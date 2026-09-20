@@ -90,32 +90,75 @@
     }
   };
 
+  function employeeStatusInfo(a,s,ac,sg){
+    if(!a)return {key:'available',label:'AVAILABLE'};
+    const over=a.job!==HOLD&&ac>sg;
+    const paused=!s&&typeof empStatus==='function'&&String(empStatus(a)).toLowerCase()==='paused';
+    if(a.rework){
+      if(s)return {key:'repeat',label:'REPEAT • RUNNING'};
+      if(paused)return {key:'repeat',label:'REPEAT • PAUSED'};
+      return {key:'repeat',label:'REPEAT WORK'};
+    }
+    if(over)return {key:'over',label:'OVER SUGGESTED'};
+    if(s)return {key:'running',label:'RUNNING'};
+    if(paused)return {key:'paused',label:'PAUSED'};
+    return {key:'new',label:'NEW'};
+  }
+
   function focusHTML(){
     if(!me||me.role!=='Employee')return '';
     const s=activeSession(me.id);
     const opens=openFor(me.id);
-    const a=s?findAssignmentForSession(s):(opens[0]||null);
+    let a=s?findAssignmentForSession(s):null;
+
     if(!a){
-      return '<div class="card v42-focus"><div class="v42-focus-head"><div><div class="small muted">CURRENT WORK</div><div class="v42-focus-jc">NO JOB ASSIGNED</div></div><span class="status ready">AVAILABLE</span></div><p class="muted">You are logged in and ready. A new assignment will appear automatically when the Supervisor assigns a Job Card.</p><div class="v42-sync-note">You do not need to logout when closing the app.</div></div>';
+      a=opens.find(x=>typeof empStatus==='function'&&String(empStatus(x)).toLowerCase()==='paused')||opens[0]||null;
     }
+
+    if(!a){
+      return '<div class="card v42-focus v51-focus v51-status-available">'+
+        '<div class="v51-status-strip"><span>AVAILABLE</span></div>'+
+        '<div class="v51-empty"><div class="v42-focus-jc">NO JOB ASSIGNED</div>'+
+        '<p>Ready for the next assignment.</p></div>'+
+        '<div class="v42-sync-note">Closing or locking the phone does not log you out.</div></div>';
+    }
+
     const j=job(a.job)||{};
-    const ac=actualFor(a),sg=Number(a.suggested||0),rem=Math.max(0,sg-ac),over=a.job===HOLD?0:Math.max(0,ac-sg);
-    const st=s?'WORKING':(typeof empStatus==='function'?String(empStatus(a)).toUpperCase():'ASSIGNED');
+    const ac=actualFor(a),sg=Number(a.suggested||0);
+    const rem=Math.max(0,sg-ac),over=a.job===HOLD?0:Math.max(0,ac-sg);
+    const info=employeeStatusInfo(a,s,ac,sg);
+
+    const other=opens.filter(x=>String(x.id)!==String(a.id));
+    const next=other[0]||null;
+    const nextJob=next?(job(next.job)||{}):null;
+    const nextStatus=next?employeeStatusInfo(next,null,actualFor(next),Number(next.suggested||0)):null;
+
     let buttons='';
     if(s){
-      if(a.job!==HOLD)buttons+='<button class="yellow" onclick="pause()">⏸ PAUSE</button>';
-      buttons+='<button class="green" onclick="finish()">'+(a.job===HOLD?'■ STOP':'✓ FINISH')+'</button>';
-      if(a.job!==HOLD)buttons+='<button class="blue v42-wide" onclick="openEmployeeRequestMenu(\''+esc(a.job)+'\')">📩 INFORM / MORE TIME / PROBLEM</button>';
+      if(a.job!==HOLD)buttons+='<button class="yellow v51-main-action" onclick="pause()">⏸ PAUSE</button>';
+      buttons+='<button class="green v51-main-action" onclick="finish()">'+(a.job===HOLD?'■ STOP':'✓ FINISH')+'</button>';
     }else{
-      buttons+='<button class="green v42-wide" onclick="start(\''+esc(a.job)+'\')">▶ START '+esc(a.job)+'</button>';
+      const paused=info.key==='paused'||info.label.includes('PAUSED');
+      buttons+='<button class="'+(paused?'blue':'green')+' v42-wide v51-main-action" onclick="start(\''+esc(a.job)+'\')">'+(paused?'▶ RESUME ':'▶ START ')+esc(a.job)+'</button>';
     }
-    return '<div class="card v42-focus">'+
-      '<div class="v42-focus-head"><div><div class="small muted">'+(a.rework?'🔁 REPEAT WORK':'CURRENT / NEXT JOB')+'</div><div class="v42-focus-jc">'+esc(a.job)+'</div></div><span class="status '+(s?'start':'new')+'">'+esc(st)+'</span></div>'+
-      '<div class="v42-focus-vehicle">'+esc(j.vehicle||'')+(j.reg?' · '+esc(j.reg):'')+'</div>'+
-      '<div class="v42-times"><div class="v42-time">Suggested<b>'+fmt(sg)+'</b></div><div class="v42-time">Actual<b>'+fmt(ac)+'</b></div><div class="v42-time">Remaining<b>'+fmt(rem)+'</b></div><div class="v42-time">Exceeded<b>'+fmt(over)+'</b></div></div>'+
-      (opens.length>1?'<p class="small muted">'+(opens.length-1)+' other assigned job(s) are listed below.</p>':'')+
-      '<div class="v42-actions">'+buttons+'</div>'+
-      '<div class="v42-sync-note">Closing the app or locking the phone does not stop timing and does not logout.</div></div>';
+
+    const requestButton=a.job===HOLD?'':'<button class="secondary v42-wide v51-request" onclick="openEmployeeRequestMenu(\''+esc(a.job)+'\')">📩 INFORM / REQUEST</button>';
+
+    return '<div class="card v42-focus v51-focus v51-status-'+info.key+'">'+
+      '<div class="v51-status-strip"><span>'+esc(info.label)+'</span></div>'+
+      '<div class="v42-focus-head"><div><div class="small muted">CURRENT JOB</div><div class="v42-focus-jc">'+esc(a.job)+'</div></div></div>'+
+      '<div class="v42-focus-vehicle">'+esc(j.vehicle||'')+(j.reg?' <span>·</span> '+esc(j.reg):'')+'</div>'+
+      '<div class="v42-times v51-times">'+
+        '<div class="v42-time v51-suggested">Suggested<b>'+fmt(sg)+'</b></div>'+
+        '<div class="v42-time v51-actual">Actual<b id="currentActual">'+fmt(ac)+'</b></div>'+
+        '<div class="v42-time v51-remaining">Remaining<b id="currentRemaining">'+fmt(rem)+'</b></div>'+
+        '<div class="v42-time v51-exceeded '+(over>0?'has-over':'')+'">Exceeded<b id="currentExceeded">'+fmt(over)+'</b></div>'+
+      '</div>'+
+      '<div class="v42-actions v51-actions">'+buttons+requestButton+'</div>'+
+      (next?'<div class="v51-next"><div><span class="v51-next-label">NEXT JOB</span><strong>'+esc(next.job)+'</strong>'+
+        '<small>'+esc(nextJob.vehicle||'')+(nextJob.reg?' · '+esc(nextJob.reg):'')+'</small></div>'+
+        '<span class="v51-next-status v51-mini-'+nextStatus.key+'">'+esc(nextStatus.label)+'</span></div>':'')+
+      '<div class="v42-sync-note">Timing continues if the app is closed or the phone is locked.</div></div>';
   }
 
   const employeeBase=window.renderEmployee;
@@ -124,10 +167,45 @@
       employeeBase();
       const root=document.getElementById('employeeView');
       if(!root||!me)return;
+
       root.querySelector('.v42-focus')?.remove();
       root.insertAdjacentHTML('afterbegin',focusHTML());
+
       const oldCurrent=root.querySelector('.employee-current');
       if(oldCurrent)oldCurrent.style.display='none';
+
+      // Reuse existing calculation/report DOM inside collapsed V51 panels.
+      const top=root.querySelector('.employee-top');
+      const month=top?.querySelector('.month-summary');
+      if(month){
+        const d=document.createElement('details');
+        d.className='card v51-collapse v51-monthly';
+        d.innerHTML='<summary><span>📊 My Monthly Performance</span><small>7 KPI summary</small></summary><div class="v51-collapse-body"></div>';
+        d.querySelector('.v51-collapse-body').appendChild(month);
+        if(top)top.insertAdjacentElement('afterend',d); else root.appendChild(d);
+      }
+
+      const jobs=root.querySelector('.employee-jobs');
+      if(jobs){
+        const d=document.createElement('details');
+        d.className='card v51-collapse v51-jobs';
+        d.innerHTML='<summary><span>📋 My Assigned Jobs</span><small>View all assigned work</small></summary><div class="v51-collapse-body"></div>';
+        d.querySelector('.v51-collapse-body').appendChild(jobs);
+        root.appendChild(d);
+      }
+
+      const finished=root.querySelector('.employee-finished');
+      if(finished){
+        finished.classList.add('v51-secondary-detail');
+        if(!finished.open)finished.open=false;
+      }
+      const history=root.querySelector('.employee-history');
+      if(history){
+        history.classList.add('v51-secondary-detail');
+        if(!history.open)history.open=false;
+      }
+
+      if(top && !top.querySelector('.month-summary'))top.style.display='none';
     };
   }
 
