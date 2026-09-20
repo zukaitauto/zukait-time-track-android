@@ -132,10 +132,39 @@ function supervisorOverview(assigned,techs){
   let completedJobs=new Set(assigned.filter(a=>a.completed).map(a=>a.job)).size;
   let overdue=assigned.filter(a=>!a.completed&&overStatus(a));
   let attention=assigned.filter(a=>(empStatus(a)==='Paused'||overStatus(a))&&!isAttentionDismissed(a));
-  let board=techs.map(id=>{let workerJobs=state.assign.filter(a=>a.emp===id),current=workerJobs.find(a=>empStatus(a)==='Started')||workerJobs.find(a=>empStatus(a)==='Paused')||workerJobs.find(a=>!a.completed),status=current?empStatus(current):'Available',actual=actualMinutesForDay(id),idle=idleMinutes(id),remaining=dailyRemaining(id),currentText=current?`<p><b>${current.job}</b><br>${job(current.job).reg}<br>Actual: ${fmt(total(current.job,id))}<br>${overStatus(current)?`<span class="over-alert">EXCEEDED ${fmt(total(current.job,id)-current.suggested)}</span>`:`<span class="remaining">Remaining ${fmt(Math.max(0,current.suggested-total(current.job,id)))}</span>`}</p>`:`<p class="muted">No active assignment</p>`;return `<div class="job-card"><h4>${userLabel(id)} <span class="small">${user(id).department}</span></h4><p class="muted">${id}</p>${statusHTML(status)}${currentText}<p class="small"><b>Today Work:</b> ${fmt(actual)} · <b>Idle:</b> ${fmt(idle)} · <b>${remaining>=0?'Remaining':'Exceeded'}:</b> ${fmt(Math.abs(remaining))}</p><button class="blue" onclick="openSupervisorTechnician('${id}')">View jobs</button></div>`}).join('');
-  let attentionTable=attention.length?`<table><tr><th>Technician</th><th>Department</th><th>Job</th><th>Status</th><th>Reason</th><th>Action</th></tr>${attention.map(a=>`<tr><td>${userLabel(a.emp)}</td><td>${user(a.emp).department}</td><td>${a.job}</td><td>${statusHTML(empStatus(a))}</td><td>${empStatus(a)==='Paused'?'Work is paused':'Exceeded suggested time by '+fmt(totalForAssignment(a)-a.suggested)}</td><td><button class="blue" onclick="openSupervisorJob('${a.job}')">View Job</button><button class="secondary" onclick="dismissAttention('${a.id}')">✓ Checked / Remove</button></td></tr>`).join('')}</table>`:'<p class="ok">No jobs need attention right now.</p>';
-  return `<div class="card"><h3><span class="live-dot"></span>Today at a Glance <span class="small muted live-data-refresh">${new Date().toLocaleTimeString()}</span></h3><p class="muted small">Live technician status. Click a count to inspect job cards. The detail window stays open until you press Close.</p><div class="grid"><div class="notice clickable" onclick="openActiveWorkers()"><b>Active Workers</b><div class="stat">${active}</div><span class="small muted">Click to view by work type</span></div><div class="notice clickable" onclick="openGlanceList('paused')"><b>Paused Jobs</b><div class="stat">${paused}</div></div><div class="notice clickable" onclick="openGlanceList('completed')"><b>Finished Job Cards</b><div class="stat">${completedJobs}</div></div><div class="notice clickable" onclick="openGlanceList('overdue')"><b>Over Suggested Time</b><div class="stat">${overdue.length}</div></div></div></div><div class="card"><h3>Technician Board — Live</h3><div class="grid">${board}</div><div id="supervisorTechDetail"></div></div><div class="card"><h3>Needs Attention <span class="pill">Manual check required</span></h3>${attentionTable}</div>`;
+  let attentionTable=attention.length?`<table><tr><th>Technician</th><th>Department</th><th>Job</th><th>Status</th><th>Reason</th><th>Action</th></tr>${attention.map(a=>`<tr><td>${userLabel(a.emp)}</td><td>${user(a.emp).department}</td><td>${a.job}</td><td>${statusHTML(empStatus(a))}</td><td>${empStatus(a)==='Paused'?'Work is paused':'Exceeded allocated time by '+fmt(totalForAssignment(a)-a.suggested)}</td><td><button class="blue" onclick="openSupervisorJob('${a.job}')">View Job</button><button class="secondary" onclick="dismissAttention('${a.id}')">✓ Checked / Remove</button></td></tr>`).join('')}</table>`:'<p class="ok">No jobs need attention right now.</p>';
+  return `<div class="card"><h3><span class="live-dot"></span>Today at a Glance <span class="small muted live-data-refresh">${new Date().toLocaleTimeString()}</span></h3><div class="grid glance-grid"><div class="notice clickable glance-box" onclick="openActiveWorkers()"><b>Active Workers</b><div class="stat">${active}</div></div><div class="notice clickable glance-box" onclick="openGlanceList('paused')"><b>Paused Jobs</b><div class="stat">${paused}</div></div><div class="notice clickable glance-box" onclick="openGlanceList('completed')"><b>Finished Job Cards</b><div class="stat">${completedJobs}</div></div><div class="notice clickable glance-box" onclick="openGlanceList('overdue')"><b>Over Allocated Time</b><div class="stat">${overdue.length}</div></div></div></div>
+  <div class="card v56-technician-board-card"><button class="v54-tech-button" onclick="openTechnicianBoardV56()"><span><span class="v54-icon">👷</span><b>TECHNICIAN BOARD</b><br><span class="small">Denting · Painting · Mechanical</span></span><span style="font-size:28px">›</span></button></div>
+  <div class="card"><h3>Needs Attention <span class="pill">Manual check required</span></h3>${attentionTable}</div>`;
 }
+
+function openTechnicianBoardV56(){
+  let deps=[
+    {key:'Denter',label:'Denting',icon:'🛠️'},
+    {key:'Painter',label:'Painting',icon:'🎨'},
+    {key:'Mechanic',label:'Mechanical',icon:'⚙️'}
+  ];
+  let body='<div class="v54-dept-grid">'+deps.map(d=>{
+    let team=users.filter(u=>u.role==='Employee'&&u.department===d.key);
+    let working=team.filter(u=>activeSession(u.id)).length;
+    return '<button class="secondary v54-dept-box" onclick="openTechnicianDeptV56(\''+d.key+'\')"><span class="v54-icon">'+d.icon+'</span>'+d.label+'<strong>'+working+' / '+team.length+'</strong><span class="small">working</span></button>';
+  }).join('')+'</div>';
+  showSupervisorModal('👷 Technician Board',body);
+}
+function openTechnicianDeptV56(dept){
+  let label=dept==='Denter'?'Denting':dept==='Painter'?'Painting':'Mechanical';
+  let icon=dept==='Denter'?'🛠️':dept==='Painter'?'🎨':'⚙️';
+  let team=users.filter(u=>u.role==='Employee'&&u.department===dept);
+  let body=team.length?'<div class="grid">'+team.map(u=>{
+    let rows=state.assign.filter(a=>a.emp===u.id&&!a.cancelled&&!a.completed);
+    let current=rows.find(a=>empStatus(a)==='Started')||rows.find(a=>empStatus(a)==='Paused')||rows[0]||null;
+    if(!current)return '<div class="job-card"><h4>'+userLabel(u.id)+'</h4><p class="ok">AVAILABLE</p><button class="blue" onclick="openSupervisorTechnician(\''+u.id+'\')">VIEW JOBS</button></div>';
+    let j=job(current.job),actual=totalForAssignment(current),remaining=Math.max(0,current.suggested-actual);
+    return '<div class="job-card"><h4>'+userLabel(u.id)+'</h4><p><b>'+current.job+'</b><br>'+((j&&j.vehicle)||'')+' · '+((j&&j.reg)||'')+'</p>'+statusHTML(empStatus(current))+'<p>Allocated: <b>'+fmt(current.suggested)+'</b> · Actual: <b>'+fmt(actual)+'</b><br>Remaining: <b>'+fmt(remaining)+'</b></p><button class="blue" onclick="openSupervisorTechnician(\''+u.id+'\')">VIEW JOBS</button></div>';
+  }).join('')+'</div>':'<p class="muted">No technicians in this department.</p>';
+  showSupervisorModal(icon+' '+label+' Technicians',body);
+}
+
 function showSupervisorModal(title,body){let modal=document.getElementById('modal');modal.className='modal-backdrop';modal.innerHTML='<div class="modal-box" onclick="event.stopPropagation()"><div class="section-title"><h3>'+title+'</h3><button class="secondary" onclick="closeSupervisorModal()">Close</button></div>'+body+'</div>';}
 function closeSupervisorModal(){let modal=document.getElementById('modal');modal.className='hidden';modal.innerHTML='';}
 function openGlanceList(type){let rows=state.assign,title={paused:'Paused Job Cards',completed:'Finished Job Cards',overdue:'Over Suggested Time'}[type],matches=type==='paused'?rows.filter(a=>empStatus(a)==='Paused'):type==='completed'?rows.filter(a=>a.completed):rows.filter(a=>!a.completed&&overStatus(a)),numbers=[...new Set(matches.map(a=>a.job))];showSupervisorModal(title,numbers.length?'<p class="muted">Select a job card. The detail window will remain open until you press Close.</p><div class="grid">'+numbers.map(no=>'<button class="blue" onclick="openSupervisorJob(\''+no+'\')">View '+no+'</button>').join('')+'</div>':'<p class="muted">No job cards in this list.</p>')}
@@ -985,238 +1014,47 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
   window.finish=function(){let s=activeSession(me.id);if(!s)return;let a=assignmentById(s.assignmentId)||currentAssignment(s.job,me.id);if(!a)return alert('Active assignment could not be found.');let verb=s.job===HOLD?'Stop':'Finish work on';if(!confirm(verb+' '+s.job+'?'))return;s.end=now();s.finished=true;s.paused=false;a.completed=true;a.completedAt=now();setLastAction((s.job===HOLD?'Stopped ':'Finished ')+s.job);save();render()};
 
   window.addRepeatWork=function(no){
-    let j=job(no);if(!j)return;let workers=[...new Set((state.assign||[]).filter(a=>a.job===no&&!a.cancelled).map(a=>a.emp))];
-    let emps=users.filter(u=>u.role==='Employee');
-    let options=emps.map(u=>'<option value="'+u.id+'">'+esc(u.name)+' — '+esc(u.department)+' ('+u.id+')</option>').join('');
-    let mistake=emps.filter(u=>workers.includes(u.id)).map(u=>'<option value="'+u.id+'">'+esc(u.name)+' ('+u.id+')</option>').join('')||options;
-    showSupervisorModal('🔁 Repeat Work — '+esc(no),'<p class="muted">Repeat work stays on the same Job Card. Select who will repair it and whose mistake caused the repeat.</p><div class="grid"><label><b>Repeat Employee</b><br><select id="v36RepeatEmp" onchange="v36RepeatEmpChanged(\''+no+'\')">'+options+'</select></label><label><b>Mistake Employee</b><br><select id="v36MistakeEmp">'+mistake+'</select></label><label id="v36RepeatSuggestedWrap"><b>Suggested Time</b><br><input id="v36RepeatSuggested" value="1.00" inputmode="decimal"><div class="time-hint">Required when another employee performs repeat work.</div></label></div><label><b>Repeat Reason</b><br><textarea id="v36RepeatReason" style="width:100%" placeholder="Repeat complaint / correction"></textarea></label><p><button class="purple" onclick="v36AssignRepeat(\''+no+'\')">ASSIGN REPEAT WORK</button> <button class="secondary" onclick="closeSupervisorModal()">CANCEL</button></p>');
-    setTimeout(()=>window.v36RepeatEmpChanged(no),0);
+    let j=job(no);if(!j)return alert('Job Card not found.');
+    let originals=liveAssign().filter(a=>a.job===no&&!a.rework);
+    if(!originals.length)return alert('Original work assignment was not found for this Job Card.');
+    if(originals.some(a=>!a.completed))return alert('Repeat Work can only be issued after the original work is FINISHED.');
+    if(liveAssign().some(a=>a.job===no&&a.rework&&!a.completed))return alert('An unfinished Repeat Work assignment already exists on this Job Card.');
+
+    let workers=[...new Set(originals.map(a=>a.emp))];
+    let employees=users.filter(u=>u.role==='Employee');
+    let opts=employees.map(u=>'<option value="'+u.id+'">'+u.name+' — '+u.department+' ('+u.id+')</option>').join('');
+    let mistake=(workers.length?employees.filter(u=>workers.includes(u.id)):employees).map(u=>'<option value="'+u.id+'">'+u.name+' ('+u.id+')</option>').join('');
+    showSupervisorModal('🔁 Repeat Work — '+no,
+      '<div class="notice"><b>Original work is Finished.</b> A new Repeat Work assignment can now be issued.</div>'+
+      '<div class="grid"><label><b>Repeat Employee</b><br><select id="repeatEmployee">'+opts+'</select></label>'+
+      '<label><b>Mistake Employee</b><br><select id="repeatMistakeEmployee">'+mistake+'</select></label>'+
+      '<label><b>Allocated Repeat Time</b><br><input id="repeatAllocatedTime" value="1.00" inputmode="decimal"><div class="time-hint">Manual entry required every time, including same-employee repeat work.</div></label></div>'+
+      '<label><b>Repeat Reason</b><br><textarea id="repeatReason" style="width:100%" placeholder="Repeat complaint / correction"></textarea></label>'+
+      '<p><button class="purple" onclick="assignRepeatWorkV56(\''+no+'\')">ASSIGN REPEAT WORK</button> <button class="secondary" onclick="closeSupervisorModal()">CANCEL</button></p>');
   };
-  window.v36RepeatEmpChanged=function(no){let emp=document.getElementById('v36RepeatEmp')?.value,wrap=document.getElementById('v36RepeatSuggestedWrap'),prior=(state.assign||[]).filter(a=>a.job===no&&a.emp===emp&&!a.cancelled&&!a.rework).length>0;if(wrap)wrap.style.display=prior?'none':''};
-  window.v36AssignRepeat=function(no){
-    let emp=document.getElementById('v36RepeatEmp')?.value,mistake=document.getElementById('v36MistakeEmp')?.value,reason=(document.getElementById('v36RepeatReason')?.value||'').trim();
-    if(!emp||user(emp).role!=='Employee')return alert('Select Repeat Employee.');if(!mistake||user(mistake).role!=='Employee')return alert('Select Mistake Employee.');if(!reason)return alert('Repeat Reason is required.');
-    if(activeSession(emp))return alert(user(emp).name+' already has an active job. Stop or pause that work before starting repeat work.');
-    let existing=currentAssignment(no,emp);if(existing)return alert(user(emp).name+' already has an unfinished assignment on this Job Card. Finish it before creating repeat work.');
-    let same=(state.assign||[]).some(a=>a.job===no&&a.emp===emp&&!a.cancelled&&!a.rework),mins=0;
-    if(!same){let raw=document.getElementById('v36RepeatSuggested')?.value;mins=parseWorkMinutes(raw);if(!Number.isFinite(mins)||mins<1)return alert('Enter valid Suggested Time for the repeat employee. '+timeInputHint())}
-    let a={id:uid(),job:no,emp:emp,suggested:same?0:mins,completed:false,rework:true,repeatReason:reason,mistakeEmp:mistake,assignedBy:me.id,assignedAt:now(),repeatSameEmployee:same};
-    state.assign.push(a);state.reworkLogs=state.reworkLogs||[];state.reworkLogs.push({id:uid(),assignmentId:a.id,job:no,emp:emp,mistakeEmp:mistake,suggested:a.suggested,reason:reason,by:me.id,at:now()});save();closeSupervisorModal();renderSupervisor();alert('Repeat work assigned on '+no+' to '+user(emp).name+'. Mistake employee: '+user(mistake).name+'.');
-  };
+  window.assignRepeatWorkV56=function(no){
+    let emp=document.getElementById('repeatEmployee')?.value;
+    let mistake=document.getElementById('repeatMistakeEmployee')?.value;
+    let mins=parseWorkMinutes(document.getElementById('repeatAllocatedTime')?.value||'');
+    let reason=(document.getElementById('repeatReason')?.value||'').trim();
+    if(!emp||user(emp).role!=='Employee')return alert('Select Repeat Employee.');
+    if(!mistake||user(mistake).role!=='Employee')return alert('Select Mistake Employee.');
+    if(!Number.isFinite(mins)||mins<1)return alert('Enter valid Allocated Repeat Time. '+timeInputHint());
+    if(!reason)return alert('Repeat Reason is required.');
 
-  function normalForAssignment(a){return (state.sessions||[]).filter(s=>s.assignmentId===a.id).reduce((x,s)=>x+normalMinutes(s.start,s.end||Date.now()),0)}
-  function repeatDeduction(emp,from,to){return (state.assign||[]).filter(a=>a.rework&&a.mistakeEmp===emp&&!a.cancelled).reduce((sum,a)=>sum+(state.sessions||[]).filter(s=>s.assignmentId===a.id&&s.start<to&&(s.end||Date.now())>from).reduce((x,s)=>x+normalMinutes(Math.max(s.start,from),Math.min(s.end||Date.now(),to)),0),0)}
-  window.repeatDeductionMinutes=repeatDeduction;
-  window.incentiveFor=function(emp){let {from,to}=monthBounds(),sg=window.monthlySuggestedMinutes?window.monthlySuggestedMinutes(emp,from,to):(state.assign||[]).filter(a=>a.emp===emp&&!a.cancelled&&(a.assignedAt||0)>=from&&(a.assignedAt||0)<to).reduce((x,a)=>x+(+a.suggested||0),0),ac=window.monthlyNormalActualMinutes?window.monthlyNormalActualMinutes(emp,from,to):0,ded=repeatDeduction(emp,from,to);return{target:TARGET,suggested:sg,actual:ac,repeat:ded,incentive:ac>=TARGET?Math.max(0,sg-ac-ded):0}};
+    let originals=liveAssign().filter(a=>a.job===no&&!a.rework);
+    if(!originals.length||originals.some(a=>!a.completed))return alert('Repeat Work can only be issued after the original work is FINISHED.');
+    if(liveAssign().some(a=>a.job===no&&a.rework&&!a.completed))return alert('An unfinished Repeat Work assignment already exists on this Job Card.');
 
-  window.supervisorRowsTable=function(rows){rows=(rows||[]).slice().sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));if(!rows.length)return '<p class="muted">No assigned job cards found.</p>';return '<div style="overflow:auto"><table><tr><th>Date</th><th>Job Number</th><th>Make / Model</th><th>Employee</th><th>Suggested</th><th>Actual Normal</th><th>Status</th><th>Action</th></tr>'+rows.map(a=>'<tr><td>'+(a.assignedAt?new Date(a.assignedAt).toLocaleDateString():'—')+'</td><td><b>'+esc(a.job)+'</b>'+(a.rework?' <span class="pill">REPEAT</span>':'')+'</td><td>'+esc(job(a.job)?.vehicle||'')+'</td><td>'+esc(user(a.emp).name)+'</td><td>'+fmt(a.suggested)+'</td><td>'+fmt(normalForAssignment(a))+'</td><td>'+statusHTML(empStatus(a))+'</td><td><button class="blue" onclick="openSupervisorJob(\''+a.job+'\')">VIEW</button> <button class="purple" onclick="addRepeatWork(\''+a.job+'\')">REPEAT WORK</button></td></tr>').join('')+'</table></div>'};
-  window.openSupervisorAssignedWindow=function(){let rows=(state.assign||[]).filter(a=>!a.cancelled&&!a.completed);showSupervisorModal('📋 Assigned Job Cards','<p><input id="v36AssignedSearch" placeholder="Search JC / employee / vehicle / registration" oninput="v36FilterAssigned()" style="width:100%"></p><div id="v36AssignedRows">'+window.supervisorRowsTable(rows)+'</div>')};  window.v36FilterAssigned=function(){let q=(document.getElementById('v36AssignedSearch')?.value||'').toLowerCase(),rows=(state.assign||[]).filter(a=>!a.cancelled&&!a.completed).filter(a=>{let j=job(a.job)||{};return [a.job,j.vehicle,j.reg,user(a.emp).name].join(' ').toLowerCase().includes(q)}),el=document.getElementById('v36AssignedRows');if(el)el.innerHTML=window.supervisorRowsTable(rows)};
-
-  // Labour cost uses normal actual only, never overtime.
-  window.labourCost=function(a){return normalForAssignment(a)*2.5/60};
-})();
-</script>
-
-
-<script>
-/* V38 SUPERVISOR + ID001 STABILITY — authoritative final handlers */
-(function(){
-  const HOLD='ID001';
-  const LABOUR_RATE=2.5;
-  const dayStart=t=>{const d=new Date(t);return +new Date(d.getFullYear(),d.getMonth(),d.getDate())};
-  const isFriday=t=>new Date(t).getDay()===5;
-  const escSafe=s=>typeof esc==='function'?esc(String(s??'')):String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-
-  state.systemNotifications=state.systemNotifications||[];
-
-  function normalMinutes(st,en){
-    if(!Number.isFinite(st)||!Number.isFinite(en)||en<=st)return 0;
-    let out=0,cur=st;
-    while(cur<en){
-      const ds=dayStart(cur),de=Math.min(en,ds+86400000);
-      if(!isFriday(cur)){
-        for(const [a,b] of [[480,780],[900,1140]]){
-          const x=Math.max(cur,ds+a*60000),y=Math.min(de,ds+b*60000);
-          if(y>x)out+=(y-x)/60000;
-        }
-      }
-      cur=de;
-    }
-    return Math.max(0,out);
-  }
-
-  function overtimeMinutes(st,en){
-    if(!Number.isFinite(st)||!Number.isFinite(en)||en<=st)return 0;
-    let out=0,cur=st;
-    while(cur<en){
-      const ds=dayStart(cur),de=Math.min(en,ds+86400000);
-      if(isFriday(cur))out+=(de-cur)/60000;
-      else{
-        const lunchStart=ds+780*60000,lunchEnd=ds+900*60000,evening=ds+1140*60000;
-        const lx=Math.max(cur,lunchStart),ly=Math.min(de,lunchEnd);if(ly>lx)out+=(ly-lx)/60000;
-        const ex=Math.max(cur,evening);if(de>ex)out+=(de-ex)/60000;
-      }
-      cur=de;
-    }
-    return Math.max(0,out);
-  }
-  function clippedSessions(emp,from,to){return (state.sessions||[]).filter(s=>s.emp===emp&&s.start<to&&(s.end||Date.now())>from).map(s=>({...s,start:Math.max(s.start,from),end:Math.min(s.end||Date.now(),to)})).filter(s=>s.end>s.start);}
-  function monthlyNormalActual(emp,from,to){return clippedSessions(emp,from,to).reduce((x,s)=>x+normalMinutes(s.start,s.end),0);}
-  function monthlyOvertime(emp,from,to){return clippedSessions(emp,from,to).reduce((x,s)=>x+overtimeMinutes(s.start,s.end),0);}
-  function monthlySuggested(emp,from,to){return (state.assign||[]).filter(a=>a.emp===emp&&!a.cancelled&&(a.assignedAt||0)>=from&&(a.assignedAt||0)<to).reduce((x,a)=>x+(+a.suggested||0),0);}
-  function monthlyIdeal(emp,from,to){let ss=clippedSessions(emp,from,to).sort((a,b)=>a.start-b.start),sum=0,lastEnd=null;for(const s of ss){if(lastEnd!==null&&s.start>lastEnd)sum+=normalMinutes(lastEnd,s.start);lastEnd=lastEnd===null?s.end:Math.max(lastEnd,s.end);}return sum;}
-  function monthBounds(){const d=new Date();return{from:+new Date(d.getFullYear(),d.getMonth(),1),to:+new Date(d.getFullYear(),d.getMonth()+1,1)};}
-
-  function inferAssignmentForSession(s){
-    if(!s)return null;
-    if(s.assignmentId){const direct=(state.assign||[]).find(a=>a.id===s.assignmentId);if(direct)return direct;}
-    const rows=(state.assign||[]).filter(a=>a.job===s.job&&a.emp===s.emp).slice().sort((a,b)=>(a.assignedAt||0)-(b.assignedAt||0));
-    if(!rows.length)return null;
-    const before=rows.filter(a=>(a.assignedAt||0)<=s.start);
-    return (before.length?before[before.length-1]:rows[0])||null;
-  }
-
-  // Upgrade legacy sessions to assignment IDs where the owning assignment can be inferred.
-  let migrated=false;
-  (state.sessions||[]).forEach(s=>{if(!s.assignmentId){const a=inferAssignmentForSession(s);if(a){s.assignmentId=a.id;migrated=true;}}});
-  if(migrated)save();
-
-  function assignmentById(id){return (state.assign||[]).find(a=>a.id===id)||null;}
-  function sessionsForAssignment(a){
-    if(!a)return [];
-    return (state.sessions||[]).filter(s=>{
-      if(s.assignmentId)return s.assignmentId===a.id;
-      const owner=inferAssignmentForSession(s);return owner&&owner.id===a.id;
-    });
-  }
-  function normalForAssignment(a,to=Date.now()){
-    return sessionsForAssignment(a).reduce((sum,s)=>sum+normalMinutes(s.start,Math.min(s.end||to,to)),0);
-  }
-  function latestOpen(no,emp){return (state.assign||[]).filter(a=>a.job===no&&a.emp===emp&&!a.cancelled&&!a.completed).sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0))[0]||null;}
-  function latestAny(no,emp){return (state.assign||[]).filter(a=>a.job===no&&a.emp===emp&&!a.cancelled).sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0))[0]||null;}
-  function assignmentForSession(s){return assignmentById(s?.assignmentId)||inferAssignmentForSession(s)||latestOpen(s?.job,s?.emp)||null;}
-
-  window.v38NormalForAssignment=normalForAssignment;
-  window.totalForAssignment=normalForAssignment;
-  window.effA=function(a){const ac=normalForAssignment(a),sg=+a?.suggested||0;return ac?sg/ac*100:null;};
-  window.suggest=function(no,emp){
-    const active=activeSession(emp);let a=null;
-    if(active&&active.job===no)a=assignmentForSession(active);
-    a=a||latestOpen(no,emp)||latestAny(no,emp);
-    return +a?.suggested||0;
-  };
-  // Keep historical aggregation for normal JCs, but ID001 and the current active assignment are assignment-specific.
-  window.total=function(no,emp){
-    const active=activeSession(emp);
-    if(active&&active.job===no){const a=assignmentForSession(active);if(a)return normalForAssignment(a);}
-    if(no===HOLD){const a=latestOpen(no,emp)||latestAny(no,emp);return a?normalForAssignment(a):0;}
-    return (state.sessions||[]).filter(s=>s.job===no&&s.emp===emp).reduce((sum,s)=>sum+normalMinutes(s.start,s.end||Date.now()),0);
+    let a={id:uid(),job:no,emp,suggested:mins,completed:false,rework:true,repeatReason:reason,mistakeEmp:mistake,assignedBy:me.id,assignedAt:now(),repeatSameEmployee:emp===mistake};
+    state.assign.push(a);
+    state.reworkLogs=state.reworkLogs||[];
+    state.reworkLogs.push({id:uid(),assignmentId:a.id,job:no,emp,mistakeEmp:mistake,suggested:mins,reason,by:me.id,at:now()});
+    setLastAction('Assigned repeat work '+no+' to '+user(emp).name);
+    save();closeSupervisorModal();render();
+    alert('Repeat Work assigned to '+user(emp).name+' with '+fmt(mins)+' Allocated Time.');
   };
 
-  function statusFor(a){
-    if(!a)return 'New';
-    const active=(state.sessions||[]).find(s=>!s.end&&assignmentForSession(s)?.id===a.id);
-    if(active)return 'Started';
-    if(a.completed)return 'Finished';
-    if(a.job===HOLD)return 'New';
-    const last=sessionsForAssignment(a).slice().sort((x,y)=>y.start-x.start)[0];
-    if(last&&last.paused)return 'Paused';
-    return 'New';
-  }
-  window.empStatus=statusFor;
-  window.overStatus=function(a){
-    if(!a||a.cancelled||a.completed||a.job===HOLD)return false;
-    const sg=+a.suggested||0;
-    if(sg<=0)return false; // same-employee repeat work has no new suggested time
-    return normalForAssignment(a)>sg;
-  };
-
-  function openAssignments(){return (state.assign||[]).filter(a=>!a.cancelled&&!a.completed);}
-
-  function completedEfficiencyFinal(emp,from,to){
-    const openJobs=new Set(openAssignments().map(a=>a.job));
-    const rows=(state.assign||[]).filter(a=>a.emp===emp&&a.completed&&!a.cancelled&&a.job!==HOLD&&!openJobs.has(a.job)&&(a.completedAt||0)>=from&&(a.completedAt||0)<to);
-    const ids=new Set(rows.map(a=>a.id));
-    const sg=rows.reduce((x,a)=>x+(+a.suggested||0),0);
-    let ac=0;
-    clippedSessions(emp,from,to).forEach(s=>{const a=assignmentForSession(s);if(a&&ids.has(a.id))ac+=normalMinutes(s.start,s.end);});
-    return {suggested:sg,actual:ac,efficiency:ac?sg/ac*100:null};
-  }
-  function repeatDeductionFinal(emp,from,to){
-    const ids=new Set((state.assign||[]).filter(a=>a.rework&&a.mistakeEmp===emp&&!a.cancelled).map(a=>a.id));
-    let total=0;
-    (state.sessions||[]).forEach(s=>{const a=assignmentForSession(s);if(!a||!ids.has(a.id)||s.start>=to||(s.end||Date.now())<=from)return;const st=Math.max(s.start,from),en=Math.min(s.end||Date.now(),to);total+=normalMinutes(st,en);});
-    return total;
-  }
-  window.normalOverlapMinutes=normalMinutes;
-  window.sessionNormalMinutes=(s,to=Date.now())=>normalMinutes(s.start,Math.min(s.end||to,to));
-  window.sessionOvertimeMinutes=(s,to=Date.now())=>overtimeMinutes(s.start,Math.min(s.end||to,to));
-  window.overtimeForSession=window.sessionOvertimeMinutes;
-  window.overtimeForEmployee=monthlyOvertime;
-  window.monthlyNormalActualMinutes=monthlyNormalActual;
-  window.monthlySuggestedMinutes=monthlySuggested;
-  window.monthlyIdealTimeMinutes=monthlyIdeal;
-  window.completedEfficiency=completedEfficiencyFinal;
-  window.repeatDeductionMinutes=repeatDeductionFinal;
-  function monthlyRepeatJobHours(emp,from,to){
-    const ids=new Set((state.assign||[]).filter(a=>a.rework&&!a.cancelled&&(a.emp===emp||a.mistakeEmp===emp)).map(a=>a.id));
-    let total=0;
-    (state.sessions||[]).forEach(s=>{
-      const a=assignmentForSession(s);
-      if(!a||!ids.has(a.id)||s.start>=to||(s.end||Date.now())<=from)return;
-      const st=Math.max(s.start,from),en=Math.min(s.end||Date.now(),to);
-      total+=normalMinutes(st,en);
-    });
-    return total;
-  }
-  window.monthlyRepeatJobHours=monthlyRepeatJobHours;
-
-  window.incentiveFor=function(emp){const {from,to}=monthBounds(),sg=monthlySuggested(emp,from,to),ac=monthlyNormalActual(emp,from,to),ded=repeatDeductionFinal(emp,from,to);return{target:210*60,suggested:sg,actual:ac,repeat:ded,incentive:ac>=210*60?Math.max(0,sg-ac-ded):0};};
-  window.monthlyEmployeeSummary=function(){
-    const d=new Date(),{from,to}=monthBounds(),sg=monthlySuggested(me.id,from,to),ac=monthlyNormalActual(me.id,from,to),ef=completedEfficiencyFinal(me.id,from,to),inc=window.incentiveFor(me.id),ideal=monthlyIdeal(me.id,from,to),ot=monthlyOvertime(me.id,from,to),rep=monthlyRepeatJobHours(me.id,from,to),rem=Math.max(0,sg-ac);
-    const card=(cl,label,val,id,note)=>'<div class="employee-month-kpi '+cl+'"><div class="kpi-label">'+label+'</div><div class="kpi-value" id="'+id+'">'+val+'</div><span class="small">'+note+'</span></div>';
-    return '<div class="card month-summary employee-dashboard-card v38-month"><div class="employee-section-title"><h3>📅 This Month</h3><span class="pill">Monthly</span></div><p class="muted">'+d.toLocaleString(undefined,{month:'long',year:'numeric'})+'</p><div class="employee-month-grid">'+card('kpi-ideal','Total Suggested Time',fmt(sg),'monthTotalSuggestedTime','All assigned jobs including unfinished work and ID001')+card('kpi-actual','Total Actual Time',fmt(ac),'monthTotalActualTime','Normal duty time only; overtime separate')+card('kpi-remaining','Remaining Suggested Time',fmt(rem),'monthRemainingSuggestedTime','Suggested minus normal actual')+card('kpi-eff','Efficiency Percentage',ef.efficiency==null?'—':ef.efficiency.toFixed(1)+'%','monthEfficiencyPercentage','Fully completed customer work only')+card('kpi-incentive','Total Incentive Hours',fmt(inc.incentive),'monthTotalIncentiveHours','Requires 210h normal actual; repeat deduction applied')+card('kpi-remaining','Total Ideal Time',fmt(ideal),'monthTotalIdealTime','Only gaps between jobs during duty hours')+card('kpi-overtime','Total Overtime Hours',fmt(ot),'monthTotalOvertimeHours','13:00–15:00, after 19:00; Friday all work')+card('kpi-repeat','Total Repeat Job Hours',fmt(rep),'monthTotalRepeatJobHours','Normal-duty repeat hours done by you or caused by your mistake; counted once')+'</div></div>';
-  };
-  window.openIncentiveList=function(){const {from,to}=monthBounds(),rows=users.filter(u=>u.role==='Employee').map(u=>({u,x:window.incentiveFor(u.id),ot:monthlyOvertime(u.id,from,to)})).sort((a,b)=>b.x.incentive-a.x.incentive);const body='<p class="muted">Incentive = Total Suggested − Normal Actual − Repeat Deduction after the employee reaches 210 normal Actual hours. Overtime is excluded.</p><table><tr><th>Employee</th><th>Total Suggested</th><th>Normal Actual</th><th>Repeat Deduction</th><th>Overtime</th><th>Incentive</th></tr>'+rows.map(r=>'<tr><td>'+escSafe(r.u.name)+'</td><td>'+fmt(r.x.suggested)+'</td><td>'+fmt(r.x.actual)+'</td><td>'+fmt(r.x.repeat)+'</td><td>'+fmt(r.ot)+'</td><td><b>'+fmt(r.x.incentive)+'</b></td></tr>').join('')+'</table>';(me&&me.role==='Manager'?showManagerModal:showSupervisorModal)('⭐ Incentive Hours',body);};
-  function finishedCustomerJobs(){
-    const openJobs=new Set(openAssignments().map(a=>a.job));
-    const map=new Map();
-    (state.assign||[]).filter(a=>!a.cancelled&&a.completed&&a.job!==HOLD&&!openJobs.has(a.job)).forEach(a=>{
-      const prev=map.get(a.job);if(!prev||(a.completedAt||0)>(prev.completedAt||0))map.set(a.job,a);
-    });
-    return [...map.values()].sort((a,b)=>(b.completedAt||0)-(a.completedAt||0));
-  }
-  function displayStatus(a){
-    const base=statusFor(a);
-    if(a.job===HOLD)return 'IDEAL TIME CARD — '+(base==='Started'?'WORKING':'NOT STARTED');
-    if(a.rework)return '🔁 REPEAT WORK — '+(base==='Started'?'WORKING':base==='Paused'?'PAUSED':'NOT STARTED');
-    return base==='Started'?'WORKING':base==='Paused'?'PAUSED':base==='New'?'NOT STARTED':'FINISHED';
-  }
-  function remainingFor(a){return Math.max(0,(+a.suggested||0)-normalForAssignment(a));}
-
-  window.v38SupervisorRows=function(rows){
-    rows=(rows||[]).slice().sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));
-    if(!rows.length)return '<p class="muted">No job cards in this list.</p>';
-    return '<div style="overflow:auto"><table><tr><th>Date</th><th>JC Number</th><th>Vehicle</th><th>Employee</th><th>Suggested</th><th>Actual</th><th>Remaining</th><th>Status</th></tr>'+rows.map(a=>{
-      const j=job(a.job)||{};
-      return '<tr><td>'+(a.assignedAt?new Date(a.assignedAt).toLocaleDateString():'—')+'</td><td><button class="blue" onclick="openSupervisorJob(\''+escSafe(a.job)+'\')">'+escSafe(a.job)+'</button></td><td>'+escSafe(j.vehicle||'')+(j.reg?' / '+escSafe(j.reg):'')+'</td><td>'+escSafe(user(a.emp).name)+'</td><td>'+fmt(+a.suggested||0)+'</td><td>'+fmt(normalForAssignment(a))+'</td><td>'+fmt(remainingFor(a))+'</td><td><b>'+displayStatus(a)+'</b></td></tr>';
-    }).join('')+'</table></div>';
-  };
-
-  window.openSupervisorAssignedWindow=function(){
-    const rows=openAssignments();
-    showSupervisorModal('📋 Assigned Job Cards — All Open','<p class="muted">Not Started, Working, Paused, Repeat Work and ID001. Fully completed assignments are excluded.</p><p><input id="v38AssignedSearch" placeholder="Search JC / employee / vehicle / registration / status" oninput="v38FilterAssigned()" style="width:100%"></p><div id="v38AssignedRows">'+window.v38SupervisorRows(rows)+'</div>');
-  };
-  window.v38FilterAssigned=function(){
-    const q=(document.getElementById('v38AssignedSearch')?.value||'').trim().toLowerCase();
-    const rows=openAssignments().filter(a=>{const j=job(a.job)||{};return [a.job,j.vehicle,j.reg,user(a.emp).name,displayStatus(a)].join(' ').toLowerCase().includes(q)});
-    const el=document.getElementById('v38AssignedRows');if(el)el.innerHTML=window.v38SupervisorRows(rows);
-  };
-  window.openSupervisorFinishedWindow=function(){
-    const rows=finishedCustomerJobs();
-    if(!rows.length)return showSupervisorModal('✅ Finished Job Cards','<p class="muted">No fully finished normal customer Job Cards. ID001 is never shown here, and a JC with open Repeat Work remains Work In Progress.</p>');
-    showSupervisorModal('✅ Finished Job Cards','<p class="muted">Normal customer Job Cards only. Open Repeat Work is excluded.</p><table><tr><th>Completion</th><th>JC Number</th><th>Vehicle</th><th>Action</th></tr>'+rows.map(a=>{const j=job(a.job)||{};return '<tr><td>'+(a.completedAt?new Date(a.completedAt).toLocaleString():'—')+'</td><td><b>'+escSafe(a.job)+'</b></td><td>'+escSafe(j.vehicle||'')+(j.reg?' / '+escSafe(j.reg):'')+'</td><td><button class="blue" onclick="openSupervisorJob(\''+escSafe(a.job)+'\')">VIEW DETAILS</button></td></tr>'}).join('')+'</table>');
-  };
   window.openGlanceList=function(type){
     if(type==='completed')return window.openSupervisorFinishedWindow();
     const rows=openAssignments();
