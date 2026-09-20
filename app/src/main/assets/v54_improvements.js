@@ -688,5 +688,6 @@
 
   ensureOnlineIndicator();
   applyWording(document.body);
-  window.v54Ready=true;\n  window.v55Ready=true;
+  window.v54Ready=true;
+  window.v55Ready=true;
 })();
