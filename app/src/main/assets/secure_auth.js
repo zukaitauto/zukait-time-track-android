@@ -1,7 +1,18 @@
-
 (function(){
   const AUTH_URL='https://pjknotnjkufadqavcmii.supabase.co/functions/v1/staff-auth';
   const PUBLISHABLE_KEY='sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A';
+  const SESSION_KEY='zukait_secure_session_v42';
+  let restoring=false;
+
+  function savedSession(){
+    try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch(_){return null}
+  }
+  function saveSession(token,user){
+    if(!token||!user)return;
+    localStorage.setItem(SESSION_KEY,JSON.stringify({token,user,savedAt:Date.now()}));
+  }
+  function clearSession(){localStorage.removeItem(SESSION_KEY)}
+  function token(){return savedSession()?.token||''}
 
   async function callAuth(payload){
     let res;
@@ -26,6 +37,7 @@
     if(r?.code==='exists')return 'That User ID already exists.';
     if(r?.code==='not_found')return 'User ID not found.';
     if(r?.code==='forbidden')return 'Manager authorization required.';
+    if(r?.code==='invalid_session')return 'This saved login is no longer valid. Please login again.';
     if(r?._status>=500)return 'Login server error. Please try again.';
     return 'Invalid User ID or password.';
   }
@@ -43,11 +55,26 @@
   async function forceFirstChange(id,current){
     alert('This is your temporary password. You must create your own password before continuing.');
     const np=passwordPrompt('Create your new password');
-    if(np===null)return false;
+    if(np===null)return null;
     const r=await callAuth({action:'change_password',user_id:id,current_password:current,new_password:np});
-    if(!r.ok){alert(authMessage(r));return false;}
-    alert('Password changed successfully. Use your new password next time.');
-    return true;
+    if(!r.ok){alert(authMessage(r));return null;}
+    alert('Password changed successfully.');
+    return r.session_token||null;
+  }
+
+  function openApp(userObj){
+    me=userObj;
+    const login=document.getElementById('login');
+    const app=document.getElementById('app');
+    if(login)login.classList.add('hidden');
+    if(app)app.classList.remove('hidden');
+  }
+  function showLogin(){
+    me=null;
+    const app=document.getElementById('app');
+    const login=document.getElementById('login');
+    if(app)app.classList.add('hidden');
+    if(login)login.classList.remove('hidden');
   }
 
   window.login=async function(){
@@ -60,23 +87,24 @@
     try{
       const r=await callAuth({action:'login',user_id:id,password:p});
       if(!r.ok){alert(authMessage(r));return;}
+      let sessionToken=r.session_token||'';
       if(r.must_change){
-        const changed=await forceFirstChange(id,p);
-        if(!changed)return;
+        const replacement=await forceFirstChange(id,p);
+        if(!replacement)return;
+        sessionToken=replacement;
       }
-      me=r.user;
-      document.getElementById('login').classList.add('hidden');
-      document.getElementById('app').classList.remove('hidden');
+      saveSession(sessionToken,r.user);
+      openApp(r.user);
       try{
-        if(window.zukaitCloud?.pull)await window.zukaitCloud.pull(true);
+        if(window.zukaitCloud?.init)await window.zukaitCloud.init(true);
         render();
       }catch(err){
         console.error(err);
         alert('Dashboard loading error: '+(err?.message||err));
-        document.getElementById('app').classList.add('hidden');
-        document.getElementById('login').classList.remove('hidden');
-        me=null;
       }
+    }catch(err){
+      console.error(err);
+      alert(err?.message||'Login failed.');
     }finally{
       if(btn){btn.disabled=false;btn.textContent='Login';}
       const pw=document.getElementById('pw');if(pw)pw.value='';
@@ -84,6 +112,18 @@
   };
 
   window.quickLogin=function(){alert('Quick Login is disabled. Use your individual User ID and password.');};
+
+  window.logout=async function(){
+    const s=savedSession();
+    if(s?.token && navigator.onLine){
+      try{await callAuth({action:'logout',session_token:s.token})}catch(_){}
+    }
+    clearSession();
+    if(employeeClockTimer)clearInterval(employeeClockTimer);employeeClockTimer=null;
+    if(liveSupervisorTimer)clearInterval(liveSupervisorTimer);liveSupervisorTimer=null;
+    showLogin();
+    if(window.zukaitCloud?.stop)window.zukaitCloud.stop();
+  };
 
   window.changeOwnPassword=async function(){
     if(!me)return;
@@ -93,6 +133,7 @@
     if(np===null)return;
     const r=await callAuth({action:'change_password',user_id:me.id,current_password:current,new_password:np});
     if(!r.ok)return alert(authMessage(r));
+    saveSession(r.session_token,me);
     alert('Your password has been changed successfully.');
   };
 
@@ -150,8 +191,7 @@
     if(!j)return;
     if(!reason)return alert('Delete reason is required.');
     if(!pw)return alert('Enter Manager password.');
-
-    const check=await callAuth({action:'login',user_id:me.id,password:pw});
+    const check=await callAuth({action:'verify_password',user_id:me.id,password:pw});
     if(!check.ok)return alert('Incorrect Manager Password.');
 
     const snapshot={
@@ -169,14 +209,45 @@
     save();closeModal();render();
   };
 
-  // Remove all legacy/common test passwords from local storage after upgrading from V40.
+  async function restoreSession(){
+    if(restoring)return;
+    restoring=true;
+    try{
+      const s=savedSession();
+      if(!s?.token||!s?.user){showLogin();return false;}
+      if(!navigator.onLine){
+        openApp(s.user);
+        try{render()}catch(e){console.warn('Offline restore render failed',e)}
+        if(window.zukaitCloud?.init)window.zukaitCloud.init(false);
+        return true;
+      }
+      const r=await callAuth({action:'session',session_token:s.token});
+      if(!r.ok){
+        clearSession();showLogin();return false;
+      }
+      saveSession(s.token,r.user);
+      openApp(r.user);
+      if(window.zukaitCloud?.init)await window.zukaitCloud.init(true);
+      try{render()}catch(e){console.warn('Session restore render failed',e)}
+      return true;
+    }catch(e){
+      console.warn('Session restore check failed',e);
+      const s=savedSession();
+      if(s?.user){
+        openApp(s.user);
+        try{render()}catch(_){}
+        return true;
+      }
+      showLogin();return false;
+    }finally{restoring=false}
+  }
+
   try{
     passwords={};
     delete state.passwords;
     localStorage.setItem(KEY,JSON.stringify(state));
   }catch(e){console.warn('Credential cleanup warning',e)}
 
-  // Add a password-change button for every logged-in staff member.
   const observer=new MutationObserver(()=>{
     const app=document.getElementById('app');
     if(!app||app.classList.contains('hidden'))return;
@@ -187,9 +258,18 @@
       b.className='secondary';
       b.textContent='🔐 Change Password';
       b.onclick=()=>window.changeOwnPassword();
-      const logout=row.querySelector('button');
+      const logout=[...row.querySelectorAll('button')].find(x=>(x.textContent||'').toLowerCase().includes('logout'));
       row.insertBefore(b,logout||null);
     }
   });
   observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+
+  window.zukaitAuth={
+    getToken:()=>token(),
+    getSavedUser:()=>savedSession()?.user||null,
+    restoreSession,
+    clearSession
+  };
+
+  setTimeout(()=>restoreSession(),50);
 })();
