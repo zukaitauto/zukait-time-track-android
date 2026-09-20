@@ -1,4 +1,4 @@
-name: Build Test APK
+name: Build V39 Cloud Test APK
 
 on:
   workflow_dispatch:
@@ -21,6 +21,25 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Validate JavaScript
+        shell: bash
+        run: |
+          node --check app/src/main/assets/cloud_sync.js
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path('app/src/main/assets/offline_test.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>', html, flags=re.S|re.I)
+          out = Path('/tmp/zukait-inline-js')
+          out.mkdir(parents=True, exist_ok=True)
+          for i, script in enumerate(scripts):
+              (out / f'inline_{i:02d}.js').write_text(script, encoding='utf-8')
+          print(f'Extracted {len(scripts)} inline script blocks')
+          PY
+          for f in /tmp/zukait-inline-js/*.js; do
+            node --check "$f"
+          done
+
       - name: Install Android SDK packages
         shell: bash
         run: |
@@ -38,10 +57,10 @@ jobs:
         run: gradle assembleDebug --stacktrace
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk ZUKAIT_TIME_TRACK_V38_ANDROID_TEST.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk ZUKAIT_TIME_TRACK_V39_CLOUD_MULTIUSER_TEST.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ZUKAIT_TIME_TRACK_V38_ANDROID_TEST
-          path: ZUKAIT_TIME_TRACK_V38_ANDROID_TEST.apk
+          name: ZUKAIT_TIME_TRACK_V39_CLOUD_MULTIUSER_TEST
+          path: ZUKAIT_TIME_TRACK_V39_CLOUD_MULTIUSER_TEST.apk
