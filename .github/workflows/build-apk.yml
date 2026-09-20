@@ -1,4 +1,4 @@
-name: Build V56 Tech Repeat Fix APK
+name: Build V56 Release APK
 
 on:
   workflow_dispatch:
