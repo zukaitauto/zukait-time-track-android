@@ -32,7 +32,7 @@ jobs:
           cp app/src/main/assets/offline_test.html _site/index.html
           cp app/src/main/assets/cloud_sync.js _site/cloud_sync.js
           cp app/src/main/assets/secure_auth.js _site/secure_auth.js
-          cp app/src/main/assets/production_pilot.js _site/production_pilot.js
+          cp app/src/main/assets/production_pilot.js _site/production_pilot.js\n          cp app/src/main/assets/professional_ux.js _site/professional_ux.js
           cp app/src/main/assets/zukait_logo.webp _site/zukait_logo.webp
           touch _site/.nojekyll
 

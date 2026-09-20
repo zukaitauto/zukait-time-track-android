@@ -1,4 +1,4 @@
-name: Build V42 Production Pilot APK
+name: Build V43 Professional UX APK
 
 on:
   workflow_dispatch:
@@ -26,7 +26,7 @@ jobs:
         run: |
           node --check app/src/main/assets/cloud_sync.js
           node --check app/src/main/assets/secure_auth.js
-          node --check app/src/main/assets/production_pilot.js
+          node --check app/src/main/assets/production_pilot.js\n          node --check app/src/main/assets/professional_ux.js
           python - <<'PY'
           from pathlib import Path
           import re
@@ -68,10 +68,10 @@ jobs:
         run: gradle assembleDebug --stacktrace
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk ZUKAIT_TIME_TRACK_V42_PRODUCTION_PILOT.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk ZUKAIT_TIME_TRACK_V43_PROFESSIONAL_UX.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ZUKAIT_TIME_TRACK_V42_PRODUCTION_PILOT
-          path: ZUKAIT_TIME_TRACK_V42_PRODUCTION_PILOT.apk
+          name: ZUKAIT_TIME_TRACK_V43_PROFESSIONAL_UX
+          path: ZUKAIT_TIME_TRACK_V43_PROFESSIONAL_UX.apk
