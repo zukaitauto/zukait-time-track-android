@@ -1,4 +1,4 @@
-name: Build V54 Supervisor Voice UI APK
+name: Build V55 Release APK
 
 on:
   workflow_dispatch:
@@ -68,14 +68,14 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Build debug APK
-        run: gradle assembleDebug --stacktrace
+      - name: Build release APK
+        run: gradle assembleRelease --stacktrace
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk ZUKAIT_TIME_TRACK_V54_SUPERVISOR_VOICE_UI.apk
+        run: cp app/build/outputs/apk/release/app-release-unsigned.apk ZUKAIT_TIME_TRACK_V55_UNSIGNED_RELEASE.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ZUKAIT_TIME_TRACK_V54_SUPERVISOR_VOICE_UI
-          path: ZUKAIT_TIME_TRACK_V54_SUPERVISOR_VOICE_UI.apk
+          name: ZUKAIT_TIME_TRACK_V55_UNSIGNED_RELEASE
+          path: ZUKAIT_TIME_TRACK_V55_UNSIGNED_RELEASE.apk
