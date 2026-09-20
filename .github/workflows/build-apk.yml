@@ -1,4 +1,4 @@
-name: Build V55 Release APK
+name: Build V56 Tech Repeat Fix APK
 
 on:
   workflow_dispatch:
@@ -72,13 +72,13 @@ jobs:
         run: gradle assembleRelease --stacktrace
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/release/app-release-unsigned.apk ZUKAIT_TIME_TRACK_V55_UNSIGNED_RELEASE.apk
+        run: cp app/build/outputs/apk/release/app-release-unsigned.apk ZUKAIT_TIME_TRACK_V56_UNSIGNED_RELEASE.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ZUKAIT_TIME_TRACK_V55_UNSIGNED_RELEASE
-          path: ZUKAIT_TIME_TRACK_V55_UNSIGNED_RELEASE.apk
+          name: ZUKAIT_TIME_TRACK_V56_UNSIGNED_RELEASE
+          path: ZUKAIT_TIME_TRACK_V56_UNSIGNED_RELEASE.apk
 
       - name: Prepare Android signing tools
         shell: bash
