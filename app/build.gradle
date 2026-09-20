@@ -1,0 +1,16 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.zukait.timetrack'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.zukait.timetrack'
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName 'V38-APK-TEST-1'
+    }
+}
