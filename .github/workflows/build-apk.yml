@@ -26,7 +26,8 @@ jobs:
         run: |
           node --check app/src/main/assets/cloud_sync.js
           node --check app/src/main/assets/secure_auth.js
-          node --check app/src/main/assets/production_pilot.js\n          node --check app/src/main/assets/professional_ux.js
+          node --check app/src/main/assets/production_pilot.js
+          node --check app/src/main/assets/professional_ux.js
           python - <<'PY'
           from pathlib import Path
           import re
@@ -46,6 +47,7 @@ jobs:
         shell: bash
         run: |
           test -s app/src/main/assets/zukait_logo.webp
+          test -s app/src/main/assets/professional_ux.js
           test -s app/src/main/res/drawable/app_icon.webp
           test -s app/src/main/res/drawable/app_logo.webp
           test -s app/src/main/res/drawable/splash_screen.xml
