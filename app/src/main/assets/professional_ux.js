@@ -136,6 +136,12 @@
       user-select:none;
     }
     #welcome.v44-user-button:hover{background:#f8fafc}
+    #welcome.v44-user-button.role-supervisor{border-left:4px solid #2563eb;background:#eff6ff;color:#1e3a8a}
+    #welcome.v44-user-button.role-manager{border-left:4px solid #d5a62e;background:#fff8e1;color:#6b4f00}
+    #welcome.v44-user-button.role-denter{border-left:4px solid #ea580c;background:#fff7ed;color:#9a3412}
+    #welcome.v44-user-button.role-painter{border-left:4px solid #7c3aed;background:#f5f3ff;color:#5b21b6}
+    #welcome.v44-user-button.role-mechanic{border-left:4px solid #15803d;background:#f0fdf4;color:#166534}
+    #welcome.v44-user-button.role-employee{border-left:4px solid #64748b;background:#f8fafc;color:#334155}
     .v44-account-menu{
       display:none;
       position:absolute;
@@ -361,7 +367,11 @@
     });
 
     welcome.classList.add('v44-user-button');
-    const wantedWelcome=(me.name||me.id)+' ▾';
+    welcome.classList.remove('role-supervisor','role-manager','role-denter','role-painter','role-mechanic','role-employee');
+    const roleKey=(me.role==='Employee'?(me.department||'Employee'):me.role||'Employee').toLowerCase();
+    welcome.classList.add('role-'+roleKey.replace(/[^a-z0-9]+/g,'-'));
+    const occupation=(me.role==='Employee'?(me.department||'Employee'):(me.role||''));
+    const wantedWelcome=(me.name||me.id)+(occupation?' – '+occupation:'')+' ▾';
     if(welcome.textContent!==wantedWelcome)welcome.textContent=wantedWelcome;
     if(welcome.title!=='Account menu')welcome.title='Account menu';
     welcome.onclick=(ev)=>{
@@ -380,7 +390,7 @@
     if(menu.dataset.userId!==String(me.id||'')){
       menu.dataset.userId=String(me.id||'');
       menu.innerHTML=
-        '<div class="v44-account-head"><b>'+esc(me.name||me.id)+'</b><span>'+esc(me.role||'')+'</span></div>'+
+        '<div class="v44-account-head"><b>'+esc(me.name||me.id)+'</b><span>'+esc(me.role==='Employee'?(me.department||'Employee'):(me.role||''))+'</span></div>'+
         '<button onclick="window.changeOwnPassword();document.getElementById(\'v44AccountMenu\')?.classList.remove(\'open\')">🔐 Change Password</button>'+
         '<button onclick="window.v42SyncNow();document.getElementById(\'v44AccountMenu\')?.classList.remove(\'open\')">↻ Sync Now</button>'+
         '<button class="v44-logout" onclick="window.logout()">↪ Logout</button>';
