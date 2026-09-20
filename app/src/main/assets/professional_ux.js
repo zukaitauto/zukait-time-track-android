@@ -353,7 +353,7 @@
     const welcome=document.getElementById('welcome');
     if(!row||!welcome)return;
 
-    [...row.querySelectorAll('button')].forEach(b=>{
+    [...row.querySelectorAll(':scope > button')].forEach(b=>{
       if(['changePasswordBtn','v42SyncBtn'].includes(b.id) ||
          (b.textContent||'').toLowerCase().includes('logout')){
         b.style.display='none';
