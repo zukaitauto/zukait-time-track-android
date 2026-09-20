@@ -79,3 +79,18 @@ jobs:
         with:
           name: ZUKAIT_TIME_TRACK_V55_UNSIGNED_RELEASE
           path: ZUKAIT_TIME_TRACK_V55_UNSIGNED_RELEASE.apk
+
+      - name: Prepare Android signing tools
+        shell: bash
+        run: |
+          mkdir -p signing-tools/lib
+          cp "$ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner" signing-tools/
+          cp "$ANDROID_SDK_ROOT/build-tools/35.0.0/zipalign" signing-tools/
+          cp "$ANDROID_SDK_ROOT/build-tools/35.0.0/lib/apksigner.jar" signing-tools/lib/
+          chmod +x signing-tools/apksigner signing-tools/zipalign
+
+      - name: Upload Android signing tools
+        uses: actions/upload-artifact@v4
+        with:
+          name: ANDROID_SIGNING_TOOLS_35
+          path: signing-tools
