@@ -361,8 +361,9 @@
     });
 
     welcome.classList.add('v44-user-button');
-    welcome.textContent=(me.name||me.id)+' ▾';
-    welcome.title='Account menu';
+    const wantedWelcome=(me.name||me.id)+' ▾';
+    if(welcome.textContent!==wantedWelcome)welcome.textContent=wantedWelcome;
+    if(welcome.title!=='Account menu')welcome.title='Account menu';
     welcome.onclick=(ev)=>{
       ev.stopPropagation();
       const menu=document.getElementById('v44AccountMenu');
@@ -392,7 +393,16 @@
     if(menu&&welcome&&!menu.contains(e.target)&&e.target!==welcome)menu.classList.remove('open');
   });
 
-  const v44Obs=new MutationObserver(()=>buildAccountMenu());
-  v44Obs.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+  let v44MenuScheduled=false;
+  const v44Obs=new MutationObserver(()=>{
+    if(v44MenuScheduled)return;
+    v44MenuScheduled=true;
+    requestAnimationFrame(()=>{
+      v44MenuScheduled=false;
+      buildAccountMenu();
+    });
+  });
+  const v44App=document.getElementById('app');
+  if(v44App)v44Obs.observe(v44App,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
   setTimeout(buildAccountMenu,100);
 })();
