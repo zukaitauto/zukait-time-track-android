@@ -358,7 +358,7 @@ function exportManagerReport(type){let headers=[],rows=[],filename='zukait-repor
 
 /* V24: compact supervisor controls + overtime monitoring + completed-only incentive */
 (function(){
-  const DUTY_GRACE=5*60000;
+  const DUTY_GRACE=0;
   const TARGET=210*60;
   state.incentiveTargetMinutes=TARGET;
   state.overtimeNotices=state.overtimeNotices||{};
@@ -457,7 +457,7 @@ function exportManagerReport(type){let headers=[],rows=[],filename='zukait-repor
         if(split>s.start){
           s.end=split;
           s.autoPausedAt=split;
-          s.autoPauseReason='Automatic duty-time split after 5-minute grace';
+          s.autoPauseReason='Automatic duty-time split at the exact duty boundary';
           let a=state.assign.find(v=>v.id===s.assignmentId)||state.assign.find(v=>v.job===s.job&&v.emp===s.emp&&!v.cancelled);
           state.sessions.push({id:uid(),job:s.job,emp:s.emp,assignmentId:a?.id,start:split,end:null,paused:false,overtime:true,overtimeStartedAt:split,autoOvertime:true,rework:s.rework===true});
         }else{
@@ -481,7 +481,7 @@ function exportManagerReport(type){let headers=[],rows=[],filename='zukait-repor
     let t=now(),info=overtimeInfo(t),active=forEmp?activeSession(forEmp):null;
     if(!active)return '';
     let mins=sessionOvertimeMinutes(active,t);
-    if(info.isGrace)return '<div class="overtime-notice grace">⏰ <b>Duty time has ended.</b> Please pause your work within 5 minutes. If you continue, time after the grace period will be recorded as OVERTIME and will not count toward incentive.</div>';
+    if(info.isGrace)return '<div class="overtime-notice grace">⏰ <b>Duty time has ended.</b> Please pause your work or continue working. Continued work is recorded as OVERTIME immediately and will not count toward incentive.</div>';
     if(mins>0)return '<div class="overtime-notice active">🔴 <b>OVERTIME ACTIVE</b> — '+user(forEmp).name+' is working on <b>'+active.job+'</b> · Overtime: <b>'+fmt(mins)+'</b><br><span class="small">Overtime is for monitoring only and is excluded from incentive.</span></div>';
     return '';
   }
@@ -537,7 +537,7 @@ function exportManagerReport(type){let headers=[],rows=[],filename='zukait-repor
       <div class="card clickable compact-control incentive-card" onclick="openIncentiveList('supervisor')"><div class="section-title"><h3>⭐ Incentive Hours</h3><span class="pill">Click to view employees</span></div><div class="small muted">Calculated only from completed normal work. Overtime and repeat work do not count toward incentive.</div></div>`;
   };
 
-  function openSupervisorOvertimeWindow(){showSupervisorModal('🔴 Overtime Now','<p class="muted">Overtime starts after the 5-minute grace period following duty time. It is monitoring only and is excluded from incentive.</p>'+overtimeTable());}
+  function openSupervisorOvertimeWindow(){showSupervisorModal('🔴 Overtime Now','<p class="muted">Overtime starts at the exact duty boundary following duty time. It is monitoring only and is excluded from incentive.</p>'+overtimeTable());}
   window.openSupervisorOvertimeWindow=openSupervisorOvertimeWindow;
 
   window.openAdditionalTimeWindow=function(){
@@ -735,7 +735,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
       let d=new Date(cur),ds=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime(),de=ds+86400000,se=Math.min(end,de);
       if(d.getDay()===5) total+=(se-cur)/60000;
       else {
-        const lunch=ds+13*3600000+5*60000, evening=ds+19*3600000+5*60000;
+        const lunch=ds+13*3600000, evening=ds+19*3600000;
         total+=Math.max(0,(Math.min(se,ds+15*3600000)-Math.max(cur,lunch))/60000);
         total+=Math.max(0,(se-Math.max(cur,evening))/60000);
       }
@@ -757,7 +757,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     rows.forEach(a=>{(state.sessions||[]).filter(s=>s.emp===emp&&s.job===a.job&&s.start<to&&(s.end||Date.now())>from).forEach(s=>{let aa=Math.max(s.start,from),bb=Math.min(s.end||Date.now(),to);ac+=window.sessionNormalMinutes({start:aa,end:bb},bb);});});
     return {suggested:sg,actual:ac,efficiency:ac?sg/ac*100:null};
   };
-  // Automatic duty-time split. This creates a distinct overtime segment after the 5-minute grace.
+  // Automatic duty-time split. This creates a distinct overtime segment at the exact duty boundary.
   window.v28AutoDutySplit=function(){
     if(!me||me.role!=='Employee')return;
     let t=Date.now(),changed=false;
@@ -765,17 +765,17 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
       if(s.end)return;
       let d=new Date(t),ds=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();
       if(d.getDay()===5)return;
-      let points=[ds+13*3600000+5*60000,ds+19*3600000+5*60000];
+      let points=[ds+13*3600000,ds+19*3600000];
       for(const split of points){
         if(s.start<split && t>=split && !s.autoDutySplit){
-          s.end=split;s.autoDutySplit=true;s.autoPauseReason='Automatic pause/split after 5-minute duty grace';
+          s.end=split;s.autoDutySplit=true;s.autoPauseReason='Automatic pause/split at the exact duty boundary';
           let a=(state.assign||[]).find(v=>v.id===s.assignmentId)||assignment(s.job,s.emp);
           state.sessions.push({id:uid(),job:s.job,emp:s.emp,assignmentId:a?.id,start:split,end:null,paused:false,overtime:true,overtimeStartedAt:split,autoOvertime:true,rework:s.rework===true});
           changed=true;break;
         }
       }
     });
-    if(changed){save(); if(typeof setLastAction==='function')setLastAction('Duty-time reached — work moved to OVERTIME after 5-minute grace'); render();}
+    if(changed){save(); if(typeof setLastAction==='function')setLastAction('Duty-time reached — work moved to OVERTIME at the exact duty boundary'); render();}
   };
   // Make the Employee monthly section easier to read and calculate efficiency correctly.
   window.monthlyEmployeeSummary=function(){
@@ -916,7 +916,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
   const oldOT=window.sessionOvertimeMinutes;
   window.sessionOvertimeMinutes=function(s,to=Date.now()){
     let end=Math.max(s.start,Math.min(to,s.end||to)); if(end<=s.start)return 0; let total=0,cur=s.start;
-    while(cur<end){let d=new Date(cur),ds=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime(),next=ds+86400000,se=Math.min(end,next);if(d.getDay()===5){total+=(se-cur)/60000;}else{let a=ds+13*3600000+5*60000,b=ds+19*3600000+5*60000; if(se>a)total+=Math.max(0,(Math.min(se,b)-Math.max(cur,a))/60000); if(se>b)total+=Math.max(0,(se-Math.max(cur,b))/60000);}cur=se;} return total;
+    while(cur<end){let d=new Date(cur),ds=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime(),next=ds+86400000,se=Math.min(end,next);if(d.getDay()===5){total+=(se-cur)/60000;}else{let a=ds+13*3600000,b=ds+19*3600000; if(se>a)total+=Math.max(0,(Math.min(se,b)-Math.max(cur,a))/60000); if(se>b)total+=Math.max(0,(se-Math.max(cur,b))/60000);}cur=se;} return total;
   };
   window.overtimeForEmployee=function(emp,from,to){return (state.sessions||[]).filter(s=>s.emp===emp&&s.start<to&&(s.end||Date.now())>from).reduce((x,s)=>x+window.sessionOvertimeMinutes(s,to),0)};
   // Ensure incentive uses normal productive minutes only; overtime never contributes.
@@ -1379,6 +1379,8 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 </script>
 
 <script src="cloud_sync.js"></script>
-<script src="secure_auth.js"></script>\n<script src="production_pilot.js"></script>
-<script src="professional_ux.js"></script>\n</body>
+<script src="secure_auth.js"></script>
+<script src="production_pilot.js"></script>
+<script src="professional_ux.js"></script>
+</body>
 </html>

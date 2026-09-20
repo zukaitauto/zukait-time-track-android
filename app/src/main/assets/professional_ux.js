@@ -120,7 +120,7 @@
       margin-right:8px!important;
     }
     #net{display:none!important}
-    #app>.row{position:relative}
+    #app>.row{position:sticky;top:67px}
     #welcome.v44-user-button{
       cursor:pointer;
       width:auto!important;
@@ -332,8 +332,6 @@
 
   const obs=new MutationObserver(()=>{
     polishEmployee();
-    if(me?.role==='Supervisor')injectDesktop('Supervisor');
-    if(me?.role==='Manager')injectDesktop('Manager');
   });
   obs.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
 
@@ -376,12 +374,15 @@
       menu=document.createElement('div');
       menu.id='v44AccountMenu';
       menu.className='v44-account-menu';
+      row.appendChild(menu);
+    }
+    if(menu.dataset.userId!==String(me.id||'')){
+      menu.dataset.userId=String(me.id||'');
       menu.innerHTML=
         '<div class="v44-account-head"><b>'+esc(me.name||me.id)+'</b><span>'+esc(me.role||'')+'</span></div>'+
         '<button onclick="window.changeOwnPassword();document.getElementById(\'v44AccountMenu\')?.classList.remove(\'open\')">🔐 Change Password</button>'+
         '<button onclick="window.v42SyncNow();document.getElementById(\'v44AccountMenu\')?.classList.remove(\'open\')">↻ Sync Now</button>'+
         '<button class="v44-logout" onclick="window.logout()">↪ Logout</button>';
-      row.appendChild(menu);
     }
   }
 
