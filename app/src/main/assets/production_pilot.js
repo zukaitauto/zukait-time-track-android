@@ -240,12 +240,12 @@
     const header=document.querySelector('header');
     if(header&&!header.querySelector('.v42-brand')){
       const net=document.getElementById('net');
-      header.innerHTML='<div class="v42-brand"><img src="zukait_logo.png" alt=""><div class="v42-brand-title">Zukait Time Track<small>Workshop Production & Time Tracking</small></div></div>';
+      header.innerHTML='<div class="v42-brand"><img src="zukait_logo.webp" alt=""><div class="v42-brand-title">Zukait Time Track<small>Workshop Production & Time Tracking</small></div></div>';
       if(net)header.appendChild(net);
     }
     const login=document.getElementById('login');
     if(login&&!login.querySelector('.v42-login-logo')){
-      const img=document.createElement('img');img.className='v42-login-logo';img.src='zukait_logo.png';img.alt='Zukait Time Track';
+      const img=document.createElement('img');img.className='v42-login-logo';img.src='zukait_logo.webp';img.alt='Zukait Time Track';
       login.insertBefore(img,login.firstChild);
     }
   }
