@@ -11,7 +11,7 @@ android {
         minSdk 24
         targetSdk 35
         versionCode 19
-        versionName 'V56-TECH-REPEAT-FIX-1'
+        versionName 'V56-RELEASE-1'
     }
 }
 
