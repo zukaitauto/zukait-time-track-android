@@ -144,6 +144,30 @@ public class MainActivity extends Activity {
         public void notify(String title, String message) {
             runOnUiThread(() -> showNotification(title, message));
         }
+
+        @JavascriptInterface
+        public boolean hasMicrophonePermission() {
+            return checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+        }
+
+        @JavascriptInterface
+        public void requestMicrophonePermission() {
+            runOnUiThread(() -> {
+                if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                    notifyMicrophonePermissionToWeb(true);
+                } else {
+                    requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, MIC_REQUEST);
+                }
+            });
+        }
+    }
+
+    private void notifyMicrophonePermissionToWeb(boolean granted) {
+        if (webView == null) return;
+        webView.post(() -> webView.evaluateJavascript(
+                "if(window.v55OnMicrophonePermission){window.v55OnMicrophonePermission(" + (granted ? "true" : "false") + ");}",
+                null
+        ));
     }
 
     private void showNotification(String title, String message) {
@@ -173,13 +197,17 @@ public class MainActivity extends Activity {
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == MIC_REQUEST && pendingPermissionRequest != null) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                pendingPermissionRequest.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
-            } else {
-                pendingPermissionRequest.deny();
+        if (requestCode == MIC_REQUEST) {
+            boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+            if (pendingPermissionRequest != null) {
+                if (granted) {
+                    pendingPermissionRequest.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
+                } else {
+                    pendingPermissionRequest.deny();
+                }
+                pendingPermissionRequest = null;
             }
-            pendingPermissionRequest = null;
+            notifyMicrophonePermissionToWeb(granted);
         }
     }
 
