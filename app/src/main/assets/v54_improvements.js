@@ -571,7 +571,9 @@
       '<p><button class="purple" onclick="v54AssignRepeat(\''+esc(no)+'\')">ASSIGN REPEAT WORK</button> <button class="secondary" onclick="closeSupervisorModal()">CANCEL</button></p>');
   };
 
-  window.v54OpenRepeatWork=window.addRepeatWork;\n\n  window.v54RepeatChanged=function(){};
+  window.v54OpenRepeatWork=window.addRepeatWork;
+
+  window.v54RepeatChanged=function(){};
 
   window.v54AssignRepeat=function(no){
     const emp=document.getElementById('v54RepeatEmp')?.value;
