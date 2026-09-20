@@ -40,6 +40,9 @@
   async function api(payload){
     const token=sessionToken();
     if(!token)throw new Error('NO_SESSION');
+    if(!navigator.onLine)throw new Error('NETWORK');
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),15000);
     let res;
     try{
       res=await fetch(API_URL,{
@@ -49,10 +52,13 @@
           'apikey':CLOUD_KEY,
           'x-zukait-session':token
         },
-        body:JSON.stringify(payload)
+        body:JSON.stringify(payload),
+        signal:controller.signal
       });
     }catch(e){
-      throw new Error('NETWORK');
+      throw new Error(e && e.name==='AbortError'?'TIMEOUT':'NETWORK');
+    }finally{
+      clearTimeout(timer);
     }
     let body={};
     try{body=await res.json()}catch(_){}

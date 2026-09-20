@@ -15,15 +15,22 @@
   function token(){return savedSession()?.token||''}
 
   async function callAuth(payload){
+    if(!navigator.onLine)throw new Error('Phone is offline. Check Wi-Fi or mobile data.');
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),15000);
     let res;
     try{
       res=await fetch(AUTH_URL,{
         method:'POST',
         headers:{'Content-Type':'application/json','apikey':PUBLISHABLE_KEY},
-        body:JSON.stringify(payload)
+        body:JSON.stringify(payload),
+        signal:controller.signal
       });
     }catch(e){
-      throw new Error('Cannot reach the login server. Check internet connection.');
+      if(e && e.name==='AbortError')throw new Error('Login server did not respond within 15 seconds. Check internet and try again.');
+      throw new Error('Cannot reach the login server. Check Wi-Fi/mobile data and try again.');
+    }finally{
+      clearTimeout(timer);
     }
     let body={};
     try{body=await res.json()}catch(_){}
