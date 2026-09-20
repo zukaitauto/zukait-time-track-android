@@ -111,6 +111,67 @@
       table{font-size:12px}
     }
   `;
+  css.textContent += `
+    #cloudStatus{
+      font-size:11px!important;
+      font-weight:900!important;
+      padding:4px 8px!important;
+      border-radius:999px!important;
+      margin-right:8px!important;
+    }
+    #net{display:none!important}
+    #app>.row{position:relative}
+    #welcome.v44-user-button{
+      cursor:pointer;
+      width:auto!important;
+      margin:0 auto 0 0!important;
+      padding:8px 11px;
+      border-radius:10px;
+      background:#fff;
+      border:1px solid #dfe5ec;
+      box-shadow:0 1px 4px rgba(15,27,43,.05);
+      font-size:15px!important;
+      font-weight:900;
+      color:#0f1b2b;
+      user-select:none;
+    }
+    #welcome.v44-user-button:hover{background:#f8fafc}
+    .v44-account-menu{
+      display:none;
+      position:absolute;
+      top:52px;
+      left:0;
+      z-index:300;
+      width:230px;
+      background:#fff;
+      border:1px solid #dfe5ec;
+      border-radius:14px;
+      box-shadow:0 12px 34px rgba(15,27,43,.18);
+      padding:8px;
+    }
+    .v44-account-menu.open{display:block}
+    .v44-account-head{padding:10px 10px 9px;border-bottom:1px solid #eef2f6;margin-bottom:5px}
+    .v44-account-head b{display:block;color:#0f1b2b}
+    .v44-account-head span{font-size:11px;color:#64748b}
+    .v44-account-menu button{
+      width:100%;
+      display:block;
+      text-align:left;
+      background:#fff!important;
+      color:#0f1b2b!important;
+      border:0!important;
+      min-height:42px;
+      margin:2px 0!important;
+      padding:9px 10px!important;
+    }
+    .v44-account-menu button:hover{background:#f1f5f9!important}
+    .v44-account-menu .v44-logout{color:#b42318!important}
+    @media(max-width:900px){
+      #app>.row{top:60px!important;padding:6px 0!important}
+      #welcome.v44-user-button{font-size:14px!important;padding:7px 9px}
+      .v44-account-menu{top:46px}
+    }
+  `;
   document.head.appendChild(css);
 
   function stats(){
@@ -286,4 +347,51 @@
     if(me?.role==='Supervisor')injectDesktop('Supervisor');
     if(me?.role==='Manager')injectDesktop('Manager');
   },150);
+
+  function buildAccountMenu(){
+    const app=document.getElementById('app');
+    if(!app||app.classList.contains('hidden')||!me)return;
+    const row=app.querySelector(':scope > .row');
+    const welcome=document.getElementById('welcome');
+    if(!row||!welcome)return;
+
+    [...row.querySelectorAll('button')].forEach(b=>{
+      if(['changePasswordBtn','v42SyncBtn'].includes(b.id) ||
+         (b.textContent||'').toLowerCase().includes('logout')){
+        b.style.display='none';
+      }
+    });
+
+    welcome.classList.add('v44-user-button');
+    welcome.textContent=(me.name||me.id)+' ▾';
+    welcome.title='Account menu';
+    welcome.onclick=(ev)=>{
+      ev.stopPropagation();
+      const menu=document.getElementById('v44AccountMenu');
+      if(menu)menu.classList.toggle('open');
+    };
+
+    let menu=document.getElementById('v44AccountMenu');
+    if(!menu){
+      menu=document.createElement('div');
+      menu.id='v44AccountMenu';
+      menu.className='v44-account-menu';
+      menu.innerHTML=
+        '<div class="v44-account-head"><b>'+esc(me.name||me.id)+'</b><span>'+esc(me.role||'')+'</span></div>'+
+        '<button onclick="window.changeOwnPassword();document.getElementById(\'v44AccountMenu\')?.classList.remove(\'open\')">🔐 Change Password</button>'+
+        '<button onclick="window.v42SyncNow();document.getElementById(\'v44AccountMenu\')?.classList.remove(\'open\')">↻ Sync Now</button>'+
+        '<button class="v44-logout" onclick="window.logout()">↪ Logout</button>';
+      row.appendChild(menu);
+    }
+  }
+
+  document.addEventListener('click',e=>{
+    const menu=document.getElementById('v44AccountMenu');
+    const welcome=document.getElementById('welcome');
+    if(menu&&welcome&&!menu.contains(e.target)&&e.target!==welcome)menu.classList.remove('open');
+  });
+
+  const v44Obs=new MutationObserver(()=>buildAccountMenu());
+  v44Obs.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+  setTimeout(buildAccountMenu,100);
 })();
