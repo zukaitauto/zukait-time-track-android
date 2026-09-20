@@ -169,6 +169,20 @@
         if(title)title.textContent='Assigned Jobs';
         const hint=jobs.querySelector('.section-title .pill');
         if(hint)hint.textContent='Choose a NEW job or RESUME a PAUSED job';
+
+        // Do not duplicate the actively running assignment in Assigned Jobs.
+        const active=activeSession(me.id);
+        const activeA=active?findAssignmentForSession(active):null;
+        [...jobs.querySelectorAll('.job-card')].forEach(card=>{
+          const h=(card.querySelector('h4')?.textContent||'').trim();
+          if(activeA && h.startsWith(String(activeA.job)+' '))card.remove();
+        });
+
+        const grid=jobs.querySelector('.grid');
+        if(grid && !grid.querySelector('.job-card')){
+          grid.innerHTML='<p class="muted">No other assigned jobs waiting.</p>';
+        }
+
         const focus=root.querySelector('.v42-focus');
         if(focus)focus.insertAdjacentElement('afterend',jobs);
       }
