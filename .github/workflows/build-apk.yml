@@ -1,4 +1,4 @@
-name: Build V40 All Staff Cloud Test APK
+name: Build V41 Individual Password Test APK
 
 on:
   workflow_dispatch:
@@ -25,6 +25,7 @@ jobs:
         shell: bash
         run: |
           node --check app/src/main/assets/cloud_sync.js
+          node --check app/src/main/assets/secure_auth.js
           python - <<'PY'
           from pathlib import Path
           import re
@@ -57,10 +58,10 @@ jobs:
         run: gradle assembleDebug --stacktrace
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk ZUKAIT_TIME_TRACK_V40_ALL_STAFF_CLOUD_TEST.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk ZUKAIT_TIME_TRACK_V41_INDIVIDUAL_PASSWORD_TEST.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ZUKAIT_TIME_TRACK_V40_ALL_STAFF_CLOUD_TEST
-          path: ZUKAIT_TIME_TRACK_V40_ALL_STAFF_CLOUD_TEST.apk
+          name: ZUKAIT_TIME_TRACK_V41_INDIVIDUAL_PASSWORD_TEST
+          path: ZUKAIT_TIME_TRACK_V41_INDIVIDUAL_PASSWORD_TEST.apk
