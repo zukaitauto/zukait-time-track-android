@@ -274,10 +274,28 @@
   function setVoiceStatus(text){const e=document.getElementById('v54VoiceStatus');if(e)e.textContent=text;}
   function stopTracks(){if(voice.stream){voice.stream.getTracks().forEach(t=>t.stop());voice.stream=null;}}
 
+  window.v55OnMicrophonePermission=function(granted){
+    if(granted){
+      setVoiceStatus('Microphone permission granted. Starting recorder…');
+      setTimeout(()=>window.v54StartVoice(),120);
+    }else{
+      setVoiceStatus('Microphone permission is blocked. Enable it in Android Settings.');
+      alert('Microphone permission is required for voice notes.');
+    }
+  };
+
   window.v54StartVoice=async function(){
     if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined'){
       alert('Voice recording is not supported on this device.');return;
     }
+    try{
+      if(window.AndroidBridge && typeof AndroidBridge.hasMicrophonePermission==='function' && !AndroidBridge.hasMicrophonePermission()){
+        setVoiceStatus('Microphone permission is required once.');
+        if(typeof AndroidBridge.requestMicrophonePermission==='function')AndroidBridge.requestMicrophonePermission();
+        else alert('Please allow microphone permission in Android Settings.');
+        return;
+      }
+    }catch(_){}
     clearVoice();
     try{
       const stream=await navigator.mediaDevices.getUserMedia({audio:true});
@@ -527,49 +545,61 @@
   // The one-active-job rule still prevents them STARTING two jobs simultaneously.
   window.addRepeatWork=function(no){
     const j=getJob(no);if(!j)return alert('Job Card not found.');
-    const workers=[...new Set((state.assign||[]).filter(a=>a.job===no&&!a.cancelled&&!a.rework).map(a=>a.emp))];
+
+    const originals=(state.assign||[]).filter(a=>a.job===no&&!a.cancelled&&!a.rework);
+    if(!originals.length)return alert('Original work assignment was not found for this Job Card.');
+    if(originals.some(a=>!a.completed)){
+      return alert('Repeat Work can only be issued after the original work is FINISHED.');
+    }
+    const openRepeat=(state.assign||[]).find(a=>a.job===no&&a.rework&&!a.cancelled&&!a.completed);
+    if(openRepeat){
+      return alert('An existing Repeat Work assignment on this Job Card must be finished before another Repeat Work can be issued.');
+    }
+
+    const workers=[...new Set(originals.map(a=>a.emp))];
     const employees=empUsers();
     const options=employees.map(u=>'<option value="'+u.id+'">'+esc(u.name)+' — '+esc(u.department)+' ('+u.id+')</option>').join('');
     const mistakeOptions=(workers.length?employees.filter(u=>workers.includes(u.id)):employees)
       .map(u=>'<option value="'+u.id+'">'+esc(u.name)+' ('+u.id+')</option>').join('');
+
     showSupervisorModal('🔁 Repeat Work — '+esc(no),
-      '<div class="grid"><label><b>Repeat Employee</b><br><select id="v54RepeatEmp" onchange="v54RepeatChanged()">'+options+'</select></label>'+
-      '<label><b>Mistake Employee</b><br><select id="v54MistakeEmp" onchange="v54RepeatChanged()">'+mistakeOptions+'</select></label>'+
-      '<label id="v54RepeatAllocatedWrap"><b>Allocated Time</b><br><input id="v54RepeatAllocated" value="1.00" inputmode="decimal"><div class="time-hint">Required only when another employee performs the repeat work.</div></label></div>'+
+      '<div class="notice"><b>Original work is completed.</b> Enter the repeat repair details below.</div>'+
+      '<div class="grid"><label><b>Repeat Employee</b><br><select id="v54RepeatEmp">'+options+'</select></label>'+
+      '<label><b>Mistake Employee</b><br><select id="v54MistakeEmp">'+mistakeOptions+'</select></label>'+
+      '<label><b>Allocated Repeat Time</b><br><input id="v54RepeatAllocated" value="1.00" inputmode="decimal"><div class="time-hint">Manual time entry is required for every Repeat Work assignment.</div></label></div>'+
       '<label><b>Repeat Reason</b><br><textarea id="v54RepeatReason" style="width:100%" placeholder="Repeat complaint / correction"></textarea></label>'+
       '<p><button class="purple" onclick="v54AssignRepeat(\''+esc(no)+'\')">ASSIGN REPEAT WORK</button> <button class="secondary" onclick="closeSupervisorModal()">CANCEL</button></p>');
-    setTimeout(window.v54RepeatChanged,0);
   };
-  window.v54RepeatChanged=function(){
-    const emp=document.getElementById('v54RepeatEmp')?.value;
-    const mistake=document.getElementById('v54MistakeEmp')?.value;
-    const wrap=document.getElementById('v54RepeatAllocatedWrap');
-    if(wrap)wrap.style.display=emp&&mistake&&emp===mistake?'none':'';
-  };
+
+  window.v54RepeatChanged=function(){};
+
   window.v54AssignRepeat=function(no){
     const emp=document.getElementById('v54RepeatEmp')?.value;
     const mistake=document.getElementById('v54MistakeEmp')?.value;
     const reason=(document.getElementById('v54RepeatReason')?.value||'').trim();
+    const mins=parseWorkMinutes(document.getElementById('v54RepeatAllocated')?.value||'');
+
     if(!emp||user(emp).role!=='Employee')return alert('Select Repeat Employee.');
     if(!mistake||user(mistake).role!=='Employee')return alert('Select Mistake Employee.');
+    if(!Number.isFinite(mins)||mins<1)return alert('Enter valid Allocated Repeat Time. '+timeInputHint());
     if(!reason)return alert('Repeat Reason is required.');
 
-    const openRepeat=(state.assign||[]).find(a=>a.job===no&&a.emp===emp&&a.rework&&!a.cancelled&&!a.completed);
-    if(openRepeat)return alert(user(emp).name+' already has an unfinished Repeat Work assignment on this Job Card.');
+    const originals=(state.assign||[]).filter(a=>a.job===no&&!a.cancelled&&!a.rework);
+    if(!originals.length||originals.some(a=>!a.completed)){
+      return alert('Repeat Work can only be issued after the original work is FINISHED.');
+    }
+    if((state.assign||[]).some(a=>a.job===no&&a.rework&&!a.cancelled&&!a.completed)){
+      return alert('An unfinished Repeat Work assignment already exists on this Job Card.');
+    }
 
     const same=emp===mistake;
-    let mins=0;
-    if(!same){
-      mins=parseWorkMinutes(document.getElementById('v54RepeatAllocated')?.value||'');
-      if(!Number.isFinite(mins)||mins<1)return alert('Enter valid Allocated Time for the repeat employee. '+timeInputHint());
-    }
-    const a={id:uid(),job:no,emp,suggested:same?0:mins,completed:false,rework:true,repeatReason:reason,mistakeEmp:mistake,assignedBy:me.id,assignedAt:now(),repeatSameEmployee:same};
+    const a={id:uid(),job:no,emp,suggested:mins,completed:false,rework:true,repeatReason:reason,mistakeEmp:mistake,assignedBy:me.id,assignedAt:now(),repeatSameEmployee:same};
     state.assign.push(a);
     state.reworkLogs=state.reworkLogs||[];
-    state.reworkLogs.push({id:uid(),assignmentId:a.id,job:no,emp,mistakeEmp:mistake,suggested:a.suggested,reason,by:me.id,at:now()});
+    state.reworkLogs.push({id:uid(),assignmentId:a.id,job:no,emp,mistakeEmp:mistake,suggested:mins,reason,by:me.id,at:now()});
     if(typeof setLastAction==='function')setLastAction('Assigned repeat work '+no+' to '+user(emp).name);
     save();closeSupervisorModal();render();
-    alert('Repeat Work assigned to '+user(emp).name+'. Mistake employee: '+user(mistake).name+'.');
+    alert('Repeat Work assigned to '+user(emp).name+' with '+fmt(mins)+' Allocated Time. Mistake employee: '+user(mistake).name+'.');
   };
 
   function enhanceSupervisor(){
@@ -603,13 +633,16 @@
       holder.appendChild(available);
     }
 
-    // Replace the full live board with one clean Technician Board box.
-    const techCard=[...root.querySelectorAll('.card')].find(c=>{
-      const h=c.querySelector('h3');return h&&/TECHNICIAN BOARD/i.test(h.textContent||'');
+    // V55: reliably replace every legacy Technician Board — Live card.
+    const techCards=[...root.querySelectorAll('.card')].filter(c=>{
+      const h=c.querySelector('h3');
+      return h&&/TECHNICIAN\s+BOARD/i.test(h.textContent||'');
     });
-    if(techCard&&!techCard.classList.contains('v54-tech-card')){
-      techCard.classList.add('v54-tech-card');
+    if(techCards.length){
+      const techCard=techCards[0];
+      techCard.className='card v55-tech-card';
       techCard.innerHTML='<button class="v54-tech-button" onclick="v54OpenTechnicianBoard()"><span><span class="v54-icon">👷</span><b>TECHNICIAN BOARD</b><br><span class="small">Denting · Painting · Mechanical</span></span><span style="font-size:28px">›</span></button>';
+      techCards.slice(1).forEach(c=>c.remove());
     }
     applyWording(root);
   }
@@ -655,5 +688,5 @@
 
   ensureOnlineIndicator();
   applyWording(document.body);
-  window.v54Ready=true;
+  window.v54Ready=true;\n  window.v55Ready=true;
 })();
