@@ -108,44 +108,31 @@
   function focusHTML(){
     if(!me||me.role!=='Employee')return '';
     const s=activeSession(me.id);
-    const opens=openFor(me.id);
-    let a=s?findAssignmentForSession(s):null;
-
-    if(!a){
-      a=opens.find(x=>typeof empStatus==='function'&&String(empStatus(x)).toLowerCase()==='paused')||opens[0]||null;
+    if(!s){
+      return '<div class="card v42-focus v51-focus v52-no-work">'+
+        '<div class="v51-status-strip"><span>NO WORK IS GOING ON</span></div>'+
+        '<div class="v51-empty"><div class="v42-focus-jc">NO ACTIVE WORK</div>'+
+        '<p>Select a job from <b>Assigned Jobs</b> below to start or resume work.</p></div>'+
+        '<div class="v42-sync-note">Paused jobs remain in Assigned Jobs and can be resumed at any time.</div></div>';
     }
 
+    const a=findAssignmentForSession(s);
     if(!a){
-      return '<div class="card v42-focus v51-focus v51-status-available">'+
-        '<div class="v51-status-strip"><span>AVAILABLE</span></div>'+
-        '<div class="v51-empty"><div class="v42-focus-jc">NO JOB ASSIGNED</div>'+
-        '<p>Ready for the next assignment.</p></div>'+
-        '<div class="v42-sync-note">Closing or locking the phone does not log you out.</div></div>';
+      return '<div class="card v42-focus v51-focus v52-no-work"><div class="v51-status-strip"><span>NO WORK IS GOING ON</span></div><div class="v51-empty"><div class="v42-focus-jc">NO ACTIVE WORK</div></div></div>';
     }
 
     const j=job(a.job)||{};
     const ac=actualFor(a),sg=Number(a.suggested||0);
     const rem=Math.max(0,sg-ac),over=a.job===HOLD?0:Math.max(0,ac-sg);
-    const info=employeeStatusInfo(a,s,ac,sg);
-
-    const other=opens.filter(x=>String(x.id)!==String(a.id));
-    const next=other[0]||null;
-    const nextJob=next?(job(next.job)||{}):null;
-    const nextStatus=next?employeeStatusInfo(next,null,actualFor(next),Number(next.suggested||0)):null;
+    const strip=a.rework?'REPEAT WORK • WORK IN PROGRESS':'WORK IN PROGRESS';
 
     let buttons='';
-    if(s){
-      if(a.job!==HOLD)buttons+='<button class="yellow v51-main-action" onclick="pause()">⏸ PAUSE</button>';
-      buttons+='<button class="green v51-main-action" onclick="finish()">'+(a.job===HOLD?'■ STOP':'✓ FINISH')+'</button>';
-    }else{
-      const paused=info.key==='paused'||info.label.includes('PAUSED');
-      buttons+='<button class="'+(paused?'blue':'green')+' v42-wide v51-main-action" onclick="start(\''+esc(a.job)+'\')">'+(paused?'▶ RESUME ':'▶ START ')+esc(a.job)+'</button>';
-    }
-
+    if(a.job!==HOLD)buttons+='<button class="yellow v51-main-action" onclick="pause()">⏸ PAUSE</button>';
+    buttons+='<button class="green v51-main-action" onclick="finish()">'+(a.job===HOLD?'■ STOP':'✓ FINISH')+'</button>';
     const requestButton=a.job===HOLD?'':'<button class="secondary v42-wide v51-request" onclick="openEmployeeRequestMenu(\''+esc(a.job)+'\')">📩 INFORM / REQUEST</button>';
 
-    return '<div class="card v42-focus v51-focus v51-status-'+info.key+'">'+
-      '<div class="v51-status-strip"><span>'+esc(info.label)+'</span></div>'+
+    return '<div class="card v42-focus v51-focus '+(a.rework?'v51-status-repeat':'v51-status-running')+'">'+
+      '<div class="v51-status-strip"><span>'+strip+'</span></div>'+
       '<div class="v42-focus-head"><div><div class="small muted">CURRENT JOB</div><div class="v42-focus-jc">'+esc(a.job)+'</div></div></div>'+
       '<div class="v42-focus-vehicle">'+esc(j.vehicle||'')+(j.reg?' <span>·</span> '+esc(j.reg):'')+'</div>'+
       '<div class="v42-times v51-times">'+
@@ -155,9 +142,6 @@
         '<div class="v42-time v51-exceeded '+(over>0?'has-over':'')+'">Exceeded<b id="currentExceeded">'+fmt(over)+'</b></div>'+
       '</div>'+
       '<div class="v42-actions v51-actions">'+buttons+requestButton+'</div>'+
-      (next?'<div class="v51-next"><div><span class="v51-next-label">NEXT JOB</span><strong>'+esc(next.job)+'</strong>'+
-        '<small>'+esc(nextJob.vehicle||'')+(nextJob.reg?' · '+esc(nextJob.reg):'')+'</small></div>'+
-        '<span class="v51-next-status v51-mini-'+nextStatus.key+'">'+esc(nextStatus.label)+'</span></div>':'')+
       '<div class="v42-sync-note">Timing continues if the app is closed or the phone is locked.</div></div>';
   }
 
@@ -174,36 +158,38 @@
       const oldCurrent=root.querySelector('.employee-current');
       if(oldCurrent)oldCurrent.style.display='none';
 
-      // Reuse existing calculation/report DOM inside collapsed V51 panels.
       const top=root.querySelector('.employee-top');
       const month=top?.querySelector('.month-summary');
+      const jobs=root.querySelector('.employee-jobs');
+
+      // Assigned Jobs must always remain open and directly below Current Work.
+      if(jobs){
+        jobs.classList.add('v52-assigned-open');
+        const title=jobs.querySelector('.section-title h3');
+        if(title)title.textContent='Assigned Jobs';
+        const hint=jobs.querySelector('.section-title .pill');
+        if(hint)hint.textContent='Choose a NEW job or RESUME a PAUSED job';
+        const focus=root.querySelector('.v42-focus');
+        if(focus)focus.insertAdjacentElement('afterend',jobs);
+      }
+
+      // Monthly performance stays below Assigned Jobs and collapsed.
       if(month){
         const d=document.createElement('details');
         d.className='card v51-collapse v51-monthly';
-        d.innerHTML='<summary><span>📊 My Monthly Performance</span><small>7 KPI summary</small></summary><div class="v51-collapse-body"></div>';
+        d.innerHTML='<summary><span>📊 This Month</span><small>Performance summary</small></summary><div class="v51-collapse-body"></div>';
         d.querySelector('.v51-collapse-body').appendChild(month);
-        if(top)top.insertAdjacentElement('afterend',d); else root.appendChild(d);
-      }
-
-      const jobs=root.querySelector('.employee-jobs');
-      if(jobs){
-        const d=document.createElement('details');
-        d.className='card v51-collapse v51-jobs';
-        d.innerHTML='<summary><span>📋 My Assigned Jobs</span><small>View all assigned work</small></summary><div class="v51-collapse-body"></div>';
-        d.querySelector('.v51-collapse-body').appendChild(jobs);
-        root.appendChild(d);
+        if(jobs)jobs.insertAdjacentElement('afterend',d);
+        else {
+          const focus=root.querySelector('.v42-focus');
+          if(focus)focus.insertAdjacentElement('afterend',d);
+        }
       }
 
       const finished=root.querySelector('.employee-finished');
-      if(finished){
-        finished.classList.add('v51-secondary-detail');
-        if(!finished.open)finished.open=false;
-      }
+      if(finished){finished.classList.add('v51-secondary-detail');finished.open=false;}
       const history=root.querySelector('.employee-history');
-      if(history){
-        history.classList.add('v51-secondary-detail');
-        if(!history.open)history.open=false;
-      }
+      if(history){history.classList.add('v51-secondary-detail');history.open=false;}
 
       if(top && !top.querySelector('.month-summary'))top.style.display='none';
     };

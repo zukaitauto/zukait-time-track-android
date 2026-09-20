@@ -1149,11 +1149,24 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
   window.monthlyIdealTimeMinutes=monthlyIdeal;
   window.completedEfficiency=completedEfficiencyFinal;
   window.repeatDeductionMinutes=repeatDeductionFinal;
+  function monthlyRepeatJobHours(emp,from,to){
+    const ids=new Set((state.assign||[]).filter(a=>a.rework&&!a.cancelled&&(a.emp===emp||a.mistakeEmp===emp)).map(a=>a.id));
+    let total=0;
+    (state.sessions||[]).forEach(s=>{
+      const a=assignmentForSession(s);
+      if(!a||!ids.has(a.id)||s.start>=to||(s.end||Date.now())<=from)return;
+      const st=Math.max(s.start,from),en=Math.min(s.end||Date.now(),to);
+      total+=normalMinutes(st,en);
+    });
+    return total;
+  }
+  window.monthlyRepeatJobHours=monthlyRepeatJobHours;
+
   window.incentiveFor=function(emp){const {from,to}=monthBounds(),sg=monthlySuggested(emp,from,to),ac=monthlyNormalActual(emp,from,to),ded=repeatDeductionFinal(emp,from,to);return{target:210*60,suggested:sg,actual:ac,repeat:ded,incentive:ac>=210*60?Math.max(0,sg-ac-ded):0};};
   window.monthlyEmployeeSummary=function(){
-    const d=new Date(),{from,to}=monthBounds(),sg=monthlySuggested(me.id,from,to),ac=monthlyNormalActual(me.id,from,to),ef=completedEfficiencyFinal(me.id,from,to),inc=window.incentiveFor(me.id),ideal=monthlyIdeal(me.id,from,to),ot=monthlyOvertime(me.id,from,to),rem=Math.max(0,sg-ac);
+    const d=new Date(),{from,to}=monthBounds(),sg=monthlySuggested(me.id,from,to),ac=monthlyNormalActual(me.id,from,to),ef=completedEfficiencyFinal(me.id,from,to),inc=window.incentiveFor(me.id),ideal=monthlyIdeal(me.id,from,to),ot=monthlyOvertime(me.id,from,to),rep=monthlyRepeatJobHours(me.id,from,to),rem=Math.max(0,sg-ac);
     const card=(cl,label,val,id,note)=>'<div class="employee-month-kpi '+cl+'"><div class="kpi-label">'+label+'</div><div class="kpi-value" id="'+id+'">'+val+'</div><span class="small">'+note+'</span></div>';
-    return '<div class="card month-summary employee-dashboard-card v38-month"><div class="employee-section-title"><h3>📅 This Month</h3><span class="pill">Monthly</span></div><p class="muted">'+d.toLocaleString(undefined,{month:'long',year:'numeric'})+'</p><div class="employee-month-grid">'+card('kpi-ideal','Total Suggested Time',fmt(sg),'monthTotalSuggestedTime','All assigned jobs including unfinished work and ID001')+card('kpi-actual','Total Actual Time',fmt(ac),'monthTotalActualTime','Normal duty time only; overtime separate')+card('kpi-remaining','Remaining Suggested Time',fmt(rem),'monthRemainingSuggestedTime','Suggested minus normal actual')+card('kpi-eff','Efficiency Percentage',ef.efficiency==null?'—':ef.efficiency.toFixed(1)+'%','monthEfficiencyPercentage','Fully completed customer work only')+card('kpi-incentive','Total Incentive Hours',fmt(inc.incentive),'monthTotalIncentiveHours','Requires 210h normal actual; repeat deduction applied')+card('kpi-remaining','Total Ideal Time',fmt(ideal),'monthTotalIdealTime','Only gaps between jobs during duty hours')+card('kpi-overtime','Total Overtime Hours',fmt(ot),'monthTotalOvertimeHours','13:00–15:00, after 19:00; Friday all work')+'</div></div>';
+    return '<div class="card month-summary employee-dashboard-card v38-month"><div class="employee-section-title"><h3>📅 This Month</h3><span class="pill">Monthly</span></div><p class="muted">'+d.toLocaleString(undefined,{month:'long',year:'numeric'})+'</p><div class="employee-month-grid">'+card('kpi-ideal','Total Suggested Time',fmt(sg),'monthTotalSuggestedTime','All assigned jobs including unfinished work and ID001')+card('kpi-actual','Total Actual Time',fmt(ac),'monthTotalActualTime','Normal duty time only; overtime separate')+card('kpi-remaining','Remaining Suggested Time',fmt(rem),'monthRemainingSuggestedTime','Suggested minus normal actual')+card('kpi-eff','Efficiency Percentage',ef.efficiency==null?'—':ef.efficiency.toFixed(1)+'%','monthEfficiencyPercentage','Fully completed customer work only')+card('kpi-incentive','Total Incentive Hours',fmt(inc.incentive),'monthTotalIncentiveHours','Requires 210h normal actual; repeat deduction applied')+card('kpi-remaining','Total Ideal Time',fmt(ideal),'monthTotalIdealTime','Only gaps between jobs during duty hours')+card('kpi-overtime','Total Overtime Hours',fmt(ot),'monthTotalOvertimeHours','13:00–15:00, after 19:00; Friday all work')+card('kpi-repeat','Total Repeat Job Hours',fmt(rep),'monthTotalRepeatJobHours','Normal-duty repeat hours done by you or caused by your mistake; counted once')+'</div></div>';
   };
   window.openIncentiveList=function(){const {from,to}=monthBounds(),rows=users.filter(u=>u.role==='Employee').map(u=>({u,x:window.incentiveFor(u.id),ot:monthlyOvertime(u.id,from,to)})).sort((a,b)=>b.x.incentive-a.x.incentive);const body='<p class="muted">Incentive = Total Suggested − Normal Actual − Repeat Deduction after the employee reaches 210 normal Actual hours. Overtime is excluded.</p><table><tr><th>Employee</th><th>Total Suggested</th><th>Normal Actual</th><th>Repeat Deduction</th><th>Overtime</th><th>Incentive</th></tr>'+rows.map(r=>'<tr><td>'+escSafe(r.u.name)+'</td><td>'+fmt(r.x.suggested)+'</td><td>'+fmt(r.x.actual)+'</td><td>'+fmt(r.x.repeat)+'</td><td>'+fmt(r.ot)+'</td><td><b>'+fmt(r.x.incentive)+'</b></td></tr>').join('')+'</table>';(me&&me.role==='Manager'?showManagerModal:showSupervisorModal)('⭐ Incentive Hours',body);};
   function finishedCustomerJobs(){
@@ -1359,7 +1372,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     const put=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
     put('activeRunningTime',fmt((Date.now()-active.start)/60000));put('currentSuggested',fmt(sg));put('currentActual',fmt(ac));put('currentRemaining',fmt(Math.max(0,sg-ac)));put('currentExceeded',fmt(a?.job===HOLD?0:Math.max(0,ac-sg)));
     const {from,to}=monthBounds(),ms=monthlySuggested(me.id,from,to),ma=monthlyNormalActual(me.id,from,to),ef=completedEfficiencyFinal(me.id,from,to),inc=window.incentiveFor(me.id),ideal=monthlyIdeal(me.id,from,to),ot=monthlyOvertime(me.id,from,to);
-    put('monthTotalSuggestedTime',fmt(ms));put('monthTotalActualTime',fmt(ma));put('monthRemainingSuggestedTime',fmt(Math.max(0,ms-ma)));put('monthEfficiencyPercentage',ef.efficiency==null?'—':ef.efficiency.toFixed(1)+'%');put('monthTotalIncentiveHours',fmt(inc.incentive));put('monthTotalIdealTime',fmt(ideal));put('monthTotalOvertimeHours',fmt(ot));
+    put('monthTotalSuggestedTime',fmt(ms));put('monthTotalActualTime',fmt(ma));put('monthRemainingSuggestedTime',fmt(Math.max(0,ms-ma)));put('monthEfficiencyPercentage',ef.efficiency==null?'—':ef.efficiency.toFixed(1)+'%');put('monthTotalIncentiveHours',fmt(inc.incentive));put('monthTotalIdealTime',fmt(ideal));put('monthTotalOvertimeHours',fmt(ot));if(typeof window.monthlyRepeatJobHours==='function')put('monthTotalRepeatJobHours',fmt(window.monthlyRepeatJobHours(me.id,from,to)));
   };
 
   const priorRenderSupervisor=window.renderSupervisor;
