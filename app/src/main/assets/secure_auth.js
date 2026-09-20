@@ -102,12 +102,15 @@
       }
       saveSession(sessionToken,r.user);
       openApp(r.user);
-      try{
-        if(window.zukaitCloud?.init)await window.zukaitCloud.init(true);
-        render();
-      }catch(err){
+      try{render()}catch(err){
         console.error(err);
         alert('Dashboard loading error: '+(err?.message||err));
+      }
+      // Do not hold the login flow while cloud state initializes.
+      if(window.zukaitCloud?.init){
+        Promise.resolve(window.zukaitCloud.init(true)).then(()=>{
+          try{render()}catch(_){}
+        }).catch(err=>console.warn('Cloud init after login failed',err));
       }
     }catch(err){
       console.error(err);

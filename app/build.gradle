@@ -14,3 +14,8 @@ android {
         versionName 'V46-LOGIN-TIMEOUT-FIX-1'
     }
 }
+
+
+dependencies {
+    implementation "androidx.webkit:webkit:1.17.0"
+}
