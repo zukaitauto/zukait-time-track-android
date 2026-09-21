@@ -206,5 +206,5 @@ window.render=function(){
  },0);
 };
 setTimeout(()=>{if(me){decorateAccount();cleanManagerDuplicates();if(me.role==='Manager')renderManager66()}},80);
-window.v66Ready=true;
+window.v66UpdateCheckResult=function(latestCode,latestName,error){if(typeof window.v65UpdateCheckResult==='function')return window.v65UpdateCheckResult(latestCode,latestName,error);};\nwindow.v66Ready=true;
 })();
