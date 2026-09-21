@@ -21,7 +21,7 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
-import android.webkit.WebView;
+import android.webkit.WebView;\n\nimport org.json.JSONObject;\n\nimport java.io.BufferedReader;\nimport java.io.InputStreamReader;\nimport java.net.HttpURLConnection;\nimport java.net.URL;
 
 import androidx.webkit.WebViewAssetLoader;
 import androidx.webkit.WebViewClientCompat;
@@ -159,12 +159,12 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getAppVersion() {
-            return "V63";
+            return "V64";
         }
 
         @JavascriptInterface
         public int getAppVersionCode() {
-            return 26;
+            return 27;
         }
 
         @JavascriptInterface
@@ -182,6 +182,46 @@ public class MainActivity extends Activity {
                 }
             });
         }
+    }
+
+    private void checkForUpdatesNative() {
+        new Thread(() -> {
+            int latestCode = 0;
+            String latestName = "";
+            boolean error = false;
+            HttpURLConnection conn = null;
+            try {
+                URL url = new URL("https://raw.githubusercontent.com/zukaitauto/zukait-time-track-android/main/latest-version.json");
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(10000);
+                conn.setReadTimeout(10000);
+                conn.setRequestProperty("Cache-Control", "no-cache");
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) sb.append(line);
+                    JSONObject json = new JSONObject(sb.toString());
+                    latestCode = json.optInt("versionCode", 0);
+                    latestName = json.optString("versionName", "");
+                    if (latestCode <= 0) error = true;
+                }
+            } catch (Exception ex) {
+                error = true;
+            } finally {
+                if (conn != null) conn.disconnect();
+            }
+            final int code = latestCode;
+            final String name = latestName;
+            final boolean failed = error;
+            runOnUiThread(() -> {
+                if (webView == null) return;
+                String safeName = name.replace("\\", "\\\\").replace("'", "\\'");
+                webView.evaluateJavascript(
+                        "if(window.v64UpdateCheckResult){window.v64UpdateCheckResult(" + code + ",'" + safeName + "'," + (failed ? "true" : "false") + ");}",
+                        null
+                );
+            });
+        }).start();
     }
 
     private void registerUpdateReceiver() {
