@@ -14,6 +14,9 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.speech.RecognitionListener;
+import android.speech.RecognizerIntent;
+import android.speech.SpeechRecognizer;
 import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
@@ -29,6 +32,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 
 import androidx.webkit.WebViewAssetLoader;
 import androidx.webkit.WebViewClientCompat;
@@ -42,6 +46,8 @@ public class MainActivity extends Activity {
     private PermissionRequest pendingPermissionRequest;
     private long updateDownloadId = -1;
     private BroadcastReceiver updateReceiver;
+    private SpeechRecognizer speechRecognizer;
+    private boolean pendingNativeVoice = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -166,12 +172,12 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getAppVersion() {
-            return "V68";
+            return "V69";
         }
 
         @JavascriptInterface
         public int getAppVersionCode() {
-            return 31;
+            return 32;
         }
 
         @JavascriptInterface
@@ -185,6 +191,18 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void startNativeVoiceRecognition() {
+            runOnUiThread(() -> {
+                if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                    pendingNativeVoice = true;
+                    requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, MIC_REQUEST);
+                    return;
+                }
+                startNativeVoiceRecognitionInternal();
+            });
+        }
+
+        @JavascriptInterface
         public void requestMicrophonePermission() {
             runOnUiThread(() -> {
                 if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
@@ -194,6 +212,78 @@ public class MainActivity extends Activity {
                 }
             });
         }
+    }
+
+    private void startNativeVoiceRecognitionInternal() {
+        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+            notifyVoiceResultToWeb("", "Voice recognition service is not available on this phone.");
+            return;
+        }
+
+        try {
+            if (speechRecognizer != null) {
+                speechRecognizer.destroy();
+                speechRecognizer = null;
+            }
+            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
+            speechRecognizer.setRecognitionListener(new RecognitionListener() {
+                @Override public void onReadyForSpeech(Bundle params) { }
+                @Override public void onBeginningOfSpeech() { }
+                @Override public void onRmsChanged(float rmsdB) { }
+                @Override public void onBufferReceived(byte[] buffer) { }
+                @Override public void onEndOfSpeech() { }
+
+                @Override public void onError(int error) {
+                    String message;
+                    switch (error) {
+                        case SpeechRecognizer.ERROR_AUDIO:
+                            message = "Microphone audio error. Please try again."; break;
+                        case SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
+                            message = "Microphone permission is not available to the app."; break;
+                        case SpeechRecognizer.ERROR_NETWORK:
+                        case SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
+                            message = "Voice recognition needs a working network connection."; break;
+                        case SpeechRecognizer.ERROR_NO_MATCH:
+                            message = "No speech was recognized. Please try again."; break;
+                        case SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
+                            message = "Voice recognition is busy. Please try again."; break;
+                        case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
+                            message = "No speech detected. Please try again."; break;
+                        default:
+                            message = "Voice recognition could not start. Please try again."; break;
+                    }
+                    notifyVoiceResultToWeb("", message);
+                }
+
+                @Override public void onResults(Bundle results) {
+                    ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                    String text = (matches != null && !matches.isEmpty()) ? matches.get(0) : "";
+                    notifyVoiceResultToWeb(text, text.isEmpty() ? "No speech was recognized. Please try again." : "");
+                }
+
+                @Override public void onPartialResults(Bundle partialResults) { }
+                @Override public void onEvent(int eventType, Bundle params) { }
+            });
+
+            Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US");
+            intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false);
+            intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak your message");
+            speechRecognizer.startListening(intent);
+        } catch (Exception e) {
+            notifyVoiceResultToWeb("", "Voice recognition could not start. Please try again.");
+        }
+    }
+
+    private void notifyVoiceResultToWeb(String text, String error) {
+        if (webView == null) return;
+        final String safeText = JSONObject.quote(text == null ? "" : text);
+        final String safeError = JSONObject.quote(error == null ? "" : error);
+        webView.post(() -> webView.evaluateJavascript(
+                "if(window.v69OnVoiceResult){window.v69OnVoiceResult(" + safeText + "," + safeError + ");}",
+                null
+        ));
     }
 
     private void checkForUpdatesNative() {
@@ -229,7 +319,7 @@ public class MainActivity extends Activity {
                 if (webView == null) return;
                 String safeName = name.replace("\\", "\\\\").replace("'", "\\'");
                 webView.evaluateJavascript(
-                        "if(window.v68UpdateCheckResult){window.v68UpdateCheckResult(" + code + ",'" + safeName + "'," + (failed ? "true" : "false") + ");}",
+                        "if(window.v69UpdateCheckResult){window.v69UpdateCheckResult(" + code + ",'" + safeName + "'," + (failed ? "true" : "false") + ");}",
                         null
                 );
             });
@@ -317,6 +407,11 @@ public class MainActivity extends Activity {
                 pendingPermissionRequest = null;
             }
             notifyMicrophonePermissionToWeb(granted);
+            if (pendingNativeVoice) {
+                pendingNativeVoice = false;
+                if (granted) startNativeVoiceRecognitionInternal();
+                else notifyVoiceResultToWeb("", "Microphone permission is disabled for Zukait Time Track.");
+            }
         }
     }
 
@@ -335,6 +430,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         if (updateReceiver != null) { try { unregisterReceiver(updateReceiver); } catch (Exception ignored) { } }
+        if (speechRecognizer != null) { try { speechRecognizer.destroy(); } catch (Exception ignored) { } speechRecognizer = null; }
         if (webView != null) webView.destroy();
         super.onDestroy();
     }
