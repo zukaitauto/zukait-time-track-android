@@ -153,12 +153,12 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getAppVersion() {
-            return "V61";
+            return "V62";
         }
 
         @JavascriptInterface
         public int getAppVersionCode() {
-            return 24;
+            return 25;
         }
 
         @JavascriptInterface
