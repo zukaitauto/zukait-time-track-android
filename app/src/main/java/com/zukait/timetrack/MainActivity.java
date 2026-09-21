@@ -156,7 +156,7 @@ public class MainActivity extends Activity {
         });
 
         webView.clearCache(true);
-        webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html?v=74");
+        webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html?v=75");
     }
 
     private void createNotificationChannel() {
