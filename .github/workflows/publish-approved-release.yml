@@ -9,6 +9,9 @@ on:
       version_code:
         description: Approved Android version code
         required: true
+  push:
+    paths:
+      - 'release-request.json'
 
 permissions:
   contents: write
@@ -23,11 +26,21 @@ jobs:
       - name: Checkout approved source
         uses: actions/checkout@v4
 
-      - name: Verify requested version matches source
+      - name: Resolve approved version
+        id: approved
         shell: bash
         run: |
-          grep -q "versionName '${{ inputs.version_name }}'" app/build.gradle
-          grep -q "versionCode ${{ inputs.version_code }}" app/build.gradle
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION_NAME="${{ steps.approved.outputs.version_name }}"
+            VERSION_CODE="${{ steps.approved.outputs.version_code }}"
+          else
+            VERSION_NAME=$(python3 -c "import json; d=json.load(open('release-request.json')); assert d.get('approvedForStaff') is True; print(d['versionName'])")
+            VERSION_CODE=$(python3 -c "import json; d=json.load(open('release-request.json')); assert d.get('approvedForStaff') is True; print(d['versionCode'])")
+          fi
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          grep -q "versionName '$VERSION_NAME'" app/build.gradle
+          grep -q "versionCode $VERSION_CODE" app/build.gradle
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -95,12 +108,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="release-${{ inputs.version_name }}"
+          TAG="release-${{ steps.approved.outputs.version_name }}"
           gh release view "$TAG" >/dev/null 2>&1 && gh release delete "$TAG" --yes || true
           git push origin ":refs/tags/$TAG" >/dev/null 2>&1 || true
           git tag "$TAG"
           git push origin "$TAG"
           gh release create "$TAG" ZUKAIT_TIME_TRACK_LATEST.apk \
-            --title "Zukait Time Track ${{ inputs.version_name }}" \
-            --notes "Approved signed production release ${{ inputs.version_name }}." \
+            --title "Zukait Time Track ${{ steps.approved.outputs.version_name }}" \
+            --notes "Approved signed production release ${{ steps.approved.outputs.version_name }}." \
             --latest
