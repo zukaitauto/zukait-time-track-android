@@ -33,7 +33,8 @@ jobs:
           node --check app/src/main/assets/v65_updates.js
           node --check app/src/main/assets/v66_updates.js
           node --check app/src/main/assets/v67_updates.js
-          node --check app/src/main/assets/v68_updates.js\n          node --check app/src/main/assets/v69_updates.js
+          node --check app/src/main/assets/v68_updates.js
+          node --check app/src/main/assets/v69_updates.js
           python - <<'PY'
           from pathlib import Path
           import re
@@ -58,7 +59,8 @@ jobs:
           test -s app/src/main/assets/v65_updates.js
           test -s app/src/main/assets/v66_updates.js
           test -s app/src/main/assets/v67_updates.js
-          test -s app/src/main/assets/v68_updates.js\n          test -s app/src/main/assets/v69_updates.js
+          test -s app/src/main/assets/v68_updates.js
+          test -s app/src/main/assets/v69_updates.js
           test -s app/src/main/res/drawable/app_icon.webp
           test -s app/src/main/res/drawable/app_logo.webp
           test -s app/src/main/res/drawable/splash_screen.xml
@@ -88,7 +90,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ZUKAIT_TIME_TRACK_V69_UNSIGNED_RELEASE
-          path: ZUKAIT_TIME_TRACK_V68_UNSIGNED_RELEASE.apk
+          path: ZUKAIT_TIME_TRACK_V69_UNSIGNED_RELEASE.apk
           if-no-files-found: error
 
       - name: Prepare Android signing tools
