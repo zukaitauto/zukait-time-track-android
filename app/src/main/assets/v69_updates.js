@@ -279,5 +279,6 @@ const prevRender=window.render;
 window.render=function(){prevRender();setTimeout(polishSupervisor,0)};
 setTimeout(polishSupervisor,100);
 window.v69UpdateCheckResult=function(latestCode,latestName,error){if(typeof window.v68UpdateCheckResult==='function')return window.v68UpdateCheckResult(latestCode,latestName,error)};
+window.v71UpdateCheckResult=function(latestCode,latestName,error){return window.v69UpdateCheckResult(latestCode,latestName,error)};
 window.v69Ready=true;
 })();
