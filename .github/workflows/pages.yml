@@ -41,6 +41,7 @@ jobs:
           cp app/src/main/assets/v67_updates.js _site/v67_updates.js
           cp app/src/main/assets/v68_updates.js _site/v68_updates.js
           cp app/src/main/assets/v69_updates.js _site/v69_updates.js
+          cp app/src/main/assets/v74_updates.js _site/v74_updates.js
           cp app/src/main/assets/zukait_logo.webp _site/zukait_logo.webp
           test -s _site/v54_improvements.js
           test -s _site/v63_updates.js
@@ -49,6 +50,7 @@ jobs:
           test -s _site/v67_updates.js
           test -s _site/v68_updates.js
           test -s _site/v69_updates.js
+          test -s _site/v74_updates.js
           touch _site/.nojekyll
 
       - name: Setup Pages
