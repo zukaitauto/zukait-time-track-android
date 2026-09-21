@@ -226,6 +226,11 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void cancelNativeVoiceNote() {
+            runOnUiThread(() -> stopNativeVoiceNoteInternal(true));
+        }
+
+        @JavascriptInterface
         public void requestMicrophonePermission() {
             runOnUiThread(() -> {
                 if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
