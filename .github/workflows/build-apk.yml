@@ -34,7 +34,7 @@ jobs:
           node --check app/src/main/assets/v66_updates.js
           node --check app/src/main/assets/v67_updates.js
           node --check app/src/main/assets/v68_updates.js
-          node --check app/src/main/assets/v69_updates.js v74_updates.js
+          node --check app/src/main/assets/v69_updates.js\n          node --check app/src/main/assets/v74_updates.js
           python - <<'PY'
           from pathlib import Path
           import re
