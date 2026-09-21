@@ -656,13 +656,9 @@
   }
 
   function enhanceManager(){
+    // V66 owns the Manager dashboard and the single Employee Requests panel.
+    // Keep wording normalization only; do not inject legacy Manager cards.
     const root=document.getElementById('managerView');if(!root||root.classList.contains('hidden'))return;
-    if(!root.querySelector('.v54-manager-requests')){
-      const count=(state.requests||[]).filter(r=>r.status==='New').length;
-      const card=document.createElement('div');card.className='card v54-manager-requests clickable';
-      card.innerHTML='<div class="section-title"><h3>🔔 Employee Requests — Manager Copy</h3><span class="request-badge">'+count+'</span></div><button class="blue" onclick="v54OpenManagerRequests()">VIEW REQUESTS</button>';
-      root.insertBefore(card,root.firstChild);
-    }
     applyWording(root);
   }
 
