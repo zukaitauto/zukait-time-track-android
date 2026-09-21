@@ -13,6 +13,7 @@
   let pollTimer=null;
   let initialDone=false;
   let conflictAlerted=false;
+  let lastSyncedState=null;
 
   function sessionToken(){return window.zukaitAuth?.getToken?.()||''}
 
@@ -112,6 +113,61 @@
 
   function clone(x){return JSON.parse(JSON.stringify(x))}
 
+  function threeWayMerge(base,remote,local){
+    if (same(local,base)) return clone(remote);
+    if (same(remote,base)) return clone(local);
+    if (Array.isArray(base)||Array.isArray(remote)||Array.isArray(local)) {
+      const b=Array.isArray(base)?base:[], r=Array.isArray(remote)?remote:[], l=Array.isArray(local)?local:[];
+      const idBased=[...b,...r,...l].every(x=>!x || typeof x!=='object' || Array.isArray(x) || x.id!=null);
+      if(!idBased) return clone(l);
+      const bm=new Map(b.filter(x=>x&&x.id!=null).map(x=>[String(x.id),x]));
+      const rm=new Map(r.filter(x=>x&&x.id!=null).map(x=>[String(x.id),x]));
+      const lm=new Map(l.filter(x=>x&&x.id!=null).map(x=>[String(x.id),x]));
+      const ids=[...new Set([...bm.keys(),...rm.keys(),...lm.keys()])];
+      const out=[];
+      for(const id of ids){
+        const bv=bm.get(id),rv=rm.get(id),lv=lm.get(id);
+        if(bv===undefined){
+          if(rv!==undefined&&lv!==undefined)out.push(threeWayMerge({},rv,lv));
+          else if(lv!==undefined)out.push(clone(lv));
+          else if(rv!==undefined)out.push(clone(rv));
+          continue;
+        }
+        if(lv===undefined&&rv===undefined)continue;
+        if(lv===undefined){
+          if(same(rv,bv))continue;
+          out.push(clone(rv));continue;
+        }
+        if(rv===undefined){
+          if(same(lv,bv))continue;
+          out.push(clone(lv));continue;
+        }
+        out.push(threeWayMerge(bv,rv,lv));
+      }
+      return out;
+    }
+    const bObj=base&&typeof base==='object',rObj=remote&&typeof remote==='object',lObj=local&&typeof local==='object';
+    if(bObj&&rObj&&lObj){
+      const out={};
+      const keys=new Set([...Object.keys(base||{}),...Object.keys(remote||{}),...Object.keys(local||{})]);
+      for(const k of keys){
+        const bv=base?.[k],rv=remote?.[k],lv=local?.[k];
+        if(lv===undefined&&rv===undefined)continue;
+        if(lv===undefined){
+          if(same(rv,bv))continue;
+          out[k]=clone(rv);continue;
+        }
+        if(rv===undefined){
+          if(same(lv,bv))continue;
+          out[k]=clone(lv);continue;
+        }
+        out[k]=threeWayMerge(bv,rv,lv);
+      }
+      return out;
+    }
+    return clone(local);
+  }
+
   function nativeNotify(title,message){
     try{if(window.AndroidBridge&&typeof AndroidBridge.notify==='function')AndroidBridge.notify(String(title||'Zukait Time Track'),String(message||''));}catch(_){}
   }
@@ -178,7 +234,10 @@
       if(typeof window.v42AfterCloudPull==='function'){
         try{window.v42AfterCloudPull(before,clone(state),r)}catch(e){console.warn('Notification hook failed',e)}
       }
+      lastSyncedState=clone(state||{});
       if(me)try{render()}catch(e){console.error('Render after sync failed',e)}
+    } else if(!lastSyncedState) {
+      lastSyncedState=clone(state||{});
     }
     status('SYNCED','ok');
     initialDone=true;
@@ -186,7 +245,7 @@
     return true;
   }
 
-  async function push(retry=false){
+  async function push(retry=0){
     if(cloudPushing||!cloudDirty)return false;
     if(!sessionToken()){status('LOGIN REQUIRED','bad');return false}
     if(!navigator.onLine){status('OFFLINE — CHANGE QUEUED','warn');return false}
@@ -202,37 +261,31 @@
         localStorage.removeItem(PENDING_KEY);
         cloudDirty=false;
         status('SYNCED','ok');
+        lastSyncedState=clone(localSnapshot);
         conflictAlerted=false;
         return true;
       }
 
       if(r.code==='conflict'&&r.data){
-        if(me?.role==='Employee'&&!retry){
-          const merged=mergeEmployeeConflict(r.data,localSnapshot,me.id);
-          cloudApplying=true;
-          try{state=merged;ensureShape();persistLocal()}finally{cloudApplying=false}
-          cloudRevision=Number(r.revision||cloudRevision);
-          localStorage.setItem(REV_KEY,String(cloudRevision));
-          cloudDirty=true;
-          localStorage.setItem(DIRTY_KEY,'1');
-          cloudPushing=false;
-          return await push(true);
-        }
-
-        localStorage.setItem(PENDING_KEY,JSON.stringify({
-          savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:localSnapshot
-        }));
-        cloudDirty=false;
-        localStorage.removeItem(DIRTY_KEY);
-        cloudRevision=Number(r.revision||cloudRevision);
+        const remote=clone(r.data||{});
+        const base=lastSyncedState?clone(lastSyncedState):clone(remote);
+        const merged=threeWayMerge(base,remote,localSnapshot);
         cloudApplying=true;
-        try{normalizeRemote(r.data)}finally{cloudApplying=false}
-        status('SYNC CONFLICT — REVIEW','bad');
+        try{state=merged;ensureShape();persistLocal()}finally{cloudApplying=false}
+        cloudRevision=Number(r.revision||cloudRevision);
+        localStorage.setItem(REV_KEY,String(cloudRevision));
+        lastSyncedState=remote;
+        cloudDirty=true;
+        localStorage.setItem(DIRTY_KEY,'1');
+        status('SYNCING LATEST CHANGES…','info');
         if(me)try{render()}catch(_){}
-        if(!conflictAlerted){
-          conflictAlerted=true;
-          alert('Another phone changed workshop data at the same moment. Latest data is shown. Your unsynced copy was saved on this phone for recovery; please repeat the last Supervisor/Manager action.');
+        if(retry<3){
+          cloudPushing=false;
+          return await push(retry+1);
         }
+        localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:merged}));
+        status('SYNC BUSY — RETRYING','warn');
+        setTimeout(()=>{if(cloudDirty&&!cloudPushing)push(0)},700);
         return false;
       }
 
@@ -261,12 +314,12 @@
     cloudDirty=true;
     localStorage.setItem(DIRTY_KEY,'1');
     clearTimeout(pushTimer);
-    pushTimer=setTimeout(()=>push(false),100);
+    pushTimer=setTimeout(()=>push(0),100);
   };
 
   async function syncNow(){
     if(!navigator.onLine)return status('OFFLINE — CHANGE QUEUED','warn');
-    if(cloudDirty)await push(false);
+    if(cloudDirty)await push(0);
     if(!cloudDirty)await pull(true);
   }
 
@@ -303,7 +356,7 @@
       return false;
     }
     try{
-      if(cloudDirty&&navigator.onLine)await push(false);
+      if(cloudDirty&&navigator.onLine)await push(0);
       if(!cloudDirty)await pull(!!force);
     }catch(e){
       console.error('Cloud initialization failed',e);
