@@ -3,5 +3,6 @@
   "versionCode": 37,
   "approvedForStaff": true,
   "approvedAt": "2026-09-22",
-  "sourceCommit": "9f0e5c69a8102ee82015737dbadad9dffe938d04"
+  "sourceCommit": "9f0e5c69a8102ee82015737dbadad9dffe938d04",
+  "publishNonce": "approved-v74-final"
 }
