@@ -290,15 +290,8 @@
       '<button class="purple" onclick="openManagerReports()">REPORTS</button></div></div>';
   }
 
-  const managerBase=window.renderManager;
-  if(typeof managerBase==='function'){
-    window.renderManager=function(){
-      managerBase();
-      const root=document.getElementById('managerView');if(!root||!me)return;
-      root.querySelector('.v42-manager-tools')?.remove();
-      root.insertAdjacentHTML('afterbegin',managerToolsHTML());
-    };
-  }
+  // V65: legacy Manager Production Safety injection disabled.
+  // Backup/sync functions remain available and are exposed only through the V65 Admin panel.
 
   function ensureTopControls(){
     const app=document.getElementById('app');if(!app||app.classList.contains('hidden'))return;
@@ -306,12 +299,7 @@
     [...row.querySelectorAll('button')].forEach(b=>{
       if((b.textContent||'').toLowerCase().includes('reset test data')){b.style.display='none';b.classList.add('v42-hide-reset')}
     });
-    if(!document.getElementById('v42SyncBtn')){
-      const b=document.createElement('button');b.id='v42SyncBtn';b.className='secondary';b.textContent='↻ Sync';
-      b.onclick=()=>window.v42SyncNow();
-      const logout=[...row.querySelectorAll('button')].find(x=>(x.textContent||'').toLowerCase().includes('logout'));
-      row.insertBefore(b,logout||null);
-    }
+    // V65 owns Account / Sync / Logout controls.
   }
 
   function applyBranding(){
