@@ -261,7 +261,7 @@
     cloudDirty=true;
     localStorage.setItem(DIRTY_KEY,'1');
     clearTimeout(pushTimer);
-    pushTimer=setTimeout(()=>push(false),220);
+    pushTimer=setTimeout(()=>push(false),100);
   };
 
   async function syncNow(){
@@ -313,7 +313,7 @@
     pollTimer=setInterval(async()=>{
       if(!sessionToken()||!navigator.onLine||cloudDirty||cloudPushing)return;
       try{await pull(false)}catch(e){console.warn('Cloud poll failed',e);status('SYNC ERROR','bad')}
-    },3000);
+    },1500);
     return true;
   }
 
