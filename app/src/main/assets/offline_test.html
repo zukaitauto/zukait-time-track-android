@@ -1379,6 +1379,84 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
   window.v61Ready=true;
 })();
 </script>
+<script>
+/* V62 TRIAL — assignment editing/splitting + Manager worked-hours cards. */
+(function(){
+  const esc62=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const open62=()=> (state.assign||[]).filter(a=>a&&!a.cancelled&&!a.completed).slice().sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));
+  const actual62=a=>{try{return totalForAssignment(a)||0}catch(_){return 0}};
+  const status62=a=>{try{return empStatus(a)}catch(_){return actual62(a)>0?'Working':'Not Started'}};
+  const employees62=()=>users.filter(u=>u.role==='Employee');
+  const techOptions62=(selected)=>employees62().map(u=>'<option value="'+esc62(u.id)+'" '+(u.id===selected?'selected':'')+'>'+esc62(u.name)+' — '+esc62(u.department||'')+'</option>').join('');
+
+  window.v62EditAssignment=function(id){
+    const a=(state.assign||[]).find(x=>x.id===id&&!x.cancelled&&!x.completed); if(!a)return alert('Assignment is no longer open.');
+    const ac=Math.round(actual62(a)), started=ac>0||(state.sessions||[]).some(s=>s.assignmentId===a.id);
+    showSupervisorModal('✏️ Edit Assignment — '+esc62(a.job),
+      '<div class="notice"><b>Current Technician:</b> '+esc62(user(a.emp).name)+'<br><b>Status:</b> '+esc62(status62(a))+'<br><b>Allocated:</b> '+fmt(+a.suggested||0)+' &nbsp; <b>Actual:</b> '+fmt(ac)+'</div>'+
+      '<div class="grid"><label><b>Technician</b><br><select id="v62Tech" style="width:100%">'+techOptions62(a.emp)+'</select></label>'+
+      '<label><b>Allocated Time</b><br><input id="v62Time" value="'+Math.floor((+a.suggested||0)/60)+'.'+String((+a.suggested||0)%60).padStart(2,'0')+'" style="width:100%;box-sizing:border-box"><span class="small muted">'+timeInputHint()+'</span></label></div>'+
+      (started?'<div class="notice" style="border-left:4px solid #d97706">This technician has already worked on the job. Changing technician will close this portion with <b>Suggested = Actual ('+fmt(ac)+')</b>, then create a fresh assignment for the new technician.</div>':'')+
+      '<p><button class="green" onclick="v62SaveEdit(\''+id+'\')">SAVE CHANGES</button> <button class="secondary" onclick="closeModal()">CANCEL</button></p>');
+  };
+
+  window.v62SaveEdit=function(id){
+    const a=(state.assign||[]).find(x=>x.id===id&&!x.cancelled&&!x.completed);if(!a)return alert('Assignment is no longer open.');
+    const newEmp=document.getElementById('v62Tech')?.value, mins=parseWorkMinutes(document.getElementById('v62Time')?.value);
+    if(!newEmp)return alert('Select a technician.'); if(!Number.isFinite(mins)||mins<1)return alert('Enter valid allocated time. '+timeInputHint());
+    const ac=Math.round(actual62(a)), started=ac>0||(state.sessions||[]).some(s=>s.assignmentId===a.id);
+    if(newEmp===a.emp){ if(mins<ac)return alert('Allocated time cannot be less than actual time already worked ('+fmt(ac)+').'); a.suggested=mins;a.editedAt=now();a.editedBy=me.id;save();closeModal();render();return; }
+    if(!started){
+      const old=a.emp;a.emp=newEmp;a.suggested=mins;a.editedAt=now();a.editedBy=me.id;a.transferHistory=a.transferHistory||[];a.transferHistory.push({from:old,to:newEmp,at:now(),by:me.id,type:'Before Start'});
+      save();closeModal();render();return;
+    }
+    if(activeSession(a.emp))return alert('The current technician is actively working. Ask them to PAUSE first, then transfer the job. This protects the exact worked time.');
+    a.suggested=ac;a.completed=true;a.completedAt=now();a.transferClosed=true;
+    const na={id:uid(),job:a.job,emp:newEmp,suggested:mins,completed:false,rework:!!a.rework,assignedBy:me.id,assignedAt:now(),transferredFrom:a.id,transferType:'Technician Change'};
+    state.assign.push(na);save();closeModal();render();
+  };
+
+  window.v62SplitAssignment=function(id){
+    const a=(state.assign||[]).find(x=>x.id===id&&!x.cancelled&&!x.completed);if(!a)return alert('Assignment is no longer open.');
+    const ac=Math.round(actual62(a));
+    showSupervisorModal('👥 Add Technician / Split Time — '+esc62(a.job),
+      '<div class="notice"><b>'+esc62(user(a.emp).name)+'</b> currently has '+fmt(+a.suggested||0)+' suggested and '+fmt(ac)+' actual.</div>'+
+      '<div class="grid"><label><b>Add Technician</b><br><select id="v62SplitTech" style="width:100%"><option value="">Select</option>'+employees62().filter(u=>u.id!==a.emp).map(u=>'<option value="'+esc62(u.id)+'">'+esc62(u.name)+' — '+esc62(u.department||'')+'</option>').join('')+'</select></label>'+
+      '<label><b>Time to deduct and give second technician</b><br><input id="v62SplitTime" placeholder="3.00" style="width:100%;box-sizing:border-box"><span class="small muted">'+timeInputHint()+'</span></label></div>'+
+      '<p class="muted">The total suggested time remains unchanged. Both technicians may work on this Job Card simultaneously.</p>'+
+      '<p><button class="green" onclick="v62SaveSplit(\''+id+'\')">SPLIT ALLOCATION</button> <button class="secondary" onclick="closeModal()">CANCEL</button></p>');
+  };
+  window.v62SaveSplit=function(id){
+    const a=(state.assign||[]).find(x=>x.id===id&&!x.cancelled&&!x.completed);if(!a)return alert('Assignment is no longer open.');
+    const emp=document.getElementById('v62SplitTech')?.value, give=parseWorkMinutes(document.getElementById('v62SplitTime')?.value), ac=Math.round(actual62(a)), old=+a.suggested||0;
+    if(!emp)return alert('Select the second technician.');if(!Number.isFinite(give)||give<1)return alert('Enter valid split time.');
+    const remain=old-give;if(remain<ac)return alert('Cannot reduce '+user(a.emp).name+' below actual time already worked ('+fmt(ac)+').');if(remain<1)return alert('First technician must keep at least 1 minute.');
+    a.suggested=remain;a.splitHistory=a.splitHistory||[];a.splitHistory.push({to:emp,minutes:give,at:now(),by:me.id});
+    state.assign.push({id:uid(),job:a.job,emp,suggested:give,completed:false,rework:!!a.rework,assignedBy:me.id,assignedAt:now(),splitFrom:a.id,splitAllocation:true});
+    save();closeModal();render();
+  };
+
+  function table62(list){
+    if(!list.length)return '<div class="notice"><b>No open assigned job cards.</b></div>';
+    return '<div style="overflow:auto"><table><thead><tr><th>Job Card</th><th>Vehicle</th><th>Technician</th><th>Status</th><th>Suggested</th><th>Actual</th><th>Actions</th></tr></thead><tbody>'+
+      list.map(a=>{const j=job(a.job)||{};return '<tr><td><b>'+esc62(a.job)+'</b></td><td>'+esc62(j.vehicle||'—')+'<br><span class="small">'+esc62(j.reg||'')+'</span></td><td>'+esc62(user(a.emp).name)+'</td><td>'+esc62(status62(a))+'</td><td>'+fmt(+a.suggested||0)+'</td><td>'+fmt(actual62(a))+'</td><td><button class="blue" onclick="openSupervisorJob(\''+String(a.job).replace(/'/g,"\\'")+'\')">VIEW</button><button class="amber" onclick="v62EditAssignment(\''+a.id+'\')">EDIT</button><button class="purple" onclick="v62SplitAssignment(\''+a.id+'\')">+ TECHNICIAN</button></td></tr>'}).join('')+'</tbody></table></div>';
+  }
+  window.openSupervisorAssignedWindow=function(){const list=open62();showSupervisorModal('📋 Assigned Job Cards','<div class="row"><input id="v62Search" style="flex:1;min-width:220px" placeholder="Search JC / vehicle / registration / technician" oninput="v62Filter()"><span class="pill">'+list.length+' OPEN</span></div><div id="v62Rows" style="margin-top:12px">'+table62(list)+'</div>');};
+  window.v62Filter=function(){const q=(document.getElementById('v62Search')?.value||'').toLowerCase();const list=open62().filter(a=>{const j=job(a.job)||{};return [a.job,j.vehicle,j.reg,user(a.emp).name,status62(a)].join(' ').toLowerCase().includes(q)});const el=document.getElementById('v62Rows');if(el)el.innerHTML=table62(list);};
+
+  function workedBetween(from,to){return (state.sessions||[]).reduce((sum,s)=>{const st=Math.max(+s.start||0,from),en=Math.min(+(s.end||Date.now()),to);if(en<=st)return sum;try{if(typeof normalMinutes==='function')return sum+normalMinutes(st,en)}catch(_){}return sum+(en-st)/60000;},0);}
+  function managerHours62(){
+    const n=new Date(), ds=new Date(n.getFullYear(),n.getMonth(),n.getDate()).getTime(), de=ds+86400000;
+    const wd=(n.getDay()+6)%7, ws=ds-wd*86400000,we=ws+7*86400000, ms=new Date(n.getFullYear(),n.getMonth(),1).getTime(),me2=new Date(n.getFullYear(),n.getMonth()+1,1).getTime();
+    const cards=[['TODAY',workedBetween(ds,de),'Daily'],['THIS WEEK',workedBetween(ws,we),'Weekly'],['THIS MONTH',workedBetween(ms,me2),'Monthly']];
+    return '<div class="v62-hours-wrap">'+cards.map(x=>'<div class="v62-hour-card" title="'+x[2]+' total actual productive man-hours"><div class="v62-ring"><div><b>'+fmt(x[1])+'</b><span>'+x[0]+'</span></div></div></div>').join('')+'</div>';
+  }
+  const style=document.createElement('style');style.textContent='.v62-hours-wrap{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;margin:16px 0}.v62-hour-card{width:170px;height:170px;border-radius:50%;background:#fff;box-shadow:0 8px 24px #0f172a18;display:flex;align-items:center;justify-content:center;border:1px solid #e2e8f0}.v62-ring{width:138px;height:138px;border-radius:50%;border:9px solid #e2e8f0;display:flex;align-items:center;justify-content:center;text-align:center}.v62-ring b{display:block;font-size:24px;color:#0f172a}.v62-ring span{display:block;font-size:11px;font-weight:900;color:#64748b;margin-top:5px;letter-spacing:.05em}@media(max-width:600px){.v62-hour-card{width:132px;height:132px}.v62-ring{width:104px;height:104px;border-width:7px}.v62-ring b{font-size:19px}}';document.head.appendChild(style);
+  const priorManager62=window.renderManager;
+  window.renderManager=function(){priorManager62();const root=document.getElementById('managerView');if(!root)return;const hero=root.querySelector('.manager-hero');if(hero)hero.insertAdjacentHTML('afterend','<div class="card"><div class="section-title"><h3>Worked Hours</h3><span class="pill">ACTUAL PRODUCTIVE MAN-HOURS</span></div>'+managerHours62()+'</div>');};
+  window.v62TrialReady=true;
+})();
+</script>
 <script src="cloud_sync.js"></script>
 <script src="secure_auth.js"></script>
 <script src="production_pilot.js"></script>
