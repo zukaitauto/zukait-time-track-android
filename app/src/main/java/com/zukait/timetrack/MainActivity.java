@@ -209,7 +209,6 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        @JavascriptInterface
         public void startNativeVoiceNote() {
             runOnUiThread(() -> {
                 if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -226,6 +225,7 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> stopNativeVoiceNoteInternal(false));
         }
 
+        @JavascriptInterface
         public void requestMicrophonePermission() {
             runOnUiThread(() -> {
                 if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
