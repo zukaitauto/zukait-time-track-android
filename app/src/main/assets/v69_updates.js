@@ -142,7 +142,7 @@ window.openSupervisorJob=function(no){
  const aa=assignments(no).slice().sort((a,b)=>(a.assignedAt||0)-(b.assignedAt||0));
  const totalS=aa.reduce((n,a)=>n+(+a.suggested||0),0),totalA=aa.reduce((n,a)=>n+actual(a),0);
  const rows=aa.length?'<div class="v69-table"><table><tr><th>Technician</th><th>Department</th><th>Type</th><th>Status</th><th>Allocated</th><th>Actual</th><th>Labour</th></tr>'+
-   aa.map(a=>'<tr><td><b>'+E(person(a.emp).name)+'</b></td><td>'+E(person(a.emp).department||'—')+'</td><td>'+(a.rework?'Repeat':a.reissued?'Reissued':a.reopened?'Reopened':'Normal')+'</td><td>'+E(status(a))+(a.completed&&!a.rework?' <br><button class="green" style="margin-top:6px" onclick="v71ReopenSameAssignment(\\''+E(a.id)+'\\')">↻ REOPEN SAME</button>':'')+'</td><td>'+fm(+a.suggested||0)+'</td><td>'+fm(actual(a))+'</td><td>'+money(actual(a))+'</td></tr>').join('')+'</table></div>':'<div class="notice">No assignments.</div>';
+   aa.map(a=>'<tr><td><b>'+E(person(a.emp).name)+'</b></td><td>'+E(person(a.emp).department||'—')+'</td><td>'+(a.rework?'Repeat':a.reissued?'Reissued':a.reopened?'Reopened':'Normal')+'</td><td>'+E(status(a))+(a.completed&&!a.rework?' <br><button class="green" style="margin-top:6px" onclick="v71ReopenSameAssignment(&quot;'+E(a.id)+'&quot;)">↻ REOPEN SAME</button>':'')+'</td><td>'+fm(+a.suggested||0)+'</td><td>'+fm(actual(a))+'</td><td>'+money(actual(a))+'</td></tr>').join('')+'</table></div>':'<div class="notice">No assignments.</div>';
  const canReissue=aa.some(a=>a.completed&&!a.rework);
  const buttons=(no===HOLD?'':'<p>'+(canReissue?'<button class="green" onclick="v69ReissueJob(\''+E(no)+'\')">↻ REOPEN / REISSUE</button> ':'')+
    '<button class="purple" onclick="addRepeatWork(\''+E(no)+'\')">🔁 REPEAT WORK</button></p>');
