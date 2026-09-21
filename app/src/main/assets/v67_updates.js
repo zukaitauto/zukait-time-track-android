@@ -143,5 +143,6 @@ const css=document.createElement('style');css.id='v67ManagerStyle';css.textConte
 const prevRender=window.render;
 window.render=function(){prevRender();setTimeout(()=>{if(me?.role==='Manager')renderManager67()},0)};
 setTimeout(()=>{if(me?.role==='Manager')renderManager67()},80);
-window.v67UpdateCheckResult=function(latestCode,latestName,error){if(typeof window.v66UpdateCheckResult==='function')return window.v66UpdateCheckResult(latestCode,latestName,error);};\nwindow.v67Ready=true;
+window.v67UpdateCheckResult=function(latestCode,latestName,error){if(typeof window.v66UpdateCheckResult==='function')return window.v66UpdateCheckResult(latestCode,latestName,error);};
+window.v67Ready=true;
 })();
