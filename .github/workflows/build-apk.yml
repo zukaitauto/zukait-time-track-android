@@ -1,4 +1,4 @@
-name: Build V68 Manager Search Report APK
+name: Build V69 Supervisor Reliability Update APK
 
 on:
   workflow_dispatch:
@@ -33,7 +33,7 @@ jobs:
           node --check app/src/main/assets/v65_updates.js
           node --check app/src/main/assets/v66_updates.js
           node --check app/src/main/assets/v67_updates.js
-          node --check app/src/main/assets/v68_updates.js
+          node --check app/src/main/assets/v68_updates.js\n          node --check app/src/main/assets/v69_updates.js
           python - <<'PY'
           from pathlib import Path
           import re
@@ -58,7 +58,7 @@ jobs:
           test -s app/src/main/assets/v65_updates.js
           test -s app/src/main/assets/v66_updates.js
           test -s app/src/main/assets/v67_updates.js
-          test -s app/src/main/assets/v68_updates.js
+          test -s app/src/main/assets/v68_updates.js\n          test -s app/src/main/assets/v69_updates.js
           test -s app/src/main/res/drawable/app_icon.webp
           test -s app/src/main/res/drawable/app_logo.webp
           test -s app/src/main/res/drawable/splash_screen.xml
@@ -80,14 +80,14 @@ jobs:
       - name: Build release APK
         run: gradle assembleRelease --stacktrace
 
-      - name: Rename unsigned V68 APK
+      - name: Rename unsigned V69 APK
         shell: bash
-        run: cp app/build/outputs/apk/release/app-release-unsigned.apk ZUKAIT_TIME_TRACK_V68_UNSIGNED_RELEASE.apk
+        run: cp app/build/outputs/apk/release/app-release-unsigned.apk ZUKAIT_TIME_TRACK_V69_UNSIGNED_RELEASE.apk
 
-      - name: Upload unsigned V68 APK artifact
+      - name: Upload unsigned V69 APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ZUKAIT_TIME_TRACK_V68_UNSIGNED_RELEASE
+          name: ZUKAIT_TIME_TRACK_V69_UNSIGNED_RELEASE
           path: ZUKAIT_TIME_TRACK_V68_UNSIGNED_RELEASE.apk
           if-no-files-found: error
 
