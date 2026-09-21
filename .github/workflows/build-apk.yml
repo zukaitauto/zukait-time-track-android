@@ -29,7 +29,8 @@ jobs:
           node --check app/src/main/assets/production_pilot.js
           node --check app/src/main/assets/professional_ux.js
           node --check app/src/main/assets/v54_improvements.js
-          node --check app/src/main/assets/v63_updates.js\n          node --check app/src/main/assets/v64_updates.js
+          node --check app/src/main/assets/v63_updates.js
+          node --check app/src/main/assets/v64_updates.js
           python - <<'PY'
           from pathlib import Path
           import re
@@ -50,7 +51,8 @@ jobs:
         run: |
           test -s app/src/main/assets/zukait_logo.webp
           test -s app/src/main/assets/professional_ux.js
-          test -s app/src/main/assets/v54_improvements.js\n          test -s app/src/main/assets/v64_updates.js
+          test -s app/src/main/assets/v54_improvements.js
+          test -s app/src/main/assets/v64_updates.js
           test -s app/src/main/res/drawable/app_icon.webp
           test -s app/src/main/res/drawable/app_logo.webp
           test -s app/src/main/res/drawable/splash_screen.xml
