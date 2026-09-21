@@ -131,6 +131,22 @@ window.v42SupervisorList=function(type){
  supModal(title,listTable(rows));
 };
 
+/* Assigned Jobs: simple Search placeholder; a JC stays here while any assignment is open. */
+window.openSupervisorAssignedWindow=function(){
+ const rows=(state.assign||[]).filter(a=>a&&!a.cancelled&&!a.completed).slice().sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));
+ supModal('📋 Assigned Job Cards',
+   '<div class="row"><input id="v69AssignedSearch" style="flex:1;min-width:220px" placeholder="Search" oninput="v69FilterAssigned()"><span class="pill">'+rows.length+' OPEN</span></div>'+
+   '<div id="v69AssignedRows" style="margin-top:12px">'+listTable(rows)+'</div>');
+};
+window.v69FilterAssigned=function(){
+ const q=(document.getElementById('v69AssignedSearch')?.value||'').trim().toLowerCase();
+ const rows=(state.assign||[]).filter(a=>a&&!a.cancelled&&!a.completed).filter(a=>{
+   const j=jinfo(a.job),u=person(a.emp);
+   return !q||[a.job,j.vehicle,j.reg,u.name,u.department,status(a)].join(' ').toLowerCase().includes(q);
+ }).slice().sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));
+ const el=document.getElementById('v69AssignedRows');if(el)el.innerHTML=listTable(rows);
+};
+
 /* Finished Jobs are unique by JC and appear only when ALL assignments are finished. */
 window.openSupervisorFinishedWindow=function(){
  const rows=customerJobs().filter(j=>allFinished(j.no)).sort((a,b)=>{
