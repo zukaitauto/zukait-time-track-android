@@ -126,7 +126,6 @@ window.v71ReopenSameAssignment=function(id){
    suggested:allocated,actualAtReopen:worked,
    previousCompletedAt:finishedAt,by:me.id,at:now()
  });
- const j=jinfo(a.job);if(j&&j.no){j.status='Open';delete j.completedAt;}
  if(typeof setLastAction==='function')setLastAction('Reopened same assignment '+a.job+' for '+person(a.emp).name);
  try{
    if(typeof addNotification==='function')addNotification([a.emp],'Supervisor reopened '+a.job+' with the same allocated time. Previous actual time is retained.',a.id);
