@@ -153,19 +153,19 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getAppVersion() {
-            return "V57-TECH-BOARD-FIX-1";
+            return "V58-DIRECT-UPDATE-TECH-CARDS";
         }
 
         @JavascriptInterface
         public int getAppVersionCode() {
-            return 20;
+            return 21;
         }
 
         @JavascriptInterface
         public void openUpdatePage() {
             runOnUiThread(() -> {
                 try {
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/zukaitauto/zukait-time-track-android/releases/latest"));
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/zukaitauto/zukait-time-track-android/releases/latest/download/ZUKAIT_TIME_TRACK_LATEST.apk"));
                     startActivity(intent);
                 } catch (Exception ignored) { }
             });
