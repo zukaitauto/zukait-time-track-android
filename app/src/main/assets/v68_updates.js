@@ -112,7 +112,7 @@ window.v68OpenJobDetail=function(no){
  '<div class="v68-block"><h3>Worked Persons</h3>'+tech+'</div>'+
  rep+
  '<div class="v68-two"><div class="v68-block"><h3>Work Timeline</h3>'+time+'</div><div class="v68-block"><h3>Other Job Cards — Same Registration</h3><div class="v68-related-list">'+related+'</div><p><button class="v68-light-btn" onclick="v68OpenVehicleHistory(\''+esc(j.reg||'')+'\')">VEHICLE HISTORY</button></p></div></div>'+
- '<div class="v68-block review"><h3>Management Review</h3><label class="v68-check"><input type="checkbox" id="v68ReviewFlag" '+(rv.flag?'checked':'')+'> Mark for Management Review</label><label>Manager Remark<br><textarea id="v68ReviewRemark" rows="3" placeholder="Optional management remark">'+esc(rv.remark||'')+'</textarea></label><p><button class="v68-light-btn" onclick="v68SaveReview(\''+esc(no)+'\')">SAVE REMARK</button></p></div>'+
+ '<div class="v68-block review"><h3>Management Review</h3><label class="v68-check"><input type="checkbox" id="v68ReviewFlag" '+(rv.flag?'checked':'')+'> Mark for Management Review</label><label>Manager Remark<br><textarea id="v68ReviewRemark" rows="3" placeholder="">'+esc(rv.remark||'')+'</textarea></label><p><button class="v68-light-btn" onclick="v68SaveReview(\''+esc(no)+'\')">SAVE REMARK</button></p></div>'+
  '<div class="v68-actions"><button class="v68-print" onclick="v68PrintSummary(\''+esc(no)+'\')">PRINT SUMMARY</button><button class="v68-share" onclick="v68FullReport(\''+esc(no)+'\')">FULL PDF / EMAIL / WHATSAPP</button></div>'+
  '</div>');
 };
@@ -160,7 +160,7 @@ function injectSearch(){
  const head=titles.find(x=>/Workshop Control Center/i.test(x.textContent||''));if(!head||head.querySelector('.v68-search-wrap'))return;
  head.classList.add('v68-control-head');
  const box=document.createElement('div');box.className='v68-search-wrap';
- box.innerHTML='<span>⌕</span><input id="v68ManagerSearch" placeholder="JC / Reg No." autocomplete="off" onkeydown="v68SearchKey(event)"><button onclick="v68ManagerSearch()">Search</button>';
+ box.innerHTML='<span>⌕</span><input id="v68ManagerSearch" placeholder="" autocomplete="off" onkeydown="v68SearchKey(event)"><button onclick="v68ManagerSearch()">Search</button>';
  head.appendChild(box);
 }
 const css=document.createElement('style');css.id='v68SearchStyle';css.textContent=`
