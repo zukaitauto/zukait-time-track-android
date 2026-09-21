@@ -73,13 +73,13 @@ jobs:
 
       - name: Rename unsigned V57 APK
         shell: bash
-        run: cp app/build/outputs/apk/release/app-release-unsigned.apk ZUKAIT_TIME_TRACK_V60_UNSIGNED_RELEASE.apk
+        run: cp app/build/outputs/apk/release/app-release-unsigned.apk ZUKAIT_TIME_TRACK_V62_UNSIGNED_RELEASE.apk
 
       - name: Upload unsigned V57 APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ZUKAIT_TIME_TRACK_V60_UNSIGNED_RELEASE
-          path: ZUKAIT_TIME_TRACK_V60_UNSIGNED_RELEASE.apk
+          name: ZUKAIT_TIME_TRACK_V62_UNSIGNED_RELEASE
+          path: ZUKAIT_TIME_TRACK_V62_UNSIGNED_RELEASE.apk
           if-no-files-found: error
 
       - name: Prepare Android signing tools
