@@ -73,7 +73,7 @@ public class MainActivity extends Activity {
         settings.setAllowContentAccess(false);
         settings.setAllowFileAccessFromFileURLs(false);
         settings.setAllowUniversalAccessFromFileURLs(false);
-        settings.setMediaPlaybackRequiresUserGesture(false);
+        settings.setMediaPlaybackRequiresUserGesture(false);\n        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
 
@@ -140,7 +140,7 @@ public class MainActivity extends Activity {
         });
 
         if (savedInstanceState == null) {
-            webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html");
+            webView.clearCache(true);\n            webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html?v=72");
         } else {
             webView.restoreState(savedInstanceState);
         }
@@ -172,12 +172,12 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getAppVersion() {
-            return "V71";
+            return "V72";
         }
 
         @JavascriptInterface
         public int getAppVersionCode() {
-            return 34;
+            return 35;
         }
 
         @JavascriptInterface
@@ -319,7 +319,7 @@ public class MainActivity extends Activity {
                 if (webView == null) return;
                 String safeName = name.replace("\\", "\\\\").replace("'", "\\'");
                 webView.evaluateJavascript(
-                        "if(window.v71UpdateCheckResult){window.v71UpdateCheckResult(" + code + ",'" + safeName + "'," + (failed ? "true" : "false") + ");}",
+                        "if(window.v72UpdateCheckResult){window.v72UpdateCheckResult(" + code + ",'" + safeName + "'," + (failed ? "true" : "false") + ");}",
                         null
                 );
             });
