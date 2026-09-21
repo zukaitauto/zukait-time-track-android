@@ -1250,6 +1250,50 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 })();
 </script>
 
+<script>
+/* V59 STABLE — employee work controls use self-contained assignment helpers. */
+(function(){
+  const HOLD='ID001';
+  function openAssignment(no,emp){
+    return (state.assign||[]).filter(a=>a.job===no&&a.emp===emp&&!a.cancelled&&!a.completed)
+      .sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0))[0]||null;
+  }
+  function assignmentForActive(s){
+    if(!s)return null;
+    return (state.assign||[]).find(a=>a.id===s.assignmentId)||
+      (state.assign||[]).filter(a=>a.job===s.job&&a.emp===s.emp&&!a.cancelled&&!a.completed)
+        .sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0))[0]||null;
+  }
+  window.start=function(no){
+    if(!me||me.role!=='Employee')return alert('Employee login is required.');
+    if(activeSession(me.id))return alert('You already have an active job. Pause or finish it first.');
+    const a=openAssignment(no,me.id);
+    if(!a)return alert('This job is not available for work.');
+    state.sessions=state.sessions||[];
+    state.sessions.push({id:uid(),assignmentId:a.id,job:a.job,emp:me.id,start:now(),end:null,paused:false,rework:a.rework===true});
+    setLastAction('Started '+a.job+(a.rework?' repeat work':''));
+    save();render();
+  };
+  window.pause=function(){
+    if(!me||me.role!=='Employee')return;
+    const s=activeSession(me.id);if(!s)return alert('No active work to pause.');
+    if(s.job===HOLD)return alert('ID001 Ideal Time Card uses START / STOP only.');
+    let reason=prompt('Pause reason (optional).','');if(reason===null)reason='';
+    s.end=now();s.paused=true;s.pauseReason=reason.trim();
+    const a=assignmentForActive(s);if(a)a.pauseReason=s.pauseReason;
+    setLastAction('Paused '+s.job);save();render();
+  };
+  window.finish=function(){
+    if(!me||me.role!=='Employee')return;
+    const s=activeSession(me.id);if(!s)return alert('No active work to finish.');
+    const a=assignmentForActive(s);if(!a)return alert('Active assignment could not be found.');
+    if(!confirm((s.job===HOLD?'Stop ID001 Ideal Time Card':'Finish work on '+s.job)+'?'))return;
+    s.end=now();s.finished=true;s.paused=false;a.completed=true;a.completedAt=s.end;
+    setLastAction((s.job===HOLD?'Stopped ':'Finished ')+s.job);save();render();
+  };
+  window.v59Stable=true;
+})();
+</script>
 <script src="cloud_sync.js"></script>
 <script src="secure_auth.js"></script>
 <script src="production_pilot.js"></script>
