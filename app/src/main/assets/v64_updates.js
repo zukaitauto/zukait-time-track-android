@@ -110,6 +110,12 @@ function decorateSupervisor(){
  const root=document.getElementById('supervisorView');if(!root)return;
  document.querySelectorAll('.v54-dept-box').forEach(b=>{const t=(b.textContent||'').toLowerCase();b.classList.toggle('v64-dent',t.includes('denting'));b.classList.toggle('v64-paint',t.includes('painting'));b.classList.toggle('v64-mech',t.includes('mechanical'))});
 }
+
+window.assignmentTable=function(rows,rowClass=''){
+ if(!rows.length)return '<p class="muted">No job cards found.</p>';
+ return '<table><tr><th>Job Card</th><th>Vehicle</th><th>Registration</th><th>Status</th><th>Suggested</th><th>Actual</th><th>Assigned By</th><th>Pause Reason</th></tr>'+rows.slice().sort((a,b)=>assignmentSortValue(a)-assignmentSortValue(b)).map(a=>{const j=job(a.job)||{};return '<tr class="'+rowClass+'" data-search="'+e((a.job+' '+(j.vehicle||'')+' '+(j.reg||'')+' '+person(a.emp).name).toLowerCase())+'"><td><b>'+e(a.job)+'</b></td><td><b>'+e(j.vehicle||'—')+'</b></td><td>'+e(j.reg||'—')+'</td><td>'+statusHTML(currentStatus(a))+'</td><td>'+fmt(+a.suggested||0)+'</td><td>'+fmt(actual(a))+'</td><td>'+e(person(a.assignedBy).name||'—')+'</td><td>'+e(a.pauseReason||'—')+'</td></tr>'}).join('')+'</table>';
+};
+
 const oldDept=window.openTechnicianDeptV56;
 if(typeof oldDept==='function')window.openTechnicianDeptV56=function(dept){oldDept(dept);setTimeout(decorateSupervisor,0)};
 
