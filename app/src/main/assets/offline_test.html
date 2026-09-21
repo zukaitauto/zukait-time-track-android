@@ -158,12 +158,12 @@ function openTechnicianDeptV56(dept){
   let label=dept==='Denter'?'Denting':dept==='Painter'?'Painting':'Mechanical';
   let icon=dept==='Denter'?'🛠️':dept==='Painter'?'🎨':'⚙️';
   let team=users.filter(u=>u.role==='Employee'&&u.department===dept);
-  let body=team.length?'<div class="grid">'+team.map(u=>{
+  let body=team.length?'<div class="tech-card-grid">'+team.map(u=>{
     let rows=state.assign.filter(a=>a.emp===u.id&&!a.cancelled&&!a.completed);
     let current=rows.find(a=>empStatus(a)==='Started')||rows.find(a=>empStatus(a)==='Paused')||rows[0]||null;
-    if(!current)return '<div class="job-card"><h4>'+userLabel(u.id)+'</h4><p class="ok">AVAILABLE</p><button class="blue" onclick="openSupervisorTechnician(\''+u.id+'\')">VIEW JOBS</button></div>';
+    if(!current)return '<div class="tech-card-box"><h4>'+userLabel(u.id)+'</h4><p class="ok">AVAILABLE</p><button class="blue" onclick="openSupervisorTechnician(\''+u.id+'\')">VIEW JOBS</button></div>';
     let j=job(current.job),actual=totalForAssignment(current),remaining=Math.max(0,current.suggested-actual);
-    return '<div class="job-card"><h4>'+userLabel(u.id)+'</h4><p><b>'+current.job+'</b><br>'+((j&&j.vehicle)||'')+' · '+((j&&j.reg)||'')+'</p>'+statusHTML(empStatus(current))+'<p>Allocated: <b>'+fmt(current.suggested)+'</b> · Actual: <b>'+fmt(actual)+'</b><br>Remaining: <b>'+fmt(remaining)+'</b></p><button class="blue" onclick="openSupervisorTechnician(\''+u.id+'\')">VIEW JOBS</button></div>';
+    return '<div class="tech-card-box"><h4>'+userLabel(u.id)+'</h4><p><b>'+current.job+'</b><br>'+((j&&j.vehicle)||'')+' · '+((j&&j.reg)||'')+'</p>'+statusHTML(empStatus(current))+'<p>Allocated: <b>'+fmt(current.suggested)+'</b> · Actual: <b>'+fmt(actual)+'</b><br>Remaining: <b>'+fmt(remaining)+'</b></p><button class="blue" onclick="openSupervisorTechnician(\''+u.id+'\')">VIEW JOBS</button></div>';
   }).join('')+'</div>':'<p class="muted">No technicians in this department.</p>';
   showSupervisorModal(icon+' '+label+' Technicians',body);
 }
