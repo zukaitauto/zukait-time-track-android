@@ -1,4 +1,4 @@
-name: Build V68 Manager Leave Control Update APK
+name: Build V68 Manager Search Report APK
 
 on:
   workflow_dispatch:
@@ -34,7 +34,6 @@ jobs:
           node --check app/src/main/assets/v66_updates.js
           node --check app/src/main/assets/v67_updates.js
           node --check app/src/main/assets/v68_updates.js
-          node --check app/src/main/assets/v68_updates.js
           python - <<'PY'
           from pathlib import Path
           import re
@@ -59,7 +58,6 @@ jobs:
           test -s app/src/main/assets/v65_updates.js
           test -s app/src/main/assets/v66_updates.js
           test -s app/src/main/assets/v67_updates.js
-          test -s app/src/main/assets/v68_updates.js
           test -s app/src/main/assets/v68_updates.js
           test -s app/src/main/res/drawable/app_icon.webp
           test -s app/src/main/res/drawable/app_logo.webp
