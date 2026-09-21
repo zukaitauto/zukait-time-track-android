@@ -1,4 +1,4 @@
-name: Build V69 Supervisor Reliability Update APK
+name: Build Zukait Time Track APK
 
 on:
   workflow_dispatch:
@@ -82,15 +82,15 @@ jobs:
       - name: Build release APK
         run: gradle assembleRelease --stacktrace
 
-      - name: Rename unsigned V69 APK
+      - name: Rename unsigned APK
         shell: bash
-        run: cp app/build/outputs/apk/release/app-release-unsigned.apk ZUKAIT_TIME_TRACK_V69_UNSIGNED_RELEASE.apk
+        run: cp app/build/outputs/apk/release/app-release-unsigned.apk ZUKAIT_TIME_TRACK_UNSIGNED_RELEASE.apk
 
-      - name: Upload unsigned V69 APK artifact
+      - name: Upload unsigned APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ZUKAIT_TIME_TRACK_V69_UNSIGNED_RELEASE
-          path: ZUKAIT_TIME_TRACK_V69_UNSIGNED_RELEASE.apk
+          name: ZUKAIT_TIME_TRACK_UNSIGNED_RELEASE
+          path: ZUKAIT_TIME_TRACK_UNSIGNED_RELEASE.apk
           if-no-files-found: error
 
       - name: Prepare Android signing tools
