@@ -1328,6 +1328,57 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
   window.v60SupervisorAssignedReady=true;
 })();
 </script>
+<script>
+/* V61 STABLE — microphone permission bridge + final Supervisor assigned list binding. */
+(function(){
+  let pendingVoiceStart=false;
+  function runSpeech(){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    const btn=document.getElementById('reqVoiceBtn'),status=document.getElementById('reqVoiceStatus'),box=document.getElementById('reqMessage');
+    if(!box)return;
+    if(!SR){if(status)status.textContent='Voice input is not available on this phone.';return;}
+    const r=new SR(); r.lang='en-US'; r.interimResults=false; r.continuous=false;
+    if(btn){btn.disabled=true;btn.textContent='🎤 LISTENING...';}
+    if(status)status.textContent='Listening — speak now';
+    r.onresult=e=>{const t=Array.from(e.results||[]).map(x=>x[0]?.transcript||'').join(' ').trim();if(t)box.value=(box.value?box.value.trim()+' ':'')+t;if(status)status.textContent=t?'Voice text added — review before sending':'No speech detected';};
+    r.onerror=e=>{if(status)status.textContent=e.error==='not-allowed'?'Microphone permission is not enabled for Zukait Time Track.':'Voice error: '+(e.error||'try again');};
+    r.onend=()=>{if(btn){btn.disabled=false;btn.textContent='🎤 VOICE INPUT';}};
+    try{r.start()}catch(e){if(status)status.textContent='Voice could not start — try again';if(btn){btn.disabled=false;btn.textContent='🎤 VOICE INPUT';}}
+  }
+  window.v55OnMicrophonePermission=function(granted){if(!pendingVoiceStart)return;pendingVoiceStart=false;if(granted)runSpeech();else{const st=document.getElementById('reqVoiceStatus');if(st)st.textContent='Microphone permission was denied.';}};
+  window.startRequestVoice=function(){
+    try{
+      if(window.AndroidBridge&&typeof AndroidBridge.hasMicrophonePermission==='function'){
+        if(AndroidBridge.hasMicrophonePermission())return runSpeech();
+        pendingVoiceStart=true;
+        if(typeof AndroidBridge.requestMicrophonePermission==='function')AndroidBridge.requestMicrophonePermission();
+        return;
+      }
+    }catch(_){}
+    runSpeech();
+  };
+
+  function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function rows(){return (state.assign||[]).filter(a=>a&&!a.cancelled&&!a.completed).slice().sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));}
+  function status(a){try{return empStatus(a)}catch(_){return 'Assigned'}}
+  function makeTable(list){
+    if(!list.length)return '<div class="notice"><b>No open assigned job cards.</b></div>';
+    return '<div style="overflow:auto"><table><thead><tr><th>Date</th><th>Job Card</th><th>Vehicle / Reg.</th><th>Employee</th><th>Status</th><th>Allocated</th><th>Actual</th><th>Action</th></tr></thead><tbody>'+
+      list.map(a=>{const j=job(a.job)||{},u=user(a.emp)||{};let act=0;try{act=totalForAssignment(a)}catch(_){}
+      return '<tr><td>'+esc(a.assignedAt?new Date(a.assignedAt).toLocaleDateString():'—')+'</td><td><b>'+esc(a.job)+'</b>'+(a.rework?'<br><span class="pill">REPEAT</span>':'')+'</td><td>'+esc(j.vehicle||'—')+'<br><span class="small">'+esc(j.reg||'')+'</span></td><td>'+esc(u.name||a.emp)+'</td><td>'+esc(status(a))+'</td><td>'+fmt(+a.suggested||0)+'</td><td>'+fmt(act)+'</td><td><button class="blue" onclick="openSupervisorJob(\''+String(a.job).replace(/'/g,"\\'")+'\')">VIEW</button></td></tr>'}).join('')+'</tbody></table></div>';
+  }
+  window.openSupervisorAssignedWindow=function(){
+    const list=rows();
+    showSupervisorModal('📋 Assigned Job Cards','<div class="row"><input id="v61AssignedSearch" style="flex:1;min-width:220px" placeholder="Search JC / vehicle / registration / employee" oninput="v61FilterAssigned()"><span class="pill">'+list.length+' OPEN</span></div><div id="v61AssignedRows" style="margin-top:12px">'+makeTable(list)+'</div>');
+  };
+  window.v61FilterAssigned=function(){
+    const q=(document.getElementById('v61AssignedSearch')?.value||'').trim().toLowerCase();
+    const list=rows().filter(a=>{const j=job(a.job)||{},u=user(a.emp)||{};return [a.job,j.vehicle,j.reg,u.name,a.emp,status(a),a.rework?'repeat':''].join(' ').toLowerCase().includes(q)});
+    const el=document.getElementById('v61AssignedRows');if(el)el.innerHTML=makeTable(list);
+  };
+  window.v61Ready=true;
+})();
+</script>
 <script src="cloud_sync.js"></script>
 <script src="secure_auth.js"></script>
 <script src="production_pilot.js"></script>
