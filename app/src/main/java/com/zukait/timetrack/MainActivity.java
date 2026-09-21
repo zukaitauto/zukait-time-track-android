@@ -23,6 +23,8 @@ import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.view.View;
+import android.print.PrintManager;
+import android.print.PrintDocumentAdapter;
 import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
@@ -184,6 +186,27 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public int getAppVersionCode() {
             return 37;
+        }
+
+        @JavascriptInterface
+        public void printHtml(String html) {
+            runOnUiThread(() -> {
+                try {
+                    WebView printView = new WebView(MainActivity.this);
+                    printView.getSettings().setJavaScriptEnabled(false);
+                    printView.setWebViewClient(new android.webkit.WebViewClient() {
+                        @Override
+                        public void onPageFinished(WebView view, String url) {
+                            PrintManager pm = (PrintManager) getSystemService(Context.PRINT_SERVICE);
+                            PrintDocumentAdapter adapter = view.createPrintDocumentAdapter("Zukait Job Card List");
+                            pm.print("Zukait Job Card List", adapter, null);
+                        }
+                    });
+                    printView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
+                } catch (Exception e) {
+                    android.util.Log.e("ZukaitPrint", "Unable to print Job Card List", e);
+                }
+            });
         }
 
         @JavascriptInterface
