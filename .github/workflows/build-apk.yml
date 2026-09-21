@@ -1,4 +1,4 @@
-name: Build V60 Supervisor List Fix APK
+name: Build V63 Manager Leave Control Update APK
 
 on:
   workflow_dispatch:
@@ -29,6 +29,7 @@ jobs:
           node --check app/src/main/assets/production_pilot.js
           node --check app/src/main/assets/professional_ux.js
           node --check app/src/main/assets/v54_improvements.js
+          node --check app/src/main/assets/v63_updates.js
           python - <<'PY'
           from pathlib import Path
           import re
@@ -71,15 +72,15 @@ jobs:
       - name: Build release APK
         run: gradle assembleRelease --stacktrace
 
-      - name: Rename unsigned V57 APK
+      - name: Rename unsigned V63 APK
         shell: bash
-        run: cp app/build/outputs/apk/release/app-release-unsigned.apk ZUKAIT_TIME_TRACK_V62_UNSIGNED_RELEASE.apk
+        run: cp app/build/outputs/apk/release/app-release-unsigned.apk ZUKAIT_TIME_TRACK_V63_UNSIGNED_RELEASE.apk
 
-      - name: Upload unsigned V57 APK artifact
+      - name: Upload unsigned V63 APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ZUKAIT_TIME_TRACK_V62_UNSIGNED_RELEASE
-          path: ZUKAIT_TIME_TRACK_V62_UNSIGNED_RELEASE.apk
+          name: ZUKAIT_TIME_TRACK_V63_UNSIGNED_RELEASE
+          path: ZUKAIT_TIME_TRACK_V63_UNSIGNED_RELEASE.apk
           if-no-files-found: error
 
       - name: Prepare Android signing tools
