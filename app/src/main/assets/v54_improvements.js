@@ -279,8 +279,12 @@
 
   window.v55OnMicrophonePermission=function(granted){
     if(granted){
-      setVoiceStatus('Microphone permission granted. Starting recorder…');
-      setTimeout(()=>window.v54StartVoice(),120);
+      // Native voice-note permission flow resumes recording from Android.
+      // Only restart here on older builds that do not expose the native recorder.
+      if(!(window.AndroidBridge&&typeof AndroidBridge.startNativeVoiceNote==='function')){
+        setVoiceStatus('Microphone permission granted. Starting recorder…');
+        setTimeout(()=>window.v54StartVoice(),120);
+      }
     }else{
       setVoiceStatus('Microphone permission is blocked. Enable it in Android Settings.');
       alert('Microphone permission is required for voice notes.');
