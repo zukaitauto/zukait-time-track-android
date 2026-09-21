@@ -284,58 +284,68 @@
     }
   };
 
+  window.v73OnNativeVoiceNote=function(base64,mime,error){
+    const start=document.getElementById('v54RecordBtn'),stop=document.getElementById('v54StopBtn');
+    if(error){
+      setVoiceStatus(error);
+      if(start){start.disabled=false;start.textContent='🎤 RECORD';}
+      if(stop)stop.disabled=true;
+      return;
+    }
+    if(!base64){
+      voice.started=Date.now();
+      if(start){start.disabled=true;start.textContent='● RECORDING...';}
+      if(stop)stop.disabled=false;
+      setVoiceStatus('Recording… maximum 60 seconds.');
+      voice.timer=setTimeout(()=>{try{AndroidBridge.stopNativeVoiceNote()}catch(_){}},60000);
+      return;
+    }
+    try{
+      const bin=atob(base64),bytes=new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+      voice.blob=new Blob([bytes],{type:mime||'audio/mp4'});
+      if(voice.url)URL.revokeObjectURL(voice.url);
+      voice.url=URL.createObjectURL(voice.blob);
+      const audio=document.getElementById('v54VoicePreview');
+      if(audio){audio.src=voice.url;audio.classList.remove('hidden');}
+      const ready=document.getElementById('v54VoiceReady');
+      if(ready)ready.textContent='Voice note ready · '+Math.max(1,Math.round((Date.now()-(voice.started||Date.now()))/1000))+' sec';
+      setVoiceStatus('Recorded. Play the preview, then send the request.');
+    }catch(_){setVoiceStatus('Voice note could not be prepared. Please try again.');}
+    if(start){start.disabled=false;start.textContent='🎤 RECORD AGAIN';}
+    if(stop)stop.disabled=true;
+  };
+
   window.v54StartVoice=async function(){
+    clearVoice();
+    try{
+      if(window.AndroidBridge&&typeof AndroidBridge.startNativeVoiceNote==='function'){
+        setVoiceStatus('Starting microphone…');
+        AndroidBridge.startNativeVoiceNote();
+        return;
+      }
+    }catch(e){setVoiceStatus('Native recorder unavailable. Trying WebView recorder…');}
     if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined'){
       alert('Voice recording is not supported on this device.');return;
     }
     try{
-      if(window.AndroidBridge && typeof AndroidBridge.hasMicrophonePermission==='function' && !AndroidBridge.hasMicrophonePermission()){
-        setVoiceStatus('Microphone permission is required once.');
-        if(typeof AndroidBridge.requestMicrophonePermission==='function')AndroidBridge.requestMicrophonePermission();
-        else alert('Please allow microphone permission in Android Settings.');
-        return;
-      }
-    }catch(_){}
-    clearVoice();
-    try{
       const stream=await navigator.mediaDevices.getUserMedia({audio:true});
       voice.stream=stream;
-      const types=['audio/webm;codecs=opus','audio/webm','audio/ogg'];
-      const mime=types.find(t=>typeof MediaRecorder.isTypeSupported!=='function'||MediaRecorder.isTypeSupported(t))||'';
-      const rec=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
+      const rec=new MediaRecorder(stream);
       voice.recorder=rec;voice.chunks=[];voice.started=Date.now();
       rec.ondataavailable=e=>{if(e.data&&e.data.size)voice.chunks.push(e.data)};
       rec.onstop=()=>{
-        const type=(rec.mimeType||mime||'audio/webm').split(';')[0];
-        voice.blob=new Blob(voice.chunks,{type});
-        stopTracks();
+        voice.blob=new Blob(voice.chunks,{type:rec.mimeType||'audio/webm'});stopTracks();
         voice.url=URL.createObjectURL(voice.blob);
-        const audio=document.getElementById('v54VoicePreview');
-        if(audio){audio.src=voice.url;audio.classList.remove('hidden');}
-        const send=document.getElementById('v54VoiceReady');
-        if(send)send.textContent='Voice note ready · '+Math.max(1,Math.round((Date.now()-voice.started)/1000))+' sec';
+        const audio=document.getElementById('v54VoicePreview');if(audio){audio.src=voice.url;audio.classList.remove('hidden');}
         setVoiceStatus('Recorded. Play the preview, then send the request.');
-        const start=document.getElementById('v54RecordBtn'),stop=document.getElementById('v54StopBtn');
-        if(start){start.disabled=false;start.textContent='🎤 RECORD AGAIN';}
-        if(stop)stop.disabled=true;
       };
-      rec.start(250);
-      const start=document.getElementById('v54RecordBtn'),stop=document.getElementById('v54StopBtn');
-      if(start){start.disabled=true;start.textContent='● RECORDING...';}
-      if(stop)stop.disabled=false;
-      setVoiceStatus('Recording… maximum 60 seconds.');
-      voice.timer=setTimeout(()=>{try{if(rec.state==='recording')rec.stop()}catch(_){}},60000);
-    }catch(e){
-      stopTracks();
-      setVoiceStatus('Microphone permission was not granted.');
-      const detail=(e&&e.name)?(' ('+e.name+')'):'';
-      setVoiceStatus('Microphone could not start'+detail+'. Close any other recorder/call and try again.');
-      alert('Microphone could not start'+detail+'. The app permission may already be enabled; please try again.');
-    }
+      rec.start(250);setVoiceStatus('Recording… maximum 60 seconds.');
+    }catch(e){stopTracks();setVoiceStatus('Microphone could not start ('+(e?.name||'unknown')+').');}
   };
-
   window.v54StopVoice=function(){
     try{
+      if(window.AndroidBridge&&typeof AndroidBridge.stopNativeVoiceNote==='function'){AndroidBridge.stopNativeVoiceNote();return;}
       if(voice.timer)clearTimeout(voice.timer);
       if(voice.recorder&&voice.recorder.state==='recording')voice.recorder.stop();
     }catch(_){}
