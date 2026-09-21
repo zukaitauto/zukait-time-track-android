@@ -1,4 +1,4 @@
-name: Build V58 Direct Update + Technician Cards APK
+name: Build V58 Manager Production Dashboard APK
 
 on:
   workflow_dispatch:
