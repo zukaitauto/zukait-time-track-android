@@ -1,4 +1,4 @@
-name: Build V66 Manager Leave Control Update APK
+name: Build V67 Manager Leave Control Update APK
 
 on:
   workflow_dispatch:
@@ -31,6 +31,8 @@ jobs:
           node --check app/src/main/assets/v54_improvements.js
           node --check app/src/main/assets/v63_updates.js
           node --check app/src/main/assets/v65_updates.js
+          node --check app/src/main/assets/v66_updates.js
+          node --check app/src/main/assets/v67_updates.js
           python - <<'PY'
           from pathlib import Path
           import re
@@ -53,6 +55,8 @@ jobs:
           test -s app/src/main/assets/professional_ux.js
           test -s app/src/main/assets/v54_improvements.js
           test -s app/src/main/assets/v65_updates.js
+          test -s app/src/main/assets/v66_updates.js
+          test -s app/src/main/assets/v67_updates.js
           test -s app/src/main/res/drawable/app_icon.webp
           test -s app/src/main/res/drawable/app_logo.webp
           test -s app/src/main/res/drawable/splash_screen.xml
@@ -74,15 +78,15 @@ jobs:
       - name: Build release APK
         run: gradle assembleRelease --stacktrace
 
-      - name: Rename unsigned V66 APK
+      - name: Rename unsigned V67 APK
         shell: bash
-        run: cp app/build/outputs/apk/release/app-release-unsigned.apk ZUKAIT_TIME_TRACK_V66_UNSIGNED_RELEASE.apk
+        run: cp app/build/outputs/apk/release/app-release-unsigned.apk ZUKAIT_TIME_TRACK_V67_UNSIGNED_RELEASE.apk
 
-      - name: Upload unsigned V66 APK artifact
+      - name: Upload unsigned V67 APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ZUKAIT_TIME_TRACK_V66_UNSIGNED_RELEASE
-          path: ZUKAIT_TIME_TRACK_V66_UNSIGNED_RELEASE.apk
+          name: ZUKAIT_TIME_TRACK_V67_UNSIGNED_RELEASE
+          path: ZUKAIT_TIME_TRACK_V67_UNSIGNED_RELEASE.apk
           if-no-files-found: error
 
       - name: Prepare Android signing tools
