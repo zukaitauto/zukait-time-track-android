@@ -113,7 +113,7 @@ window.v68OpenJobDetail=function(no){
  rep+
  '<div class="v68-two"><div class="v68-block"><h3>Work Timeline</h3>'+time+'</div><div class="v68-block"><h3>Other Job Cards — Same Registration</h3><div class="v68-related-list">'+related+'</div><p><button class="v68-light-btn" onclick="v68OpenVehicleHistory(\''+esc(j.reg||'')+'\')">VEHICLE HISTORY</button></p></div></div>'+
  '<div class="v68-block review"><h3>Management Review</h3><label class="v68-check"><input type="checkbox" id="v68ReviewFlag" '+(rv.flag?'checked':'')+'> Mark for Management Review</label><label>Manager Remark<br><textarea id="v68ReviewRemark" rows="3" placeholder="Optional management remark">'+esc(rv.remark||'')+'</textarea></label><p><button class="v68-light-btn" onclick="v68SaveReview(\''+esc(no)+'\')">SAVE REMARK</button></p></div>'+
- '<div class="v68-actions"><button class="v68-print" onclick="v68PrintSummary(\''+esc(no)+'\')">PRINT SUMMARY</button><button class="v68-share" onclick="v68FullReport(\''+esc(no)+'\')">FULL PDF / SHARE</button></div>'+
+ '<div class="v68-actions"><button class="v68-print" onclick="v68PrintSummary(\''+esc(no)+'\')">PRINT SUMMARY</button><button class="v68-share" onclick="v68FullReport(\''+esc(no)+'\')">FULL PDF / EMAIL / WHATSAPP</button></div>'+
  '</div>');
 };
 window.v68SaveReview=saveReview;
@@ -141,7 +141,7 @@ window.v68FullReport=function(no){
  const rep=repeats.length?repeats.map(x=>'<div class="repeat"><b>Repeat Employee:</b> '+esc(x.u.name)+'<br><b>Mistake Employee:</b> '+esc(x.mistake.name||'—')+'<br><b>Reason:</b> '+esc(x.a.reason||x.log.reason||'—')+'<br><b>Allocated:</b> '+fmtM(+x.a.suggested||0)+' · <b>Actual:</b> '+fmtM(x.actual)+' · <b>Status:</b> '+(x.a.completed?'Finished':'Open')+'</div>').join(''):'<p>No Repeat Work recorded.</p>';
  const time=tl.map(x=>'<div><b>'+new Date(x.at).toLocaleString()+'</b> — '+esc(x.label)+'</div>').join('');
  const other=rel.length?'<table><tr><th>Job Card</th><th>Date</th><th>Actual Hours</th><th>Actual Cost</th></tr>'+rel.map(x=>{const z=totals(x.no);return'<tr><td>'+esc(x.no)+'</td><td>'+new Date(x.createdAt||Date.now()).toLocaleDateString()+'</td><td>'+fmtM(z.actual)+'</td><td>'+money(z.actual)+'</td></tr>'}).join('')+'</table>':'<p>No other Job Cards for this registration.</p>';
- const html='<div class="no-print"><button onclick="window.print()">SAVE / SHARE AS PDF</button></div>'+
+ const html='<div class="no-print"><button onclick="window.print()">SAVE AS PDF / SHARE</button></div>'+
  '<div class="head"><div><h1>ZUKAIT AUTO</h1><p>FULL JOB CARD MANAGEMENT REPORT</p></div><div><b>JC '+esc(no)+'</b><p>'+esc(j.vehicle||'—')+'</p><p>'+esc(j.reg||'—')+'</p></div></div>'+
  '<div class="summary"><div class="box"><small>Persons Worked</small><b>'+t.people+'</b></div><div class="box"><small>Total Suggested</small><b>'+fmtM(t.suggested)+'</b></div><div class="box"><small>Total Actual</small><b>'+fmtM(t.actual)+'</b></div><div class="box"><small>Original Actual</small><b>'+fmtM(t.original)+'</b></div><div class="box"><small>Repeat Actual</small><b>'+fmtM(t.repeat)+'</b></div><div class="box"><small>Total Actual Labour Cost</small><b>'+money(t.actual)+'</b></div></div>'+
  '<div class="section"><h2>Worked Persons</h2><table><tr><th>Name</th><th>Department</th><th>Suggested</th><th>Actual</th><th>Suggested Cost</th><th>Actual Cost</th></tr>'+tech+'</table></div>'+
