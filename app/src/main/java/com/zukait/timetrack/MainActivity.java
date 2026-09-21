@@ -12,6 +12,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.media.MediaRecorder;
+import android.util.Base64;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.ByteArrayOutputStream;
 import android.os.Build;
 import android.os.Bundle;
 import android.speech.RecognitionListener;
@@ -48,6 +53,9 @@ public class MainActivity extends Activity {
     private BroadcastReceiver updateReceiver;
     private SpeechRecognizer speechRecognizer;
     private boolean pendingNativeVoice = false;
+    private boolean pendingNativeVoiceNote = false;
+    private MediaRecorder voiceNoteRecorder;
+    private File voiceNoteFile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,7 +149,7 @@ public class MainActivity extends Activity {
         });
 
         webView.clearCache(true);
-        webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html?v=72");
+        webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html?v=73");
     }
 
     private void createNotificationChannel() {
@@ -170,12 +178,12 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getAppVersion() {
-            return "V72";
+            return "V73";
         }
 
         @JavascriptInterface
         public int getAppVersionCode() {
-            return 35;
+            return 36;
         }
 
         @JavascriptInterface
@@ -201,6 +209,23 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        @JavascriptInterface
+        public void startNativeVoiceNote() {
+            runOnUiThread(() -> {
+                if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                    pendingNativeVoiceNote = true;
+                    requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, MIC_REQUEST);
+                    return;
+                }
+                startNativeVoiceNoteInternal();
+            });
+        }
+
+        @JavascriptInterface
+        public void stopNativeVoiceNote() {
+            runOnUiThread(() -> stopNativeVoiceNoteInternal(false));
+        }
+
         public void requestMicrophonePermission() {
             runOnUiThread(() -> {
                 if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
@@ -210,6 +235,73 @@ public class MainActivity extends Activity {
                 }
             });
         }
+    }
+
+    private void startNativeVoiceNoteInternal() {
+        try {
+            stopNativeVoiceNoteInternal(true);
+            voiceNoteFile = new File(getCacheDir(), "voice_note_" + System.currentTimeMillis() + ".m4a");
+            voiceNoteRecorder = new MediaRecorder();
+            voiceNoteRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            voiceNoteRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+            voiceNoteRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+            voiceNoteRecorder.setAudioEncodingBitRate(64000);
+            voiceNoteRecorder.setAudioSamplingRate(44100);
+            voiceNoteRecorder.setOutputFile(voiceNoteFile.getAbsolutePath());
+            voiceNoteRecorder.prepare();
+            voiceNoteRecorder.start();
+            notifyNativeVoiceNoteToWeb("", "audio/mp4", "");
+        } catch (Exception e) {
+            releaseVoiceNoteRecorder();
+            notifyNativeVoiceNoteToWeb("", "audio/mp4", "Microphone recorder could not start: " + e.getClass().getSimpleName());
+        }
+    }
+
+    private void stopNativeVoiceNoteInternal(boolean discard) {
+        if (voiceNoteRecorder == null) return;
+        try { voiceNoteRecorder.stop(); } catch (Exception ignored) { }
+        releaseVoiceNoteRecorder();
+        if (discard) {
+            if (voiceNoteFile != null) voiceNoteFile.delete();
+            voiceNoteFile = null;
+            return;
+        }
+        if (voiceNoteFile == null || !voiceNoteFile.exists() || voiceNoteFile.length() == 0) {
+            notifyNativeVoiceNoteToWeb("", "audio/mp4", "No voice audio was recorded. Please try again.");
+            return;
+        }
+        try (FileInputStream in = new FileInputStream(voiceNoteFile);
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int n;
+            while ((n = in.read(buffer)) > 0) out.write(buffer, 0, n);
+            String base64 = Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP);
+            notifyNativeVoiceNoteToWeb(base64, "audio/mp4", "");
+        } catch (Exception e) {
+            notifyNativeVoiceNoteToWeb("", "audio/mp4", "Voice note could not be prepared.");
+        } finally {
+            voiceNoteFile.delete();
+            voiceNoteFile = null;
+        }
+    }
+
+    private void releaseVoiceNoteRecorder() {
+        if (voiceNoteRecorder != null) {
+            try { voiceNoteRecorder.reset(); } catch (Exception ignored) { }
+            try { voiceNoteRecorder.release(); } catch (Exception ignored) { }
+            voiceNoteRecorder = null;
+        }
+    }
+
+    private void notifyNativeVoiceNoteToWeb(String base64, String mime, String error) {
+        if (webView == null) return;
+        final String safeData = JSONObject.quote(base64 == null ? "" : base64);
+        final String safeMime = JSONObject.quote(mime == null ? "audio/mp4" : mime);
+        final String safeError = JSONObject.quote(error == null ? "" : error);
+        webView.post(() -> webView.evaluateJavascript(
+                "if(window.v73OnNativeVoiceNote){window.v73OnNativeVoiceNote(" + safeData + "," + safeMime + "," + safeError + ");}",
+                null
+        ));
     }
 
     private void startNativeVoiceRecognitionInternal() {
@@ -405,6 +497,11 @@ public class MainActivity extends Activity {
                 pendingPermissionRequest = null;
             }
             notifyMicrophonePermissionToWeb(granted);
+            if (pendingNativeVoiceNote) {
+                pendingNativeVoiceNote = false;
+                if (granted) startNativeVoiceNoteInternal();
+                else notifyNativeVoiceNoteToWeb("", "audio/mp4", "Microphone permission is disabled for Zukait Time Track.");
+            }
             if (pendingNativeVoice) {
                 pendingNativeVoice = false;
                 if (granted) startNativeVoiceRecognitionInternal();
@@ -429,6 +526,7 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         if (updateReceiver != null) { try { unregisterReceiver(updateReceiver); } catch (Exception ignored) { } }
         if (speechRecognizer != null) { try { speechRecognizer.destroy(); } catch (Exception ignored) { } speechRecognizer = null; }
+        if (voiceNoteRecorder != null) stopNativeVoiceNoteInternal(true);
         if (webView != null) webView.destroy();
         super.onDestroy();
     }
