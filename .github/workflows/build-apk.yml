@@ -1,4 +1,4 @@
-name: Build V57 Technician Board + Update APK
+name: Build V58 Direct Update + Technician Cards APK
 
 on:
   workflow_dispatch:
