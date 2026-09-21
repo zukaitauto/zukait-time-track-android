@@ -14,6 +14,9 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.media.MediaRecorder;
 import android.util.Base64;
+import android.provider.MediaStore;
+import android.content.ContentValues;
+import java.io.OutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.ByteArrayOutputStream;
@@ -45,6 +48,8 @@ import androidx.webkit.WebViewAssetLoader;
 import androidx.webkit.WebViewClientCompat;
 
 public class MainActivity extends Activity {
+    private static final int EXPORT_FILE_REQUEST = 7401;
+    private byte[] pendingExportData = null;
     private static final int MIC_REQUEST = 1001;
     private static final int NOTIFICATION_REQUEST = 1002;
     private static final String NOTIFICATION_CHANNEL = "zukait_updates";
@@ -186,6 +191,40 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public int getAppVersionCode() {
             return 37;
+        }
+
+        @JavascriptInterface
+        public void saveExportFile(String filename, String mime, String base64) {
+            runOnUiThread(() -> {
+                try {
+                    byte[] data = Base64.decode(base64, Base64.DEFAULT);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        ContentValues values = new ContentValues();
+                        values.put(MediaStore.Downloads.DISPLAY_NAME, filename);
+                        values.put(MediaStore.Downloads.MIME_TYPE, mime);
+                        values.put(MediaStore.Downloads.IS_PENDING, 1);
+                        Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                        if (uri == null) throw new Exception("Unable to create download");
+                        try (OutputStream out = getContentResolver().openOutputStream(uri)) {
+                            if (out == null) throw new Exception("Unable to open download");
+                            out.write(data);
+                        }
+                        values.clear();
+                        values.put(MediaStore.Downloads.IS_PENDING, 0);
+                        getContentResolver().update(uri, values, null, null);
+                        android.widget.Toast.makeText(MainActivity.this, "Export saved to Downloads", android.widget.Toast.LENGTH_LONG).show();
+                    } else {
+                        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                        intent.addCategory(Intent.CATEGORY_OPENABLE);
+                        intent.setType(mime);
+                        intent.putExtra(Intent.EXTRA_TITLE, filename);
+                        pendingExportData = data;
+                        startActivityForResult(intent, EXPORT_FILE_REQUEST);
+                    }
+                } catch (Exception e) {
+                    android.widget.Toast.makeText(MainActivity.this, "Export could not be saved", android.widget.Toast.LENGTH_LONG).show();
+                }
+            });
         }
 
         @JavascriptInterface
@@ -508,6 +547,22 @@ public class MainActivity extends Activity {
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (manager != null) {
             manager.notify((int) (System.currentTimeMillis() & 0x0fffffff), builder.build());
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == EXPORT_FILE_REQUEST) {
+            if (resultCode == RESULT_OK && data != null && data.getData() != null && pendingExportData != null) {
+                try (OutputStream out = getContentResolver().openOutputStream(data.getData())) {
+                    if (out != null) out.write(pendingExportData);
+                    android.widget.Toast.makeText(this, "Export saved", android.widget.Toast.LENGTH_LONG).show();
+                } catch (Exception e) {
+                    android.widget.Toast.makeText(this, "Export could not be saved", android.widget.Toast.LENGTH_LONG).show();
+                }
+            }
+            pendingExportData = null;
         }
     }
 
