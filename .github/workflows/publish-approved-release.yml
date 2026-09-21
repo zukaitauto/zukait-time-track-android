@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version_name:
-        description: Approved version name, e.g. V67
+        description: Approved version name, e.g. V73
         required: true
       version_code:
         description: Approved Android version code
@@ -53,21 +53,41 @@ jobs:
       - name: Restore permanent signing key
         shell: bash
         env:
-          ZUKAIT_SIGNING_JKS_BASE64: ${{ secrets.ZUKAIT_SIGNING_JKS_BASE64 }}
+          NEW_KEYSTORE: ${{ secrets.ZUKAIT_SIGNING_JKS_BASE64 }}
+          LEGACY_KEYSTORE: ${{ secrets.ZUKAIT_KEYSTORE_BASE64 }}
         run: |
-          test -n "$ZUKAIT_SIGNING_JKS_BASE64"
-          printf '%s' "$ZUKAIT_SIGNING_JKS_BASE64" | base64 -d > /tmp/zukait-release.jks
+          if [ -n "$NEW_KEYSTORE" ]; then
+            printf '%s' "$NEW_KEYSTORE" | base64 -d > /tmp/zukait-release.jks
+          elif [ -n "$LEGACY_KEYSTORE" ]; then
+            printf '%s' "$LEGACY_KEYSTORE" | base64 -d > /tmp/zukait-release.jks
+          else
+            echo "No permanent Zukait signing keystore secret is available."
+            exit 1
+          fi
+          test -s /tmp/zukait-release.jks
 
       - name: Sign and verify APK
         shell: bash
         env:
           ZUKAIT_KEY_ALIAS: ${{ secrets.ZUKAIT_KEY_ALIAS }}
-          ZUKAIT_STORE_PASSWORD: ${{ secrets.ZUKAIT_STORE_PASSWORD }}
+          NEW_STORE_PASSWORD: ${{ secrets.ZUKAIT_STORE_PASSWORD }}
+          LEGACY_STORE_PASSWORD: ${{ secrets.ZUKAIT_KEYSTORE_PASSWORD }}
           ZUKAIT_KEY_PASSWORD: ${{ secrets.ZUKAIT_KEY_PASSWORD }}
         run: |
+          STORE_PASSWORD="$NEW_STORE_PASSWORD"
+          [ -n "$STORE_PASSWORD" ] || STORE_PASSWORD="$LEGACY_STORE_PASSWORD"
+          test -n "$ZUKAIT_KEY_ALIAS" || { echo "Missing signing key alias"; exit 1; }
+          test -n "$STORE_PASSWORD" || { echo "Missing keystore password"; exit 1; }
+          test -n "$ZUKAIT_KEY_PASSWORD" || { echo "Missing key password"; exit 1; }
           BT="$ANDROID_SDK_ROOT/build-tools/35.0.0"
           "$BT/zipalign" -f 4 app/build/outputs/apk/release/app-release-unsigned.apk /tmp/aligned.apk
-          "$BT/apksigner" sign             --ks /tmp/zukait-release.jks             --ks-key-alias "$ZUKAIT_KEY_ALIAS"             --ks-pass env:ZUKAIT_STORE_PASSWORD             --key-pass env:ZUKAIT_KEY_PASSWORD             --out ZUKAIT_TIME_TRACK_LATEST.apk             /tmp/aligned.apk
+          "$BT/apksigner" sign \
+            --ks /tmp/zukait-release.jks \
+            --ks-key-alias "$ZUKAIT_KEY_ALIAS" \
+            --ks-pass "pass:$STORE_PASSWORD" \
+            --key-pass "pass:$ZUKAIT_KEY_PASSWORD" \
+            --out ZUKAIT_TIME_TRACK_LATEST.apk \
+            /tmp/aligned.apk
           "$BT/apksigner" verify --verbose --print-certs ZUKAIT_TIME_TRACK_LATEST.apk
 
       - name: Publish GitHub Release
@@ -80,4 +100,7 @@ jobs:
           git push origin ":refs/tags/$TAG" >/dev/null 2>&1 || true
           git tag "$TAG"
           git push origin "$TAG"
-          gh release create "$TAG" ZUKAIT_TIME_TRACK_LATEST.apk             --title "Zukait Time Track ${{ inputs.version_name }}"             --notes "Approved signed production release ${{ inputs.version_name }}."             --latest
+          gh release create "$TAG" ZUKAIT_TIME_TRACK_LATEST.apk \
+            --title "Zukait Time Track ${{ inputs.version_name }}" \
+            --notes "Approved signed production release ${{ inputs.version_name }}." \
+            --latest
