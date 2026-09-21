@@ -1,4 +1,4 @@
-name: Build V65 Manager Leave Control Update APK
+name: Build V66 Manager Leave Control Update APK
 
 on:
   workflow_dispatch:
@@ -74,15 +74,15 @@ jobs:
       - name: Build release APK
         run: gradle assembleRelease --stacktrace
 
-      - name: Rename unsigned V65 APK
+      - name: Rename unsigned V66 APK
         shell: bash
-        run: cp app/build/outputs/apk/release/app-release-unsigned.apk ZUKAIT_TIME_TRACK_V65_UNSIGNED_RELEASE.apk
+        run: cp app/build/outputs/apk/release/app-release-unsigned.apk ZUKAIT_TIME_TRACK_V66_UNSIGNED_RELEASE.apk
 
-      - name: Upload unsigned V65 APK artifact
+      - name: Upload unsigned V66 APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ZUKAIT_TIME_TRACK_V65_UNSIGNED_RELEASE
-          path: ZUKAIT_TIME_TRACK_V65_UNSIGNED_RELEASE.apk
+          name: ZUKAIT_TIME_TRACK_V66_UNSIGNED_RELEASE
+          path: ZUKAIT_TIME_TRACK_V66_UNSIGNED_RELEASE.apk
           if-no-files-found: error
 
       - name: Prepare Android signing tools
