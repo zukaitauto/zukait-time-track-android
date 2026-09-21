@@ -1005,6 +1005,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 <script>
 /* V36 TEST — authoritative repeat-work / assigned-list fixes */
 (function(){
+  const escSafe=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const HOLD='ID001', TARGET=210*60;
   const monthBounds=()=>{let d=new Date();return{from:+new Date(d.getFullYear(),d.getMonth(),1),to:+new Date(d.getFullYear(),d.getMonth()+1,1)}};
   const dayStart=t=>{let d=new Date(t);return +new Date(d.getFullYear(),d.getMonth(),d.getDate())};
