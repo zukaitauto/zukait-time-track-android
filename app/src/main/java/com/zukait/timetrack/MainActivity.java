@@ -5,6 +5,9 @@ import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -30,12 +33,15 @@ public class MainActivity extends Activity {
     private static final String APP_HOST = "appassets.androidplatform.net";
     private WebView webView;
     private PermissionRequest pendingPermissionRequest;
+    private long updateDownloadId = -1;
+    private BroadcastReceiver updateReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         createNotificationChannel();
+        registerUpdateReceiver();
 
         if (Build.VERSION.SDK_INT >= 33 &&
                 checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -153,22 +159,17 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getAppVersion() {
-            return "V62";
+            return "V63";
         }
 
         @JavascriptInterface
         public int getAppVersionCode() {
-            return 25;
+            return 26;
         }
 
         @JavascriptInterface
         public void openUpdatePage() {
-            runOnUiThread(() -> {
-                try {
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/zukaitauto/zukait-time-track-android/releases/latest/download/ZUKAIT_TIME_TRACK_LATEST.apk"));
-                    startActivity(intent);
-                } catch (Exception ignored) { }
-            });
+            runOnUiThread(() -> downloadAndInstallUpdate());
         }
 
         @JavascriptInterface
@@ -181,6 +182,41 @@ public class MainActivity extends Activity {
                 }
             });
         }
+    }
+
+    private void registerUpdateReceiver() {
+        updateReceiver = new BroadcastReceiver() {
+            @Override public void onReceive(Context context, Intent intent) {
+                long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
+                if (id != updateDownloadId) return;
+                DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+                Uri apk = dm != null ? dm.getUriForDownloadedFile(id) : null;
+                if (apk == null) return;
+                try {
+                    Intent install = new Intent(Intent.ACTION_VIEW);
+                    install.setDataAndType(apk, "application/vnd.android.package-archive");
+                    install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(install);
+                } catch (Exception ignored) { }
+            }
+        };
+        IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+        if (Build.VERSION.SDK_INT >= 33) registerReceiver(updateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        else registerReceiver(updateReceiver, filter);
+    }
+
+    private void downloadAndInstallUpdate() {
+        try {
+            DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+            if (dm == null) return;
+            Uri uri = Uri.parse("https://github.com/zukaitauto/zukait-time-track-android/releases/latest/download/ZUKAIT_TIME_TRACK_LATEST.apk");
+            DownloadManager.Request req = new DownloadManager.Request(uri)
+                    .setTitle("Zukait Time Track Update")
+                    .setDescription("Preparing update")
+                    .setMimeType("application/vnd.android.package-archive")
+                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+            updateDownloadId = dm.enqueue(req);
+        } catch (Exception ignored) { }
     }
 
     private void notifyMicrophonePermissionToWeb(boolean granted) {
@@ -246,6 +282,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (updateReceiver != null) { try { unregisterReceiver(updateReceiver); } catch (Exception ignored) { } }
         if (webView != null) webView.destroy();
         super.onDestroy();
     }
