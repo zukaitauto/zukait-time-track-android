@@ -6,6 +6,7 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
@@ -148,6 +149,26 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public boolean hasMicrophonePermission() {
             return checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+        }
+
+        @JavascriptInterface
+        public String getAppVersion() {
+            return BuildConfig.VERSION_NAME;
+        }
+
+        @JavascriptInterface
+        public int getAppVersionCode() {
+            return BuildConfig.VERSION_CODE;
+        }
+
+        @JavascriptInterface
+        public void openUpdatePage() {
+            runOnUiThread(() -> {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/zukaitauto/zukait-time-track-android/releases/latest"));
+                    startActivity(intent);
+                } catch (Exception ignored) { }
+            });
         }
 
         @JavascriptInterface
