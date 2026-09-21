@@ -166,12 +166,12 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getAppVersion() {
-            return "V67";
+            return "V68";
         }
 
         @JavascriptInterface
         public int getAppVersionCode() {
-            return 30;
+            return 31;
         }
 
         @JavascriptInterface
@@ -229,7 +229,7 @@ public class MainActivity extends Activity {
                 if (webView == null) return;
                 String safeName = name.replace("\\", "\\\\").replace("'", "\\'");
                 webView.evaluateJavascript(
-                        "if(window.v67UpdateCheckResult){window.v67UpdateCheckResult(" + code + ",'" + safeName + "'," + (failed ? "true" : "false") + ");}",
+                        "if(window.v68UpdateCheckResult){window.v68UpdateCheckResult(" + code + ",'" + safeName + "'," + (failed ? "true" : "false") + ");}",
                         null
                 );
             });
