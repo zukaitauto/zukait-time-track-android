@@ -267,6 +267,9 @@
 
   function clearVoice(){
     if(voice.timer)clearTimeout(voice.timer);
+    try{
+      if(window.AndroidBridge&&typeof AndroidBridge.cancelNativeVoiceNote==='function') AndroidBridge.cancelNativeVoiceNote();
+    }catch(_){}
     if(voice.stream)voice.stream.getTracks().forEach(t=>t.stop());
     if(voice.url)URL.revokeObjectURL(voice.url);
     voice={stream:null,recorder:null,chunks:[],blob:null,url:null,timer:null,started:0};
@@ -285,6 +288,7 @@
   };
 
   window.v73OnNativeVoiceNote=function(base64,mime,error){
+    if(voice.timer){clearTimeout(voice.timer);voice.timer=null;}
     const start=document.getElementById('v54RecordBtn'),stop=document.getElementById('v54StopBtn');
     if(error){
       setVoiceStatus(error);
