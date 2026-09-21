@@ -93,13 +93,57 @@ window.v69SaveReissue=function(no){
  render();
 };
 
+/* Supervisor accidental-Finish correction: reopen the SAME assignment.
+   Keeps employee, allocated time, prior actual minutes and assignment ID/history. */
+window.v71ReopenSameAssignment=function(id){
+ if(!me||me.role!=='Supervisor')return;
+ const a=(state.assign||[]).find(x=>x&&x.id===id&&!x.cancelled);
+ if(!a)return alert('Assignment not found.');
+ if(a.job===HOLD)return alert('Use a new ID001 assignment instead.');
+ if(a.rework)return alert('Repeat Work must be handled from Repeat Work controls.');
+ if(!a.completed)return alert('This assignment is already open.');
+ if((state.assign||[]).some(x=>x.id!==a.id&&x.job===a.job&&x.emp===a.emp&&!x.cancelled&&!x.completed)){
+   return alert(person(a.emp).name+' already has an open assignment on this Job Card.');
+ }
+ const worked=actual(a),allocated=+a.suggested||0;
+ const ok=confirm(
+   'REOPEN SAME ASSIGNMENT?\n\nJob Card: '+a.job+
+   '\nTechnician: '+person(a.emp).name+
+   '\nAllocated Time: '+fm(allocated)+
+   '\nExisting Actual Time: '+fm(worked)+
+   '\n\nThis keeps the SAME employee, SAME allocated time and all previous worked time. It is NOT Repeat Work.'
+ );
+ if(!ok)return;
+ const finishedAt=a.completedAt||null;
+ a.completed=false;
+ delete a.completedAt;
+ a.reopened=true;
+ a.lastReopenedAt=now();
+ a.lastReopenedBy=me.id;
+ state.reopenLogs=state.reopenLogs||[];
+ state.reopenLogs.push({
+   id:uid(),assignmentId:a.id,job:a.job,emp:a.emp,
+   suggested:allocated,actualAtReopen:worked,
+   previousCompletedAt:finishedAt,by:me.id,at:now()
+ });
+ const j=jinfo(a.job);if(j&&j.no){j.status='Open';delete j.completedAt;}
+ if(typeof setLastAction==='function')setLastAction('Reopened same assignment '+a.job+' for '+person(a.emp).name);
+ try{
+   if(typeof addNotification==='function')addNotification([a.emp],'Supervisor reopened '+a.job+' with the same allocated time. Previous actual time is retained.',a.id);
+ }catch(_){}
+ save();
+ if(typeof closeSupervisorModal==='function')closeSupervisorModal();
+ render();
+ alert(a.job+' reopened for '+person(a.emp).name+'. Existing actual time '+fm(worked)+' is retained.');
+};
+
 /* Robust Supervisor job detail. Fixes Need Attention -> View. */
 window.openSupervisorJob=function(no){
  const j=jinfo(no);if(!j)return supModal('Job Card','<div class="notice">Job Card not found.</div>');
  const aa=assignments(no).slice().sort((a,b)=>(a.assignedAt||0)-(b.assignedAt||0));
  const totalS=aa.reduce((n,a)=>n+(+a.suggested||0),0),totalA=aa.reduce((n,a)=>n+actual(a),0);
  const rows=aa.length?'<div class="v69-table"><table><tr><th>Technician</th><th>Department</th><th>Type</th><th>Status</th><th>Allocated</th><th>Actual</th><th>Labour</th></tr>'+
-   aa.map(a=>'<tr><td><b>'+E(person(a.emp).name)+'</b></td><td>'+E(person(a.emp).department||'—')+'</td><td>'+(a.rework?'Repeat':a.reissued?'Reissued':'Normal')+'</td><td>'+E(status(a))+'</td><td>'+fm(+a.suggested||0)+'</td><td>'+fm(actual(a))+'</td><td>'+money(actual(a))+'</td></tr>').join('')+'</table></div>':'<div class="notice">No assignments.</div>';
+   aa.map(a=>'<tr><td><b>'+E(person(a.emp).name)+'</b></td><td>'+E(person(a.emp).department||'—')+'</td><td>'+(a.rework?'Repeat':a.reissued?'Reissued':a.reopened?'Reopened':'Normal')+'</td><td>'+E(status(a))+(a.completed&&!a.rework?' <br><button class="green" style="margin-top:6px" onclick="v71ReopenSameAssignment(\\''+E(a.id)+'\\')">↻ REOPEN SAME</button>':'')+'</td><td>'+fm(+a.suggested||0)+'</td><td>'+fm(actual(a))+'</td><td>'+money(actual(a))+'</td></tr>').join('')+'</table></div>':'<div class="notice">No assignments.</div>';
  const canReissue=aa.some(a=>a.completed&&!a.rework);
  const buttons=(no===HOLD?'':'<p>'+(canReissue?'<button class="green" onclick="v69ReissueJob(\''+E(no)+'\')">↻ REOPEN / REISSUE</button> ':'')+
    '<button class="purple" onclick="addRepeatWork(\''+E(no)+'\')">🔁 REPEAT WORK</button></p>');
