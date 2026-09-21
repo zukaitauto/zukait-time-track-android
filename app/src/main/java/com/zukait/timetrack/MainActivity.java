@@ -153,12 +153,12 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getAppVersion() {
-            return BuildConfig.VERSION_NAME;
+            return "V57-TECH-BOARD-FIX-1";
         }
 
         @JavascriptInterface
         public int getAppVersionCode() {
-            return BuildConfig.VERSION_CODE;
+            return 20;
         }
 
         @JavascriptInterface
