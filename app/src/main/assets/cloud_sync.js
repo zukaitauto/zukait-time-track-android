@@ -112,6 +112,21 @@
 
   function clone(x){return JSON.parse(JSON.stringify(x))}
 
+  function nativeNotify(title,message){
+    try{if(window.AndroidBridge&&typeof AndroidBridge.notify==='function')AndroidBridge.notify(String(title||'Zukait Time Track'),String(message||''));}catch(_){}
+  }
+  window.v42AfterCloudPull=function(before,after){
+    if(!me)return;
+    const oldAssign=new Set((before?.assign||[]).filter(a=>a&&a.emp===me.id&&!a.cancelled).map(a=>String(a.id)));
+    const newAssign=(after?.assign||[]).filter(a=>a&&a.emp===me.id&&!a.cancelled&&!a.completed&&!oldAssign.has(String(a.id)));
+    for(const a of newAssign){const j=(after?.jobs||[]).find(x=>x.no===a.job)||{};nativeNotify('New Job Assigned',a.job+(j.vehicle?' — '+j.vehicle:'')+(j.reg?' · '+j.reg:''));}
+    if(me.role==='Supervisor'||me.role==='Manager'){
+      const oldReq=new Set((before?.requests||[]).map(r=>String(r.id)));
+      const newReq=(after?.requests||[]).filter(r=>r&&r.status==='New'&&!oldReq.has(String(r.id)));
+      for(const r of newReq){const u=(after?.users||[]).find(x=>x.id===r.emp)||{};nativeNotify('New Employee Request',(u.name||r.emp)+' — '+r.job+(r.message?' — '+r.message:''));}
+    }
+  };
+
   function mergeById(remote,local,preferLocal){
     const out=(remote||[]).map(x=>clone(x));
     const pos=new Map(out.map((x,i)=>[String(x?.id??''),i]));
