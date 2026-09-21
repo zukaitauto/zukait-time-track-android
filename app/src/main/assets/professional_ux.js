@@ -355,6 +355,8 @@
   },150);
 
   function buildAccountMenu(){
+    // V65 owns the single Account menu; legacy v44 menu is disabled.
+    return;
     const app=document.getElementById('app');
     if(!app||app.classList.contains('hidden')||!me)return;
     const row=app.querySelector(':scope > .row');
