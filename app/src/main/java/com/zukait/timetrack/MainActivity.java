@@ -153,12 +153,12 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getAppVersion() {
-            return "V58-DIRECT-UPDATE-TECH-CARDS";
+            return "V59";
         }
 
         @JavascriptInterface
         public int getAppVersionCode() {
-            return 21;
+            return 22;
         }
 
         @JavascriptInterface
