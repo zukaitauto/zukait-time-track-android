@@ -1,4 +1,4 @@
-name: Build V57 Technician Board Fix APK
+name: Build V57 Technician Board + Update APK
 
 on:
   workflow_dispatch:
