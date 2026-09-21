@@ -1,4 +1,4 @@
-name: Build V56 Release APK
+name: Build V57 Technician Board Fix APK
 
 on:
   workflow_dispatch:
@@ -71,34 +71,15 @@ jobs:
       - name: Build release APK
         run: gradle assembleRelease --stacktrace
 
-      - name: Sign V56 APK with permanent key
+      - name: Rename unsigned V57 APK
         shell: bash
-        env:
-          ZUKAIT_KEYSTORE_BASE64: ${{ secrets.ZUKAIT_KEYSTORE_BASE64 }}
-          ZUKAIT_KEYSTORE_PASSWORD: ${{ secrets.ZUKAIT_KEYSTORE_PASSWORD }}
-          ZUKAIT_KEY_ALIAS: ${{ secrets.ZUKAIT_KEY_ALIAS }}
-          ZUKAIT_KEY_PASSWORD: ${{ secrets.ZUKAIT_KEY_PASSWORD }}
-        run: |
-          test -n "$ZUKAIT_KEYSTORE_BASE64" || { echo "Missing ZUKAIT_KEYSTORE_BASE64 repository secret"; exit 1; }
-          test -n "$ZUKAIT_KEYSTORE_PASSWORD" || { echo "Missing ZUKAIT_KEYSTORE_PASSWORD repository secret"; exit 1; }
-          test -n "$ZUKAIT_KEY_ALIAS" || { echo "Missing ZUKAIT_KEY_ALIAS repository secret"; exit 1; }
-          test -n "$ZUKAIT_KEY_PASSWORD" || { echo "Missing ZUKAIT_KEY_PASSWORD repository secret"; exit 1; }
-          printf '%s' "$ZUKAIT_KEYSTORE_BASE64" | base64 --decode > /tmp/zukait-release.jks
-          "$ANDROID_SDK_ROOT/build-tools/35.0.0/zipalign" -f -p 4 app/build/outputs/apk/release/app-release-unsigned.apk /tmp/ZUKAIT_TIME_TRACK_V56_ALIGNED.apk
-          "$ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner" sign \
-            --ks /tmp/zukait-release.jks \
-            --ks-key-alias "$ZUKAIT_KEY_ALIAS" \
-            --ks-pass "pass:$ZUKAIT_KEYSTORE_PASSWORD" \
-            --key-pass "pass:$ZUKAIT_KEY_PASSWORD" \
-            --out ZUKAIT_TIME_TRACK_V56_SIGNED_RELEASE.apk \
-            /tmp/ZUKAIT_TIME_TRACK_V56_ALIGNED.apk
-          "$ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner" verify --verbose --print-certs ZUKAIT_TIME_TRACK_V56_SIGNED_RELEASE.apk
+        run: cp app/build/outputs/apk/release/app-release-unsigned.apk ZUKAIT_TIME_TRACK_V57_UNSIGNED_RELEASE.apk
 
-      - name: Upload signed APK artifact
+      - name: Upload unsigned V57 APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ZUKAIT_TIME_TRACK_V56_SIGNED_RELEASE
-          path: ZUKAIT_TIME_TRACK_V56_SIGNED_RELEASE.apk
+          name: ZUKAIT_TIME_TRACK_V57_UNSIGNED_RELEASE
+          path: ZUKAIT_TIME_TRACK_V57_UNSIGNED_RELEASE.apk
           if-no-files-found: error
 
       - name: Prepare Android signing tools
