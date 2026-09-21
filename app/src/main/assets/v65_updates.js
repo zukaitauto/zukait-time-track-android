@@ -97,7 +97,7 @@ function controlTable(rows){
 }
 window.v65FilterControl=function(){const q=(document.getElementById('v65ControlSearch')?.value||'').toLowerCase();document.querySelectorAll('.v65-filter-row').forEach(r=>r.style.display=!q||r.dataset.search.includes(q)?'':'none')};
 window.v65OpenControl=function(type){
- let body='<input id="v65ControlSearch" class="v65-search" placeholder="Search JC / vehicle / technician / department" oninput="v65FilterControl()">';
+ let body='<input id="v65ControlSearch" class="v65-search" placeholder="" oninput="v65FilterControl()">';
  if(type==='leave'){
    const rows=leaveToday();body+=rows.length?'<div class="v65-scroll"><table><tr><th>Employee</th><th>Department</th><th>Period</th><th>Remark</th></tr>'+rows.map(l=>{const u=person(l.emp);return'<tr class="v65-filter-row" data-search="'+esc((u.name+' '+u.department+' '+l.period).toLowerCase())+'"><td><b>'+esc(u.name)+'</b></td><td>'+esc(u.department||'—')+'</td><td>'+esc(l.period==='AM'?'Morning 8–1':l.period==='PM'?'Afternoon 3–7':'Full Day')+'</td><td>'+esc(l.remark||'—')+'</td></tr>'}).join('')+'</table></div>':'<div class="notice">No employees on leave today.</div>';
  } else if(type==='waiting'){
