@@ -443,7 +443,7 @@
         managerCopy:true
       });
       if(typeof setLastAction==='function')setLastAction('Sent employee request for '+no);
-      save();
+      try{save();}catch(syncErr){console.warn('Request saved; cloud sync will retry',syncErr);}
       clearVoice();closeModal();render();
       alert('Request sent to Supervisor and copied to Manager.');
     }catch(e){
