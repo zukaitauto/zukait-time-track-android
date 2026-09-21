@@ -149,7 +149,7 @@ public class MainActivity extends Activity {
         });
 
         webView.clearCache(true);
-        webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html?v=73");
+        webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html?v=74");
     }
 
     private void createNotificationChannel() {
@@ -178,12 +178,12 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getAppVersion() {
-            return "V73";
+            return "V74";
         }
 
         @JavascriptInterface
         public int getAppVersionCode() {
-            return 36;
+            return 37;
         }
 
         @JavascriptInterface
