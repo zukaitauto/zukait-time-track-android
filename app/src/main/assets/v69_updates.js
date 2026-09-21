@@ -179,7 +179,7 @@ window.v42SupervisorList=function(type){
 window.openSupervisorAssignedWindow=function(){
  const rows=(state.assign||[]).filter(a=>a&&!a.cancelled&&!a.completed).slice().sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));
  supModal('📋 Assigned Job Cards',
-   '<div class="row"><input id="v69AssignedSearch" style="flex:1;min-width:220px" placeholder="Search" oninput="v69FilterAssigned()"><span class="pill">'+rows.length+' OPEN</span></div>'+
+   '<div class="row"><input id="v69AssignedSearch" style="flex:1;min-width:220px" placeholder="" oninput="v69FilterAssigned()"><span class="pill">'+rows.length+' OPEN</span></div>'+
    '<div id="v69AssignedRows" style="margin-top:12px">'+listTable(rows)+'</div>');
 };
 window.v69FilterAssigned=function(){
@@ -223,7 +223,7 @@ function polishSupervisor(){
    if(el.children.length===0&&/Technicians are color coded/i.test(el.textContent||''))el.remove();
  });
  root.querySelectorAll('input[placeholder]').forEach(i=>{
-   if(/search.*(jc|job card|vehicle|registration)/i.test(i.placeholder||''))i.placeholder='Search';
+   if(/search.*(jc|job card|vehicle|registration)/i.test(i.placeholder||''))i.placeholder='';
  });
  ['se','se2'].forEach(id=>{
    const sel=document.getElementById(id);if(!sel)return;
