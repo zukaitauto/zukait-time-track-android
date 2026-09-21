@@ -269,7 +269,9 @@
       if(r.code==='conflict'&&r.data){
         const remote=clone(r.data||{});
         const base=lastSyncedState?clone(lastSyncedState):clone(remote);
-        const merged=threeWayMerge(base,remote,localSnapshot);
+        const merged=me?.role==='Employee'
+          ? mergeEmployeeConflict(remote,localSnapshot,me.id)
+          : threeWayMerge(base,remote,localSnapshot);
         cloudApplying=true;
         try{state=merged;ensureShape();persistLocal()}finally{cloudApplying=false}
         cloudRevision=Number(r.revision||cloudRevision);
@@ -290,8 +292,27 @@
       }
 
       if(r.code==='forbidden_change'){
+        if(me?.role==='Employee'&&retry<2){
+          try{
+            const latest=await api({action:'load'});
+            if(latest?.ok&&latest.data){
+              const merged=mergeEmployeeConflict(latest.data,localSnapshot,me.id);
+              cloudApplying=true;
+              try{state=merged;ensureShape();persistLocal()}finally{cloudApplying=false}
+              cloudRevision=Number(latest.revision||cloudRevision);
+              localStorage.setItem(REV_KEY,String(cloudRevision));
+              lastSyncedState=clone(latest.data);
+              cloudDirty=true;
+              localStorage.setItem(DIRTY_KEY,'1');
+              status('SYNCING LATEST CHANGES…','info');
+              cloudPushing=false;
+              return await push(retry+1);
+            }
+          }catch(_){}
+        }
         status('PERMISSION BLOCKED','bad');
-        alert('This action is not permitted for your role. No workshop data was changed.');
+        alert('This action could not be saved. Latest workshop data will be reloaded.');
+        try{await pull(true)}catch(_){}
         return false;
       }
       if(r.code==='invalid_session'){
