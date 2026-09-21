@@ -73,7 +73,8 @@ public class MainActivity extends Activity {
         settings.setAllowContentAccess(false);
         settings.setAllowFileAccessFromFileURLs(false);
         settings.setAllowUniversalAccessFromFileURLs(false);
-        settings.setMediaPlaybackRequiresUserGesture(false);\n        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+        settings.setMediaPlaybackRequiresUserGesture(false);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
 
@@ -139,11 +140,8 @@ public class MainActivity extends Activity {
             }
         });
 
-        if (savedInstanceState == null) {
-            webView.clearCache(true);\n            webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html?v=72");
-        } else {
-            webView.restoreState(savedInstanceState);
-        }
+        webView.clearCache(true);
+        webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html?v=72");
     }
 
     private void createNotificationChannel() {
