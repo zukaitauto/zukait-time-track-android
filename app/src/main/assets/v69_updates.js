@@ -43,7 +43,8 @@ window.assignJobCore=function(no,emp,mins){
  save();render();
 };
 
-/* Strong Finish protection. A JC is Completed only after every live assignment is completed. */
+/* Employee Finish updates only the employee session and assignment.
+   Job Card completion is derived from all live assignments. */
 window.finish=function(){
  if(!me||me.role!=='Employee')return;
  const s=activeSession(me.id);if(!s)return alert('No active work to finish.');
@@ -52,13 +53,13 @@ window.finish=function(){
    if(!confirm('Stop ID001 Ideal Time Card?'))return;
  }else{
    const otherOpen=assignments(s.job).filter(x=>x.id!==a.id&&!x.completed).length;
-   const msg='FINISH '+s.job+'?\n\nPlease confirm carefully. After Finish, this assignment cannot be continued unless the Supervisor REOPENS / REISSUES it.'+
-     (otherOpen?'\n\n'+otherOpen+' other technician assignment(s) are still open, so the Job Card will remain in Assigned Jobs.':'');
+   let msg='FINISH '+s.job+'?\n\nPlease confirm carefully. After Finish, this assignment can only be continued if the Supervisor REOPENS / REISSUES it.';
+   if(otherOpen)msg+='\n\n'+otherOpen+' other technician assignment(s) are still open. The Job Card will remain in Assigned Jobs until all technicians finish.';
+   else msg+='\n\nThis is the last open technician assignment. The Job Card will be shown as Finished after this action.';
    if(!confirm(msg))return;
  }
  s.end=now();s.finished=true;s.paused=false;
  a.completed=true;a.completedAt=s.end;
- if(s.job!==HOLD)updateJobStatus(s.job);
  if(typeof setLastAction==='function')setLastAction((s.job===HOLD?'Stopped ':'Finished ')+s.job);
  save();render();
 };
