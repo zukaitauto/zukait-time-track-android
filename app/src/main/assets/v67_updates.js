@@ -48,7 +48,7 @@ function controlCounts(){return{
  notstarted:rows('notstarted').length,
  paused:rows('paused').length,
  leave:leaveToday().length,
- completed:new Set(rows('completed').map(a=>a.job)).size,
+ completed:rows('completed').filter(a=>a.job!==HOLD).length,
  repeat:new Set(rows('repeat').map(a=>a.job)).size,
  waiting:waitingNow().length
 }}
