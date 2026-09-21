@@ -53,15 +53,9 @@ window.finish=function(){
    if(!confirm('Stop ID001 Ideal Time Card?'))return;
  }else{
    const otherOpen=assignments(s.job).filter(x=>x.id!==a.id&&!x.completed).length;
-   let msg='FINISH '+s.job+'?
-
-Please confirm carefully. After Finish, this assignment can only be continued if the Supervisor REOPENS / REISSUES it.';
-   if(otherOpen)msg+='
-
-'+otherOpen+' other technician assignment(s) are still open. The Job Card will remain in Assigned Jobs until all technicians finish.';
-   else msg+='
-
-This is the last open technician assignment. The Job Card will be shown as Finished after this action.';
+   let msg='FINISH '+s.job+'?\n\nPlease confirm carefully. After Finish, this assignment can only be continued if the Supervisor REOPENS / REISSUES it.';
+   if(otherOpen)msg+='\n\n'+otherOpen+' other technician assignment(s) are still open. The Job Card will remain in Assigned Jobs until all technicians finish.';
+   else msg+='\n\nThis is the last open technician assignment. The Job Card will be shown as Finished after this action.';
    if(!confirm(msg))return;
  }
  s.end=now();s.finished=true;s.paused=false;
@@ -113,18 +107,11 @@ window.v71ReopenSameAssignment=function(id){
  }
  const worked=actual(a),allocated=+a.suggested||0;
  const ok=confirm(
-   'REOPEN SAME ASSIGNMENT?
-
-Job Card: '+a.job+
-   '
-Technician: '+person(a.emp).name+
-   '
-Allocated Time: '+fm(allocated)+
-   '
-Existing Actual Time: '+fm(worked)+
-   '
-
-This keeps the SAME employee, SAME allocated time and all previous worked time. It is NOT Repeat Work.'
+   'REOPEN SAME ASSIGNMENT?\n\nJob Card: '+a.job+
+   '\nTechnician: '+person(a.emp).name+
+   '\nAllocated Time: '+fm(allocated)+
+   '\nExisting Actual Time: '+fm(worked)+
+   '\n\nThis keeps the SAME employee, SAME allocated time and all previous worked time. It is NOT Repeat Work.'
  );
  if(!ok)return;
  const finishedAt=a.completedAt||null;
