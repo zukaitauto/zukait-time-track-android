@@ -1294,6 +1294,40 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
   window.v59Stable=true;
 })();
 </script>
+<script>
+/* V60 STABLE — authoritative Supervisor Assigned Job Cards list. */
+(function(){
+  function safe(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function assignedRows(){
+    return (state.assign||[]).filter(a=>a&&!a.cancelled&&!a.completed)
+      .slice().sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));
+  }
+  function rowStatus(a){
+    try{return typeof empStatus==='function'?empStatus(a):'Assigned'}catch(_){return 'Assigned'}
+  }
+  function actual(a){
+    try{return typeof totalForAssignment==='function'?totalForAssignment(a):0}catch(_){return 0}
+  }
+  function table(rows){
+    if(!rows.length)return '<div class="notice">No open assigned job cards.</div>';
+    return '<div style="overflow:auto"><table><thead><tr><th>Date</th><th>Job Card</th><th>Vehicle / Reg.</th><th>Employee</th><th>Status</th><th>Allocated</th><th>Actual</th><th>Action</th></tr></thead><tbody>'+
+      rows.map(a=>{const j=job(a.job)||{},u=user(a.emp)||{};return '<tr><td>'+safe(a.assignedAt?new Date(a.assignedAt).toLocaleDateString():'—')+'</td><td><b>'+safe(a.job)+'</b>'+(a.rework?'<br><span class="pill">REPEAT</span>':'')+'</td><td>'+safe(j.vehicle||'—')+'<br><span class="small">'+safe(j.reg||'')+'</span></td><td>'+safe(u.name||a.emp)+'<br><span class="small">'+safe(a.emp)+'</span></td><td>'+safe(rowStatus(a))+'</td><td>'+fmt(+a.suggested||0)+'</td><td>'+fmt(actual(a))+'</td><td><button class="blue" onclick="openSupervisorJob(\''+String(a.job).replace(/'/g,"\\'")+'\')">VIEW</button></td></tr>'}).join('')+
+      '</tbody></table></div>';
+  }
+  window.openSupervisorAssignedWindow=function(){
+    const rows=assignedRows();
+    showSupervisorModal('📋 Assigned Job Cards',
+      '<div class="row" style="align-items:end"><label style="flex:1"><b>SEARCH ASSIGNED JOB CARD</b><br><input id="v60AssignedSearch" style="width:100%;box-sizing:border-box" placeholder="JC / registration / vehicle / employee" oninput="v60FilterAssigned()"></label><span class="pill">'+rows.length+' OPEN</span></div>'+
+      '<div id="v60AssignedRows" style="margin-top:12px">'+table(rows)+'</div>');
+  };
+  window.v60FilterAssigned=function(){
+    const q=(document.getElementById('v60AssignedSearch')?.value||'').trim().toLowerCase();
+    const rows=assignedRows().filter(a=>{const j=job(a.job)||{},u=user(a.emp)||{};return [a.job,j.vehicle,j.reg,u.name,a.emp,rowStatus(a),a.rework?'repeat':''].join(' ').toLowerCase().includes(q)});
+    const el=document.getElementById('v60AssignedRows');if(el)el.innerHTML=table(rows);
+  };
+  window.v60SupervisorAssignedReady=true;
+})();
+</script>
 <script src="cloud_sync.js"></script>
 <script src="secure_auth.js"></script>
 <script src="production_pilot.js"></script>
