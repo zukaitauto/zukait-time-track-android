@@ -391,11 +391,11 @@
     const title=labels[type]||'📩 Employee Request';
     const more=type==='more_time';
     const defaultMessage=more?'Please approve additional time for this job card.':'';
-    const amount=more?'<label><b>Requested Additional Time</b><br><input id="reqMinutes" inputmode="decimal" placeholder="0.30" value="0.30"><div class="time-hint">'+(typeof timeInputHint==='function'?timeInputHint():'Enter H.MM or H:MM')+'</div></label>':'';
+    const amount=more?'<label><b>Requested Additional Time</b><br><input id="reqMinutes" inputmode="decimal" placeholder="" value="0.30"><div class="time-hint">'+(typeof timeInputHint==='function'?timeInputHint():'Enter H.MM or H:MM')+'</div></label>':'';
     const detail='<div class="job-detail-grid"><div class="job-detail-stat"><b>JOB CARD</b><strong>'+esc(no)+'</strong></div><div class="job-detail-stat"><b>VEHICLE</b><strong>'+esc(String(j.vehicle||'').toUpperCase())+' · '+esc(String(j.reg||'').toUpperCase())+'</strong></div><div class="job-detail-stat"><b>ALLOCATED</b><strong>'+fmt(a.suggested||0)+'</strong></div><div class="job-detail-stat"><b>ACTUAL</b><strong>'+fmt(assignmentActual(a))+'</strong></div></div>';
     openModal('<div class="section-title"><h3>'+title+'</h3><button class="secondary" onclick="v54CloseRequest()">Close</button></div>'+detail+
       '<div class="card" style="margin:12px 0;background:#f8fafc"><div class="grid">'+amount+
-      '<label><b>Message / Details</b><br><textarea id="reqMessage" rows="3" style="width:100%;box-sizing:border-box" placeholder="Type a message, record a voice note, or use both">'+esc(defaultMessage)+'</textarea></label></div>'+
+      '<label><b>Message / Details</b><br><textarea id="reqMessage" rows="3" style="width:100%;box-sizing:border-box" placeholder="">'+esc(defaultMessage)+'</textarea></label></div>'+
       '<div class="v54-voice-panel"><b>🎤 Voice Note</b><div class="v54-voice-actions" style="margin-top:8px">'+
       '<button type="button" class="blue" id="v54RecordBtn" onclick="v54StartVoice()">🎤 RECORD</button>'+
       '<button type="button" class="danger" id="v54StopBtn" onclick="v54StopVoice()" disabled>■ STOP</button>'+
@@ -587,7 +587,7 @@
       '<div class="grid"><label><b>Repeat Employee</b><br><select id="v54RepeatEmp">'+options+'</select></label>'+
       '<label><b>Mistake Employee</b><br><select id="v54MistakeEmp">'+mistakeOptions+'</select></label>'+
       '<label><b>Allocated Repeat Time</b><br><input id="v54RepeatAllocated" value="1.00" inputmode="decimal"><div class="time-hint">Manual time entry is required for every Repeat Work assignment.</div></label></div>'+
-      '<label><b>Repeat Reason</b><br><textarea id="v54RepeatReason" style="width:100%" placeholder="Repeat complaint / correction"></textarea></label>'+
+      '<label><b>Repeat Reason</b><br><textarea id="v54RepeatReason" style="width:100%" placeholder=""></textarea></label>'+
       '<p><button class="purple" onclick="v54AssignRepeat(\''+esc(no)+'\')">ASSIGN REPEAT WORK</button> <button class="secondary" onclick="closeSupervisorModal()">CANCEL</button></p>');
   };
 
@@ -635,7 +635,7 @@
     if(sj&&!document.getElementById('v54JobSearch')){
       const input=document.createElement('input');
       input.id='v54JobSearch';input.className='v54-job-search';
-      input.placeholder='SEARCH JC / VEHICLE / REGISTRATION';
+      input.placeholder='';
       input.autocomplete='off';
       input.addEventListener('input',window.v54FilterJobCards);
       sj.parentElement?.insertBefore(input,sj);
