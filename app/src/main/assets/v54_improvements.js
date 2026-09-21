@@ -328,7 +328,9 @@
     }catch(e){
       stopTracks();
       setVoiceStatus('Microphone permission was not granted.');
-      alert('Microphone could not start. Please allow microphone permission and try again.');
+      const detail=(e&&e.name)?(' ('+e.name+')'):'';
+      setVoiceStatus('Microphone could not start'+detail+'. Close any other recorder/call and try again.');
+      alert('Microphone could not start'+detail+'. The app permission may already be enabled; please try again.');
     }
   };
 
