@@ -150,6 +150,8 @@
     merged.systemNotifications=mergeById(remote.systemNotifications,local.systemNotifications,(l,r)=>l.target===emp&&l.read!==r.read);
     merged.notifications=mergeById(remote.notifications,local.notifications,(l)=>l.target===emp||l.emp===emp);
     merged.overtimeNotices=Object.assign({},remote.overtimeNotices||{},local.overtimeNotices||{});
+    merged.leaves=mergeById(remote.leaves,local.leaves,(l)=>l.emp===emp);
+    merged.leaveAudit=mergeById(remote.leaveAudit,local.leaveAudit,(l)=>l.by===emp);
     return merged;
   }
 
