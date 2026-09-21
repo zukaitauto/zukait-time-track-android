@@ -109,11 +109,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="release-${{ steps.approved.outputs.version_name }}"
-          gh release view "$TAG" >/dev/null 2>&1 && gh release delete "$TAG" --yes || true
-          git push origin ":refs/tags/$TAG" >/dev/null 2>&1 || true
-          git tag "$TAG"
-          git push origin "$TAG"
+          gh release view "$TAG" >/dev/null 2>&1 && gh release delete "$TAG" --yes --cleanup-tag || true
           gh release create "$TAG" ZUKAIT_TIME_TRACK_LATEST.apk \
+            --target "${{ github.sha }}" \
             --title "Zukait Time Track ${{ steps.approved.outputs.version_name }}" \
             --notes "Approved signed production release ${{ steps.approved.outputs.version_name }}." \
             --latest
