@@ -42,9 +42,11 @@ function v74ApplySupervisorFinal(){
  let glance=cards.find(x=>(x.querySelector('h3')?.textContent||'').includes('Today at a Glance'));
  if(glance){
    let board=cards.find(x=>x.classList.contains('v56-technician-board-card')||((x.textContent||'').includes('TECHNICIAN BOARD')));
+   let oldEff=[...root.querySelectorAll('.v75-eff-section')];
    let wrap=document.createElement('div');wrap.className='v74-supervisor-final';wrap.innerHTML=window.supervisorOverview(state.assign||[]);
    glance.replaceWith(wrap);
    if(board&&board.isConnected)board.remove();
+   oldEff.forEach(x=>{if(x.isConnected&&!wrap.contains(x))x.remove()});
  }
 }
 function v74ApplyManagerFinal(){if(me?.role==='Manager')polish()}
