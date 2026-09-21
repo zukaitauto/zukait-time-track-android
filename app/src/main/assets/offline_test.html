@@ -746,7 +746,7 @@ function suggested(emp,from,to){return(state.assign||[]).filter(a=>a.emp===emp&&
 function isRepeat(s){let a=as(s);return s.rework===true||a?.rework===true}
 function completed(emp,from,to){let rows=(state.assign||[]).filter(a=>a.emp===emp&&a.completed&&!a.cancelled&&!a.rework&&!hold(a)&&(a.completedAt||0)>=from&&(a.completedAt||0)<to),ids=new Set(rows.map(a=>a.id)),actual=0;clip(emp,from,to).forEach(s=>{let a=as(s);if(a&&!isRepeat(s)&&(ids.has(a.id)||rows.some(r=>r.job===a.job&&r.emp===a.emp)))actual+=normal(s.start,s.end)});return{suggested:rows.reduce((x,a)=>x+(+a.suggested||0),0),actual}}
 function repeat(emp,from,to){return clip(emp,from,to).reduce((x,s)=>x+(isRepeat(s)?normal(s.start,s.end):0),0)}
-function ideal(emp,from,to){let ss=clip(emp,from,to).sort((a,b)=>a.start-b.start),x=0,last=null;for(let s of ss){if(last!==null&&s.start>last)x+=idealDuty(last,s.start);last=Math.max(last??s.end,s.end)}return x}
+function ideal(emp,from,to){let ss=clip(emp,from,to).sort((a,b)=>a.start-b.start),x=0,last=null;for(let s of ss){if(last!==null&&s.start>last)x+=Math.max(0,idealDuty(last,s.start)-(window.v63LeaveOverlapMinutes?window.v63LeaveOverlapMinutes(emp,last,s.start):0));last=Math.max(last??s.end,s.end)}return x}
 function bounds(){let d=new Date();return{from:new Date(d.getFullYear(),d.getMonth(),1).getTime(),to:new Date(d.getFullYear(),d.getMonth()+1,1).getTime()}}
 window.sessionNormalMinutes=(s,to=Date.now())=>normal(s.start,Math.min(s.end||to,to));window.sessionOvertimeMinutes=(s,to=Date.now())=>overtime(s.start,Math.min(s.end||to,to));window.overtimeForSession=window.sessionOvertimeMinutes;window.overtimeForEmployee=overEmp;window.monthlyNormalActualMinutes=normalActual;window.monthlySuggestedMinutes=suggested;window.monthlyIdealTimeMinutes=ideal;
 window.completedEfficiency=(emp,from,to)=>{let x=completed(emp,from,to);return{...x,efficiency:x.actual?x.suggested/x.actual*100:null}};
@@ -1461,5 +1461,5 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 <script src="secure_auth.js"></script>
 <script src="production_pilot.js"></script>
 <script src="professional_ux.js"></script>\n<script src="v54_improvements.js"></script>
-</body>
+<script src="v63_updates.js"></script>\n</body>
 </html>
