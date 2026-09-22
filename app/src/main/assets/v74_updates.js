@@ -108,7 +108,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const existing=openHold(emp);
    if(existing){const n=safeUser(emp).name||emp;if(typeof v74Msg==='function')return v74Msg('ID001 is already assigned to '+n+'. Stop/complete the existing Ideal Time card before assigning another.','Ideal Time');return alert('ID001 is already assigned to '+n);}
    state.assign=state.assign||[];
-   const a={id:uid(),job:H,emp:emp,suggested:m,completed:false,cancelled:false,rework:false,idealCard:true,assignedBy:me&&me.id?me.id:'SYSTEM',assignedAt:now()};
+   const a={id:uid(),job:H,emp:emp,suggested:m,completed:false,cancelled:false,rework:false,idealCard:true,idealSafeVersion:1,assignedBy:me&&me.id?me.id:'SYSTEM',assignedAt:now()};
    state.assign.push(a);
    if(typeof setLastAction==='function')setLastAction('Assigned ID001 to '+(safeUser(emp).name||emp)+' for '+fmt(m));
    save();render();return a;
@@ -122,7 +122,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(activeSession(me.id)){if(typeof v74Msg==='function')return v74Msg('You already have an active job. Stop or finish it before starting ID001.','One Job at a Time');return alert('You already have an active job.');}
    const a=openHold(me.id);if(!a){if(typeof v74Msg==='function')return v74Msg('No open ID001 assignment was found for you.','Ideal Time');return alert('No open ID001 assignment was found.');}
    state.sessions=state.sessions||[];
-   state.sessions.push({id:uid(),assignmentId:a.id,job:H,emp:me.id,start:now(),end:null,paused:false,rework:false,idealCard:true});
+   state.sessions.push({id:uid(),assignmentId:a.id,job:H,emp:me.id,start:now(),end:null,paused:false,rework:false,idealCard:true,idealSafeVersion:1});
    if(typeof setLastAction==='function')setLastAction('Started ID001');
    save();render();
  };
