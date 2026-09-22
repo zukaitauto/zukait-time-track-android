@@ -159,6 +159,28 @@ public class MainActivity extends Activity {
         webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html?v=75");
     }
 
+    private String installedVersionName() {
+        try {
+            android.content.pm.PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
+            return info.versionName == null ? "" : info.versionName;
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private int installedVersionCode() {
+        try {
+            android.content.pm.PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                long code = info.getLongVersionCode();
+                return code > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) code;
+            }
+            return info.versionCode;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
@@ -185,12 +207,12 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getAppVersion() {
-            return BuildConfig.VERSION_NAME;
+            return installedVersionName();
         }
 
         @JavascriptInterface
         public int getAppVersionCode() {
-            return BuildConfig.VERSION_CODE;
+            return installedVersionCode();
         }
 
         @JavascriptInterface
