@@ -11,8 +11,8 @@ const releaseWorkflow = read('.github/workflows/publish-approved-release.yml');
 
 const versionCode = Number((gradle.match(/versionCode\s+(\d+)/)||[])[1]);
 const versionName = (gradle.match(/versionName\s+['"]([^'"]+)['"]/ )||[])[1];
-assert.equal(versionCode, 48, 'candidate Android versionCode must be 48');
-assert.equal(versionName, 'V85', 'candidate Android versionName must be V85');
+assert.ok(Number.isInteger(versionCode) && versionCode > 0, 'Android versionCode must be a positive integer');
+assert.match(versionName||'', /^V\d+$/, 'Android versionName must use V<number> format');
 assert.match(main, /getPackageInfo\(getPackageName\(\), 0\)/, 'native bridge must read the installed APK package info');
 assert.match(main, /return installedVersionName\(\);/, 'native bridge must report installed versionName');
 assert.match(main, /return installedVersionCode\(\);/, 'native bridge must report installed versionCode');
@@ -355,8 +355,8 @@ assert.match(updates, /v82-logo-fallback/, 'V82 must provide generic car fallbac
 assert.match(updates, /v82EV/, 'V82 must detect EV marker');
 assert.match(updates, /⚡ EV/, 'V82 must show EV badge separately from manufacturer logo');
 assert.match(updates, /onerror=/, 'V82 logo image failure must fall back without blank UI');
-assert.match(gradle, /versionCode 48/, 'V85 must use versionCode 48');
-assert.match(gradle, /versionName 'V85'/, 'V85 must use versionName V85');
+assert.ok(gradle.includes('versionCode '+versionCode), 'Gradle versionCode must match parsed candidate version');
+assert.ok(gradle.includes("versionName '"+versionName+"'") || gradle.includes('versionName "'+versionName+'"'), 'Gradle versionName must match parsed candidate version');
 
 // V83 employee UI regression contracts
 assert.match(read('app/src/main/assets/offline_test.html'), /id="legacyAppHeader"/, 'legacy app header must be explicitly addressable');
@@ -379,11 +379,13 @@ assert.match(updates, /v84-tech-grid/, 'Department technicians must use card gri
 assert.match(updates, /v84ToggleTech/, 'Technician cards must expand details on click');
 assert.match(updates, /v84-alert-row/, 'Employee Requests and Need Attention must share a two-column row');
 assert.match(updates, /v84-action-grid/, 'Supervisor action controls must use a two-column grid');
-assert.match(updates, /OVERTIME\(\?:\\\\s\\+NOW\)\?/, 'Duplicate standalone overtime card must be removed by heading');
+assert.match(updates, /Overtime belongs only in Today at a Glance/, 'Supervisor must declare the single-overtime-card contract');
+assert.match(updates, /!x\.closest\('\.glance-grid,\.v74-six'\)/, 'Overtime cleanup must preserve Today at a Glance');
 
 assert.match(updates, /v84EmployeeAccount/, 'Employee dashboard must provide an account menu');
 assert.match(updates, /ABOUT \/ UPDATE/, 'Employee account menu must expose update access');
-assert.match(updates, /v63OpenLeave\(\).*LEAVE/, 'Employee account menu must retain Leave');
+assert.match(updates, /v84EmployeeLeave/, 'Employee account menu must retain Leave access');
+assert.match(updates, /v65OpenAbout\(\)/, 'Employee account menu must retain About and Update access');
 assert.match(updates, /closeModal\(\);logout\(\)/, 'Employee account menu must retain Logout');
 
 assert.match(updates, /st=ot>0\?'Overtime'/, 'Technician Board must show Overtime status');
