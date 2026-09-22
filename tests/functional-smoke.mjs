@@ -10,8 +10,8 @@ const releaseWorkflow = read('.github/workflows/publish-approved-release.yml');
 
 const versionCode = Number((gradle.match(/versionCode\s+(\d+)/)||[])[1]);
 const versionName = (gradle.match(/versionName\s+['"]([^'"]+)['"]/ )||[])[1];
-assert.equal(versionCode, 40, 'candidate Android versionCode must be 40');
-assert.equal(versionName, 'V77', 'candidate Android versionName must be V77');
+assert.equal(versionCode, 41, 'candidate Android versionCode must be 41');
+assert.equal(versionName, 'V78', 'candidate Android versionName must be V78');
 assert.match(main, /getPackageInfo\(getPackageName\(\), 0\)/, 'native bridge must read the installed APK package info');
 assert.match(main, /return installedVersionName\(\);/, 'native bridge must report installed versionName');
 assert.match(main, /return installedVersionCode\(\);/, 'native bridge must report installed versionCode');
@@ -282,3 +282,14 @@ assert.match(updates, /New Version/, 'About update center must show new version'
 assert.match(updates, /v77ProgressBar/, 'About update center must show download progress');
 assert.match(updates, /DOWNLOAD UPDATE/, 'About update center must expose download action');
 assert.match(updates, /INSTALL UPDATE/, 'About update center must expose install action after completion');
+
+
+// V78 Supervisor Leave + Manager printable report contracts
+assert.match(updates, /V78 SUPERVISOR LEAVE STATUS \+ MANAGER PRINTABLE LEAVE REPORT/, 'V78 leave dashboard/print fix must be present');
+assert.match(updates, /v78SupervisorLeaveRow/, 'Supervisor must have a dedicated leave status row');
+assert.match(updates, /TODAY’S LEAVE/, 'Supervisor leave status must include Today’s Leave');
+assert.match(updates, /THIS MONTH LEAVE/, 'Supervisor leave status must include This Month Leave');
+assert.match(updates, /v78PrintLeave/, 'Manager leave report must have printable action');
+assert.match(updates, /PRINT LEAVE REPORT/, 'Manager leave window must expose print button');
+assert.match(updates, /AndroidBridge\.printHtml/, 'Manager leave report must use native printable area on Android');
+assert.match(updates, /@page\{size:A4 landscape/, 'printed leave report must be formatted for A4');
