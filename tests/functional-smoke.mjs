@@ -106,7 +106,7 @@ assert.match(html, /root\.dataset\.supervisorRuntime='v87'/, 'successful Supervi
 assert.match(html, /Supervisor renderer returned empty surface/, 'Supervisor renderer must detect an empty dashboard');
 assert.match(html, /Dashboard recovery mode is active/, 'Supervisor renderer must provide a visible recovery surface instead of a blank page');
 assert.match(html, /window\.v87FilterSupervisorAssigned=function/, 'final Assigned Job Cards search handler must exist');
-assert.match(html, /const supOpenAssignments=.*?!a\.cancelled&&!a\.completed/s, 'final Assigned Job Cards handler must show only open assignments');
+assert.ok(html.includes("const supOpenAssignments=()=> (state.assign||[]).filter(a=>a&&!a.cancelled&&!a.completed)"), 'final Assigned Job Cards handler must show only open assignments');
 
 // Manager / whole-job contracts
 assert.match(updates, /AA\(x\.no\)\.every\(a=>a\.completed\)/, 'Ready for Delivery requires all assignments complete');
