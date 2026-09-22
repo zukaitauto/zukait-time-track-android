@@ -324,7 +324,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v84EmployeeAccount=function(){
    if(!me||me.role!=='Employee')return;
    const name=String(me.name||me.id||'Employee').replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]});
-   openModal('<div class="section-title"><h2>'+name+'</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="v63-account"><button class="blue" onclick="v42SyncNow()">↻ SYNC</button><button class="v65-leave-btn" onclick="v84EmployeeLeave()">LEAVE</button><button class="secondary" onclick="v65OpenAbout()">ABOUT / UPDATE</button><button class="danger" onclick="closeModal();logout()">LOGOUT</button></div>');
+   openModal('<div class="section-title"><h2>'+name+'</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="v63-account"><button class="blue" onclick="v42SyncNow()">↻ SYNC</button><button class="v65-leave-btn" onclick="v84EmployeeLeave()">LEAVE</button><button class="secondary" onclick="v63OpenAbout()">ABOUT / UPDATE</button><button class="danger" onclick="closeModal();logout()">LOGOUT</button></div>');
  };
  window.v84EmployeeLeave=function(){
    closeModal();
