@@ -831,10 +831,11 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
      '<h3>Mark Staff Leave</h3><div class="grid">'+allowed.map(u=>'<button class="secondary" onclick="v755OpenLeaveForm(\''+esc(u.id)+'\')"><b>'+esc(u.name)+'</b><br><span class="small">'+esc(u.role+(u.department?' · '+u.department:''))+'</span></button>').join('')+'</div>');
  };
 
+ if(!document.getElementById('v88-role-account-style')){let css=document.createElement('style');css.id='v88-role-account-style';css.textContent='.v88-role-account{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.v88-role-account button{min-height:48px;border-radius:13px!important;color:#172033!important;font-weight:900!important;border:1px solid rgba(255,255,255,.8)!important;box-shadow:inset 0 1px 2px #fff,0 5px 12px #0f172214!important}.v88-role-account .v88-sync{background:#e5f3ff!important}.v88-role-account .v88-about{background:#efe9ff!important}.v88-role-account .v88-leave{background:#e9f9ef!important}.v88-role-account .v88-logout{background:#ffe8e8!important;color:#991b1b!important}';document.head.appendChild(css)}
  window.v65OpenAccount=function(){
    if(!me)return;
    openModal('<div class="section-title"><h2>'+esc(me.name)+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
-     '<div class="v63-account"><button onclick="cloudSyncNow&&cloudSyncNow()">SYNC</button><button onclick="v63OpenAbout()">ABOUT</button><button onclick="v755OpenLeaveHub()">LEAVE</button><button class="danger" onclick="logout()">LOGOUT</button></div>');
+     '<div class="v63-account v88-role-account"><button class="v88-sync" onclick="cloudSyncNow&&cloudSyncNow()">↻ SYNC</button><button class="v88-about" onclick="v63OpenAbout()">ℹ ABOUT</button><button class="v88-leave" onclick="v755OpenLeaveHub()">🗓 LEAVE</button><button class="v88-logout" onclick="logout()">↪ LOGOUT</button></div>');
  };
 
  function leaveToday(){const k=dateKey(Date.now());return activeLeaveRows().filter(l=>l.date===k)}
