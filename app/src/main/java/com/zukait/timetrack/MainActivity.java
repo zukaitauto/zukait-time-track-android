@@ -61,6 +61,10 @@ public class MainActivity extends Activity {
     private WebView webView;
     private PermissionRequest pendingPermissionRequest;
     private long updateDownloadId = -1;
+    private int updateTargetVersionCode = 0;
+    private boolean updateEnqueueInProgress = false;
+    private final android.os.Handler updateHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable updateProgressRunnable;
     private BroadcastReceiver updateReceiver;
     private SpeechRecognizer speechRecognizer;
     private boolean pendingNativeVoice = false;
@@ -211,7 +215,8 @@ public class MainActivity extends Activity {
         });
 
         webView.clearCache(true);
-        webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html?v=76");
+        webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html?v=77");
+        updateHandler.postDelayed(this::resumeUpdateDownloadMonitoring, 1200);
     }
 
     private String installedVersionName() {
@@ -332,7 +337,25 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void openUpdatePage() {
-            runOnUiThread(() -> downloadAndInstallUpdate());
+            runOnUiThread(() -> startUpdateDownloadNative());
+        }
+
+        @JavascriptInterface
+        public void startUpdateDownload() {
+            runOnUiThread(() -> startUpdateDownloadNative());
+        }
+
+        @JavascriptInterface
+        public void requestUpdateDownloadStatus() {
+            runOnUiThread(() -> {
+                restoreUpdateDownloadState();
+                reportUpdateDownloadState();
+            });
+        }
+
+        @JavascriptInterface
+        public void installDownloadedUpdate() {
+            runOnUiThread(() -> installDownloadedUpdateNative());
         }
 
         @JavascriptInterface
@@ -564,16 +587,9 @@ public class MainActivity extends Activity {
         updateReceiver = new BroadcastReceiver() {
             @Override public void onReceive(Context context, Intent intent) {
                 long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
+                restoreUpdateDownloadState();
                 if (id != updateDownloadId) return;
-                DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
-                Uri apk = dm != null ? dm.getUriForDownloadedFile(id) : null;
-                if (apk == null) return;
-                try {
-                    Intent install = new Intent(Intent.ACTION_VIEW);
-                    install.setDataAndType(apk, "application/vnd.android.package-archive");
-                    install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(install);
-                } catch (Exception ignored) { }
+                reportUpdateDownloadState();
             }
         };
         IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
@@ -581,7 +597,131 @@ public class MainActivity extends Activity {
         else registerReceiver(updateReceiver, filter);
     }
 
-    private void downloadAndInstallUpdate() {
+    private android.content.SharedPreferences updatePrefs() {
+        return getSharedPreferences("zukait_update_state", MODE_PRIVATE);
+    }
+
+    private void persistUpdateDownloadState(long id, int targetCode) {
+        updateDownloadId = id;
+        updateTargetVersionCode = targetCode;
+        updatePrefs().edit()
+                .putLong("download_id", id)
+                .putInt("target_version_code", targetCode)
+                .apply();
+    }
+
+    private void clearUpdateDownloadState() {
+        updateDownloadId = -1;
+        updateTargetVersionCode = 0;
+        updatePrefs().edit().remove("download_id").remove("target_version_code").apply();
+        if (updateProgressRunnable != null) updateHandler.removeCallbacks(updateProgressRunnable);
+    }
+
+    private void restoreUpdateDownloadState() {
+        if (updateDownloadId < 0) {
+            updateDownloadId = updatePrefs().getLong("download_id", -1);
+            updateTargetVersionCode = updatePrefs().getInt("target_version_code", 0);
+        }
+        if (updateTargetVersionCode > 0 && installedVersionCode() >= updateTargetVersionCode) {
+            clearUpdateDownloadState();
+        }
+    }
+
+    private void resumeUpdateDownloadMonitoring() {
+        restoreUpdateDownloadState();
+        if (updateDownloadId >= 0) {
+            reportUpdateDownloadState();
+            startUpdateProgressMonitor();
+        }
+    }
+
+    private void notifyUpdateDownloadToWeb(String status, int percent, long downloaded, long total, String message) {
+        if (webView == null) return;
+        final String safeStatus = JSONObject.quote(status == null ? "" : status);
+        final String safeMessage = JSONObject.quote(message == null ? "" : message);
+        webView.post(() -> webView.evaluateJavascript(
+                "if(window.v77UpdateDownloadStatus){window.v77UpdateDownloadStatus(" +
+                        safeStatus + "," + percent + "," + downloaded + "," + total + "," + safeMessage + ");}",
+                null
+        ));
+    }
+
+    private int reportUpdateDownloadState() {
+        restoreUpdateDownloadState();
+        if (updateDownloadId < 0) {
+            notifyUpdateDownloadToWeb("IDLE", 0, 0, 0, "");
+            return -1;
+        }
+        DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+        if (dm == null) return -1;
+        DownloadManager.Query q = new DownloadManager.Query().setFilterById(updateDownloadId);
+        try (android.database.Cursor c = dm.query(q)) {
+            if (c == null || !c.moveToFirst()) {
+                clearUpdateDownloadState();
+                notifyUpdateDownloadToWeb("IDLE", 0, 0, 0, "");
+                return -1;
+            }
+            int status = c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS));
+            long downloaded = c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR));
+            long total = c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES));
+            int percent = total > 0 ? (int) Math.max(0, Math.min(100, downloaded * 100L / total)) : 0;
+            if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                notifyUpdateDownloadToWeb("COMPLETE", 100, downloaded, total, "Download complete. Ready to install.");
+            } else if (status == DownloadManager.STATUS_FAILED) {
+                int reason = c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON));
+                clearUpdateDownloadState();
+                notifyUpdateDownloadToWeb("FAILED", percent, downloaded, total, "Download failed (" + reason + "). Please try again.");
+            } else if (status == DownloadManager.STATUS_PAUSED) {
+                notifyUpdateDownloadToWeb("PAUSED", percent, downloaded, total, "Download paused. Waiting to continue.");
+            } else if (status == DownloadManager.STATUS_PENDING) {
+                notifyUpdateDownloadToWeb("PENDING", percent, downloaded, total, "Preparing download...");
+            } else {
+                notifyUpdateDownloadToWeb("DOWNLOADING", percent, downloaded, total, "Downloading update...");
+            }
+            return status;
+        } catch (Exception e) {
+            notifyUpdateDownloadToWeb("FAILED", 0, 0, 0, "Unable to read download status.");
+            return -1;
+        }
+    }
+
+    private void startUpdateProgressMonitor() {
+        if (updateProgressRunnable != null) updateHandler.removeCallbacks(updateProgressRunnable);
+        updateProgressRunnable = new Runnable() {
+            @Override public void run() {
+                int status = reportUpdateDownloadState();
+                if (status == DownloadManager.STATUS_PENDING ||
+                        status == DownloadManager.STATUS_RUNNING ||
+                        status == DownloadManager.STATUS_PAUSED) {
+                    updateHandler.postDelayed(this, 700);
+                }
+            }
+        };
+        updateHandler.post(updateProgressRunnable);
+    }
+
+    private boolean hasExistingUpdateDownload() {
+        restoreUpdateDownloadState();
+        if (updateDownloadId < 0) return false;
+        int status = reportUpdateDownloadState();
+        if (status == DownloadManager.STATUS_SUCCESSFUL ||
+                status == DownloadManager.STATUS_PENDING ||
+                status == DownloadManager.STATUS_RUNNING ||
+                status == DownloadManager.STATUS_PAUSED) {
+            startUpdateProgressMonitor();
+            return true;
+        }
+        return false;
+    }
+
+    private void startUpdateDownloadNative() {
+        if (updateEnqueueInProgress) {
+            reportUpdateDownloadState();
+            return;
+        }
+        if (hasExistingUpdateDownload()) return;
+        updateEnqueueInProgress = true;
+        notifyUpdateDownloadToWeb("PENDING", 0, 0, 0, "Checking update...");
         new Thread(() -> {
             int latestCode = 0;
             boolean error = false;
@@ -608,27 +748,72 @@ public class MainActivity extends Activity {
             final int publishedCode = latestCode;
             final boolean failed = error;
             runOnUiThread(() -> {
+                updateEnqueueInProgress = false;
                 if (failed) {
-                    android.widget.Toast.makeText(MainActivity.this, "Unable to verify the latest version. Please try again.", android.widget.Toast.LENGTH_LONG).show();
+                    notifyUpdateDownloadToWeb("FAILED", 0, 0, 0, "Unable to verify the latest version. Please try again.");
                     return;
                 }
                 if (publishedCode <= installedVersionCode()) {
-                    android.widget.Toast.makeText(MainActivity.this, "App is already up to date.", android.widget.Toast.LENGTH_LONG).show();
+                    clearUpdateDownloadState();
+                    notifyUpdateDownloadToWeb("UP_TO_DATE", 100, 0, 0, "App is already up to date.");
                     return;
                 }
+                if (hasExistingUpdateDownload()) return;
                 try {
                     DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
-                    if (dm == null) return;
+                    if (dm == null) {
+                        notifyUpdateDownloadToWeb("FAILED", 0, 0, 0, "Download service is unavailable.");
+                        return;
+                    }
                     Uri uri = Uri.parse("https://github.com/zukaitauto/zukait-time-track-android/releases/latest/download/ZUKAIT_TIME_TRACK_LATEST.apk");
                     DownloadManager.Request req = new DownloadManager.Request(uri)
                             .setTitle("Zukait Time Track Update")
-                            .setDescription("Preparing update")
+                            .setDescription("Downloading update")
                             .setMimeType("application/vnd.android.package-archive")
-                            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-                    updateDownloadId = dm.enqueue(req);
-                } catch (Exception ignored) { }
+                            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE);
+                    long id = dm.enqueue(req);
+                    persistUpdateDownloadState(id, publishedCode);
+                    notifyUpdateDownloadToWeb("PENDING", 0, 0, 0, "Preparing download...");
+                    startUpdateProgressMonitor();
+                } catch (Exception e) {
+                    notifyUpdateDownloadToWeb("FAILED", 0, 0, 0, "Unable to start download.");
+                }
             });
         }).start();
+    }
+
+    private void installDownloadedUpdateNative() {
+        restoreUpdateDownloadState();
+        if (updateDownloadId < 0) {
+            notifyUpdateDownloadToWeb("FAILED", 0, 0, 0, "No downloaded update is available.");
+            return;
+        }
+        DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+        if (dm == null) return;
+        DownloadManager.Query q = new DownloadManager.Query().setFilterById(updateDownloadId);
+        try (android.database.Cursor c = dm.query(q)) {
+            if (c == null || !c.moveToFirst() ||
+                    c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)) != DownloadManager.STATUS_SUCCESSFUL) {
+                reportUpdateDownloadState();
+                return;
+            }
+        } catch (Exception e) {
+            notifyUpdateDownloadToWeb("FAILED", 0, 0, 0, "Downloaded update could not be opened.");
+            return;
+        }
+        Uri apk = dm.getUriForDownloadedFile(updateDownloadId);
+        if (apk == null) {
+            notifyUpdateDownloadToWeb("FAILED", 0, 0, 0, "Downloaded update could not be opened.");
+            return;
+        }
+        try {
+            Intent install = new Intent(Intent.ACTION_VIEW);
+            install.setDataAndType(apk, "application/vnd.android.package-archive");
+            install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(install);
+        } catch (Exception e) {
+            notifyUpdateDownloadToWeb("FAILED", 100, 0, 0, "Installer could not be opened.");
+        }
     }
 
     private void notifyMicrophonePermissionToWeb(boolean granted) {
@@ -720,6 +905,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (updateProgressRunnable != null) updateHandler.removeCallbacks(updateProgressRunnable);
         if (updateReceiver != null) { try { unregisterReceiver(updateReceiver); } catch (Exception ignored) { } }
         if (speechRecognizer != null) { try { speechRecognizer.destroy(); } catch (Exception ignored) { } speechRecognizer = null; }
         if (voiceNoteRecorder != null) stopNativeVoiceNoteInternal(true);
