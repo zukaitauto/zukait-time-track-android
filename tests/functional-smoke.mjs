@@ -379,7 +379,7 @@ assert.match(updates, /v84-tech-grid/, 'Department technicians must use card gri
 assert.match(updates, /v84ToggleTech/, 'Technician cards must expand details on click');
 assert.match(updates, /v84-alert-row/, 'Employee Requests and Need Attention must share a two-column row');
 assert.match(updates, /v84-action-grid/, 'Supervisor action controls must use a two-column grid');
-assert.match(updates, /querySelectorAll\('\.overtime-card'\).*forEach\(x=>x\.remove\(\)\)/, 'Duplicate standalone overtime card must be removed');
+assert.match(updates, /OVERTIME\(\?:\\\\s\\+NOW\)\?/, 'Duplicate standalone overtime card must be removed by heading');
 
 assert.match(updates, /v84EmployeeAccount/, 'Employee dashboard must provide an account menu');
 assert.match(updates, /ABOUT \/ UPDATE/, 'Employee account menu must expose update access');
