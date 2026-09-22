@@ -530,16 +530,7 @@ function exportManagerReport(type){let headers=[],rows=[],filename='zukait-repor
   }
 
   // Employee: add clear duty/overtime information without changing the normal workflow.
-  const oldRenderEmployee=window.renderEmployee;
-  window.renderEmployee=function(){
-    oldRenderEmployee();
-    ensureOvertimeFlags();
-    let el=document.getElementById('employeeView'); if(!el)return;
-    let active=me&&activeSession(me.id);
-    if(active){
-      let box=document.createElement('div');box.innerHTML=overtimeBanner(me.id);if(box.firstElementChild)el.insertBefore(box.firstElementChild,el.firstChild);
-    }
-  };
+  /* V85 architecture cleanup: legacy overtime Employee renderer wrapper retired. */
   const oldRefresh=window.refreshActiveRunningTime;
   window.refreshActiveRunningTime=function(){
     ensureOvertimeFlags();
@@ -914,8 +905,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
   window.refreshActiveRunningTime=function(){dutyNotice();let active=me&&activeSession(me.id);if(!active)return;let timer=document.getElementById('activeRunningTime');if(timer)timer.textContent=fmt((Date.now()-active.start)/60000);let ac=window.total(active.job,me.id),sg=suggest(active.job,me.id),put=(id,v)=>{let e=document.getElementById(id);if(e)e.textContent=v};put('currentActual',fmt(ac));put('currentRemaining',fmt(Math.max(0,sg-ac)));put('currentExceeded',fmt(Math.max(0,ac-sg)))};
 
   // ID001 is START/STOP only: hide Pause and relabel Finish as STOP while it is active.
-  const employeeBase=window.renderEmployee;
-  window.renderEmployee=function(){employeeBase();let a=me&&activeSession(me.id);if(a&&a.job===HOLD){let root=document.getElementById('employeeView');if(root){[...root.querySelectorAll('button')].forEach(b=>{let tx=(b.textContent||'').toUpperCase();if(tx.includes('PAUSE'))b.style.display='none';if(tx.includes('FINISH')){b.textContent='■ STOP';b.classList.remove('green');b.classList.add('danger')}})}}};
+  /* V85 architecture cleanup: legacy ID001 Employee renderer wrapper retired; finalizer below owns this behavior. */
 
   // Incentive list follows the confirmed monthly formula.
   window.openIncentiveList=function(){let {from,to}=monthBounds(),rows=users.filter(u=>u.role==='Employee').map(u=>({u,x:window.incentiveFor(u.id),ot:overtimeEmp(u.id,from,to)})).sort((a,b)=>b.x.incentive-a.x.incentive);let html='<p class="muted">Incentive = Total Suggested − Normal Actual − Repeat Work. Minimum Normal Actual: 210h. Overtime is excluded.</p><table><tr><th>Employee</th><th>Total Suggested</th><th>Normal Actual</th><th>Repeat Deduction</th><th>Overtime</th><th>Incentive</th></tr>'+rows.map(r=>'<tr><td>'+r.u.name+'</td><td>'+fmt(r.x.suggested)+'</td><td>'+fmt(r.x.actual)+'</td><td>'+fmt(r.x.repeat)+'</td><td>'+fmt(r.ot)+'</td><td><b>'+fmt(r.x.incentive)+'</b></td></tr>').join('')+'</table>';(me&&me.role==='Manager'?showManagerModal:showSupervisorModal)('⭐ Incentive Hours',html)};
@@ -1194,10 +1184,15 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     state.assign.push(a);setLastAction('Assigned ID001 to '+user(emp).name+' for '+fmt(s));save();render();
   };
 
-  const priorRenderEmployee=window.renderEmployee;
-  window.renderEmployee=function(){
+  const authoritativeEmployeeRenderer=window.renderEmployee;
+  function finalizeEmployeeDashboard(){
     window.v38CheckID001();
-    priorRenderEmployee();
+    ensureOvertimeFlags();
+    const overtimeRoot=document.getElementById('employeeView');
+    const overtimeActive=me&&activeSession(me.id);
+    if(overtimeRoot&&overtimeActive&&!overtimeRoot.querySelector('.overtime-notice')){
+      const box=document.createElement('div');box.innerHTML=overtimeBanner(me.id);if(box.firstElementChild)overtimeRoot.insertBefore(box.firstElementChild,overtimeRoot.firstChild);
+    }
     const root=document.getElementById('employeeView');if(!root||!me)return;
     const notice=notificationHTML(me.id);if(notice)root.insertAdjacentHTML('afterbegin',notice);
     const s=activeSession(me.id),a=s?assignmentForSession(s):null;
@@ -1208,7 +1203,8 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     }
     [...root.querySelectorAll('.job-card')].forEach(card=>{if((card.textContent||'').includes(HOLD)){[...card.querySelectorAll('button')].forEach(b=>{const t=(b.textContent||'').toUpperCase();if(t.includes('PAUSE'))b.remove();if(t.includes('FINISH')){b.textContent='■ STOP';b.classList.remove('green');b.classList.add('danger');}})}});
     if(s&&s.job===HOLD){[...root.querySelectorAll('.employee-current button')].forEach(b=>{const t=(b.textContent||'').toUpperCase();if(t.includes('PAUSE'))b.remove();if(t.includes('FINISH')){b.textContent='■ STOP';b.classList.remove('green');b.classList.add('danger');}})}
-  };
+  }
+  window.renderEmployee=function(){authoritativeEmployeeRenderer();finalizeEmployeeDashboard();};
 
   window.refreshActiveRunningTime=function(){
     dutyNoticeFinal();
