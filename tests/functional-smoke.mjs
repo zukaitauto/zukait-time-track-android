@@ -10,8 +10,8 @@ const releaseWorkflow = read('.github/workflows/publish-approved-release.yml');
 
 const versionCode = Number((gradle.match(/versionCode\s+(\d+)/)||[])[1]);
 const versionName = (gradle.match(/versionName\s+['"]([^'"]+)['"]/ )||[])[1];
-assert.equal(versionCode, 45, 'candidate Android versionCode must be 45');
-assert.equal(versionName, 'V82', 'candidate Android versionName must be V82');
+assert.equal(versionCode, 46, 'candidate Android versionCode must be 46');
+assert.equal(versionName, 'V83', 'candidate Android versionName must be V83');
 assert.match(main, /getPackageInfo\(getPackageName\(\), 0\)/, 'native bridge must read the installed APK package info');
 assert.match(main, /return installedVersionName\(\);/, 'native bridge must report installed versionName');
 assert.match(main, /return installedVersionCode\(\);/, 'native bridge must report installed versionCode');
@@ -354,5 +354,11 @@ assert.match(updates, /v82-logo-fallback/, 'V82 must provide generic car fallbac
 assert.match(updates, /v82EV/, 'V82 must detect EV marker');
 assert.match(updates, /⚡ EV/, 'V82 must show EV badge separately from manufacturer logo');
 assert.match(updates, /onerror=/, 'V82 logo image failure must fall back without blank UI');
-assert.match(gradle, /versionCode 45/, 'V82 must use versionCode 45');
-assert.match(gradle, /versionName 'V82'/, 'V82 must use versionName V82');
+assert.match(gradle, /versionCode 46/, 'V83 must use versionCode 46');
+assert.match(gradle, /versionName 'V83'/, 'V83 must use versionName V83');
+
+// V83 employee UI regression contracts
+assert.match(read('app/src/main/assets/offline_test.html'), /id="legacyAppHeader"/, 'legacy app header must be explicitly addressable');
+assert.match(read('app/src/main/assets/offline_test.html'), /legacyHeader\.style\.display=me\.role==='Employee'\?'none':''/, 'employee dashboard must hide legacy duplicate header');
+assert.match(read('app/src/main/assets/offline_test.html'), /function logout\(\)\{[\s\S]{0,350}closeModal\(\)/, 'logout must close account modal before showing login');
+assert.match(updates, /\.v75s-card \.v82-brand-logo\{width:58px;height:38px/, 'job-card manufacturer logo must use compact bounded size');
