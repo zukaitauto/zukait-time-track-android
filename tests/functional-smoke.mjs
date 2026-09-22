@@ -371,3 +371,12 @@ assert.match(html, /q\.querySelectorAll\('\.glance-box'\).*v83-glass/, 'Supervis
 assert.match(html, /assigned\.slice\(1\)\.forEach\(x=>x\.remove\(\)\)/, 'Supervisor dashboard must remove duplicate Assigned Job Cards cards');
 assert.match(html, /workDays\*\(9\*60-15\)/, 'Incentive target must deduct 15 cleaning minutes per applicable working day');
 assert.doesNotMatch(html, /210h productive target/, 'Fixed 210-hour incentive target text must not return');
+
+
+assert.match(updates, /v84-depts/, 'Supervisor Technician Board must use three department boxes');
+assert.match(updates, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, 'Technician departments must stay in three columns');
+assert.match(updates, /v84-tech-grid/, 'Department technicians must use card grid');
+assert.match(updates, /v84ToggleTech/, 'Technician cards must expand details on click');
+assert.match(updates, /v84-alert-row/, 'Employee Requests and Need Attention must share a two-column row');
+assert.match(updates, /v84-action-grid/, 'Supervisor action controls must use a two-column grid');
+assert.match(updates, /\.overtime-card'\)\.forEach\(x=>x\.remove\(\)\)/, 'Duplicate standalone overtime card must be removed');
