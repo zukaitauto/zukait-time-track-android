@@ -1,0 +1,4 @@
+V82 APK test build trigger
+versionCode=45
+purpose=Build and smoke-test V82 local vehicle logos and EV fallback
+trigger=2
