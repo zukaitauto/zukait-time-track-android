@@ -1,8 +1,8 @@
 {
-  "versionName": "V79",
-  "versionCode": 42,
+  "versionName": "V80",
+  "versionCode": 43,
   "approvedForStaff": true,
   "approvedAt": "2026-09-22",
-  "sourceCommit": "12171992c3c445203c66b8160fda59c07bd4fed1",
-  "publishNonce": "approved-v79-work-integrity-20260922-r1"
+  "sourceCommit": "c9255d3d1c06104a750d8e1ddaaee2e7a81defc3",
+  "publishNonce": "approved-v80-gauge-test-20260922-r1"
 }
