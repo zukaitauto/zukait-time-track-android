@@ -1126,3 +1126,323 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  document.head.appendChild(css);
  window.v78SupervisorLeavePrintReady=true;
 })();
+
+
+/* V79 WORK SESSION INTEGRITY AUTHORITY
+   One employee = one current session.
+   Status/time are assignmentId-authoritative.
+   Stale overlapping open sessions are reconciled so they cannot keep dashboards "Working". */
+(function(){'use strict';
+ const HOLD='ID001';
+ const sessions=()=>Array.isArray(state.sessions)?state.sessions:(state.sessions=[]);
+ const assigns=()=>Array.isArray(state.assign)?state.assign:(state.assign=[]);
+ const byStart=(a,b)=>(+a.start||0)-(+b.start||0);
+ const byAssigned=(a,b)=>(+a.assignedAt||0)-(+b.assignedAt||0);
+
+ function assignmentForSessionV79(s){
+   if(!s)return null;
+   if(s.assignmentId){
+     const direct=assigns().find(a=>a&&String(a.id)===String(s.assignmentId));
+     if(direct)return direct;
+   }
+   const candidates=assigns().filter(a=>a&&a.emp===s.emp&&a.job===s.job&&!a.cancelled).slice().sort(byAssigned);
+   if(!candidates.length)return null;
+   let chosen=candidates[0];
+   for(const a of candidates){
+     if((+a.assignedAt||0)<= (+s.start||0))chosen=a; else break;
+   }
+   return chosen;
+ }
+ window.v79AssignmentForSession=assignmentForSessionV79;
+
+ function assignmentSessionsV79(a){
+   if(!a)return[];
+   const direct=sessions().filter(s=>s&&s.assignmentId&&String(s.assignmentId)===String(a.id));
+   const legacy=sessions().filter(s=>s&&!s.assignmentId&&s.emp===a.emp&&s.job===a.job&&assignmentForSessionV79(s)?.id===a.id);
+   const map=new Map();
+   [...direct,...legacy].forEach(s=>{if(s&&s.id)map.set(String(s.id),s)});
+   return [...map.values()].sort(byStart);
+ }
+ window.v79AssignmentSessions=assignmentSessionsV79;
+
+ function latestSessionForEmployee(emp){
+   const rows=sessions().filter(s=>s&&s.emp===emp).slice().sort(byStart);
+   return rows.length?rows[rows.length-1]:null;
+ }
+ function latestSessionForAssignment(a){
+   const rows=assignmentSessionsV79(a);
+   return rows.length?rows[rows.length-1]:null;
+ }
+
+ function reconcileEmployeeSessions(emp){
+   const rows=sessions().filter(s=>s&&s.emp===emp).slice().sort(byStart);
+   if(rows.length<2)return false;
+   let changed=false;
+   for(let i=0;i<rows.length-1;i++){
+     const s=rows[i],next=rows[i+1];
+     if(!s.end){
+       const boundary=Math.max(+s.start||0,+next.start||0);
+       s.end=boundary;
+       s.reconciledStaleOpen=true;
+       s.reconciledAt=Date.now();
+       s.reconciledReason='Newer session exists';
+       // Do not mark finished; this is a technical closure only.
+       if(!s.finished)s.paused=true;
+       changed=true;
+     }else if((+s.end||0)>(+next.start||0)){
+       // One employee cannot work two jobs at the same time. Clamp older overlap.
+       s.end=Math.max(+s.start||0,+next.start||0);
+       s.reconciledOverlap=true;
+       s.reconciledAt=Date.now();
+       s.reconciledReason='Overlap clamped to next session start';
+       if(!s.finished)s.paused=true;
+       changed=true;
+     }
+   }
+   return changed;
+ }
+ function reconcileAllSessionsV79(){
+   const emps=[...new Set(sessions().map(s=>s?.emp).filter(Boolean))];
+   let changed=false;
+   emps.forEach(emp=>{if(reconcileEmployeeSessions(emp))changed=true});
+   if(changed){try{save()}catch(_){}}
+   return changed;
+ }
+ window.v79ReconcileWorkSessions=reconcileAllSessionsV79;
+
+ window.activeSession=function(emp){
+   reconcileEmployeeSessions(emp);
+   const latest=latestSessionForEmployee(emp);
+   return latest&&!latest.end?latest:null;
+ };
+
+ window.empStatus=function(a){
+   if(!a)return'New';
+   if(a.completed)return'Finished';
+   const latest=latestSessionForAssignment(a);
+   if(!latest)return'New';
+   // Only the exact latest employee session can make this assignment Working.
+   const employeeLatest=latestSessionForEmployee(a.emp);
+   if(employeeLatest&&employeeLatest.id===latest.id&&!latest.end)return'Started';
+   if(latest.paused)return'Paused';
+   if(latest.finished)return a.completed?'Finished':'Paused';
+   return latest.end?'Paused':'New';
+ };
+
+ window.totalForAssignment=function(a){
+   if(!a)return 0;
+   return assignmentSessionsV79(a).reduce((n,s)=>{
+     const end=s.end||Date.now();
+     try{return n+(typeof window.sessionNormalMinutes==='function'?window.sessionNormalMinutes(s,end):Math.max(0,(end-(+s.start||end))/60000))}
+     catch(_){return n+Math.max(0,(end-(+s.start||end))/60000)}
+   },0);
+ };
+
+ window.v79OvertimeForAssignment=function(a,from=0,to=Number.MAX_SAFE_INTEGER){
+   if(!a)return 0;
+   return assignmentSessionsV79(a).reduce((n,s)=>{
+     const st=Math.max(+s.start||0,from),en=Math.min(+(s.end||Date.now()),to);
+     if(en<=st)return n;
+     try{return n+(typeof window.sessionOvertimeMinutes==='function'?window.sessionOvertimeMinutes({start:st,end:en},en):0)}
+     catch(_){return n}
+   },0);
+ };
+
+ // Overtime must not count stale historical open sessions as "now".
+ window.v79CurrentOvertimeRows=function(){
+   const rows=[];
+   for(const u of users.filter(x=>x&&x.role==='Employee')){
+     const s=activeSession(u.id);
+     if(!s||s.job===HOLD)continue;
+     let m=0;try{m=window.sessionOvertimeMinutes(s,Date.now())||0}catch(_){}
+     if(m>0)rows.push({s,m});
+   }
+   return rows;
+ };
+ window.v74OT=function(){
+   const rows=window.v79CurrentOvertimeRows();
+   const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+   const F=m=>{try{return fmt(Math.max(0,+m||0))}catch(_){return Math.round(+m||0)+'m'}};
+   const P=id=>{try{return user(id)||{name:id}}catch(_){return{name:id}}};
+   showSupervisorModal('⏱ Overtime Now',rows.length?'<table><tr><th>Employee</th><th>JC</th><th>Overtime</th></tr>'+rows.map(x=>'<tr><td>'+E(P(x.s.emp).name)+'</td><td>'+E(x.s.job)+'</td><td><b>'+F(x.m)+'</b></td></tr>').join('')+'</table>':'<div class="notice">No employee is in overtime now.</div>');
+ };
+
+ // Active Workers must use authoritative current sessions only.
+ function currentWorkerRowsV79(){
+   return users.filter(u=>u&&u.role==='Employee').map(u=>{
+     const s=activeSession(u.id);if(!s)return null;
+     const a=assignmentForSessionV79(s);
+     let j={};try{j=job(s.job)||{}}catch(_){}
+     return{s,a,u,j};
+   }).filter(Boolean);
+ }
+ window.v79CurrentWorkerRows=currentWorkerRowsV79;
+ window.v756UniqueActiveWorkerRows=currentWorkerRowsV79;
+
+ window.openActiveWorkers=function(){
+   const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+   const F=m=>{try{return fmt(Math.max(0,+m||0))}catch(_){return Math.round(+m||0)+'m'}};
+   const rows=currentWorkerRowsV79(),deptName={Denter:'Denting',Painter:'Painting',Mechanic:'Mechanical'},depts=['Denter','Painter','Mechanic'];
+   const groups=depts.map(dept=>{
+     const list=rows.filter(x=>x.u.department===dept);
+     return '<section class="v69-dept v69-'+dept.toLowerCase()+'"><div class="v69-dept-head"><b>'+deptName[dept]+'</b><span>'+list.length+'</span></div>'+
+       (list.length?list.map(x=>{
+         const hold=x.s.job===HOLD,allocated=+x.a?.suggested||0,ac=x.a?totalForAssignment(x.a):0;
+         return '<details class="v69-worker '+(hold?'v756-id001-worker':'v756-normal-worker')+'"><summary>'+E(x.u.name)+' <small class="'+(hold?'v756-id001-badge':'')+'">'+(hold?'ID001 · WAITING':E(x.s.job))+'</small></summary><div>'+
+           (hold?'<div class="v756-id001-title">ID001 — AVAILABLE / WAITING</div><b>Allocated ID001:</b> '+F(allocated)+'<br><b>Current ID001 Time:</b> '+F(ac)+'<br><b>Status:</b> <span class="v756-id001-status">ACTIVE ID001</span>':
+           '<b>Job Card:</b> '+E(x.s.job)+'<br><b>Vehicle:</b> '+E(x.j.vehicle||'—')+' · '+E(x.j.reg||'—')+'<br><b>Allocated:</b> '+F(allocated)+'<br><b>Actual:</b> '+F(ac)+'<br><b>Status:</b> WORKING<br><button class="blue" onclick="openSupervisorJob(\''+E(x.s.job)+'\')">VIEW JOB</button>')+
+           '</div></details>';
+       }).join(''):'<div class="v69-empty">No active workers</div>')+'</section>';
+   }).join('');
+   showSupervisorModal('👷 Active Workers','<div class="v756-active-legend"><span class="v756-normal-dot"></span>Normal Job Card <span class="v756-id001-dot"></span>ID001 / Waiting</div><div class="v69-dept-grid">'+groups+'</div>');
+ };
+
+ // Patch Supervisor overview counts after all previous wrappers.
+ const prevOverview79=window.supervisorOverview;
+ window.supervisorOverview=function(rows){
+   let html=typeof prevOverview79==='function'?prevOverview79.apply(this,arguments):'';
+   if(!html||me?.role!=='Supervisor')return html;
+   const open=(rows||state.assign||[]).filter(a=>a&&!a.cancelled&&!a.completed&&a.job!==HOLD);
+   const active=currentWorkerRowsV79().filter(x=>x.s.job!==HOLD).length;
+   const paused=open.filter(a=>empStatus(a)==='Paused').length;
+   const ot=window.v79CurrentOvertimeRows().length;
+   html=html.replace(/(<b>Active Workers<\/b><div class="stat">)\d+(<\/div>)/,'$1'+active+'$2');
+   html=html.replace(/(<b>Paused Jobs<\/b><div class="stat">)\d+(<\/div>)/,'$1'+paused+'$2');
+   html=html.replace(/(<b>Overtime Now<\/b><div class="stat">)\d+(<\/div>)/,'$1'+ot+'$2');
+   return html;
+ };
+
+ // Prevent duplicate open assignment rows for the same employee + same JC unless it is explicit Repeat Work.
+ function reconcileDuplicateOpenAssignments(){
+   const groups=new Map();
+   for(const a of assigns().filter(a=>a&&!a.cancelled&&!a.completed&&a.job!==HOLD&&!a.rework)){
+     const k=String(a.emp)+'||'+String(a.job);
+     if(!groups.has(k))groups.set(k,[]);
+     groups.get(k).push(a);
+   }
+   let changed=false;
+   for(const rows of groups.values()){
+     if(rows.length<2)continue;
+     rows.sort((a,b)=>(+b.assignedAt||0)-(+a.assignedAt||0));
+     const keep=rows[0];
+     for(const a of rows.slice(1)){
+       // Only auto-close true duplicates that have no own session history.
+       const own=assignmentSessionsV79(a);
+       if(own.length===0){
+         a.cancelled=true;a.cancelledAt=Date.now();a.cancelReason='Automatic duplicate-open cleanup';a.duplicateOf=keep.id;
+         changed=true;
+       }
+     }
+   }
+   if(changed){try{save()}catch(_){}}
+   return changed;
+ }
+ window.v79ReconcileDuplicateAssignments=reconcileDuplicateOpenAssignments;
+
+ // Strong Start / Pause / Finish authority for normal jobs and ID001.
+ const previousStart79=window.start;
+ window.start=function(no){
+   if(!me||me.role!=='Employee')return;
+   reconcileEmployeeSessions(me.id);reconcileDuplicateOpenAssignments();
+   if(activeSession(me.id))return typeof window.v74Msg==='function'?window.v74Msg('You already have an active job. Pause, finish or stop it before starting another job.','One Job at a Time'):alert('You already have an active job.');
+   const candidates=assigns().filter(a=>a&&a.emp===me.id&&a.job===no&&!a.cancelled&&!a.completed).sort((a,b)=>(+b.assignedAt||0)-(+a.assignedAt||0));
+   if(no===HOLD)return typeof previousStart79==='function'?previousStart79.apply(this,arguments):undefined;
+   const a=candidates[0];
+   if(!a)return typeof window.v74Msg==='function'?window.v74Msg('This Job Card is not available for work.','Start Work'):alert('This job is not available for work.');
+   state.sessions.push({id:uid(),assignmentId:a.id,job:a.job,emp:me.id,start:now(),end:null,paused:false,finished:false,rework:a.rework===true,v79Integrity:true});
+   if(typeof setLastAction==='function')setLastAction('Started '+a.job+(a.rework?' repeat work':''));
+   save();render();
+ };
+
+ window.v74Pause=function(){
+   if(!me||me.role!=='Employee')return closeModal();
+   const s=activeSession(me.id);if(!s)return closeModal();
+   if(s.job===HOLD){closeModal();return typeof window.v74Msg==='function'?window.v74Msg('ID001 cannot be paused. Use STOP.','Ideal Time'):undefined}
+   const r=(document.getElementById('v74pr')?.value||'').trim(),t=now();
+   s.end=t;s.paused=true;s.finished=false;s.pauseReason=r;s.v79Integrity=true;
+   const a=assignmentForSessionV79(s);if(a)a.pauseReason=r;
+   if(typeof setLastAction==='function')setLastAction('Paused '+s.job);
+   save();closeModal();render();
+ };
+
+ window.v74Finish=function(){
+   if(!me||me.role!=='Employee')return closeModal();
+   const s=activeSession(me.id),a=assignmentForSessionV79(s);if(!s||!a)return closeModal();
+   const t=now();s.end=t;s.finished=true;s.paused=false;s.v79Integrity=true;a.completed=true;a.completedAt=t;
+   if(s.job!==HOLD){
+     let j=null;try{j=job(s.job)}catch(_){}
+     if(j){
+       const aa=assigns().filter(x=>x&&!x.cancelled&&x.job===s.job);
+       const done=aa.length>0&&aa.every(x=>x.completed);
+       j.status=done?'Completed':'Open';if(done)j.completedAt=Math.max(...aa.map(x=>+x.completedAt||0),t);else delete j.completedAt;
+     }
+   }
+   if(typeof setLastAction==='function')setLastAction((s.job===HOLD?'Stopped ':'Finished ')+s.job);
+   save();closeModal();render();
+ };
+
+ // Run on load/render/cloud refresh so stale states cannot keep returning.
+ const priorCloud79=window.v42AfterCloudPull;
+ window.v42AfterCloudPull=function(){
+   const r=typeof priorCloud79==='function'?priorCloud79.apply(this,arguments):undefined;
+   reconcileAllSessionsV79();reconcileDuplicateOpenAssignments();return r;
+ };
+ const priorRender79=window.render;
+ window.render=function(){
+   reconcileAllSessionsV79();reconcileDuplicateOpenAssignments();
+   return typeof priorRender79==='function'?priorRender79.apply(this,arguments):undefined;
+ };
+ setTimeout(()=>{reconcileAllSessionsV79();reconcileDuplicateOpenAssignments()},100);
+
+
+ // Normal assignment guard: never create/reopen a duplicate same JC + employee silently.
+ const priorAssignCore79=window.assignJobCore;
+ window.assignJobCore=function(no,emp,minutes){
+   if(no===HOLD)return typeof priorAssignCore79==='function'?priorAssignCore79.apply(this,arguments):undefined;
+   const m=Number(minutes);
+   if(!Number.isFinite(m)||m<1)return typeof window.v74Msg==='function'?window.v74Msg('Enter a valid allocated time.','Assign Job Card'):alert('Enter a valid allocated time.');
+   reconcileDuplicateOpenAssignments();
+   const same=assigns().filter(a=>a&&a.job===no&&a.emp===emp&&!a.cancelled&&!a.rework).sort((a,b)=>(+b.assignedAt||0)-(+a.assignedAt||0));
+   const open=same.filter(a=>!a.completed);
+   if(open.length){
+     const a=open[0],old=+a.suggested||0;
+     a.suggested=m;a.assignedBy=me?.id||a.assignedBy;a.updatedAt=Date.now();
+     state.suggestedEdits=state.suggestedEdits||[];
+     state.suggestedEdits.push({id:uid(),assignmentId:a.id,job:no,emp,old,newValue:m,by:me?.id||'',at:Date.now(),source:'Supervisor update existing open assignment'});
+     if(typeof setLastAction==='function')setLastAction('Updated assignment '+no+' for '+(user(emp)?.name||emp));
+     save();render();return a;
+   }
+   const completed=same.find(a=>a.completed);
+   if(completed){
+     const msg='This employee already completed this Job Card. Use Reopen Same Assignment for mistaken finish, or Repeat Work when it is repeat work.';
+     return typeof window.v74Msg==='function'?window.v74Msg(msg,'Existing Completed Work'):alert(msg);
+   }
+   const a={id:uid(),job:no,emp,suggested:m,completed:false,cancelled:false,rework:false,assignedBy:me?.id||'SYSTEM',assignedAt:Date.now(),v79Integrity:true};
+   assigns().push(a);
+   if(typeof setLastAction==='function')setLastAction('Assigned '+no+' to '+(user(emp)?.name||emp));
+   save();render();return a;
+ };
+
+ // Employee overtime/actual summaries reconcile first, so stale open sessions cannot keep accruing time.
+ const oldOTEmployee79=window.overtimeForEmployee;
+ window.overtimeForEmployee=function(emp,from,to){
+   reconcileEmployeeSessions(emp);
+   return sessions().filter(x=>x&&x.emp===emp&&x.start<to&&(x.end||Date.now())>from).reduce((n,x)=>{
+     const st=Math.max(+x.start||0,from),en=Math.min(+(x.end||Date.now()),to);
+     if(en<=st)return n;
+     try{return n+(typeof window.sessionOvertimeMinutes==='function'?window.sessionOvertimeMinutes({start:st,end:en},en):0)}
+     catch(_){return n}
+   },0);
+ };
+ const oldMonthlyNormal79=window.monthlyNormalActualMinutes;
+ window.monthlyNormalActualMinutes=function(emp,from,to){
+   reconcileEmployeeSessions(emp);
+   return sessions().filter(x=>x&&x.emp===emp&&x.job!==HOLD&&x.start<to&&(x.end||Date.now())>from).reduce((n,x)=>{
+     const st=Math.max(+x.start||0,from),en=Math.min(+(x.end||Date.now()),to);
+     if(en<=st)return n;
+     try{return n+(typeof window.sessionNormalMinutes==='function'?window.sessionNormalMinutes({start:st,end:en},en):(en-st)/60000)}
+     catch(_){return n+(en-st)/60000}
+   },0);
+ };
+ window.v79WorkSessionIntegrityReady=true;
+})();

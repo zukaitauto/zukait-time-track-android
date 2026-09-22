@@ -293,3 +293,34 @@ assert.match(updates, /v78PrintLeave/, 'Manager leave report must have printable
 assert.match(updates, /PRINT LEAVE REPORT/, 'Manager leave window must expose print button');
 assert.match(updates, /AndroidBridge\.printHtml/, 'Manager leave report must use native printable area on Android');
 assert.match(updates, /@page\{size:A4 landscape/, 'printed leave report must be formatted for A4');
+
+
+// V79 work-session integrity contracts
+assert.match(updates, /V79 WORK SESSION INTEGRITY AUTHORITY/, 'V79 session integrity authority must be present');
+assert.match(updates, /window\.activeSession=function\(emp\)/, 'activeSession must be overridden by latest-session authority');
+assert.match(updates, /window\.empStatus=function\(a\)/, 'assignment status must be authoritative');
+assert.match(updates, /window\.totalForAssignment=function\(a\)/, 'actual time must be assignmentId-specific');
+assert.match(updates, /assignmentId&&String\(s\.assignmentId\)===String\(a\.id\)/, 'assignment session matching must use assignmentId');
+assert.match(updates, /reconciledStaleOpen=true/, 'older stale open sessions must be reconciled');
+assert.match(updates, /reconciledOverlap=true/, 'overlapping sessions must be clamped');
+assert.match(updates, /v79CurrentOvertimeRows/, 'current overtime must use authoritative active sessions');
+assert.match(updates, /reconcileDuplicateOpenAssignments/, 'duplicate open assignments must be reconciled');
+assert.match(updates, /Automatic duplicate-open cleanup/, 'safe duplicate cleanup must be auditable');
+assert.match(updates, /v79Integrity:true/, 'new work sessions must carry V79 integrity marker');
+
+const v79LatestActive=(rows,emp)=>{
+  const x=rows.filter(s=>s.emp===emp).sort((a,b)=>a.start-b.start);
+  const latest=x[x.length-1]; return latest&&!latest.end?latest:null;
+};
+assert.equal(v79LatestActive([{emp:'E1',start:1,end:null},{emp:'E1',start:2,end:3,paused:true}],'E1'),null,'older stale open session must not make employee Working when latest session is Paused');
+assert.equal(v79LatestActive([{emp:'E1',start:1,end:2,paused:true},{emp:'E1',start:3,end:null}],'E1').start,3,'resume must show only latest open session as Working');
+
+const v79AssignmentActual=(sessions,id)=>sessions.filter(s=>s.assignmentId===id).reduce((n,s)=>n+Math.max(0,((s.end??s.start)-s.start)/60000),0);
+assert.equal(v79AssignmentActual([{assignmentId:'A1',start:0,end:60000},{assignmentId:'A2',start:60000,end:180000}],'A1'),1,'same JC/employee assignments must not share actual time');
+assert.equal(v79AssignmentActual([{assignmentId:'A1',start:0,end:60000},{assignmentId:'A2',start:60000,end:180000}],'A2'),2,'new/repeat assignment keeps its own actual time');
+
+
+assert.match(updates, /Use Reopen Same Assignment for mistaken finish/, 'completed same JC/employee must not be silently reopened by normal assign');
+assert.match(updates, /Supervisor update existing open assignment/, 'existing same JC/employee open assignment must be updated instead of duplicated');
+assert.match(updates, /window\.overtimeForEmployee=function\(emp,from,to\)/, 'employee overtime must reconcile stale sessions first');
+assert.match(updates, /window\.monthlyNormalActualMinutes=function\(emp,from,to\)/, 'monthly actual must reconcile stale sessions first');
