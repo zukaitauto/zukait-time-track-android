@@ -379,4 +379,4 @@ assert.match(updates, /v84-tech-grid/, 'Department technicians must use card gri
 assert.match(updates, /v84ToggleTech/, 'Technician cards must expand details on click');
 assert.match(updates, /v84-alert-row/, 'Employee Requests and Need Attention must share a two-column row');
 assert.match(updates, /v84-action-grid/, 'Supervisor action controls must use a two-column grid');
-assert.match(updates, /\.overtime-card'\)\.forEach\(x=>x\.remove\(\)\)/, 'Duplicate standalone overtime card must be removed');
+assert.match(updates, /querySelectorAll\('\.overtime-card'\).*forEach\(x=>x\.remove\(\)\)/, 'Duplicate standalone overtime card must be removed');
