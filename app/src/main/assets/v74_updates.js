@@ -356,7 +356,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.monthlyNormalActualMinutes=(emp,from,to)=>(state.sessions||[]).filter(x=>x&&x.emp===emp&&x.start<to&&(x.end||Date.now())>from).reduce((n,x)=>{const st=Math.max(+x.start||0,from),en=Math.min(+(x.end||Date.now()),to);return en>st?n+normalMinutes(st,en):n},0);
 
  const normalAssignmentAvailableMinutes=(emp,gapStart,gapEnd,previousJob)=>{
-   const intervals=(state.assign||[]).filter(a=>a&&a.emp===emp&&a.job!==HOLD&&!a.cancelled&&a.job!==previousJob)
+   const intervals=(state.assign||[]).filter(a=>a&&a.emp===emp&&a.job!==HOLD&&a.job!==previousJob)
      .map(a=>{
        const st=Math.max(gapStart,+a.assignedAt||gapStart);
        const rawEnd=a.completedAt||a.cancelledAt||gapEnd;
@@ -616,13 +616,13 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
        rows.map(x=>'<tr><td><b>'+esc(x.u.name)+'</b><br><span class="small">'+esc(x.u.id)+'</span></td><td>'+esc(x.u.department||'—')+'</td><td>'+x.sessions.length+'</td><td><b>'+fmtMin(x.minutes)+'</b></td><td><button class="blue" onclick="v753OpenID001Employee(\''+esc(x.u.id)+'\')">DETAILS</button></td></tr>').join('')+'</table></div>':'<div class="notice">No ID001 time in the selected dates.</div>');
  };
  window.v753ReportFilter=window.v753ReportFilter||{from:'',to:''};
- function saveReportFilter(){
+ window.v753SaveReportFilter=function(){
    const f=document.getElementById('v753From')?.value||window.v753ReportFilter.from||'';
    const t=document.getElementById('v753To')?.value||window.v753ReportFilter.to||'';
    window.v753ReportFilter={from:f,to:t};
- }
+ };
  window.v753OpenID001Employee=function(emp){
-   saveReportFilter();
+   window.v753SaveReportFilter();
    const {from,to}=filterBounds(),u=user(emp),rows=(state.sessions||[]).filter(s=>s&&s.emp===emp&&s.job===HOLD&&s.start<to&&(s.end||Date.now())>from).sort((a,b)=>b.start-a.start);
    const body=rows.length?'<div class="v74-scroll"><table><tr><th>Date</th><th>Start</th><th>Stop</th><th>ID001 Hours</th></tr>'+
      rows.map(s=>{const en=s.end||Date.now();return '<tr><td>'+esc(new Date(s.start).toLocaleDateString())+'</td><td>'+esc(new Date(s.start).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))+'</td><td>'+esc(s.end?new Date(s.end).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'Running')+'</td><td><b>'+fmtMin(sessionNormal(s,from,to))+'</b></td></tr>'}).join('')+'</table></div>':'<div class="notice">No ID001 sessions in the selected dates.</div>';
@@ -634,7 +634,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const from=preserve&&window.v753ReportFilter.from?window.v753ReportFilter.from:first;
    const to=preserve&&window.v753ReportFilter.to?window.v753ReportFilter.to:today;
    window.v753ReportFilter={from,to};
-   openModal('<div class="section-title"><h2>◷ ID001 Details</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="notice"><b>ID001 purpose</b><br>Time when an employee is available but no normal workshop work is provided. It counts toward Actual Working Time, but stays separate from productive Job Card work and never appears in Finished Job Cards.</div><div class="row"><label>From<br><input id="v753From" type="date" value="'+from+'" onchange="saveReportFilter();v753RenderID001Report()"></label><label>To<br><input id="v753To" type="date" value="'+to+'" onchange="saveReportFilter();v753RenderID001Report()"></label></div><div id="v753ReportBody" style="margin-top:12px"></div>');
+   openModal('<div class="section-title"><h2>◷ ID001 Details</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="notice"><b>ID001 purpose</b><br>Time when an employee is available but no normal workshop work is provided. It counts toward Actual Working Time, but stays separate from productive Job Card work and never appears in Finished Job Cards.</div><div class="row"><label>From<br><input id="v753From" type="date" value="'+from+'" onchange="v753SaveReportFilter();v753RenderID001Report()"></label><label>To<br><input id="v753To" type="date" value="'+to+'" onchange="v753SaveReportFilter();v753RenderID001Report()"></label></div><div id="v753ReportBody" style="margin-top:12px"></div>');
    setTimeout(window.v753RenderID001Report,0);
  };
 
