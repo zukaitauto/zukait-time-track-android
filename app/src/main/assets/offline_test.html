@@ -59,7 +59,14 @@ const defaultUsers=staffRoster;
 const defaultPasswords={};
 const initial={jobs:[{no:'JC1001',vehicle:'Toyota Corolla',reg:'OM-12345',status:'Open',createdBy:'SUP001',createdAt:new Date('2026-09-16T09:00:00').getTime()},{no:'JC1002',vehicle:'Nissan Patrol',reg:'OM-67890',status:'Open',createdBy:'SUP001',createdAt:new Date('2026-09-15T09:00:00').getTime()}],assign:[{id:'a1',job:'JC1001',emp:'EMP001',suggested:390,completed:false,rework:false,assignedBy:'SUP001',assignedAt:new Date('2026-09-16T09:00:00').getTime()},{id:'a2',job:'JC1002',emp:'EMP001',suggested:150,completed:false,rework:false,assignedBy:'SUP001',assignedAt:new Date('2026-09-15T09:00:00').getTime()},{id:'a3',job:'JC1001',emp:'EMP002',suggested:270,completed:false,rework:false,assignedBy:'SUP001',assignedAt:new Date('2026-09-16T09:30:00').getTime()}],sessions:[],corrections:[],jobEdits:[],suggestedEdits:[],reworks:[],requests:[]};
 let state=null,me=null,employeeClockTimer=null;
-function loadSavedState(){try{const raw=window.localStorage.getItem(KEY);if(!raw)return structuredClone(initial);const parsed=JSON.parse(raw);return parsed&&typeof parsed==='object'?parsed:structuredClone(initial)}catch(e){console.warn('Local storage unavailable or invalid; using in-memory test data.',e);return structuredClone(initial)}}
+function loadSavedState(){try{const raw=window.localStorage.getItem(KEY);if(!raw)return structuredClone(initial);const parsed=JSON.parse(raw);if(!parsed||typeof parsed!=='object')return structuredClone(initial);
+  // Startup recovery for legacy ID001 states that can crash old dashboard renderers before cloud sync runs.
+  let recovered=false;
+  if(Array.isArray(parsed.assign))parsed.assign.forEach(a=>{if(a&&a.job==='ID001'&&!a.cancelled&&!a.completed&&Number(a.idealSafeVersion||0)!==1){a.cancelled=true;a.cancelledAt=Date.now();a.cancelReason='Local startup recovery: legacy ID001';recovered=true}});
+  if(Array.isArray(parsed.sessions))parsed.sessions.forEach(x=>{if(x&&x.job==='ID001'&&!x.end&&Number(x.idealSafeVersion||0)!==1){x.end=Date.now();x.paused=false;x.recoveryClosed=true;recovered=true}});
+  if(recovered){try{window.localStorage.setItem(KEY,JSON.stringify(parsed));window.localStorage.removeItem('zukait_cloud_dirty_v42');window.localStorage.removeItem('zukait_cloud_pending_conflict_v42');window.localStorage.setItem('zukait_cloud_revision_v42','0')}catch(_){}}
+  return parsed;
+}catch(e){console.warn('Local storage unavailable or invalid; using in-memory test data.',e);return structuredClone(initial)}}
 state=loadSavedState();
 state.requests=state.requests||[]; state.additionalActions=state.additionalActions||[]; state.attentionDismissed=state.attentionDismissed||[]; state.suggestedEdits=state.suggestedEdits||[]; state.reworks=state.reworks||[]; state.lastActions=state.lastActions||{}; state.jobDeletes=state.jobDeletes||[];
 let users=state.users||structuredClone(defaultUsers),passwords=state.passwords||structuredClone(defaultPasswords);
