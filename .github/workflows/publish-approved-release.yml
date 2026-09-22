@@ -4,14 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       version_name:
-        description: Approved version name, e.g. V75
+        description: Approved version name, e.g. V85
         required: true
       version_code:
         description: Approved Android version code
         required: true
-  push:
-    paths:
-      - 'release-request.json'
 
 permissions:
   contents: write
@@ -34,13 +31,8 @@ jobs:
         id: approved
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION_NAME="${{ github.event.inputs.version_name }}"
-            VERSION_CODE="${{ github.event.inputs.version_code }}"
-          else
-            VERSION_NAME=$(python3 -c "import json; d=json.load(open('release-request.json')); assert d.get('approvedForStaff') is True; print(d['versionName'])")
-            VERSION_CODE=$(python3 -c "import json; d=json.load(open('release-request.json')); assert d.get('approvedForStaff') is True; print(d['versionCode'])")
-          fi
+          VERSION_NAME="${{ github.event.inputs.version_name }}"
+          VERSION_CODE="${{ github.event.inputs.version_code }}"
           test -n "$VERSION_NAME"
           test -n "$VERSION_CODE"
           echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
