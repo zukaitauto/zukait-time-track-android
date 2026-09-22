@@ -11,8 +11,8 @@ const releaseWorkflow = read('.github/workflows/publish-approved-release.yml');
 
 const versionCode = Number((gradle.match(/versionCode\s+(\d+)/)||[])[1]);
 const versionName = (gradle.match(/versionName\s+['"]([^'"]+)['"]/ )||[])[1];
-assert.equal(versionCode, 47, 'candidate Android versionCode must be 47');
-assert.equal(versionName, 'V84', 'candidate Android versionName must be V84');
+assert.equal(versionCode, 48, 'candidate Android versionCode must be 48');
+assert.equal(versionName, 'V85', 'candidate Android versionName must be V85');
 assert.match(main, /getPackageInfo\(getPackageName\(\), 0\)/, 'native bridge must read the installed APK package info');
 assert.match(main, /return installedVersionName\(\);/, 'native bridge must report installed versionName');
 assert.match(main, /return installedVersionCode\(\);/, 'native bridge must report installed versionCode');
@@ -355,8 +355,8 @@ assert.match(updates, /v82-logo-fallback/, 'V82 must provide generic car fallbac
 assert.match(updates, /v82EV/, 'V82 must detect EV marker');
 assert.match(updates, /⚡ EV/, 'V82 must show EV badge separately from manufacturer logo');
 assert.match(updates, /onerror=/, 'V82 logo image failure must fall back without blank UI');
-assert.match(gradle, /versionCode 47/, 'V84 must use versionCode 47');
-assert.match(gradle, /versionName 'V84'/, 'V84 must use versionName V84');
+assert.match(gradle, /versionCode 48/, 'V85 must use versionCode 48');
+assert.match(gradle, /versionName 'V85'/, 'V85 must use versionName V85');
 
 // V83 employee UI regression contracts
 assert.match(read('app/src/main/assets/offline_test.html'), /id="legacyAppHeader"/, 'legacy app header must be explicitly addressable');
