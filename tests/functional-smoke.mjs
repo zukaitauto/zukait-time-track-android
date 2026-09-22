@@ -318,3 +318,9 @@ assert.equal(v79LatestActive([{emp:'E1',start:1,end:2,paused:true},{emp:'E1',sta
 const v79AssignmentActual=(sessions,id)=>sessions.filter(s=>s.assignmentId===id).reduce((n,s)=>n+Math.max(0,((s.end??s.start)-s.start)/60000),0);
 assert.equal(v79AssignmentActual([{assignmentId:'A1',start:0,end:60000},{assignmentId:'A2',start:60000,end:180000}],'A1'),1,'same JC/employee assignments must not share actual time');
 assert.equal(v79AssignmentActual([{assignmentId:'A1',start:0,end:60000},{assignmentId:'A2',start:60000,end:180000}],'A2'),2,'new/repeat assignment keeps its own actual time');
+
+
+assert.match(updates, /Use Reopen Same Assignment for mistaken finish/, 'completed same JC/employee must not be silently reopened by normal assign');
+assert.match(updates, /Supervisor update existing open assignment/, 'existing same JC/employee open assignment must be updated instead of duplicated');
+assert.match(updates, /window\.overtimeForEmployee=function\(emp,from,to\)/, 'employee overtime must reconcile stale sessions first');
+assert.match(updates, /window\.monthlyNormalActualMinutes=function\(emp,from,to\)/, 'monthly actual must reconcile stale sessions first');
