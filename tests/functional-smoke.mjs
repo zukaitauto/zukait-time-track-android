@@ -276,6 +276,9 @@ const dedupeActive=sessions=>{
 assert.equal(dedupeActive([{emp:'E1',job:'JC1',start:1,end:null},{emp:'E1',job:'ID001',start:2,end:null}]).length,1,'same employee with stale normal + ID001 active records must display once');
 assert.equal(dedupeActive([{emp:'E1',job:'JC1',start:1,end:null},{emp:'E1',job:'ID001',start:2,end:null}])[0].job,'ID001','latest active session must be shown as current activity');
 
+assert.ok(updates.includes('v81-month-grid'), 'employee monthly summary must use two-column 3D circle grid');
+assert.ok(updates.includes("'Incentive Hours'"), 'employee monthly summary must include Incentive Hours');
+assert.ok(updates.includes("'Completed Jobs'") && updates.includes("'Suggested Time'") && updates.includes("'Actual Time'") && updates.includes("'Ideal Time'") && updates.includes("'Overtime'"), 'employee monthly summary must preserve monthly details');
 console.log('Functional smoke tests passed: Employee, ID001, holidays, Ideal Time availability, Leave, Active Workers, Supervisor, Manager, update/release contracts.');
 
 
