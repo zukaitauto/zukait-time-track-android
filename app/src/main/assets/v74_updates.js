@@ -1393,5 +1393,56 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    return typeof priorRender79==='function'?priorRender79.apply(this,arguments):undefined;
  };
  setTimeout(()=>{reconcileAllSessionsV79();reconcileDuplicateOpenAssignments()},100);
+
+
+ // Normal assignment guard: never create/reopen a duplicate same JC + employee silently.
+ const priorAssignCore79=window.assignJobCore;
+ window.assignJobCore=function(no,emp,minutes){
+   if(no===HOLD)return typeof priorAssignCore79==='function'?priorAssignCore79.apply(this,arguments):undefined;
+   const m=Number(minutes);
+   if(!Number.isFinite(m)||m<1)return typeof window.v74Msg==='function'?window.v74Msg('Enter a valid allocated time.','Assign Job Card'):alert('Enter a valid allocated time.');
+   reconcileDuplicateOpenAssignments();
+   const same=assigns().filter(a=>a&&a.job===no&&a.emp===emp&&!a.cancelled&&!a.rework).sort((a,b)=>(+b.assignedAt||0)-(+a.assignedAt||0));
+   const open=same.filter(a=>!a.completed);
+   if(open.length){
+     const a=open[0],old=+a.suggested||0;
+     a.suggested=m;a.assignedBy=me?.id||a.assignedBy;a.updatedAt=Date.now();
+     state.suggestedEdits=state.suggestedEdits||[];
+     state.suggestedEdits.push({id:uid(),assignmentId:a.id,job:no,emp,old,newValue:m,by:me?.id||'',at:Date.now(),source:'Supervisor update existing open assignment'});
+     if(typeof setLastAction==='function')setLastAction('Updated assignment '+no+' for '+(user(emp)?.name||emp));
+     save();render();return a;
+   }
+   const completed=same.find(a=>a.completed);
+   if(completed){
+     const msg='This employee already completed this Job Card. Use Reopen Same Assignment for mistaken finish, or Repeat Work when it is repeat work.';
+     return typeof window.v74Msg==='function'?window.v74Msg(msg,'Existing Completed Work'):alert(msg);
+   }
+   const a={id:uid(),job:no,emp,suggested:m,completed:false,cancelled:false,rework:false,assignedBy:me?.id||'SYSTEM',assignedAt:Date.now(),v79Integrity:true};
+   assigns().push(a);
+   if(typeof setLastAction==='function')setLastAction('Assigned '+no+' to '+(user(emp)?.name||emp));
+   save();render();return a;
+ };
+
+ // Employee overtime/actual summaries reconcile first, so stale open sessions cannot keep accruing time.
+ const oldOTEmployee79=window.overtimeForEmployee;
+ window.overtimeForEmployee=function(emp,from,to){
+   reconcileEmployeeSessions(emp);
+   return sessions().filter(x=>x&&x.emp===emp&&x.start<to&&(x.end||Date.now())>from).reduce((n,x)=>{
+     const st=Math.max(+x.start||0,from),en=Math.min(+(x.end||Date.now()),to);
+     if(en<=st)return n;
+     try{return n+(typeof window.sessionOvertimeMinutes==='function'?window.sessionOvertimeMinutes({start:st,end:en},en):0)}
+     catch(_){return n}
+   },0);
+ };
+ const oldMonthlyNormal79=window.monthlyNormalActualMinutes;
+ window.monthlyNormalActualMinutes=function(emp,from,to){
+   reconcileEmployeeSessions(emp);
+   return sessions().filter(x=>x&&x.emp===emp&&x.job!==HOLD&&x.start<to&&(x.end||Date.now())>from).reduce((n,x)=>{
+     const st=Math.max(+x.start||0,from),en=Math.min(+(x.end||Date.now()),to);
+     if(en<=st)return n;
+     try{return n+(typeof window.sessionNormalMinutes==='function'?window.sessionNormalMinutes({start:st,end:en},en):(en-st)/60000)}
+     catch(_){return n+(en-st)/60000}
+   },0);
+ };
  window.v79WorkSessionIntegrityReady=true;
 })();
