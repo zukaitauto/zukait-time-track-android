@@ -404,7 +404,7 @@ assert.match(updates, /!x\.closest\('\.glance-grid,\.v74-six'\)/, 'Overtime clea
 assert.match(updates, /v84EmployeeAccount/, 'Employee dashboard must provide an account menu');
 assert.match(updates, /ABOUT \/ UPDATE/, 'Employee account menu must expose update access');
 assert.match(updates, /v84EmployeeLeave/, 'Employee account menu must retain Leave access');
-assert.match(updates, /v65OpenAbout\(\)/, 'Employee account menu must retain About and Update access');
+assert.match(updates, /v63OpenAbout\(\)/, 'Employee account menu must open the working About and Update screen');
 assert.match(updates, /closeModal\(\);logout\(\)/, 'Employee account menu must retain Logout');
 
 assert.match(updates, /st=ot>0\?'Overtime'/, 'Technician Board must show Overtime status');
