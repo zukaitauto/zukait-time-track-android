@@ -1,8 +1,8 @@
 {
-  "versionName": "V86",
-  "versionCode": 49,
+  "versionName": "V87",
+  "versionCode": 50,
   "approvedForStaff": true,
   "approvedAt": "2026-09-23",
-  "sourceCommit": "6972255f48f3597ea8eaf4d544a0d04d9b960a0c",
-  "publishNonce": "approved-v86-supervisor-dashboard-recovery-20260923-r1"
+  "sourceCommit": "9808dd4d9e664f00c2085d5004b6ba35a9ffc42a",
+  "publishNonce": "approved-v87-supervisor-runtime-stability-20260923-r1"
 }
