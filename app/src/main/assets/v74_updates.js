@@ -75,7 +75,7 @@ function v84SupervisorPanels(root){
 }
 function v74ApplyManagerFinal(){if(me?.role==='Manager')polish()}
 const v74SupRender=window.renderSupervisor;
-if(typeof v74SupRender==='function')window.renderSupervisor=function(){let r=v74SupRender.apply(this,arguments);setTimeout(v74ApplySupervisorFinal,0);return r};
+if(typeof v74SupRender==='function')window.renderSupervisor=function(){let r=v74SupRender.apply(this,arguments);v74ApplySupervisorFinal();return r};
 const v74MgrRender=window.renderManager;
 if(typeof v74MgrRender==='function')window.renderManager=function(){let r=v74MgrRender.apply(this,arguments);setTimeout(v74ApplyManagerFinal,0);return r};
 
