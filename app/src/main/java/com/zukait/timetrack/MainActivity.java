@@ -582,17 +582,53 @@ public class MainActivity extends Activity {
     }
 
     private void downloadAndInstallUpdate() {
-        try {
-            DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
-            if (dm == null) return;
-            Uri uri = Uri.parse("https://github.com/zukaitauto/zukait-time-track-android/releases/latest/download/ZUKAIT_TIME_TRACK_LATEST.apk");
-            DownloadManager.Request req = new DownloadManager.Request(uri)
-                    .setTitle("Zukait Time Track Update")
-                    .setDescription("Preparing update")
-                    .setMimeType("application/vnd.android.package-archive")
-                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-            updateDownloadId = dm.enqueue(req);
-        } catch (Exception ignored) { }
+        new Thread(() -> {
+            int latestCode = 0;
+            boolean error = false;
+            HttpURLConnection conn = null;
+            try {
+                URL url = new URL("https://raw.githubusercontent.com/zukaitauto/zukait-time-track-android/main/latest-version.json");
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(10000);
+                conn.setReadTimeout(10000);
+                conn.setRequestProperty("Cache-Control", "no-cache");
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) sb.append(line);
+                    latestCode = new JSONObject(sb.toString()).optInt("versionCode", 0);
+                    if (latestCode <= 0) error = true;
+                }
+            } catch (Exception ex) {
+                error = true;
+            } finally {
+                if (conn != null) conn.disconnect();
+            }
+
+            final int publishedCode = latestCode;
+            final boolean failed = error;
+            runOnUiThread(() -> {
+                if (failed) {
+                    android.widget.Toast.makeText(MainActivity.this, "Unable to verify the latest version. Please try again.", android.widget.Toast.LENGTH_LONG).show();
+                    return;
+                }
+                if (publishedCode <= installedVersionCode()) {
+                    android.widget.Toast.makeText(MainActivity.this, "App is already up to date.", android.widget.Toast.LENGTH_LONG).show();
+                    return;
+                }
+                try {
+                    DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+                    if (dm == null) return;
+                    Uri uri = Uri.parse("https://github.com/zukaitauto/zukait-time-track-android/releases/latest/download/ZUKAIT_TIME_TRACK_LATEST.apk");
+                    DownloadManager.Request req = new DownloadManager.Request(uri)
+                            .setTitle("Zukait Time Track Update")
+                            .setDescription("Preparing update")
+                            .setMimeType("application/vnd.android.package-archive")
+                            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                    updateDownloadId = dm.enqueue(req);
+                } catch (Exception ignored) { }
+            });
+        }).start();
     }
 
     private void notifyMicrophonePermissionToWeb(boolean granted) {
