@@ -688,3 +688,198 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v753ID001ReportReady=true;
  window.v754FinalRuntimeFixes=true;
 })();
+
+
+/* V75.5 LEAVE CONTROL + PAUSED-JOB ID001 AUTHORITY */
+(function(){'use strict';
+ const H='ID001';
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const dateKey=ts=>{const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+ const dayStartFromKey=k=>{const p=String(k||'').split('-').map(Number);return p.length===3?new Date(p[0],p[1]-1,p[2]).getTime():NaN};
+ const periodLabel=p=>p==='AM'?'Morning Half Day — 8:00 AM to 1:00 PM':p==='PM'?'Afternoon Half Day — 3:00 PM to 7:00 PM':'Full Day — 8:00 AM to 1:00 PM + 3:00 PM to 7:00 PM';
+ const leaveSegments=l=>{
+   const d=dayStartFromKey(l?.date);if(!Number.isFinite(d))return[];
+   if(l.period==='AM')return[[d+8*3600000,d+13*3600000]];
+   if(l.period==='PM')return[[d+15*3600000,d+19*3600000]];
+   return[[d+8*3600000,d+13*3600000],[d+15*3600000,d+19*3600000]];
+ };
+ const activeLeaveRows=()=>{state.leaves=state.leaves||[];return state.leaves.filter(l=>l&&!l.cancelled)};
+ const leaveRowsFor=(emp,from,to)=>activeLeaveRows().filter(l=>l.emp===emp).filter(l=>leaveSegments(l).some(([a,b])=>b>from&&a<to));
+ window.v63LeaveOverlapMinutes=function(emp,from,to){
+   return leaveRowsFor(emp,from,to).reduce((sum,l)=>sum+leaveSegments(l).reduce((n,[a,b])=>n+Math.max(0,Math.min(to,b)-Math.max(from,a))/60000,0),0);
+ };
+ window.v63IsOnLeave=function(emp,ts=Date.now()){
+   return activeLeaveRows().some(l=>l.emp===emp&&leaveSegments(l).some(([a,b])=>ts>=a&&ts<b));
+ };
+
+ function userSafe(id){try{return user(id)||{id,name:id,role:'',department:''}}catch(_){return{id,name:id,role:'',department:''}}}
+ function canManageTarget(target){
+   if(!me||!target)return false;
+   if(String(target)===String(me.id))return true;
+   const u=userSafe(target);
+   if(me.role==='Manager')return u.role==='Employee'||u.role==='Supervisor';
+   if(me.role==='Supervisor')return u.role==='Employee';
+   return false;
+ }
+ function hasSessionConflict(emp,l){
+   return (state.sessions||[]).some(s=>s&&s.emp===emp&&leaveSegments(l).some(([a,b])=>Math.min(s.end||Date.now(),b)>Math.max(s.start||0,a)));
+ }
+ function hasDuplicate(emp,l){
+   return activeLeaveRows().some(x=>x.emp===emp&&x.date===l.date&&(x.period==='FULL'||l.period==='FULL'||x.period===l.period));
+ }
+ function closedLeaveDay(l){
+   const seg=leaveSegments(l)[0];if(!seg)return false;
+   const ts=seg[0];
+   try{return typeof window.v75IsClosedWorkshopDay==='function'&&window.v75IsClosedWorkshopDay(ts)}catch(_){return new Date(ts).getDay()===5}
+ }
+ function notifyLeave(l){
+   state.leaveNotifications=state.leaveNotifications||[];
+   state.leaveNotifications.push({id:uid(),leaveId:l.id,emp:l.emp,period:l.period,date:l.date,by:l.by,at:Date.now(),cancelled:false});
+   if(l.by===l.emp && userSafe(l.emp).role!=='Manager'){
+     state.requests=state.requests||[];
+     state.requests.push({id:uid(),type:'leave_notice',emp:l.emp,job:'',status:'New',message:(userSafe(l.emp).name||l.emp)+' marked '+periodLabel(l.period)+' leave for '+l.date+(l.remark?' — '+l.remark:''),createdAt:Date.now(),leaveId:l.id});
+   }
+ }
+
+ window.v755OpenLeaveForm=function(target){
+   target=target||me?.id;if(!target||!canManageTarget(target))return;
+   const u=userSafe(target),today=dateKey(Date.now()),self=String(target)===String(me.id);
+   const rows=activeLeaveRows().filter(l=>l.emp===target).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,12);
+   openModal('<div class="section-title"><h2>Leave — '+esc(u.name)+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
+     '<div class="grid"><label>Date<br><input type="date" id="v755LeaveDate" min="'+today+'" value="'+today+'"></label><label>Leave Type<br><select id="v755LeavePeriod"><option value="FULL">Full Day</option><option value="AM">Morning Half Day — 8:00 AM to 1:00 PM</option><option value="PM">Afternoon Half Day — 3:00 PM to 7:00 PM</option></select></label></div>'+
+     '<label>Remark / Reason (optional)<br><input id="v755LeaveRemark" style="width:100%" placeholder=""></label>'+
+     '<p><button class="green big-action" onclick="v755SaveLeave(\''+esc(target)+'\')">'+(self?'MARK MY LEAVE':'MARK LEAVE')+'</button></p>'+
+     '<h3>Recent Leave</h3>'+(rows.length?'<div style="overflow:auto"><table><tr><th>Date</th><th>Type</th><th>Marked By</th><th>Remark</th></tr>'+
+       rows.map(l=>'<tr><td>'+esc(l.date)+'</td><td>'+esc(periodLabel(l.period))+'</td><td>'+esc(userSafe(l.by).name||l.by)+'</td><td>'+esc(l.remark||'—')+'</td></tr>').join('')+'</table></div>':'<div class="notice">No leave records.</div>'));
+ };
+ window.v755SaveLeave=function(emp){
+   if(!canManageTarget(emp))return;
+   const date=document.getElementById('v755LeaveDate')?.value,period=document.getElementById('v755LeavePeriod')?.value,remark=document.getElementById('v755LeaveRemark')?.value.trim()||'';
+   if(!date||!['FULL','AM','PM'].includes(period))return alert('Select leave date and leave type.');
+   const l={id:uid(),emp,date,period,remark,by:me.id,createdAt:Date.now(),cancelled:false};
+   if(closedLeaveDay(l))return alert('Leave is not required on Friday or a workshop Public Holiday.');
+   if(hasSessionConflict(emp,l))return alert('Work time is already recorded during this leave period. Correct the work/leave conflict before marking leave.');
+   if(hasDuplicate(emp,l))return alert('Leave is already recorded for this date/period.');
+   state.leaves=state.leaves||[];state.leaveAudit=state.leaveAudit||[];
+   state.leaves.push(l);state.leaveAudit.push({id:uid(),action:'ADD',leaveId:l.id,by:me.id,at:Date.now()});notifyLeave(l);
+   save();closeModal();render();
+   setTimeout(()=>{try{typeof window.v74Msg==='function'?window.v74Msg('Leave marked successfully. Supervisor and Manager can see this leave.','Leave'):alert('Leave marked successfully.')}catch(_){}},0);
+ };
+ window.v63OpenLeave=function(emp){return window.v755OpenLeaveForm(emp||me?.id)};
+
+ window.v755OpenLeaveHub=function(){
+   if(!me)return;
+   if(me.role==='Employee')return window.v755OpenLeaveForm(me.id);
+   const allowed=users.filter(u=>u&&((me.role==='Manager'&&(u.role==='Employee'||u.role==='Supervisor'))||(me.role==='Supervisor'&&u.role==='Employee')));
+   openModal('<div class="section-title"><h2>Leave</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
+     '<button class="green big-action" style="width:100%;margin-bottom:12px" onclick="v755OpenLeaveForm(\''+esc(me.id)+'\')">MY LEAVE</button>'+
+     '<h3>Mark Staff Leave</h3><div class="grid">'+allowed.map(u=>'<button class="secondary" onclick="v755OpenLeaveForm(\''+esc(u.id)+'\')"><b>'+esc(u.name)+'</b><br><span class="small">'+esc(u.role+(u.department?' · '+u.department:''))+'</span></button>').join('')+'</div>');
+ };
+
+ window.v65OpenAccount=function(){
+   if(!me)return;
+   openModal('<div class="section-title"><h2>'+esc(me.name)+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
+     '<div class="v63-account"><button onclick="cloudSyncNow&&cloudSyncNow()">SYNC</button><button onclick="v63OpenAbout()">ABOUT</button><button onclick="v755OpenLeaveHub()">LEAVE</button><button class="danger" onclick="logout()">LOGOUT</button></div>');
+ };
+
+ function leaveToday(){const k=dateKey(Date.now());return activeLeaveRows().filter(l=>l.date===k)}
+ function leaveMonth(){const d=new Date(),prefix=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-';return activeLeaveRows().filter(l=>String(l.date||'').startsWith(prefix))}
+ function uniquePeople(rows){return new Set(rows.map(l=>String(l.emp))).size}
+ function leaveListHtml(rows){
+   const sorted=rows.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))||(b.createdAt||0)-(a.createdAt||0));
+   return sorted.length?'<div style="overflow:auto"><table><tr><th>Name</th><th>Role / Department</th><th>Date</th><th>Leave Type</th><th>Remark</th><th>Marked By</th></tr>'+
+     sorted.map(l=>{const u=userSafe(l.emp),by=userSafe(l.by);return'<tr><td><b>'+esc(u.name)+'</b></td><td>'+esc(u.role+(u.department?' / '+u.department:''))+'</td><td>'+esc(l.date)+'</td><td>'+esc(periodLabel(l.period))+'</td><td>'+esc(l.remark||'—')+'</td><td>'+esc(by.name||l.by)+'</td></tr>'}).join('')+'</table></div>':'<div class="notice">No leave records.</div>';
+ }
+ window.v755OpenLeaveList=function(mode){
+   const rows=mode==='month'?leaveMonth():leaveToday();
+   openModal('<div class="section-title"><h2>'+(mode==='month'?'This Month Leave':'Today’s Leave')+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+leaveListHtml(rows));
+ };
+ function injectManagerLeaveRow(){
+   if(!me||me.role!=='Manager')return;
+   const root=document.getElementById('managerView');if(!root)return;
+   const section=[...root.querySelectorAll('.v67-section,.v65-section')].find(x=>/Workshop Control Center/i.test(x.querySelector('h3')?.textContent||''));
+   if(!section)return;
+   section.querySelectorAll('button').forEach(b=>{if(/^On Leave\b/i.test((b.textContent||'').trim()))b.style.display='none'});
+   let row=section.querySelector('#v755LeaveControlRow');
+   if(!row){row=document.createElement('div');row.id='v755LeaveControlRow';row.className='v755-leave-control-row';section.appendChild(row);}
+   const today=leaveToday(),month=leaveMonth();
+   row.innerHTML='<button class="v755-leave-card today" onclick="v755OpenLeaveList(\'today\')"><span>TODAY’S LEAVE</span><b>'+uniquePeople(today)+'</b><small>Tap to see who is on leave</small></button>'+
+     '<button class="v755-leave-card month" onclick="v755OpenLeaveList(\'month\')"><span>THIS MONTH LEAVE</span><b>'+month.length+'</b><small>Tap for monthly leave details</small></button>';
+ }
+
+ // Leave must never become Ideal Time. Full-day leave is 5h + 4h; lunch is excluded.
+ const leaveAwareIdeal=(emp,from,to)=>{
+   const rows=(state.sessions||[]).filter(x=>x&&x.emp===emp&&x.start<to&&(x.end||Date.now())>from)
+     .map(x=>({job:x.job,start:Math.max(+x.start||0,from),end:Math.min(+(x.end||Date.now()),to)}))
+     .filter(x=>x.end>x.start).sort((a,b)=>a.start-b.start);
+   let sum=0,last=null;
+   for(const x of rows){
+     if(last&&x.start>last.end){
+       const avail=typeof window.v75NormalAssignmentAvailableMinutes==='function'?window.v75NormalAssignmentAvailableMinutes(emp,last.end,x.start,last.job):0;
+       const leave=window.v63LeaveOverlapMinutes(emp,last.end,x.start);
+       sum+=Math.max(0,avail-leave);
+     }
+     if(!last||x.end>last.end)last={job:x.job,start:x.start,end:x.end};
+   }
+   return Math.max(0,sum);
+ };
+ window.monthlyIdealTimeMinutes=leaveAwareIdeal;
+
+ // ID001 may be assigned when all open normal work is PAUSED. Any active or ready/new normal work still blocks it.
+ const openHold=emp=>(state.assign||[]).find(a=>a&&a.job===H&&a.emp===emp&&!a.cancelled&&!a.completed)||null;
+ const openNormal=emp=>(state.assign||[]).filter(a=>a&&a.job!==H&&a.emp===emp&&!a.cancelled&&!a.completed);
+ const normalStatus=a=>{try{return empStatus(a)}catch(_){return a?.completed?'Finished':'New'}};
+ const pausedOnlyNormal=emp=>{const rows=openNormal(emp);return rows.length>0&&rows.every(a=>normalStatus(a)==='Paused')};
+ const idealAvailable=emp=>!activeSession(emp)&&!openHold(emp)&&(openNormal(emp).length===0||pausedOnlyNormal(emp));
+ window.v755PausedOnlyNormal=pausedOnlyNormal;
+ window.v75IdealAvailableEmployees=()=>users.filter(u=>u&&u.role==='Employee'&&idealAvailable(u.id));
+
+ const oldAssignCore=window.assignJobCore;
+ window.assignJobCore=function(no,emp,minutes){
+   if(no!==H)return typeof oldAssignCore==='function'?oldAssignCore.apply(this,arguments):undefined;
+   const m=Number(minutes),t=Date.now(),n=userSafe(emp).name||emp;
+   if(!Number.isFinite(m)||m<1)return typeof window.v74Msg==='function'?window.v74Msg('Enter a valid allocated time for ID001.','Ideal Time'):alert('Enter a valid allocated time for ID001.');
+   if(typeof window.v75IsClosedWorkshopDay==='function'&&window.v75IsClosedWorkshopDay(t))return typeof window.v74Msg==='function'?window.v74Msg('ID001 cannot be assigned on Friday or a Public Holiday.','Ideal Time'):alert('ID001 cannot be assigned today.');
+   if(typeof window.v75IsID001DutyTime==='function'&&!window.v75IsID001DutyTime(t))return typeof window.v74Msg==='function'?window.v74Msg('ID001 can be assigned only during duty hours: 08:00–13:00 and 15:00–19:00.','Ideal Time'):alert('Outside duty hours.');
+   if(window.v63IsOnLeave(emp,t))return typeof window.v74Msg==='function'?window.v74Msg(n+' is on leave. ID001 cannot be assigned.','Ideal Time'):alert(n+' is on leave.');
+   if(openHold(emp))return typeof window.v74Msg==='function'?window.v74Msg('ID001 is already assigned to '+n+'.','Ideal Time'):alert('ID001 is already assigned.');
+   if(activeSession(emp))return typeof window.v74Msg==='function'?window.v74Msg(n+' has an active running job. ID001 cannot be assigned.','Ideal Time'):alert(n+' has an active job.');
+   const blocking=openNormal(emp).filter(a=>normalStatus(a)!=='Paused');
+   if(blocking.length)return typeof window.v74Msg==='function'?window.v74Msg(n+' has normal work available. ID001 is allowed only when normal work is paused and no other job is available.','Ideal Time'):alert(n+' has normal work available.');
+   state.assign=state.assign||[];
+   const a={id:uid(),job:H,emp,suggested:m,completed:false,cancelled:false,rework:false,idealCard:true,idealSafeVersion:2,assignedBy:me?.id||'SYSTEM',assignedAt:Date.now(),pausedJobFallback:pausedOnlyNormal(emp)};
+   state.assign.push(a);if(typeof setLastAction==='function')setLastAction('Assigned ID001 to '+n+' for '+fmt(m));save();render();return a;
+ };
+ window.v75AssignIdealToAvailable=function(minutes,employeeIds){
+   const m=Number(minutes),t=Date.now();if(!Number.isFinite(m)||m<1)return{ok:false,reason:'invalid_time',assigned:[]};
+   if(typeof window.v75IsClosedWorkshopDay==='function'&&window.v75IsClosedWorkshopDay(t))return{ok:false,reason:'holiday',assigned:[]};
+   if(typeof window.v75IsID001DutyTime==='function'&&!window.v75IsID001DutyTime(t))return{ok:false,reason:'outside_duty',assigned:[]};
+   const wanted=Array.isArray(employeeIds)&&employeeIds.length?new Set(employeeIds.map(String)):null;
+   const list=users.filter(u=>u&&u.role==='Employee'&&(!wanted||wanted.has(String(u.id)))&&!window.v63IsOnLeave(u.id,t)&&idealAvailable(u.id));
+   if(!list.length)return{ok:false,reason:'none_available',assigned:[]};
+   const created=[];
+   for(const u of list){const a={id:uid(),job:H,emp:u.id,suggested:m,completed:false,cancelled:false,rework:false,idealCard:true,idealSafeVersion:2,assignedBy:me?.id||'SYSTEM',assignedAt:t,pausedJobFallback:pausedOnlyNormal(u.id)};state.assign.push(a);created.push(a);}
+   if(typeof setLastAction==='function')setLastAction('Assigned ID001 to '+created.length+' available staff');save();render();return{ok:true,assigned:created.map(a=>a.emp)};
+ };
+
+ const priorRender=window.render;
+ window.render=function(){
+   const r=typeof priorRender==='function'?priorRender.apply(this,arguments):undefined;
+   setTimeout(injectManagerLeaveRow,0);return r;
+ };
+ const priorRefresh=window.refreshActiveRunningTime;
+ window.refreshActiveRunningTime=function(){
+   const r=typeof priorRefresh==='function'?priorRefresh.apply(this,arguments):undefined;
+   if(me?.role==='Employee'){
+     const root=document.getElementById('employeeView'),n=new Date(),from=new Date(n.getFullYear(),n.getMonth(),1).getTime(),to=new Date(n.getFullYear(),n.getMonth()+1,1).getTime();
+     root?.querySelectorAll('.month-summary .notice').forEach(box=>{if((box.querySelector('b')?.textContent||'').trim()==='Total Ideal Time'){const stat=box.querySelector('.stat');if(stat)stat.textContent=fmt(leaveAwareIdeal(me.id,from,to));}});
+   }
+   return r;
+ };
+
+ const css=document.createElement('style');css.id='v755LeaveStyle';css.textContent=
+   '.v755-leave-control-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.v755-leave-card{min-height:95px;border-radius:14px;border:1px solid;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;text-align:left;padding:13px;box-shadow:0 5px 12px rgba(34,55,80,.08)}.v755-leave-card span{font-size:11px;font-weight:900}.v755-leave-card b{font-size:27px;margin:4px 0}.v755-leave-card small{font-size:10px}.v755-leave-card.today{background:#fff1f3;color:#984758;border-color:#f0d4d9}.v755-leave-card.month{background:#f5f0ff;color:#6d4a9d;border-color:#ded1f2}@media(max-width:620px){.v755-leave-control-row{grid-template-columns:1fr 1fr}}';
+ document.head.appendChild(css);
+ setTimeout(injectManagerLeaveRow,0);
+ window.v755LeaveAndPausedID001Ready=true;
+})();
