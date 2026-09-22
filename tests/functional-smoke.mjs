@@ -222,4 +222,29 @@ assert.equal(availabilityMinutes([], 'E1', g0, g1, 'JC1'),0,'gap with no other a
 assert.equal(availabilityMinutes([{emp:'E1',job:'JC2',assignedAt:g0-60000}], 'E1', g0, g1, 'JC1'),30,'gap with another normal job already available must be Ideal Time');
 assert.equal(availabilityMinutes([{emp:'E1',job:'JC1',assignedAt:g0-60000}], 'E1', g0, g1, 'JC1'),0,'paused prior job by itself must not create Ideal Time when no other work exists');
 
-console.log('Functional smoke tests passed: Employee, ID001, holidays, Ideal Time availability, Supervisor, Manager, update/release contracts.');
+
+// V75.5 Leave + paused-ID001 contracts
+assert.match(updates, /V75\.5 LEAVE CONTROL \+ PAUSED-JOB ID001 AUTHORITY/, 'V75.5 leave/ID001 authority must be present');
+assert.match(updates, /return\[\[d\+8\*3600000,d\+13\*3600000\],\[d\+15\*3600000,d\+19\*3600000\]\]/, 'full-day leave must exclude the 13:00–15:00 lunch break');
+assert.match(updates, /TODAY’S LEAVE/, 'Manager Workshop Control Center must show Today’s Leave');
+assert.match(updates, /THIS MONTH LEAVE/, 'Manager Workshop Control Center must show This Month Leave');
+assert.match(updates, /v755-leave-control-row/, 'Manager leave controls must use a dedicated two-column row');
+assert.match(updates, /SYNC[\s\S]*ABOUT[\s\S]*LEAVE[\s\S]*LOGOUT/, 'all account menus must expose SYNC ABOUT LEAVE LOGOUT');
+assert.match(updates, /u\.role==='Employee'\|\|u\.role==='Supervisor'/, 'Manager must be able to mark Employee or Supervisor leave');
+assert.match(updates, /rows\.every\(a=>normalStatus\(a\)==='Paused'\)/, 'paused-only normal work must be eligible for ID001');
+assert.match(updates, /blocking=openNormal\(emp\)\.filter\(a=>normalStatus\(a\)!=='Paused'\)/, 'any non-paused normal job must still block ID001');
+assert.match(updates, /pausedJobFallback:pausedOnlyNormal\(emp\)/, 'ID001 assignment must record paused-job fallback context');
+assert.match(updates, /leaveAwareIdeal/, 'leave periods must be excluded from Ideal Time');
+
+const fullLeave={date:'2026-09-21',period:'FULL'};
+const leaveSeg=d=>{
+  const p=d.date.split('-').map(Number),x=new Date(p[0],p[1]-1,p[2]).getTime();
+  return d.period==='FULL'?[[x+8*3600000,x+13*3600000],[x+15*3600000,x+19*3600000]]:[];
+};
+assert.equal(leaveSeg(fullLeave).reduce((n,[a,b])=>n+(b-a)/3600000,0),9,'full-day leave must equal 9 duty hours');
+
+const pausedEligibility=rows=>rows.length===0||rows.every(x=>x.status==='Paused');
+assert.equal(pausedEligibility([{status:'Paused'}]),true,'paused current job with no other available work must allow ID001');
+assert.equal(pausedEligibility([{status:'Paused'},{status:'New'}]),false,'another available normal job must block ID001');
+
+console.log('Functional smoke tests passed: Employee, ID001, holidays, Ideal Time availability, Leave, Supervisor, Manager, update/release contracts.');
