@@ -2,6 +2,7 @@ package com.zukait.timetrack;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -29,12 +30,15 @@ import android.view.View;
 import android.print.PrintManager;
 import android.print.PrintDocumentAdapter;
 import android.webkit.JavascriptInterface;
+import android.webkit.JsResult;
+import android.webkit.JsPromptResult;
 import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.widget.EditText;
 
 import org.json.JSONObject;
 
@@ -129,6 +133,57 @@ public class MainActivity extends Activity {
 
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
         webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
+                runOnUiThread(() -> {
+                    String text = message == null ? "" : message;
+                    if (text.startsWith("Request sent to Supervisor") || text.startsWith("Request sent")) {
+                        android.widget.Toast.makeText(MainActivity.this, text, android.widget.Toast.LENGTH_LONG).show();
+                        result.confirm();
+                        return;
+                    }
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("Zukait Time Track")
+                            .setMessage(text)
+                            .setPositiveButton("OK", (dialog, which) -> result.confirm())
+                            .setOnCancelListener(dialog -> result.cancel())
+                            .show();
+                });
+                return true;
+            }
+
+            @Override
+            public boolean onJsConfirm(WebView view, String url, String message, JsResult result) {
+                runOnUiThread(() -> new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Zukait Time Track")
+                        .setMessage(message == null ? "" : message)
+                        .setPositiveButton("OK", (dialog, which) -> result.confirm())
+                        .setNegativeButton("Cancel", (dialog, which) -> result.cancel())
+                        .setOnCancelListener(dialog -> result.cancel())
+                        .show());
+                return true;
+            }
+
+            @Override
+            public boolean onJsPrompt(WebView view, String url, String message, String defaultValue, JsPromptResult result) {
+                runOnUiThread(() -> {
+                    final EditText input = new EditText(MainActivity.this);
+                    input.setText(defaultValue == null ? "" : defaultValue);
+                    input.setSelectAllOnFocus(true);
+                    int pad = (int) (18 * getResources().getDisplayMetrics().density);
+                    input.setPadding(pad, pad / 2, pad, pad / 2);
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("Zukait Time Track")
+                            .setMessage(message == null ? "" : message)
+                            .setView(input)
+                            .setPositiveButton("OK", (dialog, which) -> result.confirm(input.getText().toString()))
+                            .setNegativeButton("Cancel", (dialog, which) -> result.cancel())
+                            .setOnCancelListener(dialog -> result.cancel())
+                            .show();
+                });
+                return true;
+            }
+
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
                 runOnUiThread(() -> {

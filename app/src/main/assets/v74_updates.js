@@ -266,7 +266,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const overtimeMin=(state.sessions||[]).filter(x=>x&&x.emp===me.id&&x.job!==H&&x.start<mt&&(x.end||nowTs)>mf).reduce((n,x)=>{const st=Math.max(+x.start||0,mf),en=Math.min(+(x.end||nowTs),mt);if(en<=st)return n;try{return n+(typeof window.sessionOvertimeMinutes==='function'?window.sessionOvertimeMinutes({start:st,end:en},en):0)}catch(_){return n}},0);
    const normalSg=normalDone.reduce((n,a)=>n+(+a.suggested||0),0),normalAc=normalDone.reduce((n,a)=>n+actual(a),0),eff=normalAc?normalSg/normalAc*100:null;
    const month='<div class="card month-summary v75s-section"><div class="section-title"><h3>📅 This Month</h3><span class="pill">MONTHLY</span></div><div class="grid"><div class="notice"><b>Completed Jobs</b><div class="stat">'+normalDone.length+'</div></div><div class="notice"><b>Efficiency</b><div class="stat">'+(eff==null?'—':eff.toFixed(1)+'%')+'</div></div><div class="notice"><b>Total Ideal Time</b><div class="stat">'+fm(idealMin)+'</div></div><div class="notice"><b>Overtime</b><div class="stat">'+fm(overtimeMin)+'</div><span class="small">Monitoring only · excluded from efficiency and incentive</span></div></div></div>';
-   const finished='<div class="card v75s-section"><div class="section-title"><h3>✅ Finished Jobs</h3><span class="pill">'+done.length+'</span></div>'+(done.length?'<div class="v75s-history"><table><tr><th>Job</th><th>Vehicle</th><th>Allocated</th><th>Actual</th><th>Finished</th></tr>'+done.slice(0,20).map(a=>{const x=jj(a.job);return '<tr><td><b>'+esc(a.job)+'</b></td><td>'+esc(a.job===H?'Ideal Time':(x.vehicle||'—'))+'</td><td>'+fm(a.suggested)+'</td><td>'+fm(actual(a))+'</td><td>'+esc(a.completedAt?new Date(a.completedAt).toLocaleString():'—')+'</td></tr>'}).join('')+'</table></div>':'<p class="muted">No finished jobs.</p>')+'</div>';
+   const finishedDone=done.filter(a=>a.job!==H);const finished='<div class="card v75s-section"><div class="section-title"><h3>✅ Finished Jobs</h3><span class="pill">'+finishedDone.length+'</span></div>'+(finishedDone.length?'<div class="v75s-history"><table><tr><th>Job</th><th>Vehicle</th><th>Allocated</th><th>Actual</th><th>Finished</th></tr>'+finishedDone.slice(0,20).map(a=>{const x=jj(a.job);return '<tr><td><b>'+esc(a.job)+'</b></td><td>'+esc(x.vehicle||'—')+'</td><td>'+fm(a.suggested)+'</td><td>'+fm(actual(a))+'</td><td>'+esc(a.completedAt?new Date(a.completedAt).toLocaleString():'—')+'</td></tr>'}).join('')+'</table></div>':'<p class="muted">No finished jobs.</p>')+'</div>';
    const historyRows=(state.sessions||[]).filter(x=>x&&x.emp===me.id).slice().sort((a,b)=>(b.start||0)-(a.start||0)).slice(0,30);
    const history='<div class="card v75s-section"><div class="section-title"><h3>📊 Detailed Performance & Work History</h3><span class="pill">LATEST 30</span></div>'+(historyRows.length?'<div class="v75s-history"><table><tr><th>Job</th><th>Start</th><th>End</th><th>Status</th><th>Time</th></tr>'+historyRows.map(x=>{const end=x.end||Date.now(),mins=Math.max(0,(end-(+x.start||end))/60000);return '<tr><td><b>'+esc(x.job)+'</b></td><td>'+esc(x.start?new Date(x.start).toLocaleString():'—')+'</td><td>'+esc(x.end?new Date(x.end).toLocaleString():'In progress')+'</td><td>'+esc(x.end?(x.paused?'Paused':'Finished'):'Running')+'</td><td>'+fm(mins)+'</td></tr>'}).join('')+'</table></div>':'<p class="muted">No work history yet.</p>')+'</div>';
 
@@ -505,4 +505,127 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  };
 
  window.v752HolidayRuntime=true;
+})();
+
+
+/* V75.3 ID001 REPORT + TIME BREAKDOWN
+   - Work sessions start only after the employee presses START.
+   - ID001 is excluded from every normal Finished Job Card view.
+   - ID001 time is reported separately and counts as Actual Working Time,
+     while Productive Actual remains normal Job Card work only.
+   - Ideal Time is only uncovered duty-hour gaps between sessions. */
+(function(){'use strict';
+ const HOLD='ID001';
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const fmtMin=m=>{try{return fmt(Math.max(0,+m||0))}catch(_){const n=Math.max(0,Math.round(+m||0));return Math.floor(n/60)+'h '+String(n%60).padStart(2,'0')+'m'}};
+ const monthBounds=()=>{const d=new Date();return{from:new Date(d.getFullYear(),d.getMonth(),1).getTime(),to:new Date(d.getFullYear(),d.getMonth()+1,1).getTime()}};
+ const dayStart=v=>{const d=new Date(v);return new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()};
+ const sessionNormal=(s,from,to)=>{
+   const st=Math.max(+s.start||0,from),en=Math.min(+(s.end||Date.now()),to);
+   if(en<=st)return 0;
+   try{return window.sessionNormalMinutes?Math.max(0,window.sessionNormalMinutes({start:st,end:en},en)||0):Math.max(0,(en-st)/60000)}catch(_){return Math.max(0,(en-st)/60000)}
+ };
+ const id001Minutes=(emp,from,to)=>(state.sessions||[]).filter(s=>s&&s.emp===emp&&s.job===HOLD&&s.start<to&&(s.end||Date.now())>from).reduce((n,s)=>n+sessionNormal(s,from,to),0);
+ const productiveMinutes=(emp,from,to)=>(state.sessions||[]).filter(s=>s&&s.emp===emp&&s.job!==HOLD&&s.start<to&&(s.end||Date.now())>from).reduce((n,s)=>n+sessionNormal(s,from,to),0);
+ const idealMinutes=(emp,from,to)=>{try{return typeof window.monthlyIdealTimeMinutes==='function'?Math.max(0,window.monthlyIdealTimeMinutes(emp,from,to)||0):0}catch(_){return 0}};
+ const overtimeMinutes=(emp,from,to)=>{try{return typeof window.overtimeForEmployee==='function'?Math.max(0,window.overtimeForEmployee(emp,from,to)||0):0}catch(_){return 0}};
+ window.v753ID001Minutes=id001Minutes;
+ window.v753ProductiveMinutes=productiveMinutes;
+
+ function cleanNormalFinishedLists(root=document){
+   if(!root)return;
+   root.querySelectorAll('table tr').forEach(tr=>{
+     const first=(tr.querySelector('td')?.textContent||'').trim().toUpperCase();
+     if(first===HOLD || first.startsWith(HOLD+' ')){
+       const section=tr.closest('.card,.manager-section,.v67-section,.v74-scroll');
+       const title=(section?.querySelector('h2,h3,h4')?.textContent||'').toLowerCase();
+       if(title.includes('finished')||title.includes('completed')||title.includes('production'))tr.remove();
+     }
+   });
+ }
+ window.v753CleanFinishedLists=cleanNormalFinishedLists;
+
+ function addEmployeeTimeBreakdown(){
+   if(!me||me.role!=='Employee')return;
+   const root=document.getElementById('employeeView');if(!root)return;
+   const {from,to}=monthBounds(),productive=productiveMinutes(me.id,from,to),id001=id001Minutes(me.id,from,to),actual=productive+id001,ideal=idealMinutes(me.id,from,to),ot=overtimeMinutes(me.id,from,to);
+   const month=[...root.querySelectorAll('.month-summary')][0];if(!month)return;
+   let grid=month.querySelector('.grid,.employee-month-grid');if(!grid)return;
+   let box=document.getElementById('v753ActualBreakdown');
+   const html='<div id="v753ActualBreakdown" class="notice v753-actual-breakdown"><b>Total Actual Working</b><div class="stat">'+fmtMin(actual)+'</div><span class="small">Productive + ID001</span></div>'+
+     '<div id="v753ProductiveCard" class="notice"><b>Productive Actual</b><div class="stat">'+fmtMin(productive)+'</div><span class="small">Normal Job Card work</span></div>'+
+     '<div id="v753ID001Card" class="notice"><b>ID001 Time</b><div class="stat">'+fmtMin(id001)+'</div><span class="small">Available / no work provided</span></div>';
+   if(!box)grid.insertAdjacentHTML('beforeend',html);
+   else{
+     box.querySelector('.stat').textContent=fmtMin(actual);
+     const p=document.querySelector('#v753ProductiveCard .stat');if(p)p.textContent=fmtMin(productive);
+     const i=document.querySelector('#v753ID001Card .stat');if(i)i.textContent=fmtMin(id001);
+   }
+   root.querySelectorAll('.month-summary .notice').forEach(card=>{
+     const label=(card.querySelector('b')?.textContent||'').trim();
+     const stat=card.querySelector('.stat');
+     if(!stat)return;
+     if(label==='Total Ideal Time')stat.textContent=fmtMin(ideal);
+     if(label==='Overtime')stat.textContent=fmtMin(ot);
+   });
+ }
+
+ function filterBounds(){
+   const f=document.getElementById('v753From')?.value||'',t=document.getElementById('v753To')?.value||'';
+   const now=new Date(),defFrom=new Date(now.getFullYear(),now.getMonth(),1).getTime(),defTo=new Date(now.getFullYear(),now.getMonth()+1,1).getTime();
+   const from=f?new Date(f+'T00:00:00').getTime():defFrom;
+   const to=t?new Date(t+'T23:59:59.999').getTime()+1:defTo;
+   return {from,to};
+ }
+ function id001Rows(from,to){
+   return users.filter(u=>u&&u.role==='Employee').map(u=>{
+     const sessions=(state.sessions||[]).filter(s=>s&&s.emp===u.id&&s.job===HOLD&&s.start<to&&(s.end||Date.now())>from);
+     const minutes=sessions.reduce((n,s)=>n+sessionNormal(s,from,to),0);
+     return {u,sessions,minutes};
+   }).filter(x=>x.sessions.length||x.minutes>0).sort((a,b)=>b.minutes-a.minutes);
+ }
+ window.v753RenderID001Report=function(){
+   const host=document.getElementById('v753ReportBody');if(!host)return;
+   const {from,to}=filterBounds(),rows=id001Rows(from,to),total=rows.reduce((n,x)=>n+x.minutes,0);
+   host.innerHTML='<div class="notice"><b>Total ID001 Hours</b><div class="stat">'+fmtMin(total)+'</div><span class="small">'+rows.length+' employee'+(rows.length===1?'':'s')+'</span></div>'+
+     (rows.length?'<div class="v74-scroll"><table><tr><th>Employee</th><th>Department</th><th>Sessions</th><th>ID001 Hours</th><th></th></tr>'+
+       rows.map(x=>'<tr><td><b>'+esc(x.u.name)+'</b><br><span class="small">'+esc(x.u.id)+'</span></td><td>'+esc(x.u.department||'—')+'</td><td>'+x.sessions.length+'</td><td><b>'+fmtMin(x.minutes)+'</b></td><td><button class="blue" onclick="v753OpenID001Employee(\''+esc(x.u.id)+'\')">DETAILS</button></td></tr>').join('')+'</table></div>':'<div class="notice">No ID001 time in the selected dates.</div>');
+ };
+ window.v753OpenID001Employee=function(emp){
+   const {from,to}=filterBounds(),u=user(emp),rows=(state.sessions||[]).filter(s=>s&&s.emp===emp&&s.job===HOLD&&s.start<to&&(s.end||Date.now())>from).sort((a,b)=>b.start-a.start);
+   const body=rows.length?'<div class="v74-scroll"><table><tr><th>Date</th><th>Start</th><th>Stop</th><th>ID001 Hours</th></tr>'+
+     rows.map(s=>{const en=s.end||Date.now();return '<tr><td>'+esc(new Date(s.start).toLocaleDateString())+'</td><td>'+esc(new Date(s.start).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))+'</td><td>'+esc(s.end?new Date(s.end).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'Running')+'</td><td><b>'+fmtMin(sessionNormal(s,from,to))+'</b></td></tr>'}).join('')+'</table></div>':'<div class="notice">No ID001 sessions in the selected dates.</div>';
+   openModal('<div class="section-title"><h2>ID001 — '+esc(u?.name||emp)+'</h2><button class="secondary" onclick="v753OpenID001Report()">Back</button></div>'+body);
+ };
+ window.v753OpenID001Report=function(){
+   if(!me||!['Supervisor','Manager'].includes(me.role))return;
+   const d=new Date(),first=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01',today=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+   openModal('<div class="section-title"><h2>◷ ID001 Details</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="notice"><b>ID001 purpose</b><br>Time when an employee is available but no normal workshop work is provided. It counts toward Actual Working Time, but stays separate from productive Job Card work and never appears in Finished Job Cards.</div><div class="row"><label>From<br><input id="v753From" type="date" value="'+first+'" onchange="v753RenderID001Report()"></label><label>To<br><input id="v753To" type="date" value="'+today+'" onchange="v753RenderID001Report()"></label></div><div id="v753ReportBody" style="margin-top:12px"></div>');
+   setTimeout(window.v753RenderID001Report,0);
+ };
+
+ function injectDashboardID001Button(){
+   if(!me||!['Supervisor','Manager'].includes(me.role))return;
+   const root=document.getElementById(me.role==='Manager'?'managerView':'supervisorView');if(!root||root.querySelector('#v753ID001Dashboard'))return;
+   const b=document.createElement('section');
+   b.id='v753ID001Dashboard';b.className='card v753-id001-dashboard';
+   b.innerHTML='<button class="blue big-action" style="width:100%" onclick="v753OpenID001Report()">◷ ID001 DETAILS / HOURS</button><div class="small muted" style="margin-top:6px">Employee ID001 hours · From / To date filter · separate from Finished Job Cards</div>';
+   const target=root.querySelector('.v67-section,.card');
+   if(target)target.insertAdjacentElement('afterend',b);else root.prepend(b);
+ }
+ const oldRender=window.render;
+ window.render=function(){
+   const r=typeof oldRender==='function'?oldRender.apply(this,arguments):undefined;
+   setTimeout(()=>{cleanNormalFinishedLists(document);addEmployeeTimeBreakdown();injectDashboardID001Button()},0);
+   return r;
+ };
+ const oldRefresh=window.refreshActiveRunningTime;
+ window.refreshActiveRunningTime=function(){
+   const r=typeof oldRefresh==='function'?oldRefresh.apply(this,arguments):undefined;
+   addEmployeeTimeBreakdown();return r;
+ };
+ setInterval(()=>{if(me?.role==='Employee')addEmployeeTimeBreakdown()},1000);
+
+ window.v753ManualStartOnly=true;
+ window.v753ID001ReportReady=true;
 })();

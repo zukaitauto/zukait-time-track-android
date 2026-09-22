@@ -39,6 +39,27 @@ assert.match(updates, /stopID001AtDutyEnd/, 'active ID001 must stop at the duty 
 assert.match(updates, /window\.monthlyIdealTimeMinutes=idealGapMinutes/, 'Ideal Time must use gaps between sessions, not ID001 duration');
 assert.match(updates, /window\.overtimeForEmployee=.*overtimeMinutes/s, 'holiday-aware overtime must be authoritative');
 
+// V75.3 ID001 report / manual-start contracts
+assert.match(updates, /V75\.3 ID001 REPORT \+ TIME BREAKDOWN/, 'V75.3 ID001 report runtime must be present');
+assert.match(updates, /window\.v753ManualStartOnly=true/, 'manual-start-only contract marker must be present');
+assert.equal((updates.match(/state\.sessions\.push\s*\(/g)||[]).length,1,'candidate update layer must create sessions only from the explicit Start flow');
+assert.match(updates, /finishedDone=done\.filter\(a=>a\.job!==H\)/, 'Employee Finished Jobs must exclude ID001');
+assert.match(updates, /v753OpenID001Report/, 'Supervisor/Manager ID001 report must exist');
+assert.match(updates, /v753From/, 'ID001 report must include From date filter');
+assert.match(updates, /v753To/, 'ID001 report must include To date filter');
+assert.match(updates, /Total Actual Working/, 'Employee dashboard must show Total Actual Working');
+assert.match(updates, /Productive Actual/, 'Employee dashboard must show Productive Actual separately');
+assert.match(updates, /ID001 Time/, 'Employee dashboard must show ID001 Time separately');
+assert.match(updates, /ID001 DETAILS \/ HOURS/, 'Supervisor/Manager dashboards must expose the ID001 report control');
+
+// Native dialog contract: no WebView URL banner should be shown to users.
+assert.match(main, /boolean onJsAlert\(WebView view, String url, String message, JsResult result\)/, 'Android wrapper must intercept JavaScript alerts');
+assert.match(main, /boolean onJsConfirm\(WebView view, String url, String message, JsResult result\)/, 'Android wrapper must intercept JavaScript confirms');
+assert.match(main, /boolean onJsPrompt\(WebView view, String url, String message, String defaultValue, JsPromptResult result\)/, 'Android wrapper must intercept JavaScript prompts');
+assert.match(main, /setTitle\("Zukait Time Track"\)/, 'native JavaScript dialogs must use app branding');
+assert.match(main, /text\.startsWith\("Request sent to Supervisor"\)/, 'request-sent success should use a native toast instead of a blocking browser alert');
+
+
 
 // Supervisor contracts
 assert.match(updates, /window\.v71ReopenSameAssignment=function/, 'Supervisor reopen-same flow must exist');
