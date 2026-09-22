@@ -114,6 +114,11 @@ assert.match(updates, /\.v84-depts\{display:grid!important;grid-template-columns
 assert.match(updates, /\['Denter','DENTING'[^\n]+\['Painter','PAINTING'[^\n]+\['Mechanic','MECHANICAL'/, 'Technician Board must expose Denting, Painting and Mechanical');
 assert.match(updates, /v84OpenDept/, 'Technician Board department popup must exist');
 assert.match(updates, /v84ToggleTech/, 'Technician detail expansion must exist');
+assert.match(updates, /v89-employee-lower/, 'Employee lower dashboard must use compact controls');
+assert.match(updates, /\.v89-employee-lower\{display:grid!important;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/, 'Employee lower dashboard must remain two columns');
+assert.match(updates, /v89OpenEmployeeFinished/, 'Employee Finished Jobs details must open separately');
+assert.match(updates, /v89OpenEmployeeRepeats/, 'Employee Repeat Jobs details must open separately');
+assert.match(updates, /String\(a\.mistakeEmp\|\|''\)===String\(me\.id\)/, 'Employee repeat count must belong to the mistake employee');
 assert.match(updates, /const items=\[job,assigned,add,inc\]/, 'Supervisor lower control set must be Job Card List, Assigned, Additional Time and Incentive');
 
 // Manager / whole-job contracts
