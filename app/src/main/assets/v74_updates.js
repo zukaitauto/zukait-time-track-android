@@ -292,3 +292,217 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 
  window.v75ID001Safe=true;
 })();
+
+
+/* V75.2 HOLIDAY + ID001 RUNTIME AUTHORITY
+   Friday is always a workshop holiday.
+   Manager may declare government/public holiday dates in Admin.
+   Normal work is allowed on holidays but every worked minute is OVERTIME.
+   ID001 is allowed only in normal duty windows on non-holiday working days. */
+(function(){'use strict';
+ const HOLD='ID001';
+ const pad=n=>String(n).padStart(2,'0');
+ const dateKey=ts=>{const d=new Date(ts);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+ const entryKey=v=>{if(typeof v==='string')return v.slice(0,10);if(v&&typeof v==='object')return String(v.date||v.dateKey||v.day||'').slice(0,10);return''};
+ const holidays=()=>{state.workshopHolidays=Array.isArray(state.workshopHolidays)?state.workshopHolidays:[];return state.workshopHolidays};
+ const isFriday=ts=>new Date(ts).getDay()===5;
+ const isPublicHoliday=ts=>{const k=dateKey(ts);return holidays().some(v=>entryKey(v)===k)};
+ const isClosedDay=ts=>isFriday(ts)||isPublicHoliday(ts);
+ const dayStart=ts=>{const d=new Date(ts);return new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()};
+ const dutyWindow=ts=>{
+   if(isClosedDay(ts))return null;
+   const d=new Date(ts),m=d.getHours()*60+d.getMinutes()+d.getSeconds()/60,ds=dayStart(ts);
+   if(m>=480&&m<780)return{start:ds+480*60000,end:ds+780*60000};
+   if(m>=900&&m<1140)return{start:ds+900*60000,end:ds+1140*60000};
+   return null;
+ };
+ const onLeave=(emp,ts=Date.now())=>{try{return typeof window.v63IsOnLeave==='function'&&!!window.v63IsOnLeave(emp,ts)}catch(_){return false}};
+ const normalMinutes=(start,end)=>{
+   start=+start||0;end=+end||0;if(end<=start)return 0;
+   let total=0,cur=start;
+   while(cur<end){
+     const ds=dayStart(cur),de=ds+86400000,se=Math.min(end,de);
+     if(!isClosedDay(cur)){
+       for(const [a,b] of [[480,780],[900,1140]]){
+         total+=Math.max(0,(Math.min(se,ds+b*60000)-Math.max(cur,ds+a*60000))/60000);
+       }
+     }
+     cur=de;
+   }
+   return Math.max(0,total);
+ };
+ const overtimeMinutes=(start,end)=>{
+   start=+start||0;end=+end||0;if(end<=start)return 0;
+   let total=0,cur=start;
+   while(cur<end){
+     const ds=dayStart(cur),de=ds+86400000,se=Math.min(end,de);
+     if(isClosedDay(cur)){
+       total+=(se-cur)/60000;
+     }else{
+       total+=Math.max(0,(Math.min(se,ds+900*60000)-Math.max(cur,ds+780*60000))/60000);
+       total+=Math.max(0,(se-Math.max(cur,ds+1140*60000))/60000);
+     }
+     cur=de;
+   }
+   return Math.max(0,total);
+ };
+ window.v75IsWorkshopHoliday=isPublicHoliday;
+ window.v75IsClosedWorkshopDay=isClosedDay;
+ window.v75IsID001DutyTime=ts=>!!dutyWindow(ts);
+ window.sessionNormalMinutes=(session,to=Date.now())=>normalMinutes(session.start,Math.min(session.end||to,to));
+ window.sessionOvertimeMinutes=(session,to=Date.now())=>overtimeMinutes(session.start,Math.min(session.end||to,to));
+ window.overtimeForSession=window.sessionOvertimeMinutes;
+ window.overtimeForEmployee=(emp,from,to)=>(state.sessions||[]).filter(x=>x&&x.emp===emp&&x.start<to&&(x.end||Date.now())>from).reduce((n,x)=>{const st=Math.max(+x.start||0,from),en=Math.min(+(x.end||Date.now()),to);return en>st?n+overtimeMinutes(st,en):n},0);
+ window.monthlyNormalActualMinutes=(emp,from,to)=>(state.sessions||[]).filter(x=>x&&x.emp===emp&&x.start<to&&(x.end||Date.now())>from).reduce((n,x)=>{const st=Math.max(+x.start||0,from),en=Math.min(+(x.end||Date.now()),to);return en>st?n+normalMinutes(st,en):n},0);
+
+ const idealGapMinutes=(emp,from,to)=>{
+   const rows=(state.sessions||[]).filter(x=>x&&x.emp===emp&&x.start<to&&(x.end||Date.now())>from)
+     .map(x=>({start:Math.max(+x.start||0,from),end:Math.min(+(x.end||Date.now()),to)}))
+     .filter(x=>x.end>x.start).sort((a,b)=>a.start-b.start);
+   let sum=0,lastEnd=null;
+   for(const x of rows){
+     if(lastEnd!==null&&x.start>lastEnd)sum+=normalMinutes(lastEnd,x.start);
+     lastEnd=lastEnd===null?x.end:Math.max(lastEnd,x.end);
+   }
+   return Math.max(0,sum);
+ };
+ window.monthlyIdealTimeMinutes=idealGapMinutes;
+
+ const id001Assignment=sess=>(state.assign||[]).find(a=>a&&a.id===sess?.assignmentId)||
+   (state.assign||[]).filter(a=>a&&a.job===HOLD&&a.emp===sess?.emp&&!a.cancelled&&!a.completed).sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0))[0]||null;
+ const id001StopBoundary=sess=>{
+   if(!sess)return Date.now();
+   const st=+sess.start||Date.now(),w=dutyWindow(st);
+   return w?w.end:st;
+ };
+ function stopID001AtDutyEnd(){
+   let changed=false,t=Date.now();
+   (state.sessions||[]).filter(x=>x&&!x.end&&x.job===HOLD).forEach(sess=>{
+     const boundary=id001StopBoundary(sess);
+     if(t<boundary)return;
+     const a=id001Assignment(sess);if(!a)return;
+     sess.end=boundary;sess.finished=true;sess.paused=false;sess.autoStopped=true;sess.autoStopReason='ID001 duty window ended';
+     a.completed=true;a.completedAt=boundary;a.autoStopped=true;a.autoStopReason='Duty hours ended';
+     state.lastActions=state.lastActions||{};
+     state.lastActions[sess.emp]={text:'Stopped ID001 automatically at duty end',at:boundary};
+     changed=true;
+   });
+   if(changed){try{save()}catch(_){}}
+   return changed;
+ }
+ window.v75StopID001AtDutyEnd=stopID001AtDutyEnd;
+
+ const oldAssign=window.assignJobCore;
+ window.assignJobCore=function(no,emp,minutes){
+   if(no!==HOLD)return typeof oldAssign==='function'?oldAssign.apply(this,arguments):undefined;
+   const t=Date.now();
+   if(isClosedDay(t)){const m=isFriday(t)?'Friday is a workshop holiday. ID001 cannot be assigned.':'This date is marked as a Public Holiday. ID001 cannot be assigned.';return typeof window.v74Msg==='function'?window.v74Msg(m,'Ideal Time'):alert(m)}
+   if(!dutyWindow(t)){const m='ID001 can be assigned only during duty hours: 08:00–13:00 and 15:00–19:00.';return typeof window.v74Msg==='function'?window.v74Msg(m,'Ideal Time'):alert(m)}
+   if(onLeave(emp,t)){const m=(user(emp)?.name||emp)+' is on leave. ID001 cannot be assigned.';return typeof window.v74Msg==='function'?window.v74Msg(m,'Ideal Time'):alert(m)}
+   return typeof oldAssign==='function'?oldAssign.apply(this,arguments):undefined;
+ };
+
+ const oldBulk=window.v75AssignIdealToAvailable;
+ window.v75AssignIdealToAvailable=function(minutes,employeeIds){
+   const t=Date.now();
+   if(isClosedDay(t))return{ok:false,reason:'holiday',assigned:[]};
+   if(!dutyWindow(t))return{ok:false,reason:'outside_duty',assigned:[]};
+   let ids=Array.isArray(employeeIds)&&employeeIds.length?employeeIds.map(String):users.filter(u=>u&&u.role==='Employee').map(u=>String(u.id));
+   ids=ids.filter(id=>!onLeave(id,t));
+   if(!ids.length)return{ok:false,reason:'none_available',assigned:[]};
+   return typeof oldBulk==='function'?oldBulk.call(this,minutes,ids):{ok:false,reason:'unavailable',assigned:[]};
+ };
+
+ const oldStart=window.start;
+ window.start=function(no){
+   if(no!==HOLD)return typeof oldStart==='function'?oldStart.apply(this,arguments):undefined;
+   const t=Date.now();
+   if(isClosedDay(t)){const m=isFriday(t)?'Friday is a workshop holiday. ID001 cannot run.':'This date is marked as a Public Holiday. ID001 cannot run.';return typeof window.v74Msg==='function'?window.v74Msg(m,'Ideal Time'):alert(m)}
+   if(!dutyWindow(t)){const m='ID001 can run only during duty hours: 08:00–13:00 and 15:00–19:00.';return typeof window.v74Msg==='function'?window.v74Msg(m,'Ideal Time'):alert(m)}
+   if(me&&onLeave(me.id,t)){const m='ID001 cannot run while you are on leave.';return typeof window.v74Msg==='function'?window.v74Msg(m,'Ideal Time'):alert(m)}
+   return typeof oldStart==='function'?oldStart.apply(this,arguments):undefined;
+ };
+
+ function updateEmployeeMonthlyLive(){
+   if(!me||me.role!=='Employee')return;
+   const root=document.getElementById('employeeView');if(!root)return;
+   const n=new Date(),from=new Date(n.getFullYear(),n.getMonth(),1).getTime(),to=new Date(n.getFullYear(),n.getMonth()+1,1).getTime();
+   const values={'Total Ideal Time':idealGapMinutes(me.id,from,to),'Overtime':window.overtimeForEmployee(me.id,from,to)};
+   root.querySelectorAll('.month-summary .notice').forEach(box=>{
+     const label=(box.querySelector('b')?.textContent||'').trim(),stat=box.querySelector('.stat');
+     if(stat&&Object.prototype.hasOwnProperty.call(values,label))stat.textContent=fmt(values[label]);
+   });
+ }
+ const oldRefresh=window.refreshActiveRunningTime;
+ window.refreshActiveRunningTime=function(){
+   const stopped=stopID001AtDutyEnd();
+   if(stopped){try{render()}catch(_){}return;}
+   const out=typeof oldRefresh==='function'?oldRefresh.apply(this,arguments):undefined;
+   const sess=me&&me.role==='Employee'?activeSession(me.id):null;
+   if(sess&&sess.job===HOLD){
+     const a=id001Assignment(sess),worked=a?(typeof totalForAssignment==='function'?Math.max(0,totalForAssignment(a)||0):normalMinutes(sess.start,Date.now())):0,allocated=+a?.suggested||0;
+     const put=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+     put('currentActual',fmt(worked));put('currentRemaining',fmt(Math.max(0,allocated-worked)));put('currentExceeded',fmt(0));
+   }
+   updateEmployeeMonthlyLive();
+   return out;
+ };
+
+ const oldRenderEmployee=window.renderEmployee;
+ window.renderEmployee=function(){
+   stopID001AtDutyEnd();
+   const out=typeof oldRenderEmployee==='function'?oldRenderEmployee.apply(this,arguments):undefined;
+   setTimeout(updateEmployeeMonthlyLive,0);
+   return out;
+ };
+ if(window.v752EmployeeTimer)clearInterval(window.v752EmployeeTimer);
+ window.v752EmployeeTimer=setInterval(()=>{if(me?.role==='Employee'){stopID001AtDutyEnd();updateEmployeeMonthlyLive()}},1000);
+
+ // Reopen SAME assignment: reset the parent Job Card as Open immediately on confirmation.
+ window.v71ReopenSameAssignment=function(id){
+   if(!me||me.role!=='Supervisor')return;
+   const a=(state.assign||[]).find(x=>x&&x.id===id&&!x.cancelled);
+   const msg=(m,t='Reopen Work')=>typeof window.v74Msg==='function'?window.v74Msg(m,t):alert(m);
+   if(!a)return msg('Assignment not found.');
+   if(a.job===HOLD)return msg('ID001 must use a new Ideal Time assignment.');
+   if(a.rework)return msg('Repeat Work must be handled from Repeat Work controls.');
+   if(!a.completed)return msg('This assignment is already open.');
+   if((state.assign||[]).some(x=>x&&x.id!==a.id&&x.job===a.job&&x.emp===a.emp&&!x.cancelled&&!x.completed))return msg((user(a.emp)?.name||a.emp)+' already has an open assignment on this Job Card.');
+   const worked=(()=>{try{return totalForAssignment(a)||0}catch(_){return 0}})(),allocated=+a.suggested||0,finishedAt=a.completedAt||null;
+   const doIt=()=>{
+     a.completed=false;delete a.completedAt;a.reopened=true;a.lastReopenedAt=now();a.lastReopenedBy=me.id;
+     const j=typeof job==='function'?job(a.job):null;if(j){j.status='Open';delete j.completedAt;j.reopenedAt=now();}
+     state.reopenLogs=state.reopenLogs||[];state.reopenLogs.push({id:uid(),assignmentId:a.id,job:a.job,emp:a.emp,suggested:allocated,actualAtReopen:worked,previousCompletedAt:finishedAt,by:me.id,at:now()});
+     if(typeof setLastAction==='function')setLastAction('Reopened same assignment '+a.job+' for '+(user(a.emp)?.name||a.emp));
+     save();try{if(typeof closeSupervisorModal==='function')closeSupervisorModal();else closeModal()}catch(_){}
+     render();setTimeout(()=>msg(a.job+' reopened for '+(user(a.emp)?.name||a.emp)+'. Existing actual time '+fmt(worked)+' is retained.','Work Reopened'),0);
+   };
+   openModal('<div class="v74-d"><h2>↻ Reopen Same Assignment</h2><div class="notice"><b>Job Card:</b> '+String(a.job)+'<br><b>Technician:</b> '+String(user(a.emp)?.name||a.emp)+'<br><b>Allocated:</b> '+fmt(allocated)+'<br><b>Existing Actual:</b> '+fmt(worked)+'</div><p>This keeps the same employee, same allocated time and previous worked time. It is not Repeat Work.</p><div class="v74-actions"><button class="secondary" onclick="closeModal()">CANCEL</button><button class="green" id="v752reopenconfirm">↻ REOPEN SAME</button></div></div>');
+   setTimeout(()=>{const b=document.getElementById('v752reopenconfirm');if(b)b.onclick=doIt},0);
+ };
+
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ window.v75OpenPublicHolidays=function(){
+   if(!me||me.role!=='Manager')return;
+   const rows=holidays().slice().sort((a,b)=>entryKey(a).localeCompare(entryKey(b)));
+   const body=rows.length?'<div class="v74-scroll"><table><tr><th>Date</th><th>Holiday</th><th>Action</th></tr>'+rows.map(h=>'<tr><td><b>'+esc(entryKey(h))+'</b></td><td>'+esc(typeof h==='object'?(h.name||'Public Holiday'):'Public Holiday')+'</td><td><button class="danger" onclick="v75RemovePublicHoliday(\''+esc(entryKey(h))+'\')">REMOVE</button></td></tr>').join('')+'</table></div>':'<div class="notice">No additional public holidays are configured.</div>';
+   openModal('<div class="section-title"><h2>📅 Public Holidays</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="notice"><b>Friday is always a holiday.</b><br>On Friday or a Manager-declared public holiday, normal Job Card work is allowed but all worked time is OVERTIME. ID001 cannot be assigned or run.</div><div class="grid"><label>Holiday Date<br><input id="v75HolidayDate" type="date"></label><label>Holiday Name<br><input id="v75HolidayName" placeholder="Government Public Holiday"></label></div><p><button class="green" onclick="v75AddPublicHoliday()">+ ADD HOLIDAY</button></p>'+body);
+ };
+ window.v75AddPublicHoliday=function(){
+   if(!me||me.role!=='Manager')return;
+   const date=(document.getElementById('v75HolidayDate')?.value||'').trim(),name=(document.getElementById('v75HolidayName')?.value||'').trim()||'Public Holiday';
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return typeof window.v74Msg==='function'?window.v74Msg('Select a valid holiday date.','Public Holidays'):alert('Select a valid holiday date.');
+   if(holidays().some(h=>entryKey(h)===date))return typeof window.v74Msg==='function'?window.v74Msg('That date is already marked as a holiday.','Public Holidays'):alert('Holiday already exists.');
+   holidays().push({date,name,createdAt:Date.now(),createdBy:me.id});save();window.v75OpenPublicHolidays();
+ };
+ window.v75RemovePublicHoliday=function(date){
+   if(!me||me.role!=='Manager')return;
+   state.workshopHolidays=holidays().filter(h=>entryKey(h)!==String(date));save();window.v75OpenPublicHolidays();
+ };
+ window.v65OpenAdmin=function(){
+   if(!me||me.role!=='Manager')return;
+   openModal('<div class="section-title"><h2>Admin</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="v65-admin-grid"><button class="blue" onclick="v42SyncNow()">↻ SYNC NOW</button><button class="green" onclick="v63Backup()">☁ BACKUP NOW</button><button class="secondary" onclick="v63BackupHistory()">BACKUP HISTORY</button><button class="secondary" onclick="openUserManagement()">USER MANAGEMENT</button><button class="manager-action manager-amber" onclick="v75OpenPublicHolidays()">📅 PUBLIC HOLIDAYS</button></div><div class="notice"><b>Holiday rules</b><br>Friday is always a holiday. Manager-added public holidays are shared with all staff. Work on holidays is counted as overtime; ID001 is disabled.</div>');
+ };
+
+ window.v752HolidayRuntime=true;
+})();
