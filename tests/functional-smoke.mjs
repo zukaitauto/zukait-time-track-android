@@ -361,4 +361,4 @@ assert.match(gradle, /versionName 'V83'/, 'V83 must use versionName V83');
 assert.match(read('app/src/main/assets/offline_test.html'), /id="legacyAppHeader"/, 'legacy app header must be explicitly addressable');
 assert.match(read('app/src/main/assets/offline_test.html'), /legacyHeader\.style\.display=me\.role==='Employee'\?'none':''/, 'employee dashboard must hide legacy duplicate header');
 assert.match(read('app/src/main/assets/offline_test.html'), /function logout\(\)\{[\s\S]{0,350}closeModal\(\)/, 'logout must close account modal before showing login');
-assert.match(updates, /\.v75s-card \.v82-brand-logo\{width:58px;height:38px/, 'job-card manufacturer logo must use compact bounded size');
+assert.match(updates, /\.v75s-card \.v82-brand-logo\{width:52px;height:32px/, 'job-card manufacturer logo must use compact bounded size');
