@@ -185,12 +185,12 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getAppVersion() {
-            return "V74";
+            return BuildConfig.VERSION_NAME;
         }
 
         @JavascriptInterface
         public int getAppVersionCode() {
-            return 37;
+            return BuildConfig.VERSION_CODE;
         }
 
         @JavascriptInterface
