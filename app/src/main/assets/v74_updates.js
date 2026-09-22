@@ -195,5 +195,59 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    window[name]=function(){try{const r=prev.apply(this,arguments);setTimeout(decorate,0);return r}catch(err){console.error('Safe render recovery',name,err);const root=document.getElementById(rootId);if(root){root.innerHTML='<div class="card"><h2>Zukait Time Track</h2><div class="notice"><b>Screen recovery mode</b><br>The shared data is safe. Please close and reopen this screen.</div></div>';}return undefined}};
  };
  wrap('renderEmployee','employeeView');wrap('renderSupervisor','supervisorView');wrap('renderManager','managerView');
+ 
+ // Final stable Employee renderer. It does not call the layered legacy renderEmployee chain,
+ // so a bad legacy card cannot blank the Employee screen.
+ window.renderEmployee=function(){
+   if(!me||me.role!=='Employee')return;
+   const root=document.getElementById('employeeView');if(!root)return;
+   root.classList.remove('hidden');
+   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+   const fm=v=>{try{return fmt(Math.max(0,+v||0))}catch(_){return Math.round(+v||0)+'m'}};
+   const jj=no=>{try{return job(no)||{no:no,vehicle:no===H?'Ideal Time Card':'—',reg:no===H?'Waiting':'—'}}catch(_){return{no:no,vehicle:'—',reg:'—'}}};
+   const actual=a=>{try{return Math.max(0,totalForAssignment(a)||0)}catch(_){return 0}};
+   const all=(state.assign||[]).filter(a=>a&&a.emp===me.id&&!a.cancelled);
+   const open=all.filter(a=>!a.completed).sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));
+   const done=all.filter(a=>a.completed).sort((a,b)=>(b.completedAt||0)-(a.completedAt||0));
+   const active=activeSession(me.id),aa=active?((state.assign||[]).find(a=>a&&a.id===active.assignmentId)||open.find(a=>a.job===active.job)):null;
+   const j=active?jj(active.job):null,ac=aa?actual(aa):0,sg=aa?(+aa.suggested||0):0,remain=Math.max(0,sg-ac),over=Math.max(0,ac-sg),hold=active&&active.job===H;
+   let current='<div class="card employee-dashboard-card"><div class="section-title"><h3>RUNNING WORK</h3><span class="pill">'+(active?'WORKING':'NO ACTIVE JOB')+'</span></div>';
+   if(active&&aa){
+     current+='<div class="notice"><div class="big">'+esc(active.job)+'</div><p><b>'+esc(hold?'IDEAL TIME':(j.vehicle||'—'))+'</b><br>'+esc(hold?'Waiting / No Assigned Work':(j.reg||'—'))+'</p>'+
+       '<div class="time-panel"><div class="time-box time-suggested">Allocated Time<div class="time-value" id="currentSuggested">'+fm(sg)+'</div></div><div class="time-box time-actual">Actual Work Time<div class="time-value" id="currentActual">'+fm(ac)+'</div></div><div class="time-box time-remaining">Time Remaining<div class="time-value" id="currentRemaining">'+fm(remain)+'</div></div><div class="time-box time-exceeded">Exceeded Time<div class="time-value" id="currentExceeded">'+fm(hold?0:over)+'</div></div></div>'+
+       '<div class="request-actions">'+(hold?'':'<button class="blue big-action" onclick="openEmployeeRequestMenu(\''+esc(active.job)+'\')">📩 INFORM / REQUEST</button>')+'</div>'+
+       '<div class="request-actions" style="margin-top:12px">'+(hold?'':'<button class="yellow big-action" onclick="pause()">⏸ PAUSE WORK</button>')+'<button class="green big-action" onclick="finish()">'+(hold?'■ STOP':'✓ FINISH WORK')+'</button></div></div>';
+   }else current+='<p class="muted">No job currently running.</p>';
+   current+='</div>';
+
+   const cards=open.length?open.map(a=>{const x=jj(a.job),run=!!active&&active.assignmentId===a.id,holdCard=a.job===H,worked=actual(a),remaining=Math.max(0,(+a.suggested||0)-worked);return '<div class="job-card"><h4>'+esc(a.job)+(holdCard?' — IDEAL TIME':'')+'</h4><p>'+esc(holdCard?'Waiting / No Assigned Work':(x.vehicle||'—'))+'<br><span class="muted">'+esc(holdCard?'':(x.reg||''))+'</span></p><div class="row"><span class="pill">Allocated '+fm(a.suggested)+'</span><span class="pill">Remaining '+fm(remaining)+'</span></div>'+(run?'<button class="secondary" disabled>CURRENTLY RUNNING</button>':active?'<button class="secondary" disabled>Pause current work first</button>':'<button class="blue" onclick="start(\''+esc(a.job)+'\')">▶ START WORK</button>')+'</div>'}).join(''):'<div class="notice">No allotted work.</div>';
+   const allotted='<div class="card"><div class="section-title"><h3>ALLOTTED WORK</h3><span class="pill">'+open.length+' OPEN</span></div><div class="grid">'+cards+'</div></div>';
+
+   const nowTs=Date.now(),d=new Date(nowTs),mf=+new Date(d.getFullYear(),d.getMonth(),1),mt=+new Date(d.getFullYear(),d.getMonth()+1,1);
+   const normalDone=done.filter(a=>a.job!==H&&(a.completedAt||0)>=mf&&(a.completedAt||0)<mt);
+   const idealMin=(state.sessions||[]).filter(x=>x&&x.emp===me.id&&x.job===H&&x.start<mt&&(x.end||nowTs)>mf).reduce((n,x)=>n+(Math.min(x.end||nowTs,mt)-Math.max(x.start,mf))/60000,0);
+   const normalSg=normalDone.reduce((n,a)=>n+(+a.suggested||0),0),normalAc=normalDone.reduce((n,a)=>n+actual(a),0),eff=normalAc?normalSg/normalAc*100:null;
+   const month='<div class="card month-summary"><div class="section-title"><h3>This Month</h3><span class="pill">MONTHLY</span></div><div class="grid"><div class="notice"><b>Completed Jobs</b><div class="stat">'+normalDone.length+'</div></div><div class="notice"><b>Efficiency</b><div class="stat">'+(eff==null?'—':eff.toFixed(1)+'%')+'</div></div><div class="notice"><b>Total Ideal Time</b><div class="stat">'+fm(idealMin)+'</div></div></div></div>';
+   const finished='<div class="card"><div class="section-title"><h3>Finished Jobs</h3><span class="pill">'+done.length+'</span></div>'+(done.length?'<div style="overflow:auto"><table><tr><th>Job</th><th>Vehicle</th><th>Allocated</th><th>Actual</th><th>Finished</th></tr>'+done.slice(0,20).map(a=>{const x=jj(a.job);return '<tr><td><b>'+esc(a.job)+'</b></td><td>'+esc(a.job===H?'Ideal Time':(x.vehicle||'—'))+'</td><td>'+fm(a.suggested)+'</td><td>'+fm(actual(a))+'</td><td>'+esc(a.completedAt?new Date(a.completedAt).toLocaleString():'—')+'</td></tr>'}).join('')+'</table></div>':'<p class="muted">No finished jobs.</p>')+'</div>';
+   root.innerHTML=current+allotted+month+finished;
+   if(employeeClockTimer)clearInterval(employeeClockTimer);
+   employeeClockTimer=setInterval(()=>{const x=activeSession(me.id);if(!x)return;const a=(state.assign||[]).find(z=>z&&z.id===x.assignmentId)||null;if(!a)return;const worked=actual(a),alloc=+a.suggested||0,put=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};put('currentActual',fm(worked));put('currentRemaining',fm(Math.max(0,alloc-worked)));put('currentExceeded',fm(x.job===H?0:Math.max(0,worked-alloc)))},1000);
+ };
+
+ // Supervisor accidental-finish recovery uses in-app dialogs only; no browser page alert.
+ window.v71ReopenSameAssignment=function(id){
+   if(!me||me.role!=='Supervisor')return;
+   const a=(state.assign||[]).find(x=>x&&x.id===id&&!x.cancelled);
+   if(!a)return v74Msg('Assignment not found.','Reopen Work');
+   if(a.job===H)return v74Msg('ID001 must use a new Ideal Time assignment.','Reopen Work');
+   if(a.rework)return v74Msg('Repeat Work must be handled from Repeat Work controls.','Reopen Work');
+   if(!a.completed)return v74Msg('This assignment is already open.','Reopen Work');
+   if((state.assign||[]).some(x=>x&&x.id!==a.id&&x.job===a.job&&x.emp===a.emp&&!x.cancelled&&!x.completed))return v74Msg((safeUser(a.emp).name||a.emp)+' already has an open assignment on this Job Card.','Reopen Work');
+   const worked=(()=>{try{return totalForAssignment(a)||0}catch(_){return 0}})(),allocated=+a.suggested||0;
+   const doIt=()=>{const finishedAt=a.completedAt||null;a.completed=false;delete a.completedAt;a.reopened=true;a.lastReopenedAt=now();a.lastReopenedBy=me.id;state.reopenLogs=state.reopenLogs||[];state.reopenLogs.push({id:uid(),assignmentId:a.id,job:a.job,emp:a.emp,suggested:allocated,actualAtReopen:worked,previousCompletedAt:finishedAt,by:me.id,at:now()});if(typeof setLastAction==='function')setLastAction('Reopened same assignment '+a.job+' for '+(safeUser(a.emp).name||a.emp));try{if(typeof addNotification==='function')addNotification([a.emp],'Supervisor reopened '+a.job+' with the same allocated time. Previous actual time is retained.',a.id)}catch(_){};save();try{if(typeof closeSupervisorModal==='function')closeSupervisorModal()}catch(_){};render();setTimeout(()=>v74Msg(a.job+' reopened for '+(safeUser(a.emp).name||a.emp)+'. Existing actual time '+fm(worked)+' is retained.','Work Reopened'),0)};
+   openModal('<div class="v74-d"><h2>↻ Reopen Same Assignment</h2><div class="notice"><b>Job Card:</b> '+String(a.job)+'<br><b>Technician:</b> '+String(safeUser(a.emp).name||a.emp)+'<br><b>Allocated:</b> '+fm(allocated)+'<br><b>Existing Actual:</b> '+fm(worked)+'</div><p>This keeps the same employee, same allocated time and previous worked time. It is not Repeat Work.</p><div class="v74-actions"><button class="secondary" onclick="closeModal()">CANCEL</button><button class="green" id="v75reopenconfirm">↻ REOPEN SAME</button></div></div>');
+   setTimeout(()=>{const b=document.getElementById('v75reopenconfirm');if(b)b.onclick=doIt},0);
+ };
+
  window.v75ID001Safe=true;
 })();
