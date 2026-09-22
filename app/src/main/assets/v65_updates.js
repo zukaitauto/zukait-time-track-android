@@ -153,6 +153,8 @@ function renderManager65(){
 
 function decorateTop(){
  const app=document.getElementById('app'),row=app?.querySelector(':scope > .row'),w=document.getElementById('welcome');if(!row||!w||!me)return;
+ // Employee V75+ dashboard has its own brand/identity header. Keep the legacy account row hidden to prevent duplicate headers.
+ if(me.role==='Employee'){row.style.setProperty('display','none','important');return}else{row.style.removeProperty('display')}
  row.querySelectorAll(':scope > button').forEach(b=>b.style.display='none');
  document.getElementById('v44AccountMenu')?.remove();
  w.className='v65-user';
