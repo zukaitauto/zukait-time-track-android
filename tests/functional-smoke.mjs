@@ -107,6 +107,14 @@ assert.match(html, /Supervisor renderer returned empty surface/, 'Supervisor ren
 assert.match(html, /Dashboard recovery mode is active/, 'Supervisor renderer must provide a visible recovery surface instead of a blank page');
 assert.match(html, /window\.v87FilterSupervisorAssigned=function/, 'final Assigned Job Cards search handler must exist');
 assert.ok(html.includes("const supOpenAssignments=()=> (state.assign||[]).filter(a=>a&&!a.cancelled&&!a.completed)"), 'final Assigned Job Cards handler must show only open assignments');
+assert.match(updates, /v89-two-col/, 'Supervisor Quick Entry and Assign Update must use the locked two-column grid');
+assert.match(updates, /\.v89-two-col\{display:grid!important;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/, 'Supervisor two-column layout must override legacy/mobile CSS');
+assert.match(updates, /\.v84-action-grid\{display:grid!important;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/, 'Supervisor lower controls must remain compact two-column boxes');
+assert.match(updates, /\.v84-depts\{display:grid!important;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)!important/, 'Technician Board must remain three department boxes');
+assert.match(updates, /\['Denter','DENTING'[^\n]+\['Painter','PAINTING'[^\n]+\['Mechanic','MECHANICAL'/, 'Technician Board must expose Denting, Painting and Mechanical');
+assert.match(updates, /v84OpenDept/, 'Technician Board department popup must exist');
+assert.match(updates, /v84ToggleTech/, 'Technician detail expansion must exist');
+assert.match(updates, /const items=\[job,assigned,add,inc\]/, 'Supervisor lower control set must be Job Card List, Assigned, Additional Time and Incentive');
 
 // Manager / whole-job contracts
 assert.match(updates, /AA\(x\.no\)\.every\(a=>a\.completed\)/, 'Ready for Delivery requires all assignments complete');
