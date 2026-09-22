@@ -307,9 +307,15 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  // Employee account menu must remain available with Leave, Update and Logout after the custom dashboard renderer.
  window.v84EmployeeAccount=function(){
    if(!me||me.role!=='Employee')return;
-   const name=esc(me.name||me.id);
-   openModal('<div class="section-title"><h2>'+name+'</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="v63-account"><button class="blue" onclick="v42SyncNow()">↻ SYNC</button><button class="v65-leave-btn" onclick="v63OpenLeave()">LEAVE</button><button class="secondary" onclick="v65OpenAbout()">ABOUT / UPDATE</button><button class="danger" onclick="closeModal();logout()">LOGOUT</button></div>');
+   const name=String(me.name||me.id||'Employee').replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]});
+   openModal('<div class="section-title"><h2>'+name+'</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="v63-account"><button class="blue" onclick="v42SyncNow()">↻ SYNC</button><button class="v65-leave-btn" onclick="v84EmployeeLeave()">LEAVE</button><button class="secondary" onclick="v65OpenAbout()">ABOUT / UPDATE</button><button class="danger" onclick="closeModal();logout()">LOGOUT</button></div>');
  };
+ window.v84EmployeeLeave=function(){
+   closeModal();
+   if(typeof v755OpenLeaveHub==='function')return v755OpenLeaveHub();
+   if(typeof v63OpenLeave==='function')return v63OpenLeave();
+ };
+
  // Supervisor accidental-finish recovery uses in-app dialogs only; no browser page alert.
  window.v71ReopenSameAssignment=function(id){
    if(!me||me.role!=='Supervisor')return;
