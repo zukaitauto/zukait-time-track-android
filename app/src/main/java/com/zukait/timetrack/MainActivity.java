@@ -215,7 +215,7 @@ public class MainActivity extends Activity {
         });
 
         webView.clearCache(true);
-        webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html?v=77");
+        webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html?v=78");
         updateHandler.postDelayed(this::resumeUpdateDownloadMonitoring, 1200);
     }
 

@@ -1035,3 +1035,94 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  document.head.appendChild(css);
  window.v77InAppUpdaterReady=true;
 })();
+
+
+/* V78 SUPERVISOR LEAVE STATUS + MANAGER PRINTABLE LEAVE REPORT */
+(function(){'use strict';
+ const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const localKey=ts=>{const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+ const person=id=>{try{return user(id)||{id,name:id,role:'',department:''}}catch(_){return{id,name:id,role:'',department:''}}};
+ const activeLeaves=()=>{state.leaves=state.leaves||[];return state.leaves.filter(l=>l&&!l.cancelled)};
+ const todayRows=()=>{const k=localKey(Date.now());return activeLeaves().filter(l=>l.date===k)};
+ const monthRows=()=>{const d=new Date(),p=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-';return activeLeaves().filter(l=>String(l.date||'').startsWith(p))};
+ const label=p=>p==='AM'?'Morning Half Day — 8:00 AM to 1:00 PM':p==='PM'?'Afternoon Half Day — 3:00 PM to 7:00 PM':'Full Day — 8:00 AM to 1:00 PM + 3:00 PM to 7:00 PM';
+ const unique=rows=>new Set(rows.map(l=>String(l.emp))).size;
+ const sorted=rows=>rows.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||(+b.createdAt||0)-(+a.createdAt||0));
+
+ function leaveTable(rows){
+   const list=sorted(rows);
+   return list.length?'<div class="v78-leave-table"><table><tr><th>Name</th><th>Role / Department</th><th>Date</th><th>Leave Type</th><th>Remark</th><th>Marked By</th></tr>'+
+     list.map(l=>{const u=person(l.emp),by=person(l.by);return'<tr><td><b>'+E(u.name||l.emp)+'</b></td><td>'+E((u.role||'')+(u.department?' / '+u.department:''))+'</td><td>'+E(l.date||'—')+'</td><td>'+E(label(l.period))+'</td><td>'+E(l.remark||'—')+'</td><td>'+E(by.name||l.by||'—')+'</td></tr>'}).join('')+
+     '</table></div>':'<div class="notice">No leave records.</div>';
+ }
+
+ function leavePrintHtml(mode,rows){
+   const title=mode==='month'?'This Month Leave Report':'Today’s Leave Report';
+   const period=mode==='month'?new Date().toLocaleDateString(undefined,{month:'long',year:'numeric'}):new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+   const list=sorted(rows);
+   const table=list.length?'<table><thead><tr><th>#</th><th>Name</th><th>Role / Department</th><th>Date</th><th>Leave Type</th><th>Remark</th><th>Marked By</th></tr></thead><tbody>'+
+     list.map((l,i)=>{const u=person(l.emp),by=person(l.by);return'<tr><td>'+(i+1)+'</td><td>'+E(u.name||l.emp)+'</td><td>'+E((u.role||'')+(u.department?' / '+u.department:''))+'</td><td>'+E(l.date||'—')+'</td><td>'+E(label(l.period))+'</td><td>'+E(l.remark||'—')+'</td><td>'+E(by.name||l.by||'—')+'</td></tr>'}).join('')+
+     '</tbody></table>':'<p>No leave records.</p>';
+   return '<!doctype html><html><head><meta charset="utf-8"><title>'+E(title)+'</title><style>'+
+     '@page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;color:#111;font-size:11px}h1{font-size:20px;margin:0 0 4px}h2{font-size:13px;margin:0 0 14px;color:#444}.summary{margin:8px 0 12px;font-weight:700}table{width:100%;border-collapse:collapse}th,td{border:1px solid #777;padding:6px;vertical-align:top}th{background:#eee;text-align:left}footer{margin-top:18px;font-size:9px;color:#666}</style></head><body>'+
+     '<h1>ZUKAIT TIME TRACK</h1><h2>'+E(title)+' — '+E(period)+'</h2><div class="summary">Total leave records: '+list.length+' &nbsp; | &nbsp; People on leave: '+unique(list)+'</div>'+table+
+     '<footer>Printed from Zukait Time Track</footer></body></html>';
+ }
+
+ window.v78PrintLeave=function(mode){
+   if(!me||me.role!=='Manager')return;
+   const rows=mode==='month'?monthRows():todayRows();
+   const html=leavePrintHtml(mode,rows);
+   try{
+     if(window.AndroidBridge&&typeof AndroidBridge.printHtml==='function'){AndroidBridge.printHtml(html);return}
+   }catch(_){}
+   const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),250)}
+ };
+
+ window.v755OpenLeaveList=function(mode){
+   const rows=mode==='month'?monthRows():todayRows();
+   const title=mode==='month'?'This Month Leave':'Today’s Leave';
+   const print=me?.role==='Manager'?'<button class="blue v78-print-leave" onclick="v78PrintLeave(\''+E(mode)+'\')">🖨 PRINT LEAVE REPORT</button>':'';
+   const body='<div class="section-title"><h2>'+E(title)+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
+     '<div class="v78-leave-summary"><span><b>'+unique(rows)+'</b> people</span><span><b>'+rows.length+'</b> records</span></div>'+
+     print+leaveTable(rows);
+   if(me?.role==='Supervisor'&&typeof showSupervisorModal==='function')showSupervisorModal(title,body.replace(/^<div class="section-title">[\s\S]*?<\/div>/,''));
+   else openModal(body);
+ };
+
+ function injectSupervisorLeaveRow(){
+   if(!me||me.role!=='Supervisor')return;
+   const root=document.getElementById('supervisorView');if(!root)return;
+   let row=root.querySelector('#v78SupervisorLeaveRow');
+   if(!row){
+     row=document.createElement('div');
+     row.id='v78SupervisorLeaveRow';
+     row.className='v78-supervisor-leave-row';
+     const glance=[...root.querySelectorAll('.card')].find(x=>/Today at a Glance/i.test(x.querySelector('h3')?.textContent||''));
+     if(glance)glance.insertAdjacentElement('afterend',row);
+     else root.insertAdjacentElement('afterbegin',row);
+   }
+   const t=todayRows(),m=monthRows();
+   row.innerHTML='<button class="v755-leave-card today" onclick="v755OpenLeaveList(\'today\')"><span>TODAY’S LEAVE</span><b>'+unique(t)+'</b><small>Tap to see who is on leave</small></button>'+
+     '<button class="v755-leave-card month" onclick="v755OpenLeaveList(\'month\')"><span>THIS MONTH LEAVE</span><b>'+m.length+'</b><small>Tap for monthly leave details</small></button>';
+ }
+
+ const previousRender=window.render;
+ window.render=function(){
+   const r=typeof previousRender==='function'?previousRender.apply(this,arguments):undefined;
+   setTimeout(injectSupervisorLeaveRow,0);
+   return r;
+ };
+ const prevCloud=window.v42AfterCloudPull;
+ window.v42AfterCloudPull=function(){
+   const r=typeof prevCloud==='function'?prevCloud.apply(this,arguments):undefined;
+   setTimeout(injectSupervisorLeaveRow,0);
+   return r;
+ };
+ setTimeout(injectSupervisorLeaveRow,150);
+
+ const css=document.createElement('style');css.id='v78LeaveStyle';css.textContent=
+   '.v78-supervisor-leave-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}.v78-leave-summary{display:flex;gap:10px;margin:0 0 10px}.v78-leave-summary span{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px}.v78-print-leave{margin:0 0 10px}.v78-leave-table{overflow:auto}.v78-leave-table table{min-width:760px}@media(max-width:620px){.v78-supervisor-leave-row{grid-template-columns:1fr 1fr}}';
+ document.head.appendChild(css);
+ window.v78SupervisorLeavePrintReady=true;
+})();
