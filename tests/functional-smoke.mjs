@@ -59,6 +59,19 @@ assert.match(main, /boolean onJsPrompt\(WebView view, String url, String message
 assert.match(main, /setTitle\("Zukait Time Track"\)/, 'native JavaScript dialogs must use app branding');
 assert.match(main, /text\.startsWith\("Request sent to Supervisor"\)/, 'request-sent success should use a native toast instead of a blocking browser alert');
 
+// V75.4 final runtime contracts
+assert.match(updates, /v75NormalAssignmentAvailableMinutes/, 'Ideal Time must use actual normal-work availability');
+assert.match(updates, /a\.job!==previousJob/, 'Ideal Time must require other normal work, not just the paused/finished job itself');
+assert.match(updates, /v754ReconcileID001Globally/, 'ID001 duty-end reconciliation must run globally for any role/device');
+assert.match(updates, /setInterval\(reconcileID001Globally,15000\)/, 'global ID001 reconciliation timer must be present');
+assert.match(updates, /v42AfterCloudPull=function/, 'ID001 reconciliation must run after cloud pulls');
+assert.match(updates, /cells\.some\(v=>v===HOLD/, 'legacy finished/production cleanup must inspect all table cells');
+assert.match(updates, /v753ReportFilter/, 'ID001 report must preserve selected date filters');
+assert.match(updates, /v753OpenID001Report\(true\)/, 'ID001 employee-detail Back must preserve filters');
+assert.match(updates, /window\.v753SaveReportFilter/, 'date-filter callback must be globally accessible to inline controls');
+assert.match(updates, /window\.v754FinalRuntimeFixes=true/, 'final runtime fix marker must be present');
+
+
 
 
 // Supervisor contracts
@@ -191,4 +204,22 @@ reopenJobState.jobs[0].status='Open'; delete reopenJobState.jobs[0].completedAt;
 assert.equal(reopenJobState.jobs[0].status,'Open','reopen must reset parent Job Card to Open');
 assert.equal('completedAt' in reopenJobState.jobs[0],false,'reopen must clear parent completion date');
 
-console.log('Functional smoke tests passed: Employee, ID001, holidays, Supervisor, Manager, update/release contracts.');
+
+// V75.4 Ideal Time availability simulation
+const availabilityMinutes=(assignments,emp,gapStart,gapEnd,previousJob)=>{
+  const intervals=assignments.filter(a=>a.emp===emp&&a.job!=='ID001'&&a.job!==previousJob).map(a=>{
+    const st=Math.max(gapStart,a.assignedAt||gapStart);
+    const en=Math.min(gapEnd,a.completedAt||a.cancelledAt||gapEnd);
+    return {start:st,end:en};
+  }).filter(x=>x.end>x.start).sort((a,b)=>a.start-b.start);
+  if(!intervals.length)return 0;
+  let total=0,cs=intervals[0].start,ce=intervals[0].end;
+  for(let i=1;i<intervals.length;i++){const x=intervals[i];if(x.start<=ce)ce=Math.max(ce,x.end);else{total+=(ce-cs)/60000;cs=x.start;ce=x.end}}
+  return total+(ce-cs)/60000;
+};
+const g0=new Date(2026,8,21,10,0).getTime(),g1=new Date(2026,8,21,10,30).getTime();
+assert.equal(availabilityMinutes([], 'E1', g0, g1, 'JC1'),0,'gap with no other assigned work must not be Ideal Time');
+assert.equal(availabilityMinutes([{emp:'E1',job:'JC2',assignedAt:g0-60000}], 'E1', g0, g1, 'JC1'),30,'gap with another normal job already available must be Ideal Time');
+assert.equal(availabilityMinutes([{emp:'E1',job:'JC1',assignedAt:g0-60000}], 'E1', g0, g1, 'JC1'),0,'paused prior job by itself must not create Ideal Time when no other work exists');
+
+console.log('Functional smoke tests passed: Employee, ID001, holidays, Ideal Time availability, Supervisor, Manager, update/release contracts.');
