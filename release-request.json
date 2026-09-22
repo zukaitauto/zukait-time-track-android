@@ -1,8 +1,8 @@
 {
-  "versionName": "V81",
-  "versionCode": 44,
+  "versionName": "V82",
+  "versionCode": 45,
   "approvedForStaff": true,
-  "approvedAt": "2026-09-22",
-  "sourceCommit": "2f1cc13bac2339c1afff08c8adad215a30c90c7d",
-  "publishNonce": "approved-v81-final-release-20260922-r5"
+  "approvedAt": "2026-09-23",
+  "sourceCommit": "619fab829116e76da809c8009d1f68c917793e51",
+  "publishNonce": "approved-v82-release-20260923-r1"
 }
