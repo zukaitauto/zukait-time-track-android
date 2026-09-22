@@ -291,6 +291,17 @@
         return false;
       }
 
+      if(r.code==='id001_update_required'){
+        // The server rejected a legacy ID001 state. Discard the unsafe local queue and reload the clean shared state.
+        cloudDirty=false;
+        localStorage.removeItem(DIRTY_KEY);
+        localStorage.removeItem(PENDING_KEY);
+        status('RELOADING SAFE ID001 STATE…','info');
+        cloudPushing=false;
+        try{await pull(true)}catch(_){status('SYNC ERROR','bad')}
+        return false;
+      }
+
       if(r.code==='forbidden_change'){
         if(me?.role==='Employee'&&retry<2){
           try{
