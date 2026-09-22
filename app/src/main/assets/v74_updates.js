@@ -934,30 +934,12 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  // including ID001. Never count the same employee twice.
  const prevOverview=window.supervisorOverview;
  window.supervisorOverview=function(rows){
-   if(!me||me.role!=='Supervisor')return typeof prevOverview==='function'?prevOverview.apply(this,arguments):'';
-   const open=(rows||[]).filter(a=>a&&!a.cancelled&&!a.completed&&a.job!==H);
+   const html=typeof prevOverview==='function'?prevOverview.apply(this,arguments):'';
+   if(!me||me.role!=='Supervisor'||!html)return html;
    const active=uniqueActiveWorkerRows().length;
-   const paused=open.filter(a=>{try{return empStatus(a)==='Paused'}catch(_){return false}}).length;
-   const day=(()=>{let d=new Date();d.setHours(0,0,0,0);return d.getTime()})();
-   const fin=(rows||[]).filter(a=>a&&!a.cancelled&&a.completed&&a.job!==H&&(a.completedAt||0)>=day).length;
-   const over=open.filter(a=>(+a.suggested||0)>0&&actual(a)>+a.suggested).length;
-   const ot=(state.sessions||[]).filter(s=>!s.end&&s.job!==H).filter(s=>{try{return sessionOvertimeMinutes(s,Date.now())>0}catch(_){return false}}).length;
-   let ready=0;try{ready=typeof window.v74ReadyCount==='function'?window.v74ReadyCount():0}catch(_){}
-   // Existing READY helper is closure-scoped in V74; derive the same count safely here.
-   try{
-     const jobs=(state.jobs||[]).filter(j=>j&&j.no!==H);
-     ready=jobs.filter(j=>{const aa=(state.assign||[]).filter(a=>a&&a.job===j.no&&!a.cancelled&&a.job!==H);return aa.length&&aa.every(a=>a.completed)}).length;
-   }catch(_){}
-   const C=(i,l,n,c,k)=>'<div class="notice clickable glance-box '+k+'" onclick="'+c+'"><span class="v74-icon">'+i+'</span><div><b>'+l+'</b><div class="stat">'+n+'</div></div></div>';
-   return '<div class="card"><h3><span class="live-dot"></span>Today at a Glance</h3><div class="v74-six">'+
-     C('👷','Active Workers',active,'openActiveWorkers()','ga')+
-     C('⏸','Paused Jobs',paused,"openGlanceList('paused')",'gp')+
-     C('✅','Finished Jobs',fin,'openSupervisorFinishedWindow()','gf')+
-     C('🚗✓','Ready for Delivery',ready,"v74Ready('supervisor')",'gr')+
-     C('⏱','Overtime Now',ot,'v74OT()','go')+
-     C('⚠','Over Allocated Time',over,"openGlanceList('over')",'gx')+
-     '</div></div><div class="card v56-technician-board-card"><button class="v54-tech-button" onclick="openTechnicianBoardV56()"><span><span class="v54-icon">👷</span><b>TECHNICIAN BOARD</b><br><span class="small">Denting · Painting · Mechanical</span></span><span style="font-size:28px">›</span></button></div>'+
-     (typeof window.v75EfficiencySection==='function'?window.v75EfficiencySection():'');
+   // Preserve the complete existing Supervisor overview (including Efficiency,
+   // Technician Board, Ready for Delivery, etc.) and change only Active Workers count.
+   return html.replace(/(<b>Active Workers<\/b><div class="stat">)\d+(<\/div>)/,'$1'+active+'$2');
  };
 
  const css=document.createElement('style');css.id='v756ActiveWorkersStyle';css.textContent=
