@@ -1250,6 +1250,14 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
   window.renderSupervisor=function(){
     window.v38CheckID001();
     priorRenderSupervisor();
+    const q=document.getElementById('supervisorView');
+    if(q){
+      q.querySelectorAll('.quick-entry .grid,.compact-panel .grid').forEach(g=>g.classList.add('supervisor-two-col'));
+      q.querySelectorAll('#se,#se2').forEach(s=>s.classList.add('tech-name-box'));
+      q.querySelectorAll('.glance-box').forEach(x=>x.classList.add('v83-glass'));
+      const cards=[...q.querySelectorAll('.card')],assigned=cards.filter(x=>/Assigned Job Cards/i.test(x.textContent||''));
+      assigned.slice(1).forEach(x=>x.remove());
+    }
     const root=document.getElementById('supervisorView');if(!root||!me)return;
     const notice=notificationHTML(me.id);if(notice)root.insertAdjacentHTML('afterbegin',notice);
     // Replace the old embedded Assigned list with one reliable whole-card click target.
