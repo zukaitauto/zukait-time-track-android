@@ -1237,7 +1237,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     const notice=notificationHTML(me.id);if(notice)root.insertAdjacentHTML('afterbegin',notice);
     // Replace the old embedded Assigned list with one reliable whole-card click target.
     const assignedCard=[...root.querySelectorAll('.card')].find(c=>{const h=c.querySelector('h3');return h&&(h.textContent||'').trim().toUpperCase()==='ASSIGNED JOB CARDS';});
-    if(assignedCard){const count=openAssignments().length;assignedCard.classList.add('clickable');assignedCard.style.cursor='pointer';assignedCard.innerHTML='<h3>📋 Assigned Job Cards</h3><div class="stat">'+count+'</div><p class="muted">Click anywhere here to open all Not Started, Working, Paused, Repeat Work and ID001 assignments.</p>';assignedCard.onclick=()=>window.openSupervisorAssignedWindow();}
+    if(assignedCard){const count=(state.assign||[]).filter(a=>a&&!a.cancelled&&!a.completed).length;assignedCard.classList.add('clickable');assignedCard.style.cursor='pointer';assignedCard.innerHTML='<h3>📋 Assigned Job Cards</h3><div class="stat">'+count+'</div><p class="muted">Click anywhere here to open all Not Started, Working, Paused, Repeat Work and ID001 assignments.</p>';assignedCard.onclick=()=>window.openSupervisorAssignedWindow();}
   }
 
 
