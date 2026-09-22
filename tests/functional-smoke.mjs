@@ -28,7 +28,7 @@ assert.match(updates, /left<=0\?'v80-red':leftPct<25\?'v80-orange':leftPct<50\?'
 assert.match(updates, /EXCEEDED/, 'remaining gauge must show exceeded state');
 assert.match(updates, /vehicleBrand/, 'vehicle brand detection must exist');
 assert.match(updates, /vehicleBadge/, 'vehicle badge rendering must exist');
-assert.match(updates, /me\.name\)+' · '\+esc\(dept\)/, 'employee header must show name and department');
+assert.ok(updates.includes("esc(me.name)+' · '+esc(dept)"), 'employee header must show name and department');
 
 // Employee contracts
 assert.match(updates, /openNormal=emp=>[\s\S]*?a\.job!==H[\s\S]*?!a\.cancelled[\s\S]*?!a\.completed/, 'normal open work must be detected');
