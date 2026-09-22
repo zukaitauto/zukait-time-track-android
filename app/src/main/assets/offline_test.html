@@ -347,30 +347,8 @@ function exportManagerReport(type){let headers=[],rows=[],filename='zukait-repor
     document.getElementById('net').textContent=navigator.onLine?'Online':'OFFLINE';
   };
 
-  window.renderSupervisor=function(){
-    let el=document.getElementById('supervisorView');el.classList.remove('hidden');
-    let jobs=state.jobs||[], assigned=activeAssign(), techs=users.filter(u=>u.role==='Employee').map(u=>u.id), newReq=requestCount();
-    let requestBox='<div class="supervisor-request-top clickable" onclick="openSupervisorRequestsWindow()"><div class="mini-icon">🔔</div><div><b>EMPLOYEE REQUESTS</b><div class="small">'+(newReq?newReq+' new request'+(newReq>1?'s':''):'No new requests')+'</div></div><div class="request-number">'+newReq+'</div></div>';
-    el.innerHTML=requestBox+`
-      <div class="card quick-entry compact-panel"><div class="panel-title"><span class="mini-icon">🚗</span><div><h3>Quick Entry — Supervisor</h3><span class="small muted">Create and assign quickly</span></div></div>
-      <div class="grid supervisor-two-col"><label><span class="field-icon">🪪</span> Job Card Number<br><input id="newNo" placeholder=""></label><label><span class="field-icon">🚘</span> Vehicle / Model<br><input id="newVehicle" placeholder=""></label><label><span class="field-icon">🔢</span> Registration Number<br><input id="newReg" placeholder=""></label><label><span class="field-icon">👷</span> Technician<br><select id="se" class="tech-select tech-name-box">${techOptions()}</select></label><label><span class="field-icon">⏱</span> Suggested Time<br><input id="st" inputmode="decimal" placeholder="" value="2.00"><div class="time-hint">${timeInputHint()}</div></label></div><button class="blue" onclick="createAndAssignJob()">➕ Create Job + Assign</button></div>
-      <div class="card compact-panel"><div class="panel-title"><span class="mini-icon">🧾</span><div><h3>Assign / Update Job Card</h3><span class="small muted">Technicians are color coded</span></div></div>
-      <div class="grid supervisor-two-col"><label><span class="field-icon">🪪</span> Job Card<br><select id="sj">${jobs.map(j=>'<option>'+j.no+'</option>').join('')}</select></label><label><span class="field-icon">👷</span> Technician<br><select id="se2" class="tech-select tech-name-box">${techOptions()}</select></label><label><span class="field-icon">⏱</span> Suggested Time<br><input id="st2" inputmode="decimal" placeholder="" value="2.00"><div class="time-hint">${timeInputHint()}</div></label></div><button class="blue" onclick="assignJobExisting()">Assign / Update</button></div>
-      <div class="card"><div class="section-title"><h3>Today at a Glance</h3><span class="pill">Manual refresh</span></div><div class="glance-grid">
-        ${glanceBox('glance-active','👷','Active Workers',assigned.filter(a=>empStatus(a)==='Started'),'openActiveWorkers()')}
-        ${glanceBox('glance-paused','⏸','Paused Jobs',assigned.filter(a=>empStatus(a)==='Paused'),"openGlanceList('paused')")}
-        ${glanceBox('glance-finished','✅','Finished Jobs',liveAssign().filter(a=>a.completed),"openGlanceList('completed')")}
-        ${glanceBox('glance-over','⚠','Over Suggested Time',assigned.filter(a=>overStatus(a)),"openGlanceList('overdue')")}
-      </div></div>
-      <div class="card v56-technician-board"><button class="v54-tech-button" onclick="v54OpenTechnicianBoard()"><span><span class="v54-icon">👷</span><b>TECHNICIAN BOARD</b><br><span class="small">Denting · Painting · Mechanical</span></span><span style="font-size:28px">›</span></button></div>
-      <div class="card"><div class="section-title"><h3>Need Attention</h3><span class="pill">Manual check</span></div>${supervisorAttentionTable()}</div>
-      <div class="card"><div class="section-title"><h3>Assigned Job Cards</h3><button class="blue" onclick="openSupervisorAssignedWindow()">OPEN JOB CARDS</button></div><p class="muted">Open the complete assigned-job list in a separate window.</p></div>
-      <div class="card"><div class="section-title"><h3>Finished Job Cards</h3><button class="green" onclick="openSupervisorFinishedWindow()">OPEN FINISHED</button></div><p class="muted">Completed work is kept separate.</p></div>
-      <div class="card"><div class="section-title"><h3>Additional Time</h3><button class="blue" onclick="manualAdditionalTime()">ADD ADDITIONAL TIME</button><button class="secondary" onclick="openAdditionalHistoryWindow()">ACTION HISTORY</button></div><p class="muted">All history windows stay open until manually closed.</p></div>
-      <div class="card incentive-card"><div class="section-title"><h3>⭐ Incentive Hours</h3><button class="purple" onclick="openIncentiveList('supervisor')">VIEW INCENTIVE</button></div><p class="muted">Incentive starts only after completed normal work reaches the applicable monthly duty hours. 15 minutes cleaning allowance is deducted for each working day; repeat work and overtime do not count.</p></div>`;
-  };
-  function glanceBox(cls,icon,title,rows,action){let jobs=[...new Set(rows.map(a=>a.job))],sg=rows.reduce((x,a)=>x+a.suggested,0),ac=rows.reduce((x,a)=>x+totalForAssignment(a),0);return `<div class="glance-box ${cls} clickable" onclick="${action}"><div class="glance-icon">${icon}</div><div><b>${title}</b><div class="glance-num">${jobs.length}</div><span class="small">Suggested: ${fmt(sg)} · Actual: ${fmt(ac)}</span></div></div>`};window.glanceBox=glanceBox
-  function technicianBoardCard(id){let rows=activeAssign().filter(a=>a.emp===id),cur=rows.find(a=>empStatus(a)==='Started')||rows.find(a=>empStatus(a)==='Paused')||rows[0],u=user(id);return `<div class="job-card"><h4>${userLabel(id)} <span class="small">${u.department}</span></h4>${cur?`<p><b>${cur.job}</b><br><span class="vehicle-line">🚘 ${esc(job(cur.job)?.vehicle||'')} · ${esc(job(cur.job)?.reg||'')}</span><br>${statusHTML(empStatus(cur))}<br>Suggested: ${fmt(cur.suggested)} · Actual: ${fmt(totalForAssignment(cur))}</p>`:'<p class="muted">No active assignment</p>'}<button class="blue" onclick="openSupervisorTechnician('${id}')">View Jobs</button></div>`}
+  /* V85 architecture cleanup: legacy Supervisor renderer retired; the later compact renderer is authoritative. */
+
   function supervisorAttentionTable(){let rows=activeAssign().filter(a=>(empStatus(a)==='Paused'||overStatus(a))&&!isAttentionDismissed(a));if(!rows.length)return '<p class="ok">No jobs need attention right now.</p>';return '<table><tr><th>Technician</th><th>Job</th><th>Vehicle / Reg.</th><th>Status</th><th>Action</th></tr>'+rows.map(a=>`<tr><td>${user(a.emp).name}</td><td>${a.job}</td><td>${esc(job(a.job).vehicle)} / ${esc(job(a.job).reg)}</td><td>${statusHTML(empStatus(a))}</td><td><button class="blue" onclick="openSupervisorJob('${a.job}')">View</button> <button class="secondary" onclick="dismissAttention('${a.id}')">✓ Check</button></td></tr>`).join('')+'</table>'}
   function supervisorRowsTable(rows,mode){return '<table><tr><th>Date</th><th>JC</th><th>Vehicle</th><th>Reg.</th><th>Employee</th><th>Status</th><th>Suggested</th><th>Actual</th><th>Action</th></tr>'+rows.slice().sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0)).map(a=>{let action='<button class="blue" onclick="openSupervisorJob(\''+a.job+'\')">View</button>';if(mode==='assigned')action+=' <button class="amber" onclick="transferAssignment(\''+a.id+'\')">Change Employee</button>';if(mode==='finished')action+=' <button class="purple" onclick="addRepeatWork(\''+a.job+'\')">Repeat Work</button>';return '<tr><td>'+(a.assignedAt?new Date(a.assignedAt).toLocaleDateString():'—')+'</td><td><b>'+a.job+'</b></td><td>'+esc(job(a.job)?.vehicle||'')+'</td><td>'+esc(job(a.job)?.reg||'')+'</td><td>'+user(a.emp).name+'</td><td>'+statusHTML(empStatus(a))+'</td><td>'+fmt(a.suggested)+'</td><td>'+fmt(totalForAssignment(a))+'</td><td>'+action+'</td></tr>'}).join('')+'</table>'}
   window.openSupervisorAssignedWindow=function(){let rows=activeAssign();showSupervisorModal('Assigned Job Cards','<p class="muted">Newest first. Repeat Work becomes available only after the original work is finished.</p>'+supervisorRowsTable(rows,'assigned'))}
@@ -600,7 +578,8 @@ function exportManagerReport(type){let headers=[],rows=[],filename='zukait-repor
       <div class="card clickable compact-control" onclick="openSupervisorFinishedWindow()"><div class="section-title"><h3>✅ Finished Job Cards</h3><span class="pill">Click to open list</span></div><div class="small muted">View completed job cards without filling the dashboard.</div></div>
       <div class="card clickable compact-control" onclick="openAdditionalTimeWindow()"><div class="section-title"><h3>⏱ Additional Time</h3><span class="pill">Click to search JC and add time</span></div><div class="small muted">Select a job card, employee and add supervisor-approved time.</div></div>
       <div class="card clickable compact-control incentive-card" onclick="openIncentiveList('supervisor')"><div class="section-title"><h3>⭐ Incentive Hours</h3><span class="pill">Click to view employees</span></div><div class="small muted">Calculated only from completed normal work. Overtime and repeat work do not count toward incentive.</div></div>`;
-  };
+     finalizeSupervisorDashboard();
+ };
 
   function openSupervisorOvertimeWindow(){showSupervisorModal('🔴 Overtime Now','<p class="muted">Overtime starts at the exact duty boundary following duty time. It is monitoring only and is excluded from incentive.</p>'+overtimeTable());}
   window.openSupervisorOvertimeWindow=openSupervisorOvertimeWindow;
@@ -1246,9 +1225,9 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     put('monthTotalSuggestedTime',fmt(ms));put('monthTotalActualTime',fmt(ma));put('monthRemainingSuggestedTime',fmt(Math.max(0,ms-ma)));put('monthEfficiencyPercentage',ef.efficiency==null?'—':ef.efficiency.toFixed(1)+'%');put('monthTotalIncentiveHours',fmt(inc.incentive));put('monthTotalIdealTime',fmt(ideal));put('monthTotalOvertimeHours',fmt(ot));if(typeof window.monthlyRepeatJobHours==='function')put('monthTotalRepeatJobHours',fmt(window.monthlyRepeatJobHours(me.id,from,to)));
   };
 
-  const priorRenderSupervisor=window.renderSupervisor;
-  window.renderSupervisor=function(){
-    window.v38CheckID001();
+
+  // V85 authoritative Supervisor post-render finalizer (called by the compact renderer).
+  function finalizeSupervisorDashboard(){    window.v38CheckID001();
     priorRenderSupervisor();
     const q=document.getElementById('supervisorView');
     if(q){
@@ -1263,7 +1242,8 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     // Replace the old embedded Assigned list with one reliable whole-card click target.
     const assignedCard=[...root.querySelectorAll('.card')].find(c=>{const h=c.querySelector('h3');return h&&(h.textContent||'').trim().toUpperCase()==='ASSIGNED JOB CARDS';});
     if(assignedCard){const count=openAssignments().length;assignedCard.classList.add('clickable');assignedCard.style.cursor='pointer';assignedCard.innerHTML='<h3>📋 Assigned Job Cards</h3><div class="stat">'+count+'</div><p class="muted">Click anywhere here to open all Not Started, Working, Paused, Repeat Work and ID001 assignments.</p>';assignedCard.onclick=()=>window.openSupervisorAssignedWindow();}
-  };
+  }
+
 
   // Normal actual only for labour cost; overtime is excluded.
   window.labourCost=a=>normalForAssignment(a)*LABOUR_RATE/60;
