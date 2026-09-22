@@ -355,8 +355,8 @@ assert.match(updates, /v82-logo-fallback/, 'V82 must provide generic car fallbac
 assert.match(updates, /v82EV/, 'V82 must detect EV marker');
 assert.match(updates, /⚡ EV/, 'V82 must show EV badge separately from manufacturer logo');
 assert.match(updates, /onerror=/, 'V82 logo image failure must fall back without blank UI');
-assert.match(gradle, /versionCode 46/, 'V83 must use versionCode 46');
-assert.match(gradle, /versionName 'V83'/, 'V83 must use versionName V83');
+assert.match(gradle, /versionCode 47/, 'V84 must use versionCode 47');
+assert.match(gradle, /versionName 'V84'/, 'V84 must use versionName V84');
 
 // V83 employee UI regression contracts
 assert.match(read('app/src/main/assets/offline_test.html'), /id="legacyAppHeader"/, 'legacy app header must be explicitly addressable');
