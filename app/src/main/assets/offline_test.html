@@ -1223,8 +1223,8 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 
 
   // V85 authoritative Supervisor post-render finalizer (called by the compact renderer).
-  function finalizeSupervisorDashboard(){    window.v38CheckID001();
-    priorRenderSupervisor();
+  function finalizeSupervisorDashboard(){
+    window.v38CheckID001();
     const q=document.getElementById('supervisorView');
     if(q){
       q.querySelectorAll('.quick-entry .grid,.compact-panel .grid').forEach(g=>g.classList.add('supervisor-two-col'));
