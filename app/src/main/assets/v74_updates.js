@@ -355,17 +355,40 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.overtimeForEmployee=(emp,from,to)=>(state.sessions||[]).filter(x=>x&&x.emp===emp&&x.start<to&&(x.end||Date.now())>from).reduce((n,x)=>{const st=Math.max(+x.start||0,from),en=Math.min(+(x.end||Date.now()),to);return en>st?n+overtimeMinutes(st,en):n},0);
  window.monthlyNormalActualMinutes=(emp,from,to)=>(state.sessions||[]).filter(x=>x&&x.emp===emp&&x.start<to&&(x.end||Date.now())>from).reduce((n,x)=>{const st=Math.max(+x.start||0,from),en=Math.min(+(x.end||Date.now()),to);return en>st?n+normalMinutes(st,en):n},0);
 
+ const normalAssignmentAvailableMinutes=(emp,gapStart,gapEnd,previousJob)=>{
+   const intervals=(state.assign||[]).filter(a=>a&&a.emp===emp&&a.job!==HOLD&&!a.cancelled&&a.job!==previousJob)
+     .map(a=>{
+       const st=Math.max(gapStart,+a.assignedAt||gapStart);
+       const rawEnd=a.completedAt||a.cancelledAt||gapEnd;
+       const en=Math.min(gapEnd,+rawEnd||gapEnd);
+       return {start:st,end:en};
+     }).filter(x=>x.end>x.start).sort((a,b)=>a.start-b.start);
+   if(!intervals.length)return 0;
+   let total=0,cs=intervals[0].start,ce=intervals[0].end;
+   for(let i=1;i<intervals.length;i++){
+     const x=intervals[i];
+     if(x.start<=ce)ce=Math.max(ce,x.end);
+     else{total+=normalMinutes(cs,ce);cs=x.start;ce=x.end;}
+   }
+   total+=normalMinutes(cs,ce);
+   return Math.max(0,total);
+ };
  const idealGapMinutes=(emp,from,to)=>{
    const rows=(state.sessions||[]).filter(x=>x&&x.emp===emp&&x.start<to&&(x.end||Date.now())>from)
-     .map(x=>({start:Math.max(+x.start||0,from),end:Math.min(+(x.end||Date.now()),to)}))
+     .map(x=>({job:x.job,start:Math.max(+x.start||0,from),end:Math.min(+(x.end||Date.now()),to)}))
      .filter(x=>x.end>x.start).sort((a,b)=>a.start-b.start);
-   let sum=0,lastEnd=null;
+   let sum=0,last=null;
    for(const x of rows){
-     if(lastEnd!==null&&x.start>lastEnd)sum+=normalMinutes(lastEnd,x.start);
-     lastEnd=lastEnd===null?x.end:Math.max(lastEnd,x.end);
+     if(last&&x.start>last.end){
+       // A gap is Ideal Time only when OTHER normal work was already available.
+       // No-work waiting belongs to ID001 and is never charged as Ideal Time.
+       sum+=normalAssignmentAvailableMinutes(emp,last.end,x.start,last.job);
+     }
+     if(!last||x.end>last.end)last={job:x.job,start:x.start,end:x.end};
    }
    return Math.max(0,sum);
  };
+ window.v75NormalAssignmentAvailableMinutes=normalAssignmentAvailableMinutes;
  window.monthlyIdealTimeMinutes=idealGapMinutes;
 
  const id001Assignment=sess=>(state.assign||[]).find(a=>a&&a.id===sess?.assignmentId)||
@@ -535,10 +558,11 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  function cleanNormalFinishedLists(root=document){
    if(!root)return;
    root.querySelectorAll('table tr').forEach(tr=>{
-     const first=(tr.querySelector('td')?.textContent||'').trim().toUpperCase();
-     if(first===HOLD || first.startsWith(HOLD+' ')){
-       const section=tr.closest('.card,.manager-section,.v67-section,.v74-scroll');
-       const title=(section?.querySelector('h2,h3,h4')?.textContent||'').toLowerCase();
+     const cells=[...tr.querySelectorAll('td')].map(td=>(td.textContent||'').trim().toUpperCase());
+     const hasID001=cells.some(v=>v===HOLD||v.startsWith(HOLD+' ')||v.includes(' '+HOLD+' '));
+     if(hasID001){
+       const section=tr.closest('.card,.manager-section,.v67-section,.v74-scroll,.report-table-wrap,.job-list-wrap')||tr.parentElement;
+       const title=((section?.querySelector?.('h2,h3,h4')?.textContent||'')+' '+(section?.textContent||'')).toLowerCase();
        if(title.includes('finished')||title.includes('completed')||title.includes('production'))tr.remove();
      }
    });
@@ -591,16 +615,26 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
      (rows.length?'<div class="v74-scroll"><table><tr><th>Employee</th><th>Department</th><th>Sessions</th><th>ID001 Hours</th><th></th></tr>'+
        rows.map(x=>'<tr><td><b>'+esc(x.u.name)+'</b><br><span class="small">'+esc(x.u.id)+'</span></td><td>'+esc(x.u.department||'—')+'</td><td>'+x.sessions.length+'</td><td><b>'+fmtMin(x.minutes)+'</b></td><td><button class="blue" onclick="v753OpenID001Employee(\''+esc(x.u.id)+'\')">DETAILS</button></td></tr>').join('')+'</table></div>':'<div class="notice">No ID001 time in the selected dates.</div>');
  };
+ window.v753ReportFilter=window.v753ReportFilter||{from:'',to:''};
+ function saveReportFilter(){
+   const f=document.getElementById('v753From')?.value||window.v753ReportFilter.from||'';
+   const t=document.getElementById('v753To')?.value||window.v753ReportFilter.to||'';
+   window.v753ReportFilter={from:f,to:t};
+ }
  window.v753OpenID001Employee=function(emp){
+   saveReportFilter();
    const {from,to}=filterBounds(),u=user(emp),rows=(state.sessions||[]).filter(s=>s&&s.emp===emp&&s.job===HOLD&&s.start<to&&(s.end||Date.now())>from).sort((a,b)=>b.start-a.start);
    const body=rows.length?'<div class="v74-scroll"><table><tr><th>Date</th><th>Start</th><th>Stop</th><th>ID001 Hours</th></tr>'+
      rows.map(s=>{const en=s.end||Date.now();return '<tr><td>'+esc(new Date(s.start).toLocaleDateString())+'</td><td>'+esc(new Date(s.start).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))+'</td><td>'+esc(s.end?new Date(s.end).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'Running')+'</td><td><b>'+fmtMin(sessionNormal(s,from,to))+'</b></td></tr>'}).join('')+'</table></div>':'<div class="notice">No ID001 sessions in the selected dates.</div>';
-   openModal('<div class="section-title"><h2>ID001 — '+esc(u?.name||emp)+'</h2><button class="secondary" onclick="v753OpenID001Report()">Back</button></div>'+body);
+   openModal('<div class="section-title"><h2>ID001 — '+esc(u?.name||emp)+'</h2><button class="secondary" onclick="v753OpenID001Report(true)">Back</button></div>'+body);
  };
- window.v753OpenID001Report=function(){
+ window.v753OpenID001Report=function(preserve){
    if(!me||!['Supervisor','Manager'].includes(me.role))return;
    const d=new Date(),first=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01',today=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-   openModal('<div class="section-title"><h2>◷ ID001 Details</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="notice"><b>ID001 purpose</b><br>Time when an employee is available but no normal workshop work is provided. It counts toward Actual Working Time, but stays separate from productive Job Card work and never appears in Finished Job Cards.</div><div class="row"><label>From<br><input id="v753From" type="date" value="'+first+'" onchange="v753RenderID001Report()"></label><label>To<br><input id="v753To" type="date" value="'+today+'" onchange="v753RenderID001Report()"></label></div><div id="v753ReportBody" style="margin-top:12px"></div>');
+   const from=preserve&&window.v753ReportFilter.from?window.v753ReportFilter.from:first;
+   const to=preserve&&window.v753ReportFilter.to?window.v753ReportFilter.to:today;
+   window.v753ReportFilter={from,to};
+   openModal('<div class="section-title"><h2>◷ ID001 Details</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="notice"><b>ID001 purpose</b><br>Time when an employee is available but no normal workshop work is provided. It counts toward Actual Working Time, but stays separate from productive Job Card work and never appears in Finished Job Cards.</div><div class="row"><label>From<br><input id="v753From" type="date" value="'+from+'" onchange="saveReportFilter();v753RenderID001Report()"></label><label>To<br><input id="v753To" type="date" value="'+to+'" onchange="saveReportFilter();v753RenderID001Report()"></label></div><div id="v753ReportBody" style="margin-top:12px"></div>');
    setTimeout(window.v753RenderID001Report,0);
  };
 
@@ -626,6 +660,31 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  };
  setInterval(()=>{if(me?.role==='Employee')addEmployeeTimeBreakdown()},1000);
 
+ // Reconcile stale ID001 sessions from ANY logged-in role/device.
+ // If the employee app was closed at duty end, Supervisor/Manager opening or syncing
+ // the app still closes the session at the exact 13:00/19:00 boundary.
+ function reconcileID001Globally(){
+   try{
+     if(typeof window.v75StopID001AtDutyEnd==='function'){
+       const changed=window.v75StopID001AtDutyEnd();
+       if(changed)cleanNormalFinishedLists(document);
+       return changed;
+     }
+   }catch(e){console.warn('ID001 duty-end reconcile failed',e)}
+   return false;
+ }
+ window.v754ReconcileID001Globally=reconcileID001Globally;
+ const priorCloudPull=window.v42AfterCloudPull;
+ window.v42AfterCloudPull=function(before,after){
+   let r;if(typeof priorCloudPull==='function')r=priorCloudPull.apply(this,arguments);
+   setTimeout(()=>{if(reconcileID001Globally()){try{if(typeof window.cloudScheduleSave==='function')window.cloudScheduleSave()}catch(_){}}},0);
+   return r;
+ };
+ if(window.v754ID001GlobalTimer)clearInterval(window.v754ID001GlobalTimer);
+ window.v754ID001GlobalTimer=setInterval(reconcileID001Globally,15000);
+ setTimeout(reconcileID001Globally,0);
+
  window.v753ManualStartOnly=true;
  window.v753ID001ReportReady=true;
+ window.v754FinalRuntimeFixes=true;
 })();
