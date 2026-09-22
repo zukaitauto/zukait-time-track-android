@@ -85,3 +85,97 @@ window.openSupervisorJobCardList=function(){
 function v74ExportData(){return v74JobListRows().map(x=>{let names=[...new Set(x.aa.map(a=>v74JLP(a.emp).name))],s=x.finished?'Finished':x.paused?'Paused':x.repeat?'Repeat':x.aa.some(a=>!a.completed)?'In Progress':'Unassigned';return[ x.ts?new Date(x.ts).toLocaleDateString():'',x.j.no||'',x.j.vehicle||'',x.j.reg||'',names.join(', '),s]})}
 window.v74ExportJobListExcel=function(){let rows=[['Date','Job Card','Vehicle','Registration','Employee','Status'],...v74ExportData()],csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');if(window.AndroidBridge&&AndroidBridge.saveExportFile){AndroidBridge.saveExportFile('Zukait_Job_Card_List.csv','text/csv',btoa(unescape(encodeURIComponent(csv))));return}v74Msg('Export is not available on this device.','Excel Export')};
 window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head><meta charset="utf-8"><style>body{font-family:sans-serif;padding:20px}h2{text-align:center}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #999;padding:6px;text-align:left}th{background:#eee}</style></head><body><h2>ZUKAIT AUTO — JOB CARD LIST</h2><table><tr><th>Date</th><th>Job Card</th><th>Vehicle</th><th>Registration</th><th>Employee</th><th>Status</th></tr>'+rows.map(r=>'<tr>'+r.map(v=>'<td>'+v74JLE(v)+'</td>').join('')+'</tr>').join('')+'</table></body></html>';if(window.AndroidBridge&&AndroidBridge.printHtml){AndroidBridge.printHtml(html)}else{let w=window.open('','_blank');if(w){w.document.write(html);w.document.close();w.print()}}};
+
+
+/* V75.1 ID001 SAFE AUTHORITY — START/STOP only, isolated from productive KPIs, no auto-finish. */
+(function(){'use strict';
+ const H='ID001';
+ const safeUser=id=>{try{return user(id)||{name:id}}catch(_){return{name:id}}};
+ const openHold=emp=>(state.assign||[]).filter(a=>a&&a.job===H&&a.emp===emp&&!a.cancelled&&!a.completed).sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0))[0]||null;
+ const assFor=s=>{if(!s)return null;return (state.assign||[]).find(a=>a&&a.id===s.assignmentId)||openHold(s.emp)};
+ const isHoldAssignment=a=>!!a&&a.job===H;
+ const isHoldSession=x=>!!x&&x.job===H;
+
+ // Disable every older automatic ID001 completion path. ID001 stops only when the employee presses STOP.
+ window.v38CheckID001=function(){return false};
+
+ // Authoritative ID001 assignment creation. A technician can have only one open ID001 assignment.
+ const oldAssign=window.assignJobCore;
+ window.assignJobCore=function(no,emp,minutes){
+   if(no!==H)return typeof oldAssign==='function'?oldAssign.apply(this,arguments):undefined;
+   const m=Number(minutes);
+   if(!Number.isFinite(m)||m<1){if(typeof v74Msg==='function')return v74Msg('Enter a valid allocated time for ID001.','Ideal Time');return alert('Enter a valid allocated time for ID001.');}
+   const existing=openHold(emp);
+   if(existing){const n=safeUser(emp).name||emp;if(typeof v74Msg==='function')return v74Msg('ID001 is already assigned to '+n+'. Stop/complete the existing Ideal Time card before assigning another.','Ideal Time');return alert('ID001 is already assigned to '+n);}
+   state.assign=state.assign||[];
+   const a={id:uid(),job:H,emp:emp,suggested:m,completed:false,cancelled:false,rework:false,idealCard:true,assignedBy:me&&me.id?me.id:'SYSTEM',assignedAt:now()};
+   state.assign.push(a);
+   if(typeof setLastAction==='function')setLastAction('Assigned ID001 to '+(safeUser(emp).name||emp)+' for '+fmt(m));
+   save();render();return a;
+ };
+
+ // Employee work controls: ID001 START / STOP only and exact assignmentId binding.
+ const oldStart=window.start,oldPause=window.pause,oldFinish=window.finish;
+ window.start=function(no){
+   if(no!==H)return typeof oldStart==='function'?oldStart.apply(this,arguments):undefined;
+   if(!me||me.role!=='Employee')return;
+   if(activeSession(me.id)){if(typeof v74Msg==='function')return v74Msg('You already have an active job. Stop or finish it before starting ID001.','One Job at a Time');return alert('You already have an active job.');}
+   const a=openHold(me.id);if(!a){if(typeof v74Msg==='function')return v74Msg('No open ID001 assignment was found for you.','Ideal Time');return alert('No open ID001 assignment was found.');}
+   state.sessions=state.sessions||[];
+   state.sessions.push({id:uid(),assignmentId:a.id,job:H,emp:me.id,start:now(),end:null,paused:false,rework:false,idealCard:true});
+   if(typeof setLastAction==='function')setLastAction('Started ID001');
+   save();render();
+ };
+ window.pause=function(){
+   const x=me&&activeSession(me.id);
+   if(x&&x.job===H){if(typeof v74Msg==='function')return v74Msg('ID001 Ideal Time Card uses START / STOP only. Pause is not available.','Ideal Time');return alert('ID001 uses START / STOP only.');}
+   return typeof oldPause==='function'?oldPause.apply(this,arguments):undefined;
+ };
+ window.finish=function(){
+   const x=me&&activeSession(me.id);
+   if(!x||x.job!==H)return typeof oldFinish==='function'?oldFinish.apply(this,arguments):undefined;
+   const a=assFor(x);
+   if(!a){if(typeof v74Msg==='function')return v74Msg('The active ID001 assignment could not be found. No data was changed.','Ideal Time');return;}
+   const stop=()=>{const ts=now();x.end=ts;x.finished=true;x.paused=false;x.idealCard=true;a.completed=true;a.completedAt=ts;a.cancelled=false;if(typeof setLastAction==='function')setLastAction('Stopped ID001');save();if(typeof closeModal==='function')try{closeModal()}catch(_){}render();};
+   if(typeof openModal==='function'){openModal('<div class="v74-d"><h2>■ Stop Ideal Time</h2><div class="notice">Stop ID001 Ideal Time Card now?</div><div class="v74-actions"><button class="secondary" onclick="closeModal()">CANCEL</button><button class="danger" id="v75id001stop">■ STOP</button></div></div>');setTimeout(()=>{const b=document.getElementById('v75id001stop');if(b)b.onclick=stop},0);return;}
+   if(confirm('Stop ID001 Ideal Time Card?'))stop();
+ };
+
+ // ID001 is waiting/ideal time, never productive Actual, Efficiency, Incentive or Labour Cost.
+ const oldLabour=window.labourCost;
+ window.labourCost=function(a){if(isHoldAssignment(a))return 0;return typeof oldLabour==='function'?oldLabour.apply(this,arguments):0};
+
+ const oldMonthlySuggested=window.monthlySuggestedMinutes;
+ if(typeof oldMonthlySuggested==='function')window.monthlySuggestedMinutes=function(emp,from,to){
+   return (state.assign||[]).filter(a=>a&&a.emp===emp&&a.job!==H&&!a.cancelled&&(a.assignedAt||0)>=from&&(a.assignedAt||0)<to).reduce((n,a)=>n+(+a.suggested||0),0);
+ };
+ const oldMonthlyActual=window.monthlyNormalActualMinutes;
+ if(typeof oldMonthlyActual==='function')window.monthlyNormalActualMinutes=function(emp,from,to){
+   return (state.sessions||[]).filter(x=>x&&x.emp===emp&&x.job!==H&&x.start<to&&(x.end||Date.now())>from).reduce((sum,x)=>{const st=Math.max(+x.start||0,from),en=Math.min(+(x.end||Date.now()),to);if(en<=st)return sum;try{return sum+(typeof window.sessionNormalMinutes==='function'?window.sessionNormalMinutes({start:st,end:en},en):(en-st)/60000)}catch(_){return sum+(en-st)/60000}},0);
+ };
+
+ // Replace the old ID001 refresh path so it can never auto-finish or recursively render all dashboards.
+ const oldRefresh=window.refreshActiveRunningTime;
+ window.refreshActiveRunningTime=function(){
+   const x=me&&me.role==='Employee'?activeSession(me.id):null;
+   if(!x||x.job!==H)return typeof oldRefresh==='function'?oldRefresh.apply(this,arguments):undefined;
+   const a=assFor(x),elapsed=Math.max(0,(Date.now()-(+x.start||Date.now()))/60000),allocated=a?(+a.suggested||0):0;
+   const put=(id,val)=>{const e=document.getElementById(id);if(e)e.textContent=val};
+   put('activeRunningTime',fmt(elapsed));put('currentSuggested',fmt(allocated));put('currentActual',fmt(elapsed));put('currentRemaining',fmt(Math.max(0,allocated-elapsed)));put('currentExceeded',fmt(0));
+ };
+
+ // Final UI safety: ID001 always shows STOP, never PAUSE. Any legacy renderer error is contained instead of blanking all staff screens.
+ function decorate(){
+   if(!me||me.role!=='Employee')return;
+   const x=activeSession(me.id);
+   if(!x||x.job!==H)return;
+   const root=document.getElementById('employeeView');if(!root)return;
+   root.querySelectorAll('button').forEach(b=>{const t=(b.textContent||'').toUpperCase();if(t.includes('PAUSE'))b.style.display='none';if(t.includes('FINISH')){b.textContent='■ STOP';b.classList.remove('green');b.classList.add('danger')}});
+ }
+ const wrap=(name,rootId)=>{
+   const prev=window[name];if(typeof prev!=='function')return;
+   window[name]=function(){try{const r=prev.apply(this,arguments);setTimeout(decorate,0);return r}catch(err){console.error('Safe render recovery',name,err);const root=document.getElementById(rootId);if(root){root.innerHTML='<div class="card"><h2>Zukait Time Track</h2><div class="notice"><b>Screen recovery mode</b><br>The shared data is safe. Please close and reopen this screen.</div></div>';}return undefined}};
+ };
+ wrap('renderEmployee','employeeView');wrap('renderSupervisor','supervisorView');wrap('renderManager','managerView');
+ window.v75ID001Safe=true;
+})();
