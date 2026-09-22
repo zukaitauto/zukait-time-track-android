@@ -883,3 +883,85 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  setTimeout(injectManagerLeaveRow,0);
  window.v755LeaveAndPausedID001Ready=true;
 })();
+
+
+/* V75.6 SUPERVISOR ACTIVE WORKERS — UNIQUE EMPLOYEES + ID001 COLOUR */
+(function(){'use strict';
+ const H='ID001';
+ const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const P=id=>{try{return user(id)||{id,name:id,department:''}}catch(_){return{id,name:id,department:''}}};
+ const J=no=>{try{return job(no)||{no,vehicle:'',reg:''}}catch(_){return{no,vehicle:'',reg:''}}};
+ const F=m=>{try{return fmt(Math.max(0,Number(m)||0))}catch(_){return Math.round(Number(m)||0)+'m'}};
+ const ass=s=>(state.assign||[]).find(a=>a&&a.id===s?.assignmentId)||
+   (state.assign||[]).filter(a=>a&&a.emp===s?.emp&&a.job===s?.job&&!a.cancelled&&!a.completed).sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0))[0]||null;
+ const actual=a=>{try{return totalForAssignment(a)||0}catch(_){try{return total(a.job,a.emp)||0}catch(__){return 0}}};
+ const status=a=>{try{return empStatus(a)}catch(_){return a?.completed?'Finished':'Started'}};
+
+ function uniqueActiveWorkerRows(){
+   const byEmp=new Map();
+   (state.sessions||[]).filter(s=>s&&!s.end).forEach(s=>{
+     const key=String(s.emp||'');if(!key)return;
+     const old=byEmp.get(key);
+     // One employee must appear once. When stale overlapping sessions exist,
+     // show the latest-started session as the current activity.
+     if(!old||(+s.start||0)>(+old.start||0))byEmp.set(key,s);
+   });
+   return [...byEmp.values()].map(s=>({s,a:ass(s),u:P(s.emp),j:J(s.job)}));
+ }
+ window.v756UniqueActiveWorkerRows=uniqueActiveWorkerRows;
+
+ window.openActiveWorkers=function(){
+   const rows=uniqueActiveWorkerRows();
+   const deptName={Denter:'Denting',Painter:'Painting',Mechanic:'Mechanical'};
+   const depts=['Denter','Painter','Mechanic'];
+   const groups=depts.map(dept=>{
+     const list=rows.filter(x=>x.u.department===dept);
+     return '<section class="v69-dept v69-'+dept.toLowerCase()+'"><div class="v69-dept-head"><b>'+deptName[dept]+'</b><span>'+list.length+'</span></div>'+
+       (list.length?list.map(x=>{
+         const hold=x.s.job===H,allocated=x.a?(+x.a.suggested||0):0,ac=x.a?actual(x.a):Math.max(0,(Date.now()-(+x.s.start||Date.now()))/60000);
+         return '<details class="v69-worker '+(hold?'v756-id001-worker':'v756-normal-worker')+'"><summary>'+
+           E(x.u.name)+' <small class="'+(hold?'v756-id001-badge':'')+'">'+(hold?'ID001 · WAITING':E(x.s.job))+'</small></summary><div>'+
+           (hold
+             ?'<div class="v756-id001-title">ID001 — AVAILABLE / WAITING</div><b>Allocated ID001:</b> '+F(allocated)+'<br><b>Current ID001 Time:</b> '+F(ac)+'<br><b>Status:</b> <span class="v756-id001-status">ACTIVE ID001</span>'
+             :'<b>Job Card:</b> '+E(x.s.job)+'<br><b>Vehicle:</b> '+E(x.j.vehicle||'—')+' · '+E(x.j.reg||'—')+'<br><b>Allocated:</b> '+F(allocated)+'<br><b>Actual:</b> '+F(ac)+'<br><b>Status:</b> '+E(x.a?status(x.a):'Started')+'<br><button class="blue" onclick="openSupervisorJob(\''+E(x.s.job)+'\')">VIEW JOB</button>')+
+           '</div></details>';
+       }).join(''):'<div class="v69-empty">No active workers</div>')+'</section>';
+   }).join('');
+   showSupervisorModal('👷 Active Workers','<div class="v756-active-legend"><span class="v756-normal-dot"></span>Normal Job Card <span class="v756-id001-dot"></span>ID001 / Waiting</div><div class="v69-dept-grid">'+groups+'</div>');
+ };
+
+ // Today at a Glance: Active Workers means unique people with any current session,
+ // including ID001. Never count the same employee twice.
+ const prevOverview=window.supervisorOverview;
+ window.supervisorOverview=function(rows){
+   if(!me||me.role!=='Supervisor')return typeof prevOverview==='function'?prevOverview.apply(this,arguments):'';
+   const open=(rows||[]).filter(a=>a&&!a.cancelled&&!a.completed&&a.job!==H);
+   const active=uniqueActiveWorkerRows().length;
+   const paused=open.filter(a=>{try{return empStatus(a)==='Paused'}catch(_){return false}}).length;
+   const day=(()=>{let d=new Date();d.setHours(0,0,0,0);return d.getTime()})();
+   const fin=(rows||[]).filter(a=>a&&!a.cancelled&&a.completed&&a.job!==H&&(a.completedAt||0)>=day).length;
+   const over=open.filter(a=>(+a.suggested||0)>0&&actual(a)>+a.suggested).length;
+   const ot=(state.sessions||[]).filter(s=>!s.end&&s.job!==H).filter(s=>{try{return sessionOvertimeMinutes(s,Date.now())>0}catch(_){return false}}).length;
+   let ready=0;try{ready=typeof window.v74ReadyCount==='function'?window.v74ReadyCount():0}catch(_){}
+   // Existing READY helper is closure-scoped in V74; derive the same count safely here.
+   try{
+     const jobs=(state.jobs||[]).filter(j=>j&&j.no!==H);
+     ready=jobs.filter(j=>{const aa=(state.assign||[]).filter(a=>a&&a.job===j.no&&!a.cancelled&&a.job!==H);return aa.length&&aa.every(a=>a.completed)}).length;
+   }catch(_){}
+   const C=(i,l,n,c,k)=>'<div class="notice clickable glance-box '+k+'" onclick="'+c+'"><span class="v74-icon">'+i+'</span><div><b>'+l+'</b><div class="stat">'+n+'</div></div></div>';
+   return '<div class="card"><h3><span class="live-dot"></span>Today at a Glance</h3><div class="v74-six">'+
+     C('👷','Active Workers',active,'openActiveWorkers()','ga')+
+     C('⏸','Paused Jobs',paused,"openGlanceList('paused')",'gp')+
+     C('✅','Finished Jobs',fin,'openSupervisorFinishedWindow()','gf')+
+     C('🚗✓','Ready for Delivery',ready,"v74Ready('supervisor')",'gr')+
+     C('⏱','Overtime Now',ot,'v74OT()','go')+
+     C('⚠','Over Allocated Time',over,"openGlanceList('over')",'gx')+
+     '</div></div><div class="card v56-technician-board-card"><button class="v54-tech-button" onclick="openTechnicianBoardV56()"><span><span class="v54-icon">👷</span><b>TECHNICIAN BOARD</b><br><span class="small">Denting · Painting · Mechanical</span></span><span style="font-size:28px">›</span></button></div>'+
+     (typeof window.v75EfficiencySection==='function'?window.v75EfficiencySection():'');
+ };
+
+ const css=document.createElement('style');css.id='v756ActiveWorkersStyle';css.textContent=
+   '.v756-active-legend{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:0 0 12px;font-size:12px;font-weight:800;color:#475569}.v756-normal-dot,.v756-id001-dot{width:11px;height:11px;border-radius:50%;display:inline-block;margin-right:5px}.v756-normal-dot{background:#2563eb}.v756-id001-dot{background:#7c3aed}.v756-id001-worker{background:#f5f0ff!important;border-color:#d8c8f3!important;box-shadow:0 5px 12px rgba(109,40,217,.12)!important}.v756-id001-worker summary{color:#6d28d9!important}.v756-id001-badge{display:inline-block;background:#ede9fe;color:#6d28d9;border:1px solid #c4b5fd;border-radius:999px;padding:2px 7px;font-weight:900!important}.v756-id001-title{font-weight:900;color:#6d28d9;margin-bottom:7px}.v756-id001-status{display:inline-block;background:#ede9fe;color:#6d28d9;border:1px solid #c4b5fd;border-radius:999px;padding:2px 7px;font-weight:900}';
+ document.head.appendChild(css);
+ window.v756ActiveWorkersReady=true;
+})();
