@@ -5,6 +5,7 @@ const read = p => fs.readFileSync(p, 'utf8');
 const gradle = read('app/build.gradle');
 const main = read('app/src/main/java/com/zukait/timetrack/MainActivity.java');
 const updates = read('app/src/main/assets/v74_updates.js');
+const html = read('app/src/main/assets/offline_test.html');
 const metadata = JSON.parse(read('latest-version.json'));
 const releaseWorkflow = read('.github/workflows/publish-approved-release.yml');
 
