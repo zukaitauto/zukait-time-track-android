@@ -34,9 +34,9 @@ jobs:
         id: approved
         shell: bash
         run: |
-          if [ "\${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION_NAME="\${{ github.event.inputs.version_name }}"
-            VERSION_CODE="\${{ github.event.inputs.version_code }}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION_NAME="${{ github.event.inputs.version_name }}"
+            VERSION_CODE="${{ github.event.inputs.version_code }}"
           else
             VERSION_NAME=$(python3 -c "import json; d=json.load(open('release-request.json')); assert d.get('approvedForStaff') is True; print(d['versionName'])")
             VERSION_CODE=$(python3 -c "import json; d=json.load(open('release-request.json')); assert d.get('approvedForStaff') is True; print(d['versionCode'])")
@@ -103,8 +103,8 @@ jobs:
       - name: Restore permanent signing key
         shell: bash
         env:
-          NEW_KEYSTORE: \${{ secrets.ZUKAIT_SIGNING_JKS_BASE64 }}
-          LEGACY_KEYSTORE: \${{ secrets.ZUKAIT_KEYSTORE_BASE64 }}
+          NEW_KEYSTORE: ${{ secrets.ZUKAIT_SIGNING_JKS_BASE64 }}
+          LEGACY_KEYSTORE: ${{ secrets.ZUKAIT_KEYSTORE_BASE64 }}
         run: |
           if [ -n "$NEW_KEYSTORE" ]; then
             printf '%s' "$NEW_KEYSTORE" | base64 -d > /tmp/zukait-release.jks
@@ -119,10 +119,10 @@ jobs:
       - name: Sign and verify APK
         shell: bash
         env:
-          ZUKAIT_KEY_ALIAS: \${{ secrets.ZUKAIT_KEY_ALIAS }}
-          NEW_STORE_PASSWORD: \${{ secrets.ZUKAIT_STORE_PASSWORD }}
-          LEGACY_STORE_PASSWORD: \${{ secrets.ZUKAIT_KEYSTORE_PASSWORD }}
-          ZUKAIT_KEY_PASSWORD: \${{ secrets.ZUKAIT_KEY_PASSWORD }}
+          ZUKAIT_KEY_ALIAS: ${{ secrets.ZUKAIT_KEY_ALIAS }}
+          NEW_STORE_PASSWORD: ${{ secrets.ZUKAIT_STORE_PASSWORD }}
+          LEGACY_STORE_PASSWORD: ${{ secrets.ZUKAIT_KEYSTORE_PASSWORD }}
+          ZUKAIT_KEY_PASSWORD: ${{ secrets.ZUKAIT_KEY_PASSWORD }}
         run: |
           STORE_PASSWORD="$NEW_STORE_PASSWORD"
           [ -n "$STORE_PASSWORD" ] || STORE_PASSWORD="$LEGACY_STORE_PASSWORD"
@@ -139,23 +139,24 @@ jobs:
             --out ZUKAIT_TIME_TRACK_LATEST.apk \
             /tmp/aligned.apk
           "$BT/apksigner" verify --verbose --print-certs ZUKAIT_TIME_TRACK_LATEST.apk | tee /tmp/apksigner-verify.txt
-          grep -qi "$EXPECTED_CERT_SHA256" /tmp/apksigner-verify.txt
+          ACTUAL_CERT=$(grep -i "Signer #1 certificate SHA-256 digest:" /tmp/apksigner-verify.txt | head -n 1 | sed 's/.*: //' | tr -d ':' | tr '[:upper:]' '[:lower:]')
+          test "$ACTUAL_CERT" = "$EXPECTED_CERT_SHA256"
           "$BT/aapt" dump badging ZUKAIT_TIME_TRACK_LATEST.apk | head -n 1 | tee /tmp/apk-badging.txt
           grep -q "package: name='$EXPECTED_PACKAGE'" /tmp/apk-badging.txt
-          grep -q "versionCode='\${{ steps.approved.outputs.version_code }}'" /tmp/apk-badging.txt
-          grep -q "versionName='\${{ steps.approved.outputs.version_name }}'" /tmp/apk-badging.txt
+          grep -q "versionCode='${{ steps.approved.outputs.version_code }}'" /tmp/apk-badging.txt
+          grep -q "versionName='${{ steps.approved.outputs.version_name }}'" /tmp/apk-badging.txt
 
       - name: Create draft GitHub release
         shell: bash
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="release-\${{ steps.approved.outputs.version_name }}"
+          TAG="release-${{ steps.approved.outputs.version_name }}"
           gh release view "$TAG" >/dev/null 2>&1 && gh release delete "$TAG" --yes --cleanup-tag || true
           gh release create "$TAG" ZUKAIT_TIME_TRACK_LATEST.apk \
-            --target "\${{ github.sha }}" \
-            --title "Zukait Time Track \${{ steps.approved.outputs.version_name }}" \
-            --notes "Approved signed production release \${{ steps.approved.outputs.version_name }}." \
+            --target "${{ github.sha }}" \
+            --title "Zukait Time Track ${{ steps.approved.outputs.version_name }}" \
+            --notes "Approved signed production release ${{ steps.approved.outputs.version_name }}." \
             --draft
 
       - name: Publish matching update metadata
@@ -166,8 +167,8 @@ jobs:
           from pathlib import Path
           p=Path('latest-version.json')
           d={
-            "versionCode": int("\${{ steps.approved.outputs.version_code }}"),
-            "versionName": "\${{ steps.approved.outputs.version_name }}",
+            "versionCode": int("${{ steps.approved.outputs.version_code }}"),
+            "versionName": "${{ steps.approved.outputs.version_name }}",
             "status": "current",
             "package": "com.zukait.timetrack"
           }
@@ -176,14 +177,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add latest-version.json
-          git diff --cached --quiet || git commit -m "Publish \${{ steps.approved.outputs.version_name }} update metadata"
+          git diff --cached --quiet || git commit -m "Publish ${{ steps.approved.outputs.version_name }} update metadata"
           git push origin HEAD:main
 
       - name: Make approved release public and latest
         shell: bash
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="release-\${{ steps.approved.outputs.version_name }}"
+          TAG="release-${{ steps.approved.outputs.version_name }}"
           gh release edit "$TAG" --draft=false --latest
           gh release view "$TAG" --json tagName,name,isDraft,isPrerelease,url,assets
