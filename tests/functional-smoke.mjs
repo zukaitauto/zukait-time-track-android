@@ -396,3 +396,5 @@ assert.match(updates, /Finished Job Cards/, 'legacy Finished Job Cards cleanup m
 // Architecture guard: retired Supervisor wrappers must not return.
 assert.doesNotMatch(html, /const oldSupervisor=window\.renderSupervisor/, 'obsolete V33 Supervisor wrapper must remain retired');
 assert.doesNotMatch(html, /const priorSupervisor=window\.renderSupervisor/, 'obsolete V34 Supervisor wrapper must remain retired');
+assert.equal((html.match(/window\.renderSupervisor\s*=\s*function\s*\(/g)||[]).length,1,'Supervisor must have exactly one authoritative window renderer');
+assert.match(html, /finalizeSupervisorDashboard\(\)/, 'authoritative Supervisor renderer must run its finalizer directly');
