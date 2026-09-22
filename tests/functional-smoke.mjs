@@ -380,3 +380,8 @@ assert.match(updates, /v84ToggleTech/, 'Technician cards must expand details on 
 assert.match(updates, /v84-alert-row/, 'Employee Requests and Need Attention must share a two-column row');
 assert.match(updates, /v84-action-grid/, 'Supervisor action controls must use a two-column grid');
 assert.match(updates, /querySelectorAll\('\.overtime-card'\).*forEach\(x=>x\.remove\(\)\)/, 'Duplicate standalone overtime card must be removed');
+
+assert.match(updates, /v84EmployeeAccount/, 'Employee dashboard must provide an account menu');
+assert.match(updates, /ABOUT \/ UPDATE/, 'Employee account menu must expose update access');
+assert.match(updates, /v63OpenLeave\(\).*LEAVE/, 'Employee account menu must retain Leave');
+assert.match(updates, /closeModal\(\);logout\(\)/, 'Employee account menu must retain Logout');
