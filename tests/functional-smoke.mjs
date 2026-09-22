@@ -362,3 +362,11 @@ assert.match(read('app/src/main/assets/offline_test.html'), /id="legacyAppHeader
 assert.match(read('app/src/main/assets/offline_test.html'), /legacyHeader\.style\.display=me\.role==='Employee'\?'none':''/, 'employee dashboard must hide legacy duplicate header');
 assert.match(read('app/src/main/assets/offline_test.html'), /function logout\(\)\{[\s\S]{0,350}closeModal\(\)/, 'logout must close account modal before showing login');
 assert.match(updates, /\.v75s-card \.v82-brand-logo\{width:52px;height:32px/, 'job-card manufacturer logo must use compact bounded size');
+
+
+assert.match(html, /supervisor-two-col/, 'Supervisor Quick Entry and Assign\/Update must enforce two-column layout');
+assert.match(html, /tech-name-box/, 'Supervisor technician selector must use colored name-box styling');
+assert.match(html, /q\.querySelectorAll\('\.glance-box'\).*v83-glass/, 'Supervisor glance cards must enforce liquid-glass styling after legacy wrappers');
+assert.match(html, /assigned\.slice\(1\)\.forEach\(x=>x\.remove\(\)\)/, 'Supervisor dashboard must remove duplicate Assigned Job Cards cards');
+assert.match(html, /workDays\*\(9\*60-15\)/, 'Incentive target must deduct 15 cleaning minutes per applicable working day');
+assert.doesNotMatch(html, /210h productive target/, 'Fixed 210-hour incentive target text must not return');
