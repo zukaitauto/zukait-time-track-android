@@ -247,4 +247,19 @@ const pausedEligibility=rows=>rows.length===0||rows.every(x=>x.status==='Paused'
 assert.equal(pausedEligibility([{status:'Paused'}]),true,'paused current job with no other available work must allow ID001');
 assert.equal(pausedEligibility([{status:'Paused'},{status:'New'}]),false,'another available normal job must block ID001');
 
-console.log('Functional smoke tests passed: Employee, ID001, holidays, Ideal Time availability, Leave, Supervisor, Manager, update/release contracts.');
+
+// V75.6 Supervisor Active Workers contracts
+assert.match(updates, /V75\.6 SUPERVISOR ACTIVE WORKERS — UNIQUE EMPLOYEES \+ ID001 COLOUR/, 'V75.6 Active Workers fix must be present');
+assert.match(updates, /const byEmp=new Map\(\)/, 'Active Workers must deduplicate by employee');
+assert.match(updates, /if\(!old\|\|\(\+s\.start\|\|0\)>\(\+old\.start\|\|0\)\)byEmp\.set\(key,s\)/, 'latest active session must win when duplicate active sessions exist');
+assert.match(updates, /ID001 · WAITING/, 'ID001 must have a distinct Active Workers label');
+assert.match(updates, /v756-id001-worker/, 'ID001 worker must have separate visual styling');
+assert.match(updates, /const active=uniqueActiveWorkerRows\(\)\.length/, 'Supervisor Active Workers count must use unique employees');
+
+const dedupeActive=sessions=>{
+ const by=new Map();for(const s of sessions){if(s.end)continue;const old=by.get(s.emp);if(!old||s.start>old.start)by.set(s.emp,s)}return [...by.values()];
+};
+assert.equal(dedupeActive([{emp:'E1',job:'JC1',start:1,end:null},{emp:'E1',job:'ID001',start:2,end:null}]).length,1,'same employee with stale normal + ID001 active records must display once');
+assert.equal(dedupeActive([{emp:'E1',job:'JC1',start:1,end:null},{emp:'E1',job:'ID001',start:2,end:null}])[0].job,'ID001','latest active session must be shown as current activity');
+
+console.log('Functional smoke tests passed: Employee, ID001, holidays, Ideal Time availability, Leave, Active Workers, Supervisor, Manager, update/release contracts.');
