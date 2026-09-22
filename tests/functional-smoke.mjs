@@ -31,7 +31,8 @@ assert.match(updates, /vehicleBadge/, 'vehicle badge rendering must exist');
 assert.ok(updates.includes("esc(me.name)+' · '+esc(dept)"), 'employee header must show name and department');
 assert.ok(!updates.includes("WORK SMARTER • BETTER TOMORROW"), 'duplicate employee banner tagline must be removed');
 assert.ok(!updates.includes("esc(me.name)+' – Employee'"), 'generic duplicate Employee identity must be removed');
-assert.match(updates, /currentRemaining',left<=0\?'\+'\+fm/, 'zero or negative remaining time must use exceeded display');
+assert.match(updates, /currentRemaining',!hasAlloc\?'—':left<=0\?'\+'\+fm/, 'zero allocation must show no allocated time and negative remaining time must use exceeded display');
+assert.match(updates, /NO ALLOCATED TIME/, 'zero allocation must show a clear no allocated time state');
 
 // Employee contracts
 assert.match(updates, /openNormal=emp=>[\s\S]*?a\.job!==H[\s\S]*?!a\.cancelled[\s\S]*?!a\.completed/, 'normal open work must be detected');
