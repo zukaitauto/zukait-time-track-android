@@ -10,8 +10,8 @@ const releaseWorkflow = read('.github/workflows/publish-approved-release.yml');
 
 const versionCode = Number((gradle.match(/versionCode\s+(\d+)/)||[])[1]);
 const versionName = (gradle.match(/versionName\s+['"]([^'"]+)['"]/ )||[])[1];
-assert.equal(versionCode, 41, 'candidate Android versionCode must be 41');
-assert.equal(versionName, 'V78', 'candidate Android versionName must be V78');
+assert.equal(versionCode, 42, 'candidate Android versionCode must be 42');
+assert.equal(versionName, 'V79', 'candidate Android versionName must be V79');
 assert.match(main, /getPackageInfo\(getPackageName\(\), 0\)/, 'native bridge must read the installed APK package info');
 assert.match(main, /return installedVersionName\(\);/, 'native bridge must report installed versionName');
 assert.match(main, /return installedVersionCode\(\);/, 'native bridge must report installed versionCode');
