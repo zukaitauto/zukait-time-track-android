@@ -3,6 +3,6 @@
   "versionCode": 44,
   "approvedForStaff": true,
   "approvedAt": "2026-09-22",
-  "sourceCommit": "5a0a788f8895033fa3e8c73f91fd9dfdde94e83c",
-  "publishNonce": "approved-v81-final-corrections-20260922-r2"
+  "sourceCommit": "c85b6362bcd82dabca6321f3d81ca4135417d7eb",
+  "publishNonce": "approved-v81-final-hardening-20260922-r3"
 }
