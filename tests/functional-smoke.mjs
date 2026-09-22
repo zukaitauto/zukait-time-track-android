@@ -97,6 +97,17 @@ assert.match(updates, /actualAtReopen:worked/, 'reopen must record retained actu
 assert.match(updates, /openModal\('<div class="v74-d"><h2>↻ Reopen Same Assignment/, 'reopen must use in-app modal');
 assert.match(updates, /j\.status='Open';delete j\.completedAt/, 'reopen must reset parent Job Card status and completion date');
 
+
+
+// V87 Supervisor runtime regression guard
+assert.match(html, /V87 SUPERVISOR RUNTIME LOCK/, 'final Supervisor runtime lock must be loaded after legacy dashboard layers');
+assert.match(html, /window\.v87SupervisorRuntimeLock=true/, 'Supervisor runtime lock marker must be present');
+assert.match(html, /root\.dataset\.supervisorRuntime='v87'/, 'successful Supervisor render must mark the final runtime');
+assert.match(html, /Supervisor renderer returned empty surface/, 'Supervisor renderer must detect an empty dashboard');
+assert.match(html, /Dashboard recovery mode is active/, 'Supervisor renderer must provide a visible recovery surface instead of a blank page');
+assert.match(html, /window\.v87FilterSupervisorAssigned=function/, 'final Assigned Job Cards search handler must exist');
+assert.match(html, /const supOpenAssignments=.*?!a\.cancelled&&!a\.completed/s, 'final Assigned Job Cards handler must show only open assignments');
+
 // Manager / whole-job contracts
 assert.match(updates, /AA\(x\.no\)\.every\(a=>a\.completed\)/, 'Ready for Delivery requires all assignments complete');
 assert.match(updates, /window\.labourCost=function\(a\)\{if\(isHoldAssignment\(a\)\)return 0;/, 'ID001 labour cost must be zero');
