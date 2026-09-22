@@ -547,8 +547,10 @@ function exportManagerReport(type){let headers=[],rows=[],filename='zukait-repor
   function technicianBoardCard(id){let rows=allAssign().filter(a=>a.emp===id),cur=rows.find(a=>empStatus(a)==='Started')||rows.find(a=>empStatus(a)==='Paused')||rows[0],u=user(id);return `<div class="job-card"><h4>${userLabel(id)} <span class="small">${u.department}</span></h4>${cur?`<p><b>${cur.job}</b><br><span class="vehicle-line">🚘 ${esc(job(cur.job)?.vehicle||'')} · ${esc(job(cur.job)?.reg||'')}</span><br>${statusHTML(empStatus(cur))}<br>Suggested: ${fmt(cur.suggested)} · Actual: ${fmt(totalForAssignment(cur))}</p>`:'<p class="muted">No active assignment</p>'}<button class="blue" onclick="openSupervisorTechnician('${id}')">View Jobs</button></div>`}
   function supervisorAttentionTable(){let rows=allAssign().filter(a=>(empStatus(a)==='Paused'||overStatus(a))&&!isAttentionDismissed(a));if(!rows.length)return '<p class="ok">No jobs need attention right now.</p>';return '<table><tr><th>Technician</th><th>Job</th><th>Vehicle / Reg.</th><th>Status</th><th>Action</th></tr>'+rows.map(a=>`<tr><td>${user(a.emp).name}</td><td>${a.job}</td><td>${esc(job(a.job).vehicle)} / ${esc(job(a.job).reg)}</td><td>${statusHTML(empStatus(a))}</td><td><button class="blue" onclick="openSupervisorJob('${a.job}')">View</button> <button class="secondary" onclick="dismissAttention('${a.id}')">✓ Check</button></td></tr>`).join('')+'</table>'}
 
-  // Supervisor compact clickable cards.
+  // Supervisor compact clickable cards. Keep a proven legacy fallback so a UI-only exception can never leave Supervisor blank.
+  const legacySupervisorRenderer=window.renderSupervisor;
   window.renderSupervisor=function(){
+    try{
     let el=document.getElementById('supervisorView');el.classList.remove('hidden');ensureOvertimeFlags();
     let jobs=state.jobs||[],assigned=allAssign(),techs=users.filter(u=>u.role==='Employee').map(u=>u.id),newReq=(state.requests||[]).filter(r=>r.status==='New').length;
     let ot=overtimeRows();
@@ -570,6 +572,10 @@ function exportManagerReport(type){let headers=[],rows=[],filename='zukait-repor
       <div class="card clickable compact-control" onclick="openAdditionalTimeWindow()"><div class="section-title"><h3>⏱ Additional Time</h3><span class="pill">Click to search JC and add time</span></div><div class="small muted">Select a job card, employee and add supervisor-approved time.</div></div>
       <div class="card clickable compact-control incentive-card" onclick="openIncentiveList('supervisor')"><div class="section-title"><h3>⭐ Incentive Hours</h3><span class="pill">Click to view employees</span></div><div class="small muted">Calculated only from completed normal work. Overtime and repeat work do not count toward incentive.</div></div>`;
      finalizeSupervisorDashboard();
+    }catch(err){
+      console.error('Supervisor compact renderer failed; restoring stable dashboard.',err);
+      try{return legacySupervisorRenderer.apply(this,arguments)}catch(fallbackErr){console.error('Supervisor fallback renderer failed.',fallbackErr);throw fallbackErr}
+    }
  };
 
   function openSupervisorOvertimeWindow(){showSupervisorModal('🔴 Overtime Now','<p class="muted">Overtime starts at the exact duty boundary following duty time. It is monitoring only and is excluded from incentive.</p>'+overtimeTable());}
