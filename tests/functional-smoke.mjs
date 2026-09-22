@@ -367,7 +367,7 @@ assert.match(updates, /\.v75s-card \.v82-brand-logo\{width:52px;height:32px/, 'j
 
 assert.match(html, /supervisor-two-col/, 'Supervisor Quick Entry and Assign\/Update must enforce two-column layout');
 assert.match(html, /tech-name-box/, 'Supervisor technician selector must use colored name-box styling');
-assert.match(html, /q\.querySelectorAll\('\.glance-box'\).*v83-glass/, 'Supervisor glance cards must enforce liquid-glass styling after legacy wrappers');
+assert.match(updates, /glance-box v83-glass/, 'Supervisor glance cards must render with liquid-glass styling directly');
 assert.match(html, /assigned\.slice\(1\)\.forEach\(x=>x\.remove\(\)\)/, 'Supervisor dashboard must remove duplicate Assigned Job Cards cards');
 assert.match(html, /workDays\*\(9\*60-15\)/, 'Incentive target must deduct 15 cleaning minutes per applicable working day');
 assert.doesNotMatch(html, /210h productive target/, 'Fixed 210-hour incentive target text must not return');
@@ -392,3 +392,7 @@ assert.match(updates, /st=ot>0\?'Overtime'/, 'Technician Board must show Overtim
 assert.match(updates, /req\.onclick=.*openSupervisorRequestsWindow/, 'Employee Requests card must be clickable');
 assert.match(updates, /att\.onclick=.*v66OpenAttention/, 'Need Attention card must be clickable');
 assert.match(updates, /Finished Job Cards/, 'legacy Finished Job Cards cleanup must be present');
+
+// Architecture guard: retired Supervisor wrappers must not return.
+assert.doesNotMatch(html, /const oldSupervisor=window\.renderSupervisor/, 'obsolete V33 Supervisor wrapper must remain retired');
+assert.doesNotMatch(html, /const priorSupervisor=window\.renderSupervisor/, 'obsolete V34 Supervisor wrapper must remain retired');
