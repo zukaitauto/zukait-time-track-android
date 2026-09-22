@@ -1486,7 +1486,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     const el=document.getElementById('v87SupRows');if(el)el.innerHTML=supAssignedTable(list);
   };
   const supRender=window.renderSupervisor;
-  window.renderSupervisor=function(){
+  window.v87RenderSupervisor=function(){
     if(!me||me.role!=='Supervisor')return;
     const root=document.getElementById('supervisorView');
     try{
@@ -1500,9 +1500,10 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
       console.error('V87 Supervisor runtime recovery',err);
       if(!root)return;
       root.classList.remove('hidden');
-      root.innerHTML='<div class="card"><h3>Supervisor Dashboard</h3><p class="muted">Dashboard recovery mode is active.</p><button class="blue" onclick="renderSupervisor()">RELOAD DASHBOARD</button></div>';
+      root.innerHTML='<div class="card"><h3>Supervisor Dashboard</h3><p class="muted">Dashboard recovery mode is active.</p><button class="blue" onclick="v87RenderSupervisor()">RELOAD DASHBOARD</button></div>';
     }
   };
+  window.renderSupervisor=window.v87RenderSupervisor;
   window.v87SupervisorRuntimeLock=true;
 })();
 </script>
