@@ -2,13 +2,6 @@ name: Publish Approved Signed APK
 
 on:
   workflow_dispatch:
-    inputs:
-      version_name:
-        description: Approved version name, e.g. V85
-        required: true
-      version_code:
-        description: Approved Android version code
-        required: true
 
 permissions:
   contents: write
@@ -31,14 +24,13 @@ jobs:
         id: approved
         shell: bash
         run: |
-          VERSION_NAME="${{ github.event.inputs.version_name }}"
-          VERSION_CODE="${{ github.event.inputs.version_code }}"
-          test -n "$VERSION_NAME"
-          test -n "$VERSION_CODE"
+          VERSION_NAME=$(sed -n "s/^[[:space:]]*versionName[[:space:]]*['\"]\([^'\"]*\)['\"].*/\1/p" app/build.gradle | head -n 1)
+          VERSION_CODE=$(sed -n 's/^[[:space:]]*versionCode[[:space:]]*\([0-9][0-9]*\).*/\1/p' app/build.gradle | head -n 1)
+          test -n "$VERSION_NAME" || { echo "Could not read versionName from app/build.gradle"; exit 1; }
+          test -n "$VERSION_CODE" || { echo "Could not read versionCode from app/build.gradle"; exit 1; }
+          echo "Resolved production version: $VERSION_NAME (code $VERSION_CODE)"
           echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
           echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
-          grep -q "versionName '$VERSION_NAME'" app/build.gradle
-          grep -q "versionCode $VERSION_CODE" app/build.gradle
 
       - name: Set up Java
         uses: actions/setup-java@v5
