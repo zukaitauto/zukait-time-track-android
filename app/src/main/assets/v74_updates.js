@@ -92,6 +92,9 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  const H='ID001';
  const safeUser=id=>{try{return user(id)||{name:id}}catch(_){return{name:id}}};
  const openHold=emp=>(state.assign||[]).filter(a=>a&&a.job===H&&a.emp===emp&&!a.cancelled&&!a.completed).sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0))[0]||null;
+ const openNormal=emp=>(state.assign||[]).filter(a=>a&&a.job!==H&&a.emp===emp&&!a.cancelled&&!a.completed);
+ const availableForIdeal=emp=>!activeSession(emp)&&openNormal(emp).length===0&&!openHold(emp);
+ window.v75IdealAvailableEmployees=()=>users.filter(u=>u&&u.role==='Employee'&&availableForIdeal(u.id));
  const assFor=s=>{if(!s)return null;return (state.assign||[]).find(a=>a&&a.id===s.assignmentId)||openHold(s.emp)};
  const isHoldAssignment=a=>!!a&&a.job===H;
  const isHoldSession=x=>!!x&&x.job===H;
@@ -107,11 +110,26 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(!Number.isFinite(m)||m<1){if(typeof v74Msg==='function')return v74Msg('Enter a valid allocated time for ID001.','Ideal Time');return alert('Enter a valid allocated time for ID001.');}
    const existing=openHold(emp);
    if(existing){const n=safeUser(emp).name||emp;if(typeof v74Msg==='function')return v74Msg('ID001 is already assigned to '+n+'. Stop/complete the existing Ideal Time card before assigning another.','Ideal Time');return alert('ID001 is already assigned to '+n);}
+   const normalOpen=openNormal(emp),active=activeSession(emp);
+   if(active||normalOpen.length){const n=safeUser(emp).name||emp;if(typeof v74Msg==='function')return v74Msg(n+' already has normal workshop work. ID001 is only for staff who currently have no job.','Ideal Time');return alert(n+' already has normal workshop work.');}
    state.assign=state.assign||[];
    const a={id:uid(),job:H,emp:emp,suggested:m,completed:false,cancelled:false,rework:false,idealCard:true,idealSafeVersion:1,assignedBy:me&&me.id?me.id:'SYSTEM',assignedAt:now()};
    state.assign.push(a);
    if(typeof setLastAction==='function')setLastAction('Assigned ID001 to '+(safeUser(emp).name||emp)+' for '+fmt(m));
    save();render();return a;
+ };
+
+ // The common ID001 card may be assigned to many available employees at the same time.
+ // Each employee receives an independent assignment and independent START/STOP session.
+ window.v75AssignIdealToAvailable=function(minutes,employeeIds){
+   const m=Number(minutes);if(!Number.isFinite(m)||m<1)return {ok:false,reason:'invalid_time',assigned:[]};
+   const wanted=Array.isArray(employeeIds)&&employeeIds.length?new Set(employeeIds.map(String)):null;
+   const list=users.filter(u=>u&&u.role==='Employee'&&(!wanted||wanted.has(String(u.id)))&&availableForIdeal(u.id));
+   if(!list.length)return {ok:false,reason:'none_available',assigned:[]};
+   state.assign=state.assign||[];const ts=now(),by=me&&me.id?me.id:'SYSTEM',created=[];
+   for(const u of list){const a={id:uid(),job:H,emp:u.id,suggested:m,completed:false,cancelled:false,rework:false,idealCard:true,idealSafeVersion:1,assignedBy:by,assignedAt:ts};state.assign.push(a);created.push(a);}
+   if(typeof setLastAction==='function')setLastAction('Assigned ID001 to '+created.length+' available staff');
+   save();render();return {ok:true,assigned:created.map(a=>a.emp)};
  };
 
  // Employee work controls: ID001 START / STOP only and exact assignmentId binding.
