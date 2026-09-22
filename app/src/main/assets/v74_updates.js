@@ -947,3 +947,91 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  document.head.appendChild(css);
  window.v756ActiveWorkersReady=true;
 })();
+
+
+/* V77 IN-APP UPDATE CENTER — SINGLE DOWNLOAD + PROGRESS + INSTALL */
+(function(){'use strict';
+ const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ window.v77UpdateInfo=window.v77UpdateInfo||{current:'',latest:'',latestCode:0};
+
+ function currentVersion(){try{return window.AndroidBridge?AndroidBridge.getAppVersion():'Web'}catch(_){return'Web'}}
+ function currentCode(){try{return window.AndroidBridge?Number(AndroidBridge.getAppVersionCode()||0):0}catch(_){return 0}}
+ function updateShell(){
+   const cur=currentVersion();window.v77UpdateInfo.current=cur;
+   return '<div class="v77-update-card">'+
+     '<div class="v77-version-row"><div><span>Current Version</span><b id="v77CurrentVersion">'+E(cur)+'</b></div><div><span>New Version</span><b id="v77NewVersion">—</b></div></div>'+
+     '<div id="v77UpdateState" class="v77-update-state muted">Check for updates to see the latest version.</div>'+
+     '<div id="v77ProgressWrap" class="v77-progress-wrap" style="display:none"><div class="v77-progress-track"><div id="v77ProgressBar" class="v77-progress-bar" style="width:0%"></div></div><div class="v77-progress-meta"><b id="v77ProgressPct">0%</b><span id="v77ProgressText">Preparing download...</span></div></div>'+
+     '<div class="v77-update-actions"><button id="v77CheckBtn" class="blue big-action" onclick="v77CheckUpdate()">CHECK FOR UPDATES</button><button id="v77DownloadBtn" class="green big-action" style="display:none" onclick="v77StartDownload()">DOWNLOAD UPDATE</button><button id="v77InstallBtn" class="green big-action" style="display:none" onclick="v77InstallUpdate()">INSTALL UPDATE</button></div>'+
+     '</div>';
+ }
+ window.v63OpenAbout=function(){
+   const version=currentVersion();
+   openModal('<div class="section-title"><h2>About</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
+     '<div class="notice"><b>Zukait Time Track</b><br>Installed version: '+E(version)+'</div>'+
+     (window.AndroidBridge?updateShell():'<div class="muted">Web version updates automatically.</div>'));
+   setTimeout(()=>{try{AndroidBridge.requestUpdateDownloadStatus()}catch(_){}},120);
+ };
+ window.v77CheckUpdate=function(){
+   const st=document.getElementById('v77UpdateState'),b=document.getElementById('v77CheckBtn');
+   if(st)st.textContent='Checking for updates…';if(b)b.disabled=true;
+   try{AndroidBridge.checkForUpdates()}catch(_){if(st)st.textContent='Unable to check for updates.';if(b)b.disabled=false}
+ };
+ window.v63CheckUpdate=window.v77CheckUpdate;
+
+ window.v72UpdateCheckResult=function(latestCode,latestName,error){
+   const st=document.getElementById('v77UpdateState'),check=document.getElementById('v77CheckBtn'),down=document.getElementById('v77DownloadBtn'),inst=document.getElementById('v77InstallBtn'),nv=document.getElementById('v77NewVersion');
+   if(check)check.disabled=false;
+   if(error){if(st)st.textContent='Update check failed. Please check internet connection.';return}
+   const current=currentCode();window.v77UpdateInfo={current:currentVersion(),latest:String(latestName||''),latestCode:Number(latestCode||0)};
+   if(nv)nv.textContent=latestName||'—';
+   if(Number(latestCode)<=current){
+     if(st)st.innerHTML='<b class="ok">App is up to date.</b>';
+     if(down)down.style.display='none';if(inst)inst.style.display='none';
+     return;
+   }
+   if(st)st.innerHTML='<b>Update available: '+E(currentVersion())+' → '+E(latestName||'New version')+'</b>';
+   if(down){down.style.display='inline-block';down.disabled=false;down.textContent='DOWNLOAD UPDATE'}
+   if(inst)inst.style.display='none';
+   try{AndroidBridge.requestUpdateDownloadStatus()}catch(_){}
+ };
+
+ window.v77StartDownload=function(){
+   const down=document.getElementById('v77DownloadBtn'),st=document.getElementById('v77UpdateState');
+   if(down){down.disabled=true;down.textContent='STARTING…'}if(st)st.textContent='Preparing download…';
+   try{AndroidBridge.startUpdateDownload()}catch(_){if(st)st.textContent='Unable to start download.';if(down){down.disabled=false;down.textContent='DOWNLOAD UPDATE'}}
+ };
+ window.v77InstallUpdate=function(){
+   const st=document.getElementById('v77UpdateState');if(st)st.textContent='Opening installer…';
+   try{AndroidBridge.installDownloadedUpdate()}catch(_){if(st)st.textContent='Unable to open installer.'}
+ };
+ window.v77UpdateDownloadStatus=function(status,percent,downloaded,total,message){
+   const wrap=document.getElementById('v77ProgressWrap'),bar=document.getElementById('v77ProgressBar'),pct=document.getElementById('v77ProgressPct'),txt=document.getElementById('v77ProgressText'),st=document.getElementById('v77UpdateState'),down=document.getElementById('v77DownloadBtn'),inst=document.getElementById('v77InstallBtn');
+   const p=Math.max(0,Math.min(100,Number(percent)||0));
+   if(['PENDING','DOWNLOADING','PAUSED','COMPLETE'].includes(status)){
+     if(wrap)wrap.style.display='block';if(bar)bar.style.width=p+'%';if(pct)pct.textContent=p+'%';if(txt)txt.textContent=message||'Downloading update…';
+   }
+   if(status==='PENDING'||status==='DOWNLOADING'||status==='PAUSED'){
+     if(st)st.textContent=message||'Downloading update…';
+     if(down){down.style.display='inline-block';down.disabled=true;down.textContent=status==='PAUSED'?'DOWNLOAD PAUSED':'DOWNLOADING…'}
+     if(inst)inst.style.display='none';
+   }else if(status==='COMPLETE'){
+     if(st)st.innerHTML='<b class="ok">Download complete. Ready to install.</b>';
+     if(down)down.style.display='none';if(inst)inst.style.display='inline-block';
+     if(bar)bar.style.width='100%';if(pct)pct.textContent='100%';
+   }else if(status==='FAILED'){
+     if(st)st.textContent=message||'Download failed. Please try again.';
+     if(down){down.style.display='inline-block';down.disabled=false;down.textContent='RETRY DOWNLOAD'}
+     if(inst)inst.style.display='none';
+   }else if(status==='UP_TO_DATE'){
+     if(st)st.innerHTML='<b class="ok">App is already up to date.</b>';
+     if(down)down.style.display='none';if(inst)inst.style.display='none';if(wrap)wrap.style.display='none';
+   }else if(status==='IDLE'){
+     if(inst)inst.style.display='none';
+   }
+ };
+ const css=document.createElement('style');css.id='v77UpdateCenterStyle';css.textContent=
+   '.v77-update-card{margin-top:12px;padding:14px;border:1px solid #dce4ee;border-radius:14px;background:#fff}.v77-version-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.v77-version-row>div{padding:12px;border:1px solid #e2e8f0;border-radius:11px;background:#f8fafc}.v77-version-row span{display:block;font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase}.v77-version-row b{display:block;font-size:18px;color:#1e3a5f;margin-top:4px}.v77-update-state{margin:12px 0}.v77-progress-wrap{margin:12px 0}.v77-progress-track{height:12px;background:#e5e7eb;border-radius:999px;overflow:hidden}.v77-progress-bar{height:100%;background:#2563eb;border-radius:999px;transition:width .25s ease}.v77-progress-meta{display:flex;justify-content:space-between;gap:10px;margin-top:6px;font-size:11px;color:#475569}.v77-update-actions{display:grid;gap:8px}.v77-update-actions button{width:100%}@media(max-width:520px){.v77-version-row{grid-template-columns:1fr 1fr}}';
+ document.head.appendChild(css);
+ window.v77InAppUpdaterReady=true;
+})();

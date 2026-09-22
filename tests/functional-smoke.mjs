@@ -10,8 +10,8 @@ const releaseWorkflow = read('.github/workflows/publish-approved-release.yml');
 
 const versionCode = Number((gradle.match(/versionCode\s+(\d+)/)||[])[1]);
 const versionName = (gradle.match(/versionName\s+['"]([^'"]+)['"]/ )||[])[1];
-assert.equal(versionCode, 39, 'candidate Android versionCode must be 39');
-assert.equal(versionName, 'V76', 'candidate Android versionName must be V76');
+assert.equal(versionCode, 40, 'candidate Android versionCode must be 40');
+assert.equal(versionName, 'V77', 'candidate Android versionName must be V77');
 assert.match(main, /getPackageInfo\(getPackageName\(\), 0\)/, 'native bridge must read the installed APK package info');
 assert.match(main, /return installedVersionName\(\);/, 'native bridge must report installed versionName');
 assert.match(main, /return installedVersionCode\(\);/, 'native bridge must report installed versionCode');
@@ -268,3 +268,17 @@ console.log('Functional smoke tests passed: Employee, ID001, holidays, Ideal Tim
 // Update download hard guard
 assert.match(main, /if \(publishedCode <= installedVersionCode\(\)\)/, 'native update download must refuse same or older published version');
 assert.match(main, /App is already up to date\./, 'native update guard must tell user the app is already current');
+
+
+// V77 in-app updater contracts
+assert.match(main, /startUpdateDownloadNative\(\)/, 'V77 must start update download from native single-download flow');
+assert.match(main, /persistUpdateDownloadState/, 'update download id must be persisted');
+assert.match(main, /hasExistingUpdateDownload\(\)/, 'duplicate update downloads must be blocked');
+assert.match(main, /v77UpdateDownloadStatus/, 'native layer must report download progress into the app');
+assert.match(main, /installDownloadedUpdateNative/, 'installer must be opened only from explicit in-app install action');
+assert.doesNotMatch(main, /onReceive[\s\S]{0,900}startActivity\(install\)/, 'download completion receiver must not auto-open installer');
+assert.match(updates, /Current Version/, 'About update center must show current version');
+assert.match(updates, /New Version/, 'About update center must show new version');
+assert.match(updates, /v77ProgressBar/, 'About update center must show download progress');
+assert.match(updates, /DOWNLOAD UPDATE/, 'About update center must expose download action');
+assert.match(updates, /INSTALL UPDATE/, 'About update center must expose install action after completion');
