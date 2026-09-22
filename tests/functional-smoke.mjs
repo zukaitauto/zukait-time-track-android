@@ -19,6 +19,17 @@ assert.doesNotMatch(main, /getAppVersion\(\)[\s\S]{0,120}return "V74"/, 'native 
 assert.ok(Number(metadata.versionCode) <= versionCode, 'published metadata cannot be newer than candidate build');
 assert.equal(metadata.package, 'com.zukait.timetrack');
 
+
+assert.match(updates, /v80RunningGauge/, 'employee running gauge must exist');
+assert.match(updates, /v80RemainingGauge/, 'employee remaining gauge must exist');
+assert.match(updates, /rr\.textContent=fm\(worked\)/, 'running gauge must use accumulated actual assignment time');
+assert.match(updates, /p>=100\?'v80-red':p>75\?'v80-orange':p>50\?'v80-blue':'v80-green'/, 'running gauge color thresholds must be preserved');
+assert.match(updates, /left<=0\?'v80-red':leftPct<25\?'v80-orange':leftPct<50\?'v80-blue':'v80-green'/, 'remaining gauge color thresholds must be preserved');
+assert.match(updates, /EXCEEDED/, 'remaining gauge must show exceeded state');
+assert.match(updates, /vehicleBrand/, 'vehicle brand detection must exist');
+assert.match(updates, /vehicleBadge/, 'vehicle badge rendering must exist');
+assert.match(updates, /me\.name\)+' · '\+esc\(dept\)/, 'employee header must show name and department');
+
 // Employee contracts
 assert.match(updates, /openNormal=emp=>[\s\S]*?a\.job!==H[\s\S]*?!a\.cancelled[\s\S]*?!a\.completed/, 'normal open work must be detected');
 assert.match(updates, /availableForIdeal=emp=>!activeSession\(emp\)&&openNormal\(emp\)\.length===0&&!openHold\(emp\)/, 'ID001 must only be available with no normal work');
