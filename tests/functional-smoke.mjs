@@ -263,3 +263,8 @@ assert.equal(dedupeActive([{emp:'E1',job:'JC1',start:1,end:null},{emp:'E1',job:'
 assert.equal(dedupeActive([{emp:'E1',job:'JC1',start:1,end:null},{emp:'E1',job:'ID001',start:2,end:null}])[0].job,'ID001','latest active session must be shown as current activity');
 
 console.log('Functional smoke tests passed: Employee, ID001, holidays, Ideal Time availability, Leave, Active Workers, Supervisor, Manager, update/release contracts.');
+
+
+// Update download hard guard
+assert.match(main, /if \(publishedCode <= installedVersionCode\(\)\)/, 'native update download must refuse same or older published version');
+assert.match(main, /App is already up to date\./, 'native update guard must tell user the app is already current');
