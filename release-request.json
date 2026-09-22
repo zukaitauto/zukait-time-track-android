@@ -1,8 +1,8 @@
 {
-  "versionName": "V75",
-  "versionCode": 38,
+  "versionName": "V76",
+  "versionCode": 39,
   "approvedForStaff": true,
   "approvedAt": "2026-09-22",
-  "sourceCommit": "ae1dc62b95d30a14a4f78e13b1572ccfd5cd9b91",
-  "publishNonce": "approved-v75-online-release-20260922-r2"
+  "sourceCommit": "cdee445d1dc344bfb167a1f0cc70601bfb47254f",
+  "publishNonce": "approved-v76-online-release-20260922-r1"
 }
