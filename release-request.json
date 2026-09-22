@@ -1,8 +1,8 @@
 {
-  "versionName": "V76",
-  "versionCode": 39,
+  "versionName": "V77",
+  "versionCode": 40,
   "approvedForStaff": true,
   "approvedAt": "2026-09-22",
-  "sourceCommit": "cdee445d1dc344bfb167a1f0cc70601bfb47254f",
-  "publishNonce": "approved-v76-online-release-20260922-r1"
+  "sourceCommit": "fef516fc416f834597314bca1c587f0df5145fe4",
+  "publishNonce": "approved-v77-in-app-updater-20260922-r1"
 }
