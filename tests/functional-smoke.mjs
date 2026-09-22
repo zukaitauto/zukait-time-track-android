@@ -354,5 +354,5 @@ assert.match(updates, /v82-logo-fallback/, 'V82 must provide generic car fallbac
 assert.match(updates, /v82EV/, 'V82 must detect EV marker');
 assert.match(updates, /⚡ EV/, 'V82 must show EV badge separately from manufacturer logo');
 assert.match(updates, /onerror=/, 'V82 logo image failure must fall back without blank UI');
-assert.match(buildGradle, /versionCode 45/, 'V82 must use versionCode 45');
-assert.match(buildGradle, /versionName 'V82'/, 'V82 must use versionName V82');
+assert.match(gradle, /versionCode 45/, 'V82 must use versionCode 45');
+assert.match(gradle, /versionName 'V82'/, 'V82 must use versionName V82');
