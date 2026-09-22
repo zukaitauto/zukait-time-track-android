@@ -3,6 +3,6 @@
   "versionCode": 44,
   "approvedForStaff": true,
   "approvedAt": "2026-09-22",
-  "sourceCommit": "db1324f6bb64b41b3ebed682650e542384607380",
-  "publishNonce": "approved-v81-installer-hardening-20260922-r4"
+  "sourceCommit": "2f1cc13bac2339c1afff08c8adad215a30c90c7d",
+  "publishNonce": "approved-v81-final-release-20260922-r5"
 }
