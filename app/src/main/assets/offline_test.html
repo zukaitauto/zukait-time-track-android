@@ -1464,6 +1464,49 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
   window.v62TrialReady=true;
 })();
 </script>
+<script>
+/* V87 SUPERVISOR RUNTIME LOCK — one final, authoritative Supervisor surface after all legacy layers. */
+(function(){
+  const supOpenAssignments=()=> (state.assign||[]).filter(a=>a&&!a.cancelled&&!a.completed).slice().sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));
+  const supSafe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const supActual=a=>{try{return typeof totalForAssignment==='function'?(totalForAssignment(a)||0):0}catch(_){return 0}};
+  const supStatus=a=>{try{return typeof empStatus==='function'?empStatus(a):(supActual(a)>0?'Working':'Not Started')}catch(_){return 'Not Started'}};
+  function supAssignedTable(list){
+    if(!list.length)return '<div class="notice"><b>No open assigned job cards.</b></div>';
+    return '<div style="overflow:auto"><table><thead><tr><th>Date</th><th>Job Card</th><th>Vehicle / Reg.</th><th>Employee</th><th>Status</th><th>Suggested</th><th>Actual</th><th>Actions</th></tr></thead><tbody>'+
+      list.map(a=>{const j=job(a.job)||{},u=user(a.emp)||{};return '<tr><td>'+supSafe(a.assignedAt?new Date(a.assignedAt).toLocaleDateString():'—')+'</td><td><b>'+supSafe(a.job)+'</b>'+(a.rework?'<br><span class="pill">REPEAT</span>':'')+'</td><td>'+supSafe(j.vehicle||'—')+'<br><span class="small">'+supSafe(j.reg||'')+'</span></td><td>'+supSafe(u.name||a.emp)+'</td><td>'+supSafe(supStatus(a))+'</td><td>'+fmt(+a.suggested||0)+'</td><td>'+fmt(supActual(a))+'</td><td><button class="blue" onclick="openSupervisorJob(\''+String(a.job).replace(/'/g,"\\'")+'\')">VIEW</button>'+(typeof window.v62EditAssignment==='function'?'<button class="amber" onclick="v62EditAssignment(\''+a.id+'\')">EDIT</button>':'')+(typeof window.v62SplitAssignment==='function'?'<button class="purple" onclick="v62SplitAssignment(\''+a.id+'\')">+ TECHNICIAN</button>':'')+'</td></tr>'}).join('')+'</tbody></table></div>';
+  }
+  window.openSupervisorAssignedWindow=function(){
+    const list=supOpenAssignments();
+    showSupervisorModal('📋 Assigned Job Cards','<div class="row"><input id="v87SupSearch" style="flex:1;min-width:220px" placeholder="" oninput="v87FilterSupervisorAssigned()"><span class="pill">'+list.length+' OPEN</span></div><div id="v87SupRows" style="margin-top:12px">'+supAssignedTable(list)+'</div>');
+  };
+  window.v87FilterSupervisorAssigned=function(){
+    const q=(document.getElementById('v87SupSearch')?.value||'').trim().toLowerCase();
+    const list=supOpenAssignments().filter(a=>{const j=job(a.job)||{},u=user(a.emp)||{};return [a.job,j.vehicle,j.reg,u.name,a.emp,supStatus(a),a.rework?'repeat':''].join(' ').toLowerCase().includes(q)});
+    const el=document.getElementById('v87SupRows');if(el)el.innerHTML=supAssignedTable(list);
+  };
+  const supRender=window.renderSupervisor;
+  window.renderSupervisor=function(){
+    if(!me||me.role!=='Supervisor')return;
+    const root=document.getElementById('supervisorView');
+    try{
+      supRender.apply(this,arguments);
+      if(!root)throw new Error('Supervisor root missing');
+      root.classList.remove('hidden');
+      const meaningful=(root.textContent||'').trim();
+      if(!meaningful||!root.querySelector('.card,.supervisor-request-top'))throw new Error('Supervisor renderer returned empty surface');
+      root.dataset.supervisorRuntime='v87';
+    }catch(err){
+      console.error('V87 Supervisor runtime recovery',err);
+      if(!root)return;
+      root.classList.remove('hidden');
+      root.innerHTML='<div class="card"><h3>Supervisor Dashboard</h3><p class="muted">Dashboard recovery mode is active.</p><button class="blue" onclick="renderSupervisor()">RELOAD DASHBOARD</button></div>';
+    }
+  };
+  window.v87SupervisorRuntimeLock=true;
+})();
+</script>
+
 <script src="cloud_sync.js?v=81"></script>
 <script src="secure_auth.js?v=81"></script>
 <script src="production_pilot.js?v=81"></script>
