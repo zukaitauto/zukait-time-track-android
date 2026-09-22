@@ -398,3 +398,8 @@ assert.doesNotMatch(html, /const oldSupervisor=window\.renderSupervisor/, 'obsol
 assert.doesNotMatch(html, /const priorSupervisor=window\.renderSupervisor/, 'obsolete V34 Supervisor wrapper must remain retired');
 assert.equal((html.match(/window\.renderSupervisor\s*=\s*function\s*\(/g)||[]).length,1,'Supervisor must have exactly one authoritative window renderer');
 assert.match(html, /finalizeSupervisorDashboard\(\)/, 'authoritative Supervisor renderer must run its finalizer directly');
+
+assert.equal((html.match(/window\.renderEmployee\s*=\s*function\s*\(/g)||[]).length,1,'Employee must have exactly one authoritative window renderer wrapper');
+assert.match(html, /finalizeEmployeeDashboard\(\)/, 'authoritative Employee renderer must run its finalizer directly');
+assert.doesNotMatch(html, /const oldRenderEmployee=window\.renderEmployee/, 'legacy overtime Employee renderer wrapper must remain retired');
+assert.doesNotMatch(html, /const employeeBase=window\.renderEmployee/, 'legacy ID001 Employee renderer wrapper must remain retired');
