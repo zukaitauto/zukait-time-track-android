@@ -385,3 +385,8 @@ assert.match(updates, /v84EmployeeAccount/, 'Employee dashboard must provide an 
 assert.match(updates, /ABOUT \/ UPDATE/, 'Employee account menu must expose update access');
 assert.match(updates, /v63OpenLeave\(\).*LEAVE/, 'Employee account menu must retain Leave');
 assert.match(updates, /closeModal\(\);logout\(\)/, 'Employee account menu must retain Logout');
+
+assert.match(updates, /st=ot>0\?'Overtime'/, 'Technician Board must show Overtime status');
+assert.match(updates, /req\.onclick=.*openSupervisorRequestsWindow/, 'Employee Requests card must be clickable');
+assert.match(updates, /att\.onclick=.*v66OpenAttention/, 'Need Attention card must be clickable');
+assert.match(updates, /Finished Job Cards/, 'legacy Finished Job Cards cleanup must be present');
