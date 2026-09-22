@@ -42,7 +42,7 @@ assert.match(updates, /window\.overtimeForEmployee=.*overtimeMinutes/s, 'holiday
 // V75.3 ID001 report / manual-start contracts
 assert.match(updates, /V75\.3 ID001 REPORT \+ TIME BREAKDOWN/, 'V75.3 ID001 report runtime must be present');
 assert.match(updates, /window\.v753ManualStartOnly=true/, 'manual-start-only contract marker must be present');
-assert.equal((updates.match(/state\.sessions\.push\s*\(/g)||[]).length,1,'candidate update layer must create sessions only from the explicit Start flow');
+assert.equal((updates.match(/state\.sessions\.push\s*\(/g)||[]).length,2,'candidate update layer must create sessions only from the two explicit Start flows: normal work and ID001');
 assert.match(updates, /finishedDone=done\.filter\(a=>a\.job!==H\)/, 'Employee Finished Jobs must exclude ID001');
 assert.match(updates, /v753OpenID001Report/, 'Supervisor/Manager ID001 report must exist');
 assert.match(updates, /v753From/, 'ID001 report must include From date filter');
