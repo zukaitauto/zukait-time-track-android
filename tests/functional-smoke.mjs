@@ -40,7 +40,7 @@ assert.match(updates, /v75AssignIdealToAvailable/, 'bulk ID001 assignment must e
 assert.match(updates, /idealSafeVersion:1/, 'safe ID001 version marker must be written');
 assert.match(updates, /window\.v38CheckID001=function\(\)\{return false\}/, 'legacy ID001 auto-finish must be disabled');
 assert.match(updates, /START \/ STOP only|START \/ STOP/, 'ID001 must remain start/stop only');
-assert.match(updates, /<b>Overtime<\/b>/, 'Employee monthly dashboard must show Overtime');
+assert.ok(updates.includes("'Overtime'") && updates.includes('overtimeMin'), 'Employee monthly dashboard must show Overtime');
 assert.match(updates, /x\.job!==H[\s\S]*?sessionOvertimeMinutes/, 'ID001 must be excluded from monthly overtime');
 assert.match(updates, /Final screenshot-style Employee dashboard/, 'stable Employee renderer must be the final standalone renderer');
 
@@ -277,6 +277,9 @@ assert.equal(dedupeActive([{emp:'E1',job:'JC1',start:1,end:null},{emp:'E1',job:'
 assert.equal(dedupeActive([{emp:'E1',job:'JC1',start:1,end:null},{emp:'E1',job:'ID001',start:2,end:null}])[0].job,'ID001','latest active session must be shown as current activity');
 
 assert.ok(updates.includes('v81-month-grid'), 'employee monthly summary must use two-column 3D circle grid');
+assert.ok(updates.includes('v81OpenMyMonthlyLeave') && updates.includes('v81-month-leave'), 'employee dashboard must show clickable monthly leave summary');
+assert.ok(updates.includes("l.period==='FULL'?1:.5"), 'monthly leave must count full day as 1 and half day as 0.5');
+assert.ok(updates.includes('v81OpenEmployeeHistory'), 'employee performance history must open separately');
 assert.ok(updates.includes("'Incentive Hours'"), 'employee monthly summary must include Incentive Hours');
 assert.ok(updates.includes("'Completed Jobs'") && updates.includes("'Suggested Time'") && updates.includes("'Actual Time'") && updates.includes("'Ideal Time'") && updates.includes("'Overtime'"), 'employee monthly summary must preserve monthly details');
 console.log('Functional smoke tests passed: Employee, ID001, holidays, Ideal Time availability, Leave, Active Workers, Supervisor, Manager, update/release contracts.');
