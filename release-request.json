@@ -1,8 +1,8 @@
 {
-  "versionName": "V77",
-  "versionCode": 40,
+  "versionName": "V78",
+  "versionCode": 41,
   "approvedForStaff": true,
   "approvedAt": "2026-09-22",
-  "sourceCommit": "fef516fc416f834597314bca1c587f0df5145fe4",
-  "publishNonce": "approved-v77-in-app-updater-20260922-r1"
+  "sourceCommit": "60fcf088ba94770b8eb702ad36a2cfb38bda3b98",
+  "publishNonce": "approved-v78-supervisor-leave-print-20260922-r1"
 }
