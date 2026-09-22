@@ -56,6 +56,7 @@ public class MainActivity extends Activity {
     private byte[] pendingExportData = null;
     private static final int MIC_REQUEST = 1001;
     private static final int NOTIFICATION_REQUEST = 1002;
+    private static final int UNKNOWN_SOURCES_REQUEST = 1003;
     private static final String NOTIFICATION_CHANNEL = "zukait_updates";
     private static final String APP_HOST = "appassets.androidplatform.net";
     private WebView webView;
@@ -610,6 +611,23 @@ public class MainActivity extends Activity {
                 .apply();
     }
 
+    private void removeDownloadedUpdate(long id) {
+        if (id < 0) return;
+        try {
+            DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+            if (dm != null) dm.remove(id);
+        } catch (Exception ignored) { }
+    }
+
+    private void clearInstalledUpdateDownloadIfNeeded() {
+        restoreUpdateDownloadState();
+        if (updateDownloadId >= 0 && updateTargetVersionCode > 0 && installedVersionCode() >= updateTargetVersionCode) {
+            long completedId = updateDownloadId;
+            clearUpdateDownloadState();
+            removeDownloadedUpdate(completedId);
+        }
+    }
+
     private void clearUpdateDownloadState() {
         updateDownloadId = -1;
         updateTargetVersionCode = 0;
@@ -621,9 +639,6 @@ public class MainActivity extends Activity {
         if (updateDownloadId < 0) {
             updateDownloadId = updatePrefs().getLong("download_id", -1);
             updateTargetVersionCode = updatePrefs().getInt("target_version_code", 0);
-        }
-        if (updateTargetVersionCode > 0 && installedVersionCode() >= updateTargetVersionCode) {
-            clearUpdateDownloadState();
         }
     }
 
@@ -784,6 +799,20 @@ public class MainActivity extends Activity {
 
     private void installDownloadedUpdateNative() {
         restoreUpdateDownloadState();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                !getPackageManager().canRequestPackageInstalls()) {
+            try {
+                Intent permissionIntent = new Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                        Uri.parse("package:" + getPackageName()));
+                startActivityForResult(permissionIntent, UNKNOWN_SOURCES_REQUEST);
+                notifyUpdateDownloadToWeb("PERMISSION_REQUIRED", 100, 0, 0,
+                        "Allow Install unknown apps for Zukait Time Track, then return and tap Install.");
+            } catch (Exception e) {
+                notifyUpdateDownloadToWeb("FAILED", 100, 0, 0,
+                        "Unable to open the Install unknown apps setting.");
+            }
+            return;
+        }
         if (updateDownloadId < 0) {
             notifyUpdateDownloadToWeb("FAILED", 0, 0, 0, "No downloaded update is available.");
             return;
@@ -889,6 +918,12 @@ public class MainActivity extends Activity {
                 else notifyVoiceResultToWeb("", "Microphone permission is disabled for Zukait Time Track.");
             }
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        clearInstalledUpdateDownloadIfNeeded();
     }
 
     @Override
