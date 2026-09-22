@@ -64,7 +64,12 @@ function v84SupervisorPanels(root){
  // Remove legacy duplicate action cards that are not part of the agreed four-card control area.
  [...root.querySelectorAll('.card')].filter(x=>{const h=x.querySelector('h3');return h&&/Finished Job Cards/i.test(h.textContent||'')}).forEach(x=>x.remove());
  const find=t=>[...root.querySelectorAll('.card')].find(x=>{const h=x.querySelector('h3');return h&&new RegExp(t,'i').test(h.textContent||'')});
- const job=find('Job Card List'),assigned=find('Assigned Job Cards'),add=find('Additional Time'),inc=find('Incentive Hours'),items=[job,assigned,add,inc].filter(Boolean);
+ const job=find('Job Card List'),assigned=find('Assigned Job Cards'),add=find('Additional Time'),inc=find('Incentive Hours');
+ // Supervisor lower controls: one Job Card List only. Assigned Job Cards and Additional Time open in modal boxes.
+ if(job&&job.isConnected)job.remove();
+ if(assigned){assigned.classList.add('clickable');assigned.setAttribute('onclick','openSupervisorAssignedWindow()');assigned.innerHTML='<div class="section-title"><h3>📋 Assigned Job Cards</h3><span class="pill">Click to open</span></div><div class="small muted">Open assignments · status · suggested / actual time</div>'}
+ if(add){add.classList.add('clickable');add.setAttribute('onclick','manualAdditionalTime()');add.innerHTML='<div class="section-title"><h3>⏱ Additional Time</h3><span class="pill">Click to open</span></div><div class="small muted">Add extra suggested time for an employee</div>'}
+ const items=[assigned,add,inc].filter(x=>x&&x.isConnected);
  if(items.length&&!root.querySelector('.v84-action-grid')){let g=document.createElement('div');g.className='v84-action-grid';items[0].parentNode.insertBefore(g,items[0]);items.forEach((x,i)=>{x.classList.add('v84-action','v84-action-'+i,'clickable');g.appendChild(x)})}
 }
 function v74ApplyManagerFinal(){if(me?.role==='Manager')polish()}
