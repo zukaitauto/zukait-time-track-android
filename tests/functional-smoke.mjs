@@ -345,3 +345,14 @@ assert.match(updates, /Use Reopen Same Assignment for mistaken finish/, 'complet
 assert.match(updates, /Supervisor update existing open assignment/, 'existing same JC/employee open assignment must be updated instead of duplicated');
 assert.match(updates, /window\.overtimeForEmployee=function\(emp,from,to\)/, 'employee overtime must reconcile stale sessions first');
 assert.match(updates, /window\.monthlyNormalActualMinutes=function\(emp,from,to\)/, 'monthly actual must reconcile stale sessions first');
+
+
+// V82 local vehicle logo contracts
+assert.match(updates, /vehicle-logos\//, 'V82 must load vehicle logos from local APK assets');
+assert.match(updates, /v82-brand-logo/, 'V82 must render manufacturer logo container');
+assert.match(updates, /v82-logo-fallback/, 'V82 must provide generic car fallback for missing or unknown logos');
+assert.match(updates, /v82EV/, 'V82 must detect EV marker');
+assert.match(updates, /⚡ EV/, 'V82 must show EV badge separately from manufacturer logo');
+assert.match(updates, /onerror=/, 'V82 logo image failure must fall back without blank UI');
+assert.match(buildGradle, /versionCode 45/, 'V82 must use versionCode 45');
+assert.match(buildGradle, /versionName 'V82'/, 'V82 must use versionName V82');
