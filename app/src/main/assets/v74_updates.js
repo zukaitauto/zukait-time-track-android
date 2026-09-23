@@ -139,7 +139,7 @@ function v91RoleHeader(role){
  const top=root.querySelector('.v92-supervisor-top');if(role==='Supervisor'&&top)root.insertBefore(row,top);else root.insertBefore(row,root.firstChild);
  // Supervisor and Manager each own exactly one identity/status row.
  // Legacy/global identity and network badges must never coexist with the role header.
- if(role==='Supervisor'||role==='Manager'){
+ if(role==='Supervisor'){
    if(gh)gh.style.setProperty('display','none','important');
    const net=document.getElementById('net');if(net){net.textContent='';net.style.setProperty('display','none','important')}
    const hos=document.getElementById('headerOnlineStatus');if(hos)hos.style.setProperty('display','none','important');
