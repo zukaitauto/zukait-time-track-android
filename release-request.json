@@ -1,8 +1,8 @@
 {
-  "versionName": "V99",
-  "versionCode": 62,
+  "versionName": "V100",
+  "versionCode": 63,
   "approvedForStaff": true,
   "approvedAt": "2026-09-23",
-  "sourceCommit": "05acdd99e407a05951574628e7f48c8eed292afd",
-  "publishNonce": "approved-v99-authoritative-native-updater-20260923"
+  "sourceCommit": "5de7e0d6878338684be17d4ef559722528cea9f3",
+  "publishNonce": "approved-v100-supervisor-permanent-fix-20260923"
 }
