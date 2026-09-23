@@ -16,7 +16,7 @@ const v103SupervisorOverviewAuthority=window.supervisorOverview;
 window.openTechnicianBoardV56=function(){if(me?.role==='Supervisor'){const b=document.querySelector('#supervisorView .v84-tech-board');if(b){b.scrollIntoView({behavior:'smooth',block:'center'});return}}};
 window.openTechnicianDeptV56=function(dept){return window.v84OpenDept(dept)};
 function v84TechState(u){let s=activeSession(u.id),st='Available';if(s){let ot=0;try{ot=sessionOvertimeMinutes(s,Date.now())}catch(_){}let a=AS(s),paused=false;try{paused=(a&&empStatus(a)==='Paused')||!!s.paused}catch(_){paused=!!s.paused}st=ot>0?'Overtime':(paused?'Paused':'Working')}return{session:s,status:st}}
-function v84TechnicianBoard(){let ds=[['Denter','DENTING','🛠️','v84-denter'],['Painter','PAINTING','<span class="v113-spray" aria-label="Paint spray">▰<i>•••</i></span>','v84-painter'],['Mechanic','MECHANICAL','⚙️','v84-mechanic']];return '<div class="card v84-tech-board v92-tech-board"><div class="v92-tech-title"><div><h3>👷 Technician Board</h3><small>Live workshop status · tap a department</small></div><span class="v92-live-dot">● LIVE</span></div><div class="v84-depts v92-tech-depts">'+ds.map(d=>{let t=(users||[]).filter(u=>u.role==='Employee'&&u.department===d[0]),working=t.filter(u=>{let x=v84TechState(u);return x.status==='Working'||x.status==='Overtime'}).length;return '<button class="v84-dept v92-tech-dept '+d[3]+'" onclick="v84OpenDept(\''+d[0]+'\')"><span class="v92-dept-icon">'+d[2]+'</span><b>'+d[1]+'</b><strong>'+working+' <em>/ '+t.length+'</em></strong><small>WORKING / TOTAL</small><i>Tap to view ›</i></button>'}).join('')+'</div></div>'}
+function v84TechnicianBoard(){let ds=[['Denter','DENTING','🛠️','v84-denter'],['Painter','PAINTING','<span class="v112-carpaint" aria-label="Automotive paint"><span class="v112-car">▰</span><span class="v112-gun">⌁</span><i>•••</i></span>','v84-painter'],['Mechanic','MECHANICAL','⚙️','v84-mechanic']];return '<div class="card v84-tech-board v92-tech-board"><div class="v92-tech-title"><div><h3>👷 Technician Board</h3><small>Live workshop status · tap a department</small></div><span class="v92-live-dot">● LIVE</span></div><div class="v84-depts v92-tech-depts">'+ds.map(d=>{let t=(users||[]).filter(u=>u.role==='Employee'&&u.department===d[0]),working=t.filter(u=>{let x=v84TechState(u);return x.status==='Working'||x.status==='Overtime'}).length;return '<button class="v84-dept v92-tech-dept '+d[3]+'" onclick="v84OpenDept(\''+d[0]+'\')"><span class="v92-dept-icon">'+d[2]+'</span><b>'+d[1]+'</b><strong>'+working+' <em>/ '+t.length+'</em></strong><small>WORKING / TOTAL</small><i>Tap to view ›</i></button>'}).join('')+'</div></div>'}
 window.v84OpenDept=function(dept){let team=(users||[]).filter(u=>u.role==='Employee'&&u.department===dept),label=dept==='Denter'?'Denting':dept==='Painter'?'Painting':'Mechanical';let body='<div class="v84-tech-details"><div class="v84-tech-grid">'+(team.length?team.map(u=>{let x=v84TechState(u);return '<div class="v84-tech-card"><button class="v84-tech-name" onclick="v84ToggleTech(\''+u.id+'\',this)"><b>'+E(u.name)+'</b><span class="v84-status v84-status-'+E(x.status.toLowerCase())+'">● '+E(x.status)+'</span></button><div class="v84-tech-expand"></div></div>'}).join(''):'<div class="notice">No technicians in this department.</div>')+'</div></div>';showSupervisorModal('👷 '+E(label)+' Technicians',body)};
 window.v84ToggleTech=function(emp,btn){
  let root=btn.closest('.v84-tech-details');if(!root)return;
@@ -2423,3 +2423,19 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 })();
 
 (function(){if(document.getElementById('v111LeaveBadgeStyle'))return;const s=document.createElement('style');s.id='v111LeaveBadgeStyle';s.textContent='#managerView .v111-manager-leave{grid-template-columns:1fr auto!important}#managerView .v111-manager-leave .v111-leave-today{grid-column:2;grid-row:1/3;align-self:center;justify-self:end;display:flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 6px;border-radius:999px;background:#d92d20;color:#fff;font-size:11px;font-weight:950;line-height:1;box-shadow:0 2px 7px rgba(217,45,32,.28)}#managerView .v111-manager-leave small{grid-column:1}';document.head.appendChild(s)})();
+
+/* V112 SUPERVISOR INPUT + AUTOMOTIVE PAINT ICON AUTHORITY. */
+(function(){'use strict';
+ function apply(){
+  if(!me||me.role!=='Supervisor')return;
+  const root=document.getElementById('supervisorView');if(!root)return;
+  const y=root.querySelector('#newYear');if(y){y.removeAttribute('placeholder');if(String(y.value||'').toUpperCase()==='YYYY')y.value=''}
+  const sj=root.querySelector('#sj');if(sj){
+    sj.removeAttribute('placeholder');
+    if(sj.tagName==='SELECT'){const first=sj.options&&sj.options[0];if(first&&!first.value){first.textContent='';if(!sj.dataset.v112blank){sj.value='';sj.dataset.v112blank='1'}}}
+    else if(!sj.dataset.v112blank){sj.value='';sj.dataset.v112blank='1'}
+  }
+ }
+ const old=window.render;window.render=function(){const r=typeof old==='function'?old.apply(this,arguments):undefined;setTimeout(apply,0);return r};setTimeout(apply,0);
+ if(!document.getElementById('v112SupervisorCleanStyle')){const s=document.createElement('style');s.id='v112SupervisorCleanStyle';s.textContent='.v112-carpaint{position:relative;display:inline-block;width:46px;height:30px}.v112-carpaint .v112-car{position:absolute;left:1px;bottom:1px;font-size:25px;transform:scaleX(1.25);border-radius:10px}.v112-carpaint .v112-gun{position:absolute;right:0;top:-5px;font-size:24px;font-weight:950;transform:rotate(-18deg)}.v112-carpaint i{position:absolute;right:10px;top:11px;font-size:12px;font-style:normal;letter-spacing:1px;transform:rotate(-18deg)}';document.head.appendChild(s)}
+})();
