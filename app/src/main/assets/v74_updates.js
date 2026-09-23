@@ -2381,5 +2381,8 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(!cons){cons=document.createElement('button');cons.type='button';cons.className='v133-manager-leave v109-manager-consumables';cons.onclick=()=>alert('Consumables details will be added later.');cons.innerHTML='<span>📦 CONSUMABLES</span><b>›</b><small>Workshop consumables · details coming later</small>';const p=root.querySelector('.v123-manager-performance');(p?.parentNode||root).insertBefore(cons,p?p.nextSibling:root.firstChild)}
    else{cons.onclick=()=>alert('Consumables details will be added later.');cons.innerHTML='<span>📦 CONSUMABLES</span><b>›</b><small>Workshop consumables · details coming later</small>'}
  }
- const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(apply,0);return r};setTimeout(apply,0);
+ const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(apply,0);return r};
+ const prevManager=window.renderManager;if(typeof prevManager==='function')window.renderManager=function(){const r=prevManager.apply(this,arguments);apply();setTimeout(apply,0);return r};
+ // Run after the full render chain settles as protection against legacy Manager renderers that rebuild the root asynchronously.
+ let guard=0;function settle(){if(!me||me.role!=='Manager'||guard++>5)return;apply();setTimeout(settle,60)}setTimeout(settle,0);
 })();
