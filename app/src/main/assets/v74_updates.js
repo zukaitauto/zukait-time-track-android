@@ -2189,3 +2189,20 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(apply,0);return r};setTimeout(apply,0);window.v127SupervisorHeaderAuthority=true;
 })();
 
+
+/* V128 SUPERVISOR SURFACE LOCK — source-level guard against legacy header/layout resurrection. */
+(function(){'use strict';
+ function apply(){
+  if(!me||me.role!=='Supervisor')return;const root=document.getElementById('supervisorView');if(!root)return;
+  const gh=document.getElementById('globalBrandHeader'),lh=document.getElementById('legacyAppHeader');[gh,lh].filter(Boolean).forEach(x=>{x.classList.add('hidden');x.style.setProperty('display','none','important')});
+  const ids=[...root.querySelectorAll('.v91-role-identity')];ids.slice(1).forEach(x=>x.remove());
+  const keep=ids[0];if(keep){keep.classList.add('v128-header');const top=root.querySelector('.v92-supervisor-top');if(top&&keep.nextElementSibling!==top)root.insertBefore(keep,top)}
+  const assign=[...root.querySelectorAll('.card')].find(x=>/Assign\s*\/\s*Update Job Card/i.test(x.querySelector('h3')?.textContent||''));if(!assign)return;
+  let g=assign.querySelector('.v112-assign-grid,.grid');if(!g)return;g.classList.add('v128-assign-grid');
+  const j=g.querySelector('#sj')?.closest('label'),t=g.querySelector('#se2')?.closest('label'),tm=g.querySelector('#st2')?.closest('label'),b=assign.querySelector('.v107-assign,button[onclick*="assignJobExisting"]'),id=g.querySelector('#v112ID001Quick'),h=g.querySelector('#v119ID001History');
+  [[j,'job'],[t,'tech'],[tm,'time'],[b,'assign'],[id,'id'],[h,'history']].forEach(([x,a])=>{if(x){x.dataset.v128area=a;g.appendChild(x)}});
+ }
+ const s=document.createElement('style');s.id='v128SupervisorSurfaceStyle';s.textContent='#globalBrandHeader.v128-supervisor-hide,#legacyAppHeader.v128-supervisor-hide{display:none!important}#supervisorView .v128-assign-grid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;grid-template-areas:"job tech" "time assign" "id history"!important;gap:11px!important}#supervisorView .v128-assign-grid>[data-v128area="job"]{grid-area:job!important}#supervisorView .v128-assign-grid>[data-v128area="tech"]{grid-area:tech!important}#supervisorView .v128-assign-grid>[data-v128area="time"]{grid-area:time!important}#supervisorView .v128-assign-grid>[data-v128area="assign"]{grid-area:assign!important}#supervisorView .v128-assign-grid>[data-v128area="id"]{grid-area:id!important;grid-column:auto!important}#supervisorView .v128-assign-grid>[data-v128area="history"]{grid-area:history!important}#supervisorView .v128-assign-grid>*{min-width:0!important;width:100%!important;margin:0!important;box-sizing:border-box!important}';document.head.appendChild(s);
+ let busy=false;const obs=new MutationObserver(()=>{if(busy||!me||me.role!=='Supervisor')return;busy=true;requestAnimationFrame(()=>{try{apply()}finally{busy=false}})});obs.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']});
+ const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(apply,0);return r};setTimeout(apply,0);window.v128SupervisorSurfaceLock=true;
+})();
