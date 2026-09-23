@@ -496,10 +496,10 @@ assert.doesNotMatch(html, /const employeeBase=window\.renderEmployee/, 'legacy I
 
 
 // V107 incentive final authority regression checks.
-must(/V107 INCENTIVE FINAL AUTHORITY/, 'V107 incentive final authority');
-must(/window\.v107IncentiveFinalAuthority=true/, 'V107 final incentive authority marker');
-must(/incentive=Math\.max\(0,achieved-t\.target-repeat\)/, 'incentive = achieved - target - repeat');
-must(/a\.job===HOLD\)return \{achieved:current/, 'ID001 counts toward achieved hours');
-must(/String\(a\.mistakeEmp\|\|a\.emp\)!==String\(emp\)/, 'different repeat employee can earn achievement');
-must(/String\(a\.mistakeEmp\|\|a\.emp\)===String\(emp\)/, 'repeat actual is charged to mistake employee');
-must(/dutyAfterLeave-15/, '15-minute cleaning allowance reduces working-day target');
+assert.match(updates,/V107 INCENTIVE FINAL AUTHORITY/,'V107 incentive final authority');
+assert.match(updates,/window\.v107IncentiveFinalAuthority=true/,'V107 final incentive authority marker');
+assert.match(updates,/incentive=Math\.max\(0,achieved-t\.target-repeat\)/,'incentive = achieved - target - repeat');
+assert.match(updates,/a\.job===HOLD\)return \{achieved:current/,'ID001 counts toward achieved hours');
+assert.match(updates,/String\(a\.mistakeEmp\|\|a\.emp\)!==String\(emp\)/,'different repeat employee can earn achievement');
+assert.match(updates,/String\(a\.mistakeEmp\|\|a\.emp\)===String\(emp\)/,'repeat actual is charged to mistake employee');
+assert.match(updates,/dutyAfterLeave-15/,'15-minute cleaning allowance reduces working-day target');
