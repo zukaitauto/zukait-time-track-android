@@ -503,3 +503,11 @@ assert.match(updates,/a\.job===HOLD\)return \{achieved:current/,'ID001 counts to
 assert.match(updates,/String\(a\.mistakeEmp\|\|a\.emp\)!==String\(emp\)/,'different repeat employee can earn achievement');
 assert.match(updates,/String\(a\.mistakeEmp\|\|a\.emp\)===String\(emp\)/,'repeat actual is charged to mistake employee');
 assert.match(updates,/dutyAfterLeave-15/,'15-minute cleaning allowance reduces working-day target');
+
+
+// V108 monthly metrics UI lock regression checks.
+assert.match(updates,/V108 MONTHLY METRICS UI LOCK/,'V108 monthly metrics UI lock');
+assert.match(updates,/v104-progress excess/,'Employee monthly dashboard must show Excess Hours');
+assert.match(updates,/EXCESS HOURS/,'Excess Hours label must be visible');
+assert.match(updates,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/,'monthly metrics must use four capsules');
+assert.match(updates,/window\.v108MonthlyMetricsUILock=true/,'monthly metrics UI lock marker');
