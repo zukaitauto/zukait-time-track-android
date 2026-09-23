@@ -2098,7 +2098,6 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const root=document.getElementById('supervisorView');if(!root)return;
    techPlaceholder(root.querySelector('#se'));techPlaceholder(root.querySelector('#se2'));
    normalJobSelect(root.querySelector('#sj'));
-   let box=root.querySelector('#v112ID001Quick');
    const cards=[...root.querySelectorAll('.card')];
    const assign=cards.find(x=>/Assign\s*\/\s*Update Job Card/i.test(x.querySelector('h3')?.textContent||''));
    if(!assign)return;
@@ -2108,11 +2107,13 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
      const movable=[...assign.children].filter(x=>x.tagName!=='H3'&&!x.classList.contains('section-title'));
      movable.forEach(x=>grid.appendChild(x));assign.appendChild(grid);
    }
-   if(!box){box=document.createElement('button');box.id='v112ID001Quick';box.type='button';box.className='v112-id001-quick';box.innerHTML='<b>◷ ID001</b><span>IDEAL TIME</span><small>Quick Assign</small>';box.onclick=window.v112OpenID001Quick}
-   grid.appendChild(box);
+   // Keep ID001 as its own prominent control, never inside Assign / Update Job Card.
+   grid.querySelectorAll('#v112ID001Quick').forEach(x=>x.remove());
+   let box=root.querySelector('#v109ID001Standalone');
+   if(!box){box=document.createElement('section');box.id='v109ID001Standalone';box.className='card v109-id001-standalone';box.innerHTML='<button id="v109ID001Button" type="button"><b>◷ ID001</b><span>IDEAL TIME</span><small>ASSIGN ID001</small></button>';const btn=box.querySelector('button');btn.onclick=window.v112OpenID001Quick;assign.insertAdjacentElement('afterend',box)}
  }
  const style=document.createElement('style');
- style.textContent='.v113-spray{display:inline-flex;align-items:center;gap:1px;font-size:17px;transform:rotate(-8deg)}.v113-spray i{font-style:normal;font-size:10px;letter-spacing:-1px}#supervisorView .quick-entry{position:relative}.v112-assign-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;align-items:stretch}.v112-assign-grid>#v112ID001Quick{grid-column:2;min-height:86px;align-self:stretch}#v112ID001Quick{min-width:150px;margin:0;padding:14px 16px;border:1px solid rgba(80,140,255,.35);border-radius:14px;background:rgba(80,140,255,.10);cursor:pointer;text-align:center}#v112ID001Quick b,#v112ID001Quick span,#v112ID001Quick small{display:block}#v112ID001Quick b{font-size:17px}#v112ID001Quick span{font-size:11px;font-weight:800;letter-spacing:.6px}#v112ID001Quick small{margin-top:3px;opacity:.72}.v112-id001-dialog label{display:block;margin-top:12px}';
+ style.textContent='.v113-spray{display:inline-flex;align-items:center;gap:1px;font-size:17px;transform:rotate(-8deg)}.v113-spray i{font-style:normal;font-size:10px;letter-spacing:-1px}#supervisorView .quick-entry{position:relative}.v112-assign-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;align-items:stretch}.v109-id001-standalone{padding:10px!important}.v109-id001-standalone #v109ID001Button{width:100%;min-height:96px;margin:0;padding:14px 18px;border:1px solid rgba(80,140,255,.40);border-radius:15px;background:rgba(80,140,255,.12);color:#163b68;cursor:pointer;text-align:center}.v109-id001-standalone #v109ID001Button b,.v109-id001-standalone #v109ID001Button span,.v109-id001-standalone #v109ID001Button small{display:block}.v109-id001-standalone #v109ID001Button b{font-size:24px;font-weight:950;line-height:1.1}.v109-id001-standalone #v109ID001Button span{font-size:14px;font-weight:900;letter-spacing:.8px;margin-top:5px}.v109-id001-standalone #v109ID001Button small{font-size:11px;font-weight:800;margin-top:5px;opacity:.78}.v112-id001-dialog label{display:block;margin-top:12px}';
  document.head.appendChild(style);
  const prior=window.render;
  window.render=function(){const r=typeof prior==='function'?prior.apply(this,arguments):undefined;setTimeout(apply,0);return r};
