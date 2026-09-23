@@ -1488,28 +1488,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 <script src="v68_updates.js?v=81"></script>
 <script src="v69_updates.js?v=81"></script>
 <script src="v74_updates.js?v=104"></script>
-<script>
-/* V104 SUPERVISOR FINALIZER — legacy V103 runtime lock retired.
-   v74_updates.js owns the current Supervisor UI, incentive action and single online header. */
-(function(){'use strict';
- const previous=window.renderSupervisor;
- window.renderSupervisor=function(){
-   const out=typeof previous==='function'?previous.apply(this,arguments):undefined;
-   if(me&&me.role==='Supervisor'){
-     if(typeof v74ApplySupervisorFinal==='function')v74ApplySupervisorFinal();
-     const root=document.getElementById('supervisorView');
-     if(root){
-       root.querySelectorAll('.v91-role-identity').forEach((x,i)=>{if(i)x.remove()});
-       root.querySelectorAll('.v84-job-details').forEach((x,i)=>{if(i)x.remove()});
-       root.querySelectorAll('.v84-tech-board').forEach((x,i)=>{if(i)x.remove()});
-       root.dataset.supervisorRuntime='v104';
-     }
-   }
-   return out;
- };
- window.v104SupervisorRuntimeAuthority=true;
-})();
-</script>
+
 
 </body>
 </html>
