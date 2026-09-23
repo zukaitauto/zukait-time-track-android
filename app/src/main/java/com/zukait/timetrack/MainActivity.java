@@ -49,6 +49,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 
+import androidx.core.content.FileProvider;
 import androidx.webkit.WebViewAssetLoader;
 import androidx.webkit.WebViewClientCompat;
 
@@ -861,20 +862,50 @@ public class MainActivity extends Activity {
     }
 
     private boolean openDownloadedUpdateWithSystemInstaller() {
+        File cachedApk = null;
         try {
             DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
-            Uri apk = dm == null ? null : dm.getUriForDownloadedFile(updateDownloadId);
-            if (apk == null) throw new Exception("APK URI unavailable");
-            Intent install = new Intent(Intent.ACTION_VIEW);
-            install.setDataAndType(apk, "application/vnd.android.package-archive");
-            install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
-            if (install.resolveActivity(getPackageManager()) == null) {
+            Uri source = dm == null ? null : dm.getUriForDownloadedFile(updateDownloadId);
+            if (source == null) throw new Exception("Downloaded APK URI unavailable");
+
+            File updateDir = new File(getCacheDir(), "updates");
+            if (!updateDir.exists() && !updateDir.mkdirs()) {
+                throw new java.io.IOException("Unable to create update cache");
+            }
+            cachedApk = new File(updateDir, "ZUKAIT_TIME_TRACK_UPDATE.apk");
+            try (java.io.InputStream in = getContentResolver().openInputStream(source);
+                 java.io.OutputStream out = new java.io.FileOutputStream(cachedApk, false)) {
+                if (in == null) throw new java.io.IOException("Downloaded APK stream unavailable");
+                byte[] buffer = new byte[65536];
+                int n;
+                while ((n = in.read(buffer)) != -1) out.write(buffer, 0, n);
+                out.flush();
+            }
+            if (!cachedApk.exists() || cachedApk.length() == 0) {
+                throw new java.io.IOException("Cached APK is empty");
+            }
+
+            Uri apk = FileProvider.getUriForFile(
+                    this, getPackageName() + ".updateprovider", cachedApk);
+            Intent install = new Intent(Intent.ACTION_INSTALL_PACKAGE);
+            install.setData(apk);
+            install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            install.putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true);
+            install.putExtra(Intent.EXTRA_RETURN_RESULT, false);
+
+            android.content.pm.ResolveInfo resolved =
+                    getPackageManager().resolveActivity(install, PackageManager.MATCH_DEFAULT_ONLY);
+            if (resolved == null || resolved.activityInfo == null) {
                 throw new android.content.ActivityNotFoundException("No Android package installer available");
             }
+            grantUriPermission(resolved.activityInfo.packageName, apk, Intent.FLAG_GRANT_READ_URI_PERMISSION);
             startActivity(install);
+            notifyUpdateDownloadToWeb("INSTALLING", 100, 0, 0,
+                    "Android installer opened. Tap Install to update.");
             return true;
         } catch (Exception error) {
             android.util.Log.e("ZukaitUpdate", "System installer launch failed", error);
+            if (cachedApk != null && cachedApk.exists() && cachedApk.length() == 0) cachedApk.delete();
             return false;
         }
     }
