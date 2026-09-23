@@ -2121,6 +2121,31 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 })();
 
 
+/* V126 ASSIGN / UPDATE UI AUTHORITY — exact agreed 3x2 supervisor layout. */
+(function(){'use strict';
+ function apply(){
+  if(!me||me.role!=='Supervisor')return;
+  const root=document.getElementById('supervisorView');if(!root)return;
+  const assign=[...root.querySelectorAll('.card')].find(x=>/Assign\s*\/\s*Update Job Card/i.test(x.querySelector('h3')?.textContent||''));if(!assign)return;
+  assign.classList.add('v126-assign-authority');
+  let g=assign.querySelector('.v112-assign-grid,.grid');if(!g)return;
+  g.classList.add('v126-assign-grid');
+  const j=g.querySelector('#sj')?.closest('label'),t=g.querySelector('#se2')?.closest('label'),tm=g.querySelector('#st2')?.closest('label');
+  const b=assign.querySelector('.v107-assign,button[onclick*="assignJobExisting"]');
+  let id=root.querySelector('#v112ID001Quick');if(!id){id=document.createElement('button');id.id='v112ID001Quick';id.type='button'}
+  id.className='v119-id v126-id001-assign';id.innerHTML='<b>◷ ID001 Assign</b><small>Ideal Time</small>';id.onclick=window.v112OpenID001Quick;
+  let h=g.querySelector('#v119ID001History');if(!h){h=document.createElement('button');h.id='v119ID001History';h.type='button'}
+  h.className='v119-id v126-id001-history';h.innerHTML='<b>▤ ID001 History</b><small>Details · Print</small>';h.onclick=()=>window.v753OpenID001Report?.();
+  if(j){j.classList.add('v126-job');j.childNodes[0].textContent='🔎 Job Card Search '}
+  if(t){t.classList.add('v126-tech');t.childNodes[0].textContent='👨‍🔧 Technician '}
+  if(tm){tm.classList.add('v126-time');tm.childNodes[0].textContent='⏱ Allocated Time '}
+  if(b){b.classList.add('v119-primary','v126-assign-button');b.innerHTML='✓ Assign / Update'}
+  [j,t,tm,b,id,h].filter(Boolean).forEach(x=>g.appendChild(x));
+ }
+ const s=document.createElement('style');s.id='v126AssignUpdateStyle';s.textContent='#supervisorView .v126-assign-grid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;grid-template-areas:"job tech" "time assign" "id history"!important;gap:11px!important;align-items:stretch!important}#supervisorView .v126-assign-grid>.v126-job{grid-area:job!important}#supervisorView .v126-assign-grid>.v126-tech{grid-area:tech!important}#supervisorView .v126-assign-grid>.v126-time{grid-area:time!important}#supervisorView .v126-assign-grid>.v126-assign-button{grid-area:assign!important;min-height:68px!important;align-self:stretch!important}#supervisorView .v126-assign-grid>.v126-id001-assign{grid-area:id!important;min-height:76px!important;grid-column:auto!important}#supervisorView .v126-assign-grid>.v126-id001-history{grid-area:history!important;min-height:76px!important}#supervisorView .v126-assign-grid>*{width:100%!important;min-width:0!important;margin:0!important;box-sizing:border-box!important}#supervisorView .v126-assign-grid label{display:flex!important;flex-direction:column!important;justify-content:flex-start!important}#supervisorView .v126-assign-grid input,#supervisorView .v126-assign-grid select{width:100%!important;min-height:45px!important;box-sizing:border-box!important}@media(max-width:350px){#supervisorView .v126-assign-grid{gap:8px!important}}';document.head.appendChild(s);
+ const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(apply,0);return r};setTimeout(apply,0);window.v126AssignUpdateUIAuthority=true;
+})();
+
 /* V119 SUPERVISOR UI AUTHORITY — final mobile layout, no duplicate controls. */
 (function(){'use strict';
  window.v119OpenAssignedJobs=function(){const el=document.getElementById('assignedRows');if(typeof window.openSupervisorAssignedWindow==='function')return window.openSupervisorAssignedWindow();if(el){el.scrollIntoView({behavior:'smooth',block:'start'});return}if(typeof window.openSupervisorJobCardList==='function')return window.openSupervisorJobCardList()};
