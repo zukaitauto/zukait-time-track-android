@@ -23,6 +23,9 @@ assert.equal(metadata.package, 'com.zukait.timetrack');
 
 assert.ok(updates.includes('v91-identity-menu'), 'Employee menu must sit in the identity/online row');
 assert.ok(updates.includes("v91RoleHeader('Supervisor')"), 'Supervisor must use the compact identity/online/menu row');
+assert.ok(updates.includes('v92-tech-board'), 'Supervisor must render the redesigned Technician Board');
+assert.ok(updates.includes('v92-tech-dept'), 'Technician Board department cards must use the authoritative redesigned UI');
+assert.ok(updates.includes('Tap to view ›'), 'Technician Board department cards must expose their drill-down affordance');
 assert.ok(updates.includes("v91RoleHeader('Manager')"), 'Manager must use the compact identity/online/menu row');
 assert.ok(updates.includes('.manager-hero .pill{display:none!important}'), 'Manager duplicate live/online badge must be hidden');
 assert.match(updates, /📋 Job Card List/, 'Supervisor detail control must be named Job Card List');
