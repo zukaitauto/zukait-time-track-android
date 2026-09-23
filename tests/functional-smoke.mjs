@@ -507,7 +507,7 @@ assert.doesNotMatch(html, /const employeeBase=window\.renderEmployee/, 'legacy I
 assert.match(updates,/const idealMin=typeof window\.monthlyIdealTimeMinutes==='function'\?window\.monthlyIdealTimeMinutes\(me\.id,mf,mt\):0/,'Employee Ideal Time tile must show duty-hour gaps, not ID001 waiting duration');
 assert.match(updates,/a\.job==='ID001'\?0:/,'Achieved details fallback must exclude ID001');
 assert.match(updates,/const active=activeSession\(me\.id\),aa=active\?\(\(state\.assign\|\|\[\]\)\.find\(a=>a&&a\.id===active\.assignmentId\)\|\|open\.find\(a=>a\.job===active\.job\)\):null/,'Employee current work must prefer assignmentId for accurate time ownership');
-assert.match(updates,/active\?'Pause current work first'/,'Employee must not start a second job while another is active');
+assert.match(updates,/if\(activeSession\(me\.id\)\)return typeof window\.v74Msg==='function'\?window\.v74Msg\('You already have an active job\./,'Employee Start authority must block a second active job');
 assert.match(updates,/hold\?'':'<button class="v75s-request"/,'ID001 must not expose normal employee request controls');
 
 // V107 incentive final authority regression checks.
