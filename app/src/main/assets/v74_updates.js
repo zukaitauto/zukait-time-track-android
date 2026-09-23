@@ -60,9 +60,12 @@ function v74ApplySupervisorFinal(){
    if(board&&board.isConnected)board.remove();
    oldEff.forEach(x=>{if(x.isConnected&&!wrap.contains(x))x.remove()});
    cards.forEach(x=>{if(x.isConnected&&/Finished Job Cards/i.test(x.textContent||'')){x.className='card clickable compact-control';x.setAttribute('onclick','openSupervisorJobCardList()');x.innerHTML='<div class="section-title"><h3>📋 Job Card Details</h3><span class="pill">Click to open</span></div><div class="small muted">Full job information · search · status · working time</div>'}});
-   v84SupervisorPanels(root);
-   v91RoleHeader('Supervisor');
  }
+ // Always apply the authoritative Supervisor panels/header. Older render layers may already have
+ // replaced "Today at a Glance", so these must not depend on finding that legacy card.
+ v84SupervisorPanels(root);
+ v91RoleHeader('Supervisor');
+ root.dataset.supervisorUi='v101-authoritative';
 }
 window.v92OpenAvailableWorkers=function(){let team=(users||[]).filter(u=>u.role==='Employee'&&!v84TechState(u).session),body=team.length?'<div class="v84-tech-grid">'+team.map(u=>'<div class="v84-tech-card"><div class="v84-tech-name"><b>'+E(u.name)+'</b><span class="v84-status v84-status-available">● Available</span></div><div class="small muted">'+E(u.department||'Technician')+'</div></div>').join('')+'</div>':'<div class="notice">No technicians are available now.</div>';showSupervisorModal('👷 Available Workers',body)};
 function v84SupervisorPanels(root){
