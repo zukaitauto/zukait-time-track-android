@@ -22,6 +22,16 @@ assert.ok(Number(metadata.versionCode) <= versionCode, 'published metadata canno
 assert.equal(metadata.package, 'com.zukait.timetrack');
 
 
+
+assert.ok(updates.includes('v110ID001ReportButton') && updates.includes('v110OpenID001Report'), 'Supervisor must show the ID001 Report beside the standalone ID001 assignment control');
+assert.ok(updates.includes('v110ID001Emp') && updates.includes('v110ID001From') && updates.includes('v110ID001To'), 'ID001 Report must support employee and date filtering');
+assert.ok(updates.includes('v110PrintID001Report') && updates.includes('Zukait_ID001_Report.pdf'), 'ID001 Report must support Print / PDF output');
+assert.ok(updates.includes("grid-template-columns:repeat(2,minmax(0,1fr))") && updates.includes('v110-id001-pair'), 'ID001 Assign and Report must remain a two-column Supervisor row');
+assert.ok(updates.includes("v135OpenManagerMenu()") && updates.includes("row.onclick=function(e){if(e.target.closest('button'))return;menu()}"), 'Manager header and menu button must open the authoritative Manager menu');
+assert.ok(updates.includes("v133OpenManagerLeave()") && updates.includes("v63OpenAbout()") && updates.includes("closeModal();logout()"), 'Manager menu must retain Leave Control, About / Update, and Logout');
+assert.ok(updates.includes("v109-manager-consumables") && updates.includes("CONSUMABLES"), 'Manager dashboard must keep the Consumables placeholder instead of a duplicate leave card');
+assert.ok(updates.includes('v133LeaveEmployee') && updates.includes('v133PrintLeave') && updates.includes('v133ShareLeave'), 'Manager Leave Management must retain employee filter, Print / PDF, and WhatsApp sharing');
+
 assert.ok(updates.includes('v91-identity-menu'), 'Employee menu must sit in the identity/online row');
 assert.ok(updates.includes('v93-employee-menu') && updates.includes('v93-menu-sync') && updates.includes('v93-menu-leave') && updates.includes('v93-menu-update') && updates.includes('v93-menu-logout'), 'Employee account actions must remain visually distinct and clickable');
 assert.ok(updates.includes('v80-rpm-gauge') && updates.includes('.v93-rpm-redline,.v93-rpm-needle,.v93-rpm-hub{display:none!important}'), 'Employee Running and Remaining Time must use the RPM-style gauge without redline/needle markers');
