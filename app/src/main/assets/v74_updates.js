@@ -1984,3 +1984,39 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  setTimeout(apply,0);
  window.v112SupervisorAssignmentUX=true;
 })();
+
+
+/* V118 SUPERVISOR MOBILE LAYOUT AUTHORITY — professional single-source visual correction. */
+(function(){'use strict';
+ const apply=()=>{
+  if(!me||me.role!=='Supervisor')return;
+  const root=document.getElementById('supervisorView');if(!root)return;
+  // Remove the obsolete standalone Available Workers surface; Incentive belongs beside Employee Requests.
+  [...root.querySelectorAll('.card,button')].filter(x=>/^\s*(?:👷\s*)?AVAILABLE WORKERS\s*\d*\s*$/i.test((x.textContent||'').trim())||/AVAILABLE WORKERS/i.test(x.querySelector?.('h3')?.textContent||'')).forEach(x=>{if(!x.closest('.v92-supervisor-top'))x.remove()});
+  // Keep exactly one ID001 quick action and make it a first-class control inside Assign / Update.
+  const ids=[...root.querySelectorAll('#v112ID001Quick')];ids.slice(1).forEach(x=>x.remove());
+  const box=ids[0];if(box){box.disabled=false;box.removeAttribute('disabled');box.setAttribute('aria-label','Assign ID001 Ideal Time');box.innerHTML='<b>◷ ID001</b><span>IDEAL TIME</span><small>Quick Assign</small>'}
+  // Lower actions: only one of each, then group into a clean two-column mobile grid.
+  const unique=(rx)=>{const a=[...root.querySelectorAll('.card')].filter(x=>rx.test(x.querySelector('h3')?.textContent||''));a.slice(1).forEach(x=>x.remove());return a[0]||null};
+  const job=unique(/Job Card Details/i),assigned=unique(/Assigned Job Cards/i),additional=unique(/Additional Time/i);
+  let g=root.querySelector('.v118-action-grid');if(!g&&job){g=document.createElement('div');g.className='v118-action-grid';job.parentNode.insertBefore(g,job)}
+  if(g)[job,assigned,additional].filter(Boolean).forEach(x=>g.appendChild(x));
+  // Incentive is the only second top card beside Employee Requests.
+  const top=root.querySelector('.v92-supervisor-top');if(top){const inc=top.querySelector('.v104-incentive-top,.v92-available-card');if(inc){inc.classList.add('v118-incentive');inc.innerHTML='<span class="v92-top-icon">⭐</span><span><b>INCENTIVE</b><small>Target · Achieved · Incentive</small></span><strong>›</strong>';inc.onclick=()=>window.openIncentiveList()}}
+ };
+ const s=document.createElement('style');s.id='v118SupervisorMobileAuthority';s.textContent=
+ '#supervisorView .v91-assign-card{overflow:visible!important}'+
+ '#supervisorView .v91-assign-card .v112-assign-grid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(132px,.78fr)!important;gap:12px!important;align-items:end!important}'+
+ '#supervisorView .v91-assign-card .v112-assign-grid>*{min-width:0!important;max-width:100%!important;box-sizing:border-box!important}'+
+ '#supervisorView .v91-assign-card select,#supervisorView .v91-assign-card input{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}'+
+ '#supervisorView #v112ID001Quick{grid-column:2!important;min-width:0!important;width:100%!important;min-height:94px!important;padding:14px 10px!important;opacity:1!important;color:#12345a!important;background:linear-gradient(145deg,#eef6ff,#dfeeff)!important;border:1px solid #9fc7ff!important;box-shadow:0 7px 18px rgba(38,110,210,.14)!important}'+
+ '#supervisorView #v112ID001Quick b{font-size:18px!important;color:#1558b0!important}#supervisorView #v112ID001Quick span{font-size:11px!important;color:#244d7d!important}#supervisorView #v112ID001Quick small{font-size:10px!important;color:#54708f!important;opacity:1!important}'+
+ '#supervisorView .v92-supervisor-top{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}#supervisorView .v92-supervisor-top>*{min-width:0!important;width:auto!important;margin:0!important}'+
+ '#supervisorView .v118-action-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;margin-top:12px!important}'+
+ '#supervisorView .v118-action-grid>.card{margin:0!important;min-width:0!important;min-height:112px!important;padding:14px!important;overflow:hidden!important}'+
+ '#supervisorView .v118-action-grid .section-title{display:flex!important;align-items:flex-start!important;gap:8px!important;flex-wrap:wrap!important}#supervisorView .v118-action-grid h3{font-size:15px!important;line-height:1.2!important;margin:0!important;word-break:normal!important}#supervisorView .v118-action-grid .pill{margin-left:0!important;font-size:9px!important;white-space:nowrap!important}#supervisorView .v118-action-grid .small{font-size:11px!important;line-height:1.4!important;margin-top:8px!important}'+
+ '@media(max-width:380px){#supervisorView .v91-assign-card .v112-assign-grid{grid-template-columns:minmax(0,1fr) minmax(118px,.72fr)!important;gap:9px!important}#supervisorView .v118-action-grid{gap:9px!important}#supervisorView .v118-action-grid>.card{padding:11px!important}}';
+ document.head.appendChild(s);
+ const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(apply,0);return r};
+ setTimeout(apply,0);window.v118SupervisorMobileAuthority=true;
+})();
