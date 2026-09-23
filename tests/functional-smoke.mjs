@@ -356,9 +356,9 @@ assert.match(updates, /month-summary \.v81-month-orb\{aspect-ratio:auto!importan
 assert.ok(updates.includes("'Completed Jobs'") && updates.includes("'Suggested Time'") && updates.includes("'Actual Time'") && updates.includes("'Ideal Time'") && updates.includes("'Overtime'"), 'employee monthly summary must preserve monthly details');
 
 assert(updates.includes("req.closest('.v88-alert-row,.v84-alert-row')"), 'Supervisor finalizer must reuse the existing alert row instead of nesting it');
-assert(html.includes("typeof v74ApplySupervisorFinal==='function')v74ApplySupervisorFinal()"), 'Supervisor runtime lock must force the final agreed dashboard');
-assert(html.includes("v91SupervisorFinalAuthority"), 'Supervisor final authority marker missing');
-assert(html.includes("root.querySelector('.v74-supervisor-final')||!root.querySelector('.v84-tech-board')"), 'Supervisor runtime must verify final overview and Technician Board');
+assert(html.includes("typeof v74ApplySupervisorFinal==='function')v74ApplySupervisorFinal()"), 'V104 Supervisor finalizer must force the final agreed dashboard');
+assert(html.includes("v104SupervisorRuntimeAuthority"), 'V104 Supervisor final authority marker missing');
+assert(html.includes("root.dataset.supervisorRuntime='v104'"), 'V104 Supervisor runtime marker must be applied');
 console.log('Functional smoke tests passed: Employee, ID001, holidays, Ideal Time availability, Leave, Active Workers, Supervisor, Manager, update/release contracts.');
 
 
