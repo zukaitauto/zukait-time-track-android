@@ -1485,7 +1485,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 <script src="v69_updates.js?v=81"></script>
 <script src="v74_updates.js?v=103"></script>
 <script>
-/* V101 SUPERVISOR RUNTIME LOCK — one final, authoritative Supervisor surface after all legacy layers. */
+/* V103 SUPERVISOR RUNTIME LOCK — one final, authoritative Supervisor surface after all legacy layers. */
 (function(){
   const supOpenAssignments=()=> (state.assign||[]).filter(a=>a&&!a.cancelled&&!a.completed).slice().sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));
   const supSafe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
