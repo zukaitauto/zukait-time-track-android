@@ -35,7 +35,7 @@ assert.ok(updates.includes('v92OpenAvailableWorkers'), 'Available Workers top ca
 assert.ok(updates.includes('Tap to view ›'), 'Technician Board department cards must expose their drill-down affordance');
 assert.ok(updates.includes("v91RoleHeader('Manager')"), 'Manager must use the compact identity/online/menu row');
 assert.ok(updates.includes('.manager-hero .pill{display:none!important}'), 'Manager duplicate live/online badge must be hidden');
-assert.match(updates, /📋 Job Card List/, 'Supervisor detail control must be named Job Card List');
+assert.match(updates, /📋 Job Card Details/, 'Supervisor detail control must be named Job Card Details');
 assert.match(updates, /v80RunningGauge/, 'employee running gauge must exist');
 assert.match(updates, /v80RemainingGauge/, 'employee remaining gauge must exist');
 assert.match(updates, /rr\.textContent=fm\(worked\)/, 'running gauge must use accumulated actual assignment time');
@@ -134,7 +134,7 @@ assert.match(updates, /\.v89-employee-lower\{display:grid!important;grid-templat
 assert.match(updates, /v89OpenEmployeeFinished/, 'Employee Finished Jobs details must open separately');
 assert.match(updates, /v89OpenEmployeeRepeats/, 'Employee Repeat Jobs details must open separately');
 assert.match(updates, /String\(a\.mistakeEmp\|\|''\)===String\(me\.id\)/, 'Employee repeat count must belong to the mistake employee');
-assert.match(updates, /const items=\[job,assigned,add,inc,id001\]/, 'Supervisor lower control set must include Job Card List, Assigned, Additional Time, Incentive and compact ID001');
+assert.match(updates, /const items=\[job,assigned,add,inc,id001\]/, 'Supervisor lower control set must include Job Card Details, Assigned, Additional Time, Incentive and compact ID001');
 
 // Manager / whole-job contracts
 assert.match(updates, /AA\(x\.no\)\.every\(a=>a\.completed\)/, 'Ready for Delivery requires all assignments complete');
