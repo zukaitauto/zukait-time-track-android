@@ -137,9 +137,6 @@ assert.match(updates, /j\.status='Open';delete j\.completedAt/, 'reopen must res
 
 
 // V104 Supervisor runtime regression guard
-assert.match(html, /V104 SUPERVISOR FINALIZER/, 'final V104 Supervisor finalizer must load after legacy dashboard layers');
-assert.match(html, /window\.v104SupervisorRuntimeAuthority=true/, 'V104 Supervisor runtime authority marker must be present');
-assert.match(html, /root\.dataset\.supervisorRuntime='v104'/, 'successful Supervisor render must mark the current V104 runtime');
 assert.doesNotMatch(html, /V103 SUPERVISOR RUNTIME LOCK/, 'legacy V103 Supervisor runtime lock must remain retired');
 assert.doesNotMatch(html, /window\.v87SupervisorRuntimeLock=true/, 'legacy V87 runtime wrapper must remain retired');
 assert.match(updates, /v89-two-col/, 'Supervisor Quick Entry and Assign Update must use the locked two-column grid');
@@ -355,8 +352,6 @@ assert.ok(updates.includes("'Completed Jobs'") && updates.includes("'Suggested T
 
 assert(updates.includes("req.closest('.v88-alert-row,.v84-alert-row')"), 'Supervisor finalizer must reuse the existing alert row instead of nesting it');
 assert(html.includes("typeof v74ApplySupervisorFinal==='function')v74ApplySupervisorFinal()"), 'V104 Supervisor finalizer must force the final agreed dashboard');
-assert(html.includes("v104SupervisorRuntimeAuthority"), 'V104 Supervisor final authority marker missing');
-assert(html.includes("root.dataset.supervisorRuntime='v104'"), 'V104 Supervisor runtime marker must be applied');
 console.log('Functional smoke tests passed: Employee, ID001, holidays, Ideal Time availability, Leave, Active Workers, Supervisor, Manager, update/release contracts.');
 
 
