@@ -1810,3 +1810,56 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.render=function(){const out=typeof previousRender==='function'?previousRender.apply(this,arguments):undefined;setTimeout(()=>{if(!me||me.role!=='Employee')return;const row=document.querySelector('#employeeView .v104-month-progress');if(!row)return;const x=typeof window.incentiveFor==='function'?window.incentiveFor(me.id):null;if(!x)return;const values=[['target','🎯','TARGET HOURS',x.target],['achieved','🏆','ACHIEVED HOURS',x.achieved??x.eligible],['excess','⏱','EXCESS HOURS',x.excess],['incentive','⭐','INCENTIVE',x.incentive]];row.innerHTML=values.map(v=>'<div class="v104-progress '+v[0]+'"><i class="v111-metric-icon">'+v[1]+'</i><span>'+v[2]+'</span><b>'+fmt(Math.max(0,+v[3]||0))+'</b></div>').join('')},0);return out};
  window.v111PerformanceUI=true;
 })();
+
+
+/* V112 Supervisor assignment UX authority */
+(function(){
+ 'use strict';
+ const HOLD='ID001';
+ const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ function techPlaceholder(sel){
+   if(!sel)return;
+   let p=Array.from(sel.options).find(o=>o.value==='');
+   if(!p){p=document.createElement('option');p.value='';p.textContent='Technicians';sel.insertBefore(p,sel.firstChild)}
+   p.textContent='Technicians';p.disabled=true;p.selected=true;sel.value='';
+ }
+ function normalJobSelect(sel){
+   if(!sel)return;
+   Array.from(sel.options).forEach(o=>{if(String(o.value||o.textContent).trim().toUpperCase()===HOLD)o.remove()});
+ }
+ window.v112OpenID001Quick=function(){
+   let eligible=typeof window.v75IdealAvailableEmployees==='function'?window.v75IdealAvailableEmployees():(users||[]).filter(u=>u&&u.role==='Employee');
+   let opts='<option value="" selected disabled>Select Technician</option>'+eligible.map(u=>'<option value="'+esc(u.id)+'">'+esc(u.name)+' · '+esc(u.department||'Technician')+'</option>').join('');
+   let body='<div class="v74-d v112-id001-dialog"><h2>◷ ID001 · IDEAL TIME</h2><div class="notice">Assign common Ideal Time quickly.</div><label>Assign Staff<br><select id="v112IdealEmp" class="tech-select">'+opts+'</select></label><label>Time<br><input id="v112IdealTime" inputmode="decimal" placeholder="H.MM or H:MM"><div class="time-hint">Example: 1.30 or 1:30</div></label><div class="v74-actions"><button class="secondary" onclick="closeModal()">CANCEL</button><button class="blue" onclick="v112AssignID001()">ASSIGN</button></div></div>';
+   openModal(body);
+ };
+ window.v112AssignID001=function(){
+   let emp=document.getElementById('v112IdealEmp')?.value||'',raw=document.getElementById('v112IdealTime')?.value||'';
+   let mins=typeof parseWorkMinutes==='function'?parseWorkMinutes(raw):NaN;
+   if(!emp)return typeof window.v74Msg==='function'?window.v74Msg('Select a technician.','ID001 Ideal Time'):alert('Select a technician.');
+   if(!Number.isFinite(mins)||mins<1)return typeof window.v74Msg==='function'?window.v74Msg('Enter a valid time.','ID001 Ideal Time'):alert('Enter a valid time.');
+   window.assignJobCore(HOLD,emp,mins);
+   try{closeModal()}catch(_){}
+ };
+ function apply(){
+   if(!me||me.role!=='Supervisor')return;
+   const root=document.getElementById('supervisorView');if(!root)return;
+   techPlaceholder(root.querySelector('#se'));techPlaceholder(root.querySelector('#se2'));
+   normalJobSelect(root.querySelector('#sj'));
+   if(root.querySelector('#v112ID001Quick'))return;
+   const quick=root.querySelector('.quick-entry.compact-panel')||root.querySelector('.quick-entry');
+   if(!quick)return;
+   const box=document.createElement('button');
+   box.id='v112ID001Quick';box.type='button';box.className='v112-id001-quick';
+   box.innerHTML='<b>◷ ID001</b><span>IDEAL TIME</span><small>Quick Assign</small>';
+   box.onclick=window.v112OpenID001Quick;
+   quick.appendChild(box);
+ }
+ const style=document.createElement('style');
+ style.textContent='#supervisorView .quick-entry{position:relative}#v112ID001Quick{float:right;min-width:128px;margin:8px 0 0 12px;padding:10px 14px;border:1px solid rgba(80,140,255,.35);border-radius:14px;background:rgba(80,140,255,.10);cursor:pointer;text-align:center}#v112ID001Quick b,#v112ID001Quick span,#v112ID001Quick small{display:block}#v112ID001Quick b{font-size:17px}#v112ID001Quick span{font-size:11px;font-weight:800;letter-spacing:.6px}#v112ID001Quick small{margin-top:3px;opacity:.72}.v112-id001-dialog label{display:block;margin-top:12px}';
+ document.head.appendChild(style);
+ const prior=window.render;
+ window.render=function(){const r=typeof prior==='function'?prior.apply(this,arguments):undefined;setTimeout(apply,0);return r};
+ setTimeout(apply,0);
+ window.v112SupervisorAssignmentUX=true;
+})();
