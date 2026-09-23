@@ -11,6 +11,7 @@ window.v74ManagerCompletedJobs=function(){let rows=(state.assign||[]).filter(a=>
 window.openManagerJobsPopup=(function(old){return function(type){if(type==='completed')return window.v74ManagerCompletedJobs();return typeof old==='function'?old.apply(this,arguments):undefined}})(window.openManagerJobsPopup);
 window.v74Ready=function(mode){let rows=READY(),body=rows.length?'<div class="v74-scroll"><table><tr><th>JC</th><th>Vehicle / Reg.</th><th>Employees</th><th>Status</th><th></th></tr>'+rows.map(x=>'<tr><td><b>'+E(x.no)+'</b></td><td>'+E(x.vehicle||'—')+'<br>'+E(x.reg||'—')+'</td><td>'+[...new Set(AA(x.no).map(a=>P(a.emp).name))].map(E).join(', ')+'</td><td><b>ALL WORK COMPLETE</b></td><td><button class="blue" onclick="'+(mode==='manager'?'openManagerJobDetails':'openSupervisorJob')+'(\''+E(x.no)+'\')">VIEW</button></td></tr>').join('')+'</table></div>':'<div class="notice">No Job Cards are Ready for Delivery.</div>';mode==='manager'?openModal('<div class="section-title"><h2>🚗✓ Ready for Delivery</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+body):showSupervisorModal('🚗✓ Ready for Delivery',body)};
 window.supervisorOverview=function(rows){let open=(rows||[]).filter(a=>a&&!a.cancelled&&!a.completed&&a.job!==H),active=open.filter(a=>{let s=activeSession(a.emp);return s&&s.job===a.job}).length,paused=open.filter(a=>{try{return empStatus(a)==='Paused'}catch(_){return false}}).length,day=(()=>{let d=new Date();d.setHours(0,0,0,0);return d.getTime()})(),fin=(rows||[]).filter(a=>a&&!a.cancelled&&a.completed&&a.job!==H&&(a.completedAt||0)>=day).length,over=open.filter(a=>(+a.suggested||0)>0&&A(a)>+a.suggested).length,ot=(state.sessions||[]).filter(s=>!s.end&&s.job!==H).filter(s=>{try{return sessionOvertimeMinutes(s,Date.now())>0}catch(_){return false}}).length,r=READY().length,C=(i,l,n,c,k)=>'<div class="notice clickable glance-box v83-glass '+k+'" onclick="'+c+'"><span class="v74-icon">'+i+'</span><div><b>'+l+'</b><div class="stat">'+n+'</div></div></div>';return'<div class="card"><h3><span class="live-dot"></span>Today at a Glance</h3><div class="v74-six">'+C('👷','Active Workers',active,'openActiveWorkers()','ga')+C('⏸','Paused Jobs',paused,"openGlanceList('paused')",'gp')+C('✅','Finished Jobs',fin,'openSupervisorFinishedWindow()','gf')+C('🚗✓','Ready for Delivery',r,"v74Ready(\'supervisor\')",'gr')+C('⏱','Overtime Now',ot,'v74OT()','go')+C('⚠','Over Allocated Time',over,"openGlanceList('over')",'gx')+'</div></div>'+v84TechnicianBoard()+'<div id="v84TechDetails"></div>'+v75EffSection()};
+const v103SupervisorOverviewAuthority=window.supervisorOverview;
 // Permanent Supervisor Technician Board authority: old V56 modal board is retired.
 window.openTechnicianBoardV56=function(){if(me?.role==='Supervisor'){const b=document.querySelector('#supervisorView .v84-tech-board');if(b){b.scrollIntoView({behavior:'smooth',block:'center'});return}}};
 window.openTechnicianDeptV56=function(dept){return window.v84OpenDept(dept)};
@@ -41,7 +42,7 @@ const OR=window.render;window.render=function(){OR();setTimeout(polish,0)};setTi
 // V74 final dashboard rendering hook: apply the requested layout after the role view itself renders.
 // This avoids later role-specific renderers replacing the V74 dashboard markup.
 // Permanent authority: route the final Supervisor overview through one controlled path.
-const v101SupervisorOverviewAuthority=function(assignments){return window.supervisorOverview(assignments)};
+const v101SupervisorOverviewAuthority=v103SupervisorOverviewAuthority;
 function v74ApplySupervisorFinal(){
  if(me?.role!=='Supervisor')return;
  let root=document.getElementById('supervisorView')||document.querySelector('[id*="supervisor"][id*="View"]');
@@ -74,7 +75,7 @@ function v74ApplySupervisorFinal(){
  // Always apply the authoritative Supervisor panels/header after the overview is guaranteed.
  v84SupervisorPanels(root);
  v91RoleHeader('Supervisor');
- root.dataset.supervisorUi='v101-authoritative';
+ root.dataset.supervisorUi='v103-authoritative';
 }
 window.v92OpenAvailableWorkers=function(){let team=(users||[]).filter(u=>u.role==='Employee'&&!v84TechState(u).session),body=team.length?'<div class="v84-tech-grid">'+team.map(u=>'<div class="v84-tech-card"><div class="v84-tech-name"><b>'+E(u.name)+'</b><span class="v84-status v84-status-available">● Available</span></div><div class="small muted">'+E(u.department||'Technician')+'</div></div>').join('')+'</div>':'<div class="notice">No technicians are available now.</div>';showSupervisorModal('👷 Available Workers',body)};
 function v84SupervisorPanels(root){
