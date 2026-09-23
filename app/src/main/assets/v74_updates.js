@@ -67,7 +67,7 @@ const OR=window.render;window.render=function(){OR();setTimeout(polish,0)};setTi
  [...root.querySelectorAll('.card')].filter(x=>!wrap.contains(x)&&(x.querySelector('h3')?.textContent||'').includes('Today at a Glance')).forEach(x=>x.remove());
  [...root.querySelectorAll('.v56-technician-board-card,.v84-tech-board')].filter(x=>!wrap.contains(x)).forEach(x=>x.remove());
  // Remove every legacy Technician Board by heading/text, even when an old renderer used no known class.
- [...root.querySelectorAll('.card')].filter(x=>!wrap.contains(x)&&/Technician Board(?:\\s*[—-]\\s*Live)?/i.test(x.querySelector('h3')?.textContent||x.textContent||'')).forEach(x=>x.remove());
+ [...root.querySelectorAll('.card')].filter(x=>!wrap.contains(x)&&/Technician Board(?:\s*[—-]\s*Live)?/i.test(x.querySelector('h3')?.textContent||x.textContent||'')).forEach(x=>x.remove());
  [...root.querySelectorAll('.v75-eff-section')].filter(x=>!wrap.contains(x)).forEach(x=>x.remove());
  // Always apply the authoritative Supervisor panels/header after the overview is guaranteed.
  v84SupervisorPanels(root);
