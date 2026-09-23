@@ -975,8 +975,11 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
       let day=new Date(cur),key=day.getFullYear()+'-'+String(day.getMonth()+1).padStart(2,'0')+'-'+String(day.getDate()).padStart(2,'0');
       let publicHoliday=(state.workshopHolidays||[]).some(h=>String(typeof h==='object'?(h.date||h.day||''):h)===key);
       if(day.getDay()===5||publicHoliday)continue;
-      let dayTarget=9*60;
-      if(typeof window.v63LeaveOverlapMinutes==='function')dayTarget=Math.max(0,dayTarget-window.v63LeaveOverlapMinutes(emp,cur,cur+86400000));
+      let leaveMinutes=typeof window.v63LeaveOverlapMinutes==='function'?window.v63LeaveOverlapMinutes(emp,cur,cur+86400000):0;
+      // Each working day is 9h duty less the standard 15-minute cleaning allowance.
+      // Leave is removed from duty first; cleaning allowance applies only when the employee has working time that day.
+      let dutyAfterLeave=Math.max(0,9*60-leaveMinutes);
+      let dayTarget=dutyAfterLeave>0?Math.max(0,dutyAfterLeave-15):0;
       target+=dayTarget;
     }
     (state.sessions||[]).filter(s=>s.emp===emp&&s.start<to&&(s.end||Date.now())>from).forEach(s=>{let st=Math.max(s.start,from),en=Math.min(s.end||Date.now(),to),mins=normalOverlapMinutes(st,en),a=state.assign.find(v=>v.id===s.assignmentId||(!s.assignmentId&&v.job===s.job&&v.emp===s.emp));if(s.rework===true||a?.rework)repeat+=mins;else if(a&&a.job!=='ID001')actual+=mins;});
