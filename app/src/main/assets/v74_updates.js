@@ -40,7 +40,7 @@ function polish(){if(me?.role!=='Manager')return;let root=document.getElementByI
 const OR=window.render;window.render=function(){OR();setTimeout(polish,0)};setTimeout(polish,100);
 // V74 final dashboard rendering hook: apply the requested layout after the role view itself renders.
 // This avoids later role-specific renderers replacing the V74 dashboard markup.
-// Permanent authority: capture the agreed Supervisor overview once. Later legacy wrappers cannot replace the Technician Board.\nconst v101SupervisorOverviewAuthority=window.supervisorOverview;\nfunction v74ApplySupervisorFinal(){
+// Permanent authority: capture the agreed Supervisor overview once. Later legacy wrappers cannot replace the Technician Board.\nconst v101SupervisorOverviewAuthority=function(assignments){return window.supervisorOverview(assignments)};\nfunction v74ApplySupervisorFinal(){
  if(me?.role!=='Supervisor')return;
  let root=document.getElementById('supervisorView')||document.querySelector('[id*="supervisor"][id*="View"]');
  if(!root)return;
