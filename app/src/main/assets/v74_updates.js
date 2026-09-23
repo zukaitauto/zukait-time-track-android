@@ -1619,54 +1619,93 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 (()=>{const s=document.createElement('style');s.textContent='.v104-month-progress{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:8px 0 12px}.v104-progress{min-width:0;border-radius:999px;padding:8px 6px;text-align:center;border:1px solid rgba(255,255,255,.58);box-shadow:inset 0 1px 0 rgba(255,255,255,.82),0 4px 10px rgba(15,23,42,.12)}.v104-progress span{display:block;font-size:8px;font-weight:1000;letter-spacing:.06em;white-space:nowrap}.v104-progress b{display:block;font-size:15px;line-height:1.1;margin-top:2px;white-space:nowrap}.v104-progress.target{background:#e8f2ff;color:#174ea6}.v104-progress.achieved{background:#e7f8ea;color:#166534}.v104-progress.incentive{background:#f0e8ff;color:#6b21a8}@media(max-width:380px){.v104-month-progress{gap:5px}.v104-progress{padding:7px 4px}.v104-progress b{font-size:13px}.v104-progress span{font-size:7px}}';document.head.appendChild(s)})();
 
 
-/* V105 ID001 ASSIGNMENT FIX — dedicated Supervisor assignment flow. */
+/* V106 ID001 FINAL AUTHORITY — one authoritative Supervisor assignment path. */
 (function(){'use strict';
- const H='ID001';
+ const H='ID001',SAFE=2;
  const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
- function eligible(){
-   try{
-     if(typeof window.v75IdealAvailableEmployees==='function')return window.v75IdealAvailableEmployees();
-   }catch(_){}
-   return (users||[]).filter(u=>u&&u.role==='Employee'&&!activeSession(u.id)&&!(state.assign||[]).some(a=>a&&a.emp===u.id&&!a.cancelled&&!a.completed));
- }
- window.v105OpenAssignID001=function(){
-   if(!me||me.role!=='Supervisor')return;
-   const people=eligible();
-   if(!people.length){
-     const m='No employee is currently available for ID001. ID001 is for staff with no running normal job (or only paused normal work).';
-     return typeof window.v74Msg==='function'?window.v74Msg(m,'Assign ID001'):alert(m);
+ const msg=(text,title='Ideal Time')=>typeof window.v74Msg==='function'?window.v74Msg(text,title):alert(text);
+ const openHold=emp=>(state.assign||[]).find(a=>a&&a.job===H&&a.emp===emp&&!a.cancelled&&!a.completed)||null;
+ const openNormal=emp=>(state.assign||[]).filter(a=>a&&a.job!==H&&a.emp===emp&&!a.cancelled&&!a.completed);
+ const normalStatus=a=>{try{return empStatus(a)}catch(_){return a?.completed?'Finished':'New'}};
+ const pausedOnly=emp=>{const rows=openNormal(emp);return rows.length>0&&rows.every(a=>normalStatus(a)==='Paused')};
+ const closed=t=>typeof window.v75IsClosedWorkshopDay==='function'&&window.v75IsClosedWorkshopDay(t);
+ const duty=t=>typeof window.v75IsID001DutyTime!=='function'||window.v75IsID001DutyTime(t);
+ const leave=(emp,t)=>typeof window.v63IsOnLeave==='function'&&window.v63IsOnLeave(emp,t);
+ const eligibleEmp=(emp,t=Date.now())=>!closed(t)&&duty(t)&&!leave(emp,t)&&!activeSession(emp)&&!openHold(emp)&&(openNormal(emp).length===0||pausedOnly(emp));
+ window.v75IdealAvailableEmployees=()=> (users||[]).filter(u=>u&&u.role==='Employee'&&eligibleEmp(u.id));
+ window.v755PausedOnlyNormal=pausedOnly;
+
+ const previousAssign=window.assignJobCore;
+ window.assignJobCore=function(no,emp,minutes){
+   if(no!==H)return typeof previousAssign==='function'?previousAssign.apply(this,arguments):undefined;
+   const m=Number(minutes),t=Date.now(),n=(user(emp)||{}).name||emp;
+   if(!Number.isFinite(m)||m<1)return msg('Enter a valid allocated time for ID001.');
+   if(closed(t))return msg('ID001 cannot be assigned on Friday or a Public Holiday.');
+   if(!duty(t))return msg('ID001 can be assigned only during duty hours: 08:00–13:00 and 15:00–19:00.');
+   if(leave(emp,t))return msg(n+' is on leave. ID001 cannot be assigned.');
+   if(openHold(emp))return msg('ID001 is already assigned to '+n+'. Stop/complete it before assigning another.');
+   if(activeSession(emp))return msg(n+' has an active running job. ID001 cannot be assigned.');
+   if(openNormal(emp).some(a=>normalStatus(a)!=='Paused'))return msg(n+' has normal work available. ID001 is allowed only when normal work is paused and no other job is available.');
+   state.assign=state.assign||[];
+   const a={id:uid(),job:H,emp,suggested:m,completed:false,cancelled:false,rework:false,idealCard:true,idealSafeVersion:SAFE,assignedBy:me?.id||'SYSTEM',assignedAt:t,pausedJobFallback:pausedOnly(emp)};
+   state.assign.push(a);
+   if(typeof setLastAction==='function')setLastAction('Assigned ID001 to '+n+' for '+fmt(m));
+   save();render();return a;
+ };
+ window.v75AssignIdealToAvailable=function(minutes,employeeIds){
+   const m=Number(minutes),t=Date.now();
+   if(!Number.isFinite(m)||m<1)return{ok:false,reason:'invalid_time',assigned:[]};
+   if(closed(t))return{ok:false,reason:'holiday',assigned:[]};
+   if(!duty(t))return{ok:false,reason:'outside_duty',assigned:[]};
+   const wanted=Array.isArray(employeeIds)&&employeeIds.length?new Set(employeeIds.map(String)):null;
+   const list=(users||[]).filter(u=>u&&u.role==='Employee'&&(!wanted||wanted.has(String(u.id)))&&eligibleEmp(u.id,t));
+   if(!list.length)return{ok:false,reason:'none_available',assigned:[]};
+   const created=[];
+   for(const u of list){
+     const a={id:uid(),job:H,emp:u.id,suggested:m,completed:false,cancelled:false,rework:false,idealCard:true,idealSafeVersion:SAFE,assignedBy:me?.id||'SYSTEM',assignedAt:t,pausedJobFallback:pausedOnly(u.id)};
+     state.assign.push(a);created.push(a);
    }
+   if(typeof setLastAction==='function')setLastAction('Assigned ID001 to '+created.length+' available staff');
+   save();render();return{ok:true,assigned:created.map(a=>a.emp)};
+ };
+
+ window.v106OpenAssignID001=function(){
+   if(!me||me.role!=='Supervisor')return;
+   const people=window.v75IdealAvailableEmployees();
+   if(!people.length)return msg('No employee is currently available for ID001. The employee must have no running job and either no normal work or only paused normal work.','Assign ID001');
    const opts=people.map(u=>'<option value="'+esc(u.id)+'">'+esc(u.name)+' — '+esc(u.department||'')+'</option>').join('');
    const html='<div class="v74-d"><div class="section-title"><h2>◷ Assign ID001</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
      '<div class="notice">Assign the common Ideal Time card to an available employee.</div>'+
-     '<div class="grid"><label>Employee<br><select id="v105IdealEmp">'+opts+'</select></label>'+
-     '<label>Allocated Time<br><input id="v105IdealTime" inputmode="decimal" value="1.00"><div class="time-hint">'+(typeof timeInputHint==='function'?timeInputHint():'Use H.MM or H:MM')+'</div></label></div>'+
-     '<div class="v74-actions"><button class="blue big-action" onclick="v105ConfirmAssignID001()">ASSIGN ID001</button></div></div>';
-   if(typeof openModal==='function')openModal(html); else showSupervisorModal('Assign ID001',html);
+     '<div class="grid"><label>Employee<br><select id="v106IdealEmp">'+opts+'</select></label>'+
+     '<label>Allocated Time<br><input id="v106IdealTime" inputmode="decimal" value="1.00"><div class="time-hint">'+(typeof timeInputHint==='function'?timeInputHint():'Use H.MM or H:MM')+'</div></label></div>'+
+     '<div class="v74-actions"><button class="blue big-action" onclick="v106ConfirmAssignID001()">ASSIGN ID001</button></div></div>';
+   if(typeof openModal==='function')openModal(html);else showSupervisorModal('Assign ID001',html);
  };
- window.v105ConfirmAssignID001=function(){
-   const emp=document.getElementById('v105IdealEmp')?.value;
-   const raw=document.getElementById('v105IdealTime')?.value||'';
+ window.v106ConfirmAssignID001=function(){
+   const emp=document.getElementById('v106IdealEmp')?.value,raw=document.getElementById('v106IdealTime')?.value||'';
    const mins=typeof parseWorkMinutes==='function'?parseWorkMinutes(raw):Number(raw);
    if(!emp)return;
-   const before=(state.assign||[]).filter(a=>a&&a.job===H&&a.emp===emp&&!a.cancelled&&!a.completed).length;
-   const result=window.assignJobCore(H,emp,mins);
-   const after=(state.assign||[]).filter(a=>a&&a.job===H&&a.emp===emp&&!a.cancelled&&!a.completed).length;
-   if(after>before){
+   const before=!!openHold(emp),result=window.assignJobCore(H,emp,mins),after=openHold(emp);
+   if(!before&&after){
      try{if(typeof closeModal==='function')closeModal()}catch(_){}
-     if(typeof window.v74Msg==='function')window.v74Msg('ID001 assigned successfully to '+((user(emp)||{}).name||emp)+'.','Assign ID001');
+     msg('ID001 assigned successfully to '+((user(emp)||{}).name||emp)+'.','Assign ID001');
    }
    return result;
  };
+ // Backward-compatible names: all Supervisor buttons now route to the same final authority.
+ window.v105OpenAssignID001=window.v106OpenAssignID001;
+ window.v105ConfirmAssignID001=window.v106ConfirmAssignID001;
+
  function inject(){
    if(!me||me.role!=='Supervisor')return;
-   const root=document.getElementById('supervisorView'); if(!root||root.querySelector('#v105AssignID001'))return;
-   const card=document.createElement('section'); card.id='v105AssignID001'; card.className='card v93-id001-action';
-   card.innerHTML='<button class="green big-action" style="width:100%" onclick="v105OpenAssignID001()">◷ ASSIGN ID001</button><div class="small muted" style="margin-top:6px">Assign Ideal Time to an available employee</div>';
-   const grid=root.querySelector('.v84-action-grid'); if(grid)grid.appendChild(card); else root.appendChild(card);
+   const root=document.getElementById('supervisorView');if(!root)return;
+   root.querySelectorAll('#v105AssignID001,#v106AssignID001').forEach(x=>x.remove());
+   const card=document.createElement('section');card.id='v106AssignID001';card.className='card v93-id001-action';
+   card.innerHTML='<button class="green big-action" style="width:100%" onclick="v106OpenAssignID001()">◷ ASSIGN ID001</button><div class="small muted" style="margin-top:6px">Assign Ideal Time to an available employee</div>';
+   const grid=root.querySelector('.v84-action-grid');if(grid)grid.appendChild(card);else root.appendChild(card);
  }
- const prev=window.render;
- window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(inject,0);return r;};
+ const previousRender=window.render;
+ window.render=function(){const r=typeof previousRender==='function'?previousRender.apply(this,arguments):undefined;setTimeout(inject,0);return r;};
  setTimeout(inject,0);
- window.v105ID001AssignFix=true;
+ window.v106ID001FinalAuthority=true;
 })();
