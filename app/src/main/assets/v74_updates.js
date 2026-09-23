@@ -389,7 +389,8 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 
    const nowTs=Date.now(),d=new Date(nowTs),mf=+new Date(d.getFullYear(),d.getMonth(),1),mt=+new Date(d.getFullYear(),d.getMonth()+1,1);
    const normalDone=done.filter(a=>a.job!==H&&(a.completedAt||0)>=mf&&(a.completedAt||0)<mt);
-   const idealMin=(state.sessions||[]).filter(x=>x&&x.emp===me.id&&x.job===H&&x.start<mt&&(x.end||nowTs)>mf).reduce((n,x)=>n+(Math.min(x.end||nowTs,mt)-Math.max(x.start,mf))/60000,0);
+   // "Ideal Time" is the duty-hour gap metric. ID001 is waiting coverage and must not be displayed as Ideal Time.
+   const idealMin=typeof window.monthlyIdealTimeMinutes==='function'?window.monthlyIdealTimeMinutes(me.id,mf,mt):0;
    const overtimeMin=(state.sessions||[]).filter(x=>x&&x.emp===me.id&&x.job!==H&&x.start<mt&&(x.end||nowTs)>mf).reduce((n,x)=>{const st=Math.max(+x.start||0,mf),en=Math.min(+(x.end||nowTs),mt);if(en<=st)return n;try{return n+(typeof window.sessionOvertimeMinutes==='function'?window.sessionOvertimeMinutes({start:st,end:en},en):0)}catch(_){return n}},0);
    const normalSg=normalDone.reduce((n,a)=>n+(+a.suggested||0),0),normalAc=normalDone.reduce((n,a)=>n+(typeof window.v107AssignmentNormal==='function'?window.v107AssignmentNormal(a,mf,mt):actual(a)),0),eff=normalAc?normalSg/normalAc*100:null;
    const monthSuggested=typeof window.monthlySuggestedMinutes==='function'?window.monthlySuggestedMinutes(me.id,mf,mt):(state.assign||[]).filter(a=>a&&a.emp===me.id&&a.job!==H&&!a.cancelled&&(a.assignedAt||0)>=mf&&(a.assignedAt||0)<mt).reduce((n,a)=>n+(+a.suggested||0),0),monthActual=typeof window.monthlyNormalActualMinutes==='function'?window.monthlyNormalActualMinutes(me.id,mf,mt):(state.sessions||[]).filter(x=>x&&x.emp===me.id&&x.job!==H&&x.start<mt&&(x.end||nowTs)>mf).reduce((n,x)=>n+Math.max(0,(Math.min(+(x.end||nowTs),mt)-Math.max(+x.start||0,mf))/60000),0),monthRemaining=monthSuggested-monthActual,monthInc=typeof window.incentiveFor==='function'?window.incentiveFor(me.id):{incentive:0},orb=(cl,val,label)=>'<div class="v81-month-orb '+cl+'"><b>'+val+'</b><span>'+label+'</span></div>';
@@ -1879,7 +1880,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const now=new Date(),mf=new Date(now.getFullYear(),now.getMonth(),1).getTime(),mt=new Date(now.getFullYear(),now.getMonth()+1,1).getTime();
    const rows=(state.assign||[]).filter(a=>a&&!a.cancelled&&String(a.emp)===String(me.id)&&((a.assignedAt||a.completedAt||0)<mt)&&((a.completedAt||Date.now())>=mf)).map(a=>{
      const normal=typeof window.v107AssignmentNormal==='function'?window.v107AssignmentNormal(a,mf,mt):(typeof actual==='function'?actual(a):0);
-     const metric=typeof window.v107AchievementFor==='function'?window.v107AchievementFor(a,mf,mt):null;let achieved=metric?metric.achieved:(a.job==='ID001'?normal:(a.completedAt?Math.max(0,Math.min(Math.max(0,+a.suggested||0),2*Math.max(0,+a.suggested||0)-normal)):Math.max(0,normal)));
+     const metric=typeof window.v107AchievementFor==='function'?window.v107AchievementFor(a,mf,mt):null;let achieved=metric?metric.achieved:(a.job==='ID001'?0:(a.completedAt?Math.max(0,Math.min(Math.max(0,+a.suggested||0),2*Math.max(0,+a.suggested||0)-normal)):Math.max(0,normal)));
      return {a,normal,achieved};
    }).filter(r=>r.achieved>0);
    const body='<div class="section-title"><h2>🏆 Achieved Hours</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
