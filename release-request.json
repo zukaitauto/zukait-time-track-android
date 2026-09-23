@@ -1,8 +1,8 @@
 {
-  "versionName": "V93",
-  "versionCode": 56,
+  "versionName": "V94",
+  "versionCode": 57,
   "approvedForStaff": true,
   "approvedAt": "2026-09-23",
-  "sourceCommit": "12d3a51d40b6ecb2d6d14f2557828650536878a8",
-  "publishNonce": "approved-v93-employee-menu-rpm-gauges-20260923"
+  "sourceCommit": "6b3ee3df5f3a4fdf4de6a62ad76fd7007c746c3c",
+  "publishNonce": "approved-v94-supervisor-layout-packageinstaller-20260923"
 }
