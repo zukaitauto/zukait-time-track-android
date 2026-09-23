@@ -911,6 +911,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(closedLeaveDay(l))return alert('Leave is not required on Friday or a workshop Public Holiday.');
    if(hasSessionConflict(emp,l))return alert('Work time is already recorded during this leave period. Correct the work/leave conflict before marking leave.');
    if(hasDuplicate(emp,l))return alert('Leave is already recorded for this date/period.');
+   const who=userSafe(emp).name||emp;if(!confirm('Confirm Leave\n\nStaff: '+who+'\nDate: '+date+'\nLeave: '+periodLabel(period)+'\n\nAre you sure you want to mark this leave?'))return;
    state.leaves=state.leaves||[];state.leaveAudit=state.leaveAudit||[];
    state.leaves.push(l);state.leaveAudit.push({id:uid(),action:'ADD',leaveId:l.id,by:me.id,at:Date.now()});notifyLeave(l);
    save();closeModal();render();
@@ -966,6 +967,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(hasSessionConflict(emp,candidate))return alert('Work time is already recorded during this leave period. Correct the work/leave conflict first.');
    const duplicate=activeLeaveRows().some(x=>String(x.id)!==String(id)&&String(x.emp)===String(emp)&&x.date===date&&(x.period==='FULL'||period==='FULL'||x.period===period));
    if(duplicate)return alert('Leave is already recorded for this staff/date/period.');
+   const editWho=userSafe(emp).name||emp;if(!confirm('Confirm Leave Change\n\nStaff: '+editWho+'\nDate: '+date+'\nLeave: '+periodLabel(period)+'\n\nSave these changes?'))return;
    const before={emp:l.emp,date:l.date,period:l.period,remark:l.remark||''};Object.assign(l,{emp,date,period,remark,updatedAt:Date.now(),updatedBy:me.id});
    state.leaveAudit=state.leaveAudit||[];state.leaveAudit.push({id:uid(),action:'EDIT',leaveId:l.id,by:me.id,at:Date.now(),before,after:{emp,date,period,remark}});
    save();closeModal();render();
@@ -974,6 +976,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(!me||me.role!=='Manager')return;
    const l=(state.leaves||[]).find(x=>x&&String(x.id)===String(id)&&!x.cancelled);if(!l)return;
    const reason=prompt('Reason for deleting/cancelling this leave record:','Correction');if(reason===null)return;if(!String(reason).trim())return alert('Enter a reason.');
+   if(!confirm('Confirm Delete Leave\n\nThis will cancel the selected leave record. Continue?'))return;
    l.cancelled=true;l.cancelledAt=Date.now();l.cancelledBy=me.id;l.cancelReason=String(reason).trim();
    state.leaveAudit=state.leaveAudit||[];state.leaveAudit.push({id:uid(),action:'DELETE',leaveId:l.id,by:me.id,at:Date.now(),reason:l.cancelReason,before:{emp:l.emp,date:l.date,period:l.period,remark:l.remark||''}});
    save();closeModal();render();
@@ -2438,4 +2441,39 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  }
  const old=window.render;window.render=function(){const r=typeof old==='function'?old.apply(this,arguments):undefined;setTimeout(apply,0);return r};setTimeout(apply,0);
  if(!document.getElementById('v112SupervisorCleanStyle')){const s=document.createElement('style');s.id='v112SupervisorCleanStyle';s.textContent='.v112-carpaint{position:relative;display:inline-block;width:46px;height:30px}.v112-carpaint .v112-car{position:absolute;left:1px;bottom:1px;font-size:25px;transform:scaleX(1.25);border-radius:10px}.v112-carpaint .v112-gun{position:absolute;right:0;top:-5px;font-size:24px;font-weight:950;transform:rotate(-18deg)}.v112-carpaint i{position:absolute;right:10px;top:11px;font-size:12px;font-style:normal;letter-spacing:1px;transform:rotate(-18deg)}';document.head.appendChild(s)}
+})();
+
+
+/* V113 MANAGER WORKSHOP CONTROL ROOT AUTHORITY — eliminate legacy On Leave/Consumables overlap. */
+(function(){'use strict';
+ function controlRoot(root){
+   const heads=[...root.querySelectorAll('h1,h2,h3,h4')];
+   const h=heads.find(x=>/Workshop Control Center/i.test(x.textContent||''));if(!h)return null;
+   let n=h.parentElement,best=null;
+   for(let i=0;n&&n!==root&&i<6;i++,n=n.parentElement){
+     const tx=(n.textContent||'').toUpperCase();
+     if(tx.includes('TODAY JOBS')&&tx.includes('WORKING NOW')&&tx.includes('COMPLETED TODAY')){best=n;break}
+   }
+   return best||h.parentElement;
+ }
+ function apply(){
+   if(!me||me.role!=='Manager')return;const root=document.getElementById('managerView');if(!root)return;
+   const control=controlRoot(root);if(!control)return;
+   const buttons=[...control.querySelectorAll('button')];
+   let tile=buttons.find(b=>/^ON LEAVE\b/i.test((b.textContent||'').trim()));
+   const consumables=buttons.filter(b=>/\bCONSUMABLES\b/i.test((b.textContent||'').trim()));
+   if(!tile)tile=consumables.find(b=>/View details/i.test(b.textContent||''))||consumables[0]||null;
+   consumables.forEach(b=>{if(b!==tile)b.remove()});
+   root.querySelectorAll('.v109-manager-consumables').forEach(x=>x.remove());
+   root.querySelectorAll('.v111-control-consumables').forEach(x=>{if(x!==tile)x.remove()});
+   if(tile){
+     tile.classList.remove('v111-control-consumables');tile.classList.add('v113-control-consumables');
+     tile.onclick=()=>alert('Consumables details will be added later.');
+     tile.innerHTML='<span>CONSUMABLES</span><b>›</b><small>View details</small>';
+   }
+ }
+ const oldRender=window.render;window.render=function(){const r=typeof oldRender==='function'?oldRender.apply(this,arguments):undefined;setTimeout(apply,0);return r};
+ const oldManager=window.renderManager;if(typeof oldManager==='function')window.renderManager=function(){const r=oldManager.apply(this,arguments);apply();setTimeout(apply,0);return r};
+ let pass=0;function settle(){if(!me||me.role!=='Manager'||pass++>12)return;apply();setTimeout(settle,80)}setTimeout(settle,0);
+ window.v113ManagerWorkshopControlAuthority=apply;
 })();
