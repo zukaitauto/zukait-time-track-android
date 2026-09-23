@@ -2167,3 +2167,25 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 })();
 
 
+
+
+/* V127 SUPERVISOR MOBILE HEADER AUTHORITY — one identity row only. */
+(function(){'use strict';
+ function apply(){
+  if(!me||me.role!=='Supervisor')return;
+  const root=document.getElementById('supervisorView');if(!root)return;
+  const rows=[...root.querySelectorAll('.v91-role-identity')];let keep=rows[0]||null;rows.slice(1).forEach(x=>x.remove());
+  const gh=document.getElementById('globalBrandHeader'),lh=document.getElementById('legacyAppHeader');
+  if(gh){gh.classList.add('hidden');gh.style.setProperty('display','none','important')}
+  if(lh){lh.classList.add('hidden');lh.style.setProperty('display','none','important')}
+  const welcome=document.getElementById('welcome');if(welcome&&welcome!==keep){welcome.style.setProperty('display','none','important')}
+  const net=document.getElementById('net');if(net)net.style.setProperty('display','none','important');
+  const hos=document.getElementById('headerOnlineStatus');if(hos)hos.style.setProperty('display','none','important');
+  document.querySelectorAll('.header-online-status').forEach(x=>{if(!keep?.contains(x))x.style.setProperty('display','none','important')});
+  if(keep){keep.classList.add('v127-single-supervisor-header');const top=root.querySelector('.v92-supervisor-top');if(top&&keep.nextElementSibling!==top)root.insertBefore(keep,top)}
+ }
+ const s=document.createElement('style');s.id='v127SupervisorHeaderStyle';s.textContent='body:has(#supervisorView:not(.hidden)) #globalBrandHeader,body:has(#supervisorView:not(.hidden)) #legacyAppHeader,body:has(#supervisorView:not(.hidden)) #welcome{display:none!important}#supervisorView .v127-single-supervisor-header{display:flex!important;position:static!important;width:auto!important;margin:0 0 10px!important}';
+ document.head.appendChild(s);
+ const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(apply,0);return r};setTimeout(apply,0);window.v127SupervisorHeaderAuthority=true;
+})();
+
