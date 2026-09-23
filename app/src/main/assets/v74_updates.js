@@ -1766,7 +1766,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  const achievementFor=(a,from,to)=>{
    const current=assignmentNormal(a,from,to);
    if(current<=0)return {achieved:0,excess:0,actual:0};
-   if(a.job===HOLD)return {achieved:current,excess:0,actual:current};
+   if(a.job===HOLD)return {achieved:0,excess:0,actual:current};
    const prior=assignmentNormal(a,0,from);
    const suggested=Math.max(0,+a.suggested||0);
    const remainingAtStart=Math.max(0,suggested-prior);
@@ -1860,9 +1860,9 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  };
  window.v117OpenIncentiveDetails=function(){
    const x=current();if(!x)return;
-   const over=Math.max(0,(+(x.achieved??x.eligible)||0)-(+x.target||0)),penalty=Math.max(0,+x.repeat||0);
+   const grossOver=Math.max(0,(+(x.achieved??x.eligible)||0)-(+x.target||0)),penalty=Math.max(0,+x.repeat||0),over=Math.max(0,grossOver-penalty);
    const body='<div class="section-title"><h2>⭐ Incentive Hours</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
-    '<div class="report-summary"><div class="notice"><b>Target</b><br>'+fm(x.target)+'</div><div class="notice"><b>Achieved</b><br>'+fm(x.achieved??x.eligible)+'</div><div class="notice"><b>Beyond Target</b><br>'+fm(over)+'</div><div class="notice"><b>Repeat Penalty</b><br>'+fm(penalty)+'</div><div class="notice"><b>Incentive</b><br>'+fm(x.incentive)+'</div></div>';
+    '<div class="report-summary"><div class="notice"><b>Target</b><br>'+fm(x.target)+'</div><div class="notice"><b>Achieved</b><br>'+fm(x.achieved??x.eligible)+'</div><div class="notice"><b>Beyond Target After Repeat Penalty</b><br>'+fm(over)+'</div><div class="notice"><b>Repeat Penalty</b><br>'+fm(penalty)+'</div><div class="notice"><b>Incentive</b><br>'+fm(x.incentive)+'</div></div>';
    if(typeof openModal==='function')openModal(body);
  };
  function apply(){
