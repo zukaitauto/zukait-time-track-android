@@ -1515,7 +1515,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
       root.classList.remove('hidden');
       /* Final authority: force the agreed Supervisor transformation after all legacy layers. */
       if(typeof v74ApplySupervisorFinal==='function')v74ApplySupervisorFinal();
-      if(root.dataset.supervisorUi!=='v101-authoritative')throw new Error('Authoritative Supervisor UI did not apply');
+      if(root.dataset.supervisorUi!=='v103-authoritative')throw new Error('Authoritative Supervisor UI did not apply');
       // Permanent guard: the final runtime owns exactly one status header, one Job Card Details tile and one Technician Board.
       const net=document.getElementById('net');if(net){net.textContent='';net.style.setProperty('display','none','important')}
       const hos=document.getElementById('headerOnlineStatus');if(hos)hos.style.setProperty('display','none','important');
@@ -1525,7 +1525,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
       const meaningful=(root.textContent||'').trim();
       if(!meaningful||!root.querySelector('.card,.supervisor-request-top'))throw new Error('Supervisor renderer returned empty surface');
       if(!root.querySelector('.v74-supervisor-final')||!root.querySelector('.v84-tech-board'))throw new Error('Supervisor final surface not applied');
-      root.dataset.supervisorRuntime='v101';
+      root.dataset.supervisorRuntime='v103';
     }catch(err){
       console.error('V87 Supervisor runtime recovery',err);
       if(!root)return;
@@ -1534,7 +1534,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     }
   };
   window.renderSupervisor=window.v87RenderSupervisor;
-  window.v87SupervisorRuntimeLock=true; window.v91SupervisorFinalAuthority=true; window.v101SupervisorFinalAuthority=true;
+  window.v87SupervisorRuntimeLock=true; window.v91SupervisorFinalAuthority=true; window.v101SupervisorFinalAuthority=true; window.v103SupervisorFinalAuthority=true;
 })();
 </script>
 
