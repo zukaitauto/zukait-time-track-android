@@ -1794,6 +1794,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    return {target:t.target,actual,eligible:achieved,achieved,excess,repeat,incentive,workDays:t.workDays,cleaningAllowance:t.cleaningAllowance};
  };
  window.v107AssignmentNormal=assignmentNormal;
+ window.v107AchievementFor=achievementFor;
  window.v107IncentiveFinalAuthority=true;
 })();
 
@@ -1849,7 +1850,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const now=new Date(),mf=new Date(now.getFullYear(),now.getMonth(),1).getTime(),mt=new Date(now.getFullYear(),now.getMonth()+1,1).getTime();
    const rows=(state.assign||[]).filter(a=>a&&!a.cancelled&&String(a.emp)===String(me.id)&&((a.assignedAt||a.completedAt||0)<mt)&&((a.completedAt||Date.now())>=mf)).map(a=>{
      const normal=typeof window.v107AssignmentNormal==='function'?window.v107AssignmentNormal(a,mf,mt):(typeof actual==='function'?actual(a):0);
-     let achieved=0;if(a.job==='ID001')achieved=normal;else if(a.completedAt){const sg=Math.max(0,+a.suggested||0);achieved=Math.max(0,Math.min(sg,2*sg-normal))}else achieved=Math.max(0,normal);
+     const metric=typeof window.v107AchievementFor==='function'?window.v107AchievementFor(a,mf,mt):null;let achieved=metric?metric.achieved:(a.job==='ID001'?normal:(a.completedAt?Math.max(0,Math.min(Math.max(0,+a.suggested||0),2*Math.max(0,+a.suggested||0)-normal)):Math.max(0,normal)));
      return {a,normal,achieved};
    }).filter(r=>r.achieved>0);
    const body='<div class="section-title"><h2>🏆 Achieved Hours</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
@@ -1868,7 +1869,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(!me||me.role!=='Employee')return;const row=document.querySelector('#employeeView .v104-month-progress');if(!row)return;const x=current();if(!x)return;
    const achieved=Math.max(0,+(x.achieved??x.eligible)||0),target=Math.max(0,+x.target||0),inc=Math.max(0,+x.incentive||0);
    const ap=target>0?Math.min(100,achieved/target*100):0;
-   const ip=achieved>target&&inc>0?Math.min(100,inc/Math.max(1,achieved-target)*100):0;
+   const ip=achieved>target&&inc>0&&target>0?Math.min(100,inc/target*100):0;
    const ac=row.querySelector('.achieved'),ic=row.querySelector('.incentive');
    if(ac){ac.classList.add('v117-fill');ac.style.setProperty('--v117-fill',ap.toFixed(2)+'%');ac.onclick=window.v117OpenAchievedDetails;ac.title='Tap to view achieved-hour details'}
    if(ic){ic.classList.add('v117-fill');ic.style.setProperty('--v117-fill',ip.toFixed(2)+'%');ic.onclick=window.v117OpenIncentiveDetails;ic.title='Tap to view incentive-hour details'}
