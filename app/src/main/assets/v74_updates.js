@@ -1832,6 +1832,22 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 })();
 
 
+/* V115 SUPERVISOR INCENTIVE WINDOW — authoritative click target and monthly staff detail. */
+(function(){'use strict';
+ const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ const fm=v=>typeof window.fmt==='function'?window.fmt(Math.max(0,+v||0)):((Math.floor((+v||0)/60))+'h '+String(Math.round((+v||0)%60)).padStart(2,'0')+'m');
+ window.openIncentiveList=function(){
+   if(!me||me.role!=='Supervisor')return;
+   const rows=(users||[]).filter(u=>u&&u.role==='Employee').map(u=>{const x=typeof window.incentiveFor==='function'?window.incentiveFor(u.id):{target:0,achieved:0,excess:0,repeat:0,incentive:0};return {u,x}}).sort((a,b)=>String(a.u.name||'').localeCompare(String(b.u.name||'')));
+   const body='<div class="section-title"><h2>⭐ Monthly Incentive</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
+    '<div style="overflow:auto"><table><tr><th>Employee</th><th>Target</th><th>Achieved</th><th>Excess</th><th>Repeat Penalty</th><th>Incentive</th></tr>'+
+    rows.map(r=>'<tr><td><b>'+esc(r.u.name||r.u.id)+'</b><br><span class="small">'+esc(r.u.department||'')+'</span></td><td>'+fm(r.x.target)+'</td><td>'+fm(r.x.achieved??r.x.eligible)+'</td><td>'+fm(r.x.excess)+'</td><td>'+fm(r.x.repeat)+'</td><td><b>'+fm(r.x.incentive)+'</b></td></tr>').join('')+'</table></div>';
+   if(typeof openModal==='function')return openModal(body);
+   if(typeof showSupervisorModal==='function')return showSupervisorModal('Monthly Incentive',body);
+ };
+ window.v115SupervisorIncentiveWindow=true;
+})();
+
 /* V113 NORMAL ASSIGNMENT SAFETY — neutral Technician placeholder must never create a blank employee assignment. */
 (function(){'use strict';
  const H='ID001',previous=window.assignJobCore;
