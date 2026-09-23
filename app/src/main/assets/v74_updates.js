@@ -1790,6 +1790,19 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 })();
 
 
+/* V113 NORMAL ASSIGNMENT SAFETY — neutral Technician placeholder must never create a blank employee assignment. */
+(function(){'use strict';
+ const H='ID001',previous=window.assignJobCore;
+ window.assignJobCore=function(no,emp,minutes){
+   if(no!==H&&!String(emp||'').trim()){
+     const msg='Select a technician before assigning the Job Card.';
+     return typeof window.v74Msg==='function'?window.v74Msg(msg,'Assign Job Card'):alert(msg);
+   }
+   return typeof previous==='function'?previous.apply(this,arguments):undefined;
+ };
+ window.v113NormalAssignmentEmployeeGuard=true;
+})();
+
 /* V112 Supervisor assignment UX authority */
 (function(){
  'use strict';
