@@ -1697,17 +1697,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v105OpenAssignID001=window.v106OpenAssignID001;
  window.v105ConfirmAssignID001=window.v106ConfirmAssignID001;
 
- function inject(){
-   if(!me||me.role!=='Supervisor')return;
-   const root=document.getElementById('supervisorView');if(!root)return;
-   root.querySelectorAll('#v105AssignID001,#v106AssignID001').forEach(x=>x.remove());
-   const card=document.createElement('section');card.id='v106AssignID001';card.className='card v93-id001-action';
-   card.innerHTML='<button class="green big-action" style="width:100%" onclick="v106OpenAssignID001()">◷ ASSIGN ID001</button><div class="small muted" style="margin-top:6px">Assign Ideal Time to an available employee</div>';
-   const grid=root.querySelector('.v84-action-grid');if(grid)grid.appendChild(card);else root.appendChild(card);
- }
- const previousRender=window.render;
- window.render=function(){const r=typeof previousRender==='function'?previousRender.apply(this,arguments):undefined;setTimeout(inject,0);return r;};
- setTimeout(inject,0);
+ // V112 owns the Supervisor ID001 quick-action placement. Keep V106 assignment logic only.
  window.v106ID001FinalAuthority=true;
 })();
 
