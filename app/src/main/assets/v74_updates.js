@@ -1661,6 +1661,25 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 (()=>{const s=document.createElement('style');s.textContent='.v104-month-progress{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:8px 0 12px}.v104-progress{min-width:0;border-radius:999px;padding:8px 6px;text-align:center;border:1px solid rgba(255,255,255,.58);box-shadow:inset 0 1px 0 rgba(255,255,255,.82),0 4px 10px rgba(15,23,42,.12)}.v104-progress span{display:block;font-size:8px;font-weight:1000;letter-spacing:.06em;white-space:nowrap}.v104-progress b{display:block;font-size:15px;line-height:1.1;margin-top:2px;white-space:nowrap}.v104-progress.target{background:#e8f2ff;color:#174ea6}.v104-progress.achieved{background:#e7f8ea;color:#166534}.v104-progress.excess{background:#fff3e0;color:#9a3412}.v104-progress.incentive{background:#f0e8ff;color:#6b21a8}@media(max-width:380px){.v104-month-progress{gap:5px}.v104-progress{padding:7px 4px}.v104-progress b{font-size:13px}.v104-progress span{font-size:7px}}';document.head.appendChild(s)})();
 
 
+/* V120 FINISHED / READY DELIVERY CYCLE AUTHORITY */
+(function(){'use strict';
+ const H='ID001',esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ const asg=no=>(state.assign||[]).filter(a=>a&&!a.cancelled&&a.job===no&&a.job!==H);
+ const jobs=()=>state.jobs||[];
+ function cycle(no){const all=asg(no),repeats=all.filter(a=>a.rework===true),normal=all.filter(a=>a.rework!==true);return repeats.length?repeats:normal}
+ function complete(no){const rows=cycle(no);return rows.length>0&&rows.every(a=>a.completed)}
+ function completedAt(no){const rows=cycle(no);return complete(no)?Math.max(...rows.map(a=>+a.completedAt||0)):0}
+ function finishedJobs(todayOnly){let day=0;if(todayOnly){const d=new Date();d.setHours(0,0,0,0);day=d.getTime()}return jobs().filter(j=>j&&j.no!==H&&!j.archived&&complete(j.no)&&(!todayOnly||completedAt(j.no)>=day)).sort((a,b)=>completedAt(b.no)-completedAt(a.no))}
+ function readyJobs(){return finishedJobs(false).filter(j=>!j.delivered)}
+ function table(rows,mode){if(!rows.length)return '<div class="notice">No matching Job Cards.</div>';return '<div class="v74-scroll"><table><tr><th>JC</th><th>Vehicle / Reg.</th><th>Employees</th><th>Completed</th><th></th></tr>'+rows.map(j=>{const r=cycle(j.no),names=[...new Set(r.map(a=>{try{return user(a.emp)?.name||a.emp}catch(_){return a.emp}}))];return '<tr><td><b>'+esc(j.no)+'</b></td><td>'+esc(j.vehicle||'—')+'<br>'+esc(j.reg||'—')+'</td><td>'+names.map(esc).join(', ')+'</td><td>'+esc(completedAt(j.no)?new Date(completedAt(j.no)).toLocaleString():'—')+'</td><td><button class="blue" onclick="'+(mode==='manager'?'openManagerJobDetails':'openSupervisorJob')+'(\\''+esc(j.no)+'\\')">VIEW</button></td></tr>'}).join('')+'</table></div>'}
+ window.v120JobCycleAssignments=cycle;window.v120JobCycleComplete=complete;window.v120FinishedJobs=finishedJobs;window.v120ReadyJobs=readyJobs;
+ window.openSupervisorFinishedWindow=function(){showSupervisorModal('✅ Finished Job Cards Today',table(finishedJobs(true),'supervisor'))};
+ window.v74ManagerCompletedJobs=function(){openModal('<div class="section-title"><h2>✓ Completed Job Cards</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+table(finishedJobs(false),'manager'))};
+ window.v74Ready=function(mode){const rows=readyJobs(),body=rows.length?table(rows,mode):'<div class="notice">No Job Cards are Ready for Delivery.</div>';mode==='manager'?openModal('<div class="section-title"><h2>🚗✓ Ready for Delivery</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+body):showSupervisorModal('🚗✓ Ready for Delivery',body)};
+ const oldOverview=window.supervisorOverview;window.supervisorOverview=function(rows){let html=typeof oldOverview==='function'?oldOverview.apply(this,arguments):'';if(!html)return html;const fin=finishedJobs(true).length,ready=readyJobs().length;html=html.replace(/(<b>Finished Jobs<\/b><div class="stat">)\d+(<\/div>)/,'$1'+fin+'$2');html=html.replace(/(<b>Ready for Delivery<\/b><div class="stat">)\d+(<\/div>)/,'$1'+ready+'$2');return html};
+ window.v120FinishedReadyAuthority=true;
+})();
+
 /* V106 ID001 FINAL AUTHORITY — one authoritative Supervisor assignment path. */
 (function(){'use strict';
  const H='ID001',SAFE=2;
