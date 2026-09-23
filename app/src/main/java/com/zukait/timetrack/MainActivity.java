@@ -219,7 +219,7 @@ public class MainActivity extends Activity {
         });
 
         webView.clearCache(true);
-        webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html?v=81");
+        webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html?v=96");
         handleUpdateInstallResult(getIntent());
         updateHandler.postDelayed(this::resumeUpdateDownloadMonitoring, 1200);
     }
@@ -827,28 +827,66 @@ public class MainActivity extends Activity {
             }
             return;
         }
+        if (!downloadedUpdateIsReady()) {
+            reportUpdateDownloadState();
+            return;
+        }
+
+        // Use Android's normal package installer UI first. This is the most
+        // compatible path across Samsung, Vivo, Oppo, Xiaomi and other OEMs.
+        notifyUpdateDownloadToWeb("INSTALLING", 100, 0, 0, "Opening Android installer...");
+        if (openDownloadedUpdateWithSystemInstaller()) return;
+
+        // Only fall back to PackageInstaller when the device has no activity
+        // capable of handling the standard APK install intent.
+        installDownloadedUpdateWithPackageInstaller();
+    }
+
+    private boolean downloadedUpdateIsReady() {
         if (updateDownloadId < 0) {
             notifyUpdateDownloadToWeb("FAILED", 0, 0, 0, "No downloaded update is available.");
-            return;
+            return false;
         }
         DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
-        if (dm == null) return;
+        if (dm == null) return false;
         DownloadManager.Query q = new DownloadManager.Query().setFilterById(updateDownloadId);
         try (android.database.Cursor c = dm.query(q)) {
-            if (c == null || !c.moveToFirst() ||
-                    c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)) != DownloadManager.STATUS_SUCCESSFUL) {
-                reportUpdateDownloadState();
-                return;
-            }
+            return c != null && c.moveToFirst() &&
+                    c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)) ==
+                            DownloadManager.STATUS_SUCCESSFUL;
         } catch (Exception e) {
             notifyUpdateDownloadToWeb("FAILED", 0, 0, 0, "Downloaded update could not be verified.");
-            return;
+            return false;
         }
-        Uri apk = dm.getUriForDownloadedFile(updateDownloadId);
+    }
+
+    private boolean openDownloadedUpdateWithSystemInstaller() {
+        try {
+            DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+            Uri apk = dm == null ? null : dm.getUriForDownloadedFile(updateDownloadId);
+            if (apk == null) throw new Exception("APK URI unavailable");
+            Intent install = new Intent(Intent.ACTION_VIEW);
+            install.setDataAndType(apk, "application/vnd.android.package-archive");
+            install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+            if (install.resolveActivity(getPackageManager()) == null) {
+                throw new android.content.ActivityNotFoundException("No Android package installer available");
+            }
+            startActivity(install);
+            return true;
+        } catch (Exception error) {
+            android.util.Log.e("ZukaitUpdate", "System installer launch failed", error);
+            return false;
+        }
+    }
+
+    private void installDownloadedUpdateWithPackageInstaller() {
+        DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+        Uri apk = dm == null ? null : dm.getUriForDownloadedFile(updateDownloadId);
         if (apk == null) {
-            notifyUpdateDownloadToWeb("FAILED", 0, 0, 0, "Downloaded update could not be opened.");
+            notifyUpdateDownloadToWeb("FAILED", 100, 0, 0, "Downloaded update could not be opened.");
             return;
         }
+        PackageInstaller.Session session = null;
         try {
             PackageInstaller installer = getPackageManager().getPackageInstaller();
             PackageInstaller.SessionParams params =
@@ -858,7 +896,7 @@ public class MainActivity extends Activity {
                 params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_REQUIRED);
             }
             int sessionId = installer.createSession(params);
-            PackageInstaller.Session session = installer.openSession(sessionId);
+            session = installer.openSession(sessionId);
             try (java.io.InputStream in = getContentResolver().openInputStream(apk);
                  java.io.OutputStream out = session.openWrite("zukait-update.apk", 0, -1)) {
                 if (in == null) throw new java.io.IOException("Downloaded APK stream unavailable");
@@ -874,29 +912,13 @@ public class MainActivity extends Activity {
                     this, UPDATE_INSTALL_REQUEST, callback,
                     android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_MUTABLE);
             session.commit(pending.getIntentSender());
-            session.close();
             notifyUpdateDownloadToWeb("INSTALLING", 100, 0, 0, "Android is verifying the signed update...");
         } catch (Exception e) {
-            android.util.Log.e("ZukaitUpdate", "PackageInstaller update failed", e);
-            notifyUpdateDownloadToWeb("INSTALL_FALLBACK", 100, 0, 0,
-                    "Opening Android installer...");
-            openDownloadedUpdateWithSystemInstaller();
-        }
-    }
-
-    private void openDownloadedUpdateWithSystemInstaller() {
-        try {
-            DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
-            Uri apk = dm == null ? null : dm.getUriForDownloadedFile(updateDownloadId);
-            if (apk == null) throw new Exception("APK URI unavailable");
-            Intent install = new Intent(Intent.ACTION_VIEW);
-            install.setDataAndType(apk, "application/vnd.android.package-archive");
-            install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivity(install);
-        } catch (Exception fallbackError) {
-            android.util.Log.e("ZukaitUpdate", "System installer fallback failed", fallbackError);
+            android.util.Log.e("ZukaitUpdate", "PackageInstaller fallback failed", e);
             notifyUpdateDownloadToWeb("FAILED", 100, 0, 0,
-                    "Android installer could not be opened. Restart the app and try Update again.");
+                    "Android installer could not be opened. Please restart the app and try again.");
+        } finally {
+            if (session != null) try { session.close(); } catch (Exception ignored) { }
         }
     }
 
@@ -914,12 +936,12 @@ public class MainActivity extends Activity {
                     return;
                 } catch (Exception ignored) { }
             }
-            openDownloadedUpdateWithSystemInstaller();
+            if (!openDownloadedUpdateWithSystemInstaller()) installDownloadedUpdateWithPackageInstaller();
         } else if (status == PackageInstaller.STATUS_SUCCESS) {
             clearInstalledUpdateDownloadIfNeeded();
         } else {
             android.util.Log.e("ZukaitUpdate", "Install status " + status + ": " + detail);
-            openDownloadedUpdateWithSystemInstaller();
+            if (!openDownloadedUpdateWithSystemInstaller()) installDownloadedUpdateWithPackageInstaller();
         }
         intent.setAction(null);
     }
