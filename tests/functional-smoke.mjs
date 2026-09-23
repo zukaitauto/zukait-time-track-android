@@ -432,6 +432,14 @@ assert.match(updates, /req\.onclick=.*openSupervisorRequestsWindow/, 'Employee R
 assert.match(updates, /att\.onclick=.*v66OpenAttention/, 'Need Attention card must be clickable');
 assert.match(updates, /Finished Job Cards/, 'legacy Finished Job Cards cleanup must be present');
 
+// Syntax regression guard: v74 runtime CSS is intentionally a single-quoted JS string.
+// A raw newline inside it breaks the whole dashboard before Android can render it.
+const runtimeStyleStart = updates.indexOf("let s=document.createElement('style');s.textContent='");
+const runtimeStyleEnd = updates.indexOf("';document.head.appendChild(s)", runtimeStyleStart);
+assert.ok(runtimeStyleStart >= 0 && runtimeStyleEnd > runtimeStyleStart, 'Runtime CSS bundle must remain a valid single-quoted JavaScript string');
+const runtimeStyleBody = updates.slice(runtimeStyleStart, runtimeStyleEnd);
+assert.ok(!runtimeStyleBody.includes('\\n') && !runtimeStyleBody.includes('\\r'), 'Runtime CSS bundle must not contain raw line breaks');
+
 // Architecture guard: retired Supervisor wrappers must not return.
 assert.doesNotMatch(html, /const oldSupervisor=window\.renderSupervisor/, 'obsolete V33 Supervisor wrapper must remain retired');
 assert.doesNotMatch(html, /const priorSupervisor=window\.renderSupervisor/, 'obsolete V34 Supervisor wrapper must remain retired');
