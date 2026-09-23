@@ -134,7 +134,7 @@ assert.match(updates, /\.v89-employee-lower\{display:grid!important;grid-templat
 assert.match(updates, /v89OpenEmployeeFinished/, 'Employee Finished Jobs details must open separately');
 assert.match(updates, /v89OpenEmployeeRepeats/, 'Employee Repeat Jobs details must open separately');
 assert.match(updates, /String\(a\.mistakeEmp\|\|''\)===String\(me\.id\)/, 'Employee repeat count must belong to the mistake employee');
-assert.match(updates, /const items=\[job,assigned,add,inc\]/, 'Supervisor lower control set must be Job Card List, Assigned, Additional Time and Incentive');
+assert.match(updates, /const items=\[job,assigned,add,inc,id001\]/, 'Supervisor lower control set must include Job Card List, Assigned, Additional Time, Incentive and compact ID001');
 
 // Manager / whole-job contracts
 assert.match(updates, /AA\(x\.no\)\.every\(a=>a\.completed\)/, 'Ready for Delivery requires all assignments complete');
