@@ -352,6 +352,14 @@ assert.ok(updates.includes("'Completed Jobs'") && updates.includes("'Suggested T
 
 assert(updates.includes("req.closest('.v88-alert-row,.v84-alert-row')"), 'Supervisor finalizer must reuse the existing alert row instead of nesting it');
 assert(updates.includes("v91RoleHeader('Supervisor')"), 'Supervisor authoritative finalizer must apply the single identity/header surface');
+
+// V105 employee performance progress regression guards.
+const updatesSource = fs.readFileSync(path.join(root, 'app/src/main/assets/v74_updates.js'), 'utf8');
+assert.match(updatesSource, /window\.v107AchievementFor=achievementFor/, 'Achieved detail window must use canonical V107 achievement authority');
+assert.match(updatesSource, /inc\/target\*100/, 'Incentive visual fill must grow left-to-right against monthly target');
+assert.match(updatesSource, /achieved>target&&inc>0&&target>0/, 'Incentive fill must remain empty until achieved exceeds target');
+assert.match(updatesSource, /window\.v117OpenAchievedDetails/, 'Achieved card must open details');
+assert.match(updatesSource, /window\.v117OpenIncentiveDetails/, 'Incentive card must open details');
 console.log('Functional smoke tests passed: Employee, ID001, holidays, Ideal Time availability, Leave, Active Workers, Supervisor, Manager, update/release contracts.');
 
 
