@@ -64,7 +64,7 @@ function v84SupervisorPanels(root){
  const cards=[...root.querySelectorAll('.card')];
  const byTitle=t=>cards.find(x=>{const h=x.querySelector('h3');return h&&new RegExp(t,'i').test((h.textContent||'').trim())});
  const req=[...root.querySelectorAll('.supervisor-request-top,.card')].find(x=>/EMPLOYEE REQUESTS/i.test(x.textContent||'')),att=byTitle('Need\\s*Attention');
- if(req&&att&&!root.querySelector('.v84-alert-row')){let row=document.createElement('div');row.className='v84-alert-row';req.parentNode.insertBefore(row,req);row.append(req,att);req.classList.add('v84-alert','v84-request','clickable');att.classList.add('v84-alert','v84-attention','clickable');req.onclick=()=>window.openSupervisorRequestsWindow();att.onclick=()=>window.v66OpenAttention();}
+ if(req&&att){let row=req.closest('.v88-alert-row,.v84-alert-row')||att.closest('.v88-alert-row,.v84-alert-row');if(!row){row=document.createElement('div');req.parentNode.insertBefore(row,req);row.append(req,att)}row.classList.add('v84-alert-row');req.classList.add('v84-alert','v84-request','clickable');att.classList.add('v84-alert','v84-attention','clickable');req.onclick=()=>window.openSupervisorRequestsWindow();att.onclick=()=>window.v66OpenAttention();}
  // Overtime belongs only in Today at a Glance. Remove any separate legacy Overtime card by its heading.
  [...root.querySelectorAll('.card')].filter(x=>{const h=x.querySelector('h3');return h&&/^\\s*(?:⏱\\s*)?OVERTIME(?:\\s+NOW)?\\s*$/i.test(h.textContent||'')&&!x.closest('.glance-grid,.v74-six')}).forEach(x=>x.remove());
  // Remove legacy duplicate action cards that are not part of the agreed four-card control area.
