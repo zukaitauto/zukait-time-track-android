@@ -220,7 +220,7 @@ public class MainActivity extends Activity {
         });
 
         webView.clearCache(true);
-        webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html?v=96");
+        webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html?v=99");
         handleUpdateInstallResult(getIntent());
         updateHandler.postDelayed(this::resumeUpdateDownloadMonitoring, 1200);
     }
@@ -811,6 +811,8 @@ public class MainActivity extends Activity {
     }
 
     private void installDownloadedUpdateNative() {
+        android.widget.Toast.makeText(this, "Update installer started", android.widget.Toast.LENGTH_SHORT).show();
+        notifyUpdateDownloadToWeb("INSTALLING", 100, 0, 0, "Native installer started...");
         restoreUpdateDownloadState();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
                 !getPackageManager().canRequestPackageInstalls()) {
@@ -887,11 +889,10 @@ public class MainActivity extends Activity {
 
             Uri apk = FileProvider.getUriForFile(
                     this, getPackageName() + ".updateprovider", cachedApk);
-            Intent install = new Intent(Intent.ACTION_INSTALL_PACKAGE);
-            install.setData(apk);
-            install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            install.putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true);
-            install.putExtra(Intent.EXTRA_RETURN_RESULT, false);
+            Intent install = new Intent(Intent.ACTION_VIEW);
+            install.setDataAndType(apk, "application/vnd.android.package-archive");
+            install.setClipData(android.content.ClipData.newRawUri("Zukait Time Track Update", apk));
+            install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
 
             android.content.pm.ResolveInfo resolved =
                     getPackageManager().resolveActivity(install, PackageManager.MATCH_DEFAULT_ONLY);
