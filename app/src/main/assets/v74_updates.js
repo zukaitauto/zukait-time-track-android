@@ -944,6 +944,47 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const rows=mode==='month'?leaveMonth():leaveToday();
    openModal('<div class="section-title"><h2>'+(mode==='month'?'This Month Leave':'Today’s Leave')+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+leaveListHtml(rows));
  };
+ window.v114EditLeave=function(id){
+   if(!me||me.role!=='Manager')return;
+   const l=(state.leaves||[]).find(x=>x&&String(x.id)===String(id)&&!x.cancelled);if(!l)return;
+   const staff=(users||[]).filter(u=>u&&(u.role==='Employee'||u.role==='Supervisor'));
+   openModal('<div class="section-title"><h2>Edit Leave</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
+    '<label>Staff<br><select id="v114LeaveEmp">'+staff.map(u=>'<option value="'+esc(u.id)+'" '+(String(u.id)===String(l.emp)?'selected':'')+'>'+esc(u.name)+'</option>').join('')+'</select></label>'+
+    '<div class="grid"><label>Date<br><input type="date" id="v114LeaveDate" value="'+esc(l.date)+'"></label><label>Leave Type<br><select id="v114LeavePeriod"><option value="FULL" '+(l.period==='FULL'?'selected':'')+'>Full Day</option><option value="AM" '+(l.period==='AM'?'selected':'')+'>Morning Half Day</option><option value="PM" '+(l.period==='PM'?'selected':'')+'>Afternoon Half Day</option></select></label></div>'+
+    '<label>Remark / Reason<br><input id="v114LeaveRemark" style="width:100%" value="'+esc(l.remark||'')+'"></label>'+
+    '<div class="v74-actions"><button class="danger" onclick="v114DeleteLeave(\''+esc(l.id)+'\')">DELETE</button><button class="green" onclick="v114SaveLeaveEdit(\''+esc(l.id)+'\')">SAVE CHANGES</button></div>');
+ };
+ window.v114SaveLeaveEdit=function(id){
+   if(!me||me.role!=='Manager')return;
+   const l=(state.leaves||[]).find(x=>x&&String(x.id)===String(id)&&!x.cancelled);if(!l)return;
+   const emp=document.getElementById('v114LeaveEmp')?.value,date=document.getElementById('v114LeaveDate')?.value,period=document.getElementById('v114LeavePeriod')?.value,remark=document.getElementById('v114LeaveRemark')?.value.trim()||'';
+   if(!emp||!date||!['FULL','AM','PM'].includes(period))return alert('Select staff, date and leave type.');
+   const candidate={...l,emp,date,period,remark};
+   if(closedLeaveDay(candidate))return alert('Leave is not required on Friday or a workshop Public Holiday.');
+   if(hasSessionConflict(emp,candidate))return alert('Work time is already recorded during this leave period. Correct the work/leave conflict first.');
+   const duplicate=activeLeaveRows().some(x=>String(x.id)!==String(id)&&String(x.emp)===String(emp)&&x.date===date&&(x.period==='FULL'||period==='FULL'||x.period===period));
+   if(duplicate)return alert('Leave is already recorded for this staff/date/period.');
+   const before={emp:l.emp,date:l.date,period:l.period,remark:l.remark||''};Object.assign(l,{emp,date,period,remark,updatedAt:Date.now(),updatedBy:me.id});
+   state.leaveAudit=state.leaveAudit||[];state.leaveAudit.push({id:uid(),action:'EDIT',leaveId:l.id,by:me.id,at:Date.now(),before,after:{emp,date,period,remark}});
+   save();closeModal();render();
+ };
+ window.v114DeleteLeave=function(id){
+   if(!me||me.role!=='Manager')return;
+   const l=(state.leaves||[]).find(x=>x&&String(x.id)===String(id)&&!x.cancelled);if(!l)return;
+   const reason=prompt('Reason for deleting/cancelling this leave record:','Correction');if(reason===null)return;if(!String(reason).trim())return alert('Enter a reason.');
+   l.cancelled=true;l.cancelledAt=Date.now();l.cancelledBy=me.id;l.cancelReason=String(reason).trim();
+   state.leaveAudit=state.leaveAudit||[];state.leaveAudit.push({id:uid(),action:'DELETE',leaveId:l.id,by:me.id,at:Date.now(),reason:l.cancelReason,before:{emp:l.emp,date:l.date,period:l.period,remark:l.remark||''}});
+   save();closeModal();render();
+ };
+ const v114BaseLeaveListHtml=leaveListHtml;
+ leaveListHtml=function(rows){
+   if(!me||me.role!=='Manager')return v114BaseLeaveListHtml(rows);
+   const sorted=rows.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))||(b.createdAt||0)-(a.createdAt||0));
+   return sorted.length?'<div style="overflow:auto"><table><tr><th>Name</th><th>Role / Department</th><th>Date</th><th>Leave Type</th><th>Remark</th><th>Marked By</th><th>Action</th></tr>'+
+    sorted.map(l=>{const u=userSafe(l.emp),by=userSafe(l.by);return'<tr><td><b>'+esc(u.name)+'</b></td><td>'+esc(u.role+(u.department?' / '+u.department:''))+'</td><td>'+esc(l.date)+'</td><td>'+esc(periodLabel(l.period))+'</td><td>'+esc(l.remark||'—')+'</td><td>'+esc(by.name||l.by)+'</td><td><button class="blue" onclick="v114EditLeave(\''+esc(l.id)+'\')">EDIT</button></td></tr>'}).join('')+'</table></div>':'<div class="notice">No leave records.</div>';
+ };
+ window.v114ManagerLeaveCorrection=true;
+
  function injectManagerLeaveRow(){
    if(!me||me.role!=='Manager')return;
    const root=document.getElementById('managerView');if(!root)return;
