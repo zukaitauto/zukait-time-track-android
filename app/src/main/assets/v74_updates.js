@@ -2206,3 +2206,22 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  let busy=false;const obs=new MutationObserver(()=>{if(busy||!me||me.role!=='Supervisor')return;busy=true;requestAnimationFrame(()=>{try{apply()}finally{busy=false}})});obs.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']});
  const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(apply,0);return r};setTimeout(apply,0);window.v128SupervisorSurfaceLock=true;
 })();
+
+/* V129 EMPLOYEE MONTHLY LIQUID GLASS — larger readable seven KPI capsules. */
+(()=>{const s=document.createElement('style');s.id='v129EmployeeMonthlyGlass';s.textContent=`
+.v75s .month-summary .v81-month-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;padding:10px 0 4px!important}
+.v75s .month-summary .v81-month-orb{position:relative!important;overflow:hidden!important;isolation:isolate!important;width:100%!important;min-height:88px!important;border-radius:28px!important;padding:15px 14px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;border:1px solid rgba(255,255,255,.72)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 0 rgba(255,255,255,.22),0 10px 24px rgba(31,41,55,.12)!important;backdrop-filter:blur(16px) saturate(145%)!important;-webkit-backdrop-filter:blur(16px) saturate(145%)!important}
+.v75s .month-summary .v81-month-orb:before{content:''!important;display:block!important;position:absolute!important;inset:0!important;z-index:-1!important;background:linear-gradient(145deg,rgba(255,255,255,.64),rgba(255,255,255,.12))!important;pointer-events:none!important}
+.v75s .month-summary .v81-month-orb:after{content:''!important;display:block!important;position:absolute!important;left:12%!important;right:12%!important;top:7px!important;height:24px!important;border-radius:999px!important;background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,0))!important;filter:blur(1px)!important;pointer-events:none!important}
+.v75s .month-summary .v81-month-orb b{font-size:22px!important;line-height:1.05!important;font-weight:900!important;letter-spacing:-.02em!important;margin:0!important;color:#172033!important;text-shadow:0 1px 0 rgba(255,255,255,.7)!important}
+.v75s .month-summary .v81-month-orb span{font-size:11px!important;line-height:1.18!important;font-weight:850!important;letter-spacing:.025em!important;margin-top:7px!important;color:#344054!important;white-space:normal!important;text-align:center!important}
+.v75s .month-summary #v81-m1{background:linear-gradient(135deg,rgba(219,234,254,.88),rgba(239,246,255,.58))!important}
+.v75s .month-summary #v81-m2{background:linear-gradient(135deg,rgba(209,250,229,.88),rgba(236,253,245,.58))!important}
+.v75s .month-summary #v81-m3{background:linear-gradient(135deg,rgba(224,231,255,.88),rgba(238,242,255,.58))!important}
+.v75s .month-summary #v81-m4{background:linear-gradient(135deg,rgba(207,250,254,.88),rgba(236,254,255,.58))!important}
+.v75s .month-summary #v81-m5{background:linear-gradient(135deg,rgba(254,243,199,.90),rgba(255,251,235,.60))!important}
+.v75s .month-summary #v81-m6{background:linear-gradient(135deg,rgba(243,232,255,.90),rgba(250,245,255,.60))!important}
+.v75s .month-summary #v81-m7{background:linear-gradient(135deg,rgba(255,228,230,.90),rgba(255,241,242,.60))!important}
+.v75s .month-summary .v81-month-orb:last-child:nth-child(odd){grid-column:1/-1!important;max-width:calc(50% - 6px)!important;justify-self:center!important}
+@media(max-width:380px){.v75s .month-summary .v81-month-grid{gap:9px!important}.v75s .month-summary .v81-month-orb{min-height:80px!important;border-radius:24px!important;padding:12px 9px!important}.v75s .month-summary .v81-month-orb b{font-size:20px!important}.v75s .month-summary .v81-month-orb span{font-size:10px!important}}
+`;document.head.appendChild(s);window.v129EmployeeMonthlyGlass=true})();
