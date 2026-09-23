@@ -338,7 +338,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 .v80-gauge:after{content:'';position:absolute;left:20%;right:20%;top:8%;height:22%;border-radius:50%;background:linear-gradient(180deg,rgba(255,255,255,.68),rgba(255,255,255,.04));pointer-events:none;z-index:1}
 .v80-gauge-inner{z-index:2}.v80-gauge b{font-size:26px}.v80-gauge-title{font-size:11px}.v80-gauge small{font-size:10px}
 /* V100 Employee gauge clarity: dashboard-style arc, clear USED/LEFT labels, status-coloured remaining time. */
-.v80-rpm-gauge{overflow:hidden;background:conic-gradient(from 225deg,var(--g) 0 var(--p),rgba(203,213,225,.42) var(--p) 270deg,transparent 270deg 360deg)!important;border:2px solid rgba(255,255,255,.72);box-shadow:inset 0 0 0 5px rgba(15,23,42,.035),0 12px 26px rgba(15,23,42,.16)}
+.v80-rpm-gauge{overflow:hidden;background:conic-gradient(from 225deg,var(--g) 0 var(--p),rgba(203,213,225,.42) var(--p) 360deg)!important;border:2px solid rgba(255,255,255,.72);box-shadow:inset 0 0 0 5px rgba(15,23,42,.035),0 12px 26px rgba(15,23,42,.16)}
 .v80-rpm-gauge:before{inset:15px!important;background:radial-gradient(circle at 50% 38%,#fff 0,#f8fbfd 62%,#edf3f7 100%)!important}
 .v80-rpm-gauge:after{left:24%!important;right:24%!important;top:10%!important;height:16%!important}
 .v80-rpm-gauge .v80-gauge-inner{margin-top:16px}.v80-rpm-gauge .v80-gauge-title{font-size:13px;font-weight:1000;letter-spacing:.055em}.v80-rpm-gauge b{font-size:29px!important;margin:6px 0 4px!important}.v80-rpm-gauge small{font-size:12px!important;font-weight:1000!important;letter-spacing:.035em}
