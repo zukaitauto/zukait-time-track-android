@@ -179,7 +179,7 @@ window.openSupervisorJobCardList=function(){
 };
 function v74ExportData(){return v74JobListRows().map(x=>{let names=[...new Set(x.aa.map(a=>v74JLP(a.emp).name))],s=x.finished?'Finished':x.paused?'Paused':x.repeat?'Repeat':x.aa.some(a=>!a.completed)?'In Progress':'Unassigned';return[ x.ts?new Date(x.ts).toLocaleDateString():'',x.j.no||'',x.j.vehicle||'',x.j.reg||'',names.join(', '),s]})}
 window.v74ExportJobListExcel=function(){let rows=[['Date','Job Card','Vehicle','Registration','Employee','Status'],...v74ExportData()],csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');if(window.AndroidBridge&&AndroidBridge.saveExportFile){AndroidBridge.saveExportFile('Zukait_Job_Card_List.csv','text/csv',btoa(unescape(encodeURIComponent(csv))));return}v74Msg('Export is not available on this device.','Excel Export')};
-window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head><meta charset="utf-8"><style>body{font-family:sans-serif;padding:20px}h2{text-align:center}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #999;padding:6px;text-align:left}th{background:#eee}</style></head><body><h2>ZUKAIT AUTO — JOB CARD LIST</h2><table><tr><th>Date</th><th>Job Card</th><th>Vehicle</th><th>Registration</th><th>Employee</th><th>Status</th></tr>'+rows.map(r=>'<tr>'+r.map(v=>'<td>'+v74JLE(v)+'</td>').join('')+'</tr>').join('')+'</table></body></html>';if(window.AndroidBridge&&AndroidBridge.printHtml){AndroidBridge.printHtml(html)}else{let w=window.open('','_blank');if(w){w.document.write(html);w.document.close();w.print()}}};
+window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head><meta charset="utf-8"><style>body{font-family:sans-serif;padding:20px}h2{text-align:center}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #999;padding:6px;text-align:left}th{background:#eee}</style></head><body><h2>ZUKAIT AUTO — JOB CARD LIST</h2><table><tr><th>Date</th><th>Job Card</th><th>Vehicle</th><th>Registration</th><th>Employee</th><th>Status</th></tr>'+rows.map(r=>'<tr>'+r.map(v=>'<td>'+v74JLE(v)+'</td>').join('')+'</tr>').join('')+'</table></body></html>';if(typeof window.v110ReportActions==='function'){window.v110ReportActions(html,'Zukait_Job_Card_List.pdf');return}if(window.AndroidBridge&&AndroidBridge.printHtml){AndroidBridge.printHtml(html)}else{let w=window.open('','_blank');if(w){w.document.write(html);w.document.close();w.print()}}};
 
 
 /* V75.1 ID001 SAFE AUTHORITY — START/STOP only, isolated from productive KPIs, no auto-finish. */
@@ -1235,6 +1235,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(!me||me.role!=='Manager')return;
    const rows=mode==='month'?monthRows():todayRows();
    const html=leavePrintHtml(mode,rows);
+   if(typeof window.v110ReportActions==='function'){window.v110ReportActions(html,mode==='month'?'Zukait_Monthly_Leave_Report.pdf':'Zukait_Todays_Leave_Report.pdf');return}
    try{
      if(window.AndroidBridge&&typeof AndroidBridge.printHtml==='function'){AndroidBridge.printHtml(html);return}
    }catch(_){}
@@ -1777,4 +1778,20 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    },0);return out;
  };
  window.v108MonthlyMetricsUILock=true;
+})();
+
+/* V110 REPORT ACTIONS — every print entry gets Print, Share PDF and Close. */
+(function(){'use strict';
+ let reportHtml='',reportName='Zukait_Report.pdf';
+ window.v110ReportActions=function(html,name){
+   reportHtml=String(html||'');reportName=String(name||'Zukait_Report.pdf');
+   const body='<div class="section-title"><h2>Report Options</h2><button class="secondary" onclick="closeModal()">✕ CLOSE</button></div>'+
+   '<div class="notice"><b>Choose what you want to do with this report.</b></div>'+
+   '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px"><button class="blue" onclick="v110PrintReport()">🖨 PRINT</button><button class="green" onclick="v110ShareReport()">📄 SHARE PDF / WHATSAPP</button></div>'+
+   '<button class="secondary" style="width:100%;margin-top:10px" onclick="closeModal()">← BACK / CLOSE</button>';
+   if(typeof openModal==='function')openModal(body);else if(typeof showSupervisorModal==='function')showSupervisorModal('Report Options',body);
+ };
+ window.v110PrintReport=function(){try{if(window.AndroidBridge&&typeof AndroidBridge.printHtml==='function'){AndroidBridge.printHtml(reportHtml);return}}catch(_){}const w=window.open('','_blank');if(w){w.document.write(reportHtml);w.document.close();setTimeout(()=>w.print(),250)}};
+ window.v110ShareReport=function(){try{if(window.AndroidBridge&&typeof AndroidBridge.shareHtmlAsPdf==='function'){AndroidBridge.shareHtmlAsPdf(reportHtml,reportName);return}}catch(_){}alert('PDF sharing is available in the Android app.')};
+ window.v110ReportActionsReady=true;
 })();
