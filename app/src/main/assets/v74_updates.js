@@ -2364,10 +2364,41 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 
 
 
+/* V112 MANAGER ACTION + OUTPUT AUTHORITY — restore Leave Marking, native print/share, explicit Back. */
+(function(){'use strict';
+ const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ window.v112ManagerBack=function(){try{closeModal()}catch(_){}};
+ window.v112OpenLeaveMarking=function(){try{closeModal()}catch(_){};setTimeout(()=>{if(typeof window.v755OpenLeaveHub==='function')window.v755OpenLeaveHub()},0)};
+ window.v112PrintHtml=function(html,title){
+   if(window.AndroidBridge&&typeof AndroidBridge.printHtml==='function'){try{return AndroidBridge.printHtml(html)}catch(_){}}
+   const w=window.open('','_blank');if(!w)return alert('Unable to open print preview.');
+   w.document.write(html);w.document.close();w.focus();setTimeout(()=>w.print(),250)
+ };
+ window.v112ShareText=function(msg){
+   if(!msg)return;
+   if(window.AndroidBridge){
+     for(const fn of ['shareText','shareWhatsApp','openWhatsApp'])if(typeof AndroidBridge[fn]==='function'){try{return AndroidBridge[fn](msg)}catch(_){}}
+   }
+   const url='https://wa.me/?text='+encodeURIComponent(msg);
+   try{const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove()}catch(_){location.href=url}
+ };
+ function leavePrintHtml(){
+   const rows=typeof window.v133LeaveRows==='function'?window.v133LeaveRows():[];
+   const title=window.v133LeaveEmployee?'Employee Leave Report':'Monthly Leave Report';
+   const tr=rows.map(l=>{let u;try{u=user(l.emp)||{name:l.emp,department:''}}catch(_){u={name:l.emp,department:''}};const label=l.period==='AM'?'Morning Half Day':l.period==='PM'?'Afternoon Half Day':'Full Day';return '<tr><td>'+esc(u.name)+'</td><td>'+esc(u.department||'—')+'</td><td>'+esc(l.date)+'</td><td>'+esc(label)+'</td><td>'+esc(l.remark||'—')+'</td></tr>'}).join('');
+   return '<html><head><title>'+title+'</title><style>body{font-family:Arial;padding:24px}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{border:1px solid #bbb;padding:8px;text-align:left}th{background:#eee}</style></head><body><h2>ZUKAIT AUTO</h2><h3>'+title+'</h3><table><tr><th>Employee</th><th>Department</th><th>Date</th><th>Leave</th><th>Remark</th></tr>'+(tr||'<tr><td colspan="5">No leave records.</td></tr>')+'</table></body></html>'
+ }
+ window.v133PrintLeave=function(){window.v112PrintHtml(leavePrintHtml(),'Leave Report')};
+ window.v133ShareLeave=function(){const rows=typeof window.v133LeaveRows==='function'?window.v133LeaveRows():[];if(!rows.length)return alert('No leave records to share.');const lines=rows.map(l=>{let u;try{u=user(l.emp)||{name:l.emp}}catch(_){u={name:l.emp}};const label=l.period==='AM'?'Morning Half Day':l.period==='PM'?'Afternoon Half Day':'Full Day';return [u.name,l.date,label,l.remark||'—'].join(' | ')});window.v112ShareText('ZUKAIT AUTO - Leave Report\\n'+lines.join('\\n'))};
+ const oldOpen=window.v133OpenManagerLeave;
+ if(typeof oldOpen==='function')window.v133OpenManagerLeave=function(){const r=oldOpen.apply(this,arguments);setTimeout(()=>{const modal=document.querySelector('.modal:not(.hidden),#modal:not(.hidden)')||document.querySelector('.modal');if(!modal)return;const head=modal.querySelector('.section-title');if(head&&!head.querySelector('.v112-back')){const b=document.createElement('button');b.className='secondary v112-back';b.textContent='← BACK';b.onclick=window.v112ManagerBack;head.appendChild(b)}},0);return r};
+ window.v112ManagerActionAuthority=true;
+})();
+
 /* V111 MANAGER LAYOUT AUTHORITY — header menu + dashboard Leave Management; Workshop Control Center On Leave becomes Consumables. */
 (function(){'use strict';
  const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
- window.v111OpenManagerMenu=function(){if(!me||me.role!=='Manager')return;openModal('<div class="v135-menu-head"><div><small>MANAGER ACCOUNT</small><h2>'+esc(me.name||'Manager')+'</h2></div><button class="v135-close" onclick="closeModal()">×</button></div><div class="v135-manager-menu"><button class="v135-action sync" onclick="v42SyncNow();closeModal()"><i>↻</i><span><b>Synchronize</b><small>Sync workshop data</small></span></button><button class="v135-action update" onclick="closeModal();v63OpenAbout()"><i>⬆</i><span><b>About / Update</b><small>Check software version</small></span></button><button class="v135-action logout" onclick="closeModal();logout()"><i>↪</i><span><b>Logout</b><small>Sign out safely</small></span></button></div>')};
+ window.v111OpenManagerMenu=function(){if(!me||me.role!=='Manager')return;openModal('<div class="v135-menu-head"><div><small>MANAGER ACCOUNT</small><h2>'+esc(me.name||'Manager')+'</h2></div><button class="v135-close" onclick="closeModal()">×</button></div><div class="v135-manager-menu"><button class="v135-action sync" onclick="v42SyncNow();closeModal()"><i>↻</i><span><b>Synchronize</b><small>Sync workshop data</small></span></button><button class="v135-action leave" onclick="v112OpenLeaveMarking()"><i>🗓</i><span><b>Leave Marking</b><small>Mark employee / supervisor leave</small></span></button><button class="v135-action update" onclick="closeModal();v63OpenAbout()"><i>⬆</i><span><b>About / Update</b><small>Check software version</small></span></button><button class="v135-action logout" onclick="closeModal();logout()"><i>↪</i><span><b>Logout</b><small>Sign out safely</small></span></button></div>')};
  window.v135OpenManagerMenu=window.v111OpenManagerMenu;window.v110OpenManagerMenu=window.v111OpenManagerMenu;
  function apply(){if(!me||me.role!=='Manager')return;const root=document.getElementById('managerView');if(!root)return;
    root.querySelectorAll('.v91-role-identity').forEach(x=>x.remove());
