@@ -14,6 +14,8 @@
   let initialDone=false;
   let conflictAlerted=false;
   let lastSyncedState=null;
+  let pullInFlight=false;
+  let lastVisibleSyncAt=0;
 
   function sessionToken(){return window.zukaitAuth?.getToken?.()||''}
 
@@ -212,12 +214,15 @@
   }
 
   async function pull(force){
+    if(pullInFlight)return false;
     if(!sessionToken()){status('LOGIN REQUIRED','local');initialDone=true;return false}
     if(!navigator.onLine){status(cloudDirty?'OFFLINE — CHANGE QUEUED':'OFFLINE — LOCAL CACHE','warn');initialDone=true;return false}
     if(cloudDirty&&!force){status('CHANGE WAITING TO SYNC','warn');return false}
     status('SYNCING…','info');
+    pullInFlight=true;
     const before=clone(state||{});
-    const r=await api({action:'load'});
+    let r;
+    try{r=await api({action:'load'})}finally{pullInFlight=false}
     if(!r.ok){
       if(r.code==='invalid_session')status('LOGIN REQUIRED','bad');
       else status('SYNC ERROR','bad');
@@ -396,13 +401,26 @@
       initialDone=true;
     }
     pollTimer=setInterval(async()=>{
-      if(!sessionToken()||!navigator.onLine||cloudDirty||cloudPushing)return;
+      if(!sessionToken()||!navigator.onLine||cloudDirty||cloudPushing||pullInFlight)return;
       try{await pull(false)}catch(e){console.warn('Cloud poll failed',e);status('SYNC ERROR','bad')}
-    },1500);
+    },1000);
     return true;
   }
 
   function stop(){clearInterval(pollTimer);pollTimer=null;clearTimeout(pushTimer);pushTimer=null}
+
+
+  // V100 shared-dashboard consistency: every logged-in device refreshes immediately when the app becomes visible again.
+  async function refreshVisibleSharedState(){
+    if(!sessionToken()||!navigator.onLine||document.visibilityState==='hidden')return;
+    const ts=Date.now();if(ts-lastVisibleSyncAt<700)return;lastVisibleSyncAt=ts;
+    try{
+      if(cloudDirty&&!cloudPushing)await push(0);
+      if(!cloudDirty&&!cloudPushing&&!pullInFlight)await pull(true);
+    }catch(e){console.warn('Visible shared-state refresh failed',e)}
+  }
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshVisibleSharedState()});
+  window.addEventListener('focus',refreshVisibleSharedState);
 
   window.addEventListener('online',()=>init(false));
   window.addEventListener('offline',()=>status(cloudDirty?'OFFLINE — CHANGE QUEUED':'OFFLINE — LOCAL CACHE','warn'));
