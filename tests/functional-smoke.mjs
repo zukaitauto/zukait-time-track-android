@@ -608,3 +608,13 @@ assert.match(updates,/v133PrintLeave/,'Leave Management must retain Print\/PDF')
 assert.match(updates,/v133ShareLeave/,'Leave Management must retain WhatsApp sharing');
 assert.match(updates,/v111-leave-today/,'Leave Management must show today leave count badge');
 assert.match(updates,/v111-control-consumables/,'Workshop Control Center On Leave position must become Consumables');
+
+
+// V112 Manager action/output regression checks.
+assert.match(updates,/v112OpenLeaveMarking/,'Manager menu must restore Leave Marking');
+assert.match(updates,/v755OpenLeaveHub/,'Leave Marking must open the existing leave marking workflow');
+assert.match(updates,/v112PrintHtml/,'reports must use the unified print authority');
+assert.match(updates,/AndroidBridge\.printHtml/,'Android reports must prefer native print');
+assert.match(updates,/v112ShareText/,'reports must use the unified share authority');
+assert.match(updates,/shareText|shareWhatsApp|openWhatsApp/,'WhatsApp sharing must support Android native bridge');
+assert.match(updates,/v112ManagerBack/,'Manager report modal must expose explicit Back');
