@@ -400,6 +400,12 @@ assert.match(updates, /v82-logo-fallback/, 'V82 must provide generic car fallbac
 assert.match(updates, /v82EV/, 'V82 must detect EV marker');
 assert.match(updates, /⚡ EV/, 'V82 must show EV badge separately from manufacturer logo');
 assert.match(updates, /onerror=/, 'V82 logo image failure must fall back without blank UI');
+const logoFiles=new Set(fs.readdirSync('app/src/main/assets/vehicle-logos'));
+const mappedLogoFiles=[...updates.matchAll(/,'[^']+','([^']+\.svg)'\]/g)].map(m=>m[1]);
+assert.ok(mappedLogoFiles.length>=35, 'vehicle logo resolver must retain the full local manufacturer library');
+for(const logo of mappedLogoFiles) assert.ok(logoFiles.has(logo), 'mapped vehicle logo asset missing: '+logo);
+assert.ok(updates.includes("'Lexus','lexus.svg'") && updates.includes("'Jaguar','jaguar.svg'"), 'Lexus and Jaguar must use bundled local logos');
+
 assert.ok(gradle.includes('versionCode '+versionCode), 'Gradle versionCode must match parsed candidate version');
 assert.ok(gradle.includes("versionName '"+versionName+"'") || gradle.includes('versionName "'+versionName+'"'), 'Gradle versionName must match parsed candidate version');
 
