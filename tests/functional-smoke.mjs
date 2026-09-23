@@ -493,3 +493,13 @@ assert.equal((html.match(/window\.renderEmployee\s*=\s*function\s*\(/g)||[]).len
 assert.match(html, /finalizeEmployeeDashboard\(\)/, 'authoritative Employee renderer must run its finalizer directly');
 assert.doesNotMatch(html, /const oldRenderEmployee=window\.renderEmployee/, 'legacy overtime Employee renderer wrapper must remain retired');
 assert.doesNotMatch(html, /const employeeBase=window\.renderEmployee/, 'legacy ID001 Employee renderer wrapper must remain retired');
+
+
+// V107 incentive final authority regression checks.
+must(/V107 INCENTIVE FINAL AUTHORITY/, 'V107 incentive final authority');
+must(/window\.v107IncentiveFinalAuthority=true/, 'V107 final incentive authority marker');
+must(/incentive=Math\.max\(0,achieved-t\.target-repeat\)/, 'incentive = achieved - target - repeat');
+must(/a\.job===HOLD\)return \{achieved:current/, 'ID001 counts toward achieved hours');
+must(/String\(a\.mistakeEmp\|\|a\.emp\)!==String\(emp\)/, 'different repeat employee can earn achievement');
+must(/String\(a\.mistakeEmp\|\|a\.emp\)===String\(emp\)/, 'repeat actual is charged to mistake employee');
+must(/dutyAfterLeave-15/, '15-minute cleaning allowance reduces working-day target');
