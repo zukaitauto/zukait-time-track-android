@@ -1832,6 +1832,51 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 })();
 
 
+/* V117 EMPLOYEE ACHIEVED / INCENTIVE PROGRESS — left-to-right fill and read-only detail windows. */
+(function(){'use strict';
+ const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ const fm=v=>typeof window.fmt==='function'?window.fmt(Math.max(0,+v||0)):((Math.floor((+v||0)/60))+'h '+String(Math.round((+v||0)%60)).padStart(2,'0')+'m');
+ const css=document.createElement('style');css.textContent=
+ '#employeeView .v104-progress.v117-fill{position:relative!important;overflow:hidden!important;isolation:isolate;cursor:pointer!important}'+
+ '#employeeView .v104-progress.v117-fill:before{content:"";position:absolute;z-index:-1;left:0;top:0;bottom:0;width:var(--v117-fill,0%);transition:width .65s ease;border-radius:inherit;pointer-events:none}'+
+ '#employeeView .v104-progress.achieved.v117-fill:before{background:rgba(34,197,94,.24)}'+
+ '#employeeView .v104-progress.incentive.v117-fill:before{background:rgba(250,204,21,.28)}'+
+ '#employeeView .v104-progress.v117-fill span,#employeeView .v104-progress.v117-fill b,#employeeView .v104-progress.v117-fill i{position:relative;z-index:1}';
+ document.head.appendChild(css);
+ function current(){return me&&typeof window.incentiveFor==='function'?window.incentiveFor(me.id):null}
+ window.v117OpenAchievedDetails=function(){
+   const x=current();if(!x)return;
+   const now=new Date(),mf=new Date(now.getFullYear(),now.getMonth(),1).getTime(),mt=new Date(now.getFullYear(),now.getMonth()+1,1).getTime();
+   const rows=(state.assign||[]).filter(a=>a&&!a.cancelled&&String(a.emp)===String(me.id)&&((a.assignedAt||a.completedAt||0)<mt)&&((a.completedAt||Date.now())>=mf)).map(a=>{
+     const normal=typeof window.v107AssignmentNormal==='function'?window.v107AssignmentNormal(a,mf,mt):(typeof actual==='function'?actual(a):0);
+     let achieved=0;if(a.job==='ID001')achieved=normal;else if(a.completedAt){const sg=Math.max(0,+a.suggested||0);achieved=Math.max(0,Math.min(sg,2*sg-normal))}else achieved=Math.max(0,normal);
+     return {a,normal,achieved};
+   }).filter(r=>r.achieved>0);
+   const body='<div class="section-title"><h2>🏆 Achieved Hours</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
+    '<div class="notice"><b>Target: '+fm(x.target)+'</b> &nbsp; Achieved: <b>'+fm(x.achieved??x.eligible)+'</b></div>'+
+    (rows.length?'<div style="overflow:auto"><table><tr><th>Job Card</th><th>Suggested</th><th>Actual Normal</th><th>Achieved</th></tr>'+rows.map(r=>'<tr><td><b>'+esc(r.a.job)+'</b></td><td>'+fm(r.a.suggested)+'</td><td>'+fm(r.normal)+'</td><td><b>'+fm(r.achieved)+'</b></td></tr>').join('')+'</table></div>':'<div class="notice">No achieved-hour entries this month.</div>');
+   if(typeof openModal==='function')openModal(body);
+ };
+ window.v117OpenIncentiveDetails=function(){
+   const x=current();if(!x)return;
+   const over=Math.max(0,(+(x.achieved??x.eligible)||0)-(+x.target||0)),penalty=Math.max(0,+x.repeat||0);
+   const body='<div class="section-title"><h2>⭐ Incentive Hours</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
+    '<div class="report-summary"><div class="notice"><b>Target</b><br>'+fm(x.target)+'</div><div class="notice"><b>Achieved</b><br>'+fm(x.achieved??x.eligible)+'</div><div class="notice"><b>Beyond Target</b><br>'+fm(over)+'</div><div class="notice"><b>Repeat Penalty</b><br>'+fm(penalty)+'</div><div class="notice"><b>Incentive</b><br>'+fm(x.incentive)+'</div></div>';
+   if(typeof openModal==='function')openModal(body);
+ };
+ function apply(){
+   if(!me||me.role!=='Employee')return;const row=document.querySelector('#employeeView .v104-month-progress');if(!row)return;const x=current();if(!x)return;
+   const achieved=Math.max(0,+(x.achieved??x.eligible)||0),target=Math.max(0,+x.target||0),inc=Math.max(0,+x.incentive||0);
+   const ap=target>0?Math.min(100,achieved/target*100):0;
+   const ip=achieved>target&&inc>0?Math.min(100,inc/Math.max(1,achieved-target)*100):0;
+   const ac=row.querySelector('.achieved'),ic=row.querySelector('.incentive');
+   if(ac){ac.classList.add('v117-fill');ac.style.setProperty('--v117-fill',ap.toFixed(2)+'%');ac.onclick=window.v117OpenAchievedDetails;ac.title='Tap to view achieved-hour details'}
+   if(ic){ic.classList.add('v117-fill');ic.style.setProperty('--v117-fill',ip.toFixed(2)+'%');ic.onclick=window.v117OpenIncentiveDetails;ic.title='Tap to view incentive-hour details'}
+ }
+ const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(apply,0);return r};
+ window.v117EmployeeProgressDetails=true;
+})();
+
 /* V115 SUPERVISOR INCENTIVE WINDOW — authoritative click target and monthly staff detail. */
 (function(){'use strict';
  const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
