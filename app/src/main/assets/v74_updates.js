@@ -1099,8 +1099,16 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    try{AndroidBridge.startUpdateDownload()}catch(_){if(st)st.textContent='Unable to start download.';if(down){down.disabled=false;down.textContent='DOWNLOAD UPDATE'}}
  };
  window.v77InstallUpdate=function(){
-   const st=document.getElementById('v77UpdateState');if(st)st.textContent='Opening installer…';
-   try{AndroidBridge.installDownloadedUpdate()}catch(_){if(st)st.textContent='Unable to open installer.'}
+   const st=document.getElementById('v77UpdateState'),inst=document.getElementById('v77InstallBtn');
+   if(inst){inst.disabled=true;inst.textContent='OPENING ANDROID INSTALLER…'}
+   if(st)st.innerHTML='<b>Starting native Android installer…</b>';
+   try{
+     if(!window.AndroidBridge||typeof AndroidBridge.installDownloadedUpdate!=='function') throw new Error('Native updater bridge unavailable');
+     AndroidBridge.installDownloadedUpdate();
+   }catch(error){
+     if(st)st.textContent='Native updater bridge failed: '+String(error&&error.message||error||'unknown error');
+     if(inst){inst.disabled=false;inst.textContent='RETRY INSTALL'}
+   }
  };
  window.v77UpdateDownloadStatus=function(status,percent,downloaded,total,message){
    const wrap=document.getElementById('v77ProgressWrap'),bar=document.getElementById('v77ProgressBar'),pct=document.getElementById('v77ProgressPct'),txt=document.getElementById('v77ProgressText'),st=document.getElementById('v77UpdateState'),down=document.getElementById('v77DownloadBtn'),inst=document.getElementById('v77InstallBtn');
