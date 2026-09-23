@@ -22,6 +22,8 @@ assert.equal(metadata.package, 'com.zukait.timetrack');
 
 
 assert.ok(updates.includes('v91-identity-menu'), 'Employee menu must sit in the identity/online row');
+assert.ok(updates.includes('v93-employee-menu') && updates.includes('v93-menu-sync') && updates.includes('v93-menu-leave') && updates.includes('v93-menu-update') && updates.includes('v93-menu-logout'), 'Employee account actions must remain visually distinct and clickable');
+assert.ok(updates.includes('v80-rpm-gauge') && updates.includes('v93-rpm-needle') && updates.includes('v93-rpm-redline'), 'Employee Running and Remaining Time must use the RPM-style gauge');
 assert.ok(updates.includes("v91RoleHeader('Supervisor')"), 'Supervisor must use the compact identity/online/menu row');
 assert.ok(updates.includes('v92-tech-board'), 'Supervisor must render the redesigned Technician Board');
 assert.ok(updates.includes('v92-tech-dept'), 'Technician Board department cards must use the authoritative redesigned UI');
