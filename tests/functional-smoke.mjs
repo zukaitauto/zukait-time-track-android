@@ -6,6 +6,7 @@ const gradle = read('app/build.gradle');
 const main = read('app/src/main/java/com/zukait/timetrack/MainActivity.java');
 const updates = read('app/src/main/assets/v74_updates.js');
 const html = read('app/src/main/assets/offline_test.html');
+const cloud = read('app/src/main/assets/cloud_sync.js');
 const metadata = JSON.parse(read('latest-version.json'));
 const releaseWorkflow = read('.github/workflows/publish-approved-release.yml');
 
@@ -50,6 +51,15 @@ assert.ok(!updates.includes("WORK SMARTER • BETTER TOMORROW"), 'duplicate empl
 assert.ok(!updates.includes("esc(me.name)+' – Employee'"), 'generic duplicate Employee identity must be removed');
 assert.match(updates, /currentRemaining',!hasAlloc\?'—':left<=0\?'\+'\+fm/, 'zero allocation must show no allocated time and negative remaining time must use exceeded display');
 assert.match(updates, /NO ALLOCATED TIME/, 'zero allocation must show a clear no allocated time state');
+
+// Shared data consistency contracts
+assert.match(cloud, /pollTimer=setInterval[\s\S]*?1000\);/, 'all logged-in dashboards must poll the same shared cloud state every second');
+assert.match(cloud, /visibilitychange[\s\S]*?refreshVisibleSharedState/, 'dashboard must refresh shared state when the app becomes visible');
+assert.match(cloud, /window\.addEventListener\('focus',refreshVisibleSharedState\)/, 'dashboard must refresh shared state when the app regains focus');
+assert.match(cloud, /if\(cloudDirty&&!cloudPushing\)await push\(0\)/, 'local changes must be pushed before a forced shared-state refresh');
+assert.match(cloud, /threeWayMerge\(base,remote,localSnapshot\)/, 'Supervisor and Manager concurrent changes must merge against the shared revision');
+assert.match(cloud, /mergeEmployeeConflict\(remote,localSnapshot,me\.id\)/, 'Employee concurrent changes must merge only their own work into shared state');
+assert.match(cloud, /if\(me\)try\{render\(\)\}/, 'a received shared revision must rerender the active dashboard');
 
 // Employee contracts
 assert.match(updates, /openNormal=emp=>[\s\S]*?a\.job!==H[\s\S]*?!a\.cancelled[\s\S]*?!a\.completed/, 'normal open work must be detected');
