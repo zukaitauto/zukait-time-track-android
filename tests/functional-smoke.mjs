@@ -593,3 +593,18 @@ assert.doesNotMatch(html,/const prevIncentive=window\.incentiveFor/,'late legacy
 assert.match(html,/ID001 included in Achieved/,'Supervisor and Manager incentive explanation must match V107');
 assert.match(html,/Excess Hours/,'Supervisor and Manager incentive table must expose Excess Hours');
 assert.match(html,/Repeat Deduction/,'Supervisor and Manager incentive table must expose repeat deduction');
+
+
+// Manager V111 root-authority regression checks.
+assert.match(updates,/V111 MANAGER LAYOUT AUTHORITY/,'Manager V111 layout authority must be present');
+assert.match(updates,/window\.v111OpenManagerMenu=function/,'Manager header must own an explicit menu function');
+assert.match(updates,/closeModal\(\);logout\(\)/,'Manager menu must always expose Logout');
+assert.match(updates,/v111-manager-header/,'Manager header must be recreated by final authority');
+assert.match(updates,/const prevManager=window\.renderManager/,'Manager header authority must hook the final Manager renderer');
+assert.match(updates,/setTimeout\(settle,60\)/,'Manager header must survive delayed legacy render layers');
+assert.match(updates,/v111-manager-leave/,'standalone Manager Leave Management card must exist');
+assert.match(updates,/v133OpenManagerLeave/,'Leave Management card must open the full leave manager');
+assert.match(updates,/v133PrintLeave/,'Leave Management must retain Print\/PDF');
+assert.match(updates,/v133ShareLeave/,'Leave Management must retain WhatsApp sharing');
+assert.match(updates,/v111-leave-today/,'Leave Management must show today leave count badge');
+assert.match(updates,/v111-control-consumables/,'Workshop Control Center On Leave position must become Consumables');
