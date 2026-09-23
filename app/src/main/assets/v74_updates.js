@@ -1662,6 +1662,20 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 (()=>{const s=document.createElement('style');s.textContent='.v104-month-progress{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:8px 0 12px}.v104-progress{min-width:0;border-radius:999px;padding:8px 6px;text-align:center;border:1px solid rgba(255,255,255,.58);box-shadow:inset 0 1px 0 rgba(255,255,255,.82),0 4px 10px rgba(15,23,42,.12)}.v104-progress span{display:block;font-size:8px;font-weight:1000;letter-spacing:.06em;white-space:nowrap}.v104-progress b{display:block;font-size:15px;line-height:1.1;margin-top:2px;white-space:nowrap}.v104-progress.target{background:#e8f2ff;color:#174ea6}.v104-progress.achieved{background:#e7f8ea;color:#166534}.v104-progress.excess{background:#fff3e0;color:#9a3412}.v104-progress.incentive{background:#f0e8ff;color:#6b21a8}@media(max-width:380px){.v104-month-progress{gap:5px}.v104-progress{padding:7px 4px}.v104-progress b{font-size:13px}.v104-progress span{font-size:7px}}';document.head.appendChild(s)})();
 
 
+/* V121 MANAGER LOGIC AUTHORITY — keep Manager summaries aligned with final workshop rules. */
+(function(){'use strict';
+ const H='ID001',RATE=2.5;
+ const monthBounds=()=>{const d=new Date();return{from:+new Date(d.getFullYear(),d.getMonth(),1),to:+new Date(d.getFullYear(),d.getMonth()+1,1)}};
+ const normalActual=(emp,from,to)=>{try{return typeof window.monthlyNormalActualMinutes==='function'?Math.max(0,window.monthlyNormalActualMinutes(emp,from,to)||0):0}catch(_){return 0}};
+ const suggested=(emp,from,to)=>{try{return typeof window.monthlySuggestedMinutes==='function'?Math.max(0,window.monthlySuggestedMinutes(emp,from,to)||0):0}catch(_){return 0}};
+ window.v121ManagerMonthEmployee=function(emp){const {from,to}=monthBounds(),sg=suggested(emp,from,to),ac=normalActual(emp,from,to);return{suggested:sg,actual:ac,efficiency:ac?sg/ac*100:null,labourCost:ac*RATE/60}};
+ window.v121ManagerMonthSummary=function(){const {from,to}=monthBounds(),emps=(users||[]).filter(u=>u&&u.role==='Employee');let sg=0,ac=0;for(const u of emps){sg+=suggested(u.id,from,to);ac+=normalActual(u.id,from,to)}return{suggested:sg,actual:ac,efficiency:ac?sg/ac*100:null,labourCost:ac*RATE/60}};
+ // Manager must use the same final V107 incentive authority as Employee/Supervisor.
+ const oldIncentive=window.openIncentiveList;window.openManagerIncentiveList=function(){if(!me||me.role!=='Manager')return;const rows=(users||[]).filter(u=>u&&u.role==='Employee').map(u=>({u,x:typeof window.incentiveFor==='function'?window.incentiveFor(u.id):{target:0,achieved:0,excess:0,repeat:0,incentive:0}})).sort((a,b)=>String(a.u.name||'').localeCompare(String(b.u.name||'')));const e=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])),fm=v=>typeof window.fmt==='function'?window.fmt(Math.max(0,+v||0)):String(Math.max(0,+v||0));const body='<div class="section-title"><h2>⭐ Monthly Incentive</h2><button class="secondary" onclick="closeModal()">Close</button></div><p class="muted">Overtime and ID001 are excluded from achieved/incentive hours. Repeat actual time is deducted from the Mistake Employee.</p><div style="overflow:auto"><table><tr><th>Employee</th><th>Target</th><th>Achieved</th><th>Excess</th><th>Repeat Penalty</th><th>Incentive</th></tr>'+rows.map(r=>'<tr><td><b>'+e(r.u.name||r.u.id)+'</b></td><td>'+fm(r.x.target)+'</td><td>'+fm(r.x.achieved??r.x.eligible)+'</td><td>'+fm(r.x.excess)+'</td><td>'+fm(r.x.repeat)+'</td><td><b>'+fm(r.x.incentive)+'</b></td></tr>').join('')+'</table></div>';return typeof openModal==='function'?openModal(body):undefined};
+ window.openIncentiveList=function(){if(me?.role==='Manager')return window.openManagerIncentiveList();return typeof oldIncentive==='function'?oldIncentive.apply(this,arguments):undefined};
+ window.v121ManagerLogicAuthority=true;
+})();
+
 /* V120 FINISHED / READY DELIVERY CYCLE AUTHORITY */
 (function(){'use strict';
  const H='ID001',esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
