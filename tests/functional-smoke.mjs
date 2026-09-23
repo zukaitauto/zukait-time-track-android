@@ -182,6 +182,15 @@ assert.match(updates,/v120FinishedJobs\('true'\)|v120FinishedJobs\(true\)/,'Mana
 assert.match(updates,/v120ReadyJobs\(\)\.length/,'Manager Ready for Delivery counter must use final ready Job Cards');
 assert.match(updates,/inc\.slice\(1\)\.forEach/,'Manager must suppress duplicate incentive controls');
 
+assert.match(updates,/V123 MANAGER WORKSHOP PERFORMANCE/,'Manager Workshop Performance section must be present');
+assert.match(updates,/v123ManagerPerformanceRange/,'Manager performance must support Today and This Month ranges');
+assert.match(updates,/Jobs in Progress/,'Manager performance must expose jobs in progress');
+assert.match(updates,/Ready for Delivery/,'Manager performance must expose ready for delivery');
+assert.match(updates,/Over Allocated/,'Manager performance must expose over-allocated work');
+assert.match(updates,/Workshop Efficiency/,'Manager performance must expose efficiency');
+assert.match(updates,/Repeat Work/,'Manager performance must expose repeat work');
+assert.match(updates,/Labour Value/,'Manager performance must expose labour value');
+
 // Manager / whole-job contracts
 assert.match(updates, /AA\(x\.no\)\.every\(a=>a\.completed\)/, 'Ready for Delivery requires all assignments complete');
 assert.match(updates, /window\.labourCost=function\(a\)\{if\(isHoldAssignment\(a\)\)return 0;/, 'ID001 labour cost must be zero');
