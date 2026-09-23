@@ -169,6 +169,14 @@ assert.match(updates, /String\(a\.mistakeEmp\|\|''\)===String\(me\.id\)/, 'Emplo
 assert.match(updates, /const items=\[job,assigned,add,id001\]/, 'Supervisor lower control set must include Job Card Details, Assigned, Additional Time and compact ID001 without duplicate Incentive');
 assert.match(updates, /v104-incentive-top/, 'Supervisor top row must contain the clickable Incentive tile');
 
+// V121 Manager final-rule regression guards.
+assert.match(updates,/V121 MANAGER LOGIC AUTHORITY/,'Manager final logic authority must be present');
+assert.match(updates,/window\.v121ManagerMonthSummary/,'Manager monthly summary must have a final-rule calculation authority');
+assert.match(updates,/monthlyNormalActualMinutes/,'Manager actual hours must use normal-duty actual time authority');
+assert.match(updates,/monthlySuggestedMinutes/,'Manager suggested hours must use the final monthly suggested authority');
+assert.match(updates,/if\(me\?\.role==='Manager'\)return window\.openManagerIncentiveList\(\)/,'Manager incentive click must route to the final V107-compatible report');
+assert.match(updates,/Overtime and ID001 are excluded from achieved\/incentive hours/,'Manager incentive explanation must match final incentive rules');
+
 // Manager / whole-job contracts
 assert.match(updates, /AA\(x\.no\)\.every\(a=>a\.completed\)/, 'Ready for Delivery requires all assignments complete');
 assert.match(updates, /window\.labourCost=function\(a\)\{if\(isHoldAssignment\(a\)\)return 0;/, 'ID001 labour cost must be zero');
