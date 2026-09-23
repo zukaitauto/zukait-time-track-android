@@ -26,15 +26,15 @@ assert.ok(updates.includes('v91-identity-menu'), 'Employee menu must sit in the 
 assert.ok(updates.includes('v93-employee-menu') && updates.includes('v93-menu-sync') && updates.includes('v93-menu-leave') && updates.includes('v93-menu-update') && updates.includes('v93-menu-logout'), 'Employee account actions must remain visually distinct and clickable');
 assert.ok(updates.includes('v80-rpm-gauge') && updates.includes('v93-rpm-needle') && updates.includes('v93-rpm-redline'), 'Employee Running and Remaining Time must use the RPM-style gauge');
 assert.ok(updates.includes("v91RoleHeader('Supervisor')"), 'Supervisor must use the compact identity/online/menu row');
-assert.ok(updates.includes("root.dataset.supervisorUi='v101-authoritative'"), 'Supervisor final UI transformation must run even when legacy Today at a Glance was already replaced');
+assert.ok(updates.includes("root.dataset.supervisorUi='v103-authoritative'"), 'Supervisor final UI transformation must run even when legacy Today at a Glance was already replaced');
 assert.ok(updates.includes("let currentFinal=root.querySelector('.v74-supervisor-final')"), 'Supervisor finalizer must detect an existing authoritative overview independently of the legacy glance card');
 assert.ok(updates.includes("if(currentFinal&&currentFinal.isConnected)currentFinal.replaceWith(wrap)"), 'Supervisor finalizer must refresh an existing authoritative overview on every render');
 assert.ok(updates.includes("else if(glance&&glance.isConnected)glance.replaceWith(wrap)"), 'Supervisor finalizer must upgrade a legacy glance card when present');
 assert.ok(updates.includes("anchor.insertAdjacentElement('afterend',wrap)"), 'Supervisor finalizer must insert the authoritative overview even when no legacy glance card exists');
 assert.ok(updates.includes("filter(x=>!wrap.contains(x)&&(x.querySelector('h3')?.textContent||'').includes('Today at a Glance')).forEach(x=>x.remove())"), 'Supervisor finalizer must remove duplicate legacy glance surfaces');
-assert.ok(html.includes('v74_updates.js?v=101'), 'Supervisor final asset must use the current cache-busting revision');
-assert.ok(html.includes("root.dataset.supervisorUi!=='v101-authoritative'"), 'Supervisor runtime lock must reject a stale/non-authoritative final surface');
-assert.ok(html.includes("root.dataset.supervisorRuntime='v101'"), 'Supervisor runtime must identify the authoritative V101 surface');
+assert.ok(html.includes('v74_updates.js?v=103'), 'Supervisor final asset must use the current cache-busting revision');
+assert.ok(html.includes("root.dataset.supervisorUi!=='v103-authoritative'"), 'Supervisor runtime lock must reject a stale/non-authoritative final surface');
+assert.ok(html.includes("root.dataset.supervisorRuntime='v103'"), 'Supervisor runtime must identify the authoritative V101 surface');
 assert.ok(updates.includes('v92-tech-board'), 'Supervisor must render the redesigned Technician Board');
 assert.ok(updates.includes('v92-tech-dept'), 'Technician Board department cards must use the authoritative redesigned UI');
 assert.ok(updates.includes('v92-supervisor-top'), 'Supervisor must keep Employee Requests and Available Workers in the compact top row');
@@ -135,9 +135,9 @@ assert.match(updates, /j\.status='Open';delete j\.completedAt/, 'reopen must res
 
 
 // V101 Supervisor runtime regression guard
-assert.match(html, /V101 SUPERVISOR RUNTIME LOCK/, 'final Supervisor runtime lock must be loaded after legacy dashboard layers');
+assert.match(html, /V103 SUPERVISOR RUNTIME LOCK/, 'final Supervisor runtime lock must be loaded after legacy dashboard layers');
 assert.match(html, /window\.v87SupervisorRuntimeLock=true/, 'Supervisor runtime lock marker must be present');
-assert.match(html, /root\.dataset\.supervisorRuntime='v101'/, 'successful Supervisor render must mark the final authoritative runtime');
+assert.match(html, /root\.dataset\.supervisorRuntime='v103'/, 'successful Supervisor render must mark the final authoritative runtime');
 assert.match(html, /Supervisor renderer returned empty surface/, 'Supervisor renderer must detect an empty dashboard');
 assert.match(html, /Dashboard recovery mode is active/, 'Supervisor renderer must provide a visible recovery surface instead of a blank page');
 assert.match(html, /window\.v87FilterSupervisorAssigned=function/, 'final Assigned Job Cards search handler must exist');
@@ -149,6 +149,13 @@ assert.match(updates, /\.v84-depts\{display:grid!important;grid-template-columns
 assert.match(updates, /\['Denter','DENTING'[^\n]+\['Painter','PAINTING'[^\n]+\['Mechanic','MECHANICAL'/, 'Technician Board must expose Denting, Painting and Mechanical');
 assert.match(updates, /v84OpenDept/, 'Technician Board department popup must exist');
 assert.match(updates, /v84ToggleTech/, 'Technician detail expansion must exist');
+assert.equal((updates.match(/function v84TechnicianBoard\(/g)||[]).length,1,'Technician Board must have exactly one authoritative renderer');
+assert.doesNotMatch(html, /v56-technician-board-card/, 'base HTML must not recreate the legacy Technician Board');
+assert.doesNotMatch(read('app/src/main/assets/v54_improvements.js'), /v54OpenTechnicianBoard/, 'V54 legacy Technician Board modal must remain retired');
+assert.match(updates, /const v103SupervisorOverviewAuthority=window\.supervisorOverview/, 'V103 must capture the authoritative Supervisor overview before later wrappers');
+assert.match(updates, /x\.status==='Working'\|\|x\.status==='Overtime'/, 'Technician Board working count must exclude paused technicians');
+assert.match(updates, /let a=live\?AS\(live\):null/, 'Technician detail must bind to the current live assignment first');
+assert.ok(html.includes("{id:'EMP012',name:'Jijesh',role:'Employee',department:'Painter'}"), 'Jijesh roster spelling must remain correct');
 assert.match(updates, /v89-employee-lower/, 'Employee lower dashboard must use compact controls');
 assert.match(updates, /\.v89-employee-lower\{display:grid!important;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/, 'Employee lower dashboard must remain two columns');
 assert.match(updates, /v89OpenEmployeeFinished/, 'Employee Finished Jobs details must open separately');
