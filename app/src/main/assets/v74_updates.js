@@ -1705,6 +1705,37 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v120FinishedReadyAuthority=true;
 })();
 
+/* V122 MANAGER FINAL DOM / COUNTER AUTHORITY — one logical source for Manager cards. */
+(function(){'use strict';
+ const H='ID001';
+ function apply(){
+  if(!me||me.role!=='Manager')return;
+  const root=document.getElementById('managerView');if(!root)return;
+  const month=typeof window.v121ManagerMonthSummary==='function'?window.v121ManagerMonthSummary():null;
+  if(month){
+   const cards=[...root.querySelectorAll('.manager-kpi')];
+   const find=t=>cards.find(x=>(x.textContent||'').toUpperCase().includes(t));
+   const actual=find('MONTH ACTUAL'),eff=find('MONTH EFFICIENCY');
+   if(actual){const n=actual.querySelector('.num'),s=actual.querySelector('.small:last-child');if(n)n.textContent=fmt(month.actual||0);if(s)s.textContent='Suggested '+fmt(month.suggested||0)}
+   if(eff){const n=eff.querySelector('.num');if(n)n.textContent=month.efficiency==null?'—':month.efficiency.toFixed(1)+'%'}
+  }
+  // Completed and Ready counters are JOB CARD counts, never assignment counts.
+  const today=typeof window.v120FinishedJobs==='function'?window.v120FinishedJobs(true).length:0;
+  const ready=typeof window.v120ReadyJobs==='function'?window.v120ReadyJobs().length:0;
+  root.querySelectorAll('button,.manager-kpi,.v67-control,.v67-feature').forEach(el=>{
+   const txt=(el.textContent||'').toUpperCase();
+   if(txt.includes('TODAY COMPLETED')||txt.includes('COMPLETED TODAY')){const n=el.querySelector('.num,.stat,b');if(n)n.textContent=String(today)}
+   if(txt.includes('READY FOR DELIVERY')){const n=el.querySelector('.num,.stat,b');if(n)n.textContent=String(ready)}
+  });
+  // Remove accidental duplicate identity and incentive controls without changing approved layout.
+  const ids=[...root.querySelectorAll('.v91-role-identity')];ids.slice(1).forEach(x=>x.remove());
+  const inc=[...root.querySelectorAll('button')].filter(b=>(b.textContent||'').toUpperCase().includes('INCENTIVE'));
+  inc.slice(1).forEach(x=>x.remove());
+ }
+ const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(apply,0);return r};
+ window.v122ApplyManagerFinal=apply;window.v122ManagerFinalAuthority=true;
+})();
+
 /* V106 ID001 FINAL AUTHORITY — one authoritative Supervisor assignment path. */
 (function(){'use strict';
  const H='ID001',SAFE=2;
