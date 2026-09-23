@@ -1116,6 +1116,10 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
      if(st)st.innerHTML='<b class="ok">Download complete. Ready to install.</b>';
      if(down)down.style.display='none';if(inst)inst.style.display='inline-block';
      if(bar)bar.style.width='100%';if(pct)pct.textContent='100%';
+   }else if(status==='INSTALL_DIAGNOSTIC'){
+     if(st)st.innerHTML='<b style="color:#b91c1c">INSTALLER DIAGNOSTIC</b><div style="margin-top:8px;word-break:break-word">'+E(message||'Unknown installer error')+'</div>';
+     if(inst){inst.style.display='inline-block';inst.disabled=false;inst.textContent='RETRY INSTALL'}
+     if(down)down.style.display='none';
    }else if(status==='FAILED'){
      if(st)st.textContent=message||'Download failed. Please try again.';
      if(down){down.style.display='inline-block';down.disabled=false;down.textContent='RETRY DOWNLOAD'}
