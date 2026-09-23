@@ -66,6 +66,7 @@ public class MainActivity extends Activity {
     private long updateDownloadId = -1;
     private int updateTargetVersionCode = 0;
     private boolean updateEnqueueInProgress = false;
+    private boolean pendingInstallAfterPermission = false;
     private final android.os.Handler updateHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private Runnable updateProgressRunnable;
     private BroadcastReceiver updateReceiver;
@@ -219,6 +220,7 @@ public class MainActivity extends Activity {
 
         webView.clearCache(true);
         webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html?v=81");
+        handleUpdateInstallResult(getIntent());
         updateHandler.postDelayed(this::resumeUpdateDownloadMonitoring, 1200);
     }
 
@@ -546,6 +548,10 @@ public class MainActivity extends Activity {
         ));
     }
 
+    private String updateMetadataUrl() {
+        return "https://raw.githubusercontent.com/zukaitauto/zukait-time-track-android/main/latest-version.json?ts=" + System.currentTimeMillis();
+    }
+
     private void checkForUpdatesNative() {
         new Thread(() -> {
             int latestCode = 0;
@@ -553,11 +559,13 @@ public class MainActivity extends Activity {
             boolean error = false;
             HttpURLConnection conn = null;
             try {
-                URL url = new URL("https://raw.githubusercontent.com/zukaitauto/zukait-time-track-android/main/latest-version.json");
+                URL url = new URL(updateMetadataUrl());
                 conn = (HttpURLConnection) url.openConnection();
                 conn.setConnectTimeout(10000);
                 conn.setReadTimeout(10000);
-                conn.setRequestProperty("Cache-Control", "no-cache");
+                conn.setUseCaches(false);
+                conn.setRequestProperty("Cache-Control", "no-cache, no-store, max-age=0");
+                conn.setRequestProperty("Pragma", "no-cache");
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
                     StringBuilder sb = new StringBuilder();
                     String line;
@@ -744,11 +752,13 @@ public class MainActivity extends Activity {
             boolean error = false;
             HttpURLConnection conn = null;
             try {
-                URL url = new URL("https://raw.githubusercontent.com/zukaitauto/zukait-time-track-android/main/latest-version.json");
+                URL url = new URL(updateMetadataUrl());
                 conn = (HttpURLConnection) url.openConnection();
                 conn.setConnectTimeout(10000);
                 conn.setReadTimeout(10000);
-                conn.setRequestProperty("Cache-Control", "no-cache");
+                conn.setUseCaches(false);
+                conn.setRequestProperty("Cache-Control", "no-cache, no-store, max-age=0");
+                conn.setRequestProperty("Pragma", "no-cache");
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
                     StringBuilder sb = new StringBuilder();
                     String line;
@@ -806,6 +816,8 @@ public class MainActivity extends Activity {
             try {
                 Intent permissionIntent = new Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                         Uri.parse("package:" + getPackageName()));
+                pendingInstallAfterPermission = true;
+                updatePrefs().edit().putBoolean("pending_install_permission", true).apply();
                 startActivityForResult(permissionIntent, UNKNOWN_SOURCES_REQUEST);
                 notifyUpdateDownloadToWeb("PERMISSION_REQUIRED", 100, 0, 0,
                         "Allow Install unknown apps for Zukait Time Track, then return to continue the update.");
@@ -866,9 +878,57 @@ public class MainActivity extends Activity {
             notifyUpdateDownloadToWeb("INSTALLING", 100, 0, 0, "Android is verifying the signed update...");
         } catch (Exception e) {
             android.util.Log.e("ZukaitUpdate", "PackageInstaller update failed", e);
-            notifyUpdateDownloadToWeb("FAILED", 100, 0, 0,
-                    "Android could not prepare this update. Please download it again.");
+            notifyUpdateDownloadToWeb("INSTALL_FALLBACK", 100, 0, 0,
+                    "Opening Android installer...");
+            openDownloadedUpdateWithSystemInstaller();
         }
+    }
+
+    private void openDownloadedUpdateWithSystemInstaller() {
+        try {
+            DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+            Uri apk = dm == null ? null : dm.getUriForDownloadedFile(updateDownloadId);
+            if (apk == null) throw new Exception("APK URI unavailable");
+            Intent install = new Intent(Intent.ACTION_VIEW);
+            install.setDataAndType(apk, "application/vnd.android.package-archive");
+            install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(install);
+        } catch (Exception fallbackError) {
+            android.util.Log.e("ZukaitUpdate", "System installer fallback failed", fallbackError);
+            notifyUpdateDownloadToWeb("FAILED", 100, 0, 0,
+                    "Android installer could not be opened. Restart the app and try Update again.");
+        }
+    }
+
+    private void handleUpdateInstallResult(Intent intent) {
+        if (intent == null || !"com.zukait.timetrack.UPDATE_INSTALL_RESULT".equals(intent.getAction())) return;
+        int status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE);
+        String detail = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
+        if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
+            Intent confirm = intent.getParcelableExtra(Intent.EXTRA_INTENT);
+            if (confirm != null) {
+                try {
+                    confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(confirm);
+                    notifyUpdateDownloadToWeb("INSTALLING", 100, 0, 0, "Confirm the Android installation.");
+                    return;
+                } catch (Exception ignored) { }
+            }
+            openDownloadedUpdateWithSystemInstaller();
+        } else if (status == PackageInstaller.STATUS_SUCCESS) {
+            clearInstalledUpdateDownloadIfNeeded();
+        } else {
+            android.util.Log.e("ZukaitUpdate", "Install status " + status + ": " + detail);
+            openDownloadedUpdateWithSystemInstaller();
+        }
+        intent.setAction(null);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleUpdateInstallResult(intent);
     }
 
     private void notifyMicrophonePermissionToWeb(boolean granted) {
@@ -950,9 +1010,16 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         clearInstalledUpdateDownloadIfNeeded();
+        restoreUpdateDownloadState();
+        boolean permissionReturn = updatePrefs().getBoolean("pending_install_permission", false);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
                 getPackageManager().canRequestPackageInstalls() && updateDownloadId >= 0) {
             reportUpdateDownloadState();
+            if (permissionReturn || pendingInstallAfterPermission) {
+                pendingInstallAfterPermission = false;
+                updatePrefs().edit().remove("pending_install_permission").apply();
+                updateHandler.postDelayed(this::installDownloadedUpdateNative, 250);
+            }
         }
     }
 
