@@ -625,3 +625,13 @@ assert.doesNotMatch(updates,/placeholder="YYYY"/,'Supervisor Vehicle Year must n
 assert.match(updates,/V128 SUPERVISOR SURFACE LOCK/,'Supervisor surface lock must remain present');
 assert.match(updates,/v112-carpaint/,'Technician Board Painting card must use automotive paint icon');
 assert.match(updates,/v111-control-consumables/,'Workshop Control Center must retain Consumables authority');
+
+
+// V113 Manager Workshop Control + leave safety regression guards.
+assert.match(updates,/V113 MANAGER WORKSHOP CONTROL ROOT AUTHORITY/,'Manager Workshop Control must have a final root-level authority');
+assert.match(updates,/TODAY JOBS.*WORKING NOW.*COMPLETED TODAY/s,'Workshop Control root detection must identify the actual live card');
+assert.match(updates,/v113-control-consumables/,'existing Workshop Control On Leave tile must become Consumables in place');
+assert.match(updates,/consumables\.forEach\(b=>\{if\(b!==tile\)b\.remove\(\)\}\)/,'duplicate Consumables controls must be removed');
+assert.match(updates,/Confirm Leave\\n\\nStaff:/,'new leave marking must require confirmation');
+assert.match(updates,/Confirm Leave Change/,'Manager leave edits must require confirmation');
+assert.match(updates,/Confirm Delete Leave/,'Manager leave deletion must require confirmation');
