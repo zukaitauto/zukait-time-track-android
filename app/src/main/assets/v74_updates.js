@@ -49,20 +49,25 @@ function v74ApplySupervisorFinal(){
  if(quick){quick.classList.add('v89-quick-entry');const qg=quick.querySelector('.grid');if(qg)qg.classList.add('v89-two-col')}
  const assignPanel=[...root.querySelectorAll('.card')].find(x=>/Assign\s*\/\s*Update Job Card/i.test(x.textContent||''));
  if(assignPanel){assignPanel.classList.add('v89-assign-panel');const ag=assignPanel.querySelector('.grid');if(ag)ag.classList.add('v89-two-col')}
- // Replace the actual Today-at-a-Glance/Technician-Board block using the current assignment data.
+ // Rebuild the authoritative Supervisor overview every render. Never depend on a legacy
+ // "Today at a Glance" card being present: older layers may already have replaced it.
  let cards=[...root.querySelectorAll('.card')];
  let glance=cards.find(x=>(x.querySelector('h3')?.textContent||'').includes('Today at a Glance'));
- if(glance){
-   let board=cards.find(x=>x.classList.contains('v56-technician-board-card')||((x.textContent||'').includes('TECHNICIAN BOARD')));
-   let oldEff=[...root.querySelectorAll('.v75-eff-section')];
-   let wrap=document.createElement('div');wrap.className='v74-supervisor-final';wrap.innerHTML=window.supervisorOverview(state.assign||[]);
-   glance.replaceWith(wrap);
-   if(board&&board.isConnected)board.remove();
-   oldEff.forEach(x=>{if(x.isConnected&&!wrap.contains(x))x.remove()});
-   cards.forEach(x=>{if(x.isConnected&&/Finished Job Cards/i.test(x.textContent||'')){x.className='card clickable compact-control';x.setAttribute('onclick','openSupervisorJobCardList()');x.innerHTML='<div class="section-title"><h3>📋 Job Card Details</h3><span class="pill">Click to open</span></div><div class="small muted">Full job information · search · status · working time</div>'}});
+ let currentFinal=root.querySelector('.v74-supervisor-final');
+ let wrap=document.createElement('div');
+ wrap.className='v74-supervisor-final';
+ wrap.innerHTML=window.supervisorOverview(state.assign||[]);
+ if(currentFinal&&currentFinal.isConnected)currentFinal.replaceWith(wrap);
+ else if(glance&&glance.isConnected)glance.replaceWith(wrap);
+ else{
+   const anchor=assignPanel||quick||root.querySelector('.v92-supervisor-top,.v91-role-identity')||root.firstElementChild;
+   if(anchor&&anchor.parentNode)anchor.insertAdjacentElement('afterend',wrap);else root.prepend(wrap);
  }
- // Always apply the authoritative Supervisor panels/header. Older render layers may already have
- // replaced "Today at a Glance", so these must not depend on finding that legacy card.
+ // Remove any duplicate legacy overview/board/efficiency surfaces left by earlier renderers.
+ [...root.querySelectorAll('.card')].filter(x=>!wrap.contains(x)&&(x.querySelector('h3')?.textContent||'').includes('Today at a Glance')).forEach(x=>x.remove());
+ [...root.querySelectorAll('.v56-technician-board-card,.v84-tech-board')].filter(x=>!wrap.contains(x)).forEach(x=>x.remove());
+ [...root.querySelectorAll('.v75-eff-section')].filter(x=>!wrap.contains(x)).forEach(x=>x.remove());
+ // Always apply the authoritative Supervisor panels/header after the overview is guaranteed.
  v84SupervisorPanels(root);
  v91RoleHeader('Supervisor');
  root.dataset.supervisorUi='v101-authoritative';
