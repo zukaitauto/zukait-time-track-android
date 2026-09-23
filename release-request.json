@@ -1,8 +1,8 @@
 {
-  "versionName": "V108",
-  "versionCode": 71,
+  "versionName": "V109",
+  "versionCode": 72,
   "approvedForStaff": true,
   "approvedAt": "2026-09-24",
-  "sourceCommit": "d520a721ca1a72254cb550240aee516a979cc845",
-  "publishNonce": "approved-v108-final-20260924"
+  "sourceCommit": "4210c0ab4dd41b93055b379173d89a68afa1a58c",
+  "publishNonce": "approved-v109-final-20260924"
 }
