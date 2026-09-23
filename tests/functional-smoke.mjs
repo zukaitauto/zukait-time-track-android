@@ -351,7 +351,7 @@ assert.match(updates, /month-summary \.v81-month-orb\{aspect-ratio:auto!importan
 assert.ok(updates.includes("'Completed Jobs'") && updates.includes("'Suggested Time'") && updates.includes("'Actual Time'") && updates.includes("'Ideal Time'") && updates.includes("'Overtime'"), 'employee monthly summary must preserve monthly details');
 
 assert(updates.includes("req.closest('.v88-alert-row,.v84-alert-row')"), 'Supervisor finalizer must reuse the existing alert row instead of nesting it');
-assert(html.includes("typeof v74ApplySupervisorFinal==='function')v74ApplySupervisorFinal()"), 'V104 Supervisor finalizer must force the final agreed dashboard');
+assert(updates.includes("v91RoleHeader('Supervisor')"), 'Supervisor authoritative finalizer must apply the single identity/header surface');
 console.log('Functional smoke tests passed: Employee, ID001, holidays, Ideal Time availability, Leave, Active Workers, Supervisor, Manager, update/release contracts.');
 
 
