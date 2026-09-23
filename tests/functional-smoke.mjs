@@ -191,6 +191,10 @@ assert.match(updates,/Workshop Efficiency/,'Manager performance must expose effi
 assert.match(updates,/Repeat Work/,'Manager performance must expose repeat work');
 assert.match(updates,/Labour Value/,'Manager performance must expose labour value');
 
+assert.match(updates,/const actual=\(a,from,to\)=>\{try\{return typeof window\.v107AssignmentNormal==='function'/,'Manager Workshop Performance must use normal-duty assignment time and exclude overtime');
+assert.match(updates,/const totalNormal=a=>actual\(a,0,Date\.now\(\)\)/,'Over-allocated status must compare cumulative normal-duty actual time with allocated time');
+assert.doesNotMatch(updates,/window\.assignmentNormalMinutes/,'Manager performance must not depend on a nonexistent assignmentNormalMinutes helper');
+
 // Manager / whole-job contracts
 assert.match(updates, /AA\(x\.no\)\.every\(a=>a\.completed\)/, 'Ready for Delivery requires all assignments complete');
 assert.match(updates, /window\.labourCost=function\(a\)\{if\(isHoldAssignment\(a\)\)return 0;/, 'ID001 labour cost must be zero');
