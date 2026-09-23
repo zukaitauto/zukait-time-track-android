@@ -28,7 +28,7 @@ assert.ok(updates.includes("v91RoleHeader('Supervisor')"), 'Supervisor must use 
 assert.ok(updates.includes('v92-tech-board'), 'Supervisor must render the redesigned Technician Board');
 assert.ok(updates.includes('v92-tech-dept'), 'Technician Board department cards must use the authoritative redesigned UI');
 assert.ok(updates.includes('v92-supervisor-top'), 'Supervisor must keep Employee Requests and Available Workers in the compact top row');
-assert.ok(updates.includes("if(role==='Supervisor'&&gh)gh.style.setProperty('display','none','important')"), 'Supervisor must hide the legacy global header and show one identity row only');
+assert.ok(updates.includes("if(role==='Supervisor'){" ) && updates.includes("gh.style.setProperty('display','none','important')") && updates.includes("headerOnlineStatus"), 'Supervisor must hide all legacy/global online headers and show one identity row only');
 assert.ok(updates.includes("const actionGrid=root.querySelector('.v84-action-grid')"), 'ID001 Details must be placed in the compact lower Supervisor action grid');
 assert.ok(updates.includes("filter(x=>!(x.textContent||'').trim()).forEach(x=>x.remove())"), 'Supervisor lower action grid must remove empty legacy tiles');
 assert.ok(updates.includes("/^Details$/i") && updates.includes("v84-job-details"), 'Legacy Supervisor Details tile must normalize to one Job Card Details control');
