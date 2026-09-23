@@ -1756,19 +1756,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 })();
 
 
-/* V108 MONTHLY METRICS UI LOCK — V107 is the only monthly incentive authority. */
-(function(){'use strict';
- const previousRender=window.render;
- window.render=function(){const out=typeof previousRender==='function'?previousRender.apply(this,arguments):undefined;
-   setTimeout(()=>{if(!me||me.role!=='Employee')return;const root=document.getElementById('app');if(!root)return;
-     const row=root.querySelector('.v104-month-progress');if(!row)return;
-     const x=typeof window.incentiveFor==='function'?window.incentiveFor(me.id):null;if(!x)return;
-     const values=[['target','MONTHLY TARGET',x.target],['achieved','MONTHLY ACHIEVED',x.achieved??x.eligible],['excess','EXCESS HOURS',x.excess],['incentive','INCENTIVE',x.incentive]];
-     row.innerHTML=values.map(v=>'<div class="v104-progress '+v[0]+'"><span>'+v[1]+'</span><b>'+fm(+v[2]||0)+'</b></div>').join('');
-   },0);return out;
- };
- window.v108MonthlyMetricsUILock=true;
-})();
+/* V108 retired: V111 is the single Employee monthly metrics UI authority. */
 
 /* V110 REPORT ACTIONS — every print entry gets Print, Share PDF and Close. */
 (function(){'use strict';
