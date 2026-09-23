@@ -1,8 +1,8 @@
 {
-  "versionName": "V111",
-  "versionCode": 74,
+  "versionName": "V112",
+  "versionCode": 75,
   "approvedForStaff": true,
   "approvedAt": "2026-09-24",
-  "sourceCommit": "5b45a6397ae5d09966c0928c655b9c813b7409be",
-  "publishNonce": "approved-v111-final-20260924"
+  "sourceCommit": "fa47e6e2c2c732c7ea84d30c1201704d64762662",
+  "publishNonce": "approved-v112-final-20260924"
 }
