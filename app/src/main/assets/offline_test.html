@@ -986,6 +986,12 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     let eligible=Math.max(0,actual-repeat),incentive=Math.max(0,eligible-target);
     return {target,actual,repeat,eligible,incentive};
   };
+  // V104 single authoritative incentive table for Supervisor and Manager.
+  window.openIncentiveList=function(){
+    let rows=(users||[]).filter(u=>u.role==='Employee').map(u=>({u,x:window.incentiveFor(u.id)})).sort((a,b)=>(b.x.incentive||0)-(a.x.incentive||0));
+    let html='<p class="muted">Monthly target follows workshop working days. Fridays, Public Holidays, recorded leave and the daily 15-minute cleaning allowance are deducted. Overtime, ID001 and repeat work do not create incentive.</p><div style="overflow:auto"><table><tr><th>Employee</th><th>Targeted Working Hours</th><th>Achieved Working Hours</th><th>Incentive Hours</th></tr>'+rows.map(r=>'<tr><td><b>'+esc(r.u.name)+'</b></td><td>'+fmt(r.x.target||0)+'</td><td>'+fmt(r.x.eligible||r.x.actual||0)+'</td><td><b>'+fmt(r.x.incentive||0)+'</b></td></tr>').join('')+'</table></div>';
+    return me&&me.role==='Manager'?showManagerModal('⭐ Incentive Hours',html):showSupervisorModal('⭐ Incentive Hours',html);
+  };
   // Refresh manager after existing render, and guarantee only one incentive button.
   const baseManager=window.renderManager;
   window.renderManager=function(){baseManager();let el=document.getElementById('managerView');if(!el)return;let bs=[...el.querySelectorAll('.manager-actions button')].filter(b=>(b.textContent||'').includes('INCENTIVE'));bs.slice(1).forEach(b=>b.remove());};
