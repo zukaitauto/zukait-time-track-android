@@ -12,6 +12,7 @@ import android.content.IntentFilter;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.PackageInstaller;
 import android.net.Uri;
 import android.media.MediaRecorder;
 import android.util.Base64;
@@ -57,6 +58,7 @@ public class MainActivity extends Activity {
     private static final int MIC_REQUEST = 1001;
     private static final int NOTIFICATION_REQUEST = 1002;
     private static final int UNKNOWN_SOURCES_REQUEST = 1003;
+    private static final int UPDATE_INSTALL_REQUEST = 1004;
     private static final String NOTIFICATION_CHANNEL = "zukait_updates";
     private static final String APP_HOST = "appassets.androidplatform.net";
     private WebView webView;
@@ -806,7 +808,7 @@ public class MainActivity extends Activity {
                         Uri.parse("package:" + getPackageName()));
                 startActivityForResult(permissionIntent, UNKNOWN_SOURCES_REQUEST);
                 notifyUpdateDownloadToWeb("PERMISSION_REQUIRED", 100, 0, 0,
-                        "Allow Install unknown apps for Zukait Time Track, then return and tap Install.");
+                        "Allow Install unknown apps for Zukait Time Track, then return to continue the update.");
             } catch (Exception e) {
                 notifyUpdateDownloadToWeb("FAILED", 100, 0, 0,
                         "Unable to open the Install unknown apps setting.");
@@ -827,7 +829,7 @@ public class MainActivity extends Activity {
                 return;
             }
         } catch (Exception e) {
-            notifyUpdateDownloadToWeb("FAILED", 0, 0, 0, "Downloaded update could not be opened.");
+            notifyUpdateDownloadToWeb("FAILED", 0, 0, 0, "Downloaded update could not be verified.");
             return;
         }
         Uri apk = dm.getUriForDownloadedFile(updateDownloadId);
@@ -836,12 +838,36 @@ public class MainActivity extends Activity {
             return;
         }
         try {
-            Intent install = new Intent(Intent.ACTION_VIEW);
-            install.setDataAndType(apk, "application/vnd.android.package-archive");
-            install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(install);
+            PackageInstaller installer = getPackageManager().getPackageInstaller();
+            PackageInstaller.SessionParams params =
+                    new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
+            params.setAppPackageName(getPackageName());
+            if (Build.VERSION.SDK_INT >= 31) {
+                params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_REQUIRED);
+            }
+            int sessionId = installer.createSession(params);
+            PackageInstaller.Session session = installer.openSession(sessionId);
+            try (java.io.InputStream in = getContentResolver().openInputStream(apk);
+                 java.io.OutputStream out = session.openWrite("zukait-update.apk", 0, -1)) {
+                if (in == null) throw new java.io.IOException("Downloaded APK stream unavailable");
+                byte[] buffer = new byte[65536];
+                int n;
+                while ((n = in.read(buffer)) != -1) out.write(buffer, 0, n);
+                session.fsync(out);
+            }
+            Intent callback = new Intent(this, MainActivity.class);
+            callback.setAction("com.zukait.timetrack.UPDATE_INSTALL_RESULT");
+            callback.putExtra("package_installer_session", sessionId);
+            android.app.PendingIntent pending = android.app.PendingIntent.getActivity(
+                    this, UPDATE_INSTALL_REQUEST, callback,
+                    android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_MUTABLE);
+            session.commit(pending.getIntentSender());
+            session.close();
+            notifyUpdateDownloadToWeb("INSTALLING", 100, 0, 0, "Android is verifying the signed update...");
         } catch (Exception e) {
-            notifyUpdateDownloadToWeb("FAILED", 100, 0, 0, "Installer could not be opened.");
+            android.util.Log.e("ZukaitUpdate", "PackageInstaller update failed", e);
+            notifyUpdateDownloadToWeb("FAILED", 100, 0, 0,
+                    "Android could not prepare this update. Please download it again.");
         }
     }
 
@@ -924,6 +950,10 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         clearInstalledUpdateDownloadIfNeeded();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                getPackageManager().canRequestPackageInstalls() && updateDownloadId >= 0) {
+            reportUpdateDownloadState();
+        }
     }
 
     @Override
