@@ -105,6 +105,14 @@ assert.match(updates, /Productive Actual/, 'Employee dashboard must show Product
 assert.match(updates, /ID001 Time/, 'Employee dashboard must show ID001 Time separately');
 assert.match(updates, /ID001 DETAILS \/ HOURS/, 'Supervisor/Manager dashboards must expose the ID001 report control');
 
+
+assert.match(updates, /V120 FINISHED \/ READY DELIVERY CYCLE AUTHORITY/, 'finished and ready-for-delivery must use the current work-cycle authority');
+assert.match(updates, /function cycle\(no\)\{const all=asg\(no\),repeats=all\.filter\(a=>a\.rework===true\),normal=all\.filter\(a=>a\.rework!==true\);return repeats\.length\?repeats:normal\}/, 'repeat work must become the current completion cycle when present');
+assert.match(updates, /function complete\(no\)\{const rows=cycle\(no\);return rows\.length>0&&rows\.every\(a=>a\.completed\)\}/, 'a Job Card must finish only when every assignment in the current cycle is complete');
+assert.match(updates, /function readyJobs\(\)\{return finishedJobs\(false\)\.filter\(j=>!j\.delivered\)\}/, 'delivered Job Cards must be excluded from Ready for Delivery');
+assert.match(updates, /openSupervisorFinishedWindow=function\(\)\{showSupervisorModal\('✅ Finished Job Cards Today',table\(finishedJobs\(true\),'supervisor'\)\)\}/, 'Supervisor Finished Jobs must show unique completed Job Cards');
+assert.match(updates, /v120SyncJobLifecycle/, 'parent Job Card status must synchronize to the current normal or repeat-work cycle');
+
 // Native dialog contract: no WebView URL banner should be shown to users.
 assert.match(main, /boolean onJsAlert\(WebView view, String url, String message, JsResult result\)/, 'Android wrapper must intercept JavaScript alerts');
 assert.match(main, /boolean onJsConfirm\(WebView view, String url, String message, JsResult result\)/, 'Android wrapper must intercept JavaScript confirms');
