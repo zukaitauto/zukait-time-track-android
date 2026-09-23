@@ -135,7 +135,7 @@ function v91RoleHeader(role){
  const lh=document.getElementById('legacyAppHeader');if(lh){lh.classList.add('hidden');lh.style.setProperty('display','none','important')}
  root.querySelectorAll('.v91-role-identity').forEach(x=>x.remove());
  const dept=String(me.department||role||'').trim();
- const row=document.createElement('div');row.className='v91-role-identity';row.innerHTML='<b>'+E(me.name)+' · '+E(dept||role)+'</b><span class="v91-role-online"><i></i>ONLINE</span><button class="v91-role-menu" onclick="v65OpenAccount()" aria-label="Open account menu">☰</button>';
+ const row=document.createElement('div');row.className='v91-role-identity';const menuAction=role==='Manager'?'v135OpenManagerMenu()':'v65OpenAccount()';row.innerHTML='<b>'+E(me.name)+' · '+E(dept||role)+'</b><span class="v91-role-online"><i></i>ONLINE</span><button class="v91-role-menu" onclick="'+menuAction+'" aria-label="Open account menu">☰</button>';
  const top=root.querySelector('.v92-supervisor-top');if(role==='Supervisor'&&top)root.insertBefore(row,top);else root.insertBefore(row,root.firstChild);
  // Supervisor and Manager each own exactly one identity/status row.
  // Legacy/global identity and network badges must never coexist with the role header.
@@ -2322,6 +2322,8 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 (function(){'use strict';
  function menu(){if(!me||me.role!=='Manager')return;const n=String(me.name||'Manager').replace(/[&<>"']/g,'');openModal('<div class="v135-menu-head"><div><small>ACCOUNT</small><h2>'+n+'</h2></div><button class="v135-close" onclick="closeModal()">×</button></div><div class="v135-manager-menu"><button class="v135-action sync" onclick="v42SyncNow();closeModal()"><i>↻</i><span><b>Synchronize</b><small>Sync workshop data</small></span></button><button class="v135-action leave" onclick="closeModal();v133OpenManagerLeave()"><i>▣</i><span><b>Leave Control</b><small>Today & monthly leave</small></span></button><button class="v135-action update" onclick="closeModal();v63OpenAbout()"><i>⬆</i><span><b>About / Update</b><small>Check software version</small></span></button><button class="v135-action logout" onclick="closeModal();logout()"><i>↪</i><span><b>Logout</b><small>Sign out safely</small></span></button></div>')}
  window.v135OpenManagerMenu=menu;
+ // V110 Manager authority: expose the Manager menu immediately so Logout and About / Update are never dependent on a later render callback.
+ window.v110OpenManagerMenu=menu;
  function apply(){if(!me||me.role!=='Manager')return;const root=document.getElementById('managerView');if(!root)return;
    // V109 authority: old Manager identity/header/status layers are removed before rebuilding.
    [...root.querySelectorAll('.v91-role-identity')].forEach(x=>x.remove());
