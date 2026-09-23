@@ -533,33 +533,7 @@
     {key:'Painter',label:'Painting',icon:'🎨'},
     {key:'Mechanic',label:'Mechanical',icon:'⚙️'}
   ];
-  window.v54OpenTechnicianBoard=function(){
-    const body='<div class="v54-dept-grid">'+depts.map(d=>{
-      const team=empUsers().filter(u=>u.department===d.key);
-      const active=team.filter(u=>typeof activeSession==='function'&&activeSession(u.id)).length;
-      return '<button class="secondary v54-dept-box" onclick="v54OpenTechnicianDept(\''+d.key+'\')"><span class="v54-icon">'+d.icon+'</span>'+d.label+'<strong>'+active+' / '+team.length+'</strong><span class="small">working</span></button>';
-    }).join('')+'</div>';
-    showSupervisorModal('👷 Technician Board',body);
-  };
-  window.v54OpenTechnicianDept=function(dept){
-    const cfg=depts.find(d=>d.key===dept)||{label:dept,icon:'👷'};
-    const team=empUsers().filter(u=>u.department===dept);
-    const body=team.length?'<div class="grid">'+team.map(u=>{
-      const active=currentAssignmentFor(u.id);
-      const open=(state.assign||[]).filter(a=>a.emp===u.id&&!a.cancelled&&!a.completed);
-      const current=active||open.find(a=>assignmentStatus(a)==='Paused')||open[0]||null;
-      const j=current?getJob(current.job):null;
-      const ac=current?assignmentActual(current):0,al=current?Number(current.suggested||0):0;
-      const remain=Math.max(0,al-ac);
-      return '<div class="job-card"><h4>'+esc(u.name)+' <span class="small">'+esc(u.id)+'</span></h4>'+
-        (current?'<p><b>'+esc(current.job)+'</b><br>'+esc(String(j?.vehicle||'').toUpperCase())+' · '+esc(String(j?.reg||'').toUpperCase())+'</p>'+
-        statusHTML(assignmentStatus(current))+'<p>Allocated: <b>'+fmt(al)+'</b> · Actual: <b>'+fmt(ac)+'</b><br>Remaining: <b>'+fmt(remain)+'</b></p>'
-        :'<p class="ok">AVAILABLE</p>')+
-        '<button class="blue" onclick="openSupervisorTechnician(\''+u.id+'\')">VIEW JOBS</button></div>';
-    }).join('')+'</div>':'<p class="muted">No technicians in this department.</p>';
-    showSupervisorModal(cfg.icon+' '+cfg.label+' Technicians',body);
-    applyWording(document.getElementById('modal'));
-  };
+  // V103: legacy Technician Board/modal functions removed. v74_updates.js owns board and department drill-down.
 
   // Repeat Work assignment: assignment is allowed even when technician is active elsewhere.
   // The one-active-job rule still prevents them STARTING two jobs simultaneously.
