@@ -1676,6 +1676,27 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v121ManagerLogicAuthority=true;
 })();
 
+/* V124 ADDITIONAL TIME FINAL AUTHORITY — single safe mutation path. */
+(function(){'use strict';
+ const findAssignment=(jobNo,emp)=>(state.assign||[]).filter(a=>a&&!a.cancelled&&!a.completed&&a.job===jobNo&&String(a.emp)===String(emp)).sort((a,b)=>(+b.assignedAt||0)-(+a.assignedAt||0))[0]||null;
+ function add(a,mins,source,request){
+  mins=Number(mins);if(!a||a.cancelled||a.completed)return{ok:false,reason:'inactive'};if(!Number.isFinite(mins)||mins<1)return{ok:false,reason:'invalid'};
+  if(request&&request.status!=='New')return{ok:false,reason:'handled'};
+  const old=Math.max(0,+a.suggested||0),at=Date.now();a.suggested=old+mins;
+  state.additionalActions=state.additionalActions||[];state.suggestedEdits=state.suggestedEdits||[];
+  state.additionalActions.push({id:uid(),type:'Additional Time',assignmentId:a.id,job:a.job,emp:a.emp,minutes:mins,oldSuggested:old,newSuggested:a.suggested,by:me?.id||'SYSTEM',at,source});
+  state.suggestedEdits.push({assignmentId:a.id,job:a.job,emp:a.emp,old,newValue:a.suggested,by:me?.id||'SYSTEM',at,source});
+  if(request){request.status='Approved';request.respondedAt=at;request.responseBy=me?.id||'SYSTEM';request.approvedMinutes=mins;request.appliedAssignmentId=a.id;request.additionalActionApplied=true;request.response='Approved +'+mins+' minutes by supervisor'}
+  if(typeof setLastAction==='function')setLastAction('Added '+mins+' min to '+a.job+' for '+((typeof user==='function'&&user(a.emp)?.name)||a.emp));
+  save();render();return{ok:true,assignment:a};
+ }
+ window.v124AddAdditionalTime=add;
+ const oldManual=window.manualAdditionalTime;window.manualAdditionalTime=function(){return typeof window.openAdditionalTimeWindow==='function'?window.openAdditionalTimeWindow():typeof oldManual==='function'?oldManual.apply(this,arguments):undefined};
+ const oldAdd=window.addTimeToAssignment;window.addTimeToAssignment=function(id){const a=(state.assign||[]).find(x=>x&&x.id===id&&!x.cancelled&&!x.completed);if(!a)return alert('Assignment is no longer active.');const raw=prompt('Additional time approved by supervisor (H.MM or H:MM)','0.30');if(raw===null)return;const mins=typeof parseWorkMinutes==='function'?parseWorkMinutes(raw):NaN;if(!Number.isFinite(mins)||mins<1)return alert('Invalid time. '+(typeof timeInputHint==='function'?timeInputHint():''));const out=add(a,mins,'Supervisor Additional Time');if(out.ok&&typeof window.openAdditionalTimeWindow==='function')window.openAdditionalTimeWindow()};
+ window.approveRequest=function(id){const r=(state.requests||[]).find(x=>x&&x.id===id);if(!r)return;if(r.status!=='New')return alert('This request has already been '+String(r.status||'handled').toLowerCase()+'. Additional time was not added again.');if(r.type!=='more_time')return alert('This request is not an additional-time request.');const a=findAssignment(r.job,r.emp);if(!a)return alert('Active assignment no longer exists.');const raw=prompt('Supervisor approved additional time for '+r.job+' / '+((typeof user==='function'&&user(r.emp)?.name)||r.emp)+'\\nRequested: '+fmt(Number(r.minutes)||0)+'\\nEnter approved time (H.MM or H:MM)',((Number(r.minutes)||30)/60).toFixed(2));if(raw===null)return;const mins=typeof parseWorkMinutes==='function'?parseWorkMinutes(raw):NaN;if(!Number.isFinite(mins)||mins<1)return alert('Enter valid approved time. '+(typeof timeInputHint==='function'?timeInputHint():''));const out=add(a,mins,'Employee Request Approved',r);if(!out.ok)return alert(out.reason==='handled'?'This request was already handled.':'Additional time could not be applied.');if(typeof window.openSupervisorRequestsWindow==='function')window.openSupervisorRequestsWindow()};
+ window.v124AdditionalTimeAuthority=true;
+})();
+
 /* V120 FINISHED / READY DELIVERY CYCLE AUTHORITY */
 (function(){'use strict';
  const H='ID001',esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
