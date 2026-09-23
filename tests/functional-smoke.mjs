@@ -177,6 +177,11 @@ assert.match(updates,/monthlySuggestedMinutes/,'Manager suggested hours must use
 assert.match(updates,/if\(me\?\.role==='Manager'\)return window\.openManagerIncentiveList\(\)/,'Manager incentive click must route to the final V107-compatible report');
 assert.match(updates,/Overtime and ID001 are excluded from achieved\/incentive hours/,'Manager incentive explanation must match final incentive rules');
 
+assert.match(updates,/V122 MANAGER FINAL DOM \/ COUNTER AUTHORITY/,'Manager final DOM/counter authority must be present');
+assert.match(updates,/v120FinishedJobs\('true'\)|v120FinishedJobs\(true\)/,'Manager completed counter must use unique completed Job Cards');
+assert.match(updates,/v120ReadyJobs\(\)\.length/,'Manager Ready for Delivery counter must use final ready Job Cards');
+assert.match(updates,/inc\.slice\(1\)\.forEach/,'Manager must suppress duplicate incentive controls');
+
 // Manager / whole-job contracts
 assert.match(updates, /AA\(x\.no\)\.every\(a=>a\.completed\)/, 'Ready for Delivery requires all assignments complete');
 assert.match(updates, /window\.labourCost=function\(a\)\{if\(isHoldAssignment\(a\)\)return 0;/, 'ID001 labour cost must be zero');
