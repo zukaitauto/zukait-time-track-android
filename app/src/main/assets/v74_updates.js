@@ -2364,25 +2364,29 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 
 
 
-/* V111 MANAGER HEADER ROOT AUTHORITY — explicit menu; Leave and Consumables cannot swap. */
+/* V111 MANAGER LAYOUT AUTHORITY — header menu + dashboard Leave Management; Workshop Control Center On Leave becomes Consumables. */
 (function(){'use strict';
  const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
- window.v111OpenManagerMenu=function(){if(!me||me.role!=='Manager')return;openModal('<div class="v135-menu-head"><div><small>MANAGER ACCOUNT</small><h2>'+esc(me.name||'Manager')+'</h2></div><button class="v135-close" onclick="closeModal()">×</button></div><div class="v135-manager-menu"><button class="v135-action sync" onclick="v42SyncNow();closeModal()"><i>↻</i><span><b>Synchronize</b><small>Sync workshop data</small></span></button><button class="v135-action leave" onclick="closeModal();v133OpenManagerLeave()"><i>▣</i><span><b>Leave Management</b><small>Employee leave · filter · print</small></span></button><button class="v135-action update" onclick="closeModal();v63OpenAbout()"><i>⬆</i><span><b>About / Update</b><small>Check software version</small></span></button><button class="v135-action logout" onclick="closeModal();logout()"><i>↪</i><span><b>Logout</b><small>Sign out safely</small></span></button></div>')};
+ window.v111OpenManagerMenu=function(){if(!me||me.role!=='Manager')return;openModal('<div class="v135-menu-head"><div><small>MANAGER ACCOUNT</small><h2>'+esc(me.name||'Manager')+'</h2></div><button class="v135-close" onclick="closeModal()">×</button></div><div class="v135-manager-menu"><button class="v135-action sync" onclick="v42SyncNow();closeModal()"><i>↻</i><span><b>Synchronize</b><small>Sync workshop data</small></span></button><button class="v135-action update" onclick="closeModal();v63OpenAbout()"><i>⬆</i><span><b>About / Update</b><small>Check software version</small></span></button><button class="v135-action logout" onclick="closeModal();logout()"><i>↪</i><span><b>Logout</b><small>Sign out safely</small></span></button></div>')};
  window.v135OpenManagerMenu=window.v111OpenManagerMenu;window.v110OpenManagerMenu=window.v111OpenManagerMenu;
  function apply(){if(!me||me.role!=='Manager')return;const root=document.getElementById('managerView');if(!root)return;
    root.querySelectorAll('.v91-role-identity').forEach(x=>x.remove());
    const row=document.createElement('div');row.className='v91-role-identity v135-manager-header v111-manager-header';row.setAttribute('role','button');row.setAttribute('tabindex','0');row.setAttribute('aria-label','Open Manager menu');row.innerHTML='<b>Manager</b><span class="v91-role-online"><i></i>ONLINE</span><button type="button" class="v91-role-menu v135-menu-button" aria-label="Open Manager menu"><span>MENU</span><b>☰</b></button>';
    const open=e=>{if(e)e.preventDefault();window.v111OpenManagerMenu()};row.onclick=function(e){if(e.target.closest('.v135-menu-button'))return;open(e)};row.onkeydown=function(e){if(e.key==='Enter'||e.key===' ')open(e)};row.querySelector('.v135-menu-button').onclick=open;
    const perf=root.querySelector('.v123-manager-performance');root.insertBefore(row,perf||root.firstChild);
-   // Dashboard module is Consumables only. Leave Management exists only in the Manager account menu.
+
+   // The standalone dashboard card is Leave Management and opens the full leave window (filter, edit, Print/PDF, WhatsApp).
+   root.querySelectorAll('.v109-manager-consumables').forEach(x=>x.remove());
+   let leave=root.querySelector('.v111-manager-leave');
+   if(!leave){leave=document.createElement('button');leave.type='button';leave.className='v133-manager-leave v111-manager-leave';const pp=root.querySelector('.v123-manager-performance');(pp?.parentNode||root).insertBefore(leave,pp?pp.nextSibling:root.firstChild)}
+   leave.onclick=()=>window.v133OpenManagerLeave();leave.innerHTML='<span>🗓 LEAVE MANAGEMENT</span><b>›</b><small>Employee leave · filter · edit · print / PDF · WhatsApp</small>';
+
+   // Workshop Control Center keeps the same tile position but ON LEAVE is repurposed as CONSUMABLES.
    root.querySelectorAll('#v755LeaveControlRow,.v755-leave-control-row').forEach(x=>x.remove());
-   let cons=root.querySelector('.v109-manager-consumables');
-   root.querySelectorAll('.v133-manager-leave').forEach(x=>{if(!x.classList.contains('v109-manager-consumables'))x.remove()});
-   if(!cons){cons=document.createElement('button');cons.type='button';cons.className='v133-manager-leave v109-manager-consumables';cons.onclick=()=>alert('Consumables details will be added later.');cons.innerHTML='<span>📦 CONSUMABLES</span><b>›</b><small>Workshop consumables · details coming later</small>';const p=root.querySelector('.v123-manager-performance');(p?.parentNode||root).insertBefore(cons,p?p.nextSibling:root.firstChild)}
-   else{cons.onclick=()=>alert('Consumables details will be added later.');cons.innerHTML='<span>📦 CONSUMABLES</span><b>›</b><small>Workshop consumables · details coming later</small>'}
+   const sections=[...root.querySelectorAll('.v67-section,.v65-section')];const control=sections.find(x=>/Workshop Control Center/i.test(x.querySelector('h3')?.textContent||''));
+   if(control){let target=[...control.querySelectorAll('button')].find(b=>/^(ON LEAVE|CONSUMABLES)\b/i.test((b.textContent||'').trim()));if(!target){target=document.createElement('button');control.appendChild(target)}target.className=(target.className||'')+' v111-control-consumables';target.onclick=()=>alert('Consumables details will be added later.');target.innerHTML='<span>📦 CONSUMABLES</span><b>›</b><small>Workshop consumables · details coming later</small>'}
  }
  const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(apply,0);return r};
  const prevManager=window.renderManager;if(typeof prevManager==='function')window.renderManager=function(){const r=prevManager.apply(this,arguments);apply();setTimeout(apply,0);return r};
- // Run after the full render chain settles as protection against legacy Manager renderers that rebuild the root asynchronously.
  let guard=0;function settle(){if(!me||me.role!=='Manager'||guard++>5)return;apply();setTimeout(settle,60)}setTimeout(settle,0);
 })();
