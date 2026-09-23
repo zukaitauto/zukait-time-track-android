@@ -3,6 +3,6 @@
   "versionCode": 63,
   "approvedForStaff": true,
   "approvedAt": "2026-09-23",
-  "sourceCommit": "5de7e0d6878338684be17d4ef559722528cea9f3",
-  "publishNonce": "approved-v100-supervisor-permanent-fix-20260923"
+  "sourceCommit": "e5741ffa72284cb5ae811dc9f836390726f9eaf5",
+  "publishNonce": "approved-v100-final-sync-gauges-20260923"
 }
