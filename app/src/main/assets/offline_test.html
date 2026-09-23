@@ -965,31 +965,11 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     while(cur<end){let d=new Date(cur),ds=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime(),next=ds+86400000,se=Math.min(end,next);if(d.getDay()===5){total+=(se-cur)/60000;}else{let a=ds+13*3600000,b=ds+19*3600000; if(se>a)total+=Math.max(0,(Math.min(se,b)-Math.max(cur,a))/60000); if(se>b)total+=Math.max(0,(se-Math.max(cur,b))/60000);}cur=se;} return total;
   };
   window.overtimeForEmployee=function(emp,from,to){return (state.sessions||[]).filter(s=>s.emp===emp&&s.start<to&&(s.end||Date.now())>from).reduce((x,s)=>x+window.sessionOvertimeMinutes(s,to),0)};
-  // Ensure incentive uses normal productive minutes only; overtime never contributes.
-  const prevIncentive=window.incentiveFor;
-  window.incentiveFor=function(emp){
-    let d=new Date(),from=new Date(d.getFullYear(),d.getMonth(),1).getTime(),to=new Date(d.getFullYear(),d.getMonth()+1,1).getTime(),target=0,actual=0,repeat=0;
-    // Dynamic employee target: 9 normal duty hours for each workshop working day in the month.
-    // Friday and Manager-declared Public Holidays are zero-target days. Recorded employee leave reduces only that employee's target.
-    for(let cur=from;cur<to;cur+=86400000){
-      let day=new Date(cur),key=day.getFullYear()+'-'+String(day.getMonth()+1).padStart(2,'0')+'-'+String(day.getDate()).padStart(2,'0');
-      let publicHoliday=(state.workshopHolidays||[]).some(h=>String(typeof h==='object'?(h.date||h.day||''):h)===key);
-      if(day.getDay()===5||publicHoliday)continue;
-      let leaveMinutes=typeof window.v63LeaveOverlapMinutes==='function'?window.v63LeaveOverlapMinutes(emp,cur,cur+86400000):0;
-      // Each working day is 9h duty less the standard 15-minute cleaning allowance.
-      // Leave is removed from duty first; cleaning allowance applies only when the employee has working time that day.
-      let dutyAfterLeave=Math.max(0,9*60-leaveMinutes);
-      let dayTarget=dutyAfterLeave>0?Math.max(0,dutyAfterLeave-15):0;
-      target+=dayTarget;
-    }
-    (state.sessions||[]).filter(s=>s.emp===emp&&s.start<to&&(s.end||Date.now())>from).forEach(s=>{let st=Math.max(s.start,from),en=Math.min(s.end||Date.now(),to),mins=normalOverlapMinutes(st,en),a=state.assign.find(v=>v.id===s.assignmentId||(!s.assignmentId&&v.job===s.job&&v.emp===s.emp));if(s.rework===true||a?.rework)repeat+=mins;else if(a&&a.job!=='ID001')actual+=mins;});
-    let eligible=Math.max(0,actual-repeat),incentive=Math.max(0,eligible-target);
-    return {target,actual,repeat,eligible,incentive};
-  };
+  // V109: legacy incentive calculation retired. The final V107 authority in v74_updates.js owns all monthly metrics.
   // V104 single authoritative incentive table for Supervisor and Manager.
   window.openIncentiveList=function(){
     let rows=(users||[]).filter(u=>u.role==='Employee').map(u=>({u,x:window.incentiveFor(u.id)})).sort((a,b)=>(b.x.incentive||0)-(a.x.incentive||0));
-    let html='<p class="muted">Monthly target follows workshop working days. Fridays, Public Holidays, recorded leave and the daily 15-minute cleaning allowance are deducted. Overtime, ID001 and repeat work do not create incentive.</p><div style="overflow:auto"><table><tr><th>Employee</th><th>Targeted Working Hours</th><th>Achieved Working Hours</th><th>Incentive Hours</th></tr>'+rows.map(r=>'<tr><td><b>'+esc(r.u.name)+'</b></td><td>'+fmt(r.x.target||0)+'</td><td>'+fmt(r.x.eligible||r.x.actual||0)+'</td><td><b>'+fmt(r.x.incentive||0)+'</b></td></tr>').join('')+'</table></div>';
+    let html='<p class="muted">Monthly metrics use the final workshop rules: calendar target less Fridays/Public Holidays, recorded leave and daily cleaning allowance; overtime excluded; ID001 included in Achieved; Repeat actual time is charged to the Mistake Employee.</p><div style="overflow:auto"><table><tr><th>Employee</th><th>Target Hours</th><th>Achieved Hours</th><th>Excess Hours</th><th>Repeat Deduction</th><th>Incentive Hours</th></tr>'+rows.map(r=>'<tr><td><b>'+esc(r.u.name)+'</b></td><td>'+fmt(r.x.target||0)+'</td><td>'+fmt(r.x.achieved??r.x.eligible??0)+'</td><td>'+fmt(r.x.excess||0)+'</td><td>'+fmt(r.x.repeat||0)+'</td><td><b>'+fmt(r.x.incentive||0)+'</b></td></tr>').join('')+'</table></div>';
     return me&&me.role==='Manager'?showManagerModal('⭐ Incentive Hours',html):showSupervisorModal('⭐ Incentive Hours',html);
   };
   // Refresh manager after existing render, and guarantee only one incentive button.
