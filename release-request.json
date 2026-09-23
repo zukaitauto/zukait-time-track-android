@@ -1,8 +1,8 @@
 {
-  "versionName": "V89",
-  "versionCode": 52,
+  "versionName": "V90",
+  "versionCode": 53,
   "approvedForStaff": true,
   "approvedAt": "2026-09-23",
-  "sourceCommit": "e3438c62a5e26ada6de2673bc96e63632c9e5881",
-  "publishNonce": "approved-v89-dashboard-layout-vehicle-logos-single-header-20260923"
+  "sourceCommit": "bed34ae0cec833a2e9425bf82fd75a66dabda4c9",
+  "publishNonce": "approved-v90-liquid-glass-gauges-20260923"
 }
