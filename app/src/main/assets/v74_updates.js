@@ -1848,6 +1848,28 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v115SupervisorIncentiveWindow=true;
 })();
 
+/* V116 SUPERVISOR HEADER AUTHORITY — one fixed identity/online row, never floating or duplicated. */
+(function(){'use strict';
+ const apply=()=>{
+   if(!me||me.role!=='Supervisor')return;
+   const root=document.getElementById('supervisorView');if(!root)return;
+   const rows=[...root.querySelectorAll('.v91-role-identity')];
+   let row=rows.shift()||null;rows.forEach(x=>x.remove());
+   if(!row&&typeof window.v91RoleHeader==='function'){try{window.v91RoleHeader('Supervisor')}catch(_){}} 
+   row=root.querySelector('.v91-role-identity');if(!row)return;
+   row.classList.add('v116-supervisor-header');
+   row.style.position='static';row.style.inset='auto';row.style.transform='none';row.style.zIndex='auto';
+   const top=root.querySelector('.v92-supervisor-top');if(top&&row.nextElementSibling!==top)root.insertBefore(row,top);
+   const gh=document.getElementById('globalBrandHeader');if(gh)gh.style.setProperty('display','none','important');
+   const net=document.getElementById('net');if(net)net.style.setProperty('display','none','important');
+   const hos=document.getElementById('headerOnlineStatus');if(hos)hos.style.setProperty('display','none','important');
+   root.querySelectorAll('.header-online-status').forEach(x=>x.style.setProperty('display','none','important'));
+ };
+ const s=document.createElement('style');s.textContent='#supervisorView .v116-supervisor-header{position:static!important;top:auto!important;right:auto!important;bottom:auto!important;left:auto!important;transform:none!important;width:auto!important;margin:0 0 10px!important;z-index:auto!important;box-shadow:none!important}';document.head.appendChild(s);
+ const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(apply,0);return r};
+ window.v116SupervisorHeaderAuthority=true;
+})();
+
 /* V113 NORMAL ASSIGNMENT SAFETY — neutral Technician placeholder must never create a blank employee assignment. */
 (function(){'use strict';
  const H='ID001',previous=window.assignJobCore;
