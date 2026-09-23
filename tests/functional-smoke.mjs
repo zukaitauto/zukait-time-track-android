@@ -26,6 +26,7 @@ assert.ok(updates.includes('v91-identity-menu'), 'Employee menu must sit in the 
 assert.ok(updates.includes('v93-employee-menu') && updates.includes('v93-menu-sync') && updates.includes('v93-menu-leave') && updates.includes('v93-menu-update') && updates.includes('v93-menu-logout'), 'Employee account actions must remain visually distinct and clickable');
 assert.ok(updates.includes('v80-rpm-gauge') && updates.includes('v93-rpm-needle') && updates.includes('v93-rpm-redline'), 'Employee Running and Remaining Time must use the RPM-style gauge');
 assert.ok(updates.includes("v91RoleHeader('Supervisor')"), 'Supervisor must use the compact identity/online/menu row');
+assert.ok(updates.includes("root.dataset.supervisorUi='v101-authoritative'"), 'Supervisor final UI transformation must run even when legacy Today at a Glance was already replaced');
 assert.ok(updates.includes('v92-tech-board'), 'Supervisor must render the redesigned Technician Board');
 assert.ok(updates.includes('v92-tech-dept'), 'Technician Board department cards must use the authoritative redesigned UI');
 assert.ok(updates.includes('v92-supervisor-top'), 'Supervisor must keep Employee Requests and Available Workers in the compact top row');
