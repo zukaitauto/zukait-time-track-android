@@ -348,69 +348,59 @@ public class MainActivity extends Activity {
                     if (!safeName.toLowerCase().endsWith(".pdf")) safeName += ".pdf";
                     safeName = safeName.replaceAll("[^A-Za-z0-9._-]", "_");
                     final String finalName = safeName;
-                    File reportDir = new File(getCacheDir(), "reports");
+                    final File reportDir = new File(getCacheDir(), "reports");
                     if (!reportDir.exists()) reportDir.mkdirs();
-                    File pdfFile = new File(reportDir, finalName);
+                    final File pdfFile = new File(reportDir, finalName);
                     if (pdfFile.exists()) pdfFile.delete();
 
-                    WebView pdfView = new WebView(MainActivity.this);
+                    final WebView pdfView = new WebView(MainActivity.this);
                     pdfView.getSettings().setJavaScriptEnabled(false);
                     pdfView.setWebViewClient(new android.webkit.WebViewClient() {
                         @Override
                         public void onPageFinished(WebView view, String url) {
                             try {
-                                PrintDocumentAdapter adapter = view.createPrintDocumentAdapter(finalName);
-                                PrintAttributes attrs = new PrintAttributes.Builder()
-                                        .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
-                                        .setResolution(new PrintAttributes.Resolution("pdf", "pdf", 300, 300))
-                                        .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
-                                        .setColorMode(PrintAttributes.COLOR_MODE_COLOR)
-                                        .build();
-                                adapter.onLayout(null, attrs, new CancellationSignal(),
-                                        new PrintDocumentAdapter.LayoutResultCallback() {
-                                            @Override
-                                            public void onLayoutFinished(android.print.PrintDocumentInfo info, boolean changed) {
-                                                try {
-                                                    ParcelFileDescriptor pfd = ParcelFileDescriptor.open(pdfFile,
-                                                            ParcelFileDescriptor.MODE_CREATE | ParcelFileDescriptor.MODE_TRUNCATE | ParcelFileDescriptor.MODE_READ_WRITE);
-                                                    adapter.onWrite(new PageRange[]{PageRange.ALL_PAGES}, pfd,
-                                                            new CancellationSignal(), new PrintDocumentAdapter.WriteResultCallback() {
-                                                                @Override
-                                                                public void onWriteFinished(PageRange[] pages) {
-                                                                    try { pfd.close(); } catch (Exception ignored) {}
-                                                                    try {
-                                                                        Uri uri = FileProvider.getUriForFile(MainActivity.this,
-                                                                                getPackageName() + ".updateprovider", pdfFile);
-                                                                        Intent share = new Intent(Intent.ACTION_SEND);
-                                                                        share.setType("application/pdf");
-                                                                        share.putExtra(Intent.EXTRA_STREAM, uri);
-                                                                        share.putExtra(Intent.EXTRA_SUBJECT, finalName);
-                                                                        share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                                                                        startActivity(Intent.createChooser(share, "Share PDF"));
-                                                                    } catch (Exception e) {
-                                                                        android.widget.Toast.makeText(MainActivity.this, "PDF sharing could not open", android.widget.Toast.LENGTH_LONG).show();
-                                                                    }
-                                                                }
-                                                                @Override
-                                                                public void onWriteFailed(CharSequence error) {
-                                                                    try { pfd.close(); } catch (Exception ignored) {}
-                                                                    android.widget.Toast.makeText(MainActivity.this, "PDF creation failed", android.widget.Toast.LENGTH_LONG).show();
-                                                                }
-                                                            });
-                                                } catch (Exception e) {
-                                                    android.widget.Toast.makeText(MainActivity.this, "PDF creation failed", android.widget.Toast.LENGTH_LONG).show();
-                                                }
-                                            }
-                                            @Override
-                                            public void onLayoutFailed(CharSequence error) {
-                                                android.widget.Toast.makeText(MainActivity.this, "PDF layout failed", android.widget.Toast.LENGTH_LONG).show();
-                                            }
-                                        }, null);
+                                android.print.pdf.PrintedPdfDocument document =
+                                        new android.print.pdf.PrintedPdfDocument(MainActivity.this,
+                                                new PrintAttributes.Builder()
+                                                        .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
+                                                        .setResolution(new PrintAttributes.Resolution("pdf", "pdf", 300, 300))
+                                                        .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
+                                                        .setColorMode(PrintAttributes.COLOR_MODE_COLOR)
+                                                        .build());
+                                android.graphics.pdf.PdfDocument.Page page = document.startPage(0);
+                                int pageWidth = page.getCanvas().getWidth();
+                                int contentWidth = Math.max(1, view.getWidth());
+                                float scale = (float) pageWidth / (float) contentWidth;
+                                page.getCanvas().save();
+                                page.getCanvas().scale(scale, scale);
+                                view.draw(page.getCanvas());
+                                page.getCanvas().restore();
+                                document.finishPage(page);
+                                java.io.FileOutputStream out = new java.io.FileOutputStream(pdfFile);
+                                document.writeTo(out);
+                                out.close();
+                                document.close();
+
+                                Uri uri = FileProvider.getUriForFile(MainActivity.this,
+                                        getPackageName() + ".updateprovider", pdfFile);
+                                Intent share = new Intent(Intent.ACTION_SEND);
+                                share.setType("application/pdf");
+                                share.putExtra(Intent.EXTRA_STREAM, uri);
+                                share.putExtra(Intent.EXTRA_SUBJECT, finalName);
+                                share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                startActivity(Intent.createChooser(share, "Share PDF"));
                             } catch (Exception e) {
-                                android.widget.Toast.makeText(MainActivity.this, "PDF creation failed", android.widget.Toast.LENGTH_LONG).show();
+                                android.util.Log.e("ZukaitPdf", "Unable to create/share PDF", e);
+                                android.widget.Toast.makeText(MainActivity.this, "PDF sharing failed", android.widget.Toast.LENGTH_LONG).show();
                             }
                         }
                     });
+                    android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
+                    int width = Math.max(1080, dm.widthPixels);
+                    pdfView.measure(
+                            android.view.View.MeasureSpec.makeMeasureSpec(width, android.view.View.MeasureSpec.EXACTLY),
+                            android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED));
+                    pdfView.layout(0, 0, pdfView.getMeasuredWidth(), Math.max(1, pdfView.getMeasuredHeight()));
                     pdfView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
                 } catch (Exception e) {
                     android.util.Log.e("ZukaitPdf", "Unable to share PDF", e);
