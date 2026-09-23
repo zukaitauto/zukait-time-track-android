@@ -505,12 +505,11 @@ assert.match(updates,/String\(a\.mistakeEmp\|\|a\.emp\)===String\(emp\)/,'repeat
 assert.match(updates,/dutyAfterLeave-15/,'15-minute cleaning allowance reduces working-day target');
 
 
-// V108 monthly metrics UI lock regression checks.
-assert.match(updates,/V108 MONTHLY METRICS UI LOCK/,'V108 monthly metrics UI lock');
-assert.match(updates,/v104-progress excess/,'Employee monthly dashboard must show Excess Hours');
+// V111 monthly metrics UI authority regression checks.
+assert.match(updates,/V108 retired: V111 is the single Employee monthly metrics UI authority/,'V108 renderer retired');
 assert.match(updates,/EXCESS HOURS/,'Excess Hours label must be visible');
-assert.match(updates,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/,'monthly metrics must use four capsules');
-assert.match(updates,/window\.v108MonthlyMetricsUILock=true/,'monthly metrics UI lock marker');
+assert.match(updates,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/,'monthly metrics must use the approved 2x2 layout');
+assert.match(updates,/window\.v111PerformanceUI=true/,'V111 monthly metrics UI authority marker');
 
 
 // V109 legacy incentive override retirement.
