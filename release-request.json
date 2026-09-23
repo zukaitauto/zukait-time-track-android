@@ -1,8 +1,8 @@
 {
-  "versionName": "V107",
-  "versionCode": 70,
+  "versionName": "V108",
+  "versionCode": 71,
   "approvedForStaff": true,
   "approvedAt": "2026-09-24",
-  "sourceCommit": "88b1c532e9981165bcfac386e62be8932021ff7f",
-  "publishNonce": "approved-v107-production-optimization-retry-20260924"
+  "sourceCommit": "d520a721ca1a72254cb550240aee516a979cc845",
+  "publishNonce": "approved-v108-final-20260924"
 }
