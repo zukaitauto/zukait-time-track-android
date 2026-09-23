@@ -40,7 +40,7 @@ function polish(){if(me?.role!=='Manager')return;let root=document.getElementByI
 const OR=window.render;window.render=function(){OR();setTimeout(polish,0)};setTimeout(polish,100);
 // V74 final dashboard rendering hook: apply the requested layout after the role view itself renders.
 // This avoids later role-specific renderers replacing the V74 dashboard markup.
-function v74ApplySupervisorFinal(){
+// Permanent authority: capture the agreed Supervisor overview once. Later legacy wrappers cannot replace the Technician Board.\nconst v101SupervisorOverviewAuthority=window.supervisorOverview;\nfunction v74ApplySupervisorFinal(){
  if(me?.role!=='Supervisor')return;
  let root=document.getElementById('supervisorView')||document.querySelector('[id*="supervisor"][id*="View"]');
  if(!root)return;
@@ -56,7 +56,7 @@ function v74ApplySupervisorFinal(){
  let currentFinal=root.querySelector('.v74-supervisor-final');
  let wrap=document.createElement('div');
  wrap.className='v74-supervisor-final';
- wrap.innerHTML=window.supervisorOverview(state.assign||[]);
+ wrap.innerHTML=v101SupervisorOverviewAuthority(state.assign||[]);
  if(currentFinal&&currentFinal.isConnected)currentFinal.replaceWith(wrap);
  else if(glance&&glance.isConnected)glance.replaceWith(wrap);
  else{
@@ -65,7 +65,7 @@ function v74ApplySupervisorFinal(){
  }
  // Remove any duplicate legacy overview/board/efficiency surfaces left by earlier renderers.
  [...root.querySelectorAll('.card')].filter(x=>!wrap.contains(x)&&(x.querySelector('h3')?.textContent||'').includes('Today at a Glance')).forEach(x=>x.remove());
- [...root.querySelectorAll('.v56-technician-board-card,.v84-tech-board')].filter(x=>!wrap.contains(x)).forEach(x=>x.remove());
+ [...root.querySelectorAll('.v56-technician-board-card,.v84-tech-board')].filter(x=>!wrap.contains(x)).forEach(x=>x.remove());\n // Remove every legacy Technician Board by heading/text, even when an old renderer used no known class.\n [...root.querySelectorAll('.card')].filter(x=>!wrap.contains(x)&&/Technician Board(?:\\s*[—-]\\s*Live)?/i.test(x.querySelector('h3')?.textContent||x.textContent||'')).forEach(x=>x.remove());
  [...root.querySelectorAll('.v75-eff-section')].filter(x=>!wrap.contains(x)).forEach(x=>x.remove());
  // Always apply the authoritative Supervisor panels/header after the overview is guaranteed.
  v84SupervisorPanels(root);
