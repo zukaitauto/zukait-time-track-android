@@ -2362,3 +2362,24 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  const s=document.createElement('style');s.id='v110ID001ReportStyle';s.textContent='#supervisorView .v110-id001-pair{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}#supervisorView .v110-id001-pair>button{width:100%;min-height:96px!important;margin:0!important;padding:14px 18px!important;border-radius:15px!important}#v110ID001ReportButton{border:1px solid rgba(28,126,93,.4)!important;background:rgba(28,126,93,.11)!important;color:#145a43!important}#v110ID001ReportButton b,#v110ID001ReportButton span,#v110ID001ReportButton small{display:block}.v110-id001-filters{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:8px;align-items:end;margin:10px 0}.v110-id001-filters select,.v110-id001-filters input{width:100%}.v110-id001-total{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:12px;background:rgba(80,140,255,.10);margin:10px 0}@media(max-width:700px){.v110-id001-filters{grid-template-columns:1fr 1fr}.v110-id001-filters label:first-child{grid-column:1/-1}}';document.head.appendChild(s)
 })();
 
+
+
+/* V111 MANAGER HEADER ROOT AUTHORITY — explicit menu; Leave and Consumables cannot swap. */
+(function(){'use strict';
+ const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ window.v111OpenManagerMenu=function(){if(!me||me.role!=='Manager')return;openModal('<div class="v135-menu-head"><div><small>MANAGER ACCOUNT</small><h2>'+esc(me.name||'Manager')+'</h2></div><button class="v135-close" onclick="closeModal()">×</button></div><div class="v135-manager-menu"><button class="v135-action sync" onclick="v42SyncNow();closeModal()"><i>↻</i><span><b>Synchronize</b><small>Sync workshop data</small></span></button><button class="v135-action leave" onclick="closeModal();v133OpenManagerLeave()"><i>▣</i><span><b>Leave Management</b><small>Employee leave · filter · print</small></span></button><button class="v135-action update" onclick="closeModal();v63OpenAbout()"><i>⬆</i><span><b>About / Update</b><small>Check software version</small></span></button><button class="v135-action logout" onclick="closeModal();logout()"><i>↪</i><span><b>Logout</b><small>Sign out safely</small></span></button></div>')};
+ window.v135OpenManagerMenu=window.v111OpenManagerMenu;window.v110OpenManagerMenu=window.v111OpenManagerMenu;
+ function apply(){if(!me||me.role!=='Manager')return;const root=document.getElementById('managerView');if(!root)return;
+   root.querySelectorAll('.v91-role-identity').forEach(x=>x.remove());
+   const row=document.createElement('div');row.className='v91-role-identity v135-manager-header v111-manager-header';row.setAttribute('role','button');row.setAttribute('tabindex','0');row.setAttribute('aria-label','Open Manager menu');row.innerHTML='<b>Manager</b><span class="v91-role-online"><i></i>ONLINE</span><button type="button" class="v91-role-menu v135-menu-button" aria-label="Open Manager menu"><span>MENU</span><b>☰</b></button>';
+   const open=e=>{if(e)e.preventDefault();window.v111OpenManagerMenu()};row.onclick=function(e){if(e.target.closest('.v135-menu-button'))return;open(e)};row.onkeydown=function(e){if(e.key==='Enter'||e.key===' ')open(e)};row.querySelector('.v135-menu-button').onclick=open;
+   const perf=root.querySelector('.v123-manager-performance');root.insertBefore(row,perf||root.firstChild);
+   // Dashboard module is Consumables only. Leave Management exists only in the Manager account menu.
+   root.querySelectorAll('#v755LeaveControlRow,.v755-leave-control-row').forEach(x=>x.remove());
+   let cons=root.querySelector('.v109-manager-consumables');
+   root.querySelectorAll('.v133-manager-leave').forEach(x=>{if(!x.classList.contains('v109-manager-consumables'))x.remove()});
+   if(!cons){cons=document.createElement('button');cons.type='button';cons.className='v133-manager-leave v109-manager-consumables';cons.onclick=()=>alert('Consumables details will be added later.');cons.innerHTML='<span>📦 CONSUMABLES</span><b>›</b><small>Workshop consumables · details coming later</small>';const p=root.querySelector('.v123-manager-performance');(p?.parentNode||root).insertBefore(cons,p?p.nextSibling:root.firstChild)}
+   else{cons.onclick=()=>alert('Consumables details will be added later.');cons.innerHTML='<span>📦 CONSUMABLES</span><b>›</b><small>Workshop consumables · details coming later</small>'}
+ }
+ const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(apply,0);return r};setTimeout(apply,0);
+})();
