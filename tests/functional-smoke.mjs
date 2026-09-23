@@ -25,6 +25,8 @@ assert.ok(updates.includes('v91-identity-menu'), 'Employee menu must sit in the 
 assert.ok(updates.includes("v91RoleHeader('Supervisor')"), 'Supervisor must use the compact identity/online/menu row');
 assert.ok(updates.includes('v92-tech-board'), 'Supervisor must render the redesigned Technician Board');
 assert.ok(updates.includes('v92-tech-dept'), 'Technician Board department cards must use the authoritative redesigned UI');
+assert.ok(updates.includes('v92-supervisor-top'), 'Supervisor must keep Employee Requests and Available Workers in the compact top row');
+assert.ok(updates.includes('v92OpenAvailableWorkers'), 'Available Workers top card must open the available technician list');
 assert.ok(updates.includes('Tap to view ›'), 'Technician Board department cards must expose their drill-down affordance');
 assert.ok(updates.includes("v91RoleHeader('Manager')"), 'Manager must use the compact identity/online/menu row');
 assert.ok(updates.includes('.manager-hero .pill{display:none!important}'), 'Manager duplicate live/online badge must be hidden');
