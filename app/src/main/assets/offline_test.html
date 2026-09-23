@@ -1515,6 +1515,12 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
       root.classList.remove('hidden');
       /* Final authority: force the agreed Supervisor transformation after all legacy layers. */
       if(typeof v74ApplySupervisorFinal==='function')v74ApplySupervisorFinal();
+      // Permanent guard: the final runtime owns exactly one status header, one Job Card Details tile and one Technician Board.
+      const net=document.getElementById('net');if(net){net.textContent='';net.style.setProperty('display','none','important')}
+      const hos=document.getElementById('headerOnlineStatus');if(hos)hos.style.setProperty('display','none','important');
+      root.querySelectorAll('.header-online-status').forEach(x=>x.style.setProperty('display','none','important'));
+      const details=[...root.querySelectorAll('.v84-job-details')];details.slice(1).forEach(x=>x.remove());
+      const boards=[...root.querySelectorAll('.v84-tech-board')];boards.slice(1).forEach(x=>x.remove());
       const meaningful=(root.textContent||'').trim();
       if(!meaningful||!root.querySelector('.card,.supervisor-request-top'))throw new Error('Supervisor renderer returned empty surface');
       if(!root.querySelector('.v74-supervisor-final')||!root.querySelector('.v84-tech-board'))throw new Error('Supervisor final surface not applied');
