@@ -905,6 +905,14 @@ public class MainActivity extends Activity {
             return true;
         } catch (Exception error) {
             android.util.Log.e("ZukaitUpdate", "System installer launch failed", error);
+            String detail = error.getClass().getSimpleName();
+            if (error.getMessage() != null && !error.getMessage().trim().isEmpty()) {
+                detail += ": " + error.getMessage();
+            }
+            notifyUpdateDownloadToWeb("INSTALL_DIAGNOSTIC", 100, 0, 0,
+                    "SYSTEM INSTALLER FAILED — " + detail);
+            android.widget.Toast.makeText(this,
+                    "Installer error: " + detail, android.widget.Toast.LENGTH_LONG).show();
             if (cachedApk != null && cachedApk.exists() && cachedApk.length() == 0) cachedApk.delete();
             return false;
         }
@@ -946,8 +954,14 @@ public class MainActivity extends Activity {
             notifyUpdateDownloadToWeb("INSTALLING", 100, 0, 0, "Android is verifying the signed update...");
         } catch (Exception e) {
             android.util.Log.e("ZukaitUpdate", "PackageInstaller fallback failed", e);
+            String detail = e.getClass().getSimpleName();
+            if (e.getMessage() != null && !e.getMessage().trim().isEmpty()) {
+                detail += ": " + e.getMessage();
+            }
             notifyUpdateDownloadToWeb("FAILED", 100, 0, 0,
-                    "Android installer could not be opened. Please restart the app and try again.");
+                    "PACKAGE INSTALLER FAILED — " + detail);
+            android.widget.Toast.makeText(this,
+                    "PackageInstaller error: " + detail, android.widget.Toast.LENGTH_LONG).show();
         } finally {
             if (session != null) try { session.close(); } catch (Exception ignored) { }
         }
