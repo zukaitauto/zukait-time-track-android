@@ -1709,3 +1709,57 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  setTimeout(inject,0);
  window.v106ID001FinalAuthority=true;
 })();
+
+
+/* V107 INCENTIVE FINAL AUTHORITY — one monthly calculation for Employee, Supervisor and Manager. */
+(function(){'use strict';
+ const HOLD='ID001',DAY=86400000;
+ const monthBounds=(ts=Date.now())=>{const d=new Date(ts);return [new Date(d.getFullYear(),d.getMonth(),1).getTime(),new Date(d.getFullYear(),d.getMonth()+1,1).getTime()]};
+ const key=t=>{const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+ const isHoliday=t=>(new Date(t).getDay()===5)||(state.workshopHolidays||[]).some(h=>String(typeof h==='object'?(h.date||h.day||''):h)===key(t));
+ const assignmentFor=s=>(state.assign||[]).find(a=>a&&a.id===s.assignmentId)||(state.assign||[]).find(a=>a&&!a.cancelled&&a.job===s.job&&a.emp===s.emp&&!!a.rework===!!s.rework);
+ const clippedNormal=(s,from,to)=>{const st=Math.max(+s.start||0,from),en=Math.min(+s.end||Date.now(),to);if(en<=st)return 0;return typeof window.normalOverlapMinutes==='function'?Math.max(0,window.normalOverlapMinutes(st,en)):Math.max(0,(en-st)/60000)};
+ const assignmentNormal=(a,from,to)=>(state.sessions||[]).filter(s=>s&&String(s.emp)===String(a.emp)&&(s.assignmentId===a.id||(!s.assignmentId&&s.job===a.job&&!!s.rework===!!a.rework))&&(+s.start||0)<to&&(+s.end||Date.now())>from).reduce((n,s)=>n+clippedNormal(s,from,to),0);
+ const targetFor=(emp,from,to)=>{
+   let target=0,workDays=0,cleaningAllowance=0;
+   for(let cur=from;cur<to;cur+=DAY){
+     if(isHoliday(cur))continue;
+     const leave=typeof window.v63LeaveOverlapMinutes==='function'?Math.max(0,window.v63LeaveOverlapMinutes(emp,cur,cur+DAY)||0):0;
+     const dutyAfterLeave=Math.max(0,540-leave);
+     if(dutyAfterLeave<=0)continue;
+     workDays++;cleaningAllowance+=15;target+=Math.max(0,dutyAfterLeave-15);
+   }
+   return {target,workDays,cleaningAllowance};
+ };
+ const achievementFor=(a,from,to)=>{
+   const current=assignmentNormal(a,from,to);
+   if(current<=0)return {achieved:0,excess:0,actual:0};
+   if(a.job===HOLD)return {achieved:current,excess:0,actual:current};
+   const prior=assignmentNormal(a,0,from);
+   const suggested=Math.max(0,+a.suggested||0);
+   const remainingAtStart=Math.max(0,suggested-prior);
+   const completedInPeriod=!!a.completed&&(+a.completedAt||to-1)>=from&&(+a.completedAt||to-1)<to;
+   if(!completedInPeriod)return {achieved:current,excess:Math.max(0,current-remainingAtStart),actual:current};
+   const excess=Math.max(0,current-remainingAtStart);
+   return {achieved:Math.max(0,remainingAtStart-excess),excess,actual:current};
+ };
+ window.incentiveFor=function(emp,ts=Date.now()){
+   const [from,to]=monthBounds(ts),t=targetFor(emp,from,to);
+   let achieved=0,excess=0,actual=0;
+   const assignments=(state.assign||[]).filter(a=>a&&!a.cancelled&&String(a.emp)===String(emp));
+   for(const a of assignments){
+     if(a.rework){
+       // Repeat employee earns achievement only when correcting another employee's mistake.
+       if(String(a.mistakeEmp||a.emp)!==String(emp)){const x=achievementFor(a,from,to);achieved+=x.achieved;excess+=x.excess;actual+=x.actual}
+       continue;
+     }
+     const x=achievementFor(a,from,to);achieved+=x.achieved;excess+=x.excess;actual+=x.actual;
+   }
+   // Repeat penalty belongs to the Mistake Employee and always uses ACTUAL normal-duty repeat time.
+   let repeat=0;
+   for(const a of (state.assign||[]).filter(a=>a&&!a.cancelled&&a.rework&&String(a.mistakeEmp||a.emp)===String(emp)))repeat+=assignmentNormal(a,from,to);
+   const incentive=Math.max(0,achieved-t.target-repeat);
+   return {target:t.target,actual,eligible:achieved,achieved,excess,repeat,incentive,workDays:t.workDays,cleaningAllowance:t.cleaningAllowance};
+ };
+ window.v107IncentiveFinalAuthority=true;
+})();
