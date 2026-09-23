@@ -354,7 +354,7 @@ assert(updates.includes("req.closest('.v88-alert-row,.v84-alert-row')"), 'Superv
 assert(updates.includes("v91RoleHeader('Supervisor')"), 'Supervisor authoritative finalizer must apply the single identity/header surface');
 
 // V105 employee performance progress regression guards.
-const updatesSource = fs.readFileSync(root + '/app/src/main/assets/v74_updates.js', 'utf8');
+const updatesSource = updates;
 assert.match(updatesSource, /window\.v107AchievementFor=achievementFor/, 'Achieved detail window must use canonical V107 achievement authority');
 assert.match(updatesSource, /inc\/target\*100/, 'Incentive visual fill must grow left-to-right against monthly target');
 assert.match(updatesSource, /achieved>target&&inc>0&&target>0/, 'Incentive fill must remain empty until achieved exceeds target');
