@@ -203,6 +203,15 @@ assert.match(updates,/additionalActionApplied=true/,'approved request must recor
 assert.match(updates,/if\(r\.status!=='New'\)return alert/,'Supervisor approval must reject an already handled request');
 assert.match(updates,/findAssignment\(r\.job,r\.emp\)/,'approval must target the latest active assignment, not a historical completed assignment');
 
+// V125 Repeat Work lifecycle-cycle contracts.
+assert.match(updates,/V125 REPEAT CYCLE AUTHORITY/,'Repeat Work must have an explicit lifecycle-cycle authority');
+assert.match(updates,/repeatCycleId:cycleId/,'new repeat assignments must carry an explicit repeat cycle id');
+assert.match(updates,/repeatCycleNo:cycleNo/,'new repeat assignments must carry an ordered repeat cycle number');
+assert.match(updates,/existing\.some\(a=>!a\.completed\)/,'a new repeat cycle must be blocked while the current repeat is unfinished');
+assert.match(updates,/j\.status='Open';delete j\.completedAt;j\.delivered=false/,'issuing repeat work must reopen the Job Card and remove Ready-for-Delivery state');
+assert.match(updates,/typeof window\.v125CurrentCycle==='function'/,'Finished and Ready logic must use only the current repeat cycle');
+assert.match(updates,/legacy-repeat-/,'legacy repeat assignments must receive stable fallback cycle identities');
+
 // Manager / whole-job contracts
 assert.match(updates, /AA\(x\.no\)\.every\(a=>a\.completed\)/, 'Ready for Delivery requires all assignments complete');
 assert.match(updates, /window\.labourCost=function\(a\)\{if\(isHoldAssignment\(a\)\)return 0;/, 'ID001 labour cost must be zero');
