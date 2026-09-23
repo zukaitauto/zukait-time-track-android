@@ -134,10 +134,10 @@ assert.match(updates, /j\.status='Open';delete j\.completedAt/, 'reopen must res
 
 
 
-// V87 Supervisor runtime regression guard
-assert.match(html, /V87 SUPERVISOR RUNTIME LOCK/, 'final Supervisor runtime lock must be loaded after legacy dashboard layers');
+// V101 Supervisor runtime regression guard
+assert.match(html, /V101 SUPERVISOR RUNTIME LOCK/, 'final Supervisor runtime lock must be loaded after legacy dashboard layers');
 assert.match(html, /window\.v87SupervisorRuntimeLock=true/, 'Supervisor runtime lock marker must be present');
-assert.match(html, /root\.dataset\.supervisorRuntime='v91'/, 'successful Supervisor render must mark the final authoritative runtime');
+assert.match(html, /root\.dataset\.supervisorRuntime='v101'/, 'successful Supervisor render must mark the final authoritative runtime');
 assert.match(html, /Supervisor renderer returned empty surface/, 'Supervisor renderer must detect an empty dashboard');
 assert.match(html, /Dashboard recovery mode is active/, 'Supervisor renderer must provide a visible recovery surface instead of a blank page');
 assert.match(html, /window\.v87FilterSupervisorAssigned=function/, 'final Assigned Job Cards search handler must exist');
