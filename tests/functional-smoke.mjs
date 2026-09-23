@@ -74,7 +74,10 @@ assert.match(cloud, /if\(me\)try\{render\(\)\}/, 'a received shared revision mus
 assert.match(updates, /openNormal=emp=>[\s\S]*?a\.job!==H[\s\S]*?!a\.cancelled[\s\S]*?!a\.completed/, 'normal open work must be detected');
 assert.match(updates, /availableForIdeal=emp=>!activeSession\(emp\)&&openNormal\(emp\)\.length===0&&!openHold\(emp\)/, 'ID001 must only be available with no normal work');
 assert.match(updates, /v75AssignIdealToAvailable/, 'bulk ID001 assignment must exist');
-assert.match(updates, /idealSafeVersion:1/, 'safe ID001 version marker must be written');
+assert.match(updates, /idealSafeVersion:1/, 'legacy safe ID001 marker must remain supported');
+assert.match(updates, /V106 ID001 FINAL AUTHORITY/, 'final ID001 assignment authority must be present');
+assert.match(updates, /idealSafeVersion:SAFE/, 'final ID001 assignments must write the current safe marker');
+assert.match(updates, /window\.v106ID001FinalAuthority=true/, 'final ID001 authority marker must be present');
 assert.match(updates, /window\.v38CheckID001=function\(\)\{return false\}/, 'legacy ID001 auto-finish must be disabled');
 assert.match(updates, /START \/ STOP only|START \/ STOP/, 'ID001 must remain start/stop only');
 assert.ok(updates.includes("'Overtime'") && updates.includes('overtimeMin'), 'Employee monthly dashboard must show Overtime');
