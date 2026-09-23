@@ -511,3 +511,11 @@ assert.match(updates,/v104-progress excess/,'Employee monthly dashboard must sho
 assert.match(updates,/EXCESS HOURS/,'Excess Hours label must be visible');
 assert.match(updates,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/,'monthly metrics must use four capsules');
 assert.match(updates,/window\.v108MonthlyMetricsUILock=true/,'monthly metrics UI lock marker');
+
+
+// V109 legacy incentive override retirement.
+assert.match(html,/V109: legacy incentive calculation retired/,'late legacy incentive override must stay retired');
+assert.doesNotMatch(html,/const prevIncentive=window\.incentiveFor/,'late legacy incentive wrapper must not return');
+assert.match(html,/ID001 included in Achieved/,'Supervisor and Manager incentive explanation must match V107');
+assert.match(html,/Excess Hours/,'Supervisor and Manager incentive table must expose Excess Hours');
+assert.match(html,/Repeat Deduction/,'Supervisor and Manager incentive table must expose repeat deduction');
