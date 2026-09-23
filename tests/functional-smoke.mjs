@@ -27,6 +27,9 @@ assert.ok(updates.includes('v93-employee-menu') && updates.includes('v93-menu-sy
 assert.ok(updates.includes('v80-rpm-gauge') && updates.includes('v93-rpm-needle') && updates.includes('v93-rpm-redline'), 'Employee Running and Remaining Time must use the RPM-style gauge');
 assert.ok(updates.includes("v91RoleHeader('Supervisor')"), 'Supervisor must use the compact identity/online/menu row');
 assert.ok(updates.includes("root.dataset.supervisorUi='v101-authoritative'"), 'Supervisor final UI transformation must run even when legacy Today at a Glance was already replaced');
+assert.ok(html.includes('v74_updates.js?v=101'), 'Supervisor final asset must use the current cache-busting revision');
+assert.ok(html.includes("root.dataset.supervisorUi!=='v101-authoritative'"), 'Supervisor runtime lock must reject a stale/non-authoritative final surface');
+assert.ok(html.includes("root.dataset.supervisorRuntime='v101'"), 'Supervisor runtime must identify the authoritative V101 surface');
 assert.ok(updates.includes('v92-tech-board'), 'Supervisor must render the redesigned Technician Board');
 assert.ok(updates.includes('v92-tech-dept'), 'Technician Board department cards must use the authoritative redesigned UI');
 assert.ok(updates.includes('v92-supervisor-top'), 'Supervisor must keep Employee Requests and Available Workers in the compact top row');
