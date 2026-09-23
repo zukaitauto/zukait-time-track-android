@@ -1,8 +1,8 @@
 {
-  "versionName": "V98",
-  "versionCode": 61,
+  "versionName": "V99",
+  "versionCode": 62,
   "approvedForStaff": true,
   "approvedAt": "2026-09-23",
-  "sourceCommit": "029804d4920a4c08759f69513827af5c9fd5f88d",
-  "publishNonce": "approved-v98-installer-diagnostics-20260923"
+  "sourceCommit": "05acdd99e407a05951574628e7f48c8eed292afd",
+  "publishNonce": "approved-v99-authoritative-native-updater-20260923"
 }
