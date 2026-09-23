@@ -195,6 +195,14 @@ assert.match(updates,/const actual=\(a,from,to\)=>\{try\{return typeof window\.v
 assert.match(updates,/const totalNormal=a=>actual\(a,0,Date\.now\(\)\)/,'Over-allocated status must compare cumulative normal-duty actual time with allocated time');
 assert.doesNotMatch(updates,/window\.assignmentNormalMinutes/,'Manager performance must not depend on a nonexistent assignmentNormalMinutes helper');
 
+// V124 Additional Time final-authority contracts.
+assert.match(updates,/V124 ADDITIONAL TIME FINAL AUTHORITY/,'Additional Time must have one final mutation authority');
+assert.match(updates,/request&&request\.status!=='New'/,'approved requests must not apply additional time twice');
+assert.match(updates,/assignmentId:a\.id/,'Additional Time audit rows must identify the exact assignment');
+assert.match(updates,/additionalActionApplied=true/,'approved request must record that its additional time was applied');
+assert.match(updates,/if\(r\.status!=='New'\)return alert/,'Supervisor approval must reject an already handled request');
+assert.match(updates,/findAssignment\(r\.job,r\.emp\)/,'approval must target the latest active assignment, not a historical completed assignment');
+
 // Manager / whole-job contracts
 assert.match(updates, /AA\(x\.no\)\.every\(a=>a\.completed\)/, 'Ready for Delivery requires all assignments complete');
 assert.match(updates, /window\.labourCost=function\(a\)\{if\(isHoldAssignment\(a\)\)return 0;/, 'ID001 labour cost must be zero');
