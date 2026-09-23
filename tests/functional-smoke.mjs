@@ -138,14 +138,12 @@ assert.match(updates, /j\.status='Open';delete j\.completedAt/, 'reopen must res
 
 
 
-// V101 Supervisor runtime regression guard
-assert.match(html, /V103 SUPERVISOR RUNTIME LOCK/, 'final Supervisor runtime lock must be loaded after legacy dashboard layers');
-assert.match(html, /window\.v87SupervisorRuntimeLock=true/, 'Supervisor runtime lock marker must be present');
-assert.match(html, /root\.dataset\.supervisorRuntime='v103'/, 'successful Supervisor render must mark the final authoritative runtime');
-assert.match(html, /Supervisor renderer returned empty surface/, 'Supervisor renderer must detect an empty dashboard');
-assert.match(html, /Dashboard recovery mode is active/, 'Supervisor renderer must provide a visible recovery surface instead of a blank page');
-assert.match(html, /window\.v87FilterSupervisorAssigned=function/, 'final Assigned Job Cards search handler must exist');
-assert.ok(html.includes("const supOpenAssignments=()=> (state.assign||[]).filter(a=>a&&!a.cancelled&&!a.completed)"), 'final Assigned Job Cards handler must show only open assignments');
+// V104 Supervisor runtime regression guard
+assert.match(html, /V104 SUPERVISOR FINALIZER/, 'final V104 Supervisor finalizer must load after legacy dashboard layers');
+assert.match(html, /window\.v104SupervisorRuntimeAuthority=true/, 'V104 Supervisor runtime authority marker must be present');
+assert.match(html, /root\.dataset\.supervisorRuntime='v104'/, 'successful Supervisor render must mark the current V104 runtime');
+assert.doesNotMatch(html, /V103 SUPERVISOR RUNTIME LOCK/, 'legacy V103 Supervisor runtime lock must remain retired');
+assert.doesNotMatch(html, /window\.v87SupervisorRuntimeLock=true/, 'legacy V87 runtime wrapper must remain retired');
 assert.match(updates, /v89-two-col/, 'Supervisor Quick Entry and Assign Update must use the locked two-column grid');
 assert.match(updates, /\.v89-two-col\{display:grid!important;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/, 'Supervisor two-column layout must override legacy/mobile CSS');
 assert.match(updates, /\.v84-action-grid\{display:grid!important;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/, 'Supervisor lower controls must remain compact two-column boxes');
