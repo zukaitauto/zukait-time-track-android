@@ -296,6 +296,11 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    root.classList.add('v75s');
 
    const dept=String(me.department||P(me.id).department||'Employee').trim()||'Employee';
+   // Employee owns exactly one app-title header. Hide every legacy/global title source at render time.
+   document.body.classList.add('employee-session');
+   const globalHeader=document.getElementById('globalBrandHeader');if(globalHeader){globalHeader.classList.add('hidden');globalHeader.style.setProperty('display','none','important')}
+   const legacyHeader=document.getElementById('legacyAppHeader');if(legacyHeader){legacyHeader.classList.add('hidden');legacyHeader.style.setProperty('display','none','important')}
+   root.querySelectorAll('.v75s-brand,.v80-compact-brand').forEach(x=>x.remove());
    const brand='<div class="v75s-brand v80-compact-brand"><div class="v75s-logo">Z</div><div><h2>Zukait Time Track</h2></div><button class="v84-emp-account" onclick="v84EmployeeAccount()" aria-label="Open account menu">☰</button></div>';
    const identity='<div class="v75s-identity v80-compact-identity"><b>'+esc(me.name)+' · '+esc(dept)+'</b><span class="v75s-online"><i></i>ONLINE</span></div>';
 
