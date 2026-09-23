@@ -655,17 +655,7 @@
       holder.appendChild(available);
     }
 
-    // V55: reliably replace every legacy Technician Board — Live card.
-    const techCards=[...root.querySelectorAll('.card')].filter(c=>{
-      const h=c.querySelector('h3');
-      return h&&/TECHNICIAN\s+BOARD/i.test(h.textContent||'');
-    });
-    if(techCards.length){
-      const techCard=techCards[0];
-      techCard.className='card v55-tech-card';
-      techCard.innerHTML='<button class="v54-tech-button" onclick="v54OpenTechnicianBoard()"><span><span class="v54-icon">👷</span><b>TECHNICIAN BOARD</b><br><span class="small">Denting · Painting · Mechanical</span></span><span style="font-size:28px">›</span></button>';
-      techCards.slice(1).forEach(c=>c.remove());
-    }
+    // V103: legacy Technician Board injection retired; v74_updates.js owns this surface.
     applyWording(root);
   }
 
