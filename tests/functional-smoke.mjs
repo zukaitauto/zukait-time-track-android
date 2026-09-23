@@ -406,7 +406,8 @@ assert(updates.includes("v91RoleHeader('Supervisor')"), 'Supervisor authoritativ
 
 // V128 Supervisor UI regression guards.
 assert.ok(updates.includes('window.v128SupervisorSurfaceLock=true'), 'Supervisor final surface lock must prevent legacy UI resurrection');
-assert.ok(updates.includes('grid-template-areas:"job tech" "time assign" "id history"'), 'Assign / Update must preserve the agreed 3x2 layout');
+assert.ok(updates.includes('grid-template-areas:"job tech" "time assign"'), 'Assign / Update must preserve the agreed compact layout without ID001/default-job controls');
+assert.ok(updates.includes("v109ID001Standalone"), 'ID001 must remain a dedicated standalone Supervisor control outside Assign / Update');
 assert.ok(updates.includes("const gh=document.getElementById('globalBrandHeader'),lh=document.getElementById('legacyAppHeader')"), 'Supervisor authority must address both legacy header sources');
 assert.ok(updates.includes("ids.slice(1).forEach(x=>x.remove())"), 'Supervisor authority must remove duplicate identity rows');
 
