@@ -308,6 +308,11 @@ assert.ok(updates.includes("l.period==='FULL'?1:.5"), 'monthly leave must count 
 assert.ok(updates.includes('v81OpenEmployeeHistory'), 'employee performance history must open separately');
 assert.ok(updates.includes("'Incentive Hours'"), 'employee monthly summary must include Incentive Hours');
 assert.ok(updates.includes("'Completed Jobs'") && updates.includes("'Suggested Time'") && updates.includes("'Actual Time'") && updates.includes("'Ideal Time'") && updates.includes("'Overtime'"), 'employee monthly summary must preserve monthly details');
+
+assert(v74.includes("req.closest('.v88-alert-row,.v84-alert-row')"), 'Supervisor finalizer must reuse the existing alert row instead of nesting it');
+assert(html.includes("typeof v74ApplySupervisorFinal==='function')v74ApplySupervisorFinal()"), 'Supervisor runtime lock must force the final agreed dashboard');
+assert(html.includes("v91SupervisorFinalAuthority"), 'Supervisor final authority marker missing');
+assert(html.includes("root.querySelector('.v74-supervisor-final')||!root.querySelector('.v84-tech-board')"), 'Supervisor runtime must verify final overview and Technician Board');
 console.log('Functional smoke tests passed: Employee, ID001, holidays, Ideal Time availability, Leave, Active Workers, Supervisor, Manager, update/release contracts.');
 
 
