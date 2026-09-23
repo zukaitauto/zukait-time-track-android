@@ -618,3 +618,10 @@ assert.match(updates,/AndroidBridge\.printHtml/,'Android reports must prefer nat
 assert.match(updates,/v112ShareText/,'reports must use the unified share authority');
 assert.match(updates,/shareText|shareWhatsApp|openWhatsApp/,'WhatsApp sharing must support Android native bridge');
 assert.match(updates,/v112ManagerBack/,'Manager report modal must expose explicit Back');
+
+
+// V112 final Supervisor/Manager overlap guards.
+assert.doesNotMatch(updates,/placeholder="YYYY"/,'Supervisor Vehicle Year must not resurrect the YYYY placeholder');
+assert.match(updates,/V128 SUPERVISOR SURFACE LOCK/,'Supervisor surface lock must remain present');
+assert.match(updates,/v112-carpaint/,'Technician Board Painting card must use automotive paint icon');
+assert.match(updates,/v111-control-consumables/,'Workshop Control Center must retain Consumables authority');
