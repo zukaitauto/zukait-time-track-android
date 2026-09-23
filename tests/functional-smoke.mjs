@@ -27,6 +27,11 @@ assert.ok(updates.includes('v93-employee-menu') && updates.includes('v93-menu-sy
 assert.ok(updates.includes('v80-rpm-gauge') && updates.includes('v93-rpm-needle') && updates.includes('v93-rpm-redline'), 'Employee Running and Remaining Time must use the RPM-style gauge');
 assert.ok(updates.includes("v91RoleHeader('Supervisor')"), 'Supervisor must use the compact identity/online/menu row');
 assert.ok(updates.includes("root.dataset.supervisorUi='v101-authoritative'"), 'Supervisor final UI transformation must run even when legacy Today at a Glance was already replaced');
+assert.ok(updates.includes("let currentFinal=root.querySelector('.v74-supervisor-final')"), 'Supervisor finalizer must detect an existing authoritative overview independently of the legacy glance card');
+assert.ok(updates.includes("if(currentFinal&&currentFinal.isConnected)currentFinal.replaceWith(wrap)"), 'Supervisor finalizer must refresh an existing authoritative overview on every render');
+assert.ok(updates.includes("else if(glance&&glance.isConnected)glance.replaceWith(wrap)"), 'Supervisor finalizer must upgrade a legacy glance card when present');
+assert.ok(updates.includes("anchor.insertAdjacentElement('afterend',wrap)"), 'Supervisor finalizer must insert the authoritative overview even when no legacy glance card exists');
+assert.ok(updates.includes("filter(x=>!wrap.contains(x)&&(x.querySelector('h3')?.textContent||'').includes('Today at a Glance')).forEach(x=>x.remove())"), 'Supervisor finalizer must remove duplicate legacy glance surfaces');
 assert.ok(html.includes('v74_updates.js?v=101'), 'Supervisor final asset must use the current cache-busting revision');
 assert.ok(html.includes("root.dataset.supervisorUi!=='v101-authoritative'"), 'Supervisor runtime lock must reject a stale/non-authoritative final surface');
 assert.ok(html.includes("root.dataset.supervisorRuntime='v101'"), 'Supervisor runtime must identify the authoritative V101 surface');
