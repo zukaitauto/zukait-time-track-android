@@ -24,7 +24,7 @@ assert.equal(metadata.package, 'com.zukait.timetrack');
 
 assert.ok(updates.includes('v91-identity-menu'), 'Employee menu must sit in the identity/online row');
 assert.ok(updates.includes('v93-employee-menu') && updates.includes('v93-menu-sync') && updates.includes('v93-menu-leave') && updates.includes('v93-menu-update') && updates.includes('v93-menu-logout'), 'Employee account actions must remain visually distinct and clickable');
-assert.ok(updates.includes('v80-rpm-gauge') && updates.includes('v93-rpm-needle') && updates.includes('v93-rpm-redline'), 'Employee Running and Remaining Time must use the RPM-style gauge');
+assert.ok(updates.includes('v80-rpm-gauge') && updates.includes('.v93-rpm-redline,.v93-rpm-needle,.v93-rpm-hub{display:none!important}'), 'Employee Running and Remaining Time must use the RPM-style gauge without redline/needle markers');
 assert.ok(updates.includes("v91RoleHeader('Supervisor')"), 'Supervisor must use the compact identity/online/menu row');
 assert.ok(updates.includes("root.dataset.supervisorUi='v103-authoritative'"), 'Supervisor final UI transformation must run even when legacy Today at a Glance was already replaced');
 assert.ok(updates.includes("let currentFinal=root.querySelector('.v74-supervisor-final')"), 'Supervisor finalizer must detect an existing authoritative overview independently of the legacy glance card');
@@ -161,7 +161,8 @@ assert.match(updates, /\.v89-employee-lower\{display:grid!important;grid-templat
 assert.match(updates, /v89OpenEmployeeFinished/, 'Employee Finished Jobs details must open separately');
 assert.match(updates, /v89OpenEmployeeRepeats/, 'Employee Repeat Jobs details must open separately');
 assert.match(updates, /String\(a\.mistakeEmp\|\|''\)===String\(me\.id\)/, 'Employee repeat count must belong to the mistake employee');
-assert.match(updates, /const items=\[job,assigned,add,inc,id001\]/, 'Supervisor lower control set must include Job Card Details, Assigned, Additional Time, Incentive and compact ID001');
+assert.match(updates, /const items=\[job,assigned,add,id001\]/, 'Supervisor lower control set must include Job Card Details, Assigned, Additional Time and compact ID001 without duplicate Incentive');
+assert.match(updates, /v104-incentive-top/, 'Supervisor top row must contain the clickable Incentive tile');
 
 // Manager / whole-job contracts
 assert.match(updates, /AA\(x\.no\)\.every\(a=>a\.completed\)/, 'Ready for Delivery requires all assignments complete');
@@ -348,7 +349,8 @@ assert.ok(updates.includes('v81-month-grid'), 'employee monthly summary must use
 assert.ok(updates.includes('v81OpenMyMonthlyLeave') && updates.includes('v81-month-leave'), 'employee dashboard must show clickable monthly leave summary');
 assert.ok(updates.includes("l.period==='FULL'?1:.5"), 'monthly leave must count full day as 1 and half day as 0.5');
 assert.ok(updates.includes('v81OpenEmployeeHistory'), 'employee performance history must open separately');
-assert.ok(updates.includes("'Incentive Hours'"), 'employee monthly summary must include Incentive Hours');
+assert.ok(updates.includes('v104-progress incentive') && updates.includes('<span>INCENTIVE</span>'), 'Employee monthly summary must show Incentive in the three-column capsule row');
+assert.match(updates, /month-summary \.v81-month-orb\{aspect-ratio:auto!important/, 'Employee This Month KPI tiles must use capsule styling');
 assert.ok(updates.includes("'Completed Jobs'") && updates.includes("'Suggested Time'") && updates.includes("'Actual Time'") && updates.includes("'Ideal Time'") && updates.includes("'Overtime'"), 'employee monthly summary must preserve monthly details');
 
 assert(updates.includes("req.closest('.v88-alert-row,.v84-alert-row')"), 'Supervisor finalizer must reuse the existing alert row instead of nesting it');
