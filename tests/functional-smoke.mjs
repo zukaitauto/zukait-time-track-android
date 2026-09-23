@@ -21,6 +21,11 @@ assert.ok(Number(metadata.versionCode) <= versionCode, 'published metadata canno
 assert.equal(metadata.package, 'com.zukait.timetrack');
 
 
+assert.ok(updates.includes('v91-identity-menu'), 'Employee menu must sit in the identity/online row');
+assert.ok(updates.includes("v91RoleHeader('Supervisor')"), 'Supervisor must use the compact identity/online/menu row');
+assert.ok(updates.includes("v91RoleHeader('Manager')"), 'Manager must use the compact identity/online/menu row');
+assert.ok(updates.includes('.manager-hero .pill{display:none!important}'), 'Manager duplicate live/online badge must be hidden');
+assert.match(updates, /📋 Job Card List/, 'Supervisor detail control must be named Job Card List');
 assert.match(updates, /v80RunningGauge/, 'employee running gauge must exist');
 assert.match(updates, /v80RemainingGauge/, 'employee remaining gauge must exist');
 assert.match(updates, /rr\.textContent=fm\(worked\)/, 'running gauge must use accumulated actual assignment time');
