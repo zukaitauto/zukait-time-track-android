@@ -107,7 +107,7 @@ assert.match(updates, /ID001 DETAILS \/ HOURS/, 'Supervisor/Manager dashboards m
 
 
 assert.match(updates, /V120 FINISHED \/ READY DELIVERY CYCLE AUTHORITY/, 'finished and ready-for-delivery must use the current work-cycle authority');
-assert.match(updates, /function cycle\(no\)\{const all=asg\(no\),repeats=all\.filter\(a=>a\.rework===true\),normal=all\.filter\(a=>a\.rework!==true\);return repeats\.length\?repeats:normal\}/, 'repeat work must become the current completion cycle when present');
+assert.match(updates, /function cycle\(no\)\{if\(typeof window\.v125CurrentCycle==='function'\)return window\.v125CurrentCycle\(no\)/, 'finished and ready logic must use the explicit current repeat-work cycle');
 assert.match(updates, /function complete\(no\)\{const rows=cycle\(no\);return rows\.length>0&&rows\.every\(a=>a\.completed\)\}/, 'a Job Card must finish only when every assignment in the current cycle is complete');
 assert.match(updates, /function readyJobs\(\)\{return finishedJobs\(false\)\.filter\(j=>!j\.delivered\)\}/, 'delivered Job Cards must be excluded from Ready for Delivery');
 assert.match(updates, /openSupervisorFinishedWindow=function\(\)\{showSupervisorModal\('✅ Finished Job Cards Today',table\(finishedJobs\(true\),'supervisor'\)\)\}/, 'Supervisor Finished Jobs must show unique completed Job Cards');
