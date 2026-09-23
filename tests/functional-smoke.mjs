@@ -404,6 +404,12 @@ assert.ok(updates.includes("'Completed Jobs'") && updates.includes("'Suggested T
 assert(updates.includes("req.closest('.v88-alert-row,.v84-alert-row')"), 'Supervisor finalizer must reuse the existing alert row instead of nesting it');
 assert(updates.includes("v91RoleHeader('Supervisor')"), 'Supervisor authoritative finalizer must apply the single identity/header surface');
 
+// V128 Supervisor UI regression guards.
+assert.ok(updates.includes('window.v128SupervisorSurfaceLock=true'), 'Supervisor final surface lock must prevent legacy UI resurrection');
+assert.ok(updates.includes('grid-template-areas:"job tech" "time assign" "id history"'), 'Assign / Update must preserve the agreed 3x2 layout');
+assert.ok(updates.includes("const gh=document.getElementById('globalBrandHeader'),lh=document.getElementById('legacyAppHeader')"), 'Supervisor authority must address both legacy header sources');
+assert.ok(updates.includes("ids.slice(1).forEach(x=>x.remove())"), 'Supervisor authority must remove duplicate identity rows');
+
 // V105 employee performance progress regression guards.
 const updatesSource = updates;
 assert.match(updatesSource, /window\.v107AchievementFor=achievementFor/, 'Achieved detail window must use canonical V107 achievement authority');
