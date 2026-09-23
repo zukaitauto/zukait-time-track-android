@@ -1697,12 +1697,35 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v124AdditionalTimeAuthority=true;
 })();
 
+/* V125 REPEAT CYCLE AUTHORITY — every repeat issue is its own work cycle. */
+(function(){'use strict';
+ const H='ID001',live=no=>(state.assign||[]).filter(a=>a&&!a.cancelled&&a.job===no&&a.job!==H);
+ const originals=no=>live(no).filter(a=>!a.rework);
+ const repeats=no=>live(no).filter(a=>a.rework).sort((a,b)=>(+a.assignedAt||0)-(+b.assignedAt||0));
+ const cycleKey=a=>String(a?.repeatCycleId||a?.id||'');
+ function backfill(no){const rr=repeats(no);let changed=false;for(const a of rr){if(!a.repeatCycleId){a.repeatCycleId='legacy-repeat-'+a.id;a.repeatCycleNo=rr.indexOf(a)+1;changed=true}}return changed}
+ function current(no){backfill(no);const rr=repeats(no);if(!rr.length)return originals(no);const last=rr[rr.length-1],key=cycleKey(last);return rr.filter(a=>cycleKey(a)===key)}
+ function complete(no){const rows=current(no);return rows.length>0&&rows.every(a=>a.completed)}
+ window.v125CurrentCycle=current;window.v125CycleComplete=complete;
+ const previousAssign=window.assignRepeatWorkV56;window.assignRepeatWorkV56=function(no){
+  const emp=document.getElementById('repeatEmployee')?.value,mistake=document.getElementById('repeatMistakeEmployee')?.value,mins=typeof parseWorkMinutes==='function'?parseWorkMinutes(document.getElementById('repeatAllocatedTime')?.value||''):NaN,reason=(document.getElementById('repeatReason')?.value||'').trim();
+  if(!emp||!user(emp)||user(emp).role!=='Employee')return alert('Select Repeat Employee.');if(!mistake||!user(mistake)||user(mistake).role!=='Employee')return alert('Select Mistake Employee.');if(!Number.isFinite(mins)||mins<1)return alert('Enter valid Allocated Repeat Time. '+(typeof timeInputHint==='function'?timeInputHint():''));if(!reason)return alert('Repeat Reason is required.');
+  const orig=originals(no);if(!orig.length||orig.some(a=>!a.completed))return alert('Repeat Work can only be issued after the original work is FINISHED.');const existing=repeats(no);if(existing.some(a=>!a.completed))return alert('An unfinished Repeat Work assignment already exists on this Job Card.');
+  const cycleNo=(existing.reduce((m,a)=>Math.max(m,+a.repeatCycleNo||0),0)||existing.length)+1,cycleId='repeat-'+no+'-'+Date.now()+'-'+uid();
+  const a={id:uid(),job:no,emp,suggested:mins,completed:false,cancelled:false,rework:true,repeatCycleId:cycleId,repeatCycleNo:cycleNo,repeatReason:reason,mistakeEmp:mistake,assignedBy:me.id,assignedAt:Date.now(),repeatSameEmployee:String(emp)===String(mistake),v125Cycle:true};
+  state.assign.push(a);state.reworkLogs=state.reworkLogs||[];state.reworkLogs.push({id:uid(),assignmentId:a.id,repeatCycleId:cycleId,repeatCycleNo:cycleNo,job:no,emp,mistakeEmp:mistake,suggested:mins,reason,by:me.id,at:a.assignedAt});
+  const j=typeof job==='function'?job(no):null;if(j){j.status='Open';delete j.completedAt;j.delivered=false;delete j.deliveredAt}
+  if(typeof setLastAction==='function')setLastAction('Assigned repeat cycle '+cycleNo+' for '+no+' to '+(user(emp)?.name||emp));save();if(typeof closeSupervisorModal==='function')closeSupervisorModal();render();alert('Repeat Work cycle '+cycleNo+' assigned to '+(user(emp)?.name||emp)+' with '+fmt(mins)+' Allocated Time.');return a;
+ };
+ window.v125RepeatCycleAuthority=true;
+})();
+
 /* V120 FINISHED / READY DELIVERY CYCLE AUTHORITY */
 (function(){'use strict';
  const H='ID001',esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
  const asg=no=>(state.assign||[]).filter(a=>a&&!a.cancelled&&a.job===no&&a.job!==H);
  const jobs=()=>state.jobs||[];
- function cycle(no){const all=asg(no),repeats=all.filter(a=>a.rework===true),normal=all.filter(a=>a.rework!==true);return repeats.length?repeats:normal}
+ function cycle(no){if(typeof window.v125CurrentCycle==='function')return window.v125CurrentCycle(no);const all=asg(no),repeats=all.filter(a=>a.rework===true),normal=all.filter(a=>a.rework!==true);return repeats.length?repeats:normal}
  function complete(no){const rows=cycle(no);return rows.length>0&&rows.every(a=>a.completed)}
  function completedAt(no){const rows=cycle(no);return complete(no)?Math.max(...rows.map(a=>+a.completedAt||0)):0}
  function finishedJobs(todayOnly){let day=0;if(todayOnly){const d=new Date();d.setHours(0,0,0,0);day=d.getTime()}return jobs().filter(j=>j&&j.no!==H&&!j.archived&&complete(j.no)&&(!todayOnly||completedAt(j.no)>=day)).sort((a,b)=>completedAt(b.no)-completedAt(a.no))}
