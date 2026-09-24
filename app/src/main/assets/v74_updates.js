@@ -2336,7 +2336,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    root.querySelectorAll('.v109-manager-consumables').forEach(x=>x.remove());
    let leave=root.querySelector('.v111-manager-leave');
    if(!leave){leave=document.createElement('button');leave.type='button';leave.className='v133-manager-leave v111-manager-leave';const pp=root.querySelector('.v123-manager-performance');(pp?.parentNode||root).insertBefore(leave,pp?pp.nextSibling:root.firstChild)}
-   const todayCount=(()=>{try{const now=new Date(),key=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');return new Set((state.leave||[]).filter(x=>x&&x.date===key).map(x=>String(x.emp))).size}catch(_){return 0}})();leave.onclick=()=>window.v133OpenManagerLeave();leave.innerHTML='<span>🗓 LEAVE MANAGEMENT</span><span class="v111-leave-today" title="Today on leave">'+todayCount+'</span><small>Employee leave · filter · edit · print / PDF · WhatsApp</small>';
+   const todayCount=(()=>{try{const now=new Date(),key=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');return new Set((state.leave||[]).filter(x=>x&&x.date===key).map(x=>String(x.emp))).size}catch(_){return 0}})();leave.onclick=()=>window.v133OpenManagerLeave();leave.innerHTML='<span>🗓 EMPLOYEE LEAVE MANAGEMENT</span><span class="v111-leave-today" title="Today on leave">'+todayCount+'</span>';
 
    // Consumables is owned by the source Workshop Control renderers (V65/V66/V67). Never append a dashboard tile here.
    root.querySelectorAll('#v755LeaveControlRow,.v755-leave-control-row,.v109-manager-consumables,.v111-control-consumables,.v113-control-consumables').forEach(x=>x.remove());
