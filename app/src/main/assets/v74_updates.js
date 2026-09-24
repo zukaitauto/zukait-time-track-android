@@ -2720,3 +2720,118 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  setTimeout(install,0);
  window.v136AssignJobSearchAuthority=true;
 })();
+
+
+/* V137 ASSIGN JOB CARD SEARCH COMPATIBILITY AUTHORITY */
+(function(){'use strict';
+ const HOLD='ID001';
+ const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ const norm=v=>String(v??'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'');
+ function jobs(){
+   return (state.jobs||[]).filter(j=>j&&String(j.no||'').trim()&&String(j.no).trim().toUpperCase()!==HOLD);
+ }
+ function searchable(j){return [j.no,j.reg,j.vehicle,j.year,j.brand].map(v=>String(v??'')).join(' ').toLowerCase()}
+ function rank(j,q,nq){
+   const fields=[j.no,j.reg,j.vehicle,j.year,j.brand].map(v=>String(v??'').toLowerCase()),nf=[j.no,j.reg,j.vehicle,j.year,j.brand].map(norm);
+   if(fields[0]===q||nf[0]===nq)return 0;
+   if(fields[0].startsWith(q)||nf[0].startsWith(nq))return 1;
+   if(fields[1]===q||nf[1]===nq)return 2;
+   if(fields[1].startsWith(q)||nf[1].startsWith(nq))return 3;
+   if(fields[0].includes(q)||nf[0].includes(nq))return 4;
+   if(fields[1].includes(q)||nf[1].includes(nq))return 5;
+   if(fields[2].startsWith(q)||nf[2].startsWith(nq))return 6;
+   return 7;
+ }
+ function findJobs(q){
+   q=String(q||'').trim().toLowerCase();const nq=norm(q);
+   let list=jobs();
+   if(q)list=list.filter(j=>searchable(j).includes(q)||(nq&&[j.no,j.reg,j.vehicle,j.year,j.brand].some(v=>norm(v).includes(nq))));
+   return list.sort((a,b)=>rank(a,q,nq)-rank(b,q,nq)||(+b.createdAt||0)-(+a.createdAt||0)||String(a.no).localeCompare(String(b.no))).slice(0,20);
+ }
+ function exact(q){
+   const nq=norm(q);if(!nq)return null;
+   let hit=jobs().find(j=>norm(j.no)===nq);if(hit)return hit;
+   const regs=jobs().filter(j=>norm(j.reg)===nq);return regs.length===1?regs[0]:null;
+ }
+ function buildSelect(selected){
+   const s=document.createElement('select');s.id='sj';s.className='v137-internal-job-select';s.setAttribute('aria-hidden','true');s.tabIndex=-1;
+   const blank=document.createElement('option');blank.value='';blank.textContent='';s.appendChild(blank);
+   jobs().forEach(j=>{const o=document.createElement('option');o.value=String(j.no||'').trim();o.textContent=o.value;s.appendChild(o)});
+   const wanted=String(selected||'').trim();if(wanted&&jobs().some(j=>String(j.no)===wanted))s.value=wanted;else s.value='';
+   return s;
+ }
+ function selectedBox(label){
+   let el=label.querySelector('.v137-selected');if(!el){el=document.createElement('div');el.className='v137-selected hidden';label.appendChild(el)}return el;
+ }
+ function setSelected(j,input,select,label){
+   if(!j)return false;
+   const no=String(j.no||'').trim();
+   if(!Array.from(select.options||[]).some(o=>o.value===no)){const o=document.createElement('option');o.value=no;o.textContent=no;select.appendChild(o)}
+   select.value=no;input.value=no;input.dataset.selectedJob=no;
+   const box=selectedBox(label);box.innerHTML='<b>✓ '+esc(no)+'</b><span>'+esc(j.reg||'No Registration')+'</span><small>'+esc(j.vehicle||'Vehicle')+(j.year?' · '+esc(j.year):'')+'</small>';box.classList.remove('hidden');
+   label.querySelector('.v137-results')?.classList.add('hidden');
+   select.dispatchEvent(new Event('change',{bubbles:true}));return true;
+ }
+ function clearSelected(input,select,label){
+   input.dataset.selectedJob='';select.value='';selectedBox(label).classList.add('hidden');
+ }
+ function renderResults(input,select,label){
+   const q=input.value||'',box=label.querySelector('.v137-results');if(!box)return;
+   if(!q.trim()){box.innerHTML='';box.classList.add('hidden');return}
+   const list=findJobs(q).slice(0,8);
+   if(!list.length){box.innerHTML='<div class="v137-empty">No matching Job Card</div>';box.classList.remove('hidden');return}
+   box.innerHTML=list.map((j,i)=>'<button type="button" data-i="'+i+'"><b>'+esc(j.no)+'</b><span>'+esc(j.reg||'No Reg')+'</span><small>'+esc(j.vehicle||'Vehicle')+(j.year?' · '+esc(j.year):'')+'</small></button>').join('');
+   [...box.querySelectorAll('button')].forEach((b,i)=>b.onclick=()=>setSelected(list[i],input,select,label));box.classList.remove('hidden');
+ }
+ function openSearch(input,select,label){
+   const q=String(input.value||'').trim(),list=findJobs(q);
+   const body=list.length?'<div class="v137-modal-list">'+list.map(j=>'<button type="button" class="v137-modal-job" data-no="'+esc(j.no)+'"><b>'+esc(j.no)+'</b><span>'+esc(j.reg||'No Registration')+'</span><small>'+esc(j.vehicle||'Vehicle')+(j.year?' · '+esc(j.year):'')+'</small><em>SELECT ›</em></button>').join('')+'</div>':'<div class="notice">No matching Job Card found.</div>';
+   openModal('<div class="section-title"><h2>🔎 Search Job Card</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="notice">Search by Job Card number, registration number, vehicle / model, year or brand.</div>'+body);
+   setTimeout(()=>document.querySelectorAll('.v137-modal-job').forEach(b=>b.onclick=()=>{const j=jobs().find(x=>String(x.no)===String(b.dataset.no));if(j){setSelected(j,input,select,label);closeModal()}}),0);
+ }
+ function install(){
+   if(!window.me||me.role!=='Supervisor')return;
+   const root=document.getElementById('supervisorView');if(!root)return;
+   const assign=[...root.querySelectorAll('.card')].find(x=>/Assign\s*\/\s*Update Job Card/i.test(x.querySelector('h3')?.textContent||''));if(!assign)return;
+   let current=root.querySelector('#sj'),label=current?.closest('label')||assign.querySelector('.v126-job,.v136-job-search-wrap');if(!label)return;
+   let input=label.querySelector('#v137JobSearch');
+   let carry='';
+   if(current&&current.tagName!=='SELECT'){carry=String(current.value||'');current.remove()}
+   else if(current)carry=String(current.value||'');
+   if(!input){input=document.createElement('input');input.id='v137JobSearch';input.type='search';input.inputMode='search';input.autocomplete='off';input.placeholder='JC / Reg / Vehicle';input.setAttribute('aria-label','Search Job Card');label.appendChild(input)}
+   if(!input.value&&carry&&carry.toUpperCase()!==HOLD)input.value=carry;
+   let select=label.querySelector('#sj');
+   if(!select||select.tagName!=='SELECT'){if(select)select.remove();select=buildSelect(input.dataset.selectedJob||exact(input.value)?.no||'');label.appendChild(select)}
+   else{
+     const wanted=select.value;select.replaceWith(buildSelect(wanted));select=label.querySelector('#sj');
+   }
+   label.querySelectorAll('.v136-job-results').forEach(x=>x.remove());
+   label.classList.remove('v136-job-search-wrap');label.classList.add('v137-job-search');
+   let row=label.querySelector('.v137-search-row');
+   if(!row){row=document.createElement('div');row.className='v137-search-row';input.parentNode.insertBefore(row,input);row.appendChild(input);const b=document.createElement('button');b.type='button';b.className='v137-search-button';b.textContent='SEARCH';row.appendChild(b)}
+   let results=label.querySelector('.v137-results');if(!results){results=document.createElement('div');results.className='v137-results hidden';row.insertAdjacentElement('afterend',results)}
+   const button=row.querySelector('.v137-search-button');button.onclick=()=>openSearch(input,select,label);
+   if(input.dataset.v137Bound!=='1'){
+     input.dataset.v137Bound='1';
+     input.addEventListener('input',()=>{clearSelected(input,select,label);renderResults(input,select,label)});
+     input.addEventListener('keydown',e=>{if(e.key==='Escape'){results.classList.add('hidden')}if(e.key==='Enter'){e.preventDefault();const hit=exact(input.value)||findJobs(input.value)[0];if(hit)setSelected(hit,input,select,label);else openSearch(input,select,label)}});
+     input.addEventListener('focus',()=>{if(input.value.trim())renderResults(input,select,label)});
+   }
+   const hit=exact(input.value);if(hit&&!select.value)setSelected(hit,input,select,label);
+ }
+ const previousAssign=window.assignJobExisting;
+ window.assignJobExisting=function(){
+   const input=document.getElementById('v137JobSearch'),select=document.getElementById('sj'),label=input?.closest('label');
+   if(input&&select&&select.tagName==='SELECT'){
+     if(!select.value){const hit=exact(input.value);if(hit)setSelected(hit,input,select,label)}
+     if(!select.value)return alert('Search and select a valid Job Card first.');
+   }
+   return typeof previousAssign==='function'?previousAssign.apply(this,arguments):undefined;
+ };
+ const style=document.createElement('style');style.id='v137AssignSearchStyle';
+ style.textContent='#supervisorView .v137-job-search{position:relative!important;overflow:visible!important}#supervisorView .v137-internal-job-select{display:none!important}.v137-search-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;width:100%}.v137-search-row input{width:100%!important;min-width:0!important}.v137-search-button{margin:0!important;padding:0 11px!important;min-width:64px!important;background:#2563eb!important;color:#fff!important;font-size:10px!important;font-weight:900!important;border-radius:9px!important}.v137-results{display:grid;gap:5px;margin-top:6px;max-height:238px;overflow:auto;padding:5px;border:1px solid #d7e0ea;border-radius:10px;background:#f8fafc}.v137-results.hidden{display:none!important}.v137-results button{display:grid!important;grid-template-columns:1fr auto!important;width:100%!important;margin:0!important;padding:8px 9px!important;background:#fff!important;color:#172033!important;border:1px solid #e2e8f0!important;border-radius:9px!important;text-align:left!important;box-shadow:none!important}.v137-results button span{font-size:10px!important;color:#475569!important;font-weight:800}.v137-results button small{grid-column:1/3;font-size:10px!important;color:#64748b!important}.v137-empty{padding:9px;text-align:center;font-size:11px;color:#64748b}.v137-selected{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin-top:6px;padding:7px 9px;border-radius:9px;background:#ecfdf5;border:1px solid #a7f3d0}.v137-selected.hidden{display:none!important}.v137-selected b{font-size:11px;color:#166534}.v137-selected span{font-size:10px;color:#166534}.v137-selected small{grid-column:1/3;font-size:10px;color:#475569}.v137-modal-list{display:grid;gap:8px;margin-top:12px}.v137-modal-job{display:grid!important;grid-template-columns:1fr auto!important;width:100%!important;margin:0!important;padding:12px!important;background:#fff!important;color:#172033!important;border:1px solid #dbe3ee!important;border-radius:12px!important;text-align:left!important}.v137-modal-job span,.v137-modal-job small{font-size:11px!important;color:#64748b!important}.v137-modal-job small{grid-column:1}.v137-modal-job em{grid-column:2;grid-row:1/4;align-self:center;font-style:normal;font-size:10px;font-weight:900;color:#166534}';
+ document.head.appendChild(style);
+ const previousRender=window.render;window.render=function(){const r=typeof previousRender==='function'?previousRender.apply(this,arguments):undefined;setTimeout(install,0);return r};
+ setTimeout(install,0);
+ window.v137AssignJobSearchCompatibilityAuthority=true;
+})();
