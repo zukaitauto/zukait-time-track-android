@@ -2022,27 +2022,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v115SupervisorIncentiveWindow=true;
 })();
 
-/* V116 SUPERVISOR HEADER AUTHORITY — one fixed identity/online row, never floating or duplicated. */
-(function(){'use strict';
- const apply=()=>{
-   if(!me||me.role!=='Supervisor')return;
-   const root=document.getElementById('supervisorView');if(!root)return;
-   const rows=[...root.querySelectorAll('.v91-role-identity')];
-   let row=rows.shift()||null;rows.forEach(x=>x.remove());
-   if(!row&&typeof window.v91RoleHeader==='function'){try{window.v91RoleHeader('Supervisor')}catch(_){}} 
-   row=root.querySelector('.v91-role-identity');if(!row)return;
-   row.classList.add('v116-supervisor-header');
-   row.style.position='static';row.style.inset='auto';row.style.transform='none';row.style.zIndex='auto';
-   const top=root.querySelector('.v92-supervisor-top');if(top&&row.nextElementSibling!==top)root.insertBefore(row,top);
-   const gh=document.getElementById('globalBrandHeader');if(gh)gh.style.setProperty('display','none','important');
-   const net=document.getElementById('net');if(net)net.style.setProperty('display','none','important');
-   const hos=document.getElementById('headerOnlineStatus');if(hos)hos.style.setProperty('display','none','important');
-   root.querySelectorAll('.header-online-status').forEach(x=>x.style.setProperty('display','none','important'));
- };
- const s=document.createElement('style');s.textContent='#supervisorView .v116-supervisor-header{position:static!important;top:auto!important;right:auto!important;bottom:auto!important;left:auto!important;transform:none!important;width:auto!important;margin:0 0 10px!important;z-index:auto!important;box-shadow:none!important}';document.head.appendChild(s);
- const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(apply,0);return r};
- window.v116SupervisorHeaderAuthority=true;
-})();
+/* V116 RETIRED — Supervisor header ownership consolidated into V91 + V128. */
 
 /* V113 NORMAL ASSIGNMENT SAFETY — neutral Technician placeholder must never create a blank employee assignment. */
 (function(){'use strict';
@@ -2161,26 +2141,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 
 /* V126 RETIRED — Assign / Update layout moved into the authoritative Supervisor renderer. */
 
-/* V127 SUPERVISOR MOBILE HEADER AUTHORITY — one identity row only. */
-(function(){'use strict';
- function apply(){
-  if(!me||me.role!=='Supervisor')return;
-  const root=document.getElementById('supervisorView');if(!root)return;
-  const rows=[...root.querySelectorAll('.v91-role-identity')];let keep=rows[0]||null;rows.slice(1).forEach(x=>x.remove());
-  const gh=document.getElementById('globalBrandHeader'),lh=document.getElementById('legacyAppHeader');
-  if(gh){gh.classList.add('hidden');gh.style.setProperty('display','none','important')}
-  if(lh){lh.classList.add('hidden');lh.style.setProperty('display','none','important')}
-  const welcome=document.getElementById('welcome');if(welcome&&welcome!==keep){welcome.style.setProperty('display','none','important')}
-  const net=document.getElementById('net');if(net)net.style.setProperty('display','none','important');
-  const hos=document.getElementById('headerOnlineStatus');if(hos)hos.style.setProperty('display','none','important');
-  document.querySelectorAll('.header-online-status').forEach(x=>{if(!keep?.contains(x))x.style.setProperty('display','none','important')});
-  if(keep){keep.classList.add('v127-single-supervisor-header');const top=root.querySelector('.v92-supervisor-top');if(top&&keep.nextElementSibling!==top)root.insertBefore(keep,top)}
- }
- const s=document.createElement('style');s.id='v127SupervisorHeaderStyle';s.textContent='body:has(#supervisorView:not(.hidden)) #globalBrandHeader,body:has(#supervisorView:not(.hidden)) #legacyAppHeader,body:has(#supervisorView:not(.hidden)) #welcome{display:none!important}#supervisorView .v127-single-supervisor-header{display:flex!important;position:static!important;width:auto!important;margin:0 0 10px!important}';
- document.head.appendChild(s);
- const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(apply,0);return r};setTimeout(apply,0);window.v127SupervisorHeaderAuthority=true;
-})();
-
+/* V127 RETIRED — Supervisor header ownership consolidated into V91 + V128. */
 
 /* V128 SUPERVISOR SURFACE LOCK — source-level guard against legacy header/layout resurrection. */
 (function(){'use strict';
@@ -2192,7 +2153,6 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
   // Assign / Update layout is owned by the authoritative Supervisor renderer; V128 guards header/surface only.
  }
  const s=document.createElement('style');s.id='v128SupervisorSurfaceStyle';s.textContent='#globalBrandHeader.v128-supervisor-hide,#legacyAppHeader.v128-supervisor-hide{display:none!important}';document.head.appendChild(s);
- let busy=false;const obs=new MutationObserver(()=>{if(busy||!me||me.role!=='Supervisor')return;busy=true;requestAnimationFrame(()=>{try{apply()}finally{busy=false}})});obs.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']});
  const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(apply,0);return r};setTimeout(apply,0);window.v128SupervisorSurfaceLock=true;
 })();
 
