@@ -38,8 +38,26 @@ function jcData(no){
  const vehicle=[j.make,j.model,j.year].filter(Boolean).join(' ')||j.vehicle||'';
  return {job:j,vehicle,supervisorId,painters:[...new Map(painters.map(x=>[x.id,x])).values()]};
 }
+function consJobMatches(q){
+ const x=String(q||'').trim().toLowerCase();
+ return (state.jobs||[]).filter(j=>j&&String(j.no||'').toUpperCase()!=='ID001').filter(j=>{
+   if(!x)return true;
+   return [j.no,j.reg,j.registration,j.vehicle,j.make,j.model,j.year,j.modelYear].filter(Boolean).join(' ').toLowerCase().includes(x);
+ }).sort((a,b)=>(Number(b.createdAt)||0)-(Number(a.createdAt)||0)).slice(0,10);
+}
+function consVehicleDetails(d,colour){
+ if(!d)return '';
+ const j=d.job||{},vehicle=d.vehicle||j.vehicle||[j.make,j.model].filter(Boolean).join(' ')||'—';
+ const reg=j.reg||j.registration||'—',year=j.year||j.modelYear||'—',vin=j.vin||j.VIN||j.chassis||j.chassisNo||'',status=j.status||'Open';
+ const clr=colour||j.colorCode||j.colourCode||'—';
+ return '<div class="cons-vehicle-card"><div><small>JOB CARD</small><b>'+esc(j.no||'—')+'</b></div><div><small>VEHICLE</small><b>'+esc(vehicle)+'</b></div><div><small>REGISTRATION</small><b>'+esc(reg)+'</b></div><div><small>YEAR</small><b>'+esc(year)+'</b></div><div><small>COLOUR CODE</small><b>'+esc(clr)+'</b></div><div><small>STATUS</small><b>'+esc(status)+'</b></div>'+(vin?'<div class="wide"><small>VIN / CHASSIS</small><b>'+esc(vin)+'</b></div>':'')+'</div>';
+}
+function consJobResults(q,selectFn){
+ const rows=consJobMatches(q);
+ return rows.length?rows.map(j=>'<button type="button" class="cons-jc-result" onclick="'+selectFn+'(decodeURIComponent(\''+encodeURIComponent(String(j.no||''))+'\'))"><b>'+esc(j.no||'')+'</b><span>'+esc(j.reg||j.registration||'No Reg')+'</span><small>'+esc(j.vehicle||[j.make,j.model,j.year].filter(Boolean).join(' ')||'Vehicle')+'</small></button>').join(''):'<div class="cons-jc-empty">No matching Job Card.</div>';
+}
 function entryHeader(type){
- return '<div class="cons-entry-grid"><label>Search Job Card No.<input id="consJc" placeholder="JC Number" oninput="consLoadJC(\''+type+'\')"></label><label>Vehicle Make + Model + Year<input id="consVehicle" readonly></label><label>Colour Code<input id="consColour" placeholder="Paint colour code"></label><label>Painter Name<select id="consPainter"><option value="">Select painter</option></select></label><label>Allotted Supervisor<input id="consSupervisor" readonly></label></div><div id="consJcNote" class="muted small"></div>';
+ return '<div class="cons-jc-access"><label>Job Card Search<div class="cons-searchbar"><input id="consJc" placeholder="JC / Registration / Vehicle" autocomplete="off" oninput="consFindJC(\''+type+'\')"><button class="blue" type="button" onclick="consFindJC(\''+type+'\',true)">SEARCH</button></div></label><div id="consJcResults" class="cons-jc-results hidden"></div><div id="consVehicleDetails"></div></div><div class="cons-entry-grid"><label>Vehicle Make + Model + Year<input id="consVehicle" readonly></label><label>Colour Code<input id="consColour" placeholder="Paint colour code"></label><label>Painter Name<select id="consPainter"><option value="">Select painter</option></select></label><label>Allotted Supervisor<input id="consSupervisor" readonly></label></div><div id="consJcNote" class="muted small"></div>';
 }
 function lineEditor(){
  const c=C().ensureState(state),m=c.materials.filter(x=>x.active!==false),b=c.brands.filter(x=>x.active!==false);
@@ -52,10 +70,21 @@ window.openConsumablesEntry=function(type){
  draft={type,jc:null,lines:[]};
  modal(names[type]||'Painting Consumables','<div class="cons-entry-shell">'+entryHeader(type)+lineEditor()+'<div class="cons-entry-actions"><button class="secondary" onclick="openPaintingConsumables()">← BACK</button><button class="green" onclick="consFinishIssue()">FINISH</button></div></div>');
 };
+window.consFindJC=function(type,showAll){
+ const input=document.getElementById('consJc'),box=document.getElementById('consJcResults');if(!input||!box)return;
+ const q=input.value||'';if(!q&&!showAll){box.innerHTML='';box.classList?.add?.('hidden');return}
+ box.innerHTML=consJobResults(q,'consSelectJC');box.dataset.type=type||'';box.classList?.remove?.('hidden');
+};
+window.consSelectJC=function(no){
+ const input=document.getElementById('consJc'),box=document.getElementById('consJcResults');if(input)input.value=no;
+ const type=box?.dataset?.type||draft.type||'issued';if(box){box.innerHTML='';box.classList?.add?.('hidden')}
+ consLoadJC(type);
+};
 window.consLoadJC=function(type){
- const el=document.getElementById('consJc'),d=jcData(el?.value),v=document.getElementById('consVehicle'),p=document.getElementById('consPainter'),sup=document.getElementById('consSupervisor'),note=document.getElementById('consJcNote');
+ const el=document.getElementById('consJc'),d=jcData(el?.value),v=document.getElementById('consVehicle'),p=document.getElementById('consPainter'),sup=document.getElementById('consSupervisor'),note=document.getElementById('consJcNote'),details=document.getElementById('consVehicleDetails');
  draft.jc=d;
- if(!d){if(v)v.value='';if(p)p.innerHTML='<option value="">Select painter</option>';if(sup)sup.value=me?.name||me?.id||'';if(note)note.textContent=el?.value?'Job Card not found.':'';return}
+ if(!d){if(v)v.value='';if(p)p.innerHTML='<option value="">Select painter</option>';if(sup)sup.value=me?.name||me?.id||'';if(details)details.innerHTML='';if(note)note.textContent=el?.value?'Select a Job Card from the search results.':'';return}
+ if(details)details.innerHTML=consVehicleDetails(d,document.getElementById('consColour')?.value||'');
  if(v)v.value=d.vehicle||'';
  if(sup){const su=(users||[]).find(x=>x.id===d.supervisorId);sup.value=su?.name||d.supervisorId||me?.name||me?.id||'';}
  if(p){p.innerHTML=(d.painters.length>1?'<option value="">Choose Main Painter</option>':'')+d.painters.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');if(d.painters.length===1)p.value=d.painters[0].id}
@@ -92,13 +121,23 @@ window.consFinishIssue=function(){
 window.openConsumablesActual=function(){
  if(!['Supervisor','Manager'].includes(role()))return;
  draft={type:'actual',jc:null,lines:[]};
- modal('Actual Materials','<div class="cons-entry-shell"><div class="cons-entry-grid"><label>Search Job Card No.<input id="consActualJc" placeholder="JC Number" oninput="consLoadActual()"></label><label>Vehicle Make + Model + Year<input id="consActualVehicle" readonly></label><label>Colour Code<input id="consActualColour" readonly></label><label>Main Painter<input id="consActualPainter" readonly></label><label>Allotted Supervisor<input id="consActualSupervisor" readonly></label></div><div id="consActualNote" class="muted small"></div><div id="consActualRows" class="notice">Search a Job Card to load Suggested + Additional materials.</div><div class="cons-entry-actions"><button class="secondary" onclick="openPaintingConsumables()">← BACK</button><button class="green" onclick="consFinishActual()">FINISH ACTUAL</button></div></div>');
+ modal('Actual Materials','<div class="cons-entry-shell"><div class="cons-jc-access"><label>Job Card Search<div class="cons-searchbar"><input id="consActualJc" placeholder="JC / Registration / Vehicle" autocomplete="off" oninput="consFindActualJC()"><button class="blue" type="button" onclick="consFindActualJC(true)">SEARCH</button></div></label><div id="consActualJcResults" class="cons-jc-results hidden"></div><div id="consActualVehicleDetails"></div></div><div class="cons-entry-grid"><label>Vehicle Make + Model + Year<input id="consActualVehicle" readonly></label><label>Colour Code<input id="consActualColour" readonly></label><label>Main Painter<input id="consActualPainter" readonly></label><label>Allotted Supervisor<input id="consActualSupervisor" readonly></label></div><div id="consActualNote" class="muted small"></div><div id="consActualRows" class="notice">Search and select a Job Card to load Suggested + Additional materials.</div><div class="cons-entry-actions"><button class="secondary" onclick="openPaintingConsumables()">← BACK</button><button class="green" onclick="consFinishActual()">FINISH ACTUAL</button></div></div>');
+};
+window.consFindActualJC=function(showAll){
+ const input=document.getElementById('consActualJc'),box=document.getElementById('consActualJcResults');if(!input||!box)return;
+ const q=input.value||'';if(!q&&!showAll){box.innerHTML='';box.classList?.add?.('hidden');return}
+ box.innerHTML=consJobResults(q,'consSelectActualJC');box.classList?.remove?.('hidden');
+};
+window.consSelectActualJC=function(no){
+ const input=document.getElementById('consActualJc'),box=document.getElementById('consActualJcResults');if(input)input.value=no;if(box){box.innerHTML='';box.classList?.add?.('hidden')}consLoadActual();
 };
 window.consLoadActual=function(){
  const no=document.getElementById('consActualJc')?.value||'',d=jcData(no),out=document.getElementById('consActualRows'),note=document.getElementById('consActualNote');
  draft={type:'actual',jc:d,lines:[]};
- if(!d){['consActualVehicle','consActualColour','consActualPainter','consActualSupervisor'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});if(note)note.textContent='';if(out)out.innerHTML='<div class="notice">Search a Job Card to load Suggested + Additional materials.</div>';return}
+ const details=document.getElementById('consActualVehicleDetails');
+ if(!d){['consActualVehicle','consActualColour','consActualPainter','consActualSupervisor'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});if(details)details.innerHTML='';if(note)note.textContent='';if(out)out.innerHTML='<div class="notice">Search and select a Job Card to load Suggested + Additional materials.</div>';return}
  const c=C().ensureState(state),issued=c.issues.filter(x=>x.jobCard===d.job.no&&!x.voided),base=issued.find(x=>x.type===C().TYPES.ISSUED);
+ if(details)details.innerHTML=consVehicleDetails(d,base?.colourCode||'');
  document.getElementById('consActualVehicle').value=d.vehicle||'';
  document.getElementById('consActualColour').value=base?.colourCode||'';
  const pu=(users||[]).find(x=>x.id===base?.mainPainterId),su=(users||[]).find(x=>x.id===base?.allottedSupervisorId);
@@ -227,7 +266,7 @@ const css=document.createElement('style');css.id='consumablesUiCss';css.textCont
 .cons-dept,.cons-action{min-height:128px;padding:18px;border:1px solid #dfe5ec;background:#fff;color:#0f1b2b;border-radius:18px;text-align:left;box-shadow:0 5px 18px rgba(15,27,43,.07)}
 .cons-dept span{display:block;font-size:30px;margin-bottom:12px}.cons-dept b,.cons-dept small,.cons-action b,.cons-action small{display:block}.cons-dept b,.cons-action b{font-size:17px}.cons-dept small,.cons-action small{margin-top:7px;color:#64748b;line-height:1.35}.cons-dept.disabled{opacity:.72}
 .cons-action{border-top:4px solid #64748b}.cons-action.issued{border-top-color:#2563eb}.cons-action.actual{border-top-color:#15803d}.cons-action.additional{border-top-color:#ca8a04}.cons-action.search{border-top-color:#7c3aed}.cons-action.manager{border-top-color:#d5a62e}
-.cons-entry-shell{display:grid;gap:14px}.cons-entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cons-entry-grid label{font-weight:800;color:#334155}.cons-entry-grid input,.cons-entry-grid select{width:100%;margin-top:5px}.cons-line-editor{display:grid;grid-template-columns:2fr 1.4fr 1fr auto;gap:8px;align-items:center}.cons-line-editor>*{width:100%}.cons-table{overflow:auto}.cons-table table{min-width:650px;width:100%}.cons-entry-actions{display:flex;justify-content:space-between;gap:10px}.cons-searchbar{display:grid;grid-template-columns:1fr auto;gap:8px}.cons-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;padding:12px;border:1px solid #dfe5ec;border-radius:12px;background:#f8fafc}.cons-summary b{grid-column:1/-1;font-size:18px}.cons-add-history{display:grid;gap:8px;padding:10px}.cons-add-history>div{padding:10px;border:1px solid #e2e8f0;border-radius:10px;background:#fff}.cons-export-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.cons-master-form{display:grid;grid-template-columns:1.5fr 1.2fr .8fr 1fr 1.2fr auto;gap:8px;align-items:end}.cons-master-form label{font-weight:800;font-size:12px}.cons-master-form label input{width:100%;margin-top:4px}.cons-price-history{margin-top:12px;padding:12px;border:1px solid #dfe5ec;border-radius:12px;overflow:auto}.cons-price-history table{width:100%;border-collapse:collapse}.cons-price-history th,.cons-price-history td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:left}.cons-price-change{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:10px}.cons-report-filters{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.cons-report-filters label{font-size:12px;font-weight:800}.cons-report-filters label input{width:100%;margin-top:4px}.cons-report-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.cons-report-kpis>div{padding:12px;border:1px solid #dfe5ec;border-radius:12px;background:#f8fafc}.cons-report-kpis b,.cons-report-kpis span{display:block}
+.cons-entry-shell{display:grid;gap:14px}.cons-jc-access{display:grid;gap:7px}.cons-jc-access label{font-weight:900;color:#334155}.cons-jc-results{display:grid;gap:5px;max-height:230px;overflow:auto;padding:6px;border:1px solid #dbe3ee;border-radius:12px;background:#f8fafc}.cons-jc-results.hidden{display:none!important}.cons-jc-result{display:grid!important;grid-template-columns:1fr auto!important;width:100%!important;margin:0!important;padding:9px 10px!important;border:1px solid #e2e8f0!important;border-radius:9px!important;background:#fff!important;color:#172033!important;text-align:left!important;box-shadow:none!important}.cons-jc-result b{font-size:12px}.cons-jc-result span{font-size:11px;color:#334155;font-weight:800}.cons-jc-result small{grid-column:1/3;font-size:10px;color:#64748b;margin-top:2px}.cons-jc-empty{padding:10px;text-align:center;color:#64748b}.cons-vehicle-card{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding:10px;border:1px solid #a7d7bd;border-radius:12px;background:#f0fdf4}.cons-vehicle-card>div{min-width:0;padding:7px 8px;border-radius:8px;background:#fff;border:1px solid #dcfce7}.cons-vehicle-card .wide{grid-column:1/-1}.cons-vehicle-card small,.cons-vehicle-card b{display:block}.cons-vehicle-card small{font-size:8px;color:#64748b;font-weight:900}.cons-vehicle-card b{font-size:11px;color:#174526;margin-top:2px;overflow-wrap:anywhere}.cons-entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cons-entry-grid label{font-weight:800;color:#334155}.cons-entry-grid input,.cons-entry-grid select{width:100%;margin-top:5px}.cons-line-editor{display:grid;grid-template-columns:2fr 1.4fr 1fr auto;gap:8px;align-items:center}.cons-line-editor>*{width:100%}.cons-table{overflow:auto}.cons-table table{min-width:650px;width:100%}.cons-entry-actions{display:flex;justify-content:space-between;gap:10px}.cons-searchbar{display:grid;grid-template-columns:1fr auto;gap:8px}.cons-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;padding:12px;border:1px solid #dfe5ec;border-radius:12px;background:#f8fafc}.cons-summary b{grid-column:1/-1;font-size:18px}.cons-add-history{display:grid;gap:8px;padding:10px}.cons-add-history>div{padding:10px;border:1px solid #e2e8f0;border-radius:10px;background:#fff}.cons-export-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.cons-master-form{display:grid;grid-template-columns:1.5fr 1.2fr .8fr 1fr 1.2fr auto;gap:8px;align-items:end}.cons-master-form label{font-weight:800;font-size:12px}.cons-master-form label input{width:100%;margin-top:4px}.cons-price-history{margin-top:12px;padding:12px;border:1px solid #dfe5ec;border-radius:12px;overflow:auto}.cons-price-history table{width:100%;border-collapse:collapse}.cons-price-history th,.cons-price-history td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:left}.cons-price-change{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:10px}.cons-report-filters{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.cons-report-filters label{font-size:12px;font-weight:800}.cons-report-filters label input{width:100%;margin-top:4px}.cons-report-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.cons-report-kpis>div{padding:12px;border:1px solid #dfe5ec;border-radius:12px;background:#f8fafc}.cons-report-kpis b,.cons-report-kpis span{display:block}
 @media(min-width:901px){
 .modal-backdrop:has(#consMasterWorkspace) .modal-box{width:96vw!important;max-width:1500px!important;max-height:92vh!important;padding:24px!important}
 .modal-backdrop:has(#consMasterWorkspace){padding:12px!important}
@@ -244,7 +283,7 @@ body.cons-master-open .cons-master-form{grid-template-columns:minmax(220px,2fr) 
 body.cons-master-open .cons-master-form input,body.cons-master-open .cons-master-form select,body.cons-master-open .cons-master-form button{min-height:46px;font-size:15px}
 body.cons-master-open #cmList{max-height:62vh;overflow:auto}
 }
-@media(max-width:700px){.cons-depts,.cons-actions,.cons-entry-grid{grid-template-columns:1fr}.cons-line-editor{grid-template-columns:1fr 1fr}.cons-line-editor input,.cons-line-editor button{min-height:48px}.cons-dept,.cons-action{min-height:105px}.cons-launch{margin-top:6px}}
+@media(max-width:700px){.cons-depts,.cons-actions,.cons-entry-grid{grid-template-columns:1fr}.cons-vehicle-card{grid-template-columns:repeat(2,minmax(0,1fr))}.cons-line-editor{grid-template-columns:1fr 1fr}.cons-line-editor input,.cons-line-editor button{min-height:48px}.cons-dept,.cons-action{min-height:105px}.cons-launch{margin-top:6px}}
 `;document.head.appendChild(css);
 const oldRender=window.render;
 if(typeof oldRender==='function')window.render=function(){const r=oldRender.apply(this,arguments);setTimeout(addLaunchCard,0);return r};
