@@ -318,14 +318,27 @@
     try{
       const r=await api({action:'save',expected_revision:cloudRevision,data:localSnapshot});
       if(r.ok){
-        cloudRevision=Number(r.revision||cloudRevision+1);
+        // New sync protocol: a server-rebased write returns the authoritative
+        // merged snapshot plus server_revision. Apply it immediately so this
+        // device cannot remain locally stale after a successful save.
+        cloudRevision=Number(r.server_revision||r.revision||cloudRevision+1);
         localStorage.setItem(REV_KEY,String(cloudRevision));
         localStorage.removeItem(DIRTY_KEY);
         localStorage.removeItem(PENDING_KEY);
         cloudDirty=false;
+        if(r.data&&typeof r.data==='object'){
+          cloudApplying=true;
+          try{normalizeRemote(r.data)}finally{cloudApplying=false}
+          lastSyncedState=clone(state||{});
+          if(me)try{render()}catch(_){}
+        }else{
+          lastSyncedState=clone(localSnapshot);
+        }
         status('SYNCED','ok');
-        lastSyncedState=clone(localSnapshot);
         conflictAlerted=false;
+        if(r.force_pull&&!r.data){
+          setTimeout(()=>{if(!cloudDirty)pull(true).catch(e=>console.warn('Post-rebase refresh failed',e))},0);
+        }
         return true;
       }
 

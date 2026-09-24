@@ -16,6 +16,10 @@ assert.match(cloud,/action:'live_status'/,'cloud layer must call the server live
 assert.match(cloud,/livePollTimer=setInterval/,'cloud layer must poll server live state independently');
 assert.match(cloud,/if\(!sessionToken\(\)\|\|!navigator\.onLine\|\|!liveRole\(\)\)return;/,'live poll must not be blocked by cloudDirty');
 assert.match(cloud,/window\.zukaitServerLive=/,'cloud layer must publish authoritative rows');
+assert.match(cloud,/r\.server_revision\|\|r\.revision/,'rebased saves must acknowledge the real server revision');
+assert.match(cloud,/r\.data&&typeof r\.data==='object'/,'rebased saves must carry an authoritative merged snapshot');
+assert.match(cloud,/normalizeRemote\(r\.data\)/,'client must apply the merged server snapshot immediately after a rebase');
+assert.match(cloud,/r\.force_pull&&!r\.data/,'legacy-compatible rebase responses must force a refresh when no merged payload is present');
 assert.match(authority,/window\.currentStaffStatuses=function/,'server authority must replace staff status reads');
 assert.match(authority,/window\.currentActiveWorkers=function/,'server authority must replace active-worker reads');
 assert.match(authority,/window\.openActiveWorkers=function/,'Active Workers details must use server rows');
