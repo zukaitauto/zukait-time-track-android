@@ -27,6 +27,7 @@ jobs:
           node --check app/src/main/assets/cloud_sync.js
           node --check app/src/main/assets/consumables.js
           node --check app/src/main/assets/consumables_ui.js
+          node --check app/src/main/assets/paint_module.js
           node --check app/src/main/assets/secure_auth.js
           node --check app/src/main/assets/production_pilot.js
           node --check app/src/main/assets/professional_ux.js
@@ -66,6 +67,7 @@ jobs:
           node tests/live-status-authority.mjs
           node tests/consumables-backend-security.mjs
           node tests/v128-costing-safety.mjs
+          node tests/paint-safety.mjs
 
       - name: Check production assets
         shell: bash
