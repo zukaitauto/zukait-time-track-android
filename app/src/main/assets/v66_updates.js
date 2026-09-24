@@ -157,7 +157,7 @@ function renderManager66(){
  controlCard('working','Working Now',workingCount(),'#059669')+
  controlCard('notstarted','Not Started',notStartedCount(),'#64748b')+
  controlCard('paused','Paused',pausedCount(),'#d97706')+
- controlCard('leave','On Leave',leaveCount(),'#be123c')+
+ controlCard('consumables','Consumables','›','#be123c')+
  controlCard('completed','Completed Today',completedTodayCount(),'#0f766e')+
  controlCard('repeat','Repeat Work',repeatCount(),'#7c3aed')+
  controlCard('waiting','Waiting / ID001',waitingCount(),'#475569')+
