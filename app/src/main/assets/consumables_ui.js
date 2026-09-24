@@ -152,7 +152,7 @@ window.consFinishIssue=function(){
 window.openConsumablesActual=function(){
  if(!['Supervisor','Manager'].includes(role()))return;
  draft={type:'actual',jc:null,lines:[]};
- modal('Actual Materials','<div class="cons-entry-shell"><div class="cons-jc-access"><label>Job Card Search<div class="cons-searchbar"><input id="consActualJc" placeholder="JC / Registration / Vehicle" autocomplete="off" oninput="consFindActualJC()"><button class="blue" type="button" onclick="consFindActualJC(true)">SEARCH</button></div></label><div id="consActualJcResults" class="cons-jc-results hidden"></div><div id="consActualVehicleDetails" class="cons-vehicle-sticky"></div></div><div class="cons-entry-grid cons-entry-grid-compact"><label>Vehicle Details<input id="consActualVehicle" readonly></label><label>Colour Code<input id="consActualColour" readonly></label><label>Main Painter<input id="consActualPainter" readonly></label><label>Allotted Supervisor<input id="consActualSupervisor" readonly></label></div><div id="consActualNote" class="muted small"></div><div id="consActualRows" class="notice">Search and select a Job Card to load Suggested + Additional materials.</div><div class="cons-entry-actions"><button class="secondary" onclick="openPaintingConsumables()">← BACK</button><button class="green" onclick="consFinishActual()">FINISH ACTUAL</button></div></div>');
+ modal('Actual Materials','<div class="cons-entry-shell"><div class="cons-jc-access"><label>Job Card Search<div class="cons-searchbar"><input id="consActualJc" placeholder="JC / Registration / Vehicle" autocomplete="off" oninput="consFindActualJC()"><button class="blue" type="button" onclick="consFindActualJC(true)">SEARCH</button></div></label><div id="consActualJcResults" class="cons-jc-results hidden"></div><div id="consActualVehicleDetails" class="cons-vehicle-sticky"></div></div><div class="cons-entry-grid cons-entry-grid-compact"><label>Vehicle Details<input id="consActualVehicle" readonly></label><label>Colour Code<input id="consActualColour" readonly></label><label>Main Painter<input id="consActualPainter" readonly></label><label>Allotted Supervisor<input id="consActualSupervisor" readonly></label></div><div id="consActualNote" class="muted small"></div><div id="consActualRows" class="notice">Search and select a Job Card to load Suggested + Additional materials.</div><div class="cons-entry-actions"><button class="secondary" onclick="openPaintingConsumables()">← BACK</button><button id="consFinishActualBtn" class="green" onclick="consFinishActual()" disabled>FINISH ACTUAL</button></div></div>');
 };
 window.consFindActualJC=function(showAll){
  const input=document.getElementById('consActualJc'),box=document.getElementById('consActualJcResults');if(!input||!box)return;
@@ -166,7 +166,7 @@ window.consLoadActual=function(){
  const no=document.getElementById('consActualJc')?.value||'',d=jcData(no),out=document.getElementById('consActualRows'),note=document.getElementById('consActualNote');
  draft={type:'actual',jc:d,lines:[]};
  const details=document.getElementById('consActualVehicleDetails');
- if(!d){['consActualVehicle','consActualColour','consActualPainter','consActualSupervisor'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});if(details)details.innerHTML='';if(note)note.textContent='';if(out)out.innerHTML='<div class="notice">Search and select a Job Card to load Suggested + Additional materials.</div>';return}
+ if(!d){const fb=document.getElementById('consFinishActualBtn');if(fb)fb.disabled=true;['consActualVehicle','consActualColour','consActualPainter','consActualSupervisor'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});if(details)details.innerHTML='';if(note)note.textContent='';if(out)out.innerHTML='<div class="notice">Search and select a Job Card to load Suggested + Additional materials.</div>';return}
  const c=C().ensureState(state),issued=c.issues.filter(x=>x.jobCard===d.job.no&&!x.voided),base=issued.find(x=>x.type===C().TYPES.ISSUED);
  if(details)details.innerHTML=consVehicleDetails(d,base?.colourCode||'');
  document.getElementById('consActualVehicle').value=d.vehicle||'';
@@ -174,10 +174,10 @@ window.consLoadActual=function(){
  const pu=(users||[]).find(x=>x.id===base?.mainPainterId),su=(users||[]).find(x=>x.id===base?.allottedSupervisorId);
  document.getElementById('consActualPainter').value=pu?.name||base?.mainPainterId||'';
  document.getElementById('consActualSupervisor').value=su?.name||base?.allottedSupervisorId||'';
- if(!base){out.innerHTML='<div class="notice">No completed Suggested / Issued Materials found for this Job Card.</div>';return}
- if(c.actuals.some(x=>x.jobCard===d.job.no&&!x.voided)){out.innerHTML='<div class="notice">Actual Materials are already finished and locked for this Job Card.</div>';return}
+ if(!base){const fb=document.getElementById('consFinishActualBtn');if(fb)fb.disabled=true;out.innerHTML='<div class="notice">No completed Suggested / Issued Materials found for this Job Card.</div>';return}
+ if(c.actuals.some(x=>x.jobCard===d.job.no&&!x.voided)){const fb=document.getElementById('consFinishActualBtn');if(fb)fb.disabled=true;out.innerHTML='<div class="notice">Actual Materials are already finished and locked for this Job Card.</div>';return}
  const a=C().allowance(state,d.job.no);
- draft.lines=a.map(({materialId,brandId,quantity})=>({materialId,brandId,quantity}));
+ draft.lines=a.map(({materialId,brandId,quantity})=>({materialId,brandId,quantity}));const fb=document.getElementById('consFinishActualBtn');if(fb)fb.disabled=!draft.lines.length;
  if(note)note.textContent='Actual quantity starts from total Suggested + Additional issued quantity. Reduce/change quantity only when actual use differs.';
  consRenderActualRows();
 };
