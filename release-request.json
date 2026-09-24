@@ -1,8 +1,8 @@
 {
-  "versionName": "V113",
-  "versionCode": 76,
+  "versionName": "V114",
+  "versionCode": 77,
   "approvedForStaff": true,
   "approvedAt": "2026-09-24",
-  "sourceCommit": "cbb4652e1db7df1f6062b1aae63de63ca32a7c0a",
-  "publishNonce": "approved-v113-final-20260924"
+  "sourceCommit": "c52b1137c420893623267a87ed43fe6c7ae7cc98",
+  "publishNonce": "approved-v114-root-fix-20260924"
 }
