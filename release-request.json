@@ -1,8 +1,8 @@
 {
-  "versionName": "V127",
-  "versionCode": 90,
+  "versionName": "V128",
+  "versionCode": 91,
   "approvedForStaff": true,
   "approvedAt": "2026-09-24",
-  "sourceCommit": "9f0bee02a097611f88315812dcfe5422c4af585c",
-  "publishNonce": "approved-v127-consumables-job-card-access-20260924"
+  "sourceCommit": "0715163813617b5fe8808a7c4fa0a5e05dec09bf",
+  "publishNonce": "approved-v128-consumables-costing-safety-20260924"
 }
