@@ -197,6 +197,19 @@
     return out;
   }
 
+  function reconcileEmployeeOpenSessions(data,emp){
+    data.sessions=Array.isArray(data.sessions)?data.sessions:[];
+    const open=data.sessions.filter(s=>s&&s.emp===emp&&!s.end).sort((a,b)=>(+b.start||0)-(+a.start||0)||String(b.id||'').localeCompare(String(a.id||'')));
+    if(open.length<=1)return data;
+    const keep=open[0],cut=Math.max(+keep.start||Date.now(),Date.now());
+    for(const s of open.slice(1)){
+      s.end=cut;s.paused=true;s.multiDeviceClosed=true;s.closeReason='MULTI_DEVICE_CONFLICT';
+    }
+    data.multiDeviceAudit=Array.isArray(data.multiDeviceAudit)?data.multiDeviceAudit:[];
+    data.multiDeviceAudit.push({id:'md-'+Date.now()+'-'+emp,emp,keptSession:keep.id,closedSessions:open.slice(1).map(s=>s.id),at:Date.now()});
+    return data;
+  }
+
   function mergeEmployeeConflict(remote,local,emp){
     const merged=clone(remote||{});
     merged.sessions=mergeById(remote.sessions,local.sessions,(l)=>l.emp===emp);
@@ -210,7 +223,7 @@
     merged.overtimeNotices=Object.assign({},remote.overtimeNotices||{},local.overtimeNotices||{});
     merged.leaves=mergeById(remote.leaves,local.leaves,(l)=>l.emp===emp);
     merged.leaveAudit=mergeById(remote.leaveAudit,local.leaveAudit,(l)=>l.by===emp);
-    return merged;
+    return reconcileEmployeeOpenSessions(merged,emp);
   }
 
   async function pull(force){
