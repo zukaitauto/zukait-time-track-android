@@ -10,8 +10,8 @@ android {
         applicationId 'com.zukait.timetrack'
         minSdk 24
         targetSdk 35
-        versionCode 98
-        versionName 'V135'
+        versionCode 99
+        versionName 'V136'
     }
 }
 
