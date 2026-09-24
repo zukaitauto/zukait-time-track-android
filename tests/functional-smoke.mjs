@@ -665,3 +665,10 @@ assert.match(updates,/V115 MULTI-DEVICE EMPLOYEE ACTION AUTHORITY/,'employee act
 assert.match(updates,/await fresh\(\);const active=closeDuplicates\(me\.id\)/,'Start must sync before enforcing one active job');
 assert.match(updates,/await fresh\(\);closeDuplicates\(me\.id\);return corePause/,'Pause must sync before mutation');
 assert.match(updates,/await fresh\(\);closeDuplicates\(me\.id\);return coreFinish/,'Finish must sync before mutation');
+
+// V115 multi-technician reopen guards.
+assert.match(updates,/V115 MULTI-TECHNICIAN REOPEN SELECTOR/,'multi-worker reopen selector must remain present');
+assert.match(updates,/Select Employee to Reopen/,'multi-worker completed jobs must require technician selection');
+assert.match(updates,/Other technicians remain finished/,'reopen flow must preserve other completed technicians');
+assert.match(updates,/window\.v115ChooseReopenEmployee=choose/,'reopen selector must expose one job-card authority');
+assert.match(updates,/if\(peers\.length>1\)return choose\(a\.job\)/,'assignment reopen must route multi-technician jobs through selection');
