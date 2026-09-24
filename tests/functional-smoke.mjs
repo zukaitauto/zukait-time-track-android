@@ -102,7 +102,7 @@ assert.match(cloud, /if\(me\)try\{render\(\)\}/, 'a received shared revision mus
 // Employee contracts
 assert.match(updates, /openNormal=emp=>[\s\S]*?a\.job!==H[\s\S]*?!a\.cancelled[\s\S]*?!a\.completed/, 'normal open work must be detected');
 assert.match(updates, /availableForIdeal=emp=>!activeSession\(emp\)&&openNormal\(emp\)\.length===0&&!openHold\(emp\)/, 'ID001 must only be available with no normal work');
-assert.match(updates, /v75AssignIdealToAvailable/, 'bulk ID001 assignment must exist');
+assert.match(updates, /window\.v75AssignIdealToAvailable=function\(\)\{return\{ok:false,reason:'one_by_one_only'/, 'ID001 bulk assignment must be retired; Supervisor assigns one employee at a time');
 assert.match(updates, /idealSafeVersion:1/, 'legacy safe ID001 marker must remain supported');
 assert.match(updates, /V106 ID001 FINAL AUTHORITY/, 'final ID001 assignment authority must be present');
 assert.match(updates, /idealSafeVersion:SAFE/, 'final ID001 assignments must write the current safe marker');
@@ -111,8 +111,7 @@ assert.match(updates, /window\.v38CheckID001=function\(\)\{return false\}/, 'leg
 assert.match(updates, /START \/ STOP only|START \/ STOP/, 'ID001 must remain start/stop only');
 assert.ok(updates.includes("'Overtime'") && updates.includes('overtimeMin'), 'Employee monthly dashboard must show Overtime');
 assert.match(updates, /x\.job!==H[\s\S]*?sessionOvertimeMinutes/, 'ID001 must be excluded from monthly overtime');
-assert.match(updates, /window\.monthlySuggestedMinutes=function\(emp,from,to\)[\s\S]{0,700}a&&a\.emp===emp&&!a\.cancelled/, 'ID001 suggested time must count in monthly Suggested Time');
-assert.doesNotMatch(updates, /window\.monthlySuggestedMinutes=function\(emp,from,to\)[\s\S]{0,500}a\.job!==H/, 'monthly Suggested Time must not exclude ID001');
+assert.match(updates, /window\.monthlySuggestedMinutes=\(emp,from,to\)=>\(state\.assign\|\|\[\]\)\.filter\(a=>a&&String\(a\.emp\)===String\(emp\)&&a\.job!==H/, 'monthly Suggested Time must exclude ID001');
 assert.match(updates, /Final screenshot-style Employee dashboard/, 'stable Employee renderer must be the final standalone renderer');
 
 assert.match(updates, /V75\.2 HOLIDAY \+ ID001 RUNTIME AUTHORITY/, 'V75.2 runtime authority must be present');
@@ -733,3 +732,23 @@ assert.ok(html.includes("Search and select a valid Job Card first."), 'assignmen
 assert.ok(!updates.includes('V136 ASSIGN JOB CARD TRUE SEARCH AUTHORITY') && !updates.includes('V137 ASSIGN JOB CARD SEARCH COMPATIBILITY AUTHORITY'), 'retired late search overlays must not return');
 
 assert.ok(main.includes('offline_test.html?v=124'), 'Android wrapper must load the fresh V124 page revision to prevent stale dashboard layout');
+
+
+// V130 ID001 normal-working-hours final contracts.
+assert.match(updates,/V130 ID001 NORMAL WORKING HOURS FINAL AUTHORITY/,'V130 ID001 final authority must be present');
+assert.match(updates,/suggested:0[\s\S]{0,180}noSuggestedTime:true[\s\S]{0,180}countsAsNormalWorking:true/,'new ID001 assignments must have zero suggested time and count as normal working time');
+assert.match(updates,/reason:'one_by_one_only'/,'Supervisor ID001 assignment must be one employee at a time');
+assert.match(updates,/No suggested time is required/,'Supervisor ID001 dialog must not ask for allocated time');
+assert.match(updates,/pausedOnly\(emp\)/,'all-paused normal work must remain eligible for ID001');
+assert.match(updates,/window\.v130StopID001BeforeNormal=closeID001BeforeNormal/,'normal work must auto-stop ID001');
+assert.match(updates,/autoStoppedForNormalWork=true/,'auto-stop transition must be recorded');
+assert.match(updates,/window\.monthlyProductiveActualMinutes=productive/,'productive Job Card hours must remain separate');
+assert.match(updates,/window\.v130ID001Minutes=waiting/,'ID001 waiting hours must remain separately measurable');
+assert.match(updates,/window\.monthlyNormalWorkingMinutes=\(emp,from,to\)=>productive\(emp,from,to\)\+waiting\(emp,from,to\)/,'normal working hours must equal productive plus ID001');
+assert.match(updates,/a\.job!==H&&!a\.cancelled/,'ID001 must be excluded from Suggested Time');
+assert.match(updates,/s\.job!==H[\s\S]{0,300}sessionOvertimeMinutes/,'ID001 must be excluded from overtime');
+assert.match(updates,/ID001 ASSIGNED/,'assigned ID001 must appear as employee Current Work before START');
+assert.match(updates,/ID001 never shows Allocated \/ Suggested \/ Remaining \/ Exceeded fields/,'ID001 UI must hide suggested-time concepts');
+assert.match(updates,/Normal Working Hours/,'employee monthly view must show Normal Working Hours');
+assert.match(updates,/ID001 Hours/,'employee monthly view must show ID001 Hours separately');
+assert.match(updates,/window\.v130ID001NormalWorkingAuthority=true/,'V130 ID001 final marker');

@@ -1109,7 +1109,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
          return '<details class="v69-worker '+(hold?'v756-id001-worker':'v756-normal-worker')+'"><summary>'+
            E(x.u.name)+' <small class="'+(hold?'v756-id001-badge':'')+'">'+(hold?'ID001 · WAITING':E(x.s.job))+'</small></summary><div>'+
            (hold
-             ?'<div class="v756-id001-title">ID001 — AVAILABLE / WAITING</div><b>Allocated ID001:</b> '+F(allocated)+'<br><b>Current ID001 Time:</b> '+F(ac)+'<br><b>Status:</b> <span class="v756-id001-status">ACTIVE ID001</span>'
+             ?'<div class="v756-id001-title">ID001 — AVAILABLE / WAITING</div><b>Current ID001 Time:</b> '+F(ac)+'<br><b>Status:</b> <span class="v756-id001-status">ACTIVE ID001</span>'
              :'<b>Job Card:</b> '+E(x.s.job)+'<br><b>Vehicle:</b> '+E(x.j.vehicle||'—')+' · '+E(x.j.reg||'—')+'<br><b>Allocated:</b> '+F(allocated)+'<br><b>Actual:</b> '+F(ac)+'<br><b>Status:</b> '+E(x.a?status(x.a):'Started')+'<br><button class="blue" onclick="openSupervisorJob(\''+E(x.s.job)+'\')">VIEW JOB</button>')+
            '</div></details>';
        }).join(''):'<div class="v69-empty">No active workers</div>')+'</section>';
@@ -1489,7 +1489,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
        (list.length?list.map(x=>{
          const hold=x.s.job===HOLD,allocated=+x.a?.suggested||0,ac=x.a?totalForAssignment(x.a):0;
          return '<details class="v69-worker '+(hold?'v756-id001-worker':'v756-normal-worker')+'"><summary>'+E(x.u.name)+' <small class="'+(hold?'v756-id001-badge':'')+'">'+(hold?'ID001 · WAITING':E(x.s.job))+'</small></summary><div>'+
-           (hold?'<div class="v756-id001-title">ID001 — AVAILABLE / WAITING</div><b>Allocated ID001:</b> '+F(allocated)+'<br><b>Current ID001 Time:</b> '+F(ac)+'<br><b>Status:</b> <span class="v756-id001-status">ACTIVE ID001</span>':
+           (hold?'<div class="v756-id001-title">ID001 — AVAILABLE / WAITING</div><b>Current ID001 Time:</b> '+F(ac)+'<br><b>Status:</b> <span class="v756-id001-status">ACTIVE ID001</span>':
            '<b>Job Card:</b> '+E(x.s.job)+'<br><b>Vehicle:</b> '+E(x.j.vehicle||'—')+' · '+E(x.j.reg||'—')+'<br><b>Allocated:</b> '+F(allocated)+'<br><b>Actual:</b> '+F(ac)+'<br><b>Status:</b> WORKING<br><button class="blue" onclick="openSupervisorJob(\''+E(x.s.job)+'\')">VIEW JOB</button>')+
            '</div></details>';
        }).join(''):'<div class="v69-empty">No active workers</div>')+'</section>';
@@ -2752,4 +2752,210 @@ const st=document.createElement('style');st.id='v148SupervisorStyle';st.textCont
 '#supervisorView .v74-six{grid-template-columns:repeat(3,minmax(0,1fr))!important}#supervisorView .v148-reserved{opacity:.6!important;border:1px dashed #94a3b8!important;background:#f8fafc!important}#supervisorView .v148-splash{font-size:27px}'+
 '@media(max-width:700px){#supervisorView .v148-top{gap:5px!important}#supervisorView .v148-top-card{padding:7px!important;min-height:66px!important}#supervisorView .v148-top-card small{display:none!important}#supervisorView .v148-top-card b{font-size:9px!important}#supervisorView .v74-six{grid-template-columns:repeat(2,minmax(0,1fr))!important}#supervisorView .v148-ideal,#supervisorView .v148-modules{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}}';
 document.head.appendChild(st);const old=window.render;window.render=function(){const z=typeof old==='function'?old.apply(this,arguments):undefined;setTimeout(apply,0);return z};setTimeout(apply,0);window.v148SupervisorApply=apply;
+})();
+
+
+/* V130 ID001 NORMAL WORKING HOURS FINAL AUTHORITY
+   Final workshop rules:
+   - Supervisor assigns ID001 to one employee at a time; no suggested/allocated time.
+   - Employee may receive ID001 with no normal work, or when every open normal job is Paused.
+   - Once assigned, ID001 is the employee's Current Work (Assigned until START).
+   - START/STOP only. Starting/resuming a normal Job Card automatically closes ID001 first.
+   - ID001 actual duty-time counts in Normal Working Hours, but remains separate from Productive Actual.
+   - ID001 never contributes to Suggested Time, Job Card Efficiency, Incentive, Overtime or Labour Cost. */
+(function(){'use strict';
+ const H='ID001',SAFE=130;
+ const msg=(m,t='ID001')=>typeof window.v74Msg==='function'?window.v74Msg(m,t):alert(m);
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const openHold=emp=>(state.assign||[]).filter(a=>a&&a.job===H&&String(a.emp)===String(emp)&&!a.cancelled&&!a.completed).sort((a,b)=>(+b.assignedAt||0)-(+a.assignedAt||0))[0]||null;
+ const openNormal=emp=>(state.assign||[]).filter(a=>a&&a.job!==H&&String(a.emp)===String(emp)&&!a.cancelled&&!a.completed);
+ const status=a=>{try{return typeof empStatus==='function'?empStatus(a):(a.completed?'Finished':'New')}catch(_){return a?.completed?'Finished':'New'}};
+ const pausedOnly=emp=>{const rows=openNormal(emp);return rows.length>0&&rows.every(a=>status(a)==='Paused')};
+ const closed=t=>typeof window.v75IsClosedWorkshopDay==='function'&&window.v75IsClosedWorkshopDay(t);
+ const duty=t=>typeof window.v75IsID001DutyTime!=='function'||window.v75IsID001DutyTime(t);
+ const leave=(emp,t)=>typeof window.v63IsOnLeave==='function'&&window.v63IsOnLeave(emp,t);
+ const eligible=(emp,t=Date.now())=>!closed(t)&&duty(t)&&!leave(emp,t)&&!activeSession(emp)&&!openHold(emp)&&(openNormal(emp).length===0||pausedOnly(emp));
+ window.v130ID001Eligible=eligible;
+ window.v75IdealAvailableEmployees=()=> (users||[]).filter(u=>u&&u.role==='Employee'&&eligible(u.id));
+
+ // Final assignment authority: ID001 has no Suggested / Allocated Time.
+ const priorAssign=window.assignJobCore;
+ window.assignJobCore=function(no,emp,minutes){
+   if(no!==H)return typeof priorAssign==='function'?priorAssign.apply(this,arguments):undefined;
+   const t=Date.now(),u=typeof user==='function'?user(emp):null,n=u?.name||emp;
+   if(!String(emp||'').trim())return msg('Select an employee.','Assign ID001');
+   if(closed(t))return msg('ID001 cannot be assigned on Friday or a Public Holiday.','Assign ID001');
+   if(!duty(t))return msg('ID001 can be assigned only during duty hours: 08:00–13:00 and 15:00–19:00.','Assign ID001');
+   if(leave(emp,t))return msg(n+' is on leave. ID001 cannot be assigned.','Assign ID001');
+   if(openHold(emp))return msg('ID001 is already assigned to '+n+'.','Assign ID001');
+   if(activeSession(emp))return msg(n+' has an active running job. ID001 cannot be assigned.','Assign ID001');
+   if(openNormal(emp).some(a=>status(a)!=='Paused'))return msg(n+' has normal work available. ID001 is allowed only when there is no normal work, or all current normal work is Paused.','Assign ID001');
+   state.assign=state.assign||[];
+   const a={id:uid(),job:H,emp,suggested:0,completed:false,cancelled:false,rework:false,idealCard:true,noSuggestedTime:true,countsAsNormalWorking:true,idealSafeVersion:SAFE,assignedBy:me?.id||'SYSTEM',assignedAt:t,pausedJobFallback:pausedOnly(emp)};
+   state.assign.push(a);
+   if(typeof setLastAction==='function')setLastAction('Assigned ID001 to '+n);
+   save();render();return a;
+ };
+
+ // Bulk assignment is intentionally retired. Supervisors assign one employee per action.
+ window.v75AssignIdealToAvailable=function(){return{ok:false,reason:'one_by_one_only',assigned:[]}};
+
+ window.v106OpenAssignID001=function(){
+   if(!me||me.role!=='Supervisor')return;
+   const people=window.v75IdealAvailableEmployees();
+   if(!people.length)return msg('No employee is currently available for ID001. The employee must have no running job and either no normal work or only paused normal work.','Assign ID001');
+   const opts=people.map(u=>'<option value="'+esc(u.id)+'">'+esc(u.name)+' — '+esc(u.department||'')+'</option>').join('');
+   const body='<div class="v74-d"><div class="section-title"><h2>◷ Assign ID001</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
+     '<div class="notice"><b>ID001 / Waiting Time</b><br>Select one employee. No suggested time is required.</div>'+
+     '<label>Employee<br><select id="v106IdealEmp">'+opts+'</select></label>'+
+     '<div class="v74-actions"><button class="blue big-action" onclick="v106ConfirmAssignID001()">ASSIGN ID001</button></div></div>';
+   if(typeof openModal==='function')openModal(body);else if(typeof showSupervisorModal==='function')showSupervisorModal('Assign ID001',body);
+ };
+ window.v106ConfirmAssignID001=function(){
+   const emp=document.getElementById('v106IdealEmp')?.value;if(!emp)return;
+   const before=!!openHold(emp),result=window.assignJobCore(H,emp,0),after=openHold(emp);
+   if(!before&&after){
+     try{if(typeof closeModal==='function')closeModal()}catch(_){}
+     msg('ID001 assigned successfully to '+((typeof user==='function'&&user(emp)?.name)||emp)+'.','Assign ID001');
+   }
+   return result;
+ };
+ window.v105OpenAssignID001=window.v106OpenAssignID001;
+ window.v105ConfirmAssignID001=window.v106ConfirmAssignID001;
+
+ function assignmentForSession(s){
+   if(!s)return null;
+   return (state.assign||[]).find(a=>a&&a.id===s.assignmentId)||
+     (state.assign||[]).filter(a=>a&&a.job===H&&String(a.emp)===String(s.emp)&&!a.cancelled).sort((a,b)=>(+b.assignedAt||0)-(+a.assignedAt||0))[0]||null;
+ }
+ function closeID001BeforeNormal(emp,at=Date.now()){
+   const a=openHold(emp);if(!a)return false;
+   const s=activeSession(emp);
+   if(s&&s.job!==H)return false;
+   if(s&&s.job===H){
+     s.end=at;s.finished=true;s.paused=false;s.autoStoppedForNormalWork=true;s.autoStoppedAt=at;
+   }
+   a.completed=true;a.completedAt=at;a.cancelled=false;a.autoStoppedForNormalWork=true;
+   if(typeof setLastAction==='function')setLastAction('Stopped ID001 automatically before normal work');
+   return true;
+ }
+ window.v130StopID001BeforeNormal=closeID001BeforeNormal;
+
+ // Starting/resuming a valid normal Job Card automatically stops/completes ID001 first.
+ const priorStart=window.start;
+ window.start=function(no){
+   if(no===H)return typeof priorStart==='function'?priorStart.apply(this,arguments):undefined;
+   if(!me||me.role!=='Employee')return typeof priorStart==='function'?priorStart.apply(this,arguments):undefined;
+   const candidate=(state.assign||[]).filter(a=>a&&String(a.emp)===String(me.id)&&a.job===no&&!a.cancelled&&!a.completed).sort((a,b)=>(+b.assignedAt||0)-(+a.assignedAt||0))[0]||null;
+   if(!candidate)return typeof priorStart==='function'?priorStart.apply(this,arguments):undefined;
+   const changed=closeID001BeforeNormal(me.id,Date.now());
+   const out=typeof priorStart==='function'?priorStart.apply(this,arguments):undefined;
+   if(changed){
+     const current=activeSession(me.id);
+     if(!current||current.job!==no){try{save();render()}catch(_){}}
+   }
+   return out;
+ };
+
+ // Calculation separation: productive normal work, ID001 waiting, and total normal working hours.
+ const clipped=(s,from,to)=>{
+   const st=Math.max(+s.start||0,+from||0),en=Math.min(+(s.end||Date.now()),+to||Number.MAX_SAFE_INTEGER);
+   if(en<=st)return 0;
+   try{return typeof window.sessionNormalMinutes==='function'?Math.max(0,window.sessionNormalMinutes({start:st,end:en},en)||0):Math.max(0,(en-st)/60000)}
+   catch(_){return Math.max(0,(en-st)/60000)}
+ };
+ const productive=(emp,from,to)=>{
+   try{if(typeof window.v79ReconcileWorkSessions==='function')window.v79ReconcileWorkSessions()}catch(_){}
+   return (state.sessions||[]).filter(s=>s&&String(s.emp)===String(emp)&&s.job!==H&&(+s.start||0)<to&&(+s.end||Date.now())>from).reduce((n,s)=>n+clipped(s,from,to),0);
+ };
+ const waiting=(emp,from,to)=>{
+   try{if(typeof window.v79ReconcileWorkSessions==='function')window.v79ReconcileWorkSessions()}catch(_){}
+   return (state.sessions||[]).filter(s=>s&&String(s.emp)===String(emp)&&s.job===H&&(+s.start||0)<to&&(+s.end||Date.now())>from).reduce((n,s)=>n+clipped(s,from,to),0);
+ };
+ window.v130ProductiveMinutes=productive;
+ window.v130ID001Minutes=waiting;
+ window.monthlyProductiveActualMinutes=productive;
+ window.monthlyNormalActualMinutes=productive;
+ window.monthlyNormalWorkingMinutes=(emp,from,to)=>productive(emp,from,to)+waiting(emp,from,to);
+
+ // Suggested Time belongs only to productive Job Cards; historical ID001 allocations are ignored.
+ window.monthlySuggestedMinutes=(emp,from,to)=>(state.assign||[]).filter(a=>a&&String(a.emp)===String(emp)&&a.job!==H&&!a.cancelled&&(a.assignedAt||0)>=from&&(a.assignedAt||0)<to).reduce((n,a)=>n+(+a.suggested||0),0);
+
+ // ID001 is normal-duty waiting only; it can never create overtime.
+ window.overtimeForEmployee=(emp,from,to)=>{
+   try{if(typeof window.v79ReconcileWorkSessions==='function')window.v79ReconcileWorkSessions()}catch(_){}
+   return (state.sessions||[]).filter(s=>s&&String(s.emp)===String(emp)&&s.job!==H&&(+s.start||0)<to&&(+s.end||Date.now())>from).reduce((n,s)=>{
+     const st=Math.max(+s.start||0,from),en=Math.min(+(s.end||Date.now()),to);if(en<=st)return n;
+     try{return n+(typeof window.sessionOvertimeMinutes==='function'?Math.max(0,window.sessionOvertimeMinutes({start:st,end:en},en)||0):0)}catch(_){return n}
+   },0);
+ };
+
+ function applyEmployeeUI(){
+   if(!me||me.role!=='Employee')return;
+   const root=document.getElementById('employeeView');if(!root)return;
+   const a=openHold(me.id),active=activeSession(me.id),activeHold=!!active&&active.job===H;
+   const fm=v=>{try{return fmt(Math.max(0,+v||0))}catch(_){const m=Math.max(0,Math.round(+v||0));return Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m'}};
+
+   // ID001 becomes Current Work immediately after Supervisor assignment, even before START.
+   if(a&&!active){
+     const live=root.querySelector('.v75s-live');
+     if(live){
+       live.classList.remove('off');
+       const gear=live.querySelector('.v75s-gear'),h=live.querySelector('h2'),p=live.querySelector('p');
+       if(gear)gear.textContent='◷';if(h)h.textContent='ID001 ASSIGNED';if(p)p.textContent='Current Work · Press START to begin waiting time';
+     }
+     const top=root.querySelector('.v75s-top');
+     if(top&&!root.querySelector('.v130-id001-current')){
+       top.insertAdjacentHTML('afterend','<div class="v75s-hero v130-id001-current"><div><div class="v75s-jno">CURRENT WORK : <b>ID001</b></div><div class="v75s-vehicle">WAITING TIME</div><div class="v75s-reg">Assigned · Not started</div><button class="v75s-start" onclick="start(\\'ID001\\')">▶ START ID001</button></div><div class="v75s-gear" style="margin-left:auto">◷</div></div>');
+     }
+   }
+
+   // ID001 never shows Allocated / Suggested / Remaining / Exceeded fields.
+   if(activeHold){
+     const pair=root.querySelector('.v75s-timepair');if(pair)pair.style.gridTemplateColumns='1fr';
+     const remaining=root.querySelector('#v80RemainingGauge');if(remaining)remaining.style.display='none';
+     const metrics=root.querySelector('.v75s-metrics');
+     if(metrics)metrics.innerHTML='<div class="v75s-metric actual" style="grid-column:1/-1"><span>ID001 WAITING TIME</span><b id="currentActual">'+fm(waiting(me.id,new Date(new Date().getFullYear(),new Date().getMonth(),1).getTime(),new Date(new Date().getFullYear(),new Date().getMonth()+1,1).getTime()))+'</b></div>';
+   }
+
+   // Hide duplicate ID001 allotted card. Paused normal jobs remain visible and can be resumed;
+   // if ID001 is running, their button is enabled and START will auto-stop ID001 first.
+   root.querySelectorAll('.v75s-card').forEach(card=>{
+     const label=(card.querySelector('.v75s-card-top b')?.textContent||'').trim();
+     if(label==='JOB : ID001'){card.style.display='none';return}
+     if(activeHold){
+       const b=card.querySelector('.v75s-start');
+       const m=label.match(/^JOB\s*:\s*(.+)$/);
+       if(b&&m){b.disabled=false;b.textContent='▶ RESUME / START';b.setAttribute('onclick',"start('"+String(m[1]).replace(/'/g,"\\\\'")+"')")}
+     }
+   });
+   const count=root.querySelector('.v75s-count');
+   if(count){
+     const n=openNormal(me.id).length;count.textContent=n+' Job'+(n===1?'':'s');
+   }
+
+   // Monthly figures: productive and waiting hours remain separate, while Normal Working Hours includes both.
+   const now=new Date(),from=+new Date(now.getFullYear(),now.getMonth(),1),to=+new Date(now.getFullYear(),now.getMonth()+1,1);
+   const prod=productive(me.id,from,to),hold=waiting(me.id,from,to),normal=prod+hold;
+   const grid=root.querySelector('.month-summary .v81-month-grid');
+   if(grid){
+     [...grid.querySelectorAll('.v81-month-orb')].forEach(box=>{
+       const label=box.querySelector('span'),value=box.querySelector('b');if(!label||!value)return;
+       const t=(label.textContent||'').trim();
+       if(t==='Suggested Time'){label.textContent='Productive Suggested'}
+       if(t==='Actual Time'){label.textContent='Productive Actual';value.textContent=fm(prod)}
+       if(t==='Remaining Time'||t==='Over Suggested'){label.textContent='Productive '+t}
+     });
+     if(!grid.querySelector('.v130-id001-hours'))grid.insertAdjacentHTML('beforeend','<div class="v81-month-orb v81-m8 v130-id001-hours"><b>'+fm(hold)+'</b><span>ID001 Hours</span></div>');
+     else grid.querySelector('.v130-id001-hours b').textContent=fm(hold);
+     if(!grid.querySelector('.v130-normal-hours'))grid.insertAdjacentHTML('beforeend','<div class="v81-month-orb v81-m2 v130-normal-hours"><b>'+fm(normal)+'</b><span>Normal Working Hours</span></div>');
+     else grid.querySelector('.v130-normal-hours b').textContent=fm(normal);
+   }
+ }
+ window.v130ApplyEmployeeID001UI=applyEmployeeUI;
+ const priorEmployeeRender=window.renderEmployee;
+ window.renderEmployee=function(){const r=typeof priorEmployeeRender==='function'?priorEmployeeRender.apply(this,arguments):undefined;setTimeout(applyEmployeeUI,0);return r};
+ setInterval(()=>{if(me?.role==='Employee')applyEmployeeUI()},1000);
+
+ window.v130ID001NormalWorkingAuthority=true;
 })();
