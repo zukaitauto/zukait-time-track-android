@@ -3,6 +3,6 @@
   "versionCode": 83,
   "approvedForStaff": true,
   "approvedAt": "2026-09-24",
-  "sourceCommit": "cdacb56e951faff94b46602f3fcd888ae07e0033",
-  "publishNonce": "approved-v120-search-session-selection-fix-20260924"
+  "sourceCommit": "0bc9bfa0ac054a9d3a4b74bd838f6641813533b4",
+  "publishNonce": "approved-v120-search-session-selection-fix-20260924-verified-cache-revision"
 }
