@@ -79,7 +79,7 @@
     const rid=requestId(input); if(rid){const prior=c.issues.find(x=>x.clientRequestId===rid);if(prior)return clone(prior)}
     if(type===TYPES.ISSUED&&c.issues.some(x=>!x.voided&&x.type===TYPES.ISSUED&&x.jobCard===jc&&x.department===DEPT))throw new Error('ISSUED_ALREADY_FINISHED');
     if(c.actuals.some(x=>!x.voided&&x.jobCard===jc&&x.department===DEPT&&x.locked))throw new Error('ACTUAL_ALREADY_FINISHED');
-    const row={id:uid(type),type,department:DEPT,jobCard:jc,vehicle:String(input.vehicle||''),colourCode:String(input.colourCode||''),mainPainterId:String(input.mainPainterId||''),allottedSupervisorId:String(input.allottedSupervisorId||actor.id||''),lines:cleanLines(state,input.lines),clientRequestId:rid||uid('req'),locked:true,createdAt:Date.now(),createdBy:actor.id};
+    const row={id:uid(type),type,department:DEPT,jobCard:jc,vehicle:String(input.vehicle||''),colourCode:String(input.colourCode||''),mainPainterId:String(input.mainPainterId||''),allottedSupervisorId:String(input.allottedSupervisorId||actor.id||''),lines:cleanLines(state,input.lines),clientRequestId:rid||uid('req'),locked:true,createdAt:Date.now(),createdBy:actor.id,createdByName:String(actor?.name||actor?.id||''),createdByRole:String(actor?.role||'')};
     c.issues.push(row); return clone(row);
   }
   function allowance(state,jc){
@@ -101,7 +101,7 @@
       const p=priceAt(state,l.materialId,l.brandId,Number(input.actualAt)||Date.now()); if(!p)throw new Error('PRICE_NOT_FOUND');
       return {no:i+1,materialId:l.materialId,brandId:l.brandId,unit:a.unit,issuedQuantity:a.quantity,actualQuantity:q,priceId:p.id,unitPriceSnapshot:p.pricePerUnit,lineCost:money(q*p.pricePerUnit)};
     });
-    const row={id:uid('actual'),department:DEPT,jobCard:jc,actualAt:Number(input.actualAt)||Date.now(),lines,clientRequestId:rid||uid('req'),locked:true,totalCost:money(lines.reduce((s,l)=>s+l.lineCost,0)),createdAt:Date.now(),createdBy:actor.id};
+    const row={id:uid('actual'),department:DEPT,jobCard:jc,actualAt:Number(input.actualAt)||Date.now(),lines,clientRequestId:rid||uid('req'),locked:true,totalCost:money(lines.reduce((s,l)=>s+l.lineCost,0)),createdAt:Date.now(),createdBy:actor.id,createdByName:String(actor?.name||actor?.id||''),createdByRole:String(actor?.role||'')};
     c.actuals.push(row); return clone(row);
   }
   function auditChange(c,type,entity,before,after,actor,reason){
@@ -116,7 +116,7 @@
     if(patch.mainPainterId!==undefined)next.mainPainterId=String(patch.mainPainterId||'');
     if(patch.allottedSupervisorId!==undefined)next.allottedSupervisorId=String(patch.allottedSupervisorId||'');
     if(patch.lines!==undefined)next.lines=cleanLines(state,patch.lines);
-    next.correctedAt=Date.now(); next.correctedBy=actor.id; Object.assign(row,next);
+    next.correctedAt=Date.now(); next.correctedBy=actor.id; next.correctedByName=String(actor?.name||actor?.id||''); next.correctedByRole=String(actor?.role||''); Object.assign(row,next);
     auditChange(c,'ISSUE_CORRECTED',row,before,row,actor,reason); return clone(row);
   }
   function managerCorrectActual(state,id,lines,actor,reason){
@@ -130,7 +130,7 @@
       const p=old?{id:old.priceId,pricePerUnit:old.unitPriceSnapshot}:priceAt(state,l.materialId,l.brandId,row.actualAt); if(!p)throw new Error('PRICE_NOT_FOUND');
       return {no:i+1,materialId:l.materialId,brandId:l.brandId,unit:a.unit,issuedQuantity:a.quantity,actualQuantity:q,priceId:p.id,unitPriceSnapshot:p.pricePerUnit,lineCost:money(q*p.pricePerUnit)};
     });
-    row.lines=nextLines; row.totalCost=money(nextLines.reduce((n,l)=>n+l.lineCost,0)); row.correctedAt=Date.now(); row.correctedBy=actor.id;
+    row.lines=nextLines; row.totalCost=money(nextLines.reduce((n,l)=>n+l.lineCost,0)); row.correctedAt=Date.now(); row.correctedBy=actor.id; row.correctedByName=String(actor?.name||actor?.id||''); row.correctedByRole=String(actor?.role||'');
     auditChange(c,'ACTUAL_CORRECTED',row,before,row,actor,reason); return clone(row);
   }
   function managerRecalculateActualPrices(state,priceId,actor,reason){
@@ -143,13 +143,13 @@
   function managerVoid(state,kind,id,actor,reason){
     assertRole(actor?.role,true); const c=ensureState(state),list=kind==='actual'?c.actuals:c.issues,row=list.find(x=>x.id===id&&!x.voided); if(!row)throw new Error('RECORD_NOT_FOUND');
     const why=String(reason||'').trim(); if(!why)throw new Error('REASON_REQUIRED');
-    const before=clone(row); row.voided=true; row.voidedAt=Date.now(); row.voidedBy=actor.id; row.voidReason=why;
+    const before=clone(row); row.voided=true; row.voidedAt=Date.now(); row.voidedBy=actor.id; row.voidedByName=String(actor?.name||actor?.id||''); row.voidedByRole=String(actor?.role||''); row.voidReason=why;
     auditChange(c,kind==='actual'?'ACTUAL_VOIDED':'ISSUE_VOIDED',row,before,row,actor,why); return clone(row);
   }
   function managerReopenActual(state,id,actor,reason){
     assertRole(actor?.role,true); const c=ensureState(state),row=c.actuals.find(x=>x.id===id&&!x.voided); if(!row)throw new Error('ACTUAL_NOT_FOUND');
     const before=clone(row); const why=String(reason||'').trim(); if(!why)throw new Error('REASON_REQUIRED');
-    row.locked=true; row.reopenedAt=Date.now(); row.reopenedBy=actor.id; row.reopenReason=why; row.managerReopen=true;
+    row.locked=true; row.reopenedAt=Date.now(); row.reopenedBy=actor.id; row.reopenedByName=String(actor?.name||actor?.id||''); row.reopenedByRole=String(actor?.role||''); row.reopenReason=why; row.managerReopen=true;
     auditChange(c,'ACTUAL_REOPENED',row,before,row,actor,why); return clone(row);
   }
   function monthlyExpense(state,year,month){
