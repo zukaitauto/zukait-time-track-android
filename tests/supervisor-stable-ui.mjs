@@ -5,9 +5,9 @@ const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
 const stable=fs.readFileSync('app/src/main/assets/supervisor_stable.js','utf8');
 
 assert.match(stable,/V143 SUPERVISOR STABLE AUTHORITY/,'final Supervisor authority marker must exist');
-assert.ok(html.includes('<script src="v74_updates.js?v=143"></script>'),'legacy update bundle must still load for shared helpers');
-assert.ok(html.includes('<script src="supervisor_stable.js?v=143"></script>'),'stable Supervisor authority must be shipped');
-assert.ok(html.indexOf('supervisor_stable.js?v=143')>html.indexOf('v74_updates.js?v=143'),'stable Supervisor authority must load after all legacy Supervisor decorators');
+const v74=html.match(/<script src="v74_updates\\.js\\?v=\\d+"><\\/script>/);assert.ok(v74,'legacy update bundle must still load for shared helpers');
+const stableTag=html.match(/<script src="supervisor_stable\\.js\\?v=\\d+"><\\/script>/);assert.ok(stableTag,'stable Supervisor authority must be shipped');
+assert.ok(html.indexOf(stableTag[0])>html.indexOf(v74[0]),'stable Supervisor authority must load after all legacy Supervisor decorators');
 
 assert.match(stable,/window\.renderSupervisor=renderStable/,'stable authority must own renderSupervisor');
 assert.match(stable,/window\.render=function\(\)\{if\(role\(\)==='Supervisor'\)return renderStable\(\);return typeof prior==='function'\?prior\.apply/,'Supervisor render must bypass legacy render chain while non-Supervisor roles retain it');
