@@ -2915,7 +2915,7 @@ document.head.appendChild(st);const old=window.render;window.render=function(){c
      const pair=root.querySelector('.v75s-timepair');if(pair)pair.style.gridTemplateColumns='1fr';
      const remaining=root.querySelector('#v80RemainingGauge');if(remaining)remaining.style.display='none';
      const metrics=root.querySelector('.v75s-metrics');
-     if(metrics)metrics.innerHTML='<div class="v75s-metric actual" style="grid-column:1/-1"><span>ID001 WAITING TIME</span><b id="currentActual">'+fm(waiting(me.id,new Date(new Date().getFullYear(),new Date().getMonth(),1).getTime(),new Date(new Date().getFullYear(),new Date().getMonth()+1,1).getTime()))+'</b></div>';
+     if(metrics){const currentID001=a&&typeof totalForAssignment==='function'?Math.max(0,+totalForAssignment(a)||0):Math.max(0,(Date.now()-(+active.start||Date.now()))/60000);metrics.innerHTML='<div class="v75s-metric actual" style="grid-column:1/-1"><span>ID001 WAITING TIME</span><b id="currentActual">'+fm(currentID001)+'</b></div>'}
    }
 
    // Hide duplicate ID001 allotted card. Paused normal jobs remain visible and can be resumed;
