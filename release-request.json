@@ -1,8 +1,8 @@
 {
-  "versionName": "V138",
-  "versionCode": 101,
+  "versionName": "V139",
+  "versionCode": 102,
   "approvedForStaff": true,
   "approvedAt": "2026-09-25",
-  "sourceCommit": "c887be0f70c6b8bf0c90afadc44b576f247bc019",
-  "publishNonce": "approved-v138-unified-vehicle-year-authority-20260925-1"
+  "sourceCommit": "1fac236ac442c6ef80eb66154f85544afd49f3e4",
+  "publishNonce": "approved-v139-year-workshop-control-20260925-1"
 }
