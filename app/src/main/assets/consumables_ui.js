@@ -2,7 +2,7 @@
 'use strict';
 const C=()=>window.ZukaitConsumables;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const role=()=>typeof me==='undefined'?'':me?.role||'';
+const role=()=>typeof me==='undefined'?'':(me&&me.role)||'';
 const modal=(title,body)=>{
   if(typeof window.openModal==='function') return openModal('<div class="cons-page"><div class="section-title"><h2>'+title+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+body+'</div>');
 };
@@ -10,7 +10,7 @@ function deptCard(title,icon,enabled,fn){
  return '<button class="cons-dept '+(enabled?'':'disabled')+'" '+(enabled?'onclick="'+fn+'"':'disabled')+'><span>'+icon+'</span><b>'+title+'</b><small>'+(enabled?'Open module':'Coming soon')+'</small></button>';
 }
 window.openConsumablesModule=function(){
- if(!['Supervisor','Manager'].includes(role()))return;
+ const r=role();if(r!=='Supervisor'&&r!=='Manager')return;
  modal('Consumables','<div class="cons-depts">'+deptCard('Painting Consumables','🎨',true,'openPaintingConsumables()')+deptCard('Denting Consumables','🛠️',false,"openConsumablesPlaceholder('Denting')")+deptCard('Mechanical Consumables','⚙️',false,"openConsumablesPlaceholder('Mechanical')")+'</div>');
 };
 window.openConsumablesPlaceholder=function(name){modal(esc(name)+' Consumables','<div class="notice">This department module is openable and isolated. Detailed workflow will be added after Painting Consumables is completed.</div>')};
