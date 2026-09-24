@@ -32,6 +32,7 @@ jobs:
           cp app/src/main/assets/offline_test.html _site/index.html
           cp app/src/main/assets/consumables.js _site/consumables.js
           cp app/src/main/assets/consumables_ui.js _site/consumables_ui.js
+          cp app/src/main/assets/paint_module.js _site/paint_module.js
           cp app/src/main/assets/cloud_sync.js _site/cloud_sync.js
           cp app/src/main/assets/secure_auth.js _site/secure_auth.js
           cp app/src/main/assets/production_pilot.js _site/production_pilot.js
@@ -47,6 +48,8 @@ jobs:
           cp app/src/main/assets/zukait_logo.webp _site/zukait_logo.webp
           test -s _site/consumables.js
           test -s _site/consumables_ui.js
+          test -s _site/paint_module.js
+          grep -q 'openPaintModule' _site/paint_module.js
           grep -q 'openConsumablesModule' _site/consumables_ui.js
           grep -q 'consumables_ui.js' _site/index.html
           test -s _site/v54_improvements.js
