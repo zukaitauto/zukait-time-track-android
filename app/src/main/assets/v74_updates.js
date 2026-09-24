@@ -3121,3 +3121,24 @@ document.head.appendChild(st);const old=window.render;window.render=function(){c
  document.head.appendChild(st);
  window.v150SupervisorModalCloseReady=true;
 })();
+
+
+/* V134 modal close de-duplication: keep one visible CLOSE control per modal.
+   Action buttons such as BACK, CANCEL, SAVE and STOP are intentionally untouched. */
+(function(){
+ function v134DeduplicateModalClose(){
+  const modal=document.getElementById('modal');if(!modal||modal.classList.contains('hidden'))return;
+  const buttons=[...modal.querySelectorAll('button')];
+  const closes=buttons.filter(b=>{
+   const t=String(b.textContent||'').replace(/[✕×]/g,'').trim().toUpperCase();
+   const oc=String(b.getAttribute('onclick')||'');
+   return t==='CLOSE'&&(oc.includes('closeModal')||oc.includes('closeSupervisorModal'));
+  });
+  closes.slice(1).forEach(b=>b.remove());
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{
+  const m=document.getElementById('modal');if(m)new MutationObserver(v134DeduplicateModalClose).observe(m,{childList:true,subtree:true});
+ });else{
+  const m=document.getElementById('modal');if(m)new MutationObserver(v134DeduplicateModalClose).observe(m,{childList:true,subtree:true});
+ }
+})();
