@@ -711,4 +711,4 @@ assert.ok(updates.includes("s.id='sj';s.className='v137-internal-job-select'"), 
 assert.ok(updates.includes("select.value=no;input.value=no"), 'choosing a search result must feed the selected Job Card into the legacy assignment selector');
 assert.ok(updates.includes("Search and select a valid Job Card first."), 'assignment must reject unselected search text instead of assigning the wrong Job Card');
 
-assert.ok(main.includes('offline_test.html?v=121'), 'Android wrapper must load the fresh V121 page revision to prevent stale dashboard layout');
+assert.ok(main.includes('offline_test.html?v=122'), 'Android wrapper must load the fresh V121 page revision to prevent stale dashboard layout');
