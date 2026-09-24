@@ -211,8 +211,8 @@ window.v132OpenSupervisorVehicleEdit=function(no){
 window.v132SaveSupervisorVehicleEdit=function(no){
  if(!me||me.role!=='Supervisor')return alert('Supervisor access required.');
  const j=(state.jobs||[]).find(x=>x&&String(x.no||'').trim().toUpperCase()===String(no||'').trim().toUpperCase());if(!j)return alert('Job Card not found.');
- const make=(document.getElementById('v132SupMake')?.value||'').trim(),model=(document.getElementById('v132SupModel')?.value||'').trim(),year=(document.getElementById('v132SupYear')?.value||'').trim(),reg=(document.getElementById('v132SupReg')?.value||'').trim().toUpperCase();
- if(!make||!model||!reg)return alert('Make, Model and Registration Number are required.');if(year&&!/^\\d{4}$/.test(year))return alert('Enter a valid 4-digit vehicle year.');
+ const make=(document.getElementById('v132SupMake')?.value||'').trim(),model=(document.getElementById('v132SupModel')?.value||'').trim(),yearEl=document.getElementById('v132SupYear'),rawYear=String(yearEl?.value??'').trim(),existingYear=String(j.year??'').trim(),year=existingYear||rawYear,reg=(document.getElementById('v132SupReg')?.value||'').trim().toUpperCase();
+ if(!make||!model||!reg)return alert('Make, Model and Registration Number are required.');if(!existingYear&&rawYear&&!/^\\d{4}$/.test(rawYear))return alert('Enter a valid 4-digit vehicle year.');
  const before={make:j.make||j.brand||'',model:j.model||'',year:j.year||'',reg:j.reg||'',vehicle:j.vehicle||''},after={make,model,year,reg,vehicle:(make+' '+model).trim()};
  if(before.make===after.make&&before.model===after.model&&String(before.year)===String(after.year)&&String(before.reg).toUpperCase()===after.reg)return alert('No changes were made.');
  if(!confirm('Save corrected vehicle details for Job Card '+j.no+'?'))return;
