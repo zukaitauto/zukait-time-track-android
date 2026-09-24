@@ -212,10 +212,10 @@ function addLaunchCard(){
    anchor.insertAdjacentElement('afterend',card);
    return;
  }
- if(host.querySelector('.cons-launch'))return;
- const card=document.createElement('button');card.className='cons-launch';card.onclick=openConsumablesModule;
- card.innerHTML='<span>◫</span><div><b>Consumables</b><small>Painting · Denting · Mechanical</small></div><i>›</i>';
- host.insertBefore(card,host.firstChild);
+ // Manager launcher is owned by the authoritative Workshop Control renderer.
+ // Do not inject a second .cons-launch at the top of Manager Dashboard.
+ // V141 in v74_updates.js repairs/binds the single Workshop Control button.
+ return;
 }
 const css=document.createElement('style');css.id='consumablesUiCss';css.textContent=`
 .cons-launch{width:100%;display:flex;align-items:center;gap:12px;padding:14px 16px;margin:8px 0 12px;border:1px solid #d8e0e8;background:linear-gradient(135deg,#fff,#f7fafc);color:#0f1b2b;border-radius:16px;text-align:left;box-shadow:0 4px 14px rgba(15,27,43,.07)}
