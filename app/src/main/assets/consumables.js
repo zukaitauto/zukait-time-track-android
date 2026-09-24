@@ -7,6 +7,7 @@
   const DEPT='Painting';
   const TYPES={ISSUED:'issued',ADDITIONAL:'additional',ACTUAL:'actual'};
   const UNITS=['Liter','kg','Piece'];
+  const CATEGORIES=['Paint','Consumable'];
   const UNIT_ALIASES={Litre:'Liter',litre:'Liter',liter:'Liter',KG:'kg',Kg:'kg',piece:'Piece',PIECE:'Piece'};
   const normalizeUnit=unit=>UNIT_ALIASES[String(unit||'').trim()]||String(unit||'').trim();
   const clone=v=>JSON.parse(JSON.stringify(v));
@@ -34,10 +35,10 @@
   function validUnit(unit){return UNITS.includes(normalizeUnit(unit))}
   function addMaterial(state,input,actor){
     assertRole(actor?.role,true); const c=ensureState(state);
-    const name=String(input?.name||'').trim(); const unit=normalizeUnit(input?.unit);
+    const name=String(input?.name||'').trim(); const unit=normalizeUnit(input?.unit); const category=CATEGORIES.includes(input?.category)?input.category:'Consumable';
     if(!name)throw new Error('MATERIAL_NAME_REQUIRED'); if(!validUnit(unit))throw new Error('INVALID_UNIT');
     if(c.materials.some(x=>x.active!==false&&x.name.toLowerCase()===name.toLowerCase()))throw new Error('MATERIAL_DUPLICATE');
-    const row={id:uid('mat'),name,unit,active:true,createdAt:Date.now(),createdBy:actor.id};
+    const row={id:uid('mat'),name,unit,category,active:true,createdAt:Date.now(),createdBy:actor.id};
     c.materials.push(row); return clone(row);
   }
   function addBrand(state,input,actor){
@@ -163,5 +164,5 @@
     const keys=['jobs','assign','sessions','corrections','jobEdits','suggestedEdits','reworks','requests','additionalActions','lastActions','overtimeNotices','leaves','leaveAudit'];
     const out={}; for(const k of keys)out[k]=clone(state[k]===undefined?null:state[k]); return JSON.stringify(out);
   }
-  return {DEPT,TYPES,UNITS,ensureState,addMaterial,addBrand,setPrice,priceAt,issue,allowance,finishActual,managerCorrectIssue,managerCorrectActual,managerRecalculateActualPrices,managerVoid,managerReopenActual,monthlyExpense,timeControlFingerprint};
+  return {DEPT,TYPES,UNITS,CATEGORIES,ensureState,addMaterial,addBrand,setPrice,priceAt,issue,allowance,finishActual,managerCorrectIssue,managerCorrectActual,managerRecalculateActualPrices,managerVoid,managerReopenActual,monthlyExpense,timeControlFingerprint};
 });
