@@ -2716,12 +2716,14 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 
 /* V148 SUPERVISOR UI ORGANISATION — preserve existing business actions. */
 (function(){'use strict';
-function apply(){if(!window.me||me.role!=='Supervisor')return;const r=document.getElementById('supervisorView');if(!r)return;\n r.querySelectorAll('.v148-top,.v148-ideal,.v148-modules').forEach(x=>{if(x!==r.querySelector('.v148-top')&&x.classList.contains('v148-top'))x.remove()});
+function apply(){if(!window.me||me.role!=='Supervisor')return;const r=document.getElementById('supervisorView');if(!r)return;
+ r.querySelectorAll('.v148-top,.v148-ideal,.v148-modules').forEach(x=>{if(x!==r.querySelector('.v148-top')&&x.classList.contains('v148-top'))x.remove()});
  const cards=[...r.querySelectorAll('.card')],by=t=>cards.find(x=>new RegExp(t,'i').test(x.querySelector('h3')?.textContent||''));
  const req=[...r.querySelectorAll('.supervisor-request-top,.card,.v92-top-card')].find(x=>/EMPLOYEE REQUESTS?/i.test(x.textContent||'')),att=by('Need\\s*Attention');
  let top=r.querySelector('.v148-top');if(!top){top=document.createElement('div');top.className='v148-top'}const id=r.querySelector('.v91-role-identity');if(id&&id.nextElementSibling!==top)id.insertAdjacentElement('afterend',top);else if(!top.isConnected)r.prepend(top)
  if(req){req.classList.add('v148-top-card','v148-req');req.onclick=()=>window.openSupervisorRequestsWindow?.();top.appendChild(req)}
- if(att){att.classList.add('v148-top-card','v148-att');att.onclick=()=>window.v66OpenAttention?.();top.appendChild(att)}\n [...r.querySelectorAll('.v92-supervisor-top')].forEach(x=>{if(!x.children.length||!(x.textContent||'').trim())x.remove()});
+ if(att){att.classList.add('v148-top-card','v148-att');att.onclick=()=>window.v66OpenAttention?.();top.appendChild(att)}
+ [...r.querySelectorAll('.v92-supervisor-top')].forEach(x=>{if(!x.children.length||!(x.textContent||'').trim())x.remove()});
  let ot=top.querySelector('.v148-ot');if(!ot){ot=document.createElement('button');ot.className='v148-top-card v148-ot';ot.onclick=()=>window.v74OT?.();top.appendChild(ot)}
  let otc=0;try{otc=window.v79CurrentOvertimeRows?.().length||0}catch(_){}
  ot.innerHTML='<span class="v148-icon">⏱</span><span><b>OVERTIME NOW</b><small>Current overtime</small></span><strong>'+otc+'</strong>';
@@ -2730,7 +2732,11 @@ function apply(){if(!window.me||me.role!=='Supervisor')return;const r=document.g
  if(assign){let ir=r.querySelector('.v148-ideal');if(!ir){ir=document.createElement('div');ir.className='v148-ideal'}if(assign.nextElementSibling!==ir)assign.insertAdjacentElement('afterend',ir);['#v109ID001Standalone','#v753ID001Dashboard'].forEach(s=>{const x=r.querySelector(s);if(x){x.classList.add('v148-3d');ir.appendChild(x)}})}
  const glance=[...r.querySelectorAll('.card')].find(x=>/Today at a Glance/i.test(x.querySelector('h3')?.textContent||''));if(glance){const g=glance.querySelector('.v74-six,.glance-grid');if(g){[...g.children].filter(x=>/Overtime Now/i.test(x.textContent||'')).forEach(x=>x.remove());let av=g.querySelector('.v148-av');if(!av){av=document.createElement('button');av.className='notice clickable glance-box v148-av';av.onclick=()=>window.v92OpenAvailableWorkers?.();g.appendChild(av)}let n=0;try{n=(users||[]).filter(u=>u.role==='Employee'&&(!window.v84TechState||!window.v84TechState(u).session)).length}catch(_){}av.innerHTML='<span class="v74-icon">👷</span><div><b>Available Workers</b><div class="stat">'+n+'</div></div>';let z=g.querySelector('.v148-reserved');if(!z){z=document.createElement('div');z.className='notice glance-box v148-reserved';z.innerHTML='<span class="v74-icon">＋</span><div><b>Reserved</b><div class="small">Future use</div></div>';g.appendChild(z)}}
  let mr=r.querySelector('.v148-modules');if(!mr){mr=document.createElement('div');mr.className='v148-modules'}if(glance.nextElementSibling!==mr)glance.insertAdjacentElement('afterend',mr)let cons=r.querySelector('.cons-supervisor-tile');if(cons){cons.classList.add('v148-module','v148-3d');mr.appendChild(cons)}let sp=mr.querySelector('.v148-spare');if(!sp){sp=document.createElement('button');sp.className='v148-module v148-spare v148-3d';sp.onclick=()=>window.v148Spare();sp.innerHTML='<span>⚙️</span><span><b>SPARE PARTS</b><small>Future workshop module</small></span><strong>›</strong>';mr.appendChild(sp)}}
- r.querySelectorAll('.v84-painter .v92-dept-icon').forEach(x=>x.innerHTML='<span class="v148-splash">🎨</span>');\n [...r.querySelectorAll('.cons-supervisor-tile')].slice(1).forEach(x=>x.remove());\n [...r.querySelectorAll('.v148-spare')].slice(1).forEach(x=>x.remove());\n [...r.querySelectorAll('.v148-av')].slice(1).forEach(x=>x.remove());\n [...r.querySelectorAll('.v148-reserved')].slice(1).forEach(x=>x.remove());
+ r.querySelectorAll('.v84-painter .v92-dept-icon').forEach(x=>x.innerHTML='<span class="v148-splash">🎨</span>');
+ [...r.querySelectorAll('.cons-supervisor-tile')].slice(1).forEach(x=>x.remove());
+ [...r.querySelectorAll('.v148-spare')].slice(1).forEach(x=>x.remove());
+ [...r.querySelectorAll('.v148-av')].slice(1).forEach(x=>x.remove());
+ [...r.querySelectorAll('.v148-reserved')].slice(1).forEach(x=>x.remove());
 }
 window.v148Spare=function(){if(typeof showSupervisorModal==='function')return showSupervisorModal('⚙️ Spare Parts','<div class="notice">Spare Parts module reserved for future use.</div>');if(typeof openModal==='function')return openModal('<div class="section-title"><h3>⚙️ Spare Parts</h3><button class="secondary" onclick="closeModal()">Close</button></div><div class="notice">Spare Parts module reserved for future use.</div>')};
 const st=document.createElement('style');st.id='v148SupervisorStyle';st.textContent=
