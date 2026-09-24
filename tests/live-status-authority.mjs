@@ -5,6 +5,7 @@ import vm from 'node:vm';
 const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
 const cloud=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
 const authority=fs.readFileSync('app/src/main/assets/live_status_authority.js','utf8');
+const updates=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
 
 const stableTag=html.match(/<script src="supervisor_stable\.js\?v=\d+"><\/script>/);
 const liveTag=html.match(/<script src="live_status_authority\.js\?v=\d+"><\/script>/);
@@ -19,6 +20,8 @@ assert.match(authority,/window\.currentStaffStatuses=function/,'server authority
 assert.match(authority,/window\.currentActiveWorkers=function/,'server authority must replace active-worker reads');
 assert.match(authority,/window\.openActiveWorkers=function/,'Active Workers details must use server rows');
 assert.match(authority,/window\.v65OpenControl=function/,'Manager Working Now details must use server rows');
+assert.match(updates,/Online shared dashboards are owned exclusively by live_status_authority\.js/,'legacy V115 worker counter must defer to SERVER LIVE authority');
+assert.match(updates,/if\(window\.zukaitLiveStatusAuthority\)return;/,'online Manager\/Supervisor local worker counter must not overwrite server-live counts');
 
 const listeners={};
 const windowObj={
