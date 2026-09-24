@@ -58,6 +58,7 @@ jobs:
           node --check app/src/main/assets/v69_updates.js
           node --check app/src/main/assets/v74_updates.js
           node --check app/src/main/assets/supervisor_stable.js
+          node --check app/src/main/assets/live_status_authority.js
           python3 - <<'PY'
           from pathlib import Path
           import re
@@ -77,6 +78,7 @@ jobs:
           node tests/consumables-ui.mjs
           node tests/assignment-search-ui.mjs
           node tests/supervisor-stable-ui.mjs
+          node tests/live-status-authority.mjs
           node --check app/src/main/assets/consumables.js
           node --check app/src/main/assets/consumables_ui.js
 
