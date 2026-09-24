@@ -35,6 +35,24 @@ body{font-family:Arial,sans-serif;margin:0;background:#f4f6f8;color:#172033}head
 .glance-grid .glance-box:before,.v74-six .glance-box:before{content:"";position:absolute;left:8%;right:8%;top:5px;height:34%;border-radius:50%;background:linear-gradient(rgba(255,255,255,.68),rgba(255,255,255,0));pointer-events:none}
 .glance-grid .glance-box>* ,.v74-six .glance-box>*{position:relative;z-index:1}
 @media(max-width:520px){.supervisor-two-col{grid-template-columns:repeat(2,minmax(0,1fr))!important}.supervisor-two-col label{min-width:0}.supervisor-two-col input,.supervisor-two-col select{width:100%;box-sizing:border-box}}
+#supervisorView .supervisor-assign-grid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;grid-template-areas:"job tech" "time assign"!important;gap:10px!important;align-items:stretch!important}
+#supervisorView .supervisor-job-cell{grid-area:job!important;min-width:0!important}
+#supervisorView .supervisor-tech-cell{grid-area:tech!important;min-width:0!important}
+#supervisorView .supervisor-time-cell{grid-area:time!important;min-width:0!important}
+#supervisorView .supervisor-assign-button{grid-area:assign!important;width:100%!important;min-height:68px!important;align-self:stretch!important;margin:0!important;border-radius:12px!important;font-weight:900!important}
+#supervisorView .supervisor-job-search-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:6px!important;margin-top:5px!important}
+#supervisorView .supervisor-job-search-row input{width:100%!important;min-width:0!important;margin:0!important;min-height:45px!important}
+#supervisorView .supervisor-job-search-button{min-width:62px!important;margin:0!important;padding:0 10px!important;border-radius:10px!important;background:#2563eb!important;color:#fff!important;font-size:10px!important;font-weight:900!important}
+#supervisorView .supervisor-internal-job-select{display:none!important}
+#supervisorView .supervisor-job-search-results{display:grid;gap:5px;margin-top:6px;max-height:220px;overflow:auto;padding:5px;border:1px solid #dbe3ee;border-radius:10px;background:#f8fafc}
+#supervisorView .supervisor-job-search-results.hidden{display:none!important}
+#supervisorView .supervisor-job-result{display:grid!important;grid-template-columns:1fr auto!important;width:100%!important;margin:0!important;padding:8px 9px!important;border:1px solid #e2e8f0!important;border-radius:9px!important;background:#fff!important;color:#172033!important;text-align:left!important;box-shadow:none!important}
+#supervisorView .supervisor-job-result b{font-size:12px!important}
+#supervisorView .supervisor-job-result span{font-size:10px!important;color:#475569!important;font-weight:800!important}
+#supervisorView .supervisor-job-result small{grid-column:1/3;font-size:9px!important;color:#64748b!important;margin-top:2px!important}
+#supervisorView .supervisor-job-selected{margin-top:6px;padding:7px 9px;border:1px solid #a7f3d0;border-radius:9px;background:#ecfdf5;color:#166534;font-size:10px;font-weight:800}
+#supervisorView .supervisor-job-selected.hidden{display:none!important}
+#supervisorView .supervisor-job-empty{padding:8px;text-align:center;font-size:10px;color:#64748b}
 </style><style id="v88-header-space">.compact-app-header{display:flex!important;align-items:center;gap:8px;flex-wrap:nowrap}.compact-app-header #welcome{font-size:16px;margin:0;min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.supervisor-header-menu,.header-online-status{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-size:12px;font-weight:900;border-radius:12px;padding:7px 9px}.supervisor-header-menu{background:#eaf3ff;color:#172033}.header-online-status{background:#e9f9ef;color:#166534}.header-online-status.is-offline{background:#fee2e2;color:#991b1b}.online-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block}.is-offline .online-dot{background:#ef4444}.compact-app-header .header-update,.compact-app-header .header-logout{padding:7px 9px;font-size:11px;white-space:nowrap}.v88-header-menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.v88-header-menu-grid button{min-height:52px}@media(max-width:520px){.compact-app-header{gap:5px}.compact-app-header #welcome{font-size:13px}.supervisor-header-menu,.header-online-status{font-size:10px;padding:6px}.compact-app-header .header-update,.compact-app-header .header-logout{font-size:0;padding:7px}.header-update:after{content:"⬆";font-size:14px}.header-logout:after{content:"↪";font-size:14px}}
 /* Employee uses only its own compact brand header. */
 body.employee-session #globalBrandHeader{display:none!important}
@@ -146,7 +164,38 @@ function approveRequest(id){let r=state.requests.find(x=>x.id===id);if(!r)return
 function rejectRequest(id){let r=state.requests.find(x=>x.id===id);if(!r)return;let reason=prompt('Optional reason for rejecting this request:','Please continue with the current suggested time.');if(reason===null)return;r.status='Rejected';r.respondedAt=now();r.responseBy=me.id;r.response=reason||'Request rejected';save();render()}
 function ackRequest(id){let r=state.requests.find(x=>x.id===id);if(!r)return;r.status='Read';r.respondedAt=now();r.responseBy=me.id;r.response='Received by supervisor';save();render()}
 function createAndAssignJob(){let no=document.getElementById('newNo').value.trim().toUpperCase(),v=document.getElementById('newVehicle').value.trim(),r=document.getElementById('newReg').value.trim().toUpperCase(),emp=document.getElementById('se').value,s=parseWorkMinutes(document.getElementById('st').value);if(!no||!v||!r||!emp||!Number.isFinite(s)||s<1)return alert('Enter Job Card, vehicle, registration, technician and valid suggested time. '+timeInputHint());if(job(no))return alert('Job Card Number already exists.');state.jobs.push({no,vehicle:v,reg:r,status:'Open',createdBy:me.id,createdAt:now()});state.assign.push({id:uid(),job:no,emp,suggested:s,completed:false,rework:false,assignedBy:me.id,assignedAt:now()});setLastAction('Created and assigned '+no+' to '+user(emp).name);save();render()}
-function assignJobExisting(){let no=document.getElementById('sj').value,emp=document.getElementById('se2').value,s=parseWorkMinutes(document.getElementById('st2').value);assignJobCore(no,emp,s)}
+function supervisorSearchJobs(q){
+  q=String(q||'').trim().toLowerCase();const nq=q.replace(/[^a-z0-9]+/g,'');
+  let rows=(state.jobs||[]).filter(j=>j&&String(j.no||'').trim()&&String(j.no||'').trim().toUpperCase()!=='ID001');
+  const norm=v=>String(v??'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+  const text=j=>[j.no,j.reg,j.vehicle,j.year,j.brand,j.make,j.model].map(v=>String(v??'')).join(' ').toLowerCase();
+  if(q)rows=rows.filter(j=>text(j).includes(q)||(nq&&[j.no,j.reg,j.vehicle,j.year,j.brand,j.make,j.model].some(v=>norm(v).includes(nq))));
+  const score=j=>{const f=[j.no,j.reg,j.vehicle,j.year,j.brand,j.make,j.model].map(v=>String(v??'').toLowerCase()),n=f.map(norm);if(f[0]===q||n[0]===nq)return 0;if(f[0].startsWith(q)||n[0].startsWith(nq))return 1;if(f[1]===q||n[1]===nq)return 2;if(f[1].startsWith(q)||n[1].startsWith(nq))return 3;if(f[0].includes(q)||n[0].includes(nq))return 4;if(f[1].includes(q)||n[1].includes(nq))return 5;return 6};
+  return rows.sort((a,b)=>score(a)-score(b)||(+b.createdAt||0)-(+a.createdAt||0)||String(a.no).localeCompare(String(b.no)));
+}
+function supervisorJobSearchChanged(){
+  const sel=document.getElementById('sj'),info=document.getElementById('supervisorJobSelected');if(sel)sel.value='';if(info)info.classList.add('hidden');renderSupervisorJobSearch(false);
+}
+function renderSupervisorJobSearch(showAll){
+  const input=document.getElementById('supervisorJobSearch'),box=document.getElementById('supervisorJobSearchResults');if(!input||!box)return;
+  const q=input.value.trim();if(!q&&!showAll){box.innerHTML='';box.classList.add('hidden');return}
+  const rows=supervisorSearchJobs(q).slice(0,8);
+  box.innerHTML=rows.length?rows.map(j=>'<button type="button" class="supervisor-job-result" onclick="supervisorSelectExistingJob(\''+encodeURIComponent(String(j.no||''))+'\')"><b>'+esc(j.no)+'</b><span>'+esc(j.reg||'No Reg')+'</span><small>'+esc(j.vehicle||'Vehicle')+(j.year?' · '+esc(j.year):'')+'</small></button>').join(''):'<div class="supervisor-job-empty">No matching Job Card</div>';
+  box.classList.remove('hidden');
+}
+function supervisorSelectExistingJob(encodedNo){
+  const no=decodeURIComponent(String(encodedNo||'')),j=job(no);if(!j||String(no).toUpperCase()==='ID001')return alert('Select a valid Job Card.');
+  const sel=document.getElementById('sj'),input=document.getElementById('supervisorJobSearch'),box=document.getElementById('supervisorJobSearchResults'),info=document.getElementById('supervisorJobSelected');
+  if(sel){if(!Array.from(sel.options||[]).some(o=>o.value===no)){const o=document.createElement('option');o.value=no;o.textContent=no;sel.appendChild(o)}sel.value=no}
+  if(input)input.value=no;
+  if(box){box.innerHTML='';box.classList.add('hidden')}
+  if(info){info.innerHTML='✓ '+esc(no)+' · '+esc(j.reg||'No Registration')+' · '+esc(j.vehicle||'Vehicle')+(j.year?' · '+esc(j.year):'');info.classList.remove('hidden')}
+}
+function supervisorJobSearchKeydown(e){
+  if(e.key==='Escape'){document.getElementById('supervisorJobSearchResults')?.classList.add('hidden');return}
+  if(e.key!=='Enter')return;e.preventDefault();const rows=supervisorSearchJobs(document.getElementById('supervisorJobSearch')?.value||'');if(rows.length)supervisorSelectExistingJob(encodeURIComponent(String(rows[0].no||'')));else renderSupervisorJobSearch(true);
+}
+function assignJobExisting(){let no=document.getElementById('sj')?.value?.trim()?.toUpperCase()||'',emp=document.getElementById('se2')?.value||'',s=parseWorkMinutes(document.getElementById('st2')?.value||'');if(!no||no==='ID001'||!job(no))return alert('Search and select a valid Job Card first.');assignJobCore(no,emp,s)}
 function assignJobCore(no,emp,s){if(!Number.isFinite(s)||s<1)return alert('Enter valid suggested time. '+timeInputHint());let a=assignment(no,emp);if(a){let old=a.suggested;a.suggested=s;a.assignedBy=me.id;a.assignedAt=now();state.suggestedEdits.push({job:no,emp,old,newValue:s,by:me.id,at:now(),source:'Supervisor'});a.completed=false;a.rework=false}else state.assign.push({id:uid(),job:no,emp,suggested:s,completed:false,rework:false,assignedBy:me.id,assignedAt:now()});setLastAction('Assigned '+no+' to '+user(emp).name);save();render()}
 function assignmentSortValue(a){let st=empStatus(a);return st==='New'?0:st==='Started'?1:st==='Paused'?2:3}
 function supervisorOverview(assigned,techs){
@@ -563,7 +612,7 @@ function exportManagerReport(type){let headers=[],rows=[],filename='zukait-repor
     el.innerHTML=`
       <div class="v88-alert-row"><div class="supervisor-request-top clickable v88-request-box" onclick="openSupervisorRequestsWindow()"><div class="mini-icon">🔔</div><div><b>EMPLOYEE REQUESTS</b><div class="small">${newReq?newReq+' new request'+(newReq>1?'s':''):'No new requests'}</div></div><div class="request-number">${newReq}</div></div><div class="card clickable v88-attention-box" onclick="v66OpenAttention()"><div class="mini-icon">⚠️</div><div><b>NEED ATTENTION</b><div class="small">Click to view</div></div></div></div>
       <div class="card quick-entry compact-panel"><div class="panel-title"><span class="mini-icon">🚗</span><div><h3>Quick Entry — Supervisor</h3><span class="small muted">Create and assign quickly</span></div></div><div class="grid"><label>🪪 Job Card Number<br><input id="newNo" placeholder=""></label><label>🚘 Vehicle / Model<br><input id="newVehicle" placeholder=""></label><label>🔢 Registration Number<br><input id="newReg" placeholder=""></label><label>👷 Technician<br><select id="se" class="tech-select">${techOptions()}</select></label><label>⏱ Suggested Time<br><input id="st" inputmode="decimal" placeholder="" value="2.00"><div class="time-hint">${timeInputHint()}</div></label></div><button class="blue" onclick="createAndAssignJob()">➕ Create Job + Assign</button></div>
-      <div class="card compact-panel"><div class="panel-title"><span class="mini-icon">🧾</span><div><h3>Assign / Update Job Card</h3><span class="small muted">Assign or update existing work</span></div></div><div class="grid"><label>🪪 Job Card<br><select id="sj">${jobs.map(j=>'<option>'+j.no+'</option>').join('')}</select></label><label>👷 Technician<br><select id="se2" class="tech-select">${techOptions()}</select></label><label>⏱ Suggested Time<br><input id="st2" inputmode="decimal" placeholder="" value="2.00"><div class="time-hint">${timeInputHint()}</div></label></div><button class="blue" onclick="assignJobExisting()">Assign / Update</button></div>
+      <div class="card compact-panel supervisor-assign-card"><div class="panel-title"><span class="mini-icon">🧾</span><div><h3>Assign / Update Job Card</h3><span class="small muted">Search a Job Card, select technician and allocate time</span></div></div><div class="grid supervisor-two-col supervisor-assign-grid v112-assign-grid"><label class="supervisor-job-cell">🔎 Job Card Search<br><div class="supervisor-job-search-row"><input id="supervisorJobSearch" type="search" autocomplete="off" placeholder="JC / Reg / Vehicle" oninput="supervisorJobSearchChanged()" onkeydown="supervisorJobSearchKeydown(event)"><button type="button" class="supervisor-job-search-button" onclick="renderSupervisorJobSearch(true)">SEARCH</button></div><select id="sj" class="supervisor-internal-job-select" aria-hidden="true" tabindex="-1"><option value=""></option>${jobs.filter(j=>j&&String(j.no||'').trim().toUpperCase()!=='ID001').map(j=>'<option value="'+esc(j.no)+'">'+esc(j.no)+'</option>').join('')}</select><div id="supervisorJobSearchResults" class="supervisor-job-search-results hidden"></div><div id="supervisorJobSelected" class="supervisor-job-selected hidden"></div></label><label class="supervisor-tech-cell">👷 Technician<br><select id="se2" class="tech-select">${techOptions()}</select></label><label class="supervisor-time-cell">⏱ Allocated Time<br><input id="st2" inputmode="decimal" placeholder="" value="2.00"><div class="time-hint">${timeInputHint()}</div></label><button class="blue supervisor-assign-button" onclick="assignJobExisting()">✓ Assign / Update</button></div></div>
       <div class="card"><div class="section-title"><h3>Today at a Glance</h3><span class="pill">Manual view</span></div><div class="glance-grid">
         ${glanceBox('glance-active','👷','Active Workers',assigned.filter(a=>empStatus(a)==='Started'),"openActiveWorkers()")}
         ${glanceBox('glance-paused','⏸','Paused Jobs',assigned.filter(a=>empStatus(a)==='Paused'),"openGlanceList('paused')")}
@@ -1250,6 +1299,8 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
       assigned.slice(1).forEach(x=>x.remove());
     }
     const root=document.getElementById('supervisorView');if(!root||!me)return;
+    const assignCards=[...root.querySelectorAll('.card')].filter(x=>/Assign\s*\/\s*Update Job Card/i.test(x.querySelector('h3')?.textContent||''));assignCards.slice(1).forEach(x=>x.remove());
+    const assignCard=assignCards[0];if(assignCard){assignCard.classList.add('supervisor-assign-card');const grid=assignCard.querySelector('.v112-assign-grid,.supervisor-assign-grid,.grid');if(grid){grid.classList.add('supervisor-two-col','supervisor-assign-grid','v112-assign-grid')}[...assignCard.querySelectorAll('#sj')].slice(1).forEach(x=>x.remove());[...assignCard.querySelectorAll('#supervisorJobSearch')].slice(1).forEach(x=>x.remove());}
     const notice=notificationHTML(me.id);if(notice)root.insertAdjacentHTML('afterbegin',notice);
     // Replace the old embedded Assigned list with one reliable whole-card click target.
     const assignedCard=[...root.querySelectorAll('.card')].find(c=>{const h=c.querySelector('h3');return h&&(h.textContent||'').trim().toUpperCase()==='ASSIGNED JOB CARDS';});
