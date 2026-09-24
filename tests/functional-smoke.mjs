@@ -656,3 +656,12 @@ assert.match(updates,/setInterval\(syncRefresh,5000\)/,'live dashboards must pol
 assert.match(updates,/setInterval\(refresh,1000\)/,'live worker counts must refresh locally every second');
 assert.match(updates,/replaceCount\(root,'Working Now',work\.length\)/,'Manager Working Now must use shared authority');
 assert.match(updates,/replaceCount\(root,'Active Workers',rows\.length\)/,'Supervisor Active Workers must use shared authority');
+
+// V115 multi-device root guards.
+const cloudSync = read('app/src/main/assets/cloud_sync.js');
+assert.match(cloudSync,/function reconcileEmployeeOpenSessions\(data,emp\)/,'cloud conflict merge must reconcile duplicate employee open sessions');
+assert.match(cloudSync,/MULTI_DEVICE_CONFLICT/,'cloud reconciliation must audit multi-device conflicts');
+assert.match(updates,/V115 MULTI-DEVICE EMPLOYEE ACTION AUTHORITY/,'employee actions must have multi-device authority');
+assert.match(updates,/await fresh\(\);const active=closeDuplicates\(me\.id\)/,'Start must sync before enforcing one active job');
+assert.match(updates,/await fresh\(\);closeDuplicates\(me\.id\);return corePause/,'Pause must sync before mutation');
+assert.match(updates,/await fresh\(\);closeDuplicates\(me\.id\);return coreFinish/,'Finish must sync before mutation');
