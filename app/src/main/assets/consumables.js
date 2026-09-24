@@ -6,7 +6,9 @@
   'use strict';
   const DEPT='Painting';
   const TYPES={ISSUED:'issued',ADDITIONAL:'additional',ACTUAL:'actual'};
-  const UNITS=['Litre','ml','kg','gram','piece','roll','sheet','disc','tool','set'];
+  const UNITS=['Liter','kg','Piece'];
+  const UNIT_ALIASES={Litre:'Liter',litre:'Liter',liter:'Liter',KG:'kg',Kg:'kg',piece:'Piece',PIECE:'Piece'};
+  const normalizeUnit=unit=>UNIT_ALIASES[String(unit||'').trim()]||String(unit||'').trim();
   const clone=v=>JSON.parse(JSON.stringify(v));
   const num=v=>Number.isFinite(Number(v))?Number(v):0;
   const money=v=>Math.round((num(v)+Number.EPSILON)*1000)/1000;
@@ -29,10 +31,10 @@
     if(managerOnly&&role!=='Manager')throw new Error('MANAGER_ONLY');
     if(role!=='Manager'&&role!=='Supervisor')throw new Error('CONSUMABLES_FORBIDDEN');
   }
-  function validUnit(unit){return UNITS.includes(String(unit||''))}
+  function validUnit(unit){return UNITS.includes(normalizeUnit(unit))}
   function addMaterial(state,input,actor){
     assertRole(actor?.role,true); const c=ensureState(state);
-    const name=String(input?.name||'').trim(); const unit=String(input?.unit||'').trim();
+    const name=String(input?.name||'').trim(); const unit=normalizeUnit(input?.unit);
     if(!name)throw new Error('MATERIAL_NAME_REQUIRED'); if(!validUnit(unit))throw new Error('INVALID_UNIT');
     if(c.materials.some(x=>x.active!==false&&x.name.toLowerCase()===name.toLowerCase()))throw new Error('MATERIAL_DUPLICATE');
     const row={id:uid('mat'),name,unit,active:true,createdAt:Date.now(),createdBy:actor.id};
