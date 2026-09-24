@@ -5,12 +5,12 @@ const C=require('../app/src/main/assets/consumables.js');
 const manager={id:'MGR001',role:'Manager'},supervisor={id:'SUP001',role:'Supervisor'},employee={id:'EMP001',role:'Employee'};
 const state={jobs:[{no:'JC1'}],assign:[{id:'a1',job:'JC1',emp:'EMP1',suggested:60}],sessions:[{id:'s1',job:'JC1',emp:'EMP1',start:100,end:200}],overtimeNotices:{EMP1:{x:1}},leaves:[]};
 const before=C.timeControlFingerprint(state);
-const mat=C.addMaterial(state,{name:'2K Primer',unit:'Litre'},manager);
+const mat=C.addMaterial(state,{name:'2K Primer',unit:'Liter'},manager);
 const brand=C.addBrand(state,{name:'Duxone'},manager);
-assert.throws(()=>C.addMaterial(state,{name:'2K Primer',unit:'Litre'},manager),/MATERIAL_DUPLICATE/);
+assert.throws(()=>C.addMaterial(state,{name:'2K Primer',unit:'Liter'},manager),/MATERIAL_DUPLICATE/);
 assert.throws(()=>C.addBrand(state,{name:'Duxone'},manager),/BRAND_DUPLICATE/);
 assert.throws(()=>C.addMaterial(state,{name:'Bad',unit:'box'},manager),/INVALID_UNIT/);
-assert.throws(()=>C.addMaterial(state,{name:'Employee Edit',unit:'Litre'},employee),/MANAGER_ONLY/);
+assert.throws(()=>C.addMaterial(state,{name:'Employee Edit',unit:'Liter'},employee),/MANAGER_ONLY/);
 const oct1=new Date(2026,9,1).getTime(),nov1=new Date(2026,10,1).getTime();
 const p1=C.setPrice(state,{materialId:mat.id,brandId:brand.id,pricePerUnit:3.5,effectiveFrom:oct1,reason:'Initial/configured price'},manager);
 const p2=C.setPrice(state,{materialId:mat.id,brandId:brand.id,pricePerUnit:3.75,effectiveFrom:nov1,reason:'Initial/configured price'},manager);
@@ -51,7 +51,7 @@ assert.equal(voided.voided,true); assert.equal(state.consumables.audit.at(-1).ty
 assert.equal(C.monthlyExpense(state,2026,9).totalExpense,0,'voided actual must leave financial reports');
 // Reopen must never create a second Actual or double-count financials.
 const reopenState={};
-const om=C.addMaterial(reopenState,{name:'Reopen Primer',unit:'Litre'},manager),ob=C.addBrand(reopenState,{name:'ReopenBrand'},manager);
+const om=C.addMaterial(reopenState,{name:'Reopen Primer',unit:'Liter'},manager),ob=C.addBrand(reopenState,{name:'ReopenBrand'},manager);
 C.setPrice(reopenState,{materialId:om.id,brandId:ob.id,pricePerUnit:4,effectiveFrom:new Date(2026,0,1).getTime(),reason:'Reopen lifecycle test price'},manager);
 C.issue(reopenState,{clientRequestId:'reopen-issued',jobCard:'JC-REOPEN',lines:[{materialId:om.id,brandId:ob.id,quantity:3}]},supervisor,C.TYPES.ISSUED);
 const oa=C.finishActual(reopenState,{clientRequestId:'reopen-actual',jobCard:'JC-REOPEN',actualAt:new Date(2026,8,24).getTime(),lines:[{materialId:om.id,brandId:ob.id,quantity:2}]},supervisor);
@@ -66,7 +66,7 @@ assert.equal(C.monthlyExpense(reopenState,2026,8).totalExpense,6,'corrected Actu
 
 // Backdated price recalculation: only affected finalized Actuals change, with full audit and snapshot update.
 const priceState={};
-const pm=C.addMaterial(priceState,{name:'Price Primer',unit:'Litre'},manager),pb=C.addBrand(priceState,{name:'PriceBrand'},manager);
+const pm=C.addMaterial(priceState,{name:'Price Primer',unit:'Liter'},manager),pb=C.addBrand(priceState,{name:'PriceBrand'},manager);
 C.setPrice(priceState,{materialId:pm.id,brandId:pb.id,pricePerUnit:5,effectiveFrom:new Date(2026,0,1).getTime(),reason:'Base price'},manager);
 C.issue(priceState,{clientRequestId:'price-issued',jobCard:'JC-PRICE',lines:[{materialId:pm.id,brandId:pb.id,quantity:3}]},supervisor,C.TYPES.ISSUED);
 const pa=C.finishActual(priceState,{clientRequestId:'price-actual',jobCard:'JC-PRICE',actualAt:new Date(2026,8,24).getTime(),lines:[{materialId:pm.id,brandId:pb.id,quantity:2}]},supervisor);
@@ -101,7 +101,7 @@ assert.equal(C.timeControlFingerprint(state),before,'consumables operations must
 
 // Idempotency: retries/double taps with the same clientRequestId must create exactly one record.
 const retryState={};
-const rm=C.addMaterial(retryState,{name:'Clear Coat',unit:'Litre'},manager),rb=C.addBrand(retryState,{name:'RetryBrand'},manager);
+const rm=C.addMaterial(retryState,{name:'Clear Coat',unit:'Liter'},manager),rb=C.addBrand(retryState,{name:'RetryBrand'},manager);
 C.setPrice(retryState,{materialId:rm.id,brandId:rb.id,pricePerUnit:2,effectiveFrom:new Date(2026,0,1).getTime(),reason:'Retry test price'},manager);
 const issuedInput={clientRequestId:'req-issued-001',jobCard:'JC-RETRY',vehicle:'Test',mainPainterId:'EMP006',allottedSupervisorId:'SUP001',lines:[{materialId:rm.id,brandId:rb.id,quantity:2}]};
 const ri1=C.issue(retryState,issuedInput,supervisor,C.TYPES.ISSUED),ri2=C.issue(retryState,issuedInput,supervisor,C.TYPES.ISSUED);
