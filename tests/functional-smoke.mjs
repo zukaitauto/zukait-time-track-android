@@ -420,12 +420,15 @@ assert.ok(updates.includes("'Completed Jobs'") && updates.includes("'Suggested T
 assert(updates.includes("req.closest('.v88-alert-row,.v84-alert-row')"), 'Supervisor finalizer must reuse the existing alert row instead of nesting it');
 assert(updates.includes("v91RoleHeader('Supervisor')"), 'Supervisor authoritative finalizer must apply the single identity/header surface');
 
-// V128 Supervisor UI regression guards.
-assert.ok(updates.includes('window.v128SupervisorSurfaceLock=true'), 'Supervisor final surface lock must prevent legacy UI resurrection');
-assert.ok(updates.includes('grid-template-areas:"job tech" "time assign"'), 'Assign / Update must preserve the agreed compact layout without ID001/default-job controls');
+// Supervisor root architecture regression guards.
+assert.ok(updates.includes('window.v128SupervisorSurfaceLock=true'), 'Supervisor final surface lock must prevent legacy header resurrection');
+assert.ok(html.includes('supervisor-assign-grid') && html.includes('grid-template-areas:"job tech" "time assign"'), 'authoritative Supervisor renderer must own the compact 2x2 Assign / Update layout');
+assert.ok(html.includes('id="supervisorJobSearch"') && html.includes('class="supervisor-internal-job-select"'), 'authoritative Supervisor renderer must own visible search plus hidden #sj handoff');
+assert.ok(html.includes("assignCards.slice(1).forEach(x=>x.remove())"), 'Supervisor finalizer must remove duplicate Assign / Update cards');
 assert.ok(updates.includes("v109ID001Standalone"), 'ID001 must remain a dedicated standalone Supervisor control outside Assign / Update');
 assert.ok(updates.includes("const gh=document.getElementById('globalBrandHeader'),lh=document.getElementById('legacyAppHeader')"), 'Supervisor authority must address both legacy header sources');
 assert.ok(updates.includes("ids.slice(1).forEach(x=>x.remove())"), 'Supervisor authority must remove duplicate identity rows');
+assert.ok(updates.includes('V126 RETIRED') && updates.includes('V136 + V137 RETIRED'), 'legacy competing Assign/Search authorities must stay retired');
 
 // V105 employee performance progress regression guards.
 const updatesSource = updates;
@@ -704,11 +707,10 @@ assert.match(consumablesUi, /Workshop Month-to-Month Total:/, 'Monthly compariso
 assert.match(consumablesUi, /Overall finalized Painting Actual expense; report filters above do not change this comparison\./, 'Monthly comparison scope must remain explicit');
 
 
-// V137 Assign / Update Job Card search compatibility contracts
-assert.ok(updates.includes('V137 ASSIGN JOB CARD SEARCH COMPATIBILITY AUTHORITY'), 'Supervisor Assign / Update must use the compatibility-safe Job Card search authority');
-assert.ok(updates.includes("input.id='v137JobSearch'"), 'visible Job Card search must use a dedicated search input instead of replacing the legacy sj selector');
-assert.ok(updates.includes("s.id='sj';s.className='v137-internal-job-select'"), 'legacy sj selector must remain available internally for assignment compatibility');
-assert.ok(updates.includes("select.value=no;input.value=no"), 'choosing a search result must feed the selected Job Card into the legacy assignment selector');
-assert.ok(updates.includes("Search and select a valid Job Card first."), 'assignment must reject unselected search text instead of assigning the wrong Job Card');
+// Authoritative Assign / Update Job Card search contracts
+assert.ok(html.includes('function supervisorSearchJobs('), 'Supervisor Job Card search must live in offline_test authoritative renderer');
+assert.ok(html.includes('supervisorSelectExistingJob') && html.includes("sel.value=no"), 'search selection must feed the selected Job Card into hidden #sj');
+assert.ok(html.includes("Search and select a valid Job Card first."), 'assignment must reject unselected search text instead of assigning the wrong Job Card');
+assert.ok(!updates.includes('V136 ASSIGN JOB CARD TRUE SEARCH AUTHORITY') && !updates.includes('V137 ASSIGN JOB CARD SEARCH COMPATIBILITY AUTHORITY'), 'retired late search overlays must not return');
 
 assert.ok(main.includes('offline_test.html?v=122'), 'Android wrapper must load the fresh V121 page revision to prevent stale dashboard layout');
