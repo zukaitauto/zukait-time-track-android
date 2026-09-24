@@ -3185,3 +3185,21 @@ document.head.appendChild(st);const old=window.render;window.render=function(){c
  }`;
  document.head.appendChild(st);
 })();
+
+
+/* V134 UNIFIED WORK STATUS COLOURS — same semantic colours on every dashboard/modal. */
+(function(){
+ if(document.getElementById('v134UnifiedStatusColours'))return;
+ const st=document.createElement('style');st.id='v134UnifiedStatusColours';
+ st.textContent=`
+ :root{--zuk-start-bg:#dbeafe;--zuk-start-fg:#1e40af;--zuk-run-bg:#d1fae5;--zuk-run-fg:#166534;--zuk-pause-bg:#fef3c7;--zuk-pause-fg:#92400e;--zuk-over-bg:#fee2e2;--zuk-over-fg:#991b1b;--zuk-idle-bg:#f6e5b9;--zuk-idle-fg:#704500;--zuk-finish-bg:#e2e8f0;--zuk-finish-fg:#334155}
+ #employeeView .v75s-start:not([disabled]),#supervisorView .v132-jc-card.new,#managerView .status-not-started{background:var(--zuk-start-bg)!important;color:var(--zuk-start-fg)!important;border-color:#93c5fd!important}
+ #employeeView .v75s-card.running,#supervisorView .v132-jc-card.working,#supervisorView .v132-full.working .v132-status,#managerView .status-working,#modal .status-working{background:var(--zuk-run-bg)!important;color:var(--zuk-run-fg)!important;border-color:#6bbd8a!important}
+ #employeeView .v75s-card.paused,#supervisorView .v132-jc-card.paused,#supervisorView .v132-full.paused .v132-status,#managerView .status-paused,#modal .status-paused{background:var(--zuk-pause-bg)!important;color:var(--zuk-pause-fg)!important;border-color:#d4ad38!important}
+ #employeeView .v75s-card.over,#supervisorView .v132-jc-card.exceeded,#supervisorView .v132-full.exceeded .v132-status,#managerView .status-exceeded,#modal .status-exceeded{background:var(--zuk-over-bg)!important;color:var(--zuk-over-fg)!important;border-color:#df8585!important}
+ #employeeView .v75s-card.ideal,#supervisorView .status-id001,#managerView .status-id001,#modal .status-id001{background:var(--zuk-idle-bg)!important;color:var(--zuk-idle-fg)!important;border-color:#d3ae67!important}
+ #supervisorView .v132-jc-card.completed,#managerView .status-completed,#modal .status-completed{background:var(--zuk-finish-bg)!important;color:var(--zuk-finish-fg)!important;border-color:#94a3b8!important}
+ .v134-status-key{font-weight:900}
+ `;
+ document.head.appendChild(st);
+})();
