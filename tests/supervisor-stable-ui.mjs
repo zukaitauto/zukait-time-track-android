@@ -5,8 +5,8 @@ const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
 const stable=fs.readFileSync('app/src/main/assets/supervisor_stable.js','utf8');
 
 assert.match(stable,/V143 SUPERVISOR STABLE AUTHORITY/,'final Supervisor authority marker must exist');
-const v74=html.match(/<script src="v74_updates\\.js\\?v=\\d+"><\\/script>/);assert.ok(v74,'legacy update bundle must still load for shared helpers');
-const stableTag=html.match(/<script src="supervisor_stable\\.js\\?v=\\d+"><\\/script>/);assert.ok(stableTag,'stable Supervisor authority must be shipped');
+const v74=html.match(/<script src="v74_updates\.js\?v=\d+"><\/script>/);assert.ok(v74,'legacy update bundle must still load for shared helpers');
+const stableTag=html.match(/<script src="supervisor_stable\.js\?v=\d+"><\/script>/);assert.ok(stableTag,'stable Supervisor authority must be shipped');
 assert.ok(html.indexOf(stableTag[0])>html.indexOf(v74[0]),'stable Supervisor authority must load after all legacy Supervisor decorators');
 
 assert.match(stable,/window\.renderSupervisor=renderStable/,'stable authority must own renderSupervisor');
