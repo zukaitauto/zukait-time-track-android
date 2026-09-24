@@ -2673,3 +2673,42 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  [0,80,200,500].forEach(ms=>setTimeout(install,ms));
  window.v141ManagerConsumablesAuthority=true;
 })();
+
+
+/* V144 MANAGER CONSUMABLES SELF-CONTAINED WEB AUTHORITY */
+(function(){'use strict';
+ function role(){return typeof me==='undefined'?'':(me&&me.role)||''}
+ function show(title,body){
+   if(typeof window.openModal==='function')return window.openModal('<div class="cons-page"><div class="section-title"><h2>'+title+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+body+'</div>');
+   return alert(title);
+ }
+ function fallback(){
+   if(!['Manager','Supervisor'].includes(role()))return;
+   const painting='<button class="cons-dept" onclick="v144OpenPaintingConsumables()"><span>🎨</span><b>Painting Consumables</b><small>Open module</small></button>';
+   const dent='<button class="cons-dept disabled" disabled><span>🛠️</span><b>Denting Consumables</b><small>Coming soon</small></button>';
+   const mech='<button class="cons-dept disabled" disabled><span>⚙️</span><b>Mechanical Consumables</b><small>Coming soon</small></button>';
+   show('Consumables','<div class="cons-depts">'+painting+dent+mech+'</div>');
+ }
+ window.v144OpenPaintingConsumables=function(){
+   if(typeof window.openPaintingConsumables==='function')return window.openPaintingConsumables();
+   show('🎨 Painting Consumables','<div class="notice">Painting Consumables UI asset is unavailable in this web deployment. The dashboard launcher is working, but the deployed web files must include consumables_ui.js.</div>');
+ };
+ function open(){
+   if(role()!=='Manager')return;
+   if(typeof window.openConsumablesModule==='function')return window.openConsumablesModule();
+   return fallback();
+ }
+ window.v144OpenManagerConsumables=open;
+ window.v141OpenManagerConsumables=open;
+ window.v139OpenManagerConsumables=open;
+ function bind(){
+   if(role()!=='Manager')return;
+   const root=document.getElementById('managerView');if(!root)return;
+   [...root.querySelectorAll('button')].filter(b=>/^\s*(?:📦\s*)?CONSUMABLES\b/i.test((b.textContent||'').trim())).forEach(b=>{
+     b.removeAttribute('onclick');b.onclick=e=>{e.preventDefault();e.stopPropagation();open()};b.dataset.v144Consumables='1';
+   });
+ }
+ const prior=window.render;window.render=function(){const r=typeof prior==='function'?prior.apply(this,arguments):undefined;[0,80,250].forEach(ms=>setTimeout(bind,ms));return r};
+ [0,100,300,700].forEach(ms=>setTimeout(bind,ms));
+ window.v144ManagerConsumablesAuthority=true;
+})();
