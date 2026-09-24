@@ -215,6 +215,29 @@
     return clone(local);
   }
 
+  function reconcileConsumablesDuplicates(s){
+    const c=s&&s.consumables;if(!c||typeof c!=='object')return s;
+    function dedupe(list){
+      if(!Array.isArray(list))return[];
+      const seen=new Map(),out=[];
+      list.forEach(row=>{
+        if(!row||row.voided){out.push(row);return}
+        const rid=String(row.clientRequestId||'').trim();
+        const semantic=String(row.department||'')+'|'+String(row.type||'actual')+'|'+String(row.jobCard||'').toUpperCase();
+        const key=rid?'request|'+rid:semantic;
+        if(!seen.has(key)){seen.set(key,row);out.push(row);return}
+        const keep=seen.get(key);
+        if(Number(row.createdAt||row.actualAt||0)<Number(keep.createdAt||keep.actualAt||0)){
+          const i=out.indexOf(keep);if(i>=0)out[i]=row;seen.set(key,row)
+        }
+      });
+      return out
+    }
+    c.issues=dedupe(c.issues);
+    c.actuals=dedupe(c.actuals);
+    return s
+  }
+
   function nativeNotify(title,message){
     try{if(window.AndroidBridge&&typeof AndroidBridge.notify==='function')AndroidBridge.notify(String(title||'Zukait Time Track'),String(message||''));}catch(_){}
   }
