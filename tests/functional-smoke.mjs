@@ -5,6 +5,7 @@ const read = p => fs.readFileSync(p, 'utf8');
 const gradle = read('app/build.gradle');
 const main = read('app/src/main/java/com/zukait/timetrack/MainActivity.java');
 const updates = read('app/src/main/assets/v74_updates.js');
+const supervisorStable = read('app/src/main/assets/supervisor_stable.js');
 const v65 = read('app/src/main/assets/v65_updates.js');
 const v66 = read('app/src/main/assets/v66_updates.js');
 const v67 = read('app/src/main/assets/v67_updates.js');
@@ -48,8 +49,19 @@ assert.ok(updates.includes("if(currentFinal&&currentFinal.isConnected)currentFin
 assert.ok(updates.includes("else if(glance&&glance.isConnected)glance.replaceWith(wrap)"), 'Supervisor finalizer must upgrade a legacy glance card when present');
 assert.ok(updates.includes("anchor.insertAdjacentElement('afterend',wrap)"), 'Supervisor finalizer must insert the authoritative overview even when no legacy glance card exists');
 assert.ok(updates.includes("filter(x=>!wrap.contains(x)&&(x.querySelector('h3')?.textContent||'').includes('Today at a Glance')).forEach(x=>x.remove())"), 'Supervisor finalizer must remove duplicate legacy glance surfaces');
-assert.ok(html.includes('v74_updates.js?v=140'), 'Supervisor final asset must use the current V140 cache-busting revision');
+assert.ok(html.includes('v74_updates.js?v=142'), 'Supervisor final asset must use the current V142 cache-busting revision');
 assert.ok(!html.includes('V103 SUPERVISOR RUNTIME LOCK'), 'legacy V103 Supervisor runtime lock must stay retired');
+assert.match(supervisorStable,/V143 SUPERVISOR STABLE AUTHORITY/,'final stable Supervisor authority must exist');
+assert.ok(html.includes('supervisor_stable.js?v=143'),'production page must load the stable Supervisor authority');
+assert.ok(html.indexOf('supervisor_stable.js?v=143')>html.indexOf('v74_updates.js?v=142'),'stable Supervisor authority must load after the legacy update bundle');
+assert.match(supervisorStable,/window\.renderSupervisor=renderStable/,'stable authority must own renderSupervisor');
+assert.match(supervisorStable,/if\(role\(\)==='Supervisor'\)return renderStable\(\)/,'Supervisor render must bypass the legacy render chain');
+assert.doesNotMatch(supervisorStable,/MutationObserver/,'stable Supervisor UI must not use DOM observers');
+assert.match(supervisorStable,/grid-template-areas:"job tech" "time assign"/,'stable Assign\/Update must keep the agreed 2x2 layout');
+assert.match(supervisorStable,/id="v143JobSearch"/,'stable Supervisor renderer must contain the visible Job Card search');
+assert.match(supervisorStable,/id="sj" class="v143-internal"/,'stable Supervisor renderer must keep hidden #sj compatibility');
+assert.match(supervisorStable,/id="supervisorConsumablesTile"/,'stable Supervisor renderer must contain the paired Consumables card');
+
 assert.ok(updates.includes('v92-tech-board'), 'Supervisor must render the redesigned Technician Board');
 assert.ok(updates.includes('v92-tech-dept'), 'Technician Board department cards must use the authoritative redesigned UI');
 assert.ok(updates.includes('v92-supervisor-top'), 'Supervisor must keep Employee Requests and Available Workers in the compact top row');
