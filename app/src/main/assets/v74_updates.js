@@ -1975,6 +1975,23 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v110ReportActionsReady=true;
 })();
 
+/* V147 MANAGER + SUPERVISOR DETAIL READABILITY — popups, safe wrapping and touch targets. */
+(function(){'use strict';
+ if(document.getElementById('v147DashboardDetailReadability'))return;
+ const s=document.createElement('style');s.id='v147DashboardDetailReadability';s.textContent=
+ '#managerView button,#supervisorView button{min-height:42px;touch-action:manipulation}'+
+ '#managerView .v123-perf,#supervisorView .v123-perf,#managerView .manager-action,#supervisorView .manager-action{overflow:hidden;overflow-wrap:anywhere;word-break:normal}'+
+ '#managerView .v123-perf span,#supervisorView .v123-perf span,#managerView .v123-perf b,#supervisorView .v123-perf b{max-width:100%;overflow-wrap:anywhere}'+
+ '#modal h2,#modal h3,.modal h2,.modal h3,[role="dialog"] h2,[role="dialog"] h3{font-size:18px!important;line-height:1.3!important}'+
+ '#modal button,.modal button,[role="dialog"] button{font-size:13px!important;font-weight:700!important;min-height:42px;line-height:1.3!important;touch-action:manipulation}'+
+ '#modal table,.modal table,[role="dialog"] table{font-size:12px!important}'+
+ '#modal th,#modal td,.modal th,.modal td,[role="dialog"] th,[role="dialog"] td{line-height:1.35!important;overflow-wrap:anywhere;word-break:normal}'+
+ '#modal .small,#modal .muted,.modal .small,.modal .muted,[role="dialog"] .small,[role="dialog"] .muted{font-size:12px!important;line-height:1.4!important}'+
+ '#modal input,#modal select,#modal textarea,.modal input,.modal select,.modal textarea,[role="dialog"] input,[role="dialog"] select,[role="dialog"] textarea{font-size:14px!important;min-height:42px}'+
+ '@media(max-width:520px){#modal table,.modal table,[role="dialog"] table{font-size:11.5px!important}#modal th,#modal td,.modal th,.modal td,[role="dialog"] th,[role="dialog"] td{padding:8px 6px!important}}';
+ document.head.appendChild(s);
+})();
+
 /* V146 MANAGER + SUPERVISOR READABILITY — larger labels without changing card geometry. */
 (function(){'use strict';
  if(document.getElementById('v146DashboardReadability'))return;
