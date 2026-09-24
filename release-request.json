@@ -1,8 +1,8 @@
 {
-  "versionName": "V121",
-  "versionCode": 84,
+  "versionName": "V122",
+  "versionCode": 85,
   "approvedForStaff": true,
   "approvedAt": "2026-09-24",
-  "sourceCommit": "993d850cfd710293fc224c37b4daccca65ff4340",
-  "publishNonce": "approved-v121-layout-cache-root-fix-20260924"
+  "sourceCommit": "ab36f2fa60dd51dd04e046fc75175bf6227af81d",
+  "publishNonce": "approved-v122-manager-consumables-root-routing-fix-20260924"
 }
