@@ -2295,7 +2295,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    root.querySelectorAll('#v755LeaveControlRow,.v755-leave-control-row,.v133-manager-leave').forEach(x=>x.remove());
    root.querySelectorAll('button').forEach(b=>{const tx=(b.textContent||'').trim();if(/^(TODAY[’']?S? LEAVE|THIS MONTH LEAVE|ON LEAVE)\b/i.test(tx)&&!b.closest('.modal'))b.remove()});
    // Keep this Manager dashboard position as a future Consumables module; Leave Control stays in the header menu.
-   const btn=document.createElement('button');btn.className='v133-manager-leave v109-manager-consumables';btn.onclick=function(){alert('Consumables details will be added later.')};btn.innerHTML='<span>📦 CONSUMABLES</span><b>›</b><small>Workshop consumables · details coming later</small>';
+   const btn=document.createElement('button');btn.className='v133-manager-leave v109-manager-consumables';btn.onclick=function(){window.v139OpenManagerConsumables?.()};btn.innerHTML='<span>📦 CONSUMABLES</span><b>›</b><small>Painting consumables · issue · actual · reports · pricing</small>';
    const perf=root.querySelector('.v123-manager-performance');(perf?.parentNode||root).insertBefore(btn,perf?perf.nextSibling:root.firstChild);
  }
  const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(apply,0);return r};
@@ -2834,4 +2834,56 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  for(const name of ['render','renderSupervisor']){const previous=window[name];if(typeof previous==='function')window[name]=function(){const r=previous.apply(this,arguments);setTimeout(install,0);return r}}
  setTimeout(install,0);
  window.v137AssignJobSearchCompatibilityAuthority=true;
+})();
+
+
+/* V139 MANAGER CONSUMABLES FINAL AUTHORITY */
+(function(){'use strict';
+ function open(){
+   if(typeof me==='undefined'||!me||me.role!=='Manager')return;
+   if(typeof window.openConsumablesModule==='function')return window.openConsumablesModule();
+   const msg='Consumables module is not loaded. Refresh the app and try again.';
+   return typeof window.v74Msg==='function'?window.v74Msg(msg,'Consumables'):alert(msg);
+ }
+ window.v139OpenManagerConsumables=open;
+ function managerButtons(root){
+   const explicit=[...root.querySelectorAll('.v65-consumables,.v66-consumables,.v67-consumables,.v109-manager-consumables,.v111-control-consumables,.v113-control-consumables,.v139-manager-consumables')];
+   const byText=[...root.querySelectorAll('button')].filter(b=>/^\s*(?:📦\s*)?CONSUMABLES\b/i.test((b.textContent||'').trim()));
+   return [...new Set([...explicit,...byText])];
+ }
+ function ensure(){
+   if(typeof me==='undefined'||!me||me.role!=='Manager')return;
+   const root=document.getElementById('managerView');if(!root)return;
+   let buttons=managerButtons(root);
+   if(!buttons.length){
+     const grid=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid');
+     if(grid){
+       const b=document.createElement('button');
+       b.type='button';b.className='v67-control rose v139-manager-consumables';
+       b.innerHTML='<span>Consumables</span><b>›</b><small>Open module</small><em></em>';
+       grid.appendChild(b);buttons=[b];
+     }
+   }
+   buttons=managerButtons(root);
+   if(buttons.length>1){
+     const preferred=buttons.find(b=>b.closest('.v67-control-grid,.v66-control-grid,.v65-control-grid'))||buttons[0];
+     buttons.filter(b=>b!==preferred).forEach(b=>b.remove());
+     buttons=[preferred];
+   }
+   buttons.forEach(b=>{
+     b.removeAttribute('onclick');
+     b.onclick=open;
+     b.dataset.v139Consumables='1';
+     const sm=b.querySelector('small');if(sm)sm.textContent='Open consumables';
+   });
+ }
+ const wrap=name=>{
+   const prior=window[name];
+   if(typeof prior!=='function'||prior.__v139ConsumablesWrapped)return;
+   const fn=function(){const r=prior.apply(this,arguments);setTimeout(ensure,0);setTimeout(ensure,90);return r};
+   fn.__v139ConsumablesWrapped=true;window[name]=fn;
+ };
+ wrap('render');wrap('renderManager');
+ [0,80,180,350].forEach(ms=>setTimeout(ensure,ms));
+ window.v139ManagerConsumablesAuthority=true;
 })();
