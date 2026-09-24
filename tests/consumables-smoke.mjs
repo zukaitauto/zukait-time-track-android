@@ -44,7 +44,7 @@ assert.throws(()=>C.managerCorrectActual(state,actual.id,[{materialId:mat.id,bra
 assert.throws(()=>C.managerReopenActual(state,actual.id,supervisor,'x'),/MANAGER_ONLY/);
 assert.throws(()=>C.managerReopenActual(state,actual.id,manager,''),/REASON_REQUIRED/);
 const reopened=C.managerReopenActual(state,actual.id,manager,'Supervisor needs controlled correction');
-assert.equal(reopened.locked,true); assert.equal(reopened.managerReopen,true); assert.equal(state.consumables.audit.at(-1).type,'ACTUAL_REOPENED');
+assert.equal(reopened.locked,false); assert.equal(reopened.managerReopen,true); assert.equal(state.consumables.audit.at(-1).type,'ACTUAL_REOPENED');
 assert.throws(()=>C.managerVoid(state,'actual',actual.id,manager,''),/REASON_REQUIRED/);
 const voided=C.managerVoid(state,'actual',actual.id,manager,'Duplicate/invalid record test');
 assert.equal(voided.voided,true); assert.equal(state.consumables.audit.at(-1).type,'ACTUAL_VOIDED');
@@ -57,11 +57,12 @@ C.issue(reopenState,{clientRequestId:'reopen-issued',jobCard:'JC-REOPEN',lines:[
 const oa=C.finishActual(reopenState,{clientRequestId:'reopen-actual',jobCard:'JC-REOPEN',actualAt:new Date(2026,8,24).getTime(),lines:[{materialId:om.id,brandId:ob.id,quantity:2}]},supervisor);
 C.managerReopenActual(reopenState,oa.id,manager,'Correct finalized quantity');
 assert.equal(reopenState.consumables.actuals.length,1,'reopen must retain one authoritative Actual');
-assert.equal(reopenState.consumables.actuals[0].locked,true,'reopen must not remove financial lock');
-assert.throws(()=>C.finishActual(reopenState,{clientRequestId:'reopen-second',jobCard:'JC-REOPEN',lines:[{materialId:om.id,brandId:ob.id,quantity:1}]},supervisor),/ACTUAL_RECORD_EXISTS/);
-C.managerCorrectActual(reopenState,oa.id,[{materialId:om.id,brandId:ob.id,quantity:1.5}],manager,'Correct after reopen');
-assert.equal(reopenState.consumables.actuals.length,1,'correction after reopen must not duplicate Actual');
-assert.equal(C.monthlyExpense(reopenState,2026,8).totalExpense,6,'corrected Actual must be counted exactly once');
+assert.equal(reopenState.consumables.actuals[0].locked,false,'reopen must temporarily remove the record from finalized financials');
+assert.equal(C.monthlyExpense(reopenState,2026,8).totalExpense,0,'reopened Actual must stay out of finalized financials');
+const refinal=C.finishActual(reopenState,{clientRequestId:'reopen-second',jobCard:'JC-REOPEN',actualAt:new Date(2026,8,24).getTime(),lines:[{materialId:om.id,brandId:ob.id,quantity:1.5}]},supervisor);
+assert.equal(reopenState.consumables.actuals.length,1,'re-finalize must update the authoritative Actual without duplication');
+assert.equal(refinal.locked,true); assert.equal(refinal.managerReopen,false); assert.equal(state.consumables.audit.at(-1)?.type==='ACTUAL_REFINALIZED'||reopenState.consumables.audit.at(-1).type,'ACTUAL_REFINALIZED');
+assert.equal(C.monthlyExpense(reopenState,2026,8).totalExpense,6,'re-finalized Actual must be counted exactly once');
 
 
 // Backdated price recalculation: only affected finalized Actuals change, with full audit and snapshot update.
