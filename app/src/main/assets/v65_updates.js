@@ -108,7 +108,7 @@ window.v65OpenControl=function(type){
 
 function controlGrid(){
  const c=controlCounts(),types=['today','working','notstarted','paused','leave','completed','repeat','waiting'];
- return '<div class="v65-control-grid">'+types.map(t=>t==='leave'?'<button class="v65-control leave v65-consumables" onclick="alert(\'Consumables details will be added later.\')"><span>Consumables</span><b>›</b><small>View details</small></button>':'<button class="v65-control '+t+'" onclick="v65OpenControl(\''+t+'\')"><span>'+controlLabels[t]+'</span><b>'+c[t]+'</b><small>Tap for details</small></button>').join('')+'</div>';
+ return '<div class="v65-control-grid">'+types.map(t=>t==='leave'?'<button class="v65-control leave v65-consumables" onclick="openConsumablesModule()"><span>Consumables</span><b>›</b><small>View details</small></button>':'<button class="v65-control '+t+'" onclick="v65OpenControl(\''+t+'\')"><span>'+controlLabels[t]+'</span><b>'+c[t]+'</b><small>Tap for details</small></button>').join('')+'</div>';
 }
 
 function employeeMinutes(emp,from,to){return (state.sessions||[]).filter(s=>s.emp===emp&&s.job!==HOLD).reduce((n,s)=>{const a=Math.max(+s.start||0,from),b=Math.min(+(s.end||Date.now()),to);if(b<=a)return n;try{return n+sessionNormalMinutes({start:a,end:b},b)}catch(_){return n+(b-a)/60000}},0)}
