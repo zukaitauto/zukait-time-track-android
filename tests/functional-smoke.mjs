@@ -630,9 +630,9 @@ assert.doesNotMatch(updates,/target=document\.createElement\('button'\);control\
 
 
 // V114 deep source-authority regression guards.
-const v65 = readFileSync('app/src/main/assets/v65_updates.js','utf8');
-const v66 = readFileSync('app/src/main/assets/v66_updates.js','utf8');
-const v67 = readFileSync('app/src/main/assets/v67_updates.js','utf8');
+const v65 = read('app/src/main/assets/v65_updates.js');
+const v66 = read('app/src/main/assets/v66_updates.js');
+const v67 = read('app/src/main/assets/v67_updates.js');
 assert.doesNotMatch(v65,/controlLabels=.*leave:'On Leave'/,'V65 source must not render On Leave in Workshop Control');
 assert.match(v65,/v65-consumables/,'V65 source must render Consumables in the former leave position');
 assert.doesNotMatch(v66,/controlCard\('leave','On Leave'/,'V66 source must not render On Leave in Workshop Control');
