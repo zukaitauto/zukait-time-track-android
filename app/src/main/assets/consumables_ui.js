@@ -121,7 +121,8 @@ window.consFilterBrands=function(){
  const c=C().ensureState(state),mid=document.getElementById('consMaterial')?.value,sel=document.getElementById('consBrand');if(!sel)return;
  const ids=new Set(c.prices.filter(p=>!p.voided&&p.materialId===mid).map(p=>p.brandId));
  const brands=c.brands.filter(b=>b.active!==false&&ids.has(b.id));
- sel.innerHTML='<option value="">Brand</option>'+brands.map(b=>'<option value="'+esc(b.id)+'">'+esc(b.name)+'</option>').join('');
+ sel.innerHTML='<option value="">Brand</option>'+brands.map(b=>'<option value="'+esc(b.id)+'">'+esc(b.name)+'</option>').join('');if(brands.length===1)sel.value=brands[0].id;
+ const m=c.materials.find(x=>x.id===mid),q=document.getElementById('consQty');if(q)q.placeholder=m?.unit?'Quantity ('+m.unit+')':'Quantity';
 };
 window.consAddLine=function(){
  if(!draft.jc)return alert('Load a valid Job Card first.');
@@ -131,6 +132,7 @@ window.consAddLine=function(){
  document.getElementById('consQty').value='';
 };
 window.consRemoveLine=function(i){draft.lines.splice(i,1);consRenderRows()};
+window.consEditLine=function(i){const l=draft.lines[i];if(!l)return;const c=C().ensureState(state),m=c.materials.find(x=>x.id===l.materialId)||{},b=c.brands.find(x=>x.id===l.brandId)||{},v=prompt((m.name||'Material')+' / '+(b.name||'Brand')+' quantity ('+(m.unit||'unit')+')',String(l.quantity));if(v===null)return;const q=Number(v);if(!Number.isFinite(q)||q<=0)return alert('Enter a valid quantity.');l.quantity=q;consRenderRows()};
 window.consRenderRows=function(){
  const out=document.getElementById('consDraftRows');if(!out)return;const c=C().ensureState(state);
  out.innerHTML=draft.lines.length?'<div class="cons-table"><table><tr><th>No.</th><th>Material</th><th>Brand</th><th>Qty</th><th></th></tr>'+draft.lines.map((l,i)=>{const m=c.materials.find(x=>x.id===l.materialId)||{},b=c.brands.find(x=>x.id===l.brandId)||{};return '<tr><td>'+(i+1)+'</td><td>'+esc(m.name||'')+'</td><td>'+esc(b.name||'')+'</td><td>'+esc(l.quantity)+' '+esc(m.unit||'')+'</td><td><button class="secondary" onclick="consRemoveLine('+i+')">REMOVE</button></td></tr>'}).join('')+'</table></div>':'<div class="notice">No materials added yet.</div>';
