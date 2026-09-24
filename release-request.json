@@ -1,8 +1,8 @@
 {
-  "versionName": "V132",
-  "versionCode": 95,
+  "versionName": "V133",
+  "versionCode": 96,
   "approvedForStaff": true,
   "approvedAt": "2026-09-25",
-  "sourceCommit": "8d80fc512f9283c271110415aa5f342542bfd200",
-  "publishNonce": "approved-v132-consumables-final-20260925"
+  "sourceCommit": "38b11845cca9ce1f996e37dbe8fd8068ccee7c25",
+  "publishNonce": "approved-v133-supervisor-jobcard-ui-20260925"
 }
