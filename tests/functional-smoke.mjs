@@ -672,3 +672,11 @@ assert.match(updates,/Select Employee to Reopen/,'multi-worker completed jobs mu
 assert.match(updates,/Other technicians remain finished/,'reopen flow must preserve other completed technicians');
 assert.match(updates,/window\.v115ChooseReopenEmployee=choose/,'reopen selector must expose one job-card authority');
 assert.match(updates,/if\(peers\.length>1\)return choose\(a\.job\)/,'assignment reopen must route multi-technician jobs through selection');
+
+// V115 unified real-time staff status authority guards.
+assert.match(updates,/V115 UNIFIED REAL-TIME STAFF STATUS AUTHORITY/,'unified staff status authority must remain present');
+assert.match(updates,/window\.currentStaffStatus=authority/,'all dashboards must have one staff status authority');
+assert.match(updates,/window\.empStatus=function\(a\)/,'assignment status must be driven by unified authority');
+assert.match(updates,/window\.v84TechState=function\(u\)/,'Technician Board must use unified status authority');
+assert.match(updates,/statuses\.filter\(x=>\['Working','Overtime','ID001'\]\.includes\(x\.status\)\)/,'Supervisor Active Workers must derive from unified status');
+assert.match(updates,/statuses\.filter\(x=>x\.status==='Paused'\)/,'Supervisor Paused Jobs must derive from unified status');
