@@ -5,12 +5,12 @@ import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
 const C=require('../app/src/main/assets/consumables.js');
 const elements=new Map(),alerts=[],prompts=[];
-const element=id=>{if(!elements.has(id))elements.set(id,{value:'',innerHTML:'',textContent:''});return elements.get(id)};
+const element=id=>{if(!elements.has(id))elements.set(id,{value:'',innerHTML:'',textContent:'',dataset:{},classList:{add(){},remove(){}}});return elements.get(id)};
 let tile=null;
 const parent={classList:{add(){}}};
 const available={textContent:'AVAILABLE WORKERS',parentElement:parent,closest(){return this},insertAdjacentElement(position,card){tile=card}};
 const host={querySelector(){return tile},querySelectorAll(selector){return selector.startsWith('.cons-launch')?[]:[available]}};
-const state={jobs:[{no:'JC1',vehicle:'Toyota',year:2020},{no:'ID001'}],assign:[{job:'JC1',emp:'P1',assignedBy:'S1'}]};
+const state={jobs:[{no:'JC1',vehicle:'Toyota Camry',make:'Toyota',model:'Camry',year:2020,reg:'REG1',status:'Open'},{no:'ID001'}],assign:[{job:'JC1',emp:'P1',assignedBy:'S1'}]};
 const ctx={state,users:[{id:'P1',name:'Painter',department:'Painter'},{id:'S1',name:'Supervisor',role:'Supervisor'}],me:{id:'M1',role:'Manager'},ZukaitConsumables:C,console,
  document:{head:{appendChild(){}},createElement(){return {}},getElementById(id){if(id==='supervisorView')return host;if(id==='managerView')return null;return element(id)},querySelectorAll(){return element('consActualRows').innerHTML.match(/value="([^"]*)"/g)?.map(x=>({value:x.slice(7,-1)}))||[]}},
  alert:x=>alerts.push(x),prompt:()=>prompts.length?prompts.shift():'Verified correction',confirm:()=>true,setTimeout:fn=>fn(),render(){},save(){ctx.saved=JSON.stringify(state)},closeModal(){},openModal(html){ctx.modal=html}};
@@ -22,6 +22,7 @@ fill({cmMaterial:'Primer',cmBrand:'Brand',cmUnit:'Litre',cmPrice:'3.5',cmDate:'2
 ctx.consSaveMaster();assert.equal(state.consumables.materials.length,1);assert.equal(state.consumables.brands.length,1);assert.match(element('cmList').innerHTML,/OMR 3.500/);assert.doesNotMatch(element('cmList').innerHTML,/NaN/);
 const m=state.consumables.materials[0],b=state.consumables.brands[0];
 vm.runInContext("me={id:'S1',role:'Supervisor'}",ctx);ctx.render();assert.equal(tile.className,'cons-supervisor-tile');ctx.render();assert.ok(tile);
+ctx.openConsumablesEntry('issued');fill({consJc:'REG1'});ctx.consFindJC('issued');assert.match(element('consJcResults').innerHTML,/JC1/);assert.match(element('consJcResults').innerHTML,/REG1/);ctx.consSelectJC('JC1');assert.match(element('consVehicleDetails').innerHTML,/Toyota Camry/);assert.match(element('consVehicleDetails').innerHTML,/REG1/);assert.match(element('consVehicleDetails').innerHTML,/2020/);
 for(const [type,quantity] of [['issued','2'],['additional','0.5']]){
  ctx.openConsumablesEntry(type);fill({consJc:'JC1'});ctx.consLoadJC(type);fill({consMaterial:m.id,consBrand:b.id,consQty:quantity,consPainter:'P1'});ctx.consAddLine();ctx.consFinishIssue();
 }
@@ -36,5 +37,5 @@ assert.throws(()=>C.managerCorrectActual(state,state.consumables.actuals[0].id,[
 assert.throws(()=>C.managerCorrectIssue(state,state.consumables.issues[0].id,{colourCode:'changed'},vm.runInContext('me',ctx),''),/REASON_REQUIRED/);assert.equal(JSON.stringify(state),before);
 fill({consActualJc:'bad'});ctx.consLoadActual();assert.equal(element('consActualVehicle').value,'');
 ctx.openConsumablesModule();assert.match(ctx.modal,/disabled[^>]*><span>🛠️/);
-assert.ok(ctx.saved);assert.ok(!alerts.includes('MANAGER_ONLY'));console.log('Consumables UI integration tests passed: setup, issue, additional, actual, search, reports, history, supervisor tile, cancellation and audit safety');
+assert.ok(ctx.saved);assert.ok(!alerts.includes('MANAGER_ONLY'));console.log('Consumables UI integration tests passed: Job Card picker/vehicle details, setup, issue, additional, actual, search, reports, history, supervisor tile, cancellation and audit safety');
 
