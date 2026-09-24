@@ -322,27 +322,40 @@
       }
 
       if(r.code==='forbidden_change'){
-        if(me?.role==='Employee'&&retry<2){
+        // A full-state client can contain harmless stale fields from another device.
+        // Rebase the intended local change onto the latest authoritative state once
+        // for every role, then retry. This prevents one stale snapshot from putting
+        // the whole workshop into a permission/reload loop.
+        if(retry<2){
           try{
             const latest=await api({action:'load'});
             if(latest?.ok&&latest.data){
-              const merged=mergeEmployeeConflict(latest.data,localSnapshot,me.id);
+              const remote=clone(latest.data||{});
+              const base=lastSyncedState?clone(lastSyncedState):clone(remote);
+              const merged=me?.role==='Employee'
+                ? mergeEmployeeConflict(remote,localSnapshot,me.id)
+                : threeWayMerge(base,remote,localSnapshot);
               cloudApplying=true;
               try{state=merged;ensureShape();persistLocal()}finally{cloudApplying=false}
               cloudRevision=Number(latest.revision||cloudRevision);
               localStorage.setItem(REV_KEY,String(cloudRevision));
-              lastSyncedState=clone(latest.data);
+              lastSyncedState=remote;
               cloudDirty=true;
               localStorage.setItem(DIRTY_KEY,'1');
               status('SYNCING LATEST CHANGES…','info');
               cloudPushing=false;
               return await push(retry+1);
             }
-          }catch(_){}
+          }catch(e){console.warn('Permission rebase failed',e)}
         }
-        status('PERMISSION BLOCKED','bad');
-        alert('This action could not be saved. Latest workshop data will be reloaded.');
-        try{await pull(true)}catch(_){}
+        // Do not keep retrying an unauthorized full snapshot. Clear the dirty
+        // snapshot before pulling so every device returns to one clean revision.
+        cloudDirty=false;
+        localStorage.removeItem(DIRTY_KEY);
+        localStorage.removeItem(PENDING_KEY);
+        status('REFRESHING WORKSHOP DATA…','info');
+        cloudPushing=false;
+        try{await pull(true)}catch(_){status('SYNC ERROR','bad')}
         return false;
       }
       if(r.code==='invalid_session'){
