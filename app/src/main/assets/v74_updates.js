@@ -3203,3 +3203,20 @@ document.head.appendChild(st);const old=window.render;window.render=function(){c
  `;
  document.head.appendChild(st);
 })();
+
+
+/* V134 EMPLOYEE IDENTITY COLOUR AUTHORITY — one department colour everywhere. */
+(function(){'use strict';
+ if(document.getElementById('v134EmployeeIdentityColours'))return;
+ const st=document.createElement('style');st.id='v134EmployeeIdentityColours';st.textContent=`
+ :root{--zuk-emp-painter:#175cd3;--zuk-emp-denter:#7a5af8;--zuk-emp-mechanic:#087e8b;--zuk-emp-supervisor:#b54708}
+ .zuk-emp-name{font-weight:900!important}
+ .zuk-emp-painter{color:var(--zuk-emp-painter)!important}.zuk-emp-denter{color:var(--zuk-emp-denter)!important}.zuk-emp-mechanic{color:var(--zuk-emp-mechanic)!important}.zuk-emp-supervisor{color:var(--zuk-emp-supervisor)!important}
+ .zuk-emp-name:before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:currentColor;margin-right:5px;vertical-align:1px}
+ `;document.head.appendChild(st);
+ function cls(id){let u;try{u=(window.users||[]).find(x=>x&&String(x.id)===String(id))||user(id)}catch(_){u=null}const d=String(u?.department||u?.role||'').toLowerCase();return 'zuk-emp-name '+(d.includes('paint')?'zuk-emp-painter':d.includes('dent')?'zuk-emp-denter':d.includes('mech')?'zuk-emp-mechanic':d.includes('super')?'zuk-emp-supervisor':'')}
+ window.zukaitEmployeeIdentityClass=cls;
+ function apply(root=document){if(!root)return;root.querySelectorAll('[data-emp]').forEach(el=>{const id=el.getAttribute('data-emp');if(id)el.classList.add(...cls(id).split(' '))})}
+ window.zukaitApplyEmployeeIdentityColours=apply;
+ const obs=new MutationObserver(()=>apply(document.getElementById('modal')||document));obs.observe(document.body,{childList:true,subtree:true});setTimeout(()=>apply(document),0);
+})();
