@@ -1,8 +1,8 @@
 {
-  "versionName": "V126",
-  "versionCode": 89,
+  "versionName": "V127",
+  "versionCode": 90,
   "approvedForStaff": true,
   "approvedAt": "2026-09-24",
-  "sourceCommit": "26e1690cf760072ef5644d2dd0ef2218ef9da036",
-  "publishNonce": "approved-v126-database-live-authority-no-stale-fallback-20260924"
+  "sourceCommit": "9f0bee02a097611f88315812dcfe5422c4af585c",
+  "publishNonce": "approved-v127-consumables-job-card-access-20260924"
 }
