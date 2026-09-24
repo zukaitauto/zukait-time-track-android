@@ -1527,7 +1527,19 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 </script>
 
 
-<script src="consumables.js?v=118"></script><script src="consumables_ui.js?v=141"></script><script src="cloud_sync.js?v=81"></script>
+<script src="consumables.js?v=142"></script><script>
+/* V142 inline consumables bootstrap: web-safe fallback when external UI asset is stale/missing. */
+(function(){'use strict';
+ if(typeof window.openConsumablesModule==='function')return;
+ const role=()=>typeof me==='undefined'?'':(me&&me.role)||'';
+ const modal=(title,body)=>{if(typeof window.openModal==='function')return window.openModal('<div class="cons-page"><div class="section-title"><h2>'+title+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+body+'</div>')};
+ window.openConsumablesModule=function(){
+   if(!['Supervisor','Manager'].includes(role()))return;
+   if(typeof window.openPaintingConsumables==='function')return window.openPaintingConsumables();
+   modal('Consumables','<div class="notice">Consumables interface is loading. Refresh once if this screen remains open.</div>');
+ };
+})();
+</script><script src="consumables_ui.js?v=142"></script><script src="cloud_sync.js?v=81"></script>
 <script src="secure_auth.js?v=81"></script>
 <script src="production_pilot.js?v=81"></script>
 <script src="professional_ux.js?v=81"></script>
@@ -1538,7 +1550,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 <script src="v67_updates.js?v=122"></script>
 <script src="v68_updates.js?v=81"></script>
 <script src="v69_updates.js?v=81"></script>
-<script src="v74_updates.js?v=141"></script>
+<script src="v74_updates.js?v=142"></script>
 
 
 </body>
