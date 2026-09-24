@@ -47,6 +47,7 @@ jobs:
           cp app/src/main/assets/v69_updates.js _site/v69_updates.js
           cp app/src/main/assets/v74_updates.js _site/v74_updates.js
           cp app/src/main/assets/zukait_logo.webp _site/zukait_logo.webp
+          cp -R app/src/main/assets/vehicle-logos _site/vehicle-logos
           test -s _site/consumables.js
           test -s _site/consumables_ui.js
           test -s _site/paint_module.js
@@ -63,6 +64,11 @@ jobs:
           test -s _site/v68_updates.js
           test -s _site/v69_updates.js
           test -s _site/v74_updates.js
+          test -s _site/vehicle-logos/cadillac.svg
+          test -s _site/vehicle-logos/gmc.svg
+          test -s _site/vehicle-logos/chevrolet.svg
+          test -s _site/vehicle-logos/ford.svg
+          test -s _site/vehicle-logos/honda.svg
           touch _site/.nojekyll
 
       - name: Setup Pages

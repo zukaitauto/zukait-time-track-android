@@ -102,6 +102,7 @@ jobs:
           node tests/consumables-backend-security.mjs
           node tests/v128-costing-safety.mjs
           node tests/paint-safety.mjs
+          node tests/vehicle-logo-assets.mjs
           node --check app/src/main/assets/consumables.js
           node --check app/src/main/assets/consumables_ui.js
           node --check app/src/main/assets/paint_module.js

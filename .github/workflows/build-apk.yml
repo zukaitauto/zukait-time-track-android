@@ -68,6 +68,7 @@ jobs:
           node tests/consumables-backend-security.mjs
           node tests/v128-costing-safety.mjs
           node tests/paint-safety.mjs
+          node tests/vehicle-logo-assets.mjs
 
       - name: Check production assets
         shell: bash
