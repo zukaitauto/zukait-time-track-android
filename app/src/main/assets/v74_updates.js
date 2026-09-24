@@ -2502,3 +2502,36 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  setTimeout(refresh,0);
  window.v115RefreshLiveWorkers=refresh;
 })();
+
+/* V115 MULTI-DEVICE EMPLOYEE ACTION AUTHORITY */
+(function(){'use strict';
+ let actionBusy=false;
+ async function fresh(){
+   if(actionBusy)return false;actionBusy=true;
+   try{if(window.zukaitCloud?.syncNow)await window.zukaitCloud.syncNow();return true}
+   catch(_){return false}finally{actionBusy=false}
+ }
+ function openFor(emp){return (state.sessions||[]).filter(s=>s&&s.emp===emp&&!s.end).sort((a,b)=>(+b.start||0)-(+a.start||0))}
+ function closeDuplicates(emp){
+   const rows=openFor(emp);if(rows.length<2)return rows[0]||null;
+   const keep=rows[0],at=Date.now();
+   rows.slice(1).forEach(s=>{s.end=Math.max(+s.start||0,at);s.paused=true;s.multiDeviceClosed=true;s.closeReason='MULTI_DEVICE_RECONCILE'});
+   save();return keep;
+ }
+ const coreStart=window.start,corePause=window.pause,coreFinish=window.finish;
+ window.start=async function(no){
+   if(!me||me.role!=='Employee')return coreStart.apply(this,arguments);
+   await fresh();const active=closeDuplicates(me.id);
+   if(active)return alert('You already have active work on '+active.job+'. Pause or finish it first.');
+   return coreStart.call(this,no);
+ };
+ window.pause=async function(){
+   if(!me||me.role!=='Employee')return corePause.apply(this,arguments);
+   await fresh();closeDuplicates(me.id);return corePause.apply(this,arguments);
+ };
+ window.finish=async function(){
+   if(!me||me.role!=='Employee')return coreFinish.apply(this,arguments);
+   await fresh();closeDuplicates(me.id);return coreFinish.apply(this,arguments);
+ };
+ window.v115ReconcileEmployeeOpenSessions=closeDuplicates;
+})();
