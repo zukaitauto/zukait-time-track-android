@@ -195,6 +195,29 @@
     }
   }
 
+  const priorRender=window.render;
+  window.render=function(){
+    const out=typeof priorRender==='function'?priorRender.apply(this,arguments):undefined;
+    setTimeout(apply,0);
+    return out;
+  };
+  const priorRenderManager=window.renderManager;
+  if(typeof priorRenderManager==='function'){
+    window.renderManager=function(){
+      const out=priorRenderManager.apply(this,arguments);
+      setTimeout(apply,0);
+      return out;
+    };
+  }
+  const priorRenderSupervisor=window.renderSupervisor;
+  if(typeof priorRenderSupervisor==='function'){
+    window.renderSupervisor=function(){
+      const out=priorRenderSupervisor.apply(this,arguments);
+      setTimeout(apply,0);
+      return out;
+    };
+  }
+
   window.addEventListener('zukait-live-status',apply);
   window.addEventListener('offline',apply);
   window.addEventListener('online',apply);
