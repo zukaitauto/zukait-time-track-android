@@ -21,6 +21,7 @@
     const c=state.consumables;
     c.schemaVersion=1;
     c.materials=Array.isArray(c.materials)?c.materials:[];
+    c.materials.forEach(m=>{if(m&&!CATEGORIES.includes(m.category))m.category='Consumable'});
     c.brands=Array.isArray(c.brands)?c.brands:[];
     c.prices=Array.isArray(c.prices)?c.prices:[];
     c.issues=Array.isArray(c.issues)?c.issues:[];
