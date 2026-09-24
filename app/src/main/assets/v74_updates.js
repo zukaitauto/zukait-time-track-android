@@ -2639,3 +2639,37 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.openManagerJobDetails=function(no){const r=typeof old==='function'?old.apply(this,arguments):undefined;setTimeout(()=>{if(!me||me.role!=='Manager')return;const modal=document.querySelector('#modal .modal-content,#modalContent,.modal-content');const scope=modal||document.getElementById('modal');if(!scope||scope.querySelector('.v140-review-actions'))return;const row=scope.querySelector('.row[style*="margin-top:12px"]');if(!row)return;const a=document.createElement('div');a.className='row v140-review-actions';a.style.marginTop='10px';a.innerHTML='<button class="blue" onclick="v140PrintManagerJob(\''+String(no).replace(/'/g,"\\'")+'\')">🖨 PRINT</button><button class="green" onclick="v140PdfManagerJob(\''+String(no).replace(/'/g,"\\'")+'\')">PDF / SHARE</button>';row.parentNode.insertBefore(a,row);},0);return r};
  window.v140ManagerJobReviewPrintPdf=true;
 })();
+
+
+/* V141 MANAGER CONSUMABLES ROOT AUTHORITY */
+(function(){'use strict';
+ function open(){
+   if(typeof me==='undefined'||!me||me.role!=='Manager')return;
+   if(typeof window.openConsumablesModule!=='function'){
+     const msg='Consumables module failed to load. Please refresh the app.';
+     return typeof window.v74Msg==='function'?window.v74Msg(msg,'Consumables'):alert(msg);
+   }
+   return window.openConsumablesModule();
+ }
+ window.v141OpenManagerConsumables=open;
+ window.v139OpenManagerConsumables=open;
+ function install(){
+   if(typeof me==='undefined'||!me||me.role!=='Manager')return;
+   const root=document.getElementById('managerView');if(!root)return;
+   const grid=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid');
+   let buttons=[...root.querySelectorAll('.v139-manager-consumables,.v141-manager-consumables')];
+   if(!buttons.length&&grid){
+     const b=document.createElement('button');b.type='button';b.className='v67-control rose v141-manager-consumables';
+     b.innerHTML='<span>Consumables</span><b>›</b><small>Open consumables</small><em></em>';grid.appendChild(b);buttons=[b];
+   }
+   // Also repair any source-rendered Consumables control rather than depending on legacy inline handlers.
+   root.querySelectorAll('button').forEach(b=>{if(/^\s*(?:📦\s*)?CONSUMABLES\b/i.test((b.textContent||'').trim())&&!buttons.includes(b))buttons.push(b)});
+   const unique=[...new Set(buttons)];
+   if(unique.length>1){const keep=unique.find(b=>b.closest('.v67-control-grid,.v66-control-grid,.v65-control-grid'))||unique[0];unique.filter(b=>b!==keep).forEach(b=>b.remove());buttons=[keep]}else buttons=unique;
+   buttons.forEach(b=>{b.type='button';b.removeAttribute('onclick');b.onclick=function(e){e.preventDefault();e.stopPropagation();open()};b.dataset.v141Consumables='1';const sm=b.querySelector('small');if(sm)sm.textContent='Open consumables'});
+ }
+ const wrap=n=>{const prior=window[n];if(typeof prior!=='function'||prior.__v141)return;const fn=function(){const r=prior.apply(this,arguments);[0,60,180].forEach(ms=>setTimeout(install,ms));return r};fn.__v141=true;window[n]=fn};
+ wrap('render');wrap('renderManager');
+ [0,80,200,500].forEach(ms=>setTimeout(install,ms));
+ window.v141ManagerConsumablesAuthority=true;
+})();
