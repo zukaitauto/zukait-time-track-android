@@ -2016,18 +2016,18 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v110ReportActionsReady=true;
 })();
 
-/* V153 MANAGER WORKSHOP CONTROL FUTURE MODULES — one authoritative row, no duplicate Spare Parts. */
+/* V154 MANAGER WORKSHOP CONTROL ROOT AUTHORITY — stable 2-column future-module row, no DOM reordering loops. */
 (function(){'use strict';
  const modal=(title,icon)=>{if(!window.me||me.role!=='Manager')return;const body='<div class="notice"><b>'+title+'</b><div>This module is reserved for future use.</div></div>';if(typeof openModal==='function')return openModal('<div class="section-title"><h2>'+icon+' '+title+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+body);alert(title+' — Coming Soon')};
- window.v150OpenManagerSpareParts=()=>modal('Spare Parts','⚙️');
- window.v153OpenManagerBodyShop=()=>modal('Body Shop','🚘');
+ window.v150OpenManagerSpareParts=()=>modal('Spare Parts','⚙️');window.v153OpenManagerBodyShop=()=>modal('Body Shop','🚘');
+ function card(kind){const b=document.createElement('button');b.type='button';b.className='v67-control v154-future '+kind;if(kind==='v154-spare'){b.dataset.v154Spare='1';b.onclick=window.v150OpenManagerSpareParts;b.innerHTML='<span>⚙️ Spare Parts</span><b>›</b><small>Future module</small><em></em>'}else{b.dataset.v154Body='1';b.onclick=window.v153OpenManagerBodyShop;b.innerHTML='<span>🚘 Body Shop</span><b>›</b><small>Future module</small><em></em>'}return b}
  function apply(){if(!window.me||me.role!=='Manager')return;const root=document.getElementById('managerView');if(!root)return;const grid=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid');if(!grid)return;
-   const spare=[...root.querySelectorAll('.v150-manager-spare,[data-v153-spare="1"]')];spare.slice(1).forEach(x=>x.remove());let sp=spare[0];if(!sp){sp=document.createElement('button')}sp.type='button';sp.className='v67-control v153-future-card v153-spare';sp.dataset.v153Spare='1';sp.onclick=window.v150OpenManagerSpareParts;sp.innerHTML='<span><i>⚙️</i> Spare Parts</span><b>›</b><small>Future module</small><em></em>';
-   const bodies=[...root.querySelectorAll('[data-v153-body="1"]')];bodies.slice(1).forEach(x=>x.remove());let bs=bodies[0];if(!bs){bs=document.createElement('button')}bs.type='button';bs.className='v67-control v153-future-card v153-body';bs.dataset.v153Body='1';bs.onclick=window.v153OpenManagerBodyShop;bs.innerHTML='<span><i>🚘</i> Body Shop</span><b>›</b><small>Future module</small><em></em>';
-   grid.appendChild(sp);grid.appendChild(bs);
+   root.querySelectorAll('.v150-manager-modules,.v150-manager-spare,[data-v153-spare],[data-v153-body]').forEach(x=>x.remove());
+   let sp=grid.querySelector('[data-v154-spare]'),bs=grid.querySelector('[data-v154-body]');root.querySelectorAll('[data-v154-spare]').forEach((x,i)=>{if(i)x.remove()});root.querySelectorAll('[data-v154-body]').forEach((x,i)=>{if(i)x.remove()});
+   if(!sp){sp=card('v154-spare');grid.appendChild(sp)}if(!bs){bs=card('v154-body');grid.appendChild(bs)}
  }
- const st=document.createElement('style');st.id='v153ManagerFutureModulesStyle';st.textContent='.v153-future-card{min-width:0!important}.v153-future-card span{display:flex!important;align-items:center!important;gap:7px!important;font-weight:900!important}.v153-future-card span i{font-style:normal!important;font-size:17px!important;line-height:1!important}.v153-spare{background:linear-gradient(135deg,#eef6ff,#f8fbff)!important;border-color:#bdd5ef!important;color:#173b63!important}.v153-body{background:linear-gradient(135deg,#f2f7f4,#fbfdfc)!important;border-color:#c5ddd0!important;color:#244c38!important}';if(!document.getElementById(st.id))document.head.appendChild(st);
- const prior=window.render;window.render=function(){const r=typeof prior==='function'?prior.apply(this,arguments):undefined;[0,80,220].forEach(ms=>setTimeout(apply,ms));return r};[0,100,300].forEach(ms=>setTimeout(apply,ms));
+ if(!document.getElementById('v154ManagerFutureStyle')){const st=document.createElement('style');st.id='v154ManagerFutureStyle';st.textContent='#managerView .v67-control-grid,#managerView .v66-control-grid,#managerView .v65-control-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}#managerView .v154-future{min-width:0!important;min-height:82px!important}#managerView .v154-future span{font-weight:900!important;font-size:13px!important}#managerView .v154-spare{background:linear-gradient(135deg,#eef6ff,#f8fbff)!important;border-color:#bdd5ef!important;color:#173b63!important}#managerView .v154-body{background:linear-gradient(135deg,#f2f7f4,#fbfdfc)!important;border-color:#c5ddd0!important;color:#244c38!important}';document.head.appendChild(st)}
+ const prior=window.render;window.render=function(){const r=typeof prior==='function'?prior.apply(this,arguments):undefined;setTimeout(apply,0);return r};const pm=window.renderManager;if(typeof pm==='function'&&!pm.__v154){const fn=function(){const r=pm.apply(this,arguments);setTimeout(apply,0);return r};fn.__v154=true;window.renderManager=fn}setTimeout(apply,0);
 })();
 
 /* V149 SHARED COLOUR WIRING — apply identity/status authority to dashboard detail windows. */
