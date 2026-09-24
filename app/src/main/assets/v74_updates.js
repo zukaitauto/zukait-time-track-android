@@ -1671,6 +1671,34 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v121ManagerLogicAuthority=true;
 })();
 
+
+/* V144 MANAGER PRODUCTION / REPORT INCENTIVE BRIDGE — final incentive authority only. */
+(function(){'use strict';
+ function openManagerIncentive(){
+   if(!window.me||window.me.role!=='Manager')return;
+   const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+   const fm=v=>typeof window.fmt==='function'?window.fmt(Math.max(0,+v||0)):String(Math.max(0,+v||0));
+   const rows=(window.users||users||[]).filter(u=>u&&u.role==='Employee').map(u=>{
+     const x=typeof window.incentiveFor==='function'?window.incentiveFor(u.id):null;
+     return {u,x:x||{target:0,achieved:0,eligible:0,excess:0,repeat:0,incentive:0}};
+   }).sort((a,b)=>String(a.u.name||'').localeCompare(String(b.u.name||'')));
+   const body='<div class="section-title"><h2>⭐ Monthly Incentive</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
+    '<p class="muted">Uses the same final monthly incentive calculation as Employee and Supervisor. Overtime and ID001 are excluded.</p>'+
+    '<div style="overflow:auto"><table><tr><th>Employee</th><th>Target</th><th>Achieved</th><th>Excess</th><th>Repeat Penalty</th><th>Incentive</th></tr>'+
+    rows.map(r=>'<tr><td><b>'+esc(r.u.name||r.u.id)+'</b><br><span class="small">'+esc(r.u.department||'')+'</span></td><td>'+fm(r.x.target)+'</td><td>'+fm(r.x.achieved??r.x.eligible)+'</td><td>'+fm(r.x.excess)+'</td><td>'+fm(r.x.repeat)+'</td><td><b>'+fm(r.x.incentive)+'</b></td></tr>').join('')+
+    '</table></div>';
+   return typeof window.openModal==='function'?window.openModal(body):undefined;
+ }
+ window.openManagerIncentiveList=openManagerIncentive;
+ const prior=window.openIncentiveList;
+ window.openIncentiveList=function(){
+   if(window.me?.role==='Manager')return openManagerIncentive();
+   return typeof prior==='function'?prior.apply(this,arguments):undefined;
+ };
+ window.v144ManagerIncentiveBridge=true;
+})();
+
+
 /* V124 ADDITIONAL TIME FINAL AUTHORITY — single safe mutation path. */
 (function(){'use strict';
  const findAssignment=(jobNo,emp)=>(state.assign||[]).filter(a=>a&&!a.cancelled&&!a.completed&&a.job===jobNo&&String(a.emp)===String(emp)).sort((a,b)=>(+b.assignedAt||0)-(+a.assignedAt||0))[0]||null;
