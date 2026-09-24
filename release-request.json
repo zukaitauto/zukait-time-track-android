@@ -1,8 +1,8 @@
 {
-  "versionName": "V118",
-  "versionCode": 81,
+  "versionName": "V119",
+  "versionCode": 82,
   "approvedForStaff": true,
   "approvedAt": "2026-09-24",
-  "sourceCommit": "006c3d31ae78dc637b8211764d3c95c2fdbdec54",
-  "publishNonce": "approved-v118-consumables-ui-fixes-20260924"
+  "sourceCommit": "d890e7b41b3431b354ad0b6ba7bb7971a3c5773b",
+  "publishNonce": "approved-v119-assign-search-root-fix-20260924"
 }
