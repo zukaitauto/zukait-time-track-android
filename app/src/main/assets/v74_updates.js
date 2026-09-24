@@ -1975,6 +1975,21 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v110ReportActionsReady=true;
 })();
 
+/* V148 SHARED VISUAL AUTHORITY — operational status + employee department identity. */
+(function(){'use strict';
+ if(document.getElementById('v148SharedVisualAuthority'))return;
+ const s=document.createElement('style');s.id='v148SharedVisualAuthority';s.textContent=
+ ':root{--z-status-working:#16794b;--z-status-paused:#a85d00;--z-status-attention:#b42318;--z-status-completed:#175cd3;--z-status-available:#52606d;--z-status-overtime:#6941c6;--z-painter:#175cd3;--z-denter:#7a5af8;--z-mechanic:#087e8b;--z-supervisor:#b54708}'+
+ '.z-status{display:inline-flex;align-items:center;gap:5px;font-weight:800;border-radius:999px;padding:3px 8px;border:1px solid currentColor}'+
+ '.z-status-working{color:var(--z-status-working);background:#ecfdf3}.z-status-paused{color:var(--z-status-paused);background:#fff7ed}.z-status-attention{color:var(--z-status-attention);background:#fef3f2}.z-status-completed{color:var(--z-status-completed);background:#eff8ff}.z-status-available{color:var(--z-status-available);background:#f2f4f7}.z-status-overtime{color:var(--z-status-overtime);background:#f4f3ff}'+
+ '.z-emp{display:inline-flex;align-items:center;gap:5px;font-weight:800}.z-emp:before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;flex:0 0 auto}.z-emp-painter{color:var(--z-painter)}.z-emp-denter{color:var(--z-denter)}.z-emp-mechanic{color:var(--z-mechanic)}.z-emp-supervisor{color:var(--z-supervisor)}'+
+ '#managerView .stat,#supervisorView .stat,#managerView .num,#supervisorView .num{font-weight:900!important}';
+ document.head.appendChild(s);
+ function dep(u){const x=String((u&&((u.department||u.role)))||'').toLowerCase();return x.includes('paint')?'painter':x.includes('dent')?'denter':x.includes('mech')?'mechanic':x.includes('super')?'supervisor':''}
+ window.zukaitEmployeeColourClass=function(id){try{const u=(window.users||[]).find(x=>x&&x.id===id);const d=dep(u);return d?'z-emp z-emp-'+d:'z-emp'}catch(_){return'z-emp'}};
+ window.zukaitStatusColourClass=function(v){const x=String(v||'').toLowerCase();if(x.includes('overtime'))return'z-status z-status-overtime';if(x.includes('attention')||x.includes('over suggested')||x.includes('over allocated'))return'z-status z-status-attention';if(x.includes('pause'))return'z-status z-status-paused';if(x.includes('complete')||x.includes('finish'))return'z-status z-status-completed';if(x.includes('work')||x.includes('start')||x.includes('active')||x.includes('running'))return'z-status z-status-working';return'z-status z-status-available'};
+})();
+
 /* V147 MANAGER + SUPERVISOR DETAIL READABILITY — popups, safe wrapping and touch targets. */
 (function(){'use strict';
  if(document.getElementById('v147DashboardDetailReadability'))return;
