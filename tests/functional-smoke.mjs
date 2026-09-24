@@ -5,6 +5,9 @@ const read = p => fs.readFileSync(p, 'utf8');
 const gradle = read('app/build.gradle');
 const main = read('app/src/main/java/com/zukait/timetrack/MainActivity.java');
 const updates = read('app/src/main/assets/v74_updates.js');
+const v65 = read('app/src/main/assets/v65_updates.js');
+const v66 = read('app/src/main/assets/v66_updates.js');
+const v67 = read('app/src/main/assets/v67_updates.js');
 const html = read('app/src/main/assets/offline_test.html');
 const cloud = read('app/src/main/assets/cloud_sync.js');
 const metadata = JSON.parse(read('latest-version.json'));
@@ -633,9 +636,6 @@ assert.doesNotMatch(updates,/target=document\.createElement\('button'\);control\
 
 
 // V114 deep source-authority regression guards.
-const v65 = read('app/src/main/assets/v65_updates.js');
-const v66 = read('app/src/main/assets/v66_updates.js');
-const v67 = read('app/src/main/assets/v67_updates.js');
 assert.doesNotMatch(v65,/controlLabels=.*leave:'On Leave'/,'V65 source must not render On Leave in Workshop Control');
 assert.match(v65,/v65-consumables/,'V65 source must render Consumables in the former leave position');
 assert.doesNotMatch(v66,/controlCard\('leave','On Leave'/,'V66 source must not render On Leave in Workshop Control');
