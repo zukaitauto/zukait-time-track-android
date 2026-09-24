@@ -3152,3 +3152,36 @@ document.head.appendChild(st);const old=window.render;window.render=function(){c
   const m=document.getElementById('modal');if(m)new MutationObserver(v134DeduplicateModalClose).observe(m,{childList:true,subtree:true});
  }
 })();
+
+
+/* V134 SUPERVISOR + MANAGER READABILITY — modest global type increase, layout-safe. */
+(function(){
+ if(document.getElementById('v134RoleReadability'))return;
+ const st=document.createElement('style');st.id='v134RoleReadability';
+ st.textContent=`
+ #supervisorView,#managerView{font-size:15px!important;line-height:1.38}
+ #supervisorView button,#managerView button{font-size:13px!important;font-weight:850;line-height:1.25}
+ #supervisorView h2,#managerView h2{font-size:21px!important;line-height:1.2}
+ #supervisorView h3,#managerView h3{font-size:16px!important;line-height:1.25}
+ #supervisorView small,#managerView small{font-size:11px!important;line-height:1.3}
+ #supervisorView .muted,#managerView .muted,#supervisorView .notice,#managerView .notice{font-size:12px!important;line-height:1.4}
+ #supervisorView label,#managerView label{font-size:12px!important;font-weight:800}
+ #supervisorView input,#supervisorView select,#supervisorView textarea,#managerView input,#managerView select,#managerView textarea{font-size:14px!important}
+ #supervisorView table,#managerView table{font-size:12px!important}
+ #supervisorView th,#managerView th{font-size:11px!important}
+ #modal .modal-box{font-size:14px;line-height:1.38}
+ #modal .modal-box button{font-size:13px;font-weight:850;line-height:1.25}
+ #modal .modal-box h2{font-size:20px;line-height:1.2}
+ #modal .modal-box h3{font-size:16px;line-height:1.25}
+ #modal .modal-box label{font-size:12px;font-weight:800}
+ #modal .modal-box input,#modal .modal-box select,#modal .modal-box textarea{font-size:14px}
+ #modal .modal-box table{font-size:12px}
+ #modal .modal-box th{font-size:11px}
+ #modal .modal-box .muted,#modal .modal-box .notice,#modal .modal-box small{font-size:11.5px;line-height:1.4}
+ @media(max-width:480px){
+  #supervisorView,#managerView{font-size:14px!important}
+  #supervisorView button,#managerView button,#modal .modal-box button{font-size:12.5px!important}
+  #supervisorView h3,#managerView h3,#modal .modal-box h3{font-size:15px!important}
+ }`;
+ document.head.appendChild(st);
+})();
