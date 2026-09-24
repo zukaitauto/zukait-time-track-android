@@ -699,3 +699,11 @@ assert.match(consumablesUi, /No\.<\/th><th>Suggested Material<\/th><th>Brand<\/t
 assert.match(consumablesUi, /role\(\)==='Manager'/, 'Manager-only Consumables controls must remain role gated');
 assert.match(consumablesUi, /Workshop Month-to-Month Total:/, 'Monthly comparison must be explicitly labelled as workshop-wide');
 assert.match(consumablesUi, /Overall finalized Painting Actual expense; report filters above do not change this comparison\./, 'Monthly comparison scope must remain explicit');
+
+
+// V137 Assign / Update Job Card search compatibility contracts
+assert.ok(updates.includes('V137 ASSIGN JOB CARD SEARCH COMPATIBILITY AUTHORITY'), 'Supervisor Assign / Update must use the compatibility-safe Job Card search authority');
+assert.ok(updates.includes("input.id='v137JobSearch'"), 'visible Job Card search must use a dedicated search input instead of replacing the legacy sj selector');
+assert.ok(updates.includes("s.id='sj';s.className='v137-internal-job-select'"), 'legacy sj selector must remain available internally for assignment compatibility');
+assert.ok(updates.includes("select.value=no;input.value=no"), 'choosing a search result must feed the selected Job Card into the legacy assignment selector');
+assert.ok(updates.includes("Search and select a valid Job Card first."), 'assignment must reject unselected search text instead of assigning the wrong Job Card');
