@@ -680,3 +680,22 @@ assert.match(updates,/window\.empStatus=function\(a\)/,'assignment status must b
 assert.match(updates,/window\.v84TechState=function\(u\)/,'Technician Board must use unified status authority');
 assert.match(updates,/statuses\.filter\(x=>\['Working','Overtime','ID001'\]\.includes\(x\.status\)\)/,'Supervisor Active Workers must derive from unified status');
 assert.match(updates,/statuses\.filter\(x=>x\.status==='Paused'\)/,'Supervisor Paused Jobs must derive from unified status');
+
+// Painting Consumables V1 isolation contracts
+const consumables = read('app/src/main/assets/consumables.js');
+assert.ok(html.includes('consumables.js?v=1'), 'Consumables foundation must load as an isolated asset');
+assert.match(cloud, /ZukaitConsumables\.ensureState\(state\)/, 'cloud state normalization must initialize Consumables without replacing workshop state');
+assert.match(consumables, /timeControlFingerprint/, 'Consumables must expose a regression fingerprint for protected time-control collections');
+assert.doesNotMatch(consumables, /state\.sessions\.(push|splice)|state\.assign\.(push|splice)|state\.jobs\.(push|splice)/, 'Consumables module must not mutate time-control jobs, assignments, or sessions');
+assert.match(consumables, /unitPriceSnapshot/, 'Actual material records must snapshot the applicable historical unit price');
+assert.match(consumables, /ACTUAL_EXCEEDS_ISSUED/, 'Actual quantity must never exceed issued plus additional allowance');
+assert.match(consumables, /ACTUAL_ALREADY_FINISHED/, 'Actual Finish must be duplicate protected and locked');
+const consumablesUi = read('app/src/main/assets/consumables_ui.js');
+assert.match(consumablesUi, /Suggested \/ Issued Materials/, 'Supervisor Painting menu must retain Suggested / Issued Materials');
+assert.match(consumablesUi, /Actual Materials/, 'Supervisor Painting menu must retain Actual Materials');
+assert.match(consumablesUi, /Additional Materials/, 'Supervisor Painting menu must retain Additional Materials');
+assert.match(consumablesUi, /Search Material List/, 'Supervisor Painting menu must retain Search Material List');
+assert.match(consumablesUi, /No\.<\/th><th>Suggested Material<\/th><th>Brand<\/th><th>Quantity<\/th><th>Actual Material<\/th><th>Brand<\/th><th>Quantity<\/th>/, 'Search Material List must retain approved side-by-side Suggested vs Actual layout');
+assert.match(consumablesUi, /role\(\)==='Manager'/, 'Manager-only Consumables controls must remain role gated');
+assert.match(consumablesUi, /Workshop Month-to-Month Total:/, 'Monthly comparison must be explicitly labelled as workshop-wide');
+assert.match(consumablesUi, /Overall finalized Painting Actual expense; report filters above do not change this comparison\./, 'Monthly comparison scope must remain explicit');

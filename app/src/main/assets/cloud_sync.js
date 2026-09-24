@@ -97,6 +97,7 @@
     state.systemNotifications=state.systemNotifications||[];
     state.overtimeNotices=state.overtimeNotices||{};
     state.incentiveTargetMinutes=state.incentiveTargetMinutes||210*60;
+    if(window.ZukaitConsumables&&typeof window.ZukaitConsumables.ensureState==='function')window.ZukaitConsumables.ensureState(state);
   }
 
   function persistLocal(){

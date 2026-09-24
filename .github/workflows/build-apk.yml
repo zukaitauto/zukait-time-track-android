@@ -3,7 +3,7 @@ name: Build Zukait Time Track APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ main, feature/painting-consumables-v1 ]
 
 jobs:
   build:
@@ -25,6 +25,8 @@ jobs:
         shell: bash
         run: |
           node --check app/src/main/assets/cloud_sync.js
+          node --check app/src/main/assets/consumables.js
+          node --check app/src/main/assets/consumables_ui.js
           node --check app/src/main/assets/secure_auth.js
           node --check app/src/main/assets/production_pilot.js
           node --check app/src/main/assets/professional_ux.js
@@ -52,12 +54,17 @@ jobs:
           done
 
       - name: Run functional smoke tests
-        run: node tests/functional-smoke.mjs
+        run: |
+          node tests/functional-smoke.mjs
+          node tests/consumables-smoke.mjs
+          node tests/consumables-backend-security.mjs
 
       - name: Check production assets
         shell: bash
         run: |
           test -s app/src/main/assets/zukait_logo.webp
+          test -s app/src/main/assets/consumables.js
+          test -s app/src/main/assets/consumables_ui.js
           test -s app/src/main/assets/professional_ux.js
           test -s app/src/main/assets/v54_improvements.js
           test -s app/src/main/assets/v65_updates.js
