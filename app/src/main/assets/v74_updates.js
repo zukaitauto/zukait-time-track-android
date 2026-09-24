@@ -2629,3 +2629,94 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  setInterval(reconcileUI,1000);
  setTimeout(reconcileUI,0);
 })();
+
+
+/* V136 ASSIGN JOB CARD TRUE SEARCH AUTHORITY */
+(function(){'use strict';
+ const HOLD='ID001';
+ const norm=v=>String(v??'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'');
+ const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ function rows(){
+   return (state.jobs||[]).filter(j=>j&&String(j.no||'').trim()&&String(j.no).trim().toUpperCase()!==HOLD);
+ }
+ function hay(j){
+   return [j.no,j.reg,j.vehicle,j.year,j.brand].map(v=>String(v??'')).join(' ').toLowerCase();
+ }
+ function score(j,q,nq){
+   const no=String(j.no||'').toLowerCase(),reg=String(j.reg||'').toLowerCase(),veh=String(j.vehicle||'').toLowerCase();
+   const nno=norm(j.no),nreg=norm(j.reg),nveh=norm(j.vehicle);
+   if(no===q||nno===nq)return 0;
+   if(no.startsWith(q)||nno.startsWith(nq))return 1;
+   if(reg===q||nreg===nq)return 2;
+   if(reg.startsWith(q)||nreg.startsWith(nq))return 3;
+   if(no.includes(q)||nno.includes(nq))return 4;
+   if(reg.includes(q)||nreg.includes(nq))return 5;
+   if(veh.startsWith(q)||nveh.startsWith(nq))return 6;
+   return 7;
+ }
+ function matches(q){
+   q=String(q||'').trim().toLowerCase();const nq=norm(q);
+   let list=rows();
+   if(q)list=list.filter(j=>hay(j).includes(q)||(nq&&[j.no,j.reg,j.vehicle,j.year,j.brand].some(v=>norm(v).includes(nq))));
+   return list.sort((a,b)=>score(a,q,nq)-score(b,q,nq)||(+b.createdAt||0)-(+a.createdAt||0)||String(a.no).localeCompare(String(b.no))).slice(0,12);
+ }
+ function choose(input,j,box){
+   input.value=String(j.no||'').trim().toUpperCase();
+   input.dataset.selectedJob=input.value;
+   box.classList.add('hidden');
+   box.innerHTML='';
+   input.dispatchEvent(new Event('change',{bubbles:true}));
+ }
+ function draw(input,box){
+   const q=input.value||'',list=matches(q);
+   if(!q.trim()){box.classList.add('hidden');box.innerHTML='';return}
+   if(!list.length){
+     box.innerHTML='<div class="v136-no-result">No matching Job Card</div>';
+     box.classList.remove('hidden');return;
+   }
+   box.innerHTML=list.map((j,i)=>'<button type="button" class="v136-job-result" data-index="'+i+'"><b>'+esc(j.no)+'</b><span>'+esc(j.reg||'No Reg')+'</span><small>'+esc(j.vehicle||'Vehicle')+(j.year?' · '+esc(j.year):'')+'</small></button>').join('');
+   [...box.querySelectorAll('.v136-job-result')].forEach((b,i)=>b.onclick=()=>choose(input,list[i],box));
+   box.classList.remove('hidden');
+ }
+ function install(){
+   if(!window.me||me.role!=='Supervisor')return;
+   const root=document.getElementById('supervisorView');if(!root)return;
+   const old=root.querySelector('#sj');if(!old)return;
+   const label=old.closest('label');if(!label)return;
+   label.classList.add('v136-job-search-wrap');
+   let input=old;
+   if(old.tagName==='SELECT'){
+     const value=String(old.value||'').trim().toUpperCase();
+     input=document.createElement('input');
+     input.id='sj';input.type='search';input.inputMode='search';input.autocomplete='off';
+     input.className=old.className||'';
+     input.value=value===HOLD?'':value;
+     old.replaceWith(input);
+   }
+   input.type='search';
+   input.setAttribute('aria-label','Search Job Card');
+   input.setAttribute('aria-autocomplete','list');
+   input.placeholder='Search JC / Reg / Vehicle';
+   let box=label.querySelector('.v136-job-results');
+   if(!box){box=document.createElement('div');box.className='v136-job-results hidden';box.setAttribute('role','listbox');label.appendChild(box)}
+   if(input.dataset.v136SearchBound==='1')return;
+   input.dataset.v136SearchBound='1';
+   input.addEventListener('input',()=>{input.dataset.selectedJob='';draw(input,box)});
+   input.addEventListener('focus',()=>{if(input.value.trim())draw(input,box)});
+   input.addEventListener('keydown',e=>{
+     if(e.key==='Escape'){box.classList.add('hidden');return}
+     if(e.key==='Enter'){
+       const list=matches(input.value);
+       if(list.length){e.preventDefault();choose(input,list[0],box)}
+     }
+   });
+   input.addEventListener('blur',()=>setTimeout(()=>box.classList.add('hidden'),180));
+ }
+ const style=document.createElement('style');style.id='v136AssignJobSearchStyle';
+ style.textContent='#supervisorView .v136-job-search-wrap{position:relative!important;overflow:visible!important}#supervisorView .v136-job-search-wrap #sj{padding-right:34px!important;background:#fff!important}#supervisorView .v136-job-results{position:absolute;z-index:9999;left:0;right:0;top:calc(100% + 4px);max-height:290px;overflow:auto;padding:6px;border:1px solid #cbd5e1;border-radius:12px;background:#fff;box-shadow:0 12px 30px rgba(15,23,42,.20)}#supervisorView .v136-job-results.hidden{display:none!important}#supervisorView .v136-job-result{display:grid!important;grid-template-columns:1fr auto!important;width:100%!important;min-height:54px!important;margin:0 0 5px!important;padding:9px 10px!important;border:1px solid #e2e8f0!important;border-radius:10px!important;background:#fff!important;color:#0f172a!important;text-align:left!important;box-shadow:none!important}#supervisorView .v136-job-result:last-child{margin-bottom:0!important}#supervisorView .v136-job-result b{font-size:14px!important}#supervisorView .v136-job-result span{font-size:11px!important;color:#334155!important;font-weight:800!important;text-align:right}#supervisorView .v136-job-result small{grid-column:1/3;font-size:11px!important;color:#64748b!important;margin-top:2px}.v136-no-result{padding:11px;font-size:12px;color:#64748b;text-align:center}';
+ document.head.appendChild(style);
+ const previous=window.render;
+ window.render=function(){const r=typeof previous==='function'?previous.apply(this,arguments):undefined;setTimeout(install,0);return r};
+ setTimeout(install,0);
+ window.v136AssignJobSearchAuthority=true;
+})();
