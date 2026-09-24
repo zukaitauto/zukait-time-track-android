@@ -1,8 +1,8 @@
 {
-  "versionName": "V120",
-  "versionCode": 83,
+  "versionName": "V121",
+  "versionCode": 84,
   "approvedForStaff": true,
   "approvedAt": "2026-09-24",
-  "sourceCommit": "0bc9bfa0ac054a9d3a4b74bd838f6641813533b4",
-  "publishNonce": "approved-v120-search-session-selection-fix-20260924-verified-cache-revision"
+  "sourceCommit": "993d850cfd710293fc224c37b4daccca65ff4340",
+  "publishNonce": "approved-v121-layout-cache-root-fix-20260924"
 }
