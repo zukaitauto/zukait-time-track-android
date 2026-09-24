@@ -628,10 +628,15 @@ assert.match(updates,/v111-control-consumables/,'Workshop Control Center must re
 
 
 // V113 Manager Workshop Control + leave safety regression guards.
-assert.match(updates,/V113 MANAGER WORKSHOP CONTROL ROOT AUTHORITY/,'Manager Workshop Control must have a final root-level authority');
-assert.match(updates,/TODAY JOBS.*WORKING NOW.*COMPLETED TODAY/s,'Workshop Control root detection must identify the actual live card');
-assert.match(updates,/v113-control-consumables/,'existing Workshop Control On Leave tile must become Consumables in place');
-assert.match(updates,/consumables\.forEach\(b=>\{if\(b!==tile\)b\.remove\(\)\}\)/,'duplicate Consumables controls must be removed');
 assert.match(updates,/Confirm Leave\\n\\nStaff:/,'new leave marking must require confirmation');
 assert.match(updates,/Confirm Leave Change/,'Manager leave edits must require confirmation');
 assert.match(updates,/Confirm Delete Leave/,'Manager leave deletion must require confirmation');
+
+
+// V114 Manager source-authority overlap guards.
+const v67 = readFileSync(new URL('../app/src/main/assets/v67_updates.js', import.meta.url), 'utf8');
+assert.doesNotMatch(v67,/controlCard\('leave','On Leave'/,'V67 Workshop Control source must not render On Leave');
+assert.match(v67,/controlCard\('consumables','Consumables'/,'V67 Workshop Control source must render Consumables in the original tile position');
+assert.match(v67,/v67-consumables/,'V67 Consumables tile must have a stable identity');
+assert.match(updates,/V114 MANAGER WORKSHOP CONTROL FINAL AUTHORITY/,'final Manager overlap authority must be present');
+assert.match(updates,/\.v109-manager-consumables,.v111-control-consumables,.v113-control-consumables/,'legacy appended Consumables controls must be removed');
