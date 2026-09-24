@@ -111,6 +111,8 @@ assert.match(updates, /window\.v38CheckID001=function\(\)\{return false\}/, 'leg
 assert.match(updates, /START \/ STOP only|START \/ STOP/, 'ID001 must remain start/stop only');
 assert.ok(updates.includes("'Overtime'") && updates.includes('overtimeMin'), 'Employee monthly dashboard must show Overtime');
 assert.match(updates, /x\.job!==H[\s\S]*?sessionOvertimeMinutes/, 'ID001 must be excluded from monthly overtime');
+assert.match(updates, /window\.monthlySuggestedMinutes=function\(emp,from,to\)[\s\S]{0,700}a&&a\.emp===emp&&!a\.cancelled/, 'ID001 suggested time must count in monthly Suggested Time');
+assert.doesNotMatch(updates, /window\.monthlySuggestedMinutes=function\(emp,from,to\)[\s\S]{0,500}a\.job!==H/, 'monthly Suggested Time must not exclude ID001');
 assert.match(updates, /Final screenshot-style Employee dashboard/, 'stable Employee renderer must be the final standalone renderer');
 
 assert.match(updates, /V75\.2 HOLIDAY \+ ID001 RUNTIME AUTHORITY/, 'V75.2 runtime authority must be present');
