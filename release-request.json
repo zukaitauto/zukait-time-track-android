@@ -1,8 +1,8 @@
 {
-  "versionName": "V117",
-  "versionCode": 80,
+  "versionName": "V118",
+  "versionCode": 81,
   "approvedForStaff": true,
   "approvedAt": "2026-09-24",
-  "sourceCommit": "1e74937a6cc6ce9709226f8bf4e06479af221a75",
-  "publishNonce": "approved-v117-job-card-search-20260924"
+  "sourceCommit": "006c3d31ae78dc637b8211764d3c95c2fdbdec54",
+  "publishNonce": "approved-v118-consumables-ui-fixes-20260924"
 }
