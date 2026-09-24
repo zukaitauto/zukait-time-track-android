@@ -618,7 +618,7 @@ assert.match(updates,/window\.v111PerformanceUI=true/,'V111 monthly metrics UI a
 // V109 legacy incentive override retirement.
 assert.match(html,/V109: legacy incentive calculation retired/,'late legacy incentive override must stay retired');
 assert.doesNotMatch(html,/const prevIncentive=window\.incentiveFor/,'late legacy incentive wrapper must not return');
-assert.match(html,/ID001 included in Achieved/,'Supervisor and Manager incentive explanation must match V107');
+assert.match(html,/ID001 excluded from Achieved\/Incentive/,'Supervisor and Manager incentive explanation must match V107');
 assert.match(html,/Excess Hours/,'Supervisor and Manager incentive table must expose Excess Hours');
 assert.match(html,/Repeat Deduction/,'Supervisor and Manager incentive table must expose repeat deduction');
 
