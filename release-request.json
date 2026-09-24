@@ -1,8 +1,8 @@
 {
-  "versionName": "V119",
-  "versionCode": 82,
+  "versionName": "V120",
+  "versionCode": 83,
   "approvedForStaff": true,
   "approvedAt": "2026-09-24",
-  "sourceCommit": "d890e7b41b3431b354ad0b6ba7bb7971a3c5773b",
-  "publishNonce": "approved-v119-assign-search-root-fix-20260924"
+  "sourceCommit": "cdacb56e951faff94b46602f3fcd888ae07e0033",
+  "publishNonce": "approved-v120-search-session-selection-fix-20260924"
 }
