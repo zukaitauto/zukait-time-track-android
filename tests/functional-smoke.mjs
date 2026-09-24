@@ -648,3 +648,11 @@ assert.match(updates,/Confirm Delete Leave/,'Manager leave deletion must require
 // Root regression: legacy V75.5 must never inject an On Leave card into Workshop Control Center.
 assert.doesNotMatch(updates,/function injectManagerLeaveRow\(\)\{[\s\S]{0,1800}v755LeaveControlRow/,'legacy Manager On Leave tile injector must stay retired');
 assert.doesNotMatch(updates,/setTimeout\(injectManagerLeaveRow,0\)/,'legacy Manager leave injector must not be scheduled');
+
+// V115 shared live-worker authority regression guards.
+assert.match(updates,/V115 SHARED LIVE WORKER AUTHORITY/,'shared live-worker authority must remain present');
+assert.match(updates,/window\.currentActiveWorkers=liveRows/,'Manager and Supervisor must share one active-worker source');
+assert.match(updates,/setInterval\(syncRefresh,5000\)/,'live dashboards must poll synchronization every five seconds');
+assert.match(updates,/setInterval\(refresh,1000\)/,'live worker counts must refresh locally every second');
+assert.match(updates,/replaceCount\(root,'Working Now',work\.length\)/,'Manager Working Now must use shared authority');
+assert.match(updates,/replaceCount\(root,'Active Workers',rows\.length\)/,'Supervisor Active Workers must use shared authority');
