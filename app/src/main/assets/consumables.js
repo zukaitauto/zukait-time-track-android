@@ -96,7 +96,8 @@
   function finishActual(state,input,actor){
     assertRole(actor?.role); const c=ensureState(state),jc=String(input?.jobCard||'').trim().toUpperCase(); if(!jc)throw new Error('JOB_CARD_REQUIRED');
     const rid=requestId(input); if(rid){const prior=c.actuals.find(x=>x.clientRequestId===rid);if(prior)return clone(prior)}
-    if(c.actuals.some(x=>!x.voided&&x.department===DEPT&&x.jobCard===jc))throw new Error('ACTUAL_RECORD_EXISTS');
+    const reopened=c.actuals.find(x=>!x.voided&&!x.locked&&x.managerReopen&&x.department===DEPT&&x.jobCard===jc);
+    if(c.actuals.some(x=>!x.voided&&x.department===DEPT&&x.jobCard===jc&&x!==reopened))throw new Error('ACTUAL_RECORD_EXISTS');
     const allowed=allowance(state,jc); if(!allowed.length)throw new Error('NO_ISSUED_MATERIALS');
     const wanted=Array.isArray(input.lines)&&input.lines.length?input.lines:allowed;
     const lines=wanted.map((l,i)=>{
@@ -106,6 +107,7 @@
       return {no:i+1,materialId:l.materialId,brandId:l.brandId,unit:a.unit,issuedQuantity:a.quantity,actualQuantity:q,priceId:p.id,unitPriceSnapshot:p.pricePerUnit,lineCost:money(q*p.pricePerUnit)};
     });
     const row={id:uid('actual'),department:DEPT,jobCard:jc,actualAt:Number(input.actualAt)||Date.now(),lines,clientRequestId:rid||uid('req'),locked:true,totalCost:money(lines.reduce((s,l)=>s+l.lineCost,0)),createdAt:Date.now(),createdBy:actor.id,createdByName:String(actor?.name||actor?.id||''),createdByRole:String(actor?.role||'')};
+    if(reopened){const before=clone(reopened);Object.assign(reopened,row,{id:reopened.id,createdAt:reopened.createdAt,createdBy:reopened.createdBy,createdByName:reopened.createdByName,createdByRole:reopened.createdByRole,refinalizedAt:Date.now(),refinalizedBy:actor.id,refinalizedByName:String(actor?.name||actor?.id||''),refinalizedByRole:String(actor?.role||''),managerReopen:false});auditChange(c,'ACTUAL_REFINALIZED',reopened,before,reopened,actor,String(reopened.reopenReason||'Manager reopened actual'));return clone(reopened)}
     c.actuals.push(row); return clone(row);
   }
   function auditChange(c,type,entity,before,after,actor,reason){
