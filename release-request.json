@@ -1,8 +1,8 @@
 {
-  "versionName": "V125",
-  "versionCode": 88,
+  "versionName": "V126",
+  "versionCode": 89,
   "approvedForStaff": true,
   "approvedAt": "2026-09-24",
-  "sourceCommit": "523240b720ba4a2f9de7e903d8cefded28d52e55",
-  "publishNonce": "approved-v125-server-live-status-authority-20260924"
+  "sourceCommit": "26e1690cf760072ef5644d2dd0ef2218ef9da036",
+  "publishNonce": "approved-v126-database-live-authority-no-stale-fallback-20260924"
 }
