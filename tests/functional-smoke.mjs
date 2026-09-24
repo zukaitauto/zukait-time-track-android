@@ -48,7 +48,7 @@ assert.ok(updates.includes("if(currentFinal&&currentFinal.isConnected)currentFin
 assert.ok(updates.includes("else if(glance&&glance.isConnected)glance.replaceWith(wrap)"), 'Supervisor finalizer must upgrade a legacy glance card when present');
 assert.ok(updates.includes("anchor.insertAdjacentElement('afterend',wrap)"), 'Supervisor finalizer must insert the authoritative overview even when no legacy glance card exists');
 assert.ok(updates.includes("filter(x=>!wrap.contains(x)&&(x.querySelector('h3')?.textContent||'').includes('Today at a Glance')).forEach(x=>x.remove())"), 'Supervisor finalizer must remove duplicate legacy glance surfaces');
-assert.ok(html.includes('v74_updates.js?v=139'), 'Supervisor final asset must use the current V139 cache-busting revision');
+assert.ok(html.includes('v74_updates.js?v=140'), 'Supervisor final asset must use the current V140 cache-busting revision');
 assert.ok(!html.includes('V103 SUPERVISOR RUNTIME LOCK'), 'legacy V103 Supervisor runtime lock must stay retired');
 assert.ok(updates.includes('v92-tech-board'), 'Supervisor must render the redesigned Technician Board');
 assert.ok(updates.includes('v92-tech-dept'), 'Technician Board department cards must use the authoritative redesigned UI');
@@ -716,4 +716,4 @@ assert.ok(html.includes('supervisorSelectExistingJob') && html.includes("sel.val
 assert.ok(html.includes("Search and select a valid Job Card first."), 'assignment must reject unselected search text instead of assigning the wrong Job Card');
 assert.ok(!updates.includes('V136 ASSIGN JOB CARD TRUE SEARCH AUTHORITY') && !updates.includes('V137 ASSIGN JOB CARD SEARCH COMPATIBILITY AUTHORITY'), 'retired late search overlays must not return');
 
-assert.ok(main.includes('offline_test.html?v=122'), 'Android wrapper must load the fresh V121 page revision to prevent stale dashboard layout');
+assert.ok(main.includes('offline_test.html?v=123'), 'Android wrapper must load the fresh V123 page revision to prevent stale dashboard layout');
