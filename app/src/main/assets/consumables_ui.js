@@ -338,7 +338,7 @@ const css=document.createElement('style');css.id='consumablesUiCss';css.textCont
 .modal-backdrop:has(#consMasterWorkspace) .modal-box{width:96vw!important;max-width:1500px!important;max-height:92vh!important;padding:24px!important}
 .modal-backdrop:has(#consMasterWorkspace){padding:12px!important}
 #consMasterWorkspace{width:100%;min-width:0}
-#consMasterWorkspace .cons-master-form{grid-template-columns:minmax(220px,2fr) minmax(200px,1.7fr) minmax(120px,.8fr) minmax(170px,1fr) minmax(170px,1.2fr) minmax(180px,auto)!important;gap:14px!important}
+#consMasterWorkspace .cons-master-form{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px 14px!important}
 #consMasterWorkspace .cons-master-form input,#consMasterWorkspace .cons-master-form select,#consMasterWorkspace .cons-master-form button{min-height:48px!important;font-size:15px!important}
 #consMasterWorkspace #cmList{max-height:65vh;overflow:auto}
 }
@@ -346,7 +346,7 @@ const css=document.createElement('style');css.id='consumablesUiCss';css.textCont
 body.cons-master-open .modal{width:min(96vw,1500px)!important;max-width:1500px!important}
 body.cons-master-open .modal-content,body.cons-master-open .modal-body{max-width:none!important}
 body.cons-master-open .cons-page{width:100%}
-body.cons-master-open .cons-master-form{grid-template-columns:minmax(220px,2fr) minmax(200px,1.7fr) minmax(120px,.8fr) minmax(170px,1fr) minmax(170px,1.2fr) minmax(180px,auto);gap:14px}
+body.cons-master-open .cons-master-form{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}
 body.cons-master-open .cons-master-form input,body.cons-master-open .cons-master-form select,body.cons-master-open .cons-master-form button{min-height:46px;font-size:15px}
 body.cons-master-open #cmList{max-height:62vh;overflow:auto}
 }
