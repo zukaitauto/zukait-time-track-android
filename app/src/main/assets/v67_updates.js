@@ -85,6 +85,7 @@ function featureCard(cls,title,count,sub,click){
  return '<button class="v67-feature '+cls+'" onclick="'+click+'"><div><span>'+title+'</span><b>'+count+'</b><small>'+sub+'</small></div><em>›</em></button>';
 }
 function controlCard(type,label,count,cls){
+ if(type==='consumables')return '<button class="v67-control '+cls+' v67-consumables" onclick="alert(\'Consumables details will be added later.\')"><span>'+label+'</span><b>›</b><small>View details</small><em></em></button>';
  return '<button class="v67-control '+cls+'" onclick="v65OpenControl(\''+type+'\')"><span>'+label+'</span><b>'+count+'</b><small>View details</small><em>›</em></button>';
 }
 function roundHour(kind,label,cls){
@@ -107,7 +108,7 @@ function renderManager67(){
  controlCard('working','Working Now',c.working,'mint')+
  controlCard('notstarted','Not Started',c.notstarted,'slate')+
  controlCard('paused','Paused',c.paused,'amber')+
- controlCard('leave','On Leave',c.leave,'rose')+
+ controlCard('consumables','Consumables',0,'rose')+
  controlCard('completed','Completed Today',c.completed,'teal')+
  controlCard('repeat','Repeat Work',c.repeat,'violet')+
  controlCard('waiting','Waiting / ID001',c.waiting,'gray')+
