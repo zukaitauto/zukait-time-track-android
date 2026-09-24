@@ -1,8 +1,8 @@
 {
-  "versionName": "V122",
-  "versionCode": 85,
+  "versionName": "V123",
+  "versionCode": 86,
   "approvedForStaff": true,
   "approvedAt": "2026-09-24",
-  "sourceCommit": "ab36f2fa60dd51dd04e046fc75175bf6227af81d",
-  "publishNonce": "approved-v122-manager-consumables-root-routing-fix-20260924"
+  "sourceCommit": "dd28a956ffeea70c8371ed8889f1c8ee0aa9f9ec",
+  "publishNonce": "approved-v123-supervisor-root-ui-search-fix-20260924"
 }
