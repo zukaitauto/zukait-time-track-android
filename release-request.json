@@ -1,8 +1,8 @@
 {
-  "versionName": "V129",
-  "versionCode": 92,
+  "versionName": "V130",
+  "versionCode": 93,
   "approvedForStaff": true,
   "approvedAt": "2026-09-24",
-  "sourceCommit": "4332ae4ae01e63d789b7c0a132f76f965e1c6b55",
-  "publishNonce": "approved-v129-final-consumables-units-paint-po-20260924"
+  "sourceCommit": "66cee07a2c1c02ae1ec5ed5e06403bf597f6cb17",
+  "publishNonce": "approved-v130-id001-normal-working-hours-20260924"
 }
