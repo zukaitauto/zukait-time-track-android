@@ -153,7 +153,7 @@
   function managerReopenActual(state,id,actor,reason){
     assertRole(actor?.role,true); const c=ensureState(state),row=c.actuals.find(x=>x.id===id&&!x.voided); if(!row)throw new Error('ACTUAL_NOT_FOUND');
     const before=clone(row); const why=String(reason||'').trim(); if(!why)throw new Error('REASON_REQUIRED');
-    row.locked=true; row.reopenedAt=Date.now(); row.reopenedBy=actor.id; row.reopenedByName=String(actor?.name||actor?.id||''); row.reopenedByRole=String(actor?.role||''); row.reopenReason=why; row.managerReopen=true;
+    row.locked=false; row.reopenedAt=Date.now(); row.reopenedBy=actor.id; row.reopenedByName=String(actor?.name||actor?.id||''); row.reopenedByRole=String(actor?.role||''); row.reopenReason=why; row.managerReopen=true;
     auditChange(c,'ACTUAL_REOPENED',row,before,row,actor,why); return clone(row);
   }
   function monthlyExpense(state,year,month){
