@@ -2444,36 +2444,24 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 })();
 
 
-/* V113 MANAGER WORKSHOP CONTROL ROOT AUTHORITY — eliminate legacy On Leave/Consumables overlap. */
+/* V114 MANAGER WORKSHOP CONTROL FINAL AUTHORITY — source tile is Consumables; remove every legacy duplicate. */
 (function(){'use strict';
- function controlRoot(root){
-   const heads=[...root.querySelectorAll('h1,h2,h3,h4')];
-   const h=heads.find(x=>/Workshop Control Center/i.test(x.textContent||''));if(!h)return null;
-   let n=h.parentElement,best=null;
-   for(let i=0;n&&n!==root&&i<6;i++,n=n.parentElement){
-     const tx=(n.textContent||'').toUpperCase();
-     if(tx.includes('TODAY JOBS')&&tx.includes('WORKING NOW')&&tx.includes('COMPLETED TODAY')){best=n;break}
-   }
-   return best||h.parentElement;
- }
  function apply(){
    if(!me||me.role!=='Manager')return;const root=document.getElementById('managerView');if(!root)return;
-   const control=controlRoot(root);if(!control)return;
-   const buttons=[...control.querySelectorAll('button')];
-   let tile=buttons.find(b=>/^ON LEAVE\b/i.test((b.textContent||'').trim()));
-   const consumables=buttons.filter(b=>/\bCONSUMABLES\b/i.test((b.textContent||'').trim()));
-   if(!tile)tile=consumables.find(b=>/View details/i.test(b.textContent||''))||consumables[0]||null;
-   consumables.forEach(b=>{if(b!==tile)b.remove()});
-   root.querySelectorAll('.v109-manager-consumables').forEach(x=>x.remove());
-   root.querySelectorAll('.v111-control-consumables').forEach(x=>{if(x!==tile)x.remove()});
-   if(tile){
-     tile.classList.remove('v111-control-consumables');tile.classList.add('v113-control-consumables');
-     tile.onclick=()=>alert('Consumables details will be added later.');
-     tile.innerHTML='<span>CONSUMABLES</span><b>›</b><small>View details</small>';
+   // V67 is the actual Workshop Control Center renderer. Its source now owns the Consumables tile.
+   const section=[...root.querySelectorAll('.v67-section')].find(x=>/Workshop Control Center/i.test(x.querySelector('h3')?.textContent||''));
+   if(section){
+     const grid=section.querySelector('.v67-control-grid');
+     let tile=grid?.querySelector('.v67-consumables')||null;
+     const old=[...(grid?.querySelectorAll('.v67-control')||[])].filter(x=>/^ON LEAVE\b/i.test((x.textContent||'').trim()));
+     old.forEach(x=>{if(!tile){tile=x;tile.className='v67-control rose v67-consumables';tile.onclick=()=>alert('Consumables details will be added later.');tile.innerHTML='<span>CONSUMABLES</span><b>›</b><small>View details</small><em></em>'}else x.remove()});
+     const dup=[...(grid?.querySelectorAll('.v67-consumables')||[])];dup.slice(1).forEach(x=>x.remove());
    }
+   // Never append a separate Consumables/leave card below Workshop Control Center.
+   root.querySelectorAll('.v109-manager-consumables,.v111-control-consumables,.v113-control-consumables,#v755LeaveControlRow,.v755-leave-control-row').forEach(x=>x.remove());
  }
  const oldRender=window.render;window.render=function(){const r=typeof oldRender==='function'?oldRender.apply(this,arguments):undefined;setTimeout(apply,0);return r};
  const oldManager=window.renderManager;if(typeof oldManager==='function')window.renderManager=function(){const r=oldManager.apply(this,arguments);apply();setTimeout(apply,0);return r};
- let pass=0;function settle(){if(!me||me.role!=='Manager'||pass++>12)return;apply();setTimeout(settle,80)}setTimeout(settle,0);
- window.v113ManagerWorkshopControlAuthority=apply;
-})();
+ let pass=0;function settle(){if(!me||me.role!=='Manager'||pass++>15)return;apply();setTimeout(settle,80)}setTimeout(settle,0);
+ window.v114ManagerWorkshopControlAuthority=apply;
+})();;
