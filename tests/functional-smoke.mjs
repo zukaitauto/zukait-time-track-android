@@ -643,3 +643,8 @@ assert.doesNotMatch(updates,/V114 MANAGER WORKSHOP CONTROL FINAL AUTHORITY/,'tem
 assert.match(updates,/Confirm Leave\\n\\nStaff:/,'new leave marking must require confirmation');
 assert.match(updates,/Confirm Leave Change/,'Manager leave edits must require confirmation');
 assert.match(updates,/Confirm Delete Leave/,'Manager leave deletion must require confirmation');
+
+
+// Root regression: legacy V75.5 must never inject an On Leave card into Workshop Control Center.
+assert.doesNotMatch(updates,/function injectManagerLeaveRow\(\)\{[\s\S]{0,1800}v755LeaveControlRow/,'legacy Manager On Leave tile injector must stay retired');
+assert.doesNotMatch(updates,/setTimeout\(injectManagerLeaveRow,0\)/,'legacy Manager leave injector must not be scheduled');
