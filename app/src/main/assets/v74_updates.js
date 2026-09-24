@@ -2567,3 +2567,65 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  };
  const style=document.createElement('style');style.textContent='.v115-reopen-list{display:grid;gap:9px;margin:14px 0}.v115-reopen-tech{width:100%;display:grid;grid-template-columns:1fr auto;gap:3px 12px;text-align:left;padding:13px 14px;border:1px solid #dbe3ee;border-radius:14px;background:#fff;color:#0f172a}.v115-reopen-tech b{font-size:15px}.v115-reopen-tech span,.v115-reopen-tech small{font-size:12px;color:#64748b}.v115-reopen-tech small{grid-column:1}.v115-reopen-tech em{grid-column:2;grid-row:1/4;align-self:center;font-style:normal;font-weight:900;font-size:11px;color:#166534}';document.head.appendChild(style);
 })();
+
+/* V115 UNIFIED REAL-TIME STAFF STATUS AUTHORITY */
+(function(){'use strict';
+ const HOLD='ID001';
+ function latest(emp){
+   const ss=(state.sessions||[]).filter(s=>s&&s.emp===emp).slice().sort((a,b)=>(+b.start||0)-(+a.start||0)||String(b.id||'').localeCompare(String(a.id||'')));
+   return ss[0]||null;
+ }
+ function assignmentOf(s){
+   if(!s)return null;
+   if(s.assignmentId){const a=(state.assign||[]).find(x=>x&&String(x.id)===String(s.assignmentId)&&!x.cancelled);if(a)return a}
+   return (state.assign||[]).filter(a=>a&&a.emp===s.emp&&a.job===s.job&&!a.cancelled).slice().sort((a,b)=>(+b.assignedAt||0)-(+a.assignedAt||0))[0]||null;
+ }
+ function authority(emp){
+   let s=null;try{s=activeSession(emp)}catch(_){s=latest(emp);if(s?.end)s=null}
+   if(s){
+     const a=assignmentOf(s);
+     if(s.job!==HOLD&&(!a||a.completed||a.cancelled))return{emp,status:'Available',session:null,assignment:null,job:null};
+     let overtime=0;try{overtime=s.job!==HOLD?(sessionOvertimeMinutes(s,Date.now())||0):0}catch(_){}
+     return{emp,status:s.job===HOLD?'ID001':(overtime>0?'Overtime':'Working'),session:s,assignment:a,job:s.job,overtime};
+   }
+   const l=latest(emp);
+   if(l&&l.end&&l.paused){
+     const a=assignmentOf(l);
+     if(a&&!a.completed&&!a.cancelled)return{emp,status:'Paused',session:l,assignment:a,job:l.job};
+   }
+   return{emp,status:'Available',session:null,assignment:null,job:null};
+ }
+ window.currentStaffStatus=authority;
+ window.currentStaffStatuses=()=> (users||[]).filter(u=>u&&u.role==='Employee').map(u=>authority(u.id));
+ window.empStatus=function(a){
+   if(!a)return'New';if(a.completed)return'Finished';
+   const x=authority(a.emp);
+   if(x.assignment&&String(x.assignment.id)===String(a.id)){
+     if(x.status==='Working'||x.status==='Overtime'||x.status==='ID001')return'Started';
+     if(x.status==='Paused')return'Paused';
+   }
+   let ss=[];try{ss=window.v79AssignmentSessions?window.v79AssignmentSessions(a):(state.sessions||[]).filter(s=>s.emp===a.emp&&s.job===a.job)}catch(_){}
+   const l=ss.slice().sort((p,q)=>(+q.start||0)-(+p.start||0))[0];
+   return l?'Paused':'New';
+ };
+ window.v84TechState=function(u){const x=authority(u.id);return{session:x.session,status:x.status==='ID001'?'ID001':x.status}};
+ function reconcileUI(){
+   if(!window.me)return;
+   const statuses=window.currentStaffStatuses();
+   if(me.role==='Supervisor'){
+     const root=document.getElementById('supervisorView');if(!root)return;
+     const active=statuses.filter(x=>['Working','Overtime','ID001'].includes(x.status)).length;
+     const paused=statuses.filter(x=>x.status==='Paused').length;
+     [...root.querySelectorAll('.glance-box,button,.notice')].forEach(el=>{
+       const tx=(el.textContent||'').toLowerCase(),stat=el.querySelector('.stat,b.stat');
+       if(!stat)return;
+       if(tx.includes('active workers'))stat.textContent=String(active);
+       if(tx.includes('paused jobs'))stat.textContent=String(paused);
+     });
+   }
+ }
+ const prior=window.v115RefreshLiveWorkers;
+ window.v115RefreshLiveWorkers=function(){if(typeof prior==='function')prior();reconcileUI()};
+ setInterval(reconcileUI,1000);
+ setTimeout(reconcileUI,0);
+})();
