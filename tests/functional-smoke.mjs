@@ -49,8 +49,8 @@ assert.ok(updates.includes("if(currentFinal&&currentFinal.isConnected)currentFin
 assert.ok(updates.includes("else if(glance&&glance.isConnected)glance.replaceWith(wrap)"), 'Supervisor finalizer must upgrade a legacy glance card when present');
 assert.ok(updates.includes("anchor.insertAdjacentElement('afterend',wrap)"), 'Supervisor finalizer must insert the authoritative overview even when no legacy glance card exists');
 assert.ok(updates.includes("filter(x=>!wrap.contains(x)&&(x.querySelector('h3')?.textContent||'').includes('Today at a Glance')).forEach(x=>x.remove())"), 'Supervisor finalizer must remove duplicate legacy glance surfaces');
-const v74AssetMatch=html.match(/v74_updates\\.js\\?v=(\\d+)/);
-const stableAssetMatch=html.match(/supervisor_stable\\.js\\?v=(\\d+)/);
+const v74AssetMatch=html.match(/v74_updates\.js\?v=(\d+)/);
+const stableAssetMatch=html.match(/supervisor_stable\.js\?v=(\d+)/);
 assert.ok(v74AssetMatch,'legacy v74 update bundle must be shipped');
 assert.ok(stableAssetMatch,'stable Supervisor authority asset must be shipped');
 assert.ok(html.indexOf(stableAssetMatch[0])>html.indexOf(v74AssetMatch[0]),'stable Supervisor authority must load after the legacy update bundle');
