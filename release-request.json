@@ -1,8 +1,8 @@
 {
-  "versionName": "V136",
-  "versionCode": 99,
+  "versionName": "V137",
+  "versionCode": 100,
   "approvedForStaff": true,
   "approvedAt": "2026-09-25",
-  "sourceCommit": "f68371aca56ce5c7c989cdaeaeed597faaafc0dd",
-  "publishNonce": "approved-v136-supervisor-authority-ui-cleanup-20260925-1"
+  "sourceCommit": "afdde93ba6ad8787989c5303055a67c45b8d2e52",
+  "publishNonce": "approved-v137-year-edit-available-workers-20260925-1"
 }
