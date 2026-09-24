@@ -2423,6 +2423,15 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  }
  function refresh(){
    if(!window.me)return;
+   // Online shared dashboards are owned exclusively by live_status_authority.js.
+   // Do not let this legacy local-session timer race with SERVER LIVE counts.
+   if(navigator.onLine&&(me.role==='Supervisor'||me.role==='Manager')){
+     const live=window.zukaitServerLive;
+     if(live&&live.fresh&&Array.isArray(live.rows)&&live.fetchedAt&&Date.now()-Number(live.fetchedAt)<=7000)return;
+     // While server status is still loading, leave the count untouched so the
+     // final live authority can show SYNCING instead of a stale local number.
+     if(window.zukaitLiveStatusAuthority)return;
+   }
    const rows=liveRows(),work=normal(),wait=waiting();
    if(me.role==='Supervisor'){
      const root=document.getElementById('supervisorView');
