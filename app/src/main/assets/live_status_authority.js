@@ -9,6 +9,12 @@
     return x;
   }
   function rows(){return live()?.rows||null}
+  function serverRequired(){
+    return !!window.me && navigator.onLine && (window.me.role==='Supervisor'||window.me.role==='Manager');
+  }
+  function unavailableStatus(emp){
+    return {emp,status:'Unavailable',session:null,assignment:null,job:null,server:true,unavailable:true};
+  }
   function statusObject(r){
     const paused=r.status==='Paused';
     const hasSession=!!r.session_id;
@@ -53,11 +59,13 @@
       const r=rr.find(x=>String(x.employee_id)===String(emp));
       return r?statusObject(r):{emp,status:'Available',session:null,assignment:null,job:null,server:true};
     }
+    if(serverRequired())return unavailableStatus(emp);
     return typeof oldCurrentStaffStatus==='function'?oldCurrentStaffStatus.apply(this,arguments):null;
   };
   window.currentStaffStatuses=function(){
     const rr=rows();
     if(rr)return rr.map(statusObject);
+    if(serverRequired())return [];
     return typeof oldCurrentStaffStatuses==='function'?oldCurrentStaffStatuses.apply(this,arguments):[];
   };
   function serverActiveRows(){
@@ -67,16 +75,19 @@
   window.currentActiveWorkers=function(){
     const rr=serverActiveRows();
     if(rr)return rr;
+    if(serverRequired())return [];
     return typeof oldCurrentActiveWorkers==='function'?oldCurrentActiveWorkers.apply(this,arguments):[];
   };
   window.v79CurrentWorkerRows=function(){
     const rr=serverActiveRows();
     if(rr)return rr;
+    if(serverRequired())return [];
     return typeof oldV79Rows==='function'?oldV79Rows.apply(this,arguments):[];
   };
   window.v756UniqueActiveWorkerRows=function(){
     const rr=serverActiveRows();
     if(rr)return rr;
+    if(serverRequired())return [];
     return typeof oldUniqueRows==='function'?oldUniqueRows.apply(this,arguments):[];
   };
   window.v84TechState=function(u){
@@ -85,6 +96,7 @@
       const r=rr.find(x=>String(x.employee_id)===String(u?.id));
       if(r){const x=statusObject(r);return{session:x.session,status:x.status}}
     }
+    if(serverRequired())return{session:null,status:'Syncing'};
     return typeof oldTechState==='function'?oldTechState.apply(this,arguments):{session:null,status:'Available'};
   };
 
@@ -104,11 +116,19 @@
   window.openActiveWorkers=function(){
     const rr=rows();
     if(rr)return workerTable(rr.filter(r=>ACTIVE.has(r.status)),'Active Workers — Server Live');
+    if(serverRequired()){
+      if(typeof window.v74Msg==='function')return window.v74Msg('Live worker status is syncing with the server. Please retry after the SERVER LIVE indicator returns.','Live Status');
+      return alert('Live worker status is syncing with the server.');
+    }
     return typeof oldOpenActive==='function'?oldOpenActive.apply(this,arguments):undefined;
   };
   window.v65OpenControl=function(type){
     const rr=rows();
     if(rr&&type==='working')return workerTable(rr.filter(r=>r.status==='Working'||r.status==='Overtime'),'Working Now — Server Live');
+    if(serverRequired()&&type==='working'){
+      if(typeof window.v74Msg==='function')return window.v74Msg('Live worker status is syncing with the server. Please retry after the SERVER LIVE indicator returns.','Live Status');
+      return alert('Live worker status is syncing with the server.');
+    }
     return typeof oldControl==='function'?oldControl.apply(this,arguments):undefined;
   };
 
@@ -134,8 +154,20 @@
       if(strong)strong.innerHTML=working+' <em>/ '+team.length+'</em>';
     });
   }
+  function markUnavailable(){
+    if(!window.me||!serverRequired())return;
+    const root=me.role==='Supervisor'?document.getElementById('supervisorView'):document.getElementById('managerView');
+    if(!root)return;
+    const labels=me.role==='Supervisor'
+      ?['Active Workers','Paused Jobs','Available Workers','Overtime Now']
+      :['Working Now','Waiting / ID001','Work Paused','Free Tech','Active Workers'];
+    labels.forEach(label=>setCount(root,label,'—'));
+    root.querySelectorAll('.v143-live,.v92-live-dot').forEach(b=>b.textContent='● SYNCING');
+  }
   function apply(){
-    const x=live();if(!x||!window.me)return;
+    const x=live();
+    if(!window.me)return;
+    if(!x){markUnavailable();return;}
     const rr=x.rows;
     const active=rr.filter(r=>ACTIVE.has(r.status)).length;
     const working=rr.filter(r=>r.status==='Working'||r.status==='Overtime').length;
@@ -164,6 +196,8 @@
   }
 
   window.addEventListener('zukait-live-status',apply);
+  window.addEventListener('offline',apply);
+  window.addEventListener('online',apply);
   window.addEventListener('focus',apply);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)apply()});
   setInterval(apply,1000);
