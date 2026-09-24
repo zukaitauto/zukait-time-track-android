@@ -108,10 +108,30 @@
     const body=list.length?'<div class="manager-scroll"><table><tr><th>Employee</th><th>Department</th><th>Status</th><th>Job Card</th><th>Vehicle</th><th>Reg.</th><th>Allocated</th></tr>'+
       list.map(r=>'<tr><td><b>'+esc(r.employee_name||r.employee_id)+'</b></td><td>'+esc(r.department||'')+'</td><td><span class="pill">'+esc(r.status)+'</span></td><td>'+esc(r.job_no||'—')+'</td><td>'+esc(r.vehicle||'—')+'</td><td>'+esc(r.registration||'—')+'</td><td>'+minutes(r.suggested_minutes)+'</td></tr>').join('')+
       '</table></div>':'<div class="notice">No matching workers right now.</div>';
-    const html='<div class="section-title"><h2>'+esc(title)+'</h2><span class="pill">SERVER LIVE</span></div>'+body;
-    if(window.me?.role==='Supervisor'&&typeof window.showSupervisorModal==='function')return window.showSupervisorModal(title,body);
-    if(typeof window.openModal==='function')return window.openModal(html);
+    const close='<button type="button" aria-label="Close" onclick="closeActiveWorkersPopup()" style="margin-left:auto;min-width:42px;min-height:38px;padding:4px 12px;border-radius:10px;font-size:20px;font-weight:900">×</button>';
+    const html='<div class="section-title"><h2>'+esc(title)+'</h2><span class="pill">SERVER LIVE</span>'+close+'</div>'+body;
+    let out;
+    if(window.me?.role==='Supervisor'&&typeof window.showSupervisorModal==='function')out=window.showSupervisorModal(title,body);
+    else if(typeof window.openModal==='function')out=window.openModal(html);
+    setTimeout(()=>{
+      const candidates=[...document.querySelectorAll('.modal,.modal-content,.popup,.dialog,[role="dialog"]')].filter(x=>x.offsetParent!==null);
+      const host=candidates[candidates.length-1];
+      if(host&&!host.querySelector('[data-active-workers-close]')){
+        const b=document.createElement('button');b.type='button';b.dataset.activeWorkersClose='1';b.setAttribute('aria-label','Close Active Workers');b.textContent='×';
+        b.style.cssText='position:absolute;right:12px;top:10px;z-index:10002;min-width:42px;min-height:38px;border-radius:10px;font-size:20px;font-weight:900';
+        b.onclick=window.closeActiveWorkersPopup;host.style.position=host.style.position||'relative';host.appendChild(b);
+      }
+    },0);
+    return out;
   }
+  window.closeActiveWorkersPopup=function(){
+    const b=document.querySelector('[data-active-workers-close]');
+    const host=b?.closest('.modal,.modal-content,.popup,.dialog,[role="dialog"]');
+    const close=host?.querySelector('[data-close],.close,.modal-close,[aria-label="Close"]');
+    if(close&&close!==b){close.click();return}
+    if(host){host.remove();return}
+    try{if(typeof window.closeModal==='function')return window.closeModal()}catch(_){}
+  };
 
   window.openActiveWorkers=function(){
     const rr=rows();
