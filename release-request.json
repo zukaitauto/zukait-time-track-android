@@ -1,8 +1,8 @@
 {
-  "versionName": "V128",
-  "versionCode": 91,
+  "versionName": "V129",
+  "versionCode": 92,
   "approvedForStaff": true,
   "approvedAt": "2026-09-24",
-  "sourceCommit": "0715163813617b5fe8808a7c4fa0a5e05dec09bf",
-  "publishNonce": "approved-v128-consumables-costing-safety-20260924"
+  "sourceCommit": "4332ae4ae01e63d789b7c0a132f76f965e1c6b55",
+  "publishNonce": "approved-v129-final-consumables-units-paint-po-20260924"
 }
