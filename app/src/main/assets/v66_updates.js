@@ -133,7 +133,7 @@ function waitingCount(){return (state.sessions||[]).filter(s=>s.job===HOLD&&!s.e
 function todayJobsCount(){const d=startDay(Date.now());return new Set((state.assign||[]).filter(a=>a&&!a.cancelled&&((a.assignedAt||0)>=d||(a.completedAt||0)>=d||(state.sessions||[]).some(s=>s.assignmentId===a.id&&s.start>=d))).map(a=>a.job)).size}
 
 function controlCard(type,label,count,accent){
- if(type==='consumables')return '<button class="v66-raised v66-control v66-consumables" style="--accent:'+accent+'" onclick="alert(\'Consumables details will be added later.\')"><span class="v66-accent"></span><small>'+label+'</small><b>'+count+'</b><em>View details ›</em></button>';
+ if(type==='consumables')return '<button class="v66-raised v66-control v66-consumables" style="--accent:'+accent+'" onclick="openConsumablesModule()"><span class="v66-accent"></span><small>'+label+'</small><b>'+count+'</b><em>View details ›</em></button>';
  return '<button class="v66-raised v66-control" style="--accent:'+accent+'" onclick="v65OpenControl(\''+type+'\')"><span class="v66-accent"></span><small>'+label+'</small><b>'+count+'</b><em>View details ›</em></button>';
 }
 function hoursButton(kind,label){
