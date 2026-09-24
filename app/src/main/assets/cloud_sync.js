@@ -351,7 +351,7 @@
         cloudDirty=false;
         if(r.data&&typeof r.data==='object'){
           cloudApplying=true;
-          try{normalizeRemote(r.data)}finally{cloudApplying=false}
+          try{normalizeRemote(reconcileConsumablesDuplicates(clone(r.data)))}finally{cloudApplying=false}
           lastSyncedState=clone(state||{});
           if(me)try{render()}catch(_){}
         }else{
