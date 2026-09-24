@@ -77,14 +77,21 @@ function consJobResults(q,selectFn){
  return rows.length?rows.map(j=>'<button type="button" class="cons-jc-result" onclick="'+selectFn+'(decodeURIComponent(\''+encodeURIComponent(String(j.no||''))+'\'))"><b>'+esc(j.no||'')+'</b><span>'+esc(j.reg||j.registration||'No Reg')+'</span><small>'+esc(j.vehicle||[j.make,j.model,j.year].filter(Boolean).join(' ')||'Vehicle')+'</small></button>').join(''):'<div class="cons-jc-empty">No matching Job Card.</div>';
 }
 function entryHeader(type){
- return '<div class="cons-jc-access"><label>Job Card Search<div class="cons-searchbar"><input id="consJc" placeholder="JC / Registration / Vehicle" autocomplete="off" oninput="consFindJC(\''+type+'\')"><button class="blue" type="button" onclick="consFindJC(\''+type+'\',true)">SEARCH</button></div></label><div id="consJcResults" class="cons-jc-results hidden"></div><div id="consVehicleDetails" class="cons-vehicle-sticky"></div></div><div class="cons-entry-grid"><label>Vehicle Make + Model + Year<input id="consVehicle" readonly></label><label>Colour Code<input id="consColour" placeholder="Paint colour code"></label><label>Painter Name<select id="consPainter"><option value="">Select painter</option></select></label><label>Allotted Supervisor<input id="consSupervisor" readonly></label></div><div id="consJcNote" class="muted small"></div>';
+ return '<div class="cons-jc-access"><label>Job Card Search<div class="cons-searchbar"><input id="consJc" placeholder="JC / Registration / Vehicle" autocomplete="off" oninput="consFindJC(\''+type+'\')"><button class="blue" type="button" onclick="consFindJC(\''+type+'\',true)">SEARCH</button></div></label><div id="consJcResults" class="cons-jc-results hidden"></div><div id="consVehicleDetails" class="cons-vehicle-sticky"></div></div><div class="cons-entry-grid cons-entry-grid-compact"><label>Vehicle Details<input id="consVehicle" readonly></label><label>Colour Code<input id="consColour" placeholder="Paint colour code"></label><label>Painter Name<select id="consPainter"><option value="">Select painter</option></select></label><label>Allotted Supervisor<input id="consSupervisor" readonly></label></div><div id="consJcNote" class="muted small"></div>';
 }
 function lineEditor(){
  const c=C().ensureState(state),m=c.materials.filter(x=>x.active!==false),b=c.brands.filter(x=>x.active!==false);
  return '<div class="cons-line-editor"><select id="consMaterial" onchange="consFilterBrands()"><option value="">Material</option>'+m.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+' · '+esc(x.unit)+'</option>').join('')+'</select><select id="consBrand"><option value="">Brand</option>'+b.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('')+'</select><input id="consQty" type="number" min="0" step="any" placeholder="Quantity"><button class="blue" onclick="consAddLine()">ADD</button></div><div id="consDraftRows"></div>';
 }
+function consCompactEntryStyle(){
+ if(document.getElementById('consCompactEntryStyle'))return;
+ const s=document.createElement('style');s.id='consCompactEntryStyle';
+ s.textContent='.cons-entry-grid-compact{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:10px 12px!important;align-items:end!important}.cons-entry-grid-compact label{min-width:0!important;margin:0!important}.cons-entry-grid-compact input,.cons-entry-grid-compact select{width:100%!important;box-sizing:border-box!important}.cons-line-editor{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:10px 12px!important;align-items:stretch!important}.cons-line-editor>*{min-width:0!important;width:100%!important;box-sizing:border-box!important;margin:0!important}.cons-line-editor button{min-height:48px!important}@media(max-width:340px){.cons-entry-grid-compact,.cons-line-editor{gap:8px!important}}';
+ document.head.appendChild(s);
+}
 window.openConsumablesEntry=function(type){
  if(!['Supervisor','Manager'].includes(role()))return;
+ consCompactEntryStyle();
  const names={issued:'Suggested / Issued Materials',additional:'Additional Materials',actual:'Actual Materials'};
  if(type==='actual')return openConsumablesActual();
  draft={type,jc:null,lines:[]};
