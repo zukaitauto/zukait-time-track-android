@@ -193,13 +193,33 @@ window.consShareReport=async function(){const x=document.getElementById('crResul
 function addLaunchCard(){
  if(!['Supervisor','Manager'].includes(role()))return;
  const host=document.getElementById(role()==='Manager'?'managerView':'supervisorView');
- if(!host||host.querySelector('.cons-launch'))return;
+ if(!host)return;
+ if(role()==='Supervisor'){
+   // Supervisor authority: one compact Consumables tile only, beside the rendered
+   // AVAILABLE WORKERS tile shown below Employee Efficiency. Never prepend a
+   // separate full-width Consumables launcher.
+   host.querySelectorAll('.cons-launch:not(.cons-supervisor-tile)').forEach(x=>x.remove());
+   if(host.querySelector('.cons-supervisor-tile'))return;
+   const available=[...host.querySelectorAll('button,.card,section,div')].filter(x=>/AVAILABLE\\s*WORKERS/i.test((x.textContent||'').trim())).sort((a,b)=>(a.textContent||'').length-(b.textContent||'').length)[0];
+   if(!available)return;
+   const anchor=available.closest('button,.card')||available;
+   const parent=anchor.parentElement;if(!parent)return;
+   const card=document.createElement('button');card.type='button';card.className='cons-supervisor-tile';card.onclick=openConsumablesModule;
+   card.innerHTML='<span class="cons-supervisor-icon">▦</span><span><b>CONSUMABLES</b><small>Painting · Denting · Mechanical</small></span><strong>›</strong>';
+   parent.classList.add('cons-supervisor-pair');
+   anchor.insertAdjacentElement('afterend',card);
+   return;
+ }
+ if(host.querySelector('.cons-launch'))return;
  const card=document.createElement('button');card.className='cons-launch';card.onclick=openConsumablesModule;
  card.innerHTML='<span>◫</span><div><b>Consumables</b><small>Painting · Denting · Mechanical</small></div><i>›</i>';
  host.insertBefore(card,host.firstChild);
 }
 const css=document.createElement('style');css.id='consumablesUiCss';css.textContent=`
 .cons-launch{width:100%;display:flex;align-items:center;gap:12px;padding:14px 16px;margin:8px 0 12px;border:1px solid #d8e0e8;background:linear-gradient(135deg,#fff,#f7fafc);color:#0f1b2b;border-radius:16px;text-align:left;box-shadow:0 4px 14px rgba(15,27,43,.07)}
+.cons-supervisor-pair{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;align-items:stretch!important}
+.cons-supervisor-tile{width:100%!important;min-width:0!important;min-height:100%!important;margin:0!important;padding:16px!important;border:1px solid #d8c7ee!important;border-radius:16px!important;background:linear-gradient(145deg,#faf5ff,#f3e8ff)!important;color:#5b217a!important;box-shadow:0 5px 14px rgba(91,33,122,.10)!important;display:grid!important;grid-template-columns:auto 1fr auto!important;gap:9px!important;align-items:center!important;text-align:left!important}
+.cons-supervisor-tile .cons-supervisor-icon{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:#eadcff;font-size:20px}.cons-supervisor-tile b,.cons-supervisor-tile small{display:block}.cons-supervisor-tile b{font-size:13px;font-weight:950}.cons-supervisor-tile small{font-size:9px;margin-top:4px;line-height:1.25;opacity:.76}.cons-supervisor-tile strong{font-size:22px}
 .cons-launch>span{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:#0f1b2b;color:#fff;font-size:22px}.cons-launch div{flex:1}.cons-launch b,.cons-launch small{display:block}.cons-launch b{font-size:17px}.cons-launch small{color:#64748b;margin-top:3px}.cons-launch i{font-size:28px;color:#94a3b8}
 .cons-page{max-width:1100px}.cons-depts,.cons-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.cons-actions{grid-template-columns:repeat(2,1fr)}
 .cons-dept,.cons-action{min-height:128px;padding:18px;border:1px solid #dfe5ec;background:#fff;color:#0f1b2b;border-radius:18px;text-align:left;box-shadow:0 5px 18px rgba(15,27,43,.07)}
