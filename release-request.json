@@ -1,8 +1,8 @@
 {
-  "versionName": "V133",
-  "versionCode": 96,
+  "versionName": "V134",
+  "versionCode": 97,
   "approvedForStaff": true,
   "approvedAt": "2026-09-25",
-  "sourceCommit": "38b11845cca9ce1f996e37dbe8fd8068ccee7c25",
-  "publishNonce": "approved-v133-supervisor-jobcard-ui-20260925"
+  "sourceCommit": "fce71ce30cd748706eb61101f08c5bac85026062",
+  "publishNonce": "approved-v134-ui-consistency-20260925"
 }
