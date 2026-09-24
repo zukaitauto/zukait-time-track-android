@@ -49,11 +49,11 @@ assert.ok(updates.includes("if(currentFinal&&currentFinal.isConnected)currentFin
 assert.ok(updates.includes("else if(glance&&glance.isConnected)glance.replaceWith(wrap)"), 'Supervisor finalizer must upgrade a legacy glance card when present');
 assert.ok(updates.includes("anchor.insertAdjacentElement('afterend',wrap)"), 'Supervisor finalizer must insert the authoritative overview even when no legacy glance card exists');
 assert.ok(updates.includes("filter(x=>!wrap.contains(x)&&(x.querySelector('h3')?.textContent||'').includes('Today at a Glance')).forEach(x=>x.remove())"), 'Supervisor finalizer must remove duplicate legacy glance surfaces');
-assert.ok(html.includes('v74_updates.js?v=142'), 'Supervisor final asset must use the current V142 cache-busting revision');
+assert.ok(html.includes('v74_updates.js?v=143'), 'Supervisor final asset must use the current V143 cache-busting revision');
 assert.ok(!html.includes('V103 SUPERVISOR RUNTIME LOCK'), 'legacy V103 Supervisor runtime lock must stay retired');
 assert.match(supervisorStable,/V143 SUPERVISOR STABLE AUTHORITY/,'final stable Supervisor authority must exist');
 assert.ok(html.includes('supervisor_stable.js?v=143'),'production page must load the stable Supervisor authority');
-assert.ok(html.indexOf('supervisor_stable.js?v=143')>html.indexOf('v74_updates.js?v=142'),'stable Supervisor authority must load after the legacy update bundle');
+assert.ok(html.indexOf('supervisor_stable.js?v=143')>html.indexOf('v74_updates.js?v=143'),'stable Supervisor authority must load after the legacy update bundle');
 assert.match(supervisorStable,/window\.renderSupervisor=renderStable/,'stable authority must own renderSupervisor');
 assert.match(supervisorStable,/if\(role\(\)==='Supervisor'\)return renderStable\(\)/,'Supervisor render must bypass the legacy render chain');
 assert.doesNotMatch(supervisorStable,/MutationObserver/,'stable Supervisor UI must not use DOM observers');
