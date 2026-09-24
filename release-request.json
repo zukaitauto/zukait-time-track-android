@@ -1,8 +1,8 @@
 {
-  "versionName": "V131",
-  "versionCode": 94,
+  "versionName": "V132",
+  "versionCode": 95,
   "approvedForStaff": true,
   "approvedAt": "2026-09-25",
-  "sourceCommit": "7a775268ca72d8571136222f844f181c2e4add6e",
-  "publishNonce": "approved-v131-multi-version-sync-authority-20260925"
+  "sourceCommit": "8d80fc512f9283c271110415aa5f342542bfd200",
+  "publishNonce": "approved-v132-consumables-final-20260925"
 }
