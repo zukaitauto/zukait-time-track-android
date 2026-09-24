@@ -22,6 +22,7 @@ assert.match(authority,/window\.v65OpenControl=function/,'Manager Working Now de
 
 const listeners={};
 const windowObj={
+  me:{role:'Supervisor'},
   zukaitServerLive:{
     fresh:true,
     fetchedAt:Date.now(),
@@ -67,6 +68,13 @@ assert.deepEqual(active.map(x=>x.u.id).sort(),['EMP1','EMP3']);
 assert.equal(context.window.v84TechState({id:'EMP3'}).status,'ID001');
 
 context.window.zukaitServerLive.fetchedAt=Date.now()-8000;
-assert.equal(context.window.currentStaffStatuses()[0].emp,'LOCAL','stale server data must fall back to local cache instead of pretending to be live');
+assert.deepEqual(context.window.currentStaffStatuses(),[],'online stale server data must never fall back to local worker status');
+assert.equal(context.window.currentStaffStatus('EMP1').status,'Unavailable','online stale server data must surface unavailable, not local activity');
+assert.deepEqual(context.window.currentActiveWorkers(),[],'online stale server data must never invent active workers from cache');
 
-console.log('Server live-status authority tests passed: last-loaded authority, dirty-independent polling, server counts/details, and stale fallback');
+context.navigator.onLine=false;
+assert.equal(context.window.currentStaffStatuses()[0].emp,'LOCAL','offline mode may use local cache as a fallback');
+
+assert.match(authority,/setTimeout\(apply,0\)/,'server live counts must be reapplied immediately after dashboard renders');
+
+console.log('Server live-status authority tests passed: server counts/details, dirty-independent polling, no online stale fallback, offline-only cache fallback, and immediate render reapply');
