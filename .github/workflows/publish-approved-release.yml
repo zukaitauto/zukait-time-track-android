@@ -70,7 +70,12 @@ jobs:
           for f in /tmp/zukait-inline-js/*.js; do node --check "$f"; done
 
       - name: Run functional smoke tests
-        run: node tests/functional-smoke.mjs
+        run: |
+          node tests/functional-smoke.mjs
+          node tests/consumables-smoke.mjs
+          node tests/consumables-ui.mjs
+          node --check app/src/main/assets/consumables.js
+          node --check app/src/main/assets/consumables_ui.js
 
       - name: Install Android SDK packages
         shell: bash

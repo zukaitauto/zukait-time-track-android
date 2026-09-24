@@ -49,7 +49,7 @@
     const material=c.materials.find(x=>x.id===input.materialId&&x.active!==false);
     const brand=c.brands.find(x=>x.id===input.brandId&&x.active!==false);
     if(!material)throw new Error('MATERIAL_NOT_FOUND'); if(!brand)throw new Error('BRAND_NOT_FOUND');
-    const price=num(input.pricePerUnit); if(price<0)throw new Error('INVALID_PRICE');
+    const price=Number(input.pricePerUnit); if(!Number.isFinite(price)||price<0)throw new Error('INVALID_PRICE');
     const effectiveFrom=Number(input.effectiveFrom); if(!Number.isFinite(effectiveFrom))throw new Error('EFFECTIVE_DATE_REQUIRED');
     const reason=String(input.reason||'').trim(); if(!reason)throw new Error('REASON_REQUIRED');
     const duplicate=c.prices.find(x=>x.materialId===material.id&&x.brandId===brand.id&&x.effectiveFrom===effectiveFrom&&!x.voided);
@@ -97,7 +97,7 @@
     const wanted=Array.isArray(input.lines)&&input.lines.length?input.lines:allowed;
     const lines=wanted.map((l,i)=>{
       const a=allowed.find(x=>x.materialId===l.materialId&&x.brandId===l.brandId); if(!a)throw new Error('ACTUAL_NOT_ISSUED');
-      const q=num(l.quantity); if(q<0||q>a.quantity+1e-9)throw new Error('ACTUAL_EXCEEDS_ISSUED');
+      const q=Number(l.quantity); if(!Number.isFinite(q)||q<0||q>a.quantity+1e-9)throw new Error('ACTUAL_EXCEEDS_ISSUED');
       const p=priceAt(state,l.materialId,l.brandId,Number(input.actualAt)||Date.now()); if(!p)throw new Error('PRICE_NOT_FOUND');
       return {no:i+1,materialId:l.materialId,brandId:l.brandId,unit:a.unit,issuedQuantity:a.quantity,actualQuantity:q,priceId:p.id,unitPriceSnapshot:p.pricePerUnit,lineCost:money(q*p.pricePerUnit)};
     });
@@ -110,6 +110,7 @@
   }
   function managerCorrectIssue(state,id,patch,actor,reason){
     assertRole(actor?.role,true); const c=ensureState(state),row=c.issues.find(x=>x.id===id&&!x.voided); if(!row)throw new Error('ISSUE_NOT_FOUND');
+    if(!String(reason||'').trim())throw new Error('REASON_REQUIRED');
     const before=clone(row),next=clone(row);
     if(patch.colourCode!==undefined)next.colourCode=String(patch.colourCode||'');
     if(patch.mainPainterId!==undefined)next.mainPainterId=String(patch.mainPainterId||'');
@@ -120,10 +121,11 @@
   }
   function managerCorrectActual(state,id,lines,actor,reason){
     assertRole(actor?.role,true); const c=ensureState(state),row=c.actuals.find(x=>x.id===id&&!x.voided); if(!row)throw new Error('ACTUAL_NOT_FOUND');
+    if(!String(reason||'').trim())throw new Error('REASON_REQUIRED');
     const before=clone(row),allowed=allowance(state,row.jobCard);
     const nextLines=(Array.isArray(lines)?lines:[]).map((l,i)=>{
       const a=allowed.find(x=>x.materialId===l.materialId&&x.brandId===l.brandId); if(!a)throw new Error('ACTUAL_NOT_ISSUED');
-      const q=num(l.quantity); if(q<0||q>a.quantity+1e-9)throw new Error('ACTUAL_EXCEEDS_ISSUED');
+      const q=Number(l.quantity); if(!Number.isFinite(q)||q<0||q>a.quantity+1e-9)throw new Error('ACTUAL_EXCEEDS_ISSUED');
       const old=row.lines.find(x=>x.materialId===l.materialId&&x.brandId===l.brandId);
       const p=old?{id:old.priceId,pricePerUnit:old.unitPriceSnapshot}:priceAt(state,l.materialId,l.brandId,row.actualAt); if(!p)throw new Error('PRICE_NOT_FOUND');
       return {no:i+1,materialId:l.materialId,brandId:l.brandId,unit:a.unit,issuedQuantity:a.quantity,actualQuantity:q,priceId:p.id,unitPriceSnapshot:p.pricePerUnit,lineCost:money(q*p.pricePerUnit)};

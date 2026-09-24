@@ -57,6 +57,7 @@ jobs:
         run: |
           node tests/functional-smoke.mjs
           node tests/consumables-smoke.mjs
+          node tests/consumables-ui.mjs
           node tests/consumables-backend-security.mjs
 
       - name: Check production assets
