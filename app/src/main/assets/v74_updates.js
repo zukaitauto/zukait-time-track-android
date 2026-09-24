@@ -3064,3 +3064,21 @@ document.head.appendChild(st);const old=window.render;window.render=function(){c
 
  window.v130ID001NormalWorkingAuthority=true;
 })();
+
+
+/* SUPERVISOR MODAL CLOSE AUTHORITY — every Supervisor popup must be escapable. */
+(function(){'use strict';
+ const previous=window.showSupervisorModal;
+ if(typeof previous!=='function'||window.v150SupervisorModalCloseReady)return;
+ const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ window.showSupervisorModal=function(title,body){
+   const safeTitle=esc(title||'Details');
+   const content=String(body||'');
+   const header='<div class="v150-supervisor-modal-head"><h2>'+safeTitle+'</h2><button type="button" class="secondary v150-supervisor-modal-close" onclick="closeModal()" aria-label="Close">✕ CLOSE</button></div>';
+   return previous.call(this,'',header+content);
+ };
+ const st=document.createElement('style');st.id='v150SupervisorModalCloseStyle';st.textContent=
+   '.v150-supervisor-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 14px}.v150-supervisor-modal-head h2{margin:0;min-width:0;line-height:1.15}.v150-supervisor-modal-close{flex:0 0 auto!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;min-width:82px!important;min-height:42px!important;padding:8px 12px!important;border-radius:12px!important;font-weight:900!important;visibility:visible!important;opacity:1!important;position:relative!important;z-index:5!important}@media(max-width:420px){.v150-supervisor-modal-head h2{font-size:20px!important}.v150-supervisor-modal-close{min-width:72px!important;padding:7px 9px!important;font-size:11px!important}}';
+ document.head.appendChild(st);
+ window.v150SupervisorModalCloseReady=true;
+})();
