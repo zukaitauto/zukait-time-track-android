@@ -990,17 +990,8 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  };
  window.v114ManagerLeaveCorrection=true;
 
- function injectManagerLeaveRow(){
-   if(!me||me.role!=='Manager')return;
-   const root=document.getElementById('managerView');if(!root)return;
-   const section=[...root.querySelectorAll('.v67-section,.v65-section')].find(x=>/Workshop Control Center/i.test(x.querySelector('h3')?.textContent||''));
-   if(!section)return;
-   section.querySelectorAll('button').forEach(b=>{if(/^On Leave\b/i.test((b.textContent||'').trim()))b.style.display='none'});
-   let row=section.querySelector('#v755LeaveControlRow');
-   if(!row){row=document.createElement('div');row.id='v755LeaveControlRow';row.className='v755-leave-control-row';section.appendChild(row);}
-   const today=leaveToday(),month=leaveMonth();
-   row.innerHTML='<button class="v755-leave-card today" onclick="v133OpenManagerLeave()"><span>ON LEAVE</span><b>'+uniquePeople(today)+'</b><small>Today · tap for today + this month details</small></button>';
- }
+ function injectManagerLeaveRow(){ /* retired: Leave Management is outside Workshop Control Center */ }
+
 
  // Leave must never become Ideal Time. Full-day leave is 5h + 4h; lunch is excluded.
  const leaveAwareIdeal=(emp,from,to)=>{
@@ -1060,7 +1051,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  const priorRender=window.render;
  window.render=function(){
    const r=typeof priorRender==='function'?priorRender.apply(this,arguments):undefined;
-   setTimeout(injectManagerLeaveRow,0);return r;
+   return r;
  };
  const priorRefresh=window.refreshActiveRunningTime;
  window.refreshActiveRunningTime=function(){
@@ -1075,7 +1066,6 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  const css=document.createElement('style');css.id='v755LeaveStyle';css.textContent=
    '.v755-leave-control-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.v755-leave-card{min-height:95px;border-radius:14px;border:1px solid;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;text-align:left;padding:13px;box-shadow:0 5px 12px rgba(34,55,80,.08)}.v755-leave-card span{font-size:11px;font-weight:900}.v755-leave-card b{font-size:27px;margin:4px 0}.v755-leave-card small{font-size:10px}.v755-leave-card.today{background:#fff1f3;color:#984758;border-color:#f0d4d9}.v755-leave-card.month{background:#f5f0ff;color:#6d4a9d;border-color:#ded1f2}@media(max-width:620px){.v755-leave-control-row{grid-template-columns:1fr 1fr}}';
  document.head.appendChild(css);
- setTimeout(injectManagerLeaveRow,0);
  window.v755LeaveAndPausedID001Ready=true;
 })();
 
