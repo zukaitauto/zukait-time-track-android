@@ -81,8 +81,10 @@ jobs:
           node tests/supervisor-stable-ui.mjs
           node tests/live-status-authority.mjs
           node tests/v128-costing-safety.mjs
+          node tests/paint-safety.mjs
           node --check app/src/main/assets/consumables.js
           node --check app/src/main/assets/consumables_ui.js
+          node --check app/src/main/assets/paint_module.js
 
       - name: Install Android SDK packages
         shell: bash
