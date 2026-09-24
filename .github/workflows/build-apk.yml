@@ -39,7 +39,8 @@ jobs:
           node --check app/src/main/assets/v69_updates.js
           node --check app/src/main/assets/v74_updates.js
           node --check app/src/main/assets/supervisor_stable.js
-          node --check app/src/main/assets/live_status_authority.js\n          node --check app/src/main/assets/job_cost_summary_v128.js
+          node --check app/src/main/assets/live_status_authority.js
+          node --check app/src/main/assets/job_cost_summary_v128.js
           python - <<'PY'
           from pathlib import Path
           import re
@@ -63,7 +64,8 @@ jobs:
           node tests/assignment-search-ui.mjs
           node tests/supervisor-stable-ui.mjs
           node tests/live-status-authority.mjs
-          node tests/consumables-backend-security.mjs\n          node tests/v128-costing-safety.mjs
+          node tests/consumables-backend-security.mjs
+          node tests/v128-costing-safety.mjs
 
       - name: Check production assets
         shell: bash
@@ -80,7 +82,8 @@ jobs:
           test -s app/src/main/assets/v69_updates.js
           test -s app/src/main/assets/v74_updates.js
           test -s app/src/main/assets/supervisor_stable.js
-          test -s app/src/main/assets/live_status_authority.js\n          test -s app/src/main/assets/job_cost_summary_v128.js
+          test -s app/src/main/assets/live_status_authority.js
+          test -s app/src/main/assets/job_cost_summary_v128.js
           test -s app/src/main/res/drawable/app_icon.webp
           test -s app/src/main/res/drawable/app_logo.webp
           test -s app/src/main/res/drawable/splash_screen.xml
