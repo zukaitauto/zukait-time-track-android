@@ -68,9 +68,9 @@ assert.deepEqual(active.map(x=>x.u.id).sort(),['EMP1','EMP3']);
 assert.equal(context.window.v84TechState({id:'EMP3'}).status,'ID001');
 
 context.window.zukaitServerLive.fetchedAt=Date.now()-8000;
-assert.deepEqual(context.window.currentStaffStatuses(),[],'online stale server data must never fall back to local worker status');
+assert.equal(context.window.currentStaffStatuses().length,0,'online stale server data must never fall back to local worker status');
 assert.equal(context.window.currentStaffStatus('EMP1').status,'Unavailable','online stale server data must surface unavailable, not local activity');
-assert.deepEqual(context.window.currentActiveWorkers(),[],'online stale server data must never invent active workers from cache');
+assert.equal(context.window.currentActiveWorkers().length,0,'online stale server data must never invent active workers from cache');
 
 context.navigator.onLine=false;
 assert.equal(context.window.currentStaffStatuses()[0].emp,'LOCAL','offline mode may use local cache as a fallback');
