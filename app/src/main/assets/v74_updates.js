@@ -1975,6 +1975,22 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v110ReportActionsReady=true;
 })();
 
+/* V146 MANAGER + SUPERVISOR READABILITY — larger labels without changing card geometry. */
+(function(){'use strict';
+ if(document.getElementById('v146DashboardReadability'))return;
+ const s=document.createElement('style');s.id='v146DashboardReadability';s.textContent=
+ '#managerView h2,#supervisorView h2{font-size:20px!important;line-height:1.25!important}'+
+ '#managerView h3,#supervisorView h3{font-size:18px!important;line-height:1.3!important}'+
+ '#managerView button,#supervisorView button{font-size:13px!important;font-weight:700!important;line-height:1.3!important}'+
+ '#managerView .manager-action,#supervisorView .manager-action,#managerView .v123-perf,#supervisorView .v123-perf{font-size:13px!important;font-weight:700!important}'+
+ '#managerView .v123-perf span,#supervisorView .v123-perf span,#managerView .small,#supervisorView .small{font-size:11px!important;line-height:1.35!important}'+
+ '#managerView .muted,#supervisorView .muted{font-size:12px!important;line-height:1.4!important}'+
+ '#managerView .pill,#supervisorView .pill{font-size:11px!important;font-weight:700!important}'+
+ '#managerView .stat,#supervisorView .stat,#managerView .num,#supervisorView .num,#managerView .v123-perf b,#supervisorView .v123-perf b{font-size:20px!important;font-weight:800!important;line-height:1.2!important}'+
+ '@media(max-width:520px){#managerView button,#supervisorView button{font-size:13px!important}#managerView h3,#supervisorView h3{font-size:17px!important}}';
+ document.head.appendChild(s);
+})();
+
 /* V145 MANAGER WORKSHOP PERFORMANCE — consumables expense follows Today / This Month. */
 (function(){'use strict';
  function escx(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
