@@ -88,7 +88,7 @@ function controlCounts(){return{
  repeat:new Set(rowsFor('repeat').map(a=>a.job)).size,
  waiting:waitingNow().length
 }}
-const controlLabels={today:'Today Jobs',working:'Working Now',notstarted:'Not Started',paused:'Paused',leave:'On Leave',completed:'Completed Today',repeat:'Repeat Work',waiting:'Waiting / ID001'};
+const controlLabels={today:'Today Jobs',working:'Working Now',notstarted:'Not Started',paused:'Paused',leave:'Consumables',completed:'Completed Today',repeat:'Repeat Work',waiting:'Waiting / ID001'};
 
 function controlTable(rows){
  if(!rows.length)return'<div class="notice">No records in this section.</div>';
@@ -108,7 +108,7 @@ window.v65OpenControl=function(type){
 
 function controlGrid(){
  const c=controlCounts(),types=['today','working','notstarted','paused','leave','completed','repeat','waiting'];
- return '<div class="v65-control-grid">'+types.map(t=>'<button class="v65-control '+t+'" onclick="v65OpenControl(\''+t+'\')"><span>'+controlLabels[t]+'</span><b>'+c[t]+'</b><small>Tap for details</small></button>').join('')+'</div>';
+ return '<div class="v65-control-grid">'+types.map(t=>t==='leave'?'<button class="v65-control leave v65-consumables" onclick="alert(\'Consumables details will be added later.\')"><span>Consumables</span><b>›</b><small>View details</small></button>':'<button class="v65-control '+t+'" onclick="v65OpenControl(\''+t+'\')"><span>'+controlLabels[t]+'</span><b>'+c[t]+'</b><small>Tap for details</small></button>').join('')+'</div>';
 }
 
 function employeeMinutes(emp,from,to){return (state.sessions||[]).filter(s=>s.emp===emp&&s.job!==HOLD).reduce((n,s)=>{const a=Math.max(+s.start||0,from),b=Math.min(+(s.end||Date.now()),to);if(b<=a)return n;try{return n+sessionNormalMinutes({start:a,end:b},b)}catch(_){return n+(b-a)/60000}},0)}
