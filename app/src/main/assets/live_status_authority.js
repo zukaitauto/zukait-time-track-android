@@ -106,7 +106,7 @@
   }
   function workerTable(list,title){
     const body=list.length?'<div class="manager-scroll"><table><tr><th>Employee</th><th>Department</th><th>Status</th><th>Job Card</th><th>Vehicle</th><th>Reg.</th><th>Allocated</th></tr>'+
-      list.map(r=>'<tr><td><b>'+esc(r.employee_name||r.employee_id)+'</b></td><td>'+esc(r.department||'')+'</td><td><span class="pill">'+esc(r.status)+'</span></td><td>'+esc(r.job_no||'—')+'</td><td>'+esc(r.vehicle||'—')+'</td><td>'+esc(r.registration||'—')+'</td><td>'+minutes(r.suggested_minutes)+'</td></tr>').join('')+
+      list.map(r=>{const dep=String(r.department||'').toLowerCase(),dc=dep.includes('paint')?'painter':dep.includes('dent')?'denter':dep.includes('mech')?'mechanic':dep.includes('super')?'supervisor':'',ec='z-emp'+(dc?' z-emp-'+dc:''),sc=typeof window.zukaitStatusColourClass==='function'?window.zukaitStatusColourClass(r.status):'pill';return '<tr><td><b class="'+ec+'">'+esc(r.employee_name||r.employee_id)+'</b></td><td>'+esc(r.department||'')+'</td><td><span class="'+sc+'">'+esc(r.status)+'</span></td><td>'+esc(r.job_no||'—')+'</td><td>'+esc(r.vehicle||'—')+'</td><td>'+esc(r.registration||'—')+'</td><td>'+minutes(r.suggested_minutes)+'</td></tr>'}).join('')+
       '</table></div>':'<div class="notice">No matching workers right now.</div>';
     const close='<button type="button" aria-label="Close" onclick="closeActiveWorkersPopup()" style="margin-left:auto;min-width:42px;min-height:38px;padding:4px 12px;border-radius:10px;font-size:20px;font-weight:900">×</button>';
     const html='<div class="section-title"><h2>'+esc(title)+'</h2><span class="pill">SERVER LIVE</span>'+close+'</div>'+body;
