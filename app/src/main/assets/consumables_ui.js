@@ -2,7 +2,7 @@
 'use strict';
 const C=()=>window.ZukaitConsumables;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const role=()=>window.me?.role||'';
+const role=()=>typeof me==='undefined'?'':me?.role||'';
 const modal=(title,body)=>{
   if(typeof window.openModal==='function') return openModal('<div class="cons-page"><div class="section-title"><h2>'+title+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+body+'</div>');
 };

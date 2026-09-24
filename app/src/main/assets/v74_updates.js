@@ -2069,7 +2069,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    p.textContent='Technicians';p.disabled=true;p.selected=true;sel.value='';
  }
  function normalJobSelect(sel){
-   if(!sel)return;
+   if(!sel||sel.tagName!=='SELECT')return;
    Array.from(sel.options).forEach(o=>{if(String(o.value||o.textContent).trim().toUpperCase()===HOLD)o.remove()});
  }
  window.v112OpenID001Quick=function(){
@@ -2640,7 +2640,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    return (state.jobs||[]).filter(j=>j&&String(j.no||'').trim()&&String(j.no).trim().toUpperCase()!==HOLD);
  }
  function hay(j){
-   return [j.no,j.reg,j.vehicle,j.year,j.brand].map(v=>String(v??'')).join(' ').toLowerCase();
+   return [j.no,j.reg,j.vehicle,j.year,j.brand,j.make,j.model].map(v=>String(v??'')).join(' ').toLowerCase();
  }
  function score(j,q,nq){
    const no=String(j.no||'').toLowerCase(),reg=String(j.reg||'').toLowerCase(),veh=String(j.vehicle||'').toLowerCase();
@@ -2657,7 +2657,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  function matches(q){
    q=String(q||'').trim().toLowerCase();const nq=norm(q);
    let list=rows();
-   if(q)list=list.filter(j=>hay(j).includes(q)||(nq&&[j.no,j.reg,j.vehicle,j.year,j.brand].some(v=>norm(v).includes(nq))));
+   if(q)list=list.filter(j=>hay(j).includes(q)||(nq&&[j.no,j.reg,j.vehicle,j.year,j.brand,j.make,j.model].some(v=>norm(v).includes(nq))));
    return list.sort((a,b)=>score(a,q,nq)-score(b,q,nq)||(+b.createdAt||0)-(+a.createdAt||0)||String(a.no).localeCompare(String(b.no))).slice(0,12);
  }
  function choose(input,j,box){
@@ -2679,7 +2679,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    box.classList.remove('hidden');
  }
  function install(){
-   if(!window.me||me.role!=='Supervisor')return;
+   if(window.v137AssignJobSearchCompatibilityAuthority||typeof me==='undefined'||me?.role!=='Supervisor')return;
    const root=document.getElementById('supervisorView');if(!root)return;
    const old=root.querySelector('#sj');if(!old)return;
    const label=old.closest('label');if(!label)return;
@@ -2730,9 +2730,9 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  function jobs(){
    return (state.jobs||[]).filter(j=>j&&String(j.no||'').trim()&&String(j.no).trim().toUpperCase()!==HOLD);
  }
- function searchable(j){return [j.no,j.reg,j.vehicle,j.year,j.brand].map(v=>String(v??'')).join(' ').toLowerCase()}
+ function searchable(j){return [j.no,j.reg,j.vehicle,j.year,j.brand,j.make,j.model].map(v=>String(v??'')).join(' ').toLowerCase()}
  function rank(j,q,nq){
-   const fields=[j.no,j.reg,j.vehicle,j.year,j.brand].map(v=>String(v??'').toLowerCase()),nf=[j.no,j.reg,j.vehicle,j.year,j.brand].map(norm);
+   const fields=[j.no,j.reg,j.vehicle,j.year,j.brand,j.make,j.model].map(v=>String(v??'').toLowerCase()),nf=[j.no,j.reg,j.vehicle,j.year,j.brand,j.make,j.model].map(norm);
    if(fields[0]===q||nf[0]===nq)return 0;
    if(fields[0].startsWith(q)||nf[0].startsWith(nq))return 1;
    if(fields[1]===q||nf[1]===nq)return 2;
@@ -2745,7 +2745,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  function findJobs(q){
    q=String(q||'').trim().toLowerCase();const nq=norm(q);
    let list=jobs();
-   if(q)list=list.filter(j=>searchable(j).includes(q)||(nq&&[j.no,j.reg,j.vehicle,j.year,j.brand].some(v=>norm(v).includes(nq))));
+   if(q)list=list.filter(j=>searchable(j).includes(q)||(nq&&[j.no,j.reg,j.vehicle,j.year,j.brand,j.make,j.model].some(v=>norm(v).includes(nq))));
    return list.sort((a,b)=>rank(a,q,nq)-rank(b,q,nq)||(+b.createdAt||0)-(+a.createdAt||0)||String(a.no).localeCompare(String(b.no))).slice(0,20);
  }
  function exact(q){
@@ -2790,7 +2790,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    setTimeout(()=>document.querySelectorAll('.v137-modal-job').forEach(b=>b.onclick=()=>{const j=jobs().find(x=>String(x.no)===String(b.dataset.no));if(j){setSelected(j,input,select,label);closeModal()}}),0);
  }
  function install(){
-   if(!window.me||me.role!=='Supervisor')return;
+   if(typeof me==='undefined'||me?.role!=='Supervisor')return;
    const root=document.getElementById('supervisorView');if(!root)return;
    const assign=[...root.querySelectorAll('.card')].find(x=>/Assign\s*\/\s*Update Job Card/i.test(x.querySelector('h3')?.textContent||''));if(!assign)return;
    let current=root.querySelector('#sj'),label=current?.closest('label')||assign.querySelector('.v126-job,.v136-job-search-wrap');if(!label)return;
@@ -2803,7 +2803,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    let select=label.querySelector('#sj');
    if(!select||select.tagName!=='SELECT'){if(select)select.remove();select=buildSelect(input.dataset.selectedJob||exact(input.value)?.no||'');label.appendChild(select)}
    else{
-     const wanted=select.value;select.replaceWith(buildSelect(wanted));select=label.querySelector('#sj');
+     const wanted=select.value;const updated=buildSelect(wanted);select.innerHTML=updated.innerHTML;select.className='v137-internal-job-select';select.setAttribute('aria-hidden','true');select.tabIndex=-1;select.value=updated.value;
    }
    label.querySelectorAll('.v136-job-results').forEach(x=>x.remove());
    label.classList.remove('v136-job-search-wrap');label.classList.add('v137-job-search');
@@ -2831,7 +2831,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  const style=document.createElement('style');style.id='v137AssignSearchStyle';
  style.textContent='#supervisorView .v137-job-search{position:relative!important;overflow:visible!important}#supervisorView .v137-internal-job-select{display:none!important}.v137-search-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;width:100%}.v137-search-row input{width:100%!important;min-width:0!important}.v137-search-button{margin:0!important;padding:0 11px!important;min-width:64px!important;background:#2563eb!important;color:#fff!important;font-size:10px!important;font-weight:900!important;border-radius:9px!important}.v137-results{display:grid;gap:5px;margin-top:6px;max-height:238px;overflow:auto;padding:5px;border:1px solid #d7e0ea;border-radius:10px;background:#f8fafc}.v137-results.hidden{display:none!important}.v137-results button{display:grid!important;grid-template-columns:1fr auto!important;width:100%!important;margin:0!important;padding:8px 9px!important;background:#fff!important;color:#172033!important;border:1px solid #e2e8f0!important;border-radius:9px!important;text-align:left!important;box-shadow:none!important}.v137-results button span{font-size:10px!important;color:#475569!important;font-weight:800}.v137-results button small{grid-column:1/3;font-size:10px!important;color:#64748b!important}.v137-empty{padding:9px;text-align:center;font-size:11px;color:#64748b}.v137-selected{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin-top:6px;padding:7px 9px;border-radius:9px;background:#ecfdf5;border:1px solid #a7f3d0}.v137-selected.hidden{display:none!important}.v137-selected b{font-size:11px;color:#166534}.v137-selected span{font-size:10px;color:#166534}.v137-selected small{grid-column:1/3;font-size:10px;color:#475569}.v137-modal-list{display:grid;gap:8px;margin-top:12px}.v137-modal-job{display:grid!important;grid-template-columns:1fr auto!important;width:100%!important;margin:0!important;padding:12px!important;background:#fff!important;color:#172033!important;border:1px solid #dbe3ee!important;border-radius:12px!important;text-align:left!important}.v137-modal-job span,.v137-modal-job small{font-size:11px!important;color:#64748b!important}.v137-modal-job small{grid-column:1}.v137-modal-job em{grid-column:2;grid-row:1/4;align-self:center;font-style:normal;font-size:10px;font-weight:900;color:#166534}';
  document.head.appendChild(style);
- const previousRender=window.render;window.render=function(){const r=typeof previousRender==='function'?previousRender.apply(this,arguments):undefined;setTimeout(install,0);return r};
+ for(const name of ['render','renderSupervisor']){const previous=window[name];if(typeof previous==='function')window[name]=function(){const r=previous.apply(this,arguments);setTimeout(install,0);return r}}
  setTimeout(install,0);
  window.v137AssignJobSearchCompatibilityAuthority=true;
 })();
