@@ -2339,7 +2339,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const todayCount=(()=>{try{const now=new Date(),key=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');return new Set((state.leave||[]).filter(x=>x&&x.date===key).map(x=>String(x.emp))).size}catch(_){return 0}})();leave.onclick=()=>window.v133OpenManagerLeave();leave.innerHTML='<span>🗓 EMPLOYEE LEAVE MANAGEMENT</span><span class="v111-leave-today" title="Today on leave">'+todayCount+'</span>';
 
    // Consumables is owned by the source Workshop Control renderers (V65/V66/V67). Never append a dashboard tile here.
-   root.querySelectorAll('#v755LeaveControlRow,.v755-leave-control-row,.v109-manager-consumables,.v111-control-consumables,.v113-control-consumables').forEach(x=>x.remove());
+   root.querySelectorAll('#v755LeaveControlRow,.v755-leave-control-row,.v109-manager-consumables,.v111-control-consumables,.v113-control-consumables').forEach(x=>{if(!x.matches('.v65-consumables,.v66-consumables,.v67-consumables'))x.remove()});
  }
  const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(apply,0);return r};
  const prevManager=window.renderManager;if(typeof prevManager==='function')window.renderManager=function(){const r=prevManager.apply(this,arguments);apply();setTimeout(apply,0);return r};
