@@ -2906,7 +2906,7 @@ document.head.appendChild(st);const old=window.render;window.render=function(){c
      }
      const top=root.querySelector('.v75s-top');
      if(top&&!root.querySelector('.v130-id001-current')){
-       top.insertAdjacentHTML('afterend','<div class="v75s-hero v130-id001-current"><div><div class="v75s-jno">CURRENT WORK : <b>ID001</b></div><div class="v75s-vehicle">WAITING TIME</div><div class="v75s-reg">Assigned · Not started</div><button class="v75s-start" onclick="start(\\'ID001\\')">▶ START ID001</button></div><div class="v75s-gear" style="margin-left:auto">◷</div></div>');
+       top.insertAdjacentHTML('afterend','<div class="v75s-hero v130-id001-current"><div><div class="v75s-jno">CURRENT WORK : <b>ID001</b></div><div class="v75s-vehicle">WAITING TIME</div><div class="v75s-reg">Assigned · Not started</div><button class="v75s-start" onclick="start(&quot;ID001&quot;)">▶ START ID001</button></div><div class="v75s-gear" style="margin-left:auto">◷</div></div>');
      }
    }
 
