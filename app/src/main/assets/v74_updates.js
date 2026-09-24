@@ -222,8 +222,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  const oldAssign=window.assignJobCore;
  window.assignJobCore=function(no,emp,minutes){
    if(no!==H)return typeof oldAssign==='function'?oldAssign.apply(this,arguments):undefined;
-   const m=Number(minutes);
-   if(!Number.isFinite(m)||m<1){if(typeof v74Msg==='function')return v74Msg('Enter a valid allocated time for ID001.','Ideal Time');return alert('Enter a valid allocated time for ID001.');}
+   const m=0;
    const existing=openHold(emp);
    if(existing){const n=safeUser(emp).name||emp;if(typeof v74Msg==='function')return v74Msg('ID001 is already assigned to '+n+'. Stop/complete the existing Ideal Time card before assigning another.','Ideal Time');return alert('ID001 is already assigned to '+n);}
    const normalOpen=openNormal(emp),active=activeSession(emp);
@@ -231,7 +230,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    state.assign=state.assign||[];
    const a={id:uid(),job:H,emp:emp,suggested:m,completed:false,cancelled:false,rework:false,idealCard:true,idealSafeVersion:1,assignedBy:me&&me.id?me.id:'SYSTEM',assignedAt:now()};
    state.assign.push(a);
-   if(typeof setLastAction==='function')setLastAction('Assigned ID001 to '+(safeUser(emp).name||emp)+' for '+fmt(m));
+   if(typeof setLastAction==='function')setLastAction('Assigned ID001 to '+(safeUser(emp).name||emp));
    save();render();return a;
  };
 
@@ -2173,15 +2172,13 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v112OpenID001Quick=function(){
    let eligible=typeof window.v75IdealAvailableEmployees==='function'?window.v75IdealAvailableEmployees():(users||[]).filter(u=>u&&u.role==='Employee');
    let opts='<option value="" selected disabled>Select Technician</option>'+eligible.map(u=>'<option value="'+esc(u.id)+'">'+esc(u.name)+' · '+esc(u.department||'Technician')+'</option>').join('');
-   let body='<div class="v74-d v112-id001-dialog"><h2>◷ ID001 · IDEAL TIME</h2><div class="notice">Assign common Ideal Time quickly.</div><label>Assign Staff<br><select id="v112IdealEmp" class="tech-select">'+opts+'</select></label><label>Time<br><input id="v112IdealTime" inputmode="decimal" placeholder="H.MM or H:MM"><div class="time-hint">Example: 1.30 or 1:30</div></label><div class="v74-actions"><button class="secondary" onclick="closeModal()">CANCEL</button><button class="blue" onclick="v112AssignID001()">ASSIGN</button></div></div>';
+   let body='<div class="v74-d v112-id001-dialog"><h2>◷ ID001 · IDEAL TIME</h2><div class="notice">Assign common Ideal Time quickly. Worked time is recorded automatically from START to STOP.</div><label>Assign Staff<br><select id="v112IdealEmp" class="tech-select">'+opts+'</select></label><div class="v74-actions"><button class="secondary" onclick="closeModal()">CANCEL</button><button class="blue" onclick="v112AssignID001()">ASSIGN</button></div></div>';
    openModal(body);
  };
  window.v112AssignID001=function(){
-   let emp=document.getElementById('v112IdealEmp')?.value||'',raw=document.getElementById('v112IdealTime')?.value||'';
-   let mins=typeof parseWorkMinutes==='function'?parseWorkMinutes(raw):NaN;
+   let emp=document.getElementById('v112IdealEmp')?.value||'';
    if(!emp)return typeof window.v74Msg==='function'?window.v74Msg('Select a technician.','ID001 Ideal Time'):alert('Select a technician.');
-   if(!Number.isFinite(mins)||mins<1)return typeof window.v74Msg==='function'?window.v74Msg('Enter a valid time.','ID001 Ideal Time'):alert('Enter a valid time.');
-   window.assignJobCore(HOLD,emp,mins);
+   window.assignJobCore(HOLD,emp,0);
    try{closeModal()}catch(_){}
  };
  function apply(){
