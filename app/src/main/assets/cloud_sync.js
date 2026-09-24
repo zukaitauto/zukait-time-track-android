@@ -11,6 +11,12 @@
   let cloudPushing=false;
   let pushTimer=null;
   let pollTimer=null;
+  let livePollTimer=null;
+  let liveInFlight=false;
+  let liveStatusRows=[];
+  let liveStatusRevision=0;
+  let liveStatusLastFetchedAt=0;
+  let liveStatusServerTime=0;
   let initialDone=false;
   let conflictAlerted=false;
   let lastSyncedState=null;
@@ -67,6 +73,44 @@
     try{body=await res.json()}catch(_){}
     body._status=res.status;
     return body;
+  }
+
+  function liveRole(){
+    return !!me && (me.role==='Supervisor'||me.role==='Manager');
+  }
+
+  function publishLiveStatus(fresh){
+    window.zukaitServerLive={
+      rows:clone(liveStatusRows||[]),
+      revision:liveStatusRevision,
+      fetchedAt:liveStatusLastFetchedAt,
+      serverTime:liveStatusServerTime,
+      fresh:!!fresh
+    };
+    try{
+      window.dispatchEvent(new CustomEvent('zukait-live-status',{detail:window.zukaitServerLive}));
+    }catch(_){}
+  }
+
+  async function pullLiveStatus(){
+    if(liveInFlight||!sessionToken()||!navigator.onLine||!liveRole())return false;
+    liveInFlight=true;
+    try{
+      const r=await api({action:'live_status'});
+      if(!r.ok)throw new Error(r.code||'LIVE_STATUS_FAILED');
+      liveStatusRows=Array.isArray(r.rows)?r.rows:[];
+      liveStatusRevision=Number(r.revision||0);
+      liveStatusLastFetchedAt=Date.now();
+      liveStatusServerTime=Number(r.server_time||0);
+      publishLiveStatus(true);
+      return true;
+    }catch(e){
+      console.warn('Authoritative live-status refresh failed',e);
+      publishLiveStatus(false);
+      return false;
+    }finally{
+      liveInFlight=false;
+    }
   }
 
   function payloadState(){
@@ -385,6 +429,7 @@
     if(!navigator.onLine)return status('OFFLINE — CHANGE QUEUED','warn');
     if(cloudDirty)await push(0);
     if(!cloudDirty)await pull(true);
+    if(liveRole())await pullLiveStatus();
   }
 
   async function backupNow(){
@@ -414,6 +459,7 @@
   async function init(force){
     removeSetupButton();
     clearInterval(pollTimer);
+    clearInterval(livePollTimer);
     if(!sessionToken()){
       status('LOGIN REQUIRED','local');
       initialDone=true;
@@ -422,6 +468,7 @@
     try{
       if(cloudDirty&&navigator.onLine)await push(0);
       if(!cloudDirty)await pull(!!force);
+      if(liveRole())await pullLiveStatus();
     }catch(e){
       console.error('Cloud initialization failed',e);
       status(navigator.onLine?'SYNC ERROR':'OFFLINE — LOCAL CACHE',navigator.onLine?'bad':'warn');
@@ -431,10 +478,18 @@
       if(!sessionToken()||!navigator.onLine||cloudDirty||cloudPushing||pullInFlight)return;
       try{await pull(false)}catch(e){console.warn('Cloud poll failed',e);status('SYNC ERROR','bad')}
     },1000);
+    livePollTimer=setInterval(()=>{
+      if(!sessionToken()||!navigator.onLine||!liveRole())return;
+      pullLiveStatus();
+    },1000);
     return true;
   }
 
-  function stop(){clearInterval(pollTimer);pollTimer=null;clearTimeout(pushTimer);pushTimer=null}
+  function stop(){
+    clearInterval(pollTimer);pollTimer=null;
+    clearInterval(livePollTimer);livePollTimer=null;
+    clearTimeout(pushTimer);pushTimer=null;
+  }
 
 
   // V100 shared-dashboard consistency: every logged-in device refreshes immediately when the app becomes visible again.
@@ -444,19 +499,25 @@
     try{
       if(cloudDirty&&!cloudPushing)await push(0);
       if(!cloudDirty&&!cloudPushing&&!pullInFlight)await pull(true);
+      if(liveRole())await pullLiveStatus();
     }catch(e){console.warn('Visible shared-state refresh failed',e)}
   }
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshVisibleSharedState()});
   window.addEventListener('focus',refreshVisibleSharedState);
 
   window.addEventListener('online',()=>init(false));
-  window.addEventListener('offline',()=>status(cloudDirty?'OFFLINE — CHANGE QUEUED':'OFFLINE — LOCAL CACHE','warn'));
+  window.addEventListener('offline',()=>{
+    status(cloudDirty?'OFFLINE — CHANGE QUEUED':'OFFLINE — LOCAL CACHE','warn');
+    publishLiveStatus(false);
+  });
   window.zukaitCloud={
-    init,pull,push,stop,syncNow,backupNow,backupList,
+    init,pull,push,pullLiveStatus,stop,syncNow,backupNow,backupList,
     configured:()=>true,
     get revision(){return cloudRevision},
     get dirty(){return cloudDirty},
     get ready(){return initialDone},
+    get liveRevision(){return liveStatusRevision},
+    get liveFresh(){return liveStatusLastFetchedAt>0&&Date.now()-liveStatusLastFetchedAt<7000&&navigator.onLine},
     get pendingConflict(){try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'null')}catch(_){return null}}
   };
 })();
