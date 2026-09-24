@@ -25,27 +25,22 @@ jobs:
           fetch-depth: 0
 
       - name: Verify approved source commit
-        id: source
         shell: bash
         run: |
-          SOURCE_COMMIT=$(python3 - <<'PY'
-          import json
-          from pathlib import Path
-          d=json.loads(Path('release-request.json').read_text(encoding='utf-8'))
-          if d.get('approvedForStaff') is not True:
-              raise SystemExit('release-request.json is not approvedForStaff=true')
-          source=str(d.get('sourceCommit') or '').strip()
-          if not source:
-              raise SystemExit('release-request.json is missing sourceCommit')
-          print(source)
-          PY
-          )
+          APPROVED=$(jq -r '.approvedForStaff // false' release-request.json)
+          SOURCE_COMMIT=$(jq -r '.sourceCommit // empty' release-request.json)
+          test "$APPROVED" = "true" || { echo "release-request.json is not approved"; exit 1; }
+          test -n "$SOURCE_COMMIT" || { echo "release-request.json is missing sourceCommit"; exit 1; }
           git cat-file -e "$SOURCE_COMMIT^{commit}"
           git merge-base --is-ancestor "$SOURCE_COMMIT" "$GITHUB_SHA" || {
             echo "Approved source commit is not an ancestor of the release approval commit."
             exit 1
           }
-          CHANGED=$(git diff --name-only "$SOURCE_COMMIT" "$GITHUB_SHA" -- . | grep -v '^release-request.json
+          CHANGED=$(git diff --name-only "$SOURCE_COMMIT" "$GITHUB_SHA" -- . | grep -v '^release-request\.json
+      - name: Resolve approved version
+        id: approved
+        shell: bash
+        run: |
           VERSION_NAME=$(sed -n "s/^[[:space:]]*versionName[[:space:]]*['\"]\([^'\"]*\)['\"].*/\1/p" app/build.gradle | head -n 1)
           VERSION_CODE=$(sed -n 's/^[[:space:]]*versionCode[[:space:]]*\([0-9][0-9]*\).*/\1/p' app/build.gradle | head -n 1)
           test -n "$VERSION_NAME" || { echo "Could not read versionName from app/build.gradle"; exit 1; }
@@ -229,7 +224,6 @@ jobs:
             echo "$CHANGED"
             exit 1
           fi
-          echo "source_commit=$SOURCE_COMMIT" >> "$GITHUB_OUTPUT"
           echo "Approved source commit verified: $SOURCE_COMMIT"
 
       - name: Resolve approved version
