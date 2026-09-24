@@ -29,7 +29,10 @@ assert.ok(updates.includes('v110PrintID001Report') && updates.includes('Zukait_I
 assert.ok(updates.includes("grid-template-columns:repeat(2,minmax(0,1fr))") && updates.includes('v110-id001-pair'), 'ID001 Assign and Report must remain a two-column Supervisor row');
 assert.ok(updates.includes("v135OpenManagerMenu()") && updates.includes("row.onclick=function(e){if(e.target.closest('button'))return;menu()}"), 'Manager header and menu button must open the authoritative Manager menu');
 assert.ok(updates.includes("v133OpenManagerLeave()") && updates.includes("v63OpenAbout()") && updates.includes("closeModal();logout()"), 'Manager menu must retain Leave Control, About / Update, and Logout');
-assert.ok(updates.includes("v109-manager-consumables") && updates.includes("CONSUMABLES"), 'Manager dashboard must keep the Consumables placeholder instead of a duplicate leave card');
+assert.ok(updates.includes('V139 MANAGER CONSUMABLES FINAL AUTHORITY') && updates.includes('v139OpenManagerConsumables'), 'Manager must have one final Consumables routing authority');
+assert.ok([v65,v66,v67].every(src=>src.includes('openConsumablesModule()')), 'all Manager renderer generations must open the real Consumables module');
+assert.ok(![v65,v66,v67,updates].some(src=>src.includes('Consumables details will be added later.')), 'no Manager Consumables placeholder alert may remain');
+assert.ok(updates.includes("buttons.length>1") && updates.includes("b.onclick=open"), 'final Manager Consumables authority must deduplicate controls and bind the real open handler');
 assert.ok(updates.includes('v133LeaveEmployee') && updates.includes('v133PrintLeave') && updates.includes('v133ShareLeave'), 'Manager Leave Management must retain employee filter, Print / PDF, and WhatsApp sharing');
 
 assert.ok(updates.includes('v91-identity-menu'), 'Employee menu must sit in the identity/online row');
@@ -42,7 +45,7 @@ assert.ok(updates.includes("if(currentFinal&&currentFinal.isConnected)currentFin
 assert.ok(updates.includes("else if(glance&&glance.isConnected)glance.replaceWith(wrap)"), 'Supervisor finalizer must upgrade a legacy glance card when present');
 assert.ok(updates.includes("anchor.insertAdjacentElement('afterend',wrap)"), 'Supervisor finalizer must insert the authoritative overview even when no legacy glance card exists');
 assert.ok(updates.includes("filter(x=>!wrap.contains(x)&&(x.querySelector('h3')?.textContent||'').includes('Today at a Glance')).forEach(x=>x.remove())"), 'Supervisor finalizer must remove duplicate legacy glance surfaces');
-assert.ok(html.includes('v74_updates.js?v=138'), 'Supervisor final asset must use the current V120 release cache-busting revision');
+assert.ok(html.includes('v74_updates.js?v=139'), 'Supervisor final asset must use the current V139 cache-busting revision');
 assert.ok(!html.includes('V103 SUPERVISOR RUNTIME LOCK'), 'legacy V103 Supervisor runtime lock must stay retired');
 assert.ok(updates.includes('v92-tech-board'), 'Supervisor must render the redesigned Technician Board');
 assert.ok(updates.includes('v92-tech-dept'), 'Technician Board department cards must use the authoritative redesigned UI');
