@@ -607,7 +607,7 @@ assert.match(updates,/v133OpenManagerLeave/,'Leave Management card must open the
 assert.match(updates,/v133PrintLeave/,'Leave Management must retain Print\/PDF');
 assert.match(updates,/v133ShareLeave/,'Leave Management must retain WhatsApp sharing');
 assert.match(updates,/v111-leave-today/,'Leave Management must show today leave count badge');
-assert.match(updates,/v111-control-consumables/,'Workshop Control Center On Leave position must become Consumables');
+assert.doesNotMatch(updates,/target=document\.createElement\('button'\);control\.appendChild\(target\)/,'Manager final authority must never append a Consumables tile');
 
 
 // V112 Manager action/output regression checks.
@@ -624,19 +624,22 @@ assert.match(updates,/v112ManagerBack/,'Manager report modal must expose explici
 assert.doesNotMatch(updates,/placeholder="YYYY"/,'Supervisor Vehicle Year must not resurrect the YYYY placeholder');
 assert.match(updates,/V128 SUPERVISOR SURFACE LOCK/,'Supervisor surface lock must remain present');
 assert.match(updates,/v112-carpaint/,'Technician Board Painting card must use automotive paint icon');
-assert.match(updates,/v111-control-consumables/,'Workshop Control Center must retain Consumables authority');
+assert.doesNotMatch(updates,/target=document\.createElement\('button'\);control\.appendChild\(target\)/,'Workshop Control Center must not receive an appended Consumables tile');
 
 
-// V113 Manager Workshop Control + leave safety regression guards.
+
+
+// V114 deep source-authority regression guards.
+const v65 = readFileSync('app/src/main/assets/v65_updates.js','utf8');
+const v66 = readFileSync('app/src/main/assets/v66_updates.js','utf8');
+const v67 = readFileSync('app/src/main/assets/v67_updates.js','utf8');
+assert.doesNotMatch(v65,/controlLabels=.*leave:'On Leave'/,'V65 source must not render On Leave in Workshop Control');
+assert.match(v65,/v65-consumables/,'V65 source must render Consumables in the former leave position');
+assert.doesNotMatch(v66,/controlCard\('leave','On Leave'/,'V66 source must not render On Leave in Workshop Control');
+assert.match(v66,/v66-consumables/,'V66 source must render native Consumables');
+assert.match(v67,/controlCard\('consumables','Consumables'/,'V67 source must render Consumables in the former leave position');
+assert.doesNotMatch(updates,/target=document\.createElement\('button'\);control\.appendChild\(target\)/,'late Manager layers must never append a Consumables tile');
+assert.doesNotMatch(updates,/V114 MANAGER WORKSHOP CONTROL FINAL AUTHORITY/,'temporary DOM patch must remain retired after source correction');
 assert.match(updates,/Confirm Leave\\n\\nStaff:/,'new leave marking must require confirmation');
 assert.match(updates,/Confirm Leave Change/,'Manager leave edits must require confirmation');
 assert.match(updates,/Confirm Delete Leave/,'Manager leave deletion must require confirmation');
-
-
-// V114 Manager source-authority overlap guards.
-const v67 = readFileSync(new URL('../app/src/main/assets/v67_updates.js', import.meta.url), 'utf8');
-assert.doesNotMatch(v67,/controlCard\('leave','On Leave'/,'V67 Workshop Control source must not render On Leave');
-assert.match(v67,/controlCard\('consumables','Consumables'/,'V67 Workshop Control source must render Consumables in the original tile position');
-assert.match(v67,/v67-consumables/,'V67 Consumables tile must have a stable identity');
-assert.match(updates,/V114 MANAGER WORKSHOP CONTROL FINAL AUTHORITY/,'final Manager overlap authority must be present');
-assert.match(updates,/\.v109-manager-consumables,.v111-control-consumables,.v113-control-consumables/,'legacy appended Consumables controls must be removed');
