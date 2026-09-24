@@ -730,4 +730,4 @@ assert.ok(html.includes('supervisorSelectExistingJob') && html.includes("sel.val
 assert.ok(html.includes("Search and select a valid Job Card first."), 'assignment must reject unselected search text instead of assigning the wrong Job Card');
 assert.ok(!updates.includes('V136 ASSIGN JOB CARD TRUE SEARCH AUTHORITY') && !updates.includes('V137 ASSIGN JOB CARD SEARCH COMPATIBILITY AUTHORITY'), 'retired late search overlays must not return');
 
-assert.ok(main.includes('offline_test.html?v=123'), 'Android wrapper must load the fresh V123 page revision to prevent stale dashboard layout');
+assert.ok(main.includes('offline_test.html?v=124'), 'Android wrapper must load the fresh V124 page revision to prevent stale dashboard layout');
