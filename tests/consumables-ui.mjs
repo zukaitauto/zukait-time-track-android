@@ -28,7 +28,7 @@ for(const [type,quantity] of [['issued','2'],['additional','0.5']]){
 }
 assert.equal(state.consumables.issues.length,2);
 ctx.openConsumablesActual();fill({consActualJc:'JC1'});ctx.consLoadActual();assert.match(element('consActualRows').innerHTML,/Primer/);assert.match(element('consActualRows').innerHTML,/max="2.5"/);assert.match(element('consActualRows').innerHTML,/value="2.5"/);
-element('consActualRows').innerHTML=element('consActualRows').innerHTML.replace('value="2.5"','value="2.25"');ctx.consFinishActual();assert.equal(state.consumables.actuals.length,1);assert.equal(state.consumables.actuals[0].totalCost,7.875);
+element('consActualRows').innerHTML=element('consActualRows').innerHTML.replace('value="2.5"','value="2.25"');ctx.consFinishActual();assert.equal(state.consumables.actuals.length,0);assert.match(ctx.modal,/FINAL CHECK BEFORE LOCKING/);assert.match(ctx.modal,/OMR 7.875/);ctx.consConfirmFinishActual();assert.equal(state.consumables.actuals.length,1);assert.equal(state.consumables.actuals[0].totalCost,7.875);assert.equal(state.consumables.actuals[0].createdBy,'S1');
 fill({consSearchJc:'JC1'});ctx.consShowSearch();assert.match(element('consSearchResult').innerHTML,/2.5 Litre/);assert.match(element('consSearchResult').innerHTML,/2.25 Litre/);assert.doesNotMatch(element('consSearchResult').innerHTML,/\[object Object\]|undefined/);
 vm.runInContext("me={id:'M1',role:'Manager'}",ctx);ctx.consRunReports();assert.match(element('crResult').innerHTML,/2.25 Litre/);assert.match(element('crResult').innerHTML,/OMR 7.875/);
 fill({csmMaterial:m.id});ctx.consMaterialHistory();assert.match(element('csmResult').innerHTML,/OMR 3.500/);assert.doesNotMatch(element('csmResult').innerHTML,/NaN/);
@@ -37,5 +37,5 @@ assert.throws(()=>C.managerCorrectActual(state,state.consumables.actuals[0].id,[
 assert.throws(()=>C.managerCorrectIssue(state,state.consumables.issues[0].id,{colourCode:'changed'},vm.runInContext('me',ctx),''),/REASON_REQUIRED/);assert.equal(JSON.stringify(state),before);
 fill({consActualJc:'bad'});ctx.consLoadActual();assert.equal(element('consActualVehicle').value,'');
 ctx.openConsumablesModule();assert.match(ctx.modal,/disabled[^>]*><span>🛠️/);
-assert.ok(ctx.saved);assert.ok(!alerts.includes('MANAGER_ONLY'));console.log('Consumables UI integration tests passed: Job Card picker/vehicle details, setup, issue, additional, actual, search, reports, history, supervisor tile, cancellation and audit safety');
+assert.ok(ctx.saved);assert.ok(!alerts.includes('MANAGER_ONLY'));console.log('Consumables UI integration tests passed: Job Card picker/vehicle details, sticky summary source, duplicate safeguards, final Actual review, actor audit, search, reports and supervisor tile');
 
