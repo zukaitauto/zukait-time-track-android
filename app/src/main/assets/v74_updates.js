@@ -2727,56 +2727,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 /* V136 + V137 RETIRED — Job Card search now lives in the authoritative Supervisor renderer. */
 
 /* V139 MANAGER CONSUMABLES FINAL AUTHORITY */
-(function(){'use strict';
- function open(){
-   if(typeof me==='undefined'||!me||me.role!=='Manager')return;
-   if(typeof window.openConsumablesModule==='function')return window.openConsumablesModule();
-   const msg='Consumables module is not loaded. Refresh the app and try again.';
-   return typeof window.v74Msg==='function'?window.v74Msg(msg,'Consumables'):alert(msg);
- }
- window.v139OpenManagerConsumables=open;
- function managerButtons(root){
-   const explicit=[...root.querySelectorAll('.v65-consumables,.v66-consumables,.v67-consumables,.v109-manager-consumables,.v111-control-consumables,.v113-control-consumables,.v139-manager-consumables')];
-   const byText=[...root.querySelectorAll('button')].filter(b=>/^\s*(?:📦\s*)?CONSUMABLES\b/i.test((b.textContent||'').trim()));
-   return [...new Set([...explicit,...byText])];
- }
- function ensure(){
-   if(typeof me==='undefined'||!me||me.role!=='Manager')return;
-   const root=document.getElementById('managerView');if(!root)return;
-   let buttons=managerButtons(root);
-   if(!buttons.length){
-     const grid=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid');
-     if(grid){
-       const b=document.createElement('button');
-       b.type='button';b.className='v67-control rose v139-manager-consumables';
-       b.innerHTML='<span>Consumables</span><b>›</b><small>Open module</small><em></em>';
-       grid.appendChild(b);buttons=[b];
-     }
-   }
-   buttons=managerButtons(root);
-   if(buttons.length>1){
-     const preferred=buttons.find(b=>b.closest('.v67-control-grid,.v66-control-grid,.v65-control-grid'))||buttons[0];
-     buttons.filter(b=>b!==preferred).forEach(b=>b.remove());
-     buttons=[preferred];
-   }
-   buttons.forEach(b=>{
-     b.removeAttribute('onclick');
-     b.onclick=open;
-     b.dataset.v139Consumables='1';
-     const sm=b.querySelector('small');if(sm)sm.textContent='Open consumables';
-   });
- }
- const wrap=name=>{
-   const prior=window[name];
-   if(typeof prior!=='function'||prior.__v139ConsumablesWrapped)return;
-   const fn=function(){const r=prior.apply(this,arguments);setTimeout(ensure,0);setTimeout(ensure,90);return r};
-   fn.__v139ConsumablesWrapped=true;window[name]=fn;
- };
- wrap('render');wrap('renderManager');
- [0,80,180,350].forEach(ms=>setTimeout(ensure,ms));
- window.v139ManagerConsumablesAuthority=true;
-})();
-
+/* RETIRED: V156 Manager UI consolidation. Launcher compatibility is owned by V144 + final Manager settle. */
 
 /* V140 MANAGER JOB CARD REVIEW — PRINT / PDF */
 (function(){'use strict';
@@ -2802,38 +2753,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 
 
 /* V141 MANAGER CONSUMABLES ROOT AUTHORITY */
-(function(){'use strict';
- function open(){
-   if(typeof me==='undefined'||!me||me.role!=='Manager')return;
-   if(typeof window.openConsumablesModule!=='function'){
-     const msg='Consumables module failed to load. Please refresh the app.';
-     return typeof window.v74Msg==='function'?window.v74Msg(msg,'Consumables'):alert(msg);
-   }
-   return window.openConsumablesModule();
- }
- window.v141OpenManagerConsumables=open;
- window.v139OpenManagerConsumables=open;
- function install(){
-   if(typeof me==='undefined'||!me||me.role!=='Manager')return;
-   const root=document.getElementById('managerView');if(!root)return;
-   const grid=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid');
-   let buttons=[...root.querySelectorAll('.v139-manager-consumables,.v141-manager-consumables')];
-   if(!buttons.length&&grid){
-     const b=document.createElement('button');b.type='button';b.className='v67-control rose v141-manager-consumables';
-     b.innerHTML='<span>Consumables</span><b>›</b><small>Open consumables</small><em></em>';grid.appendChild(b);buttons=[b];
-   }
-   // Also repair any source-rendered Consumables control rather than depending on legacy inline handlers.
-   root.querySelectorAll('button').forEach(b=>{if(/^\s*(?:📦\s*)?CONSUMABLES\b/i.test((b.textContent||'').trim())&&!buttons.includes(b))buttons.push(b)});
-   const unique=[...new Set(buttons)];
-   if(unique.length>1){const keep=unique.find(b=>b.closest('.v67-control-grid,.v66-control-grid,.v65-control-grid'))||unique[0];unique.filter(b=>b!==keep).forEach(b=>b.remove());buttons=[keep]}else buttons=unique;
-   buttons.forEach(b=>{b.type='button';b.removeAttribute('onclick');b.onclick=function(e){e.preventDefault();e.stopPropagation();open()};b.dataset.v141Consumables='1';const sm=b.querySelector('small');if(sm)sm.textContent='Open consumables'});
- }
- const wrap=n=>{const prior=window[n];if(typeof prior!=='function'||prior.__v141)return;const fn=function(){const r=prior.apply(this,arguments);[0,60,180].forEach(ms=>setTimeout(install,ms));return r};fn.__v141=true;window[n]=fn};
- wrap('render');wrap('renderManager');
- [0,80,200,500].forEach(ms=>setTimeout(install,ms));
- window.v141ManagerConsumablesAuthority=true;
-})();
-
+/* RETIRED: V156 Manager UI consolidation. Launcher compatibility is owned by V144 + final Manager settle. */
 
 /* V144 MANAGER CONSUMABLES SELF-CONTAINED WEB AUTHORITY */
 (function(){'use strict';
@@ -2873,15 +2793,21 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v144ManagerConsumablesAuthority=true;
 })();
 
-/* V155 FINAL MANAGER UI SETTLE — one last post-render pass after all legacy Manager layers. */
+/* V156 FINAL MANAGER UI AUTHORITY — one post-render owner for Manager layout and launchers. */
 (function(){'use strict';
- const prior=window.render;window.render=function(){const r=typeof prior==='function'?prior.apply(this,arguments):undefined;if(window.me&&me.role==='Manager')setTimeout(()=>{try{window.v154ApplyManagerWorkshopControl?.()}catch(_){}},0);return r};
- const pm=window.renderManager;if(typeof pm==='function'&&!pm.__v155){const fn=function(){const r=pm.apply(this,arguments);setTimeout(()=>{try{window.v154ApplyManagerWorkshopControl?.()}catch(_){}},0);return r};fn.__v155=true;window.renderManager=fn}
- setTimeout(()=>{try{window.v154ApplyManagerWorkshopControl?.()}catch(_){}},0);
- window.v155ManagerFinalAuthority=true;
+ function settle(){if(!window.me||me.role!=='Manager')return;const root=document.getElementById('managerView');if(!root)return;
+   try{window.v154ApplyManagerWorkshopControl?.()}catch(_){}
+   const grid=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid');
+   const cons=[...root.querySelectorAll('.v65-consumables,.v66-consumables,.v67-consumables,.v139-manager-consumables,.v141-manager-consumables,[data-v144-consumables]')];
+   if(cons.length){const keep=cons.find(x=>grid&&x.parentElement===grid)||cons[0];cons.filter(x=>x!==keep).forEach(x=>x.remove());if(grid&&keep.parentElement!==grid)grid.insertBefore(keep,grid.firstChild);keep.type='button';keep.removeAttribute('onclick');keep.onclick=e=>{e.preventDefault();e.stopPropagation();if(typeof window.v144OpenManagerConsumables==='function')window.v144OpenManagerConsumables()}}
+   const heads=[...root.querySelectorAll('.v91-role-identity')];if(heads.length>1)heads.slice(0,-1).forEach(x=>x.remove());
+   const leaves=[...root.querySelectorAll('.v111-manager-leave')];if(leaves.length>1)leaves.slice(1).forEach(x=>x.remove());
+ }
+ window.v156SettleManagerUI=settle;
+ const prior=window.render;window.render=function(){const r=typeof prior==='function'?prior.apply(this,arguments):undefined;if(window.me&&me.role==='Manager')setTimeout(settle,0);return r};
+ const pm=window.renderManager;if(typeof pm==='function'&&!pm.__v156){const fn=function(){const r=pm.apply(this,arguments);setTimeout(settle,0);return r};fn.__v156=true;window.renderManager=fn}
+ setTimeout(settle,0);window.v156ManagerUIAuthority=true;
 })();
-
-
 /* V148 SUPERVISOR UI ORGANISATION RETIRED.
    The authoritative Supervisor renderer now owns the approved top row, Quick Entry,
    Assign/Update, Consumables + Spare Parts and ID001 layout directly.
