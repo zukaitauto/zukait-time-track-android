@@ -2430,3 +2430,75 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  const old=window.render;window.render=function(){const r=typeof old==='function'?old.apply(this,arguments):undefined;setTimeout(apply,0);return r};setTimeout(apply,0);
  if(!document.getElementById('v112SupervisorCleanStyle')){const s=document.createElement('style');s.id='v112SupervisorCleanStyle';s.textContent='.v112-carpaint{position:relative;display:inline-block;width:46px;height:30px}.v112-carpaint .v112-car{position:absolute;left:1px;bottom:1px;font-size:25px;transform:scaleX(1.25);border-radius:10px}.v112-carpaint .v112-gun{position:absolute;right:0;top:-5px;font-size:24px;font-weight:950;transform:rotate(-18deg)}.v112-carpaint i{position:absolute;right:10px;top:11px;font-size:12px;font-style:normal;letter-spacing:1px;transform:rotate(-18deg)}';document.head.appendChild(s)}
 })();
+
+/* V115 SHARED LIVE WORKER AUTHORITY — one source for Manager/Web/Supervisor live counts. */
+(function(){'use strict';
+ function liveRows(){
+   const out=[];
+   for(const u of (window.users||[]).filter(x=>x&&x.role==='Employee')){
+     let s=null;try{s=activeSession(u.id)}catch(_){}
+     if(!s||s.end)continue;
+     let a=null;try{a=(state.assign||[]).find(x=>x&&x.id===s.assignmentId&&!x.cancelled&&!x.completed)||null}catch(_){}
+     if(s.job!==HOLD&&!a)continue;
+     let j={};try{j=job(s.job)||{}}catch(_){}
+     out.push({u,s,a,j});
+   }
+   return out;
+ }
+ window.currentActiveWorkers=liveRows;
+ window.v79CurrentWorkerRows=liveRows;
+ window.v756UniqueActiveWorkerRows=liveRows;
+ function normal(){return liveRows().filter(x=>x.s.job!==HOLD)}
+ function waiting(){return liveRows().filter(x=>x.s.job===HOLD)}
+ function replaceCount(root,label,n){
+   if(!root)return;
+   [...root.querySelectorAll('button,.notice,.glance-box,.v67-control')].forEach(el=>{
+     const tx=(el.textContent||'').trim();
+     if(!tx.toLowerCase().includes(label.toLowerCase()))return;
+     const b=el.querySelector('b.stat,.stat,b');if(b)b.textContent=String(n);
+   });
+ }
+ function refresh(){
+   if(!window.me)return;
+   const rows=liveRows(),work=normal(),wait=waiting();
+   if(me.role==='Supervisor'){
+     const root=document.getElementById('supervisorView');
+     replaceCount(root,'Active Workers',rows.length);
+   }else if(me.role==='Manager'){
+     const root=document.getElementById('managerView');
+     replaceCount(root,'Working Now',work.length);
+     replaceCount(root,'Waiting / ID001',wait.length);
+   }
+ }
+ const oldControl=window.v65OpenControl;
+ window.v65OpenControl=function(type){
+   if(type==='working'){
+     const list=normal().map(x=>x.a).filter(Boolean);
+     if(typeof assignmentRowsHtml==='function')return openModal('<div class="section-title"><h2>Working Now</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+assignmentRowsHtml(list));
+   }
+   return typeof oldControl==='function'?oldControl.apply(this,arguments):undefined;
+ };
+ const oldActive=window.openActiveWorkers;
+ window.openActiveWorkers=function(){
+   // Existing detail renderer now consumes the shared authority through v79CurrentWorkerRows.
+   return typeof oldActive==='function'?oldActive.apply(this,arguments):undefined;
+ };
+ let busy=false;
+ async function syncRefresh(){
+   if(busy||!window.me||document.hidden)return;
+   busy=true;
+   try{
+     if(typeof window.v42SyncNow==='function')await window.v42SyncNow(true);
+   }catch(_){}
+   finally{busy=false;refresh()}
+ }
+ const oldRender=window.render;
+ window.render=function(){const r=typeof oldRender==='function'?oldRender.apply(this,arguments):undefined;setTimeout(refresh,0);return r};
+ window.addEventListener('focus',syncRefresh);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncRefresh()});
+ window.addEventListener('storage',refresh);
+ setInterval(syncRefresh,5000);
+ setInterval(refresh,1000);
+ setTimeout(refresh,0);
+ window.v115RefreshLiveWorkers=refresh;
+})();
