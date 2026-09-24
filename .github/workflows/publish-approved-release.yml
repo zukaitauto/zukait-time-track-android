@@ -57,6 +57,7 @@ jobs:
           node --check app/src/main/assets/v68_updates.js
           node --check app/src/main/assets/v69_updates.js
           node --check app/src/main/assets/v74_updates.js
+          node --check app/src/main/assets/supervisor_stable.js
           python3 - <<'PY'
           from pathlib import Path
           import re
@@ -75,6 +76,7 @@ jobs:
           node tests/consumables-smoke.mjs
           node tests/consumables-ui.mjs
           node tests/assignment-search-ui.mjs
+          node tests/supervisor-stable-ui.mjs
           node --check app/src/main/assets/consumables.js
           node --check app/src/main/assets/consumables_ui.js
 
