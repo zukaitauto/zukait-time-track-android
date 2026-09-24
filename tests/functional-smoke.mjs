@@ -422,6 +422,9 @@ assert(updates.includes("v91RoleHeader('Supervisor')"), 'Supervisor authoritativ
 
 // Supervisor root architecture regression guards.
 assert.ok(updates.includes('window.v128SupervisorSurfaceLock=true'), 'Supervisor final surface lock must prevent legacy header resurrection');
+assert.ok(updates.includes('V116 RETIRED') && updates.includes('V127 RETIRED'), 'duplicate Supervisor header authorities must remain retired');
+assert.ok(!updates.includes('V116 SUPERVISOR HEADER AUTHORITY') && !updates.includes('V127 SUPERVISOR MOBILE HEADER AUTHORITY'), 'retired Supervisor header renderers must not return');
+assert.ok(!updates.includes("obs.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']})"), 'Supervisor surface lock must not use a continuous DOM observer');
 assert.ok(html.includes('supervisor-assign-grid') && html.includes('grid-template-areas:"job tech" "time assign"'), 'authoritative Supervisor renderer must own the compact 2x2 Assign / Update layout');
 assert.ok(html.includes('id="supervisorJobSearch"') && html.includes('class="supervisor-internal-job-select"'), 'authoritative Supervisor renderer must own visible search plus hidden #sj handoff');
 assert.ok(html.includes("assignCards.slice(1).forEach(x=>x.remove())"), 'Supervisor finalizer must remove duplicate Assign / Update cards');
