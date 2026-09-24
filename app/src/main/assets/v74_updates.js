@@ -2027,7 +2027,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(!sp){sp=card('v154-spare');grid.appendChild(sp)}if(!bs){bs=card('v154-body');grid.appendChild(bs)}
  }
  if(!document.getElementById('v154ManagerFutureStyle')){const st=document.createElement('style');st.id='v154ManagerFutureStyle';st.textContent='#managerView .v67-control-grid,#managerView .v66-control-grid,#managerView .v65-control-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}#managerView .v154-future{min-width:0!important;min-height:82px!important}#managerView .v154-future span{font-weight:900!important;font-size:13px!important}#managerView .v154-spare{background:linear-gradient(135deg,#eef6ff,#f8fbff)!important;border-color:#bdd5ef!important;color:#173b63!important}#managerView .v154-body{background:linear-gradient(135deg,#f2f7f4,#fbfdfc)!important;border-color:#c5ddd0!important;color:#244c38!important}';document.head.appendChild(st)}
- const prior=window.render;window.render=function(){const r=typeof prior==='function'?prior.apply(this,arguments):undefined;setTimeout(apply,0);return r};const pm=window.renderManager;if(typeof pm==='function'&&!pm.__v154){const fn=function(){const r=pm.apply(this,arguments);setTimeout(apply,0);return r};fn.__v154=true;window.renderManager=fn}setTimeout(apply,0);
+ window.v154ApplyManagerWorkshopControl=apply;setTimeout(apply,0);
 })();
 
 /* V149 SHARED COLOUR WIRING — apply identity/status authority to dashboard detail windows. */
@@ -2871,6 +2871,14 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  const prior=window.render;window.render=function(){const r=typeof prior==='function'?prior.apply(this,arguments):undefined;[0,80,250].forEach(ms=>setTimeout(bind,ms));return r};
  [0,100,300,700].forEach(ms=>setTimeout(bind,ms));
  window.v144ManagerConsumablesAuthority=true;
+})();
+
+/* V155 FINAL MANAGER UI SETTLE — one last post-render pass after all legacy Manager layers. */
+(function(){'use strict';
+ const prior=window.render;window.render=function(){const r=typeof prior==='function'?prior.apply(this,arguments):undefined;if(window.me&&me.role==='Manager')setTimeout(()=>{try{window.v154ApplyManagerWorkshopControl?.()}catch(_){}},0);return r};
+ const pm=window.renderManager;if(typeof pm==='function'&&!pm.__v155){const fn=function(){const r=pm.apply(this,arguments);setTimeout(()=>{try{window.v154ApplyManagerWorkshopControl?.()}catch(_){}},0);return r};fn.__v155=true;window.renderManager=fn}
+ setTimeout(()=>{try{window.v154ApplyManagerWorkshopControl?.()}catch(_){}},0);
+ window.v155ManagerFinalAuthority=true;
 })();
 
 
