@@ -2535,3 +2535,35 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  };
  window.v115ReconcileEmployeeOpenSessions=closeDuplicates;
 })();
+
+/* V115 MULTI-TECHNICIAN REOPEN SELECTOR */
+(function(){'use strict';
+ const previous=window.v71ReopenSameAssignment;
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const fm=v=>{try{return fmt(Math.max(0,+v||0))}catch(_){return Math.round(+v||0)+'m'}};
+ function completedFor(jobNo){
+   return (state.assign||[]).filter(a=>a&&a.job===jobNo&&!a.cancelled&&a.completed&&!a.rework&&a.job!=='ID001');
+ }
+ function choose(jobNo){
+   const rows=completedFor(jobNo);
+   if(!rows.length)return typeof v74Msg==='function'?v74Msg('No completed technician assignment is available to reopen.','Reopen Work'):undefined;
+   if(rows.length===1)return previous.call(window,rows[0].id);
+   const body=rows.map(a=>{
+     let actual=0;try{actual=totalForAssignment(a)||0}catch(_){}
+     const u=(()=>{try{return user(a.emp)||{}}catch(_){return{}}})();
+     return '<button class="v115-reopen-tech" data-id="'+esc(a.id)+'"><b>'+esc(u.name||a.emp)+'</b><span>'+esc(u.department||'')+'</span><small>Allocated '+fm(a.suggested)+' · Actual '+fm(actual)+'</small><em>SELECT ›</em></button>';
+   }).join('');
+   openModal('<div class="v74-d"><h2>↻ Select Employee to Reopen</h2><div class="notice"><b>Job Card:</b> '+esc(jobNo)+'<br>Select only the technician whose completed assignment needs to be reopened. Other technicians remain finished.</div><div class="v115-reopen-list">'+body+'</div><div class="v74-actions"><button class="secondary" onclick="closeModal()">CANCEL</button></div></div>');
+   setTimeout(()=>document.querySelectorAll('.v115-reopen-tech').forEach(b=>b.onclick=()=>{const id=b.dataset.id;closeModal();previous.call(window,id)}),0);
+ }
+ window.v115ChooseReopenEmployee=choose;
+ window.v71ReopenJobCard=function(jobNo){return choose(jobNo)};
+ window.v71ReopenSameAssignment=function(id){
+   const a=(state.assign||[]).find(x=>x&&x.id===id&&!x.cancelled);
+   if(!a)return previous.apply(this,arguments);
+   const peers=completedFor(a.job);
+   if(peers.length>1)return choose(a.job);
+   return previous.apply(this,arguments);
+ };
+ const style=document.createElement('style');style.textContent='.v115-reopen-list{display:grid;gap:9px;margin:14px 0}.v115-reopen-tech{width:100%;display:grid;grid-template-columns:1fr auto;gap:3px 12px;text-align:left;padding:13px 14px;border:1px solid #dbe3ee;border-radius:14px;background:#fff;color:#0f172a}.v115-reopen-tech b{font-size:15px}.v115-reopen-tech span,.v115-reopen-tech small{font-size:12px;color:#64748b}.v115-reopen-tech small{grid-column:1}.v115-reopen-tech em{grid-column:2;grid-row:1/4;align-self:center;font-style:normal;font-weight:900;font-size:11px;color:#166534}';document.head.appendChild(style);
+})();
