@@ -85,7 +85,7 @@ function featureCard(cls,title,count,sub,click){
  return '<button class="v67-feature '+cls+'" onclick="'+click+'"><div><span>'+title+'</span><b>'+count+'</b><small>'+sub+'</small></div><em>›</em></button>';
 }
 function controlCard(type,label,count,cls){
- if(type==='consumables')return '<button class="v67-control '+cls+' v67-consumables" onclick="alert(\'Consumables details will be added later.\')"><span>'+label+'</span><b>›</b><small>View details</small><em></em></button>';
+ if(type==='consumables')return '<button class="v67-control '+cls+' v67-consumables" onclick="openConsumablesModule()"><span>'+label+'</span><b>›</b><small>View details</small><em></em></button>';
  return '<button class="v67-control '+cls+'" onclick="v65OpenControl(\''+type+'\')"><span>'+label+'</span><b>'+count+'</b><small>View details</small><em>›</em></button>';
 }
 function roundHour(kind,label,cls){
