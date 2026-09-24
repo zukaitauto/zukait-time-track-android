@@ -1,8 +1,8 @@
 {
-  "versionName": "V130",
-  "versionCode": 93,
+  "versionName": "V131",
+  "versionCode": 94,
   "approvedForStaff": true,
-  "approvedAt": "2026-09-24",
-  "sourceCommit": "66cee07a2c1c02ae1ec5ed5e06403bf597f6cb17",
-  "publishNonce": "approved-v130-id001-normal-working-hours-20260924"
+  "approvedAt": "2026-09-25",
+  "sourceCommit": "7a775268ca72d8571136222f844f181c2e4add6e",
+  "publishNonce": "approved-v131-multi-version-sync-authority-20260925"
 }
