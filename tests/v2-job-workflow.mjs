@@ -1,0 +1,13 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';import vm from 'node:vm';
+const code=fs.readFileSync('app/src/main/assets/v2/features/jobcards/workflow.js','utf8');
+const sandbox={window:{},Date};vm.createContext(sandbox);vm.runInContext(code,sandbox);
+const w=sandbox.window.zukaitV2.jobWorkflow;
+assert.equal(w.stages.length,12);
+assert.equal(w.canTransition('CREATED','DENTING'),true);
+assert.equal(w.canTransition('DENTING','CREATED'),false);
+assert.equal(w.canTransition('DELIVERED','QC'),false);
+assert.equal(w.canTransition('DENTING','PAINTING',{allowSkip:false}),true);
+assert.equal(w.canTransition('DENTING','QC',{allowSkip:false}),false);
+const r=w.transition({id:'JC1',workflowStage:'QC'},'READY_FOR_DELIVERY',{actorId:'SUP1',deviceId:'D1',serverTime:'2026-09-25T00:00:00Z'});
+assert.equal(r.ok,true);assert.equal(r.audit.type,'JOB_STAGE_CHANGED');assert.equal(r.audit.from,'QC');assert.equal(r.audit.to,'READY_FOR_DELIVERY');
+console.log('V2 job workflow: ok');
