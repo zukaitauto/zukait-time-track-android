@@ -3,6 +3,9 @@
 
 begin;
 
+-- Drop the pre-composite signature so upgrades cannot leave an ambiguous overload.
+drop function if exists public.zukait_v2_event_page(timestamptz,integer,text,text);
+
 create table if not exists public.workshop_v2_events (
   event_id text primary key,
   entity_id text not null,
