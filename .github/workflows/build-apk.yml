@@ -96,6 +96,7 @@ jobs:
           node tests/v2-data-paths.mjs
           node tests/v2-server-data-adapter.mjs
           node tests/v2-report-server-adapter.mjs
+          node tests/v2-event-write-idempotency.mjs
           node tests/v2-job-workflow.mjs
           node tests/v2-spare-parts.mjs
           node tests/v2-repeat-work.mjs
