@@ -77,7 +77,7 @@
 
   async function v2CommitEvent(event){
     const r=await api({action:'v2_commit_event',event});
-    if(!r.ok)throw new Error(r.code||'V2_EVENT_COMMIT_FAILED');
+    if(!r.ok){const e=new Error(r.code||'V2_EVENT_COMMIT_FAILED');e.code=r.code||'V2_EVENT_COMMIT_FAILED';throw e;}
     return r;
   }
   async function flushV2EventQueue(){
@@ -85,7 +85,11 @@
     let synced=0;
     for(const event of q.pending()){
       try{const r=await v2CommitEvent(event);q.markSynced(event.eventId,{serverTime:r.server_time,serverRevision:r.server_revision});synced++;}
-      catch(e){console.warn('V2 event sync deferred',event.eventId,e);break;}
+      catch(e){
+        const code=String(e?.code||e?.message||'V2_EVENT_COMMIT_FAILED');
+        if(code==='NETWORK'||code==='TIMEOUT'||code==='NO_SESSION'){console.warn('V2 event sync deferred',event.eventId,e);break;}
+        q.markConflict?.(event.eventId,code);console.warn('V2 event quarantined for reconciliation',event.eventId,code);
+      }
     }
     q.compact();return {synced,pending:q.pending().length};
   }
