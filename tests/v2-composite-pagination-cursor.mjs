@@ -1,0 +1,13 @@
+import fs from'node:fs';import assert from'node:assert/strict';
+const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+const cloud=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
+const hist=fs.readFileSync('supabase/ARCHITECTURE_V2_BOUNDED_HISTORY.sql','utf8');
+const job=fs.readFileSync('supabase/ARCHITECTURE_V2_JOBCARD_PROJECTION.sql','utf8');
+const report=fs.readFileSync('supabase/ARCHITECTURE_V2_REPORTING.sql','utf8');
+assert.match(hist,/e\.server_time = p_before and p_before_id is not null and e\.event_id < p_before_id/i);
+assert.match(job,/j\.updated_at=p_before and p_before_id is not null and j\.job_card<p_before_id/i);
+assert.match(report,/e\.server_time=p_before and p_before_id is not null and e\.event_id<p_before_id/i);
+assert.match(api,/before_id: beforeId/);assert.match(api,/before_id:String\(last\.event_id\)/);
+assert.match(api,/before_id:String\(cursorId\)/);
+assert.match(cloud,/before:cursor\?\.before\|\|cursor\|\|null,before_id:cursor\?\.before_id\|\|null/);
+console.log('V2 composite pagination cursor gate: ok');
