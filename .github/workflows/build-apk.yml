@@ -114,6 +114,7 @@ jobs:
           node tests/v2-repeat-consumables-server-authority.mjs
           node tests/v2-spare-parts-server-authority.mjs
           node tests/v2-multidevice-conflict-matrix.mjs
+          node tests/v2-same-employee-device-race.mjs
           node tests/v2-jobcard-projection.mjs
           node tests/v2-wip-completion-target.mjs
           node tests/v2-jobcard-projection-conflicts.mjs
