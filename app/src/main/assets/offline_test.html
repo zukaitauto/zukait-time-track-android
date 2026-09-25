@@ -747,7 +747,7 @@ function exportManagerReport(type){let headers=[],rows=[],filename='zukait-repor
     showSupervisorModal(title,html);
   };
   window.finalFilterSuper=function(){const q=(document.getElementById('finalSuperSearch')?.value||'').toLowerCase();document.querySelectorAll('#finalSuperRows tr').forEach(r=>r.style.display=(r.dataset.finalSearch||'').includes(q)?'':'none')};
-  window.openSupervisorJobActions=function(no){showSupervisorModal('Actions — '+E(no),`<button class="blue big-action" onclick="openSupervisorFullJob('${E(no)}')">👁 View Full Details</button><button class="green big-action" onclick="changeEmployeeForJob('${E(no)}')">👤 Change Employee</button><button class="yellow big-action" onclick="createRepeatWork('${E(no)}')">🔁 Repeat Work</button>`)};
+  window.openSupervisorJobActions=function(no){showSupervisorModal('Actions — '+E(no),`<button class="blue big-action" onclick="openSupervisorFullJob('${E(no)}')">👁 View Full Details</button><button class="green big-action" onclick="changeEmployeeForJob('${E(no)}')">👤 Change Technician</button><button class="yellow big-action" onclick="createRepeatWork('${E(no)}')">🔁 Repeat Work</button>`)};
   // Improve contrast for all dashboard cards and controls.
   const css=document.createElement('style');css.textContent=`.supervisor-action-card,.kpi,.metric-card,.notice,.time-box{color:#172033!important;text-shadow:none!important}.supervisor-action-card small,.kpi small,.metric-card small,.notice small{color:#26364d!important}.supervisor-action-card button,.card button{font-weight:700}.job-detail-stat{background:#eef4ff!important;color:#172033!important;border:1px solid #b7c9e8;border-radius:10px;padding:10px}.job-detail-stat b,.job-detail-stat strong{color:#172033!important}.modal-box input,.modal-box textarea,.modal-box select{color:#172033!important;background:#fff!important}`;document.head.appendChild(css);
 })();
@@ -989,7 +989,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
   }
   window.openAssignmentStatusMenu=function(id){
     const a=(state.assign||[]).find(x=>x.id===id); if(!a)return;
-    showSupervisorModal('Job Card Status — '+a.job,`<p class="muted">Choose an action for <b>${esc(a.job)}</b> — ${esc(user(a.emp).name)}.</p><div class="grid"><button class="blue big" onclick="transferAssignment('${a.id}');closeSupervisorModal()">👤 CHANGE EMPLOYEE</button><button class="purple big" onclick="addRepeatWork('${a.job}');closeSupervisorModal()">🔁 REPEAT WORK</button><button class="secondary big" onclick="openSupervisorJob('${a.job}')">📋 VIEW JOB DETAILS</button></div><p><button class="secondary" onclick="closeSupervisorModal()">CLOSE</button></p>`);
+    showSupervisorModal('Job Card Status — '+a.job,`<p class="muted">Choose an action for <b>${esc(a.job)}</b> — ${esc(user(a.emp).name)}.</p><div class="grid"><button class="blue big" onclick="transferAssignment('${a.id}');closeSupervisorModal()">👤 CHANGE TECHNICIAN</button><button class="purple big" onclick="addRepeatWork('${a.job}');closeSupervisorModal()">🔁 REPEAT WORK</button><button class="secondary big" onclick="openSupervisorJob('${a.job}')">📋 VIEW JOB DETAILS</button></div><p><button class="secondary" onclick="closeSupervisorModal()">CLOSE</button></p>`);
   };
   window.supervisorRowsTable=function(rows){
     rows=rows.slice().sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));
