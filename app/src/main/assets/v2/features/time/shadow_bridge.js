@@ -2,36 +2,37 @@
   'use strict';
   const FLAG='zukait_v2_shadow_events';
   function enabled(){try{return localStorage.getItem(FLAG)!=='0'}catch(_){return true}}
-  function context(at){
-    const actor=window.me||{};
-    let deviceId='';try{deviceId=localStorage.getItem('zukait_device_id')||''}catch(_){}
-    return {actorId:actor.id||'',deviceId,clientTime:new Date(at||Date.now()).toISOString(),syncState:'shadow'};
+  function context(a,at,eventId){
+    let deviceId='';try{deviceId=localStorage.getItem('zukait_device_id')||localStorage.getItem('zukait_device_id_v42')||''}catch(_){}
+    return {eventId,actorId:String(a?.emp||''),deviceId,clientTime:new Date(at||Date.now()).toISOString(),syncState:'shadow'};
   }
-  function record(type,a,at){
+  function record(type,a,at,eventId){
     if(!enabled()||!a||!window.zukaitV2?.work)return null;
-    try{return window.zukaitV2.work.record(type,a,context(at))}catch(err){console.warn('V2 shadow event skipped',err);return null}
-  }
-  function wrap(name,typeFn){
-    const original=window[name];if(typeof original!=='function'||original.__zukaitV2Shadow)return false;
-    function wrapped(...args){
-      const beforeSession=window.me&&typeof window.activeSession==='function'?window.activeSession(window.me.id):null;
-      const beforeAssignment=beforeSession?(window.state?.assign||[]).find(a=>a.id===beforeSession.assignmentId):null;
-      const result=original.apply(this,args);
-      const afterSession=window.me&&typeof window.activeSession==='function'?window.activeSession(window.me.id):null;
-      let a=beforeAssignment;
-      if(name==='start'&&afterSession)a=(window.state?.assign||[]).find(x=>x.id===afterSession.assignmentId)||a;
-      const type=typeFn({beforeSession,afterSession,assignment:a,args});
-      if(type&&a)record(type,a,(afterSession?.start||beforeSession?.end||a.completedAt||Date.now()));
-      return result;
-    }
-    wrapped.__zukaitV2Shadow=true;wrapped.__legacy=original;window[name]=wrapped;return true;
+    try{return window.zukaitV2.work.record(type,a,context(a,at,eventId))}catch(err){console.warn('V2 shadow event skipped',err);return null}
   }
   function install(){
-    const T=window.zukaitV2?.work?.TYPES;if(!T)return false;
-    wrap('start',({afterSession})=>afterSession?(afterSession.job==='ID001'?T.ID001_START:T.START):null);
-    wrap('pause',({beforeSession})=>beforeSession&&beforeSession.end&&beforeSession.paused?T.PAUSE:null);
-    wrap('finish',({beforeSession,assignment})=>assignment?.completed?(beforeSession?.job==='ID001'?T.ID001_STOP:T.FINISH):null);
-    return true;
+    if(window.__zukaitV2ShadowInstalled)return true;
+    const oldStart=window.start,oldPause=window.pause,oldFinish=window.finish;
+    if(typeof oldStart!=='function'||typeof oldPause!=='function'||typeof oldFinish!=='function')return false;
+    window.start=function(no){
+      const before=(state.sessions||[]).length,result=oldStart.apply(this,arguments);
+      const s=(state.sessions||[]).length>before?(state.sessions||[]).at(-1):null;
+      if(s&&!s.end){const a=(state.assign||[]).find(x=>x.id===s.assignmentId);record(s.job==='ID001'?'ID001_START':'WORK_START',a,s.start,'shadow_start_'+s.id)}
+      return result;
+    };
+    window.pause=function(){
+      const s=me&&typeof activeSession==='function'?activeSession(me.id):null;if(!s)return oldPause.apply(this,arguments);
+      const sid=s.id,result=oldPause.apply(this,arguments),ended=(state.sessions||[]).find(x=>x.id===sid);
+      if(ended?.end&&ended.paused){const a=(state.assign||[]).find(x=>x.id===ended.assignmentId);record('WORK_PAUSE',a,ended.end,'shadow_pause_'+sid+'_'+ended.end)}
+      return result;
+    };
+    window.finish=function(){
+      const s=me&&typeof activeSession==='function'?activeSession(me.id):null;if(!s)return oldFinish.apply(this,arguments);
+      const sid=s.id,result=oldFinish.apply(this,arguments),ended=(state.sessions||[]).find(x=>x.id===sid);
+      if(ended?.end&&ended.finished){const a=(state.assign||[]).find(x=>x.id===ended.assignmentId);record(ended.job==='ID001'?'ID001_STOP':'WORK_FINISH',a,ended.end,'shadow_finish_'+sid+'_'+ended.end)}
+      return result;
+    };
+    window.__zukaitV2ShadowInstalled=true;return true;
   }
   window.zukaitV2=Object.assign(window.zukaitV2||{},{shadow:{install,enabled,record}});
 })();
