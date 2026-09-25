@@ -1,0 +1,10 @@
+import fs from'node:fs';import assert from'node:assert/strict';import vm from'node:vm';const code=fs.readFileSync('app/src/main/assets/v2/features/notifications/rules.js','utf8');const s={window:{},Date};vm.createContext(s);vm.runInContext(code,s);const n=s.window.zukaitV2.notifications;
+assert.equal(n.completionRisk({id:'J1',workflowStage:'DENTING',ageDays:24}),null);
+assert.equal(n.completionRisk({id:'J1',workflowStage:'DENTING',ageDays:30}).severity,'urgent');
+assert.equal(n.completionRisk({id:'J1',workflowStage:'DELIVERED',ageDays:40}),null);
+assert.equal(n.partsDelay({id:'P1',status:'ORDERED',pendingDays:7}).severity,'urgent');
+assert.equal(n.partsDelay({id:'P1',status:'RECEIVED',pendingDays:9}),null);
+assert.equal(n.materialVariance({id:'M1',suggested:10,actual:11}),null);
+assert.equal(n.materialVariance({id:'M1',suggested:10,actual:13}).type,'MATERIAL_VARIANCE');
+const a=n.build('QC_READY',{entityId:'J1',status:'READY'});const b={...a};assert.equal(n.dedupe([a,b]).length,1);
+console.log('V2 notification rules: ok');
