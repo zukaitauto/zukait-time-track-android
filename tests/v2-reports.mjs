@@ -1,0 +1,6 @@
+import fs from'node:fs';import assert from'node:assert/strict';import vm from'node:vm';const code=fs.readFileSync('app/src/main/assets/v2/features/reports/service.js','utf8');const calls=[];const s={window:{zukaitServerReports:{page:async x=>(calls.push(x),{rows:[],nextCursor:'n',source:'server'}),searchJobCards:async x=>(calls.push(x),{rows:[],nextCursor:null,source:'server'})}}};vm.createContext(s);vm.runInContext(code,s);const r=s.window.zukaitV2.reports;
+assert.equal(r.clamp(10000),500);assert.equal(r.supported('wip'),true);assert.equal(r.supported('unknown'),false);assert.equal(r.labourCost(3,2.5),7.5);assert.equal(r.dashboardContract().fullHistoryScan,false);
+await r.page('WIP',{limit:10000,filters:{status:'open'}});assert.equal(calls[0].limit,500);
+await r.searchJobCards('JC100',{limit:10000});assert.equal(calls[1].limit,500);
+const s2={window:{}};vm.createContext(s2);vm.runInContext(code,s2);const noApi=await s2.window.zukaitV2.reports.page('AUDIT');assert.equal(noApi.source,'server-required');
+console.log('V2 reports service: ok');
