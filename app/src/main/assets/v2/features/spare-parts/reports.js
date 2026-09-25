@@ -5,7 +5,11 @@ function report(lists,from,to){const r=rows(lists).filter(x=>x.finalPurchaseAt>=
 function omanDayRange(v=new Date()){const d=new Date(new Date(v).getTime()+4*3600000),y=d.getUTCFullYear(),m=d.getUTCMonth(),day=d.getUTCDate(),from=Date.UTC(y,m,day)-4*3600000;return{from,to:from+86400000}}
 function presetRange(kind,now=new Date()){const day=omanDayRange(now);if(kind==='TODAY')return day;if(kind==='WEEK'){const local=new Date(day.from+4*3600000),dow=local.getUTCDay(),since=(dow+6)%7;return{from:day.from-since*86400000,to:day.to}}if(kind==='MONTH'){const local=new Date(day.from+4*3600000),from=Date.UTC(local.getUTCFullYear(),local.getUTCMonth(),1)-4*3600000;return{from,to:Date.UTC(local.getUTCFullYear(),local.getUTCMonth()+1,1)-4*3600000}}return day}
 function preset(lists,kind,now){const r=presetRange(kind,now);return report(lists,r.from,r.to)}
+function byJC(lists,q){q=String(q||'').trim().toLowerCase();const selected=(lists||[]).filter(x=>[x.jobCard,x.number,x.registration].some(v=>String(v||'').toLowerCase().includes(q)));const r=rows(selected),total=r.reduce((s,x)=>s+(Number(x.finalPriceOMR)||0),0);return{rows:r,total,byJobCard:p.analytics.byJobCard(r),initialAdditional:p.analytics.splitCost(r.map(x=>({finalPriceOMR:x.finalPriceOMR,additional:x.additional})))}}
+function custom(lists,from,to){return report(lists,new Date(from).getTime(),new Date(to).getTime()+86400000)}
+function statusReport(lists,status){const xs=(lists||[]).filter(x=>status==='DELIVERED_PENDING'?x.deliveredPending:status==='COMPLETED'?(p.completion?.evaluate(x).complete):true);return{lists:xs,count:xs.length}}
+function capReport(lists){return(lists||[]).filter(x=>Number.isFinite(Number(x.purchaseCapOMR))).map(x=>({pl:x.number,jobCard:x.jobCard,capOMR:Number(x.purchaseCapOMR),currentOMR:p.analytics.finalTotal(x.lines||[]),state:p.analytics.cap(Number(x.purchaseCapOMR),p.analytics.finalTotal(x.lines||[]))}))}
 function actions(){return Object.freeze(['PRINT','PDF','WHATSAPP_TEXT','WHATSAPP_PDF','BACK'])}
 function whatsappSummary(title,r){return[String(title||'Spare Parts Report'),...r.rows.map(x=>[x.jobCard,x.part,'Qty '+x.qty,p.money(x.finalPriceOMR).toFixed(3)+' OMR'].join(' · ')),'Total: '+p.money(r.total).toFixed(3)+' OMR'].join('\n')}
-p.partsReports={rows,report,presetRange,preset,omanDayRange,actions,whatsappSummary};
+p.partsReports={rows,report,presetRange,preset,omanDayRange,byJC,custom,statusReport,capReport,actions,whatsappSummary};
 })();
