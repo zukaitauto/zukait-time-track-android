@@ -10,7 +10,7 @@ assert.match(sql,/if exists\(select 1 from public\.workshop_v2_work_sessions x w
 assert.match(sql,/if found and coalesce\(p_revision,0\)<=cur\.revision then raise exception 'stale_work_revision'/i);
 // Duplicate delivery of the exact same device event is idempotent; reuse with changed content is a conflict.
 assert.match(eventSql,/on conflict \(event_id\) do nothing returning \* into v/i);
-assert.match(eventSql,/v\.device_id<>p_device_id/i);
+assert.match(eventSql,/coalesce\(v\.device_id,''\)<>coalesce\(p_device_id,''\)/i);
 assert.match(eventSql,/raise exception 'event_id_conflict'/i);
 // Authenticated identity owns actorId even when devices differ.
 assert.match(api,/actor_mismatch/);assert.match(api,/p_actor_id:String\(user\.id\)/);
