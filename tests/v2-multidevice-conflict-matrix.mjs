@@ -1,0 +1,24 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+function load(path){const ctx={window:{},console,Date};ctx.window.window=ctx.window;vm.runInNewContext(fs.readFileSync(path,'utf8'),ctx);return ctx.window.zukaitV2}
+const conflict=load('app/src/main/assets/v2/core/conflict_resolver.js').conflict;
+const reconnect=load('app/src/main/assets/v2/core/reconnect_authority.js').reconnect;
+const rules=load('app/src/main/assets/v2/features/time/work_rules.js').rules;
+const ev={eventId:'e1',serverRevision:4,clientTime:'2026-09-25T10:00:00Z',payload:{employeeId:'EMP1'}};
+assert.equal(conflict.resolve(ev,{revision:5,lastEventId:'x'}).decision,'server');
+assert.equal(conflict.resolve(ev,{revision:4,lastEventId:'e1'}).decision,'ack');
+assert.equal(conflict.resolve(ev,null).decision,'local-pending');
+assert.equal(reconnect.decide({serverRevision:4,syncState:'pending',start:100},{serverRevision:5,start:100}).action,'ACCEPT_SERVER');
+assert.equal(reconnect.decide({serverRevision:6,syncState:'pending',start:100},{serverRevision:5,start:100}).action,'REPLAY_LOCAL');
+assert.equal(reconnect.decide({serverRevision:5,start:100},{serverRevision:5,start:100,end:200}).action,'CONFLICT');
+const normal={id:'a1',emp:'EMP1',job:'JC1'},hold={id:'h1',emp:'EMP1',job:'ID001'};
+let state={sessions:[{id:'s1',emp:'EMP1',job:'JC1',assignmentId:'a1',start:1}]};
+assert.ok(rules.validate('WORK_START',normal,state,{at:new Date(2026,8,24,10,0).getTime()}).issues.includes('employee-already-active'));
+assert.ok(rules.validate('ID001_START',hold,state,{at:new Date(2026,8,24,10,0).getTime()}).issues.includes('employee-already-active'));
+state={sessions:[],leaves:[{emp:'EMP1',date:'2026-09-24'}]};
+assert.ok(rules.validate('WORK_START',normal,state,{at:new Date(2026,8,24,10,0).getTime()}).issues.includes('employee-on-leave'));
+state={sessions:[]};
+assert.ok(rules.validate('ID001_START',hold,state,{at:new Date(2026,8,25,10,0).getTime()}).issues.includes('id001-outside-duty'));
+assert.ok(rules.validate('ID001_START',hold,state,{at:new Date(2026,8,24,14,0).getTime()}).issues.includes('id001-outside-duty'));
+state={sessions:[{id:'p1',emp:'EMP1',job:'JC1',assignmentId:'a1',start:1,end:2,paused:true}]};
+assert.equal(rules.validate('WORK_RESUME',normal,state,{at:new Date(2026,8,24,10,0).getTime()}).ok,true);
+console.log('V2 multi-device/offline conflict matrix: ok');
