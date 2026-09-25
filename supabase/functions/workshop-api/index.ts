@@ -352,6 +352,17 @@ Deno.serve(async (req: Request) => {
       return reply({ ok: true, ...live, server_time: Date.now(), user });
     }
 
+    if (action === "v2_allocate_spare_part_list") {
+      if (!["Manager","Supervisor","Purchaser"].includes(String(user.role || ""))) return reply({ok:false,code:"forbidden"},403);
+      const jobCard=String(body?.job_card||"").trim().toUpperCase();
+      if(!jobCard) return reply({ok:false,code:"job_card_required"},400);
+      const {data,error}=await admin.rpc("zukait_v2_allocate_spare_part_list",{p_job_card:jobCard,p_actor_id:String(user.id)});
+      if(error) throw error;
+      const row=Array.isArray(data)?data[0]:data;
+      if(!row?.list_no) return reply({ok:false,code:"allocation_failed"},409);
+      return reply({ok:true,list:row,user});
+    }
+
     if (action === "v2_commit_event") {
       const event = body?.event && typeof body.event === "object" ? body.event : null;
       if (!event || !String(event.eventId || "").trim() || !String(event.entityId || "").trim() || !String(event.type || "").trim()) {
