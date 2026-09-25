@@ -46,6 +46,7 @@ jobs:
           node --check app/src/main/assets/v2/core/live_selectors.js
           node --check app/src/main/assets/v2/core/offline_queue.js
           node --check app/src/main/assets/v2/core/event_parity.js
+          node --check app/src/main/assets/v2/core/reconnect_authority.js
           node --check app/src/main/assets/v2/features/time/work_rules.js
           node --check app/src/main/assets/v2/features/time/work_events.js
           python - <<'PY'
@@ -77,6 +78,7 @@ jobs:
           node tests/vehicle-logo-assets.mjs
           node tests/architecture-v2.mjs
           node tests/v2-work-events.mjs
+          node tests/v2-reconnect-authority.mjs
           node tests/v2-work-rules.mjs
 
       - name: Check production assets
