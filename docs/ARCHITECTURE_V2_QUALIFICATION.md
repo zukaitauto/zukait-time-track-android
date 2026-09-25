@@ -1,6 +1,11 @@
 # Architecture V2 Qualification Status
 
-Verified checkpoint: `96b59c4d067cf1f7f002da600afb26759a10c963`\nQualification run: `36171003647` — SUCCESS.\n\nNewer pagination qualification commits are still awaiting a completed green workflow and are not included in this verified checkpoint.\n\n## Passed
+Verified checkpoint: `22db1c80cb9964801c50d5c52a44805641b27822`
+Qualification run: `36178145344` — SUCCESS.
+
+This checkpoint includes the composite-pagination corrections and 2,000/10,000 tie-scale qualification gates. The complete branch workflow passed through release APK compilation and artifact preparation.
+
+## Passed
 - Existing V141 functional regression suite.
 - V2 event/idempotency and offline queue tests.
 - Work/ID001 rule tests.
