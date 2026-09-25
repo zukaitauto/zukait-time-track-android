@@ -1222,8 +1222,9 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(check)check.disabled=false;
    if(error){if(st)st.textContent='Update check failed. Please check internet connection.';return}
    const current=currentCode();window.v77UpdateInfo={current:currentVersion(),latest:String(latestName||''),latestCode:Number(latestCode||0)};
-   if(nv)nv.textContent=latestName||'—';
    if(Number(latestCode)<=current){
+     if(nv)nv.textContent=currentVersion()||'—';
+     window.v77UpdateInfo={current:currentVersion(),latest:currentVersion(),latestCode:current};
      if(st)st.innerHTML='<b class="ok">App is up to date.</b>';
      if(down)down.style.display='none';if(inst)inst.style.display='none';
      return;
