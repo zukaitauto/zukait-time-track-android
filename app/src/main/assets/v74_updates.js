@@ -2047,8 +2047,8 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    /* Spare Parts is the single fifth-row module entry. Body Shop remains future-only and is not duplicated into this row. */
    if(bs)bs.remove();root.querySelectorAll('[data-v154-body]').forEach(x=>x.remove());
  }
- if(!document.getElementById('v154ManagerFutureStyle')){const st=document.createElement('style');st.id='v154ManagerFutureStyle';st.textContent='#managerView .v67-control-grid,#managerView .v66-control-grid,#managerView .v65-control-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}#managerView .v154-future{min-width:0!important;min-height:82px!important}#managerView .v154-future span{font-weight:900!important;font-size:13px!important}#managerView .v154-spare{background:linear-gradient(135deg,#eef6ff,#f8fbff)!important;border-color:#bdd5ef!important;color:#173b63!important;grid-column:1/-1!important}#managerView .v154-spare-logo{display:inline-grid!important;place-items:center!important;width:30px!important;height:30px!important;margin-right:7px!important;border-radius:9px!important;background:#fff!important;box-shadow:0 3px 8px #173b6322!important;font-size:16px!important}#managerView .v154-body{background:linear-gradient(135deg,#f2f7f4,#fbfdfc)!important;border-color:#c5ddd0!important;color:#244c38!important}';document.head.appendChild(st)}
- window.v154ApplyManagerWorkshopControl=apply;setTimeout(apply,0);
+ if(!document.getElementById('v154ManagerFutureStyle')){const st=document.createElement('style');st.id='v154ManagerFutureStyle';st.textContent='#managerView .v67-control-grid,#managerView .v66-control-grid,#managerView .v65-control-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}#managerView .v154-future{min-width:0!important;min-height:82px!important}#managerView .v154-future span{font-weight:900!important;font-size:13px!important}#managerView .v154-spare{background:linear-gradient(135deg,#eef6ff,#f8fbff)!important;border-color:#bdd5ef!important;color:#173b63!important}#managerView .v154-spare-logo{display:inline-grid!important;place-items:center!important;width:30px!important;height:30px!important;margin-right:7px!important;border-radius:9px!important;background:#fff!important;box-shadow:0 3px 8px #173b6322!important;font-size:16px!important}#managerView .v154-body{background:linear-gradient(135deg,#f2f7f4,#fbfdfc)!important;border-color:#c5ddd0!important;color:#244c38!important}';document.head.appendChild(st)}
+ window.v154ApplyManagerWorkshopControl=apply;[0,80,250,700].forEach(ms=>setTimeout(apply,ms));
 })();
 
 /* V149 SHARED COLOUR WIRING — apply identity/status authority to dashboard detail windows. */
@@ -2832,6 +2832,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const leaves=[...root.querySelectorAll('.v111-manager-leave')];if(leaves.length>1)leaves.slice(1).forEach(x=>x.remove());
  }
  window.v156SettleManagerUI=settle;
+ window.v156ManagerSparePartsInvariant=function(){settle();const root=document.getElementById('managerView'),grid=root?.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid');return !!(grid&&grid.querySelector('[data-v154-spare]'))};
  const prior=window.render;window.render=function(){const r=typeof prior==='function'?prior.apply(this,arguments):undefined;if(window.me&&me.role==='Manager')setTimeout(settle,0);return r};
  const pm=window.renderManager;if(typeof pm==='function'&&!pm.__v156){const fn=function(){const r=pm.apply(this,arguments);setTimeout(settle,0);return r};fn.__v156=true;window.renderManager=fn}
  setTimeout(settle,0);window.v156ManagerUIAuthority=true;
