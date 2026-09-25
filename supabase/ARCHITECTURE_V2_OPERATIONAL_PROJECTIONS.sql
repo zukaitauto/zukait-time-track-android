@@ -71,6 +71,23 @@ returns boolean language sql stable security invoker set search_path=public as $
  );
 $$;
 
+create or replace function public.zukait_v2_apply_calendar_event(p_event_id text,p_entity_id text,p_event_type text,p_event_time timestamptz,p_payload jsonb)
+returns void language plpgsql security invoker set search_path=public as $$
+declare d date; labelv text;
+begin
+ d:=nullif(coalesce(p_payload->>'date',p_entity_id,''),'')::date; labelv:=coalesce(p_payload->>'label','');
+ if d is null then raise exception 'calendar_date_required'; end if;
+ if p_event_type='PUBLIC_HOLIDAY_SET' then
+   insert into public.workshop_v2_calendar(work_date,is_public_holiday,label,updated_at,updated_by) values(d,true,labelv,now(),coalesce(p_payload->>'actorId',''))
+   on conflict(work_date) do update set is_public_holiday=true,label=excluded.label,updated_at=now(),updated_by=excluded.updated_by;
+ elsif p_event_type='PUBLIC_HOLIDAY_CLEARED' then
+   insert into public.workshop_v2_calendar(work_date,is_public_holiday,label,updated_at,updated_by) values(d,false,labelv,now(),coalesce(p_payload->>'actorId',''))
+   on conflict(work_date) do update set is_public_holiday=false,label=excluded.label,updated_at=now(),updated_by=excluded.updated_by;
+ else raise exception 'unsupported_calendar_event'; end if;
+end;$$;
+revoke all on function public.zukait_v2_apply_calendar_event(text,text,text,timestamptz,jsonb) from public,anon,authenticated;
+grant execute on function public.zukait_v2_apply_calendar_event(text,text,text,timestamptz,jsonb) to service_role;
+
 create or replace function public.zukait_v2_apply_leave_event(p_event_id text,p_entity_id text,p_event_type text,p_event_time timestamptz,p_payload jsonb)
 returns void language plpgsql security invoker set search_path=public as $$
 declare emp text; d date; per text;
