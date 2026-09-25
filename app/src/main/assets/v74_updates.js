@@ -437,7 +437,8 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    }
    runningHtml+='</div>';
 
-   const denterPartsButton=jobNo=>{if(dept!=='Denter'||jobNo===H)return'';const sp=window.zukaitV2?.sparePartsMain,s=sp?.partsSummary?sp.partsSummary(jobNo):{exists:false,count:0};return s.exists?'<button class="v75s-parts" onclick="event.stopPropagation();zukaitV2.sparePartsMain.openForJobCard(\''+esc(jobNo)+'\')">🔩 PARTS LIST · '+s.count+'</button>':'<button class="v75s-parts empty" disabled>🔩 NO PARTS LIST</button>'};
+   window.v157OpenEmployeeParts=window.v157OpenEmployeeParts||function(no){const sp=window.zukaitV2?.sparePartsMain;if(sp&&typeof sp.openForJobCard==='function')return sp.openForJobCard(no);return typeof window.v74Msg==='function'?window.v74Msg('Parts List is not available yet. Please sync and try again.','Parts List'):undefined};
+   const denterPartsButton=jobNo=>{if(dept!=='Denter'||jobNo===H)return'';const sp=window.zukaitV2?.sparePartsMain,s=sp?.partsSummary?sp.partsSummary(jobNo):{exists:false,count:0};return s.exists?'<button class="v75s-parts" onclick="event.stopPropagation();v157OpenEmployeeParts(\''+esc(jobNo)+'\')">🔩 PARTS LIST · '+s.count+'</button>':'<button class="v75s-parts empty" disabled>🔩 NO PARTS LIST</button>'};
    const cards=open.length?open.map(a=>{const x=jj(a.job),run=!!active&&((active.assignmentId&&active.assignmentId===a.id)||(!active.assignmentId&&active.job===a.job)),holdCard=a.job===H,worked=actual(a),remaining=Math.max(0,(+a.suggested||0)-worked),badge=run?'RUNNING':(worked>0?'PAUSED':'NOT STARTED');return '<div class="v75s-card '+(run?'running ':'')+(holdCard?'ideal':'')+'"><div class="v75s-card-top"><b>JOB : '+esc(a.job)+'</b><span class="v75s-badge">'+badge+'</span></div><h3>'+esc(holdCard?'IDEAL TIME':(x.vehicle||'—'))+'</h3><p>'+esc(holdCard?'Waiting / No Assigned Work':(x.reg||'—'))+'</p>'+(holdCard?'<div class="v75s-gear" style="width:40px;height:40px;font-size:20px">◷</div>':vehicleBadge(x.vehicle))+'<div class="v75s-mini"><div>Allocated<b>'+fm(a.suggested)+'</b></div><div>Remaining<b>'+fm(remaining)+'</b></div></div>'+denterPartsButton(a.job)+(run?'<button class="v75s-start" disabled>CURRENTLY RUNNING</button>':active?'<button class="v75s-start" disabled>Pause current work first</button>':'<button class="v75s-start" onclick="start(\''+esc(a.job)+'\')">▶ START WORK</button>')+'</div>'}).join(''):'<div class="notice">No allotted job cards.</div>';
    const allotted='<div class="v75s-allotted-head"><div style="font-size:22px">▣</div><div><h2>ALLOTTED WORK</h2><p>Your assigned job cards (Pause current work to start another)</p></div><span class="v75s-count">'+open.length+' Job'+(open.length===1?'':'s')+'</span></div><div class="v75s-grid">'+cards+'</div>'+(active&&open.some(a=>!((active.assignmentId&&active.assignmentId===a.id)||(!active.assignmentId&&active.job===a.job)))?'<div class="v75s-warning">⚠ Please pause your current work before starting another job. You can work on only one job at a time.</div>':'');
 
@@ -2946,10 +2947,8 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(!candidate)return typeof priorStart==='function'?priorStart.apply(this,arguments):undefined;
    const changed=closeID001BeforeNormal(me.id,Date.now());
    const out=typeof priorStart==='function'?priorStart.apply(this,arguments):undefined;
-   if(changed){
-     const current=activeSession(me.id);
-     if(!current||current.job!==no){try{save();render()}catch(_){}}
-   }
+   if(changed&&out&&typeof out.then==='function')return out.then(result=>{const current=activeSession(me.id);if(!current||current.job!==no){try{save();render()}catch(_){}}return result});
+   if(changed){const current=activeSession(me.id);if(!current||current.job!==no){try{save();render()}catch(_){}}}
    return out;
  };
 
