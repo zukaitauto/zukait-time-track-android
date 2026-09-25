@@ -2037,8 +2037,8 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 /* V154 MANAGER WORKSHOP CONTROL ROOT AUTHORITY — stable 2-column future-module row, no DOM reordering loops. */
 (function(){'use strict';
  const modal=(title,icon)=>{if(!window.me||me.role!=='Manager')return;const body='<div class="notice"><b>'+title+'</b><div>This module is reserved for future use.</div></div>';if(typeof openModal==='function')return openModal('<div class="section-title"><h2>'+icon+' '+title+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+body);alert(title+' — Coming Soon')};
- window.v150OpenManagerSpareParts=()=>modal('Spare Parts','⚙️');window.v153OpenManagerBodyShop=()=>modal('Body Shop','🚘');
- function card(kind){const b=document.createElement('button');b.type='button';b.className='v67-control v154-future '+kind;if(kind==='v154-spare'){b.dataset.v154Spare='1';b.onclick=window.v150OpenManagerSpareParts;b.innerHTML='<span>⚙️ Spare Parts</span><b>›</b><small>Future module</small><em></em>'}else{b.dataset.v154Body='1';b.onclick=window.v153OpenManagerBodyShop;b.innerHTML='<span>🚘 Body Shop</span><b>›</b><small>Future module</small><em></em>'}return b}
+ window.v150OpenManagerSpareParts=()=>typeof window.openSpareParts==='function'?window.openSpareParts():modal('Spare Parts','⚙️');window.v153OpenManagerBodyShop=()=>modal('Body Shop','🚘');
+ function card(kind){const b=document.createElement('button');b.type='button';b.className='v67-control v154-future '+kind;if(kind==='v154-spare'){b.dataset.v154Spare='1';b.onclick=window.v150OpenManagerSpareParts;b.innerHTML='<span>⚙️ Spare Parts</span><b>›</b><small>Parts Lists & purchasing</small><em></em>'}else{b.dataset.v154Body='1';b.onclick=window.v153OpenManagerBodyShop;b.innerHTML='<span>🚘 Body Shop</span><b>›</b><small>Future module</small><em></em>'}return b}
  function apply(){if(!window.me||me.role!=='Manager')return;const root=document.getElementById('managerView');if(!root)return;const grid=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid');if(!grid)return;
    root.querySelectorAll('.v150-manager-modules,.v150-manager-spare,[data-v153-spare],[data-v153-body]').forEach(x=>x.remove());
    let sp=grid.querySelector('[data-v154-spare]'),bs=grid.querySelector('[data-v154-body]');root.querySelectorAll('[data-v154-spare]').forEach((x,i)=>{if(i)x.remove()});root.querySelectorAll('[data-v154-body]').forEach((x,i)=>{if(i)x.remove()});
@@ -2839,9 +2839,9 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    Keep only the compatibility launcher so older saved onclick references remain safe. */
 (function(){'use strict';
  window.v148Spare=function(){
+   if(typeof window.openSpareParts==='function')return window.openSpareParts();
    if(typeof window.v143OpenSpareParts==='function')return window.v143OpenSpareParts();
-   if(typeof showSupervisorModal==='function')return showSupervisorModal('⚙️ Spare Parts','<div class="notice">Spare Parts module reserved for future use.</div>');
-   if(typeof openModal==='function')return openModal('<div class="section-title"><h3>⚙️ Spare Parts</h3><button class="secondary" onclick="closeModal()">Close</button></div><div class="notice">Spare Parts module reserved for future use.</div>');
+   if(typeof showSupervisorModal==='function')return showSupervisorModal('⚙️ Spare Parts','<div class="notice">Spare Parts is loading. Please retry.</div>');
  };
  window.v148SupervisorApply=function(){};
 })();
