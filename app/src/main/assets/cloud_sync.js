@@ -278,10 +278,26 @@
     return data;
   }
 
+  function employeeActionTime(x){return Number(x?.finishDeviceTime||x?.pauseDeviceTime||x?.end||x?.startDeviceTime||x?.start||0)}
+  function preferEmployeeSession(localItem,remoteItem,emp){
+    if(localItem?.emp!==emp)return false;
+    const lt=employeeActionTime(localItem),rt=employeeActionTime(remoteItem);
+    if(localItem.end&&(!remoteItem?.end||lt>=rt))return true;
+    if(remoteItem?.end&&!localItem.end)return false;
+    return lt>=rt;
+  }
+  function reconcileOfflineActionLog(data,emp){
+    data.offlineActionLog=Array.isArray(data.offlineActionLog)?data.offlineActionLog:[];
+    const seen=new Map();
+    for(const x of data.offlineActionLog){if(!x||x.emp!==emp)continue;const k=String(x.id||[x.type,x.assignmentId,x.sessionId,x.at].join('|'));if(!seen.has(k))seen.set(k,x)}
+    const other=data.offlineActionLog.filter(x=>x&&x.emp!==emp);
+    data.offlineActionLog=[...other,...seen.values()].sort((a,b)=>(+a.at||0)-(+b.at||0));
+    return data;
+  }
   function mergeEmployeeConflict(remote,local,emp){
     const merged=clone(remote||{});
-    merged.sessions=mergeById(remote.sessions,local.sessions,(l)=>l.emp===emp);
-    merged.assign=mergeById(remote.assign,local.assign,(l)=>l.emp===emp);
+    merged.sessions=mergeById(remote.sessions,local.sessions,(l,r)=>preferEmployeeSession(l,r,emp));
+    merged.assign=mergeById(remote.assign,local.assign,(l,r)=>l.emp===emp&&Number(l.completedAt||l.pendingOfflineFinishAt||l.pendingOfflinePauseAt||l.pendingOfflineStartAt||0)>=Number(r.completedAt||r.pendingOfflineFinishAt||r.pendingOfflinePauseAt||r.pendingOfflineStartAt||0));
     const remoteReqIds=new Set((remote.requests||[]).map(x=>String(x.id)));
     merged.requests=[...(remote.requests||[]).map(clone),...(local.requests||[]).filter(x=>x.emp===emp&&!remoteReqIds.has(String(x.id))).map(clone)];
     merged.lastActions=Object.assign({},remote.lastActions||{});
@@ -291,6 +307,8 @@
     merged.overtimeNotices=Object.assign({},remote.overtimeNotices||{},local.overtimeNotices||{});
     merged.leaves=mergeById(remote.leaves,local.leaves,(l)=>l.emp===emp);
     merged.leaveAudit=mergeById(remote.leaveAudit,local.leaveAudit,(l)=>l.by===emp);
+    merged.offlineActionLog=mergeById(remote.offlineActionLog,local.offlineActionLog,(l)=>l.emp===emp);
+    reconcileOfflineActionLog(merged,emp);
     return reconcileEmployeeOpenSessions(merged,emp);
   }
 
