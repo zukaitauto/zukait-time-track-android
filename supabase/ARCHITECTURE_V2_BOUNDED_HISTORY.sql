@@ -59,7 +59,7 @@ create sequence if not exists public.workshop_v2_spare_part_list_seq start 1;
 
 create or replace function public.zukait_v2_allocate_spare_part_list(p_job_card text,p_actor_id text)
 returns table(list_no text,sequence_no bigint,job_card text,status text,created_at timestamptz,created_by text)
-language plpgsql security invoker set search_path=public as $
+language plpgsql security invoker set search_path=public as $$
 declare v_seq bigint; v_no text;
 begin
   if nullif(trim(coalesce(p_job_card,'')),'') is null then raise exception 'job_card_required'; end if;
@@ -73,7 +73,7 @@ begin
   return query select l.list_no,l.sequence_no,l.job_card,l.status,l.created_at,l.created_by from public.workshop_v2_spare_part_lists l where l.list_no=v_no;
 exception when unique_violation then
   return query select l.list_no,l.sequence_no,l.job_card,l.status,l.created_at,l.created_by from public.workshop_v2_spare_part_lists l where upper(l.job_card)=upper(trim(p_job_card)) and l.status<>'CLOSED' order by l.created_at desc limit 1;
-end;$;
+end;$$;
 revoke all on function public.zukait_v2_allocate_spare_part_list(text,text) from public,anon,authenticated;
 grant execute on function public.zukait_v2_allocate_spare_part_list(text,text) to service_role;
 
