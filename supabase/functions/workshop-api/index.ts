@@ -431,7 +431,10 @@ Deno.serve(async (req: Request) => {
             : await admin.rpc("zukait_v2_report_page", { p_report: report, p_before: before, p_limit: limit, p_filters: filters });
       if (error) throw error;
       const rows = Array.isArray(data) ? data : [];
-      const nextCursor = rows.length === limit && rows.length ? String(rows[rows.length - 1]?.sort_time || "") : null;
+      const cursorValue = action === "v2_search_jobcards" || report === "WIP" || report === "COMPLETION_TARGET"
+        ? rows[rows.length - 1]?.updated_at
+        : rows[rows.length - 1]?.sort_time || rows[rows.length - 1]?.updated_at;
+      const nextCursor = rows.length === limit && rows.length && cursorValue ? String(cursorValue) : null;
       return reply({ ok:true, rows, next_cursor:nextCursor, limit, report:action === "v2_search_jobcards" ? "JOB_SEARCH" : report, user });
     }
 
