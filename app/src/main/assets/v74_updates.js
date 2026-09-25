@@ -2608,8 +2608,10 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.addEventListener('focus',syncRefresh);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncRefresh()});
  window.addEventListener('storage',refresh);
- setInterval(syncRefresh,5000);
- setInterval(refresh,1000);
+ let v166SyncTimer=null,v166RefreshTimer=null;
+  const scheduleSync=()=>{clearTimeout(v166SyncTimer);v166SyncTimer=setTimeout(async()=>{if(document.visibilityState==='visible')await syncRefresh();scheduleSync()},document.visibilityState==='visible'?10000:60000)};
+  const scheduleWorkers=()=>{clearTimeout(v166RefreshTimer);v166RefreshTimer=setTimeout(()=>{if(document.visibilityState==='visible')refresh();scheduleWorkers()},document.visibilityState==='visible'?3000:30000)};
+  scheduleSync();scheduleWorkers();
  setTimeout(refresh,0);
  window.v115RefreshLiveWorkers=refresh;
 })();
@@ -3078,7 +3080,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  // Retire independent employee UI timers after all legacy layers have loaded.
  ['v752EmployeeTimer','v755EmployeeBreakdownTimer','v157EmployeeLiveTimer'].forEach(k=>{try{if(window[k]){clearInterval(window[k]);clearTimeout(window[k])}}catch(_){}});
  window.v157EmployeeLiveRefresh=refresh;
- window.v157EmployeeLiveTimer=setInterval(refresh,1000);
+ const scheduleEmployee=()=>{clearTimeout(window.v157EmployeeLiveTimer);window.v157EmployeeLiveTimer=setTimeout(()=>{if(document.visibilityState==='visible')refresh();scheduleEmployee()},document.visibilityState==='visible'?1000:30000)};scheduleEmployee();
  window.addEventListener('focus',refresh);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
  const prior=window.renderEmployee;
