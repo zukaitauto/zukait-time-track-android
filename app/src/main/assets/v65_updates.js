@@ -190,7 +190,7 @@ body{background:var(--v65-bg)!important;color:var(--v65-text)}
 `;document.head.appendChild(css);
 
 const priorRender=window.render;
-window.render=function(){priorRender();setTimeout(()=>{decorateTop();if(me?.role==='Manager')renderManager65();if(me?.role==='Supervisor')decorateSupervisor()},0)};
-setTimeout(()=>{if(me){decorateTop();if(me.role==='Manager')renderManager65();if(me.role==='Supervisor')decorateSupervisor()}},50);
+window.render=function(){priorRender();decorateTop();if(me?.role==='Supervisor')decorateSupervisor()};
+setTimeout(()=>{if(me){decorateTop();if(me.role==='Supervisor')decorateSupervisor()}},50);
 window.v65Ready=true;
 })();
