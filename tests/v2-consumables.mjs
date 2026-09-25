@@ -1,0 +1,12 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const ctx={window:{},Map,Set,Number,String,Object};vm.createContext(ctx);vm.runInContext(fs.readFileSync('app/src/main/assets/v2/features/consumables/contract.js','utf8'),ctx);const c=ctx.window.zukaitV2.consumables;
+assert.equal(c.canEnter('Supervisor'),true);assert.equal(c.canEnter('Manager'),true);assert.equal(c.canEnter('Employee'),false);assert.equal(c.canAdmin('Manager'),true);assert.equal(c.canAdmin('Supervisor'),false);
+const issues=[{department:'Painting',jobCard:'JC1',locked:true,type:'issued',lines:[{materialId:'m',brandId:'b',unit:'Liter',quantity:2}]},{department:'Painting',jobCard:'JC1',locked:true,type:'additional',lines:[{materialId:'m',brandId:'b',unit:'Liter',quantity:.5}]}];
+assert.equal(c.allowance(issues,'jc1')[0].quantity,2.5);
+assert.equal(c.validateActual({jobCard:'JC1',lines:[{materialId:'m',brandId:'b',quantity:2.6}]},{role:'Supervisor',issues,actuals:[]}).code,'ACTUAL_EXCEEDS_ISSUED');
+assert.equal(c.validateActual({jobCard:'JC1',lines:[{materialId:'m',brandId:'b',quantity:2.25}]},{role:'Supervisor',issues,actuals:[]}).ok,true);
+assert.equal(c.validateActual({jobCard:'JC1',lines:[{materialId:'m',brandId:'b',quantity:1}]},{role:'Employee',issues,actuals:[]}).code,'CONSUMABLES_FORBIDDEN');
+assert.equal(c.snapshotCost(2.25,3.5),7.875);
+const v=c.variance(2.5,2.25);assert.equal(v.ratio,.9);assert.equal(v.percent,90);
+const from=new Date(2026,8,1).getTime(),to=new Date(2026,9,1).getTime();assert.deepEqual(c.monthlyExpense([{jobCard:'JC1',actualAt:from+1,locked:true,totalCost:7.875},{jobCard:'JC2',actualAt:from+2,locked:false,totalCost:5},{jobCard:'JC3',actualAt:from+3,locked:true,voided:true,totalCost:5}],from,to),{jobCards:1,totalExpense:7.875,records:1});
+console.log('V2 consumables parity contract tests passed');
