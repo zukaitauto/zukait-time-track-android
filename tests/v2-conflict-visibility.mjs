@@ -1,0 +1,7 @@
+import fs from'node:fs';import assert from'node:assert/strict';import vm from'node:vm';
+const store=new Map();const ctx={window:{},localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)},Date};vm.createContext(ctx);
+vm.runInContext(fs.readFileSync('app/src/main/assets/v2/core/offline_queue.js','utf8'),ctx);
+vm.runInContext(fs.readFileSync('app/src/main/assets/v2/core/conflict_visibility.js','utf8'),ctx);
+const q=ctx.window.zukaitV2.queue;q.enqueue({eventId:'e1',type:'WORK_START',entityId:'a1',actorId:'u1',deviceId:'d1',clientTime:'2026-09-25T10:00:00Z'});q.markConflict('e1','REVISION_CONFLICT');
+const s=ctx.window.zukaitV2.conflictVisibility.snapshot();assert.equal(s.count,1);assert.equal(s.byCode.REVISION_CONFLICT,1);assert.equal(s.items[0].eventId,'e1');assert.equal(s.items[0].deviceId,'d1');assert.equal(ctx.window.zukaitV2.conflictVisibility.hasConflicts(),true);
+console.log('V2 conflict visibility gate: ok');
