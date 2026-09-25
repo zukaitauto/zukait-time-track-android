@@ -97,6 +97,7 @@ jobs:
           node tests/v2-job-workflow.mjs
           node tests/v2-spare-parts.mjs
           node tests/v2-repeat-work.mjs
+          node tests/v2-leave.mjs
           node tests/v2-notification-rules.mjs
           node tests/v2-reports.mjs
           node tests/v2-scale-benchmark.mjs
