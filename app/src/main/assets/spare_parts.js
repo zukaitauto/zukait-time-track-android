@@ -5,8 +5,8 @@
   function load(){try{return JSON.parse(localStorage.getItem(KEY)||'{"lists":[]}')}catch(e){return {lists:[]}}}
   function save(db){localStorage.setItem(KEY,JSON.stringify(db))}
   function who(){return window.me?.id||'UNKNOWN'}
-  function role(){return window.me?.role||''}
-  function canPrice(){return role()==='Manager'||role()==='Purchaser'}
+  function role(){return window.me?.role||''}\n  function dept(){return window.me?.department||''}\n  function isDenter(){return dept()==='Denter'}
+  function canPrice(){return role()==='Manager'||role()==='Purchaser'}\n  function canReceive(){return role()==='Purchaser'||role()==='Manager'}
   function jc(no){return (window.state?.jobs||[]).find(j=>String(j.no)===String(no))}
   function ensure(no){
     const db=load(); let list=db.lists.find(x=>x.job===no);
@@ -48,16 +48,16 @@
   window.partsOpenItem=function(no,id){
     const {db,list}=ensure(no),x=list.items.find(a=>a.id===id);if(!x)return;
     let allowed=stages;
-    if(role()==='Denter'||role()==='Employee')allowed=['CONFIRMED'];
+    if(isDenter())allowed=['CONFIRMED','FITTED'];\n    else if(role()==='Employee')allowed=[];\n    else if(role()==='Supervisor')allowed=['LISTED','ENQUIRY','CONFIRMED','FITTED','UNAVAILABLE','RETURNED'];\n    else if(canReceive())allowed=stages;
     const next=String(prompt('Status: '+allowed.join(', '),x.stage)||'').trim().toUpperCase();
     if(!allowed.includes(next))return;
-    if((next==='ORDERED'||next==='RECEIVED')&&!canPrice()&&role()!=='Supervisor')return alert('Purchaser/Supervisor action required.');
+    if((next==='ORDERED'||next==='RECEIVED')&&!canReceive())return alert('Purchaser action required.');
     if(canPrice()&&(next==='ORDERED'||next==='RECEIVED')){
       const p=prompt('Purchase price OMR',x.price==null?'':x.price);if(p!==null&&p!==''){const n=Number(p);if(!Number.isFinite(n)||n<0)return alert('Invalid price.');x.price=n}
     }
     if(next==='RETURNED'){x.returnReason=String(prompt('Return reason / wrong part detail','')||'').trim()}
     if(next==='UNAVAILABLE'){x.settlement='CASH_SETTLEMENT_REQUIRED'}
-    x.stage=next;x.updatedAt=Date.now();x.updatedBy=who();audit(list,'STATUS',x.name+' → '+next);save(db);partsRefresh(no);
+    x.stage=next;x.updatedAt=Date.now();x.updatedBy=who();\n    if(next==='RECEIVED'){x.receivedAt=Date.now();x.receivedBy=who();x.supervisorConfirmed=false}\n    if(next==='CONFIRMED'){x.supervisorConfirmed=true;x.confirmedAt=Date.now();x.confirmedBy=who()}\n    if(next==='FITTED'){x.fittedAt=Date.now();x.fittedBy=who()}\n    audit(list,'STATUS',x.name+' → '+next);save(db);partsRefresh(no);
   };
   window.partsWhatsApp=function(no){
     const {list}=ensure(no);
