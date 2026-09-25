@@ -1,0 +1,12 @@
+import fs from'node:fs';import assert from'node:assert/strict';
+const y=fs.readFileSync('.github/workflows/build-apk.yml','utf8');
+const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const data=fs.readFileSync('app/src/main/assets/v2/core/data_paths.js','utf8');
+const spare=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/workflow.js','utf8');
+const cloud=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
+for(const t of ['functional-smoke.mjs','consumables-smoke.mjs','consumables-ui.mjs','v2-spare-parts.mjs','v2-spare-parts-server-authority.mjs','v2-repeat-consumables-server-authority.mjs','v2-multidevice-conflict-matrix.mjs','v2-work-state-machine-authority.mjs','v2-full-regression-manifest.mjs'])assert.ok(y.includes('node tests/'+t),'combined pipeline missing '+t);
+assert.ok(html.includes('v2/features/spare-parts/workflow.js'),'spare parts V2 workflow not loaded by app shell');
+assert.match(spare,/PRICE_ROLES=new Set\(\['Manager','Purchaser'\]\)/);assert.match(spare,/SPARE_PART_STATUS_CHANGED/);assert.match(spare,/deviceId:ctx\.deviceId/);
+assert.match(cloud,/v2_commit_event/);assert.match(cloud,/syncState:'conflict'/);
+assert.match(data,/LIVE|RECENT|HISTORY/);
+console.log('V2 combined Time Track + Consumables + Spare Parts integration gate: ok');
