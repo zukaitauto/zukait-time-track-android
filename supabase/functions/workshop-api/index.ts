@@ -372,6 +372,29 @@ Deno.serve(async (req: Request) => {
       return reply({ ok: true, rows, next_cursor: nextCursor, limit, user });
     }
 
+    if (action === "v2_report_page" || action === "v2_search_jobcards") {
+      const requested = Number(body?.limit || (action === "v2_search_jobcards" ? 50 : 100));
+      const limit = Math.max(1, Math.min(Number.isFinite(requested) ? requested : 100, 500));
+      const before = body?.before ? String(body.before) : null;
+      const report = String(body?.report || "").toUpperCase();
+      const query = String(body?.query || "").trim();
+      const filters = body?.filters && typeof body.filters === "object" ? body.filters : {};
+      if (action === "v2_report_page" && !["WIP","AUDIT","CYCLE_TIME","EFFICIENCY","REPEAT","ID001","OVERTIME","PARTS_DELAY","CONSUMABLES_VARIANCE","JOB_COST","COMPLETION_TARGET"].includes(report)) {
+        return reply({ ok:false, code:"unsupported_report" },400);
+      }
+      if (action === "v2_search_jobcards" && !query) return reply({ ok:true, rows:[], next_cursor:null, limit, user });
+      const { data, error } = await admin.rpc("zukait_v2_report_page", {
+        p_report: action === "v2_search_jobcards" ? "JOB_SEARCH" : report,
+        p_before: before,
+        p_limit: limit,
+        p_filters: action === "v2_search_jobcards" ? { ...filters, query } : filters
+      });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      const nextCursor = rows.length === limit && rows.length ? String(rows[rows.length - 1]?.sort_time || "") : null;
+      return reply({ ok:true, rows, next_cursor:nextCursor, limit, report:action === "v2_search_jobcards" ? "JOB_SEARCH" : report, user });
+    }
+
     if (action === "save") {
       const originalExpected = Number(body.expected_revision);
       const originalProposed = body.data;
