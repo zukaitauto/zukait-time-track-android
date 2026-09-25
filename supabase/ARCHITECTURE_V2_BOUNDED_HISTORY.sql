@@ -56,6 +56,11 @@ begin
    if p_event_type in ('WORK_START','WORK_PAUSE','WORK_RESUME','WORK_FINISH','ID001_START','ID001_STOP') then
      perform public.zukait_v2_apply_work_event(p_event_id,p_entity_id,p_event_type,coalesce(p_client_time,now()),coalesce(p_revision,0),coalesce(p_payload,'{}'::jsonb));
    end if;
+   if p_event_type in ('REPEAT_ASSIGNED','REPEAT_COMPLETED','REPEAT_CANCELLED','CONSUMABLE_ISSUED','CONSUMABLE_ADDITIONAL','CONSUMABLE_ACTUAL','CONSUMABLE_VOIDED') then
+     if p_event_type like 'REPEAT%' and nullif(trim(coalesce(p_payload->>'jobCard',p_payload->>'job','')),'') is null then raise exception 'repeat_job_required'; end if;
+     if p_event_type='REPEAT_ASSIGNED' and (nullif(trim(coalesce(p_payload->>'employeeId',p_payload->>'emp','')),'') is null or nullif(trim(coalesce(p_payload->>'mistakeEmployeeId',p_payload->>'mistakeEmp','')),'') is null or nullif(trim(coalesce(p_payload->>'reason','')),'') is null) then raise exception 'invalid_repeat_event'; end if;
+     if p_event_type like 'CONSUMABLE%' and nullif(trim(coalesce(p_payload->>'jobCard','')),'') is null then raise exception 'consumable_job_required'; end if;
+   end if;
    if p_event_type in ('JOB_CREATED','JOB_UPDATED','JOB_STAGE_CHANGED','JOB_COMPLETED','JOB_REOPENED') then
      perform public.zukait_v2_upsert_jobcard(
        coalesce(nullif(p_payload->>'jobCard',''),p_entity_id),
