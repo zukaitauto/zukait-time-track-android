@@ -15,3 +15,12 @@ for(const name of ['honda.svg','ford.svg','chevrolet.svg','gmc.svg','cadillac.sv
   assert.match(svg,/<svg\b/i,`${name} must be an SVG`);
 }
 console.log(`Vehicle logo asset test passed: ${refs.length} referenced SVGs are present.`);
+
+
+const heavyVehicleLogos = ['fuso.svg','hino.svg','ud-trucks.svg','scania.svg','iveco.svg','daf.svg','renault-trucks.svg','tata-motors.svg','ashok-leyland.svg'];
+for (const logo of heavyVehicleLogos) {
+  const full = path.join(logoDir, logo);
+  assert.ok(fs.existsSync(full), 'Missing heavy vehicle logo: ' + logo);
+  const svg = fs.readFileSync(full, 'utf8');
+  assert.match(svg, /<svg\b/i, logo + ' must be SVG');
+}
