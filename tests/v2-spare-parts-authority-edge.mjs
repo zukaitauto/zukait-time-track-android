@@ -1,0 +1,6 @@
+import fs from'node:fs';import assert from'node:assert/strict';import vm from'node:vm';const s={window:{},Date};vm.createContext(s);for(const f of['contract.js','lists.js','quantity.js','completion.js','standalone-controller.js'])vm.runInContext(fs.readFileSync('app/src/main/assets/v2/features/spare-parts/'+f,'utf8'),s);const p=s.window.zukaitV2.spareParts;
+const list={number:'PL-A',jobCard:'JC-A',lines:[{id:'P1',name:'Lamp',qty:1,status:'ORDERED'}]};
+let st=p.controller.createStore({role:'Denter',lists:[list]});assert.equal(st.dispatch('ORDER',{pl:'PL-A',id:'P1'}).code,'FORBIDDEN');assert.equal(st.dispatch('FINAL_PRICE',{pl:'PL-A',id:'P1',value:10}).code,'FORBIDDEN');assert.equal(st.dispatch('DELIVERED_PENDING',{pl:'PL-A'}).code,'FORBIDDEN');
+st=p.controller.createStore({role:'Purchaser',lists:[list]});assert.equal(st.dispatch('FINAL_PRICE',{pl:'PL-A',id:'P1',value:10}).code,'FORBIDDEN');assert.equal(st.dispatch('DELIVERED_PENDING',{pl:'PL-A'}).code,'FORBIDDEN');
+st=p.controller.createStore({role:'Supervisor',lists:[list]});assert.equal(st.dispatch('ORDER',{pl:'PL-A',id:'P1'}).code,'FORBIDDEN');assert.equal(st.dispatch('FINAL_PRICE',{pl:'PL-A',id:'P1',value:''}).code,'INVALID_PRICE');
+console.log('Spare Parts controller authority edges: ok');

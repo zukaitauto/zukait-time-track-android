@@ -1,0 +1,21 @@
+(function(){
+'use strict';
+const V2=window.zukaitV2=window.zukaitV2||{}, p=V2.spareParts=V2.spareParts||{};
+p.contractVersion=2;
+p.roles=Object.freeze({MANAGER:'Manager',SUPERVISOR:'Supervisor',PURCHASER:'Purchaser',DENTER:'Denter'});
+p.currencies=Object.freeze(['OMR','AED']);
+p.listViews=Object.freeze(['NEW','ACTIVE','WAITING','PURCHASE_COMPLETED','DELIVERED_PENDING']);
+p.canCreate=role=>['Supervisor','Manager'].includes(String(role||''));
+p.canPurchase=role=>['Purchaser','Manager'].includes(String(role||''));
+p.canManageQuotation=role=>['Purchaser','Manager'].includes(String(role||''));
+p.canViewQuotation=role=>['Purchaser','Supervisor','Manager'].includes(String(role||''));
+p.canSeePrice=role=>['Purchaser','Supervisor','Manager'].includes(String(role||''));
+p.canEditEverything=role=>String(role||'')==='Manager';
+p.normalizePartName=v=>String(v||'').trim().replace(/\s+/g,' ');
+p.normalizeJobCard=v=>String(v||'').trim().toUpperCase();
+p.money=v=>Math.round((Math.max(0,Number(v)||0)+Number.EPSILON)*1000)/1000;
+p.makeListNumber=n=>'PL'+String(Math.max(1,Number(n)||1)).padStart(3,'0');
+p.progress=function(lines=[]){const active=lines.filter(x=>x&&!x.voided),resolved=active.filter(x=>['SUPERVISOR_CONFIRMED','FITTED','CUSTOMER_SETTLEMENT'].includes(x.status));return{resolved:resolved.length,total:active.length,pending:active.length-resolved.length,complete:active.length>0&&resolved.length===active.length}};
+p.suggestParts=function(history,input,{make='',model='',limit=8}={}){const q=p.normalizePartName(input).toLowerCase();if(!q)return[];return [...new Map((history||[]).filter(x=>p.normalizePartName(x.name).toLowerCase().includes(q)).sort((a,b)=>{const sa=(String(a.make||'').toLowerCase()===String(make).toLowerCase()?2:0)+(String(a.model||'').toLowerCase()===String(model).toLowerCase()?1:0),sb=(String(b.make||'').toLowerCase()===String(make).toLowerCase()?2:0)+(String(b.model||'').toLowerCase()===String(model).toLowerCase()?1:0);return sb-sa}).map(x=>[p.normalizePartName(x.name).toLowerCase(),p.normalizePartName(x.name)])).values()].slice(0,limit)};
+p.audit=function(field,oldValue,newValue,ctx={}){return{type:'SPARE_PART_EDIT',field,oldValue,newValue,actorId:ctx.actorId||null,role:ctx.role||null,at:ctx.serverTime||new Date().toISOString()}};
+})();

@@ -1,0 +1,7 @@
+import fs from'node:fs';import assert from'node:assert/strict';import vm from'node:vm';const s={window:{},Date,structuredClone:globalThis.structuredClone};vm.createContext(s);for(const f of['contract.js','quotation.js','quantity.js','completion.js','problems.js','manager-edit.js','persistence-contract.js'])vm.runInContext(fs.readFileSync('app/src/main/assets/v2/features/spare-parts/'+f,'utf8'),s);const p=s.window.zukaitV2.spareParts;
+assert.equal(p.quantity.arrive({qty:1},1,{role:'Denter'}).code,'FORBIDDEN');assert.equal(p.quantity.accept({qty:1,arrivedQty:1},1,{role:'Purchaser'}).code,'FORBIDDEN');
+let x=p.problems.returned({status:'RECEIVED'},'Wrong',{role:'Purchaser'});assert.equal(x.ok,true);assert.equal(p.completion.evaluate({lines:[x.item]}).complete,false);
+x=p.problems.settlement({status:'UNAVAILABLE'},0,{role:'Supervisor'});assert.equal(x.ok,true);assert.equal(p.completion.evaluate({lines:[x.item]}).complete,true);
+assert.equal(p.managerEdit.edit({x:1},{x:2},{role:'Supervisor'}).code,'MANAGER_REQUIRED');
+assert.equal(p.persistenceContract.productionConnected,false);assert.equal(p.persistenceContract.integration.notifications,'NO_PRODUCTION_PUSH_UNTIL_ENABLED');
+console.log('Spare Parts role/exception hardening: ok');

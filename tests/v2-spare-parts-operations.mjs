@@ -1,0 +1,8 @@
+import fs from'node:fs';import assert from'node:assert/strict';import vm from'node:vm';const s={window:{},Date};vm.createContext(s);for(const f of['contract.js','workflow.js','quotation.js','analytics.js','attention.js','lists.js','calendar.js','reports.js','share.js'])vm.runInContext(fs.readFileSync('app/src/main/assets/v2/features/spare-parts/'+f,'utf8'),s);const p=s.window.zukaitV2.spareParts;
+let c=p.lists.create({jobCard:'jc1',number:'PL-0001',make:'Toyota',model:'Land Cruiser',year:2022,lines:[{name:'Front Bumper',qty:1}]},{role:'Supervisor',actorId:'S1',serverTime:'2026-09-20T08:00:00Z'});assert.equal(c.ok,true);assert.equal(c.list.jobCard,'JC1');assert.equal(p.lists.deriveView(c.list),'NEW');
+let a=p.lists.add(c.list,{name:'RH Headlamp',qty:1},{role:'Supervisor'});assert.equal(a.ok,true);assert.equal(a.list.lines.length,2);assert.equal(a.line.additional,true);
+assert.equal(p.calendar.workshopDaysBetween('2026-09-20','2026-09-24'),4);assert.equal(p.calendar.newPeriodExpired('2026-09-20','2026-09-23'),true);
+assert.match(p.share.partsText(c.list),/Toyota Land Cruiser 2022/);assert.doesNotMatch(p.share.partsText(c.list),/PL-0001/);
+const done={...c.list,lines:[{...c.list.lines[0],status:'SUPERVISOR_CONFIRMED',finalPriceOMR:25,finalPurchaseAt:Date.parse('2026-09-22T10:00:00Z')}]};assert.equal(p.lists.deriveView(done),'PURCHASE_COMPLETED');
+const r=p.partsReports.report([done],Date.parse('2026-09-01'),Date.parse('2026-10-01'));assert.equal(r.total,25);assert.equal(r.byJobCard.JC1,25);assert.ok(p.partsReports.actions().includes('PDF'));assert.ok(p.partsReports.actions().includes('WHATSAPP_PDF'));
+console.log('Spare Parts list/calendar/report/share: ok');

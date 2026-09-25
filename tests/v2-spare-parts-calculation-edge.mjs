@@ -1,0 +1,16 @@
+import fs from'node:fs';import assert from'node:assert/strict';import vm from'node:vm';const s={window:{},Date,structuredClone:globalThis.structuredClone};vm.createContext(s);for(const f of['contract.js','quotation.js','quantity.js','completion.js','analytics.js','attention.js','calendar.js','lists.js','reports.js','intelligence.js'])vm.runInContext(fs.readFileSync('app/src/main/assets/v2/features/spare-parts/'+f,'utf8'),s);const p=s.window.zukaitV2.spareParts;
+const base={id:'x',qty:1,status:'SUPERVISOR_CONFIRMED',arrivedQty:1,acceptedQty:1};
+for(const v of [null,'',undefined])assert.equal(p.completion.lineResolved({...base,finalPriceOMR:v}),false,'blank price must remain pending');
+assert.equal(p.completion.lineResolved({...base,finalPriceOMR:0}),true,'real zero price is allowed');
+assert.equal(p.completion.lineResolved({...base,finalPriceOMR:12.345}),true);
+assert.equal(p.analytics.finalTotal([{finalPriceOMR:1.1114},{finalPriceOMR:2.2224}]),3.334);
+let q=p.quotation.empty();q=p.quotation.setPrice(q,'x','A',10,'OMR',99).quotation;assert.equal(q.prices.x.A.rateToOMR,1);assert.equal(q.prices.x.A.omrEquivalent,10);
+q=p.quotation.setPrice(q,'x','B',100,'AED',0.105).quotation;assert.equal(q.prices.x.B.omrEquivalent,10.5);
+assert.equal(p.quotation.setPrice(q,'x','C','', 'OMR',1).ok,false);
+const list={number:'PL-X',jobCard:'JC-X',make:'Toyota',model:'Camry',lines:[{id:'p',name:'Front Bumper',qty:1,status:'ORDERED'}]};assert.equal(p.lists.search([list],'bumper').length,1);
+assert.equal(p.calendar.workshopDaysBetween('2026-09-24','2026-09-27'),2,'Friday excluded; Sat+Sun counted');
+const noPrice={...list,lines:[{...base,name:'Lamp',finalPriceOMR:null,finalPurchaseAt:Date.parse('2026-09-25T10:00:00Z')}]};assert.equal(p.partsReports.rows([noPrice]).length,0);
+assert.equal(p.analytics.priceVariance(42,35).difference,-7);assert.equal(p.analytics.priceVariance(35,42).difference,7);const over=p.analytics.cap(500,525.25);assert.equal(over.exceeded,true);assert.equal(over.balance,0);assert.equal(over.overBy,25.25);
+let bad=p.lists.create({jobCard:'JC-Q',lines:[{name:'Bumper',qty:1.5}]},{role:'Supervisor'});assert.equal(bad.code,'INVALID_QTY');bad=p.lists.create({jobCard:'JC-Q',lines:[{name:'Bumper',qty:0}]},{role:'Supervisor'});assert.equal(bad.code,'INVALID_QTY');const noPriceView={number:'PL-NP',view:'WAITING',lines:[{id:'N',name:'Lamp',qty:1,status:'SUPERVISOR_CONFIRMED',arrivedQty:1,acceptedQty:1,finalPriceOMR:null}]};assert.notEqual(p.lists.deriveView(noPriceView),'PURCHASE_COMPLETED');
+assert.equal(p.calendar.dayKey('2026-09-24T21:30:00Z'),'2026-09-25');assert.equal(p.calendar.dayKey('2026-09-25T00:30:00+04:00'),'2026-09-25');
+console.log('Spare Parts calculation edge cases: ok');

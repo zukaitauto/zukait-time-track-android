@@ -1,0 +1,7 @@
+(function(){
+'use strict';const V2=window.zukaitV2=window.zukaitV2||{},p=V2.spareParts=V2.spareParts||{};
+function edit(record,changes,ctx={}){if(String(ctx.role||'')!=='Manager')return{ok:false,code:'MANAGER_REQUIRED'};const next=Object.assign({},record),audit=[];Object.keys(changes||{}).forEach(k=>{const old=next[k],val=changes[k];if(JSON.stringify(old)!==JSON.stringify(val)){next[k]=val;audit.push(p.audit?p.audit(k,old,val,ctx):{field:k,oldValue:old,newValue:val})}});next.updatedAt=ctx.serverTime||new Date().toISOString();next.updatedBy=ctx.actorId||null;return{ok:true,record:next,audit}}
+function voidLine(line,reason,ctx={}){if(String(ctx.role||'')!=='Manager')return{ok:false,code:'MANAGER_REQUIRED'};if(!String(reason||'').trim())return{ok:false,code:'REASON_REQUIRED'};return edit(line,{voided:true,voidReason:String(reason).trim()},ctx)}
+function reopen(list,reason,ctx={}){if(String(ctx.role||'')!=='Manager')return{ok:false,code:'MANAGER_REQUIRED'};if(!String(reason||'').trim())return{ok:false,code:'REASON_REQUIRED'};return edit(list,{view:list.deliveredPending?'DELIVERED_PENDING':'WAITING',reopened:true,reopenReason:String(reason).trim(),costingProvisional:true},ctx)}
+p.managerEdit={edit,voidLine,reopen};
+})();
