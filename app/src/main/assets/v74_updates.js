@@ -3207,3 +3207,41 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 
 /* V151 AVAILABLE WORKERS READABILITY — employee identity colour + larger names. */
 (function(){if(document.getElementById('v151AvailableWorkersStyle'))return;const s=document.createElement('style');s.id='v151AvailableWorkersStyle';s.textContent='.v151-available-workers .v151-available-worker{border-left:6px solid var(--emp,#64748b)!important;background:linear-gradient(135deg,var(--emp-soft,#f8fafc),#fff)!important}.v151-available-workers .v151-worker-name{font-size:18px!important;line-height:1.2!important;font-weight:950!important;color:var(--emp-ink,#172033)!important;letter-spacing:.1px}.v151-available-workers .v84-tech-name{align-items:center!important;gap:8px!important}.v151-available-workers .v84-status{flex:0 0 auto!important}';document.head.appendChild(s)})();
+
+
+/* V158 EV CARD AUTHORITY */
+(()=>{
+  const isEV=v=>/(^|[\s\-_/])ev($|[\s\-_/])/i.test(String(v||''));
+  const jobForCard=card=>{
+    const no=card?.dataset?.job||card?.getAttribute?.('data-job');
+    return no?(state.jobs||[]).find(j=>j&&String(j.no)===String(no)):null;
+  };
+  const ensureEV=card=>{
+    const j=jobForCard(card);
+    const vehicle=String(j?.vehicle||'');
+    if(!isEV(vehicle)){card?.classList?.remove('v158-ev-card');return;}
+    card.classList.add('v158-ev-card');
+    const mark=card.querySelector('.v82-vehicle-mark');
+    if(mark&&!mark.querySelector('.v82-ev-badge')) mark.insertAdjacentHTML('beforeend','<span class="v82-ev-badge">⚡ EV</span>');
+  };
+  const apply=()=>{
+    document.querySelectorAll('[data-job]').forEach(ensureEV);
+    const s=me&&typeof activeSession==='function'?activeSession(me.id):null;
+    if(s){
+      const j=(state.jobs||[]).find(x=>x&&x.no===s.job);
+      const mark=document.querySelector('#employeeView .v75s-shell .v82-vehicle-mark');
+      const shell=mark?.closest('.v75s-card,.v75s-hero');
+      if(j&&isEV(j.vehicle)){
+        shell?.classList.add('v158-ev-card');
+        if(mark&&!mark.querySelector('.v82-ev-badge'))mark.insertAdjacentHTML('beforeend','<span class="v82-ev-badge">⚡ EV</span>');
+      }
+    }
+  };
+  const css=document.createElement('style');
+  css.textContent='.v158-ev-card{background-image:linear-gradient(rgba(220,252,231,.38),rgba(220,252,231,.38))!important}.v158-ev-card .v82-ev-badge{box-shadow:0 2px 7px rgba(22,101,52,.16)}';
+  document.head.appendChild(css);
+  const obs=new MutationObserver(()=>requestAnimationFrame(apply));
+  obs.observe(document.body,{childList:true,subtree:true});
+  apply();
+  window.v158ApplyEVCardAuthority=apply;
+})();
