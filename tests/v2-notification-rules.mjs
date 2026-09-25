@@ -6,5 +6,5 @@ assert.equal(n.partsDelay({id:'P1',status:'ORDERED',pendingDays:7}).severity,'ur
 assert.equal(n.partsDelay({id:'P1',status:'RECEIVED',pendingDays:9}),null);
 assert.equal(n.materialVariance({id:'M1',suggested:10,actual:11}),null);
 assert.equal(n.materialVariance({id:'M1',suggested:10,actual:13}).type,'MATERIAL_VARIANCE');
-const a=n.build('QC_READY',{entityId:'J1',status:'READY'});const b={...a};assert.equal(n.dedupe([a,b]).length,1);
+assert.equal(n.dutyEnd({id:'A1',jobCard:'JC1',active:true},{boundary:'13:00'}).action,'CONFIRM_DUTY_END');assert.equal(n.dutyEnd({id:'A1',active:true},{boundary:'14:00'}),null);assert.equal(n.additionalTime({id:'AT1',jobCard:'JC1',status:'PENDING'}).action,'REVIEW_ADDITIONAL_TIME');assert.equal(n.additionalTime({id:'AT1',status:'APPROVED'}),null);assert.equal(n.repeatWork({id:'R1',job:'JC1'}).action,'OPEN_REPEAT_WORK');assert.equal(n.repeatWork({id:'R1',completed:true}),null);assert.equal(n.qcReady({id:'J2',jobCard:'JC2',workflowStage:'QC'}).action,'OPEN_QC');assert.equal(n.qcReady({id:'J2',jobCard:'JC2',workflowStage:'READY_FOR_DELIVERY'}).action,'OPEN_READY_FOR_DELIVERY');assert.equal(n.qcReady({id:'J2',workflowStage:'PAINTING'}),null);const a=n.build('QC_READY',{entityId:'J1',status:'READY'});const b={...a};assert.equal(n.dedupe([a,b]).length,1);
 console.log('V2 notification rules: ok');
