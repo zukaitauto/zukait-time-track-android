@@ -16,7 +16,7 @@ assert.match(api,/last\?\.server_time && last\?\.event_id/);
 // Job/WIP cursors use updated_at and generic report cursor uses sort_time with updated_at fallback.
 assert.match(job,/p_before is null or j\.updated_at<p_before or \(j\.updated_at=p_before and p_before_id is not null and j\.job_card<p_before_id\)/i);
 assert.match(api,/cursorValue = action === "v2_search_jobcards" \|\| report === "WIP" \|\| report === "COMPLETION_TARGET"/);
-assert.match(api,/lastRow\?\.sort_time \|\| lastRow\?\.updated_at/);
+assert.match(api,/rows\[rows\.length - 1\]\?\.sort_time \|\| rows\[rows\.length - 1\]\?\.updated_at/);
 // A short final page must terminate pagination rather than emit another cursor.
 assert.match(api,/rows\.length === limit[\s\S]*next_cursor/s);
 console.log('V2 pagination contract consistency gate: ok');
