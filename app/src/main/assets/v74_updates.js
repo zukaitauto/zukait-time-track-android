@@ -3310,3 +3310,36 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  };
  const obs=new MutationObserver(()=>requestAnimationFrame(apply));obs.observe(document.body,{childList:true,subtree:true});apply();
 })();
+
+
+/* V161 OMAN BRAND AUTHORITY */
+(()=>{
+ const defs=[
+ ['Tesla','tesla.svg',/\b(?:tesla|model\s*[3sxy]|cybertruck)\b/i,true],
+ ['Changan','changan.svg',/\bchangan\b/i,false],['Chery','chery.svg',/\b(?:chery|tiggo|arrizo|himla)\b/i,false],
+ ['Haval','haval.svg',/\bhaval\b/i,false],['Tank','tank.svg',/\btank\s*(?:300|400|500|700)?\b/i,false],
+ ['JAC','jac.svg',/\bjac\b/i,false],['BAIC','baic.svg',/\bbaic\b/i,false],['GAC','gac.svg',/\b(?:gac|trumpchi)\b/i,false],
+ ['Bestune','bestune.svg',/\bbestune\b/i,false],['Maxus','maxus.svg',/\bmaxus\b/i,false],['Dongfeng','dongfeng.svg',/\bdongfeng\b/i,false],
+ ['Foton','foton.svg',/\bfoton\b/i,false],['OMODA','omoda.svg',/\bomoda\b/i,false],['JAECOO','jaecoo.svg',/\bjaecoo\b/i,false],
+ ['EXEED','exeed.svg',/\bexeed\b/i,false],['Deepal','deepal.svg',/\bdeepal\b/i,true],['Hongqi','hongqi.svg',/\bhongqi\b/i,false],
+ ['Soueast','soueast.svg',/\bsoueast\b/i,false],['Dodge','dodge.svg',/\bdodge\b/i,false],['Subaru','subaru.svg',/\bsubaru\b/i,false],
+ ['Polestar','polestar.svg',/\bpolestar\b/i,true],['Lucid','lucid.svg',/\blucid\b/i,true],['Zeekr','zeekr.svg',/\bzeekr\b/i,true],
+ ['XPeng','xpeng.svg',/\b(?:xpeng|x\s*peng)\b/i,true],['NIO','nio.svg',/\bnio\b/i,true],['Voyah','voyah.svg',/\bvoyah\b/i,true],
+ ['VinFast','vinfast.svg',/\bvin\s*fast\b/i,true],['AVATR','avatr.svg',/\bavatr\b/i,true],['ROX','rox.svg',/\brox\b/i,true],
+ ['Li Auto','li-auto.svg',/\b(?:li auto|lixiang)\b/i,true],['Seres','seres.svg',/\bseres\b/i,true]
+ ];
+ window.v161OmanBrandInfo=v=>{const s=String(v||'');for(const [name,file,re,ev] of defs)if(re.test(s))return{name,file,ev};return null};
+ const apply=()=>{
+  document.querySelectorAll('[data-job]').forEach(card=>{
+   const no=card.dataset.job,j=(state.jobs||[]).find(x=>x&&String(x.no)===String(no)); if(!j)return;
+   const b=window.v161OmanBrandInfo([j.brand,j.make,j.model,j.vehicle].filter(Boolean).join(' ')); if(!b)return;
+   const mark=card.querySelector('.v82-vehicle-mark'); if(!mark)return;
+   const old=mark.querySelector('.v82-brand-logo');
+   const html='<div class="v82-brand-logo v161-oman-brand" title="'+b.name+'"><img src="vehicle-logos/'+b.file+'" alt="'+b.name+' logo"></div>';
+   if(old)old.outerHTML=html;else mark.insertAdjacentHTML('afterbegin',html);
+   const explicitEV=/(^|[\s\-_/])ev($|[\s\-_/])/i.test([j.brand,j.make,j.model,j.vehicle].filter(Boolean).join(' '));
+   if((b.ev||explicitEV)&&!mark.querySelector('.v82-ev-badge'))mark.insertAdjacentHTML('beforeend','<span class="v82-ev-badge">⚡ EV</span>');
+  });
+ };
+ const obs=new MutationObserver(()=>requestAnimationFrame(apply));obs.observe(document.body,{childList:true,subtree:true});apply();
+})();
