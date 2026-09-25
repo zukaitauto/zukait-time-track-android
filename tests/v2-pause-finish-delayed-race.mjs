@@ -16,5 +16,5 @@ assert.match(eventSql,/if found then/i);assert.match(eventSql,/raise exception '
 // API exposes deterministic conflict codes so the client quarantines, refreshes and creates a new event identity.
 assert.match(api,/code:"stale_work_revision"/);assert.match(api,/code:"work_not_paused"/);
 assert.match(queue,/function markConflict/);assert.match(queue,/function supersedeConflict/);
-assert.match(queue,/replacement\.eventId===eventId/);
+assert.match(queue,/String\(replacement\.eventId\)===String\(eventId\)/);
 console.log('V2 pause/finish delayed-device race gate: ok');
