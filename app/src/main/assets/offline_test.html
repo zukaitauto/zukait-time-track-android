@@ -54,6 +54,18 @@ body{font-family:Arial,sans-serif;margin:0;background:#f4f6f8;color:#172033}head
 #supervisorView .supervisor-job-selected.hidden{display:none!important}
 #supervisorView .supervisor-job-empty{padding:8px;text-align:center;font-size:10px;color:#64748b}
 </style><style id="v88-header-space">.compact-app-header{display:flex!important;align-items:center;gap:8px;flex-wrap:nowrap}.compact-app-header #welcome{font-size:16px;margin:0;min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.supervisor-header-menu,.header-online-status{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-size:12px;font-weight:900;border-radius:12px;padding:7px 9px}.supervisor-header-menu{background:#eaf3ff;color:#172033}.header-online-status{background:#e9f9ef;color:#166534}.header-online-status.is-offline{background:#fee2e2;color:#991b1b}.online-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block}.is-offline .online-dot{background:#ef4444}.compact-app-header .header-update,.compact-app-header .header-logout{padding:7px 9px;font-size:11px;white-space:nowrap}.v88-header-menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.v88-header-menu-grid button{min-height:52px}@media(max-width:520px){.compact-app-header{gap:5px}.compact-app-header #welcome{font-size:13px}.supervisor-header-menu,.header-online-status{font-size:10px;padding:6px}.compact-app-header .header-update,.compact-app-header .header-logout{font-size:0;padding:7px}.header-update:after{content:"⬆";font-size:14px}.header-logout:after{content:"↪";font-size:14px}}
+/* V167 LOGIN SCREEN AUTHORITY — stable mobile layout and no horizontal overflow. */
+html,body{min-height:100%;overflow-x:hidden}
+body:not(.employee-session) #login{max-width:560px;margin:clamp(18px,8vh,72px) auto;padding:clamp(18px,5vw,28px);box-sizing:border-box}
+#login .grid{grid-template-columns:1fr;gap:14px}
+#login label{display:block;min-width:0;font-weight:700}
+#login input{display:block;width:100%;box-sizing:border-box;margin-top:6px;min-height:48px}
+#login .password-wrap{display:flex;width:100%;min-width:0;margin-top:6px}
+#login .password-wrap input{margin-top:0;min-width:0;flex:1;border-radius:8px 0 0 8px}
+#login .password-wrap .pw-eye{flex:0 0 48px;margin:0;border-radius:0 8px 8px 0}
+#login .big-action{width:100%;margin:4px 0 0;box-sizing:border-box}
+@media(max-width:600px){body:not(.employee-session) main{padding:12px}body:not(.employee-session) #login{margin:18px auto;border-radius:16px}}
+
 /* Employee uses only its own compact brand header. */
 body.employee-session #globalBrandHeader{display:none!important}
 </style></head><body><header id="globalBrandHeader"><b>Zukait Time Track</b><span id="net" style="float:right"></span></header><main>
