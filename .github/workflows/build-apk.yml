@@ -101,6 +101,7 @@ jobs:
           node tests/v2-jobcard-projection.mjs
           node tests/v2-wip-completion-target.mjs
           node tests/v2-jobcard-projection-conflicts.mjs
+          node tests/v2-jobcard-event-projection.mjs
           node tests/v2-job-workflow.mjs
           node tests/v2-spare-parts.mjs
           node tests/v2-repeat-work.mjs
