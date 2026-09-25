@@ -1,7 +1,7 @@
 (function(){
 'use strict';const V2=window.zukaitV2=window.zukaitV2||{},p=V2.spareParts=V2.spareParts||{};
 function clone(x){return JSON.parse(JSON.stringify(x))}
-function createStore(seed={}){let state={role:seed.role||'Supervisor',lists:clone(seed.lists||[]),active:null,screen:'DASHBOARD',draft:{lines:[]},events:[]};const emit=(type,data={})=>state.events.push({type,data,at:new Date().toISOString()});function findPL(n){return state.lists.find(x=>x.number===n)}
+function createStore(seed={}){let state={role:seed.role||'Supervisor',lists:clone(seed.lists||[]),active:null,screen:'DASHBOARD',draft:{lines:[]},events:[]};if(p.completion)state.lists=state.lists.map(x=>p.completion.apply(x).list);const emit=(type,data={})=>state.events.push({type,data,at:new Date().toISOString()});function findPL(n){return state.lists.find(x=>x.number===n)}
 function dispatch(a,payload={}){switch(a){
 case'OPEN':state.screen=payload.screen;state.active=payload.pl||state.active;break;
 case'CREATE_DRAFT_PART':if(!String(payload.name||'').trim())return{ok:false,code:'PART_REQUIRED'};state.draft.lines.push({id:'D'+Date.now(),name:String(payload.name).trim(),qty:Math.max(1,Number(payload.qty)||1),status:'ENQUIRY'});break;
