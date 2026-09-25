@@ -1,0 +1,15 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const sql=fs.readFileSync('supabase/ARCHITECTURE_V2_BOUNDED_HISTORY.sql','utf8');
+const op=fs.readFileSync('supabase/ARCHITECTURE_V2_OPERATIONAL_PROJECTIONS.sql','utf8');
+const cloud=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
+assert.match(sql,/on conflict \(event_id\) do nothing returning \* into v/i);
+assert.match(sql,/coalesce\(v\.revision,-1\)<>coalesce\(p_revision,-1\)/);
+assert.match(sql,/coalesce\(v\.client_time,'epoch'::timestamptz\)<>coalesce\(p_client_time,'epoch'::timestamptz\)/);
+assert.match(sql,/raise exception 'event_id_conflict'/);
+assert.match(op,/raise exception 'stale_work_revision'/);
+assert.match(op,/raise exception 'employee_already_active'/);
+assert.match(op,/create unique index if not exists workshop_v2_one_active_employee_idx/);
+assert.match(cloud,/for\(const event of q\.pending\(\)\)/);
+assert.match(cloud,/catch\(e\).*break;/s);
+assert.match(cloud,/q\.markSynced\(event\.eventId/);
+console.log('V2 delayed replay and duplicate identity gate: ok');
