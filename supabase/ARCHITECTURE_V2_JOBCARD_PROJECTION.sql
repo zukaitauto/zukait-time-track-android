@@ -15,7 +15,7 @@ create table if not exists public.workshop_v2_jobcards (
  revision bigint not null default 0,
  last_event_id text
 );
-create index if not exists workshop_v2_jobcards_updated_idx on public.workshop_v2_jobcards(updated_at desc);
+create index if not exists workshop_v2_jobcards_updated_idx on public.workshop_v2_jobcards(updated_at desc, job_card desc);
 create index if not exists workshop_v2_jobcards_registration_idx on public.workshop_v2_jobcards(registration);
 create index if not exists workshop_v2_jobcards_status_idx on public.workshop_v2_jobcards(status,updated_at desc);
 alter table public.workshop_v2_jobcards enable row level security;
@@ -30,7 +30,7 @@ language sql stable security invoker set search_path=public as $$
  where (p_before is null or j.updated_at<p_before)
  and (nullif(trim(coalesce(p_status,'')),'') is null or j.status=upper(trim(p_status)))
  and (nullif(trim(coalesce(p_query,'')),'') is null or j.job_card ilike '%'||trim(p_query)||'%' or j.registration ilike '%'||trim(p_query)||'%')
- order by j.updated_at desc limit greatest(1,least(coalesce(p_limit,100),500));
+ order by j.updated_at desc, j.job_card desc limit greatest(1,least(coalesce(p_limit,100),500));
 $$;
 revoke all on function public.zukait_v2_jobcard_page(text,timestamptz,integer,text) from public,anon,authenticated;
 grant execute on function public.zukait_v2_jobcard_page(text,timestamptz,integer,text) to service_role;
@@ -47,7 +47,7 @@ language sql stable security invoker set search_path=public as $$
    and (nullif(trim(coalesce(p_stage,'')),'') is null or j.workflow_stage=upper(trim(p_stage)))
    and (nullif(trim(coalesce(p_risk,'')),'') is null or
         upper(trim(p_risk))=case when now()-j.created_at>=interval '30 days' then 'OVERDUE' when now()-j.created_at>=interval '25 days' then 'WARNING' else 'NORMAL' end)
- order by j.updated_at desc limit greatest(1,least(coalesce(p_limit,100),500));
+ order by j.updated_at desc, j.job_card desc limit greatest(1,least(coalesce(p_limit,100),500));
 $$;
 revoke all on function public.zukait_v2_wip_page(timestamptz,integer,text,text) from public,anon,authenticated;
 grant execute on function public.zukait_v2_wip_page(timestamptz,integer,text,text) to service_role;
