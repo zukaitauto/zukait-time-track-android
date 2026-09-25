@@ -71,6 +71,22 @@ returns boolean language sql stable security invoker set search_path=public as $
  );
 $$;
 
+create or replace function public.zukait_v2_apply_leave_event(p_event_id text,p_entity_id text,p_event_type text,p_event_time timestamptz,p_payload jsonb)
+returns void language plpgsql security invoker set search_path=public as $$
+declare emp text; d date; per text;
+begin
+ emp:=coalesce(p_payload->>'employeeId',p_payload->>'emp',''); d:=nullif(coalesce(p_payload->>'date',''),'')::date; per:=upper(coalesce(p_payload->>'period',''));
+ if emp='' then raise exception 'employee_required'; end if; if d is null then raise exception 'leave_date_required'; end if;
+ if p_event_type='LEAVE_CANCELLED' then update public.workshop_v2_leave set cancelled=true,updated_at=now(),updated_by=coalesce(p_payload->>'actorId','') where leave_id=p_entity_id; if not found then raise exception 'leave_missing'; end if; return; end if;
+ if p_event_type not in ('LEAVE_CREATED','LEAVE_UPDATED') then raise exception 'unsupported_leave_event'; end if;
+ if per not in ('FULL','AM','PM') then raise exception 'leave_period_required'; end if; if public.zukait_v2_closed_day(d) then raise exception 'leave_closed_day'; end if;
+ if exists(select 1 from public.workshop_v2_leave l where l.employee_id=emp and l.leave_date=d and not l.cancelled and l.leave_id<>p_entity_id and (l.period='FULL' or per='FULL' or l.period=per)) then raise exception 'leave_overlap'; end if;
+ insert into public.workshop_v2_leave(leave_id,employee_id,leave_date,period,cancelled,updated_at,updated_by) values(p_entity_id,emp,d,per,false,now(),coalesce(p_payload->>'actorId',''))
+ on conflict(leave_id) do update set employee_id=excluded.employee_id,leave_date=excluded.leave_date,period=excluded.period,cancelled=false,updated_at=now(),updated_by=excluded.updated_by;
+end;$$;
+revoke all on function public.zukait_v2_apply_leave_event(text,text,text,timestamptz,jsonb) from public,anon,authenticated;
+grant execute on function public.zukait_v2_apply_leave_event(text,text,text,timestamptz,jsonb) to service_role;
+
 create or replace function public.zukait_v2_duty_minutes(p_start timestamptz,p_end timestamptz)
 returns integer language plpgsql stable security invoker set search_path=public as $$
 declare d date; total integer:=0; a timestamptz; b timestamptz;
