@@ -161,6 +161,11 @@ begin
  if found and cur.last_event_id=p_event_id then return; end if;
  if found and coalesce(p_revision,0)<=cur.revision then raise exception 'stale_work_revision'; end if;
  if found and p_event_type='WORK_PAUSE' and cur.kind='ID001' then raise exception 'id001_pause_not_allowed'; end if;
+ if found and cur.kind='WORK' and p_event_type in ('ID001_STOP','ID001_START') then raise exception 'work_command_kind_mismatch'; end if;
+ if found and cur.kind='ID001' and p_event_type in ('WORK_PAUSE','WORK_RESUME','WORK_FINISH','WORK_START') then raise exception 'id001_command_kind_mismatch'; end if;
+ if found and p_event_type='WORK_PAUSE' and cur.status<>'ACTIVE' then raise exception 'work_not_active'; end if;
+ if found and p_event_type='WORK_FINISH' and cur.status not in ('ACTIVE','PAUSED') then raise exception 'work_not_finishable'; end if;
+ if found and p_event_type='ID001_STOP' and (cur.kind<>'ID001' or cur.status<>'ACTIVE') then raise exception 'id001_not_active'; end if;
  if p_event_type in ('WORK_START','ID001_START') then
    if p_event_type='WORK_START' then
      update public.workshop_v2_work_sessions x set
@@ -172,7 +177,7 @@ begin
      where x.employee_id=emp and x.status='ACTIVE' and x.kind='ID001' and x.session_id<>p_entity_id;
    end if;
    if exists(select 1 from public.workshop_v2_work_sessions x where x.employee_id=emp and x.status='ACTIVE' and x.session_id<>p_entity_id) then raise exception 'employee_already_active'; end if;
-   if found and cur.status not in ('FINISHED','STOPPED') then raise exception 'work_session_exists'; end if;
+   if found then raise exception 'work_session_exists'; end if;
    insert into public.workshop_v2_work_sessions(session_id,assignment_id,job_card,employee_id,kind,started_at,active_since,status,suggested_minutes,repeat_minutes,last_event_id,revision)
    values(p_entity_id,p_entity_id,job,emp,kindv,etime,etime,'ACTIVE',case when kindv='ID001' then 0 else greatest(coalesce((p_payload->>'suggestedMinutes')::integer,0),0) end,greatest(coalesce((p_payload->>'repeatMinutes')::integer,0),0),p_event_id,coalesce(p_revision,0))
    on conflict(session_id) do update set started_at=excluded.started_at,active_since=excluded.started_at,accumulated_minutes=0,actual_minutes=0,ended_at=null,status='ACTIVE',last_event_id=excluded.last_event_id,revision=excluded.revision,updated_at=now();
