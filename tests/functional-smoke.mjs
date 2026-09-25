@@ -88,7 +88,7 @@ assert.ok(html.indexOf(stableAssetMatch[0])>html.indexOf(v74AssetMatch[0]),'stab
 assert.ok(!html.includes('V103 SUPERVISOR RUNTIME LOCK'), 'legacy V103 Supervisor runtime lock must stay retired');
 assert.match(supervisorStable,/V143 SUPERVISOR STABLE AUTHORITY/,'final stable Supervisor authority must exist');
 assert.match(supervisorStable,/window\.renderSupervisor=renderStable/,'stable authority must own renderSupervisor');
-assert.match(supervisorStable,/if\(role\(\)==='Supervisor'\)return renderStable\(\)/,'Supervisor render must bypass the legacy render chain');
+assert.match(supervisorStable,/if\(role\(\)==='Supervisor'\)\{const r=renderStable\(\);bindStableActions\(\);return r\}/,'Supervisor render must bypass the legacy render chain and bind final actions');
 assert.doesNotMatch(supervisorStable,/MutationObserver/,'stable Supervisor UI must not use DOM observers');
 assert.match(supervisorStable,/grid-template-areas:"job tech" "time assign"/,'stable Assign\/Update must keep the agreed 2x2 layout');
 assert.match(supervisorStable,/id="v143JobSearch"/,'stable Supervisor renderer must contain the visible Job Card search');
