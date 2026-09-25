@@ -79,10 +79,10 @@ begin
  if p_event_type='ID001_START' and (public.zukait_v2_closed_day((etime at time zone 'Asia/Muscat')::date) or not (((etime at time zone 'Asia/Muscat')::time>=time '08:00' and (etime at time zone 'Asia/Muscat')::time<time '13:00') or ((etime at time zone 'Asia/Muscat')::time>=time '15:00' and (etime at time zone 'Asia/Muscat')::time<time '19:00'))) then raise exception 'id001_outside_duty'; end if;
  if p_event_type='ID001_START' and job<>'ID001' then raise exception 'id001_job_required'; end if;
  if p_event_type='WORK_START' and job='ID001' then raise exception 'use_id001_start'; end if;
- if p_event_type='WORK_PAUSE' and cur.kind='ID001' then raise exception 'id001_pause_not_allowed'; end if;
  select * into cur from public.workshop_v2_work_sessions where session_id=p_entity_id for update;
  if found and cur.last_event_id=p_event_id then return; end if;
  if found and coalesce(p_revision,0)<=cur.revision then raise exception 'stale_work_revision'; end if;
+ if found and p_event_type='WORK_PAUSE' and cur.kind='ID001' then raise exception 'id001_pause_not_allowed'; end if;
  if p_event_type in ('WORK_START','ID001_START') then
    if exists(select 1 from public.workshop_v2_work_sessions x where x.employee_id=emp and x.status='ACTIVE' and x.session_id<>p_entity_id) then raise exception 'employee_already_active'; end if;
    if found and cur.status not in ('FINISHED','STOPPED') then raise exception 'work_session_exists'; end if;
