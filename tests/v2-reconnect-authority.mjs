@@ -1,0 +1,15 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const c={window:{},Map,Number,String};c.window=c;vm.createContext(c);
+vm.runInContext(fs.readFileSync('app/src/main/assets/v2/core/reconnect_authority.js','utf8'),c);
+const r=c.zukaitV2.reconnect;
+assert.equal(r.decide({serverRevision:2,syncState:'synced',start:100,end:null},{serverRevision:3,start:100,end:200}).action,'ACCEPT_SERVER');
+assert.equal(r.decide({serverRevision:4,syncState:'pending',start:300,end:null},{serverRevision:3,start:100,end:200}).action,'REPLAY_LOCAL');
+assert.equal(r.decide({serverRevision:5,syncState:'synced',start:100,end:null},{serverRevision:5,start:100,end:200}).action,'CONFLICT');
+assert.equal(r.decide({serverRevision:5,syncState:'synced',start:100,end:500},{serverRevision:5,start:100,end:600}).action,'CONFLICT');
+assert.equal(r.decide({serverRevision:5,syncState:'synced',start:100,end:500},{serverRevision:5,start:100,end:500}).action,'ACCEPT_SERVER');
+assert.equal(r.decide({serverRevision:1,syncState:'pending'},null).action,'KEEP_LOCAL');
+assert.equal(r.decide(null,{serverRevision:2}).action,'ACCEPT_SERVER');
+const rows=r.reconcile([{assignmentId:'A',serverRevision:1,syncState:'pending',start:10,end:null},{assignmentId:'B',serverRevision:1,syncState:'synced',start:10,end:20}],[{assignmentId:'A',serverRevision:2,start:10,end:20},{assignmentId:'B',serverRevision:1,start:10,end:20}]);
+assert.equal(rows[0].decision.action,'ACCEPT_SERVER');
+assert.equal(rows[1].decision.action,'ACCEPT_SERVER');
+console.log('V2 reconnect authority passed');
