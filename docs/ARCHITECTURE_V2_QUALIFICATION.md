@@ -22,7 +22,7 @@ Verified checkpoint: `96b59c4d067cf1f7f002da600afb26759a10c963`\nQualification r
 - No V2 release has been published.
 
 ## Remaining before production authority
-1. Complete and verify the corrected real backend pagination cursor path with production-like data validation.
+1. Complete and verify the corrected real backend pagination cursor path with production-like data validation. Deterministic secondary ordering is now present for equal timestamps; composite continuation across an equal-timestamp page boundary remains required before this gate can close.
 2. Complete production-like multi-device conflict/reconciliation validation against the real V2 backend; static and queue lifecycle gates are present, but this does not substitute for the isolated-device pilot.
 3. Real multi-device pilot using isolated test identities/devices.
 4. Android durable native transport follow-up (Room + WorkManager) where required.
