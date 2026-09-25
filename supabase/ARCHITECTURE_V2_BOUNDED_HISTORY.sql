@@ -24,18 +24,18 @@ revoke all on table public.workshop_v2_events from anon, authenticated;
 grant select, insert, update, delete on table public.workshop_v2_events to service_role;
 
 create or replace function public.zukait_v2_event_page(
-  p_before timestamptz default null,p_limit integer default 100,p_entity_id text default null,p_event_type text default null
+  p_before timestamptz default null,p_limit integer default 100,p_entity_id text default null,p_event_type text default null,p_before_id text default null
 )
 returns setof public.workshop_v2_events
 language sql stable security invoker set search_path=public as $$
   select e.* from public.workshop_v2_events e
-  where (p_before is null or e.server_time < p_before)
+  where (p_before is null or e.server_time < p_before or (e.server_time = p_before and p_before_id is not null and e.event_id < p_before_id))
     and (p_entity_id is null or e.entity_id = p_entity_id)
     and (p_event_type is null or e.event_type = p_event_type)
   order by e.server_time desc, e.event_id desc
   limit greatest(1,least(coalesce(p_limit,100),500));
 $$;
-revoke all on function public.zukait_v2_event_page(timestamptz,integer,text,text) from public,anon,authenticated;
+revoke all on function public.zukait_v2_event_page(timestamptz,integer,text,text,text) from public,anon,authenticated;
 grant execute on function public.zukait_v2_event_page(timestamptz,integer,text,text) to service_role;
 
 create or replace function public.zukait_v2_commit_event(
