@@ -2,7 +2,7 @@ import fs from 'node:fs';import assert from 'node:assert/strict';
 const sql=fs.readFileSync('supabase/ARCHITECTURE_V2_BOUNDED_HISTORY.sql','utf8');
 const op=fs.readFileSync('supabase/ARCHITECTURE_V2_OPERATIONAL_PROJECTIONS.sql','utf8');
 const cloud=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
-assert.match(sql,/on conflict (?:\\(event_id\\)|on constraint workshop_v2_events_pkey) do nothing returning \\* into v/i);
+assert.match(sql,/on conflict (?:\\(event_id\\)|on constraint workshop_v2_events_pkey) do nothing returning \* into v/i);
 assert.match(sql,/coalesce\(v\.revision,-1\)<>coalesce\(p_revision,-1\)/);
 assert.match(sql,/coalesce\(v\.client_time,'epoch'::timestamptz\)<>coalesce\(p_client_time,'epoch'::timestamptz\)/);
 assert.match(sql,/raise exception 'event_id_conflict'/);
