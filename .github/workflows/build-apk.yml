@@ -50,7 +50,8 @@ jobs:
           node --check app/src/main/assets/v2/core/reconnect_shadow_audit.js
           node --check app/src/main/assets/v2/core/authority_adapter.js
           node --check app/src/main/assets/v2/core/reconcile_runtime.js
-          node --check app/src/main/assets/v2/core/pilot_activation.js\n          node --check app/src/main/assets/v2/core/data_paths.js
+          node --check app/src/main/assets/v2/core/pilot_activation.js
+          node --check app/src/main/assets/v2/core/data_paths.js
           node --check app/src/main/assets/v2/features/time/work_rules.js
           node --check app/src/main/assets/v2/features/time/work_events.js
           python - <<'PY'
@@ -87,7 +88,8 @@ jobs:
           node tests/v2-authority-adapter.mjs
           node tests/v2-reconcile-runtime.mjs
           node tests/v2-pilot-activation.mjs
-          node tests/v2-work-rules.mjs\n          node tests/v2-data-paths.mjs
+          node tests/v2-work-rules.mjs
+          node tests/v2-data-paths.mjs
 
       - name: Check production assets
         shell: bash
