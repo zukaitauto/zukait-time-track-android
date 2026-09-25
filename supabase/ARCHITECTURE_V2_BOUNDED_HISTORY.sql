@@ -66,6 +66,9 @@ begin
  on conflict (event_id) do nothing returning * into v;
  if found then
    v_inserted:=true;
+   if p_event_type in ('WORK_START','WORK_PAUSE','WORK_RESUME','WORK_FINISH','ID001_START','ID001_STOP') then
+     perform public.zukait_v2_apply_work_event(p_event_id,p_entity_id,p_event_type,coalesce(p_client_time,now()),coalesce(p_revision,0),coalesce(p_payload,'{}'::jsonb));
+   end if;
    if p_event_type in ('JOB_CREATED','JOB_UPDATED','JOB_STAGE_CHANGED','JOB_COMPLETED','JOB_REOPENED') then
      perform public.zukait_v2_upsert_jobcard(
        coalesce(nullif(p_payload->>'jobCard',''),p_entity_id),
