@@ -2049,7 +2049,14 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(bs)bs.remove();root.querySelectorAll('[data-v154-body]').forEach(x=>x.remove());
  }
  if(!document.getElementById('v154ManagerFutureStyle')){const st=document.createElement('style');st.id='v154ManagerFutureStyle';st.textContent='#managerView .v67-control-grid,#managerView .v66-control-grid,#managerView .v65-control-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}#managerView .v154-future{min-width:0!important;min-height:82px!important}#managerView .v154-future span{font-weight:900!important;font-size:13px!important}#managerView .v154-spare{background:linear-gradient(135deg,#eef6ff,#f8fbff)!important;border-color:#bdd5ef!important;color:#173b63!important;grid-column:1/-1!important}#managerView .v154-spare-logo{display:inline-grid!important;place-items:center!important;width:30px!important;height:30px!important;margin-right:7px!important;border-radius:9px!important;background:#fff!important;box-shadow:0 3px 8px #173b6322!important;font-size:16px!important}#managerView .v154-body{background:linear-gradient(135deg,#f2f7f4,#fbfdfc)!important;border-color:#c5ddd0!important;color:#244c38!important}';document.head.appendChild(st)}
- window.v154ApplyManagerWorkshopControl=apply;setTimeout(apply,0);
+ window.v154ApplyManagerWorkshopControl=apply;
+ let applying=false;
+ function ensure(){if(applying)return;applying=true;try{apply()}finally{applying=false}}
+ setTimeout(ensure,0);
+ const managerRoot=document.getElementById('managerView');
+ if(managerRoot)new MutationObserver(()=>ensure()).observe(managerRoot,{childList:true,subtree:true});
+ const priorManagerSpareRender=window.renderManager;
+ if(typeof priorManagerSpareRender==='function')window.renderManager=function(){const r=priorManagerSpareRender.apply(this,arguments);setTimeout(ensure,0);return r};
 })();
 
 /* V149 SHARED COLOUR WIRING — apply identity/status authority to dashboard detail windows. */
