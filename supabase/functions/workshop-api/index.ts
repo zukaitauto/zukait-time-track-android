@@ -385,19 +385,20 @@ Deno.serve(async (req: Request) => {
       const requested = Number(body?.limit || 100);
       const limit = Math.max(1, Math.min(Number.isFinite(requested) ? requested : 100, 500));
       const before = body?.before ? String(body.before) : null;
+      const beforeId = body?.before_id ? String(body.before_id) : null;
       const entityId = body?.entity_id ? String(body.entity_id) : null;
       const eventType = body?.event_type ? String(body.event_type) : null;
       const { data, error } = await admin.rpc("zukait_v2_event_page", {
         p_before: before,
         p_limit: limit,
         p_entity_id: entityId,
-        p_event_type: eventType
+        p_event_type: eventType,
+        p_before_id: beforeId
       });
       if (error) throw error;
       const rows = Array.isArray(data) ? data : [];
-      const nextCursor = rows.length === limit && rows.length
-        ? String(rows[rows.length - 1].server_time || "")
-        : null;
+      const last=rows[rows.length-1];
+      const nextCursor = rows.length === limit && last?.server_time && last?.event_id ? { before:String(last.server_time), before_id:String(last.event_id) } : null;
       return reply({ ok: true, rows, next_cursor: nextCursor, limit, user });
     }
 
@@ -421,6 +422,7 @@ Deno.serve(async (req: Request) => {
       const requested = Number(body?.limit || (action === "v2_search_jobcards" ? 50 : 100));
       const limit = Math.max(1, Math.min(Number.isFinite(requested) ? requested : 100, 500));
       const before = body?.before ? String(body.before) : null;
+      const beforeId = body?.before_id ? String(body.before_id) : null;
       const report = String(body?.report || "").toUpperCase();
       const query = String(body?.query || "").trim();
       const filters = body?.filters && typeof body.filters === "object" ? body.filters : {};
@@ -429,18 +431,20 @@ Deno.serve(async (req: Request) => {
       }
       if (action === "v2_search_jobcards" && !query) return reply({ ok:true, rows:[], next_cursor:null, limit, user });
       const { data, error } = action === "v2_search_jobcards"
-        ? await admin.rpc("zukait_v2_jobcard_page", { p_query: query, p_before: before, p_limit: limit, p_status: null })
+        ? await admin.rpc("zukait_v2_jobcard_page", { p_query: query, p_before: before, p_limit: limit, p_status: null, p_before_id: beforeId })
         : report === "WIP" || report === "COMPLETION_TARGET"
-          ? await admin.rpc("zukait_v2_wip_page", { p_before: before, p_limit: limit, p_stage: filters.stage || null, p_risk: report === "COMPLETION_TARGET" ? (filters.risk || null) : null })
+          ? await admin.rpc("zukait_v2_wip_page", { p_before: before, p_limit: limit, p_stage: filters.stage || null, p_risk: report === "COMPLETION_TARGET" ? (filters.risk || null) : null, p_before_id: beforeId })
           : ["ID001","OVERTIME","REPEAT","JOB_COST","EFFICIENCY"].includes(report)
             ? await admin.rpc("zukait_v2_operational_report_page", { p_report: report, p_before: before, p_limit: limit, p_filters: filters })
-            : await admin.rpc("zukait_v2_report_page", { p_report: report, p_before: before, p_limit: limit, p_filters: filters });
+            : await admin.rpc("zukait_v2_report_page", { p_report: report, p_before: before, p_limit: limit, p_filters: filters, p_before_id: beforeId });
       if (error) throw error;
       const rows = Array.isArray(data) ? data : [];
       const cursorValue = action === "v2_search_jobcards" || report === "WIP" || report === "COMPLETION_TARGET"
         ? rows[rows.length - 1]?.updated_at
         : rows[rows.length - 1]?.sort_time || rows[rows.length - 1]?.updated_at;
-      const nextCursor = rows.length === limit && rows.length && cursorValue ? String(cursorValue) : null;
+      const lastRow=rows[rows.length-1];
+      const cursorId = action === "v2_search_jobcards" || report === "WIP" || report === "COMPLETION_TARGET" ? lastRow?.job_card : lastRow?.event_id;
+      const nextCursor = rows.length === limit && cursorValue && cursorId ? { before:String(cursorValue), before_id:String(cursorId) } : null;
       return reply({ ok:true, rows, next_cursor:nextCursor, limit, report:action === "v2_search_jobcards" ? "JOB_SEARCH" : report, user });
     }
 
