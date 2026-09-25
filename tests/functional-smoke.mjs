@@ -751,6 +751,9 @@ assert.match(consumablesUi, /Actual Materials/, 'Supervisor Painting menu must r
 assert.match(consumablesUi, /Additional Materials/, 'Supervisor Painting menu must retain Additional Materials');
 assert.match(consumablesUi, /Search Material List/, 'Supervisor Painting menu must retain Search Material List');
 assert.match(consumablesUi, /No\.<\/th><th>Suggested Material<\/th><th>Brand<\/th><th>Quantity<\/th><th>Actual Material<\/th><th>Brand<\/th><th>Quantity<\/th>/, 'Search Material List must retain approved side-by-side Suggested vs Actual layout');
+assert.match(consumablesUi, /consMaterialBrandPairs/, 'Supervisor Suggested Materials must provide searchable Material + Brand pairs');
+assert.match(consumablesUi, /Type material or brand/, 'Supervisor material entry must support typing to search');
+assert.match(consumablesUi, /consSelectMaterialBrand/, 'Supervisor must be able to select a Material + Brand search result');
 assert.match(consumablesUi, /role\(\)==='Manager'/, 'Manager-only Consumables controls must remain role gated');
 assert.match(consumablesUi, /Workshop Month-to-Month Total:/, 'Monthly comparison must be explicitly labelled as workshop-wide');
 assert.match(consumablesUi, /Overall finalized Painting Actual expense; report filters above do not change this comparison\./, 'Monthly comparison scope must remain explicit');
