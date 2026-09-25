@@ -2726,8 +2726,13 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 
 /* V136 + V137 RETIRED — Job Card search now lives in the authoritative Supervisor renderer. */
 
-/* V139 MANAGER CONSUMABLES FINAL AUTHORITY */
-/* RETIRED: V156 Manager UI consolidation. Launcher compatibility is owned by V144 + final Manager settle. */
+/* V139 MANAGER CONSUMABLES FINAL AUTHORITY — compatibility contract retained; V156 owns final layout. */
+(function(){'use strict';
+ function open(){if(typeof me==='undefined'||!me||me.role!=='Manager')return;if(typeof window.v144OpenManagerConsumables==='function')return window.v144OpenManagerConsumables();if(typeof window.openConsumablesModule==='function')return window.openConsumablesModule()}
+ window.v139OpenManagerConsumables=open;
+ function bind(){if(typeof me==='undefined'||!me||me.role!=='Manager')return;const root=document.getElementById('managerView');if(!root)return;let buttons=[...root.querySelectorAll('.v65-consumables,.v66-consumables,.v67-consumables,.v139-manager-consumables,.v141-manager-consumables,[data-v144-consumables]')];if(buttons.length>1){const grid=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid');const keep=buttons.find(b=>grid&&b.parentElement===grid)||buttons[0];buttons.filter(b=>b!==keep).forEach(b=>b.remove());buttons=[keep]}buttons.forEach(b=>{b.removeAttribute('onclick');b.onclick=open})}
+ window.v139BindManagerConsumables=bind;
+})();
 
 /* V140 MANAGER JOB CARD REVIEW — PRINT / PDF */
 (function(){'use strict';
