@@ -7,5 +7,5 @@ assert.match(sql,/event_id text primary key/i);assert.match(sql,/on conflict \(e
 assert.match(api,/action === "v2_commit_event"/);assert.match(api,/actor_mismatch/);assert.match(api,/String\(event\.actorId\) !== String\(user\.id\)/);assert.match(api,/admin\.rpc\("zukait_v2_commit_event"/);
 assert.match(cloud,/async function flushV2EventQueue/);assert.match(cloud,/for\(const event of q\.pending\(\)\)/);assert.match(cloud,/q\.markSynced\(event\.eventId/);assert.match(cloud,/catch\(e\).*break;/s);assert.match(queue,/rows\.some\(x=>x\.eventId===event\.eventId\)/);assert.match(queue,/syncState:'synced'/);
 // Same event ID must be the retry identity from local queue through server primary key.
-assert.match(cloud,/v2CommitEvent\(event\)/);assert.match(api,/p_event_id:String\(event\.eventId\)/);
+assert.match(cloud,/v2CommitEvent\(event\)/);assert.match(api,/p_event_id:eventId/);
 console.log('V2 idempotent event write/retry contract: ok');
