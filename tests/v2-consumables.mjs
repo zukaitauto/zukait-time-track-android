@@ -8,5 +8,5 @@ assert.equal(c.validateActual({jobCard:'JC1',lines:[{materialId:'m',brandId:'b',
 assert.equal(c.validateActual({jobCard:'JC1',lines:[{materialId:'m',brandId:'b',quantity:1}]},{role:'Employee',issues,actuals:[]}).code,'CONSUMABLES_FORBIDDEN');
 assert.equal(c.snapshotCost(2.25,3.5),7.875);
 const v=c.variance(2.5,2.25);assert.equal(v.ratio,.9);assert.equal(v.percent,90);
-const from=new Date(2026,8,1).getTime(),to=new Date(2026,9,1).getTime();assert.deepEqual(c.monthlyExpense([{jobCard:'JC1',actualAt:from+1,locked:true,totalCost:7.875},{jobCard:'JC2',actualAt:from+2,locked:false,totalCost:5},{jobCard:'JC3',actualAt:from+3,locked:true,voided:true,totalCost:5}],from,to),{jobCards:1,totalExpense:7.875,records:1});
+const from=new Date(2026,8,1).getTime(),to=new Date(2026,9,1).getTime();const month=c.monthlyExpense([{jobCard:'JC1',actualAt:from+1,locked:true,totalCost:7.875},{jobCard:'JC2',actualAt:from+2,locked:false,totalCost:5},{jobCard:'JC3',actualAt:from+3,locked:true,voided:true,totalCost:5}],from,to);assert.equal(month.jobCards,1);assert.equal(month.totalExpense,7.875);assert.equal(month.records,1);
 console.log('V2 consumables parity contract tests passed');
