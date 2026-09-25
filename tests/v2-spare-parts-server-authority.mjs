@@ -10,5 +10,5 @@ assert.match(sql,/raise exception 'invalid_spare_part_transition'/);
 assert.match(report,/q\.report='PARTS_DELAY'.*e\.event_type like 'SPARE_PART%'/s);
 assert.match(workflow,/if\(to==='DENTER_CHECKED'\)return role==='Manager'/,'Denter must not confirm parts');
 assert.doesNotMatch(workflow,/role==='Denter'\|\|role==='Manager'/,'Denter must not have transition authority');
-assert.match(workflow,/function notifySupervisor/);assert.match(main,/function denterView/);assert.match(main,/Notify Supervisor/);assert.match(main,/denterView\(\)\?'':'<hr>/,'Denter must not see part-entry controls');
+assert.match(workflow,/function notifySupervisor/);assert.match(main,/function denterView/);assert.match(main,/Notify Supervisor/);assert.match(main,/denterView\(\)\?'':'<hr>/,'Denter must not see part-entry controls');assert.match(main,/function canManage\(\).*Manager.*Supervisor.*Purchaser/,'write authority must exclude Denter');assert.match(main,/function addItem\([^)]*\)\{if\(!canManage\(\)\)return \{ok:false,reason:'FORBIDDEN'\}/,'direct addItem must reject Denter');assert.match(main,/async function createFromUI\(\)\{if\(!canManage\(\)\)/,'UI create must reject Denter');
 console.log('V2 spare-parts server event authority gate: ok');
