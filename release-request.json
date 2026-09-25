@@ -1,8 +1,8 @@
 {
-  "versionName": "V142",
-  "versionCode": 105,
+  "versionName": "V143",
+  "versionCode": 106,
   "approvedForStaff": true,
   "approvedAt": "2026-09-26",
-  "sourceCommit": "d34dcf8153ece5be6dea0f12763aa904049ff181",
-  "publishNonce": "approved-v142-architecture-v2-qualified-20260926-1"
+  "sourceCommit": "8bd92006fab3da41ac56fbb12b85394d4b6d73c7",
+  "publishNonce": "approved-v143-supervisor-consumables-20260926-1"
 }
