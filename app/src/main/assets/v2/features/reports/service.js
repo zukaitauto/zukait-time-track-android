@@ -7,7 +7,7 @@ async function page(report,{cursor=null,limit=100,filters={}}={}){
  const a=api();if(!a||typeof a.page!=='function')return {rows:[],nextCursor:null,source:'server-required'};
  return a.page({report,cursor,limit:clamp(limit),filters});
 }
-const reports=['WIP','AUDIT','CYCLE_TIME','EFFICIENCY','REPEAT','ID001','OVERTIME','PARTS_DELAY','CONSUMABLES_VARIANCE','JOB_COST','COMPLETION_TARGET'];
+const reports=['WIP','AUDIT','CYCLE_TIME','EFFICIENCY','REPEAT','ID001','OVERTIME','PARTS_DELAY','SPARE_PARTS','CONSUMABLES_VARIANCE','JOB_COST','COMPLETION_TARGET'];
 function supported(name){return reports.includes(String(name||'').toUpperCase())}
 async function searchJobCards(query,{cursor=null,limit=50}={}){
  const q=String(query||'').trim();if(!q)return {rows:[],nextCursor:null,source:'empty-query'};
