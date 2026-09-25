@@ -14,7 +14,7 @@ assert.ok(html.indexOf(liveTag[0])>html.indexOf(stableTag[0]),'server live autho
 
 assert.match(cloud,/action:'live_status'/,'cloud layer must call the server live-status endpoint');
 assert.match(cloud,/livePollTimer=setTimeout/,'cloud layer must poll server live state independently with battery-aware scheduling');
-assert.match(cloud,/if\(!sessionToken\(\)\|\|!navigator\.onLine\|\|!liveRole\(\)\)return;/,'live poll must not be blocked by cloudDirty');
+assert.match(cloud,/if\(liveInFlight\|\|!sessionToken\(\)\|\|!navigator\.onLine\|\|!liveRole\(\)\)return false;/,'live poll must not be blocked by cloudDirty');
 assert.match(cloud,/window\.zukaitServerLive=/,'cloud layer must publish authoritative rows');
 assert.match(cloud,/r\.server_revision\|\|r\.revision/,'rebased saves must acknowledge the real server revision');
 assert.match(cloud,/r\.data&&typeof r\.data==='object'/,'rebased saves must carry an authoritative merged snapshot');
