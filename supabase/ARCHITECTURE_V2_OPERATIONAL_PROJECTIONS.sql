@@ -10,6 +10,7 @@ create table if not exists public.workshop_v2_work_sessions(
 create index if not exists workshop_v2_work_sessions_employee_updated_idx on public.workshop_v2_work_sessions(employee_id,updated_at desc);
 create index if not exists workshop_v2_work_sessions_job_idx on public.workshop_v2_work_sessions(job_card,updated_at desc);
 create index if not exists workshop_v2_work_sessions_status_idx on public.workshop_v2_work_sessions(status,updated_at desc);
+create unique index if not exists workshop_v2_one_active_employee_idx on public.workshop_v2_work_sessions(employee_id) where status='ACTIVE';
 alter table public.workshop_v2_work_sessions enable row level security;
 revoke all on public.workshop_v2_work_sessions from public,anon,authenticated;
 grant select,insert,update on public.workshop_v2_work_sessions to service_role;
@@ -83,13 +84,14 @@ begin
  if found and cur.last_event_id=p_event_id then return; end if;
  if found and coalesce(p_revision,0)<=cur.revision then raise exception 'stale_work_revision'; end if;
  if p_event_type in ('WORK_START','ID001_START') then
+   if exists(select 1 from public.workshop_v2_work_sessions x where x.employee_id=emp and x.status='ACTIVE' and x.session_id<>p_entity_id) then raise exception 'employee_already_active'; end if;
    if found and cur.status not in ('FINISHED','STOPPED') then raise exception 'work_session_exists'; end if;
    insert into public.workshop_v2_work_sessions(session_id,assignment_id,job_card,employee_id,kind,started_at,active_since,status,suggested_minutes,repeat_minutes,last_event_id,revision)
    values(p_entity_id,p_entity_id,job,emp,kindv,etime,etime,'ACTIVE',case when kindv='ID001' then 0 else greatest(coalesce((p_payload->>'suggestedMinutes')::integer,0),0) end,greatest(coalesce((p_payload->>'repeatMinutes')::integer,0),0),p_event_id,coalesce(p_revision,0))
    on conflict(session_id) do update set started_at=excluded.started_at,active_since=excluded.started_at,accumulated_minutes=0,actual_minutes=0,ended_at=null,status='ACTIVE',last_event_id=excluded.last_event_id,revision=excluded.revision,updated_at=now();
  elsif not found then raise exception 'work_session_missing';
  elsif p_event_type='WORK_PAUSE' then intervalmins:=greatest(0,floor(extract(epoch from (etime-coalesce(cur.active_since,cur.started_at)))/60)::integer); dutymins:=public.zukait_v2_duty_minutes(coalesce(cur.active_since,cur.started_at),etime); mins:=intervalmins; update public.workshop_v2_work_sessions set status='PAUSED',accumulated_minutes=cur.accumulated_minutes+mins,overtime_minutes=cur.overtime_minutes+greatest(intervalmins-dutymins,0),active_since=null,last_event_id=p_event_id,revision=p_revision,updated_at=now() where session_id=p_entity_id;
- elsif p_event_type='WORK_RESUME' then if cur.status<>'PAUSED' then raise exception 'work_not_paused'; end if; update public.workshop_v2_work_sessions set status='ACTIVE',active_since=etime,last_event_id=p_event_id,revision=p_revision,updated_at=now() where session_id=p_entity_id;
+ elsif p_event_type='WORK_RESUME' then if cur.status<>'PAUSED' then raise exception 'work_not_paused'; end if; if exists(select 1 from public.workshop_v2_work_sessions x where x.employee_id=emp and x.status='ACTIVE' and x.session_id<>p_entity_id) then raise exception 'employee_already_active'; end if; update public.workshop_v2_work_sessions set status='ACTIVE',active_since=etime,last_event_id=p_event_id,revision=p_revision,updated_at=now() where session_id=p_entity_id;
  elsif p_event_type in ('WORK_FINISH','ID001_STOP') then
    intervalmins:=case when cur.status='ACTIVE' then greatest(0,floor(extract(epoch from (etime-coalesce(cur.active_since,cur.started_at)))/60)::integer) else 0 end; dutymins:=case when cur.status='ACTIVE' then public.zukait_v2_duty_minutes(coalesce(cur.active_since,cur.started_at),etime) else 0 end; mins:=cur.accumulated_minutes+intervalmins;
    update public.workshop_v2_work_sessions set ended_at=etime,active_since=null,accumulated_minutes=mins,overtime_minutes=cur.overtime_minutes+greatest(intervalmins-dutymins,0),status=case when kind='ID001' then 'STOPPED' else 'FINISHED' end,actual_minutes=mins,last_event_id=p_event_id,revision=p_revision,updated_at=now() where session_id=p_entity_id;
