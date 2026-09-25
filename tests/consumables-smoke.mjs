@@ -122,11 +122,11 @@ console.log('Consumables isolation tests passed');
  const brand=C.addBrand(s,{name:'Correction Test Brand'},mgr);
  const p=C.setPrice(s,{materialId:mat.id,brandId:brand.id,pricePerUnit:4.125,effectiveFrom:1000,reason:'Initial'},mgr);
  const beforeActual={id:'actual-price-snapshot',department:'Painting',jobCard:'JC-SNAPSHOT',actualAt:2000,locked:true,voided:false,lines:[{materialId:mat.id,brandId:brand.id,actualQuantity:2,priceId:p.id,unitPriceSnapshot:4.125,lineCost:8.25}],totalCost:8.25};
- C.ensureState(s).actuals.push(beforeActual);
+ s.consumables.actuals.push(beforeActual);
  const corrected=C.managerCorrectPrice(s,p.id,5.500,mgr,'Wrong price entered');
  assert.equal(corrected.pricePerUnit,5.5);
- assert.equal(C.ensureState(s).actuals[0].lines[0].unitPriceSnapshot,4.125,'master correction must not rewrite historical JC price snapshot');
- assert.equal(C.ensureState(s).actuals[0].totalCost,8.25,'master correction must not rewrite historical JC total');
- const audit=C.ensureState(s).audit.at(-1);assert.equal(audit.type,'PRICE_CORRECTED');assert.equal(audit.before.pricePerUnit,4.125);assert.equal(audit.after.pricePerUnit,5.5);
+ assert.equal(s.consumables.actuals[0].lines[0].unitPriceSnapshot,4.125,'master correction must not rewrite historical JC price snapshot');
+ assert.equal(s.consumables.actuals[0].totalCost,8.25,'master correction must not rewrite historical JC total');
+ const audit=s.consumables.audit.at(-1);assert.equal(audit.type,'PRICE_CORRECTED');assert.equal(audit.before.pricePerUnit,4.125);assert.equal(audit.after.pricePerUnit,5.5);
  assert.throws(()=>C.managerCorrectPrice(s,p.id,6,{id:'SUP1',role:'Supervisor'},'wrong'),/MANAGER_ONLY/);
 }
