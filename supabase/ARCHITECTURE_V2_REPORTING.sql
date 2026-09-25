@@ -1,6 +1,9 @@
 -- Architecture V2 bounded reporting read model.
 -- Repository migration only; do not apply to production before controlled V2 backend rollout.
 begin;
+
+-- Drop the pre-composite signature so upgrades cannot leave an ambiguous overload.
+drop function if exists public.zukait_v2_report_page(text,timestamptz,integer,jsonb);
 create or replace function public.zukait_v2_report_page(p_report text,p_before timestamptz default null,p_limit integer default 100,p_filters jsonb default '{}'::jsonb,p_before_id text default null)
 returns table(event_id text,entity_id text,event_type text,actor_id text,sort_time timestamptz,revision bigint,payload jsonb)
 language sql stable security invoker set search_path=public as $$
