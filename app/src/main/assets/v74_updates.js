@@ -230,7 +230,7 @@ window.v132SaveSupervisorVehicleEdit=function(no){
  if(typeof setLastAction==='function')setLastAction('Corrected vehicle details '+j.no);save();if(typeof closeSupervisorModal==='function')closeSupervisorModal();else if(typeof closeModal==='function')closeModal();render();setTimeout(()=>{if(typeof openSupervisorJobCardList==='function')openSupervisorJobCardList()},0);
 };
 function v74ExportData(){return v74JobListRows().map(x=>{let names=[...new Set(x.aa.map(a=>v74JLP(a.emp).name))],s=x.finished?'Finished':x.paused?'Paused':x.repeat?'Repeat':x.aa.some(a=>!a.completed)?'In Progress':'Unassigned';return[ x.ts?new Date(x.ts).toLocaleDateString():'',x.j.no||'',x.j.vehicle||'',x.j.reg||'',names.join(', '),s]})}
-window.v74ExportJobListExcel=function(){let rows=[['Date','Job Card','Vehicle','Registration','Employee','Status'],...v74ExportData()],csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\\r\\n');if(window.AndroidBridge&&AndroidBridge.saveExportFile){AndroidBridge.saveExportFile('Zukait_Job_Card_List.csv','text/csv',btoa(unescape(encodeURIComponent(csv))));return}v74Msg('Export is not available on this device.','Excel Export')};
+window.v74ExportJobListExcel=function(){let rows=[['Date','Job Card','Vehicle','Registration','Employee','Status'],...v74ExportData()],csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');if(window.AndroidBridge&&AndroidBridge.saveExportFile){AndroidBridge.saveExportFile('Zukait_Job_Card_List.csv','text/csv',btoa(unescape(encodeURIComponent(csv))));return}v74Msg('Export is not available on this device.','Excel Export')};
 window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head><meta charset="utf-8"><style>body{font-family:sans-serif;padding:20px}h2{text-align:center}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #999;padding:6px;text-align:left}th{background:#eee}</style></head><body><h2>ZUKAIT AUTO — JOB CARD LIST</h2><table><tr><th>Date</th><th>Job Card</th><th>Vehicle</th><th>Registration</th><th>Employee</th><th>Status</th></tr>'+rows.map(r=>'<tr>'+r.map(v=>'<td>'+v74JLE(v)+'</td>').join('')+'</tr>').join('')+'</table></body></html>';if(typeof window.v110ReportActions==='function'){window.v110ReportActions(html,'Zukait_Job_Card_List.pdf');return}if(window.AndroidBridge&&AndroidBridge.printHtml){AndroidBridge.printHtml(html)}else{let w=window.open('','_blank');if(w){w.document.write(html);w.document.close();w.print()}}};
 
 
@@ -963,13 +963,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(closedLeaveDay(l))return alert('Leave is not required on Friday or a workshop Public Holiday.');
    if(hasSessionConflict(emp,l))return alert('Work time is already recorded during this leave period. Correct the work/leave conflict before marking leave.');
    if(hasDuplicate(emp,l))return alert('Leave is already recorded for this date/period.');
-   const who=userSafe(emp).name||emp;if(!confirm('Confirm Leave
-
-Staff: '+who+'
-Date: '+date+'
-Leave: '+periodLabel(period)+'
-
-Are you sure you want to mark this leave?'))return;
+   const who=userSafe(emp).name||emp;if(!confirm('Confirm Leave\n\nStaff: '+who+'\nDate: '+date+'\nLeave: '+periodLabel(period)+'\n\nAre you sure you want to mark this leave?'))return;
    state.leaves=state.leaves||[];state.leaveAudit=state.leaveAudit||[];
    state.leaves.push(l);state.leaveAudit.push({id:uid(),action:'ADD',leaveId:l.id,by:me.id,at:Date.now()});notifyLeave(l);
    save();closeModal();render();
@@ -1025,13 +1019,7 @@ Are you sure you want to mark this leave?'))return;
    if(hasSessionConflict(emp,candidate))return alert('Work time is already recorded during this leave period. Correct the work/leave conflict first.');
    const duplicate=activeLeaveRows().some(x=>String(x.id)!==String(id)&&String(x.emp)===String(emp)&&x.date===date&&(x.period==='FULL'||period==='FULL'||x.period===period));
    if(duplicate)return alert('Leave is already recorded for this staff/date/period.');
-   const editWho=userSafe(emp).name||emp;if(!confirm('Confirm Leave Change
-
-Staff: '+editWho+'
-Date: '+date+'
-Leave: '+periodLabel(period)+'
-
-Save these changes?'))return;
+   const editWho=userSafe(emp).name||emp;if(!confirm('Confirm Leave Change\n\nStaff: '+editWho+'\nDate: '+date+'\nLeave: '+periodLabel(period)+'\n\nSave these changes?'))return;
    const before={emp:l.emp,date:l.date,period:l.period,remark:l.remark||''};Object.assign(l,{emp,date,period,remark,updatedAt:Date.now(),updatedBy:me.id});
    state.leaveAudit=state.leaveAudit||[];state.leaveAudit.push({id:uid(),action:'EDIT',leaveId:l.id,by:me.id,at:Date.now(),before,after:{emp,date,period,remark}});
    save();closeModal();render();
@@ -1040,9 +1028,7 @@ Save these changes?'))return;
    if(!me||me.role!=='Manager')return;
    const l=(state.leaves||[]).find(x=>x&&String(x.id)===String(id)&&!x.cancelled);if(!l)return;
    const reason=prompt('Reason for deleting/cancelling this leave record:','Correction');if(reason===null)return;if(!String(reason).trim())return alert('Enter a reason.');
-   if(!confirm('Confirm Delete Leave
-
-This will cancel the selected leave record. Continue?'))return;
+   if(!confirm('Confirm Delete Leave\n\nThis will cancel the selected leave record. Continue?'))return;
    l.cancelled=true;l.cancelledAt=Date.now();l.cancelledBy=me.id;l.cancelReason=String(reason).trim();
    state.leaveAudit=state.leaveAudit||[];state.leaveAudit.push({id:uid(),action:'DELETE',leaveId:l.id,by:me.id,at:Date.now(),reason:l.cancelReason,before:{emp:l.emp,date:l.date,period:l.period,remark:l.remark||''}});
    save();closeModal();render();
@@ -1789,9 +1775,7 @@ This will cancel the selected leave record. Continue?'))return;
  window.v124AddAdditionalTime=add;
  const oldManual=window.manualAdditionalTime;window.manualAdditionalTime=function(){return typeof window.openAdditionalTimeWindow==='function'?window.openAdditionalTimeWindow():typeof oldManual==='function'?oldManual.apply(this,arguments):undefined};
  const oldAdd=window.addTimeToAssignment;window.addTimeToAssignment=function(id){const a=(state.assign||[]).find(x=>x&&x.id===id&&!x.cancelled&&!x.completed);if(!a)return alert('Assignment is no longer active.');const raw=prompt('Additional time approved by supervisor (H.MM or H:MM)','0.30');if(raw===null)return;const mins=typeof parseWorkMinutes==='function'?parseWorkMinutes(raw):NaN;if(!Number.isFinite(mins)||mins<1)return alert('Invalid time. '+(typeof timeInputHint==='function'?timeInputHint():''));const out=add(a,mins,'Supervisor Additional Time');if(out.ok&&typeof window.openAdditionalTimeWindow==='function')window.openAdditionalTimeWindow()};
- window.approveRequest=function(id){const r=(state.requests||[]).find(x=>x&&x.id===id);if(!r)return;if(r.status!=='New')return alert('This request has already been '+String(r.status||'handled').toLowerCase()+'. Additional time was not added again.');if(r.type!=='more_time')return alert('This request is not an additional-time request.');const a=findAssignment(r.job,r.emp);if(!a)return alert('Active assignment no longer exists.');const raw=prompt('Supervisor approved additional time for '+r.job+' / '+((typeof user==='function'&&user(r.emp)?.name)||r.emp)+'\
-Requested: '+fmt(Number(r.minutes)||0)+'\
-Enter approved time (H.MM or H:MM)',((Number(r.minutes)||30)/60).toFixed(2));if(raw===null)return;const mins=typeof parseWorkMinutes==='function'?parseWorkMinutes(raw):NaN;if(!Number.isFinite(mins)||mins<1)return alert('Enter valid approved time. '+(typeof timeInputHint==='function'?timeInputHint():''));const out=add(a,mins,'Employee Request Approved',r);if(!out.ok)return alert(out.reason==='handled'?'This request was already handled.':'Additional time could not be applied.');if(typeof window.openSupervisorRequestsWindow==='function')window.openSupervisorRequestsWindow()};
+ window.approveRequest=function(id){const r=(state.requests||[]).find(x=>x&&x.id===id);if(!r)return;if(r.status!=='New')return alert('This request has already been '+String(r.status||'handled').toLowerCase()+'. Additional time was not added again.');if(r.type!=='more_time')return alert('This request is not an additional-time request.');const a=findAssignment(r.job,r.emp);if(!a)return alert('Active assignment no longer exists.');const raw=prompt('Supervisor approved additional time for '+r.job+' / '+((typeof user==='function'&&user(r.emp)?.name)||r.emp)+'\\nRequested: '+fmt(Number(r.minutes)||0)+'\\nEnter approved time (H.MM or H:MM)',((Number(r.minutes)||30)/60).toFixed(2));if(raw===null)return;const mins=typeof parseWorkMinutes==='function'?parseWorkMinutes(raw):NaN;if(!Number.isFinite(mins)||mins<1)return alert('Enter valid approved time. '+(typeof timeInputHint==='function'?timeInputHint():''));const out=add(a,mins,'Employee Request Approved',r);if(!out.ok)return alert(out.reason==='handled'?'This request was already handled.':'Additional time could not be applied.');if(typeof window.openSupervisorRequestsWindow==='function')window.openSupervisorRequestsWindow()};
  window.v124AdditionalTimeAuthority=true;
 })();
 
@@ -2407,9 +2391,7 @@ Enter approved time (H.MM or H:MM)',((Number(r.minutes)||30)/60).toFixed(2));if(
  window.v133LeaveEmployee='';
  window.v133LeaveRows=function(){const all=month();return window.v133LeaveEmployee?all.filter(x=>String(x.emp)===String(window.v133LeaveEmployee)):all};
  window.v133PrintLeave=function(){const rows=window.v133LeaveRows(),title=window.v133LeaveEmployee?'Employee Leave Report':'Monthly Leave Report';const w=window.open('','_blank');if(!w)return alert('Allow pop-ups to print the leave report.');w.document.write('<html><head><title>'+title+'</title><style>body{font-family:Arial;padding:24px}h2{margin-bottom:4px}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{border:1px solid #bbb;padding:8px;text-align:left}th{background:#eee}</style></head><body><h2>ZUKAIT AUTO</h2><div>'+title+'</div>'+table(rows)+'</body></html>');w.document.close();w.focus();setTimeout(()=>w.print(),250)};
- window.v133ShareLeave=function(){const rows=window.v133LeaveRows();if(!rows.length)return alert('No leave records to share.');const lines=rows.map(l=>{const u=person(l.emp);return [u.name,l.date,label(l.period),l.remark||'—'].join(' | ')});const msg='ZUKAIT AUTO - Leave Report\
-'+lines.join('\
-');const url='https://wa.me/?text='+encodeURIComponent(msg);window.open(url,'_blank')};
+ window.v133ShareLeave=function(){const rows=window.v133LeaveRows();if(!rows.length)return alert('No leave records to share.');const lines=rows.map(l=>{const u=person(l.emp);return [u.name,l.date,label(l.period),l.remark||'—'].join(' | ')});const msg='ZUKAIT AUTO - Leave Report\\n'+lines.join('\\n');const url='https://wa.me/?text='+encodeURIComponent(msg);window.open(url,'_blank')};
  window.v133FilterLeave=function(v){window.v133LeaveEmployee=v||'';window.v133OpenManagerLeave(true)};
  window.v133OpenManagerLeave=function(preserve){if(!me||me.role!=='Manager')return;if(!preserve)window.v133LeaveEmployee='';const t=today(),m=month(),staff=(users||[]).filter(u=>u&&(u.role==='Employee'||u.role==='Supervisor')),sel=window.v133LeaveEmployee,filtered=sel?m.filter(x=>String(x.emp)===String(sel)):m,days=filtered.reduce((n,l)=>n+(l.period==='FULL'?1:.5),0);openModal('<div class="section-title"><h2>🗓 Leave Management</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="v133-leave-tools"><label>Employee<br><select onchange="v133FilterLeave(this.value)"><option value="">All Employees</option>'+staff.map(u=>'<option value="'+E(u.id)+'" '+(String(u.id)===String(sel)?'selected':'')+'>'+E(u.name)+'</option>').join('')+'</select></label><div class="v133-leave-actions"><button onclick="v133PrintLeave()">🖨 PRINT / PDF</button><button onclick="v133ShareLeave()">◉ SEND WHATSAPP</button></div></div><div class="v133-leave-summary"><div><span>ON LEAVE TODAY</span><b>'+new Set(t.filter(x=>!sel||String(x.emp)===String(sel)).map(x=>x.emp)).size+'</b></div><div><span>SELECTED MONTH</span><b>'+days.toFixed(1).replace('.0','')+' days</b></div></div><h3>This Month</h3>'+table(filtered))};
  function apply(){if(!me||me.role!=='Manager')return;const root=document.getElementById('managerView');if(!root)return;const t=today(),count=new Set(t.map(x=>String(x.emp))).size;
@@ -2504,9 +2486,7 @@ Enter approved time (H.MM or H:MM)',((Number(r.minutes)||30)/60).toFixed(2));if(
    return '<html><head><title>'+title+'</title><style>body{font-family:Arial;padding:24px}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{border:1px solid #bbb;padding:8px;text-align:left}th{background:#eee}</style></head><body><h2>ZUKAIT AUTO</h2><h3>'+title+'</h3><table><tr><th>Employee</th><th>Department</th><th>Date</th><th>Leave</th><th>Remark</th></tr>'+(tr||'<tr><td colspan="5">No leave records.</td></tr>')+'</table></body></html>'
  }
  window.v133PrintLeave=function(){window.v112PrintHtml(leavePrintHtml(),'Leave Report')};
- window.v133ShareLeave=function(){const rows=typeof window.v133LeaveRows==='function'?window.v133LeaveRows():[];if(!rows.length)return alert('No leave records to share.');const lines=rows.map(l=>{let u;try{u=user(l.emp)||{name:l.emp}}catch(_){u={name:l.emp}};const label=l.period==='AM'?'Morning Half Day':l.period==='PM'?'Afternoon Half Day':'Full Day';return [u.name,l.date,label,l.remark||'—'].join(' | ')});window.v112ShareText('ZUKAIT AUTO - Leave Report\
-'+lines.join('\
-'))};
+ window.v133ShareLeave=function(){const rows=typeof window.v133LeaveRows==='function'?window.v133LeaveRows():[];if(!rows.length)return alert('No leave records to share.');const lines=rows.map(l=>{let u;try{u=user(l.emp)||{name:l.emp}}catch(_){u={name:l.emp}};const label=l.period==='AM'?'Morning Half Day':l.period==='PM'?'Afternoon Half Day':'Full Day';return [u.name,l.date,label,l.remark||'—'].join(' | ')});window.v112ShareText('ZUKAIT AUTO - Leave Report\\n'+lines.join('\\n'))};
  const oldOpen=window.v133OpenManagerLeave;
  if(typeof oldOpen==='function')window.v133OpenManagerLeave=function(){const r=oldOpen.apply(this,arguments);setTimeout(()=>{const modal=document.querySelector('.modal:not(.hidden),#modal:not(.hidden)')||document.querySelector('.modal');if(!modal)return;const head=modal.querySelector('.section-title');if(head&&!head.querySelector('.v112-back')){const b=document.createElement('button');b.className='secondary v112-back';b.textContent='← BACK';b.onclick=window.v112ManagerBack;head.appendChild(b)}},0);return r};
  window.v112ManagerActionAuthority=true;
