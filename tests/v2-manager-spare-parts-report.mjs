@@ -16,3 +16,5 @@ assert.match(m,/function reportActivityAt\(item,list\)/);assert.match(m,/item\?\
 const reports=fs.readFileSync('app/src/main/assets/v2/features/reports/service.js','utf8');assert.match(reports,/'SPARE_PARTS'/);assert.match(m,/loadAuthoritativeManagerReport/);assert.match(m,/svc\.page\('SPARE_PARTS'/);assert.match(m,/local-fallback/);assert.match(m,/Data source:/);
 
 assert.match(m,/function normalizeReportRow\(r=\{\}\)/);assert.match(m,/r\.list_no/);assert.match(m,/r\.job_card/);assert.match(m,/r\.purchase_amount/);assert.match(m,/do\{const r=await svc\.page\('SPARE_PARTS',\{cursor,limit:500/);assert.match(m,/while\(cursor&&pages<20\)/);assert.match(m,/server-capped-10000/);
+
+assert.match(m,/>WhatsApp<\/button>/);assert.match(m,/function whatsAppManagerReport\(\)/);assert.match(m,/https:\/\/wa\.me\/\?text=/);assert.match(m,/encodeURIComponent\(text\)/);assert.match(m,/whatsAppManagerReport,managerReportText/);
