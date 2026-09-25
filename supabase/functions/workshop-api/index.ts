@@ -352,6 +352,26 @@ Deno.serve(async (req: Request) => {
       return reply({ ok: true, ...live, server_time: Date.now(), user });
     }
 
+    if (action === "v2_event_history") {
+      const requested = Number(body?.limit || 100);
+      const limit = Math.max(1, Math.min(Number.isFinite(requested) ? requested : 100, 500));
+      const before = body?.before ? String(body.before) : null;
+      const entityId = body?.entity_id ? String(body.entity_id) : null;
+      const eventType = body?.event_type ? String(body.event_type) : null;
+      const { data, error } = await admin.rpc("zukait_v2_event_page", {
+        p_before: before,
+        p_limit: limit,
+        p_entity_id: entityId,
+        p_event_type: eventType
+      });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      const nextCursor = rows.length === limit && rows.length
+        ? String(rows[rows.length - 1].server_time || "")
+        : null;
+      return reply({ ok: true, rows, next_cursor: nextCursor, limit, user });
+    }
+
     if (action === "save") {
       const originalExpected = Number(body.expected_revision);
       const originalProposed = body.data;
