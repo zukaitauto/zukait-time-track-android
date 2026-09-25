@@ -99,6 +99,7 @@ jobs:
           node tests/v2-event-write-idempotency.mjs
           node tests/v2-api-single-authority.mjs
           node tests/v2-sql-migration-integrity.mjs
+          node tests/v2-sql-delimiters.mjs
           node tests/v2-multidevice-conflict-matrix.mjs
           node tests/v2-jobcard-projection.mjs
           node tests/v2-wip-completion-target.mjs
