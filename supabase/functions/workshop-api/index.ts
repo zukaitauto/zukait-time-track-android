@@ -453,7 +453,9 @@ Deno.serve(async (req: Request) => {
       if (action === "v2_search_jobcards" && !query) return reply({ ok:true, rows:[], next_cursor:null, limit, user });
       const { data, error } = action === "v2_search_jobcards"
         ? await admin.rpc("zukait_v2_jobcard_page", { p_query: query, p_before: before, p_limit: limit, p_status: null })
-        : await admin.rpc("zukait_v2_report_page", { p_report: report, p_before: before, p_limit: limit, p_filters: filters });
+        : report === "WIP" || report === "COMPLETION_TARGET"
+          ? await admin.rpc("zukait_v2_wip_page", { p_before: before, p_limit: limit, p_stage: filters.stage || null, p_risk: report === "COMPLETION_TARGET" ? (filters.risk || null) : null })
+          : await admin.rpc("zukait_v2_report_page", { p_report: report, p_before: before, p_limit: limit, p_filters: filters });
       if (error) throw error;
       const rows = Array.isArray(data) ? data : [];
       const nextCursor = rows.length === limit && rows.length ? String(rows[rows.length - 1]?.sort_time || "") : null;
