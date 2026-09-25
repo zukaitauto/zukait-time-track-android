@@ -52,4 +52,26 @@ $;
 revoke all on function public.zukait_v2_wip_page(timestamptz,integer,text,text) from public,anon,authenticated;
 grant execute on function public.zukait_v2_wip_page(timestamptz,integer,text,text) to service_role;
 
+create or replace function public.zukait_v2_upsert_jobcard(
+ p_job_card text,p_registration text default '',p_vehicle_make text default '',p_vehicle_model text default '',p_vehicle_year integer default null,
+ p_workflow_stage text default 'CREATED',p_status text default 'OPEN',p_revision bigint default 0,p_event_id text default null,p_completed_at timestamptz default null
+)
+returns public.workshop_v2_jobcards
+language plpgsql security invoker set search_path=public as $
+declare outrow public.workshop_v2_jobcards;
+begin
+ if nullif(trim(coalesce(p_job_card,'')),'') is null then raise exception 'job_card_required'; end if;
+ insert into public.workshop_v2_jobcards(job_card,registration,vehicle_make,vehicle_model,vehicle_year,workflow_stage,status,revision,last_event_id,completed_at)
+ values(trim(p_job_card),coalesce(p_registration,''),coalesce(p_vehicle_make,''),coalesce(p_vehicle_model,''),p_vehicle_year,upper(coalesce(p_workflow_stage,'CREATED')),upper(coalesce(p_status,'OPEN')),greatest(coalesce(p_revision,0),0),p_event_id,p_completed_at)
+ on conflict(job_card) do update set
+  registration=excluded.registration,vehicle_make=excluded.vehicle_make,vehicle_model=excluded.vehicle_model,vehicle_year=excluded.vehicle_year,
+  workflow_stage=excluded.workflow_stage,status=excluded.status,updated_at=now(),completed_at=excluded.completed_at,revision=excluded.revision,last_event_id=excluded.last_event_id
+ where excluded.revision>=workshop_v2_jobcards.revision and (excluded.last_event_id is null or workshop_v2_jobcards.last_event_id is distinct from excluded.last_event_id)
+ returning * into outrow;
+ if outrow.job_card is null then select * into outrow from public.workshop_v2_jobcards where job_card=trim(p_job_card); end if;
+ return outrow;
+end;$;
+revoke all on function public.zukait_v2_upsert_jobcard(text,text,text,text,integer,text,text,bigint,text,timestamptz) from public,anon,authenticated;
+grant execute on function public.zukait_v2_upsert_jobcard(text,text,text,text,integer,text,text,bigint,text,timestamptz) to service_role;
+
 commit;
