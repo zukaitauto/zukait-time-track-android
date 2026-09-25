@@ -64,7 +64,29 @@ begin
  insert into public.workshop_v2_events(event_id,entity_id,actor_id,device_id,event_type,client_time,revision,payload)
  values(p_event_id,p_entity_id,nullif(p_actor_id,''),nullif(p_device_id,''),p_event_type,p_client_time,p_revision,coalesce(p_payload,'{}'::jsonb))
  on conflict(event_id) do nothing returning * into v;
- if found then v_inserted:=true;
+ if found then
+   v_inserted:=true;
+   if p_event_type in ('JOB_CREATED','JOB_UPDATED','JOB_STAGE_CHANGED','JOB_COMPLETED','JOB_REOPENED') then
+     perform public.zukait_v2_upsert_jobcard(
+       coalesce(nullif(p_payload->>'jobCard',''),p_entity_id),
+       coalesce(p_payload->>'registration',''),coalesce(p_payload->>'vehicleMake',''),coalesce(p_payload->>'vehicleModel',''),
+       case when coalesce(p_payload->>'vehicleYear','') ~ '^[0-9]{4}
+   select * into v from public.workshop_v2_events e where e.event_id=p_event_id;
+   if v.entity_id<>p_entity_id or v.event_type<>p_event_type or coalesce(v.actor_id,'')<>coalesce(p_actor_id,'') or coalesce(v.device_id,'')<>coalesce(p_device_id,'') or v.payload<>coalesce(p_payload,'{}'::jsonb) then raise exception 'event_id_conflict'; end if;
+ end if;
+ return query select v.event_id,v.server_time,v.revision,v_inserted;
+end;$$;
+revoke all on function public.zukait_v2_commit_event(text,text,text,text,text,timestamptz,bigint,jsonb) from public,anon,authenticated;
+grant execute on function public.zukait_v2_commit_event(text,text,text,text,text,timestamptz,bigint,jsonb) to service_role;
+
+commit;
+ then (p_payload->>'vehicleYear')::integer else null end,
+       coalesce(p_payload->>'workflowStage','CREATED'),
+       case when p_event_type='JOB_COMPLETED' then 'COMPLETED' when p_event_type='JOB_REOPENED' then 'OPEN' else coalesce(p_payload->>'status','OPEN') end,
+       coalesce(p_revision,0),p_event_id,
+       case when p_event_type='JOB_COMPLETED' then now() when p_event_type='JOB_REOPENED' then null else null end
+     );
+   end if;
  else
    select * into v from public.workshop_v2_events e where e.event_id=p_event_id;
    if v.entity_id<>p_entity_id or v.event_type<>p_event_type or coalesce(v.actor_id,'')<>coalesce(p_actor_id,'') or coalesce(v.device_id,'')<>coalesce(p_device_id,'') or v.payload<>coalesce(p_payload,'{}'::jsonb) then raise exception 'event_id_conflict'; end if;
