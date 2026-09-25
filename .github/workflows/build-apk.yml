@@ -102,6 +102,7 @@ jobs:
           node tests/v2-sql-delimiters.mjs
           node tests/v2-server-calendar-leave-authority.mjs
           node tests/v2-one-active-session-authority.mjs
+          node tests/v2-delayed-replay-authority.mjs
           node tests/v2-multidevice-conflict-matrix.mjs
           node tests/v2-jobcard-projection.mjs
           node tests/v2-wip-completion-target.mjs
