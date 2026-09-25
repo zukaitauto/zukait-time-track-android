@@ -22,6 +22,8 @@
       if(job===HOLD&&(isFriday(ts)||publicHoliday(state,ts)||!inDuty(ts)))issues.push('id001-outside-duty');
     }
     if(type==='WORK_PAUSE'&&job===HOLD)issues.push('id001-pause-not-allowed');
+    if(type==='ID001_START'&&job!==HOLD)issues.push('id001-job-required');
+    if(type==='WORK_START'&&job===HOLD)issues.push('use-id001-start');
     return {ok:issues.length===0,issues};
   }
   window.zukaitV2=Object.assign(window.zukaitV2||{},{rules:{isFriday,inDuty,publicHoliday,onLeave,activeSession,validate}});
