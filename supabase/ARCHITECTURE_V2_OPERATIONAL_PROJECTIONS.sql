@@ -15,6 +15,24 @@ alter table public.workshop_v2_work_sessions enable row level security;
 revoke all on public.workshop_v2_work_sessions from public,anon,authenticated;
 grant select,insert,update on public.workshop_v2_work_sessions to service_role;
 
+create table if not exists public.workshop_v2_assignments(
+ assignment_id text primary key,
+ job_card text not null,
+ employee_id text not null,
+ status text not null default 'ASSIGNED',
+ suggested_minutes integer not null default 0,
+ assigned_at timestamptz not null default now(),
+ updated_at timestamptz not null default now(),
+ revision bigint not null default 0,
+ last_event_id text,
+ check(suggested_minutes>=0)
+);
+create index if not exists workshop_v2_assignments_employee_idx on public.workshop_v2_assignments(employee_id,updated_at desc);
+create index if not exists workshop_v2_assignments_job_idx on public.workshop_v2_assignments(job_card,updated_at desc);
+alter table public.workshop_v2_assignments enable row level security;
+revoke all on public.workshop_v2_assignments from public,anon,authenticated;
+grant select,insert,update on public.workshop_v2_assignments to service_role;
+
 create table if not exists public.workshop_v2_calendar(
  work_date date primary key,
  is_public_holiday boolean not null default false,
@@ -68,6 +86,30 @@ begin
   end if; d=d+1;
  end loop; return total;
 end;$$;
+
+create or replace function public.zukait_v2_apply_assignment_event(p_event_id text,p_entity_id text,p_event_type text,p_event_time timestamptz,p_revision bigint,p_payload jsonb)
+returns void language plpgsql security invoker set search_path=public as $
+declare emp text; job text; etime timestamptz; cur public.workshop_v2_assignments%rowtype;
+begin
+ if p_event_type<>'JOB_ASSIGNED' then raise exception 'unsupported_assignment_event'; end if;
+ emp:=coalesce(p_payload->>'employeeId',''); job:=coalesce(p_payload->>'jobCard',''); etime:=coalesce(p_event_time,now());
+ if emp='' then raise exception 'employee_required'; end if; if job='' or job='ID001' then raise exception 'job_card_required'; end if;
+ select * into cur from public.workshop_v2_assignments where assignment_id=p_entity_id for update;
+ if found and cur.last_event_id=p_event_id then return; end if;
+ if found and coalesce(p_revision,0)<=cur.revision then raise exception 'stale_assignment_revision'; end if;
+ update public.workshop_v2_work_sessions x set
+   ended_at=etime,active_since=null,
+   accumulated_minutes=x.accumulated_minutes+greatest(0,floor(extract(epoch from (etime-coalesce(x.active_since,x.started_at)))/60)::integer),
+   actual_minutes=x.accumulated_minutes+greatest(0,floor(extract(epoch from (etime-coalesce(x.active_since,x.started_at)))/60)::integer),
+   overtime_minutes=x.overtime_minutes+greatest(greatest(0,floor(extract(epoch from (etime-coalesce(x.active_since,x.started_at)))/60)::integer)-public.zukait_v2_duty_minutes(coalesce(x.active_since,x.started_at),etime),0),
+   status='STOPPED',updated_at=now()
+ where x.employee_id=emp and x.status='ACTIVE' and x.kind='ID001';
+ insert into public.workshop_v2_assignments(assignment_id,job_card,employee_id,status,suggested_minutes,assigned_at,revision,last_event_id)
+ values(p_entity_id,job,emp,'ASSIGNED',greatest(coalesce((p_payload->>'suggestedMinutes')::integer,0),0),etime,coalesce(p_revision,0),p_event_id)
+ on conflict(assignment_id) do update set job_card=excluded.job_card,employee_id=excluded.employee_id,status='ASSIGNED',suggested_minutes=excluded.suggested_minutes,updated_at=now(),revision=excluded.revision,last_event_id=excluded.last_event_id;
+end;$;
+revoke all on function public.zukait_v2_apply_assignment_event(text,text,text,timestamptz,bigint,jsonb) from public,anon,authenticated;
+grant execute on function public.zukait_v2_apply_assignment_event(text,text,text,timestamptz,bigint,jsonb) to service_role;
 
 create or replace function public.zukait_v2_apply_work_event(p_event_id text,p_entity_id text,p_event_type text,p_event_time timestamptz,p_revision bigint,p_payload jsonb)
 returns void language plpgsql security invoker set search_path=public as $$
