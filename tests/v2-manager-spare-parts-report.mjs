@@ -10,3 +10,5 @@ console.log('Manager Spare Parts report: role guard, filters and totals ok');
 assert.match(m,/Print \/ PDF/);assert.match(m,/shareManagerReport/);assert.match(m,/navigator\.share/);assert.match(m,/printManagerReport/);assert.match(m,/>Back<\/button>/);
 
 assert.match(m,/function filteredReportRows\(\)/);assert.match(m,/function managerReportText\(\)\{const rows=filteredReportRows\(\)/);assert.match(m,/function renderManagerReport\(\)\{if\(role\(\)!=='Manager'\)return;const rows=filteredReportRows\(\)/);assert.match(m,/From '\+f\.from/);
+
+assert.match(m,/function reportActivityAt\(item,list\)/);assert.match(m,/item\?\.fittedAt/);assert.match(m,/item\?\.returnedAt/);assert.match(m,/item\?\.receivedAt/);assert.match(m,/r\.activityAt\|\|r\.createdAt/);assert.match(m,/Activity Date/);
