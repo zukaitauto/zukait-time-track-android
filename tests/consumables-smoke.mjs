@@ -117,7 +117,7 @@ assert.throws(()=>C.issue(state,{jobCard:'JC2',lines:[{materialId:mat.id,brandId
 console.log('Consumables isolation tests passed');
 
 {
- const s=baseState();const mgr={id:'MGR1',name:'Manager',role:'Manager'};
+ const s={};const mgr={id:'MGR1',name:'Manager',role:'Manager'};
  const mat=C.addMaterial(s,{name:'Correction Test Paint',unit:'Liter',category:'Paint'},mgr);
  const brand=C.addBrand(s,{name:'Correction Test Brand'},mgr);
  const p=C.setPrice(s,{materialId:mat.id,brandId:brand.id,pricePerUnit:4.125,effectiveFrom:1000,reason:'Initial'},mgr);
