@@ -353,31 +353,26 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "v2_commit_event") {
-      const event = body?.event || {};
-      const eventId=String(event.eventId||"").trim(), entityId=String(event.entityId||"").trim(), type=String(event.type||"").trim();
-      if(!eventId||!entityId||!type)return reply({ok:false,code:"bad_event"},400);
-      if(event.actorId && String(event.actorId)!==String(user.id))return reply({ok:false,code:"actor_mismatch"},403);
-      const {data,error}=await admin.rpc("zukait_v2_commit_event",{
-        p_event_id:eventId,p_entity_id:entityId,p_actor_id:user.id,p_device_id:String(event.deviceId||""),p_event_type:type,
-        p_client_time:event.clientTime||null,p_revision:event.serverRevision==null?null:Number(event.serverRevision),p_payload:event.payload||{}
+      const event = body?.event && typeof body.event === "object" ? body.event : null;
+      if (!event || !String(event.eventId || "").trim() || !String(event.entityId || "").trim() || !String(event.type || "").trim()) {
+        return reply({ ok:false, code:"bad_event" },400);
+      }
+      const eventId = String(event.eventId).trim();
+      const entityId = String(event.entityId).trim();
+      const eventType = String(event.type).trim();
+      if (event.actorId && String(event.actorId) !== String(user.id)) return reply({ok:false,code:"actor_mismatch"},403);
+      const { data, error } = await admin.rpc("zukait_v2_commit_event", {
+        p_event_id:eventId, p_entity_id:entityId, p_actor_id:String(user.id),
+        p_device_id:String(event.deviceId||""), p_event_type:eventType, p_client_time:event.clientTime||null,
+        p_revision:event.serverRevision==null?null:Number(event.serverRevision),
+        p_payload:event.payload && typeof event.payload==="object" ? event.payload : {}
       });
-      if(error)throw error;
+      if (error) {
+        if (String(error.message||"").includes("event_id_conflict")) return reply({ok:false,code:"event_id_conflict"},409);
+        throw error;
+      }
       const row=Array.isArray(data)?data[0]:data;
       return reply({ok:true,event_id:row?.event_id||eventId,server_time:row?.server_time||null,server_revision:row?.revision??null,inserted:row?.inserted===true,user});
-    }
-
-    if (action === "v2_commit_event") {
-      const event = body?.event;
-      if (!event?.eventId || !event?.entityId || !event?.type) return reply({ ok:false, code:"bad_event" },400);
-      if (event.actorId && String(event.actorId) !== String(user.id)) return reply({ ok:false, code:"actor_mismatch" },403);
-      const { data, error } = await admin.rpc("zukait_v2_commit_event", {
-        p_event_id:String(event.eventId), p_entity_id:String(event.entityId), p_actor_id:String(user.id),
-        p_device_id:String(event.deviceId||""), p_event_type:String(event.type), p_client_time:event.clientTime||null,
-        p_revision:event.serverRevision==null?null:Number(event.serverRevision), p_payload:event.payload&&typeof event.payload==="object"?event.payload:{}
-      });
-      if (error) throw error;
-      const row=Array.isArray(data)?data[0]:data;
-      return reply({ok:true,event_id:row?.event_id||String(event.eventId),server_time:row?.server_time||null,server_revision:row?.revision??null,inserted:row?.inserted===true,user});
     }
 
     if (action === "v2_event_history") {
@@ -400,45 +395,8 @@ Deno.serve(async (req: Request) => {
       return reply({ ok: true, rows, next_cursor: nextCursor, limit, user });
     }
 
-    if (action === "v2_commit_event") {
-      const e = body?.event || {};
-      const eventId=String(e.eventId||"").trim(), entityId=String(e.entityId||"").trim(), eventType=String(e.type||"").trim();
-      if(!eventId||!entityId||!eventType)return reply({ok:false,code:"bad_event"},400);
-      if(String(e.actorId||"")!==String(user.id))return reply({ok:false,code:"actor_mismatch"},403);
-      const {data,error}=await admin.rpc("zukait_v2_commit_event",{p_event_id:eventId,p_entity_id:entityId,p_actor_id:user.id,p_device_id:String(e.deviceId||""),p_event_type:eventType,p_client_time:e.clientTime||null,p_revision:e.serverRevision==null?null:Number(e.serverRevision),p_payload:e.payload&&typeof e.payload==="object"?e.payload:{}});
-      if(error){if(String(error.message||"").includes("event_id_conflict"))return reply({ok:false,code:"event_id_conflict"},409);throw error;}
-      const row=Array.isArray(data)?data[0]:data;
-      return reply({ok:true,event_id:eventId,server_time:row?.server_time||null,server_revision:row?.revision??null,inserted:row?.inserted===true,user});
-    }
 
-    if (action === "v2_commit_event") {
-      const e = body?.event || {};
-      const eventId=String(e.eventId||""), entityId=String(e.entityId||""), eventType=String(e.type||"");
-      if(!eventId||!entityId||!eventType)return reply({ok:false,code:"bad_event"},400);
-      const actorId=String(e.actorId||user.id);
-      if(actorId!==user.id)return reply({ok:false,code:"actor_mismatch"},403);
-      const { data, error } = await admin.rpc("zukait_v2_commit_event",{
-        p_event_id:eventId,p_entity_id:entityId,p_actor_id:user.id,p_device_id:String(e.deviceId||""),p_event_type:eventType,
-        p_client_time:e.clientTime||null,p_revision:e.serverRevision==null?null:Number(e.serverRevision),p_payload:e.payload&&typeof e.payload==="object"?e.payload:{}
-      });
-      if(error){if(String(error.message||"").includes("event_id_conflict"))return reply({ok:false,code:"event_id_conflict"},409);throw error;}
-      const row=Array.isArray(data)?data[0]:data;
-      return reply({ok:true,event_id:row?.event_id||eventId,server_time:row?.server_time||null,server_revision:row?.revision??null,inserted:row?.inserted===true,user});
-    }
 
-    if (action === "v2_commit_event") {
-      const event = body?.event && typeof body.event === "object" ? body.event : null;
-      if (!event || !event.eventId || !event.entityId || !event.type) return reply({ ok:false, code:"bad_event" },400);
-      if (event.actorId && String(event.actorId) !== String(user.id)) return reply({ ok:false, code:"actor_mismatch" },403);
-      const { data, error } = await admin.rpc("zukait_v2_commit_event", {
-        p_event_id:String(event.eventId), p_entity_id:String(event.entityId), p_actor_id:String(user.id),
-        p_device_id:String(event.deviceId||""), p_event_type:String(event.type), p_client_time:event.clientTime||null,
-        p_revision:event.serverRevision==null?null:Number(event.serverRevision), p_payload:event.payload||{}
-      });
-      if (error) throw error;
-      const row=Array.isArray(data)?data[0]:data;
-      return reply({ok:true,event_id:row?.event_id||String(event.eventId),server_time:row?.server_time||null,server_revision:row?.revision??null,inserted:row?.inserted===true,user});
-    }
 
     if (action === "v2_upsert_jobcard") {
       const j=body?.jobcard||{};
