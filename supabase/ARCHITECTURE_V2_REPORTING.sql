@@ -24,5 +24,5 @@ language sql stable security invoker set search_path=public as $$
  select e.event_id,e.entity_id,e.event_type,e.actor_id,e.server_time,e.revision,e.payload from mapped e order by e.server_time desc, e.event_id desc limit greatest(1,least(coalesce(p_limit,100),500));
 $$;
 revoke all on function public.zukait_v2_report_page(text,timestamptz,integer,jsonb,text) from public,anon,authenticated;
-grant execute on function public.zukait_v2_report_page(text,timestamptz,integer,jsonb) to service_role;
+grant execute on function public.zukait_v2_report_page(text,timestamptz,integer,jsonb,text) to service_role;
 commit;
