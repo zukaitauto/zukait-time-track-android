@@ -55,6 +55,7 @@ jobs:
           node --check app/src/main/assets/v2/features/jobcards/workflow.js
           node --check app/src/main/assets/v2/features/spare-parts/workflow.js
           node --check app/src/main/assets/v2/features/notifications/rules.js
+          node --check app/src/main/assets/v2/features/reports/service.js
           node --check app/src/main/assets/v2/features/time/work_rules.js
           node --check app/src/main/assets/v2/features/time/work_events.js
           python - <<'PY'
@@ -96,6 +97,7 @@ jobs:
           node tests/v2-job-workflow.mjs
           node tests/v2-spare-parts.mjs
           node tests/v2-notification-rules.mjs
+          node tests/v2-reports.mjs
 
       - name: Check production assets
         shell: bash
