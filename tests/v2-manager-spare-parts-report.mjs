@@ -8,3 +8,5 @@ assert.match(m,/role\(\)==='Manager'\?'<button class="blue"/);
 assert.match(m,/openManagerReport,renderManagerReport,reportRows/);
 console.log('Manager Spare Parts report: role guard, filters and totals ok');
 assert.match(m,/Print \/ PDF/);assert.match(m,/shareManagerReport/);assert.match(m,/navigator\.share/);assert.match(m,/printManagerReport/);assert.match(m,/>Back<\/button>/);
+
+assert.match(m,/function filteredReportRows\(\)/);assert.match(m,/function managerReportText\(\)\{const rows=filteredReportRows\(\)/);assert.match(m,/function renderManagerReport\(\)\{if\(role\(\)!=='Manager'\)return;const rows=filteredReportRows\(\)/);assert.match(m,/From '\+f\.from/);
