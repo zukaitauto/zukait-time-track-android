@@ -3245,3 +3245,38 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
   apply();
   window.v158ApplyEVCardAuthority=apply;
 })();
+
+
+/* V159 HEAVY VEHICLE CLASS AUTHORITY */
+(()=>{
+  const heavyClass=v=>{
+    const s=String(v||'').toLowerCase().replace(/[_-]+/g,' ');
+    if(/\bprime\s*mover(s)?\b|\btractor\s*(head|unit)?\b/.test(s))return 'PRIME MOVER';
+    if(/\b3\s*(ton|tonne|t)\b/.test(s))return '3 TON';
+    if(/\b7\s*(ton|tonne|t)\b/.test(s))return '7 TON';
+    if(/\b10\s*(ton|tonne|t)\b/.test(s))return '10 TON';
+    return '';
+  };
+  const apply=()=>{
+    document.querySelectorAll('[data-job]').forEach(card=>{
+      const no=card.dataset.job,j=(state.jobs||[]).find(x=>x&&String(x.no)===String(no));
+      const cls=heavyClass(j?.vehicle);
+      let badge=card.querySelector('.v159-heavy-badge');
+      if(!cls){badge?.remove();return;}
+      if(!badge){
+        badge=document.createElement('span');badge.className='v159-heavy-badge';
+        const mark=card.querySelector('.v82-vehicle-mark')||card.querySelector('.v75s-card-top')||card;
+        mark.appendChild(badge);
+      }
+      badge.textContent=cls;
+    });
+  };
+  const css=document.createElement('style');
+  css.textContent='.v159-heavy-badge{display:inline-flex;align-items:center;white-space:nowrap;padding:5px 8px;border-radius:10px;background:#f1f5f9;border:1px solid #94a3b8;color:#334155;font-size:10px;font-weight:1000;letter-spacing:.3px}';
+  document.head.appendChild(css);
+  const obs=new MutationObserver(()=>requestAnimationFrame(apply));
+  obs.observe(document.body,{childList:true,subtree:true});
+  apply();
+  window.v159HeavyVehicleClass=heavyClass;
+  window.v159ApplyHeavyVehicleClass=apply;
+})();
