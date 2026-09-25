@@ -18,7 +18,7 @@ language sql stable security invoker set search_path=public as $$
   (q.report in ('WIP','CYCLE_TIME','EFFICIENCY','COMPLETION_TARGET') and e.event_type like 'JOB%') or
   (q.report='JOB_SEARCH' and q.query is not null and (e.entity_id ilike '%'||q.query||'%' or coalesce(e.payload->>'jobCard','') ilike '%'||q.query||'%' or coalesce(e.payload->>'registration','') ilike '%'||q.query||'%'))
  ))
- select e.event_id,e.entity_id,e.event_type,e.actor_id,e.server_time,e.revision,e.payload from mapped e order by e.server_time desc limit greatest(1,least(coalesce(p_limit,100),500));
+ select e.event_id,e.entity_id,e.event_type,e.actor_id,e.server_time,e.revision,e.payload from mapped e order by e.server_time desc, e.event_id desc limit greatest(1,least(coalesce(p_limit,100),500));
 $$;
 revoke all on function public.zukait_v2_report_page(text,timestamptz,integer,jsonb) from public,anon,authenticated;
 grant execute on function public.zukait_v2_report_page(text,timestamptz,integer,jsonb) to service_role;
