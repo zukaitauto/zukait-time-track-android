@@ -10,4 +10,5 @@ assert.equal(p.quotation.setPrice(q,'x','C','', 'OMR',1).ok,false);
 const list={number:'PL-X',jobCard:'JC-X',make:'Toyota',model:'Camry',lines:[{id:'p',name:'Front Bumper',qty:1,status:'ORDERED'}]};assert.equal(p.lists.search([list],'bumper').length,1);
 assert.equal(p.calendar.workshopDaysBetween('2026-09-24','2026-09-27'),2,'Friday excluded; Sat+Sun counted');
 const noPrice={...list,lines:[{...base,name:'Lamp',finalPriceOMR:null,finalPurchaseAt:Date.parse('2026-09-25T10:00:00Z')}]};assert.equal(p.partsReports.rows([noPrice]).length,0);
+assert.equal(p.analytics.priceVariance(42,35).difference,-7);assert.equal(p.analytics.priceVariance(35,42).difference,7);const over=p.analytics.cap(500,525.25);assert.equal(over.exceeded,true);assert.equal(over.balance,0);assert.equal(over.overBy,25.25);
 console.log('Spare Parts calculation edge cases: ok');
