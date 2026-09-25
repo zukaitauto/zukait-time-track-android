@@ -396,6 +396,7 @@
         const merged=me?.role==='Employee'
           ? mergeEmployeeConflict(remote,localSnapshot,me.id)
           : threeWayMerge(base,remote,localSnapshot);
+        try{if(me?.role==='Employee')window.zukaitV2?.reconnectAudit?.record?.({assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:cloudRevision,syncState:'pending'},{assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:Number(r.revision||cloudRevision)},'LEGACY_CONFLICT_MERGE')}catch(e){console.warn('V2 reconnect shadow audit skipped',e)}
         cloudApplying=true;
         try{state=merged;ensureShape();persistLocal()}finally{cloudApplying=false}
         cloudRevision=Number(r.revision||cloudRevision);
@@ -440,6 +441,7 @@
               const merged=me?.role==='Employee'
                 ? mergeEmployeeConflict(remote,localSnapshot,me.id)
                 : threeWayMerge(base,remote,localSnapshot);
+              try{if(me?.role==='Employee')window.zukaitV2?.reconnectAudit?.record?.({assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:cloudRevision,syncState:'pending'},{assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:Number(latest.revision||cloudRevision)},'LEGACY_PERMISSION_REBASE')}catch(e){console.warn('V2 reconnect shadow audit skipped',e)}
               cloudApplying=true;
               try{state=merged;ensureShape();persistLocal()}finally{cloudApplying=false}
               cloudRevision=Number(latest.revision||cloudRevision);
