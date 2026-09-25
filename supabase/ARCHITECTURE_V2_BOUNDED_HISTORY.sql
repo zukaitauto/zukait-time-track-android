@@ -60,6 +60,9 @@ begin
      if nullif(trim(coalesce(p_payload->>'jobCard','')),'') is null or nullif(trim(coalesce(p_payload->>'partId',p_entity_id,'')),'') is null then raise exception 'invalid_spare_part_event'; end if;
      if p_event_type='SPARE_PART_STATUS_CHANGED' and (nullif(trim(coalesce(p_payload->>'from','')),'') is null or nullif(trim(coalesce(p_payload->>'to','')),'') is null) then raise exception 'invalid_spare_part_transition'; end if;
    end if;
+   if p_event_type in ('PUBLIC_HOLIDAY_SET','PUBLIC_HOLIDAY_CLEARED') then
+     perform public.zukait_v2_apply_calendar_event(p_event_id,p_entity_id,p_event_type,p_client_time,p_payload);
+   end if;
    if p_event_type in ('LEAVE_CREATED','LEAVE_UPDATED','LEAVE_CANCELLED') then
      perform public.zukait_v2_apply_leave_event(p_event_id,p_entity_id,p_event_type,p_client_time,p_payload);
    end if;
