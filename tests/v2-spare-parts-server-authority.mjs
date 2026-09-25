@@ -1,9 +1,14 @@
 import fs from'node:fs';import assert from'node:assert/strict';
 const sql=fs.readFileSync('supabase/ARCHITECTURE_V2_BOUNDED_HISTORY.sql','utf8');
 const report=fs.readFileSync('supabase/ARCHITECTURE_V2_REPORTING.sql','utf8');
+const workflow=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/workflow.js','utf8');
+const main=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8');
 assert.match(sql,/p_event_type like 'SPARE_PART%'/);
 assert.match(sql,/raise exception 'invalid_spare_part_event'/);
 assert.match(sql,/p_event_type='SPARE_PART_STATUS_CHANGED'/);
 assert.match(sql,/raise exception 'invalid_spare_part_transition'/);
 assert.match(report,/q\.report='PARTS_DELAY'.*e\.event_type like 'SPARE_PART%'/s);
+assert.match(workflow,/if\(to==='DENTER_CHECKED'\)return role==='Manager'/,'Denter must not confirm parts');
+assert.doesNotMatch(workflow,/role==='Denter'\|\|role==='Manager'/,'Denter must not have transition authority');
+assert.match(workflow,/function notifySupervisor/);assert.match(main,/function denterView/);assert.match(main,/Notify Supervisor/);assert.match(main,/denterView\(\)\?'':'<hr>/,'Denter must not see part-entry controls');
 console.log('V2 spare-parts server event authority gate: ok');
