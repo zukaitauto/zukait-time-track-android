@@ -2,7 +2,7 @@ import fs from 'node:fs';import assert from 'node:assert/strict';import vm from 
 const code=fs.readFileSync('app/src/main/assets/v2/features/jobcards/workflow.js','utf8');
 const sandbox={window:{},Date};vm.createContext(sandbox);vm.runInContext(code,sandbox);
 const w=sandbox.window.zukaitV2.jobWorkflow;
-assert.equal(w.stages.length,12);
+assert.equal(w.stages.length,11);
 assert.equal(w.canTransition('CREATED','DENTING'),true);
 assert.equal(w.canTransition('DENTING','CREATED'),false);
 assert.equal(w.canTransition('DELIVERED','QC'),false);
