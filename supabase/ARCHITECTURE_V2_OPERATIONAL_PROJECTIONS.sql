@@ -15,7 +15,7 @@ revoke all on public.workshop_v2_work_sessions from public,anon,authenticated;
 grant select,insert,update on public.workshop_v2_work_sessions to service_role;
 
 create or replace function public.zukait_v2_duty_minutes(p_start timestamptz,p_end timestamptz)
-returns integer language plpgsql immutable as $
+returns integer language plpgsql immutable as $$
 declare d date; total integer:=0; a timestamptz; b timestamptz;
 begin
  if p_start is null or p_end is null or p_end<=p_start then return 0; end if;
@@ -28,10 +28,10 @@ begin
    total:=total+greatest(0,floor(extract(epoch from (least(p_end,b)-greatest(p_start,a)))/60)::integer);
   end if; d=d+1;
  end loop; return total;
-end;$;
+end;$$;
 
 create or replace function public.zukait_v2_apply_work_event(p_event_id text,p_entity_id text,p_event_type text,p_event_time timestamptz,p_revision bigint,p_payload jsonb)
-returns void language plpgsql security invoker set search_path=public as $
+returns void language plpgsql security invoker set search_path=public as $$
 declare cur public.workshop_v2_work_sessions%rowtype; mins integer:=0; dutymins integer:=0; intervalmins integer:=0; kindv text; emp text; job text; etime timestamptz;
 begin
  etime:=coalesce(p_event_time,now()); emp:=coalesce(p_payload->>'employeeId',''); job:=coalesce(p_payload->>'jobCard',p_payload->>'job',''); kindv:=case when p_event_type like 'ID001%' then 'ID001' else 'WORK' end;
@@ -51,7 +51,7 @@ begin
    intervalmins:=case when cur.status='ACTIVE' then greatest(0,floor(extract(epoch from (etime-coalesce(cur.active_since,cur.started_at)))/60)::integer) else 0 end; dutymins:=case when cur.status='ACTIVE' then public.zukait_v2_duty_minutes(coalesce(cur.active_since,cur.started_at),etime) else 0 end; mins:=cur.accumulated_minutes+intervalmins;
    update public.workshop_v2_work_sessions set ended_at=etime,active_since=null,accumulated_minutes=mins,overtime_minutes=cur.overtime_minutes+greatest(intervalmins-dutymins,0),status=case when kind='ID001' then 'STOPPED' else 'FINISHED' end,actual_minutes=mins,last_event_id=p_event_id,revision=p_revision,updated_at=now() where session_id=p_entity_id;
  end if;
-end;$;
+end;$$;
 revoke all on function public.zukait_v2_apply_work_event(text,text,text,timestamptz,bigint,jsonb) from public,anon,authenticated;
 grant execute on function public.zukait_v2_apply_work_event(text,text,text,timestamptz,bigint,jsonb) to service_role;
 
