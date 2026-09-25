@@ -84,6 +84,15 @@ begin
  if found and coalesce(p_revision,0)<=cur.revision then raise exception 'stale_work_revision'; end if;
  if found and p_event_type='WORK_PAUSE' and cur.kind='ID001' then raise exception 'id001_pause_not_allowed'; end if;
  if p_event_type in ('WORK_START','ID001_START') then
+   if p_event_type='WORK_START' then
+     update public.workshop_v2_work_sessions x set
+       ended_at=etime, active_since=null,
+       accumulated_minutes=x.accumulated_minutes+greatest(0,floor(extract(epoch from (etime-coalesce(x.active_since,x.started_at)))/60)::integer),
+       actual_minutes=x.accumulated_minutes+greatest(0,floor(extract(epoch from (etime-coalesce(x.active_since,x.started_at)))/60)::integer),
+       overtime_minutes=x.overtime_minutes+greatest(greatest(0,floor(extract(epoch from (etime-coalesce(x.active_since,x.started_at)))/60)::integer)-public.zukait_v2_duty_minutes(coalesce(x.active_since,x.started_at),etime),0),
+       status='STOPPED',updated_at=now()
+     where x.employee_id=emp and x.status='ACTIVE' and x.kind='ID001' and x.session_id<>p_entity_id;
+   end if;
    if exists(select 1 from public.workshop_v2_work_sessions x where x.employee_id=emp and x.status='ACTIVE' and x.session_id<>p_entity_id) then raise exception 'employee_already_active'; end if;
    if found and cur.status not in ('FINISHED','STOPPED') then raise exception 'work_session_exists'; end if;
    insert into public.workshop_v2_work_sessions(session_id,assignment_id,job_card,employee_id,kind,started_at,active_since,status,suggested_minutes,repeat_minutes,last_event_id,revision)
