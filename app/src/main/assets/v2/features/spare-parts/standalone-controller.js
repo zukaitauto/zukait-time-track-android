@@ -1,9 +1,9 @@
 (function(){
 'use strict';const V2=window.zukaitV2=window.zukaitV2||{},p=V2.spareParts=V2.spareParts||{};
 function clone(x){return JSON.parse(JSON.stringify(x))}
-function createStore(seed={}){let state={role:seed.role||'Supervisor',lists:clone(seed.lists||[]),active:null,screen:'DASHBOARD',draft:{lines:[]},events:[]};if(p.completion)state.lists=state.lists.map(x=>p.completion.apply(x).list);const emit=(type,data={})=>state.events.push({type,data,at:new Date().toISOString()});function findPL(n){return state.lists.find(x=>x.number===n)}
+function createStore(seed={}){let state={role:seed.role||'Supervisor',lists:clone(seed.lists||[]),active:null,screen:'DASHBOARD',draft:{lines:[]},events:[],processedEvents:clone(seed.processedEvents||[])};if(p.completion)state.lists=state.lists.map(x=>p.completion.apply(x).list);const emit=(type,data={})=>state.events.push({type,data,at:new Date().toISOString()});function findPL(n){return state.lists.find(x=>x.number===n)}
 function roleOf(payload){return String(payload?.ctx?.role||state.role||'')}
-function dispatch(a,payload={}){switch(a){
+function dispatch(a,payload={}){const eventId=String(payload.eventId||'').trim();if(eventId&&state.processedEvents.includes(eventId))return{ok:true,duplicate:true,state:snapshot()};switch(a){
 case'OPEN':state.screen=payload.screen;state.active=payload.pl||state.active;break;
 case'SET_DRAFT_JOB_CARD':{const jc=payload.jobCard||null;if(!jc){state.draft.jobCard=null;break}state.draft.jobCard=String(jc.number||jc.jobCard||jc.id||jc).trim();state.draft.registration=String(jc.registration||'').trim();state.draft.make=String(jc.make||'').trim();state.draft.model=String(jc.model||'').trim();state.draft.year=String(jc.year||'').trim();state.draft.customer=String(jc.customer||'').trim();break}
 case'CREATE_DRAFT_PART':if(!String(payload.name||'').trim())return{ok:false,code:'PART_REQUIRED'};state.draft.lines.push({id:'D'+Date.now(),name:String(payload.name).trim(),qty:Math.max(1,Number(payload.qty)||1),status:'ENQUIRY'});break;
@@ -19,7 +19,7 @@ case'ADD_ADDITIONAL':{const x=findPL(payload.pl);if(!x)return{ok:false,code:'NOT
 case'MARK_VIEWED':{const x=findPL(payload.pl);if(!x)return{ok:false,code:'NOT_FOUND'};const r=p.lists?.markViewed(x,payload.ctx||{role:state.role});if(!r?.ok)return r;Object.assign(x,r.list);break}
 case'DELIVERED_PENDING':{if(!['Supervisor','Manager'].includes(roleOf(payload)))return{ok:false,code:'FORBIDDEN'};const x=findPL(payload.pl);if(!x)return{ok:false,code:'NOT_FOUND'};x.deliveredPending=true;x.deliveredAt=payload.at||new Date().toISOString();x.view='DELIVERED_PENDING';emit('VEHICLE_DELIVERED_PENDING',{pl:payload.pl});break}
 default:return{ok:false,code:'UNKNOWN_ACTION'}}
-const targetPL=payload.pl||state.active,x=targetPL&&findPL(targetPL);if(x&&p.completion){const applied=p.completion.apply(x);Object.assign(x,applied.list);if(!x.view)x.view=x.deliveredPending?'DELIVERED_PENDING':'WAITING'}return{ok:true,state:snapshot()}}
+if(eventId)state.processedEvents.push(eventId);const targetPL=payload.pl||state.active,x=targetPL&&findPL(targetPL);if(x&&p.completion){const applied=p.completion.apply(x);Object.assign(x,applied.list);if(!x.view)x.view=x.deliveredPending?'DELIVERED_PENDING':'WAITING'}return{ok:true,state:snapshot()}}
 function snapshot(){return clone(state)}return{dispatch,snapshot,findPL}}
 p.controller={createStore};
 })();
