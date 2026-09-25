@@ -14,8 +14,10 @@
   }
   function recent(options={}){
     const limit=Math.max(1,Math.min(Number(options.limit)||DEFAULT_RECENT_LIMIT,500));
-    const source=normalizeRows(window.zukaitServerRecent);
-    return source.slice(0,limit);
+    const source=window.zukaitServerRecent;
+    if(source&&typeof source.page==='function')return source.page({limit,filters:options.filters||{}});
+    const rows=normalizeRows(source).slice(0,limit);
+    return {rows,nextCursor:null,hasMore:false,source:rows.length?'server-cache':'server-required'};
   }
   function history(options={}){
     const limit=Math.max(1,Math.min(Number(options.limit)||DEFAULT_HISTORY_LIMIT,500));
