@@ -1,6 +1,10 @@
 -- Architecture V2 canonical Job Card projection.
 -- Repository migration only; do not apply to production before controlled V2 backend rollout.
 begin;
+
+-- Drop pre-composite signatures before creating the current cursor-safe functions.
+drop function if exists public.zukait_v2_jobcard_page(text,timestamptz,integer,text);
+drop function if exists public.zukait_v2_wip_page(timestamptz,integer,text,text);
 create table if not exists public.workshop_v2_jobcards (
  job_card text primary key,
  registration text not null default '',
