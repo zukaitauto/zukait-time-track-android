@@ -7,4 +7,16 @@ assert.equal(r.validate('WORK_START',a,{...base,sessions:[{emp:'E1',end:null}]},
 assert.equal(r.validate('ID001_START',hold,base,{at:friday}).ok,false);
 assert.equal(r.validate('WORK_PAUSE',hold,base,{at:monday}).ok,false);
 assert.equal(r.validate('ID001_START',hold,{...base,leave:[{emp:'E1',date:'2026-09-21'}]},{at:monday}).ok,false);
+const paused={...base,sessions:[{id:'S1',assignmentId:'A',job:'JC1',emp:'E1',start:monday-60000,end:monday-1000,paused:true}]};
+assert.equal(r.validate('WORK_RESUME',a,paused,{at:monday}).ok,true);
+assert.equal(r.validate('WORK_RESUME',a,base,{at:monday}).ok,false);
+assert.equal(r.validate('WORK_PAUSE',a,base,{at:monday}).ok,false);
+assert.equal(r.validate('WORK_FINISH',a,base,{at:monday}).ok,false);
+assert.equal(r.validate('ID001_STOP',hold,base,{at:monday}).ok,false);
+const active={...base,sessions:[{id:'S2',assignmentId:'A',job:'JC1',emp:'E1',start:monday-1000,end:null,paused:false}]};
+assert.equal(r.validate('WORK_PAUSE',a,active,{at:monday}).ok,true);
+assert.equal(r.validate('WORK_FINISH',a,active,{at:monday}).ok,true);
+assert.equal(r.validate('WORK_RESUME',a,active,{at:monday}).ok,false);
+assert.equal(r.validate('WORK_START',hold,base,{at:monday}).ok,false);
+assert.equal(r.validate('ID001_START',a,base,{at:monday}).ok,false);
 console.log('V2 work rules passed');
