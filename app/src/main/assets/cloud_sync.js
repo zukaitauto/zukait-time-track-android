@@ -494,8 +494,8 @@
 
   async function init(force){
     removeSetupButton();
-    clearInterval(pollTimer);
-    clearInterval(livePollTimer);
+    clearTimeout(pollTimer);
+    clearTimeout(livePollTimer);
     if(!sessionToken()){
       status('LOGIN REQUIRED','local');
       initialDone=true;
@@ -510,20 +510,17 @@
       status(navigator.onLine?'SYNC ERROR':'OFFLINE — LOCAL CACHE',navigator.onLine?'bad':'warn');
       initialDone=true;
     }
-    pollTimer=setInterval(async()=>{
-      if(!sessionToken()||!navigator.onLine||cloudDirty||cloudPushing||pullInFlight)return;
-      try{await pull(false)}catch(e){console.warn('Cloud poll failed',e);status('SYNC ERROR','bad')}
-    },1000);
-    livePollTimer=setInterval(()=>{
-      if(!sessionToken()||!navigator.onLine||!liveRole())return;
-      pullLiveStatus();
-    },1000);
+    const pollMs=()=>document.visibilityState==='hidden'?30000:5000;
+    const liveMs=()=>document.visibilityState==='hidden'?30000:3000;
+    const schedulePoll=()=>{clearTimeout(pollTimer);pollTimer=setTimeout(async()=>{if(sessionToken()&&navigator.onLine&&!cloudDirty&&!cloudPushing&&!pullInFlight)try{await pull(false)}catch(e){console.warn('Cloud poll failed',e);status('SYNC ERROR','bad')}schedulePoll()},pollMs())};
+    const scheduleLive=()=>{clearTimeout(livePollTimer);livePollTimer=setTimeout(()=>{if(sessionToken()&&navigator.onLine&&liveRole())pullLiveStatus();scheduleLive()},liveMs())};
+    schedulePoll();scheduleLive();
     return true;
   }
 
   function stop(){
-    clearInterval(pollTimer);pollTimer=null;
-    clearInterval(livePollTimer);livePollTimer=null;
+    clearTimeout(pollTimer);pollTimer=null;
+    clearTimeout(livePollTimer);livePollTimer=null;
     clearTimeout(pushTimer);pushTimer=null;
   }
 
@@ -541,7 +538,9 @@
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshVisibleSharedState()});
   window.addEventListener('focus',refreshVisibleSharedState);
 
-  window.addEventListener('online',()=>init(false));
+  window.addEventListener('online',async()=>{status(cloudDirty?'ONLINE — SYNCING QUEUED CHANGES':'ONLINE','info');try{await init(false)}catch(e){console.warn('Reconnect sync failed',e)}});
+  window.addEventListener('pagehide',()=>{if(cloudDirty)try{localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:payloadState()}))}catch(_){}});
+  window.addEventListener('beforeunload',()=>{if(cloudDirty)try{localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:payloadState()}))}catch(_){} });
   window.addEventListener('offline',()=>{
     status(cloudDirty?'OFFLINE — CHANGE QUEUED':'OFFLINE — LOCAL CACHE','warn');
     publishLiveStatus(false);
