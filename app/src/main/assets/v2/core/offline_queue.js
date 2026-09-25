@@ -9,7 +9,7 @@
     if(rows.some(x=>x.eventId===event.eventId))return event;
     rows.push(Object.assign({},event,{syncState:event.syncState||'pending'}));write(rows);return event;
   }
-  function pending(){return read().filter(x=>x.syncState==='pending'||!x.syncState)}
+  function pending(){return read().filter(x=>x.syncState!=='synced'&&x.syncState!=='conflict')}
   function markSynced(eventId,server={}){
     const rows=read().map(x=>x.eventId===eventId?Object.assign({},x,{syncState:'synced',serverTime:server.serverTime||x.serverTime||new Date().toISOString(),serverRevision:server.serverRevision??x.serverRevision}):x);
     write(rows);return rows.find(x=>x.eventId===eventId)||null;
