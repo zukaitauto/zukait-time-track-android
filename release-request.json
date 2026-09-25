@@ -1,8 +1,8 @@
 {
-  "versionName": "V140",
-  "versionCode": 103,
+  "versionName": "V141",
+  "versionCode": 104,
   "approvedForStaff": true,
   "approvedAt": "2026-09-25",
-  "sourceCommit": "37b5b407a6159cfebd383ade1b0b25fa5af4607b",
-  "publishNonce": "approved-v140-oman-logo-integration-20260925-2"
+  "sourceCommit": "9c77ee00dc198c79fe6367e7c1b45632efb3bc12",
+  "publishNonce": "approved-v141-battery-offline-live-authority-20260925-1"
 }
