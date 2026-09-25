@@ -12,3 +12,5 @@ assert.match(m,/Print \/ PDF/);assert.match(m,/shareManagerReport/);assert.match
 assert.match(m,/function filteredReportRows\(\)/);assert.match(m,/function managerReportText\(\)\{const rows=filteredReportRows\(\)/);assert.match(m,/function renderManagerReport\(\)\{if\(role\(\)!=='Manager'\)return;const rows=filteredReportRows\(\)/);assert.match(m,/From '\+f\.from/);
 
 assert.match(m,/function reportActivityAt\(item,list\)/);assert.match(m,/item\?\.fittedAt/);assert.match(m,/item\?\.returnedAt/);assert.match(m,/item\?\.receivedAt/);assert.match(m,/r\.activityAt\|\|r\.createdAt/);assert.match(m,/Activity Date/);
+
+const reports=fs.readFileSync('app/src/main/assets/v2/features/reports/service.js','utf8');assert.match(reports,/'SPARE_PARTS'/);assert.match(m,/loadAuthoritativeManagerReport/);assert.match(m,/svc\.page\('SPARE_PARTS'/);assert.match(m,/local-fallback/);assert.match(m,/Data source:/);
