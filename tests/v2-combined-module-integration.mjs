@@ -5,7 +5,7 @@ const data=fs.readFileSync('app/src/main/assets/v2/core/data_paths.js','utf8');
 const spare=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/workflow.js','utf8');
 const cloud=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
 for(const t of ['functional-smoke.mjs','consumables-smoke.mjs','consumables-ui.mjs','v2-spare-parts.mjs','v2-spare-parts-server-authority.mjs','v2-repeat-consumables-server-authority.mjs','v2-multidevice-conflict-matrix.mjs','v2-work-state-machine-authority.mjs','v2-full-regression-manifest.mjs'])assert.ok(y.includes('node tests/'+t),'combined pipeline missing '+t);
-assert.ok(html.includes('v2/features/spare-parts/workflow.js'),'spare parts V2 workflow not loaded by app shell');
+assert.ok(html.includes('v2/features/spare-parts/workflow.js'),'spare parts V2 workflow not loaded by app shell');\nassert.ok(html.includes('v2/features/spare-parts/main_module.js'),'spare parts main module not loaded by app shell');\nconst spareMain=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8');assert.match(spareMain,/PL'\+String\(n\)\.padStart\(3,'0'\)/);assert.match(spareMain,/\['Manager','Supervisor','Purchaser'\]/);assert.match(spareMain,/window\.openSpareParts=render/);
 assert.match(spare,/PRICE_ROLES=new Set\(\['Manager','Purchaser'\]\)/);assert.match(spare,/SPARE_PART_STATUS_CHANGED/);assert.match(spare,/deviceId:ctx\.deviceId/);
 assert.match(cloud,/v2_commit_event/);
 const queue=fs.readFileSync('app/src/main/assets/v2/core/offline_queue.js','utf8');assert.match(queue,/syncState:'conflict'/);
