@@ -17,11 +17,17 @@
     const issues=[],ts=ctx.at||Date.now(),emp=assignment?.emp||ctx.employeeId,job=assignment?.job||ctx.job;
     if(!assignment||assignment.cancelled)issues.push('assignment-unavailable');
     if(type==='WORK_START'||type==='WORK_RESUME'||type==='ID001_START'){
-      if(activeSession(state,emp))issues.push('employee-already-active');
+      const active=activeSession(state,emp);
+      if(active)issues.push('employee-already-active');
+      if(type==='WORK_RESUME'){
+        const prior=(state?.sessions||[]).filter(s=>String(s.emp)===String(emp)&&String(s.assignmentId||'')===String(assignment?.id||'')&&s.paused&&s.end).sort((a,b)=>Number(b.end||0)-Number(a.end||0))[0];
+        if(!prior)issues.push('resume-requires-paused-session');
+      }
       if(onLeave(state,emp,ts))issues.push('employee-on-leave');
       if(job===HOLD&&(isFriday(ts)||publicHoliday(state,ts)||!inDuty(ts)))issues.push('id001-outside-duty');
     }
     if(type==='WORK_PAUSE'&&job===HOLD)issues.push('id001-pause-not-allowed');
+    if((type==='WORK_PAUSE'||type==='WORK_FINISH'||type==='ID001_STOP')&&!activeSession(state,emp))issues.push('active-session-required');
     if(type==='ID001_START'&&job!==HOLD)issues.push('id001-job-required');
     if(type==='WORK_START'&&job===HOLD)issues.push('use-id001-start');
     return {ok:issues.length===0,issues};
