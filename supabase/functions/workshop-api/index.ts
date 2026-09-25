@@ -352,6 +352,20 @@ Deno.serve(async (req: Request) => {
       return reply({ ok: true, ...live, server_time: Date.now(), user });
     }
 
+    if (action === "v2_commit_event") {
+      const event = body?.event || {};
+      const eventId=String(event.eventId||"").trim(), entityId=String(event.entityId||"").trim(), type=String(event.type||"").trim();
+      if(!eventId||!entityId||!type)return reply({ok:false,code:"bad_event"},400);
+      if(event.actorId && String(event.actorId)!==String(user.id))return reply({ok:false,code:"actor_mismatch"},403);
+      const {data,error}=await admin.rpc("zukait_v2_commit_event",{
+        p_event_id:eventId,p_entity_id:entityId,p_actor_id:user.id,p_device_id:String(event.deviceId||""),p_event_type:type,
+        p_client_time:event.clientTime||null,p_revision:event.serverRevision==null?null:Number(event.serverRevision),p_payload:event.payload||{}
+      });
+      if(error)throw error;
+      const row=Array.isArray(data)?data[0]:data;
+      return reply({ok:true,event_id:row?.event_id||eventId,server_time:row?.server_time||null,server_revision:row?.revision??null,inserted:row?.inserted===true,user});
+    }
+
     if (action === "v2_event_history") {
       const requested = Number(body?.limit || 100);
       const limit = Math.max(1, Math.min(Number.isFinite(requested) ? requested : 100, 500));
