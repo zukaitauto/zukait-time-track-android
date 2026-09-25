@@ -3096,7 +3096,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  const logo=j=>{let b=typeof window.v132JobBrandInfo==='function'?window.v132JobBrandInfo(j):null;if(!b&&window.v131VehicleBrandAuthority){const n=window.v131VehicleBrandAuthority.infer(String(j?.brand||'')+' '+String(j?.vehicle||''));const map={'Toyota':'toyota.svg','Nissan':'nissan-logo.svg','Infiniti':'infiniti-logo.svg','Lexus':'lexus.svg','Mercedes-Benz':'mercedes-benz.svg','BMW':'bmw.svg','Land Rover':'land-rover.svg','Porsche':'porsche.svg','Audi':'audi.svg','Volkswagen':'volkswagen.svg','Volvo':'volvo.svg','Mitsubishi':'mitsubishi.svg','Mazda':'mazda.svg','Jeep':'jeep.svg','Hyundai':'hyundai-logo.svg','Kia':'kia-logo.svg','Genesis':'genesis-logo.svg','Honda':'honda.svg','Ford':'ford.svg','Chevrolet':'chevrolet.svg','GMC':'gmc.svg','BYD':'byd-logo.svg','Jetour':'jetour.svg','Geely':'geely.svg','Lincoln':'lincoln.svg','Chrysler':'chrysler.svg','Isuzu':'isuzu.svg','RAM':'ram.svg','Suzuki':'suzuki.svg','Renault':'renault.svg','Peugeot':'peugeot.svg','Citroën':'citroen.svg','Škoda':'skoda.svg','Bentley':'bentley.svg','Rolls-Royce':'rolls-royce.svg','Aston Martin':'aston-martin.svg','Ferrari':'ferrari.svg','McLaren':'mclaren.svg','MAN':'man.svg','GWM':'gwm.svg','MG':'mg.svg','Shacman':'shacman.svg'};if(n&&map[n])b={name:n,file:map[n]}}return b?'<div class="v132-supervisor-logo v82-brand-logo" title="'+esc(b.name)+'"><img src="vehicle-logos/'+esc(b.file)+'" alt="'+esc(b.name)+' logo"></div>':'<div class="v132-supervisor-logo v82-logo-fallback"><span class="v80-generic-car">🚘</span></div>'};
  const old=window.v132OpenSupervisorJobFull;if(typeof old==='function'&&!old.v134logo){const w=function(no){const r=old.apply(this,arguments);setTimeout(()=>{if(me?.role!=='Supervisor')return;const j=(state.jobs||[]).find(x=>x&&String(x.no||'').trim().toUpperCase()===String(no||'').trim().toUpperCase());const v=document.querySelector('#modal .v132-vehicle');if(!j||!v||v.querySelector('.v132-supervisor-logo'))return;v.insertAdjacentHTML('afterbegin',logo(j))},0);return r};w.v134logo=true;window.v132OpenSupervisorJobFull=w}
  function cards(){if(me?.role!=='Supervisor')return;document.querySelectorAll('#modal .v132-jc-card').forEach(card=>{if(card.querySelector('.v132-supervisor-logo'))return;const m=String(card.getAttribute('onclick')||'').match(/v132OpenSupervisorJobFull\('([^']+)'\)/);if(!m)return;const j=(state.jobs||[]).find(x=>x&&String(x.no||'').trim().toUpperCase()===String(m[1]).trim().toUpperCase());if(j)card.querySelector('.v132-jc-top')?.insertAdjacentHTML('afterend',logo(j))})}
- const modal=document.getElementById('modal');if(modal)new MutationObserver(()=>setTimeout(cards,0)).observe(modal,{childList:true,subtree:true});
+ window.v166SupervisorLogoCards=cards;
  if(!document.getElementById('v134SupervisorLogoStyle')){const st=document.createElement('style');st.id='v134SupervisorLogoStyle';st.textContent='.v132-jc-card .v132-supervisor-logo{margin:8px 0 2px;width:48px;height:32px}.v132-vehicle>.v132-supervisor-logo{width:64px;height:46px;align-self:center;justify-self:center}.v132-supervisor-logo img{width:100%!important;height:100%!important;object-fit:contain!important}';document.head.appendChild(st)}
 })();
 
@@ -3113,11 +3113,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
   });
   closes.slice(1).forEach(b=>b.remove());
  }
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{
-  const m=document.getElementById('modal');if(m)new MutationObserver(v134DeduplicateModalClose).observe(m,{childList:true,subtree:true});
- });else{
-  const m=document.getElementById('modal');if(m)new MutationObserver(v134DeduplicateModalClose).observe(m,{childList:true,subtree:true});
- }
+ window.v166DeduplicateModalClose=v134DeduplicateModalClose;
 })();
 
 
@@ -3352,3 +3348,6 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  };
  const obs=new MutationObserver(()=>requestAnimationFrame(apply));obs.observe(document.body,{childList:true,subtree:true});apply();
 })();
+
+/* V166 CONSOLIDATED DOM DECORATION OBSERVER — one scheduler for modal cleanup, logos, EV and vehicle badges. */
+(()=>{'use strict';let pending=false;const apply=()=>{pending=false;try{window.v166DeduplicateModalClose?.()}catch(_){}try{window.v166SupervisorLogoCards?.()}catch(_){}try{window.v158ApplyEVCardAuthority?.()}catch(_){}try{window.v159ApplyHeavyVehicleClass?.()}catch(_){}try{window.v160ApplyHeavyBrandAuthority?.()}catch(_){}try{window.v161ApplyOmanBrandAuthority?.()}catch(_){}};const schedule=()=>{if(pending)return;pending=true;requestAnimationFrame(apply)};const start=()=>{const root=document.body;if(!root)return;window.v166DecorationObserver?.disconnect?.();window.v166DecorationObserver=new MutationObserver(schedule);window.v166DecorationObserver.observe(root,{childList:true,subtree:true});schedule()};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();window.v166ApplyDecorations=apply})();
