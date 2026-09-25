@@ -37,12 +37,12 @@ revoke all on public.workshop_v2_calendar,public.workshop_v2_leave from public,a
 grant select,insert,update on public.workshop_v2_calendar,public.workshop_v2_leave to service_role;
 
 create or replace function public.zukait_v2_closed_day(p_day date)
-returns boolean language sql stable security invoker set search_path=public as $
+returns boolean language sql stable security invoker set search_path=public as $$
  select extract(isodow from p_day)=5 or exists(select 1 from public.workshop_v2_calendar c where c.work_date=p_day and c.is_public_holiday=true);
-$;
+$$;
 
 create or replace function public.zukait_v2_employee_on_leave(p_employee text,p_at timestamptz)
-returns boolean language sql stable security invoker set search_path=public as $
+returns boolean language sql stable security invoker set search_path=public as $$
  select exists(
   select 1 from public.workshop_v2_leave l
   where l.employee_id=p_employee and l.leave_date=(p_at at time zone 'Asia/Muscat')::date and not l.cancelled
@@ -50,10 +50,10 @@ returns boolean language sql stable security invoker set search_path=public as $
       or (l.period='AM' and (p_at at time zone 'Asia/Muscat')::time>=time '08:00' and (p_at at time zone 'Asia/Muscat')::time<time '13:00')
       or (l.period='PM' and (p_at at time zone 'Asia/Muscat')::time>=time '15:00' and (p_at at time zone 'Asia/Muscat')::time<time '19:00'))
  );
-$;
+$$;
 
 create or replace function public.zukait_v2_duty_minutes(p_start timestamptz,p_end timestamptz)
-returns integer language plpgsql stable security invoker set search_path=public as $
+returns integer language plpgsql stable security invoker set search_path=public as $$
 declare d date; total integer:=0; a timestamptz; b timestamptz;
 begin
  if p_start is null or p_end is null or p_end<=p_start then return 0; end if;
