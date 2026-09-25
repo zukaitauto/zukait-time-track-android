@@ -37,7 +37,7 @@ language sql stable security invoker set search_path=public as $$
  order by j.updated_at desc, j.job_card desc limit greatest(1,least(coalesce(p_limit,100),500));
 $$;
 revoke all on function public.zukait_v2_jobcard_page(text,timestamptz,integer,text,text) from public,anon,authenticated;
-grant execute on function public.zukait_v2_jobcard_page(text,timestamptz,integer,text) to service_role;
+grant execute on function public.zukait_v2_jobcard_page(text,timestamptz,integer,text,text) to service_role;
 create or replace function public.zukait_v2_wip_page(p_before timestamptz default null,p_limit integer default 100,p_stage text default null,p_risk text default null,p_before_id text default null)
 returns table(job_card text,registration text,vehicle_make text,vehicle_model text,workflow_stage text,status text,created_at timestamptz,updated_at timestamptz,age_days integer,risk text)
 language sql stable security invoker set search_path=public as $$
@@ -54,7 +54,7 @@ language sql stable security invoker set search_path=public as $$
  order by j.updated_at desc, j.job_card desc limit greatest(1,least(coalesce(p_limit,100),500));
 $$;
 revoke all on function public.zukait_v2_wip_page(timestamptz,integer,text,text,text) from public,anon,authenticated;
-grant execute on function public.zukait_v2_wip_page(timestamptz,integer,text,text) to service_role;
+grant execute on function public.zukait_v2_wip_page(timestamptz,integer,text,text,text) to service_role;
 
 create or replace function public.zukait_v2_upsert_jobcard(
  p_job_card text,p_registration text default '',p_vehicle_make text default '',p_vehicle_model text default '',p_vehicle_year integer default null,
