@@ -397,6 +397,21 @@ Deno.serve(async (req: Request) => {
       return reply({ok:true,event_id:eventId,server_time:row?.server_time||null,server_revision:row?.revision??null,inserted:row?.inserted===true,user});
     }
 
+    if (action === "v2_commit_event") {
+      const e = body?.event || {};
+      const eventId=String(e.eventId||""), entityId=String(e.entityId||""), eventType=String(e.type||"");
+      if(!eventId||!entityId||!eventType)return reply({ok:false,code:"bad_event"},400);
+      const actorId=String(e.actorId||user.id);
+      if(actorId!==user.id)return reply({ok:false,code:"actor_mismatch"},403);
+      const { data, error } = await admin.rpc("zukait_v2_commit_event",{
+        p_event_id:eventId,p_entity_id:entityId,p_actor_id:user.id,p_device_id:String(e.deviceId||""),p_event_type:eventType,
+        p_client_time:e.clientTime||null,p_revision:e.serverRevision==null?null:Number(e.serverRevision),p_payload:e.payload&&typeof e.payload==="object"?e.payload:{}
+      });
+      if(error){if(String(error.message||"").includes("event_id_conflict"))return reply({ok:false,code:"event_id_conflict"},409);throw error;}
+      const row=Array.isArray(data)?data[0]:data;
+      return reply({ok:true,event_id:row?.event_id||eventId,server_time:row?.server_time||null,server_revision:row?.revision??null,inserted:row?.inserted===true,user});
+    }
+
     if (action === "v2_report_page" || action === "v2_search_jobcards") {
       const requested = Number(body?.limit || (action === "v2_search_jobcards" ? 50 : 100));
       const limit = Math.max(1, Math.min(Number.isFinite(requested) ? requested : 100, 500));
