@@ -1,0 +1,10 @@
+import fs from'node:fs';import assert from'node:assert/strict';
+const required=['tests/architecture-v2.mjs','tests/v2-work-events.mjs','tests/v2-work-rules.mjs','tests/v2-reconnect-shadow-readonly.mjs','tests/v2-reconnect-authority.mjs','tests/v2-authority-adapter.mjs','tests/v2-reconcile-runtime.mjs','tests/v2-pilot-activation.mjs','tests/v2-data-paths.mjs','tests/v2-job-workflow.mjs','tests/v2-spare-parts.mjs','tests/v2-notification-rules.mjs','tests/v2-reports.mjs','tests/v2-scale-benchmark.mjs'];
+for(const f of required)assert.ok(fs.existsSync(f),'missing gate '+f);
+const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+for(const f of ['v2/core/data_paths.js','v2/features/jobcards/workflow.js','v2/features/spare-parts/workflow.js','v2/features/notifications/rules.js','v2/features/reports/service.js'])assert.ok(html.includes(f),'not loaded '+f);
+const pilot=fs.readFileSync('app/src/main/assets/v2/core/pilot_activation.js','utf8');
+assert.match(pilot,/enabled|pilot/i);assert.match(pilot,/device/i);
+const authority=fs.readFileSync('app/src/main/assets/v2/core/authority_adapter.js','utf8');
+assert.match(authority,/legacy/i);
+console.log('V2 migration completeness manifest: ok');
