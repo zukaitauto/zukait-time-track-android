@@ -75,6 +75,15 @@
     return body;
   }
 
+  async function v2EventPage({cursor=null,limit=100,filters={}}={}){
+    const r=await api({action:'v2_event_history',before:cursor||null,limit:Math.max(1,Math.min(Number(limit)||100,500)),entity_id:filters.entityId||filters.entity_id||null,event_type:filters.eventType||filters.event_type||null});
+    if(!r.ok)throw new Error(r.code||'V2_HISTORY_FAILED');
+    const rows=Array.isArray(r.rows)?r.rows:[];
+    return {rows,nextCursor:r.next_cursor||null,hasMore:!!r.next_cursor,source:'server'};
+  }
+  window.zukaitServerHistory={page:v2EventPage};
+  window.zukaitServerRecent={page:opts=>v2EventPage({...opts,cursor:null})};
+
   function liveRole(){
     return !!me && (me.role==='Supervisor'||me.role==='Manager');
   }
