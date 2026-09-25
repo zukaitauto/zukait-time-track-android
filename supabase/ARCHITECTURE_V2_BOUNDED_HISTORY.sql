@@ -51,6 +51,7 @@ begin
  values(p_event_id,p_entity_id,nullif(p_actor_id,''),nullif(p_device_id,''),p_event_type,p_client_time,p_revision,coalesce(p_payload,'{}'::jsonb))
  on conflict (event_id) do nothing returning * into v;
  if found then
+   -- Project before returning success. If projection rejects a stale/conflicting event, the surrounding transaction rolls back the inserted event row too.
    v_inserted:=true;
    if p_event_type in ('WORK_START','WORK_PAUSE','WORK_RESUME','WORK_FINISH','ID001_START','ID001_STOP') then
      perform public.zukait_v2_apply_work_event(p_event_id,p_entity_id,p_event_type,coalesce(p_client_time,now()),coalesce(p_revision,0),coalesce(p_payload,'{}'::jsonb));
@@ -68,7 +69,7 @@ begin
    end if;
  else
    select * into v from public.workshop_v2_events e where e.event_id=p_event_id;
-   if v.entity_id<>p_entity_id or v.event_type<>p_event_type or coalesce(v.actor_id,'')<>coalesce(p_actor_id,'') or coalesce(v.device_id,'')<>coalesce(p_device_id,'') or v.payload<>coalesce(p_payload,'{}'::jsonb) then raise exception 'event_id_conflict'; end if;
+   if v.entity_id<>p_entity_id or v.event_type<>p_event_type or coalesce(v.actor_id,'')<>coalesce(p_actor_id,'') or coalesce(v.device_id,'')<>coalesce(p_device_id,'') or v.payload<>coalesce(p_payload,'{}'::jsonb) or coalesce(v.revision,-1)<>coalesce(p_revision,-1) or coalesce(v.client_time,'epoch'::timestamptz)<>coalesce(p_client_time,'epoch'::timestamptz) then raise exception 'event_id_conflict'; end if;
  end if;
  return query select v.event_id,v.server_time,v.revision,v_inserted;
 end;$$;
