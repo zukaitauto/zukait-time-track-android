@@ -66,9 +66,15 @@ begin
  on conflict(job_card) do update set
   registration=excluded.registration,vehicle_make=excluded.vehicle_make,vehicle_model=excluded.vehicle_model,vehicle_year=excluded.vehicle_year,
   workflow_stage=excluded.workflow_stage,status=excluded.status,updated_at=now(),completed_at=excluded.completed_at,revision=excluded.revision,last_event_id=excluded.last_event_id
- where excluded.revision>=workshop_v2_jobcards.revision and (excluded.last_event_id is null or workshop_v2_jobcards.last_event_id is distinct from excluded.last_event_id)
+ where excluded.revision>workshop_v2_jobcards.revision
+    and (excluded.last_event_id is null or workshop_v2_jobcards.last_event_id is distinct from excluded.last_event_id)
  returning * into outrow;
- if outrow.job_card is null then select * into outrow from public.workshop_v2_jobcards where job_card=trim(p_job_card); end if;
+ if outrow.job_card is null then
+   select * into outrow from public.workshop_v2_jobcards where job_card=trim(p_job_card);
+   if outrow.last_event_id is distinct from p_event_id and coalesce(p_revision,0)<=outrow.revision then
+     raise exception 'stale_jobcard_revision';
+   end if;
+ end if;
  return outrow;
 end;$;
 revoke all on function public.zukait_v2_upsert_jobcard(text,text,text,text,integer,text,text,bigint,text,timestamptz) from public,anon,authenticated;
