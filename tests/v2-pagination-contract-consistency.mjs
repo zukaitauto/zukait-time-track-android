@@ -13,10 +13,14 @@ assert.match(api,/Math\.max\(1, Math\.min\(Number\.isFinite\(requested\) \? requ
 assert.match(hist,/p_before is null or e\.server_time < p_before or \(e\.server_time = p_before and p_before_id is not null and e\.event_id < p_before_id\)/i);
 assert.match(hist,/order by e\.server_time desc, e\.event_id desc/i);
 assert.match(api,/last\?\.server_time && last\?\.event_id/);
-// Job/WIP cursors use updated_at and generic report cursor uses sort_time with updated_at fallback.
+// Job/WIP and operational reports use deterministic composite cursors; generic reports use sort_time/event_id.
 assert.match(job,/p_before is null or j\.updated_at<p_before or \(j\.updated_at=p_before and p_before_id is not null and j\.job_card<p_before_id\)/i);
 assert.match(api,/cursorValue = action === "v2_search_jobcards" \|\| report === "WIP" \|\| report === "COMPLETION_TARGET"/);
 assert.match(api,/rows\[rows\.length - 1\]\?\.sort_time \|\| rows\[rows\.length - 1\]\?\.updated_at/);
+assert.match(op,/p_before is null or s\.updated_at<p_before or \(s\.updated_at=p_before and p_before_id is not null and s\.session_id<p_before_id\)/i);
+assert.match(op,/order by s\.updated_at desc, s\.session_id desc/i);
+assert.match(api,/zukait_v2_operational_report_page[\s\S]*p_before_id: beforeId/);
+assert.match(api,/\["ID001","OVERTIME","REPEAT","JOB_COST","EFFICIENCY"\]\.includes\(report\) \? lastRow\?\.session_id/);
 // A short final page must terminate pagination rather than emit another cursor.
 assert.match(api,/rows\.length === limit[\s\S]*next_cursor/s);
 console.log('V2 pagination contract consistency gate: ok');
