@@ -55,6 +55,12 @@ assert.ok(updates.includes('V139 MANAGER CONSUMABLES FINAL AUTHORITY') && update
 assert.ok(updates.includes('V154 MANAGER WORKSHOP CONTROL ROOT AUTHORITY') && updates.includes('data-v154-spare') && updates.includes('v156ManagerSparePartsInvariant'), 'final Manager render authority must preserve exactly one Spare Parts control');
 assert.ok(updates.includes('[0,80,250,700].forEach(ms=>setTimeout(apply,ms))'), 'Manager Spare Parts control must survive delayed dashboard renderer replacement');
 assert.ok(!updates.includes('color:#173b63!important;grid-column:1/-1!important}#managerView .v154-spare-logo'), 'Manager Spare Parts card must not force a full-width row');
+const v65=fs.readFileSync(path.join(root,'app/src/main/assets/v65_updates.js'),'utf8');
+const v66=fs.readFileSync(path.join(root,'app/src/main/assets/v66_updates.js'),'utf8');
+const v67=fs.readFileSync(path.join(root,'app/src/main/assets/v67_updates.js'),'utf8');
+assert.ok(!/me\?\.role==='Manager'\)renderManager65\(\)/.test(v65), 'V65 Manager renderer must remain retired to prevent login UI flash');
+assert.ok(!/me\?\.role==='Manager'\)renderManager66\(\)/.test(v66), 'V66 Manager renderer must remain retired to prevent login UI flash');
+assert.ok(v67.includes("window.render=function(){prevRender();if(me?.role==='Manager')renderManager67()};"), 'V67 Manager renderer must be the synchronous visible Manager authority');
 assert.ok([v65,v66,v67].every(src=>src.includes('openConsumablesModule()')), 'all Manager renderer generations must open the real Consumables module');
 assert.ok(![v65,v66,v67,updates].some(src=>src.includes('Consumables details will be added later.')), 'no Manager Consumables placeholder alert may remain');
 assert.ok(updates.includes("buttons.length>1") && updates.includes("b.onclick=open"), 'final Manager Consumables authority must deduplicate controls and bind the real open handler');
