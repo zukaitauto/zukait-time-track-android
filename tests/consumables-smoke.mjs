@@ -61,7 +61,7 @@ assert.equal(reopenState.consumables.actuals[0].locked,false,'reopen must tempor
 assert.equal(C.monthlyExpense(reopenState,2026,8).totalExpense,0,'reopened Actual must stay out of finalized financials');
 const refinal=C.finishActual(reopenState,{clientRequestId:'reopen-second',jobCard:'JC-REOPEN',actualAt:new Date(2026,8,24).getTime(),lines:[{materialId:om.id,brandId:ob.id,quantity:1.5}]},supervisor);
 assert.equal(reopenState.consumables.actuals.length,1,'re-finalize must update the authoritative Actual without duplication');
-assert.equal(refinal.locked,true); assert.equal(refinal.managerReopen,false); assert.equal(state.consumables.audit.at(-1)?.type==='ACTUAL_REFINALIZED'||reopenState.consumables.audit.at(-1).type,'ACTUAL_REFINALIZED');
+assert.equal(refinal.locked,true); assert.equal(refinal.managerReopen,false); assert.equal(reopenState.consumables.audit.at(-1).type,'ACTUAL_REFINALIZED');
 assert.equal(C.monthlyExpense(reopenState,2026,8).totalExpense,6,'re-finalized Actual must be counted exactly once');
 
 
