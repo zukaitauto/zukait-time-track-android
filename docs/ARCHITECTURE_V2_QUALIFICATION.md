@@ -1,7 +1,6 @@
 # Architecture V2 Qualification Status
 
-Verified checkpoint: `22db1c80cb9964801c50d5c52a44805641b27822`
-Qualification run: `36178145344` — SUCCESS.
+Verified checkpoint: `9624309bbbcebe8b040ab808fa73063e69d6db52`\nQualification run: `36190134333` — SUCCESS.
 
 This checkpoint includes the composite-pagination corrections and 2,000/10,000 tie-scale qualification gates. The complete branch workflow passed through release APK compilation and artifact preparation.
 
@@ -20,7 +19,7 @@ This checkpoint includes the composite-pagination corrections and 2,000/10,000 t
 - 2,000/10,000 bounded-read scale gate.\n- Server calendar/public-holiday and leave work-authority static qualification.\n- One-active-session-per-employee server authority gate.\n- Delayed offline replay / duplicate-event identity gate.\n- SQL migration integrity and delimiter gates.\n- Expanded regression manifest covering current V2 authority gates.
 - Android release APK compilation and artifact generation.
 
-## Production status
+## Latest combined qualification\n- Work-session state-machine guards are included in CI and the delayed FINISHED → PAUSE race is blocked.\n- Time Track + Consumables + Spare Parts combined integration gate passed.\n- Same-employee multi-device, ID001/normal-work race, offline conflict quarantine, Job Card/WIP, reporting and 2k/10k bounded-read gates passed in the same workflow.\n- Release APK compilation completed successfully as part of the branch workflow.\n\n## Production status
 - `main` / V141 remains the production baseline.
 - V2 authority remains OFF.
 - No staff/device pilot has been activated.
