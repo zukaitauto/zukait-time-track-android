@@ -1,0 +1,10 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const sql=fs.readFileSync('supabase/ARCHITECTURE_V2_BOUNDED_HISTORY.sql','utf8');
+const report=fs.readFileSync('supabase/ARCHITECTURE_V2_REPORTING.sql','utf8');
+for(const e of ['REPEAT_ASSIGNED','REPEAT_COMPLETED','REPEAT_CANCELLED','CONSUMABLE_ISSUED','CONSUMABLE_ADDITIONAL','CONSUMABLE_ACTUAL','CONSUMABLE_VOIDED'])assert.ok(sql.includes(e),'missing '+e);
+assert.match(sql,/raise exception 'repeat_job_required'/);
+assert.match(sql,/raise exception 'invalid_repeat_event'/);
+assert.match(sql,/raise exception 'consumable_job_required'/);
+assert.match(report,/q\.report='REPEAT' and e\.event_type like 'REPEAT%'/);
+assert.match(report,/q\.report='CONSUMABLES_VARIANCE' and e\.event_type like 'CONSUMABLE%'/);
+console.log('V2 repeat/consumables server event authority gate: ok');
