@@ -3076,7 +3076,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    try{if(typeof window.v130ApplyEmployeeID001UI==='function')window.v130ApplyEmployeeID001UI()}catch(e){console.warn('Employee ID001 UI refresh failed',e)}
  }
  // Retire independent employee UI timers after all legacy layers have loaded.
- ['v752EmployeeTimer','v755EmployeeBreakdownTimer','v157EmployeeLiveTimer'].forEach(k=>{try{if(window[k])clearInterval(window[k])}catch(_){}});
+ ['v752EmployeeTimer','v755EmployeeBreakdownTimer','v157EmployeeLiveTimer'].forEach(k=>{try{if(window[k]){clearInterval(window[k]);clearTimeout(window[k])}}catch(_){}});
  window.v157EmployeeLiveRefresh=refresh;
  window.v157EmployeeLiveTimer=setInterval(refresh,1000);
  window.addEventListener('focus',refresh);
