@@ -4,7 +4,7 @@ const STATUS=['LISTED','ENQUIRY','QUOTED','ORDERED','RECEIVED','DENTER_CHECKED',
 const PRICE_ROLES=new Set(['Manager','Purchaser']);
 const transitions={
 LISTED:['ENQUIRY','UNAVAILABLE'],ENQUIRY:['QUOTED','UNAVAILABLE'],QUOTED:['ORDERED','ENQUIRY','UNAVAILABLE'],
-ORDERED:['RECEIVED','RETURNED','UNAVAILABLE'],RECEIVED:['DENTER_CHECKED','RETURNED'],
+ORDERED:['RECEIVED','RETURNED','UNAVAILABLE'],RECEIVED:['RECEIVED','DENTER_CHECKED','RETURNED'],
 DENTER_CHECKED:['SUPERVISOR_CONFIRMED','RETURNED'],SUPERVISOR_CONFIRMED:['FITTED','RETURNED'],
 UNAVAILABLE:['CUSTOMER_SETTLEMENT'],RETURNED:['ENQUIRY','ORDERED','UNAVAILABLE']
 };
@@ -33,7 +33,7 @@ function transition(item,to,ctx={}){
  if(to==='UNAVAILABLE')next.cashSettlementRequired=true;
  if(to==='CUSTOMER_SETTLEMENT')next.cashSettlementRequired=false;
  if(to==='RETURNED')next.returnReason=String(ctx.reason||'').trim();
- if(to==='RECEIVED'){const ordered=Number(item?.qty||0),received=ctx.receivedQty==null?ordered:Number(ctx.receivedQty);if(!Number.isFinite(received)||received<=0||received>ordered)return {ok:false,reason:'INVALID_RECEIVED_QUANTITY',orderedQty:ordered};next.receivedQty=received;next.receivedAt=now;next.receivedBy=ctx.actorId||null;if(received<ordered)next.partialReceipt=true;else delete next.partialReceipt}
+ if(to==='RECEIVED'){const ordered=Number(item?.qty||0),already=from==='RECEIVED'?Number(item?.receivedQty||0):0,batch=ctx.receivedQty==null?(ordered-already):Number(ctx.receivedQty),received=already+batch;if(!Number.isFinite(ordered)||ordered<=0||!Number.isFinite(batch)||batch<=0||received>ordered)return {ok:false,reason:'INVALID_RECEIVED_QUANTITY',orderedQty:ordered,receivedQty:already};next.receivedQty=received;next.receivedAt=now;next.receivedBy=ctx.actorId||null;next.lastReceivedQty=batch;if(received<ordered)next.partialReceipt=true;else delete next.partialReceipt}
  if(to==='DENTER_CHECKED'){if(Number(item?.receivedQty||item?.qty||0)<Number(item?.qty||0))return {ok:false,reason:'RECEIPT_INCOMPLETE'};next.denterCheckedAt=now;next.denterCheckedBy=ctx.actorId||null}
  if(to==='SUPERVISOR_CONFIRMED'){if(!item?.denterCheckedAt)return {ok:false,reason:'DENTER_CHECK_REQUIRED'};next.confirmedAt=now;next.confirmedBy=ctx.actorId||null}
  if(to==='FITTED'){if(!item?.denterCheckedAt||!item?.confirmedAt)return {ok:false,reason:'CONFIRMATION_REQUIRED'};next.fittedAt=now;next.fittedBy=ctx.actorId||null}
