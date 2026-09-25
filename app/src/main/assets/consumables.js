@@ -63,6 +63,16 @@
     c.prices.push(row); c.audit.push({id:uid('audit'),type:previous?'PRICE_CHANGED':'PRICE_CREATED',entityId:row.id,by:actor.id,at:Date.now(),reason,before:previous?clone(previous):null,after:clone(row)});
     return clone(row);
   }
+  function managerCorrectPrice(state,priceId,newPrice,actor,reason){
+    assertRole(actor?.role,true); const c=ensureState(state),why=String(reason||'').trim();
+    if(!why)throw new Error('REASON_REQUIRED');
+    const row=c.prices.find(x=>x.id===priceId&&!x.voided); if(!row)throw new Error('PRICE_NOT_FOUND');
+    const price=Number(newPrice); if(!Number.isFinite(price)||price<0)throw new Error('INVALID_PRICE');
+    const before=clone(row),now=Date.now();
+    row.pricePerUnit=money(price); row.correctedAt=now; row.correctedBy=actor.id; row.correctedByName=String(actor?.name||actor?.id||''); row.correctedByRole=String(actor?.role||'');
+    c.audit.push({id:uid('audit'),type:'PRICE_CORRECTED',entityId:row.id,entityType:'price',by:actor.id,at:now,reason:why,before,after:clone(row)});
+    return clone(row);
+  }
   function priceAt(state,materialId,brandId,at){
     const c=ensureState(state); const t=Number(at);
     const rows=c.prices.filter(x=>!x.voided&&x.materialId===materialId&&x.brandId===brandId&&x.effectiveFrom<=t).sort((a,b)=>b.effectiveFrom-a.effectiveFrom||b.createdAt-a.createdAt);
@@ -167,5 +177,5 @@
     const keys=['jobs','assign','sessions','corrections','jobEdits','suggestedEdits','reworks','requests','additionalActions','lastActions','overtimeNotices','leaves','leaveAudit'];
     const out={}; for(const k of keys)out[k]=clone(state[k]===undefined?null:state[k]); return JSON.stringify(out);
   }
-  return {DEPT,TYPES,UNITS,CATEGORIES,ensureState,addMaterial,addBrand,setPrice,priceAt,issue,allowance,finishActual,managerCorrectIssue,managerCorrectActual,managerRecalculateActualPrices,managerVoid,managerReopenActual,monthlyExpense,timeControlFingerprint};
+  return {DEPT,TYPES,UNITS,CATEGORIES,ensureState,addMaterial,addBrand,setPrice,managerCorrectPrice,priceAt,issue,allowance,finishActual,managerCorrectIssue,managerCorrectActual,managerRecalculateActualPrices,managerVoid,managerReopenActual,monthlyExpense,timeControlFingerprint};
 });
