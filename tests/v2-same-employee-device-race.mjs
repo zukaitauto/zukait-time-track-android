@@ -9,7 +9,7 @@ assert.match(sql,/create unique index if not exists workshop_v2_one_active_emplo
 assert.match(sql,/if exists\(select 1 from public\.workshop_v2_work_sessions x where x\.employee_id=emp and x\.status='ACTIVE' and x\.session_id<>p_entity_id\) then raise exception 'employee_already_active'/i);
 assert.match(sql,/if found and coalesce\(p_revision,0\)<=cur\.revision then raise exception 'stale_work_revision'/i);
 // Duplicate delivery of the exact same device event is idempotent; reuse with changed content is a conflict.
-assert.match(eventSql,/on conflict \(event_id\) do nothing returning \* into v/i);
+assert.match(eventSql,/on conflict (?:\\(event_id\\)|on constraint workshop_v2_events_pkey) do nothing returning \* into v/i);
 assert.match(eventSql,/coalesce\(v\.device_id,''\)<>coalesce\(p_device_id,''\)/i);
 assert.match(eventSql,/raise exception 'event_id_conflict'/i);
 // Authenticated identity owns actorId even when devices differ.
