@@ -435,7 +435,7 @@ Deno.serve(async (req: Request) => {
         : report === "WIP" || report === "COMPLETION_TARGET"
           ? await admin.rpc("zukait_v2_wip_page", { p_before: before, p_limit: limit, p_stage: filters.stage || null, p_risk: report === "COMPLETION_TARGET" ? (filters.risk || null) : null, p_before_id: beforeId })
           : ["ID001","OVERTIME","REPEAT","JOB_COST","EFFICIENCY"].includes(report)
-            ? await admin.rpc("zukait_v2_operational_report_page", { p_report: report, p_before: before, p_limit: limit, p_filters: filters })
+            ? await admin.rpc("zukait_v2_operational_report_page", { p_report: report, p_before: before, p_limit: limit, p_filters: filters, p_before_id: beforeId })
             : await admin.rpc("zukait_v2_report_page", { p_report: report, p_before: before, p_limit: limit, p_filters: filters, p_before_id: beforeId });
       if (error) throw error;
       const rows = Array.isArray(data) ? data : [];
@@ -443,7 +443,7 @@ Deno.serve(async (req: Request) => {
         ? rows[rows.length - 1]?.updated_at
         : rows[rows.length - 1]?.sort_time || rows[rows.length - 1]?.updated_at;
       const lastRow=rows[rows.length-1];
-      const cursorId = action === "v2_search_jobcards" || report === "WIP" || report === "COMPLETION_TARGET" ? lastRow?.job_card : lastRow?.event_id;
+      const cursorId = action === "v2_search_jobcards" || report === "WIP" || report === "COMPLETION_TARGET" ? lastRow?.job_card : ["ID001","OVERTIME","REPEAT","JOB_COST","EFFICIENCY"].includes(report) ? lastRow?.session_id : lastRow?.event_id;
       const nextCursor = rows.length === limit && cursorValue && cursorId ? { before:String(cursorValue), before_id:String(cursorId) } : null;
       return reply({ ok:true, rows, next_cursor:nextCursor, limit, report:action === "v2_search_jobcards" ? "JOB_SEARCH" : report, user });
     }
