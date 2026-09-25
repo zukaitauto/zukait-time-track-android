@@ -1,0 +1,10 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const c={window:{},Date};c.window=c;vm.createContext(c);vm.runInContext(fs.readFileSync('app/src/main/assets/v2/features/time/work_rules.js','utf8'),c);
+const r=c.zukaitV2.rules,base={sessions:[],leave:[],holidays:[]},a={id:'A',job:'JC1',emp:'E1'},hold={id:'H',job:'ID001',emp:'E1'};
+const monday=new Date('2026-09-21T09:00:00').getTime(),friday=new Date('2026-09-25T09:00:00').getTime();
+assert.equal(r.validate('WORK_START',a,base,{at:monday}).ok,true);
+assert.equal(r.validate('WORK_START',a,{...base,sessions:[{emp:'E1',end:null}]},{at:monday}).ok,false);
+assert.equal(r.validate('ID001_START',hold,base,{at:friday}).ok,false);
+assert.equal(r.validate('WORK_PAUSE',hold,base,{at:monday}).ok,false);
+assert.equal(r.validate('ID001_START',hold,{...base,leave:[{emp:'E1',date:'2026-09-21'}]},{at:monday}).ok,false);
+console.log('V2 work rules passed');
