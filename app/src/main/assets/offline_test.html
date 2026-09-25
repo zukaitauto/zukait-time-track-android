@@ -106,6 +106,9 @@ let liveSupervisorTimer=null;
   staffRoster.forEach(u=>{if(!byId.has(u.id)) users.push(structuredClone(u)); else {byId.get(u.id).name=u.name;byId.get(u.id).role=u.role;byId.get(u.id).department=u.department;}});
   save();
 })();
+let v165IndexVersion=-1,v165Indexes=null;
+function v165IndexesGet(){const sig=(state.assign?.length||0)*1000003+(state.sessions?.length||0)*101+(state.jobs?.length||0);if(v165Indexes&&v165IndexVersion===sig)return v165Indexes;const aByJob=new Map(),sByJob=new Map(),sByEmp=new Map();(state.assign||[]).forEach(a=>{if(!a)return;let x=aByJob.get(a.job)||[];x.push(a);aByJob.set(a.job,x)});(state.sessions||[]).forEach(s=>{if(!s)return;let x=sByJob.get(s.job)||[];x.push(s);sByJob.set(s.job,x);let y=sByEmp.get(s.emp)||[];y.push(s);sByEmp.set(s.emp,y)});v165IndexVersion=sig;return v165Indexes={aByJob,sByJob,sByEmp}}
+window.zukaitDataIndex={assignmentsForJob:no=>(v165IndexesGet().aByJob.get(no)||[]),sessionsForJob:no=>(v165IndexesGet().sByJob.get(no)||[]),sessionsForEmployee:id=>(v165IndexesGet().sByEmp.get(id)||[]),invalidate:()=>{v165IndexVersion=-1;v165Indexes=null}};
 function save(){state.users=users;state.passwords=passwords;try{window.localStorage.setItem(KEY,JSON.stringify(state));}catch(e){console.warn('Local storage unavailable; changes remain in this session.',e)}if(typeof window.cloudScheduleSave==='function')window.cloudScheduleSave()} function uid(){return crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random())} function now(){return Date.now()} function fmt(m){m=Math.max(0,Math.round(m));return Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m'} function signedFmt(m){return (m<0?'- ':'')+fmt(Math.abs(m))} function user(id){return users.find(x=>x.id===id)||{name:id,role:'Unknown'}} function parseWorkMinutes(value){let raw=String(value??'').trim().replace(',', '.');if(!raw)return NaN;if(/^\d+\s*:\s*\d{1,2}$/.test(raw)){let parts=raw.split(':');let h=Number(parts[0]),m=Number(parts[1]);return h*60+m}if(!/^\d+(?:\.\d+)?$/.test(raw))return NaN;let parts=raw.split('.'),h=Number(parts[0]),mins=parts.length>1?Number((parts[1]+'00').slice(0,2)):0;if(mins>59)return NaN;return h*60+mins} function timeInputHint(){return 'Enter H.MM or H:MM — e.g. 2.30 = 2h 30m, 2.45 = 2h 45m'}
 function job(no){return state.jobs.find(j=>j.no===no)} function assignment(no,emp){return state.assign.find(a=>a.job===no&&a.emp===emp)} function activeSession(emp){return state.sessions.find(s=>s.emp===emp&&!s.end)} function setLastAction(text){state.lastActions=state.lastActions||{};state.lastActions[me.id]={text,at:now()}}
 function deptClass(dept){return 'dept-'+String(dept||'').toLowerCase().replace(/\s+/g,'-')} function userLabel(id){let u=user(id);return '<span class="'+deptClass(u.department)+'">'+u.name+'</span>'}
@@ -1346,10 +1349,12 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     if(!me||me.role!=='Employee')return;
     const s=activeSession(me.id);if(!s)return alert('No active work to pause.');
     if(s.job===HOLD)return alert('ID001 Ideal Time Card uses START / STOP only.');
+    const offlineAtPause=!navigator.onLine;
     let reason=prompt('Pause reason (optional).','');if(reason===null)reason='';
-    s.end=now();s.paused=true;s.pauseReason=reason.trim();
-    const a=assignmentForActive(s);if(a)a.pauseReason=s.pauseReason;
-    setLastAction('Paused '+s.job);save();render();
+    s.end=now();s.paused=true;s.pauseReason=reason.trim();s.pauseRecordedOffline=offlineAtPause;s.pauseDeviceTime=s.end;
+    const a=assignmentForActive(s);if(a){a.pauseReason=s.pauseReason;if(offlineAtPause){a.pendingOfflinePause=true;a.pendingOfflinePauseAt=s.end}}
+    state.offlineActionLog=state.offlineActionLog||[];if(offlineAtPause)state.offlineActionLog.push({id:uid(),type:'PAUSE',job:s.job,emp:me.id,assignmentId:s.assignmentId||a?.id,at:s.end,queuedAt:now()});
+    setLastAction('Paused '+s.job+(offlineAtPause?' — offline, queued for sync':''));save();render();
   };
   window.finish=function(){
     if(!me||me.role!=='Employee')return;
