@@ -112,6 +112,7 @@ jobs:
           node tests/v2-conflict-resolution-lifecycle.mjs
           node tests/v2-bounded-pagination-cursors.mjs
           node tests/v2-pagination-contract-consistency.mjs
+          node tests/v2-pagination-overload-safety.mjs
           node tests/v2-pagination-timestamp-tie-safety.mjs
           node tests/v2-composite-pagination-cursor.mjs
           node tests/v2-composite-pagination-scale.mjs
