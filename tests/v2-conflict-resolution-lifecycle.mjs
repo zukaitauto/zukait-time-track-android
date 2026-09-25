@@ -1,0 +1,16 @@
+import fs from'node:fs';import vm from'node:vm';import assert from'node:assert/strict';
+const store=new Map();const ctx={window:{},localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,String(v))},Date};vm.createContext(ctx);
+vm.runInContext(fs.readFileSync('app/src/main/assets/v2/core/offline_queue.js','utf8'),ctx);
+const q=ctx.window.zukaitV2.queue;
+q.enqueue({eventId:'devA-start-1',entityId:'session-A',type:'WORK_START',actorId:'EMP1',deviceId:'phone-A',serverRevision:7});
+q.markConflict('devA-start-1','employee_already_active');
+assert.equal(q.pending().length,0);assert.equal(q.conflicts().length,1);
+assert.throws(()=>q.supersedeConflict('devA-start-1',{eventId:'devA-start-1'}),/must be new/);
+const replacement=q.supersedeConflict('devA-start-1',{eventId:'devA-start-2',entityId:'session-A',type:'WORK_START',actorId:'EMP1',deviceId:'phone-A',serverRevision:8});
+assert.equal(replacement.syncState,'pending');assert.equal(replacement.supersedes,'devA-start-1');
+assert.equal(q.conflicts().length,0);assert.equal(q.pending().length,1);
+const old=q.read().find(x=>x.eventId==='devA-start-1');assert.equal(old.syncState,'superseded');assert.equal(old.supersededBy,'devA-start-2');
+assert.throws(()=>q.supersedeConflict('devA-start-1',{eventId:'devA-start-3'}),/conflict event required/);
+q.markSynced('devA-start-2',{serverRevision:9,serverTime:'2026-09-25T18:00:00Z'});assert.equal(q.pending().length,0);
+q.compact(1);const rows=q.read();assert.equal(rows.length,1);assert.equal(rows[0].eventId,'devA-start-2');assert.equal(rows[0].syncState,'synced');
+console.log('V2 conflict replacement lifecycle: ok');
