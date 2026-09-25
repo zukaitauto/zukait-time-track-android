@@ -14,9 +14,9 @@ function canAct(role,from,to){
  role=String(role||'');
  if(!allowed(from,to))return false;
  if(['ENQUIRY','QUOTED','ORDERED','RECEIVED'].includes(to))return role==='Purchaser'||role==='Manager';
- if(to==='DENTER_CHECKED')return role==='Denter'||role==='Manager';
+ if(to==='DENTER_CHECKED')return role==='Manager';
  if(to==='SUPERVISOR_CONFIRMED')return role==='Supervisor'||role==='Manager';
- if(['FITTED','RETURNED'].includes(to))return ['Denter','Supervisor','Purchaser','Manager'].includes(role);
+ if(['FITTED','RETURNED'].includes(to))return ['Supervisor','Purchaser','Manager'].includes(role);
  if(['UNAVAILABLE','CUSTOMER_SETTLEMENT'].includes(to))return ['Supervisor','Purchaser','Manager'].includes(role);
  return role==='Supervisor'||role==='Manager';
 }
@@ -40,11 +40,10 @@ function transition(item,to,ctx={}){
  if(to==='RETURNED'){const rr=String(ctx.reason||'').trim();if(!rr)return {ok:false,reason:'RETURN_REASON_REQUIRED'};next.returnReason=rr;next.returnedAt=now;next.returnedBy=ctx.actorId||null}
  return {ok:true,item:next,audit:{type:'SPARE_PART_STATUS_CHANGED',entityId:String(item?.id||''),from,to,actorId:ctx.actorId||null,deviceId:ctx.deviceId||null,reason:ctx.reason||null}};
 }
-function flag(item,kind,ctx={}){
- const allowedKinds=['URGENT','DEFECT'];
- if(!allowedKinds.includes(kind)||!['Denter','Supervisor','Manager'].includes(String(ctx.role||'')))return {ok:false,reason:'FORBIDDEN_FLAG'};
+function notifySupervisor(item,ctx={}){
+ if(String(ctx.role||'')!=='Denter')return {ok:false,reason:'DENTER_ONLY'};
  const now=ctx.serverTime||new Date().toISOString();
- return {ok:true,item:Object.assign({},item,{[kind==='URGENT'?'urgent':'defect']:true,flaggedAt:now,flaggedBy:ctx.actorId||null}),notification:{type:'SPARE_PART_'+kind,jobCard:item?.jobCard||null,partId:item?.id||null,targetRole:'Supervisor',dedupeKey:['spare',kind,item?.id||'',item?.status||''].join(':')}};
+ return {ok:true,notification:{type:'SPARE_PART_DENTER_NOTICE',jobCard:item?.jobCard||null,partId:item?.id||null,targetRole:'Supervisor',title:'Spare Parts update',message:'Denter requested Supervisor attention for this Parts List.',action:'OPEN_SPARE_PART',createdAt:now,dedupeKey:['spare','DENTER_NOTICE',item?.id||'',item?.status||''].join(':')}};
 }
-window.zukaitV2=Object.assign(window.zukaitV2||{},{spareParts:{STATUS,canSeePrice,allowed,canAct,sanitize,transition,flag}});
+window.zukaitV2=Object.assign(window.zukaitV2||{},{spareParts:{STATUS,canSeePrice,allowed,canAct,sanitize,transition,notifySupervisor}});
 })();
