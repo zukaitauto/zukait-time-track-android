@@ -1,0 +1,11 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+const job=fs.readFileSync('supabase/ARCHITECTURE_V2_JOBCARD_PROJECTION.sql','utf8');
+const hist=fs.readFileSync('supabase/ARCHITECTURE_V2_BOUNDED_HISTORY.sql','utf8');
+assert.match(job,/p_before is null or j\.updated_at<p_before/);
+assert.match(job,/order by j\.updated_at desc limit greatest\(1,least\(coalesce\(p_limit,100\),500\)\)/);
+assert.match(api,/action === "v2_search_jobcards" \|\| report === "WIP" \|\| report === "COMPLETION_TARGET"/);
+assert.match(api,/rows\[rows\.length - 1\]\?\.updated_at/);
+assert.match(api,/cursorValue \? String\(cursorValue\) : null/);
+assert.match(hist,/limit greatest\(1,least\(coalesce\(p_limit,100\),500\)\)/);
+console.log('V2 bounded pagination cursor gate: ok');
