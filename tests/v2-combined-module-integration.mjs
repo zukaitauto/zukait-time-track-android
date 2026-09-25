@@ -10,7 +10,7 @@ assert.ok(html.includes('v2/features/spare-parts/workflow.js'),'spare parts V2 w
 assert.ok(html.includes('v2/features/spare-parts/main_module.js'),'spare parts main module not loaded by app shell');
 const spareMain=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8');assert.match(spareMain,/allocateSparePartList/);assert.match(spareMain,/serverAllocated:true/);assert.match(spareMain,/\['Manager','Supervisor','Purchaser','Denter'\]/);assert.match(spareMain,/denterView/);assert.match(spareMain,/notifySupervisor/);assert.match(spareMain,/window\.openSpareParts=render/);assert.match(spareMain,/partsSummary/);assert.match(spareMain,/openForJobCard/);
 assert.match(employeeUi,/denterPartsButton/);assert.match(employeeUi,/PARTS LIST/);assert.match(employeeUi,/NO PARTS LIST/);
-assert.match(spare,/PRICE_ROLES=new Set\(\['Manager','Purchaser'\]\)/);assert.match(spare,/SPARE_PART_STATUS_CHANGED/);assert.match(spare,/deviceId:ctx\.deviceId/);
+assert.match(spare,/PRICE_ROLES=new Set\(\['Manager','Purchaser'\]\)/);assert.match(spare,/SPARE_PART_STATUS_CHANGED/);assert.match(spare,/deviceId:ctx\.deviceId/);assert.doesNotMatch(spareMain,/eventType:'SPARE_PART/);assert.match(spareMain,/type:'SPARE_PART_STATUS_CHANGED'/);assert.doesNotMatch(spareMain,/function nextNumber/);assert.match(spareMain,/SERVER_ALLOCATION_REQUIRED/);
 assert.match(cloud,/v2_commit_event/);assert.match(cloud,/v2_allocate_spare_part_list/);
 const queue=fs.readFileSync('app/src/main/assets/v2/core/offline_queue.js','utf8');assert.match(queue,/syncState:'conflict'/);
 assert.match(data,/LIVE|RECENT|HISTORY/);
