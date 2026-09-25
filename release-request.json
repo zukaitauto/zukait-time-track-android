@@ -1,8 +1,8 @@
 {
-  "versionName": "V141",
-  "versionCode": 104,
+  "versionName": "V142",
+  "versionCode": 105,
   "approvedForStaff": true,
-  "approvedAt": "2026-09-25",
-  "sourceCommit": "9c77ee00dc198c79fe6367e7c1b45632efb3bc12",
-  "publishNonce": "approved-v141-battery-offline-live-authority-20260925-1"
+  "approvedAt": "2026-09-26",
+  "sourceCommit": "d34dcf8153ece5be6dea0f12763aa904049ff181",
+  "publishNonce": "approved-v142-architecture-v2-qualified-20260926-1"
 }
