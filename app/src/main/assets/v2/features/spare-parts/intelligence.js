@@ -1,0 +1,7 @@
+(function(){
+'use strict';const V2=window.zukaitV2=window.zukaitV2||{},p=V2.spareParts=V2.spareParts||{};
+function summarize(list,ctx={}){const lines=(list?.lines||[]).filter(x=>x&&!x.voided),progress=p.progress(lines),final=p.analytics?.finalTotal(lines)||0,quoted=lines.reduce((s,x)=>s+(Number(x.selectedQuoteOMR)||0),0),cap=p.analytics?.cap(list?.purchaseCapOMR,final)||null;return{progress,quoted:p.money(quoted),final:p.money(final),cap,pricePending:lines.filter(x=>x.status==='SUPERVISOR_CONFIRMED'&&!Number.isFinite(Number(x.finalPriceOMR))).length,additionalPending:lines.filter(x=>x.additional&&!['SUPERVISOR_CONFIRMED','CUSTOMER_SETTLEMENT'].includes(x.status)).length,lastAction:list?.lastAction||null,attention:p.attention?.build(list,{role:ctx.role,cap})||[]}}
+function aging(line,now,calendarOpts){const from=line?.orderedAt||line?.createdAt||line?.addedAt;if(!from)return null;const days=p.calendar?.workshopDaysBetween(from,now,calendarOpts);return Number.isFinite(days)?{workshopDays:days,label:'Waiting '+days+' workshop day'+(days===1?'':'s')}:null}
+function quotationChange(line){if(!Number.isFinite(Number(line?.selectedQuoteOMR))||!Number.isFinite(Number(line?.finalPriceOMR)))return null;return p.analytics.priceVariance(line.selectedQuoteOMR,line.finalPriceOMR)}
+p.intelligence={summarize,aging,quotationChange};
+})();
