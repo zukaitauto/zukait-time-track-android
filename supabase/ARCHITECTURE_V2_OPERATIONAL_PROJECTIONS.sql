@@ -1,6 +1,9 @@
 -- Architecture V2 canonical operational reporting projections.
 -- Repository migration only; production remains on V141 until controlled rollout.
 begin;
+
+-- Drop the pre-composite signature so upgrades cannot leave an ambiguous overload.
+drop function if exists public.zukait_v2_operational_report_page(text,timestamptz,integer,jsonb);
 create table if not exists public.workshop_v2_work_sessions(
  session_id text primary key,assignment_id text not null,job_card text not null default '',employee_id text not null,
  kind text not null default 'WORK',started_at timestamptz not null,ended_at timestamptz,status text not null default 'ACTIVE',
