@@ -1,0 +1,8 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+const commitBlocks=(api.match(/if \(action === "v2_commit_event"\)/g)||[]).length;
+assert.equal(commitBlocks,1,'workshop API must expose exactly one v2_commit_event authority');
+assert.match(api,/event_id_conflict/,'event commit authority must preserve duplicate-id conflict handling');
+assert.match(api,/actor_mismatch/,'event commit authority must reject actor spoofing');
+assert.match(api,/p_actor_id:String\(user\.id\)/,'authenticated server identity must own event actor');
+console.log('V2 workshop API single event authority: ok');
