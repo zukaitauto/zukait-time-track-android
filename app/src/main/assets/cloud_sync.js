@@ -84,6 +84,22 @@
   window.zukaitServerHistory={page:v2EventPage};
   window.zukaitServerRecent={page:opts=>v2EventPage({...opts,cursor:null})};
 
+  async function v2ReportPage({report,cursor=null,limit=100,filters={}}={}){
+    const r=await api({action:'v2_report_page',report:String(report||'').toUpperCase(),before:cursor||null,limit:Math.max(1,Math.min(Number(limit)||100,500)),filters:filters||{}});
+    if(!r.ok)throw new Error(r.code||'V2_REPORT_FAILED');
+    const rows=Array.isArray(r.rows)?r.rows:[];
+    return {rows,nextCursor:r.next_cursor||null,hasMore:!!r.next_cursor,source:'server'};
+  }
+  async function v2SearchJobCards({query,cursor=null,limit=50}={}){
+    const q=String(query||'').trim();
+    if(!q)return {rows:[],nextCursor:null,hasMore:false,source:'empty-query'};
+    const r=await api({action:'v2_search_jobcards',query:q,before:cursor||null,limit:Math.max(1,Math.min(Number(limit)||50,500))});
+    if(!r.ok)throw new Error(r.code||'V2_JOB_SEARCH_FAILED');
+    const rows=Array.isArray(r.rows)?r.rows:[];
+    return {rows,nextCursor:r.next_cursor||null,hasMore:!!r.next_cursor,source:'server'};
+  }
+  window.zukaitServerReports={page:v2ReportPage,searchJobCards:v2SearchJobCards};
+
   function liveRole(){
     return !!me && (me.role==='Supervisor'||me.role==='Manager');
   }
