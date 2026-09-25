@@ -371,6 +371,13 @@ Deno.serve(async (req: Request) => {
       const eventId = String(event.eventId).trim();
       const entityId = String(event.entityId).trim();
       const eventType = String(event.type).trim();
+      const callerRole=String(profile?.role||"");
+      if (callerRole==="Denter" && eventType.startsWith("SPARE_PART") && eventType!=="SPARE_PART_DENTER_NOTICE") {
+        return reply({ok:false,code:"denter_spare_parts_read_only"},403);
+      }
+      if (eventType==="SPARE_PART_DENTER_NOTICE" && callerRole!=="Denter") {
+        return reply({ok:false,code:"denter_notice_forbidden"},403);
+      }
       if (event.actorId && String(event.actorId) !== String(user.id)) return reply({ok:false,code:"actor_mismatch"},403);
       const { data, error } = await admin.rpc("zukait_v2_commit_event", {
         p_event_id:eventId, p_entity_id:entityId, p_actor_id:String(user.id),
