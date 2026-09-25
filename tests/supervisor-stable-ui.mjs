@@ -10,7 +10,7 @@ const stableTag=html.match(/<script src="supervisor_stable\.js\?v=\d+"><\/script
 assert.ok(html.indexOf(stableTag[0])>html.indexOf(v74[0]),'stable Supervisor authority must load after all legacy Supervisor decorators');
 
 assert.match(stable,/window\.renderSupervisor=renderStable/,'stable authority must own renderSupervisor');
-assert.match(stable,/window\.render=function\(\)\{if\(role\(\)==='Supervisor'\)return renderStable\(\);return typeof prior==='function'\?prior\.apply/,'Supervisor render must bypass legacy render chain while non-Supervisor roles retain it');
+assert.match(stable,/window\.render=function\(\)\{if\(role\(\)==='Supervisor'\)\{const r=renderStable\(\);bindStableActions\(\);return r\}return typeof prior==='function'\?prior\.apply/,'Supervisor render must bypass legacy render chain and bind final actions while non-Supervisor roles retain it');
 assert.doesNotMatch(stable,/MutationObserver/,'stable Supervisor authority must not use DOM observers');
 assert.doesNotMatch(stable,/setTimeout\(apply/,'stable Supervisor authority must not use post-render layout decorators');
 
