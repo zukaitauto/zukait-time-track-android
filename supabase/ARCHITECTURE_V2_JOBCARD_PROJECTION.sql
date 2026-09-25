@@ -36,7 +36,7 @@ revoke all on function public.zukait_v2_jobcard_page(text,timestamptz,integer,te
 grant execute on function public.zukait_v2_jobcard_page(text,timestamptz,integer,text) to service_role;
 create or replace function public.zukait_v2_wip_page(p_before timestamptz default null,p_limit integer default 100,p_stage text default null,p_risk text default null)
 returns table(job_card text,registration text,vehicle_make text,vehicle_model text,workflow_stage text,status text,created_at timestamptz,updated_at timestamptz,age_days integer,risk text)
-language sql stable security invoker set search_path=public as $
+language sql stable security invoker set search_path=public as $$
  select j.job_card,j.registration,j.vehicle_make,j.vehicle_model,j.workflow_stage,j.status,j.created_at,j.updated_at,
         greatest(0,floor(extract(epoch from (now()-j.created_at))/86400)::integer) age_days,
         case when now()-j.created_at>=interval '30 days' then 'OVERDUE'
@@ -48,7 +48,7 @@ language sql stable security invoker set search_path=public as $
    and (nullif(trim(coalesce(p_risk,'')),'') is null or
         upper(trim(p_risk))=case when now()-j.created_at>=interval '30 days' then 'OVERDUE' when now()-j.created_at>=interval '25 days' then 'WARNING' else 'NORMAL' end)
  order by j.updated_at desc limit greatest(1,least(coalesce(p_limit,100),500));
-$;
+$$;
 revoke all on function public.zukait_v2_wip_page(timestamptz,integer,text,text) from public,anon,authenticated;
 grant execute on function public.zukait_v2_wip_page(timestamptz,integer,text,text) to service_role;
 
@@ -57,7 +57,7 @@ create or replace function public.zukait_v2_upsert_jobcard(
  p_workflow_stage text default 'CREATED',p_status text default 'OPEN',p_revision bigint default 0,p_event_id text default null,p_completed_at timestamptz default null
 )
 returns public.workshop_v2_jobcards
-language plpgsql security invoker set search_path=public as $
+language plpgsql security invoker set search_path=public as $$
 declare outrow public.workshop_v2_jobcards;
 begin
  if nullif(trim(coalesce(p_job_card,'')),'') is null then raise exception 'job_card_required'; end if;
@@ -76,7 +76,7 @@ begin
    end if;
  end if;
  return outrow;
-end;$;
+end;$$;
 revoke all on function public.zukait_v2_upsert_jobcard(text,text,text,text,integer,text,text,bigint,text,timestamptz) from public,anon,authenticated;
 grant execute on function public.zukait_v2_upsert_jobcard(text,text,text,text,integer,text,text,bigint,text,timestamptz) to service_role;
 
