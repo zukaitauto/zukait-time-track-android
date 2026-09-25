@@ -109,6 +109,7 @@ jobs:
           node tests/v2-delayed-replay-authority.mjs
           node tests/v2-queue-conflict-quarantine.mjs
           node tests/v2-conflict-visibility.mjs
+          node tests/v2-conflict-resolution-lifecycle.mjs
           node tests/v2-bounded-pagination-cursors.mjs
           node tests/v2-repeat-consumables-server-authority.mjs
           node tests/v2-spare-parts-server-authority.mjs
