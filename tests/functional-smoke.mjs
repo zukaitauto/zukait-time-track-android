@@ -11,6 +11,7 @@ const v66 = read('app/src/main/assets/v66_updates.js');
 const v67 = read('app/src/main/assets/v67_updates.js');
 const html = read('app/src/main/assets/offline_test.html');
 const cloud = read('app/src/main/assets/cloud_sync.js');
+const liveStatusAuthority = read('app/src/main/assets/live_status_authority.js');
 const metadata = JSON.parse(read('latest-version.json'));
 const releaseWorkflow = read('.github/workflows/publish-approved-release.yml');
 
@@ -24,6 +25,17 @@ assert.match(main, /return installedVersionCode\(\);/, 'native bridge must repor
 assert.doesNotMatch(main, /getAppVersion\(\)[\s\S]{0,120}return "V74"/, 'native version name must not be hard-coded');
 assert.ok(Number(metadata.versionCode) <= versionCode, 'published metadata cannot be newer than candidate build');
 assert.equal(metadata.package, 'com.zukait.timetrack');
+
+// Real-time Manager / Supervisor authority contracts.
+assert.match(liveStatusAuthority, /window\.currentStaffStatuses=function\(\)[\s\S]*?if\(serverRequired\(\)\)return \[\]/, 'online Manager/Supervisor staff status must fail closed instead of falling back to stale local sessions');
+assert.match(liveStatusAuthority, /window\.currentActiveWorkers=function\(\)[\s\S]*?if\(serverRequired\(\)\)return \[\]/, 'online Active Workers must not fall back to stale local sessions');
+assert.match(liveStatusAuthority, /window\.v79CurrentWorkerRows=function\(\)[\s\S]*?if\(serverRequired\(\)\)return \[\]/, 'legacy worker-row API must remain server authoritative online');
+assert.match(liveStatusAuthority, /window\.v84TechState=function\(u\)[\s\S]*?if\(serverRequired\(\)\)return\{session:null,status:'Syncing'\}/, 'technician board must show Syncing rather than stale local status when server live data is unavailable');
+assert.match(liveStatusAuthority, /window\.v65OpenControl=function\(type\)[\s\S]*?serverRequired\(\)&&type==='working'/, 'Manager Working Now details must remain server authoritative');
+assert.match(liveStatusAuthority, /window\.addEventListener\('zukait-live-status',apply\)/, 'live status updates must immediately reconcile Manager/Supervisor UI');
+assert.match(liveStatusAuthority, /setInterval\(apply,1000\)/, 'Manager/Supervisor live UI must keep the one-second reconciliation cadence');
+assert.match(supervisorStable, /if\(window\.me&&navigator\.onLine&&window\.me\.role==='Supervisor'\)return\[\]/, 'authoritative Supervisor renderer must not use local activeSession fallback while online');
+
 
 
 
