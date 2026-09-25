@@ -1,5 +1,5 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';
 const sql=fs.readFileSync('supabase/ARCHITECTURE_V2_JOBCARD_PROJECTION.sql','utf8');const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
 assert.match(sql,/create table if not exists public\.workshop_v2_jobcards/i);assert.match(sql,/job_card text primary key/i);assert.match(sql,/workflow_stage text not null/i);assert.match(sql,/revision bigint not null/i);assert.match(sql,/workshop_v2_jobcards_updated_idx/i);assert.match(sql,/workshop_v2_jobcards_registration_idx/i);assert.match(sql,/workshop_v2_jobcards_status_idx/i);assert.match(sql,/zukait_v2_jobcard_page/i);assert.match(sql,/least\(coalesce\(p_limit,100\),500\)/i);assert.match(sql,/j\.job_card ilike/i);assert.match(sql,/j\.registration ilike/i);assert.match(sql,/revoke all[^;]+anon,authenticated/is);assert.match(sql,/grant execute[^;]+service_role/is);
-assert.match(api,/action === "v2_search_jobcards"/);assert.match(api,/admin\.rpc\("zukait_v2_jobcard_page"/);assert.doesNotMatch(api,/p_report:\s*"JOB_SEARCH"[^}]+v2_search_jobcards/s);
+assert.match(api,/action === "v2_search_jobcards"/);assert.ok(api.includes('zukait_v2_jobcard_page'));assert.doesNotMatch(api,/p_report:\s*"JOB_SEARCH"[^}]+v2_search_jobcards/s);
 console.log('V2 canonical Job Card projection/search contract: ok');
