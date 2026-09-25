@@ -1504,15 +1504,28 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     save();closeModal();render();
   };
 
+  window.v164AssignedActions=function(id){
+    const a=(state.assign||[]).find(x=>x&&x.id===id&&!x.cancelled);if(!a)return alert('Assignment not found.');
+    const no=String(a.job).replace(/'/g,"\\'"), aid=String(a.id).replace(/'/g,"\\'");
+    let actions='<button class="blue big-action" onclick="openSupervisorJob(\''+no+'\')">👁 VIEW DETAILS</button>';
+    if(!a.completed){
+      actions+='<button class="green big-action" onclick="v62EditAssignment(\''+aid+'\')">🔄 CHANGE TECHNICIAN</button>'+
+        '<button class="purple big-action" onclick="v62SplitAssignment(\''+aid+'\')">👥 SPLIT WORK / ADD TECHNICIAN</button>';
+    }else if(!a.rework){
+      actions+='<button class="purple big-action" onclick="closeSupervisorModal();if(window.v71ReopenSameAssignment)window.v71ReopenSameAssignment(\''+aid+'\')">↻ REISSUE / REOPEN</button>';
+    }
+    actions+='<button class="secondary big-action" onclick="closeSupervisorModal()">CLOSE</button>';
+    showSupervisorModal('Assignment Actions — '+esc62(a.job),actions);
+  };
   function table62(list){
-    if(!list.length)return '<div class="notice"><b>No open assigned job cards.</b></div>';
-    return '<div style="overflow:auto"><table><thead><tr><th>Job Card</th><th>Vehicle</th><th>Technician</th><th>Status</th><th>Suggested</th><th>Actual</th><th>Actions</th></tr></thead><tbody>'+
-      list.map(a=>{const j=job(a.job)||{};return '<tr><td><b>'+esc62(a.job)+'</b></td><td>'+esc62(j.vehicle||'—')+'<br><span class="small">'+esc62(j.reg||'')+'</span></td><td>'+esc62(user(a.emp).name)+'</td><td>'+esc62(status62(a))+'</td><td>'+fmt(+a.suggested||0)+'</td><td>'+fmt(actual62(a))+'</td><td><button class="blue" onclick="openSupervisorJob(\''+String(a.job).replace(/'/g,"\\'")+'\')">VIEW</button><button class="amber" onclick="v62EditAssignment(\''+a.id+'\')">EDIT</button><button class="purple" onclick="v62SplitAssignment(\''+a.id+'\')">+ TECHNICIAN</button></td></tr>'}).join('')+'</tbody></table></div>';
+    if(!list.length)return '<div class="notice"><b>No assigned job cards found.</b></div>';
+    return '<div style="overflow:auto"><table><thead><tr><th>Job Card</th><th>Vehicle</th><th>Technician</th><th>Status</th><th>Suggested</th><th>Actual</th><th>Action</th></tr></thead><tbody>'+
+      list.map(a=>{const j=job(a.job)||{};return '<tr><td><b>'+esc62(a.job)+'</b></td><td>'+esc62(j.vehicle||'—')+'<br><span class="small">'+esc62(j.reg||'')+'</span></td><td>'+esc62(user(a.emp).name)+'</td><td>'+esc62(status62(a))+'</td><td>'+fmt(+a.suggested||0)+'</td><td>'+fmt(actual62(a))+'</td><td><button class="blue" onclick="v164AssignedActions(\''+a.id+'\')">ACTIONS</button></td></tr>'}).join('')+'</tbody></table></div>';
   }
-  window.openSupervisorAssignedWindow=function(){const list=open62();showSupervisorModal('📋 Assigned Job Cards','<div class="row"><input id="v62Search" style="flex:1;min-width:220px" placeholder="" oninput="v62Filter()"><span class="pill">'+list.length+' OPEN</span></div><div id="v62Rows" style="margin-top:12px">'+table62(list)+'</div>');};
+  window.openSupervisorAssignedWindow=function(){const list=(state.assign||[]).filter(a=>a&&!a.cancelled&&a.job!=='ID001'&&!a.rework);showSupervisorModal('📋 Assigned Job Cards','<div class="row"><input id="v62Search" style="flex:1;min-width:220px" placeholder="" oninput="v62Filter()"><span class="pill">'+list.length+' ASSIGNED</span></div><div id="v62Rows" style="margin-top:12px">'+table62(list)+'</div>');};
   window.v163OpenRepeatAssign=function(){let finished=(state.assign||[]).filter(a=>a&&!a.cancelled&&a.completed&&!a.rework&&a.job!=='ID001');let jobs=[...new Set(finished.map(a=>a.job))].sort();showSupervisorModal('🔁 Assign Repeat Job','<p class="muted">Select a finished original Job Card. Repeat Work remains separate from Reissue/Reopen.</p><div class="grid"><label><b>Finished Job Card</b><br><select id="v163RepeatJob" style="width:100%"><option value="">Select Job Card</option>'+jobs.map(no=>'<option value="'+esc62(no)+'">'+esc62(no)+' — '+esc62((job(no)||{}).vehicle||'')+'</option>').join('')+'</select></label></div><p><button class="yellow" onclick="let no=document.getElementById(\'v163RepeatJob\').value;if(!no)return alert(\'Select a finished Job Card.\');closeSupervisorModal();createRepeatWork(no)">CONTINUE</button> <button class="secondary" onclick="closeSupervisorModal()">CLOSE</button></p>');};
   window.v163OpenRepeatHistory=function(){let rows=(state.assign||[]).filter(a=>a&&!a.cancelled&&a.rework).slice().sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));showSupervisorModal('📋 Repeat Job History',rows.length?'<div style="overflow:auto"><table><thead><tr><th>Date</th><th>Job Card</th><th>Vehicle / Reg.</th><th>Technician</th><th>Status</th><th>Suggested</th><th>Actual</th></tr></thead><tbody>'+rows.map(a=>{let j=job(a.job)||{};return '<tr><td>'+new Date(a.assignedAt||Date.now()).toLocaleDateString()+'</td><td><b>'+esc62(a.job)+'</b></td><td>'+esc62(j.vehicle||'—')+'<br><span class="small">'+esc62(j.reg||'')+'</span></td><td>'+esc62(user(a.emp).name)+'</td><td>'+esc62(status62(a))+'</td><td>'+fmt(+a.suggested||0)+'</td><td>'+fmt(actual62(a))+'</td></tr>'}).join('')+'</tbody></table></div>':'<div class="notice"><b>No Repeat Job history yet.</b></div>');};
-  window.v62Filter=function(){const q=(document.getElementById('v62Search')?.value||'').toLowerCase();const list=open62().filter(a=>{const j=job(a.job)||{};return [a.job,j.vehicle,j.reg,user(a.emp).name,status62(a)].join(' ').toLowerCase().includes(q)});const el=document.getElementById('v62Rows');if(el)el.innerHTML=table62(list);};
+  window.v62Filter=function(){const q=(document.getElementById('v62Search')?.value||'').toLowerCase();const list=(state.assign||[]).filter(a=>a&&!a.cancelled&&a.job!=='ID001'&&!a.rework).filter(a=>{const j=job(a.job)||{};return [a.job,j.vehicle,j.reg,user(a.emp).name,status62(a)].join(' ').toLowerCase().includes(q)});const el=document.getElementById('v62Rows');if(el)el.innerHTML=table62(list);};
 
   function workedBetween(from,to){return (state.sessions||[]).reduce((sum,s)=>{const st=Math.max(+s.start||0,from),en=Math.min(+(s.end||Date.now()),to);if(en<=st)return sum;try{if(typeof normalMinutes==='function')return sum+normalMinutes(st,en)}catch(_){}return sum+(en-st)/60000;},0);}
   function managerHours62(){
