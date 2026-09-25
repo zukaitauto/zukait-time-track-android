@@ -1346,6 +1346,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     state.sessions=state.sessions||[];
     const newSession={id:uid(),assignmentId:a.id,job:a.job,emp:me.id,start:startAt,end:null,paused:false,rework:a.rework===true,startRecordedOffline:offlineAtStart,startDeviceTime:startAt};
     state.sessions.push(newSession);
+    try{window.zukaitV2?.work?.record(a.job===HOLD?window.zukaitV2.work.TYPES.ID001_START:window.zukaitV2.work.TYPES.START,a,{actorId:me.id,clientTime:new Date(startAt).toISOString(),syncState:'shadow'})}catch(e){console.warn('V2 shadow start skipped',e)}
     state.offlineActionLog=state.offlineActionLog||[];if(offlineAtStart)state.offlineActionLog.push({id:uid(),type:'START',job:a.job,emp:me.id,assignmentId:a.id,sessionId:newSession.id,at:startAt,queuedAt:now()});
     if(offlineAtStart){a.pendingOfflineStart=true;a.pendingOfflineStartAt=startAt}
     setLastAction('Started '+a.job+(a.rework?' repeat work':'')+(offlineAtStart?' — offline, queued for sync':''));
@@ -1359,6 +1360,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     let reason=prompt('Pause reason (optional).','');if(reason===null)reason='';
     s.end=now();s.paused=true;s.pauseReason=reason.trim();s.pauseRecordedOffline=offlineAtPause;s.pauseDeviceTime=s.end;
     const a=assignmentForActive(s);if(a){a.pauseReason=s.pauseReason;if(offlineAtPause){a.pendingOfflinePause=true;a.pendingOfflinePauseAt=s.end}}
+    try{window.zukaitV2?.work?.record(window.zukaitV2.work.TYPES.PAUSE,a||{id:s.assignmentId,job:s.job,emp:me.id},{actorId:me.id,clientTime:new Date(s.end).toISOString(),syncState:'shadow'})}catch(e){console.warn('V2 shadow pause skipped',e)}
     state.offlineActionLog=state.offlineActionLog||[];if(offlineAtPause)state.offlineActionLog.push({id:uid(),type:'PAUSE',job:s.job,emp:me.id,assignmentId:s.assignmentId||a?.id,at:s.end,queuedAt:now()});
     setLastAction('Paused '+s.job+(offlineAtPause?' — offline, queued for sync':''));save();render();
   };
@@ -1368,6 +1370,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     const a=assignmentForActive(s);if(!a)return alert('Active assignment could not be found.');
     if(!confirm((s.job===HOLD?'Stop ID001 Ideal Time Card':'Finish work on '+s.job)+'?'))return;
     s.end=now();s.finished=true;s.paused=false;a.completed=true;a.completedAt=s.end;
+    try{window.zukaitV2?.work?.record(s.job===HOLD?window.zukaitV2.work.TYPES.ID001_STOP:window.zukaitV2.work.TYPES.FINISH,a,{actorId:me.id,clientTime:new Date(s.end).toISOString(),syncState:'shadow'})}catch(e){console.warn('V2 shadow finish skipped',e)}
     setLastAction((s.job===HOLD?'Stopped ':'Finished ')+s.job);save();render();
   };
   window.v59Stable=true;
