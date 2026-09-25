@@ -139,6 +139,7 @@ jobs:
           node tests/v2-scale-benchmark.mjs
           node tests/v2-migration-completeness.mjs
           node tests/v2-production-isolation.mjs
+          node tests/v2-combined-module-integration.mjs
           node tests/v2-full-regression-manifest.mjs
 
       - name: Check production assets
