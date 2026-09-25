@@ -14,4 +14,14 @@ const expected=[
  [files.report,/drop function if exists public\.zukait_v2_report_page\(text,timestamptz,integer,jsonb\)/i,/zukait_v2_report_page\([\s\S]*p_before_id text default null/i]
 ];
 for(const [sql,oldSig,newSig] of expected){assert.match(sql,oldSig);assert.match(sql,newSig);}
+
+const grants=[
+ [files.hist,/revoke all on function public\.zukait_v2_event_page\(timestamptz,integer,text,text,text\) from public,anon,authenticated/i,/grant execute on function public\.zukait_v2_event_page\(timestamptz,integer,text,text,text\) to service_role/i],
+ [files.op,/revoke all on function public\.zukait_v2_operational_report_page\(text,timestamptz,integer,jsonb,text\) from public,anon,authenticated/i,/grant execute on function public\.zukait_v2_operational_report_page\(text,timestamptz,integer,jsonb,text\) to service_role/i],
+ [files.job,/revoke all on function public\.zukait_v2_jobcard_page\(text,timestamptz,integer,text,text\) from public,anon,authenticated/i,/grant execute on function public\.zukait_v2_jobcard_page\(text,timestamptz,integer,text,text\) to service_role/i],
+ [files.job,/revoke all on function public\.zukait_v2_wip_page\(timestamptz,integer,text,text,text\) from public,anon,authenticated/i,/grant execute on function public\.zukait_v2_wip_page\(timestamptz,integer,text,text,text\) to service_role/i],
+ [files.report,/revoke all on function public\.zukait_v2_report_page\(text,timestamptz,integer,jsonb,text\) from public,anon,authenticated/i,/grant execute on function public\.zukait_v2_report_page\(text,timestamptz,integer,jsonb,text\) to service_role/i]
+];
+for(const [sql,revokeSig,grantSig] of grants){assert.match(sql,revokeSig);assert.match(sql,grantSig);}
+
 console.log('V2 pagination overload safety gate: ok');
