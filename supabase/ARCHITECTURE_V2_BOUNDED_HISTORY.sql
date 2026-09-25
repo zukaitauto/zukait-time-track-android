@@ -75,4 +75,44 @@ end;$$;
 revoke all on function public.zukait_v2_commit_event(text,text,text,text,text,timestamptz,bigint,jsonb) from public,anon,authenticated;
 grant execute on function public.zukait_v2_commit_event(text,text,text,text,text,timestamptz,bigint,jsonb) to service_role;
 
+create or replace function public.zukait_v2_commit_event(
+  p_event_id text,
+  p_entity_id text,
+  p_actor_id text,
+  p_device_id text,
+  p_event_type text,
+  p_client_time timestamptz,
+  p_revision bigint,
+  p_payload jsonb default '{}'::jsonb
+)
+returns table(event_id text, server_time timestamptz, revision bigint, inserted boolean)
+language plpgsql
+security invoker
+set search_path=public
+as $
+declare
+  v_row public.workshop_v2_events%rowtype;
+  v_inserted boolean := false;
+begin
+  if nullif(trim(p_event_id),'') is null or nullif(trim(p_entity_id),'') is null or nullif(trim(p_event_type),'') is null then
+    raise exception 'invalid_event';
+  end if;
+  insert into public.workshop_v2_events(event_id,entity_id,actor_id,device_id,event_type,client_time,revision,payload)
+  values(p_event_id,p_entity_id,p_actor_id,p_device_id,p_event_type,p_client_time,p_revision,coalesce(p_payload,'{}'::jsonb))
+  on conflict (event_id) do nothing
+  returning * into v_row;
+  if found then
+    v_inserted := true;
+  else
+    select * into v_row from public.workshop_v2_events e where e.event_id=p_event_id;
+  end if;
+  return query select v_row.event_id,v_row.server_time,v_row.revision,v_inserted;
+end;
+$;
+
+revoke all on function public.zukait_v2_commit_event(text,text,text,text,text,timestamptz,bigint,jsonb)
+  from public, anon, authenticated;
+grant execute on function public.zukait_v2_commit_event(text,text,text,text,text,timestamptz,bigint,jsonb)
+  to service_role;
+
 commit;
