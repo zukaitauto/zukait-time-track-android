@@ -294,6 +294,12 @@
     data.offlineActionLog=[...other,...seen.values()].sort((a,b)=>(+a.at||0)-(+b.at||0));
     return data;
   }
+  function finalizeEmployeeOfflineMarkers(data,emp){
+    const pending=(data.offlineActionLog||[]).filter(x=>x&&x.emp===emp);
+    const keys=new Set(pending.map(x=>String(x.assignmentId||'')));
+    for(const a of (data.assign||[])){if(!a||a.emp!==emp||!keys.has(String(a.id||''))){delete a.pendingOfflineStart;delete a.pendingOfflineStartAt;delete a.pendingOfflinePause;delete a.pendingOfflinePauseAt;delete a.pendingOfflineFinish;delete a.pendingOfflineFinishAt}}
+    return data;
+  }
   function mergeEmployeeConflict(remote,local,emp){
     const merged=clone(remote||{});
     merged.sessions=mergeById(remote.sessions,local.sessions,(l,r)=>preferEmployeeSession(l,r,emp));
@@ -370,6 +376,7 @@
         if(r.data&&typeof r.data==='object'){
           cloudApplying=true;
           try{normalizeRemote(reconcileConsumablesDuplicates(clone(r.data)))}finally{cloudApplying=false}
+          if(me?.role==='Employee')finalizeEmployeeOfflineMarkers(state,me.id);
           lastSyncedState=clone(state||{});
           if(me)try{render()}catch(_){}
         }else{
