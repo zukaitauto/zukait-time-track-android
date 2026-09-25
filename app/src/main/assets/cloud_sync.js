@@ -75,6 +75,22 @@
     return body;
   }
 
+  async function v2CommitEvent(event){
+    const r=await api({action:'v2_commit_event',event});
+    if(!r.ok)throw new Error(r.code||'V2_EVENT_COMMIT_FAILED');
+    return r;
+  }
+  async function flushV2EventQueue(){
+    const q=window.zukaitV2?.queue;if(!q||!sessionToken()||!navigator.onLine)return {synced:0,pending:q?.pending?.().length||0};
+    let synced=0;
+    for(const event of q.pending()){
+      try{const r=await v2CommitEvent(event);q.markSynced(event.eventId,{serverTime:r.server_time,serverRevision:r.server_revision});synced++;}
+      catch(e){console.warn('V2 event sync deferred',event.eventId,e);break;}
+    }
+    q.compact();return {synced,pending:q.pending().length};
+  }
+  window.zukaitV2Transport={commitEvent:v2CommitEvent,flush:flushV2EventQueue};
+
   async function v2EventPage({cursor=null,limit=100,filters={}}={}){
     const r=await api({action:'v2_event_history',before:cursor||null,limit:Math.max(1,Math.min(Number(limit)||100,500)),entity_id:filters.entityId||filters.entity_id||null,event_type:filters.eventType||filters.event_type||null});
     if(!r.ok)throw new Error(r.code||'V2_HISTORY_FAILED');
