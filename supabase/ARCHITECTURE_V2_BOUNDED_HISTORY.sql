@@ -36,7 +36,7 @@ language sql stable security invoker set search_path=public as $$
   limit greatest(1,least(coalesce(p_limit,100),500));
 $$;
 revoke all on function public.zukait_v2_event_page(timestamptz,integer,text,text,text) from public,anon,authenticated;
-grant execute on function public.zukait_v2_event_page(timestamptz,integer,text,text) to service_role;
+grant execute on function public.zukait_v2_event_page(timestamptz,integer,text,text,text) to service_role;
 
 create or replace function public.zukait_v2_commit_event(
   p_event_id text,p_entity_id text,p_actor_id text,p_device_id text,p_event_type text,
