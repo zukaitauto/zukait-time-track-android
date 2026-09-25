@@ -61,6 +61,9 @@ const v67=fs.readFileSync(path.join(root,'app/src/main/assets/v67_updates.js'),'
 assert.ok(!/me\?\.role==='Manager'\)renderManager65\(\)/.test(v65), 'V65 Manager renderer must remain retired to prevent login UI flash');
 assert.ok(!/me\?\.role==='Manager'\)renderManager66\(\)/.test(v66), 'V66 Manager renderer must remain retired to prevent login UI flash');
 assert.ok(v67.includes("window.render=function(){prevRender();if(me?.role==='Manager')renderManager67()};"), 'V67 Manager renderer must be the synchronous visible Manager authority');
+const stable=fs.readFileSync(path.join(root,'app/src/main/assets/supervisor_stable.js'),'utf8');
+assert.ok(!stable.includes("alert('Spare Parts — Coming Soon')"), 'final Supervisor renderer must not override the live Spare Parts module');
+assert.ok(stable.includes('v143BindStableActions') && stable.includes('v143OpenConsumables') && stable.includes('openSpareParts'), 'final Supervisor renderer must bind Consumables and Spare Parts to live module authorities');
 assert.ok([v65,v66,v67].every(src=>src.includes('openConsumablesModule()')), 'all Manager renderer generations must open the real Consumables module');
 assert.ok(![v65,v66,v67,updates].some(src=>src.includes('Consumables details will be added later.')), 'no Manager Consumables placeholder alert may remain');
 assert.ok(updates.includes("buttons.length>1") && updates.includes("b.onclick=open"), 'final Manager Consumables authority must deduplicate controls and bind the real open handler');
