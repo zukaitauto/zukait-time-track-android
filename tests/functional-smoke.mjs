@@ -39,7 +39,7 @@ assert.match(supervisorStable, /Today at a Glance[\s\S]*Active Workers[\s\S]*Wor
 assert.match(supervisorStable, /\.v143-glance\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, 'Supervisor Today at a Glance must remain a 3-column by 2-row grid');
 assert.doesNotMatch(supervisorStable, /class="v143-ot"/, 'Supervisor stable dashboard must not restore the redundant standalone Overtime Now row');
 assert.ok(supervisorStable.includes("onclick=\"v65OpenControl(\\'working\\')\""), 'Working Now card must open the authoritative working-now route');
-assert.match(supervisorStable, /onclick="openReadyForDelivery\(\)"/, 'Ready for Delivery card must retain its dedicated detail route');
+assert.match(supervisorStable, /onclick="v143OpenReadyForDelivery\(\)"/, 'Ready for Delivery card must use the stable authoritative detail route');
 
 
 
