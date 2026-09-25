@@ -1238,8 +1238,10 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     const s=me&&activeSession(me.id);if(!s)return;const a=assignmentForSession(s);if(!a)return alert('Active assignment could not be found.');
     const verb=s.job===HOLD?'Stop ID001 Ideal Time Card':'Finish work on '+s.job;
     if(!confirm(verb+'?'))return;
-    s.end=now();s.finished=true;s.paused=false;a.completed=true;a.completedAt=s.end;
-    setLastAction((s.job===HOLD?'Stopped ':'Finished ')+s.job);save();render();
+    const offlineAtFinish=!navigator.onLine;
+    s.end=now();s.finished=true;s.paused=false;s.finishRecordedOffline=offlineAtFinish;s.finishDeviceTime=s.end;a.completed=true;a.completedAt=s.end;
+    state.offlineActionLog=state.offlineActionLog||[];if(offlineAtFinish){a.pendingOfflineFinish=true;a.pendingOfflineFinishAt=s.end;state.offlineActionLog.push({id:uid(),type:s.job===HOLD?'STOP_ID001':'FINISH',job:s.job,emp:me.id,assignmentId:a.id,sessionId:s.id,at:s.end,queuedAt:now()})}
+    setLastAction((s.job===HOLD?'Stopped ':'Finished ')+s.job+(offlineAtFinish?' — offline, queued for sync':''));save();render();
   };
 
   // ID001 reassignment creates a fresh assignment after the prior one is completed.
@@ -1340,9 +1342,13 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     if(activeSession(me.id))return alert('You already have an active job. Pause or finish it first.');
     const a=openAssignment(no,me.id);
     if(!a)return alert('This job is not available for work.');
+    const offlineAtStart=!navigator.onLine,startAt=now();
     state.sessions=state.sessions||[];
-    state.sessions.push({id:uid(),assignmentId:a.id,job:a.job,emp:me.id,start:now(),end:null,paused:false,rework:a.rework===true});
-    setLastAction('Started '+a.job+(a.rework?' repeat work':''));
+    const newSession={id:uid(),assignmentId:a.id,job:a.job,emp:me.id,start:startAt,end:null,paused:false,rework:a.rework===true,startRecordedOffline:offlineAtStart,startDeviceTime:startAt};
+    state.sessions.push(newSession);
+    state.offlineActionLog=state.offlineActionLog||[];if(offlineAtStart)state.offlineActionLog.push({id:uid(),type:'START',job:a.job,emp:me.id,assignmentId:a.id,sessionId:newSession.id,at:startAt,queuedAt:now()});
+    if(offlineAtStart){a.pendingOfflineStart=true;a.pendingOfflineStartAt=startAt}
+    setLastAction('Started '+a.job+(a.rework?' repeat work':'')+(offlineAtStart?' — offline, queued for sync':''));
     save();render();
   };
   window.pause=function(){
