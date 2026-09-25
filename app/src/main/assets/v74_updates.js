@@ -3059,6 +3059,27 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v150SupervisorModalCloseReady=true;
 })();
 
+/* V157 EMPLOYEE LIVE REFRESH AUTHORITY — one final scheduler for employee-only UI refresh work. */
+(function(){'use strict';
+ function refresh(){
+   if(!me||me.role!=='Employee')return;
+   try{if(typeof window.refreshActiveRunningTime==='function')window.refreshActiveRunningTime()}catch(e){console.warn('Employee running refresh failed',e)}
+   try{if(typeof window.v130ApplyEmployeeID001UI==='function')window.v130ApplyEmployeeID001UI()}catch(e){console.warn('Employee ID001 UI refresh failed',e)}
+ }
+ // Retire independent employee UI timers after all legacy layers have loaded.
+ ['v752EmployeeTimer','v755EmployeeBreakdownTimer','v157EmployeeLiveTimer'].forEach(k=>{try{if(window[k])clearInterval(window[k])}catch(_){}});
+ window.v157EmployeeLiveRefresh=refresh;
+ window.v157EmployeeLiveTimer=setInterval(refresh,1000);
+ window.addEventListener('focus',refresh);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
+ const prior=window.renderEmployee;
+ window.renderEmployee=function(){const r=typeof prior==='function'?prior.apply(this,arguments):undefined;setTimeout(refresh,0);return r};
+ window.v157EmployeeLiveAuthority=true;
+})();
+
+/* V134
+})();
+
 
 /* V134 SUPERVISOR VEHICLE LOGO AUTHORITY — use the same Job Card brand mapping as Employee cards. */
 (function(){'use strict';
