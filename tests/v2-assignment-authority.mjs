@@ -1,0 +1,11 @@
+import fs from'node:fs';import assert from'node:assert/strict';
+const op=fs.readFileSync('supabase/ARCHITECTURE_V2_OPERATIONAL_PROJECTIONS.sql','utf8');
+const ev=fs.readFileSync('supabase/ARCHITECTURE_V2_BOUNDED_HISTORY.sql','utf8');
+assert.match(op,/create table if not exists public\.workshop_v2_assignments/);
+assert.match(op,/create or replace function public\.zukait_v2_apply_assignment_event/);
+assert.match(op,/p_event_type<>'JOB_ASSIGNED'/);
+assert.match(op,/x\.employee_id=emp and x\.status='ACTIVE' and x\.kind='ID001'/);
+assert.match(op,/status='STOPPED'/);assert.match(op,/actual_minutes=x\.accumulated_minutes\+greatest/);
+assert.match(op,/insert into public\.workshop_v2_assignments/);
+assert.match(ev,/p_event_type='JOB_ASSIGNED'/);assert.match(ev,/zukait_v2_apply_assignment_event/);
+console.log('V2 assignment authority and ID001 auto-stop gate: ok');
