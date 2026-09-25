@@ -1,0 +1,10 @@
+import fs from'node:fs';import assert from'node:assert/strict';
+const q=fs.readFileSync('app/src/main/assets/v2/core/offline_queue.js','utf8');
+const c=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
+assert.match(q,/syncState==='pending'\|\|!x\.syncState/);
+assert.match(q,/syncState:'conflict'/);assert.match(q,/function conflicts\(\)/);assert.match(q,/markConflict/);
+assert.match(c,/code==='NETWORK'\|\|code==='TIMEOUT'\|\|code==='NO_SESSION'/);
+assert.match(c,/q\.markConflict\?\.\(event\.eventId,code\)/);
+assert.match(c,/V2 event quarantined for reconciliation/);
+assert.match(c,/break;/);
+console.log('V2 queue conflict quarantine gate: ok');
