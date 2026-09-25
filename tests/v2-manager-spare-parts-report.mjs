@@ -18,3 +18,5 @@ const reports=fs.readFileSync('app/src/main/assets/v2/features/reports/service.j
 assert.match(m,/function normalizeReportRow\(r=\{\}\)/);assert.match(m,/r\.list_no/);assert.match(m,/r\.job_card/);assert.match(m,/r\.purchase_amount/);assert.match(m,/do\{const r=await svc\.page\('SPARE_PARTS',\{cursor,limit:500/);assert.match(m,/while\(cursor&&pages<20\)/);assert.match(m,/server-capped-10000/);
 
 assert.match(m,/>WhatsApp<\/button>/);assert.match(m,/function whatsAppManagerReport\(\)/);assert.match(m,/https:\/\/wa\.me\/\?text=/);assert.match(m,/encodeURIComponent\(text\)/);assert.match(m,/whatsAppManagerReport,managerReportText/);
+
+assert.match(m,/function whatsAppReportText\(\)/);assert.match(m,/max=40/);assert.match(m,/shown=rows\.slice\(0,max\)/);assert.match(m,/more part line\(s\)\. Use Print \/ PDF for the complete report/);assert.match(m,/const text=whatsAppReportText\(\)/);
