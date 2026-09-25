@@ -60,6 +60,9 @@ begin
      if nullif(trim(coalesce(p_payload->>'jobCard','')),'') is null or nullif(trim(coalesce(p_payload->>'partId',p_entity_id,'')),'') is null then raise exception 'invalid_spare_part_event'; end if;
      if p_event_type='SPARE_PART_STATUS_CHANGED' and (nullif(trim(coalesce(p_payload->>'from','')),'') is null or nullif(trim(coalesce(p_payload->>'to','')),'') is null) then raise exception 'invalid_spare_part_transition'; end if;
    end if;
+   if p_event_type='JOB_ASSIGNED' then
+     perform public.zukait_v2_apply_assignment_event(p_event_id,p_entity_id,p_event_type,p_client_time,p_revision,p_payload);
+   end if;
    if p_event_type in ('REPEAT_ASSIGNED','REPEAT_COMPLETED','REPEAT_CANCELLED','CONSUMABLE_ISSUED','CONSUMABLE_ADDITIONAL','CONSUMABLE_ACTUAL','CONSUMABLE_VOIDED') then
      if p_event_type like 'REPEAT%' and nullif(trim(coalesce(p_payload->>'jobCard',p_payload->>'job','')),'') is null then raise exception 'repeat_job_required'; end if;
      if p_event_type='REPEAT_ASSIGNED' and (nullif(trim(coalesce(p_payload->>'employeeId',p_payload->>'emp','')),'') is null or nullif(trim(coalesce(p_payload->>'mistakeEmployeeId',p_payload->>'mistakeEmp','')),'') is null or nullif(trim(coalesce(p_payload->>'reason','')),'') is null) then raise exception 'invalid_repeat_event'; end if;
