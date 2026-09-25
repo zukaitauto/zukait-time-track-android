@@ -109,7 +109,7 @@ assert.match(updates, /currentRemaining',!hasAlloc\?'—':left<=0\?'\+'\+fm/, 'z
 assert.match(updates, /NO ALLOCATED TIME/, 'zero allocation must show a clear no allocated time state');
 
 // Shared data consistency contracts
-assert.match(cloud, /pollTimer=setInterval[\s\S]*?1000\);/, 'all logged-in dashboards must poll the same shared cloud state every second');
+assert.match(cloud, /const pollMs=\(\)=>document\.visibilityState==='hidden'\?30000:5000/, 'cloud polling must use visibility-aware battery-efficient cadence');
 assert.match(cloud, /visibilitychange[\s\S]*?refreshVisibleSharedState/, 'dashboard must refresh shared state when the app becomes visible');
 assert.match(cloud, /window\.addEventListener\('focus',refreshVisibleSharedState\)/, 'dashboard must refresh shared state when the app regains focus');
 assert.match(cloud, /if\(cloudDirty&&!cloudPushing\)await push\(0\)/, 'local changes must be pushed before a forced shared-state refresh');
@@ -695,7 +695,7 @@ assert.doesNotMatch(updates,/setTimeout\(injectManagerLeaveRow,0\)/,'legacy Mana
 assert.match(updates,/V115 SHARED LIVE WORKER AUTHORITY/,'shared live-worker authority must remain present');
 assert.match(updates,/window\.currentActiveWorkers=liveRows/,'Manager and Supervisor must share one active-worker source');
 assert.match(updates,/setInterval\(syncRefresh,5000\)/,'live dashboards must poll synchronization every five seconds');
-assert.match(updates,/setInterval\(refresh,1000\)/,'live worker counts must refresh locally every second');
+assert.match(updates,/const scheduleWorkers=.*?document\.visibilityState==='visible'\?3000:30000/s,'live worker counts must use visibility-aware refresh cadence');
 assert.match(updates,/replaceCount\(root,'Working Now',work\.length\)/,'Manager Working Now must use shared authority');
 assert.match(updates,/replaceCount\(root,'Active Workers',rows\.length\)/,'Supervisor Active Workers must use shared authority');
 
