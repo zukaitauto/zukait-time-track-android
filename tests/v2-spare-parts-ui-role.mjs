@@ -1,0 +1,5 @@
+import fs from'node:fs';import assert from'node:assert/strict';import vm from'node:vm';const s={window:{}};vm.createContext(s);for(const f of['ui-theme.js','purchaser-role.js'])vm.runInContext(fs.readFileSync('app/src/main/assets/v2/features/spare-parts/'+f,'utf8'),s);const p=s.window.zukaitV2.spareParts;
+assert.equal(p.uiTheme.cards.length,10);assert.equal(p.cardTheme('WAITING').tone,'amber');assert.equal(p.cardTheme('COMPLETED').tone,'green');assert.equal(p.cardTheme('RETURNS').tone,'red');
+assert.equal(p.purchaserRole.role,'Purchaser');assert.equal(p.purchaserRole.authOwnedByMainApp,true);assert.equal(p.purchaserRole.permissions.manageUsers,false);assert.equal(p.purchaserRole.permissions.quotation,true);
+assert.equal(p.accountIntegrationContract.requiredRole,'Purchaser');assert.ok(p.accountIntegrationContract.security.includes('NEVER_DISPLAY_EXISTING_PASSWORD'));assert.ok(p.accountIntegrationContract.managerActions.includes('RESET_PASSWORD'));
+console.log('Spare Parts UI and purchaser contract: ok');
