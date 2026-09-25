@@ -3280,3 +3280,33 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
   window.v159HeavyVehicleClass=heavyClass;
   window.v159ApplyHeavyVehicleClass=apply;
 })();
+
+
+/* V160 HEAVY BRAND AUTHORITY */
+(()=>{
+ const defs=[
+  ['Hino','hino.svg',/\bhino\b/i],
+  ['FUSO','fuso.svg',/\b(?:fuso|canter)\b/i],
+  ['UD Trucks','ud-trucks.svg',/\b(?:ud trucks?|nissan ud|quon|quester|kuzer)\b/i],
+  ['Scania','scania.svg',/\bscania\b/i],
+  ['Iveco','iveco.svg',/\biveco\b/i],
+  ['DAF','daf.svg',/\bdaf\b/i],
+  ['Renault Trucks','renault-trucks.svg',/\brenault trucks?\b/i],
+  ['Tata Motors','tata-motors.svg',/\b(?:tata motors?|tata truck)\b/i],
+  ['Ashok Leyland','ashok-leyland.svg',/\b(?:ashok leyland|leyland)\b/i]
+ ];
+ window.v160HeavyBrandInfo=v=>{const s=String(v||'');for(const [name,file,re] of defs)if(re.test(s))return{name,file};return null};
+ const apply=()=>{
+  document.querySelectorAll('[data-job]').forEach(card=>{
+   const no=card.dataset.job,j=(state.jobs||[]).find(x=>x&&String(x.no)===String(no));
+   const b=window.v160HeavyBrandInfo(j?.brand||j?.vehicle);
+   if(!b)return;
+   let mark=card.querySelector('.v82-vehicle-mark');
+   if(!mark)return;
+   let logo=mark.querySelector('.v82-brand-logo');
+   const html='<div class="v82-brand-logo v160-heavy-brand" title="'+b.name+'"><img src="vehicle-logos/'+b.file+'" alt="'+b.name+' logo"></div>';
+   if(logo)logo.outerHTML=html;else mark.insertAdjacentHTML('afterbegin',html);
+  });
+ };
+ const obs=new MutationObserver(()=>requestAnimationFrame(apply));obs.observe(document.body,{childList:true,subtree:true});apply();
+})();
