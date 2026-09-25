@@ -1,0 +1,12 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const js=fs.readFileSync('app/src/main/assets/spare_parts.js','utf8');
+const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+assert.match(html,/spare_parts\.js\?v=1/);
+for(const stage of ['LISTED','ENQUIRY','ORDERED','RECEIVED','CONFIRMED','FITTED','UNAVAILABLE','RETURNED']) assert.match(js,new RegExp(stage));
+assert.match(js,/Supervisor entry only/);
+assert.match(js,/CASH_SETTLEMENT_REQUIRED/);
+assert.match(js,/returnReason/);
+assert.match(js,/WhatsApp List/);
+assert.match(js,/canPrice\(\)/);
+console.log('spare-parts smoke: ok');
