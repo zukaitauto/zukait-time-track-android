@@ -99,6 +99,7 @@ jobs:
           node tests/v2-notification-rules.mjs
           node tests/v2-reports.mjs
           node tests/v2-scale-benchmark.mjs
+          node tests/v2-migration-completeness.mjs
 
       - name: Check production assets
         shell: bash
