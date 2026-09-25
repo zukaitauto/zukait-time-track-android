@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const TYPES=['COMPLETION_RISK','PARTS_DELAY','DUTY_END','ADDITIONAL_TIME','REPEAT_WORK','QC_READY','MATERIAL_VARIANCE'];
+const TYPES=['COMPLETION_RISK','PARTS_DELAY','DUTY_END','ADDITIONAL_TIME','REPEAT_WORK','QC_READY','MATERIAL_VARIANCE','SPARE_PART_DENTER_NOTICE'];
 function key(n){return [n.type,n.entityId||n.jobCard||'',n.rule||'',n.revision||n.status||''].join(':')}
 function build(type,data={}){
  if(!TYPES.includes(type))return null;
@@ -39,8 +39,12 @@ function qcReady(job,ctx={}){
  if(!['QC','READY_FOR_DELIVERY'].includes(stage))return null;
  return build('QC_READY',{entityId:job?.id,jobCard:job?.jobCard||job?.no,targetRole:stage==='QC'?'Supervisor':'Manager',severity:'normal',message:stage==='QC'?'Job card is ready for final QC.':'Job card is ready for delivery.',action:stage==='QC'?'OPEN_QC':'OPEN_READY_FOR_DELIVERY',revision:job?.revision,status:stage,serverTime:ctx.serverTime});
 }
+function denterNotice(part,ctx={}){
+ if(!part?.id)return null;
+ return build('SPARE_PART_DENTER_NOTICE',{entityId:part.id,jobCard:part.jobCard,targetRole:'Supervisor',severity:'normal',title:'Spare Parts update',message:'Denter requested Supervisor attention for this Parts List.',action:'OPEN_SPARE_PART',status:part.status||'LISTED',revision:part.revision||null,serverTime:ctx.serverTime});
+}
 function dedupe(list){
  const seen=new Set();return (list||[]).filter(n=>n&&(!seen.has(n.dedupeKey)&&seen.add(n.dedupeKey)));
 }
-window.zukaitV2=Object.assign(window.zukaitV2||{},{notifications:{TYPES,key,build,completionRisk,partsDelay,materialVariance,dutyEnd,additionalTime,repeatWork,qcReady,dedupe}});
+window.zukaitV2=Object.assign(window.zukaitV2||{},{notifications:{TYPES,key,build,completionRisk,partsDelay,materialVariance,dutyEnd,additionalTime,repeatWork,qcReady,denterNotice,dedupe}});
 })();
