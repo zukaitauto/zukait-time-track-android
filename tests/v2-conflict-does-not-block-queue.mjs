@@ -5,7 +5,7 @@ assert.ok(start>=0,'V2 queue flusher required');
 const end=cloud.indexOf('\n  }',start);const block=cloud.slice(start,end+4);
 assert.match(block,/for\(const event of q\.pending\(\)\)/);
 assert.match(block,/NETWORK.*TIMEOUT.*NO_SESSION/s);
-assert.match(block,/q\.markConflict\(event\.eventId/);
+assert.match(block,/q\.markConflict\?\.\(event\.eventId/);
 // Transient transport failures may stop a flush; domain conflicts must be quarantined and iteration must continue.
 const conflict=block.indexOf('q.markConflict?.(event.eventId');
 assert.ok(conflict>=0);
