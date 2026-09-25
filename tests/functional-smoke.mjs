@@ -38,7 +38,7 @@ assert.match(supervisorStable, /if\(window\.me&&navigator\.onLine&&window\.me\.r
 assert.match(supervisorStable, /Today at a Glance[\s\S]*Active Workers[\s\S]*Working Now[\s\S]*Paused Jobs[\s\S]*Finished Jobs[\s\S]*Over Allocated[\s\S]*Ready for Delivery/, 'Supervisor stable renderer must retain the approved six-card Today at a Glance layout');
 assert.match(supervisorStable, /\.v143-glance\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, 'Supervisor Today at a Glance must remain a 3-column by 2-row grid');
 assert.doesNotMatch(supervisorStable, /class="v143-ot"/, 'Supervisor stable dashboard must not restore the redundant standalone Overtime Now row');
-assert.match(supervisorStable, /onclick="v65OpenControl\(\\\\'working\\\\'\)"/, 'Working Now card must open the authoritative working-now route');
+assert.ok(supervisorStable.includes("onclick=\"v65OpenControl(\\'working\\')\""), 'Working Now card must open the authoritative working-now route');
 assert.match(supervisorStable, /onclick="openReadyForDelivery\(\)"/, 'Ready for Delivery card must retain its dedicated detail route');
 
 
