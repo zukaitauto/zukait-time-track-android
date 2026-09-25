@@ -52,6 +52,9 @@ assert.ok(updates.includes("grid-template-columns:repeat(2,minmax(0,1fr))") && u
 assert.ok(updates.includes("v135OpenManagerMenu()") && updates.includes("row.onclick=function(e){if(e.target.closest('button'))return;menu()}"), 'Manager header and menu button must open the authoritative Manager menu');
 assert.ok(updates.includes("v133OpenManagerLeave()") && updates.includes("v63OpenAbout()") && updates.includes("closeModal();logout()"), 'Manager menu must retain Leave Control, About / Update, and Logout');
 assert.ok(updates.includes('V139 MANAGER CONSUMABLES FINAL AUTHORITY') && updates.includes('v139OpenManagerConsumables'), 'Manager must have one final Consumables routing authority');
+assert.ok(updates.includes('V154 MANAGER WORKSHOP CONTROL ROOT AUTHORITY') && updates.includes('data-v154-spare') && updates.includes('v156ManagerSparePartsInvariant'), 'final Manager render authority must preserve exactly one Spare Parts control');
+assert.ok(updates.includes('[0,80,250,700].forEach(ms=>setTimeout(apply,ms))'), 'Manager Spare Parts control must survive delayed dashboard renderer replacement');
+assert.ok(!updates.includes('color:#173b63!important;grid-column:1/-1!important}#managerView .v154-spare-logo'), 'Manager Spare Parts card must not force a full-width row');
 assert.ok([v65,v66,v67].every(src=>src.includes('openConsumablesModule()')), 'all Manager renderer generations must open the real Consumables module');
 assert.ok(![v65,v66,v67,updates].some(src=>src.includes('Consumables details will be added later.')), 'no Manager Consumables placeholder alert may remain');
 assert.ok(updates.includes("buttons.length>1") && updates.includes("b.onclick=open"), 'final Manager Consumables authority must deduplicate controls and bind the real open handler');
