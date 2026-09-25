@@ -694,7 +694,7 @@ assert.doesNotMatch(updates,/setTimeout\(injectManagerLeaveRow,0\)/,'legacy Mana
 // V115 shared live-worker authority regression guards.
 assert.match(updates,/V115 SHARED LIVE WORKER AUTHORITY/,'shared live-worker authority must remain present');
 assert.match(updates,/window\.currentActiveWorkers=liveRows/,'Manager and Supervisor must share one active-worker source');
-assert.match(updates,/setInterval\(syncRefresh,5000\)/,'live dashboards must poll synchronization every five seconds');
+assert.ok(updates.includes("const scheduleSync=()=>")&&updates.includes("document.visibilityState==='visible'?10000:60000"),'live dashboards must use visibility-aware synchronization cadence');
 assert.ok(updates.includes("const scheduleWorkers=()=>")&&updates.includes("document.visibilityState==='visible'?3000:30000"),'live worker counts must use visibility-aware refresh cadence');
 assert.match(updates,/replaceCount\(root,'Working Now',work\.length\)/,'Manager Working Now must use shared authority');
 assert.match(updates,/replaceCount\(root,'Active Workers',rows\.length\)/,'Supervisor Active Workers must use shared authority');
