@@ -15,9 +15,9 @@ create table if not exists public.workshop_v2_events (
   payload jsonb not null default '{}'::jsonb
 );
 
-create index if not exists workshop_v2_events_entity_server_idx on public.workshop_v2_events(entity_id, server_time desc);
-create index if not exists workshop_v2_events_type_server_idx on public.workshop_v2_events(event_type, server_time desc);
-create index if not exists workshop_v2_events_actor_server_idx on public.workshop_v2_events(actor_id, server_time desc);
+create index if not exists workshop_v2_events_entity_server_idx on public.workshop_v2_events(entity_id, server_time desc, event_id desc);
+create index if not exists workshop_v2_events_type_server_idx on public.workshop_v2_events(event_type, server_time desc, event_id desc);
+create index if not exists workshop_v2_events_actor_server_idx on public.workshop_v2_events(actor_id, server_time desc, event_id desc);
 
 alter table public.workshop_v2_events enable row level security;
 revoke all on table public.workshop_v2_events from anon, authenticated;
@@ -32,7 +32,7 @@ language sql stable security invoker set search_path=public as $$
   where (p_before is null or e.server_time < p_before)
     and (p_entity_id is null or e.entity_id = p_entity_id)
     and (p_event_type is null or e.event_type = p_event_type)
-  order by e.server_time desc
+  order by e.server_time desc, e.event_id desc
   limit greatest(1,least(coalesce(p_limit,100),500));
 $$;
 revoke all on function public.zukait_v2_event_page(timestamptz,integer,text,text) from public,anon,authenticated;
