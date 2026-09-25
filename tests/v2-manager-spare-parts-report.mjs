@@ -7,3 +7,4 @@ assert.match(m,/Recorded Amount/);assert.match(m,/Total Qty/);assert.match(m,/Fi
 assert.match(m,/role\(\)==='Manager'\?'<button class="blue"/);
 assert.match(m,/openManagerReport,renderManagerReport,reportRows/);
 console.log('Manager Spare Parts report: role guard, filters and totals ok');
+assert.match(m,/Print \/ PDF/);assert.match(m,/shareManagerReport/);assert.match(m,/navigator\.share/);assert.match(m,/printManagerReport/);assert.match(m,/>Back<\/button>/);
