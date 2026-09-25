@@ -34,4 +34,22 @@ language sql stable security invoker set search_path=public as $$
 $$;
 revoke all on function public.zukait_v2_jobcard_page(text,timestamptz,integer,text) from public,anon,authenticated;
 grant execute on function public.zukait_v2_jobcard_page(text,timestamptz,integer,text) to service_role;
+create or replace function public.zukait_v2_wip_page(p_before timestamptz default null,p_limit integer default 100,p_stage text default null,p_risk text default null)
+returns table(job_card text,registration text,vehicle_make text,vehicle_model text,workflow_stage text,status text,created_at timestamptz,updated_at timestamptz,age_days integer,risk text)
+language sql stable security invoker set search_path=public as $
+ select j.job_card,j.registration,j.vehicle_make,j.vehicle_model,j.workflow_stage,j.status,j.created_at,j.updated_at,
+        greatest(0,floor(extract(epoch from (now()-j.created_at))/86400)::integer) age_days,
+        case when now()-j.created_at>=interval '30 days' then 'OVERDUE'
+             when now()-j.created_at>=interval '25 days' then 'WARNING' else 'NORMAL' end risk
+ from public.workshop_v2_jobcards j
+ where j.completed_at is null and j.status not in ('DELIVERED','CLOSED','CANCELLED')
+   and (p_before is null or j.updated_at<p_before)
+   and (nullif(trim(coalesce(p_stage,'')),'') is null or j.workflow_stage=upper(trim(p_stage)))
+   and (nullif(trim(coalesce(p_risk,'')),'') is null or
+        upper(trim(p_risk))=case when now()-j.created_at>=interval '30 days' then 'OVERDUE' when now()-j.created_at>=interval '25 days' then 'WARNING' else 'NORMAL' end)
+ order by j.updated_at desc limit greatest(1,least(coalesce(p_limit,100),500));
+$;
+revoke all on function public.zukait_v2_wip_page(timestamptz,integer,text,text) from public,anon,authenticated;
+grant execute on function public.zukait_v2_wip_page(timestamptz,integer,text,text) to service_role;
+
 commit;
