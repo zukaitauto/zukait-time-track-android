@@ -368,7 +368,13 @@ Deno.serve(async (req: Request) => {
         p_payload:event.payload && typeof event.payload==="object" ? event.payload : {}
       });
       if (error) {
-        if (String(error.message||"").includes("event_id_conflict")) return reply({ok:false,code:"event_id_conflict"},409);
+        const message=String(error.message||"");
+        if (message.includes("event_id_conflict")) return reply({ok:false,code:"event_id_conflict"},409);
+        if (message.includes("stale_work_revision")) return reply({ok:false,code:"stale_work_revision"},409);
+        if (message.includes("employee_already_active")) return reply({ok:false,code:"employee_already_active"},409);
+        if (message.includes("stale_assignment_revision")) return reply({ok:false,code:"stale_assignment_revision"},409);
+        if (message.includes("work_session_exists")) return reply({ok:false,code:"work_session_exists"},409);
+        if (message.includes("work_not_paused")) return reply({ok:false,code:"work_not_paused"},409);
         throw error;
       }
       const row=Array.isArray(data)?data[0]:data;
