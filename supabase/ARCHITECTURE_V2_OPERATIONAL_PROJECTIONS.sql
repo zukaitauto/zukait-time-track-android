@@ -88,7 +88,7 @@ begin
 end;$$;
 
 create or replace function public.zukait_v2_apply_assignment_event(p_event_id text,p_entity_id text,p_event_type text,p_event_time timestamptz,p_revision bigint,p_payload jsonb)
-returns void language plpgsql security invoker set search_path=public as $
+returns void language plpgsql security invoker set search_path=public as $$
 declare emp text; job text; etime timestamptz; cur public.workshop_v2_assignments%rowtype;
 begin
  if p_event_type<>'JOB_ASSIGNED' then raise exception 'unsupported_assignment_event'; end if;
@@ -107,7 +107,7 @@ begin
  insert into public.workshop_v2_assignments(assignment_id,job_card,employee_id,status,suggested_minutes,assigned_at,revision,last_event_id)
  values(p_entity_id,job,emp,'ASSIGNED',greatest(coalesce((p_payload->>'suggestedMinutes')::integer,0),0),etime,coalesce(p_revision,0),p_event_id)
  on conflict(assignment_id) do update set job_card=excluded.job_card,employee_id=excluded.employee_id,status='ASSIGNED',suggested_minutes=excluded.suggested_minutes,updated_at=now(),revision=excluded.revision,last_event_id=excluded.last_event_id;
-end;$;
+end;$$;
 revoke all on function public.zukait_v2_apply_assignment_event(text,text,text,timestamptz,bigint,jsonb) from public,anon,authenticated;
 grant execute on function public.zukait_v2_apply_assignment_event(text,text,text,timestamptz,bigint,jsonb) to service_role;
 
