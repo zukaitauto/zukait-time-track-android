@@ -13,7 +13,7 @@ case'ACCEPT':{const x=findPL(payload.pl),i=x?.lines.findIndex(y=>y.id===payload.
 case'FINAL_PRICE':{if(!['Supervisor','Manager'].includes(roleOf(payload)))return{ok:false,code:'FORBIDDEN'};const x=findPL(payload.pl),line=x?.lines.find(y=>y.id===payload.id),v=Number(payload.value);if(!line||payload.value===null||payload.value===''||!Number.isFinite(v)||v<0)return{ok:false,code:'INVALID_PRICE'};line.finalPriceOMR=p.money(v);line.finalPriceAt=payload.at||new Date().toISOString();emit('FINAL_PRICE_SAVED',{pl:payload.pl,id:payload.id,value:line.finalPriceOMR});break}
 case'DELIVERED_PENDING':{if(!['Supervisor','Manager'].includes(roleOf(payload)))return{ok:false,code:'FORBIDDEN'};const x=findPL(payload.pl);if(!x)return{ok:false,code:'NOT_FOUND'};x.deliveredPending=true;x.deliveredAt=payload.at||new Date().toISOString();x.view='DELIVERED_PENDING';emit('VEHICLE_DELIVERED_PENDING',{pl:payload.pl});break}
 default:return{ok:false,code:'UNKNOWN_ACTION'}}
-const x=state.active&&findPL(state.active);if(x&&p.completion){const applied=p.completion.apply(x);Object.assign(x,applied.list);if(!x.view)x.view=x.deliveredPending?'DELIVERED_PENDING':'WAITING'}return{ok:true,state:snapshot()}}
+const targetPL=payload.pl||state.active,x=targetPL&&findPL(targetPL);if(x&&p.completion){const applied=p.completion.apply(x);Object.assign(x,applied.list);if(!x.view)x.view=x.deliveredPending?'DELIVERED_PENDING':'WAITING'}return{ok:true,state:snapshot()}}
 function snapshot(){return clone(state)}return{dispatch,snapshot,findPL}}
 p.controller={createStore};
 })();
