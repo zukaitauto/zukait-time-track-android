@@ -1,0 +1,10 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const sql=fs.readFileSync('supabase/ARCHITECTURE_V2_OPERATIONAL_PROJECTIONS.sql','utf8');
+assert.match(sql,/workshop_v2_calendar/);assert.match(sql,/workshop_v2_leave/);
+assert.match(sql,/zukait_v2_closed_day/);assert.match(sql,/is_public_holiday=true/);
+assert.match(sql,/zukait_v2_employee_on_leave/);assert.match(sql,/period='FULL'/);assert.match(sql,/period='AM'/);assert.match(sql,/period='PM'/);
+assert.match(sql,/not public\.zukait_v2_closed_day\(d\)/);
+assert.match(sql,/employee_on_leave/);assert.match(sql,/id001_outside_duty/);assert.match(sql,/id001_job_required/);assert.match(sql,/use_id001_start/);assert.match(sql,/id001_pause_not_allowed/);
+assert.match(sql,/time '08:00'/);assert.match(sql,/time '13:00'/);assert.match(sql,/time '15:00'/);assert.match(sql,/time '19:00'/);
+assert.doesNotMatch(sql,/zukait_v2_duty_minutes\(p_start timestamptz,p_end timestamptz\)\s*returns integer language plpgsql immutable/i);
+console.log('V2 server calendar/leave authority gate: ok');
