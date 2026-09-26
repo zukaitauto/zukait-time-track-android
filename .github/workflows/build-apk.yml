@@ -54,6 +54,7 @@ jobs:
           node --check app/src/main/assets/v2/core/data_paths.js
           node --check app/src/main/assets/v2/features/jobcards/workflow.js
           node --check app/src/main/assets/v2/features/spare-parts/workflow.js
+          node --check app/src/main/assets/v2/features/spare-parts/main_module.js
           node --check app/src/main/assets/v2/features/notifications/rules.js
           node --check app/src/main/assets/v2/features/reports/service.js
           node --check app/src/main/assets/v2/features/time/work_rules.js
@@ -118,6 +119,7 @@ jobs:
           node tests/v2-composite-pagination-scale.mjs
           node tests/v2-repeat-consumables-server-authority.mjs
           node tests/v2-spare-parts-server-authority.mjs
+          node tests/v2-spare-parts-hardening.mjs
           node tests/v2-multidevice-conflict-matrix.mjs
           node tests/v2-same-employee-device-race.mjs
           node tests/v2-pause-finish-delayed-race.mjs
