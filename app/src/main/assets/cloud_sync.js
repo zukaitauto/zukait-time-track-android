@@ -208,6 +208,8 @@
     state.notifications=state.notifications||[];
     state.systemNotifications=state.systemNotifications||[];
     state.overtimeNotices=state.overtimeNotices||{};
+    state.estimates=state.estimates||[];
+    state.estimateAudit=state.estimateAudit||[];
     state.incentiveTargetMinutes=state.incentiveTargetMinutes||210*60;
     if(window.ZukaitConsumables&&typeof window.ZukaitConsumables.ensureState==='function')window.ZukaitConsumables.ensureState(state);
   }
