@@ -444,7 +444,7 @@ Deno.serve(async (req: Request) => {
       const report = String(body?.report || "").toUpperCase();
       const query = String(body?.query || "").trim();
       const filters = body?.filters && typeof body.filters === "object" ? body.filters : {};
-      if (action === "v2_report_page" && !["WIP","AUDIT","CYCLE_TIME","EFFICIENCY","REPEAT","ID001","OVERTIME","PARTS_DELAY","CONSUMABLES_VARIANCE","JOB_COST","COMPLETION_TARGET"].includes(report)) {
+      if (action === "v2_report_page" && !["WIP","AUDIT","CYCLE_TIME","EFFICIENCY","REPEAT","ID001","OVERTIME","PARTS_DELAY","SPARE_PARTS","CONSUMABLES_VARIANCE","JOB_COST","COMPLETION_TARGET"].includes(report)) {
         return reply({ ok:false, code:"unsupported_report" },400);
       }
       if (action === "v2_search_jobcards" && !query) return reply({ ok:true, rows:[], next_cursor:null, limit, user });
