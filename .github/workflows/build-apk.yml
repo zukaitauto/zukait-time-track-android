@@ -86,6 +86,7 @@ jobs:
           node tests/v128-costing-safety.mjs
           node tests/paint-safety.mjs
           node tests/vehicle-logo-assets.mjs
+          node tests/native-update-integrity.mjs
           node tests/architecture-v2.mjs
           node tests/v2-work-events.mjs
           node tests/v2-reconnect-authority.mjs
