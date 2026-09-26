@@ -142,6 +142,24 @@ const plPrintable=api.printable({
 for(const text of ['LABOUR','SPARE PARTS','Denting','Painting','Headlamp','Bracket','Qty','Unit Price','Total Labour','Total Parts','Subtotal','VAT 5%','GRAND TOTAL','315.000']){
   assert.ok(plPrintable.includes(text),'PL printable missing '+text);
 }
+const plNoVat=api.printable({
+  id:'EPL2',estimateNo:'Zi-Qt003',date:'2026-09-26',type:'PL',vatEnabled:false,
+  customerName:'No VAT',mobile:'',makeModel:'Toyota Hilux',year:'2024',registration:'NV1',vin:'',claimNo:'',jobCard:'',
+  labourRows:[{id:'A',description:'Labour',amount:10}],
+  partRows:[{id:'P',description:'Part',qty:1,unitPrice:5}],misc:0,createdBy:'SUP1'
+});
+assert.equal(plNoVat.includes('VAT 5%'),false,'No-VAT PL print must hide VAT row');
+
+const longParts=Array.from({length:120},(_,i)=>({id:'PX'+i,description:'Part '+String(i+1).padStart(3,'0'),qty:1,unitPrice:1}));
+const longPl=api.estimateDocumentHtml({
+  id:'ELONG',estimateNo:'Zi-Qt004',date:'2026-09-26',type:'PL',vatEnabled:true,
+  customerName:'Long Estimate',mobile:'',makeModel:'Vehicle',year:'2025',registration:'LONG1',vin:'',claimNo:'',jobCard:'',
+  labourRows:[{id:'L',description:'Long labour',amount:10}],partRows:longParts,misc:0,createdBy:'SUP1'
+});
+assert.ok(longPl.includes('Part 001'),'Long PL output must contain first part');
+assert.ok(longPl.includes('Part 120'),'Long PL output must contain final part');
+assert.ok(native.includes('int pageCount = Math.max(1'),'Android PDF renderer must calculate multiple pages');
+assert.ok(native.includes('pageIndex < pageCount'),'Android PDF renderer must render every calculated page');
 
 const printable=api.printable(state.estimates[0]);
 for(const text of ['ZUKAIT INTERNATIONAL LLC','REPAIR ESTIMATE','Zi-Qt001','Test Customer','Toyota Camry','Tel No.','Frame / VIN No.','Description','R.O.','Bz.','Total Labour / Lumpsum','SPARE PARTS REQUIRED — TO BE SUPPLIED BY CUSTOMER','Headlamp<br>Bracket','NOTES / CONDITIONS','Subject to inspection.','ESTIMATE VALID FOR 15 DAYS.','VAT 5%']){
