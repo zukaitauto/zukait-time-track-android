@@ -57,7 +57,7 @@ assert.ok(updates.includes('[0,80,250,700].forEach(ms=>setTimeout(apply,ms))'), 
 assert.ok(!updates.includes('color:#173b63!important;grid-column:1/-1!important}#managerView .v154-spare-logo'), 'Manager Spare Parts card must not force a full-width row');
 assert.ok(!/me\?\.role==='Manager'\)renderManager65\(\)/.test(v65), 'V65 Manager renderer must remain retired to prevent login UI flash');
 assert.ok(!/me\?\.role==='Manager'\)renderManager66\(\)/.test(v66), 'V66 Manager renderer must remain retired to prevent login UI flash');
-assert.ok(v67.includes("window.render=function(){prevRender();if(me?.role==='Manager')renderManager67()};"), 'V67 Manager renderer must be the synchronous visible Manager authority');
+assert.ok(v67.includes("window.render=function(){if(me?.role==='Manager')return renderManager67();const r=prevRender();return r};") && v67.includes("window.renderManager=renderManager67;") && v67.includes("window.zukaitManagerRendererAuthority='V67';"), 'V67 Manager renderer must be the synchronous visible Manager authority');
 const stable=supervisorStable;
 assert.ok(!stable.includes("alert('Spare Parts — Coming Soon')"), 'final Supervisor renderer must not override the live Spare Parts module');
 assert.ok(stable.includes('v143BindStableActions') && stable.includes('v143OpenConsumables') && stable.includes('openSpareParts'), 'final Supervisor renderer must bind Consumables and Spare Parts to live module authorities');
