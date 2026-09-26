@@ -1592,15 +1592,17 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     const existing=[...root.querySelectorAll('[data-v2-manager-spare-parts],button')].filter(x=>
       x.hasAttribute('data-v2-manager-spare-parts') || /SPARE\s*PARTS/i.test(x.textContent||''));
     if(existing.length){existing.slice(1).forEach(x=>x.remove());return;}
-    const actions=root.querySelector('.manager-actions');
-    if(!actions) return;
+    const grid=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid')||root.querySelector('.manager-actions');
+    if(!grid) return;
     const b=document.createElement('button');
     b.type='button';
-    b.className='manager-action manager-blue';
+    b.className=grid.matches('.v67-control-grid,.v66-control-grid,.v65-control-grid')?'v67-feature v2-manager-spare-parts':'manager-action manager-blue';
     b.setAttribute('data-v2-manager-spare-parts','1');
-    b.innerHTML='🚗⚙️<br>SPARE PARTS';
+    b.innerHTML='<div><span>🚗⚙️ SPARE PARTS</span><b>›</b><small>Parts lists · tracking · reports</small></div>';
     b.onclick=()=>{if(typeof window.openSparePartsModule==='function')window.openSparePartsModule();else alert('Spare Parts module is loading. Please try again.');};
-    actions.appendChild(b);
+    const children=[...grid.children].filter(x=>x.nodeType===1);
+    const fifthRowStart=8;
+    if(children.length>fifthRowStart)grid.insertBefore(b,children[fifthRowStart]);else grid.appendChild(b);
   }
   window.ensureManagerSparePartsCard=ensureManagerSparePartsCard;
   const wrap=()=>{
