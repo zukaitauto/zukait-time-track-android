@@ -46,6 +46,9 @@ assert.match(stable,/Create Job Card<\/b>/,'Quick Entry must expose Create Job C
 assert.match(stable,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,'Quick Entry actions must remain one three-column row');
 assert.match(stable,/v143-unassigned-action/,'Quick Entry must expose the unassigned Job Card queue');
 assert.match(stable,/data-v143-unassigned-count/,'Unassigned Job Cards must show a live notification count');
+assert.match(stable,/linear-gradient\(145deg,#f59e0b,#d97706\)/,'Create Job Card action must be orange');
+assert.match(stable,/linear-gradient\(145deg,#22c55e,#15803d\)/,'Create + Assign action must be green');
+assert.match(stable,/linear-gradient\(145deg,#3b82f6,#1d4ed8\)/,'Unassigned Job Cards action must be blue');
 assert.match(stable,/v143VoiceStop/,'voice Quick Entry must expose a STOP path');
 assert.match(stable,/STOP/,'voice control must visibly offer STOP while listening');
 
