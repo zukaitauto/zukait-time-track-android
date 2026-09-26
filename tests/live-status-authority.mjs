@@ -24,6 +24,8 @@ assert.match(authority,/window\.currentStaffStatuses=function/,'server authority
 assert.match(authority,/window\.currentActiveWorkers=function/,'server authority must replace active-worker reads');
 assert.match(authority,/window\.openActiveWorkers=function/,'Active Workers details must use server rows');
 assert.match(authority,/window\.v65OpenControl=function/,'Manager Working Now details must use server rows');
+assert.match(authority,/if\(rr&&type==='working'\)return workerTable\(rr\.filter\(r=>r\.status==='Working'\|\|r\.status==='Overtime'\),'Working Now — Server Live'\)/,'Working Now popup must be built directly from the same server rows as its count');
+assert.match(authority,/window\.openActiveWorkers=function\(\)[\s\S]*rr\.filter\(r=>ACTIVE\.has\(r\.status\)\)/,'Active Workers popup must be built directly from authoritative active rows');
 assert.match(authority,/setCount\(root,'Working Now',working\)/,'Supervisor Working Now count must use the same authoritative server rows');
 assert.match(updates,/Online shared dashboards are owned exclusively by live_status_authority\.js/,'legacy V115 worker counter must defer to SERVER LIVE authority');
 assert.match(updates,/if\(window\.zukaitLiveStatusAuthority\)return;/,'online Manager\/Supervisor local worker counter must not overwrite server-live counts');
