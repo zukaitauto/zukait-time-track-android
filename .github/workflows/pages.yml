@@ -46,6 +46,9 @@ jobs:
           cp app/src/main/assets/v68_updates.js _site/v68_updates.js
           cp app/src/main/assets/v69_updates.js _site/v69_updates.js
           cp app/src/main/assets/v74_updates.js _site/v74_updates.js
+          mkdir -p _site/v2/features/spare-parts
+          cp app/src/main/assets/v2/features/spare-parts/workflow.js _site/v2/features/spare-parts/workflow.js
+          cp app/src/main/assets/v2/features/spare-parts/main_module.js _site/v2/features/spare-parts/main_module.js
           cp app/src/main/assets/zukait_logo.webp _site/zukait_logo.webp
           cp -R app/src/main/assets/vehicle-logos _site/vehicle-logos
           test -s _site/consumables.js
@@ -64,6 +67,10 @@ jobs:
           test -s _site/v68_updates.js
           test -s _site/v69_updates.js
           test -s _site/v74_updates.js
+          test -s _site/v2/features/spare-parts/workflow.js
+          test -s _site/v2/features/spare-parts/main_module.js
+          grep -q 'sparePartsMain:{open:render' _site/v2/features/spare-parts/main_module.js
+          grep -q 'window.openSparePartsModule=render' _site/v2/features/spare-parts/main_module.js
           test -s _site/vehicle-logos/cadillac.svg
           test -s _site/vehicle-logos/gmc.svg
           test -s _site/vehicle-logos/chevrolet.svg
