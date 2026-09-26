@@ -1,8 +1,8 @@
 {
-  "versionName": "V156",
-  "versionCode": 119,
+  "versionName": "V157",
+  "versionCode": 120,
   "approvedForStaff": true,
   "approvedAt": "2026-09-26",
-  "sourceCommit": "551b84dc90f2566166f13071c1f71c95569e88a1",
-  "publishNonce": "approved-v156-architecture-v2-estimate-id001-20260926"
+  "sourceCommit": "49273660a05af25aed884062b568233646dec70f",
+  "publishNonce": "approved-v157-architecture-v2-duty-incentive-20260926"
 }
