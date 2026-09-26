@@ -38,8 +38,8 @@ assert.match(supervisorStable, /if\(window\.me&&navigator\.onLine&&window\.me\.r
 assert.match(supervisorStable, /Today at a Glance[\s\S]*Active Workers[\s\S]*Working Now[\s\S]*Paused Jobs[\s\S]*Finished Jobs[\s\S]*Over Allocated[\s\S]*Ready for Delivery/, 'Supervisor stable renderer must retain the approved six-card Today at a Glance layout');
 assert.match(supervisorStable, /\.v143-glance\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, 'Supervisor Today at a Glance must remain a 3-column by 2-row grid');
 assert.doesNotMatch(supervisorStable, /class="v143-ot"/, 'Supervisor stable dashboard must not restore the redundant standalone Overtime Now row');
-assert.ok(supervisorStable.includes("onclick=\"v65OpenControl(\\'working\\')\""), 'Working Now card must open the authoritative working-now route');
-assert.match(supervisorStable, /onclick="openReadyForDelivery\(\)"/, 'Ready for Delivery card must retain its dedicated detail route');
+assert.ok(supervisorStable.includes("onclick=\"v158OpenWorkingNow()\"") && supervisorStable.includes("window.v158OpenWorkingNow=function()"), 'Working Now card must open through the stable Supervisor action authority');
+assert.match(supervisorStable, /onclick="v143OpenReadyForDelivery\(\)"/, 'Ready for Delivery card must use the stable authoritative detail route');
 
 
 
@@ -52,6 +52,19 @@ assert.ok(updates.includes("grid-template-columns:repeat(2,minmax(0,1fr))") && u
 assert.ok(updates.includes("v135OpenManagerMenu()") && updates.includes("row.onclick=function(e){if(e.target.closest('button'))return;menu()}"), 'Manager header and menu button must open the authoritative Manager menu');
 assert.ok(updates.includes("v133OpenManagerLeave()") && updates.includes("v63OpenAbout()") && updates.includes("closeModal();logout()"), 'Manager menu must retain Leave Control, About / Update, and Logout');
 assert.ok(updates.includes('V139 MANAGER CONSUMABLES FINAL AUTHORITY') && updates.includes('v139OpenManagerConsumables'), 'Manager must have one final Consumables routing authority');
+assert.ok(updates.includes('V154 MANAGER WORKSHOP CONTROL ROOT AUTHORITY') && updates.includes('data-v154-spare') && updates.includes('v156ManagerSparePartsInvariant'), 'final Manager render authority must preserve exactly one Spare Parts control');
+assert.ok(updates.includes('[0,80,250,700].forEach(ms=>setTimeout(apply,ms))'), 'Manager Spare Parts control must survive delayed dashboard renderer replacement');
+assert.ok(!updates.includes('color:#173b63!important;grid-column:1/-1!important}#managerView .v154-spare-logo'), 'Manager Spare Parts card must not force a full-width row');
+assert.ok(!/me\?\.role==='Manager'\)renderManager65\(\)/.test(v65), 'V65 Manager renderer must remain retired to prevent login UI flash');
+assert.ok(!/me\?\.role==='Manager'\)renderManager66\(\)/.test(v66), 'V66 Manager renderer must remain retired to prevent login UI flash');
+assert.ok(v67.includes("window.render=function(){if(me?.role==='Manager')return renderManager67();const r=prevRender();return r};") && v67.includes("window.renderManager=renderManager67;") && v67.includes("window.zukaitManagerRendererAuthority='V67';"), 'V67 Manager renderer must be the synchronous visible Manager authority');
+const stable=supervisorStable;
+assert.ok(!stable.includes("alert('Spare Parts — Coming Soon')"), 'final Supervisor renderer must not override the live Spare Parts module');
+assert.ok(stable.includes('v143BindStableActions') && stable.includes('v143OpenConsumables') && stable.includes('openSpareParts'), 'final Supervisor renderer must bind Consumables and Spare Parts to live module authorities');
+assert.ok(stable.includes("v143OpenReadyForDelivery") && stable.includes("window.v74Ready('supervisor')"), 'final Supervisor Ready for Delivery must route to the existing v74 lifecycle authority');
+assert.ok(!stable.includes('onclick="openReadyForDelivery()"'), 'final Supervisor renderer must not call undefined Ready for Delivery handler');
+assert.ok(updates.includes('window.v157OpenEmployeeParts=') && updates.includes("v157OpenEmployeeParts(\\''+esc(jobNo)+'\\')"), 'Denter Employee Parts List must use the guarded Employee launcher');
+assert.ok(updates.includes("changed&&out&&typeof out.then==='function'"), 'normal Job start after ID001 must preserve the asynchronous multi-device start boundary');
 assert.ok([v65,v66,v67].every(src=>src.includes('openConsumablesModule()')), 'all Manager renderer generations must open the real Consumables module');
 assert.ok(![v65,v66,v67,updates].some(src=>src.includes('Consumables details will be added later.')), 'no Manager Consumables placeholder alert may remain');
 assert.ok(updates.includes("buttons.length>1") && updates.includes("b.onclick=open"), 'final Manager Consumables authority must deduplicate controls and bind the real open handler');
@@ -75,7 +88,7 @@ assert.ok(html.indexOf(stableAssetMatch[0])>html.indexOf(v74AssetMatch[0]),'stab
 assert.ok(!html.includes('V103 SUPERVISOR RUNTIME LOCK'), 'legacy V103 Supervisor runtime lock must stay retired');
 assert.match(supervisorStable,/V143 SUPERVISOR STABLE AUTHORITY/,'final stable Supervisor authority must exist');
 assert.match(supervisorStable,/window\.renderSupervisor=renderStable/,'stable authority must own renderSupervisor');
-assert.match(supervisorStable,/if\(role\(\)==='Supervisor'\)return renderStable\(\)/,'Supervisor render must bypass the legacy render chain');
+assert.match(supervisorStable,/if\(role\(\)==='Supervisor'\)\{const r=renderStable\(\);bindStableActions\(\);return r\}/,'Supervisor render must bypass the legacy render chain and bind final actions');
 assert.doesNotMatch(supervisorStable,/MutationObserver/,'stable Supervisor UI must not use DOM observers');
 assert.match(supervisorStable,/grid-template-areas:"job tech" "time assign"/,'stable Assign\/Update must keep the agreed 2x2 layout');
 assert.match(supervisorStable,/id="v143JobSearch"/,'stable Supervisor renderer must contain the visible Job Card search');
@@ -738,6 +751,9 @@ assert.match(consumablesUi, /Actual Materials/, 'Supervisor Painting menu must r
 assert.match(consumablesUi, /Additional Materials/, 'Supervisor Painting menu must retain Additional Materials');
 assert.match(consumablesUi, /Search Material List/, 'Supervisor Painting menu must retain Search Material List');
 assert.match(consumablesUi, /No\.<\/th><th>Suggested Material<\/th><th>Brand<\/th><th>Quantity<\/th><th>Actual Material<\/th><th>Brand<\/th><th>Quantity<\/th>/, 'Search Material List must retain approved side-by-side Suggested vs Actual layout');
+assert.match(consumablesUi, /consMaterialBrandPairs/, 'Supervisor Suggested Materials must provide searchable Material + Brand pairs');
+assert.match(consumablesUi, /Type material or brand/, 'Supervisor material entry must support typing to search');
+assert.match(consumablesUi, /consSelectMaterialBrand/, 'Supervisor must be able to select a Material + Brand search result');
 assert.match(consumablesUi, /role\(\)==='Manager'/, 'Manager-only Consumables controls must remain role gated');
 assert.match(consumablesUi, /Workshop Month-to-Month Total:/, 'Monthly comparison must be explicitly labelled as workshop-wide');
 assert.match(consumablesUi, /Overall finalized Painting Actual expense; report filters above do not change this comparison\./, 'Monthly comparison scope must remain explicit');
