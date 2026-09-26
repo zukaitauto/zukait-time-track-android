@@ -42,7 +42,10 @@ assert.match(stable,/sel\.value=no/,'selecting a result must write the selected 
 assert.match(stable,/Search and select a valid Job Card first\./,'invalid free text must not assign a stale Job Card');
 assert.match(stable,/window\.assignJobCore\(no,emp,mins\)/,'selected Job Card must reach the existing assignment core');
 assert.match(stable,/v143CreateJobOnly/,'Supervisor must be able to create a Job Card before technician assignment');
-assert.match(stable,/Create Job Card Only/,'Quick Entry must expose Create Job Card Only');
+assert.match(stable,/Create Job Card<\/b>/,'Quick Entry must expose Create Job Card');
+assert.match(stable,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,'Quick Entry actions must remain one three-column row');
+assert.match(stable,/v143-unassigned-action/,'Quick Entry must expose the unassigned Job Card queue');
+assert.match(stable,/data-v143-unassigned-count/,'Unassigned Job Cards must show a live notification count');
 assert.match(stable,/v143VoiceStop/,'voice Quick Entry must expose a STOP path');
 assert.match(stable,/STOP/,'voice control must visibly offer STOP while listening');
 
