@@ -1908,7 +1908,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(activeSession(emp))return msg(n+' has an active running job. ID001 cannot be assigned.');
    if(openNormal(emp).some(a=>normalStatus(a)!=='Paused'))return msg(n+' has normal work available. ID001 is allowed only when normal work is paused and no other job is available.');
    state.assign=state.assign||[];
-   const a={id:uid(),job:H,emp,suggested:m,completed:false,cancelled:false,rework:false,idealCard:true,idealSafeVersion:SAFE,assignedBy:me?.id||'SYSTEM',assignedAt:t,pausedJobFallback:pausedOnly(emp)};
+   const a={id:uid(),job:H,emp,suggested:m,completed:false,cancelled:false,rework:false,idealCard:true,idealSafeVersion:SAFE,idealReason:String(reason||'').trim().slice(0,240),idealRegistration:String(registration||'').trim().slice(0,40),idealRegistrationKey:window.zukaitRegistration?.key?.(registration)||'',idealVehicle:String(vehicle||'').trim().slice(0,120),assignedBy:me?.id||'SYSTEM',assignedAt:t,pausedJobFallback:pausedOnly(emp)};
    state.assign.push(a);
    if(typeof setLastAction==='function')setLastAction('Assigned ID001 to '+n+' for '+fmt(m));
    save();render();return a;
@@ -2244,7 +2244,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const unavailable=!eligible.length?(typeof window.v75IsClosedWorkshopDay==='function'&&window.v75IsClosedWorkshopDay(t)?'ID001 is unavailable on Friday and public holidays.':typeof window.v75IsID001DutyTime==='function'&&!window.v75IsID001DutyTime(t)?'Outside duty hours. ID001 can be assigned from 08:00–13:00 and 15:00–19:00.':'No technician is currently available. Check active work, open Job Cards, existing ID001 assignments and leave.') : '';
    let opts='<option value="" selected disabled>Select Technician</option>'+eligible.map(u=>'<option value="'+esc(u.id)+'">'+esc(u.name)+' · '+esc(u.department||'Technician')+'</option>').join('');
    if(unavailable)opts='<option value="" selected disabled>No technician available</option>';
-   let body='<div class="v74-d v112-id001-dialog"><h2>◷ ID001 · IDEAL TIME</h2><div class="notice">'+(unavailable?esc(unavailable):'Assign common Ideal Time quickly. Worked time is recorded automatically from START to STOP.')+'</div><label>Assign Staff<br><select id="v112IdealEmp" class="tech-select">'+opts+'</select></label><label>Vehicle Registration (optional)<br><input id="v112IdealReg" maxlength="40" autocomplete="off" placeholder="Leave blank for No Work" oninput="v112ID001VehicleFields()"></label><div id="v112IdealVehicleFields" class="hidden"><label>Vehicle Make / Model<br><input id="v112IdealVehicle" maxlength="120" placeholder="e.g. Toyota Land Cruiser"></label><label>Reason<br><input id="v112IdealReason" maxlength="240" placeholder="Inspection / dismantling / checking"></label></div><div class="v74-actions"><button class="secondary" onclick="closeModal()">CANCEL</button><button class="blue" onclick="v112AssignID001()">ASSIGN</button></div></div>';
+   let body='<div class="v74-d v112-id001-dialog"><h2>◷ ID001 · IDEAL TIME</h2><div class="notice">'+(unavailable?esc(unavailable):'Assign common Ideal Time quickly. Worked time is recorded automatically from START to STOP.')+'</div><label>Assign Staff<br><select id="v112IdealEmp" class="tech-select">'+opts+'</select></label><div class="notice">Without Job Card / General Waiting: leave registration blank and enter the reason below.</div><label>Vehicle Registration (optional)<br><input id="v112IdealReg" maxlength="40" autocomplete="off" placeholder="Blank = Without Job Card" oninput="v112ID001VehicleFields()"></label><div id="v112IdealVehicleFields" class="hidden"><label>Vehicle Make / Model<br><input id="v112IdealVehicle" maxlength="120" placeholder="e.g. Toyota Land Cruiser"></label></div><label>Reason (optional)<br><input id="v112IdealReason" maxlength="240" placeholder="Waiting for job / inspection / checking"></label><div class="v74-actions"><button class="secondary" onclick="closeModal()">CANCEL</button><button class="blue" onclick="v112AssignID001()">ASSIGN</button></div></div>';
    openModal(body);
  };
  window.v112ID001VehicleFields=function(){const reg=String(document.getElementById('v112IdealReg')?.value||'').trim(),box=document.getElementById('v112IdealVehicleFields');if(box)box.classList.toggle('hidden',!reg)};
@@ -2253,7 +2253,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(!emp)return typeof window.v74Msg==='function'?window.v74Msg('Select a technician.','ID001 Ideal Time'):alert('Select a technician.');
    const reg=String(document.getElementById('v112IdealReg')?.value||'').trim().slice(0,40);
    const vehicle=reg?String(document.getElementById('v112IdealVehicle')?.value||'').trim().slice(0,120):'';
-   const reason=reg?String(document.getElementById('v112IdealReason')?.value||'').trim().slice(0,240):'';
+   const reason=String(document.getElementById('v112IdealReason')?.value||'').trim().slice(0,240);
    const assigned=window.assignJobCore(HOLD,emp,0,reason,reg,vehicle);
    if(assigned&&assigned.job===HOLD){assigned.idealRegistration=reg;assigned.idealRegistrationKey=window.zukaitRegistration?.key?.(reg)||'';assigned.idealVehicle=vehicle;save()}
    if(assigned&&assigned.job===HOLD)try{closeModal()}catch(_){}
@@ -2913,7 +2913,7 @@ window.v2TogglePilotThisDevice=function(){
 
  // Final assignment authority: ID001 has no Suggested / Allocated Time.
  const priorAssign=window.assignJobCore;
- window.assignJobCore=function(no,emp,minutes){
+ window.assignJobCore=function(no,emp,minutes,reason,registration,vehicle){
    if(no!==H)return typeof priorAssign==='function'?priorAssign.apply(this,arguments):undefined;
    const t=Date.now(),u=typeof user==='function'?user(emp):null,n=u?.name||emp;
    if(!String(emp||'').trim())return msg('Select an employee.','Assign ID001');
