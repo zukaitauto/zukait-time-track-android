@@ -66,6 +66,37 @@ vm.runInContext(code,ctx);
 const api=ctx.window.zukaitEstimate;
 assert.ok(api,'Estimate API not exported');
 
+function input(value){return {value:String(value),classList:{contains(){return false}}}}
+const domValues={
+  estDate:input('2026-09-27'),
+  estName:input('Unsaved Customer'),
+  estMobile:input('91111111'),
+  estMakeModel:input('Lexus LX570'),
+  estYear:input('2025'),
+  estReg:input('UNSAVED1'),
+  estVin:input('VIN-UNSAVED'),
+  estClaim:input('CLAIM-NEW'),
+  estJobCard:input('JC-NEW'),
+  estMiscPl:input('5'),
+  estMiscLs:input('0'),
+  estLsParts:input('0'),
+  estTypePL:{classList:{contains:x=>x==='active'}},
+  estVatYes:{classList:{contains:()=>false}}
+};
+const labRow={getAttribute:()=> 'LAB-X',querySelector:q=>q==='.est-desc'?input('Panel labour'):q==='.est-amount'?input('100'):null};
+const partRow={getAttribute:()=> 'PART-X',querySelector:q=>q==='.est-desc'?input('Lamp'):q==='.est-qty'?input('2'):q==='.est-unit'?input('25'):null};
+ctx.document.getElementById=id=>domValues[id]||null;
+ctx.document.querySelectorAll=sel=>sel==='[data-est-lab-row]'?[labRow]:sel==='[data-est-part-row]'?[partRow]:[];
+ctx.window.__zukaitEstimateCurrent='E1';
+const unsaved=api.currentOutputEstimate('E1');
+assert.equal(unsaved.customerName,'Unsaved Customer');
+assert.equal(unsaved.type,'PL');
+assert.equal(unsaved.vatEnabled,false);
+assert.equal(api.totals(unsaved).total,155);
+ctx.document.getElementById=()=>null;
+ctx.document.querySelectorAll=()=>[];
+ctx.window.__zukaitEstimateCurrent='';
+
 const ls=api.totals({
   type:'LS',vatEnabled:true,
   lsRows:[{amount:100},{amount:50}],
