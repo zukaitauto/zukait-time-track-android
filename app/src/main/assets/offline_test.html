@@ -1592,15 +1592,35 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
       return 'Attention '+s.attention+' · Waiting '+s.waiting+' · Delivered pending '+s.deliveredPending+' · Month '+Number(s.monthSpend||0).toFixed(3)+' OMR';
     }catch(_){return 'Parts lists · tracking · reports'}
   }
+  function sparePartsCandidates(root){
+    return [...root.querySelectorAll('button')].filter(b=>
+      b.getAttribute('data-v2-manager-spare-parts')==='1' ||
+      /\bSPARE\s*PARTS\b/i.test(String(b.textContent||''))
+    );
+  }
+  function updateSparePartsCard(card,detail){
+    if(!card)return;
+    card.setAttribute('data-v2-manager-spare-parts','1');
+    const small=card.querySelector('small');
+    if(small)small.textContent=detail;
+  }
+  async function refreshManagerSparePartsSummary(){
+    if(!window.me || window.me.role!=='Manager')return;
+    try{await window.zukaitV2?.sparePartsMain?.hydrateAuthoritativeLists?.()}catch(_){}
+    const root=document.getElementById('managerView'); if(!root)return;
+    const card=sparePartsCandidates(root)[0];
+    updateSparePartsCard(card,sparePartsSummaryText());
+  }
   function ensureManagerSparePartsCard(){
     if(!window.me || window.me.role!=='Manager') return;
     const root=document.getElementById('managerView');
     if(!root) return;
-    const existing=[...root.querySelectorAll('[data-v2-manager-spare-parts="1"]')];
+    const existing=sparePartsCandidates(root);
     const detail=sparePartsSummaryText();
     if(existing.length){
-      existing.slice(1).forEach(x=>x.remove());
-      const small=existing[0].querySelector('small'); if(small)small.textContent=detail;
+      const canonical=existing.find(x=>x.getAttribute('data-v2-manager-spare-parts')==='1')||existing[0];
+      existing.filter(x=>x!==canonical).forEach(x=>x.remove());
+      updateSparePartsCard(canonical,detail);
       return;
     }
     const grid=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid')||root.querySelector('.manager-actions');
@@ -1616,15 +1636,16 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     if(children.length>fifthRowStart)grid.insertBefore(b,children[fifthRowStart]);else grid.appendChild(b);
   }
   window.ensureManagerSparePartsCard=ensureManagerSparePartsCard;
+  window.refreshManagerSparePartsSummary=refreshManagerSparePartsSummary;
   const wrap=()=>{
     if(typeof window.renderManager!=='function'||window.renderManager.__v2SparePartsWrapped)return;
     const prior=window.renderManager;
-    const wrapped=function(){const r=prior.apply(this,arguments);ensureManagerSparePartsCard();setTimeout(ensureManagerSparePartsCard,300);return r;};
+    const wrapped=function(){const r=prior.apply(this,arguments);ensureManagerSparePartsCard();setTimeout(ensureManagerSparePartsCard,300);setTimeout(refreshManagerSparePartsSummary,450);return r;};
     wrapped.__v2SparePartsWrapped=true;
     window.renderManager=wrapped;
   };
   wrap();
-  document.addEventListener('DOMContentLoaded',()=>{wrap();ensureManagerSparePartsCard();setTimeout(ensureManagerSparePartsCard,500);setTimeout(ensureManagerSparePartsCard,1500);});
+  document.addEventListener('DOMContentLoaded',()=>{wrap();ensureManagerSparePartsCard();setTimeout(refreshManagerSparePartsSummary,500);setTimeout(refreshManagerSparePartsSummary,1500);});
   new MutationObserver(()=>{wrap();ensureManagerSparePartsCard();}).observe(document.documentElement,{childList:true,subtree:true});
 })();
 </script>
