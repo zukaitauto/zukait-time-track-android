@@ -1,0 +1,12 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const updates=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
+assert.match(updates,/id="v112IdealReason"/,'ID001 dialog must expose reason entry');
+assert.match(updates,/assignJobCore\(HOLD,emp,0,reason\)/,'ID001 UI must send reason');
+assert.match(updates,/function\(no,emp,s,reason\)/,'Supervisor wrapper must accept reason');
+assert.match(updates,/baseAssignCore\(no,emp,s,reason\)/,'Supervisor wrapper must forward reason');
+assert.match(html,/function assignJobCore\(no,emp,s,reason\)/,'base assignment must accept reason');
+assert.match(html,/a\.idealReason=idealReason/,'existing ID001 assignment must persist reason');
+assert.match(html,/a\.idealReason=idealReason;state\.assign\.push\(a\)/,'new ID001 assignment must persist reason');
+assert.match(updates,/assignment\?\.idealReason\|\|'—'/,'ID001 history must display persisted reason');
+console.log('ID001 reason persistence: ok');
