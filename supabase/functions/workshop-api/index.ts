@@ -155,6 +155,23 @@ function reconcileAutoOvertime(candidate: any, current: any): any {
   candidate.sessions = (candidate?.sessions || []).filter((s: any) => {
     if (!s?.autoOvertime || s?.end) return true;
     const start = Number(s.start || 0);
+    // Older clients synthesize overtime without asking the employee, even on Cancel.
+    // Keep the original duty session closed and paused; a deliberate Start creates
+    // a separate, non-synthetic session when work actually continues.
+    if (!serverIds.has(String(s.id || "")) && !s.overtimeApprovedAt) {
+      const source = (candidate.sessions || []).find((p: any) =>
+        p && String(p.id) !== String(s.id) &&
+        String(p.emp) === String(s.emp) &&
+        String(p.assignmentId || p.job) === String(s.assignmentId || s.job) &&
+        Number(p.start || 0) < start &&
+        Number(p.end || 0) === start);
+      if (source) {
+        source.paused = true;
+        source.autoPausedAt = start;
+        source.autoPauseReason = "Duty ended; employee must explicitly restart to work overtime";
+      }
+      return false;
+    }
     const pause = paused.find((p: any) =>
       String(p.id) !== String(s.id) &&
       String(p.emp) === String(s.emp) &&
