@@ -13,7 +13,7 @@ assert.match(main,/async function hydrateAuthoritativeLists/);assert.match(main,
 assert.doesNotMatch(main,/\\\\nfunction canPurchase/,'Spare Parts main module must not contain literal escaped newlines between declarations');
 assert.match(main,/function roleActionButton/,'role-specific recommended actions must render in Parts Lists');
 assert.match(main,/serverRevision:nextRevision/,'status transitions must carry a deterministic revision');
-assert.match(main,/eventId:\['spare-status'/,'status event IDs must be deterministic for idempotency');
+assert.match(main,/const eventId=\['spare-status'/,'status event IDs must be deterministic for idempotency');
 assert.match(api,/spare_list_create_forbidden/,'API must enforce list-create role authority');
 assert.match(api,/spare_commercial_forbidden/,'API must enforce commercial role authority');
 assert.match(api,/spare_transition_forbidden/,'API must enforce status-transition role authority');
