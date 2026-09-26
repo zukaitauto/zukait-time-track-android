@@ -3,7 +3,7 @@ name: Publish Approved Signed APK
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, architecture-v2]
     paths:
       - 'release-request.json'
 
@@ -36,7 +36,10 @@ jobs:
             echo "Approved source commit is not an ancestor of the release approval commit."
             exit 1
           }
-          if ! git diff --quiet "$SOURCE_COMMIT" "$GITHUB_SHA" -- . ':(exclude)release-request.json'; then
+          if [ "$GITHUB_REF_NAME" = "architecture-v2" ]; then
+            test "$(git rev-parse origin/architecture-v2)" = "$GITHUB_SHA" || { echo "architecture-v2 release must run from current branch HEAD"; exit 1; }
+          fi
+          if ! git diff --quiet "$SOURCE_COMMIT" "$GITHUB_SHA" -- . ':(exclude)release-request.json' ':(exclude)latest-version.json' ':(exclude)app/build.gradle' ':(exclude).github/workflows/publish-approved-release.yml'; then
             echo "Production source drift detected after approved source commit:"
             git diff --name-only "$SOURCE_COMMIT" "$GITHUB_SHA" -- . ':(exclude)release-request.json'
             exit 1
@@ -174,7 +177,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="release-${{ steps.approved.outputs.version_name }}"
+          TAG="release-${{ steps.approved.outputs.version_name }}${{ github.ref_name == 'architecture-v2' && '-architecture-v2' || '' }}"
           gh release view "$TAG" >/dev/null 2>&1 && gh release delete "$TAG" --yes --cleanup-tag || true
           git tag -f "$TAG" "${{ github.sha }}"
           git push origin "refs/tags/$TAG" --force
@@ -206,9 +209,9 @@ jobs:
           # Main may advance while this signed release is building (for example a UI/cache-only commit).
           # Rebase the metadata commit onto the newest main and retry instead of failing non-fast-forward.
           for attempt in 1 2 3; do
-            git fetch origin main
-            git rebase origin/main
-            if git push origin HEAD:main; then
+            git fetch origin "$GITHUB_REF_NAME"
+            git rebase "origin/$GITHUB_REF_NAME"
+            if git push origin "HEAD:$GITHUB_REF_NAME"; then
               exit 0
             fi
             echo "Metadata push raced with another main update; retrying ($attempt/3)."
@@ -222,6 +225,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="release-${{ steps.approved.outputs.version_name }}"
+          TAG="release-${{ steps.approved.outputs.version_name }}${{ github.ref_name == 'architecture-v2' && '-architecture-v2' || '' }}"
           gh release edit "$TAG" --draft=false --latest
           gh release view "$TAG" --json tagName,name,isDraft,isPrerelease,url,assets
