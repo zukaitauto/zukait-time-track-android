@@ -632,7 +632,7 @@ assert.match(updates,/hold\?'':'<button class="v75s-request"/,'ID001 must not ex
 assert.match(updates,/V107 INCENTIVE FINAL AUTHORITY/,'V107 incentive final authority');
 assert.match(updates,/window\.v107IncentiveFinalAuthority=true/,'V107 final incentive authority marker');
 assert.match(updates,/incentive=Math\.max\(0,achieved-t\.target-repeat\)/,'incentive = achieved - target - repeat');
-assert.match(updates,/a\.job===HOLD\)return \{achieved:0,excess:0,actual:current\}/,'ID001 actual time is tracked but excluded from achieved/incentive hours');
+assert.match(updates,/a\.job===HOLD\)return \{achieved:current,excess:0,actual:current,id001:current\}/,'ID001 duty-time must count in Achieved exactly once');
 assert.match(updates,/String\(a\.mistakeEmp\|\|a\.emp\)!==String\(emp\)/,'different repeat employee can earn achievement');
 assert.match(updates,/String\(a\.mistakeEmp\|\|a\.emp\)===String\(emp\)/,'repeat actual is charged to mistake employee');
 assert.match(updates,/dutyAfterLeave-15/,'15-minute cleaning allowance reduces working-day target');
