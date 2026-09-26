@@ -487,6 +487,14 @@ Deno.serve(async (req: Request) => {
       if (eventType==="SPARE_PART_ITEM_EDITED" && !["Manager","Supervisor"].includes(callerRole)) {
         return reply({ok:false,code:"spare_item_edit_forbidden"},403);
       }
+      if (eventType==="SPARE_PART_FINAL_PRICE_RECORDED") {
+        const p=event.payload && typeof event.payload==="object" ? event.payload : {};
+        const price=Number(p.finalPrice);
+        const allowedKeys=new Set(["partId","listNo","jobCard","finalPrice"]);
+        if (!["Manager","Supervisor"].includes(callerRole) || !String(p.partId||"") || !String(p.listNo||"") || !String(p.jobCard||"") || !Number.isFinite(price) || price<0 || price>1000000 || Object.keys(p).some(k=>!allowedKeys.has(k))) {
+          return reply({ok:false,code:"spare_final_price_forbidden_or_invalid"},403);
+        }
+      }
       if (eventType==="SPARE_PART_COMMERCIAL_UPDATED" && !["Manager","Purchaser"].includes(callerRole)) {
         return reply({ok:false,code:"spare_commercial_forbidden"},403);
       }
