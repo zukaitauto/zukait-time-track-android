@@ -69,7 +69,8 @@ jobs:
           test -s _site/v74_updates.js
           test -s _site/v2/features/spare-parts/workflow.js
           test -s _site/v2/features/spare-parts/main_module.js
-          grep -q 'window.zukaitV2SpareParts' _site/v2/features/spare-parts/main_module.js
+          grep -q 'sparePartsMain:{open:render' _site/v2/features/spare-parts/main_module.js
+          grep -q 'window.openSparePartsModule=render' _site/v2/features/spare-parts/main_module.js
           test -s _site/vehicle-logos/cadillac.svg
           test -s _site/vehicle-logos/gmc.svg
           test -s _site/vehicle-logos/chevrolet.svg
