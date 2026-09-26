@@ -93,6 +93,11 @@
     if(!r.ok){const e=new Error(r.code||'V2_SPARE_LIST_ALLOCATE_FAILED');e.code=r.code||'V2_SPARE_LIST_ALLOCATE_FAILED';throw e;}
     return r.list;
   }
+  async function v2AllocateEstimateNo(clientKey){
+    const r=await api({action:'v2_allocate_estimate_no',client_key:String(clientKey||'').trim()});
+    if(!r.ok){const e=new Error(r.code||'V2_ESTIMATE_ALLOCATE_FAILED');e.code=r.code||'V2_ESTIMATE_ALLOCATE_FAILED';throw e;}
+    return r.estimate;
+  }
   async function v2CommitEvent(event){
     const r=await api({action:'v2_commit_event',event});
     if(!r.ok){const e=new Error(r.code||'V2_EVENT_COMMIT_FAILED');e.code=r.code||'V2_EVENT_COMMIT_FAILED';throw e;}
@@ -111,7 +116,7 @@
     }
     q.compact();return {synced,pending:q.pending().length};
   }
-  window.zukaitV2Transport={commitEvent:v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,pilotStatus:v2PilotStatus,pilotClaim:v2PilotClaim,flush:flushV2EventQueue};
+  window.zukaitV2Transport={commitEvent:v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,pilotStatus:v2PilotStatus,pilotClaim:v2PilotClaim,flush:flushV2EventQueue};
 
   async function v2EventPage({cursor=null,limit=100,filters={}}={}){
     const r=await api({action:'v2_event_history',before:cursor?.before||cursor||null,before_id:cursor?.before_id||null,limit:Math.max(1,Math.min(Number(limit)||100,500)),entity_id:filters.entityId||filters.entity_id||null,event_type:filters.eventType||filters.event_type||null});
@@ -640,7 +645,7 @@
     publishLiveStatus(false);
   });
   window.zukaitCloud={
-    init,pull,push,pullLiveStatus,stop,syncNow,backupNow,backupList,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,v2PilotStatus,v2PilotClaim,
+    init,pull,push,pullLiveStatus,stop,syncNow,backupNow,backupList,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
     configured:()=>true,
     get revision(){return cloudRevision},
     get dirty(){return cloudDirty},
