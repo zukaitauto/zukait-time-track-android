@@ -413,6 +413,11 @@ function exportManagerReport(type){let headers=[],rows=[],filename='zukait-repor
     if(me.role==='Employee')window.renderEmployee();
     if(me.role==='Supervisor')window.renderSupervisor();
     if(me.role==='Manager')window.renderManager();
+    if(me.role==='Purchaser'){
+      const view=document.getElementById('managerView');
+      view.classList.remove('hidden');
+      view.innerHTML='<div class="card" style="max-width:760px;margin:16px auto;padding:20px;border-radius:20px;background:linear-gradient(145deg,#f8fbff,#edf4fb);border:1px solid #dce8f4;box-shadow:0 14px 32px #17304d18"><h2 style="margin:0;color:#17304d">🛒 Purchaser — Spare Parts</h2><p style="color:#516881">Parts lists · enquiries · quotations · orders · receiving</p><button type="button" class="blue big-action" style="width:100%;min-height:56px" onclick="window.zukaitV2?.sparePartsMain?.open?.()">Open Spare Parts Dashboard</button></div>';
+    }
     document.getElementById('net').textContent=navigator.onLine?'Online':'OFFLINE';
   };
 
