@@ -475,7 +475,7 @@ function exportManagerReport(type){let headers=[],rows=[],filename='zukait-repor
 
 /* V24: compact supervisor controls + overtime monitoring + completed-only incentive */
 (function(){
-  const DUTY_GRACE=5*60000;
+  const DUTY_GRACE=0;
   const TARGET=210*60;
   state.incentiveTargetMinutes=TARGET;
   state.overtimeNotices=state.overtimeNotices||{};
@@ -562,11 +562,11 @@ function exportManagerReport(type){let headers=[],rows=[],filename='zukait-repor
   function ensureOvertimeFlags(){
     let changed=false,t=now();
     state.sessions.forEach(s=>{
-      if(s.end||s.overtime||s.autoOvertime||s.overtimeApprovedAt||s.start>=t)return;
+      if(s.end||s.overtime||s.autoOvertime||s.start>=t)return;
       let info=overtimeInfo(t);
       if(!info.isOvertime||s.start>=info.dutyEnd)return;
-      s.end=info.overtimeStart;s.paused=true;s.autoPausedAt=info.overtimeStart;
-      s.autoPauseReason='No response within five minutes of duty end';
+      s.end=info.dutyEnd;s.paused=true;s.autoPausedAt=info.dutyEnd;
+      s.autoPauseReason='Automatic pause at the exact duty boundary';
       changed=true;
     });
     if(changed)save();
@@ -584,7 +584,6 @@ function exportManagerReport(type){let headers=[],rows=[],filename='zukait-repor
     let t=now(),info=overtimeInfo(t),active=forEmp?activeSession(forEmp):null;
     if(!active)return '';
     let mins=sessionOvertimeMinutes(active,t);
-    if(info.isGrace)return '<div class="overtime-notice grace">⏰ <b>Duty time ended.</b> Choose within five minutes or work pauses automatically.<br><button class="green" onclick="window.v28ContinueOvertime()">Continue overtime</button> <button class="yellow" onclick="window.pause()">Pause</button></div>';
     if(mins>0)return '<div class="overtime-notice active">🔴 <b>OVERTIME ACTIVE</b> — '+user(forEmp).name+' is working on <b>'+active.job+'</b> · Overtime: <b>'+fmt(mins)+'</b><br><span class="small">Overtime is for monitoring only and is excluded from incentive.</span></div>';
     return '';
   }
@@ -862,34 +861,22 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     return {suggested:sg,actual:ac,efficiency:ac?sg/ac*100:null};
   };
   // Automatic duty-time split. This creates a distinct overtime segment at the exact duty boundary.
-  window.v28ContinueOvertime=function(){
-    if(!me||me.role!=='Employee')return;
-    const s=activeSession(me.id),t=Date.now();
-    if(!s||s.overtime||s.autoOvertime)return;
-    const day=new Date(t),ds=new Date(day.getFullYear(),day.getMonth(),day.getDate()).getTime();
-    const boundary=[ds+13*3600000,ds+19*3600000].find(b=>s.start<b&&t>=b&&t<b+5*60000);
-    if(!boundary)return;
-    s.end=boundary;s.overtimeApprovedAt=t;
-    const a=(state.assign||[]).find(v=>v.id===s.assignmentId)||assignment(s.job,s.emp);
-    state.sessions.push({id:uid(),job:s.job,emp:s.emp,assignmentId:a?.id,start:boundary,end:null,paused:false,overtime:true,overtimeStartedAt:boundary,autoOvertime:true,overtimeApprovedAt:t,rework:s.rework===true});
-    save();render();
-  };
   window.v28AutoDutySplit=function(){
     if(!me||me.role!=='Employee')return;
     let t=Date.now(),changed=false;
     (state.sessions||[]).forEach(s=>{
-      if(s.end||s.overtime||s.autoOvertime||s.overtimeApprovedAt||s.start>=t)return;
+      if(s.end||s.overtime||s.autoOvertime||s.start>=t)return;
       let day=new Date(t),ds=new Date(day.getFullYear(),day.getMonth(),day.getDate()).getTime();
       if(day.getDay()===5)return;
       for(const boundary of [ds+13*3600000,ds+19*3600000]){
-        if(s.start<boundary&&t>=boundary+5*60000){
-          s.end=boundary+5*60000;s.paused=true;s.autoPausedAt=s.end;
-          s.autoPauseReason='No response within five minutes of duty end';
+        if(s.start<boundary&&t>=boundary){
+          s.end=boundary;s.paused=true;s.autoPausedAt=boundary;
+          s.autoPauseReason='Automatic pause at the exact duty boundary';
           changed=true;break;
         }
       }
     });
-    if(changed){save();if(typeof setLastAction==='function')setLastAction('Duty ended — work paused after five minutes');render();}
+    if(changed){save();if(typeof setLastAction==='function')setLastAction('Duty ended — work paused');render();}
   };
   // Make the Employee monthly section easier to read and calculate efficiency correctly.
   window.monthlyEmployeeSummary=function(){
