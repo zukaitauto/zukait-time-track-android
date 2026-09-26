@@ -5,7 +5,7 @@ import vm from 'node:vm';
 const state={
  labourRate:2.5,
  jobs:[{no:'JC1',vehicle:'Toyota Camry',reg:'REG1'}],
- assign:[{id:'A1',job:'JC1',emp:'P1',suggested:120,completed:true}],
+ assign:[{id:'A1',job:'JC1',emp:'P1',suggested:120,completed:true},{id:'A2',job:'JC1',emp:'P2',suggested:60,completed:true,cancelled:true},{id:'H1',job:'ID001',emp:'P1',suggested:0,completed:true}],
  sessions:[],
  consumables:{
   issues:[{id:'I1',type:'issued',jobCard:'JC1',locked:true,createdAt:Date.now()}],
@@ -39,6 +39,10 @@ assert.equal(d.consumables,11.125);
 assert.equal(d.parts,12.5,'returned, unavailable and cancelled parts must not be charged to the Job Card');
 assert.equal(d.total,26.125);
 assert.equal(d.labourHours,1);
+assert.equal(state.assign.filter(a=>a.job==='ID001').length,1,'fixture must include ID001 waiting work');
+assert.equal(state.assign.filter(a=>a.cancelled).length,1,'fixture must include a cancelled JC assignment');
+assert.match(fs.readFileSync('app/src/main/assets/job_cost_summary_v128.js','utf8'),/a\.job===no&&!a\.cancelled/,'Job cost must exclude ID001/other jobs and cancelled assignments');
+assert.match(fs.readFileSync('app/src/main/assets/offline_test.html','utf8'),/function total\(no,emp\)\{return state\.sessions\.filter\(s=>s\.job===no&&s\.emp===emp\)\.reduce\(\(a,s\)=>a\+window\.sessionNormalMinutes\(s,now\(\)\),0\)\}/,'Assignment actual time must use normal-session minutes, excluding overtime');
 assert.equal(d.consumablesStatus,'Completed');
 assert.equal(d.paintStatus,'Received / Costed');
 
