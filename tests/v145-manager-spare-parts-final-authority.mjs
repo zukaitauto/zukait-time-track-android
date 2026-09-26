@@ -1,0 +1,10 @@
+import fs from'node:fs';import assert from'node:assert/strict';
+const s=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
+const block=s.slice(s.indexOf('V154 MANAGER WORKSHOP CONTROL ROOT AUTHORITY'),s.indexOf('V149 SHARED COLOUR WIRING'));
+assert.match(block,/fifthRowStart=8/);
+assert.match(block,/grid\.insertBefore\(sp,cards\[fifthRowStart\]\)/);
+assert.match(block,/sp\.style\.gridColumn=''/);
+assert.doesNotMatch(block,/v154-spare\{[^}]*grid-column:1\/-1/);
+assert.match(block,/v150OpenManagerSpareParts=.*sparePartsMain/);
+assert.match(block,/data-v154-spare/);
+console.log('V145 final Manager Spare Parts authority guard passed');
