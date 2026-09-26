@@ -352,6 +352,25 @@ Deno.serve(async (req: Request) => {
       return reply({ ok: true, ...live, server_time: Date.now(), user });
     }
 
+    if (action === "v2_pilot_status") {
+      if (String(user.role || "") !== "Manager") return reply({ok:false,code:"forbidden"},403);
+      const deviceId=String(body?.device_id||"").trim();
+      if(!deviceId) return reply({ok:false,code:"device_id_required"},400);
+      const {data,error}=await admin.from("workshop_v2_pilot").select("device_id,actor_id,active,claimed_at").eq("id","manager-pilot").maybeSingle();
+      if(error) throw error;
+      return reply({ok:true,claimed:!!data,active:data?.active===true,is_pilot:!!data&&data.active===true&&String(data.device_id)===deviceId,claimed_at:data?.claimed_at||null,user});
+    }
+
+    if (action === "v2_pilot_claim") {
+      if (String(user.role || "") !== "Manager") return reply({ok:false,code:"forbidden"},403);
+      const deviceId=String(body?.device_id||"").trim();
+      if(!deviceId) return reply({ok:false,code:"device_id_required"},400);
+      const {data,error}=await admin.rpc("zukait_v2_claim_manager_pilot",{p_device_id:deviceId,p_actor_id:String(user.id)});
+      if(error) throw error;
+      const row=Array.isArray(data)?data[0]:data;
+      return reply({ok:true,is_pilot:row?.is_pilot===true,active:row?.active===true,claimed_at:row?.claimed_at||null,user});
+    }
+
     if (action === "v2_allocate_spare_part_list") {
       if (!["Manager","Supervisor"].includes(String(user.role || ""))) return reply({ok:false,code:"forbidden"},403);
       const jobCard=String(body?.job_card||"").trim().toUpperCase();
@@ -371,7 +390,7 @@ Deno.serve(async (req: Request) => {
       const eventId = String(event.eventId).trim();
       const entityId = String(event.entityId).trim();
       const eventType = String(event.type).trim();
-      const callerRole=String(profile?.role||"");
+      const callerRole=String(user?.role||"");
       if (callerRole==="Denter" && eventType.startsWith("SPARE_PART") && eventType!=="SPARE_PART_DENTER_NOTICE") {
         return reply({ok:false,code:"denter_spare_parts_read_only"},403);
       }
