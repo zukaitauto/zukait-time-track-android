@@ -336,21 +336,27 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void printHtml(String html) {
+            printHtmlNamed(html, "Zukait Document");
+        }
+
+        @JavascriptInterface
+        public void printHtmlNamed(String html, String title) {
             runOnUiThread(() -> {
                 try {
+                    final String safeTitle = (title == null || title.trim().isEmpty()) ? "Zukait Document" : title.trim();
                     WebView printView = new WebView(MainActivity.this);
                     printView.getSettings().setJavaScriptEnabled(false);
                     printView.setWebViewClient(new android.webkit.WebViewClient() {
                         @Override
                         public void onPageFinished(WebView view, String url) {
                             PrintManager pm = (PrintManager) getSystemService(Context.PRINT_SERVICE);
-                            PrintDocumentAdapter adapter = view.createPrintDocumentAdapter("Zukait Job Card List");
-                            pm.print("Zukait Job Card List", adapter, null);
+                            PrintDocumentAdapter adapter = view.createPrintDocumentAdapter(safeTitle);
+                            pm.print(safeTitle, adapter, null);
                         }
                     });
                     printView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
                 } catch (Exception e) {
-                    android.util.Log.e("ZukaitPrint", "Unable to print Job Card List", e);
+                    android.util.Log.e("ZukaitPrint", "Unable to print document", e);
                 }
             });
         }
