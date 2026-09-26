@@ -131,6 +131,29 @@ function cloneValue<T>(value: T): T {
   return JSON.parse(JSON.stringify(value));
 }
 
+
+// A delayed legacy client must not reopen work that another device already paused.
+// Only synthetic overtime sessions absent from the current server snapshot are removed.
+function discardStaleAutoOvertime(candidate: any, current: any): any {
+  const existing = new Set((current?.sessions || []).map((s: any) => String(s?.id || "")));
+  const paused = (current?.sessions || []).filter((s: any) => s?.paused === true && Number(s?.end || 0) > 0);
+  candidate.sessions = (candidate?.sessions || []).filter((s: any) => {
+    if (!s?.autoOvertime || s?.end || existing.has(String(s.id || ""))) return true;
+    const start = Number(s.start || 0);
+    return !paused.some((p: any) =>
+      String(p.emp) === String(s.emp) &&
+      String(p.assignmentId || p.job) === String(s.assignmentId || s.job) &&
+      Number(p.start || 0) < start &&
+      !(current?.sessions || []).some((later: any) =>
+        later && String(later.emp) === String(s.emp) &&
+        String(later.assignmentId || later.job) === String(s.assignmentId || s.job) &&
+        !later.end && Number(later.start || 0) >= Number(p.end || 0)
+      )
+    );
+  });
+  return candidate;
+}
+
 function threeWayMerge(base: any, remote: any, local: any): any {
   if (same(local, base)) return cloneValue(remote);
   if (same(remote, base)) return cloneValue(local);
@@ -556,6 +579,7 @@ Deno.serve(async (req: Request) => {
             return reply({ ok: false, code: "conflict", revision: current.revision, data: current.data }, 409);
           }
           candidate = threeWayMerge(baseData, current.data, originalProposed);
+          candidate = discardStaleAutoOvertime(candidate, current.data);
         }
 
         const unsafeIdeal = (candidate.assign || []).some((a: any) =>
