@@ -2235,8 +2235,12 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    Array.from(sel.options).forEach(o=>{if(String(o.value||o.textContent).trim().toUpperCase()===HOLD)o.remove()});
  }
  window.v112OpenID001Quick=function(){
-   let eligible=typeof window.v75IdealAvailableEmployees==='function'?window.v75IdealAvailableEmployees():(users||[]).filter(u=>u&&u.role==='Employee');
    const t=Date.now();
+   if(typeof window.v75IsClosedWorkshopDay==='function'&&window.v75IsClosedWorkshopDay(t))
+     return typeof window.v74Msg==='function'?window.v74Msg('ID001 is available only on workshop working days. Friday and public holidays are excluded.','ID001 · Without Job Card'):alert('ID001 is unavailable on Friday and public holidays.');
+   if(typeof window.v75IsID001DutyTime==='function'&&!window.v75IsID001DutyTime(t))
+     return typeof window.v74Msg==='function'?window.v74Msg('ID001 can be assigned during duty hours: 08:00–13:00 and 15:00–19:00 Oman time. Work pauses at the duty boundary.','ID001 · Without Job Card'):alert('ID001 is available during duty hours only.');
+   let eligible=typeof window.v75IdealAvailableEmployees==='function'?window.v75IdealAvailableEmployees():(users||[]).filter(u=>u&&u.role==='Employee');
    const unavailable=!eligible.length?(typeof window.v75IsClosedWorkshopDay==='function'&&window.v75IsClosedWorkshopDay(t)?'ID001 is unavailable on Friday and public holidays.':typeof window.v75IsID001DutyTime==='function'&&!window.v75IsID001DutyTime(t)?'Outside duty hours. ID001 can be assigned from 08:00–13:00 and 15:00–19:00.':'No technician is currently available. Check active work, open Job Cards, existing ID001 assignments and leave.') : '';
    let opts='<option value="" selected disabled>Select Technician</option>'+eligible.map(u=>'<option value="'+esc(u.id)+'">'+esc(u.name)+' · '+esc(u.department||'Technician')+'</option>').join('');
    if(unavailable)opts='<option value="" selected disabled>No technician available</option>';
