@@ -62,7 +62,8 @@ const windowObj={
 const documentObj={
   hidden:false,
   addEventListener:()=>{},
-  getElementById:()=>null
+  getElementById:()=>null,
+  querySelectorAll:()=>[]
 };
 const context={
   window:windowObj,
