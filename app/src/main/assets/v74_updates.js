@@ -556,7 +556,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.sessionNormalMinutes=(session,to=Date.now())=>normalMinutes(session.start,Math.min(session.end||to,to));
  window.sessionOvertimeMinutes=(session,to=Date.now())=>overtimeMinutes(session.start,Math.min(session.end||to,to));
  window.overtimeForSession=window.sessionOvertimeMinutes;
- window.overtimeForEmployee=(emp,from,to)=>(state.sessions||[]).filter(x=>x&&x.emp===emp&&x.start<to&&(x.end||Date.now())>from).reduce((n,x)=>{const st=Math.max(+x.start||0,from),en=Math.min(+(x.end||Date.now()),to);return en>st?n+overtimeMinutes(st,en):n},0);
+ window.overtimeForEmployee=(emp,from,to)=>(state.sessions||[]).filter(x=>x&&x.emp===emp&&x.job!==HOLD&&x.start<to&&(x.end||Date.now())>from).reduce((n,x)=>{const st=Math.max(+x.start||0,from),en=Math.min(+(x.end||Date.now()),to);return en>st?n+overtimeMinutes(st,en):n},0);
  window.monthlyNormalActualMinutes=(emp,from,to)=>(state.sessions||[]).filter(x=>x&&x.emp===emp&&x.start<to&&(x.end||Date.now())>from).reduce((n,x)=>{const st=Math.max(+x.start||0,from),en=Math.min(+(x.end||Date.now()),to);return en>st?n+normalMinutes(st,en):n},0);
 
  const normalAssignmentAvailableMinutes=(emp,gapStart,gapEnd,previousJob)=>{
