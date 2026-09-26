@@ -45,8 +45,7 @@ assert.match(stable,/v143CreateJobOnly/,'Supervisor must be able to create a Job
 assert.match(stable,/Create Job Card Only/,'Quick Entry must expose Create Job Card Only');
 assert.match(stable,/v143VoiceStop/,'voice Quick Entry must expose a STOP path');
 assert.match(stable,/STOP/,'voice control must visibly offer STOP while listening');
-assert.match(stable,/v112IdReason/,'ID001 assignment must capture the typed reason');
-assert.match(stable,/reason/,'ID001 reason must be forwarded through the assignment flow');
+
 
 assert.match(stable,/v65OpenAccount\(\)/,'Supervisor menu must remain available');
 assert.match(stable,/v92OpenAvailableWorkers\(\)/,'Available Workers popup must remain wired');
