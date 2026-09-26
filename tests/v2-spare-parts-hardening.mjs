@@ -1,0 +1,13 @@
+import fs from'node:fs';import assert from'node:assert/strict';
+const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+const sql=fs.readFileSync('supabase/ARCHITECTURE_V2_REPORTING.sql','utf8');
+const hist=fs.readFileSync('supabase/ARCHITECTURE_V2_BOUNDED_HISTORY.sql','utf8');
+const main=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8');
+assert.match(api,/"SPARE_PARTS"/,'API must allow authoritative Spare Parts report');
+assert.match(sql,/q\.report in \('PARTS_DELAY','SPARE_PARTS'\)/,'SQL must project Spare Parts report');
+assert.match(hist,/unique index if not exists workshop_v2_spare_part_lists_open_job_idx[\s\S]*where status <> 'CLOSED'/,'one open list per JC must be server enforced');
+assert.match(hist,/exception when unique_violation[\s\S]*status<>'CLOSED'/,'concurrent allocation must return existing open list');
+assert.match(main,/q\?\.enqueue\?\.\(event\)/,'transient Spare Parts events must queue offline');
+assert.match(main,/function assignedToJob/);assert.match(main,/assignedToJob\(r\.jobCard,uid\)/,'Denter visibility must use canonical assignment rows');
+assert.match(main,/async function hydrateAuthoritativeLists/);assert.match(main,/hydrateFromServerRows/,'module must hydrate cross-device server data');
+console.log('V2 Spare Parts hardening guard passed');
