@@ -1969,7 +1969,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  const key=t=>{const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
  const isHoliday=t=>(new Date(t).getDay()===5)||(state.workshopHolidays||[]).some(h=>String(typeof h==='object'?(h.date||h.day||''):h)===key(t));
  const assignmentFor=s=>(state.assign||[]).find(a=>a&&a.id===s.assignmentId)||(state.assign||[]).find(a=>a&&!a.cancelled&&a.job===s.job&&a.emp===s.emp&&!!a.rework===!!s.rework);
- const clippedNormal=(s,from,to)=>{const st=Math.max(+s.start||0,from),en=Math.min(+s.end||Date.now(),to);if(en<=st)return 0;return typeof window.normalOverlapMinutes==='function'?Math.max(0,window.normalOverlapMinutes(st,en)):Math.max(0,(en-st)/60000)};
+ const clippedNormal=(s,from,to)=>{const st=Math.max(+s.start||0,from),en=Math.min(+s.end||Date.now(),to);if(en<=st)return 0;return typeof window.sessionNormalMinutes==='function'?Math.max(0,window.sessionNormalMinutes({start:st,end:en},en)):0};
  const assignmentNormal=(a,from,to)=>(state.sessions||[]).filter(s=>s&&String(s.emp)===String(a.emp)&&(s.assignmentId===a.id||(!s.assignmentId&&s.job===a.job&&!!s.rework===!!a.rework))&&(+s.start||0)<to&&(+s.end||Date.now())>from).reduce((n,s)=>n+clippedNormal(s,from,to),0);
  const targetFor=(emp,from,to)=>{
    let target=0,workDays=0,cleaningAllowance=0;
@@ -1984,7 +1984,14 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  };
  const achievementFor=(a,from,to)=>{
    const current=assignmentNormal(a,from,to);
-   if(current<=0)return {achieved:0,excess:0,actual:0};
+   // Completed job credit follows its suggested time even if all tracked work
+   // happened in overtime. Overtime minutes remain excluded from Actual and
+   // from the allocated-time countdown.
+   const worked=(state.sessions||[]).some(s=>s&&String(s.emp)===String(a.emp)&&
+     (s.assignmentId===a.id||(!s.assignmentId&&s.job===a.job&&!!s.rework===!!a.rework))&&
+     (+s.start||0)<to&&(+s.end||Date.now())>from&&
+     Math.min(+s.end||Date.now(),to)>Math.max(+s.start||0,from));
+   if(!worked)return {achieved:0,excess:0,actual:0};
    if(a.job===HOLD)return {achieved:current,excess:0,actual:current,id001:current};
    const prior=assignmentNormal(a,0,from);
    const suggested=Math.max(0,+a.suggested||0);
