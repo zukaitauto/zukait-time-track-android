@@ -1,8 +1,8 @@
 {
-  "versionName": "V160",
-  "versionCode": 123,
+  "versionName": "V161",
+  "versionCode": 124,
   "approvedForStaff": true,
   "approvedAt": "2026-09-26",
-  "sourceCommit": "ea843dd00ac7c7965108e710d0031787b36376fa",
-  "publishNonce": "approved-v160-architecture-v2-parts-list-validation-20260926"
+  "sourceCommit": "09100d63c55fd3f862c186f3288fa2418bb0275a",
+  "publishNonce": "approved-v161-architecture-v2-supervisor-quick-entry-colours-20260926"
 }
