@@ -450,6 +450,13 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void stopNativeVoiceRecognition() {
+            runOnUiThread(() -> {
+                if (speechRecognizer != null) speechRecognizer.stopListening();
+            });
+        }
+
+        @JavascriptInterface
         public void startNativeVoiceNote() {
             runOnUiThread(() -> {
                 if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
