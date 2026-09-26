@@ -38,6 +38,7 @@ assert.equal(d.paint,3.25);
 assert.equal(d.consumables,11.125);
 assert.equal(d.parts,12.5,'returned, unavailable and cancelled parts must not be charged to the Job Card');
 assert.equal(d.total,26.125);
+assert.equal(d.labourHours,1);
 assert.equal(d.consumablesStatus,'Completed');
 assert.equal(d.paintStatus,'Received / Costed');
 
@@ -53,6 +54,9 @@ assert.match(src,/TOTAL JOB COST/);
 assert.match(src,/CONSUMABLES COST/);
 assert.match(src,/PARTS COST/);
 assert.match(src,/Parts \+ Consumables \+ Labour/);
+assert.match(src,/Cost source check/);
+assert.match(src,/Paint net after returns/);
+assert.match(src,/chargeable recorded commercial amount/);
 assert.match(src,/openManagerJobDetails/);
 assert.match(src,/openSupervisorJob/);
 console.log('V128 combined Job Cost and consumables/paint status tests passed');
