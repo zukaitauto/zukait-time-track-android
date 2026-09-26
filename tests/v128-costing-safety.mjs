@@ -27,7 +27,7 @@ const ctx={
  },
  openManagerJobDetails(){},
  openSupervisorJob(){},
- zukaitV2:{sparePartsMain:{reportRows:()=>[{jobCard:'JC1',amount:12.5},{jobCard:'OTHER',amount:99}]}}
+ zukaitV2:{sparePartsMain:{reportRows:()=>[{jobCard:'JC1',amount:12.5,status:'FITTED'},{jobCard:'JC1',amount:7,status:'RETURNED'},{jobCard:'JC1',amount:8,status:'UNAVAILABLE'},{jobCard:'JC1',amount:9,status:'CANCELLED'},{jobCard:'OTHER',amount:99,status:'FITTED'}]}}
 };
 ctx.window=ctx;vm.createContext(ctx);
 vm.runInContext(fs.readFileSync('app/src/main/assets/job_cost_summary_v128.js','utf8'),ctx);
@@ -36,7 +36,7 @@ assert.equal(d.labour,2.5);
 assert.equal(d.materials,7.875);
 assert.equal(d.paint,3.25);
 assert.equal(d.consumables,11.125);
-assert.equal(d.parts,12.5);
+assert.equal(d.parts,12.5,'returned, unavailable and cancelled parts must not be charged to the Job Card');
 assert.equal(d.total,26.125);
 assert.equal(d.consumablesStatus,'Completed');
 assert.equal(d.paintStatus,'Received / Costed');
