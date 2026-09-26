@@ -173,6 +173,7 @@ jobs:
           grep -q "versionName='${{ steps.approved.outputs.version_name }}'" /tmp/apk-badging.txt
 
       - name: Create draft GitHub release
+        id: draft_release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -181,11 +182,16 @@ jobs:
           gh release view "$TAG" >/dev/null 2>&1 && gh release delete "$TAG" --yes --cleanup-tag || true
           git tag -f "$TAG" "${{ github.sha }}"
           git push origin "refs/tags/$TAG" --force
-          gh release create "$TAG" ZUKAIT_TIME_TRACK_LATEST.apk \
+          RELEASE_URL=$(gh release create "$TAG" ZUKAIT_TIME_TRACK_LATEST.apk \
             --verify-tag \
             --title "Zukait Time Track ${{ steps.approved.outputs.version_name }}" \
             --notes "Approved signed production release ${{ steps.approved.outputs.version_name }}." \
-            --draft
+            --draft)
+          test -n "$RELEASE_URL" || { echo "Draft release URL was not returned"; exit 1; }
+          echo "release_url=$RELEASE_URL" >> "$GITHUB_OUTPUT"
+          RELEASE_ID=$(gh api "$RELEASE_URL" --jq '.id')
+          test -n "$RELEASE_ID" || { echo "Draft release ID was not returned"; exit 1; }
+          echo "release_id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
 
       - name: Publish matching update metadata
         shell: bash
@@ -225,6 +231,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="release-${{ steps.approved.outputs.version_name }}${{ github.ref_name == 'architecture-v2' && '-architecture-v2' || '' }}"
-          gh release edit "$TAG" --draft=false --latest
-          gh release view "$TAG" --json tagName,name,isDraft,isPrerelease,url,assets
+          RELEASE_ID="${{ steps.draft_release.outputs.release_id }}"
+          test -n "$RELEASE_ID" || { echo "Missing draft release ID"; exit 1; }
+          gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" -f draft=false -f make_latest=true >/tmp/published-release.json
+          jq '{tag_name,name,draft,prerelease,html_url,assets:[.assets[].name]}' /tmp/published-release.json
