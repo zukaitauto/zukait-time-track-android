@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 const KEY='zukait_v2_pilot_device';
-function deviceId(){try{return String(localStorage.getItem('zukait_device_id')||localStorage.getItem('zukaitDeviceId')||'')}catch(_){return ''}}
+function deviceId(){try{let id=String(localStorage.getItem('zukait_device_id')||localStorage.getItem('zukaitDeviceId')||'').trim();if(id)return id;id=(globalThis.crypto?.randomUUID?.()||('dev-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12))).toLowerCase();localStorage.setItem('zukait_device_id',id);localStorage.setItem('zukaitDeviceId',id);return id}catch(_){return ''}}
 function pilotId(){try{return String(localStorage.getItem(KEY)||'')}catch(_){return ''}}
 function setPilotDevice(id){try{localStorage.setItem(KEY,String(id||''))}catch(_){}return pilotId()}
 function eligible(){const d=deviceId(),p=pilotId();return !!d&&!!p&&d===p}
