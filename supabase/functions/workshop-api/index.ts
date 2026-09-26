@@ -427,6 +427,8 @@ Deno.serve(async (req: Request) => {
         const allowed = callerRole==="Manager" || (callerRole==="Purchaser" && purchaserTargets.has(to)) || (callerRole==="Supervisor" && supervisorTargets.has(to));
         if(!allowed) return reply({ok:false,code:"spare_transition_forbidden"},403);
       }
+      if (eventType==="ID001_PRELIMINARY_LINKED" && !["Manager","Supervisor"].includes(callerRole)) return reply({ok:false,code:"preliminary_link_forbidden"},403);
+      if (eventType==="ID001_PRELIMINARY_REVERSED" && callerRole!=="Manager") return reply({ok:false,code:"preliminary_reverse_forbidden"},403);
       if (event.actorId && String(event.actorId) !== String(user.id)) return reply({ok:false,code:"actor_mismatch"},403);
       const { data, error } = await admin.rpc("zukait_v2_commit_event", {
         p_event_id:eventId, p_entity_id:entityId, p_actor_id:String(user.id),
@@ -436,6 +438,8 @@ Deno.serve(async (req: Request) => {
       });
       if (error) {
         const message=String(error.message||"");
+        if (message.includes("preliminary_session_already_linked")) return reply({ok:false,code:"preliminary_session_already_linked"},409);
+        if (message.includes("preliminary_link_not_active")) return reply({ok:false,code:"preliminary_link_not_active"},409);
         if (message.includes("event_id_conflict")) return reply({ok:false,code:"event_id_conflict"},409);
         if (message.includes("stale_work_revision")) return reply({ok:false,code:"stale_work_revision"},409);
         if (message.includes("employee_already_active")) return reply({ok:false,code:"employee_already_active"},409);
