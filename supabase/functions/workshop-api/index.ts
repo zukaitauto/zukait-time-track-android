@@ -134,22 +134,45 @@ function cloneValue<T>(value: T): T {
 
 // A delayed legacy client must not reopen work that another device already paused.
 // Only synthetic overtime sessions absent from the current server snapshot are removed.
-function discardStaleAutoOvertime(candidate: any, current: any): any {
-  const existing = new Set((current?.sessions || []).map((s: any) => String(s?.id || "")));
-  const paused = (current?.sessions || []).filter((s: any) => s?.paused === true && Number(s?.end || 0) > 0);
+function preserveClosedSessions(candidate: any, current: any): any {
+  const closed = new Map((current?.sessions || []).filter((s: any) => Number(s?.end || 0) > 0).map((s: any) => [String(s.id),s]));
+  candidate.sessions = (candidate?.sessions || []).map((s: any) => {
+    const authoritative: any = closed.get(String(s?.id || ""));
+    return authoritative && !s?.end
+      ? {...s,end:authoritative.end,paused:authoritative.paused,autoPausedAt:authoritative.autoPausedAt,
+         pauseReason:authoritative.pauseReason,closeReason:authoritative.closeReason}
+      : s;
+  });
+  return candidate;
+}
+
+function reconcileAutoOvertime(candidate: any, current: any): any {
+  const serverIds = new Set((current?.sessions || []).map((s: any) => String(s?.id || "")));
+  const paused = [...(candidate?.sessions || []),...(current?.sessions || [])]
+    .filter((s: any) => s?.paused === true && Number(s?.end || 0) > 0);
+  const explicitResumes = (candidate?.sessions || []).filter((s: any) =>
+    s && !s.autoOvertime && Number(s.start || 0) > 0);
   candidate.sessions = (candidate?.sessions || []).filter((s: any) => {
-    if (!s?.autoOvertime || s?.end || existing.has(String(s.id || ""))) return true;
+    if (!s?.autoOvertime || s?.end) return true;
     const start = Number(s.start || 0);
-    return !paused.some((p: any) =>
+    const pause = paused.find((p: any) =>
+      String(p.id) !== String(s.id) &&
       String(p.emp) === String(s.emp) &&
       String(p.assignmentId || p.job) === String(s.assignmentId || s.job) &&
       Number(p.start || 0) < start &&
-      !(current?.sessions || []).some((later: any) =>
-        later && String(later.emp) === String(s.emp) &&
-        String(later.assignmentId || later.job) === String(s.assignmentId || s.job) &&
-        !later.end && Number(later.start || 0) >= Number(p.end || 0)
-      )
+      !explicitResumes.some((resume: any) =>
+        String(resume.id) !== String(p.id) &&
+        String(resume.emp) === String(s.emp) &&
+        String(resume.assignmentId || resume.job) === String(s.assignmentId || s.job) &&
+        Number(resume.start || 0) >= Number(p.end || 0) &&
+        Number(resume.start || 0) <= start)
     );
+    if (!pause) return true;
+    if (!serverIds.has(String(s.id || ""))) return false;
+    s.end = Math.max(start, Number(pause.end));
+    s.paused = true;
+    s.closeReason = "PAUSE_OVERRIDES_AUTO_OVERTIME";
+    return true;
   });
   return candidate;
 }
@@ -399,7 +422,7 @@ Deno.serve(async (req: Request) => {
       const jobCard=String(body?.job_card||"").trim().toUpperCase();
       if(!jobCard) return reply({ok:false,code:"job_card_required"},400);
       const {data,error}=await admin.rpc("zukait_v2_allocate_spare_part_list",{p_job_card:jobCard,p_actor_id:String(user.id)});
-      if(error) throw error;
+      if(error){console.error("spare_part_allocator_failed",error);return reply({ok:false,code:"spare_part_allocator_unavailable"},503);}
       const row=Array.isArray(data)?data[0]:data;
       if(!row?.list_no) return reply({ok:false,code:"allocation_failed"},409);
       return reply({ok:true,list:row,user});
@@ -579,8 +602,9 @@ Deno.serve(async (req: Request) => {
             return reply({ ok: false, code: "conflict", revision: current.revision, data: current.data }, 409);
           }
           candidate = threeWayMerge(baseData, current.data, originalProposed);
-          candidate = discardStaleAutoOvertime(candidate, current.data);
         }
+
+        candidate = reconcileAutoOvertime(preserveClosedSessions(candidate, current.data), current.data);
 
         const unsafeIdeal = (candidate.assign || []).some((a: any) =>
           a && a.job === "ID001" && !a.cancelled && !a.completed && Number(a.idealSafeVersion || 0) < 1
