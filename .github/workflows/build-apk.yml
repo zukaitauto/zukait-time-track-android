@@ -85,6 +85,8 @@ jobs:
           node tests/live-status-authority.mjs
           node tests/consumables-backend-security.mjs
           node tests/v128-costing-safety.mjs
+          node tests/registration-authority.mjs
+          node tests/id001-preliminary-labour.mjs
           node tests/paint-safety.mjs
           node tests/vehicle-logo-assets.mjs
           node tests/native-update-integrity.mjs
