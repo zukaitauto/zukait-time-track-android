@@ -200,13 +200,10 @@ body{background:linear-gradient(180deg,#f8fafc 0,#f2f6fb 100%)!important;color:v
 const previousRender=window.render;
 window.render=function(){
  previousRender();
- setTimeout(()=>{
-   decorateAccount();
-   cleanManagerDuplicates();
-   if(me?.role==='Manager')renderManager66();
- },0);
+ decorateAccount();
+ cleanManagerDuplicates();
 };
-setTimeout(()=>{if(me){decorateAccount();cleanManagerDuplicates();if(me.role==='Manager')renderManager66()}},80);
+setTimeout(()=>{if(me){decorateAccount();cleanManagerDuplicates()}},80);
 window.v66UpdateCheckResult=function(latestCode,latestName,error){if(typeof window.v65UpdateCheckResult==='function')return window.v65UpdateCheckResult(latestCode,latestName,error);};
 window.v66Ready=true;
 })();
