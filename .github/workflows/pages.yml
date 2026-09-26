@@ -48,6 +48,36 @@ jobs:
           cp app/src/main/assets/v2/features/spare-parts/main_module.js _site/v2/features/spare-parts/main_module.js
           cp app/src/main/assets/zukait_logo.webp _site/zukait_logo.webp
           cp -R app/src/main/assets/vehicle-logos _site/vehicle-logos
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from shutil import copy2
+
+          class Scripts(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.sources = []
+              def handle_starttag(self, tag, attrs):
+                  if tag == 'script':
+                      src = dict(attrs).get('src')
+                      if src:
+                          self.sources.append(src.split('?', 1)[0])
+
+          assets = Path('app/src/main/assets')
+          parser = Scripts()
+          parser.feed((assets / 'offline_test.html').read_text(encoding='utf-8'))
+          for source in parser.sources:
+              relative = Path(source)
+              if relative.is_absolute() or '..' in relative.parts:
+                  raise ValueError(f'Unsafe script path: {source}')
+              origin = assets / relative
+              if not origin.is_file():
+                  raise FileNotFoundError(origin)
+              destination = Path('_site') / relative
+              destination.parent.mkdir(parents=True, exist_ok=True)
+              copy2(origin, destination)
+          print(f'Copied {len(parser.sources)} referenced scripts')
+          PY
           test -s _site/consumables.js
           test -s _site/consumables_ui.js
           test -s _site/paint_module.js
