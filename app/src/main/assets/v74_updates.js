@@ -251,7 +251,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 
  // Authoritative ID001 assignment creation. A technician can have only one open ID001 assignment.
  const oldAssign=window.assignJobCore;
- window.assignJobCore=function(no,emp,minutes,reason,registration){
+ window.assignJobCore=function(no,emp,minutes,reason,registration,vehicle){
    if(no!==H)return typeof oldAssign==='function'?oldAssign.apply(this,arguments):undefined;
    const m=0;
    const existing=openHold(emp);
@@ -259,7 +259,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const normalOpen=openNormal(emp),active=activeSession(emp);
    if(active||normalOpen.length){const n=safeUser(emp).name||emp;if(typeof v74Msg==='function')return v74Msg(n+' already has normal workshop work. ID001 is only for staff who currently have no job.','Ideal Time');return alert(n+' already has normal workshop work.');}
    state.assign=state.assign||[];
-   const a={id:uid(),job:H,emp:emp,suggested:m,completed:false,cancelled:false,rework:false,idealCard:true,idealSafeVersion:1,idealReason:String(reason||'').trim().slice(0,240),idealRegistration:String(registration||'').trim().slice(0,40),idealRegistrationKey:window.zukaitRegistration?.key?.(registration)||'',assignedBy:me&&me.id?me.id:'SYSTEM',assignedAt:now()};
+   const a={id:uid(),job:H,emp:emp,suggested:m,completed:false,cancelled:false,rework:false,idealCard:true,idealSafeVersion:1,idealReason:String(reason||'').trim().slice(0,240),idealRegistration:String(registration||'').trim().slice(0,40),idealRegistrationKey:window.zukaitRegistration?.key?.(registration)||'',idealVehicle:String(vehicle||'').trim().slice(0,120),assignedBy:me&&me.id?me.id:'SYSTEM',assignedAt:now()};
    state.assign.push(a);
    if(typeof setLastAction==='function')setLastAction('Assigned ID001 to '+(safeUser(emp).name||emp));
    save();render();return a;
