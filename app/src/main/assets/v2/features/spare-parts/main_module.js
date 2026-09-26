@@ -4,7 +4,7 @@ function read(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(_){
 function write(v){localStorage.setItem(KEY,JSON.stringify(v));return v}
 function normalizeJobCard(v){return String(v||'').trim().toUpperCase()}
 function existingOpen(rows,jobCard){return rows.find(r=>normalizeJobCard(r.jobCard)===jobCard&&r.status!=='CLOSED')}
-function currentUser(){return window.me||window.currentUser||null}
+function currentUser(){try{if(typeof me!=='undefined'&&me)return me}catch(_){}return window.me||window.currentUser||null}
 function role(){return String(currentUser()?.role||'')}
 function canOpen(){return ['Manager','Supervisor','Purchaser','Denter'].includes(role())}
 function canManage(){return ['Manager','Supervisor','Purchaser'].includes(role())}
