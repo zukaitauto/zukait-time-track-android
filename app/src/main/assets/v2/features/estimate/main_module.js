@@ -240,6 +240,13 @@ function printable(e){
   '<table class="details"><tr><th>Name</th><td>'+esc(e.customerName)+'</td><th>Mobile</th><td>'+esc(e.mobile)+'</td></tr><tr><th>Make & Model</th><td>'+esc(e.makeModel)+'</td><th>Year</th><td>'+esc(e.year)+'</td></tr><tr><th>Registration</th><td>'+esc(e.registration)+'</td><th>VIN</th><td>'+esc(e.vin)+'</td></tr><tr><th>Claim No.</th><td>'+esc(e.claimNo)+'</td><th>Job Card</th><td>'+esc(e.jobCard||'')+'</td></tr></table>'+
   body+'<div class="valid">Estimate valid for 15 days.</div><div class="sign"><span>Manager</span><span>Foreman</span><span>Prepared By: '+esc((typeof user==='function'?user(e.createdBy)?.name:e.createdBy)||e.createdBy||'')+'</span></div></div>';
 }
+function currentOutputEstimate(id){
+  const e=findEstimate(id);if(!e)return null;
+  try{
+    if(String(window.__zukaitEstimateCurrent||'')===String(id) && document.getElementById('estDate')) return draftFromDom(e);
+  }catch(_){}
+  return e;
+}
 function estimateDocumentHtml(e){
   return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(e.estimateNo)+'</title><style>body{font-family:Arial,sans-serif;padding:18px;color:#111}.head{text-align:center}.head h2,.head h1{margin:3px}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #555;padding:7px;text-align:left}.details th{width:16%}.totals{margin-left:auto;width:54%}.totals th{width:70%}.grand{font-size:17px;font-weight:bold}.valid{margin-top:22px;font-weight:bold}.sign{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:38px;text-align:center}.sign span{border-top:1px solid #555;padding-top:7px}@media print{body{padding:0}}</style></head><body>'+printable(e)+'</body></html>';
 }
@@ -248,14 +255,14 @@ function printDocument(e,autoPrint=true){
   w.document.write(estimateDocumentHtml(e));
   w.document.close();w.focus();if(autoPrint)setTimeout(()=>w.print(),200);
 }
-function preview(id){const e=findEstimate(id);if(!e)return;openModal(nav('zukaitEstimate.openEditor(\''+esc(id)+'\')')+'<div style="background:#fff;padding:12px;border-radius:12px;overflow:auto">'+printable(e)+'</div>')}
+function preview(id){const e=currentOutputEstimate(id);if(!e)return;openModal(nav('zukaitEstimate.openEditor(\''+esc(id)+'\')')+'<div style="background:#fff;padding:12px;border-radius:12px;overflow:auto">'+printable(e)+'</div>')}
 function printEstimate(id){
-  const e=findEstimate(id);if(!e)return;
+  const e=currentOutputEstimate(id);if(!e)return;
   try{if(window.AndroidBridge&&typeof AndroidBridge.printHtml==='function'){AndroidBridge.printHtml(estimateDocumentHtml(e));return}}catch(_){}
   printDocument(e,true);
 }
 function pdfEstimate(id){
-  const e=findEstimate(id);if(!e)return;
+  const e=currentOutputEstimate(id);if(!e)return;
   try{if(window.AndroidBridge&&typeof AndroidBridge.shareHtmlAsPdf==='function'){AndroidBridge.shareHtmlAsPdf(estimateDocumentHtml(e),e.estimateNo+'.pdf');return}}catch(_){}
   alert('Choose “Save as PDF” in the print window.');printDocument(e,true);
 }
@@ -263,12 +270,12 @@ function shareText(e){
   const t=totals(e);return ['ZUKAIT INTERNATIONAL LLC','Repair Estimate '+e.estimateNo,'Date: '+(e.date||''),'Customer: '+(e.customerName||''),'Vehicle: '+[e.makeModel,e.year].filter(Boolean).join(' '),'Registration: '+(e.registration||''),'Type: '+e.type+(e.vatEnabled?' · VAT 5%':' · No VAT'),'Total: OMR '+money(t.total)].join('\n')
 }
 function whatsApp(id){
-  const e=findEstimate(id);if(!e)return;const url='https://wa.me/?text='+encodeURIComponent(shareText(e));
+  const e=currentOutputEstimate(id);if(!e)return;const url='https://wa.me/?text='+encodeURIComponent(shareText(e));
   try{if(window.AndroidBridge&&typeof AndroidBridge.openExternalUrl==='function'){AndroidBridge.openExternalUrl(url);return}}catch(_){}
   try{const w=window.open(url,'_blank');if(w)return}catch(_){}window.location.href=url;
 }
 async function shareEstimate(id){
-  const e=findEstimate(id);if(!e)return;const text=shareText(e);
+  const e=currentOutputEstimate(id);if(!e)return;const text=shareText(e);
   try{if(window.AndroidBridge&&typeof AndroidBridge.shareText==='function'){AndroidBridge.shareText('Estimate '+e.estimateNo,text);return}}catch(_){}
   try{if(navigator.share){await navigator.share({title:'Estimate '+e.estimateNo,text});return}}catch(x){if(x?.name==='AbortError')return}
   try{await navigator.clipboard.writeText(text);alert('Estimate summary copied for sharing.')}catch(_){alert('Share is unavailable on this device.')}
@@ -299,7 +306,7 @@ function wrapRender(name){
   const w=function(){const r=fn.apply(this,arguments);setTimeout(ensureDashboardCards,0);setTimeout(ensureDashboardCards,250);return r};w.__estimateWrapped=true;window[name]=w;
 }
 function boot(){ensureState();ensureStyle();wrapRender('renderSupervisor');wrapRender('renderManager');ensureDashboardCards()}
-window.zukaitEstimate={openHome,newEstimate,openEditor,setType,setVat,addRow,removeRow,recalc,saveCurrent,loadJob,openFind,renderFind,openRecent,openReports,preview,printEstimate,pdfEstimate,whatsApp,shareEstimate,ensureDashboardCards,totals,printable,estimateDocumentHtml,shareText};
+window.zukaitEstimate={openHome,newEstimate,openEditor,setType,setVat,addRow,removeRow,recalc,saveCurrent,loadJob,openFind,renderFind,openRecent,openReports,preview,printEstimate,pdfEstimate,whatsApp,shareEstimate,ensureDashboardCards,totals,printable,estimateDocumentHtml,shareText,currentOutputEstimate};
 window.openEstimateModule=openHome;
 document.addEventListener('DOMContentLoaded',boot);setTimeout(boot,0);setTimeout(boot,700);
 new MutationObserver(()=>{wrapRender('renderSupervisor');wrapRender('renderManager');ensureDashboardCards()}).observe(document.documentElement,{childList:true,subtree:true});
