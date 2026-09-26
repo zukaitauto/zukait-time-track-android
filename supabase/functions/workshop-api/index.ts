@@ -438,11 +438,15 @@ Deno.serve(async (req: Request) => {
       if (!["Manager","Supervisor"].includes(String(user.role || ""))) return reply({ok:false,code:"forbidden"},403);
       const jobCard=String(body?.job_card||"").trim().toUpperCase();
       if(!jobCard) return reply({ok:false,code:"job_card_required"},400);
+      const {data:workshop,error:workshopError}=await admin.from("workshop_state").select("data").eq("id","main").single();
+      if(workshopError) throw workshopError;
+      const existingJob=(Array.isArray(workshop?.data?.jobs)?workshop.data.jobs:[]).find((j:any)=>String(j?.no||"").trim().toUpperCase()===jobCard);
+      if(!existingJob) return reply({ok:false,code:"job_card_not_found"},404);
       const {data,error}=await admin.rpc("zukait_v2_allocate_spare_part_list",{p_job_card:jobCard,p_actor_id:String(user.id)});
       if(error){console.error("spare_part_allocator_failed",error);return reply({ok:false,code:"spare_part_allocator_unavailable"},503);}
       const row=Array.isArray(data)?data[0]:data;
       if(!row?.list_no) return reply({ok:false,code:"allocation_failed"},409);
-      return reply({ok:true,list:row,user});
+      return reply({ok:true,list:{...row,vehicle:existingJob.vehicle||existingJob.make||"",model:existingJob.model||"",year:existingJob.year||"",registration:existingJob.reg||existingJob.registration||""},user});
     }
 
     if (action === "v2_allocate_estimate_no") {
