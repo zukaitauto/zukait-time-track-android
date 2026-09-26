@@ -17,6 +17,7 @@ const state={
     id:'E1',estimateNo:'Zi-Qt001',date:'2026-09-26',type:'LS',vatEnabled:true,
     customerName:'Test Customer',mobile:'90000000',makeModel:'Toyota Camry',year:'2024',
     registration:'TEST1',vin:'VIN1',claimNo:'CL1',jobCard:'',
+    customerSuppliedParts:'Headlamp\\nBracket',notes:'Subject to inspection.',
     lsRows:[{id:'L1',description:'Repair',amount:100},{id:'L2',description:'Paint',amount:50}],
     labourRows:[],partRows:[],lsSpareParts:30,misc:20,createdBy:'SUP1'
   }],
@@ -131,7 +132,7 @@ assert.equal(pl.vat,15);
 assert.equal(pl.total,315);
 
 const printable=api.printable(state.estimates[0]);
-for(const text of ['ZUKAIT INTERNATIONAL LLC','REPAIR ESTIMATE','Zi-Qt001','Test Customer','Toyota Camry','VAT 5%','210.000']){
+for(const text of ['ZUKAIT INTERNATIONAL LLC','REPAIR ESTIMATE','Zi-Qt001','Test Customer','Toyota Camry','Tel No.','Frame / VIN No.','Description','R.O.','Bz.','Total Labour / Lumpsum','SPARE PARTS REQUIRED — TO BE SUPPLIED BY CUSTOMER','Headlamp<br>Bracket','NOTES / CONDITIONS','Subject to inspection.','ESTIMATE VALID FOR 15 DAYS.','VAT 5%','210.000']){
   assert.ok(printable.includes(text),'Printable estimate missing '+text);
 }
 
