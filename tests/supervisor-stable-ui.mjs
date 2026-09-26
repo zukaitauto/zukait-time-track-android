@@ -10,8 +10,14 @@ const stableTag=html.match(/<script src="supervisor_stable\.js\?v=\d+"><\/script
 assert.ok(html.indexOf(stableTag[0])>html.indexOf(v74[0]),'stable Supervisor authority must load after all legacy Supervisor decorators');
 
 assert.match(stable,/window\.renderSupervisor=renderStable/,'stable authority must own renderSupervisor');
-assert.match(stable,/window\.render=function\(\)\{if\(role\(\)==='Supervisor'\)return renderStable\(\);return typeof prior==='function'\?prior\.apply/,'Supervisor render must bypass legacy render chain while non-Supervisor roles retain it');
+assert.match(stable,/window\.render=function\(\)\{if\(role\(\)==='Supervisor'\)\{const r=renderStable\(\);bindStableActions\(\);return r\}return typeof prior==='function'\?prior\.apply/,'Supervisor render must bypass legacy render chain and bind final actions while non-Supervisor roles retain it');
 assert.doesNotMatch(stable,/MutationObserver/,'stable Supervisor authority must not use DOM observers');
+assert.match(stable,/v158OpenActiveWorkers/, 'stable Supervisor must own Active Workers click routing');
+assert.match(stable,/v158OpenAssignedJobs/, 'stable Supervisor must own Assigned Job Cards click routing');
+assert.match(stable,/v158OpenAdditionalTime/, 'stable Supervisor must own Additional Time click routing');
+assert.match(stable,/v158OpenIncentive/, 'stable Supervisor must own Incentive click routing');
+assert.match(stable,/technician already has an active assignment/i, 'existing Job Card assignment must reject duplicate active technician assignment');
+assert.match(stable,/Assignment service is unavailable/, 'existing Job Card assignment must fail closed when assignment authority is unavailable');
 assert.doesNotMatch(stable,/setTimeout\(apply/,'stable Supervisor authority must not use post-render layout decorators');
 
 assert.match(stable,/class="v143-two"/,'stable UI must use deterministic two-column rows');
