@@ -8,6 +8,7 @@ const bridgeCalls=[];
 const bridge={
   printHtml:html=>bridgeCalls.push(['print',html]),
   shareHtmlAsPdf:(html,name)=>bridgeCalls.push(['pdf',name,html]),
+  shareHtmlAsPdfWhatsApp:(html,name)=>bridgeCalls.push(['whatsapp-pdf',name,html]),
   openExternalUrl:url=>bridgeCalls.push(['url',url]),
   shareText:(title,text)=>bridgeCalls.push(['share',title,text])
 };
@@ -142,15 +143,15 @@ api.pdfEstimate('E1');
 assert.deepEqual(bridgeCalls[1].slice(0,2),['pdf','Zi-Qt001.pdf']);
 
 api.whatsApp('E1');
-assert.equal(bridgeCalls[2][0],'url');
-assert.match(bridgeCalls[2][1],/^https:\/\/wa\.me\/\?text=/);
+assert.deepEqual(bridgeCalls[2].slice(0,2),['whatsapp-pdf','Zi-Qt001.pdf']);
+assert.match(bridgeCalls[2][2],/REPAIR ESTIMATE/);
 
 await api.shareEstimate('E1');
 assert.equal(bridgeCalls[3][0],'share');
 assert.equal(bridgeCalls[3][1],'Estimate Zi-Qt001');
 assert.match(bridgeCalls[3][2],/Total: OMR 210\.000/);
 
-for(const required of ['public void openExternalUrl(String url)','public void shareText(String title, String text)','int pageCount = Math.max(1','for (int pageIndex = 0; pageIndex < pageCount; pageIndex++)']) {
+for(const required of ['public void shareHtmlAsPdfWhatsApp(String html, String filename)','whatsApp.setPackage("com.whatsapp")','whatsAppBusiness.setPackage("com.whatsapp.w4b")','public void openExternalUrl(String url)','public void shareText(String title, String text)','int pageCount = Math.max(1','for (int pageIndex = 0; pageIndex < pageCount; pageIndex++)']) {
   assert.ok(native.includes(required),'Android Estimate integration missing '+required);
 }
 console.log('V2 Estimate functional calculations + Android bridge: ok');
