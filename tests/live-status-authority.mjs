@@ -40,7 +40,9 @@ const windowObj={
     rows:[
       {employee_id:'EMP1',employee_name:'One',department:'Painter',status:'Working',job_no:'JC1',assignment_id:'A1',session_id:'S1',session_start:1000,suggested_minutes:60,vehicle:'Car',registration:'R1',overtime:false},
       {employee_id:'EMP2',employee_name:'Two',department:'Denter',status:'Paused',job_no:'JC2',assignment_id:'A2',session_id:'S2',session_start:900,suggested_minutes:45,vehicle:'SUV',registration:'R2',overtime:false},
-      {employee_id:'EMP3',employee_name:'Three',department:'Mechanic',status:'ID001',job_no:'ID001',assignment_id:'A3',session_id:'S3',session_start:800,suggested_minutes:0,vehicle:'',registration:'',overtime:false}
+      {employee_id:'EMP3',employee_name:'Three',department:'Mechanic',status:'ID001',job_no:'ID001',assignment_id:'A3',session_id:'S3',session_start:800,suggested_minutes:0,vehicle:'',registration:'',overtime:false},
+      {employee_id:'EMP4',employee_name:'Four',department:'Painter',status:'Overtime',job_no:'JC4',assignment_id:'A4',session_id:'S4',session_start:700,suggested_minutes:120,vehicle:'Sedan',registration:'R4',overtime:true},
+      {employee_id:'EMP5',employee_name:'Five',department:'Denter',status:'Available',job_no:null,assignment_id:null,session_id:null,session_start:null,suggested_minutes:0,vehicle:'',registration:'',overtime:false}
     ]
   },
   currentStaffStatuses:()=>[{emp:'LOCAL',status:'Available'}],
@@ -49,6 +51,12 @@ const windowObj={
   v79CurrentWorkerRows:()=>[],
   v756UniqueActiveWorkerRows:()=>[],
   v84TechState:()=>({session:null,status:'Available'}),
+  openModal:(html)=>{windowObj.lastModal=html;return html},
+  showSupervisorModal:(title,body)=>{windowObj.lastModal=title+' '+body;return windowObj.lastModal},
+  v65OpenControl:()=>{windowObj.legacyControl=true},
+  openGlanceList:()=>{windowObj.legacyGlance=true},
+  v74OT:()=>{windowObj.legacyOvertime=true},
+  v92OpenAvailableWorkers:()=>{windowObj.legacyAvailable=true},
   addEventListener:(name,fn)=>{listeners[name]=fn}
 };
 const documentObj={
@@ -70,12 +78,27 @@ vm.createContext(context);
 vm.runInContext(authority,context);
 
 const statuses=context.window.currentStaffStatuses();
-assert.equal(statuses.length,3);
+assert.equal(statuses.length,5);
 assert.equal(statuses.find(x=>x.emp==='EMP1').status,'Working');
 assert.equal(context.window.currentStaffStatus('EMP2').status,'Paused');
 const active=context.window.currentActiveWorkers();
-assert.deepEqual(active.map(x=>x.u.id).sort(),['EMP1','EMP3']);
+assert.deepEqual(active.map(x=>x.u.id).sort(),['EMP1','EMP3','EMP4']);
 assert.equal(context.window.v84TechState({id:'EMP3'}).status,'ID001');
+
+context.window.v65OpenControl('working');
+assert.match(context.window.lastModal,/One/); assert.match(context.window.lastModal,/Four/); assert.doesNotMatch(context.window.lastModal,/Two/);
+context.window.v65OpenControl('waiting');
+assert.match(context.window.lastModal,/Three/); assert.doesNotMatch(context.window.lastModal,/One/);
+context.window.openGlanceList('paused');
+assert.match(context.window.lastModal,/Two/); assert.doesNotMatch(context.window.lastModal,/Three/);
+context.window.v74OT();
+assert.match(context.window.lastModal,/Four/); assert.doesNotMatch(context.window.lastModal,/One/);
+context.window.v92OpenAvailableWorkers();
+assert.match(context.window.lastModal,/Five/); assert.doesNotMatch(context.window.lastModal,/Four/);
+assert.equal(windowObj.legacyControl,undefined,'server-live Working/ID001 popups must not call legacy local control');
+assert.equal(windowObj.legacyGlance,undefined,'server-live Paused popup must not call legacy local glance');
+assert.equal(windowObj.legacyOvertime,undefined,'server-live Overtime popup must not call legacy local overtime');
+assert.equal(windowObj.legacyAvailable,undefined,'server-live Available popup must not call legacy local available list');
 
 context.window.zukaitServerLive.fetchedAt=Date.now()-8000;
 assert.equal(context.window.currentStaffStatuses().length,0,'online stale server data must never fall back to local worker status');
