@@ -402,6 +402,9 @@ Deno.serve(async (req: Request) => {
       const entityId = String(event.entityId).trim();
       const eventType = String(event.type).trim();
       const callerRole=String(user?.role||"");
+      if (eventType==="JOB_CREATED" && !["Manager","Supervisor"].includes(callerRole)) {
+        return reply({ok:false,code:"job_create_forbidden"},403);
+      }
       if (callerRole==="Denter" && eventType.startsWith("SPARE_PART") && eventType!=="SPARE_PART_DENTER_NOTICE") {
         return reply({ok:false,code:"denter_spare_parts_read_only"},403);
       }
@@ -438,6 +441,7 @@ Deno.serve(async (req: Request) => {
       });
       if (error) {
         const message=String(error.message||"");
+        if (message.includes("stale_jobcard_revision")) return reply({ok:false,code:"job_card_exists"},409);
         if (message.includes("preliminary_session_already_linked")) return reply({ok:false,code:"preliminary_session_already_linked"},409);
         if (message.includes("preliminary_link_not_active")) return reply({ok:false,code:"preliminary_link_not_active"},409);
         if (message.includes("event_id_conflict")) return reply({ok:false,code:"event_id_conflict"},409);
