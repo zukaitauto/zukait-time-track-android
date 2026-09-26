@@ -75,6 +75,16 @@
     return body;
   }
 
+  async function v2PilotStatus(deviceId){
+    const r=await api({action:'v2_pilot_status',device_id:String(deviceId||'').trim()});
+    if(!r.ok){const e=new Error(r.code||'V2_PILOT_STATUS_FAILED');e.code=r.code||'V2_PILOT_STATUS_FAILED';throw e;}
+    return r;
+  }
+  async function v2PilotClaim(deviceId){
+    const r=await api({action:'v2_pilot_claim',device_id:String(deviceId||'').trim()});
+    if(!r.ok){const e=new Error(r.code||'V2_PILOT_CLAIM_FAILED');e.code=r.code||'V2_PILOT_CLAIM_FAILED';throw e;}
+    return r;
+  }
   async function v2AllocateSparePartList(jobCard){
     const r=await api({action:'v2_allocate_spare_part_list',job_card:String(jobCard||'').trim().toUpperCase()});
     if(!r.ok){const e=new Error(r.code||'V2_SPARE_LIST_ALLOCATE_FAILED');e.code=r.code||'V2_SPARE_LIST_ALLOCATE_FAILED';throw e;}
@@ -98,7 +108,7 @@
     }
     q.compact();return {synced,pending:q.pending().length};
   }
-  window.zukaitV2Transport={commitEvent:v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,flush:flushV2EventQueue};
+  window.zukaitV2Transport={commitEvent:v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,pilotStatus:v2PilotStatus,pilotClaim:v2PilotClaim,flush:flushV2EventQueue};
 
   async function v2EventPage({cursor=null,limit=100,filters={}}={}){
     const r=await api({action:'v2_event_history',before:cursor?.before||cursor||null,before_id:cursor?.before_id||null,limit:Math.max(1,Math.min(Number(limit)||100,500)),entity_id:filters.entityId||filters.entity_id||null,event_type:filters.eventType||filters.event_type||null});
@@ -623,7 +633,7 @@
     publishLiveStatus(false);
   });
   window.zukaitCloud={
-    init,pull,push,pullLiveStatus,stop,syncNow,backupNow,backupList,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,
+    init,pull,push,pullLiveStatus,stop,syncNow,backupNow,backupList,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,v2PilotStatus,v2PilotClaim,
     configured:()=>true,
     get revision(){return cloudRevision},
     get dirty(){return cloudDirty},
