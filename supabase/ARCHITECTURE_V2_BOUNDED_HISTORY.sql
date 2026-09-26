@@ -99,6 +99,9 @@ begin
      if nullif(trim(coalesce(p_payload->>'jobCard','')),'') is null or nullif(trim(coalesce(p_payload->>'partId',p_entity_id,'')),'') is null then raise exception 'invalid_spare_part_event'; end if;
      if p_event_type='SPARE_PART_STATUS_CHANGED' and (nullif(trim(coalesce(p_payload->>'from','')),'') is null or nullif(trim(coalesce(p_payload->>'to','')),'') is null) then raise exception 'invalid_spare_part_transition'; end if;
    end if;
+   if p_event_type in ('ID001_PRELIMINARY_LINKED','ID001_PRELIMINARY_REVERSED') then
+     perform public.zukait_v2_apply_preliminary_link_event(p_event_id,p_entity_id,p_event_type,p_actor_id,coalesce(p_payload,'{}'::jsonb));
+   end if;
    if p_event_type in ('PUBLIC_HOLIDAY_SET','PUBLIC_HOLIDAY_CLEARED') then
      perform public.zukait_v2_apply_calendar_event(p_event_id,p_entity_id,p_event_type,p_client_time,p_payload);
    end if;
