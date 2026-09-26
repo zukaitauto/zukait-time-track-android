@@ -112,6 +112,7 @@ function renderManager67(){
  controlCard('completed','Completed Today',c.completed,'teal')+
  controlCard('repeat','Repeat Work',c.repeat,'violet')+
  controlCard('waiting','Waiting / ID001',c.waiting,'gray')+
+ '<button type="button" class="v67-control v67-spare-parts" data-v2-manager-spare-parts="1" onclick="v150OpenManagerSpareParts()"><span>🚗⚙️ Spare Parts</span><b>›</b><small>Parts lists · tracking · reports</small><em>›</em></button>'+
  '</div></section>'+
  '<section class="v67-section"><div class="v67-section-title"><div><h3>Actual Worked Hours</h3><p>Productive technician man-hours</p></div></div><div class="v67-round-row">'+
  roundHour('day','TODAY','round-blue')+
@@ -142,7 +143,9 @@ const css=document.createElement('style');css.id='v67ManagerStyle';css.textConte
 `;document.head.appendChild(css);
 
 const prevRender=window.render;
-window.render=function(){prevRender();if(me?.role==='Manager')renderManager67()};
+window.render=function(){if(me?.role==='Manager')return renderManager67();const r=prevRender();return r};
+window.renderManager=renderManager67;
+window.zukaitManagerRendererAuthority='V67';
 if(me?.role==='Manager')renderManager67();
 window.v67UpdateCheckResult=function(latestCode,latestName,error){if(typeof window.v66UpdateCheckResult==='function')return window.v66UpdateCheckResult(latestCode,latestName,error);};
 window.v67Ready=true;
