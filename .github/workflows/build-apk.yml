@@ -129,6 +129,7 @@ jobs:
           node tests/v2-pause-finish-delayed-race.mjs
           node tests/v2-conflict-does-not-block-queue.mjs
           node tests/v2-id001-normal-job-device-race.mjs
+          node tests/v2-id001-preliminary-authority.mjs
           node tests/v2-id001-preliminary-link-authority.mjs
           node tests/v2-jobcard-projection.mjs
           node tests/v2-wip-completion-target.mjs
