@@ -143,8 +143,10 @@ const css=document.createElement('style');css.id='v67ManagerStyle';css.textConte
 `;document.head.appendChild(css);
 
 const prevRender=window.render;
-window.render=function(){prevRender();setTimeout(()=>{if(me?.role==='Manager')renderManager67()},0)};
-setTimeout(()=>{if(me?.role==='Manager')renderManager67()},80);
+window.render=function(){if(me?.role==='Manager')return renderManager67();const r=prevRender();return r};
+window.renderManager=renderManager67;
+window.zukaitManagerRendererAuthority='V67';
+if(me?.role==='Manager')renderManager67();
 window.v67UpdateCheckResult=function(latestCode,latestName,error){if(typeof window.v66UpdateCheckResult==='function')return window.v66UpdateCheckResult(latestCode,latestName,error);};
 window.v67Ready=true;
 })();
