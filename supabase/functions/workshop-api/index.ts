@@ -382,6 +382,17 @@ Deno.serve(async (req: Request) => {
       return reply({ok:true,list:row,user});
     }
 
+    if (action === "v2_allocate_estimate_no") {
+      if (!["Manager","Supervisor"].includes(String(user.role || ""))) return reply({ok:false,code:"forbidden"},403);
+      const clientKey=String(body?.client_key||"").trim();
+      if(!clientKey) return reply({ok:false,code:"client_key_required"},400);
+      const {data,error}=await admin.rpc("zukait_v2_allocate_estimate_no",{p_actor_id:String(user.id),p_client_key:clientKey});
+      if(error) throw error;
+      const row=Array.isArray(data)?data[0]:data;
+      if(!row?.estimate_no) return reply({ok:false,code:"allocation_failed"},409);
+      return reply({ok:true,estimate:row,user});
+    }
+
     if (action === "v2_commit_event") {
       const event = body?.event && typeof body.event === "object" ? body.event : null;
       if (!event || !String(event.eventId || "").trim() || !String(event.entityId || "").trim() || !String(event.type || "").trim()) {
