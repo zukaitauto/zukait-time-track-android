@@ -182,16 +182,22 @@ jobs:
           gh release view "$TAG" >/dev/null 2>&1 && gh release delete "$TAG" --yes --cleanup-tag || true
           git tag -f "$TAG" "${{ github.sha }}"
           git push origin "refs/tags/$TAG" --force
-          RELEASE_URL=$(gh release create "$TAG" ZUKAIT_TIME_TRACK_LATEST.apk \
-            --verify-tag \
-            --title "Zukait Time Track ${{ steps.approved.outputs.version_name }}" \
-            --notes "Approved signed production release ${{ steps.approved.outputs.version_name }}." \
-            --draft)
-          test -n "$RELEASE_URL" || { echo "Draft release URL was not returned"; exit 1; }
-          echo "release_url=$RELEASE_URL" >> "$GITHUB_OUTPUT"
-          sleep 5
-          RELEASE_ID=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/$TAG" --jq '.id')
+          RELEASE_JSON=$(gh api --method POST "repos/${GITHUB_REPOSITORY}/releases" \
+            -f tag_name="$TAG" \
+            -f target_commitish="${GITHUB_SHA}" \
+            -f name="Zukait Time Track ${{ steps.approved.outputs.version_name }}" \
+            -f body="Approved signed production release ${{ steps.approved.outputs.version_name }}." \
+            -F draft=true \
+            -F prerelease=false)
+          RELEASE_ID=$(printf '%s' "$RELEASE_JSON" | jq -r '.id // empty')
+          RELEASE_URL=$(printf '%s' "$RELEASE_JSON" | jq -r '.html_url // empty')
           test -n "$RELEASE_ID" || { echo "Draft release ID was not returned"; exit 1; }
+          test -n "$RELEASE_URL" || { echo "Draft release URL was not returned"; exit 1; }
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=ZUKAIT_TIME_TRACK_LATEST.apk" \
+            -H "Content-Type: application/vnd.android.package-archive" \
+            --input ZUKAIT_TIME_TRACK_LATEST.apk >/tmp/release-asset.json
+          test "$(jq -r '.name' /tmp/release-asset.json)" = "ZUKAIT_TIME_TRACK_LATEST.apk"
+          echo "release_url=$RELEASE_URL" >> "$GITHUB_OUTPUT"
           echo "release_id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
 
       - name: Publish matching update metadata
