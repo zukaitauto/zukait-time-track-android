@@ -26,7 +26,9 @@ function paintStatus(no){
 function data(no){
  const j=job(no);if(!j)return null;
  const rate=num(state.labourRate||2.5),aa=(state.assign||[]).filter(a=>a&&a.job===no&&!a.cancelled);
- const regular=aa.reduce((n,a)=>n+labourValue(a,rate),0);\n const preliminary=(state.sessions||[]).filter(s=>s&&String(s.preliminaryLinkedJob||'')===String(no)&&s.end).reduce((n,s)=>n+Math.max(0,(num(s.end)-num(s.start))/60000)/60*rate,0);\n const labour=Math.round((regular+preliminary)*1000)/1000;
+ const regular=aa.reduce((n,a)=>n+labourValue(a,rate),0);
+ const preliminary=(state.sessions||[]).filter(s=>s&&String(s.preliminaryLinkedJob||'')===String(no)&&s.end).reduce((n,s)=>n+Math.max(0,(num(s.end)-num(s.start))/60000)/60*rate,0);
+ const labour=Math.round((regular+preliminary)*1000)/1000;
  const c=state.consumables||{},materials=Math.round((c.actuals||[]).filter(x=>x&&!x.voided&&x.locked&&x.jobCard===no).reduce((n,x)=>n+num(x.totalCost),0)*1000)/1000;
  const paintRow=state.paintCosting&&state.paintCosting[no],paint=Math.round(num(paintRow?.netPaintCost??j.paintCost)*1000)/1000;
  const consumables=Math.round((materials+paint)*1000)/1000;
