@@ -89,6 +89,7 @@ jobs:
           node tests/id001-preliminary-labour.mjs
           node tests/id001-achieved-classification.mjs
           node tests/id001-preliminary-classification.mjs
+          node tests/id001-preliminary-end-to-end.mjs
           node tests/paint-safety.mjs
           node tests/vehicle-logo-assets.mjs
           node tests/native-update-integrity.mjs
