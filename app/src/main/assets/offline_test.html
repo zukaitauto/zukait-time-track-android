@@ -562,7 +562,7 @@ function exportManagerReport(type){let headers=[],rows=[],filename='zukait-repor
   function ensureOvertimeFlags(){
     let changed=false,t=now();
     state.sessions.forEach(s=>{
-      if(s.end||s.overtime||s.autoOvertime||s.start>=t)return;
+      if(s.end||s.job==='ID001'||s.overtime||s.autoOvertime||s.start>=t)return;
       let info=overtimeInfo(t);
       if(!info.isOvertime||s.start>=info.dutyEnd)return;
       s.end=info.dutyEnd;s.paused=true;s.autoPausedAt=info.dutyEnd;
@@ -865,7 +865,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     if(!me||me.role!=='Employee')return;
     let t=Date.now(),changed=false;
     (state.sessions||[]).forEach(s=>{
-      if(s.end||s.overtime||s.autoOvertime||s.start>=t)return;
+      if(s.end||s.job==='ID001'||s.overtime||s.autoOvertime||s.start>=t)return;
       let day=new Date(t),ds=new Date(day.getFullYear(),day.getMonth(),day.getDate()).getTime();
       if(day.getDay()===5)return;
       for(const boundary of [ds+13*3600000,ds+19*3600000]){
