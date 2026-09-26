@@ -26,7 +26,8 @@ const ctx={
   getElementById(){return null}
  },
  openManagerJobDetails(){},
- openSupervisorJob(){}
+ openSupervisorJob(){},
+ zukaitV2:{sparePartsMain:{reportRows:()=>[{jobCard:'JC1',amount:12.5},{jobCard:'OTHER',amount:99}]}}
 };
 ctx.window=ctx;vm.createContext(ctx);
 vm.runInContext(fs.readFileSync('app/src/main/assets/job_cost_summary_v128.js','utf8'),ctx);
@@ -34,7 +35,9 @@ const d=ctx.v128JobCostData('JC1');
 assert.equal(d.labour,2.5);
 assert.equal(d.materials,7.875);
 assert.equal(d.paint,3.25);
-assert.equal(d.total,13.625);
+assert.equal(d.consumables,11.125);
+assert.equal(d.parts,12.5);
+assert.equal(d.total,26.125);
 assert.equal(d.consumablesStatus,'Completed');
 assert.equal(d.paintStatus,'Received / Costed');
 
@@ -48,7 +51,8 @@ assert.equal(ctx.v128JobCostData('JC1').consumablesStatus,'Not Started');
 const src=fs.readFileSync('app/src/main/assets/job_cost_summary_v128.js','utf8');
 assert.match(src,/TOTAL JOB COST/);
 assert.match(src,/CONSUMABLES COST/);
-assert.match(src,/PAINT COST/);
+assert.match(src,/PARTS COST/);
+assert.match(src,/Parts \+ Consumables \+ Labour/);
 assert.match(src,/openManagerJobDetails/);
 assert.match(src,/openSupervisorJob/);
 console.log('V128 combined Job Cost and consumables/paint status tests passed');
