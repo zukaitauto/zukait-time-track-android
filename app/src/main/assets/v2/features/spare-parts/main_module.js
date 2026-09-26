@@ -6,7 +6,7 @@ function normalizeJobCard(v){return String(v||'').trim().toUpperCase()}
 function partKey(name,partNo=''){return [String(name||'').trim().toLowerCase().replace(/\s+/g,' '),String(partNo||'').trim().toUpperCase()].join('|')}
 function existingOpen(rows,jobCard){return rows.find(r=>normalizeJobCard(r.jobCard)===jobCard&&r.status!=='CLOSED')}
 function currentUser(){try{if(typeof me!=='undefined'&&me)return me}catch(_){}return window.me||window.currentUser||null}
-function role(){return String(currentUser()?.role||'')}
+function role(){const u=currentUser()||{},r=String(u.role||''),d=String(u.department||'');return r==='Employee'&&d==='Denter'?'Denter':r}
 function canOpen(){return ['Manager','Supervisor','Purchaser','Denter'].includes(role())}
 function canManage(){return ['Manager','Supervisor'].includes(role())}
 function canPurchase(){return ['Manager','Purchaser'].includes(role())}
