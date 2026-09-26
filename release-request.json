@@ -1,8 +1,8 @@
 {
-  "versionName": "V145",
-  "versionCode": 108,
+  "versionName": "V146",
+  "versionCode": 109,
   "approvedForStaff": true,
   "approvedAt": "2026-09-26",
-  "sourceCommit": "f6c5a365558f8ba541200d3437cba1c82464978c",
-  "publishNonce": "approved-v145-release-upload-endpoint-5"
+  "sourceCommit": "57cc34c3b671d5327d54c18d6914ee723ea5f998",
+  "publishNonce": "approved-v146-architecture-v2-pilot-20260926-1"
 }
