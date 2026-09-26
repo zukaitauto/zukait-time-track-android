@@ -374,84 +374,61 @@ public class MainActivity extends Activity {
                         @Override
                         public void onPageFinished(WebView view, String url) {
                             try {
-                                final PrintAttributes attrs = new PrintAttributes.Builder()
+                                PrintAttributes attrs = new PrintAttributes.Builder()
                                         .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
                                         .setResolution(new PrintAttributes.Resolution("pdf", "pdf", 300, 300))
                                         .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
                                         .setColorMode(PrintAttributes.COLOR_MODE_COLOR)
                                         .build();
-                                final PrintDocumentAdapter adapter = view.createPrintDocumentAdapter(finalName);
-                                final ParcelFileDescriptor destination = ParcelFileDescriptor.open(
-                                        pdfFile,
-                                        ParcelFileDescriptor.MODE_CREATE | ParcelFileDescriptor.MODE_TRUNCATE | ParcelFileDescriptor.MODE_READ_WRITE
-                                );
-                                final CancellationSignal layoutCancel = new CancellationSignal();
-                                adapter.onLayout(null, attrs, layoutCancel, new PrintDocumentAdapter.LayoutResultCallback() {
-                                    private void closeDestination() {
-                                        try { destination.close(); } catch (Exception ignored) {}
-                                    }
 
-                                    private void fail(String message) {
-                                        closeDestination();
-                                        try { pdfView.destroy(); } catch (Exception ignored) {}
-                                        android.util.Log.e("ZukaitPdf", message);
-                                        android.widget.Toast.makeText(MainActivity.this, "PDF sharing failed", android.widget.Toast.LENGTH_LONG).show();
-                                    }
+                                android.print.pdf.PrintedPdfDocument document =
+                                        new android.print.pdf.PrintedPdfDocument(MainActivity.this, attrs);
 
-                                    @Override
-                                    public void onLayoutFinished(android.print.PrintDocumentInfo info, boolean changed) {
-                                        adapter.onWrite(
-                                                new PageRange[]{PageRange.ALL_PAGES},
-                                                destination,
-                                                new CancellationSignal(),
-                                                new PrintDocumentAdapter.WriteResultCallback() {
-                                                    private void closeAndDestroy() {
-                                                        closeDestination();
-                                                        try { pdfView.destroy(); } catch (Exception ignored) {}
-                                                    }
+                                android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
+                                int viewWidth = Math.max(1080, dm.widthPixels);
+                                view.measure(
+                                        android.view.View.MeasureSpec.makeMeasureSpec(viewWidth, android.view.View.MeasureSpec.EXACTLY),
+                                        android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED));
+                                view.layout(0, 0, view.getMeasuredWidth(), Math.max(1, view.getMeasuredHeight()));
 
-                                                    @Override
-                                                    public void onWriteFinished(PageRange[] pages) {
-                                                        closeAndDestroy();
-                                                        try {
-                                                            Uri uri = FileProvider.getUriForFile(MainActivity.this,
-                                                                    getPackageName() + ".updateprovider", pdfFile);
-                                                            Intent share = new Intent(Intent.ACTION_SEND);
-                                                            share.setType("application/pdf");
-                                                            share.putExtra(Intent.EXTRA_STREAM, uri);
-                                                            share.putExtra(Intent.EXTRA_SUBJECT, finalName);
-                                                            share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                                                            startActivity(Intent.createChooser(share, "Share PDF"));
-                                                        } catch (Exception e) {
-                                                            android.util.Log.e("ZukaitPdf", "Unable to share generated PDF", e);
-                                                            android.widget.Toast.makeText(MainActivity.this, "PDF sharing failed", android.widget.Toast.LENGTH_LONG).show();
-                                                        }
-                                                    }
+                                android.graphics.pdf.PdfDocument.Page probe = document.startPage(0);
+                                int pageWidth = probe.getCanvas().getWidth();
+                                int pageHeight = probe.getCanvas().getHeight();
+                                document.finishPage(probe);
 
-                                                    @Override
-                                                    public void onWriteFailed(CharSequence error) {
-                                                        fail("PDF write failed: " + String.valueOf(error));
-                                                    }
+                                float scale = (float) pageWidth / (float) Math.max(1, view.getWidth());
+                                float pageHeightInView = pageHeight / Math.max(0.0001f, scale);
+                                int pageCount = Math.max(1, (int) Math.ceil(view.getHeight() / Math.max(1f, pageHeightInView)));
 
-                                                    @Override
-                                                    public void onWriteCancelled() {
-                                                        closeAndDestroy();
-                                                    }
-                                                }
-                                        );
-                                    }
+                                // Recreate the document so the probe page is not included in the final PDF.
+                                document.close();
+                                document = new android.print.pdf.PrintedPdfDocument(MainActivity.this, attrs);
 
-                                    @Override
-                                    public void onLayoutFailed(CharSequence error) {
-                                        fail("PDF layout failed: " + String.valueOf(error));
-                                    }
+                                for (int pageIndex = 0; pageIndex < pageCount; pageIndex++) {
+                                    android.graphics.pdf.PdfDocument.Page page = document.startPage(pageIndex);
+                                    android.graphics.Canvas canvas = page.getCanvas();
+                                    canvas.save();
+                                    canvas.scale(scale, scale);
+                                    canvas.translate(0f, -pageIndex * pageHeightInView);
+                                    view.draw(canvas);
+                                    canvas.restore();
+                                    document.finishPage(page);
+                                }
 
-                                    @Override
-                                    public void onLayoutCancelled() {
-                                        closeDestination();
-                                        try { pdfView.destroy(); } catch (Exception ignored) {}
-                                    }
-                                }, new Bundle());
+                                try (java.io.FileOutputStream out = new java.io.FileOutputStream(pdfFile)) {
+                                    document.writeTo(out);
+                                }
+                                document.close();
+                                try { pdfView.destroy(); } catch (Exception ignored) {}
+
+                                Uri uri = FileProvider.getUriForFile(MainActivity.this,
+                                        getPackageName() + ".updateprovider", pdfFile);
+                                Intent share = new Intent(Intent.ACTION_SEND);
+                                share.setType("application/pdf");
+                                share.putExtra(Intent.EXTRA_STREAM, uri);
+                                share.putExtra(Intent.EXTRA_SUBJECT, finalName);
+                                share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                startActivity(Intent.createChooser(share, "Share PDF"));
                             } catch (Exception e) {
                                 android.util.Log.e("ZukaitPdf", "Unable to create/share PDF", e);
                                 try { pdfView.destroy(); } catch (Exception ignored) {}
