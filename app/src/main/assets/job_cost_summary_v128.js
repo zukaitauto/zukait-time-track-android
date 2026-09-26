@@ -29,7 +29,10 @@ function data(no){
  const labour=Math.round(aa.reduce((n,a)=>n+labourValue(a,rate),0)*1000)/1000;
  const c=state.consumables||{},materials=Math.round((c.actuals||[]).filter(x=>x&&!x.voided&&x.locked&&x.jobCard===no).reduce((n,x)=>n+num(x.totalCost),0)*1000)/1000;
  const paintRow=state.paintCosting&&state.paintCosting[no],paint=Math.round(num(paintRow?.netPaintCost??j.paintCost)*1000)/1000;
- return {job:j,labour,materials,paint,total:Math.round((labour+materials+paint)*1000)/1000,consumablesStatus:consumablesStatus(no),paintStatus:paintStatus(no),rate};
+ const consumables=Math.round((materials+paint)*1000)/1000;
+ let parts=0;
+ try{const rows=window.zukaitV2?.sparePartsMain?.reportRows?.()||[];parts=Math.round(rows.filter(x=>String(x?.jobCard||'')===String(no)).reduce((n,x)=>n+num(x.amount),0)*1000)/1000}catch(_){}
+ return {job:j,labour,materials,paint,consumables,parts,total:Math.round((labour+consumables+parts)*1000)/1000,consumablesStatus:consumablesStatus(no),paintStatus:paintStatus(no),rate};
 }
 window.v128JobCostData=data;
 function pill(label,value,cls){return '<div class="v128-status '+(cls||'')+'"><small>'+esc(label)+'</small><b>'+esc(value)+'</b></div>'}
