@@ -1,8 +1,8 @@
 {
-  "versionName": "V148",
-  "versionCode": 111,
+  "versionName": "V149",
+  "versionCode": 112,
   "approvedForStaff": true,
   "approvedAt": "2026-09-26",
-  "sourceCommit": "f6aecfa315ffcd5da4a52d97ebc1346ecd6b34ad",
-  "publishNonce": "approved-v148-device-id-pilot-20260926-2"
+  "sourceCommit": "cc497930b2c8c18400f6715c9d73c94c1b3f5d41",
+  "publishNonce": "approved-v149-spare-ui-20260926-1"
 }
