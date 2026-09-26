@@ -2230,14 +2230,18 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v112OpenID001Quick=function(){
    let eligible=typeof window.v75IdealAvailableEmployees==='function'?window.v75IdealAvailableEmployees():(users||[]).filter(u=>u&&u.role==='Employee');
    let opts='<option value="" selected disabled>Select Technician</option>'+eligible.map(u=>'<option value="'+esc(u.id)+'">'+esc(u.name)+' · '+esc(u.department||'Technician')+'</option>').join('');
-   let body='<div class="v74-d v112-id001-dialog"><h2>◷ ID001 · IDEAL TIME</h2><div class="notice">Assign common Ideal Time quickly. Worked time is recorded automatically from START to STOP.</div><label>Assign Staff<br><select id="v112IdealEmp" class="tech-select">'+opts+'</select></label><label>Vehicle Registration (optional)<br><input id="v112IdealReg" maxlength="40" autocomplete="off" placeholder="e.g. 6295 AB"></label><label>Reason (optional)<br><input id="v112IdealReason" maxlength="240" placeholder="Inspection / dismantling / checking"></label><div class="v74-actions"><button class="secondary" onclick="closeModal()">CANCEL</button><button class="blue" onclick="v112AssignID001()">ASSIGN</button></div></div>';
+   let body='<div class="v74-d v112-id001-dialog"><h2>◷ ID001 · IDEAL TIME</h2><div class="notice">Assign common Ideal Time quickly. Worked time is recorded automatically from START to STOP.</div><label>Assign Staff<br><select id="v112IdealEmp" class="tech-select">'+opts+'</select></label><label>Vehicle Registration (optional)<br><input id="v112IdealReg" maxlength="40" autocomplete="off" placeholder="Leave blank for No Work" oninput="v112ID001VehicleFields()"></label><div id="v112IdealVehicleFields" class="hidden"><label>Vehicle Make / Model<br><input id="v112IdealVehicle" maxlength="120" placeholder="e.g. Toyota Land Cruiser"></label><label>Reason<br><input id="v112IdealReason" maxlength="240" placeholder="Inspection / dismantling / checking"></label></div><div class="v74-actions"><button class="secondary" onclick="closeModal()">CANCEL</button><button class="blue" onclick="v112AssignID001()">ASSIGN</button></div></div>';
    openModal(body);
  };
+ window.v112ID001VehicleFields=function(){const reg=String(document.getElementById('v112IdealReg')?.value||'').trim(),box=document.getElementById('v112IdealVehicleFields');if(box)box.classList.toggle('hidden',!reg)};
  window.v112AssignID001=function(){
    let emp=document.getElementById('v112IdealEmp')?.value||'';
    if(!emp)return typeof window.v74Msg==='function'?window.v74Msg('Select a technician.','ID001 Ideal Time'):alert('Select a technician.');
-   const reason=String(document.getElementById('v112IdealReason')?.value||'').trim().slice(0,240);
-   const assigned=window.assignJobCore(HOLD,emp,0,reason);
+   const reg=String(document.getElementById('v112IdealReg')?.value||'').trim().slice(0,40);
+   const vehicle=reg?String(document.getElementById('v112IdealVehicle')?.value||'').trim().slice(0,120):'';
+   const reason=reg?String(document.getElementById('v112IdealReason')?.value||'').trim().slice(0,240):'';
+   const assigned=window.assignJobCore(HOLD,emp,0,reason,reg,vehicle);
+   if(assigned&&assigned.job===HOLD){assigned.idealRegistration=reg;assigned.idealRegistrationKey=window.zukaitRegistration?.key?.(reg)||'';assigned.idealVehicle=vehicle;save()}
    if(assigned&&assigned.job===HOLD)try{closeModal()}catch(_){}
    return assigned;
  };
