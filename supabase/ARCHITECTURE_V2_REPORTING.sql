@@ -15,7 +15,8 @@ language sql stable security invoker set search_path=public as $$
   (q.report='REPEAT' and e.event_type like 'REPEAT%') or
   (q.report='ID001' and e.event_type like 'ID001%') or
   (q.report='OVERTIME' and e.event_type like 'OVERTIME%') or
-  (q.report in ('PARTS_DELAY','SPARE_PARTS') and (e.event_type like 'SPARE_PART%' or e.event_type='PARTS_DELAY')) or
+  (q.report='PARTS_DELAY' and (e.event_type like 'SPARE_PART%' or e.event_type='PARTS_DELAY')) or
+  (q.report='SPARE_PARTS' and e.event_type like 'SPARE_PART%') or
   (q.report='CONSUMABLES_VARIANCE' and e.event_type like 'CONSUMABLE%') or
   (q.report='JOB_COST' and (e.event_type like 'JOB%' or e.event_type like 'WORK%')) or
   (q.report in ('WIP','CYCLE_TIME','EFFICIENCY','COMPLETION_TARGET') and e.event_type like 'JOB%') or
