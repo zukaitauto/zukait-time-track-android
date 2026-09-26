@@ -1,8 +1,8 @@
 {
-  "versionName": "V163",
-  "versionCode": 126,
+  "versionName": "V164",
+  "versionCode": 127,
   "approvedForStaff": true,
   "approvedAt": "2026-09-26",
-  "sourceCommit": "765ad5f52e4c4d9b97dc2fd182048fab3ee15d71",
-  "publishNonce": "approved-v163-architecture-v2-parts-list-print-20260926"
+  "sourceCommit": "2e987c91ef8a71cc0f84740172fb5dfca98b9ccf",
+  "publishNonce": "approved-v164-architecture-v2-parts-list-ui-20260926"
 }
