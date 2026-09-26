@@ -31,7 +31,7 @@ function data(no){
  const paintRow=state.paintCosting&&state.paintCosting[no],paint=Math.round(num(paintRow?.netPaintCost??j.paintCost)*1000)/1000;
  const consumables=Math.round((materials+paint)*1000)/1000;
  let parts=0;
- try{const rows=window.zukaitV2?.sparePartsMain?.reportRows?.()||[],nonChargeable=new Set(['RETURNED','UNAVAILABLE','CANCELLED','VOIDED']);parts=Math.round(rows.filter(x=>String(x?.jobCard||'')===String(no)&&!nonChargeable.has(String(x?.status||'').toUpperCase())).reduce((n,x)=>n+num(x.amount),0)*1000)/1000}catch(_){}
+ try{const rows=window.zukaitV2?.sparePartsMain?.reportRows?.()||[],chargeable=new Set(['RECEIVED','SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED','CUSTOMER_SETTLEMENT']);parts=Math.round(rows.filter(x=>String(x?.jobCard||'')===String(no)&&chargeable.has(String(x?.status||'').toUpperCase())).reduce((n,x)=>n+num(x.amount),0)*1000)/1000}catch(_){}
  return {job:j,labour,materials,paint,consumables,parts,total:Math.round((labour+consumables+parts)*1000)/1000,consumablesStatus:consumablesStatus(no),paintStatus:paintStatus(no),rate,labourHours:rate>0?Math.round((labour/rate)*1000)/1000:0};
 }
 window.v128JobCostData=data;
