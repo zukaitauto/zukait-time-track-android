@@ -10,4 +10,14 @@ assert.match(hist,/exception when unique_violation[\s\S]*status<>'CLOSED'/,'conc
 assert.match(main,/q\?\.enqueue\?\.\(event\)/,'transient Spare Parts events must queue offline');
 assert.match(main,/function assignedToJob/);assert.match(main,/assignedToJob\(r\.jobCard,uid\)/,'Denter visibility must use canonical assignment rows');
 assert.match(main,/async function hydrateAuthoritativeLists/);assert.match(main,/hydrateFromServerRows/,'module must hydrate cross-device server data');
+assert.doesNotMatch(main,/\\\\nfunction canPurchase/,'Spare Parts main module must not contain literal escaped newlines between declarations');
+assert.match(main,/function roleActionButton/,'role-specific recommended actions must render in Parts Lists');
+assert.match(main,/serverRevision:nextRevision/,'status transitions must carry a deterministic revision');
+assert.match(main,/eventId:\['spare-status'/,'status event IDs must be deterministic for idempotency');
+assert.match(api,/spare_list_create_forbidden/,'API must enforce list-create role authority');
+assert.match(api,/spare_commercial_forbidden/,'API must enforce commercial role authority');
+assert.match(api,/spare_transition_forbidden/,'API must enforce status-transition role authority');
+const workflow=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/workflow.js','utf8');
+assert.match(workflow,/if\(to==='FITTED'\)return role==='Supervisor'\|\|role==='Manager'/,'Purchaser must not have fitting authority');
+assert.match(workflow,/if\(to==='CUSTOMER_SETTLEMENT'\)return role==='Supervisor'\|\|role==='Manager'/,'Purchaser must not have customer-settlement authority');
 console.log('V2 Spare Parts hardening guard passed');
