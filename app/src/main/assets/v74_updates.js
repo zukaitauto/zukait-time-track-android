@@ -251,7 +251,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 
  // Authoritative ID001 assignment creation. A technician can have only one open ID001 assignment.
  const oldAssign=window.assignJobCore;
- window.assignJobCore=function(no,emp,minutes){
+ window.assignJobCore=function(no,emp,minutes,reason){
    if(no!==H)return typeof oldAssign==='function'?oldAssign.apply(this,arguments):undefined;
    const m=0;
    const existing=openHold(emp);
@@ -259,7 +259,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const normalOpen=openNormal(emp),active=activeSession(emp);
    if(active||normalOpen.length){const n=safeUser(emp).name||emp;if(typeof v74Msg==='function')return v74Msg(n+' already has normal workshop work. ID001 is only for staff who currently have no job.','Ideal Time');return alert(n+' already has normal workshop work.');}
    state.assign=state.assign||[];
-   const a={id:uid(),job:H,emp:emp,suggested:m,completed:false,cancelled:false,rework:false,idealCard:true,idealSafeVersion:1,assignedBy:me&&me.id?me.id:'SYSTEM',assignedAt:now()};
+   const a={id:uid(),job:H,emp:emp,suggested:m,completed:false,cancelled:false,rework:false,idealCard:true,idealSafeVersion:1,idealReason:String(reason||'').trim().slice(0,240),assignedBy:me&&me.id?me.id:'SYSTEM',assignedAt:now()};
    state.assign.push(a);
    if(typeof setLastAction==='function')setLastAction('Assigned ID001 to '+(safeUser(emp).name||emp));
    save();render();return a;
@@ -2230,14 +2230,16 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v112OpenID001Quick=function(){
    let eligible=typeof window.v75IdealAvailableEmployees==='function'?window.v75IdealAvailableEmployees():(users||[]).filter(u=>u&&u.role==='Employee');
    let opts='<option value="" selected disabled>Select Technician</option>'+eligible.map(u=>'<option value="'+esc(u.id)+'">'+esc(u.name)+' · '+esc(u.department||'Technician')+'</option>').join('');
-   let body='<div class="v74-d v112-id001-dialog"><h2>◷ ID001 · IDEAL TIME</h2><div class="notice">Assign common Ideal Time quickly. Worked time is recorded automatically from START to STOP.</div><label>Assign Staff<br><select id="v112IdealEmp" class="tech-select">'+opts+'</select></label><div class="v74-actions"><button class="secondary" onclick="closeModal()">CANCEL</button><button class="blue" onclick="v112AssignID001()">ASSIGN</button></div></div>';
+   let body='<div class="v74-d v112-id001-dialog"><h2>◷ ID001 · IDEAL TIME</h2><div class="notice">Assign common Ideal Time quickly. Worked time is recorded automatically from START to STOP.</div><label>Assign Staff<br><select id="v112IdealEmp" class="tech-select">'+opts+'</select></label><label>Reason (optional)<br><input id="v112IdealReason" maxlength="240" placeholder="Type a short reason"></label><div class="v74-actions"><button class="secondary" onclick="closeModal()">CANCEL</button><button class="blue" onclick="v112AssignID001()">ASSIGN</button></div></div>';
    openModal(body);
  };
  window.v112AssignID001=function(){
    let emp=document.getElementById('v112IdealEmp')?.value||'';
    if(!emp)return typeof window.v74Msg==='function'?window.v74Msg('Select a technician.','ID001 Ideal Time'):alert('Select a technician.');
-   window.assignJobCore(HOLD,emp,0);
-   try{closeModal()}catch(_){}
+   const reason=String(document.getElementById('v112IdealReason')?.value||'').trim().slice(0,240);
+   const assigned=window.assignJobCore(HOLD,emp,0,reason);
+   if(assigned&&assigned.job===HOLD)try{closeModal()}catch(_){}
+   return assigned;
  };
  function apply(){
    if(!me||me.role!=='Supervisor')return;
@@ -2468,7 +2470,7 @@ window.v2TogglePilotThisDevice=function(){
    const emp=document.getElementById('v110ID001Emp')?.value||'',from=day(document.getElementById('v110ID001From')?.value,false),to=day(document.getElementById('v110ID001To')?.value,true);
    return (state.sessions||[]).filter(s=>s&&s.job===H&&(!emp||String(s.emp)===String(emp))&&(!from||(+s.start||0)>=from)&&(!to||(+s.start||0)<=to)).slice().sort((a,b)=>(+b.start||0)-(+a.start||0));
  }
- function body(rs){let total=0;const tr=rs.map(s=>{const en=+(s.end||Date.now()),mins=Math.max(0,(en-(+s.start||en))/60000);total+=mins;const u=usr(s.emp);return'<tr><td>'+esc(u.name)+'</td><td>'+esc(u.department||'—')+'</td><td>'+esc(s.start?new Date(+s.start).toLocaleDateString():'—')+'</td><td>'+esc(s.start?new Date(+s.start).toLocaleTimeString():'—')+'</td><td>'+esc(s.end?new Date(+s.end).toLocaleTimeString():'Running')+'</td><td><b>'+esc(fm(mins))+'</b></td></tr>'}).join('');return'<div class="v110-id001-total"><span>TOTAL ID001 TIME</span><b>'+esc(fm(total))+'</b></div><div class="v75s-history"><table><tr><th>Employee</th><th>Department</th><th>Date</th><th>Start</th><th>Stop</th><th>ID001 Time</th></tr>'+(tr||'<tr><td colspan="6">No ID001 usage found for this filter.</td></tr>')+'</table></div>'}
+ function body(rs){let total=0;const tr=rs.map(s=>{const en=+(s.end||Date.now()),mins=Math.max(0,(en-(+s.start||en))/60000);total+=mins;const u=usr(s.emp),assignment=(state.assign||[]).find(a=>a.id===s.assignmentId);return'<tr><td>'+esc(u.name)+'</td><td>'+esc(u.department||'—')+'</td><td>'+esc(s.start?new Date(+s.start).toLocaleDateString():'—')+'</td><td>'+esc(s.start?new Date(+s.start).toLocaleTimeString():'—')+'</td><td>'+esc(s.end?new Date(+s.end).toLocaleTimeString():'Running')+'</td><td><b>'+esc(fm(mins))+'</b></td><td>'+esc(assignment?.idealReason||'—')+'</td></tr>'}).join('');return'<div class="v110-id001-total"><span>TOTAL ID001 TIME</span><b>'+esc(fm(total))+'</b></div><div class="v75s-history"><table><tr><th>Employee</th><th>Department</th><th>Date</th><th>Start</th><th>Stop</th><th>ID001 Time</th><th>Reason</th></tr>'+(tr||'<tr><td colspan="7">No ID001 usage found for this filter.</td></tr>')+'</table></div>'}
  window.v110RefreshID001Report=function(){const out=document.getElementById('v110ID001Rows');if(out)out.innerHTML=body(rows())};
  window.v110PrintID001Report=function(){const rs=rows(),html='<html><head><title>ZUKAIT AUTO - ID001 Report</title><style>body{font-family:Arial;padding:24px}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #bbb;padding:7px;text-align:left}.v110-id001-total{font-size:18px;margin:12px 0}</style></head><body><h2>ZUKAIT AUTO</h2><h3>ID001 Ideal Time Report</h3>'+body(rs)+'</body></html>';if(typeof window.v110ReportActions==='function')return window.v110ReportActions(html,'Zukait_ID001_Report.pdf');if(window.AndroidBridge&&AndroidBridge.printHtml)return AndroidBridge.printHtml(html);const w=window.open('','_blank');if(!w)return alert('Allow pop-ups to print the ID001 report.');w.document.write(html);w.document.close();w.focus();setTimeout(()=>w.print(),250)};
  window.v110OpenID001Report=function(){if(!me||me.role!=='Supervisor')return;const staff=(users||[]).filter(u=>u&&u.role==='Employee').slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));openModal('<div class="section-title"><h2>◷ ID001 Report</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="v110-id001-filters"><label>Employee<br><select id="v110ID001Emp" onchange="v110RefreshID001Report()"><option value="">All Employees</option>'+staff.map(u=>'<option value="'+esc(u.id)+'">'+esc(u.name)+'</option>').join('')+'</select></label><label>From Date<br><input id="v110ID001From" type="date" onchange="v110RefreshID001Report()"></label><label>To Date<br><input id="v110ID001To" type="date" onchange="v110RefreshID001Report()"></label><button onclick="v110PrintID001Report()">🖨 PRINT / PDF</button></div><div id="v110ID001Rows">'+body((state.sessions||[]).filter(s=>s&&s.job===H).slice().sort((a,b)=>(+b.start||0)-(+a.start||0)))+'</div>')};
