@@ -65,5 +65,5 @@ assert.match(src,/openManagerJobDetails/);
 assert.match(src,/openSupervisorJob/);
 console.log('V128 combined Job Cost and consumables/paint status tests passed');
 
-assert.match(cost,/chargeable=new Set\(\['RECEIVED','SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED','CUSTOMER_SETTLEMENT'\]\)/,'actual Parts Cost must start only after physical receipt');
-assert.doesNotMatch(cost,/chargeable=new Set\([^\n]*'ORDERED'/,'ordered-not-received parts must not inflate actual Job Card cost');
+assert.match(src,/chargeable=new Set\(\['RECEIVED','SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED','CUSTOMER_SETTLEMENT'\]\)/,'actual Parts Cost must start only after physical receipt');
+assert.doesNotMatch(src,/chargeable=new Set\([^\n]*'ORDERED'/,'ordered-not-received parts must not inflate actual Job Card cost');
