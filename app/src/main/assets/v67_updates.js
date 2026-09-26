@@ -112,6 +112,7 @@ function renderManager67(){
  controlCard('completed','Completed Today',c.completed,'teal')+
  controlCard('repeat','Repeat Work',c.repeat,'violet')+
  controlCard('waiting','Waiting / ID001',c.waiting,'gray')+
+ '<button type="button" class="v67-control v67-spare-parts" data-v2-manager-spare-parts="1" onclick="v150OpenManagerSpareParts()"><span>🚗⚙️ Spare Parts</span><b>›</b><small>Parts lists · tracking · reports</small><em>›</em></button>'+
  '</div></section>'+
  '<section class="v67-section"><div class="v67-section-title"><div><h3>Actual Worked Hours</h3><p>Productive technician man-hours</p></div></div><div class="v67-round-row">'+
  roundHour('day','TODAY','round-blue')+
