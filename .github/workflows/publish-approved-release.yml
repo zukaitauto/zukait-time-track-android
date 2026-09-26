@@ -193,9 +193,15 @@ jobs:
           RELEASE_URL=$(printf '%s' "$RELEASE_JSON" | jq -r '.html_url // empty')
           test -n "$RELEASE_ID" || { echo "Draft release ID was not returned"; exit 1; }
           test -n "$RELEASE_URL" || { echo "Draft release URL was not returned"; exit 1; }
-          gh api --method POST "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=ZUKAIT_TIME_TRACK_LATEST.apk" \
+          UPLOAD_URL=$(printf '%s' "$RELEASE_JSON" | jq -r '.upload_url // empty' | sed 's/{?name,label}//')
+          test -n "$UPLOAD_URL" || { echo "Draft release upload URL was not returned"; exit 1; }
+          curl --fail-with-body --silent --show-error \
+            -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
             -H "Content-Type: application/vnd.android.package-archive" \
-            --input ZUKAIT_TIME_TRACK_LATEST.apk >/tmp/release-asset.json
+            --data-binary @ZUKAIT_TIME_TRACK_LATEST.apk \
+            "${UPLOAD_URL}?name=ZUKAIT_TIME_TRACK_LATEST.apk" >/tmp/release-asset.json
           test "$(jq -r '.name' /tmp/release-asset.json)" = "ZUKAIT_TIME_TRACK_LATEST.apk"
           echo "release_url=$RELEASE_URL" >> "$GITHUB_OUTPUT"
           echo "release_id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
