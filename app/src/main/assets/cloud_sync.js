@@ -228,6 +228,7 @@
     persistLocal();
   }
 
+  function same(a,b){return JSON.stringify(a)===JSON.stringify(b)}
   function clone(x){return JSON.parse(JSON.stringify(x))}
 
   function threeWayMerge(base,remote,local){
