@@ -232,7 +232,7 @@ function openReports(){
 }
 function splitMoney(v){v=Math.round(num(v)*1000);return {ro:Math.floor(v/1000),bz:String(v%1000).padStart(3,'0')}}
 function printable(e){
-  const t=totals(e),vat=e.vatEnabled?'<tr><th>VAT 5%</th><td colspan="2">'+money(t.vat)+'</td></tr>':'';
+  const t=totals(e);
   const customerParts=String(e.customerSuppliedParts||'').trim();
   const notes=String(e.notes||'').trim();
   let body='';
