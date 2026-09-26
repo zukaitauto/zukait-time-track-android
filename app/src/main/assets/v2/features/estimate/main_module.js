@@ -270,7 +270,9 @@ function shareText(e){
   const t=totals(e);return ['ZUKAIT INTERNATIONAL LLC','Repair Estimate '+e.estimateNo,'Date: '+(e.date||''),'Customer: '+(e.customerName||''),'Vehicle: '+[e.makeModel,e.year].filter(Boolean).join(' '),'Registration: '+(e.registration||''),'Type: '+e.type+(e.vatEnabled?' · VAT 5%':' · No VAT'),'Total: OMR '+money(t.total)].join('\n')
 }
 function whatsApp(id){
-  const e=currentOutputEstimate(id);if(!e)return;const url='https://wa.me/?text='+encodeURIComponent(shareText(e));
+  const e=currentOutputEstimate(id);if(!e)return;
+  try{if(window.AndroidBridge&&typeof AndroidBridge.shareHtmlAsPdfWhatsApp==='function'){AndroidBridge.shareHtmlAsPdfWhatsApp(estimateDocumentHtml(e),e.estimateNo+'.pdf');return}}catch(_){}
+  const url='https://wa.me/?text='+encodeURIComponent(shareText(e));
   try{if(window.AndroidBridge&&typeof AndroidBridge.openExternalUrl==='function'){AndroidBridge.openExternalUrl(url);return}}catch(_){}
   try{const w=window.open(url,'_blank');if(w)return}catch(_){}window.location.href=url;
 }
