@@ -53,6 +53,7 @@ window.v143ApplyVoiceEntry=function(text){
  const reg=take('registration|reg|plate').replace(/[^a-z0-9 -]/gi,'').toUpperCase();
  const yr=(raw.match(/\b(19\d{2}|20\d{2})\b/)||[])[1]||'';
  let vehicle=take('vehicle|make|model').replace(/\b(?:year|model)\s*(?:19\d{2}|20\d{2})\b/ig,'').trim();
+ const makePart=take('make'),modelPart=take('model');if(makePart&&modelPart&&!/^(?:19|20)\d{2}$/.test(modelPart))vehicle=makePart+' '+modelPart;
  if(!vehicle){const makes=['Mercedes Benz','Land Rover','Range Rover','Toyota','Lexus','Nissan','Infiniti','Hyundai','Genesis','Honda','Kia','BYD','Changan','Jetour','MG','Geely','Subaru','Jaguar','Audi','BMW','Porsche','Lincoln','GMC','Chrysler','Jeep','Dodge','Chevrolet','Isuzu','Volvo','Scania','MAN','Mitsubishi','Shacman','Volkswagen'];const make=makes.find(x=>new RegExp('\\b'+x.replace(/ /g,'\\s*')+'\\b','i').test(raw));if(make){const from=raw.toLowerCase().indexOf(make.toLowerCase());vehicle=raw.slice(from).split(/\b(?:registration|reg|plate|year|job\s*card|jc|technician|tech|time|allocated|19\d{2}|20\d{2})\b/i)[0].trim()}}
  const norm=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
  const q=norm(raw),tech=U().filter(u=>u&&u.role==='Employee').sort((x,y)=>String(y.name||'').length-String(x.name||'').length).find(u=>u.name&&q.includes(norm(u.name)));
