@@ -1908,7 +1908,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(activeSession(emp))return msg(n+' has an active running job. ID001 cannot be assigned.');
    if(openNormal(emp).some(a=>normalStatus(a)!=='Paused'))return msg(n+' has normal work available. ID001 is allowed only when normal work is paused and no other job is available.');
    state.assign=state.assign||[];
-   const a={id:uid(),job:H,emp,suggested:m,completed:false,cancelled:false,rework:false,idealCard:true,idealSafeVersion:SAFE,idealReason:String(reason||'').trim().slice(0,240),idealRegistration:String(registration||'').trim().slice(0,40),idealRegistrationKey:window.zukaitRegistration?.key?.(registration)||'',idealVehicle:String(vehicle||'').trim().slice(0,120),assignedBy:me?.id||'SYSTEM',assignedAt:t,pausedJobFallback:pausedOnly(emp)};
+   const a={id:uid(),job:H,emp,suggested:m,completed:false,cancelled:false,rework:false,idealCard:true,idealSafeVersion:SAFE,assignedBy:me?.id||'SYSTEM',assignedAt:t,pausedJobFallback:pausedOnly(emp)};
    state.assign.push(a);
    if(typeof setLastAction==='function')setLastAction('Assigned ID001 to '+n+' for '+fmt(m));
    save();render();return a;
@@ -2924,7 +2924,7 @@ window.v2TogglePilotThisDevice=function(){
    if(activeSession(emp))return msg(n+' has an active running job. ID001 cannot be assigned.','Assign ID001');
    if(openNormal(emp).some(a=>status(a)!=='Paused'))return msg(n+' has normal work available. ID001 is allowed only when there is no normal work, or all current normal work is Paused.','Assign ID001');
    state.assign=state.assign||[];
-   const a={id:uid(),job:H,emp,suggested:0,completed:false,cancelled:false,rework:false,idealCard:true,noSuggestedTime:true,countsAsNormalWorking:true,idealSafeVersion:SAFE,assignedBy:me?.id||'SYSTEM',assignedAt:t,pausedJobFallback:pausedOnly(emp)};
+   const a={id:uid(),job:H,emp,suggested:0,completed:false,cancelled:false,rework:false,idealCard:true,noSuggestedTime:true,countsAsNormalWorking:true,idealSafeVersion:SAFE,idealReason:String(reason||'').trim().slice(0,240),idealRegistration:String(registration||'').trim().slice(0,40),idealRegistrationKey:window.zukaitRegistration?.key?.(registration)||'',idealVehicle:String(vehicle||'').trim().slice(0,120),assignedBy:me?.id||'SYSTEM',assignedAt:t,pausedJobFallback:pausedOnly(emp)};
    state.assign.push(a);
    if(typeof setLastAction==='function')setLastAction('Assigned ID001 to '+n);
    save();render();return a;
