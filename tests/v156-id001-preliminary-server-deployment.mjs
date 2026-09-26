@@ -11,7 +11,7 @@ assert.match(migration,/for update/i,'preliminary link/reversal must lock the au
 assert.match(migration,/preliminary_session_already_linked/i,'duplicate link must be rejected');
 assert.match(migration,/preliminary_link_not_active/i,'stale reversal must be rejected');
 assert.match(migration,/preliminary_reversal_reason_required/i,'reversal reason must remain mandatory');
-assert.match(migration,/ID001_PRELIMINARY_LINKED','deployment migration must wire link event into commit authority');
+assert.match(migration,/ID001_PRELIMINARY_LINKED/,'deployment migration must wire link event into commit authority');
 assert.match(migration,/zukait_v2_apply_preliminary_link_event/,'commit authority must project preliminary events');
 
 assert.match(api,/eventType==="ID001_PRELIMINARY_LINKED".*\["Manager","Supervisor"\]/s,'server API must allow only Manager/Supervisor to link');
