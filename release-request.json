@@ -1,8 +1,8 @@
 {
-  "versionName": "V152",
-  "versionCode": 115,
+  "versionName": "V153",
+  "versionCode": 116,
   "approvedForStaff": true,
   "approvedAt": "2026-09-26",
-  "sourceCommit": "f13519c2849aaa666134375a23ce464260b996fd",
-  "publishNonce": "approved-v152-spare-parts-ui-20260926-1"
+  "sourceCommit": "45fe6621511d879213099bb7bd27c4d152a425d4",
+  "publishNonce": "approved-v153-purchaser-blank-fix-20260926-1"
 }
