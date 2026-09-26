@@ -4,8 +4,7 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const num=v=>Number.isFinite(Number(v))?Number(v):0;
 function job(no){return (state.jobs||[]).find(j=>j&&String(j.no)===String(no))||null}
 function assignmentActual(a){
- if(typeof totalForAssignment==='function')return num(totalForAssignment(a));
- const ss=(state.sessions||[]).filter(s=>s&&s.emp===a.emp&&s.job===a.job);
+ const ss=(state.sessions||[]).filter(s=>s&&s.emp===a.emp&&s.job===a.job&&!s.preliminaryLinkedJob);
  return ss.reduce((n,s)=>{const end=s.end||Date.now();return n+Math.max(0,(end-num(s.start))/60000)},0);
 }
 function labourValue(a,rate){
