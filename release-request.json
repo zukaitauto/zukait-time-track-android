@@ -1,8 +1,8 @@
 {
-  "versionName": "V162",
-  "versionCode": 125,
+  "versionName": "V163",
+  "versionCode": 126,
   "approvedForStaff": true,
   "approvedAt": "2026-09-26",
-  "sourceCommit": "395d7752e2d6d842ac9da20339508a9ac434974b",
-  "publishNonce": "approved-v162-architecture-v2-purchaser-flow-share-20260926"
+  "sourceCommit": "765ad5f52e4c4d9b97dc2fd182048fab3ee15d71",
+  "publishNonce": "approved-v163-architecture-v2-parts-list-print-20260926"
 }
