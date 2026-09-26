@@ -2153,7 +2153,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const now=new Date(),mf=new Date(now.getFullYear(),now.getMonth(),1).getTime(),mt=new Date(now.getFullYear(),now.getMonth()+1,1).getTime();
    const rows=(state.assign||[]).filter(a=>a&&!a.cancelled&&String(a.emp)===String(me.id)&&((a.assignedAt||a.completedAt||0)<mt)&&((a.completedAt||Date.now())>=mf)).map(a=>{
      const normal=typeof window.v107AssignmentNormal==='function'?window.v107AssignmentNormal(a,mf,mt):(typeof actual==='function'?actual(a):0);
-     const metric=typeof window.v107AchievementFor==='function'?window.v107AchievementFor(a,mf,mt):null;let achieved=metric?metric.achieved:(a.job==='ID001'?0:(a.completedAt?Math.max(0,Math.min(Math.max(0,+a.suggested||0),2*Math.max(0,+a.suggested||0)-normal)):Math.max(0,normal)));
+     const metric=typeof window.v107AchievementFor==='function'?window.v107AchievementFor(a,mf,mt):null;let achieved=metric?metric.achieved:(a.job==='ID001'?Math.max(0,normal):(a.completedAt?Math.max(0,Math.min(Math.max(0,+a.suggested||0),2*Math.max(0,+a.suggested||0)-normal)):Math.max(0,normal)));
      return {a,normal,achieved};
    }).filter(r=>r.achieved>0);
    const body='<div class="section-title"><h2>🏆 Achieved Hours</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
