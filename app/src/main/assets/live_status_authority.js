@@ -199,6 +199,7 @@
     if(me.role==='Supervisor'){
       const root=document.getElementById('supervisorView');
       setCount(root,'Active Workers',active);
+      setCount(root,'Working Now',working);
       setCount(root,'Paused Jobs',paused);
       setCount(root,'Available Workers',available);
       setCount(root,'Overtime Now',overtime);
