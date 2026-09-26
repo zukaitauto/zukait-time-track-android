@@ -152,6 +152,26 @@
     return typeof oldControl==='function'?oldControl.apply(this,arguments):undefined;
   };
 
+  window.v74OT=function(){
+    const rr=rows();
+    if(rr)return workerTable(rr.filter(r=>r.status==='Overtime'),'Overtime Now — Server Live');
+    if(serverRequired())return typeof window.v74Msg==='function'?window.v74Msg('Live worker status is syncing with the server. Please retry after the SERVER LIVE indicator returns.','Live Status'):alert('Live worker status is syncing with the server.');
+  };
+  window.v92OpenAvailableWorkers=function(){
+    const rr=rows();
+    if(rr)return workerTable(rr.filter(r=>r.status==='Available'),'Available Workers — Server Live');
+    if(serverRequired())return typeof window.v74Msg==='function'?window.v74Msg('Live worker status is syncing with the server. Please retry after the SERVER LIVE indicator returns.','Live Status'):alert('Live worker status is syncing with the server.');
+  };
+  const serverControl=window.v65OpenControl;
+  window.v65OpenControl=function(type){
+    const rr=rows();
+    if(rr&&type==='working')return workerTable(rr.filter(r=>r.status==='Working'||r.status==='Overtime'),'Working Now — Server Live');
+    if(rr&&type==='waiting')return workerTable(rr.filter(r=>r.status==='ID001'),'Waiting / ID001 — Server Live');
+    if(rr&&type==='paused')return workerTable(rr.filter(r=>r.status==='Paused'),'Paused — Server Live');
+    if(serverRequired()&&['working','waiting','paused'].includes(type))return typeof window.v74Msg==='function'?window.v74Msg('Live worker status is syncing with the server. Please retry after the SERVER LIVE indicator returns.','Live Status'):alert('Live worker status is syncing with the server.');
+    return typeof serverControl==='function'?serverControl.apply(this,arguments):undefined;
+  };
+
   function setCount(root,label,value){
     if(!root)return;
     const target=label.toLowerCase();
