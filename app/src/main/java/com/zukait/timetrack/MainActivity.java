@@ -129,7 +129,17 @@ public class MainActivity extends Activity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
-                return uri == null || !APP_HOST.equalsIgnoreCase(uri.getHost());
+                if (uri == null) return true;
+                if (APP_HOST.equalsIgnoreCase(uri.getHost())) return false;
+                try {
+                    String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase();
+                    if ("http".equals(scheme) || "https".equals(scheme) || "tel".equals(scheme) || "mailto".equals(scheme) || "whatsapp".equals(scheme)) {
+                        startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                    }
+                } catch (Exception e) {
+                    android.util.Log.w("ZukaitLink", "Unable to open external link", e);
+                }
+                return true;
             }
 
             @Override
@@ -137,7 +147,12 @@ public class MainActivity extends Activity {
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 try {
                     Uri uri = Uri.parse(url);
-                    return !APP_HOST.equalsIgnoreCase(uri.getHost());
+                    if (APP_HOST.equalsIgnoreCase(uri.getHost())) return false;
+                    String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase();
+                    if ("http".equals(scheme) || "https".equals(scheme) || "tel".equals(scheme) || "mailto".equals(scheme) || "whatsapp".equals(scheme)) {
+                        startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                    }
+                    return true;
                 } catch (Exception e) {
                     return true;
                 }
@@ -405,6 +420,40 @@ public class MainActivity extends Activity {
                 } catch (Exception e) {
                     android.util.Log.e("ZukaitPdf", "Unable to share PDF", e);
                     android.widget.Toast.makeText(MainActivity.this, "PDF sharing failed", android.widget.Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void openExternalUrl(String url) {
+            runOnUiThread(() -> {
+                try {
+                    Uri uri = Uri.parse(url == null ? "" : url.trim());
+                    String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase();
+                    if (!("http".equals(scheme) || "https".equals(scheme) || "tel".equals(scheme) || "mailto".equals(scheme) || "whatsapp".equals(scheme))) {
+                        android.widget.Toast.makeText(MainActivity.this, "Unsupported link", android.widget.Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                } catch (Exception e) {
+                    android.util.Log.e("ZukaitLink", "Unable to open link", e);
+                    android.widget.Toast.makeText(MainActivity.this, "Unable to open link", android.widget.Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void shareText(String title, String text) {
+            runOnUiThread(() -> {
+                try {
+                    Intent share = new Intent(Intent.ACTION_SEND);
+                    share.setType("text/plain");
+                    share.putExtra(Intent.EXTRA_SUBJECT, title == null ? "Zukait Time Track" : title);
+                    share.putExtra(Intent.EXTRA_TEXT, text == null ? "" : text);
+                    startActivity(Intent.createChooser(share, "Share"));
+                } catch (Exception e) {
+                    android.util.Log.e("ZukaitShare", "Unable to share text", e);
+                    android.widget.Toast.makeText(MainActivity.this, "Sharing failed", android.widget.Toast.LENGTH_LONG).show();
                 }
             });
         }
