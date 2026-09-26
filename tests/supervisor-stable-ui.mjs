@@ -55,4 +55,9 @@ assert.match(stable,/v92OpenAvailableWorkers\(\)/,'Available Workers popup must 
 assert.match(stable,/openConsumablesModule\(\)/,'Supervisor Consumables must open the real module');
 assert.match(stable,/v84OpenDept/,'Technician Board departments must remain clickable');
 
+assert.match(stable,/JOB_CREATED/,'Create without technician must use authoritative Job Card creation event');
+assert.match(stable,/zukaitV2Transport/,'Create without technician must use V2 transport');
+assert.match(stable,/v143OpenUnassignedJobs/,'Unassigned Job Cards must have a direct open handler');
+assert.match(stable,/bind\('\.v143-unassigned-action'/,'Unassigned Job Cards card must be explicitly click-bound');
+
 console.log('Stable Supervisor UI tests passed: single final renderer, no legacy layout chain, fixed two-column surface, working search handoff and preserved controls');
