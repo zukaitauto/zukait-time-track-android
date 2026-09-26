@@ -1,8 +1,8 @@
 {
-  "versionName": "V154",
-  "versionCode": 117,
+  "versionName": "V155",
+  "versionCode": 118,
   "approvedForStaff": true,
   "approvedAt": "2026-09-26",
-  "sourceCommit": "18ffce4dfdf622bfbad6afc3cd3a9067694791ba",
-  "publishNonce": "approved-v154-architecture-v2-test-release-20260926-2"
+  "sourceCommit": "30d36bec582904cdeeeba81e85912ca1234239db",
+  "publishNonce": "approved-v155-architecture-v2-eight-improvements-20260926"
 }
