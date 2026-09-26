@@ -357,6 +357,15 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void shareHtmlAsPdf(String html, String filename) {
+            shareHtmlAsPdfInternal(html, filename, false);
+        }
+
+        @JavascriptInterface
+        public void shareHtmlAsPdfWhatsApp(String html, String filename) {
+            shareHtmlAsPdfInternal(html, filename, true);
+        }
+
+        private void shareHtmlAsPdfInternal(String html, String filename, boolean whatsappOnly) {
             runOnUiThread(() -> {
                 try {
                     String safeName = (filename == null || filename.trim().isEmpty()) ? "Zukait_Report.pdf" : filename.trim();
@@ -400,7 +409,6 @@ public class MainActivity extends Activity {
                                 float pageHeightInView = pageHeight / Math.max(0.0001f, scale);
                                 int pageCount = Math.max(1, (int) Math.ceil(view.getHeight() / Math.max(1f, pageHeightInView)));
 
-                                // Recreate the document so the probe page is not included in the final PDF.
                                 document.close();
                                 document = new android.print.pdf.PrintedPdfDocument(MainActivity.this, attrs);
 
@@ -428,7 +436,23 @@ public class MainActivity extends Activity {
                                 share.putExtra(Intent.EXTRA_STREAM, uri);
                                 share.putExtra(Intent.EXTRA_SUBJECT, finalName);
                                 share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                                startActivity(Intent.createChooser(share, "Share PDF"));
+
+                                if (whatsappOnly) {
+                                    Intent whatsApp = new Intent(share);
+                                    whatsApp.setPackage("com.whatsapp");
+                                    if (whatsApp.resolveActivity(getPackageManager()) != null) {
+                                        startActivity(whatsApp);
+                                        return;
+                                    }
+                                    Intent whatsAppBusiness = new Intent(share);
+                                    whatsAppBusiness.setPackage("com.whatsapp.w4b");
+                                    if (whatsAppBusiness.resolveActivity(getPackageManager()) != null) {
+                                        startActivity(whatsAppBusiness);
+                                        return;
+                                    }
+                                    android.widget.Toast.makeText(MainActivity.this, "WhatsApp not found. Choose an app to share the PDF.", android.widget.Toast.LENGTH_LONG).show();
+                                }
+                                startActivity(Intent.createChooser(share, whatsappOnly ? "Share Estimate PDF" : "Share PDF"));
                             } catch (Exception e) {
                                 android.util.Log.e("ZukaitPdf", "Unable to create/share PDF", e);
                                 try { pdfView.destroy(); } catch (Exception ignored) {}
