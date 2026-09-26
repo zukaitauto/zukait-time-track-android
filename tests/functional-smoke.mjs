@@ -237,7 +237,7 @@ assert.match(updates,/window\.v121ManagerMonthSummary/,'Manager monthly summary 
 assert.match(updates,/monthlyNormalActualMinutes/,'Manager actual hours must use normal-duty actual time authority');
 assert.match(updates,/monthlySuggestedMinutes/,'Manager suggested hours must use the final monthly suggested authority');
 assert.match(updates,/if\(me\?\.role==='Manager'\)return window\.openManagerIncentiveList\(\)/,'Manager incentive click must route to the final V107-compatible report');
-assert.match(updates,/Overtime and ID001 are excluded from achieved\/incentive hours/,'Manager incentive explanation must match final incentive rules');
+assert.match(updates,/ID001 duty-time is included in Achieved but excluded from productive efficiency and JC labour cost; overtime is excluded/,'Manager incentive explanation must match final ID001 achieved rule');
 
 assert.match(updates,/V122 MANAGER FINAL DOM \/ COUNTER AUTHORITY/,'Manager final DOM/counter authority must be present');
 assert.match(updates,/v120FinishedJobs\('true'\)|v120FinishedJobs\(true\)/,'Manager completed counter must use unique completed Job Cards');
