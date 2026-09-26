@@ -1585,20 +1585,31 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 <script src="v2/features/spare-parts/workflow.js?v=1"></script>
 <script>
 (function(){
+  function sparePartsSummaryText(){
+    try{
+      const s=window.zukaitV2?.sparePartsMain?.managerDashboardSummary?.();
+      if(!s)return 'Parts lists · tracking · reports';
+      return 'Attention '+s.attention+' · Waiting '+s.waiting+' · Delivered pending '+s.deliveredPending+' · Month '+Number(s.monthSpend||0).toFixed(3)+' OMR';
+    }catch(_){return 'Parts lists · tracking · reports'}
+  }
   function ensureManagerSparePartsCard(){
     if(!window.me || window.me.role!=='Manager') return;
     const root=document.getElementById('managerView');
     if(!root) return;
-    const existing=[...root.querySelectorAll('[data-v2-manager-spare-parts],button')].filter(x=>
-      x.hasAttribute('data-v2-manager-spare-parts') || /SPARE\s*PARTS/i.test(x.textContent||''));
-    if(existing.length){existing.slice(1).forEach(x=>x.remove());return;}
+    const existing=[...root.querySelectorAll('[data-v2-manager-spare-parts="1"]')];
+    const detail=sparePartsSummaryText();
+    if(existing.length){
+      existing.slice(1).forEach(x=>x.remove());
+      const small=existing[0].querySelector('small'); if(small)small.textContent=detail;
+      return;
+    }
     const grid=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid')||root.querySelector('.manager-actions');
     if(!grid) return;
     const b=document.createElement('button');
     b.type='button';
     b.className=grid.matches('.v67-control-grid,.v66-control-grid,.v65-control-grid')?'v67-feature v2-manager-spare-parts':'manager-action manager-blue';
     b.setAttribute('data-v2-manager-spare-parts','1');
-    b.innerHTML='<div><span>🚗⚙️ SPARE PARTS</span><b>›</b><small>Parts lists · tracking · reports</small></div>';
+    b.innerHTML='<div><span>🚗⚙️ SPARE PARTS</span><b>›</b><small>'+detail+'</small></div>';
     b.onclick=()=>{if(typeof window.openSparePartsModule==='function')window.openSparePartsModule();else alert('Spare Parts module is loading. Please try again.');};
     const children=[...grid.children].filter(x=>x.nodeType===1);
     const fifthRowStart=8;
@@ -1608,12 +1619,12 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
   const wrap=()=>{
     if(typeof window.renderManager!=='function'||window.renderManager.__v2SparePartsWrapped)return;
     const prior=window.renderManager;
-    const wrapped=function(){const r=prior.apply(this,arguments);ensureManagerSparePartsCard();return r;};
+    const wrapped=function(){const r=prior.apply(this,arguments);ensureManagerSparePartsCard();setTimeout(ensureManagerSparePartsCard,300);return r;};
     wrapped.__v2SparePartsWrapped=true;
     window.renderManager=wrapped;
   };
   wrap();
-  document.addEventListener('DOMContentLoaded',()=>{wrap();ensureManagerSparePartsCard();});
+  document.addEventListener('DOMContentLoaded',()=>{wrap();ensureManagerSparePartsCard();setTimeout(ensureManagerSparePartsCard,500);setTimeout(ensureManagerSparePartsCard,1500);});
   new MutationObserver(()=>{wrap();ensureManagerSparePartsCard();}).observe(document.documentElement,{childList:true,subtree:true});
 })();
 </script>
