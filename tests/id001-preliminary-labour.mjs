@@ -4,7 +4,7 @@ const state={labourRate:2.5,jobs:[{no:'JC100'}],assign:[{id:'A1',job:'JC100',emp
  {id:'N1',assignmentId:'A1',job:'JC100',emp:'E1',start:0,end:3600000},
  {id:'P1',assignmentId:'I1',job:'JC100',emp:'E1',start:0,end:1800000,preliminarySourceJob:'ID001',preliminaryLinkedJob:'JC100'}
 ],consumables:{actuals:[],issues:[]},paintPurchasing:{orders:[]}};
-const ctx={window:{},state,Date,console,setTimeout(){},document:{querySelector(){return null},getElementById(){return null}},MutationObserver:class{observe(){}}};
+const ctx={window:{},state,Date,console,setTimeout(){},document:{querySelector(){return null},getElementById(){return null},createElement(){return {style:{},appendChild(){},setAttribute(){}}},head:{appendChild(){}}},MutationObserver:class{observe(){}}};
 vm.createContext(ctx);vm.runInContext(src,ctx);
 let d=ctx.window.v128JobCostData('JC100');
 assert.equal(d.labourHours,1.5,'normal 1h + preliminary 0.5h must count once');
