@@ -561,27 +561,16 @@ function exportManagerReport(type){let headers=[],rows=[],filename='zukait-repor
 
   function ensureOvertimeFlags(){
     let changed=false,t=now();
-    state.sessions.slice().forEach(s=>{
-      if(s.end)return;
+    state.sessions.forEach(s=>{
+      if(s.end||s.overtime||s.autoOvertime||s.start>=t)return;
       let info=overtimeInfo(t);
-      if(!info.isOvertime)return;
-      if(!s.overtimeStartedAt){
-        let split=info.overtimeStart;
-        if(split<=s.start) split=s.start;
-        // Automatically split the session at the end of the 5-minute grace period.
-        // The original productive session is closed; a separate overtime session
-        // continues so overtime is visible but never counted for incentive/efficiency.
-        if(split>s.start){
-          s.end=split;
-          s.autoPausedAt=split;
-          s.autoPauseReason='Automatic duty-time split at the exact duty boundary';
-          let a=state.assign.find(v=>v.id===s.assignmentId)||state.assign.find(v=>v.job===s.job&&v.emp===s.emp&&!v.cancelled);
-          state.sessions.push({id:uid(),job:s.job,emp:s.emp,assignmentId:a?.id,start:split,end:null,paused:false,overtime:true,overtimeStartedAt:split,autoOvertime:true,rework:s.rework===true});
-        }else{
-          s.overtimeStartedAt=split;s.overtime=true;s.autoOvertime=true;
-        }
-        changed=true;
-      }
+      if(!info.isOvertime||s.start>=info.dutyEnd)return;
+      // Duty end pauses the existing session. Overtime requires a deliberate Start.
+      s.end=info.dutyEnd;
+      s.paused=true;
+      s.autoPausedAt=info.dutyEnd;
+      s.autoPauseReason='Duty ended; employee must explicitly restart to work overtime';
+      changed=true;
     });
     if(changed)save();
   }
@@ -879,21 +868,19 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
   window.v28AutoDutySplit=function(){
     if(!me||me.role!=='Employee')return;
     let t=Date.now(),changed=false;
-    (state.sessions||[]).slice().forEach(s=>{
-      if(s.end)return;
-      let d=new Date(t),ds=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();
-      if(d.getDay()===5)return;
-      let points=[ds+13*3600000,ds+19*3600000];
-      for(const split of points){
-        if(s.start<split && t>=split && !s.autoDutySplit){
-          s.end=split;s.autoDutySplit=true;s.autoPauseReason='Automatic pause/split at the exact duty boundary';
-          let a=(state.assign||[]).find(v=>v.id===s.assignmentId)||assignment(s.job,s.emp);
-          state.sessions.push({id:uid(),job:s.job,emp:s.emp,assignmentId:a?.id,start:split,end:null,paused:false,overtime:true,overtimeStartedAt:split,autoOvertime:true,rework:s.rework===true});
+    (state.sessions||[]).forEach(s=>{
+      if(s.end||s.overtime||s.autoOvertime||s.start>=t)return;
+      let day=new Date(t),ds=new Date(day.getFullYear(),day.getMonth(),day.getDate()).getTime();
+      if(day.getDay()===5)return;
+      for(const boundary of [ds+13*3600000,ds+19*3600000]){
+        if(s.start<boundary&&t>=boundary){
+          s.end=boundary;s.paused=true;s.autoPausedAt=boundary;
+          s.autoPauseReason='Duty ended; employee must explicitly restart to work overtime';
           changed=true;break;
         }
       }
     });
-    if(changed){save(); if(typeof setLastAction==='function')setLastAction('Duty-time reached — work moved to OVERTIME at the exact duty boundary'); render();}
+    if(changed){save();if(typeof setLastAction==='function')setLastAction('Duty ended — work paused');render();}
   };
   // Make the Employee monthly section easier to read and calculate efficiency correctly.
   window.monthlyEmployeeSummary=function(){
