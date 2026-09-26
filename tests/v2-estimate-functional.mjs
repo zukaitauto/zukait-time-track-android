@@ -132,9 +132,11 @@ assert.equal(pl.vat,15);
 assert.equal(pl.total,315);
 
 const printable=api.printable(state.estimates[0]);
-for(const text of ['ZUKAIT INTERNATIONAL LLC','REPAIR ESTIMATE','Zi-Qt001','Test Customer','Toyota Camry','Tel No.','Frame / VIN No.','Description','R.O.','Bz.','Total Labour / Lumpsum','SPARE PARTS REQUIRED — TO BE SUPPLIED BY CUSTOMER','Headlamp<br>Bracket','NOTES / CONDITIONS','Subject to inspection.','ESTIMATE VALID FOR 15 DAYS.','VAT 5%','210.000']){
+for(const text of ['ZUKAIT INTERNATIONAL LLC','REPAIR ESTIMATE','Zi-Qt001','Test Customer','Toyota Camry','Tel No.','Frame / VIN No.','Description','R.O.','Bz.','Total Labour / Lumpsum','SPARE PARTS REQUIRED — TO BE SUPPLIED BY CUSTOMER','Headlamp<br>Bracket','NOTES / CONDITIONS','Subject to inspection.','ESTIMATE VALID FOR 15 DAYS.','VAT 5%']){
   assert.ok(printable.includes(text),'Printable estimate missing '+text);
 }
+assert.ok(printable.includes('<tr class="grand summary-row"><th>TOTAL</th><td class="money-cell">210</td><td class="money-cell">000</td></tr>'),'LS total must print in R.O. / Bz. columns');
+assert.ok(printable.includes('<tr class="summary-row"><th>VAT 5%</th><td class="money-cell">10</td><td class="money-cell">000</td></tr>'),'LS VAT must print in R.O. / Bz. columns');
 
 api.printEstimate('E1');
 assert.equal(bridgeCalls[0][0],'print');
