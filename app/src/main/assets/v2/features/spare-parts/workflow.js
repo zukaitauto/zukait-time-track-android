@@ -17,8 +17,10 @@ function canAct(role,from,to){
  if(to==='SUPERVISOR_VERIFIED')return role==='Supervisor'||role==='Manager';
  if(to==='DENTER_CHECKED')return false;
  if(to==='SUPERVISOR_CONFIRMED')return role==='Supervisor'||role==='Manager';
- if(['FITTED','RETURNED'].includes(to))return ['Supervisor','Purchaser','Manager'].includes(role);
- if(['UNAVAILABLE','CUSTOMER_SETTLEMENT'].includes(to))return ['Supervisor','Purchaser','Manager'].includes(role);
+ if(to==='FITTED')return role==='Supervisor'||role==='Manager';
+ if(to==='RETURNED')return ['Supervisor','Purchaser','Manager'].includes(role);
+ if(to==='UNAVAILABLE')return ['Supervisor','Purchaser','Manager'].includes(role);
+ if(to==='CUSTOMER_SETTLEMENT')return role==='Supervisor'||role==='Manager';
  return role==='Supervisor'||role==='Manager';
 }
 function sanitize(item,role){
