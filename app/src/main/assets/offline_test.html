@@ -1583,6 +1583,39 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 <script src="v2/core/data_paths.js?v=1"></script>
 <script src="v2/features/jobcards/workflow.js?v=1"></script>
 <script src="v2/features/spare-parts/workflow.js?v=1"></script>
+<script>
+(function(){
+  function ensureManagerSparePartsCard(){
+    if(!window.me || window.me.role!=='Manager') return;
+    const root=document.getElementById('managerView');
+    if(!root) return;
+    const existing=[...root.querySelectorAll('[data-v2-manager-spare-parts],button')].filter(x=>
+      x.hasAttribute('data-v2-manager-spare-parts') || /SPARE\s*PARTS/i.test(x.textContent||''));
+    if(existing.length){existing.slice(1).forEach(x=>x.remove());return;}
+    const actions=root.querySelector('.manager-actions');
+    if(!actions) return;
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='manager-action manager-blue';
+    b.setAttribute('data-v2-manager-spare-parts','1');
+    b.innerHTML='🚗⚙️<br>SPARE PARTS';
+    b.onclick=()=>{if(typeof window.openSparePartsModule==='function')window.openSparePartsModule();else alert('Spare Parts module is loading. Please try again.');};
+    actions.appendChild(b);
+  }
+  window.ensureManagerSparePartsCard=ensureManagerSparePartsCard;
+  const wrap=()=>{
+    if(typeof window.renderManager!=='function'||window.renderManager.__v2SparePartsWrapped)return;
+    const prior=window.renderManager;
+    const wrapped=function(){const r=prior.apply(this,arguments);ensureManagerSparePartsCard();return r;};
+    wrapped.__v2SparePartsWrapped=true;
+    window.renderManager=wrapped;
+  };
+  wrap();
+  document.addEventListener('DOMContentLoaded',()=>{wrap();ensureManagerSparePartsCard();});
+  new MutationObserver(()=>{wrap();ensureManagerSparePartsCard();}).observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+
 <script src="v2/features/spare-parts/main_module.js?v=1"></script>
 <script src="v2/features/notifications/rules.js?v=1"></script>
 <script src="v2/features/reports/service.js?v=1"></script>
