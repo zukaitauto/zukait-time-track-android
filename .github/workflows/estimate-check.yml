@@ -1,0 +1,58 @@
+name: Estimate Module Check
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ architecture-v2 ]
+    paths:
+      - 'app/src/main/assets/v2/features/estimate/**'
+      - 'app/src/main/assets/cloud_sync.js'
+      - 'app/src/main/java/com/zukait/timetrack/MainActivity.java'
+      - 'app/src/main/AndroidManifest.xml'
+      - 'tests/v2-estimate-*.mjs'
+      - 'supabase/V148_ESTIMATE_NUMBERING.sql'
+      - 'supabase/functions/workshop-api/index.ts'
+      - '.github/workflows/estimate-check.yml'
+
+jobs:
+  estimate:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      ANDROID_HOME: /usr/local/lib/android/sdk
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Validate Estimate JavaScript
+        run: |
+          node --check app/src/main/assets/v2/features/estimate/main_module.js
+          node --check app/src/main/assets/cloud_sync.js
+
+      - name: Run Estimate tests
+        run: |
+          node tests/v2-estimate-smoke.mjs
+          node tests/v2-estimate-functional.mjs
+          node tests/v2-estimate-shared-sync.mjs
+
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          SDKMANAGER=$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | head -n 1)
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Compile Android app
+        run: gradle assembleRelease --stacktrace
