@@ -1,8 +1,8 @@
 {
-  "versionName": "V158",
-  "versionCode": 121,
+  "versionName": "V159",
+  "versionCode": 122,
   "approvedForStaff": true,
   "approvedAt": "2026-09-26",
-  "sourceCommit": "49881594bed1d5cd3d60e5cdc4d57f9f172cdd26",
-  "publishNonce": "approved-v158-architecture-v2-id001-no-card-20260926"
+  "sourceCommit": "033e930fc495d0e08601d6e1fe61ac077e62e51f",
+  "publishNonce": "approved-v159-architecture-v2-id001-duty-end-20260926"
 }
