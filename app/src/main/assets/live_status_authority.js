@@ -52,6 +52,9 @@
   const oldTechState=window.v84TechState;
   const oldOpenActive=window.openActiveWorkers;
   const oldControl=window.v65OpenControl;
+  const oldOpenGlance=window.openGlanceList;
+  const oldOvertime=window.v74OT;
+  const oldAvailable=window.v92OpenAvailableWorkers;
 
   window.currentStaffStatus=function(emp){
     const rr=rows();
@@ -145,11 +148,30 @@
   window.v65OpenControl=function(type){
     const rr=rows();
     if(rr&&type==='working')return workerTable(rr.filter(r=>r.status==='Working'||r.status==='Overtime'),'Working Now — Server Live');
+    if(rr&&type==='waiting')return workerTable(rr.filter(r=>r.status==='ID001'),'Waiting / ID001 — Server Live');
+    if(rr&&type==='paused')return workerTable(rr.filter(r=>r.status==='Paused'),'Paused — Server Live');
     if(serverRequired()&&type==='working'){
       if(typeof window.v74Msg==='function')return window.v74Msg('Live worker status is syncing with the server. Please retry after the SERVER LIVE indicator returns.','Live Status');
       return alert('Live worker status is syncing with the server.');
     }
     return typeof oldControl==='function'?oldControl.apply(this,arguments):undefined;
+  };
+  window.openGlanceList=function(type){
+    const rr=rows();
+    if(rr&&type==='paused')return workerTable(rr.filter(r=>r.status==='Paused'),'Paused Jobs — Server Live');
+    return typeof oldOpenGlance==='function'?oldOpenGlance.apply(this,arguments):undefined;
+  };
+  window.v74OT=function(){
+    const rr=rows();
+    if(rr)return workerTable(rr.filter(r=>r.status==='Overtime'),'Overtime Now — Server Live');
+    if(serverRequired())return typeof window.v74Msg==='function'?window.v74Msg('Live worker status is syncing with the server.','Live Status'):undefined;
+    return typeof oldOvertime==='function'?oldOvertime.apply(this,arguments):undefined;
+  };
+  window.v92OpenAvailableWorkers=function(){
+    const rr=rows();
+    if(rr)return workerTable(rr.filter(r=>r.status==='Available'),'Available Workers — Server Live');
+    if(serverRequired())return typeof window.v74Msg==='function'?window.v74Msg('Live worker status is syncing with the server.','Live Status'):undefined;
+    return typeof oldAvailable==='function'?oldAvailable.apply(this,arguments):undefined;
   };
 
   window.v74OT=function(){
