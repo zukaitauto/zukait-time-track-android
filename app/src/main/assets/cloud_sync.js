@@ -22,6 +22,9 @@
   let lastSyncedState=null;
   let pullInFlight=false;
   let lastVisibleSyncAt=0;
+  let lastSuccessfulSyncAt=0;
+  let lastSyncError='';
+  let consecutiveSyncErrors=0;
 
   function sessionToken(){return window.zukaitAuth?.getToken?.()||''}
 
@@ -410,6 +413,7 @@
       lastSyncedState=clone(state||{});
     }
     status('SYNCED','ok');
+    lastSuccessfulSyncAt=Date.now();lastSyncError='';consecutiveSyncErrors=0;
     initialDone=true;
     conflictAlerted=false;
     return true;
@@ -640,6 +644,9 @@
     get ready(){return initialDone},
     get liveRevision(){return liveStatusRevision},
     get liveFresh(){return liveStatusLastFetchedAt>0&&Date.now()-liveStatusLastFetchedAt<7000&&navigator.onLine},
+    get lastSuccessfulSyncAt(){return lastSuccessfulSyncAt},
+    get lastSyncAgeMs(){return lastSuccessfulSyncAt?Math.max(0,Date.now()-lastSuccessfulSyncAt):null},
+    get syncHealth(){return {online:navigator.onLine,revision:cloudRevision,dirty:cloudDirty,pushing:cloudPushing,pulling:pullInFlight,ready:initialDone,lastSuccessfulSyncAt,lastSyncAgeMs:lastSuccessfulSyncAt?Math.max(0,Date.now()-lastSuccessfulSyncAt):null,lastError:lastSyncError,consecutiveErrors:consecutiveSyncErrors,pendingConflict:!!localStorage.getItem(PENDING_KEY),liveFresh:liveStatusLastFetchedAt>0&&Date.now()-liveStatusLastFetchedAt<7000&&navigator.onLine,liveAgeMs:liveStatusLastFetchedAt?Math.max(0,Date.now()-liveStatusLastFetchedAt):null}},
     get pendingConflict(){try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'null')}catch(_){return null}}
   };
 })();
