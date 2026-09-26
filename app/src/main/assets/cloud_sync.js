@@ -539,7 +539,10 @@
       console.error('Cloud save failed',e);
       cloudDirty=true;
       localStorage.setItem(DIRTY_KEY,'1');
+      lastSyncError=String(e?.code||e?.message||'SAVE_FAILED');consecutiveSyncErrors++;
+      try{localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:localSnapshot,error:lastSyncError}))}catch(_){}
       status(navigator.onLine?'SYNC ERROR — RETRYING':'OFFLINE — CHANGE QUEUED',navigator.onLine?'bad':'warn');
+      if(navigator.onLine&&sessionToken())setTimeout(()=>{if(cloudDirty&&!cloudPushing)push(0)},Math.min(15000,1000*Math.pow(2,Math.min(consecutiveSyncErrors,4))));
       return false;
     }finally{cloudPushing=false}
   }
@@ -629,7 +632,7 @@
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshVisibleSharedState()});
   window.addEventListener('focus',refreshVisibleSharedState);
 
-  window.addEventListener('online',async()=>{status(cloudDirty?'ONLINE — SYNCING QUEUED CHANGES':'ONLINE','info');try{await init(false)}catch(e){console.warn('Reconnect sync failed',e)}});
+  window.addEventListener('online',async()=>{status(cloudDirty?'ONLINE — SYNCING QUEUED CHANGES':'ONLINE','info');try{const pending=(()=>{try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'null')}catch(_){return null}})();if(pending&&pending.user&&me?.id&&String(pending.user)!==String(me.id)){localStorage.removeItem(PENDING_KEY);cloudDirty=false;localStorage.removeItem(DIRTY_KEY)}await init(false)}catch(e){lastSyncError=String(e?.code||e?.message||'RECONNECT_FAILED');consecutiveSyncErrors++;console.warn('Reconnect sync failed',e)}});
   window.addEventListener('pagehide',()=>{if(cloudDirty)try{localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:payloadState()}))}catch(_){}});
   window.addEventListener('beforeunload',()=>{if(cloudDirty)try{localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:payloadState()}))}catch(_){} });
   window.addEventListener('offline',()=>{
