@@ -1,8 +1,8 @@
 {
-  "versionName": "V153",
-  "versionCode": 116,
+  "versionName": "V154",
+  "versionCode": 117,
   "approvedForStaff": true,
   "approvedAt": "2026-09-26",
-  "sourceCommit": "45fe6621511d879213099bb7bd27c4d152a425d4",
-  "publishNonce": "approved-v153-purchaser-blank-fix-20260926-1"
+  "sourceCommit": "c702315cfe5192d4a99ae7fb6bd7bf9112575a53",
+  "publishNonce": "approved-v154-supervisor-id001-fixes-20260926-1"
 }
