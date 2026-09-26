@@ -353,7 +353,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "v2_allocate_spare_part_list") {
-      if (!["Manager","Supervisor","Purchaser"].includes(String(user.role || ""))) return reply({ok:false,code:"forbidden"},403);
+      if (!["Manager","Supervisor"].includes(String(user.role || ""))) return reply({ok:false,code:"forbidden"},403);
       const jobCard=String(body?.job_card||"").trim().toUpperCase();
       if(!jobCard) return reply({ok:false,code:"job_card_required"},400);
       const {data,error}=await admin.rpc("zukait_v2_allocate_spare_part_list",{p_job_card:jobCard,p_actor_id:String(user.id)});
@@ -377,6 +377,25 @@ Deno.serve(async (req: Request) => {
       }
       if (eventType==="SPARE_PART_DENTER_NOTICE" && callerRole!=="Denter") {
         return reply({ok:false,code:"denter_notice_forbidden"},403);
+      }
+      if (eventType==="SPARE_PART_LIST_CREATED" && !["Manager","Supervisor"].includes(callerRole)) {
+        return reply({ok:false,code:"spare_list_create_forbidden"},403);
+      }
+      if (eventType==="SPARE_PART_LISTED" && !["Manager","Supervisor"].includes(callerRole)) {
+        return reply({ok:false,code:"spare_list_edit_forbidden"},403);
+      }
+      if (eventType==="SPARE_PART_ITEM_EDITED" && !["Manager","Supervisor"].includes(callerRole)) {
+        return reply({ok:false,code:"spare_item_edit_forbidden"},403);
+      }
+      if (eventType==="SPARE_PART_COMMERCIAL_UPDATED" && !["Manager","Purchaser"].includes(callerRole)) {
+        return reply({ok:false,code:"spare_commercial_forbidden"},403);
+      }
+      if (eventType==="SPARE_PART_STATUS_CHANGED") {
+        const to=String(event?.payload?.to||"");
+        const purchaserTargets=new Set(["ENQUIRY","QUOTED","ORDERED","RECEIVED","RETURNED","UNAVAILABLE"]);
+        const supervisorTargets=new Set(["SUPERVISOR_VERIFIED","SUPERVISOR_CONFIRMED","FITTED","RETURNED","UNAVAILABLE","CUSTOMER_SETTLEMENT"]);
+        const allowed = callerRole==="Manager" || (callerRole==="Purchaser" && purchaserTargets.has(to)) || (callerRole==="Supervisor" && supervisorTargets.has(to));
+        if(!allowed) return reply({ok:false,code:"spare_transition_forbidden"},403);
       }
       if (event.actorId && String(event.actorId) !== String(user.id)) return reply({ok:false,code:"actor_mismatch"},403);
       const { data, error } = await admin.rpc("zukait_v2_commit_event", {
