@@ -623,7 +623,7 @@ public class MainActivity extends Activity {
     }
 
     private String updateMetadataUrl() {
-        return "https://raw.githubusercontent.com/zukaitauto/zukait-time-track-android/main/latest-version.json?ts=" + System.currentTimeMillis();
+        return "https://raw.githubusercontent.com/zukaitauto/zukait-time-track-android/architecture-v2/latest-version.json?ts=" + System.currentTimeMillis();
     }
 
     private void checkForUpdatesNative() {
@@ -823,6 +823,7 @@ public class MainActivity extends Activity {
         notifyUpdateDownloadToWeb("PENDING", 0, 0, 0, "Checking update...");
         new Thread(() -> {
             int latestCode = 0;
+            String latestName = "";
             boolean error = false;
             HttpURLConnection conn = null;
             try {
@@ -837,8 +838,10 @@ public class MainActivity extends Activity {
                     StringBuilder sb = new StringBuilder();
                     String line;
                     while ((line = reader.readLine()) != null) sb.append(line);
-                    latestCode = new JSONObject(sb.toString()).optInt("versionCode", 0);
-                    if (latestCode <= 0) error = true;
+                    JSONObject json = new JSONObject(sb.toString());
+                    latestCode = json.optInt("versionCode", 0);
+                    latestName = json.optString("versionName", "");
+                    if (latestCode <= 0 || latestName.trim().isEmpty()) error = true;
                 }
             } catch (Exception ex) {
                 error = true;
@@ -847,6 +850,7 @@ public class MainActivity extends Activity {
             }
 
             final int publishedCode = latestCode;
+            final String publishedName = latestName;
             final boolean failed = error;
             runOnUiThread(() -> {
                 updateEnqueueInProgress = false;
@@ -866,7 +870,8 @@ public class MainActivity extends Activity {
                         notifyUpdateDownloadToWeb("FAILED", 0, 0, 0, "Download service is unavailable.");
                         return;
                     }
-                    Uri uri = Uri.parse("https://github.com/zukaitauto/zukait-time-track-android/releases/latest/download/ZUKAIT_TIME_TRACK_LATEST.apk");
+                    String safeVersion = publishedName.replaceAll("[^A-Za-z0-9._-]", "");
+                    Uri uri = Uri.parse("https://github.com/zukaitauto/zukait-time-track-android/releases/download/release-" + safeVersion + "-architecture-v2/ZUKAIT_TIME_TRACK_LATEST.apk");
                     DownloadManager.Request req = new DownloadManager.Request(uri)
                             .setTitle("Zukait Time Track Update")
                             .setDescription("Downloading update")
