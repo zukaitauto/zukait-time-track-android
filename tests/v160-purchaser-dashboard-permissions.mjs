@@ -1,0 +1,11 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const parts=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8');
+assert.match(html,/me\.role==='Purchaser'[\s\S]{0,500}Purchaser — Spare Parts/,'Purchaser login must render a visible dashboard shell');
+assert.match(html,/me\.role==='Purchaser'[\s\S]{0,700}openSparePartsModule\(\)/,'Purchaser shell must expose Spare Parts entry');
+assert.match(parts,/function canManage\(\)\{return \['Manager','Supervisor'\]\.includes\(role\(\)\)\}/,'Only Manager/Supervisor may create/manage Parts Lists');
+assert.match(parts,/function canPurchase\(\)\{return \['Manager','Purchaser'\]\.includes\(role\(\)\)\}/,'Purchaser commercial permission must be explicit');
+assert.match(parts,/async function renderPurchaserDashboard\(\)/,'Purchaser must have a dedicated dashboard renderer');
+assert.match(parts,/if\(role\(\)==='Purchaser'\)return renderPurchaserDashboard\(\)/,'Spare Parts router must send Purchaser to purchaser dashboard');
+assert.match(parts,/if\(!canManage\(\)\)\{alert\('FORBIDDEN'\);return\}/,'Parts List creation must enforce Manager\/Supervisor permission');
+console.log('Purchaser dashboard and permissions: ok');
