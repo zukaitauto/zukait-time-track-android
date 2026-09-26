@@ -32,10 +32,11 @@ element('consActualRows').innerHTML=element('consActualRows').innerHTML.replace(
 fill({consSearchJc:'JC1'});ctx.consShowSearch();assert.match(element('consSearchResult').innerHTML,/2.5 Liter/);assert.match(element('consSearchResult').innerHTML,/2.25 Liter/);assert.doesNotMatch(element('consSearchResult').innerHTML,/\[object Object\]|undefined/);
 vm.runInContext("me={id:'M1',role:'Manager'}",ctx);ctx.consRunReports();assert.match(element('crResult').innerHTML,/2.25 Liter/);assert.match(element('crResult').innerHTML,/OMR 7.875/);
 fill({csmMaterial:m.id});ctx.consMaterialHistory();assert.match(element('csmResult').innerHTML,/OMR 3.500/);assert.doesNotMatch(element('csmResult').innerHTML,/NaN/);
+assert.match(element('cmList').innerHTML,/EDIT PRICE/);const currentPrice=state.consumables.prices.find(x=>x.materialId===m.id&&x.brandId===b.id&&!x.voided);prompts.push('4.250','Correct current master price');ctx.consEditMasterPrice(currentPrice.id);assert.match(element('cmList').innerHTML,/OMR 4.250/);assert.equal(state.consumables.actuals[0].totalCost,7.875);assert.ok(state.consumables.audit.some(x=>x.type==='PRICE_CORRECTED'&&x.entityId===currentPrice.id));
 const before=JSON.stringify(state);prompts.push(null);assert.doesNotThrow(()=>ctx.consHistoryCorrectActual(state.consumables.actuals[0].id));assert.equal(JSON.stringify(state),before);
 assert.throws(()=>C.managerCorrectActual(state,state.consumables.actuals[0].id,[{materialId:m.id,brandId:b.id,quantity:1}],vm.runInContext('me',ctx),''),/REASON_REQUIRED/);assert.equal(JSON.stringify(state),before);
 assert.throws(()=>C.managerCorrectIssue(state,state.consumables.issues[0].id,{colourCode:'changed'},vm.runInContext('me',ctx),''),/REASON_REQUIRED/);assert.equal(JSON.stringify(state),before);
 fill({consActualJc:'bad'});ctx.consLoadActual();assert.equal(element('consActualVehicle').value,'');
 ctx.openConsumablesModule();assert.match(ctx.modal,/disabled[^>]*><span>🛠️/);
-assert.ok(ctx.saved);assert.ok(!alerts.includes('MANAGER_ONLY'));console.log('Consumables UI integration tests passed: Job Card picker/vehicle details, sticky summary source, duplicate safeguards, final Actual review, actor audit, search, reports and supervisor tile');
+assert.ok(ctx.saved);assert.ok(!alerts.includes('MANAGER_ONLY'));console.log('Consumables UI integration tests passed: Job Card picker/vehicle details, sticky summary source, duplicate safeguards, final Actual review, actor audit, search, reports, manager price editing and supervisor tile');
 
