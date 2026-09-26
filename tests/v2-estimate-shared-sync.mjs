@@ -63,6 +63,6 @@ assert.deepEqual(
 const managerNew={estimates:[{id:'E2',estimateNo:'Zi-Qt002',customerName:'M'}],estimateAudit:[]};
 const supervisorNew={estimates:[{id:'E3',estimateNo:'Zi-Qt003',customerName:'S'}],estimateAudit:[]};
 const additions=merge({estimates:[],estimateAudit:[]},managerNew,supervisorNew);
-assert.deepEqual(additions.estimates.map(x=>x.id).sort(),['E2','E3'],'Concurrent new estimates must both survive');
+assert.deepEqual([...additions.estimates].map(x=>x.id).sort(),['E2','E3'],'Concurrent new estimates must both survive');
 
 console.log('V2 Estimate shared Manager/Supervisor sync: ok');
