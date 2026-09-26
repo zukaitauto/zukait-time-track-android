@@ -7,5 +7,11 @@ assert.match(parts,/function canManage\(\)\{return \['Manager','Supervisor'\]\.i
 assert.match(parts,/function canPurchase\(\)\{return \['Manager','Purchaser'\]\.includes\(role\(\)\)\}/,'Purchaser commercial permission must be explicit');
 assert.match(parts,/async function renderPurchaserDashboard\(\)/,'Purchaser must have a dedicated dashboard renderer');
 assert.match(parts,/if\(role\(\)==='Purchaser'\)return renderPurchaserDashboard\(\)/,'Spare Parts router must send Purchaser to purchaser dashboard');
-assert.match(parts,/if\(!canManage\(\)\)\{alert\('FORBIDDEN'\);return\}/,'Parts List creation must enforce Manager\/Supervisor permission');
+assert.match(parts,/if\(!canManage\(\)\)\{alert\('FORBIDDEN'\);return\}/,'Parts List creation must enforce Manager/Supervisor permission');
+assert.match(parts,/New Purchase Requests/,'Purchaser dashboard must clearly show incoming purchase requests, not list-creation authority');
+assert.match(parts,/Quotation OMR/,'Purchaser dashboard must expose quotation entry');
+assert.match(parts,/Purchase Amount OMR/,'Purchaser dashboard must keep actual purchase amount separate from quotation');
+assert.match(parts,/Mark Arrived/,'Purchaser must have the receiving handoff action');
+assert.match(parts,/Re-order/,'Returned parts must remain actionable for Purchaser replacement/re-order');
+assert.doesNotMatch(parts,/Purchaser[^\n]{0,120}Create Parts List/i,'Purchaser UI must not advertise Parts List creation');
 console.log('Purchaser dashboard and permissions: ok');
