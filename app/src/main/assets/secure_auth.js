@@ -108,8 +108,9 @@
       }
       // Do not hold the login flow while cloud state initializes.
       if(window.zukaitCloud?.init){
-        Promise.resolve(window.zukaitCloud.init(true)).then(()=>{
+        Promise.resolve(window.zukaitCloud.init(true)).then(async()=>{
           try{render()}catch(_){}
+          try{await window.zukaitV2?.pilot?.autoClaim?.()}catch(e){console.warn('V2 pilot auto-claim failed',e)}
         }).catch(err=>console.warn('Cloud init after login failed',err));
       }
     }catch(err){
@@ -239,6 +240,7 @@
       openApp(r.user);
       if(window.zukaitCloud?.init)await window.zukaitCloud.init(true);
       try{render()}catch(e){console.warn('Session restore render failed',e)}
+      try{await window.zukaitV2?.pilot?.autoClaim?.()}catch(e){console.warn('V2 pilot auto-claim after session restore failed',e)}
       return true;
     }catch(e){
       console.warn('Session restore check failed',e);
