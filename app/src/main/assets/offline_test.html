@@ -488,7 +488,7 @@ function exportManagerReport(type){let headers=[],rows=[],filename='zukait-repor
     let d=new Date(ts), y=d.getFullYear(),m=d.getMonth(),day=d.getDate(),mins=d.getHours()*60+d.getMinutes()+d.getSeconds()/60;
     if(friday(ts)) return new Date(y,m,day,8,0).getTime();
     if(mins < 13*60) return new Date(y,m,day,13,0).getTime();
-    if(mins < 15*60) return new Date(y,m,day,15,0).getTime();
+    if(mins < 15*60) return new Date(y,m,day,13,0).getTime();
     return new Date(y,m,day,19,0).getTime();
   }
   function overtimeInfo(ts){
