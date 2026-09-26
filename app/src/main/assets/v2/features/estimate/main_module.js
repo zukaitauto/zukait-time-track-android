@@ -92,6 +92,7 @@ async function newEstimate(){
   const u=currentUser()||{},e={
     id:clientKey,estimateNo:String(a?.estimate_no||''),sequenceNo:Number(a?.sequence_no||0),date:localDate(),type:'LS',vatEnabled:true,vatRate:.05,
     customerName:'',mobile:'',makeModel:'',year:'',registration:'',vin:'',claimNo:'',jobCard:'',
+    customerSuppliedParts:'',notes:'',
     lsRows:[{id:uid(),description:'',amount:0}],labourRows:[{id:uid(),description:'',amount:0}],partRows:[{id:uid(),description:'',qty:1,unitPrice:0}],
     lsSpareParts:0,misc:0,status:'Draft',createdAt:Date.now(),createdBy:u.id||'',updatedAt:Date.now(),updatedBy:u.id||'',revision:0
   };
@@ -100,6 +101,9 @@ async function newEstimate(){
 }
 function field(id,label,value,type='text',extra=''){
   return '<label>'+label+'<input id="'+id+'" type="'+type+'" value="'+esc(value||'')+'" '+extra+'></label>';
+}
+function textAreaField(id,label,value,placeholder=''){
+  return '<label style="display:block;font-weight:700;font-size:12px;color:#334155">'+label+'<textarea id="'+id+'" rows="2" placeholder="'+esc(placeholder)+'" style="width:100%;box-sizing:border-box;margin-top:4px;resize:vertical">'+esc(value||'')+'</textarea></label>';
 }
 function lsRowsHtml(rows){
   return (rows||[]).map(r=>'<div class="est-row" data-est-ls-row="'+esc(r.id)+'"><input class="est-desc" placeholder="Description" value="'+esc(r.description||'')+'"><input class="est-amount" inputmode="decimal" placeholder="0.000" value="'+money(r.amount)+'" oninput="zukaitEstimate.recalc()"><button class="est-remove" onclick="zukaitEstimate.removeRow(this)">✕</button></div>').join('');
@@ -134,6 +138,7 @@ function openEditor(id){
   '<h4 style="margin-top:15px">SPARE PARTS</h4><div class="small muted">Part · Qty · Unit Price</div><div id="estPartRows">'+partRowsHtml(e.partRows)+'</div><button class="est-add" onclick="zukaitEstimate.addRow(\'PART\')">+ Add Part</button>'+
   '<div style="margin-top:10px">'+field('estMiscPl','Misc',money(e.misc),'text','inputmode="decimal" oninput="zukaitEstimate.recalc()"')+'</div></div>'+
   '<div class="est-section est-summary"><div id="estSummary"></div></div>'+
+  '<div class="est-section"><h4 style="margin-bottom:8px">Optional</h4>'+textAreaField('estCustomerParts','Spare Parts Required — To Be Supplied by Customer',e.customerSuppliedParts,'Only if required')+'<div style="height:8px"></div>'+textAreaField('estNotes','Notes / Conditions',e.notes,'Optional notes')+'</div>'+
   '<div class="est-bottom"><button class="green" onclick="zukaitEstimate.saveCurrent(\''+esc(e.id)+'\')">💾 Save</button><button class="blue" onclick="zukaitEstimate.preview(\''+esc(e.id)+'\')">👁 Preview</button><button class="blue" onclick="zukaitEstimate.printEstimate(\''+esc(e.id)+'\')">🖨 Print</button><button class="purple" onclick="zukaitEstimate.pdfEstimate(\''+esc(e.id)+'\')">PDF</button><button class="green" onclick="zukaitEstimate.whatsApp(\''+esc(e.id)+'\')">WhatsApp</button><button class="secondary" onclick="zukaitEstimate.shareEstimate(\''+esc(e.id)+'\')">↗ Share</button></div></div>';
   openModal(html);
   window.__zukaitEstimateCurrent=id;
@@ -180,6 +185,8 @@ function draftFromDom(e){
     vin:document.getElementById('estVin')?.value?.trim().toUpperCase()||'',
     claimNo:document.getElementById('estClaim')?.value?.trim()||'',
     jobCard:document.getElementById('estJobCard')?.value?.trim().toUpperCase()||'',
+    customerSuppliedParts:document.getElementById('estCustomerParts')?.value?.trim()||'',
+    notes:document.getElementById('estNotes')?.value?.trim()||'',
     lsRows:rowsFromDom('[data-est-ls-row]','ls'),
     labourRows:rowsFromDom('[data-est-lab-row]','lab'),
     partRows:rowsFromDom('[data-est-part-row]','part'),
@@ -226,19 +233,24 @@ function openReports(){
 function splitMoney(v){v=Math.round(num(v)*1000);return {ro:Math.floor(v/1000),bz:String(v%1000).padStart(3,'0')}}
 function printable(e){
   const t=totals(e),vat=e.vatEnabled?'<tr><th>VAT 5%</th><td colspan="2">'+money(t.vat)+'</td></tr>':'';
+  const customerParts=String(e.customerSuppliedParts||'').trim();
+  const notes=String(e.notes||'').trim();
   let body='';
   if(e.type==='PL'){
-    body='<h3>LABOUR</h3><table><tr><th>No.</th><th>Description</th><th>Amount OMR</th></tr>'+((e.labourRows||[]).filter(x=>x.description||num(x.amount)).map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(x.description)+'</td><td>'+money(x.amount)+'</td></tr>').join('')||'<tr><td colspan="3">&nbsp;</td></tr>')+'</table>'+
-    '<h3>SPARE PARTS</h3><table><tr><th>No.</th><th>Part Description</th><th>Qty</th><th>Unit Price</th><th>Amount</th></tr>'+((e.partRows||[]).filter(x=>x.description||num(x.unitPrice)).map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(x.description)+'</td><td>'+num(x.qty)+'</td><td>'+money(x.unitPrice)+'</td><td>'+money(num(x.qty)*num(x.unitPrice))+'</td></tr>').join('')||'<tr><td colspan="5">&nbsp;</td></tr>')+'</table>'+
+    body='<div class="doc-section-title">LABOUR</div><table class="work-table"><tr><th style="width:7%">No.</th><th>Description</th><th style="width:20%">Amount OMR</th></tr>'+((e.labourRows||[]).filter(x=>x.description||num(x.amount)).map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(x.description)+'</td><td class="money-cell">'+money(x.amount)+'</td></tr>').join('')||'<tr><td colspan="3">&nbsp;</td></tr>')+'</table>'+
+    '<div class="doc-section-title">SPARE PARTS</div><table class="work-table"><tr><th style="width:7%">No.</th><th>Part Description</th><th style="width:10%">Qty</th><th style="width:18%">Unit Price</th><th style="width:18%">Amount</th></tr>'+((e.partRows||[]).filter(x=>x.description||num(x.unitPrice)).map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(x.description)+'</td><td>'+num(x.qty)+'</td><td class="money-cell">'+money(x.unitPrice)+'</td><td class="money-cell">'+money(num(x.qty)*num(x.unitPrice))+'</td></tr>').join('')||'<tr><td colspan="5">&nbsp;</td></tr>')+'</table>'+
     '<table class="totals"><tr><th>Total Labour</th><td>'+money(t.labour)+'</td></tr><tr><th>Total Parts</th><td>'+money(t.parts)+'</td></tr><tr><th>Misc</th><td>'+money(t.misc)+'</td></tr>'+ (e.vatEnabled?'<tr><th>VAT 5%</th><td>'+money(t.vat)+'</td></tr>':'') +'<tr class="grand"><th>GRAND TOTAL</th><td>'+money(t.total)+'</td></tr></table>';
   }else{
     const rows=(e.lsRows||[]).filter(x=>x.description||num(x.amount));
-    body='<table><tr><th>Description</th><th>R.O.</th><th>Bz.</th></tr>'+((rows.length?rows:[{description:'',amount:0}]).map(x=>{const m=splitMoney(x.amount);return '<tr><td>'+esc(x.description)+'</td><td>'+m.ro+'</td><td>'+m.bz+'</td></tr>'}).join(''))+'</table>'+
+    body='<table class="work-table ls-table"><tr><th>Description</th><th style="width:14%">R.O.</th><th style="width:14%">Bz.</th></tr>'+((rows.length?rows:[{description:'',amount:0}]).map(x=>{const m=splitMoney(x.amount);return '<tr><td>'+esc(x.description)+'</td><td class="money-cell">'+m.ro+'</td><td class="money-cell">'+m.bz+'</td></tr>'}).join(''))+'</table>'+
     '<table class="totals"><tr><th>Total Labour / Lumpsum</th><td colspan="2">'+money(t.labour)+'</td></tr><tr><th>Spare Parts</th><td colspan="2">'+money(t.parts)+'</td></tr><tr><th>Misc</th><td colspan="2">'+money(t.misc)+'</td></tr>'+vat+'<tr class="grand"><th>TOTAL</th><td colspan="2">'+money(t.total)+'</td></tr></table>';
   }
-  return '<div class="estimate-print"><div class="head"><h2>ZUKAIT INTERNATIONAL LLC</h2><h1>REPAIR ESTIMATE</h1><div><b>Estimate No.:</b> '+esc(e.estimateNo)+' &nbsp; <b>Date:</b> '+esc(e.date)+'</div></div>'+
-  '<table class="details"><tr><th>Name</th><td>'+esc(e.customerName)+'</td><th>Mobile</th><td>'+esc(e.mobile)+'</td></tr><tr><th>Make & Model</th><td>'+esc(e.makeModel)+'</td><th>Year</th><td>'+esc(e.year)+'</td></tr><tr><th>Registration</th><td>'+esc(e.registration)+'</td><th>VIN</th><td>'+esc(e.vin)+'</td></tr><tr><th>Claim No.</th><td>'+esc(e.claimNo)+'</td><th>Job Card</th><td>'+esc(e.jobCard||'')+'</td></tr></table>'+
-  body+'<div class="valid">Estimate valid for 15 days.</div><div class="sign"><span>Manager</span><span>Foreman</span><span>Prepared By: '+esc((typeof user==='function'?user(e.createdBy)?.name:e.createdBy)||e.createdBy||'')+'</span></div></div>';
+  const lower='<div class="doc-lower"><div class="doc-section-title">SPARE PARTS REQUIRED — TO BE SUPPLIED BY CUSTOMER</div><div class="doc-box">'+(customerParts?esc(customerParts).replace(/\\n/g,'<br>'):'&nbsp;<br>&nbsp;')+'</div>'+
+    (notes?'<div class="doc-section-title">NOTES / CONDITIONS</div><div class="doc-box">'+esc(notes).replace(/\\n/g,'<br>')+'</div>':'')+'</div>';
+  const prepared=esc((typeof user==='function'?user(e.createdBy)?.name:e.createdBy)||e.createdBy||'');
+  return '<div class="estimate-print"><div class="head"><h2>ZUKAIT INTERNATIONAL LLC</h2><h1>REPAIR ESTIMATE</h1><div class="estimate-meta"><span><b>Estimate No.:</b> '+esc(e.estimateNo)+'</span><span><b>Date:</b> '+esc(e.date)+'</span></div></div>'+
+  '<table class="details"><tr><th>Name</th><td>'+esc(e.customerName)+'</td><th>Tel No.</th><td>'+esc(e.mobile)+'</td></tr><tr><th>Make / Model</th><td>'+esc(e.makeModel)+(e.year?' · '+esc(e.year):'')+'</td><th>Reg No.</th><td>'+esc(e.registration)+'</td></tr><tr><th>Frame / VIN No.</th><td>'+esc(e.vin)+'</td><th>Claim No.</th><td>'+esc(e.claimNo)+'</td></tr>'+(e.jobCard?'<tr><th>Job Card No.</th><td colspan="3">'+esc(e.jobCard)+'</td></tr>':'')+'</table>'+
+  body+lower+'<div class="valid">ESTIMATE VALID FOR 15 DAYS.</div><div class="sign"><span>Manager</span><span>Foreman</span><span>Prepared By: '+prepared+'</span></div></div>';
 }
 function currentOutputEstimate(id){
   const e=findEstimate(id);if(!e)return null;
@@ -248,7 +260,7 @@ function currentOutputEstimate(id){
   return e;
 }
 function estimateDocumentHtml(e){
-  return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(e.estimateNo)+'</title><style>body{font-family:Arial,sans-serif;padding:18px;color:#111}.head{text-align:center}.head h2,.head h1{margin:3px}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #555;padding:7px;text-align:left}.details th{width:16%}.totals{margin-left:auto;width:54%}.totals th{width:70%}.grand{font-size:17px;font-weight:bold}.valid{margin-top:22px;font-weight:bold}.sign{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:38px;text-align:center}.sign span{border-top:1px solid #555;padding-top:7px}@media print{body{padding:0}}</style></head><body>'+printable(e)+'</body></html>';
+  return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(e.estimateNo)+'</title><style>@page{size:A4;margin:11mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;margin:0;color:#111;font-size:12px}.estimate-print{width:100%}.head{text-align:center;border-bottom:2px solid #111;padding-bottom:6px}.head h2{font-size:19px;letter-spacing:.3px;margin:0}.head h1{font-size:16px;margin:3px 0}.estimate-meta{display:flex;justify-content:space-between;text-align:left;margin-top:5px}.details,.work-table,.totals{width:100%;border-collapse:collapse;margin:8px 0}th,td{border:1px solid #111;padding:5px 6px;text-align:left;vertical-align:top}.details th{width:16%;white-space:nowrap;background:#f7f7f7}.work-table th{background:#f3f3f3}.ls-table td{min-height:26px}.money-cell{text-align:right}.totals{margin-left:auto;width:56%}.totals th{width:68%;background:#f7f7f7}.totals td{text-align:right}.grand{font-size:14px;font-weight:bold}.doc-section-title{font-weight:bold;margin:10px 0 4px;padding:4px 6px;border:1px solid #111;background:#f3f3f3}.doc-box{border:1px solid #111;min-height:38px;padding:6px;white-space:normal}.doc-lower{break-inside:avoid}.valid{margin-top:12px;font-weight:bold;text-align:center}.sign{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:34px;text-align:center;break-inside:avoid}.sign span{border-top:1px solid #111;padding-top:6px}.doc-section-title,.details tr,.work-table tr,.totals tr{break-inside:avoid}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body>'+printable(e)+'</body></html>';
 }
 function printDocument(e,autoPrint=true){
   const w=window.open('','_blank');if(!w)return alert('Print window blocked.');
