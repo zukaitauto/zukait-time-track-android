@@ -199,7 +199,7 @@ function recalc(){
   const d=draftFromDom(e),t=totals(d),box=document.getElementById('estSummary');if(!box)return;
   const lines=d.type==='LS'
     ?[['Total Labour / Lumpsum',t.labour],['Spare Parts',t.parts],['Misc',t.misc]]
-    :[['Total Labour',t.labour],['Total Parts',t.parts],['Misc',t.misc]];
+    :[['Total Labour',t.labour],['Total Parts',t.parts],['Misc',t.misc],['Subtotal',t.subtotal]];
   box.innerHTML=lines.map(x=>'<div class="est-summary-line"><span>'+x[0]+'</span><b>OMR '+money(x[1])+'</b></div>').join('')+
     (d.vatEnabled?'<div class="est-summary-line"><span>VAT 5%</span><b>OMR '+money(t.vat)+'</b></div>':'')+
     '<div class="est-summary-line total"><span>TOTAL</span><span>OMR '+money(t.total)+'</span></div>';
@@ -239,7 +239,7 @@ function printable(e){
   if(e.type==='PL'){
     body='<div class="doc-section-title">LABOUR</div><table class="work-table"><tr><th style="width:7%">No.</th><th>Description</th><th style="width:20%">Amount OMR</th></tr>'+((e.labourRows||[]).filter(x=>x.description||num(x.amount)).map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(x.description)+'</td><td class="money-cell">'+money(x.amount)+'</td></tr>').join('')||'<tr><td colspan="3">&nbsp;</td></tr>')+'</table>'+
     '<div class="doc-section-title">SPARE PARTS</div><table class="work-table"><tr><th style="width:7%">No.</th><th>Part Description</th><th style="width:10%">Qty</th><th style="width:18%">Unit Price</th><th style="width:18%">Amount</th></tr>'+((e.partRows||[]).filter(x=>x.description||num(x.unitPrice)).map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(x.description)+'</td><td>'+num(x.qty)+'</td><td class="money-cell">'+money(x.unitPrice)+'</td><td class="money-cell">'+money(num(x.qty)*num(x.unitPrice))+'</td></tr>').join('')||'<tr><td colspan="5">&nbsp;</td></tr>')+'</table>'+
-    '<table class="totals"><tr><th>Total Labour</th><td>'+money(t.labour)+'</td></tr><tr><th>Total Parts</th><td>'+money(t.parts)+'</td></tr><tr><th>Misc</th><td>'+money(t.misc)+'</td></tr>'+ (e.vatEnabled?'<tr><th>VAT 5%</th><td>'+money(t.vat)+'</td></tr>':'') +'<tr class="grand"><th>GRAND TOTAL</th><td>'+money(t.total)+'</td></tr></table>';
+    '<table class="totals"><tr><th>Total Labour</th><td>'+money(t.labour)+'</td></tr><tr><th>Total Parts</th><td>'+money(t.parts)+'</td></tr><tr><th>Misc</th><td>'+money(t.misc)+'</td></tr><tr><th>Subtotal</th><td>'+money(t.subtotal)+'</td></tr>'+ (e.vatEnabled?'<tr><th>VAT 5%</th><td>'+money(t.vat)+'</td></tr>':'') +'<tr class="grand"><th>GRAND TOTAL</th><td>'+money(t.total)+'</td></tr></table>';
   }else{
     const rows=(e.lsRows||[]).filter(x=>x.description||num(x.amount));
     const lm=splitMoney(t.labour),pm=splitMoney(t.parts),mm=splitMoney(t.misc),vm=splitMoney(t.vat),tm=splitMoney(t.total);
@@ -275,7 +275,10 @@ function printDocument(e,autoPrint=true){
 function preview(id){const e=currentOutputEstimate(id);if(!e)return;openModal(nav('zukaitEstimate.openEditor(\''+esc(id)+'\')')+'<div style="background:#fff;padding:12px;border-radius:12px;overflow:auto">'+printable(e)+'</div>')}
 function printEstimate(id){
   const e=currentOutputEstimate(id);if(!e)return;
-  try{if(window.AndroidBridge&&typeof AndroidBridge.printHtml==='function'){AndroidBridge.printHtml(estimateDocumentHtml(e));return}}catch(_){}
+  try{
+    if(window.AndroidBridge&&typeof AndroidBridge.printHtmlNamed==='function'){AndroidBridge.printHtmlNamed(estimateDocumentHtml(e),'Estimate '+e.estimateNo);return}
+    if(window.AndroidBridge&&typeof AndroidBridge.printHtml==='function'){AndroidBridge.printHtml(estimateDocumentHtml(e));return}
+  }catch(_){}
   printDocument(e,true);
 }
 function pdfEstimate(id){
