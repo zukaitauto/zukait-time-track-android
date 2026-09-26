@@ -1,8 +1,8 @@
 {
-  "versionName": "V147",
-  "versionCode": 110,
+  "versionName": "V148",
+  "versionCode": 111,
   "approvedForStaff": true,
   "approvedAt": "2026-09-26",
   "sourceCommit": "82dafddf5caf24df2e122d947f9143bcf4f5c16a",
-  "publishNonce": "approved-v147-auto-pilot-20260926-1"
+  "publishNonce": "approved-v148-device-id-pilot-20260926-1"
 }
