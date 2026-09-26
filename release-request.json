@@ -1,8 +1,8 @@
 {
-  "versionName": "V159",
-  "versionCode": 122,
+  "versionName": "V160",
+  "versionCode": 123,
   "approvedForStaff": true,
   "approvedAt": "2026-09-26",
-  "sourceCommit": "033e930fc495d0e08601d6e1fe61ac077e62e51f",
-  "publishNonce": "approved-v159-architecture-v2-id001-duty-end-20260926"
+  "sourceCommit": "ea843dd00ac7c7965108e710d0031787b36376fa",
+  "publishNonce": "approved-v160-architecture-v2-parts-list-validation-20260926"
 }
