@@ -150,7 +150,7 @@ assert.equal(bridgeCalls[3][0],'share');
 assert.equal(bridgeCalls[3][1],'Estimate Zi-Qt001');
 assert.match(bridgeCalls[3][2],/Total: OMR 210\.000/);
 
-for(const required of ['public void openExternalUrl(String url)','public void shareText(String title, String text)','PrintDocumentAdapter.WriteResultCallback','PageRange.ALL_PAGES']) {
+for(const required of ['public void openExternalUrl(String url)','public void shareText(String title, String text)','int pageCount = Math.max(1','for (int pageIndex = 0; pageIndex < pageCount; pageIndex++)']) {
   assert.ok(native.includes(required),'Android Estimate integration missing '+required);
 }
 console.log('V2 Estimate functional calculations + Android bridge: ok');
