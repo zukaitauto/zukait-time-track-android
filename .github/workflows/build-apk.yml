@@ -55,6 +55,7 @@ jobs:
           node --check app/src/main/assets/v2/features/jobcards/workflow.js
           node --check app/src/main/assets/v2/features/spare-parts/workflow.js
           node --check app/src/main/assets/v2/features/spare-parts/main_module.js
+          node --check app/src/main/assets/v2/features/estimate/main_module.js
           node --check app/src/main/assets/v2/features/notifications/rules.js
           node --check app/src/main/assets/v2/features/reports/service.js
           node --check app/src/main/assets/v2/features/time/work_rules.js
@@ -134,6 +135,7 @@ jobs:
           node tests/v2-work-state-machine-authority.mjs
           node tests/v2-job-workflow.mjs
           node tests/v2-spare-parts.mjs
+          node tests/v2-estimate-smoke.mjs
           node tests/v2-repeat-work.mjs
           node tests/v2-leave.mjs
           node tests/v2-consumables.mjs
