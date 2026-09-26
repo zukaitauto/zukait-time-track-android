@@ -7,6 +7,7 @@ const native=fs.readFileSync('app/src/main/java/com/zukait/timetrack/MainActivit
 const bridgeCalls=[];
 const bridge={
   printHtml:html=>bridgeCalls.push(['print',html]),
+  printHtmlNamed:(html,title)=>bridgeCalls.push(['print-named',title,html]),
   shareHtmlAsPdf:(html,name)=>bridgeCalls.push(['pdf',name,html]),
   shareHtmlAsPdfWhatsApp:(html,name)=>bridgeCalls.push(['whatsapp-pdf',name,html]),
   openExternalUrl:url=>bridgeCalls.push(['url',url]),
@@ -130,6 +131,17 @@ assert.equal(pl.parts,130);
 assert.equal(pl.subtotal,300);
 assert.equal(pl.vat,15);
 assert.equal(pl.total,315);
+const plPrintable=api.printable({
+  id:'EPL',estimateNo:'Zi-Qt002',date:'2026-09-26',type:'PL',vatEnabled:true,
+  customerName:'PL Customer',mobile:'92222222',makeModel:'Lexus LX570',year:'2025',
+  registration:'PL-1',vin:'VIN-PL',claimNo:'CLAIM-PL',jobCard:'',
+  labourRows:[{id:'A',description:'Denting',amount:120},{id:'B',description:'Painting',amount:30}],
+  partRows:[{id:'P1',description:'Headlamp',qty:2,unitPrice:50},{id:'P2',description:'Bracket',qty:3,unitPrice:10}],
+  misc:20,createdBy:'SUP1'
+});
+for(const text of ['LABOUR','SPARE PARTS','Denting','Painting','Headlamp','Bracket','Qty','Unit Price','Total Labour','Total Parts','Subtotal','VAT 5%','GRAND TOTAL','315.000']){
+  assert.ok(plPrintable.includes(text),'PL printable missing '+text);
+}
 
 const printable=api.printable(state.estimates[0]);
 for(const text of ['ZUKAIT INTERNATIONAL LLC','REPAIR ESTIMATE','Zi-Qt001','Test Customer','Toyota Camry','Tel No.','Frame / VIN No.','Description','R.O.','Bz.','Total Labour / Lumpsum','SPARE PARTS REQUIRED — TO BE SUPPLIED BY CUSTOMER','Headlamp<br>Bracket','NOTES / CONDITIONS','Subject to inspection.','ESTIMATE VALID FOR 15 DAYS.','VAT 5%']){
@@ -139,8 +151,8 @@ assert.ok(printable.includes('<tr class="grand summary-row"><th>TOTAL</th><td cl
 assert.ok(printable.includes('<tr class="summary-row"><th>VAT 5%</th><td class="money-cell">10</td><td class="money-cell">000</td></tr>'),'LS VAT must print in R.O. / Bz. columns');
 
 api.printEstimate('E1');
-assert.equal(bridgeCalls[0][0],'print');
-assert.match(bridgeCalls[0][1],/REPAIR ESTIMATE/);
+assert.deepEqual(bridgeCalls[0].slice(0,2),['print-named','Estimate Zi-Qt001']);
+assert.match(bridgeCalls[0][2],/REPAIR ESTIMATE/);
 
 api.pdfEstimate('E1');
 assert.deepEqual(bridgeCalls[1].slice(0,2),['pdf','Zi-Qt001.pdf']);
@@ -154,7 +166,7 @@ assert.equal(bridgeCalls[3][0],'share');
 assert.equal(bridgeCalls[3][1],'Estimate Zi-Qt001');
 assert.match(bridgeCalls[3][2],/Total: OMR 210\.000/);
 
-for(const required of ['public void shareHtmlAsPdfWhatsApp(String html, String filename)','whatsApp.setPackage("com.whatsapp")','whatsAppBusiness.setPackage("com.whatsapp.w4b")','public void openExternalUrl(String url)','public void shareText(String title, String text)','int pageCount = Math.max(1','for (int pageIndex = 0; pageIndex < pageCount; pageIndex++)']) {
+for(const required of ['public void printHtmlNamed(String html, String title)','public void shareHtmlAsPdfWhatsApp(String html, String filename)','whatsApp.setPackage("com.whatsapp")','whatsAppBusiness.setPackage("com.whatsapp.w4b")','public void openExternalUrl(String url)','public void shareText(String title, String text)','int pageCount = Math.max(1','for (int pageIndex = 0; pageIndex < pageCount; pageIndex++)']) {
   assert.ok(native.includes(required),'Android Estimate integration missing '+required);
 }
 console.log('V2 Estimate functional calculations + Android bridge: ok');
