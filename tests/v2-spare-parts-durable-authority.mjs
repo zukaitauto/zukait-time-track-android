@@ -33,6 +33,8 @@ assert.match(main,/async function addQuotationOffer\(button\)/,'Purchaser or Man
 assert.match(main,/async function selectQuotationOffer\(button\)/,'an offer can be selected as the authoritative quotation');
 assert.match(main,/quotationOffers:item\.quotationOffers/,'selected offer alternatives must be committed in durable event payload');
 assert.match(main,/if\(Array\.isArray\(p\.quotationOffers\)\)item\.quotationOffers=p\.quotationOffers/,'server hydration must restore alternative quotation offers');
+assert.match(main,/uniqueVendors\.size>=3/,'quotation entry must enforce a maximum of three unique vendors per part');
+assert.match(main,/if\(bucket==='NEW'\)return isNewPartsList\(r\)&&statuses\.some\(s=>\['LISTED','ENQUIRY','QUOTED'\]\.includes\(s\)\)/,'New Parts List must be both within the working-hour window and still need Purchaser action');
 
 assert.match(main,/function partsLibrary\(query='',list=null\)/,'reusable parts library must derive suggestions from historical parts');
 assert.match(main,/function partCategory\(name\)/,'parts must receive automatic practical grouping');
