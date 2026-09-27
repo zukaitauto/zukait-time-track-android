@@ -202,6 +202,31 @@ function reconcileAutoOvertime(candidate: any, current: any): any {
   return candidate;
 }
 
+// Consumables is a nested append/correct/void domain. A stale full-state client
+// may legitimately lack the module or carry older/empty arrays while saving an
+// unrelated workshop action. Preserve every server record by ID; incoming rows
+// with the same ID still win so Manager corrections/void flags remain valid.
+function preserveConsumablesHistory(candidate: any, current: any): any {
+  const existing = current?.consumables;
+  if (!existing || typeof existing !== "object") return candidate;
+  const incoming = candidate?.consumables && typeof candidate.consumables === "object"
+    ? candidate.consumables : {};
+  for (const key of ["materials","brands","prices","issues","actuals","audit"] as const) {
+    const nextRows = Array.isArray(incoming?.[key]) ? incoming[key] : [];
+    const serverRows = Array.isArray(existing?.[key]) ? existing[key] : [];
+    const identity = (row:any) => row?.id ? "id:"+String(row.id) : "json:"+JSON.stringify(row);
+    const seen = new Set(nextRows.map(identity));
+    for (const row of serverRows) {
+      const id = identity(row);
+      if (!seen.has(id)) { nextRows.push(cloneValue(row)); seen.add(id); }
+    }
+    if (nextRows.length || serverRows.length || Array.isArray(incoming?.[key])) incoming[key] = nextRows;
+  }
+  incoming.schemaVersion = Math.max(Number(incoming.schemaVersion||0), Number(existing.schemaVersion||0), 1);
+  candidate.consumables = incoming;
+  return candidate;
+}
+
 // A full-state client can carry an old snapshot while saving an unrelated change.
 // Keep prior records unless a Manager records an explicit, reasoned Job Card deletion.
 function preserveOperationalHistory(candidate: any, current: any, user: any): any {
@@ -723,7 +748,7 @@ Deno.serve(async (req: Request) => {
           candidate = threeWayMerge(baseData, current.data, originalProposed);
         }
 
-        candidate = preserveOperationalHistory(reconcileAutoOvertime(preserveClosedSessions(candidate, current.data), current.data), current.data, user);
+        candidate = preserveConsumablesHistory(preserveOperationalHistory(reconcileAutoOvertime(preserveClosedSessions(candidate, current.data), current.data), current.data, user), current.data);
 
         // Keep profiles whose credentials are still active. Inactive staff may be
         // intentionally removed; an old full-state save must not remove active staff.
