@@ -8,7 +8,7 @@ const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
 assert.ok(cloud.includes('state.estimates=state.estimates||[];'),'Cloud shape must include estimates');
 assert.ok(cloud.includes('state.estimateAudit=state.estimateAudit||[];'),'Cloud shape must include estimate audit');
 assert.ok(cloud.includes('function same(a,b){return JSON.stringify(a)===JSON.stringify(b)}'),'Client conflict merge needs a local equality helper');
-assert.ok(api.includes('function threeWayMerge(base: any, remote: any, local: any): any'),'Server must retain three-way merge');
+assert.match(api,/function threeWayMerge\(base: any, remote: any, local: any(?:, field = "")?\): any/,'Server must retain three-way merge');
 
 const allowed=api.match(/const allowed = new Set\(\[(.*?)\]\);/s);
 assert.ok(allowed,'Employee change allowlist not found');

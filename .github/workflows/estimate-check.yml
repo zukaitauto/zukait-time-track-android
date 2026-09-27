@@ -40,6 +40,7 @@ jobs:
           node tests/v2-estimate-smoke.mjs
           node tests/v2-estimate-functional.mjs
           node tests/v2-estimate-shared-sync.mjs
+          node tests/legacy-closed-session-authority.mjs
 
       - name: Install Android SDK packages
         shell: bash

@@ -138,7 +138,10 @@ function preserveClosedSessions(candidate: any, current: any): any {
   const closed = new Map((current?.sessions || []).filter((s: any) => Number(s?.end || 0) > 0).map((s: any) => [String(s.id),s]));
   candidate.sessions = (candidate?.sessions || []).map((s: any) => {
     const authoritative: any = closed.get(String(s?.id || ""));
-    return authoritative && !s?.end
+    // A stale device can also hold an earlier end value. Once the server has
+    // closed this session, its terminal fields remain authoritative; a real
+    // restart must create a new session ID.
+    return authoritative
       ? {...s,end:authoritative.end,paused:authoritative.paused,autoPausedAt:authoritative.autoPausedAt,
          pauseReason:authoritative.pauseReason,closeReason:authoritative.closeReason}
       : s;
