@@ -10,6 +10,8 @@ const updates=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
 const stableTag=html.match(/<script src="supervisor_stable\.js\?v=\d+"><\/script>/);
 const liveTag=html.match(/<script src="live_status_authority\.js\?v=\d+"><\/script>/);
 assert.ok(stableTag && liveTag,'stable Supervisor and live authority scripts must ship');
+assert.match(html,/<script src="cloud_sync\\.js\\?v=178"><\\/script>/,'Web shell must bust the shared sync-engine cache when cloud_sync changes');
+assert.match(html,/<script src="v2\\/features\\/notifications\\/center\\.js\\?v=2"><\\/script>/,'Web/Android shell must load the shared notification center');
 assert.ok(html.indexOf(liveTag[0])>html.indexOf(stableTag[0]),'server live authority must load last');
 
 assert.match(cloud,/action:'live_status'/,'cloud layer must call the server live-status endpoint');
