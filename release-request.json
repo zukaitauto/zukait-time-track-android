@@ -1,8 +1,8 @@
 {
-  "versionName": "V179",
-  "versionCode": 142,
+  "versionName": "V180",
+  "versionCode": 143,
   "approvedForStaff": true,
   "approvedAt": "2026-09-27",
-  "sourceCommit": "311d1451867ef6a7d8c855f8709c6e727977d6f0",
-  "publishNonce": "release-v179-material-recovery-parts-pending-20260927"
+  "sourceCommit": "bfbb54af1dfed6c8b4607a1cdb8c422cba765c9f",
+  "publishNonce": "release-v180-compact-mobile-lists-20260927"
 }
