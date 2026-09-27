@@ -420,3 +420,31 @@
   if(v44App)v44Obs.observe(v44App,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
   setTimeout(buildAccountMenu,100);
 })();
+/* Shared technician identity colours — identical across Manager/Supervisor/Employee modules */
+(function(){
+  const palette=[
+    ['#e8f1ff','#174ea6','#8ab4f8'],['#ecfdf3','#166534','#86efac'],['#fff7e6','#92400e','#f6c453'],
+    ['#f5efff','#6b21a8','#c4a7ff'],['#e8fbfb','#155e75','#67d5dc'],['#fff0f3','#9f1239','#fda4af'],
+    ['#f1f5f9','#334155','#94a3b8'],['#eefbf0','#3f6212','#a3d977'],['#fff4e8','#9a3412','#fdba74'],
+    ['#edf5ff','#1e40af','#93c5fd'],['#f7f0ff','#7e22ce','#d8b4fe'],['#ecfeff','#0e7490','#67e8f9'],
+    ['#fefce8','#854d0e','#fde047'],['#f0fdf4','#15803d','#86efac'],['#fdf2f8','#9d174d','#f9a8d4'],
+    ['#eff6ff','#1d4ed8','#60a5fa']
+  ];
+  function key(v){return String(v||'').trim().toLowerCase().replace(/\s+/g,' ')}
+  function hash(v){let h=2166136261,s=key(v);for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+  function colours(name,id){const p=palette[hash(id||name)%palette.length];return{bg:p[0],fg:p[1],border:p[2]}}
+  window.zukaitTechnicianIdentity={colours,key};
+  function nameFromOptionText(t){return String(t||'').split('·')[0].trim()}
+  function paintSelect(sel){
+    if(!sel||sel.dataset.ztTechColourBound)return;
+    const apply=()=>{const o=sel.options?.[sel.selectedIndex],n=nameFromOptionText(o?.text);if(!o||!o.value||!/denter|painter|mechanic|technician/i.test(o.text||'')){sel.style.removeProperty('background-color');sel.style.removeProperty('color');sel.style.removeProperty('border-color');return}const p=colours(n,o.value);sel.style.setProperty('background-color',p.bg,'important');sel.style.setProperty('color',p.fg,'important');sel.style.setProperty('border-color',p.border,'important');sel.style.fontWeight='850'};
+    sel.addEventListener('change',apply);sel.dataset.ztTechColourBound='1';apply()
+  }
+  function paintText(root=document){
+    root.querySelectorAll('select').forEach(s=>{const txt=[...s.options].map(o=>o.text).join(' ');if(/denter|painter|mechanic|select technician/i.test(txt))paintSelect(s)});
+    root.querySelectorAll('[data-employee-id],[data-technician-id]').forEach(el=>{const id=el.dataset.employeeId||el.dataset.technicianId,n=el.dataset.employeeName||el.dataset.technicianName||el.textContent?.split('·')[0]?.trim();if(!n)return;const p=colours(n,id);el.style.setProperty('--zt-tech-bg',p.bg);el.style.setProperty('--zt-tech-fg',p.fg);el.style.setProperty('--zt-tech-border',p.border);el.classList.add('zt-tech-identity')})
+  }
+  const st=document.createElement('style');st.id='ztTechnicianIdentityStyle';st.textContent='.zt-tech-identity{display:inline-flex!important;align-items:center;padding:2px 6px!important;border-radius:7px!important;background:var(--zt-tech-bg)!important;color:var(--zt-tech-fg)!important;border:1px solid var(--zt-tech-border)!important;font-weight:850!important;line-height:1.25!important}';document.head.appendChild(st);
+  const boot=()=>{paintText();new MutationObserver(m=>m.forEach(x=>x.addedNodes.forEach(n=>{if(n.nodeType===1)paintText(n)}))).observe(document.body,{childList:true,subtree:true})};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot()
+})();
