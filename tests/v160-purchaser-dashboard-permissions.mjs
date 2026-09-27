@@ -14,4 +14,9 @@ assert.match(parts,/Purchase Amount OMR/,'Purchaser dashboard must keep actual p
 assert.match(parts,/Mark Arrived/,'Purchaser must have the receiving handoff action');
 assert.match(parts,/Re-order/,'Returned parts must remain actionable for Purchaser replacement/re-order');
 assert.doesNotMatch(parts,/Purchaser[^\n]{0,120}Create Parts List/i,'Purchaser UI must not advertise Parts List creation');
+assert.match(parts,/v2-sp-listcard/,'Purchaser full Parts List must use responsive part cards');
+assert.match(parts,/v2-sp-progress/,'Purchaser part cards must show compact status progress');
+assert.doesNotMatch(parts,/min-width:780px/,'Purchaser Parts List must not require a phone-hostile wide table');
+assert.match(parts,/Mark Arrived/,'Current purchaser arrival action must remain available after card redesign');
+assert.match(parts,/data-to="RETURNED"/,'Returned action must remain available for eligible ordered\/received parts');
 console.log('Purchaser dashboard and permissions: ok');
