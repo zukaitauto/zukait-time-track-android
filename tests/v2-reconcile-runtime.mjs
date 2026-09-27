@@ -10,6 +10,6 @@ let c=boot('ACCEPT_SERVER'),r=c.zukaitV2.reconcileRuntime.resolve(local,server,(
 c=boot('REPLAY_LOCAL');r=c.zukaitV2.reconcileRuntime.resolve(local,server,()=>({legacy:true}));assert.equal(r.result.kind,'LOCAL_REPLAY');assert.equal(r.result.state.id,'L');
 c=boot('KEEP_LOCAL');r=c.zukaitV2.reconcileRuntime.resolve(local,server,()=>({legacy:true}));assert.equal(r.result.kind,'LOCAL_HOLD');assert.equal(r.result.state.id,'L');
 c=boot('CONFLICT');r=c.zukaitV2.reconcileRuntime.resolve(local,server,()=>({legacy:true}));assert.equal(r.result.kind,'CONFLICT_HOLD');assert.equal(r.result.state,null);assert.equal(r.result.conflict,true);
-c=boot('BOGUS');r=c.zukaitV2.reconcileRuntime.resolve(local,server,()=>({legacy:true}));assert.equal(r.decision.mode,'LEGACY');assert.equal(r.decision.reason,'v2-apply-failed');assert.equal(r.result.legacy,true);
+c=boot('BOGUS');r=c.zukaitV2.reconcileRuntime.resolve(local,server,()=>({legacy:true}));assert.equal(r.decision.mode,'V2');assert.equal(r.decision.action,'BLOCK');assert.equal(r.decision.reason,'v2-apply-failed');assert.equal(r.blocked,true);assert.equal(r.result,null);
 c=boot('ACCEPT_SERVER');c.zukaitV2.authorityAdapter.setEnabled(false);r=c.zukaitV2.reconcileRuntime.resolve(local,server,()=>({legacy:true}));assert.equal(r.decision.mode,'LEGACY');assert.equal(r.result.legacy,true);
 console.log('V2 reconcile runtime passed');
