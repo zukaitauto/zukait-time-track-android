@@ -23,8 +23,9 @@ ctx.consSaveMaster();assert.equal(state.consumables.materials.length,1);assert.e
 const m=state.consumables.materials[0],b=state.consumables.brands[0];
 vm.runInContext("me={id:'S1',role:'Supervisor'}",ctx);ctx.render();assert.equal(tile.className,'cons-supervisor-tile');ctx.render();assert.ok(tile);
 ctx.openConsumablesEntry('issued');fill({consJc:'REG1'});ctx.consFindJC('issued');assert.match(element('consJcResults').innerHTML,/JC1/);assert.match(element('consJcResults').innerHTML,/REG1/);ctx.consSelectJC('JC1');assert.match(element('consVehicleDetails').innerHTML,/Toyota Camry/);assert.match(element('consVehicleDetails').innerHTML,/REG1/);assert.match(element('consVehicleDetails').innerHTML,/2020/);
+assert.equal(element('consFinishBtn').disabled,true,'FINISH must remain disabled before a material line is added');
 for(const [type,quantity] of [['issued','2'],['additional','0.5']]){
- ctx.openConsumablesEntry(type);fill({consJc:'JC1'});ctx.consLoadJC(type);fill({consMaterial:m.id,consBrand:b.id,consQty:quantity,consPainter:'P1'});ctx.consAddLine();ctx.consFinishIssue();
+ ctx.openConsumablesEntry(type);fill({consJc:'JC1'});ctx.consLoadJC(type);fill({consMaterial:m.id,consBrand:b.id,consQty:quantity,consPainter:'P1'});ctx.consAddLine();assert.equal(element('consFinishBtn').disabled,false,'FINISH must enable after valid JC, painter and material line');ctx.consFinishIssue();
 }
 assert.equal(state.consumables.issues.length,2);
 ctx.openConsumablesActual();fill({consActualJc:'JC1'});ctx.consLoadActual();assert.match(element('consActualRows').innerHTML,/Primer/);assert.match(element('consActualRows').innerHTML,/max="2.5"/);assert.match(element('consActualRows').innerHTML,/value="2.5"/);
@@ -38,5 +39,6 @@ assert.throws(()=>C.managerCorrectActual(state,state.consumables.actuals[0].id,[
 assert.throws(()=>C.managerCorrectIssue(state,state.consumables.issues[0].id,{colourCode:'changed'},vm.runInContext('me',ctx),''),/REASON_REQUIRED/);assert.equal(JSON.stringify(state),before);
 fill({consActualJc:'bad'});ctx.consLoadActual();assert.equal(element('consActualVehicle').value,'');
 ctx.openConsumablesModule();assert.match(ctx.modal,/disabled[^>]*><span>🛠️/);
+const uiSource=fs.readFileSync('app/src/main/assets/consumables_ui.js','utf8');assert.match(uiSource,/name="viewport" content="width=device-width,initial-scale=1"/,'print preview must be mobile responsive');assert.match(uiSource,/copy\.querySelectorAll\('\.cons-export-actions,button'\)\.forEach\(x=>x\.remove\(\)\)/,'print preview must remove export/action buttons');assert.match(uiSource,/\.cons-summary\{display:grid/,'print preview must preserve structured summary layout');
 assert.ok(ctx.saved);assert.ok(!alerts.includes('MANAGER_ONLY'));console.log('Consumables UI integration tests passed: Job Card picker/vehicle details, sticky summary source, duplicate safeguards, final Actual review, actor audit, search, reports, manager price editing and supervisor tile');
 
