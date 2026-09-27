@@ -14,7 +14,7 @@ assert.match(main,/SPARE_PART_MANAGER_CORRECTED/);
 assert.match(api,/\["WIP","AUDIT","CYCLE_TIME","EFFICIENCY","REPEAT","ID001","OVERTIME","PARTS_DELAY","SPARE_PARTS"/,'API must expose Spare Parts server event history');
 console.log('Spare Parts durable server-history authority regression: PASS');
 
-assert.match(main,/function openPartsQuotation\(\)\{if\(!\['Purchaser','Manager'\]\.includes\(role\(\)\)\)return/,'quotation entry must be shared by Purchaser and Manager');
+assert.match(main,/async function openPartsQuotation\(\)\{if\(!\['Purchaser','Manager'\]\.includes\(role\(\)\)\)return/,'quotation entry must be shared by Purchaser and Manager');
 assert.match(main,/async function saveQuotationPrice\(button\)\{if\(!\['Purchaser','Manager'\]\.includes\(role\(\)\)\|\|!button\)return/,'only Purchaser and Manager can save quotation pricing');
 assert.match(main,/Quotation Total <strong id="v2SpQuoteTotal"/,'quotation page must show live total');
 assert.doesNotMatch(main,/Purchase Amount OMR/,'Purchaser must not have a second purchase-price entry field');
@@ -29,7 +29,7 @@ assert.match(main,/Lowest <b>/,'quotation should display lowest historical price
 assert.match(main,/document\.getElementById\('v2SpVendor_'\+nextIndex\)\?\.focus\(\)/,'saving a quote should advance focus to the next part');
 
 assert.match(main,/function quotationOffers\(item\)/,'parts support multiple vendor quotation offers');
-assert.match(main,/function addQuotationOffer\(button\)/,'Purchaser or Manager can add alternative offers without duplicate parts');
+assert.match(main,/async function addQuotationOffer\(button\)/,'Purchaser or Manager can add alternative offers without duplicate parts');
 assert.match(main,/async function selectQuotationOffer\(button\)/,'an offer can be selected as the authoritative quotation');
 assert.match(main,/quotationOffers:item\.quotationOffers/,'selected offer alternatives must be committed in durable event payload');
 assert.match(main,/if\(Array\.isArray\(p\.quotationOffers\)\)item\.quotationOffers=p\.quotationOffers/,'server hydration must restore alternative quotation offers');
