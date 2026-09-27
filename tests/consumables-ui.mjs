@@ -73,3 +73,8 @@ assert.match(uiSource,/\['Supervisor','Manager'\]\.includes\(role\(\)\)/,'Total 
 assert.match(uiSource,/ACTUAL QTY/,'Actual Materials must expose actual quantity entry');
 assert.match(uiSource,/ADD MATERIAL/,'Actual Materials must allow real materials absent from Suggested list');
 assert.match(uiSource,/Actual Materials are not finalized yet/,'Total Consumables must not cost from Suggested quantities');
+
+assert.match(uiSource,/function consRecentMaterialLists\(\)/,'Search Material List must show recent server-backed material lists');
+assert.match(uiSource,/JC \| Vehicle \| Registration/,'Recent material list must use compact single-row columns');
+assert.match(uiSource,/let d=jcData\(raw\);[\s\S]*if\(!d&&q\)/,'material search must fall back to Consumables records when the local Job Card lookup is missing');
+assert.match(uiSource,/consMaterialListData\(hit\.jobCard,hit\)/,'server-backed Consumables records must remain directly openable');
