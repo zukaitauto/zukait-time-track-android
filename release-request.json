@@ -1,8 +1,8 @@
 {
-  "versionName": "V168",
-  "versionCode": 131,
+  "versionName": "V169",
+  "versionCode": 132,
   "approvedForStaff": true,
   "approvedAt": "2026-09-27",
-  "sourceCommit": "9f4b10ce619c06d4f19f88ed66185d3ae96625a1",
-  "publishNonce": "approved-v168-voice-review-supervisor-20260927"
+  "sourceCommit": "b571677500ede9668b694364d1f4bf930508a43e",
+  "publishNonce": "approved-v169-immediate-server-sync-20260927"
 }
