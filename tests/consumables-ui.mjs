@@ -50,8 +50,8 @@ assert.match(uiSource,/const backAction=back\|\|/,'Consumables must derive one s
 assert.match(uiSource,/height:26px;min-height:26px;width:auto;flex:0 0 auto/,'Consumables top navigation must stay compact and must not stretch');assert.match(uiSource,/font-size:9px;line-height:1;font-weight:900;padding:4px 8px/,'Consumables top navigation must use the approved small control sizing');
 assert.match(uiSource,/replace\(\/<button\[\^>\]\*>\\s\*←\?\\s\*BACK/,'Consumables shared modal must strip duplicate embedded Back controls');
 assert.match(uiSource,/const modal=\(title,body,back\)=>/,'Consumables must use one shared modal navigation wrapper');
-assert.match(uiSource,/background:#2563eb/,'Consumables Back control must use compact blue navigation styling');
-assert.match(uiSource,/background:#dc2626/,'Consumables Close control must use distinct compact red styling');
+assert.match(uiSource,/background:#dbeafe;color:#1d4ed8/,'Consumables Back control must use compact light-blue navigation styling');
+assert.match(uiSource,/background:#fee2e2;color:#b91c1c/,'Consumables Close control must use distinct compact light-red styling');
 assert.match(uiSource,/AndroidBridge\?\.shareHtmlAsPdfWhatsApp/,'Android material PDF must use the native PDF sharing bridge');
 assert.match(uiSource,/if\(history\.length>1\)\{history\.back\(\)\}else if\(window\.opener/,'print preview Back\/Close must prefer WebView history so Android can return reliably');
 assert.match(uiSource,/WITH PRICE/);assert.match(uiSource,/WITHOUT PRICE/);
