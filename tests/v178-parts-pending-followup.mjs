@@ -24,4 +24,9 @@ assert.ok(dashboardMatches>=2,'Manager and Supervisor dashboards must expose Par
 assert.match(src,/onclick="zukaitV2\.sparePartsMain\.openPartsPending\(\)"[^>]*><span>🔎<\/span><b>Parts Pending<\/b>/,'Purchaser dashboard must expose Parts Pending');
 assert.match(src,/\['Manager','Supervisor','Purchaser'\]\.includes\(role\(\)\)/,'Pending follow-up must be available to all three operational roles');
 
-console.log('Parts Pending follow-up regression passed');
+assert.match(src,/const remaining=q-Math\.max\(0,Number\.isFinite\(received\)\?received:0\)/,'Pending quantity must subtract already received quantity');
+assert.match(src,/Quantity arrived now \(remaining/,'Purchaser must enter the quantity received for partial deliveries');
+assert.match(src,/receivedQty:to==='RECEIVED'\?moved\.item\.receivedQty:null/,'Received quantity must be persisted in the authoritative event');
+assert.match(src,/item\.receivedQty=Number\.isFinite\(rq\)/,'Server hydration must restore authoritative received quantity instead of assuming full receipt');
+assert.match(src,/receivedQty:transitionCtx\.receivedQty/,'Partial receipt quantity must reach the workflow transition');
+console.log('Parts Pending follow-up regression passed, including partial receipt quantities');
