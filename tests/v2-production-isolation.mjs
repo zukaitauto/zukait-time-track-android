@@ -8,5 +8,7 @@ let legacy=0,v2=0;a.apply({revision:1},{revision:2},()=>++legacy,()=>++v2);asser
 assert.equal(p.enable().ok,false,'non-pilot device must not enable V2');assert.equal(a.enabled(),false);
 localStorage.setItem('zukait_device_id','DEVICE-A');p.setPilotDevice('DEVICE-B');assert.equal(p.enable().ok,false);assert.equal(a.enabled(),false);
 p.setPilotDevice('DEVICE-A');assert.equal(p.enable().ok,true);assert.equal(a.enabled(),true);
+let fallback=0;const missing=a.apply({revision:1},{revision:2},()=>++fallback,null);assert.equal(fallback,0,'enabled V2 must never silently fall back to legacy when V2 apply is missing');assert.equal(missing.blocked,true);assert.equal(missing.decision.action,'BLOCK');
+const failed=a.apply({revision:1},{revision:2},()=>++fallback,()=>{throw new Error('boom')});assert.equal(fallback,0,'enabled V2 must never silently fall back to legacy after V2 apply failure');assert.equal(failed.blocked,true);assert.equal(failed.decision.reason,'v2-apply-failed');
 p.disable();assert.equal(a.enabled(),false);
 console.log('V2 authority default-off and pilot isolation: ok');
