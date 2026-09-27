@@ -61,6 +61,16 @@ assert.equal(o.lines[0].pricePerLitre,8);
 assert.equal(o.lines[0].lineTotal,4.8);
 assert.equal(state.paintCosting.JC1.netPaintCost,4.8);
 
+// Exact-cost return regression: 0.150 L is 25% of the finalized 0.600 L / OMR 4.800 line.
+Object.assign(el('pretLine'),{value:'0'});Object.assign(el('pretQty'),{value:'0.150'});Object.assign(el('pretReason'),{value:'Excess/Not Required'});Object.assign(el('pretRemarks'),{value:''});
+ctx.paintSaveReturn(o.id);
+assert.equal(o.returns.length,1);
+assert.equal(o.returns[0].value,1.2,'0.150 L return must deduct exactly 25% of the authoritative OMR 4.800 line cost');
+assert.equal(state.paintCosting.JC1.grossPaintCost,4.8);
+assert.equal(state.paintCosting.JC1.returnedPaintValue,1.2);
+assert.equal(state.paintCosting.JC1.netPaintCost,3.6,'Net Paint Cost must be OMR 3.600 after the partial return');
+assert.equal(state.jobs[0].paintCost,3.6,'Job Card paintCost must receive the same exact net cost');
+
 const alertCount=alerts.length;
 ctx.paintReviewReceived(o.id);
 assert.equal(alerts.length,alertCount+1);
