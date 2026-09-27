@@ -111,10 +111,10 @@
     const allowed=allowance(state,jc); if(!allowed.length)throw new Error('NO_ISSUED_MATERIALS');
     const wanted=Array.isArray(input.lines)&&input.lines.length?input.lines:allowed;
     const lines=wanted.map((l,i)=>{
-      const a=allowed.find(x=>x.materialId===l.materialId&&x.brandId===l.brandId); if(!a)throw new Error('ACTUAL_NOT_ISSUED');
-      const q=Number(l.quantity); if(!Number.isFinite(q)||q<0||q>a.quantity+1e-9)throw new Error('ACTUAL_EXCEEDS_ISSUED');
+      const a=allowed.find(x=>x.materialId===l.materialId&&x.brandId===l.brandId),m=c.materials.find(x=>x.id===l.materialId&&x.active!==false),b=c.brands.find(x=>x.id===l.brandId&&x.active!==false); if(!m)throw new Error('MATERIAL_NOT_FOUND'); if(!b)throw new Error('BRAND_NOT_FOUND');
+      const q=Number(l.quantity); if(!Number.isFinite(q)||q<0)throw new Error('INVALID_ACTUAL_QUANTITY');
       const p=priceAt(state,l.materialId,l.brandId,Number(input.actualAt)||Date.now()); if(!p)throw new Error('PRICE_NOT_FOUND');
-      return {no:i+1,materialId:l.materialId,brandId:l.brandId,unit:a.unit,issuedQuantity:a.quantity,actualQuantity:q,priceId:p.id,unitPriceSnapshot:p.pricePerUnit,lineCost:money(q*p.pricePerUnit)};
+      return {no:i+1,materialId:l.materialId,brandId:l.brandId,unit:m.unit,issuedQuantity:Number(a?.quantity||0),actualQuantity:q,actualOnly:!a,overIssued:!!a&&q>a.quantity+1e-9,priceId:p.id,unitPriceSnapshot:p.pricePerUnit,lineCost:money(q*p.pricePerUnit)};
     });
     const row={id:uid('actual'),department:DEPT,jobCard:jc,actualAt:Number(input.actualAt)||Date.now(),lines,clientRequestId:rid||uid('req'),locked:true,totalCost:money(lines.reduce((s,l)=>s+l.lineCost,0)),createdAt:Date.now(),createdBy:actor.id,createdByName:String(actor?.name||actor?.id||''),createdByRole:String(actor?.role||'')};
     if(reopened){const before=clone(reopened);Object.assign(reopened,row,{id:reopened.id,createdAt:reopened.createdAt,createdBy:reopened.createdBy,createdByName:reopened.createdByName,createdByRole:reopened.createdByRole,refinalizedAt:Date.now(),refinalizedBy:actor.id,refinalizedByName:String(actor?.name||actor?.id||''),refinalizedByRole:String(actor?.role||''),managerReopen:false});auditChange(c,'ACTUAL_REFINALIZED',reopened,before,reopened,actor,String(reopened.reopenReason||'Manager reopened actual'));return clone(reopened)}
