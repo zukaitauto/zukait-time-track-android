@@ -18,7 +18,8 @@ assert.match(api,/spare_list_create_forbidden/,'API must enforce list-create rol
 assert.match(api,/spare_commercial_forbidden/,'API must enforce commercial role authority');
 assert.match(api,/spare_transition_forbidden/,'API must enforce status-transition role authority');
 const workflow=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/workflow.js','utf8');
-assert.match(workflow,/if\(to==='FITTED'\)return role==='Supervisor'\|\|role==='Manager'/,'Purchaser must not have fitting authority');
+assert.match(workflow,/if\(to==='FITTED'\)return role==='Manager'/,'Post-arrival fitting authority must remain Manager-only');
+assert.match(workflow,/if\(to==='SUPERVISOR_VERIFIED'\)return role==='Supervisor'\|\|role==='Manager'/,'Supervisor must retain physical-arrival verification authority');
 assert.match(workflow,/if\(to==='CUSTOMER_SETTLEMENT'\)return role==='Supervisor'\|\|role==='Manager'/,'Purchaser must not have customer-settlement authority');
 console.log('V2 Spare Parts hardening guard passed');
 assert.match(main,/if\(role\(\)!=='Manager'\)return;const rows=read\(\),list=/,'Manager correction save must remain Manager-only');
