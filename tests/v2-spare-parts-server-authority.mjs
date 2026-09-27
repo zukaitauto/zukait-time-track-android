@@ -22,3 +22,9 @@ assert.ok(api.includes('spare_manager_correction_forbidden_or_invalid'),'Manager
 assert.ok(api.includes('allowedStatuses=new Set(["LISTED","ENQUIRY","QUOTED","ORDERED","RECEIVED"'),'Manager correction status allowlist must remain server-side');
 assert.ok(api.includes('"FITTED","RETURNED","UNAVAILABLE","CUSTOMER_SETTLEMENT"]'),'Manager correction final statuses must remain server-side');
 assert.match(api,/!String\(p\.reason\|\|""\)\.trim\(\)/,'Manager correction reason must be required server-side');
+
+assert.ok(sql.includes("p_event_type='SPARE_PART_MANAGER_CORRECTED'"),'SQL must recognize Manager correction revision lane');
+assert.ok(sql.includes("prior.event_type='SPARE_PART_MANAGER_CORRECTED'"),'Manager correction revision check must compare only Manager corrections');
+assert.ok(sql.includes("coalesce(prior.revision,0)>=p_revision"),'same or older Manager correction revisions must be rejected');
+assert.ok(sql.includes("stale_spare_manager_correction_revision"),'stale Manager correction must have explicit server rejection');
+assert.doesNotMatch(sql,/p_event_type in \([^)]*SPARE_PART_STATUS_CHANGED[^)]*SPARE_PART_MANAGER_CORRECTED/,'ordinary status transitions must not share Manager correction revision lane');
