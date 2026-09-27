@@ -61,8 +61,9 @@ function ensureStyle(){
   `;document.head.appendChild(s);
 }
 function nav(back){
-  return '<div class="row" style="margin-bottom:10px"><button class="blue" onclick="'+(back||'zukaitEstimate.openHome()')+'">← Back</button><button class="danger" onclick="closeModal()">✕ Close</button></div>';
+  return '<div class="est-nav"><button class="est-back" onclick="'+(back||'zukaitEstimate.openHome()')+'">← BACK</button><button class="est-close" onclick="closeModal()">✕ CLOSE</button></div>';
 }
+function ensureSharedEstimateUi(){if(document.getElementById('estimateSharedUiStyle'))return;const s=document.createElement('style');s.id='estimateSharedUiStyle';s.textContent='.est-nav{display:flex;gap:5px;align-items:center;margin:0 0 6px}.est-nav button{height:28px!important;min-height:28px!important;width:auto!important;flex:0 0 auto!important;border-radius:8px!important;font-size:9px!important;line-height:1!important;font-weight:900!important;padding:4px 8px!important}.est-back{border:1px solid #93c5fd!important;background:#dbeafe!important;color:#1d4ed8!important}.est-close{border:1px solid #fca5a5!important;background:#fee2e2!important;color:#b91c1c!important}.est-grid2{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}.est-grid2 .est-action{min-height:88px!important;padding:10px 12px!important;border-radius:16px!important;box-shadow:0 3px 12px rgba(15,27,43,.07)!important}@media(max-width:700px){.est-grid2{grid-template-columns:repeat(2,minmax(0,1fr))!important}.est-grid2 .est-action b{font-size:13px!important}.est-grid2 .est-action small{font-size:10px!important}}';document.head.appendChild(s)}
 function estimateCard(e){
   const t=totals(e);
   return '<button class="est-result" onclick="zukaitEstimate.openEditor(\''+esc(e.id)+'\')"><b>'+esc(e.estimateNo)+'</b> · '+esc(e.date||'')+
@@ -71,7 +72,7 @@ function estimateCard(e){
 }
 function openHome(){
   if(!canUse())return alert('Supervisor or Manager access required.');
-  ensureState();ensureStyle();
+  ensureState();ensureStyle();ensureSharedEstimateUi();
   const recent=state.estimates.slice().sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)).slice(0,4);
   const html=nav('closeModal()')+'<div class="est-home"><h3 style="margin-top:0">🧾 Estimate</h3><div class="est-grid2">'+
     '<button class="est-action" onclick="zukaitEstimate.newEstimate()"><b>➕ New Estimate</b><small>LS or Parts + Labour</small></button>'+
