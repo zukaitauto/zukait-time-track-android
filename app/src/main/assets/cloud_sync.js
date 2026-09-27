@@ -299,8 +299,11 @@
       list.forEach(row=>{
         if(!row||row.voided){out.push(row);return}
         const rid=String(row.clientRequestId||'').trim();
-        const semantic=String(row.department||'')+'|'+String(row.type||'actual')+'|'+String(row.jobCard||'').toUpperCase();
-        const key=rid?'request|'+rid:semantic;
+        const id=String(row.id||'').trim();
+        // Only collapse records that carry the same idempotency key (or, for
+        // legacy rows, the exact same record id). Never dedupe merely because
+        // two legitimate Consumables records share type + Job Card.
+        const key=rid?'request|'+rid:(id?'id|'+id:'json|'+JSON.stringify(row));
         if(!seen.has(key)){seen.set(key,row);out.push(row);return}
         const keep=seen.get(key);
         if(Number(row.createdAt||row.actualAt||0)<Number(keep.createdAt||keep.actualAt||0)){
