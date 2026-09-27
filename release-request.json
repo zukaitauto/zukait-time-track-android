@@ -1,8 +1,8 @@
 {
-  "versionName": "V169",
-  "versionCode": 132,
+  "versionName": "V170",
+  "versionCode": 133,
   "approvedForStaff": true,
   "approvedAt": "2026-09-27",
-  "sourceCommit": "b571677500ede9668b694364d1f4bf930508a43e",
-  "publishNonce": "approved-v169-immediate-server-sync-20260927"
+  "sourceCommit": "36ba74ca48fa8243b1bef9758306a7949f079dfd",
+  "publishNonce": "approved-v170-supervisor-confirmation-rls-20260927"
 }
