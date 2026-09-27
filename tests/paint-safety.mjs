@@ -93,6 +93,8 @@ assert.match(src,/paint-received-card/,'Received Paint must keep each paint line
 assert.match(src,/paint-review-cards/,'Received Paint final costing review must use responsive cards');
 assert.match(src,/ACTUAL COST/,'Received Paint review must keep actual cost visible before confirmation');
 assert.match(src,/paint-edit-cards/,'Manager Paint correction must use responsive edit cards');
+assert.match(src,/paint-search-line-cards/,'Paint Search results must use responsive line cards');
+assert.match(src,/paint-return-cards/,'Paint Return history must use responsive cards');
 assert.match(src,/if\(r\(\)!=='Manager'\)return/,'Paint correction must remain Manager-only');
 assert.match(src,/Edit Reason is required/,'Manager Paint correction must require a reason');
 assert.match(src,/Confirm Manager correction\?/,'Manager Paint correction must retain accidental-click confirmation');
