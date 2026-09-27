@@ -122,7 +122,7 @@ assert.match(updates, /currentRemaining',!hasAlloc\?'—':left<=0\?'\+'\+fm/, 'z
 assert.match(updates, /NO ALLOCATED TIME/, 'zero allocation must show a clear no allocated time state');
 
 // Shared data consistency contracts
-assert.match(cloud, /const pollMs=\(\)=>document\.visibilityState==='hidden'\?30000:5000/, 'cloud polling must use visibility-aware battery-efficient cadence');
+assert.match(cloud, /const pollMs=\(\)=>document\.visibilityState==='hidden'\?30000:1000/, 'cloud revision heartbeat must detect active-device changes within about one second while remaining battery-aware when hidden');
 assert.match(cloud, /visibilitychange[\s\S]*?refreshVisibleSharedState/, 'dashboard must refresh shared state when the app becomes visible');
 assert.match(cloud, /window\.addEventListener\('focus',refreshVisibleSharedState\)/, 'dashboard must refresh shared state when the app regains focus');
 assert.match(cloud, /if\(cloudDirty&&!cloudPushing\)await push\(0\)/, 'local changes must be pushed before a forced shared-state refresh');
