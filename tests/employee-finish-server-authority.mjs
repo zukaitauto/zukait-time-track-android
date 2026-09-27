@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+assert.match(api,/if \(k === "jobs"\) continue/,'Employee validator must special-case Job Card projection rather than grant general jobs permission');
+assert.match(api,/delete x\.status;delete x\.completedAt/,'Only status and completedAt may differ on Employee Finish');
+assert.match(api,/if \(!same\(strip\(before\),strip\(after\)\)\) return false/,'Employee must not edit other Job Card fields');
+assert.match(api,/assignments\.every\(\(a:any\)=>a\?\.completed===true\)/,'Completed status must be derived from all non-cancelled assignments');
+assert.match(api,/expectedStatus=done\?"Completed":"Open"/,'Job Card status must be server-validated from assignment completion');
+assert.match(api,/Math\.max\(\.\.\.assignments\.map/,'completedAt must be the latest assignment completion time');
+assert.match(api,/if \(!mine \|\| !assignments\.length\) return false/,'Employee Finish projection must belong to the employee');
+console.log('employee finish server authority regression passed');
