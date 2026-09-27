@@ -1,8 +1,8 @@
 {
-  "versionName": "V175",
-  "versionCode": 138,
+  "versionName": "V176",
+  "versionCode": 139,
   "approvedForStaff": true,
   "approvedAt": "2026-09-27",
-  "sourceCommit": "c33c86c5ce637979321fdb33be0573c6add88305",
-  "publishNonce": "approved-v175-supervisor-search-voice-clear-20260927"
+  "sourceCommit": "2b58963fb66023ba71ac04fd04fbc71921862efa",
+  "publishNonce": "approved-v176-one-column-job-search-results-20260927"
 }
