@@ -56,7 +56,7 @@ function inject(){
  updateBadges();
 }
 function updateBadges(){const n=unread(),html='🔔'+(n?'<span class="zukait-notify-badge">'+(n>99?'99+':n)+'</span>':'');document.querySelectorAll('.zukait-notify-btn').forEach(b=>{if(b.innerHTML!==html)b.innerHTML=html})}
-function openPart(n){try{window.zukaitV2?.sparePartsMain?.openList?.(n.listNo)}catch(_){}}
+function openPart(n){const no=String(n?.listNo||n||'').trim();if(!no)return;try{if(typeof closeModal==='function')closeModal()}catch(_){}const open=()=>{try{const sp=window.zukaitV2?.sparePartsMain;if(sp?.openList){sp.openList(no);return true}if(sp?.open){sp.open();setTimeout(()=>sp.openList?.(no),80);return true}}catch(_){}return false};if(!open())setTimeout(open,120)}
 function openCenter(){
  const rows=all();localStorage.setItem(readKey(),String(Date.now()));updateBadges();
  const body='<div class="zukait-notify-list">'+(rows.length?rows.slice(0,30).map(n=>'<div class="zukait-notify-row"><b>'+esc(n.title)+'</b><span>'+esc(n.message)+'</span><small>'+esc(n.at?new Date(n.at).toLocaleString():'')+'</small>'+(n.listNo?'<button class="blue" onclick="zukaitNotificationCenter.openPart(\''+esc(n.listNo)+'\')">Open Spare Parts</button>':'')+'</div>').join(''):'<p class="muted">No notifications.</p>')+'</div>';
