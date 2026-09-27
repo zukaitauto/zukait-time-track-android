@@ -217,14 +217,14 @@
     });
   }
   function markUnavailable(){
-    if(!window.me||!serverRequired())return;
+    if(!window.me||!['Supervisor','Manager'].includes(me.role))return;
     const root=me.role==='Supervisor'?document.getElementById('supervisorView'):document.getElementById('managerView');
     if(!root)return;
     const labels=me.role==='Supervisor'
-      ?['Active Workers','Paused Jobs','Available Workers','Overtime Now']
+      ?['Active Workers','Working Now','Paused Jobs','Available Workers','Overtime Now']
       :['Working Now','Waiting / ID001','Work Paused','Free Tech','Active Workers'];
     labels.forEach(label=>setCount(root,label,'—'));
-    root.querySelectorAll('.v143-live,.v92-live-dot').forEach(b=>b.textContent='● SYNCING');
+    root.querySelectorAll('.v143-live,.v92-live-dot').forEach(b=>b.textContent=navigator.onLine?'● SYNCING':'● OFFLINE');
   }
   function apply(){
     const x=live();
