@@ -37,5 +37,5 @@ assert.match(main,/function partCategory\(name\)/,'parts must receive automatic 
 assert.match(main,/Body'.*Mechanical'.*Electrical'.*Consumables'.*Other'/s,'automatic grouping must support the five agreed groups');
 assert.match(main,/function draftPartSuggestions\(\)/,'parts-list creation must provide fast historical suggestions');
 assert.match(main,/vs last/,'quotation must show compact price-change guidance');
-assert.match(main,/v2-sp-price-change up/,'price increases must be visually identifiable');
-assert.match(main,/v2-sp-price-change down/,'price reductions must be visually identifiable');
+assert.match(main,/delta>0\?'up':'down'/,'price increases must be visually identifiable');
+assert.match(main,/v2-sp-price-change \.up/,'price increase styling must exist');\nassert.match(main,/v2-sp-price-change \.down/,'price reduction styling must exist');
