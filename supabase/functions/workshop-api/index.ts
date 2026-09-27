@@ -216,6 +216,20 @@ function preserveOperationalHistory(candidate: any, current: any, user: any): an
     }
     candidate[key] = incoming;
   }
+  // Audit entries are append-only. Some legacy audit arrays have no record ID,
+  // so compare their full values when recovering them from a stale save.
+  for (const key of ["dutyEndAudit", "jobVehicleEdits", "statusCorrections"] as const) {
+    const incoming = Array.isArray(candidate?.[key]) ? candidate[key] : [];
+    const seen = new Set(incoming.map((x: any) => JSON.stringify(x)));
+    for (const record of Array.isArray(current?.[key]) ? current[key] : []) {
+      const identity = JSON.stringify(record);
+      if (!seen.has(identity)) {
+        incoming.push(cloneValue(record));
+        seen.add(identity);
+      }
+    }
+    if (incoming.length || Array.isArray(current?.[key])) candidate[key] = incoming;
+  }
   const previousReopens = new Set((current?.reopenLogs || []).map((x: any) => String(x?.id || "")));
   const allowedReopens = new Set((candidate?.reopenLogs || []).filter((x: any) =>
     ["Supervisor", "Manager"].includes(String(user?.role || "")) &&
@@ -684,6 +698,24 @@ Deno.serve(async (req: Request) => {
         }
 
         candidate = preserveOperationalHistory(reconcileAutoOvertime(preserveClosedSessions(candidate, current.data), current.data), current.data, user);
+
+        // Keep profiles whose credentials are still active. Inactive staff may be
+        // intentionally removed; an old full-state save must not remove active staff.
+        const proposedUsers = Array.isArray(candidate.users) ? candidate.users : [];
+        const presentUsers = new Set(proposedUsers.map((u: any) => String(u?.id || "")));
+        const missingUsers = (Array.isArray(current.data?.users) ? current.data.users : [])
+          .filter((u: any) => u?.id && !presentUsers.has(String(u.id)));
+        if (missingUsers.length) {
+          const { data: activeStaff, error: staffError } = await admin.from("staff_credentials")
+            .select("user_id").eq("active", true)
+            .in("user_id", missingUsers.map((u: any) => String(u.id)));
+          if (staffError) throw staffError;
+          const activeIds = new Set((activeStaff || []).map((x: any) => String(x.user_id)));
+          for (const profile of missingUsers) {
+            if (activeIds.has(String(profile.id))) proposedUsers.push(cloneValue(profile));
+          }
+          candidate.users = proposedUsers;
+        }
 
         const unsafeIdeal = (candidate.assign || []).some((a: any) =>
           a && a.job === "ID001" && !a.cancelled && !a.completed && Number(a.idealSafeVersion || 0) < 1
