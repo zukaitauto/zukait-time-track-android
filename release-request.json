@@ -1,8 +1,8 @@
 {
-  "versionName": "V178",
-  "versionCode": 141,
+  "versionName": "V179",
+  "versionCode": 142,
   "approvedForStaff": true,
   "approvedAt": "2026-09-27",
-  "sourceCommit": "eb4281edb68f02d5a785cef559e6679d703f690a",
-  "publishNonce": "release-v178-consumables-recovery-20260927"
+  "sourceCommit": "311d1451867ef6a7d8c855f8709c6e727977d6f0",
+  "publishNonce": "release-v179-material-recovery-parts-pending-20260927"
 }
