@@ -38,14 +38,19 @@ async function sessionUser(token: string) {
   if (!token) return null;
   const hash = await sha256Hex(token);
   const { data: session } = await admin.from("staff_sessions")
-    .select("user_id,revoked_at").eq("token_hash", hash).maybeSingle();
+    .select("user_id,revoked_at,last_seen_at").eq("token_hash", hash).maybeSingle();
   if (!session || session.revoked_at) return null;
   const { data: staff } = await admin.from("staff_credentials")
     .select("user_id,display_name,role,department,active")
     .eq("user_id", session.user_id).maybeSingle();
   if (!staff || !staff.active) return null;
-  await admin.from("staff_sessions").update({ last_seen_at: new Date().toISOString() })
-    .eq("token_hash", hash);
+  // Revision probes can arrive every second from active phones. Keep session
+  // liveness useful without turning every read into a database write.
+  const lastSeen = session.last_seen_at ? Date.parse(String(session.last_seen_at)) : 0;
+  if (!Number.isFinite(lastSeen) || Date.now() - lastSeen >= 60000) {
+    await admin.from("staff_sessions").update({ last_seen_at: new Date().toISOString() })
+      .eq("token_hash", hash);
+  }
   return { id: staff.user_id, name: staff.display_name, role: staff.role, department: staff.department };
 }
 function same(a: unknown, b: unknown) {
