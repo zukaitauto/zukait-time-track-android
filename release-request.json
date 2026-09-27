@@ -1,8 +1,8 @@
 {
-  "versionName": "V181",
-  "versionCode": 144,
+  "versionName": "V182",
+  "versionCode": 145,
   "approvedForStaff": true,
   "approvedAt": "2026-09-28",
-  "sourceCommit": "3eb7364b2d4f467ffcbbe40257084ed23c6e7522",
-  "publishNonce": "release-v181-spare-parts-durable-compact-ui-20260928"
+  "sourceCommit": "ab62a6c429ff36213913d8fc39a5c392e9d50007",
+  "publishNonce": "release-v182-manager-performance-purchaser-header-20260928"
 }
