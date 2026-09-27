@@ -280,8 +280,11 @@ window.consSetSearchView=function(mode){
  if(document.getElementById('consSearchJc')?.value)consShowSearch();
  return consSearchView;
 };
-window.openConsumablesSearch=function(){
+window.openConsumablesSearch=async function(){
  if(!['Supervisor','Manager'].includes(role()))return;
+ if(navigator.onLine&&window.zukaitCloud?.syncNow){
+  try{await window.zukaitCloud.syncNow()}catch(e){console.warn('Consumables search refresh failed; using local cache',e)}
+ }
  consSearchListStyle();
  modal('Search Material List','<div class="cons-subnav"><button class="secondary" type="button" onclick="openPaintingConsumables()">← BACK TO CONSUMABLES</button><button class="blue" type="button" onclick="consOpenPaintReport()">PAINT REPORT</button></div><div class="cons-entry-shell"><div class="cons-searchbar"><input id="consSearchJc" placeholder="Search Job Card No." oninput="consShowSearch()"><button class="blue" onclick="consShowSearch()">SEARCH</button></div><div class="cons-search-tabs"><button type="button" data-search-view="issued" class="'+(consSearchView==='issued'?'active':'')+'" onclick="consSetSearchView(\'issued\')">SUGGESTED / ISSUED</button><button type="button" data-search-view="actual" class="'+(consSearchView==='actual'?'active':'')+'" onclick="consSetSearchView(\'actual\')">ACTUAL MATERIALS</button></div><div class="cons-recent-head"><b>RECENT MATERIAL LISTS</b><small>JC | Vehicle | Registration</small></div><div class="cons-recent-list">'+consRecentMaterialLists()+'</div><div id="consSearchResult" class="notice">Enter a Job Card number to view the selected material list.</div></div>');
 };
