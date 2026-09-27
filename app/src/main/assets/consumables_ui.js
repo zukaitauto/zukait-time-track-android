@@ -83,8 +83,11 @@ function entryHeader(type){
 }
 function consMaterialBrandPairs(q){
  const c=C().ensureState(state),x=String(q||'').trim().toLowerCase(),seen=new Set(),rows=[];
- c.prices.filter(p=>p&&!p.voided).sort((a,b)=>(Number(b.effectiveFrom)||0)-(Number(a.effectiveFrom)||0)).forEach(p=>{const m=c.materials.find(v=>v.id===p.materialId&&v.active!==false),b=c.brands.find(v=>v.id===p.brandId&&v.active!==false);if(!m||!b)return;const key=m.id+'|'+b.id;if(seen.has(key))return;seen.add(key);const hay=(m.name+' '+b.name+' '+(m.unit||'')).toLowerCase();if(!x||hay.includes(x))rows.push({m,b})});
- return rows.slice(0,12);
+ const add=(mid,bid)=>{const m=c.materials.find(v=>v.id===mid&&v.active!==false),b=c.brands.find(v=>v.id===bid&&v.active!==false);if(!m||!b)return;const key=m.id+'|'+b.id;if(seen.has(key))return;seen.add(key);const hay=(m.name+' '+b.name+' '+(m.unit||'')).toLowerCase();if(!x||hay.includes(x))rows.push({m,b})};
+ c.prices.filter(p=>p&&!p.voided).sort((a,b)=>(Number(b.effectiveFrom)||0)-(Number(a.effectiveFrom)||0)).forEach(p=>add(p.materialId,p.brandId));
+ [...c.issues].filter(r=>r&&!r.voided).sort((a,b)=>(Number(b.createdAt)||0)-(Number(a.createdAt)||0)).forEach(r=>(r.lines||[]).forEach(l=>add(l.materialId,l.brandId)));
+ [...c.actuals].filter(r=>r&&!r.voided).sort((a,b)=>(Number(b.createdAt)||0)-(Number(a.createdAt)||0)).forEach(r=>(r.lines||[]).forEach(l=>add(l.materialId,l.brandId)));
+ return rows.sort((a,b)=>String(a.m.name||'').localeCompare(String(b.m.name||''))||String(a.b.name||'').localeCompare(String(b.b.name||''))).slice(0,50);
 }
 function lineEditor(){
  return '<div class="cons-material-picker"><label>Material Search<input id="consMaterialSearch" autocomplete="off" placeholder="Type material or brand" oninput="consSearchMaterialBrand()" onfocus="consSearchMaterialBrand(true)"></label><input id="consMaterial" type="hidden"><input id="consBrand" type="hidden"><div id="consMaterialResults" class="cons-material-results hidden"></div><div id="consMaterialSelected" class="cons-material-selected hidden"></div></div><div class="cons-line-editor"><input id="consQty" type="number" min="0" step="any" placeholder="Quantity"><button class="blue" onclick="consAddLine()">ADD</button></div><div id="consDraftRows"></div>';
