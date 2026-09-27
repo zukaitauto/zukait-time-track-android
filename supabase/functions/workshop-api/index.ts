@@ -595,6 +595,15 @@ Deno.serve(async (req: Request) => {
       if (eventType==="SPARE_PART_ITEM_EDITED" && !["Manager","Supervisor"].includes(callerRole)) {
         return reply({ok:false,code:"spare_item_edit_forbidden"},403);
       }
+      if (eventType==="SPARE_PART_MANAGER_CORRECTED") {
+        const p=event.payload && typeof event.payload==="object" ? event.payload : {};
+        const after=p.after && typeof p.after==="object" ? p.after : {};
+        const allowedStatuses=new Set(["LISTED","ENQUIRY","QUOTED","ORDERED","RECEIVED","SUPERVISOR_VERIFIED","SUPERVISOR_CONFIRMED","FITTED","RETURNED","UNAVAILABLE","CUSTOMER_SETTLEMENT"]);
+        const price=after.finalPrice==null?null:Number(after.finalPrice);
+        if (callerRole!=="Manager" || !String(p.partId||"") || !String(p.listNo||"") || !String(p.jobCard||"") || !String(p.reason||"").trim() || !p.before || !p.after || !allowedStatuses.has(String(after.status||"")) || (price!=null&&(!Number.isFinite(price)||price<0||price>1000000))) {
+          return reply({ok:false,code:"spare_manager_correction_forbidden_or_invalid"},403);
+        }
+      }
       if (eventType==="SPARE_PART_ARRIVAL_ACCEPTED") {
         const p=event.payload && typeof event.payload==="object" ? event.payload : {};
         const allowedKeys=new Set(["partId","listNo","jobCard"]);
