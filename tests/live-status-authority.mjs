@@ -12,7 +12,7 @@ const liveTag=html.match(/<script src="live_status_authority\.js\?v=\d+"><\/scri
 assert.ok(stableTag && liveTag,'stable Supervisor and live authority scripts must ship');
 assert.ok(html.includes('<script src="cloud_sync.js?v=178"></script>'),'Web shell must bust the shared sync-engine cache when cloud_sync changes');
 assert.ok(html.includes('consumables.js?v=179'),'Web/Android shell must load the current Consumables model after server-record recovery');
-assert.ok(html.includes('consumables_ui.js?v=180'),'Web/Android shell must load the current Consumables UI after server-record recovery');
+assert.ok(html.includes('consumables_ui.js?v=181'),'Web/Android shell must load the current Consumables UI after authoritative search refresh');
 assert.ok(html.includes('paint_module.js?v=179'),'Web/Android shell must load the current Paint workflow after server-record recovery');
 assert.ok(html.includes('<script src="v2/features/notifications/center.js?v=2"></script>'),'Web/Android shell must load the shared notification center');
 assert.ok(html.indexOf(liveTag[0])>html.indexOf(stableTag[0]),'server live authority must load last');
