@@ -1,10 +1,13 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';
 const sql=fs.readFileSync('supabase/ARCHITECTURE_V2_BOUNDED_HISTORY.sql','utf8');
 const report=fs.readFileSync('supabase/ARCHITECTURE_V2_REPORTING.sql','utf8');
+const cloud=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
 for(const e of ['REPEAT_ASSIGNED','REPEAT_COMPLETED','REPEAT_CANCELLED','CONSUMABLE_ISSUED','CONSUMABLE_ADDITIONAL','CONSUMABLE_ACTUAL','CONSUMABLE_VOIDED'])assert.ok(sql.includes(e),'missing '+e);
 assert.match(sql,/raise exception 'repeat_job_required'/);
 assert.match(sql,/raise exception 'invalid_repeat_event'/);
 assert.match(sql,/raise exception 'consumable_job_required'/);
 assert.match(report,/q\.report='REPEAT' and e\.event_type like 'REPEAT%'/);
 assert.match(report,/q\.report='CONSUMABLES_VARIANCE' and e\.event_type like 'CONSUMABLE%'/);
+assert.match(cloud,/const key=rid\?'request\\|'\+rid:\(id\?'id\\|'\+id:/,'Consumables sync dedupe must preserve distinct legacy records by record id');
+assert.doesNotMatch(cloud,/const key=rid\?'request\\|'\+rid:semantic/,'Consumables sync must not collapse records only by type + Job Card');
 console.log('V2 repeat/consumables server event authority gate: ok');
