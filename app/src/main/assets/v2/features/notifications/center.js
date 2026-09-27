@@ -1,21 +1,47 @@
 (function(){'use strict';
 const POLL_MS=5000;
+let serverPartsEvents=null;
 function meNow(){try{return (typeof me!=='undefined'&&me)||window.me||null}catch(_){return window.me||null}}
 function role(){return String(meNow()?.role||'')}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function readKey(){return 'zukait-notification-read-'+String(meNow()?.id||role()||'guest')}
 function readAt(){return Number(localStorage.getItem(readKey())||0)}
-function eventTime(v){const n=Date.parse(String(v||''));return Number.isFinite(n)?n:0}
+function eventTime(v){if(typeof v==='number'&&Number.isFinite(v))return v;const n=Date.parse(String(v||''));return Number.isFinite(n)?n:0}
 function partsRows(){try{return window.zukaitV2?.sparePartsMain?.reportRows?.()||[]}catch(_){return[]}}
-function partsNotifications(){
- const r=role(),rows=partsRows(),out=[];
- for(const x of rows){
-  const status=String(x.status||'LISTED'),created=eventTime(x.createdAt),activity=eventTime(x.activityAt);
-  if((r==='Purchaser'||r==='Manager')&&['LISTED','ENQUIRY'].includes(status))out.push({id:'parts-new-'+x.listNo+'-'+x.name,type:'SPARE_PART_LISTED',at:created||activity,title:'New Parts Entry',message:'JC '+(x.jobCard||'')+' · '+(x.name||'Part')+' is ready for Purchaser action.',listNo:x.listNo});
-  if((r==='Supervisor'||r==='Manager')&&status==='RECEIVED')out.push({id:'parts-arrived-'+x.listNo+'-'+x.name,type:'SPARE_PART_RECEIVED',at:activity||created,title:'Parts Arrived',message:'JC '+(x.jobCard||'')+' · '+(x.name||'Part')+' was marked arrived by Purchaser.',listNo:x.listNo});
+function payloadOf(x){return x&&typeof x.payload==='object'&&x.payload?x.payload:{}}
+function normalizeServerEvent(x={}){
+ const p=payloadOf(x);
+ return {eventId:String(x.event_id??x.eventId??''),eventType:String(x.event_type??x.eventType??''),at:eventTime(x.sort_time??x.server_time??x.serverTime??x.created_at??x.createdAt),partId:String(x.entity_id??x.entityId??p.partId??p.part_id??''),listNo:String(p.listNo??p.list_no??x.listNo??x.list_no??''),jobCard:String(p.jobCard??p.job_card??x.jobCard??x.job_card??''),name:String(p.name??p.partName??p.part_name??p.part??x.name??''),to:String(p.to??x.to??'').toUpperCase(),targetRole:String(p.targetRole??p.target_role??'')};
+}
+async function loadServerPartEvents(){
+ if(!navigator.onLine||!window.zukaitV2?.reports?.page)return null;
+ let cursor=null,rows=[],pages=0;
+ do{
+  const r=await window.zukaitV2.reports.page('SPARE_PARTS',{cursor,limit:500,filters:{}});
+  if(!Array.isArray(r?.rows)||r.source==='server-required')throw Error('SPARE_PARTS_REPORT_UNAVAILABLE');
+  rows.push(...r.rows);cursor=r.nextCursor??null;pages++;
+ }while(cursor&&pages<20);
+ serverPartsEvents=rows.map(normalizeServerEvent).filter(x=>x.eventId&&x.at);
+ return serverPartsEvents;
+}
+function eventPartsNotifications(events){
+ const r=role(),out=[];
+ for(const x of events||[]){
+  if((r==='Purchaser'||r==='Manager')&&x.eventType==='SPARE_PART_LISTED')out.push({id:'parts-event-'+x.eventId,type:'SPARE_PART_LISTED',at:x.at,title:'New Parts Entry',message:'JC '+(x.jobCard||'')+' · '+(x.name||'Part')+' is ready for Purchaser action.',listNo:x.listNo});
+  if((r==='Supervisor'||r==='Manager')&&x.eventType==='SPARE_PART_STATUS_CHANGED'&&x.to==='RECEIVED')out.push({id:'parts-event-'+x.eventId,type:'SPARE_PART_RECEIVED',at:x.at,title:'Parts Arrived',message:'JC '+(x.jobCard||'')+' · '+(x.name||'Part')+' was marked arrived by Purchaser.',listNo:x.listNo});
  }
  return out;
 }
+function statePartsNotifications(){
+ const r=role(),rows=partsRows(),out=[];
+ for(const x of rows){
+  const status=String(x.status||'LISTED'),created=eventTime(x.createdAt),activity=eventTime(x.activityAt);
+  if((r==='Purchaser'||r==='Manager')&&['LISTED','ENQUIRY'].includes(status))out.push({id:'parts-state-new-'+x.listNo+'-'+x.name,type:'SPARE_PART_LISTED',at:created||activity,title:'New Parts Entry',message:'JC '+(x.jobCard||'')+' · '+(x.name||'Part')+' is ready for Purchaser action.',listNo:x.listNo});
+  if((r==='Supervisor'||r==='Manager')&&status==='RECEIVED')out.push({id:'parts-state-arrived-'+x.listNo+'-'+x.name,type:'SPARE_PART_RECEIVED',at:activity||created,title:'Parts Arrived',message:'JC '+(x.jobCard||'')+' · '+(x.name||'Part')+' was marked arrived by Purchaser.',listNo:x.listNo});
+ }
+ return out;
+}
+function partsNotifications(){return serverPartsEvents===null?statePartsNotifications():eventPartsNotifications(serverPartsEvents)}
 function systemNotifications(){
  const u=meNow(),rows=Array.isArray(window.state?.systemNotifications)?window.state.systemNotifications:[];
  return rows.filter(n=>n&&!n.read&&(n.target===u?.id||n.target===role())).map(n=>({id:'system-'+n.id,type:'SYSTEM',at:Number(n.createdAt)||0,title:'System Notification',message:String(n.message||''),systemId:n.id}));
@@ -37,10 +63,10 @@ function openCenter(){
  if(typeof openModal==='function')openModal('<div class="row"><h3 style="margin:0;flex:1">🔔 Notifications</h3><button class="danger" onclick="closeModal()">✕ Close</button></div>'+body);
 }
 async function refresh(){
- try{if(navigator.onLine&&window.zukaitV2?.sparePartsMain?.hydrateAuthoritativeLists)await window.zukaitV2.sparePartsMain.hydrateAuthoritativeLists()}catch(_){}
+ try{if(navigator.onLine){if(window.zukaitV2?.sparePartsMain?.hydrateAuthoritativeLists)await window.zukaitV2.sparePartsMain.hydrateAuthoritativeLists();await loadServerPartEvents()}}catch(_){}
  inject();updateBadges();
 }
-window.zukaitNotificationCenter={open:openCenter,openPart,refresh,all,unread,inject};
+window.zukaitNotificationCenter={open:openCenter,openPart,refresh,all,unread,inject,eventPartsNotifications,normalizeServerEvent,loadServerPartEvents};
 document.addEventListener('DOMContentLoaded',()=>{inject();refresh()});window.addEventListener('online',refresh);window.addEventListener('focus',refresh);setTimeout(()=>{inject();refresh()},700);setInterval(refresh,POLL_MS);
 new MutationObserver(()=>inject()).observe(document.documentElement,{childList:true,subtree:true});
 })();
