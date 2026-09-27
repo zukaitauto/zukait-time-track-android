@@ -13,9 +13,9 @@ function consSyncInfo(){
 function consUpdateSync(){
  const el=document.getElementById('consSyncPill');if(!el)return;const x=consSyncInfo();el.textContent=x.text;el.className='cons-sync-pill '+x.cls;
 }
-const modal=(title,body)=>{
+const modal=(title,body,back)=>{
   if(typeof window.openModal!=='function')return;
-  const x=consSyncInfo(),r=openModal('<div class="cons-page"><div class="section-title"><h2>'+title+'</h2><span id="consSyncPill" class="cons-sync-pill '+x.cls+'">'+x.text+'</span><button class="secondary" onclick="closeModal()">Close</button></div>'+body+'</div>');
+  const x=consSyncInfo(),nav='<div class="cons-top-nav" style="display:flex;gap:6px;margin:0 0 10px">'+(back?'<button type="button" onclick="'+back+'" style="min-height:32px;border:0;border-radius:8px;background:#2563eb;color:#fff;font-size:11px;font-weight:900;padding:6px 10px">← BACK</button>':'')+'<button type="button" onclick="closeModal()" style="min-height:32px;border:0;border-radius:8px;background:#dc2626;color:#fff;font-size:11px;font-weight:900;padding:6px 10px">✕ CLOSE</button></div>',r=openModal('<div class="cons-page">'+nav+'<div class="section-title"><h2>'+title+'</h2><span id="consSyncPill" class="cons-sync-pill '+x.cls+'">'+x.text+'</span></div>'+body.replace(/<button class="secondary"[^>]*>← BACK[^<]*<\/button>/gi,'')+'</div>');
   setTimeout(consUpdateSync,0);return r;
 };
 if(window.addEventListener){window.addEventListener('zukait-live-status',consUpdateSync);window.addEventListener('online',consUpdateSync);window.addEventListener('offline',consUpdateSync)}
