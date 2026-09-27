@@ -16,6 +16,6 @@ assert.match(b,/state\.consumables\?\.actuals/,'Consumables Expense must use fin
 assert.match(b,/!x\.voided&&x\.locked/,'Consumables Expense must exclude voided/unfinalized records');
 assert.match(b,/consSelectTotalJC/,'clicking a consumables JC must drill into its consumables detail');
 assert.match(b,/Job Card \/ Vehicle/,'purchase drilldown must show Job Card and Vehicle');
-assert.equal((b.match(/>Total Purchase</g)||[]).length,2,'Total Purchase should appear only once as card and once as drilldown total label');
-assert.equal((b.match(/>Consumables Expense</g)||[]).length,2,'Consumables Expense should appear only once as card and once as drilldown total label');
+assert.equal((b.match(/>Total Purchase</g)||[]).length,1,'Total Purchase must have one dashboard card only');
+assert.equal((b.match(/>Consumables Expense</g)||[]).length,1,'Consumables Expense must have one dashboard card only');
 console.log('Manager Workshop Performance purchase/consumables regression passed');
