@@ -1,8 +1,8 @@
 {
-  "versionName": "V177",
-  "versionCode": 140,
+  "versionName": "V178",
+  "versionCode": 141,
   "approvedForStaff": true,
   "approvedAt": "2026-09-27",
-  "sourceCommit": "ec3ac9d129b1aa79d76f48f039c3ca89cab48480",
-  "publishNonce": "approved-v177-paint-consumables-costing-20260927"
+  "sourceCommit": "e1e818c7480477b5e658579556dca98ca309c861",
+  "publishNonce": "approved-v178-consumables-search-redesign-20260927"
 }
