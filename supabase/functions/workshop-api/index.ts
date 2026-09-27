@@ -202,6 +202,14 @@ function preserveOperationalHistory(candidate: any, current: any, user: any): an
     user?.role === "Manager" && String(x?.deletedBy || "") === String(user?.id || "") &&
     String(x?.reason || "").trim() && !earlier.has(String(x?.job || "") + ":" + String(x?.deletedAt || ""))
   ).map((x: any) => String(x.job)));
+  // An explicit Manager deletion wins even if another device edited the job
+  // after the deleting device loaded its snapshot.
+  if (deletedJobs.size) {
+    for (const [key, job] of [["jobs", "no"], ["assign", "job"], ["sessions", "job"]] as const) {
+      candidate[key] = (Array.isArray(candidate?.[key]) ? candidate[key] : [])
+        .filter((record: any) => !deletedJobs.has(String(record?.[job] || "")));
+    }
+  }
   for (const [key, identity, job] of [
     ["jobs", "no", "no"], ["assign", "id", "job"], ["sessions", "id", "job"]
   ] as const) {
@@ -218,7 +226,7 @@ function preserveOperationalHistory(candidate: any, current: any, user: any): an
   }
   // Audit entries are append-only. Some legacy audit arrays have no record ID,
   // so compare their full values when recovering them from a stale save.
-  for (const key of ["dutyEndAudit", "jobVehicleEdits", "statusCorrections"] as const) {
+  for (const key of ["dutyEndAudit", "jobVehicleEdits", "statusCorrections", "suggestedEdits", "jobEdits", "jobDeletes"] as const) {
     const incoming = Array.isArray(candidate?.[key]) ? candidate[key] : [];
     const seen = new Set(incoming.map((x: any) => JSON.stringify(x)));
     for (const record of Array.isArray(current?.[key]) ? current[key] : []) {
@@ -251,7 +259,7 @@ function preserveOperationalHistory(candidate: any, current: any, user: any): an
   return candidate;
 }
 
-function threeWayMerge(base: any, remote: any, local: any): any {
+function threeWayMerge(base: any, remote: any, local: any, field = ""): any {
   if (same(local, base)) return cloneValue(remote);
   if (same(remote, base)) return cloneValue(local);
 
@@ -260,12 +268,15 @@ function threeWayMerge(base: any, remote: any, local: any): any {
     const r = Array.isArray(remote) ? remote : [];
     const l = Array.isArray(local) ? local : [];
     const all = [...b, ...r, ...l];
-    const idBased = all.every(x => x == null || (typeof x === "object" && !Array.isArray(x) && x.id != null));
-    if (!idBased) return cloneValue(local);
+    // Job Cards use "no", while assignments and sessions use "id".
+    // Without this key, an edit to one Job Card replaces the entire remote list.
+    const identity = field === "jobs" ? "no" : "id";
+    const keyed = all.every(x => x == null || (typeof x === "object" && !Array.isArray(x) && x[identity] != null));
+    if (!keyed) return cloneValue(local);
 
-    const bm = new Map(b.filter((x:any)=>x?.id!=null).map((x:any)=>[String(x.id),x]));
-    const rm = new Map(r.filter((x:any)=>x?.id!=null).map((x:any)=>[String(x.id),x]));
-    const lm = new Map(l.filter((x:any)=>x?.id!=null).map((x:any)=>[String(x.id),x]));
+    const bm = new Map(b.filter((x:any)=>x?.[identity]!=null).map((x:any)=>[String(x[identity]),x]));
+    const rm = new Map(r.filter((x:any)=>x?.[identity]!=null).map((x:any)=>[String(x[identity]),x]));
+    const lm = new Map(l.filter((x:any)=>x?.[identity]!=null).map((x:any)=>[String(x[identity]),x]));
     const ids = [...new Set([...bm.keys(), ...rm.keys(), ...lm.keys()])];
     const out:any[] = [];
 
@@ -312,7 +323,7 @@ function threeWayMerge(base: any, remote: any, local: any): any {
         out[k] = cloneValue(lv);
         continue;
       }
-      out[k] = threeWayMerge(bv, rv, lv);
+      out[k] = threeWayMerge(bv, rv, lv, k);
     }
     return out;
   }
