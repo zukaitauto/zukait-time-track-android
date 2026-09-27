@@ -60,6 +60,7 @@ assert.match(uiSource,/cons-actual-line-cards/,'Actual Materials entry must use 
 assert.match(uiSource,/TOTAL ISSUED/,'Actual material cards must keep the issued allowance visible');
 assert.match(uiSource,/ACTUAL QTY/,'Actual material cards must keep the editable actual quantity');
 assert.match(uiSource,/cons-review-cards/,'Actual Materials final locking review must use responsive cards');
+assert.doesNotMatch(uiSource,/<th>No\.<\/th><th>Material<\/th><th>Brand<\/th><th>Actual Qty<\/th><th>Price \/ Unit<\/th><th>Cost<\/th>/,'Actual Materials final review must not fall back to the old wide table');
 assert.match(uiSource,/Total Actual Material Cost/,'Actual Materials review must retain the final total at the bottom');
 assert.match(uiSource,/consStripSearchActions/,'print/share must operate on the selected list only');
 assert.match(uiSource,/\.cons-summary\{display:grid/,'print preview must preserve structured summary layout');
