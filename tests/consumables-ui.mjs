@@ -55,6 +55,10 @@ assert.match(uiSource,/\.cons-price-col,\.cons-list-total,\.cons-price-note,\.co
 assert.doesNotMatch(uiSource,/PRINT \/ PDF BOTH/,'combined Suggested + Actual print must not return');
 assert.doesNotMatch(uiSource,/Approx\./,'Search Material UI must not use Approx wording');
 assert.match(uiSource,/name="viewport" content="width=device-width,initial-scale=1"/,'print preview must be mobile responsive');
+assert.match(uiSource,/cons-entry-line-cards/,'Suggested / Issued entry must use responsive material cards');
+assert.match(uiSource,/cons-actual-line-cards/,'Actual Materials entry must use responsive cards');
+assert.match(uiSource,/TOTAL ISSUED/,'Actual material cards must keep the issued allowance visible');
+assert.match(uiSource,/ACTUAL QTY/,'Actual material cards must keep the editable actual quantity');
 assert.match(uiSource,/consStripSearchActions/,'print/share must operate on the selected list only');
 assert.match(uiSource,/\.cons-summary\{display:grid/,'print preview must preserve structured summary layout');
 assert.ok(ctx.saved);assert.ok(!alerts.includes('MANAGER_ONLY'));console.log('Consumables UI integration tests passed: Job Card picker/vehicle details, simplified Additional Materials inheritance, duplicate safeguards, final Actual review, actor audit, search, reports, manager price editing and supervisor tile');
