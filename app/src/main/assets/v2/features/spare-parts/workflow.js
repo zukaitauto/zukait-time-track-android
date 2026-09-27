@@ -16,9 +16,9 @@ function canAct(role,from,to){
  if(['ENQUIRY','QUOTED','ORDERED','RECEIVED'].includes(to))return role==='Purchaser'||role==='Manager';
  if(to==='SUPERVISOR_VERIFIED')return role==='Supervisor'||role==='Manager';
  if(to==='DENTER_CHECKED')return false;
- if(to==='SUPERVISOR_CONFIRMED')return role==='Supervisor'||role==='Manager';
- if(to==='FITTED')return role==='Supervisor'||role==='Manager';
- if(to==='RETURNED')return ['Supervisor','Purchaser','Manager'].includes(role);
+ if(to==='SUPERVISOR_CONFIRMED')return role==='Manager';
+ if(to==='FITTED')return role==='Manager';
+ if(to==='RETURNED'){if(['SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED'].includes(String(from||'')))return role==='Manager';return ['Purchaser','Manager'].includes(role);}
  if(to==='UNAVAILABLE')return ['Supervisor','Purchaser','Manager'].includes(role);
  if(to==='CUSTOMER_SETTLEMENT')return role==='Supervisor'||role==='Manager';
  return role==='Supervisor'||role==='Manager';
