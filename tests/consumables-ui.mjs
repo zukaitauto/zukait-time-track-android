@@ -66,3 +66,10 @@ assert.match(uiSource,/consStripSearchActions/,'print/share must operate on the 
 assert.match(uiSource,/\.cons-summary\{display:grid/,'print preview must preserve structured summary layout');
 assert.ok(ctx.saved);assert.ok(!alerts.includes('MANAGER_ONLY'));console.log('Consumables UI integration tests passed: Job Card picker/vehicle details, simplified Additional Materials inheritance, duplicate safeguards, final Actual review, actor audit, search, reports, manager price editing and supervisor tile');
 
+
+assert.match(ui,/Total Consumables/,'Consumables must expose Total Consumables lookup');
+assert.match(ui,/openTotalConsumables/,'Total Consumables must be wired');
+assert.match(ui,/\['Supervisor','Manager'\]\.includes\(role\(\)\)/,'Total Consumables must be shared by Supervisor and Manager');
+assert.match(ui,/ACTUAL QTY/,'Actual Materials must expose actual quantity entry');
+assert.match(ui,/ADD MATERIAL/,'Actual Materials must allow real materials absent from Suggested list');
+assert.match(ui,/Actual Materials are not finalized yet/,'Total Consumables must not cost from Suggested quantities');
