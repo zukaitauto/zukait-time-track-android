@@ -74,4 +74,7 @@ assert.match(src,/paint-color-code/,'Paint PO Color Code must have emphasized st
 assert.match(src,/modelYearOf\(j\)/,'Paint PO must normalize Model Year from Job Card data');
 assert.match(src,/class="paint-cost"/,'Received Paint must expose editable Actual Cost');
 assert.match(src,/paintRecalcReceived/,'Received Paint must support two-way price/cost calculation');
+assert.match(src,/paint-po-line-cards/,'Paint PO entry must use responsive line cards instead of a wide entry table');
+assert.match(src,/paint-received-cards/,'Received Paint costing must use responsive cards');
+assert.match(src,/paint-received-card/,'Received Paint must keep each paint line together on mobile');
 console.log('Paint safety tests passed: auto Model Year, bold colour authority, two-way litre price/actual cost, actor audit and finalized costing');
