@@ -1,5 +1,5 @@
 (function(){'use strict';
-const POLL_MS=15000;
+const POLL_MS=5000;
 function meNow(){try{return (typeof me!=='undefined'&&me)||window.me||null}catch(_){return window.me||null}}
 function role(){return String(meNow()?.role||'')}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -23,7 +23,7 @@ function systemNotifications(){
 function all(){const m=new Map();for(const n of [...partsNotifications(),...systemNotifications()])m.set(n.id,n);return [...m.values()].sort((a,b)=>b.at-a.at)}
 function unread(){const t=readAt();return all().filter(n=>n.at>t).length}
 function ensureStyle(){if(document.getElementById('zukaitNotificationCenterStyle'))return;const s=document.createElement('style');s.id='zukaitNotificationCenterStyle';s.textContent='.zukait-notify-btn{position:relative!important;width:34px!important;height:34px!important;min-height:34px!important;padding:0!important;margin:0 4px!important;border-radius:10px!important;background:#f8fafc!important;color:#17304d!important;border:1px solid #d7e1eb!important;box-shadow:0 3px 10px #17304d12!important;font-size:17px!important}.zukait-notify-badge{position:absolute;right:-4px;top:-5px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#dc2626;color:#fff;font:800 9px/16px system-ui;text-align:center}.zukait-notify-list{display:grid;gap:8px}.zukait-notify-row{padding:11px;border:1px solid #dce6ef;border-radius:13px;background:#fff;color:#17304d}.zukait-notify-row b{display:block}.zukait-notify-row small{display:block;color:#64748b;margin-top:4px}.zukait-notify-row button{margin-top:8px!important}';document.head.appendChild(s)}
-function candidates(){return [...document.querySelectorAll('#supervisorView .v143-header,#managerView .v135-manager-header,#managerView .v111-manager-header,#employeeView .v91-role-identity,#managerView .v91-role-identity')]}
+function candidates(){const rows=[...document.querySelectorAll('#supervisorView .v143-header,#managerView .v135-manager-header,#managerView .v111-manager-header,#employeeView .v91-role-identity,#managerView .v91-role-identity')];if(role()==='Purchaser'){const h=document.querySelector('#managerView .section-title');if(h&&!rows.includes(h))rows.push(h)}return rows}
 function inject(){
  ensureStyle();if(!meNow())return;
  for(const h of candidates()){if(h.querySelector('.zukait-notify-btn'))continue;const b=document.createElement('button');b.type='button';b.className='zukait-notify-btn';b.setAttribute('aria-label','Notifications');b.title='Notifications';b.onclick=e=>{e.stopPropagation();openCenter()};const menu=[...h.querySelectorAll('button')].find(x=>x!==b&&/☰|menu/i.test((x.textContent||'')+(x.title||'')));if(menu)h.insertBefore(b,menu);else h.appendChild(b)}
@@ -41,6 +41,6 @@ async function refresh(){
  inject();updateBadges();
 }
 window.zukaitNotificationCenter={open:openCenter,openPart,refresh,all,unread,inject};
-document.addEventListener('DOMContentLoaded',()=>{inject();refresh()});setTimeout(()=>{inject();refresh()},700);setInterval(refresh,POLL_MS);
+document.addEventListener('DOMContentLoaded',()=>{inject();refresh()});window.addEventListener('online',refresh);window.addEventListener('focus',refresh);setTimeout(()=>{inject();refresh()},700);setInterval(refresh,POLL_MS);
 new MutationObserver(()=>inject()).observe(document.documentElement,{childList:true,subtree:true});
 })();
