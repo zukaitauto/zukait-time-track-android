@@ -77,4 +77,6 @@ assert.match(src,/paintRecalcReceived/,'Received Paint must support two-way pric
 assert.match(src,/paint-po-line-cards/,'Paint PO entry must use responsive line cards instead of a wide entry table');
 assert.match(src,/paint-received-cards/,'Received Paint costing must use responsive cards');
 assert.match(src,/paint-received-card/,'Received Paint must keep each paint line together on mobile');
+assert.match(src,/paint-review-cards/,'Received Paint final costing review must use responsive cards');
+assert.match(src,/ACTUAL COST/,'Received Paint review must keep actual cost visible before confirmation');
 console.log('Paint safety tests passed: auto Model Year, bold colour authority, two-way litre price/actual cost, actor audit and finalized costing');
