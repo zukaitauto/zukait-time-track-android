@@ -763,7 +763,8 @@ assert.match(consumablesUi, /Price \(OMR\)/, 'Search Material prices must declar
 assert.match(consumablesUi, /Material Cost \(OMR\)/, 'Suggested / Issued must show material cost in its own column');
 assert.match(consumablesUi, /Actual Cost \(OMR\)/, 'Actual Materials must show finalized actual cost in its own column');
 assert.match(consumablesUi, /Total Material Cost \(OMR\)/, 'Each material list must place total material cost at the bottom');
-assert.match(consumablesUi, /Based on current material price/, 'Suggested / Issued total must explain its current-price basis');
+assert.doesNotMatch(consumablesUi, /Based on current material price/, 'Suggested / Issued must keep the agreed clean cost wording');
+assert.match(consumablesUi, /MATERIAL COST/, 'Suggested / Issued must retain a clear material-cost label');
 assert.doesNotMatch(consumablesUi, /Approx\./, 'Search Material must not use Approx wording');
 assert.doesNotMatch(consumablesUi, /PRINT \/ PDF BOTH/, 'Suggested and Actual lists must not print as a combined page');
 assert.match(consumablesUi, /\.cons-price-col,\.cons-list-total,\.cons-price-note,\.cons-cost-label/, 'WITHOUT PRICE must remove price, cost totals and costing labels');
