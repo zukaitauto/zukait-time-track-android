@@ -644,6 +644,7 @@ Deno.serve(async (req: Request) => {
         if (message.includes("preliminary_session_already_linked")) return reply({ok:false,code:"preliminary_session_already_linked"},409);
         if (message.includes("preliminary_link_not_active")) return reply({ok:false,code:"preliminary_link_not_active"},409);
         if (message.includes("event_id_conflict")) return reply({ok:false,code:"event_id_conflict"},409);
+        if (message.includes("stale_spare_manager_correction")) return reply({ok:false,code:"stale_spare_manager_correction"},409);
         if (message.includes("stale_work_revision")) return reply({ok:false,code:"stale_work_revision"},409);
         if (message.includes("employee_already_active")) return reply({ok:false,code:"employee_already_active"},409);
         if (message.includes("stale_assignment_revision")) return reply({ok:false,code:"stale_assignment_revision"},409);
