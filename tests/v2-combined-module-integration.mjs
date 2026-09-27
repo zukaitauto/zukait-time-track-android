@@ -1,5 +1,5 @@
 import fs from'node:fs';import assert from'node:assert/strict';
-const y=fs.readFileSync('.github/workflows/build-apk.yml','utf8');
+const y=fs.readFileSync('scripts/ci-full-regression.sh','utf8');
 const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
 const data=fs.readFileSync('app/src/main/assets/v2/core/data_paths.js','utf8');
 const spare=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/workflow.js','utf8');
