@@ -1,8 +1,8 @@
 {
-  "versionName": "V166",
-  "versionCode": 129,
+  "versionName": "V167",
+  "versionCode": 130,
   "approvedForStaff": true,
   "approvedAt": "2026-09-27",
-  "sourceCommit": "24e05587f1feffbf8c3804954392cf09af7beb9b",
-  "publishNonce": "approved-v166-supervisor-parts-list-whatsapp-20260927"
+  "sourceCommit": "02af5041d370f9fc6202e48bca96b9337d07b674",
+  "publishNonce": "approved-v167-native-parts-print-whatsapp-20260927"
 }
