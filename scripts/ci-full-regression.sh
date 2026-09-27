@@ -76,6 +76,7 @@ node tests/v2-repeat-work.mjs
 node tests/v2-leave.mjs
 node tests/v2-consumables.mjs
 node tests/v2-notification-rules.mjs
+node tests/v2-notification-center.mjs
 node tests/v2-reports.mjs
 node tests/v2-scale-benchmark.mjs
 node tests/v2-migration-completeness.mjs
