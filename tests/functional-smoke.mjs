@@ -757,7 +757,7 @@ assert.match(consumablesUi, /Suggested \/ Issued Materials/, 'Supervisor Paintin
 assert.match(consumablesUi, /Actual Materials/, 'Supervisor Painting menu must retain Actual Materials');
 assert.match(consumablesUi, /Additional Materials/, 'Supervisor Painting menu must retain Additional Materials');
 assert.match(consumablesUi, /Search Material List/, 'Supervisor Painting menu must retain Search Material List');
-assert.match(consumablesUi, /No\.<\/th><th>Suggested Material<\/th><th>Brand<\/th><th>Quantity<\/th><th>Actual Material<\/th><th>Brand<\/th><th>Quantity<\/th>/, 'Search Material List must retain approved side-by-side Suggested vs Actual layout');
+assert.match(consumablesUi, /No\.<\/th><th>Suggested Material<\/th><th>Brand<\/th><th>Quantity<\/th><th>Price \/ Unit<\/th><th>Approx\. Cost<\/th><th>Actual Material<\/th><th>Brand<\/th><th>Quantity<\/th><th>Price \/ Unit<\/th><th>Actual Cost<\/th>/, 'Search Material List must retain Suggested vs Actual layout with automatic cost columns');
 assert.match(consumablesUi, /consMaterialBrandPairs/, 'Supervisor Suggested Materials must provide searchable Material + Brand pairs');
 assert.match(consumablesUi, /Type material or brand/, 'Supervisor material entry must support typing to search');
 assert.match(consumablesUi, /consSelectMaterialBrand/, 'Supervisor must be able to select a Material + Brand search result');
