@@ -17,6 +17,8 @@ console.log('V2 spare-parts server event authority gate: ok');
 assert.match(main,/Array\.isArray\(j\?\.assignedEmployees\)&&j\.assignedEmployees\.map\(String\)\.includes\(uid\)/,'Denter assignment scope must fail closed when assignment data is unavailable');
 
 assert.match(api,/eventType==="SPARE_PART_MANAGER_CORRECTED"/,'API must explicitly recognize Manager parts corrections');
-assert.match(api,/callerRole!=="Manager"[\\s\\S]*spare_manager_correction_forbidden_or_invalid/,'Manager parts correction event must be rejected for every non-Manager role');
-assert.match(api,/allowedStatuses=new Set\(\["LISTED","ENQUIRY","QUOTED","ORDERED","RECEIVED"[\\s\\S]*"FITTED"/,'Manager correction status must be validated server-side');
+assert.ok(api.includes('callerRole!=="Manager"'),'Manager parts correction must require Manager role');
+assert.ok(api.includes('spare_manager_correction_forbidden_or_invalid'),'Manager correction rejection code must remain explicit');
+assert.ok(api.includes('allowedStatuses=new Set(["LISTED","ENQUIRY","QUOTED","ORDERED","RECEIVED"'),'Manager correction status allowlist must remain server-side');
+assert.ok(api.includes('"FITTED","RETURNED","UNAVAILABLE","CUSTOMER_SETTLEMENT"]'),'Manager correction final statuses must remain server-side');
 assert.match(api,/!String\(p\.reason\|\|""\)\.trim\(\)/,'Manager correction reason must be required server-side');
