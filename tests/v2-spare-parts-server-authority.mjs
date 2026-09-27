@@ -14,3 +14,8 @@ assert.doesNotMatch(workflow,/role==='Denter'\|\|role==='Manager'/,'Denter must 
 assert.match(workflow,/function notifySupervisor/);assert.match(main,/function denterView/);assert.match(main,/Notify Supervisor/);assert.match(main,/const add=canManage\(\)\?/,'Denter and Purchaser must not see Supervisor part-entry controls');assert.match(main,/function canManage\(\)\{return \['Manager','Supervisor'\]\.includes\(role\(\)\)\}/,'Supervisor list-edit authority missing or Purchaser leaked into it');assert.match(main,/function canPurchase\(\)\{return \['Manager','Purchaser'\]\.includes\(role\(\)\)\}/,'Purchaser commercial authority missing');assert.match(main,/function addItem\([^)]*\)\{if\(!canManage\(\)\)return \{ok:false,reason:'FORBIDDEN'\}/,'direct addItem must reject Denter and Purchaser');assert.match(main,/async function createFromUI\(\)\{if\(!canManage\(\)\)/,'UI create must reject Denter and Purchaser');
 console.log('V2 spare-parts server event authority gate: ok');
 assert.match(main,/Array\.isArray\(j\?\.assignedEmployees\)&&j\.assignedEmployees\.map\(String\)\.includes\(uid\)/,'Denter assignment scope must fail closed when assignment data is unavailable');
+
+assert.match(api,/eventType==="SPARE_PART_MANAGER_CORRECTED"/,'API must explicitly recognize Manager parts corrections');
+assert.match(api,/callerRole!=="Manager"[\\s\\S]*spare_manager_correction_forbidden_or_invalid/,'Manager parts correction event must be rejected for every non-Manager role');
+assert.match(api,/allowedStatuses=new Set\(\["LISTED","ENQUIRY","QUOTED","ORDERED","RECEIVED"[\\s\\S]*"FITTED"/,'Manager correction status must be validated server-side');
+assert.match(api,/!String\(p\.reason\|\|""\)\.trim\(\)/,'Manager correction reason must be required server-side');
