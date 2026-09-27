@@ -26,8 +26,7 @@ assert.equal(rows[0].title,'New Parts Entry');
 
 window.me.role='Manager';
 rows=n.eventPartsNotifications([listed,received,verified]);
-assert.equal(rows.length,2,'Manager must see both new-entry and arrived operational events');
-assert.equal(JSON.stringify(Array.from(rows,x=>x.id).sort()),JSON.stringify(['parts-event-E1','parts-event-E3']));
+assert.equal(rows.length,0,'Manager must not receive routine Purchaser/Supervisor handoff notifications');
 
 assert.match(code,/reports\.page\('SPARE_PARTS'/,'notification refresh must use authoritative Spare Parts event history');
 assert.match(code,/setInterval\(refresh,POLL_MS\)/);
@@ -38,3 +37,6 @@ assert.match(code,/if\(!u\|\|!u\.id\)\{inject\(\);updateBadges\(\);return\}/,'no
 assert.match(code,/if\(typeof closeModal==='function'\)closeModal\(\)/,'notification actions must close the notification modal before routing');
 assert.match(code,/sp\.openList\(no\)/,'notification actions must open the concerned Spare Parts list');
 console.log('V2 notification center event history: ok');
+
+assert.match(code,/r==='Purchaser'&&x\.eventType==='SPARE_PART_LISTED'/,'new Parts List event must target Purchaser');
+assert.match(code,/r==='Supervisor'&&x\.eventType==='SPARE_PART_STATUS_CHANGED'&&x\.to==='RECEIVED'/,'Purchaser Received event must target Supervisor');
