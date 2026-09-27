@@ -1,8 +1,8 @@
 {
-  "versionName": "V182",
-  "versionCode": 145,
+  "versionName": "V183",
+  "versionCode": 146,
   "approvedForStaff": true,
   "approvedAt": "2026-09-28",
-  "sourceCommit": "ab62a6c429ff36213913d8fc39a5c392e9d50007",
-  "publishNonce": "release-v182-manager-performance-purchaser-header-20260928"
+  "sourceCommit": "60d3002a831b9844ea7d2777caa455ca6a663b50",
+  "publishNonce": "release-v183-spare-parts-handoff-readability-20260928"
 }
