@@ -1,8 +1,8 @@
 {
-  "versionName": "V173",
-  "versionCode": 136,
+  "versionName": "V174",
+  "versionCode": 137,
   "approvedForStaff": true,
   "approvedAt": "2026-09-27",
-  "sourceCommit": "69a46f30c49440725f43fbb6621b90dc994f542a",
-  "publishNonce": "approved-v173-id001-registration-history-20260927"
+  "sourceCommit": "b08d96dca0719bc27081055bcef54cdc6a76ac38",
+  "publishNonce": "approved-v174-consumables-recovery-20260927"
 }
