@@ -131,7 +131,7 @@ function v84SupervisorPanels(root){
  [...root.querySelectorAll('.v84-action-grid>.card,.v84-action-grid>section')].filter(x=>!(x.textContent||'').trim()).forEach(x=>x.remove());
 }
 function v91RoleHeader(role){
- const root=document.getElementById(role==='Supervisor'?'supervisorView':'managerView');if(!root||!me)return;
+ const root=document.getElementById(role==='Supervisor'?'supervisorView':role==='Purchaser'?'purchaserView':'managerView');if(!root||!me)return;
  document.body.classList.remove('employee-session');
  const gh=document.getElementById('globalBrandHeader');if(gh){gh.classList.remove('hidden');gh.style.removeProperty('display')}
  const lh=document.getElementById('legacyAppHeader');if(lh){lh.classList.add('hidden');lh.style.setProperty('display','none','important')}
@@ -141,7 +141,7 @@ function v91RoleHeader(role){
  const top=root.querySelector('.v92-supervisor-top');if(role==='Supervisor'&&top)root.insertBefore(row,top);else root.insertBefore(row,root.firstChild);
  // Supervisor and Manager each own exactly one identity/status row.
  // Legacy/global identity and network badges must never coexist with the role header.
- if(role==='Supervisor'){
+ if(role==='Supervisor'||role==='Purchaser'){
    if(gh)gh.style.setProperty('display','none','important');
    const net=document.getElementById('net');if(net){net.textContent='';net.style.setProperty('display','none','important')}
    const hos=document.getElementById('headerOnlineStatus');if(hos)hos.style.setProperty('display','none','important');
@@ -149,6 +149,8 @@ function v91RoleHeader(role){
  }
 }
 function v74ApplyManagerFinal(){if(me?.role==='Manager'){polish();v91RoleHeader('Manager')}}
+function v182ApplyPurchaserHeader(){if(me?.role!=='Purchaser')return;let root=document.getElementById('purchaserView');if(!root){root=document.createElement('div');root.id='purchaserView';const app=document.getElementById('app');if(app)app.prepend(root);else return}v91RoleHeader('Purchaser');const keep=root.querySelector('.v91-role-online');root.querySelectorAll('.header-online-status,.v91-role-online').forEach(x=>{if(x!==keep)x.remove()});const net=document.getElementById('net');if(net){net.textContent='';net.style.setProperty('display','none','important')}const hos=document.getElementById('headerOnlineStatus');if(hos)hos.style.setProperty('display','none','important')}
+window.v182ApplyPurchaserHeader=v182ApplyPurchaserHeader;
 const v74SupRender=window.renderSupervisor;
 if(typeof v74SupRender==='function')window.renderSupervisor=function(){let r=v74SupRender.apply(this,arguments);v74ApplySupervisorFinal();return r};
 const v74MgrRender=window.renderManager;
