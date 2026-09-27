@@ -98,6 +98,7 @@ begin
    if p_event_type like 'SPARE_PART%' then
      if nullif(trim(coalesce(p_payload->>'jobCard','')),'') is null or nullif(trim(coalesce(p_payload->>'partId',p_entity_id,'')),'') is null then raise exception 'invalid_spare_part_event'; end if;
      if p_event_type='SPARE_PART_STATUS_CHANGED' and (nullif(trim(coalesce(p_payload->>'from','')),'') is null or nullif(trim(coalesce(p_payload->>'to','')),'') is null) then raise exception 'invalid_spare_part_transition'; end if;
+     if p_event_type='SPARE_PART_MANAGER_CORRECTED' and exists(select 1 from public.workshop_v2_events e where e.entity_id=p_entity_id and e.event_type='SPARE_PART_MANAGER_CORRECTED' and coalesce(e.revision,0)>=coalesce(p_revision,0) and e.event_id<>p_event_id) then raise exception 'stale_spare_manager_correction'; end if;
      if p_event_type='SPARE_PART_MANAGER_CORRECTED' and (
        p_revision is null or p_revision<=0 or exists(
          select 1 from public.workshop_v2_events prior
