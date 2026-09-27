@@ -47,7 +47,7 @@ const uiSource=fs.readFileSync('app/src/main/assets/consumables_ui.js','utf8');
 assert.match(uiSource,/Price on Print \/ PDF/,'Search Material print area must expose price visibility choice');
 assert.match(uiSource,/PDF → WHATSAPP/,'Material detail must expose direct PDF to WhatsApp');
 assert.match(uiSource,/const backAction=back\|\|/,'Consumables must derive one shared top Back action');
-assert.match(uiSource,/font-size:10px;font-weight:900;padding:6px 10px/,'Consumables top navigation must stay compact');
+assert.match(uiSource,/height:26px;min-height:26px;width:auto;flex:0 0 auto/,'Consumables top navigation must stay compact and must not stretch');assert.match(uiSource,/font-size:9px;line-height:1;font-weight:900;padding:4px 8px/,'Consumables top navigation must use the approved small control sizing');
 assert.match(uiSource,/replace\(\/<button\[\^>\]\*>\\s\*←\?\\s\*BACK/,'Consumables shared modal must strip duplicate embedded Back controls');
 assert.match(uiSource,/const modal=\(title,body,back\)=>/,'Consumables must use one shared modal navigation wrapper');
 assert.match(uiSource,/background:#2563eb/,'Consumables Back control must use compact blue navigation styling');
