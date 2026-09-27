@@ -216,6 +216,24 @@ function preserveOperationalHistory(candidate: any, current: any, user: any): an
     }
     candidate[key] = incoming;
   }
+  const previousReopens = new Set((current?.reopenLogs || []).map((x: any) => String(x?.id || "")));
+  const allowedReopens = new Set((candidate?.reopenLogs || []).filter((x: any) =>
+    ["Supervisor", "Manager"].includes(String(user?.role || "")) &&
+    String(x?.by || "") === String(user?.id || "") && x?.assignmentId && x?.id &&
+    !previousReopens.has(String(x.id))
+  ).map((x: any) => String(x.assignmentId)));
+  const latestAssignments = new Map((current?.assign || []).filter((x: any) => x?.id).map((x: any) => [String(x.id), x]));
+  candidate.assign = (candidate.assign || []).map((x: any) => {
+    const earlier: any = latestAssignments.get(String(x?.id || ""));
+    if (earlier?.completed === true && x?.completed !== true && !allowedReopens.has(String(x.id))) {
+      return {...x, completed: true, completedAt: earlier.completedAt};
+    }
+    return x;
+  });
+  const completed = new Set(candidate.assign.filter((x: any) => x?.completed === true).map((x: any) => String(x.id)));
+  candidate.sessions = (candidate.sessions || []).filter((s: any) =>
+    s?.end != null || !completed.has(String(s?.assignmentId || "")) || allowedReopens.has(String(s.assignmentId))
+  );
   return candidate;
 }
 
