@@ -43,7 +43,7 @@ assert.match(stable,/Assigned Job Cards/,'Assigned Job Cards must remain');
 assert.match(stable,/Additional Time/,'Additional Time must remain');
 assert.match(stable,/Incentive/,'Incentive must remain');
 
-assert.match(stable,/grid-template-areas:"job job" "tech time" "assign assign"/,'Assign\/Update must keep Job Card Search full width with Technician and Allocated Time below');
+assert.match(stable,/grid-template-areas:"job tech" "time assign"/,'Assign\/Update must preserve the agreed 2x2 form layout');
 assert.match(stable,/id="v143JobSearch"/,'visible Job Card search must be part of final Supervisor renderer');
 assert.match(stable,/id="sj" class="v143-internal"/,'legacy #sj handoff must remain hidden for assignment compatibility');
 assert.match(stable,/\[j\.no,j\.reg,j\.vehicle,j\.year,j\.brand,j\.make,j\.model\]/,'search must cover JC, registration, vehicle, year, brand, make and model');
@@ -66,6 +66,9 @@ assert.match(stable,/CLEAR ALL/,'Quick Entry must show a visible CLEAR ALL contr
 assert.match(stable,/\.v143-results\{position:absolute/,'Job Card search results must float instead of expanding the Assign\/Update grid');
 assert.match(stable,/max-height:168px;overflow:auto/,'Job Card search dropdown must stay compact and scrollable on phones');
 assert.match(stable,/findJobs\(q\)\.slice\(0,5\)/,'Job Card dropdown must limit visible result rendering');
+assert.match(stable,/\.v143-job-result\{display:flex!important;flex-direction:column!important/,'search result cards must use one vertical column');
+assert.match(stable,/Reg: /,'search result cards must label registration on its own line');
+assert.doesNotMatch(stable,/\.v143-job-result\{display:grid!important;grid-template-columns:1fr auto!important/,'search results must not split JC and registration into two columns');
 
 
 assert.match(stable,/v65OpenAccount\(\)/,'Supervisor menu must remain available');
