@@ -4,7 +4,7 @@ import vm from 'node:vm';
 
 const code=fs.readFileSync('app/src/main/assets/v2/features/notifications/center.js','utf8');
 const storage=new Map();
-const window={me:{id:'SUP1',role:'Supervisor'},state:{},zukaitV2:{}};
+const window={me:{id:'SUP1',role:'Supervisor'},state:{},zukaitV2:{},addEventListener(){}};
 const document={addEventListener(){},querySelectorAll(){return[]},querySelector(){return null},getElementById(){return null},documentElement:{}};
 class MutationObserver{observe(){}}
 const sandbox={window,document,navigator:{onLine:false},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,String(v))},MutationObserver,setTimeout(){},setInterval(){},Date,console};
