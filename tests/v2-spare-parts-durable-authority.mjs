@@ -31,3 +31,11 @@ assert.match(main,/function addQuotationOffer\(button\)/,'Purchaser or Manager c
 assert.match(main,/async function selectQuotationOffer\(button\)/,'an offer can be selected as the authoritative quotation');
 assert.match(main,/quotationOffers:item\.quotationOffers/,'selected offer alternatives must be committed in durable event payload');
 assert.match(main,/if\(Array\.isArray\(p\.quotationOffers\)\)item\.quotationOffers=p\.quotationOffers/,'server hydration must restore alternative quotation offers');
+
+assert.match(main,/function partsLibrary\(query='',list=null\)/,'reusable parts library must derive suggestions from historical parts');
+assert.match(main,/function partCategory\(name\)/,'parts must receive automatic practical grouping');
+assert.match(main,/Body'.*Mechanical'.*Electrical'.*Consumables'.*Other'/s,'automatic grouping must support the five agreed groups');
+assert.match(main,/function draftPartSuggestions\(\)/,'parts-list creation must provide fast historical suggestions');
+assert.match(main,/vs last/,'quotation must show compact price-change guidance');
+assert.match(main,/v2-sp-price-change up/,'price increases must be visually identifiable');
+assert.match(main,/v2-sp-price-change down/,'price reductions must be visually identifiable');
