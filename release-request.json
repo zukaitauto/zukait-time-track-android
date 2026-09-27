@@ -1,8 +1,8 @@
 {
-  "versionName": "V165",
-  "versionCode": 128,
+  "versionName": "V166",
+  "versionCode": 129,
   "approvedForStaff": true,
   "approvedAt": "2026-09-27",
-  "sourceCommit": "8a67505a52cd69f96c62dd6c06fdfe8514969136",
-  "publishNonce": "approved-v165-architecture-v2-parts-workflow-20260927"
+  "sourceCommit": "24e05587f1feffbf8c3804954392cf09af7beb9b",
+  "publishNonce": "approved-v166-supervisor-parts-list-whatsapp-20260927"
 }
