@@ -1,8 +1,8 @@
 {
-  "versionName": "V180",
-  "versionCode": 143,
+  "versionName": "V181",
+  "versionCode": 144,
   "approvedForStaff": true,
-  "approvedAt": "2026-09-27",
-  "sourceCommit": "bfbb54af1dfed6c8b4607a1cdb8c422cba765c9f",
-  "publishNonce": "release-v180-compact-mobile-lists-20260927"
+  "approvedAt": "2026-09-28",
+  "sourceCommit": "3eb7364b2d4f467ffcbbe40257084ed23c6e7522",
+  "publishNonce": "release-v181-spare-parts-durable-compact-ui-20260928"
 }
