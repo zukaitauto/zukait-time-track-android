@@ -12,7 +12,8 @@ assert.match(report,/q\.report='PARTS_DELAY'.*e\.event_type like 'SPARE_PART%'/s
 assert.match(workflow,/if\(to==='SUPERVISOR_VERIFIED'\)return role==='Supervisor'\|\|role==='Manager'/,'Supervisor verification authority missing');
 assert.match(workflow,/if\(to==='DENTER_CHECKED'\)return false/,'legacy DENTER_CHECKED must not be creatable');
 assert.doesNotMatch(workflow,/role==='Denter'\|\|role==='Manager'/,'Denter must not have transition authority');
-assert.match(workflow,/function notifySupervisor/);assert.match(main,/function denterView/);assert.match(main,/Notify Supervisor/);assert.match(main,/const add=canManage\(\)\?/,'Denter and Purchaser must not see Supervisor part-entry controls');assert.match(main,/function canManage\(\)\{return \['Manager','Supervisor'\]\.includes\(role\(\)\)\}/,'Supervisor list-edit authority missing or Purchaser leaked into it');assert.match(main,/function canPurchase\(\)\{return \['Manager','Purchaser'\]\.includes\(role\(\)\)\}/,'Purchaser commercial authority missing');assert.match(main,/function addItem\([^)]*\)\{if\(!canManage\(\)\)return \{ok:false,reason:'FORBIDDEN'\}/,'direct addItem must reject Denter and Purchaser');assert.match(main,/async function createFromUI\(\)\{if\(!canManage\(\)\)/,'UI create must reject Denter and Purchaser');
+assert.match(workflow,/function notifySupervisor/);assert.match(main,/function denterView/);assert.match(main,/Notify Supervisor/);assert.match(main,/const add='';/,'Parts List detail must remain strictly read-only');
+assert.doesNotMatch(main,/const add=canManage\(\)\?/,'Parts List detail must not restore role-specific part-entry controls');assert.match(main,/function canManage\(\)\{return \['Manager','Supervisor'\]\.includes\(role\(\)\)\}/,'Supervisor list-edit authority missing or Purchaser leaked into it');assert.match(main,/function canPurchase\(\)\{return \['Manager','Purchaser'\]\.includes\(role\(\)\)\}/,'Purchaser commercial authority missing');assert.match(main,/function addItem\([^)]*\)\{if\(!canManage\(\)\)return \{ok:false,reason:'FORBIDDEN'\}/,'direct addItem must reject Denter and Purchaser');assert.match(main,/async function createFromUI\(\)\{if\(!canManage\(\)\)/,'UI create must reject Denter and Purchaser');
 console.log('V2 spare-parts server event authority gate: ok');
 assert.match(main,/Array\.isArray\(j\?\.assignedEmployees\)&&j\.assignedEmployees\.map\(String\)\.includes\(uid\)/,'Denter assignment scope must fail closed when assignment data is unavailable');
 
@@ -35,3 +36,8 @@ assert.ok(sql.includes("coalesce(e.revision,0)>=coalesce(p_revision,0)"),'Manage
 assert.ok(sql.includes("stale_spare_manager_correction"),'SQL must raise a dedicated stale Manager correction conflict');
 assert.ok(api.includes('message.includes("stale_spare_manager_correction")'),'API must recognize stale Manager correction conflicts');
 assert.ok(api.includes('code:"stale_spare_manager_correction"},409'),'API must expose stale Manager correction as HTTP 409');
+
+assert.doesNotMatch(main,/SUPERVISOR_VERIFIED:!item\.arrivalAccepted\?\['Confirm Arrived','ACCEPTED'/,'Purchaser must not re-confirm a Supervisor-confirmed arrival');
+assert.ok(main.includes("targetRole:'Purchaser'"),'new Parts List/item events must target Purchaser');
+assert.ok(main.includes("targetRole:to==='RECEIVED'?'Supervisor':null"),'Received event must target Supervisor');
+assert.ok(main.includes("name:previous.name||''"),'Received notification event must retain the part name');
