@@ -215,24 +215,37 @@ jobs:
           EXPECTED_TAG="release-${{ steps.approved.outputs.version_name }}${{ github.ref_name == 'architecture-v2' && '-architecture-v2' || '' }}"
           test -n "$RELEASE_ID" || { echo "Missing draft release ID"; exit 1; }
 
-          # Publish and request latest status first.
-          gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}"             -f draft=false -f make_latest=true >/tmp/published-release.json
+          # Publish V178 and explicitly request repository-wide latest status.
+          gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" --input - >/tmp/published-release.json <<'JSON'
+          {"draft":false,"make_latest":"true"}
+          JSON
 
-          # Do not trust the PATCH response alone: verify the repository-wide
-          # latest pointer. If an older release is still pinned, unpin it and retry.
-          LATEST_JSON=$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" 2>/dev/null || printf '{}')
-          LATEST_ID=$(printf '%s' "$LATEST_JSON" | jq -r '.id // empty')
-          if [ "$LATEST_ID" != "$RELEASE_ID" ]; then
-            echo "Latest release pointer is stale (expected $RELEASE_ID, got ${LATEST_ID:-none}); repairing."
-            if [ -n "$LATEST_ID" ]; then
-              gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${LATEST_ID}"                 -f make_latest=false >/tmp/previous-latest-release.json
-            fi
-            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}"               -f draft=false -f make_latest=true >/tmp/published-release.json
-            sleep 2
-            LATEST_JSON=$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest")
+          # GitHub can retain an older manually pinned "latest" release even after
+          # a newer release is published. Reset that stale pin to legacy selection,
+          # re-pin this release, and poll until the public /releases/latest endpoint
+          # confirms the expected release.
+          LATEST_JSON='{}'
+          LATEST_ID=''
+          for attempt in 1 2 3 4 5; do
+            LATEST_JSON=$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" 2>/dev/null || printf '{}')
             LATEST_ID=$(printf '%s' "$LATEST_JSON" | jq -r '.id // empty')
-          fi
+            [ "$LATEST_ID" = "$RELEASE_ID" ] && break
 
+            echo "Latest release pointer is stale (expected $RELEASE_ID, got ${LATEST_ID:-none}); repairing attempt $attempt/5."
+            if [ -n "$LATEST_ID" ]; then
+              gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${LATEST_ID}" --input - >/tmp/previous-latest-release.json <<'JSON'
+          {"make_latest":"legacy"}
+          JSON
+            fi
+
+            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" --input - >/tmp/published-release.json <<'JSON'
+          {"draft":false,"make_latest":"true"}
+          JSON
+            sleep 2
+          done
+
+          LATEST_JSON=$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest")
+          LATEST_ID=$(printf '%s' "$LATEST_JSON" | jq -r '.id // empty')
           LATEST_TAG=$(printf '%s' "$LATEST_JSON" | jq -r '.tag_name // empty')
           test "$LATEST_ID" = "$RELEASE_ID" || {
             echo "GitHub latest release pointer verification failed: expected ID $RELEASE_ID, got ${LATEST_ID:-none}"
