@@ -82,3 +82,6 @@ assert.match(stable,/v143OpenUnassignedJobs/,'Unassigned Job Cards must have a d
 assert.match(stable,/bind\('\.v143-unassigned-action'/,'Unassigned Job Cards card must be explicitly click-bound');
 
 console.log('Stable Supervisor UI tests passed: single final renderer, no legacy layout chain, fixed two-column surface, working search handoff and preserved controls');
+
+assert.match(js,/id="supervisorEstimateTile"/,'Stable Supervisor dashboard must show Estimate');
+assert.match(js,/supervisorEstimateTile[^\n]*openEstimateModule\(\)/,'Supervisor Estimate must open the shared Estimate module');
