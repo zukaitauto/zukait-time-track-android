@@ -19,3 +19,9 @@ assert.match(main,/async function saveQuotationPrice\(button\)\{if\(!\['Purchase
 assert.match(main,/Quotation Total <strong id="v2SpQuoteTotal"/,'quotation page must show live total');
 assert.doesNotMatch(main,/Purchase Amount OMR/,'Purchaser must not have a second purchase-price entry field');
 assert.match(main,/async function saveSupervisorFinalPrice\(listNo,itemId\)\{if\(!\['Supervisor','Manager'\]\.includes\(role\(\)\)\)return/,'final price authority must remain Supervisor and Manager');
+
+assert.match(main,/function partPriceHistory\(list,item\)/,'quotation must expose historical price guidance');
+assert.match(main,/function supplierSuggestions\(item\)/,'quotation must suggest prior suppliers');
+assert.match(main,/Last <b>/,'quotation should display last price');
+assert.match(main,/Lowest <b>/,'quotation should display lowest historical price');
+assert.match(main,/document\.getElementById\('v2SpVendor_'\+nextIndex\)\?\.focus\(\)/,'saving a quote should advance focus to the next part');
