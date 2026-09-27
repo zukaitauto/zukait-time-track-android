@@ -46,6 +46,9 @@ const hm={id:'legacy-mat',name:'Legacy Reducer',unit:'Liter',category:'Consumabl
 const uiSource=fs.readFileSync('app/src/main/assets/consumables_ui.js','utf8');
 assert.match(uiSource,/Price on Print \/ PDF/,'Search Material print area must expose price visibility choice');
 assert.match(uiSource,/PDF → WHATSAPP/,'Material detail must expose direct PDF to WhatsApp');
+assert.match(uiSource,/const modal=\(title,body,back\)=>/,'Consumables must use one shared modal navigation wrapper');
+assert.match(uiSource,/background:#2563eb/,'Consumables Back control must use compact blue navigation styling');
+assert.match(uiSource,/background:#dc2626/,'Consumables Close control must use distinct compact red styling');
 assert.match(uiSource,/AndroidBridge\?\.shareHtmlAsPdfWhatsApp/,'Android material PDF must use the native PDF sharing bridge');
 assert.match(uiSource,/if\(history\.length>1\)\{history\.back\(\)\}else if\(window\.opener/,'print preview Back\/Close must prefer WebView history so Android can return reliably');
 assert.match(uiSource,/WITH PRICE/);assert.match(uiSource,/WITHOUT PRICE/);
