@@ -25,3 +25,9 @@ assert.match(main,/function supplierSuggestions\(item\)/,'quotation must suggest
 assert.match(main,/Last <b>/,'quotation should display last price');
 assert.match(main,/Lowest <b>/,'quotation should display lowest historical price');
 assert.match(main,/document\.getElementById\('v2SpVendor_'\+nextIndex\)\?\.focus\(\)/,'saving a quote should advance focus to the next part');
+
+assert.match(main,/function quotationOffers\(item\)/,'parts support multiple vendor quotation offers');
+assert.match(main,/function addQuotationOffer\(button\)/,'Purchaser or Manager can add alternative offers without duplicate parts');
+assert.match(main,/async function selectQuotationOffer\(button\)/,'an offer can be selected as the authoritative quotation');
+assert.match(main,/quotationOffers:item\.quotationOffers/,'selected offer alternatives must be committed in durable event payload');
+assert.match(main,/if\(Array\.isArray\(p\.quotationOffers\)\)item\.quotationOffers=p\.quotationOffers/,'server hydration must restore alternative quotation offers');
