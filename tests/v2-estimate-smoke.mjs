@@ -43,5 +43,5 @@ assert.match(ui,/Job Card \/ Registration not found\. You can still enter all es
 
 console.log('V2 Estimate smoke: ok');
 
-assert.match(src,/\.estimate-dashboard-card,\.estimate-dashboard-card \*\{color:#102a43!important\}/,'Estimate dashboard card must force readable dark text against legacy dashboard CSS');
-assert.match(src,/\.estimate-dashboard-card small\{color:#486581!important\}/,'Estimate dashboard subtext must remain readable');
+assert.match(ui,/\.estimate-dashboard-card,\.estimate-dashboard-card \*\{color:#102a43!important\}/,'Estimate dashboard card must force readable dark text against legacy dashboard CSS');
+assert.match(ui,/\.estimate-dashboard-card small\{color:#486581!important\}/,'Estimate dashboard subtext must remain readable');
