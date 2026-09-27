@@ -19,4 +19,7 @@ assert.match(parts,/v2-sp-progress/,'Purchaser part cards must show compact stat
 assert.doesNotMatch(parts,/min-width:780px/,'Purchaser Parts List must not require a phone-hostile wide table');
 assert.match(parts,/Mark Arrived/,'Current purchaser arrival action must remain available after card redesign');
 assert.match(parts,/data-to="RETURNED"/,'Returned action must remain available for eligible ordered\/received parts');
+assert.match(parts,/v2-sp-purchase-form/,'Purchasing Details must use the shared responsive form shell');
+assert.match(parts,/v2-sp-form-grid/,'Purchasing commercial fields must use responsive form layout');
+assert.match(parts,/v2-sp-report-records/,'Manager on-screen Spare Parts report must use mobile-safe record cards');
 console.log('Purchaser dashboard and permissions: ok');
