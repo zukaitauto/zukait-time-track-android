@@ -474,6 +474,13 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const action = String(body?.action || "load");
 
+    if (action === "revision") {
+      const { data, error } = await admin.from("workshop_state")
+        .select("revision,updated_at,updated_by").eq("id","main").single();
+      if (error) throw error;
+      return reply({ ok:true, ...data, server_time:Date.now(), user });
+    }
+
     if (action === "load") {
       const { data, error } = await admin.from("workshop_state")
         .select("revision,data,updated_at,updated_by").eq("id","main").single();
