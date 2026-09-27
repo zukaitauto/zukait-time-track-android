@@ -28,3 +28,10 @@ assert.ok(sql.includes("prior.event_type='SPARE_PART_MANAGER_CORRECTED'"),'Manag
 assert.ok(sql.includes("coalesce(prior.revision,0)>=p_revision"),'same or older Manager correction revisions must be rejected');
 assert.ok(sql.includes("stale_spare_manager_correction_revision"),'stale Manager correction must have explicit server rejection');
 assert.doesNotMatch(sql,/p_event_type in \([^)]*SPARE_PART_STATUS_CHANGED[^)]*SPARE_PART_MANAGER_CORRECTED/,'ordinary status transitions must not share Manager correction revision lane');
+
+assert.ok(sql.includes("p_event_type='SPARE_PART_MANAGER_CORRECTED' and exists"),'Server projection must guard concurrent Manager corrections');
+assert.ok(sql.includes("e.event_type='SPARE_PART_MANAGER_CORRECTED'"),'Manager correction stale check must be isolated to Manager correction lane');
+assert.ok(sql.includes("coalesce(e.revision,0)>=coalesce(p_revision,0)"),'Manager correction stale check must reject equal or older revisions');
+assert.ok(sql.includes("stale_spare_manager_correction"),'SQL must raise a dedicated stale Manager correction conflict');
+assert.ok(api.includes('message.includes("stale_spare_manager_correction")'),'API must recognize stale Manager correction conflicts');
+assert.ok(api.includes('code:"stale_spare_manager_correction"},409'),'API must expose stale Manager correction as HTTP 409');
