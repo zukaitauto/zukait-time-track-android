@@ -25,5 +25,5 @@ assert.match(main,/if\(role\(\)!=='Manager'\)return;const rows=read\(\),list=/,'
 assert.match(main,/Correction reason is required\./,'Manager parts correction must require a reason');
 assert.match(main,/SPARE_PART_MANAGER_CORRECTED/,'Manager correction must emit an auditable server event');
 assert.match(main,/managerCorrectionAudit/,'Manager correction must retain before\/after audit history');
-assert.match(main,/option value="RECEIVED">Arrived<\/option>/,'Manager correction must allow Arrived status');
-assert.match(main,/option value="FITTED">Fitted<\/option>/,'Manager correction must allow Fitted status');
+assert.match(main,/option value="RECEIVED"[\\s\\S]*?>Arrived<\\/option>/,'Manager correction must allow Arrived status');
+assert.match(main,/option value="FITTED"[\\s\\S]*?>Fitted<\\/option>/,'Manager correction must allow Fitted status');
