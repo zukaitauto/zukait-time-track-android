@@ -13,6 +13,11 @@ create table if not exists public.workshop_v2_preliminary_links(
   reversal_reason text
 );
 
+-- Internal server-owned authority table. Phones and browser clients must never access it directly.
+alter table public.workshop_v2_preliminary_links enable row level security;
+revoke all on table public.workshop_v2_preliminary_links from anon, authenticated;
+grant select, insert, update, delete on table public.workshop_v2_preliminary_links to service_role;
+
 create or replace function public.zukait_v2_apply_preliminary_link_event(
   p_event_id text,p_entity_id text,p_event_type text,p_actor_id text,p_payload jsonb
 ) returns void language plpgsql security invoker set search_path=public as $$
