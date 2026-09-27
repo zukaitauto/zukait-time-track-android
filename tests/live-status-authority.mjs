@@ -13,13 +13,19 @@ assert.ok(stableTag && liveTag,'stable Supervisor and live authority scripts mus
 assert.ok(html.indexOf(liveTag[0])>html.indexOf(stableTag[0]),'server live authority must load last');
 
 assert.match(cloud,/action:'live_status'/,'cloud layer must call the server live-status endpoint');
-assert.match(cloud,/livePollTimer=setTimeout/,'cloud layer must poll server live state independently with battery-aware scheduling');
+assert.match(cloud,/livePollTimer=setTimeout/,'cloud layer must keep a slower server-live recovery heartbeat');
+assert.match(cloud,/action:'revision'/,'cloud layer must use a lightweight authenticated revision heartbeat');
+assert.match(cloud,/document\.visibilityState==='hidden'\?30000:1000/,'visible clients must detect shared-state revisions within about one second');
+assert.match(cloud,/dirtyGeneration\+\+/,'every local save must advance a monotonic mutation generation');
+assert.match(cloud,/const newerPending=dirtyGeneration!==pushGeneration/,'a save acknowledgement must not clear a newer in-flight click');
+assert.match(cloud,/pushTimer=setTimeout\(\(\)=>push\(0\),0\)/,'Start/Pause/Stop/Assign saves must be dispatched immediately');
 assert.match(cloud,/if\(liveInFlight\|\|!sessionToken\(\)\|\|!navigator\.onLine\|\|!liveRole\(\)\)return false;/,'live poll must not be blocked by cloudDirty');
 assert.match(cloud,/window\.zukaitServerLive=/,'cloud layer must publish authoritative rows');
 assert.match(cloud,/r\.server_revision\|\|r\.revision/,'rebased saves must acknowledge the real server revision');
 assert.match(cloud,/r\.data&&typeof r\.data==='object'/,'rebased saves must carry an authoritative merged snapshot');
 assert.match(cloud,/normalizeRemote\(r\.data\)/,'client must apply the merged server snapshot immediately after a rebase');
 assert.match(cloud,/r\.force_pull&&!r\.data/,'legacy-compatible rebase responses must force a refresh when no merged payload is present');
+assert.match(cloud,/threeWayMerge\(localSnapshot,authoritativeSnapshot,pendingSnapshot\)/,'newer supervisor/manager clicks must be replayed on the acknowledged server snapshot instead of overwriting it');
 assert.match(authority,/window\.currentStaffStatuses=function/,'server authority must replace staff status reads');
 assert.match(authority,/window\.currentActiveWorkers=function/,'server authority must replace active-worker reads');
 assert.match(authority,/window\.openActiveWorkers=function/,'Active Workers details must use server rows');
