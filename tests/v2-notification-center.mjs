@@ -32,5 +32,7 @@ assert.equal(JSON.stringify(Array.from(rows,x=>x.id).sort()),JSON.stringify(['pa
 assert.match(code,/reports\.page\('SPARE_PARTS'/,'notification refresh must use authoritative Spare Parts event history');
 assert.match(code,/setInterval\(refresh,POLL_MS\)/);
 assert.match(code,/const POLL_MS=5000/);
-assert.match(code,/if\(!window\.me\|\|!window\.me\.id\)\{inject\(\);updateBadges\(\);return\}/,'notification network hydration must stay off the unauthenticated Web login path');
+assert.match(code,/if\(b\.innerHTML!==html\)b\.innerHTML=html/,'notification observer must not rewrite an unchanged bell and recursively trigger itself');
+assert.match(code,/const u=meNow\(\);if\(!u\|\|!u\.id\)/,'notification refresh must use the shared logged-in user resolver');
+assert.match(code,/if\(!u\|\|!u\.id\)\{inject\(\);updateBadges\(\);return\}/,'notification network hydration must stay off the unauthenticated Web login path');
 console.log('V2 notification center event history: ok');
