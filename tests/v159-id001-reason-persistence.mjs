@@ -9,4 +9,9 @@ assert.match(html,/function assignJobCore\(no,emp,s,reason\)/,'base assignment m
 assert.match(html,/a\.idealReason=idealReason/,'existing ID001 assignment must persist reason');
 assert.match(html,/a\.idealReason=idealReason;state\.assign\.push\(a\)/,'new ID001 assignment must persist reason');
 assert.match(updates,/assignment\?\.idealReason\|\|'—'/,'ID001 history must display persisted reason');
-console.log('ID001 reason persistence: ok');
+assert.match(html,/function assignmentJobLabel\(a\)/,'ID001 assignment labels must use a display-only helper');
+assert.match(html,/ID001 \+ /,'vehicle-related ID001 must display registration beside ID001');
+assert.match(updates,/WITH REGISTRATION/,'ID001 History must separate sessions with registration');
+assert.match(updates,/WITHOUT REGISTRATION/,'ID001 History must separate sessions without registration');
+assert.match(updates,/registrationForSession/,'ID001 History grouping must use the persisted assignment registration');
+console.log('ID001 reason + registration display/history grouping: ok');
