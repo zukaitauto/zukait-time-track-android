@@ -13,6 +13,11 @@
   let pollTimer=null;
   let livePollTimer=null;
   let liveInFlight=false;
+  let revisionProbeInFlight=false;
+  let lastRevisionProbeAt=0;
+  // Monotonic local mutation generation. A save response may only clear dirty
+  // state when no newer click happened while that request was in flight.
+  let dirtyGeneration=cloudDirty?1:0;
   let liveStatusRows=[];
   let liveStatusRevision=0;
   let liveStatusLastFetchedAt=0;
@@ -427,6 +432,38 @@
     return true;
   }
 
+  async function probeRevision(){
+    if(revisionProbeInFlight||!sessionToken()||!navigator.onLine)return false;
+    revisionProbeInFlight=true;
+    try{
+      const r=await api({action:'revision'});
+      if(!r.ok)throw new Error(r.code||'REVISION_CHECK_FAILED');
+      lastRevisionProbeAt=Date.now();
+      const remoteRevision=Number(r.revision||0);
+      if(remoteRevision===cloudRevision)return false;
+
+      // Never pull over a local click. Commit it first; the server will rebase
+      // it transactionally if another device already advanced the revision.
+      if(cloudDirty){
+        if(!cloudPushing)await push(0);
+        if(cloudDirty||cloudPushing)return false;
+        if(liveRole())await pullLiveStatus();
+        return true;
+      }
+      if(cloudPushing)return false;
+
+      await pull(true);
+      if(liveRole())await pullLiveStatus();
+      return true;
+    }catch(e){
+      lastSyncError=String(e?.code||e?.message||'REVISION_CHECK_FAILED');
+      console.warn('Revision probe failed',e);
+      return false;
+    }finally{
+      revisionProbeInFlight=false;
+    }
+  }
+
   async function push(retry=0){
     if(cloudPushing||!cloudDirty)return false;
     if(!sessionToken()){status('LOGIN REQUIRED','bad');return false}
@@ -434,30 +471,54 @@
     cloudPushing=true;
     status('SAVING…','info');
     const localSnapshot=payloadState();
+    const pushGeneration=dirtyGeneration;
+    let followupPush=false;
     try{
       const r=await api({action:'save',expected_revision:cloudRevision,data:localSnapshot});
       if(r.ok){
-        // New sync protocol: a server-rebased write returns the authoritative
-        // merged snapshot plus server_revision. Apply it immediately so this
-        // device cannot remain locally stale after a successful save.
+        // Acknowledge exactly the snapshot sent by this request. If another
+        // Start/Pause/Stop/Assign click happened while it was in flight, keep
+        // that newer mutation dirty and immediately send a second request.
         cloudRevision=Number(r.server_revision||r.revision||cloudRevision+1);
         localStorage.setItem(REV_KEY,String(cloudRevision));
-        localStorage.removeItem(DIRTY_KEY);
-        localStorage.removeItem(PENDING_KEY);
-        cloudDirty=false;
-        if(r.data&&typeof r.data==='object'){
+        const newerPending=dirtyGeneration!==pushGeneration;
+        const authoritativeSnapshot=r.data&&typeof r.data==='object'
+          ? reconcileConsumablesDuplicates(clone(r.data))
+          : clone(localSnapshot);
+        lastSyncedState=clone(authoritativeSnapshot);
+
+        if(newerPending){
+          // Preserve server-side rebase/reconciliation while replaying only the
+          // newer local delta on top. This prevents an in-flight acknowledgement
+          // from erasing the user's second click or overwriting another device.
+          const pendingSnapshot=payloadState();
+          const mergedPending=me?.role==='Employee'
+            ? mergeEmployeeConflict(authoritativeSnapshot,pendingSnapshot,me.id)
+            : threeWayMerge(localSnapshot,authoritativeSnapshot,pendingSnapshot);
           cloudApplying=true;
-          try{normalizeRemote(reconcileConsumablesDuplicates(clone(r.data)))}finally{cloudApplying=false}
-          if(me?.role==='Employee')finalizeEmployeeOfflineMarkers(state,me.id);
-          lastSyncedState=clone(state||{});
+          try{state=reconcileConsumablesDuplicates(mergedPending);ensureShape();persistLocal()}finally{cloudApplying=false}
+          cloudDirty=true;
+          localStorage.setItem(DIRTY_KEY,'1');
+          try{localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:payloadState()}))}catch(_){}
+          status('SAVING LATEST CHANGE…','info');
+          followupPush=true;
           if(me)try{render()}catch(_){}
         }else{
-          lastSyncedState=clone(localSnapshot);
-        }
-        status('SYNCED','ok');
-        conflictAlerted=false;
-        if(r.force_pull&&!r.data){
-          setTimeout(()=>{if(!cloudDirty)pull(true).catch(e=>console.warn('Post-rebase refresh failed',e))},0);
+          localStorage.removeItem(DIRTY_KEY);
+          localStorage.removeItem(PENDING_KEY);
+          cloudDirty=false;
+          if(r.data&&typeof r.data==='object'){
+            cloudApplying=true;
+            try{normalizeRemote(r.data);reconcileConsumablesDuplicates(state);persistLocal()}finally{cloudApplying=false}
+            if(me?.role==='Employee')finalizeEmployeeOfflineMarkers(state,me.id);
+            lastSyncedState=clone(state||{});
+            if(me)try{render()}catch(_){}
+          }
+          status('SYNCED','ok');
+          conflictAlerted=false;
+          if(r.force_pull&&!r.data){
+            setTimeout(()=>{if(!cloudDirty)pull(true).catch(e=>console.warn('Post-rebase refresh failed',e))},0);
+          }
         }
         return true;
       }
@@ -552,15 +613,24 @@
       status(navigator.onLine?'SYNC ERROR — RETRYING':'OFFLINE — CHANGE QUEUED',navigator.onLine?'bad':'warn');
       if(navigator.onLine&&sessionToken())setTimeout(()=>{if(cloudDirty&&!cloudPushing)push(0)},Math.min(15000,1000*Math.pow(2,Math.min(consecutiveSyncErrors,4))));
       return false;
-    }finally{cloudPushing=false}
+    }finally{
+      cloudPushing=false;
+      if(followupPush&&cloudDirty&&navigator.onLine&&sessionToken()){
+        clearTimeout(pushTimer);
+        pushTimer=setTimeout(()=>push(0),0);
+      }
+    }
   }
 
   window.cloudScheduleSave=function(){
     if(cloudApplying)return;
+    dirtyGeneration++;
     cloudDirty=true;
     localStorage.setItem(DIRTY_KEY,'1');
     clearTimeout(pushTimer);
-    pushTimer=setTimeout(()=>push(0),100);
+    // A user action should leave the phone for the server on the next task,
+    // not after an arbitrary debounce window.
+    pushTimer=setTimeout(()=>push(0),0);
   };
 
   async function syncNow(){
@@ -612,9 +682,9 @@
       status(navigator.onLine?'SYNC ERROR':'OFFLINE — LOCAL CACHE',navigator.onLine?'bad':'warn');
       initialDone=true;
     }
-    const pollMs=()=>document.visibilityState==='hidden'?30000:5000;
-    const liveMs=()=>document.visibilityState==='hidden'?30000:3000;
-    const schedulePoll=()=>{clearTimeout(pollTimer);pollTimer=setTimeout(async()=>{if(sessionToken()&&navigator.onLine&&!cloudDirty&&!cloudPushing&&!pullInFlight)try{await pull(false)}catch(e){console.warn('Cloud poll failed',e);status('SYNC ERROR','bad')}schedulePoll()},pollMs())};
+    const pollMs=()=>document.visibilityState==='hidden'?30000:1000;
+    const liveMs=()=>document.visibilityState==='hidden'?60000:15000;
+    const schedulePoll=()=>{clearTimeout(pollTimer);pollTimer=setTimeout(async()=>{if(sessionToken()&&navigator.onLine)await probeRevision();schedulePoll()},pollMs())};
     const scheduleLive=()=>{clearTimeout(livePollTimer);livePollTimer=setTimeout(()=>{if(sessionToken()&&navigator.onLine&&liveRole())pullLiveStatus();scheduleLive()},liveMs())};
     schedulePoll();scheduleLive();
     return true;
@@ -648,7 +718,7 @@
     publishLiveStatus(false);
   });
   window.zukaitCloud={
-    init,pull,push,pullLiveStatus,stop,syncNow,backupNow,backupList,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
+    init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,backupNow,backupList,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
     configured:()=>true,
     get revision(){return cloudRevision},
     get dirty(){return cloudDirty},
@@ -656,6 +726,7 @@
     get liveRevision(){return liveStatusRevision},
     get liveFresh(){return liveStatusLastFetchedAt>0&&Date.now()-liveStatusLastFetchedAt<7000&&navigator.onLine},
     get lastSuccessfulSyncAt(){return lastSuccessfulSyncAt},
+    get lastRevisionProbeAt(){return lastRevisionProbeAt},
     get lastSyncAgeMs(){return lastSuccessfulSyncAt?Math.max(0,Date.now()-lastSuccessfulSyncAt):null},
     get syncHealth(){return {online:navigator.onLine,revision:cloudRevision,dirty:cloudDirty,pushing:cloudPushing,pulling:pullInFlight,ready:initialDone,lastSuccessfulSyncAt,lastSyncAgeMs:lastSuccessfulSyncAt?Math.max(0,Date.now()-lastSuccessfulSyncAt):null,lastError:lastSyncError,consecutiveErrors:consecutiveSyncErrors,pendingConflict:!!localStorage.getItem(PENDING_KEY),liveFresh:liveStatusLastFetchedAt>0&&Date.now()-liveStatusLastFetchedAt<7000&&navigator.onLine,liveAgeMs:liveStatusLastFetchedAt?Math.max(0,Date.now()-liveStatusLastFetchedAt):null}},
     get pendingConflict(){try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'null')}catch(_){return null}}
