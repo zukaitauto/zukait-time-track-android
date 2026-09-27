@@ -194,6 +194,31 @@ function reconcileAutoOvertime(candidate: any, current: any): any {
   return candidate;
 }
 
+// A full-state client can carry an old snapshot while saving an unrelated change.
+// Keep prior records unless a Manager records an explicit, reasoned Job Card deletion.
+function preserveOperationalHistory(candidate: any, current: any, user: any): any {
+  const earlier = new Set((current?.jobDeletes || []).map((x: any) => String(x?.job || "") + ":" + String(x?.deletedAt || "")));
+  const deletedJobs = new Set((candidate?.jobDeletes || []).filter((x: any) =>
+    user?.role === "Manager" && String(x?.deletedBy || "") === String(user?.id || "") &&
+    String(x?.reason || "").trim() && !earlier.has(String(x?.job || "") + ":" + String(x?.deletedAt || ""))
+  ).map((x: any) => String(x.job)));
+  for (const [key, identity, job] of [
+    ["jobs", "no", "no"], ["assign", "id", "job"], ["sessions", "id", "job"]
+  ] as const) {
+    const incoming = Array.isArray(candidate?.[key]) ? candidate[key] : [];
+    const seen = new Set(incoming.map((x: any) => String(x?.[identity] || "")));
+    for (const record of Array.isArray(current?.[key]) ? current[key] : []) {
+      const id = String(record?.[identity] || "");
+      if (id && !seen.has(id) && !deletedJobs.has(String(record?.[job] || ""))) {
+        incoming.push(cloneValue(record));
+        seen.add(id);
+      }
+    }
+    candidate[key] = incoming;
+  }
+  return candidate;
+}
+
 function threeWayMerge(base: any, remote: any, local: any): any {
   if (same(local, base)) return cloneValue(remote);
   if (same(remote, base)) return cloneValue(local);
@@ -640,7 +665,7 @@ Deno.serve(async (req: Request) => {
           candidate = threeWayMerge(baseData, current.data, originalProposed);
         }
 
-        candidate = reconcileAutoOvertime(preserveClosedSessions(candidate, current.data), current.data);
+        candidate = preserveOperationalHistory(reconcileAutoOvertime(preserveClosedSessions(candidate, current.data), current.data), current.data, user);
 
         const unsafeIdeal = (candidate.assign || []).some((a: any) =>
           a && a.job === "ID001" && !a.cancelled && !a.completed && Number(a.idealSafeVersion || 0) < 1
@@ -666,6 +691,7 @@ Deno.serve(async (req: Request) => {
         if (committed?.ok) {
           const committedRevision = Number(committed.revision || next);
           const rebased = currentRevision !== originalExpected;
+          const reconciled = !same(candidate, originalProposed);
           return reply({
             ok: true,
             // Backward compatibility: legacy clients only understand "revision".
@@ -673,8 +699,8 @@ Deno.serve(async (req: Request) => {
             // so its existing poller is forced to reload the authoritative state.
             revision: rebased ? originalExpected : committedRevision,
             server_revision: committedRevision,
-            data: rebased ? candidate : undefined,
-            force_pull: rebased,
+            data: rebased || reconciled ? candidate : undefined,
+            force_pull: rebased || reconciled,
             updated_by: user.id,
             rebased,
             original_revision: originalExpected,
