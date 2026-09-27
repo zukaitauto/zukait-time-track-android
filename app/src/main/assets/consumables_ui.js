@@ -72,9 +72,11 @@ function consVehicleDetails(d,colour){
  const clr=colour||j.colorCode||j.colourCode||'—';
  return '<div class="cons-vehicle-card"><div><small>JOB CARD</small><b>'+esc(j.no||'—')+'</b></div><div><small>VEHICLE</small><b>'+esc(vehicle)+'</b></div><div><small>REGISTRATION</small><b>'+esc(reg)+'</b></div><div><small>YEAR</small><b>'+esc(year)+'</b></div><div><small>COLOUR CODE</small><b>'+esc(clr)+'</b></div><div><small>STATUS</small><b>'+esc(status)+'</b></div>'+(vin?'<div class="wide"><small>VIN / CHASSIS</small><b>'+esc(vin)+'</b></div>':'')+'</div>';
 }
-function consJobResults(q,selectFn){
- const rows=consJobMatches(q);
- return rows.length?rows.map(j=>'<button type="button" class="cons-jc-result" onclick="'+selectFn+'(decodeURIComponent(\''+encodeURIComponent(String(j.no||''))+'\'))"><b>'+esc(j.no||'')+'</b><span>'+esc(j.reg||j.registration||'No Reg')+'</span><small>'+esc(j.vehicle||[j.make,j.model,j.year].filter(Boolean).join(' ')||'Vehicle')+'</small></button>').join(''):'<div class="cons-jc-empty">No matching Job Card.</div>';
+function consBaseIssued(jobCard){const c=C().ensureState(state);return c.issues.find(x=>x&&!x.voided&&x.type===C().TYPES.ISSUED&&String(x.jobCard||'').toUpperCase()===String(jobCard||'').toUpperCase())||null}
+function consJobResults(q,selectFn,type){
+ let rows=consJobMatches(q);
+ if(type==='additional')rows=rows.filter(j=>!!consBaseIssued(j.no));
+ return rows.length?rows.map(j=>'<button type="button" class="cons-jc-result" onclick="'+selectFn+'(decodeURIComponent(\''+encodeURIComponent(String(j.no||''))+'\'))"><b>'+esc(j.no||'')+'</b><span>'+esc(j.reg||j.registration||'No Reg')+'</span><small>'+esc(j.vehicle||[j.make,j.model,j.year].filter(Boolean).join(' ')||'Vehicle')+'</small></button>').join(''):'<div class="cons-jc-empty">'+(type==='additional'?'No Job Card with completed Suggested / Issued materials found.':'No matching Job Card.')+'</div>';
 }
 function entryHeader(type){
  return '<div class="cons-jc-access"><label>Job Card Search<div class="cons-searchbar"><input id="consJc" placeholder="JC / Registration / Vehicle" autocomplete="off" oninput="consFindJC(\''+type+'\')"><button class="blue" type="button" onclick="consFindJC(\''+type+'\',true)">SEARCH</button></div></label><div id="consJcResults" class="cons-jc-results hidden"></div><div id="consVehicleDetails" class="cons-vehicle-sticky"></div></div><div class="cons-entry-grid cons-entry-grid-compact"><label>Vehicle Details<input id="consVehicle" readonly></label><label>Colour Code<input id="consColour" placeholder="Paint colour code"></label><label>Painter Name<select id="consPainter" onchange="consRefreshIssueFinishState()"><option value="">Select painter</option></select></label><label>Allotted Supervisor<input id="consSupervisor" readonly></label></div><div id="consJcNote" class="muted small"></div>';
@@ -93,21 +95,27 @@ window.consSelectMaterialBrand=function(mid,bid){const c=C().ensureState(state),
 function consCompactEntryStyle(){
  if(document.getElementById('consCompactEntryStyle'))return;
  const s=document.createElement('style');s.id='consCompactEntryStyle';
- s.textContent='.cons-entry-grid-compact{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:10px 12px!important;align-items:end!important}.cons-entry-grid-compact label{min-width:0!important;margin:0!important}.cons-entry-grid-compact input,.cons-entry-grid-compact select{width:100%!important;box-sizing:border-box!important}.cons-material-picker{position:relative;margin-bottom:10px}.cons-material-picker input{width:100%;box-sizing:border-box}.cons-material-results{display:grid;gap:6px;margin-top:6px;max-height:260px;overflow:auto}.cons-material-result{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:2px 10px!important;text-align:left!important;padding:9px 11px!important}.cons-material-result b{font-size:13px}.cons-material-result span{font-weight:800}.cons-material-result small{grid-column:1/-1;opacity:.7}.cons-material-selected{display:flex;gap:8px;align-items:center;margin-top:6px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:10px}.cons-material-selected span{font-weight:800}.cons-line-editor{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:10px 12px!important;align-items:stretch!important}.cons-line-editor>*{min-width:0!important;width:100%!important;box-sizing:border-box!important;margin:0!important}.cons-line-editor button{min-height:48px!important}@media(max-width:520px){.cons-draft-table{display:none!important}.cons-draft-cards{display:grid!important;gap:7px}}@media(max-width:340px){.cons-entry-grid-compact,.cons-line-editor{gap:8px!important}}';
+ s.textContent='.cons-entry-grid-compact{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:10px 12px!important;align-items:end!important}.cons-entry-grid-compact label{min-width:0!important;margin:0!important}.cons-entry-grid-compact input,.cons-entry-grid-compact select{width:100%!important;box-sizing:border-box!important}.cons-material-picker{position:relative;margin-bottom:10px}.cons-material-picker input{width:100%;box-sizing:border-box}.cons-material-results{display:grid;gap:6px;margin-top:6px;max-height:260px;overflow:auto}.cons-material-result{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:2px 10px!important;text-align:left!important;padding:9px 11px!important}.cons-material-result b{font-size:13px}.cons-material-result span{font-weight:800}.cons-material-result small{grid-column:1/-1;opacity:.7}.cons-material-selected{display:flex;gap:8px;align-items:center;margin-top:6px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:10px}.cons-material-selected span{font-weight:800}.cons-line-editor{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:10px 12px!important;align-items:stretch!important}.cons-line-editor>*{min-width:0!important;width:100%!important;box-sizing:border-box!important;margin:0!important}.cons-line-editor button{min-height:48px!important}.cons-additional-context{display:grid;gap:3px;padding:10px 12px;margin:2px 0 10px;border:1px solid #f2d28f;border-radius:11px;background:#fffaf0}.cons-additional-context b,.cons-additional-context small{display:block}.cons-additional-context b{font-size:13px;color:#7a4c00}.cons-additional-context small{font-size:10px;color:#475569}.hidden{display:none!important}@media(max-width:520px){.cons-draft-table{display:none!important}.cons-draft-cards{display:grid!important;gap:7px}}@media(max-width:340px){.cons-entry-grid-compact,.cons-line-editor{gap:8px!important}}';
  document.head.appendChild(s);
 }
+window.openConsumablesAdditional=function(){
+ if(!['Supervisor','Manager'].includes(role()))return;
+ consCompactEntryStyle();draft={type:'additional',jc:null,lines:[],additionalBase:null};
+ modal('Additional Materials','<div class="cons-entry-shell"><div class="cons-jc-access"><label>Job Card Search<div class="cons-searchbar"><input id="consJc" placeholder="JC / Registration / Vehicle" autocomplete="off" oninput="consFindJC(\'additional\')"><button class="blue" type="button" onclick="consFindJC(\'additional\',true)">SEARCH</button></div></label><div id="consJcResults" class="cons-jc-results hidden"></div></div><div id="consAdditionalWorkspace" class="hidden"><div id="consVehicleDetails" class="cons-vehicle-sticky"></div><div id="consAdditionalContext" class="cons-additional-context"></div>'+lineEditor()+'<div class="cons-entry-actions"><button class="secondary" onclick="openPaintingConsumables()">← BACK</button><button id="consFinishBtn" class="green" onclick="consFinishIssue()" disabled>FINISH ADDITIONAL</button></div></div><div id="consJcNote" class="muted small">Select a Job Card that already has Suggested / Issued materials.</div></div>');
+};
 window.openConsumablesEntry=function(type){
  if(!['Supervisor','Manager'].includes(role()))return;
  consCompactEntryStyle();
  const names={issued:'Suggested / Issued Materials',additional:'Additional Materials',actual:'Actual Materials'};
  if(type==='actual')return openConsumablesActual();
+ if(type==='additional')return openConsumablesAdditional();
  draft={type,jc:null,lines:[]};
  modal(names[type]||'Painting Consumables','<div class="cons-entry-shell">'+entryHeader(type)+lineEditor()+'<div class="cons-entry-actions"><button class="secondary" onclick="openPaintingConsumables()">← BACK</button><button id="consFinishBtn" class="green" onclick="consFinishIssue()" disabled>FINISH</button></div></div>');
 };
 window.consFindJC=function(type,showAll){
  const input=document.getElementById('consJc'),box=document.getElementById('consJcResults');if(!input||!box)return;
  const q=input.value||'';if(!q&&!showAll){box.innerHTML='';box.classList?.add?.('hidden');return}
- box.innerHTML=consJobResults(q,'consSelectJC');box.dataset.type=type||'';box.classList?.remove?.('hidden');
+ box.innerHTML=consJobResults(q,'consSelectJC',type||'');box.dataset.type=type||'';box.classList?.remove?.('hidden');
 };
 window.consSelectJC=function(no){
  const input=document.getElementById('consJc'),box=document.getElementById('consJcResults');if(input)input.value=no;
@@ -117,6 +125,15 @@ window.consSelectJC=function(no){
 window.consLoadJC=function(type){
  const el=document.getElementById('consJc'),d=jcData(el?.value),v=document.getElementById('consVehicle'),colour=document.getElementById('consColour'),p=document.getElementById('consPainter'),sup=document.getElementById('consSupervisor'),note=document.getElementById('consJcNote'),details=document.getElementById('consVehicleDetails');
  draft.jc=d;
+ if(type==='additional'){
+  const workspace=document.getElementById('consAdditionalWorkspace'),context=document.getElementById('consAdditionalContext');
+  const base=d?consBaseIssued(d.job.no):null;draft.additionalBase=base;
+  if(!d||!base){if(workspace)workspace.classList?.add?.('hidden');if(details)details.innerHTML='';if(context)context.innerHTML='';if(note)note.textContent=d?'Create Suggested / Issued materials first for this Job Card.':(el?.value?'Select a Job Card from the search results.':'');consRefreshIssueFinishState();return}
+  if(details)details.innerHTML=consVehicleDetails(d,base.colourCode||'');
+  const pname=(users||[]).find(x=>x.id===base.mainPainterId)?.name||base.mainPainterId||'—',sname=(users||[]).find(x=>x.id===base.allottedSupervisorId)?.name||base.allottedSupervisorId||'—';
+  if(context)context.innerHTML='<b>ADDING EXTRA MATERIALS TO JC '+esc(d.job.no)+'</b><small>'+esc(d.vehicle||d.job.vehicle||'Vehicle')+' · Colour '+esc(base.colourCode||'—')+'</small><small>Painter '+esc(pname)+' · Supervisor '+esc(sname)+'</small>';
+  if(workspace)workspace.classList?.remove?.('hidden');if(note)note.textContent='Add only the extra materials required for this Job Card.';consRefreshIssueFinishState();return
+ }
  if(!d){if(v)v.value='';if(p)p.innerHTML='<option value="">Select painter</option>';if(sup)sup.value=me?.name||me?.id||'';if(details)details.innerHTML='';if(note)note.textContent=el?.value?'Select a Job Card from the search results.':'';consRefreshIssueFinishState();return}
  if(details)details.innerHTML=consVehicleDetails(d,document.getElementById('consColour')?.value||'');
  if(v)v.value=d.vehicle||'';
@@ -132,7 +149,7 @@ window.consFilterBrands=function(){
  sel.innerHTML='<option value="">Brand</option>'+brands.map(b=>'<option value="'+esc(b.id)+'">'+esc(b.name)+'</option>').join('');if(brands.length===1)sel.value=brands[0].id;
  const m=c.materials.find(x=>x.id===mid),q=document.getElementById('consQty');if(q)q.placeholder=m?.unit?'Quantity ('+m.unit+')':'Quantity';
 };
-window.consRefreshIssueFinishState=function(){const btn=document.getElementById('consFinishBtn');if(!btn)return false;const painter=document.getElementById('consPainter')?.value||'';const ready=!!(draft.jc&&draft.lines.length&&painter);btn.disabled=!ready;return ready};
+window.consRefreshIssueFinishState=function(){const btn=document.getElementById('consFinishBtn');if(!btn)return false;const painter=draft.type==='additional'?(draft.additionalBase?.mainPainterId||''):(document.getElementById('consPainter')?.value||'');const ready=!!(draft.jc&&draft.lines.length&&painter);btn.disabled=!ready;return ready};
 window.consAddLine=function(){
  if(!draft.jc)return alert('Load a valid Job Card first.');
  const mid=document.getElementById('consMaterial')?.value,bid=document.getElementById('consBrand')?.value,q=Number(document.getElementById('consQty')?.value);
@@ -149,13 +166,14 @@ window.consRenderRows=function(){
 };
 window.consFinishIssue=function(){
  if(!draft.jc||!draft.lines.length)return alert('Load Job Card and add at least one material.');
- const painter=document.getElementById('consPainter')?.value;if(!painter)return alert('Select the Main Painter.');
+ const base=draft.type==='additional'?(draft.additionalBase||consBaseIssued(draft.jc?.job?.no)):null;
+ const painter=base?.mainPainterId||document.getElementById('consPainter')?.value;if(!painter)return alert(draft.type==='additional'?'Suggested / Issued material record is required before adding Additional Materials.':'Select the Main Painter.');
  const issueType=draft.type==='additional'?C().TYPES.ADDITIONAL:C().TYPES.ISSUED,dup=consRecentDuplicate(issueType,draft.jc.job.no,draft.lines);
  if(dup&&!confirm('Possible duplicate entry: the same materials and quantities were saved for this Job Card within the last 15 minutes. Continue anyway?'))return;
  if(!confirm('Finish and lock this material issue?'))return;
  try{
   draft.clientRequestId=draft.clientRequestId||('ui-'+Date.now()+'-'+Math.random().toString(36).slice(2,10));
-  const x=C().issue(state,{clientRequestId:draft.clientRequestId,jobCard:draft.jc.job.no,vehicle:draft.jc.vehicle||'',colourCode:document.getElementById('consColour')?.value||'',mainPainterId:painter,allottedSupervisorId:draft.jc.supervisorId||me?.id||'',lines:draft.lines},{id:me?.id||'',name:me?.name||me?.id||'',role:role()},issueType);
+  const x=C().issue(state,{clientRequestId:draft.clientRequestId,jobCard:draft.jc.job.no,vehicle:draft.jc.vehicle||'',colourCode:base?.colourCode||document.getElementById('consColour')?.value||'',mainPainterId:painter,allottedSupervisorId:base?.allottedSupervisorId||draft.jc.supervisorId||me?.id||'',lines:draft.lines},{id:me?.id||'',name:me?.name||me?.id||'',role:role()},issueType);
   if(typeof save==='function')save(); alert((draft.type==='additional'?'Additional':'Suggested / Issued')+' Materials saved and locked.'); openPaintingConsumables();
  }catch(e){alert(String(e?.message||e))}
 };
