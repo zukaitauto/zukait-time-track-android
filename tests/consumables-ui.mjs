@@ -78,3 +78,8 @@ assert.match(uiSource,/function consRecentMaterialLists\(\)/,'Search Material Li
 assert.match(uiSource,/JC \| Vehicle \| Registration/,'Recent material list must use compact single-row columns');
 assert.match(uiSource,/let d=jcData\(raw\);[\s\S]*if\(!d&&q\)/,'material search must fall back to Consumables records when the local Job Card lookup is missing');
 assert.match(uiSource,/consMaterialListData\(hit\.jobCard,hit\)/,'server-backed Consumables records must remain directly openable');
+
+assert.match(uiSource,/function consMaterialListData\(jobCard,row\)/,'Consumables must synthesize display data from a stored material record even when the local Job Card is absent');
+assert.match(uiSource,/\[\.\.\.c\.issues,\.\.\.c\.actuals\]/,'Recent Material Lists must be sourced from stored Consumables records, not only state.jobs');
+assert.match(uiSource,/String\(x\.jobCard\|\|''\)\.toUpperCase\(\)===jc/,'material detail lookup must normalize stored Job Card numbers');
+assert.match(uiSource,/Material list not found\./,'missing local Job Card must not be reported as Job Card not found');
