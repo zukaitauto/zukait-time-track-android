@@ -45,6 +45,9 @@ ctx.openConsumablesModule();assert.match(ctx.modal,/disabled[^>]*><span>🛠️/
 const hm={id:'legacy-mat',name:'Legacy Reducer',unit:'Liter',category:'Consumable',active:true},hb={id:'legacy-brand',name:'Legacy Brand',active:true},hi={id:'legacy-issue',type:C.TYPES.ISSUED,jobCard:'OLD-JC',voided:false,createdAt:1,lines:[{materialId:hm.id,brandId:hb.id,quantity:1}]};state.consumables.materials.push(hm);state.consumables.brands.push(hb);state.consumables.issues.push(hi);ctx.openConsumablesEntry('issued');fill({consMaterialSearch:'Legacy Reducer'});ctx.consSearchMaterialBrand();assert.match(element('consMaterialResults').innerHTML,/Legacy Reducer/,'historically used material must remain searchable even without a current price row');assert.match(element('consMaterialResults').innerHTML,/Legacy Brand/);state.consumables.issues.pop();state.consumables.brands.pop();state.consumables.materials.pop();
 const uiSource=fs.readFileSync('app/src/main/assets/consumables_ui.js','utf8');
 assert.match(uiSource,/Price on Print \/ PDF/,'Search Material print area must expose price visibility choice');
+assert.match(uiSource,/PDF → WHATSAPP/,'Material detail must expose direct PDF to WhatsApp');
+assert.match(uiSource,/AndroidBridge\?\.shareHtmlAsPdfWhatsApp/,'Android material PDF must use the native PDF sharing bridge');
+assert.match(uiSource,/if\(history\.length>1\)\{history\.back\(\)\}else if\(window\.opener/,'print preview Back\/Close must prefer WebView history so Android can return reliably');
 assert.match(uiSource,/WITH PRICE/);assert.match(uiSource,/WITHOUT PRICE/);
 assert.match(uiSource,/consSearchView='issued'/,'Search Material must default to Suggested / Issued view');
 assert.match(uiSource,/SUGGESTED \/ ISSUED/);assert.match(uiSource,/ACTUAL MATERIALS/);
