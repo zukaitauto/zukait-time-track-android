@@ -63,6 +63,9 @@ function openCenter(){
  if(typeof openModal==='function')openModal('<div class="row"><h3 style="margin:0;flex:1">🔔 Notifications</h3><button class="danger" onclick="closeModal()">✕ Close</button></div>'+body);
 }
 async function refresh(){
+ // Never compete with authentication on the login screen. Server notification
+ // hydration starts only after secure_auth has established the logged-in user.
+ if(!window.me||!window.me.id){inject();updateBadges();return}
  try{if(navigator.onLine){if(window.zukaitV2?.sparePartsMain?.hydrateAuthoritativeLists)await window.zukaitV2.sparePartsMain.hydrateAuthoritativeLists();await loadServerPartEvents()}}catch(_){}
  inject();updateBadges();
 }
