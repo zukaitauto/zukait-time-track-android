@@ -1,8 +1,8 @@
 {
-  "versionName": "V164",
-  "versionCode": 127,
+  "versionName": "V165",
+  "versionCode": 128,
   "approvedForStaff": true,
-  "approvedAt": "2026-09-26",
-  "sourceCommit": "2e987c91ef8a71cc0f84740172fb5dfca98b9ccf",
-  "publishNonce": "approved-v164-architecture-v2-parts-list-ui-20260926"
+  "approvedAt": "2026-09-27",
+  "sourceCommit": "8a67505a52cd69f96c62dd6c06fdfe8514969136",
+  "publishNonce": "approved-v165-architecture-v2-parts-workflow-20260927"
 }
