@@ -122,7 +122,8 @@ window.v65OpenAdmin=function(){openModal('<div class="section-title"><h2>Admin</
 window.v65OpenAccount=function(){
  if(!me)return;
  let items='<button class="secondary" onclick="changeOwnPassword()">🔐 CHANGE PASSWORD</button><button class="blue" onclick="v42SyncNow()">↻ SYNC</button><button class="secondary" onclick="v65OpenAbout()">ABOUT</button>';
- if(me.role==='Employee')items+='<button class="v65-leave-btn" onclick="v63OpenLeave()">LEAVE</button>';
+ if(['Employee','Supervisor','Manager','Purchaser'].includes(me.role)&&typeof window.v63OpenLeave==='function')items+='<button class="v65-leave-btn" onclick="v63OpenLeave()">LEAVE</button>';
+ if(window.AndroidBridge)items+='<button class="green v65-update" onclick="v65OpenAbout();setTimeout(v65CheckUpdate,0)">⬆ UPDATE APP</button>';
  items+='<button class="danger v65-logout" onclick="closeModal();logout()">LOGOUT</button>';
  openModal('<div class="section-title"><h2>'+esc(me.name)+'</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="v65-account">'+items+'</div>');
 };
