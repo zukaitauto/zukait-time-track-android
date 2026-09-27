@@ -20,7 +20,7 @@ function sections(raw){
 }
 function code(s){const raw=clean(s).replace(/^(?:number|no)\s+/i,'');const m=raw.match(/^((?:(?:zero|oh|one|two|three|four|five|six|seven|eight|nine|\d+)\s*){1,20})/i);if(m)return digits(m[1]).replace(/[^0-9]/g,'').slice(0,20);return (raw.match(/^[a-z0-9-]{1,20}/i)||[])[0]?.toUpperCase()||''}
 function registration(s){return digits(s).replace(/[^a-z0-9]/gi,'').toUpperCase().slice(0,24)}
-function validVehicle(s){const value=clean(s).replace(/\b(19\d{2}|20\d{2})\b/g,'').replace(/^(?:make|model)\s+/i,'').trim();if(!value||/\b(job\s*card|registration|reg(?:istration)?\s*number|jc)\b/i.test(value)||!/[a-z]{2}/i.test(value))return '';return value}
+function validVehicle(s){const value=clean(s).replace(/\bmodel(?:\s*year)?\b(?=\s*(?:19\d{2}|20\d{2})\b)/ig,'').replace(/\b(19\d{2}|20\d{2})\b/g,'').replace(/^(?:make|model)\s+/i,'').replace(/\bmodel\s*$/i,'').trim();if(!value||/\b(job\s*card|registration|reg(?:istration)?\s*number|jc)\b/i.test(value)||!/[a-z]{2}/i.test(value))return '';return value}
 function inferredVehicle(s){const value=clean(s);return brands.some(b=>new RegExp('^'+b.replace(/\s+/g,'\\s+')+'\\b','i').test(value))?validVehicle(value):''}
 function technician(raw){const q=norm(raw);if(!q)return null;const people=Array.from(window.users||[]).filter(u=>u&&u.role==='Employee');let found=people.filter(u=>q===norm(u.id)||q===norm(u.name));if(found.length===1)return found[0];found=people.filter(u=>clean(u.name).split(/\s+/).some(t=>t.length>2&&q===norm(t)));return found.length===1?found[0]:null}
 function time(raw){const s=clean(raw).toLowerCase();let m=s.match(/\b(\d{1,2})(?:\s*(?:h|hr|hrs|hours?))\s*(?:and\s*)?(\d{1,2})?\s*(?:m|min|mins|minutes?)?\b/);
@@ -49,11 +49,12 @@ function preview(){
  b.classList.remove('hidden')
 }
 function setField(id,value){const e=document.getElementById(id);if(!e||value==null||value==='')return;if(id==='se'&&!Array.from(e.options||[]).some(o=>o.value===value))return;e.value=String(value);e.dispatchEvent(new Event('change',{bubbles:true}))}
-window.v143ApplyVoiceEntry=function(text){const raw=clean(text),b=document.getElementById('v143VoiceStatus');pending=null;if(!raw){if(b){b.textContent='No speech detected. Please try again.';b.classList.remove('hidden')}return}pending={raw,parsed:parse(raw)};preview();return pending};
+window.v143ApplyVoiceEntry=function(text){if(Number(window.v143VoiceIgnoreUntil||0)>Date.now())return;const raw=clean(text),b=document.getElementById('v143VoiceStatus');pending=null;if(!raw){if(b){b.textContent='No speech detected. Please try again.';b.classList.remove('hidden')}return}pending={raw,parsed:parse(raw)};preview();return pending};
 window.v143AcceptVoiceEntry=function(){if(!pending)return;const x=pending.parsed;setField('newNo',x.jc);setField('newVehicle',x.vehicle);setField('newYear',x.year);setField('newReg',x.reg);setField('se',x.tech?.id);if(x.minutes)setField('st',Math.floor(x.minutes/60)+':'+String(x.minutes%60).padStart(2,'0'));pending=null;const b=document.getElementById('v143VoiceStatus');if(b){b.textContent='Voice details accepted. Review fields before creating or assigning a Job Card.';b.classList.remove('hidden')}};
 window.v143RejectVoiceEntry=function(){pending=null;const b=document.getElementById('v143VoiceStatus');if(b){b.textContent='Voice details declined. Quick Entry is unchanged.';b.classList.remove('hidden')}};
 window.v143RenderVoiceReview=preview;
-const start=window.v143StartVoiceEntry;if(typeof start==='function')window.v143StartVoiceEntry=function(){pending=null;return start.apply(this,arguments)};
+const clear=window.v143ClearQuickEntry;window.v143ClearQuickEntry=function(){pending=null;window.v143VoiceIgnoreUntil=Date.now()+1500;if(typeof clear==='function')return clear.apply(this,arguments);for(const id of ['newNo','newVehicle','newYear','newReg','st']){const e=document.getElementById(id);if(e)e.value=''}const tech=document.getElementById('se');if(tech)tech.value='';const b=document.getElementById('v143VoiceStatus');if(b){b.innerHTML='';b.textContent='';b.classList.add('hidden')}return true};
+const start=window.v143StartVoiceEntry;if(typeof start==='function')window.v143StartVoiceEntry=function(){pending=null;window.v143VoiceIgnoreUntil=0;return start.apply(this,arguments)};
 window.zukaitVoiceQuickEntryParse=parse;
 window.v157IntelligentVoiceQuickEntry=true;
 })();
