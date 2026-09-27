@@ -21,9 +21,9 @@ const workflow=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/work
 assert.match(workflow,/if\(to==='FITTED'\)return role==='Supervisor'\|\|role==='Manager'/,'Purchaser must not have fitting authority');
 assert.match(workflow,/if\(to==='CUSTOMER_SETTLEMENT'\)return role==='Supervisor'\|\|role==='Manager'/,'Purchaser must not have customer-settlement authority');
 console.log('V2 Spare Parts hardening guard passed');
-assert.match(mainSource,/if\(role\(\)!=='Manager'\)return;const rows=read\(\),list=/,'Manager correction save must remain Manager-only');
-assert.match(mainSource,/Correction reason is required\./,'Manager parts correction must require a reason');
-assert.match(mainSource,/SPARE_PART_MANAGER_CORRECTED/,'Manager correction must emit an auditable server event');
-assert.match(mainSource,/managerCorrectionAudit/,'Manager correction must retain before\/after audit history');
-assert.match(mainSource,/option value="RECEIVED">Arrived<\/option>/,'Manager correction must allow Arrived status');
-assert.match(mainSource,/option value="FITTED">Fitted<\/option>/,'Manager correction must allow Fitted status');
+assert.match(main,/if\(role\(\)!=='Manager'\)return;const rows=read\(\),list=/,'Manager correction save must remain Manager-only');
+assert.match(main,/Correction reason is required\./,'Manager parts correction must require a reason');
+assert.match(main,/SPARE_PART_MANAGER_CORRECTED/,'Manager correction must emit an auditable server event');
+assert.match(main,/managerCorrectionAudit/,'Manager correction must retain before\/after audit history');
+assert.match(main,/option value="RECEIVED">Arrived<\/option>/,'Manager correction must allow Arrived status');
+assert.match(main,/option value="FITTED">Fitted<\/option>/,'Manager correction must allow Fitted status');
