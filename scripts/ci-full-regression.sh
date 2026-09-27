@@ -52,6 +52,7 @@ node tests/v2-composite-pagination-cursor.mjs
 node tests/v2-composite-pagination-scale.mjs
 node tests/v2-repeat-consumables-server-authority.mjs
 node tests/v2-spare-parts-server-authority.mjs
+node tests/v2-spare-parts-durable-authority.mjs
 node tests/v2-spare-parts-hardening.mjs
 node tests/v2-multidevice-conflict-matrix.mjs
 node tests/v2-same-employee-device-race.mjs
