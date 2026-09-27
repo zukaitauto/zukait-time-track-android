@@ -69,7 +69,30 @@ function validateEmployeeChange(emp: string, oldData: any, newData: any) {
   const allowed = new Set(["sessions","assign","requests","lastActions","systemNotifications","notifications","overtimeNotices","leaves","leaveAudit"]);
   const allKeys = new Set([...Object.keys(oldData), ...Object.keys(newData)]);
   for (const k of allKeys) {
+    if (k === "jobs") continue;
     if (!allowed.has(k) && !same(oldData[k], newData[k])) return false;
+  }
+
+  // Employees never receive general Job Card edit permission. Legacy Finish may
+  // only project assignment completion into that same JC's status/completedAt.
+  const oldJ = new Map((oldData.jobs || []).map((j:any)=>[String(j?.no||""),j]));
+  const newJ = new Map((newData.jobs || []).map((j:any)=>[String(j?.no||""),j]));
+  if (oldJ.size !== newJ.size) return false;
+  for (const [no,before] of oldJ) {
+    const after:any = newJ.get(no); if (!after) return false;
+    const strip=(j:any)=>{const x=cloneValue(j)||{};delete x.status;delete x.completedAt;return x};
+    if (!same(strip(before),strip(after))) return false;
+    if (same(before,after)) continue;
+    const assignments=(newData.assign||[]).filter((a:any)=>!a?.cancelled&&String(a?.job||"")===no);
+    const mine=assignments.some((a:any)=>String(a?.emp||"")===String(emp)&&a?.completed===true);
+    if (!mine || !assignments.length) return false;
+    const done=assignments.every((a:any)=>a?.completed===true);
+    const expectedStatus=done?"Completed":"Open";
+    if (String(after?.status||"")!==expectedStatus) return false;
+    if (done) {
+      const expectedAt=Math.max(...assignments.map((a:any)=>Number(a?.completedAt)||0));
+      if (!(expectedAt>0) || Number(after?.completedAt||0)!==expectedAt) return false;
+    } else if (after?.completedAt !== undefined && after?.completedAt !== null) return false;
   }
 
   const oldA = mapById(oldData.assign || []);
