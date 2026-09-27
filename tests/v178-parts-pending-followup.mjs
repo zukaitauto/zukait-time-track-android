@@ -29,4 +29,7 @@ assert.match(src,/Quantity arrived now \(remaining/,'Purchaser must enter the qu
 assert.match(src,/receivedQty:to==='RECEIVED'\?moved\.item\.receivedQty:null/,'Received quantity must be persisted in the authoritative event');
 assert.match(src,/item\.receivedQty=Number\.isFinite\(rq\)/,'Server hydration must restore authoritative received quantity instead of assuming full receipt');
 assert.match(src,/receivedQty:transitionCtx\.receivedQty/,'Partial receipt quantity must reach the workflow transition');
-console.log('Parts Pending follow-up regression passed, including partial receipt quantities');
+assert.match(src,/function withNav\(html,back\)\{return navButtons\(back\)\+html\}/,'Spare Parts must render navigation once at the top only');
+assert.match(src,/background:#dbeafe;color:#1d4ed8/,'Spare Parts Back button must use compact blue styling');
+assert.match(src,/background:#fee2e2;color:#b91c1c/,'Spare Parts Close button must use distinct compact red styling');
+console.log('Parts Pending follow-up regression passed, including partial receipt quantities and single top navigation');
