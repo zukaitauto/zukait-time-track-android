@@ -40,3 +40,10 @@ console.log('V2 notification center event history: ok');
 
 assert.match(code,/r==='Purchaser'&&x\.eventType==='SPARE_PART_LISTED'/,'new Parts List event must target Purchaser');
 assert.match(code,/r==='Supervisor'&&x\.eventType==='SPARE_PART_STATUS_CHANGED'&&x\.to==='RECEIVED'/,'Purchaser Received event must target Supervisor');
+
+const main=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8');
+assert.match(main,/function partsListWhatsAppText\(r\)/);
+assert.match(main,/const lines=\[vehicle\|\|'Vehicle'\]/,'WhatsApp must begin with vehicle only');
+assert.doesNotMatch(main,/const lines=\[\(vehicle\|\|'Vehicle'\)\+'\.'/,'WhatsApp vehicle line must not add punctuation');
+assert.match(main,/function whatsAppQuotation\(no\)\{return whatsAppPartsList\(no\)\}/,'quotation WhatsApp must use the same minimal parts-only format');
+assert.match(main,/function partFullyArrived\(item\).*SUPERVISOR_VERIFIED/,'Supervisor verification must complete purchasing for the part');
