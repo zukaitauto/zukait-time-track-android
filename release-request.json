@@ -1,8 +1,8 @@
 {
-  "versionName": "V174",
-  "versionCode": 137,
+  "versionName": "V175",
+  "versionCode": 138,
   "approvedForStaff": true,
   "approvedAt": "2026-09-27",
-  "sourceCommit": "b08d96dca0719bc27081055bcef54cdc6a76ac38",
-  "publishNonce": "approved-v174-consumables-recovery-20260927"
+  "sourceCommit": "c33c86c5ce637979321fdb33be0573c6add88305",
+  "publishNonce": "approved-v175-supervisor-search-voice-clear-20260927"
 }
