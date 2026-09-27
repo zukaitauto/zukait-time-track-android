@@ -33,13 +33,20 @@ window.openPaintingConsumables=function(){
  let base=action('Suggested / Issued Materials','Original material issue','openConsumablesEntry(\'issued\')','issued')+
  action('Actual Materials','Final quantity used for costing','openConsumablesEntry(\'actual\')','actual')+
  action('Additional Materials','Extra controlled material issue','openConsumablesEntry(\'additional\')','additional')+
- action('Search Material List','JC issued vs actual material','openConsumablesSearch()','search');
+ action('Search Material List','JC issued vs actual material','openConsumablesSearch()','search')+
+ action('Total Consumables','Search JC and view final consumables total','openTotalConsumables()','search');
  let mgr=role()==='Manager'?action('Brands & Price','Material, brand, unit and price master','openConsumablesManager(\'master\')','manager')+
  action('Search Material','Find and correct material pricing','openConsumablesManager(\'material\')','manager')+
  action('Reports','Actual material cost and consumption reports','openConsumablesManager(\'reports\')','manager')+
  action('Edit History','Manager audit trail','openConsumablesManager(\'history\')','manager'):'';
  modal('🎨 Painting Consumables','<div class="cons-actions">'+base+mgr+'</div>');
 };
+window.openTotalConsumables=function(){
+ if(!['Supervisor','Manager'].includes(role()))return;modal('Total Consumables','<div class="cons-entry-shell"><div class="cons-jc-access"><label>Job Card Search<div class="cons-searchbar"><input id="consTotalJc" placeholder="Enter Job Card / Registration" autocomplete="off" oninput="consFindTotalJC()"><button class="blue" type="button" onclick="consFindTotalJC(true)">SEARCH</button></div></label><div id="consTotalJcResults" class="cons-jc-results hidden"></div></div><div id="consTotalDetails" class="notice">Search and select a Job Card to view total consumables.</div><div class="cons-entry-actions"><button class="secondary" onclick="openPaintingConsumables()">← BACK</button></div></div>');
+};
+window.consFindTotalJC=function(showAll){const input=document.getElementById('consTotalJc'),box=document.getElementById('consTotalJcResults');if(!input||!box)return;const q=input.value||'';if(!q&&!showAll){box.innerHTML='';box.classList.add('hidden');return}box.innerHTML=consJobResults(q,'consSelectTotalJC');box.classList.remove('hidden')};
+window.consSelectTotalJC=function(no){const input=document.getElementById('consTotalJc'),box=document.getElementById('consTotalJcResults');if(input)input.value=no;if(box){box.innerHTML='';box.classList.add('hidden')}consShowTotalConsumables(no)};
+window.consShowTotalConsumables=function(no){const d=jcData(no),out=document.getElementById('consTotalDetails');if(!out)return;if(!d){out.innerHTML='<div class="notice">Job Card not found.</div>';return}const c=C().ensureState(state),actual=c.actuals.filter(x=>x&&!x.voided&&x.locked&&String(x.jobCard||'').toUpperCase()===String(d.job.no).toUpperCase()).sort((a,b)=>(Number(b.actualAt)||0)-(Number(a.actualAt)||0))[0];if(!actual){out.innerHTML=consVehicleDetails(d,'')+'<div class="notice">Actual Materials are not finalized yet. Total Consumables costing will appear after Actual Materials are finished.</div>';return}const rows=(actual.lines||[]).map(l=>{const m=c.materials.find(x=>x.id===l.materialId)||{},b=c.brands.find(x=>x.id===l.brandId)||{};return '<div class="cons-review-card"><div><small>MATERIAL</small><b>'+esc(m.name||'—')+'</b><span>'+esc(b.name||'—')+'</span></div><div><small>ISSUED QTY</small><b>'+esc(Number(l.issuedQuantity||0))+' '+esc(l.unit||m.unit||'')+'</b></div><div><small>ACTUAL QTY</small><b>'+esc(Number(l.actualQuantity||0))+' '+esc(l.unit||m.unit||'')+'</b></div><div><small>COST</small><b>OMR '+Number(l.lineCost||0).toFixed(3)+'</b></div></div>'}).join('');out.innerHTML=consVehicleDetails(d,'')+'<div class="cons-review-cards">'+rows+'</div><div class="cons-confirm-total"><span>TOTAL CONSUMABLES</span><b>OMR '+Number(actual.totalCost||0).toFixed(3)+'</b></div>'};
 let draft={type:null,jc:null,lines:[]};
 function jcData(no){
  const n=String(no||'').trim().toUpperCase(),j=(state.jobs||[]).find(x=>String(x.no||'').toUpperCase()===n);
