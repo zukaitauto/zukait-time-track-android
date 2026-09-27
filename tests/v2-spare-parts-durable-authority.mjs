@@ -13,3 +13,9 @@ assert.match(main,/SPARE_PART_FINAL_PRICE_RECORDED/);
 assert.match(main,/SPARE_PART_MANAGER_CORRECTED/);
 assert.match(api,/\["WIP","AUDIT","CYCLE_TIME","EFFICIENCY","REPEAT","ID001","OVERTIME","PARTS_DELAY","SPARE_PARTS"/,'API must expose Spare Parts server event history');
 console.log('Spare Parts durable server-history authority regression: PASS');
+
+assert.match(main,/function openPartsQuotation\(\)\{if\(!\['Purchaser','Manager'\]\.includes\(role\(\)\)\)return/,'quotation entry must be shared by Purchaser and Manager');
+assert.match(main,/async function saveQuotationPrice\(button\)\{if\(!\['Purchaser','Manager'\]\.includes\(role\(\)\)\|\|!button\)return/,'only Purchaser and Manager can save quotation pricing');
+assert.match(main,/Quotation Total <strong id="v2SpQuoteTotal"/,'quotation page must show live total');
+assert.doesNotMatch(main,/Purchase Amount OMR/,'Purchaser must not have a second purchase-price entry field');
+assert.match(main,/async function saveSupervisorFinalPrice\(listNo,itemId\)\{if\(!\['Supervisor','Manager'\]\.includes\(role\(\)\)\)return/,'final price authority must remain Supervisor and Manager');
