@@ -32,3 +32,6 @@ assert.ok(main.includes("type==='SPARE_PART_MANAGER_CORRECTED'&&p.after"),'Manag
 assert.ok(main.includes("Object.assign(item,after);item.editRevision=Number(r.revision||0)"),'Manager correction hydration must apply after-state with revision protection');
 assert.ok(main.includes("after.status==='RECEIVED'&&!item.receivedAt"),'Manager Arrived correction must restore arrival metadata during hydration');
 assert.ok(main.includes("after.status==='FITTED'&&!item.fittedAt"),'Manager Fitted correction must restore fitted metadata during hydration');
+
+assert.ok(main.includes("hydrateFromServerRows(rows);return {rows:reportRows()"),'Manager report must reduce server event history to current authoritative part state before totals');
+assert.ok(!main.includes("rows.push(...r.rows.map(normalizeReportRow));source=r.source"),'Manager report must not count raw Spare Parts event rows as current part lines');
