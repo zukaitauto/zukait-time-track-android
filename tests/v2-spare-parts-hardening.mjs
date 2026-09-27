@@ -27,3 +27,8 @@ assert.match(main,/SPARE_PART_MANAGER_CORRECTED/,'Manager correction must emit a
 assert.match(main,/managerCorrectionAudit/,'Manager correction must retain before\/after audit history');
 assert.ok(main.includes('option value="RECEIVED"')&&main.includes('>Arrived</option>'),'Manager correction must allow Arrived status');
 assert.ok(main.includes('option value="FITTED"')&&main.includes('>Fitted</option>'),'Manager correction must allow Fitted status');
+
+assert.ok(main.includes("type==='SPARE_PART_MANAGER_CORRECTED'&&p.after"),'Manager correction events must hydrate authoritative state on every device');
+assert.ok(main.includes("Object.assign(item,after);item.editRevision=Number(r.revision||0)"),'Manager correction hydration must apply after-state with revision protection');
+assert.ok(main.includes("after.status==='RECEIVED'&&!item.receivedAt"),'Manager Arrived correction must restore arrival metadata during hydration');
+assert.ok(main.includes("after.status==='FITTED'&&!item.fittedAt"),'Manager Fitted correction must restore fitted metadata during hydration');
