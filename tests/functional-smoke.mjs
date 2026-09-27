@@ -31,7 +31,7 @@ assert.equal(metadata.package, 'com.zukait.timetrack');
 // Consumables full-state preservation: stale devices must not erase nested shared data.
 assert.match(workshopApi,/function preserveConsumablesHistory\(candidate: any, current: any\)/,'server must preserve consumables records across stale full-state saves');
 assert.match(workshopApi,/\["materials","brands","prices","issues","actuals","audit"\]/,'server preservation must cover every consumables collection');
-assert.match(workshopApi,/candidate = preserveConsumablesHistory\(preserveOperationalHistory/,'save authority must apply consumables preservation before commit');
+assert.match(workshopApi,/candidate = preservePaintPurchasingHistory\(preserveConsumablesHistory\(preserveOperationalHistory/,'save authority must apply paint + consumables preservation before commit');
 
 // Real-time Manager / Supervisor authority contracts.
 assert.match(liveStatusAuthority, /window\.currentStaffStatuses=function\(\)[\s\S]*?if\(serverRequired\(\)\)return \[\]/, 'online Manager/Supervisor staff status must fail closed instead of falling back to stale local sessions');
