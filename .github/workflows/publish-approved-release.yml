@@ -106,6 +106,7 @@ jobs:
           node tests/v128-costing-safety.mjs
           node tests/paint-safety.mjs
           node tests/vehicle-logo-assets.mjs
+          node tests/release-latest-integrity.mjs
           node --check app/src/main/assets/consumables.js
           node --check app/src/main/assets/consumables_ui.js
           node --check app/src/main/assets/paint_module.js
@@ -245,6 +246,37 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           RELEASE_ID="${{ steps.draft_release.outputs.release_id }}"
+          EXPECTED_TAG="release-${{ steps.approved.outputs.version_name }}${{ github.ref_name == 'architecture-v2' && '-architecture-v2' || '' }}"
           test -n "$RELEASE_ID" || { echo "Missing draft release ID"; exit 1; }
-          gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" -f draft=false -f make_latest=true >/tmp/published-release.json
+
+          # Publish and request latest status first.
+          gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}"             -f draft=false -f make_latest=true >/tmp/published-release.json
+
+          # Do not trust the PATCH response alone: verify the repository-wide
+          # latest pointer. If an older release is still pinned, unpin it and retry.
+          LATEST_JSON=$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" 2>/dev/null || printf '{}')
+          LATEST_ID=$(printf '%s' "$LATEST_JSON" | jq -r '.id // empty')
+          if [ "$LATEST_ID" != "$RELEASE_ID" ]; then
+            echo "Latest release pointer is stale (expected $RELEASE_ID, got ${LATEST_ID:-none}); repairing."
+            if [ -n "$LATEST_ID" ]; then
+              gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${LATEST_ID}"                 -f make_latest=false >/tmp/previous-latest-release.json
+            fi
+            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}"               -f draft=false -f make_latest=true >/tmp/published-release.json
+            sleep 2
+            LATEST_JSON=$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest")
+            LATEST_ID=$(printf '%s' "$LATEST_JSON" | jq -r '.id // empty')
+          fi
+
+          LATEST_TAG=$(printf '%s' "$LATEST_JSON" | jq -r '.tag_name // empty')
+          test "$LATEST_ID" = "$RELEASE_ID" || {
+            echo "GitHub latest release pointer verification failed: expected ID $RELEASE_ID, got ${LATEST_ID:-none}"
+            exit 1
+          }
+          test "$LATEST_TAG" = "$EXPECTED_TAG" || {
+            echo "GitHub latest release tag verification failed: expected $EXPECTED_TAG, got ${LATEST_TAG:-none}"
+            exit 1
+          }
+          test "$(jq -r '.draft' /tmp/published-release.json)" = "false"
+          test "$(jq -r '.prerelease' /tmp/published-release.json)" = "false"
+          test "$(jq -r '[.assets[].name] | index("ZUKAIT_TIME_TRACK_LATEST.apk") != null' /tmp/published-release.json)" = "true"
           jq '{tag_name,name,draft,prerelease,html_url,assets:[.assets[].name]}' /tmp/published-release.json
