@@ -27,7 +27,7 @@ assert.equal(rows[0].title,'New Parts Entry');
 window.me.role='Manager';
 rows=n.eventPartsNotifications([listed,received,verified]);
 assert.equal(rows.length,2,'Manager must see both new-entry and arrived operational events');
-assert.deepEqual(rows.map(x=>x.id).sort(),['parts-event-E1','parts-event-E3']);
+assert.equal(JSON.stringify(Array.from(rows,x=>x.id).sort()),JSON.stringify(['parts-event-E1','parts-event-E3']));
 
 assert.match(code,/reports\.page\('SPARE_PARTS'/,'notification refresh must use authoritative Spare Parts event history');
 assert.match(code,/setInterval\(refresh,POLL_MS\)/);
