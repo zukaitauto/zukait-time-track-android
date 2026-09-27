@@ -55,7 +55,7 @@ function inject(){
  for(const h of candidates()){if(h.querySelector('.zukait-notify-btn'))continue;const b=document.createElement('button');b.type='button';b.className='zukait-notify-btn';b.setAttribute('aria-label','Notifications');b.title='Notifications';b.onclick=e=>{e.stopPropagation();openCenter()};const menu=[...h.querySelectorAll('button')].find(x=>x!==b&&/☰|menu/i.test((x.textContent||'')+(x.title||'')));if(menu)h.insertBefore(b,menu);else h.appendChild(b)}
  updateBadges();
 }
-function updateBadges(){const n=unread();document.querySelectorAll('.zukait-notify-btn').forEach(b=>{b.innerHTML='🔔'+(n?'<span class="zukait-notify-badge">'+(n>99?'99+':n)+'</span>':'')})}
+function updateBadges(){const n=unread(),html='🔔'+(n?'<span class="zukait-notify-badge">'+(n>99?'99+':n)+'</span>':'');document.querySelectorAll('.zukait-notify-btn').forEach(b=>{if(b.innerHTML!==html)b.innerHTML=html})}
 function openPart(n){try{window.zukaitV2?.sparePartsMain?.openList?.(n.listNo)}catch(_){}}
 function openCenter(){
  const rows=all();localStorage.setItem(readKey(),String(Date.now()));updateBadges();
@@ -65,7 +65,7 @@ function openCenter(){
 async function refresh(){
  // Never compete with authentication on the login screen. Server notification
  // hydration starts only after secure_auth has established the logged-in user.
- if(!window.me||!window.me.id){inject();updateBadges();return}
+ const u=meNow();if(!u||!u.id){inject();updateBadges();return}
  try{if(navigator.onLine){if(window.zukaitV2?.sparePartsMain?.hydrateAuthoritativeLists)await window.zukaitV2.sparePartsMain.hydrateAuthoritativeLists();await loadServerPartEvents()}}catch(_){}
  inject();updateBadges();
 }
