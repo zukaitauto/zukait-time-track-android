@@ -27,8 +27,8 @@ async function loadServerPartEvents(){
 function eventPartsNotifications(events){
  const r=role(),out=[];
  for(const x of events||[]){
-  if((r==='Purchaser'||r==='Manager')&&x.eventType==='SPARE_PART_LISTED')out.push({id:'parts-event-'+x.eventId,type:'SPARE_PART_LISTED',at:x.at,title:'New Parts Entry',message:'JC '+(x.jobCard||'')+' · '+(x.name||'Part')+' is ready for Purchaser action.',listNo:x.listNo});
-  if((r==='Supervisor'||r==='Manager')&&x.eventType==='SPARE_PART_STATUS_CHANGED'&&x.to==='RECEIVED')out.push({id:'parts-event-'+x.eventId,type:'SPARE_PART_RECEIVED',at:x.at,title:'Parts Arrived',message:'JC '+(x.jobCard||'')+' · '+(x.name||'Part')+' was marked arrived by Purchaser.',listNo:x.listNo});
+  if(r==='Purchaser'&&x.eventType==='SPARE_PART_LISTED')out.push({id:'parts-event-'+x.eventId,type:'SPARE_PART_LISTED',at:x.at,title:'New Parts Entry',message:'JC '+(x.jobCard||'')+' · '+(x.name||'Part')+' is ready for Purchaser action.',listNo:x.listNo});
+  if(r==='Supervisor'&&x.eventType==='SPARE_PART_STATUS_CHANGED'&&x.to==='RECEIVED')out.push({id:'parts-event-'+x.eventId,type:'SPARE_PART_RECEIVED',at:x.at,title:'Parts Arrived',message:'JC '+(x.jobCard||'')+' · '+(x.name||'Part')+' was marked arrived by Purchaser.',listNo:x.listNo});
  }
  return out;
 }
@@ -36,8 +36,8 @@ function statePartsNotifications(){
  const r=role(),rows=partsRows(),out=[];
  for(const x of rows){
   const status=String(x.status||'LISTED'),created=eventTime(x.createdAt),activity=eventTime(x.activityAt);
-  if((r==='Purchaser'||r==='Manager')&&['LISTED','ENQUIRY'].includes(status))out.push({id:'parts-state-new-'+x.listNo+'-'+x.name,type:'SPARE_PART_LISTED',at:created||activity,title:'New Parts Entry',message:'JC '+(x.jobCard||'')+' · '+(x.name||'Part')+' is ready for Purchaser action.',listNo:x.listNo});
-  if((r==='Supervisor'||r==='Manager')&&status==='RECEIVED')out.push({id:'parts-state-arrived-'+x.listNo+'-'+x.name,type:'SPARE_PART_RECEIVED',at:activity||created,title:'Parts Arrived',message:'JC '+(x.jobCard||'')+' · '+(x.name||'Part')+' was marked arrived by Purchaser.',listNo:x.listNo});
+  if(r==='Purchaser'&&['LISTED','ENQUIRY'].includes(status))out.push({id:'parts-state-new-'+x.listNo+'-'+x.name,type:'SPARE_PART_LISTED',at:created||activity,title:'New Parts Entry',message:'JC '+(x.jobCard||'')+' · '+(x.name||'Part')+' is ready for Purchaser action.',listNo:x.listNo});
+  if(r==='Supervisor'&&status==='RECEIVED')out.push({id:'parts-state-arrived-'+x.listNo+'-'+x.name,type:'SPARE_PART_RECEIVED',at:activity||created,title:'Parts Arrived',message:'JC '+(x.jobCard||'')+' · '+(x.name||'Part')+' was marked arrived by Purchaser.',listNo:x.listNo});
  }
  return out;
 }
