@@ -22,4 +22,8 @@ assert.match(parts,/data-to="RETURNED"/,'Returned action must remain available f
 assert.match(parts,/v2-sp-purchase-form/,'Purchasing Details must use the shared responsive form shell');
 assert.match(parts,/v2-sp-form-grid/,'Purchasing commercial fields must use responsive form layout');
 assert.match(parts,/v2-sp-report-records/,'Manager on-screen Spare Parts report must use mobile-safe record cards');
+assert.match(parts,/v2-sp-draft-card/,'Create Parts List draft items must use mobile-safe cards');
+assert.match(parts,/v2-sp-attention-card/,'Attention results must use shared cards');
+assert.match(parts,/v2-sp-result-card/,'Search results must use shared cards');
+assert.doesNotMatch(parts,/id="v2SpDraftRows"><\/tbody>/,'Create Parts List must not regress to a table body');
 console.log('Purchaser dashboard and permissions: ok');
