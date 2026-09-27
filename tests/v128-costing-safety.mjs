@@ -12,7 +12,7 @@ const state={
   actuals:[{id:'AC1',jobCard:'JC1',locked:true,totalCost:7.875}]
  },
  paintPurchasing:{orders:[{id:'PO1',jobCard:'JC1',createdAt:Date.now(),receivedAt:Date.now(),returns:[],status:'Received / Costed'}]},
- paintCosting:{JC1:{netPaintCost:3.25,quoteAmount:99}}
+ paintCosting:{JC1:{grossPaintCost:4.8,returnedPaintValue:1.2,netPaintCost:3.6,quoteAmount:99}}
 };
 const ctx={
  state,console,
@@ -34,10 +34,10 @@ vm.runInContext(fs.readFileSync('app/src/main/assets/job_cost_summary_v128.js','
 const d=ctx.v128JobCostData('JC1');
 assert.equal(d.labour,2.5);
 assert.equal(d.materials,7.875);
-assert.equal(d.paint,3.25,'Job Card must use net finalized paint cost, not quotation or gross values');
-assert.equal(d.consumables,11.125);
+assert.equal(d.paint,3.6,'Job Card must use exact OMR 3.600 net paint cost after the OMR 1.200 return, not quotation or gross values');
+assert.equal(d.consumables,11.475,'Consumables bucket must equal OMR 7.875 materials + OMR 3.600 net paint exactly once');
 assert.equal(d.parts,12.5,'returned, unavailable and cancelled parts must not be charged to the Job Card');
-assert.equal(d.total,26.125,'Total must equal actual Parts + finalized Consumables/Paint + Labour exactly once');
+assert.equal(d.total,26.475,'Total must equal OMR 2.500 labour + 7.875 materials + 3.600 net paint + 12.500 received parts exactly once');
 assert.equal(d.labourHours,1);
 assert.equal(state.assign.filter(a=>a.job==='ID001').length,1,'fixture must include ID001 waiting work');
 assert.equal(state.assign.filter(a=>a.cancelled).length,1,'fixture must include a cancelled JC assignment');
