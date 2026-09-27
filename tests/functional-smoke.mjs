@@ -14,6 +14,7 @@ const cloud = read('app/src/main/assets/cloud_sync.js');
 const liveStatusAuthority = read('app/src/main/assets/live_status_authority.js');
 const metadata = JSON.parse(read('latest-version.json'));
 const releaseWorkflow = read('.github/workflows/publish-approved-release.yml');
+const workshopApi = read('supabase/functions/workshop-api/index.ts');
 
 const versionCode = Number((gradle.match(/versionCode\s+(\d+)/)||[])[1]);
 const versionName = (gradle.match(/versionName\s+['"]([^'"]+)['"]/ )||[])[1];
@@ -25,6 +26,12 @@ assert.match(main, /return installedVersionCode\(\);/, 'native bridge must repor
 assert.doesNotMatch(main, /getAppVersion\(\)[\s\S]{0,120}return "V74"/, 'native version name must not be hard-coded');
 assert.ok(Number(metadata.versionCode) <= versionCode, 'published metadata cannot be newer than candidate build');
 assert.equal(metadata.package, 'com.zukait.timetrack');
+
+
+// Consumables full-state preservation: stale devices must not erase nested shared data.
+assert.match(workshopApi,/function preserveConsumablesHistory\(candidate: any, current: any\)/,'server must preserve consumables records across stale full-state saves');
+assert.match(workshopApi,/\["materials","brands","prices","issues","actuals","audit"\]/,'server preservation must cover every consumables collection');
+assert.match(workshopApi,/candidate = preserveConsumablesHistory\(preserveOperationalHistory/,'save authority must apply consumables preservation before commit');
 
 // Real-time Manager / Supervisor authority contracts.
 assert.match(liveStatusAuthority, /window\.currentStaffStatuses=function\(\)[\s\S]*?if\(serverRequired\(\)\)return \[\]/, 'online Manager/Supervisor staff status must fail closed instead of falling back to stale local sessions');
