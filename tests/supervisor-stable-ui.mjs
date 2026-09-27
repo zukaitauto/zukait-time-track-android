@@ -61,6 +61,11 @@ assert.match(stable,/linear-gradient\(145deg,#22c55e,#15803d\)/,'Create + Assign
 assert.match(stable,/linear-gradient\(145deg,#3b82f6,#1d4ed8\)/,'Unassigned Job Cards action must be blue');
 assert.match(stable,/v143VoiceStop/,'voice Quick Entry must expose a STOP path');
 assert.match(stable,/STOP/,'voice control must visibly offer STOP while listening');
+assert.match(stable,/v143ClearQuickEntry/,'Quick Entry must expose CLEAR ALL authority');
+assert.match(stable,/CLEAR ALL/,'Quick Entry must show a visible CLEAR ALL control');
+assert.match(stable,/\.v143-results\{position:absolute/,'Job Card search results must float instead of expanding the Assign\/Update grid');
+assert.match(stable,/max-height:168px;overflow:auto/,'Job Card search dropdown must stay compact and scrollable on phones');
+assert.match(stable,/findJobs\(q\)\.slice\(0,5\)/,'Job Card dropdown must limit visible result rendering');
 
 
 assert.match(stable,/v65OpenAccount\(\)/,'Supervisor menu must remain available');
