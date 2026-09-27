@@ -21,16 +21,17 @@ C.issue(state,{jobCard:'jc1',vehicle:'Toyota',colourCode:'040',mainPainterId:'EM
 assert.throws(()=>C.issue(state,{jobCard:'JC1',lines:[{materialId:mat.id,brandId:brand.id,quantity:1}]},supervisor,C.TYPES.ISSUED),/ISSUED_ALREADY_FINISHED/);
 C.issue(state,{jobCard:'JC1',lines:[{materialId:mat.id,brandId:brand.id,quantity:.5}]},supervisor,C.TYPES.ADDITIONAL);
 assert.equal(C.allowance(state,'JC1')[0].quantity,2.5);
-assert.throws(()=>C.finishActual(state,{jobCard:'JC1',actualAt:new Date(2026,9,15).getTime(),lines:[{materialId:mat.id,brandId:brand.id,quantity:2.6}]},supervisor),/ACTUAL_EXCEEDS_ISSUED/);
-const actual=C.finishActual(state,{jobCard:'JC1',actualAt:new Date(2026,9,15).getTime(),lines:[{materialId:mat.id,brandId:brand.id,quantity:2.25}]},supervisor);
+const actual=C.finishActual(state,{jobCard:'JC1',actualAt:new Date(2026,9,15).getTime(),lines:[{materialId:mat.id,brandId:brand.id,quantity:2.6}]},supervisor);
 assert.equal(actual.lines[0].unitPriceSnapshot,3.5);
-assert.equal(actual.totalCost,7.875);
+assert.equal(actual.lines[0].issuedQuantity,2.5);
+assert.equal(actual.lines[0].overIssued,true,'real usage above issued quantity must be retained explicitly');
+assert.equal(actual.totalCost,9.1,'costing must use the actual quantity, not cap it to issued quantity');
 assert.throws(()=>C.finishActual(state,{jobCard:'JC1'},supervisor),/ACTUAL_RECORD_EXISTS/);
 assert.throws(()=>C.issue(state,{jobCard:'JC1',lines:[{materialId:mat.id,brandId:brand.id,quantity:1}]},supervisor,C.TYPES.ADDITIONAL),/ACTUAL_ALREADY_FINISHED/);
 C.setPrice(state,{materialId:mat.id,brandId:brand.id,pricePerUnit:4,effectiveFrom:new Date(2026,11,1).getTime(),reason:'Initial/configured price'},manager);
-assert.equal(state.consumables.actuals[0].totalCost,7.875,'historical actual must retain price snapshot');
+assert.equal(state.consumables.actuals[0].totalCost,9.1,'historical actual must retain price snapshot');
 const month=C.monthlyExpense(state,2026,9);
-assert.equal(month.jobCards,1); assert.equal(month.totalExpense,7.875);
+assert.equal(month.jobCards,1); assert.equal(month.totalExpense,9.1);
 
 // Manager correction/audit safety
 assert.throws(()=>C.managerCorrectActual(state,actual.id,[{materialId:mat.id,brandId:brand.id,quantity:2}],supervisor,'x'),/MANAGER_ONLY/);
