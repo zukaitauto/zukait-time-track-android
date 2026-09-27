@@ -43,7 +43,7 @@ assert.match(stable,/Assigned Job Cards/,'Assigned Job Cards must remain');
 assert.match(stable,/Additional Time/,'Additional Time must remain');
 assert.match(stable,/Incentive/,'Incentive must remain');
 
-assert.match(stable,/grid-template-areas:"job tech" "time assign"/,'Assign\/Update must preserve the agreed 2x2 layout');
+assert.match(stable,/grid-template-areas:"job job" "tech time" "assign assign"/,'Assign\/Update must keep Job Card Search full width with Technician and Allocated Time below');
 assert.match(stable,/id="v143JobSearch"/,'visible Job Card search must be part of final Supervisor renderer');
 assert.match(stable,/id="sj" class="v143-internal"/,'legacy #sj handoff must remain hidden for assignment compatibility');
 assert.match(stable,/\[j\.no,j\.reg,j\.vehicle,j\.year,j\.brand,j\.make,j\.model\]/,'search must cover JC, registration, vehicle, year, brand, make and model');
