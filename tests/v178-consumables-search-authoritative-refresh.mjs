@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const ui=fs.readFileSync('app/src/main/assets/consumables_ui.js','utf8');
+const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+assert.match(ui,/window\.openConsumablesSearch=async function\(\)/,'Search Material List must wait for refresh');
+assert.match(ui,/await window\.zukaitCloud\.syncNow\(\)/,'Search Material List must use safe push-then-pull sync before rendering');
+assert.match(ui,/\[\.\.\.c\.issues,\.\.\.c\.actuals\]/,'Recent Material Lists must be sourced from stored Consumables records');
+assert.match(ui,/consMaterialListData\(hit\.jobCard,hit\)/,'Search must recover stored list even when local JC is absent');
+assert.match(html,/consumables_ui\.js\?v=181/,'Shell must load refreshed Consumables search asset');
+console.log('Consumables authoritative search refresh regression passed');
