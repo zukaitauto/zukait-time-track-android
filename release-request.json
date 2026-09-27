@@ -1,8 +1,8 @@
 {
-  "versionName": "V171",
-  "versionCode": 134,
+  "versionName": "V172",
+  "versionCode": 135,
   "approvedForStaff": true,
   "approvedAt": "2026-09-27",
-  "sourceCommit": "43e4e41ea62c6083db92384b349aefecda373704",
-  "publishNonce": "approved-v171-consumables-finish-print-20260927"
+  "sourceCommit": "8109b7662bfdbd07c49857c44745f6897df94a6b",
+  "publishNonce": "approved-v172-additional-materials-simple-20260927"
 }
