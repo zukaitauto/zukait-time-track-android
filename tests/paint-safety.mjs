@@ -79,4 +79,10 @@ assert.match(src,/paint-received-cards/,'Received Paint costing must use respons
 assert.match(src,/paint-received-card/,'Received Paint must keep each paint line together on mobile');
 assert.match(src,/paint-review-cards/,'Received Paint final costing review must use responsive cards');
 assert.match(src,/ACTUAL COST/,'Received Paint review must keep actual cost visible before confirmation');
+assert.match(src,/paint-edit-cards/,'Manager Paint correction must use responsive edit cards');
+assert.match(src,/if\(r\(\)!=='Manager'\)return/,'Paint correction must remain Manager-only');
+assert.match(src,/Edit Reason is required/,'Manager Paint correction must require a reason');
+assert.match(src,/Confirm Manager correction\?/,'Manager Paint correction must retain accidental-click confirmation');
+assert.match(src,/MANAGER_PAINT_CORRECTION/,'Manager Paint correction must remain audited');
+assert.match(src,/syncCost\(o\)/,'Manager Paint correction must recalculate Job Card paint cost');
 console.log('Paint safety tests passed: auto Model Year, bold colour authority, two-way litre price/actual cost, actor audit and finalized costing');
