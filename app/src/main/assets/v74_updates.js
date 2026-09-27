@@ -2096,7 +2096,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  '#modal th,#modal td,.modal th,.modal td,[role="dialog"] th,[role="dialog"] td{line-height:1.35!important;overflow-wrap:anywhere;word-break:normal}'+
  '#modal .small,#modal .muted,.modal .small,.modal .muted,[role="dialog"] .small,[role="dialog"] .muted{font-size:12px!important;line-height:1.4!important}'+
  '#modal input,#modal select,#modal textarea,.modal input,.modal select,.modal textarea,[role="dialog"] input,[role="dialog"] select,[role="dialog"] textarea{font-size:14px!important;min-height:42px}'+
- '@media(max-width:520px){#modal table,.modal table,[role="dialog"] table{font-size:11.5px!important}#modal th,#modal td,.modal th,.modal td,[role="dialog"] th,[role="dialog"] td{padding:8px 6px!important}}';
+ '@media(max-width:520px){#modal table,.modal table,[role="dialog"] table{font-size:10.5px!important}#modal th,#modal td,.modal th,.modal td,[role="dialog"] th,[role="dialog"] td{padding:5px 4px!important;line-height:1.2!important}#modal td button,.modal td button,[role="dialog"] td button{min-height:30px!important;padding:4px 6px!important;font-size:9px!important;border-radius:7px!important}.v74-scroll{margin-left:-2px!important;margin-right:-2px!important}}';
  document.head.appendChild(s);
 })();
 
