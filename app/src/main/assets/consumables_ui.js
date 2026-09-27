@@ -201,8 +201,11 @@ window.consFinishIssue=function(){
   if(typeof save==='function')save(); alert((draft.type==='additional'?'Additional':'Suggested / Issued')+' Materials saved and locked.'); openPaintingConsumables();
  }catch(e){alert(String(e?.message||e))}
 };
-window.openConsumablesActual=function(){
+window.openConsumablesActual=async function(){
  if(!['Supervisor','Manager'].includes(role()))return;
+ if(navigator.onLine&&window.zukaitCloud?.syncNow){
+  try{await window.zukaitCloud.syncNow()}catch(e){console.warn('Actual Materials refresh failed; using local cache',e)}
+ }
  draft={type:'actual',jc:null,lines:[]};
  modal('Actual Materials','<div class="cons-entry-shell"><div class="cons-jc-access"><label>Job Card Search<div class="cons-searchbar"><input id="consActualJc" placeholder="JC / Registration / Vehicle" autocomplete="off" oninput="consFindActualJC()"><button class="blue" type="button" onclick="consFindActualJC(true)">SEARCH</button></div></label><div id="consActualJcResults" class="cons-jc-results hidden"></div><div id="consActualVehicleDetails" class="cons-vehicle-sticky"></div></div><div class="cons-entry-grid cons-entry-grid-compact"><label>Vehicle Details<input id="consActualVehicle" readonly></label><label>Colour Code<input id="consActualColour" readonly></label><label>Main Painter<input id="consActualPainter" readonly></label><label>Allotted Supervisor<input id="consActualSupervisor" readonly></label></div><div id="consActualNote" class="muted small"></div><div id="consActualAdd" class="hidden"></div><div id="consActualRows" class="notice">Search and select a Job Card to load Suggested + Additional materials.</div><div class="cons-entry-actions"><button class="secondary" onclick="openPaintingConsumables()">← BACK</button><button id="consFinishActualBtn" class="green" onclick="consFinishActual()" disabled>FINISH ACTUAL</button></div></div>');
 };
