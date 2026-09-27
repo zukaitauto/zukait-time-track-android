@@ -18,6 +18,16 @@ assert.match(stable,/v158OpenAdditionalTime/, 'stable Supervisor must own Additi
 assert.match(stable,/v158OpenIncentive/, 'stable Supervisor must own Incentive click routing');
 assert.match(stable,/technician already has an active assignment/i, 'existing Job Card assignment must reject duplicate active technician assignment');
 assert.match(stable,/Assignment service is unavailable/, 'existing Job Card assignment must fail closed when assignment authority is unavailable');
+assert.match(stable,/function v143ConfirmAction\(title,rows,okText\)/,'Supervisor must use one confirmation authority for job-card actions');
+assert.match(stable,/Confirm Create Job Card/,'Create Job Card must require confirmation');
+assert.match(stable,/Confirm Create \+ Assign/,'Create + Assign must require confirmation');
+assert.match(stable,/Confirm Job Card Assignment/,'Assign Existing Job Card must require confirmation');
+const createAssignBlock=stable.slice(stable.indexOf('window.v143CreateAndAssignJob=function'),stable.indexOf('let v143CreateOnlyBusy=false'));
+const createOnlyBlock=stable.slice(stable.indexOf('window.v143CreateJobOnly=async function'),stable.indexOf('let v143AssignBusy=false'));
+const assignExistingBlock=stable.slice(stable.indexOf('window.v143AssignExisting=function'),stable.indexOf('function countAttention()'));
+assert.ok(createAssignBlock.indexOf('Confirm Create + Assign')>=0 && createAssignBlock.indexOf('Confirm Create + Assign')<createAssignBlock.indexOf('state.jobs.push('),'Create + Assign confirmation must occur before Job Card mutation');
+assert.ok(createOnlyBlock.indexOf('Confirm Create Job Card')>=0 && createOnlyBlock.indexOf('Confirm Create Job Card')<createOnlyBlock.indexOf('transport.commitEvent(event)'),'Create-only confirmation must occur before authoritative server commit');
+assert.ok(assignExistingBlock.indexOf('Confirm Job Card Assignment')>=0 && assignExistingBlock.indexOf('Confirm Job Card Assignment')<assignExistingBlock.indexOf('window.assignJobCore(no,emp,mins)'),'Existing assignment confirmation must occur before assignment mutation');
 assert.doesNotMatch(stable,/setTimeout\(apply/,'stable Supervisor authority must not use post-render layout decorators');
 
 assert.match(stable,/class="v143-two"/,'stable UI must use deterministic two-column rows');
