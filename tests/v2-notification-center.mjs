@@ -35,4 +35,6 @@ assert.match(code,/const POLL_MS=5000/);
 assert.match(code,/if\(b\.innerHTML!==html\)b\.innerHTML=html/,'notification observer must not rewrite an unchanged bell and recursively trigger itself');
 assert.match(code,/const u=meNow\(\);if\(!u\|\|!u\.id\)/,'notification refresh must use the shared logged-in user resolver');
 assert.match(code,/if\(!u\|\|!u\.id\)\{inject\(\);updateBadges\(\);return\}/,'notification network hydration must stay off the unauthenticated Web login path');
+assert.match(code,/if\(typeof closeModal==='function'\)closeModal\(\)/,'notification actions must close the notification modal before routing');
+assert.match(code,/sp\.openList\(no\)/,'notification actions must open the concerned Spare Parts list');
 console.log('V2 notification center event history: ok');
