@@ -66,7 +66,7 @@ assert.doesNotMatch(uiSource,/Approx\./,'Search Material UI must not use Approx 
 assert.match(uiSource,/name="viewport" content="width=device-width,initial-scale=1"/,'print preview must be mobile responsive');
 assert.match(uiSource,/cons-entry-line-cards/,'Suggested / Issued entry must use responsive material cards');
 assert.match(uiSource,/cons-actual-line-cards/,'Actual Materials entry must use responsive cards');
-assert.match(uiSource,/TOTAL ISSUED/,'Actual material cards must keep the issued allowance visible');
+assert.match(uiSource,/SUGGESTED QTY/,'Actual material cards must keep the suggested issued allowance visible');
 assert.match(uiSource,/ACTUAL QTY/,'Actual material cards must keep the editable actual quantity');
 assert.match(uiSource,/cons-review-cards/,'Actual Materials final locking review must use responsive cards');
 assert.doesNotMatch(uiSource,/<th>No\.<\/th><th>Material<\/th><th>Brand<\/th><th>Actual Qty<\/th><th>Price \/ Unit<\/th><th>Cost<\/th>/,'Actual Materials final review must not fall back to the old wide table');
