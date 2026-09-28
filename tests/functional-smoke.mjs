@@ -803,3 +803,9 @@ assert.match(updates,/ID001 never shows Allocated \/ Suggested \/ Remaining \/ E
 assert.match(updates,/Normal Working Hours/,'employee monthly view must show Normal Working Hours');
 assert.match(updates,/ID001 Hours/,'employee monthly view must show ID001 Hours separately');
 assert.match(updates,/window\.v130ID001NormalWorkingAuthority=true/,'V130 ID001 final marker');
+
+// Manager output navigation: every Print/PDF/Share modal must expose Back/Close.
+const v184Updates=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
+assert.match(v184Updates,/V184 MANAGER OUTPUT NAVIGATION/,'Manager output navigation guard must exist');
+assert.match(v184Updates,/print\|pdf\|share\|whatsapp/i,'Manager output navigation must detect all output actions');
+assert.match(v184Updates,/← BACK \/ CLOSE/,'Manager output navigation must provide Back/Close');
