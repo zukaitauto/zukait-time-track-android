@@ -2905,8 +2905,9 @@ window.v2TogglePilotThisDevice=function(){
    try{window.v154ApplyManagerWorkshopControl?.()}catch(_){}
    try{window.v144BindManagerConsumables?.()}catch(_){}
    const grid=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid');
+   // One Manager Consumables launcher only: the Workshop Control Center tile.
    const cons=[...root.querySelectorAll('.v65-consumables,.v66-consumables,.v67-consumables,.v139-manager-consumables,.v141-manager-consumables,[data-v144-consumables]')];
-   if(cons.length){const keep=cons.find(x=>grid&&x.parentElement===grid)||cons[0];cons.filter(x=>x!==keep).forEach(x=>x.remove());if(grid&&keep.parentElement!==grid)grid.insertBefore(keep,grid.firstChild);keep.type='button';keep.removeAttribute('onclick');keep.onclick=e=>{e.preventDefault();e.stopPropagation();if(typeof window.v144OpenManagerConsumables==='function')window.v144OpenManagerConsumables()}}
+   if(cons.length){const keep=cons.find(x=>grid&&x.parentElement===grid);cons.filter(x=>x!==keep).forEach(x=>x.remove());if(keep){keep.type='button';keep.removeAttribute('onclick');keep.onclick=e=>{e.preventDefault();e.stopPropagation();if(typeof window.v144OpenManagerConsumables==='function')window.v144OpenManagerConsumables()}}}
    const heads=[...root.querySelectorAll('.v91-role-identity')];if(heads.length>1)heads.slice(0,-1).forEach(x=>x.remove());
    const leaves=[...root.querySelectorAll('.v111-manager-leave')];if(leaves.length>1)leaves.slice(1).forEach(x=>x.remove());
  }
