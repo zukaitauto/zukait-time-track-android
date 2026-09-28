@@ -10,6 +10,7 @@
   let cloudApplying=false;
   let cloudPushing=false;
   let pushTimer=null;
+  let dashboardRenderTimer=null;
   let pollTimer=null;
   let livePollTimer=null;
   let liveInFlight=false;
@@ -32,6 +33,20 @@
   let consecutiveSyncErrors=0;
 
   function sessionToken(){return window.zukaitAuth?.getToken?.()||''}
+
+  // Remote sync can advance through several revisions in a short burst when
+  // multiple workshop phones act together. Rebuild the visible dashboard once
+  // after the burst instead of tearing down/recreating the whole view for every
+  // acknowledgement. Local button actions still render immediately.
+  function scheduleDashboardRender(){
+    if(!me)return;
+    clearTimeout(dashboardRenderTimer);
+    dashboardRenderTimer=setTimeout(()=>{
+      dashboardRenderTimer=null;
+      if(!me||document.visibilityState==='hidden')return;
+      try{render()}catch(e){console.error('Render after sync failed',e)}
+    },120);
+  }
 
   function status(text,kind){
     let el=document.getElementById('cloudStatus');
@@ -430,7 +445,7 @@
       if(typeof window.v42AfterCloudPull==='function'){
         try{window.v42AfterCloudPull(before,clone(state),r)}catch(e){console.warn('Notification hook failed',e)}
       }
-      if(changed&&me)try{render()}catch(e){console.error('Render after sync failed',e)}
+      if(changed) scheduleDashboardRender()
     } else if(!lastSyncedState) {
       lastSyncedState=clone(state||{});
     }
@@ -703,6 +718,7 @@
     clearTimeout(pollTimer);pollTimer=null;
     clearTimeout(livePollTimer);livePollTimer=null;
     clearTimeout(pushTimer);pushTimer=null;
+    clearTimeout(dashboardRenderTimer);dashboardRenderTimer=null;
   }
 
 
