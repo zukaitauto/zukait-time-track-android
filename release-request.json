@@ -1,8 +1,8 @@
 {
-  "versionName": "V183",
-  "versionCode": 146,
+  "versionName": "V184",
+  "versionCode": 147,
   "approvedForStaff": true,
   "approvedAt": "2026-09-28",
-  "sourceCommit": "06e3aad7d54a163d166800c3bbb87b48eb698268",
-  "publishNonce": "release-v183-final-verified-20260928"
+  "sourceCommit": "bc55fcf8900dfa3795ae85472f223ae2355c2651",
+  "publishNonce": "release-v184-consumables-expense-20260928"
 }
