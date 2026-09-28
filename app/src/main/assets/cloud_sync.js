@@ -45,10 +45,13 @@
     // must never force a structural dashboard rebuild.
     if(role==='Employee'){
       const id=String(who.id||'');
+      const empAssign=(data.assign||[]).filter(a=>a&&String(a.emp)===id);
+      const empSessions=(data.sessions||[]).filter(x=>x&&String(x.emp)===id);
+      const jobNos=new Set([...empAssign.map(a=>a.job),...empSessions.map(x=>x.job)].filter(Boolean).map(String));
       return {
-        jobs:(data.jobs||[]),
-        assign:(data.assign||[]).filter(a=>a&&String(a.emp)===id),
-        sessions:(data.sessions||[]).filter(x=>x&&String(x.emp)===id),
+        jobs:(data.jobs||[]).filter(j=>j&&jobNos.has(String(j.no||''))),
+        assign:empAssign,
+        sessions:empSessions,
         requests:(data.requests||[]).filter(x=>x&&String(x.emp)===id),
         leaves:(data.leaves||[]).filter(x=>x&&String(x.emp)===id)
       };
