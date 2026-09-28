@@ -2592,9 +2592,10 @@ window.v2TogglePilotThisDevice=function(){
    // Consumables is owned by the source Workshop Control renderers (V65/V66/V67). Never append a dashboard tile here.
    root.querySelectorAll('#v755LeaveControlRow,.v755-leave-control-row,.v109-manager-consumables,.v111-control-consumables,.v113-control-consumables').forEach(x=>{if(!x.matches('.v65-consumables,.v66-consumables,.v67-consumables'))x.remove()});
  }
- const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(apply,0);return r};
- const prevManager=window.renderManager;if(typeof prevManager==='function')window.renderManager=function(){const r=prevManager.apply(this,arguments);apply();setTimeout(apply,0);return r};
- let guard=0;function settle(){if(!me||me.role!=='Manager'||guard++>5)return;apply();setTimeout(settle,60)}setTimeout(settle,0);
+ // V156 is the final Manager post-render authority. Keep this legacy apply helper
+ // callable for compatibility, but do not independently mutate/rebuild Manager DOM
+ // after every render or run a timed settle loop.
+ window.v111ApplyManagerLegacy=apply;
 })();
 
 (function(){if(document.getElementById('v111LeaveBadgeStyle'))return;const s=document.createElement('style');s.id='v111LeaveBadgeStyle';s.textContent='#managerView .v111-manager-leave{grid-template-columns:1fr auto!important}#managerView .v111-manager-leave .v111-leave-today{grid-column:2;grid-row:1/3;align-self:center;justify-self:end;display:flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 6px;border-radius:999px;background:#d92d20;color:#fff;font-size:11px;font-weight:950;line-height:1;box-shadow:0 2px 7px rgba(217,45,32,.28)}#managerView .v111-manager-leave small{grid-column:1}';document.head.appendChild(s)})();
