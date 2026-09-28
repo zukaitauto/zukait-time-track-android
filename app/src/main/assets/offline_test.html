@@ -1595,7 +1595,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     if(!card)return;
     card.setAttribute('data-v2-manager-spare-parts','1');
     const small=card.querySelector('small');
-    if(small)small.textContent=detail;
+    if(small&&small.textContent!==detail)small.textContent=detail;
   }
   async function refreshManagerSparePartsSummary(){
     if(!window.me || window.me.role!=='Manager')return;
@@ -1652,14 +1652,14 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 <script src="secure_auth.js?v=81"></script>
 <script src="production_pilot.js?v=81"></script>
 <script src="professional_ux.js?v=81"></script>
-<script src="v54_improvements.js?v=81"></script>
+<script src="v54_improvements.js?v=187"></script>
 <script src="v63_updates.js?v=81"></script>
 <script src="v65_updates.js?v=122"></script>
 <script src="v66_updates.js?v=122"></script>
 <script src="v67_updates.js?v=122"></script>
 <script src="v68_updates.js?v=81"></script>
 <script src="v69_updates.js?v=81"></script>
-<script src="v74_updates.js?v=157"></script>
+<script src="v74_updates.js?v=187"></script>
 <script src="supervisor_stable.js?v=172"></script>
 <script src="voice_quick_entry_intelligent.js?v=169"></script>
 <script src="live_status_authority.js?v=156"></script>

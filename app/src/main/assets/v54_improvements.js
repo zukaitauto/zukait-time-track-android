@@ -245,9 +245,12 @@
       row.appendChild(badge);
     }
     const online=navigator.onLine;
-    badge.className=online?'online':'offline';
-    badge.innerHTML='<span class="dot"></span>'+(online?'ONLINE':'OFFLINE');
-    badge.title=online?'Phone is connected to a network':'Phone is offline';
+    const cls=online?'online':'offline';
+    const label=online?'ONLINE':'OFFLINE';
+    if(badge.className!==cls)badge.className=cls;
+    if(badge.querySelector('.dot')?.nextSibling?.textContent!==label)badge.innerHTML='<span class="dot"></span>'+label;
+    const title=online?'Phone is connected to a network':'Phone is offline';
+    if(badge.title!==title)badge.title=title;
   }
   window.addEventListener('online',ensureOnlineIndicator);
   window.addEventListener('offline',ensureOnlineIndicator);

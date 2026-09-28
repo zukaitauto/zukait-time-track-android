@@ -3332,8 +3332,6 @@ window.v2TogglePilotThisDevice=function(){
   const css=document.createElement('style');
   css.textContent='.v158-ev-card{background-image:linear-gradient(rgba(220,252,231,.38),rgba(220,252,231,.38))!important}.v158-ev-card .v82-ev-badge{box-shadow:0 2px 7px rgba(22,101,52,.16)}';
   document.head.appendChild(css);
-  const obs=new MutationObserver(()=>requestAnimationFrame(apply));
-  obs.observe(document.body,{childList:true,subtree:true});
   apply();
   window.v158ApplyEVCardAuthority=apply;
 })();
@@ -3360,14 +3358,12 @@ window.v2TogglePilotThisDevice=function(){
         const mark=card.querySelector('.v82-vehicle-mark')||card.querySelector('.v75s-card-top')||card;
         mark.appendChild(badge);
       }
-      badge.textContent=cls;
+      if(badge.textContent!==cls)badge.textContent=cls;
     });
   };
   const css=document.createElement('style');
   css.textContent='.v159-heavy-badge{display:inline-flex;align-items:center;white-space:nowrap;padding:5px 8px;border-radius:10px;background:#f1f5f9;border:1px solid #94a3b8;color:#334155;font-size:10px;font-weight:1000;letter-spacing:.3px}';
   document.head.appendChild(css);
-  const obs=new MutationObserver(()=>requestAnimationFrame(apply));
-  obs.observe(document.body,{childList:true,subtree:true});
   apply();
   window.v159HeavyVehicleClass=heavyClass;
   window.v159ApplyHeavyVehicleClass=apply;
@@ -3397,10 +3393,13 @@ window.v2TogglePilotThisDevice=function(){
    if(!mark)return;
    let logo=mark.querySelector('.v82-brand-logo');
    const html='<div class="v82-brand-logo v160-heavy-brand" title="'+b.name+'"><img src="vehicle-logos/'+b.file+'" alt="'+b.name+' logo"></div>';
-   if(logo)logo.outerHTML=html;else mark.insertAdjacentHTML('afterbegin',html);
+   if(logo){
+     if(!logo.classList.contains('v160-heavy-brand')||logo.querySelector('img')?.getAttribute('src')!=='vehicle-logos/'+b.file)logo.outerHTML=html;
+   }else mark.insertAdjacentHTML('afterbegin',html);
   });
  };
- const obs=new MutationObserver(()=>requestAnimationFrame(apply));obs.observe(document.body,{childList:true,subtree:true});apply();
+ apply();
+ window.v160ApplyHeavyBrandAuthority=apply;
 })();
 
 
@@ -3428,12 +3427,15 @@ window.v2TogglePilotThisDevice=function(){
    const mark=card.querySelector('.v82-vehicle-mark'); if(!mark)return;
    const old=mark.querySelector('.v82-brand-logo');
    const html='<div class="v82-brand-logo v161-oman-brand" title="'+b.name+'"><img src="vehicle-logos/'+b.file+'" alt="'+b.name+' logo"></div>';
-   if(old)old.outerHTML=html;else mark.insertAdjacentHTML('afterbegin',html);
+   if(old){
+     if(!old.classList.contains('v161-oman-brand')||old.querySelector('img')?.getAttribute('src')!=='vehicle-logos/'+b.file)old.outerHTML=html;
+   }else mark.insertAdjacentHTML('afterbegin',html);
    const explicitEV=/(^|[\s\-_/])ev($|[\s\-_/])/i.test([j.brand,j.make,j.model,j.vehicle].filter(Boolean).join(' '));
    if((b.ev||explicitEV)&&!mark.querySelector('.v82-ev-badge'))mark.insertAdjacentHTML('beforeend','<span class="v82-ev-badge">⚡ EV</span>');
   });
  };
- const obs=new MutationObserver(()=>requestAnimationFrame(apply));obs.observe(document.body,{childList:true,subtree:true});apply();
+ apply();
+ window.v161ApplyOmanBrandAuthority=apply;
 })();
 
 /* V166 CONSOLIDATED DOM DECORATION OBSERVER — one scheduler for modal cleanup, logos, EV and vehicle badges. */
