@@ -3413,3 +3413,24 @@ window.v2TogglePilotThisDevice=function(){
 
 /* V166 CONSOLIDATED DOM DECORATION OBSERVER — one scheduler for modal cleanup, logos, EV and vehicle badges. */
 (()=>{'use strict';let pending=false;const apply=()=>{pending=false;try{window.v166DeduplicateModalClose?.()}catch(_){}try{window.v166SupervisorLogoCards?.()}catch(_){}try{window.v158ApplyEVCardAuthority?.()}catch(_){}try{window.v159ApplyHeavyVehicleClass?.()}catch(_){}try{window.v160ApplyHeavyBrandAuthority?.()}catch(_){}try{window.v161ApplyOmanBrandAuthority?.()}catch(_){}};const schedule=()=>{if(pending)return;pending=true;requestAnimationFrame(apply)};const start=()=>{const root=document.body;if(!root)return;window.v166DecorationObserver?.disconnect?.();window.v166DecorationObserver=new MutationObserver(schedule);window.v166DecorationObserver.observe(root,{childList:true,subtree:true});schedule()};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();window.v166ApplyDecorations=apply})();
+
+
+/* V184 MANAGER OUTPUT NAVIGATION — every Manager print/PDF/share modal has Back/Close. */
+(function(){'use strict';
+ function apply(){
+   if(!window.me||me.role!=='Manager')return;
+   const modal=document.getElementById('modal');if(!modal)return;
+   const scope=modal.querySelector('.modal-content,#modalContent')||modal;
+   const buttons=[...scope.querySelectorAll('button')];
+   if(!buttons.some(b=>/\b(print|pdf|share|whatsapp)\b/i.test(String(b.textContent||''))))return;
+   if(buttons.some(b=>/\b(close|back)\b/i.test(String(b.textContent||''))))return;
+   const bar=document.createElement('div');bar.className='v184-manager-output-nav';
+   bar.innerHTML='<button type="button" class="secondary" onclick="closeModal()">← BACK / CLOSE</button>';
+   scope.insertBefore(bar,scope.firstChild);
+ }
+ const obs=new MutationObserver(()=>setTimeout(apply,0));
+ function start(){if(document.body)obs.observe(document.body,{childList:true,subtree:true});setTimeout(apply,0)}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+ window.v184ApplyManagerOutputNavigation=apply;
+ const s=document.createElement('style');s.id='v184ManagerOutputNavigationStyle';s.textContent='.v184-manager-output-nav{display:flex;justify-content:flex-end;margin:0 0 8px}.v184-manager-output-nav button{width:auto!important;min-height:30px!important;padding:6px 10px!important;border-radius:9px!important;font-size:10px!important;font-weight:900!important}';document.head.appendChild(s);
+})();
