@@ -1,8 +1,8 @@
 {
-  "versionName": "V197",
-  "versionCode": 160,
+  "versionName": "V198",
+  "versionCode": 161,
   "approvedForStaff": true,
   "approvedAt": "2026-09-28",
-  "sourceCommit": "61564895d3b9a86e6cdb291a768500a777d33694",
-  "publishNonce": "release-v197-employee-time-manager-menu-20260928"
+  "sourceCommit": "f34096c22b0986718ef93c329d28a7404c49d466",
+  "publishNonce": "release-v198-manager-dashboard-cache-refresh-20260928"
 }
