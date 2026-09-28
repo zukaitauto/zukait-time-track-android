@@ -14,7 +14,7 @@ assert.match(html,/<script src="cloud_sync\.js\?v=\d+"><\/script>/,'Web shell mu
 assert.match(html,/consumables\.js\?v=\d+/,'Web/Android shell must load a cache-versioned Consumables model');
 assert.match(html,/consumables_ui\.js\?v=\d+/,'Web/Android shell must load a cache-versioned Consumables UI');
 assert.match(html,/paint_module\.js\?v=\d+/,'Web/Android shell must load a cache-versioned Paint workflow');
-assert.ok(html.includes('<script src="v2/features/notifications/center.js?v=2"></script>'),'Web/Android shell must load the shared notification center');
+assert.match(html,/<script src="v2\/features\/notifications\/center\.js\?v=\d+"><\/script>/,'Web/Android shell must load a cache-versioned shared notification center');
 assert.ok(html.indexOf(liveTag[0])>html.indexOf(stableTag[0]),'server live authority must load last');
 
 assert.match(cloud,/action:'live_status'/,'cloud layer must call the server live-status endpoint');
