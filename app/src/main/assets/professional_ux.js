@@ -288,14 +288,18 @@
     if(innerWidth<901)return;
     const root=document.getElementById(role==='Manager'?'managerView':'supervisorView');
     if(!root||root.classList.contains('hidden'))return;
+    const liveHTML=liveBoardHTML(role),teamHTML=teamTableHTML(),reportHTML=role==='Manager'?reportStrip():'';
+    const signature=String(liveHTML)+'\n'+String(teamHTML)+'\n'+String(reportHTML);
+    if(root.dataset.v43DesktopSignature===signature&&root.querySelector('.v43-live-board')&&root.querySelector('.v43-team-card')){updateClock();return}
     root.querySelectorAll('.v43-live-board,.v43-team-card,.v43-report-card').forEach(x=>x.remove());
-    root.insertAdjacentHTML('afterbegin',teamTableHTML());
-    root.insertAdjacentHTML('afterbegin',liveBoardHTML(role));
+    root.insertAdjacentHTML('afterbegin',teamHTML);
+    root.insertAdjacentHTML('afterbegin',liveHTML);
     if(role==='Manager'){
-      const box=document.createElement('div');box.className='v43-report-card';box.innerHTML=reportStrip();
+      const box=document.createElement('div');box.className='v43-report-card';box.innerHTML=reportHTML;
       const live=root.querySelector('.v43-live-board');
       if(live)live.insertAdjacentElement('afterend',box);
     }
+    root.dataset.v43DesktopSignature=signature;
     updateClock();
   }
 
