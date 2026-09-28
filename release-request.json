@@ -1,8 +1,8 @@
 {
-  "versionName": "V203",
-  "versionCode": 166,
+  "versionName": "V204",
+  "versionCode": 167,
   "approvedForStaff": true,
   "approvedAt": "2026-09-28",
-  "sourceCommit": "50b976f545ca3d004c20297ac4354d3743db2d56",
-  "publishNonce": "release-v203-supervisor-top-search-verified-20260928-r1"
+  "sourceCommit": "430b6bdd016d5aa27d4e6dbe6914ee23aade4d13",
+  "publishNonce": "release-v204-verified-ui-polish-20260928-r1"
 }
