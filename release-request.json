@@ -1,8 +1,8 @@
 {
-  "versionName": "V198",
-  "versionCode": 161,
+  "versionName": "V199",
+  "versionCode": 162,
   "approvedForStaff": true,
   "approvedAt": "2026-09-28",
-  "sourceCommit": "7a000b6ea6a8910a698be6d4aeffca8913031c24",
-  "publishNonce": "release-v198-manager-dashboard-cache-refresh-20260928-r2"
+  "sourceCommit": "42c5bee159153a16535c2bd6ec8384f8ffb84aa2",
+  "publishNonce": "release-v199-manager-final-composition-20260928-r1"
 }
