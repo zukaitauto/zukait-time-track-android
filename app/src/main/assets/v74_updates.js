@@ -2904,8 +2904,13 @@ window.v2TogglePilotThisDevice=function(){
    const sup=document.getElementById('supervisorView');if(sup&&!sup.classList.contains('hidden'))sup.classList.add('hidden');
    root.classList.remove('hidden');
    if(!root.querySelector('.v111-manager-header')){try{window.v111ApplyManagerLegacy?.()}catch(_){}}
+   // Reapply every additive Manager module after the base renderer. This keeps the
+   // stable V67 control center while restoring newer Manager features deterministically.
+   try{window.v123ApplyManagerPerformance?.()}catch(_){}
+   try{window.v145ApplyManagerConsumablesPerformance?.()}catch(_){}
    try{window.v154ApplyManagerWorkshopControl?.()}catch(_){}
    try{window.v144BindManagerConsumables?.()}catch(_){}
+   try{window.v184ApplyManagerOutputNavigation?.()}catch(_){}
    const grid=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid');
    // One Manager Consumables launcher only: the Workshop Control Center tile.
    const cons=[...root.querySelectorAll('.v65-consumables,.v66-consumables,.v67-consumables,.v139-manager-consumables,.v141-manager-consumables,[data-v144-consumables]')];
