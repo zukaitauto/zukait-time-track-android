@@ -1,0 +1,15 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const v74=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
+const start=v74.indexOf('/* V135 MODERN MANAGER MENU');
+assert.ok(start>=0,'V135 Manager menu authority must exist');
+const block=v74.slice(start,v74.indexOf('/* V110 SUPERVISOR ID001 REPORT',start));
+assert.match(block,/if\(!me\|\|me\.role!=='Manager'\)return/);
+assert.match(block,/v135-action logout/);
+assert.match(block,/onclick="closeModal\(\);logout\(\)"/);
+assert.match(block,/if\(!row\)\{/);
+assert.match(block,/row=document\.createElement\('div'\)/);
+assert.match(block,/root\.insertBefore\(row,root\.firstChild\)/);
+assert.match(block,/aria-label="Open Manager menu"/);
+assert.match(block,/mb\.onclick=menu/);
+assert.doesNotMatch(block,/let row=root\.querySelector\('\.v91-role-identity'\);if\(!row\)return/);
+console.log('Manager menu self-contained authority guard passed');
