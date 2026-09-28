@@ -3489,7 +3489,7 @@ window.v2TogglePilotThisDevice=function(){
 .v75s .v75s-top{gap:8px!important}
 .v75s .v75s-live,.v75s .v75s-clock{min-height:78px!important;padding:10px!important}
 .v75s .v75s-live h2{font-size:13px!important}.v75s .v75s-live p{font-size:9px!important;line-height:1.25!important}.v75s .v75s-clock b{font-size:16px!important}
-.v75s .v75s-job{padding:10px!important}.v75s .v75s-job h3{font-size:14px!important}.v75s .v75s-job .small,.v75s .v75s-job small{color:#52647a!important}
+.v75s .v75s-job{padding:10px!important}.v75s .v75s-job h3{font-size:14px!important}.v75s .v75s-job .small,.v75s .v75s-job small{color:#52647a!important}.v75s .v75s-job .pill.paused,.v75s .v75s-job [class*="status"].paused,.v75s .v75s-job .paused.pill{background:#fff1c2!important;color:#8a4b00!important;border:1px solid #f2b84b!important;box-shadow:0 2px 7px rgba(180,108,0,.16)!important;font-weight:900!important}
 .v75s .month-summary .v104-month-progress{gap:9px!important;margin:9px 0 11px!important}
 .v75s .month-summary .v104-progress{min-height:78px!important;padding:10px 8px!important;border-radius:17px!important;box-shadow:0 6px 15px rgba(31,41,55,.09)!important}
 .v75s .month-summary .v104-progress b{font-size:21px!important;margin-top:5px!important}.v75s .month-summary .v104-progress span{font-size:9px!important;color:#344054!important}
