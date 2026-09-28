@@ -751,7 +751,7 @@ assert.match(updates,/statuses\.filter\(x=>x\.status==='Paused'\)/,'Supervisor P
 
 // Painting Consumables V1 isolation contracts
 const consumables = read('app/src/main/assets/consumables.js');
-assert.ok(html.includes('consumables.js?v=1'), 'Consumables foundation must load as an isolated asset');
+assert.match(html,/consumables\\.js\\?v=\\d+/,'Consumables foundation must load as an isolated cache-versioned asset');
 assert.match(cloud, /ZukaitConsumables\.ensureState\(state\)/, 'cloud state normalization must initialize Consumables without replacing workshop state');
 assert.match(consumables, /timeControlFingerprint/, 'Consumables must expose a regression fingerprint for protected time-control collections');
 assert.doesNotMatch(consumables, /state\.sessions\.(push|splice)|state\.assign\.(push|splice)|state\.jobs\.(push|splice)/, 'Consumables module must not mutate time-control jobs, assignments, or sessions');
