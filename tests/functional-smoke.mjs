@@ -61,7 +61,7 @@ assert.ok(updates.includes("v135OpenManagerMenu()") && updates.includes("row.onc
 assert.ok(updates.includes("v133OpenManagerLeave()") && updates.includes("v63OpenAbout()") && updates.includes("closeModal();logout()"), 'Manager menu must retain Leave Control, About / Update, and Logout');
 assert.ok(updates.includes('V139 MANAGER CONSUMABLES FINAL AUTHORITY') && updates.includes('v139OpenManagerConsumables'), 'Manager must have one final Consumables routing authority');
 assert.ok(updates.includes('V154 MANAGER WORKSHOP CONTROL ROOT AUTHORITY') && updates.includes('data-v154-spare') && updates.includes('v156ManagerSparePartsInvariant'), 'final Manager render authority must preserve exactly one Spare Parts control');
-assert.ok(updates.includes('[0,80,250,700].forEach(ms=>setTimeout(apply,ms))'), 'Manager Spare Parts control must survive delayed dashboard renderer replacement');
+assert.ok(updates.includes('v156ManagerSparePartsInvariant'), 'Manager Spare Parts control must be preserved by the final V156 Manager authority without delayed repaint loops');
 assert.ok(!updates.includes('color:#173b63!important;grid-column:1/-1!important}#managerView .v154-spare-logo'), 'Manager Spare Parts card must not force a full-width row');
 assert.ok(!/me\?\.role==='Manager'\)renderManager65\(\)/.test(v65), 'V65 Manager renderer must remain retired to prevent login UI flash');
 assert.ok(!/me\?\.role==='Manager'\)renderManager66\(\)/.test(v66), 'V66 Manager renderer must remain retired to prevent login UI flash');
@@ -667,7 +667,7 @@ assert.match(updates,/window\.v111OpenManagerMenu=function/,'Manager header must
 assert.match(updates,/closeModal\(\);logout\(\)/,'Manager menu must always expose Logout');
 assert.match(updates,/v111-manager-header/,'Manager header must be recreated by final authority');
 assert.match(updates,/const prevManager=window\.renderManager/,'Manager header authority must hook the final Manager renderer');
-assert.match(updates,/setTimeout\(settle,60\)/,'Manager header must survive delayed legacy render layers');
+assert.doesNotMatch(updates,/setTimeout\(settle,60\)/,'legacy Manager delayed settle loop must remain retired to prevent dashboard blinking');
 assert.match(updates,/v111-manager-leave/,'standalone Manager Leave Management card must exist');
 assert.match(updates,/v133OpenManagerLeave/,'Leave Management card must open the full leave manager');
 assert.match(updates,/v133PrintLeave/,'Leave Management must retain Print\/PDF');
