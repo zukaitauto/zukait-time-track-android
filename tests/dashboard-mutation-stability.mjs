@@ -64,3 +64,12 @@ assert.match(v74,/addEventListener\('zukait-live-status',reconcileUI\)/,'status 
 assert.match(v74,/v149Pending/,'shared colour observer must coalesce mutation bursts');
 assert.match(v74,/v184Pending/,'global employee-colour observer must coalesce mutation bursts');
 console.log('Dashboard periodic-writer stability: single live authority and coalesced observers passed');
+
+
+// Employee live dashboard must have one second-level DOM update chain only.
+assert.doesNotMatch(v74,/v752EmployeeTimer=setInterval/,'V75.2 duplicate Employee timer must stay retired');
+assert.doesNotMatch(v74,/v755EmployeeBreakdownTimer=setInterval/,'V75.3 duplicate Employee timer must stay retired');
+assert.match(v74,/employeeClockTimer=setInterval/,'the authoritative Employee running-time clock must remain active');
+assert.match(v74,/window\.refreshActiveRunningTime=function\(\)[\s\S]*?updateEmployeeMonthlyLive\(\)/,'monthly live values must remain chained to the authoritative refresh');
+assert.match(v74,/window\.refreshActiveRunningTime=function\(\)[\s\S]*?addEmployeeTimeBreakdown\(\)/,'Employee breakdown must remain chained to the authoritative refresh');
+console.log('Employee timer stability: duplicate one-second writers retired');
