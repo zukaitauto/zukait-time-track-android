@@ -136,7 +136,8 @@ assert.match(cloud, /window\.addEventListener\('focus',refreshVisibleSharedState
 assert.match(cloud, /if\(cloudDirty&&!cloudPushing\)await push\(0\)/, 'local changes must be pushed before a forced shared-state refresh');
 assert.match(cloud, /threeWayMerge\(base,remote,localSnapshot\)/, 'Supervisor and Manager concurrent changes must merge against the shared revision');
 assert.match(cloud, /mergeEmployeeConflict\(remote,localSnapshot,me\.id\)/, 'Employee concurrent changes must merge only their own work into shared state');
-assert.match(cloud, /if\(me\)try\{render\(\)\}/, 'a received shared revision must rerender the active dashboard');
+assert.match(cloud, /scheduleDashboardRender\(beforeState,state\)/, 'received shared revisions must pass through the role-scoped structural render gate');
+assert.doesNotMatch(cloud, /if\(me\)try\{render\(\)\}/, 'cloud sync must not directly rebuild dashboard roots');
 
 // Employee contracts
 assert.match(updates, /openNormal=emp=>[\s\S]*?a\.job!==H[\s\S]*?!a\.cancelled[\s\S]*?!a\.completed/, 'normal open work must be detected');
