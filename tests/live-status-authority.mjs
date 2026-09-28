@@ -148,3 +148,6 @@ assert.equal(context.window.currentStaffStatuses()[0].emp,'LOCAL','offline mode 
 assert.match(authority,/setTimeout\(apply,0\)/,'server live counts must be reapplied immediately after dashboard renders');
 
 console.log('Server live-status authority tests passed: server counts/details, dirty-independent polling, no online stale fallback, offline-only cache fallback, and immediate render reapply');
+
+assert.doesNotMatch(authority,/setInterval\(apply,1000\)/,'live status authority must not run an unconditional one-second whole-dashboard DOM pass');
+console.log('Live status DOM writer cadence: event-driven anti-blink guard passed');
