@@ -1,8 +1,8 @@
 {
-  "versionName": "V195",
-  "versionCode": 158,
+  "versionName": "V196",
+  "versionCode": 159,
   "approvedForStaff": true,
   "approvedAt": "2026-09-28",
-  "sourceCommit": "f964fc6d49169cd04bfe8291f35bcb48ca6c4604",
-  "publishNonce": "release-v195-manager-menu-authority-20260928"
+  "sourceCommit": "3fa82223e0b9fcb0bb3fd460f9a5f0730dbbd6b6",
+  "publishNonce": "release-v196-stability-omr-consumables-20260928"
 }
