@@ -1,8 +1,8 @@
 {
-  "versionName": "V184",
-  "versionCode": 147,
+  "versionName": "V185",
+  "versionCode": 148,
   "approvedForStaff": true,
   "approvedAt": "2026-09-28",
-  "sourceCommit": "bc55fcf8900dfa3795ae85472f223ae2355c2651",
-  "publishNonce": "release-v184-consumables-expense-20260928"
+  "sourceCommit": "769397c4c4696c5dfb36c6bfa76519a99323a052",
+  "publishNonce": "release-v185-manager-blink-fix-20260928"
 }
