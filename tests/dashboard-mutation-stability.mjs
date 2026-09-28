@@ -55,3 +55,12 @@ assert.match(v74,/window\.v161ApplyOmanBrandAuthority=apply/);
 assert.match(v74,/box\.classList\.contains\('v132-explicit-brand'\)&&img\?\.getAttribute\('src'\)===/,'an unchanged Employee logo must remain mounted');
 assert.match(v74,/if\(count\.textContent!==label\)count\.textContent=label/,'the recurring Employee count must not rewrite unchanged content');
 console.log('Dashboard mutation stability: online badge, Manager card, and vehicle decorators passed');
+
+
+// Periodic server status must have a single authority; the retired legacy
+// reconcile loop must not wake the shared dashboard every second.
+assert.doesNotMatch(v74,/setInterval\(reconcileUI,1000\)/,'legacy one-second status reconciliation must stay retired');
+assert.match(v74,/addEventListener\('zukait-live-status',reconcileUI\)/,'status reconciliation must be event-driven by server-live updates');
+assert.match(v74,/v149Pending/,'shared colour observer must coalesce mutation bursts');
+assert.match(v74,/v184Pending/,'global employee-colour observer must coalesce mutation bursts');
+console.log('Dashboard periodic-writer stability: single live authority and coalesced observers passed');
