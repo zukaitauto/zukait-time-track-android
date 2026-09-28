@@ -3258,7 +3258,7 @@ window.v2TogglePilotThisDevice=function(){
  window.zukaitEmployeeIdentityClass=cls;
  function apply(root=document){if(!root)return;root.querySelectorAll('[data-emp],[data-emp-id],[data-employee-id],[data-technician]').forEach(el=>{const id=el.getAttribute('data-emp')||el.getAttribute('data-emp-id')||el.getAttribute('data-employee-id')||el.getAttribute('data-technician');if(id)el.classList.add(...cls(id).split(' '))})}
  window.zukaitApplyEmployeeIdentityColours=apply;
- const obs=new MutationObserver(()=>apply(document));obs.observe(document.body,{childList:true,subtree:true});setTimeout(()=>apply(document),0);
+ let identityPending=false;const scheduleIdentity=()=>{if(identityPending)return;identityPending=true;requestAnimationFrame(()=>{identityPending=false;apply(document)})};const obs=new MutationObserver(scheduleIdentity);obs.observe(document.body,{childList:true,subtree:true});setTimeout(scheduleIdentity,0);
 })();
 
 
@@ -3269,7 +3269,7 @@ window.v2TogglePilotThisDevice=function(){
  window.v143ApplyVoiceEntry=function(text){const raw=String(text||'').trim(),low=raw.toLowerCase(),put=(id,v)=>{const e=document.getElementById(id);if(e&&v)e.value=String(v).trim()};const jc=(raw.match(/(?:job\s*card|jc)\s*(?:number|no)?\s*([a-z0-9-]+)/i)||[])[1];if(jc)put('newNo',jc.toUpperCase());const yr=(raw.match(/\b(19\d{2}|20\d{2})\b/)||[])[1];if(yr)put('newYear',yr);const reg=(raw.match(/(?:registration|reg)\s*(?:number|no)?\s*([a-z0-9 -]+?)(?=\s+(?:technician|tech|time|allocated|hours?|minutes?)\b|$)/i)||[])[1];if(reg)put('newReg',reg.toUpperCase());const n=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]+/g,'');const q=n(raw),tech=(window.users||[]).filter(u=>u&&u.role==='Employee').sort((a,b)=>String(b.name||'').length-String(a.name||'').length).find(u=>q.includes(n(u.name||u.id)));if(tech){const e=document.getElementById('se');if(e)e.value=tech.id}const h=low.match(/(\d+(?:\.\d+)?)\s*(?:hours?|hrs?)/),m=low.match(/(\d+)\s*(?:minutes?|mins?)/);if(h){const mins=Math.round(parseFloat(h[1])*60)+(m?parseInt(m[1],10):0);if(mins>0)put('st',(mins/60).toFixed(2))}let v=raw;if(jc)v=v.replace(new RegExp('(?:job\\s*card|jc)\\s*(?:number|no)?\\s*'+jc,'i'),' ');if(yr)v=v.replace(yr,' ');if(reg)v=v.replace(reg,' ');if(tech)v=v.replace(tech.name,' ');v=v.replace(/\b(?:registration|reg|technician|tech|allocated|time)\b/ig,' ').replace(/\b\d+(?:\.\d+)?\s*(?:hours?|hrs?|minutes?|mins?)\b/ig,' ').replace(/\s+/g,' ').trim();if(v)put('newVehicle',v);const b=box();if(b){b.textContent='Transcript: '+raw+' — Check the filled fields, then press Create Job + Assign.';b.classList.remove('hidden')}};
  const prior=window.v69OnVoiceResult;window.v69OnVoiceResult=function(text,error){if(document.getElementById('v143VoiceStatus')){const b=box();if(error){if(b){b.textContent=error;b.classList.remove('hidden')}return}return window.v143ApplyVoiceEntry(text)}if(typeof prior==='function')return prior.apply(this,arguments)};
  function enhance(){if(!window.me||me.role!=='Supervisor')return;const q=document.querySelector('#supervisorView .v143-quick');if(!q||document.getElementById('v143VoiceEntry'))return;const b=document.createElement('button');b.id='v143VoiceEntry';b.type='button';b.className='v143-voice-entry';b.textContent='🎤 VOICE ENTRY';b.onclick=window.v143StartVoiceEntry;q.parentNode.insertBefore(b,q);const x=document.createElement('div');x.id='v143VoiceStatus';x.className='v143-voice-status hidden';q.parentNode.insertBefore(x,q)}
- new MutationObserver(enhance).observe(document.body,{childList:true,subtree:true});setTimeout(enhance,0);
+ let voicePending=false;const scheduleVoice=()=>{if(voicePending)return;voicePending=true;requestAnimationFrame(()=>{voicePending=false;enhance()})};new MutationObserver(scheduleVoice).observe(document.body,{childList:true,subtree:true});setTimeout(scheduleVoice,0);
  const st=document.createElement('style');st.textContent='#supervisorView .v143-voice-entry{width:100%;min-height:42px;margin:0 0 8px!important;border-radius:10px!important;background:#e8f1ff!important;color:#174ea6!important;border:1px solid #b8d1f5!important;font-weight:900!important}#supervisorView .v143-voice-status{margin:0 0 8px;padding:8px 10px;border-radius:9px;background:#f0f7ff;border:1px solid #cfe2fa;color:#334155;font-size:11px;line-height:1.35}#supervisorView .v143-voice-status.hidden{display:none!important}';document.head.appendChild(st);
 })();
 
@@ -3445,8 +3445,8 @@ window.v2TogglePilotThisDevice=function(){
    bar.innerHTML='<button type="button" class="secondary" onclick="closeModal()">← BACK / CLOSE</button>';
    scope.insertBefore(bar,scope.firstChild);
  }
- const obs=new MutationObserver(()=>setTimeout(apply,0));
- function start(){if(document.body)obs.observe(document.body,{childList:true,subtree:true});setTimeout(apply,0)}
+ let navPending=false;const scheduleNav=()=>{if(navPending)return;navPending=true;requestAnimationFrame(()=>{navPending=false;apply()})};const obs=new MutationObserver(scheduleNav);
+ function start(){if(document.body)obs.observe(document.body,{childList:true,subtree:true});setTimeout(scheduleNav,0)}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
  window.v184ApplyManagerOutputNavigation=apply;
  const s=document.createElement('style');s.id='v184ManagerOutputNavigationStyle';s.textContent='.v184-manager-output-nav{display:flex;justify-content:flex-end;margin:0 0 8px}.v184-manager-output-nav button{width:auto!important;min-height:30px!important;padding:6px 10px!important;border-radius:9px!important;font-size:10px!important;font-weight:900!important}';document.head.appendChild(s);
