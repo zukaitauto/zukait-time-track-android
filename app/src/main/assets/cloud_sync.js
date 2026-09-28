@@ -399,14 +399,13 @@
 
   function reconcileEmployeeOpenSessions(data,emp){
     data.sessions=Array.isArray(data.sessions)?data.sessions:[];
-    const open=data.sessions.filter(s=>s&&s.emp===emp&&!s.end).sort((a,b)=>(+b.start||0)-(+a.start||0)||String(b.id||'').localeCompare(String(a.id||'')));
+    const open=data.sessions.filter(s=>s&&s.emp===emp&&!s.end);
     if(open.length<=1)return data;
-    const keep=open[0],cut=Math.max(+keep.start||Date.now(),Date.now());
-    for(const s of open.slice(1)){
-      s.end=cut;s.paused=true;s.multiDeviceClosed=true;s.closeReason='MULTI_DEVICE_CONFLICT';
-    }
+    // Never end a running normal job from a client-side merge. Device clocks,
+    // delayed replay and stale snapshots can make the "newest" session wrong.
+    // The server work-state authority owns one-active-session conflict resolution.
     data.multiDeviceAudit=Array.isArray(data.multiDeviceAudit)?data.multiDeviceAudit:[];
-    data.multiDeviceAudit.push({id:'md-'+Date.now()+'-'+emp,emp,keptSession:keep.id,closedSessions:open.slice(1).map(s=>s.id),at:Date.now()});
+    data.multiDeviceAudit.push({id:'md-pending-'+Date.now()+'-'+emp,emp,openSessions:open.map(s=>s.id),at:Date.now(),resolution:'SERVER_AUTHORITY_REQUIRED'});
     return data;
   }
 
