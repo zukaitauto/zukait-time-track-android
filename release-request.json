@@ -1,8 +1,8 @@
 {
-  "versionName": "V199",
-  "versionCode": 162,
+  "versionName": "V200",
+  "versionCode": 163,
   "approvedForStaff": true,
   "approvedAt": "2026-09-28",
-  "sourceCommit": "51ff8a59eae581155674ff12b65592eb1ad596c2",
-  "publishNonce": "release-v199-manager-complete-polish-20260928-r2"
+  "sourceCommit": "7b9e0d669298efa6366d2fa45d746c18f0b31806",
+  "publishNonce": "release-v200-manager-v202-verified-20260928-r1"
 }
