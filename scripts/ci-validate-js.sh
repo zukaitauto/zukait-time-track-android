@@ -17,6 +17,7 @@ node --check app/src/main/assets/v69_updates.js
 node --check app/src/main/assets/v74_updates.js
 node --check app/src/main/assets/supervisor_stable.js
 node --check app/src/main/assets/live_status_authority.js
+node --check app/src/main/assets/workshop_overview.js
 node --check app/src/main/assets/job_cost_summary_v128.js
 node --check app/src/main/assets/v2/core/event_contract.js
 node --check app/src/main/assets/v2/core/live_selectors.js

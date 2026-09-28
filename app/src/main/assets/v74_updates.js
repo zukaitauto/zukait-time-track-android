@@ -2636,7 +2636,7 @@ window.v2TogglePilotThisDevice=function(){
    [...root.querySelectorAll('button,.notice,.glance-box,.v67-control')].forEach(el=>{
      const tx=(el.textContent||'').trim();
      if(!tx.toLowerCase().includes(label.toLowerCase()))return;
-     const b=el.querySelector('b.stat,.stat,b');if(b)b.textContent=String(n);
+     const b=el.querySelector('b.stat,.stat,b');if(b&&b.textContent!==String(n))b.textContent=String(n);
    });
  }
  function refresh(){
@@ -2673,24 +2673,14 @@ window.v2TogglePilotThisDevice=function(){
    // Existing detail renderer now consumes the shared authority through v79CurrentWorkerRows.
    return typeof oldActive==='function'?oldActive.apply(this,arguments):undefined;
  };
- let busy=false;
- async function syncRefresh(){
-   if(busy||!window.me||document.hidden)return;
-   busy=true;
-   try{
-     if(typeof window.v42SyncNow==='function')await window.v42SyncNow(true);
-   }catch(_){}
-   finally{busy=false;refresh()}
- }
  const oldRender=window.render;
  window.render=function(){const r=typeof oldRender==='function'?oldRender.apply(this,arguments):undefined;setTimeout(refresh,0);return r};
- window.addEventListener('focus',syncRefresh);
- document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncRefresh()});
+ // cloud_sync.js owns revision polling, live-status polling and visibility refresh.
+ // This legacy 10-second forced pull redrew every dashboard independently.
  window.addEventListener('storage',refresh);
- let v166SyncTimer=null,v166RefreshTimer=null;
-  const scheduleSync=()=>{clearTimeout(v166SyncTimer);v166SyncTimer=setTimeout(async()=>{if(document.visibilityState==='visible')await syncRefresh();scheduleSync()},document.visibilityState==='visible'?10000:60000)};
+ let v166RefreshTimer=null;
   const scheduleWorkers=()=>{clearTimeout(v166RefreshTimer);v166RefreshTimer=setTimeout(()=>{if(document.visibilityState==='visible')refresh();scheduleWorkers()},document.visibilityState==='visible'?3000:30000)};
-  scheduleSync();scheduleWorkers();
+  scheduleWorkers();
  setTimeout(refresh,0);
  window.v115RefreshLiveWorkers=refresh;
 })();
@@ -2811,8 +2801,8 @@ window.v2TogglePilotThisDevice=function(){
      [...root.querySelectorAll('.glance-box,button,.notice')].forEach(el=>{
        const tx=(el.textContent||'').toLowerCase(),stat=el.querySelector('.stat,b.stat');
        if(!stat)return;
-       if(tx.includes('active workers'))stat.textContent=String(active);
-       if(tx.includes('paused jobs'))stat.textContent=String(paused);
+       if(tx.includes('active workers')&&stat.textContent!==String(active))stat.textContent=String(active);
+       if(tx.includes('paused jobs')&&stat.textContent!==String(paused))stat.textContent=String(paused);
      });
    }
  }

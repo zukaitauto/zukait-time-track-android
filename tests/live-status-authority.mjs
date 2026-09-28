@@ -40,6 +40,10 @@ assert.match(authority,/window\.openActiveWorkers=function\(\)[\s\S]*rr\.filter\
 assert.match(authority,/setCount\(root,'Working Now',working\)/,'Supervisor Working Now count must use the same authoritative server rows');
 assert.match(updates,/Online shared dashboards are owned exclusively by live_status_authority\.js/,'legacy V115 worker counter must defer to SERVER LIVE authority');
 assert.match(updates,/if\(window\.zukaitLiveStatusAuthority\)return;/,'online Manager\/Supervisor local worker counter must not overwrite server-live counts');
+const legacyWorkerBlock=updates.split('/* V115 SHARED LIVE WORKER AUTHORITY')[1]?.split('/* V115 MULTI-DEVICE EMPLOYEE ACTION AUTHORITY')[0];
+assert.ok(legacyWorkerBlock,'legacy worker compatibility block must remain available');
+assert.doesNotMatch(legacyWorkerBlock,/v42SyncNow|scheduleSync|syncRefresh/,'legacy worker UI must not force a second periodic cloud pull');
+assert.match(cloud,/window\.addEventListener\('focus',refreshVisibleSharedState\)/,'cloud layer must still refresh when the app regains focus');
 
 const listeners={};
 const windowObj={
