@@ -1692,6 +1692,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
   function compose(){
     if(!window.me||me.role!=='Manager')return;
     try{window.v74ApplyManagerFinal?.()}catch(e){console.error('Manager polish',e)}
+    try{const n=typeof window.v120ReadyJobs==='function'?window.v120ReadyJobs().length:0;document.querySelectorAll('#managerView [data-manager-ready-count],#managerView .v74-ready b').forEach(x=>x.textContent=String(n))}catch(e){}
     try{window.v156SettleManagerUI?.()}catch(e){console.error('Manager composition',e)}
     try{window.ensureManagerSparePartsCard?.()}catch(e){}
     try{window.refreshManagerSparePartsSummary?.()}catch(e){}
