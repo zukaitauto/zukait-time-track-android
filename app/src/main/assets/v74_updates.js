@@ -692,8 +692,9 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    setTimeout(updateEmployeeMonthlyLive,0);
    return out;
  };
- if(window.v752EmployeeTimer)clearInterval(window.v752EmployeeTimer);
- window.v752EmployeeTimer=setInterval(()=>{if(me?.role==='Employee'){stopID001AtDutyEnd();updateEmployeeMonthlyLive()}},1000);
+ // The main employeeClockTimer -> refreshActiveRunningTime chain already runs these updates once per second.
+ // Retire the duplicate V75.2 timer to avoid parallel DOM writes/repaint pressure.
+ if(window.v752EmployeeTimer){clearInterval(window.v752EmployeeTimer);window.v752EmployeeTimer=null;}
 
  // Reopen SAME assignment: reset the parent Job Card as Open immediately on confirmation.
  window.v71ReopenSameAssignment=function(id){
@@ -874,7 +875,9 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const r=typeof oldRefresh==='function'?oldRefresh.apply(this,arguments):undefined;
    addEmployeeTimeBreakdown();return r;
  };
- if(window.v755EmployeeBreakdownTimer)clearInterval(window.v755EmployeeBreakdownTimer);window.v755EmployeeBreakdownTimer=setInterval(()=>{if(me?.role==='Employee')addEmployeeTimeBreakdown()},1000);
+ // addEmployeeTimeBreakdown is already chained into refreshActiveRunningTime once per second.
+ // Retire the duplicate V75.3 timer so Employee has one second-level DOM update path.
+ if(window.v755EmployeeBreakdownTimer){clearInterval(window.v755EmployeeBreakdownTimer);window.v755EmployeeBreakdownTimer=null;}
 
  // Reconcile stale ID001 sessions from ANY logged-in role/device.
  // If the employee app was closed at duty end, Supervisor/Manager opening or syncing
