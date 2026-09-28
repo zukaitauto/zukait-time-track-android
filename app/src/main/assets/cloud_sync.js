@@ -57,18 +57,12 @@
       spareParts:data.spareParts||data.spare_parts||null,
       notifications:(data.notifications||[]).filter(x=>x&&(!x.target||String(x.target)===String(who.id)))
     };
-    // Manager/Supervisor dashboard shells are stable. Their operational live
-    // counts are owned by the live-status endpoint. Only data that changes
-    // cards/lists/attention surfaces is structural.
-    return {
-      jobs:data.jobs||[],
-      assign:data.assign||[],
-      requests:data.requests||[],
-      leaves:data.leaves||[],
-      consumables:data.consumables||null,
-      spareParts:data.spareParts||data.spare_parts||null,
-      systemNotifications:data.systemNotifications||[]
-    };
+    // Manager/Supervisor roots must remain mounted while the workshop is live.
+    // Their live counters are patched by live_status_authority and operational
+    // modules read the latest shared state when opened. Remote workshop churn
+    // must not tear down/recreate the whole dashboard shell.
+    if(role==='Manager'||role==='Supervisor')return {shell:role};
+    return {role};
   }
 
   function scheduleDashboardRender(beforeState,afterState){
