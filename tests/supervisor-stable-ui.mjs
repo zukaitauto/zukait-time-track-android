@@ -85,3 +85,10 @@ console.log('Stable Supervisor UI tests passed: single final renderer, no legacy
 
 assert.match(stable,/id="supervisorEstimateTile"/,'Stable Supervisor dashboard must show Estimate');
 assert.match(stable,/supervisorEstimateTile[^\n]*openEstimateModule\(\)/,'Supervisor Estimate must open the shared Estimate module');
+
+// V202 low-risk polish guard: visual organization must stay CSS-only and scoped to Supervisor.
+assert.match(stable,/id='v202SupervisorPolish'/,'Supervisor polish style authority must exist');
+assert.match(stable,/@media\(max-width:799px\)/,'Supervisor polish must remain mobile-scoped');
+assert.match(stable,/#supervisorView \.v143-create-actions \.v143-primary\{min-height:82px/,'Quick Entry polish must stay scoped to Supervisor');
+assert.match(stable,/#supervisorView \.v143-tech strong\{font-size:18px/,'Technician counts must retain improved readability');
+assert.doesNotMatch(stable,/V202 low-risk Supervisor mobile polish:[\s\S]*?(onclick|addEventListener|MutationObserver|commitEvent|syncNow)/,'V202 visual polish must not introduce handlers, observers, server commits or sync logic');
