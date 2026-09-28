@@ -42,7 +42,7 @@
       const net=document.getElementById('net');
       if(net&&net.parentNode)net.parentNode.insertBefore(el,net);
     }
-    el.textContent=text;
+    if(el.textContent!==text)el.textContent=text;
     const map={
       ok:['#dcfce7','#166534'],
       warn:['#fef3c7','#92400e'],
@@ -51,7 +51,7 @@
       local:['#e5e7eb','#374151']
     };
     const c=map[kind]||map.local;
-    el.style.background=c[0];el.style.color=c[1];
+    if(el.dataset.syncKind!==kind){el.style.background=c[0];el.style.color=c[1];el.dataset.syncKind=kind}
   }
 
   async function api(payload){
@@ -402,7 +402,8 @@
     if(!sessionToken()){status('LOGIN REQUIRED','local');initialDone=true;return false}
     if(!navigator.onLine){status(cloudDirty?'OFFLINE — CHANGE QUEUED':'OFFLINE — LOCAL CACHE','warn');initialDone=true;return false}
     if(cloudDirty&&!force){status('CHANGE WAITING TO SYNC','warn');return false}
-    status('SYNCING…','info');
+    // Background revision checks keep the last successful indicator steady.
+    if(!initialDone)status('SYNCING…','info');
     pullInFlight=true;
     const before=clone(state||{});
     let r;
@@ -414,17 +415,20 @@
     }
     const remoteRev=Number(r.revision||0);
     if(force||remoteRev!==cloudRevision){
+      // A forced refresh may return the same snapshot (for example on focus).
+      // Replacing every role dashboard in that case visibly flashes the UI.
       cloudApplying=true;
       try{
         normalizeRemote(r.data);
         cloudRevision=remoteRev;
         localStorage.setItem(REV_KEY,String(cloudRevision));
       }finally{cloudApplying=false}
+      const changed=JSON.stringify(before)!==JSON.stringify(state);
       if(typeof window.v42AfterCloudPull==='function'){
         try{window.v42AfterCloudPull(before,clone(state),r)}catch(e){console.warn('Notification hook failed',e)}
       }
       lastSyncedState=clone(state||{});
-      if(me)try{render()}catch(e){console.error('Render after sync failed',e)}
+      if(changed&&me)try{render()}catch(e){console.error('Render after sync failed',e)}
     } else if(!lastSyncedState) {
       lastSyncedState=clone(state||{});
     }

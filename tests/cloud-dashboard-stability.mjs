@@ -1,0 +1,38 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+
+const src=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
+const begin=src.indexOf('  async function pull(force){');
+const end=src.indexOf('  async function probeRevision(){',begin);
+assert.ok(begin>=0&&end>begin);
+const pullSource=src.slice(begin,end);
+
+async function run(remote,initial){
+  const statuses=[];
+  let renders=0;
+  const ctx={
+    state:structuredClone(initial),cloudRevision:1,cloudDirty:false,pullInFlight:false,
+    initialDone:true,lastSyncedState:null,lastSuccessfulSyncAt:0,lastSyncError:'',
+    consecutiveSyncErrors:0,conflictAlerted:false,cloudApplying:false,
+    me:{role:'Employee'},navigator:{onLine:true},REV_KEY:'revision',
+    localStorage:{setItem(){}},sessionToken:()=>true,
+    status:(s)=>statuses.push(s),clone:structuredClone,
+    api:async()=>({ok:true,revision:2,data:remote}),
+    normalizeRemote:(data)=>{ctx.state=structuredClone(data)},
+    render:()=>{renders++},window:{},console
+  };
+  vm.runInNewContext(pullSource+';globalThis.pull=pull;',ctx);
+  await ctx.pull(true);
+  return {renders,statuses,state:ctx.state,revision:ctx.cloudRevision};
+}
+
+const same=await run({jobs:[{no:'JC1'}]},{jobs:[{no:'JC1'}]});
+assert.equal(same.renders,0,'a forced identical pull must preserve the visible dashboard');
+assert.deepEqual(same.statuses,['SYNCED'],'background refresh must not flash the status badge');
+assert.equal(same.revision,2,'an unchanged snapshot still acknowledges its server revision');
+
+const changed=await run({jobs:[{no:'JC1'},{no:'JC2'}]},{jobs:[{no:'JC1'}]});
+assert.equal(changed.renders,1,'a real shared update must still refresh the dashboard');
+assert.equal(changed.state.jobs.length,2,'a real update must be applied');
+console.log('Cloud dashboard stability: identical and changed server snapshots passed');

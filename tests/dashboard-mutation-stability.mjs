@@ -52,4 +52,6 @@ for(const [start,end] of [
 assert.match(v74,/if\(badge\.textContent!==cls\)badge\.textContent=cls/);
 assert.match(v74,/window\.v160ApplyHeavyBrandAuthority=apply/);
 assert.match(v74,/window\.v161ApplyOmanBrandAuthority=apply/);
+assert.match(v74,/box\.classList\.contains\('v132-explicit-brand'\)&&img\?\.getAttribute\('src'\)===/,'an unchanged Employee logo must remain mounted');
+assert.match(v74,/if\(count\.textContent!==label\)count\.textContent=label/,'the recurring Employee count must not rewrite unchanged content');
 console.log('Dashboard mutation stability: online badge, Manager card, and vehicle decorators passed');

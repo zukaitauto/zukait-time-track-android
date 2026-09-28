@@ -785,6 +785,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 
  function addEmployeeTimeBreakdown(){
    if(!me||me.role!=='Employee')return;
+   const put=(el,value)=>{if(el&&el.textContent!==value)el.textContent=value};
    const root=document.getElementById('employeeView');if(!root)return;
    const {from,to}=monthBounds(),productive=productiveMinutes(me.id,from,to),id001=id001Minutes(me.id,from,to),actual=productive+id001,ideal=idealMinutes(me.id,from,to),ot=overtimeMinutes(me.id,from,to);
    const month=[...root.querySelectorAll('.month-summary')][0];if(!month)return;
@@ -795,16 +796,16 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
      '<div id="v753ID001Card" class="notice"><b>ID001 Time</b><div class="stat">'+fmtMin(id001)+'</div><span class="small">Available / no work provided</span></div>';
    if(!box)grid.insertAdjacentHTML('beforeend',html);
    else{
-     box.querySelector('.stat').textContent=fmtMin(actual);
-     const p=document.querySelector('#v753ProductiveCard .stat');if(p)p.textContent=fmtMin(productive);
-     const i=document.querySelector('#v753ID001Card .stat');if(i)i.textContent=fmtMin(id001);
+     put(box.querySelector('.stat'),fmtMin(actual));
+     const p=document.querySelector('#v753ProductiveCard .stat');put(p,fmtMin(productive));
+     const i=document.querySelector('#v753ID001Card .stat');put(i,fmtMin(id001));
    }
    root.querySelectorAll('.month-summary .notice').forEach(card=>{
      const label=(card.querySelector('b')?.textContent||'').trim();
      const stat=card.querySelector('.stat');
      if(!stat)return;
-     if(label==='Total Ideal Time')stat.textContent=fmtMin(ideal);
-     if(label==='Overtime')stat.textContent=fmtMin(ot);
+     if(label==='Total Ideal Time')put(stat,fmtMin(ideal));
+     if(label==='Overtime')put(stat,fmtMin(ot));
    });
  }
 
@@ -2432,7 +2433,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 (function(){'use strict';
  const files={'Toyota':'toyota.svg','Nissan':'nissan-logo.svg','Infiniti':'infiniti-logo.svg','Lexus':'lexus.svg','Mercedes-Benz':'mercedes-benz.svg','BMW':'bmw.svg','Land Rover':'land-rover.svg','Porsche':'porsche.svg','Audi':'audi.svg','Volkswagen':'volkswagen.svg','Volvo':'volvo.svg','Mitsubishi':'mitsubishi.svg','Mazda':'mazda.svg','Jeep':'jeep.svg','Hyundai':'hyundai-logo.svg','Kia':'kia-logo.svg','Genesis':'genesis-logo.svg','Honda':'honda.svg','Ford':'ford.svg','Chevrolet':'chevrolet.svg','GMC':'gmc.svg','Cadillac':'cadillac.svg','BYD':'byd-logo.svg','Jetour':'jetour.svg','Geely':'geely.svg','Lincoln':'lincoln.svg','Chrysler':'chrysler.svg','Isuzu':'isuzu.svg','RAM':'ram.svg','Suzuki':'suzuki.svg','Renault':'renault.svg','Peugeot':'peugeot.svg','Citroën':'citroen.svg','Škoda':'skoda.svg','Bentley':'bentley.svg','Rolls-Royce':'rolls-royce.svg','Aston Martin':'aston-martin.svg','Ferrari':'ferrari.svg','McLaren':'mclaren.svg','MAN':'man.svg','GWM':'gwm.svg','MG':'mg.svg','Shacman':'shacman.svg'};
  const brandInfo=j=>{if(!j)return null;const n=String(j.brand||'').trim();return n&&files[n]?{name:n,file:files[n]}:null};window.v132JobBrandInfo=brandInfo;
- function applyEmployee(){if(!me||me.role!=='Employee')return;document.querySelectorAll('#employeeView .v75s-card[data-job],#employeeView [data-job]').forEach(card=>{const no=card.dataset.job,j=(state.jobs||[]).find(x=>x&&x.no===no),b=brandInfo(j);if(!b)return;const box=card.querySelector('.v82-brand-logo,.v82-logo-fallback');if(!box)return;box.outerHTML='<div class="v82-brand-logo v132-explicit-brand" title="'+b.name+'"><img src="vehicle-logos/'+b.file+'" alt="'+b.name+' logo"></div>'});const s=activeSession?.(me.id);if(s){const j=(state.jobs||[]).find(x=>x&&x.no===s.job),b=brandInfo(j),mark=document.querySelector('#employeeView .v75s-shell .v82-vehicle-mark');if(b&&mark){const ev=mark.querySelector('.v82-ev-badge')?.outerHTML||'';mark.innerHTML='<div class="v82-brand-logo v132-explicit-brand" title="'+b.name+'"><img src="vehicle-logos/'+b.file+'" alt="'+b.name+' logo"></div>'+ev}}}
+ function applyEmployee(){if(!me||me.role!=='Employee')return;document.querySelectorAll('#employeeView .v75s-card[data-job],#employeeView [data-job]').forEach(card=>{const no=card.dataset.job,j=(state.jobs||[]).find(x=>x&&x.no===no),b=brandInfo(j);if(!b)return;const box=card.querySelector('.v82-brand-logo,.v82-logo-fallback');if(!box)return;const img=box.querySelector('img');if(box.classList.contains('v132-explicit-brand')&&img?.getAttribute('src')==='vehicle-logos/'+b.file)return;box.outerHTML='<div class="v82-brand-logo v132-explicit-brand" title="'+b.name+'"><img src="vehicle-logos/'+b.file+'" alt="'+b.name+' logo"></div>'});const s=activeSession?.(me.id);if(s){const j=(state.jobs||[]).find(x=>x&&x.no===s.job),b=brandInfo(j),mark=document.querySelector('#employeeView .v75s-shell .v82-vehicle-mark');if(b&&mark){const ev=mark.querySelector('.v82-ev-badge')?.outerHTML||'';{const img=mark.querySelector('.v132-explicit-brand img');if(!img||img.getAttribute('src')!=='vehicle-logos/'+b.file)mark.innerHTML='<div class="v82-brand-logo v132-explicit-brand" title="'+b.name+'"><img src="vehicle-logos/'+b.file+'" alt="'+b.name+' logo"></div>'+ev}}}}
  const oldEdit=window.editJobManager;if(typeof oldEdit==='function'&&!oldEdit.v132){const w=function(no){const r=oldEdit.apply(this,arguments);setTimeout(()=>{const j=(state.jobs||[]).find(x=>x&&x.no===no),v=document.getElementById('editJCVehicle');if(!v||document.getElementById('v132EditBrand'))return;const lab=document.createElement('label');lab.innerHTML='Vehicle Brand<br><select id="v132EditBrand">'+window.v131VehicleBrandAuthority.options(j?.brand||window.v131VehicleBrandAuthority.infer(j?.vehicle||''))+'</select>';v.closest('label')?.insertAdjacentElement('afterend',lab)},0);return r};w.v132=true;window.editJobManager=w}
  const oldSave=window.saveJobManagerEdit;if(typeof oldSave==='function'&&!oldSave.v132){const w=function(){const no=document.getElementById('editJCNo')?.value?.trim()?.toUpperCase(),brand=document.getElementById('v132EditBrand')?.value;const r=oldSave.apply(this,arguments);const j=(state.jobs||[]).find(x=>x&&x.no===no);if(j&&brand!==undefined){j.brand=brand;try{save()}catch(_){}}return r};w.v132=true;window.saveJobManagerEdit=w}
  const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(applyEmployee,0);return r};setTimeout(applyEmployee,0);window.v132JobBrandLogoAuthority=true;
@@ -3071,7 +3072,7 @@ window.v2TogglePilotThisDevice=function(){
      if(live){
        live.classList.remove('off');
        const gear=live.querySelector('.v75s-gear'),h=live.querySelector('h2'),p=live.querySelector('p');
-       if(gear)gear.textContent='◷';if(h)h.textContent='ID001 ASSIGNED';if(p)p.textContent='Current Work · Press START to begin waiting time';
+       if(gear&&gear.textContent!=='◷')gear.textContent='◷';if(h&&h.textContent!=='ID001 ASSIGNED')h.textContent='ID001 ASSIGNED';if(p&&p.textContent!=='Current Work · Press START to begin waiting time')p.textContent='Current Work · Press START to begin waiting time';
      }
      const top=root.querySelector('.v75s-top');
      if(top&&!root.querySelector('.v130-id001-current')){
@@ -3103,12 +3104,12 @@ window.v2TogglePilotThisDevice=function(){
      if(activeHold){
        const b=card.querySelector('.v75s-start');
        const m=label.match(/^JOB\s*:\s*(.+)$/);
-       if(b&&m){b.disabled=false;b.textContent='▶ RESUME / START';b.setAttribute('onclick',"start('"+String(m[1]).replace(/'/g,"\\\\'")+"')")}
+       if(b&&m){if(b.disabled)b.disabled=false;if(b.textContent!=='▶ RESUME / START')b.textContent='▶ RESUME / START';const action="start('"+String(m[1]).replace(/'/g,"\\\\'")+"')";if(b.getAttribute('onclick')!==action)b.setAttribute('onclick',action)}
      }
    });
    const count=root.querySelector('.v75s-count');
    if(count){
-     const n=openNormal(me.id).length;count.textContent=n+' Job'+(n===1?'':'s');
+     const n=openNormal(me.id).length;const label=n+' Job'+(n===1?'':'s');if(count.textContent!==label)count.textContent=label;
    }
 
    // Monthly figures: productive and waiting hours remain separate, while Normal Working Hours includes both.
@@ -3120,13 +3121,13 @@ window.v2TogglePilotThisDevice=function(){
        const label=box.querySelector('span'),value=box.querySelector('b');if(!label||!value)return;
        const t=(label.textContent||'').trim();
        if(t==='Suggested Time'){label.textContent='Productive Suggested'}
-       if(t==='Actual Time'){label.textContent='Productive Actual';value.textContent=fm(prod)}
+       if(t==='Actual Time'){label.textContent='Productive Actual';value.textContent!==fm(prod)&&(value.textContent=fm(prod))}
        if(t==='Remaining Time'||t==='Over Suggested'){label.textContent='Productive '+t}
      });
      if(!grid.querySelector('.v130-id001-hours'))grid.insertAdjacentHTML('beforeend','<div class="v81-month-orb v81-m8 v130-id001-hours"><b>'+fm(hold)+'</b><span>ID001 Hours</span></div>');
-     else grid.querySelector('.v130-id001-hours b').textContent=fm(hold);
+     else {const value=grid.querySelector('.v130-id001-hours b');if(value&&value.textContent!==fm(hold))value.textContent=fm(hold)}
      if(!grid.querySelector('.v130-normal-hours'))grid.insertAdjacentHTML('beforeend','<div class="v81-month-orb v81-m2 v130-normal-hours"><b>'+fm(normal)+'</b><span>Normal Working Hours</span></div>');
-     else grid.querySelector('.v130-normal-hours b').textContent=fm(normal);
+     else {const value=grid.querySelector('.v130-normal-hours b');if(value&&value.textContent!==fm(normal))value.textContent=fm(normal)}
    }
  }
  window.v130ApplyEmployeeID001UI=applyEmployeeUI;
