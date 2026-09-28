@@ -40,7 +40,8 @@ assert.match(liveStatusAuthority, /window\.v79CurrentWorkerRows=function\(\)[\s\
 assert.match(liveStatusAuthority, /window\.v84TechState=function\(u\)[\s\S]*?if\(serverRequired\(\)\)return\{session:null,status:'Syncing'\}/, 'technician board must show Syncing rather than stale local status when server live data is unavailable');
 assert.match(liveStatusAuthority, /window\.v65OpenControl=function\(type\)[\s\S]*?serverRequired\(\)&&type==='working'/, 'Manager Working Now details must remain server authoritative');
 assert.match(liveStatusAuthority, /window\.addEventListener\('zukait-live-status',apply\)/, 'live status updates must immediately reconcile Manager/Supervisor UI');
-assert.match(liveStatusAuthority, /setInterval\(apply,1000\)/, 'Manager/Supervisor live UI must keep the one-second reconciliation cadence');
+assert.doesNotMatch(liveStatusAuthority, /setInterval\(apply,1000\)/, 'Manager/Supervisor live UI must be event-driven and must not repaint the dashboard every second');
+assert.match(liveStatusAuthority, /addEventListener\('zukait-live-status',apply\)/, 'Manager/Supervisor live UI must refresh from authoritative live-status events');
 assert.match(supervisorStable, /if\(window\.me&&navigator\.onLine&&window\.me\.role==='Supervisor'\)return\[\]/, 'authoritative Supervisor renderer must not use local activeSession fallback while online');
 assert.match(supervisorStable, /Today at a Glance[\s\S]*Active Workers[\s\S]*Working Now[\s\S]*Paused Jobs[\s\S]*Finished Jobs[\s\S]*Over Allocated[\s\S]*Ready for Delivery/, 'Supervisor stable renderer must retain the approved six-card Today at a Glance layout');
 assert.match(supervisorStable, /\.v143-glance\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, 'Supervisor Today at a Glance must remain a 3-column by 2-row grid');
