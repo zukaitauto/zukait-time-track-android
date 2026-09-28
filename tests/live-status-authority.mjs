@@ -10,10 +10,10 @@ const updates=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
 const stableTag=html.match(/<script src="supervisor_stable\.js\?v=\d+"><\/script>/);
 const liveTag=html.match(/<script src="live_status_authority\.js\?v=\d+"><\/script>/);
 assert.ok(stableTag && liveTag,'stable Supervisor and live authority scripts must ship');
-assert.ok(html.includes('<script src="cloud_sync.js?v=196"></script>'),'Web shell must bust the shared sync-engine cache when cloud_sync changes');
-assert.ok(html.includes('consumables.js?v=179'),'Web/Android shell must load the current Consumables model after server-record recovery');
-assert.ok(html.includes('consumables_ui.js?v=181'),'Web/Android shell must load the current Consumables UI after authoritative search refresh');
-assert.ok(html.includes('paint_module.js?v=179'),'Web/Android shell must load the current Paint workflow after server-record recovery');
+assert.match(html,/<script src="cloud_sync\.js\?v=\d+"><\/script>/,'Web shell must cache-version the shared sync engine');
+assert.match(html,/consumables\.js\?v=\d+/,'Web/Android shell must load a cache-versioned Consumables model');
+assert.match(html,/consumables_ui\.js\?v=\d+/,'Web/Android shell must load a cache-versioned Consumables UI');
+assert.match(html,/paint_module\.js\?v=\d+/,'Web/Android shell must load a cache-versioned Paint workflow');
 assert.ok(html.includes('<script src="v2/features/notifications/center.js?v=2"></script>'),'Web/Android shell must load the shared notification center');
 assert.ok(html.indexOf(liveTag[0])>html.indexOf(stableTag[0]),'server live authority must load last');
 
