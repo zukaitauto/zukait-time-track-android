@@ -759,10 +759,10 @@ assert.match(consumablesUi, /Additional Materials/, 'Supervisor Painting menu mu
 assert.match(consumablesUi, /Search Material List/, 'Supervisor Painting menu must retain Search Material List');
 assert.match(consumablesUi, /SUGGESTED \/ ISSUED/, 'Search Material List must expose a dedicated Suggested / Issued view');
 assert.match(consumablesUi, /ACTUAL MATERIALS/, 'Search Material List must expose a dedicated Actual Materials view');
-assert.match(consumablesUi, /Price \(OMR\)/, 'Search Material prices must declare currency in the column header');
-assert.match(consumablesUi, /Material Cost \(OMR\)/, 'Suggested / Issued must show material cost in its own column');
-assert.match(consumablesUi, /Actual Cost \(OMR\)/, 'Actual Materials must show finalized actual cost in its own column');
-assert.match(consumablesUi, /Total Material Cost \(OMR\)/, 'Each material list must place total material cost at the bottom');
+assert.match(consumablesUi, /Price \(⃄\)/, 'Search Material prices must declare currency in the column header');
+assert.match(consumablesUi, /Material Cost \(⃄\)/, 'Suggested / Issued must show material cost in its own column');
+assert.match(consumablesUi, /Actual Cost \(⃄\)/, 'Actual Materials must show finalized actual cost in its own column');
+assert.match(consumablesUi, /Total Material Cost \(⃄\)/, 'Each material list must place total material cost at the bottom');
 assert.doesNotMatch(consumablesUi, /Based on current material price/, 'Suggested / Issued must keep the agreed clean cost wording');
 assert.match(consumablesUi, /MATERIAL COST/, 'Suggested / Issued must retain a clear material-cost label');
 assert.doesNotMatch(consumablesUi, /Approx\./, 'Search Material must not use Approx wording');
