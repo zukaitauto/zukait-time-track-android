@@ -1639,7 +1639,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
   };
   wrap();
   document.addEventListener('DOMContentLoaded',()=>{wrap();ensureManagerSparePartsCard();setTimeout(refreshManagerSparePartsSummary,500);setTimeout(refreshManagerSparePartsSummary,1500);});
-  new MutationObserver(()=>{wrap();ensureManagerSparePartsCard();}).observe(document.documentElement,{childList:true,subtree:true});
+  let sparePartsObserverPending=false;const scheduleSparePartsCard=()=>{if(sparePartsObserverPending)return;sparePartsObserverPending=true;requestAnimationFrame(()=>{sparePartsObserverPending=false;wrap();ensureManagerSparePartsCard();})};new MutationObserver(scheduleSparePartsCard).observe(document.documentElement,{childList:true,subtree:true});
 })();
 </script>
 
