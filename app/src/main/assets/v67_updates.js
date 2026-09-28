@@ -98,7 +98,7 @@ function renderManager67(){
  const el=document.getElementById('managerView');if(!el||!me||me.role!=='Manager')return;
  const c=controlCounts();
  if(el.classList.contains('hidden'))el.classList.remove('hidden');
- el.innerHTML=smallHeader()+
+ // Manager identity/menu is owned by the final V135 header authority; do not render a second Manager/ONLINE header.\n el.innerHTML=
  '<div class="v67-first-row">'+
  featureCard('blue','Employee Requests',requestCount(),'New / pending requests','v65OpenRequests()')+
  featureCard('rose','Attention',attentionCount(),'Jobs needing review','v66OpenAttention()')+
