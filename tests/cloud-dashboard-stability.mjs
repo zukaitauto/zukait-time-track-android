@@ -3,7 +3,8 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const src=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
-const helperBegin=src.indexOf('  function roleStructuralSnapshot');\nconst begin=src.indexOf('  async function pull(force){');
+const helperBegin=src.indexOf('  function roleStructuralSnapshot');
+const begin=src.indexOf('  async function pull(force){');
 const end=src.indexOf('  async function probeRevision(){',begin);
 assert.ok(begin>=0&&end>begin);
 const pullSource=src.slice(helperBegin,begin)+src.slice(begin,end);
