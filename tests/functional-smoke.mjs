@@ -667,7 +667,8 @@ assert.match(updates,/V111 MANAGER LAYOUT AUTHORITY/,'Manager V111 layout author
 assert.match(updates,/window\.v111OpenManagerMenu=function/,'Manager header must own an explicit menu function');
 assert.match(updates,/closeModal\(\);logout\(\)/,'Manager menu must always expose Logout');
 assert.match(updates,/v111-manager-header/,'Manager header must be recreated by final authority');
-assert.match(updates,/const prevManager=window\.renderManager/,'Manager header authority must hook the final Manager renderer');
+assert.match(updates,/window\.v111ApplyManagerLegacy=apply/,'legacy Manager header helper must remain available without wrapping the final renderer');
+assert.match(updates,/window\.v156SettleManagerUI=settle/,'V156 must own the final Manager post-render authority');
 assert.doesNotMatch(updates,/setTimeout\(settle,60\)/,'legacy Manager delayed settle loop must remain retired to prevent dashboard blinking');
 assert.match(updates,/v111-manager-leave/,'standalone Manager Leave Management card must exist');
 assert.match(updates,/v133OpenManagerLeave/,'Leave Management card must open the full leave manager');
