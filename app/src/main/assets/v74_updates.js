@@ -2099,6 +2099,21 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.zukaitStatusColourClass=function(v){const x=String(v||'').toLowerCase();if(x.includes('overtime'))return'z-status z-status-overtime';if(x.includes('attention')||x.includes('over suggested')||x.includes('over allocated'))return'z-status z-status-attention';if(x.includes('pause'))return'z-status z-status-paused';if(x.includes('complete')||x.includes('finish'))return'z-status z-status-completed';if(x.includes('work')||x.includes('start')||x.includes('active')||x.includes('running'))return'z-status z-status-working';return'z-status z-status-available'};
 })();
 
+/* V184 GLOBAL EMPLOYEE COLOUR AUTHORITY — same employee identity colours everywhere. */
+(function(){'use strict';
+ function norm(v){return String(v||'').trim().toLowerCase()}
+ function findUser(text){const t=norm(text);if(!t)return null;return (window.users||[]).find(u=>u&&['Employee','Supervisor'].includes(u.role)&&(norm(u.name)===t||norm(u.id)===t))||null}
+ function colour(el,u){if(!el||!u)return;const cls=typeof window.zukaitEmployeeColourClass==='function'?window.zukaitEmployeeColourClass(u.id):'z-emp';el.classList.add(...cls.split(' ').filter(Boolean));el.dataset.zukaitEmployeeColour='1'}
+ function mark(root){if(!root)return;
+   root.querySelectorAll('[data-emp],[data-employee],[data-employee-id],[data-technician],[data-tech]').forEach(el=>{const id=el.dataset.emp||el.dataset.employee||el.dataset.employeeId||el.dataset.technician||el.dataset.tech;const u=(window.users||[]).find(x=>x&&String(x.id)===String(id))||findUser(el.textContent);colour(el,u)});
+   root.querySelectorAll('td,th,button,.pill,.badge,.chip,.name,.employee,.technician,strong,b,span,label,option').forEach(el=>{if(el.dataset.zukaitEmployeeColour)return;const raw=String(el.textContent||'').trim();if(!raw||raw.length>80)return;let u=findUser(raw);if(!u){const us=(window.users||[]).filter(x=>x&&['Employee','Supervisor'].includes(x.role)&&norm(x.name)&&norm(raw).includes(norm(x.name)));if(us.length===1)u=us[0]}if(u)colour(el,u)});
+ }
+ function apply(){mark(document.getElementById('managerView'));mark(document.getElementById('supervisorView'));mark(document.getElementById('employeeView'));document.querySelectorAll('.modal,.modal-content,.popup,.dialog,[role="dialog"]').forEach(mark)}
+ const obs=new MutationObserver(()=>setTimeout(apply,0));function start(){if(document.body)obs.observe(document.body,{childList:true,subtree:true});setTimeout(apply,0)}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+ window.v184ApplyGlobalEmployeeColours=apply;
+})();
+
 /* V147 MANAGER + SUPERVISOR DETAIL READABILITY — popups, safe wrapping and touch targets. */
 (function(){'use strict';
  if(document.getElementById('v147DashboardDetailReadability'))return;
