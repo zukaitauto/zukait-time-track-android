@@ -81,3 +81,9 @@ assert.doesNotMatch(v74,/\[0,80,250\]\.forEach\(ms=>setTimeout\(bind,ms\)\)/,'le
 assert.match(v74,/window\.v156SettleManagerUI=settle/,'V156 must remain the final Manager UI authority');
 assert.match(v74,/window\.v144BindManagerConsumables\?\.\(\)/,'V156 must invoke the consumables binder in its single settle pass');
 console.log('Manager repaint stability: legacy settle loops retired under V156');
+
+// Role isolation: active Manager finalizers must never mutate or expose Supervisor root.
+assert.match(v74,/mark\(document\.getElementById\(me\.role==='Manager'\?'managerView':'supervisorView'\)\)/,'shared colour finalizer must target only the active Manager/Supervisor root');
+assert.match(v74,/const sup=document\.getElementById\('supervisorView'\);if\(sup&&!sup\.classList\.contains\('hidden'\)\)sup\.classList\.add\('hidden'\)/,'V156 must keep Supervisor root hidden during Manager rendering');
+assert.match(v74,/v135-action logout[\s\S]*?closeModal\(\);logout\(\)/,'Manager account menu must retain a working Logout action');
+console.log('Manager/Supervisor role isolation and Logout regression guards: OK');
