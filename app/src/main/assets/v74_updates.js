@@ -2907,7 +2907,7 @@ window.v2TogglePilotThisDevice=function(){
    // Reapply every additive Manager module after the base renderer. This keeps the
    // stable V67 control center while restoring newer Manager features deterministically.
    try{window.v123ApplyManagerPerformance?.()}catch(_){}
-   try{window.v145ApplyManagerConsumablesPerformance?.()}catch(_){}
+   try{window.v145ApplyConsumablesPerformance?.()}catch(_){}
    try{window.v154ApplyManagerWorkshopControl?.()}catch(_){}
    try{window.v144BindManagerConsumables?.()}catch(_){}
    try{window.v184ApplyManagerOutputNavigation?.()}catch(_){}
