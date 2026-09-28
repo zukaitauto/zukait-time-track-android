@@ -94,3 +94,4 @@ node tests/cloud-dashboard-stability.mjs
 node tests/dashboard-render-visibility.mjs
 node tests/dashboard-display-check.mjs
 node tests/workshop-overview.cjs
+node tests/v200-manager-workshop-overview-placement.mjs
