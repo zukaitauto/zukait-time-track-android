@@ -2920,9 +2920,9 @@ window.v2TogglePilotThisDevice=function(){
  }
  window.v156SettleManagerUI=settle;
  window.v156ManagerSparePartsInvariant=function(){settle();const root=document.getElementById('managerView'),grid=root?.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid');return !!(grid&&grid.querySelector('[data-v154-spare]'))};
- const prior=window.render;window.render=function(){const r=typeof prior==='function'?prior.apply(this,arguments):undefined;if(window.me&&me.role==='Manager')setTimeout(settle,0);return r};
- const pm=window.renderManager;if(typeof pm==='function'&&!pm.__v156){const fn=function(){const r=pm.apply(this,arguments);setTimeout(settle,0);return r};fn.__v156=true;window.renderManager=fn}
- setTimeout(settle,0);window.v156ManagerUIAuthority=true;
+ const prior=window.render;window.render=function(){const r=typeof prior==='function'?prior.apply(this,arguments):undefined;if(window.me&&me.role==='Manager')settle();return r};
+ const pm=window.renderManager;if(typeof pm==='function'&&!pm.__v156){const fn=function(){const r=pm.apply(this,arguments);settle();return r};fn.__v156=true;window.renderManager=fn}
+ settle();window.v156ManagerUIAuthority=true;
 })();
 /* V148 SUPERVISOR UI ORGANISATION RETIRED.
    The authoritative Supervisor renderer now owns the approved top row, Quick Entry,
