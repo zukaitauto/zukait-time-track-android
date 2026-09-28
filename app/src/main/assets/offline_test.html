@@ -1691,6 +1691,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 (function(){'use strict';
   function compose(){
     if(!window.me||me.role!=='Manager')return;
+    try{window.v74ApplyManagerFinal?.()}catch(e){console.error('Manager polish',e)}
     try{window.v156SettleManagerUI?.()}catch(e){console.error('Manager composition',e)}
     try{window.ensureManagerSparePartsCard?.()}catch(e){}
     try{window.refreshManagerSparePartsSummary?.()}catch(e){}
