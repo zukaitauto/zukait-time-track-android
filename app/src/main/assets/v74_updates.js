@@ -2893,6 +2893,7 @@ window.v2TogglePilotThisDevice=function(){
 /* V156 FINAL MANAGER UI AUTHORITY — one post-render owner for Manager layout and launchers. */
 (function(){'use strict';
  function settle(){if(!window.me||me.role!=='Manager')return;const root=document.getElementById('managerView');if(!root)return;
+   if(!root.querySelector('.v111-manager-header')){try{window.v111ApplyManagerLegacy?.()}catch(_){}}
    try{window.v154ApplyManagerWorkshopControl?.()}catch(_){}
    try{window.v144BindManagerConsumables?.()}catch(_){}
    const grid=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid');
