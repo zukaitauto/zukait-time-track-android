@@ -2082,7 +2082,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 (function(){'use strict';
  function mark(root){if(!root)return;const us=window.users||[];root.querySelectorAll('tr').forEach(tr=>{const cells=tr.querySelectorAll('td');if(!cells.length)return;const text=(cells[0]?.textContent||'').trim();const u=us.find(x=>x&&x.role==='Employee'&&(String(x.name||'').trim()===text||String(x.id||'').trim()===text));if(u&&cells[0]){const cls=typeof window.zukaitEmployeeColourClass==='function'?window.zukaitEmployeeColourClass(u.id):'z-emp';const target=cells[0].querySelector('b,strong,span')||cells[0];target.classList.add(...cls.split(' ').filter(Boolean))}cells.forEach(td=>{const v=(td.textContent||'').trim();if(/^(Working|Started|Running|Paused|Overtime|Available|Not Started|New|Completed|Finished|Attention|Over Suggested|Over Allocated)$/i.test(v)){const cls=typeof window.zukaitStatusColourClass==='function'?window.zukaitStatusColourClass(v):'';if(cls){const target=td.querySelector('span,b,strong')||td;target.classList.add(...cls.split(' ').filter(Boolean))}}})})}
  function apply(){if(!window.me||!['Manager','Supervisor'].includes(me.role))return;mark(document.getElementById('managerView'));mark(document.getElementById('supervisorView'));document.querySelectorAll('.modal,.modal-content,.popup,.dialog,[role="dialog"]').forEach(mark)}
- const obs=new MutationObserver(()=>setTimeout(apply,0));obs.observe(document.body,{childList:true,subtree:true});window.v149ApplySharedColours=apply;setTimeout(apply,0);
+ let v149Pending=false;const obs=new MutationObserver(()=>{if(v149Pending)return;v149Pending=true;requestAnimationFrame(()=>{v149Pending=false;apply()})});obs.observe(document.body,{childList:true,subtree:true});window.v149ApplySharedColours=apply;setTimeout(apply,0);
 })();
 
 /* V148 SHARED VISUAL AUTHORITY — operational status + employee department identity. */
@@ -2110,7 +2110,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    root.querySelectorAll('td,th,button,.pill,.badge,.chip,.name,.employee,.technician,strong,b,span,label,option').forEach(el=>{if(el.dataset.zukaitEmployeeColour)return;const raw=String(el.textContent||'').trim();if(!raw||raw.length>80)return;let u=findUser(raw);if(!u){const us=(window.users||[]).filter(x=>x&&['Employee','Supervisor'].includes(x.role)&&norm(x.name)&&norm(raw).includes(norm(x.name)));if(us.length===1)u=us[0]}if(u)colour(el,u)});
  }
  function apply(){mark(document.getElementById('managerView'));mark(document.getElementById('supervisorView'));mark(document.getElementById('employeeView'));document.querySelectorAll('.modal,.modal-content,.popup,.dialog,[role="dialog"]').forEach(mark)}
- const obs=new MutationObserver(()=>setTimeout(apply,0));function start(){if(document.body)obs.observe(document.body,{childList:true,subtree:true});setTimeout(apply,0)}
+ let v184Pending=false;const obs=new MutationObserver(()=>{if(v184Pending)return;v184Pending=true;requestAnimationFrame(()=>{v184Pending=false;apply()})});function start(){if(document.body)obs.observe(document.body,{childList:true,subtree:true});setTimeout(apply,0)}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
  window.v184ApplyGlobalEmployeeColours=apply;
 })();
@@ -2808,8 +2808,7 @@ window.v2TogglePilotThisDevice=function(){
  }
  const prior=window.v115RefreshLiveWorkers;
  window.v115RefreshLiveWorkers=function(){if(typeof prior==='function')prior();reconcileUI()};
- setInterval(reconcileUI,1000);
- setTimeout(reconcileUI,0);
+ // SERVER LIVE is the sole periodic status authority. Reconcile only when its snapshot changes.\n window.addEventListener('zukait-live-status',reconcileUI);\n setTimeout(reconcileUI,0);
 })();
 
 
