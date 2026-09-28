@@ -2885,8 +2885,8 @@ window.v2TogglePilotThisDevice=function(){
      b.removeAttribute('onclick');b.onclick=e=>{e.preventDefault();e.stopPropagation();open()};b.dataset.v144Consumables='1';
    });
  }
- const prior=window.render;window.render=function(){const r=typeof prior==='function'?prior.apply(this,arguments):undefined;[0,80,250].forEach(ms=>setTimeout(bind,ms));return r};
- [0,100,300,700].forEach(ms=>setTimeout(bind,ms));
+ window.v144BindManagerConsumables=bind;
+ setTimeout(bind,0);
  window.v144ManagerConsumablesAuthority=true;
 })();
 
@@ -2894,6 +2894,7 @@ window.v2TogglePilotThisDevice=function(){
 (function(){'use strict';
  function settle(){if(!window.me||me.role!=='Manager')return;const root=document.getElementById('managerView');if(!root)return;
    try{window.v154ApplyManagerWorkshopControl?.()}catch(_){}
+   try{window.v144BindManagerConsumables?.()}catch(_){}
    const grid=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid');
    const cons=[...root.querySelectorAll('.v65-consumables,.v66-consumables,.v67-consumables,.v139-manager-consumables,.v141-manager-consumables,[data-v144-consumables]')];
    if(cons.length){const keep=cons.find(x=>grid&&x.parentElement===grid)||cons[0];cons.filter(x=>x!==keep).forEach(x=>x.remove());if(grid&&keep.parentElement!==grid)grid.insertBefore(keep,grid.firstChild);keep.type='button';keep.removeAttribute('onclick');keep.onclick=e=>{e.preventDefault();e.stopPropagation();if(typeof window.v144OpenManagerConsumables==='function')window.v144OpenManagerConsumables()}}
