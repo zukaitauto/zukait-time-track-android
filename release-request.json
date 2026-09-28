@@ -1,8 +1,8 @@
 {
-  "versionName": "V200",
-  "versionCode": 163,
+  "versionName": "V201",
+  "versionCode": 164,
   "approvedForStaff": true,
   "approvedAt": "2026-09-28",
-  "sourceCommit": "7b9e0d669298efa6366d2fa45d746c18f0b31806",
-  "publishNonce": "release-v200-manager-v202-verified-20260928-r1"
+  "sourceCommit": "f6d3b09f27542bcc6046845741d52eb51dc45b92",
+  "publishNonce": "release-v201-manager-organization-verified-20260928-r1"
 }
