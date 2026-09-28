@@ -1,8 +1,8 @@
 {
-  "versionName": "V193",
-  "versionCode": 156,
+  "versionName": "V194",
+  "versionCode": 157,
   "approvedForStaff": true,
   "approvedAt": "2026-09-28",
-  "sourceCommit": "3bba0b3ecea204138cef957869a9e3ff6b6cced9",
-  "publishNonce": "release-v193-runtime-stability-20260928"
+  "sourceCommit": "40f242c4aaf86d06211e58a7cdebea0b47947958",
+  "publishNonce": "release-v194-manager-role-isolation-20260928"
 }
