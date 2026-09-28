@@ -1,8 +1,8 @@
 {
-  "versionName": "V190",
-  "versionCode": 153,
+  "versionName": "V191",
+  "versionCode": 154,
   "approvedForStaff": true,
   "approvedAt": "2026-09-28",
-  "sourceCommit": "60676594ed864979135d96693fa3fb348d9c03df",
-  "publishNonce": "release-v190-single-sync-workshop-controls-20260928"
+  "sourceCommit": "2fa600fb2ba04e1ceefcfb70638a4408237e8ffa",
+  "publishNonce": "release-v191-display-check-network-labels-20260928"
 }
