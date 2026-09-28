@@ -10,14 +10,14 @@ assert.ok(begin>=0&&end>begin);
 const helperEnd=src.indexOf('  function status(',helperBegin);
 const pullSource=src.slice(helperBegin,helperEnd)+src.slice(begin,end);
 
-async function run(remote,initial,baseline=null,afterPull=null){
+async function run(remote,initial,baseline=null,afterPull=null,who={role:'Employee',id:'EMP1'}){
   const statuses=[];
   let renders=0;
   const ctx={
     state:structuredClone(initial),cloudRevision:1,cloudDirty:false,pullInFlight:false,
     initialDone:true,lastSyncedState:baseline,lastSuccessfulSyncAt:0,lastSyncError:'',
     consecutiveSyncErrors:0,conflictAlerted:false,cloudApplying:false,
-    me:{role:'Employee',id:'EMP1'},navigator:{onLine:true},document:{visibilityState:'visible'},REV_KEY:'revision',
+    me:who,navigator:{onLine:true},document:{visibilityState:'visible'},REV_KEY:'revision',
     localStorage:{setItem(){}},sessionToken:()=>true,
     status:(s)=>statuses.push(s),clone:structuredClone,
     api:async()=>({ok:true,revision:2,data:remote}),
@@ -41,7 +41,15 @@ const afterHook=await run({jobs:[{no:'JC1'}]},{jobs:[{no:'JC1'}]},{jobs:[{no:'JC
 assert.equal(afterHook.renders,0,'a sync hook must not cause a redraw when server data is unchanged');
 assert.equal(afterHook.lastSyncedState.localSessionAdjustment,undefined,'the comparison baseline must remain the authoritative server snapshot');
 
-const changed=await run({jobs:[{no:'JC1'},{no:'JC2'}]},{jobs:[{no:'JC1'}]});
-assert.equal(changed.renders,1,'a real shared update must still refresh the dashboard');
-assert.equal(changed.state.jobs.length,2,'a real update must be applied');
-console.log('Cloud dashboard stability: identical, locally adjusted, and changed server snapshots passed');
+const unrelated=await run({jobs:[{no:'JC1'},{no:'JC2'}],assign:[{id:'A2',job:'JC2',emp:'EMP2'}]},{jobs:[{no:'JC1'}],assign:[]});
+assert.equal(unrelated.renders,0,'unrelated workshop job changes must not rebuild an Employee dashboard');
+assert.equal(unrelated.state.jobs.length,2,'unrelated shared updates must still enter local state');
+
+const own=await run({jobs:[{no:'JC1'}],assign:[{id:'A1',job:'JC1',emp:'EMP1'}]},{jobs:[{no:'JC1'}],assign:[]});
+assert.equal(own.renders,1,'an Employee assignment change must refresh that Employee dashboard');
+
+const manager=await run({jobs:[{no:'JC1'},{no:'JC2'}],assign:[{id:'A2',job:'JC2',emp:'EMP2'}]},{jobs:[{no:'JC1'}],assign:[]},null,null,{role:'Manager',id:'MGR'});
+assert.equal(manager.renders,0,'remote workshop churn must not tear down the Manager dashboard root');
+const supervisor=await run({jobs:[{no:'JC1'},{no:'JC2'}],assign:[{id:'A2',job:'JC2',emp:'EMP2'}]},{jobs:[{no:'JC1'}],assign:[]},null,null,{role:'Supervisor',id:'SUP'});
+assert.equal(supervisor.renders,0,'remote workshop churn must not tear down the Supervisor dashboard root');
+console.log('Cloud dashboard stability: mounted role roots and Employee-scoped structural updates passed');
