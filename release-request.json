@@ -1,8 +1,8 @@
 {
-  "versionName": "V186",
-  "versionCode": 149,
+  "versionName": "V187",
+  "versionCode": 150,
   "approvedForStaff": true,
   "approvedAt": "2026-09-28",
-  "sourceCommit": "d34400d51090293a0b99b2c3fa9ed31cee3fbdef",
-  "publishNonce": "release-v186-employee-id001-smooth-20260928"
+  "sourceCommit": "3033866bc9737a4283fac0c4c558e6b3e1b4010a",
+  "publishNonce": "release-v187-shared-dashboard-redraw-20260928"
 }
