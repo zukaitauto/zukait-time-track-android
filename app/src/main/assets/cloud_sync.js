@@ -553,6 +553,7 @@
           // Preserve server-side rebase/reconciliation while replaying only the
           // newer local delta on top. This prevents an in-flight acknowledgement
           // from erasing the user's second click or overwriting another device.
+          const beforeAckRender=clone(state||{});
           const pendingSnapshot=payloadState();
           const mergedPending=me?.role==='Employee'
             ? mergeEmployeeConflict(authoritativeSnapshot,pendingSnapshot,me.id)
@@ -564,17 +565,18 @@
           try{localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:payloadState()}))}catch(_){}
           status('SAVING LATEST CHANGE…','info');
           followupPush=true;
-          if(me)try{render()}catch(_){}
+          scheduleDashboardRender(beforeAckRender,state);
         }else{
           localStorage.removeItem(DIRTY_KEY);
           localStorage.removeItem(PENDING_KEY);
           cloudDirty=false;
           if(r.data&&typeof r.data==='object'){
+            const beforeAckRender=clone(state||{});
             cloudApplying=true;
             try{normalizeRemote(r.data);reconcileConsumablesDuplicates(state);persistLocal()}finally{cloudApplying=false}
             if(me?.role==='Employee')finalizeEmployeeOfflineMarkers(state,me.id);
             lastSyncedState=clone(state||{});
-            if(me)try{render()}catch(_){}
+            scheduleDashboardRender(beforeAckRender,state);
           }
           status('SYNCED','ok');
           conflictAlerted=false;
@@ -592,6 +594,7 @@
           ? mergeEmployeeConflict(remote,localSnapshot,me.id)
           : threeWayMerge(base,remote,localSnapshot);
         try{if(me?.role==='Employee')window.zukaitV2?.reconnectAudit?.record?.({assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:cloudRevision,syncState:'pending'},{assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:Number(r.revision||cloudRevision)},'LEGACY_CONFLICT_MERGE')}catch(e){console.warn('V2 reconnect shadow audit skipped',e)}
+        const beforeConflictRender=clone(state||{});
         cloudApplying=true;
         try{state=merged;ensureShape();persistLocal()}finally{cloudApplying=false}
         cloudRevision=Number(r.revision||cloudRevision);
@@ -600,7 +603,7 @@
         cloudDirty=true;
         localStorage.setItem(DIRTY_KEY,'1');
         status('SYNCING LATEST CHANGES…','info');
-        if(me)try{render()}catch(_){}
+        scheduleDashboardRender(beforeConflictRender,state);
         if(retry<3){
           cloudPushing=false;
           return await push(retry+1);
