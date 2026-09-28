@@ -293,7 +293,6 @@
   window.addEventListener('online',apply);
   window.addEventListener('focus',apply);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)apply()});
-  setInterval(apply,1000);
-  setTimeout(apply,0);
+  // Event-driven only. A one-second whole-dashboard DOM pass caused visible\n  // repaint/observer storms in Web and Android. Running clocks have their own\n  // narrow timers; server status is applied when a fresh snapshot arrives.\n  setTimeout(apply,0);
   window.zukaitLiveStatusAuthority={apply,rows:()=>rows(),fresh:()=>!!live()};
 })();
