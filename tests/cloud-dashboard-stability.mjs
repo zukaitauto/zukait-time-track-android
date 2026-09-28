@@ -53,3 +53,12 @@ assert.equal(manager.renders,0,'remote workshop churn must not tear down the Man
 const supervisor=await run({jobs:[{no:'JC1'},{no:'JC2'}],assign:[{id:'A2',job:'JC2',emp:'EMP2'}]},{jobs:[{no:'JC1'}],assign:[]},null,null,{role:'Supervisor',id:'SUP'});
 assert.equal(supervisor.renders,0,'remote workshop churn must not tear down the Supervisor dashboard root');
 console.log('Cloud dashboard stability: mounted role roots and Employee-scoped structural updates passed');
+
+// Sync acknowledgements/conflict reconciliation must route through the structural render gate.
+const cloudSrc=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
+const pushStart=cloudSrc.indexOf('  async function push('),pushEnd=cloudSrc.indexOf('  function schedulePush',pushStart);
+const pushBlock=cloudSrc.slice(pushStart,pushEnd);
+assert.doesNotMatch(pushBlock,/if\(me\)try\{render\(\)\}/,'push acknowledgements must never directly rebuild dashboard roots');
+assert.match(pushBlock,/scheduleDashboardRender\(beforeAckRender,state\)/,'successful acknowledgements must use the structural render gate');
+assert.match(pushBlock,/scheduleDashboardRender\(beforeConflictRender,state\)/,'conflict reconciliation must use the structural render gate');
+console.log('Cloud push stability: acknowledgements cannot directly rebuild dashboards');
