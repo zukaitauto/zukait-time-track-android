@@ -92,4 +92,5 @@ node tests/v145-manager-consumables-expense-detail.mjs
 node tests/dashboard-mutation-stability.mjs
 node tests/cloud-dashboard-stability.mjs
 node tests/dashboard-render-visibility.mjs
+node tests/dashboard-display-check.mjs
 node tests/workshop-overview.cjs

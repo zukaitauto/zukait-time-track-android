@@ -335,7 +335,7 @@ function correctSession(no,emp){let ss=state.sessions.filter(s=>s.job===no&&s.em
 function auditTable(){if(!state.corrections.length&&!state.jobEdits.length)return '<p class="muted">No manager corrections yet.</p>';return '<div>'+state.corrections.map(c=>'<div class="audit"><b>Time correction</b> · '+new Date(c.at).toLocaleString()+' · Manager: '+user(c.by).name+'<br>Original: '+new Date(c.oldStart).toLocaleString()+' → '+new Date(c.oldEnd).toLocaleString()+'<br>Corrected: '+new Date(c.newStart).toLocaleString()+' → '+new Date(c.newEnd).toLocaleString()+'<br>Reason: '+c.reason+'</div>').join('')+state.jobEdits.map(c=>'<div class="audit"><b>Job/vehicle correction</b> · '+new Date(c.at).toLocaleString()+' · Manager: '+user(c.by).name+'<br>Original: '+c.old.no+' / '+c.old.vehicle+' / '+c.old.reg+'<br>Corrected: '+c.newValue.no+' / '+c.newValue.vehicle+' / '+c.newValue.reg+'</div>').join('')+'</div>'}
 function suggestedAudit(){return state.suggestedEdits.length?'<table><tr><th>Job</th><th>Employee</th><th>Old</th><th>New</th><th>Changed By</th><th>Source</th><th>Time</th></tr>'+state.suggestedEdits.slice().reverse().map(c=>'<tr><td>'+c.job+'</td><td>'+user(c.emp).name+'</td><td>'+fmt(c.old)+'</td><td>'+fmt(c.newValue)+'</td><td>'+user(c.by).name+'</td><td>'+c.source+'</td><td>'+new Date(c.at).toLocaleString()+'</td></tr>').join('')+'</table>':'<p class="muted">No Suggested Time changes yet.</p>'}
 function exportCSV(){let rows=[['Employee','Job Card','Vehicle Details','Registration','Status','Suggested Minutes','Actual Minutes','Difference','Efficiency %']];state.assign.forEach(a=>{let j=job(a.job),ac=total(a.job,a.emp),e=eff(a.job,a.emp);rows.push([user(a.emp).name,a.job,j.vehicle,j.reg,empStatus(a),a.suggested,Math.round(ac),Math.round(ac-a.suggested),e==null?'':e.toFixed(1)])});let csv=rows.map(r=>r.map(x=>'"'+String(x).replaceAll('"','""')+'"').join(',')).join('\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='zukait-time-report.csv';a.click()}
-function resetData(){if(confirm('Reset all local test data?')){localStorage.removeItem(KEY);location.reload()}} window.addEventListener('online',render);window.addEventListener('offline',render);
+function resetData(){if(confirm('Reset all local test data?')){localStorage.removeItem(KEY);location.reload()}} function refreshNetworkLabels(){const offline=!navigator.onLine,status=document.getElementById('headerOnlineStatus'),header=document.getElementById('headerOnlineText'),net=document.getElementById('net');if(status&&status.classList.contains('is-offline')!==offline)status.classList.toggle('is-offline',offline);const label=offline?'Offline':'Online';if(header&&header.textContent!==label)header.textContent=label;const netLabel=offline?'OFFLINE':'Online';if(net&&net.textContent!==netLabel)net.textContent=netLabel}window.addEventListener('online',refreshNetworkLabels);window.addEventListener('offline',refreshNetworkLabels);
 
 function toggleEmployeeRequests(){let x=document.getElementById('employeeRequestList');if(x)x.classList.toggle('hidden')}
 function assignmentCreatedTime(a){return a.assignedAt||a.createdAt||0}
@@ -1653,8 +1653,8 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 <script src="production_pilot.js?v=81"></script>
 <script src="professional_ux.js?v=81"></script>
 <script src="v54_improvements.js?v=187"></script>
-<script src="v63_updates.js?v=81"></script>
-<script src="v65_updates.js?v=122"></script>
+<script src="v63_updates.js?v=191"></script>
+<script src="v65_updates.js?v=191"></script>
 <script src="v66_updates.js?v=122"></script>
 <script src="v67_updates.js?v=189"></script>
 <script src="v68_updates.js?v=81"></script>
@@ -1670,5 +1670,6 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 
 <script src="workshop_overview.js?v=190"></script>
 <script src="v2/features/estimate/main_module.js?v=148"></script>
+<script src="dashboard_diagnostics.js?v=191"></script>
 </body>
 </html>

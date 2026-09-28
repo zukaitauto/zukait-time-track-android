@@ -13,6 +13,7 @@ test -s app/src/main/assets/v69_updates.js
 test -s app/src/main/assets/v74_updates.js
 test -s app/src/main/assets/supervisor_stable.js
 test -s app/src/main/assets/live_status_authority.js
+test -s app/src/main/assets/dashboard_diagnostics.js
 test -s app/src/main/assets/job_cost_summary_v128.js
 test -s app/src/main/res/drawable/app_icon.webp
 test -s app/src/main/res/drawable/app_logo.webp
