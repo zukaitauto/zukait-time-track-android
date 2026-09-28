@@ -91,3 +91,4 @@ node tests/v181-manager-performance-cost-drilldown.mjs
 node tests/v145-manager-consumables-expense-detail.mjs
 node tests/dashboard-mutation-stability.mjs
 node tests/cloud-dashboard-stability.mjs
+node tests/dashboard-render-visibility.mjs

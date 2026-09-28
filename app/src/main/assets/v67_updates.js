@@ -97,7 +97,7 @@ function toolBox(cls,title,sub,buttons){
 function renderManager67(){
  const el=document.getElementById('managerView');if(!el||!me||me.role!=='Manager')return;
  const c=controlCounts();
- el.classList.remove('hidden');
+ if(el.classList.contains('hidden'))el.classList.remove('hidden');
  el.innerHTML=smallHeader()+
  '<div class="v67-first-row">'+
  featureCard('blue','Employee Requests',requestCount(),'New / pending requests','v65OpenRequests()')+

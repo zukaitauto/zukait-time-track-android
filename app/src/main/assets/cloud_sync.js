@@ -416,18 +416,20 @@
     const remoteRev=Number(r.revision||0);
     if(force||remoteRev!==cloudRevision){
       // A forced refresh may return the same snapshot (for example on focus).
-      // Replacing every role dashboard in that case visibly flashes the UI.
+      // Render helpers may adjust the local cache without creating a new server
+      // revision. Compare with the last server snapshot, not that mutable cache.
+      const previousSnapshot=lastSyncedState||before;
       cloudApplying=true;
       try{
         normalizeRemote(r.data);
         cloudRevision=remoteRev;
         localStorage.setItem(REV_KEY,String(cloudRevision));
       }finally{cloudApplying=false}
-      const changed=JSON.stringify(before)!==JSON.stringify(state);
+      const changed=JSON.stringify(previousSnapshot)!==JSON.stringify(state);
+      lastSyncedState=clone(state||{});
       if(typeof window.v42AfterCloudPull==='function'){
         try{window.v42AfterCloudPull(before,clone(state),r)}catch(e){console.warn('Notification hook failed',e)}
       }
-      lastSyncedState=clone(state||{});
       if(changed&&me)try{render()}catch(e){console.error('Render after sync failed',e)}
     } else if(!lastSyncedState) {
       lastSyncedState=clone(state||{});
