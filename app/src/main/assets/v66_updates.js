@@ -174,7 +174,15 @@ function cleanManagerDuplicates(){
 }
 function decorateAccount(){
  const app=document.getElementById('app'),row=app?.querySelector(':scope > .row'),w=document.getElementById('welcome');if(!row||!w||!me)return;
- row.querySelectorAll(':scope > button').forEach(b=>b.style.display='none');
+ // Keep role navigation isolated. Supervisor owns its Supervisor menu; Manager must never inherit it.
+ const supervisorMenu=document.getElementById('supervisorHeaderMenu');
+ if(supervisorMenu)supervisorMenu.classList.toggle('hidden',me.role!=='Supervisor');
+ // Legacy direct buttons are replaced by the account menu, but Manager must always have an explicit,
+ // visible Logout escape hatch even if a later dashboard layer fails to open the account popup.
+ row.querySelectorAll(':scope > button').forEach(b=>{
+   const isLogout=b.classList.contains('header-logout')||/logout/i.test(b.textContent||'');
+   b.style.display=(me.role==='Manager'&&isLogout)?'':'none';
+ });
  document.getElementById('v44AccountMenu')?.remove();
  w.className='v66-user';w.textContent=(me.name||me.id)+' — '+(me.role==='Employee'?(me.department||'Employee'):me.role)+' ▾';w.onclick=e=>{e.stopPropagation();v65OpenAccount()};w.title='Account / Logout';
 }
