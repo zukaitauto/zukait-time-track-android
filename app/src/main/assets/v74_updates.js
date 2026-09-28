@@ -187,7 +187,7 @@ window.v74JobListRender=function(keepLimit){
  const listView=(localStorage.getItem('zukaitJobListView')||'cards')==='list',limit=Math.max(50,window.v164JobListLimit||50),visible=rows.slice(0,limit);el.innerHTML=rows.length?'<div class="v132-jc-grid '+(listView?'v162-list-view':'')+'">'+visible.map(x=>{let names=[...new Set(x.aa.map(a=>v74JLP(a.emp).name))],[s,cl]=statusOf(x),sg=x.aa.reduce((n,a)=>n+(+a.suggested||0),0),ac=x.aa.reduce((n,a)=>{try{return n+totalForAssignment(a)}catch(_){return n}},0),rem=Math.max(0,sg-ac);return '<button type="button" class="v132-jc-card '+cl+'" onclick="v132OpenSupervisorJobFull(\''+v74JLE(x.j.no)+'\')"><div class="v132-jc-top"><b>'+v74JLE(x.j.no)+'</b><span>'+s+'</span></div><h3>'+v74JLE(x.j.vehicle||'—')+'</h3><p>'+v74JLE(x.j.reg||'—')+'</p><div class="v132-jc-tech">'+v74JLE(names.join(', ')||'Unassigned')+'</div><div class="v132-jc-mini"><div>Suggested<b>'+fmt(sg)+'</b></div><div>'+(cl==='exceeded'?'Exceeded':'Remaining')+'<b>'+fmt(cl==='exceeded'?Math.max(0,ac-sg):rem)+'</b></div></div></button>'}).join('')+'</div>'+(visible.length<rows.length?'<div class="v164-load-more"><span>Showing '+visible.length+' of '+rows.length+' Job Cards</span><button class="secondary" onclick="v164LoadMoreJobCards()">LOAD NEXT 50</button></div>':'<div class="v164-load-more"><span>Showing all '+rows.length+' Job Cards</span></div>'):'<div class="notice">No Job Cards match the selected filters.</div>';setTimeout(v164ObserveJobListMore,0);
 };
 window.v132OpenSupervisorJobFull=function(no){
- if(!me||me.role!=='Supervisor')return;
+ if(!me||!['Supervisor','Manager'].includes(me.role))return;
  const j=(state.jobs||[]).find(x=>x&&!x.cancelled&&String(x.no)===String(no));if(!j)return alert('Job Card not found.');
  const aa=(window.zukaitDataIndex?window.zukaitDataIndex.assignmentsForJob(no):(state.assign||[]).filter(a=>a&&a.job===no)).filter(a=>a&&!a.cancelled),sessions=(window.zukaitDataIndex?window.zukaitDataIndex.sessionsForJob(no):(state.sessions||[]).filter(s=>s&&s.job===no)).slice().sort((a,b)=>(a.start||0)-(b.start||0));
  const sg=aa.reduce((n,a)=>n+(+a.suggested||0),0),ac=aa.reduce((n,a)=>{try{return n+totalForAssignment(a)}catch(_){return n}},0);
@@ -220,7 +220,7 @@ window.openSupervisorJobCardList=function(){
  }catch(err){console.error('Job Card Details',err);if(typeof v74Msg==='function')v74Msg('Job Card Details could not open. Please retry.','Job Card Details')}
 };
 window.v132OpenSupervisorVehicleEdit=function(no){
- if(!me||me.role!=='Supervisor')return alert('Supervisor access required.');
+ if(!me||!['Supervisor','Manager'].includes(me.role))return alert('Supervisor or Manager access required.');
  const j=(state.jobs||[]).find(x=>x&&String(x.no||'').trim().toUpperCase()===String(no||'').trim().toUpperCase());if(!j)return alert('Job Card not found.');
  const vehicle=String(j.vehicle||'').trim(),make=String(j.make||j.brand||'').trim(),model=String(j.model||'').trim();
  let guessedMake=make,guessedModel=model;if(!guessedMake&&!guessedModel&&vehicle){const p=vehicle.split(/\s+/);guessedMake=p.shift()||'';guessedModel=p.join(' ')}
@@ -228,7 +228,7 @@ window.v132OpenSupervisorVehicleEdit=function(no){
  if(typeof showSupervisorModal==='function')showSupervisorModal('Edit Vehicle Details',body);else openModal(body);
 };
 window.v132SaveSupervisorVehicleEdit=function(no){
- if(!me||me.role!=='Supervisor')return alert('Supervisor access required.');
+ if(!me||!['Supervisor','Manager'].includes(me.role))return alert('Supervisor or Manager access required.');
  const j=(state.jobs||[]).find(x=>x&&String(x.no||'').trim().toUpperCase()===String(no||'').trim().toUpperCase());if(!j)return alert('Job Card not found.');
  const make=(document.getElementById('v132SupMake')?.value||'').trim(),model=(document.getElementById('v132SupModel')?.value||'').trim(),yr=window.zukaitReadVehicleYear?window.zukaitReadVehicleYear('v132SupYear'):{ok:true,value:String(document.getElementById('v132SupYear')?.value||'').trim()},year=yr.value,reg=(document.getElementById('v132SupReg')?.value||'').trim().toUpperCase();
  if(!make||!model||!reg)return alert('Make, Model and Registration Number are required.');if(!yr.ok)return alert('Enter a valid 4-digit vehicle year.');
@@ -491,7 +491,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 
  // Supervisor accidental-finish recovery uses in-app dialogs only; no browser page alert.
  window.v71ReopenSameAssignment=function(id){
-   if(!me||me.role!=='Supervisor')return;
+   if(!me||!['Supervisor','Manager'].includes(me.role))return;
    const a=(state.assign||[]).find(x=>x&&x.id===id&&!x.cancelled);
    if(!a)return v74Msg('Assignment not found.','Reopen Work');
    if(a.job===H)return v74Msg('ID001 must use a new Ideal Time assignment.','Reopen Work');
@@ -698,7 +698,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 
  // Reopen SAME assignment: reset the parent Job Card as Open immediately on confirmation.
  window.v71ReopenSameAssignment=function(id){
-   if(!me||me.role!=='Supervisor')return;
+   if(!me||!['Supervisor','Manager'].includes(me.role))return;
    const a=(state.assign||[]).find(x=>x&&x.id===id&&!x.cancelled);
    const msg=(m,t='Reopen Work')=>typeof window.v74Msg==='function'?window.v74Msg(m,t):alert(m);
    if(!a)return msg('Assignment not found.');
@@ -1953,7 +1953,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  };
 
  window.v106OpenAssignID001=function(){
-   if(!me||me.role!=='Supervisor')return;
+   if(!me||!['Supervisor','Manager'].includes(me.role))return;
    const people=window.v75IdealAvailableEmployees();
    if(!people.length)return msg('No employee is currently available for ID001. The employee must have no running job and either no normal work or only paused normal work.','Assign ID001');
    const opts=people.map(u=>'<option value="'+esc(u.id)+'">'+esc(u.name)+' — '+esc(u.department||'')+'</option>').join('');
@@ -2354,7 +2354,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  const stamp=t=>{try{return new Date(+t||Date.now()).toLocaleString()}catch(_){return'—'}};
  const ftime=m=>{try{return typeof fmt==='function'?fmt(+m||0):Math.round(+m||0)+' min'}catch(_){return Math.round(+m||0)+' min'}};
  window.v109OpenAdditionalActionHistory=function(){
-  if(!me||me.role!=='Supervisor')return;
+  if(!me||!['Supervisor','Manager'].includes(me.role))return;
   const rows=[];
   (state.additionalActions||[]).forEach(x=>rows.push({at:x.at,type:x.type||'Additional Time',job:x.job,emp:x.emp,detail:(x.minutes?'Added '+ftime(x.minutes):'Time updated')+(x.source?' · '+x.source:''),by:x.by}));
   (state.suggestedEdits||[]).forEach(x=>{if(String(x.source||'').toLowerCase().includes('additional'))return;rows.push({at:x.at,type:'Allocated Time Changed',job:x.job,emp:x.emp,detail:ftime(x.old)+' → '+ftime(x.newValue),by:x.by})});
@@ -2541,7 +2541,7 @@ window.v2TogglePilotThisDevice=function(){
  function body(rs){const withReg=rs.filter(s=>!!registrationForSession(s)),withoutReg=rs.filter(s=>!registrationForSession(s)),total=rs.reduce((n,s)=>{const en=+(s.end||Date.now());return n+Math.max(0,(en-(+s.start||en))/60000)},0);return'<div class="v110-id001-total"><span>TOTAL ID001 TIME · '+rs.length+' RECORDS</span><b>'+esc(fm(total))+'</b></div><div class="v110-id001-section with-reg"><h3>🚗 WITH REGISTRATION <span class="pill">'+withReg.length+'</span></h3><small>Vehicle-related ID001 · shown as ID001 + Registration</small>'+historyTable(withReg,true)+'</div><div class="v110-id001-section without-reg"><h3>◷ WITHOUT REGISTRATION <span class="pill">'+withoutReg.length+'</span></h3><small>General waiting / enquiry / non-vehicle ID001</small>'+historyTable(withoutReg,false)+'</div>'}
  window.v110RefreshID001Report=function(){const out=document.getElementById('v110ID001Rows');if(out)out.innerHTML=body(rows())};
  window.v110PrintID001Report=function(){const rs=rows(),html='<html><head><title>ZUKAIT AUTO - ID001 Report</title><style>body{font-family:Arial;padding:24px}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #bbb;padding:7px;text-align:left}.v110-id001-total{font-size:18px;margin:12px 0}</style></head><body><h2>ZUKAIT AUTO</h2><h3>ID001 Ideal Time Report</h3>'+body(rs)+'</body></html>';if(typeof window.v110ReportActions==='function')return window.v110ReportActions(html,'Zukait_ID001_Report.pdf');if(window.AndroidBridge&&AndroidBridge.printHtml)return AndroidBridge.printHtml(html);const w=window.open('','_blank');if(!w)return alert('Allow pop-ups to print the ID001 report.');w.document.write(html);w.document.close();w.focus();setTimeout(()=>w.print(),250)};
- window.v110OpenID001Report=function(){if(!me||me.role!=='Supervisor')return;const staff=(users||[]).filter(u=>u&&u.role==='Employee').slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));openModal('<div class="section-title"><h2>◷ ID001 History</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="notice">History is separated automatically into <b>With Registration</b> and <b>Without Registration</b>. Employee and date filters apply to both sections.</div><div class="v110-id001-filters"><label>Employee<br><select id="v110ID001Emp" onchange="v110RefreshID001Report()"><option value="">All Employees</option>'+staff.map(u=>'<option value="'+esc(u.id)+'">'+esc(u.name)+'</option>').join('')+'</select></label><label>From Date<br><input id="v110ID001From" type="date" onchange="v110RefreshID001Report()"></label><label>To Date<br><input id="v110ID001To" type="date" onchange="v110RefreshID001Report()"></label><button onclick="v110PrintID001Report()">🖨 PRINT / PDF</button></div><div id="v110ID001Rows">'+body((state.sessions||[]).filter(s=>s&&s.job===H).slice().sort((a,b)=>(+b.start||0)-(+a.start||0)))+'</div>')};
+ window.v110OpenID001Report=function(){if(!me||!['Supervisor','Manager'].includes(me.role))return;const staff=(users||[]).filter(u=>u&&u.role==='Employee').slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));openModal('<div class="section-title"><h2>◷ ID001 History</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="notice">History is separated automatically into <b>With Registration</b> and <b>Without Registration</b>. Employee and date filters apply to both sections.</div><div class="v110-id001-filters"><label>Employee<br><select id="v110ID001Emp" onchange="v110RefreshID001Report()"><option value="">All Employees</option>'+staff.map(u=>'<option value="'+esc(u.id)+'">'+esc(u.name)+'</option>').join('')+'</select></label><label>From Date<br><input id="v110ID001From" type="date" onchange="v110RefreshID001Report()"></label><label>To Date<br><input id="v110ID001To" type="date" onchange="v110RefreshID001Report()"></label><button onclick="v110PrintID001Report()">🖨 PRINT / PDF</button></div><div id="v110ID001Rows">'+body((state.sessions||[]).filter(s=>s&&s.job===H).slice().sort((a,b)=>(+b.start||0)-(+a.start||0)))+'</div>')};
  function apply(){if(!me||me.role!=='Supervisor')return;const root=document.getElementById('supervisorView'),box=root?.querySelector('#v109ID001Standalone');if(!box)return;box.querySelectorAll('#v110ID001ReportButton').forEach(x=>x.remove());box.classList.add('v110-id001-pair');const b=document.createElement('button');b.id='v110ID001ReportButton';b.type='button';b.onclick=window.v110OpenID001Report;b.innerHTML='<b>▤ ID001</b><span>REPORT</span><small>VIEW · FILTER · PRINT</small>';box.appendChild(b)}
  const old=window.render;window.render=function(){const r=typeof old==='function'?old.apply(this,arguments):undefined;setTimeout(apply,0);return r};setTimeout(apply,0);
  const s=document.createElement('style');s.id='v110ID001ReportStyle';s.textContent='#supervisorView .v110-id001-pair{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}#supervisorView .v110-id001-pair>button{width:100%;min-height:96px!important;margin:0!important;padding:14px 18px!important;border-radius:15px!important}#v110ID001ReportButton{border:1px solid rgba(28,126,93,.4)!important;background:rgba(28,126,93,.11)!important;color:#145a43!important}#v110ID001ReportButton b,#v110ID001ReportButton span,#v110ID001ReportButton small{display:block}.v110-id001-filters{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:8px;align-items:end;margin:10px 0}.v110-id001-filters select,.v110-id001-filters input{width:100%}.v110-id001-total,.v110-id001-subtotal{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:12px;background:rgba(80,140,255,.10);margin:10px 0}.v110-id001-subtotal{padding:7px 10px;font-size:12px}.v110-id001-section{margin:14px 0;padding:12px;border:1px solid #dbe3ec;border-radius:14px}.v110-id001-section.with-reg{background:#f0fdf4;border-color:#bbdfc8}.v110-id001-section.without-reg{background:#fffaf0;border-color:#f2d28f}.v110-id001-section h3{margin:0 0 4px}.v110-id001-section>small{display:block;color:#64748b;margin-bottom:8px}@media(max-width:700px){.v110-id001-filters{grid-template-columns:1fr 1fr}.v110-id001-filters label:first-child{grid-column:1/-1}}';document.head.appendChild(s)
@@ -2984,7 +2984,7 @@ window.v2TogglePilotThisDevice=function(){
  window.v75AssignIdealToAvailable=function(){return{ok:false,reason:'one_by_one_only',assigned:[]}};
 
  window.v106OpenAssignID001=function(){
-   if(!me||me.role!=='Supervisor')return;
+   if(!me||!['Supervisor','Manager'].includes(me.role))return;
    const people=window.v75IdealAvailableEmployees();
    if(!people.length)return msg('No employee is currently available for ID001. The employee must have no running job and either no normal work or only paused normal work.','Assign ID001');
    const opts=people.map(u=>'<option value="'+esc(u.id)+'">'+esc(u.name)+' — '+esc(u.department||'')+'</option>').join('');
