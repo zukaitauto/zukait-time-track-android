@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const js=fs.readFileSync('app/src/main/assets/v2/core/data_paths.js','utf8');
 const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
-assert.match(html,/v2\/core\/data_paths\.js\?v=200/);
+assert.match(html,/v2\/core\/data_paths\.js\?v=201/);
 assert.match(js,/DEFAULT_RECENT_LIMIT=100/);
 assert.match(js,/DEFAULT_HISTORY_LIMIT=100/);
 assert.match(js,/Math\.min\(Number\(options\.limit\)\|\|DEFAULT_RECENT_LIMIT,500\)/);
