@@ -1,8 +1,8 @@
 {
-  "versionName": "V189",
-  "versionCode": 152,
+  "versionName": "V190",
+  "versionCode": 153,
   "approvedForStaff": true,
   "approvedAt": "2026-09-28",
-  "sourceCommit": "c80ff562a6e4f7677fd3033053204c6883dd0764",
-  "publishNonce": "release-v189-stable-active-dashboard-20260928"
+  "sourceCommit": "60676594ed864979135d96693fa3fb348d9c03df",
+  "publishNonce": "release-v190-single-sync-workshop-controls-20260928"
 }
