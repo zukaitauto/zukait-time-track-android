@@ -7,7 +7,8 @@ const helperBegin=src.indexOf('  function roleStructuralSnapshot');
 const begin=src.indexOf('  async function pull(force){');
 const end=src.indexOf('  async function probeRevision(){',begin);
 assert.ok(begin>=0&&end>begin);
-const helperEnd=src.indexOf('  function status(',helperBegin);\nconst pullSource=src.slice(helperBegin,helperEnd)+src.slice(begin,end);
+const helperEnd=src.indexOf('  function status(',helperBegin);
+const pullSource=src.slice(helperBegin,helperEnd)+src.slice(begin,end);
 
 async function run(remote,initial,baseline=null,afterPull=null){
   const statuses=[];
