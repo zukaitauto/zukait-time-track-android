@@ -10,10 +10,11 @@ assert.match(b,/card\('purchase','Total Purchase'/,'Total Purchase card must exi
 assert.match(b,/card\('consumables','Consumables Expense'/,'Consumables Expense must remain a separate card');
 assert.match(b,/const p=Number\(x\.finalPrice\)/,'Total Purchase must use confirmed final Spare Parts price');
 assert.match(b,/p\*q/,'Total Purchase must multiply final unit price by quantity');
-assert.match(b,/No confirmed Spare Parts final prices yet/);
+assert.match(b,/No final Spare Parts invoice costs yet/);
 assert.match(b,/zukaitV2\.sparePartsMain\.openList/,'clicking a purchase JC must open its Parts List');
 assert.match(b,/c\.actuals/,'Consumables Expense must use finalized actual records');
 assert.match(b,/!x\.voided&&x\.locked/,'Consumables Expense must exclude voided/unfinalized records');
 assert.match(b,/consSelectTotalJC/,'clicking a consumables JC must drill into its consumables detail');
 assert.match(b,/No\.<\/b><b>Job Card<\/b><b>Vehicle<\/b><b>Total Purchase/,'purchase drilldown columns must match requested format');
-console.log('Manager Workshop Performance purchase/consumables regression passed');
+assert.doesNotMatch(b,/card\('consumables','Consumables Expense'/,'V123 must not render the duplicate Consumables Expense card; V145 owns it');
+console.log('Manager Workshop Performance spare-parts/consumables regression passed');
