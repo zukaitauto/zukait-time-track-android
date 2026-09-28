@@ -88,3 +88,4 @@ node tests/release-latest-integrity.mjs
 node tests/ci-release-gate-parity.mjs
 
 node tests/v181-manager-performance-cost-drilldown.mjs
+node tests/v145-manager-consumables-expense-detail.mjs
