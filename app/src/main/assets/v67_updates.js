@@ -99,7 +99,8 @@ function renderManager67(){
  const c=controlCounts();
  if(el.classList.contains('hidden'))el.classList.remove('hidden');
  // Manager identity/menu is owned by the final V135 header authority; do not render a second Manager/ONLINE header.\n el.dataset.managerBaseAuthority='v202';
- el.innerHTML=\n '<div class="v67-first-row">'+
+ el.innerHTML=
+ '<div class="v67-first-row">'+
  featureCard('blue','Employee Requests',requestCount(),'New / pending requests','v65OpenRequests()')+
  featureCard('rose','Attention',attentionCount(),'Jobs needing review','v66OpenAttention()')+
  '<button type="button" class="v67-feature v74-ready" onclick="typeof v74Ready===\'function\'&&v74Ready(\'manager\')"><div><span>🚗✓ Ready for Delivery</span><b data-manager-ready-count>0</b><small>All work complete</small></div><em>›</em></button>'+ 
