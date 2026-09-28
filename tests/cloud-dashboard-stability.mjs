@@ -20,7 +20,7 @@ async function run(remote,initial,baseline=null,afterPull=null){
     status:(s)=>statuses.push(s),clone:structuredClone,
     api:async()=>({ok:true,revision:2,data:remote}),
     normalizeRemote:(data)=>{ctx.state=structuredClone(data)},
-    render:()=>{renders++},window:{v42AfterCloudPull:afterPull?()=>afterPull(ctx):undefined},console
+    render:()=>{renders++},scheduleDashboardRender:()=>{renders++},window:{v42AfterCloudPull:afterPull?()=>afterPull(ctx):undefined},console
   };
   vm.runInNewContext(pullSource+';globalThis.pull=pull;',ctx);
   await ctx.pull(true);
