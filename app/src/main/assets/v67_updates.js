@@ -121,13 +121,13 @@ function renderManager67(){
  roundHour('week','THIS WEEK','round-green')+
  roundHour('month','THIS MONTH','round-violet')+
  '</div></section>'+
- '<section class="v67-section"><div class="v67-section-title"><div><h3>Job / Production Tools</h3><p>Workshop control and performance</p></div></div><div class="v67-tools">'+
+ '<section class="v67-section"><div class="v67-section-title"><div><h3>Workshop Tools</h3><p>Job Card control, production and reports</p></div></div><div class="v67-tools">'+
  toolBox('tool-blue','Job Card Tools','Workshop job control',
   '<button onclick="openJobCardManager(\'all\')">Job Card Manager</button><button onclick="v67OpenActiveJobs()">Active Jobs</button><button onclick="openManagerJobsPopup(\'completed\')">Completed Jobs</button><button onclick="openManagerTechniciansPopup()">Technicians</button>')+
  toolBox('tool-green','Production & Reports','Performance and history',
   '<button onclick="openCompletedJobProduction()">Job Production</button><button onclick="openManagerReports()">Reports</button><button onclick="openIncentiveList()">Incentive</button><button onclick="openManagerHistoryPopup()">History</button>')+
  '</div></section>'+
- '<section class="v67-admin-row"><div><h3>Admin</h3><p>Sync, backups and User Management</p></div><button onclick="v65OpenAdmin()">Open Admin ›</button></section>';
+ '<section class="v67-admin-row v200-admin-section"><div><h3>Administration</h3><p>Sync, backups and User Management</p></div><button onclick="v65OpenAdmin()">Open Admin ›</button></section>';
 }
 const css=document.createElement('style');css.id='v67ManagerStyle';css.textContent=`
 #managerView{max-width:1180px;margin:auto}
@@ -143,6 +143,8 @@ const css=document.createElement('style');css.id='v67ManagerStyle';css.textConte
 @media(max-width:780px){.v67-control-grid{grid-template-columns:repeat(2,1fr)}.v67-tools{grid-template-columns:1fr}.v67-round-row{gap:8px}.v67-round{width:min(100%,150px)}}
 @media(max-width:560px){.v67-first-row{grid-template-columns:repeat(3,minmax(0,1fr))}.v67-feature{min-height:95px;padding:12px}.v67-feature b{font-size:27px}.v67-round{width:110px}.v67-round b{font-size:18px}.v67-tool-actions{grid-template-columns:1fr}.v67-minihead b{font-size:16px}}
 `;document.head.appendChild(css);
+const v200=document.createElement('style');v200.id='v200ManagerLowerOrganizationStyle';v200.textContent='#managerView .v67-tools{gap:12px!important}#managerView .v67-tools>div{border:1px solid #dce7f2!important;border-radius:14px!important}#managerView .v200-admin-section{margin-top:14px!important;border-top:2px solid #dce7f2!important;padding-top:14px!important}';document.head.appendChild(v200);
+
 
 const prevRender=window.render;
 window.render=function(){if(me?.role==='Manager')return renderManager67();const r=prevRender();return r};
