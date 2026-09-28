@@ -1684,5 +1684,31 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 <script src="workshop_overview.js?v=199"></script>
 <script src="v2/features/estimate/main_module.js?v=199"></script>
 <script src="dashboard_diagnostics.js?v=199"></script>
+<script>
+/* V199 LAST-LOADED MANAGER COMPOSITION AUTHORITY.
+   All feature scripts are loaded above this point, so Manager composition cannot
+   be lost because a later feature wraps renderManager/render. */
+(function(){'use strict';
+  function compose(){
+    if(!window.me||me.role!=='Manager')return;
+    try{window.v156SettleManagerUI?.()}catch(e){console.error('Manager composition',e)}
+    try{window.ensureManagerSparePartsCard?.()}catch(e){}
+    try{window.refreshManagerSparePartsSummary?.()}catch(e){}
+    try{window.zukaitEstimate?.ensureDashboardCards?.()}catch(e){}
+  }
+  const render=window.render;
+  if(typeof render==='function'&&!render.__v199ManagerFinal){
+    const wrapped=function(){const out=render.apply(this,arguments);compose();return out};
+    wrapped.__v199ManagerFinal=true;window.render=wrapped;
+  }
+  const manager=window.renderManager;
+  if(typeof manager==='function'&&!manager.__v199ManagerFinal){
+    const wrapped=function(){const out=manager.apply(this,arguments);compose();return out};
+    wrapped.__v199ManagerFinal=true;window.renderManager=wrapped;
+  }
+  window.zukaitComposeManagerDashboard=compose;
+  compose();
+})();
+</script>
 </body>
 </html>
