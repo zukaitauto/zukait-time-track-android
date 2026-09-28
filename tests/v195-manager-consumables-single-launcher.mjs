@@ -1,0 +1,10 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const src=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
+const start=src.indexOf('/* V156 FINAL MANAGER UI AUTHORITY');
+assert.ok(start>=0,'V156 Manager UI authority must exist');
+const block=src.slice(start,src.indexOf('/* V148 SUPERVISOR UI',start));
+assert.match(block,/One Manager Consumables launcher only: the Workshop Control Center tile/);
+assert.match(block,/const keep=cons\.find\(x=>grid&&x\.parentElement===grid\)/);
+assert.doesNotMatch(block,/\|\|cons\[0\]/);
+assert.match(block,/cons\.filter\(x=>x!==keep\)\.forEach\(x=>x\.remove\(\)\)/);
+console.log('Manager single Consumables launcher guard passed');
