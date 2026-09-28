@@ -73,3 +73,11 @@ assert.match(v74,/employeeClockTimer=setInterval/,'the authoritative Employee ru
 assert.match(v74,/window\.refreshActiveRunningTime=function\(\)[\s\S]*?updateEmployeeMonthlyLive\(\)/,'monthly live values must remain chained to the authoritative refresh');
 assert.match(v74,/window\.refreshActiveRunningTime=function\(\)[\s\S]*?addEmployeeTimeBreakdown\(\)/,'Employee breakdown must remain chained to the authoritative refresh');
 console.log('Employee timer stability: duplicate one-second writers retired');
+
+
+// Manager must have one final post-render authority; retired V111/V144 loops must not compete with V156.
+assert.doesNotMatch(v74,/let guard=0;function settle\(\).*?setTimeout\(settle,60\)/s,'legacy V111 Manager settle loop must stay retired');
+assert.doesNotMatch(v74,/\[0,80,250\]\.forEach\(ms=>setTimeout\(bind,ms\)\)/,'legacy V144 multi-pass Manager binder must stay retired');
+assert.match(v74,/window\.v156SettleManagerUI=settle/,'V156 must remain the final Manager UI authority');
+assert.match(v74,/window\.v144BindManagerConsumables\?\.\(\)/,'V156 must invoke the consumables binder in its single settle pass');
+console.log('Manager repaint stability: legacy settle loops retired under V156');
