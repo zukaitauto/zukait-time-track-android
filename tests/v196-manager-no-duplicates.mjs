@@ -1,0 +1,12 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const manager=fs.readFileSync('app/src/main/assets/v67_updates.js','utf8');
+const updates=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
+const overview=fs.readFileSync('app/src/main/assets/workshop_overview.js','utf8');
+const m=manager.slice(manager.indexOf('function renderManager67'),manager.indexOf('const css=',manager.indexOf('function renderManager67')));
+assert.doesNotMatch(m,/el\.innerHTML=smallHeader\(\)\+/,'base Manager renderer must not create a second Manager/ONLINE header');
+assert.match(updates,/if\(root\.firstElementChild!==row\)root\.insertBefore\(row,root\.firstChild\)/,'final Manager header must remain first');
+const summary=overview.slice(overview.indexOf('function summaryHtml'),overview.indexOf('function ensurePanel'));
+assert.doesNotMatch(summary,/System Health/,'System Health must not be duplicated in Daily Workshop Summary');
+assert.match(updates,/<b>System Health<\/b>/,'System Health must live in Manager menu');
+assert.match(updates,/One Manager Consumables launcher only: the Workshop Control Center tile/,'Manager Consumables must remain single-authority');
+console.log('Manager no-duplicate surfaces regression passed');
