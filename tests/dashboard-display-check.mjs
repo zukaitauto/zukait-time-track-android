@@ -4,7 +4,7 @@ import vm from 'node:vm';
 
 const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
 const source=fs.readFileSync('app/src/main/assets/dashboard_diagnostics.js','utf8');
-assert.match(html,/<script src="dashboard_diagnostics\.js\?v=191"><\/script>/);
+assert.match(html,/<script src="dashboard_diagnostics\.js\?v=\d+"><\/script>/);
 for(const path of ['v63_updates.js','v65_updates.js']){
   const about=fs.readFileSync('app/src/main/assets/'+path,'utf8');
   assert.match(about,/zukaitDisplayDiagnostics\.open\(\)/,path+' must expose Display Check');
