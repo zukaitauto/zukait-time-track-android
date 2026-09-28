@@ -38,14 +38,55 @@
   // multiple workshop phones act together. Rebuild the visible dashboard once
   // after the burst instead of tearing down/recreating the whole view for every
   // acknowledgement. Local button actions still render immediately.
-  function scheduleDashboardRender(){
+  function roleStructuralSnapshot(data,who){
+    if(!data||!who)return null;
+    const role=String(who.role||'');
+    // Live worker counts/statuses are patched by live_status_authority.js and
+    // must never force a structural dashboard rebuild.
+    if(role==='Employee'){
+      const id=String(who.id||'');
+      return {
+        jobs:(data.jobs||[]),
+        assign:(data.assign||[]).filter(a=>a&&String(a.emp)===id),
+        sessions:(data.sessions||[]).filter(x=>x&&String(x.emp)===id),
+        requests:(data.requests||[]).filter(x=>x&&String(x.emp)===id),
+        leaves:(data.leaves||[]).filter(x=>x&&String(x.emp)===id)
+      };
+    }
+    if(role==='Purchaser')return {
+      spareParts:data.spareParts||data.spare_parts||null,
+      notifications:(data.notifications||[]).filter(x=>x&&(!x.target||String(x.target)===String(who.id)))
+    };
+    // Manager/Supervisor dashboard shells are stable. Their operational live
+    // counts are owned by the live-status endpoint. Only data that changes
+    // cards/lists/attention surfaces is structural.
+    return {
+      jobs:data.jobs||[],
+      assign:data.assign||[],
+      requests:data.requests||[],
+      leaves:data.leaves||[],
+      consumables:data.consumables||null,
+      spareParts:data.spareParts||data.spare_parts||null,
+      systemNotifications:data.systemNotifications||[]
+    };
+  }
+
+  function scheduleDashboardRender(beforeState,afterState){
     if(!me)return;
+    let structuralChanged=true;
+    try{
+      structuralChanged=JSON.stringify(roleStructuralSnapshot(beforeState,me))!==JSON.stringify(roleStructuralSnapshot(afterState,me));
+    }catch(_){}
+    if(!structuralChanged){
+      try{window.zukaitLiveStatusAuthority?.apply?.()}catch(_){}
+      return;
+    }
     clearTimeout(dashboardRenderTimer);
     dashboardRenderTimer=setTimeout(()=>{
       dashboardRenderTimer=null;
       if(!me||document.visibilityState==='hidden')return;
       try{render()}catch(e){console.error('Render after sync failed',e)}
-    },120);
+    },180);
   }
 
   function status(text,kind){
@@ -445,7 +486,7 @@
       if(typeof window.v42AfterCloudPull==='function'){
         try{window.v42AfterCloudPull(before,clone(state),r)}catch(e){console.warn('Notification hook failed',e)}
       }
-      if(changed) scheduleDashboardRender()
+      if(changed) scheduleDashboardRender(previousSnapshot,state)
     } else if(!lastSyncedState) {
       lastSyncedState=clone(state||{});
     }
