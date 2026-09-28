@@ -1,8 +1,8 @@
 {
-  "versionName": "V191",
-  "versionCode": 154,
+  "versionName": "V192",
+  "versionCode": 155,
   "approvedForStaff": true,
   "approvedAt": "2026-09-28",
-  "sourceCommit": "2fa600fb2ba04e1ceefcfb70638a4408237e8ffa",
-  "publishNonce": "release-v191-display-check-network-labels-20260928"
+  "sourceCommit": "3bba0b3ecea204138cef957869a9e3ff6b6cced9",
+  "publishNonce": "release-v192-runtime-stability-20260928"
 }
