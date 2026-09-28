@@ -1,11 +1,14 @@
 (function(){'use strict';
   const ACTIVE=new Set(['Working','Overtime','ID001']);
+  // The visible live-status heartbeat is 15 seconds. Allow a missed poll before
+  // declaring the snapshot stale; otherwise Manager counts blink every cycle.
+  const LIVE_STATUS_MAX_AGE_MS=35000;
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   function live(){
     const x=window.zukaitServerLive;
     if(!x||!x.fresh||!Array.isArray(x.rows)||!x.fetchedAt)return null;
-    if(!navigator.onLine||Date.now()-Number(x.fetchedAt)>7000)return null;
+    if(!navigator.onLine||Date.now()-Number(x.fetchedAt)>LIVE_STATUS_MAX_AGE_MS)return null;
     return x;
   }
   function rows(){return live()?.rows||null}
@@ -200,7 +203,7 @@
     [...root.querySelectorAll('button,.glance-box,.notice,.v67-control,.v143-resource,.v143-top')].forEach(el=>{
       if(!(el.textContent||'').toLowerCase().includes(target))return;
       const n=el.querySelector('.stat')||el.querySelector('strong');
-      if(n)n.textContent=String(value);
+      if(n&&n.textContent!==String(value))n.textContent=String(value);
     });
   }
   function applyDepartmentCounts(root,rr){
@@ -213,7 +216,8 @@
       const team=rr.filter(r=>r.department===pair[0]);
       const working=team.filter(r=>r.status==='Working'||r.status==='Overtime').length;
       const strong=el.querySelector('strong');
-      if(strong)strong.innerHTML=working+' <em>/ '+team.length+'</em>';
+      const html=working+' <em>/ '+team.length+'</em>';
+      if(strong&&strong.innerHTML!==html)strong.innerHTML=html;
     });
   }
   function markUnavailable(){
@@ -223,8 +227,11 @@
     const labels=me.role==='Supervisor'
       ?['Active Workers','Working Now','Paused Jobs','Available Workers','Overtime Now']
       :['Working Now','Waiting / ID001','Work Paused','Free Tech','Active Workers'];
-    labels.forEach(label=>setCount(root,label,'—'));
-    root.querySelectorAll('.v143-live,.v92-live-dot').forEach(b=>b.textContent=navigator.onLine?'● SYNCING':'● OFFLINE');
+    // Keep the last authoritative figures visible during a brief server failure.
+    // The indicator states that they are syncing, and actions still require
+    // fresh server data. A first load without any snapshot has no figures yet.
+    if(!navigator.onLine||!window.zukaitServerLive?.rows?.length)labels.forEach(label=>setCount(root,label,'—'));
+    root.querySelectorAll('.v143-live,.v92-live-dot').forEach(b=>{const text=navigator.onLine?'● SYNCING':'● OFFLINE';if(b.textContent!==text)b.textContent=text});
   }
   function apply(){
     const x=live();
@@ -246,7 +253,7 @@
       setCount(root,'Available Workers',available);
       setCount(root,'Overtime Now',overtime);
       applyDepartmentCounts(root,rr);
-      root?.querySelectorAll('.v143-live,.v92-live-dot').forEach(b=>b.textContent='● SERVER LIVE');
+      root?.querySelectorAll('.v143-live,.v92-live-dot').forEach(b=>{if(b.textContent!=='● SERVER LIVE')b.textContent='● SERVER LIVE'});
     }
     if(me.role==='Manager'){
       const root=document.getElementById('managerView');

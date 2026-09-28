@@ -113,9 +113,30 @@ assert.equal(windowObj.legacyOvertime,undefined,'server-live Overtime popup must
 assert.equal(windowObj.legacyAvailable,undefined,'server-live Available popup must not call legacy local available list');
 
 context.window.zukaitServerLive.fetchedAt=Date.now()-8000;
+assert.equal(context.window.currentStaffStatuses().length,5,'live rows must remain available between 15-second polls');
+context.window.zukaitServerLive.fetchedAt=Date.now()-16000;
+assert.equal(context.window.currentStaffStatuses().length,5,'one missed heartbeat must not make Manager counts blink');
+context.window.zukaitServerLive.fetchedAt=Date.now()-36000;
 assert.equal(context.window.currentStaffStatuses().length,0,'online stale server data must never fall back to local worker status');
 assert.equal(context.window.currentStaffStatus('EMP1').status,'Unavailable','online stale server data must surface unavailable, not local activity');
 assert.equal(context.window.currentActiveWorkers().length,0,'online stale server data must never invent active workers from cache');
+
+let writes=0,value='—';
+const stat={get textContent(){return value},set textContent(next){value=next;writes++}};
+const button={textContent:'Working Now',querySelector:()=>stat};
+const root={querySelectorAll(selector){return selector.includes('button')?[button]:[]}};
+documentObj.getElementById=id=>id==='managerView'?root:null;
+context.me.role='Manager';windowObj.me.role='Manager';
+windowObj.zukaitServerLive.fetchedAt=Date.now();
+windowObj.zukaitServerLive.fresh=true;
+windowObj.zukaitLiveStatusAuthority.apply();
+assert.equal(value,'2');
+const firstWrites=writes;
+windowObj.zukaitLiveStatusAuthority.apply();
+assert.equal(writes,firstWrites,'unchanged worker counts must not be rewritten every second');
+windowObj.zukaitServerLive.fresh=false;
+windowObj.zukaitLiveStatusAuthority.apply();
+assert.equal(value,'2','brief live-status failures must preserve the last server count while syncing');
 
 context.navigator.onLine=false;
 assert.equal(context.window.currentStaffStatuses()[0].emp,'LOCAL','offline mode may use local cache as a fallback');

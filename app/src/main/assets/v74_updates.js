@@ -2644,7 +2644,7 @@ window.v2TogglePilotThisDevice=function(){
    // Do not let this legacy local-session timer race with SERVER LIVE counts.
    if(navigator.onLine&&(me.role==='Supervisor'||me.role==='Manager')){
      const live=window.zukaitServerLive;
-     if(live&&live.fresh&&Array.isArray(live.rows)&&live.fetchedAt&&Date.now()-Number(live.fetchedAt)<=7000)return;
+     if(live&&live.fresh&&Array.isArray(live.rows)&&live.fetchedAt&&Date.now()-Number(live.fetchedAt)<=35000)return;
      // While server status is still loading, leave the count untouched so the
      // final live authority can show SYNCING instead of a stale local number.
      if(window.zukaitLiveStatusAuthority)return;
