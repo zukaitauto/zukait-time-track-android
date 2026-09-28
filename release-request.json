@@ -1,8 +1,8 @@
 {
-  "versionName": "V192",
-  "versionCode": 155,
+  "versionName": "V193",
+  "versionCode": 156,
   "approvedForStaff": true,
   "approvedAt": "2026-09-28",
   "sourceCommit": "3bba0b3ecea204138cef957869a9e3ff6b6cced9",
-  "publishNonce": "release-v192-runtime-stability-20260928"
+  "publishNonce": "release-v193-runtime-stability-20260928"
 }
