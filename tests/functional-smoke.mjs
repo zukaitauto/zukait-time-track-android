@@ -726,7 +726,9 @@ assert.match(updates,/replaceCount\(root,'Active Workers',rows\.length\)/,'Super
 // V115 multi-device root guards.
 const cloudSync = read('app/src/main/assets/cloud_sync.js');
 assert.match(cloudSync,/function reconcileEmployeeOpenSessions\(data,emp\)/,'cloud conflict merge must reconcile duplicate employee open sessions');
-assert.match(cloudSync,/MULTI_DEVICE_CONFLICT/,'cloud reconciliation must audit multi-device conflicts');
+assert.match(cloudSync,/SERVER_AUTHORITY_REQUIRED/,'cloud reconciliation must record duplicate open sessions for server-authority resolution');
+const reconcileBlock=cloudSync.slice(cloudSync.indexOf('function reconcileEmployeeOpenSessions'),cloudSync.indexOf('function employeeActionTime'));
+assert.doesNotMatch(reconcileBlock,/\.end\s*=|\.paused\s*=/,'client conflict reconciliation must never stop or pause a running employee session');
 assert.match(updates,/V115 MULTI-DEVICE EMPLOYEE ACTION AUTHORITY/,'employee actions must have multi-device authority');
 assert.match(updates,/await fresh\(\);const active=closeDuplicates\(me\.id\)/,'Start must sync before enforcing one active job');
 assert.match(updates,/await fresh\(\);closeDuplicates\(me\.id\);return corePause/,'Pause must sync before mutation');
