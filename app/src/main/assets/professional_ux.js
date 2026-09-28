@@ -338,8 +338,11 @@
     });
   }
 
+  let polishScheduled=false;
   const obs=new MutationObserver(()=>{
-    polishEmployee();
+    if(polishScheduled)return;
+    polishScheduled=true;
+    requestAnimationFrame(()=>{polishScheduled=false;polishEmployee();});
   });
   obs.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
 
@@ -450,6 +453,6 @@
     scope.querySelectorAll('td,b,span,strong,button').forEach(el=>{if(el.classList.contains('zt-tech-identity')||el.children.length)return;const t=key(el.textContent);if(!t||t.length>80)return;const u=staff.find(x=>{const n=key(x.name),d=key(x.department||'technician');return t===n||t===n+' · '+d||t===n+' - '+d||t===n+' — '+d});if(u)applyIdentity(el,u)})
   }
   const st=document.createElement('style');st.id='ztTechnicianIdentityStyle';st.textContent='.zt-tech-identity{display:inline-flex!important;align-items:center;padding:2px 6px!important;border-radius:7px!important;background:var(--zt-tech-bg)!important;color:var(--zt-tech-fg)!important;border:1px solid var(--zt-tech-border)!important;font-weight:850!important;line-height:1.25!important}.cons-top-nav,.paint-top-nav,.v2-sp-nav,.est-nav{display:flex!important;gap:5px!important;align-items:center!important;margin:0 0 6px!important}.cons-top-nav button,.paint-top-nav button,.v2-sp-nav button,.est-nav button{height:28px!important;min-height:28px!important;width:auto!important;flex:0 0 auto!important;border-radius:8px!important;font-size:9px!important;line-height:1!important;font-weight:900!important;padding:4px 8px!important}.cons-depts,.cons-actions,.paint-menu-grid,.est-grid2{grid-template-columns:repeat(2,minmax(0,1fr))!important}@media(max-width:700px){.cons-depts,.cons-actions,.paint-menu-grid,.est-grid2{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}}';document.head.appendChild(st);
-  const boot=()=>{paintText();new MutationObserver(m=>m.forEach(x=>x.addedNodes.forEach(n=>{if(n.nodeType===1)paintText(n)}))).observe(document.body,{childList:true,subtree:true})};
+  const boot=()=>{paintText();let pending=false;new MutationObserver(m=>{if(pending)return;if(!m.some(x=>x.addedNodes&&x.addedNodes.length))return;pending=true;requestAnimationFrame(()=>{pending=false;paintText(document)})}).observe(document.body,{childList:true,subtree:true})};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot()
 })();
