@@ -19,7 +19,7 @@ assert.match(main,/async function saveQuotationPrice\(button\)\{if\(!\['Purchase
 assert.match(main,/Quotation Total <strong id="v2SpQuoteTotal"/,'quotation page must show live total');
 assert.doesNotMatch(main,/Purchase Amount OMR/,'Purchaser must not have a second purchase-price entry field');
 assert.match(main,/async function saveSupervisorFinalPrice\(listNo,itemId\)\{return saveSupervisorInvoicePrice\(listNo,itemId,'list'\)\}/,'legacy final-price entry point must delegate to invoice authority');
-assert.match(main,/async function saveSupervisorInvoicePrice\(listNo,itemId,context='list'\)\{if\(!\['Supervisor','Manager'\]\.includes\(role\(\)\)\)return/,'invoice price authority must remain Supervisor and Manager');
+assert.match(main,/async function saveSupervisorInvoicePrice\(listNo,itemId,context='list',providedRaw=null\)\{if\(!\['Supervisor','Manager'\]\.includes\(role\(\)\)\)return/,'invoice price authority must remain Supervisor and Manager');
 assert.match(main,/type:'SPARE_PART_FINAL_PRICE_RECORDED'[\s\S]{0,240}purchaseAmount:amount/,'invoice save must retain durable final-price event compatibility while carrying authoritative purchase amount');
 
 assert.match(main,/function partPriceHistory\(list,item\)/,'quotation must expose historical price guidance');
