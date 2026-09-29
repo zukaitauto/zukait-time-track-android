@@ -3523,3 +3523,33 @@ window.v2TogglePilotThisDevice=function(){
 .v75s .compact-control:not(.v89-employee-control) .pill{font-size:0!important;padding:7px 10px!important}.v75s .compact-control:not(.v89-employee-control) .pill:after{content:'OPEN ›';font-size:9px!important;font-weight:900!important}
 }
 `;document.head.appendChild(s)})();
+
+
+/* V201 ARRIVED PARTS DASHBOARD FOLLOW-UP — presentation-only launcher; workflow stays in V2 spare-parts authority. */
+(function(){'use strict';
+ const KEY='zukait_v2_spare_parts_lists_v1';
+ function pendingCount(){try{return (JSON.parse(localStorage.getItem(KEY)||'[]')||[]).reduce((n,l)=>n+(l.items||[]).filter(i=>String(i?.status||'')==='RECEIVED').length,0)}catch(_){return 0}}
+ function openArrival(){const api=window.zukaitV2?.sparePartsMain;if(api?.openArrivalConfirmation)return api.openArrivalConfirmation();if(api?.openPartsArrived)return api.openPartsArrived();if(typeof window.openSparePartsModule==='function')return window.openSparePartsModule()}
+ function removeManagerQuick(root){[...root.querySelectorAll('.card,.manager-section,section')].forEach(x=>{const h=x.querySelector(':scope > h2,:scope > h3,:scope > .section-title h2,:scope > .section-title h3');if(h&&/^\s*(?:⚡\s*)?Quick\s+(?:Action|Actions|Management)\s*$/i.test(h.textContent||''))x.remove()})}
+ function applySupervisor(){
+   const root=document.getElementById('supervisorView');if(!root||!window.me||me.role!=='Supervisor')return;
+   let card=root.querySelector('[data-v201-arrived-supervisor]');
+   if(!card){card=document.createElement('button');card.type='button';card.dataset.v201ArrivedSupervisor='1';card.className='v201-arrived-followup';card.onclick=openArrival;card.innerHTML='<span class="v201-arrived-icon">📦</span><span><b>PARTS ARRIVED</b><small>Purchaser marked arrived · confirm each item</small></span><strong data-v201-arrived-count>0</strong><em>›</em>';const top=root.querySelector('.v143-top-three,.v92-supervisor-top,.v84-alert-row');if(top)top.insertAdjacentElement('afterend',card);else root.prepend(card)}
+   const n=card.querySelector('[data-v201-arrived-count]');if(n)n.textContent=String(pendingCount());
+ }
+ function applyManager(){
+   const root=document.getElementById('managerView');if(!root||!window.me||me.role!=='Manager')return;
+   removeManagerQuick(root);
+   let grid=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid');
+   if(!grid)return;
+   let card=grid.querySelector('[data-v201-arrived-manager]');
+   if(!card){card=document.createElement('button');card.type='button';card.dataset.v201ArrivedManager='1';card.className='v67-control v201-arrived-manager';card.onclick=openArrival;card.innerHTML='<span>📦 Parts Arrived</span><b data-v201-arrived-count>0</b><small>Waiting confirmation</small>';grid.appendChild(card)}
+   const n=card.querySelector('[data-v201-arrived-count]');if(n)n.textContent=String(pendingCount());
+ }
+ function apply(){try{applySupervisor();applyManager()}catch(e){console.warn('V201 arrived-parts dashboard launcher',e)}}
+ if(!document.getElementById('v201ArrivedDashboardStyle')){const s=document.createElement('style');s.id='v201ArrivedDashboardStyle';s.textContent='.v201-arrived-followup{width:100%;display:grid;grid-template-columns:34px minmax(0,1fr) auto 12px;gap:8px;align-items:center;margin:8px 0 10px;padding:9px 11px;border:1px solid #b9dfcf;border-radius:13px;background:linear-gradient(145deg,#f3fff9,#edf9f5);color:#174c39;text-align:left;box-shadow:0 4px 12px #17304d0d}.v201-arrived-followup .v201-arrived-icon{font-size:21px}.v201-arrived-followup b{display:block;font-size:12px}.v201-arrived-followup small{display:block;margin-top:2px;font-size:9px;color:#5d746c}.v201-arrived-followup strong{display:grid;place-items:center;min-width:27px;height:27px;padding:0 5px;border-radius:8px;background:#fff;font-size:13px}.v201-arrived-followup em{font-style:normal;font-size:17px}.v201-arrived-manager{background:linear-gradient(145deg,#effbf6,#f9fffc)!important;border-color:#b9dfcf!important;color:#174c39!important}';document.head.appendChild(s)}
+ const prev=window.render;window.render=function(){const r=typeof prev==='function'?prev.apply(this,arguments):undefined;setTimeout(apply,0);return r};
+ const after=window.v42AfterCloudPull;window.v42AfterCloudPull=function(){const r=typeof after==='function'?after.apply(this,arguments):undefined;setTimeout(apply,0);return r};
+ window.v201ApplyArrivedPartsDashboard=apply;window.v201OpenArrivalConfirmation=openArrival;
+ [0,120,450].forEach(ms=>setTimeout(apply,ms));
+})();
