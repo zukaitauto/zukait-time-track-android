@@ -1489,7 +1489,9 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v79ReconcileWorkSessions=reconcileAllSessionsV79;
 
  window.activeSession=function(emp){
-   reconcileEmployeeSessions(emp);
+   // Read-only authority: status/render checks must never mutate or save work sessions.
+   // Reconciliation remains available explicitly through v79ReconcileWorkSessions for
+   // maintenance/import recovery, but normal Start/Pause/Finish reads are side-effect free.
    const latest=latestSessionForEmployee(emp);
    return latest&&!latest.end?latest:null;
  };
@@ -2962,7 +2964,16 @@ window.v2TogglePilotThisDevice=function(){
  const openHold=emp=>(state.assign||[]).filter(a=>a&&a.job===H&&String(a.emp)===String(emp)&&!a.cancelled&&!a.completed).sort((a,b)=>(+b.assignedAt||0)-(+a.assignedAt||0))[0]||null;
  const openNormal=emp=>(state.assign||[]).filter(a=>a&&a.job!==H&&String(a.emp)===String(emp)&&!a.cancelled&&!a.completed);
  const status=a=>{try{return typeof empStatus==='function'?empStatus(a):(a.completed?'Finished':'New')}catch(_){return a?.completed?'Finished':'New'}};
- const pausedOnly=emp=>{const rows=openNormal(emp);return rows.length>0&&rows.every(a=>status(a)==='Paused')};
+ const exactLatestSession=a=>{
+   if(!a)return null;
+   const rows=(state.sessions||[]).filter(s=>s&&(
+     (s.assignmentId&&String(s.assignmentId)===String(a.id))||
+     (!s.assignmentId&&String(s.emp)===String(a.emp)&&String(s.job)===String(a.job))
+   )).slice().sort((x,y)=>(+x.start||0)-(+y.start||0));
+   return rows.length?rows[rows.length-1]:null;
+ };
+ const assignmentPaused=a=>{const s=exactLatestSession(a);return !!(s&&s.end&&s.paused===true&&s.finished!==true)};
+ const pausedOnly=emp=>{const rows=openNormal(emp);return rows.length>0&&rows.every(assignmentPaused)};
  const closed=t=>typeof window.v75IsClosedWorkshopDay==='function'&&window.v75IsClosedWorkshopDay(t);
  const duty=t=>typeof window.v75IsID001DutyTime!=='function'||window.v75IsID001DutyTime(t);
  const leave=(emp,t)=>typeof window.v63IsOnLeave==='function'&&window.v63IsOnLeave(emp,t);
@@ -2981,7 +2992,7 @@ window.v2TogglePilotThisDevice=function(){
    if(leave(emp,t))return msg(n+' is on leave. ID001 cannot be assigned.','Assign ID001');
    if(openHold(emp))return msg('ID001 is already assigned to '+n+'.','Assign ID001');
    if(activeSession(emp))return msg(n+' has an active running job. ID001 cannot be assigned.','Assign ID001');
-   if(openNormal(emp).some(a=>status(a)!=='Paused'))return msg(n+' has normal work available. ID001 is allowed only when there is no normal work, or all current normal work is Paused.','Assign ID001');
+   if(openNormal(emp).some(a=>!assignmentPaused(a)))return msg(n+' has normal work available. ID001 is allowed only when there is no normal work, or all current normal work is Paused.','Assign ID001');
    state.assign=state.assign||[];
    const a={id:uid(),job:H,emp,suggested:0,completed:false,cancelled:false,rework:false,idealCard:true,noSuggestedTime:true,countsAsNormalWorking:true,idealSafeVersion:SAFE,idealReason:String(reason||'').trim().slice(0,240),idealRegistration:String(registration||'').trim().slice(0,40),idealRegistrationKey:window.zukaitRegistration?.key?.(registration)||'',idealVehicle:String(vehicle||'').trim().slice(0,120),assignedBy:me?.id||'SYSTEM',assignedAt:t,pausedJobFallback:pausedOnly(emp)};
    state.assign.push(a);
