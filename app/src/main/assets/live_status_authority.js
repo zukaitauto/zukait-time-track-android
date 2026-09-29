@@ -152,6 +152,7 @@
     const rr=rows();
     if(rr&&type==='working')return workerTable(rr.filter(r=>r.status==='Working'||(window.me?.role!=='Manager'&&r.status==='Overtime')),'Working Now — Server Live');
     if(rr&&type==='waiting')return workerTable(rr.filter(r=>r.status==='ID001'),'Waiting / ID001 — Server Live');
+    if(rr&&type==='available')return workerTable(rr.filter(r=>r.status==='Available'||r.status==='ID001'),'Available Workers — Server Live');
     if(rr&&type==='paused')return workerTable(rr.filter(r=>r.status==='Paused'),'Paused — Server Live');
     if(serverRequired()&&type==='working'){
       if(typeof window.v74Msg==='function')return window.v74Msg('Live worker status is syncing with the server. Please retry after the SERVER LIVE indicator returns.','Live Status');
@@ -193,7 +194,7 @@
     if(rr&&type==='working')return workerTable(rr.filter(r=>r.status==='Working'||r.status==='Overtime'),'Working Now — Server Live');
     if(rr&&type==='waiting')return workerTable(rr.filter(r=>r.status==='ID001'),'Waiting / ID001 — Server Live');
     if(rr&&type==='paused')return workerTable(rr.filter(r=>r.status==='Paused'),'Paused — Server Live');
-    if(serverRequired()&&['working','waiting','paused'].includes(type))return typeof window.v74Msg==='function'?window.v74Msg('Live worker status is syncing with the server. Please retry after the SERVER LIVE indicator returns.','Live Status'):alert('Live worker status is syncing with the server.');
+    if(serverRequired()&&['working','waiting','available','paused'].includes(type))return typeof window.v74Msg==='function'?window.v74Msg('Live worker status is syncing with the server. Please retry after the SERVER LIVE indicator returns.','Live Status'):alert('Live worker status is syncing with the server.');
     return typeof serverControl==='function'?serverControl.apply(this,arguments):undefined;
   };
 
@@ -226,7 +227,7 @@
     if(!root)return;
     const labels=me.role==='Supervisor'
       ?['Active Workers','Working Now','Paused Jobs','Available Workers','Overtime Now']
-      :['Working Now','Waiting / ID001','Work Paused','Free Tech','Active Workers'];
+      :['Working Now','Available Workers','Paused','Free Tech','Active Workers'];
     // Keep the last authoritative figures visible during a brief server failure.
     // The indicator states that they are syncing, and actions still require
     // fresh server data. A first load without any snapshot has no figures yet.
@@ -259,7 +260,7 @@
     if(me.role==='Manager'){
       const root=document.getElementById('managerView');
       setCount(root,'Working Now',managerWorking);
-      setCount(root,'Waiting / ID001',waiting);
+      setCount(root,'Available Workers',available+waiting);
       setCount(root,'Paused',paused);
       setCount(root,'Free Tech',available+waiting);
       setCount(root,'Active Workers',active);
