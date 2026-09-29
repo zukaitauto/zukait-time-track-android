@@ -56,6 +56,10 @@ assert.match(supervisorStable, /onclick="v143OpenReadyForDelivery\(\)"/, 'Ready 
 // Employee work-state safety: read paths must not mutate sessions, and ID001 must use exact assignment sessions.
 assert.match(updates,/window\.activeSession=function\(emp\)\{[\s\S]*?const latest=latestSessionForEmployee\(emp\);[\s\S]*?return latest&&!latest\.end\?latest:null;[\s\S]*?\};/,'activeSession must remain a read-only current-session lookup');
 assert.doesNotMatch(updates,/window\.activeSession=function\(emp\)\{\s*reconcileEmployeeSessions\(emp\)/,'activeSession must never reconcile/mutate sessions during render or button-state reads');
+assert.match(updates,/function latestSessionForEmployee\(emp\)[\s\S]*?String\(s\.emp\)===String\(emp\)[\s\S]*?a\.end==null\?1:0[\s\S]*?b\.end==null\?1:0/,'all employees must deterministically prefer an open running session when timestamps tie');
+assert.doesNotMatch(updates,/const productive=\(emp,from,to\)=>\{\s*try\{if\(typeof window\.v79ReconcileWorkSessions/,'productive-time refresh must not mutate/reconcile employee sessions');
+assert.doesNotMatch(updates,/const waiting=\(emp,from,to\)=>\{\s*try\{if\(typeof window\.v79ReconcileWorkSessions/,'ID001-time refresh must not mutate/reconcile employee sessions');
+assert.doesNotMatch(updates,/window\.overtimeForEmployee=\(emp,from,to\)=>\{\s*try\{if\(typeof window\.v79ReconcileWorkSessions/,'overtime refresh must not mutate/reconcile employee sessions');
 assert.match(updates,/const exactLatestSession=a=>[\s\S]*?s\.assignmentId&&String\(s\.assignmentId\)===String\(a\.id\)/,'ID001 eligibility must inspect the exact assignment-bound latest session');
 assert.match(updates,/const assignmentPaused=a=>\{const s=exactLatestSession\(a\);return !!\(s&&s\.end&&s\.paused===true&&s\.finished!==true\)\}/,'ID001 paused-only eligibility must require an ended paused non-finished assignment session');
 assert.match(updates,/openNormal\(emp\)\.some\(a=>!assignmentPaused\(a\)\)/,'ID001 assignment guard must use exact per-assignment paused state');
