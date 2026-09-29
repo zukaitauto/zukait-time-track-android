@@ -35,7 +35,7 @@ assert.match(authority,/window\.currentStaffStatuses=function/,'server authority
 assert.match(authority,/window\.currentActiveWorkers=function/,'server authority must replace active-worker reads');
 assert.match(authority,/window\.openActiveWorkers=function/,'Active Workers details must use server rows');
 assert.match(authority,/window\.v65OpenControl=function/,'Manager Working Now details must use server rows');
-assert.match(authority,/if\(rr&&type==='working'\)return workerTable\(rr\.filter\(r=>r\.status==='Working'\|\|r\.status==='Overtime'\),'Working Now — Server Live'\)/,'Working Now popup must be built directly from the same server rows as its count');
+assert.match(authority,/if\(rr&&type==='working'\)\{const list=rr\.filter\(r=>\['Working','Overtime','ID001'\]\.includes\(r\.status\)\)/,'Working Now popup must be built directly from the same server rows as its count');
 assert.match(authority,/window\.openActiveWorkers=function\(\)[\s\S]*rr\.filter\(r=>ACTIVE\.has\(r\.status\)\)/,'Active Workers popup must be built directly from authoritative active rows');
 assert.match(authority,/setCount\(root,'Working Now',working\)/,'Supervisor Working Now count must use the same authoritative server rows');
 assert.match(updates,/Online shared dashboards are owned exclusively by live_status_authority\.js/,'legacy V115 worker counter must defer to SERVER LIVE authority');
@@ -134,13 +134,13 @@ context.me.role='Manager';windowObj.me.role='Manager';
 windowObj.zukaitServerLive.fetchedAt=Date.now();
 windowObj.zukaitServerLive.fresh=true;
 windowObj.zukaitLiveStatusAuthority.apply();
-assert.equal(value,'1','Manager Working Now must count current Working staff only, matching Daily Workshop Summary');
+assert.equal(value,'3','Manager Working Now must include Working, Overtime and ID001 active staff from the server snapshot');
 const firstWrites=writes;
 windowObj.zukaitLiveStatusAuthority.apply();
 assert.equal(writes,firstWrites,'unchanged worker counts must not be rewritten every second');
 windowObj.zukaitServerLive.fresh=false;
 windowObj.zukaitLiveStatusAuthority.apply();
-assert.equal(value,'1','brief live-status failures must preserve the last server count while syncing');
+assert.equal(value,'3','brief live-status failures must preserve the last server count while syncing');
 
 context.navigator.onLine=false;
 assert.equal(context.window.currentStaffStatuses()[0].emp,'LOCAL','offline mode may use local cache as a fallback');
