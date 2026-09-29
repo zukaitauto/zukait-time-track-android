@@ -60,6 +60,10 @@ assert.match(updates,/function latestSessionForEmployee\(emp\)[\s\S]*?String\(s\
 assert.doesNotMatch(updates,/const productive=\(emp,from,to\)=>\{\s*try\{if\(typeof window\.v79ReconcileWorkSessions/,'productive-time refresh must not mutate/reconcile employee sessions');
 assert.doesNotMatch(updates,/const waiting=\(emp,from,to\)=>\{\s*try\{if\(typeof window\.v79ReconcileWorkSessions/,'ID001-time refresh must not mutate/reconcile employee sessions');
 assert.doesNotMatch(updates,/window\.overtimeForEmployee=\(emp,from,to\)=>\{\s*try\{if\(typeof window\.v79ReconcileWorkSessions/,'overtime refresh must not mutate/reconcile employee sessions');
+assert.doesNotMatch(updates,/window\.v42AfterCloudPull=function\(\)[\s\S]{0,400}?reconcileAllSessionsV79\(\)/,'cloud pull/render path must not auto-close an active employee session');
+assert.doesNotMatch(updates,/window\.render=function\(\)[\s\S]{0,300}?reconcileAllSessionsV79\(\)/,'normal render must not auto-close an active employee session');
+assert.doesNotMatch(updates,/window\.monthlyNormalActualMinutes=function\(emp,from,to\)\{\s*reconcileEmployeeSessions\(emp\)/,'monthly running-time calculation must be read-only');
+
 assert.match(updates,/const exactLatestSession=a=>[\s\S]*?s\.assignmentId&&String\(s\.assignmentId\)===String\(a\.id\)/,'ID001 eligibility must inspect the exact assignment-bound latest session');
 assert.match(updates,/const assignmentPaused=a=>\{const s=exactLatestSession\(a\);return !!\(s&&s\.end&&s\.paused===true&&s\.finished!==true\)\}/,'ID001 paused-only eligibility must require an ended paused non-finished assignment session');
 assert.match(updates,/openNormal\(emp\)\.some\(a=>!assignmentPaused\(a\)\)/,'ID001 assignment guard must use exact per-assignment paused state');
