@@ -858,6 +858,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 
  function injectDashboardID001Button(){
    if(!me||!['Supervisor','Manager'].includes(me.role))return;
+   if(me.role==='Manager')return; // Manager ID001 visibility is consolidated into Workshop Control Center > Available Workers.
    const root=document.getElementById(me.role==='Manager'?'managerView':'supervisorView');if(!root||root.querySelector('#v753ID001Dashboard'))return;
    const b=document.createElement('section');
    b.id='v753ID001Dashboard';b.className='card v753-id001-dashboard';
