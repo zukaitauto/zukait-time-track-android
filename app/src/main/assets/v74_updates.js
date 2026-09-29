@@ -1670,18 +1670,21 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    save();closeModal();render();
  };
 
- // Run on load/render/cloud refresh so stale states cannot keep returning.
+ // Normal render/cloud refresh must be read-only for work sessions.
+ // Automatic reconciliation here used to close a legitimate running session,
+ // which then froze Running Time and made Pause/Finish report no active work.
+ // Keep duplicate-assignment cleanup, but session repair is explicit maintenance only.
  const priorCloud79=window.v42AfterCloudPull;
  window.v42AfterCloudPull=function(){
    const r=typeof priorCloud79==='function'?priorCloud79.apply(this,arguments):undefined;
-   reconcileAllSessionsV79();reconcileDuplicateOpenAssignments();return r;
+   reconcileDuplicateOpenAssignments();return r;
  };
  const priorRender79=window.render;
  window.render=function(){
-   reconcileAllSessionsV79();reconcileDuplicateOpenAssignments();
+   reconcileDuplicateOpenAssignments();
    return typeof priorRender79==='function'?priorRender79.apply(this,arguments):undefined;
  };
- setTimeout(()=>{reconcileAllSessionsV79();reconcileDuplicateOpenAssignments()},100);
+ setTimeout(()=>{reconcileDuplicateOpenAssignments()},100);
 
 
  // Normal assignment guard: never create/reopen a duplicate same JC + employee silently.
@@ -1712,10 +1715,9 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    save();render();return a;
  };
 
- // Employee overtime/actual summaries reconcile first, so stale open sessions cannot keep accruing time.
+ // Employee summaries are read-only; calculations must never close/pause work sessions.
  const oldOTEmployee79=window.overtimeForEmployee;
  window.overtimeForEmployee=function(emp,from,to){
-   reconcileEmployeeSessions(emp);
    return sessions().filter(x=>x&&x.emp===emp&&x.start<to&&(x.end||Date.now())>from).reduce((n,x)=>{
      const st=Math.max(+x.start||0,from),en=Math.min(+(x.end||Date.now()),to);
      if(en<=st)return n;
@@ -1725,7 +1727,6 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  };
  const oldMonthlyNormal79=window.monthlyNormalActualMinutes;
  window.monthlyNormalActualMinutes=function(emp,from,to){
-   reconcileEmployeeSessions(emp);
    return sessions().filter(x=>x&&x.emp===emp&&x.job!==HOLD&&x.start<to&&(x.end||Date.now())>from).reduce((n,x)=>{
      const st=Math.max(+x.start||0,from),en=Math.min(+(x.end||Date.now()),to);
      if(en<=st)return n;
