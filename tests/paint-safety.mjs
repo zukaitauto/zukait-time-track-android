@@ -46,7 +46,7 @@ assert.equal(o.createdBy,'S1');
 assert.equal(o.createdByName,'Supervisor One');
 assert.equal(o.createdByRole,'Supervisor');
 
-Object.assign(el('prJc'),{value:'JC1'});priceEls=[{value:'8.000'}];costEls=[{value:''}];
+Object.assign(el('prJc'),{value:'JC1'});priceEls=[{value:'8.000',dataset:{}}];costEls=[{value:'',dataset:{}}];
 ctx.paintRecalcReceived(0,'price');assert.equal(costEls[0].value,'4.800','0.600 L × 8.000 OMR/L must calculate 4.800 OMR actual cost');
 priceEls[0].value='';costEls[0].value='4.800';ctx.paintRecalcReceived(0,'cost');assert.equal(priceEls[0].value,'8.000','4.800 OMR ÷ 0.600 L must calculate 8.000 OMR/L');
 ctx.paintReviewReceived(o.id);
