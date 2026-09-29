@@ -31,6 +31,9 @@ assert.equal(rows.length,0,'Manager must not receive routine Purchaser/Superviso
 assert.match(code,/reports\.page\('SPARE_PARTS'/,'notification refresh must use authoritative Spare Parts event history');
 assert.match(code,/setInterval\(refresh,POLL_MS\)/);
 assert.match(code,/const POLL_MS=5000/);
+assert.match(code,/const beforeParts=purchaser&&sp\?\.reportRows\?JSON\.stringify\(sp\.reportRows\(\)\):''/,'Purchaser refresh must detect authoritative Spare Parts changes without rebuilding on unchanged polls');
+assert.match(code,/renderPurchaserDashboard\?\.\(true\)/,'Visible Purchaser dashboard must refresh from the hydrated server cache when Spare Parts change');
+assert.match(code,/refreshManagerSparePartsSummary\?\.\(true\)/,'Manager Spare Parts summary must refresh from the same hydrated server cache');
 assert.match(code,/if\(b\.innerHTML!==html\)b\.innerHTML=html/,'notification observer must not rewrite an unchanged bell and recursively trigger itself');
 assert.match(code,/const u=meNow\(\);if\(!u\|\|!u\.id\)/,'notification refresh must use the shared logged-in user resolver');
 assert.match(code,/if\(!u\|\|!u\.id\)\{inject\(\);updateBadges\(\);return\}/,'notification network hydration must stay off the unauthenticated Web login path');
@@ -42,6 +45,11 @@ assert.match(code,/r==='Purchaser'&&x\.eventType==='SPARE_PART_LISTED'/,'new Par
 assert.match(code,/r==='Supervisor'&&x\.eventType==='SPARE_PART_STATUS_CHANGED'&&x\.to==='RECEIVED'/,'Purchaser Received event must target Supervisor');
 
 const main=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8');
+const shell=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+assert.match(main,/async function renderPurchaserDashboard\(skipHydrate=false\)/,'Purchaser dashboard must support a cache-only live refresh path');
+assert.match(main,/const rows=skipHydrate\?read\(\):await hydrateAuthoritativeLists\(\)/,'Cache-only Purchaser refresh must reuse the just-hydrated authoritative data');
+assert.match(shell,/async function refreshManagerSparePartsSummary\(skipHydrate=false\)/,'Manager summary must support a no-duplicate-fetch live refresh path');
+assert.match(shell,/if\(!skipHydrate\)try\{await window\.zukaitV2\?\.sparePartsMain\?\.hydrateAuthoritativeLists\?\.\(\)\}/,'Manager live summary must avoid a second server fetch after notification hydration');
 assert.match(main,/function partsListWhatsAppText\(r\)/);
 assert.match(main,/const lines=\[vehicle\|\|'Vehicle'\]/,'WhatsApp must begin with vehicle only');
 assert.doesNotMatch(main,/const lines=\[\(vehicle\|\|'Vehicle'\)\+'\.'/,'WhatsApp vehicle line must not add punctuation');
