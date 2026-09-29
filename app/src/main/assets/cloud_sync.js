@@ -146,8 +146,8 @@
     if(!r.ok){const e=new Error(r.code||'V2_PILOT_CLAIM_FAILED');e.code=r.code||'V2_PILOT_CLAIM_FAILED';throw e;}
     return r;
   }
-  async function v2AllocateSparePartList(jobCard){
-    const r=await api({action:'v2_allocate_spare_part_list',job_card:String(jobCard||'').trim().toUpperCase()});
+  async function v2AllocateSparePartList(jobCard,clientKey){
+    const r=await api({action:'v2_allocate_spare_part_list',job_card:String(jobCard||'').trim().toUpperCase(),client_key:String(clientKey||'').trim()});
     if(!r.ok){const e=new Error(r.code||'V2_SPARE_LIST_ALLOCATE_FAILED');e.code=r.code||'V2_SPARE_LIST_ALLOCATE_FAILED';throw e;}
     return r.list;
   }
