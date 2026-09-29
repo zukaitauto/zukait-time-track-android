@@ -30,9 +30,21 @@ window.openConsumablesModule=function(){
 };
 window.openConsumablesPlaceholder=function(name){modal(esc(name)+' Consumables','<div class="notice">This department module is openable and isolated. Detailed workflow will be added after Painting Consumables is completed.</div>')};
 function action(label,sub,fn,cls=''){return '<button class="cons-action '+cls+'" onclick="'+fn+'"><b>'+label+'</b><small>'+sub+'</small></button>'}
+function consFinalMaterialPendingRows(){
+ const c=C().ensureState(state),done=no=>{const a=(state.assign||[]).filter(x=>x&&!x.cancelled&&String(x.job)===String(no));return a.length>0&&a.every(x=>x.completed)},actual=new Set(c.actuals.filter(x=>x&&!x.voided&&x.locked).map(x=>String(x.jobCard||'').toUpperCase())),by=new Map();
+ c.issues.filter(x=>x&&!x.voided&&x.type===C().TYPES.ISSUED&&x.jobCard).forEach(x=>{const no=String(x.jobCard).toUpperCase();if(done(no)&&!actual.has(no))by.set(no,x)});
+ return [...by.entries()].map(([jobCard,row])=>({jobCard,row}));
+}
+window.consFinalMaterialPendingCount=function(){return consFinalMaterialPendingRows().length};
+window.openFinalMaterialPending=function(){
+ if(!['Supervisor','Manager'].includes(role()))return;
+ const rows=consFinalMaterialPendingRows();
+ const body=rows.length?'<div class="cons-review-cards">'+rows.map((x,i)=>{const d=jcData(x.jobCard),j=d?.job||{};return '<button type="button" class="cons-recent-row cons-compact-list-row" onclick="openConsumablesActual().then(()=>{const e=document.getElementById(\'consActualJc\');if(e){e.value=decodeURIComponent(\''+encodeURIComponent(x.jobCard)+'\');consLoadActual()}})"><b class="cons-row-no">'+(i+1)+'</b><b>'+esc(x.jobCard)+'</b><span>'+esc(d?.vehicle||j.vehicle||'Vehicle')+'</span><span class="cons-row-reg">'+esc(j.reg||j.registration||'—')+'</span><i>›</i></button>'}).join('')+'</div>':'<div class="notice">No Final Paint Material entries are pending.</div>';
+ modal('⚠ Final Material Pending · '+rows.length,body,'openPaintingConsumables()');
+};
 window.openPaintingConsumables=function(){
  if(!['Supervisor','Manager'].includes(role()))return;
- let base=action('Suggested / Issued Materials','Original material issue','openConsumablesEntry(\'issued\')','issued')+
+ let base=action('⚠ Final Material Pending · '+consFinalMaterialPendingRows().length,'Ready JCs missing final Actual Materials','openFinalMaterialPending()','additional')+action('Suggested / Issued Materials','Original material issue','openConsumablesEntry(\'issued\')','issued')+
  action('Actual Materials','Final quantity used for costing','openConsumablesEntry(\'actual\')','actual')+
  action('Additional Materials','Extra controlled material issue','openConsumablesEntry(\'additional\')','additional')+
  action('Search Material List','JC issued vs actual material','openConsumablesSearch()','search')+
