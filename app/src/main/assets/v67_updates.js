@@ -50,7 +50,8 @@ function controlCounts(){return{
  leave:leaveToday().length,
  completed:rows('completed').filter(a=>a.job!==HOLD).length,
  repeat:new Set(rows('repeat').map(a=>a.job)).size,
- waiting:waitingNow().length
+ waiting:waitingNow().length,
+ available:(users||[]).filter(u=>u&&u.role==='Employee'&&!activeSession(u.id)).length+waitingNow().length
 }}
 
 function assignmentRowsHtml(list){
@@ -112,7 +113,7 @@ function renderManager67(){
  controlCard('consumables','Consumables',0,'rose')+
  controlCard('completed','Completed Today',c.completed,'teal')+
  controlCard('repeat','Repeat Work',c.repeat,'violet')+
- controlCard('waiting','Waiting / ID001',c.waiting,'gray')+
+ controlCard('available','Available Workers',c.available,'gray')+
  '<button type="button" class="v67-control v67-spare-parts" data-v2-manager-spare-parts="1" onclick="v150OpenManagerSpareParts()"><span>🚗⚙️ Spare Parts</span><b>›</b><small>Parts lists · tracking · reports</small><em>›</em></button>'+
  '</div></section>'+
  '<section class="v67-section"><div class="v67-section-title"><div><h3>Actual Worked Hours</h3><p>Productive technician man-hours</p></div></div><div class="v67-round-row">'+
