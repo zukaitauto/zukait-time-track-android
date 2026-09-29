@@ -107,7 +107,6 @@ function renderManager67(){
  '</div>'+
  '<section class="v67-section"><div class="v67-section-title"><div><h3>Workshop Control Center</h3><p>Live workshop status</p></div></div><div class="v67-control-grid">'+
  controlCard('today','Today Jobs',c.today,'sky')+
- controlCard('working','Working Now',c.working,'mint')+
  controlCard('notstarted','Not Started',c.notstarted,'slate')+
  controlCard('paused','Paused',c.paused,'amber')+
  controlCard('consumables','Consumables',0,'rose')+
