@@ -1612,9 +1612,9 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     const small=card.querySelector('small');
     if(small&&small.textContent!==detail)small.textContent=detail;
   }
-  async function refreshManagerSparePartsSummary(){
+  async function refreshManagerSparePartsSummary(skipHydrate=false){
     if(!window.me || window.me.role!=='Manager')return;
-    try{await window.zukaitV2?.sparePartsMain?.hydrateAuthoritativeLists?.()}catch(_){}
+    if(!skipHydrate)try{await window.zukaitV2?.sparePartsMain?.hydrateAuthoritativeLists?.()}catch(_){}
     const root=document.getElementById('managerView'); if(!root)return;
     const card=sparePartsCandidates(root)[0];
     updateSparePartsCard(card,sparePartsSummaryText());
