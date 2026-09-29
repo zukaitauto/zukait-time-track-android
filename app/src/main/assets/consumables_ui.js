@@ -175,7 +175,7 @@ window.consFilterBrands=function(){
  sel.innerHTML='<option value="">Brand</option>'+brands.map(b=>'<option value="'+esc(b.id)+'">'+esc(b.name)+'</option>').join('');if(brands.length===1)sel.value=brands[0].id;
  const m=c.materials.find(x=>x.id===mid),q=document.getElementById('consQty');if(q)q.placeholder=m?.unit?'Quantity ('+m.unit+')':'Quantity';
 };
-window.consRefreshIssueFinishState=function(){const btn=document.getElementById('consFinishBtn');if(!btn)return false;const painter=draft.type==='additional'?(draft.additionalBase?.mainPainterId||''):(document.getElementById('consPainter')?.value||'');const ready=!!(draft.jc&&draft.lines.length&&painter);btn.disabled=!ready;return ready};
+window.consRefreshIssueFinishState=function(){const btn=document.getElementById('consFinishBtn');if(!btn)return false;const painter=draft.type==='additional'?(draft.additionalBase?.mainPainterId||''):(document.getElementById('consPainter')?.value||draft.jc?.painters?.[0]?.id||'');const ready=!!(draft.jc&&draft.lines.length&&painter);btn.disabled=!ready;return ready};
 window.consAddLine=function(){
  if(!draft.jc)return alert('Load a valid Job Card first.');
  const mid=document.getElementById('consMaterial')?.value,bid=document.getElementById('consBrand')?.value,q=Number(document.getElementById('consQty')?.value);
@@ -195,7 +195,7 @@ window.consRenderRows=function(){
 window.consFinishIssue=function(){
  if(!draft.jc||!draft.lines.length)return alert('Load Job Card and add at least one material.');
  const base=draft.type==='additional'?(draft.additionalBase||consBaseIssued(draft.jc?.job?.no)):null;
- const painter=base?.mainPainterId||document.getElementById('consPainter')?.value;if(!painter)return alert(draft.type==='additional'?'Suggested / Issued material record is required before adding Additional Materials.':'Select the Main Painter.');
+ const painter=base?.mainPainterId||document.getElementById('consPainter')?.value||draft.jc?.painters?.[0]?.id;if(!painter)return alert(draft.type==='additional'?'Suggested / Issued material record is required before adding Additional Materials.':'Select the Main Painter.');
  const issueType=draft.type==='additional'?C().TYPES.ADDITIONAL:C().TYPES.ISSUED,dup=consRecentDuplicate(issueType,draft.jc.job.no,draft.lines);
  if(dup&&!confirm('Possible duplicate entry: the same materials and quantities were saved for this Job Card within the last 15 minutes. Continue anyway?'))return;
  if(!confirm('Finish and lock this material issue?'))return;
