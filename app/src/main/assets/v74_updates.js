@@ -1444,7 +1444,16 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v79AssignmentSessions=assignmentSessionsV79;
 
  function latestSessionForEmployee(emp){
-   const rows=sessions().filter(s=>s&&s.emp===emp).slice().sort(byStart);
+   const rows=sessions().filter(s=>s&&String(s.emp)===String(emp)).slice().sort((a,b)=>{
+     const d=(+a.start||0)-(+b.start||0);
+     if(d)return d;
+     // Deterministic tie-breaker: an open session wins over a closed historical
+     // session with the same start timestamp. This keeps a newly resumed job
+     // authoritative after cache/cloud reload without altering either record.
+     const ao=a.end==null?1:0,bo=b.end==null?1:0;
+     if(ao!==bo)return ao-bo;
+     return String(a.id||'').localeCompare(String(b.id||''));
+   });
    return rows.length?rows[rows.length-1]:null;
  }
  function latestSessionForAssignment(a){
@@ -3066,11 +3075,9 @@ window.v2TogglePilotThisDevice=function(){
    catch(_){return Math.max(0,(en-st)/60000)}
  };
  const productive=(emp,from,to)=>{
-   try{if(typeof window.v79ReconcileWorkSessions==='function')window.v79ReconcileWorkSessions()}catch(_){}
    return (state.sessions||[]).filter(s=>s&&String(s.emp)===String(emp)&&s.job!==H&&(+s.start||0)<to&&(+s.end||Date.now())>from).reduce((n,s)=>n+clipped(s,from,to),0);
  };
  const waiting=(emp,from,to)=>{
-   try{if(typeof window.v79ReconcileWorkSessions==='function')window.v79ReconcileWorkSessions()}catch(_){}
    return (state.sessions||[]).filter(s=>s&&String(s.emp)===String(emp)&&s.job===H&&(+s.start||0)<to&&(+s.end||Date.now())>from).reduce((n,s)=>n+clipped(s,from,to),0);
  };
  window.v130ProductiveMinutes=productive;
@@ -3084,7 +3091,6 @@ window.v2TogglePilotThisDevice=function(){
 
  // ID001 is normal-duty waiting only; it can never create overtime.
  window.overtimeForEmployee=(emp,from,to)=>{
-   try{if(typeof window.v79ReconcileWorkSessions==='function')window.v79ReconcileWorkSessions()}catch(_){}
    return (state.sessions||[]).filter(s=>s&&String(s.emp)===String(emp)&&s.job!==H&&(+s.start||0)<to&&(+s.end||Date.now())>from).reduce((n,s)=>{
      const st=Math.max(+s.start||0,from),en=Math.min(+(s.end||Date.now()),to);if(en<=st)return n;
      try{return n+(typeof window.sessionOvertimeMinutes==='function'?Math.max(0,window.sessionOvertimeMinutes({start:st,end:en},en)||0):0)}catch(_){return n}
