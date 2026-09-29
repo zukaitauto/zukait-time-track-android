@@ -66,7 +66,21 @@ async function refresh(){
  // Never compete with authentication on the login screen. Server notification
  // hydration starts only after secure_auth has established the logged-in user.
  const u=meNow();if(!u||!u.id){inject();updateBadges();return}
- try{if(navigator.onLine){if(window.zukaitV2?.sparePartsMain?.hydrateAuthoritativeLists)await window.zukaitV2.sparePartsMain.hydrateAuthoritativeLists();await loadServerPartEvents()}}catch(_){}
+ try{
+  if(navigator.onLine){
+   const sp=window.zukaitV2?.sparePartsMain;
+   const purchaser=role()==='Purchaser';
+   const beforeParts=purchaser&&sp?.reportRows?JSON.stringify(sp.reportRows()):'';
+   if(sp?.hydrateAuthoritativeLists)await sp.hydrateAuthoritativeLists();
+   const afterParts=purchaser&&sp?.reportRows?JSON.stringify(sp.reportRows()):'';
+   await loadServerPartEvents();
+   if(role()==='Manager')await window.refreshManagerSparePartsSummary?.(true);
+   if(purchaser&&beforeParts!==afterParts){
+    const host=document.getElementById('managerView');
+    if(host&&!host.classList.contains('hidden')&&host.dataset.zukaitPurchaserShell==='1')await sp?.renderPurchaserDashboard?.(true);
+   }
+  }
+ }catch(_){}
  inject();updateBadges();
 }
 window.zukaitNotificationCenter={open:openCenter,openPart,refresh,all,unread,inject,eventPartsNotifications,normalizeServerEvent,loadServerPartEvents};
