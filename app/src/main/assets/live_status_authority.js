@@ -130,6 +130,16 @@
     },0);
     return out;
   }
+  function managerWorkingList(list,title){
+    const sorted=list.slice().sort((a,b)=>(a.status==='ID001')-(b.status==='ID001'));
+    const body=sorted.length?'<div class="wo-status-list">'+sorted.map((r,i)=>{
+      const dep=String(r.department||'').toLowerCase(),cls=dep.includes('paint')?'painter':dep.includes('dent')?'denter':dep.includes('mech')?'mechanic':'';
+      const jc=r.status==='ID001'?'ID001':(r.job_no||'—');
+      return '<div class="wo-status-row wo-status-'+cls+'"><b class="wo-status-no">'+(i+1)+'</b><span class="wo-status-name">'+esc(r.employee_name||r.employee_id)+'</span><small class="wo-status-job">JC '+esc(jc)+'</small></div>';
+    }).join('')+'</div>':'<div class="notice">No matching workers right now.</div>';
+    if(typeof window.openModal==='function')return window.openModal('<div class="section-title"><h2>'+esc(title)+'</h2><span class="pill">SERVER LIVE</span><button class="secondary" onclick="closeModal()">Close</button></div>'+body);
+  }
+
   window.closeActiveWorkersPopup=function(){
     const b=document.querySelector('[data-active-workers-close]');
     const host=b?.closest('.modal,.modal-content,.popup,.dialog,[role="dialog"]');
@@ -150,7 +160,7 @@
   };
   window.v65OpenControl=function(type){
     const rr=rows();
-    if(rr&&type==='working')return workerTable(rr.filter(r=>r.status==='Working'||(window.me?.role!=='Manager'&&r.status==='Overtime')),'Working Now — Server Live');
+    if(rr&&type==='working'){const list=rr.filter(r=>['Working','Overtime','ID001'].includes(r.status));if(window.me?.role==='Manager')return managerWorkingList(list,'Working Now — Server Live');return workerTable(list,'Working Now — Server Live');}
     if(rr&&type==='waiting')return workerTable(rr.filter(r=>r.status==='ID001'),'Waiting / ID001 — Server Live');
     if(rr&&type==='available')return workerTable(rr.filter(r=>r.status==='Available'||r.status==='ID001'),'Available Workers — Server Live');
     if(rr&&type==='paused')return workerTable(rr.filter(r=>r.status==='Paused'),'Paused — Server Live');
@@ -241,7 +251,7 @@
     const rr=x.rows;
     const active=rr.filter(r=>ACTIVE.has(r.status)).length;
     const working=rr.filter(r=>r.status==='Working'||r.status==='Overtime').length;
-    const managerWorking=rr.filter(r=>r.status==='Working').length;
+    const managerWorking=rr.filter(r=>['Working','Overtime','ID001'].includes(r.status)).length;
     const waiting=rr.filter(r=>r.status==='ID001').length;
     const paused=rr.filter(r=>r.status==='Paused').length;
     const available=rr.filter(r=>r.status==='Available').length;
