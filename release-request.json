@@ -1,8 +1,8 @@
 {
-  "versionName": "V208",
-  "versionCode": 171,
+  "versionName": "V209",
+  "versionCode": 172,
   "approvedForStaff": true,
   "approvedAt": "2026-09-29",
-  "sourceCommit": "46ab92fa65a46f9c5babe8728e6ddc0e3bb8e9da",
-  "publishNonce": "release-v208-consumables-active-workers-verified-20260929-r2"
+  "sourceCommit": "e507ba785e089e2aab345335d3ce91748eb2f26c",
+  "publishNonce": "release-v209-manager-status-list-verified-20260929-r1"
 }
