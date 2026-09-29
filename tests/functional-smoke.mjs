@@ -63,6 +63,8 @@ assert.doesNotMatch(updates,/window\.overtimeForEmployee=\(emp,from,to\)=>\{\s*t
 assert.doesNotMatch(updates,/window\.v42AfterCloudPull=function\(\)[\s\S]{0,400}?reconcileAllSessionsV79\(\)/,'cloud pull/render path must not auto-close an active employee session');
 assert.doesNotMatch(updates,/window\.render=function\(\)[\s\S]{0,300}?reconcileAllSessionsV79\(\)/,'normal render must not auto-close an active employee session');
 assert.doesNotMatch(updates,/window\.monthlyNormalActualMinutes=function\(emp,from,to\)\{\s*reconcileEmployeeSessions\(emp\)/,'monthly running-time calculation must be read-only');
+assert.doesNotMatch(updates,/window\.start=function\(no\)\{[\s\S]{0,250}?reconcileEmployeeSessions\(me\.id\)/,'employee Start must not rewrite or close existing session history');
+
 
 assert.match(updates,/const exactLatestSession=a=>[\s\S]*?s\.assignmentId&&String\(s\.assignmentId\)===String\(a\.id\)/,'ID001 eligibility must inspect the exact assignment-bound latest session');
 assert.match(updates,/const assignmentPaused=a=>\{const s=exactLatestSession\(a\);return !!\(s&&s\.end&&s\.paused===true&&s\.finished!==true\)\}/,'ID001 paused-only eligibility must require an ended paused non-finished assignment session');
