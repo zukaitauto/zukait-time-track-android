@@ -3,8 +3,8 @@
 const STATUS=['LISTED','ENQUIRY','QUOTED','ORDERED','RECEIVED','SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED','RETURNED','UNAVAILABLE','CUSTOMER_SETTLEMENT'];
 const PRICE_ROLES=new Set(['Manager','Purchaser']);
 const transitions={
-LISTED:['ENQUIRY','UNAVAILABLE'],ENQUIRY:['QUOTED','UNAVAILABLE'],QUOTED:['ORDERED','ENQUIRY','UNAVAILABLE'],
-ORDERED:['RECEIVED','RETURNED','UNAVAILABLE'],RECEIVED:['RECEIVED','SUPERVISOR_VERIFIED','RETURNED'],
+LISTED:['ENQUIRY','UNAVAILABLE'],ENQUIRY:['QUOTED','LISTED','UNAVAILABLE'],QUOTED:['ORDERED','ENQUIRY','UNAVAILABLE'],
+ORDERED:['RECEIVED','ENQUIRY','RETURNED','UNAVAILABLE'],RECEIVED:['RECEIVED','ORDERED','SUPERVISOR_VERIFIED','RETURNED'],
 SUPERVISOR_VERIFIED:['SUPERVISOR_CONFIRMED','RETURNED'],DENTER_CHECKED:['SUPERVISOR_CONFIRMED','RETURNED'],SUPERVISOR_CONFIRMED:['FITTED','RETURNED'],
 UNAVAILABLE:['CUSTOMER_SETTLEMENT'],RETURNED:['ENQUIRY','ORDERED','UNAVAILABLE']
 };
@@ -13,6 +13,7 @@ function allowed(from,to){return (transitions[String(from||'')]||[]).includes(St
 function canAct(role,from,to){
  role=String(role||'');
  if(!allowed(from,to))return false;
+ if((from==='ENQUIRY'&&to==='LISTED')||(from==='ORDERED'&&to==='ENQUIRY')||(from==='RECEIVED'&&to==='ORDERED'))return role==='Purchaser'||role==='Manager';
  if(['ENQUIRY','QUOTED','ORDERED','RECEIVED'].includes(to))return role==='Purchaser'||role==='Manager';
  if(to==='SUPERVISOR_VERIFIED')return role==='Supervisor'||role==='Manager';
  if(to==='DENTER_CHECKED')return false;
@@ -36,6 +37,7 @@ function transition(item,to,ctx={}){
  if(to==='UNAVAILABLE')next.cashSettlementRequired=true;
  if(to==='CUSTOMER_SETTLEMENT')next.cashSettlementRequired=false;
  if(to==='RETURNED')next.returnReason=String(ctx.reason||'').trim();
+ if(from==='RECEIVED'&&to==='ORDERED'){delete next.receivedQty;delete next.receivedAt;delete next.receivedBy;delete next.lastReceivedQty;delete next.partialReceipt}
  if(to==='RECEIVED'){const ordered=Number(item?.qty||0),already=from==='RECEIVED'?Number(item?.receivedQty||0):0,batch=ctx.receivedQty==null?(ordered-already):Number(ctx.receivedQty),received=already+batch;if(!Number.isFinite(ordered)||ordered<=0||!Number.isFinite(batch)||batch<=0||received>ordered)return {ok:false,reason:'INVALID_RECEIVED_QUANTITY',orderedQty:ordered,receivedQty:already};next.receivedQty=received;next.receivedAt=now;next.receivedBy=ctx.actorId||null;next.lastReceivedQty=batch;if(received<ordered)next.partialReceipt=true;else delete next.partialReceipt}
  if(to==='SUPERVISOR_VERIFIED'){if(Number(item?.receivedQty||item?.qty||0)<Number(item?.qty||0))return {ok:false,reason:'RECEIPT_INCOMPLETE'};next.supervisorVerifiedAt=now;next.supervisorVerifiedBy=ctx.actorId||null}
  if(to==='SUPERVISOR_CONFIRMED'){if(!(item?.supervisorVerifiedAt||item?.denterCheckedAt))return {ok:false,reason:'VERIFICATION_REQUIRED'};next.confirmedAt=now;next.confirmedBy=ctx.actorId||null}
