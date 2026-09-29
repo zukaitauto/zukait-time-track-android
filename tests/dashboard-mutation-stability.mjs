@@ -35,7 +35,7 @@ assert.equal(writes,2,'a real network transition must update the badge exactly o
 let detailWrites=0,detail='';
 const small={get textContent(){return detail},set textContent(value){detail=value;detailWrites++}};
 const card={setAttribute(){},querySelector(){return small}};
-const update=new Function(extract(html,'function updateSparePartsCard(card,detail){','async function refreshManagerSparePartsSummary()')+'return updateSparePartsCard;')();
+const update=new Function(extract(html,'function updateSparePartsCard(card,detail){','async function refreshManagerSparePartsSummary(skipHydrate=false)')+'return updateSparePartsCard;')();
 update(card,'2 parts waiting');update(card,'2 parts waiting');
 assert.equal(detailWrites,1,'unchanged spare parts summary must not loop through its observer');
 
