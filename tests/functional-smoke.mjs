@@ -53,6 +53,13 @@ assert.match(supervisorStable, /onclick="v143OpenReadyForDelivery\(\)"/, 'Ready 
 
 
 
+// Employee work-state safety: read paths must not mutate sessions, and ID001 must use exact assignment sessions.
+assert.match(updates,/window\.activeSession=function\(emp\)\{[\s\S]*?const latest=latestSessionForEmployee\(emp\);[\s\S]*?return latest&&!latest\.end\?latest:null;[\s\S]*?\};/,'activeSession must remain a read-only current-session lookup');
+assert.doesNotMatch(updates,/window\.activeSession=function\(emp\)\{\s*reconcileEmployeeSessions\(emp\)/,'activeSession must never reconcile/mutate sessions during render or button-state reads');
+assert.match(updates,/const exactLatestSession=a=>[\s\S]*?s\.assignmentId&&String\(s\.assignmentId\)===String\(a\.id\)/,'ID001 eligibility must inspect the exact assignment-bound latest session');
+assert.match(updates,/const assignmentPaused=a=>\{const s=exactLatestSession\(a\);return !!\(s&&s\.end&&s\.paused===true&&s\.finished!==true\)\}/,'ID001 paused-only eligibility must require an ended paused non-finished assignment session');
+assert.match(updates,/openNormal\(emp\)\.some\(a=>!assignmentPaused\(a\)\)/,'ID001 assignment guard must use exact per-assignment paused state');
+
 assert.ok(updates.includes('v110ID001ReportButton') && updates.includes('v110OpenID001Report'), 'Supervisor must show the ID001 Report beside the standalone ID001 assignment control');
 assert.ok(updates.includes('v110ID001Emp') && updates.includes('v110ID001From') && updates.includes('v110ID001To'), 'ID001 Report must support employee and date filtering');
 assert.ok(updates.includes('v110PrintID001Report') && updates.includes('Zukait_ID001_Report.pdf'), 'ID001 Report must support Print / PDF output');
