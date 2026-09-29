@@ -1,8 +1,8 @@
 {
-  "versionName": "V205",
-  "versionCode": 168,
+  "versionName": "V206",
+  "versionCode": 169,
   "approvedForStaff": true,
-  "approvedAt": "2026-09-28",
-  "sourceCommit": "dac7d20d7887783ba7d5e45fa1ed12526fd6adb5",
-  "publishNonce": "release-v205-employee-status-badge-verified-20260928-r1"
+  "approvedAt": "2026-09-29",
+  "sourceCommit": "adacd5402dac8399f6a96514fa9d6ad0abebbb0d",
+  "publishNonce": "release-v206-session-consumables-verified-20260929-r1"
 }
