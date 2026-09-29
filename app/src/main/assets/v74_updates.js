@@ -3553,3 +3553,30 @@ window.v2TogglePilotThisDevice=function(){
  window.v201ApplyArrivedPartsDashboard=apply;window.v201OpenArrivalConfirmation=openArrival;
  [0,120,450].forEach(ms=>setTimeout(apply,ms));
 })();
+
+
+/* V213 READY FOR DELIVERY — additive QC/costing/parts status; preserves V120 lifecycle authority. */
+(function(){'use strict';
+ const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ const sp=()=>window.zukaitV2?.sparePartsMain;
+ function ready(){return typeof window.v120ReadyJobs==='function'?window.v120ReadyJobs():[]}
+ function paintState(no){
+  const c=state.consumables||{},jc=String(no||'').toUpperCase(),issued=(c.issues||[]).some(x=>x&&!x.voided&&String(x.jobCard||'').toUpperCase()===jc&&String(x.type||'').toLowerCase()==='issued'),actual=(c.actuals||[]).some(x=>x&&!x.voided&&x.locked&&String(x.jobCard||'').toUpperCase()===jc);
+  return {used:issued,final:!issued||actual,pending:issued&&!actual};
+ }
+ function partCount(no){
+  const api=sp();if(!api?.listsForJobCard||!api?.isPartPending)return 0;
+  return api.listsForJobCard(no).flatMap(l=>l.items||[]).filter(api.isPartPending).reduce((n,x)=>n+(api.pendingQty?api.pendingQty(x):Number(x.qty)||1),0);
+ }
+ function badge(text,ok){return '<span class="v213-badge '+(ok?'ok':'warn')+'">'+esc(text)+'</span>'}
+ function row(j,mode){
+  const p=paintState(j.no),parts=partCount(j.no),qc=j.qcPassed===true,openFn=mode==='manager'?'openManagerJobDetails':'openSupervisorJob';
+  return '<div class="v213-ready-row"><div class="v213-ready-main"><b>JC '+esc(j.no)+'</b><span>'+esc(j.vehicle||'Vehicle')+' · '+esc(j.reg||'—')+'</span></div><div class="v213-badges">'+badge(qc?'QC Done':'QC Pending',qc)+badge(p.pending?'Paint Final Pending':'Paint Final Done',!p.pending)+badge('Parts Pending '+parts,parts===0)+badge(p.pending?'Costing Pending':'Costing Ready',!p.pending)+'</div><div class="v213-actions"><button class="'+(qc?'secondary':'blue')+'" data-jc="'+esc(j.no)+'" onclick="v213ToggleQC(this.dataset.jc)">'+(qc?'QC DONE':'QC')+'</button><button class="secondary" data-jc="'+esc(j.no)+'" onclick="'+openFn+'(this.dataset.jc)">VIEW</button><button class="green" data-jc="'+esc(j.no)+'" onclick="v213AskDelivered(this.dataset.jc)">MARK DELIVERED</button></div></div>'
+ }
+ window.v213ToggleQC=function(no){if(!['Manager','Supervisor'].includes(me?.role))return;const j=(state.jobs||[]).find(x=>x&&String(x.no)===String(no));if(!j||j.delivered)return;j.qcPassed=!j.qcPassed;j.qcUpdatedAt=Date.now();j.qcUpdatedBy=me.id||'';try{save()}catch(_){}window.v74Ready(me.role==='Manager'?'manager':'supervisor')};
+ window.v213AskDelivered=function(no){if(!['Manager','Supervisor'].includes(me?.role))return;const j=(state.jobs||[]).find(x=>x&&String(x.no)===String(no));if(!j||j.delivered)return;const p=paintState(no),parts=partCount(no),notes=[j.qcPassed?'QC Done':'QC Pending',p.pending?'Final Paint Material Pending / Costing Pending':'Paint Final Done',parts?parts+' spare part(s) pending':'No spare parts pending'];openModal('<div class="v74-d"><h2>Confirm Vehicle Delivery</h2><div class="v74-jc">Job Card <b>'+esc(no)+'</b></div><div class="notice">'+notes.map(esc).join('<br>')+'</div><p class="muted">Pending paint costing or spare parts do not block delivery. Outstanding spare parts will appear under Delivered · Pending Parts.</p><div class="v74-actions"><button class="secondary" onclick="closeModal()">CANCEL</button><button class="green" data-jc="'+esc(no)+'" onclick="v213ConfirmDelivered(this.dataset.jc)">CONFIRM DELIVERED</button></div></div>')};
+ window.v213ConfirmDelivered=function(no){if(!['Manager','Supervisor'].includes(me?.role))return;const j=(state.jobs||[]).find(x=>x&&String(x.no)===String(no));if(!j||j.delivered)return;const current=ready().some(x=>String(x.no)===String(no));if(!current)return alert('This Job Card is no longer Ready for Delivery. Refresh and check the work status.');j.delivered=true;j.deliveredAt=Date.now();j.status='Delivered';try{if(typeof setLastAction==='function')setLastAction('Vehicle delivered '+no);save()}catch(_){}closeModal();render();if(navigator.onLine&&window.zukaitCloud?.syncNow)window.zukaitCloud.syncNow().catch(()=>{});};
+ window.v74Ready=function(mode){const rows=ready(),body=rows.length?'<div class="v213-ready-list">'+rows.map(j=>row(j,mode)).join('')+'</div>':'<div class="notice">No Job Cards are Ready for Delivery.</div>';mode==='manager'?openModal('<div class="section-title"><h2>🚗✓ Ready for Delivery</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+body):showSupervisorModal('🚗✓ Ready for Delivery',body)};
+ if(!document.getElementById('v213ReadyStyle')){const s=document.createElement('style');s.id='v213ReadyStyle';s.textContent='.v213-ready-row{margin:7px 0;padding:9px;border:1px solid #dbe5ef;border-radius:12px;background:#fff;box-shadow:0 2px 7px #17304d0d;display:grid;grid-template-columns:minmax(130px,1fr) minmax(220px,1.4fr) auto;gap:8px;align-items:center}.v213-ready-main{display:grid;gap:2px}.v213-ready-main b{font-size:13px}.v213-ready-main span{font-size:10px;color:#60748d}.v213-badges{display:flex;gap:4px;flex-wrap:wrap}.v213-badge{padding:4px 7px;border-radius:999px;font-size:9px;font-weight:900}.v213-badge.ok{background:#eaf8ef;color:#23723e}.v213-badge.warn{background:#fff4df;color:#9a5b00}.v213-actions{display:flex;gap:4px;flex-wrap:wrap}.v213-actions button{min-height:34px!important;padding:6px 8px!important;font-size:9px!important}@media(max-width:700px){.v213-ready-row{grid-template-columns:1fr}.v213-actions button{flex:1}}';document.head.appendChild(s)}
+ window.v213ReadyDeliveryAuthority=true;
+})();
