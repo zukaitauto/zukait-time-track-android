@@ -1632,7 +1632,9 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  const previousStart79=window.start;
  window.start=function(no){
    if(!me||me.role!=='Employee')return;
-   reconcileEmployeeSessions(me.id);reconcileDuplicateOpenAssignments();
+   // Starting work must never rewrite/close session history. The server remains
+   // authoritative for multi-device conflicts; client Start only checks current state.
+   reconcileDuplicateOpenAssignments();
    if(activeSession(me.id))return typeof window.v74Msg==='function'?window.v74Msg('You already have an active job. Pause, finish or stop it before starting another job.','One Job at a Time'):alert('You already have an active job.');
    const candidates=assigns().filter(a=>a&&a.emp===me.id&&a.job===no&&!a.cancelled&&!a.completed).sort((a,b)=>(+b.assignedAt||0)-(+a.assignedAt||0));
    if(no===HOLD)return typeof previousStart79==='function'?previousStart79.apply(this,arguments):undefined;
