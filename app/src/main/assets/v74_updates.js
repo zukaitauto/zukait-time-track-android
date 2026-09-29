@@ -217,7 +217,7 @@ window.v74ClearJobListFilters=function(){['v74jlf','v74jlt','v74jlq'].forEach(id
 window.openSupervisorJobCardList=function(){
  try{
  let emps=[...new Set((state.assign||[]).filter(a=>a&&!a.cancelled&&a.job!==v74JLH).map(a=>String(a.emp)))].sort((a,b)=>v74JLP(a).name.localeCompare(v74JLP(b).name));
- let savedView=localStorage.getItem('zukaitJobListView')||'cards';let body='<div class="v162-view-switch"><button type="button" data-view="cards" class="'+(savedView==='list'?'':'active')+'" onclick="v162SetJobListView(\'cards\')">▦ CARDS</button><button type="button" data-view="list" class="'+(savedView==='list'?'active':'')+'" onclick="v162SetJobListView(\'list\')">☰ LIST</button></div><div class="v74-jlfilters"><label>From<input id="v74jlf" type="date" onchange="v74JobListRender()"></label><label>To<input id="v74jlt" type="date" onchange="v74JobListRender()"></label><label>Search<input id="v74jlq" placeholder="" oninput="v74JobListRender()"></label><label>Status<select id="v74jls" onchange="v74JobListRender()"><option value="all">All</option><option value="notstarted">Not Started</option><option value="working">Working</option><option value="paused">Paused</option><option value="exceeded">Exceeded</option><option value="finished">Finished</option><option value="repeat">Repeat</option><option value="ready">Ready for Delivery</option></select></label><label>Employee<select id="v74jle" onchange="v74JobListRender()"><option value="all">All Employees</option>'+emps.map(id=>'<option value="'+v74JLE(id)+'">'+v74JLE(v74JLP(id).name)+'</option>').join('')+'</select></label><label>Department<select id="v74jld" onchange="v74JobListRender()"><option value="all">All Departments</option><option value="denter">Denter</option><option value="painter">Painter</option><option value="mechanic">Mechanic</option></select></label><label>Sort<select id="v74jlo" onchange="v74JobListRender()"><option value="newest">Newest First</option><option value="oldest">Oldest First</option><option value="job">By Job Card Number</option></select></label></div><div id="v74jlsummary" class="v74-jl-summary"></div><div class="v74-export"><button class="secondary" onclick="v74ClearJobListFilters()">CLEAR FILTERS</button><button class="green" onclick="v74ExportJobListExcel()">EXPORT EXCEL</button><button class="blue" onclick="v74ExportJobListPDF()">EXPORT PDF</button></div><div id="v74jlrows"></div>';
+ let savedView=localStorage.getItem('zukaitJobListView')||'cards';let body='<div class="v214-jl-toolbar"><button type="button" class="v214-filter-toggle" onclick="v214ToggleJobFilters()">FILTERS ▴</button><div class="v162-view-switch"><button type="button" data-view="cards" class="'+(savedView==='list'?'':'active')+'" onclick="v162SetJobListView(\'cards\')">▦ CARDS</button><button type="button" data-view="list" class="'+(savedView==='list'?'active':'')+'" onclick="v162SetJobListView(\'list\')">☰ LIST</button></div></div><div id="v214JobFilters" class="v74-jlfilters"><label>From<input id="v74jlf" type="date" onchange="v74JobListRender()"></label><label>To<input id="v74jlt" type="date" onchange="v74JobListRender()"></label><label>Search<input id="v74jlq" placeholder="" oninput="v74JobListRender()"></label><label>Status<select id="v74jls" onchange="v74JobListRender()"><option value="all">All</option><option value="notstarted">Not Started</option><option value="working">Working</option><option value="paused">Paused</option><option value="exceeded">Exceeded</option><option value="finished">Finished</option><option value="repeat">Repeat</option><option value="ready">Ready for Delivery</option></select></label><label>Employee<select id="v74jle" onchange="v74JobListRender()"><option value="all">All Employees</option>'+emps.map(id=>'<option value="'+v74JLE(id)+'">'+v74JLE(v74JLP(id).name)+'</option>').join('')+'</select></label><label>Department<select id="v74jld" onchange="v74JobListRender()"><option value="all">All Departments</option><option value="denter">Denter</option><option value="painter">Painter</option><option value="mechanic">Mechanic</option></select></label><label>Sort<select id="v74jlo" onchange="v74JobListRender()"><option value="newest">Newest First</option><option value="oldest">Oldest First</option><option value="job">By Job Card Number</option></select></label></div><div id="v74jlsummary" class="v74-jl-summary"></div><div class="v74-export"><button class="secondary" onclick="v74ClearJobListFilters()">CLEAR</button><button class="green" onclick="v74ExportJobListExcel()">EXCEL</button><button class="blue" onclick="v74ExportJobListPDF()">PDF</button></div><div id="v74jlrows"></div>';
  if(typeof showSupervisorModal==='function')showSupervisorModal('📋 Job Card Details — All Job Cards',body);else if(typeof openModal==='function')openModal('<div class="section-title"><h2>📋 Job Card Details — All Job Cards</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+body);setTimeout(v74JobListRender,0);clearTimeout(window.v74JobListLiveTimer);const v164Tick=()=>{if(!document.getElementById('v74jlrows')){window.v74JobListLiveTimer=null;return}if(document.visibilityState==='visible')v74JobListRender(true);window.v74JobListLiveTimer=setTimeout(v164Tick,document.visibilityState==='visible'?5000:30000)};window.v74JobListLiveTimer=setTimeout(v164Tick,5000);
  }catch(err){console.error('Job Card Details',err);if(typeof v74Msg==='function')v74Msg('Job Card Details could not open. Please retry.','Job Card Details')}
 };
@@ -3580,3 +3580,34 @@ window.v2TogglePilotThisDevice=function(){
  if(!document.getElementById('v213ReadyStyle')){const s=document.createElement('style');s.id='v213ReadyStyle';s.textContent='.v213-ready-row{margin:7px 0;padding:9px;border:1px solid #dbe5ef;border-radius:12px;background:#fff;box-shadow:0 2px 7px #17304d0d;display:grid;grid-template-columns:minmax(130px,1fr) minmax(220px,1.4fr) auto;gap:8px;align-items:center}.v213-ready-main{display:grid;gap:2px}.v213-ready-main b{font-size:13px}.v213-ready-main span{font-size:10px;color:#60748d}.v213-badges{display:flex;gap:4px;flex-wrap:wrap}.v213-badge{padding:4px 7px;border-radius:999px;font-size:9px;font-weight:900}.v213-badge.ok{background:#eaf8ef;color:#23723e}.v213-badge.warn{background:#fff4df;color:#9a5b00}.v213-actions{display:flex;gap:4px;flex-wrap:wrap}.v213-actions button{min-height:34px!important;padding:6px 8px!important;font-size:9px!important}@media(max-width:700px){.v213-ready-row{grid-template-columns:1fr}.v213-actions button{flex:1}}';document.head.appendChild(s)}
  window.v213ReadyDeliveryAuthority=true;
 })();
+
+/* V214 compact mobile Job Card Details UI only; filtering/export/data authority unchanged. */
+window.v214ToggleJobFilters=function(){
+ const box=document.getElementById('v214JobFilters'),btn=document.querySelector('.v214-filter-toggle');if(!box)return;
+ const hidden=box.classList.toggle('v214-hidden');if(btn)btn.textContent=hidden?'FILTERS ▾':'FILTERS ▴';
+};
+if(!document.getElementById('v214-job-list-compact')){
+ const s=document.createElement('style');s.id='v214-job-list-compact';s.textContent=`
+ .v214-jl-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px}
+ .v214-jl-toolbar .v162-view-switch{margin:0}
+ .v214-filter-toggle{min-height:36px!important;padding:7px 11px!important;border-radius:10px!important;background:#eef2f7!important;color:#334155!important;border:1px solid #cbd5e1!important;box-shadow:none!important;font-size:10px!important;font-weight:900!important}
+ .v74-jlfilters.v214-hidden{display:none!important}
+ .v74-export button{flex:1;min-width:0}
+ @media(max-width:700px){
+  .v74-jlfilters{gap:6px!important;margin-bottom:7px!important}
+  .v74-jlfilters label{font-size:10px!important}
+  .v74-jlfilters input,.v74-jlfilters select{min-height:39px!important;height:39px!important;margin-top:2px!important;padding:6px 8px!important;font-size:12px!important}
+  .v74-export{gap:6px!important;margin:7px 0 10px!important}
+  .v74-export button{min-height:38px!important;padding:7px 5px!important;font-size:10px!important}
+  .v162-view-switch{gap:5px!important}
+  .v162-view-switch button{min-height:36px!important;padding:7px 10px!important}
+  .v132-jc-grid{gap:8px!important}
+  .v132-jc-card{padding:10px!important;border-radius:15px!important;box-shadow:0 4px 0 #8aafd4,0 7px 12px #17324b20,inset 0 1px #fff!important}
+  .v132-jc-card h3{margin:7px 0 2px!important;font-size:13px!important}
+  .v132-jc-card p{margin:0 0 5px!important;font-size:11px!important}
+  .v132-jc-tech{font-size:9px!important}
+  .v132-jc-mini{gap:4px!important;margin-top:6px!important}
+  .v132-jc-mini div{padding:5px!important}
+ }
+ `;document.head.appendChild(s);
+}
