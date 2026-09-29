@@ -150,7 +150,7 @@
   };
   window.v65OpenControl=function(type){
     const rr=rows();
-    if(rr&&type==='working')return workerTable(rr.filter(r=>r.status==='Working'||r.status==='Overtime'),'Working Now — Server Live');
+    if(rr&&type==='working')return workerTable(rr.filter(r=>r.status==='Working'||(window.me?.role!=='Manager'&&r.status==='Overtime')),'Working Now — Server Live');
     if(rr&&type==='waiting')return workerTable(rr.filter(r=>r.status==='ID001'),'Waiting / ID001 — Server Live');
     if(rr&&type==='paused')return workerTable(rr.filter(r=>r.status==='Paused'),'Paused — Server Live');
     if(serverRequired()&&type==='working'){
@@ -202,7 +202,7 @@
     const target=label.toLowerCase();
     [...root.querySelectorAll('button,.glance-box,.notice,.v67-control,.v143-resource,.v143-top')].forEach(el=>{
       if(!(el.textContent||'').toLowerCase().includes(target))return;
-      const n=el.querySelector('.stat')||el.querySelector('strong');
+      const n=el.querySelector('.stat')||el.querySelector('strong')||(el.matches('.v67-control')?el.querySelector('b'):null);
       if(n&&n.textContent!==String(value))n.textContent=String(value);
     });
   }
@@ -240,6 +240,7 @@
     const rr=x.rows;
     const active=rr.filter(r=>ACTIVE.has(r.status)).length;
     const working=rr.filter(r=>r.status==='Working'||r.status==='Overtime').length;
+    const managerWorking=rr.filter(r=>r.status==='Working').length;
     const waiting=rr.filter(r=>r.status==='ID001').length;
     const paused=rr.filter(r=>r.status==='Paused').length;
     const available=rr.filter(r=>r.status==='Available').length;
@@ -257,9 +258,9 @@
     }
     if(me.role==='Manager'){
       const root=document.getElementById('managerView');
-      setCount(root,'Working Now',working);
+      setCount(root,'Working Now',managerWorking);
       setCount(root,'Waiting / ID001',waiting);
-      setCount(root,'Work Paused',paused);
+      setCount(root,'Paused',paused);
       setCount(root,'Free Tech',available+waiting);
       setCount(root,'Active Workers',active);
     }
