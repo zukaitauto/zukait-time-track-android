@@ -1,8 +1,8 @@
 {
-  "versionName": "V211",
-  "versionCode": 174,
+  "versionName": "V212",
+  "versionCode": 175,
   "approvedForStaff": true,
   "approvedAt": "2026-09-29",
-  "sourceCommit": "123ffa9a3c32cb42caefe694fb4671489408c98e",
-  "publishNonce": "release-v211-approved-20260929-r1"
+  "sourceCommit": "7d777db878da9503a8631a5f1107e6b7088b3b36",
+  "publishNonce": "release-v212-approved-20260929-r1"
 }
