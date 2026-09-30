@@ -1,8 +1,8 @@
 {
-  "versionName": "V220",
-  "versionCode": 183,
+  "versionName": "V221",
+  "versionCode": 184,
   "approvedForStaff": true,
   "approvedAt": "2026-09-30",
-  "sourceCommit": "c6823fbdb19c28b920c0f20eccb4d8309faa9d63",
-  "publishNonce": "release-v220-approved-20260930-r1"
+  "sourceCommit": "6db6a9c7d2edbb5fa144d6c40e4de708f415b774",
+  "publishNonce": "release-v221-department-login-fix-20260930-r1"
 }
