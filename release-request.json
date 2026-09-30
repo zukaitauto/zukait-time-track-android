@@ -1,8 +1,8 @@
 {
-  "versionName": "V219",
-  "versionCode": 182,
+  "versionName": "V220",
+  "versionCode": 183,
   "approvedForStaff": true,
   "approvedAt": "2026-09-30",
-  "sourceCommit": "d4d23056e3de3193598fcca95f4f225723341d68",
-  "publishNonce": "release-v219-approved-20260930-r1"
+  "sourceCommit": "c6823fbdb19c28b920c0f20eccb4d8309faa9d63",
+  "publishNonce": "release-v220-approved-20260930-r1"
 }
