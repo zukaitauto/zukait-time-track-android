@@ -1,8 +1,8 @@
 {
-  "versionName": "V222",
-  "versionCode": 185,
+  "versionName": "V223",
+  "versionCode": 186,
   "approvedForStaff": true,
   "approvedAt": "2026-09-30",
-  "sourceCommit": "325efb0510d2f8e28f9f3668cf483904846e4f94",
-  "publishNonce": "release-v222-supervisor-ui-qc-estimate-20260930-r2"
+  "sourceCommit": "7094772db45d6d3f108968251921b604ea4ab924",
+  "publishNonce": "release-v223-qc-colors-20260930-r1"
 }
