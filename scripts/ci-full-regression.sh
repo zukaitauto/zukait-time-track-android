@@ -4,6 +4,7 @@ node tests/functional-smoke.mjs
 node tests/employee-finish-server-authority.mjs
 node tests/consumables-smoke.mjs
 node tests/consumables-ui.mjs
+node tests/material-list-navigation.mjs
 node tests/assignment-search-ui.mjs
 node tests/supervisor-stable-ui.mjs
 node tests/live-status-authority.mjs

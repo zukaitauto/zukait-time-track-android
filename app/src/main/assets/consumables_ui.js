@@ -16,7 +16,9 @@ function consUpdateSync(){
 const modal=(title,body,back)=>{
   if(typeof window.openModal!=='function')return;
   const backAction=back||((title==='Consumables')?'':(title==='🎨 Painting Consumables'?'openConsumablesModule()':'openPaintingConsumables()'));
-  const x=consSyncInfo(),nav='<div class="cons-top-nav" style="display:flex;gap:5px;align-items:center;margin:0 0 6px">'+(backAction?'<button type="button" onclick="'+backAction+'" style="height:26px;min-height:26px;width:auto;flex:0 0 auto;border:1px solid #93c5fd;border-radius:8px;background:#dbeafe;color:#1d4ed8;font-size:9px;line-height:1;font-weight:900;padding:4px 8px">← BACK</button>':'')+'<button type="button" onclick="closeModal()" style="height:26px;min-height:26px;width:auto;flex:0 0 auto;border:1px solid #fca5a5;border-radius:8px;background:#fee2e2;color:#b91c1c;font-size:9px;line-height:1;font-weight:900;padding:4px 8px">✕ CLOSE</button></div>',clean=String(body||'').replace(/<button[^>]*>\s*←?\s*BACK(?:\s*\/\s*CLOSE)?[^<]*<\/button>/gi,'').replace(/<button[^>]*>\s*✕?\s*CLOSE[^<]*<\/button>/gi,''),r=openModal('<div class="cons-page">'+nav+'<div class="section-title"><h2>'+title+'</h2><span id="consSyncPill" class="cons-sync-pill '+x.cls+'">'+x.text+'</span></div>'+clean+'</div>');
+  const listType=title==='Suggested / Issued Materials'?'issued':title==='Actual Materials'?'actual':'';
+  const listButton=listType?'<button type="button" onclick="openConsumablesSavedList(\''+listType+'\')" style="margin-left:auto;height:26px;min-height:26px;width:auto;flex:0 0 auto;border:1px solid #93c5fd;border-radius:8px;background:#dbeafe;color:#1d4ed8;font-size:9px;font-weight:900;padding:4px 10px">LIST</button>':'';
+  const x=consSyncInfo(),nav='<div class="cons-top-nav" style="display:flex;gap:5px;align-items:center;margin:0 0 6px">'+(backAction?'<button type="button" onclick="'+backAction+'" style="height:26px;min-height:26px;width:auto;flex:0 0 auto;border:1px solid #93c5fd;border-radius:8px;background:#dbeafe;color:#1d4ed8;font-size:9px;line-height:1;font-weight:900;padding:4px 8px">← BACK</button>':'')+'<button type="button" onclick="closeModal()" style="height:26px;min-height:26px;width:auto;flex:0 0 auto;border:1px solid #fca5a5;border-radius:8px;background:#fee2e2;color:#b91c1c;font-size:9px;line-height:1;font-weight:900;padding:4px 8px">✕ CLOSE</button>'+listButton+'</div>',clean=String(body||'').replace(/<button[^>]*>\s*←?\s*BACK(?:\s*\/\s*CLOSE)?[^<]*<\/button>/gi,'').replace(/<button[^>]*>\s*✕?\s*CLOSE[^<]*<\/button>/gi,''),r=openModal('<div class="cons-page">'+nav+'<div class="section-title"><h2>'+title+'</h2><span id="consSyncPill" class="cons-sync-pill '+x.cls+'">'+x.text+'</span></div>'+clean+'</div>');
   setTimeout(consUpdateSync,0);return r;
 };
 if(window.addEventListener){window.addEventListener('zukait-live-status',consUpdateSync);window.addEventListener('online',consUpdateSync);window.addEventListener('offline',consUpdateSync)}
@@ -299,6 +301,31 @@ window.consSetSearchView=function(mode){
  if(document.getElementById('consSearchJc')?.value)consShowSearch();
  return consSearchView;
 };
+// Saved lists use creation time: a backdated costing date does not hide a newly saved record.
+function consSavedTime(row){for(const value of [row.createdAt,row.actualAt]){const n=Number(value)||(typeof value==='string'&&value.trim()?Date.parse(value):0);if(Number.isFinite(n)&&n>0)return n}return 0}
+let consSavedListType='issued';
+window.openConsumablesSavedList=async function(type){
+ if(!['Supervisor','Manager'].includes(role()))return;
+ consSavedListType=type==='actual'?'actual':'issued';
+ if(navigator.onLine&&window.zukaitCloud?.syncNow){try{await window.zukaitCloud.syncNow()}catch(e){console.warn('Saved material list refresh failed; using local cache',e)}}
+ consSearchListStyle();
+ const typeName=consSavedListType==='actual'?'Actual Materials':'Suggested / Issued Materials';
+ modal(typeName+' — List','<div class="cons-searchbar"><input id="consSavedQuery" placeholder="Job Card / Vehicle / Registration / Date" oninput="consRenderSavedList()"></div><p class="muted small">Newest saved records first</p><div id="consSavedRows"></div>',"openConsumablesEntry('"+consSavedListType+"')");
+ consRenderSavedList();
+};
+window.consRenderSavedList=function(){
+ const out=document.getElementById('consSavedRows');if(!out)return;
+ const c=C().ensureState(state),type=consSavedListType,q=(document.getElementById('consSavedQuery')?.value||'').trim().toLowerCase();
+ const rows=(type==='actual'?c.actuals:c.issues).filter(x=>x&&!x.voided&&x.jobCard&&(!x.department||x.department===C().DEPT)&&(type==='actual'||x.type===C().TYPES.ISSUED)).slice().sort((a,b)=>consSavedTime(b)-consSavedTime(a)||String(b.id||'').localeCompare(String(a.id||'')));
+ const items=rows.map(row=>{const d=consMaterialListData(row.jobCard,row),at=consSavedTime(row),date=at?new Date(at).toLocaleString():'Date unavailable',vehicle=d.vehicle||'Vehicle',reg=d.job.reg||d.job.registration||'';return {row,date,vehicle,reg}}).filter(x=>!q||[x.row.jobCard,x.vehicle,x.reg,x.date].join(' ').toLowerCase().includes(q));
+ out.innerHTML=items.length?items.map((x,i)=>consCompactListRow(i+1,'JC '+esc(x.row.jobCard),esc([x.vehicle,x.reg,x.date].filter(Boolean).join(' · ')),type==='actual'?'OMR '+Number(x.row.totalCost||0).toFixed(3):'',"consOpenSavedMaterial(decodeURIComponent('"+esc(encodeURIComponent(x.row.jobCard).replace(/'/g,'%27'))+"'))")).join(''):'<div class="notice">No '+(q?'matching':'saved')+' material lists.</div>';
+};
+window.consOpenSavedMaterial=function(no){
+ if(!['Supervisor','Manager'].includes(role()))return;
+ consSearchView=consSavedListType;consSearchListStyle();
+ modal((consSavedListType==='actual'?'Actual Materials':'Suggested / Issued Materials')+' — Details','<input id="consSearchJc" type="hidden" value="'+esc(no)+'"><div id="consSearchResult"></div>',"openConsumablesSavedList('"+consSavedListType+"')");
+ const el=document.getElementById('consSearchJc');if(el)el.value=no;consShowSearch(no);
+};
 window.openConsumablesSearch=async function(){
  if(!['Supervisor','Manager'].includes(role()))return;
  if(navigator.onLine&&window.zukaitCloud?.syncNow){
@@ -307,10 +334,11 @@ window.openConsumablesSearch=async function(){
  consSearchListStyle();
  modal('Search Material List','<div class="cons-subnav"><button class="secondary" type="button" onclick="openPaintingConsumables()">← BACK TO CONSUMABLES</button><button class="blue" type="button" onclick="consOpenPaintReport()">PAINT REPORT</button></div><div class="cons-entry-shell"><div class="cons-searchbar"><input id="consSearchJc" placeholder="Search Job Card No." oninput="consShowSearch()"><button class="blue" onclick="consShowSearch()">SEARCH</button></div><div class="cons-search-tabs"><button type="button" data-search-view="issued" class="'+(consSearchView==='issued'?'active':'')+'" onclick="consSetSearchView(\'issued\')">SUGGESTED / ISSUED</button><button type="button" data-search-view="actual" class="'+(consSearchView==='actual'?'active':'')+'" onclick="consSetSearchView(\'actual\')">ACTUAL MATERIALS</button></div><div class="cons-recent-head"><b>RECENT MATERIAL LISTS</b><small>JC | Vehicle | Registration</small></div><div class="cons-recent-list">'+consRecentMaterialLists()+'</div><div id="consSearchResult" class="notice">Enter a Job Card number to view the selected material list.</div></div>');
 };
-window.consShowSearch=function(){
+window.consShowSearch=function(exactJobCard){
  const raw=document.getElementById('consSearchJc')?.value||'',out=document.getElementById('consSearchResult');if(!out)return;
  const c=C().ensureState(state),q=String(raw).trim().toLowerCase();
  let d=jcData(raw);
+ if(exactJobCard){const hit=[...c.issues,...c.actuals].find(x=>x&&!x.voided&&String(x.jobCard||'').toUpperCase()===String(exactJobCard).toUpperCase());if(!hit){out.innerHTML='<div class="notice">Material list not found.</div>';return}d=consMaterialListData(exactJobCard,hit)}
  if(!d&&q){
   const recent=[...c.issues,...c.actuals].filter(x=>x&&!x.voided).sort((a,b)=>(Number(b.createdAt||b.actualAt)||0)-(Number(a.createdAt||a.actualAt)||0));
   const hit=recent.find(x=>{const j=(state.jobs||[]).find(v=>String(v.no||'').toUpperCase()===String(x.jobCard||'').toUpperCase())||{};return [x.jobCard,x.vehicle,j.reg,j.registration,j.vehicle,j.make,j.model,j.year,j.modelYear].filter(Boolean).join(' ').toLowerCase().includes(q)});
