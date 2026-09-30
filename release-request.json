@@ -1,8 +1,8 @@
 {
-  "versionName": "V226",
-  "versionCode": 189,
+  "versionName": "V227",
+  "versionCode": 190,
   "approvedForStaff": true,
   "approvedAt": "2026-09-30",
-  "sourceCommit": "7cc9e1b8beb6a8e23d326970dda04e75b34d98cc",
-  "publishNonce": "release-v226-delivered-vehicle-list-20260930-r1"
+  "sourceCommit": "c1ae209c97dc2331c9e21afe588aaf997aa03cb4",
+  "publishNonce": "release-v227-employee-assigned-cards-20260930-r1"
 }
