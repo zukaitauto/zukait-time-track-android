@@ -1,8 +1,8 @@
 {
-  "versionName": "V229",
-  "versionCode": 192,
+  "versionName": "V230",
+  "versionCode": 193,
   "approvedForStaff": true,
   "approvedAt": "2026-10-01",
-  "sourceCommit": "4d3c94198d219a4d9bf88aec7feb0ff17adf6035",
-  "publishNonce": "release-v229-technician-workload-20261001-r1"
+  "sourceCommit": "ac2038fabee10a281ed9b7f54d7d7e3637b390c3",
+  "publishNonce": "release-v230-technician-list-20261001-r1"
 }
