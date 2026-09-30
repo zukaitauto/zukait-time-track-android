@@ -241,13 +241,13 @@ assert.match(updates, /\.v84-action-grid\{display:grid!important;grid-template-c
 assert.match(updates, /\.v84-depts\{display:grid!important;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)!important/, 'Technician Board must remain three department boxes');
 assert.match(updates, /\['Denter','DENTING'[^\n]+\['Painter','PAINTING'[^\n]+\['Mechanic','MECHANICAL'/, 'Technician Board must expose Denting, Painting and Mechanical');
 assert.match(updates, /v84OpenDept/, 'Technician Board department popup must exist');
-assert.match(updates, /v84ToggleTech/, 'Technician detail expansion must exist');
+assert.match(updates, /v84ToggleTech/, 'Technician detail navigation must exist');
 assert.equal((updates.match(/function v84TechnicianBoard\(/g)||[]).length,1,'Technician Board must have exactly one authoritative renderer');
 assert.doesNotMatch(html, /v56-technician-board-card/, 'base HTML must not recreate the legacy Technician Board');
 assert.doesNotMatch(read('app/src/main/assets/v54_improvements.js'), /v54OpenTechnicianBoard/, 'V54 legacy Technician Board modal must remain retired');
 assert.match(updates, /const v103SupervisorOverviewAuthority=window\.supervisorOverview/, 'V103 must capture the authoritative Supervisor overview before later wrappers');
 assert.match(updates, /x\.status==='Working'\|\|x\.status==='Overtime'/, 'Technician Board working count must exclude paused technicians');
-assert.match(updates, /let a=live\?AS\(live\):null/, 'Technician detail must bind to the current live assignment first');
+assert.match(read('app/src/main/assets/technician_workload.js'), /s\.assignmentId\?same\(a\.id,s\.assignmentId\)/, 'Technician workload must match the current live assignment by ID');
 assert.ok(html.includes("{id:'EMP012',name:'Jijesh',role:'Employee',department:'Painter'}"), 'Jijesh roster spelling must remain correct');
 assert.match(updates, /v89-employee-lower/, 'Employee lower dashboard must use compact controls');
 assert.match(updates, /\.v89-employee-lower\{display:grid!important;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/, 'Employee lower dashboard must remain two columns');
@@ -610,7 +610,7 @@ assert.doesNotMatch(html, /210h productive target/, 'Fixed 210-hour incentive ta
 assert.match(updates, /v84-depts/, 'Supervisor Technician Board must use three department boxes');
 assert.match(updates, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, 'Technician departments must stay in three columns');
 assert.match(updates, /v84-tech-grid/, 'Department technicians must use card grid');
-assert.match(updates, /v84ToggleTech/, 'Technician cards must expand details on click');
+assert.match(updates, /v84ToggleTech/, 'Technician cards must open workload details on click');
 assert.match(updates, /v84-alert-row/, 'Employee Requests and Need Attention must share a two-column row');
 assert.match(updates, /v84-action-grid/, 'Supervisor action controls must use a two-column grid');
 assert.match(updates, /Overtime belongs only in Today at a Glance/, 'Supervisor must declare the single-overtime-card contract');

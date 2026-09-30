@@ -55,3 +55,5 @@ done
 
 node --check app/src/main/assets/qc_delivery.js
 node --check app/src/main/assets/qc_delivery_rules.js
+
+node --check app/src/main/assets/technician_workload.js

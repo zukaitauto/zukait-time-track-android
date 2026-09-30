@@ -19,3 +19,5 @@ test -s app/src/main/res/drawable/app_icon.webp
 test -s app/src/main/res/drawable/app_logo.webp
 test -s app/src/main/res/drawable/splash_screen.xml
 test -s app/src/main/res/values/styles.xml
+
+test -s app/src/main/assets/technician_workload.js
