@@ -53,6 +53,15 @@ assert.match(ui,/Painting QC ✓/,'Ready to Deliver must show Painting QC pass s
 assert.match(ui,/Final QC ✓/,'Ready to Deliver must show Final QC pass state');
 assert.match(ui,/lastNotice=operation==='DELIVER'/,'QC actions must return with a short non-blocking result notice');
 assert.match(ui,/const dn=jobs\(\)\.filter\(j=>j&&j\.delivered/,'Delivered Vehicles must have a live count');
+assert.match(ui,/qc-btn-paint/,'Painting QC action must keep its own semantic colour');
+assert.match(ui,/qc-btn-final/,'Final QC action must keep its own semantic colour');
+assert.match(ui,/qc-btn-deliver/,'Delivery action must keep its own semantic colour');
+assert.match(ui,/qc-btn-pass/,'PASS action must be green');
+assert.match(ui,/qc-btn-fail/,'FAIL action must be red');
+assert.match(ui,/qc-btn-detail/,'View Details must use a distinct neutral accent');
+assert.match(ui,/qc-record-pass/,'Passed QC record must be visually distinct');
+assert.match(ui,/qc-record-pending/,'Pending QC record must be visually distinct');
+
 
 
 assert.match(fs.readFileSync('.github/workflows/pages.yml','utf8'),/cp app\/src\/main\/assets\/qc_delivery_rules.js _site\/qc_delivery_rules.js/);
