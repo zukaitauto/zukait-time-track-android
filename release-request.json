@@ -1,8 +1,8 @@
 {
-  "versionName": "V224",
-  "versionCode": 187,
+  "versionName": "V225",
+  "versionCode": 188,
   "approvedForStaff": true,
   "approvedAt": "2026-09-30",
-  "sourceCommit": "5c4890a10c0a773d735bc6185c83abfdcc65aab9",
-  "publishNonce": "release-v224-manager-paint-notifications-20260930-r1"
+  "sourceCommit": "ebb8c11ec18c925f3b3d2db598f46a565bbca7ff",
+  "publishNonce": "release-v225-dashboard-raised-cards-20260930-r1"
 }
