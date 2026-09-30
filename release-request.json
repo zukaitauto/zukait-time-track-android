@@ -1,8 +1,8 @@
 {
-  "versionName": "V228",
-  "versionCode": 191,
+  "versionName": "V229",
+  "versionCode": 192,
   "approvedForStaff": true,
-  "approvedAt": "2026-09-30",
-  "sourceCommit": "774645ec3f0c5331abab85e7f4d47261cb43d157",
-  "publishNonce": "release-v228-print-navigation-tools-20260930-r1"
+  "approvedAt": "2026-10-01",
+  "sourceCommit": "4d3c94198d219a4d9bf88aec7feb0ff17adf6035",
+  "publishNonce": "release-v229-technician-workload-20261001-r1"
 }
