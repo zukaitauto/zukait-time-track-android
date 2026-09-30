@@ -304,6 +304,14 @@ window.consSetSearchView=function(mode){
 // Saved lists use creation time: a backdated costing date does not hide a newly saved record.
 function consSavedTime(row){for(const value of [row.createdAt,row.actualAt]){const n=Number(value)||(typeof value==='string'&&value.trim()?Date.parse(value):0);if(Number.isFinite(n)&&n>0)return n}return 0}
 let consSavedListType='issued';
+window.consOpenNotificationMaterial=function(id){
+ if(role()!=='Manager')return false;
+ const c=C().ensureState(state),row=c.issues.find(x=>x.id===id&&!x.voided&&x.type===C().TYPES.ISSUED);
+ if(!row){alert('This material list is no longer available.');return false}
+ const job=(state.jobs||[]).find(x=>x.no===row.jobCard)||{};
+ const body='<div class="cons-summary"><b>JC '+esc(row.jobCard)+'</b><span>'+esc(row.vehicle||job.vehicle||job.make||'')+'</span><span>Registration: '+esc(job.reg||job.registration||'—')+'</span><span>Colour: '+esc(row.colourCode||'—')+'</span><span>Supervisor: '+esc(row.createdByName||row.createdBy||'—')+'</span><span>'+esc(new Date(row.createdAt).toLocaleString())+'</span></div><div class="cons-table"><table><tr><th>No.</th><th>Material</th><th>Brand</th><th>Quantity</th><th>Unit</th></tr>'+(row.lines||[]).map((l,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(c.materials.find(m=>m.id===l.materialId)?.name||l.materialId)+'</td><td>'+esc(c.brands.find(b=>b.id===l.brandId)?.name||l.brandId)+'</td><td>'+esc(l.quantity)+'</td><td>'+esc(l.unit)+'</td></tr>').join('')+'</table></div>';
+ modal('Paint Material List — Details',body,'zukaitNotificationCenter.open()');return true;
+};
 window.openConsumablesSavedList=async function(type){
  if(!['Supervisor','Manager'].includes(role()))return;
  consSavedListType=type==='actual'?'actual':'issued';

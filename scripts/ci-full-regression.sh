@@ -83,6 +83,7 @@ node tests/v2-leave.mjs
 node tests/v2-consumables.mjs
 node tests/v2-notification-rules.mjs
 node tests/v2-notification-center.mjs
+node tests/manager-paint-notifications.mjs
 node tests/v2-reports.mjs
 node tests/v2-scale-benchmark.mjs
 node tests/v2-migration-completeness.mjs
@@ -106,3 +107,4 @@ node tests/v196-manager-header-top.mjs
 node tests/v196-manager-no-duplicates.mjs
 
 node tests/technician-workload.mjs
+
