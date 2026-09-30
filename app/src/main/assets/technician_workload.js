@@ -50,7 +50,7 @@
   }
   function workloadBody(emp){
     const {rows}=snapshot(emp);
-    return '<div class="tw-workload-summary"><span>Present Jobs</span><b>'+rows.length+'</b></div>'+(rows.length?rows.map((r,i)=>{
+    return '<div class="tw-workload-summary" data-summary="Present Jobs: '+rows.length+'"><span>Present Jobs</span><b>'+rows.length+'</b></div>'+(rows.length?rows.map((r,i)=>{
       const suggested=r.assignments.reduce((n,a)=>n+(Number(a.suggested)||0),0);
       const worked=r.assignments.reduce((n,a)=>n+(Number(totalForAssignment(a))||0),0);
       const remaining=Math.max(0,suggested-worked);
