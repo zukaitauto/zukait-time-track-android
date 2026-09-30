@@ -108,3 +108,5 @@ node tests/v196-manager-no-duplicates.mjs
 
 node tests/technician-workload.mjs
 
+
+node tests/print-navigation.mjs
