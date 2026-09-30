@@ -1,8 +1,8 @@
 {
-  "versionName": "V225",
-  "versionCode": 188,
+  "versionName": "V226",
+  "versionCode": 189,
   "approvedForStaff": true,
   "approvedAt": "2026-09-30",
-  "sourceCommit": "ebb8c11ec18c925f3b3d2db598f46a565bbca7ff",
-  "publishNonce": "release-v225-dashboard-raised-cards-20260930-r1"
+  "sourceCommit": "7cc9e1b8beb6a8e23d326970dda04e75b34d98cc",
+  "publishNonce": "release-v226-delivered-vehicle-list-20260930-r1"
 }
