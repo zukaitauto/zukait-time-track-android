@@ -1,8 +1,8 @@
 {
-  "versionName": "V221",
-  "versionCode": 184,
+  "versionName": "V222",
+  "versionCode": 185,
   "approvedForStaff": true,
   "approvedAt": "2026-09-30",
-  "sourceCommit": "6db6a9c7d2edbb5fa144d6c40e4de708f415b774",
-  "publishNonce": "release-v221-department-login-fix-20260930-r1"
+  "sourceCommit": "30f8ce9110d8115fc577fa4e24a86e0f2f8d7a86",
+  "publishNonce": "release-v222-supervisor-ui-qc-estimate-20260930-r1"
 }
