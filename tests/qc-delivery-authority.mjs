@@ -37,9 +37,16 @@ for(const person of [vinayan,shine,manager]){
  const ctx={qcStatus:status,state:copy(initial),me:person,window:{addEventListener(){}},document:{getElementById(){return null},createElement(){return{}},head:{appendChild(){}}},Date,console,alert(){},openModal(){}};
  vm.runInNewContext(ui.replace(/^import[^\n]+\n/, '')+'\nwindow.testRow=row;',ctx);
  let html=ctx.window.testRow(initial.jobs[0]);
- assert.equal(html.includes('Painting QC</button>'),person.id==='SUP002');assert.equal(html.includes('Final QC</button>'),false);assert.equal(html.includes('Mark Delivered</button>'),person.role==='Supervisor');
- ctx.state=copy(data);ctx.state.jobs[0].delivered=false;html=ctx.window.testRow(ctx.state.jobs[0]);assert.equal(html.includes('Final QC</button>'),person.id==='SUP001');assert.equal(/v213AskDelivered[^>]+disabled/.test(html),false);
+ assert.equal(html.includes('Painting QC</button>'),person.id==='SUP002');assert.equal(html.includes('Final QC</button>'),false);assert.equal(html.includes('Mark Delivered</button>'),false,'QC queue must not contain delivery action');
+ ctx.state=copy(data);ctx.state.jobs[0].delivered=false;html=ctx.window.testRow(ctx.state.jobs[0]);assert.equal(html.includes('Final QC</button>'),false,'Final-passed vehicle must leave QC queue');assert.equal(html.includes('Mark Delivered</button>'),false);const readyHtml=ctx.window.testRow(ctx.state.jobs[0],'ready');assert.equal(readyHtml.includes('Mark Delivered</button>'),person.role==='Supervisor');assert.equal(/v213AskDelivered[^>]+disabled/.test(readyHtml),false);
 }
+
+assert.match(ui,/function qcQueueMatches\(j\)/,'QC queue must have an explicit stage filter');
+assert.match(ui,/function readyMatches\(j\)/,'Ready to Deliver must be a separate filter');
+assert.match(ui,/window\.zukaitOpenReadyToDeliver=\(\)=>openPage\('ready'\)/,'Ready to Deliver must have its own launcher');
+assert.match(ui,/<b>QC<\/b><small>Painting \/ Final quality check<\/small>/,'QC launcher must be separate from delivery');
+assert.match(ui,/<b>Ready to Deliver<\/b><small>Both QC stages passed<\/small>/,'Ready to Deliver launcher must be separate from QC');
+
 assert.match(fs.readFileSync('.github/workflows/pages.yml','utf8'),/cp app\/src\/main\/assets\/qc_delivery_rules.js _site\/qc_delivery_rules.js/);
 assert.match(fs.readFileSync('app/src/main/assets/offline_test.html','utf8'),/<script type="module" src="qc_delivery.js\?v=218"><\/script>/);
 console.log('QC dashboard role buttons and Web/Android module packaging passed.');
