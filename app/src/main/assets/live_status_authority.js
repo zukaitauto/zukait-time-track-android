@@ -216,6 +216,7 @@
       if(!(el.textContent||'').toLowerCase().includes(target))return;
       const n=el.querySelector('.stat')||el.querySelector('strong')||(el.matches('.v67-control')?el.querySelector('b'):null);
       if(n&&n.textContent!==String(value))n.textContent=String(value);
+      if(el.dataset&&el.matches?.('.v143-top')){const countState=Number.isFinite(Number(value))?(Number(value)>0?'active':'empty'):'unknown';if(el.dataset.countState!==countState)el.dataset.countState=countState;}
     });
   }
   function applyDepartmentCounts(root,rr){
