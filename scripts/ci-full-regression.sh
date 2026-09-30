@@ -7,6 +7,7 @@ node tests/consumables-ui.mjs
 node tests/assignment-search-ui.mjs
 node tests/supervisor-stable-ui.mjs
 node tests/live-status-authority.mjs
+node tests/paused-menu-consistency.mjs
 node tests/consumables-backend-security.mjs
 node tests/v128-costing-safety.mjs
 node tests/registration-authority.mjs

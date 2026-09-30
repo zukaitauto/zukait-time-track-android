@@ -173,6 +173,7 @@
   window.openGlanceList=function(type){
     const rr=rows();
     if(rr&&type==='paused')return workerTable(rr.filter(r=>r.status==='Paused'),'Paused Jobs — Server Live');
+    if(serverRequired()&&type==='paused')return typeof window.v74Msg==='function'?window.v74Msg('Live worker status is syncing with the server. Please retry after the SERVER LIVE indicator returns.','Live Status'):alert('Live worker status is syncing with the server.');
     return typeof oldOpenGlance==='function'?oldOpenGlance.apply(this,arguments):undefined;
   };
   window.v74OT=function(){

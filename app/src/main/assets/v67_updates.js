@@ -109,7 +109,7 @@ function renderManager67(){
  '<section class="v67-section"><div class="v67-section-title"><div><h3>Workshop Control Center</h3><p>Live workshop status</p></div></div><div class="v67-control-grid">'+
  controlCard('today','Today Jobs',c.today,'sky')+
  controlCard('notstarted','Not Started',c.notstarted,'slate')+
- controlCard('paused','Paused',c.paused,'amber')+
+ '<button type="button" class="v67-control sky" disabled aria-disabled="true"><span>Delivered Vehicles</span><small>Details coming later</small></button>'+
  controlCard('consumables','Consumables',0,'rose')+
  controlCard('completed','Completed Today',c.completed,'teal')+
  controlCard('repeat','Repeat Work',c.repeat,'violet')+
