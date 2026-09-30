@@ -46,6 +46,14 @@ assert.match(ui,/function readyMatches\(j\)/,'Ready to Deliver must be a separat
 assert.match(ui,/window\.zukaitOpenReadyToDeliver=\(\)=>openPage\('ready'\)/,'Ready to Deliver must have its own launcher');
 assert.match(ui,/<b>QC<\/b><small>Painting \/ Final quality check<\/small>/,'QC launcher must be separate from delivery');
 assert.match(ui,/<b>Ready to Deliver<\/b><small>Both QC stages passed<\/small>/,'Ready to Deliver launcher must be separate from QC');
+assert.match(ui,/function queueSince\(j\)/,'QC queue must sort by waiting age');
+assert.match(ui,/function readySince\(j\)/,'Ready to Deliver must sort by ready age');
+assert.match(ui,/qc-fail-badge/,'QC failures must show a visible FAIL badge');
+assert.match(ui,/Painting QC ✓/,'Ready to Deliver must show Painting QC pass state');
+assert.match(ui,/Final QC ✓/,'Ready to Deliver must show Final QC pass state');
+assert.match(ui,/lastNotice=operation==='DELIVER'/,'QC actions must return with a short non-blocking result notice');
+assert.match(ui,/const dn=jobs\(\)\.filter\(j=>j&&j\.delivered/,'Delivered Vehicles must have a live count');
+
 
 assert.match(fs.readFileSync('.github/workflows/pages.yml','utf8'),/cp app\/src\/main\/assets\/qc_delivery_rules.js _site\/qc_delivery_rules.js/);
 assert.match(fs.readFileSync('app/src/main/assets/offline_test.html','utf8'),/<script type="module" src="qc_delivery.js\?v=218"><\/script>/);
