@@ -59,3 +59,26 @@ for(const emp of users){
 context.me.role='Employee';title='unchanged';context.openTechnicianWorkload('1');assert.equal(title,'unchanged');
 assert.doesNotMatch(source,/save\(|commitEvent\(|syncNow\(|MutationObserver/);
 console.log('Technician workload: all departments, row navigation, unique unfinished JCs, times, escaping, realtime finish/reassignment, read-only state and timer cleanup passed');
+
+// Production login updates lexical `me`, not necessarily window.me.
+// Exercise the actual dashboard entry point with those identities separated.
+const production={...context,window:{v84TechState:()=>({status:'Available',session:null})}};
+delete production.me;
+vm.createContext(production);
+vm.runInContext("let me={role:'Supervisor'};",production);
+vm.runInContext(source,production);
+const updates=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
+vm.runInContext(updates.match(/window\.v84OpenDept=function\(dept\)\{[^\n]+/)[0],production);
+for(const employee of users){
+  title='not opened';
+  production.window.v84OpenDept(employee.department);
+  assert.notEqual(title,'not opened',employee.department+' must open with the production lexical session');
+  production.window.openTechnicianWorkload(employee.id);
+  assert.ok(elements.get('twWorkload'),'employee workload must open with the same session');
+  tick();assert.equal(intervals.size,1,'live refresh must retain the lexical Supervisor session');
+}
+production.window.me={role:'Supervisor'};
+vm.runInContext('me=null;',production);
+title='closed';production.window.v84OpenDept('Denter');assert.equal(title,'closed','stale window identity must not reopen after logout');
+tick();assert.equal(intervals.size,0);
+console.log('Production lexical login: Denting, Painting, Mechanical, workload and logout guards passed');

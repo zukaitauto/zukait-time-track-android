@@ -1,5 +1,7 @@
 (function(){
   'use strict';
+  // Match the dashboard and secure login's lexical session authority.
+  const supervisor=()=>typeof me!=='undefined'&&me?.role==='Supervisor';
   const departments={Denter:'Denting',Painter:'Painting',Mechanic:'Mechanical'};
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const same=(a,b)=>String(a)===String(b);
@@ -56,14 +58,14 @@
     stop();
     let previous=body.innerHTML;
     timer=setInterval(()=>{
-      if(!body.isConnected||window.me?.role!=='Supervisor'){stop();return;}
+      if(!body.isConnected||!supervisor()){stop();return;}
       if(document.hidden)return;
       const next=render();
       if(next!==previous){body.innerHTML=next;previous=next;}
     },1000);
   }
   window.openTechnicianDepartment=function(dept){
-    if(window.me?.role!=='Supervisor'||!departments[dept])return;
+    if(!supervisor()||!departments[dept])return;
     stop();
     showSupervisorModal(esc(departments[dept])+' Technicians','<div id="twDepartment">'+departmentBody(dept)+'</div>');
     const body=document.getElementById('twDepartment');
@@ -72,7 +74,7 @@
   };
   window.openTechnicianWorkload=function(emp){
     const u=person(emp);
-    if(window.me?.role!=='Supervisor'||!u||u.role!=='Employee'||!departments[u.department])return;
+    if(!supervisor()||!u||u.role!=='Employee'||!departments[u.department])return;
     stop();
     showSupervisorModal(esc(u.name)+' · '+esc(departments[u.department]),'<button type="button" id="twBack" class="secondary">← Back</button><div id="twWorkload">'+workloadBody(emp)+'</div>');
     document.getElementById('modal').classList.add('tw-fullscreen');
