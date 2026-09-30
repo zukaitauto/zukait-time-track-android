@@ -750,7 +750,7 @@
     // but no longer hammer Supabase every second on every open device. Local user
     // actions still push immediately; focus/visibility/online events still force an
     // immediate reconciliation. Hidden devices back off aggressively.
-    const pollMs=()=>document.visibilityState==='hidden'?60000:3000;
+    const pollMs=()=>document.visibilityState==='hidden'?30000:1000;
     const liveMs=()=>document.visibilityState==='hidden'?60000:15000;
     const schedulePoll=()=>{clearTimeout(pollTimer);pollTimer=setTimeout(async()=>{if(sessionToken()&&navigator.onLine)await probeRevision();schedulePoll()},pollMs())};
     const scheduleLive=()=>{clearTimeout(livePollTimer);livePollTimer=setTimeout(()=>{if(sessionToken()&&navigator.onLine&&liveRole())pullLiveStatus();scheduleLive()},liveMs())};
