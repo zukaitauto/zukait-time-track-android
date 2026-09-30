@@ -1016,12 +1016,15 @@ public class MainActivity extends Activity {
         }
         notifyUpdateDownloadToWeb("SYNCING", 100, 0, 0,
                 "Saving workshop changes before update...");
+        // syncNow can resolve without loading when the session is missing or a
+        // pull is already running. Require confirmed, fresh workshop sync.
         webView.evaluateJavascript(
                 "(async function(){try{" +
                 "if(!window.zukaitCloud||!window.zukaitCloud.syncNow)throw new Error('SYNC_UNAVAILABLE');" +
+                "var startedAt=Date.now();" +
                 "await window.zukaitCloud.syncNow();" +
-                "var h=window.zukaitCloud.syncHealth||{};" +
-                "var ok=!!navigator.onLine&&!h.dirty&&!h.pushing&&!h.pulling&&!h.pendingConflict;" +
+                "var h=window.zukaitCloud.syncHealth;" +
+                "var ok=!!navigator.onLine&&!!h&&h.ready===true&&h.dirty===false&&h.pushing===false&&h.pulling===false&&h.pendingConflict===false&&h.lastError===''&&Number.isFinite(h.lastSuccessfulSyncAt)&&h.lastSuccessfulSyncAt>0&&h.lastSuccessfulSyncAt>=startedAt;" +
                 "if(window.AndroidBridge&&window.AndroidBridge.completeUpdatePreInstallSync)window.AndroidBridge.completeUpdatePreInstallSync(ok);" +
                 "}catch(e){if(window.AndroidBridge&&window.AndroidBridge.completeUpdatePreInstallSync)window.AndroidBridge.completeUpdatePreInstallSync(false);}})();",
                 null

@@ -18,6 +18,7 @@ node tests/v156-id001-preliminary-server-deployment.mjs
 node tests/paint-safety.mjs
 node tests/vehicle-logo-assets.mjs
 node tests/native-update-integrity.mjs
+node tests/native-update-sync-safety.mjs
 node tests/release-latest-integrity.mjs
 node tests/architecture-v2.mjs
 node tests/v2-work-events.mjs
