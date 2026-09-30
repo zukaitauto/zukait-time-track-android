@@ -12,7 +12,7 @@ const modal=element();elements.set('modal',modal);
 const state={jobs:[],assign:[],sessions:[]};
 const users=['Denter','Painter','Mechanic'].map((department,i)=>({id:String(i+1),name:i?'Employee '+i:'AKHIL <test>',role:'Employee',department}));
 let live={status:'Working',session:{emp:'1',job:'LC-1003',assignmentId:'a'}};
-const context={state,users,me:{role:'Supervisor'},document:{hidden:false,head:{appendChild(){}},createElement:element,getElementById:id=>elements.get(id)},
+const context={state,users,me:{role:'Supervisor'},document:{hidden:false,head:{appendChild(){}},createElement:element,querySelector:selector=>selector==='#modal .v150-supervisor-modal-close'?element():null,getElementById:id=>elements.get(id)},
   setInterval(fn){intervals.set(++serial,fn);return serial;},clearInterval(id){intervals.delete(id);},
   fmt:n=>String(n)+'m',totalForAssignment:a=>a.worked||0,empStatus:a=>a.testStatus||'New',
   v84TechState:()=>live,
