@@ -1,8 +1,8 @@
 {
-  "versionName": "V227",
-  "versionCode": 190,
+  "versionName": "V228",
+  "versionCode": 191,
   "approvedForStaff": true,
   "approvedAt": "2026-09-30",
-  "sourceCommit": "c1ae209c97dc2331c9e21afe588aaf997aa03cb4",
-  "publishNonce": "release-v227-employee-assigned-cards-20260930-r1"
+  "sourceCommit": "774645ec3f0c5331abab85e7f4d47261cb43d157",
+  "publishNonce": "release-v228-print-navigation-tools-20260930-r1"
 }
