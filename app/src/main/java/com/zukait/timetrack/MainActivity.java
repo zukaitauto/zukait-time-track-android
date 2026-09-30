@@ -533,7 +533,16 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void installDownloadedUpdate() {
-            runOnUiThread(() -> installDownloadedUpdateNative());
+            runOnUiThread(() -> requestInstallAfterCloudSync());
+        }
+
+        @JavascriptInterface
+        public void completeUpdatePreInstallSync(boolean safeToInstall) {
+            runOnUiThread(() -> {
+                if (safeToInstall) installDownloadedUpdateNative();
+                else notifyUpdateDownloadToWeb("SYNC_REQUIRED", 100, 0, 0,
+                        "Update kept ready. Sync workshop changes before installing.");
+            });
         }
 
         @JavascriptInterface
@@ -994,6 +1003,31 @@ public class MainActivity extends Activity {
         }).start();
     }
 
+    private void requestInstallAfterCloudSync() {
+        restoreUpdateDownloadState();
+        if (!downloadedUpdateIsReady()) {
+            reportUpdateDownloadState();
+            return;
+        }
+        if (webView == null) {
+            notifyUpdateDownloadToWeb("SYNC_REQUIRED", 100, 0, 0,
+                    "Update kept ready. Open the app and sync before installing.");
+            return;
+        }
+        notifyUpdateDownloadToWeb("SYNCING", 100, 0, 0,
+                "Saving workshop changes before update...");
+        webView.evaluateJavascript(
+                "(async function(){try{" +
+                "if(!window.zukaitCloud||!window.zukaitCloud.syncNow)throw new Error('SYNC_UNAVAILABLE');" +
+                "await window.zukaitCloud.syncNow();" +
+                "var h=window.zukaitCloud.syncHealth||{};" +
+                "var ok=!!navigator.onLine&&!h.dirty&&!h.pushing&&!h.pulling&&!h.pendingConflict;" +
+                "if(window.AndroidBridge&&window.AndroidBridge.completeUpdatePreInstallSync)window.AndroidBridge.completeUpdatePreInstallSync(ok);" +
+                "}catch(e){if(window.AndroidBridge&&window.AndroidBridge.completeUpdatePreInstallSync)window.AndroidBridge.completeUpdatePreInstallSync(false);}})();",
+                null
+        );
+    }
+
     private void installDownloadedUpdateNative() {
         android.widget.Toast.makeText(this, "Update installer started", android.widget.Toast.LENGTH_SHORT).show();
         notifyUpdateDownloadToWeb("INSTALLING", 100, 0, 0, "Native installer started...");
@@ -1270,7 +1304,7 @@ public class MainActivity extends Activity {
             if (permissionReturn || pendingInstallAfterPermission) {
                 pendingInstallAfterPermission = false;
                 updatePrefs().edit().remove("pending_install_permission").apply();
-                updateHandler.postDelayed(this::installDownloadedUpdateNative, 250);
+                updateHandler.postDelayed(this::requestInstallAfterCloudSync, 250);
             }
         }
     }
