@@ -1,3 +1,4 @@
+import { qcTransition, preserveQcAuthority } from "./qc_delivery_rules.js";
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
@@ -561,6 +562,20 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const action = String(body?.action || "load");
 
+    if (action === "qc_delivery") {
+      for (let attempt=0;attempt<8;attempt++) {
+        const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
+        if(readError)throw readError;
+        const result=qcTransition(current.data,user,body,Date.now());
+        if(!result.ok)return reply({ok:false,code:result.code},result.code==="qc_permission_denied"?403:409);
+        const next=Number(current.revision||0)+1;
+        const {data:committed,error:commitError}=await admin.rpc("zukait_commit_workshop_state_v2",{p_expected_revision:Number(current.revision||0),p_data:result.data,p_changed_by:user.id,p_live:computeLiveStatus(result.data,next,user.id)});
+        if(commitError)throw commitError;
+        if(committed?.ok)return reply({ok:true,job:result.job,server_revision:committed.revision||next});
+      }
+      return reply({ok:false,code:"qc_conflict"},409);
+    }
+
     if (action === "revision") {
       const { data, error } = await admin.from("workshop_state")
         .select("revision,updated_at,updated_by").eq("id","main").single();
@@ -847,6 +862,8 @@ Deno.serve(async (req: Request) => {
         if (user.role === "Employee" && !validateEmployeeChange(user.id, current.data, candidate)) {
           return reply({ ok: false, code: "forbidden_change" }, 403);
         }
+
+        candidate = preserveQcAuthority(candidate, current.data);
 
         const next = currentRevision + 1;
         const live = computeLiveStatus(candidate, next, user.id);

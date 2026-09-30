@@ -52,3 +52,6 @@ PY
 for f in /tmp/zukait-inline-js/*.js; do
   node --check "$f"
 done
+
+node --check app/src/main/assets/qc_delivery.js
+node --check app/src/main/assets/qc_delivery_rules.js

@@ -48,6 +48,7 @@ jobs:
           cp app/src/main/assets/v2/features/spare-parts/main_module.js _site/v2/features/spare-parts/main_module.js
           cp app/src/main/assets/zukait_logo.webp _site/zukait_logo.webp
           cp -R app/src/main/assets/vehicle-logos _site/vehicle-logos
+          cp app/src/main/assets/qc_delivery_rules.js _site/qc_delivery_rules.js
           python3 - <<'PY'
           from html.parser import HTMLParser
           from pathlib import Path
