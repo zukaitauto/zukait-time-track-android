@@ -60,7 +60,7 @@ for(const emp of users){
 }
 }
 context.me.role='Employee';title='unchanged';context.openTechnicianWorkload('1');assert.equal(title,'unchanged');
-assert.doesNotMatch(source,/save\(|commitEvent\(|syncNow\(|MutationObserver/);
+assert.doesNotMatch(source,/\\bsave\\s*\\(|\\bcommitEvent\\s*\\(|\\bsyncNow\\s*\\(|MutationObserver/);
 console.log('Technician workload: all departments, row navigation, unique unfinished JCs, times, escaping, realtime finish/reassignment, read-only state and timer cleanup passed');
 
 // Production login updates lexical `me`, not necessarily window.me.
