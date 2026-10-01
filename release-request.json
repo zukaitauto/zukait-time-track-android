@@ -1,8 +1,8 @@
 {
-  "versionName": "V235",
-  "versionCode": 198,
+  "versionName": "V236",
+  "versionCode": 199,
   "approvedForStaff": true,
   "approvedAt": "2026-10-01",
-  "sourceCommit": "cddda3c81260bc9e3b4fee4652f4d78776a38c4d",
-  "publishNonce": "release-v235-technician-work-history-20261001-r1"
+  "sourceCommit": "87924b195d0db68e6c340cc7f0cbcceaa63322b3",
+  "publishNonce": "release-v236-compact-am-pm-history-20261001-r1"
 }
