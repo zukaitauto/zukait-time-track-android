@@ -46,7 +46,10 @@ function summarize(state,bounds=currentMonthBounds(),options={}){
   const remainingAtStart=Math.max(0,suggested-before);
   const completed=!!(a.completed||a.finished||a.status==='Completed'||a.status==='Finished');
   const completionTs=num(a.completedAt||a.finishedAt||a.finishAt);
-  const completedInPeriod=completed&&(!completionTs||(completionTs>=bounds.start&&completionTs<bounds.end));
+  // Only grant the full remaining suggested balance when completion is known to
+  // belong to this reporting period. Missing legacy completion timestamps are
+  // treated conservatively as unfinished for month-specific credit.
+  const completedInPeriod=completed&&completionTs>=bounds.start&&completionTs<bounds.end;
   const suggestedCredit=completedInPeriod?remainingAtStart:Math.min(remainingAtStart,current);
   const row={assignmentId:id(a.id),job:id(a.job),employeeId:id(a.emp),department:id(a.department||a.workType||a.section||''),suggestedMinutes:suggestedCredit,actualMinutes:current,remainingSuggestedMinutes:Math.max(0,remainingAtStart-suggestedCredit),efficiency:current>0?suggestedCredit/current*100:(suggestedCredit===0?null:null),completedInPeriod,carryForward:before>0,overrunMinutes:Math.max(0,current-remainingAtStart),repeat:!!(a.rework||a.repeat)};
   rows.push(row);byAssignment.set(key,row);
@@ -68,5 +71,18 @@ function group(summary,key){
  return [...m].map(([name,rows])=>({name,...aggregate(rows)}));
 }
 function formatPercent(v){return Number.isFinite(Number(v))?Number(v).toFixed(2)+'%':'—'}
-window.zukaitV2=Object.assign(window.zukaitV2||{},{efficiency:{DUTY,monthBounds,currentMonthBounds,eligibleSegments,eligibleMinutes,summarize,aggregate,group,formatPercent}});
+function selfTest(){
+ const at=(y,m,d,h,min=0)=>new Date(y,m,d,h,min,0,0).getTime(),state={holidays:[],sessions:[],assign:[]};
+ const bounds=monthBounds(2026,9),session=(start,end)=>({job:'JC',emp:'E1',start,end});
+ const tests=[
+  ['normal-window',eligibleMinutes(session(at(2026,9,1,8),at(2026,9,1,13)),state,bounds),300],
+  ['lunch-clipped',eligibleMinutes(session(at(2026,9,1,12),at(2026,9,1,16)),state,bounds),120],
+  ['overtime-clipped',eligibleMinutes(session(at(2026,9,1,18),at(2026,9,1,20)),state,bounds),60],
+  ['friday-excluded',eligibleMinutes(session(at(2026,9,2,8),at(2026,9,2,12)),state,bounds),0]
+ ];
+ const holidayState={holidays:[{date:'2026-10-03'}]};
+ tests.push(['holiday-excluded',eligibleMinutes(session(at(2026,9,3,8),at(2026,9,3,12)),holidayState,bounds),0]);
+ return {ok:tests.every(x=>Math.abs(x[1]-x[2])<0.001),tests:tests.map(([name,actual,expected])=>({name,actual,expected,ok:Math.abs(actual-expected)<0.001}))};
+}
+window.zukaitV2=Object.assign(window.zukaitV2||{},{efficiency:{DUTY,monthBounds,currentMonthBounds,eligibleSegments,eligibleMinutes,summarize,aggregate,group,formatPercent,selfTest}});
 })();
