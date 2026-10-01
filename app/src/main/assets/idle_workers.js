@@ -74,7 +74,7 @@ window.zukaitOpenIdleWorkers=function(kind='day',date=''){
 function inject(root){
  if(!root||root.querySelector('[data-idle-workers-card]'))return;
  const headings=[...root.querySelectorAll('h2,h3')],h=headings.find(x=>/Today at a Glance/i.test(x.textContent||''));if(!h)return;
- const section=h.closest('.card,.v67-section,section')||h.parentElement?.parentElement;if(!section)return;
+ const section=h.closest('.card,.v143-card,.v67-section,section')||h.parentElement?.parentElement;if(!section)return;
  const grid=section.querySelector('.v143-glance,.glance-grid,.grid');if(!grid)return;
  const b=document.createElement('button');b.type='button';b.dataset.idleWorkersCard='1';b.className=grid.classList.contains('v143-glance')?'idle-glance-v143':'glance-box idle-glance clickable';
  b.onclick=()=>window.zukaitOpenIdleWorkers('day');
