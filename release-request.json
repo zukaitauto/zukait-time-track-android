@@ -1,8 +1,8 @@
 {
-  "versionName": "V234",
-  "versionCode": 197,
+  "versionName": "V235",
+  "versionCode": 198,
   "approvedForStaff": true,
   "approvedAt": "2026-10-01",
-  "sourceCommit": "8f622acdb6a3bd1fb394289ce34a635c989fc22b",
-  "publishNonce": "release-v234-finished-technician-performance-20261001-r1"
+  "sourceCommit": "cddda3c81260bc9e3b4fee4652f4d78776a38c4d",
+  "publishNonce": "release-v235-technician-work-history-20261001-r1"
 }
