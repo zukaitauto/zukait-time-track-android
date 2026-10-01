@@ -1,8 +1,8 @@
 {
-  "versionName": "V233",
-  "versionCode": 196,
+  "versionName": "V234",
+  "versionCode": 197,
   "approvedForStaff": true,
   "approvedAt": "2026-10-01",
-  "sourceCommit": "b16f7bacd99d1b14c74f3ea8a2d54eef2d973a42",
-  "publishNonce": "release-v233-time-management-20261001-r1"
+  "sourceCommit": "8f622acdb6a3bd1fb394289ce34a635c989fc22b",
+  "publishNonce": "release-v234-finished-technician-performance-20261001-r1"
 }
