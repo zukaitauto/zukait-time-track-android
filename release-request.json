@@ -1,8 +1,8 @@
 {
-  "versionName": "V230",
-  "versionCode": 193,
+  "versionName": "V231",
+  "versionCode": 194,
   "approvedForStaff": true,
   "approvedAt": "2026-10-01",
-  "sourceCommit": "ac2038fabee10a281ed9b7f54d7d7e3637b390c3",
-  "publishNonce": "release-v230-technician-list-20261001-r1"
+  "sourceCommit": "5460ac7029598726844b848d4c85b35d8d7f9949",
+  "publishNonce": "release-v231-spare-parts-expense-filters-20261001-r1"
 }
