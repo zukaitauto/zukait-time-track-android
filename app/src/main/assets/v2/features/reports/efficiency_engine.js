@@ -82,6 +82,13 @@ function selfTest(){
  ];
  const holidayState={holidays:[{date:'2026-10-03'}]};
  tests.push(['holiday-excluded',eligibleMinutes(session(at(2026,9,3,8),at(2026,9,3,12)),holidayState,bounds),0]);
+ const calc=(name,suggested,actual,expected)=>tests.push([name,actual>0?suggested/actual*100:null,expected]);
+ calc('unfinished-credit-cap',8,8,100);
+ calc('finish-carry-forward',12,11,12/11*100);
+ calc('finish-carry-forward-slow',12,14,12/14*100);
+ calc('overrun-zero-balance',20,22,20/22*100);
+ calc('transfer-raw-total',20,18,20/18*100);
+ calc('repeat-extra-actual',10,12,10/12*100);
  return {ok:tests.every(x=>Math.abs(x[1]-x[2])<0.001),tests:tests.map(([name,actual,expected])=>({name,actual,expected,ok:Math.abs(actual-expected)<0.001}))};
 }
 window.zukaitV2=Object.assign(window.zukaitV2||{},{efficiency:{DUTY,monthBounds,currentMonthBounds,eligibleSegments,eligibleMinutes,summarize,aggregate,group,formatPercent,selfTest}});
