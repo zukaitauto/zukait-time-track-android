@@ -67,6 +67,8 @@ public class MainActivity extends Activity {
     private static final String NOTIFICATION_CHANNEL = "zukait_updates";
     private static final String APP_HOST = "appassets.androidplatform.net";
     private WebView webView;
+    private boolean activityStopped = false;
+    private final ArrayList<PendingJsDialog> pendingJsDialogs = new ArrayList<>();
     private PermissionRequest pendingPermissionRequest;
     private long updateDownloadId = -1;
     private int updateTargetVersionCode = 0;
@@ -163,52 +165,25 @@ public class MainActivity extends Activity {
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
-                runOnUiThread(() -> {
-                    String text = message == null ? "" : message;
-                    if (text.startsWith("Request sent to Supervisor") || text.startsWith("Request sent")) {
+                String text = message == null ? "" : message;
+                if (text.startsWith("Request sent to Supervisor") || text.startsWith("Request sent")) {
+                    runOnUiThread(() -> {
                         android.widget.Toast.makeText(MainActivity.this, text, android.widget.Toast.LENGTH_LONG).show();
                         result.confirm();
-                        return;
-                    }
-                    new AlertDialog.Builder(MainActivity.this)
-                            .setTitle("Zukait Time Track")
-                            .setMessage(text)
-                            .setPositiveButton("OK", (dialog, which) -> result.confirm())
-                            .setOnCancelListener(dialog -> result.cancel())
-                            .show();
-                });
+                    });
+                } else showJavaScriptDialog(result, text, null, false, false);
                 return true;
             }
 
             @Override
             public boolean onJsConfirm(WebView view, String url, String message, JsResult result) {
-                runOnUiThread(() -> new AlertDialog.Builder(MainActivity.this)
-                        .setTitle("Zukait Time Track")
-                        .setMessage(message == null ? "" : message)
-                        .setPositiveButton("OK", (dialog, which) -> result.confirm())
-                        .setNegativeButton("Cancel", (dialog, which) -> result.cancel())
-                        .setOnCancelListener(dialog -> result.cancel())
-                        .show());
+                showJavaScriptDialog(result, message, null, false, true);
                 return true;
             }
 
             @Override
             public boolean onJsPrompt(WebView view, String url, String message, String defaultValue, JsPromptResult result) {
-                runOnUiThread(() -> {
-                    final EditText input = new EditText(MainActivity.this);
-                    input.setText(defaultValue == null ? "" : defaultValue);
-                    input.setSelectAllOnFocus(true);
-                    int pad = (int) (18 * getResources().getDisplayMetrics().density);
-                    input.setPadding(pad, pad / 2, pad, pad / 2);
-                    new AlertDialog.Builder(MainActivity.this)
-                            .setTitle("Zukait Time Track")
-                            .setMessage(message == null ? "" : message)
-                            .setView(input)
-                            .setPositiveButton("OK", (dialog, which) -> result.confirm(input.getText().toString()))
-                            .setNegativeButton("Cancel", (dialog, which) -> result.cancel())
-                            .setOnCancelListener(dialog -> result.cancel())
-                            .show();
-                });
+                showJavaScriptDialog(result, message, defaultValue, true, true);
                 return true;
             }
 
@@ -1295,6 +1270,78 @@ public class MainActivity extends Activity {
         }
     }
 
+
+    // A custom JS dialog pauses WebView until its result is completed.
+    // Every exit path must resolve it exactly once, including lifecycle dismissal.
+    private final class PendingJsDialog {
+        final JsResult result;
+        final JsDialogCompletion completion = new JsDialogCompletion();
+        AlertDialog dialog;
+        PendingJsDialog(JsResult result) { this.result = result; }
+        void respond(Runnable response) {
+            completion.finish(() -> {
+                pendingJsDialogs.remove(this);
+                response.run();
+            });
+        }
+        void cancel() { respond(result::cancel); }
+    }
+
+    private void showJavaScriptDialog(JsResult result, String message, String defaultValue, boolean prompt, boolean canCancel) {
+        runOnUiThread(() -> {
+            final PendingJsDialog pending = new PendingJsDialog(result);
+            if (activityStopped || isFinishing() || isDestroyed()) { pending.cancel(); return; }
+            pendingJsDialogs.add(pending);
+            try {
+                final EditText input = prompt ? new EditText(MainActivity.this) : null;
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Zukait Time Track")
+                        .setMessage(message == null ? "" : message);
+                if (input != null) {
+                    input.setText(defaultValue == null ? "" : defaultValue);
+                    input.setSelectAllOnFocus(true);
+                    int pad = (int) (18 * getResources().getDisplayMetrics().density);
+                    input.setPadding(pad, pad / 2, pad, pad / 2);
+                    builder.setView(input);
+                }
+                builder.setPositiveButton("OK", (dialog, which) -> pending.respond(() -> {
+                    if (input != null) ((JsPromptResult) result).confirm(input.getText().toString());
+                    else result.confirm();
+                }));
+                if (canCancel) builder.setNegativeButton("Cancel", (dialog, which) -> pending.cancel());
+                builder.setOnCancelListener(dialog -> pending.cancel());
+                pending.dialog = builder.create();
+                pending.dialog.setOnDismissListener(dialog -> pending.cancel());
+                pending.dialog.show();
+            } catch (RuntimeException error) {
+                pending.cancel();
+                android.util.Log.w("ZukaitDialog", "Unable to display JavaScript dialog", error);
+            }
+        });
+    }
+
+    private void cancelJavaScriptDialogs() {
+        for (PendingJsDialog pending : new ArrayList<>(pendingJsDialogs)) {
+            pending.cancel();
+            if (pending.dialog != null) {
+                try { pending.dialog.dismiss(); } catch (RuntimeException ignored) { }
+            }
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        activityStopped = false;
+    }
+
+    @Override
+    protected void onStop() {
+        activityStopped = true;
+        cancelJavaScriptDialogs();
+        super.onStop();
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -1326,6 +1373,8 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        activityStopped = true;
+        cancelJavaScriptDialogs();
         if (updateProgressRunnable != null) updateHandler.removeCallbacks(updateProgressRunnable);
         if (updateReceiver != null) { try { unregisterReceiver(updateReceiver); } catch (Exception ignored) { } }
         if (speechRecognizer != null) { try { speechRecognizer.destroy(); } catch (Exception ignored) { } speechRecognizer = null; }

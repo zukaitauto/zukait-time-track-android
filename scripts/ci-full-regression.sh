@@ -119,3 +119,5 @@ node tests/time-management.mjs
 node tests/finished-assignment-performance.mjs
 
 node tests/technician-work-history.mjs
+
+node tests/native-dialog-lifecycle.mjs
