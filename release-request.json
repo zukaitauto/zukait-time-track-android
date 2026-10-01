@@ -1,8 +1,8 @@
 {
-  "versionName": "V241",
-  "versionCode": 204,
+  "versionName": "V242",
+  "versionCode": 205,
   "approvedForStaff": true,
   "approvedAt": "2026-10-01",
-  "sourceCommit": "7c6d558f94042d5323ded5d26521129c2dd6a3b4",
-  "publishNonce": "release-v241-time-details-20261001-r2"
+  "sourceCommit": "40d044cd35d6870f0ee777ce0b20bbee268511da",
+  "publishNonce": "release-v242-dashboard-idle-workers-20261001"
 }
