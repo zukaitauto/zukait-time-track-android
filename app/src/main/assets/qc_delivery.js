@@ -46,13 +46,14 @@ function apply(){if(!allowed())return;const root=document.getElementById(me.role
  const qn=jobs().filter(qcQueueMatches).length,qtext=String(qn);if(queue.dataset.qcCount!==qtext){queue.innerHTML='<span class="qc-card-icon" aria-hidden="true">✅</span><span class="qc-card-copy"><b>QC</b><small>Painting / Final quality check</small></span><span class="qc-card-count">'+esc(qn)+'</span><span class="qc-card-arrow" aria-hidden="true">›</span>';queue.dataset.qcCount=qtext;}
  let ready=root.querySelector('[data-qc-ready]')||[...root.querySelectorAll('button')].find(b=>/Ready\s*(for|to)\s*Delivery/i.test(b.textContent||''));if(!ready){ready=document.createElement('button');ready.className=me.role==='Manager'?'v67-control sky qc-launch':'v143-resource qc-launch';(root.querySelector('.v67-control-grid,.v143-two')||root).appendChild(ready)}ready.dataset.qcReady='1';if(!String(ready.className||'').split(/\s+/).includes('qc-launch'))ready.className=(ready.className||'')+' qc-launch';ready.disabled=false;ready.removeAttribute('aria-disabled');ready.onclick=window.zukaitOpenReadyToDeliver;
  const rn=jobs().filter(readyMatches).length,rtext=String(rn);if(ready.dataset.qcCount!==rtext){ready.innerHTML='<span class="qc-card-icon" aria-hidden="true">🚘✓</span><span class="qc-card-copy"><b>Ready to Deliver</b><small>Both QC stages passed</small></span><span class="qc-card-count">'+esc(rn)+'</span><span class="qc-card-arrow" aria-hidden="true">›</span>';ready.dataset.qcCount=rtext;}
- if(me.role==='Manager'){
+ if(me.role==='Manager'||me.role==='Supervisor'){
   const grid=root.querySelector('.v143-two')||root.querySelector('.v67-control-grid');
   if(grid){
    const find=t=>[...grid.querySelectorAll('button')].find(b=>new RegExp(t,'i').test(b.textContent||''));
    const estimate=find('Estimate'),consumables=find('Consumables'),parts=find('Spare Parts'),qc=grid.querySelector('[data-qc-queue]'),readyCard=grid.querySelector('[data-qc-ready]'),deliveredCard=grid.querySelector('[data-qc-delivered]')||find('Delivered Vehicles');
    [estimate,consumables,parts,qc,readyCard,deliveredCard].filter(Boolean).forEach(x=>grid.appendChild(x));
    root.querySelectorAll('.v67-first-row .v74-ready').forEach(x=>x.remove());
+   if(me.role==='Supervisor')root.querySelectorAll('.v143-glance [data-ready],.v143-glance .v74-ready').forEach(x=>x.remove());
   }
  }
  if(view&&document.getElementById('qcRows'))renderPage();
