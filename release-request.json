@@ -1,8 +1,8 @@
 {
-  "versionName": "V231",
-  "versionCode": 194,
+  "versionName": "V232",
+  "versionCode": 195,
   "approvedForStaff": true,
   "approvedAt": "2026-10-01",
-  "sourceCommit": "5460ac7029598726844b848d4c85b35d8d7f9949",
-  "publishNonce": "release-v231-spare-parts-expense-filters-20261001-r1"
+  "sourceCommit": "042e40f3fbcc0776c05858a116ad2b9a35273a01",
+  "publishNonce": "release-v232-expense-readability-20261001-r1"
 }
