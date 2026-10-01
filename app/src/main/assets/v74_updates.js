@@ -1919,7 +1919,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
   filter.jc=String(document.getElementById('v123PurchaseJC').value||'').trim();
   const rows=purchaseRows(filter),total=rows.reduce((s,x)=>s+x.total,0);
   body.innerHTML='<p class="small">'+e(filter.from?filter.from+' to '+filter.to:'All dates')+' · Oman time'+(filter.jc?' · JC '+e(filter.jc):'')+'</p>'+
-   (rows.length?'<div class="v123-cost-list"><div class="v123-cost-head"><b>No.</b><b>Job Card</b><b>Vehicle</b><b>Spare Parts</b></div>'+rows.map((x,i)=>'<button type="button" class="v123-cost-row" data-list="'+e(x.lists[0])+'" data-jc="'+e(x.jc)+'" onclick="(zukaitV2.sparePartsMain.openForJobCard?zukaitV2.sparePartsMain.openForJobCard(this.dataset.jc):zukaitV2.sparePartsMain.openList(this.dataset.list))"><span>'+(i+1)+'</span><b>'+e(x.jc)+'</b><span>'+e(x.vehicle)+'</span><strong>'+x.total.toFixed(3)+'</strong></button>').join('')+'</div>':'<div class="notice">No final Spare Parts invoice costs yet for these filters.</div>')+
+   (rows.length?'<div class="v123-cost-list"><div class="v123-cost-head"><b>No.</b><b>Job Card</b><b>Vehicle</b><b>Spare Parts</b></div>'+rows.map((x,i)=>'<button type="button" class="v123-cost-row" data-list="'+e(x.lists[0])+'" data-jc="'+e(x.jc)+'" onclick="zukaitV2.sparePartsMain.openList(this.dataset.list)"><span>'+(i+1)+'</span><b>'+e(x.jc)+'</b><span>'+e(x.vehicle)+'</span><strong>'+x.total.toFixed(3)+'</strong></button>').join('')+'</div>':'<div class="notice">No final Spare Parts invoice costs yet for these filters.</div>')+
    '<div class="v123-cost-total">Spare Parts Expense <b>'+total.toFixed(3)+' OMR</b> · '+rows.length+' job cards</div>';
  }
  window.v123PurchaseExpensePreset=function(){

@@ -29,7 +29,7 @@ select('date');assert.match(body(),/27\.000 OMR/,'Oman midnight must include the
 select('week');assert.match(body(),/32\.000 OMR/);assert.match(body(),/2026-09-26 to 2026-10-02/);
 select('custom','2026-10-01','2026-10-03');assert.match(body(),/30\.000 OMR/);
 fields.get('v123PurchaseJC').value='11975';context.v123ApplyPurchaseExpenseFilters();assert.match(body(),/23\.000 OMR/);assert.doesNotMatch(body(),/>119750</);
-select('all');assert.match(body(),/28\.000 OMR/);assert.match(body(),/openForJobCard/);
+select('all');assert.match(body(),/28\.000 OMR/);assert.match(body(),/openList/);
 fields.get('v123PurchaseJC').value='';select('all');assert.match(body(),/45\.000 OMR/,'all dates must retain older and undated costs');
 select('custom','2026-10-03','2026-10-01');assert.match(body(),/Choose valid dates/);
 assert.equal(writes,0,'filtering must not write parts records');
