@@ -1,8 +1,8 @@
 {
-  "versionName": "V237",
-  "versionCode": 200,
+  "versionName": "V238",
+  "versionCode": 201,
   "approvedForStaff": true,
   "approvedAt": "2026-10-01",
-  "sourceCommit": "84907c8a82e5ed23988de0b978a0645c738e5532",
-  "publishNonce": "release-v237-estimate-department-design-20261001-r1"
+  "sourceCommit": "496a18a280babed37ec9e0af6dec426a41f82918",
+  "publishNonce": "release-v238-distinct-dashboard-colours-20261001-r1"
 }
