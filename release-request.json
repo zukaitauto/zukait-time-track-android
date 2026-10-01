@@ -1,8 +1,8 @@
 {
-  "versionName": "V239",
-  "versionCode": 202,
+  "versionName": "V240",
+  "versionCode": 203,
   "approvedForStaff": true,
   "approvedAt": "2026-10-01",
-  "sourceCommit": "3f34483022c5cd2c5c9d7596240b2eb3adc6765f",
-  "publishNonce": "release-v239-teal-estimate-20261001-r1"
+  "sourceCommit": "d24c3b2047c2ea7b8f31fad34f38cd26d7b867c2",
+  "publishNonce": "release-v240-shared-manager-technician-board-20261001-r1"
 }
