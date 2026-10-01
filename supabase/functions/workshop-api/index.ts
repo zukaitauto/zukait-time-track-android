@@ -1,4 +1,5 @@
 import { qcTransition, preserveQcAuthority } from "./qc_delivery_rules.js";
+import { timeManagementTransition } from "./time_management_rules.js";
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
@@ -317,7 +318,7 @@ function preserveOperationalHistory(candidate: any, current: any, user: any): an
   }
   // Audit entries are append-only. Some legacy audit arrays have no record ID,
   // so compare their full values when recovering them from a stale save.
-  for (const key of ["dutyEndAudit", "jobVehicleEdits", "statusCorrections", "suggestedEdits", "jobEdits", "jobDeletes"] as const) {
+  for (const key of ["dutyEndAudit", "jobVehicleEdits", "statusCorrections", "suggestedEdits", "jobEdits", "jobDeletes", "additionalActions"] as const) {
     const incoming = Array.isArray(candidate?.[key]) ? candidate[key] : [];
     const seen = new Set(incoming.map((x: any) => JSON.stringify(x)));
     for (const record of Array.isArray(current?.[key]) ? current[key] : []) {
@@ -561,6 +562,22 @@ Deno.serve(async (req: Request) => {
   try {
     const body = await req.json();
     const action = String(body?.action || "load");
+
+    if (action === "time_management") {
+      for (let attempt=0;attempt<8;attempt++) {
+        const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
+        if(readError)throw readError;
+        const result=timeManagementTransition(current.data,user,body,Date.now());
+        if(!result.ok)return reply({ok:false,code:result.code},result.code==="time_permission_denied"?403:409);
+        if(result.duplicate)return reply({ok:true,audit:result.audit,duplicate:true,server_revision:current.revision});
+        const next=Number(current.revision||0)+1;
+        const {data:committed,error:commitError}=await admin.rpc("zukait_commit_workshop_state_v2",{p_expected_revision:Number(current.revision||0),p_data:result.data,p_changed_by:user.id,p_live:computeLiveStatus(result.data,next,user.id)});
+        if(commitError)throw commitError;
+        if(committed?.ok)return reply({ok:true,audit:result.audit,server_revision:committed.revision||next});
+        if(committed?.code!=="conflict")return reply({ok:false,code:committed?.code||"time_commit_failed"},409);
+      }
+      return reply({ok:false,code:"time_conflict"},409);
+    }
 
     if (action === "qc_delivery") {
       for (let attempt=0;attempt<8;attempt++) {

@@ -136,6 +136,18 @@
     return body;
   }
 
+  async function timeManagement(command){
+    if(!me||!['Supervisor','Manager'].includes(me.role))throw new Error('time_permission_denied');
+    if(!navigator.onLine)throw new Error('NETWORK');
+    await syncNow();
+    if(cloudDirty||cloudPushing||pullInFlight||!initialDone||localStorage.getItem(PENDING_KEY))throw new Error('TIME_SYNC_PENDING');
+    const r=await api({...command,action:'time_management'});
+    if(!r.ok){const e=new Error(r.code||'TIME_CHANGE_FAILED');e.code=r.code||'TIME_CHANGE_FAILED';throw e;}
+    await syncNow();
+    if(cloudDirty||pullInFlight||cloudRevision<Number(r.server_revision||0))throw new Error('TIME_SYNC_PENDING');
+    return r;
+  }
+
   async function v2PilotStatus(deviceId){
     const r=await api({action:'v2_pilot_status',device_id:String(deviceId||'').trim()});
     if(!r.ok){const e=new Error(r.code||'V2_PILOT_STATUS_FAILED');e.code=r.code||'V2_PILOT_STATUS_FAILED';throw e;}
@@ -787,7 +799,7 @@
     publishLiveStatus(false);
   });
   window.zukaitCloud={
-    init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,backupNow,backupList,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
+    init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,backupNow,backupList,timeManagement,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
     configured:()=>true,
     get revision(){return cloudRevision},
     get dirty(){return cloudDirty},

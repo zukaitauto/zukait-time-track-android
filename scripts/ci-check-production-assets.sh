@@ -21,3 +21,7 @@ test -s app/src/main/res/drawable/splash_screen.xml
 test -s app/src/main/res/values/styles.xml
 
 test -s app/src/main/assets/technician_workload.js
+
+test -s app/src/main/assets/time_management.js
+test -s app/src/main/assets/time_management_rules.js
+
