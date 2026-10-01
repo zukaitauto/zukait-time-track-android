@@ -74,7 +74,7 @@ assert.doesNotMatch(stable,/\.v143-job-result\{display:grid!important;grid-templ
 assert.match(stable,/v65OpenAccount\(\)/,'Supervisor menu must remain available');
 assert.match(stable,/v92OpenAvailableWorkers\(\)/,'Available Workers popup must remain wired');
 assert.match(stable,/openConsumablesModule\(\)/,'Supervisor Consumables must open the real module');
-assert.match(stable,/v84OpenDept/,'Technician Board departments must remain clickable');
+assert.match(stable,/openTechnicianDepartment/,'Technician Board departments must remain clickable');
 
 assert.match(stable,/JOB_CREATED/,'Create without technician must use authoritative Job Card creation event');
 assert.match(stable,/zukaitV2Transport/,'Create without technician must use V2 transport');
