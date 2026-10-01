@@ -61,6 +61,7 @@
     const previous=c.prices.filter(x=>!x.voided&&x.materialId===material.id&&x.brandId===brand.id&&x.effectiveFrom<effectiveFrom).sort((a,b)=>b.effectiveFrom-a.effectiveFrom||b.createdAt-a.createdAt)[0]||null;
     const row={id:uid('price'),materialId:material.id,brandId:brand.id,unit:material.unit,pricePerUnit:money(price),effectiveFrom,createdAt:Date.now(),createdBy:actor.id,reason};
     c.prices.push(row); c.audit.push({id:uid('audit'),type:previous?'PRICE_CHANGED':'PRICE_CREATED',entityId:row.id,by:actor.id,at:Date.now(),reason,before:previous?clone(previous):null,after:clone(row)});
+    managerRecalculateActualPrices(state,row.id,actor,reason);
     return clone(row);
   }
   function managerCorrectPrice(state,priceId,newPrice,actor,reason){
@@ -71,6 +72,7 @@
     const before=clone(row),now=Date.now();
     row.pricePerUnit=money(price); row.correctedAt=now; row.correctedBy=actor.id; row.correctedByName=String(actor?.name||actor?.id||''); row.correctedByRole=String(actor?.role||'');
     c.audit.push({id:uid('audit'),type:'PRICE_CORRECTED',entityId:row.id,entityType:'price',by:actor.id,at:now,reason:why,before,after:clone(row)});
+    managerRecalculateActualPrices(state,row.id,actor,why);
     return clone(row);
   }
   function priceAt(state,materialId,brandId,at){
@@ -142,8 +144,7 @@
     const nextLines=(Array.isArray(lines)?lines:[]).map((l,i)=>{
       const a=allowed.find(x=>x.materialId===l.materialId&&x.brandId===l.brandId); if(!a)throw new Error('ACTUAL_NOT_ISSUED');
       const q=Number(l.quantity); if(!Number.isFinite(q)||q<0||q>a.quantity+1e-9)throw new Error('ACTUAL_EXCEEDS_ISSUED');
-      const old=row.lines.find(x=>x.materialId===l.materialId&&x.brandId===l.brandId);
-      const p=old?{id:old.priceId,pricePerUnit:old.unitPriceSnapshot}:priceAt(state,l.materialId,l.brandId,row.actualAt); if(!p)throw new Error('PRICE_NOT_FOUND');
+      const p=priceAt(state,l.materialId,l.brandId,row.actualAt); if(!p)throw new Error('PRICE_NOT_FOUND');
       return {no:i+1,materialId:l.materialId,brandId:l.brandId,unit:a.unit,issuedQuantity:a.quantity,actualQuantity:q,priceId:p.id,unitPriceSnapshot:p.pricePerUnit,lineCost:money(q*p.pricePerUnit)};
     });
     row.lines=nextLines; row.totalCost=money(nextLines.reduce((n,l)=>n+l.lineCost,0)); row.correctedAt=Date.now(); row.correctedBy=actor.id; row.correctedByName=String(actor?.name||actor?.id||''); row.correctedByRole=String(actor?.role||'');
@@ -153,7 +154,7 @@
     assertRole(actor?.role,true); const c=ensureState(state),why=String(reason||'').trim(); if(!why)throw new Error('REASON_REQUIRED');
     const price=c.prices.find(x=>x.id===priceId&&!x.voided); if(!price)throw new Error('PRICE_NOT_FOUND');
     const affected=c.actuals.filter(x=>!x.voided&&x.locked&&x.actualAt>=price.effectiveFrom&&x.lines.some(l=>l.materialId===price.materialId&&l.brandId===price.brandId));
-    const changed=[]; affected.forEach(row=>{const applicable=priceAt(state,price.materialId,price.brandId,row.actualAt);if(!applicable||applicable.id!==price.id)return;const before=clone(row);let touched=false;row.lines=row.lines.map(l=>{if(l.materialId!==price.materialId||l.brandId!==price.brandId)return l;touched=true;const q=num(l.actualQuantity??l.quantity);return {...l,priceId:applicable.id,unitPriceSnapshot:applicable.pricePerUnit,lineCost:money(q*applicable.pricePerUnit)}});if(!touched)return;row.totalCost=money(row.lines.reduce((n,l)=>n+num(l.lineCost),0));row.priceRecalculatedAt=Date.now();row.priceRecalculatedBy=actor.id;auditChange(c,'ACTUAL_PRICE_RECALCULATED',row,before,row,actor,why);changed.push(clone(row))});
+    const changed=[]; affected.forEach(row=>{const applicable=priceAt(state,price.materialId,price.brandId,row.actualAt);if(!applicable||applicable.id!==price.id)return;const before=clone(row);let touched=false;row.lines=row.lines.map(l=>{if(l.materialId!==price.materialId||l.brandId!==price.brandId)return l;const q=num(l.actualQuantity??l.quantity);if(l.priceId===applicable.id&&num(l.unitPriceSnapshot)===num(applicable.pricePerUnit)&&num(l.lineCost)===money(q*applicable.pricePerUnit))return l;touched=true;return {...l,priceId:applicable.id,unitPriceSnapshot:applicable.pricePerUnit,lineCost:money(q*applicable.pricePerUnit)}});if(!touched)return;row.totalCost=money(row.lines.reduce((n,l)=>n+num(l.lineCost),0));row.priceRecalculatedAt=Date.now();row.priceRecalculatedBy=actor.id;auditChange(c,'ACTUAL_PRICE_RECALCULATED',row,before,row,actor,why);changed.push(clone(row))});
     return changed;
   }
   function managerVoid(state,kind,id,actor,reason){

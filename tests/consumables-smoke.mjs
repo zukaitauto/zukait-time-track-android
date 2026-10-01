@@ -74,29 +74,19 @@ C.issue(priceState,{clientRequestId:'price-issued',jobCard:'JC-PRICE',lines:[{ma
 const pa=C.finishActual(priceState,{clientRequestId:'price-actual',jobCard:'JC-PRICE',actualAt:new Date(2026,8,24).getTime(),lines:[{materialId:pm.id,brandId:pb.id,quantity:2}]},supervisor);
 assert.equal(pa.totalCost,10);
 const back=C.setPrice(priceState,{materialId:pm.id,brandId:pb.id,pricePerUnit:4.25,effectiveFrom:new Date(2026,8,1).getTime(),reason:'Backdated supplier invoice'},manager);
-// Make this backdated row the applicable price for the Actual date before testing recalculation.
-const basePrice=priceState.consumables.prices.find(p=>p.materialId===pm.id&&p.brandId===pb.id&&p.id!==back.id);
-basePrice.voided=true;
-assert.equal(C.priceAt(priceState,pm.id,pb.id,new Date(2026,8,24).getTime()).id,back.id,'backdated row must be applicable before recalculation');
-assert.equal(pa.totalCost,10,'backdated price must not silently change finalized Actual');
+assert.equal(C.priceAt(priceState,pm.id,pb.id,new Date(2026,8,24).getTime()).id,back.id);
+const paAfterBack=priceState.consumables.actuals.find(x=>x.id===pa.id);
+assert.equal(paAfterBack.totalCost,8.5,'backdated price automatically recalculates applicable actuals');
+assert.equal(paAfterBack.lines[0].unitPriceSnapshot,4.25);
+assert.equal(priceState.consumables.audit.at(-1).before.totalCost,10);
+assert.equal(priceState.consumables.audit.at(-1).after.totalCost,8.5);
+assert.equal(C.managerRecalculateActualPrices(priceState,back.id,manager,'Retry').length,0,'retry is idempotent');
 assert.throws(()=>C.managerRecalculateActualPrices(priceState,back.id,supervisor,'x'),/MANAGER_ONLY/);
 assert.throws(()=>C.managerRecalculateActualPrices(priceState,back.id,manager,''),/REASON_REQUIRED/);
-const changed=C.managerRecalculateActualPrices(priceState,back.id,manager,'Approved historical recalculation');
-assert.equal(changed.length,1);
-const paAfterBack=priceState.consumables.actuals.find(x=>x.id===pa.id);
-assert.equal(paAfterBack.lines[0].priceId,back.id); assert.equal(paAfterBack.lines[0].unitPriceSnapshot,4.25); assert.equal(paAfterBack.totalCost,8.5);
-assert.equal(priceState.consumables.audit.at(-1).type,'ACTUAL_PRICE_RECALCULATED');
-assert.equal(priceState.consumables.audit.at(-1).reason,'Approved historical recalculation');
-assert.equal(C.monthlyExpense(priceState,2026,8).totalExpense,8.5);
-assert.equal(priceState.consumables.audit.at(-1).before.totalCost,10,'recalculation audit must preserve original total');
-assert.equal(priceState.consumables.audit.at(-1).after.totalCost,8.5,'recalculation audit must preserve recalculated total');
-// A selected backdated price must not override a newer price that was actually applicable on the Actual date.
 const newer=C.setPrice(priceState,{materialId:pm.id,brandId:pb.id,pricePerUnit:6,effectiveFrom:new Date(2026,8,15).getTime(),reason:'Newer applicable price'},manager);
-const unchanged=C.managerRecalculateActualPrices(priceState,back.id,manager,'Retry older price recalculation');
-assert.equal(unchanged.length,0,'older backdated price must not override newer applicable price');
-assert.equal(priceState.consumables.actuals.find(x=>x.id===pa.id).totalCost,8.5,'non-applicable recalculation must leave stored snapshot unchanged');
-const changedNewer=C.managerRecalculateActualPrices(priceState,newer.id,manager,'Apply newer effective price');
-assert.equal(changedNewer.length,1); assert.equal(priceState.consumables.actuals.find(x=>x.id===pa.id).totalCost,12,'applicable newer price must recalculate finalized Actual');
+assert.equal(paAfterBack.totalCost,12);
+C.managerCorrectPrice(priceState,back.id,1.7,manager,'Correct earlier price period');
+assert.equal(paAfterBack.totalCost,12,'earlier correction must not override newer price period');
 assert.equal(C.monthlyExpense(priceState,2026,8).totalExpense,12);
 
 assert.equal(C.timeControlFingerprint(state),before,'consumables operations must not mutate time-control state');
@@ -126,8 +116,8 @@ console.log('Consumables isolation tests passed');
  s.consumables.actuals.push(beforeActual);
  const corrected=C.managerCorrectPrice(s,p.id,5.500,mgr,'Wrong price entered');
  assert.equal(corrected.pricePerUnit,5.5);
- assert.equal(s.consumables.actuals[0].lines[0].unitPriceSnapshot,4.125,'master correction must not rewrite historical JC price snapshot');
- assert.equal(s.consumables.actuals[0].totalCost,8.25,'master correction must not rewrite historical JC total');
- const audit=s.consumables.audit.at(-1);assert.equal(audit.type,'PRICE_CORRECTED');assert.equal(audit.before.pricePerUnit,4.125);assert.equal(audit.after.pricePerUnit,5.5);
+ assert.equal(s.consumables.actuals[0].lines[0].unitPriceSnapshot,5.5,'master correction applies from effective date');
+ assert.equal(s.consumables.actuals[0].totalCost,11,'master correction recalculates historical JC total');
+ const audit=s.consumables.audit.findLast(x=>x.type==='PRICE_CORRECTED');assert.equal(audit.type,'PRICE_CORRECTED');assert.equal(audit.before.pricePerUnit,4.125);assert.equal(audit.after.pricePerUnit,5.5);
  assert.throws(()=>C.managerCorrectPrice(s,p.id,6,{id:'SUP1',role:'Supervisor'},'wrong'),/MANAGER_ONLY/);
 }
