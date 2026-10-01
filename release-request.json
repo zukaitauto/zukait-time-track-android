@@ -1,8 +1,8 @@
 {
-  "versionName": "V240",
-  "versionCode": 203,
+  "versionName": "V241",
+  "versionCode": 204,
   "approvedForStaff": true,
   "approvedAt": "2026-10-01",
-  "sourceCommit": "d24c3b2047c2ea7b8f31fad34f38cd26d7b867c2",
-  "publishNonce": "release-v240-shared-manager-technician-board-20261001-r1"
+  "sourceCommit": "f0a8fdd39d73abb6723a6c7c2777b6a58c2fe0e7",
+  "publishNonce": "release-v241-native-dialog-lifecycle-20261001-r1"
 }
