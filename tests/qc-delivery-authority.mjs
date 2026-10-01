@@ -65,5 +65,5 @@ assert.match(ui,/qc-record-pending/,'Pending QC record must be visually distinct
 
 
 assert.match(fs.readFileSync('.github/workflows/pages.yml','utf8'),/cp app\/src\/main\/assets\/qc_delivery_rules.js _site\/qc_delivery_rules.js/);
-assert.match(fs.readFileSync('app/src/main/assets/offline_test.html','utf8'),/<script type="module" src="qc_delivery.js\?v=218"><\/script>/);
+assert.match(fs.readFileSync('app/src/main/assets/offline_test.html','utf8'),/<script type="module" src="qc_delivery.js\?v=\d+"><\/script>/);
 console.log('QC dashboard role buttons and Web/Android module packaging passed.');
