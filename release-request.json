@@ -1,8 +1,8 @@
 {
-  "versionName": "V232",
-  "versionCode": 195,
+  "versionName": "V233",
+  "versionCode": 196,
   "approvedForStaff": true,
   "approvedAt": "2026-10-01",
-  "sourceCommit": "042e40f3fbcc0776c05858a116ad2b9a35273a01",
-  "publishNonce": "release-v232-expense-readability-20261001-r1"
+  "sourceCommit": "b16f7bacd99d1b14c74f3ea8a2d54eef2d973a42",
+  "publishNonce": "release-v233-time-management-20261001-r1"
 }
