@@ -110,3 +110,5 @@ node tests/technician-workload.mjs
 
 
 node tests/print-navigation.mjs
+
+node tests/spare-parts-expense-filters.mjs
