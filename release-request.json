@@ -1,8 +1,8 @@
 {
-  "versionName": "V238",
-  "versionCode": 201,
+  "versionName": "V239",
+  "versionCode": 202,
   "approvedForStaff": true,
   "approvedAt": "2026-10-01",
-  "sourceCommit": "496a18a280babed37ec9e0af6dec426a41f82918",
-  "publishNonce": "release-v238-distinct-dashboard-colours-20261001-r1"
+  "sourceCommit": "3f34483022c5cd2c5c9d7596240b2eb3adc6765f",
+  "publishNonce": "release-v239-teal-estimate-20261001-r1"
 }
