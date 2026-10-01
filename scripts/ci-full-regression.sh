@@ -115,3 +115,5 @@ node tests/spare-parts-expense-filters.mjs
 
 node tests/time-management.mjs
 
+
+node tests/finished-assignment-performance.mjs
