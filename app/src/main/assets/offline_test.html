@@ -1678,10 +1678,10 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 <script src="v68_updates.js?v=202"></script>
 <script src="v69_updates.js?v=202"></script>
 <script src="v74_updates.js?v=239"></script>
-<script src="supervisor_stable.js?v=237"></script>
+<script src="supervisor_stable.js?v=240"></script>
 <script src="voice_quick_entry_intelligent.js?v=202"></script>
 <script src="live_status_authority.js?v=217"></script>
-<script src="technician_workload.js?v=236"></script>
+<script src="technician_workload.js?v=240"></script>
 <script src="job_cost_summary_v128.js?v=202"></script>
 <script src="v2/features/time/shadow_bridge.js?v=202"></script>
 <script>window.zukaitV2?.shadow?.install();</script>
@@ -1717,6 +1717,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     try{window.ensureManagerSparePartsCard?.()}catch(e){}
     try{window.refreshManagerSparePartsSummary?.()}catch(e){}
     try{window.zukaitEstimate?.ensureDashboardCards?.()}catch(e){}
+    try{window.zukaitRefreshManagerTechnicianBoard?.()}catch(e){console.error('Manager technician board',e)}
     root.dataset.managerComposition='v200-final';
   }
   const render=window.render;
@@ -1730,6 +1731,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     wrapped.__v199ManagerFinal=true;window.renderManager=wrapped;
   }
   window.zukaitComposeManagerDashboard=compose;
+  window.addEventListener('zukait-live-status',()=>window.zukaitRefreshManagerTechnicianBoard?.());
   compose();
 })();
 </script>

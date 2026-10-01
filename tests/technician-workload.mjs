@@ -23,6 +23,8 @@ const context={state,users,me:{role:'Supervisor'},document:{hidden:false,head:{a
 context.window=context;vm.createContext(context);vm.runInContext(source,context);
 const tick=()=>[...intervals.values()].forEach(fn=>fn());
 const body=()=>elements.get('twWorkload').innerHTML;
+for(const viewerRole of ['Supervisor','Manager']){
+context.me.role=viewerRole;
 for(const emp of users){
   state.jobs=[{no:'LC-1003',vehicle:'Toyota Avalon',year:2005,reg:'123 <AB>'},{no:'JC2',vehicle:'Nissan'},{no:'JC3'},{no:'JC4'},{no:'JC5',delivered:true},{no:'JC6',archived:true},{no:'ID001'}];
   state.assign=[{id:'a',emp:emp.id,job:'LC-1003',suggested:180,worked:80},{id:'b',emp:emp.id,job:'JC2',suggested:60,worked:75,testStatus:'Paused'},
@@ -56,6 +58,7 @@ for(const emp of users){
   live={status:'Syncing',session:null};tick();assert.match(body(),/Syncing/);
   const current=elements.get('twWorkload');current.isConnected=false;tick();assert.equal(intervals.size,0,'closing view stops its timer');
 }
+}
 context.me.role='Employee';title='unchanged';context.openTechnicianWorkload('1');assert.equal(title,'unchanged');
 assert.doesNotMatch(source,/save\(|commitEvent\(|syncNow\(|MutationObserver/);
 console.log('Technician workload: all departments, row navigation, unique unfinished JCs, times, escaping, realtime finish/reassignment, read-only state and timer cleanup passed');
@@ -82,3 +85,17 @@ vm.runInContext('me=null;',production);
 title='closed';production.window.v84OpenDept('Denter');assert.equal(title,'closed','stale window identity must not reopen after logout');
 tick();assert.equal(intervals.size,0);
 console.log('Production lexical login: Denting, Painting, Mechanical, workload and logout guards passed');
+
+const stable=fs.readFileSync('app/src/main/assets/supervisor_stable.js','utf8');
+const boardCode=stable.slice(stable.indexOf('function techBoard(st)'),stable.indexOf('let voiceRecognition'));
+let viewer='Manager',staffRows=[{emp:'1',status:'Working'},{emp:'2',status:'Paused'}],host=null,appendCount=0;
+const managerRoot={querySelector:()=>host,appendChild(node){host=node;appendCount++;}};
+const boardContext={users,window:{},U:()=>users,staff:()=>staffRows,role:()=>viewer,document:{getElementById:()=>managerRoot,createElement:()=>({innerHTML:''})}};
+vm.createContext(boardContext);vm.runInContext(boardCode,boardContext);
+const managerHTML=boardContext.window.zukaitTechnicianBoardHTML();viewer='Supervisor';assert.equal(boardContext.window.zukaitTechnicianBoardHTML(),managerHTML,'both dashboards must share identical board markup and counts');
+assert.match(managerHTML,/v237-spray-gun/);assert.match(managerHTML,/openTechnicianDepartment/);assert.match(managerHTML,/1 <em>\/ 1/);
+viewer='Manager';boardContext.window.zukaitRefreshManagerTechnicianBoard();assert.equal(host.innerHTML,managerHTML);boardContext.window.zukaitRefreshManagerTechnicianBoard();assert.equal(appendCount,1,'repeated composition must keep a single board');
+staffRows=[];boardContext.window.zukaitRefreshManagerTechnicianBoard();assert.doesNotMatch(host.innerHTML,/1 <em>\/ 1/,'new live projection must update working counts');
+viewer='Employee';staffRows=[{emp:'1',status:'Working'}];const saved=host.innerHTML;boardContext.window.zukaitRefreshManagerTechnicianBoard();assert.equal(host.innerHTML,saved,'other roles cannot inject manager board');
+assert.match(html,/zukaitRefreshManagerTechnicianBoard/);assert.match(html,/addEventListener\('zukait-live-status'/);
+console.log('Shared Manager board: identical renderer, spray gun, department routes, live counts, single board and role isolation passed');

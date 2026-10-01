@@ -1,7 +1,7 @@
 (function(){
   'use strict';
   // Match the dashboard and secure login's lexical session authority.
-  const supervisor=()=>typeof me!=='undefined'&&me?.role==='Supervisor';
+  const canView=()=>typeof me!=='undefined'&&['Supervisor','Manager'].includes(me?.role);
   const departments={Denter:'Denting',Painter:'Painting',Mechanic:'Mechanical'};
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const same=(a,b)=>String(a)===String(b);
@@ -109,7 +109,7 @@
   }
   window.openTechnicianWorkHistory=function(emp,no){
     const u=person(emp),row=present(emp).find(r=>same(r.job.no,no));
-    if(!supervisor()||!u||u.role!=='Employee'||!departments[u.department]||!row)return;
+    if(!canView()||!u||u.role!=='Employee'||!departments[u.department]||!row)return;
     const ids=new Set(row.assignments.map(a=>String(a.id)));stop();
     showSupervisorModal(esc(u.name)+' · JC '+esc(no)+' · Work History','<div class="tw-workload-tools"><button type="button" id="twHistoryBack" class="secondary tw-back">← Back</button></div><div id="twHistory" class="'+deptClass(u.department)+'">'+historyBody(emp,no,ids)+'</div>');
     document.getElementById('modal').classList.add('tw-fullscreen');
@@ -121,14 +121,14 @@
     stop();
     let previous=body.innerHTML;
     timer=setInterval(()=>{
-      if(!body.isConnected||!supervisor()){stop();return;}
+      if(!body.isConnected||!canView()){stop();return;}
       if(document.hidden)return;
       const next=render();
       if(next!==previous){body.innerHTML=next;previous=next;}
     },1000);
   }
   window.openTechnicianDepartment=function(dept){
-    if(!supervisor()||!departments[dept])return;
+    if(!canView()||!departments[dept])return;
     stop();
     showSupervisorModal(esc(departments[dept])+' Technicians','<div id="twDepartment" class="tw-department '+deptClass(dept)+'">'+departmentBody(dept)+'</div>');
     const body=document.getElementById('twDepartment');
@@ -139,7 +139,7 @@
   };
   window.openTechnicianWorkload=function(emp){
     const u=person(emp);
-    if(!supervisor()||!u||u.role!=='Employee'||!departments[u.department])return;
+    if(!canView()||!u||u.role!=='Employee'||!departments[u.department])return;
     stop();
     showSupervisorModal(esc(u.name)+' · '+esc(departments[u.department]),'<div class="tw-workload-tools '+deptClass(u.department)+'"><button type="button" id="twBack" class="secondary tw-back">← Back</button></div><div id="twWorkload" class="'+deptClass(u.department)+'">'+workloadBody(emp)+'</div>');
     document.getElementById('modal').classList.add('tw-fullscreen');
