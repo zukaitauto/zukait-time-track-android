@@ -5,7 +5,7 @@ const om=s=>Date.parse(s),now=om('2026-10-01T11:10:00Z');
 class Clock extends Date{constructor(...a){super(...(a.length?a:[now]))}static now(){return now}}
 const users=[{id:'E1',role:'Employee',name:'Babu',department:'Denter'}],state={sessions:[],assign:[],leaves:[],workshopHolidays:[]};
 const ctx={state,users,Date:Clock,window:{v75IsClosedWorkshopDay(t){const d=new Clock(t);return d.getDay()===5||state.workshopHolidays.some(h=>h.dateKey===d.toISOString().slice(0,10))},v63IsOnLeave(){return false}},activeSession(id){return state.sessions.find(s=>s.emp===id&&!s.end)||null},fmt:m=>m+'m',me:{role:'Supervisor'},document:{getElementById(){return null},createElement(){return{}},head:{appendChild(){}}},setInterval(){},setTimeout(){},openModal(){}};
-vm.runInNewContext(block,ctx);
+ctx.window.window=ctx.window;ctx.window.state=state;ctx.window.users=users;ctx.window.Date=Clock;ctx.window.activeSession=ctx.activeSession;ctx.window.fmt=ctx.fmt;ctx.window.me=ctx.me;ctx.window.document=ctx.document;ctx.window.setInterval=ctx.setInterval;ctx.window.setTimeout=ctx.setTimeout;ctx.window.openModal=ctx.openModal;vm.runInNewContext(block,ctx.window);
 const S=(job,start,end,extra={})=>({emp:'E1',job,start:om(start),end:end?om(end):null,...extra});
 state.sessions=[S('A','2026-10-01T05:55:00Z','2026-10-01T06:00:00Z')];assert.equal(ctx.window.v247CurrentIdealRows()[0].minutes,190,'current idle counts valid duty minutes only');
 state.sessions=[S('A','2026-10-01T08:58:00Z','2026-10-01T08:58:00Z')];assert.equal(ctx.window.v247CurrentIdealRows()[0].minutes,12,'12:58 pause crosses lunch and counts 2+10 duty minutes');
