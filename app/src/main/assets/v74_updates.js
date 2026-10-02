@@ -3709,15 +3709,15 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  function statusFor(s){if(!s)return'—';const a=(state.assign||[]).find(x=>x&&x.id===s.assignmentId)|| (state.assign||[]).find(x=>x&&x.job===s.job&&String(x.emp)===String(s.emp));return a?.completed||s.finished?'Finished':'Paused'}
  function currentRow(u,at=Date.now()){
    if(activeSession(u.id)||leave(u.id,at)||closed(at))return null;
-   const prev=lastProductive(u.id,at);if(!prev||!prev.end||at-(+prev.end)<GRACE)return null;
-   const gap=uncovered(u.id,+prev.end,at);if(gap.minutes<=0)return null;
+   const prev=lastProductive(u.id,at);if(!prev||!prev.end)return null;
+   const gap=uncovered(u.id,+prev.end,at);if(gap.minutes<5)return null;
    return{u,prev,status:statusFor(prev),since:+prev.end,minutes:gap.minutes};
  }
  window.v247CurrentIdealRows=()=>users.filter(u=>u&&u.role==='Employee').map(u=>currentRow(u)).filter(Boolean).sort((a,b)=>b.minutes-a.minutes);
  function history(emp,from,to,includeOpen=true){
    const ss=productive(emp,from-86400000,to),rows=[];
    for(let i=0;i<ss.length-1;i++){const a=ss[i],b=ss[i+1],st=+a.end||0,en=+b.start||0;if(!st||en<=st||en<from||st>=to)continue;const x=uncovered(emp,Math.max(st,from),Math.min(en,to));if(x.minutes>0)rows.push({emp,fromJob:a.job,toJob:b.job,status:statusFor(a),start:Math.max(st,from),end:Math.min(en,to),minutes:x.minutes,open:false})}
-   if(includeOpen){const p=lastProductive(emp,to);if(p?.end&&+p.end<to&&to-(+p.end)>=GRACE){const st=Math.max(+p.end,from);if(st<to){const x=uncovered(emp,st,to);if(x.minutes>0)rows.push({emp,fromJob:p.job,toJob:'—',status:statusFor(p),start:st,end:to,minutes:x.minutes,open:true})}}}
+   if(includeOpen){const p=lastProductive(emp,to);if(p?.end&&+p.end<to){const st=Math.max(+p.end,from);if(st<to){const x=uncovered(emp,st,to);if(x.minutes>=5)rows.push({emp,fromJob:p.job,toJob:'—',status:statusFor(p),start:st,end:to,minutes:x.minutes,open:true})}}}
    return rows;
  }
  window.v247IdealHistory=history;
