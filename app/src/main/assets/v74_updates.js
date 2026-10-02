@@ -3726,17 +3726,10 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  function renderLive(){
    const host=document.getElementById('v247Live');if(!host)return;
    const rows=window.v247CurrentIdealRows();
-   let html='<h3>Current Without Work <span class="pill">'+rows.length+'</span></h3><div class="small muted">Appears after 5 minutes without starting another productive Job Card.</div>';
-   if(rows.length){
-     html+='<div class="v74-scroll"><table><tr><th>Employee</th><th>Department</th><th>Previous JC</th><th>Status</th><th>Without Work Since</th><th>Ideal Time</th></tr>';
-     html+=rows.map(x=>'<tr><td><b>'+esc(x.u.name)+'</b></td><td>'+esc(x.u.department||'—')+'</td><td><b>'+esc(x.prev.job)+'</b></td><td>'+esc(x.status)+'</td><td>'+esc(tm(x.since))+'</td><td><b>'+fm(x.minutes)+'</b></td></tr>').join('');
-     html+='</table></div>';
-   }else{
-     html+='<div class="notice">No employee has been without productive work for more than 5 minutes.</div>';
-   }
-   host.innerHTML=html;
+   const empty='<div class="notice">No employee has been without productive work for more than 5 minutes.</div>';
+   const table=rows.length?'<div class="v74-scroll"><table><tr><th>Employee</th><th>Department</th><th>Previous JC</th><th>Status</th><th>Without Work Since</th><th>Ideal Time</th></tr>'+rows.map(x=>'<tr><td><b>'+esc(x.u.name)+'</b></td><td>'+esc(x.u.department||'—')+'</td><td><b>'+esc(x.prev.job)+'</b></td><td>'+esc(x.status)+'</td><td>'+esc(tm(x.since))+'</td><td><b>'+fm(x.minutes)+'</b></td></tr>').join('')+'</table></div>':empty;
+   host.innerHTML='<h3>Current Without Work <span class="pill">'+rows.length+'</span></h3><div class="small muted">Appears after 5 minutes without starting another productive Job Card.</div>'+table;
  }
-
  function renderHistory(){
    const host=document.getElementById('v247History');if(!host)return;
    const {from,to}=bounds(),filter=document.getElementById('v247Employee')?.value||'';
