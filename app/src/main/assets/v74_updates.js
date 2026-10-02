@@ -3674,3 +3674,74 @@ window.zukaitOpenJob360=function(no){
  return alert('Job Card details are unavailable. Please sync and try again.');
 };
 window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
+
+
+/* V247 IDEAL TIME MONITOR — read-only productive-work gap reporting.
+   ID001 remains unchanged. Live list uses a 5-minute visibility grace period.
+   History retains the full uncovered duty-time gap and excludes ID001, leave,
+   Friday/public holidays, lunch and outside-duty time. */
+(function(){'use strict';
+ const H='ID001',GRACE=5*60000;
+ const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ const fm=m=>{try{return fmt(Math.max(0,+m||0))}catch(_){const n=Math.max(0,Math.round(+m||0));return Math.floor(n/60)+'h '+String(n%60).padStart(2,'0')+'m'}};
+ const dt=t=>new Date(t).toLocaleString([],{year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+ const tm=t=>new Date(t).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+ const day0=t=>{const d=new Date(t);return new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()};
+ const closed=t=>{try{return typeof window.v75IsClosedWorkshopDay==='function'?window.v75IsClosedWorkshopDay(t):new Date(t).getDay()===5}catch(_){return new Date(t).getDay()===5}};
+ const leave=(emp,t)=>{try{return typeof window.v63IsOnLeave==='function'&&window.v63IsOnLeave(emp,t)}catch(_){return false}};
+ function dutySegments(from,to){
+   const out=[];for(let d=day0(from);d<to;d+=86400000){if(closed(d+12*3600000))continue;for(const [a,b] of [[480,780],[900,1140]]){const s=Math.max(from,d+a*60000),e=Math.min(to,d+b*60000);if(e>s)out.push([s,e])}}return out;
+ }
+ function merge(xs){xs=xs.filter(x=>x[1]>x[0]).sort((a,b)=>a[0]-b[0]);if(!xs.length)return[];const out=[xs[0].slice()];for(let i=1;i<xs.length;i++){const z=out[out.length-1],x=xs[i];if(x[0]<=z[1])z[1]=Math.max(z[1],x[1]);else out.push(x.slice())}return out}
+ function covered(emp,from,to){
+   const xs=(state.sessions||[]).filter(s=>s&&String(s.emp)===String(emp)&&s.start<to&&(s.end||Date.now())>from).map(s=>[Math.max(from,+s.start||0),Math.min(to,+(s.end||Date.now()))]);
+   const leaves=(state.leaves||[]).filter(l=>l&&!l.cancelled&&String(l.emp)===String(emp));
+   for(const l of leaves){const p=String(l.date||'').split('-').map(Number);if(p.length!==3)continue;const d=new Date(p[0],p[1]-1,p[2]).getTime(),segs=l.period==='AM'?[[480,780]]:l.period==='PM'?[[900,1140]]:[[480,780],[900,1140]];for(const [a,b] of segs)xs.push([Math.max(from,d+a*60000),Math.min(to,d+b*60000)])}
+   return merge(xs);
+ }
+ function uncovered(emp,from,to){
+   if(to<=from)return{minutes:0,segments:[]};const cov=covered(emp,from,to),out=[];
+   for(const [ds,de] of dutySegments(from,to)){let cur=ds;for(const [a,b] of cov){if(b<=cur||a>=de)continue;if(a>cur)out.push([cur,Math.min(a,de)]);cur=Math.max(cur,b);if(cur>=de)break}if(cur<de)out.push([cur,de])}
+   const segs=out.filter(([a,b])=>b>a&&!leave(emp,(a+b)/2));return{minutes:segs.reduce((n,[a,b])=>n+(b-a)/60000,0),segments:segs};
+ }
+ function productive(emp,from,to){return (state.sessions||[]).filter(s=>s&&String(s.emp)===String(emp)&&s.job!==H&&s.start<to&&(s.end||Date.now())>from).slice().sort((a,b)=>(+a.start||0)-(+b.start||0))}
+ function lastProductive(emp,at=Date.now()){return productive(emp,0,at+1).filter(s=>(s.end||0)&&+s.end<=at).sort((a,b)=>(+b.end||0)-(+a.end||0))[0]||null}
+ function statusFor(s){if(!s)return'—';const a=(state.assign||[]).find(x=>x&&x.id===s.assignmentId)|| (state.assign||[]).find(x=>x&&x.job===s.job&&String(x.emp)===String(s.emp));return a?.completed||s.finished?'Finished':'Paused'}
+ function currentRow(u,at=Date.now()){
+   if(activeSession(u.id)||leave(u.id,at)||closed(at))return null;
+   const prev=lastProductive(u.id,at);if(!prev||!prev.end||at-(+prev.end)<GRACE)return null;
+   const gap=uncovered(u.id,+prev.end,at);if(gap.minutes<=0)return null;
+   return{u,prev,status:statusFor(prev),since:+prev.end,minutes:gap.minutes};
+ }
+ window.v247CurrentIdealRows=()=>users.filter(u=>u&&u.role==='Employee').map(u=>currentRow(u)).filter(Boolean).sort((a,b)=>b.minutes-a.minutes);
+ function history(emp,from,to,includeOpen=true){
+   const ss=productive(emp,from-86400000,to),rows=[];
+   for(let i=0;i<ss.length-1;i++){const a=ss[i],b=ss[i+1],st=+a.end||0,en=+b.start||0;if(!st||en<=st||en<from||st>=to)continue;const x=uncovered(emp,Math.max(st,from),Math.min(en,to));if(x.minutes>0)rows.push({emp,fromJob:a.job,toJob:b.job,status:statusFor(a),start:Math.max(st,from),end:Math.min(en,to),minutes:x.minutes,open:false})}
+   if(includeOpen){const p=lastProductive(emp,to);if(p?.end&&+p.end<to&&to-(+p.end)>=GRACE){const st=Math.max(+p.end,from);if(st<to){const x=uncovered(emp,st,to);if(x.minutes>0)rows.push({emp,fromJob:p.job,toJob:'—',status:statusFor(p),start:st,end:to,minutes:x.minutes,open:true})}}}
+   return rows;
+ }
+ window.v247IdealHistory=history;
+ function bounds(){const f=document.getElementById('v247From')?.value,t=document.getElementById('v247To')?.value,n=new Date(),a=f?new Date(f+'T00:00:00').getTime():new Date(n.getFullYear(),n.getMonth(),1).getTime(),b=t?new Date(t+'T23:59:59.999').getTime()+1:Date.now();return{from:a,to:Math.min(b,Date.now())}}
+ function renderLive(){
+   const host=document.getElementById('v247Live');if(!host)return;const rows=window.v247CurrentIdealRows();
+   host.innerHTML='<h3>Current Without Work <span class="pill">'+rows.length+'</span></h3><div class="small muted">Appears after 5 minutes without starting another productive Job Card.</div>'+(rows.length?'<div class="v74-scroll"><table><tr><th>Employee</th><th>Department</th><th>Previous JC</th><th>Status</th><th>Without Work Since</th><th>Ideal Time</th></tr>'+rows.map(x=>'<tr><td><b>'+esc(x.u.name)+'</b></td><td>'+esc(x.u.department||'—')+'</td><td><b>'+esc(x.prev.job)+'</b></td><td>'+esc(x.status)+'</td><td>'+esc(tm(x.since))+'</td><td><b>'+fm(x.minutes)+'</b></td></tr>').join('')+'</table></div>':'<div class="notice">No employee has been without productive work for more than 5 minutes.</div>';
+ }
+ function renderHistory(){
+   const host=document.getElementById('v247History');if(!host)return;const {from,to}=bounds(),filter=document.getElementById('v247Employee')?.value||'',us=users.filter(u=>u&&u.role==='Employee'&&(!filter||String(u.id)===filter)),rows=us.flatMap(u=>history(u.id,from,to,true).map(x=>({...x,u}))).sort((a,b)=>b.start-a.start),total=rows.reduce((n,x)=>n+x.minutes,0);
+   host.innerHTML='<div class="notice"><b>Total Ideal Time</b><div class="stat">'+fm(total)+'</div><span class="small">'+rows.length+' gap'+(rows.length===1?'':'s')+'</span></div>'+(rows.length?'<div class="v74-scroll"><table><tr><th>Employee</th><th>Date / Start</th><th>Previous JC</th><th>Next JC</th><th>Previous Status</th><th>End</th><th>Ideal Time</th></tr>'+rows.map(x=>'<tr><td><b>'+esc(x.u.name)+'</b><br><span class="small">'+esc(x.u.department||'')+'</span></td><td>'+esc(dt(x.start))+'</td><td>'+esc(x.fromJob)+'</td><td>'+esc(x.toJob)+'</td><td>'+esc(x.status)+'</td><td>'+esc(x.open?'Current':dt(x.end))+'</td><td><b>'+fm(x.minutes)+'</b></td></tr>').join('')+'</table></div>':'<div class="notice">No Ideal Time gaps in the selected period.</div>';
+ }
+ window.v247RenderIdeal=function(){renderLive();renderHistory()};
+ window.v247OpenIdealTime=function(){
+   if(!me||!['Manager','Supervisor'].includes(me.role))return;const n=new Date(),first=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-01',today=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0'),opts=users.filter(u=>u&&u.role==='Employee').map(u=>'<option value="'+esc(u.id)+'">'+esc(u.name)+' · '+esc(u.department||'')+'</option>').join('');
+   openModal('<div class="section-title"><h2>◷ Ideal Time</h2><div><button class="secondary" onclick="window.print()">Print</button> <button class="secondary" onclick="closeModal()">Close</button></div></div><div id="v247Live"></div><hr><h3>Ideal Time History</h3><div class="row"><label>From<br><input id="v247From" type="date" value="'+first+'" onchange="v247RenderIdeal()"></label><label>To<br><input id="v247To" type="date" value="'+today+'" onchange="v247RenderIdeal()"></label><label>Employee<br><select id="v247Employee" onchange="v247RenderIdeal()"><option value="">All Employees</option>'+opts+'</select></label></div><div id="v247History" style="margin-top:12px"></div>');
+   setTimeout(window.v247RenderIdeal,0);
+ };
+ function inject(){
+   if(!me||!['Manager','Supervisor'].includes(me.role))return;const root=document.getElementById(me.role==='Manager'?'managerView':'supervisorView');if(!root||root.querySelector('#v247IdealDashboard'))return;
+   const b=document.createElement('section');b.id='v247IdealDashboard';b.className='card v84-action clickable';b.setAttribute('onclick','v247OpenIdealTime()');b.innerHTML='<div class="section-title"><h3>◷ Ideal Time</h3><span class="pill">LIVE</span></div><div class="small muted">Current employees without work · 5-minute grace · daily / monthly / custom history</div>';
+   if(me.role==='Supervisor'){const g=root.querySelector('.v84-action-grid');if(g)g.appendChild(b);else root.appendChild(b)}else{const ctl=[...root.querySelectorAll('.card')].find(x=>(x.textContent||'').includes('Workshop Control Center'));if(ctl?.parentNode)ctl.parentNode.insertBefore(b,ctl.nextSibling);else root.appendChild(b)}
+ }
+ const oldRender=window.render;window.render=function(){const r=typeof oldRender==='function'?oldRender.apply(this,arguments):undefined;setTimeout(inject,0);return r};
+ if(window.v247IdealTimer)clearInterval(window.v247IdealTimer);window.v247IdealTimer=setInterval(()=>{if(document.getElementById('v247Live'))renderLive()},15000);
+ setTimeout(inject,0);window.v247IdealTimeReady=true;
+})();
