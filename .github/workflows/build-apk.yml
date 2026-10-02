@@ -27,8 +27,8 @@ jobs:
         shell: bash
         run: |
           test "$(git branch --show-current)" = "architecture-v2"
-          grep -q 'versionCode 213' app/build.gradle
-          grep -q 'versionName "V250"' app/build.gradle
+          grep -q 'versionCode 214' app/build.gradle
+          grep -q 'versionName "V251"' app/build.gradle
 
       - name: Set up Java
         uses: actions/setup-java@v5
