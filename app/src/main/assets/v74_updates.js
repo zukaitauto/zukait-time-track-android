@@ -3755,9 +3755,32 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
    setTimeout(window.v247RenderIdeal,0);
  };
  function inject(){
-   if(!me||!['Manager','Supervisor'].includes(me.role))return;const root=document.getElementById(me.role==='Manager'?'managerView':'supervisorView');if(!root||root.querySelector('#v247IdealDashboard'))return;
-   const b=document.createElement('section');b.id='v247IdealDashboard';b.className='card v84-action clickable';b.setAttribute('onclick','v247OpenIdealTime()');b.innerHTML='<div class="section-title"><h3>◷ Ideal Time</h3><span class="pill">LIVE</span></div><div class="small muted">Current employees without work · 5-minute grace · daily / monthly / custom history</div>';
-   if(me.role==='Supervisor'){const g=root.querySelector('.v84-action-grid');if(g)g.appendChild(b);else root.appendChild(b)}else{const ctl=[...root.querySelectorAll('.card')].find(x=>(x.textContent||'').includes('Workshop Control Center'));if(ctl?.parentNode)ctl.parentNode.insertBefore(b,ctl.nextSibling);else root.appendChild(b)}
+   if(!me||!['Manager','Supervisor'].includes(me.role))return;
+   const root=document.getElementById(me.role==='Manager'?'managerView':'supervisorView');if(!root)return;
+   let b=root.querySelector('#v247IdealDashboard');
+   if(!b){
+     b=document.createElement(me.role==='Manager'?'button':'section');
+     b.id='v247IdealDashboard';
+   }
+   b.className=me.role==='Manager'?'v67-control v247-ideal-control clickable':'card v84-action v247-ideal-action clickable';
+   b.setAttribute('onclick','v247OpenIdealTime()');
+   b.innerHTML='<div class="section-title"><h3>◷ Ideal Time</h3><span class="pill">LIVE</span></div><div class="small muted">Employees without productive work · 5-minute grace · full history</div>';
+   if(me.role==='Supervisor'){
+     const g=root.querySelector('.v84-action-grid');
+     if(g&&b.parentNode!==g)g.appendChild(b);else if(!g&&!b.isConnected)root.appendChild(b);
+   }else{
+     const g=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid');
+     if(g&&b.parentNode!==g)g.appendChild(b);else if(!g&&!b.isConnected)root.appendChild(b);
+   }
+ }
+ window.v247InjectDashboard=inject;
+ if(typeof window.v156SettleManagerUI==='function'&&!window.v156SettleManagerUI.__v247){
+   const prior=window.v156SettleManagerUI;
+   const wrapped=function(){const r=prior.apply(this,arguments);setTimeout(inject,0);return r};wrapped.__v247=true;window.v156SettleManagerUI=wrapped;
+ }
+ if(typeof window.v74ApplySupervisorFinal==='function'&&!window.v74ApplySupervisorFinal.__v247){
+   const prior=window.v74ApplySupervisorFinal;
+   const wrapped=function(){const r=prior.apply(this,arguments);setTimeout(inject,0);return r};wrapped.__v247=true;window.v74ApplySupervisorFinal=wrapped;
  }
  const oldRender=window.render;window.render=function(){const r=typeof oldRender==='function'?oldRender.apply(this,arguments):undefined;setTimeout(inject,0);return r};
  if(window.v247IdealTimer)clearInterval(window.v247IdealTimer);window.v247IdealTimer=setInterval(()=>{if(document.getElementById('v247Live'))renderLive()},15000);
