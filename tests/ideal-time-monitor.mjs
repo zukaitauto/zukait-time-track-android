@@ -14,3 +14,10 @@ state.sessions=[S('A','2026-10-01T04:00:00Z','2026-10-01T05:00:00Z'),S('B','2026
 state.sessions=[S('A','2026-10-01T04:00:00Z','2026-10-01T05:00:00Z'),S('B','2026-10-01T04:30:00Z','2026-10-01T05:30:00Z'),S('C','2026-10-01T05:40:00Z','2026-10-01T06:00:00Z')];h=ctx.window.v247IdealHistory('E1',om('2026-10-01T04:00:00Z'),om('2026-10-01T06:00:00Z'),false);assert.equal(h.length,1);assert.equal(h[0].minutes,10,'overlapping productive sessions merge before gap calculation');
 const before=JSON.stringify(state);ctx.window.v247IdealHistory('E1',om('2026-10-01T04:00:00Z'),now,false);assert.equal(JSON.stringify(state),before,'Ideal Time reporting is read-only');
 console.log('Ideal Time monitor passed: duty grace, lunch, ID001, short gaps, overlap merge, read-only.');
+
+const idealBlock=src.slice(mark,src.indexOf('})();',src.indexOf('function inject(){',mark))+5);
+assert.match(idealBlock,/Today at a Glance/,'Ideal Worker placement targets Today at a Glance');
+assert.match(idealBlock,/\.v74-six,\.glance-grid/,'Ideal Worker placement targets the 3x2 glance grid');
+assert.match(idealBlock,/Ideal Worker/,'Ideal Worker tile label is present');
+assert.doesNotMatch(idealBlock,/v84-action-grid/,'Supervisor Ideal Worker is not placed in the lower action grid');
+console.log('Ideal Worker placement passed: single glance-grid launcher with no lower-action duplicate.');
