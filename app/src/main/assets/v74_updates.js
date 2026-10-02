@@ -3736,9 +3736,22 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
    }
    host.innerHTML=html;
  }
+
  function renderHistory(){
-   const host=document.getElementById('v247History');if(!host)return;const {from,to}=bounds(),filter=document.getElementById('v247Employee')?.value||'',us=users.filter(u=>u&&u.role==='Employee'&&(!filter||String(u.id)===filter)),rows=us.flatMap(u=>history(u.id,from,to,true).map(x=>({...x,u}))).sort((a,b)=>b.start-a.start),total=rows.reduce((n,x)=>n+x.minutes,0);
-   host.innerHTML='<div class="notice"><b>Total Ideal Time</b><div class="stat">'+fm(total)+'</div><span class="small">'+rows.length+' gap'+(rows.length===1?'':'s')+'</span></div>'+(rows.length?'<div class="v74-scroll"><table><tr><th>Employee</th><th>Date / Start</th><th>Previous JC</th><th>Next JC</th><th>Previous Status</th><th>End</th><th>Ideal Time</th></tr>'+rows.map(x=>'<tr><td><b>'+esc(x.u.name)+'</b><br><span class="small">'+esc(x.u.department||'')+'</span></td><td>'+esc(dt(x.start))+'</td><td>'+esc(x.fromJob)+'</td><td>'+esc(x.toJob)+'</td><td>'+esc(x.status)+'</td><td>'+esc(x.open?'Current':dt(x.end))+'</td><td><b>'+fm(x.minutes)+'</b></td></tr>').join('')+'</table></div>':'<div class="notice">No Ideal Time gaps in the selected period.</div>';
+   const host=document.getElementById('v247History');if(!host)return;
+   const {from,to}=bounds(),filter=document.getElementById('v247Employee')?.value||'';
+   const us=users.filter(u=>u&&u.role==='Employee'&&(!filter||String(u.id)===filter));
+   const rows=us.flatMap(u=>history(u.id,from,to,true).map(x=>({...x,u}))).sort((a,b)=>b.start-a.start);
+   const total=rows.reduce((n,x)=>n+x.minutes,0);
+   let html='<div class="notice"><b>Total Ideal Time</b><div class="stat">'+fm(total)+'</div><span class="small">'+rows.length+' gap'+(rows.length===1?'':'s')+'</span></div>';
+   if(rows.length){
+     html+='<div class="v74-scroll"><table><tr><th>Employee</th><th>Date / Start</th><th>Previous JC</th><th>Next JC</th><th>Previous Status</th><th>End</th><th>Ideal Time</th></tr>';
+     html+=rows.map(x=>'<tr><td><b>'+esc(x.u.name)+'</b><br><span class="small">'+esc(x.u.department||'')+'</span></td><td>'+esc(dt(x.start))+'</td><td>'+esc(x.fromJob)+'</td><td>'+esc(x.toJob)+'</td><td>'+esc(x.status)+'</td><td>'+esc(x.open?'Current':dt(x.end))+'</td><td><b>'+fm(x.minutes)+'</b></td></tr>').join('');
+     html+='</table></div>';
+   }else{
+     html+='<div class="notice">No Ideal Time gaps in the selected period.</div>';
+   }
+   host.innerHTML=html;
  }
  window.v247RenderIdeal=function(){renderLive();renderHistory()};
  window.v247OpenIdealTime=function(){
