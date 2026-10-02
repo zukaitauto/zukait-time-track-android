@@ -15,9 +15,10 @@ state.sessions=[S('A','2026-10-01T04:00:00Z','2026-10-01T05:00:00Z'),S('B','2026
 const before=JSON.stringify(state);ctx.window.v247IdealHistory('E1',om('2026-10-01T04:00:00Z'),now,false);assert.equal(JSON.stringify(state),before,'Ideal Time reporting is read-only');
 console.log('Ideal Time monitor passed: duty grace, lunch, ID001, short gaps, overlap merge, read-only.');
 
-const idealBlock=src.slice(mark,src.indexOf('})();',src.indexOf('function inject(){',mark))+5);
-assert.match(idealBlock,/Today at a Glance/,'Ideal Worker placement targets Today at a Glance');
-assert.match(idealBlock,/\.v74-six,\.glance-grid/,'Ideal Worker placement targets the 3x2 glance grid');
-assert.match(idealBlock,/Ideal Worker/,'Ideal Worker tile label is present');
+const stable=fs.readFileSync('app/src/main/assets/supervisor_stable.js','utf8');
+assert.match(stable,/Today at a Glance[\s\S]*class="ideal-worker"/,'Ideal Worker placement targets the authoritative Today at a Glance renderer');
+assert.match(stable,/\.v143-glance\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,'Ideal Worker remains inside the 3x2 stable glance grid');
+assert.match(stable,/onclick="v143OpenIdealWorker\(\)"/,'Ideal Worker tile opens the Ideal Time details');
+assert.doesNotMatch(stable,/class="ready" onclick="v143OpenReadyForDelivery\(\)"/,'Ready for Delivery does not reclaim the Ideal Worker glance slot');
 assert.doesNotMatch(idealBlock,/v84-action-grid/,'Supervisor Ideal Worker is not placed in the lower action grid');
-console.log('Ideal Worker placement passed: single glance-grid launcher with no lower-action duplicate.');
+console.log('Ideal Worker placement passed: authoritative stable glance tile with no lower-action duplicate.');
