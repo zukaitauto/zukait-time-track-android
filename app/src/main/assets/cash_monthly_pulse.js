@@ -8,6 +8,7 @@ function month(){const d=new Date(),from=+new Date(d.getFullYear(),d.getMonth(),
 function rows(kind){const {from,to}=month();return all().filter(j=>kind==='in'?Number(j.createdAt||0)>=from&&Number(j.createdAt||0)<to:j.delivered&&Number(j.deliveredAt||0)>=from&&Number(j.deliveredAt||0)<to)}
 function total(a){return a.reduce((n,j)=>n+(Number(j.amount)||0),0)}
 function pendingAll(){return all().filter(j=>!j.delivered)}
+function outstandingTotal(a){return a.reduce((n,j)=>n+(Number(j.amount)||0),0)}
 function html(){
  const i=rows('in'),o=rows('out'),label=month().label;
  return '<section class="v251-cash-pulse" data-v251-cash-pulse><div class="v251-cash-title"><b>Cash Monthly Follow-up</b><small>'+esc(label)+' · Vehicle count & current accurate amount</small></div><div class="v251-cash-grid"><button class="v251-cash-circle in" onclick="v251OpenCashPulse(\'in\')"><span>↘</span><b>VEHICLE IN</b><strong>'+i.length+'</strong><em>'+money(total(i))+'</em><small>CASH · THIS MONTH</small></button><button class="v251-cash-circle out" onclick="v251OpenCashPulse(\'out\')"><span>↗</span><b>VEHICLE OUT</b><strong>'+o.length+'</strong><em>'+money(total(o))+'</em><small>CASH · THIS MONTH</small></button></div></section>';
@@ -24,7 +25,7 @@ window.v251OpenCashPendingAll=function(){if(!['Manager','Supervisor'].includes(r
 window.v251OpenCashPulse=function(kind){
  if(!['Manager','Supervisor'].includes(role()))return;
  const a=rows(kind),dateKey=kind==='out'?'deliveredAt':'createdAt',title=kind==='out'?'Cash Vehicle Out':'Cash Vehicle In',pending=pendingAll();
- const pendingSummary=kind==='in'?'<button class="v251-pending-total" onclick="v251OpenCashPendingAll()"><span>TOTAL CASH JOBS IN · NOT DELIVERED</span><b>'+pending.length+' Vehicles</b><strong>'+money(total(pending))+'</strong><small>Includes previous months · tap to view all</small></button>':'';
+ const pendingSummary=kind==='in'?'<button class="v251-pending-total" onclick="v251OpenCashPendingAll()"><span>TOTAL CASH JOBS IN · NOT DELIVERED</span><b>'+pending.length+' Vehicles</b><strong>'+money(outstandingTotal(pending))+'</strong><small>All months · current cash amount expected when these vehicles are delivered</small></button>':'';
  const body=a.length?a.slice().sort((x,y)=>Number(y[dateKey]||0)-Number(x[dateKey]||0)).map((j,n)=>'<div class="v251-cash-row"><b class="v251-no">'+(n+1)+'</b><div><strong>JC '+esc(j.no)+' · '+esc(j.reg||'—')+'</strong><small>'+esc(j.vehicle||'—')+' · '+new Date(Number(j[dateKey]||0)).toLocaleDateString('en-GB',{timeZone:'Asia/Muscat'})+' · '+(j.delivered?'Delivered':'Open / Pending')+'</small></div><b>'+money(j.amount)+'</b><button onclick="closeModal();zukaitOpenJob360(\''+esc(j.no)+'\')">360°</button></div>').join(''):'<p class="muted">No Cash vehicles in this section for '+esc(month().label)+'.</p>';
  openModal('<div class="section-title"><div><h2>'+title+'</h2><p class="muted">'+esc(month().label)+'</p></div><button class="secondary" onclick="closeModal()">Close</button></div>'+pendingSummary+'<div class="v251-cash-summary"><b>'+a.length+' Vehicles</b><strong>'+money(total(a))+'</strong></div>'+body);
 };
