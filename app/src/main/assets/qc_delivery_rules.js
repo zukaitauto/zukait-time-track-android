@@ -15,7 +15,7 @@ export function qcTransition(data,user,request,now){
  const error=code=>({ok:false,code});
  if(!job||key(job.no)==='ID001'||job.deleted||job.archived)return error('job_not_available');
  const op=request.operation,id=String(user.id||''),cash=String(job.jobType||'').toUpperCase()==='CASH';
- if(!['PAINTING_QC','FINAL_QC','DELIVER','CASH_AMOUNT_UPDATE','FINAL_INVOICE_CORRECTION'].includes(op))return error('bad_qc_operation');
+ if(!['PAINTING_QC','FINAL_QC','DELIVER','CASH_AMOUNT_UPDATE','FINAL_INVOICE_CORRECTION','DELIVERY_DATE_CORRECTION'].includes(op))return error('bad_qc_operation');
  if(op==='CASH_AMOUNT_UPDATE'){
   if(user.role!=='Supervisor')return error('qc_permission_denied');
   if(job.delivered)return error('already_delivered');
@@ -25,6 +25,15 @@ export function qcTransition(data,user,request,now){
   const from=Number(job.amount||0),to=Math.round(amount*1000)/1000,audit={operation:op,by:id,name:user.name,at:now,from,to};
   job.amount=to;job.financialAudit=[...(job.financialAudit||[]),audit];job.qcWorkflow={...(job.qcWorkflow||{}),revision:revision+1,history:[...(job.qcWorkflow?.history||[]),audit]};
   return {ok:true,data:candidate,job};
+ }
+ if(op==='DELIVERY_DATE_CORRECTION'){
+  if(user.role!=='Manager')return error('manager_required');
+  if(!job.delivered)return error('delivery_required');
+  const reason=String(payload.reason||'').trim();if(!reason)return error('delivery_date_reason_required');if(reason.length>2000)return error('reason_too_long');
+  const to=Number(payload.deliveredAt);if(!Number.isFinite(to)||to<=0)return error('delivery_date_required');
+  const from=Number(job.deliveredAt||0);const audit={operation:'DELIVERY_DATE_CORRECTION',by:id,name:user.name,at:now,from,to,reason};
+  job.deliveredAt=to;job.deliveryAudit=[...(job.deliveryAudit||[]),audit];job.qcWorkflow={...(job.qcWorkflow||{}),revision:revision+1,history:[...(job.qcWorkflow?.history||[]),audit]};
+  return {ok:true,job};
  }
  if(op==='FINAL_INVOICE_CORRECTION'){
   if(user.role!=='Manager')return error('qc_permission_denied');
@@ -70,7 +79,7 @@ export function preserveQcAuthority(candidate,current){
  const oldJobs=new Map((current.jobs||[]).map(j=>[key(j?.no),j]));
  for(const j of candidate.jobs||[]){const old=oldJobs.get(key(j?.no));if(!j)continue;
   if(old?.qcWorkflow)j.qcWorkflow=JSON.parse(JSON.stringify(old.qcWorkflow));else delete j.qcWorkflow;
-  if(old?.financialAudit){j.financialAudit=JSON.parse(JSON.stringify(old.financialAudit));j.amount=old.amount;if('finalInvoiceAmount' in old)j.finalInvoiceAmount=old.finalInvoiceAmount;else delete j.finalInvoiceAmount;}
+  if(old?.financialAudit){j.financialAudit=JSON.parse(JSON.stringify(old.financialAudit));j.amount=old.amount;if('finalInvoiceAmount' in old)j.finalInvoiceAmount=old.finalInvoiceAmount;else delete j.finalInvoiceAmount;}if(old?.deliveryAudit){j.deliveryAudit=JSON.parse(JSON.stringify(old.deliveryAudit));j.deliveredAt=old.deliveredAt;}
   // Legacy full-state clients cannot fabricate delivery or undo an audited delivery.
   if((!old?.delivered&&j.delivered)||old?.qcWorkflow){for(const field of ['delivered','deliveredAt','deliveredBy','deliveredByName']){if(old&&field in old)j[field]=old[field];else delete j[field]}if(old?.qcWorkflow&&old.delivered)j.status=old.status;else if(j.status==='Delivered'&&!old?.delivered)j.status=old?.status||'Open';}
   if(j.qcWorkflow)j.qcPassed=qcStatus(candidate,j).final;
