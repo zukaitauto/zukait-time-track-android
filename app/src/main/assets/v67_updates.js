@@ -124,7 +124,7 @@ function renderManager67(){
  toolBox('tool-blue','Job Card Tools','Workshop job control',
   '<button onclick="openJobCardManager(\'all\')">Job Card Manager</button><button onclick="v67OpenActiveJobs()">Active Jobs</button><button onclick="openManagerJobsPopup(\'completed\')">Completed Jobs</button><button onclick="openManagerTechniciansPopup()">Technicians</button>')+
  toolBox('tool-green','Production & Reports','Performance and history',
-  '<button onclick="openCompletedJobProduction()">Job Production</button><button onclick="openManagerReports()">Reports</button><button onclick="openIncentiveList()">Incentive</button><button onclick="openManagerHistoryPopup()">History</button>')+
+  '<button onclick="openCompletedJobProduction()">Job Production</button><button onclick="openManagerReports()">Reports</button><button onclick="v250OpenJobTypeReport()">Job Type Report</button><button onclick="openIncentiveList()">Incentive</button><button onclick="openManagerHistoryPopup()">History</button>')+
  '</div></section>'+
  '<section class="v67-admin-row v200-admin-section"><div><h3>Administration</h3><p>Sync, backups and User Management</p></div><button onclick="v65OpenAdmin()">Open Admin ›</button></section>';
 }
