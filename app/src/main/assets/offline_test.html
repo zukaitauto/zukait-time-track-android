@@ -1334,7 +1334,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 
 
   // Normal actual only for labour cost; overtime is excluded.
-  window.labourCost=a=>normalForAssignment(a)*LABOUR_RATE/60;
+  window.labourCost=a=>normalForAssignment(a)*(Number(state?.labourRate)||2.5)/60;
 
   // ID001 is a reusable system card and is never non-productive/hidden from monthly suggested totals.
   let h=job(HOLD);if(!h){state.jobs.push({no:HOLD,vehicle:'Ideal Time Card',reg:'0000',status:'Open',systemCard:true,createdBy:'SYSTEM',createdAt:Date.now()});save();}else{h.vehicle='Ideal Time Card';h.reg='0000';h.systemCard=true;delete h.nonProductive;save();}
