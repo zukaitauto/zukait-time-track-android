@@ -3715,9 +3715,11 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  }
  window.v247CurrentIdealRows=()=>users.filter(u=>u&&u.role==='Employee').map(u=>currentRow(u)).filter(Boolean).sort((a,b)=>b.minutes-a.minutes);
  function history(emp,from,to,includeOpen=true){
-   const ss=productive(emp,from-86400000,to),rows=[];
-   for(let i=0;i<ss.length-1;i++){const a=ss[i],b=ss[i+1],st=+a.end||0,en=+b.start||0;if(!st||en<=st||en<from||st>=to)continue;const x=uncovered(emp,Math.max(st,from),Math.min(en,to));if(x.minutes>0)rows.push({emp,fromJob:a.job,toJob:b.job,status:statusFor(a),start:Math.max(st,from),end:Math.min(en,to),minutes:x.minutes,open:false})}
-   if(includeOpen){const p=lastProductive(emp,to);if(p?.end&&+p.end<to){const st=Math.max(+p.end,from);if(st<to){const x=uncovered(emp,st,to);if(x.minutes>=5)rows.push({emp,fromJob:p.job,toJob:'—',status:statusFor(p),start:st,end:to,minutes:x.minutes,open:true})}}}
+   const ss=productive(emp,from-86400000,to),blocks=[];
+   ss.forEach(s=>{const st=+s.start||0,en=+(s.end||Date.now())||0;if(!st||en<=st)return;const last=blocks[blocks.length-1];if(last&&st<=last.end){if(en>=last.end){last.end=en;last.tail=s}return}blocks.push({start:st,end:en,head:s,tail:s})});
+   const rows=[];
+   for(let i=0;i<blocks.length-1;i++){const a=blocks[i],b=blocks[i+1],st=a.end,en=b.start;if(en<=st||en<from||st>=to)continue;const x=uncovered(emp,Math.max(st,from),Math.min(en,to));if(x.minutes>0)rows.push({emp,fromJob:a.tail.job,toJob:b.head.job,status:statusFor(a.tail),start:Math.max(st,from),end:Math.min(en,to),minutes:x.minutes,open:false})}
+   if(includeOpen){const p=blocks[blocks.length-1];if(p&&p.end<to){const st=Math.max(p.end,from);if(st<to){const x=uncovered(emp,st,to);if(x.minutes>=5)rows.push({emp,fromJob:p.tail.job,toJob:'—',status:statusFor(p.tail),start:st,end:to,minutes:x.minutes,open:true})}}}
    return rows;
  }
  window.v247IdealHistory=history;
