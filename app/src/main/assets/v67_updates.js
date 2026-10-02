@@ -104,7 +104,6 @@ function renderManager67(){
  '<div class="v67-first-row">'+
  featureCard('blue','Employee Requests',requestCount(),'New / pending requests','v65OpenRequests()')+
  featureCard('rose','Attention',attentionCount(),'Jobs needing review','v66OpenAttention()')+
- '<button type="button" class="v67-feature v74-ready" onclick="typeof v74Ready===\'function\'&&v74Ready(\'manager\')"><div><span>🚗✓ Ready for Delivery</span><b data-manager-ready-count>0</b><small>All work complete</small></div><em>›</em></button>'+ 
  '</div>'+
  '<section class="v67-section"><div class="v67-section-title"><div><h3>Workshop Control Center</h3><p>Live workshop status</p></div></div><div class="v67-control-grid">'+
  controlCard('today','Today Jobs',c.today,'sky')+
