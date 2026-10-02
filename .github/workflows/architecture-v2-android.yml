@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -31,6 +31,18 @@ jobs:
 
       - name: Build debug APK
         run: gradle --no-daemon clean assembleDebug
+
+      - name: Publish V244 updater APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk ZUKAIT_TIME_TRACK_LATEST.apk
+          TAG="release-V244-architecture-v2"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" ZUKAIT_TIME_TRACK_LATEST.apk --clobber
+          else
+            gh release create "$TAG" ZUKAIT_TIME_TRACK_LATEST.apk --title "Zukait Time Track V244" --notes "V244 Android release · versionCode 207"
+          fi
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
