@@ -3615,7 +3615,7 @@ window.v2TogglePilotThisDevice=function(){
  }
  function badge(text,ok){return '<span class="v213-badge '+(ok?'ok':'warn')+'">'+esc(text)+'</span>'}
  function row(j,mode){
-  const p=paintState(j.no),parts=partCount(j.no),qc=j.qcPassed===true,openFn=mode==='manager'?'openManagerJobDetails':'openSupervisorJob';
+  const p=paintState(j.no),parts=partCount(j.no),qc=j.qcPassed===true,openFn='zukaitOpenJobReview360';
   return '<div class="v213-ready-row"><div class="v213-ready-main"><b>JC '+esc(j.no)+'</b><span>'+esc(j.vehicle||'Vehicle')+' · '+esc(j.reg||'—')+'</span></div><div class="v213-badges">'+badge(qc?'QC Done':'QC Pending',qc)+badge(p.pending?'Paint Final Pending':'Paint Final Done',!p.pending)+badge('Parts Pending '+parts,parts===0)+badge(p.pending?'Costing Pending':'Costing Ready',!p.pending)+'</div><div class="v213-actions"><button class="'+(qc?'secondary':'blue')+'" data-jc="'+esc(j.no)+'" onclick="v213ToggleQC(this.dataset.jc)">'+(qc?'QC DONE':'QC')+'</button><button class="secondary" data-jc="'+esc(j.no)+'" onclick="'+openFn+'(this.dataset.jc)">VIEW</button><button class="green" data-jc="'+esc(j.no)+'" onclick="v213AskDelivered(this.dataset.jc)">MARK DELIVERED</button></div></div>'
  }
  window.v213ToggleQC=function(no){if(!['Manager','Supervisor'].includes(me?.role))return;const j=(state.jobs||[]).find(x=>x&&String(x.no)===String(no));if(!j||j.delivered)return;j.qcPassed=!j.qcPassed;j.qcUpdatedAt=Date.now();j.qcUpdatedBy=me.id||'';try{save()}catch(_){}window.v74Ready(me.role==='Manager'?'manager':'supervisor')};
