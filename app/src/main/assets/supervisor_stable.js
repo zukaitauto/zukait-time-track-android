@@ -38,7 +38,7 @@ function techBoard(st){const d=[['Denter','DENTING','🛠️'],['Painter','PAINT
 
 window.zukaitTechnicianBoardHTML=()=>techBoard(staff());
 window.zukaitRefreshManagerTechnicianBoard=function(){
- v251RefreshManagerKpi();
+ if(typeof v251RefreshManagerKpi==='function')v251RefreshManagerKpi();
  if(role()!=='Manager')return;
  const root=document.getElementById('managerView');if(!root)return;
  let host=root.querySelector('#managerTechnicianBoard');
