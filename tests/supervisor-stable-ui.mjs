@@ -34,6 +34,10 @@ assert.match(stable,/class="v143-two"/,'stable UI must use deterministic two-col
 assert.match(stable,/AVAILABLE WORKERS/,'Available Workers card must remain');
 assert.match(stable,/id="supervisorConsumablesTile"/,'Consumables must occupy the paired Supervisor resource slot');
 assert.match(stable,/Today at a Glance/,'Today at a Glance must remain');
+assert.match(stable,/class="ideal-worker"/,'Ideal Worker tile must occupy the authoritative Supervisor glance grid');
+assert.match(stable,/v143OpenIdealWorker/,'Ideal Worker tile must open the Ideal Time details');
+assert.match(stable,/v247CurrentIdealRows/,'Ideal Worker tile must show the live 5-minute-grace count');
+assert.doesNotMatch(stable,/class="ready" onclick="v143OpenReadyForDelivery/,'Ready for Delivery must not occupy the Ideal Worker glance slot');
 assert.match(stable,/Technician Board/,'Technician Board must remain');
 assert.match(stable,/ASSIGN ID001/,'standalone ID001 assignment must remain');
 assert.match(stable,/VIEW · FILTER · PRINT/,'ID001 report must remain');
