@@ -1,4 +1,4 @@
-name: Android architecture-v2 build
+name: Android architecture-v2 build\n# Build verification revision 2
 
 on:
   push:
