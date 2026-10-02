@@ -19,6 +19,8 @@ function woMins(v){v=Number(v)||0;return typeof F==='function'?F(v):(Math.floor(
 function detail(no){if(!allowed())return;const j=jobs().find(x=>norm(x.no)===norm(no));if(!j)return;const assignments=(stateNow().assign||[]).filter(a=>norm(a.job)===norm(j.no)&&!a.cancelled);let lists=[];try{const found=parts()?.listsForJobCard?.(j.no);if(Array.isArray(found))lists=found}catch(_){}const staff=typeof users==='undefined'?[]:users;
 const prod=woProduction(j.no);
 const consistency=[];
+const runningSessions=(stateNow().sessions||[]).filter(s=>s&&norm(s.job)===norm(j.no)&&!s.end&&!s.preliminaryLinkedJob);
+if(runningSessions.length)consistency.push('Running sessions '+runningSessions.length);
 if(prod.exceeded>0)consistency.push('Exceeded '+woMins(prod.exceeded));
 if(prod.repeatActual>0)consistency.push('Repeat work '+woMins(prod.repeatActual));
 const jobStatus=(()=>{if(j.delivered)return 'Delivered';if(j.archived)return 'Archived';if(j.qcPassed||j.finalQcPassed||j.finalQCPassed)return 'QC Passed';if(j.completed||String(j.status||'').toLowerCase()==='completed')return 'Completed';if(assignments.some(a=>!a.completed))return 'In Progress';return j.status||'Open'})();
