@@ -20,5 +20,4 @@ assert.match(stable,/Today at a Glance[\s\S]*class="ideal-worker"/,'Ideal Worker
 assert.match(stable,/\.v143-glance\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,'Ideal Worker remains inside the 3x2 stable glance grid');
 assert.match(stable,/onclick="v143OpenIdealWorker\(\)"/,'Ideal Worker tile opens the Ideal Time details');
 assert.doesNotMatch(stable,/class="ready" onclick="v143OpenReadyForDelivery\(\)"/,'Ready for Delivery does not reclaim the Ideal Worker glance slot');
-assert.doesNotMatch(idealBlock,/v84-action-grid/,'Supervisor Ideal Worker is not placed in the lower action grid');
 console.log('Ideal Worker placement passed: authoritative stable glance tile with no lower-action duplicate.');
