@@ -3758,22 +3758,33 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
    if(!me||!['Manager','Supervisor'].includes(me.role))return;
    const root=document.getElementById(me.role==='Manager'?'managerView':'supervisorView');if(!root)return;
    let b=root.querySelector('#v247IdealDashboard');
-   if(!b){
-     b=document.createElement(me.role==='Manager'?'button':'section');
-     b.id='v247IdealDashboard';
+   if(me.role==='Supervisor'){
+     const glance=[...root.querySelectorAll('.card')].find(x=>/Today at a Glance/i.test(x.querySelector('h3')?.textContent||''));
+     const g=glance?.querySelector('.v74-six,.glance-grid');
+     if(!g){if(b&&b.isConnected)b.remove();return}
+     if(!b){b=document.createElement('div');b.id='v247IdealDashboard'}
+     b.className='notice clickable glance-box v83-glass v247-ideal-glance';
+     b.setAttribute('role','button');b.setAttribute('tabindex','0');b.setAttribute('aria-label','Open Ideal Worker details');
+     b.setAttribute('onclick','v247OpenIdealTime()');
+     b.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')v247OpenIdealTime()};
+     const n=window.v247CurrentIdealRows?window.v247CurrentIdealRows().length:0;
+     b.innerHTML='<span class="v74-icon v247-ideal-icon" aria-hidden="true">👤◷</span><div><b>Ideal Worker</b><div class="stat">'+n+'</div></div>';
+     if(b.parentNode!==g)g.appendChild(b);
+     return;
    }
-   b.className=me.role==='Manager'?'v67-control v247-ideal-control clickable':'card v84-action v247-ideal-action clickable';
+   if(!b){b=document.createElement('button');b.id='v247IdealDashboard'}
+   b.className='v67-control v247-ideal-control clickable';
    b.setAttribute('onclick','v247OpenIdealTime()');
    b.innerHTML='<div class="section-title"><h3>◷ Ideal Time</h3><span class="pill">LIVE</span></div><div class="small muted">Employees without productive work · 5-minute grace · full history</div>';
-   if(me.role==='Supervisor'){
-     const g=root.querySelector('.v84-action-grid');
-     if(g&&b.parentNode!==g)g.appendChild(b);else if(!g&&!b.isConnected)root.appendChild(b);
-   }else{
-     const g=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid');
-     if(g&&b.parentNode!==g)g.appendChild(b);else if(!g&&!b.isConnected)root.appendChild(b);
-   }
+   const g=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid');
+   if(g&&b.parentNode!==g)g.appendChild(b);else if(!g&&!b.isConnected)root.appendChild(b);
  }
  window.v247InjectDashboard=inject;
+ if(!document.getElementById('v247IdealGlanceStyle')){
+   const s=document.createElement('style');s.id='v247IdealGlanceStyle';
+   s.textContent='#supervisorView .v247-ideal-glance{background:linear-gradient(145deg,#faf7ff,#eee8ff)!important;border-color:#ddd1ff!important;color:#49358f!important}#supervisorView .v247-ideal-glance .v247-ideal-icon{font-size:20px!important}#supervisorView .v247-ideal-glance:focus-visible{outline:3px solid #7c5ce7;outline-offset:2px}';
+   document.head.appendChild(s);
+ }
  if(typeof window.v156SettleManagerUI==='function'&&!window.v156SettleManagerUI.__v247){
    const prior=window.v156SettleManagerUI;
    const wrapped=function(){const r=prior.apply(this,arguments);setTimeout(inject,0);return r};wrapped.__v247=true;window.v156SettleManagerUI=wrapped;
@@ -3783,6 +3794,6 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
    const wrapped=function(){const r=prior.apply(this,arguments);setTimeout(inject,0);return r};wrapped.__v247=true;window.v74ApplySupervisorFinal=wrapped;
  }
  const oldRender=window.render;window.render=function(){const r=typeof oldRender==='function'?oldRender.apply(this,arguments):undefined;setTimeout(inject,0);return r};
- if(window.v247IdealTimer)clearInterval(window.v247IdealTimer);window.v247IdealTimer=setInterval(()=>{if(document.getElementById('v247Live'))renderLive()},15000);
+ if(window.v247IdealTimer)clearInterval(window.v247IdealTimer);window.v247IdealTimer=setInterval(()=>{if(document.getElementById('v247Live'))renderLive();inject()},15000);
  setTimeout(inject,0);window.v247IdealTimeReady=true;
 })();
