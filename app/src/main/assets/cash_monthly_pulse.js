@@ -19,7 +19,7 @@ function install(){
  const old=root.querySelector('[data-v251-cash-pulse]');const markup=html();
  let pulse=old;if(old&&old.outerHTML!==markup){old.outerHTML=markup;pulse=root.querySelector('[data-v251-cash-pulse]')}
  if(!pulse){root.insertAdjacentHTML('afterbegin',markup);pulse=root.querySelector('[data-v251-cash-pulse]')}
- const identity=root.querySelector('.v91-role-identity');if(identity&&pulse&&identity.nextElementSibling!==pulse)identity.insertAdjacentElement('afterend',pulse)
+ const firstDashboardBlock=[...root.children].find(el=>el!==pulse);if(firstDashboardBlock&&pulse&&firstDashboardBlock!==pulse&&firstDashboardBlock.nextElementSibling!==pulse)firstDashboardBlock.insertAdjacentElement('afterend',pulse)
 }
 window.v251OpenCashPendingAll=function(){if(!['Manager','Supervisor'].includes(role()))return;const a=pendingAll().slice().sort((x,y)=>Number(y.createdAt||0)-Number(x.createdAt||0));const body=a.length?a.map((j,n)=>'<div class="v251-cash-row"><b class="v251-no">'+(n+1)+'</b><div><strong>JC '+esc(j.no)+' · '+esc(j.reg||'—')+'</strong><small>'+esc(j.vehicle||'—')+' · In '+new Date(Number(j.createdAt||0)).toLocaleDateString('en-GB',{timeZone:'Asia/Muscat'})+' · Not delivered</small></div><b>'+money(j.amount)+'</b><button onclick="closeModal();zukaitOpenJob360(\''+esc(j.no)+'\')">360°</button></div>').join(''):'<p class="muted">No undelivered Cash vehicles.</p>';openModal('<div class="section-title"><div><h2>Total Cash Jobs In · Not Delivered</h2><p class="muted">All months · outstanding Cash vehicles</p></div><button class="secondary" onclick="closeModal()">Close</button></div><div class="v251-cash-summary"><b>'+a.length+' Vehicles</b><strong>'+money(total(a))+'</strong></div>'+body)};
 window.v251OpenCashPulse=function(kind){
