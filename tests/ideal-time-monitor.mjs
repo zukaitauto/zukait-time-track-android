@@ -1,5 +1,5 @@
 import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
-const src=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8'),mark=src.indexOf('V247 IDEAL TIME MONITOR'),start=src.indexOf("(function(){'use strict';",mark),end=src.indexOf('window.v247IdealTimeReady=true',start),block=src.slice(start,end+'window.v247IdealTimeReady=true'.length+4);
+const src=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8'),mark=src.indexOf('V247 IDEAL TIME MONITOR'),start=src.indexOf("(function(){'use strict';",mark),end=src.indexOf('window.v247IdealTimeReady=true',start),block=src.slice(start,end+'window.v247IdealTimeReady=true'.length+7);
 assert.ok(start>0&&end>start,'Ideal Time monitor block exists');
 const om=s=>Date.parse(s),now=om('2026-10-01T11:10:00Z');
 class Clock extends Date{constructor(...a){super(...(a.length?a:[now]))}static now(){return now}}
