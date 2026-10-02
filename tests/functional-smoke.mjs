@@ -43,11 +43,12 @@ assert.match(liveStatusAuthority, /window\.addEventListener\('zukait-live-status
 assert.doesNotMatch(liveStatusAuthority, /setInterval\(apply,1000\)/, 'Manager/Supervisor live UI must be event-driven and must not repaint the dashboard every second');
 assert.match(liveStatusAuthority, /addEventListener\('zukait-live-status',apply\)/, 'Manager/Supervisor live UI must refresh from authoritative live-status events');
 assert.match(supervisorStable, /if\(window\.me&&navigator\.onLine&&window\.me\.role==='Supervisor'\)return\[\]/, 'authoritative Supervisor renderer must not use local activeSession fallback while online');
-assert.match(supervisorStable, /Today at a Glance[\s\S]*Active Workers[\s\S]*Working Now[\s\S]*Paused Jobs[\s\S]*Finished Jobs[\s\S]*Over Allocated[\s\S]*Ready for Delivery/, 'Supervisor stable renderer must retain the approved six-card Today at a Glance layout');
+assert.match(supervisorStable, /Today at a Glance[\s\S]*Active Workers[\s\S]*Working Now[\s\S]*Paused Jobs[\s\S]*Finished Jobs[\s\S]*Over Allocated[\s\S]*Ideal Worker/, 'Supervisor stable renderer must retain the approved six-card Today at a Glance layout with Ideal Worker in slot six');
 assert.match(supervisorStable, /\.v143-glance\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, 'Supervisor Today at a Glance must remain a 3-column by 2-row grid');
 assert.doesNotMatch(supervisorStable, /class="v143-ot"/, 'Supervisor stable dashboard must not restore the redundant standalone Overtime Now row');
 assert.ok(supervisorStable.includes("onclick=\"v158OpenWorkingNow()\"") && supervisorStable.includes("window.v158OpenWorkingNow=function()"), 'Working Now card must open through the stable Supervisor action authority');
-assert.match(supervisorStable, /onclick="v143OpenReadyForDelivery\(\)"/, 'Ready for Delivery card must use the stable authoritative detail route');
+assert.match(supervisorStable, /window\.v143OpenReadyForDelivery=function\(\)/, 'Ready for Delivery detail route must remain available as a separate workflow');
+assert.match(supervisorStable, /onclick="v143OpenIdealWorker\(\)"/, 'Ideal Worker card must use the stable authoritative Ideal Time detail route');
 
 
 
