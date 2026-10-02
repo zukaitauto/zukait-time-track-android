@@ -3668,8 +3668,11 @@ window.zukaitOpenJob360=function(no){
  if(!window.me||!['Manager','Supervisor'].includes(me.role))return;
  const found=(window.state?.jobs||[]).some(j=>j&&!j.cancelled&&String(j.no||'').trim().toUpperCase()===jc);
  if(!found)return alert('Job Card not found.');
- if(typeof window.v132OpenSupervisorJobFull==='function')return window.v132OpenSupervisorJobFull(jc);
- if(me.role==='Manager'&&typeof window.openManagerJobDetails==='function')return window.openManagerJobDetails(jc);
+ if(me.role==='Manager'){
+   if(typeof window.openManagerJobDetails==='function')return window.openManagerJobDetails(jc);
+   if(typeof window.v132OpenSupervisorJobFull==='function')return window.v132OpenSupervisorJobFull(jc);
+ }
+ if(me.role==='Supervisor'&&typeof window.v132OpenSupervisorJobFull==='function')return window.v132OpenSupervisorJobFull(jc);
  if(typeof window.openSupervisorJob==='function')return window.openSupervisorJob(jc);
  return alert('Job Card details are unavailable. Please sync and try again.');
 };
