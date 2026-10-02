@@ -51,7 +51,7 @@ function apply(){if(!allowed())return;const root=document.getElementById(me.role
   const grid=me.role==='Manager'?((managerView&&managerView.querySelector('.v67-control-grid'))||root.querySelector('.v67-control-grid')):(root.querySelector('.v143-two')||root.querySelector('.v67-control-grid'));
   if(grid){
    const find=t=>[...grid.querySelectorAll('button')].find(b=>new RegExp(t,'i').test(b.textContent||''));
-   const estimate=find('Estimate'),consumables=find('Consumables'),parts=find('Spare Parts'),qc=grid.querySelector('[data-qc-queue]'),readyCard=grid.querySelector('[data-qc-ready]'),deliveredCard=grid.querySelector('[data-qc-delivered]')||find('Delivered Vehicles');
+   const estimate=find('Estimate'),consumables=find('Consumables'),parts=find('Spare Parts'),qc=grid.querySelector('[data-qc-queue]'),readyCard=ready,deliveredCard=grid.querySelector('[data-qc-delivered]')||find('Delivered Vehicles');
    [estimate,consumables,parts,qc,readyCard,deliveredCard].filter(Boolean).forEach(x=>grid.appendChild(x));
    root.querySelectorAll('.v67-first-row .v74-ready').forEach(x=>x.remove());
    if(me.role==='Supervisor')root.querySelectorAll('.v143-glance [data-ready],.v143-glance .v74-ready').forEach(x=>x.remove());
