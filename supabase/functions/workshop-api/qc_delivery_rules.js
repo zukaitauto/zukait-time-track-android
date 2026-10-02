@@ -24,6 +24,11 @@ export function qcTransition(data,user,request,now){
  const audit={operation:op,by:id,name:user.name,at:now};
  if(op==='DELIVER'){
   if(!status.deliveryReady)return error('both_qc_required');
+  if(String(job.jobType||'').toUpperCase()==='CASH'){
+   const finalAmount=Number(request.finalInvoiceAmount);
+   if(!Number.isFinite(finalAmount)||finalAmount<0||finalAmount>1000000)return error('final_invoice_amount_required');
+   job.amount=Math.round(finalAmount*1000)/1000;job.finalInvoiceAmount=job.amount;
+  }
   job.delivered=true;job.deliveredAt=now;job.deliveredBy=id;job.deliveredByName=user.name;job.status='Delivered';
  }else{
   if(!['PASS','FAIL'].includes(request.result))return error('bad_qc_result');
