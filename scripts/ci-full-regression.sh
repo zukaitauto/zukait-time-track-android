@@ -114,6 +114,7 @@ node tests/print-navigation.mjs
 node tests/spare-parts-expense-filters.mjs
 
 node tests/time-management.mjs
+node tests/ideal-time-monitor.mjs
 
 
 node tests/finished-assignment-performance.mjs
