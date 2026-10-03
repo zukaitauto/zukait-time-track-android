@@ -1,8 +1,8 @@
 {
-  "versionName": "V261",
-  "versionCode": 224,
+  "versionName": "V262",
+  "versionCode": 225,
   "approvedForStaff": true,
   "approvedAt": "2026-10-03",
-  "sourceCommit": "b8825b6452b997a05ac800c6143276d881538e83",
-  "publishNonce": "release-v261-20261003-pending-amber-gold"
+  "sourceCommit": "fa4aac2c61b5c7394e4c2c819c19fc5be887672f",
+  "publishNonce": "release-v262-20261003-organized-360-details"
 }
