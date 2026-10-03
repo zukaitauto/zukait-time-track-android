@@ -3,6 +3,6 @@
   "versionCode": 222,
   "approvedForStaff": true,
   "approvedAt": "2026-10-03",
-  "sourceCommit": "072c48d515056bff140032abe7421308397dcd39",
-  "publishNonce": "release-v259-20261003-leave-after-work"
+  "sourceCommit": "2b99e874bd71b919f265b123c0d4bc9a8ac8e979",
+  "publishNonce": "release-v259-20261003-offline-sync-final"
 }
