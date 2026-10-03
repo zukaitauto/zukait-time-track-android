@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 node --check app/src/main/assets/cloud_sync.js
+node --check app/src/main/assets/cash_monthly_pulse.js
 node --check app/src/main/assets/consumables.js
 node --check app/src/main/assets/consumables_ui.js
 node --check app/src/main/assets/paint_module.js

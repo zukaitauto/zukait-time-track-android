@@ -101,6 +101,7 @@ function renderManager67(){
  if(el.classList.contains('hidden'))el.classList.remove('hidden');
  // Manager identity/menu is owned by the final V135 header authority; do not render a second Manager/ONLINE header.\n el.dataset.managerBaseAuthority='v202';
  el.innerHTML=
+ '<div id="managerCashPulseSlot" class="cash-pulse-slot">'+(window.v251CashPulse?.html?.()||'')+'</div>'+
  '<div class="v67-first-row">'+
  featureCard('blue','Employee Requests',requestCount(),'New / pending requests','v65OpenRequests()')+
  featureCard('rose','Attention',attentionCount(),'Jobs needing review','v66OpenAttention()')+
@@ -127,6 +128,7 @@ function renderManager67(){
   '<button onclick="openCompletedJobProduction()">Job Production</button><button onclick="openManagerReports()">Reports</button><button onclick="v250OpenJobTypeReport()">Job Type Report</button><button onclick="openIncentiveList()">Incentive</button><button onclick="openManagerHistoryPopup()">History</button>')+
  '</div></section>'+
  '<section class="v67-admin-row v200-admin-section"><div><h3>Administration</h3><p>Sync, backups and User Management</p></div><button onclick="v65OpenAdmin()">Open Admin ›</button></section>';
+ window.v251CashPulse?.install?.();
 }
 const css=document.createElement('style');css.id='v67ManagerStyle';css.textContent=`
 #managerView{max-width:1180px;margin:auto}
