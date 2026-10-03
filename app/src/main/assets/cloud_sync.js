@@ -31,6 +31,45 @@
   let lastSuccessfulSyncAt=0;
   let lastSyncError='';
   let consecutiveSyncErrors=0;
+  let serverConnectionState='connecting';
+  let serverConnectionEverConfirmed=false;
+  let serverConnectionBannerTimer=null;
+
+  function ensureServerConnectionUi(){
+    let pill=document.getElementById('serverConnectionStatus');
+    const host=document.getElementById('legacyAppHeader');
+    if(!pill&&host){
+      pill=document.createElement('span');pill.id='serverConnectionStatus';pill.className='server-connection-status';
+      const online=document.getElementById('headerOnlineStatus');
+      if(online)host.insertBefore(pill,online);else host.appendChild(pill);
+    }
+    let banner=document.getElementById('serverConnectionBanner');
+    if(!banner){banner=document.createElement('div');banner.id='serverConnectionBanner';banner.className='server-connection-banner hidden';document.body.appendChild(banner)}
+    return {pill,banner};
+  }
+  function setServerConnection(state,message){
+    const previous=serverConnectionState;serverConnectionState=state;
+    const ui=ensureServerConnectionUi();
+    const labels={connected:'● Server Connected',connecting:'● Connecting…',offline:'● Server Offline'};
+    if(ui.pill){ui.pill.textContent=labels[state]||labels.connecting;ui.pill.dataset.serverState=state;ui.pill.title=message||''}
+    clearTimeout(serverConnectionBannerTimer);
+    if(!ui.banner)return;
+    if(state==='offline'){
+      ui.banner.textContent=message||'Server connection unavailable. Changes may not sync until connection is restored.';
+      ui.banner.className='server-connection-banner server-connection-banner-offline';
+    }else if(state==='connected'&&previous!=='connected'&&serverConnectionEverConfirmed){
+      ui.banner.textContent='Server connected — synchronization restored.';
+      ui.banner.className='server-connection-banner server-connection-banner-restored';
+      serverConnectionBannerTimer=setTimeout(()=>{ui.banner.className='server-connection-banner hidden'},3500);
+    }else if(state==='connecting'){
+      ui.banner.textContent=message||'Connecting to workshop server…';
+      ui.banner.className='server-connection-banner server-connection-banner-connecting';
+      serverConnectionBannerTimer=setTimeout(()=>{if(serverConnectionState==='connecting')ui.banner.className='server-connection-banner hidden'},4000);
+    }else ui.banner.className='server-connection-banner hidden';
+    if(state==='connected')serverConnectionEverConfirmed=true;
+    try{window.dispatchEvent(new CustomEvent('zukait-server-connection',{detail:{state,message:message||'',at:Date.now()}}))}catch(_){}
+  }
+  window.zukaitServerConnection={get state(){return serverConnectionState},get connected(){return serverConnectionState==='connected'},refresh:()=>setServerConnection(serverConnectionState)};
 
   function sessionToken(){return window.zukaitAuth?.getToken?.()||''}
 
@@ -499,7 +538,7 @@
       lastSyncedState=clone(state||{});
     }
     status('SYNCED','ok');
-    lastSuccessfulSyncAt=Date.now();lastSyncError='';consecutiveSyncErrors=0;
+    lastSuccessfulSyncAt=Date.now();lastSyncError='';consecutiveSyncErrors=0;setServerConnection('connected');
     initialDone=true;
     conflictAlerted=false;
     return true;
@@ -512,6 +551,7 @@
       const r=await api({action:'revision'});
       if(!r.ok)throw new Error(r.code||'REVISION_CHECK_FAILED');
       lastRevisionProbeAt=Date.now();
+      setServerConnection('connected');
       const remoteRevision=Number(r.revision||0);
       if(remoteRevision===cloudRevision)return false;
 
@@ -529,7 +569,8 @@
       if(liveRole())await pullLiveStatus();
       return true;
     }catch(e){
-      lastSyncError=String(e?.code||e?.message||'REVISION_CHECK_FAILED');
+      lastSyncError=String(e?.code||e?.message||'REVISION_CHECK_FAILED');consecutiveSyncErrors++;
+      setServerConnection('offline',navigator.onLine?'Workshop server cannot be reached. Check internet/Wi-Fi; changes may not sync until connection is restored.':'Server connection unavailable. Check Wi-Fi/internet; changes may not sync until connection is restored.');
       console.warn('Revision probe failed',e);
       return false;
     }finally{
@@ -685,6 +726,7 @@
       cloudDirty=true;
       localStorage.setItem(DIRTY_KEY,'1');
       lastSyncError=String(e?.code||e?.message||'SAVE_FAILED');consecutiveSyncErrors++;
+      setServerConnection('offline',navigator.onLine?'Workshop server cannot be reached. Changes are queued and will sync after reconnection.':'Server connection unavailable. Changes are queued and will sync after reconnection.');
       try{localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:localSnapshot,error:lastSyncError}))}catch(_){}
       status(navigator.onLine?'SYNC ERROR — RETRYING':'OFFLINE — CHANGE QUEUED',navigator.onLine?'bad':'warn');
       if(navigator.onLine&&sessionToken())setTimeout(()=>{if(cloudDirty&&!cloudPushing)push(0)},Math.min(15000,1000*Math.pow(2,Math.min(consecutiveSyncErrors,4))));
@@ -746,16 +788,19 @@
     clearTimeout(livePollTimer);
     if(!sessionToken()){
       status('LOGIN REQUIRED','local');
+      setServerConnection(navigator.onLine?'connecting':'offline',navigator.onLine?'Login required before server connection can be confirmed.':'No internet connection.');
       initialDone=true;
       return false;
     }
     try{
+      setServerConnection(navigator.onLine?'connecting':'offline',navigator.onLine?'Connecting to workshop server…':'Server connection unavailable. Check Wi-Fi/internet.');
       if(cloudDirty&&navigator.onLine)await push(0);
       if(!cloudDirty)await pull(!!force);
       if(liveRole())await pullLiveStatus();
     }catch(e){
       console.error('Cloud initialization failed',e);
       status(navigator.onLine?'SYNC ERROR':'OFFLINE — LOCAL CACHE',navigator.onLine?'bad':'warn');
+      setServerConnection('offline',navigator.onLine?'Workshop server cannot be reached. Check internet/Wi-Fi.':'Server connection unavailable. Check Wi-Fi/internet.');
       initialDone=true;
     }
     // Egress guard: foreground revision probes stay frequent enough for garage coordination,
@@ -791,10 +836,11 @@
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshVisibleSharedState()});
   window.addEventListener('focus',refreshVisibleSharedState);
 
-  window.addEventListener('online',async()=>{status(cloudDirty?'ONLINE — SYNCING QUEUED CHANGES':'ONLINE','info');try{const pending=(()=>{try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'null')}catch(_){return null}})();if(pending&&pending.user&&me?.id&&String(pending.user)!==String(me.id)){localStorage.removeItem(PENDING_KEY);cloudDirty=false;localStorage.removeItem(DIRTY_KEY)}await init(false)}catch(e){lastSyncError=String(e?.code||e?.message||'RECONNECT_FAILED');consecutiveSyncErrors++;console.warn('Reconnect sync failed',e)}});
+  window.addEventListener('online',async()=>{setServerConnection('connecting','Internet restored. Confirming workshop server connection…');status(cloudDirty?'ONLINE — SYNCING QUEUED CHANGES':'ONLINE','info');try{const pending=(()=>{try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'null')}catch(_){return null}})();if(pending&&pending.user&&me?.id&&String(pending.user)!==String(me.id)){localStorage.removeItem(PENDING_KEY);cloudDirty=false;localStorage.removeItem(DIRTY_KEY)}await init(false)}catch(e){lastSyncError=String(e?.code||e?.message||'RECONNECT_FAILED');consecutiveSyncErrors++;console.warn('Reconnect sync failed',e)}});
   window.addEventListener('pagehide',()=>{if(cloudDirty)try{localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:payloadState()}))}catch(_){}});
   window.addEventListener('beforeunload',()=>{if(cloudDirty)try{localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:payloadState()}))}catch(_){} });
   window.addEventListener('offline',()=>{
+    setServerConnection('offline',cloudDirty?'Server connection unavailable. Changes are queued and will sync after reconnection.':'Server connection unavailable. Check Wi-Fi/internet; changes may not sync until connection is restored.');
     status(cloudDirty?'OFFLINE — CHANGE QUEUED':'OFFLINE — LOCAL CACHE','warn');
     publishLiveStatus(false);
   });
