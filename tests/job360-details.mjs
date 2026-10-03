@@ -17,6 +17,7 @@ assert.ok(modal.includes('data-workshop-action="search"'),'overview back goes to
 assert.ok(!modal.includes('Authoritative Job Card'));assert.ok(!modal.includes('All labour, consumables'));
 assert.ok(!modal.includes('Tap any cost box'));
 assert.ok(modal.includes('OMR 35.000'));
+assert.ok(modal.includes('class="wo-job-banner"'),'sample navy identity banner is present');
 for(const type of ['parts','consumables','paint','labour','total','invoice'])assert.ok(modal.includes('data-workshop-action="cost-'+type+'"'));
 for(const cls of ['tech','parts','timeline','audit'])assert.ok(modal.includes('<details class="wo-360-card wo-360-'+cls+'-card">'));
 assert.ok(modal.includes('<summary>Financial History</summary>'));
@@ -29,6 +30,7 @@ click('cost-paint');for(const value of ['Basecoat','PO001','040','Returns','Exce
 click('cost-parts');assert.ok(modal.includes('Bumper'));assert.ok(modal.includes('Charged Purchase · OMR 20.000'));assert.ok(modal.includes('Pending'));
 click('cost-labour');assert.ok(modal.includes('Surab'));assert.ok(modal.includes('OMR 2.500'));
 click('cost-total');assert.ok(modal.includes('OMR 65.000'));for(const type of ['parts','consumables','paint','labour'])assert.ok(modal.includes('data-workshop-action="cost-'+type+'"'));
+click('cost-materials-paint');assert.ok(modal.includes('OMR 42.500'));assert.ok(modal.includes('cost-consumables'));assert.ok(modal.includes('cost-paint'));
 click('cost-invoice');assert.ok(modal.includes('OMR 95.000'));assert.ok(!modal.includes('not a separate'));
 vm.runInContext('me={role:"Supervisor"}',ctx);click('detail');assert.ok(modal.includes('wo-360-page'));
 vm.runInContext('me={role:"Employee"}',ctx);const prior=modal;click('cost-consumables');assert.equal(modal,prior);
