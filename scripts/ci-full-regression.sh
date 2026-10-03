@@ -102,6 +102,7 @@ node tests/cloud-dashboard-stability.mjs
 node tests/dashboard-render-visibility.mjs
 node tests/dashboard-display-check.mjs
 node tests/workshop-overview.cjs
+node tests/job360-details.mjs
 node tests/v200-manager-workshop-overview-placement.mjs
 node tests/v194-manager-menu-authority.mjs
 node tests/v195-manager-consumables-single-launcher.mjs
