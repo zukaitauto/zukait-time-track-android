@@ -1,8 +1,8 @@
 {
-  "versionName": "V262",
-  "versionCode": 225,
+  "versionName": "V263",
+  "versionCode": 226,
   "approvedForStaff": true,
   "approvedAt": "2026-10-03",
-  "sourceCommit": "fa4aac2c61b5c7394e4c2c819c19fc5be887672f",
-  "publishNonce": "release-v262-20261003-organized-360-details"
+  "sourceCommit": "2eb3b7f1d76819428735c971c2beb276eeb4f65c",
+  "publishNonce": "release-v263-20261003-sample-360-layout"
 }
