@@ -167,6 +167,7 @@
 
   window.createUserSecure=async function(){
     if(!me||me.role!=='Manager')return alert('Manager access required.');
+    if(!navigator.onLine||window.zukaitServerConnection?.state==='offline')return alert('Server connection required. Check Wi-Fi/internet and wait for Server Connected, then try again.');
     const btn=document.querySelector('[data-create-user-button]');
     const id=(document.getElementById('newUserCode')?.value||'').trim().toUpperCase();
     const name=(document.getElementById('newUserName')?.value||'').trim();
