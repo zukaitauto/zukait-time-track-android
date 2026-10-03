@@ -31,6 +31,7 @@ export function qcTransition(data,user,request,now){
   if(!job.delivered)return error('delivery_required');
   const reason=String(request.reason||'').trim();if(!reason)return error('delivery_date_reason_required');if(reason.length>2000)return error('reason_too_long');
   const to=Number(request.deliveredAt);if(!Number.isFinite(to)||to<=0)return error('delivery_date_required');
+  const revision=Number(job.qcWorkflow?.revision||0);if(Number(request.expectedQcRevision)!==revision)return error('qc_conflict');
   const from=Number(job.deliveredAt||0);const audit={operation:'DELIVERY_DATE_CORRECTION',by:id,name:user.name,at:now,from,to,reason};
   job.deliveredAt=to;job.deliveryAudit=[...(job.deliveryAudit||[]),audit];job.qcWorkflow={...(job.qcWorkflow||{}),revision:revision+1,history:[...(job.qcWorkflow?.history||[]),audit]};
   return {ok:true,data:candidate,job};
