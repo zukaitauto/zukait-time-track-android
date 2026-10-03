@@ -17,7 +17,7 @@ export function qcTransition(data,user,request,now){
  const op=request.operation,id=String(user.id||''),cash=String(job.jobType||'').toUpperCase()==='CASH';
  if(!['PAINTING_QC','FINAL_QC','DELIVER','CASH_AMOUNT_UPDATE','FINAL_INVOICE_CORRECTION','DELIVERY_DATE_CORRECTION'].includes(op))return error('bad_qc_operation');
  if(op==='CASH_AMOUNT_UPDATE'){
-  if(user.role!=='Supervisor')return error('qc_permission_denied');
+  if(!['Supervisor','Manager'].includes(String(user.role||'')))return error('qc_permission_denied');
   if(job.delivered)return error('already_delivered');
   if(!cash)return error('cash_job_required');
   const amount=Number(request.amount);if(!Number.isFinite(amount)||amount<0||amount>1000000)return error('cash_amount_required');
