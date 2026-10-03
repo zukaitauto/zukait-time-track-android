@@ -1,8 +1,8 @@
 {
-  "versionName": "V263",
-  "versionCode": 226,
+  "versionName": "V264",
+  "versionCode": 227,
   "approvedForStaff": true,
   "approvedAt": "2026-10-03",
-  "sourceCommit": "2eb3b7f1d76819428735c971c2beb276eeb4f65c",
-  "publishNonce": "release-v263-20261003-sample-360-layout"
+  "sourceCommit": "2a37822489f8c4b826d6b8658c4da9a85a8515bd",
+  "publishNonce": "release-v264-20261003-one-main-paint-po"
 }
