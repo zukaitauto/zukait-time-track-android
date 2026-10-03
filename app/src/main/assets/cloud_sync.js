@@ -478,8 +478,8 @@
   }
   function finalizeEmployeeOfflineMarkers(data,emp){
     const pending=(data.offlineActionLog||[]).filter(x=>x&&x.emp===emp);
-    const keys=new Set(pending.map(x=>String(x.assignmentId||'')));
-    for(const a of (data.assign||[])){if(!a||a.emp!==emp||!keys.has(String(a.id||''))){delete a.pendingOfflineStart;delete a.pendingOfflineStartAt;delete a.pendingOfflinePause;delete a.pendingOfflinePauseAt;delete a.pendingOfflineFinish;delete a.pendingOfflineFinishAt}}
+    const byAssignment=new Map();for(const x of pending){const k=String(x.assignmentId||'');if(!k)continue;if(!byAssignment.has(k))byAssignment.set(k,new Set());byAssignment.get(k).add(String(x.type||'').toUpperCase())}
+    for(const a of (data.assign||[])){if(!a||a.emp!==emp)continue;const types=byAssignment.get(String(a.id||''))||new Set();if(!types.has('START')){delete a.pendingOfflineStart;delete a.pendingOfflineStartAt}if(!types.has('PAUSE')){delete a.pendingOfflinePause;delete a.pendingOfflinePauseAt}if(!types.has('FINISH')){delete a.pendingOfflineFinish;delete a.pendingOfflineFinishAt}}
     return data;
   }
   function mergeEmployeeConflict(remote,local,emp){
