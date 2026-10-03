@@ -1,8 +1,8 @@
 {
-  "versionName": "V259",
-  "versionCode": 222,
+  "versionName": "V260",
+  "versionCode": 223,
   "approvedForStaff": true,
   "approvedAt": "2026-10-03",
-  "sourceCommit": "2b99e874bd71b919f265b123c0d4bc9a8ac8e979",
-  "publishNonce": "release-v259-20261003-offline-sync-final"
+  "sourceCommit": "0c7a2b529dbd2605da1858cdc8f2e2f17fbdc835",
+  "publishNonce": "release-v260-20261003-three-cash-circles"
 }
