@@ -1,8 +1,8 @@
 {
-  "versionName": "V256",
-  "versionCode": 219,
+  "versionName": "V257",
+  "versionCode": 220,
   "approvedForStaff": true,
   "approvedAt": "2026-10-03",
-  "sourceCommit": "82c5fadecf3f3acf3f572f1c943f7a8f72204aaf",
-  "publishNonce": "release-v256-20261003"
+  "sourceCommit": "839ea860d390299c380d1096f35c4f0c0711caa3",
+  "publishNonce": "release-v257-20261003"
 }
