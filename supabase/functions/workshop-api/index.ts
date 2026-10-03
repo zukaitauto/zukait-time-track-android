@@ -899,7 +899,8 @@ Deno.serve(async (req: Request) => {
           return reply({ ok: false, code: "forbidden_change" }, 403);
         }
 
-        candidate = reconcilePaintOrderCosts(preserveQcAuthority(candidate, current.data));
+        candidate = preserveQcAuthority(candidate, current.data);
+        candidate = reconcilePaintOrderCosts(candidate);
 
         const next = currentRevision + 1;
         const live = computeLiveStatus(candidate, next, user.id);
