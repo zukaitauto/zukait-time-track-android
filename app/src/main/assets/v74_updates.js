@@ -3715,8 +3715,15 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  function productive(emp,from,to){return (state.sessions||[]).filter(s=>s&&String(s.emp)===String(emp)&&s.job!==H&&s.start<to&&(s.end||Date.now())>from).slice().sort((a,b)=>(+a.start||0)-(+b.start||0))}
  function lastProductive(emp,at=Date.now()){return productive(emp,0,at+1).filter(s=>(s.end||0)&&+s.end<=at).sort((a,b)=>(+b.end||0)-(+a.end||0))[0]||null}
  function statusFor(s){if(!s)return'—';const a=(state.assign||[]).find(x=>x&&x.id===s.assignmentId)|| (state.assign||[]).find(x=>x&&x.job===s.job&&String(x.emp)===String(s.emp));return a?.completed||s.finished?'Finished':'Paused'}
+ function activeProductive(emp,at=Date.now()){
+   // Do not trust legacy activeSession() alone here: stale/overlapping records can
+   // make it return an older closed/ID001 session. The Ideal Time monitor must
+   // independently treat ANY open productive JC session as authoritative work.
+   return (state.sessions||[]).filter(s=>s&&String(s.emp)===String(emp)&&s.job!==H&&+s.start<=at&&!s.end)
+     .sort((a,b)=>(+b.start||0)-(+a.start||0))[0]||null;
+ }
  function currentRow(u,at=Date.now()){
-   if(activeSession(u.id)||leave(u.id,at)||closed(at))return null;
+   if(activeProductive(u.id,at)||leave(u.id,at)||closed(at))return null;
    const prev=lastProductive(u.id,at);if(!prev||!prev.end)return null;
    const gap=uncovered(u.id,+prev.end,at);if(gap.minutes<5)return null;
    return{u,prev,status:statusFor(prev),since:+prev.end,minutes:gap.minutes};
