@@ -1,8 +1,8 @@
 {
-  "versionName": "V264",
-  "versionCode": 227,
+  "versionName": "V265",
+  "versionCode": 228,
   "approvedForStaff": true,
   "approvedAt": "2026-10-03",
-  "sourceCommit": "2a37822489f8c4b826d6b8658c4da9a85a8515bd",
-  "publishNonce": "release-v264-20261003-one-main-paint-po"
+  "sourceCommit": "3fbd5477c506969aa0d90794e1c43625855f06ac",
+  "publishNonce": "release-v265-20261003-overdue-time-review"
 }
