@@ -971,11 +971,11 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(!date||!['FULL','AM','PM'].includes(period))return alert('Select leave date and leave type.');
    const l={id:uid(),emp,date,period,remark,by:me.id,createdAt:Date.now(),cancelled:false};
    if(closedLeaveDay(l))return alert('Leave is not required on Friday or a workshop Public Holiday.');
-   if(hasSessionConflict(emp,l))return alert('Work time is already recorded during this leave period. Correct the work/leave conflict before marking leave.');
+   if(hasSessionConflict(emp,l)){if(me?.role!=='Manager')return alert('Work time is already recorded during this leave period. Manager override is required to mark this leave.');const overrideReason=window.prompt('Work time exists during this leave period. Enter the Manager override reason:','Incorrect / stale work record');if(overrideReason===null)return;if(!String(overrideReason).trim())return alert('Manager override reason is required.');l.managerOverride=true;l.managerOverrideReason=String(overrideReason).trim();}
    if(hasDuplicate(emp,l))return alert('Leave is already recorded for this date/period.');
    const who=userSafe(emp).name||emp;if(!confirm('Confirm Leave\n\nStaff: '+who+'\nDate: '+date+'\nLeave: '+periodLabel(period)+'\n\nAre you sure you want to mark this leave?'))return;
    state.leaves=state.leaves||[];state.leaveAudit=state.leaveAudit||[];
-   state.leaves.push(l);state.leaveAudit.push({id:uid(),action:'ADD',leaveId:l.id,by:me.id,at:Date.now()});notifyLeave(l);
+   state.leaves.push(l);state.leaveAudit.push({id:uid(),action:l.managerOverride?'ADD_OVERRIDE':'ADD',leaveId:l.id,by:me.id,at:Date.now(),reason:l.managerOverrideReason||''});notifyLeave(l);
    save();closeModal();render();
    setTimeout(()=>{try{typeof window.v74Msg==='function'?window.v74Msg('Leave marked successfully. Supervisor and Manager can see this leave.','Leave'):alert('Leave marked successfully.')}catch(_){}},0);
  };
