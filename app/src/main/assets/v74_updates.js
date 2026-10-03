@@ -3716,11 +3716,21 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  function lastProductive(emp,at=Date.now()){return productive(emp,0,at+1).filter(s=>(s.end||0)&&+s.end<=at).sort((a,b)=>(+b.end||0)-(+a.end||0))[0]||null}
  function statusFor(s){if(!s)return'—';const a=(state.assign||[]).find(x=>x&&x.id===s.assignmentId)|| (state.assign||[]).find(x=>x&&x.job===s.job&&String(x.emp)===String(s.emp));return a?.completed||s.finished?'Finished':'Paused'}
  function activeProductive(emp,at=Date.now()){
-   // Do not trust legacy activeSession() alone here: stale/overlapping records can
-   // make it return an older closed/ID001 session. The Ideal Time monitor must
-   // independently treat ANY open productive JC session as authoritative work.
-   return (state.sessions||[]).filter(s=>s&&String(s.emp)===String(emp)&&s.job!==H&&+s.start<=at&&!s.end)
-     .sort((a,b)=>(+b.start||0)-(+a.start||0))[0]||null;
+   // Current work can be represented either by an open session OR by the latest
+   // assignment/session state after cloud reconciliation. Do not let an older
+   // paused session keep a technician in Ideal Time after a later START/RESUME.
+   const rows=(state.sessions||[]).filter(s=>s&&String(s.emp)===String(emp)&&s.job!==H&&+s.start<=at)
+     .slice().sort((a,b)=>(+b.start||0)-(+a.start||0));
+   const latest=rows[0]||null;
+   if(latest&&!latest.end)return latest;
+   try{
+     const live=typeof window.activeSession==='function'?window.activeSession(emp):null;
+     if(live&&live.job!==H&&!live.end)return live;
+   }catch(_){}
+   const open=(state.assign||[]).filter(a=>a&&String(a.emp)===String(emp)&&a.job!==H&&!a.cancelled&&!a.completed)
+     .map(a=>({a,s:(state.sessions||[]).filter(s=>s&&((s.assignmentId&&String(s.assignmentId)===String(a.id))||(!s.assignmentId&&String(s.emp)===String(emp)&&String(s.job)===String(a.job)))).sort((x,y)=>(+y.start||0)-(+x.start||0))[0]||null}))
+     .filter(x=>x.s&&!x.s.end).sort((x,y)=>(+y.s.start||0)-(+x.s.start||0));
+   return open[0]?.s||null;
  }
  function currentRow(u,at=Date.now()){
    if(activeProductive(u.id,at)||leave(u.id,at)||closed(at))return null;
