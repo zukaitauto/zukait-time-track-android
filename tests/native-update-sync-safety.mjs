@@ -105,12 +105,20 @@ function workshop() {
   let response = {ok: true, revision: 1, data: {users: [], jobs: [], sessions: []}};
   let networkFailure = false;
   const status = {textContent: '', dataset: {}, style: {}};
+  const elements = new Map([['cloudStatus', status]]);
+  const makeElement = tag => ({
+    tagName: String(tag||'').toUpperCase(), id: '', className: '', textContent: '', title: '',
+    dataset: {}, style: {}, children: [],
+    appendChild(child){ this.children.push(child); if(child?.id) elements.set(child.id, child); return child; },
+    insertBefore(child){ return this.appendChild(child); }
+  });
+  const body = makeElement('body');
   const context = vm.createContext({
     window: {
       zukaitAuth: {getToken: () => token}, addEventListener() {},
       AndroidBridge: {completeUpdatePreInstallSync: safe => decisions.push(safe)}
     },
-    document: {visibilityState: 'visible', addEventListener() {}, getElementById: id => id === 'cloudStatus' ? status : null},
+    document: {visibilityState: 'visible', body, addEventListener() {}, createElement: makeElement, getElementById: id => elements.get(id)||null},
     navigator: {onLine: true}, Date: {now: () => clock},
     localStorage: {
       getItem: key => storage.get(key) ?? null,
