@@ -29,11 +29,11 @@ export function qcTransition(data,user,request,now){
  if(op==='DELIVERY_DATE_CORRECTION'){
   if(user.role!=='Manager')return error('manager_required');
   if(!job.delivered)return error('delivery_required');
-  const reason=String(payload.reason||'').trim();if(!reason)return error('delivery_date_reason_required');if(reason.length>2000)return error('reason_too_long');
-  const to=Number(payload.deliveredAt);if(!Number.isFinite(to)||to<=0)return error('delivery_date_required');
+  const reason=String(request.reason||'').trim();if(!reason)return error('delivery_date_reason_required');if(reason.length>2000)return error('reason_too_long');
+  const to=Number(request.deliveredAt);if(!Number.isFinite(to)||to<=0)return error('delivery_date_required');
   const from=Number(job.deliveredAt||0);const audit={operation:'DELIVERY_DATE_CORRECTION',by:id,name:user.name,at:now,from,to,reason};
   job.deliveredAt=to;job.deliveryAudit=[...(job.deliveryAudit||[]),audit];job.qcWorkflow={...(job.qcWorkflow||{}),revision:revision+1,history:[...(job.qcWorkflow?.history||[]),audit]};
-  return {ok:true,job};
+  return {ok:true,data:candidate,job};
  }
  if(op==='FINAL_INVOICE_CORRECTION'){
   if(user.role!=='Manager')return error('qc_permission_denied');
