@@ -82,7 +82,7 @@ test('Supervisor and Manager invoice saves satisfy the live API contract and hyd
     const other=fixture('Purchaser');
     other.parts.hydrateFromServerRows(copy(f.serverRows));
     assert.equal(other.lists()[0].items[0].purchaseAmount,2.44);
-    assert.match(f.html(),/All received parts on this Job Card have invoice prices/);
+    assert.match(f.html(),/All eligible parts on this Job Card have invoice amounts/);
   }
 });
 
@@ -95,7 +95,7 @@ test('invoice validation and permissions reject bad inputs without committing',a
   for(const role of ['Purchaser','Denter','Employee']){
     const f=fixture(role);await f.invoice();assert.equal(f.commits.length,0,role);
   }
-  const f=fixture();f.setItem({status:'ORDERED'});await f.invoice();assert.equal(f.commits.length,0);
+  const f=fixture();f.setItem({status:'LISTED'});await f.invoice();assert.equal(f.commits.length,0);
 });
 
 test('a rejected invoice retains its prior price and unrelated part fields',async()=>{
