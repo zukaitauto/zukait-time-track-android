@@ -1,8 +1,8 @@
 {
-  "versionName": "V260",
-  "versionCode": 223,
+  "versionName": "V261",
+  "versionCode": 224,
   "approvedForStaff": true,
   "approvedAt": "2026-10-03",
-  "sourceCommit": "0c7a2b529dbd2605da1858cdc8f2e2f17fbdc835",
-  "publishNonce": "release-v260-20261003-three-cash-circles"
+  "sourceCommit": "b8825b6452b997a05ac800c6143276d881538e83",
+  "publishNonce": "release-v261-20261003-pending-amber-gold"
 }
