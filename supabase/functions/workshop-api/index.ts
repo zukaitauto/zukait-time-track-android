@@ -286,6 +286,11 @@ function preservePaintPurchasingHistory(candidate: any, current: any): any {
     // an incoming value for the same JC is still allowed to update it.
     candidate.paintCosting={...cloneValue(serverCost),...cloneValue(incomingCost)};
   }
+  return candidate;
+}
+
+// Derived cost projection follows staff authorization so unrelated employee saves stay valid.
+function reconcilePaintOrderCosts(candidate: any): any {
   for (const no of new Set((candidate.paintPurchasing?.orders || []).map((o:any)=>String(o?.jobCard || "")).filter(Boolean))) {
     const cost=paintOrderRules.costForJob(candidate.paintPurchasing.orders,no);
     if (!cost) continue;
@@ -894,7 +899,7 @@ Deno.serve(async (req: Request) => {
           return reply({ ok: false, code: "forbidden_change" }, 403);
         }
 
-        candidate = preserveQcAuthority(candidate, current.data);
+        candidate = reconcilePaintOrderCosts(preserveQcAuthority(candidate, current.data));
 
         const next = currentRevision + 1;
         const live = computeLiveStatus(candidate, next, user.id);

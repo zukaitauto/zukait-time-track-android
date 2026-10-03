@@ -16,6 +16,8 @@ assert.equal(rules.costForJob([{...main,receivedAt:null}],'12026'),null);
 assert.equal(fs.readFileSync('app/src/main/assets/paint_order_rules.js','utf8'),fs.readFileSync('supabase/functions/workshop-api/paint_order_rules.js','utf8'));
 const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8'),a=api.indexOf('function preservePaintPurchasingHistory'),b=api.indexOf('// A full-state client',a),ctx=vm.createContext({paintOrderRules:rules,cloneValue:x=>JSON.parse(JSON.stringify(x))});vm.runInContext(api.slice(a,b).replace(/:\s*(any|number)\b/g,'').replace(/ as const/g,'').replace(/byId.get\(id\)!/g,'byId.get(id)'),ctx);
 ctx.server={paintPurchasing:{orders:[main,{...main,id:'duplicate',voided:true,voidReason:'Confirmed duplicate'}],audit:[]},paintCosting:{'12026':{netPaintCost:9.6}}};ctx.incoming={jobs:[{no:'12026',paintCost:9.6}],paintPurchasing:{orders:[main,{...main,id:'duplicate'}],audit:[]},paintCosting:{'12026':{netPaintCost:9.6}}};
-const merged=vm.runInContext('preservePaintPurchasingHistory(incoming,server)',ctx);assert.equal(merged.paintPurchasing.orders.find(x=>x.id==='duplicate').voided,true);assert.equal(merged.paintCosting['12026'].netPaintCost,4.8);assert.equal(merged.jobs[0].paintCost,4.8);
+const merged=vm.runInContext('reconcilePaintOrderCosts(preservePaintPurchasingHistory(incoming,server))',ctx);assert.equal(merged.paintPurchasing.orders.find(x=>x.id==='duplicate').voided,true);assert.equal(merged.paintCosting['12026'].netPaintCost,4.8);assert.equal(merged.jobs[0].paintCost,4.8);
 assert.ok(api.includes('code:"paint_po_invalid"'));
 console.log('Paint PO authority: one main, concurrent duplicates, original references, additional reasons, received-only aggregate costing, returns and stale-void protection passed');
+
+assert.ok(api.indexOf('!validateEmployeeChange(user.id, current.data, candidate)')<api.indexOf('candidate = reconcilePaintOrderCosts('),'Derived paint costing must follow employee authorization');
