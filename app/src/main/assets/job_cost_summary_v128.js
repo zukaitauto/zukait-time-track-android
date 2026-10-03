@@ -29,7 +29,7 @@ function data(no){
  const preliminary=(state.sessions||[]).filter(s=>s&&String(s.preliminaryLinkedJob||'')===String(no)&&s.end).reduce((n,s)=>n+Math.max(0,(num(s.end)-num(s.start))/60000)/60*rate,0);
  const labour=Math.round((regular+preliminary)*1000)/1000;
  const c=state.consumables||{},materials=Math.round((c.actuals||[]).filter(x=>x&&!x.voided&&x.locked&&x.jobCard===no).reduce((n,x)=>n+num(x.totalCost),0)*1000)/1000;
- const paintRow=state.paintCosting&&state.paintCosting[no],paint=Math.round(num(paintRow?.netPaintCost??j.paintCost)*1000)/1000;
+ const paintRow=window.zukaitPaintOrderRules?.costForJob(state.paintPurchasing?.orders||[],no)||(state.paintCosting&&state.paintCosting[no]),paint=Math.round(num(paintRow?.netPaintCost??j.paintCost)*1000)/1000;
  const consumables=Math.round((materials+paint)*1000)/1000;
  let parts=0;
  try{const rows=window.zukaitV2?.sparePartsMain?.reportRows?.()||[],chargeable=new Set(['RECEIVED','SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED','CUSTOMER_SETTLEMENT']);parts=Math.round(rows.filter(x=>String(x?.jobCard||'')===String(no)&&chargeable.has(String(x?.status||'').toUpperCase())).reduce((n,x)=>n+num(x.amount),0)*1000)/1000}catch(_){}

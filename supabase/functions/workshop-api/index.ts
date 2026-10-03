@@ -1,3 +1,5 @@
+import "./paint_order_rules.js";
+const paintOrderRules = (globalThis as any).zukaitPaintOrderRules;
 import { qcTransition, preserveQcAuthority } from "./qc_delivery_rules.js";
 import { timeManagementTransition } from "./time_management_rules.js";
 
@@ -270,6 +272,7 @@ function preservePaintPurchasingHistory(candidate: any, current: any): any {
       for (const row of serverRows) {
         const id=identity(row);
         if (!byId.has(id)) { byId.set(id,nextRows.length); nextRows.push(cloneValue(row)); }
+        else if (key === "orders" && row?.voided) nextRows[byId.get(id)!] = cloneValue(row);
       }
       if (nextRows.length || serverRows.length || Array.isArray(incoming?.[key])) incoming[key]=nextRows;
     }
@@ -282,6 +285,14 @@ function preservePaintPurchasingHistory(candidate: any, current: any): any {
     // Existing server costing survives clients that do not know this module;
     // an incoming value for the same JC is still allowed to update it.
     candidate.paintCosting={...cloneValue(serverCost),...cloneValue(incomingCost)};
+  }
+  for (const no of new Set((candidate.paintPurchasing?.orders || []).map((o:any)=>String(o?.jobCard || "")).filter(Boolean))) {
+    const cost=paintOrderRules.costForJob(candidate.paintPurchasing.orders,no);
+    if (!cost) continue;
+    candidate.paintCosting=candidate.paintCosting || {};
+    candidate.paintCosting[no]={...cost,updatedAt:candidate.paintCosting[no]?.updatedAt || Date.now()};
+    const job=(candidate.jobs || []).find((j:any)=>String(j.no)===no);
+    if(job) job.paintCost=cost.netPaintCost;
   }
   return candidate;
 }
@@ -686,12 +697,12 @@ Deno.serve(async (req: Request) => {
       if (eventType==="SPARE_PART_ITEM_EDITED" && !["Manager","Supervisor"].includes(callerRole)) {
         return reply({ok:false,code:"spare_item_edit_forbidden"},403);
       }
-      if (eventType==="SPARE_PART_MANAGER_CORRECTED") {
+      if (eventType==="SPARE_PART_MANAGER_CORRECTED" || eventType==="SPARE_PART_SUPERVISOR_CORRECTED") {
         const p=event.payload && typeof event.payload==="object" ? event.payload : {};
         const after=p.after && typeof p.after==="object" ? p.after : {};
         const allowedStatuses=new Set(["LISTED","ENQUIRY","QUOTED","ORDERED","RECEIVED","SUPERVISOR_VERIFIED","SUPERVISOR_CONFIRMED","FITTED","RETURNED","UNAVAILABLE","CUSTOMER_SETTLEMENT"]);
         const price=after.finalPrice==null?null:Number(after.finalPrice);
-        if (callerRole!=="Manager" || !String(p.partId||"") || !String(p.listNo||"") || !String(p.jobCard||"") || !String(p.reason||"").trim() || !p.before || !p.after || !allowedStatuses.has(String(after.status||"")) || (price!=null&&(!Number.isFinite(price)||price<0||price>1000000))) {
+        if (!((eventType==="SPARE_PART_MANAGER_CORRECTED" && callerRole==="Manager") || (eventType==="SPARE_PART_SUPERVISOR_CORRECTED" && callerRole==="Supervisor")) || !String(p.partId||"") || !String(p.listNo||"") || !String(p.jobCard||"") || !String(p.reason||"").trim() || !p.before || !p.after || !allowedStatuses.has(String(after.status||"")) || (price!=null&&(!Number.isFinite(price)||price<0||price>1000000))) {
           return reply({ok:false,code:"spare_manager_correction_forbidden_or_invalid"},403);
         }
       }
@@ -850,6 +861,9 @@ Deno.serve(async (req: Request) => {
         }
 
         candidate = preservePaintPurchasingHistory(preserveConsumablesHistory(preserveOperationalHistory(reconcileAutoOvertime(preserveClosedSessions(candidate, current.data), current.data), current.data, user), current.data), current.data);
+
+        const paintOrderIssue=paintOrderRules.validateNewOrders(candidate.paintPurchasing?.orders || [],current.data?.paintPurchasing?.orders || []);
+        if (paintOrderIssue) return reply({ok:false,code:"paint_po_invalid",message:paintOrderIssue,revision:current.revision,data:current.data},409);
 
         // Keep profiles whose credentials are still active. Inactive staff may be
         // intentionally removed; an old full-state save must not remove active staff.

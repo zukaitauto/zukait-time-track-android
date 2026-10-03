@@ -21,6 +21,7 @@ node tests/id001-preliminary-classification.mjs
 node tests/id001-preliminary-end-to-end.mjs
 node tests/v156-id001-preliminary-server-deployment.mjs
 node tests/paint-safety.mjs
+node tests/paint-order-authority.mjs
 node tests/vehicle-logo-assets.mjs
 node tests/native-update-integrity.mjs
 node tests/native-update-sync-safety.mjs

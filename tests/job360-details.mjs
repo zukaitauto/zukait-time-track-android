@@ -7,6 +7,7 @@ const st={jobs:[{no:'12037',vehicle:'Toyota Corolla',reg:'1234 AB',year:2020,job
 const staff=[{id:'E1',name:'Surab',department:'Painter'}];
 const sandbox={fixture:st,staff,window:{openModal:html=>modal=html,closeModal(){},zukaitV2:{sparePartsMain:{reportRows:()=>[{jobCard:'12037',part:'Bumper',qty:1,status:'RECEIVED',amount:20},{jobCard:'12037',part:'Clip',qty:1,status:'ORDERED',amount:7}],listsForJobCard:()=>[]}}},document:{addEventListener:(type,fn)=>{if(type==='click')clickHandlers.push(fn)},createElement:()=>({}),head:{appendChild:s=>styles.push(s.textContent)},body:{},getElementById:()=>null,querySelector:()=>null},navigator:{onLine:true},MutationObserver:class{observe(){}},setTimeout(){},setInterval(){},totalForAssignment:()=>60};
 const ctx=vm.createContext(sandbox);vm.runInContext('let state=fixture;let users=staff;let me={role:"Manager"};',ctx);
+vm.runInContext(fs.readFileSync('app/src/main/assets/paint_order_rules.js','utf8'),ctx);
 vm.runInContext(fs.readFileSync('app/src/main/assets/job_cost_summary_v128.js','utf8'),ctx);
 vm.runInContext(fs.readFileSync('app/src/main/assets/workshop_overview.js','utf8'),ctx);
 const click=(action)=>{for(const handler of clickHandlers)handler({target:{closest:selector=>selector.includes('=')&&selector!=='[data-workshop-action="'+action+'"]'?null:({dataset:{workshopAction:action,job:'12037'}})},preventDefault(){},stopPropagation(){}})};

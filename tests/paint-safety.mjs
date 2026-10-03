@@ -34,6 +34,7 @@ const ctx={
 };
 ctx.window=ctx;vm.createContext(ctx);
 vm.runInContext('let me=window.me; delete window.me;',ctx);
+vm.runInContext(fs.readFileSync('app/src/main/assets/paint_order_rules.js','utf8'),ctx);
 vm.runInContext(fs.readFileSync('app/src/main/assets/paint_module.js','utf8'),ctx);
 ctx.paintPrintOrder=()=>{};
 
@@ -77,7 +78,7 @@ assert.equal(alerts.length,alertCount+1);
 assert.match(alerts.at(-1),/already finalized/i);
 
 const src=fs.readFileSync('app/src/main/assets/paint_module.js','utf8');
-assert.match(src,/Possible duplicate Paint PO/);
+assert.match(src,/Main Paint PO .* already exists/,'Second main PO must be blocked, not confirmed away');
 assert.match(src,/Possible duplicate return/);
 assert.match(src,/SERVER SYNCED/);
 assert.match(src,/paint-color-code/,'Paint PO Color Code must have emphasized styling');
@@ -85,7 +86,7 @@ assert.match(src,/modelYearOf\(j\)/,'Paint PO must normalize Model Year from Job
 assert.match(src,/class="paint-cost"/,'Received Paint must expose editable Actual Cost');
 assert.match(src,/function paintLineCost\(l\)/,'Finalized lineTotal must be the authoritative received paint cost');
 assert.match(src,/paintLineCost\(l\)\*\(q\/\(Number\(l\.quantity\)\|\|1\)\)/,'Paint returns must value the returned fraction from authoritative line cost');
-assert.match(src,/grossPaintCost:gross,returnedPaintValue:returned,netPaintCost:netCost/,'Job Card paint costing must use the same exact gross, return and net values');
+assert.match(src,/costForJob\(root\(\).orders,o.jobCard\)/,'Paint costing aggregates all valid received orders');
 assert.match(src,/paintRecalcReceived/,'Received Paint must support two-way price/cost calculation');
 assert.match(src,/paint-po-line-cards/,'Paint PO entry must use responsive line cards instead of a wide entry table');
 assert.match(src,/paint-received-cards/,'Received Paint costing must use responsive cards');
@@ -101,3 +102,8 @@ assert.match(src,/Confirm Manager correction\?/,'Manager Paint correction must r
 assert.match(src,/MANAGER_PAINT_CORRECTION/,'Manager Paint correction must remain audited');
 assert.match(src,/syncCost\(o\)/,'Manager Paint correction must recalculate Job Card paint cost');
 console.log('Paint safety tests passed: auto Model Year, bold colour authority, two-way litre price/actual cost, actor audit and finalized costing');
+
+vm.runInContext('me={id:"S1",name:"Supervisor One",role:"Supervisor"}',ctx);
+ctx.openPaintPO();el('ppJc').value='JC1';ctx.paintLoadPOJob();el('ppPo').value='PO-Zi002';el('ppVendor').value='Paint Vendor';el('ppType').value='Base Coat';el('ppQty').value='0.200';ctx.paintAddPOLine();const previous=state.paintPurchasing.orders.length;ctx.paintFinishPO();assert.equal(state.paintPurchasing.orders.length,previous);assert.ok(alerts.at(-1).includes('already exists'));
+ctx.openPaintAdditionalPO();el('ppJc').value='JC1';ctx.paintLoadPOJob();assert.equal(el('ppParentPO').value,state.paintPurchasing.orders[0].poNumber);el('ppPo').value='PO-Zi002';el('ppVendor').value='Paint Vendor';el('ppType').value='Base Coat';el('ppQty').value='0.200';el('ppRemarks').value='';ctx.paintAddPOLine();ctx.paintFinishPO();assert.equal(state.paintPurchasing.orders.length,previous);el('ppRemarks').value='Extra matching paint';ctx.paintFinishPO();assert.equal(state.paintPurchasing.orders.length,previous+1);assert.equal(state.paintPurchasing.orders.at(-1).parentOrderId,state.paintPurchasing.orders[0].id);assert.equal(state.paintPurchasing.orders.at(-1).additionalReason,'Extra matching paint');
+console.log('Paint UI: second main blocked, additional order requires reason and preserves original PO reference');
