@@ -19,7 +19,7 @@ async function run(remote,initial,baseline=null,afterPull=null,who={role:'Employ
     consecutiveSyncErrors:0,conflictAlerted:false,cloudApplying:false,
     me:who,navigator:{onLine:true},document:{visibilityState:'visible'},REV_KEY:'revision',
     localStorage:{setItem(){}},sessionToken:()=>true,
-    status:(s)=>statuses.push(s),clone:structuredClone,
+    setServerConnection:()=>{},status:(s)=>statuses.push(s),clone:structuredClone,
     api:async()=>({ok:true,revision:2,data:remote}),
     normalizeRemote:(data)=>{ctx.state=structuredClone(data)},
     render:()=>{renders++},dashboardRenderTimer:null,clearTimeout, setTimeout:(fn)=>{fn();return 1},window:{v42AfterCloudPull:afterPull?()=>afterPull(ctx):undefined,zukaitLiveStatusAuthority:{apply(){}}},console
