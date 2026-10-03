@@ -15,7 +15,7 @@ function leaveIntervals(emp,from,to){
  return (state?.leaves||[]).filter(l=>l&&!l.cancelled&&l.emp===emp).map(l=>{
   const ds=dayStart(new Date(String(l.date||'')+'T12:00:00').getTime());
   const w=l.period==='AM'?[ds+8*3600000,ds+13*3600000]:l.period==='PM'?[ds+15*3600000,ds+19*3600000]:[ds+8*3600000,ds+19*3600000];
-  return[Math.max(from,w[0]),Math.min(to,w[1])];
+  return[Math.max(from,w[0],Number(l.startAt||0)),Math.min(to,w[1])];
  }).filter(x=>x[1]>x[0]);
 }
 function busyIntervals(emp,from,to){

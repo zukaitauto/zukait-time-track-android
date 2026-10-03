@@ -445,7 +445,7 @@ assert.equal(availabilityMinutes([{emp:'E1',job:'JC1',assignedAt:g0-60000}], 'E1
 
 // V75.5 Leave + paused-ID001 contracts
 assert.match(updates, /V75\.5 LEAVE CONTROL \+ PAUSED-JOB ID001 AUTHORITY/, 'V75.5 leave/ID001 authority must be present');
-assert.match(updates, /return\[\[d\+8\*3600000,d\+13\*3600000\],\[d\+15\*3600000,d\+19\*3600000\]\]/, 'full-day leave must exclude the 13:00–15:00 lunch break');
+assert.match(fs.readFileSync('app/src/main/assets/v2/features/leave/rules.js','utf8'), /return\[\[d\+8\*3600000,d\+13\*3600000\],\[d\+15\*3600000,d\+19\*3600000\]\]/, 'full-day leave must exclude the 13:00–15:00 lunch break');
 assert.match(updates, /TODAY’S LEAVE/, 'Manager Workshop Control Center must show Today’s Leave');
 assert.match(updates, /THIS MONTH LEAVE/, 'Manager Workshop Control Center must show This Month Leave');
 assert.match(updates, /v755-leave-control-row/, 'Manager leave controls must use a dedicated two-column row');
@@ -484,7 +484,7 @@ assert.equal(dedupeActive([{emp:'E1',job:'JC1',start:1,end:null},{emp:'E1',job:'
 
 assert.ok(updates.includes('v81-month-grid'), 'employee monthly summary must use two-column 3D circle grid');
 assert.ok(updates.includes('v81OpenMyMonthlyLeave') && updates.includes('v81-month-leave'), 'employee dashboard must show clickable monthly leave summary');
-assert.ok(updates.includes("l.period==='FULL'?1:.5"), 'monthly leave must count full day as 1 and half day as 0.5');
+assert.ok(read('app/src/main/assets/v2/features/leave/rules.js').includes("l?.period==='FULL'?1:.5"), 'monthly leave must count full day as 1 and half day as 0.5');
 assert.ok(updates.includes('v81OpenEmployeeHistory'), 'employee performance history must open separately');
 assert.ok(updates.includes('v104-progress incentive') && updates.includes('<span>INCENTIVE</span>'), 'Employee monthly summary must show Incentive in the three-column capsule row');
 assert.match(updates, /month-summary \.v81-month-orb\{aspect-ratio:auto!important/, 'Employee This Month KPI tiles must use capsule styling');

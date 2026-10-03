@@ -21,3 +21,9 @@ assert.match(stable,/\.v143-glance\{display:grid;grid-template-columns:repeat\(3
 assert.match(stable,/onclick="v143OpenIdealWorker\(\)"/,'Ideal Worker tile opens the Ideal Time details');
 assert.doesNotMatch(stable,/class="ready" onclick="v143OpenReadyForDelivery\(\)"/,'Ready for Delivery does not reclaim the Ideal Worker glance slot');
 console.log('Ideal Worker placement passed: authoritative stable glance tile with no lower-action duplicate.');
+
+state.sessions=[S('A','2026-10-01T04:00:00Z','2026-10-01T05:00:00Z'),S('B','2026-10-01T05:40:00Z','2026-10-01T06:00:00Z')];
+state.leaves=[{emp:'E1',date:'2026-10-01',period:'FULL',startAt:om('2026-10-01T06:00:00Z')}];
+h=ctx.window.v247IdealHistory('E1',om('2026-10-01T04:00:00Z'),om('2026-10-01T06:00:00Z'),false);
+assert.equal(h[0].minutes,40,'a later leave must not hide idle time before its start');
+console.log('Remaining-day leave preserves earlier Ideal Time gaps.');

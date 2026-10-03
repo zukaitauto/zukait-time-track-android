@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 node tests/functional-smoke.mjs
+node tests/leave-after-work.mjs
 node tests/employee-finish-server-authority.mjs
 node tests/consumables-smoke.mjs
 node tests/consumables-ui.mjs

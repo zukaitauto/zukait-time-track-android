@@ -15,8 +15,10 @@ function eligibleSegments(start,end,state,emp,options={}){
  const out=[];let cursor=dayStart(start),guard=0;
  while(cursor<end&&guard++<370){
   const p=localParts(cursor);
-  if(p.dow!==5&&!holiday(state,cursor)&&(!options.excludeLeave||!leave(state,emp,cursor))){
-   for(const [a,b] of DUTY){const s=Math.max(start,cursor+a*MIN),e=Math.min(end,cursor+b*MIN);if(e>s)out.push({start:s,end:e,minutes:(e-s)/MIN})}
+  if(p.dow!==5&&!holiday(state,cursor)&&(!options.excludeLeave||window.zukaitV2?.leave||!leave(state,emp,cursor))){
+   for(const [a,b] of DUTY){const s=Math.max(start,cursor+a*MIN),e=Math.min(end,cursor+b*MIN);if(e<=s)continue;let rows=[[s,e]];
+    if(options.excludeLeave&&window.zukaitV2?.leave){for(const l of (state?.leave||state?.leaves||[]).filter(l=>l&&!l.cancelled&&id(l.emp||l.employeeId)===id(emp))){for(const [ls,le] of window.zukaitV2.leave.segments(l)){rows=rows.flatMap(([x,y])=>le<=x||ls>=y?[[x,y]]:[[x,Math.min(y,ls)],[Math.max(x,le),y]].filter(([i,j])=>j>i));}}}
+    for(const [x,y] of rows)out.push({start:x,end:y,minutes:(y-x)/MIN});}
   }
   const d=new Date(cursor);d.setDate(d.getDate()+1);cursor=d.getTime();
  }

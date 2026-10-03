@@ -451,8 +451,8 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const normalSg=normalDone.reduce((n,a)=>n+(+a.suggested||0),0),normalAc=normalDone.reduce((n,a)=>n+(typeof window.v107AssignmentNormal==='function'?window.v107AssignmentNormal(a,mf,mt):actual(a)),0),eff=normalAc?normalSg/normalAc*100:null;
    const monthSuggested=typeof window.monthlySuggestedMinutes==='function'?window.monthlySuggestedMinutes(me.id,mf,mt):(state.assign||[]).filter(a=>a&&a.emp===me.id&&!a.cancelled&&(a.assignedAt||0)>=mf&&(a.assignedAt||0)<mt).reduce((n,a)=>n+(+a.suggested||0),0),monthActual=typeof window.monthlyNormalActualMinutes==='function'?window.monthlyNormalActualMinutes(me.id,mf,mt):(state.sessions||[]).filter(x=>x&&x.emp===me.id&&x.job!==H&&x.start<mt&&(x.end||nowTs)>mf).reduce((n,x)=>n+Math.max(0,(Math.min(+(x.end||nowTs),mt)-Math.max(+x.start||0,mf))/60000),0),monthRemaining=monthSuggested-monthActual,monthInc=typeof window.incentiveFor==='function'?window.incentiveFor(me.id):{incentive:0},orb=(cl,val,label)=>'<div class="v81-month-orb '+cl+'"><b>'+val+'</b><span>'+label+'</span></div>';
    const progress='<div class="v104-month-progress"><div class="v104-progress target"><span>MONTHLY TARGET</span><b>'+fm(+monthInc.target||0)+'</b></div><div class="v104-progress achieved"><span>MONTHLY ACHIEVED</span><b>'+fm(+monthInc.eligible||+monthInc.actual||0)+'</b></div><div class="v104-progress excess"><span>EXCESS HOURS</span><b>'+fm(+monthInc.excess||0)+'</b></div><div class="v104-progress incentive"><span>INCENTIVE</span><b>'+fm(+monthInc.incentive||0)+'</b></div></div>'; const month='<div class="card month-summary v75s-section"><div class="section-title"><h3>📅 This Month</h3><span class="pill">MONTHLY</span></div>'+progress+'<div class="v81-month-grid">'+orb('v81-m1',String(normalDone.length),'Completed Jobs')+orb('v81-m2',eff==null?'—':eff.toFixed(1)+'%','Efficiency')+orb('v81-m3',fm(monthSuggested),'Suggested Time')+orb('v81-m4',fm(monthActual),'Actual Time')+orb('v81-m5',fm(Math.abs(monthRemaining)),monthRemaining>=0?'Remaining Time':'Over Suggested')+orb('v81-m6',fm(idealMin),'Ideal Time')+orb('v81-m7',fm(overtimeMin),'Overtime')+'</div></div>';
-   const monthLeaveRows=((state.leaves||[]).filter(l=>l&&!l.cancelled&&String(l.emp)===String(me.id)&&String(l.date||'').startsWith(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'))),monthLeaveDays=monthLeaveRows.reduce((n,l)=>n+(l.period==='FULL'?1:.5),0);
-   window.v81OpenMyMonthlyLeave=function(){const rows=((state.leaves||[]).filter(l=>l&&!l.cancelled&&String(l.emp)===String(me.id)&&String(l.date||'').startsWith(new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0')+'-'))).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))),label=p=>p==='AM'?'Morning Half Day':p==='PM'?'Afternoon Half Day':'Full Day',body=rows.length?'<div class="v75s-history"><table><tr><th>Date</th><th>Leave Type</th><th>Remark</th></tr>'+rows.map(l=>'<tr><td><b>'+esc(l.date)+'</b></td><td>'+esc(label(l.period))+'</td><td>'+esc(l.remark||'—')+'</td></tr>').join('')+'</table></div>':'<div class="notice">No leave taken this month.</div>';openModal('<div class="section-title"><h2>🗓 My Leave This Month</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="notice"><b>Total Leave: '+(rows.reduce((n,l)=>n+(l.period==='FULL'?1:.5),0)).toFixed(1).replace('.0','')+' day(s)</b></div>'+body)};
+   const monthLeaveRows=((state.leaves||[]).filter(l=>l&&!l.cancelled&&String(l.emp)===String(me.id)&&String(l.date||'').startsWith(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'))),monthLeaveDays=monthLeaveRows.reduce((n,l)=>n+window.v755LeaveDays(l),0);
+   window.v81OpenMyMonthlyLeave=function(){const rows=((state.leaves||[]).filter(l=>l&&!l.cancelled&&String(l.emp)===String(me.id)&&String(l.date||'').startsWith(new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0')+'-'))).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))),label=p=>p==='AM'?'Morning Half Day':p==='PM'?'Afternoon Half Day':'Full Day',body=rows.length?'<div class="v75s-history"><table><tr><th>Date</th><th>Leave Type</th><th>Remark</th></tr>'+rows.map(l=>'<tr><td><b>'+esc(l.date)+'</b></td><td>'+esc(window.v755LeaveLabel(l))+'</td><td>'+esc(l.remark||'—')+'</td></tr>').join('')+'</table></div>':'<div class="notice">No leave taken this month.</div>';openModal('<div class="section-title"><h2>🗓 My Leave This Month</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="notice"><b>Total Leave: '+(rows.reduce((n,l)=>n+window.v755LeaveDays(l),0)).toFixed(1).replace('.0','')+' day(s)</b></div>'+body)};
    const leaveBox='<button class="v81-month-leave" onclick="v81OpenMyMonthlyLeave()"><span class="v81-leave-icon">🗓</span><span class="v81-leave-copy"><span>LEAVE THIS MONTH</span><b>'+monthLeaveDays.toFixed(1).replace('.0','')+' day'+(monthLeaveDays===1?'':'s')+'</b><small>Tap to view date, leave type and remark</small></span><span class="v81-leave-open">›</span></button>';
    const finishedDone=done.filter(a=>a.job!==H);window.v89OpenEmployeeFinished=function(){const rows=finishedDone.slice(0,30),body=rows.length?'<div class="v75s-history"><table><tr><th>Job</th><th>Vehicle</th><th>Allocated</th><th>Actual</th><th>Finished</th></tr>'+rows.map(a=>{const x=jj(a.job);return '<tr><td><b>'+esc(a.job)+'</b></td><td>'+esc(x.vehicle||'—')+'</td><td>'+fm(a.suggested)+'</td><td>'+fm(actual(a))+'</td><td>'+esc(a.completedAt?new Date(a.completedAt).toLocaleString():'—')+'</td></tr>'}).join('')+'</table></div>':'<p class="muted">No finished jobs.</p>';openModal('<div class="section-title"><h2>✅ Finished Jobs</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+body)};const finished='<div class="card v75s-section clickable compact-control v89-employee-control" onclick="v89OpenEmployeeFinished()"><div class="section-title"><h3>✅ Finished Jobs</h3><span class="pill">'+finishedDone.length+'</span></div><div class="small muted">Tap to view completed job details</div></div>';
    const repeatJobs=(state.assign||[]).filter(a=>a&&a.job!==H&&!a.cancelled&&a.rework===true&&String(a.mistakeEmp||'')===String(me.id)).slice().sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));
@@ -911,12 +911,22 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  const dateKey=ts=>{const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
  const dayStartFromKey=k=>{const p=String(k||'').split('-').map(Number);return p.length===3?new Date(p[0],p[1]-1,p[2]).getTime():NaN};
  const periodLabel=p=>p==='AM'?'Morning Half Day — 8:00 AM to 1:00 PM':p==='PM'?'Afternoon Half Day — 3:00 PM to 7:00 PM':'Full Day — 8:00 AM to 1:00 PM + 3:00 PM to 7:00 PM';
- const leaveSegments=l=>{
-   const d=dayStartFromKey(l?.date);if(!Number.isFinite(d))return[];
-   if(l.period==='AM')return[[d+8*3600000,d+13*3600000]];
-   if(l.period==='PM')return[[d+15*3600000,d+19*3600000]];
-   return[[d+8*3600000,d+13*3600000],[d+15*3600000,d+19*3600000]];
- };
+ const leaveSegments=l=>window.zukaitV2.leave.segments(l);
+ const leaveLabel=l=>window.zukaitV2.leave.label(l);
+ window.v755LeaveSegments=leaveSegments;
+ window.v755LeaveLabel=leaveLabel;
+ window.v755LeaveDays=l=>window.zukaitV2.leave.days(l);
+ const timeValue=t=>t==null?'':new Date(Number(t)).toTimeString().slice(0,8);
+ function overrideField(prefix){return me?.role==='Manager'?'<label><input type="checkbox" id="'+prefix+'LeaveOverride"> Override incorrect work records (reason required)</label>':'';}
+ function leaveTimeField(prefix,l={}){return '<label>Leave from (optional)<br><input type="time" step="1" id="'+prefix+'LeaveFrom" value="'+esc(timeValue(l.startAt))+'"><small>Earlier work is kept. Leave starts after the last recorded work if this is blank.</small></label>';}
+ function prepareLeave(l,prefix){
+   const time=document.getElementById(prefix+'LeaveFrom')?.value;
+   if(time){const t=new Date(l.date+'T'+time).getTime(),base=window.zukaitV2.leave.baseSegments(l);if(!Number.isFinite(t)||!base.length||t<base[0][0]||t>=base[base.length-1][1]){alert('Choose a leave start within the selected duty period.');return null;}l.startAt=t;}else delete l.startAt;
+   if(me?.role==='Manager'&&document.getElementById(prefix+'LeaveOverride')?.checked&&hasSessionConflict(l.emp,l)){const reason=window.prompt('Reason for overriding incorrect work records:','');if(reason===null)return null;if(!String(reason).trim()){alert('Manager override reason is required.');return null;}l.managerOverride=true;l.managerOverrideReason=String(reason).trim();return l;}
+   const result=window.zukaitV2.leave.afterWork(l,{sessions:state.sessions||[],now:Date.now()});
+   if(!result.ok){alert(result.code==='ACTIVE_WORK'?'Pause or stop the current work before marking leave.': 'No duty time remains after the recorded work in this period. Choose another leave period.');return null;}
+   return result.leave;
+ }
  const activeLeaveRows=()=>{state.leaves=state.leaves||[];return state.leaves.filter(l=>l&&!l.cancelled)};
  const leaveRowsFor=(emp,from,to)=>activeLeaveRows().filter(l=>l.emp===emp).filter(l=>leaveSegments(l).some(([a,b])=>b>from&&a<to));
  window.v63LeaveOverlapMinutes=function(emp,from,to){
@@ -951,7 +961,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    state.leaveNotifications.push({id:uid(),leaveId:l.id,emp:l.emp,period:l.period,date:l.date,by:l.by,at:Date.now(),cancelled:false});
    if(l.by===l.emp && userSafe(l.emp).role!=='Manager'){
      state.requests=state.requests||[];
-     state.requests.push({id:uid(),type:'leave_notice',emp:l.emp,job:'',status:'New',message:(userSafe(l.emp).name||l.emp)+' marked '+periodLabel(l.period)+' leave for '+l.date+(l.remark?' — '+l.remark:''),createdAt:Date.now(),leaveId:l.id});
+     state.requests.push({id:uid(),type:'leave_notice',emp:l.emp,job:'',status:'New',message:(userSafe(l.emp).name||l.emp)+' marked '+leaveLabel(l)+' leave for '+l.date+(l.remark?' — '+l.remark:''),createdAt:Date.now(),leaveId:l.id});
    }
  }
 
@@ -961,26 +971,28 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const rows=activeLeaveRows().filter(l=>l.emp===target).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,12);
    openModal('<div class="section-title"><h2>Leave — '+esc(u.name)+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
      '<div class="grid"><label>Date<br><input type="date" id="v755LeaveDate" min="'+today+'" value="'+today+'"></label><label>Leave Type<br><select id="v755LeavePeriod"><option value="FULL">Full Day</option><option value="AM">Morning Half Day — 8:00 AM to 1:00 PM</option><option value="PM">Afternoon Half Day — 3:00 PM to 7:00 PM</option></select></label></div>'+
+     leaveTimeField('v755')+overrideField('v755')+
      '<label>Remark / Reason (optional)<br><input id="v755LeaveRemark" style="width:100%" placeholder=""></label>'+
      '<p><button class="green big-action" onclick="v755SaveLeave(\''+esc(target)+'\')">'+(self?'MARK MY LEAVE':'MARK LEAVE')+'</button></p>'+
      '<h3>Recent Leave</h3>'+(rows.length?'<div style="overflow:auto"><table><tr><th>Date</th><th>Type</th><th>Marked By</th><th>Remark</th></tr>'+
-       rows.map(l=>'<tr><td>'+esc(l.date)+'</td><td>'+esc(periodLabel(l.period))+'</td><td>'+esc(userSafe(l.by).name||l.by)+'</td><td>'+esc(l.remark||'—')+'</td></tr>').join('')+'</table></div>':'<div class="notice">No leave records.</div>'));
+       rows.map(l=>'<tr><td>'+esc(l.date)+'</td><td>'+esc(leaveLabel(l))+'</td><td>'+esc(userSafe(l.by).name||l.by)+'</td><td>'+esc(l.remark||'—')+'</td></tr>').join('')+'</table></div>':'<div class="notice">No leave records.</div>'));
  };
- window.v755SaveLeave=function(emp){
+ window.v755SaveLeave=function(emp,prefix='v755'){
    if(!canManageTarget(emp))return;
-   const date=document.getElementById('v755LeaveDate')?.value,period=document.getElementById('v755LeavePeriod')?.value,remark=document.getElementById('v755LeaveRemark')?.value.trim()||'';
+   const date=document.getElementById(prefix+'LeaveDate')?.value,period=document.getElementById(prefix+'LeavePeriod')?.value,remark=document.getElementById(prefix+'LeaveRemark')?.value.trim()||'';
    if(!date||!['FULL','AM','PM'].includes(period))return alert('Select leave date and leave type.');
-   const l={id:uid(),emp,date,period,remark,by:me.id,createdAt:Date.now(),cancelled:false};
+   let l={id:uid(),emp,date,period,remark,by:me.id,createdAt:Date.now(),cancelled:false};
    if(closedLeaveDay(l))return alert('Leave is not required on Friday or a workshop Public Holiday.');
-   if(hasSessionConflict(emp,l)){if(me?.role!=='Manager')return alert('Work time is already recorded during this leave period. Manager override is required to mark this leave.');const overrideReason=window.prompt('Work time exists during this leave period. Enter the Manager override reason:','Incorrect / stale work record');if(overrideReason===null)return;if(!String(overrideReason).trim())return alert('Manager override reason is required.');l.managerOverride=true;l.managerOverrideReason=String(overrideReason).trim();}
+   l=prepareLeave(l,prefix);if(!l)return;
    if(hasDuplicate(emp,l))return alert('Leave is already recorded for this date/period.');
-   const who=userSafe(emp).name||emp;if(!confirm('Confirm Leave\n\nStaff: '+who+'\nDate: '+date+'\nLeave: '+periodLabel(period)+'\n\nAre you sure you want to mark this leave?'))return;
+   const who=userSafe(emp).name||emp;if(!confirm('Confirm Leave\n\nStaff: '+who+'\nDate: '+date+'\nLeave: '+leaveLabel(l)+'\n\nAre you sure you want to mark this leave?'))return;
    state.leaves=state.leaves||[];state.leaveAudit=state.leaveAudit||[];
-   state.leaves.push(l);state.leaveAudit.push({id:uid(),action:l.managerOverride?'ADD_OVERRIDE':'ADD',leaveId:l.id,by:me.id,at:Date.now(),reason:l.managerOverrideReason||''});notifyLeave(l);
+   state.leaves.push(l);state.leaveAudit.push({id:uid(),action:l.managerOverride?'ADD_OVERRIDE':'ADD',leaveId:l.id,by:me.id,at:Date.now(),reason:l.managerOverrideReason||'',afterWork:!!l.afterWork,startAt:l.startAt??null});notifyLeave(l);
    save();closeModal();render();
    setTimeout(()=>{try{typeof window.v74Msg==='function'?window.v74Msg('Leave marked successfully. Supervisor and Manager can see this leave.','Leave'):alert('Leave marked successfully.')}catch(_){}},0);
  };
  window.v63OpenLeave=function(emp){return window.v755OpenLeaveForm(emp||me?.id)};
+ window.v63SaveLeave=function(emp){return window.v755SaveLeave(emp,'v63')};
 
  window.v755OpenLeaveHub=function(){
    if(!me)return;
@@ -1004,7 +1016,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  function leaveListHtml(rows){
    const sorted=rows.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))||(b.createdAt||0)-(a.createdAt||0));
    return sorted.length?'<div style="overflow:auto"><table><tr><th>Name</th><th>Role / Department</th><th>Date</th><th>Leave Type</th><th>Remark</th><th>Marked By</th></tr>'+
-     sorted.map(l=>{const u=userSafe(l.emp),by=userSafe(l.by);return'<tr><td><b>'+esc(u.name)+'</b></td><td>'+esc(u.role+(u.department?' / '+u.department:''))+'</td><td>'+esc(l.date)+'</td><td>'+esc(periodLabel(l.period))+'</td><td>'+esc(l.remark||'—')+'</td><td>'+esc(by.name||l.by)+'</td></tr>'}).join('')+'</table></div>':'<div class="notice">No leave records.</div>';
+     sorted.map(l=>{const u=userSafe(l.emp),by=userSafe(l.by);return'<tr><td><b>'+esc(u.name)+'</b></td><td>'+esc(u.role+(u.department?' / '+u.department:''))+'</td><td>'+esc(l.date)+'</td><td>'+esc(leaveLabel(l))+'</td><td>'+esc(l.remark||'—')+'</td><td>'+esc(by.name||l.by)+'</td></tr>'}).join('')+'</table></div>':'<div class="notice">No leave records.</div>';
  }
  window.v755OpenLeaveList=function(mode){
    const rows=mode==='month'?leaveMonth():leaveToday();
@@ -1017,6 +1029,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    openModal('<div class="section-title"><h2>Edit Leave</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
     '<label>Staff<br><select id="v114LeaveEmp">'+staff.map(u=>'<option value="'+esc(u.id)+'" '+(String(u.id)===String(l.emp)?'selected':'')+'>'+esc(u.name)+'</option>').join('')+'</select></label>'+
     '<div class="grid"><label>Date<br><input type="date" id="v114LeaveDate" value="'+esc(l.date)+'"></label><label>Leave Type<br><select id="v114LeavePeriod"><option value="FULL" '+(l.period==='FULL'?'selected':'')+'>Full Day</option><option value="AM" '+(l.period==='AM'?'selected':'')+'>Morning Half Day</option><option value="PM" '+(l.period==='PM'?'selected':'')+'>Afternoon Half Day</option></select></label></div>'+
+    leaveTimeField('v114',l)+overrideField('v114')+
     '<label>Remark / Reason<br><input id="v114LeaveRemark" style="width:100%" value="'+esc(l.remark||'')+'"></label>'+
     '<div class="v74-actions"><button class="danger" onclick="v114DeleteLeave(\''+esc(l.id)+'\')">DELETE</button><button class="green" onclick="v114SaveLeaveEdit(\''+esc(l.id)+'\')">SAVE CHANGES</button></div>');
  };
@@ -1025,14 +1038,14 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const l=(state.leaves||[]).find(x=>x&&String(x.id)===String(id)&&!x.cancelled);if(!l)return;
    const emp=document.getElementById('v114LeaveEmp')?.value,date=document.getElementById('v114LeaveDate')?.value,period=document.getElementById('v114LeavePeriod')?.value,remark=document.getElementById('v114LeaveRemark')?.value.trim()||'';
    if(!emp||!date||!['FULL','AM','PM'].includes(period))return alert('Select staff, date and leave type.');
-   const candidate={...l,emp,date,period,remark};
+   let candidate={...l,emp,date,period,remark};delete candidate.managerOverride;delete candidate.managerOverrideReason;delete candidate.afterWork;
    if(closedLeaveDay(candidate))return alert('Leave is not required on Friday or a workshop Public Holiday.');
-   if(hasSessionConflict(emp,candidate))return alert('Work time is already recorded during this leave period. Correct the work/leave conflict first.');
+   candidate=prepareLeave(candidate,'v114');if(!candidate)return;
    const duplicate=activeLeaveRows().some(x=>String(x.id)!==String(id)&&String(x.emp)===String(emp)&&x.date===date&&(x.period==='FULL'||period==='FULL'||x.period===period));
    if(duplicate)return alert('Leave is already recorded for this staff/date/period.');
-   const editWho=userSafe(emp).name||emp;if(!confirm('Confirm Leave Change\n\nStaff: '+editWho+'\nDate: '+date+'\nLeave: '+periodLabel(period)+'\n\nSave these changes?'))return;
-   const before={emp:l.emp,date:l.date,period:l.period,remark:l.remark||''};Object.assign(l,{emp,date,period,remark,updatedAt:Date.now(),updatedBy:me.id});
-   state.leaveAudit=state.leaveAudit||[];state.leaveAudit.push({id:uid(),action:'EDIT',leaveId:l.id,by:me.id,at:Date.now(),before,after:{emp,date,period,remark}});
+   const editWho=userSafe(emp).name||emp;if(!confirm('Confirm Leave Change\n\nStaff: '+editWho+'\nDate: '+date+'\nLeave: '+leaveLabel(candidate)+'\n\nSave these changes?'))return;
+   const before={...l};delete l.startAt;delete l.afterWork;delete l.managerOverride;delete l.managerOverrideReason;Object.assign(l,candidate,{updatedAt:Date.now(),updatedBy:me.id});
+   state.leaveAudit=state.leaveAudit||[];state.leaveAudit.push({id:uid(),action:'EDIT',leaveId:l.id,by:me.id,at:Date.now(),before,after:{...candidate}});
    save();closeModal();render();
  };
  window.v114DeleteLeave=function(id){
@@ -1049,7 +1062,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(!me||me.role!=='Manager')return v114BaseLeaveListHtml(rows);
    const sorted=rows.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))||(b.createdAt||0)-(a.createdAt||0));
    return sorted.length?'<div style="overflow:auto"><table><tr><th>Name</th><th>Role / Department</th><th>Date</th><th>Leave Type</th><th>Remark</th><th>Marked By</th><th>Action</th></tr>'+
-    sorted.map(l=>{const u=userSafe(l.emp),by=userSafe(l.by);return'<tr><td><b>'+esc(u.name)+'</b></td><td>'+esc(u.role+(u.department?' / '+u.department:''))+'</td><td>'+esc(l.date)+'</td><td>'+esc(periodLabel(l.period))+'</td><td>'+esc(l.remark||'—')+'</td><td>'+esc(by.name||l.by)+'</td><td><button class="blue" onclick="v114EditLeave(\''+esc(l.id)+'\')">EDIT</button></td></tr>'}).join('')+'</table></div>':'<div class="notice">No leave records.</div>';
+    sorted.map(l=>{const u=userSafe(l.emp),by=userSafe(l.by);return'<tr><td><b>'+esc(u.name)+'</b></td><td>'+esc(u.role+(u.department?' / '+u.department:''))+'</td><td>'+esc(l.date)+'</td><td>'+esc(leaveLabel(l))+'</td><td>'+esc(l.remark||'—')+'</td><td>'+esc(by.name||l.by)+'</td><td><button class="blue" onclick="v114EditLeave(\''+esc(l.id)+'\')">EDIT</button></td></tr>'}).join('')+'</table></div>':'<div class="notice">No leave records.</div>';
  };
  window.v114ManagerLeaveCorrection=true;
 
@@ -1321,7 +1334,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  function leaveTable(rows){
    const list=sorted(rows);
    return list.length?'<div class="v78-leave-table"><table><tr><th>Name</th><th>Role / Department</th><th>Date</th><th>Leave Type</th><th>Remark</th><th>Marked By</th></tr>'+
-     list.map(l=>{const u=person(l.emp),by=person(l.by);return'<tr><td><b>'+E(u.name||l.emp)+'</b></td><td>'+E((u.role||'')+(u.department?' / '+u.department:''))+'</td><td>'+E(l.date||'—')+'</td><td>'+E(label(l.period))+'</td><td>'+E(l.remark||'—')+'</td><td>'+E(by.name||l.by||'—')+'</td></tr>'}).join('')+
+     list.map(l=>{const u=person(l.emp),by=person(l.by);return'<tr><td><b>'+E(u.name||l.emp)+'</b></td><td>'+E((u.role||'')+(u.department?' / '+u.department:''))+'</td><td>'+E(l.date||'—')+'</td><td>'+E(window.v755LeaveLabel(l))+'</td><td>'+E(l.remark||'—')+'</td><td>'+E(by.name||l.by||'—')+'</td></tr>'}).join('')+
      '</table></div>':'<div class="notice">No leave records.</div>';
  }
 
@@ -1330,7 +1343,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const period=mode==='month'?new Date().toLocaleDateString(undefined,{month:'long',year:'numeric'}):new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'});
    const list=sorted(rows);
    const table=list.length?'<table><thead><tr><th>#</th><th>Name</th><th>Role / Department</th><th>Date</th><th>Leave Type</th><th>Remark</th><th>Marked By</th></tr></thead><tbody>'+
-     list.map((l,i)=>{const u=person(l.emp),by=person(l.by);return'<tr><td>'+(i+1)+'</td><td>'+E(u.name||l.emp)+'</td><td>'+E((u.role||'')+(u.department?' / '+u.department:''))+'</td><td>'+E(l.date||'—')+'</td><td>'+E(label(l.period))+'</td><td>'+E(l.remark||'—')+'</td><td>'+E(by.name||l.by||'—')+'</td></tr>'}).join('')+
+     list.map((l,i)=>{const u=person(l.emp),by=person(l.by);return'<tr><td>'+(i+1)+'</td><td>'+E(u.name||l.emp)+'</td><td>'+E((u.role||'')+(u.department?' / '+u.department:''))+'</td><td>'+E(l.date||'—')+'</td><td>'+E(window.v755LeaveLabel(l))+'</td><td>'+E(l.remark||'—')+'</td><td>'+E(by.name||l.by||'—')+'</td></tr>'}).join('')+
      '</tbody></table>':'<p>No leave records.</p>';
    return '<!doctype html><html><head><meta charset="utf-8"><title>'+E(title)+'</title><style>'+
      '@page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;color:#111;font-size:11px}h1{font-size:20px;margin:0 0 4px}h2{font-size:13px;margin:0 0 14px;color:#444}.summary{margin:8px 0 12px;font-weight:700}table{width:100%;border-collapse:collapse}th,td{border:1px solid #777;padding:6px;vertical-align:top}th{background:#eee;text-align:left}footer{margin-top:18px;font-size:9px;color:#666}</style></head><body>'+
@@ -2518,13 +2531,13 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  const key=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
  const active=()=>((state.leaves||[]).filter(l=>l&&!l.cancelled));const person=id=>{try{return user(id)||{name:id,department:''}}catch(_){return{name:id,department:''}}};const label=p=>p==='AM'?'Morning Half Day':p==='PM'?'Afternoon Half Day':'Full Day';
  const today=()=>active().filter(l=>l.date===key(new Date()));const month=()=>{const d=new Date(),p=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-';return active().filter(l=>String(l.date||'').startsWith(p))};
- const table=rows=>rows.length?'<div class="v133-leave-scroll"><table><tr><th>Employee</th><th>Department</th><th>Date</th><th>Leave</th><th>Remark</th><th>Action</th></tr>'+rows.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(l=>{const u=person(l.emp);return'<tr><td><b>'+E(u.name)+'</b></td><td>'+E(u.department||'—')+'</td><td>'+E(l.date)+'</td><td>'+E(label(l.period))+'</td><td>'+E(l.remark||'—')+'</td><td><button class="v133-edit-leave" onclick="v114EditLeave(\''+E(l.id)+'\')">Edit</button></td></tr>'}).join('')+'</table></div>':'<div class="notice">No leave records.</div>';
+ const table=rows=>rows.length?'<div class="v133-leave-scroll"><table><tr><th>Employee</th><th>Department</th><th>Date</th><th>Leave</th><th>Remark</th><th>Action</th></tr>'+rows.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(l=>{const u=person(l.emp);return'<tr><td><b>'+E(u.name)+'</b></td><td>'+E(u.department||'—')+'</td><td>'+E(l.date)+'</td><td>'+E(window.v755LeaveLabel(l))+'</td><td>'+E(l.remark||'—')+'</td><td><button class="v133-edit-leave" onclick="v114EditLeave(\''+E(l.id)+'\')">Edit</button></td></tr>'}).join('')+'</table></div>':'<div class="notice">No leave records.</div>';
  window.v133LeaveEmployee='';
  window.v133LeaveRows=function(){const all=month();return window.v133LeaveEmployee?all.filter(x=>String(x.emp)===String(window.v133LeaveEmployee)):all};
  window.v133PrintLeave=function(){const rows=window.v133LeaveRows(),title=window.v133LeaveEmployee?'Employee Leave Report':'Monthly Leave Report';const w=window.open('','_blank');if(!w)return alert('Allow pop-ups to print the leave report.');w.document.write('<html><head><title>'+title+'</title><style>body{font-family:Arial;padding:24px}h2{margin-bottom:4px}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{border:1px solid #bbb;padding:8px;text-align:left}th{background:#eee}</style></head><body><h2>ZUKAIT AUTO</h2><div>'+title+'</div>'+table(rows)+'</body></html>');w.document.close();w.focus();setTimeout(()=>w.print(),250)};
- window.v133ShareLeave=function(){const rows=window.v133LeaveRows();if(!rows.length)return alert('No leave records to share.');const lines=rows.map(l=>{const u=person(l.emp);return [u.name,l.date,label(l.period),l.remark||'—'].join(' | ')});const msg='ZUKAIT AUTO - Leave Report\\n'+lines.join('\\n');const url='https://wa.me/?text='+encodeURIComponent(msg);window.open(url,'_blank')};
+ window.v133ShareLeave=function(){const rows=window.v133LeaveRows();if(!rows.length)return alert('No leave records to share.');const lines=rows.map(l=>{const u=person(l.emp);return [u.name,l.date,window.v755LeaveLabel(l),l.remark||'—'].join(' | ')});const msg='ZUKAIT AUTO - Leave Report\\n'+lines.join('\\n');const url='https://wa.me/?text='+encodeURIComponent(msg);window.open(url,'_blank')};
  window.v133FilterLeave=function(v){window.v133LeaveEmployee=v||'';window.v133OpenManagerLeave(true)};
- window.v133OpenManagerLeave=function(preserve){if(!me||me.role!=='Manager')return;if(!preserve)window.v133LeaveEmployee='';const t=today(),m=month(),staff=(users||[]).filter(u=>u&&(u.role==='Employee'||u.role==='Supervisor')),sel=window.v133LeaveEmployee,filtered=sel?m.filter(x=>String(x.emp)===String(sel)):m,days=filtered.reduce((n,l)=>n+(l.period==='FULL'?1:.5),0);openModal('<div class="section-title"><h2>🗓 Leave Management</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="v133-leave-tools"><label>Employee<br><select onchange="v133FilterLeave(this.value)"><option value="">All Employees</option>'+staff.map(u=>'<option value="'+E(u.id)+'" '+(String(u.id)===String(sel)?'selected':'')+'>'+E(u.name)+'</option>').join('')+'</select></label><div class="v133-leave-actions"><button onclick="v133PrintLeave()">🖨 PRINT / PDF</button><button onclick="v133ShareLeave()">◉ SEND WHATSAPP</button></div></div><div class="v133-leave-summary"><div><span>ON LEAVE TODAY</span><b>'+new Set(t.filter(x=>!sel||String(x.emp)===String(sel)).map(x=>x.emp)).size+'</b></div><div><span>SELECTED MONTH</span><b>'+days.toFixed(1).replace('.0','')+' days</b></div></div><h3>This Month</h3>'+table(filtered))};
+ window.v133OpenManagerLeave=function(preserve){if(!me||me.role!=='Manager')return;if(!preserve)window.v133LeaveEmployee='';const t=today(),m=month(),staff=(users||[]).filter(u=>u&&(u.role==='Employee'||u.role==='Supervisor')),sel=window.v133LeaveEmployee,filtered=sel?m.filter(x=>String(x.emp)===String(sel)):m,days=filtered.reduce((n,l)=>n+window.v755LeaveDays(l),0);openModal('<div class="section-title"><h2>🗓 Leave Management</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="v133-leave-tools"><label>Employee<br><select onchange="v133FilterLeave(this.value)"><option value="">All Employees</option>'+staff.map(u=>'<option value="'+E(u.id)+'" '+(String(u.id)===String(sel)?'selected':'')+'>'+E(u.name)+'</option>').join('')+'</select></label><div class="v133-leave-actions"><button onclick="v133PrintLeave()">🖨 PRINT / PDF</button><button onclick="v133ShareLeave()">◉ SEND WHATSAPP</button></div></div><div class="v133-leave-summary"><div><span>ON LEAVE TODAY</span><b>'+new Set(t.filter(x=>!sel||String(x.emp)===String(sel)).map(x=>x.emp)).size+'</b></div><div><span>SELECTED MONTH</span><b>'+days.toFixed(1).replace('.0','')+' days</b></div></div><h3>This Month</h3>'+table(filtered))};
  function apply(){if(!me||me.role!=='Manager')return;const root=document.getElementById('managerView');if(!root)return;const t=today(),count=new Set(t.map(x=>String(x.emp))).size;
    // V109 authority: remove every legacy Manager leave dashboard injection first.
    root.querySelectorAll('#v755LeaveControlRow,.v755-leave-control-row,.v133-manager-leave').forEach(x=>x.remove());
@@ -2642,11 +2655,11 @@ window.v2TogglePilotThisDevice=function(){
  function leavePrintHtml(){
    const rows=typeof window.v133LeaveRows==='function'?window.v133LeaveRows():[];
    const title=window.v133LeaveEmployee?'Employee Leave Report':'Monthly Leave Report';
-   const tr=rows.map(l=>{let u;try{u=user(l.emp)||{name:l.emp,department:''}}catch(_){u={name:l.emp,department:''}};const label=l.period==='AM'?'Morning Half Day':l.period==='PM'?'Afternoon Half Day':'Full Day';return '<tr><td>'+esc(u.name)+'</td><td>'+esc(u.department||'—')+'</td><td>'+esc(l.date)+'</td><td>'+esc(label)+'</td><td>'+esc(l.remark||'—')+'</td></tr>'}).join('');
+   const tr=rows.map(l=>{let u;try{u=user(l.emp)||{name:l.emp,department:''}}catch(_){u={name:l.emp,department:''}};const label=window.v755LeaveLabel(l);return '<tr><td>'+esc(u.name)+'</td><td>'+esc(u.department||'—')+'</td><td>'+esc(l.date)+'</td><td>'+esc(label)+'</td><td>'+esc(l.remark||'—')+'</td></tr>'}).join('');
    return '<html><head><title>'+title+'</title><style>body{font-family:Arial;padding:24px}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{border:1px solid #bbb;padding:8px;text-align:left}th{background:#eee}</style></head><body><h2>ZUKAIT AUTO</h2><h3>'+title+'</h3><table><tr><th>Employee</th><th>Department</th><th>Date</th><th>Leave</th><th>Remark</th></tr>'+(tr||'<tr><td colspan="5">No leave records.</td></tr>')+'</table></body></html>'
  }
  window.v133PrintLeave=function(){window.v112PrintHtml(leavePrintHtml(),'Leave Report')};
- window.v133ShareLeave=function(){const rows=typeof window.v133LeaveRows==='function'?window.v133LeaveRows():[];if(!rows.length)return alert('No leave records to share.');const lines=rows.map(l=>{let u;try{u=user(l.emp)||{name:l.emp}}catch(_){u={name:l.emp}};const label=l.period==='AM'?'Morning Half Day':l.period==='PM'?'Afternoon Half Day':'Full Day';return [u.name,l.date,label,l.remark||'—'].join(' | ')});window.v112ShareText('ZUKAIT AUTO - Leave Report\\n'+lines.join('\\n'))};
+ window.v133ShareLeave=function(){const rows=typeof window.v133LeaveRows==='function'?window.v133LeaveRows():[];if(!rows.length)return alert('No leave records to share.');const lines=rows.map(l=>{let u;try{u=user(l.emp)||{name:l.emp}}catch(_){u={name:l.emp}};const label=window.v755LeaveLabel(l);return [u.name,l.date,label,l.remark||'—'].join(' | ')});window.v112ShareText('ZUKAIT AUTO - Leave Report\\n'+lines.join('\\n'))};
  const oldOpen=window.v133OpenManagerLeave;
  if(typeof oldOpen==='function')window.v133OpenManagerLeave=function(){const r=oldOpen.apply(this,arguments);setTimeout(()=>{const modal=document.querySelector('.modal:not(.hidden),#modal:not(.hidden)')||document.querySelector('.modal');if(!modal)return;const head=modal.querySelector('.section-title');if(head&&!head.querySelector('.v112-back')){const b=document.createElement('button');b.className='secondary v112-back';b.textContent='← BACK';b.onclick=window.v112ManagerBack;head.appendChild(b)}},0);return r};
  window.v112ManagerActionAuthority=true;
@@ -3706,7 +3719,7 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  function covered(emp,from,to){
    const xs=(state.sessions||[]).filter(s=>s&&String(s.emp)===String(emp)&&s.start<to&&(s.end||Date.now())>from).map(s=>[Math.max(from,+s.start||0),Math.min(to,+(s.end||Date.now()))]);
    const leaves=(state.leaves||[]).filter(l=>l&&!l.cancelled&&String(l.emp)===String(emp));
-   for(const l of leaves){const p=String(l.date||'').split('-').map(Number);if(p.length!==3)continue;const d=new Date(p[0],p[1]-1,p[2]).getTime(),segs=l.period==='AM'?[[480,780]]:l.period==='PM'?[[900,1140]]:[[480,780],[900,1140]];for(const [a,b] of segs)xs.push([Math.max(from,d+a*60000),Math.min(to,d+b*60000)])}
+   for(const l of leaves){const p=String(l.date||'').split('-').map(Number);if(p.length!==3)continue;const d=new Date(p[0],p[1]-1,p[2]).getTime(),segs=l.period==='AM'?[[480,780]]:l.period==='PM'?[[900,1140]]:[[480,780],[900,1140]];for(const [a,b] of segs)xs.push([Math.max(from,d+a*60000,Number(l.startAt||0)),Math.min(to,d+b*60000)])}
    return merge(xs);
  }
  function uncovered(emp,from,to){

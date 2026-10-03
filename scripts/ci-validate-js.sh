@@ -36,6 +36,7 @@ node --check app/src/main/assets/v2/features/spare-parts/main_module.js
 node --check app/src/main/assets/v2/features/estimate/main_module.js
 node --check app/src/main/assets/v2/features/notifications/rules.js
 node --check app/src/main/assets/v2/features/reports/service.js
+node --check app/src/main/assets/v2/features/leave/rules.js
 node --check app/src/main/assets/v2/features/time/work_rules.js
 node --check app/src/main/assets/v2/features/time/work_events.js
 python - <<'PY'
