@@ -165,36 +165,42 @@
     alert('Password reset for '+id+'. The user must change this temporary password at next login.');
   };
 
-  window.addUserFromPopup=async function(){
+  window.createUserSecure=async function(){
     if(!me||me.role!=='Manager')return alert('Manager access required.');
+    const btn=document.querySelector('[data-create-user-button]');
     const id=(document.getElementById('newUserCode')?.value||'').trim().toUpperCase();
     const name=(document.getElementById('newUserName')?.value||'').trim();
     const role=document.getElementById('newUserRole')?.value||'Employee';
-    const department=document.getElementById('newUserDept')?.value||'';
+    let department=document.getElementById('newUserDept')?.value||'';
     const password=document.getElementById('newUserPassword')?.value||'';
     if(!id||!name||!password)return alert('Enter all required fields.');
     if(password.length<8)return alert('Initial password must be at least 8 characters.');
     if(user(id).role!=='Unknown')return alert('That User ID already exists.');
+    if(role==='Purchaser')department='Spare Parts';
     const managerPassword=prompt('Enter Manager password to create this user');
     if(managerPassword===null)return;
-    const r=await callAuth({
-      action:'manager_create',
-      manager_id:me.id,
-      manager_password:managerPassword,
-      user_id:id,
-      display_name:name,
-      role,
-      department,
-      password
-    });
-    if(!r.ok)return alert(authMessage(r));
-    users.push({id,name,role,department});
-    save();
-    if(typeof filterUserMgmt==='function')filterUserMgmt();
-    alert('User created. The initial password must be changed at first login.');
+    if(!managerPassword)return alert('Enter Manager password.');
+    if(btn){btn.disabled=true;btn.textContent='CREATING...';}
+    try{
+      const r=await callAuth({
+        action:'manager_create', manager_id:me.id, manager_password:managerPassword,
+        user_id:id, display_name:name, role, department, password
+      });
+      if(!r.ok)return alert(authMessage(r));
+      if(user(id).role==='Unknown')users.push({id,name,role,department});
+      save();
+      if(typeof filterUserMgmt==='function')filterUserMgmt();
+      alert('User created. The initial password must be changed at first login.');
+    }catch(err){
+      console.error('Create user failed',err);
+      alert(err?.message||'User could not be created. Please check the connection and try again.');
+    }finally{
+      if(btn&&document.body.contains(btn)){btn.disabled=false;btn.textContent='CREATE USER';}
+    }
   };
+  window.addUserFromPopup=window.createUserSecure;
 
-  window.confirmDeleteJob=async function(no){
+    window.confirmDeleteJob=async function(no){
     if(!me||me.role!=='Manager')return alert('Manager access required.');
     const j=job(no);
     const pw=document.getElementById('deleteJCPassword')?.value||'';
