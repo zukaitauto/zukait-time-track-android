@@ -22,14 +22,14 @@ assert.match(workflow,/if\(to==='FITTED'\)return role==='Manager'/,'Post-arrival
 assert.match(workflow,/if\(to==='SUPERVISOR_VERIFIED'\)return role==='Supervisor'\|\|role==='Manager'/,'Supervisor must retain physical-arrival verification authority');
 assert.match(workflow,/if\(to==='CUSTOMER_SETTLEMENT'\)return role==='Supervisor'\|\|role==='Manager'/,'Purchaser must not have customer-settlement authority');
 console.log('V2 Spare Parts hardening guard passed');
-assert.match(main,/if\(role\(\)!=='Manager'\)return;const rows=read\(\),list=/,'Manager correction save must remain Manager-only');
+assert.match(main,/if\(!\['Manager','Supervisor'\]\.includes\(role\(\)\)\)return;const rows=read\(\),list=/,'Audited correction save must allow Manager and Supervisor only');
 assert.match(main,/Correction reason is required\./,'Manager parts correction must require a reason');
-assert.match(main,/SPARE_PART_MANAGER_CORRECTED/,'Manager correction must emit an auditable server event');
+assert.match(main,/SPARE_PART_MANAGER_CORRECTED/,'Manager correction must emit an auditable server event');assert.match(main,/SPARE_PART_SUPERVISOR_CORRECTED/,'Supervisor correction must emit a distinct auditable server event');
 assert.match(main,/managerCorrectionAudit/,'Manager correction must retain before\/after audit history');
 assert.ok(main.includes('option value="RECEIVED"')&&main.includes('>Arrived</option>'),'Manager correction must allow Arrived status');
 assert.ok(main.includes('option value="FITTED"')&&main.includes('>Fitted</option>'),'Manager correction must allow Fitted status');
 
-assert.ok(main.includes("type==='SPARE_PART_MANAGER_CORRECTED'&&p.after"),'Manager correction events must hydrate authoritative state on every device');
+assert.ok(main.includes("['SPARE_PART_MANAGER_CORRECTED','SPARE_PART_SUPERVISOR_CORRECTED'].includes(type)&&p.after"),'Manager and Supervisor correction events must hydrate authoritative state on every device');
 assert.ok(main.includes("Object.assign(item,after);item.editRevision=Number(r.revision||0)"),'Manager correction hydration must apply after-state with revision protection');
 assert.ok(main.includes("after.status==='RECEIVED'&&!item.receivedAt"),'Manager Arrived correction must restore arrival metadata during hydration');
 assert.ok(main.includes("after.status==='FITTED'&&!item.fittedAt"),'Manager Fitted correction must restore fitted metadata during hydration');
