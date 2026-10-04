@@ -2,6 +2,12 @@ name: Estimate Module Check
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [ architecture-v2 ]
+    paths:
+      - 'app/src/main/assets/v2/features/estimate/**'
+      - 'tests/v2-estimate-*.mjs'
+      - '.github/workflows/estimate-check.yml'
   push:
     branches: [ architecture-v2 ]
     paths:
@@ -41,6 +47,10 @@ jobs:
           node tests/v2-estimate-functional.mjs
           node tests/v2-estimate-shared-sync.mjs
           node tests/legacy-closed-session-authority.mjs
+
+      - name: Run full regression suite before merging
+        if: github.event_name == 'pull_request'
+        run: bash scripts/ci-full-regression.sh
 
       - name: Install Android SDK packages
         shell: bash
