@@ -4,7 +4,7 @@ const DELETED_KEY='zukait_v2_spare_parts_deleted_v1';
 function deletedParts(){try{return JSON.parse(localStorage.getItem(DELETED_KEY)||'{}')}catch(_){return {}}}
 function rememberDeleted(id,at){const deleted=deletedParts();deleted[id]=at;localStorage.setItem(DELETED_KEY,JSON.stringify(deleted))}
 function read(){try{const deleted=deletedParts();return JSON.parse(localStorage.getItem(KEY)||'[]').map(list=>Object.assign({},list,{items:(list.items||[]).filter(item=>!item.deletedAt&&!deleted[item.id])}))}catch(_){return[]}}
-function write(v){localStorage.setItem(KEY,JSON.stringify(v));return v}
+function write(v){const deleted=deletedParts(),rows=v.map(list=>Object.assign({},list,{items:(list.items||[]).filter(item=>!item.deletedAt&&!deleted[item.id])}));localStorage.setItem(KEY,JSON.stringify(rows));return rows}
 function normalizeJobCard(v){return String(v||'').trim().toUpperCase()}
 function partKey(name,partNo=''){return [String(name||'').trim().toLowerCase().replace(/\s+/g,' '),String(partNo||'').trim().toUpperCase()].join('|')}
 function existingOpen(rows,jobCard){return rows.find(r=>normalizeJobCard(r.jobCard)===jobCard&&r.status!=='CLOSED')}
@@ -202,7 +202,7 @@ async function deleteItem(listNo,itemId){
  const at=new Date().toISOString(),revision=Number(item.editRevision||0)+1;
  const synced=await commitEvent({eventId:'spare-delete-'+itemId+'-'+revision,entityId:itemId,actorId:currentUser()?.id||null,type:'SPARE_PART_ITEM_EDITED',serverRevision:revision,payload:{partId:itemId,listNo,jobCard:list.jobCard,reason:'Removed from Parts List',before:Object.assign({},item),after:{deletedAt:at,deletedBy:currentUser()?.id||null}}});
  if(!synced.ok&&!synced.queued)return {ok:false,reason:'SYNC_FAILED',detail:synced.reason};
- rememberDeleted(itemId,at);return {ok:true,queued:!!synced.queued};
+ rememberDeleted(itemId,at);write(read());return {ok:true,queued:!!synced.queued};
 }
 async function deleteFromUI(listNo,itemId){
  if(!canManage())return alert('FORBIDDEN');const list=read().find(x=>x.listNo===listNo),item=list?.items?.find(x=>x.id===itemId);if(!item)return;
