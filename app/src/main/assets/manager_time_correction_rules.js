@@ -23,11 +23,10 @@ export function managerTimeCorrectionTransition(current,actor,request,at=Date.no
  let target=open[0]||null;
  if(target&&(String(target.assignmentId||'')!==assignmentId||String(target.job)!==String(a.job)))return fail('manager_time_other_job_running');
  if(managerCorrectionSessionToken(target)!==(request.expectedSessionToken??null))return fail('manager_time_session_changed');
- const proposedEnd=at;
  for(const s of sessions){
   if(target&&String(s.id)===String(target.id))continue;
   const ss=Number(s.start),se=Math.min(Number(s.end)||at,at);
-  if(Number.isFinite(ss)&&ss<proposedEnd&&se>startAt)return fail('manager_time_overlap');
+  if(Number.isFinite(ss)&&ss<at&&se>startAt)return fail('manager_time_overlap');
  }
  const data=JSON.parse(JSON.stringify(current));
  let session=null;
