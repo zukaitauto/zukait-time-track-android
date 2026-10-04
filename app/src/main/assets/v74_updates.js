@@ -3868,3 +3868,31 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  const st=document.createElement('style');st.id='v270OverdueStyle';st.textContent='.v270-overdue-control{background:linear-gradient(145deg,#fff4df,#ffe7b3)!important;border:1px solid #e4b85d!important;color:#603b00!important}.v270-overdue-control>span{font-weight:900!important}.v270-overdue-control>b{font-size:24px!important;color:#9a5200!important}.v270-overdue-control small{color:#79520d!important}.v270-over{color:#b42318}.v270-review-card{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}.v270-review-card>div{padding:12px;border:1px solid #cbd8e5;border-radius:12px;background:#f7fbff}.v270-review-card span{display:block;font-size:10px;font-weight:900;color:#52677a;text-transform:uppercase}.v270-review-card b{display:block;margin-top:5px;color:#102a43}.v270-review-card .over{background:#fff0f2;border-color:#efc2c9}.v270-review-card .over b{color:#a61b32}.v270-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.v270-actions button{min-height:42px}@media(max-width:620px){.v270-review-card{grid-template-columns:repeat(2,1fr)}.v270-actions button{flex:1 1 46%}}';document.head.appendChild(st);
  setTimeout(inject,0);window.v270OverdueReviewReady=true;
 })();
+
+
+/* V271 SUPERVISOR WORKSHOP MODULE ORDER + DISTINCT CARD IDENTITY — presentation only. */
+(function(){'use strict';
+ function card(root,re){return [...root.querySelectorAll('button')].find(b=>re.test((b.textContent||'').replace(/\s+/g,' ').trim()))||null}
+ function apply(){
+  if(!window.me||me.role!=='Supervisor')return;
+  const root=document.getElementById('supervisorView');if(!root)return;
+  const items=[
+   card(root,/\bESTIMATE\b/i),
+   card(root,/\bInvoice Entry\b/i),
+   card(root,/\bCONSUMABLES\b/i),
+   card(root,/\bSPARE PARTS\b/i),
+   card(root,/^QC\b/i),
+   card(root,/\bReady\s+to\s+Deliver\b/i),
+   card(root,/\bDelivered\s+Vehicles\b/i)
+  ];
+  const present=items.filter(Boolean);if(present.length<5)return;
+  const counts=new Map();present.forEach(x=>counts.set(x.parentElement,(counts.get(x.parentElement)||0)+1));
+  const grid=[...counts.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0];if(!grid||counts.get(grid)<5)return;
+  grid.classList.add('v271-workshop-grid');
+  items.forEach((x,i)=>{if(x&&x.parentElement===grid){x.classList.add('v271-workshop-card','v271-card-'+i);grid.appendChild(x)}});
+ }
+ window.v271ArrangeSupervisorModules=apply;
+ const prior=window.render;window.render=function(){const r=typeof prior==='function'?prior.apply(this,arguments):undefined;setTimeout(apply,0);return r};
+ if(!document.getElementById('v271SupervisorModuleStyle')){const s=document.createElement('style');s.id='v271SupervisorModuleStyle';s.textContent='#supervisorView .v271-workshop-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:13px 10px!important;align-items:stretch!important}#supervisorView .v271-workshop-card{width:100%!important;margin:0!important;min-height:112px!important;position:relative!important;border-radius:19px!important;padding:13px!important;text-align:left!important;box-shadow:inset 0 2px 1px #fff,0 5px 0 var(--v271-edge),0 10px 17px var(--v271-shadow)!important;border:1.5px solid var(--v271-edge)!important;background:linear-gradient(145deg,#fff,var(--v271-bg))!important;color:var(--v271-ink)!important}#supervisorView .v271-card-0{--v271-bg:#ccfbf1;--v271-edge:#2dd4bf;--v271-ink:#134e4a;--v271-shadow:#0f766e2b}#supervisorView .v271-card-1{--v271-bg:#ede9fe;--v271-edge:#a78bfa;--v271-ink:#5b21b6;--v271-shadow:#7c3aed29}#supervisorView .v271-card-2{--v271-bg:#ffe4ef;--v271-edge:#f5a6c6;--v271-ink:#831843;--v271-shadow:#db27772b}#supervisorView .v271-card-3{--v271-bg:#e0f2fe;--v271-edge:#38bdf8;--v271-ink:#075985;--v271-shadow:#0284c72b}#supervisorView .v271-card-4{--v271-bg:#e0e7ff;--v271-edge:#818cf8;--v271-ink:#3730a3;--v271-shadow:#4f46e52b}#supervisorView .v271-card-5{--v271-bg:#d1fae5;--v271-edge:#34d399;--v271-ink:#065f46;--v271-shadow:#0596692b}#supervisorView .v271-card-6{--v271-bg:#dbeafe;--v271-edge:#60a5fa;--v271-ink:#1e40af;--v271-shadow:#2563eb2b}#supervisorView .v271-workshop-card:before{display:grid;place-items:center;position:absolute;left:12px;top:50%;transform:translateY(-50%);width:39px;height:39px;border-radius:50%;background:#ffffffc9;border:1px solid var(--v271-edge);box-shadow:0 3px 7px var(--v271-shadow);font-size:20px}#supervisorView .v271-card-0:before{content:"🧾"}#supervisorView .v271-card-1:before{content:"📄"}#supervisorView .v271-card-2:before{content:"🎨"}#supervisorView .v271-card-3:before{content:"⚙️"}#supervisorView .v271-card-4:before{content:"✓"}#supervisorView .v271-card-5:before{content:"🚗"}#supervisorView .v271-card-6:before{content:"🚙"}#supervisorView .v271-workshop-card{padding-left:61px!important}#supervisorView .v271-workshop-card *{color:inherit!important}#supervisorView .v271-workshop-card>span:first-child{font-size:0!important;width:0!important;height:0!important;margin:0!important;border:0!important;box-shadow:none!important;background:none!important}#supervisorView .v271-workshop-card>span:first-child:after{content:none!important}@media(max-width:420px){#supervisorView .v271-workshop-card{min-height:104px!important;padding:10px 8px 10px 52px!important}#supervisorView .v271-workshop-card:before{left:8px;width:35px;height:35px;font-size:18px}}';document.head.appendChild(s)}
+ setTimeout(apply,0);window.v271SupervisorModuleOrderReady=true;
+})();
