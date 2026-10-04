@@ -50,6 +50,7 @@ jobs:
           cp -R app/src/main/assets/vehicle-logos _site/vehicle-logos
           cp app/src/main/assets/qc_delivery_rules.js _site/qc_delivery_rules.js
           cp app/src/main/assets/time_management_rules.js _site/time_management_rules.js
+          cp app/src/main/assets/manager_time_correction_rules.js _site/manager_time_correction_rules.js
           python3 - <<'PY'
           from html.parser import HTMLParser
           from pathlib import Path
