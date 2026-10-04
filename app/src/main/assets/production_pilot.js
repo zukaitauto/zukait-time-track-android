@@ -155,6 +155,22 @@
       root.querySelector('.v42-focus')?.remove();
       root.insertAdjacentHTML('afterbegin',focusHTML());
 
+      // ID001 is a system assignment: never hide it just because the local jobs
+      // collection has not received the synthetic ID001 Job Card yet.
+      const openID001=(state.assign||[]).filter(a=>a&&a.emp===me.id&&a.job===HOLD&&!a.cancelled&&!a.completed)
+        .sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0))[0]||null;
+      if(openID001&&!activeSession(me.id)){
+        const jobsPanel=root.querySelector('.employee-jobs');
+        const grid=jobsPanel?.querySelector('.grid');
+        const alreadyShown=grid&&[...grid.querySelectorAll('.job-card')].some(card=>(card.textContent||'').includes(HOLD));
+        if(grid&&!alreadyShown){
+          const ac=actualFor(openID001),sg=Number(openID001.suggested||0),rem=Math.max(0,sg-ac);
+          const card=document.createElement('div');card.className='job-card id001-system-card';card.dataset.assignmentId=openID001.id||'';
+          card.innerHTML='<h4>ID001 <span class="status new">NEW</span></h4><p>Ideal / Preliminary Time Card<br><b>System Card</b></p><div class="time-panel"><div class="time-box time-suggested">Suggested<div class="time-value">'+fmt(sg)+'</div></div><div class="time-box time-actual">Actual<div class="time-value">'+fmt(ac)+'</div></div><div class="time-box time-remaining">Remaining<div class="time-value">'+fmt(rem)+'</div></div><div class="time-box time-exceeded">Exceeded<div class="time-value">0m</div></div></div><button class="green" onclick="startAssignment(\''+String(openID001.id||'').replace(/'/g,"\\'")+'\')">Start ID001</button>';
+          const empty=grid.querySelector('p.muted');if(empty)empty.remove();grid.prepend(card);
+        }
+      }
+
       const oldCurrent=root.querySelector('.employee-current');
       if(oldCurrent)oldCurrent.style.display='none';
 
