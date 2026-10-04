@@ -3949,7 +3949,7 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
    attention.forEach(b=>{if(b!==tile)b.style.display='none'});
    const old=root.querySelector('#v270OverdueTile');if(old&&old!==tile)old.style.display='none';
    buttons.filter(b=>/Over\s*-?\s*Allocated/i.test((b.textContent||'').replace(/\s+/g,' ').trim())).forEach(b=>{const perf=b.closest('.v123-manager-performance');if(!perf)b.style.display='none'});
-   const perfOver=buttons.find(b=>/Over\s*Allocated/i.test((b.textContent||'').replace(/\s+/g,' ').trim())&&b.closest('.v123-manager-performance'));if(perfOver){perfOver.onclick=e=>{e.preventDefault();window.v273OpenTimeAttention('over')};const s=perfOver.querySelector('span');if(s)s.textContent='Time Attention';const b=perfOver.querySelector('b');if(b)b.textContent=uniqueCount()}
+   const perfOver=buttons.find(b=>/Over\s*Allocated/i.test((b.textContent||'').replace(/\s+/g,' ').trim())&&b.closest('.v123-manager-performance'));if(perfOver){perfOver.style.display='none'}
  }
  window.v273SettleTimeAttention=settle;
  const oldInject=window.v270Inject;window.v270Inject=function(){const r=typeof oldInject==='function'?oldInject.apply(this,arguments):undefined;setTimeout(settle,0);return r};
