@@ -1,8 +1,8 @@
 {
-  "versionName": "V267",
-  "versionCode": 230,
+  "versionName": "V268",
+  "versionCode": 231,
   "approvedForStaff": true,
   "approvedAt": "2026-10-04",
-  "sourceCommit": "d327ee5e552e3c938d76f4aeff8114f80066bdab",
-  "publishNonce": "release-v267-20261004-approved-estimate-layout"
+  "sourceCommit": "c608c04ad3527a643d015affc77e8fe7476c19c9",
+  "publishNonce": "release-v268-20261004-invoice-profit-header"
 }
