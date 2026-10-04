@@ -9,13 +9,13 @@ assert.equal(api.addItem('PL001',{name:'Clip',qty:3}).ok,true);assert.equal(api.
 assert.equal(typeof api.openManagerEditItem,'function');assert.equal(typeof api.saveManagerItemEdit,'function');
 await api.deleteFromUI('PL001','b');assert.equal(api.partsSummary('JC1').count,3);assert.equal(events.length,0);
 reject=true;assert.equal((await api.deleteItem('PL001','b')).reason,'SYNC_FAILED');assert.equal(api.partsSummary('JC1').count,3);reject=false;
-assert.equal((await api.deleteItem('PL001','b')).ok,true);assert.equal(api.partsSummary('JC1').count,2);assert.equal(api.reportRows().some(x=>x.name==='Lamp'),false);
+assert.equal((await api.deleteItem('PL001','b')).ok,true);assert.equal(api.partsSummary('JC1').count,2);assert.equal(api.reportRows().some(x=>x.name==='Lamp'),false);assert.equal(JSON.parse(data.get(key))[0].items.some(x=>x.id==='b'),false,'shared cache used by expense reports must omit deleted items');
 assert.equal(api.addItem('PL001',{name:'Lamp',qty:1}).ok,true);assert.equal(api.partsSummary('JC1').count,3);
 box.window.me.role='Purchaser';assert.equal((await api.deleteItem('PL001','a')).reason,'FORBIDDEN');box.window.me.role='Denter';assert.equal((await api.deleteItem('PL001','a')).reason,'FORBIDDEN');
 box.window.me.role='Supervisor';box.navigator.onLine=false;const queued=[];box.window.zukaitV2.queue={enqueue:e=>queued.push(e)};assert.equal((await api.deleteItem('PL001','a')).ok,true);assert.equal(queued.length,1);assert.equal(api.partsSummary('JC1').count,2);
 data.clear();api.hydrateFromServerRows([...seed[0].items.map((item,i)=>({event_type:'SPARE_PART_LISTED',sort_time:'2026-10-01T00:00:0'+i+'Z',payload:{...item,partId:item.id,listNo:'PL001',jobCard:'JC1'}})),...events.map(e=>({...e,event_type:e.type,revision:e.serverRevision,sort_time:'2026-10-04T00:00:00Z'}))]);
 assert.equal(api.partsSummary('JC1').count,1);assert.equal(api.reportRows()[0].name,'Bumper');
-api.hydrateFromServerRows(seed[0].items.map(item=>({event_type:'SPARE_PART_LISTED',sort_time:'2026-10-01T00:00:00Z',payload:{...item,partId:item.id,listNo:'PL001',jobCard:'JC1'}})));assert.equal(api.partsSummary('JC1').count,1);
+api.hydrateFromServerRows(seed[0].items.map(item=>({event_type:'SPARE_PART_LISTED',sort_time:'2026-10-01T00:00:00Z',payload:{...item,partId:item.id,listNo:'PL001',jobCard:'JC1'}})));assert.equal(api.partsSummary('JC1').count,1);assert.equal(JSON.parse(data.get(key))[0].items.some(x=>x.id==='b'),false,'server refresh must keep the shared cache free of deleted items');
 data.set(key,JSON.stringify([{...seed[0],status:'CLOSED'}]));assert.equal((await api.deleteItem('PL001','a')).reason,'LIST_CLOSED');
 const source=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8');assert.match(source,/deleteFromUI\(this.dataset.list,this.dataset.item\)/);assert.match(source,/Existing parts stay in place/);
 console.log('Parts list: append, edit availability, deletion, permissions, confirmation, rollback, offline queue and replay passed');
