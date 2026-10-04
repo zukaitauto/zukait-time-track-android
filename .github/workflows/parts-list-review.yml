@@ -1,0 +1,57 @@
+name: Parts List Review APK
+
+on:
+  push:
+    branches: [feature/parts-list-edit-delete]
+  pull_request:
+    branches: [architecture-v2]
+    paths:
+      - 'app/src/main/assets/v2/features/spare-parts/**'
+      - 'tests/v2-spare-parts-edit-delete.mjs'
+      - '.github/workflows/parts-list-review.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parts-list-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Validate application scripts
+        run: bash scripts/ci-validate-js.sh
+      - name: Run full regression checks
+        run: bash scripts/ci-full-regression.sh
+      - name: Check production assets
+        run: bash scripts/ci-check-production-assets.sh
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build review APKs
+        run: gradle --no-daemon assembleDebug assembleRelease
+      - name: Upload debug APK for testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: PARTS_LIST_REVIEW_DEBUG_APK
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload unsigned release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PARTS_LIST_REVIEW_UNSIGNED_APK
+          path: app/build/outputs/apk/release/*unsigned.apk
+          if-no-files-found: error
+          retention-days: 14
