@@ -1,8 +1,8 @@
 {
-  "versionName": "V271",
-  "versionCode": 234,
+  "versionName": "V272",
+  "versionCode": 235,
   "approvedForStaff": true,
   "approvedAt": "2026-10-04",
-  "sourceCommit": "0f1402df76326b6d667aeea0d1fe498372e3efc6",
-  "publishNonce": "release-v271-20261004-spare-parts-modernization"
+  "sourceCommit": "0b56c5c31290c4f42d61d67c8be9424dfceec128",
+  "publishNonce": "release-v272-20261004-spare-parts-ui-routing-fix"
 }
