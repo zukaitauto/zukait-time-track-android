@@ -1,8 +1,8 @@
 {
-  "versionName": "V265",
-  "versionCode": 228,
+  "versionName": "V266",
+  "versionCode": 229,
   "approvedForStaff": true,
-  "approvedAt": "2026-10-03",
-  "sourceCommit": "3fbd5477c506969aa0d90794e1c43625855f06ac",
-  "publishNonce": "release-v265-20261003-overdue-time-review"
+  "approvedAt": "2026-10-04",
+  "sourceCommit": "59038eac40d57f87fa124d9004706a7fac650b30",
+  "publishNonce": "release-v266-20261004-parts-list-edit-delete"
 }
