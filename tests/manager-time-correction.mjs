@@ -27,6 +27,6 @@ assert.match(ui,/Correct start time/,'manager dashboard has a start correction e
 assert.match(ui,/Reason \(required\)/,'correction reason is required in the manager form');
 assert.match(cloud,/action:'manager_time_correction'/,'client calls the dedicated correction action');
 assert.match(api,/action === "manager_time_correction"/,'server exposes the correction action');
-assert.match(api,/managerTimeCorrectionTransition\(current,user,body,Date\.now\(\)\)/,'server validates against current state');
+assert.match(api,/managerTimeCorrectionTransition\(current\.data,user,body,Date\.now\(\)\)/,'server validates against current state');
 assert.match(pages,/manager_time_correction_rules\.js _site\/manager_time_correction_rules\.js/,'Pages deploys the shared correction rule module');
 console.log('Manager time correction rule and integration checks passed');
