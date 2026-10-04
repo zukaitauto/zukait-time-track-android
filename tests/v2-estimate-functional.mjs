@@ -234,3 +234,11 @@ assert.equal(state.estimates[0].customerSuppliedParts,'Headlamp\nBracket','Toggl
 ctx.document.getElementById=()=>null;
 ctx.window.__zukaitEstimateCurrent='';
 console.log('V2 Estimate optional customer parts checkbox and simplified presentation: ok');
+
+// Print-only blank lines must not become saved items or alter totals.
+assert.equal((plPrintable.match(/class="blank-print-row"/g)||[]).length,12);
+assert.equal((printable.match(/class="blank-print-row"/g)||[]).length,13);
+assert.ok(!longPl.includes('class="blank-print-row"') || (longPl.match(/class="blank-print-row"/g)||[]).length===7);
+assert.match(branded,/size:A4;margin:6mm/);
+assert.equal(api.totals(state.estimates[0]).total,210);
+console.log('V2 Estimate eight-line tables, compact margins and unchanged totals: ok');
