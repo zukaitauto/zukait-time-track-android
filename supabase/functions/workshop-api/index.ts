@@ -170,15 +170,16 @@ function cloneValue<T>(value: T): T {
 // A delayed legacy client must not reopen work that another device already paused.
 // Only synthetic overtime sessions absent from the current server snapshot are removed.
 function preserveClosedSessions(candidate: any, current: any): any {
-  const closed = new Map((current?.sessions || []).filter((s: any) => Number(s?.end || 0) > 0).map((s: any) => [String(s.id),s]));
+  const closed = new Map((current?.sessions || []).filter((s: any) => Number(s?.end || 0) > 0 || Number(s?.managerStartCorrectedAt || 0) > 0).map((s: any) => [String(s.id),s]));
   candidate.sessions = (candidate?.sessions || []).map((s: any) => {
     const authoritative: any = closed.get(String(s?.id || ""));
     // A stale device can also hold an earlier end value. Once the server has
     // closed this session, its terminal fields remain authoritative; a real
     // restart must create a new session ID.
     return authoritative
-      ? {...s,end:authoritative.end,paused:authoritative.paused,autoPausedAt:authoritative.autoPausedAt,
-         pauseReason:authoritative.pauseReason,closeReason:authoritative.closeReason,
+      ? {...s,
+         ...(Number(authoritative.end || 0) > 0 ? {end:authoritative.end,paused:authoritative.paused,autoPausedAt:authoritative.autoPausedAt,
+           pauseReason:authoritative.pauseReason,closeReason:authoritative.closeReason} : {}),
          ...(Number(authoritative.managerStartCorrectedAt)>0?{start:authoritative.start,managerStartCorrectedAt:authoritative.managerStartCorrectedAt,managerStartCorrectedBy:authoritative.managerStartCorrectedBy}: {})}
       : s;
   });
