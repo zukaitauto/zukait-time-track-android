@@ -3,15 +3,33 @@
   const PUBLISHABLE_KEY='sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A';
   const SESSION_KEY='zukait_secure_session_v42';
   let restoring=false;
+  let nativeTokenCache='';
 
   function savedSession(){
-    try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch(_){return null}
+    try{
+      const s=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');
+      if(!s)return null;
+      if(s.token){
+        nativeTokenCache=String(s.token);
+        try{AndroidBridge.saveSecureSessionToken(nativeTokenCache)}catch(_){}
+        delete s.token;
+        localStorage.setItem(SESSION_KEY,JSON.stringify(s));
+      }
+      if(!nativeTokenCache){try{nativeTokenCache=String(AndroidBridge.getSecureSessionToken()||'')}catch(_){}}
+      return Object.assign({},s,{token:nativeTokenCache});
+    }catch(_){return null}
   }
   function saveSession(token,user){
     if(!token||!user)return;
-    localStorage.setItem(SESSION_KEY,JSON.stringify({token,user,savedAt:Date.now()}));
+    nativeTokenCache=String(token);
+    try{AndroidBridge.saveSecureSessionToken(nativeTokenCache)}catch(_){}
+    localStorage.setItem(SESSION_KEY,JSON.stringify({user,savedAt:Date.now()}));
   }
-  function clearSession(){localStorage.removeItem(SESSION_KEY)}
+  function clearSession(){
+    nativeTokenCache='';
+    try{AndroidBridge.clearSecureSessionToken()}catch(_){}
+    localStorage.removeItem(SESSION_KEY);
+  }
   function token(){return savedSession()?.token||''}
 
   async function callAuth(payload){
