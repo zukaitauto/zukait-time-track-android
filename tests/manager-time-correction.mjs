@@ -17,4 +17,16 @@ data=fixture();data.sessions=[{id:'S1',assignmentId:'A1',job:'12029',emp:'EMP019
 data=fixture();data.sessions=[{id:'OTHER',assignmentId:'A2',job:'12030',emp:'EMP019',start:Date.parse('2026-10-04T06:30:00Z')}];req=command(data,'mtc-323e4567-e89b-42d3-a456-426614174000');assert.equal(transition(data,manager,req,at).code,'manager_time_other_job_running');
 data=fixture();data.sessions=[{id:'OLD',assignmentId:'A2',job:'12030',emp:'EMP019',start:Date.parse('2026-10-04T05:00:00Z'),end:Date.parse('2026-10-04T06:00:00Z')}];req=command(data,'mtc-423e4567-e89b-42d3-a456-426614174000');assert.equal(transition(data,manager,req,at).code,'manager_time_overlap');
 data=fixture();data.assign[0].completed=true;req=command(data,'mtc-523e4567-e89b-42d3-a456-426614174000');assert.equal(transition(data,manager,req,at).code,'manager_time_assignment_inactive');
-console.log('Manager time correction rule checks passed');
+const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const ui=fs.readFileSync('app/src/main/assets/manager_time_correction.js','utf8');
+const cloud=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
+const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+const pages=fs.readFileSync('.github/workflows/pages.yml','utf8');
+assert.match(html,/<script type="module" src="manager_time_correction\.js\?v=1"><\/script>/,'manager correction UI is loaded');
+assert.match(ui,/Correct start time/,'manager dashboard has a start correction entry');
+assert.match(ui,/Reason \(required\)/,'correction reason is required in the manager form');
+assert.match(cloud,/action:'manager_time_correction'/,'client calls the dedicated correction action');
+assert.match(api,/action === "manager_time_correction"/,'server exposes the correction action');
+assert.match(api,/managerTimeCorrectionTransition\(current,user,body,Date\.now\(\)\)/,'server validates against current state');
+assert.match(pages,/manager_time_correction_rules\.js _site\/manager_time_correction_rules\.js/,'Pages deploys the shared correction rule module');
+console.log('Manager time correction rule and integration checks passed');
