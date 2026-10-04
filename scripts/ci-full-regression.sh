@@ -14,6 +14,7 @@ node tests/live-status-authority.mjs
 node tests/paused-menu-consistency.mjs
 node tests/qc-delivery-authority.mjs
 node tests/invoice-entry.mjs
+node tests/job360-profit-loss.mjs
 node tests/consumables-backend-security.mjs
 node tests/v128-costing-safety.mjs
 node tests/registration-authority.mjs
