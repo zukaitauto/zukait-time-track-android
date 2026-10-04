@@ -1,8 +1,8 @@
 {
-  "versionName": "V269",
-  "versionCode": 232,
+  "versionName": "V270",
+  "versionCode": 233,
   "approvedForStaff": true,
   "approvedAt": "2026-10-04",
-  "sourceCommit": "997f9a996cf98a57705c9287af14b6cdf901f8c3",
-  "publishNonce": "release-v269-20261004-professional-estimate-a4"
+  "sourceCommit": "4f1419271c550557151d8a1fe2cfd13852eeb1f7",
+  "publishNonce": "release-v270-20261004-overdue-time-review"
 }
