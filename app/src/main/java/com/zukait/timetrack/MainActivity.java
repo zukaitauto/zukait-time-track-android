@@ -82,6 +82,7 @@ public class MainActivity extends Activity {
     private boolean pendingNativeVoiceNote = false;
     private MediaRecorder voiceNoteRecorder;
     private File voiceNoteFile;
+    private static final long MAX_VOICE_NOTE_BYTES = 8L * 1024L * 1024L;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -394,6 +395,7 @@ public class MainActivity extends Activity {
                     pdfView.setWebViewClient(new android.webkit.WebViewClient() {
                         @Override
                         public void onPageFinished(WebView view, String url) {
+                            android.print.pdf.PrintedPdfDocument document = null;
                             try {
                                 PrintAttributes attrs = new PrintAttributes.Builder()
                                         .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
@@ -402,8 +404,7 @@ public class MainActivity extends Activity {
                                         .setColorMode(PrintAttributes.COLOR_MODE_COLOR)
                                         .build();
 
-                                android.print.pdf.PrintedPdfDocument document =
-                                        new android.print.pdf.PrintedPdfDocument(MainActivity.this, attrs);
+                                document = new android.print.pdf.PrintedPdfDocument(MainActivity.this, attrs);
 
                                 android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
                                 int viewWidth = Math.max(1080, dm.widthPixels);
@@ -439,6 +440,7 @@ public class MainActivity extends Activity {
                                     document.writeTo(out);
                                 }
                                 document.close();
+                                document = null;
                                 try { pdfView.destroy(); } catch (Exception ignored) {}
 
                                 Uri uri = FileProvider.getUriForFile(MainActivity.this,
@@ -467,8 +469,10 @@ public class MainActivity extends Activity {
                                 startActivity(Intent.createChooser(share, whatsappOnly ? "Share Estimate PDF" : "Share PDF"));
                             } catch (Exception e) {
                                 android.util.Log.e("ZukaitPdf", "Unable to create/share PDF", e);
-                                try { pdfView.destroy(); } catch (Exception ignored) {}
                                 android.widget.Toast.makeText(MainActivity.this, "PDF sharing failed", android.widget.Toast.LENGTH_LONG).show();
+                            } finally {
+                                if (document != null) { try { document.close(); } catch (Exception ignored) { } }
+                                try { pdfView.stopLoading(); pdfView.setWebViewClient(null); pdfView.removeAllViews(); pdfView.destroy(); } catch (Exception ignored) { }
                             }
                         }
                     });
@@ -620,6 +624,7 @@ public class MainActivity extends Activity {
             notifyNativeVoiceNoteToWeb("", "audio/mp4", "");
         } catch (Exception e) {
             releaseVoiceNoteRecorder();
+            if (voiceNoteFile != null) { try { voiceNoteFile.delete(); } catch (Exception ignored) { } voiceNoteFile = null; }
             notifyNativeVoiceNoteToWeb("", "audio/mp4", "Microphone recorder could not start: " + e.getClass().getSimpleName());
         }
     }
@@ -637,8 +642,14 @@ public class MainActivity extends Activity {
             notifyNativeVoiceNoteToWeb("", "audio/mp4", "No voice audio was recorded. Please try again.");
             return;
         }
+        if (voiceNoteFile.length() > MAX_VOICE_NOTE_BYTES) {
+            notifyNativeVoiceNoteToWeb("", "audio/mp4", "Voice note is too long. Please record a shorter note.");
+            try { voiceNoteFile.delete(); } catch (Exception ignored) { }
+            voiceNoteFile = null;
+            return;
+        }
         try (FileInputStream in = new FileInputStream(voiceNoteFile);
-             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+             ByteArrayOutputStream out = new ByteArrayOutputStream((int) Math.min(voiceNoteFile.length(), MAX_VOICE_NOTE_BYTES))) {
             byte[] buffer = new byte[8192];
             int n;
             while ((n = in.read(buffer)) > 0) out.write(buffer, 0, n);
@@ -647,7 +658,7 @@ public class MainActivity extends Activity {
         } catch (Exception e) {
             notifyNativeVoiceNoteToWeb("", "audio/mp4", "Voice note could not be prepared.");
         } finally {
-            voiceNoteFile.delete();
+            if (voiceNoteFile != null) { try { voiceNoteFile.delete(); } catch (Exception ignored) { } }
             voiceNoteFile = null;
         }
     }
@@ -1398,7 +1409,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        webView.saveState(outState);
+        if (webView != null) webView.saveState(outState);
         super.onSaveInstanceState(outState);
     }
 
@@ -1408,6 +1419,12 @@ public class MainActivity extends Activity {
         cancelJavaScriptDialogs();
         if (updateProgressRunnable != null) updateHandler.removeCallbacks(updateProgressRunnable);
         if (updateReceiver != null) { try { unregisterReceiver(updateReceiver); } catch (Exception ignored) { } }
+        if (pendingPermissionRequest != null) {
+            try { pendingPermissionRequest.deny(); } catch (Exception ignored) { }
+            pendingPermissionRequest = null;
+        }
+        pendingNativeVoice = false;
+        pendingNativeVoiceNote = false;
         if (speechRecognizer != null) { try { speechRecognizer.destroy(); } catch (Exception ignored) { } speechRecognizer = null; }
         if (voiceNoteRecorder != null) stopNativeVoiceNoteInternal(true);
         if (webView != null) {
