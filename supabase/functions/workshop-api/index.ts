@@ -171,7 +171,7 @@ function preserveManagerTimeAuthority(candidate: any, current: any): any {
   for (const key of ['sessions','assign'] as const) {
     const rows = Array.isArray(candidate[key]) ? candidate[key] : [];
     for (const row of current[key] || []) {
-      if (!(key === 'sessions' ? row.managerTimeRevision : row.managerTimeCancellation && row.cancelled)) continue;
+      if (!(key === 'sessions' ? row.managerTimeRevision || row.managerTimeUpdatedAt : row.managerTimeCancellation && row.cancelled)) continue;
       const i = rows.findIndex((x:any) => String(x?.id) === String(row.id));
       if (i < 0) rows.push(cloneValue(row));
       else rows[i] = cloneValue(row);
@@ -179,6 +179,7 @@ function preserveManagerTimeAuthority(candidate: any, current: any): any {
     candidate[key] = rows;
   }
   const audited = new Set((current.additionalActions || []).filter((x:any)=>x.managerTime).map((x:any)=>x.id));
+  for (const row of current.corrections || []) if (row.command?.operation === 'CORRECT_SESSION') audited.add(row.id);
   for (const key of ['additionalActions','corrections','cancelledAssignments','suggestedEdits','reopenLogs'] as const) {
     const rows = Array.isArray(candidate[key]) ? candidate[key] : [];
     for (const row of current[key] || []) {

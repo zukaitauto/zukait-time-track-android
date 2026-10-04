@@ -26,6 +26,13 @@ export function timeManagementTransition(current,actor,request,at=Date.now()){
  const fail=code=>({ok:false,code});
  if(!actor||!['Manager','Supervisor'].includes(actor.role))return fail('time_permission_denied');
  request=request||{};
+ // Preserve the deployed correction contract used by older clients.
+ if(request.operation==='CORRECT_SESSION'&&request.expectedSessions===undefined&&'startAt' in request){
+  const id=String(request.requestId||''),reason=String(request.reason||'').trim();
+  if(!/^tm-[a-zA-Z0-9-]{16,100}$/.test(id))return fail('invalid_time_change');
+  if(!reason||reason.length>500)return fail('time_reason_required');
+  return correctWorkTime(current,actor,request,at,id,reason);
+ }
  if(['CORRECT_SESSION','ADD_SESSION','CANCEL_SESSION','CANCEL_ASSIGNMENT','REOPEN','REASSIGN','SET_ALLOCATION'].includes(request.operation))return managerTimeTransition(current,actor,request,at);
  const op=String(request.operation||''),reason=String(request.reason||'').trim(),minutes=Number(request.minutes),id=String(request.requestId||'');
  if(!['ADD','REDUCE','SPLIT'].includes(op)||!Number.isSafeInteger(minutes)||minutes<1||minutes>60000||!/^tm-[a-zA-Z0-9-]{16,100}$/.test(id))return fail('invalid_time_change');
@@ -68,6 +75,53 @@ export function timeManagementTransition(current,actor,request,at=Date.now()){
 
 // Manager corrections use the same revision-checked server commit as allocation changes.
 export function employeeTimeToken(data,emp){return JSON.stringify((data.sessions||[]).filter(s=>s&&String(s.emp)===String(emp)).slice().sort((a,b)=>String(a.id).localeCompare(String(b.id))))}
+function sessionAssignmentId(data,s){
+ if(s?.assignmentId)return String(s.assignmentId);
+ const candidates=(data.assign||[]).filter(x=>x&&!x.cancelled&&String(x.emp)===String(s?.emp)&&String(x.job)===String(s?.job)).slice().sort((x,y)=>(Number(x.assignedAt)||0)-(Number(y.assignedAt)||0));
+ let chosen=candidates[0];for(const x of candidates){if((Number(x.assignedAt)||0)<=(Number(s?.start)||0))chosen=x;else break}return String(chosen?.id||'');
+}
+function workSessionToken(s){return s?JSON.stringify([String(s.id||''),String(s.assignmentId||''),String(s.job||''),String(s.emp||''),Number(s.start)||0,s.end==null?null:Number(s.end),!!s.paused,!!s.finished,!!s.autoPausedAt,!!s.autoStopped]):null}
+function correctWorkTime(current,actor,request,at,id,reason){
+ const fail=code=>({ok:false,code});
+ if(actor?.role!=='Manager')return fail('time_correction_manager_only');
+ const assignmentId=String(request.assignmentId||''),sessionId=String(request.sessionId||''),start=Number(request.startAt),end=request.endAt==null||request.endAt===''?null:Number(request.endAt);
+ const command={operation:'CORRECT_SESSION',assignmentId,sessionId,startAt:start,endAt:end,reason,expectedSource:request.expectedSource,expectedSession:request.expectedSession??null};
+ const prior=(current.corrections||[]).find(x=>x&&String(x.id)===id);
+ if(prior)return prior.by===actor.id&&JSON.stringify(prior.command)===JSON.stringify(command)?{ok:true,data:current,audit:prior,duplicate:true}:fail('time_request_reused');
+ const a=(current.assign||[]).find(x=>x&&String(x.id)===assignmentId);
+ if(!a||a.cancelled||String(a.job||'').toUpperCase()==='ID001')return fail('time_assignment_inactive');
+ const j=(current.jobs||[]).find(x=>x&&String(x.no)===String(a.job));
+ if(!j||j.archived||j.deleted)return fail('time_job_inactive');
+ const employee=(current.users||[]).find(u=>u&&String(u.id)===String(a.emp)&&u.role==='Employee');
+ if(!employee)return fail('time_employee_invalid');
+ if(allocationToken(a)!==request.expectedSource)return fail('time_allocation_changed');
+ if(!Number.isSafeInteger(start)||start<=0||start>at||!(end===null||(Number.isSafeInteger(end)&&end>start&&end<=at)))return fail('time_session_invalid');
+ if(end===null&&a.completed)return fail('time_session_invalid');
+ const existing=sessionId?(current.sessions||[]).find(s=>s&&String(s.id)===sessionId):null;
+ if(sessionId&&!existing)return fail('time_session_changed');
+ if(existing){
+  if(sessionAssignmentId(current,existing)!==assignmentId||String(existing.emp)!==String(a.emp)||String(existing.job)!==String(a.job))return fail('time_session_changed');
+  if(workSessionToken(existing)!==request.expectedSession)return fail('time_session_changed');
+ }else if(sessionId||request.expectedSession!=null)return fail('time_session_changed');
+ const effectiveEnd=end===null?at:end;
+ for(const other of current.sessions||[]){
+  if(!other||String(other.emp)!==String(a.emp)||String(other.id)===String(existing?.id||''))continue;
+  const otherStart=Number(other.start)||0,otherEnd=Number(other.end)||at;
+  if(otherStart<effectiveEnd&&otherEnd>start)return fail('time_session_overlap');
+ }
+ const data=JSON.parse(JSON.stringify(current)),target=data.assign.find(x=>String(x.id)===assignmentId),targetSessions=data.sessions=Array.isArray(data.sessions)?data.sessions:[];
+ let session=existing?targetSessions.find(x=>String(x.id)===sessionId):null;
+ const before=session?JSON.parse(JSON.stringify(session)):null;
+ if(!session){session={id:'manager-time-'+id.slice(4),assignmentId,job:String(a.job),emp:String(a.emp),start,end:null,paused:false,finished:false,managerEntered:true};targetSessions.push(session)}
+ session.assignmentId=assignmentId;session.job=String(a.job);session.emp=String(a.emp);session.start=start;session.end=end;
+ if(!before){session.paused=end!==null&&!target.completed;session.finished=end!==null&&!!target.completed}
+ else if(end===null){session.paused=false;session.finished=false}
+ else if(before.end==null){session.paused=!target.completed;session.finished=!!target.completed}
+ session.managerTimeUpdatedAt=at;session.managerTimeUpdatedBy=actor.id;
+ const after=JSON.parse(JSON.stringify(session)),audit={id,type:before?'MANAGER_WORK_TIME_CORRECTED':'MANAGER_WORK_TIME_ADDED',session:session.id,assignmentId,job:String(a.job),emp:String(a.emp),oldStart:before?.start??null,oldEnd:before?.end??null,newStart:start,newEnd:end,reason,by:actor.id,byName:String(actor.name||actor.id),at,before,after,command};
+ data.corrections=Array.isArray(data.corrections)?data.corrections:[];data.corrections.push(audit);
+ return {ok:true,data,audit,duplicate:false};
+}
 export function managerTimeTransition(current,actor,request,at=Date.now()){
  const fail=code=>({ok:false,code}),copy=x=>JSON.parse(JSON.stringify(x));
  if(actor?.role!=='Manager')return fail('time_permission_denied');
