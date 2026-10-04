@@ -52,200 +52,20 @@ function ensureStyle(){
   .est-row{display:grid;grid-template-columns:minmax(0,1fr) 120px 44px;gap:6px;margin:6px 0}.est-part-row{grid-template-columns:minmax(0,1fr) 70px 105px 44px}
   .est-row input{width:100%;box-sizing:border-box}.est-remove{background:#dc2626!important;padding:6px!important;margin:0!important}
   .est-add{background:#64748b!important;width:100%;margin:7px 0 0!important}.est-summary{margin-top:10px;border-top:1px solid #e2e8f0;padding-top:8px}
-  .est-summary-line{display:flex;justify-content:space-between;gap:10px;padding:5px 2px}.est-summary-line.total{font-size:20px;font-weight:900;border-top:2px solid #cbd5e1;margin-top:5px;padding-top:9px}
-  .est-bottom{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:12px}.est-bottom button{margin:0!important;min-height:44px}
-  .estimate-dashboard-card,.estimate-dashboard-card *{color:#102a43!important}.estimate-dashboard-card small{color:#486581!important}
-  .estimate-dashboard-card{position:relative!important;border:1px solid #d7c5ee!important;background:linear-gradient(145deg,#fffaff,#eee6fb)!important;color:#2d2145!important;box-shadow:0 9px 20px #3f2a6518,inset 0 1px 0 #ffffffdd!important;border-radius:18px!important;overflow:hidden!important}.estimate-dashboard-card,.estimate-dashboard-card *{color:#2d2145!important}.estimate-dashboard-card small{color:#75648d!important}.estimate-dashboard-card span,.estimate-dashboard-card b{font-weight:800!important}.estimate-dashboard-card .estimate-card-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:13px;background:#ffffffc7;box-shadow:0 4px 10px #3f2a6512;font-size:21px}.estimate-dashboard-card .estimate-card-copy{display:grid;gap:4px;min-width:0}.estimate-dashboard-card .estimate-card-arrow{font-size:28px;font-weight:900;color:#7454a6!important}.estimate-dashboard-card.v67-feature,.estimate-dashboard-card.manager-action{min-height:92px!important;padding:14px!important}.estimate-dashboard-card.v67-feature>div,.estimate-dashboard-card.manager-action>div{display:grid!important;grid-template-columns:42px minmax(0,1fr) auto!important;align-items:center!important;gap:10px!important;width:100%!important}.estimate-dashboard-card.v67-feature small,.estimate-dashboard-card.manager-action small{grid-column:2!important}
-  .est-home{counter-reset:estresult}.est-result{counter-increment:estresult;position:relative;width:100%;margin:4px 0!important;text-align:left!important;background:#fff!important;color:#172033!important;border:1px solid #dce6ef!important;border-radius:9px!important;padding:6px 7px 6px 34px!important;box-shadow:0 1px 4px #17304d0d!important;font-size:10px!important}.est-result:before{content:counter(estresult);position:absolute;left:7px;top:7px;display:grid;place-items:center;width:21px;height:21px;border-radius:6px;background:#edf4fb;color:#31577d;font-size:9px;font-weight:900}.est-result b{font-size:11px}.est-result .small{font-size:9px}
-  @media(max-width:560px){.est-fields,.est-grid2{grid-template-columns:1fr 1fr}.est-switches{grid-template-columns:1fr}.est-row{grid-template-columns:minmax(0,1fr) 76px 32px;gap:4px;margin:4px 0}.est-part-row{grid-template-columns:minmax(0,1fr) 48px 68px 32px}.est-row input{min-width:0;padding-left:7px!important;padding-right:7px!important}.est-remove{min-width:32px!important;width:32px!important;padding:4px!important}.est-bottom{grid-template-columns:1fr 1fr}.est-fields label{min-width:0}}
-  @media(max-width:390px){.est-fields{grid-template-columns:1fr 1fr}.est-grid2{grid-template-columns:1fr 1fr}}
-  `;document.head.appendChild(s);
-}
-function nav(back){
-  return '<div class="est-nav"><button class="est-back" onclick="'+(back||'zukaitEstimate.openHome()')+'">← BACK</button><button class="est-close" onclick="closeModal()">✕ CLOSE</button></div>';
-}
-function ensureSharedEstimateUi(){if(document.getElementById('estimateSharedUiStyle'))return;const s=document.createElement('style');s.id='estimateSharedUiStyle';s.textContent='.est-nav{display:flex;gap:5px;align-items:center;margin:0 0 6px}.est-nav button{height:28px!important;min-height:28px!important;width:auto!important;flex:0 0 auto!important;border-radius:8px!important;font-size:9px!important;line-height:1!important;font-weight:900!important;padding:4px 8px!important}.est-back{border:1px solid #93c5fd!important;background:#dbeafe!important;color:#1d4ed8!important}.est-close{border:1px solid #fca5a5!important;background:#fee2e2!important;color:#b91c1c!important}.est-grid2{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}.est-grid2 .est-action{min-height:88px!important;padding:10px 12px!important;border-radius:16px!important;box-shadow:0 3px 12px rgba(15,27,43,.07)!important}@media(max-width:700px){.est-grid2{grid-template-columns:repeat(2,minmax(0,1fr))!important}.est-grid2 .est-action b{font-size:13px!important}.est-grid2 .est-action small{font-size:10px!important}}';document.head.appendChild(s)}
-function estimateCard(e){
-  const t=totals(e);
-  return '<button class="est-result" onclick="zukaitEstimate.openEditor(\''+esc(e.id)+'\')"><b>'+esc(e.estimateNo)+'</b> · '+esc(e.date||'')+
-    '<br>'+esc(e.customerName||'')+' · '+esc(e.makeModel||'')+(e.year?' · '+esc(e.year):'')+
-    '<br><span class="small">'+esc(e.registration||'')+' · '+esc(e.type||'LS')+' · '+(e.vatEnabled?'VAT 5%':'NO VAT')+' · OMR '+money(t.total)+'</span></button>';
-}
-function openHome(){
-  if(!canUse())return alert('Supervisor or Manager access required.');
-  ensureState();ensureStyle();ensureSharedEstimateUi();
-  const recent=state.estimates.slice().sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)).slice(0,4);
-  const html=nav('closeModal()')+'<div class="est-home"><h3 style="margin-top:0">🧾 Estimate</h3><div class="est-grid2">'+
-    '<button class="est-action" onclick="zukaitEstimate.newEstimate()"><b>➕ New Estimate</b><small>LS or Parts + Labour</small></button>'+
-    '<button class="est-action" onclick="zukaitEstimate.openFind()"><b>🔎 Find Estimate</b><small>Estimate / Reg / Mobile / Claim</small></button>'+
-    '<button class="est-action" onclick="zukaitEstimate.openRecent()"><b>🕘 Recent Estimates</b><small>Latest saved estimates</small></button>'+
-    '<button class="est-action" onclick="zukaitEstimate.openReports()"><b>📊 Reports</b><small>Simple estimate totals</small></button>'+
-    '</div><h4>Recent</h4>'+(recent.length?recent.map(estimateCard).join(''):'<p class="muted">No estimates yet.</p>')+'</div>';
-  openModal(html);
-}
-async function newEstimate(){
-  if(!canUse())return;
-  ensureState();
-  if(!navigator.onLine||!window.zukaitCloud?.allocateEstimateNo){
-    alert('Internet is required once to generate the official Zi-Qt estimate number.');return;
-  }
-  const clientKey=uid();let a;
-  try{a=await window.zukaitCloud.allocateEstimateNo(clientKey)}catch(e){alert('Unable to generate Estimate No. Please check connection and try again.');return}
-  const u=currentUser()||{},e={
-    id:clientKey,estimateNo:String(a?.estimate_no||''),sequenceNo:Number(a?.sequence_no||0),date:localDate(),type:'LS',vatEnabled:true,vatRate:.05,
-    customerName:'',mobile:'',makeModel:'',year:'',registration:'',vin:'',claimNo:'',jobCard:'',
-    customerSuppliedParts:'',notes:'',
-    lsRows:[{id:uid(),description:'',amount:0}],labourRows:[{id:uid(),description:'',amount:0}],partRows:[{id:uid(),description:'',qty:1,unitPrice:0}],
-    lsSpareParts:0,misc:0,status:'Draft',createdAt:Date.now(),createdBy:u.id||'',updatedAt:Date.now(),updatedBy:u.id||'',revision:0
-  };
-  if(!e.estimateNo)return alert('Estimate number allocation failed.');
-  state.estimates.unshift(e);audit(e,'CREATE');saveState();openEditor(e.id);
-}
-function field(id,label,value,type='text',extra=''){
-  return '<label>'+label+'<input id="'+id+'" type="'+type+'" value="'+esc(value||'')+'" '+extra+'></label>';
-}
-function textAreaField(id,label,value,placeholder=''){
-  return '<label style="display:block;font-weight:700;font-size:12px;color:#334155">'+label+'<textarea id="'+id+'" rows="2" placeholder="'+esc(placeholder)+'" style="width:100%;box-sizing:border-box;margin-top:4px;resize:vertical">'+esc(value||'')+'</textarea></label>';
-}
-function lsRowsHtml(rows){
-  return (rows||[]).map(r=>'<div class="est-row" data-est-ls-row="'+esc(r.id)+'"><input class="est-desc" placeholder="Description" value="'+esc(r.description||'')+'"><input class="est-amount" inputmode="decimal" placeholder="0.000" value="'+money(r.amount)+'" oninput="zukaitEstimate.recalc()"><button class="est-remove" onclick="zukaitEstimate.removeRow(this)">✕</button></div>').join('');
-}
-function labourRowsHtml(rows){
-  return (rows||[]).map(r=>'<div class="est-row" data-est-lab-row="'+esc(r.id)+'"><input class="est-desc" placeholder="Labour description" value="'+esc(r.description||'')+'"><input class="est-amount" inputmode="decimal" placeholder="0.000" value="'+money(r.amount)+'" oninput="zukaitEstimate.recalc()"><button class="est-remove" onclick="zukaitEstimate.removeRow(this)">✕</button></div>').join('');
-}
-function partRowsHtml(rows){
-  return (rows||[]).map(r=>'<div class="est-row est-part-row" data-est-part-row="'+esc(r.id)+'"><input class="est-desc" placeholder="Part description" value="'+esc(r.description||'')+'"><input class="est-qty" type="number" min="0.001" step="0.001" value="'+num(r.qty)+'" oninput="zukaitEstimate.recalc()"><input class="est-unit" inputmode="decimal" placeholder="0.000" value="'+money(r.unitPrice)+'" oninput="zukaitEstimate.recalc()"><button class="est-remove" onclick="zukaitEstimate.removeRow(this)">✕</button></div>').join('');
-}
-function openEditor(id){
-  const e=findEstimate(id);if(!e)return alert('Estimate not found.');ensureStyle();
-  const html=nav('zukaitEstimate.openHome()')+
-  '<div class="est-home"><div class="section-title"><div><h3 style="margin:0">'+esc(e.estimateNo)+'</h3><span class="small muted">Create / edit estimate</span></div></div>'+
-  '<div class="est-switches"><div><b class="small">Estimate Type</b><div class="est-switch"><button id="estTypeLS" onclick="zukaitEstimate.setType(\'LS\')">LS</button><button id="estTypePL" onclick="zukaitEstimate.setType(\'PL\')">PL</button></div></div>'+
-  '<div><b class="small">Tax</b><div class="est-switch"><button id="estVatYes" onclick="zukaitEstimate.setVat(true)">VAT 5%</button><button id="estVatNo" onclick="zukaitEstimate.setVat(false)">NO VAT</button></div></div></div>'+
-  '<div class="est-section"><div class="row"><input id="estJobLookup" placeholder="Optional: search JC / Registration" style="flex:1"><button class="blue" onclick="zukaitEstimate.loadJob()">Load JC</button></div>'+
-  '<div class="est-fields">'+
-    field('estDate','Date',e.date,'date')+
-    field('estName','Name',e.customerName)+
-    field('estMobile','Mobile Number',e.mobile,'tel')+
-    field('estMakeModel','Make & Model',e.makeModel)+
-    field('estYear','Year',e.year,'number','min="1900" max="2100"')+
-    field('estReg','Registration No.',e.registration)+
-    field('estVin','VIN No.',e.vin)+
-    field('estClaim','Claim No.',e.claimNo)+
-    field('estJobCard','Job Card No. (Optional)',e.jobCard)+
-  '</div></div>'+
-  '<div id="estLsSection" class="est-section"><h4>LS — Lumpsum</h4><div class="small muted">Description + amount</div><div id="estLsRows">'+lsRowsHtml(e.lsRows)+'</div><button class="est-add" onclick="zukaitEstimate.addRow(\'LS\')">+ Add Row</button>'+
-  '<div class="est-fields" style="margin-top:10px">'+field('estLsParts','Spare Parts',money(e.lsSpareParts),'text','inputmode="decimal" oninput="zukaitEstimate.recalc()"')+field('estMiscLs','Misc',money(e.misc),'text','inputmode="decimal" oninput="zukaitEstimate.recalc()"')+'</div></div>'+
-  '<div id="estPlSection" class="est-section"><h4>LABOUR</h4><div id="estLabRows">'+labourRowsHtml(e.labourRows)+'</div><button class="est-add" onclick="zukaitEstimate.addRow(\'LAB\')">+ Add Labour</button>'+
-  '<h4 style="margin-top:15px">SPARE PARTS</h4><div class="small muted">Part · Qty · Unit Price</div><div id="estPartRows">'+partRowsHtml(e.partRows)+'</div><button class="est-add" onclick="zukaitEstimate.addRow(\'PART\')">+ Add Part</button>'+
-  '<div style="margin-top:10px">'+field('estMiscPl','Misc',money(e.misc),'text','inputmode="decimal" oninput="zukaitEstimate.recalc()"')+'</div></div>'+
-  '<div class="est-section est-summary"><div id="estSummary"></div></div>'+
-  '<div class="est-section"><h4 style="margin-bottom:8px">Optional</h4>'+textAreaField('estCustomerParts','Spare Parts Required — To Be Supplied by Customer',e.customerSuppliedParts,'Only if required')+'<div style="height:8px"></div>'+textAreaField('estNotes','Notes / Conditions',e.notes,'Optional notes')+'</div>'+
-  '<div class="est-bottom"><button class="green" onclick="zukaitEstimate.saveCurrent(\''+esc(e.id)+'\')">💾 Save</button><button class="blue" onclick="zukaitEstimate.preview(\''+esc(e.id)+'\')">👁 Preview</button><button class="blue" onclick="zukaitEstimate.printEstimate(\''+esc(e.id)+'\')">🖨 Print</button><button class="purple" onclick="zukaitEstimate.pdfEstimate(\''+esc(e.id)+'\')">PDF</button><button class="green" onclick="zukaitEstimate.whatsApp(\''+esc(e.id)+'\')">WhatsApp</button><button class="secondary" onclick="zukaitEstimate.shareEstimate(\''+esc(e.id)+'\')">↗ Share</button></div></div>';
-  openModal(html);
-  window.__zukaitEstimateCurrent=id;
-  requestAnimationFrame(()=>{setType(e.type||'LS',false);setVat(e.vatEnabled!==false,false);recalc()});
-}
-function setType(t,doRecalc=true){
-  const e=findEstimate(window.__zukaitEstimateCurrent);t=t==='PL'?'PL':'LS';if(e)e.type=t;
-  document.getElementById('estLsSection')?.classList.toggle('hidden',t!=='LS');
-  document.getElementById('estPlSection')?.classList.toggle('hidden',t!=='PL');
-  document.getElementById('estTypeLS')?.classList.toggle('active',t==='LS');
-  document.getElementById('estTypePL')?.classList.toggle('active',t==='PL');
-  if(doRecalc)recalc();
-}
-function setVat(v,doRecalc=true){
-  const e=findEstimate(window.__zukaitEstimateCurrent);if(e)e.vatEnabled=!!v;
-  document.getElementById('estVatYes')?.classList.toggle('active',!!v);
-  document.getElementById('estVatNo')?.classList.toggle('active',!v);
-  if(doRecalc)recalc();
-}
-function addRow(kind){
-  const id=uid();let box,html='';
-  if(kind==='LS'){box=document.getElementById('estLsRows');html=lsRowsHtml([{id,description:'',amount:0}])}
-  if(kind==='LAB'){box=document.getElementById('estLabRows');html=labourRowsHtml([{id,description:'',amount:0}])}
-  if(kind==='PART'){box=document.getElementById('estPartRows');html=partRowsHtml([{id,description:'',qty:1,unitPrice:0}])}
-  if(box)box.insertAdjacentHTML('beforeend',html);recalc();
-}
-function removeRow(btn){const row=btn?.closest?.('[data-est-ls-row],[data-est-lab-row],[data-est-part-row]');if(row)row.remove();recalc()}
-function rowsFromDom(sel,kind){
-  return [...document.querySelectorAll(sel)].map(r=>{
-    if(kind==='part')return {id:r.getAttribute('data-est-part-row')||uid(),description:r.querySelector('.est-desc')?.value?.trim()||'',qty:num(r.querySelector('.est-qty')?.value)||1,unitPrice:num(r.querySelector('.est-unit')?.value)};
-    return {id:r.getAttribute(kind==='ls'?'data-est-ls-row':'data-est-lab-row')||uid(),description:r.querySelector('.est-desc')?.value?.trim()||'',amount:num(r.querySelector('.est-amount')?.value)};
-  });
-}
-function draftFromDom(e){
-  return Object.assign({},e,{
-    type:document.getElementById('estTypePL')?.classList.contains('active')?'PL':'LS',
-    vatEnabled:document.getElementById('estVatYes')?.classList.contains('active'),
-    date:document.getElementById('estDate')?.value||localDate(),
-    customerName:document.getElementById('estName')?.value?.trim()||'',
-    mobile:document.getElementById('estMobile')?.value?.trim()||'',
-    makeModel:document.getElementById('estMakeModel')?.value?.trim()||'',
-    year:document.getElementById('estYear')?.value?.trim()||'',
-    registration:document.getElementById('estReg')?.value?.trim().toUpperCase()||'',
-    vin:document.getElementById('estVin')?.value?.trim().toUpperCase()||'',
-    claimNo:document.getElementById('estClaim')?.value?.trim()||'',
-    jobCard:document.getElementById('estJobCard')?.value?.trim().toUpperCase()||'',
-    customerSuppliedParts:document.getElementById('estCustomerParts')?.value?.trim()||'',
-    notes:document.getElementById('estNotes')?.value?.trim()||'',
-    lsRows:rowsFromDom('[data-est-ls-row]','ls'),
-    labourRows:rowsFromDom('[data-est-lab-row]','lab'),
-    partRows:rowsFromDom('[data-est-part-row]','part'),
-    lsSpareParts:num(document.getElementById('estLsParts')?.value),
-    misc:num((document.getElementById('estTypePL')?.classList.contains('active')?document.getElementById('estMiscPl'):document.getElementById('estMiscLs'))?.value)
-  });
-}
-function recalc(){
-  const e=findEstimate(window.__zukaitEstimateCurrent);if(!e)return;
-  const d=draftFromDom(e),t=totals(d),box=document.getElementById('estSummary');if(!box)return;
-  const lines=d.type==='LS'
-    ?[['Total Labour / Lumpsum',t.labour],['Spare Parts',t.parts],['Misc',t.misc]]
-    :[['Total Labour',t.labour],['Total Parts',t.parts],['Misc',t.misc],['Subtotal',t.subtotal]];
-  box.innerHTML=lines.map(x=>'<div class="est-summary-line"><span>'+x[0]+'</span><b>OMR '+money(x[1])+'</b></div>').join('')+
-    (d.vatEnabled?'<div class="est-summary-line"><span>VAT 5%</span><b>OMR '+money(t.vat)+'</b></div>':'')+
-    '<div class="est-summary-line total"><span>TOTAL</span><span>OMR '+money(t.total)+'</span></div>';
-}
-function saveCurrent(id){
-  const e=findEstimate(id);if(!e)return;
-  const before=totals(e).total,d=draftFromDom(e),u=currentUser()||{};
-  Object.assign(e,d,{updatedAt:Date.now(),updatedBy:u.id||'',status:'Saved',revision:Number(e.revision||0)+1});
-  audit(e,'EDIT',before);saveState();recalc();alert(e.estimateNo+' saved.');
-}
-function loadJob(){
-  const q=document.getElementById('estJobLookup')?.value||document.getElementById('estJobCard')?.value||document.getElementById('estReg')?.value||'';
-  const j=jobByQuery(q);if(!j)return alert('Job Card / Registration not found. You can still enter all estimate details manually.');
-  const put=(id,v)=>{const x=document.getElementById(id);if(x&&v!=null&&String(v)!=='')x.value=String(v)};
-  put('estJobCard',j.no);put('estReg',j.reg||j.registration);put('estMakeModel',[j.make||j.brand,j.model||j.vehicle].filter(Boolean).join(' ').trim()||j.vehicle);put('estYear',j.year);put('estVin',j.vin||j.vinNo);put('estClaim',j.claimNo||j.claim);put('estName',j.customerName||j.name);put('estMobile',j.mobile||j.phone);
-}
-function openFind(){
-  ensureState();ensureStyle();openModal(nav('zukaitEstimate.openHome()')+'<div class="est-home"><h3>🔎 Find Estimate</h3><input id="estFindInput" style="width:100%;box-sizing:border-box" placeholder="Zi-Qt / Registration / Mobile / Name / Claim" oninput="zukaitEstimate.renderFind()"><div id="estFindResults" style="margin-top:10px"></div></div>');renderFind();
-}
-function filtered(q){
-  ensureState();q=String(q||'').trim().toLowerCase();const rows=state.estimates.slice().sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0));
-  if(!q)return rows;
-  return rows.filter(e=>[e.estimateNo,e.customerName,e.mobile,e.makeModel,e.registration,e.vin,e.claimNo,e.jobCard].join(' ').toLowerCase().includes(q));
-}
-function renderFind(){const q=document.getElementById('estFindInput')?.value||'',rows=filtered(q).slice(0,100),el=document.getElementById('estFindResults');if(el)el.innerHTML=rows.length?rows.map(estimateCard).join(''):'<p class="muted">No matching estimate.</p>'}
-function openRecent(){ensureState();const rows=state.estimates.slice().sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)).slice(0,30);openModal(nav('zukaitEstimate.openHome()')+'<div class="est-home"><h3>🕘 Recent Estimates</h3>'+(rows.length?rows.map(estimateCard).join(''):'<p class="muted">No estimates yet.</p>')+'</div>')}
-function openReports(){
-  ensureState();const rows=state.estimates,t=rows.reduce((s,e)=>s+totals(e).total,0),ls=rows.filter(e=>e.type!=='PL').length,pl=rows.filter(e=>e.type==='PL').length;
-  openModal(nav('zukaitEstimate.openHome()')+'<div class="est-home"><h3>📊 Estimate Report</h3><div class="est-grid2"><div class="notice"><b>Total Estimates</b><div class="stat">'+rows.length+'</div></div><div class="notice"><b>Total Quoted</b><div class="stat">OMR '+money(t)+'</div></div><div class="notice"><b>LS</b><div class="stat">'+ls+'</div></div><div class="notice"><b>PL</b><div class="stat">'+pl+'</div></div></div></div>');
-}
-function splitMoney(v){v=Math.round(num(v)*1000);return {ro:Math.floor(v/1000),bz:String(v%1000).padStart(3,'0')}}
+  .est-summary-line{display:flex;justify-content:space-between;gap:10px;padding:5px 2px}.est-summary-line.total{font-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';
 function printable(e){
   const t=totals(e);
   const customerParts=String(e.customerSuppliedParts||'').trim();
   const notes=String(e.notes||'').trim();
   let body='';
   if(e.type==='PL'){
-    body='<div class="doc-section-title">LABOUR</div><table class="work-table"><tr><th style="width:7%">No.</th><th>Description</th><th style="width:20%">Amount OMR</th></tr>'+((e.labourRows||[]).filter(x=>x.description||num(x.amount)).map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(x.description)+'</td><td class="money-cell">'+money(x.amount)+'</td></tr>').join('')||'<tr><td colspan="3">&nbsp;</td></tr>')+'</table>'+
-    '<div class="doc-section-title">SPARE PARTS</div><table class="work-table"><tr><th style="width:7%">No.</th><th>Part Description</th><th style="width:10%">Qty</th><th style="width:18%">Unit Price</th><th style="width:18%">Amount</th></tr>'+((e.partRows||[]).filter(x=>x.description||num(x.unitPrice)).map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(x.description)+'</td><td>'+num(x.qty)+'</td><td class="money-cell">'+money(x.unitPrice)+'</td><td class="money-cell">'+money(num(x.qty)*num(x.unitPrice))+'</td></tr>').join('')||'<tr><td colspan="5">&nbsp;</td></tr>')+'</table>'+
+    body='<div class="doc-section-title">LABOUR</div><table class="work-table"><thead><tr><th style="width:7%">No.</th><th>Description</th><th style="width:20%">Amount OMR</th></tr></thead><tbody>'+((e.labourRows||[]).filter(x=>x.description||num(x.amount)).map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(x.description)+'</td><td class="money-cell">'+money(x.amount)+'</td></tr>').join('')||'<tr><td colspan="3">&nbsp;</td></tr>')+'</tbody></table>'+
+    '<div class="doc-section-title">SPARE PARTS</div><table class="work-table"><thead><tr><th style="width:7%">No.</th><th>Part Description</th><th style="width:10%">Qty</th><th style="width:18%">Unit Price</th><th style="width:18%">Amount</th></tr></thead><tbody>'+((e.partRows||[]).filter(x=>x.description||num(x.unitPrice)).map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(x.description)+'</td><td>'+num(x.qty)+'</td><td class="money-cell">'+money(x.unitPrice)+'</td><td class="money-cell">'+money(num(x.qty)*num(x.unitPrice))+'</td></tr>').join('')||'<tr><td colspan="5">&nbsp;</td></tr>')+'</tbody></table>'+
     '<table class="totals"><tr><th>Total Labour</th><td>'+money(t.labour)+'</td></tr><tr><th>Total Parts</th><td>'+money(t.parts)+'</td></tr><tr><th>Misc</th><td>'+money(t.misc)+'</td></tr><tr><th>Subtotal</th><td>'+money(t.subtotal)+'</td></tr>'+ (e.vatEnabled?'<tr><th>VAT 5%</th><td>'+money(t.vat)+'</td></tr>':'') +'<tr class="grand"><th>GRAND TOTAL</th><td>'+money(t.total)+'</td></tr></table>';
   }else{
     const rows=(e.lsRows||[]).filter(x=>x.description||num(x.amount));
     const lm=splitMoney(t.labour),pm=splitMoney(t.parts),mm=splitMoney(t.misc),vm=splitMoney(t.vat),tm=splitMoney(t.total);
-    body='<table class="work-table ls-table"><tr><th>Description</th><th style="width:14%">R.O.</th><th style="width:14%">Bz.</th></tr>'+((rows.length?rows:[{description:'',amount:0}]).map(x=>{const m=splitMoney(x.amount);return '<tr><td>'+esc(x.description)+'</td><td class="money-cell">'+m.ro+'</td><td class="money-cell">'+m.bz+'</td></tr>'}).join(''))+
+    body='<div class="doc-section-title">LABOUR / LUMPSUM</div><table class="work-table ls-table"><tr><th>Description</th><th style="width:14%">R.O.</th><th style="width:14%">Bz.</th></tr>'+((rows.length?rows:[{description:'',amount:0}]).map(x=>{const m=splitMoney(x.amount);return '<tr><td>'+esc(x.description)+'</td><td class="money-cell">'+m.ro+'</td><td class="money-cell">'+m.bz+'</td></tr>'}).join(''))+
     '<tr class="summary-row"><th>Total Labour / Lumpsum</th><td class="money-cell">'+lm.ro+'</td><td class="money-cell">'+lm.bz+'</td></tr>'+
     '<tr class="summary-row"><th>Spare Parts</th><td class="money-cell">'+pm.ro+'</td><td class="money-cell">'+pm.bz+'</td></tr>'+
     '<tr class="summary-row"><th>Misc</th><td class="money-cell">'+mm.ro+'</td><td class="money-cell">'+mm.bz+'</td></tr>'+
@@ -253,11 +73,21 @@ function printable(e){
     '<tr class="grand summary-row"><th>TOTAL</th><td class="money-cell">'+tm.ro+'</td><td class="money-cell">'+tm.bz+'</td></tr></table>';
   }
   const lower='<div class="doc-lower"><div class="doc-section-title">SPARE PARTS REQUIRED — TO BE SUPPLIED BY CUSTOMER</div><div class="doc-box">'+(customerParts?esc(customerParts).replace(/\n/g,'<br>'):'&nbsp;<br>&nbsp;')+'</div>'+
-    (notes?'<div class="doc-section-title">NOTES / CONDITIONS</div><div class="doc-box">'+esc(notes).replace(/\n/g,'<br>')+'</div>':'')+'</div>';
+    '<div class="doc-section-title">NOTES / CONDITIONS</div><div class="doc-box">'+(notes?esc(notes).replace(/\n/g,'<br>'):'&nbsp;')+'</div>'+'</div>';
   const prepared=esc((typeof user==='function'?user(e.createdBy)?.name:e.createdBy)||e.createdBy||'');
-  return '<div class="estimate-print"><div class="head"><h2>ZUKAIT INTERNATIONAL LLC</h2><h1>REPAIR ESTIMATE</h1><div class="estimate-meta"><span><b>Estimate No.:</b> '+esc(e.estimateNo)+'</span><span><b>Date:</b> '+esc(e.date)+'</span></div></div>'+
-  '<table class="details"><tr><th>Name</th><td>'+esc(e.customerName)+'</td><th>Tel No.</th><td>'+esc(e.mobile)+'</td></tr><tr><th>Make / Model</th><td>'+esc(e.makeModel)+(e.year?' · '+esc(e.year):'')+'</td><th>Reg No.</th><td>'+esc(e.registration)+'</td></tr><tr><th>Frame / VIN No.</th><td>'+esc(e.vin)+'</td><th>Claim No.</th><td>'+esc(e.claimNo)+'</td></tr>'+(e.jobCard?'<tr><th>Job Card No.</th><td colspan="3">'+esc(e.jobCard)+'</td></tr>':'')+'</table>'+
-  body+lower+'<div class="valid">ESTIMATE VALID FOR 15 DAYS.</div><div class="sign"><span>Manager</span><span>Foreman</span><span>Prepared By: '+prepared+'</span></div></div>';
+  // Move the existing LS summary into the totals block without changing its currency split.
+  let summary='';
+  if(e.type!=='PL'){
+    const at=body.indexOf('<tr class="summary-row">');
+    summary='<table class="totals ls-table"><thead><tr><th>Totals</th><th>R.O.</th><th>Bz.</th></tr></thead><tbody>'+body.slice(at).replace('</table>','</tbody></table>');
+    body=body.slice(0,at)+'</table><div class="doc-section-title">SPARE PARTS</div><table class="work-table"><thead><tr><th>Description</th><th>Amount OMR</th></tr></thead><tbody><tr><td>Spare Parts / Lumpsum</td><td class="money-cell">'+money(t.parts)+'</td></tr></tbody></table>';
+  }else{
+    const at=body.indexOf('<table class="totals">');summary=body.slice(at);body=body.slice(0,at);
+  }
+  return '<style>'+estimatePrintCss()+'</style><div class="estimate-print"><div class="head"><div class="brand"><img src="'+estimateLogo+'" alt="Zukait Auto"><div>ZUKAIT INTERNATIONAL LLC</div></div><div class="heading"><h1>REPAIR ESTIMATE</h1><div class="estimate-meta"><div><b>Estimate No.:</b> '+esc(e.estimateNo)+'</div><div><b>Date:</b> '+esc(e.date)+'</div><div><b>Type:</b> '+(e.type==='PL'?'PL / Parts + Labour':'LS / Lumpsum')+' &nbsp; <b>VAT:</b> '+(e.vatEnabled?'5%':'NO VAT')+'</div></div></div></div>'+
+  '<table class="details"><colgroup><col style="width:17%"><col style="width:33%"><col style="width:19%"><col style="width:31%"></colgroup><tr><th colspan="2">ISSUED TO</th><th colspan="2">VEHICLE DETAILS</th></tr><tr><th>Name</th><td>'+esc(e.customerName)+'</td><th>Make / Model</th><td>'+esc(e.makeModel)+(e.year?' · '+esc(e.year):'')+'</td></tr><tr><th>Tel No.</th><td>'+esc(e.mobile)+'</td><th>Reg No.</th><td>'+esc(e.registration)+'</td></tr><tr><th>Job Card No.</th><td>'+esc(e.jobCard)+'</td><th>Frame / VIN No.</th><td>'+esc(e.vin)+'</td></tr><tr><th></th><td></td><th>Claim No.</th><td>'+esc(e.claimNo)+'</td></tr></table>'+
+  body+'<div class="doc-bottom">'+lower+'<div class="summary">'+summary+'<div class="currency">All amounts in OMR</div></div></div><div class="valid">ESTIMATE VALID FOR 15 DAYS.</div><div class="sign"><span>Authorized Signed</span><small>Prepared By: '+prepared+'</small></div><div class="doc-footer">P.O. Box 1921, Barka, Postal Code 130, C.R.N. 1194220 &nbsp; | &nbsp; Contact: 93211154</div></div>';
+
 }
 function currentOutputEstimate(id){
   const e=findEstimate(id);if(!e)return null;
@@ -266,8 +96,12 @@ function currentOutputEstimate(id){
   }catch(_){}
   return e;
 }
+function estimatePrintCss(){
+  // Scope styles so the in-app preview cannot restyle the editor or dashboard.
+  return `.estimate-print{box-sizing:border-box;width:100%;min-height:270mm;display:flex;flex-direction:column;font:12px Arial,sans-serif;color:#202523;background:white;text-align:left;padding:0}.estimate-print *{box-sizing:border-box}.estimate-print .head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #333;padding-bottom:9px;gap:16px;break-inside:avoid}.estimate-print .brand img{width:210px;height:auto;display:block}.estimate-print .brand div{font-size:9px;margin-top:4px;letter-spacing:.5px}.estimate-print .heading{text-align:right}.estimate-print h1{font-size:25px;letter-spacing:2px;margin:0 0 5px}.estimate-print .estimate-meta{font-size:11px;line-height:1.5}.estimate-print table{border-collapse:collapse;width:100%;table-layout:fixed}.estimate-print th,.estimate-print td{padding:6px 8px;vertical-align:top;overflow-wrap:anywhere;white-space:normal}.estimate-print .details{margin:8px 0;border-bottom:1px solid #555}.estimate-print .details th{width:18%;text-align:left;font-size:10px}.estimate-print .details td{width:32%}.estimate-print .details tr:first-child th{letter-spacing:1px;font-size:11px}.estimate-print .doc-section-title{font-size:16px;letter-spacing:1px;font-weight:bold;margin:12px 0 5px;break-after:avoid}.estimate-print .work-table{margin-bottom:8px}.estimate-print .work-table th{border-bottom:1px solid #333;text-align:left;font-size:11px;letter-spacing:.5px}.estimate-print .work-table td{border-bottom:1px solid #ddd;height:30px}.estimate-print .work-table tbody{min-height:100px}.estimate-print .work-table:after{content:'';display:table-row;height:55px}.estimate-print thead{display:table-header-group}.estimate-print tr{break-inside:avoid;page-break-inside:avoid}.estimate-print .money-cell{text-align:right;white-space:nowrap}.estimate-print .doc-bottom{display:flex;align-items:flex-start;gap:22px;margin-top:12px}.estimate-print .doc-lower{width:52%}.estimate-print .doc-lower .doc-section-title{font-size:10px;letter-spacing:.3px;margin-top:0}.estimate-print .doc-box{border-bottom:1px solid #999;min-height:44px;padding:6px 0;margin-bottom:14px;overflow-wrap:anywhere}.estimate-print .summary{width:48%;break-inside:avoid}.estimate-print .totals th,.estimate-print .totals td{border:1px solid #333;padding:8px;text-align:right}.estimate-print .totals th{font-weight:normal;width:64%}.estimate-print .totals.ls-table th:first-child{width:60%}.estimate-print .totals.ls-table thead th:not(:first-child){width:20%}.estimate-print .totals .grand{font-weight:bold;background:#f0f2f1;font-size:13px}.estimate-print .totals .grand th{font-weight:bold}.estimate-print .currency{font-size:9px;text-align:right;margin-top:4px}.estimate-print .valid{font-size:9px;margin:15px 0}.estimate-print .sign{margin-top:auto;padding-top:35px;align-self:flex-end;width:240px;text-align:center;break-inside:avoid}.estimate-print .sign span{display:block;border-top:1px solid #333;padding-top:6px}.estimate-print .sign small{display:block;font-size:9px;margin-top:5px}.estimate-print .doc-footer{margin-top:14px;background:#202523;color:white;padding:8px 5px;text-align:center;font-size:8px;break-inside:avoid}@media print{.estimate-print{print-color-adjust:exact;-webkit-print-color-adjust:exact}}`;
+}
 function estimateDocumentHtml(e){
-  return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(e.estimateNo)+'</title><style>@page{size:A4;margin:11mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;margin:0;color:#111;font-size:12px}.estimate-print{width:100%}.head{text-align:center;border-bottom:2px solid #111;padding-bottom:6px}.head h2{font-size:19px;letter-spacing:.3px;margin:0}.head h1{font-size:16px;margin:3px 0}.estimate-meta{display:flex;justify-content:space-between;text-align:left;margin-top:5px}.details,.work-table,.totals{width:100%;border-collapse:collapse;margin:8px 0}th,td{border:1px solid #111;padding:5px 6px;text-align:left;vertical-align:top}.details th{width:16%;white-space:nowrap;background:#f7f7f7}.work-table th{background:#f3f3f3}.ls-table td{min-height:26px}.ls-table .summary-row th{background:#f7f7f7}.money-cell{text-align:right}.totals{margin-left:auto;width:56%}.totals th{width:68%;background:#f7f7f7}.totals td{text-align:right}.grand{font-size:14px;font-weight:bold}.doc-section-title{font-weight:bold;margin:10px 0 4px;padding:4px 6px;border:1px solid #111;background:#f3f3f3}.doc-box{border:1px solid #111;min-height:38px;padding:6px;white-space:normal}.doc-lower{break-inside:avoid}.valid{margin-top:12px;font-weight:bold;text-align:center}.sign{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:34px;text-align:center;break-inside:avoid}.sign span{border-top:1px solid #111;padding-top:6px}.doc-section-title,.details tr,.work-table tr,.totals tr{break-inside:avoid}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body>'+printable(e)+'</body></html>';
+  return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(e.estimateNo)+'</title><style>@page{size:A4;margin:11mm}body{margin:0;background:white}</style></head><body>'+printable(e)+'</body></html>';
 }
 function printDocument(e,autoPrint=true){
   const w=window.zukaitOpenPrintPreview('Estimate '+e.estimateNo);if(!w)return alert('Print window blocked.');

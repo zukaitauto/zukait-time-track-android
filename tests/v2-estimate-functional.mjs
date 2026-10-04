@@ -188,3 +188,17 @@ for(const required of ['public void printHtmlNamed(String html, String title)','
   assert.ok(native.includes(required),'Android Estimate integration missing '+required);
 }
 console.log('V2 Estimate functional calculations + Android bridge: ok');
+
+// The same self-contained branding/footer must survive native WebViews with a null base URL.
+const branded=api.estimateDocumentHtml(state.estimates[0]);
+assert.match(branded,/<img src="data:image\/png;base64,[A-Za-z0-9+/=]+" alt="Zukait Auto">/);
+for(const text of ['P.O. Box 1921','Barka','Postal Code 130','C.R.N. 1194220','93211154','Authorized Signed','Type:','LS / Lumpsum']) assert.ok(branded.includes(text),text);
+assert.ok(plPrintable.includes('PL / Parts + Labour'));
+assert.ok(plNoVat.includes('NOTES / CONDITIONS'),'Notes area remains present when empty');
+assert.ok(plNoVat.includes('NO VAT'));
+const escaped=api.estimateDocumentHtml({...state.estimates[0],customerName:'<script>alert(1)</script>',notes:'<img src=x onerror=alert(1)>',lsRows:[{description:'<unsafe>',amount:1}]});
+assert.ok(escaped.includes('&lt;script&gt;'));
+assert.ok(escaped.includes('&lt;unsafe&gt;'));
+assert.ok(!escaped.includes('<script>'));
+assert.match(branded,/\.estimate-print thead\{display:table-header-group\}/);
+console.log('V2 Estimate self-contained print branding, footer, empty notes and escaping: ok');
