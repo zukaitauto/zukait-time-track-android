@@ -1,8 +1,8 @@
 {
-  "versionName": "V270",
-  "versionCode": 233,
+  "versionName": "V271",
+  "versionCode": 234,
   "approvedForStaff": true,
   "approvedAt": "2026-10-04",
-  "sourceCommit": "4f1419271c550557151d8a1fe2cfd13852eeb1f7",
-  "publishNonce": "release-v270-20261004-overdue-time-review"
+  "sourceCommit": "0f1402df76326b6d667aeea0d1fe498372e3efc6",
+  "publishNonce": "release-v271-20261004-spare-parts-modernization"
 }
