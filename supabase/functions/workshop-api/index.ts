@@ -166,6 +166,31 @@ function cloneValue<T>(value: T): T {
 }
 
 
+// Full-state clients cannot undo a server-confirmed Manager correction or cancellation.
+function preserveManagerTimeAuthority(candidate: any, current: any): any {
+  for (const key of ['sessions','assign'] as const) {
+    const rows = Array.isArray(candidate[key]) ? candidate[key] : [];
+    for (const row of current[key] || []) {
+      if (!(key === 'sessions' ? row.managerTimeRevision : row.managerTimeCancellation && row.cancelled)) continue;
+      const i = rows.findIndex((x:any) => String(x?.id) === String(row.id));
+      if (i < 0) rows.push(cloneValue(row));
+      else rows[i] = cloneValue(row);
+    }
+    candidate[key] = rows;
+  }
+  const audited = new Set((current.additionalActions || []).filter((x:any)=>x.managerTime).map((x:any)=>x.id));
+  for (const key of ['additionalActions','corrections','cancelledAssignments','suggestedEdits','reopenLogs'] as const) {
+    const rows = Array.isArray(candidate[key]) ? candidate[key] : [];
+    for (const row of current[key] || []) {
+      if (!audited.has(row.id)) continue;
+      const i = rows.findIndex((x:any)=>x?.id === row.id);
+      if (i < 0) rows.push(cloneValue(row)); else rows[i] = cloneValue(row);
+    }
+    candidate[key] = rows;
+  }
+  return candidate;
+}
+
 // A delayed legacy client must not reopen work that another device already paused.
 // Only synthetic overtime sessions absent from the current server snapshot are removed.
 function preserveClosedSessions(candidate: any, current: any): any {
@@ -467,7 +492,7 @@ function computeLiveStatus(data: any, revision: number, changedBy: string) {
   };
   return users.filter((u:any)=>u && u.role==="Employee").map((u:any)=>{
     const empSessions = sessions
-      .filter((s:any)=>s && s.emp===u.id)
+      .filter((s:any)=>s && !s.cancelled && s.emp===u.id)
       .slice()
       .sort((a:any,b:any)=>(Number(b.start)||0)-(Number(a.start)||0) || String(b.id||"").localeCompare(String(a.id||"")));
     const open = empSessions.find((s:any)=>s.end==null) || null;
@@ -866,6 +891,7 @@ Deno.serve(async (req: Request) => {
         }
 
         candidate = preservePaintPurchasingHistory(preserveConsumablesHistory(preserveOperationalHistory(reconcileAutoOvertime(preserveClosedSessions(candidate, current.data), current.data), current.data, user), current.data), current.data);
+        candidate = preserveManagerTimeAuthority(candidate, current.data);
 
         const paintOrderIssue=paintOrderRules.validateNewOrders(candidate.paintPurchasing?.orders || [],current.data?.paintPurchasing?.orders || []);
         if (paintOrderIssue) return reply({ok:false,code:"paint_po_invalid",message:paintOrderIssue,revision:current.revision,data:current.data},409);

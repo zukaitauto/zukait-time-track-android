@@ -123,7 +123,7 @@ function renderManager67(){
  '</div></section>'+
  '<section class="v67-section"><div class="v67-section-title"><div><h3>Workshop Tools</h3><p>Job Card control, production and reports</p></div></div><div class="v67-tools">'+
  toolBox('tool-blue','Job Card Tools','Workshop job control',
-  '<button onclick="openJobCardManager(\'all\')">Job Card Manager</button><button onclick="v67OpenActiveJobs()">Active Jobs</button><button onclick="openManagerJobsPopup(\'completed\')">Completed Jobs</button><button onclick="openManagerTechniciansPopup()">Technicians</button>')+
+  '<button onclick="openJobCardManager(\'all\')">Job Card Manager</button><button onclick="v67OpenActiveJobs()">Active Jobs</button><button onclick="openManagerJobsPopup(\'completed\')">Completed Jobs</button><button onclick="openManagerTechniciansPopup()">Technicians</button><button type="button" data-manager-time-management="1" onclick="zukaitOpenManagerTimeManagement()">⏱ Time Management</button>')+
  toolBox('tool-green','Production & Reports','Performance and history',
   '<button onclick="openCompletedJobProduction()">Job Production</button><button onclick="openManagerReports()">Reports</button><button onclick="v250OpenJobTypeReport()">Job Type Report</button><button onclick="openIncentiveList()">Incentive</button><button onclick="openManagerHistoryPopup()">History</button>')+
  '</div></section>'+
