@@ -2,6 +2,7 @@ import "./paint_order_rules.js";
 const paintOrderRules = (globalThis as any).zukaitPaintOrderRules;
 import { qcTransition, preserveQcAuthority } from "./qc_delivery_rules.js";
 import { timeManagementTransition } from "./time_management_rules.js";
+import { managerTimeCorrectionTransition } from "./manager_time_correction_rules.js";
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
@@ -177,7 +178,8 @@ function preserveClosedSessions(candidate: any, current: any): any {
     // restart must create a new session ID.
     return authoritative
       ? {...s,end:authoritative.end,paused:authoritative.paused,autoPausedAt:authoritative.autoPausedAt,
-         pauseReason:authoritative.pauseReason,closeReason:authoritative.closeReason}
+         pauseReason:authoritative.pauseReason,closeReason:authoritative.closeReason,
+         ...(Number(authoritative.managerStartCorrectedAt)>0?{start:authoritative.start,managerStartCorrectedAt:authoritative.managerStartCorrectedAt,managerStartCorrectedBy:authoritative.managerStartCorrectedBy}: {})}
       : s;
   });
   return candidate;
@@ -593,6 +595,22 @@ Deno.serve(async (req: Request) => {
         if(committed?.code!=="conflict")return reply({ok:false,code:committed?.code||"time_commit_failed"},409);
       }
       return reply({ok:false,code:"time_conflict"},409);
+    }
+
+    if (action === "manager_time_correction") {
+      for (let attempt=0;attempt<8;attempt++) {
+        const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
+        if(readError)throw readError;
+        const result=managerTimeCorrectionTransition(current.data,user,body,Date.now());
+        if(!result.ok)return reply({ok:false,code:result.code},result.code==="manager_time_permission_denied"?403:409);
+        if(result.duplicate)return reply({ok:true,audit:result.audit,duplicate:true,server_revision:current.revision});
+        const next=Number(current.revision||0)+1;
+        const {data:committed,error:commitError}=await admin.rpc("zukait_commit_workshop_state_v2",{p_expected_revision:Number(current.revision||0),p_data:result.data,p_changed_by:user.id,p_live:computeLiveStatus(result.data,next,user.id)});
+        if(commitError)throw commitError;
+        if(committed?.ok)return reply({ok:true,audit:result.audit,server_revision:committed.revision||next});
+        if(committed?.code!=="conflict")return reply({ok:false,code:committed?.code||"manager_time_commit_failed"},409);
+      }
+      return reply({ok:false,code:"manager_time_conflict"},409);
     }
 
     if (action === "qc_delivery") {
