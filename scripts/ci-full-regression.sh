@@ -77,6 +77,7 @@ node tests/v2-work-session-projection.mjs
 node tests/v2-work-state-machine-authority.mjs
 node tests/v2-job-workflow.mjs
 node tests/v2-spare-parts.mjs
+node tests/v2-spare-parts-edit-delete.mjs
 node tests/v2-estimate-smoke.mjs
 node tests/v2-estimate-functional.mjs
 node tests/v2-estimate-shared-sync.mjs
