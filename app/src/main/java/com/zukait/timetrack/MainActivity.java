@@ -325,7 +325,38 @@ public class MainActivity extends Activity {
                         @Override
                         public void onPageFinished(WebView view, String url) {
                             PrintManager pm = (PrintManager) getSystemService(Context.PRINT_SERVICE);
-                            PrintDocumentAdapter adapter = view.createPrintDocumentAdapter(safeTitle);
+                            final PrintDocumentAdapter delegate = view.createPrintDocumentAdapter(safeTitle);
+                            PrintDocumentAdapter adapter = new PrintDocumentAdapter() {
+                                private boolean released = false;
+                                private void releasePrintView() {
+                                    if (released) return;
+                                    released = true;
+                                    view.post(() -> {
+                                        try {
+                                            view.stopLoading();
+                                            view.setWebChromeClient(null);
+                                            view.setWebViewClient(null);
+                                            view.loadUrl("about:blank");
+                                            view.clearHistory();
+                                            view.removeAllViews();
+                                            view.destroy();
+                                        } catch (Exception ignored) { }
+                                    });
+                                }
+                                @Override public void onStart() { delegate.onStart(); }
+                                @Override public void onLayout(PrintAttributes oldAttributes, PrintAttributes newAttributes,
+                                        CancellationSignal cancellationSignal,
+                                        LayoutResultCallback callback, Bundle extras) {
+                                    delegate.onLayout(oldAttributes, newAttributes, cancellationSignal, callback, extras);
+                                }
+                                @Override public void onWrite(PageRange[] pages, ParcelFileDescriptor destination,
+                                        CancellationSignal cancellationSignal, WriteResultCallback callback) {
+                                    delegate.onWrite(pages, destination, cancellationSignal, callback);
+                                }
+                                @Override public void onFinish() {
+                                    try { delegate.onFinish(); } finally { releasePrintView(); }
+                                }
+                            };
                             pm.print(safeTitle, adapter, null);
                         }
                     });
@@ -1379,7 +1410,19 @@ public class MainActivity extends Activity {
         if (updateReceiver != null) { try { unregisterReceiver(updateReceiver); } catch (Exception ignored) { } }
         if (speechRecognizer != null) { try { speechRecognizer.destroy(); } catch (Exception ignored) { } speechRecognizer = null; }
         if (voiceNoteRecorder != null) stopNativeVoiceNoteInternal(true);
-        if (webView != null) webView.destroy();
+        if (webView != null) {
+            try {
+                webView.stopLoading();
+                webView.setWebChromeClient(null);
+                webView.setWebViewClient(null);
+                webView.removeJavascriptInterface("AndroidBridge");
+                webView.loadUrl("about:blank");
+                webView.clearHistory();
+                webView.removeAllViews();
+                webView.destroy();
+            } catch (Exception ignored) { }
+            webView = null;
+        }
         super.onDestroy();
     }
 }
