@@ -1,8 +1,8 @@
 {
-  "versionName": "V266",
-  "versionCode": 229,
+  "versionName": "V267",
+  "versionCode": 230,
   "approvedForStaff": true,
   "approvedAt": "2026-10-04",
-  "sourceCommit": "59038eac40d57f87fa124d9004706a7fac650b30",
-  "publishNonce": "release-v266-20261004-parts-list-edit-delete"
+  "sourceCommit": "3e409fcb44749113aec7df43e7302a7cebdae325",
+  "publishNonce": "release-v267-20261004-id001-employee-visibility"
 }
