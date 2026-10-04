@@ -52,6 +52,14 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyStore;
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
+import android.security.keystore.KeyGenParameterSpec;
+import android.security.keystore.KeyProperties;
 
 import androidx.core.content.FileProvider;
 import androidx.webkit.WebViewAssetLoader;
@@ -83,6 +91,10 @@ public class MainActivity extends Activity {
     private MediaRecorder voiceNoteRecorder;
     private File voiceNoteFile;
     private static final long MAX_VOICE_NOTE_BYTES = 8L * 1024L * 1024L;
+    private static final String SESSION_PREFS = "zukait_secure_native_session";
+    private static final String SESSION_KEY_ALIAS = "zukait_session_aes_v1";
+    private static final String SESSION_TOKEN_PREF = "token_ciphertext";
+    private static final String SESSION_IV_PREF = "token_iv";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -255,7 +267,75 @@ public class MainActivity extends Activity {
         }
     }
 
+    private SecretKey secureSessionKey() throws Exception {
+        KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+        keyStore.load(null);
+        java.security.Key existing = keyStore.getKey(SESSION_KEY_ALIAS, null);
+        if (existing instanceof SecretKey) return (SecretKey) existing;
+        KeyGenerator generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore");
+        generator.init(new KeyGenParameterSpec.Builder(
+                SESSION_KEY_ALIAS, KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+                .setKeySize(256)
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setRandomizedEncryptionRequired(true)
+                .build());
+        return generator.generateKey();
+    }
+
+    private void storeSecureSessionToken(String token) {
+        if (token == null || token.isEmpty()) { clearSecureSessionToken(); return; }
+        try {
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, secureSessionKey());
+            byte[] encrypted = cipher.doFinal(token.getBytes(StandardCharsets.UTF_8));
+            getSharedPreferences(SESSION_PREFS, MODE_PRIVATE).edit()
+                    .putString(SESSION_TOKEN_PREF, Base64.encodeToString(encrypted, Base64.NO_WRAP))
+                    .putString(SESSION_IV_PREF, Base64.encodeToString(cipher.getIV(), Base64.NO_WRAP))
+                    .apply();
+        } catch (Exception e) {
+            android.util.Log.e("ZukaitAuth", "Unable to protect session token", e);
+        }
+    }
+
+    private String readSecureSessionToken() {
+        try {
+            android.content.SharedPreferences prefs = getSharedPreferences(SESSION_PREFS, MODE_PRIVATE);
+            String encoded = prefs.getString(SESSION_TOKEN_PREF, "");
+            String encodedIv = prefs.getString(SESSION_IV_PREF, "");
+            if (encoded == null || encoded.isEmpty() || encodedIv == null || encodedIv.isEmpty()) return "";
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, secureSessionKey(),
+                    new GCMParameterSpec(128, Base64.decode(encodedIv, Base64.NO_WRAP)));
+            return new String(cipher.doFinal(Base64.decode(encoded, Base64.NO_WRAP)), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            android.util.Log.w("ZukaitAuth", "Protected session token is unavailable", e);
+            clearSecureSessionToken();
+            return "";
+        }
+    }
+
+    private void clearSecureSessionToken() {
+        getSharedPreferences(SESSION_PREFS, MODE_PRIVATE).edit()
+                .remove(SESSION_TOKEN_PREF).remove(SESSION_IV_PREF).apply();
+    }
+
     public class AndroidBridge {
+        @JavascriptInterface
+        public void saveSecureSessionToken(String token) {
+            storeSecureSessionToken(token == null ? "" : token);
+        }
+
+        @JavascriptInterface
+        public String getSecureSessionToken() {
+            return readSecureSessionToken();
+        }
+
+        @JavascriptInterface
+        public void clearSecureSessionToken() {
+            MainActivity.this.clearSecureSessionToken();
+        }
+
         @JavascriptInterface
         public void notify(String title, String message) {
             runOnUiThread(() -> showNotification(title, message));
