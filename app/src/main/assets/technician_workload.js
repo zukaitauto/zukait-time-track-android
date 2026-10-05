@@ -51,8 +51,10 @@
   function workloadBody(emp){
     const {rows}=snapshot(emp);
     return '<div class="tw-workload-actions"><button type="button" class="tw-time-details-button" data-tw-time-details="1">◷ Time Details</button></div><div class="tw-workload-summary" data-summary="Present Jobs: '+rows.length+'"><span>Present Jobs</span><b>'+rows.length+'</b></div>'+(rows.length?rows.map((r,i)=>{
-      const suggested=r.assignments.reduce((n,a)=>n+(Number(a.suggested)||0),0);
-      const worked=r.assignments.reduce((n,a)=>n+(Number(totalForAssignment(a))||0),0);
+      const master=window.zukaitJobCardMaster?.production?.(r.job.no);
+      const ids=new Set(r.assignments.map(a=>String(a.id||'')));
+      const suggested=master?master.normal.filter(a=>ids.has(String(a.id||''))).reduce((n,a)=>n+(Number(a.suggested)||0),0):r.assignments.reduce((n,a)=>n+(Number(a.suggested)||0),0);
+      const worked=master?master.normal.filter(a=>ids.has(String(a.id||''))).reduce((n,a)=>n+(Number(window.zukaitJobCardMaster.actualMinutes(a))||0),0):r.assignments.reduce((n,a)=>n+(Number(totalForAssignment(a))||0),0);
       const remaining=Math.max(0,suggested-worked);
       return '<article class="tw-job '+statusClass(r.status)+'"><div class="tw-job-head"><h3>'+esc((i+1)+' · '+r.job.no)+'</h3><span class="tw-status '+statusClass(r.status)+'">● '+esc(r.status)+'</span></div><p class="tw-vehicle">'+esc(vehicle(r.job))+'</p><p class="tw-reg">Registration: <b>'+esc(r.job.reg||'—')+'</b></p><dl><div class="tw-metric tw-suggested"><dt>Suggested</dt><dd>'+esc(minutes(suggested))+'</dd></div><div class="tw-metric tw-worked"><dt>Worked</dt><dd>'+esc(minutes(worked))+'</dd></div><div class="tw-metric tw-remaining"><dt>Remaining</dt><dd>'+esc(minutes(remaining))+'</dd></div></dl><button type="button" class="tw-history-button" data-tw-history="'+esc(r.job.no)+'">◷ Work History</button></article>';
     }).join(''):'<p class="notice">No unfinished job cards assigned.</p>');
