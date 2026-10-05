@@ -23,7 +23,8 @@ function paintStatus(no){
  const o=orders[0];if((o.returns||[]).length)return 'Returned / Adjusted';if(o.receivedAt)return 'Received / Costed';return 'PO Created';
 }
 function data(no){
- const j=job(no);if(!j)return null;
+ const master=window.zukaitJobCardMaster?.costs?.(no),j=job(no);if(master&&j)return {...master,job:j,consumablesStatus:consumablesStatus(no),paintStatus:paintStatus(no)};
+ if(!j)return null;
  const rate=num(state.labourRate||2.5),aa=(state.assign||[]).filter(a=>a&&a.job===no&&!a.cancelled);
  const regular=aa.reduce((n,a)=>n+labourValue(a,rate),0);
  const preliminary=(state.sessions||[]).filter(s=>s&&String(s.preliminaryLinkedJob||'')===String(no)&&s.end).reduce((n,s)=>n+Math.max(0,(num(s.end)-num(s.start))/60000)/60*rate,0);
