@@ -3,6 +3,6 @@
   "versionCode": 243,
   "approvedForStaff": true,
   "approvedAt": "2026-10-05",
-  "sourceCommit": "8a775668eff1c19875650eaad36c7289bd042786",
-  "publishNonce": "release-v280-20261005-focused-job-navigation"
+  "sourceCommit": "d45fcd4d8b182e7e1e35d4581b6a375c1cd6da8f",
+  "publishNonce": "release-v280-20261005-job-card-master-authority"
 }
