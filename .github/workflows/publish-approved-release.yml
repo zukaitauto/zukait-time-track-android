@@ -54,6 +54,8 @@ jobs:
           VERSION_CODE=$(sed -n 's/^[[:space:]]*versionCode[[:space:]]*\([0-9][0-9]*\).*/\1/p' app/build.gradle | head -n 1)
           test -n "$VERSION_NAME" || { echo "Could not read versionName from app/build.gradle"; exit 1; }
           test -n "$VERSION_CODE" || { echo "Could not read versionCode from app/build.gradle"; exit 1; }
+          test "$VERSION_NAME" = "$(jq -r '.versionName' release-request.json)" || { echo "Approved versionName does not match app"; exit 1; }
+          test "$VERSION_CODE" = "$(jq -r '.versionCode' release-request.json)" || { echo "Approved versionCode does not match app"; exit 1; }
           echo "Resolved production version: $VERSION_NAME (code $VERSION_CODE)"
           echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
           echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"

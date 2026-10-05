@@ -1,8 +1,8 @@
 {
-  "versionName": "V273",
-  "versionCode": 236,
+  "versionName": "V274",
+  "versionCode": 237,
   "approvedForStaff": true,
   "approvedAt": "2026-10-05",
-  "sourceCommit": "1a940ca6c68eeaf218f157bcd6852c03c90c0279",
-  "publishNonce": "release-v273-20261005-manager-time-attention"
+  "sourceCommit": "87566be2a52b07b08584b35b943b9746ca6f3a2d",
+  "publishNonce": "release-v274-20261005-running-attention-delivered-review-autologin"
 }
