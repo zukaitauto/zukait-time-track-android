@@ -819,7 +819,7 @@ Deno.serve(async (req: Request) => {
       if(!String(j.jobCard||"").trim()) return reply({ok:false,code:"job_card_required"},400);
       const revision=Math.max(0,Number(j.revision||0));
       const {data,error}=await admin.rpc("zukait_v2_upsert_jobcard",{
-        p_job_card:String(j.jobCard).trim(),p_registration:String(j.registration||""),p_vehicle_make:String(j.vehicleMake||""),p_vehicle_model:String(j.vehicleModel||""),
+        p_job_card:String(j.jobCard).trim(),p_registration:String(j.registration||""),p_vin:String(j.vin||""),p_vehicle_make:String(j.vehicleMake||""),p_vehicle_model:String(j.vehicleModel||""),
         p_vehicle_year:j.vehicleYear==null?null:Number(j.vehicleYear),p_workflow_stage:String(j.workflowStage||"CREATED"),p_status:String(j.status||"OPEN"),
         p_revision:revision,p_event_id:j.eventId?String(j.eventId):null,p_completed_at:j.completedAt||null
       });
