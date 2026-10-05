@@ -1,8 +1,8 @@
 {
-  "versionName": "V275",
-  "versionCode": 238,
+  "versionName": "V276",
+  "versionCode": 239,
   "approvedForStaff": true,
   "approvedAt": "2026-10-05",
-  "sourceCommit": "5dc98b7a498da7849bb8bb1aedff35b65b44f2cd",
-  "publishNonce": "release-v275-20261005-ideal-worker-test-scope-fixed"
+  "sourceCommit": "9f6a1ec58b2ca7f3da4b3955f998edb19259278e",
+  "publishNonce": "release-v276-20261005-manager-monthly-spare-parts-expense"
 }
