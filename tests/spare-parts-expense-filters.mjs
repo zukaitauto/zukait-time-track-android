@@ -33,6 +33,12 @@ select('all');assert.match(body(),/28\.000 OMR/);assert.match(body(),/openList/)
 fields.get('v123PurchaseJC').value='';select('all');assert.match(body(),/45\.000 OMR/,'all dates must retain older and undated costs');
 select('custom','2026-10-03','2026-10-01');assert.match(body(),/Choose valid dates/);
 assert.equal(writes,0,'filtering must not write parts records');
+context.Date=class extends Date{constructor(...args){super(...(args.length?args:['2026-10-05T08:00:00Z']))}static now(){return Date.parse('2026-10-05T08:00:00Z')}};
+context.v123ManagerPerformanceRange('today');
+assert.equal(context.v284MonthlyPurchaseTotal(),30,'monthly purchase card must remain monthly under Today');
+let monthlyModal='';context.openModal=html=>monthlyModal=html;
+await context.v284OpenMonthlyPurchases();
+assert.match(monthlyModal,/<option value="month" selected>/,'monthly card opens matching monthly report');
 context.me.role='Employee';const before=body();select('month');assert.equal(body(),before,'expense view is manager-only');
 const main=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8');
 const cache=new Map(),app={zukaitV2:{}};
