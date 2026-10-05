@@ -1,8 +1,8 @@
 {
-  "versionName": "V286",
-  "versionCode": 249,
+  "versionName": "V287",
+  "versionCode": 250,
   "approvedForStaff": true,
   "approvedAt": "2026-10-05",
-  "sourceCommit": "5ea9a792c836022a0b0d3b1a353897dee5c884ed",
-  "publishNonce": "release-v286-estimate-print-polish-20261005"
+  "sourceCommit": "5d7b180867be3ab4994834b6ed005593c67717b5",
+  "publishNonce": "release-v287-supervisor-jobcard-edit-20261005"
 }
