@@ -1,0 +1,35 @@
+/* Scoped to Job Card Manager details, editor and employee history. */
+.mje-form{color:#17324b;padding:4px;line-height:1.5}
+.mje-form .section-title{background:linear-gradient(125deg,#173c72,#2868ac);color:#fff;padding:18px;border-radius:18px;box-shadow:0 5px 0 #102e58,0 10px 24px #173c7220;gap:12px;margin-bottom:22px;flex-wrap:wrap}
+.mje-form .section-title h3{color:#fff;margin:0;font-size:20px;overflow-wrap:anywhere}
+.mje-form .section-title .secondary{background:#ffffff!important;color:#214b7c!important;border:1px solid #d9e7f5!important;box-shadow:0 3px 0 #b7cce2!important}
+.mje-form h4{font-size:15px;color:#234a72;margin:24px 0 12px;display:flex;align-items:center;gap:9px}
+.mje-form h4:before{content:'';width:5px;height:20px;border-radius:4px;background:#4189d4;flex:none}
+.mje-form .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0 20px}
+.mje-form .notice{box-sizing:border-box;min-width:0;margin:0;padding:15px;border-radius:15px;border:1px solid #cadcf0;background:linear-gradient(145deg,#fff,#eaf3ff);box-shadow:inset 0 2px 0 #fff,0 4px 0 #c4d7ec,0 8px 15px #1838530c;color:#244568;overflow-wrap:anywhere}
+.mje-form .notice small{font-size:11px;font-weight:750;letter-spacing:.035em;text-transform:uppercase;color:#527394}
+.mje-form .notice b{font-size:16px;color:inherit}
+.mje-form .mje-stats .notice:nth-child(1){background:linear-gradient(145deg,#f9fcff,#dbeafe);border-color:#a9caf0;color:#214d83;box-shadow:0 4px 0 #a9caf0,0 8px 15px #1838530c}
+.mje-form .mje-stats .notice:nth-child(2){background:linear-gradient(145deg,#fbfffd,#d9f5e8);border-color:#9bd7b9;color:#196044;box-shadow:0 4px 0 #9bd7b9,0 8px 15px #1838530c}
+.mje-form .mje-stats .notice:nth-child(3){background:linear-gradient(145deg,#fffefa,#fff0cd);border-color:#e9cb83;color:#77500b;box-shadow:0 4px 0 #e9cb83,0 8px 15px #1838530c}
+.mje-form .mje-stats .notice:nth-child(4){background:linear-gradient(145deg,#fefcff,#ede3ff);border-color:#c9b3eb;color:#61418e;box-shadow:0 4px 0 #c9b3eb,0 8px 15px #1838530c}
+.mje-form button{min-height:44px;border-radius:12px!important;padding:11px 15px!important;font-weight:750;cursor:pointer;transition:transform .12s,box-shadow .12s}
+.mje-form button:focus-visible,.mje-form input:focus-visible,.mje-form select:focus-visible,.mje-form textarea:focus-visible{outline:3px solid #2563eb;outline-offset:3px}
+.mje-form button:active{transform:translateY(2px)}
+.mje-form .mje-edit,.mje-form .blue{background:linear-gradient(145deg,#347cdc,#2352a3)!important;border:1px solid #234e90!important;color:#fff!important;box-shadow:0 4px 0 #163c76,0 8px 15px #2352a321!important}
+.mje-form .mje-employee{display:block;width:100%;text-align:left;background:linear-gradient(145deg,#fff,#edf5ff)!important;border:1px solid #bfd4eb!important;color:#264c76!important;box-shadow:inset 0 2px 0 #fff,0 4px 0 #b6cde6,0 8px 16px #17324b0d!important;line-height:1.9;padding:16px!important;overflow-wrap:anywhere}
+.mje-form .mje-employee b{font-size:17px;color:#193d67}
+.mje-form .mje-employee b:before{content:'●';display:inline-grid;place-items:center;width:28px;height:28px;border-radius:9px;background:#dceaff;color:#3876bb;margin-right:8px;font-size:13px}
+.mje-status{display:inline-block;border-radius:999px;padding:2px 9px;background:#e8edf3;color:#4b6179;font-size:11px;font-weight:800;margin:5px 0}
+.mje-status[data-status="Working now"]{background:#d8f4e6;color:#176044}
+.mje-status[data-status="Completed"]{background:#e9dfff;color:#613a97}
+.mje-status[data-status="Paused / Open"]{background:#fff0ca;color:#78530c}
+.mje-form label{display:block;font-size:12px;font-weight:750;color:#3e5b79;min-width:0;padding:12px;border:1px solid #dce5f0;background:#f7faff;border-radius:13px}
+.mje-form input,.mje-form select,.mje-form textarea{display:block;box-sizing:border-box;width:100%;min-width:0;margin:7px 0 0;padding:12px;min-height:44px;background:#fff;color:#17324b;border:1px solid #b8cbe0;border-radius:9px;font-size:16px;font-weight:500}
+.mje-form textarea{min-height:90px}
+.mje-form label small{display:block;font-size:11px;font-weight:500;margin-top:5px}
+.mje-form>p{font-size:13px;color:#58718a}
+.mje-form>.notice{margin:12px 0}
+@media(min-width:760px){.mje-form .mje-stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:420px){.mje-form .grid{gap:10px}.mje-form .section-title{padding:14px}.mje-form .section-title h3{font-size:18px}.mje-form .mje-employee{padding:12px!important;font-size:12px}.mje-form .mje-employee b{font-size:14px}.mje-form .mje-employee b:before{width:23px;height:23px;margin-right:5px}.mje-form .notice{padding:12px}.mje-form .notice b{font-size:14px}}
+@media(prefers-reduced-motion:reduce){.mje-form button{transition:none}}
