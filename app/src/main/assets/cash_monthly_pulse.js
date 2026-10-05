@@ -4,7 +4,8 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const money=v=>'OMR '+Number(v||0).toFixed(3);
 function role(){return (typeof me==='undefined'?window.me:me)?.role||''}
 function snapshot(){return (typeof state==='undefined'?window.state:state)||{}}
-function all(){return (snapshot().jobs||[]).filter(j=>j&&j.no!=='ID001'&&!j.deleted&&!j.archived&&String(j.jobType||'').trim().toUpperCase()==='CASH')}
+function live(j){const x=window.zukaitJobCardMaster?.display?.(j?.no,j);return x?{...j,...x}:j}
+function all(){return (snapshot().jobs||[]).filter(j=>j&&j.no!=='ID001'&&!j.deleted&&!j.archived).map(live).filter(j=>String(j.jobType||'').trim().toUpperCase()==='CASH')}
 function month(){const d=new Date(),parts=new Intl.DateTimeFormat('en',{timeZone:'Asia/Muscat',year:'numeric',month:'numeric'}).formatToParts(d),y=Number(parts.find(x=>x.type==='year').value),m=Number(parts.find(x=>x.type==='month').value);return{from:Date.UTC(y,m-1,1)-4*3600000,to:Date.UTC(y,m,1)-4*3600000,label:d.toLocaleString('en',{timeZone:'Asia/Muscat',month:'long',year:'numeric'})}}
 function rows(kind){const {from,to}=month();return all().filter(j=>kind==='in'?Number(j.createdAt||0)>=from&&Number(j.createdAt||0)<to:j.delivered&&Number(j.deliveredAt||0)>=from&&Number(j.deliveredAt||0)<to)}
 function amount(j,kind){const n=Number(kind==='out'?(j.finalInvoiceAmount??j.amount??0):(j.amount??0));return Number.isFinite(n)?n:0}
