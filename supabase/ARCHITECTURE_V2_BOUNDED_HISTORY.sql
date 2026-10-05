@@ -134,7 +134,8 @@ begin
        coalesce(p_payload->>'workflowStage','CREATED'),
        case when p_event_type='JOB_COMPLETED' then 'COMPLETED' when p_event_type='JOB_REOPENED' then 'OPEN' else coalesce(p_payload->>'status','OPEN') end,
        coalesce(p_revision,0),p_event_id,
-       case when p_event_type='JOB_COMPLETED' then now() else null end
+       case when p_event_type='JOB_COMPLETED' then now() else null end,
+       upper(coalesce(p_payload->>'vin',''))
      );
    end if;
  else
