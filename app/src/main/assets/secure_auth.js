@@ -5,29 +5,43 @@
   let restoring=false;
   let nativeTokenCache='';
 
+  function secureBridge(){
+    const b=window.AndroidBridge;
+    return b && typeof b.saveSecureSessionToken==='function' && typeof b.getSecureSessionToken==='function' ? b : null;
+  }
+  function persistNative(b,t){
+    try{if(b.saveSecureSessionToken(t)===false)return false;return String(b.getSecureSessionToken()||'')===t}catch(_){return false}
+  }
+
   function savedSession(){
     try{
       const s=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');
       if(!s)return null;
+      const b=secureBridge();
       if(s.token){
         nativeTokenCache=String(s.token);
-        try{AndroidBridge.saveSecureSessionToken(nativeTokenCache)}catch(_){}
-        delete s.token;
-        localStorage.setItem(SESSION_KEY,JSON.stringify(s));
+        if(b && persistNative(b,nativeTokenCache)){
+          delete s.token;
+          localStorage.setItem(SESSION_KEY,JSON.stringify(s));
+        }
       }
-      if(!nativeTokenCache){try{nativeTokenCache=String(AndroidBridge.getSecureSessionToken()||'')}catch(_){}}
+      if(b && !nativeTokenCache){try{nativeTokenCache=String(b.getSecureSessionToken()||'')}catch(_){}}
       return Object.assign({},s,{token:nativeTokenCache});
     }catch(_){return null}
   }
   function saveSession(token,user){
     if(!token||!user)return;
     nativeTokenCache=String(token);
-    try{AndroidBridge.saveSecureSessionToken(nativeTokenCache)}catch(_){}
-    localStorage.setItem(SESSION_KEY,JSON.stringify({user,savedAt:Date.now()}));
+    const b=secureBridge();
+    const s={user,savedAt:Date.now()};
+    if(b){
+      if(!persistNative(b,nativeTokenCache))throw new Error('Secure login storage is unavailable. Please try again.');
+    }else{s.token=nativeTokenCache}
+    localStorage.setItem(SESSION_KEY,JSON.stringify(s));
   }
   function clearSession(){
     nativeTokenCache='';
-    try{AndroidBridge.clearSecureSessionToken()}catch(_){}
+    try{window.AndroidBridge.clearSecureSessionToken()}catch(_){}
     localStorage.removeItem(SESSION_KEY);
   }
   function token(){return savedSession()?.token||''}
@@ -89,6 +103,7 @@
 
   function openApp(userObj){
     me=userObj;
+    window.me=userObj;window.currentUser=userObj;
     const login=document.getElementById('login');
     const app=document.getElementById('app');
     if(login)login.classList.add('hidden');
@@ -96,6 +111,7 @@
   }
   function showLogin(){
     me=null;
+    window.me=null;window.currentUser=null;
     const app=document.getElementById('app');
     const login=document.getElementById('login');
     if(app)app.classList.add('hidden');
@@ -258,9 +274,10 @@
         return true;
       }
       const r=await callAuth({action:'session',session_token:s.token});
-      if(!r.ok){
+      if(!r.ok && (r.code==='invalid_session'||r._status===401)){
         clearSession();showLogin();return false;
       }
+      if(!r.ok)throw new Error(authMessage(r));
       saveSession(s.token,r.user);
       openApp(r.user);
       if(window.zukaitCloud?.init)await window.zukaitCloud.init(true);
@@ -270,7 +287,7 @@
     }catch(e){
       console.warn('Session restore check failed',e);
       const s=savedSession();
-      if(s?.user){
+      if(s?.token && s?.user){
         openApp(s.user);
         try{render()}catch(_){}
         return true;

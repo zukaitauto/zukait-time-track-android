@@ -16,6 +16,8 @@ concurrency:
 
 jobs:
   deploy:
+    # Allow fixes to be build-verified without publishing the PC app.
+    if: "!contains(github.event.head_commit.message, '[verify-only]')"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

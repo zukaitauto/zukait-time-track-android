@@ -283,18 +283,19 @@ public class MainActivity extends Activity {
         return generator.generateKey();
     }
 
-    private void storeSecureSessionToken(String token) {
-        if (token == null || token.isEmpty()) { clearSecureSessionToken(); return; }
+    private boolean storeSecureSessionToken(String token) {
+        if (token == null || token.isEmpty()) { clearSecureSessionToken(); return true; }
         try {
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, secureSessionKey());
             byte[] encrypted = cipher.doFinal(token.getBytes(StandardCharsets.UTF_8));
-            getSharedPreferences(SESSION_PREFS, MODE_PRIVATE).edit()
+            return getSharedPreferences(SESSION_PREFS, MODE_PRIVATE).edit()
                     .putString(SESSION_TOKEN_PREF, Base64.encodeToString(encrypted, Base64.NO_WRAP))
                     .putString(SESSION_IV_PREF, Base64.encodeToString(cipher.getIV(), Base64.NO_WRAP))
-                    .apply();
+                    .commit();
         } catch (Exception e) {
             android.util.Log.e("ZukaitAuth", "Unable to protect session token", e);
+            return false;
         }
     }
 
@@ -322,8 +323,8 @@ public class MainActivity extends Activity {
 
     public class AndroidBridge {
         @JavascriptInterface
-        public void saveSecureSessionToken(String token) {
-            storeSecureSessionToken(token == null ? "" : token);
+        public boolean saveSecureSessionToken(String token) {
+            return storeSecureSessionToken(token == null ? "" : token);
         }
 
         @JavascriptInterface

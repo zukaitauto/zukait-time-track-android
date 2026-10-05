@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+node tests/completed-overdue-runtime.mjs
+node tests/secure-session-restore.mjs
 node tests/functional-smoke.mjs
 node tests/manager-time-management.mjs
 node tests/cash-monthly-pulse.mjs

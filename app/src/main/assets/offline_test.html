@@ -1681,7 +1681,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 <script src="print_navigation.js?v=228"></script>
 <script src="consumables.js?v=20261001"></script><script src="consumables_ui.js?v=20261001"></script><script src="paint_order_rules.js?v=264"></script>
 <script src="paint_module.js?v=264-order-rules"></script><script src="cloud_sync.js?v=256"></script>
-<script src="secure_auth.js?v=257"></script>
+<script src="secure_auth.js?v=20261005"></script>
 <script src="production_pilot.js?v=202"></script>
 <script src="professional_ux.js?v=202"></script>
 <script src="v54_improvements.js?v=202"></script>
@@ -1691,7 +1691,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 <script src="v67_updates.js?v=280-manager-time"></script>
 <script src="v68_updates.js?v=202"></script>
 <script src="v69_updates.js?v=202"></script>
-<script src="v74_updates.js?v=202610031"></script>
+<script src="v74_updates.js?v=20261005"></script>
 <script src="supervisor_stable.js?v=260"></script>
 <script src="voice_quick_entry_intelligent.js?v=202"></script>
 <script src="live_status_authority.js?v=217"></script>
@@ -1735,6 +1735,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     try{window.refreshManagerSparePartsSummary?.()}catch(e){}
     try{window.zukaitEstimate?.ensureDashboardCards?.()}catch(e){}
     try{window.zukaitRefreshManagerTechnicianBoard?.()}catch(e){console.error('Manager technician board',e)}
+    try{window.v273SettleTimeAttention?.()}catch(e){console.error('Time Attention composition',e)}
     root.dataset.managerComposition='v200-final';
   }
   const render=window.render;
