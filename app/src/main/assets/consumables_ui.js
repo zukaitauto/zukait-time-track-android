@@ -90,9 +90,9 @@ function consJobMatches(q){
 }
 function consVehicleDetails(d,colour){
  if(!d)return '';
- const j=d.job||{},vehicle=d.vehicle||j.vehicle||[j.make,j.model].filter(Boolean).join(' ')||'—';
- const reg=j.reg||j.registration||'—',year=j.year||j.modelYear||'—',vin=j.vin||j.VIN||j.chassis||j.chassisNo||'',status=j.status||'Open';
- const clr=colour||j.colorCode||j.colourCode||'—';
+ const j=d.job||{},live=window.zukaitJobCardMaster?.display?.(j.no,j)||j,vehicle=live.vehicle||d.vehicle||j.vehicle||[j.make,j.model].filter(Boolean).join(' ')||'—';
+ const reg=live.reg||live.registration||'—',year=live.year||live.modelYear||'—',vin=live.vin||live.VIN||live.chassis||live.chassisNo||'',status=live.status||j.status||'Open';
+ const clr=live.colorCode||live.colourCode||colour||j.colorCode||j.colourCode||'—';
  return '<div class="cons-vehicle-card"><div><small>JOB CARD</small><b>'+esc(j.no||'—')+'</b></div><div><small>VEHICLE</small><b>'+esc(vehicle)+'</b></div><div><small>REGISTRATION</small><b>'+esc(reg)+'</b></div><div><small>YEAR</small><b>'+esc(year)+'</b></div><div><small>COLOUR CODE</small><b>'+esc(clr)+'</b></div><div><small>STATUS</small><b>'+esc(status)+'</b></div>'+(vin?'<div class="wide"><small>VIN / CHASSIS</small><b>'+esc(vin)+'</b></div>':'')+'</div>';
 }
 function consMaterialListData(jobCard,row){
