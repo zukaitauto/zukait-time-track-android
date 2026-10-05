@@ -28,4 +28,10 @@ await ctx.openReceivedPaintList();html=el('paintReceivedListRows').innerHTML;ass
 el('paintReceivedListQuery').value='PO-old';ctx.paintRenderReceivedList();assert.match(el('paintReceivedListRows').innerHTML,/PO-old/);assert.doesNotMatch(el('paintReceivedListRows').innerHTML,/PO-new/);
 ctx.paintOpenReceivedRecord("new'&");assert.match(ctx.modal,/openReceivedPaintList\(\)/);assert.match(el('psOut').innerHTML,/PO-new/);assert.doesNotMatch(el('psOut').innerHTML,/PO-old/,'Select exact PO when two records share the same Job Card');assert.match(el('psOut').innerHTML,/PRINT/);
 state.paintPurchasing.orders=[];el('paintReceivedListQuery').value='';ctx.paintRenderReceivedList();assert.match(el('paintReceivedListRows').innerHTML,/No saved received paint records/);
-console.log('PASS: three LIST buttons, dates, descending order, filters, voids, exact details, and back navigation');
+ctx.openPaintPO();assert.match(ctx.modal,/margin-left:auto[^>]*openPaintPOList\(\)[^>]*>LIST/);
+state.paintPurchasing.orders=[{...order('old','PO-old',9999999999999),createdAt:1000},{...order('new','PO-new',null),createdAt:'2026-10-05T09:00:00Z'},{...order('missing','PO-missing',null),createdAt:null},{...order('void','PO-void',null),voided:true,createdAt:9999999999999}];
+await ctx.openPaintPOList();html=el('paintPOListRows').innerHTML;assert.ok(html.indexOf('PO-new')<html.indexOf('PO-old'),'PO list uses creation date, not received date');assert.ok(html.indexOf('PO-old')<html.indexOf('PO-missing'));assert.doesNotMatch(html,/PO-void/);assert.match(html,/Date unavailable/);
+el('paintPOListQuery').value='PO-new';ctx.paintRenderPOList();assert.doesNotMatch(el('paintPOListRows').innerHTML,/PO-old/);
+ctx.paintOpenPORecord('new');assert.match(ctx.modal,/openPaintPOList\(\)/);assert.match(el('psOut').innerHTML,/PO-new/);assert.doesNotMatch(el('psOut').innerHTML,/PO-old/);
+ctx.me.role='Employee';const prior=ctx.modal;await ctx.openPaintPOList();assert.equal(ctx.modal,prior);
+console.log('PASS: LIST navigation, creation-date sorting, filters, voids, exact PO details, role guards and back navigation');
