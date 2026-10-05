@@ -1,8 +1,8 @@
 {
-  "versionName": "V284",
-  "versionCode": 247,
+  "versionName": "V285",
+  "versionCode": 248,
   "approvedForStaff": true,
   "approvedAt": "2026-10-05",
-  "sourceCommit": "15773a5423d4bf5a4b183adcb9053c3903857520",
-  "publishNonce": "release-v284-monthly-purchases-20261005"
+  "sourceCommit": "510aac4c7dd543cd877a0478d97ea798386b97b9",
+  "publishNonce": "release-v285-paint-expense-20261005"
 }
