@@ -1,8 +1,8 @@
 {
-  "versionName": "V277",
-  "versionCode": 240,
+  "versionName": "V278",
+  "versionCode": 241,
   "approvedForStaff": true,
   "approvedAt": "2026-10-05",
-  "sourceCommit": "f83ec0400574dad683721b419bcad9accd8b4a8b",
-  "publishNonce": "release-v277-20261005-manager-control-center-ui"
+  "sourceCommit": "2941f7bfad049fea2364ff1055962ac4b2abe714",
+  "publishNonce": "release-v278-20261005-manager-ten-card-quick-view"
 }
