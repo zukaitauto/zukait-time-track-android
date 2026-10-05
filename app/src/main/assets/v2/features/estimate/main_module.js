@@ -135,7 +135,7 @@ function openEditor(id){
     field('estMakeModel','Make & Model',e.makeModel)+
     field('estYear','Year',e.year,'number','min="1900" max="2100"')+
     field('estReg','Registration No.',e.registration)+
-    field('estVin','VIN No.',e.vin)+
+    field('estVin','VIN No.',e.jobCard?(window.zukaitJobCardMaster?.vin?.(e.jobCard)||e.vin):e.vin,'text','maxlength="32" autocapitalize="characters" autocomplete="off"')+'<label>VIN Scanner<button type="button" class="secondary" onclick="zukaitVinScan?.open(\'estVin\')">📷 Scan VIN</button></label>'+
     field('estClaim','Claim No.',e.claimNo)+
     field('estJobCard','Job Card No. (Optional)',e.jobCard)+
   '</div></div>'+
@@ -222,7 +222,7 @@ function loadJob(){
   const q=document.getElementById('estJobLookup')?.value||document.getElementById('estJobCard')?.value||document.getElementById('estReg')?.value||'';
   const j=jobByQuery(q);if(!j)return alert('Job Card / Registration not found. You can still enter all estimate details manually.');
   const put=(id,v)=>{const x=document.getElementById(id);if(x&&v!=null&&String(v)!=='')x.value=String(v)};
-  put('estJobCard',j.no);put('estReg',j.reg||j.registration);put('estMakeModel',[j.make||j.brand,j.model||j.vehicle].filter(Boolean).join(' ').trim()||j.vehicle);put('estYear',j.year);put('estVin',j.vin||j.vinNo);put('estClaim',j.claimNo||j.claim);put('estName',j.customerName||j.name);put('estMobile',j.mobile||j.phone);
+  const live=window.zukaitJobCardMaster?.display?.(j.no,j)||j;put('estJobCard',live.no||j.no);put('estReg',live.reg||live.registration||j.reg||j.registration);put('estMakeModel',live.vehicle||[live.make||j.make||j.brand,live.model||j.model].filter(Boolean).join(' ').trim()||j.vehicle);put('estYear',live.year||j.year);put('estVin',live.vin||'');put('estClaim',j.claimNo||j.claim);put('estName',j.customerName||j.name);put('estMobile',j.mobile||j.phone);
 }
 function openFind(){
   ensureState();ensureStyle();openModal(nav('zukaitEstimate.openHome()')+'<div class="est-home"><h3>🔎 Find Estimate</h3><input id="estFindInput" style="width:100%;box-sizing:border-box" placeholder="Zi-Qt / Registration / Mobile / Name / Claim" oninput="zukaitEstimate.renderFind()"><div id="estFindResults" style="margin-top:10px"></div></div>');renderFind();
