@@ -8,6 +8,7 @@ drop function if exists public.zukait_v2_wip_page(timestamptz,integer,text,text)
 create table if not exists public.workshop_v2_jobcards (
  job_card text primary key,
  registration text not null default '',
+ vin text not null default '',
  vehicle_make text not null default '',
  vehicle_model text not null default '',
  vehicle_year integer,
@@ -21,19 +22,20 @@ create table if not exists public.workshop_v2_jobcards (
 );
 create index if not exists workshop_v2_jobcards_updated_idx on public.workshop_v2_jobcards(updated_at desc, job_card desc);
 create index if not exists workshop_v2_jobcards_registration_idx on public.workshop_v2_jobcards(registration);
+create index if not exists workshop_v2_jobcards_vin_idx on public.workshop_v2_jobcards(vin);
 create index if not exists workshop_v2_jobcards_status_idx on public.workshop_v2_jobcards(status,updated_at desc);
 alter table public.workshop_v2_jobcards enable row level security;
 revoke all on public.workshop_v2_jobcards from public,anon,authenticated;
 grant select,insert,update on public.workshop_v2_jobcards to service_role;
 
 create or replace function public.zukait_v2_jobcard_page(p_query text default null,p_before timestamptz default null,p_limit integer default 100,p_status text default null,p_before_id text default null)
-returns table(job_card text,registration text,vehicle_make text,vehicle_model text,vehicle_year integer,workflow_stage text,status text,created_at timestamptz,updated_at timestamptz,completed_at timestamptz,revision bigint)
+returns table(job_card text,registration text,vin text,vehicle_make text,vehicle_model text,vehicle_year integer,workflow_stage text,status text,created_at timestamptz,updated_at timestamptz,completed_at timestamptz,revision bigint)
 language sql stable security invoker set search_path=public as $$
- select j.job_card,j.registration,j.vehicle_make,j.vehicle_model,j.vehicle_year,j.workflow_stage,j.status,j.created_at,j.updated_at,j.completed_at,j.revision
+ select j.job_card,j.registration,j.vin,j.vehicle_make,j.vehicle_model,j.vehicle_year,j.workflow_stage,j.status,j.created_at,j.updated_at,j.completed_at,j.revision
  from public.workshop_v2_jobcards j
  where (p_before is null or j.updated_at<p_before or (j.updated_at=p_before and p_before_id is not null and j.job_card<p_before_id))
  and (nullif(trim(coalesce(p_status,'')),'') is null or j.status=upper(trim(p_status)))
- and (nullif(trim(coalesce(p_query,'')),'') is null or j.job_card ilike '%'||trim(p_query)||'%' or j.registration ilike '%'||trim(p_query)||'%')
+ and (nullif(trim(coalesce(p_query,'')),'') is null or j.job_card ilike '%'||trim(p_query)||'%' or j.registration ilike '%'||trim(p_query)||'%' or j.vin ilike '%'||upper(trim(p_query))||'%')
  order by j.updated_at desc, j.job_card desc limit greatest(1,least(coalesce(p_limit,100),500));
 $$;
 revoke all on function public.zukait_v2_jobcard_page(text,timestamptz,integer,text,text) from public,anon,authenticated;
@@ -57,7 +59,7 @@ revoke all on function public.zukait_v2_wip_page(timestamptz,integer,text,text,t
 grant execute on function public.zukait_v2_wip_page(timestamptz,integer,text,text,text) to service_role;
 
 create or replace function public.zukait_v2_upsert_jobcard(
- p_job_card text,p_registration text default '',p_vehicle_make text default '',p_vehicle_model text default '',p_vehicle_year integer default null,
+ p_job_card text,p_registration text default '',p_vin text default '',p_vehicle_make text default '',p_vehicle_model text default '',p_vehicle_year integer default null,
  p_workflow_stage text default 'CREATED',p_status text default 'OPEN',p_revision bigint default 0,p_event_id text default null,p_completed_at timestamptz default null
 )
 returns public.workshop_v2_jobcards
@@ -65,10 +67,10 @@ language plpgsql security invoker set search_path=public as $$
 declare outrow public.workshop_v2_jobcards;
 begin
  if nullif(trim(coalesce(p_job_card,'')),'') is null then raise exception 'job_card_required'; end if;
- insert into public.workshop_v2_jobcards(job_card,registration,vehicle_make,vehicle_model,vehicle_year,workflow_stage,status,revision,last_event_id,completed_at)
- values(trim(p_job_card),coalesce(p_registration,''),coalesce(p_vehicle_make,''),coalesce(p_vehicle_model,''),p_vehicle_year,upper(coalesce(p_workflow_stage,'CREATED')),upper(coalesce(p_status,'OPEN')),greatest(coalesce(p_revision,0),0),p_event_id,p_completed_at)
+ insert into public.workshop_v2_jobcards(job_card,registration,vin,vehicle_make,vehicle_model,vehicle_year,workflow_stage,status,revision,last_event_id,completed_at)
+ values(trim(p_job_card),coalesce(p_registration,''),upper(coalesce(p_vin,'')),coalesce(p_vehicle_make,''),coalesce(p_vehicle_model,''),p_vehicle_year,upper(coalesce(p_workflow_stage,'CREATED')),upper(coalesce(p_status,'OPEN')),greatest(coalesce(p_revision,0),0),p_event_id,p_completed_at)
  on conflict(job_card) do update set
-  registration=excluded.registration,vehicle_make=excluded.vehicle_make,vehicle_model=excluded.vehicle_model,vehicle_year=excluded.vehicle_year,
+  registration=excluded.registration,vin=excluded.vin,vehicle_make=excluded.vehicle_make,vehicle_model=excluded.vehicle_model,vehicle_year=excluded.vehicle_year,
   workflow_stage=excluded.workflow_stage,status=excluded.status,updated_at=now(),completed_at=excluded.completed_at,revision=excluded.revision,last_event_id=excluded.last_event_id
  where excluded.revision>workshop_v2_jobcards.revision
     and (excluded.last_event_id is null or workshop_v2_jobcards.last_event_id is distinct from excluded.last_event_id)
