@@ -20,6 +20,7 @@ create table if not exists public.workshop_v2_jobcards (
  revision bigint not null default 0,
  last_event_id text
 );
+alter table public.workshop_v2_jobcards add column if not exists vin text not null default '';
 create index if not exists workshop_v2_jobcards_updated_idx on public.workshop_v2_jobcards(updated_at desc, job_card desc);
 create index if not exists workshop_v2_jobcards_registration_idx on public.workshop_v2_jobcards(registration);
 create index if not exists workshop_v2_jobcards_vin_idx on public.workshop_v2_jobcards(vin);
@@ -59,8 +60,8 @@ revoke all on function public.zukait_v2_wip_page(timestamptz,integer,text,text,t
 grant execute on function public.zukait_v2_wip_page(timestamptz,integer,text,text,text) to service_role;
 
 create or replace function public.zukait_v2_upsert_jobcard(
- p_job_card text,p_registration text default '',p_vin text default '',p_vehicle_make text default '',p_vehicle_model text default '',p_vehicle_year integer default null,
- p_workflow_stage text default 'CREATED',p_status text default 'OPEN',p_revision bigint default 0,p_event_id text default null,p_completed_at timestamptz default null
+ p_job_card text,p_registration text default '',p_vehicle_make text default '',p_vehicle_model text default '',p_vehicle_year integer default null,
+ p_workflow_stage text default 'CREATED',p_status text default 'OPEN',p_revision bigint default 0,p_event_id text default null,p_completed_at timestamptz default null,p_vin text default ''
 )
 returns public.workshop_v2_jobcards
 language plpgsql security invoker set search_path=public as $$
@@ -83,7 +84,7 @@ begin
  end if;
  return outrow;
 end;$$;
-revoke all on function public.zukait_v2_upsert_jobcard(text,text,text,text,integer,text,text,bigint,text,timestamptz) from public,anon,authenticated;
-grant execute on function public.zukait_v2_upsert_jobcard(text,text,text,text,integer,text,text,bigint,text,timestamptz) to service_role;
+revoke all on function public.zukait_v2_upsert_jobcard(text,text,text,text,integer,text,text,bigint,text,timestamptz,text) from public,anon,authenticated;
+grant execute on function public.zukait_v2_upsert_jobcard(text,text,text,text,integer,text,text,bigint,text,timestamptz,text) to service_role;
 
 commit;
