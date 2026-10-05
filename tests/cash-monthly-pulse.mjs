@@ -33,7 +33,7 @@ const writes=slot.writes;pulse.install();assert.equal(slot.writes,writes,'unchan
 vm.runInContext('state={jobs:state.jobs.map(j=>j.no==="IN"?{...j,amount:15}:j)}',ctx);pulse.install();assert.ok(slot.innerHTML.includes('OMR 85.000'));
 vm.runInContext('state={jobs:state.jobs.map(j=>j.no==="IN"?{...j,jobType:"INSURANCE"}:j)}',ctx);pulse.install();assert.equal(pulse.rows('in').length,2);assert.equal(pulse.pendingAll().length,1);
 vm.runInContext('me={role:"Manager"}',ctx);pulse.install();assert.equal(manager.children[1].id,'managerCashPulseSlot');assert.equal((manager.children[1].innerHTML.match(/class="v251-cash-circle /g)||[]).length,3);
-sandbox.window.v251OpenCashPulse('out');assert.ok(modal.includes('Cash Vehicle Out'));assert.ok(modal.includes('OMR 35.000'));assert.ok(modal.includes('OMR 0.000'));assert.ok(modal.includes('zukaitOpenJob360'));
+sandbox.window.v251OpenCashPulse('out');assert.ok(modal.includes('Cash Vehicle Out'));assert.ok(modal.includes('OMR 35.000'));assert.ok(modal.includes('OMR 0.000'));assert.ok(modal.includes('zukaitOpenCashDetails'));assert.ok(!modal.includes('360°'));
 sandbox.window.v251OpenCashPendingAll();assert.ok(modal.includes('JC OLD'));assert.ok(!modal.includes('JC IN'));assert.ok(modal.includes('Not delivered'));
 vm.runInContext('me={role:"Employee"}',ctx);const before=modal;sandbox.window.v251OpenCashPulse('in');assert.equal(modal,before);
 const stable=fs.readFileSync('app/src/main/assets/supervisor_stable.js','utf8'),managerSource=fs.readFileSync('app/src/main/assets/v67_updates.js','utf8');

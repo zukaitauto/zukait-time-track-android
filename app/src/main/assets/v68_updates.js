@@ -84,7 +84,7 @@ window.v68ManagerSearch=function(){
  matches=matches.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
  const rows=matches.map((j,i)=>{
    const t=totals(j.no),hasRepeat=repeatRows(j.no).length>0;
-   return '<button class="v68-result" onclick="(window.zukaitOpenJobReview360||window.v68OpenJobDetail)(\''+esc(j.no)+'\')"><b class="v68-list-no">'+(i+1)+'</b><span><b>'+esc(j.no)+'</b><small>'+esc(j.vehicle||'—')+' · '+esc(j.reg||'—')+'</small></span><span class="v68-result-meta">'+fmtM(t.actual)+(hasRepeat?' · Repeat Work':'')+' ›</span></button>';
+   return '<button class="v68-result" onclick="window.zukaitOpenWorkDetails(\''+esc(j.no)+'\')"><b class="v68-list-no">'+(i+1)+'</b><span><b>'+esc(j.no)+'</b><small>'+esc(j.vehicle||'—')+' · '+esc(j.reg||'—')+'</small></span><span class="v68-result-meta">'+fmtM(t.actual)+(hasRepeat?' · Repeat Work':'')+' ›</span></button>';
  }).join('');
  openModal('<div class="v68-search-modal"><div class="section-title"><h2>Job Card Search</h2><button class="secondary" onclick="closeModal()">Close</button></div><p class="muted">Search: <b>'+esc(raw)+'</b></p>'+(rows||'<div class="notice">No matching Job Card or registration number found.</div>')+'</div>');
 };

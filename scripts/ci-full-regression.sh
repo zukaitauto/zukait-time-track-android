@@ -135,3 +135,4 @@ node tests/technician-work-history.mjs
 
 node tests/native-dialog-lifecycle.mjs
 node tests/manager-quick-view.cjs
+node tests/focused-job-navigation.cjs

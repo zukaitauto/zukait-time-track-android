@@ -312,12 +312,13 @@ window.consOpenNotificationMaterial=function(id){
  const body='<div class="cons-summary"><b>JC '+esc(row.jobCard)+'</b><span>'+esc(row.vehicle||job.vehicle||job.make||'')+'</span><span>Registration: '+esc(job.reg||job.registration||'—')+'</span><span>Colour: '+esc(row.colourCode||'—')+'</span><span>Supervisor: '+esc(row.createdByName||row.createdBy||'—')+'</span><span>'+esc(new Date(row.createdAt).toLocaleString())+'</span></div><div class="cons-table"><table><tr><th>No.</th><th>Material</th><th>Brand</th><th>Quantity</th><th>Unit</th></tr>'+(row.lines||[]).map((l,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(c.materials.find(m=>m.id===l.materialId)?.name||l.materialId)+'</td><td>'+esc(c.brands.find(b=>b.id===l.brandId)?.name||l.brandId)+'</td><td>'+esc(l.quantity)+'</td><td>'+esc(l.unit)+'</td></tr>').join('')+'</table></div>';
  modal('Paint Material List — Details',body,'zukaitNotificationCenter.open()');return true;
 };
-window.openConsumablesSavedList=async function(type){
+window.openConsumablesSavedList=async function(type,jobNo=''){
  if(!['Supervisor','Manager'].includes(role()))return;
  consSavedListType=type==='actual'?'actual':'issued';
  if(navigator.onLine&&window.zukaitCloud?.syncNow){try{await window.zukaitCloud.syncNow()}catch(e){console.warn('Saved material list refresh failed; using local cache',e)}}
  consSearchListStyle();
  const typeName=consSavedListType==='actual'?'Actual Materials':'Suggested / Issued Materials';
+ if(jobNo)return window.consOpenSavedMaterial(jobNo);
  modal(typeName+' — List','<div class="cons-searchbar"><input id="consSavedQuery" placeholder="Job Card / Vehicle / Registration / Date" oninput="consRenderSavedList()"></div><p class="muted small">Newest saved records first</p><div id="consSavedRows"></div>',"openConsumablesEntry('"+consSavedListType+"')");
  consRenderSavedList();
 };
