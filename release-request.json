@@ -1,8 +1,8 @@
 {
-  "versionName": "V281",
-  "versionCode": 244,
+  "versionName": "V282",
+  "versionCode": 245,
   "approvedForStaff": true,
   "approvedAt": "2026-10-05",
-  "sourceCommit": "abaa21ee64548b574241f98afbaff720ed2e9c85",
-  "publishNonce": "release-v281-manager-full-edit-20261005"
+  "sourceCommit": "b8396c7429fe1193c064eaf21474cc9c7152fdfb",
+  "publishNonce": "release-v282-manager-job-view-20261005"
 }
