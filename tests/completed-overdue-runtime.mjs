@@ -13,4 +13,14 @@ context.v273OpenTimeAttention('completed');assert.match(modal,/REVIEW/);
 context.v270OpenReview('a1');assert.match(modal,/Completed Overdue Review/);assert.match(modal,/Test Car/);assert.match(modal,/90m/);
 for(const [,handler] of modal.matchAll(/onclick="([^"]*)"/g))new vm.Script(handler.replace(/&#39;/g,"'"));
 context.v270MarkReviewed('a1');assert.equal(saved,1);assert.match(modal,/No completed overdue reviews pending/);
+const tile={id:'',type:'',className:'',style:{},textContent:'⚠ Attention0Jobs needing review›',innerHTML:'',closest:()=>null};
+const duplicate={...tile,style:{},textContent:'⚠ Attention0Jobs needing review›'};
+const root={querySelector:s=>s==='#v273TimeAttentionTile'&&tile.id==='v273TimeAttentionTile'?tile:null,querySelectorAll:()=>[tile,duplicate]};
+context.document.getElementById=id=>id==='managerView'?root:null;
+context.v273SettleTimeAttention();assert.equal(tile.id,'v273TimeAttentionTile');assert.equal(tile.style.display,'');assert.equal(duplicate.style.display,'none');
+// Real textContent has no whitespace between the title and count, and the
+// subtitle itself contains "over-allocated". Neither may hide the canonical tile.
+tile.textContent='⚠ Time Attention0Completed overdue · over-allocated · other›';
+context.v273SettleTimeAttention();context.v270Inject();assert.equal(tile.style.display,'');
+tile.onclick({preventDefault(){},stopPropagation(){}});assert.match(modal,/Time Attention/);
 console.log('PASS: full script parses, actual/suggested review details, legacy routes, executable action handlers, reviewed return to Completed Overdue.');
