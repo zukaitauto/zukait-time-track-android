@@ -1,8 +1,8 @@
 {
-  "versionName": "V283",
-  "versionCode": 246,
+  "versionName": "V284",
+  "versionCode": 247,
   "approvedForStaff": true,
   "approvedAt": "2026-10-05",
-  "sourceCommit": "f59d5270b5c1c3749d2d7e6221a047e6aaaef707",
-  "publishNonce": "release-v283-manager-cards-20261005"
+  "sourceCommit": "15773a5423d4bf5a4b183adcb9053c3903857520",
+  "publishNonce": "release-v284-monthly-purchases-20261005"
 }
