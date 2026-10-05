@@ -96,3 +96,9 @@ assert.match(stable,/@media\(max-width:799px\)/,'Supervisor polish must remain m
 assert.match(stable,/#supervisorView \.v143-create-actions \.v143-primary\{min-height:82px/,'Quick Entry polish must stay scoped to Supervisor');
 assert.match(stable,/#supervisorView \.v143-tech strong\{font-size:18px/,'Technician counts must retain improved readability');
 assert.doesNotMatch(stable,/V202 low-risk Supervisor mobile polish:[\s\S]*?(onclick|addEventListener|MutationObserver|commitEvent|syncNow)/,'V202 visual polish must not introduce handlers, observers, server commits or sync logic');
+
+// Server-authoritative Create + Assign must never roll back a committed Job Card.
+assert.match(js,/let v143CreateAssignBusy=false/,'Create + Assign must have a duplicate-submit guard');
+assert.match(js,/if\(v143CreateAssignBusy\)return alert\('Job Card creation and assignment is already in progress\.'\)/);
+assert.doesNotMatch(js,/if\(!a\)\{state\.jobs=state\.jobs\.filter\(j=>j&&j\.no!==no\)/,'Assignment failure must not delete a server-created Job Card');
+assert.match(js,/technician assignment failed\. It remains unassigned/,'Assignment failure must preserve the Job Card as unassigned');
