@@ -85,7 +85,7 @@ function consJobMatches(q){
  const x=String(q||'').trim().toLowerCase();
  return (state.jobs||[]).filter(j=>j&&String(j.no||'').toUpperCase()!=='ID001').filter(j=>{
    if(!x)return true;
-   return [j.no,j.reg,j.registration,j.vehicle,j.make,j.model,j.year,j.modelYear].filter(Boolean).join(' ').toLowerCase().includes(x);
+   const live=window.zukaitJobCardMaster?.display?.(j.no,j)||j;return [live.no||j.no,live.reg,live.registration,live.vehicle,live.make,live.model,live.year,live.vin].filter(Boolean).join(' ').toLowerCase().includes(x);
  }).sort((a,b)=>(Number(b.createdAt)||0)-(Number(a.createdAt)||0)).slice(0,10);
 }
 function consVehicleDetails(d,colour){
