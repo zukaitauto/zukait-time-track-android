@@ -1,0 +1,16 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const scan=fs.readFileSync('app/src/main/assets/vin_scan.js','utf8');
+const stable=fs.readFileSync('app/src/main/assets/supervisor_stable.js','utf8');
+const edit=fs.readFileSync('app/src/main/assets/manager_job_edit.js','utf8');
+const native=fs.readFileSync('app/src/main/java/com/zukait/timetrack/MainActivity.java','utf8');
+assert.match(html,/vin_scan\.js\?v=\d+/);assert.ok(html.indexOf('vin_scan.js')<html.indexOf('supervisor_stable.js'),'VIN scanner must load before Quick Entry');
+assert.match(stable,/id="newVin"/);assert.match(stable,/zukaitVinScan\?\.open\(\\?'newVin\\?'\)/);assert.match(stable,/vin=window\.zukaitVinScan\?\.normalize/);assert.match(stable,/JOB_CREATED[\s\S]*?vin/);
+assert.match(edit,/zukaitVinScan\?\.open\(\\?'mje-vin\\?'\)/);assert.match(native,/scanVinBarcode/);assert.match(native,/FORMAT_CODE_39/);assert.match(native,/FORMAT_CODE_128/);assert.match(native,/FORMAT_PDF417/);
+const fields={vin:{value:'',focus(){},dispatchEvent(){}}};const confirms=[];const window={zukaitJobCardMaster:{normalizeVin:v=>String(v??'').toUpperCase().replace(/[^A-Z0-9]/g,''),validVin:v=>!v||/^[A-HJ-NPR-Z0-9]{17}$/.test(v)},confirm:m=>{confirms.push(m);return true}};
+vm.runInNewContext(scan,{window,document:{getElementById:id=>id==='vin'?fields.vin:null},Event:class {}});
+assert.equal(window.zukaitVinScan.normalize(' 1hg cm826 33a004352 '),'1HGCM82633A004352');
+assert.equal(window.zukaitVinScan.valid('1HGCM82633A004352'),true);assert.equal(window.zukaitVinScan.valid('1HGCM82633A00435O'),false);
+assert.equal(window.zukaitVinScan.candidate('VIN: 1HGCM82633A004352'),'1HGCM82633A004352');
+window.AndroidBridge={scanVinBarcode(){window.zukaitVinScan.nativeResult('1HGCM82633A004352','')}};window.zukaitVinScan.open('vin');assert.equal(fields.vin.value,'1HGCM82633A004352');assert.ok(confirms.length);
+console.log('VIN scanner and canonical Quick Entry integration checks passed.');
