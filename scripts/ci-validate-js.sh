@@ -64,3 +64,5 @@ node --check app/src/main/assets/technician_workload.js
 node --check app/src/main/assets/time_management.js
 node --check app/src/main/assets/time_management_rules.js
 
+
+node --check app/src/main/assets/manager_job_edit.js
