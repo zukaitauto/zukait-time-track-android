@@ -1,8 +1,8 @@
 {
-  "versionName": "V274",
-  "versionCode": 237,
+  "versionName": "V275",
+  "versionCode": 238,
   "approvedForStaff": true,
   "approvedAt": "2026-10-05",
-  "sourceCommit": "cf02ddce33e77b2937d9301a0b0a207221bfd2bf",
-  "publishNonce": "release-v274-20261005-verified-header-and-delivered-review"
+  "sourceCommit": "5410873c335075099e22411c72143462f2e16aa4",
+  "publishNonce": "release-v275-20261005-single-ideal-time-authority"
 }
