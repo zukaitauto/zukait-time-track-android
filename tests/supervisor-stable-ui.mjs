@@ -22,7 +22,7 @@ assert.match(stable,/function v143ConfirmAction\(title,rows,okText\)/,'Superviso
 assert.match(stable,/Confirm Create Job Card/,'Create Job Card must require confirmation');
 assert.match(stable,/Confirm Create \+ Assign/,'Create + Assign must require confirmation');
 assert.match(stable,/Confirm Job Card Assignment/,'Assign Existing Job Card must require confirmation');
-const createAssignBlock=stable.slice(stable.indexOf('window.v143CreateAndAssignJob=function'),stable.indexOf('let v143CreateOnlyBusy=false'));
+const createAssignBlock=stable.slice(stable.indexOf('window.v143CreateAndAssignJob=async function'),stable.indexOf('let v143CreateOnlyBusy=false'));
 const createOnlyBlock=stable.slice(stable.indexOf('window.v143CreateJobOnly=async function'),stable.indexOf('let v143AssignBusy=false'));
 const assignExistingBlock=stable.slice(stable.indexOf('window.v143AssignExisting=function'),stable.indexOf('function countAttention()'));
 assert.ok(createAssignBlock.indexOf('Confirm Create + Assign')>=0 && createAssignBlock.indexOf('Confirm Create + Assign')<createAssignBlock.indexOf('state.jobs.push('),'Create + Assign confirmation must occur before Job Card mutation');
