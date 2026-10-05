@@ -3,6 +3,6 @@
   "versionCode": 238,
   "approvedForStaff": true,
   "approvedAt": "2026-10-05",
-  "sourceCommit": "5410873c335075099e22411c72143462f2e16aa4",
-  "publishNonce": "release-v275-20261005-single-ideal-time-authority"
+  "sourceCommit": "61305cfe51ba43f92154824f82920d9c4e739e73",
+  "publishNonce": "release-v275-20261005-ideal-worker-live-history-final"
 }
