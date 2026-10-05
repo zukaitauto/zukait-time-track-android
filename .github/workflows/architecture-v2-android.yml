@@ -29,6 +29,10 @@ jobs:
           node tests/manager-overdue-time-review.cjs
           node tests/manager-header-menu-runtime.mjs
           node tests/secure-session-restore.mjs
+          node tests/v2-jobcard-projection.mjs
+          node tests/vin-scan-integration.mjs
+          node tests/supervisor-stable-ui.mjs
+          node tests/v157-voice-quick-entry.mjs
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
