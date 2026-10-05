@@ -2,7 +2,7 @@
 (function(){'use strict';
 const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>'OMR '+Number(v||0).toFixed(3);
-function jobs(){return (window.state?.jobs||[]).filter(j=>j&&j.no!=='ID001'&&!j.deleted&&!j.archived)}
+function jobs(){return (window.state?.jobs||[]).filter(j=>j&&j.no!=='ID001'&&!j.deleted&&!j.archived).map(j=>{const live=window.zukaitJobCardMaster?.display?.(j.no,j);return live?{...j,...live}:j})}
 function monthBounds(y,m){return{from:+new Date(y,m,1),to:+new Date(y,m+1,1)}}
 function cashRows(y,m){
  const {from,to}=monthBounds(y,m),cash=jobs().filter(j=>String(j.jobType||'').toUpperCase()==='CASH');
