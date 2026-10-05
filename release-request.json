@@ -1,8 +1,8 @@
 {
-  "versionName": "V280",
-  "versionCode": 243,
+  "versionName": "V281",
+  "versionCode": 244,
   "approvedForStaff": true,
   "approvedAt": "2026-10-05",
-  "sourceCommit": "d45fcd4d8b182e7e1e35d4581b6a375c1cd6da8f",
-  "publishNonce": "release-v280-20261005-job-card-master-authority"
+  "sourceCommit": "abaa21ee64548b574241f98afbaff720ed2e9c85",
+  "publishNonce": "release-v281-manager-full-edit-20261005"
 }
