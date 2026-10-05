@@ -4,6 +4,7 @@ begin;
 
 -- Drop pre-composite signatures before creating the current cursor-safe functions.
 drop function if exists public.zukait_v2_jobcard_page(text,timestamptz,integer,text);
+drop function if exists public.zukait_v2_jobcard_page(text,timestamptz,integer,text,text);
 drop function if exists public.zukait_v2_wip_page(timestamptz,integer,text,text);
 create table if not exists public.workshop_v2_jobcards (
  job_card text primary key,
@@ -58,6 +59,8 @@ language sql stable security invoker set search_path=public as $$
 $$;
 revoke all on function public.zukait_v2_wip_page(timestamptz,integer,text,text,text) from public,anon,authenticated;
 grant execute on function public.zukait_v2_wip_page(timestamptz,integer,text,text,text) to service_role;
+
+drop function if exists public.zukait_v2_upsert_jobcard(text,text,text,text,integer,text,text,bigint,text,timestamptz);
 
 create or replace function public.zukait_v2_upsert_jobcard(
  p_job_card text,p_registration text default '',p_vehicle_make text default '',p_vehicle_model text default '',p_vehicle_year integer default null,
