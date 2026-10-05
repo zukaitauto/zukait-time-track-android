@@ -26,6 +26,7 @@ jobs:
         run: |
           bash scripts/ci-validate-js.sh
           node tests/completed-overdue-runtime.mjs
+          node tests/manager-header-menu-runtime.mjs
           node tests/secure-session-restore.mjs
 
       - name: Set up Java 17

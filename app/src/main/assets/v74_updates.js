@@ -2584,19 +2584,19 @@ window.v2TogglePilotThisDevice=function(){
 
 /* V135 MODERN MANAGER MENU — compact, non-floating, full account controls preserved. */
 (function(){'use strict';
- function menu(){if(!me||me.role!=='Manager')return;const n=String(me.name||'Manager').replace(/[&<>"']/g,'');openModal('<div class="v135-menu-head"><div><small>ACCOUNT</small><h2>'+n+'</h2></div><button class="v135-close" onclick="closeModal()">×</button></div><div class="v135-manager-menu"><button class="v135-action sync" onclick="v42SyncNow();closeModal()"><i>↻</i><span><b>Synchronize</b><small>Sync workshop data</small></span></button><button class="v135-action leave" onclick="closeModal();v133OpenManagerLeave()"><i>▣</i><span><b>Leave Control</b><small>Today & monthly leave</small></span></button><button class="v135-action update" onclick="closeModal();v63OpenAbout()"><i>⬆</i><span><b>About / Update</b><small>Check software version</small></span></button><button class="v135-action health" onclick="closeModal();setTimeout(function(){window.zukaitOpenSystemHealth?.()},0)"><i>⚙</i><span><b>System Health</b><small>Sync, live status & integrity</small></span></button><button class="v135-action logout" onclick="closeModal();logout()"><i>↪</i><span><b>Logout</b><small>Sign out safely</small></span></button></div>')}
+ function menu(){if(!me||me.role!=='Manager')return;if(typeof window.v111OpenManagerMenu==='function')return window.v111OpenManagerMenu()}
  window.v135OpenManagerMenu=menu;
  // V110 Manager authority: expose the Manager menu immediately so Logout and About / Update are never dependent on a later render callback.
  window.v110OpenManagerMenu=menu;
  function apply(){if(!me||me.role!=='Manager')return;const root=document.getElementById('managerView');if(!root)return;
-   // V109 authority: old Manager identity/header/status layers are removed before rebuilding.
-   [...root.querySelectorAll('.v91-role-identity')].forEach(x=>x.remove());
+   // Preserve the current header and its notification control; remove duplicate legacy rows.
+   const currentHeader=root.querySelector('.v135-manager-header,.v91-role-identity');root.querySelectorAll('.v91-role-identity').forEach(x=>{if(x!==currentHeader)x.remove()});
    root.querySelectorAll('.header-online-status').forEach(x=>x.remove());
    const gh=document.getElementById('globalBrandHeader');if(gh)gh.style.setProperty('display','none','important');
    const lh=document.getElementById('legacyAppHeader');if(lh){lh.classList.add('hidden');lh.style.setProperty('display','none','important')}
    const net=document.getElementById('net');if(net){net.textContent='';net.style.setProperty('display','none','important')}
    const hos=document.getElementById('headerOnlineStatus');if(hos)hos.style.setProperty('display','none','important');
-   if(typeof window.v91RoleHeader==='function'){try{window.v91RoleHeader('Manager')}catch(_){}}
+   if(!currentHeader&&typeof window.v91RoleHeader==='function'){try{window.v91RoleHeader('Manager')}catch(_){}}
    let row=root.querySelector('.v91-role-identity');
    // Manager menu must not depend on an older role-header helper. Build the identity row here if needed.
    if(!row){
@@ -2604,7 +2604,7 @@ window.v2TogglePilotThisDevice=function(){
      row.className='v91-role-identity';
      row.innerHTML='<b>Manager</b><span class="v91-role-online"><i></i>ONLINE</span><button type="button" class="v91-role-menu v135-menu-button" aria-label="Open Manager menu"><span>MENU</span><b>☰</b></button>';
      root.insertBefore(row,root.firstChild);
-   }row.classList.add('v135-manager-header');row.style.position='static';row.style.inset='auto';row.style.transform='none';row.style.zIndex='auto';const b=row.querySelector('b');if(b)b.textContent='Manager';let online=row.querySelector('.v91-role-online');if(online)online.innerHTML='<i></i>ONLINE';let mb=row.querySelector('.v91-role-menu,.v91-identity-menu');if(!mb){mb=document.createElement('button');row.appendChild(mb)}mb.className='v91-role-menu v135-menu-button';mb.innerHTML='<span>MENU</span><b>☰</b>';mb.onclick=menu;mb.setAttribute('aria-label','Open Manager menu');row.onclick=function(e){if(e.target.closest('button'))return;menu()};row.setAttribute('role','button');row.setAttribute('tabindex','0');row.setAttribute('aria-label','Open Manager menu');row.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();menu()}};// Manager identity/menu is the dashboard header and must stay above every Manager card.
+   }row.classList.add('v135-manager-header');row.style.position='static';row.style.inset='auto';row.style.transform='none';row.style.zIndex='auto';const b=row.querySelector('b');if(b)b.textContent='Manager';let online=row.querySelector('.v91-role-online');if(online)online.innerHTML='<i></i>ONLINE';let mb=row.querySelector('.v91-role-menu,.v91-identity-menu');if(!mb){mb=document.createElement('button');row.appendChild(mb)}mb.className='v91-role-menu v135-menu-button';mb.innerHTML='<span>MENU</span><b>☰</b>';mb.onclick=function(e){e.preventDefault();e.stopPropagation();menu()};mb.setAttribute('aria-label','Open Manager menu');row.onclick=null;row.onkeydown=null;row.removeAttribute('role');row.removeAttribute('tabindex');row.removeAttribute('aria-label');// Manager identity/menu is the dashboard header and must stay above every Manager card.
    if(root.firstElementChild!==row)root.insertBefore(row,root.firstChild);
  }
  window.v135ApplyManagerMenu=apply;
@@ -2669,13 +2669,13 @@ window.v2TogglePilotThisDevice=function(){
 /* V111 MANAGER LAYOUT AUTHORITY — header menu + dashboard Leave Management; Workshop Control Center On Leave becomes Consumables. */
 (function(){'use strict';
  const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
- window.v111OpenManagerMenu=function(){if(!me||me.role!=='Manager')return;openModal('<div class="v135-menu-head"><div><small>MANAGER ACCOUNT</small><h2>'+esc(me.name||'Manager')+'</h2></div><button class="v135-close" onclick="closeModal()">×</button></div><div class="v135-manager-menu"><button class="v135-action sync" onclick="v42SyncNow();closeModal()"><i>↻</i><span><b>Synchronize</b><small>Sync workshop data</small></span></button><button class="v135-action leave" onclick="v112OpenLeaveMarking()"><i>🗓</i><span><b>Leave Marking</b><small>Mark employee / supervisor leave</small></span></button><button class="v135-action update" onclick="closeModal();v63OpenAbout()"><i>⬆</i><span><b>About / Update</b><small>Check software version</small></span></button><button class="v135-action logout" onclick="closeModal();logout()"><i>↪</i><span><b>Logout</b><small>Sign out safely</small></span></button></div>')};
+ window.v111OpenManagerMenu=function(){if(!me||me.role!=='Manager')return;openModal('<div class="v135-menu-head"><div><small>MANAGER ACCOUNT</small><h2>'+esc(me.name||'Manager')+'</h2></div><button class="v135-close" onclick="closeModal()">×</button></div><div class="v135-manager-menu"><button class="v135-action sync" onclick="v42SyncNow();closeModal()"><i>↻</i><span><b>Synchronize</b><small>Sync workshop data</small></span></button><button class="v135-action leave" onclick="v112OpenLeaveMarking()"><i>🗓</i><span><b>Leave Marking</b><small>Mark employee / supervisor leave</small></span></button><button class="v135-action update" onclick="closeModal();v63OpenAbout()"><i>⬆</i><span><b>About / Update</b><small>Check software version</small></span></button><button class="v135-action health" onclick="closeModal();window.zukaitOpenSystemHealth?.()"><i>⚙</i><span><b>System Health</b><small>Sync, live status & integrity</small></span></button><button class="v135-action logout" onclick="closeModal();logout()"><i>↪</i><span><b>Logout</b><small>Sign out safely</small></span></button></div>')};
  window.v135OpenManagerMenu=window.v111OpenManagerMenu;window.v110OpenManagerMenu=window.v111OpenManagerMenu;
  function apply(){if(!me||me.role!=='Manager')return;const root=document.getElementById('managerView');if(!root)return;
    root.querySelectorAll('.v91-role-identity').forEach(x=>x.remove());
-   const row=document.createElement('div');row.className='v91-role-identity v135-manager-header v111-manager-header';row.setAttribute('role','button');row.setAttribute('tabindex','0');row.setAttribute('aria-label','Open Manager menu');row.innerHTML='<b>Manager</b><span class="v91-role-online"><i></i>ONLINE</span><button type="button" class="v91-role-menu v135-menu-button" aria-label="Open Manager menu"><span>MENU</span><b>☰</b></button>';
-   const open=e=>{if(e)e.preventDefault();window.v111OpenManagerMenu()};row.onclick=function(e){if(e.target.closest('.v135-menu-button'))return;open(e)};row.onkeydown=function(e){if(e.key==='Enter'||e.key===' ')open(e)};row.querySelector('.v135-menu-button').onclick=open;
-   const perf=root.querySelector('.v123-manager-performance');root.insertBefore(row,perf||root.firstChild);
+   const row=document.createElement('div');row.className='v91-role-identity v135-manager-header v111-manager-header';row.innerHTML='<b>Manager</b><span class="v91-role-online"><i></i>ONLINE</span><button type="button" class="v91-role-menu v135-menu-button" aria-label="Open Manager menu"><span>MENU</span><b>☰</b></button>';
+   const open=e=>{if(e){e.preventDefault();e.stopPropagation()}window.v111OpenManagerMenu()};row.querySelector('.v135-menu-button').onclick=open;
+   root.insertBefore(row,root.firstChild);
 
    // The standalone dashboard card is Leave Management and opens the full leave window (filter, edit, Print/PDF, WhatsApp).
    root.querySelectorAll('.v109-manager-consumables').forEach(x=>x.remove());
