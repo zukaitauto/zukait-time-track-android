@@ -286,10 +286,12 @@ function printable(e){
 }
 function currentOutputEstimate(id){
   const e=findEstimate(id);if(!e)return null;
+  let out=e;
   try{
-    if(String(window.__zukaitEstimateCurrent||'')===String(id) && document.getElementById('estDate')) return draftFromDom(e);
+    if(String(window.__zukaitEstimateCurrent||'')===String(id) && document.getElementById('estDate')) out=draftFromDom(e);
   }catch(_){}
-  return e;
+  if(out.jobCard){const canonicalVin=window.zukaitJobCardMaster?.vin?.(out.jobCard);if(canonicalVin!=null)out=Object.assign({},out,{vin:String(canonicalVin)})}
+  return out;
 }
 function estimatePrintCss(){
   // A4-safe professional quotation layout.
