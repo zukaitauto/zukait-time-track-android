@@ -1,8 +1,8 @@
 {
-  "versionName": "V287",
-  "versionCode": 250,
+  "versionName": "V288",
+  "versionCode": 251,
   "approvedForStaff": true,
   "approvedAt": "2026-10-05",
-  "sourceCommit": "5d7b180867be3ab4994834b6ed005593c67717b5",
-  "publishNonce": "release-v287-supervisor-jobcard-edit-20261005"
+  "sourceCommit": "133a7a472b1f42e2bd647a7ca57a5252146f6303",
+  "publishNonce": "release-v288-update-version-refresh-20261005"
 }
