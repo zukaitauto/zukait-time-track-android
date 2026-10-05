@@ -98,7 +98,7 @@ assert.match(stable,/#supervisorView \.v143-tech strong\{font-size:18px/,'Techni
 assert.doesNotMatch(stable,/V202 low-risk Supervisor mobile polish:[\s\S]*?(onclick|addEventListener|MutationObserver|commitEvent|syncNow)/,'V202 visual polish must not introduce handlers, observers, server commits or sync logic');
 
 // Server-authoritative Create + Assign must never roll back a committed Job Card.
-assert.match(js,/let v143CreateAssignBusy=false/,'Create + Assign must have a duplicate-submit guard');
-assert.match(js,/if\(v143CreateAssignBusy\)return alert\('Job Card creation and assignment is already in progress\.'\)/);
-assert.doesNotMatch(js,/if\(!a\)\{state\.jobs=state\.jobs\.filter\(j=>j&&j\.no!==no\)/,'Assignment failure must not delete a server-created Job Card');
-assert.match(js,/technician assignment failed\. It remains unassigned/,'Assignment failure must preserve the Job Card as unassigned');
+assert.match(stable,/let v143CreateAssignBusy=false/,'Create + Assign must have a duplicate-submit guard');
+assert.match(stable,/if\(v143CreateAssignBusy\)return alert\('Job Card creation and assignment is already in progress\.'\)/);
+assert.doesNotMatch(stable,/if\(!a\)\{state\.jobs=state\.jobs\.filter\(j=>j&&j\.no!==no\)/,'Assignment failure must not delete a server-created Job Card');
+assert.match(stable,/technician assignment failed\. It remains unassigned/,'Assignment failure must preserve the Job Card as unassigned');
