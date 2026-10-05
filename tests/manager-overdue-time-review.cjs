@@ -23,7 +23,7 @@ state.jobs[0].status='Open';assert.equal(api.overdueTimeRows().length,0,'open ve
 state.jobs[0].delivered=true;state.assign[1].completed=false;assert.equal(api.overdueTimeRows().length,1,'open repeat work does not hide delivered original work');
 state.assign[0].completed=false;assert.equal(api.overdueTimeRows().length,1,'delivered historical work does not require old assignment completion flags');
 state.assign[0].suggested=0;assert.equal(api.overdueTimeRows().length,0,'zero suggested time is not an exceeded-suggestion review');
-assert.match(source,/\['Running Work Attention',/);assert.match(source,/\['Delivered Vehicle Time Review',/);assert.doesNotMatch(source,/\['Overdue Time',|\['Over allocated',|\['Attention',/);
+assert.match(source,/\['Running Work Attention',/);assert.doesNotMatch(source,/\['Delivered Vehicle Time Review',|\['Overdue Time',|\['Over allocated',|\['Attention',/);
 // The Manager hub must use this same authoritative list and review detail.
 state.assign[0].suggested=110;
 const updates=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
