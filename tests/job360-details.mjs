@@ -1,4 +1,6 @@
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 const clickHandlers=[],styles=[];let modal='';
@@ -36,5 +38,5 @@ click('cost-invoice');assert.ok(modal.includes('OMR 95.000'));assert.ok(!modal.i
 vm.runInContext('me={role:"Supervisor"}',ctx);click('detail');assert.ok(modal.includes('wo-360-page'));
 vm.runInContext('me={role:"Employee"}',ctx);const prior=modal;click('cost-consumables');assert.equal(modal,prior);
 assert.ok(styles.join('').includes('[data-workshop-action="cost-consumables"]'));
-fs.writeFileSync('/tmp/zukait-job360-preview.html',modal);
+fs.writeFileSync(path.join(os.tmpdir(),'zukait-job360-preview.html'),modal);
 console.log('360 view: styled overview, all department consumables, itemized paint/returns, nested expense drilldowns, invoice, back navigation and role guards passed');
