@@ -1,8 +1,8 @@
 {
-  "versionName": "V279",
-  "versionCode": 242,
+  "versionName": "V280",
+  "versionCode": 243,
   "approvedForStaff": true,
   "approvedAt": "2026-10-05",
-  "sourceCommit": "1e5123a1c2f52720f5760d64673c4f98403c8673",
-  "publishNonce": "release-v279-20261005-manager-control-compact-copy"
+  "sourceCommit": "8a775668eff1c19875650eaad36c7289bd042786",
+  "publishNonce": "release-v280-20261005-focused-job-navigation"
 }
