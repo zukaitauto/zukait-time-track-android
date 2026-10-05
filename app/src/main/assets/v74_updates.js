@@ -3748,8 +3748,18 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
      .filter(x=>x.s&&!x.s.end).sort((x,y)=>(+y.s.start||0)-(+x.s.start||0));
    return open[0]?.s||null;
  }
+ function activeAnyWork(emp,at=Date.now()){
+   // Starting ANY work (productive JC or ID001) ends the live Ideal Worker state immediately.
+   // The completed uncovered gap remains available to history through the session boundaries.
+   try{
+     const live=typeof window.activeSession==='function'?window.activeSession(emp):null;
+     if(live&&!live.end&&+live.start<=at)return live;
+   }catch(_){}
+   return (state.sessions||[]).filter(s=>s&&String(s.emp)===String(emp)&&+s.start<=at&&!s.end)
+     .sort((a,b)=>(+b.start||0)-(+a.start||0))[0]||null;
+ }
  function currentRow(u,at=Date.now()){
-   if(activeProductive(u.id,at)||leave(u.id,at)||closed(at))return null;
+   if(activeAnyWork(u.id,at)||activeProductive(u.id,at)||leave(u.id,at)||closed(at))return null;
    const prev=lastProductive(u.id,at);if(!prev||!prev.end)return null;
    const gap=uncovered(u.id,+prev.end,at);if(gap.minutes<5)return null;
    return{u,prev,status:statusFor(prev),since:+prev.end,minutes:gap.minutes};
