@@ -1,4 +1,5 @@
-import {allocationToken,workedMinutes,employeeTimeToken} from './time_management_rules.js?v=280-manager-time';
+import {allocationToken,workedMinutes as ruleWorkedMinutes,employeeTimeToken} from './time_management_rules.js?v=280-manager-time';
+const workedMinutes=(s,a)=>window.zukaitJobCardMaster?.actualMinutes?.(a)??ruleWorkedMinutes(s,a);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const allowed=()=>typeof me!=='undefined'&&me&&['Supervisor','Manager'].includes(me.role);
 const data=()=>({...state,users:typeof users!=='undefined'?users:state.users||[]});
