@@ -75,7 +75,7 @@ assert.ok(updates.includes('v110ID001ReportButton') && updates.includes('v110Ope
 assert.ok(updates.includes('v110ID001Emp') && updates.includes('v110ID001From') && updates.includes('v110ID001To'), 'ID001 Report must support employee and date filtering');
 assert.ok(updates.includes('v110PrintID001Report') && updates.includes('Zukait_ID001_Report.pdf'), 'ID001 Report must support Print / PDF output');
 assert.ok(updates.includes("grid-template-columns:repeat(2,minmax(0,1fr))") && updates.includes('v110-id001-pair'), 'ID001 Assign and Report must remain a two-column Supervisor row');
-assert.ok(updates.includes("v135OpenManagerMenu()") && updates.includes("row.onclick=function(e){if(e.target.closest('button'))return;menu()}"), 'Manager header and menu button must open the authoritative Manager menu');
+assert.ok(updates.includes("window.v135OpenManagerMenu=window.v111OpenManagerMenu") && updates.includes("mb.onclick=function(e){e.preventDefault();e.stopPropagation();menu()}") && updates.includes("row.onclick=null"), 'Manager menu button must open the canonical menu once and the identity row must remain noninteractive');
 assert.ok(updates.includes("v133OpenManagerLeave()") && updates.includes("v63OpenAbout()") && updates.includes("closeModal();logout()"), 'Manager menu must retain Leave Control, About / Update, and Logout');
 assert.ok(updates.includes('V139 MANAGER CONSUMABLES FINAL AUTHORITY') && updates.includes('v139OpenManagerConsumables'), 'Manager must have one final Consumables routing authority');
 assert.ok(updates.includes('V154 MANAGER WORKSHOP CONTROL ROOT AUTHORITY') && updates.includes('data-v154-spare') && updates.includes('v156ManagerSparePartsInvariant'), 'final Manager render authority must preserve exactly one Spare Parts control');
