@@ -3836,7 +3836,7 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  const job=no=>(state.jobs||[]).find(j=>j&&String(j.no)===String(no))||{};
  const actual=a=>{try{return typeof A==='function'?A(a):totalForAssignment(a)}catch(_){return 0}};
  const assigns=no=>(state.assign||[]).filter(a=>a&&String(a.job)===String(no)&&a.job!==H&&!a.cancelled);
- const jcComplete=no=>{const aa=assigns(no);return aa.length>0&&aa.every(a=>a.completed)};
+ const jcComplete=no=>{const j=job(no);return j.delivered||String(j.status||'').toLowerCase()==='delivered'};
  const key=a=>String(a.id||[a.job,a.emp,a.assignedAt||0].join('|'));
  const reviews=()=>{state.overdueTimeReviews=Array.isArray(state.overdueTimeReviews)?state.overdueTimeReviews:[];return state.overdueTimeReviews};
  const reviewed=a=>reviews().some(r=>r&&String(r.assignmentKey)===key(a)&&r.reviewed===true);
@@ -3930,40 +3930,58 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  const H='ID001',E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const P=id=>{try{return user(id)}catch(_){return{name:id}}};
  const F=m=>{try{return fmt(Math.max(0,+m||0))}catch(_){return Math.round(+m||0)+'m'}};
- function actual(a){try{return totalForAssignment(a)||0}catch(_){return 0}}
- function activeOver(){return (state.assign||[]).filter(a=>a&&!a.cancelled&&!a.completed&&a.job!==H&&(+a.suggested||0)>0&&actual(a)>(+a.suggested||0))}
- function otherAttention(){return (typeof v74AttentionRows==='function'?v74AttentionRows():[]).filter(x=>!x.rs?.some(r=>/^Over allocated by /i.test(String(r||''))))}
- function completed(){try{return typeof window.v270OverdueRows==='function'?window.v270OverdueRows():[]}catch(_){return[]}}
- function uniqueCount(){const keys=new Set();completed().forEach(x=>keys.add('C|'+String(x.a?.id||x.a?.job||'')));activeOver().forEach(a=>keys.add('O|'+String(a.id||a.job||'')));otherAttention().forEach(x=>keys.add('A|'+String(x.a?.id||x.a?.job||'')));return keys.size}
- window.v273TimeAttentionCount=uniqueCount;
+ function actual(a){try{return (window.zukaitV2?.efficiency?.assignmentActualMinutes?.(state,a)??totalForAssignment(a))||0}catch(_){return 0}}
+ function runningRows(){
+   const grouped=new Map(),jobs=state.jobs||[],flags=typeof window.v74AttentionRows==='function'?window.v74AttentionRows():[];
+   const runningJob=j=>j&&!j.deleted&&!j.archived&&!j.delivered&&String(j.status||'').toLowerCase()!=='delivered'&&String(j.no)!==H;
+   function add(j,a,reasons){if(!reasons.length)return;const k=String(j.no);if(!grouped.has(k))grouped.set(k,{job:j,items:[]});grouped.get(k).items.push({a,reasons})}
+   for(const a of state.assign||[]){
+     if(!a||a.cancelled||a.completed||a.job===H)continue;
+     const j=jobs.find(j=>String(j.no)===String(a.job));if(!runningJob(j))continue;
+     const reasons=flags.find(x=>x.a===a||String(x.a?.id||'')===String(a.id||''))?.rs?.filter(r=>!/^Over allocated by /i.test(String(r)))||[];
+     if((+a.suggested||0)>0&&actual(a)>+a.suggested)reasons.unshift('Suggested time exceeded by '+F(actual(a)-+a.suggested));
+     add(j,a,[...new Set(reasons)]);
+   }
+   const api=window.zukaitWorkshopOverview;
+   for(const j of api?.unassigned?.(jobs,state.assign||[])||[])if(runningJob(j))add(j,null,['No technician assigned']);
+   return [...grouped.values()];
+ }
+ function completed(){try{const api=window.zukaitWorkshopOverview;if(api?.overdueTimeRows)return api.overdueTimeRows().map(x=>({a:x.assignment,j:x.job,u:{name:x.employee},sg:x.suggested,ac:x.actual,over:x.exceeded,signature:x.signature}));return typeof window.v270OverdueRows==='function'?window.v270OverdueRows():[]}catch(_){return[]}}
+ window.v273RunningAttentionRows=runningRows;
+ window.v273RunningAttentionCount=()=>runningRows().length;
+ window.v273TimeAttentionCount=window.v273RunningAttentionCount;
  window.v273OpenCompletedOverdueReview=function(id){
    if(!me||me.role!=='Manager')return;
    const row=completed().find(x=>String(x.a?.id||'')===String(id||''));
-   if(!row)return alert('Overdue review item not found. Please refresh Time Attention.');
+   if(!row)return alert('Overdue review item not found. Please refresh Delivered Vehicle Time Review.');
+   if(window.zukaitWorkshopOverview?.openOverdueReview)return window.zukaitWorkshopOverview.openOverdueReview(row.a.job,row.a.id,row.signature);
    const x=row.a,j=row.j||{},u=row.u||{},ss=(state.sessions||[]).filter(s=>s&&((s.assignmentId&&String(s.assignmentId)===String(x.id))||(!s.assignmentId&&String(s.job)===String(x.job)&&String(s.emp)===String(x.emp)))).slice().sort((a,b)=>(+a.start||0)-(+b.start||0));
    const hist=ss.length?'<div class="v74-scroll"><table><tr><th>Start</th><th>End</th><th>Duration</th></tr>'+ss.map(s=>'<tr><td>'+E(new Date(s.start).toLocaleString())+'</td><td>'+E(s.end?new Date(s.end).toLocaleString():'—')+'</td><td>'+F(Math.max(0,((s.end||Date.now())-s.start)/60000))+'</td></tr>').join('')+'</table></div>':'<div class="notice">No session history found.</div>';
    const action=(label,fn,value,cls='')=>'<button type="button" class="'+cls+'" data-value="'+E(value)+'" onclick="window.'+fn+'(this.dataset.value)">'+label+'</button>';
-   openModal('<div class="section-title"><h2>⏱ Completed Overdue Review</h2>'+action('← Back','v273OpenTimeAttention','completed','secondary')+'</div><div class="v270-review-card"><div><span>Vehicle / Reg.</span><b>'+E(j.vehicle||[j.make,j.model].filter(Boolean).join(' ')||'—')+' · '+E(j.reg||j.registration||'—')+'</b></div><div><span>Job Card</span><b>'+E(x.job)+'</b></div><div><span>Worked Person</span><b>'+E(u.name||x.emp)+'</b></div><div><span>Suggested</span><b>'+F(row.sg)+'</b></div><div><span>Actual</span><b>'+F(row.ac)+'</b></div><div class="over"><span>Overdue</span><b>'+F(row.over)+'</b></div></div><h3>Employee Work Time</h3>'+hist+'<div class="v270-actions">'+action('360° JOB CARD','zukaitOpenJobReview360',x.job,'blue')+action('PDF','v270SharePdf',x.id)+action('WHATSAPP','v270ShareWhatsApp',x.id,'green')+action('SHARE','v270Share',x.id)+action('✓ REVIEWED','v270MarkReviewed',x.id,'purple')+'</div>');
+   openModal('<div class="section-title"><h2>⏱ Delivered Vehicle Time Review</h2>'+action('← Back','v273OpenTimeAttention','completed','secondary')+'</div><div class="v270-review-card"><div><span>Vehicle / Reg.</span><b>'+E(j.vehicle||[j.make,j.model].filter(Boolean).join(' ')||'—')+' · '+E(j.reg||j.registration||'—')+'</b></div><div><span>Job Card</span><b>'+E(x.job)+'</b></div><div><span>Worked Person</span><b>'+E(u.name||x.emp)+'</b></div><div><span>Suggested</span><b>'+F(row.sg)+'</b></div><div><span>Actual</span><b>'+F(row.ac)+'</b></div><div class="over"><span>Overdue</span><b>'+F(row.over)+'</b></div></div><h3>Employee Work Time</h3>'+hist+'<div class="v270-actions">'+action('360° JOB CARD','zukaitOpenJobReview360',x.job,'blue')+action('PDF','v270SharePdf',x.id)+action('WHATSAPP','v270ShareWhatsApp',x.id,'green')+action('SHARE','v270Share',x.id)+action('✓ REVIEWED','v270MarkReviewed',x.id,'purple')+'</div>');
  };
  window.v273OpenTimeAttention=function(tab){
    if(!me||me.role!=='Manager')return;
-   const c=completed(),o=activeOver(),a=otherAttention(),active=tab||'completed';
-   const tabs='<div class="v273-tabs"><button class="'+(active==='completed'?'on':'')+'" onclick="v273OpenTimeAttention(\'completed\')">Completed Overdue <b>'+c.length+'</b></button><button class="'+(active==='over'?'on':'')+'" onclick="v273OpenTimeAttention(\'over\')">Over-Allocated <b>'+o.length+'</b></button><button class="'+(active==='other'?'on':'')+'" onclick="v273OpenTimeAttention(\'other\')">Other Attention <b>'+a.length+'</b></button></div>';
-   let body='';
-   if(active==='completed')body=c.length?'<div class="v74-scroll"><table><tr><th>JC</th><th>Employee</th><th>Suggested</th><th>Actual</th><th>Overdue</th><th></th></tr>'+c.map(x=>'<tr><td><b>'+E(x.a.job)+'</b></td><td>'+E(x.u?.name||x.a.emp)+'</td><td>'+F(x.sg)+'</td><td>'+F(x.ac)+'</td><td><b class="v270-over">'+F(x.over)+'</b></td><td><button class="blue" onclick="window.v273OpenCompletedOverdueReview(\''+E(x.a.id)+'\')">REVIEW</button></td></tr>').join('')+'</table></div>':'<div class="notice">No completed overdue reviews pending.</div>';
-   else if(active==='over')body=o.length?'<div class="v74-scroll"><table><tr><th>JC</th><th>Employee</th><th>Suggested</th><th>Actual</th><th>Over</th><th></th></tr>'+o.map(x=>'<tr><td><b>'+E(x.job)+'</b></td><td>'+E(P(x.emp).name||x.emp)+'</td><td>'+F(x.suggested)+'</td><td>'+F(actual(x))+'</td><td><b>'+F(actual(x)-(+x.suggested||0))+'</b></td><td><button class="blue" onclick="zukaitOpenJobReview360(\''+E(x.job)+'\')">VIEW</button></td></tr>').join('')+'</table></div>':'<div class="notice">No active over-allocated work.</div>';
-   else body=a.length?'<div class="v74-scroll"><table><tr><th>JC</th><th>Employee</th><th>Reason</th><th></th></tr>'+a.map(x=>'<tr><td><b>'+E(x.a.job)+'</b></td><td>'+E(P(x.a.emp).name||x.a.emp)+'</td><td>'+x.rs.map(E).join('<br>')+'</td><td><button class="blue" onclick="zukaitOpenJobReview360(\''+E(x.a.job)+'\')">VIEW</button></td></tr>').join('')+'</table></div>':'<div class="notice">No other time attention items.</div>';
-   openModal('<div class="section-title"><h2>⚠ Time Attention <span class="pill">'+uniqueCount()+'</span></h2><button class="secondary" onclick="closeModal()">Close</button></div>'+tabs+body);
+   let title,body,count;
+   if(tab==='completed'){
+     const c=completed();title='Delivered Vehicle Time Review';count=c.length;
+     body=window.zukaitWorkshopOverview?.completedTimeHtml?.()||(c.length?'<div class="v74-scroll"><table><tr><th>JC</th><th>Employee</th><th>Suggested</th><th>Actual</th><th>Exceeded</th><th></th></tr>'+c.map(x=>'<tr><td>'+E(x.a.job)+'</td><td>'+E(x.u?.name||x.a.emp)+'</td><td>'+F(x.sg)+'</td><td>'+F(x.ac)+'</td><td>'+F(x.over)+'</td><td><button class="blue" data-assignment="'+E(x.a.id)+'" onclick="window.v273OpenCompletedOverdueReview(this.dataset.assignment)">REVIEW</button></td></tr>').join('')+'</table></div>':'<div class="notice">No delivered vehicles are waiting for time review.</div>');
+   }else{
+     const rows=runningRows();title='Running Work Attention';count=rows.length;
+     body='<p class="muted">One list of ongoing Job Cards needing attention. Time exceeded, pauses, older work, repeat work and unassigned jobs appear together. Each Job Card is counted once.</p>'+(rows.length?rows.map(x=>'<div class="wo-row"><div><b>JC '+E(x.job.no)+' · '+E(x.job.vehicle||'Vehicle')+'</b><span>'+E(x.job.reg||'—')+'</span>'+x.items.map(i=>'<p><b>'+E(i.a?P(i.a.emp).name||i.a.emp:'Unassigned')+'</b><br>'+i.reasons.map(E).join('<br>')+(i.a?'<br>Suggested '+F(i.a.suggested)+' · Actual '+F(actual(i.a)):'')+'</p>').join('')+'</div><button class="blue" data-job="'+E(x.job.no)+'" onclick="window.zukaitOpenJobReview360(this.dataset.job)">VIEW</button></div>').join(''):'<div class="notice">No ongoing work needs attention.</div>');
+   }
+   openModal('<div class="section-title"><h2>'+title+' <span class="pill">'+count+'</span></h2><button class="secondary" onclick="closeModal()">Close</button></div>'+body);
  };
  function settle(){
    if(!me||me.role!=='Manager')return;const root=document.getElementById('managerView');if(!root)return;
+   const legacyLiveOver=root.querySelector('.v43-kpi.over');if(legacyLiveOver)legacyLiveOver.style.display='none';
    const overdue=root.querySelector('#v270OverdueTile'),buttons=[...root.querySelectorAll('button')];
    const attention=buttons.filter(b=>/^\s*(?:⚠\s*)?Attention(?:\b|\d)/i.test((b.textContent||'').replace(/\s+/g,' ').trim()));
    if(!root.querySelector('#v273TimeAttentionTile')&&!overdue&&!attention.length){
      const grid=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid');
      if(grid){const b=document.createElement('button');b.id='v273TimeAttentionTile';grid.appendChild(b)}
    }
-   let tile=root.querySelector('#v273TimeAttentionTile')||overdue||attention[0];if(tile){tile.id='v273TimeAttentionTile';tile.type='button';tile.style.display='';tile.className='v67-control v273-time-attention';tile.onclick=e=>{e.preventDefault();e.stopPropagation();window.v273OpenTimeAttention('completed')};tile.innerHTML='<span>⚠ Time Attention</span><b>'+uniqueCount()+'</b><small>Completed overdue · over-allocated · other</small><em>›</em>'}
+   let tile=root.querySelector('#v273TimeAttentionTile')||overdue||attention[0];if(tile){tile.id='v273TimeAttentionTile';tile.type='button';tile.style.display=root.querySelector('[data-workshop-action="running-attention"]')?'none':'';tile.className='v67-control v273-time-attention';tile.removeAttribute?.('onclick');tile.onclick=e=>{e.preventDefault();e.stopPropagation();window.v273OpenTimeAttention('running')};tile.innerHTML='<span>Running Work Attention</span><b>'+runningRows().length+'</b><small>All ongoing work issues in one list</small><em>›</em>'}
    attention.forEach(b=>{if(b!==tile)b.style.display='none'});
    const old=root.querySelector('#v270OverdueTile');if(old&&old!==tile)old.style.display='none';
    buttons.filter(b=>b!==tile&&/Over\s*-?\s*Allocated/i.test((b.textContent||'').replace(/\s+/g,' ').trim())).forEach(b=>{const perf=b.closest('.v123-manager-performance');if(!perf)b.style.display='none'});
@@ -3973,6 +3991,7 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  window.v270OpenReview=function(id){return window.v273OpenCompletedOverdueReview(id)};
  window.v270OpenOverdue=function(){return window.v273OpenTimeAttention('completed')};
  window.v270Inject=settle;
+ const legacyAttention=window.v66OpenAttention;window.v66OpenAttention=function(){if(me?.role==='Manager')return window.v273OpenTimeAttention('running');return legacyAttention?.apply(this,arguments)};
  const oldRender=window.render;window.render=function(){const r=typeof oldRender==='function'?oldRender.apply(this,arguments):undefined;setTimeout(settle,0);return r};
  if(!document.getElementById('v273TimeAttentionStyle')){const s=document.createElement('style');s.id='v273TimeAttentionStyle';s.textContent='.v273-time-attention{background:linear-gradient(145deg,#fff0e8,#ffe0cf)!important;border:1px solid #efb48f!important;color:#71380f!important}.v273-time-attention>b{font-size:24px!important;color:#b45309!important}.v273-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:8px 0 12px}.v273-tabs button{min-height:48px;border:1px solid #cdd9e5;border-radius:12px;background:#f5f8fb;color:#31516f;font-weight:850;padding:7px}.v273-tabs button.on{background:#e7f1ff;border-color:#6aa6e8;color:#174f8b}.v273-tabs b{display:block;font-size:17px;margin-top:3px}@media(max-width:560px){.v273-tabs{grid-template-columns:1fr}.v273-tabs button{display:flex;justify-content:space-between;align-items:center;min-height:42px}.v273-tabs b{display:inline;margin:0}}';document.head.appendChild(s)}
  [0,100,400,900].forEach(ms=>setTimeout(settle,ms));

@@ -26,6 +26,7 @@ jobs:
         run: |
           bash scripts/ci-validate-js.sh
           node tests/completed-overdue-runtime.mjs
+          node tests/manager-overdue-time-review.cjs
           node tests/manager-header-menu-runtime.mjs
           node tests/secure-session-restore.mjs
 
