@@ -30,6 +30,7 @@ jobs:
           node tests/manager-header-menu-runtime.mjs
           node tests/secure-session-restore.mjs
           node tests/v2-jobcard-projection.mjs
+          node tests/v2-jobcard-event-projection.mjs
           node tests/vin-scan-integration.mjs
           node tests/supervisor-stable-ui.mjs
           node tests/v157-voice-quick-entry.mjs
