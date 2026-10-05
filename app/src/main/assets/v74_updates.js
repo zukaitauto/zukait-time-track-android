@@ -1232,7 +1232,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    openModal('<div class="section-title"><h2>About</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
      '<div class="notice"><b>Zukait Time Track</b><br>Installed version: '+E(version)+'</div>'+
      (window.AndroidBridge?updateShell():'<div class="muted">Web version updates automatically.</div>'));
-   setTimeout(()=>{try{AndroidBridge.requestUpdateDownloadStatus()}catch(_){}},120);
+   setTimeout(()=>{try{AndroidBridge.requestUpdateDownloadStatus()}catch(_){}try{window.v77CheckUpdate&&window.v77CheckUpdate()}catch(_){}},120);
  };
  window.v77CheckUpdate=function(){
    const st=document.getElementById('v77UpdateState'),b=document.getElementById('v77CheckBtn');
