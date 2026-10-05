@@ -1,8 +1,8 @@
 {
-  "versionName": "V288",
-  "versionCode": 251,
+  "versionName": "V289",
+  "versionCode": 252,
   "approvedForStaff": true,
   "approvedAt": "2026-10-05",
-  "sourceCommit": "133a7a472b1f42e2bd647a7ca57a5252146f6303",
-  "publishNonce": "release-v288-update-version-refresh-20261005"
+  "sourceCommit": "69b4e09c21b51909fdd9dc7af744494c4194d4cf",
+  "publishNonce": "release-v289-supervisor-job-edit-20261005"
 }
