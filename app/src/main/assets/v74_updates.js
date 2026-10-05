@@ -1902,6 +1902,29 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v122ApplyManagerFinal=apply;window.v122ManagerFinalAuthority=true;
 })();
 
+/* V276 MANAGER WORKSHOP CONTROL CENTER — readability/color polish only; preserve source order and actions. */
+(function(){if(document.getElementById('v276ManagerControlPolish'))return;const s=document.createElement('style');s.id='v276ManagerControlPolish';s.textContent=`
+#managerView .v67-control-grid,#managerView .v66-control-grid,#managerView .v65-control-grid{gap:13px 11px!important}
+#managerView .v67-control-grid>.v67-control,#managerView .v66-control-grid>.v67-control,#managerView .v65-control-grid>.v67-control{position:relative!important;min-height:106px!important;padding:14px 13px!important;border-radius:19px!important;text-align:left!important;color:#17324b!important;border-width:1.5px!important;box-shadow:inset 0 2px 1px #fff,0 5px 0 #00000012,0 10px 18px #17324b16!important;overflow:hidden!important}
+#managerView .v67-control-grid>.v67-control>span,#managerView .v66-control-grid>.v67-control>span,#managerView .v65-control-grid>.v67-control>span{display:flex!important;align-items:center!important;gap:7px!important;font-size:14px!important;line-height:1.18!important;font-weight:900!important;letter-spacing:0!important;color:inherit!important}
+#managerView .v67-control-grid>.v67-control>b,#managerView .v66-control-grid>.v67-control>b,#managerView .v65-control-grid>.v67-control>b{display:block!important;margin-top:7px!important;font-size:27px!important;line-height:1!important;font-weight:1000!important;color:inherit!important}
+#managerView .v67-control-grid>.v67-control>small,#managerView .v66-control-grid>.v67-control>small,#managerView .v65-control-grid>.v67-control>small{display:block!important;margin-top:6px!important;font-size:11px!important;line-height:1.3!important;font-weight:750!important;color:inherit!important;opacity:.76!important;white-space:normal!important}
+#managerView .v67-control-grid>.v67-control>em,#managerView .v66-control-grid>.v67-control>em,#managerView .v65-control-grid>.v67-control>em{position:absolute!important;right:11px!important;bottom:8px!important;font-size:24px!important;font-style:normal!important;color:inherit!important;opacity:.52!important}
+#managerView .v67-control.sky{background:linear-gradient(145deg,#f8fcff,#dcefff)!important;border-color:#9dcaed!important;color:#174d79!important}
+#managerView .v67-control.slate{background:linear-gradient(145deg,#fbfcfe,#e7edf4)!important;border-color:#b9c8d8!important;color:#334b62!important}
+#managerView .v67-control.teal{background:linear-gradient(145deg,#f5fffb,#d9f5e8)!important;border-color:#91d5b4!important;color:#17603f!important}
+#managerView .v67-control.violet{background:linear-gradient(145deg,#fbf8ff,#eadfff)!important;border-color:#c3a9ee!important;color:#5a358d!important}
+#managerView .v67-control.gray{background:linear-gradient(145deg,#f7fbff,#e1f1f7)!important;border-color:#a9d3df!important;color:#28566a!important}
+#managerView .v67-control.rose,#managerView .v65-consumables,#managerView .v66-consumables,#managerView .v67-consumables{background:linear-gradient(145deg,#fffafd,#ffe2ee)!important;border-color:#efa5c1!important;color:#84244d!important}
+#managerView [data-v154-spare],#managerView .v67-spare-parts{background:linear-gradient(145deg,#fffdf7,#ffedc7)!important;border-color:#e9bd61!important;color:#704600!important;--tool-bg:#ffedc7!important;--tool-edge:#e9bd61!important;--tool-ink:#704600!important;--tool-accent:#c77b00!important;--tool-shadow:rgba(199,123,0,.16)!important}
+#managerView [data-v154-spare] .v154-spare-logo{background:#fff8e7!important;border:1px solid #e9bd61!important;color:#704600!important}
+#managerView .v247-ideal-control{background:linear-gradient(145deg,#fbf8ff,#e8e1ff)!important;border-color:#b8a8ec!important;color:#4d3d83!important}
+#managerView .v201-arrived-manager{background:linear-gradient(145deg,#f5fff8,#dff6e7)!important;border-color:#9dd5af!important;color:#23613a!important}
+#managerView .estimate-dashboard-card{--tool-bg:#d9f5f1!important;--tool-edge:#78cfc6!important;--tool-ink:#175a55!important;--tool-accent:#16877d!important;--tool-shadow:rgba(22,135,125,.15)!important}
+#managerView .v67-control-grid>.v67-control:active,#managerView .v66-control-grid>.v67-control:active,#managerView .v65-control-grid>.v67-control:active{transform:translateY(2px)!important;box-shadow:inset 0 2px 1px #fff,0 3px 0 #00000012,0 6px 12px #17324b12!important}
+@media(max-width:420px){#managerView .v67-control-grid,#managerView .v66-control-grid,#managerView .v65-control-grid{gap:11px 9px!important}#managerView .v67-control-grid>.v67-control,#managerView .v66-control-grid>.v67-control,#managerView .v65-control-grid>.v67-control{min-height:101px!important;padding:12px 10px!important}#managerView .v67-control-grid>.v67-control>span,#managerView .v66-control-grid>.v67-control>span,#managerView .v65-control-grid>.v67-control>span{font-size:13px!important}#managerView .v67-control-grid>.v67-control>b,#managerView .v66-control-grid>.v67-control>b,#managerView .v65-control-grid>.v67-control>b{font-size:25px!important}#managerView .v67-control-grid>.v67-control>small,#managerView .v66-control-grid>.v67-control>small,#managerView .v65-control-grid>.v67-control>small{font-size:10px!important}}
+`;document.head.appendChild(s)})();
+
 /* V123 MANAGER WORKSHOP PERFORMANCE — compact drill-down, no duplicate controls. */
 (function(){'use strict';
  const H='ID001',RATE=2.5,e=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
