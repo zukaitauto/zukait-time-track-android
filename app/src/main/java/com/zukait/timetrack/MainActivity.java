@@ -64,6 +64,10 @@ import android.security.keystore.KeyProperties;
 import androidx.core.content.FileProvider;
 import androidx.webkit.WebViewAssetLoader;
 import androidx.webkit.WebViewClientCompat;
+import com.google.mlkit.vision.barcode.common.Barcode;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanner;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning;
 
 public class MainActivity extends Activity {
     private static final int EXPORT_FILE_REQUEST = 7401;
@@ -321,6 +325,16 @@ public class MainActivity extends Activity {
                 .remove(SESSION_TOKEN_PREF).remove(SESSION_IV_PREF).apply();
     }
 
+    private void deliverVinScanResult(String value, String error) {
+        final String v = value == null ? "" : value;
+        final String e = error == null ? "" : error;
+        runOnUiThread(() -> {
+            String js = "window.zukaitVinScan&&window.zukaitVinScan.nativeResult(" +
+                    JSONObject.quote(v) + "," + JSONObject.quote(e) + ");";
+            webView.evaluateJavascript(js, null);
+        });
+    }
+
     public class AndroidBridge {
         @JavascriptInterface
         public boolean saveSecureSessionToken(String token) {
@@ -355,6 +369,25 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public int getAppVersionCode() {
             return installedVersionCode();
+        }
+
+        @JavascriptInterface
+        public void scanVinBarcode() {
+            runOnUiThread(() -> {
+                try {
+                    GmsBarcodeScannerOptions options = new GmsBarcodeScannerOptions.Builder()
+                            .setBarcodeFormats(Barcode.FORMAT_CODE_39, Barcode.FORMAT_CODE_128, Barcode.FORMAT_PDF417)
+                            .enableAutoZoom()
+                            .build();
+                    GmsBarcodeScanner scanner = GmsBarcodeScanning.getClient(MainActivity.this, options);
+                    scanner.startScan()
+                            .addOnSuccessListener(barcode -> deliverVinScanResult(barcode.getRawValue(), null))
+                            .addOnCanceledListener(() -> deliverVinScanResult(null, "cancelled"))
+                            .addOnFailureListener(e -> deliverVinScanResult(null, "scan_failed"));
+                } catch (Exception e) {
+                    deliverVinScanResult(null, "scanner_unavailable");
+                }
+            });
         }
 
         @JavascriptInterface
