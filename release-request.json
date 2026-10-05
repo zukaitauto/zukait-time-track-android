@@ -1,8 +1,8 @@
 {
-  "versionName": "V276",
-  "versionCode": 239,
+  "versionName": "V277",
+  "versionCode": 240,
   "approvedForStaff": true,
   "approvedAt": "2026-10-05",
-  "sourceCommit": "9f6a1ec58b2ca7f3da4b3955f998edb19259278e",
-  "publishNonce": "release-v276-20261005-manager-monthly-spare-parts-expense"
+  "sourceCommit": "f83ec0400574dad683721b419bcad9accd8b4a8b",
+  "publishNonce": "release-v277-20261005-manager-control-center-ui"
 }
