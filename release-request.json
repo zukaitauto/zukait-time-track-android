@@ -3,6 +3,6 @@
   "versionCode": 238,
   "approvedForStaff": true,
   "approvedAt": "2026-10-05",
-  "sourceCommit": "71a1c1536da9d1653b7a458845e7570b294740ba",
-  "publishNonce": "release-v275-20261005-ideal-worker-live-history-versioned"
+  "sourceCommit": "5dc98b7a498da7849bb8bb1aedff35b65b44f2cd",
+  "publishNonce": "release-v275-20261005-ideal-worker-test-scope-fixed"
 }
