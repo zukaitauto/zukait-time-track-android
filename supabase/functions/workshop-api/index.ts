@@ -1,3 +1,4 @@
+import { preserveJobTypeAuthority } from "./job_type_authority.js";
 import "./paint_order_rules.js";
 const paintOrderRules = (globalThis as any).zukaitPaintOrderRules;
 import { qcTransition, preserveQcAuthority } from "./qc_delivery_rules.js";
@@ -893,6 +894,7 @@ Deno.serve(async (req: Request) => {
 
         candidate = preservePaintPurchasingHistory(preserveConsumablesHistory(preserveOperationalHistory(reconcileAutoOvertime(preserveClosedSessions(candidate, current.data), current.data), current.data, user), current.data), current.data);
         candidate = preserveManagerTimeAuthority(candidate, current.data);
+        candidate = preserveJobTypeAuthority(candidate, current.data, user);
 
         const paintOrderIssue=paintOrderRules.validateNewOrders(candidate.paintPurchasing?.orders || [],current.data?.paintPurchasing?.orders || []);
         if (paintOrderIssue) return reply({ok:false,code:"paint_po_invalid",message:paintOrderIssue,revision:current.revision,data:current.data},409);

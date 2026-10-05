@@ -138,3 +138,5 @@ node tests/manager-quick-view.cjs
 node tests/focused-job-navigation.cjs
 
 node tests/manager-full-edit.cjs
+
+node tests/job-type-authority.mjs
