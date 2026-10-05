@@ -215,6 +215,7 @@ function recalc(){
 function saveCurrent(id){
   const e=findEstimate(id);if(!e)return;
   const before=totals(e).total,d=draftFromDom(e),u=currentUser()||{};
+  if(d.jobCard){const canonicalVin=window.zukaitJobCardMaster?.vin?.(d.jobCard);if(canonicalVin!=null)d.vin=String(canonicalVin)}
   Object.assign(e,d,{updatedAt:Date.now(),updatedBy:u.id||'',status:'Saved',revision:Number(e.revision||0)+1});
   audit(e,'EDIT',before);saveState();recalc();alert(e.estimateNo+' saved.');
 }
