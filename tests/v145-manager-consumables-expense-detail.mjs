@@ -42,4 +42,14 @@ assert.match(ctx.modal,/Primer/);
 assert.match(ctx.modal,/Tape/);
 assert.match(ctx.modal,/Total Consumables Expense <b>OMR 7\.500/);
 assert.match(ctx.modal,/v145OpenConsumablesPerformance\(\)">Back/);
-console.log('Manager consumables expense period and job-card drilldown passed');
+state.paintPurchasing={orders:[
+ {id:'P1',jobCard:'JC1',poNumber:'PO-1',receivedAt:now,lines:[{id:'L1',paintType:'Base Coat',quantity:2,pricePerLitre:10,lineTotal:20}],returns:[{lineId:'L1',quantity:.5,value:5,returnedAt:now}]},
+ {id:'P2',jobCard:'JC2',poNumber:'PO-2',receivedAt:old,lines:[{id:'L2',quantity:2,pricePerLitre:4}],returns:[{lineId:'L2',quantity:.5,returnedAt:now}]},
+ {jobCard:'UNRECEIVED',lines:[{quantity:10,pricePerLitre:100}]},
+ {jobCard:'VOIDPAINT',voided:true,receivedAt:now,lines:[{quantity:10,pricePerLitre:100}]}
+]};
+ctx.v145OpenConsumablesPerformance();assert.match(ctx.modal,/Paint Expense<\/span><b>OMR 21\.000/);assert.match(ctx.modal,/Total Expense<\/span><b>OMR 22\.500/);assert.doesNotMatch(ctx.modal,/UNRECEIVED|VOIDPAINT/);
+ctx.v145OpenConsumablesJobCard('JC1');assert.match(ctx.modal,/Base Coat/);assert.match(ctx.modal,/PO-1/);assert.match(ctx.modal,/Paint Return/);assert.match(ctx.modal,/OMR -5\.000/);assert.match(ctx.modal,/Total Consumables Expense <b>OMR 22\.500/);
+delete ctx.ZukaitConsumables;delete state.consumables;ctx.v145OpenConsumablesPerformance();assert.match(ctx.modal,/Total Expense<\/span><b>OMR 13\.000/,'paint must work without consumables records');
+ctx.document.querySelector=()=>({});ctx.v145OpenConsumablesPerformance();assert.match(ctx.modal,/Today/);assert.match(ctx.modal,/OMR 13\.000/);
+console.log('Consumables and paint: receipts, returns, periods, unreceived/void exclusion and matching job-card totals passed');
