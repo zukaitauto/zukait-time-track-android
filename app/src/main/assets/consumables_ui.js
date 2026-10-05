@@ -108,7 +108,7 @@ function consRecentMaterialLists(){
   return '<button type="button" class="cons-recent-row cons-compact-list-row" onclick="consOpenRecentMaterial(decodeURIComponent(\''+encodeURIComponent(no)+'\'))"><b class="cons-row-no">'+(i+1)+'</b><b>'+esc(no)+'</b><span>'+esc(vehicle)+'</span><span class="cons-row-reg">'+esc(reg)+'</span><i>›</i></button>';
  }).join('');
 }
-window.consOpenRecentMaterial=function(no){const el=document.getElementById('consSearchJc');if(el)el.value=no;consShowSearch()};
+window.consOpenRecentMaterial=function(no){no=String(no||'').trim();if(!no)return;consSearchListStyle();modal('Material List — JC '+esc(no),'<div class="cons-subnav"><button class="secondary" type="button" onclick="openConsumablesSearch()">← BACK TO MATERIAL LIST</button></div><input id="consSearchJc" type="hidden" value="'+esc(no)+'"><div class="cons-search-tabs"><button type="button" data-search-view="issued" class="'+(consSearchView==='issued'?'active':'')+'" onclick="consSetSearchView(\'issued\')">SUGGESTED / ISSUED</button><button type="button" data-search-view="actual" class="'+(consSearchView==='actual'?'active':'')+'" onclick="consSetSearchView(\'actual\')">ACTUAL MATERIALS</button></div><div id="consSearchResult" class="notice">Loading material list…</div>','openConsumablesSearch()');consShowSearch(no)};
 function consBaseIssued(jobCard){const c=C().ensureState(state);return c.issues.find(x=>x&&!x.voided&&x.type===C().TYPES.ISSUED&&String(x.jobCard||'').toUpperCase()===String(jobCard||'').toUpperCase())||null}
 function consJobResults(q,selectFn,type){
  let rows=consJobMatches(q);
