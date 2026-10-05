@@ -1925,6 +1925,35 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 @media(max-width:420px){#managerView .v67-control-grid,#managerView .v66-control-grid,#managerView .v65-control-grid{gap:11px 9px!important}#managerView .v67-control-grid>.v67-control,#managerView .v66-control-grid>.v67-control,#managerView .v65-control-grid>.v67-control{min-height:101px!important;padding:12px 10px!important}#managerView .v67-control-grid>.v67-control>span,#managerView .v66-control-grid>.v67-control>span,#managerView .v65-control-grid>.v67-control>span{font-size:13px!important}#managerView .v67-control-grid>.v67-control>b,#managerView .v66-control-grid>.v67-control>b,#managerView .v65-control-grid>.v67-control>b{font-size:25px!important}#managerView .v67-control-grid>.v67-control>small,#managerView .v66-control-grid>.v67-control>small,#managerView .v65-control-grid>.v67-control>small{font-size:10px!important}}
 `;document.head.appendChild(s)})();
 
+/* V277 MANAGER CONTROL CARD COPY — compact labels only; no workflow/order changes. */
+(function(){
+ function compact(){
+  if(!window.me||me.role!=='Manager')return;const root=document.getElementById('managerView');if(!root)return;
+  const grid=root.querySelector('.v67-control-grid,.v66-control-grid,.v65-control-grid');if(!grid)return;
+  const txt=b=>(b?.textContent||'').replace(/\s+/g,' ').trim();
+  [...grid.children].forEach(b=>{
+   const t=txt(b),small=b.querySelector('small');
+   if(/Ready\s*to\s*Deliver/i.test(t)&&small)small.textContent='Ready after QC';
+   else if(/Invoice\s*Entry/i.test(t)&&small)small.textContent='Pending invoices';
+   else if(/Parts\s*Arrived/i.test(t)&&small)small.textContent='Waiting confirmation';
+   else if(/Consumables/i.test(t)&&small)small.textContent='Materials';
+   else if(/Delivered\s*Vehicles/i.test(t)&&small)small.textContent='Delivery history';
+   else if(/^QC\b|Quality\s*Check/i.test(t)){if(small)small.textContent='Painting · Final';}
+   else if(/Estimate/i.test(t)&&small)small.textContent='Estimates';
+   else if(/Spare\s*Parts/i.test(t)&&small){
+    const m=(small.textContent||'').match(/Attention\s*\d+|Waiting\s*\d+/gi);
+    small.textContent=m?.length?m.slice(0,2).join(' · '):'Parts & purchasing';
+   }
+  });
+  const ideal=grid.querySelector('.v247-ideal-control');
+  if(ideal){const d=ideal.querySelector('.small,.muted');if(d)d.textContent='Idle workers';}
+ }
+ window.v277CompactManagerControl=compact;
+ [0,80,250,700,1500].forEach(ms=>setTimeout(compact,ms));
+ document.addEventListener('click',()=>setTimeout(compact,80),true);
+ if(!document.getElementById('v277CompactManagerControlStyle')){const s=document.createElement('style');s.id='v277CompactManagerControlStyle';s.textContent='#managerView .v67-control-grid>.v67-control,#managerView .v66-control-grid>.v67-control,#managerView .v65-control-grid>.v67-control{min-width:0!important}#managerView .v67-control-grid>.v67-control>span,#managerView .v66-control-grid>.v67-control>span,#managerView .v65-control-grid>.v67-control>span{min-width:0!important;overflow-wrap:normal!important;word-break:normal!important}#managerView .v67-control-grid>.v67-control>small,#managerView .v66-control-grid>.v67-control>small,#managerView .v65-control-grid>.v67-control>small{max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}#managerView .estimate-dashboard-card{overflow:hidden!important}#managerView .estimate-dashboard-card h3,#managerView .estimate-dashboard-card b,#managerView .estimate-dashboard-card .estimate-card-copy{font-size:clamp(13px,3.5vw,17px)!important;white-space:normal!important;overflow-wrap:normal!important;word-break:normal!important}#managerView .v247-ideal-control .section-title{gap:5px!important;align-items:center!important}#managerView .v247-ideal-control .section-title h3{font-size:14px!important;margin:0!important}#managerView .v247-ideal-control .small{font-size:11px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}';document.head.appendChild(s)}
+})();
+
 /* V123 MANAGER WORKSHOP PERFORMANCE — compact drill-down, no duplicate controls. */
 (function(){'use strict';
  const H='ID001',RATE=2.5,e=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
