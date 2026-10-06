@@ -1369,11 +1369,21 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
       (state.assign||[]).filter(a=>a.job===s.job&&a.emp===s.emp&&!a.cancelled&&!a.completed)
         .sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0))[0]||null;
   }
+  const TIME_ACTION_LOCK_MS=1200;
+  let timeActionBusyUntil=0;
+  function timeActionGuard(label){
+    const t=Date.now();
+    if(t<timeActionBusyUntil){console.warn('Duplicate time action blocked:',label);return false}
+    timeActionBusyUntil=t+TIME_ACTION_LOCK_MS;
+    return true;
+  }
+  function releaseTimeActionGuard(){setTimeout(()=>{timeActionBusyUntil=0},TIME_ACTION_LOCK_MS)}
   window.start=function(no){
     if(!me||me.role!=='Employee')return alert('Employee login is required.');
-    if(activeSession(me.id))return alert('You already have an active job. Pause or finish it first.');
+    if(!timeActionGuard('START'))return;
+    if(activeSession(me.id)){releaseTimeActionGuard();return alert('You already have an active job. Pause or finish it first.');}
     const a=openAssignment(no,me.id);
-    if(!a)return alert('This job is not available for work.');
+    if(!a){releaseTimeActionGuard();return alert('This job is not available for work.');}
     const offlineAtStart=!navigator.onLine,startAt=now();
     state.sessions=state.sessions||[];
     const newSession={id:uid(),assignmentId:a.id,job:a.job,emp:me.id,start:startAt,end:null,paused:false,rework:a.rework===true,startRecordedOffline:offlineAtStart,startDeviceTime:startAt};
@@ -1382,28 +1392,30 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     state.offlineActionLog=state.offlineActionLog||[];if(offlineAtStart)state.offlineActionLog.push({id:uid(),type:'START',job:a.job,emp:me.id,assignmentId:a.id,sessionId:newSession.id,at:startAt,queuedAt:now()});
     if(offlineAtStart){a.pendingOfflineStart=true;a.pendingOfflineStartAt=startAt}
     setLastAction('Started '+a.job+(a.rework?' repeat work':'')+(offlineAtStart?' — offline, queued for sync':''));
-    save();render();
+    save();render();releaseTimeActionGuard();
   };
   window.pause=function(){
     if(!me||me.role!=='Employee')return;
-    const s=activeSession(me.id);if(!s)return alert('No active work to pause.');
-    if(s.job===HOLD)return alert('ID001 Ideal Time Card uses START / STOP only.');
+    if(!timeActionGuard('PAUSE'))return;
+    const s=activeSession(me.id);if(!s){releaseTimeActionGuard();return alert('No active work to pause.');}
+    if(s.job===HOLD){releaseTimeActionGuard();return alert('ID001 Ideal Time Card uses START / STOP only.');}
     const offlineAtPause=!navigator.onLine;
     let reason=prompt('Pause reason (optional).','');if(reason===null)reason='';
     s.end=now();s.paused=true;s.pauseReason=reason.trim();s.pauseRecordedOffline=offlineAtPause;s.pauseDeviceTime=s.end;
     const a=assignmentForActive(s);if(a){a.pauseReason=s.pauseReason;if(offlineAtPause){a.pendingOfflinePause=true;a.pendingOfflinePauseAt=s.end}}
     try{window.zukaitV2?.work?.record(window.zukaitV2.work.TYPES.PAUSE,a||{id:s.assignmentId,job:s.job,emp:me.id},{actorId:me.id,clientTime:new Date(s.end).toISOString(),syncState:'shadow'})}catch(e){console.warn('V2 shadow pause skipped',e)}
     state.offlineActionLog=state.offlineActionLog||[];if(offlineAtPause)state.offlineActionLog.push({id:uid(),type:'PAUSE',job:s.job,emp:me.id,assignmentId:s.assignmentId||a?.id,at:s.end,queuedAt:now()});
-    setLastAction('Paused '+s.job+(offlineAtPause?' — offline, queued for sync':''));save();render();
+    setLastAction('Paused '+s.job+(offlineAtPause?' — offline, queued for sync':''));save();render();releaseTimeActionGuard();
   };
   window.finish=function(){
     if(!me||me.role!=='Employee')return;
-    const s=activeSession(me.id);if(!s)return alert('No active work to finish.');
-    const a=assignmentForActive(s);if(!a)return alert('Active assignment could not be found.');
-    if(!confirm((s.job===HOLD?'Stop ID001 Ideal Time Card':'Finish work on '+s.job)+'?'))return;
+    if(!timeActionGuard('FINISH'))return;
+    const s=activeSession(me.id);if(!s){releaseTimeActionGuard();return alert('No active work to finish.');}
+    const a=assignmentForActive(s);if(!a){releaseTimeActionGuard();return alert('Active assignment could not be found.');}
+    if(!confirm((s.job===HOLD?'Stop ID001 Ideal Time Card':'Finish work on '+s.job)+'?')){releaseTimeActionGuard();return;}
     s.end=now();s.finished=true;s.paused=false;a.completed=true;a.completedAt=s.end;
     try{window.zukaitV2?.work?.record(s.job===HOLD?window.zukaitV2.work.TYPES.ID001_STOP:window.zukaitV2.work.TYPES.FINISH,a,{actorId:me.id,clientTime:new Date(s.end).toISOString(),syncState:'shadow'})}catch(e){console.warn('V2 shadow finish skipped',e)}
-    setLastAction((s.job===HOLD?'Stopped ':'Finished ')+s.job);save();render();
+    setLastAction((s.job===HOLD?'Stopped ':'Finished ')+s.job);save();render();releaseTimeActionGuard();
   };
   window.v59Stable=true;
 })();
