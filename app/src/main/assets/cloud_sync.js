@@ -103,7 +103,7 @@
     // Their live counters are patched by live_status_authority and operational
     // modules read the latest shared state when opened. Remote workshop churn
     // must not tear down/recreate the whole dashboard shell.
-    if(role==='Manager'||role==='Supervisor')return {shell:role};
+    if(role==='Manager'||role==='Supervisor')return {shell:role,leaves:(data.leaves||[]).filter(x=>x&&!x.cancelled).map(x=>({id:x.id,emp:x.emp,date:x.date,period:x.period,startAt:x.startAt||null,updatedAt:x.updatedAt||x.createdAt||0}))};
     return {role};
   }
 
