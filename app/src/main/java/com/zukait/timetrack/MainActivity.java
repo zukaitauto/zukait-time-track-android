@@ -376,7 +376,7 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> {
                 try {
                     GmsBarcodeScannerOptions options = new GmsBarcodeScannerOptions.Builder()
-                            .setBarcodeFormats(Barcode.FORMAT_CODE_39, Barcode.FORMAT_CODE_128, Barcode.FORMAT_PDF417)
+                            .setBarcodeFormats(Barcode.FORMAT_CODE_39, Barcode.FORMAT_CODE_128, Barcode.FORMAT_PDF417, Barcode.FORMAT_QR_CODE, Barcode.FORMAT_DATA_MATRIX, Barcode.FORMAT_AZTEC)
                             .enableAutoZoom()
                             .build();
                     GmsBarcodeScanner scanner = GmsBarcodeScanning.getClient(MainActivity.this, options);
