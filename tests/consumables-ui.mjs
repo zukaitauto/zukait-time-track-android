@@ -53,7 +53,9 @@ assert.match(uiSource,/const modal=\(title,body,back\)=>/,'Consumables must use 
 assert.match(uiSource,/background:#dbeafe;color:#1d4ed8/,'Consumables Back control must use compact light-blue navigation styling');
 assert.match(uiSource,/background:#fee2e2;color:#b91c1c/,'Consumables Close control must use distinct compact light-red styling');
 assert.match(uiSource,/AndroidBridge\?\.shareHtmlAsPdfWhatsApp/,'Android material PDF must use the native PDF sharing bridge');
-assert.match(uiSource,/window\.opener&&!window\.opener\.closed/,'print preview Back must return focus to its opener when available');\nassert.match(uiSource,/history\.length>1/,'print preview must retain browser-history fallback');\nassert.match(uiSource,/cons-preview-print[^]*onclick=\"window\.print\(\)\"/,'print preview must expose an explicit Print / PDF control');
+assert.match(uiSource,/window\.opener&&!window\.opener\.closed/,'print preview Back must return focus to its opener when available');
+assert.match(uiSource,/history\.length>1/,'print preview must retain browser-history fallback');
+assert.match(uiSource,/cons-preview-print[^]*onclick=\"window\.print\(\)\"/,'print preview must expose an explicit Print / PDF control');
 assert.match(uiSource,/WITH PRICE/);assert.match(uiSource,/WITHOUT PRICE/);
 assert.match(uiSource,/consSearchView='issued'/,'Search Material must default to Suggested / Issued view');
 assert.match(uiSource,/SUGGESTED \/ ISSUED/);assert.match(uiSource,/ACTUAL MATERIALS/);
