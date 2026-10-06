@@ -230,6 +230,35 @@ window.zukaitNormalizeVehicle=function(make,model,vehicle){
  return{make:mk,model:md,vehicle:(mk+' '+md).trim(),year,learned:false}
 };
 window.zukaitLearnVehicleAlias=function(raw,make,model){window.zukaitVehicleAliasIndex.learn(raw,make,model)};
+window.zukaitRepairHistoricalVehicleIdentity=function(){
+ const st=typeof state==='undefined'?null:state;if(!st||!Array.isArray(st.jobs))return{changed:0,scanned:0};
+ let changed=0,scanned=0;
+ st.jobs.forEach(j=>{
+  if(!j||!j.no||String(j.no).trim().toUpperCase()==='ID001'||j.deleted)return;
+  scanned++;
+  const before={make:String(j.make||j.vehicleMake||j.brand||'').trim(),model:String(j.model||j.vehicleModel||'').trim(),vehicle:String(j.vehicle||'').trim(),year:String(j.year||j.modelYear||j.vehicleYear||'').trim()};
+  const n=window.zukaitNormalizeVehicle(before.make,before.model,before.vehicle)||{};
+  const make=String(n.make||before.make||'').trim(),model=String(n.model||before.model||'').trim(),vehicle=String(n.vehicle||(make+' '+model).trim()||before.vehicle).trim(),year=before.year||String(n.year||'').trim();
+  if(!make||!model)return;
+  const same=before.make===make&&before.model===model&&before.vehicle===vehicle&&(!year||before.year===year);
+  if(same)return;
+  j.make=make;j.brand=make;j.vehicleMake=make;j.model=model;j.vehicleModel=model;j.vehicle=vehicle;
+  if(year&&!before.year){j.year=year;j.modelYear=year;j.vehicleYear=year}
+  j.vehicleIdentityRepairedAt=j.vehicleIdentityRepairedAt||Date.now();
+  changed++;
+ });
+ if(changed){
+  try{if(typeof setLastAction==='function')setLastAction('Normalized '+changed+' historical vehicle identit'+(changed===1?'y':'ies'))}catch(_){}
+  try{if(typeof save==='function')save()}catch(_){}
+  try{window.dispatchEvent(new CustomEvent('zukait:vehicle-identities-repaired',{detail:{changed,scanned}}))}catch(_){}
+ }
+ return{changed,scanned}
+};
+(function repairHistoricalVehicleIdentities(){
+ let tries=0,done=false;
+ const run=()=>{if(done)return;tries++;const r=window.zukaitRepairHistoricalVehicleIdentity?.();if(r&&r.scanned){done=true;return}if(tries<12)setTimeout(run,500)};
+ setTimeout(run,0);
+})();
 window.v132OpenSupervisorVehicleEdit=function(no){
  if(!me||!['Supervisor','Manager'].includes(me.role))return alert('Supervisor or Manager access required.');
  const j=(state.jobs||[]).find(x=>x&&String(x.no||'').trim().toUpperCase()===String(no||'').trim().toUpperCase());if(!j)return alert('Job Card not found.');
