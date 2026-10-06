@@ -17,8 +17,9 @@ function candidateDetail(raw){
  const fixForbidden=x=>String(x||'').replace(/[OQ]/g,'0').replace(/I/g,'1');
  const pool=[],push=(x,source)=>{x=normalize(x);if(x.length===17&&!pool.some(p=>p.vin===x))pool.push({vin:x,source})};
  text.split(/\r?\n/).forEach((line,i)=>{
-  const n=normalize(line);if(n.length===17)push(n,'LINE');
-  const m=line.match(/[A-Z0-9][A-Z0-9 .:_-]{15,40}[A-Z0-9]/g)||[];m.forEach(x=>push(x,'LINE'));
+  const cleanedLine=line.replace(/^\s*(?:VIN(?:\s*OCR)?|CHASSIS(?:\s*(?:NO|NUMBER))?|VEHICLE\s*IDENTIFICATION\s*NUMBER)\s*[:#-]?\s*/i,'');
+  const n=normalize(cleanedLine);if(n.length===17)push(n,'LINE');
+  const m=cleanedLine.match(/[A-Z0-9][A-Z0-9 .:_-]{15,40}[A-Z0-9]/g)||[];m.forEach(x=>push(x,'LINE'));
  });
  if(clean.length===17)push(clean,'DIRECT');
  const chunks=text.match(/[A-Z0-9]{17}/g)||[];chunks.forEach(x=>push(x,'CHUNK'));
