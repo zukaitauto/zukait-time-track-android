@@ -328,6 +328,46 @@ window.openSupervisorJob=no=>focusedDetail(no,'assignments');
 window.v132OpenSupervisorJobFull=no=>focusedDetail(no,'assignments');
 window.zukaitJob360Ready=true;
 window.zukaitWorkshopOverview={focusedDetail,quickData,quickViewData,summaryHtml,unassigned,search,summary,integrityIssues,openSearch,detail,refresh,overdueTimeRows,completedTimeHtml:overdueTimeHtml,openOverdueReview:overdueReviewDetail,confirmOverdueReview,overdueTimeHistory};
+
+/* Delivered Vehicle Time Review detail — visual redesign only; data/actions unchanged. */
+(function(){
+ const s=document.createElement('style');s.id='v275DeliveredTimeReviewDetailUI';s.textContent=`
+ .workshop-overview:has(.wo-job-banner):has(.wo-stats) {max-width:980px!important}
+ .workshop-overview:has(.wo-job-banner)>.wo-heading{padding:13px 15px!important;border-radius:18px!important;background:linear-gradient(135deg,#176f88,#2859a5)!important;color:#fff!important;box-shadow:0 7px 18px #173b6b28!important}
+ .workshop-overview:has(.wo-job-banner)>.wo-heading h3{color:#fff!important;font-size:18px!important;line-height:1.25!important}
+ .workshop-overview:has(.wo-job-banner)>.wo-heading button{border:1px solid #ffffff50!important;background:#ffffffed!important;color:#24405f!important;border-radius:12px!important;box-shadow:0 3px 8px #092d5825!important}
+ .workshop-overview:has(.wo-job-banner)>.wo-heading button:last-child{background:#fff0f1!important;color:#a52b38!important;border-color:#ffc7cc!important}
+ .workshop-overview .wo-job-banner{margin:12px 0!important;padding:16px!important;border:0!important;border-radius:18px!important;background:linear-gradient(145deg,#12294f,#1d396c)!important;color:#fff!important;box-shadow:0 7px 16px #12294f25!important}
+ .workshop-overview .wo-job-banner strong{font-size:27px!important;line-height:1.1!important;color:#fff!important}
+ .workshop-overview .wo-job-banner b{font-size:16px!important;color:#f7fbff!important}
+ .workshop-overview .wo-job-banner span{font-size:12px!important;color:#bfcde2!important}
+ .workshop-overview:has(.wo-job-banner)>.wo-stats{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:9px!important;margin:0 0 15px!important}
+ .workshop-overview:has(.wo-job-banner)>.wo-stats>b{min-width:0!important;padding:12px!important;border:1px solid #d9e4ef!important;border-radius:14px!important;background:#f4f8fc!important;color:#52667b!important;font-size:10px!important;text-transform:uppercase!important;letter-spacing:.3px!important;box-shadow:none!important}
+ .workshop-overview:has(.wo-job-banner)>.wo-stats>b:nth-child(1){border-top:4px solid #3979c5!important}
+ .workshop-overview:has(.wo-job-banner)>.wo-stats>b:nth-child(2){border-top:4px solid #159388!important}
+ .workshop-overview:has(.wo-job-banner)>.wo-stats>b:nth-child(3){border-top:4px solid #d95540!important;background:#fff7f4!important}
+ .workshop-overview:has(.wo-job-banner)>.wo-stats strong{display:block!important;margin-top:6px!important;font-size:19px!important;line-height:1.1!important;text-transform:none!important;letter-spacing:0!important;color:#17324b!important}
+ .workshop-overview:has(.wo-job-banner)>.wo-stats>b:nth-child(1) strong{color:#2469b8!important}
+ .workshop-overview:has(.wo-job-banner)>.wo-stats>b:nth-child(2) strong{color:#087f76!important}
+ .workshop-overview:has(.wo-job-banner)>.wo-stats>b:nth-child(3) strong{color:#c23b2c!important}
+ .workshop-overview:has(.wo-job-banner)>h4{margin:17px 0 9px!important;color:#1c3148!important;font-size:15px!important}
+ .workshop-overview:has(.wo-job-banner)>.wo-row{margin:7px 0!important;padding:11px 12px!important;border:1px solid #e0e8f0!important;border-radius:13px!important;background:linear-gradient(145deg,#fff,#f8fbfd)!important;box-shadow:0 3px 9px #17324b0c!important}
+ .workshop-overview:has(.wo-job-banner)>.wo-row>div>b{font-size:13px!important;color:#203a55!important}
+ .workshop-overview:has(.wo-job-banner)>.wo-row span{font-size:10px!important;color:#728397!important;line-height:1.4!important}
+ .workshop-overview:has(.wo-job-banner)>.wo-row>b{padding:6px 9px!important;border-radius:10px!important;background:#eef5fb!important;color:#355d83!important;font-size:11px!important;white-space:nowrap!important}
+ .workshop-overview:has(.wo-job-banner)>.wo-tools{display:flex!important;gap:8px!important;flex-wrap:wrap!important;margin-top:14px!important}
+ .workshop-overview:has(.wo-job-banner)>.wo-tools button{min-height:40px!important;border-radius:12px!important;font-size:10px!important;font-weight:900!important}
+ .workshop-overview:has(.wo-job-banner)>.wo-tools button[data-workshop-action="overdue-confirm"]{background:linear-gradient(145deg,#168d70,#08765c)!important;color:#fff!important;box-shadow:0 5px 10px #08765c2c!important}
+ @media(max-width:620px){
+  .workshop-overview:has(.wo-job-banner)>.wo-heading{padding:11px!important}
+  .workshop-overview:has(.wo-job-banner)>.wo-heading h3{font-size:16px!important}
+  .workshop-overview:has(.wo-job-banner)>.wo-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .workshop-overview:has(.wo-job-banner)>.wo-stats>b:nth-child(3){grid-column:1/-1}
+  .workshop-overview .wo-job-banner{padding:14px!important}.workshop-overview .wo-job-banner strong{font-size:25px!important}
+  .workshop-overview:has(.wo-job-banner)>.wo-row{padding:10px!important}
+ }`;document.head.appendChild(s);
+})();
+
 const focusStyle=document.createElement('style');focusStyle.textContent='.wo-focus-identity{display:flex;flex-direction:column;gap:7px;padding:15px;margin:12px 0;background:#edf5fc;border:1px solid #cbddeb;border-radius:12px}.wo-focus-identity b{font-size:20px}.wo-focus-identity span{font-size:14px}.wo-focused-job p{font-size:14px;line-height:1.6}.wo-persistent-search .wo-find-search button{white-space:normal!important;line-height:1.3!important;min-width:105px!important;max-width:160px!important;font-size:12px!important;padding:10px!important}.wo-focused-job .wo-stats{grid-template-columns:repeat(2,minmax(0,1fr))}';document.head.appendChild(focusStyle);
 })();
 
