@@ -1,8 +1,8 @@
 {
-  "versionName": "V293",
-  "versionCode": 256,
+  "versionName": "V294",
+  "versionCode": 257,
   "approvedForStaff": true,
   "approvedAt": "2026-10-06",
-  "sourceCommit": "9fb2b6fcfc10434f74afa67d869707bf1fb8bab6",
-  "publishNonce": "release-v293-employee-idle-time-20261006-approved"
+  "sourceCommit": "ab24b4787c83fa4f0c1464dae1bec5c45fdb9662",
+  "publishNonce": "release-v294-shift-start-idle-20261006-approved"
 }
