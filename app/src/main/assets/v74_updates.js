@@ -256,8 +256,9 @@ window.zukaitRepairHistoricalVehicleIdentity=function(){
 };
 (function repairHistoricalVehicleIdentities(){
  let tries=0,done=false;
- const run=()=>{if(done)return;tries++;const r=window.zukaitRepairHistoricalVehicleIdentity?.();if(r&&r.scanned){done=true;return}if(tries<12)setTimeout(run,500)};
- setTimeout(run,0);
+ const later=typeof setTimeout==='function'?setTimeout:null;
+ const run=()=>{if(done)return;tries++;const r=window.zukaitRepairHistoricalVehicleIdentity?.();if(r&&r.scanned){done=true;return}if(tries<12&&later)later(run,500)};
+ if(later)later(run,0);else run();
 })();
 window.v132OpenSupervisorVehicleEdit=function(no){
  if(!me||!['Supervisor','Manager'].includes(me.role))return alert('Supervisor or Manager access required.');
