@@ -515,7 +515,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const history='<div class="card v75s-section clickable compact-control" onclick="v81OpenEmployeeHistory()"><div class="section-title"><h3>📊 Detailed Performance & Work History</h3><span class="pill">CLICK TO OPEN</span></div><div class="small muted">View the latest 30 work-history records in a separate window.</div></div>';
 
    const dailyReport='<div class="card v75s-section clickable compact-control v253-daily-report" onclick="v253OpenEmployeeDailyReport()"><div class="section-title"><h3>📅 Daily Report</h3><span class="pill">CLICK TO OPEN</span></div><div class="small muted">View Job Card sessions for today or select a previous date.</div></div>';
-   window.v253OpenEmployeeDailyReport=function(selected){if(!me||me.role!=='Employee')return;const localDate=ts=>{const d=new Date(ts),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())},today=localDate(Date.now()),day=selected||today,rows=(state.sessions||[]).filter(x=>x&&String(x.emp)===String(me.id)&&x.start&&localDate(+x.start)===day).slice().sort((a,b)=>(+a.start||0)-(+b.start||0)),tm=ts=>ts?new Date(+ts).toLocaleTimeString([],{hour:'numeric',minute:'2-digit',hour12:true}):'—',status=x=>!x.end?'Running':x.job===H?'Stop':x.paused?'Pause':x.finished?'Finish':'End',body=rows.length?'<div class="v75s-history"><table><tr><th>No.</th><th>JC / Work</th><th>Start</th><th>Pause / Finish</th></tr>'+rows.map((x,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(x.job===H?'ID001':x.job)+'</b></td><td>'+esc(tm(x.start))+'</td><td><b>'+esc(status(x))+'</b> '+esc(x.end?tm(x.end):'In progress')+'</td></tr>').join('')+'</table></div>':'<div class="notice">No work sessions recorded for this date.</div>';openModal('<div class="section-title"><h2>📅 Daily Report</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="card"><label><b>Select Date</b><input id="v253DailyDate" type="date" value="'+esc(day)+'" max="'+esc(today)+'"></label><button type="button" class="blue" onclick="v253OpenEmployeeDailyReport(document.getElementById(\'v253DailyDate\').value)">View</button></div>'+body)};
+   window.v253OpenEmployeeDailyReport=function(selected){if(!me||me.role!=='Employee')return;const localDate=ts=>{const d=new Date(ts),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())},today=localDate(Date.now()),day=selected||today,rows=(state.sessions||[]).filter(x=>x&&String(x.emp)===String(me.id)&&x.start&&localDate(+x.start)===day).slice().sort((a,b)=>(+a.start||0)-(+b.start||0)),tm=ts=>ts?new Date(+ts).toLocaleTimeString([],{hour:'numeric',minute:'2-digit',hour12:true}):'—',status=x=>!x.end?'Running':x.job===H?'Stop':x.paused?'Pause':x.finished?'Finish':'End',body=rows.length?'<div class="v75s-history"><table><tr><th>No.</th><th>JC / Work</th><th>Start</th><th>Pause / Finish</th></tr>'+rows.map((x,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(x.job===H?'ID001':x.job)+'</b></td><td>'+esc(tm(x.start))+'</td><td><b>'+esc(status(x))+'</b> '+esc(x.end?tm(x.end):'In progress')+'</td></tr>').join('')+'</table></div>':'<div class="notice">No work sessions recorded for this date.</div>';openModal('<div class="v253-daily-report-modal"><div class="section-title"><h2>📅 Daily Report</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="card"><label><b>Select Date</b><input id="v253DailyDate" type="date" value="'+esc(day)+'" max="'+esc(today)+'"></label><button type="button" class="blue" onclick="v253OpenEmployeeDailyReport(document.getElementById(\'v253DailyDate\').value)">View</button></div>'+body+'</div>')};
    const lower='<div class="v89-employee-lower">'+dailyReport+finished+repeatList+history+'</div>';root.innerHTML=brand+identity+runningHtml+allotted+month+leaveBox+lower;
     // V104: Target / Achieved / Incentive capsules are the only Employee incentive display.
     [...root.querySelectorAll('.employee-month-kpi,.card')].filter(x=>/^(?:Total\s+)?Incentive Hours$/i.test((x.querySelector('.kpi-label,h3')?.textContent||'').trim())).forEach(x=>x.remove());
@@ -4135,3 +4135,46 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  [0,100,400,900].forEach(ms=>setTimeout(settle,ms));
 })();
 
+
+
+/* V253 Daily Report readability: layout only; session data and report logic unchanged. */
+(function(){
+ const css=document.createElement('style');
+ css.id='v253DailyReportReadability';
+ css.textContent=`
+ #modal .modal-box:has(.v253-daily-report-modal){width:min(96vw,980px)!important;max-width:96vw!important;padding:14px!important}
+ .v253-daily-report-modal{width:100%;box-sizing:border-box}
+ .v253-daily-report-modal>.section-title{margin:0 0 8px!important;gap:10px}
+ .v253-daily-report-modal>.section-title h2{margin:0;font-size:22px;line-height:1.15}
+ .v253-daily-report-modal>.section-title .secondary{min-height:38px;padding:7px 12px}
+ .v253-daily-report-modal>.card{margin:0 0 10px!important;padding:10px 12px!important;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:10px}
+ .v253-daily-report-modal>.card label{margin:0;display:grid;gap:4px;font-size:14px}
+ .v253-daily-report-modal>.card input{box-sizing:border-box;width:100%;min-height:42px;font-size:16px}
+ .v253-daily-report-modal>.card .blue{min-height:42px;margin:0;padding:8px 18px}
+ .v253-daily-report-modal .v75s-history{width:100%;overflow-x:auto;margin:0}
+ .v253-daily-report-modal .v75s-history table{width:100%;min-width:0!important;table-layout:fixed;border-collapse:collapse;font-size:15px}
+ .v253-daily-report-modal .v75s-history th,.v253-daily-report-modal .v75s-history td{padding:11px 8px!important;line-height:1.3;vertical-align:middle;white-space:normal;overflow-wrap:normal}
+ .v253-daily-report-modal .v75s-history th{font-size:13px}
+ .v253-daily-report-modal .v75s-history th:nth-child(1){width:9%}
+ .v253-daily-report-modal .v75s-history th:nth-child(2){width:27%}
+ .v253-daily-report-modal .v75s-history th:nth-child(3){width:27%}
+ .v253-daily-report-modal .v75s-history th:nth-child(4){width:37%}
+ .v253-daily-report-modal .v75s-history td:nth-child(1){text-align:center}
+ .v253-daily-report-modal .v75s-history td:nth-child(2){font-size:16px}
+ .v253-daily-report-modal .v75s-history td:nth-child(3),.v253-daily-report-modal .v75s-history td:nth-child(4){font-variant-numeric:tabular-nums}
+ @media(max-width:520px){
+   #modal .modal-box:has(.v253-daily-report-modal){width:97vw!important;max-width:97vw!important;padding:10px!important}
+   .v253-daily-report-modal>.section-title h2{font-size:20px}
+   .v253-daily-report-modal>.card{grid-template-columns:minmax(0,1fr) auto;padding:8px!important;gap:7px}
+   .v253-daily-report-modal>.card .blue{padding:8px 13px}
+   .v253-daily-report-modal .v75s-history table{font-size:14px}
+   .v253-daily-report-modal .v75s-history th,.v253-daily-report-modal .v75s-history td{padding:10px 5px!important}
+   .v253-daily-report-modal .v75s-history th{font-size:12px}
+   .v253-daily-report-modal .v75s-history th:nth-child(1){width:8%}
+   .v253-daily-report-modal .v75s-history th:nth-child(2){width:24%}
+   .v253-daily-report-modal .v75s-history th:nth-child(3){width:27%}
+   .v253-daily-report-modal .v75s-history th:nth-child(4){width:41%}
+ }
+ `;
+ document.head.appendChild(css);
+})();
