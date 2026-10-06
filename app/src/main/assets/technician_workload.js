@@ -141,7 +141,7 @@
     const dateLabel=dateFilter?new Date(dateFilter+'T12:00:00Z').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'All Dates';
     return {name:u?.name||String(emp),dateLabel,jobLabel:jobFilter&&jobFilter!=='ALL'?'JC '+jobFilter:'All Job Cards',rows};
   }
-  const idleText=ms=>{const sec=Math.floor(ms/1000);return Math.floor(sec/60)+' min'+(sec%60?' '+sec%60+' sec':'');};
+  const idleText=ms=>{const mins=Math.floor(ms/60000);return String(Math.floor(mins/60)).padStart(2,'0')+':'+String(mins%60).padStart(2,'0');};
   function timeReportRows(emp,dateFilter,jobFilter){
     const jobs=new Map((state.jobs||[]).filter(Boolean).map(j=>[String(j.no),j]));
     const rows=timeDetailRows(emp,dateFilter,jobFilter).map(r=>{
