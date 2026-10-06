@@ -47,7 +47,13 @@ function open(id){
 function capture(id){
  targetId=String(id||'');const el=input();if(!el)return;
  if(window.AndroidBridge&&typeof window.AndroidBridge.captureVinPhoto==='function'){
-   try{window.AndroidBridge.captureVinPhoto();return}catch(_){}
+   try{
+     if(!window.zukaitVinCaptureHintShown){
+       window.zukaitVinCaptureHintShown=true;
+       alert('VIN Capture Tips\n\n• Hold the phone level and steady\n• Put the full 17-character VIN near the center\n• Fill most of the frame with the VIN label\n• Tap the VIN to focus\n• Use flash if the label is dark\n• Avoid windshield or metal glare');
+     }
+     window.AndroidBridge.captureVinPhoto();return
+   }catch(_){}
  }
  manual('VIN photo capture is not available on this device. Enter the VIN manually.');
 }
@@ -70,6 +76,7 @@ function nativeResult(raw,error,source){
  if(d.checkDigit===true)note+='\nCheck digit: verified';
  else if(d.checkDigit===false)note+='\nCheck digit: not verified; compare carefully with the vehicle';
  if(dup.length)note+='\n\nExisting Job Card VIN match: '+dup.join(', ');
+ const el=input(),existing=normalize(el?.value||'');if(existing&&existing!==vin)note+='\n\nCurrent field contains: '+existing+'\nThis scan will replace it.';
  const ok=window.confirm('VIN detected:\n\n'+vin+note+'\n\nVerify all 17 characters, then press OK. Cancel to rescan/edit.');
  if(!ok){const again=window.confirm('Would you like to scan again? Press Cancel to edit manually.');if(again)return photo?capture(targetId):open(targetId);return manual()}
  const el=input();if(!el)return;el.value=vin;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));
