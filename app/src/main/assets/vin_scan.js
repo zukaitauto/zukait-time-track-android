@@ -20,7 +20,14 @@ function open(id){
  if(window.AndroidBridge&&typeof window.AndroidBridge.scanVinBarcode==='function'){
    try{window.AndroidBridge.scanVinBarcode();return}catch(_){}
  }
- manual('VIN scanner is not available on this device. Enter the VIN manually.');
+ manual('VIN barcode scanner is not available on this device. Use Capture VIN or enter the VIN manually.');
+}
+function capture(id){
+ targetId=String(id||'');const el=input();if(!el)return;
+ if(window.AndroidBridge&&typeof window.AndroidBridge.captureVinPhoto==='function'){
+   try{window.AndroidBridge.captureVinPhoto();return}catch(_){}
+ }
+ manual('VIN photo capture is not available on this device. Enter the VIN manually.');
 }
 function nativeResult(raw,error){
  if(error){if(error!=='cancelled')manual('VIN scan was not successful. Please rescan or enter the VIN manually.');return}
@@ -30,5 +37,5 @@ function nativeResult(raw,error){
  if(!ok){const again=window.confirm('Would you like to scan again? Press Cancel to edit manually.');if(again)return open(targetId);return manual()}
  const el=input();if(!el)return;el.value=vin;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));
 }
-window.zukaitVinScan=Object.freeze({open,nativeResult,normalize,valid,candidate});
+window.zukaitVinScan=Object.freeze({open,capture,nativeResult,normalize,valid,candidate});
 })();
