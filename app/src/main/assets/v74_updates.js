@@ -1022,7 +1022,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const allowed=users.filter(u=>u&&((me.role==='Manager'&&(u.role==='Employee'||u.role==='Supervisor'))||(me.role==='Supervisor'&&u.role==='Employee')));
    openModal('<div class="section-title"><h2>Leave</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
      '<button class="green big-action" style="width:100%;margin-bottom:12px" onclick="v755OpenLeaveForm(\''+esc(me.id)+'\')">MY LEAVE</button>'+
-     '<h3>Mark Staff Leave</h3><div class="grid">'+allowed.map(u=>'<button class="secondary" onclick="v755OpenLeaveForm(\''+esc(u.id)+'\')"><b>'+esc(u.name)+'</b><br><span class="small">'+esc(u.role+(u.department?' · '+u.department:''))+'</span></button>').join('')+'</div>');
+     '<div class="grid" style="margin-bottom:12px"><button class="blue big-action" onclick="v755OpenLeaveList(\'history\')">TOTAL LEAVE HISTORY</button><button class="secondary big-action" onclick="v755OpenLeaveList(\'month\')">THIS MONTH LEAVE</button></div>'+'<h3>Mark Staff Leave</h3><div class="grid">'+allowed.map(u=>'<button class="secondary" onclick="v755OpenLeaveForm(\''+esc(u.id)+'\')"><b>'+esc(u.name)+'</b><br><span class="small">'+esc(u.role+(u.department?' · '+u.department:''))+'</span></button>').join('')+'</div>');
  };
 
  if(!document.getElementById('v88-role-account-style')){let css=document.createElement('style');css.id='v88-role-account-style';css.textContent='.v88-role-account{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.v88-role-account button{min-height:48px;border-radius:13px!important;color:#172033!important;font-weight:900!important;border:1px solid rgba(255,255,255,.8)!important;box-shadow:inset 0 1px 2px #fff,0 5px 12px #0f172214!important}.v88-role-account .v88-sync{background:#e5f3ff!important}.v88-role-account .v88-about{background:#efe9ff!important}.v88-role-account .v88-leave{background:#e9f9ef!important}.v88-role-account .v88-logout{background:#ffe8e8!important;color:#991b1b!important}';document.head.appendChild(css)}
@@ -1041,8 +1041,9 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
      sorted.map(l=>{const u=userSafe(l.emp),by=userSafe(l.by);return'<tr><td><b>'+esc(u.name)+'</b></td><td>'+esc(u.role+(u.department?' / '+u.department:''))+'</td><td>'+esc(l.date)+'</td><td>'+esc(leaveLabel(l))+'</td><td>'+esc(l.remark||'—')+'</td><td>'+esc(by.name||l.by)+'</td></tr>'}).join('')+'</table></div>':'<div class="notice">No leave records.</div>';
  }
  window.v755OpenLeaveList=function(mode){
-   const rows=mode==='month'?leaveMonth():leaveToday();
-   openModal('<div class="section-title"><h2>'+(mode==='month'?'This Month Leave':'Today’s Leave')+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+leaveListHtml(rows));
+   const rows=mode==='history'?activeLeaveRows():mode==='month'?leaveMonth():leaveToday();
+   const title=mode==='history'?'Total Leave History':mode==='month'?'This Month Leave':'Today’s Leave';
+   openModal('<div class="section-title"><h2>'+title+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+(mode==='history'?'<div class="notice">Full Day = 1 day · Morning / Afternoon Half Day = 0.5 day · Records: '+rows.length+' · Total leave: '+rows.reduce((n,l)=>n+(l.period==='FULL'?1:.5),0).toFixed(1)+' day(s)</div>':'')+leaveListHtml(rows));
  };
  window.v114EditLeave=function(id){
    if(!me||me.role!=='Manager')return;
