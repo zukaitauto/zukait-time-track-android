@@ -6,7 +6,7 @@ assert.ok(start>=0&&end>start,'Manager Workshop Performance block must exist');
 const b=s.slice(start,end);
 assert.match(b,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,'Workshop Performance must stay three-column');
 assert.match(b,/backdrop-filter:blur\(14px\) saturate\(145%\)/,'performance cards must use liquid-glass treatment');
-assert.match(b,/card\('purchase','Spare Parts Expense'/,'Spare Parts Expense card must exist');
+assert.match(b,/card\('purchase','Purchase Expenses'/,'Purchase Expenses card must exist');
 assert.match(b,/const p=Number\(x\.purchaseAmount\)/,'Spare Parts Expense must use the saved final purchase amount');
 assert.match(b,/p\*q/,'Spare Parts Expense must multiply unit price by quantity');
 assert.match(b,/No final Spare Parts invoice costs yet/);
