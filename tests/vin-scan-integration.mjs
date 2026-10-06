@@ -20,5 +20,7 @@ vm.runInNewContext(scan,{window,document:{getElementById:id=>id==='vin'?fields.v
 assert.equal(window.zukaitVinScan.normalize(' 1hg cm826 33a004352 '),'1HGCM82633A004352');
 assert.equal(window.zukaitVinScan.valid('1HGCM82633A004352'),true);assert.equal(window.zukaitVinScan.valid('1HGCM82633A00435O'),false);
 assert.equal(window.zukaitVinScan.candidate('VIN: 1HGCM82633A004352'),'1HGCM82633A004352');
+assert.equal(window.zukaitVinScan.candidate('VIN OCR\n1HGCM82633A00435O'),'1HGCM82633A004350');
+assert.equal(window.zukaitVinScan.candidate('CHASSIS: 1HG CM826 33A004352'),'1HGCM82633A004352');
 window.AndroidBridge={scanVinBarcode(){window.zukaitVinScan.nativeResult('1HGCM82633A004352','')}};window.zukaitVinScan.open('vin');assert.equal(fields.vin.value,'1HGCM82633A004352');assert.ok(confirms.length);
 console.log('VIN scanner and canonical Quick Entry integration checks passed.');
