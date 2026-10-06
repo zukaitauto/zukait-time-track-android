@@ -1461,14 +1461,14 @@ public class MainActivity extends Activity {
         }
         if (requestCode == VIN_CAPTURE_REQUEST) {
             if (resultCode != RESULT_OK || pendingVinCaptureUri == null) {
-                deliverVinScanResult(null, resultCode == RESULT_CANCELED ? "cancelled" : "capture_failed");
+                deliverVinScanResult(null, resultCode == RESULT_CANCELED ? "cancelled" : "capture_failed", "PHOTO");
             } else {
                 try {
                     InputImage image = InputImage.fromFilePath(MainActivity.this, pendingVinCaptureUri);
                     TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
                             .process(image)
-                            .addOnSuccessListener(text -> deliverVinScanResult(text.getText(), null))
-                            .addOnFailureListener(e -> deliverVinScanResult(null, "ocr_failed"));
+                            .addOnSuccessListener(text -> deliverVinScanResult(text.getText(), null, "PHOTO"))
+                            .addOnFailureListener(e -> deliverVinScanResult(null, "ocr_failed", "PHOTO"));
                 } catch (Exception e) {
                     deliverVinScanResult(null, "ocr_failed");
                 }
