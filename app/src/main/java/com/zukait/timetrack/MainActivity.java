@@ -1470,7 +1470,7 @@ public class MainActivity extends Activity {
                             .addOnSuccessListener(text -> deliverVinScanResult(text.getText(), null, "PHOTO"))
                             .addOnFailureListener(e -> deliverVinScanResult(null, "ocr_failed", "PHOTO"));
                 } catch (Exception e) {
-                    deliverVinScanResult(null, "ocr_failed");
+                    deliverVinScanResult(null, "ocr_failed", "PHOTO");
                 }
             }
             if (pendingVinCaptureFile != null) pendingVinCaptureFile.deleteOnExit();
