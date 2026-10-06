@@ -136,7 +136,7 @@ async function shareOverdueReviewCard(no,id,signature){
  const sessions=(stateNow().sessions||[]).filter(s=>s&&String(s.emp||'')===String(row.assignment.emp||'')&&norm(s.job)===norm(no)&&!s.preliminaryLinkedJob).sort((a,b)=>Number(a.start||0)-Number(b.start||0));
  const title='DELIVERED VEHICLE TIME REVIEW',vehicle=String(row.job.vehicle||'Vehicle'),reg=String(row.job.reg||row.job.registration||'—'),vin=String(row.job.vin||row.job.vinNo||'—');
  const fmtTime=t=>new Date(Number(t)).toLocaleTimeString('en-US',{timeZone:'Asia/Muscat',hour:'2-digit',minute:'2-digit',hour12:true});
- const fmtDate=t=>new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Muscat',day:'2-digit',month:'2-digit',year:'2-digit'}).format(new Date(Number(t)));
+ const fmtDate=t=>new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Muscat',day:'2-digit',month:'short',year:'numeric'}).format(new Date(Number(t)));
  const segmentRows=[];
  sessions.forEach(s=>{
   let cursor=Number(s.start||0);
@@ -160,19 +160,19 @@ async function shareOverdueReviewCard(no,id,signature){
   x.fillStyle='#102f55';x.font='800 34px Arial';x.fillText(vehicle,286,314);x.fillStyle='#526579';x.font='600 21px Arial';x.fillText('Reg: '+reg+'   VIN: '+vin,286,352);x.fillStyle='#15803d';x.font='800 21px Arial';x.fillText('DELIVERED',286,390);
   const stats=[['SUGGESTED',woMins(row.suggested),'#dceeff','#125ca5'],['ACTUAL',woMins(row.actual),'#ddf7e9','#147a49'],['EXCEEDED',woMins(row.exceeded),'#ffe2e2','#c62828']];
   stats.forEach((v,i)=>{const bx=62+i*318;x.fillStyle=v[2];rr(bx,442,294,126,18);x.fillStyle=v[3];x.font='800 18px Arial';x.fillText(v[0],bx+20,480);x.fillStyle='#102f55';x.font='900 31px Arial';x.fillText(v[1],bx+20,532)});
-  x.fillStyle='#123a63';rr(62,604,956,68,14);x.fillStyle='#fff';x.font='800 18px Arial';x.fillText('DATE',82,647);x.fillText('START',205,647);x.fillText('PAUSE / FINISH',360,647);x.fillText('EMPLOYEE',630,647);x.fillText('WORK',860,647);
+  x.fillStyle='#123a63';rr(62,604,956,68,14);x.fillStyle='#fff';x.font='800 18px Arial';x.fillText('DATE',82,647);x.fillText('START',225,647);x.fillText('PAUSE / FINISH',375,647);x.fillText('EMPLOYEE',650,647);x.fillText('WORK TIME',850,647);
   let y=714;
   if(!segmentRows.length){x.fillStyle='#64748b';x.font='600 22px Arial';x.fillText('No session-level work periods found.',84,y)}
   segmentRows.forEach((e,i)=>{
    x.fillStyle=i%2?'#f8fbff':'#eef5fb';rr(62,y-30,956,58,10);
    x.fillStyle='#17324b';x.font='700 17px Arial';
-   x.fillText(fmtDate(e.start),82,y+6);x.fillText(fmtTime(e.start),205,y+6);
+   x.fillText(fmtDate(e.start),82,y+6);x.fillText(fmtTime(e.start),225,y+6);
    const endText=e.end?fmtTime(e.end):'Running';
-   x.fillText(endText,360,y+6);
+   x.fillText(endText,375,y+6);
    const badgeColor=e.status==='PAUSE'?['#fff0cf','#b56600']:e.status==='FINISH'?['#ffe1e1','#c62828']:['#dcf7e7','#15803d'];
-   x.fillStyle=badgeColor[0];rr(510,y-21,92,36,10);x.fillStyle=badgeColor[1];x.font='800 13px Arial';x.fillText(e.status,524,y+3);
-   x.fillStyle='#17324b';x.font='700 17px Arial';x.fillText(String(row.employee),630,y+6);
-   const mins=e.end?Math.max(0,(e.end-e.start)/60000):0;x.fillText(e.end?woMins(mins):'—',860,y+6);
+   x.fillStyle=badgeColor[0];rr(525,y-21,96,36,10);x.fillStyle=badgeColor[1];x.font='800 13px Arial';x.fillText(e.status,538,y+3);
+   x.fillStyle='#17324b';x.font='700 17px Arial';x.fillText(String(row.employee),650,y+6);
+   const mins=e.end?Math.max(0,(e.end-e.start)/60000):0;x.fillText(e.end?woMins(mins):'—',850,y+6);
    y+=70
   });
   const fy=canvas.height-126;x.fillStyle='#edf8f1';rr(62,fy,956,76,16);x.fillStyle='#526579';x.font='600 17px Arial';x.fillText('Normal duty: 8:00 AM–1:00 PM · 3:00 PM–7:00 PM · Friday excluded',84,fy+31);x.fillText('Zukait Auto Services · '+segmentRows.length+' work periods',84,fy+57);
