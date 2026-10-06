@@ -1,8 +1,8 @@
 {
-  "versionName": "V295",
-  "versionCode": 258,
+  "versionName": "V296",
+  "versionCode": 259,
   "approvedForStaff": true,
   "approvedAt": "2026-10-06",
-  "sourceCommit": "9109b433d034af4c74d9055e3989641704f4977c",
-  "publishNonce": "release-v295-idle-hours-minutes-20261006-approved"
+  "sourceCommit": "407b852e781f716a11f557fce2cf50a614a5a82a",
+  "publishNonce": "release-v296-vin-scanner-accuracy-20261006-approved"
 }
