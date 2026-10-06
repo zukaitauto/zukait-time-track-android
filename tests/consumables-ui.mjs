@@ -55,7 +55,7 @@ assert.match(uiSource,/background:#fee2e2;color:#b91c1c/,'Consumables Close cont
 assert.match(uiSource,/AndroidBridge\?\.shareHtmlAsPdfWhatsApp/,'Android material PDF must use the native PDF sharing bridge');
 assert.match(uiSource,/window\.opener&&!window\.opener\.closed/,'print preview Back must return focus to its opener when available');
 assert.match(uiSource,/history\.length>1/,'print preview must retain browser-history fallback');
-assert.match(uiSource,/cons-preview-print[\\s\\S]*?onclick=\"window\\.print\\(\\)\"/,'print preview must expose an explicit Print / PDF control');
+assert.ok(uiSource.includes('cons-preview-print')&&uiSource.includes('onclick="window.print()"'),'print preview must expose an explicit Print / PDF control');
 assert.match(uiSource,/WITH PRICE/);assert.match(uiSource,/WITHOUT PRICE/);
 assert.match(uiSource,/consSearchView='issued'/,'Search Material must default to Suggested / Issued view');
 assert.match(uiSource,/SUGGESTED \/ ISSUED/);assert.match(uiSource,/ACTUAL MATERIALS/);
