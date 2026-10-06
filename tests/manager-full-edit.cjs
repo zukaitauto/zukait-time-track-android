@@ -11,10 +11,11 @@ ctx.me.role='Manager';ctx.window.editJobManager('J1');assert.doesNotMatch(html,/
 })().catch(e=>{console.error(e);process.exitCode=1});
 
 // Job Card Control Center must stay inside the desktop viewport; action/details column cannot be clipped off-screen.
-assert.match(html,/job-card-control-centre/,'Job Card Control Center must have a scoped responsive shell');
-assert.match(html,/\.job-list-wrap\{overflow-x:auto;overflow-y:visible;max-width:100%/,'Job Card list must contain horizontal overflow locally');
-assert.match(html,/\.job-list-wrap table\{width:100%;min-width:0/,'desktop Job Card table must fit the available panel width');
-assert.match(html,/\.modal-box\{box-sizing:border-box;max-width:min\(1100px,calc\(100vw - 36px\)\)/,'manager modal must stay inside the viewport');
+const shell=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+assert.match(shell,/job-card-control-centre/,'Job Card Control Center must have a scoped responsive shell');
+assert.match(shell,/\.job-list-wrap\{overflow-x:auto;overflow-y:visible;max-width:100%/,'Job Card list must contain horizontal overflow locally');
+assert.match(shell,/\.job-list-wrap table\{width:100%;min-width:0/,'desktop Job Card table must fit the available panel width');
+assert.match(shell,/\.modal-box\{box-sizing:border-box;max-width:min\(1100px,calc\(100vw - 36px\)\)/,'manager modal must stay inside the viewport');
 console.log('Job Card Control Center desktop viewport regression passed');
 
 // Canonical vehicle identity and insurance selection in Job Card Control Center.
