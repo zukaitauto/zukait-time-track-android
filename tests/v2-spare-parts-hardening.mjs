@@ -36,3 +36,7 @@ assert.ok(main.includes("after.status==='FITTED'&&!item.fittedAt"),'Manager Fitt
 
 assert.ok(main.includes("hydrateFromServerRows(rows);return {rows:reportRows()"),'Manager report must reduce server event history to current authoritative part state before totals');
 assert.ok(!main.includes("rows.push(...r.rows.map(normalizeReportRow));source=r.source"),'Manager report must not count raw Spare Parts event rows as current part lines');
+
+assert.match(main,/const PARTS_ATTENTION_DAYS=15/,'Purchaser Parts Attention threshold must remain 15 days');
+assert.match(main,/attentionAgeDays\(item,list\)>PARTS_ATTENTION_DAYS/,'Purchaser warning must require more than 15 days');
+assert.match(main,/Oldest items are shown first/,'Purchaser Parts Attention list must explain overdue ordering');
