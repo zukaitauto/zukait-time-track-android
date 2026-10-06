@@ -35,6 +35,7 @@ jobs:
           node tests/supervisor-stable-ui.mjs
           node tests/v157-voice-quick-entry.mjs
           node tests/vehicle-global-identity.mjs
+          node tests/employee-parts-privacy.mjs
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
