@@ -617,6 +617,34 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void shareImageBase64(String filename, String base64) {
+            runOnUiThread(() -> {
+                try {
+                    String safeName = (filename == null || filename.trim().isEmpty()) ? "Zukait_Time_Details.png" : filename.trim();
+                    if (!safeName.toLowerCase().endsWith(".png")) safeName += ".png";
+                    safeName = safeName.replaceAll("[^A-Za-z0-9._-]", "_");
+                    String payload = base64 == null ? "" : base64.trim();
+                    int comma = payload.indexOf(',');
+                    if (comma >= 0) payload = payload.substring(comma + 1);
+                    byte[] data = Base64.decode(payload, Base64.DEFAULT);
+                    File reportDir = new File(getCacheDir(), "reports");
+                    if (!reportDir.exists()) reportDir.mkdirs();
+                    File imageFile = new File(reportDir, safeName);
+                    try (OutputStream out = new java.io.FileOutputStream(imageFile)) { out.write(data); }
+                    Uri uri = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".fileprovider", imageFile);
+                    Intent share = new Intent(Intent.ACTION_SEND);
+                    share.setType("image/png");
+                    share.putExtra(Intent.EXTRA_STREAM, uri);
+                    share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    startActivity(Intent.createChooser(share, "Share Time Details"));
+                } catch (Exception e) {
+                    android.util.Log.e("ZukaitShare", "Unable to share image", e);
+                    android.widget.Toast.makeText(MainActivity.this, "Unable to share image", android.widget.Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        @JavascriptInterface
         public void shareText(String title, String text) {
             runOnUiThread(() -> {
                 try {
