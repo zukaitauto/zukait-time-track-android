@@ -1,8 +1,8 @@
 {
-  "versionName": "V296",
-  "versionCode": 259,
+  "versionName": "V297",
+  "versionCode": 260,
   "approvedForStaff": true,
   "approvedAt": "2026-10-06",
-  "sourceCommit": "407b852e781f716a11f557fce2cf50a614a5a82a",
-  "publishNonce": "release-v296-vin-scanner-accuracy-20261006-approved"
+  "sourceCommit": "6b71d49a853f7857a9733185a24ca782f403c620",
+  "publishNonce": "release-v297-purchaser-liquid-parts-attention-20261006-approved"
 }
