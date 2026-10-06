@@ -135,10 +135,24 @@ async function shareOverdueReviewCard(no,id,signature){
  if(!row)return alert('These time records have changed. Refresh the review and try again.');
  const sessions=(stateNow().sessions||[]).filter(s=>s&&String(s.emp||'')===String(row.assignment.emp||'')&&norm(s.job)===norm(no)&&!s.preliminaryLinkedJob).sort((a,b)=>Number(a.start||0)-Number(b.start||0));
  const title='DELIVERED VEHICLE TIME REVIEW',vehicle=String(row.job.vehicle||'Vehicle'),reg=String(row.job.reg||row.job.registration||'—'),vin=String(row.job.vin||row.job.vinNo||'—');
- const fmt=t=>new Date(Number(t)).toLocaleTimeString('en-US',{timeZone:'Asia/Muscat',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
- const eventRows=[];sessions.forEach(s=>{if(s.start)eventRows.push({t:Number(s.start),a:'START'});(s.pauses||[]).forEach(p=>{const ps=Number(p.start||p.pause||0),pe=Number(p.end||p.resume||0);if(ps)eventRows.push({t:ps,a:'PAUSE'});if(pe)eventRows.push({t:pe,a:'RESUME'})});if(s.end)eventRows.push({t:Number(s.end),a:'FINISH'})});eventRows.sort((a,b)=>a.t-b.t);
+ const fmtTime=t=>new Date(Number(t)).toLocaleTimeString('en-US',{timeZone:'Asia/Muscat',hour:'2-digit',minute:'2-digit',hour12:true});
+ const fmtDate=t=>new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Muscat',day:'2-digit',month:'2-digit',year:'2-digit'}).format(new Date(Number(t)));
+ const segmentRows=[];
+ sessions.forEach(s=>{
+  let cursor=Number(s.start||0);
+  if(!cursor)return;
+  const pauses=(Array.isArray(s.pauses)?s.pauses:[]).map(p=>({pause:Number(p.start||p.pause||0),resume:Number(p.end||p.resume||0)})).filter(p=>p.pause).sort((a,b)=>a.pause-b.pause);
+  pauses.forEach(p=>{
+   if(p.pause>=cursor)segmentRows.push({start:cursor,end:p.pause,status:'PAUSE'});
+   if(p.resume>p.pause)cursor=p.resume;else cursor=0;
+  });
+  const finish=Number(s.end||0);
+  if(cursor&&finish>=cursor)segmentRows.push({start:cursor,end:finish,status:'FINISH'});
+  else if(cursor&&!finish)segmentRows.push({start:cursor,end:0,status:'RUNNING'});
+ });
+ segmentRows.sort((a,b)=>a.start-b.start);
  try{
-  const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=Math.max(1320,830+eventRows.length*70);const x=canvas.getContext('2d'),rr=(a,b,w,h,r)=>{x.beginPath();x.roundRect(a,b,w,h,r);x.fill();};
+  const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=Math.max(1320,830+segmentRows.length*70);const x=canvas.getContext('2d'),rr=(a,b,w,h,r)=>{x.beginPath();x.roundRect(a,b,w,h,r);x.fill();};
   x.fillStyle='#eef4fb';x.fillRect(0,0,canvas.width,canvas.height);
   x.fillStyle='#123a63';rr(28,28,1024,190,30);x.fillStyle='#fff';x.font='800 42px Arial';x.fillText('ZUKAIT AUTO SERVICES',64,96);x.font='700 27px Arial';x.fillText(title,64,144);x.font='500 20px Arial';x.fillText('Oman time · 12-hour AM/PM',64,184);
   x.fillStyle='#fff';rr(28,238,1024,canvas.height-278,28);
@@ -146,11 +160,22 @@ async function shareOverdueReviewCard(no,id,signature){
   x.fillStyle='#102f55';x.font='800 34px Arial';x.fillText(vehicle,286,314);x.fillStyle='#526579';x.font='600 21px Arial';x.fillText('Reg: '+reg+'   VIN: '+vin,286,352);x.fillStyle='#15803d';x.font='800 21px Arial';x.fillText('DELIVERED',286,390);
   const stats=[['SUGGESTED',woMins(row.suggested),'#dceeff','#125ca5'],['ACTUAL',woMins(row.actual),'#ddf7e9','#147a49'],['EXCEEDED',woMins(row.exceeded),'#ffe2e2','#c62828']];
   stats.forEach((v,i)=>{const bx=62+i*318;x.fillStyle=v[2];rr(bx,442,294,126,18);x.fillStyle=v[3];x.font='800 18px Arial';x.fillText(v[0],bx+20,480);x.fillStyle='#102f55';x.font='900 31px Arial';x.fillText(v[1],bx+20,532)});
-  x.fillStyle='#123a63';rr(62,604,956,68,14);x.fillStyle='#fff';x.font='800 20px Arial';x.fillText('TIME',84,647);x.fillText('JOB CARD',300,647);x.fillText('EMPLOYEE',510,647);x.fillText('ACTION',790,647);
-  let y=714;const badge={START:['#d9efff','#1769aa'],RESUME:['#dcf7e7','#15803d'],PAUSE:['#fff0cf','#b56600'],FINISH:['#ffe1e1','#c62828']};
-  if(!eventRows.length){x.fillStyle='#64748b';x.font='600 22px Arial';x.fillText('No session-level time events found.',84,y)}
-  eventRows.forEach((e,i)=>{x.fillStyle=i%2?'#f8fbff':'#eef5fb';rr(62,y-30,956,58,10);x.fillStyle='#17324b';x.font='700 19px Arial';x.fillText(fmt(e.t),84,y+6);x.fillText(String(row.job.no),300,y+6);x.fillText(String(row.employee),510,y+6);const b=badge[e.a]||['#edf2f7','#475569'];x.fillStyle=b[0];rr(778,y-23,180,44,12);x.fillStyle=b[1];x.font='800 18px Arial';x.fillText(e.a,812,y+5);y+=70});
-  const fy=canvas.height-126;x.fillStyle='#edf8f1';rr(62,fy,956,76,16);x.fillStyle='#526579';x.font='600 17px Arial';x.fillText('Normal duty: 8:00 AM–1:00 PM · 3:00 PM–7:00 PM · Friday excluded',84,fy+31);x.fillText('Zukait Auto Services · '+eventRows.length+' time events',84,fy+57);
+  x.fillStyle='#123a63';rr(62,604,956,68,14);x.fillStyle='#fff';x.font='800 18px Arial';x.fillText('DATE',82,647);x.fillText('START',205,647);x.fillText('PAUSE / FINISH',360,647);x.fillText('EMPLOYEE',630,647);x.fillText('WORK',860,647);
+  let y=714;
+  if(!segmentRows.length){x.fillStyle='#64748b';x.font='600 22px Arial';x.fillText('No session-level work periods found.',84,y)}
+  segmentRows.forEach((e,i)=>{
+   x.fillStyle=i%2?'#f8fbff':'#eef5fb';rr(62,y-30,956,58,10);
+   x.fillStyle='#17324b';x.font='700 17px Arial';
+   x.fillText(fmtDate(e.start),82,y+6);x.fillText(fmtTime(e.start),205,y+6);
+   const endText=e.end?fmtTime(e.end):'Running';
+   x.fillText(endText,360,y+6);
+   const badgeColor=e.status==='PAUSE'?['#fff0cf','#b56600']:e.status==='FINISH'?['#ffe1e1','#c62828']:['#dcf7e7','#15803d'];
+   x.fillStyle=badgeColor[0];rr(510,y-21,92,36,10);x.fillStyle=badgeColor[1];x.font='800 13px Arial';x.fillText(e.status,524,y+3);
+   x.fillStyle='#17324b';x.font='700 17px Arial';x.fillText(String(row.employee),630,y+6);
+   const mins=e.end?Math.max(0,(e.end-e.start)/60000):0;x.fillText(e.end?woMins(mins):'—',860,y+6);
+   y+=70
+  });
+  const fy=canvas.height-126;x.fillStyle='#edf8f1';rr(62,fy,956,76,16);x.fillStyle='#526579';x.font='600 17px Arial';x.fillText('Normal duty: 8:00 AM–1:00 PM · 3:00 PM–7:00 PM · Friday excluded',84,fy+31);x.fillText('Zukait Auto Services · '+segmentRows.length+' work periods',84,fy+57);
   const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png',0.96));if(!blob)throw new Error('card');const file=new File([blob],'JC-'+row.job.no+'-delivered-time-review.png',{type:'image/png'});
   const url=URL.createObjectURL(blob),preview='<div style="text-align:center"><img src="'+url+'" alt="Delivered vehicle time review card" style="display:block;width:100%;max-height:65vh;object-fit:contain;border-radius:14px;border:1px solid #dbe4ee;background:#eef4fb;margin-bottom:12px"><div class="wo-tools"><button type="button" id="woSharePreviewImage">SHARE IMAGE / WHATSAPP</button></div><p class="muted">Only the card image will be shared. No extra text message.</p></div>';shell('Card Preview · JC '+row.job.no,preview,no,false,true);setTimeout(()=>{const b=document.getElementById('woSharePreviewImage');if(!b)return;b.onclick=async()=>{try{if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){await navigator.share({files:[file]});return}const a=document.createElement('a');a.href=url;a.download=file.name;a.click()}catch(e){if(e?.name!=='AbortError')alert('Could not open image sharing on this device.')}}},0);return;
  }catch(err){if(err?.name==='AbortError')return;console.warn('Delivered time review card failed',err);alert('Could not prepare the card image. Please try again.');}
