@@ -1,6 +1,12 @@
 (function(){
  const V2=window.zukaitV2=window.zukaitV2||{}, leave=V2.leave=V2.leave||{};
  const dayStart=k=>{const p=String(k||'').split('-').map(Number);return p.length===3?new Date(p[0],p[1]-1,p[2]).getTime():NaN};
+ // Global leave authority: every module reads the same canonical state collection.
+ leave.rows=function(){const s=window.state||{};s.leaves=Array.isArray(s.leaves)?s.leaves:[];return s.leaves};
+ leave.active=function(){return leave.rows().filter(l=>l&&!l.cancelled)};
+ leave.forEmployee=function(emp){return leave.active().filter(l=>String(l.emp)===String(emp))};
+ leave.forDate=function(date){return leave.active().filter(l=>String(l.date||'')===String(date||''))};
+ leave.history=function(){return leave.active().slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0))};
  leave.baseSegments=function(l){const d=dayStart(l&&l.date);if(!Number.isFinite(d))return[];if(l.period==='AM')return[[d+8*3600000,d+13*3600000]];if(l.period==='PM')return[[d+15*3600000,d+19*3600000]];if(l.period==='FULL')return[[d+8*3600000,d+13*3600000],[d+15*3600000,d+19*3600000]];return[]};
  // A remaining-day leave clips the selected duty period at an exact timestamp.
  leave.segments=function(l){const xs=leave.baseSegments(l);if(l?.startAt==null)return xs;const t=Number(l.startAt);if(!Number.isFinite(t))return[];return xs.map(([a,b])=>[Math.max(a,t),b]).filter(([a,b])=>b>a)};
