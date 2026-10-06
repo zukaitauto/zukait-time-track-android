@@ -949,7 +949,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(!result.ok){alert(result.code==='ACTIVE_WORK'?'Pause or stop the current work before marking leave.': 'No duty time remains after the recorded work in this period. Choose another leave period.');return null;}
    return result.leave;
  }
- const activeLeaveRows=()=>{state.leaves=state.leaves||[];return state.leaves.filter(l=>l&&!l.cancelled)};
+ const activeLeaveRows=()=>window.zukaitV2?.leave?.active?.()||(Array.isArray(state.leaves)?state.leaves.filter(l=>l&&!l.cancelled):[]);
  const leaveRowsFor=(emp,from,to)=>activeLeaveRows().filter(l=>l.emp===emp).filter(l=>leaveSegments(l).some(([a,b])=>b>from&&a<to));
  window.v63LeaveOverlapMinutes=function(emp,from,to){
    return leaveRowsFor(emp,from,to).reduce((sum,l)=>sum+leaveSegments(l).reduce((n,[a,b])=>n+Math.max(0,Math.min(to,b)-Math.max(from,a))/60000,0),0);
