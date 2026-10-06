@@ -1,8 +1,8 @@
 {
-  "versionName": "V290",
-  "versionCode": 253,
+  "versionName": "V291",
+  "versionCode": 254,
   "approvedForStaff": true,
   "approvedAt": "2026-10-06",
-  "sourceCommit": "9b547333e9e94ea2c012be6a4f1060be3717cb27",
-  "publishNonce": "release-v290-global-vehicle-identity-20261006-approved-1791265130555"
+  "sourceCommit": "401d24d74dc675685b4c974b81a5ee65cc382b0e",
+  "publishNonce": "release-v291-employee-parts-privacy-20261006-approved"
 }
