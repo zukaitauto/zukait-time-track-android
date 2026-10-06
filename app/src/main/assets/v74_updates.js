@@ -1032,7 +1032,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
      '<div class="v63-account v88-role-account"><button class="v88-sync" onclick="cloudSyncNow&&cloudSyncNow()">↻ SYNC</button><button class="v88-about" onclick="v63OpenAbout()">ℹ ABOUT</button><button class="v88-leave" onclick="v755OpenLeaveHub()">🗓 LEAVE</button><button class="v88-logout" onclick="logout()">↪ LOGOUT</button></div>');
  };
 
- function leaveToday(){const k=dateKey(Date.now());return activeLeaveRows().filter(l=>l.date===k)}
+ function leaveToday(){const k=dateKey(Date.now());return window.zukaitV2?.leave?.forDate?.(k)||activeLeaveRows().filter(l=>l.date===k)}
  function leaveMonth(){const d=new Date(),prefix=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-';return activeLeaveRows().filter(l=>String(l.date||'').startsWith(prefix))}
  function uniquePeople(rows){return new Set(rows.map(l=>String(l.emp))).size}
  function leaveListHtml(rows){
@@ -1041,7 +1041,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
      sorted.map(l=>{const u=userSafe(l.emp),by=userSafe(l.by);return'<tr><td><b>'+esc(u.name)+'</b></td><td>'+esc(u.role+(u.department?' / '+u.department:''))+'</td><td>'+esc(l.date)+'</td><td>'+esc(leaveLabel(l))+'</td><td>'+esc(l.remark||'—')+'</td><td>'+esc(by.name||l.by)+'</td></tr>'}).join('')+'</table></div>':'<div class="notice">No leave records.</div>';
  }
  window.v755OpenLeaveList=function(mode){
-   const rows=mode==='history'?activeLeaveRows():mode==='month'?leaveMonth():leaveToday();
+   const rows=mode==='history'?(window.zukaitV2?.leave?.history?.()||activeLeaveRows()):mode==='month'?leaveMonth():leaveToday();
    const title=mode==='history'?'Total Leave History':mode==='month'?'This Month Leave':'Today’s Leave';
    openModal('<div class="section-title"><h2>'+title+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+(mode==='history'?'<div class="notice">Full Day = 1 day · Morning / Afternoon Half Day = 0.5 day · Records: '+rows.length+' · Total leave: '+rows.reduce((n,l)=>n+(l.period==='FULL'?1:.5),0).toFixed(1)+' day(s)</div>':'')+leaveListHtml(rows));
  };
