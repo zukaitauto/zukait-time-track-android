@@ -1,8 +1,8 @@
 {
-  "versionName": "V291",
-  "versionCode": 254,
+  "versionName": "V292",
+  "versionCode": 255,
   "approvedForStaff": true,
   "approvedAt": "2026-10-06",
-  "sourceCommit": "401d24d74dc675685b4c974b81a5ee65cc382b0e",
-  "publishNonce": "release-v291-employee-parts-privacy-20261006-approved"
+  "sourceCommit": "389d1d9a76632a15aae9aafa562dbcbcdb076815",
+  "publishNonce": "release-v292-global-vehicle-capitalization-20261006-approved"
 }
