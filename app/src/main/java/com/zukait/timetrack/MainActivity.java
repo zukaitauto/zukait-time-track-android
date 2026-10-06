@@ -332,11 +332,16 @@ public class MainActivity extends Activity {
     }
 
     private void deliverVinScanResult(String value, String error) {
+        deliverVinScanResult(value, error, "");
+    }
+
+    private void deliverVinScanResult(String value, String error, String source) {
         final String v = value == null ? "" : value;
         final String e = error == null ? "" : error;
+        final String s = source == null ? "" : source;
         runOnUiThread(() -> {
             String js = "window.zukaitVinScan&&window.zukaitVinScan.nativeResult(" +
-                    JSONObject.quote(v) + "," + JSONObject.quote(e) + ");";
+                    JSONObject.quote(v) + "," + JSONObject.quote(e) + "," + JSONObject.quote(s) + ");";
             webView.evaluateJavascript(js, null);
         });
     }
@@ -387,7 +392,7 @@ public class MainActivity extends Activity {
                             .build();
                     GmsBarcodeScanner scanner = GmsBarcodeScanning.getClient(MainActivity.this, options);
                     scanner.startScan()
-                            .addOnSuccessListener(barcode -> deliverVinScanResult(barcode.getRawValue(), null))
+                            .addOnSuccessListener(barcode -> deliverVinScanResult(barcode.getRawValue(), null, "BARCODE"))
                             .addOnCanceledListener(() -> deliverVinScanResult(null, "cancelled"))
                             .addOnFailureListener(e -> deliverVinScanResult(null, "scan_failed"));
                 } catch (Exception e) {
