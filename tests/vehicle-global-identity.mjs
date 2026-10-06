@@ -7,8 +7,5 @@ const master=fs.readFileSync('app/src/main/assets/job_card_master.js','utf8');as
 const paint=fs.readFileSync('app/src/main/assets/paint_module.js','utf8');assert.match(paint,/patchIdentity\(j\.no,\{colorCode:o\.colorCode\},\{source:'PAINT_PURCHASE_ORDER'/);assert.match(paint,/zukaitJobCardMaster\?\.display\?\.\(j\.no,j\)/);
 const quick=fs.readFileSync('app/src/main/assets/supervisor_stable.js','utf8');assert.match(quick,/zukaitNormalizeVehicle\?\.\('','',rawVehicle\)/);assert.match(quick,/make:nv\.make/);
 
-assert.deepEqual(n('nISSAN','aLTIMA',''),{make:'Nissan',model:'Altima',vehicle:'Nissan Altima',year:'',learned:false});
-assert.deepEqual(n('TOYOTA','camry',''),{make:'Toyota',model:'Camry',vehicle:'Toyota Camry',year:'',learned:false});
-assert.deepEqual(n('honda','cr-v',''),{make:'Honda',model:'CR-V',vehicle:'Honda CR-V',year:'',learned:false});
-assert.deepEqual(n('BMW','x5',''),{make:'BMW',model:'X5',vehicle:'BMW X5',year:'',learned:false});
+for(const [makeIn,modelIn,make,model,vehicle] of [['nISSAN','aLTIMA','Nissan','Altima','Nissan Altima'],['TOYOTA','camry','Toyota','Camry','Toyota Camry'],['honda','cr-v','Honda','CR-V','Honda CR-V'],['BMW','x5','BMW','X5','BMW X5']]){const x=n(makeIn,modelIn,'');assert.equal(x.make,make);assert.equal(x.model,model);assert.equal(x.vehicle,vehicle);assert.equal(x.year,'');assert.equal(x.learned,false)}
 console.log('Global vehicle identity, short-form recognition, alias learning and Paint PO color-code write-back passed');
