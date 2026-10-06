@@ -68,10 +68,16 @@ import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanner;
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions;
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning;
+import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.text.TextRecognition;
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 
 public class MainActivity extends Activity {
     private static final int EXPORT_FILE_REQUEST = 7401;
+    private static final int VIN_CAPTURE_REQUEST = 7402;
     private byte[] pendingExportData = null;
+    private Uri pendingVinCaptureUri = null;
+    private File pendingVinCaptureFile = null;
     private static final int MIC_REQUEST = 1001;
     private static final int NOTIFICATION_REQUEST = 1002;
     private static final int UNKNOWN_SOURCES_REQUEST = 1003;
@@ -386,6 +392,29 @@ public class MainActivity extends Activity {
                             .addOnFailureListener(e -> deliverVinScanResult(null, "scan_failed"));
                 } catch (Exception e) {
                     deliverVinScanResult(null, "scanner_unavailable");
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void captureVinPhoto() {
+            runOnUiThread(() -> {
+                try {
+                    File dir = new File(getCacheDir(), "vin");
+                    if (!dir.exists() && !dir.mkdirs()) {
+                        deliverVinScanResult(null, "capture_unavailable");
+                        return;
+                    }
+                    File photo = File.createTempFile("vin_", ".jpg", dir);
+                    Uri uri = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".updateprovider", photo);
+                    Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                    intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
+                    intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    pendingVinCaptureUri = uri;
+                    pendingVinCaptureFile = photo;
+                    startActivityForResult(intent, VIN_CAPTURE_REQUEST);
+                } catch (Exception e) {
+                    deliverVinScanResult(null, "capture_unavailable");
                 }
             });
         }
@@ -1424,6 +1453,24 @@ public class MainActivity extends Activity {
                 }
             }
             pendingExportData = null;
+        }
+        if (requestCode == VIN_CAPTURE_REQUEST) {
+            if (resultCode != RESULT_OK || pendingVinCaptureUri == null) {
+                deliverVinScanResult(null, resultCode == RESULT_CANCELED ? "cancelled" : "capture_failed");
+            } else {
+                try {
+                    InputImage image = InputImage.fromFilePath(MainActivity.this, pendingVinCaptureUri);
+                    TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+                            .process(image)
+                            .addOnSuccessListener(text -> deliverVinScanResult(text.getText(), null))
+                            .addOnFailureListener(e -> deliverVinScanResult(null, "ocr_failed"));
+                } catch (Exception e) {
+                    deliverVinScanResult(null, "ocr_failed");
+                }
+            }
+            if (pendingVinCaptureFile != null) pendingVinCaptureFile.deleteOnExit();
+            pendingVinCaptureUri = null;
+            pendingVinCaptureFile = null;
         }
     }
 
