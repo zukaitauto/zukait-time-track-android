@@ -137,24 +137,65 @@
     return rows.filter(r=>(!dateFilter||dayKey(r.at)===dateFilter)&&(!jobFilter||jobFilter==='ALL'||same(r.job,jobFilter))).sort((a,b)=>b.at-a.at);
   }
   function timeDetailsCardData(emp,dateFilter,jobFilter){
-    const u=person(emp),rows=timeDetailRows(emp,dateFilter,jobFilter).slice().sort((a,b)=>a.at-b.at);
+    const u=person(emp),rows=timeReportRows(emp,dateFilter,jobFilter);
     const dateLabel=dateFilter?new Date(dateFilter+'T12:00:00Z').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'All Dates';
     return {name:u?.name||String(emp),dateLabel,jobLabel:jobFilter&&jobFilter!=='ALL'?'JC '+jobFilter:'All Job Cards',rows};
   }
+  const idleText=ms=>{const sec=Math.floor(ms/1000);return Math.floor(sec/60)+' min'+(sec%60?' '+sec%60+' sec':'');};
+  function timeReportRows(emp,dateFilter,jobFilter){
+    const jobs=new Map((state.jobs||[]).filter(Boolean).map(j=>[String(j.no),j]));
+    const rows=timeDetailRows(emp,dateFilter,jobFilter).map(r=>{
+      const j=jobs.get(r.job)||{},identity=window.zukaitJobCardMaster?.identity?.(r.job);
+      const make=identity?.make||j.make||j.vehicleMake||j.brand||window.zukaitNormalizeVehicle?.('','',j.vehicle||'')?.make||'—';
+      return {...r,make};
+    });
+    // Merge all employee work intervals before applying the job filter. Overlapping
+    // work and missing end records must never be reported as idle time.
+    let coveredEnd=null,previousJob=null;
+    const sessions=allEmployeeSessions(emp).slice().sort((a,b)=>Number(a.start)-Number(b.start));
+    for(const s of sessions){
+      const start=Number(s.start),end=s.end?Number(s.end):Infinity,job=sessionJob(s);
+      if(!Number.isFinite(start)||Number.isNaN(end)||end<start)continue;
+      if(coveredEnd!==null&&start>coveredEnd&&dayKey(start)===dayKey(coveredEnd)){
+        const duration=Math.round(normalInterval(coveredEnd,start)*60000);
+        if(duration>600000&&(!dateFilter||dayKey(start)===dateFilter)&&(!jobFilter||jobFilter==='ALL'||same(job,jobFilter)||same(previousJob,jobFilter)))
+          rows.push({at:start,from:coveredEnd,action:'IDLE',duration});
+      }
+      if(coveredEnd===null||end>coveredEnd){coveredEnd=end;previousJob=job;}
+    }
+    return rows.sort((a,b)=>a.at-b.at||(a.action==='IDLE'?-1:b.action==='IDLE'?1:0));
+  }
   function drawTimeDetailsCard(emp,dateFilter,jobFilter){
     const data=timeDetailsCardData(emp,dateFilter,jobFilter),W=1080,pad=64,rowH=76,headH=86,metaH=188;
-    const H=Math.max(640,250+metaH+headH+Math.max(1,data.rows.length)*rowH+86),c=document.createElement('canvas');c.width=W;c.height=H;
+    const H=Math.max(720,250+metaH+headH+Math.max(1,data.rows.length)*rowH+140),c=document.createElement('canvas');c.width=W;c.height=H;
     const x=c.getContext('2d'),round=(a,b,w,h,r)=>{x.beginPath();x.roundRect(a,b,w,h,r);x.fill();},txt=(t,a,b,size,weight,color,align='left')=>{x.font=weight+' '+size+'px sans-serif';x.fillStyle=color;x.textAlign=align;x.textBaseline='middle';x.fillText(String(t),a,b);};
     x.fillStyle='#eef3f9';x.fillRect(0,0,W,H);x.fillStyle='#ffffff';round(34,34,W-68,H-68,30);
     x.fillStyle='#17314d';round(34,34,W-68,154,30);x.fillRect(34,120,W-68,68);
     txt('ZUKAIT AUTO SERVICES',pad,84,34,'800','#ffffff');txt('EMPLOYEE TIME DETAILS',pad,132,22,'700','#cfe0f1');
     txt(data.name,pad,230,36,'800','#172033');txt(data.dateLabel,pad,284,24,'700','#52657a');
     x.fillStyle='#edf5ff';round(pad,324,W-pad*2,94,18);txt(data.jobLabel,pad+26,354,23,'800','#245681');txt('Oman time · 12-hour AM/PM · Read only',pad+26,392,18,'600','#64788d');
-    let y=448;x.fillStyle='#1f3048';round(pad,y,W-pad*2,headH,12);const cols=[pad+24,pad+330,pad+600,pad+790];['Time','Job Card','Action','Date'].forEach((v,i)=>txt(v,cols[i],y+headH/2,21,'800','#ffffff'));
+    let y=448;x.fillStyle='#1f3048';round(pad,y,W-pad*2,headH,12);const cols=[pad+24,pad+300,pad+500,pad+790];['Time','Job Card','Car Make','Action'].forEach((v,i)=>txt(v,cols[i],y+headH/2,21,'800','#ffffff'));
     y+=headH;
     if(!data.rows.length){txt('No time events match these filters.',W/2,y+70,24,'700','#6b7c8e','center');}
-    data.rows.forEach((r,i)=>{x.fillStyle=i%2?'#f6f8fb':'#ffffff';x.fillRect(pad,y,W-pad*2,rowH);x.strokeStyle='#e1e8f0';x.beginPath();x.moveTo(pad,y+rowH);x.lineTo(W-pad,y+rowH);x.stroke();txt(timeText(r.at),cols[0],y+rowH/2,21,'700','#26384d');txt(r.job,cols[1],y+rowH/2,22,'800','#172033');const action=String(r.action),bg=action==='PAUSE'?'#fff0d5':action==='FINISH'?'#e5eef9':action==='STOP'?'#f1e8f8':'#e5f5eb',fg=action==='PAUSE'?'#9a6500':action==='FINISH'?'#315f91':action==='STOP'?'#76518c':'#26734b';x.fillStyle=bg;round(cols[2]-10,y+19,150,38,19);txt(action,cols[2]+65,y+38,18,'800',fg,'center');txt(new Date(r.at).toLocaleDateString('en-GB',{timeZone:'Asia/Muscat',day:'2-digit',month:'short',year:'numeric'}),cols[3],y+rowH/2,18,'700','#52657a');y+=rowH;});
-    txt(data.rows.length+' time event'+(data.rows.length===1?'':'s'),pad,H-68,18,'700','#687b8e');txt('Zukait Auto Services',W-pad,H-68,18,'700','#687b8e','right');
+    data.rows.forEach((r,i)=>{
+      if(r.action==='IDLE'){
+        x.fillStyle='#fde5e5';round(pad,y,W-pad*2,rowH,10);
+        txt('IDLE TIME: '+idleText(r.duration),W/2,y+25,25,'800','#bf2020','center');
+        txt(timeText(r.from)+' – '+timeText(r.at),W/2,y+55,18,'600','#bf2020','center');
+      }else{
+        x.fillStyle=i%2?'#f6f8fb':'#ffffff';x.fillRect(pad,y,W-pad*2,rowH);
+        txt(timeText(r.at),cols[0],y+rowH/2-(dateFilter?0:10),21,'700','#26384d');
+        if(!dateFilter)txt(dayKey(r.at),cols[0],y+58,15,'600','#52657a');
+        const fit=(value,col,width)=>{let text=String(value);while(text.length>1&&x.measureText(text).width>width)text=text.slice(0,-2)+'…';txt(text,col,y+rowH/2,21,'700','#26384d');};
+        x.font='700 21px sans-serif';fit(r.job,cols[1],180);fit(r.make,cols[2],260);
+        const action=String(r.action),bg=action==='PAUSE'?'#fff0d5':action==='FINISH'?'#e5eef9':action==='STOP'?'#f1e8f8':'#e5f5eb',fg=action==='PAUSE'?'#9a6500':action==='FINISH'?'#315f91':action==='STOP'?'#76518c':'#26734b';
+        x.fillStyle=bg;round(cols[3]-10,y+19,150,38,19);txt(action,cols[3]+65,y+38,18,'800',fg,'center');
+      }
+      y+=rowH;
+    });
+    const count=data.rows.filter(r=>r.action!=='IDLE').length;
+    txt('Red: idle time over 10 minutes · scheduled breaks excluded',pad,H-100,18,'700','#bf2020');
+    txt(count+' time event'+(count===1?'':'s'),pad,H-68,18,'700','#687b8e');txt('Zukait Auto Services',W-pad,H-68,18,'700','#687b8e','right');
     return c;
   }
   async function shareTimeDetailsCard(emp,dateFilter,jobFilter){
@@ -166,9 +207,13 @@
   }
   function timeDetailsBody(emp,dateFilter,jobFilter){
     const sessions=allEmployeeSessions(emp),jobs=[...new Set(sessions.map(sessionJob).filter(Boolean))].sort((a,b)=>String(b).localeCompare(String(a),undefined,{numeric:true}));
-    const rows=timeDetailRows(emp,dateFilter,jobFilter);
-    return '<div class="tw-time-filters"><label>Date<input id="twTimeDate" type="date" value="'+esc(dateFilter||'')+'"></label><label>Job Card<select id="twTimeJob"><option value="ALL">All Job Cards</option>'+jobs.map(j=>'<option value="'+esc(j)+'"'+(same(j,jobFilter)?' selected':'')+'>'+esc(j)+'</option>').join('')+'</select></label></div><p class="tw-history-explanation">Oman time · 12-hour AM/PM · Read only</p><div class="tw-time-count">'+rows.length+' time event'+(rows.length===1?'':'s')+'</div>'+(rows.length?'<div class="tw-history-table-scroll"><table class="tw-history-table tw-time-table"><thead><tr><th>Date</th><th>Time</th><th>JC</th><th>Action</th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+esc(new Date(r.at).toLocaleDateString('en-GB',{timeZone:'Asia/Muscat',day:'2-digit',month:'short',year:'numeric'}))+'</td><td class="tw-history-clock">'+esc(timeText(r.at))+'</td><td>'+esc(r.job)+'</td><td><b class="tw-time-action tw-time-'+esc(r.action.toLowerCase())+'">'+esc(r.action)+'</b></td></tr>').join('')+'</tbody></table></div>':'<p class="notice">No time events match these filters.</p>');
+    const rows=timeReportRows(emp,dateFilter,jobFilter),count=rows.filter(r=>r.action!=='IDLE').length;
+    const tableRows=rows.map(r=>r.action==='IDLE'
+      ?'<tr class="tw-time-idle"><td colspan="4"><strong>IDLE TIME: '+esc(idleText(r.duration))+'</strong><small>'+esc(timeText(r.from)+' – '+timeText(r.at))+'</small></td></tr>'
+      :'<tr><td class="tw-history-clock">'+esc(timeText(r.at))+(!dateFilter?'<small>'+esc(dayKey(r.at))+'</small>':'')+'</td><td>'+esc(r.job)+'</td><td>'+esc(r.make)+'</td><td><b class="tw-time-action tw-time-'+esc(r.action.toLowerCase())+'">'+esc(r.action)+'</b></td></tr>').join('');
+    return '<div class="tw-time-filters"><label>Date<input id="twTimeDate" type="date" value="'+esc(dateFilter||'')+'"></label><label>Job Card<select id="twTimeJob"><option value="ALL">All Job Cards</option>'+jobs.map(j=>'<option value="'+esc(j)+'"'+(same(j,jobFilter)?' selected':'')+'>'+esc(j)+'</option>').join('')+'</select></label></div><p class="tw-history-explanation">Oman time · 12-hour AM/PM · Read only</p><div class="tw-time-count">'+count+' time event'+(count===1?'':'s')+'</div>'+(rows.length?'<div class="tw-history-table-scroll"><table class="tw-history-table tw-time-table"><thead><tr><th>Time</th><th>Job Card</th><th>Car Make</th><th>Action</th></tr></thead><tbody>'+tableRows+'</tbody></table></div><p class="tw-time-legend">Red: idle time over 10 minutes · scheduled breaks excluded</p>':'<p class="notice">No time events match these filters.</p>');
   }
+
   window.openTechnicianTimeDetails=function(emp){
     const u=person(emp);
     if(!canView()||!u||u.role!=='Employee'||!departments[u.department])return;
@@ -237,5 +282,6 @@
   style.textContent += "\n/* Match the raised workload panels in the department technician list. */\n#twDepartment .tw-employee{--tw-row-soft:#edf5ff;--tw-row-line:#bfd5ef;--tw-row-accent:#3f7fbe;--tw-row-depth:#cedced;background:linear-gradient(145deg,#fff,var(--tw-row-soft))!important;color:#172033!important;border:1px solid var(--tw-row-line)!important;border-left:6px solid var(--tw-row-accent)!important;border-radius:20px;margin:14px 0 20px;padding:18px 16px;box-shadow:inset 0 2px 0 #fff,0 5px 0 var(--tw-row-depth),0 10px 20px rgba(30,55,85,.09)}\n#twDepartment .tw-employee.tw-status-working{--tw-row-soft:#eaf8ef;--tw-row-line:#b7ddc6;--tw-row-accent:#35966b;--tw-row-depth:#c4dfd0}\n#twDepartment .tw-employee.tw-status-paused{--tw-row-soft:#fff4dc;--tw-row-line:#ebd19c;--tw-row-accent:#d59c31;--tw-row-depth:#e7d6b2}\n#twDepartment .tw-employee.tw-status-syncing,#twDepartment .tw-employee.tw-status-unavailable{--tw-row-soft:#f3efff;--tw-row-line:#d8cbee;--tw-row-accent:#8970b7;--tw-row-depth:#ded5ed}\n#twDepartment .tw-index{width:36px;height:36px;border:1px solid var(--tw-line);background:linear-gradient(145deg,#fff,var(--tw-soft));color:var(--tw-accent);box-shadow:inset 0 2px 0 #fff,0 3px 0 var(--tw-line);border-radius:12px}\n#twDepartment .tw-employee>.tw-status{background:linear-gradient(145deg,#fff,var(--tw-row-soft))!important;color:var(--tw-row-accent)!important;border-color:var(--tw-row-line)!important;box-shadow:inset 0 1px 0 #fff,0 3px 0 var(--tw-row-depth)}\n#twDepartment .tw-current{color:#25364b}\n#twDepartment .tw-summary small{color:#596b80}\n#twDepartment .tw-employee:active{transform:translateY(2px)}\n#twDepartment .tw-employee:focus-visible{outline:3px solid var(--tw-accent);outline-offset:4px}\n#modal .tw-department-close{background:linear-gradient(145deg,#fff8f8,#ffe8eb)!important;color:#a23e4f!important;border:1px solid #ecc3cb!important;box-shadow:inset 0 2px 0 #fff,0 4px 0 #dfb7c0,0 7px 14px rgba(130,55,75,.1)!important}\n#modal .tw-department-close:active{transform:translateY(2px)}\n#modal .tw-department-close:focus-visible{outline:3px solid #427aba;outline-offset:5px}\n@media(max-width:480px){#twDepartment .tw-employee{padding:16px 12px}}\n";
   style.textContent += '.tw-history-button{margin:18px 0 2px;padding:12px 18px;font-size:16px;font-weight:800;min-height:46px;border:1px solid #c3c4e9!important;border-radius:12px;background:linear-gradient(145deg,#fff,#e9e8ff)!important;color:#544787!important;box-shadow:inset 0 2px #fff,0 3px #cfcee8}.tw-history-button:focus-visible{outline:3px solid #4d76b7;outline-offset:4px}#twHistory{color:#20374f;font-size:15px}#twHistory .tw-history-vehicle{margin:8px 0;font-size:15px}#twHistory .tw-history-explanation{margin:6px 0;font-size:13px;color:#566b80}#twHistory .tw-history-help{font-size:13px;margin:6px 0 10px}#twHistory summary{cursor:pointer;color:#3b6288}#twHistory .tw-history-total{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:2px solid #bdd9cb;font-size:15px}#twHistory .tw-history-total b{font-size:20px;color:#236349}#twHistory .tw-history-day{margin-top:16px}#twHistory .tw-history-day h3{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:5px;margin:0 0 6px;font-size:16px;color:#264f79}#twHistory .tw-history-day h3 small{font-size:13px;font-weight:700;color:#466582}#twHistory .tw-history-table-scroll{overflow-x:auto}#twHistory .tw-history-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:14px}#twHistory .tw-history-table th,#twHistory .tw-history-table td{padding:8px 4px;vertical-align:middle;text-align:left;border:0;border-bottom:1px solid #dce5ee;line-height:1.3;white-space:normal;overflow-wrap:anywhere}#twHistory .tw-history-table th{font-size:12px;color:#496581;background:#edf4fb}#twHistory .tw-history-table th:first-child{width:7%}#twHistory .tw-history-table th:nth-child(2),#twHistory .tw-history-table th:nth-child(3){width:25%}#twHistory .tw-history-table th:nth-child(4){width:20%}#twHistory .tw-history-table th:nth-child(5){width:23%}#twHistory .tw-history-row{background:#fff}#twHistory .tw-history-row:nth-child(even){background:#f6f9fd}#twHistory .tw-history-clock{font-weight:700;font-variant-numeric:tabular-nums}#twHistory .tw-history-clock small{display:block;font-size:11px;font-weight:400;color:#64748b}#twHistory .tw-history-note td{padding:3px 4px 6px;font-size:12px;background:#f6f9fd}#twHistory .tw-history-note summary{font-size:12px}#twHistory .tw-history-note p{margin:6px 0;line-height:1.4}@media(max-width:360px){#twHistory .tw-history-table{font-size:13px}#twHistory .tw-history-table th,#twHistory .tw-history-table td{padding:7px 3px}}';
   style.textContent += '.tw-workload-actions{display:flex;justify-content:flex-end;margin:4px 0 14px}.tw-time-details-button{min-height:46px;padding:11px 18px;border-radius:13px!important;border:1px solid var(--tw-line,#bfd6ee)!important;background:linear-gradient(145deg,#fff,var(--tw-soft,#edf5ff))!important;color:var(--tw-accent,#31577d)!important;font-size:15px;font-weight:900;box-shadow:inset 0 2px #fff,0 3px 0 var(--tw-line,#bfd6ee)}.tw-time-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:8px 0 12px}.tw-time-filters label{display:grid;gap:5px;font-size:12px;font-weight:900;color:#52657a}.tw-time-filters input,.tw-time-filters select{box-sizing:border-box;width:100%;min-height:44px;padding:8px 10px;border:1px solid #cbd8e6;border-radius:11px;background:#fff;color:#172033;font-size:14px;font-weight:700}.tw-time-count{margin:8px 0 10px;font-size:13px;font-weight:800;color:#596b80}.tw-time-table th:nth-child(1){width:28%!important}.tw-time-table th:nth-child(2){width:25%!important}.tw-time-table th:nth-child(3){width:22%!important}.tw-time-table th:nth-child(4){width:25%!important}.tw-time-action{display:inline-block;padding:4px 7px;border-radius:999px;font-size:11px}.tw-time-start{background:#e8f6ee;color:#187145}.tw-time-pause{background:#fff1d9;color:#955800}.tw-time-resume{background:#e8f6ee;color:#187145}.tw-time-finish{background:#e9efff;color:#405ba5}.tw-time-stop{background:#eef1f4;color:#52606d}.tw-time-running{background:#e8f6ee;color:#187145}@media(max-width:420px){.tw-time-filters{grid-template-columns:1fr}.tw-time-table{font-size:12px!important}}';
+  style.textContent += '#twTimeDetails .tw-history-table-scroll{overflow-x:auto}#twTimeDetails .tw-time-table{width:100%;border-collapse:collapse;table-layout:fixed}#twTimeDetails .tw-time-table th,#twTimeDetails .tw-time-table td{padding:12px 8px;text-align:left;overflow-wrap:anywhere;border-bottom:1px solid #e1e8f0}#twTimeDetails .tw-time-table th{background:#1f3048;color:#fff}#twTimeDetails .tw-time-table tr:nth-child(even){background:#f6f8fb}#twTimeDetails .tw-time-idle td{background:#fde5e5;color:#bf2020;text-align:center;padding:16px 8px}#twTimeDetails .tw-time-idle strong{font-size:18px}#twTimeDetails .tw-time-idle small,#twTimeDetails .tw-history-clock small{display:block;margin-top:5px}.tw-time-legend{color:#bf2020;font-size:12px}';
   document.head.appendChild(style);
 })();
