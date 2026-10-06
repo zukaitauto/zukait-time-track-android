@@ -11,14 +11,23 @@ const at=t=>Date.parse('2026-10-06T'+t+'+04:00');
 const session=(job,start,end,extra={})=>({emp:'E',job,start:at(start),end:end?at(end):undefined,paused:!!end,...extra});
 const idle=(job='ALL')=>rows('E','2026-10-06',job).filter(r=>r.action==='IDLE');
 state.sessions=[session('A','08:25:05','09:01:35'),session('B','09:20:16','09:20:22'),session('A','09:20:34','10:33:20'),session('B','10:33:49')];
-const saved=JSON.stringify(state);assert.equal(idle().length,1);assert.equal(idle()[0].duration,1121000);
+const saved=JSON.stringify(state);assert.equal(idle().length,2);assert.equal(idle()[0].duration,1505000);assert.equal(idle()[1].duration,1121000);
 let body=html('E','2026-10-06','ALL');assert.match(body,/IDLE TIME: 18 min 41 sec/);assert.match(body,/<th>Time<\/th><th>Job Card<\/th><th>Car Make<\/th><th>Action<\/th>/);assert.doesNotMatch(body,/<th>Date/);assert.match(body,/Land Rover/);
 draw('E','2026-10-06','ALL');assert.ok(texts.includes('IDLE TIME: 18 min 41 sec'));assert.ok(texts.includes('Car Make'));assert.ok(!texts.includes('Date'));assert.ok(canvas.height>1100);assert.equal(JSON.stringify(state),saved);
 for(const [end,expected] of [['09:10:00',0],['09:10:01',1],['09:09:59',0]]){state.sessions=[session('A','08:00:00','09:00:00'),session('B',end)];assert.equal(idle().length,expected);}
 state.sessions=[session('A','08:00:00','09:00:00'),session('B','08:30:00','10:00:00'),session('A','10:05:00')];assert.equal(idle().length,0,'overlapping work is not idle');assert.equal(idle('A').length,0,'filtered-out job is still working time');
 state.sessions=[session('A','08:00:00'),session('B','09:30:00','09:40:00'),session('B','10:00:00')];assert.equal(idle().length,0,'unknown end must not invent idle time');
-state.sessions=[session('A','12:00:00','13:00:00'),session('B','15:00:00')];assert.equal(idle().length,0,'scheduled lunch is not idle');
+state.sessions=[session('A','08:00:00','13:00:00'),session('B','15:00:00')];assert.equal(idle().length,0,'scheduled lunch is not idle');
 state.sessions=[session('A','08:00:00','09:00:00'),session('B','09:30:00')];state.workshopHolidays=['2026-10-06'];assert.equal(idle().length,0);state.workshopHolidays=[];
 state.sessions[1].start=Date.parse('2026-10-07T08:00:00+04:00');assert.equal(rows('E','','ALL').filter(r=>r.action==='IDLE').length,0,'no overnight alert');
 state.jobs[0].make='<script>';assert.match(html('E','2026-10-06','ALL'),/&lt;script&gt;/);assert.match(html('E','','ALL'),/2026-10-07/,'all dates view retains date context');
 console.log('Idle report: sample, strict 10-minute boundary, overlap, job filters, open sessions, breaks, holidays, overnight, escaping, canvas and read-only state passed.');
+
+state.sessions=[session('A','09:00:00')];assert.equal(idle().length,1);assert.equal(idle()[0].from,at('08:00:00'));assert.equal(idle()[0].duration,3600000);assert.match(html('E','2026-10-06','ALL'),/IDLE TIME: 60 min/);
+state.sessions=[session('A','08:00:00','13:00:00'),session('B','15:30:00')];assert.equal(idle().length,1);assert.equal(idle()[0].from,at('15:00:00'));assert.equal(idle()[0].duration,1800000);
+state.sessions=[session('A','08:00:00','12:45:00'),session('B','15:20:00')];assert.deepEqual(Array.from(idle(),r=>r.duration),[900000,1200000]);assert.equal(idle()[0].at,at('13:00:00'));assert.equal(idle()[1].from,at('15:00:00'));
+for(const [start,count] of [['07:30:00',0],['08:00:00',0],['08:10:00',0],['08:10:01',1]]){state.sessions=[session('A',start)];assert.equal(idle().length,count);}
+state.sessions=[session('A','07:30:00','08:45:00'),session('B','09:00:00')];assert.equal(idle().length,1);assert.equal(idle()[0].from,at('08:45:00'));
+state.sessions=[session('A','08:00:00','15:20:00'),session('B','15:30:00')];assert.equal(idle().length,0,'work spanning lunch covers afternoon start');
+state.sessions=[session('A','09:00:00')];assert.equal(idle('B').length,0,'unrelated job filter has no shift-start alert');
+console.log('Shift-start idle: 8 AM to 9 AM = 60 minutes; afternoon restart, lunch split, threshold, early work and filters passed.');

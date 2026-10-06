@@ -156,10 +156,16 @@
     for(const s of sessions){
       const start=Number(s.start),end=s.end?Number(s.end):Infinity,job=sessionJob(s);
       if(!Number.isFinite(start)||Number.isNaN(end)||end<start)continue;
-      if(coveredEnd!==null&&start>coveredEnd&&dayKey(start)===dayKey(coveredEnd)){
-        const duration=Math.round(normalInterval(coveredEnd,start)*60000);
-        if(duration>600000&&(!dateFilter||dayKey(start)===dateFilter)&&(!jobFilter||jobFilter==='ALL'||same(job,jobFilter)||same(previousJob,jobFilter)))
-          rows.push({at:start,from:coveredEnd,action:'IDLE',duration});
+      const ds=dayStart(start);
+      // Each shift starts a fresh idle window, including the day's first job.
+      // Clip gaps to each shift so lunch and overnight time never appear as idle.
+      const gapStart=Math.max(ds,coveredEnd===null?ds:coveredEnd);
+      if(start>gapStart&&(!dateFilter||dayKey(start)===dateFilter)&&(!jobFilter||jobFilter==='ALL'||same(job,jobFilter)||same(previousJob,jobFilter))){
+        for(const [a,b] of [[8,13],[15,19]]){
+          const from=Math.max(gapStart,ds+a*3600000),to=Math.min(start,ds+b*3600000);
+          const duration=to>from?Math.round(normalInterval(from,to)*60000):0;
+          if(duration>600000)rows.push({at:to,from,action:'IDLE',duration});
+        }
       }
       if(coveredEnd===null||end>coveredEnd){coveredEnd=end;previousJob=job;}
     }
