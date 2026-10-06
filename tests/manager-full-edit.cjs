@@ -9,3 +9,10 @@ ctx.window.editJobManager('J1');state.jobs[0].reg='new';await ctx.window.zukaitS
 ctx.window.editJobManager('J1');ctx.me.role='Employee';await ctx.window.zukaitSaveManagerFullEdit();assert.equal(saves,1);
 ctx.me.role='Manager';ctx.window.editJobManager('J1');assert.doesNotMatch(html,/Amounts & Delivery|Edit Cash Amount|OMR|Final Invoice/);ctx.window.zukaitOpenManagedJob('J1');assert.match(html,/Full Edit/);assert.match(html,/1 employees assigned/);assert.match(html,/zukaitOpenManagedEmployee/);assert.doesNotMatch(html,/OMR|Invoice|financial/i);ctx.window.zukaitOpenManagedEmployee('J1','e');assert.match(html,/Worker/);assert.match(html,/Start:/);assert.match(html,/Pause:/);assert.doesNotMatch(html,/OMR|Invoice/);ctx.me.role='Employee';const prior=html;ctx.window.zukaitOpenManagedJob('J1');assert.equal(html,prior);console.log('Manager job view and full edit tests passed');
 })().catch(e=>{console.error(e);process.exitCode=1});
+
+// Job Card Control Center must stay inside the desktop viewport; action/details column cannot be clipped off-screen.
+assert.match(html,/job-card-control-centre/,'Job Card Control Center must have a scoped responsive shell');
+assert.match(html,/\.job-list-wrap\{overflow-x:auto;overflow-y:visible;max-width:100%/,'Job Card list must contain horizontal overflow locally');
+assert.match(html,/\.job-list-wrap table\{width:100%;min-width:0/,'desktop Job Card table must fit the available panel width');
+assert.match(html,/\.modal-box\{box-sizing:border-box;max-width:min\(1100px,calc\(100vw - 36px\)\)/,'manager modal must stay inside the viewport');
+console.log('Job Card Control Center desktop viewport regression passed');
