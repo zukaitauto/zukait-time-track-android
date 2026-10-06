@@ -23,11 +23,12 @@ function candidateDetail(raw){
  if(clean.length===17)push(clean,'DIRECT');
  const chunks=text.match(/[A-Z0-9]{17}/g)||[];chunks.forEach(x=>push(x,'CHUNK'));
  for(let i=0;i<=clean.length-17;i++)push(clean.slice(i,i+17),'WINDOW');
- const scored=[];
+ const scored=[],sourceBase=s=>s==='LINE'?120:s==='DIRECT'?115:s==='CHUNK'?110:50;
  for(const p of pool){
-  if(valid(p.vin))scored.push({...p,corrected:false,checkDigit:vinCheckDigit(p.vin),score:100+(p.source==='LINE'?12:p.source==='DIRECT'?10:p.source==='CHUNK'?8:0)+(vinCheckDigit(p.vin)===true?8:0)});
-  const fixed=fixForbidden(p.vin);
-  if(fixed!==p.vin&&valid(fixed))scored.push({vin:fixed,source:p.source,corrected:true,original:p.vin,checkDigit:vinCheckDigit(fixed),score:70+(p.source==='LINE'?12:p.source==='DIRECT'?10:p.source==='CHUNK'?8:0)+(vinCheckDigit(fixed)===true?8:0)});
+  const check=vinCheckDigit(p.vin);
+  if(valid(p.vin))scored.push({...p,corrected:false,checkDigit:check,score:sourceBase(p.source)+(check===true?8:0)});
+  const fixed=fixForbidden(p.vin),fixedCheck=vinCheckDigit(fixed);
+  if(fixed!==p.vin&&valid(fixed))scored.push({vin:fixed,source:p.source,corrected:true,original:p.vin,checkDigit:fixedCheck,score:sourceBase(p.source)-25+(fixedCheck===true?8:0)});
  }
  scored.sort((a,b)=>b.score-a.score||Number(a.corrected)-Number(b.corrected));
  return scored[0]||null
