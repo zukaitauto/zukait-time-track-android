@@ -135,7 +135,7 @@ function openEditor(id){
     field('estMakeModel','Make & Model',e.makeModel)+
     field('estYear','Year',e.year,'number','min="1900" max="2100"')+
     field('estReg','Registration No.',e.registration)+
-    field('estVin','VIN No.',e.jobCard?(window.zukaitJobCardMaster?.vin?.(e.jobCard)||e.vin):e.vin,'text','maxlength="32" autocapitalize="characters" autocomplete="off"')+'<label>VIN Scanner<button type="button" class="secondary" onclick="zukaitVinScan?.open(\'estVin\')">📷 Scan VIN</button></label>'+
+    field('estVin','VIN No.',e.jobCard?(window.zukaitJobCardMaster?.vin?.(e.jobCard)||e.vin):e.vin,'text','maxlength="32" autocapitalize="characters" autocomplete="off"')+'<label>VIN Scanner<button type="button" class="secondary" onclick="zukaitVinScan?.open(\'estVin\')">▣ Scan Barcode</button><button type="button" class="secondary" onclick="zukaitVinScan?.capture(\'estVin\')">📷 Capture VIN</button></label>'+
     field('estClaim','Claim No.',e.claimNo)+
     field('estJobCard','Job Card No. (Optional)',e.jobCard)+
   '</div></div>'+
