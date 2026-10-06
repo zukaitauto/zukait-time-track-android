@@ -62,6 +62,15 @@ for(const emp of users){
 context.me.role='Employee';title='unchanged';context.openTechnicianWorkload('1');assert.equal(title,'unchanged');
 assert.doesNotMatch(source,/\bsave\s*\(|\bcommitEvent\s*\(|\bsyncNow\s*\(|MutationObserver/);
 console.log('Technician workload: all departments, row navigation, unique unfinished JCs, times, escaping, realtime finish/reassignment, read-only state and timer cleanup passed');
+assert.match(source,/id="twTimeShare"/,'Time Details must expose a Share Card button');
+assert.match(source,/shareTimeDetailsCard\(emp,dateFilter,jobFilter\)/,'share must use the currently selected employee/date/job filters');
+assert.match(source,/timeDetailRows\(emp,dateFilter,jobFilter\)/,'share card must use the same authoritative event rows as the visible table');
+assert.match(source,/toDataURL\('image\/png'\)/,'Time Details share output must be a PNG card');
+assert.match(source,/bridge\.shareImageBase64\(filename,url\)/,'Android must receive the generated PNG card through the native share bridge');
+const nativeSource=fs.readFileSync('app/src/main/java/com/zukait/timetrack/MainActivity.java','utf8');
+assert.match(nativeSource,/public void shareImageBase64\(String filename, String base64\)/,'native bridge must expose PNG image sharing');
+assert.match(nativeSource,/share\.setType\("image\/png"\)/,'native Time Details card must share as image/png');
+
 
 // Production login updates lexical `me`, not necessarily window.me.
 // Exercise the actual dashboard entry point with those identities separated.
