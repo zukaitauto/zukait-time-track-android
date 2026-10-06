@@ -21,7 +21,7 @@ console.log('Job Card Control Center desktop viewport regression passed');
 // Canonical vehicle identity and insurance selection in Job Card Control Center.
 const managed=fs.readFileSync('app/src/main/assets/manager_job_edit.js','utf8');
 assert.match(managed,/insuranceCompanies=\['Almadina Insurance','Liva Insurance'/,'manager insurance company must use the shared approved list');
-assert.match(managed,/Insurance Company<select id="\+'id\+'"/,'insurance company must render as a dropdown, not free text');
+assert.match(managed,/Insurance Company<select id="'\+id\+'"/,'insurance company must render as a dropdown, not free text');
 assert.match(managed,/\['Make',v\.make\],\['Model',v\.model\],\['Year',v\.year\]/,'managed Job Card must show canonical make, model and year');
 const master=fs.readFileSync('app/src/main/assets/job_card_master.js','utf8');
 assert.match(master,/zukaitNormalizeVehicle/,'canonical identity must derive make/model from legacy combined vehicle text');
