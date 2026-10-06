@@ -170,7 +170,7 @@ function workshopDay(value=Date.now()){
 }
 function quickData(st,people,statuses,now=Date.now()){
  const day=workshopDay(now),active=(st.assign||[]).filter(a=>a&&!a.cancelled&&!a.completed&&norm(a.job)!=='id001');
- const leave=(window.zukaitV2?.leave?.active?.()||(st.leaves||[]).filter(l=>l&&!l.cancelled)).filter(l=>workshopDay(l.date)===day);
+ const leave=(window.zukaitV2?.leave?.active?.(st)||(st.leaves||[]).filter(l=>l&&!l.cancelled)).filter(l=>workshopDay(l.date)===day);
  const leaveIds=new Set(leave.map(l=>String(l.emp)));
  const open=(st.jobs||[]).filter(j=>j&&j.no&&norm(j.no)!=='id001'&&!j.deleted&&!j.delivered&&!j.archived&&!j.completed&&!['completed','closed','cancelled','delivered'].includes(String(j.status||'').toLowerCase()));
  const runningIds=statuses===null?null:new Set(statuses.filter(s=>['Working','Overtime'].includes(s.status)).map(s=>norm(s.job||s.assignment?.job||s.session?.job)));
@@ -205,6 +205,7 @@ function summaryHtml(){
 }
 function filterQuickDetails(){const q=norm(document.getElementById('woQuickSearch')?.value||'');document.querySelectorAll('[data-wo-quick-row]').forEach(row=>{row.hidden=!!q&&!norm(row.textContent).includes(q)})}
 function openQuickDetails(type){
+ if(type==='leave'&&window.zukaitLeaveHistory)return window.zukaitLeaveHistory.open('today');
  if(type==='idle'){if(quickViewData().idle===null)return shell('Idle Employees','<p>Idle worker status is not available yet. Refresh after synchronization.</p>');return window.v247OpenIdealTime?.()}
  if(type==='qc'){if(window.zukaitOpenQCQueue)return window.zukaitOpenQCQueue();return shell('QC Pending','<p>QC is still loading. Please refresh.</p>')}
  const q=quickViewData(),st=stateNow(),people=typeof users==='undefined'?[]:users,name=id=>people.find(u=>String(u.id)===String(id))?.name||id||'—';

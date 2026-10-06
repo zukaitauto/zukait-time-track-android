@@ -7,6 +7,9 @@ node tests/functional-smoke.mjs
 node tests/manager-time-management.mjs
 node tests/cash-monthly-pulse.mjs
 node tests/leave-after-work.mjs
+node tests/supervisor-leave-dashboard.mjs
+node tests/global-leave-history.mjs
+node tests/leave-sync-race.mjs
 node tests/employee-finish-server-authority.mjs
 node tests/consumables-smoke.mjs
 node tests/consumables-ui.mjs

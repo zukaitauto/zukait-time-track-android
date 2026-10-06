@@ -473,8 +473,8 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const normalSg=normalDone.reduce((n,a)=>n+(+a.suggested||0),0),normalAc=normalDone.reduce((n,a)=>n+(typeof window.v107AssignmentNormal==='function'?window.v107AssignmentNormal(a,mf,mt):actual(a)),0),eff=normalAc?normalSg/normalAc*100:null;
    const monthSuggested=typeof window.monthlySuggestedMinutes==='function'?window.monthlySuggestedMinutes(me.id,mf,mt):(state.assign||[]).filter(a=>a&&a.emp===me.id&&!a.cancelled&&(a.assignedAt||0)>=mf&&(a.assignedAt||0)<mt).reduce((n,a)=>n+(+a.suggested||0),0),monthActual=typeof window.monthlyNormalActualMinutes==='function'?window.monthlyNormalActualMinutes(me.id,mf,mt):(state.sessions||[]).filter(x=>x&&x.emp===me.id&&x.job!==H&&x.start<mt&&(x.end||nowTs)>mf).reduce((n,x)=>n+Math.max(0,(Math.min(+(x.end||nowTs),mt)-Math.max(+x.start||0,mf))/60000),0),monthRemaining=monthSuggested-monthActual,monthInc=typeof window.incentiveFor==='function'?window.incentiveFor(me.id):{incentive:0},orb=(cl,val,label)=>'<div class="v81-month-orb '+cl+'"><b>'+val+'</b><span>'+label+'</span></div>';
    const progress='<div class="v104-month-progress"><div class="v104-progress target"><span>MONTHLY TARGET</span><b>'+fm(+monthInc.target||0)+'</b></div><div class="v104-progress achieved"><span>MONTHLY ACHIEVED</span><b>'+fm(+monthInc.eligible||+monthInc.actual||0)+'</b></div><div class="v104-progress excess"><span>EXCESS HOURS</span><b>'+fm(+monthInc.excess||0)+'</b></div><div class="v104-progress incentive"><span>INCENTIVE</span><b>'+fm(+monthInc.incentive||0)+'</b></div></div>'; const month='<div class="card month-summary v75s-section"><div class="section-title"><h3>📅 This Month</h3><span class="pill">MONTHLY</span></div>'+progress+'<div class="v81-month-grid">'+orb('v81-m1',String(normalDone.length),'Completed Jobs')+orb('v81-m2',eff==null?'—':eff.toFixed(1)+'%','Efficiency')+orb('v81-m3',fm(monthSuggested),'Suggested Time')+orb('v81-m4',fm(monthActual),'Actual Time')+orb('v81-m5',fm(Math.abs(monthRemaining)),monthRemaining>=0?'Remaining Time':'Over Suggested')+orb('v81-m6',fm(idealMin),'Ideal Time')+orb('v81-m7',fm(overtimeMin),'Overtime')+'</div></div>';
-   const monthLeaveRows=((state.leaves||[]).filter(l=>l&&!l.cancelled&&String(l.emp)===String(me.id)&&String(l.date||'').startsWith(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'))),monthLeaveDays=monthLeaveRows.reduce((n,l)=>n+window.v755LeaveDays(l),0);
-   window.v81OpenMyMonthlyLeave=function(){const rows=((state.leaves||[]).filter(l=>l&&!l.cancelled&&String(l.emp)===String(me.id)&&String(l.date||'').startsWith(new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0')+'-'))).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))),label=p=>p==='AM'?'Morning Half Day':p==='PM'?'Afternoon Half Day':'Full Day',body=rows.length?'<div class="v75s-history"><table><tr><th>Date</th><th>Leave Type</th><th>Remark</th></tr>'+rows.map(l=>'<tr><td><b>'+esc(l.date)+'</b></td><td>'+esc(window.v755LeaveLabel(l))+'</td><td>'+esc(l.remark||'—')+'</td></tr>').join('')+'</table></div>':'<div class="notice">No leave taken this month.</div>';openModal('<div class="section-title"><h2>🗓 My Leave This Month</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="notice"><b>Total Leave: '+(rows.reduce((n,l)=>n+window.v755LeaveDays(l),0)).toFixed(1).replace('.0','')+' day(s)</b></div>'+body)};
+   const monthLeaveRows=window.zukaitV2.leave.history({month:window.zukaitV2.leave.dashboard(state).day.slice(0,7),employee:me.id}),monthLeaveDays=monthLeaveRows.reduce((n,l)=>n+window.v755LeaveDays(l),0);
+   window.v81OpenMyMonthlyLeave=function(){const rows=window.zukaitV2.leave.history({month:window.zukaitV2.leave.dashboard(state).day.slice(0,7),employee:me.id}).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))),label=p=>p==='AM'?'Morning Half Day':p==='PM'?'Afternoon Half Day':'Full Day',body=rows.length?'<div class="v75s-history"><table><tr><th>Date</th><th>Leave Type</th><th>Remark</th></tr>'+rows.map(l=>'<tr><td><b>'+esc(l.date)+'</b></td><td>'+esc(window.v755LeaveLabel(l))+'</td><td>'+esc(l.remark||'—')+'</td></tr>').join('')+'</table></div>':'<div class="notice">No leave taken this month.</div>';openModal('<div class="section-title"><h2>🗓 My Leave This Month</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="notice"><b>Total Leave: '+(rows.reduce((n,l)=>n+window.v755LeaveDays(l),0)).toFixed(1).replace('.0','')+' day(s)</b></div>'+body)};
    const leaveBox='<button class="v81-month-leave" onclick="v81OpenMyMonthlyLeave()"><span class="v81-leave-icon">🗓</span><span class="v81-leave-copy"><span>LEAVE THIS MONTH</span><b>'+monthLeaveDays.toFixed(1).replace('.0','')+' day'+(monthLeaveDays===1?'':'s')+'</b><small>Tap to view date, leave type and remark</small></span><span class="v81-leave-open">›</span></button>';
    const finishedDone=done.filter(a=>a.job!==H);window.v89OpenEmployeeFinished=function(){const rows=finishedDone.slice(0,30),body=rows.length?'<div class="v75s-history"><table><tr><th>Job</th><th>Vehicle</th><th>Allocated</th><th>Actual</th><th>Finished</th></tr>'+rows.map(a=>{const x=jj(a.job);return '<tr><td><b>'+esc(a.job)+'</b></td><td>'+esc(x.vehicle||'—')+'</td><td>'+fm(a.suggested)+'</td><td>'+fm(actual(a))+'</td><td>'+esc(a.completedAt?new Date(a.completedAt).toLocaleString():'—')+'</td></tr>'}).join('')+'</table></div>':'<p class="muted">No finished jobs.</p>';openModal('<div class="section-title"><h2>✅ Finished Jobs</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+body)};const finished='<div class="card v75s-section clickable compact-control v89-employee-control" onclick="v89OpenEmployeeFinished()"><div class="section-title"><h3>✅ Finished Jobs</h3><span class="pill">'+finishedDone.length+'</span></div><div class="small muted">Tap to view completed job details</div></div>';
    const repeatJobs=(state.assign||[]).filter(a=>a&&a.job!==H&&!a.cancelled&&a.rework===true&&String(a.mistakeEmp||'')===String(me.id)).slice().sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));
@@ -930,7 +930,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 (function(){'use strict';
  const H='ID001';
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const dateKey=ts=>{const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+ const dateKey=ts=>window.zukaitV2.leave.dashboard(state,ts).day;
  const dayStartFromKey=k=>{const p=String(k||'').split('-').map(Number);return p.length===3?new Date(p[0],p[1]-1,p[2]).getTime():NaN};
  const periodLabel=p=>p==='AM'?'Morning Half Day — 8:00 AM to 1:00 PM':p==='PM'?'Afternoon Half Day — 3:00 PM to 7:00 PM':'Full Day — 8:00 AM to 1:00 PM + 3:00 PM to 7:00 PM';
  const leaveSegments=l=>window.zukaitV2.leave.segments(l);
@@ -979,8 +979,8 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    try{return typeof window.v75IsClosedWorkshopDay==='function'&&window.v75IsClosedWorkshopDay(ts)}catch(_){return new Date(ts).getDay()===5}
  }
  function notifyLeave(l){
-   state.leaveNotifications=state.leaveNotifications||[];
-   state.leaveNotifications.push({id:uid(),leaveId:l.id,emp:l.emp,period:l.period,date:l.date,by:l.by,at:Date.now(),cancelled:false});
+   // Leave and leaveAudit are the shared record. Self-entry notifications use
+   // the existing requests collection, which the Employee API permits.
    if(l.by===l.emp && userSafe(l.emp).role!=='Manager'){
      state.requests=state.requests||[];
      state.requests.push({id:uid(),type:'leave_notice',emp:l.emp,job:'',status:'New',message:(userSafe(l.emp).name||l.emp)+' marked '+leaveLabel(l)+' leave for '+l.date+(l.remark?' — '+l.remark:''),createdAt:Date.now(),leaveId:l.id});
@@ -1011,7 +1011,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    state.leaves=state.leaves||[];state.leaveAudit=state.leaveAudit||[];
    state.leaves.push(l);state.leaveAudit.push({id:uid(),action:l.managerOverride?'ADD_OVERRIDE':'ADD',leaveId:l.id,by:me.id,at:Date.now(),reason:l.managerOverrideReason||'',afterWork:!!l.afterWork,startAt:l.startAt??null});notifyLeave(l);
    save();closeModal();render();
-   setTimeout(()=>{try{typeof window.v74Msg==='function'?window.v74Msg('Leave marked successfully. Supervisor and Manager can see this leave.','Leave'):alert('Leave marked successfully.')}catch(_){}},0);
+   setTimeout(()=>{if(window.zukaitLeaveHistory?.confirmSaved)return window.zukaitLeaveHistory.confirmSaved(l.id);alert('Leave saved on this device. Synchronize to share it with Manager and Supervisor.')},0);
  };
  window.v63OpenLeave=function(emp){return window.v755OpenLeaveForm(emp||me?.id)};
  window.v63SaveLeave=function(emp){return window.v755SaveLeave(emp,'v63')};
@@ -1345,11 +1345,10 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 /* V78 SUPERVISOR LEAVE STATUS + MANAGER PRINTABLE LEAVE REPORT */
 (function(){'use strict';
  const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const localKey=ts=>{const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
  const person=id=>{try{return user(id)||{id,name:id,role:'',department:''}}catch(_){return{id,name:id,role:'',department:''}}};
- const activeLeaves=()=>{state.leaves=state.leaves||[];return state.leaves.filter(l=>l&&!l.cancelled)};
- const todayRows=()=>{const k=localKey(Date.now());return activeLeaves().filter(l=>l.date===k)};
- const monthRows=()=>{const d=new Date(),p=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-';return activeLeaves().filter(l=>String(l.date||'').startsWith(p))};
+ const leaveData=()=>window.zukaitV2.leave.dashboard(state);
+ const todayRows=()=>leaveData().today;
+ const monthRows=()=>leaveData().month;
  const label=p=>p==='AM'?'Morning Half Day — 8:00 AM to 1:00 PM':p==='PM'?'Afternoon Half Day — 3:00 PM to 7:00 PM':'Full Day — 8:00 AM to 1:00 PM + 3:00 PM to 7:00 PM';
  const unique=rows=>new Set(rows.map(l=>String(l.emp))).size;
  const sorted=rows=>rows.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||(+b.createdAt||0)-(+a.createdAt||0));
@@ -1363,7 +1362,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 
  function leavePrintHtml(mode,rows){
    const title=mode==='month'?'This Month Leave Report':'Today’s Leave Report';
-   const period=mode==='month'?new Date().toLocaleDateString(undefined,{month:'long',year:'numeric'}):new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+   const period=mode==='month'?new Date().toLocaleDateString(undefined,{timeZone:'Asia/Muscat',month:'long',year:'numeric'}):new Date().toLocaleDateString(undefined,{timeZone:'Asia/Muscat',weekday:'long',day:'numeric',month:'long',year:'numeric'});
    const list=sorted(rows);
    const table=list.length?'<table><thead><tr><th>#</th><th>Name</th><th>Role / Department</th><th>Date</th><th>Leave Type</th><th>Remark</th><th>Marked By</th></tr></thead><tbody>'+
      list.map((l,i)=>{const u=person(l.emp),by=person(l.by);return'<tr><td>'+(i+1)+'</td><td>'+E(u.name||l.emp)+'</td><td>'+E((u.role||'')+(u.department?' / '+u.department:''))+'</td><td>'+E(l.date||'—')+'</td><td>'+E(window.v755LeaveLabel(l))+'</td><td>'+E(l.remark||'—')+'</td><td>'+E(by.name||l.by||'—')+'</td></tr>'}).join('')+
@@ -1386,7 +1385,9 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  };
 
  window.v755OpenLeaveList=function(mode){
-   const rows=mode==='month'?monthRows():todayRows();
+   const data=leaveData();
+   injectSupervisorLeaveRow(data);
+   const rows=mode==='month'?data.month:data.today;
    const title=mode==='month'?'This Month Leave':'Today’s Leave';
    const print=me?.role==='Manager'?'<button class="blue v78-print-leave" onclick="v78PrintLeave(\''+E(mode)+'\')">🖨 PRINT LEAVE REPORT</button>':'';
    const body='<div class="section-title"><h2>'+E(title)+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
@@ -1396,7 +1397,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    else openModal(body);
  };
 
- function injectSupervisorLeaveRow(){
+ function injectSupervisorLeaveRow(data=leaveData()){
    if(!me||me.role!=='Supervisor')return;
    const root=document.getElementById('supervisorView');if(!root)return;
    let row=root.querySelector('#v78SupervisorLeaveRow');
@@ -1408,11 +1409,19 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
      if(glance)glance.insertAdjacentElement('afterend',row);
      else root.insertAdjacentElement('afterbegin',row);
    }
-   const t=todayRows(),m=monthRows();
-   row.innerHTML='<button class="v755-leave-card today" data-leave-count="'+unique(t)+'" onclick="v755OpenLeaveList(\'today\')"><span><i class="leave-rose-icon" aria-hidden="true">🗓</i> TODAY’S LEAVE</span><b>'+unique(t)+'</b><small>Tap to see who is on leave</small></button>'+
-     '<button class="v755-leave-card month" onclick="v755OpenLeaveList(\'month\')"><span>THIS MONTH LEAVE</span><b>'+m.length+'</b><small>Tap for monthly leave details</small></button>';
+   const t=data.today,m=data.month;
+   const html='<button class="v755-leave-card today" data-leave-count="'+unique(t)+'" onclick="v755OpenLeaveList(\'today\')"><span><i class="leave-rose-icon" aria-hidden="true">🗓</i> TODAY’S LEAVE</span><b>'+unique(t)+'</b><small>Tap to see who is on leave</small></button>'+
+     '<button class="v755-leave-card month" onclick="v755OpenLeaveList(\'month\')"><span>THIS MONTH LEAVE</span><b>'+m.length+'</b><small>Leave records · tap for details</small></button>';
+   if(row.innerHTML!==html)row.innerHTML=html;
  }
 
+ // The stable Supervisor renderer owns placement; legacy render/pull hooks
+ // can safely call this too. An unchanged row causes no DOM mutations.
+ window.v78RefreshSupervisorLeave=injectSupervisorLeaveRow;
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')injectSupervisorLeaveRow()});
+ window.addEventListener('focus',()=>injectSupervisorLeaveRow());
+ // Refresh the date boundary even when no workshop record has changed.
+ setInterval(()=>{if(me?.role==='Supervisor'&&document.visibilityState!=='hidden')injectSupervisorLeaveRow()},30000);
  const previousRender=window.render;
  window.render=function(){
    const r=typeof previousRender==='function'?previousRender.apply(this,arguments):undefined;
@@ -2761,7 +2770,7 @@ window.v2TogglePilotThisDevice=function(){
    root.querySelectorAll('.v109-manager-consumables').forEach(x=>x.remove());
    let leave=root.querySelector('.v111-manager-leave');
    if(!leave){leave=document.createElement('button');leave.type='button';leave.className='v133-manager-leave v111-manager-leave';const pp=root.querySelector('.v123-manager-performance');(pp?.parentNode||root).insertBefore(leave,pp?pp.nextSibling:root.firstChild)}
-   const todayCount=(()=>{try{const now=new Date(),key=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');return new Set((state.leave||[]).filter(x=>x&&x.date===key).map(x=>String(x.emp))).size}catch(_){return 0}})();leave.onclick=()=>window.v133OpenManagerLeave();leave.innerHTML='<span>🗓 EMPLOYEE LEAVE MANAGEMENT</span><span class="v111-leave-today" title="Today on leave">'+todayCount+'</span>';
+   const todayCount=window.zukaitV2.leave.dashboard(state).todayCount;leave.onclick=()=>window.v133OpenManagerLeave();leave.innerHTML='<span>🗓 EMPLOYEE LEAVE MANAGEMENT</span><span class="v111-leave-today" title="Today on leave">'+todayCount+'</span>';
 
    // Consumables is owned by the source Workshop Control renderers (V65/V66/V67). Never append a dashboard tile here.
    root.querySelectorAll('#v755LeaveControlRow,.v755-leave-control-row,.v109-manager-consumables,.v111-control-consumables,.v113-control-consumables').forEach(x=>{if(!x.matches('.v65-consumables,.v66-consumables,.v67-consumables'))x.remove()});

@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
+import {stripTypeScriptTypes} from 'node:module';
 process.env.TZ='Asia/Muscat';
 const at=(h,m=0,s=0)=>new Date(2026,9,3,h,m,s).getTime();
 let now=at(21),serial=0,alerts=[],confirmations=[],saved=0,html='';
@@ -50,4 +51,13 @@ reset();c.state.sessions=[{...work,end:at(20)}];c.v755SaveLeave('EMP011');assert
 reset();c.state.sessions=[work];fields.v755LeaveFrom.value='09:00';c.v755SaveLeave('EMP011');assert.equal(c.state.leaves[0].startAt,work.end,'an early selected time cannot overlap recorded work');
 reset();c.state.sessions=[];fields.v755LeaveFrom.value='23:00';c.v755SaveLeave('EMP011');assert.equal(c.state.leaves.length,0);
 assert.equal(r.validate({emp:'EMP011',date:'2026-10-03',period:'FULL'},{closedDay:true}).code,'CLOSED_DAY');
+// Exercise actual self-entry against the server's unchanged permission gate.
+reset();c.state.sessions=[];c.me=staff[0];const oldState=JSON.parse(JSON.stringify(c.state));
+c.v755SaveLeave('EMP011');assert.equal(c.state.leaves.length,1);
+assert.equal(c.state.leaveNotifications,undefined,'self-entry must not modify a disallowed, unused collection');
+const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+const validator=api.slice(api.indexOf('function same('),api.indexOf('function cloneValue'));
+const server={};vm.createContext(server);vm.runInContext(stripTypeScriptTypes(validator)+';this.validate=validateEmployeeChange;',server);
+assert.equal(server.validate('EMP011',oldState,c.state),true,'employee self-entry must be accepted without permission-rebase retries');
+assert.equal(server.validate('OTHER',oldState,c.state),false,'other employees remain protected');
 console.log('Leave after work passed: Supervisor create, Manager edit/audit, exact cutoff, work retained, lunch, duplicates, active work and no remaining duty.');

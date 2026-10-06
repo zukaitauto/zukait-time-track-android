@@ -9,9 +9,9 @@
     return (state?.holidays||state?.publicHolidays||[]).some(h=>String(h?.date||h).slice(0,10)===key);
   }
   function onLeave(state,emp,ts=Date.now()){
-    if(window.zukaitV2?.leave)return window.zukaitV2.leave.isOnLeave(state?.leave||state?.leaves||[],emp,ts);
+    if(window.zukaitV2?.leave)return window.zukaitV2.leave.isOnLeave(state?.leaves||state?.leave||[],emp,ts);
     const key=new Date(ts).toISOString().slice(0,10);
-    return (state?.leave||state?.leaves||[]).some(x=>String(x?.emp||x?.employeeId||'')===String(emp)&&String(x?.date||'').slice(0,10)===key&&!x.cancelled);
+    return (state?.leaves||state?.leave||[]).some(x=>String(x?.emp||x?.employeeId||'')===String(emp)&&String(x?.date||'').slice(0,10)===key&&!x.cancelled);
   }
   function activeSession(state,emp){return (state?.sessions||[]).find(s=>String(s.emp)===String(emp)&&!s.end)||null}
   function validate(type,assignment,state,ctx={}){

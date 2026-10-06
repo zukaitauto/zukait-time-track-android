@@ -7,7 +7,7 @@ function localParts(ts){const d=new Date(num(ts));return {y:d.getFullYear(),m:d.
 function dayStart(ts){const d=new Date(num(ts));d.setHours(0,0,0,0);return d.getTime()}
 function dateKey(ts){const d=new Date(num(ts)),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())}
 function holiday(state,ts){const key=dateKey(ts);return (state?.holidays||state?.publicHolidays||[]).some(h=>String(h?.date||h).slice(0,10)===key)}
-function leave(state,emp,ts){const key=dateKey(ts);return (state?.leave||state?.leaves||[]).some(x=>id(x?.emp||x?.employeeId)===id(emp)&&String(x?.date||'').slice(0,10)===key&&!x.cancelled)}
+function leave(state,emp,ts){const key=dateKey(ts);return (state?.leaves||state?.leave||[]).some(x=>id(x?.emp||x?.employeeId)===id(emp)&&String(x?.date||'').slice(0,10)===key&&!x.cancelled)}
 function monthBounds(year,month){const start=new Date(year,month,1).getTime(),end=new Date(year,month+1,1).getTime();return {start,end}}
 function currentMonthBounds(ts=Date.now()){const d=new Date(ts);return monthBounds(d.getFullYear(),d.getMonth())}
 function eligibleSegments(start,end,state,emp,options={}){
@@ -17,7 +17,7 @@ function eligibleSegments(start,end,state,emp,options={}){
   const p=localParts(cursor);
   if(p.dow!==5&&!holiday(state,cursor)&&(!options.excludeLeave||window.zukaitV2?.leave||!leave(state,emp,cursor))){
    for(const [a,b] of DUTY){const s=Math.max(start,cursor+a*MIN),e=Math.min(end,cursor+b*MIN);if(e<=s)continue;let rows=[[s,e]];
-    if(options.excludeLeave&&window.zukaitV2?.leave){for(const l of (state?.leave||state?.leaves||[]).filter(l=>l&&!l.cancelled&&id(l.emp||l.employeeId)===id(emp))){for(const [ls,le] of window.zukaitV2.leave.segments(l)){rows=rows.flatMap(([x,y])=>le<=x||ls>=y?[[x,y]]:[[x,Math.min(y,ls)],[Math.max(x,le),y]].filter(([i,j])=>j>i));}}}
+    if(options.excludeLeave&&window.zukaitV2?.leave){for(const l of (state?.leaves||state?.leave||[]).filter(l=>l&&!l.cancelled&&id(l.emp||l.employeeId)===id(emp))){for(const [ls,le] of window.zukaitV2.leave.segments(l)){rows=rows.flatMap(([x,y])=>le<=x||ls>=y?[[x,y]]:[[x,Math.min(y,ls)],[Math.max(x,le),y]].filter(([i,j])=>j>i));}}}
     for(const [x,y] of rows)out.push({start:x,end:y,minutes:(y-x)/MIN});}
   }
   const d=new Date(cursor);d.setDate(d.getDate()+1);cursor=d.getTime();

@@ -103,12 +103,16 @@
     // Their live counters are patched by live_status_authority and operational
     // modules read the latest shared state when opened. Remote workshop churn
     // must not tear down/recreate the whole dashboard shell.
-    if(role==='Manager'||role==='Supervisor')return {shell:role,leaves:(data.leaves||[]).filter(x=>x&&!x.cancelled).map(x=>({id:x.id,emp:x.emp,date:x.date,period:x.period,startAt:x.startAt||null,updatedAt:x.updatedAt||x.createdAt||0}))};
+    if(role==='Manager'||role==='Supervisor')return {shell:role};
     return {role};
   }
 
   function scheduleDashboardRender(beforeState,afterState){
     if(!me)return;
+    // Leave changes must patch the mounted Supervisor cards even when the
+    // structural render gate intentionally preserves the dashboard shell.
+    try{window.v78RefreshSupervisorLeave?.()}catch(_){}
+    try{window.zukaitLeaveHistory?.refresh?.()}catch(_){}
     let structuralChanged=true;
     try{
       structuralChanged=JSON.stringify(roleStructuralSnapshot(beforeState,me))!==JSON.stringify(roleStructuralSnapshot(afterState,me));
@@ -493,8 +497,15 @@
     merged.systemNotifications=mergeById(remote.systemNotifications,local.systemNotifications,(l,r)=>l.target===emp&&l.read!==r.read);
     merged.notifications=mergeById(remote.notifications,local.notifications,(l)=>l.target===emp||l.emp===emp);
     merged.overtimeNotices=Object.assign({},remote.overtimeNotices||{},local.overtimeNotices||{});
-    merged.leaves=mergeById(remote.leaves,local.leaves,(l)=>l.emp===emp);
-    merged.leaveAudit=mergeById(remote.leaveAudit,local.leaveAudit,(l)=>l.by===emp);
+    // Employees may append their own leave, never replay an old version over
+    // a Manager edit/cancellation already confirmed on another device.
+    const appendOwn=(server,client,allowed)=>{
+      const rows=(server||[]).map(clone),ids=new Set(rows.map(x=>String(x.id)));
+      for(const row of client||[])if(row&&allowed(row)&&!ids.has(String(row.id))){rows.push(clone(row));ids.add(String(row.id))}
+      return rows;
+    };
+    merged.leaves=appendOwn(remote.leaves,local.leaves,l=>String(l.emp)===String(emp)&&String(l.by)===String(emp)&&!l.cancelled);
+    merged.leaveAudit=appendOwn(remote.leaveAudit,local.leaveAudit,l=>String(l.by)===String(emp)&&l.action==='ADD');
     merged.offlineActionLog=mergeById(remote.offlineActionLog,local.offlineActionLog,(l)=>l.emp===emp);
     reconcileOfflineActionLog(merged,emp);
     return reconcileEmployeeOpenSessions(merged,emp);
@@ -509,6 +520,8 @@
     if(!initialDone)status('SYNCING…','info');
     pullInFlight=true;
     const before=clone(state||{});
+    const pullGeneration=dirtyGeneration;
+    const pullRevision=cloudRevision;
     let r;
     try{r=await api({action:'load'})}finally{pullInFlight=false}
     if(!r.ok){
@@ -517,6 +530,10 @@
       throw new Error(r.code||'LOAD_FAILED');
     }
     const remoteRev=Number(r.revision||0);
+    // A user can mark leave while this request is awaiting the server. Do not
+    // replace that newer local save (or a newer push acknowledgement) with the
+    // older response. The queued push/subsequent poll will reconcile it.
+    if(cloudDirty||dirtyGeneration!==pullGeneration||cloudRevision!==pullRevision)return false;
     if(force||remoteRev!==cloudRevision){
       // A forced refresh may return the same snapshot (for example on focus).
       // Render helpers may adjust the local cache without creating a new server
