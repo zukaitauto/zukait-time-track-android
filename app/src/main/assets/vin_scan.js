@@ -79,7 +79,7 @@ function nativeResult(raw,error,source){
  const el=input(),existing=normalize(el?.value||'');if(existing&&existing!==vin)note+='\n\nCurrent field contains: '+existing+'\nThis scan will replace it.';
  const ok=window.confirm('VIN detected:\n\n'+vin+note+'\n\nVerify all 17 characters, then press OK. Cancel to rescan/edit.');
  if(!ok){const again=window.confirm('Would you like to scan again? Press Cancel to edit manually.');if(again)return photo?capture(targetId):open(targetId);return manual()}
- const el=input();if(!el)return;el.value=vin;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));
+ if(!el)return;el.value=vin;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));
 }
 window.zukaitVinScan=Object.freeze({open,capture,nativeResult,normalize,valid,candidate,candidateDetail,vinCheckDigit,duplicateJobs});
 })();
