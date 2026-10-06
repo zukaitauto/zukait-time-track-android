@@ -222,9 +222,10 @@ window.zukaitNormalizeVehicle=function(make,model,vehicle){
  if(!mk&&!md&&raw){let p=raw.split(' ');mk=p.shift()||'';md=p.join(' ')}
  const key=s=>String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
  const makes={N:'Nissan',NIS:'Nissan',NISS:'Nissan',NISSAN:'Nissan',TOY:'Toyota',TOYO:'Toyota',TOYOTA:'Toyota',CH:'Chevrolet',CHEV:'Chevrolet',CHEVY:'Chevrolet',CHEVROLET:'Chevrolet',HON:'Honda',HONDA:'Honda',HYU:'Hyundai',HYUN:'Hyundai',HYUNDAI:'Hyundai',KIA:'Kia',LEX:'Lexus',LEXUS:'Lexus',MIT:'Mitsubishi',MITS:'Mitsubishi',MITSU:'Mitsubishi',MITSUBISHI:'Mitsubishi',MAZ:'Mazda',MAZDA:'Mazda',FORD:'Ford',F:'Ford',VW:'Volkswagen',VOLKSWAGEN:'Volkswagen',BMW:'BMW',BENZ:'Mercedes-Benz',MERC:'Mercedes-Benz',MERCEDES:'Mercedes-Benz',MERCEDESBENZ:'Mercedes-Benz',GMC:'GMC',JEEP:'Jeep',SUZ:'Suzuki',SUZUKI:'Suzuki',ISU:'Isuzu',ISUZU:'Isuzu',RENAULT:'Renault',REN:'Renault',MG:'MG',BYD:'BYD'};
- let mkKey=key(mk);if(makes[mkKey])mk=makes[mkKey];
+ const smartTitle=v=>String(v||'').trim().split(/\s+/).map(x=>x?x.charAt(0).toUpperCase()+x.slice(1).toLowerCase():x).join(' ');
+ let mkKey=key(mk);if(makes[mkKey])mk=makes[mkKey];else if(mk)mk=smartTitle(mk);
  const modelKey=key(md),models={RAV4:'RAV4',LANDCRUISER:'Land Cruiser',PRADO:'Prado',COROLLA:'Corolla',CAMRY:'Camry',YARIS:'Yaris',VERSA:'Versa',SUNNY:'Sunny',PATROL:'Patrol',ALTIMA:'Altima',MAXIMA:'Maxima',MALIBU:'Malibu',TAHOE:'Tahoe',CAPTIVA:'Captiva',CRUZE:'Cruze',C300:'C300',C200:'C200',C180:'C180',CIVIC:'Civic',ACCORD:'Accord',CRV:'CR-V',HRV:'HR-V',TUCSON:'Tucson',ELANTRA:'Elantra',SONATA:'Sonata',SPORTAGE:'Sportage',SORENTO:'Sorento',CERATO:'Cerato',PAJERO:'Pajero',LANCER:'Lancer',CX5:'CX-5',CX9:'CX-9',MUSTANG:'Mustang',EXPLORER:'Explorer',ESCAPE:'Escape'};
- if(models[modelKey])md=models[modelKey];else if(md)md=md.split(/\s+/).map(x=>x?x.charAt(0).toUpperCase()+x.slice(1).toLowerCase():x).join(' ');
+ if(models[modelKey])md=models[modelKey];else if(md)md=smartTitle(md);
  return{make:mk,model:md,vehicle:(mk+' '+md).trim(),year,learned:false}
 };
 window.zukaitLearnVehicleAlias=function(raw,make,model){window.zukaitVehicleAliasIndex.learn(raw,make,model)};
