@@ -6,10 +6,14 @@ const valid=v=>master().validVin?.(v)??(!normalize(v)||/^[A-HJ-NPR-Z0-9]{17}$/.t
 function input(){return targetId?document.getElementById(targetId):null}
 function manual(message){const el=input();if(!el)return;el.focus();if(message)alert(message)}
 function candidate(raw){
- const clean=normalize(raw), direct=clean.length===17?clean:'';
+ const text=String(raw||'').toUpperCase(),clean=normalize(text),direct=clean.length===17?clean:'';
  if(direct&&valid(direct))return direct;
- const chunks=String(raw||'').toUpperCase().match(/[A-Z0-9]{17}/g)||[];
- return chunks.map(normalize).find(valid)||'';
+ const chunks=text.match(/[A-Z0-9]{17}/g)||[];
+ const exact=chunks.map(normalize).find(x=>x.length===17&&valid(x));if(exact)return exact;
+ // Some scanners include prefixes (VIN:, chassis:) or separators inside the VIN.
+ // Search every 17-character window after normalization instead of rejecting the whole payload.
+ for(let i=0;i<=clean.length-17;i++){const x=clean.slice(i,i+17);if(valid(x))return x}
+ return '';
 }
 function open(id){
  targetId=String(id||'');const el=input();if(!el)return;
