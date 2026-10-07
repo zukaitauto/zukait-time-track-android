@@ -322,7 +322,7 @@ function preserveConsumablesHistory(candidate: any, current: any): any {
 }
 
 
-function validateConsumablesManagerCorrections(candidate:any,current:any,user:any): string | null {
+function validateConsumablesManagerCorrections(candidate,current,user) {
   const oldActuals=new Map((current?.consumables?.actuals||[]).filter((x:any)=>x?.id).map((x:any)=>[String(x.id),x]));
   const newActuals=new Map((candidate?.consumables?.actuals||[]).filter((x:any)=>x?.id).map((x:any)=>[String(x.id),x]));
   for(const [id,before] of oldActuals){
@@ -390,7 +390,7 @@ function preservePaintPurchasingHistory(candidate: any, current: any): any {
 }
 
 
-function validatePaintManagerCorrections(candidate:any,current:any,user:any): string | null {
+function validatePaintManagerCorrections(candidate,current,user) {
   const oldOrders=new Map((current?.paintPurchasing?.orders||[]).filter((o:any)=>o?.id).map((o:any)=>[String(o.id),o]));
   const newOrders=new Map((candidate?.paintPurchasing?.orders||[]).filter((o:any)=>o?.id).map((o:any)=>[String(o.id),o]));
   for(const [id,before] of oldOrders){
