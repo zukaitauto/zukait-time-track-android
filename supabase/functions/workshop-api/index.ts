@@ -755,7 +755,10 @@ Deno.serve(async (req: Request) => {
 
     if (action === "live_status") {
       const live = await loadAuthoritativeLiveStatus();
-      return reply({ ok: true, ...live, server_time: Date.now(), user });
+      const rows = String(user.role || "") === "Employee"
+        ? (live.rows || []).filter((r:any)=>String(r?.employee_id || "") === String(user.id || ""))
+        : live.rows;
+      return reply({ ok: true, ...live, rows, server_time: Date.now(), user });
     }
 
     if (action === "v2_pilot_status") {
