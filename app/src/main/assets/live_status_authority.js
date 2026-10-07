@@ -12,6 +12,28 @@
     return x;
   }
   function rows(){return live()?.rows||null}
+  function consistencyIssues(snapshot=live()){
+    if(!snapshot||!Array.isArray(snapshot.rows))return [];
+    const issues=[],empSeen=new Map(),sessionSeen=new Map(),serverNow=Number(snapshot.serverTime||0)||Date.now(),futureLimit=serverNow+5*60*1000;
+    for(const r of snapshot.rows){
+      const emp=String(r?.employee_id||''),status=String(r?.status||''),job=String(r?.job_no||''),sid=String(r?.session_id||''),start=Number(r?.session_start||0);
+      if(emp){
+        const prior=empSeen.get(emp);
+        if(prior)issues.push({code:'DUPLICATE_EMPLOYEE_LIVE_ROW',employeeId:emp,statuses:[prior.status,status],sessions:[prior.sessionId||null,sid||null]});
+        else empSeen.set(emp,{status,sessionId:sid});
+      }
+      if(sid){
+        const owner=sessionSeen.get(sid);
+        if(owner&&owner!==emp)issues.push({code:'DUPLICATE_ACTIVE_SESSION_ID',sessionId:sid,employees:[owner,emp]});
+        else sessionSeen.set(sid,emp);
+      }
+      if(ACTIVE.has(status)&&!sid)issues.push({code:'ACTIVE_WITHOUT_SESSION',employeeId:emp,status,job:job||null});
+      if(status==='ID001'&&job!=='ID001')issues.push({code:'ID001_JOB_MISMATCH',employeeId:emp,job:job||null});
+      if(status!=='ID001'&&job==='ID001'&&ACTIVE.has(status))issues.push({code:'NORMAL_STATUS_ON_ID001',employeeId:emp,status});
+      if(start&&start>futureLimit)issues.push({code:'SESSION_START_IN_FUTURE',employeeId:emp,sessionId:sid||null,start,serverTime:serverNow});
+    }
+    return issues;
+  }
   function serverRequired(){
     return !!window.me && navigator.onLine && (window.me.role==='Supervisor'||window.me.role==='Manager');
   }
@@ -288,5 +310,5 @@
   window.addEventListener('focus',apply);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)apply()});
   // Event-driven only. A one-second whole-dashboard DOM pass caused visible\n  // repaint/observer storms in Web and Android. Running clocks have their own\n  // narrow timers; server status is applied when a fresh snapshot arrives.\n  setTimeout(apply,0);
-  window.zukaitLiveStatusAuthority={apply,rows:()=>rows(),fresh:()=>!!live()};
+  window.zukaitLiveStatusAuthority={apply,rows:()=>rows(),fresh:()=>!!live(),consistencyIssues:()=>consistencyIssues()};
 })();
