@@ -54,3 +54,5 @@ assert.match(mainSource,/item\.syncConflict\|\|pendingTransition\(item\).*?pendi
 const returned=ctx.window.zukaitV2.spareParts.transition({id:'SP-RETURN',status:'RECEIVED',qty:2,receivedQty:1,receivedAt:'old',partialReceipt:true,arrivalAccepted:true,supervisorVerifiedAt:'old'},'RETURNED',{role:'Purchaser',actorId:'P1',reason:'Wrong part'});
 assert.equal(returned.ok,true,'received part can be returned by Purchaser');
 for(const key of ['receivedQty','receivedAt','partialReceipt','arrivalAccepted','supervisorVerifiedAt'])assert.equal(returned.item[key],undefined,'return clears stale '+key);
+
+assert.match(mainSource,/receivedQty>0&&qty<receivedQty.*?Quantity cannot be lower than.*?already received/s,'correction cannot reduce ordered quantity below already received quantity');
