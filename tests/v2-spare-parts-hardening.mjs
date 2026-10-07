@@ -44,3 +44,6 @@ assert.match(main,/Oldest items are shown first/,'Purchaser Parts Attention list
 // Supervisor UI, client workflow, and server authority must agree on post-arrival transitions.
 assert.equal(ctx.window.zukaitV2.spareParts.canAct('Supervisor','SUPERVISOR_VERIFIED','SUPERVISOR_CONFIRMED'),true,'Supervisor can confirm verified parts for fitting');
 assert.equal(ctx.window.zukaitV2.spareParts.canAct('Supervisor','SUPERVISOR_CONFIRMED','FITTED'),true,'Supervisor can mark confirmed parts fitted');
+
+const mainSource=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8');
+assert.match(mainSource,/status==='RECEIVED'\)return Number\.isFinite\(qty\)&&qty>0&&Number\.isFinite\(received\)&&received>=qty/,'partial RECEIVED quantities must remain waiting');
