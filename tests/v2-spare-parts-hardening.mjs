@@ -68,5 +68,5 @@ assert.match(mainSource,/DELIVERED_PENDING'[\s\S]*?items\.some\(isDeliveredVehic
 
 assert.match(mainSource,/function attentionAgeDays\(item,list\)\{const started=Date\.parse\(item\?\.returnedAt\|\|item\?\.createdAt/,'15-day purchaser attention restarts from return date');
 
-assert.match(mainSource,/const NEW_PARTS_WORK_HOURS=18;/,'new parts retention is exactly three 6-hour workshop days');
+assert.match(mainSource,/const NEW_PARTS_WORK_HOURS=27;/,'new parts retention is exactly three 9-hour workshop days');
 assert.match(mainSource,/workPeriods:\[\[8,13\],\[15,19\]\],closedWeekdays:\[5\]/,'new parts workshop age excludes lunch and Friday');
