@@ -42,7 +42,7 @@ function transition(item,to,ctx={}){
  if(to==='SUPERVISOR_VERIFIED'){if(Number(item?.receivedQty||item?.qty||0)<Number(item?.qty||0))return {ok:false,reason:'RECEIPT_INCOMPLETE'};next.supervisorVerifiedAt=now;next.supervisorVerifiedBy=ctx.actorId||null}
  if(to==='SUPERVISOR_CONFIRMED'){if(!(item?.supervisorVerifiedAt||item?.denterCheckedAt))return {ok:false,reason:'VERIFICATION_REQUIRED'};next.confirmedAt=now;next.confirmedBy=ctx.actorId||null}
  if(to==='FITTED'){if(!(item?.supervisorVerifiedAt||item?.denterCheckedAt)||!item?.confirmedAt)return {ok:false,reason:'CONFIRMATION_REQUIRED'};next.fittedAt=now;next.fittedBy=ctx.actorId||null}
- if(to==='RETURNED'){const rr=String(ctx.reason||'').trim();if(!rr)return {ok:false,reason:'RETURN_REASON_REQUIRED'};next.returnReason=rr;next.returnedAt=now;next.returnedBy=ctx.actorId||null}
+ if(to==='RETURNED'){const rr=String(ctx.reason||'').trim();if(!rr)return {ok:false,reason:'RETURN_REASON_REQUIRED'};next.returnReason=rr;next.returnedAt=now;next.returnedBy=ctx.actorId||null;delete next.receivedQty;delete next.receivedAt;delete next.receivedBy;delete next.lastReceivedQty;delete next.partialReceipt;delete next.arrivalAccepted;delete next.arrivalAcceptedAt;delete next.supervisorVerifiedAt;delete next.supervisorVerifiedBy;delete next.confirmedAt;delete next.confirmedBy;delete next.fittedAt;delete next.fittedBy}
  return {ok:true,item:next,audit:{type:'SPARE_PART_STATUS_CHANGED',entityId:String(item?.id||''),from,to,actorId:ctx.actorId||null,deviceId:ctx.deviceId||null,reason:ctx.reason||null}};
 }
 function notifySupervisor(item,ctx={}){
