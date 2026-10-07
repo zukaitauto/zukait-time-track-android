@@ -20,7 +20,7 @@ function consumablesStatus(no){
 function paintStatus(no){
  const p=state.paintPurchasing||{},orders=(p.orders||[]).filter(x=>x&&!x.voided&&x.jobCard===no).sort((a,b)=>num(b.createdAt)-num(a.createdAt));
  if(!orders.length)return 'No PO';
- const o=orders[0];if((o.returns||[]).length)return 'Returned / Adjusted';if(o.receivedAt)return 'Received / Costed';return 'PO Created';
+ const o=orders[0];if((o.returns||[]).some(x=>x&&!x.voided))return 'Returned / Adjusted';if(o.nilPaintPurchase)return 'NIL – No Purchase Required';if(o.receivedAt)return 'Received / Costed';return 'PO Created';
 }
 function data(no){
  const master=window.zukaitJobCardMaster?.costs?.(no),j=job(no);if(master&&j)return {...master,job:j,consumablesStatus:consumablesStatus(no),paintStatus:paintStatus(no)};
