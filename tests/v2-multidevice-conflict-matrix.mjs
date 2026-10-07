@@ -18,7 +18,7 @@ state={sessions:[],leaves:[{emp:'EMP1',date:'2026-09-24'}]};
 assert.ok(rules.validate('WORK_START',normal,state,{at:new Date(2026,8,24,10,0).getTime()}).issues.includes('employee-on-leave'));
 state={sessions:[]};
 assert.ok(rules.validate('ID001_START',hold,state,{at:new Date(2026,8,25,10,0).getTime()}).issues.includes('id001-outside-duty'));
-assert.ok(rules.validate('ID001_START',hold,state,{at:new Date(2026,8,24,14,0).getTime()}).issues.includes('id001-outside-duty'));
+assert.ok(rules.validate('ID001_START',hold,state,{at:new Date('2026-09-24T10:00:00Z').getTime()}).issues.includes('id001-outside-duty'));
 state={sessions:[{id:'p1',emp:'EMP1',job:'JC1',assignmentId:'a1',start:1,end:2,paused:true}]};
 assert.equal(rules.validate('WORK_RESUME',normal,state,{at:new Date(2026,8,24,10,0).getTime()}).ok,true);
 console.log('V2 multi-device/offline conflict matrix: ok');
