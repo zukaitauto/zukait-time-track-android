@@ -147,7 +147,7 @@
       const p=priceAt(state,l.materialId,l.brandId,row.actualAt); if(!p)throw new Error('PRICE_NOT_FOUND');
       return {no:i+1,materialId:l.materialId,brandId:l.brandId,unit:a.unit,issuedQuantity:a.quantity,actualQuantity:q,priceId:p.id,unitPriceSnapshot:p.pricePerUnit,lineCost:money(q*p.pricePerUnit)};
     });
-    row.lines=nextLines; row.totalCost=money(nextLines.reduce((n,l)=>n+l.lineCost,0)); row.correctedAt=Date.now(); row.correctedBy=actor.id; row.correctedByName=String(actor?.name||actor?.id||''); row.correctedByRole=String(actor?.role||'');
+    row.lines=nextLines; row.totalCost=money(nextLines.reduce((n,l)=>n+l.lineCost,0)); row.correctedAt=Date.now(); row.correctedBy=actor.id; row.correctedByName=String(actor?.name||actor?.id||''); row.correctedByRole=String(actor?.role||''); row.correctionReason=String(reason||'').trim();
     auditChange(c,'ACTUAL_CORRECTED',row,before,row,actor,reason); return clone(row);
   }
   function managerRecalculateActualPrices(state,priceId,actor,reason){
