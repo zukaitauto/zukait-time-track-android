@@ -65,3 +65,5 @@ assert.match(mainSource,/PURCHASE_COMPLETED'\)return items\.length>0&&items\.eve
 
 assert.match(mainSource,/function isDeliveredVehiclePartPending\(item\).*?\['RECEIVED','SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED','CUSTOMER_SETTLEMENT'\]/s,'delivered pending ends when the part physically arrives');
 assert.match(mainSource,/DELIVERED_PENDING'[\s\S]*?items\.some\(isDeliveredVehiclePartPending\)/,'delivered pending bucket uses physical-arrival pending rule');
+
+assert.match(mainSource,/function attentionAgeDays\(item,list\)\{const started=Date\.parse\(item\?\.returnedAt\|\|item\?\.createdAt/,'15-day purchaser attention restarts from return date');
