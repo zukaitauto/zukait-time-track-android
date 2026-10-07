@@ -159,7 +159,7 @@ assert.doesNotMatch(cloud, /if\(me\)try\{render\(\)\}/, 'cloud sync must not dir
 
 // Employee contracts
 assert.match(updates, /openNormal=emp=>[\s\S]*?a\.job!==H[\s\S]*?!a\.cancelled[\s\S]*?!a\.completed/, 'normal open work must be detected');
-assert.match(updates, /availableForIdeal=emp=>!activeSession\(emp\)&&openNormal\(emp\)\.length===0&&!openHold\(emp\)/, 'ID001 must only be available with no normal work');
+assert.match(updates, /availableForIdeal=emp=>!activeSession\(emp\)&&!openHold\(emp\)/, 'ID001 must be available when there is no running session, including when productive work is paused');
 assert.match(updates, /window\.v75AssignIdealToAvailable=function\(\)\{return\{ok:false,reason:'one_by_one_only'/, 'ID001 bulk assignment must be retired; Supervisor assigns one employee at a time');
 assert.match(updates, /idealSafeVersion:1/, 'legacy safe ID001 marker must remain supported');
 assert.match(updates, /V106 ID001 FINAL AUTHORITY/, 'final ID001 assignment authority must be present');
