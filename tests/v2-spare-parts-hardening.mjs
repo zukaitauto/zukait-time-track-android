@@ -75,3 +75,5 @@ assert.match(mainSource,/function sparePartsPublicHoliday\(ts\).*?zukaitV2\?\.ru
 assert.match(mainSource,/!closed\.has\(day\)&&!sparePartsPublicHoliday\(t\)/,'new parts retention excludes configured public holidays');
 
 assert.match(mainSource,/bucket==='NEW'\)return isNewPartsList\(r\)&&items\.length>0&&items\.every\(i=>\['LISTED','ENQUIRY','QUOTED'\]/,'New Parts bucket excludes a list as soon as any part is ordered or beyond');
+
+assert.match(mainSource,/qtyLabel=received>0\?'Received '\+received\+'\/'\+ordered\+' · Pending '\+remaining/,'Parts Waiting shows received and remaining quantities for partial arrivals');
