@@ -1147,8 +1147,10 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  const openHold=emp=>(state.assign||[]).find(a=>a&&a.job===H&&a.emp===emp&&!a.cancelled&&!a.completed)||null;
  const openNormal=emp=>(state.assign||[]).filter(a=>a&&a.job!==H&&a.emp===emp&&!a.cancelled&&!a.completed);
  const normalStatus=a=>{try{return empStatus(a)}catch(_){return a?.completed?'Finished':'New'}};
- const pausedOnlyNormal=emp=>{const rows=openNormal(emp);return rows.length>0&&rows.every(a=>normalStatus(a)==='Paused')};
- const idealAvailable=emp=>!activeSession(emp)&&!openHold(emp)&&(openNormal(emp).length===0||pausedOnlyNormal(emp));
+ // ID001 eligibility is session-authoritative: if no session is currently running,
+ // an unfinished productive assignment may remain open/paused for later resume and must not hide the employee.
+ const pausedOnlyNormal=emp=>{const rows=openNormal(emp);return rows.length>0&&!activeSession(emp)};
+ const idealAvailable=emp=>!activeSession(emp)&&!openHold(emp);
  window.v755PausedOnlyNormal=pausedOnlyNormal;
  window.v75IdealAvailableEmployees=()=>users.filter(u=>u&&u.role==='Employee'&&idealAvailable(u.id));
 
@@ -1162,8 +1164,8 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(window.v63IsOnLeave(emp,t))return typeof window.v74Msg==='function'?window.v74Msg(n+' is on leave. ID001 cannot be assigned.','Ideal Time'):alert(n+' is on leave.');
    if(openHold(emp))return typeof window.v74Msg==='function'?window.v74Msg('ID001 is already assigned to '+n+'.','Ideal Time'):alert('ID001 is already assigned.');
    if(activeSession(emp))return typeof window.v74Msg==='function'?window.v74Msg(n+' has an active running job. ID001 cannot be assigned.','Ideal Time'):alert(n+' has an active job.');
-   const blocking=openNormal(emp).filter(a=>normalStatus(a)!=='Paused');
-   if(blocking.length)return typeof window.v74Msg==='function'?window.v74Msg(n+' has normal work available. ID001 is allowed only when normal work is paused and no other job is available.','Ideal Time'):alert(n+' has normal work available.');
+   // Open productive assignments are allowed to remain for later resume. The active-session
+   // check above is the single authority that prevents productive work and ID001 overlapping.
    state.assign=state.assign||[];
    const a={id:uid(),job:H,emp,suggested:m,completed:false,cancelled:false,rework:false,idealCard:true,idealSafeVersion:2,assignedBy:me?.id||'SYSTEM',assignedAt:Date.now(),pausedJobFallback:pausedOnlyNormal(emp)};
    state.assign.push(a);if(typeof setLastAction==='function')setLastAction('Assigned ID001 to '+n+' for '+fmt(m));save();render();return a;
