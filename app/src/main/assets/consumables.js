@@ -127,7 +127,7 @@
     c.audit.push({id:uid('audit'),type,entityId:entity.id,entityType:entity.type||'actual',jobCard:entity.jobCard||'',by:actor.id,at:Date.now(),reason:why,before:clone(before),after:clone(after)});
   }
   function managerCorrectIssue(state,id,patch,actor,reason){
-    assertRole(actor?.role,true); const c=ensureState(state),row=c.issues.find(x=>x.id===id&&!x.voided); if(!row)throw new Error('ISSUE_NOT_FOUND');
+    assertRole(actor?.role); const c=ensureState(state),row=c.issues.find(x=>x.id===id&&!x.voided); if(!row)throw new Error('ISSUE_NOT_FOUND');
     if(!String(reason||'').trim())throw new Error('REASON_REQUIRED');
     const before=clone(row),next=clone(row);
     if(patch.colourCode!==undefined)next.colourCode=String(patch.colourCode||'');
