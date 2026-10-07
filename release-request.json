@@ -1,8 +1,8 @@
 {
-  "versionName": "V299",
-  "versionCode": 262,
+  "versionName": "V300",
+  "versionCode": 263,
   "approvedForStaff": true,
   "approvedAt": "2026-10-07",
-  "sourceCommit": "7515934595669d062720f6e60a51ceb186fdc3ab",
-  "publishNonce": "release-v299-all-current-fixes-20261007-approved-2"
+  "sourceCommit": "04386fd74d24d3dc52f228454d766e24d7d56a09",
+  "publishNonce": "release-v300-verified-fixes-20261007-approved-1"
 }
