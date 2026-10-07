@@ -100,6 +100,13 @@ assert.equal(context.window.currentStaffStatus('EMP2').status,'Paused');
 const active=context.window.currentActiveWorkers();
 assert.deepEqual(active.map(x=>x.u.id).sort(),['EMP1','EMP3','EMP4']);
 assert.equal(context.window.v84TechState({id:'EMP3'}).status,'ID001');
+assert.deepEqual(Array.from(context.window.zukaitLiveStatusAuthority.consistencyIssues()),[],'valid server-live snapshot must have no consistency issues');
+context.window.zukaitServerLive.rows.push({employee_id:'EMP1',employee_name:'One duplicate',department:'Painter',status:'ID001',job_no:'JCX',assignment_id:'AX',session_id:'SX',session_start:Date.now()+600000,suggested_minutes:0});
+const diagnosticCodes=Array.from(context.window.zukaitLiveStatusAuthority.consistencyIssues(),x=>x.code);
+assert.ok(diagnosticCodes.includes('DUPLICATE_EMPLOYEE_LIVE_ROW'));
+assert.ok(diagnosticCodes.includes('ID001_JOB_MISMATCH'));
+assert.ok(diagnosticCodes.includes('SESSION_START_IN_FUTURE'));
+context.window.zukaitServerLive.rows.pop();
 
 context.window.v65OpenControl('working');
 assert.match(context.window.lastModal,/One/); assert.match(context.window.lastModal,/Four/); assert.doesNotMatch(context.window.lastModal,/Two/);
