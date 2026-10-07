@@ -73,3 +73,5 @@ assert.match(mainSource,/workPeriods:\[\[8,13\],\[15,19\]\],closedWeekdays:\[5\]
 
 assert.match(mainSource,/function sparePartsPublicHoliday\(ts\).*?zukaitV2\?\.rules\?\.publicHoliday/s,'parts retention reuses global public-holiday authority');
 assert.match(mainSource,/!closed\.has\(day\)&&!sparePartsPublicHoliday\(t\)/,'new parts retention excludes configured public holidays');
+
+assert.match(mainSource,/bucket==='NEW'\)return isNewPartsList\(r\)&&items\.length>0&&items\.every\(i=>\['LISTED','ENQUIRY','QUOTED'\]/,'New Parts bucket excludes a list as soon as any part is ordered or beyond');
