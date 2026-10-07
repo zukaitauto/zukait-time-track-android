@@ -451,8 +451,8 @@ assert.match(updates, /THIS MONTH LEAVE/, 'Manager Workshop Control Center must 
 assert.match(updates, /v755-leave-control-row/, 'Manager leave controls must use a dedicated two-column row');
 assert.match(updates, /SYNC[\s\S]*ABOUT[\s\S]*LEAVE[\s\S]*LOGOUT/, 'all account menus must expose SYNC ABOUT LEAVE LOGOUT');
 assert.match(updates, /u\.role==='Employee'\|\|u\.role==='Supervisor'/, 'Manager must be able to mark Employee or Supervisor leave');
-assert.match(updates, /rows\.every\(a=>normalStatus\(a\)==='Paused'\)/, 'paused-only normal work must be eligible for ID001');
-assert.match(updates, /blocking=openNormal\(emp\)\.filter\(a=>normalStatus\(a\)!=='Paused'\)/, 'any non-paused normal job must still block ID001');
+assert.match(updates, /pausedOnlyNormal=emp=>\{const rows=openNormal\(emp\);return rows\.length>0&&!activeSession\(emp\)\}/, 'open productive work with no running session must be eligible for ID001');
+assert.match(updates, /idealAvailable=emp=>!activeSession\(emp\)&&!openHold\(emp\)/, 'running session and existing ID001 are the global ID001 blockers');
 assert.match(updates, /pausedJobFallback:pausedOnlyNormal\(emp\)/, 'ID001 assignment must record paused-job fallback context');
 assert.match(updates, /leaveAwareIdeal/, 'leave periods must be excluded from Ideal Time');
 
