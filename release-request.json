@@ -1,8 +1,8 @@
 {
-  "versionName": "V298",
-  "versionCode": 261,
+  "versionName": "V299",
+  "versionCode": 262,
   "approvedForStaff": true,
   "approvedAt": "2026-10-07",
-  "sourceCommit": "5f8a3f7e75e257d4029ac2e3eecdd824e3dde29f",
-  "publishNonce": "release-v298-live-time-paint-manager-controls-20261007-approved"
+  "sourceCommit": "57402919147d8f573db82acab2b329bdb272c0df",
+  "publishNonce": "release-v299-manager-final-consumables-correction-20261007-approved"
 }
