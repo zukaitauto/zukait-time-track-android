@@ -2,6 +2,17 @@ import {qcStatus,invoiceComplete,invoiceDateValid} from './qc_delivery_rules.js?
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const jobs=()=>state.jobs||[],rawFind=no=>jobs().find(j=>String(j.no)===String(no)),find=no=>{const raw=rawFind(no);if(!raw)return null;const live=window.zukaitJobCardMaster?.display?.(no,raw);return live?{...raw,...live}:raw};
 const allowed=()=>['Supervisor','Manager'].includes(me?.role);
+function vehicleLabel(j){
+ const live=window.zukaitJobCardMaster?.display?.(j?.no,j)||j||{};
+ const explicit=[live.make,live.model].filter(Boolean).join(' ').trim();
+ if(explicit)return explicit;
+ const raw=String(live.vehicle||j?.vehicle||'').trim();
+ try{
+   const n=window.zukaitNormalizeVehicle?.(live.make||'',live.model||'',raw)||{};
+   const normalized=[n.make,n.model].filter(Boolean).join(' ').trim();
+   return normalized||n.vehicle||raw||'Vehicle';
+ }catch(_){return raw||'Vehicle'}
+}
 const messages={qc_permission_denied:'Your login is not authorized for this QC stage.',work_not_finished:'Finish all assigned work, including repeat work, before QC.',qc_conflict:'Another device updated this vehicle. Refresh and try again.',both_qc_required:'Both Painting QC and Final QC must pass before delivery.',painting_qc_required:'Vinayan must pass Painting QC first.',already_delivered:'This vehicle is already delivered.',invoice_date_required:'Enter a valid Invoice Date.',invoice_job_type_required:'Ask the Manager to set Cash, Credit or Insurance for this Job Card.',final_invoice_already_entered:'This invoice was already saved. Refresh the list.',manager_required:'Only a Manager can change an existing final invoice amount.',final_invoice_amount_required:'Enter a valid Invoice Amount in OMR.',cash_amount_required:'Enter a valid Cash Amount in OMR.',cash_job_required:'This action is only available for Cash Job Cards.',delivery_required:'The vehicle must be delivered before final invoice correction.',financial_correction_reason_required:'Enter the mandatory correction reason.',delivery_date_required:'Enter a valid delivery date.',delivery_date_reason_required:'Enter the mandatory delivery date correction reason.',qc_failure_reason_required:'Enter the QC failure reason.'};
 let busy=false,view=null,lastNotice='',invoiceView=null;
 function shell(title,body){openModal('<section class="qc-page"><div class="section-title"><h2>'+esc(title)+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+body+'</section>')}
@@ -18,7 +29,7 @@ function workCompletedAt(j){const a=(state.assign||[]).filter(x=>x&&!x.cancelled
 function queueSince(j){const s=qcStatus(state,j),qc=j.qcWorkflow||{};return s.stage==='FINAL_QC'?Number(qc.painting?.at||0):workCompletedAt(j)}
 function readySince(j){return Number(j?.qcWorkflow?.final?.at||0)}
 
-function deliveredListRow(j,index){const live=window.zukaitJobCardMaster?.display?.(j.no,j)||j,stamp=j.deliveredAt?new Date(j.deliveredAt).toLocaleString('en-GB',{timeZone:'Asia/Muscat'}):'Date not recorded';return '<button type="button" class="qc-delivered-list-row" data-jc="'+esc(j.no)+'" onclick="zukaitOpenDeliveredRecord(this.dataset.jc)"><span class="qc-delivered-no">'+(index+1)+'</span><span class="qc-delivered-copy"><b>JC '+esc(j.no)+' · '+esc(live.vehicle||'Vehicle')+'</b><small>'+esc(live.reg||live.registration||'—')+' · '+esc(stamp)+' · '+(invoiceComplete(j)?'Invoice Saved':'Invoice Pending')+'</small></span><span class="qc-delivered-next" aria-hidden="true">›</span></button>'}
+function deliveredListRow(j,index){const live=window.zukaitJobCardMaster?.display?.(j.no,j)||j,stamp=j.deliveredAt?new Date(j.deliveredAt).toLocaleString('en-GB',{timeZone:'Asia/Muscat'}):'Date not recorded',vehicle=vehicleLabel(j);return '<button type="button" class="qc-delivered-list-row" data-jc="'+esc(j.no)+'" onclick="zukaitOpenDeliveredRecord(this.dataset.jc)"><span class="qc-delivered-no">'+(index+1)+'</span><span class="qc-delivered-copy"><b>JC '+esc(j.no)+' · '+esc(vehicle)+'</b><small>'+esc(live.reg||live.registration||'—')+' · '+esc(stamp)+' · '+(invoiceComplete(j)?'Invoice Saved':'Invoice Pending')+'</small></span><span class="qc-delivered-next" aria-hidden="true">›</span></button>'}
 window.zukaitOpenDeliveredRecord=function(no){if(!allowed())return;const j=find(no);if(!j||!j.delivered)return;view=null;shell('Delivered Vehicle Details','<button type="button" class="secondary" onclick="zukaitOpenDeliveredVehicles()">← Back to list</button>'+row(j,'delivered'))};
 
 function renderPage(){if(!allowed()||!view)return;const q=document.getElementById('qcSearch')?.value||'';const list=jobs().filter(j=>view==='delivered'?!!(j&&j.delivered&&!j.deleted&&!j.archived):view==='ready'?readyMatches(j):qcQueueMatches(j)).filter(j=>[j.no,j.reg,j.vehicle].some(v=>String(v||'').toLowerCase().includes(q.toLowerCase()))).sort((a,b)=>view==='delivered'?Number(b.deliveredAt||0)-Number(a.deliveredAt||0):view==='ready'?(readySince(a)-readySince(b)||String(a.no).localeCompare(String(b.no))):(queueSince(a)-queueSince(b)||String(a.no).localeCompare(String(b.no))));
