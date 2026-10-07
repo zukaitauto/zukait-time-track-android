@@ -73,7 +73,7 @@ function immutableSame(a: any, b: any, keys: string[]) {
 }
 function validateEmployeeChange(emp: string, oldData: any, newData: any) {
   if (!oldData || !newData) return false;
-  const allowed = new Set(["sessions","assign","requests","lastActions","systemNotifications","notifications","overtimeNotices","leaves","leaveAudit"]);
+  const allowed = new Set(["sessions","assign","requests","lastActions","systemNotifications","notifications","overtimeNotices","leaves","leaveAudit","offlineActionLog"]);
   const allKeys = new Set([...Object.keys(oldData), ...Object.keys(newData)]);
   for (const k of allKeys) {
     if (k === "jobs") continue;
@@ -156,6 +156,21 @@ function validateEmployeeChange(emp: string, oldData: any, newData: any) {
   const newLast = newData.lastActions || {};
   for (const k of new Set([...Object.keys(oldLast), ...Object.keys(newLast)])) {
     if (k !== emp && !same(oldLast[k], newLast[k])) return false;
+  }
+
+  // Offline action records are append-only evidence used to replay an employee's
+  // own Start/Pause/Finish after connectivity returns. Never let an employee
+  // alter or remove another device's existing audit rows.
+  const oldOffline = mapById(oldData.offlineActionLog || []);
+  const newOffline = mapById(newData.offlineActionLog || []);
+  for (const [id, before] of oldOffline) {
+    const after = newOffline.get(id);
+    if (!after || !same(before, after)) return false;
+  }
+  for (const [id, after] of newOffline) {
+    if (oldOffline.has(id)) continue;
+    if (String(after?.emp || "") !== String(emp)) return false;
+    if (!["START","PAUSE","FINISH","STOP_ID001"].includes(String(after?.type || ""))) return false;
   }
   return true;
 }
