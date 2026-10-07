@@ -328,11 +328,22 @@ function validateConsumablesManagerCorrections(candidate:any,current:any,user:an
   for(const [id,before] of oldActuals){
     const after:any=newActuals.get(id);
     if(!after || same(before,after)) continue;
-    const protectedChange = !same(before?.lines,after?.lines) || Number(before?.totalCost||0)!==Number(after?.totalCost||0) || before?.voided!==after?.voided;
+    const protectedChange=!same(before?.lines,after?.lines)||Number(before?.totalCost||0)!==Number(after?.totalCost||0)||before?.voided!==after?.voided;
     if(!protectedChange) continue;
     if(String(user?.role||'')!=='Manager') return 'manager_required_to_correct_final_consumables';
     if(String(after?.correctedBy||after?.voidedBy||'')!==String(user?.id||'')) return 'consumables_correction_actor_invalid';
     if(!String(after?.correctionReason||after?.voidReason||'').trim()) return 'consumables_correction_reason_required';
+  }
+  const oldIssues=new Map((current?.consumables?.issues||[]).filter((x:any)=>x?.id).map((x:any)=>[String(x.id),x]));
+  const newIssues=new Map((candidate?.consumables?.issues||[]).filter((x:any)=>x?.id).map((x:any)=>[String(x.id),x]));
+  for(const [id,before] of oldIssues){
+    const after:any=newIssues.get(id);
+    if(!after || same(before,after)) continue;
+    const protectedChange=!same(before?.lines,after?.lines)||String(before?.colourCode||'')!==String(after?.colourCode||'')||String(before?.mainPainterId||'')!==String(after?.mainPainterId||'')||String(before?.allottedSupervisorId||'')!==String(after?.allottedSupervisorId||'')||before?.voided!==after?.voided;
+    if(!protectedChange) continue;
+    if(String(user?.role||'')!=='Manager') return 'manager_required_to_correct_suggested_consumables';
+    if(String(after?.correctedBy||after?.voidedBy||'')!==String(user?.id||'')) return 'suggested_consumables_correction_actor_invalid';
+    if(!String(after?.correctionReason||after?.voidReason||'').trim()) return 'suggested_consumables_correction_reason_required';
   }
   return null;
 }
