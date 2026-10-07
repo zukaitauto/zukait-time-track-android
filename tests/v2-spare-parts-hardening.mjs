@@ -47,3 +47,6 @@ assert.equal(ctx.window.zukaitV2.spareParts.canAct('Supervisor','SUPERVISOR_CONF
 
 const mainSource=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8');
 assert.match(mainSource,/status==='RECEIVED'\)return Number\.isFinite\(qty\)&&qty>0&&Number\.isFinite\(received\)&&received>=qty/,'partial RECEIVED quantities must remain waiting');
+
+assert.match(mainSource,/saveManagerItemEdit\(listNo,itemId\).*?if\(!navigator\.onLine\)return alert\('Connect to the server before correcting a Parts item\.'\);await hydrateAuthoritativeLists\(\)/s,'parts correction must refresh authoritative state first');
+assert.match(mainSource,/item\.syncConflict\|\|pendingTransition\(item\).*?pending or conflicting update/s,'parts correction must block unresolved sync conflicts');
