@@ -77,3 +77,6 @@ assert.match(mainSource,/!closed\.has\(day\)&&!sparePartsPublicHoliday\(t\)/,'ne
 assert.match(mainSource,/bucket==='NEW'\)return isNewPartsList\(r\)&&items\.length>0&&items\.every\(i=>\['LISTED','ENQUIRY','QUOTED'\]/,'New Parts bucket excludes a list as soon as any part is ordered or beyond');
 
 assert.match(mainSource,/qtyLabel=received>0\?'Received '\+received\+'\/'\+ordered\+' · Pending '\+remaining/,'Parts Waiting shows received and remaining quantities for partial arrivals');
+
+assert.match(mainSource,/function arrivalPendingItems\(list\).*?status\|\|''\)==='RECEIVED'&&receiptComplete\(item\)/s,'partial receipts must not appear in Supervisor arrival confirmation');
+assert.match(mainSource,/if\(!receiptComplete\(item\)\)return alert\('Receipt is incomplete\./,'Supervisor confirmation rechecks full received quantity');
