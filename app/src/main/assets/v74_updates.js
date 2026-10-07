@@ -1521,13 +1521,19 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
      const d=(+a.start||0)-(+b.start||0);
      if(d)return d;
      // Deterministic tie-breaker: an open session wins over a closed historical
-     // session with the same start timestamp. This keeps a newly resumed job
-     // authoritative after cache/cloud reload without altering either record.
+     // session with the same start timestamp.
      const ao=a.end==null?1:0,bo=b.end==null?1:0;
      if(ao!==bo)return ao-bo;
      return String(a.id||'').localeCompare(String(b.id||''));
    });
-   return rows.length?rows[rows.length-1]:null;
+   // A Manager/server correction can intentionally reopen a session whose original
+   // start is earlier than a later closed history row. Prefer that authoritative
+   // open record without mutating any session during display/status reads.
+   const open=rows.filter(s=>s&&s.end==null).slice().sort((a,b)=>{
+     const d=(+a.correctedAt||+a.syncRefreshAt||+a.start||0)-(+b.correctedAt||+b.syncRefreshAt||+b.start||0);
+     return d||String(a.id||'').localeCompare(String(b.id||''));
+   });
+   return open.length?open[open.length-1]:(rows.length?rows[rows.length-1]:null);
  }
  function latestSessionForAssignment(a){
    const rows=assignmentSessionsV79(a);
@@ -1571,14 +1577,8 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v79ReconcileWorkSessions=reconcileAllSessionsV79;
 
  window.activeSession=function(emp){
-   // Read-only authority: an open session is authoritative even when a Manager/system
-   // correction preserves an earlier work-time start than a later closed history row.
-   // This keeps Running Work, Start blocking, Supervisor status and live state aligned.
-   const open=sessions().filter(s=>s&&String(s.emp)===String(emp)&&s.end==null).slice().sort((a,b)=>{
-     const d=(+a.correctedAt||+a.syncRefreshAt||+a.start||0)-(+b.correctedAt||+b.syncRefreshAt||+b.start||0);
-     return d||String(a.id||'').localeCompare(String(b.id||''));
-   });
-   return open.length?open[open.length-1]:null;
+   const latest=latestSessionForEmployee(emp);
+   return latest&&!latest.end?latest:null;
  };
 
  window.empStatus=function(a){
