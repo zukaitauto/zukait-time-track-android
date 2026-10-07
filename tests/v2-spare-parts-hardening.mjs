@@ -70,3 +70,6 @@ assert.match(mainSource,/function attentionAgeDays\(item,list\)\{const started=D
 
 assert.match(mainSource,/const NEW_PARTS_WORK_HOURS=27;/,'new parts retention is exactly three 9-hour workshop days');
 assert.match(mainSource,/workPeriods:\[\[8,13\],\[15,19\]\],closedWeekdays:\[5\]/,'new parts workshop age excludes lunch and Friday');
+
+assert.match(mainSource,/function sparePartsPublicHoliday\(ts\).*?zukaitV2\?\.rules\?\.publicHoliday/s,'parts retention reuses global public-holiday authority');
+assert.match(mainSource,/!closed\.has\(day\)&&!sparePartsPublicHoliday\(t\)/,'new parts retention excludes configured public holidays');
