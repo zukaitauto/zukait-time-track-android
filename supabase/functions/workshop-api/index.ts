@@ -302,16 +302,39 @@ function preserveConsumablesHistory(candidate: any, current: any): any {
     const nextRows = Array.isArray(incoming?.[key]) ? incoming[key] : [];
     const serverRows = Array.isArray(existing?.[key]) ? existing[key] : [];
     const identity = (row:any) => row?.id ? "id:"+String(row.id) : "json:"+JSON.stringify(row);
-    const seen = new Set(nextRows.map(identity));
+    const byId = new Map(nextRows.map((row:any,index:number)=>[identity(row),index]));
     for (const row of serverRows) {
       const id = identity(row);
-      if (!seen.has(id)) { nextRows.push(cloneValue(row)); seen.add(id); }
+      if (!byId.has(id)) {
+        byId.set(id,nextRows.length); nextRows.push(cloneValue(row)); continue;
+      }
+      if (!["issues","actuals","prices"].includes(key)) continue;
+      const idx=byId.get(id)!;
+      const incomingRow:any=nextRows[idx]||{};
+      const serverCorrected=Number(row?.correctedAt||0),incomingCorrected=Number(incomingRow?.correctedAt||0);
+      if (row?.voided || serverCorrected>incomingCorrected) nextRows[idx]=cloneValue(row);
     }
     if (nextRows.length || serverRows.length || Array.isArray(incoming?.[key])) incoming[key] = nextRows;
   }
   incoming.schemaVersion = Math.max(Number(incoming.schemaVersion||0), Number(existing.schemaVersion||0), 1);
   candidate.consumables = incoming;
   return candidate;
+}
+
+
+function validateConsumablesManagerCorrections(candidate:any,current:any,user:any): string | null {
+  const oldActuals=new Map((current?.consumables?.actuals||[]).filter((x:any)=>x?.id).map((x:any)=>[String(x.id),x]));
+  const newActuals=new Map((candidate?.consumables?.actuals||[]).filter((x:any)=>x?.id).map((x:any)=>[String(x.id),x]));
+  for(const [id,before] of oldActuals){
+    const after:any=newActuals.get(id);
+    if(!after || same(before,after)) continue;
+    const protectedChange = !same(before?.lines,after?.lines) || Number(before?.totalCost||0)!==Number(after?.totalCost||0) || before?.voided!==after?.voided;
+    if(!protectedChange) continue;
+    if(String(user?.role||'')!=='Manager') return 'manager_required_to_correct_final_consumables';
+    if(String(after?.correctedBy||after?.voidedBy||'')!==String(user?.id||'')) return 'consumables_correction_actor_invalid';
+    if(!String(after?.correctionReason||after?.voidReason||'').trim()) return 'consumables_correction_reason_required';
+  }
+  return null;
 }
 
 // Paint purchasing is also an append/correct/void domain. Older app builds did
@@ -962,6 +985,8 @@ Deno.serve(async (req: Request) => {
         }
 
         candidate = preservePaintPurchasingHistory(preserveConsumablesHistory(preserveOperationalHistory(reconcileAutoOvertime(preserveClosedSessions(candidate, current.data), current.data), current.data, user), current.data), current.data);
+        const consumablesCorrectionIssue=validateConsumablesManagerCorrections(candidate,current.data,user);
+        if(consumablesCorrectionIssue) return reply({ok:false,code:"consumables_correction_forbidden",message:consumablesCorrectionIssue,revision:current.revision,data:current.data},403);
         candidate = preserveManagerTimeAuthority(candidate, current.data);
       candidate = preserveAuthoritativeReopens(candidate, current.data);
         candidate = preserveJobTypeAuthority(candidate, current.data, user);
