@@ -294,7 +294,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  const safeUser=id=>{try{return user(id)||{name:id}}catch(_){return{name:id}}};
  const openHold=emp=>(state.assign||[]).filter(a=>a&&a.job===H&&a.emp===emp&&!a.cancelled&&!a.completed).sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0))[0]||null;
  const openNormal=emp=>(state.assign||[]).filter(a=>a&&a.job!==H&&a.emp===emp&&!a.cancelled&&!a.completed);
- const availableForIdeal=emp=>!activeSession(emp)&&openNormal(emp).length===0&&!openHold(emp);
+ const availableForIdeal=emp=>!activeSession(emp)&&!openHold(emp);
  window.v75IdealAvailableEmployees=()=>users.filter(u=>u&&u.role==='Employee'&&availableForIdeal(u.id));
  const assFor=s=>{if(!s)return null;return (state.assign||[]).find(a=>a&&a.id===s.assignmentId)||openHold(s.emp)};
  const isHoldAssignment=a=>!!a&&a.job===H;
@@ -310,8 +310,10 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const m=0;
    const existing=openHold(emp);
    if(existing){const n=safeUser(emp).name||emp;if(typeof v74Msg==='function')return v74Msg('ID001 is already assigned to '+n+'. Stop/complete the existing Ideal Time card before assigning another.','Ideal Time');return alert('ID001 is already assigned to '+n);}
-   const normalOpen=openNormal(emp),active=activeSession(emp);
-   if(active||normalOpen.length){const n=safeUser(emp).name||emp;if(typeof v74Msg==='function')return v74Msg(n+' already has normal workshop work. ID001 is only for staff who currently have no job.','Ideal Time');return alert(n+' already has normal workshop work.');}
+   const active=activeSession(emp);
+   // A paused productive JC stays open for later resume, but must not block ID001.
+   // Only a currently running session blocks ID001, preserving the one-running-session rule.
+   if(active){const n=safeUser(emp).name||emp;if(typeof v74Msg==='function')return v74Msg(n+' already has running workshop work. Pause or finish it before assigning ID001.','Ideal Time');return alert(n+' already has running workshop work.');}
    state.assign=state.assign||[];
    const a={id:uid(),job:H,emp:emp,suggested:m,completed:false,cancelled:false,rework:false,idealCard:true,idealSafeVersion:1,idealReason:String(reason||'').trim().slice(0,240),idealRegistration:String(registration||'').trim().slice(0,40),idealRegistrationKey:window.zukaitRegistration?.key?.(registration)||'',idealVehicle:String(vehicle||'').trim().slice(0,120),assignedBy:me&&me.id?me.id:'SYSTEM',assignedAt:now()};
    state.assign.push(a);
