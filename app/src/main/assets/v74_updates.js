@@ -379,7 +379,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  // Replace the old ID001 refresh path so it can never auto-finish or recursively render all dashboards.
  const oldRefresh=window.refreshActiveRunningTime;
  window.refreshActiveRunningTime=function(){
-   const x=me&&me.role==='Employee'?activeSession(me.id):null;
+   const x=me&&me.role==='Employee'?(window.zukaitEmployeeDisplaySession?.(me.id)||null):null;
    if(!x||x.job!==H)return typeof oldRefresh==='function'?oldRefresh.apply(this,arguments):undefined;
    const a=assFor(x),elapsed=Math.max(0,(Date.now()-(+x.start||Date.now()))/60000),allocated=a?(+a.suggested||0):0;
    const put=(id,val)=>{const e=document.getElementById(id);if(e)e.textContent=val};
@@ -389,7 +389,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  // Final UI safety: ID001 always shows STOP, never PAUSE. Any legacy renderer error is contained instead of blanking all staff screens.
  function decorate(){
    if(!me||me.role!=='Employee')return;
-   const x=activeSession(me.id);
+   const x=window.zukaitEmployeeDisplaySession?.(me.id)||null;
    if(!x||x.job!==H)return;
    const root=document.getElementById('employeeView');if(!root)return;
    root.querySelectorAll('button').forEach(b=>{const t=(b.textContent||'').toUpperCase();if(t.includes('PAUSE'))b.style.display='none';if(t.includes('FINISH')){b.textContent='■ STOP';b.classList.remove('green');b.classList.add('danger')}});
@@ -421,7 +421,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const all=(state.assign||[]).filter(a=>a&&a.emp===me.id&&!a.cancelled);
    const open=all.filter(a=>!a.completed).sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));
    const done=all.filter(a=>a.completed).sort((a,b)=>(b.completedAt||0)-(a.completedAt||0));
-   const active=activeSession(me.id),aa=active?((state.assign||[]).find(a=>a&&a.id===active.assignmentId)||open.find(a=>a.job===active.job)):null;
+   const active=window.zukaitEmployeeDisplaySession?.(me.id)||null,aa=active?((state.assign||[]).find(a=>a&&a.id===active.assignmentId)||open.find(a=>a.job===active.job)):null;
    const j=active?jj(active.job):null,ac=aa?actual(aa):0,sg=aa?(+aa.suggested||0):0,remain=Math.max(0,sg-ac),over=Math.max(0,ac-sg),hold=!!active&&active.job===H;
    const startTime=active?clock(active.start):'—',running=active&&aa?fm(actual(aa)):'0h 00m';
 
@@ -3297,7 +3297,7 @@ window.v2TogglePilotThisDevice=function(){
  function applyEmployeeUI(){
    if(!me||me.role!=='Employee')return;
    const root=document.getElementById('employeeView');if(!root)return;
-   const a=openHold(me.id),active=activeSession(me.id),activeHold=!!active&&active.job===H;
+   const a=openHold(me.id),active=window.zukaitEmployeeDisplaySession?.(me.id)||null,activeHold=!!active&&active.job===H;
    const fm=v=>{try{return fmt(Math.max(0,+v||0))}catch(_){const m=Math.max(0,Math.round(+v||0));return Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m'}};
 
    // ID001 becomes Current Work immediately after Supervisor assignment, even before START.
