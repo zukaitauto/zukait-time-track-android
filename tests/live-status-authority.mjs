@@ -152,6 +152,22 @@ assert.equal(value,'3','brief live-status failures must preserve the last server
 context.navigator.onLine=false;
 assert.equal(context.window.currentStaffStatuses()[0].emp,'LOCAL','offline mode may use local cache as a fallback');
 
+// Employee display must follow fresh server authority, even if local cache still says running.
+context.navigator.onLine=true;
+context.me.role='Employee';windowObj.me.role='Employee';
+windowObj.activeSession=()=>({id:'LOCAL-S',assignmentId:'LOCAL-A',job:'STALE-JC',emp:'EMP1',start:111});
+windowObj.zukaitServerLive={fresh:true,fetchedAt:Date.now(),serverTime:Date.now(),revision:100,rows:[
+  {employee_id:'EMP1',employee_name:'One',department:'Painter',status:'Working',job_no:'JC-SERVER',assignment_id:'A-SERVER',session_id:'S-SERVER',session_start:222,suggested_minutes:60,vehicle:'Car',registration:'R1',overtime:false}
+]};
+let employeeDisplay=context.window.zukaitEmployeeDisplaySession('EMP1');
+assert.equal(employeeDisplay.id,'S-SERVER','Employee display must use the fresh server session instead of stale local running state');
+assert.equal(employeeDisplay.job,'JC-SERVER');
+windowObj.zukaitServerLive.rows=[{employee_id:'EMP1',employee_name:'One',department:'Painter',status:'Available',job_no:null,assignment_id:null,session_id:null,session_start:null,suggested_minutes:0,vehicle:'',registration:'',overtime:false}];
+assert.equal(context.window.zukaitEmployeeDisplaySession('EMP1'),null,'fresh server Available must clear a stale local Running display');
+windowObj.zukaitServerLive.fetchedAt=Date.now()-36000;
+employeeDisplay=context.window.zukaitEmployeeDisplaySession('EMP1');
+assert.equal(employeeDisplay.id,'LOCAL-S','stale/unavailable server snapshot must retain the existing local fallback for Employee offline resilience');
+
 assert.match(authority,/setTimeout\(apply,0\)/,'server live counts must be reapplied immediately after dashboard renders');
 
 console.log('Server live-status authority tests passed: server counts/details, dirty-independent polling, no online stale fallback, offline-only cache fallback, and immediate render reapply');
