@@ -489,7 +489,20 @@
   function mergeEmployeeConflict(remote,local,emp){
     const merged=clone(remote||{});
     merged.sessions=mergeById(remote.sessions,local.sessions,(l,r)=>preferEmployeeSession(l,r,emp));
-    merged.assign=mergeById(remote.assign,local.assign,(l,r)=>l.emp===emp&&Number(l.completedAt||l.pendingOfflineFinishAt||l.pendingOfflinePauseAt||l.pendingOfflineStartAt||0)>=Number(r.completedAt||r.pendingOfflineFinishAt||r.pendingOfflinePauseAt||r.pendingOfflineStartAt||0));
+    merged.assign=mergeById(remote.assign,local.assign,(l,r)=>{
+      if(l.emp!==emp)return false;
+      // Manager/Supervisor reopen and time-management revisions are server authority.
+      // A stale employee snapshot may still carry completedAt from the mistaken Finish;
+      // never let that old completion overwrite a newer authoritative reopen.
+      const localRev=Number(l.timeManagementRevision||0),remoteRev=Number(r.timeManagementRevision||0);
+      if(remoteRev>localRev)return false;
+      if(localRev>remoteRev)return true;
+      const localAuthority=Number(l.lastReopenedAt||l.managerTimeUpdatedAt||l.managerTimeCancellationAt||0);
+      const remoteAuthority=Number(r.lastReopenedAt||r.managerTimeUpdatedAt||r.managerTimeCancellationAt||0);
+      if(remoteAuthority>localAuthority)return false;
+      if(localAuthority>remoteAuthority)return true;
+      return Number(l.completedAt||l.pendingOfflineFinishAt||l.pendingOfflinePauseAt||l.pendingOfflineStartAt||0)>=Number(r.completedAt||r.pendingOfflineFinishAt||r.pendingOfflinePauseAt||r.pendingOfflineStartAt||0);
+    });
     const remoteReqIds=new Set((remote.requests||[]).map(x=>String(x.id)));
     merged.requests=[...(remote.requests||[]).map(clone),...(local.requests||[]).filter(x=>x.emp===emp&&!remoteReqIds.has(String(x.id))).map(clone)];
     merged.lastActions=Object.assign({},remote.lastActions||{});
