@@ -1,0 +1,14 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+const blocks=(api.match(/if \(action === "live_status"\)/g)||[]).length;
+assert.equal(blocks,1,'workshop API must expose exactly one live_status endpoint');
+const start=api.indexOf('if (action === "live_status")');
+assert.ok(start>=0,'live_status endpoint must exist');
+const end=api.indexOf('if (action === "v2_pilot_status")',start);
+assert.ok(end>start,'live_status endpoint boundary must remain identifiable');
+const live=api.slice(start,end);
+assert.match(live,/String\(user\.role \|\| ""\) === "Employee"/,'Employee live feed must be role-scoped');
+assert.match(live,/\(live\.rows \|\| \[\]\)\.filter\(\(r:any\)=>String\(r\?\.employee_id \|\| ""\) === String\(user\.id \|\| ""\)\)/,'Employee must receive only their own live-status row');
+assert.match(live,/: live\.rows;/,'non-Employee roles must retain the full authoritative live feed');
+assert.match(live,/\.\.\.live, rows, server_time: Date\.now\(\), user/,'filtered rows must replace response rows without changing revision/server metadata');
+console.log('Live status API role-scope security contract: ok');
