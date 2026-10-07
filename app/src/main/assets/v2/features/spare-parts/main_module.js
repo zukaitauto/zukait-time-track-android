@@ -265,10 +265,10 @@ function supervisorPriceClick(button){if(button?.dataset?.list&&button?.dataset?
 async function saveSupervisorFinalPrice(listNo,itemId){return saveSupervisorInvoicePrice(listNo,itemId,'list')}
 async function saveSupervisorInvoicePrice(listNo,itemId,context='list',providedRaw=null){if(!['Supervisor','Manager'].includes(role()))return;
 const list=read().find(x=>x.listNo===listNo),item=list?.items?.find(x=>x.id===itemId);
-if(!item||!invoiceAmountEligible(item))return alert('Invoice amount can be entered after the part is ordered.');
+if(!item||!invoiceAmountEligible(item))return alert('Invoice amount can be entered only after Supervisor confirms the arrived part.');
 if(pendingTransition(item))return alert('Wait for this part to finish syncing before saving its invoice price.');
 const raw=providedRaw==null?window.prompt('Final price for '+item.name+' (OMR)',item.purchaseAmount==null?'':String(item.purchaseAmount)):String(providedRaw);if(raw===null)return;
-const amount=validMoney(raw);if(amount==null)return alert('Enter a valid final price in OMR.');
+const amount=validMoney(raw);if(amount==null||amount<=0)return alert('Final invoice price must be more than 0.000 OMR.');
 if(!window.confirm('Save final price '+amount.toFixed(3)+' OMR for '+item.name+'?'))return;
 const revision=Number(item.purchaseAmountRevision||0)+1,previous=item.purchaseAmount,previousRecordedAt=item.purchaseRecordedAt,eventId='spare-purchase-amount-'+itemId+'-'+revision;
 item.purchaseAmount=amount;recordPurchaseDate(item,new Date().toISOString());item.purchaseAmountRevision=revision;item.pendingSync=true;item.pendingEventId=eventId;
