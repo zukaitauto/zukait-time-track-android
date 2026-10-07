@@ -84,7 +84,7 @@ function jcData(no){
  const painters=aa.map(a=>(users||[]).find(u=>u.id===a.emp)).filter(u=>u&&u.department==='Painter');
  const painterAssignments=aa.filter(a=>(users||[]).some(u=>u.id===a.emp&&u.department==='Painter')).sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));
  const supervisorId=painterAssignments.find(a=>a.assignedBy)?.assignedBy||aa.slice().sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0)).find(a=>a.assignedBy)?.assignedBy||'';
- const vehicle=[j.make,j.model,j.year].filter(Boolean).join(' ')||j.vehicle||'';
+ const live=window.zukaitJobCardMaster?.display?.(j.no,j)||j,vehicle=live.vehicle||[live.make,live.model].filter(Boolean).join(' ')||j.vehicle||[j.make,j.model].filter(Boolean).join(' ')||'';
  return {job:j,vehicle,supervisorId,painters:[...new Map(painters.map(x=>[x.id,x])).values()]};
 }
 function consLineFingerprint(lines){
@@ -110,8 +110,8 @@ function consVehicleDetails(d,colour){
 }
 function consMaterialListData(jobCard,row){
  const no=String(jobCard||'').trim().toUpperCase(),j=(state.jobs||[]).find(x=>String(x.no||'').toUpperCase()===no)||{};
- const vehicle=j.vehicle||[j.make,j.model,j.year].filter(Boolean).join(' ')||row?.vehicle||'';
- return {job:{...j,no,vehicle},vehicle,supervisorId:row?.allottedSupervisorId||'',painters:[]};
+ const live=window.zukaitJobCardMaster?.display?.(no,j)||j,vehicle=live.vehicle||[live.make,live.model].filter(Boolean).join(' ')||j.vehicle||row?.vehicle||'';
+ return {job:{...j,...live,no,vehicle},vehicle,supervisorId:row?.allottedSupervisorId||'',painters:[]};
 }
 function consRecentMaterialLists(){
  const c=C().ensureState(state),by=new Map();
@@ -126,7 +126,7 @@ function consBaseIssued(jobCard){const c=C().ensureState(state);return c.issues.
 function consJobResults(q,selectFn,type){
  let rows=consJobMatches(q);
  if(type==='additional')rows=rows.filter(j=>!!consBaseIssued(j.no));
- return rows.length?rows.map(j=>'<button type="button" class="cons-jc-result" onclick="'+selectFn+'(decodeURIComponent(\''+encodeURIComponent(String(j.no||''))+'\'))"><b>'+esc(j.no||'')+'</b><span>'+esc(j.reg||j.registration||'No Reg')+'</span><small>'+esc(j.vehicle||[j.make,j.model,j.year].filter(Boolean).join(' ')||'Vehicle')+'</small></button>').join(''):'<div class="cons-jc-empty">'+(type==='additional'?'No Job Card with completed Suggested / Issued materials found.':'No matching Job Card.')+'</div>';
+ return rows.length?rows.map(j=>{const live=window.zukaitJobCardMaster?.display?.(j.no,j)||j,vehicle=live.vehicle||[live.make,live.model].filter(Boolean).join(' ')||j.vehicle||'Vehicle',reg=live.reg||live.registration||j.reg||j.registration||'No Reg';return '<button type="button" class="cons-jc-result" onclick="'+selectFn+'(decodeURIComponent(\''+encodeURIComponent(String(j.no||''))+'\'))"><b>'+esc(j.no||'')+'</b><span>'+esc(reg)+'</span><small>'+esc(vehicle)+'</small></button>'}).join(''):'<div class="cons-jc-empty">'+(type==='additional'?'No Job Card with completed Suggested / Issued materials found.':'No matching Job Card.')+'</div>';
 }
 function entryHeader(type){
  return '<div class="cons-jc-access"><label>Job Card Search<div class="cons-searchbar"><input id="consJc" placeholder="JC / Registration / Vehicle" autocomplete="off" oninput="consFindJC(\''+type+'\')"><button class="blue" type="button" onclick="consFindJC(\''+type+'\',true)">SEARCH</button></div></label><div id="consJcResults" class="cons-jc-results hidden"></div><div id="consVehicleDetails" class="cons-vehicle-sticky"></div></div><div class="cons-entry-grid cons-entry-grid-compact"><label>Vehicle Details<input id="consVehicle" readonly></label><label>Colour Code<input id="consColour" placeholder="Paint colour code"></label><label>Painter Name<select id="consPainter" onchange="consRefreshIssueFinishState()"><option value="">Select painter</option></select></label><label>Allotted Supervisor<input id="consSupervisor" readonly></label></div><div id="consJcNote" class="muted small"></div>';
