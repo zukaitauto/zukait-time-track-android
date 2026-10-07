@@ -40,3 +40,7 @@ assert.ok(!main.includes("rows.push(...r.rows.map(normalizeReportRow));source=r.
 assert.match(main,/const PARTS_ATTENTION_DAYS=15/,'Purchaser Parts Attention threshold must remain 15 days');
 assert.match(main,/attentionAgeDays\(item,list\)>PARTS_ATTENTION_DAYS/,'Purchaser warning must require more than 15 days');
 assert.match(main,/Oldest items are shown first/,'Purchaser Parts Attention list must explain overdue ordering');
+
+// Supervisor UI, client workflow, and server authority must agree on post-arrival transitions.
+assert.equal(ctx.window.zukaitV2.spareParts.canAct('Supervisor','SUPERVISOR_VERIFIED','SUPERVISOR_CONFIRMED'),true,'Supervisor can confirm verified parts for fitting');
+assert.equal(ctx.window.zukaitV2.spareParts.canAct('Supervisor','SUPERVISOR_CONFIRMED','FITTED'),true,'Supervisor can mark confirmed parts fitted');
