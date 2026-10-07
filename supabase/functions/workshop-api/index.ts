@@ -329,8 +329,18 @@ function preservePaintPurchasingHistory(candidate: any, current: any): any {
       const byId = new Map(nextRows.map((row:any,index:number)=>[identity(row),index]));
       for (const row of serverRows) {
         const id=identity(row);
-        if (!byId.has(id)) { byId.set(id,nextRows.length); nextRows.push(cloneValue(row)); }
-        else if (key === "orders" && row?.voided) nextRows[byId.get(id)!] = cloneValue(row);
+        if (!byId.has(id)) {
+          byId.set(id,nextRows.length);
+          nextRows.push(cloneValue(row));
+          continue;
+        }
+        if (key !== "orders") continue;
+        const idx=byId.get(id)!;
+        const incomingRow:any=nextRows[idx] || {};
+        const serverCorrected=Number(row?.correctedAt||0),incomingCorrected=Number(incomingRow?.correctedAt||0);
+        if (row?.voided || serverCorrected>incomingCorrected) {
+          nextRows[idx]=cloneValue(row);
+        }
       }
       if (nextRows.length || serverRows.length || Array.isArray(incoming?.[key])) incoming[key]=nextRows;
     }
@@ -340,21 +350,49 @@ function preservePaintPurchasingHistory(candidate: any, current: any): any {
   const serverCost=current?.paintCosting && typeof current.paintCosting==="object" ? current.paintCosting : {};
   const incomingCost=candidate?.paintCosting && typeof candidate.paintCosting==="object" ? candidate.paintCosting : {};
   if (Object.keys(serverCost).length || Object.keys(incomingCost).length) {
-    // Existing server costing survives clients that do not know this module;
-    // an incoming value for the same JC is still allowed to update it.
     candidate.paintCosting={...cloneValue(serverCost),...cloneValue(incomingCost)};
   }
   return candidate;
+}
+
+
+function validatePaintManagerCorrections(candidate:any,current:any,user:any): string | null {
+  const oldOrders=new Map((current?.paintPurchasing?.orders||[]).filter((o:any)=>o?.id).map((o:any)=>[String(o.id),o]));
+  const newOrders=new Map((candidate?.paintPurchasing?.orders||[]).filter((o:any)=>o?.id).map((o:any)=>[String(o.id),o]));
+  for(const [id,before] of oldOrders){
+    const after:any=newOrders.get(id);
+    if(!after) continue;
+    if(before?.voided!==true && after?.voided===true){
+      if(String(user?.role||'')!=='Manager' || String(after?.cancelledBy||'')!==String(user?.id||'') || !String(after?.cancelReason||'').trim()) return 'manager_required_to_cancel_paint_po';
+    }
+    const oldReturns=new Map((before?.returns||[]).filter((x:any)=>x?.id).map((x:any)=>[String(x.id),x]));
+    const newReturns=new Map((after?.returns||[]).filter((x:any)=>x?.id).map((x:any)=>[String(x.id),x]));
+    for(const [rid,oldReturn] of oldReturns){
+      const next:any=newReturns.get(rid);
+      if(!next || same(oldReturn,next)) continue;
+      if(String(user?.role||'')!=='Manager') return 'manager_required_to_edit_paint_return';
+      if(next?.voided===true){
+        if(String(next?.cancelledBy||'')!==String(user?.id||'') || !String(next?.cancelReason||'').trim()) return 'paint_return_cancel_reason_required';
+      }else{
+        if(String(next?.correctedBy||'')!==String(user?.id||'') || !String(next?.correctionReason||'').trim()) return 'paint_return_correction_reason_required';
+      }
+    }
+  }
+  return null;
 }
 
 // Derived cost projection follows staff authorization so unrelated employee saves stay valid.
 function reconcilePaintOrderCosts(candidate: any): any {
   for (const no of new Set((candidate.paintPurchasing?.orders || []).map((o:any)=>String(o?.jobCard || "")).filter(Boolean))) {
     const cost=paintOrderRules.costForJob(candidate.paintPurchasing.orders,no);
-    if (!cost) continue;
     candidate.paintCosting=candidate.paintCosting || {};
-    candidate.paintCosting[no]={...cost,updatedAt:candidate.paintCosting[no]?.updatedAt || Date.now()};
     const job=(candidate.jobs || []).find((j:any)=>String(j.no)===no);
+    if (!cost) {
+      delete candidate.paintCosting[no];
+      if(job) job.paintCost=0;
+      continue;
+    }
+    candidate.paintCosting[no]={...cost,updatedAt:candidate.paintCosting[no]?.updatedAt || Date.now()};
     if(job) job.paintCost=cost.netPaintCost;
   }
   return candidate;
@@ -927,6 +965,9 @@ Deno.serve(async (req: Request) => {
         candidate = preserveManagerTimeAuthority(candidate, current.data);
       candidate = preserveAuthoritativeReopens(candidate, current.data);
         candidate = preserveJobTypeAuthority(candidate, current.data, user);
+
+        const paintCorrectionIssue=validatePaintManagerCorrections(candidate,current.data,user);
+        if (paintCorrectionIssue) return reply({ok:false,code:"paint_correction_forbidden",message:paintCorrectionIssue,revision:current.revision,data:current.data},403);
 
         const paintOrderIssue=paintOrderRules.validateNewOrders(candidate.paintPurchasing?.orders || [],current.data?.paintPurchasing?.orders || []);
         if (paintOrderIssue) return reply({ok:false,code:"paint_po_invalid",message:paintOrderIssue,revision:current.revision,data:current.data},409);
