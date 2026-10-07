@@ -134,7 +134,7 @@
     if(patch.mainPainterId!==undefined)next.mainPainterId=String(patch.mainPainterId||'');
     if(patch.allottedSupervisorId!==undefined)next.allottedSupervisorId=String(patch.allottedSupervisorId||'');
     if(patch.lines!==undefined)next.lines=cleanLines(state,patch.lines);
-    next.correctedAt=Date.now(); next.correctedBy=actor.id; next.correctedByName=String(actor?.name||actor?.id||''); next.correctedByRole=String(actor?.role||''); Object.assign(row,next);
+    next.correctedAt=Date.now(); next.correctedBy=actor.id; next.correctedByName=String(actor?.name||actor?.id||''); next.correctedByRole=String(actor?.role||''); next.correctionReason=String(reason||'').trim(); Object.assign(row,next);
     auditChange(c,'ISSUE_CORRECTED',row,before,row,actor,reason); return clone(row);
   }
   function managerCorrectActual(state,id,lines,actor,reason){
