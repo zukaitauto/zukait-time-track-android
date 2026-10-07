@@ -1,16 +1,22 @@
 (function(){
   'use strict';
   const HOLD='ID001';
-  function isFriday(ts=Date.now()){return new Date(ts).getDay()===5}
-  function minuteOfDay(ts=Date.now()){const d=new Date(ts);return d.getHours()*60+d.getMinutes()}
+  const OMAN_TZ='Asia/Muscat';
+  function omanParts(ts=Date.now()){
+    const parts=new Intl.DateTimeFormat('en-CA',{timeZone:OMAN_TZ,weekday:'short',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(ts));
+    const out={};for(const p of parts)if(p.type!=='literal')out[p.type]=p.value;return out;
+  }
+  function omanDateKey(ts=Date.now()){const p=omanParts(ts);return p.year+'-'+p.month+'-'+p.day}
+  function isFriday(ts=Date.now()){return omanParts(ts).weekday==='Fri'}
+  function minuteOfDay(ts=Date.now()){const p=omanParts(ts);return Number(p.hour||0)*60+Number(p.minute||0)}
   function inDuty(ts=Date.now()){const m=minuteOfDay(ts);return (m>=480&&m<780)||(m>=900&&m<1140)}
   function publicHoliday(state,ts=Date.now()){
-    const key=new Date(ts).toISOString().slice(0,10);
+    const key=omanDateKey(ts);
     return (state?.holidays||state?.publicHolidays||[]).some(h=>String(h?.date||h).slice(0,10)===key);
   }
   function onLeave(state,emp,ts=Date.now()){
     if(window.zukaitV2?.leave)return window.zukaitV2.leave.isOnLeave(state?.leaves||state?.leave||[],emp,ts);
-    const key=new Date(ts).toISOString().slice(0,10);
+    const key=omanDateKey(ts);
     return (state?.leaves||state?.leave||[]).some(x=>String(x?.emp||x?.employeeId||'')===String(emp)&&String(x?.date||'').slice(0,10)===key&&!x.cancelled);
   }
   function activeSession(state,emp){return (state?.sessions||[]).find(s=>String(s.emp)===String(emp)&&!s.end)||null}
