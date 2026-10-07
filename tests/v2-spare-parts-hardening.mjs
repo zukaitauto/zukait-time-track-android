@@ -80,3 +80,6 @@ assert.match(mainSource,/qtyLabel=received>0\?'Received '\+received\+'\/'\+order
 
 assert.match(mainSource,/function arrivalPendingItems\(list\).*?status\|\|''\)==='RECEIVED'&&receiptComplete\(item\)/s,'partial receipts must not appear in Supervisor arrival confirmation');
 assert.match(mainSource,/if\(!receiptComplete\(item\)\)return alert\('Receipt is incomplete\./,'Supervisor confirmation rechecks full received quantity');
+
+for(const key of ['purchaseAmount','purchaseRecordedAt','purchaseAmountRevision','billAmount','supplierCost'])assert.equal(returned.item[key],undefined,'return clears stale expense '+key);
+assert.match(mainSource,/if\(p\.to==='RETURNED'\).*?delete item\.purchaseAmount;delete item\.purchaseRecordedAt/s,'server replay clears returned part purchase expense');
