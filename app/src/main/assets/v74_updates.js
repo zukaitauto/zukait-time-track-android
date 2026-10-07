@@ -1571,11 +1571,14 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v79ReconcileWorkSessions=reconcileAllSessionsV79;
 
  window.activeSession=function(emp){
-   // Read-only authority: status/render checks must never mutate or save work sessions.
-   // Reconciliation remains available explicitly through v79ReconcileWorkSessions for
-   // maintenance/import recovery, but normal Start/Pause/Finish reads are side-effect free.
-   const latest=latestSessionForEmployee(emp);
-   return latest&&!latest.end?latest:null;
+   // Read-only authority: an open session is authoritative even when a Manager/system
+   // correction preserves an earlier work-time start than a later closed history row.
+   // This keeps Running Work, Start blocking, Supervisor status and live state aligned.
+   const open=sessions().filter(s=>s&&String(s.emp)===String(emp)&&s.end==null).slice().sort((a,b)=>{
+     const d=(+a.correctedAt||+a.syncRefreshAt||+a.start||0)-(+b.correctedAt||+b.syncRefreshAt||+b.start||0);
+     return d||String(a.id||'').localeCompare(String(b.id||''));
+   });
+   return open.length?open[open.length-1]:null;
  };
 
  window.empStatus=function(a){
