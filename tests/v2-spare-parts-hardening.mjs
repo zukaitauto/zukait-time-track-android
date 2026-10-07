@@ -56,3 +56,6 @@ assert.equal(returned.ok,true,'received part can be returned by Purchaser');
 for(const key of ['receivedQty','receivedAt','partialReceipt','arrivalAccepted','supervisorVerifiedAt'])assert.equal(returned.item[key],undefined,'return clears stale '+key);
 
 assert.match(mainSource,/receivedQty>0&&qty<receivedQty.*?Quantity cannot be lower than.*?already received/s,'correction cannot reduce ordered quantity below already received quantity');
+
+assert.match(mainSource,/monthSpend=items\.reduce\(\(sum,i\)=>\{const amount=Number\(i\.purchaseAmount\),t=Date\.parse\(i\.purchaseRecordedAt\|\|0\)/,'monthly purchase spend must use final invoice recording date');
+assert.doesNotMatch(mainSource,/monthSpend=items\.reduce\(\(sum,i\)=>\{const t=Date\.parse\(i\.updatedAt\|\|i\.receivedAt/,'monthly purchase spend must not move when status is later updated');
