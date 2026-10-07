@@ -83,3 +83,8 @@ assert.match(mainSource,/if\(!receiptComplete\(item\)\)return alert\('Receipt is
 
 for(const key of ['purchaseAmount','purchaseRecordedAt','purchaseAmountRevision','billAmount','supplierCost'])assert.equal(returned.item[key],undefined,'return clears stale expense '+key);
 assert.match(mainSource,/if\(p\.to==='RETURNED'\).*?delete item\.purchaseAmount;delete item\.purchaseRecordedAt/s,'server replay clears returned part purchase expense');
+
+assert.equal(spare.allowed('RETURNED','ORDERED'),false,'returned parts cannot bypass fresh enquiry/quotation');
+assert.equal(spare.allowed('RETURNED','ENQUIRY'),true,'returned parts restart at enquiry');
+for(const key of ['quoteAmount','price','supplier','quotationOffers','commercialRevision'])assert.equal(returned.item[key],undefined,'return clears stale commercial state '+key);
+assert.match(mainSource,/RETURNED:\['Re-enquire','ENQUIRY','info'\]/,'Purchaser UI restarts returned parts at enquiry');
