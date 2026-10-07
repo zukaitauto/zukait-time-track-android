@@ -23,6 +23,11 @@ state.jobs[0].status='Open';assert.equal(api.overdueTimeRows().length,0,'open ve
 state.jobs[0].delivered=true;state.assign[1].completed=false;assert.equal(api.overdueTimeRows().length,1,'open repeat work does not hide delivered original work');
 state.assign[0].completed=false;assert.equal(api.overdueTimeRows().length,1,'delivered historical work does not require old assignment completion flags');
 state.assign[0].suggested=0;assert.equal(api.overdueTimeRows().length,0,'zero suggested time is not an exceeded-suggestion review');
+state.assign[0].suggested=110;state.assign[0].completed=true;state.jobs[0].delivered=true;state.jobs[0].status='Delivered';state.jobs[0].deliveredAt=Date.parse('2026-10-05T10:00:00Z');
+state.jobs[1].deliveredAt=Date.parse('2026-10-07T10:00:00Z');state.assign[3].suggested=5;window.zukaitV2.efficiency.assignmentActualMinutes=(_s,a)=>a.id==='a4'?8:a.id==='a1'?125:0;
+let deliverySorted=api.overdueTimeRows();assert.equal(deliverySorted[0].job.no,'12002','latest delivered vehicle appears first in time review');
+state.jobs[1].deliveredAt=undefined;state.jobs[1].deliveryDate='2026-10-08T10:00:00Z';deliverySorted=api.overdueTimeRows();assert.equal(deliverySorted[0].job.no,'12002','legacy deliveryDate also sorts latest delivery first');
+state.assign[3].suggested=10;
 assert.match(source,/\['Running Work Attention',/);assert.doesNotMatch(source,/\['Delivered Vehicle Time Review',|\['Overdue Time',|\['Over allocated',|\['Attention',/);
 // The Manager hub must use this same authoritative list and review detail.
 state.assign[0].suggested=110;
