@@ -1065,8 +1065,8 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
      '<div class="v63-account v88-role-account"><button class="v88-sync" onclick="cloudSyncNow&&cloudSyncNow()">↻ SYNC</button><button class="v88-about" onclick="v63OpenAbout()">ℹ ABOUT</button><button class="v88-leave" onclick="v755OpenLeaveHub()">🗓 LEAVE</button><button class="v88-logout" onclick="logout()">↪ LOGOUT</button></div>');
  };
 
- function leaveToday(){const k=dateKey(Date.now());return window.zukaitV2?.leave?.forDate?.(k)||activeLeaveRows().filter(l=>l.date===k)}
- function leaveMonth(){const d=new Date(),prefix=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-';return activeLeaveRows().filter(l=>String(l.date||'').startsWith(prefix))}
+ function leaveToday(){const d=window.zukaitV2?.leave?.dashboard?.(state);const k=d?.day||dateKey(Date.now());return window.zukaitV2?.leave?.forDate?.(k,state)||activeLeaveRows().filter(l=>l.date===k)}
+ function leaveMonth(){const d=window.zukaitV2?.leave?.dashboard?.(state),prefix=(d?.day||dateKey(Date.now())).slice(0,7)+'-';return activeLeaveRows().filter(l=>String(l.date||'').startsWith(prefix))}
  function uniquePeople(rows){return new Set(rows.map(l=>String(l.emp))).size}
  function leaveListHtml(rows){
    const sorted=rows.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))||(b.createdAt||0)-(a.createdAt||0));
