@@ -208,6 +208,22 @@ function preserveManagerTimeAuthority(candidate: any, current: any): any {
   return candidate;
 }
 
+function preserveAuthoritativeReopens(candidate: any, current: any): any {
+  const serverAssignments=new Map((current?.assign||[]).filter((a:any)=>a?.id).map((a:any)=>[String(a.id),a]));
+  candidate.assign=(candidate?.assign||[]).map((a:any)=>{
+    const server:any=serverAssignments.get(String(a?.id||""));
+    if(!server)return a;
+    const serverRev=Number(server.timeManagementRevision||0),clientRev=Number(a.timeManagementRevision||0);
+    const serverReopenAt=Number(server.lastReopenedAt||0),clientReopenAt=Number(a.lastReopenedAt||0);
+    if((serverRev>clientRev||serverReopenAt>clientReopenAt)&&server.completed===false){
+      return cloneValue(server);
+    }
+    return a;
+  });
+  return candidate;
+}
+
+
 // A delayed legacy client must not reopen work that another device already paused.
 // Only synthetic overtime sessions absent from the current server snapshot are removed.
 function preserveClosedSessions(candidate: any, current: any): any {
@@ -909,6 +925,7 @@ Deno.serve(async (req: Request) => {
 
         candidate = preservePaintPurchasingHistory(preserveConsumablesHistory(preserveOperationalHistory(reconcileAutoOvertime(preserveClosedSessions(candidate, current.data), current.data), current.data, user), current.data), current.data);
         candidate = preserveManagerTimeAuthority(candidate, current.data);
+      candidate = preserveAuthoritativeReopens(candidate, current.data);
         candidate = preserveJobTypeAuthority(candidate, current.data, user);
 
         const paintOrderIssue=paintOrderRules.validateNewOrders(candidate.paintPurchasing?.orders || [],current.data?.paintPurchasing?.orders || []);
