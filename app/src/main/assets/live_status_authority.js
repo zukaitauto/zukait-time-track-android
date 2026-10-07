@@ -96,6 +96,17 @@
     if(serverRequired())return [];
     return typeof oldCurrentStaffStatuses==='function'?oldCurrentStaffStatuses.apply(this,arguments):[];
   };
+  function employeeDisplaySession(emp){
+    const rr=rows();
+    if(rr){
+      const r=rr.find(x=>String(x.employee_id)===String(emp));
+      if(!r||!ACTIVE.has(r.status)||!r.session_id)return null;
+      return statusObject(r).session;
+    }
+    try{return typeof window.activeSession==='function'?window.activeSession(emp):null}catch(_){return null}
+  }
+  window.zukaitEmployeeDisplaySession=employeeDisplaySession;
+
   function serverActiveRows(){
     const rr=rows();
     return rr?rr.filter(r=>ACTIVE.has(r.status)).map(activeWorkerRow):null;
