@@ -1,8 +1,8 @@
 {
-  "versionName": "V297",
-  "versionCode": 260,
+  "versionName": "V298",
+  "versionCode": 261,
   "approvedForStaff": true,
-  "approvedAt": "2026-10-06",
-  "sourceCommit": "6b71d49a853f7857a9733185a24ca782f403c620",
-  "publishNonce": "release-v297-purchaser-liquid-parts-attention-20261006-approved"
+  "approvedAt": "2026-10-07",
+  "sourceCommit": "1a4b4abaef7dd4aaf12c25c8f51371943fbe0b41",
+  "publishNonce": "release-v298-paint-po-close-nil-leftover-20261007-approved"
 }
