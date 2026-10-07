@@ -257,7 +257,7 @@
   window.zukaitServerReports={page:v2ReportPage,searchJobCards:v2SearchJobCards};
 
   function liveRole(){
-    return !!me && (me.role==='Supervisor'||me.role==='Manager');
+    return !!me && (me.role==='Employee'||me.role==='Supervisor'||me.role==='Manager');
   }
 
   function publishLiveStatus(fresh){
