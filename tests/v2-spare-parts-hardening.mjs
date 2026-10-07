@@ -59,3 +59,6 @@ assert.match(mainSource,/receivedQty>0&&qty<receivedQty.*?Quantity cannot be low
 
 assert.match(mainSource,/monthSpend=items\.reduce\(\(sum,i\)=>\{const amount=Number\(i\.purchaseAmount\),t=Date\.parse\(i\.purchaseRecordedAt\|\|0\)/,'monthly purchase spend must use final invoice recording date');
 assert.doesNotMatch(mainSource,/monthSpend=items\.reduce\(\(sum,i\)=>\{const t=Date\.parse\(i\.updatedAt\|\|i\.receivedAt/,'monthly purchase spend must not move when status is later updated');
+
+assert.match(mainSource,/function invoiceAmountEligible\(item\)\{return arrivedConfirmed\(item\)\}/,'invoice entry requires Supervisor-confirmed arrival');
+assert.match(mainSource,/PURCHASE_COMPLETED'\)return items\.length>0&&items\.every\(arrivedConfirmed\)/,'purchase completed requires Supervisor-confirmed arrival');
