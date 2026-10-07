@@ -434,6 +434,34 @@ function reconcilePaintOrderCosts(candidate: any): any {
 
 // A full-state client can carry an old snapshot while saving an unrelated change.
 // Keep prior records unless a Manager records an explicit, reasoned Job Card deletion.
+function preserveLeaveAuthority(candidate: any, current: any, user: any): any {
+  const incoming = Array.isArray(candidate?.leaves) ? candidate.leaves : [];
+  const currentRows = Array.isArray(current?.leaves) ? current.leaves : [];
+  const byId = new Map(incoming.filter((x:any)=>x?.id!=null).map((x:any)=>[String(x.id),x]));
+  for (const serverRow of currentRows) {
+    if (!serverRow?.id) continue;
+    const id=String(serverRow.id), proposed:any=byId.get(id);
+    if (!proposed) {
+      // Leave deletion is never a valid workflow action. Cancellation is explicit
+      // and audited, so a stale full-state client cannot make a leave disappear.
+      incoming.push(cloneValue(serverRow));byId.set(id,incoming[incoming.length-1]);continue;
+    }
+    // Only a Manager may alter an existing leave record. Everyone else keeps the
+    // server-confirmed version; Manager edits/cancellations remain explicit.
+    if (!same(proposed,serverRow) && String(user?.role||"")!=="Manager") {
+      const i=incoming.indexOf(proposed);if(i>=0)incoming[i]=cloneValue(serverRow);byId.set(id,incoming[i]);
+    }
+  }
+  candidate.leaves=incoming;
+  const audit=Array.isArray(candidate?.leaveAudit)?candidate.leaveAudit:[];
+  const seen=new Set(audit.map((x:any)=>String(x?.id||"")||JSON.stringify(x)));
+  for(const row of Array.isArray(current?.leaveAudit)?current.leaveAudit:[]){
+    const id=String(row?.id||"")||JSON.stringify(row);if(!seen.has(id)){audit.push(cloneValue(row));seen.add(id)}
+  }
+  candidate.leaveAudit=audit;
+  return candidate;
+}
+
 function preserveOperationalHistory(candidate: any, current: any, user: any): any {
   const earlier = new Set((current?.jobDeletes || []).map((x: any) => String(x?.job || "") + ":" + String(x?.deletedAt || "")));
   const deletedJobs = new Set((candidate?.jobDeletes || []).filter((x: any) =>
@@ -1001,6 +1029,7 @@ Deno.serve(async (req: Request) => {
         candidate = preservePaintPurchasingHistory(preserveConsumablesHistory(preserveOperationalHistory(reconcileAutoOvertime(preserveClosedSessions(candidate, current.data), current.data), current.data, user), current.data), current.data);
         const consumablesCorrectionIssue=validateConsumablesManagerCorrections(candidate,current.data,user);
         if(consumablesCorrectionIssue) return reply({ok:false,code:"consumables_correction_forbidden",message:consumablesCorrectionIssue,revision:current.revision,data:current.data},403);
+        candidate = preserveLeaveAuthority(candidate, current.data, user);
         candidate = preserveManagerTimeAuthority(candidate, current.data);
       candidate = preserveAuthoritativeReopens(candidate, current.data);
         candidate = preserveJobTypeAuthority(candidate, current.data, user);
