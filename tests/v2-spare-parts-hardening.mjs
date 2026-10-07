@@ -50,3 +50,7 @@ assert.match(mainSource,/status==='RECEIVED'\)return Number\.isFinite\(qty\)&&qt
 
 assert.match(mainSource,/saveManagerItemEdit\(listNo,itemId\).*?if\(!navigator\.onLine\)return alert\('Connect to the server before correcting a Parts item\.'\);await hydrateAuthoritativeLists\(\)/s,'parts correction must refresh authoritative state first');
 assert.match(mainSource,/item\.syncConflict\|\|pendingTransition\(item\).*?pending or conflicting update/s,'parts correction must block unresolved sync conflicts');
+
+const returned=ctx.window.zukaitV2.spareParts.transition({id:'SP-RETURN',status:'RECEIVED',qty:2,receivedQty:1,receivedAt:'old',partialReceipt:true,arrivalAccepted:true,supervisorVerifiedAt:'old'},'RETURNED',{role:'Purchaser',actorId:'P1',reason:'Wrong part'});
+assert.equal(returned.ok,true,'received part can be returned by Purchaser');
+for(const key of ['receivedQty','receivedAt','partialReceipt','arrivalAccepted','supervisorVerifiedAt'])assert.equal(returned.item[key],undefined,'return clears stale '+key);
