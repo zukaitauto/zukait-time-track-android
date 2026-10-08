@@ -884,7 +884,11 @@ Deno.serve(async (req: Request) => {
         const p=event.payload && typeof event.payload==="object" ? event.payload : {};
         const before=p.before && typeof p.before==="object" ? p.before : {};
         const after=p.after && typeof p.after==="object" ? p.after : {};
-        if (callerRole!=="Manager" || !String(p.partId||"") || !String(p.listNo||"") || !String(p.jobCard||"") || !String(p.reason||"").trim() || String(before.status||"")!=="RETURNED" || !String(after.status||"") || String(after.status||"")==="RETURNED") {
+        const allowedAfterKeys=new Set(["status","receivedQty","receivedAt","receivedBy","lastReceivedQty","partialReceipt","arrivalAccepted","arrivalAcceptedAt","supervisorVerifiedAt","supervisorVerifiedBy","denterCheckedAt","denterCheckedBy","confirmedAt","confirmedBy","fittedAt","fittedBy","purchaseAmount","purchaseRecordedAt","purchaseAmountRevision","billAmount","supplierCost","quoteAmount","price","supplier","quotationOffers","commercialRevision"]);
+        const allowedRestoredStatuses=new Set(["LISTED","ENQUIRY","QUOTED","ORDERED","RECEIVED","SUPERVISOR_VERIFIED","DENTER_CHECKED","SUPERVISOR_CONFIRMED","FITTED","UNAVAILABLE","CUSTOMER_SETTLEMENT"]);
+        const invalidAfterKey=Object.keys(after).some(k=>!allowedAfterKeys.has(k));
+        const invalidNumeric=["receivedQty","lastReceivedQty","purchaseAmount","billAmount","supplierCost","quoteAmount","price"].some(k=>after[k]!=null&&(!Number.isFinite(Number(after[k]))||Number(after[k])<0||Number(after[k])>1000000));
+        if (callerRole!=="Manager" || !String(p.partId||"") || !String(p.listNo||"") || !String(p.jobCard||"") || !String(p.reason||"").trim() || String(before.status||"")!=="RETURNED" || !allowedRestoredStatuses.has(String(after.status||"")) || invalidAfterKey || invalidNumeric) {
           return reply({ok:false,code:"spare_return_cancel_forbidden_or_invalid"},403);
         }
       }
