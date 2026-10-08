@@ -118,3 +118,10 @@ assert.match(workflowReturnedQty,/from==='RETURNED'&&to!=='RETURNED'[\s\S]*delet
 assert.match(workflowReturnedQty,/delete next\.returnedQty;delete next\.preReturnSnapshot/,'Cancel Return must clear active returnedQty');
 assert.match(mainReturnedQty,/p\.from==='RETURNED'&&p\.to!=='RETURNED'[\s\S]*delete item\.returnedQty/,'Fresh-login re-enquiry hydration must clear returnedQty');
 assert.match(mainReturnedQty,/SPARE_PART_RETURN_CANCELLED[\s\S]*delete item\.returnedQty;delete item\.preReturnSnapshot/,'Fresh-login Cancel Return hydration must clear returnedQty');
+
+const apiCommercial=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+assert.match(apiCommercial,/eventType==="SPARE_PART_COMMERCIAL_UPDATED"[\s\S]*allowedKeys=new Set\(\["partId","listNo","jobCard","supplier","quoteAmount","purchaseAmount","quotationOffers"\]\)/,'Commercial payload must be strictly allowlisted');
+assert.match(apiCommercial,/offers\.length>3/,'Commercial payload must enforce the three-vendor quotation limit');
+assert.match(apiCommercial,/\["supplier","amount","at"\]\.includes\(k\)/,'Each quotation offer must be field-allowlisted');
+assert.match(apiCommercial,/invalidKey \|\| invalidMoney \|\| invalidOffers/,'Malformed or injected commercial payloads must be rejected');
+assert.match(apiCommercial,/\["Manager","Purchaser"\]\.includes\(callerRole\)/,'Commercial workflow remains Manager/Purchaser only');
