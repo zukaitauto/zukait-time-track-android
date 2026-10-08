@@ -78,6 +78,7 @@ assert.match(mainSource,/bucket==='NEW'\)return isNewPartsList\(r\)&&items\.leng
 
 assert.match(mainSource,/qtyLabel=received>0\?'Received '\+received\+'\/'\+ordered\+' · Pending '\+remaining/,'Parts Waiting shows received and remaining quantities for partial arrivals');
 
+assert.match(mainSource,/state==='ORDERED'\|\|\(state==='RECEIVED'&&!arrived\).*?Receive Remaining/s,'partial arrival must keep a receive-remaining action for Purchaser');
 assert.match(mainSource,/function arrivalPendingItems\(list\).*?status\|\|''\)==='RECEIVED'&&receiptComplete\(item\)/s,'partial receipts must not appear in Supervisor arrival confirmation');
 assert.match(mainSource,/if\(!receiptComplete\(item\)\)return alert\('Receipt is incomplete\./,'Supervisor confirmation rechecks full received quantity');
 
