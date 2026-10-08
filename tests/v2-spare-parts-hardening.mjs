@@ -199,3 +199,9 @@ assert.match(apiListCreated,/\["ORDERED",new Set\(\["RECEIVED","ENQUIRY","RETURN
 assert.match(apiListCreated,/\["RECEIVED",new Set\(\["RECEIVED","ORDERED","SUPERVISOR_VERIFIED","RETURNED"\]\)\]/,'Received parts must pass Supervisor verification before confirmation');
 assert.match(apiListCreated,/\["SUPERVISOR_VERIFIED",new Set\(\["SUPERVISOR_CONFIRMED","RETURNED"\]\)\]/,'Verified parts must pass confirmation before fitted');
 assert.match(apiListCreated,/spare_transition_sequence_invalid/,'Invalid stage jumps must return a server conflict');
+
+assert.match(guard,/ordered_qty numeric not null default 1/,'Authoritative Spare Parts state must track ordered quantity');
+assert.match(guard,/received_qty numeric not null default 0/,'Authoritative Spare Parts state must track cumulative received quantity');
+assert.match(guard,/upper\(st\)='SUPERVISOR_VERIFIED'[\s\S]*cur\.received_qty[\s\S]*cur\.ordered_qty[\s\S]*spare_receipt_incomplete/,'Supervisor verification must be blocked until the full ordered quantity is received');
+assert.match(guard,/upper\(st\)='RECEIVED'[\s\S]*p->>'receivedQty'/,'Receipt projection must persist authoritative cumulative received quantity');
+assert.match(apiListCreated,/spare_receipt_incomplete[^\n]*409/,'Incomplete receipt verification must surface as a conflict');
