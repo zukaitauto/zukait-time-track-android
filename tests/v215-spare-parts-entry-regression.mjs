@@ -756,3 +756,20 @@ test('quotation rejection after Return or deletion refreshes the Purchaser to fi
    assert.equal(purchaser.parts.reportRows().reduce((n,r)=>n+r.amount,0),0);
  }
 });
+
+test('competing Manager corrections refresh accepted identity after event-ID collision',async()=>{
+ const first=fixture('Manager','M1'),second=fixture('Manager','M2',first.serverRows);
+ for(const [f,name] of [[first,'First corrected lamp'],[second,'Second corrected lamp']]){
+   for(const [id,value] of Object.entries({v2SpEditName:name,v2SpEditPartNo:'',v2SpEditQty:'1',
+     v2SpEditSupplier:'Vendor A',v2SpEditAmount:'',v2SpEditStatus:'SUPERVISOR_VERIFIED',v2SpEditReason:'Correct name'}))f.elements.set(id,{value});
+ }
+ second.onCommit(async event=>{
+   if(event.type==='SPARE_PART_MANAGER_CORRECTED')await first.parts.saveManagerItemEdit(first.listNo,first.partId);
+ });
+ await second.parts.saveManagerItemEdit(second.listNo,second.partId);
+ assert.equal(second.lists()[0].items[0].name,'First corrected lamp');
+ assert.ok(second.alerts.some(s=>s.includes('Latest Parts data has been refreshed')));
+ second.onCommit(null);await second.parts.saveManagerItemEdit(second.listNo,second.partId);
+ const fresh=fixture('Manager','M3',first.serverRows);
+ assert.equal(fresh.lists()[0].items[0].name,'Second corrected lamp');
+});
