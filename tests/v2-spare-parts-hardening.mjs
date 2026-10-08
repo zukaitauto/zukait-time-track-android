@@ -31,6 +31,11 @@ assert.match(mainSource,/Returned parts must use Cancel Return or Re-enquire/,'m
 assert.match(mainSource,/Cannot move a partially received part to verified\/confirmed\/fitted/,'manual correction cannot promote a partial receipt');
 assert.match(mainSource,/Supervisor verification is required before confirmation/,'manual correction preserves verification gate');
 assert.match(mainSource,/Supervisor confirmation is required before marking the part fitted/,'manual correction preserves fitting gate');
+const apiSource=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+assert.match(apiSource,/directReturnedRestore=beforeStatus==="RETURNED"&&afterStatus!=="RETURNED"/,'server blocks direct restoration of returned parts');
+assert.match(apiSource,/incompletePromotion=promotesReceipt/,'server blocks promotion of incomplete receipts');
+assert.match(apiSource,/missingVerification=afterStatus==="SUPERVISOR_CONFIRMED"/,'server enforces verification before confirmation');
+assert.match(apiSource,/missingConfirmation=afterStatus==="FITTED"/,'server enforces confirmation before fitting');
 assert.ok(main.includes('option value="FITTED"')&&main.includes('>Fitted</option>'),'Manager correction must allow Fitted status');
 
 assert.ok(main.includes("['SPARE_PART_MANAGER_CORRECTED','SPARE_PART_SUPERVISOR_CORRECTED'].includes(type)&&p.after"),'Manager and Supervisor correction events must hydrate authoritative state on every device');
