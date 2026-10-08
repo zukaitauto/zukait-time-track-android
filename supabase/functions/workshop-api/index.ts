@@ -826,6 +826,23 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const action = String(body?.action || "load");
 
+    if (action === "reception") {
+      // Caller identity comes only from the verified, active staff session.
+      // SQL validates the current role/designation again and owns all writes.
+      const command = body?.command;
+      if (!command || typeof command !== "object" || Array.isArray(command) || JSON.stringify(command).length > 24000) {
+        return reply({ok:false,code:"reception_invalid_command"},400);
+      }
+      const {data,error} = await admin.rpc("zukait_reception_command",{p_actor_id:String(user.id),p_command:command});
+      if (error) {
+        const code = String(error.message || "").match(/reception_[a-z0-9_]+/)?.[0];
+        if (code) return reply({ok:false,code}, /forbidden|manager_required/.test(code)?403:/not_found/.test(code)?404:409);
+        console.error("reception_command_failed",error);
+        return reply({ok:false,code:"reception_unavailable"},503);
+      }
+      return reply(data);
+    }
+
     if (action === "employee_time_action") {
       for(let attempt=0;attempt<8;attempt++){
         const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();

@@ -67,3 +67,5 @@ node --check app/src/main/assets/time_management_rules.js
 
 
 node --check app/src/main/assets/manager_job_edit.js
+
+node --check app/src/main/assets/v2/features/insurance/reception.js

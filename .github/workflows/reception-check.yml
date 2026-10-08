@@ -1,0 +1,26 @@
+name: Reception Phase 1 verification
+on:
+  push:
+    branches: [architecture-v2]
+    paths:
+      - "app/src/main/assets/v2/features/insurance/**"
+      - "supabase/functions/workshop-api/**"
+      - "tests/reception-*"
+      - "package*.json"
+      - ".github/workflows/reception-check.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run test:reception
+      - run: node tests/reception-api.mjs
+      - run: bash scripts/ci-validate-js.sh
