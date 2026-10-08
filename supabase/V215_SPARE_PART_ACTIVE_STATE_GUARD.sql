@@ -55,6 +55,11 @@ begin
 
   if not found then return new; end if;
 
+  if new.event_type='SPARE_PART_ITEM_EDITED' and nullif(trim(afterv->>'deletedAt'),'') is not null then
+    delete from public.workshop_v2_spare_part_state where part_id=pid;
+    return new;
+  end if;
+
   if new.event_type='SPARE_PART_STATUS_CHANGED' then
     st:=trim(coalesce(p->>'to',''));
     if st<>'' then update public.workshop_v2_spare_part_state set status=st,revision=greatest(revision,coalesce(new.revision,0)),last_event_id=new.event_id,updated_at=now() where part_id=pid; end if;
@@ -113,7 +118,17 @@ select l.part_id,l.list_no,l.job_card,
        else coalesce(nullif(trim(s.payload->'after'->>'status'),''),'LISTED') end,
   greatest(coalesce(i.revision,0),coalesce(s.revision,0)),coalesce(s.event_id,i.event_id),greatest(coalesce(s.server_time,l.listed_at),coalesce(i.server_time,l.listed_at))
 from listed l left join latest_identity i using(part_id) left join latest_status s using(part_id)
-where l.list_no<>'' and l.job_card<>'' and l.part_name<>'';
+where l.list_no<>'' and l.job_card<>'' and l.part_name<>''
+  and not exists (
+    select 1 from public.workshop_v2_events d
+    where d.entity_id=l.part_id and d.event_type='SPARE_PART_ITEM_EDITED'
+      and nullif(trim(d.payload->'after'->>'deletedAt'),'') is not null
+      and not exists (
+        select 1 from public.workshop_v2_events later
+        where later.entity_id=l.part_id and later.event_type='SPARE_PART_LISTED'
+          and (later.server_time>d.server_time or (later.server_time=d.server_time and later.event_id>d.event_id))
+      )
+  );
 
 delete from public.workshop_v2_spare_part_state_conflicts;
 insert into public.workshop_v2_spare_part_state_conflicts(list_no,part_key,part_ids)
