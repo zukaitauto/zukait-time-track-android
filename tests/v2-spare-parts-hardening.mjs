@@ -414,3 +414,7 @@ assert.match(workshopApi,/eventType==="SPARE_PART_ARRIVAL_ACCEPTED"[\s\S]*arriva
 assert.match(guard,/select \* into cur from public\.workshop_v2_spare_part_state where part_id=pid for update[\s\S]*new\.event_type='SPARE_PART_ARRIVAL_ACCEPTED'[\s\S]*spare_arrival_acceptance_not_eligible/,'Final arrival acceptance must be validated under the same authoritative part-row lock used by Manager Return');
 assert.match(guard,/new\.event_type='SPARE_PART_ARRIVAL_ACCEPTED'[\s\S]*SUPERVISOR_VERIFIED[\s\S]*DENTER_CHECKED[\s\S]*SUPERVISOR_CONFIRMED[\s\S]*FITTED/,'Arrival acceptance must fail at commit time after a simultaneous Return changes the locked status');
 assert.match(workshopApi,/message\.includes\("spare_arrival_acceptance_not_eligible"\)[\s\S]*409/,'Acceptance-versus-Return race rejection must be exposed as a recoverable 409 conflict');
+
+assert.match(guard,/select \* into cur from public\.workshop_v2_spare_part_state where part_id=pid for update[\s\S]*new\.event_type='SPARE_PART_FINAL_PRICE_RECORDED'[\s\S]*spare_final_price_not_eligible/,'Final invoice amount must be validated under the same authoritative row lock used by Manager Return');
+assert.match(workshopApi,/message\.includes\("spare_final_price_not_eligible"\)[\s\S]*409/,'Final-price-versus-Return race must return a recoverable 409 conflict');
+assert.match(mainModule,/spare_final_price_not_eligible[\s\S]*Latest Parts data has been refreshed/,'A phone losing the invoice-versus-Return race must refresh authoritative Spare Parts state');
