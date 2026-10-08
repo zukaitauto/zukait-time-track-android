@@ -402,3 +402,7 @@ assert.match(mainModule,/if\(!\['SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVIS
  assert.equal(replacement.item.preReturnSnapshot,undefined,'A genuine replacement cycle must discard the old return snapshot');
 }
 assert.match(mainModule,/function purchaserTabFor\(item\)[\s\S]*!item\.arrivalAccepted/,'Restored accepted parts must remain in Purchaser history instead of asking for duplicate final acceptance');
+
+assert.match(mainModule,/const eventId='spare-arrival-accepted-'\+itemId/,'Final arrival acceptance must use one deterministic event id per part');
+assert.match(mainModule,/if\(done\.reason==='event_id_conflict'\)\{await hydrateAuthoritativeLists\(\);[\s\S]*authoritative\?\.arrivalAccepted[\s\S]*return openList\(listNo\)/,'A second-device final acceptance collision must reconcile the already-recorded acceptance instead of surfacing a false failure');
+assert.match(workshopApi,/eventType==="SPARE_PART_ARRIVAL_ACCEPTED"[\s\S]*arrivalEligibleStatuses[\s\S]*spare_arrival_acceptance_not_eligible/,'Server must independently validate final arrival acceptance against authoritative verified status');
