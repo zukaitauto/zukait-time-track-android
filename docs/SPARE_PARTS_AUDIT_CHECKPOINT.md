@@ -62,3 +62,12 @@ This closes the automated/backend invoice–Return checkpoint; it does not certi
 - All three workflows succeeded for implementation/test commit 386db8aa; APK functional smoke tests passed.
 - Additional navigation, Manager edit, job-type, employee privacy and idle-time checks passed.
 - The entire Spare Parts module is not certified complete. Physical two-phone acceptance remains pending.
+
+## Receipt follow-up
+
+- Live rollback checks reject partial verification, excess quantities and stale batch revisions; complete receipts can be verified.
+- Competing receipt event-ID conflicts refresh the losing Purchaser to authoritative quantity.
+- Network-queued transitions retain pending state and block additional transitions until reconciled.
+- Successful reconnect clears pending markers; rejected queued receipts are quarantined and refresh quantity without automatic replay.
+- 32 entry tests passed, including receipt retry and partial-verification checks on a fresh Supervisor client.
+- All three workflows succeeded for cf5eec6a. These are simulated clients and rollback database checks; physical two-phone acceptance remains pending.

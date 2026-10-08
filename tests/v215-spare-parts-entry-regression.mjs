@@ -613,3 +613,25 @@ test('offline receipt replay after competing batch refreshes quantity and permit
  assert.equal(offline.commits.length,attempts,'Rejected batch must not retry automatically');
  assert.equal(online.serverRows.filter(r=>r.payload.to==='RECEIVED').length,3);
 });
+
+test('queued receipt keeps its pending quantity through hydration and clears it after successful reconnect',async()=>{
+ const purchaser=fixture('Purchaser','PUR001');
+ purchaser.serverRows.find(r=>r.event_type==='SPARE_PART_LISTED').payload.qty=3;
+ purchaser.serverRows.splice(purchaser.serverRows.findIndex(r=>r.payload.to==='SUPERVISOR_VERIFIED'),1);
+ purchaser.parts.hydrateFromServerRows(copy(purchaser.serverRows));
+ purchaser.fail('NETWORK');
+ assert.equal((await purchaser.parts.transitionItem(purchaser.listNo,purchaser.partId,'RECEIVED','',{receivedQty:1})).ok,true);
+ await purchaser.parts.hydrateAuthoritativeLists();
+ assert.equal(purchaser.lists()[0].items[0].receivedQty,2);
+ assert.equal(purchaser.lists()[0].items[0].pendingSync,true);
+ assert.equal((await purchaser.parts.transitionItem(purchaser.listNo,purchaser.partId,'RECEIVED','',{receivedQty:1})).reason,'PENDING_SYNC');
+ purchaser.fail(null);
+ assert.equal((await queueFlusher(purchaser)()).synced,1);
+ await purchaser.parts.hydrateAuthoritativeLists();
+ assert.equal(purchaser.lists()[0].items[0].receivedQty,2);
+ assert.equal(purchaser.lists()[0].items[0].pendingSync,undefined);
+ assert.equal(purchaser.lists()[0].items[0].pendingEventId,undefined);
+ const fresh=fixture('Supervisor','SUP003',purchaser.serverRows);
+ assert.equal(fresh.lists()[0].items[0].receivedQty,2);
+ assert.equal((await fresh.parts.transitionItem(fresh.listNo,fresh.partId,'SUPERVISOR_VERIFIED')).reason,'RECEIPT_INCOMPLETE');
+});
