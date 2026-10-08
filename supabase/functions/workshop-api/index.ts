@@ -857,8 +857,18 @@ Deno.serve(async (req: Request) => {
       if (eventType==="SPARE_PART_LIST_CREATED" && !["Manager","Supervisor"].includes(callerRole)) {
         return reply({ok:false,code:"spare_list_create_forbidden"},403);
       }
-      if (eventType==="SPARE_PART_LISTED" && !["Manager","Supervisor"].includes(callerRole)) {
-        return reply({ok:false,code:"spare_list_edit_forbidden"},403);
+      if (eventType==="SPARE_PART_LISTED") {
+        const p=event.payload && typeof event.payload==="object" && !Array.isArray(event.payload) ? event.payload : {};
+        const allowedKeys=new Set(["partId","listNo","jobCard","name","partNo","qty","targetRole"]);
+        const invalidKey=Object.keys(p).some(k=>!allowedKeys.has(k));
+        const qty=Number(p.qty);
+        const invalidIdentity=!String(p.partId||"").trim()||!String(p.listNo||"").trim()||!String(p.jobCard||"").trim();
+        const invalidName=!String(p.name||"").trim();
+        const invalidQty=!Number.isInteger(qty)||qty<=0||qty>100000;
+        const invalidTargetRole=String(p.targetRole||"")!=="Purchaser";
+        if (!["Manager","Supervisor"].includes(callerRole) || invalidKey || invalidIdentity || invalidName || invalidQty || invalidTargetRole) {
+          return reply({ok:false,code:"spare_part_create_forbidden_or_invalid"},403);
+        }
       }
       if (eventType==="SPARE_PART_ITEM_EDITED") {
         const p=event.payload && typeof event.payload==="object" ? event.payload : {};
