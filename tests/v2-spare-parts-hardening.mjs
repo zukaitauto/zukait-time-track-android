@@ -91,3 +91,5 @@ assert.match(mainSource,/RETURNED:\['Re-enquire','ENQUIRY','info'\]/,'Purchaser 
 
 assert.match(mainSource,/const amount=validMoney\(raw\);if\(amount==null\|\|amount<=0\)return alert\('Final invoice price must be more than 0\.000 OMR\.'\)/,'all invoice save paths reject zero final amount');
 assert.match(mainSource,/bucket==='PURCHASE_COMPLETED'.*?Number\(i\.purchaseAmount\)>0/s,'Purchase Completed requires positive final invoice amounts');
+
+assert.match(mainSource,/function reportAmount\(item\)\{const n=Number\(item\?\.purchaseAmount\);return Number\.isFinite\(n\)&&n>0\?n:0\}/,'parts reports use only positive final purchase amount, never quotation or supplier fallback');
