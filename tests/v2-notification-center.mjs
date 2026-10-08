@@ -55,3 +55,11 @@ assert.match(main,/const lines=\[vehicle\|\|'Vehicle'\]/,'WhatsApp must begin wi
 assert.doesNotMatch(main,/const lines=\[\(vehicle\|\|'Vehicle'\)\+'\.'/,'WhatsApp vehicle line must not add punctuation');
 assert.match(main,/function whatsAppQuotation\(no\)\{return whatsAppPartsList\(no\)\}/,'quotation WhatsApp must use the same minimal parts-only format');
 assert.match(main,/function partFullyArrived\(item\).*SUPERVISOR_VERIFIED/,'Supervisor verification must complete purchasing for the part');
+
+window.me.role='Purchaser';
+const rejected=n.normalizeServerEvent({event_id:'E-rejected',event_type:'SPARE_PART_STATUS_CHANGED',sort_time:'2026-10-08T15:00:00Z',payload:{partId:'P1',listNo:'PL001',jobCard:'JC100',name:'Lamp',from:'RECEIVED',to:'ORDERED',reason:'Not physically received',targetRole:'Purchaser'}});
+rows=n.eventPartsNotifications([rejected]);
+assert.equal(rows.length,1);assert.equal(rows[0].title,'Arrival Rejected');
+assert.match(rows[0].message,/Not physically received/);assert.equal(rows[0].listNo,'PL001');
+window.me.role='Supervisor';assert.equal(n.eventPartsNotifications([rejected]).length,0);
+window.me.role='Manager';assert.equal(n.eventPartsNotifications([rejected]).length,0);

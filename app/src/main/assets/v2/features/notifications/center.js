@@ -33,7 +33,7 @@ function partsRows(){try{return window.zukaitV2?.sparePartsMain?.reportRows?.()|
 function payloadOf(x){return x&&typeof x.payload==='object'&&x.payload?x.payload:{}}
 function normalizeServerEvent(x={}){
  const p=payloadOf(x);
- return {eventId:String(x.event_id??x.eventId??''),eventType:String(x.event_type??x.eventType??''),at:eventTime(x.sort_time??x.server_time??x.serverTime??x.created_at??x.createdAt),partId:String(x.entity_id??x.entityId??p.partId??p.part_id??''),listNo:String(p.listNo??p.list_no??x.listNo??x.list_no??''),jobCard:String(p.jobCard??p.job_card??x.jobCard??x.job_card??''),name:String(p.name??p.partName??p.part_name??p.part??x.name??''),to:String(p.to??x.to??'').toUpperCase(),targetRole:String(p.targetRole??p.target_role??'')};
+ return {eventId:String(x.event_id??x.eventId??''),eventType:String(x.event_type??x.eventType??''),at:eventTime(x.sort_time??x.server_time??x.serverTime??x.created_at??x.createdAt),partId:String(x.entity_id??x.entityId??p.partId??p.part_id??''),listNo:String(p.listNo??p.list_no??x.listNo??x.list_no??''),jobCard:String(p.jobCard??p.job_card??x.jobCard??x.job_card??''),name:String(p.name??p.partName??p.part_name??p.part??x.name??''),from:String(p.from??x.from??'').toUpperCase(),reason:String(p.reason||''),to:String(p.to??x.to??'').toUpperCase(),targetRole:String(p.targetRole??p.target_role??'')};
 }
 async function loadServerPartEvents(){
  if(!navigator.onLine||!window.zukaitV2?.reports?.page)return null;
@@ -50,6 +50,7 @@ function eventPartsNotifications(events){
  const r=role(),out=[];
  for(const x of events||[]){
   if(r==='Purchaser'&&x.eventType==='SPARE_PART_LISTED')out.push({id:'parts-event-'+x.eventId,type:'SPARE_PART_LISTED',at:x.at,title:'New Parts Entry',message:'JC '+(x.jobCard||'')+' · '+(x.name||'Part')+' is ready for Purchaser action.',listNo:x.listNo});
+  if(r==='Purchaser'&&x.eventType==='SPARE_PART_STATUS_CHANGED'&&x.from==='RECEIVED'&&x.to==='ORDERED'&&x.targetRole==='Purchaser')out.push({id:'parts-event-'+x.eventId,type:'SPARE_PART_ARRIVAL_REJECTED',at:x.at,title:'Arrival Rejected',message:'JC '+(x.jobCard||'')+' · '+(x.name||'Part')+' returned to Parts Pending. Reason: '+(x.reason||'Arrival not confirmed'),listNo:x.listNo});
   if(r==='Supervisor'&&x.eventType==='SPARE_PART_STATUS_CHANGED'&&x.to==='RECEIVED')out.push({id:'parts-event-'+x.eventId,type:'SPARE_PART_RECEIVED',at:x.at,title:'Parts Arrived',message:'JC '+(x.jobCard||'')+' · '+(x.name||'Part')+' was marked arrived by Purchaser.',listNo:x.listNo});
  }
  return out;

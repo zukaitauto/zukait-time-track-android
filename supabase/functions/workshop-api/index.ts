@@ -1098,7 +1098,7 @@ Deno.serve(async (req: Request) => {
         const invalidKey=Object.keys(p).some(k=>!allowedKeys.has(k));
         const invalidIdentity=!String(p.partId||"").trim()||!String(p.listNo||"").trim()||!String(p.jobCard||"").trim();
         const invalidQty=["receivedQty","lastReceivedQty","returnedQty"].some(k=>p[k]!=null&&(!Number.isFinite(Number(p[k]))||Number(p[k])<0||Number(p[k])>100000));
-        const invalidTargetRole=p.targetRole!=null&&p.targetRole!==""&&String(p.targetRole)!=="Supervisor";
+        const invalidTargetRole=p.targetRole!=null&&p.targetRole!==""&&!["Supervisor","Purchaser"].includes(String(p.targetRole));
         if(invalidKey||invalidIdentity||invalidQty||invalidTargetRole) return reply({ok:false,code:"spare_transition_payload_invalid"},400);
         const from=String(p.from||"").toUpperCase(),to=String(p.to||"").toUpperCase();
         const allowedTransitions=new Map([
@@ -1110,7 +1110,10 @@ Deno.serve(async (req: Request) => {
         if(!allowedTransitions.get(from)?.has(to)) return reply({ok:false,code:"spare_transition_sequence_invalid"},409);
         const purchaserTargets=new Set(["ENQUIRY","QUOTED","ORDERED","RECEIVED","RETURNED","UNAVAILABLE"]);
         const supervisorTargets=new Set(["SUPERVISOR_VERIFIED","SUPERVISOR_CONFIRMED","FITTED","RETURNED","UNAVAILABLE","CUSTOMER_SETTLEMENT"]);
-        const allowed = callerRole==="Manager" || (callerRole==="Purchaser" && purchaserTargets.has(to)) || (callerRole==="Supervisor" && supervisorTargets.has(to));
+        const arrivalRejected=from==="RECEIVED"&&to==="ORDERED";
+        if(p.targetRole==="Purchaser"&&!arrivalRejected)return reply({ok:false,code:"spare_transition_payload_invalid"},400);
+        if(arrivalRejected&&["Supervisor","Manager"].includes(callerRole)&&!String(p.reason||"").trim())return reply({ok:false,code:"spare_arrival_rejection_reason_required"},400);
+        const allowed = (callerRole==="Supervisor"&&arrivalRejected) || callerRole==="Manager" || (callerRole==="Purchaser" && purchaserTargets.has(to)) || (callerRole==="Supervisor" && supervisorTargets.has(to));
         if(!allowed) return reply({ok:false,code:"spare_transition_forbidden"},403);
         if(to==="RETURNED"){
           if(["SUPERVISOR_VERIFIED","DENTER_CHECKED","SUPERVISOR_CONFIRMED","FITTED"].includes(from)&&callerRole!=="Manager") return reply({ok:false,code:"spare_return_manager_required"},403);

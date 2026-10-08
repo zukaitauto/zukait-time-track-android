@@ -923,3 +923,48 @@ test('Supervisor report privacy preserves saved invoice through refresh',async()
  const hidden=scrub([copy(commercial)],{role:'Employee'})[0].payload;
  assert.equal(hidden.finalPrice,undefined);assert.equal(hidden.purchaseAmount,undefined);
 });
+
+test('Supervisor and Manager reject arrival back to pending and allow receipt again',async()=>{
+ for(const role of ['Supervisor','Manager']){
+  const f=fixture(role);f.serverRows.splice(f.serverRows.findIndex(r=>r.payload.to==='SUPERVISOR_VERIFIED'),1);
+  f.parts.hydrateFromServerRows(copy(f.serverRows));f.window.prompt=()=> 'Not physically received';
+  const button={dataset:{list:f.listNo,item:f.partId},disabled:false};
+  await f.parts.rejectArrival(button);
+  assert.equal(f.lists()[0].items[0].status,'ORDERED',role);
+  assert.equal(f.lists()[0].items[0].receivedQty,undefined,role);
+  assert.equal(f.parts.pendingSummary().parts,1,role);
+  const event=f.commits.at(-1);assert.equal(event.payload.targetRole,'Purchaser');
+  assert.equal(event.payload.reason,'Not physically received');
+  const fresh=fixture('Purchaser','PUR001',f.serverRows);
+  assert.equal(fresh.lists()[0].items[0].status,'ORDERED');
+  assert.equal(fresh.parts.pendingSummary().parts,1);
+  assert.equal((await fresh.parts.transitionItem(fresh.listNo,fresh.partId,'RECEIVED','',{receivedQty:1})).ok,true);
+  const supervisor=fixture('Supervisor','SUP002',f.serverRows);
+  assert.equal((await supervisor.parts.transitionItem(supervisor.listNo,supervisor.partId,'SUPERVISOR_VERIFIED')).ok,true);
+ }
+});
+
+test('arrival rejection requires reason and handles queued or stale decisions',async()=>{
+ const f=fixture('Supervisor');f.serverRows.splice(f.serverRows.findIndex(r=>r.payload.to==='SUPERVISOR_VERIFIED'),1);
+ f.parts.hydrateFromServerRows(copy(f.serverRows));f.window.prompt=()=> '';
+ await f.parts.rejectArrival({dataset:{list:f.listNo,item:f.partId}});
+ assert.equal(f.commits.length,0);
+ f.window.prompt=()=> 'Not arrived';f.fail('NETWORK');
+ await f.parts.rejectArrival({dataset:{list:f.listNo,item:f.partId}});
+ assert.equal(f.lists()[0].items[0].status,'ORDERED');
+ assert.equal(f.lists()[0].items[0].pendingSync,true);
+ assert.ok(f.alerts.some(s=>s.includes('notification will appear after sync')));
+ const fresh=fixture('Supervisor');fresh.window.prompt=()=> 'Not arrived';
+ await fresh.parts.rejectArrival({dataset:{list:fresh.listNo,item:fresh.partId}});
+ assert.equal(fresh.commits.length,0,'Verified parts must not be rejected as unconfirmed arrivals');
+});
+
+test('arrival rejection API denies blank reasons and non-review roles',async()=>{
+ for(const role of ['Supervisor','Manager','Employee']){
+  const f=fixture(role);
+  const event={eventId:'reject-api',entityId:f.partId,actorId:f.window.me.id,type:'SPARE_PART_STATUS_CHANGED',serverRevision:3,
+   payload:{partId:f.partId,listNo:f.listNo,jobCard:f.jobCard,from:'RECEIVED',to:'ORDERED',reason:'',targetRole:'Purchaser'}};
+  const result=await f.parts.commitEvent(event);
+  assert.equal(result.ok,false,role);
+ }
+});
