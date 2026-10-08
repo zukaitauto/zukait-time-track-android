@@ -384,3 +384,21 @@ assert.match(guard,/trim\(coalesce\(p->>'from',''\)\)<>''[\s\S]*upper\(trim\(p->
 }
 assert.match(mainModule,/function arrivalPendingItems\(list\)[\s\S]*status\|\|'\'\)==='RECEIVED'&&receiptComplete\(item\)/,'Cancel Return restoring SUPERVISOR_VERIFIED must not duplicate the Supervisor arrival-confirmation queue');
 assert.match(mainModule,/if\(!\['SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED'\]\.includes\(String\(item\.status\|\|'\'\)\)\)return alert\('Wait for Supervisor verification before final arrival confirmation\.'/,'Restored verified parts remain eligible only for the post-verification Purchaser acceptance step');
+
+{
+ const accepted={id:'SP-ACCEPT-RETURN',status:'SUPERVISOR_VERIFIED',qty:2,receivedQty:2,arrivalAccepted:true,arrivalAcceptedAt:'2026-10-08T07:00:00.000Z',supervisorVerifiedAt:'2026-10-08T06:55:00.000Z'};
+ const returned=spare.transition(accepted,'RETURNED',{role:'Manager',actorId:'M1',reason:'Return entered by mistake'});
+ assert.equal(returned.ok,true);
+ assert.equal(returned.item.arrivalAccepted,undefined,'Active acceptance must be cleared while the part is returned');
+ assert.equal(returned.item.preReturnSnapshot.arrivalAccepted,true,'Cancel Return snapshot must retain the pre-return acceptance');
+ const cancelled=spare.cancelReturn(returned.item,{role:'Manager',actorId:'M1',reason:'Undo mistaken return'});
+ assert.equal(cancelled.ok,true);
+ assert.equal(cancelled.item.status,'SUPERVISOR_VERIFIED');
+ assert.equal(cancelled.item.arrivalAccepted,true,'Cancelling a mistaken return must restore the already completed physical acceptance');
+ assert.equal(cancelled.item.arrivalAcceptedAt,'2026-10-08T07:00:00.000Z');
+ const replacement=spare.transition(returned.item,'ENQUIRY',{role:'Purchaser',actorId:'P1'});
+ assert.equal(replacement.ok,true);
+ assert.equal(replacement.item.arrivalAccepted,undefined,'A genuine re-enquiry/replacement cycle must not inherit acceptance from the returned part');
+ assert.equal(replacement.item.preReturnSnapshot,undefined,'A genuine replacement cycle must discard the old return snapshot');
+}
+assert.match(mainModule,/function purchaserTabFor\(item\)[\s\S]*!item\.arrivalAccepted/,'Restored accepted parts must remain in Purchaser history instead of asking for duplicate final acceptance');
