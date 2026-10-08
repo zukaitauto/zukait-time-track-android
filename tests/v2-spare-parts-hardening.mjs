@@ -234,3 +234,7 @@ assert.match(mainModule,/omanMonthKey\(i\.purchaseRecordedAt\)===monthKey/,'Mont
 
 assert.match(guard,/new\.event_type='SPARE_PART_FINAL_PRICE_RECORDED'[\s\S]*cur\.status[\s\S]*SUPERVISOR_VERIFIED[\s\S]*FITTED[\s\S]*spare_final_price_not_eligible/,'Final invoice eligibility must be rechecked atomically in the database projection');
 assert.match(apiListCreated,/spare_final_price_not_eligible[^\n]*409/,'Atomic final invoice eligibility rejection must surface as conflict');
+
+assert.match(mainModule,/function reportAmount\(item\)\{if\(String\(item\?\.status\|\|''\)\.toUpperCase\(\)==='RETURNED'\)return 0/,'Returned parts must contribute zero active purchase expense even if a stale amount remains locally');
+assert.match(mainModule,/monthSpend=items\.reduce\(\(sum,i\)=>\{const amount=reportAmount\(i\)/,'Manager monthly purchase total must use return-aware report amount');
+assert.match(mainModule,/if\(p\.to==='RETURNED'\)[\s\S]*delete item\.purchaseAmount;delete item\.purchaseRecordedAt;delete item\.purchaseAmountRevision/,'Later Return hydration must clear a previously committed invoice from current state');
