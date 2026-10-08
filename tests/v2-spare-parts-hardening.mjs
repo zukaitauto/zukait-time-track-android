@@ -161,7 +161,7 @@ assert.match(apiListCreated,/spare_list_create_forbidden_or_invalid/,'Injected p
 
 assert.match(main,/function spareConflictReason\(reason=''\)/,'Spare Parts must classify authoritative server conflicts');
 for(const code of ['stale_spare_part_status','stale_spare_manager_correction','duplicate_active_spare_part']) assert.match(main,new RegExp(code),'Known 409 conflict '+code+' must have explicit recovery');
-assert.match(main,/async function recoverSpareConflict\(recoveryReason,event\)[\s\S]*await hydrateAuthoritativeLists\([^)]*\)/,'Recognized conflicts must refresh authoritative Spare Parts state');
+assert.match(main,/async function recoverSpareConflict\(reason,event\)[\s\S]*await hydrateAuthoritativeLists\([^)]*\)/,'Recognized conflicts must refresh authoritative Spare Parts state');
 assert.match(main,/const conflictMessage=await recoverSpareConflict\(recoveryReason,event\)/,'Commit failure path must invoke Spare Parts conflict recovery');
 assert.match(main,/if\(!synced\.conflictMessage\)\{list\.items\[idx\]=previous;write\(rows\)\}/,'Status transition must not overwrite freshly hydrated server state after a recognized conflict');
 
@@ -319,7 +319,7 @@ assert.match(mainModule,/moved\.item\.revision=nextRevision[\s\S]*list\.items\[i
 assert.match(guard,/new\.event_type='SPARE_PART_STATUS_CHANGED'[\s\S]*new\.revision,0\)<=coalesce\(cur\.revision,0\)[\s\S]*stale_spare_part_status/,'Database must reject duplicate or stale status revisions, including concurrent receipt taps from separate devices');
 
 assert.match(mainModule,/function spareConflictReason\(reason=''\)[\s\S]*stale_spare_part_status[\s\S]*Latest Parts data has been refreshed/,'Stale receipt/status conflicts must be classified as recoverable authoritative refreshes');
-assert.match(mainModule,/async function recoverSpareConflict\(recoveryReason,event\)[\s\S]*await hydrateAuthoritativeLists\([^)]*\)[\s\S]*return message/,'Recognized Spare Parts conflicts must hydrate authoritative server state before returning control');
+assert.match(mainModule,/async function recoverSpareConflict\(reason,event\)[\s\S]*await hydrateAuthoritativeLists\([^)]*\)[\s\S]*return message/,'Recognized Spare Parts conflicts must hydrate authoritative server state before returning control');
 assert.match(mainModule,/if\(!synced\.ok&&synced\.reason!=='V2_TRANSPORT_UNAVAILABLE'\)\{if\(!synced\.conflictMessage\)\{list\.items\[idx\]=previous;write\(rows\)\}/,'A recognized stale receipt conflict must not roll the refreshed authoritative item back to the losing local snapshot');
 
 const offlineQueue=fs.readFileSync('app/src/main/assets/v2/core/offline_queue.js','utf8');
