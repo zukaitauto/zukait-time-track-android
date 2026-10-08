@@ -33,7 +33,7 @@ declare
   afterv jsonb:=case when jsonb_typeof(p->'after')='object' then p->'after' else '{}'::jsonb end;
   pid text:=coalesce(nullif(p->>'partId',''),new.entity_id);
   cur public.workshop_v2_spare_part_state%rowtype;
-  nm text; pn text; st text; ln text; jc text; k text;
+  nm text; pn text; st text; ln text; jc text; k text; conflict_part text;
 begin
   if new.event_type not like 'SPARE_PART%' then return new; end if;
 
@@ -44,6 +44,9 @@ begin
     nm:=trim(coalesce(p->>'name','')); pn:=upper(trim(coalesce(p->>'partNo','')));
     if ln='' or jc='' or nm='' then raise exception 'invalid_spare_part_projection'; end if;
     k:=public.zukait_v2_spare_part_key(nm,pn);
+    perform pg_advisory_xact_lock(hashtextextended(ln||'|'||k,0));
+    select part_id into conflict_part from public.workshop_v2_spare_part_state where list_no=ln and part_key=k and status<>'RETURNED' and part_id<>pid limit 1;
+    if conflict_part is not null then raise exception 'duplicate_active_spare_part'; end if;
     insert into public.workshop_v2_spare_part_state(part_id,list_no,job_card,part_name,part_no,part_key,status,revision,last_event_id)
     values(pid,ln,jc,nm,pn,k,'LISTED',coalesce(new.revision,0),new.event_id)
     on conflict(part_id) do update set
@@ -65,10 +68,22 @@ begin
     if upper(trim(coalesce(p->>'from','')))<>upper(trim(coalesce(cur.status,''))) then
       raise exception 'stale_spare_part_status';
     end if;
-    if st<>'' then update public.workshop_v2_spare_part_state set status=st,revision=greatest(revision,coalesce(new.revision,0)),last_event_id=new.event_id,updated_at=now() where part_id=pid; end if;
+    if st<>'' then
+      if upper(st)<>'RETURNED' and upper(cur.status)='RETURNED' then
+        perform pg_advisory_xact_lock(hashtextextended(cur.list_no||'|'||cur.part_key,0));
+        select part_id into conflict_part from public.workshop_v2_spare_part_state where list_no=cur.list_no and part_key=cur.part_key and status<>'RETURNED' and part_id<>pid limit 1;
+        if conflict_part is not null then raise exception 'duplicate_active_spare_part'; end if;
+      end if;
+      update public.workshop_v2_spare_part_state set status=st,revision=greatest(revision,coalesce(new.revision,0)),last_event_id=new.event_id,updated_at=now() where part_id=pid;
+    end if;
   elsif new.event_type in ('SPARE_PART_ITEM_EDITED','SPARE_PART_MANAGER_CORRECTED','SPARE_PART_SUPERVISOR_CORRECTED','SPARE_PART_RETURN_CANCELLED') then
     nm:=trim(coalesce(afterv->>'name',cur.part_name)); pn:=upper(trim(coalesce(afterv->>'partNo',cur.part_no)));
     st:=trim(coalesce(afterv->>'status',cur.status)); k:=public.zukait_v2_spare_part_key(nm,pn);
+    if upper(st)<>'RETURNED' and (k<>cur.part_key or upper(cur.status)='RETURNED') then
+      perform pg_advisory_xact_lock(hashtextextended(cur.list_no||'|'||k,0));
+      select part_id into conflict_part from public.workshop_v2_spare_part_state where list_no=cur.list_no and part_key=k and status<>'RETURNED' and part_id<>pid limit 1;
+      if conflict_part is not null then raise exception 'duplicate_active_spare_part'; end if;
+    end if;
     update public.workshop_v2_spare_part_state set part_name=nm,part_no=pn,part_key=k,status=st,
       revision=greatest(revision,coalesce(new.revision,0)),last_event_id=new.event_id,updated_at=now() where part_id=pid;
   end if;
