@@ -71,107 +71,232 @@ function mapById(arr: any[]) {
 function immutableSame(a: any, b: any, keys: string[]) {
   return keys.every(k => same(a?.[k], b?.[k]));
 }
+function emptyCompatible(a: any, b: any) {
+  const empty = (x: any): boolean => x == null || (Array.isArray(x) ? x.length === 0 :
+    typeof x === "object" && Object.values(x).every(empty));
+  return same(a,b) || (empty(a) && empty(b));
+}
+function changedFields(before: any, after: any, allowed: string[]) {
+  const fields = new Set([...Object.keys(before || {}), ...Object.keys(after || {})]);
+  return [...fields].every(k => allowed.includes(k) || same(before?.[k], after?.[k]));
+}
+function rowsValid(rows: any) {
+  return Array.isArray(rows) && rows.every(x => x && typeof x === "object" && x.id != null) &&
+    new Set(rows.map(x => String(x.id))).size === rows.length;
+}
+function appendOnly(before: any[], after: any[], own?: (x:any)=>boolean) {
+  const remaining = (after || []).slice();
+  for (const row of before || []) {
+    const i = remaining.findIndex(x => same(x,row));
+    if (i < 0) return false;
+    remaining.splice(i,1);
+  }
+  return !own || remaining.every(own);
+}
+function validTime(value: any, serverNow = Date.now()) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 && value <= serverNow + 5*60000;
+}
+function muscatParts(at: number) {
+  const d = new Date(at+4*3600000);
+  return { day:d.toISOString().slice(0,10), friday:d.getUTCDay()===5, minute:d.getUTCHours()*60+d.getUTCMinutes(), base:Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())-4*3600000 };
+}
+function closedDay(at: number, data: any) {
+  const p=muscatParts(at);
+  return p.friday || (data.workshopHolidays || []).some((h:any)=>String(typeof h==='string'?h:h?.date||h?.dateKey||h?.day||'').slice(0,10)===p.day);
+}
+function onLeave(emp: string, at: number, data: any) {
+  const p=muscatParts(at);
+  return (data.leaves || []).some((l:any)=>!l.cancelled && l.emp===emp && l.date===p.day &&
+    (l.period==='FULL' || (l.period==='AM' && p.minute>=480 && p.minute<780) || (l.period==='PM' && p.minute>=900 && p.minute<1140)));
+}
+function assignmentFor(s: any, data: any) {
+  return (data.assign || []).find((a:any)=>String(a.id)===String(s.assignmentId) && a.emp===s.emp && a.job===s.job) ||
+    (!s.assignmentId ? (data.assign || []).filter((a:any)=>a.emp===s.emp && a.job===s.job && Number(a.assignedAt||0)<=s.start).sort((a:any,b:any)=>Number(b.assignedAt||0)-Number(a.assignedAt||0))[0] : null);
+}
+function validSessionChange(before: any, after: any, data: any, serverNow = Date.now()) {
+  if (!validTime(after.start,serverNow) || (after.end!=null && (!validTime(after.end,serverNow) || after.end<after.start))) return false;
+  const a=assignmentFor(after,data);
+  if (!a || a.cancelled || (Number(a.assignedAt||0)>after.start)) return false;
+  if (!!after.rework!==!!a.rework) return false;
+  if (before) {
+    if (!immutableSame(before,after,["id","emp","job","assignmentId","start"])) return false;
+    // A closed session is historical. Corrections require Manager authority.
+    if (before.end && !immutableSame(before,after,["end","paused","finished","rework"])) return false;
+    if (before.finished && !after.finished) return false;
+  } else {
+    if (onLeave(after.emp,after.start,data)) return false;
+    if (after.job==='ID001') {
+      const m=muscatParts(after.start).minute;
+      if (closedDay(after.start,data) || !((m>=480&&m<780)||(m>=900&&m<1140))) return false;
+    }
+    if (a.completed && (!after.finished || !after.end || Number(a.completedAt)!==after.end)) return false;
+  }
+  if (after.paused && (!after.end || after.finished || after.job==='ID001')) return false;
+  if (after.finished && !after.end) return false;
+  return true;
+}
 function validateEmployeeChange(emp: string, oldData: any, newData: any) {
   if (!oldData || !newData) return false;
-  const allowed = new Set(["sessions","assign","requests","lastActions","systemNotifications","notifications","overtimeNotices","leaves","leaveAudit","offlineActionLog"]);
-  const allKeys = new Set([...Object.keys(oldData), ...Object.keys(newData)]);
-  for (const k of allKeys) {
-    if (k === "jobs") continue;
-    if (!allowed.has(k) && !same(oldData[k], newData[k])) return false;
+  const allowed = new Set(["sessions","assign","jobs","requests","lastActions","systemNotifications","notifications","overtimeNotices","leaves","leaveAudit","leaveNotifications","offlineActionLog"]);
+  for (const k of new Set([...Object.keys(oldData), ...Object.keys(newData)])) {
+    if (!allowed.has(k) && !emptyCompatible(oldData[k],newData[k])) return false;
   }
-
-  // Employees never receive general Job Card edit permission. Legacy Finish may
-  // only project assignment completion into that same JC's status/completedAt.
-  const oldJ = new Map((oldData.jobs || []).map((j:any)=>[String(j?.no||""),j]));
-  const newJ = new Map((newData.jobs || []).map((j:any)=>[String(j?.no||""),j]));
-  if (oldJ.size !== newJ.size) return false;
-  for (const [no,before] of oldJ) {
-    const after:any = newJ.get(no); if (!after) return false;
-    const strip=(j:any)=>{const x=cloneValue(j)||{};delete x.status;delete x.completedAt;return x};
-    if (!same(strip(before),strip(after))) return false;
+  for (const k of ["assign","sessions","requests","leaves","leaveAudit","leaveNotifications","offlineActionLog"]) {
+    if (!emptyCompatible(oldData[k],newData[k]) && !rowsValid(newData[k])) return false;
+  }
+  const oldA=mapById(oldData.assign || []), newA=mapById(newData.assign || []);
+  if (oldA.size!==newA.size) return false;
+  const assignmentFields=["completed","completedAt","pauseReason","pendingOfflineStart","pendingOfflineStartAt","pendingOfflinePause","pendingOfflinePauseAt","pendingOfflineFinish","pendingOfflineFinishAt","autoStopped","autoStopReason","autoStoppedForNormalWork","autoCompleted","autoCompletedReason"];
+  for (const [id,before] of oldA) {
+    const after=newA.get(id);
+    if (!after) return false;
     if (same(before,after)) continue;
-    const assignments=(newData.assign||[]).filter((a:any)=>!a?.cancelled&&String(a?.job||"")===no);
-    const mine=assignments.some((a:any)=>String(a?.emp||"")===String(emp)&&a?.completed===true);
-    if (!mine || !assignments.length) return false;
-    const done=assignments.every((a:any)=>a?.completed===true);
-    const expectedStatus=done?"Completed":"Open";
-    if (String(after?.status||"")!==expectedStatus) return false;
-    if (done) {
-      const expectedAt=Math.max(...assignments.map((a:any)=>Number(a?.completedAt)||0));
-      if (!(expectedAt>0) || Number(after?.completedAt||0)!==expectedAt) return false;
-    } else if (after?.completedAt !== undefined && after?.completedAt !== null) return false;
-  }
-
-  const oldA = mapById(oldData.assign || []);
-  const newA = mapById(newData.assign || []);
-  if (oldA.size !== newA.size) return false;
-  for (const [id, before] of oldA) {
-    const after = newA.get(id);
-    if (!after) return false;
-    if (before.emp !== emp) {
-      if (!same(before, after)) return false;
-    } else {
-      if (!immutableSame(before, after, [
-        "id","job","emp","suggested","rework","assignedBy","assignedAt",
-        "mistakeEmp","repeatReason","repeatSameEmployee","cancelled"
-      ])) return false;
+    if (before.emp!==emp || !changedFields(before,after,assignmentFields)) return false;
+    if (before.completed && (!after.completed || !same(before.completedAt,after.completedAt))) return false;
+    if (!before.completed && after.completed) {
+      const ended=(newData.sessions || []).some((x:any)=>x.emp===emp && x.finished && x.end===after.completedAt && assignmentFor(x,newData)?.id===after.id);
+      // An assigned but unstarted ID001 may be stopped before normal work starts.
+      const stoppedUnstarted=after.job==='ID001' && after.autoStoppedForNormalWork && !(oldData.sessions || []).some((x:any)=>assignmentFor(x,oldData)?.id===before.id) &&
+        (newData.sessions || []).some((x:any)=>x.emp===emp && x.job!=='ID001' && x.start===after.completedAt);
+      if (!ended && !stoppedUnstarted) return false;
     }
   }
-
-  const oldS = mapById(oldData.sessions || []);
-  const newS = mapById(newData.sessions || []);
-  for (const [id, before] of oldS) {
-    const after = newS.get(id);
+  const oldS=mapById(oldData.sessions || []), newS=mapById(newData.sessions || []);
+  for (const [id,before] of oldS) {
+    const after=newS.get(id);
     if (!after) return false;
-    if (before.emp !== emp) {
-      if (!same(before, after)) return false;
-    } else if (!immutableSame(before, after, ["id","emp","job","assignmentId","start"])) {
-      return false;
+    if (same(before,after)) continue;
+    if (before.emp!==emp || !validSessionChange(before,after,newData)) return false;
+  }
+  for (const [id,after] of newS) if (!oldS.has(id) && (after.emp!==emp || !validSessionChange(null,after,newData))) return false;
+  // Reject new overlaps; unchanged historical anomalies do not block unrelated saves.
+  const own=[...newS.values()].filter(x=>x.emp===emp).sort((a,b)=>a.start-b.start);
+  let maximumEnd=0, maximumChangedEnd=0;
+  for (const session of own) {
+    const changed=!same(oldS.get(String(session.id)),session);
+    if ((changed && maximumEnd>session.start) || maximumChangedEnd>session.start) return false;
+    const end=session.end || Infinity;
+    maximumEnd=Math.max(maximumEnd,end);
+    if(changed)maximumChangedEnd=Math.max(maximumChangedEnd,end);
+  }
+  // Finishing own work may derive a Job Card's completion status, never edit its metadata.
+  const oldJobs=new Map((oldData.jobs || []).map((j:any)=>[j.no,j]));
+  const newJobs=new Map((newData.jobs || []).map((j:any)=>[j.no,j]));
+  if (oldJobs.size!==newJobs.size) return false;
+  for (const [no,before] of oldJobs) {
+    const after:any=newJobs.get(no);
+    if (same(before,after)) continue;
+    if (!after || !changedFields(before,after,["status","completedAt"])) return false;
+    const assignments=(newData.assign || []).filter((a:any)=>a.job===no&&!a.cancelled);
+    if (!assignments.some((a:any)=>a.emp===emp && !same(oldA.get(String(a.id)),a))) return false;
+    if (after.status==='Completed') {
+      if (!assignments.length || !assignments.every((a:any)=>a.completed) || after.completedAt!==Math.max(...assignments.map((a:any)=>Number(a.completedAt||0)))) return false;
+    } else if (after.status!=='Open' || after.completedAt!=null) return false;
+  }
+  for (const k of ["requests","leaves","leaveAudit","leaveNotifications","offlineActionLog"]) {
+    if (!appendOnly(oldData[k] || [],newData[k] || [],x=> {
+      if (k==='leaveAudit') return x.by===emp && x.action==='ADD';
+      if (x.emp!==emp) return false;
+      if (k==='leaves') return x.by===emp && !x.cancelled && ['FULL','AM','PM'].includes(x.period) && /^\d{4}-\d{2}-\d{2}$/.test(x.date||'');
+      if (k==='requests') return x.status==='New';
+      if (k==='leaveNotifications') return x.by===emp;
+      const a=newA.get(String(x.assignmentId));
+      const session=(newData.sessions || []).find((v:any)=>v.emp===emp && assignmentFor(v,newData)?.id===a?.id && (x.sessionId==null || String(v.id)===String(x.sessionId)) && (x.type==='START'?v.start===x.at:v.end===x.at));
+      return a?.emp===emp && a.job===x.job && !!session && ['START','PAUSE','FINISH','STOP_ID001'].includes(x.type) && validTime(x.at);
+    })) return false;
+  }
+  for (const k of ["lastActions","overtimeNotices"]) {
+    for (const id of new Set([...Object.keys(oldData[k]||{}),...Object.keys(newData[k]||{})])) {
+      if (id!==emp && !same(oldData[k]?.[id],newData[k]?.[id])) return false;
     }
   }
-  for (const [id, after] of newS) {
-    if (!oldS.has(id) && after.emp !== emp) return false;
+  for (const k of ["systemNotifications","notifications"]) {
+    const old=mapById(oldData[k] || []), next=mapById(newData[k] || []);
+    for (const [id,before] of old) {
+      const after=next.get(id);
+      if (!after) return false;
+      if (!same(before,after) && (before.target!==emp || !changedFields(before,after,["read","readAt"]))) return false;
+    }
+    for (const [id,x] of next) if (!old.has(id) && x.target!==emp && x.emp!==emp && newA.get(String(x.assignmentId))?.emp!==emp) return false;
   }
-
-  const oldR = mapById(oldData.requests || []);
-  const newR = mapById(newData.requests || []);
-  for (const [id, before] of oldR) {
-    const after = newR.get(id);
-    if (!after || !same(before, after)) return false;
+  return true;
+}
+function validateSupervisorChange(actor: string, oldData: any, newData: any) {
+  const allowed=new Set(["jobs","assign","sessions","requests","lastActions","systemNotifications","notifications","overtimeNotices","leaves","leaveAudit","leaveNotifications","attentionDismissed","additionalActions","suggestedEdits","reworks","reworkLogs","reopenLogs","reassignLogs","reissueLogs","employeeChangeLogs","cancelledAssignments","jobEdits","jobVehicleEdits","consumables","paintPurchasing","paintCosting","estimates","estimateAudit"]);
+  for (const k of new Set([...Object.keys(oldData),...Object.keys(newData)])) {
+    if (!allowed.has(k) && !emptyCompatible(oldData[k],newData[k])) return false;
   }
-  for (const [id, after] of newR) {
-    if (!oldR.has(id) && after.emp !== emp) return false;
+  const jobFields=['status','completedAt','delivered','deliveredAt','deliveredBy','readyAt','readyBy','workflowStage','stage','updatedAt','updatedBy'];
+  const oldJobs=new Map<string,any>((oldData.jobs || []).map((j:any)=>[String(j.no),j]));
+  const newJobs=new Map<string,any>((newData.jobs || []).map((j:any)=>[String(j.no),j]));
+  for(const [no,before] of oldJobs){
+    const after=newJobs.get(no);
+    if(!after)return false;
+    if(!changedFields(before,after,jobFields)){
+      const fields=['make','brand','model','year','reg','vehicle'];
+      const audit=(newData.jobVehicleEdits || []).find((x:any)=>x.job===no && x.by===actor && !(oldData.jobVehicleEdits || []).some((old:any)=>same(old,x)) &&
+        fields.filter(k=>k!=='brand').every(k=>same(x.after?.[k],after[k])) && x.before?.vehicle===before.vehicle && x.before?.reg===(before.reg||''));
+      if(!audit || !changedFields(before,after,[...jobFields,...fields]))return false;
+    }
   }
-
-  const oldL = mapById(oldData.leaves || []);
-  const newL = mapById(newData.leaves || []);
-  for (const [id, before] of oldL) { const after = newL.get(id); if (!after || !same(before, after)) return false; }
-  for (const [id, after] of newL) { if (!oldL.has(id) && (after.emp !== emp || after.by !== emp || after.cancelled === true)) return false; }
-  const oldLA = mapById(oldData.leaveAudit || []);
-  const newLA = mapById(newData.leaveAudit || []);
-  for (const [id, before] of oldLA) { const after = newLA.get(id); if (!after || !same(before, after)) return false; }
-  for (const [id, after] of newLA) { if (!oldLA.has(id) && (after.by !== emp || after.action !== "ADD")) return false; }
-
-  const oldLast = oldData.lastActions || {};
-  const newLast = newData.lastActions || {};
-  for (const k of new Set([...Object.keys(oldLast), ...Object.keys(newLast)])) {
-    if (k !== emp && !same(oldLast[k], newLast[k])) return false;
+  for(const [no,j] of newJobs)if(!oldJobs.has(no) && j.createdBy!==actor && !(no==='ID001' && j.systemCard))return false;
+  for(const k of ['leaves','leaveNotifications']){
+    const old=mapById(oldData[k] || []), next=mapById(newData[k] || []);
+    for(const [id,before] of old){
+      const after=next.get(id);
+      if(!after)return false;
+      if(same(before,after))continue;
+      const target=(oldData.users || []).find((u:any)=>u.id===after.emp);
+      if(after.emp!==actor && target?.role!=='Employee')return false;
+    }
+    for(const [id,row] of next)if(!old.has(id)){
+      const target=(oldData.users || []).find((u:any)=>u.id===row.emp);
+      if(row.by!==actor || (row.emp!==actor && target?.role!=='Employee'))return false;
+    }
   }
-
-  // Offline action records are append-only evidence used to replay an employee's
-  // own Start/Pause/Finish after connectivity returns. Never let an employee
-  // alter or remove another device's existing audit rows.
-  const oldOffline = mapById(oldData.offlineActionLog || []);
-  const newOffline = mapById(newData.offlineActionLog || []);
-  for (const [id, before] of oldOffline) {
-    const after = newOffline.get(id);
-    if (!after || !same(before, after)) return false;
+  const oldS=mapById(oldData.sessions || []), newS=mapById(newData.sessions || []);
+  if (oldS.size!==newS.size) return false;
+  for (const [id,before] of oldS) {
+    const after=newS.get(id);
+    if (!after) return false;
+    if (!same(before,after) && (!immutableSame(before,after,["id","emp","job","assignmentId","start"]) ||
+      (before.end && !same(before.end,after.end)) || !validTime(after.end) || after.end<after.start)) return false;
   }
-  for (const [id, after] of newOffline) {
-    if (oldOffline.has(id)) continue;
-    if (String(after?.emp || "") !== String(emp)) return false;
-    if (!["START","PAUSE","FINISH","STOP_ID001"].includes(String(after?.type || ""))) return false;
+  // Supervisors can issue/finalize material use; master prices and finalized corrections remain Manager-only.
+  const oldC=oldData.consumables || {}, newC=newData.consumables || {};
+  for (const k of ["materials","brands","prices"]) if (!emptyCompatible(oldC[k],newC[k])) return false;
+  for (const k of ["issues","actuals"]) {
+    const old=mapById(oldC[k] || []), next=mapById(newC[k] || []);
+    for (const [id,before] of old) {
+      const after=next.get(id);
+      if (!after) return false;
+      if (!same(before,after) && !(k==='actuals' && before.managerReopen && !before.locked && after.refinalizedBy===actor && after.locked && after.managerReopen===false)) return false;
+    }
+    for (const [id,x] of next) if (!old.has(id) && x.createdBy!==actor) return false;
   }
+  for (const k of ["orders"]) {
+    const old=mapById(oldData.paintPurchasing?.[k] || []), next=mapById(newData.paintPurchasing?.[k] || []);
+    for (const [id,before] of old) {
+      const after=next.get(id);
+      if (!after || !immutableSame(before,after,["id","poNumber","jobCard","createdAt","createdBy","vendor","remarks","colorCode","voided"])) return false;
+      if (before.receivedAt && (!same(before.lines,after.lines) || !same(before.receivedAt,after.receivedAt))) return false;
+      if (!appendOnly(before.returns || [],after.returns || [],x=>x.returnedBy===actor)) return false;
+    }
+  }
+  return true;
+}
+function validateRoleChange(user: any, oldData: any, newData: any) {
+  if (!['Manager','Supervisor','Employee','Purchaser','Denter'].includes(user.role)) return false;
+  if (['Purchaser','Denter'].includes(user.role)) {
+    for(const k of new Set([...Object.keys(oldData),...Object.keys(newData)]))if(!['notifications','systemNotifications','lastActions'].includes(k)&&!emptyCompatible(oldData[k],newData[k]))return false;
+  }
+  if (user.role==='Employee') return validateEmployeeChange(user.id,oldData,newData);
+  if (user.role==='Supervisor' && !validateSupervisorChange(user.id,oldData,newData)) return false;
+  // Preserve existing audit entries for every role, including Manager corrections.
+  for (const k of ['corrections','jobEdits','jobVehicleEdits','suggestedEdits','additionalActions','reworkLogs','reopenLogs','reassignLogs','reissueLogs','employeeChangeLogs','jobDeletes','deletedJobAudit','leaveAudit','estimateAudit']) {
+    if (!appendOnly(oldData[k] || [],newData[k] || [])) return false;
+  }
+  for (const k of ['consumables','paintPurchasing']) if (!appendOnly(oldData[k]?.audit || [],newData[k]?.audit || [])) return false;
   return true;
 }
 
@@ -525,7 +650,7 @@ function preserveOperationalHistory(candidate: any, current: any, user: any): an
   return candidate;
 }
 
-function threeWayMerge(base: any, remote: any, local: any, field = ""): any {
+function threeWayMerge(base: any, remote: any, local: any, path = ""): any {
   if (same(local, base)) return cloneValue(remote);
   if (same(remote, base)) return cloneValue(local);
 
@@ -534,22 +659,26 @@ function threeWayMerge(base: any, remote: any, local: any, field = ""): any {
     const r = Array.isArray(remote) ? remote : [];
     const l = Array.isArray(local) ? local : [];
     const all = [...b, ...r, ...l];
-    // Job Cards use "no", while assignments and sessions use "id".
-    // Without this key, an edit to one Job Card replaces the entire remote list.
-    const identity = field === "jobs" ? "no" : "id";
-    const keyed = all.every(x => x == null || (typeof x === "object" && !Array.isArray(x) && x[identity] != null));
-    if (!keyed) return cloneValue(local);
-
-    const bm = new Map(b.filter((x:any)=>x?.[identity]!=null).map((x:any)=>[String(x[identity]),x]));
-    const rm = new Map(r.filter((x:any)=>x?.[identity]!=null).map((x:any)=>[String(x[identity]),x]));
-    const lm = new Map(l.filter((x:any)=>x?.[identity]!=null).map((x:any)=>[String(x[identity]),x]));
+    const key=path==='jobs'?'no':'id';
+    const keyed=all.every(x=>x==null || (typeof x==='object' && !Array.isArray(x) && x[key]!=null));
+    const index=(rows:any[])=>{
+      const counts=new Map<string,number>(), out=new Map<string,any>();
+      for(const x of rows){
+        if(x==null)continue;
+        const raw=keyed?String(x[key]):JSON.stringify(x);
+        const n=counts.get(raw)||0;counts.set(raw,n+1);
+        out.set(keyed?raw:raw+'#'+n,x);
+      }
+      return out;
+    };
+    const bm=index(b),rm=index(r),lm=index(l);
     const ids = [...new Set([...bm.keys(), ...rm.keys(), ...lm.keys()])];
     const out:any[] = [];
 
     for (const id of ids) {
       const bv = bm.get(id), rv = rm.get(id), lv = lm.get(id);
       if (bv === undefined) {
-        if (rv !== undefined && lv !== undefined) out.push(threeWayMerge({}, rv, lv));
+        if (rv !== undefined && lv !== undefined) out.push(threeWayMerge({}, rv, lv, path));
         else if (lv !== undefined) out.push(cloneValue(lv));
         else if (rv !== undefined) out.push(cloneValue(rv));
         continue;
@@ -565,7 +694,7 @@ function threeWayMerge(base: any, remote: any, local: any, field = ""): any {
         out.push(cloneValue(lv));
         continue;
       }
-      out.push(threeWayMerge(bv, rv, lv));
+      out.push(threeWayMerge(bv, rv, lv, path));
     }
     return out;
   }
@@ -589,12 +718,66 @@ function threeWayMerge(base: any, remote: any, local: any, field = ""): any {
         out[k] = cloneValue(lv);
         continue;
       }
-      out[k] = threeWayMerge(bv, rv, lv, k);
+      out[k] = threeWayMerge(bv, rv, lv, path ? path+"."+k : k);
     }
     return out;
   }
 
   return cloneValue(local);
+}
+
+async function authorizeV2Event(user: any, event: any) {
+  const type=String(event.type), payload=event.payload || {}, role=String(user.role);
+  const employee=String(payload.employeeId || payload.emp || '');
+  if (payload.actorId && String(payload.actorId)!==String(user.id)) return false;
+  // Exact duplicate replays remain valid even after an assignment is finished.
+  const {data: prior,error: priorError}=await admin.from('workshop_v2_events').select('actor_id').eq('event_id',String(event.eventId)).maybeSingle();
+  if(priorError)throw priorError;
+  if(prior)return String(prior.actor_id)===String(user.id);
+  if (['WORK_START','WORK_PAUSE','WORK_RESUME','WORK_FINISH','ID001_START','ID001_STOP'].includes(type)) {
+    if (!['Employee','Manager','Supervisor'].includes(role) || !employee || (role==='Employee' && employee!==String(user.id))) return false;
+    const time=event.clientTime?Date.parse(event.clientTime):Date.now();
+    if (!validTime(time)) return false;
+    if (type==='WORK_START' || type==='ID001_START') {
+      const {data: snapshot,error}=await admin.from('workshop_state').select('data').eq('id','main').single();
+      if(error)throw error;
+      const a=(snapshot?.data?.assign || []).find((a:any)=>String(a.id)===String(event.entityId) && a.emp===employee && a.job===String(payload.jobCard||payload.job||'') && !a.cancelled && !a.completed);
+      // V2 assignments may not be represented in the legacy snapshot.
+      const {data: v2,error: aError}=await admin.from('workshop_v2_assignments').select('assignment_id,employee_id,job_card,status,suggested_minutes,assigned_at').eq('assignment_id',String(event.entityId)).maybeSingle();
+      if(aError)throw aError;
+      const v2Match=v2 && v2.employee_id===employee && v2.job_card===String(payload.jobCard||payload.job||'') && v2.status==='ASSIGNED';
+      if(!a && !v2Match)return false;
+      const allocated=Number(a?.suggested ?? v2?.suggested_minutes ?? 0);
+      if(type==='WORK_START' && Number(payload.suggestedMinutes||0)!==allocated)return false;
+      if(a && time<Number(a.assignedAt||0))return false;
+      return true;
+    }
+    const {data: current,error}=await admin.from('workshop_v2_work_sessions').select('employee_id,job_card').eq('session_id',String(event.entityId)).maybeSingle();
+    if(error)throw error;
+    return !!current && current.employee_id===employee && current.job_card===String(payload.jobCard||payload.job||'');
+  }
+  if (['PUBLIC_HOLIDAY_SET','PUBLIC_HOLIDAY_CLEARED'].includes(type)) return role==='Manager';
+  if (['LEAVE_CREATED','LEAVE_UPDATED','LEAVE_CANCELLED'].includes(type)) {
+    if (role==='Manager') return true;
+    if (!employee || (role==='Employee' && (employee!==user.id || type!=='LEAVE_CREATED'))) return false;
+    if (role==='Employee') return true;
+    if (role!=='Supervisor') return false;
+    const {data: target,error}=await admin.from('staff_credentials').select('role').eq('user_id',employee).maybeSingle();
+    if(error)throw error;
+    return employee===user.id || target?.role==='Employee';
+  }
+  if (type==='SPARE_PART_DENTER_NOTICE') return role==='Denter';
+  if (type==='SPARE_PART_STATUS_CHANGED') {
+    const to=String(payload.to||'');
+    if (['ENQUIRY','QUOTED','ORDERED','RECEIVED'].includes(to)) return ['Manager','Purchaser'].includes(role);
+    if (['SUPERVISOR_VERIFIED','SUPERVISOR_CONFIRMED'].includes(to)) return ['Manager','Supervisor'].includes(role);
+    if (['FITTED','RETURNED','UNAVAILABLE','CUSTOMER_SETTLEMENT'].includes(to)) return ['Manager','Supervisor','Purchaser'].includes(role);
+    return false;
+  }
+  if(type.startsWith('SPARE_PART'))return ['Manager','Supervisor','Purchaser'].includes(role);
+  if(['CONSUMABLE_ISSUED','CONSUMABLE_ADDITIONAL','CONSUMABLE_ACTUAL'].includes(type))return ['Manager','Supervisor'].includes(role);
+  if(type==='CONSUMABLE_VOIDED')return role==='Manager';
+  return ['JOB_CREATED','JOB_UPDATED','JOB_STAGE_CHANGED','JOB_COMPLETED','JOB_REOPENED','JOB_ASSIGNED','REPEAT_ASSIGNED','REPEAT_COMPLETED','REPEAT_CANCELLED'].includes(type) && ['Manager','Supervisor'].includes(role);
 }
 
 async function baseStateForRevision(revision: number, currentRevision: number, currentData: any) {
@@ -955,6 +1138,7 @@ Deno.serve(async (req: Request) => {
       const eventId = String(event.eventId).trim();
       const entityId = String(event.entityId).trim();
       const eventType = String(event.type).trim();
+      if (["WORK_START","WORK_PAUSE","WORK_RESUME","WORK_FINISH","ID001_START","ID001_STOP","PUBLIC_HOLIDAY_SET","PUBLIC_HOLIDAY_CLEARED","LEAVE_CREATED","LEAVE_UPDATED","LEAVE_CANCELLED"].includes(eventType) && !await authorizeV2Event(user,event))return reply({ok:false,code:"event_forbidden"},403);
       const callerRole=String(user?.role||"");
       if (eventType==="JOB_CREATED" && !["Manager","Supervisor"].includes(callerRole)) {
         return reply({ok:false,code:"job_create_forbidden"},403);
@@ -1191,6 +1375,7 @@ Deno.serve(async (req: Request) => {
 
 
     if (action === "v2_upsert_jobcard") {
+      if (!["Manager","Supervisor"].includes(String(user.role)))return reply({ok:false,code:"forbidden"},403);
       const j=body?.jobcard||{};
       if(!String(j.jobCard||"").trim()) return reply({ok:false,code:"job_card_required"},400);
       const revision=Math.max(0,Number(j.revision||0));
@@ -1220,7 +1405,7 @@ Deno.serve(async (req: Request) => {
         : report === "WIP" || report === "COMPLETION_TARGET"
           ? await admin.rpc("zukait_v2_wip_page", { p_before: before, p_limit: limit, p_stage: filters.stage || null, p_risk: report === "COMPLETION_TARGET" ? (filters.risk || null) : null, p_before_id: beforeId })
           : ["ID001","OVERTIME","REPEAT","JOB_COST","EFFICIENCY"].includes(report)
-            ? await admin.rpc("zukait_v2_operational_report_page", { p_report: report, p_before: before, p_limit: limit, p_filters: filters, p_before_id: beforeId })
+            ? await admin.rpc("zukait_v2_operational_report_page_cursor", { p_report: report, p_before: before, p_limit: limit, p_filters: filters, p_before_id: beforeId })
             : await admin.rpc("zukait_v2_report_page", { p_report: report, p_before: before, p_limit: limit, p_filters: filters, p_before_id: beforeId });
       if (error) throw error;
       let rows = Array.isArray(data) ? data : [];
@@ -1323,7 +1508,7 @@ Deno.serve(async (req: Request) => {
           return reply({ ok: false, code: "id001_update_required", revision: current.revision, data: current.data }, 409);
         }
 
-        if (user.role === "Employee" && !validateEmployeeChange(user.id, current.data, candidate)) {
+        if (!validateRoleChange(user, current.data, candidate)) {
           return reply({ ok: false, code: "forbidden_change" }, 403);
         }
 
@@ -1400,3 +1585,4 @@ Deno.serve(async (req: Request) => {
     return reply({ ok:false, code:"server_error" }, 500);
   }
 });
+

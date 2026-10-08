@@ -145,3 +145,9 @@ node tests/manager-full-edit.cjs
 node tests/job-type-authority.mjs
 node tests/employee-parts-privacy.mjs
 node tests/technician-idle-time.mjs
+
+
+node tests/review-server-workflows.mjs
+node tests/review-sync-safety.mjs
+node tests/review-time-calculations.mjs
+node tests/review-v2-api.mjs

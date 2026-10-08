@@ -4,12 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       release_branch:
-        description: 'Branch to build (release workflow is locked to architecture-v2)'
+        description: 'Optional branch or SHA for an unsigned build; blank builds the triggering commit'
         required: false
-        default: 'architecture-v2'
+        default: ''
         type: string
+  pull_request:
+    branches: [ main, architecture-v2 ]
   push:
     branches: [ main, feature/painting-consumables-v1, architecture-v2 ]
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -18,19 +23,15 @@ jobs:
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
       ANDROID_HOME: /usr/local/lib/android/sdk
     steps:
-      - name: Checkout architecture-v2 release branch
+      - name: Checkout requested build source
         uses: actions/checkout@v4
         with:
-          ref: architecture-v2
+          ref: ${{ inputs.release_branch || github.sha }}
 
-      - name: Verify release branch and version
-        shell: bash
-        run: |
-          test "$(git branch --show-current)" = "architecture-v2"
-          VERSION_CODE=$(jq -r '.versionCode' release-request.json)
-          VERSION_NAME=$(jq -r '.versionName' release-request.json)
-          grep -Fq "versionCode $VERSION_CODE" app/build.gradle
-          grep -Fq "versionName \"$VERSION_NAME\"" app/build.gradle
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -91,3 +92,4 @@ jobs:
         with:
           name: ANDROID_SIGNING_TOOLS_35
           path: signing-tools
+
