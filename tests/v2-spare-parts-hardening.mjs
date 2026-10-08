@@ -185,3 +185,9 @@ assert.match(sql,/event_type='SPARE_PART_FINAL_PRICE_RECORDED'[\s\S]*coalesce\(e
 assert.match(apiListCreated,/eventType==="SPARE_PART_FINAL_PRICE_RECORDED"[\s\S]*allowedKeys=new Set\(\["partId","listNo","jobCard","finalPrice"\]\)[\s\S]*price<=0[\s\S]*price>1000000/,'Final Spare Parts invoice payload must be strictly allowlisted and positive');
 assert.match(apiListCreated,/eventType==="SPARE_PART_FINAL_PRICE_RECORDED"[\s\S]*\["Manager","Supervisor"\]\.includes\(callerRole\)/,'Only Manager or Supervisor may record final Spare Parts invoice amounts');
 assert.match(main,/stale_spare_final_price/,'Stale final invoice conflicts must refresh authoritative Spare Parts state');
+
+assert.match(apiListCreated,/eventType==="SPARE_PART_FINAL_PRICE_RECORDED"[\s\S]*allowedKeys=new Set\(\["partId","listNo","jobCard","finalPrice"\]\)/,'Final invoice payload must remain strictly allowlisted');
+assert.match(apiListCreated,/!Number\.isFinite\(price\) \|\| price<=0 \|\| price>1000000/,'Final invoice amount must remain strictly positive and bounded');
+assert.match(apiListCreated,/invoiceEligibleStatuses=new Set\(\["SUPERVISOR_VERIFIED","DENTER_CHECKED","SUPERVISOR_CONFIRMED","FITTED"\]\)/,'Final invoice amount requires an eligible confirmed arrival state');
+assert.match(apiListCreated,/stale_spare_final_price/,'API must map concurrent final-price revisions to conflict');
+assert.match(main,/stale_spare_final_price[^\n]*final invoice amount was changed on another device/,'Client must refresh and explain concurrent final invoice conflicts');
