@@ -20,3 +20,10 @@ assert.match(m,/function normalizeReportRow\(r=\{\}\)/);assert.match(m,/r\.list_
 assert.match(m,/>WhatsApp<\/button>/);assert.match(m,/function whatsAppManagerReport\(\)/);assert.match(m,/https:\/\/wa\.me\/\?text=/);assert.match(m,/encodeURIComponent\(text\)/);assert.match(m,/whatsAppManagerReport,managerReportText/);
 
 assert.match(m,/function whatsAppReportText\(\)/);assert.match(m,/max=40/);assert.match(m,/shown=rows\.slice\(0,max\)/);assert.match(m,/more part line\(s\)\. Use Print \/ PDF for the complete report/);assert.match(m,/const text=whatsAppReportText\(\)/);
+
+const apiPrivacy=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+assert.match(apiPrivacy,/report === "SPARE_PARTS" && !\["Manager","Purchaser"\]\.includes/,'SPARE_PARTS report must sanitize financial data for non-financial roles');
+for(const key of ['purchaseAmount','purchaseRecordedAt','purchaseAmountRevision','billAmount','supplierCost','quoteAmount','price','supplier','quotationOffers','commercialRevision','finalPrice','preReturnSnapshot']){
+  assert.match(apiPrivacy,new RegExp('financialKeys=new Set\\(\\[[^\\]]*"' + key + '"'),'SPARE_PARTS privacy scrub must include '+key);
+}
+assert.match(apiPrivacy,/rows=rows\.map\(\(row:any\)=>scrub\(row\)\)/,'Privacy must scrub only returned report rows, not stored events');
