@@ -139,3 +139,9 @@ assert.match(apiStatusPayload,/invalidIdentity=!String\(p\.partId/,'Status trans
 assert.match(apiStatusPayload,/\["receivedQty","lastReceivedQty","returnedQty"\]\.some/,'Status quantity fields must be validated');
 assert.match(apiStatusPayload,/invalidTargetRole[\s\S]*"Supervisor"/,'Transition notification target must not be injectable');
 assert.match(apiStatusPayload,/spare_transition_payload_invalid/,'Malformed status payloads must be rejected before commit');
+
+const apiListed=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+assert.match(apiListed,/eventType==="SPARE_PART_LISTED"[\s\S]*allowedKeys=new Set\(\["partId","listNo","jobCard","name","partNo","qty","targetRole"\]\)/,'New part payload must be strictly allowlisted');
+assert.match(apiListed,/invalidQty=!Number\.isInteger\(qty\)\|\|qty<=0\|\|qty>100000/,'New part quantity must be a positive bounded integer');
+assert.match(apiListed,/invalidTargetRole=String\(p\.targetRole\|\|""\)!=="Purchaser"/,'New parts must route only to Purchaser');
+assert.match(apiListed,/spare_part_create_forbidden_or_invalid/,'Injected initial part state must be rejected');
