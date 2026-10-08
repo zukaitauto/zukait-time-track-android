@@ -205,3 +205,9 @@ assert.match(guard,/received_qty numeric not null default 0/,'Authoritative Spar
 assert.match(guard,/upper\(st\)='SUPERVISOR_VERIFIED'[\s\S]*cur\.received_qty[\s\S]*cur\.ordered_qty[\s\S]*spare_receipt_incomplete/,'Supervisor verification must be blocked until the full ordered quantity is received');
 assert.match(guard,/upper\(st\)='RECEIVED'[\s\S]*p->>'receivedQty'/,'Receipt projection must persist authoritative cumulative received quantity');
 assert.match(apiListCreated,/spare_receipt_incomplete[^\n]*409/,'Incomplete receipt verification must surface as a conflict');
+
+assert.match(guard,/insert into public\.workshop_v2_spare_part_state\(part_id,list_no,job_card,part_name,part_no,part_key,status,ordered_qty,received_qty,revision,last_event_id,updated_at\)/,'Historical rebuild must explicitly populate quantity projection columns');
+assert.match(guard,/greatest\(1,coalesce\(nullif\(e\.payload->>'qty',''\)::numeric,1\)\) listed_qty/,'Historical ordered quantity must come from SPARE_PART_LISTED');
+assert.match(guard,/latest_qty as \([\s\S]*SPARE_PART_MANAGER_CORRECTED[\s\S]*SPARE_PART_SUPERVISOR_CORRECTED/,'Historical quantity corrections must participate in rebuild');
+assert.match(guard,/latest_receipt as \([\s\S]*event_type='SPARE_PART_STATUS_CHANGED'[\s\S]*'RECEIVED'[\s\S]*receivedQty/,'Historical cumulative receipts must participate in rebuild');
+assert.match(guard,/end \$\$;/,'Migration DO block must use valid dollar quoting');
