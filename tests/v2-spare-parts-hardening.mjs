@@ -250,3 +250,9 @@ assert.match(mainModule,/if\(bucket==='DELIVERED_PENDING'\)[\s\S]*items\.some\(i
 
 assert.match(mainModule,/function attentionAgeDays\(item,list\)\{const status=.*status==='RETURNED'\?\(item\?\.returnedAt\|\|item\?\.updatedAt/,'Returned attention age must start from the return/update event, not the original purchase age');
 assert.match(mainModule,/function pendingSince\(item,list\)\{return item\?\.createdAt\|\|item\?\.created_at\|\|list\?\.createdAt/,'Active pending age must use the active part creation lifecycle and never inherit returnedAt');
+
+assert.match(workflow,/from==='RETURNED'&&to!=='RETURNED'[\s\S]*to==='ENQUIRY'\)next\.reEnquiredAt=now/,'Re-enquiry must start a fresh operational aging lifecycle');
+assert.match(mainModule,/function pendingSince\(item,list\)\{return item\?\.reEnquiredAt\|\|item\?\.createdAt/,'Pending age must prefer re-enquiry time over original creation time');
+assert.match(mainModule,/p\.from==='RETURNED'&&p\.to!=='RETURNED'[\s\S]*p\.to==='ENQUIRY'\)item\.reEnquiredAt=r\.activityAt/,'Server hydration must reproduce the re-enquiry age reset');
+assert.match(mainModule,/ACTIVE_REPLACEMENT_ALREADY_EXISTS/,'Client must block re-enquiry when an active replacement already exists');
+assert.match(guard,/duplicate_active_spare_part/,'Database must retain authoritative duplicate-active protection');
