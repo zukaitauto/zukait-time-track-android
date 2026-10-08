@@ -1,11 +1,16 @@
 import fs from'node:fs';import assert from'node:assert/strict';
 const y=fs.readFileSync('.github/workflows/build-apk.yml','utf8');
+assert.ok(y.includes('bash scripts/ci-full-regression.sh'),'workflow must run the full regression script');
+const runner=fs.readFileSync('scripts/ci-full-regression.sh','utf8');
+assert.ok(runner.includes('for test_file in tests/*.mjs')&&runner.includes('node "$test_file"'),'runner must execute every discovered regression file');
+const scheduled=new Set(fs.readdirSync('tests').filter(x=>x.endsWith('.mjs')).map(x=>'tests/'+x));
+const assets=fs.readFileSync('scripts/check-production-assets.mjs','utf8');
 const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
 const data=fs.readFileSync('app/src/main/assets/v2/core/data_paths.js','utf8');
 const spare=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/workflow.js','utf8');
 const cloud=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
 const employeeUi=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
-for(const t of ['functional-smoke.mjs','consumables-smoke.mjs','consumables-ui.mjs','v2-spare-parts.mjs','v2-spare-parts-server-authority.mjs','v2-repeat-consumables-server-authority.mjs','v2-multidevice-conflict-matrix.mjs','v2-work-state-machine-authority.mjs','v2-full-regression-manifest.mjs'])assert.ok(y.includes('node tests/'+t),'combined pipeline missing '+t);
+for(const t of ['functional-smoke.mjs','consumables-smoke.mjs','consumables-ui.mjs','v2-spare-parts.mjs','v2-spare-parts-server-authority.mjs','v2-repeat-consumables-server-authority.mjs','v2-multidevice-conflict-matrix.mjs','v2-work-state-machine-authority.mjs','v2-full-regression-manifest.mjs'])assert.ok(scheduled.has('tests/'+t),'combined pipeline missing '+t);
 assert.ok(html.includes('v2/features/spare-parts/workflow.js'),'spare parts V2 workflow not loaded by app shell');
 assert.ok(html.includes('v2/features/spare-parts/main_module.js'),'spare parts main module not loaded by app shell');
 const spareMain=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8');assert.match(spareMain,/allocateSparePartList/);assert.match(spareMain,/serverAllocated:true/);assert.match(spareMain,/\['Manager','Supervisor','Purchaser','Denter'\]/);assert.match(spareMain,/denterView/);assert.match(spareMain,/notifySupervisor/);assert.match(spareMain,/window\.openSpareParts=render/);assert.match(spareMain,/partsSummary/);assert.match(spareMain,/openForJobCard/);
@@ -15,3 +20,4 @@ assert.match(cloud,/v2_commit_event/);assert.match(cloud,/v2_allocate_spare_part
 const queue=fs.readFileSync('app/src/main/assets/v2/core/offline_queue.js','utf8');assert.match(queue,/syncState:'conflict'/);
 assert.match(data,/LIVE|RECENT|HISTORY/);
 console.log('V2 combined Time Track + Consumables + Spare Parts integration gate: ok');
+
