@@ -77,6 +77,11 @@ begin
     if upper(coalesce(p->'before'->>'status',''))<>upper(coalesce(cur.status,'')) then
       raise exception 'stale_spare_manager_correction';
     end if;
+    if (p->'before' ? 'qty' and nullif(p->'before'->>'qty','')::numeric is distinct from cur.ordered_qty)
+       or (p->'before' ? 'name' and trim(coalesce(p->'before'->>'name',''))<>cur.part_name)
+       or (p->'before' ? 'partNo' and upper(trim(coalesce(p->'before'->>'partNo','')))<>cur.part_no) then
+      raise exception 'stale_spare_manager_correction';
+    end if;
     if afterv ? 'purchaseAmount' then
       select case
         when e.event_type='SPARE_PART_FINAL_PRICE_RECORDED' then jsonb_build_object('purchaseAmount',e.payload->'finalPrice','purchaseAmountRevision',e.revision)
