@@ -91,3 +91,11 @@ This closes the automated/backend invoice–Return checkpoint; it does not certi
 - Five listing/deletion/replacement rollback checks passed together after 6d919646.
 - Latest local entry suite before workspace disconnection had 39 passing cases. Subsequent changes were verified through live rollback tests; GitHub workflows provide full regression validation.
 - Release is deferred until audit completion. Physical-device acceptance remains outstanding.
+
+
+### Report totals and history completeness — 2026-10-08
+- Report rows and monthly spend now multiply invoice unit amount by ordered quantity; Return excludes the amount and cancellation restores it.
+- Server event timestamps now retain the Oman purchase month through Return and cancellation.
+- Manager report pagination now preserves the existing cache if a cursor remains after the 20-page limit. Partial history must never replace the cache. The report identifies this as local-fallback.
+- Added actual-module regression coverage for quantity totals, Oman month boundary, and capped report cache preservation. The capped-path direct execution passed (20 pages; cached total 7.32 retained). Full CI validation remains pending for this commit.
+- Physical two-phone acceptance and release signing remain pending; no new version is released by this checkpoint.

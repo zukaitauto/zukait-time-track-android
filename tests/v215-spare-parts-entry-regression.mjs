@@ -829,3 +829,13 @@ test('server timestamps preserve Oman purchase month through Return and cancella
  assert.equal(fresh.lists()[0].items[0].purchaseRecordedAt,original);
  assert.equal(fresh.parts.reportRows().reduce((n,r)=>n+r.amount,0),7.32);
 });
+
+test('capped Manager report preserves complete cached history',async()=>{
+ const manager=fixture('Manager','M1');await manager.invoice();
+ const before=copy(manager.lists());let calls=0;
+ manager.window.zukaitV2.reports.page=async()=>{calls++;return {rows:[],source:'server',nextCursor:{before:'older'}}};
+ const loaded=await manager.parts.loadAuthoritativeManagerReport();
+ assert.equal(calls,20);assert.equal(loaded.source,'local-fallback');
+ assert.deepEqual(manager.lists(),before);
+ assert.equal(loaded.rows.reduce((n,r)=>n+r.amount,0),2.44);
+});
