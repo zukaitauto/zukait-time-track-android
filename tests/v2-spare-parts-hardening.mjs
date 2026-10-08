@@ -211,3 +211,8 @@ assert.match(guard,/greatest\(1,coalesce\(nullif\(e\.payload->>'qty',''\)::numer
 assert.match(guard,/latest_qty as \([\s\S]*SPARE_PART_MANAGER_CORRECTED[\s\S]*SPARE_PART_SUPERVISOR_CORRECTED/,'Historical quantity corrections must participate in rebuild');
 assert.match(guard,/latest_receipt as \([\s\S]*event_type='SPARE_PART_STATUS_CHANGED'[\s\S]*'RECEIVED'[\s\S]*receivedQty/,'Historical cumulative receipts must participate in rebuild');
 assert.match(guard,/end \$\$;/,'Migration DO block must use valid dollar quoting');
+
+assert.match(guard,/afterv->>'qty'\)::numeric < coalesce\(cur\.received_qty,0\)[\s\S]*spare_quantity_below_received/,'Ordered quantity cannot be corrected below the physically received quantity');
+assert.match(guard,/SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED'[\s\S]*afterv->>'qty'\)::numeric > coalesce\(cur\.received_qty,0\)[\s\S]*spare_verified_quantity_increase_requires_reopen/,'Verified parts cannot silently become incomplete through a quantity increase');
+assert.match(apiListCreated,/spare_quantity_below_received[^\n]*409/,'Quantity-below-received correction must surface as conflict');
+assert.match(apiListCreated,/spare_verified_quantity_increase_requires_reopen[^\n]*409/,'Verified quantity increase must surface as conflict');
