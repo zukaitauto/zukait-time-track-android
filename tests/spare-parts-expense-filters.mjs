@@ -58,4 +58,13 @@ const normalizedLater=app.zukaitV2.sparePartsMain.normalizeReportRow(event('SPAR
 assert.equal(normalizedLater.purchaseRecordedAt,'','A later status event carrying an amount must not invent a new purchase date');
 assert.equal(app.zukaitSparePartsOmanDateKey('2026-09-30T19:59:59Z'),'2026-09-30');
 assert.equal(app.zukaitSparePartsOmanDateKey('2026-09-30T20:00:00Z'),'2026-10-01','V2 expense filters must use Oman business date at UTC+4 midnight');
+const correctedEvents=[
+ event('SPARE_PART_LISTED','2026-09-01T00:00:00Z',{name:'Bumper',qty:1}),
+ event('SPARE_PART_FINAL_PRICE_RECORDED','2026-10-01T08:00:00Z',{finalPrice:20},1),
+ event('SPARE_PART_MANAGER_CORRECTED','2026-11-05T08:00:00Z',{reason:'Invoice correction',after:{name:'Bumper',qty:1,status:'RECEIVED',purchaseAmount:22,purchaseRecordedAt:'2026-10-01T08:00:00.000Z'}},2)
+];
+const correctedRows=app.zukaitV2.sparePartsMain.hydrateFromServerRows(correctedEvents);
+assert.equal(correctedRows[0].items[0].purchaseAmount,22);
+assert.equal(correctedRows[0].items[0].purchaseRecordedAt,'2026-10-01T08:00:00.000Z','Amount correction must preserve original purchase transaction date after fresh login');
+assert.match(main,/purchaseRecordedAt:amount==null\?null:/,'Correction event must persist the original purchase transaction date');
 console.log('Spare Parts Expense: Oman periods, exact JC, quantities, older/undated costs, permissions, read-only filters and stable server purchase date passed');
