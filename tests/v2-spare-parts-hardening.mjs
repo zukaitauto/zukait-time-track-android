@@ -238,3 +238,5 @@ assert.match(apiListCreated,/spare_final_price_not_eligible[^\n]*409/,'Atomic fi
 assert.match(mainModule,/function reportAmount\(item\)\{if\(String\(item\?\.status\|\|''\)\.toUpperCase\(\)==='RETURNED'\)return 0/,'Returned parts must contribute zero active purchase expense even if a stale amount remains locally');
 assert.match(mainModule,/monthSpend=items\.reduce\(\(sum,i\)=>\{const amount=reportAmount\(i\)/,'Manager monthly purchase total must use return-aware report amount');
 assert.match(mainModule,/if\(p\.to==='RETURNED'\)[\s\S]*delete item\.purchaseAmount;delete item\.purchaseRecordedAt;delete item\.purchaseAmountRevision/,'Later Return hydration must clear a previously committed invoice from current state');
+
+assert.match(mainModule,/if\(bucket==='PURCHASE_COMPLETED'\)\{const active=items\.filter\(i=>String\(i\.status\|\|''\)\.toUpperCase\(\)!=='RETURNED'\);return active\.length>0&&active\.every\(arrivedConfirmed\)&&active\.every/,'Purchase Completed must evaluate active replacement lines while retaining returned history');
