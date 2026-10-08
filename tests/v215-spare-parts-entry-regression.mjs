@@ -100,7 +100,7 @@ test('Supervisor and Manager invoice saves satisfy the live API contract and hyd
     assert.equal(f.lists()[0].items[0].quoteAmount,2.5,'invoice must preserve agreed quotation');
     assert.equal(f.lists()[0].items[0].status,'SUPERVISOR_VERIFIED','invoice must not change arrival status');
     const e=f.commits.find(e=>e.type==='SPARE_PART_FINAL_PRICE_RECORDED');
-    assert.deepEqual(Object.keys(e.payload).sort(),['finalPrice','jobCard','listNo','partId']);
+    assert.deepEqual(Object.keys(e.payload).sort(),['expectedPurchaseAmount','finalPrice','jobCard','listNo','partId']);
     const other=fixture('Purchaser');
     other.parts.hydrateFromServerRows(copy(f.serverRows));
     assert.equal(other.lists()[0].items[0].purchaseAmount,2.44);

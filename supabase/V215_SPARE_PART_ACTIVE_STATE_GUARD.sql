@@ -111,6 +111,23 @@ begin
 
   if new.event_type='SPARE_PART_FINAL_PRICE_RECORDED' then
     if cur.part_id is null or upper(coalesce(cur.status,'')) not in ('SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED') then raise exception 'spare_final_price_not_eligible'; end if;
+    if p ? 'expectedPurchaseAmount' then
+      select case
+        when e.event_type='SPARE_PART_FINAL_PRICE_RECORDED' then jsonb_build_object('purchaseAmount',e.payload->'finalPrice','purchaseAmountRevision',e.revision)
+        when e.event_type in ('SPARE_PART_RETURN_CANCELLED','SPARE_PART_MANAGER_CORRECTED','SPARE_PART_SUPERVISOR_CORRECTED') then e.payload->'after'
+        when e.event_type='SPARE_PART_COMMERCIAL_UPDATED' then e.payload
+        else '{}'::jsonb end into financial_snapshot
+      from public.workshop_v2_events e
+      where e.entity_id=pid and e.event_id<>new.event_id and (
+        e.event_type in ('SPARE_PART_FINAL_PRICE_RECORDED','SPARE_PART_RETURN_CANCELLED')
+        or (e.event_type in ('SPARE_PART_MANAGER_CORRECTED','SPARE_PART_SUPERVISOR_CORRECTED') and e.payload->'after' ? 'purchaseAmount')
+        or (e.event_type='SPARE_PART_COMMERCIAL_UPDATED' and e.payload ? 'purchaseAmount')
+        or (e.event_type='SPARE_PART_STATUS_CHANGED' and upper(e.payload->>'to')='RETURNED'))
+      order by e.server_time desc,e.event_id desc limit 1;
+      if nullif(financial_snapshot->>'purchaseAmount','')::numeric is distinct from nullif(p->>'expectedPurchaseAmount','')::numeric then
+        raise exception 'stale_spare_final_price';
+      end if;
+    end if;
     perform 1 from public.workshop_v2_events e
       where e.entity_id=pid and e.event_type='SPARE_PART_FINAL_PRICE_RECORDED'
         and e.event_id<>new.event_id

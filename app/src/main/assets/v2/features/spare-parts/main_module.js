@@ -277,7 +277,7 @@ if(!window.confirm('Save final price '+amount.toFixed(3)+' OMR for '+item.name+'
 const previousRevision=item.purchaseAmountRevision,revision=Math.max(Number(item.purchaseAmountRevision||0),Number(item.purchaseAmountLastRevision||0))+1,previous=item.purchaseAmount,previousRecordedAt=item.purchaseRecordedAt,eventId='spare-purchase-amount-'+itemId+'-'+revision;
 item.purchaseAmount=amount;recordPurchaseDate(item,new Date().toISOString());item.purchaseAmountRevision=revision;item.pendingSync=true;item.pendingEventId=eventId;
 write(read().map(r=>r.listNo===listNo?list:r));
-const result=await commitEvent({eventId,entityId:itemId,actorId:currentUser()?.id||null,type:'SPARE_PART_FINAL_PRICE_RECORDED',serverRevision:revision,payload:{partId:itemId,listNo,jobCard:list.jobCard,finalPrice:amount}});
+const result=await commitEvent({eventId,entityId:itemId,actorId:currentUser()?.id||null,type:'SPARE_PART_FINAL_PRICE_RECORDED',serverRevision:revision,payload:{partId:itemId,listNo,jobCard:list.jobCard,finalPrice:amount,expectedPurchaseAmount:previous??null}});
 if(!result.ok&&!result.queued){
  if(!result.conflictMessage){if(previous==null)delete item.purchaseAmount;else item.purchaseAmount=previous;if(previousRecordedAt==null)delete item.purchaseRecordedAt;else item.purchaseRecordedAt=previousRecordedAt;if(previousRevision==null)delete item.purchaseAmountRevision;else item.purchaseAmountRevision=previousRevision;delete item.pendingSync;delete item.pendingEventId;write(read().map(r=>r.listNo===listNo?list:r))}
  alert(result.conflictMessage||('Could not save final price: '+result.reason));return;

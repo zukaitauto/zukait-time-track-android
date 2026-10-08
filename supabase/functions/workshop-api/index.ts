@@ -1064,8 +1064,9 @@ Deno.serve(async (req: Request) => {
       if (eventType==="SPARE_PART_FINAL_PRICE_RECORDED") {
         const p=event.payload && typeof event.payload==="object" ? event.payload : {};
         const price=Number(p.finalPrice);
-        const allowedKeys=new Set(["partId","listNo","jobCard","finalPrice"]);
-        if (!["Manager","Supervisor"].includes(callerRole) || !String(p.partId||"") || !String(p.listNo||"") || !String(p.jobCard||"") || !Number.isFinite(price) || price<=0 || price>1000000 || Object.keys(p).some(k=>!allowedKeys.has(k))) {
+        const invalidExpected=p.expectedPurchaseAmount!=null&&(!Number.isFinite(Number(p.expectedPurchaseAmount))||Number(p.expectedPurchaseAmount)<0||Number(p.expectedPurchaseAmount)>1000000);
+        const allowedKeys=new Set(["partId","listNo","jobCard","finalPrice","expectedPurchaseAmount"]);
+        if (!["Manager","Supervisor"].includes(callerRole) || !String(p.partId||"") || !String(p.listNo||"") || !String(p.jobCard||"") || !Number.isFinite(price) || price<=0 || price>1000000 || invalidExpected || Object.keys(p).some(k=>!allowedKeys.has(k))) {
           return reply({ok:false,code:"spare_final_price_forbidden_or_invalid"},403);
         }
         const {data:partState,error:partStateError}=await admin.from("workshop_v2_spare_part_state").select("part_id,list_no,job_card,status").eq("part_id",String(p.partId)).maybeSingle();

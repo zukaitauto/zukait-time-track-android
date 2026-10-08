@@ -18,6 +18,16 @@ insert into public.workshop_v2_events(event_id,entity_id,event_type,revision,ser
  values(pid||'-fresh-correction',pid,'SPARE_PART_MANAGER_CORRECTED',1,clock_timestamp(),
  jsonb_build_object('partId',pid,'before',jsonb_build_object('status','SUPERVISOR_VERIFIED','purchaseAmount',35),
  'after',jsonb_build_object('status','SUPERVISOR_VERIFIED','purchaseAmount',36)));
+
+ begin
+ insert into public.workshop_v2_events(event_id,entity_id,event_type,revision,server_time,payload)
+ values(pid||'-stale-invoice',pid,'SPARE_PART_FINAL_PRICE_RECORDED',3,clock_timestamp(),
+ jsonb_build_object('partId',pid,'finalPrice',40,'expectedPurchaseAmount',35));
+ raise exception 'stale invoice accepted after correction';
+ exception when others then if sqlerrm<>'stale_spare_final_price' then raise; end if; end;
+ insert into public.workshop_v2_events(event_id,entity_id,event_type,revision,server_time,payload)
+ values(pid||'-fresh-invoice',pid,'SPARE_PART_FINAL_PRICE_RECORDED',3,clock_timestamp(),
+ jsonb_build_object('partId',pid,'finalPrice',40,'expectedPurchaseAmount',36));
  end $$;
- select 'stale_correction_rejected_fresh_correction_accepted' as check_result;
+ select 'both_correction_invoice_orderings_guarded' as check_result;
  rollback;
