@@ -17,6 +17,8 @@ assert.equal(wf.cancelReturn(restored.item,{role:'Manager',reason:'Again'}).reas
 const main=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8');
 assert.match(main,/SPARE_PART_RETURN_CANCELLED/);assert.match(main,/↶ CANCEL RETURN/);assert.match(main,/type:'SPARE_PART_RETURN_CANCELLED'/);
 assert.match(main,/delete item\.preReturnSnapshot/);
+assert.match(main,/preReturnSnapshot:to==='RETURNED'\?moved\.item\.preReturnSnapshot:null/,'Return event must persist the restoration snapshot to the server');
+assert.match(main,/p\.preReturnSnapshot&&typeof p\.preReturnSnapshot==='object'/,'Fresh-login hydration must rebuild the return snapshot');
 const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
 assert.match(api,/eventType==="SPARE_PART_RETURN_CANCELLED"/);assert.match(api,/callerRole!=="Manager"/);assert.match(api,/String\(before\.status\|\|""\)!=="RETURNED"/);
 console.log('Spare Parts cancel return: Manager-only audited restoration preserves original purchase amount/date and prevents duplicate cancellation.');
