@@ -77,6 +77,7 @@ begin
   end if;
 
   if new.event_type='SPARE_PART_STATUS_CHANGED' then
+    if coalesce(new.revision,0)<=coalesce(cur.revision,0) then raise exception 'stale_spare_part_status'; end if;
     st:=trim(coalesce(p->>'to',''));
     if upper(trim(coalesce(p->>'from','')))<>upper(trim(coalesce(cur.status,''))) then
       raise exception 'stale_spare_part_status';
