@@ -191,3 +191,11 @@ assert.match(apiListCreated,/!Number\.isFinite\(price\) \|\| price<=0 \|\| price
 assert.match(apiListCreated,/invoiceEligibleStatuses=new Set\(\["SUPERVISOR_VERIFIED","DENTER_CHECKED","SUPERVISOR_CONFIRMED","FITTED"\]\)/,'Final invoice amount requires an eligible confirmed arrival state');
 assert.match(apiListCreated,/stale_spare_final_price/,'API must map concurrent final-price revisions to conflict');
 assert.match(main,/stale_spare_final_price[^\n]*final invoice amount was changed on another device/,'Client must refresh and explain concurrent final invoice conflicts');
+
+assert.match(apiListCreated,/arrivalEligibleStatuses=new Set\(\["SUPERVISOR_VERIFIED","DENTER_CHECKED","SUPERVISOR_CONFIRMED","FITTED"\]\)/,'Arrival acceptance must require a verified authoritative part state');
+assert.match(apiListCreated,/spare_arrival_acceptance_not_eligible/,'Crafted arrival acceptance must be rejected before eligible status');
+assert.match(apiListCreated,/allowedTransitions=new Map\(\[/,'Spare Parts transition sequence must be enforced by the API');
+assert.match(apiListCreated,/\["ORDERED",new Set\(\["RECEIVED","ENQUIRY","RETURNED","UNAVAILABLE"\]\)\]/,'Ordered parts cannot skip directly to supervisor confirmation');
+assert.match(apiListCreated,/\["RECEIVED",new Set\(\["RECEIVED","ORDERED","SUPERVISOR_VERIFIED","RETURNED"\]\)\]/,'Received parts must pass Supervisor verification before confirmation');
+assert.match(apiListCreated,/\["SUPERVISOR_VERIFIED",new Set\(\["SUPERVISOR_CONFIRMED","RETURNED"\]\)\]/,'Verified parts must pass confirmation before fitted');
+assert.match(apiListCreated,/spare_transition_sequence_invalid/,'Invalid stage jumps must return a server conflict');
