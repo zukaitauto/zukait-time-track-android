@@ -1,7 +1,7 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';
 const main=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8');
 const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
-assert.match(main,/const prior=reconcileSyncMarkers\(read\(\)\),pendingLists=prior\.filter\(l=>\(l\.items\|\|\[\]\)\.some\(i=>pendingTransition\(i\)\)\),local=pendingLists\.map/,'server hydration must rebuild from server history, preserving only unsynced local work');
+assert.match(main,/const prior=reconcileSyncMarkers\(read\(\)\)\.map\([\s\S]*?options\.rejectedPartId[\s\S]*?pendingLists=prior\.filter\(l=>\(l\.items\|\|\[\]\)\.some\(i=>pendingTransition\(i\)\)\),local=pendingLists\.map/,'server hydration must rebuild from server history, preserving only unsynced local work');
 assert.match(main,/if\(cursor\)throw Error\('SPARE_PART_SERVER_HISTORY_INCOMPLETE'\)/,'client must not replace its cache from a truncated server event history');
 assert.match(main,/while\(cursor&&pages<20\)/,'server history must be paged, not assumed to fit one response');
 assert.match(main,/SPARE_PART_LIST_CREATED/);

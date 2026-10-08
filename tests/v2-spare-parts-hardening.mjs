@@ -28,7 +28,7 @@ assert.match(workflow,/if\(to==='FITTED'\)return role==='Supervisor'\|\|role==='
 assert.match(workflow,/if\(to==='SUPERVISOR_VERIFIED'\)return role==='Supervisor'\|\|role==='Manager'/,'Supervisor must retain physical-arrival verification authority');
 assert.match(workflow,/if\(to==='CUSTOMER_SETTLEMENT'\)return role==='Supervisor'\|\|role==='Manager'/,'Purchaser must not have customer-settlement authority');
 console.log('V2 Spare Parts hardening guard passed');
-assert.match(main,/saveManagerItemEdit\(listNo,itemId\).*?if\(!\['Manager','Supervisor'\]\.includes\(role\(\)\)\)return;.*?await hydrateAuthoritativeLists\(\);const rows=read\(\),list=/s,'Audited correction save must allow Manager and Supervisor only and refresh server state before editing');
+assert.match(main,/saveManagerItemEdit\(listNo,itemId\).*?if\(!\['Manager','Supervisor'\]\.includes\(role\(\)\)\)return;.*?await hydrateAuthoritativeLists\([^)]*\);const rows=read\(\),list=/s,'Audited correction save must allow Manager and Supervisor only and refresh server state before editing');
 assert.match(main,/Correction reason is required\./,'Manager parts correction must require a reason');
 assert.match(main,/SPARE_PART_MANAGER_CORRECTED/,'Manager correction must emit an auditable server event');assert.match(main,/SPARE_PART_SUPERVISOR_CORRECTED/,'Supervisor correction must emit a distinct auditable server event');
 assert.match(main,/managerCorrectionAudit/,'Manager correction must retain before\/after audit history');
@@ -63,7 +63,7 @@ assert.equal(ctx.window.zukaitV2.spareParts.canAct('Supervisor','SUPERVISOR_CONF
 const mainSource=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8');
 assert.match(mainSource,/status==='RECEIVED'\)return Number\.isFinite\(qty\)&&qty>0&&Number\.isFinite\(received\)&&received>=qty/,'partial RECEIVED quantities must remain waiting');
 
-assert.match(mainSource,/saveManagerItemEdit\(listNo,itemId\).*?if\(!navigator\.onLine\)return alert\('Connect to the server before correcting a Parts item\.'\);await hydrateAuthoritativeLists\(\)/s,'parts correction must refresh authoritative state first');
+assert.match(mainSource,/saveManagerItemEdit\(listNo,itemId\).*?if\(!navigator\.onLine\)return alert\('Connect to the server before correcting a Parts item\.'\);await hydrateAuthoritativeLists\([^)]*\)/s,'parts correction must refresh authoritative state first');
 assert.match(mainSource,/item\.syncConflict\|\|pendingTransition\(item\).*?pending or conflicting update/s,'parts correction must block unresolved sync conflicts');
 
 const returned=ctx.window.zukaitV2.spareParts.transition({id:'SP-RETURN',status:'RECEIVED',qty:2,receivedQty:1,receivedAt:'old',partialReceipt:true,arrivalAccepted:true,supervisorVerifiedAt:'old'},'RETURNED',{role:'Purchaser',actorId:'P1',reason:'Wrong part'});
@@ -161,8 +161,8 @@ assert.match(apiListCreated,/spare_list_create_forbidden_or_invalid/,'Injected p
 
 assert.match(main,/function spareConflictReason\(reason=''\)/,'Spare Parts must classify authoritative server conflicts');
 for(const code of ['stale_spare_part_status','stale_spare_manager_correction','duplicate_active_spare_part']) assert.match(main,new RegExp(code),'Known 409 conflict '+code+' must have explicit recovery');
-assert.match(main,/async function recoverSpareConflict\(reason\)[\s\S]*await hydrateAuthoritativeLists\(\)/,'Recognized conflicts must refresh authoritative Spare Parts state');
-assert.match(main,/const conflictMessage=await recoverSpareConflict\(reason\)/,'Commit failure path must invoke Spare Parts conflict recovery');
+assert.match(main,/async function recoverSpareConflict\(reason,event\)[\s\S]*await hydrateAuthoritativeLists\([^)]*\)/,'Recognized conflicts must refresh authoritative Spare Parts state');
+assert.match(main,/const conflictMessage=await recoverSpareConflict\(reason,event\)/,'Commit failure path must invoke Spare Parts conflict recovery');
 assert.match(main,/if\(!synced\.conflictMessage\)\{list\.items\[idx\]=previous;write\(rows\)\}/,'Status transition must not overwrite freshly hydrated server state after a recognized conflict');
 
 assert.match(main,/if\(!synced\.conflictMessage\)\{item\.quotationOffers=previous/,'Quotation add must not rollback over authoritative conflict refresh');
@@ -319,7 +319,7 @@ assert.match(mainModule,/moved\.item\.revision=nextRevision[\s\S]*list\.items\[i
 assert.match(guard,/new\.event_type='SPARE_PART_STATUS_CHANGED'[\s\S]*new\.revision,0\)<=coalesce\(cur\.revision,0\)[\s\S]*stale_spare_part_status/,'Database must reject duplicate or stale status revisions, including concurrent receipt taps from separate devices');
 
 assert.match(mainModule,/function spareConflictReason\(reason=''\)[\s\S]*stale_spare_part_status[\s\S]*Latest Parts data has been refreshed/,'Stale receipt/status conflicts must be classified as recoverable authoritative refreshes');
-assert.match(mainModule,/async function recoverSpareConflict\(reason\)[\s\S]*await hydrateAuthoritativeLists\(\)[\s\S]*return message/,'Recognized Spare Parts conflicts must hydrate authoritative server state before returning control');
+assert.match(mainModule,/async function recoverSpareConflict\(reason,event\)[\s\S]*await hydrateAuthoritativeLists\([^)]*\)[\s\S]*return message/,'Recognized Spare Parts conflicts must hydrate authoritative server state before returning control');
 assert.match(mainModule,/if\(!synced\.ok&&synced\.reason!=='V2_TRANSPORT_UNAVAILABLE'\)\{if\(!synced\.conflictMessage\)\{list\.items\[idx\]=previous;write\(rows\)\}/,'A recognized stale receipt conflict must not roll the refreshed authoritative item back to the losing local snapshot');
 
 const offlineQueue=fs.readFileSync('app/src/main/assets/v2/core/offline_queue.js','utf8');
@@ -410,7 +410,7 @@ assert.match(mainModule,/if\(!\['SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVIS
 assert.match(mainModule,/function purchaserTabFor\(item\)[\s\S]*!item\.arrivalAccepted/,'Restored accepted parts must remain in Purchaser history instead of asking for duplicate final acceptance');
 
 assert.match(mainModule,/const eventId='spare-arrival-accepted-'\+itemId/,'Final arrival acceptance must use one deterministic event id per part');
-assert.match(mainModule,/if\(done\.reason==='event_id_conflict'\)\{await hydrateAuthoritativeLists\(\);[\s\S]*authoritative\?\.arrivalAccepted[\s\S]*return openList\(listNo\)/,'A second-device final acceptance collision must reconcile the already-recorded acceptance instead of surfacing a false failure');
+assert.match(mainModule,/if\(done\.reason==='event_id_conflict'\)\{await hydrateAuthoritativeLists\([^)]*\);[\s\S]*authoritative\?\.arrivalAccepted[\s\S]*return openList\(listNo\)/,'A second-device final acceptance collision must reconcile the already-recorded acceptance instead of surfacing a false failure');
 assert.match(workshopApi,/eventType==="SPARE_PART_ARRIVAL_ACCEPTED"[\s\S]*arrivalEligibleStatuses[\s\S]*spare_arrival_acceptance_not_eligible/,'Server must independently validate final arrival acceptance against authoritative verified status');
 
 assert.match(guard,/select \* into cur from public\.workshop_v2_spare_part_state where part_id=pid for update[\s\S]*new\.event_type='SPARE_PART_ARRIVAL_ACCEPTED'[\s\S]*spare_arrival_acceptance_not_eligible/,'Final arrival acceptance must be validated under the same authoritative part-row lock used by Manager Return');

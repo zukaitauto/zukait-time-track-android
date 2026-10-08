@@ -14,10 +14,17 @@ const LIST_KEY = 'zukait_v2_spare_parts_lists_v1';
 const DRAFT_KEY = 'zukait_v2_parts_create_draft_v1';
 const copy = value => JSON.parse(JSON.stringify(value));
 
-function fixture(userRole = 'Supervisor', userId = 'SUP002') {
+function serverProjection(rows){
+ const storage=new Map(),window={zukaitV2:{}};
+ const ctx={window,localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},navigator:{onLine:true},Date,console};
+ vm.createContext(ctx);vm.runInContext(main,ctx);
+ return window.zukaitV2.sparePartsMain.hydrateFromServerRows(copy(rows));
+}
+
+function fixture(userRole = 'Supervisor', userId = 'SUP002', sharedRows = null) {
   const storage = new Map(), elements = new Map(), alerts = [], commits = [];
   const listNo = 'PL001', jobCard = 'JC101', partId = 'SP-existing';
-  const serverRows = [
+  const serverRows = sharedRows || [
     {event_id:'spare-list-PL001-1',entity_id:listNo,actor_id:'SUP001',event_type:'SPARE_PART_LIST_CREATED',revision:1,server_time:'2026-09-30T06:00:00Z',payload:{partId:listNo,listNo,jobCard,vehicle:'Toyota',model:'Corolla',year:'2012',registration:'101 A',customer:'Cash',targetRole:'Purchaser'}},
     {event_id:'spare-item-'+partId,entity_id:partId,actor_id:'SUP001',event_type:'SPARE_PART_LISTED',revision:1,server_time:'2026-09-30T06:00:01Z',payload:{partId,listNo,jobCard,name:'Head lamp RH',partNo:'',qty:1,targetRole:'Purchaser'}},
     {event_id:'spare-quote-'+partId,entity_id:partId,actor_id:'PUR001',event_type:'SPARE_PART_COMMERCIAL_UPDATED',revision:1,server_time:'2026-09-30T06:00:02Z',payload:{partId,listNo,jobCard,quoteAmount:2.5,purchaseAmount:null,supplier:'Vendor A'}},
@@ -25,7 +32,7 @@ function fixture(userRole = 'Supervisor', userId = 'SUP002') {
     {event_id:'spare-status-'+partId+'-2',entity_id:partId,actor_id:'SUP001',event_type:'SPARE_PART_STATUS_CHANGED',revision:2,server_time:'2026-09-30T06:00:04Z',payload:{partId,listNo,jobCard,from:'RECEIVED',to:'SUPERVISOR_VERIFIED'}}
   ];
   const localStorage = {getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,String(value)),removeItem:key=>storage.delete(key)};
-  let html = '', failure = null;
+  let html = '', failure = null, beforeCommit = null;
   const window = {
     me:{id:userId,role:userRole}, confirm:()=>true, prompt:()=>null,
     openModal:value=>{html=value},
@@ -35,11 +42,16 @@ function fixture(userRole = 'Supervisor', userId = 'SUP002') {
       allocateSparePartList:async()=>({list_no:listNo,job_card:jobCard,status:'OPEN',created_by:'SUP001',created_at:'2026-09-30T06:00:00Z'}),
       v2CommitEvent:async event=>{
         commits.push(copy(event));
+        if(beforeCommit)await beforeCommit(event);
         if(failure)throw Object.assign(new Error(failure),{code:failure});
         const admin={from:table=>{const filters={};const query={select:()=>query,eq:(k,v)=>{filters[k]=v;return query},order:()=>query,limit:()=>query,maybeSingle:async()=>{
           if(table==='workshop_v2_spare_part_state'){
-            const item=JSON.parse(storage.get(LIST_KEY)||'[]').flatMap(l=>(l.items||[]).map(i=>({...i,list_no:l.listNo,job_card:l.jobCard}))).find(i=>i.id===filters.part_id);
+            const item=serverProjection(serverRows).flatMap(l=>(l.items||[]).map(i=>({...i,list_no:l.listNo,job_card:l.jobCard}))).find(i=>i.id===filters.part_id);
             return {data:item?{part_id:item.id,list_no:item.list_no,job_card:item.job_card,status:item.status}:null,error:null};
+          }
+          if(table==='workshop_v2_events'){
+            const rows=serverRows.filter(r=>r.entity_id===filters.entity_id&&r.event_type===filters.event_type);
+            return {data:copy(rows.at(-1)||null),error:null};
           }
           throw Error('Unexpected authority query: '+table);
         }};return query}};
@@ -59,6 +71,7 @@ function fixture(userRole = 'Supervisor', userId = 'SUP002') {
   const context={window,document,localStorage,navigator:{onLine:true},crypto:{randomUUID},Date,console,alert:message=>alerts.push(message)};
   vm.createContext(context);
   vm.runInContext(fs.readFileSync('app/src/main/assets/v2/core/offline_queue.js','utf8'),context);
+  vm.runInContext(fs.readFileSync('app/src/main/assets/v2/features/spare-parts/workflow.js','utf8'),context);
   vm.runInContext(main,context);
   const parts=window.zukaitV2.sparePartsMain;
   parts.hydrateFromServerRows(copy(serverRows));
@@ -71,6 +84,7 @@ function fixture(userRole = 'Supervisor', userId = 'SUP002') {
     parts,context,window,storage,elements,alerts,commits,serverRows,listNo,jobCard,partId,
     lists:()=>JSON.parse(storage.get(LIST_KEY)||'[]'), html:()=>html,
     fail:code=>{failure=code},
+    onCommit:fn=>{beforeCommit=fn},
     draft:items=>localStorage.setItem(DRAFT_KEY,JSON.stringify({jobCard,customer:'Cash',items})),
     invoice:()=>parts.invoiceEntryClick({dataset:{list:listNo,item:partId,input:'invoicePrice'}}),
     setItem:patch=>{const lists=JSON.parse(storage.get(LIST_KEY));Object.assign(lists[0].items[0],patch);localStorage.setItem(LIST_KEY,JSON.stringify(lists));}
@@ -211,4 +225,49 @@ test('only Manager may return verified, confirmed, or fitted parts through the A
       else {assert.equal(result.code,'spare_return_manager_required');assert.equal(result.status,403)}
     }
   }
+});
+
+
+test('two client caches converge when Manager Return wins an in-flight invoice save',async()=>{
+ const supervisor=fixture(),manager=fixture('Manager','M1',supervisor.serverRows);
+ const pendingId='SP-offline-other',pendingEventId='spare-item-'+pendingId;
+ const pendingLists=supervisor.lists();
+ pendingLists[0].items.push({id:pendingId,name:'Offline clip',qty:1,status:'LISTED',pendingSync:true,pendingEventId});
+ supervisor.storage.set(LIST_KEY,JSON.stringify(pendingLists));
+ supervisor.window.zukaitV2.queue.enqueue({eventId:pendingEventId,entityId:pendingId,type:'SPARE_PART_LISTED',payload:{partId:pendingId,listNo:supervisor.listNo,jobCard:supervisor.jobCard,name:'Offline clip',qty:1,targetRole:'Purchaser'}});
+ let release,started;
+ const held=new Promise(r=>release=r),entered=new Promise(r=>started=r);
+ supervisor.onCommit(async event=>{if(event.type==='SPARE_PART_FINAL_PRICE_RECORDED'){started();await held}});
+ const saving=supervisor.invoice();await entered;
+ const returned=await manager.parts.transitionItem(manager.listNo,manager.partId,'RETURNED','Wrong supplied part');
+ assert.equal(returned.ok,true);release();await saving;
+ for(const device of [supervisor,manager]){
+   await device.parts.hydrateAuthoritativeLists();
+   const returnedItem=device.lists()[0].items.find(i=>i.id===device.partId);
+   assert.equal(returnedItem.status,'RETURNED');
+   assert.equal(returnedItem.purchaseAmount,undefined);
+   assert.equal(returnedItem.pendingSync,undefined);
+ }
+ assert.equal(supervisor.lists()[0].items.find(i=>i.id===pendingId).pendingSync,true,'Unrelated offline part must survive conflict refresh');
+ assert.equal(supervisor.window.zukaitV2.queue.pending().length,1,'Unrelated queued event must remain queued');
+ assert.equal(supervisor.serverRows.filter(r=>r.event_type==='SPARE_PART_FINAL_PRICE_RECORDED').length,0);
+ assert.ok(supervisor.alerts.some(s=>s.includes('Latest Parts data has been refreshed')));
+});
+
+test('invoice first then Manager Return and Cancel Return restores amount and date on both clients',async()=>{
+ const supervisor=fixture(),manager=fixture('Manager','M1',supervisor.serverRows);
+ await supervisor.invoice();await manager.parts.hydrateAuthoritativeLists();
+ const paid=copy(manager.lists()[0].items[0]);
+ assert.equal((await manager.parts.transitionItem(manager.listNo,manager.partId,'RETURNED','Mistaken return')).ok,true);
+ manager.window.prompt=()=> 'Cancel mistaken return';
+ await manager.parts.cancelReturn(manager.listNo,manager.partId);
+ assert.deepEqual(manager.alerts,[]);
+ for(const device of [supervisor,manager]){
+   await device.parts.hydrateAuthoritativeLists();
+   const item=device.lists()[0].items[0];
+   assert.equal(item.status,paid.status);
+   assert.equal(item.purchaseAmount,paid.purchaseAmount);
+   assert.equal(item.purchaseRecordedAt,paid.purchaseRecordedAt);
+   assert.equal(device.parts.reportRows().reduce((n,r)=>n+r.amount,0),2.44);
+ }
 });
