@@ -839,3 +839,36 @@ test('capped Manager report preserves complete cached history',async()=>{
  assert.deepEqual(manager.lists(),before);
  assert.equal(loaded.rows.reduce((n,r)=>n+r.amount,0),2.44);
 });
+
+test('complete multi-page Manager report applies later invoice history',async()=>{
+ const manager=fixture('Manager','M1');const earlier=copy(manager.serverRows);await manager.invoice();
+ const invoices=copy(manager.serverRows.filter(r=>r.event_type==='SPARE_PART_FINAL_PRICE_RECORDED'));
+ manager.parts.hydrateFromServerRows(earlier);
+ let calls=0;
+ manager.window.zukaitV2.reports.page=async(_domain,options)=>{
+  calls++;if(calls===1){assert.equal(options.cursor,null);return {rows:earlier,source:'server',nextCursor:{before:'invoice-page'}}}
+  assert.deepEqual(copy(options.cursor),{before:'invoice-page'});
+  return {rows:invoices,source:'server',nextCursor:null};
+ };
+ const loaded=await manager.parts.loadAuthoritativeManagerReport();
+ assert.equal(calls,2);assert.equal(loaded.source,'server');
+ assert.equal(loaded.rows.reduce((n,r)=>n+r.amount,0),2.44);
+ assert.equal(manager.lists()[0].items[0].purchaseAmount,2.44);
+});
+
+test('failed later report page preserves cached invoice and totals',async()=>{
+ for(const failure of ['network','server-required','invalid-rows']){
+  const manager=fixture('Manager','M1');const earlier=copy(manager.serverRows);await manager.invoice();
+  const before=copy(manager.lists());let calls=0;
+  manager.window.zukaitV2.reports.page=async()=>{
+   calls++;if(calls===1)return {rows:earlier,source:'server',nextCursor:{before:'later'}};
+   if(failure==='network')throw Error('NETWORK');
+   if(failure==='server-required')return {rows:[],source:'server-required'};
+   return {rows:null,source:'server'};
+  };
+  const loaded=await manager.parts.loadAuthoritativeManagerReport();
+  assert.equal(calls,2);assert.equal(loaded.source,'local-fallback',failure);
+  assert.deepEqual(manager.lists(),before,failure);
+  assert.equal(loaded.rows.reduce((n,r)=>n+r.amount,0),2.44,failure);
+ }
+});

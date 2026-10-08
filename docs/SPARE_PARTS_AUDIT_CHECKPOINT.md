@@ -99,3 +99,10 @@ This closes the automated/backend invoice–Return checkpoint; it does not certi
 - Manager report pagination now preserves the existing cache if a cursor remains after the 20-page limit. Partial history must never replace the cache. The report identifies this as local-fallback.
 - Added actual-module regression coverage for quantity totals, Oman month boundary, and capped report cache preservation. The capped-path direct execution passed (20 pages; cached total 7.32 retained). Full CI validation remains pending for this commit.
 - Physical two-phone acceptance and release signing remain pending; no new version is released by this checkpoint.
+
+
+### Pagination acceptance follow-up — 2026-10-08
+- Commit 712b369 passed GitHub functional smoke tests, production-asset checks, Android release build and PC deployment; APK artifact publication was still finishing when checked.
+- Actual-module direct execution passed complete two-page history and three later-page failures (network error, server-required and malformed rows). Complete history updates totals; failed partial history leaves cached invoice totals intact.
+- Entry regression suite now contains 44 cases, including these pagination paths. Full CI for this follow-up must pass before treating those added tests as CI-verified.
+- Current repository release metadata remains V300 / versionCode 263. Do not assign the next version until remaining module audit and physical-device acceptance are complete.
