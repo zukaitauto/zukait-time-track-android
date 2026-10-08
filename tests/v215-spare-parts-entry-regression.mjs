@@ -810,3 +810,22 @@ test('quantity totals agree across Spare Parts report and monthly dashboard thro
  const fresh=fixture('Manager','M2',manager.serverRows);
  assert.equal(fresh.parts.reportRows().reduce((n,r)=>n+r.amount,0),7.32);
 });
+
+test('server timestamps preserve Oman purchase month through Return and cancellation',async()=>{
+ const manager=fixture('Manager','M1');
+ manager.serverRows.find(r=>r.event_type==='SPARE_PART_LISTED').payload.qty=3;
+ manager.serverRows.find(r=>r.payload.to==='RECEIVED').payload.receivedQty=3;
+ manager.serverRows.push({event_id:'invoice-month-boundary',entity_id:manager.partId,actor_id:'SUP002',
+   event_type:'SPARE_PART_FINAL_PRICE_RECORDED',revision:1,server_time:'2026-09-30T20:00:00Z',
+   payload:{partId:manager.partId,listNo:manager.listNo,jobCard:manager.jobCard,finalPrice:2.44}});
+ manager.parts.hydrateFromServerRows(copy(manager.serverRows));
+ const original=manager.lists()[0].items[0].purchaseRecordedAt;
+ assert.equal(original,'2026-09-30T20:00:00.000Z');
+ assert.equal(manager.window.zukaitSparePartsOmanDateKey(original),'2026-10-01');
+ assert.equal((await manager.parts.transitionItem(manager.listNo,manager.partId,'RETURNED','Wrong part')).ok,true);
+ assert.equal(manager.parts.reportRows().reduce((n,r)=>n+r.amount,0),0);
+ manager.window.prompt=()=> 'Restore mistaken return';await manager.parts.cancelReturn(manager.listNo,manager.partId);
+ const fresh=fixture('Manager','M2',manager.serverRows);
+ assert.equal(fresh.lists()[0].items[0].purchaseRecordedAt,original);
+ assert.equal(fresh.parts.reportRows().reduce((n,r)=>n+r.amount,0),7.32);
+});
