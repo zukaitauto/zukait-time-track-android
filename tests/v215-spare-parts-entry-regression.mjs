@@ -731,3 +731,28 @@ test('competing quotation saves refresh the losing Purchaser before reviewed ret
  assert.equal(fresh.lists()[0].items[0].quoteAmount,4);
  assert.equal(fresh.lists()[0].items[0].supplier,'Vendor C');
 });
+
+test('quotation rejection after Return or deletion refreshes the Purchaser to final server state',async()=>{
+ for(const action of ['return','delete']){
+   const purchaser=fixture('Purchaser','PUR001'),manager=fixture('Manager','M1',purchaser.serverRows);
+   purchaser.elements.set('v2SpQuote_0',{value:'3.000'});
+   purchaser.elements.set('v2SpVendor_0',{value:'Vendor B'});
+   purchaser.elements.set('v2SpQuoteMessage',{textContent:''});
+   purchaser.onCommit(async event=>{
+     if(event.type==='SPARE_PART_COMMERCIAL_UPDATED'){
+       if(action==='return')assert.equal((await manager.parts.transitionItem(manager.listNo,manager.partId,'RETURNED','Wrong supplied part')).ok,true);
+       else assert.equal((await manager.parts.deleteItem(manager.listNo,manager.partId)).ok,true);
+       throw Object.assign(new Error('stale_spare_part_status'),{code:'stale_spare_part_status'});
+     }
+   });
+   const button={dataset:{list:purchaser.listNo,item:purchaser.partId,index:'0'},disabled:false};
+   await purchaser.parts.saveQuotationPrice(button);
+   assert.equal(button.disabled,false);
+   assert.match(purchaser.elements.get('v2SpQuoteMessage').textContent,/Latest Parts data has been refreshed/);
+   const item=purchaser.lists().flatMap(l=>l.items).find(i=>i.id===purchaser.partId);
+   if(action==='return'){assert.equal(item.status,'RETURNED');assert.equal(item.quoteAmount,undefined);assert.equal(item.purchaseAmount,undefined)}
+   else assert.equal(item,undefined);
+   assert.equal(purchaser.serverRows.filter(r=>r.event_type==='SPARE_PART_COMMERCIAL_UPDATED').length,1,'Only the original quotation remains in history');
+   assert.equal(purchaser.parts.reportRows().reduce((n,r)=>n+r.amount,0),0);
+ }
+});

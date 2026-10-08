@@ -71,3 +71,12 @@ This closes the automated/backend invoice–Return checkpoint; it does not certi
 - Successful reconnect clears pending markers; rejected queued receipts are quarantined and refresh quantity without automatic replay.
 - 32 entry tests passed, including receipt retry and partial-verification checks on a fresh Supervisor client.
 - All three workflows succeeded for cf5eec6a. These are simulated clients and rollback database checks; physical two-phone acceptance remains pending.
+
+## Quotation and identity follow-up
+
+- Quantity/name/part-number corrections compare supplied before-values against the locked active projection.
+- Quotation events cannot alter the authoritative invoice amount or commit against Returned/deleted parts.
+- Competing quotation event-ID collisions refresh the accepted amount and supplier before retry.
+- 37 entry tests passed, including queued quotation replay and client recovery after Return/deletion.
+- Live rollback tests verify quotation/invoice races and quotation eligibility after Re-enquire.
+- New Android release remains deferred until the remaining audit and physical-device acceptance are complete. V300 was already released; assign the next version only after checking the current remote version.
