@@ -164,3 +164,8 @@ assert.match(main,/if\(!synced\.conflictMessage\)\{const rollback=read\(\),old=r
 assert.match(main,/if\(!synced\.conflictMessage\)\{for\(const k of \['name','partNo','qty','supplier','purchaseAmount','status'/,'Manager correction must preserve refreshed conflict state');
 assert.match(main,/if\(!synced\.conflictMessage\)\{list\.items\[idx\]=before;write\(rows\)\}/,'Cancel Return must preserve refreshed conflict state');
 assert.match(main,/if\(!result\.conflictMessage\)\{if\(previous==null\)delete item\.purchaseAmount/,'Final invoice save must preserve refreshed conflict state');
+
+assert.match(main,/else if\(!result\.queued&&!result\.conflictMessage\)\{list\.items=list\.items\.filter/,'Additional Parts must not delete authoritative state after duplicate/conflict refresh');
+assert.match(main,/done\.conflictMessage\|\|\('Could not confirm arrival:/,'Arrival acceptance must surface authoritative conflict recovery');
+assert.match(main,/return \{ok:false,reason:synced\.conflictMessage\|\|'SYNC_FAILED',detail:synced\.reason\}/,'Non-optimistic Spare Parts writes must propagate authoritative conflict messages');
+assert.match(main,/Could not save additional part:[^\n]*synced\.reason/,'Additional Parts ordinary failures must still be reported without claiming a failed item remains saved');
