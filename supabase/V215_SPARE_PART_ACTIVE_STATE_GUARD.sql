@@ -72,6 +72,7 @@ begin
     if cur.part_id is null or upper(coalesce(cur.status,'')) not in ('SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED') then raise exception 'spare_final_price_not_eligible'; end if;
     perform 1 from public.workshop_v2_events e
       where e.entity_id=pid and e.event_type='SPARE_PART_FINAL_PRICE_RECORDED'
+        and e.event_id<>new.event_id
         and coalesce(e.revision,0)>=coalesce(new.revision,0)
       limit 1;
     if found then raise exception 'stale_spare_final_price'; end if;
