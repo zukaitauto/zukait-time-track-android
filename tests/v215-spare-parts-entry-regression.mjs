@@ -483,3 +483,30 @@ test('two Managers cancelling the same Return converge after an actual event-ID 
  assert.ok(second.alerts.some(s=>s.includes('Latest Parts data has been refreshed')));
  assert.equal(second.serverRows.filter(r=>r.event_type==='SPARE_PART_RETURN_CANCELLED').length,1);
 });
+
+test('Manager and Supervisor corrections refresh a concurrent winning invoice after rejection',async()=>{
+ for(const role of ['Manager','Supervisor']){
+   const editor=fixture(role,role==='Manager'?'M1':'SUP002');
+   const other=fixture('Supervisor','SUP003',editor.serverRows);
+   for(const [id,value] of Object.entries({
+     v2SpEditName:'Head lamp RH',v2SpEditPartNo:'',v2SpEditQty:'1',
+     v2SpEditSupplier:'Vendor A',v2SpEditAmount:'3.000',
+     v2SpEditStatus:'SUPERVISOR_VERIFIED',v2SpEditReason:'Correct invoice amount'
+   }))editor.elements.set(id,{value});
+   editor.onCommit(async event=>{
+     if(event.type==='SPARE_PART_MANAGER_CORRECTED'||event.type==='SPARE_PART_SUPERVISOR_CORRECTED'){
+       await other.invoice();
+       assert.notEqual(event.payload.before.purchaseAmount,serverProjection(editor.serverRows)[0].items[0].purchaseAmount);
+       throw Object.assign(new Error('stale_spare_manager_correction'),{code:'stale_spare_manager_correction'});
+     }
+   });
+   await editor.parts.saveManagerItemEdit(editor.listNo,editor.partId);
+   const item=editor.lists()[0].items[0];
+   assert.equal(item.purchaseAmount,2.44,role);
+   assert.equal(item.status,'SUPERVISOR_VERIFIED',role);
+   assert.equal(item.pendingSync,undefined);
+   assert.equal(editor.parts.reportRows().reduce((n,r)=>n+r.amount,0),2.44);
+   assert.ok(editor.alerts.some(s=>s.includes('Latest Parts data has been refreshed')));
+   assert.equal(editor.serverRows.filter(r=>r.event_type.endsWith('_CORRECTED')).length,0);
+ }
+});
