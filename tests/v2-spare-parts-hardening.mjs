@@ -158,3 +158,9 @@ for(const code of ['stale_spare_part_status','stale_spare_manager_correction','d
 assert.match(main,/async function recoverSpareConflict\(reason\)[\s\S]*await hydrateAuthoritativeLists\(\)/,'Recognized conflicts must refresh authoritative Spare Parts state');
 assert.match(main,/const conflictMessage=await recoverSpareConflict\(reason\)/,'Commit failure path must invoke Spare Parts conflict recovery');
 assert.match(main,/if\(!synced\.conflictMessage\)\{list\.items\[idx\]=previous;write\(rows\)\}/,'Status transition must not overwrite freshly hydrated server state after a recognized conflict');
+
+assert.match(main,/if\(!synced\.conflictMessage\)\{item\.quotationOffers=previous/,'Quotation add must not rollback over authoritative conflict refresh');
+assert.match(main,/if\(!synced\.conflictMessage\)\{const rollback=read\(\),old=rollback\.find/,'Quotation selection/save must preserve refreshed conflict state');
+assert.match(main,/if\(!synced\.conflictMessage\)\{for\(const k of \['name','partNo','qty','supplier','purchaseAmount','status'/,'Manager correction must preserve refreshed conflict state');
+assert.match(main,/if\(!synced\.conflictMessage\)\{list\.items\[idx\]=before;write\(rows\)\}/,'Cancel Return must preserve refreshed conflict state');
+assert.match(main,/if\(!result\.conflictMessage\)\{if\(previous==null\)delete item\.purchaseAmount/,'Final invoice save must preserve refreshed conflict state');
