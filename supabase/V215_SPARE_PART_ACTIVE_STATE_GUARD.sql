@@ -46,6 +46,7 @@ begin
   select * into cur from public.workshop_v2_spare_part_state where part_id=pid for update;
 
   if new.event_type='SPARE_PART_LISTED' then
+    if cur.part_id is not null then raise exception 'duplicate_active_spare_part'; end if;
     ln:=trim(coalesce(p->>'listNo','')); jc:=upper(trim(coalesce(p->>'jobCard','')));
     nm:=trim(coalesce(p->>'name','')); pn:=upper(trim(coalesce(p->>'partNo','')));
     if ln='' or jc='' or nm='' then raise exception 'invalid_spare_part_projection'; end if;
