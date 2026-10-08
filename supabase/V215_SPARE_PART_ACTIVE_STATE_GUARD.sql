@@ -65,10 +65,20 @@ begin
   if not found then
     if new.event_type='SPARE_PART_FINAL_PRICE_RECORDED' then
       raise exception 'spare_final_price_not_eligible';
+    elsif new.event_type='SPARE_PART_RETURN_CANCELLED' then
+      raise exception 'stale_spare_part_status';
     elsif new.event_type='SPARE_PART_ARRIVAL_ACCEPTED' then
       raise exception 'spare_arrival_acceptance_not_eligible';
     end if;
     return new;
+  end if;
+
+  if new.event_type='SPARE_PART_RETURN_CANCELLED' then
+    if upper(coalesce(cur.status,''))<>'RETURNED'
+       or coalesce(new.revision,0)<=coalesce(cur.revision,0)
+       or (p->'before' ? 'revision' and coalesce((p->'before'->>'revision')::bigint,0)<>coalesce(cur.revision,0)) then
+      raise exception 'stale_spare_part_status';
+    end if;
   end if;
 
   if new.event_type='SPARE_PART_ITEM_EDITED' and nullif(trim(afterv->>'deletedAt'),'') is not null then
