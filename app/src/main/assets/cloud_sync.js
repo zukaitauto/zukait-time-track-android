@@ -218,15 +218,16 @@
   }
   async function flushV2EventQueue(){
     const q=window.zukaitV2?.queue;if(!q||!sessionToken()||!navigator.onLine)return {synced:0,pending:q?.pending?.().length||0};
-    let synced=0;
+    let synced=0,spareConflict=false;
     for(const event of q.pending()){
       try{const r=await v2CommitEvent(event);q.markSynced(event.eventId,{serverTime:r.server_time,serverRevision:r.server_revision});synced++;}
       catch(e){
         const code=String(e?.code||e?.message||'V2_EVENT_COMMIT_FAILED');
         if(code==='NETWORK'||code==='TIMEOUT'||code==='NO_SESSION'){console.warn('V2 event sync deferred',event.eventId,e);break;}
-        q.markConflict?.(event.eventId,code);console.warn('V2 event quarantined for reconciliation',event.eventId,code);
+        q.markConflict?.(event.eventId,code);if(String(event?.type||'').startsWith('SPARE_PART_'))spareConflict=true;console.warn('V2 event quarantined for reconciliation',event.eventId,code);
       }
     }
+    if(spareConflict){try{await window.zukaitV2?.sparePartsMain?.hydrateAuthoritativeLists?.()}catch(e){console.warn('Spare Parts conflict refresh deferred',e)}}
     q.compact();return {synced,pending:q.pending().length};
   }
   window.zukaitV2Transport={commitEvent:v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,pilotStatus:v2PilotStatus,pilotClaim:v2PilotClaim,flush:flushV2EventQueue};
