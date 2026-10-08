@@ -62,7 +62,14 @@ begin
     return new;
   end if;
 
-  if not found then return new; end if;
+  if not found then
+    if new.event_type='SPARE_PART_FINAL_PRICE_RECORDED' then
+      raise exception 'spare_final_price_not_eligible';
+    elsif new.event_type='SPARE_PART_ARRIVAL_ACCEPTED' then
+      raise exception 'spare_arrival_acceptance_not_eligible';
+    end if;
+    return new;
+  end if;
 
   if new.event_type='SPARE_PART_ITEM_EDITED' and nullif(trim(afterv->>'deletedAt'),'') is not null then
     delete from public.workshop_v2_spare_part_state where part_id=pid;
