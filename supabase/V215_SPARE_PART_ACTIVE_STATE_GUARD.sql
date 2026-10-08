@@ -46,7 +46,7 @@ begin
   select * into cur from public.workshop_v2_spare_part_state where part_id=pid for update;
 
   if new.event_type='SPARE_PART_LISTED' then
-    if cur.part_id is not null then raise exception 'duplicate_active_spare_part'; end if;
+    if cur.part_id is not null or exists(select 1 from public.workshop_v2_events e where e.entity_id=pid and e.event_type='SPARE_PART_LISTED' and e.event_id<>new.event_id) then raise exception 'duplicate_active_spare_part'; end if;
     ln:=trim(coalesce(p->>'listNo','')); jc:=upper(trim(coalesce(p->>'jobCard','')));
     nm:=trim(coalesce(p->>'name','')); pn:=upper(trim(coalesce(p->>'partNo','')));
     if ln='' or jc='' or nm='' then raise exception 'invalid_spare_part_projection'; end if;
@@ -56,10 +56,8 @@ begin
     if conflict_part is not null then raise exception 'duplicate_active_spare_part'; end if;
     insert into public.workshop_v2_spare_part_state(part_id,list_no,job_card,part_name,part_no,part_key,status,ordered_qty,received_qty,revision,last_event_id)
     values(pid,ln,jc,nm,pn,k,'LISTED',greatest(1,coalesce((p->>'qty')::numeric,1)),0,coalesce(new.revision,0),new.event_id)
-    on conflict(part_id) do update set
-      list_no=excluded.list_no,job_card=excluded.job_card,part_name=excluded.part_name,part_no=excluded.part_no,
-      part_key=excluded.part_key,status=excluded.status,ordered_qty=excluded.ordered_qty,received_qty=0,revision=greatest(workshop_v2_spare_part_state.revision,excluded.revision),
-      last_event_id=excluded.last_event_id,updated_at=now();
+    on conflict(part_id) do nothing;
+    if not found then raise exception 'duplicate_active_spare_part'; end if;
     return new;
   end if;
 
