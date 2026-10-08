@@ -21,6 +21,7 @@ create table if not exists public.workshop_v2_spare_part_state (
 alter table public.workshop_v2_spare_part_state add column if not exists ordered_qty numeric not null default 1;
 alter table public.workshop_v2_spare_part_state add column if not exists received_qty numeric not null default 0;
 alter table public.workshop_v2_spare_part_state enable row level security;
+alter table public.workshop_v2_spare_part_state enable row level security;
 revoke all on table public.workshop_v2_spare_part_state from anon, authenticated;
 grant select, insert, update, delete on table public.workshop_v2_spare_part_state to service_role;
 
@@ -127,6 +128,7 @@ create table if not exists public.workshop_v2_spare_part_state_conflicts (
   detected_at timestamptz not null default now(),
   primary key(list_no,part_key)
 );
+alter table public.workshop_v2_spare_part_state_conflicts enable row level security;
 revoke all on table public.workshop_v2_spare_part_state_conflicts from anon,authenticated;
 grant select,insert,update,delete on table public.workshop_v2_spare_part_state_conflicts to service_role;
 
