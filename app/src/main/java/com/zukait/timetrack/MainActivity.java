@@ -340,6 +340,7 @@ public class MainActivity extends Activity {
         final String e = error == null ? "" : error;
         final String s = source == null ? "" : source;
         runOnUiThread(() -> {
+            if (webView == null || isFinishing() || isDestroyed()) return;
             String js = "window.zukaitVinScan&&window.zukaitVinScan.nativeResult(" +
                     JSONObject.quote(v) + "," + JSONObject.quote(e) + "," + JSONObject.quote(s) + ");";
             webView.evaluateJavascript(js, null);
@@ -418,14 +419,19 @@ public class MainActivity extends Activity {
                         return;
                     }
                     File photo = File.createTempFile("vin_", ".jpg", dir);
+                    pendingVinCaptureFile = photo;
                     Uri uri = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".updateprovider", photo);
                     Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                     intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
+                    intent.setClipData(android.content.ClipData.newRawUri("VIN photo", uri));
                     intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     pendingVinCaptureUri = uri;
                     pendingVinCaptureFile = photo;
                     startActivityForResult(intent, VIN_CAPTURE_REQUEST);
                 } catch (Exception e) {
+                    if (pendingVinCaptureFile != null) pendingVinCaptureFile.delete();
+                    pendingVinCaptureFile = null;
+                    pendingVinCaptureUri = null;
                     deliverVinScanResult(null, "capture_unavailable");
                 }
             });
@@ -1467,22 +1473,30 @@ public class MainActivity extends Activity {
             pendingExportData = null;
         }
         if (requestCode == VIN_CAPTURE_REQUEST) {
-            if (resultCode != RESULT_OK || pendingVinCaptureUri == null) {
+            final Uri captureUri = pendingVinCaptureUri;
+            final File captureFile = pendingVinCaptureFile;
+            pendingVinCaptureUri = null;
+            pendingVinCaptureFile = null;
+            if (resultCode != RESULT_OK || captureUri == null) {
+                if (captureFile != null) captureFile.delete();
                 deliverVinScanResult(null, resultCode == RESULT_CANCELED ? "cancelled" : "capture_failed", "PHOTO");
             } else {
+                final com.google.mlkit.vision.text.TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
                 try {
-                    InputImage image = InputImage.fromFilePath(MainActivity.this, pendingVinCaptureUri);
-                    TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-                            .process(image)
+                    InputImage image = InputImage.fromFilePath(MainActivity.this, captureUri);
+                    recognizer.process(image)
                             .addOnSuccessListener(text -> deliverVinScanResult(text.getText(), null, "PHOTO"))
-                            .addOnFailureListener(e -> deliverVinScanResult(null, "ocr_failed", "PHOTO"));
+                            .addOnFailureListener(e -> deliverVinScanResult(null, "ocr_failed", "PHOTO"))
+                            .addOnCompleteListener(task -> {
+                                recognizer.close();
+                                if (captureFile != null) captureFile.delete();
+                            });
                 } catch (Exception e) {
+                    recognizer.close();
+                    if (captureFile != null) captureFile.delete();
                     deliverVinScanResult(null, "ocr_failed", "PHOTO");
                 }
             }
-            if (pendingVinCaptureFile != null) pendingVinCaptureFile.deleteOnExit();
-            pendingVinCaptureUri = null;
-            pendingVinCaptureFile = null;
         }
     }
 

@@ -13,17 +13,15 @@ function vinCheckDigit(v){
  const r=sum%11,expected=r===10?'X':String(r);return x[8]===expected
 }
 function candidateDetail(raw){
- const text=String(raw||'').toUpperCase(),clean=normalize(text);
+ const text=String(raw||'').toUpperCase();
  const fixForbidden=x=>String(x||'').replace(/[OQ]/g,'0').replace(/I/g,'1');
  const pool=[],push=(x,source)=>{x=normalize(x);if(x.length===17&&!pool.some(p=>p.vin===x))pool.push({vin:x,source})};
  text.split(/\r?\n/).forEach((line,i)=>{
   const cleanedLine=line.replace(/^\s*(?:VIN(?:\s*OCR)?|CHASSIS(?:\s*(?:NO|NUMBER))?|VEHICLE\s*IDENTIFICATION\s*NUMBER)\s*[:#-]?\s*/i,'');
   const n=normalize(cleanedLine);if(n.length===17)push(n,'LINE');
-  const m=cleanedLine.match(/[A-Z0-9][A-Z0-9 .:_-]{15,40}[A-Z0-9]/g)||[];m.forEach(x=>push(x,'LINE'));
+  // Read complete VIN tokens; never slide across unrelated words or lines.
+  for(const m of cleanedLine.matchAll(/(?:^|[^A-Z0-9])([A-Z0-9]{17})(?![A-Z0-9])/g))push(m[1],'CHUNK');
  });
- if(clean.length===17)push(clean,'DIRECT');
- const chunks=text.match(/[A-Z0-9]{17}/g)||[];chunks.forEach(x=>push(x,'CHUNK'));
- for(let i=0;i<=clean.length-17;i++)push(clean.slice(i,i+17),'WINDOW');
  const scored=[],sourceBase=s=>s==='LINE'?120:s==='DIRECT'?115:s==='CHUNK'?110:50;
  for(const p of pool){
   const check=vinCheckDigit(p.vin);
@@ -40,13 +38,15 @@ function duplicateJobs(vin){
  return jobs.filter(j=>j&&!j.deleted&&normalize(j.vin||j.VIN||j.vinNumber||j.chassis||j.chassisNo||'')===x).map(j=>String(j.no||'')).filter(Boolean)
 }
 function open(id){
+ pendingVerify=null;
  targetId=String(id||'');const el=input();if(!el)return;
  if(window.AndroidBridge&&typeof window.AndroidBridge.scanVinBarcode==='function'){
    try{window.AndroidBridge.scanVinBarcode();return}catch(_){}
  }
  manual('VIN barcode scanner is not available on this device. Use Capture VIN or enter the VIN manually.');
 }
-function capture(id){
+function capture(id,verification=false){
+ if(!verification)pendingVerify=null;
  targetId=String(id||'');const el=input();if(!el)return;
  if(window.AndroidBridge&&typeof window.AndroidBridge.captureVinPhoto==='function'){
    try{
@@ -60,16 +60,19 @@ function capture(id){
  manual('VIN photo capture is not available on this device. Enter the VIN manually.');
 }
 function nativeResult(raw,error,source){
- if(error){if(error!=='cancelled')manual('VIN scan was not successful. Keep the VIN centered, fill most of the frame, avoid glare, and try again.');return}
- const d=candidateDetail(raw),vin=d?.vin||'';if(!vin){manual('A valid 17-character VIN was not detected. Keep the VIN centered, fill most of the frame, avoid glare, and rescan or use Capture VIN.');return}
- const photo=String(source||'').toUpperCase()==='PHOTO',lowConfidence=!!d.corrected||d.checkDigit===false;
- if(photo&&lowConfidence){
-   if(!pendingVerify||pendingVerify.vin!==vin||pendingVerify.targetId!==targetId){
+ if(error){pendingVerify=null;if(error!=='cancelled'){const unavailable=['scanner_unavailable','scan_failed'].includes(error);manual(unavailable?'VIN barcode scanning is unavailable. Check Google Play services and your connection, or use Capture VIN / manual entry.':'VIN photo capture was not successful. Check that a camera app is available, keep the VIN centered, and try again.')}return}
+ const d=candidateDetail(raw),vin=d?.vin||'';if(!vin){pendingVerify=null;manual('A valid 17-character VIN was not detected. Keep the VIN centered, fill most of the frame, avoid glare, and rescan or use Capture VIN.');return}
+ const photo=String(source||'').toUpperCase()==='PHOTO';
+ // International VINs do not always use the North American check digit.
+ // A mismatch is a review warning, not a reason to repeatedly reopen the camera.
+ if(photo&&(d.corrected||pendingVerify?.targetId===targetId)){
+   if(!pendingVerify||pendingVerify.targetId!==targetId){
      pendingVerify={vin,targetId,at:Date.now()};
      const reason=d.corrected?'OCR corrected '+d.original+' to '+vin:'VIN check digit did not match';
      alert(reason+'.\n\nFor maximum accuracy, capture the VIN a second time. It will be accepted only if the same VIN is detected again.');
-     return capture(targetId);
+     return capture(targetId,true);
    }
+   if(pendingVerify.vin!==vin){pendingVerify=null;return manual('The two VIN captures do not match. Compare the vehicle label and enter the VIN manually, or start a new capture.');}
    pendingVerify=null
  }else pendingVerify=null;
  const dup=duplicateJobs(vin);
