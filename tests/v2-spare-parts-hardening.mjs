@@ -90,6 +90,8 @@ assert.equal(spare.allowed('RETURNED','ORDERED'),false,'returned parts cannot by
 assert.equal(spare.allowed('RETURNED','ENQUIRY'),true,'returned parts restart at enquiry');
 for(const key of ['quoteAmount','price','supplier','quotationOffers','commercialRevision'])assert.equal(returned.item[key],undefined,'return clears stale commercial state '+key);
 assert.match(mainSource,/RETURNED:\['Re-enquire','ENQUIRY','info'\]/,'Purchaser UI restarts returned parts at enquiry');
+assert.match(mainSource,/ACTIVE_REPLACEMENT_ALREADY_EXISTS/,'returned line cannot re-enter enquiry when an identical active replacement line already exists');
+assert.match(mainSource,/i!==idx&&String\(x\?\.status\|\|''\)!=='RETURNED'&&partKey\(x\?\.name,x\?\.partNo\)===key/,'duplicate replacement guard uses normalized part identity and excludes returned history');
 
 assert.match(mainSource,/const amount=validMoney\(raw\);if\(amount==null\|\|amount<=0\)return alert\('Final invoice price must be more than 0\.000 OMR\.'\)/,'all invoice save paths reject zero final amount');
 assert.match(mainSource,/bucket==='PURCHASE_COMPLETED'.*?Number\(i\.purchaseAmount\)>0/s,'Purchase Completed requires positive final invoice amounts');
