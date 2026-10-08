@@ -43,3 +43,12 @@ This closes the automated/backend invoice–Return checkpoint; it does not certi
 - 22 entry tests now cover both invoice/deletion orderings and actual offline queue flushing after a competing invoice, deletion or Manager Return.
 - A rejected queued invoice is quarantined; unrelated queued parts continue syncing.
 - Implementation builds through ab60db4a succeeded. Physical two-phone acceptance remains pending.
+
+## Cancel Return follow-up
+
+- The live guard now requires a current Returned state, an increasing cancellation revision, and a matching before-revision when supplied.
+- A late cancellation cannot overwrite a newer invoice or cancel a later Return cycle.
+- The client refreshes authoritative state when competing Managers generate the same cancellation event ID.
+- 25 entry tests passed, including online and queued stale cancellation recovery.
+- Live rollback tests cover late cancellation and old-cycle cancellation; valid current-cycle cancellation still succeeds.
+- Android, APK and PC Pages builds succeeded for 3db62891. Physical two-phone acceptance remains outstanding.
