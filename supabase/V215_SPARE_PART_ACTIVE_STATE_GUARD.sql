@@ -117,12 +117,12 @@ grant select,insert,update,delete on table public.workshop_v2_spare_part_state_c
 
 -- Rebuild current state from the immutable event history without changing any event.
 truncate table public.workshop_v2_spare_part_state;
-insert into public.workshop_v2_spare_part_state(part_id,list_no,job_card,part_name,part_no,part_key,status,revision,last_event_id,updated_at)
+insert into public.workshop_v2_spare_part_state(part_id,list_no,job_card,part_name,part_no,part_key,status,ordered_qty,received_qty,revision,last_event_id,updated_at)
 with listed as (
   select distinct on (e.entity_id)
     e.entity_id part_id, trim(e.payload->>'listNo') list_no, upper(trim(e.payload->>'jobCard')) job_card,
     trim(e.payload->>'name') part_name, upper(trim(coalesce(e.payload->>'partNo',''))) part_no,
-    e.server_time listed_at
+    greatest(1,coalesce(nullif(e.payload->>'qty','')::numeric,1)) listed_qty,e.server_time listed_at
   from public.workshop_v2_events e
   where e.event_type='SPARE_PART_LISTED'
   order by e.entity_id,e.server_time desc,e.event_id desc
@@ -132,6 +132,18 @@ with listed as (
   from public.workshop_v2_events e
   where e.event_type in ('SPARE_PART_ITEM_EDITED','SPARE_PART_MANAGER_CORRECTED','SPARE_PART_SUPERVISOR_CORRECTED','SPARE_PART_RETURN_CANCELLED')
     and (nullif(trim(e.payload->'after'->>'name'),'') is not null or nullif(trim(e.payload->'after'->>'partNo'),'') is not null)
+  order by e.entity_id,e.server_time desc,e.event_id desc
+), latest_qty as (
+  select distinct on (e.entity_id) e.entity_id part_id,e.payload,e.server_time
+  from public.workshop_v2_events e
+  where e.event_type in ('SPARE_PART_MANAGER_CORRECTED','SPARE_PART_SUPERVISOR_CORRECTED')
+    and nullif(e.payload->'after'->>'qty','') is not null
+  order by e.entity_id,e.server_time desc,e.event_id desc
+), latest_receipt as (
+  select distinct on (e.entity_id) e.entity_id part_id,e.payload,e.server_time
+  from public.workshop_v2_events e
+  where e.event_type='SPARE_PART_STATUS_CHANGED' and upper(trim(coalesce(e.payload->>'to','')))='RECEIVED'
+    and nullif(e.payload->>'receivedQty','') is not null
   order by e.entity_id,e.server_time desc,e.event_id desc
 ), latest_status as (
   select distinct on (e.entity_id)
@@ -147,8 +159,11 @@ select l.part_id,l.list_no,l.job_card,
   public.zukait_v2_spare_part_key(coalesce(nullif(trim(i.payload->'after'->>'name'),''),l.part_name),coalesce(nullif(upper(trim(i.payload->'after'->>'partNo')),''),l.part_no)),
   case when s.event_type='SPARE_PART_STATUS_CHANGED' then coalesce(nullif(trim(s.payload->>'to'),''),'LISTED')
        else coalesce(nullif(trim(s.payload->'after'->>'status'),''),'LISTED') end,
+  greatest(1,coalesce(nullif(q.payload->'after'->>'qty','')::numeric,l.listed_qty)),
+  case when (case when s.event_type='SPARE_PART_STATUS_CHANGED' then upper(coalesce(nullif(trim(s.payload->>'to'),''),'LISTED')) else upper(coalesce(nullif(trim(s.payload->'after'->>'status'),''),'LISTED')) end) in ('ORDERED','RETURNED','LISTED','ENQUIRY','QUOTED','UNAVAILABLE','CUSTOMER_SETTLEMENT') then 0
+       else greatest(0,least(greatest(1,coalesce(nullif(q.payload->'after'->>'qty','')::numeric,l.listed_qty)),coalesce(nullif(r.payload->>'receivedQty','')::numeric,greatest(1,coalesce(nullif(q.payload->'after'->>'qty','')::numeric,l.listed_qty))))) end,
   greatest(coalesce(i.revision,0),coalesce(s.revision,0)),coalesce(s.event_id,i.event_id),greatest(coalesce(s.server_time,l.listed_at),coalesce(i.server_time,l.listed_at))
-from listed l left join latest_identity i using(part_id) left join latest_status s using(part_id)
+from listed l left join latest_identity i using(part_id) left join latest_qty q using(part_id) left join latest_receipt r using(part_id) left join latest_status s using(part_id)
 where l.list_no<>'' and l.job_card<>'' and l.part_name<>''
   and not exists (
     select 1 from public.workshop_v2_events d
