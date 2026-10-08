@@ -293,3 +293,17 @@ assert.match(workflow,/if\(to==='RETURNED'\)[\s\S]*delete next\.receivedQty;dele
 assert.match(workflow,/from==='RETURNED'&&to!=='RETURNED'[\s\S]*to==='ENQUIRY'\)next\.reEnquiredAt=now/,'Re-enquiry must start a fresh replacement lifecycle');
 assert.match(guard,/upper\(st\) in \('LISTED','ENQUIRY','QUOTED','ORDERED','RETURNED','UNAVAILABLE','CUSTOMER_SETTLEMENT'\) then 0 else received_qty end/,'Database projection must force zero received quantity throughout pre-receipt replacement states');
 assert.match(mainModule,/if\(p\.to==='RETURNED'\)[\s\S]*delete item\.receivedQty;delete item\.receivedAt;delete item\.lastReceivedQty;delete item\.partialReceipt/,'Fresh hydration must not carry a returned partial quantity into re-enquiry');
+
+{
+ const batch1=spare.transition({id:'SP-BATCH',status:'ORDERED',qty:4},'RECEIVED',{role:'Purchaser',actorId:'P1',receivedQty:1});
+ assert.equal(batch1.ok,true);assert.equal(batch1.item.receivedQty,1);assert.equal(batch1.item.partialReceipt,true);
+ const batch2=spare.transition(batch1.item,'RECEIVED',{role:'Purchaser',actorId:'P1',receivedQty:2});
+ assert.equal(batch2.ok,true);assert.equal(batch2.item.receivedQty,3);assert.equal(batch2.item.partialReceipt,true);
+ const over=spare.transition(batch2.item,'RECEIVED',{role:'Purchaser',actorId:'P1',receivedQty:2});
+ assert.equal(over.ok,false);assert.equal(over.reason,'INVALID_RECEIVED_QUANTITY');assert.equal(over.receivedQty,3);
+ const batch3=spare.transition(batch2.item,'RECEIVED',{role:'Purchaser',actorId:'P1',receivedQty:1});
+ assert.equal(batch3.ok,true);assert.equal(batch3.item.receivedQty,4);assert.equal(batch3.item.partialReceipt,undefined);
+ const verified=spare.transition(batch3.item,'SUPERVISOR_VERIFIED',{role:'Supervisor',actorId:'S1'});
+ assert.equal(verified.ok,true,'Supervisor verification becomes valid only after cumulative 4/4 receipt');
+}
+assert.match(guard,/upper\(st\)='RECEIVED'[\s\S]*receivedQty[\s\S]*cur\.ordered_qty[\s\S]*spare_received_quantity_exceeds_ordered/,'Server must reject cumulative received quantity above ordered quantity');
