@@ -890,3 +890,16 @@ test('Manager report counts returned quantity and clears it on cancellation',asy
  assert.equal(restored.parts.reportRows()[0].returnedQty,0);
  assert.equal(restored.parts.reportRows()[0].amount,7.32);
 });
+
+test('invoice save immediately refreshes through actual report service without stale pending state',async()=>{
+ const manager=fixture('Manager','M1');
+ manager.window.zukaitServerReports={page:async()=>({rows:copy(manager.serverRows),source:'server',nextCursor:null})};
+ vm.runInContext(fs.readFileSync('app/src/main/assets/v2/features/reports/service.js','utf8'),manager.context);
+ await manager.parts.openInvoiceEntry();
+ assert.match(manager.html(),/1 pending/);
+ await manager.invoice();
+ assert.equal(manager.lists()[0].items[0].purchaseAmount,2.44);
+ assert.match(manager.html(),/All eligible parts on this Job Card have invoice amounts/);
+ await manager.parts.openInvoiceEntry();
+ assert.match(manager.html(),/No parts waiting for invoice price review/);
+});

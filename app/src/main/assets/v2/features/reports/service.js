@@ -13,6 +13,8 @@ function stable(value){
 function requestKey(report,cursor,limit,filters){return JSON.stringify([String(report||'').toUpperCase(),cursor||null,clamp(limit),stable(filters||{})])}
 async function page(report,{cursor=null,limit=100,filters={}}={}){
  const a=api();if(!a||typeof a.page!=='function')return {rows:[],nextCursor:null,source:'server-required'};
+ // Spare Parts reads rebuild operational state after writes: never reuse a cached or pre-write in-flight response.
+ if(String(report||'').toUpperCase()==='SPARE_PARTS')return a.page({report,cursor,limit:clamp(limit),filters});
  const key=requestKey(report,cursor,limit,filters),now=Date.now();
  // Only first-page report reads get a tiny cache. Operational writes, live status,
  // pagination and job-card search are intentionally untouched.
