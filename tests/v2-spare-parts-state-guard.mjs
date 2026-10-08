@@ -32,3 +32,5 @@ assert.match(sql,/e\.event_id listed_event_id/,'Initial listed events must suppl
 assert.match(sql,/coalesce\(s\.event_id,i\.event_id,l\.listed_event_id\)/,'Listed-only parts must not rebuild with a null event id');
 
 assert.match(sql,/e\.event_type='SPARE_PART_FINAL_PRICE_RECORDED'[\s\S]*e\.event_id<>new\.event_id[\s\S]*stale_spare_final_price/,'AFTER INSERT price guard must exclude its own event');
+
+assert.match(sql,/financial_snapshot[\s\S]*preReturnSnapshot[\s\S]*stale_spare_return_financial_snapshot/,'Manager Return must reject a stale undo financial snapshot under the row lock');

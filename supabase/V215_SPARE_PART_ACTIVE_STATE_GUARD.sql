@@ -38,6 +38,7 @@ declare
   afterv jsonb:=case when jsonb_typeof(p->'after')='object' then p->'after' else '{}'::jsonb end;
   pid text:=coalesce(nullif(p->>'partId',''),new.entity_id);
   cur public.workshop_v2_spare_part_state%rowtype;
+  financial_snapshot jsonb;
   nm text; pn text; st text; ln text; jc text; k text; conflict_part text;
 begin
   if new.event_type not like 'SPARE_PART%' then return new; end if;
@@ -92,6 +93,25 @@ begin
      if upper(st)='SUPERVISOR_VERIFIED' and coalesce(cur.received_qty,0)<coalesce(cur.ordered_qty,1) then raise exception 'spare_receipt_incomplete'; end if;
     if upper(st)='RETURNED' then
       if coalesce(nullif(p->>'returnedQty','')::numeric,0)<>least(coalesce(cur.received_qty,0),coalesce(cur.ordered_qty,1)) then raise exception 'spare_returned_quantity_mismatch'; end if;
+      -- Recheck undo finances under the same row lock as invoice commits.
+      select case
+        when e.event_type='SPARE_PART_FINAL_PRICE_RECORDED' then jsonb_build_object('purchaseAmount',e.payload->'finalPrice','purchaseAmountRevision',e.revision)
+        when e.event_type in ('SPARE_PART_RETURN_CANCELLED','SPARE_PART_MANAGER_CORRECTED','SPARE_PART_SUPERVISOR_CORRECTED') then e.payload->'after'
+        when e.event_type='SPARE_PART_COMMERCIAL_UPDATED' then e.payload
+        else '{}'::jsonb end into financial_snapshot
+      from public.workshop_v2_events e
+      where e.entity_id=pid and e.event_id<>new.event_id and (
+        e.event_type in ('SPARE_PART_FINAL_PRICE_RECORDED','SPARE_PART_RETURN_CANCELLED')
+        or (e.event_type in ('SPARE_PART_MANAGER_CORRECTED','SPARE_PART_SUPERVISOR_CORRECTED') and e.payload->'after' ? 'purchaseAmount')
+        or (e.event_type='SPARE_PART_COMMERCIAL_UPDATED' and e.payload ? 'purchaseAmount')
+        or (e.event_type='SPARE_PART_STATUS_CHANGED' and upper(e.payload->>'to')='RETURNED'))
+      order by e.server_time desc,e.event_id desc limit 1;
+      if p->'preReturnSnapshot' is not null and (
+        nullif(financial_snapshot->>'purchaseAmount','')::numeric is distinct from nullif(p->'preReturnSnapshot'->>'purchaseAmount','')::numeric
+        or (financial_snapshot ? 'purchaseAmountRevision' and coalesce((financial_snapshot->>'purchaseAmountRevision')::bigint,0)<>coalesce((p->'preReturnSnapshot'->>'purchaseAmountRevision')::bigint,0))) then
+        raise exception 'stale_spare_return_financial_snapshot';
+      end if;
+
     end if;
     if st<>'' then
       if upper(st)<>'RETURNED' and upper(cur.status)='RETURNED' then
@@ -113,7 +133,7 @@ begin
       select part_id into conflict_part from public.workshop_v2_spare_part_state where list_no=cur.list_no and part_key=k and status<>'RETURNED' and part_id<>pid limit 1;
       if conflict_part is not null then raise exception 'duplicate_active_spare_part'; end if;
     end if;
-    if new.event_type='SPARE_PART_RETURN_CANCELLED' and coalesce(nullif(afterv->>'receivedQty','')::numeric,0)>greatest(1,coalesce((afterv->>'qty')::numeric,ordered_qty)) then raise exception 'spare_return_restore_quantity_invalid'; end if;
+    if new.event_type='SPARE_PART_RETURN_CANCELLED' and coalesce(nullif(afterv->>'receivedQty','')::numeric,0)>greatest(1,coalesce((afterv->>'qty')::numeric,cur.ordered_qty)) then raise exception 'spare_return_restore_quantity_invalid'; end if;
     update public.workshop_v2_spare_part_state set part_name=nm,part_no=pn,part_key=k,status=st,ordered_qty=greatest(1,coalesce((afterv->>'qty')::numeric,ordered_qty)),received_qty=case when upper(st)='RETURNED' then 0 when new.event_type='SPARE_PART_RETURN_CANCELLED' then least(greatest(1,coalesce((afterv->>'qty')::numeric,ordered_qty)),greatest(0,coalesce(nullif(afterv->>'receivedQty','')::numeric,0))) else received_qty end,
       revision=greatest(revision,coalesce(new.revision,0)),last_event_id=new.event_id,updated_at=now() where part_id=pid;
   end if;

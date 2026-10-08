@@ -271,3 +271,25 @@ test('invoice first then Manager Return and Cancel Return restores amount and da
    assert.equal(device.parts.reportRows().reduce((n,r)=>n+r.amount,0),2.44);
  }
 });
+
+test('stale Manager Return refreshes a winning invoice before retry and cancellation',async()=>{
+ const supervisor=fixture(),manager=fixture('Manager','M1',supervisor.serverRows);
+ manager.onCommit(async event=>{
+   if(event.type==='SPARE_PART_STATUS_CHANGED'&&event.payload.to==='RETURNED'){
+     await supervisor.invoice();
+     const paid=serverProjection(supervisor.serverRows)[0].items[0];
+     assert.notEqual(event.payload.preReturnSnapshot.purchaseAmountRevision,paid.purchaseAmountRevision);
+     throw Object.assign(new Error('stale_spare_return_financial_snapshot'),{code:'stale_spare_return_financial_snapshot'});
+   }
+ });
+ const lost=await manager.parts.transitionItem(manager.listNo,manager.partId,'RETURNED','Wrong supplied part');
+ assert.equal(lost.ok,false);assert.equal(lost.detail,'stale_spare_return_financial_snapshot');
+ assert.equal(manager.lists()[0].items[0].status,'SUPERVISOR_VERIFIED');
+ assert.equal(manager.lists()[0].items[0].purchaseAmount,2.44);
+ assert.equal(supervisor.serverRows.filter(r=>r.payload.to==='RETURNED').length,0);
+ manager.onCommit(null);
+ assert.equal((await manager.parts.transitionItem(manager.listNo,manager.partId,'RETURNED','Reviewed return')).ok,true);
+ manager.window.prompt=()=> 'Return was mistaken';await manager.parts.cancelReturn(manager.listNo,manager.partId);
+ assert.deepEqual(manager.alerts,[]);
+ assert.equal(manager.lists()[0].items[0].purchaseAmount,2.44);
+});
