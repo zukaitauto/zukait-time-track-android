@@ -27,10 +27,10 @@ assert.match(main,/Correction reason is required\./,'Manager parts correction mu
 assert.match(main,/SPARE_PART_MANAGER_CORRECTED/,'Manager correction must emit an auditable server event');assert.match(main,/SPARE_PART_SUPERVISOR_CORRECTED/,'Supervisor correction must emit a distinct auditable server event');
 assert.match(main,/managerCorrectionAudit/,'Manager correction must retain before\/after audit history');
 assert.ok(main.includes('option value="RECEIVED"')&&main.includes('>Arrived</option>'),'Manager correction must allow Arrived status');
-assert.match(mainSource,/Returned parts must use Cancel Return or Re-enquire/,'manual correction cannot bypass audited returned-part flow');
-assert.match(mainSource,/Cannot move a partially received part to verified\/confirmed\/fitted/,'manual correction cannot promote a partial receipt');
-assert.match(mainSource,/Supervisor verification is required before confirmation/,'manual correction preserves verification gate');
-assert.match(mainSource,/Supervisor confirmation is required before marking the part fitted/,'manual correction preserves fitting gate');
+assert.match(main,/Returned parts must use Cancel Return or Re-enquire/,'manual correction cannot bypass audited returned-part flow');
+assert.match(main,/Cannot move a partially received part to verified\/confirmed\/fitted/,'manual correction cannot promote a partial receipt');
+assert.match(main,/Supervisor verification is required before confirmation/,'manual correction preserves verification gate');
+assert.match(main,/Supervisor confirmation is required before marking the part fitted/,'manual correction preserves fitting gate');
 const apiSource=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
 assert.match(apiSource,/directReturnedRestore=beforeStatus==="RETURNED"&&afterStatus!=="RETURNED"/,'server blocks direct restoration of returned parts');
 assert.match(apiSource,/incompletePromotion=promotesReceipt/,'server blocks promotion of incomplete receipts');
