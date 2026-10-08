@@ -315,3 +315,32 @@ test('replacement invoice uses a new event identity after return and re-enquiry'
  assert.equal(other.parts.reportRows().reduce((n,r)=>n+r.amount,0),3.5);
  assert.equal(other.lists()[0].items[0].purchaseAmountLastRevision,2);
 });
+
+test('Manager deletion wins an in-flight invoice and both client totals discard the deleted part',async()=>{
+ const supervisor=fixture(),manager=fixture('Manager','M1',supervisor.serverRows);
+ let release,started;
+ const held=new Promise(r=>release=r),entered=new Promise(r=>started=r);
+ supervisor.onCommit(async event=>{if(event.type==='SPARE_PART_FINAL_PRICE_RECORDED'){started();await held}});
+ const saving=supervisor.invoice();await entered;
+ try {
+   assert.equal((await manager.parts.deleteItem(manager.listNo,manager.partId)).ok,true);
+ } finally {release()}
+ await saving;
+ for(const device of [supervisor,manager]){
+   await device.parts.hydrateAuthoritativeLists();
+   assert.equal(device.lists().flatMap(l=>l.items).some(i=>i.id===device.partId),false);
+   assert.equal(device.parts.reportRows().reduce((n,r)=>n+r.amount,0),0);
+ }
+ assert.equal(supervisor.serverRows.filter(r=>r.event_type==='SPARE_PART_FINAL_PRICE_RECORDED').length,0);
+ assert.ok(supervisor.alerts.some(s=>s.includes('Latest Parts data has been refreshed')));
+});
+
+test('invoice followed by Manager deletion removes its amount on a fresh client',async()=>{
+ const supervisor=fixture(),manager=fixture('Manager','M1',supervisor.serverRows);
+ await supervisor.invoice();await manager.parts.hydrateAuthoritativeLists();
+ assert.equal(manager.parts.reportRows().reduce((n,r)=>n+r.amount,0),2.44);
+ assert.equal((await manager.parts.deleteItem(manager.listNo,manager.partId)).ok,true);
+ const fresh=fixture('Supervisor','SUP003',manager.serverRows);
+ assert.equal(fresh.lists().flatMap(l=>l.items).some(i=>i.id===fresh.partId),false);
+ assert.equal(fresh.parts.reportRows().reduce((n,r)=>n+r.amount,0),0);
+});
