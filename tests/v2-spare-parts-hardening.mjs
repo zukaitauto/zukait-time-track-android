@@ -216,3 +216,8 @@ assert.match(guard,/afterv->>'qty'\)::numeric < coalesce\(cur\.received_qty,0\)[
 assert.match(guard,/SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED'[\s\S]*afterv->>'qty'\)::numeric > coalesce\(cur\.received_qty,0\)[\s\S]*spare_verified_quantity_increase_requires_reopen/,'Verified parts cannot silently become incomplete through a quantity increase');
 assert.match(apiListCreated,/spare_quantity_below_received[^\n]*409/,'Quantity-below-received correction must surface as conflict');
 assert.match(apiListCreated,/spare_verified_quantity_increase_requires_reopen[^\n]*409/,'Verified quantity increase must surface as conflict');
+
+assert.match(guard,/upper\(st\)='RETURNED'[\s\S]*returnedQty[\s\S]*least\(coalesce\(cur\.received_qty,0\),coalesce\(cur\.ordered_qty,1\)\)[\s\S]*spare_returned_quantity_mismatch/,'Returned quantity must equal authoritative physically received quantity');
+assert.match(apiListCreated,/spare_returned_quantity_mismatch[^\n]*409/,'Returned quantity mismatch must surface as conflict');
+assert.match(workflow,/physicallyReceived=Math\.max\(0,Math\.min\(Number\(item\.qty\)\|\|0,Number\(item\.receivedQty\)\|\|0\)\)/,'Client return must record only physically received quantity');
+assert.match(workflow,/delete next\.purchaseAmount;delete next\.purchaseRecordedAt;delete next\.purchaseAmountRevision/,'Returned parts must clear active Purchase Expense fields');
