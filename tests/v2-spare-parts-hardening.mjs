@@ -145,3 +145,10 @@ assert.match(apiListed,/eventType==="SPARE_PART_LISTED"[\s\S]*allowedKeys=new Se
 assert.match(apiListed,/invalidQty=!Number\.isInteger\(qty\)\|\|qty<=0\|\|qty>100000/,'New part quantity must be a positive bounded integer');
 assert.match(apiListed,/invalidTargetRole=String\(p\.targetRole\|\|""\)!=="Purchaser"/,'New parts must route only to Purchaser');
 assert.match(apiListed,/spare_part_create_forbidden_or_invalid/,'Injected initial part state must be rejected');
+
+const apiListCreated=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+assert.match(apiListCreated,/eventType==="SPARE_PART_LIST_CREATED"[\s\S]*allowedKeys=new Set\(\["jobCard","partId","listNo","vehicle","registration","model","year","customer","targetRole"\]\)/,'Parts-list creation payload must be strictly allowlisted');
+assert.match(apiListCreated,/String\(p\.partId\|\|""\)!==String\(p\.listNo\|\|""\)/,'Parent list entity identity must match its list number');
+assert.match(apiListCreated,/invalidTargetRole=String\(p\.targetRole\|\|""\)!=="Purchaser"/,'Created lists must route only to Purchaser');
+assert.match(apiListCreated,/invalidYear=[\s\S]*1900[\s\S]*2100/,'Optional vehicle year must be plausibly bounded');
+assert.match(apiListCreated,/spare_list_create_forbidden_or_invalid/,'Injected parent list state must be rejected');
