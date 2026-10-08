@@ -161,7 +161,7 @@ function quickLogin(id){alert('Quick Login is disabled. Use your individual pass
 function openAppUpdate(){let version='V57';try{if(window.AndroidBridge&&AndroidBridge.getAppVersion)version=AndroidBridge.getAppVersion()}catch(e){}openModal('<div class="section-title"><h3>⬆ App Update</h3><button class="secondary" onclick="closeModal()">Close</button></div><div class="notice"><b>Current version:</b> '+version+'</div><p>Download the latest signed Zukait Time Track APK directly.</p><button class="blue big-action" onclick="launchUpdatePage()">DOWNLOAD LATEST UPDATE</button>')}
 function launchUpdatePage(){try{if(window.AndroidBridge&&AndroidBridge.openUpdatePage){AndroidBridge.openUpdatePage();return}}catch(e){}alert('Update service is available in the Android app.')}
 function logout(){document.body.classList.remove('employee-session');if(employeeClockTimer)clearInterval(employeeClockTimer);employeeClockTimer=null;if(liveSupervisorTimer)clearInterval(liveSupervisorTimer);liveSupervisorTimer=null;closeModal();me=null;window.me=null;window.currentUser=null;let gbh=document.getElementById('globalBrandHeader');if(gbh)gbh.classList.remove('hidden');let lah=document.getElementById('legacyAppHeader');if(lah)lah.classList.remove('hidden');document.getElementById('app').classList.add('hidden');document.getElementById('login').classList.remove('hidden')}
-function openSupervisorHeaderMenu(){if(me?.role!=='Supervisor')return;showSupervisorModal('Supervisor Menu','<div class="v88-header-menu-grid"><button class="blue" onclick="closeSupervisorModal();openSupervisorRequestsWindow()">🔔 Employee Requests</button><button class="amber" onclick="closeSupervisorModal();v66OpenAttention()">⚠ Need Attention</button><button class="purple" onclick="closeSupervisorModal();openSupervisorAssignedWindow()">📋 Assigned Jobs</button><button class="green" onclick="closeSupervisorModal();openAdditionalTimeWindow()">⏱ Additional Time</button></div>')}
+function openSupervisorHeaderMenu(){if(me?.role!=='Supervisor')return;showSupervisorModal('Supervisor Menu','<div class="v88-header-menu-grid"><button class="blue" onclick="closeSupervisorModal();openSupervisorRequestsWindow()">🔔 Employee Requests</button><button class="amber" onclick="closeSupervisorModal();v66OpenAttention()">⚠ Need Attention</button><button class="purple" onclick="closeSupervisorModal();openSupervisorAssignedWindow()">📋 Assigned Jobs</button><button class="green" onclick="closeSupervisorModal();openAdditionalTimeWindow()">⏱ Additional Time</button><button class="secondary" onclick="zukaitExitApp()">⏻ Exit App</button></div>')}
 window.openSupervisorHeaderMenu=openSupervisorHeaderMenu;
 function render(){if(!me)return;if(document.body.classList.contains('employee-session')!==(me.role==='Employee'))document.body.classList.toggle('employee-session',me.role==='Employee');if(employeeClockTimer)clearInterval(employeeClockTimer);employeeClockTimer=null;if(liveSupervisorTimer)clearInterval(liveSupervisorTimer);liveSupervisorTimer=null;const legacyHeader=document.getElementById('legacyAppHeader');if(legacyHeader)legacyHeader.style.display=me.role==='Employee'?'none':'';const welcome=document.getElementById('welcome'),greeting=me.name+' — '+me.role;if(welcome.textContent!==greeting)welcome.textContent=greeting;let gbh=document.getElementById('globalBrandHeader');if(gbh)gbh.classList.toggle('hidden',me.role==='Employee');let lah=document.getElementById('legacyAppHeader');if(lah)lah.classList.toggle('hidden',me.role==='Employee');let shm=document.getElementById('supervisorHeaderMenu');if(shm)shm.classList.toggle('hidden',me.role!=='Supervisor');let hos=document.getElementById('headerOnlineStatus');if(hos)hos.classList.toggle('is-offline',!navigator.onLine);let hot=document.getElementById('headerOnlineText');if(hot){const label=navigator.onLine?'Online':'Offline';if(hot.textContent!==label)hot.textContent=label}const activeView=me.role==='Purchaser'?'managerView':me.role.toLowerCase()+'View';['employeeView','supervisorView','managerView'].forEach(x=>{const view=document.getElementById(x),hide=x!==activeView;if(view.classList.contains('hidden')!==hide)view.classList.toggle('hidden',hide)});if(me.role==='Employee')renderEmployee();if(me.role==='Supervisor'){renderSupervisor()}if(me.role==='Manager'){delete document.getElementById('managerView').dataset.zukaitPurchaserShell;renderManager()}if(me.role==='Purchaser'){const view=document.getElementById('managerView');if(view.classList.contains('hidden'))view.classList.remove('hidden');if(!view.dataset.zukaitPurchaserShell){view.innerHTML='<div class="card"><h2>🛒 Purchaser — Spare Parts</h2><p class="muted">Loading purchasing dashboard…</p></div>';view.dataset.zukaitPurchaserShell='1';setTimeout(()=>window.zukaitV2?.sparePartsMain?.open?.(),0)}}{const net=document.getElementById('net'),label=navigator.onLine?'Online':'OFFLINE';if(net.textContent!==label)net.textContent=label}}
 function jobsFor(emp){return state.assign.filter(a=>a.emp===emp).map(a=>({a,j:job(a.job)})).filter(x=>x.j)}
@@ -1699,13 +1699,13 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 <script src="professional_ux.js?v=202"></script>
 <script src="v54_improvements.js?v=202"></script>
 <script src="v63_updates.js?v=202"></script>
-<script src="v65_updates.js?v=202"></script>
+<script src="v65_updates.js?v=202610081"></script>
 <script src="v66_updates.js?v=202"></script>
 <script src="v67_updates.js?v=280-manager-time"></script>
 <script src="v68_updates.js?v=280"></script>
 <script src="v69_updates.js?v=202"></script>
-<script src="v74_updates.js?v=202610062"></script>
-<script src="vin_scan.js?v=1"></script>
+<script src="v74_updates.js?v=202610081"></script>
+<script src="vin_scan.js?v=2"></script>
 <script src="supervisor_stable.js?v=202610062"></script>
 <script src="voice_quick_entry_intelligent.js?v=202"></script>
 <script src="live_status_authority.js?v=202610083"></script>
@@ -1772,5 +1772,6 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 <script type="module" src="qc_delivery.js?v=202610072"></script>
 <script type="module" src="time_management.js?v=280-manager-time"></script>
 <script src="manager_job_edit.js?v=283"></script>
+<script src="app_exit.js?v=1"></script>
 </body>
 </html>

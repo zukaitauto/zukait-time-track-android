@@ -2,6 +2,8 @@
 set -euo pipefail
 node tests/completed-overdue-runtime.mjs
 node tests/manager-header-menu-runtime.mjs
+node tests/app-exit.mjs
+node tests/vin-scan-runtime.mjs
 node tests/secure-session-restore.mjs
 node tests/functional-smoke.mjs
 node tests/manager-time-management.mjs

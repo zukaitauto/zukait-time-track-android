@@ -1,8 +1,7 @@
 {
-  "versionName": "V301",
-  "versionCode": 264,
-  "approvedForStaff": true,
-  "approvedAt": "2026-10-08",
-  "sourceCommit": "f9da441ba6fa94bcca4288a9a6a5ea6bd1223912",
-  "publishNonce": "release-v301-spare-audit-20261008-user-approved-1"
+  "versionName": "V303",
+  "versionCode": 266,
+  "approvedForStaff": false,
+  "sourceCommit": "6bbf8c28e5f10d60e124f6673fdda756387bb66a",
+  "publishNonce": "v303-exit-vin-candidate-20261008"
 }
