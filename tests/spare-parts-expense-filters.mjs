@@ -67,6 +67,22 @@ const correctedRows=app.zukaitV2.sparePartsMain.hydrateFromServerRows(correctedE
 assert.equal(correctedRows[0].items[0].purchaseAmount,22);
 assert.equal(correctedRows[0].items[0].purchaseRecordedAt,'2026-10-01T08:00:00.000Z','Amount correction must preserve original purchase transaction date after fresh login');
 assert.match(main,/purchaseRecordedAt:amount==null\?null:/,'Correction event must persist the original purchase transaction date');
+const crossMonthEvents=[
+ event('SPARE_PART_LISTED','2026-09-01T00:00:00Z',{name:'Original Bumper',qty:1}),
+ event('SPARE_PART_FINAL_PRICE_RECORDED','2026-09-20T08:00:00Z',{finalPrice:20},1),
+ event('SPARE_PART_STATUS_CHANGED','2026-10-02T08:00:00Z',{from:'FITTED',to:'RETURNED',returnedQty:1,preReturnSnapshot:{status:'FITTED',qty:1,purchaseAmount:20,purchaseRecordedAt:'2026-09-20T08:00:00.000Z'}},2),
+ {...event('SPARE_PART_LISTED','2026-10-03T08:00:00Z',{name:'Replacement Bumper',qty:1},1),entity_id:'P2',payload:{listNo:'PL1',jobCard:'JC1',partId:'P2',name:'Replacement Bumper',qty:1}},
+ {...event('SPARE_PART_FINAL_PRICE_RECORDED','2026-10-04T08:00:00Z',{finalPrice:24},1),entity_id:'P2',payload:{listNo:'PL1',jobCard:'JC1',partId:'P2',finalPrice:24}},
+ {...event('SPARE_PART_STATUS_CHANGED','2026-10-05T08:00:00Z',{to:'FITTED'},2),entity_id:'P2',payload:{listNo:'PL1',jobCard:'JC1',partId:'P2',to:'FITTED'}}
+];
+const crossMonthRows=app.zukaitV2.sparePartsMain.hydrateFromServerRows(crossMonthEvents);
+const crossItems=crossMonthRows[0].items;
+assert.equal(crossItems.find(x=>x.id==='P1').purchaseAmount,undefined,'Returned September original must have no active expense after October return');
+assert.equal(crossItems.find(x=>x.id==='P2').purchaseAmount,24,'October replacement must retain only its own final amount');
+assert.equal(app.zukaitV2.sparePartsMain.reportRows().reduce((n,x)=>n+x.amount,0),24,'Current expense report must count replacement only');
+const legacy=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
+assert.match(legacy,/if\(!x\|\|String\(x\.status\|\|''\)\.toUpperCase\(\)==='RETURNED'\)continue/,'Legacy Manager purchase fallback must exclude returned rows');
+
 console.log('Spare Parts Expense: Oman periods, exact JC, quantities, older/undated costs, permissions, read-only filters and stable server purchase date passed');
 
 assert.match(main,/Number\(r\.amount\)>0\?'Purchase Date':'Activity'/,'Positive Spare Parts expense rows must be labelled Purchase Date');
