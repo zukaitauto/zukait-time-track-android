@@ -68,3 +68,7 @@ assert.equal(correctedRows[0].items[0].purchaseAmount,22);
 assert.equal(correctedRows[0].items[0].purchaseRecordedAt,'2026-10-01T08:00:00.000Z','Amount correction must preserve original purchase transaction date after fresh login');
 assert.match(main,/purchaseRecordedAt:amount==null\?null:/,'Correction event must persist the original purchase transaction date');
 console.log('Spare Parts Expense: Oman periods, exact JC, quantities, older/undated costs, permissions, read-only filters and stable server purchase date passed');
+
+assert.match(main,/Number\(r\.amount\)>0\?'Purchase Date':'Activity'/,'Positive Spare Parts expense rows must be labelled Purchase Date');
+assert.match(main,/Number\(r\.amount\)>0\?omanDateKey\(r\.purchaseRecordedAt\):omanDateKey\(r\.activityAt\|\|r\.createdAt\)/,'Report date display must use Oman purchase date for expense rows');
+assert.doesNotMatch(main,/<span>Activity<b>'\+esc\(String\(r\.activityAt\|\|r\.createdAt\|\|''\)\.slice\(0,10\)/,'Report must not display raw UTC-sliced activity date');
