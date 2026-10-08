@@ -4187,3 +4187,110 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  `;
  document.head.appendChild(css);
 })();
+
+
+/* V300 SERVER-AUTHORITATIVE EMPLOYEE TIME CONTROLS
+   START / PAUSE / FINISH / ID001 STOP remain pending until workshop-api confirms.
+   Server receipt time is the canonical work timestamp; device time is audit-only. */
+(()=>{
+ 'use strict';
+ let pending=null;
+ const ACTIVE=new Set(['Working','Overtime','ID001']);
+ const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ const msg=(m,t='Work Status')=>typeof window.v74Msg==='function'?window.v74Msg(m,t):alert(m);
+ const actionId=()=>{try{return crypto.randomUUID()}catch(_){return 'time-'+Date.now()+'-'+Math.random().toString(36).slice(2)}};
+ const deviceId=()=>{
+   const k='zukait_employee_time_device_v1';let v='';
+   try{v=localStorage.getItem(k)||'';if(!v){v=actionId();localStorage.setItem(k,v)}}catch(_){v='device-unknown'}
+   return v;
+ };
+ const liveRow=()=>{
+   const rows=window.zukaitServerLive?.rows;
+   return Array.isArray(rows)&&me?rows.find(r=>String(r?.employee_id||'')===String(me.id))||null:null;
+ };
+ const active=()=>{
+   const r=liveRow();
+   if(r&&ACTIVE.has(String(r.status||''))&&r.session_id)return{id:String(r.session_id),emp:String(r.employee_id),job:String(r.job_no||''),assignmentId:String(r.assignment_id||''),start:Number(r.session_start||0),end:null,server:true};
+   try{return window.zukaitEmployeeDisplaySession?.(me?.id)||activeSession(me?.id)||null}catch(_){return null}
+ };
+ const openAssignment=no=>(state.assign||[]).filter(a=>a&&String(a.emp)===String(me?.id)&&String(a.job)===String(no)&&!a.cancelled&&!a.completed).sort((a,b)=>Number(b.assignedAt||0)-Number(a.assignedAt||0))[0]||null;
+ const pendingUi=(label)=>{
+   let e=document.getElementById('v300TimePending');
+   if(!e){e=document.createElement('div');e.id='v300TimePending';e.style.cssText='position:fixed;left:10px;right:10px;top:72px;z-index:100000;padding:14px 16px;border-radius:16px;background:#fff7d6;border:2px solid #f0b429;color:#543600;font:900 15px Arial,sans-serif;box-shadow:0 10px 24px #0003;text-align:center';document.body.appendChild(e)}
+   e.innerHTML='⏳ '+esc(label)+'<br><small style="font-weight:700">Waiting for workshop server confirmation…</small>';
+   document.querySelectorAll('#employeeView button').forEach(b=>{if(!b.dataset.v300WasDisabled)b.dataset.v300WasDisabled=b.disabled?'1':'0';b.disabled=true});
+ };
+ const clearPendingUi=()=>{
+   document.getElementById('v300TimePending')?.remove();
+   document.querySelectorAll('#employeeView button[data-v300-was-disabled]').forEach(b=>{b.disabled=b.dataset.v300WasDisabled==='1';delete b.dataset.v300WasDisabled});
+ };
+ const fail=(e,label)=>{
+   clearPendingUi();pending=null;
+   const code=String(e?.code||e?.message||'');
+   const text=code==='NETWORK'?'Server connection unavailable. '+label+' was NOT confirmed. Check internet and retry.'
+     :code==='EMPLOYEE_TIME_CONFIRM_TIMEOUT'||code==='TIMEOUT'?'Server confirmation was not received within 30 seconds. The app will not assume the status changed. Refresh and retry.'
+     :code==='employee_time_already_active'?'Server says another work session is already active. Refresh before starting another job.'
+     :code==='employee_time_no_session'?'Server could not find an active session. Refresh the dashboard before retrying.'
+     :code==='employee_time_assignment_not_open'?'Server says this assignment is not open for work.'
+     :'Server did not confirm this action ('+code+'). Refresh and retry.';
+   try{window.zukaitCloud?.pull?.(true).then(()=>window.zukaitCloud?.pullLiveStatus?.()).finally(()=>{try{render()}catch(_){}})}catch(_){}
+   return msg(text,'Not Confirmed');
+ };
+ const run=async(type,payload,label)=>{
+   if(pending)return msg('Another work action is waiting for server confirmation.','Please Wait');
+   if(!window.zukaitCloud?.employeeTimeAction)return msg('This app version does not yet contain server-confirmed time controls. Please install the latest version.','Update Required');
+   pending={type,at:Date.now()};pendingUi(label);
+   try{
+     const r=await window.zukaitCloud.employeeTimeAction({
+       event_type:type,action_id:actionId(),device_id:deviceId(),client_time:Date.now(),...payload
+     });
+     clearPendingUi();pending=null;
+     try{if(typeof closeModal==='function')closeModal()}catch(_){}
+     try{render()}catch(_){}
+     return r;
+   }catch(e){return fail(e,label)}
+ };
+
+ // START and RESUME: no local session is created. The server creates it and
+ // returns the authoritative timestamp/revision before the UI changes.
+ window.start=function(no){
+   if(!me||me.role!=='Employee')return;
+   const current=active();
+   if(current)return msg('Server shows active work on '+String(current.job||'another job')+'. Pause, finish or stop it first.','One Job at a Time');
+   const a=openAssignment(no);
+   if(!a)return msg('No open assignment was found for '+String(no)+'. Refresh and try again.','Start Work');
+   return run('START',{job:String(a.job),assignment_id:String(a.id),new_session_id:actionId()},'Starting '+String(a.job));
+ };
+
+ // PAUSE: old modal remains useful for the optional reason; only the confirm
+ // button is replaced. The UI continues showing Running + "Pausing..." until
+ // the server commits Paused.
+ window.v74Pause=function(){
+   if(!me||me.role!=='Employee')return;
+   const s=active();
+   if(!s){
+     const r=liveRow();
+     if(r&&String(r.status)==='Paused')return msg('This work is already confirmed as Paused by the server.','Already Paused');
+     return msg('Server does not show an active work session. Refresh and try again.','Pause Work');
+   }
+   if(String(s.job)==='ID001')return msg('ID001 uses START / STOP only.','Ideal Time');
+   const reason=String(document.getElementById('v74pr')?.value||'').trim();
+   return run('PAUSE',{job:String(s.job),assignment_id:String(s.assignmentId||''),session_id:String(s.id||''),reason},'Pausing '+String(s.job));
+ };
+
+ // FINISH / ID001 STOP: likewise, assignment/job completion is committed on
+ // the server first. No local completion is trusted ahead of confirmation.
+ window.v74Finish=function(){
+   if(!me||me.role!=='Employee')return;
+   const s=active();
+   if(!s)return msg('Server does not show an active work session. Refresh and try again.','Finish Work');
+   const type=String(s.job)==='ID001'?'STOP_ID001':'FINISH';
+   return run(type,{job:String(s.job),assignment_id:String(s.assignmentId||''),session_id:String(s.id||'')},type==='STOP_ID001'?'Stopping ID001':'Finishing '+String(s.job));
+ };
+
+ window.zukaitEmployeeTimeAuthority={
+   get pending(){return pending?{...pending}:null},
+   get serverRow(){return liveRow()},
+   refresh:async()=>{await window.zukaitCloud?.pull?.(true);await window.zukaitCloud?.pullLiveStatus?.();try{render()}catch(_){}}
+ };
+})();
