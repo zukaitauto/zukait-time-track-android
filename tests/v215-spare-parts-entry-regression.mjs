@@ -872,3 +872,21 @@ test('failed later report page preserves cached invoice and totals',async()=>{
   assert.equal(loaded.rows.reduce((n,r)=>n+r.amount,0),2.44,failure);
  }
 });
+
+test('Manager report counts returned quantity and clears it on cancellation',async()=>{
+ const manager=fixture('Manager','M1');
+ manager.serverRows.find(r=>r.event_type==='SPARE_PART_LISTED').payload.qty=3;
+ manager.serverRows.find(r=>r.payload.to==='RECEIVED').payload.receivedQty=3;
+ manager.parts.hydrateFromServerRows(copy(manager.serverRows));await manager.invoice();
+ assert.equal((await manager.parts.transitionItem(manager.listNo,manager.partId,'RETURNED','Wrong part')).ok,true);
+ const fresh=fixture('Manager','M2',manager.serverRows);
+ assert.equal(fresh.parts.reportRows()[0].returnedQty,3);
+ assert.equal(fresh.parts.reportRows()[0].amount,0);
+ const body={innerHTML:''};fresh.elements.set('v2SpReportBody',body);
+ fresh.parts.renderManagerReport();
+ assert.match(body.innerHTML,/Returned Qty<\/b><strong>3<\/strong>/);
+ fresh.window.prompt=()=> 'Restore mistaken return';await fresh.parts.cancelReturn(fresh.listNo,fresh.partId);
+ const restored=fixture('Manager','M3',manager.serverRows);
+ assert.equal(restored.parts.reportRows()[0].returnedQty,0);
+ assert.equal(restored.parts.reportRows()[0].amount,7.32);
+});

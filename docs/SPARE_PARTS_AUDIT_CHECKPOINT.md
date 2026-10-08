@@ -106,3 +106,10 @@ This closes the automated/backend invoice–Return checkpoint; it does not certi
 - Actual-module direct execution passed complete two-page history and three later-page failures (network error, server-required and malformed rows). Complete history updates totals; failed partial history leaves cached invoice totals intact.
 - Entry regression suite now contains 44 cases, including these pagination paths. Full CI for this follow-up must pass before treating those added tests as CI-verified.
 - Current repository release metadata remains V300 / versionCode 263. Do not assign the next version until remaining module audit and physical-device acceptance are complete.
+
+
+### Returned quantity report correction — 2026-10-08
+- Report rows omitted returnedQty although the report summary read that field. Returned quantity therefore displayed zero.
+- Report rows now expose the nonnegative recorded returned quantity. Added fresh-client Return/cancellation regression with quantity 3 and invoice total 7.32.
+- Direct actual-module rendering verified Returned Qty 3 and recorded amount 0. Full CI remains pending for this correction.
+- Physical-device acceptance and the remaining module audit are still outstanding; no release metadata was changed.
