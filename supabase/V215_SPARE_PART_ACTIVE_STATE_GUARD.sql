@@ -90,21 +90,29 @@ with listed as (
   from public.workshop_v2_events e
   where e.event_type='SPARE_PART_LISTED'
   order by e.entity_id,e.server_time desc,e.event_id desc
-), latest as (
+), latest_identity as (
+  select distinct on (e.entity_id)
+    e.entity_id part_id,e.event_id,e.revision,e.server_time,e.payload
+  from public.workshop_v2_events e
+  where e.event_type in ('SPARE_PART_ITEM_EDITED','SPARE_PART_MANAGER_CORRECTED','SPARE_PART_SUPERVISOR_CORRECTED','SPARE_PART_RETURN_CANCELLED')
+    and (nullif(trim(e.payload->'after'->>'name'),'') is not null or nullif(trim(e.payload->'after'->>'partNo'),'') is not null)
+  order by e.entity_id,e.server_time desc,e.event_id desc
+), latest_status as (
   select distinct on (e.entity_id)
     e.entity_id part_id,e.event_id,e.revision,e.server_time,e.event_type,e.payload
   from public.workshop_v2_events e
-  where e.event_type in ('SPARE_PART_LISTED','SPARE_PART_STATUS_CHANGED','SPARE_PART_ITEM_EDITED','SPARE_PART_MANAGER_CORRECTED','SPARE_PART_SUPERVISOR_CORRECTED','SPARE_PART_RETURN_CANCELLED')
+  where (e.event_type='SPARE_PART_STATUS_CHANGED' and nullif(trim(e.payload->>'to'),'') is not null)
+     or (e.event_type in ('SPARE_PART_MANAGER_CORRECTED','SPARE_PART_SUPERVISOR_CORRECTED','SPARE_PART_RETURN_CANCELLED') and nullif(trim(e.payload->'after'->>'status'),'') is not null)
   order by e.entity_id,e.server_time desc,e.event_id desc
 )
 select l.part_id,l.list_no,l.job_card,
-  coalesce(nullif(trim(x.payload->'after'->>'name'),''),l.part_name),
-  coalesce(nullif(upper(trim(x.payload->'after'->>'partNo')),''),l.part_no),
-  public.zukait_v2_spare_part_key(coalesce(nullif(trim(x.payload->'after'->>'name'),''),l.part_name),coalesce(nullif(upper(trim(x.payload->'after'->>'partNo')),''),l.part_no)),
-  case when x.event_type='SPARE_PART_STATUS_CHANGED' then coalesce(nullif(trim(x.payload->>'to'),''),'LISTED')
-       else coalesce(nullif(trim(x.payload->'after'->>'status'),''),'LISTED') end,
-  coalesce(x.revision,0),x.event_id,x.server_time
-from listed l join latest x using(part_id)
+  coalesce(nullif(trim(i.payload->'after'->>'name'),''),l.part_name),
+  coalesce(nullif(upper(trim(i.payload->'after'->>'partNo')),''),l.part_no),
+  public.zukait_v2_spare_part_key(coalesce(nullif(trim(i.payload->'after'->>'name'),''),l.part_name),coalesce(nullif(upper(trim(i.payload->'after'->>'partNo')),''),l.part_no)),
+  case when s.event_type='SPARE_PART_STATUS_CHANGED' then coalesce(nullif(trim(s.payload->>'to'),''),'LISTED')
+       else coalesce(nullif(trim(s.payload->'after'->>'status'),''),'LISTED') end,
+  greatest(coalesce(i.revision,0),coalesce(s.revision,0)),coalesce(s.event_id,i.event_id),greatest(coalesce(s.server_time,l.listed_at),coalesce(i.server_time,l.listed_at))
+from listed l left join latest_identity i using(part_id) left join latest_status s using(part_id)
 where l.list_no<>'' and l.job_card<>'' and l.part_name<>'';
 
 delete from public.workshop_v2_spare_part_state_conflicts;
