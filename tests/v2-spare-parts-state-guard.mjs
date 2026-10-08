@@ -1,0 +1,12 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const sql=fs.readFileSync(new URL('../supabase/V215_SPARE_PART_ACTIVE_STATE_GUARD.sql',import.meta.url),'utf8');
+assert.match(sql,/workshop_v2_spare_part_state/);
+assert.match(sql,/workshop_v2_spare_part_state_conflicts/);
+assert.match(sql,/event_type='SPARE_PART_LISTED'/);
+assert.match(sql,/status<>'RETURNED'/);
+assert.match(sql,/having count\(\*\)>1/);
+assert.match(sql,/unique guard index deferred until reviewed/);
+assert.match(sql,/create unique index if not exists workshop_v2_spare_part_one_active_key/);
+assert.match(sql,/duplicate_active_spare_part/);
+assert.ok(sql.indexOf('insert into public.workshop_v2_spare_part_state_conflicts')<sql.indexOf('create unique index if not exists workshop_v2_spare_part_one_active_key'),'historical conflicts are detected before unique enforcement');
+console.log('v2 spare parts state guard tests passed');
