@@ -348,6 +348,13 @@ public class MainActivity extends Activity {
 
     public class AndroidBridge {
         @JavascriptInterface
+        public void exitApp() {
+            runOnUiThread(() -> {
+                if (!isFinishing() && !isDestroyed()) finishAndRemoveTask();
+            });
+        }
+
+        @JavascriptInterface
         public boolean saveSecureSessionToken(String token) {
             return storeSecureSessionToken(token == null ? "" : token);
         }
@@ -1637,3 +1644,4 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 }
+

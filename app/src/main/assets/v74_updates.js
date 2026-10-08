@@ -529,7 +529,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v84EmployeeAccount=function(){
    if(!me||me.role!=='Employee')return;
    const name=String(me.name||me.id||'Employee').replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]});
-   openModal('<div class="section-title"><h2>'+name+'</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="v63-account v93-employee-menu"><button class="v93-menu-action v93-menu-sync" onclick="v42SyncNow()">↻ <span>SYNC</span></button><button class="v93-menu-action v93-menu-leave" onclick="v84EmployeeLeave()">▣ <span>LEAVE</span></button><button class="v93-menu-action v93-menu-update" onclick="v63OpenAbout()">⬆ <span>ABOUT / UPDATE</span></button><button class="v93-menu-action v93-menu-logout" onclick="closeModal();logout()">↪ <span>LOGOUT</span></button></div>');
+   openModal('<div class="section-title"><h2>'+name+'</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="v63-account v93-employee-menu"><button class="v93-menu-action v93-menu-sync" onclick="v42SyncNow()">↻ <span>SYNC</span></button><button class="v93-menu-action v93-menu-leave" onclick="v84EmployeeLeave()">▣ <span>LEAVE</span></button><button class="v93-menu-action v93-menu-update" onclick="v63OpenAbout()">⬆ <span>ABOUT / UPDATE</span></button><button class="v93-menu-action v93-menu-logout" onclick="closeModal();logout()">↪ <span>LOGOUT</span></button><button class="v93-menu-action v93-menu-exit" onclick="zukaitExitApp()">⏻ <span>EXIT APP</span></button></div>');
  };
  window.v84EmployeeLeave=function(){
    closeModal();
@@ -1063,7 +1063,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v65OpenAccount=function(){
    if(!me)return;
    openModal('<div class="section-title"><h2>'+esc(me.name)+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
-     '<div class="v63-account v88-role-account"><button class="v88-sync" onclick="cloudSyncNow&&cloudSyncNow()">↻ SYNC</button><button class="v88-about" onclick="v63OpenAbout()">ℹ ABOUT</button><button class="v88-leave" onclick="v755OpenLeaveHub()">🗓 LEAVE</button><button class="v88-logout" onclick="logout()">↪ LOGOUT</button></div>');
+     '<div class="v63-account v88-role-account"><button class="v88-sync" onclick="cloudSyncNow&&cloudSyncNow()">↻ SYNC</button><button class="v88-about" onclick="v63OpenAbout()">ℹ ABOUT</button><button class="v88-leave" onclick="v755OpenLeaveHub()">🗓 LEAVE</button><button class="v88-logout" onclick="logout()">↪ LOGOUT</button><button class="v88-exit" onclick="zukaitExitApp()">⏻ EXIT APP</button></div>');
  };
 
  function leaveToday(){const d=window.zukaitV2?.leave?.dashboard?.(state);const k=d?.day||dateKey(Date.now());return window.zukaitV2?.leave?.forDate?.(k,state)||activeLeaveRows().filter(l=>l.date===k)}
@@ -2797,7 +2797,7 @@ window.v2TogglePilotThisDevice=function(){
 /* V111 MANAGER LAYOUT AUTHORITY — header menu + dashboard Leave Management; Workshop Control Center On Leave becomes Consumables. */
 (function(){'use strict';
  const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
- window.v111OpenManagerMenu=function(){if(!me||me.role!=='Manager')return;openModal('<div class="v135-menu-head"><div><small>MANAGER ACCOUNT</small><h2>'+esc(me.name||'Manager')+'</h2></div><button class="v135-close" onclick="closeModal()">×</button></div><div class="v135-manager-menu"><button class="v135-action sync" onclick="v42SyncNow();closeModal()"><i>↻</i><span><b>Synchronize</b><small>Sync workshop data</small></span></button><button class="v135-action leave" onclick="v112OpenLeaveMarking()"><i>🗓</i><span><b>Leave Marking</b><small>Mark employee / supervisor leave</small></span></button><button class="v135-action update" onclick="closeModal();v63OpenAbout()"><i>⬆</i><span><b>About / Update</b><small>Check software version</small></span></button><button class="v135-action health" onclick="closeModal();window.zukaitOpenSystemHealth?.()"><i>⚙</i><span><b>System Health</b><small>Sync, live status & integrity</small></span></button><button class="v135-action logout" onclick="closeModal();logout()"><i>↪</i><span><b>Logout</b><small>Sign out safely</small></span></button></div>')};
+ window.v111OpenManagerMenu=function(){if(!me||me.role!=='Manager')return;openModal('<div class="v135-menu-head"><div><small>MANAGER ACCOUNT</small><h2>'+esc(me.name||'Manager')+'</h2></div><button class="v135-close" onclick="closeModal()">×</button></div><div class="v135-manager-menu"><button class="v135-action sync" onclick="v42SyncNow();closeModal()"><i>↻</i><span><b>Synchronize</b><small>Sync workshop data</small></span></button><button class="v135-action leave" onclick="v112OpenLeaveMarking()"><i>🗓</i><span><b>Leave Marking</b><small>Mark employee / supervisor leave</small></span></button><button class="v135-action update" onclick="closeModal();v63OpenAbout()"><i>⬆</i><span><b>About / Update</b><small>Check software version</small></span></button><button class="v135-action health" onclick="closeModal();window.zukaitOpenSystemHealth?.()"><i>⚙</i><span><b>System Health</b><small>Sync, live status & integrity</small></span></button><button class="v135-action logout" onclick="closeModal();logout()"><i>↪</i><span><b>Logout</b><small>Sign out safely</small></span></button><button class="v135-action exit" onclick="zukaitExitApp()"><i>⏻</i><span><b>Exit App</b><small>Close Zukait Time Track</small></span></button></div>')};
  window.v135OpenManagerMenu=window.v111OpenManagerMenu;window.v110OpenManagerMenu=window.v111OpenManagerMenu;
  function apply(){if(!me||me.role!=='Manager')return;const root=document.getElementById('managerView');if(!root)return;
    root.querySelectorAll('.v91-role-identity').forEach(x=>x.remove());
@@ -4295,4 +4295,5 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
    refresh:async()=>{await window.zukaitCloud?.pull?.(true);await window.zukaitCloud?.pullLiveStatus?.();try{render()}catch(_){}}
  };
 })();
+
 
