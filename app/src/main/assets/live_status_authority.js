@@ -106,6 +106,11 @@
   }
   function employeeDisplaySession(emp){
     const local=localEmployeeSession(emp),cloud=window.zukaitCloud,x=live();
+    const localChangedAt=local?Math.max(Number(local.end||0),Number(local.start||0),Number(local.correctedAt||0),Number(local.finishDeviceTime||0),Number(local.pauseDeviceTime||0)):0;
+    // START / PAUSE / FINISH must render immediately. If the local session changed
+    // after the currently visible server snapshot was fetched, that local action is
+    // newer authority until the next live-status revision arrives.
+    if(local&&localChangedAt>Number(x?.fetchedAt||0))return local.end?null:local;
     // A Start/Pause/Finish may be queued or already acknowledged while the
     // independent live-status poll still describes the previous revision.
     if(!x||cloud?.dirty||Number(x.revision)<Number(cloud?.revision||0))return local&&!local.end?local:null;
