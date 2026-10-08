@@ -27,3 +27,6 @@ assert.match(sql,/pg_advisory_xact_lock\(hashtextextended\(ln\|\|'\|'\|\|k,0\)\)
 assert.match(sql,/upper\(st\)<>'RETURNED'[\s\S]*upper\(cur\.status\)='RETURNED'[\s\S]*duplicate_active_spare_part/,'Reactivation and Cancel Return must reject an active replacement');
 assert.match(sql,/k<>cur\.part_key[\s\S]*duplicate_active_spare_part/,'Identity corrections must reject an active duplicate');
 assert.match(sql,/do \$\$[\s\S]*end \$\$;/,'Migration PL/pgSQL block must use valid dollar quoting');
+
+assert.match(sql,/e\.event_id listed_event_id/,'Initial listed events must supply the projection event id');
+assert.match(sql,/coalesce\(s\.event_id,i\.event_id,l\.listed_event_id\)/,'Listed-only parts must not rebuild with a null event id');

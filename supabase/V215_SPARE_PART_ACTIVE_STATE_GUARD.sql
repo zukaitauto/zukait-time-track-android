@@ -137,7 +137,7 @@ with listed as (
   select distinct on (e.entity_id)
     e.entity_id part_id, trim(e.payload->>'listNo') list_no, upper(trim(e.payload->>'jobCard')) job_card,
     trim(e.payload->>'name') part_name, upper(trim(coalesce(e.payload->>'partNo',''))) part_no,
-    greatest(1,coalesce(nullif(e.payload->>'qty','')::numeric,1)) listed_qty,e.server_time listed_at
+    greatest(1,coalesce(nullif(e.payload->>'qty','')::numeric,1)) listed_qty,e.event_id listed_event_id,coalesce(e.revision,0) listed_revision,e.server_time listed_at
   from public.workshop_v2_events e
   where e.event_type='SPARE_PART_LISTED'
   order by e.entity_id,e.server_time desc,e.event_id desc
@@ -177,7 +177,7 @@ select l.part_id,l.list_no,l.job_card,
   greatest(1,coalesce(nullif(q.payload->'after'->>'qty','')::numeric,l.listed_qty)),
   case when (case when s.event_type='SPARE_PART_STATUS_CHANGED' then upper(coalesce(nullif(trim(s.payload->>'to'),''),'LISTED')) else upper(coalesce(nullif(trim(s.payload->'after'->>'status'),''),'LISTED')) end) in ('ORDERED','RETURNED','LISTED','ENQUIRY','QUOTED','UNAVAILABLE','CUSTOMER_SETTLEMENT') then 0
        else greatest(0,least(greatest(1,coalesce(nullif(q.payload->'after'->>'qty','')::numeric,l.listed_qty)),coalesce(nullif(r.payload->>'receivedQty','')::numeric,greatest(1,coalesce(nullif(q.payload->'after'->>'qty','')::numeric,l.listed_qty))))) end,
-  greatest(coalesce(i.revision,0),coalesce(s.revision,0)),coalesce(s.event_id,i.event_id),greatest(coalesce(s.server_time,l.listed_at),coalesce(i.server_time,l.listed_at))
+  greatest(l.listed_revision,coalesce(i.revision,0),coalesce(s.revision,0)),coalesce(s.event_id,i.event_id,l.listed_event_id),greatest(coalesce(s.server_time,l.listed_at),coalesce(i.server_time,l.listed_at))
 from listed l left join latest_identity i using(part_id) left join latest_qty q using(part_id) left join latest_receipt r using(part_id) left join latest_status s using(part_id)
 where l.list_no<>'' and l.job_card<>'' and l.part_name<>''
   and not exists (
