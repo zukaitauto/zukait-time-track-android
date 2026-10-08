@@ -569,3 +569,22 @@ test('competing receipt batches refresh the losing Purchaser to the accepted qua
  assert.equal(second.serverRows.filter(r=>r.payload.to==='RECEIVED').length,2);
  assert.equal(item.revision,2);
 });
+
+test('receipt collision refresh allows the remaining batch and full Supervisor verification',async()=>{
+ const first=fixture('Purchaser','PUR001');
+ first.serverRows.find(r=>r.event_type==='SPARE_PART_LISTED').payload.qty=3;
+ first.serverRows.splice(first.serverRows.findIndex(r=>r.payload.to==='SUPERVISOR_VERIFIED'),1);
+ first.parts.hydrateFromServerRows(copy(first.serverRows));
+ const second=fixture('Purchaser','PUR002',first.serverRows);
+ assert.equal((await first.parts.transitionItem(first.listNo,first.partId,'RECEIVED','',{receivedQty:1})).ok,true);
+ assert.equal((await second.parts.transitionItem(second.listNo,second.partId,'RECEIVED','',{receivedQty:1})).ok,false);
+ assert.equal(second.lists()[0].items[0].receivedQty,2);
+ assert.equal((await second.parts.transitionItem(second.listNo,second.partId,'RECEIVED','',{receivedQty:1})).ok,true);
+ assert.equal(second.lists()[0].items[0].receivedQty,3);
+ const supervisor=fixture('Supervisor','SUP003',first.serverRows);
+ assert.equal((await supervisor.parts.transitionItem(supervisor.listNo,supervisor.partId,'SUPERVISOR_VERIFIED')).ok,true);
+ const fresh=fixture('Purchaser','PUR003',first.serverRows);
+ assert.equal(fresh.lists()[0].items[0].receivedQty,3);
+ assert.equal(fresh.lists()[0].items[0].status,'SUPERVISOR_VERIFIED');
+ assert.equal(first.serverRows.filter(r=>r.payload.to==='RECEIVED').length,3);
+});
