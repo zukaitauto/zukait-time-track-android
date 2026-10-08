@@ -175,3 +175,9 @@ assert.match(api,/stale_spare_final_price/,'API must map stale final-price write
 assert.match(main,/stale_spare_final_price[\s\S]*final invoice amount was changed on another device/,'Client must refresh and explain final-price conflicts');
 const stateGuardFinalPrice=fs.readFileSync('supabase/V215_SPARE_PART_ACTIVE_STATE_GUARD.sql','utf8');
 assert.match(stateGuardFinalPrice,/new\.event_type='SPARE_PART_FINAL_PRICE_RECORDED'[\s\S]*e\.event_type='SPARE_PART_FINAL_PRICE_RECORDED'[\s\S]*coalesce\(e\.revision,0\)>=coalesce\(new\.revision,0\)[\s\S]*stale_spare_final_price/,'Database must reject stale or duplicate final-price revisions');
+
+assert.match(api,/eventType==="SPARE_PART_FINAL_PRICE_RECORDED"[\s\S]*price<=0[\s\S]*price>1000000/,'Final Spare Parts invoice amount must be strictly positive and bounded');
+assert.match(api,/SPARE_PART_FINAL_PRICE_RECORDED"[\s\S]*allowedKeys=new Set\(\["partId","listNo","jobCard","finalPrice"\]\)/,'Final invoice payload must be strictly allowlisted');
+assert.match(api,/workshop_v2_spare_part_state"[\s\S]*invoiceEligibleStatuses=new Set\(\["SUPERVISOR_VERIFIED","DENTER_CHECKED","SUPERVISOR_CONFIRMED","FITTED"\]\)/,'Server must require authoritative confirmed-arrival state before final price');
+assert.match(api,/spare_final_price_not_eligible/,'Final price must reject mismatched or ineligible part/list/JC state');
+assert.match(sql,/event_type='SPARE_PART_FINAL_PRICE_RECORDED'[\s\S]*coalesce\(e\.revision,0\)>=coalesce\(new\.revision,0\)[\s\S]*stale_spare_final_price/,'Database must reject stale/equal final-price revisions');
