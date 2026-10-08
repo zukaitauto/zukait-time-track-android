@@ -62,6 +62,9 @@ begin
 
   if new.event_type='SPARE_PART_STATUS_CHANGED' then
     st:=trim(coalesce(p->>'to',''));
+    if upper(trim(coalesce(p->>'from','')))<>upper(trim(coalesce(cur.status,''))) then
+      raise exception 'stale_spare_part_status';
+    end if;
     if st<>'' then update public.workshop_v2_spare_part_state set status=st,revision=greatest(revision,coalesce(new.revision,0)),last_event_id=new.event_id,updated_at=now() where part_id=pid; end if;
   elsif new.event_type in ('SPARE_PART_ITEM_EDITED','SPARE_PART_MANAGER_CORRECTED','SPARE_PART_SUPERVISOR_CORRECTED','SPARE_PART_RETURN_CANCELLED') then
     nm:=trim(coalesce(afterv->>'name',cur.part_name)); pn:=upper(trim(coalesce(afterv->>'partNo',cur.part_no)));
