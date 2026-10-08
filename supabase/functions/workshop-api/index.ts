@@ -945,7 +945,14 @@ Deno.serve(async (req: Request) => {
         }
       }
       if (eventType==="SPARE_PART_STATUS_CHANGED") {
-        const to=String(event?.payload?.to||"");
+        const p=event.payload && typeof event.payload==="object" && !Array.isArray(event.payload) ? event.payload : {};
+        const allowedKeys=new Set(["partId","listNo","jobCard","name","from","to","reason","receivedQty","lastReceivedQty","targetRole","preReturnSnapshot","returnedQty"]);
+        const invalidKey=Object.keys(p).some(k=>!allowedKeys.has(k));
+        const invalidIdentity=!String(p.partId||"").trim()||!String(p.listNo||"").trim()||!String(p.jobCard||"").trim();
+        const invalidQty=["receivedQty","lastReceivedQty","returnedQty"].some(k=>p[k]!=null&&(!Number.isFinite(Number(p[k]))||Number(p[k])<0||Number(p[k])>100000));
+        const invalidTargetRole=p.targetRole!=null&&p.targetRole!==""&&String(p.targetRole)!=="Supervisor";
+        if(invalidKey||invalidIdentity||invalidQty||invalidTargetRole) return reply({ok:false,code:"spare_transition_payload_invalid"},400);
+        const to=String(p.to||"");
         const purchaserTargets=new Set(["ENQUIRY","QUOTED","ORDERED","RECEIVED","RETURNED","UNAVAILABLE"]);
         const supervisorTargets=new Set(["SUPERVISOR_VERIFIED","SUPERVISOR_CONFIRMED","FITTED","RETURNED","UNAVAILABLE","CUSTOMER_SETTLEMENT"]);
         const allowed = callerRole==="Manager" || (callerRole==="Purchaser" && purchaserTargets.has(to)) || (callerRole==="Supervisor" && supervisorTargets.has(to));
