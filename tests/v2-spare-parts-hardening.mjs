@@ -288,3 +288,8 @@ assert.match(mainModule,/function receiptComplete\(item\)[\s\S]*received>=qty/,'
 assert.match(mainModule,/state==='RECEIVED'\?'Receive Remaining':'Arrived'/,'A restored partial receipt must return to the Receive Remaining purchaser action');
 assert.match(guard,/new\.event_type='SPARE_PART_RETURN_CANCELLED'[\s\S]*afterv->>'receivedQty'/,'Database projection must restore received quantity from the Cancel Return snapshot');
 assert.match(guard,/spare_return_restore_quantity_invalid/,'Database must reject an impossible restored received quantity');
+
+assert.match(workflow,/if\(to==='RETURNED'\)[\s\S]*delete next\.receivedQty;delete next\.receivedAt;delete next\.receivedBy;delete next\.lastReceivedQty;delete next\.partialReceipt/,'Return must clear active partial-receipt state before a replacement cycle');
+assert.match(workflow,/from==='RETURNED'&&to!=='RETURNED'[\s\S]*to==='ENQUIRY'\)next\.reEnquiredAt=now/,'Re-enquiry must start a fresh replacement lifecycle');
+assert.match(guard,/upper\(st\) in \('LISTED','ENQUIRY','QUOTED','ORDERED','RETURNED','UNAVAILABLE','CUSTOMER_SETTLEMENT'\) then 0 else received_qty end/,'Database projection must force zero received quantity throughout pre-receipt replacement states');
+assert.match(mainModule,/if\(p\.to==='RETURNED'\)[\s\S]*delete item\.receivedQty;delete item\.receivedAt;delete item\.lastReceivedQty;delete item\.partialReceipt/,'Fresh hydration must not carry a returned partial quantity into re-enquiry');
