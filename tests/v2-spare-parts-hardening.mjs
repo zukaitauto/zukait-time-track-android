@@ -231,3 +231,6 @@ assert.match(apiListCreated,/SPARE_PART_RETURN_CANCELLED[\s\S]*preReturnSnapshot
 assert.match(apiListCreated,/financialKeys\.some\(k=>!same\(after\[k\],snap\[k\]\)\)[\s\S]*spare_return_cancel_financial_mismatch/,'Cancel Return must reject altered purchase amount/date history');
 assert.match(mainModule,/type==='SPARE_PART_RETURN_CANCELLED'[\s\S]*Object\.assign\(item,p\.after\)[\s\S]*continue/,'Cancel Return hydration must restore snapshot values without assigning cancellation activity as purchase date');
 assert.match(mainModule,/omanMonthKey\(i\.purchaseRecordedAt\)===monthKey/,'Monthly purchase expense must use purchase transaction date');
+
+assert.match(guard,/new\.event_type='SPARE_PART_FINAL_PRICE_RECORDED'[\s\S]*cur\.status[\s\S]*SUPERVISOR_VERIFIED[\s\S]*FITTED[\s\S]*spare_final_price_not_eligible/,'Final invoice eligibility must be rechecked atomically in the database projection');
+assert.match(apiListCreated,/spare_final_price_not_eligible[^\n]*409/,'Atomic final invoice eligibility rejection must surface as conflict');
