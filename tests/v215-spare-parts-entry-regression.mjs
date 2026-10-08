@@ -635,3 +635,30 @@ test('queued receipt keeps its pending quantity through hydration and clears it 
  assert.equal(fresh.lists()[0].items[0].receivedQty,2);
  assert.equal((await fresh.parts.transitionItem(fresh.listNo,fresh.partId,'SUPERVISOR_VERIFIED')).reason,'RECEIPT_INCOMPLETE');
 });
+
+test('stale quantity correction refreshes the newer part identity and ordered quantity',async()=>{
+ const editor=fixture('Supervisor','SUP002');
+ editor.serverRows.find(r=>r.event_type==='SPARE_PART_LISTED').payload.qty=3;
+ editor.serverRows.splice(editor.serverRows.findIndex(r=>r.payload.to==='SUPERVISOR_VERIFIED'),1);
+ editor.parts.hydrateFromServerRows(copy(editor.serverRows));
+ for(const [id,value] of Object.entries({
+   v2SpEditName:'Head lamp RH',v2SpEditPartNo:'',v2SpEditQty:'3',
+   v2SpEditSupplier:'Vendor A',v2SpEditAmount:'',v2SpEditStatus:'RECEIVED',
+   v2SpEditReason:'Correct part identity'
+ }))editor.elements.set(id,{value});
+ editor.onCommit(async event=>{
+   if(event.type==='SPARE_PART_SUPERVISOR_CORRECTED'){
+     editor.serverRows.push({event_id:'winning-identity',entity_id:editor.partId,actor_id:'M1',
+       event_type:'SPARE_PART_MANAGER_CORRECTED',revision:1,server_time:new Date().toISOString(),
+       payload:{partId:editor.partId,listNo:editor.listNo,jobCard:editor.jobCard,
+         before:{name:'Head lamp RH',qty:3,status:'RECEIVED'},
+         after:{name:'Corrected head lamp',qty:4,status:'RECEIVED'}}});
+     throw Object.assign(new Error('stale_spare_manager_correction'),{code:'stale_spare_manager_correction'});
+   }
+ });
+ await editor.parts.saveManagerItemEdit(editor.listNo,editor.partId);
+ const item=editor.lists()[0].items[0];
+ assert.equal(item.name,'Corrected head lamp');assert.equal(item.qty,4);
+ assert.equal(item.status,'RECEIVED');assert.equal(item.pendingSync,undefined);
+ assert.ok(editor.alerts.some(s=>s.includes('Latest Parts data has been refreshed')));
+});
