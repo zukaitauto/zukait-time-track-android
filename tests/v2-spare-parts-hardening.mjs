@@ -324,3 +324,8 @@ assert.match(cloudSync,/if\(spareConflict\)[\s\S]*sparePartsMain\?\.hydrateAutho
 
 assert.match(mainModule,/function reconcileSyncMarkers[\s\S]*state==='conflict'\)\{delete item\.pendingSync;delete item\.pendingEventId;delete item\.syncConflict;changed=true\}/,'A quarantined Spare Parts event must release its stale local pending markers before authoritative hydration');
 assert.match(offlineQueue,/function pending\(\)\{return read\(\)\.filter\(x=>x\.syncState!=='synced'&&x\.syncState!=='conflict'&&x\.syncState!=='superseded'\)\}/,'Quarantined conflict events must never be retried by the offline queue');
+
+assert.match(mainModule,/function pendingTransition\(item\)\{return !!\(item\?\.pendingSync&&item\?\.pendingEventId\)\}/,'A queued offline Spare Parts transition must remain an explicit per-item lock');
+assert.match(mainModule,/async function transitionItem[\s\S]*if\(pendingTransition\(list\.items\[idx\]\)\)return \{ok:false,reason:'PENDING_SYNC'\}/,'A second status or receipt transition must be rejected while the first offline event is queued');
+assert.match(mainModule,/if\(synced\.queued\)\{list\.items\[idx\]\.pendingSync=true;list\.items\[idx\]\.pendingEventId=eventId;write\(rows\)\}/,'The first offline receipt must persist its event lock before another action can be attempted');
+assert.match(mainModule,/async function purchaserAdvance[\s\S]*if\(!item\|\|item\.syncConflict\|\|pendingTransition\(item\)\)return/,'Purchaser Receive Remaining must not create a chained offline receipt behind an unacknowledged receipt');
