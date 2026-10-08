@@ -21,6 +21,8 @@ const quoted=wf.transition(reenquired.item,'QUOTED',{role:'Purchaser',actorId:'P
 
 const main=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8');
 assert.match(main,/SPARE_PART_RETURN_CANCELLED/);assert.match(main,/↶ CANCEL RETURN/);assert.match(main,/type:'SPARE_PART_RETURN_CANCELLED'/);
+assert.match(main,/item\?\.preReturnSnapshot&&typeof item\.preReturnSnapshot==='object'/,'Cancel Return button is shown only when a restoration snapshot exists');
+assert.match(main,/Cancel Return is unavailable for this legacy return/,'handler defensively rejects legacy returns without a snapshot');
 assert.match(main,/delete item\.preReturnSnapshot/);
 assert.match(main,/preReturnSnapshot:to==='RETURNED'\?moved\.item\.preReturnSnapshot:null/,'Return event must persist the restoration snapshot to the server');
 assert.match(main,/p\.preReturnSnapshot&&typeof p\.preReturnSnapshot==='object'/,'Fresh-login hydration must rebuild the return snapshot');
