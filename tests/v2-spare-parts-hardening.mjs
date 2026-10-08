@@ -181,3 +181,7 @@ assert.match(api,/SPARE_PART_FINAL_PRICE_RECORDED"[\s\S]*allowedKeys=new Set\(\[
 assert.match(api,/workshop_v2_spare_part_state"[\s\S]*invoiceEligibleStatuses=new Set\(\["SUPERVISOR_VERIFIED","DENTER_CHECKED","SUPERVISOR_CONFIRMED","FITTED"\]\)/,'Server must require authoritative confirmed-arrival state before final price');
 assert.match(api,/spare_final_price_not_eligible/,'Final price must reject mismatched or ineligible part/list/JC state');
 assert.match(sql,/event_type='SPARE_PART_FINAL_PRICE_RECORDED'[\s\S]*coalesce\(e\.revision,0\)>=coalesce\(new\.revision,0\)[\s\S]*stale_spare_final_price/,'Database must reject stale/equal final-price revisions');
+
+assert.match(apiListCreated,/eventType==="SPARE_PART_FINAL_PRICE_RECORDED"[\s\S]*allowedKeys=new Set\(\["partId","listNo","jobCard","finalPrice"\]\)[\s\S]*price<=0[\s\S]*price>1000000/,'Final Spare Parts invoice payload must be strictly allowlisted and positive');
+assert.match(apiListCreated,/eventType==="SPARE_PART_FINAL_PRICE_RECORDED"[\s\S]*\["Manager","Supervisor"\]\.includes\(callerRole\)/,'Only Manager or Supervisor may record final Spare Parts invoice amounts');
+assert.match(main,/stale_spare_final_price/,'Stale final invoice conflicts must refresh authoritative Spare Parts state');
