@@ -469,3 +469,17 @@ test('queued Cancel Return conflict refreshes a newer invoice and stops automati
  assert.equal(offline.parts.reportRows().reduce((n,r)=>n+r.amount,0),6);
  assert.equal((await queueFlusher(offline)()).pending,0);
 });
+
+test('two Managers cancelling the same Return converge after an actual event-ID collision',async()=>{
+ const first=fixture('Manager','M1');await first.invoice();
+ assert.equal((await first.parts.transitionItem(first.listNo,first.partId,'RETURNED','Wrong supplied part')).ok,true);
+ const second=fixture('Manager','M2',first.serverRows);
+ first.window.prompt=()=> 'Restore first';await first.parts.cancelReturn(first.listNo,first.partId);
+ first.elements.get('invoicePrice').value='4.000';await first.invoice();
+ second.window.prompt=()=> 'Restore second';await second.parts.cancelReturn(second.listNo,second.partId);
+ assert.equal(second.lists()[0].items[0].status,'SUPERVISOR_VERIFIED');
+ assert.equal(second.lists()[0].items[0].purchaseAmount,4);
+ assert.equal(second.parts.reportRows().reduce((n,r)=>n+r.amount,0),4);
+ assert.ok(second.alerts.some(s=>s.includes('Latest Parts data has been refreshed')));
+ assert.equal(second.serverRows.filter(r=>r.event_type==='SPARE_PART_RETURN_CANCELLED').length,1);
+});
