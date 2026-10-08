@@ -293,3 +293,25 @@ test('stale Manager Return refreshes a winning invoice before retry and cancella
  assert.deepEqual(manager.alerts,[]);
  assert.equal(manager.lists()[0].items[0].purchaseAmount,2.44);
 });
+
+
+test('replacement invoice uses a new event identity after return and re-enquiry',async()=>{
+ const manager=fixture('Manager','M1');await manager.invoice();
+ const first=manager.commits.find(e=>e.type==='SPARE_PART_FINAL_PRICE_RECORDED');
+ assert.equal((await manager.parts.transitionItem(manager.listNo,manager.partId,'RETURNED','Wrong part')).ok,true);
+ assert.equal((await manager.parts.transitionItem(manager.listNo,manager.partId,'ENQUIRY')).ok,true);
+ assert.equal((await manager.parts.transitionItem(manager.listNo,manager.partId,'ORDERED')).ok,true);
+ assert.equal((await manager.parts.transitionItem(manager.listNo,manager.partId,'RECEIVED','',{receivedQty:1})).ok,true);
+ assert.equal((await manager.parts.transitionItem(manager.listNo,manager.partId,'SUPERVISOR_VERIFIED')).ok,true);
+ await manager.parts.hydrateAuthoritativeLists();
+ assert.equal(manager.lists()[0].items[0].purchaseAmount,undefined);
+ manager.elements.get('invoicePrice').value='3.500';await manager.invoice();
+ assert.deepEqual(manager.alerts,[]);
+ const last=manager.commits.filter(e=>e.type==='SPARE_PART_FINAL_PRICE_RECORDED').at(-1);
+ assert.equal(last.serverRevision,first.serverRevision+1);
+ assert.notEqual(last.eventId,first.eventId);
+ const other=fixture('Supervisor','SUP003',manager.serverRows);
+ assert.equal(other.lists()[0].items[0].purchaseAmount,3.5);
+ assert.equal(other.parts.reportRows().reduce((n,r)=>n+r.amount,0),3.5);
+ assert.equal(other.lists()[0].items[0].purchaseAmountLastRevision,2);
+});
