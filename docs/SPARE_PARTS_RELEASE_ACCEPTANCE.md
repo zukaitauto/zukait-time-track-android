@@ -59,3 +59,9 @@ Automated validation for this new feature must pass before this candidate is acc
 
 ### Candidate automated verification — 2026-10-08
 Source effe40f51a7c8a0a96d5548a21d1ba1141eaba06 passed the full regression (50 entry cases), Android/APK build and PC deployment. APK and signing-tools artifacts were uploaded successfully in run 37806316578. The artifacts are unsigned; this does not satisfy signed upgrade or physical-device acceptance. Device result cells remain Pending.
+
+
+## Signed candidate build
+The Build Signed Acceptance APK workflow runs on architecture-v2 when its workflow file changes, or by manual dispatch where available. It checks the same permanent certificate and package, runs full regression and uploads ZUKAIT_SIGNED_ACCEPTANCE_APK. It has read-only repository permissions and no release/metadata publication steps.
+The initial acceptance build retains V300 / code 263 so no version bump precedes device acceptance. It can be used for signed replacement testing, but the final new-version upgrade test must be repeated after assigning a higher versionCode.
+Record the workflow run and certificate verification result before installing. A workflow definition alone does not prove signing secrets are available or that signing succeeded.
