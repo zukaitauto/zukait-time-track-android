@@ -244,3 +244,6 @@ assert.match(mainModule,/if\(bucket==='PURCHASE_COMPLETED'\)\{const active=items
 assert.match(mainModule,/if\(bucket==='WAITING'\)\{const active=items\.filter\(i=>String\(i\.status\|\|''\)\.toUpperCase\(\)!=='RETURNED'\);return active\.length>0&&!active\.every\(partFullyArrived\)\}/,'Waiting must follow active replacement lines, not returned history');
 assert.match(mainModule,/function isPartPending\(item\)\{const status=String\(item\?\.status\|\|'LISTED'\)\.toUpperCase\(\);return !!item&&status!=='RETURNED'&&/,'Returned history must not inflate Parts Pending');
 assert.match(mainModule,/if\(bucket==='ATTENTION'\)return items\.some\(i=>\['RETURNED','UNAVAILABLE'\]\.includes\(i\.status\)/,'Returned history must remain visible in Attention');
+
+assert.match(mainModule,/function isDeliveredVehiclePartPending\(item\)\{const status=String\(item\?\.status\|\|'LISTED'\)\.toUpperCase\(\);return !!item&&status!=='RETURNED'&&/,'Returned history must not keep a delivered vehicle in Pending Parts');
+assert.match(mainModule,/if\(bucket==='DELIVERED_PENDING'\)[\s\S]*items\.some\(isDeliveredVehiclePartPending\)/,'Delivered Pending must be driven by active unresolved parts');
