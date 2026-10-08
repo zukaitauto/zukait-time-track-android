@@ -52,3 +52,13 @@ This closes the automated/backend invoice–Return checkpoint; it does not certi
 - 25 entry tests passed, including online and queued stale cancellation recovery.
 - Live rollback tests cover late cancellation and old-cycle cancellation; valid current-cycle cancellation still succeeds.
 - Android, APK and PC Pages builds succeeded for 3db62891. Physical two-phone acceptance remains outstanding.
+
+## Invoice/correction follow-up
+
+- Manager and Supervisor corrections compare the before-status and purchase amount against authoritative history under the part row lock.
+- Updated invoice clients send expectedPurchaseAmount. The live guard rejects a mismatch against a winning correction.
+- API version 55 supports this optional field and rejects invalid values. Legacy invoices remain supported and require a client update for expected-amount protection.
+- 28 entry tests passed, covering correction recovery, reviewed invoice retry and payload compatibility.
+- All three workflows succeeded for implementation/test commit 386db8aa; APK functional smoke tests passed.
+- Additional navigation, Manager edit, job-type, employee privacy and idle-time checks passed.
+- The entire Spare Parts module is not certified complete. Physical two-phone acceptance remains pending.

@@ -536,3 +536,21 @@ test('invoice expected amount refreshes a winning correction and permits a revie
  assert.equal(manager.lists()[0].items[0].purchaseAmount,2.44);
  assert.equal(manager.parts.reportRows().reduce((n,r)=>n+r.amount,0),2.44);
 });
+
+test('invoice expected amount is optional for legacy clients and rejects invalid values',async()=>{
+ const f=fixture();
+ const admin={from:()=>{const query={select:()=>query,eq:()=>query,maybeSingle:async()=>({data:{part_id:f.partId,list_no:f.listNo,job_card:f.jobCard,status:'SUPERVISOR_VERIFIED'},error:null})};return query}};
+ const event={eventId:'invoice-contract',entityId:f.partId,actorId:'SUP002',type:'SPARE_PART_FINAL_PRICE_RECORDED',serverRevision:1,
+   payload:{partId:f.partId,listNo:f.listNo,jobCard:f.jobCard,finalPrice:2.44}};
+ assert.deepEqual(await validate({event},f.window.me,admin),{ok:true},'Legacy invoice contract remains supported');
+ for(const amount of [null,0,2.44,1000000]){
+   const updated=copy(event);updated.payload.expectedPurchaseAmount=amount;
+   assert.deepEqual(await validate({event:updated},f.window.me,admin),{ok:true});
+ }
+ for(const amount of [-1,'bad',1000001]){
+   const invalid=copy(event);invalid.payload.expectedPurchaseAmount=amount;
+   assert.equal((await validate({event:invalid},f.window.me,admin)).code,'spare_final_price_forbidden_or_invalid');
+ }
+ const injected=copy(event);injected.payload.unapprovedField=true;
+ assert.equal((await validate({event:injected},f.window.me,admin)).code,'spare_final_price_forbidden_or_invalid');
+});
