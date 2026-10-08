@@ -713,3 +713,21 @@ test('queued quotation replay cannot clear an invoice saved before reconnection'
  assert.equal(purchaser.lists()[0].items[0].quoteAmount,2.5);
  assert.equal(purchaser.parts.reportRows().reduce((n,r)=>n+r.amount,0),2.44);
 });
+
+test('competing quotation saves refresh the losing Purchaser before reviewed retry',async()=>{
+ const first=fixture('Purchaser','PUR001'),second=fixture('Purchaser','PUR002',first.serverRows);
+ for(const [f,amount,vendor] of [[first,'3.000','Vendor B'],[second,'4.000','Vendor C']]){
+   f.elements.set('v2SpQuote_0',{value:amount});f.elements.set('v2SpVendor_0',{value:vendor});
+   f.elements.set('v2SpQuoteMessage',{textContent:''});
+ }
+ const button=f=>({dataset:{list:f.listNo,item:f.partId,index:'0'},disabled:false});
+ await first.parts.saveQuotationPrice(button(first));
+ await second.parts.saveQuotationPrice(button(second));
+ assert.equal(second.lists()[0].items[0].quoteAmount,3);
+ assert.equal(second.lists()[0].items[0].supplier,'Vendor B');
+ assert.match(second.elements.get('v2SpQuoteMessage').textContent,/Latest Parts data has been refreshed/);
+ await second.parts.saveQuotationPrice(button(second));
+ const fresh=fixture('Purchaser','PUR003',first.serverRows);
+ assert.equal(fresh.lists()[0].items[0].quoteAmount,4);
+ assert.equal(fresh.lists()[0].items[0].supplier,'Vendor C');
+});
