@@ -554,3 +554,18 @@ test('invoice expected amount is optional for legacy clients and rejects invalid
  const injected=copy(event);injected.payload.unapprovedField=true;
  assert.equal((await validate({event:injected},f.window.me,admin)).code,'spare_final_price_forbidden_or_invalid');
 });
+
+test('competing receipt batches refresh the losing Purchaser to the accepted quantity',async()=>{
+ const first=fixture('Purchaser','PUR001');
+ first.serverRows.find(r=>r.event_type==='SPARE_PART_LISTED').payload.qty=3;
+ first.serverRows.splice(first.serverRows.findIndex(r=>r.payload.to==='SUPERVISOR_VERIFIED'),1);
+ first.parts.hydrateFromServerRows(copy(first.serverRows));
+ const second=fixture('Purchaser','PUR002',first.serverRows);
+ assert.equal((await first.parts.transitionItem(first.listNo,first.partId,'RECEIVED','',{receivedQty:1})).ok,true);
+ await second.parts.transitionItem(second.listNo,second.partId,'RECEIVED','',{receivedQty:1});
+ const item=second.lists()[0].items[0];
+ assert.equal(item.receivedQty,2);
+ assert.equal(item.pendingSync,undefined);
+ assert.equal(second.serverRows.filter(r=>r.payload.to==='RECEIVED').length,2);
+ assert.equal(item.revision,2);
+});
