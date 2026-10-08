@@ -395,3 +395,27 @@ test('queued offline invoice cannot restore a part deleted before reconnection',
  assert.equal(offline.parts.reportRows().reduce((n,r)=>n+r.amount,0),0);
  assert.equal(offline.serverRows.filter(r=>r.event_type==='SPARE_PART_FINAL_PRICE_RECORDED').length,0);
 });
+
+test('queued invoice after Manager Return is quarantined while an unrelated offline part still syncs',async()=>{
+ const offline=fixture(),manager=fixture('Manager','M1',offline.serverRows);
+ offline.fail('NETWORK');await offline.invoice();
+ await offline.parts.addFromUI(offline.listNo);
+ assert.equal(offline.window.zukaitV2.queue.pending().length,2);
+ const additional=offline.lists()[0].items.find(i=>i.id!==offline.partId);
+ assert.ok(additional.pendingSync);
+ assert.equal((await manager.parts.transitionItem(manager.listNo,manager.partId,'RETURNED','Wrong supplied part')).ok,true);
+ offline.fail(null);
+ const result=await queueFlusher(offline)();
+ assert.equal(result.synced,1);assert.equal(result.pending,0);
+ assert.equal(offline.window.zukaitV2.queue.conflicts().length,1);
+ assert.equal(offline.window.zukaitV2.queue.conflicts()[0].syncError,'spare_final_price_not_eligible');
+ const returned=offline.lists()[0].items.find(i=>i.id===offline.partId);
+ assert.equal(returned.status,'RETURNED');assert.equal(returned.purchaseAmount,undefined);
+ assert.equal(returned.pendingSync,undefined);
+ const saved=offline.lists()[0].items.find(i=>i.id===additional.id);
+ assert.ok(saved);assert.equal(saved.pendingSync,undefined);
+ const fresh=fixture('Supervisor','SUP003',offline.serverRows);
+ assert.equal(fresh.lists()[0].items.find(i=>i.id===additional.id).name,additional.name);
+ assert.equal(fresh.parts.reportRows().reduce((n,r)=>n+r.amount,0),0);
+ assert.equal(offline.serverRows.filter(r=>r.event_type==='SPARE_PART_FINAL_PRICE_RECORDED').length,0);
+});

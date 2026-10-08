@@ -34,3 +34,12 @@ Physical two-phone acceptance has not been performed. On a disposable test part:
 5. Return, re-enquire, order, receive, verify and invoice a replacement. Confirm the new invoice is accepted and only its active amount is counted.
 
 This closes the automated/backend invoice–Return checkpoint; it does not certify the entire Spare Parts module or physical-device concurrency.
+
+
+## Follow-up coverage — 2026-10-08
+
+- Missing/deleted active-state rows now reject late invoice and arrival-acceptance events in the live database guard.
+- Simultaneous invoice event-ID conflicts refresh the losing client to the accepted amount before manual retry.
+- 22 entry tests now cover both invoice/deletion orderings and actual offline queue flushing after a competing invoice, deletion or Manager Return.
+- A rejected queued invoice is quarantined; unrelated queued parts continue syncing.
+- Implementation builds through ab60db4a succeeded. Physical two-phone acceptance remains pending.
