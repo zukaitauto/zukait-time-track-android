@@ -247,3 +247,6 @@ assert.match(mainModule,/if\(bucket==='ATTENTION'\)return items\.some\(i=>\['RET
 
 assert.match(mainModule,/function isDeliveredVehiclePartPending\(item\)\{const status=String\(item\?\.status\|\|'LISTED'\)\.toUpperCase\(\);return !!item&&status!=='RETURNED'&&/,'Returned history must not keep a delivered vehicle in Pending Parts');
 assert.match(mainModule,/if\(bucket==='DELIVERED_PENDING'\)[\s\S]*items\.some\(isDeliveredVehiclePartPending\)/,'Delivered Pending must be driven by active unresolved parts');
+
+assert.match(mainModule,/function attentionAgeDays\(item,list\)\{const status=.*status==='RETURNED'\?\(item\?\.returnedAt\|\|item\?\.updatedAt/,'Returned attention age must start from the return/update event, not the original purchase age');
+assert.match(mainModule,/function pendingSince\(item,list\)\{return item\?\.createdAt\|\|item\?\.created_at\|\|list\?\.createdAt/,'Active pending age must use the active part creation lifecycle and never inherit returnedAt');
