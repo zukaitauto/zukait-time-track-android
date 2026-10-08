@@ -773,3 +773,23 @@ test('competing Manager corrections refresh accepted identity after event-ID col
  const fresh=fixture('Manager','M3',first.serverRows);
  assert.equal(fresh.lists()[0].items[0].name,'Second corrected lamp');
 });
+
+test('late Manager and Supervisor corrections cannot restore a concurrently deleted part',async()=>{
+ for(const role of ['Manager','Supervisor']){
+   const editor=fixture(role,role==='Manager'?'M2':'SUP002');
+   const manager=fixture('Manager','M1',editor.serverRows);
+   for(const [id,value] of Object.entries({v2SpEditName:'Corrected lamp',v2SpEditPartNo:'',v2SpEditQty:'1',
+     v2SpEditSupplier:'Vendor A',v2SpEditAmount:'',v2SpEditStatus:'SUPERVISOR_VERIFIED',v2SpEditReason:'Correct name'}))editor.elements.set(id,{value});
+   editor.onCommit(async event=>{
+     if(event.type.endsWith('_CORRECTED')){
+       assert.equal((await manager.parts.deleteItem(manager.listNo,manager.partId)).ok,true);
+       throw Object.assign(new Error('stale_spare_manager_correction'),{code:'stale_spare_manager_correction'});
+     }
+   });
+   await editor.parts.saveManagerItemEdit(editor.listNo,editor.partId);
+   assert.equal(editor.lists().flatMap(l=>l.items).some(i=>i.id===editor.partId),false,role);
+   assert.ok(editor.alerts.some(s=>s.includes('Latest Parts data has been refreshed')));
+   assert.equal(editor.serverRows.filter(r=>r.event_type.endsWith('_CORRECTED')).length,0);
+   assert.equal(editor.parts.reportRows().reduce((n,r)=>n+r.amount,0),0);
+ }
+});
