@@ -872,6 +872,14 @@ Deno.serve(async (req: Request) => {
           return reply({ok:false,code:"spare_manager_correction_forbidden_or_invalid"},403);
         }
       }
+      if (eventType==="SPARE_PART_RETURN_CANCELLED") {
+        const p=event.payload && typeof event.payload==="object" ? event.payload : {};
+        const before=p.before && typeof p.before==="object" ? p.before : {};
+        const after=p.after && typeof p.after==="object" ? p.after : {};
+        if (callerRole!=="Manager" || !String(p.partId||"") || !String(p.listNo||"") || !String(p.jobCard||"") || !String(p.reason||"").trim() || String(before.status||"")!=="RETURNED" || !String(after.status||"") || String(after.status||"")==="RETURNED") {
+          return reply({ok:false,code:"spare_return_cancel_forbidden_or_invalid"},403);
+        }
+      }
       if (eventType==="SPARE_PART_ARRIVAL_ACCEPTED") {
         const p=event.payload && typeof event.payload==="object" ? event.payload : {};
         const allowedKeys=new Set(["partId","listNo","jobCard"]);
