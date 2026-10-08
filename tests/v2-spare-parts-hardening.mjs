@@ -27,6 +27,10 @@ assert.match(main,/Correction reason is required\./,'Manager parts correction mu
 assert.match(main,/SPARE_PART_MANAGER_CORRECTED/,'Manager correction must emit an auditable server event');assert.match(main,/SPARE_PART_SUPERVISOR_CORRECTED/,'Supervisor correction must emit a distinct auditable server event');
 assert.match(main,/managerCorrectionAudit/,'Manager correction must retain before\/after audit history');
 assert.ok(main.includes('option value="RECEIVED"')&&main.includes('>Arrived</option>'),'Manager correction must allow Arrived status');
+assert.match(mainSource,/Returned parts must use Cancel Return or Re-enquire/,'manual correction cannot bypass audited returned-part flow');
+assert.match(mainSource,/Cannot move a partially received part to verified\/confirmed\/fitted/,'manual correction cannot promote a partial receipt');
+assert.match(mainSource,/Supervisor verification is required before confirmation/,'manual correction preserves verification gate');
+assert.match(mainSource,/Supervisor confirmation is required before marking the part fitted/,'manual correction preserves fitting gate');
 assert.ok(main.includes('option value="FITTED"')&&main.includes('>Fitted</option>'),'Manager correction must allow Fitted status');
 
 assert.ok(main.includes("['SPARE_PART_MANAGER_CORRECTED','SPARE_PART_SUPERVISOR_CORRECTED'].includes(type)&&p.after"),'Manager and Supervisor correction events must hydrate authoritative state on every device');
