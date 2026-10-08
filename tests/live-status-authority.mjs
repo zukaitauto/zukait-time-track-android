@@ -155,7 +155,7 @@ assert.equal(context.window.currentStaffStatuses()[0].emp,'LOCAL','offline mode 
 // Employee display must follow fresh server authority, even if local cache still says running.
 context.navigator.onLine=true;
 context.me.role='Employee';windowObj.me.role='Employee';
-windowObj.activeSession=()=>({id:'LOCAL-S',assignmentId:'LOCAL-A',job:'STALE-JC',emp:'EMP1',start:111});
+context.state={sessions:[{id:'LOCAL-S',assignmentId:'LOCAL-A',job:'STALE-JC',emp:'EMP1',start:111}]};
 windowObj.zukaitServerLive={fresh:true,fetchedAt:Date.now(),serverTime:Date.now(),revision:100,rows:[
   {employee_id:'EMP1',employee_name:'One',department:'Painter',status:'Working',job_no:'JC-SERVER',assignment_id:'A-SERVER',session_id:'S-SERVER',session_start:222,suggested_minutes:60,vehicle:'Car',registration:'R1',overtime:false}
 ]};

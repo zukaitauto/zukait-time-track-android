@@ -96,16 +96,62 @@
     if(serverRequired())return [];
     return typeof oldCurrentStaffStatuses==='function'?oldCurrentStaffStatuses.apply(this,arguments):[];
   };
+  const priorActiveSession=window.activeSession;
+  function localEmployeeSession(emp){
+    // Return the actual state object: Pause/Finish must close persisted history.
+    const sessions=typeof state==='object'&&state?state.sessions:window.state?.sessions;
+    if(!Array.isArray(sessions))return typeof priorActiveSession==='function'?priorActiveSession(emp):null;
+    return sessions.filter(s=>s&&String(s.emp)===String(emp))
+      .sort((a,b)=>Number(b.start||0)-Number(a.start||0))[0]||null;
+  }
   function employeeDisplaySession(emp){
-    const rr=rows();
-    if(rr){
-      const r=rr.find(x=>String(x.employee_id)===String(emp));
-      if(!r||!ACTIVE.has(r.status)||!r.session_id)return null;
-      return statusObject(r).session;
-    }
-    try{return typeof window.activeSession==='function'?window.activeSession(emp):null}catch(_){return null}
+    const local=localEmployeeSession(emp),cloud=window.zukaitCloud,x=live();
+    // A Start/Pause/Finish may be queued or already acknowledged while the
+    // independent live-status poll still describes the previous revision.
+    if(!x||cloud?.dirty||Number(x.revision)<Number(cloud?.revision||0))return local&&!local.end?local:null;
+    const r=x.rows.find(x=>String(x.employee_id)===String(emp));
+    // A partial response is not evidence that this employee stopped working.
+    if(!r)return local&&!local.end?local:null;
+    if(!ACTIVE.has(r.status)||!r.session_id)return null;
+    const persisted=((typeof state==='object'&&state?state.sessions:window.state?.sessions)||[]).find(s=>s&&String(s.emp)===String(emp)&&String(s.id)===String(r.session_id));
+    if(persisted&&!persisted.end)return persisted;
+    return {...statusObject(r).session,server:true};
   }
   window.zukaitEmployeeDisplaySession=employeeDisplaySession;
+  window.activeSession=function(emp){
+    if(window.me?.role==='Employee'&&String(window.me.id)===String(emp))return employeeDisplaySession(emp);
+    return typeof priorActiveSession==='function'?priorActiveSession.apply(this,arguments):null;
+  };
+  // Never close a detached live-status object: refresh state first and leave
+  // the controls visible if the network has not recovered the session yet.
+  for(const name of ['v74Pause','v74Finish']){
+    const action=window[name];
+    if(typeof action!=='function')continue;
+    window[name]=function(){
+      const s=window.me?.role==='Employee'?employeeDisplaySession(window.me.id):null;
+      if(s?.server){
+        window.zukaitCloud?.syncNow?.();
+        const message='Running work is syncing. Please retry Pause or Finish after the refresh.';
+        return typeof window.v74Msg==='function'?window.v74Msg(message,'Running Work'):alert(message);
+      }
+      return action.apply(this,arguments);
+    };
+  }
+  function employeeSessionKey(){
+    const s=window.me?.role==='Employee'?employeeDisplaySession(window.me.id):null;
+    return JSON.stringify([window.me?.id,s?.id,s?.job,s?.assignmentId,s?.start,!!s?.server]);
+  }
+  let employeeRenderedKey=null;
+  const priorEmployeeRender=window.renderEmployee;
+  if(typeof priorEmployeeRender==='function')window.renderEmployee=function(){
+    const out=priorEmployeeRender.apply(this,arguments);
+    employeeRenderedKey=employeeSessionKey();
+    return out;
+  };
+  function refreshEmployeeSession(){
+    if(window.me?.role!=='Employee'||document.hidden)return;
+    if(employeeSessionKey()!==employeeRenderedKey&&typeof window.render==='function')window.render();
+  }
 
   function serverActiveRows(){
     const rr=rows();
@@ -262,6 +308,7 @@
   function apply(){
     const x=live();
     if(!window.me)return;
+    refreshEmployeeSession();
     if(!x){markUnavailable();return;}
     const rr=x.rows;
     const active=rr.filter(r=>ACTIVE.has(r.status)).length;
