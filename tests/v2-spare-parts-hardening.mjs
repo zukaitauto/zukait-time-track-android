@@ -265,3 +265,9 @@ assert.match(apiListCreated,/latestStatusPayload\.preReturnSnapshot/,'Cancel Ret
 assert.match(mainModule,/function arrivedConfirmed\(item\)\{return \['SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED'\]\.includes/,'Restored confirmed/fitted states must remain completion-eligible');
 assert.match(mainModule,/type==='SPARE_PART_RETURN_CANCELLED'[\s\S]*Object\.assign\(item,p\.after\)[\s\S]*delete item\.preReturnSnapshot/,'Cancel Return hydration must restore the complete audited status and invoice snapshot');
 assert.match(mainModule,/if\(bucket==='PURCHASE_COMPLETED'\)\{const active=items\.filter[\s\S]*active\.every\(arrivedConfirmed\)&&active\.every\(i=>Number\.isFinite\(Number\(i\.purchaseAmount\)\)&&Number\(i\.purchaseAmount\)>0\)/,'Purchase Completed must immediately accept a restored confirmed/fitted part with its positive final amount');
+
+assert.match(mainModule,/function invoiceAmountEligible\(item\)\{return arrivedConfirmed\(item\)\}/,'Invoice Entry must only consider confirmed/checked/fitted active states');
+assert.match(mainModule,/function invoicePriceMissing\(item\)\{const n=Number\(item\?\.purchaseAmount\);return item\?\.purchaseAmount==null\|\|!Number\.isFinite\(n\)\|\|n<=0\}/,'Invoice Entry must disappear as soon as a positive final amount exists');
+assert.doesNotMatch(mainModule,/function arrivedConfirmed\(item\)[^\n]*RETURNED/,'Returned parts must never be invoice-entry eligible');
+assert.doesNotMatch(mainModule,/function arrivedConfirmed\(item\)[^\n]*ENQUIRY/,'Re-enquired parts must not enter Invoice Entry before the arrival/confirmation flow is completed');
+assert.match(mainModule,/type==='SPARE_PART_RETURN_CANCELLED'[\s\S]*Object\.assign\(item,p\.after\)/,'Cancel Return must restore the prior positive invoice amount before Invoice Entry is calculated');
