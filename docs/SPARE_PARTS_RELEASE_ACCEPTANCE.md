@@ -3,7 +3,7 @@
 Prepared 2026-10-08. Branch: architecture-v2 only.
 Validated implementation: c2e85c18de7ece664cbc0ff8499bea873d4b95fd.
 Current published release: V300, versionCode 263.
-Candidate version: unassigned until acceptance passes.
+Candidate version: V301 / versionCode 264 (prepared at user request; not publicly released).
 
 ## Verified before device acceptance
 - 47/47 entry regression tests and full CI regression passed.
@@ -65,3 +65,11 @@ Source effe40f51a7c8a0a96d5548a21d1ba1141eaba06 passed the full regression (50 e
 The Build Signed Acceptance APK workflow runs on architecture-v2 when its workflow file changes, or by manual dispatch where available. It checks the same permanent certificate and package, runs full regression and uploads ZUKAIT_SIGNED_ACCEPTANCE_APK. It has read-only repository permissions and no release/metadata publication steps.
 The initial acceptance build retains V300 / code 263 so no version bump precedes device acceptance. It can be used for signed replacement testing, but the final new-version upgrade test must be repeated after assigning a higher versionCode.
 Record the workflow run and certificate verification result before installing. A workflow definition alone does not prove signing secrets are available or that signing succeeded.
+
+
+## V301 candidate — 2026-10-08
+Candidate source b93ca7e8810274a218a1eeed5fc3faf0c793a64d uses V301 / versionCode 264.
+Signed acceptance run: 37806991736. Full regression step passed; signing/artifact verification must be recorded after completion.
+release-request.json has approvedForStaff=false. The automatic Publish Approved Signed APK run stopped at its approval guard; this is an intentional publication hold, not an APK build failure.
+Public latest-version.json remains V300 / 263.
+Use the V301 signed artifact for installation over V300 and complete the pending device result table.
