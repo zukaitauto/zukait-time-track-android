@@ -169,3 +169,9 @@ assert.match(main,/else if\(!result\.queued&&!result\.conflictMessage\)\{list\.i
 assert.match(main,/done\.conflictMessage\|\|\('Could not confirm arrival:/,'Arrival acceptance must surface authoritative conflict recovery');
 assert.match(main,/return \{ok:false,reason:synced\.conflictMessage\|\|'SYNC_FAILED',detail:synced\.reason\}/,'Non-optimistic Spare Parts writes must propagate authoritative conflict messages');
 assert.match(main,/Could not save additional part:[^\n]*synced\.reason/,'Additional Parts ordinary failures must still be reported without claiming a failed item remains saved');
+
+assert.match(api,/eventType==="SPARE_PART_FINAL_PRICE_RECORDED"[\s\S]*price<=0/,'Final Spare Parts invoice amount must be strictly positive at API boundary');
+assert.match(api,/stale_spare_final_price/,'API must map stale final-price writes to a conflict');
+assert.match(main,/stale_spare_final_price[\s\S]*final invoice amount was changed on another device/,'Client must refresh and explain final-price conflicts');
+const stateGuardFinalPrice=fs.readFileSync('supabase/V215_SPARE_PART_ACTIVE_STATE_GUARD.sql','utf8');
+assert.match(stateGuardFinalPrice,/new\.event_type='SPARE_PART_FINAL_PRICE_RECORDED'[\s\S]*e\.event_type='SPARE_PART_FINAL_PRICE_RECORDED'[\s\S]*coalesce\(e\.revision,0\)>=coalesce\(new\.revision,0\)[\s\S]*stale_spare_final_price/,'Database must reject stale or duplicate final-price revisions');
