@@ -281,3 +281,10 @@ assert.match(mainModule,/function arrivalPendingItems\(list\)\{return \(list\?\.
 assert.match(mainModule,/function arrivalPendingCount\(rows=read\(\)\)\{return \(rows\|\|\[\]\)\.reduce\(\(n,list\)=>n\+arrivalPendingItems\(list\)\.length,0\)\}/,'Arrival dashboard count must use the same strict queue selector');
 assert.match(mainModule,/type==='SPARE_PART_RETURN_CANCELLED'[\s\S]*Object\.assign\(item,p\.after\)/,'Cancel Return must restore the audited pre-return status before arrival queues are recalculated');
 assert.match(mainModule,/function partFullyArrived\(item\)[\s\S]*\['SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED'\]\.includes\(status\)/,'Restored verified/confirmed/fitted parts must remain classified as fully arrived');
+
+assert.match(workflow,/\['status','receivedQty','receivedAt','receivedBy','lastReceivedQty','partialReceipt'/,'Return snapshot must preserve partial-receipt quantity and marker');
+assert.match(workflow,/function cancelReturn\(item,ctx=\{\}\)[\s\S]*Object\.assign\(\{\},item,snapshot/,'Cancel Return must restore the exact partial-receipt snapshot');
+assert.match(mainModule,/function receiptComplete\(item\)[\s\S]*received>=qty/,'Supervisor arrival confirmation must require the complete ordered quantity');
+assert.match(mainModule,/state==='RECEIVED'\?'Receive Remaining':'Arrived'/,'A restored partial receipt must return to the Receive Remaining purchaser action');
+assert.match(guard,/new\.event_type='SPARE_PART_RETURN_CANCELLED'[\s\S]*afterv->>'receivedQty'/,'Database projection must restore received quantity from the Cancel Return snapshot');
+assert.match(guard,/spare_return_restore_quantity_invalid/,'Database must reject an impossible restored received quantity');
