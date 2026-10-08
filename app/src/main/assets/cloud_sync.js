@@ -179,6 +179,40 @@
     return body;
   }
 
+  async function employeeTimeAction(command){
+    if(!me||me.role!=='Employee')throw new Error('employee_time_forbidden');
+    if(!navigator.onLine)throw new Error('NETWORK');
+    const started=Date.now();
+    const payload={...command,action:'employee_time_action'};
+    let lastError=null;
+    while(Date.now()-started<30000){
+      try{
+        const r=await api(payload);
+        if(!r.ok){
+          const e=new Error(r.code||'EMPLOYEE_TIME_ACTION_FAILED');e.code=r.code||'EMPLOYEE_TIME_ACTION_FAILED';throw e;
+        }
+        // The mutation response itself is the authoritative confirmation. Pull
+        // the committed state + live row before allowing the employee UI to leave
+        // its pending state.
+        cloudRevision=Math.max(cloudRevision,Number(r.server_revision||0));
+        localStorage.setItem(REV_KEY,String(cloudRevision));
+        cloudDirty=false;localStorage.removeItem(DIRTY_KEY);localStorage.removeItem(PENDING_KEY);
+        try{await pull(true)}catch(_){}
+        try{await pullLiveStatus()}catch(_){}
+        return r;
+      }catch(e){
+        lastError=e;
+        const code=String(e?.code||e?.message||'EMPLOYEE_TIME_ACTION_FAILED');
+        if(!['NETWORK','TIMEOUT','employee_time_conflict','conflict_busy'].includes(code))throw e;
+        if(Date.now()-started>=29500)break;
+        await new Promise(resolve=>setTimeout(resolve,700));
+      }
+    }
+    const e=new Error(String(lastError?.code||lastError?.message||'EMPLOYEE_TIME_CONFIRM_TIMEOUT'));
+    e.code=String(lastError?.code||lastError?.message||'EMPLOYEE_TIME_CONFIRM_TIMEOUT');
+    throw e;
+  }
+
   async function timeManagement(command){
     if(!me||!['Supervisor','Manager'].includes(me.role))throw new Error('time_permission_denied');
     if(!navigator.onLine)throw new Error('NETWORK');
@@ -876,7 +910,7 @@
     publishLiveStatus(false);
   });
   window.zukaitCloud={
-    init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,backupNow,backupList,timeManagement,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
+    init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
     configured:()=>true,
     get revision(){return cloudRevision},
     get dirty(){return cloudDirty},
