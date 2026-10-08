@@ -942,7 +942,7 @@ Deno.serve(async (req: Request) => {
         const p=event.payload && typeof event.payload==="object" ? event.payload : {};
         const price=Number(p.finalPrice);
         const allowedKeys=new Set(["partId","listNo","jobCard","finalPrice"]);
-        if (!["Manager","Supervisor"].includes(callerRole) || !String(p.partId||"") || !String(p.listNo||"") || !String(p.jobCard||"") || !Number.isFinite(price) || price<0 || price>1000000 || Object.keys(p).some(k=>!allowedKeys.has(k))) {
+        if (!["Manager","Supervisor"].includes(callerRole) || !String(p.partId||"") || !String(p.listNo||"") || !String(p.jobCard||"") || !Number.isFinite(price) || price<=0 || price>1000000 || Object.keys(p).some(k=>!allowedKeys.has(k))) {
           return reply({ok:false,code:"spare_final_price_forbidden_or_invalid"},403);
         }
       }
@@ -1001,6 +1001,7 @@ Deno.serve(async (req: Request) => {
         if (message.includes("preliminary_link_not_active")) return reply({ok:false,code:"preliminary_link_not_active"},409);
         if (message.includes("event_id_conflict")) return reply({ok:false,code:"event_id_conflict"},409);
         if (message.includes("stale_spare_manager_correction")) return reply({ok:false,code:"stale_spare_manager_correction"},409);
+         if (message.includes("stale_spare_final_price")) return reply({ok:false,code:"stale_spare_final_price"},409);
         if (message.includes("duplicate_active_spare_part")) return reply({ok:false,code:"duplicate_active_spare_part"},409);
         if (message.includes("stale_spare_part_status")) return reply({ok:false,code:"stale_spare_part_status"},409);
         if (message.includes("stale_work_revision")) return reply({ok:false,code:"stale_work_revision"},409);
