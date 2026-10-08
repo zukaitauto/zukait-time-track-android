@@ -1,8 +1,8 @@
 {
-  "versionName": "V300",
-  "versionCode": 263,
-  "approvedForStaff": true,
-  "approvedAt": "2026-10-07",
-  "sourceCommit": "04386fd74d24d3dc52f228454d766e24d7d56a09",
-  "publishNonce": "release-v300-verified-fixes-20261007-approved-1"
+  "versionName": "V301",
+  "versionCode": 264,
+  "approvedForStaff": false,
+  "approvedAt": null,
+  "sourceCommit": "a0e8f6c75eb07d08b3293779cf942b75744a232a",
+  "publishNonce": "candidate-v301-spare-parts-audit-20261008"
 }

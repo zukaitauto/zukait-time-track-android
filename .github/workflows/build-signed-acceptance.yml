@@ -6,6 +6,7 @@ on:
     branches: [architecture-v2]
     paths:
       - .github/workflows/build-signed-acceptance.yml
+      - app/build.gradle
 
 permissions:
   contents: read
