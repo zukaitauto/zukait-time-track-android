@@ -320,7 +320,7 @@ assert.match(guard,/new\.event_type='SPARE_PART_STATUS_CHANGED'[\s\S]*new\.revis
 
 assert.match(mainModule,/function spareConflictReason\(reason=''\)[\s\S]*stale_spare_part_status[\s\S]*Latest Parts data has been refreshed/,'Stale receipt/status conflicts must be classified as recoverable authoritative refreshes');
 assert.match(mainModule,/async function recoverSpareConflict\(reason,event\)[\s\S]*await hydrateAuthoritativeLists\([^)]*\)[\s\S]*return message/,'Recognized Spare Parts conflicts must hydrate authoritative server state before returning control');
-assert.match(mainModule,/if\(!synced\.ok&&synced\.reason!=='V2_TRANSPORT_UNAVAILABLE'\)\{if\(!synced\.conflictMessage\)\{list\.items\[idx\]=previous;write\(rows\)\}/,'A recognized stale receipt conflict must not roll the refreshed authoritative item back to the losing local snapshot');
+assert.match(mainModule,/if\(!synced\.ok&&!synced\.queued\)\{if\(!synced\.conflictMessage\)\{list\.items\[idx\]=previous;write\(rows\)\}/,'A recognized stale receipt conflict must not roll the refreshed authoritative item back to the losing local snapshot');
 
 const offlineQueue=fs.readFileSync('app/src/main/assets/v2/core/offline_queue.js','utf8');
 const workshopApi=api;

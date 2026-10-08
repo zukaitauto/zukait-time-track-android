@@ -588,3 +588,28 @@ test('receipt collision refresh allows the remaining batch and full Supervisor v
  assert.equal(fresh.lists()[0].items[0].status,'SUPERVISOR_VERIFIED');
  assert.equal(first.serverRows.filter(r=>r.payload.to==='RECEIVED').length,3);
 });
+
+test('offline receipt replay after competing batch refreshes quantity and permits only the remaining batch',async()=>{
+ const online=fixture('Purchaser','PUR001');
+ online.serverRows.find(r=>r.event_type==='SPARE_PART_LISTED').payload.qty=3;
+ online.serverRows.splice(online.serverRows.findIndex(r=>r.payload.to==='SUPERVISOR_VERIFIED'),1);
+ online.parts.hydrateFromServerRows(copy(online.serverRows));
+ const offline=fixture('Purchaser','PUR002',online.serverRows);
+ offline.fail('NETWORK');
+ const queued=await offline.parts.transitionItem(offline.listNo,offline.partId,'RECEIVED','',{receivedQty:1});
+ assert.equal(queued.ok,true);
+ assert.equal(offline.lists()[0].items[0].pendingSync,true);
+ assert.equal(offline.window.zukaitV2.queue.pending().length,1);
+ assert.equal((await online.parts.transitionItem(online.listNo,online.partId,'RECEIVED','',{receivedQty:1})).ok,true);
+ offline.fail(null);await queueFlusher(offline)();
+ assert.equal(offline.window.zukaitV2.queue.conflicts().length,1);
+ assert.equal(offline.window.zukaitV2.queue.pending().length,0);
+ assert.equal(offline.lists()[0].items[0].receivedQty,2);
+ assert.equal(offline.lists()[0].items[0].pendingSync,undefined);
+ assert.equal((await offline.parts.transitionItem(offline.listNo,offline.partId,'RECEIVED','',{receivedQty:1})).ok,true);
+ assert.equal(offline.lists()[0].items[0].receivedQty,3);
+ const attempts=offline.commits.length;
+ await queueFlusher(offline)();
+ assert.equal(offline.commits.length,attempts,'Rejected batch must not retry automatically');
+ assert.equal(online.serverRows.filter(r=>r.payload.to==='RECEIVED').length,3);
+});
