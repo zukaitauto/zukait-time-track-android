@@ -329,3 +329,10 @@ assert.match(mainModule,/function pendingTransition\(item\)\{return !!\(item\?\.
 assert.match(mainModule,/async function transitionItem[\s\S]*if\(pendingTransition\(list\.items\[idx\]\)\)return \{ok:false,reason:'PENDING_SYNC'\}/,'A second status or receipt transition must be rejected while the first offline event is queued');
 assert.match(mainModule,/if\(synced\.queued\)\{list\.items\[idx\]\.pendingSync=true;list\.items\[idx\]\.pendingEventId=eventId;write\(rows\)\}/,'The first offline receipt must persist its event lock before another action can be attempted');
 assert.match(mainModule,/async function purchaserAdvance[\s\S]*if\(!item\|\|item\.syncConflict\|\|pendingTransition\(item\)\)return/,'Purchaser Receive Remaining must not create a chained offline receipt behind an unacknowledged receipt');
+
+assert.match(mainModule,/const KEY='zukait_v2_spare_parts_lists_v1'/,'Spare Parts live cache must use persistent storage across app restart');
+assert.match(mainModule,/function write\(v\)[\s\S]*localStorage\.setItem\(KEY,JSON\.stringify\(rows\)\)/,'Pending Spare Parts markers must persist with the cached item across restart');
+assert.match(offlineQueue,/const KEY='zukait_v2_event_queue_v1'/,'Offline event queue must use persistent storage across app restart');
+assert.match(offlineQueue,/function write\(rows\)\{localStorage\.setItem\(KEY,JSON\.stringify\(rows\|\|\[\]\)\)/,'Queued receipt event must persist across restart');
+assert.match(mainModule,/if\(synced\.queued\)\{list\.items\[idx\]\.pendingSync=true;list\.items\[idx\]\.pendingEventId=eventId;write\(rows\)\}/,'Offline receipt must persist the exact queued event id on its part before app shutdown');
+assert.match(mainModule,/function reconcileSyncMarkers[\s\S]*queueState\(item\.pendingEventId\)/,'After restart Spare Parts must reconcile the persisted part lock against the persisted queue event');
