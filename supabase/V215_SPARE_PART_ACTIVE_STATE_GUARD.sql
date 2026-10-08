@@ -11,11 +11,15 @@ create table if not exists public.workshop_v2_spare_part_state (
   part_no text not null default '',
   part_key text not null,
   status text not null default 'LISTED',
+  ordered_qty numeric not null default 1,
+  received_qty numeric not null default 0,
   revision bigint not null default 0,
   last_event_id text not null,
   updated_at timestamptz not null default now()
 );
 
+alter table public.workshop_v2_spare_part_state add column if not exists ordered_qty numeric not null default 1;
+alter table public.workshop_v2_spare_part_state add column if not exists received_qty numeric not null default 0;
 alter table public.workshop_v2_spare_part_state enable row level security;
 revoke all on table public.workshop_v2_spare_part_state from anon, authenticated;
 grant select, insert, update, delete on table public.workshop_v2_spare_part_state to service_role;
@@ -47,11 +51,11 @@ begin
     perform pg_advisory_xact_lock(hashtextextended(ln||'|'||k,0));
     select part_id into conflict_part from public.workshop_v2_spare_part_state where list_no=ln and part_key=k and status<>'RETURNED' and part_id<>pid limit 1;
     if conflict_part is not null then raise exception 'duplicate_active_spare_part'; end if;
-    insert into public.workshop_v2_spare_part_state(part_id,list_no,job_card,part_name,part_no,part_key,status,revision,last_event_id)
-    values(pid,ln,jc,nm,pn,k,'LISTED',coalesce(new.revision,0),new.event_id)
+    insert into public.workshop_v2_spare_part_state(part_id,list_no,job_card,part_name,part_no,part_key,status,ordered_qty,received_qty,revision,last_event_id)
+    values(pid,ln,jc,nm,pn,k,'LISTED',greatest(1,coalesce((p->>'qty')::numeric,1)),0,coalesce(new.revision,0),new.event_id)
     on conflict(part_id) do update set
       list_no=excluded.list_no,job_card=excluded.job_card,part_name=excluded.part_name,part_no=excluded.part_no,
-      part_key=excluded.part_key,status=excluded.status,revision=greatest(workshop_v2_spare_part_state.revision,excluded.revision),
+      part_key=excluded.part_key,status=excluded.status,ordered_qty=excluded.ordered_qty,received_qty=0,revision=greatest(workshop_v2_spare_part_state.revision,excluded.revision),
       last_event_id=excluded.last_event_id,updated_at=now();
     return new;
   end if;
@@ -76,13 +80,14 @@ begin
     if upper(trim(coalesce(p->>'from','')))<>upper(trim(coalesce(cur.status,''))) then
       raise exception 'stale_spare_part_status';
     end if;
+    if upper(st)='SUPERVISOR_VERIFIED' and coalesce(cur.received_qty,0)<coalesce(cur.ordered_qty,1) then raise exception 'spare_receipt_incomplete'; end if;
     if st<>'' then
       if upper(st)<>'RETURNED' and upper(cur.status)='RETURNED' then
         perform pg_advisory_xact_lock(hashtextextended(cur.list_no||'|'||cur.part_key,0));
         select part_id into conflict_part from public.workshop_v2_spare_part_state where list_no=cur.list_no and part_key=cur.part_key and status<>'RETURNED' and part_id<>pid limit 1;
         if conflict_part is not null then raise exception 'duplicate_active_spare_part'; end if;
       end if;
-      update public.workshop_v2_spare_part_state set status=st,revision=greatest(revision,coalesce(new.revision,0)),last_event_id=new.event_id,updated_at=now() where part_id=pid;
+      update public.workshop_v2_spare_part_state set status=st,received_qty=case when upper(st)='RECEIVED' then greatest(received_qty,coalesce((p->>'receivedQty')::numeric,received_qty)) when upper(st)='ORDERED' then 0 when upper(st)='RETURNED' then 0 else received_qty end,revision=greatest(revision,coalesce(new.revision,0)),last_event_id=new.event_id,updated_at=now() where part_id=pid;
     end if;
   elsif new.event_type in ('SPARE_PART_ITEM_EDITED','SPARE_PART_MANAGER_CORRECTED','SPARE_PART_SUPERVISOR_CORRECTED','SPARE_PART_RETURN_CANCELLED') then
     nm:=trim(coalesce(afterv->>'name',cur.part_name)); pn:=upper(trim(coalesce(afterv->>'partNo',cur.part_no)));
@@ -92,7 +97,7 @@ begin
       select part_id into conflict_part from public.workshop_v2_spare_part_state where list_no=cur.list_no and part_key=k and status<>'RETURNED' and part_id<>pid limit 1;
       if conflict_part is not null then raise exception 'duplicate_active_spare_part'; end if;
     end if;
-    update public.workshop_v2_spare_part_state set part_name=nm,part_no=pn,part_key=k,status=st,
+    update public.workshop_v2_spare_part_state set part_name=nm,part_no=pn,part_key=k,status=st,ordered_qty=greatest(1,coalesce((afterv->>'qty')::numeric,ordered_qty)),received_qty=case when upper(st)='RETURNED' then 0 else received_qty end,
       revision=greatest(revision,coalesce(new.revision,0)),last_event_id=new.event_id,updated_at=now() where part_id=pid;
   end if;
   return new;
