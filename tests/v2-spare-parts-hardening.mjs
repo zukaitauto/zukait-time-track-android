@@ -307,3 +307,7 @@ assert.match(mainModule,/if\(p\.to==='RETURNED'\)[\s\S]*delete item\.receivedQty
  assert.equal(verified.ok,true,'Supervisor verification becomes valid only after cumulative 4/4 receipt');
 }
 assert.match(guard,/upper\(st\)='RECEIVED'[\s\S]*receivedQty[\s\S]*cur\.ordered_qty[\s\S]*spare_received_quantity_exceeds_ordered/,'Server must reject cumulative received quantity above ordered quantity');
+
+assert.match(mainModule,/if\(!item\|\|item\.syncConflict\|\|pendingTransition\(item\)\)return;[\s\S]*if\(to==='RECEIVED'\)/,'Purchaser receipt action must refuse a second local submission while the first transition is pending');
+assert.match(mainModule,/moved\.item\.revision=nextRevision[\s\S]*list\.items\[idx\]=moved\.item;[\s\S]*commitEvent/,'Receipt transition must mark the new revision locally before awaiting network commit');
+assert.match(guard,/new\.event_type='SPARE_PART_STATUS_CHANGED'[\s\S]*new\.revision,0\)<=coalesce\(cur\.revision,0\)[\s\S]*stale_spare_part_status/,'Database must reject duplicate or stale status revisions, including concurrent receipt taps from separate devices');
