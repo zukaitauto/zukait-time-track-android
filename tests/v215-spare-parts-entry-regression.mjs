@@ -903,3 +903,23 @@ test('invoice save immediately refreshes through actual report service without s
  await manager.parts.openInvoiceEntry();
  assert.match(manager.html(),/No parts waiting for invoice price review/);
 });
+
+test('Supervisor report privacy preserves saved invoice through refresh',async()=>{
+ const start=api.indexOf('        const financialKeys=new Set'),end=api.indexOf('      const cursorValue',start);
+ const block=api.slice(start,end).replace(/\n      }\s*$/,'');
+ const scrub=new Function(stripTypeScriptTypes('function redact(rows,user){'+block+';return rows;}')+';return redact;')();
+ const supervisor=fixture('Supervisor','SUP002');
+ supervisor.window.zukaitV2.reports.page=async()=>({rows:scrub(copy(supervisor.serverRows),{role:'Supervisor'}),source:'server',nextCursor:null});
+ await supervisor.invoice();
+ assert.equal(supervisor.lists()[0].items[0].purchaseAmount,2.44);
+ assert.match(supervisor.html(),/All eligible parts on this Job Card have invoice amounts/);
+ await supervisor.parts.openInvoiceEntry();
+ assert.match(supervisor.html(),/No parts waiting for invoice price review/);
+ const commercial={payload:{finalPrice:2.44,purchaseAmount:2.44,quoteAmount:3,supplier:'Vendor',
+   after:{purchaseAmount:2.44,quoteAmount:3}}};
+ const visible=scrub([copy(commercial)],{role:'Supervisor'})[0].payload;
+ assert.equal(visible.finalPrice,2.44);assert.equal(visible.after.purchaseAmount,2.44);
+ assert.equal(visible.quoteAmount,undefined);assert.equal(visible.supplier,undefined);
+ const hidden=scrub([copy(commercial)],{role:'Employee'})[0].payload;
+ assert.equal(hidden.finalPrice,undefined);assert.equal(hidden.purchaseAmount,undefined);
+});

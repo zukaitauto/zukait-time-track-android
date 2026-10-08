@@ -1223,6 +1223,11 @@ Deno.serve(async (req: Request) => {
       let rows = Array.isArray(data) ? data : [];
       if (action === "v2_report_page" && report === "SPARE_PARTS" && !["Manager","Purchaser"].includes(String(user?.role||""))) {
         const financialKeys=new Set(["purchaseAmount","purchaseRecordedAt","purchaseAmountRevision","billAmount","supplierCost","quoteAmount","price","supplier","quotationOffers","commercialRevision","finalPrice","preReturnSnapshot"]);
+        // Supervisors enter invoice amounts and must read them back after refresh.
+        // Keep quotation, supplier and other commercial fields private.
+        if(String(user?.role||"")==="Supervisor"){
+          for(const key of ["purchaseAmount","purchaseRecordedAt","purchaseAmountRevision","finalPrice"])financialKeys.delete(key);
+        }
         const scrub=(value:any):any=>{
           if(Array.isArray(value)) return value.map(scrub);
           if(!value||typeof value!=="object") return value;
