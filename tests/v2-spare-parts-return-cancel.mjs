@@ -46,3 +46,12 @@ console.log('Spare Parts cancel return: Manager-only audited restoration preserv
 const mainSource=fs.readFileSync(new URL('../app/src/main/assets/v2/features/spare-parts/main_module.js',import.meta.url),'utf8');
 assert.match(mainSource,/activeDuplicate=.*status\|\|''\)!=='RETURNED'/s);
 assert.match(mainSource,/Cancel Return blocked: an active replacement/);
+
+const partial={id:'P2',name:'Lamp',qty:4,status:'RECEIVED',receivedQty:2,revision:1};
+const partialReturned=wf.transition(partial,'RETURNED',{role:'Purchaser',actorId:'P1',reason:'Wrong items',serverTime:'2026-10-07T08:00:00Z'});
+assert.equal(partialReturned.ok,true);assert.equal(partialReturned.item.returnedQty,2,'Only physically received quantity is returned');
+const orderedOnly={id:'P3',name:'Grille',qty:4,status:'ORDERED',revision:1};
+const orderedReturned=wf.transition(orderedOnly,'RETURNED',{role:'Purchaser',actorId:'P1',reason:'Order cancelled',serverTime:'2026-10-07T09:00:00Z'});
+assert.equal(orderedReturned.ok,true);assert.equal(orderedReturned.item.returnedQty,0,'Cancelled unreceived order has zero physical returned quantity');
+assert.match(main,/returnedQty:to==='RETURNED'/,'Return event persists physical returned quantity');
+assert.match(main,/r\.returnedQty/,'Manager report uses returned quantity instead of ordered quantity');
