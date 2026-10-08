@@ -104,7 +104,8 @@ begin
       select part_id into conflict_part from public.workshop_v2_spare_part_state where list_no=cur.list_no and part_key=k and status<>'RETURNED' and part_id<>pid limit 1;
       if conflict_part is not null then raise exception 'duplicate_active_spare_part'; end if;
     end if;
-    update public.workshop_v2_spare_part_state set part_name=nm,part_no=pn,part_key=k,status=st,ordered_qty=greatest(1,coalesce((afterv->>'qty')::numeric,ordered_qty)),received_qty=case when upper(st)='RETURNED' then 0 else received_qty end,
+    if new.event_type='SPARE_PART_RETURN_CANCELLED' and coalesce(nullif(afterv->>'receivedQty','')::numeric,0)>greatest(1,coalesce((afterv->>'qty')::numeric,ordered_qty)) then raise exception 'spare_return_restore_quantity_invalid'; end if;
+    update public.workshop_v2_spare_part_state set part_name=nm,part_no=pn,part_key=k,status=st,ordered_qty=greatest(1,coalesce((afterv->>'qty')::numeric,ordered_qty)),received_qty=case when upper(st)='RETURNED' then 0 when new.event_type='SPARE_PART_RETURN_CANCELLED' then least(greatest(1,coalesce((afterv->>'qty')::numeric,ordered_qty)),greatest(0,coalesce(nullif(afterv->>'receivedQty','')::numeric,0))) else received_qty end,
       revision=greatest(revision,coalesce(new.revision,0)),last_event_id=new.event_id,updated_at=now() where part_id=pid;
   end if;
   return new;
