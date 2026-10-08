@@ -937,6 +937,10 @@ Deno.serve(async (req: Request) => {
         if (!["Manager","Purchaser"].includes(callerRole) || !String(p.partId||"") || !String(p.listNo||"") || !String(p.jobCard||"") || Object.keys(p).some(k=>!allowedKeys.has(k))) {
           return reply({ok:false,code:"spare_arrival_acceptance_forbidden"},403);
         }
+        const {data:arrivalState,error:arrivalStateError}=await admin.from("workshop_v2_spare_part_state").select("part_id,list_no,job_card,status").eq("part_id",String(p.partId)).maybeSingle();
+        if(arrivalStateError) throw arrivalStateError;
+        const arrivalEligibleStatuses=new Set(["SUPERVISOR_VERIFIED","DENTER_CHECKED","SUPERVISOR_CONFIRMED","FITTED"]);
+        if(!arrivalState||String(arrivalState.list_no||"")!==String(p.listNo)||String(arrivalState.job_card||"")!==String(p.jobCard)||!arrivalEligibleStatuses.has(String(arrivalState.status||"").toUpperCase())) return reply({ok:false,code:"spare_arrival_acceptance_not_eligible"},409);
       }
       if (eventType==="SPARE_PART_FINAL_PRICE_RECORDED") {
         const p=event.payload && typeof event.payload==="object" ? event.payload : {};
@@ -976,7 +980,14 @@ Deno.serve(async (req: Request) => {
         const invalidQty=["receivedQty","lastReceivedQty","returnedQty"].some(k=>p[k]!=null&&(!Number.isFinite(Number(p[k]))||Number(p[k])<0||Number(p[k])>100000));
         const invalidTargetRole=p.targetRole!=null&&p.targetRole!==""&&String(p.targetRole)!=="Supervisor";
         if(invalidKey||invalidIdentity||invalidQty||invalidTargetRole) return reply({ok:false,code:"spare_transition_payload_invalid"},400);
-        const to=String(p.to||"");
+        const from=String(p.from||"").toUpperCase(),to=String(p.to||"").toUpperCase();
+        const allowedTransitions=new Map([
+          ["LISTED",new Set(["ENQUIRY","UNAVAILABLE"])],["ENQUIRY",new Set(["QUOTED","ORDERED","LISTED","UNAVAILABLE"])],["QUOTED",new Set(["ORDERED","ENQUIRY","UNAVAILABLE"])],
+          ["ORDERED",new Set(["RECEIVED","ENQUIRY","RETURNED","UNAVAILABLE"])],["RECEIVED",new Set(["RECEIVED","ORDERED","SUPERVISOR_VERIFIED","RETURNED"])],
+          ["SUPERVISOR_VERIFIED",new Set(["SUPERVISOR_CONFIRMED","RETURNED"])],["DENTER_CHECKED",new Set(["SUPERVISOR_CONFIRMED","RETURNED"])],
+          ["SUPERVISOR_CONFIRMED",new Set(["FITTED","RETURNED"])],["UNAVAILABLE",new Set(["CUSTOMER_SETTLEMENT"])],["RETURNED",new Set(["ENQUIRY","UNAVAILABLE"])]
+        ]);
+        if(!allowedTransitions.get(from)?.has(to)) return reply({ok:false,code:"spare_transition_sequence_invalid"},409);
         const purchaserTargets=new Set(["ENQUIRY","QUOTED","ORDERED","RECEIVED","RETURNED","UNAVAILABLE"]);
         const supervisorTargets=new Set(["SUPERVISOR_VERIFIED","SUPERVISOR_CONFIRMED","FITTED","RETURNED","UNAVAILABLE","CUSTOMER_SETTLEMENT"]);
         const allowed = callerRole==="Manager" || (callerRole==="Purchaser" && purchaserTargets.has(to)) || (callerRole==="Supervisor" && supervisorTargets.has(to));
