@@ -406,3 +406,7 @@ assert.match(mainModule,/function purchaserTabFor\(item\)[\s\S]*!item\.arrivalAc
 assert.match(mainModule,/const eventId='spare-arrival-accepted-'\+itemId/,'Final arrival acceptance must use one deterministic event id per part');
 assert.match(mainModule,/if\(done\.reason==='event_id_conflict'\)\{await hydrateAuthoritativeLists\(\);[\s\S]*authoritative\?\.arrivalAccepted[\s\S]*return openList\(listNo\)/,'A second-device final acceptance collision must reconcile the already-recorded acceptance instead of surfacing a false failure');
 assert.match(workshopApi,/eventType==="SPARE_PART_ARRIVAL_ACCEPTED"[\s\S]*arrivalEligibleStatuses[\s\S]*spare_arrival_acceptance_not_eligible/,'Server must independently validate final arrival acceptance against authoritative verified status');
+
+assert.match(guard,/select \* into cur from public\.workshop_v2_spare_part_state where part_id=pid for update[\s\S]*new\.event_type='SPARE_PART_ARRIVAL_ACCEPTED'[\s\S]*spare_arrival_acceptance_not_eligible/,'Final arrival acceptance must be validated under the same authoritative part-row lock used by Manager Return');
+assert.match(guard,/new\.event_type='SPARE_PART_ARRIVAL_ACCEPTED'[\s\S]*SUPERVISOR_VERIFIED[\s\S]*DENTER_CHECKED[\s\S]*SUPERVISOR_CONFIRMED[\s\S]*FITTED/,'Arrival acceptance must fail at commit time after a simultaneous Return changes the locked status');
+assert.match(workshopApi,/message\.includes\("spare_arrival_acceptance_not_eligible"\)[\s\S]*409/,'Acceptance-versus-Return race rejection must be exposed as a recoverable 409 conflict');
