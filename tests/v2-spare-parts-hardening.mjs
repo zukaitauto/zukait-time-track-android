@@ -1,4 +1,4 @@
-import fs from'node:fs';import assert from'node:assert/strict';
+import fs from'node:fs';import assert from'node:assert/strict';import vm from'node:vm';
 const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
 const sql=fs.readFileSync('supabase/ARCHITECTURE_V2_REPORTING.sql','utf8');
 const hist=fs.readFileSync('supabase/ARCHITECTURE_V2_BOUNDED_HISTORY.sql','utf8');
@@ -18,6 +18,10 @@ assert.match(api,/spare_list_create_forbidden/,'API must enforce list-create rol
 assert.match(api,/spare_commercial_forbidden/,'API must enforce commercial role authority');
 assert.match(api,/spare_transition_forbidden/,'API must enforce status-transition role authority');
 const workflow=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/workflow.js','utf8');
+const ctx={window:{zukaitV2:{}},console,Date,crypto:globalThis.crypto};
+vm.createContext(ctx);
+vm.runInContext(workflow,ctx);
+const spare=ctx.window.zukaitV2.spareParts;
 assert.match(workflow,/if\(to==='FITTED'\)return role==='Supervisor'\|\|role==='Manager'/,'Post-arrival fitting authority must remain Supervisor/Manager only');
 assert.match(workflow,/if\(to==='SUPERVISOR_VERIFIED'\)return role==='Supervisor'\|\|role==='Manager'/,'Supervisor must retain physical-arrival verification authority');
 assert.match(workflow,/if\(to==='CUSTOMER_SETTLEMENT'\)return role==='Supervisor'\|\|role==='Manager'/,'Purchaser must not have customer-settlement authority');
