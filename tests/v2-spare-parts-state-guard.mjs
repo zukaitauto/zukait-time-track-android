@@ -3,6 +3,10 @@ const sql=fs.readFileSync(new URL('../supabase/V215_SPARE_PART_ACTIVE_STATE_GUAR
 assert.match(sql,/workshop_v2_spare_part_state/);
 assert.match(sql,/workshop_v2_spare_part_state_conflicts/);
 assert.match(sql,/event_type='SPARE_PART_LISTED'/);
+assert.match(sql,/latest_identity as/);
+assert.match(sql,/latest_status as/);
+assert.match(sql,/do \\$\\$/);
+assert.doesNotMatch(sql,/do \\$\\nbegin/,'PL/pgSQL block delimiter must remain valid');
 assert.match(sql,/status<>'RETURNED'/);
 assert.match(sql,/having count\(\*\)>1/);
 assert.match(sql,/unique guard index deferred until reviewed/);
