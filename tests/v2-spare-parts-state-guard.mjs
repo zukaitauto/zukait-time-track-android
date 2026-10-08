@@ -22,3 +22,8 @@ assert.match(sql,/p->>'from'[\s\S]*cur\.status/,'Live status projection must com
 assert.match(sql,/raise exception 'stale_spare_part_status'/,'Stale concurrent status transitions must be rejected');
 const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
 assert.match(api,/stale_spare_part_status.*409/,'API must expose stale spare part transition as conflict');
+
+assert.match(sql,/pg_advisory_xact_lock\(hashtextextended\(ln\|\|'\|'\|\|k,0\)\)/,'New listed parts must serialize by list and normalized part key');
+assert.match(sql,/upper\(st\)<>'RETURNED'[\s\S]*upper\(cur\.status\)='RETURNED'[\s\S]*duplicate_active_spare_part/,'Reactivation and Cancel Return must reject an active replacement');
+assert.match(sql,/k<>cur\.part_key[\s\S]*duplicate_active_spare_part/,'Identity corrections must reject an active duplicate');
+assert.match(sql,/do \$\$[\s\S]*end \$\$;/,'Migration PL/pgSQL block must use valid dollar quoting');
