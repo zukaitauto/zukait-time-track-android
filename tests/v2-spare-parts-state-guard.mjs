@@ -17,3 +17,8 @@ assert.match(sql,/create unique index if not exists workshop_v2_spare_part_one_a
 assert.match(sql,/duplicate_active_spare_part/);
 assert.ok(sql.indexOf('insert into public.workshop_v2_spare_part_state_conflicts')<sql.indexOf('create unique index if not exists workshop_v2_spare_part_one_active_key'),'historical conflicts are detected before unique enforcement');
 console.log('v2 spare parts state guard tests passed');
+
+assert.match(sql,/p->>'from'[\s\S]*cur\.status/,'Live status projection must compare expected from-status with authoritative state');
+assert.match(sql,/raise exception 'stale_spare_part_status'/,'Stale concurrent status transitions must be rejected');
+const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+assert.match(api,/stale_spare_part_status.*409/,'API must expose stale spare part transition as conflict');
