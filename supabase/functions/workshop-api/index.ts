@@ -945,6 +945,12 @@ Deno.serve(async (req: Request) => {
         if (!["Manager","Supervisor"].includes(callerRole) || !String(p.partId||"") || !String(p.listNo||"") || !String(p.jobCard||"") || !Number.isFinite(price) || price<=0 || price>1000000 || Object.keys(p).some(k=>!allowedKeys.has(k))) {
           return reply({ok:false,code:"spare_final_price_forbidden_or_invalid"},403);
         }
+        const {data:partState,error:partStateError}=await admin.from("workshop_v2_spare_part_state").select("part_id,list_no,job_card,status").eq("part_id",String(p.partId)).maybeSingle();
+        if(partStateError) throw partStateError;
+        const invoiceEligibleStatuses=new Set(["SUPERVISOR_VERIFIED","DENTER_CHECKED","SUPERVISOR_CONFIRMED","FITTED"]);
+        if(!partState||String(partState.list_no||"")!==String(p.listNo)||String(partState.job_card||"")!==String(p.jobCard)||!invoiceEligibleStatuses.has(String(partState.status||"").toUpperCase())){
+          return reply({ok:false,code:"spare_final_price_not_eligible"},409);
+        }
       }
       if (eventType==="SPARE_PART_COMMERCIAL_UPDATED") {
         const p=event.payload && typeof event.payload==="object" ? event.payload : {};
