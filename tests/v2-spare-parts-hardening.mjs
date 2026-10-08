@@ -346,3 +346,19 @@ assert.match(mainModule,/if\(r==='Supervisor'&&s==='RECEIVED'\)return receiptCom
 assert.match(mainModule,/function arrivalPendingItems\(list\)\{return \(list\?\.items\|\|\[\]\)\.filter\(item=>String\(item\?\.status\|\|'\'\)==='RECEIVED'&&receiptComplete\(item\)\)\}/,'Arrival confirmation queue must contain only complete RECEIVED quantities');
 assert.match(guard,/select \* into cur from public\.workshop_v2_spare_part_state where part_id=pid for update/,'Receipt and Supervisor confirmation races must serialize on the authoritative part row');
 assert.match(guard,/upper\(st\)='SUPERVISOR_VERIFIED'[\s\S]*cur\.received_qty[\s\S]*cur\.ordered_qty[\s\S]*spare_receipt_incomplete/,'Database must reject Supervisor verification unless the locked authoritative receipt quantity is complete');
+
+{
+ const full={id:'SP-RACE-VERIFY',status:'RECEIVED',qty:4,receivedQty:4,revision:7};
+ const verified=spare.transition(full,'SUPERVISOR_VERIFIED',{role:'Supervisor',actorId:'S1'});
+ assert.equal(verified.ok,true);
+ const purchaserReturnAfterVerify=spare.transition(verified.item,'RETURNED',{role:'Purchaser',actorId:'P1',reason:'Race return'});
+ assert.equal(purchaserReturnAfterVerify.ok,false,'Purchaser must not return a part after Supervisor verification wins the race');
+ const managerReturnAfterVerify=spare.transition(verified.item,'RETURNED',{role:'Manager',actorId:'M1',reason:'Approved return'});
+ assert.equal(managerReturnAfterVerify.ok,true,'Manager retains controlled return authority after verification');
+ const reopened=spare.transition(full,'ORDERED',{role:'Purchaser',actorId:'P1'});
+ assert.equal(reopened.ok,true);
+ const staleVerify=spare.transition(reopened.item,'SUPERVISOR_VERIFIED',{role:'Supervisor',actorId:'S1'});
+ assert.equal(staleVerify.ok,false,'Supervisor cannot verify after RECEIVED was reopened to ORDERED');
+}
+assert.match(guard,/new\.revision,0\)<=coalesce\(cur\.revision,0\)[\s\S]*stale_spare_part_status/,'Only one same-revision competing Spare Parts status transition may win');
+assert.match(guard,/trim\(coalesce\(p->>'from',''\)\)<>''[\s\S]*upper\(trim\(p->>'from'\)\)<>upper\(coalesce\(cur\.status,''\)\)[\s\S]*stale_spare_part_status/,'A losing return, reopen, or Supervisor verification must be rejected when authoritative status already changed');
