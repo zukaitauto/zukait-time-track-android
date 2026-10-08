@@ -106,3 +106,24 @@ const reusedItem=app.zukaitV2.sparePartsMain.read()[0].items[0];
 assert.equal(reusedItem.purchaseAmount,23,'Reused part id must expose only the second-cycle active purchase amount');
 assert.equal(reusedItem.purchaseRecordedAt,'2026-10-07T08:00:00.000Z','Re-enquiry must allow the second purchase cycle to receive its own transaction date');
 assert.equal(app.zukaitV2.sparePartsMain.reportRows().reduce((n,x)=>n+x.amount,0),23,'Current Purchase Expense must not add the returned first-cycle amount to the second-cycle amount');
+
+
+// Second-cycle return cancellation must restore only the second-cycle purchase/date.
+const secondCancel=[
+ event('SPARE_PART_LISTED','2026-09-01T08:00:00Z',{name:'Headlamp',qty:1},0),
+ event('SPARE_PART_FINAL_PRICE_RECORDED','2026-09-10T08:00:00Z',{finalPrice:18},1),
+ event('SPARE_PART_STATUS_CHANGED','2026-09-12T08:00:00Z',{from:'FITTED',to:'RETURNED',returnedQty:1,preReturnSnapshot:{status:'FITTED',purchaseAmount:18,purchaseRecordedAt:'2026-09-10T08:00:00.000Z'}},2),
+ event('SPARE_PART_STATUS_CHANGED','2026-10-01T08:00:00Z',{from:'RETURNED',to:'ENQUIRY'},3),
+ event('SPARE_PART_STATUS_CHANGED','2026-10-03T08:00:00Z',{from:'ENQUIRY',to:'QUOTED'},4),
+ event('SPARE_PART_STATUS_CHANGED','2026-10-04T08:00:00Z',{from:'QUOTED',to:'ORDERED'},5),
+ event('SPARE_PART_STATUS_CHANGED','2026-10-06T08:00:00Z',{from:'ORDERED',to:'RECEIVED',receivedQty:1,lastReceivedQty:1},6),
+ event('SPARE_PART_FINAL_PRICE_RECORDED','2026-10-07T08:00:00Z',{finalPrice:23},7),
+ event('SPARE_PART_STATUS_CHANGED','2026-10-09T08:00:00Z',{from:'FITTED',to:'RETURNED',returnedQty:1,preReturnSnapshot:{status:'FITTED',receivedQty:1,purchaseAmount:23,purchaseRecordedAt:'2026-10-07T08:00:00.000Z'}},8),
+ {...event('SPARE_PART_RETURN_CANCELLED','2026-10-10T08:00:00Z',{reason:'Return marked by mistake',before:{status:'RETURNED'},after:{status:'FITTED',receivedQty:1,purchaseAmount:23,purchaseRecordedAt:'2026-10-07T08:00:00.000Z'}},9)}
+];
+app.zukaitV2.sparePartsMain.hydrateFromServerRows(secondCancel);
+const secondCancelItem=app.zukaitV2.sparePartsMain.read()[0].items[0];
+assert.equal(secondCancelItem.purchaseAmount,23,'Cancelling the second return must restore the second-cycle amount');
+assert.equal(secondCancelItem.purchaseRecordedAt,'2026-10-07T08:00:00.000Z','Cancelling the second return must restore the second-cycle purchase date');
+assert.equal(app.zukaitV2.sparePartsMain.reportRows().reduce((n,x)=>n+x.amount,0),23,'Restored second-cycle expense must be counted once only');
+assert.notEqual(secondCancelItem.purchaseRecordedAt,'2026-09-10T08:00:00.000Z','Cancel Return must never revive the first-cycle purchase date');
