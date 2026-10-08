@@ -80,3 +80,14 @@ This closes the automated/backend invoice–Return checkpoint; it does not certi
 - 37 entry tests passed, including queued quotation replay and client recovery after Return/deletion.
 - Live rollback tests verify quotation/invoice races and quotation eligibility after Re-enquire.
 - New Android release remains deferred until the remaining audit and physical-device acceptance are complete. V300 was already released; assign the next version only after checking the current remote version.
+
+## Listing/deletion follow-up
+
+- Deleted parts reject late corrections and status events; both editor roles refresh deletion after rejection.
+- Repeated listing events cannot reset an existing part's receipt state.
+- Deleted part IDs cannot be reused. A replacement with a new ID remains supported.
+- Conflicting inserts no longer update an existing projection row.
+- Exact commit-function retries remain idempotent and preserve verified receipts.
+- Five listing/deletion/replacement rollback checks passed together after 6d919646.
+- Latest local entry suite before workspace disconnection had 39 passing cases. Subsequent changes were verified through live rollback tests; GitHub workflows provide full regression validation.
+- Release is deferred until audit completion. Physical-device acceptance remains outstanding.
