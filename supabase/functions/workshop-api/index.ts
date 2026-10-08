@@ -930,9 +930,11 @@ Deno.serve(async (req: Request) => {
         if (callerRole!=="Manager" || !String(p.partId||"") || !String(p.listNo||"") || !String(p.jobCard||"") || !String(p.reason||"").trim() || String(before.status||"")!=="RETURNED" || !allowedRestoredStatuses.has(String(after.status||"")) || invalidAfterKey || invalidNumeric) {
           return reply({ok:false,code:"spare_return_cancel_forbidden_or_invalid"},403);
         }
-        const {data:returnEvent,error:returnEventError}=await admin.from("workshop_v2_events").select("payload").eq("entity_id",String(p.partId)).eq("event_type","SPARE_PART_STATUS_CHANGED").filter("payload->>to","eq","RETURNED").order("server_time",{ascending:false}).limit(1).maybeSingle();
+        const {data:latestStatusEvent,error:returnEventError}=await admin.from("workshop_v2_events").select("payload,event_type").eq("entity_id",String(p.partId)).eq("event_type","SPARE_PART_STATUS_CHANGED").order("server_time",{ascending:false}).order("event_id",{ascending:false}).limit(1).maybeSingle();
         if(returnEventError) throw returnEventError;
-        const snap=returnEvent?.payload?.preReturnSnapshot && typeof returnEvent.payload.preReturnSnapshot==="object" ? returnEvent.payload.preReturnSnapshot : null;
+        const latestStatusPayload=latestStatusEvent?.payload&&typeof latestStatusEvent.payload==="object"?latestStatusEvent.payload:null;
+        if(!latestStatusPayload||String(latestStatusPayload.to||"")!=="RETURNED") return reply({ok:false,code:"spare_return_cancel_cycle_mismatch"},409);
+        const snap=latestStatusPayload.preReturnSnapshot && typeof latestStatusPayload.preReturnSnapshot==="object" ? latestStatusPayload.preReturnSnapshot : null;
         const same=(a:any,b:any)=>JSON.stringify(a??null)===JSON.stringify(b??null);
         const financialKeys=["purchaseAmount","purchaseRecordedAt","purchaseAmountRevision","billAmount","supplierCost","quoteAmount","price","supplier","quotationOffers","commercialRevision"];
         if(!snap || financialKeys.some(k=>!same(after[k],snap[k]))) return reply({ok:false,code:"spare_return_cancel_financial_mismatch"},409);
@@ -1034,6 +1036,7 @@ Deno.serve(async (req: Request) => {
         if (message.includes("spare_returned_quantity_mismatch")) return reply({ok:false,code:"spare_returned_quantity_mismatch"},409);
         if (message.includes("spare_return_restore_quantity_invalid")) return reply({ok:false,code:"spare_return_restore_quantity_invalid"},409);
         if (message.includes("spare_return_cancel_financial_mismatch")) return reply({ok:false,code:"spare_return_cancel_financial_mismatch"},409);
+        if (message.includes("spare_return_cancel_cycle_mismatch")) return reply({ok:false,code:"spare_return_cancel_cycle_mismatch"},409);
         if (message.includes("stale_work_revision")) return reply({ok:false,code:"stale_work_revision"},409);
         if (message.includes("employee_already_active")) return reply({ok:false,code:"employee_already_active"},409);
         if (message.includes("stale_assignment_revision")) return reply({ok:false,code:"stale_assignment_revision"},409);
