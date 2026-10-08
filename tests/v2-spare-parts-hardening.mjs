@@ -111,3 +111,10 @@ const apiCorrection=fs.readFileSync('supabase/functions/workshop-api/index.ts','
 assert.match(apiCorrection,/allowedAfterKeys=new Set\(\["name","partNo","qty","supplier","purchaseAmount","finalPrice","purchaseRecordedAt","status"\]\)/,'Correction after payload must be field-allowlisted');
 assert.match(apiCorrection,/allowedBeforeKeys=new Set/,'Correction audit before payload must be field-allowlisted');
 assert.match(apiCorrection,/invalidAfterKey \|\| invalidBeforeKey \|\| invalidPurchaseAmount \|\| invalidQty \|\| invalidPurchaseDate/,'Correction API must reject injected fields and malformed values');
+
+const workflowReturnedQty=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/workflow.js','utf8');
+const mainReturnedQty=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8');
+assert.match(workflowReturnedQty,/from==='RETURNED'&&to!=='RETURNED'[\s\S]*delete next\.returnedQty/,'Genuine re-enquiry must clear active returnedQty');
+assert.match(workflowReturnedQty,/delete next\.returnedQty;delete next\.preReturnSnapshot/,'Cancel Return must clear active returnedQty');
+assert.match(mainReturnedQty,/p\.from==='RETURNED'&&p\.to!=='RETURNED'[\s\S]*delete item\.returnedQty/,'Fresh-login re-enquiry hydration must clear returnedQty');
+assert.match(mainReturnedQty,/SPARE_PART_RETURN_CANCELLED[\s\S]*delete item\.returnedQty;delete item\.preReturnSnapshot/,'Fresh-login Cancel Return hydration must clear returnedQty');
