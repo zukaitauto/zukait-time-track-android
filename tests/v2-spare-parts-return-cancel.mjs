@@ -26,4 +26,8 @@ assert.match(main,/preReturnSnapshot:to==='RETURNED'\?moved\.item\.preReturnSnap
 assert.match(main,/p\.preReturnSnapshot&&typeof p\.preReturnSnapshot==='object'/,'Fresh-login hydration must rebuild the return snapshot');
 const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
 assert.match(api,/eventType==="SPARE_PART_RETURN_CANCELLED"/);assert.match(api,/callerRole!=="Manager"/);assert.match(api,/String\(before\.status\|\|""\)!=="RETURNED"/);
+assert.match(api,/allowedAfterKeys=new Set\(\["status","receivedQty"/,'Cancel Return API must allow only controlled restoration fields');
+assert.match(api,/invalidAfterKey=Object\.keys\(after\)\.some/,'Cancel Return API rejects injected fields');
+assert.match(api,/allowedRestoredStatuses=new Set/,'Cancel Return API validates restored status');
+assert.match(api,/invalidNumeric=\["receivedQty","lastReceivedQty","purchaseAmount"/,'Cancel Return API validates restored numeric values');
 console.log('Spare Parts cancel return: Manager-only audited restoration preserves original purchase amount/date and prevents duplicate cancellation.');
