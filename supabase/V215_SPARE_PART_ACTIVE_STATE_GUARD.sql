@@ -65,7 +65,7 @@ begin
   if not found then
     if new.event_type='SPARE_PART_FINAL_PRICE_RECORDED' then
       raise exception 'spare_final_price_not_eligible';
-    elsif new.event_type='SPARE_PART_RETURN_CANCELLED' then
+    elsif new.event_type in ('SPARE_PART_RETURN_CANCELLED','SPARE_PART_COMMERCIAL_UPDATED') then
       raise exception 'stale_spare_part_status';
     elsif new.event_type='SPARE_PART_ARRIVAL_ACCEPTED' then
       raise exception 'spare_arrival_acceptance_not_eligible';
@@ -99,6 +99,10 @@ begin
         raise exception 'stale_spare_manager_correction';
       end if;
     end if;
+  end if;
+
+  if new.event_type='SPARE_PART_COMMERCIAL_UPDATED' and upper(cur.status)='RETURNED' then
+    raise exception 'stale_spare_part_status';
   end if;
 
   if new.event_type='SPARE_PART_COMMERCIAL_UPDATED' and p ? 'purchaseAmount' then
