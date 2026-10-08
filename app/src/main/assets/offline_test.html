@@ -109,8 +109,8 @@ let state=null,me=null,employeeClockTimer=null;
 function loadSavedState(){try{const raw=window.localStorage.getItem(KEY);if(!raw)return structuredClone(initial);const parsed=JSON.parse(raw);if(!parsed||typeof parsed!=='object')return structuredClone(initial);
   // Startup recovery for legacy ID001 states that can crash old dashboard renderers before cloud sync runs.
   let recovered=false;
-  if(Array.isArray(parsed.assign))parsed.assign.forEach(a=>{if(a&&a.job==='ID001'&&!a.cancelled&&!a.completed&&Number(a.idealSafeVersion||0)!==1){a.cancelled=true;a.cancelledAt=Date.now();a.cancelReason='Local startup recovery: legacy ID001';recovered=true}});
-  if(Array.isArray(parsed.sessions))parsed.sessions.forEach(x=>{if(x&&x.job==='ID001'&&!x.end&&Number(x.idealSafeVersion||0)!==1){x.end=Date.now();x.paused=false;x.recoveryClosed=true;recovered=true}});
+  if(Array.isArray(parsed.assign))parsed.assign.forEach(a=>{if(a&&a.job==='ID001'&&!a.cancelled&&!a.completed&&Number(a.idealSafeVersion||0)<1){a.cancelled=true;a.cancelledAt=Date.now();a.cancelReason='Local startup recovery: legacy ID001';recovered=true}});
+  if(Array.isArray(parsed.sessions))parsed.sessions.forEach(x=>{if(x&&x.job==='ID001'&&!x.end&&Number(x.idealSafeVersion||0)<1){x.end=Date.now();x.paused=false;x.recoveryClosed=true;recovered=true}});
   if(recovered){try{window.localStorage.setItem(KEY,JSON.stringify(parsed));window.localStorage.removeItem('zukait_cloud_dirty_v42');window.localStorage.removeItem('zukait_cloud_pending_conflict_v42');window.localStorage.setItem('zukait_cloud_revision_v42','0')}catch(_){}}
   return parsed;
 }catch(e){console.warn('Local storage unavailable or invalid; using in-memory test data.',e);return structuredClone(initial)}}
