@@ -88,3 +88,21 @@ console.log('Spare Parts Expense: Oman periods, exact JC, quantities, older/unda
 assert.match(main,/Number\(r\.amount\)>0\?'Purchase Date':'Activity'/,'Positive Spare Parts expense rows must be labelled Purchase Date');
 assert.match(main,/Number\(r\.amount\)>0\?omanDateKey\(r\.purchaseRecordedAt\):omanDateKey\(r\.activityAt\|\|r\.createdAt\)/,'Report date display must use Oman purchase date for expense rows');
 assert.doesNotMatch(main,/<span>Activity<b>'\+esc\(String\(r\.activityAt\|\|r\.createdAt\|\|''\)\.slice\(0,10\)/,'Report must not display raw UTC-sliced activity date');
+
+
+// Reused part id: a returned first-cycle expense must be retired before the second purchase cycle.
+const reused=[
+ event('SPARE_PART_LISTED','2026-09-01T08:00:00Z',{name:'Headlamp',qty:1},0),
+ event('SPARE_PART_FINAL_PRICE_RECORDED','2026-09-10T08:00:00Z',{finalPrice:18},1),
+ event('SPARE_PART_STATUS_CHANGED','2026-09-12T08:00:00Z',{from:'FITTED',to:'RETURNED',returnedQty:1,preReturnSnapshot:{status:'FITTED',purchaseAmount:18,purchaseRecordedAt:'2026-09-10T08:00:00.000Z'}},2),
+ event('SPARE_PART_STATUS_CHANGED','2026-10-01T08:00:00Z',{from:'RETURNED',to:'ENQUIRY'},3),
+ event('SPARE_PART_STATUS_CHANGED','2026-10-03T08:00:00Z',{from:'ENQUIRY',to:'QUOTED'},4),
+ event('SPARE_PART_STATUS_CHANGED','2026-10-04T08:00:00Z',{from:'QUOTED',to:'ORDERED'},5),
+ event('SPARE_PART_STATUS_CHANGED','2026-10-06T08:00:00Z',{from:'ORDERED',to:'RECEIVED',receivedQty:1,lastReceivedQty:1},6),
+ event('SPARE_PART_FINAL_PRICE_RECORDED','2026-10-07T08:00:00Z',{finalPrice:23},7)
+];
+app.zukaitV2.sparePartsMain.hydrateFromServerRows(reused);
+const reusedItem=app.zukaitV2.sparePartsMain.read()[0].items[0];
+assert.equal(reusedItem.purchaseAmount,23,'Reused part id must expose only the second-cycle active purchase amount');
+assert.equal(reusedItem.purchaseRecordedAt,'2026-10-07T08:00:00.000Z','Re-enquiry must allow the second purchase cycle to receive its own transaction date');
+assert.equal(app.zukaitV2.sparePartsMain.reportRows().reduce((n,x)=>n+x.amount,0),23,'Current Purchase Expense must not add the returned first-cycle amount to the second-cycle amount');
