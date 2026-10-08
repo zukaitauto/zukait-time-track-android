@@ -867,6 +867,15 @@ Deno.serve(async (req: Request) => {
         const p=event.payload && typeof event.payload==="object" ? event.payload : {};
         const after=p.after && typeof p.after==="object" ? p.after : {};
         const allowedStatuses=new Set(["LISTED","ENQUIRY","QUOTED","ORDERED","RECEIVED","SUPERVISOR_VERIFIED","SUPERVISOR_CONFIRMED","FITTED","RETURNED","UNAVAILABLE","CUSTOMER_SETTLEMENT"]);
+        const allowedAfterKeys=new Set(["name","partNo","qty","supplier","purchaseAmount","finalPrice","purchaseRecordedAt","status"]);
+        const allowedBeforeKeys=new Set(["name","partNo","qty","supplier","purchaseAmount","status","editRevision","updatedAt","updatedBy","managerCorrectionReason","correctedByRole","receivedQty","supervisorVerifiedAt","denterCheckedAt","confirmedAt","fittedAt"]);
+        const invalidAfterKey=Object.keys(after).some(k=>!allowedAfterKeys.has(k));
+        const invalidBeforeKey=Object.keys(before).some(k=>!allowedBeforeKeys.has(k));
+        const purchaseAmount=after.purchaseAmount==null?null:Number(after.purchaseAmount);
+        const qtyAfter=Number(after.qty);
+        const invalidPurchaseAmount=purchaseAmount!=null&&(!Number.isFinite(purchaseAmount)||purchaseAmount<0||purchaseAmount>1000000);
+        const invalidQty=Object.prototype.hasOwnProperty.call(after,"qty")&&(!Number.isInteger(qtyAfter)||qtyAfter<=0||qtyAfter>100000);
+        const invalidPurchaseDate=after.purchaseRecordedAt!=null&&after.purchaseRecordedAt!==""&&Number.isNaN(Date.parse(String(after.purchaseRecordedAt)));
         const price=after.finalPrice==null?null:Number(after.finalPrice);
         const before=p.before && typeof p.before==="object" ? p.before : {};
         const beforeStatus=String(before.status||""),afterStatus=String(after.status||"");
@@ -876,7 +885,7 @@ Deno.serve(async (req: Request) => {
         const directReturnedRestore=beforeStatus==="RETURNED"&&afterStatus!=="RETURNED";
         const missingVerification=afterStatus==="SUPERVISOR_CONFIRMED"&&!["SUPERVISOR_CONFIRMED","FITTED"].includes(beforeStatus)&&!before.supervisorVerifiedAt&&!before.denterCheckedAt;
         const missingConfirmation=afterStatus==="FITTED"&&beforeStatus!=="FITTED"&&(!before.confirmedAt||(!before.supervisorVerifiedAt&&!before.denterCheckedAt));
-        if (!((eventType==="SPARE_PART_MANAGER_CORRECTED" && callerRole==="Manager") || (eventType==="SPARE_PART_SUPERVISOR_CORRECTED" && callerRole==="Supervisor")) || !String(p.partId||"") || !String(p.listNo||"") || !String(p.jobCard||"") || !String(p.reason||"").trim() || !p.before || !p.after || !allowedStatuses.has(afterStatus) || (price!=null&&(!Number.isFinite(price)||price<0||price>1000000)) || directReturnedRestore || incompletePromotion || missingVerification || missingConfirmation) {
+        if (!((eventType==="SPARE_PART_MANAGER_CORRECTED" && callerRole==="Manager") || (eventType==="SPARE_PART_SUPERVISOR_CORRECTED" && callerRole==="Supervisor")) || !String(p.partId||"") || !String(p.listNo||"") || !String(p.jobCard||"") || !String(p.reason||"").trim() || !p.before || !p.after || invalidAfterKey || invalidBeforeKey || invalidPurchaseAmount || invalidQty || invalidPurchaseDate || !allowedStatuses.has(afterStatus) || (price!=null&&(!Number.isFinite(price)||price<0||price>1000000)) || directReturnedRestore || incompletePromotion || missingVerification || missingConfirmation) {
           return reply({ok:false,code:"spare_manager_correction_forbidden_or_invalid"},403);
         }
       }
