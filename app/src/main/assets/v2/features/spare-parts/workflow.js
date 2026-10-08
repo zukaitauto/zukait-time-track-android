@@ -34,7 +34,7 @@ function transition(item,to,ctx={}){
  if(!canAct(ctx.role,from,to))return {ok:false,reason:'FORBIDDEN_OR_INVALID_TRANSITION',from,to};
  const now=ctx.serverTime||new Date().toISOString();
  const next=Object.assign({},item,{status:to,updatedAt:now,updatedBy:ctx.actorId||null});
- if(from==='RETURNED'&&to!=='RETURNED'){delete next.preReturnSnapshot;delete next.returnedAt;delete next.returnedBy;delete next.returnReason;delete next.returnedQty}if(to==='UNAVAILABLE')next.cashSettlementRequired=true;
+ if(from==='RETURNED'&&to!=='RETURNED'){delete next.preReturnSnapshot;delete next.returnedAt;delete next.returnedBy;delete next.returnReason;delete next.returnedQty;if(to==='ENQUIRY')next.reEnquiredAt=now}if(to==='UNAVAILABLE')next.cashSettlementRequired=true;
  if(to==='CUSTOMER_SETTLEMENT')next.cashSettlementRequired=false;
  if(to==='RETURNED')next.returnReason=String(ctx.reason||'').trim();
  if(from==='RECEIVED'&&to==='ORDERED'){delete next.receivedQty;delete next.receivedAt;delete next.receivedBy;delete next.lastReceivedQty;delete next.partialReceipt}
