@@ -53,6 +53,9 @@ const events=[
 const rows=app.zukaitV2.sparePartsMain.hydrateFromServerRows(events);
 assert.equal(rows[0].items[0].purchaseRecordedAt,'2026-09-30T20:00:00.000Z');
 assert.equal(rows[0].items[0].purchaseAmount,12);
+assert.equal(rows[0].items[0].purchaseRecordedAt,'2026-09-30T20:00:00.000Z','Later final-price/status activity must not shift the original purchase transaction date');
+const normalizedLater=app.zukaitV2.sparePartsMain.normalizeReportRow(event('SPARE_PART_STATUS_CHANGED','2026-11-01T00:00:00Z',{to:'FITTED',purchaseAmount:12},3));
+assert.equal(normalizedLater.purchaseRecordedAt,'','A later status event carrying an amount must not invent a new purchase date');
 assert.equal(app.zukaitSparePartsOmanDateKey('2026-09-30T19:59:59Z'),'2026-09-30');
 assert.equal(app.zukaitSparePartsOmanDateKey('2026-09-30T20:00:00Z'),'2026-10-01','V2 expense filters must use Oman business date at UTC+4 midnight');
 console.log('Spare Parts Expense: Oman periods, exact JC, quantities, older/undated costs, permissions, read-only filters and stable server purchase date passed');
