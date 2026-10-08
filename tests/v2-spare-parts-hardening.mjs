@@ -261,3 +261,7 @@ assert.match(workflow,/if\(to==='RETURNED'\)[\s\S]*next\.preReturnSnapshot=snaps
 assert.match(workflow,/from==='RETURNED'&&to!=='RETURNED'[\s\S]*delete next\.preReturnSnapshot/,'Re-enquiry must retire the prior return snapshot before a new purchasing cycle');
 assert.match(apiListCreated,/latestStatusEvent[\s\S]*String\(latestStatusPayload\.to\|\|""\)!=="RETURNED"[\s\S]*spare_return_cancel_cycle_mismatch/,'Cancel Return must bind to the immediately current return cycle');
 assert.match(apiListCreated,/latestStatusPayload\.preReturnSnapshot/,'Cancel Return must restore the current cycle snapshot rather than searching an older returned event');
+
+assert.match(mainModule,/function arrivedConfirmed\(item\)\{return \['SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED'\]\.includes/,'Restored confirmed/fitted states must remain completion-eligible');
+assert.match(mainModule,/type==='SPARE_PART_RETURN_CANCELLED'[\s\S]*Object\.assign\(item,p\.after\)[\s\S]*delete item\.preReturnSnapshot/,'Cancel Return hydration must restore the complete audited status and invoice snapshot');
+assert.match(mainModule,/if\(bucket==='PURCHASE_COMPLETED'\)\{const active=items\.filter[\s\S]*active\.every\(arrivedConfirmed\)&&active\.every\(i=>Number\.isFinite\(Number\(i\.purchaseAmount\)\)&&Number\(i\.purchaseAmount\)>0\)/,'Purchase Completed must immediately accept a restored confirmed/fitted part with its positive final amount');
