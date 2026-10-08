@@ -311,3 +311,7 @@ assert.match(guard,/upper\(st\)='RECEIVED'[\s\S]*receivedQty[\s\S]*cur\.ordered_
 assert.match(mainModule,/if\(!item\|\|item\.syncConflict\|\|pendingTransition\(item\)\)return;[\s\S]*if\(to==='RECEIVED'\)/,'Purchaser receipt action must refuse a second local submission while the first transition is pending');
 assert.match(mainModule,/moved\.item\.revision=nextRevision[\s\S]*list\.items\[idx\]=moved\.item;[\s\S]*commitEvent/,'Receipt transition must mark the new revision locally before awaiting network commit');
 assert.match(guard,/new\.event_type='SPARE_PART_STATUS_CHANGED'[\s\S]*new\.revision,0\)<=coalesce\(cur\.revision,0\)[\s\S]*stale_spare_part_status/,'Database must reject duplicate or stale status revisions, including concurrent receipt taps from separate devices');
+
+assert.match(mainModule,/function spareConflictReason\(reason=''\)[\s\S]*stale_spare_part_status[\s\S]*Latest Parts data has been refreshed/,'Stale receipt/status conflicts must be classified as recoverable authoritative refreshes');
+assert.match(mainModule,/async function recoverSpareConflict\(reason\)[\s\S]*await hydrateAuthoritativeLists\(\)[\s\S]*return message/,'Recognized Spare Parts conflicts must hydrate authoritative server state before returning control');
+assert.match(mainModule,/if\(!synced\.ok&&synced\.reason!=='V2_TRANSPORT_UNAVAILABLE'\)\{if\(!synced\.conflictMessage\)\{list\.items\[idx\]=previous;write\(rows\)\}/,'A recognized stale receipt conflict must not roll the refreshed authoritative item back to the losing local snapshot');
