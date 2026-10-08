@@ -92,6 +92,10 @@ begin
   elsif new.event_type in ('SPARE_PART_ITEM_EDITED','SPARE_PART_MANAGER_CORRECTED','SPARE_PART_SUPERVISOR_CORRECTED','SPARE_PART_RETURN_CANCELLED') then
     nm:=trim(coalesce(afterv->>'name',cur.part_name)); pn:=upper(trim(coalesce(afterv->>'partNo',cur.part_no)));
     st:=trim(coalesce(afterv->>'status',cur.status)); k:=public.zukait_v2_spare_part_key(nm,pn);
+    if new.event_type in ('SPARE_PART_MANAGER_CORRECTED','SPARE_PART_SUPERVISOR_CORRECTED') and nullif(afterv->>'qty','') is not null then
+      if (afterv->>'qty')::numeric < coalesce(cur.received_qty,0) then raise exception 'spare_quantity_below_received'; end if;
+      if upper(cur.status) in ('SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED') and (afterv->>'qty')::numeric > coalesce(cur.received_qty,0) then raise exception 'spare_verified_quantity_increase_requires_reopen'; end if;
+    end if;
     if upper(st)<>'RETURNED' and (k<>cur.part_key or upper(cur.status)='RETURNED') then
       perform pg_advisory_xact_lock(hashtextextended(cur.list_no||'|'||k,0));
       select part_id into conflict_part from public.workshop_v2_spare_part_state where list_no=cur.list_no and part_key=k and status<>'RETURNED' and part_id<>pid limit 1;
