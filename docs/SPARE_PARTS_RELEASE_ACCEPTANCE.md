@@ -55,3 +55,7 @@ Do not modify main or reuse V300's release approval for new source.
 The audited source above predates the new rejection feature. Revalidate against the latest architecture-v2 build.
 Supervisor and Manager can reject only an unconfirmed RECEIVED item, with a required reason. The status changes to ORDERED and receipt quantity clears; quotation history remains. Purchaser notification is derived from the committed event, so offline notification appears only after successful sync.
 Automated validation for this new feature must pass before this candidate is accepted.
+
+
+### Candidate automated verification — 2026-10-08
+Source effe40f51a7c8a0a96d5548a21d1ba1141eaba06 passed the full regression (50 entry cases), Android/APK build and PC deployment. APK and signing-tools artifacts were uploaded successfully in run 37806316578. The artifacts are unsigned; this does not satisfy signed upgrade or physical-device acceptance. Device result cells remain Pending.

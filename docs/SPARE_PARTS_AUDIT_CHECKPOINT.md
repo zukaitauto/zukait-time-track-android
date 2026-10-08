@@ -154,3 +154,13 @@ No main changes, real employee work mutations or release version bump were made 
 - New regression coverage checks both reviewer roles, reason validation, queued state, fresh-client pending quantity and role-targeted notification.
 - CI initially exposed cache-version format and a source assertion tied to the old targetRole expression; these contracts were updated without weakening received-event targeting. Full new-feature CI still needs verification.
 - Previous automated closeout was for c2e85c18, before this feature. Device acceptance now also includes rejection and confirmation races.
+
+
+### Arrival rejection automated verification complete — 2026-10-08
+Validated source: effe40f51a7c8a0a96d5548a21d1ba1141eaba06.
+- APK run 37806316578 / job 113411411943 completed successfully: full functional regression, release APK build, unsigned APK upload and signing-tools upload.
+- Entry regression now has 50 cases. The full regression step passed.
+- Android architecture-v2 build and PC Pages deployment completed successfully for the same source.
+- Live API re-read confirmed the scoped Supervisor rejection permission and required reasons for Supervisor/Manager.
+- Automated rejection checkpoint is complete; pending physical acceptance includes red-button operation on both review roles, Purchaser notification, stale confirm/reject decisions and offline reconnect.
+- Build artifacts remain unsigned. V300 metadata is unchanged; no new staff release was published.
