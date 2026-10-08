@@ -18,7 +18,7 @@ assert.match(cloud,/if\(liveInFlight\|\|!sessionToken\(\)\|\|!navigator\.onLine\
 assert.match(cloud,/window\.zukaitServerLive=/,'cloud layer must publish authoritative rows');
 assert.match(cloud,/r\.server_revision\|\|r\.revision/,'rebased saves must acknowledge the real server revision');
 assert.match(cloud,/r\.data&&typeof r\.data==='object'/,'rebased saves must carry an authoritative merged snapshot');
-assert.match(cloud,/normalizeRemote\(r\.data\)/,'client must apply the merged server snapshot immediately after a rebase');
+assert.match(cloud,/normalizeRemote\(editedDuringPush\?threeWayMerge\(localSnapshot,authoritative,current\):authoritative\)/,'client must apply the merged server snapshot immediately after a rebase');
 assert.match(cloud,/r\.force_pull&&!r\.data/,'legacy-compatible rebase responses must force a refresh when no merged payload is present');
 assert.match(authority,/window\.currentStaffStatuses=function/,'server authority must replace staff status reads');
 assert.match(authority,/window\.currentActiveWorkers=function/,'server authority must replace active-worker reads');
@@ -85,3 +85,4 @@ assert.equal(context.window.currentStaffStatuses()[0].emp,'LOCAL','offline mode 
 assert.match(authority,/setTimeout\(apply,0\)/,'server live counts must be reapplied immediately after dashboard renders');
 
 console.log('Server live-status authority tests passed: server counts/details, dirty-independent polling, no online stale fallback, offline-only cache fallback, and immediate render reapply');
+
