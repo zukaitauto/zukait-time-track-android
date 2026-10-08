@@ -854,8 +854,16 @@ Deno.serve(async (req: Request) => {
       if (eventType==="SPARE_PART_DENTER_NOTICE" && callerRole!=="Denter") {
         return reply({ok:false,code:"denter_notice_forbidden"},403);
       }
-      if (eventType==="SPARE_PART_LIST_CREATED" && !["Manager","Supervisor"].includes(callerRole)) {
-        return reply({ok:false,code:"spare_list_create_forbidden"},403);
+      if (eventType==="SPARE_PART_LIST_CREATED") {
+        const p=event.payload && typeof event.payload==="object" && !Array.isArray(event.payload) ? event.payload : {};
+        const allowedKeys=new Set(["jobCard","partId","listNo","vehicle","registration","model","year","customer","targetRole"]);
+        const invalidKey=Object.keys(p).some(k=>!allowedKeys.has(k));
+        const invalidIdentity=!String(p.jobCard||"").trim()||!String(p.listNo||"").trim()||String(p.partId||"")!==String(p.listNo||"");
+        const invalidTargetRole=String(p.targetRole||"")!=="Purchaser";
+        const invalidYear=p.year!=null&&p.year!==""&&(!/^\d{4}$/.test(String(p.year))||Number(p.year)<1900||Number(p.year)>2100);
+        if (!["Manager","Supervisor"].includes(callerRole) || invalidKey || invalidIdentity || invalidTargetRole || invalidYear) {
+          return reply({ok:false,code:"spare_list_create_forbidden_or_invalid"},403);
+        }
       }
       if (eventType==="SPARE_PART_LISTED") {
         const p=event.payload && typeof event.payload==="object" && !Array.isArray(event.payload) ? event.payload : {};
