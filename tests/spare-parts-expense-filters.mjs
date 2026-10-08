@@ -102,7 +102,7 @@ const reused=[
  event('SPARE_PART_FINAL_PRICE_RECORDED','2026-10-07T08:00:00Z',{finalPrice:23},7)
 ];
 app.zukaitV2.sparePartsMain.hydrateFromServerRows(reused);
-const reusedItem=app.zukaitV2.sparePartsMain.read()[0].items[0];
+const reusedItem=app.zukaitV2.sparePartsMain.listsForJobCard('JC1')[0].items[0];
 assert.equal(reusedItem.purchaseAmount,23,'Reused part id must expose only the second-cycle active purchase amount');
 assert.equal(reusedItem.purchaseRecordedAt,'2026-10-07T08:00:00.000Z','Re-enquiry must allow the second purchase cycle to receive its own transaction date');
 assert.equal(app.zukaitV2.sparePartsMain.reportRows().reduce((n,x)=>n+x.amount,0),23,'Current Purchase Expense must not add the returned first-cycle amount to the second-cycle amount');
@@ -122,7 +122,7 @@ const secondCancel=[
  {...event('SPARE_PART_RETURN_CANCELLED','2026-10-10T08:00:00Z',{reason:'Return marked by mistake',before:{status:'RETURNED'},after:{status:'FITTED',receivedQty:1,purchaseAmount:23,purchaseRecordedAt:'2026-10-07T08:00:00.000Z'}},9)}
 ];
 app.zukaitV2.sparePartsMain.hydrateFromServerRows(secondCancel);
-const secondCancelItem=app.zukaitV2.sparePartsMain.read()[0].items[0];
+const secondCancelItem=app.zukaitV2.sparePartsMain.listsForJobCard('JC1')[0].items[0];
 assert.equal(secondCancelItem.purchaseAmount,23,'Cancelling the second return must restore the second-cycle amount');
 assert.equal(secondCancelItem.purchaseRecordedAt,'2026-10-07T08:00:00.000Z','Cancelling the second return must restore the second-cycle purchase date');
 assert.equal(app.zukaitV2.sparePartsMain.reportRows().reduce((n,x)=>n+x.amount,0),23,'Restored second-cycle expense must be counted once only');

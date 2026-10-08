@@ -198,7 +198,7 @@ from public.workshop_v2_spare_part_state
 where status<>'RETURNED'
 group by list_no,part_key having count(*)>1;
 
-do $
+do $$
 begin
   if exists(select 1 from public.workshop_v2_spare_part_state_conflicts) then
     raise notice 'Spare part active-state conflicts detected; unique guard index deferred until reviewed.';
@@ -206,7 +206,7 @@ begin
     create unique index if not exists workshop_v2_spare_part_one_active_key
       on public.workshop_v2_spare_part_state(list_no,part_key) where status<>'RETURNED';
   end if;
-end $;
+end $$;
 
 drop trigger if exists workshop_v2_spare_part_state_guard on public.workshop_v2_events;
 create trigger workshop_v2_spare_part_state_guard

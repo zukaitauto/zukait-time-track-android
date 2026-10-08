@@ -1006,6 +1006,7 @@ Deno.serve(async (req: Request) => {
       }
       if (eventType==="SPARE_PART_MANAGER_CORRECTED" || eventType==="SPARE_PART_SUPERVISOR_CORRECTED") {
         const p=event.payload && typeof event.payload==="object" ? event.payload : {};
+        const before=p.before && typeof p.before==="object" ? p.before : {};
         const after=p.after && typeof p.after==="object" ? p.after : {};
         const allowedStatuses=new Set(["LISTED","ENQUIRY","QUOTED","ORDERED","RECEIVED","SUPERVISOR_VERIFIED","SUPERVISOR_CONFIRMED","FITTED","RETURNED","UNAVAILABLE","CUSTOMER_SETTLEMENT"]);
         const allowedAfterKeys=new Set(["name","partNo","qty","supplier","purchaseAmount","finalPrice","purchaseRecordedAt","status"]);
@@ -1018,7 +1019,6 @@ Deno.serve(async (req: Request) => {
         const invalidQty=Object.prototype.hasOwnProperty.call(after,"qty")&&(!Number.isInteger(qtyAfter)||qtyAfter<=0||qtyAfter>100000);
         const invalidPurchaseDate=after.purchaseRecordedAt!=null&&after.purchaseRecordedAt!==""&&Number.isNaN(Date.parse(String(after.purchaseRecordedAt)));
         const price=after.finalPrice==null?null:Number(after.finalPrice);
-        const before=p.before && typeof p.before==="object" ? p.before : {};
         const beforeStatus=String(before.status||""),afterStatus=String(after.status||"");
         const qty=Number(after.qty??before.qty??0),receivedQty=Number(after.receivedQty??before.receivedQty??0);
         const promotesReceipt=["SUPERVISOR_VERIFIED","SUPERVISOR_CONFIRMED","FITTED"].includes(afterStatus)&&!["SUPERVISOR_VERIFIED","SUPERVISOR_CONFIRMED","FITTED"].includes(beforeStatus);
@@ -1104,7 +1104,7 @@ Deno.serve(async (req: Request) => {
           ["LISTED",new Set(["ENQUIRY","UNAVAILABLE"])],["ENQUIRY",new Set(["QUOTED","ORDERED","LISTED","UNAVAILABLE"])],["QUOTED",new Set(["ORDERED","ENQUIRY","UNAVAILABLE"])],
           ["ORDERED",new Set(["RECEIVED","ENQUIRY","RETURNED","UNAVAILABLE"])],["RECEIVED",new Set(["RECEIVED","ORDERED","SUPERVISOR_VERIFIED","RETURNED"])],
           ["SUPERVISOR_VERIFIED",new Set(["SUPERVISOR_CONFIRMED","RETURNED"])],["DENTER_CHECKED",new Set(["SUPERVISOR_CONFIRMED","RETURNED"])],
-          ["SUPERVISOR_CONFIRMED",new Set(["FITTED","RETURNED"])],["UNAVAILABLE",new Set(["CUSTOMER_SETTLEMENT"])],["RETURNED",new Set(["ENQUIRY","UNAVAILABLE"])]
+          ["SUPERVISOR_CONFIRMED",new Set(["FITTED","RETURNED"])],["FITTED",new Set(["RETURNED"])],["UNAVAILABLE",new Set(["CUSTOMER_SETTLEMENT"])],["RETURNED",new Set(["ENQUIRY","UNAVAILABLE"])]
         ]);
         if(!allowedTransitions.get(from)?.has(to)) return reply({ok:false,code:"spare_transition_sequence_invalid"},409);
         const purchaserTargets=new Set(["ENQUIRY","QUOTED","ORDERED","RECEIVED","RETURNED","UNAVAILABLE"]);
@@ -1112,6 +1112,7 @@ Deno.serve(async (req: Request) => {
         const allowed = callerRole==="Manager" || (callerRole==="Purchaser" && purchaserTargets.has(to)) || (callerRole==="Supervisor" && supervisorTargets.has(to));
         if(!allowed) return reply({ok:false,code:"spare_transition_forbidden"},403);
         if(to==="RETURNED"){
+          if(["SUPERVISOR_VERIFIED","DENTER_CHECKED","SUPERVISOR_CONFIRMED","FITTED"].includes(from)&&callerRole!=="Manager") return reply({ok:false,code:"spare_return_manager_required"},403);
           const snapshot=event?.payload?.preReturnSnapshot;
           const allowedSnapshotKeys=new Set(["status","receivedQty","receivedAt","receivedBy","lastReceivedQty","partialReceipt","arrivalAccepted","arrivalAcceptedAt","supervisorVerifiedAt","supervisorVerifiedBy","denterCheckedAt","denterCheckedBy","confirmedAt","confirmedBy","fittedAt","fittedBy","purchaseAmount","purchaseRecordedAt","purchaseAmountRevision","billAmount","supplierCost","quoteAmount","price","supplier","quotationOffers","commercialRevision"]);
           const allowedSnapshotStatuses=new Set(["LISTED","ENQUIRY","QUOTED","ORDERED","RECEIVED","SUPERVISOR_VERIFIED","DENTER_CHECKED","SUPERVISOR_CONFIRMED","FITTED","UNAVAILABLE","CUSTOMER_SETTLEMENT"]);

@@ -3,12 +3,13 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import { randomUUID } from 'node:crypto';
 import test from 'node:test';
+import { stripTypeScriptTypes } from 'node:module';
 
 const main = fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js', 'utf8');
 const api = fs.readFileSync('supabase/functions/workshop-api/index.ts', 'utf8');
 const guard = api.slice(api.indexOf('    if (action === "v2_commit_event") {'), api.indexOf('      const { data, error } = await admin.rpc("zukait_v2_commit_event"'));
 // Execute the actual API authorization and payload rules against UI-generated events.
-const validate = new Function('body', 'user', `const action='v2_commit_event'; const reply=(result,status)=>({...result,status}); ${guard} return {ok:true}; }`);
+const validate = new Function(stripTypeScriptTypes(`async function validate(body,user,admin){const action='v2_commit_event'; const reply=(result,status)=>({...result,status}); ${guard} return {ok:true}; }}`)+';return validate;')();
 const LIST_KEY = 'zukait_v2_spare_parts_lists_v1';
 const DRAFT_KEY = 'zukait_v2_parts_create_draft_v1';
 const copy = value => JSON.parse(JSON.stringify(value));
@@ -35,7 +36,14 @@ function fixture(userRole = 'Supervisor', userId = 'SUP002') {
       v2CommitEvent:async event=>{
         commits.push(copy(event));
         if(failure)throw Object.assign(new Error(failure),{code:failure});
-        const result=validate({event},window.me);
+        const admin={from:table=>{const filters={};const query={select:()=>query,eq:(k,v)=>{filters[k]=v;return query},order:()=>query,limit:()=>query,maybeSingle:async()=>{
+          if(table==='workshop_v2_spare_part_state'){
+            const item=JSON.parse(storage.get(LIST_KEY)||'[]').flatMap(l=>(l.items||[]).map(i=>({...i,list_no:l.listNo,job_card:l.jobCard}))).find(i=>i.id===filters.part_id);
+            return {data:item?{part_id:item.id,list_no:item.list_no,job_card:item.job_card,status:item.status}:null,error:null};
+          }
+          throw Error('Unexpected authority query: '+table);
+        }};return query}};
+        const result=await validate({event},window.me,admin);
         if(!result.ok)throw Object.assign(new Error(result.code),{code:result.code});
         const prior=serverRows.find(row=>row.event_id===event.eventId);
         if(prior && (prior.actor_id!==event.actorId || JSON.stringify(prior.payload)!==JSON.stringify(event.payload)))throw Object.assign(new Error('event_id_conflict'),{code:'event_id_conflict'});
@@ -183,4 +191,24 @@ test('parts module script has a new cache version so browsers receive Add Part a
   const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
   const version=Number(html.match(/v2\/features\/spare-parts\/main_module\.js\?v=(\d+)/)?.[1]);
   assert.ok(version>=215,'parts module cache version must move beyond v202');
+});
+
+test('Manager and Supervisor corrections validate before-state without a declaration error',async()=>{
+  for(const role of ['Manager','Supervisor']){
+    const event={eventId:'correction-'+role,entityId:'SP1',actorId:'USER1',type:role==='Manager'?'SPARE_PART_MANAGER_CORRECTED':'SPARE_PART_SUPERVISOR_CORRECTED',payload:{partId:'SP1',listNo:'PL1',jobCard:'12029',reason:'Correct part name',before:{name:'Bumper',qty:1,status:'LISTED'},after:{name:'Front bumper',qty:1,status:'LISTED'}}};
+    assert.deepEqual(await validate({event},{id:'USER1',role},{}),{ok:true});
+    const injected=copy(event);injected.payload.before.unapprovedField=true;
+    assert.equal((await validate({event:injected},{id:'USER1',role},{})).code,'spare_manager_correction_forbidden_or_invalid');
+  }
+});
+
+test('only Manager may return verified, confirmed, or fitted parts through the API',async()=>{
+  for(const from of ['SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED']){
+    for(const role of ['Manager','Supervisor','Purchaser']){
+      const event={eventId:'return-'+from+'-'+role,entityId:'SP1',actorId:'USER1',type:'SPARE_PART_STATUS_CHANGED',payload:{partId:'SP1',listNo:'PL1',jobCard:'12029',from,to:'RETURNED',reason:'Wrong supplied part'}};
+      const result=await validate({event},{id:'USER1',role},{});
+      if(role==='Manager')assert.deepEqual(result,{ok:true},from);
+      else {assert.equal(result.code,'spare_return_manager_required');assert.equal(result.status,403)}
+    }
+  }
 });
