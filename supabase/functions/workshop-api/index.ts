@@ -724,6 +724,95 @@ async function loadAuthoritativeLiveStatus() {
   return { revision, rows: rows || [], updated_at: current.updated_at, updated_by: current.updated_by };
 }
 
+
+function employeeTimeTransition(data:any,user:any,body:any,serverNow:number){
+  if(String(user?.role||"")!=="Employee") return {ok:false,code:"employee_time_forbidden"};
+  const type=String(body?.event_type||"").toUpperCase();
+  if(!["START","PAUSE","FINISH","STOP_ID001"].includes(type)) return {ok:false,code:"employee_time_action_invalid"};
+  const actionId=String(body?.action_id||"").trim();
+  if(!actionId) return {ok:false,code:"employee_time_action_id_required"};
+  const next=cloneValue(data||{});
+  next.sessions=Array.isArray(next.sessions)?next.sessions:[];
+  next.assign=Array.isArray(next.assign)?next.assign:[];
+  next.jobs=Array.isArray(next.jobs)?next.jobs:[];
+  next.employeeTimeActionAudit=Array.isArray(next.employeeTimeActionAudit)?next.employeeTimeActionAudit:[];
+  next.lastActions=next.lastActions&&typeof next.lastActions==="object"?next.lastActions:{};
+
+  const prior=next.employeeTimeActionAudit.find((x:any)=>String(x?.id||"")===actionId);
+  if(prior) return {ok:true,duplicate:true,data:next,audit:prior,status:String(prior.status||"")};
+
+  const emp=String(user.id);
+  const requestedJob=String(body?.job||"").trim();
+  const requestedAssignment=String(body?.assignment_id||"").trim();
+  const requestedSession=String(body?.session_id||"").trim();
+  const ownAssignments=next.assign.filter((a:any)=>a&&String(a.emp)===emp&&!a.cancelled);
+  const openSessions=next.sessions.filter((s:any)=>s&&String(s.emp)===emp&&s.end==null&&!s.cancelled);
+  const findAssignment=()=>ownAssignments.find((a:any)=>requestedAssignment&&String(a.id)===requestedAssignment)
+    || ownAssignments.filter((a:any)=>!a.completed&&(!requestedJob||String(a.job)===requestedJob))
+      .sort((a:any,b:any)=>Number(b.assignedAt||0)-Number(a.assignedAt||0))[0] || null;
+  const findSession=()=>openSessions.find((s:any)=>requestedSession&&String(s.id)===requestedSession)
+    || openSessions.find((s:any)=>!requestedJob||String(s.job)===requestedJob)
+    || (requestedSession?next.sessions.find((s:any)=>s&&String(s.emp)===emp&&String(s.id)===requestedSession):null)
+    || null;
+
+  let session:any=null,assignment:any=null,status="";
+  if(type==="START"){
+    if(openSessions.length){
+      const already=openSessions.find((s:any)=>(!requestedJob||String(s.job)===requestedJob)&&(!requestedAssignment||String(s.assignmentId||"")===requestedAssignment));
+      if(already){
+        session=already;
+        assignment=ownAssignments.find((a:any)=>String(a.id)===String(already.assignmentId||""))||null;
+        status=String(already.job)==="ID001"?"ID001":"Working";
+      }else return {ok:false,code:"employee_time_already_active"};
+    }else{
+      assignment=findAssignment();
+      if(!assignment||assignment.completed||assignment.cancelled) return {ok:false,code:"employee_time_assignment_not_open"};
+      const job=String(assignment.job||requestedJob);
+      const sid=String(body?.new_session_id||"").trim()||crypto.randomUUID();
+      session={id:sid,assignmentId:String(assignment.id),job,emp,start:serverNow,end:null,paused:false,finished:false,rework:assignment.rework===true,v79Integrity:true,serverAuthoritative:true,serverStartedAt:serverNow};
+      if(job==="ID001"){session.idealCard=true;session.idealSafeVersion=1}
+      next.sessions.push(session);
+      status=job==="ID001"?"ID001":"Working";
+      next.lastActions[emp]={text:"Started "+job,at:serverNow};
+    }
+  }else{
+    session=findSession();
+    if(!session) return {ok:false,code:"employee_time_no_session"};
+    assignment=ownAssignments.find((a:any)=>String(a.id)===String(session.assignmentId||""))
+      || ownAssignments.filter((a:any)=>String(a.job)===String(session.job)).sort((a:any,b:any)=>Number(b.assignedAt||0)-Number(a.assignedAt||0))[0] || null;
+    if(session.end!=null){
+      if(type==="PAUSE"&&session.paused===true) status="Paused";
+      else if((type==="FINISH"||type==="STOP_ID001")&&session.finished===true) status="Available";
+      else return {ok:false,code:"employee_time_session_closed"};
+    }else if(type==="PAUSE"){
+      if(String(session.job)==="ID001") return {ok:false,code:"employee_time_id001_pause_forbidden"};
+      session.end=serverNow;session.paused=true;session.finished=false;session.pauseReason=String(body?.reason||"").trim().slice(0,240);
+      session.serverPausedAt=serverNow;session.serverAuthoritative=true;
+      status="Paused";next.lastActions[emp]={text:"Paused "+String(session.job),at:serverNow};
+    }else{
+      if(type==="STOP_ID001"&&String(session.job)!=="ID001") return {ok:false,code:"employee_time_not_id001"};
+      session.end=serverNow;session.finished=true;session.paused=false;session.serverFinishedAt=serverNow;session.serverAuthoritative=true;
+      if(assignment){assignment.completed=true;assignment.completedAt=serverNow;assignment.cancelled=false}
+      if(String(session.job)!=="ID001"){
+        const related=next.assign.filter((a:any)=>a&&!a.cancelled&&String(a.job)===String(session.job));
+        const done=related.length>0&&related.every((a:any)=>a.completed===true);
+        const j=next.jobs.find((j:any)=>j&&String(j.no)===String(session.job));
+        if(j){j.status=done?"Completed":"Open";if(done)j.completedAt=Math.max(...related.map((a:any)=>Number(a.completedAt||0)),serverNow);else delete j.completedAt}
+      }
+      status="Available";next.lastActions[emp]={text:(String(session.job)==="ID001"?"Stopped ":"Finished ")+String(session.job),at:serverNow};
+    }
+  }
+
+  const audit={
+    id:actionId,type,emp,job:String(session?.job||requestedJob||""),assignmentId:String(assignment?.id||session?.assignmentId||requestedAssignment||""),
+    sessionId:String(session?.id||requestedSession||""),clientAt:Number(body?.client_time||0)||null,serverAt:serverNow,status,
+    confirmed:true,deviceId:String(body?.device_id||"").slice(0,160)
+  };
+  next.employeeTimeActionAudit.push(audit);
+  if(next.employeeTimeActionAudit.length>5000)next.employeeTimeActionAudit=next.employeeTimeActionAudit.slice(-5000);
+  return {ok:true,data:next,audit,status,session,assignment};
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return reply({ ok: false, code: "method" }, 405);
@@ -736,6 +825,28 @@ Deno.serve(async (req: Request) => {
   try {
     const body = await req.json();
     const action = String(body?.action || "load");
+
+    if (action === "employee_time_action") {
+      for(let attempt=0;attempt<8;attempt++){
+        const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
+        if(readError)throw readError;
+        const result:any=employeeTimeTransition(current.data,user,body,Date.now());
+        if(!result.ok)return reply({ok:false,code:result.code,server_time:Date.now()},result.code==="employee_time_forbidden"?403:409);
+        if(result.duplicate)return reply({ok:true,duplicate:true,status:result.status,audit:result.audit,server_revision:current.revision,server_time:Date.now()});
+        const nextRevision=Number(current.revision||0)+1;
+        const live=computeLiveStatus(result.data,nextRevision,String(user.id));
+        const {data:committed,error:commitError}=await admin.rpc("zukait_commit_workshop_state_v2",{
+          p_expected_revision:Number(current.revision||0),p_data:result.data,p_changed_by:String(user.id),p_live:live
+        });
+        if(commitError)throw commitError;
+        if(committed?.ok){
+          const row=live.find((x:any)=>String(x.employee_id)===String(user.id))||null;
+          return reply({ok:true,status:row?.status||result.status,job_no:row?.job_no||"",session_id:row?.session_id||"",assignment_id:row?.assignment_id||"",audit:result.audit,server_revision:committed.revision||nextRevision,server_time:Date.now()});
+        }
+        if(committed?.code!=="conflict")return reply({ok:false,code:committed?.code||"employee_time_commit_failed"},409);
+      }
+      return reply({ok:false,code:"employee_time_conflict"},409);
+    }
 
     if (action === "time_management") {
       for (let attempt=0;attempt<8;attempt++) {
