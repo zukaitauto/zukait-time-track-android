@@ -28,6 +28,7 @@ assert.match(main,/CANCEL RETURN<\/button><button[^\n]*Re-enquire/,'modern retur
 assert.match(main,/delete item\.preReturnSnapshot/);
 assert.match(main,/preReturnSnapshot:to==='RETURNED'\?moved\.item\.preReturnSnapshot:null/,'Return event must persist the restoration snapshot to the server');
 assert.match(main,/p\.preReturnSnapshot&&typeof p\.preReturnSnapshot==='object'/,'Fresh-login hydration must rebuild the return snapshot');
+assert.match(main,/p\.from==='RETURNED'&&p\.to!=='RETURNED'[^}]*delete item\.preReturnSnapshot;delete item\.returnedAt;delete item\.returnedBy;delete item\.returnReason/,'Fresh-login hydration must retire return snapshot and metadata when a genuine replacement cycle begins');
 const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
 assert.match(api,/eventType==="SPARE_PART_RETURN_CANCELLED"/);assert.match(api,/callerRole!=="Manager"/);assert.match(api,/String\(before\.status\|\|""\)!=="RETURNED"/);
 assert.match(api,/allowedAfterKeys=new Set\(\["status","receivedQty"/,'Cancel Return API must allow only controlled restoration fields');
