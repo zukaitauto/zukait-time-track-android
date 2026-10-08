@@ -271,3 +271,8 @@ assert.match(mainModule,/function invoicePriceMissing\(item\)\{const n=Number\(i
 assert.doesNotMatch(mainModule,/function arrivedConfirmed\(item\)[^\n]*RETURNED/,'Returned parts must never be invoice-entry eligible');
 assert.doesNotMatch(mainModule,/function arrivedConfirmed\(item\)[^\n]*ENQUIRY/,'Re-enquired parts must not enter Invoice Entry before the arrival/confirmation flow is completed');
 assert.match(mainModule,/type==='SPARE_PART_RETURN_CANCELLED'[\s\S]*Object\.assign\(item,p\.after\)/,'Cancel Return must restore the prior positive invoice amount before Invoice Entry is calculated');
+
+assert.match(mainModule,/type==='SPARE_PART_RETURN_CANCELLED'[\s\S]*delete item\.returnedAt;delete item\.returnedBy;delete item\.returnReason;delete item\.returnedQty;delete item\.preReturnSnapshot/,'Cancel Return hydration must remove stale return/problem metadata');
+assert.match(mainModule,/openProblemParts\(\)[\s\S]*\['RETURNED','UNAVAILABLE'\]\.includes\(String\(item\.status\|\|''\)\)\|\|item\.cashSettlementRequired/,'Returned/Problem must be driven by current problem status, not historical return metadata');
+assert.match(mainModule,/userRole==='Manager'[\s\S]*\['RECEIVED','SUPERVISOR_VERIFIED','DENTER_CHECKED','RETURNED','UNAVAILABLE'\]\.includes\(x\.item\.status\)/,'Manager Attention must use current restored status after Cancel Return');
+assert.match(mainModule,/userRole==='Purchaser'[\s\S]*purchaserAttentionItem/,'Purchaser Attention must recalculate from current item state after Cancel Return');
