@@ -793,3 +793,20 @@ test('late Manager and Supervisor corrections cannot restore a concurrently dele
    assert.equal(editor.parts.reportRows().reduce((n,r)=>n+r.amount,0),0);
  }
 });
+
+test('quantity totals agree across Spare Parts report and monthly dashboard through Return and cancellation',async()=>{
+ const manager=fixture('Manager','M1');
+ manager.serverRows.find(r=>r.event_type==='SPARE_PART_LISTED').payload.qty=3;
+ manager.serverRows.find(r=>r.payload.to==='RECEIVED').payload.receivedQty=3;
+ manager.parts.hydrateFromServerRows(copy(manager.serverRows));
+ await manager.invoice();
+ assert.equal(manager.lists()[0].items[0].purchaseAmount,2.44,'Invoice unit value must remain unchanged');
+ assert.equal(manager.parts.reportRows().reduce((n,r)=>n+r.amount,0),7.32);
+ assert.equal(manager.parts.managerDashboardSummary().monthSpend,7.32);
+ assert.equal((await manager.parts.transitionItem(manager.listNo,manager.partId,'RETURNED','Wrong part')).ok,true);
+ assert.equal(manager.parts.reportRows().reduce((n,r)=>n+r.amount,0),0);
+ manager.window.prompt=()=> 'Restore mistaken return';await manager.parts.cancelReturn(manager.listNo,manager.partId);
+ assert.equal(manager.parts.reportRows().reduce((n,r)=>n+r.amount,0),7.32);
+ const fresh=fixture('Manager','M2',manager.serverRows);
+ assert.equal(fresh.parts.reportRows().reduce((n,r)=>n+r.amount,0),7.32);
+});

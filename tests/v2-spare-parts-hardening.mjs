@@ -72,7 +72,7 @@ for(const key of ['receivedQty','receivedAt','partialReceipt','arrivalAccepted',
 
 assert.match(mainSource,/receivedQty>0&&qty<receivedQty.*?Quantity cannot be lower than.*?already received/s,'correction cannot reduce ordered quantity below already received quantity');
 
-assert.match(mainSource,/monthSpend=items\.reduce\(\(sum,i\)=>\{const amount=reportAmount\(i\);return amount>0&&omanMonthKey\(i\.purchaseRecordedAt\)===monthKey/,'monthly purchase spend must use final invoice recording date');
+assert.match(mainSource,/monthSpend=items\.reduce\(\(sum,i\)=>\{const amount=reportTotalAmount\(i\);return amount>0&&omanMonthKey\(i\.purchaseRecordedAt\)===monthKey/,'monthly purchase spend must use final invoice recording date');
 assert.doesNotMatch(mainSource,/monthSpend=items\.reduce\(\(sum,i\)=>\{const t=Date\.parse\(i\.updatedAt\|\|i\.receivedAt/,'monthly purchase spend must not move when status is later updated');
 
 assert.match(mainSource,/function invoiceAmountEligible\(item\)\{return arrivedConfirmed\(item\)\}/,'invoice entry requires Supervisor-confirmed arrival');
@@ -242,7 +242,7 @@ assert.match(guard,/new\.event_type='SPARE_PART_FINAL_PRICE_RECORDED'[\s\S]*cur\
 assert.match(apiListCreated,/spare_final_price_not_eligible[^\n]*409/,'Atomic final invoice eligibility rejection must surface as conflict');
 
 assert.match(mainModule,/function reportAmount\(item\)\{if\(String\(item\?\.status\|\|''\)\.toUpperCase\(\)==='RETURNED'\)return 0/,'Returned parts must contribute zero active purchase expense even if a stale amount remains locally');
-assert.match(mainModule,/monthSpend=items\.reduce\(\(sum,i\)=>\{const amount=reportAmount\(i\)/,'Manager monthly purchase total must use return-aware report amount');
+assert.match(mainModule,/monthSpend=items\.reduce\(\(sum,i\)=>\{const amount=reportTotalAmount\(i\)/,'Manager monthly purchase total must use return-aware report amount');
 assert.match(mainModule,/if\(p\.to==='RETURNED'\)[\s\S]*delete item\.purchaseAmount;delete item\.purchaseRecordedAt;delete item\.purchaseAmountRevision/,'Later Return hydration must clear a previously committed invoice from current state');
 
 assert.match(mainModule,/if\(bucket==='PURCHASE_COMPLETED'\)\{const active=items\.filter\(i=>String\(i\.status\|\|''\)\.toUpperCase\(\)!=='RETURNED'\);return active\.length>0&&active\.every\(arrivedConfirmed\)&&active\.every/,'Purchase Completed must evaluate active replacement lines while retaining returned history');
