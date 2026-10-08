@@ -132,3 +132,10 @@ assert.match(apiItemEdit,/allowedAfterKeys=new Set\(\["deletedAt","deletedBy"\]\
 assert.match(apiItemEdit,/invalidDeletedBy=String\(after\.deletedBy\|\|""\)!==String\(user\.id\)/,'Deletion actor must match authenticated user');
 assert.match(apiItemEdit,/invalidDeletedAt=[\s\S]*Date\.parse/,'Deletion timestamp must be valid');
 assert.match(apiItemEdit,/spare_item_edit_forbidden_or_invalid/,'Malformed generic item edits must be rejected');
+
+const apiStatusPayload=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+assert.match(apiStatusPayload,/eventType==="SPARE_PART_STATUS_CHANGED"[\s\S]*allowedKeys=new Set\(\["partId","listNo","jobCard","name","from","to","reason","receivedQty","lastReceivedQty","targetRole","preReturnSnapshot","returnedQty"\]\)/,'Status transition payload must be strictly allowlisted');
+assert.match(apiStatusPayload,/invalidIdentity=!String\(p\.partId/,'Status transitions must carry authoritative item/list/job identity');
+assert.match(apiStatusPayload,/\["receivedQty","lastReceivedQty","returnedQty"\]\.some/,'Status quantity fields must be validated');
+assert.match(apiStatusPayload,/invalidTargetRole[\s\S]*"Supervisor"/,'Transition notification target must not be injectable');
+assert.match(apiStatusPayload,/spare_transition_payload_invalid/,'Malformed status payloads must be rejected before commit');
