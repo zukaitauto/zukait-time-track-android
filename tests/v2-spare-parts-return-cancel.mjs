@@ -13,6 +13,11 @@ assert.equal(wf.cancelReturn(returned.item,{role:'Manager'}).reason,'CANCEL_RETU
 const restored=wf.cancelReturn(returned.item,{role:'Manager',actorId:'M1',reason:'Return marked by mistake',serverTime:'2026-10-05T09:00:00Z'});
 assert.equal(restored.ok,true);assert.equal(restored.item.status,'FITTED');assert.equal(restored.item.purchaseAmount,12.5);assert.equal(restored.item.purchaseRecordedAt,'2026-09-30T20:00:00.000Z');assert.equal(restored.item.receivedQty,2);assert.equal(restored.item.fittedAt,'2026-09-30T10:00:00Z');assert.equal(restored.item.preReturnSnapshot,undefined);assert.equal(restored.audit.type,'SPARE_PART_RETURN_CANCELLED');
 assert.equal(wf.cancelReturn(restored.item,{role:'Manager',reason:'Again'}).reason,'PART_NOT_RETURNED');
+const genuineReturn=wf.transition(original,'RETURNED',{role:'Manager',actorId:'M1',reason:'Wrong supplied part',serverTime:'2026-10-06T08:00:00Z'});
+const reenquired=wf.transition(genuineReturn.item,'ENQUIRY',{role:'Purchaser',actorId:'P1',serverTime:'2026-10-06T09:00:00Z'});
+assert.equal(reenquired.ok,true);assert.equal(reenquired.item.status,'ENQUIRY');assert.equal(reenquired.item.preReturnSnapshot,undefined,'Replacement cycle must retire old return snapshot');assert.equal(reenquired.item.purchaseAmount,undefined,'Returned purchase must remain zero expense during replacement cycle');assert.equal(reenquired.item.purchaseRecordedAt,undefined);
+const quoted=wf.transition(reenquired.item,'QUOTED',{role:'Purchaser',actorId:'P1',serverTime:'2026-10-06T10:00:00Z'});const ordered=wf.transition(quoted.item,'ORDERED',{role:'Purchaser',actorId:'P1',serverTime:'2026-10-06T11:00:00Z'});assert.equal(ordered.ok,true);assert.equal(ordered.item.purchaseAmount,undefined);assert.equal(ordered.item.preReturnSnapshot,undefined);
+
 
 const main=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8');
 assert.match(main,/SPARE_PART_RETURN_CANCELLED/);assert.match(main,/↶ CANCEL RETURN/);assert.match(main,/type:'SPARE_PART_RETURN_CANCELLED'/);
