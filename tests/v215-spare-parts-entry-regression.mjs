@@ -361,3 +361,37 @@ test('simultaneous invoice event identity conflict refreshes the winning amount 
  assert.equal(fresh.lists()[0].items[0].purchaseAmount,7.5);
  assert.equal(fresh.parts.reportRows().reduce((n,r)=>n+r.amount,0),7.5);
 });
+
+function queueFlusher(f){
+ const cloud=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
+ const source=cloud.slice(cloud.indexOf('  async function flushV2EventQueue(){'),cloud.indexOf('  window.zukaitV2Transport='));
+ vm.runInContext("function sessionToken(){return 'fixture-session'};async function v2CommitEvent(event){return window.zukaitCloud.v2CommitEvent(event)};"+source,f.context);
+ return ()=>vm.runInContext('flushV2EventQueue()',f.context);
+}
+
+test('queued offline invoice conflict is quarantined and replaced by the winning server amount',async()=>{
+ const offline=fixture(),manager=fixture('Manager','M1',offline.serverRows);
+ offline.elements.get('invoicePrice').value='8.000';offline.fail('NETWORK');await offline.invoice();
+ const eventId=offline.window.zukaitV2.queue.pending()[0].eventId;
+ await manager.invoice();offline.fail(null);
+ const flushed=await queueFlusher(offline)();
+ assert.equal(flushed.pending,0);assert.equal(flushed.synced,0);
+ assert.equal(offline.window.zukaitV2.queue.conflicts()[0].eventId,eventId);
+ assert.equal(offline.lists()[0].items[0].purchaseAmount,2.44);
+ assert.equal(offline.lists()[0].items[0].pendingSync,undefined);
+ assert.equal(offline.parts.reportRows().reduce((n,r)=>n+r.amount,0),2.44);
+ assert.equal((await queueFlusher(offline)()).synced,0,'Quarantined invoice must not retry automatically');
+ assert.equal(offline.serverRows.filter(r=>r.event_type==='SPARE_PART_FINAL_PRICE_RECORDED').length,1);
+});
+
+test('queued offline invoice cannot restore a part deleted before reconnection',async()=>{
+ const offline=fixture(),manager=fixture('Manager','M1',offline.serverRows);
+ offline.fail('NETWORK');await offline.invoice();
+ assert.equal((await manager.parts.deleteItem(manager.listNo,manager.partId)).ok,true);
+ offline.fail(null);await queueFlusher(offline)();
+ assert.equal(offline.window.zukaitV2.queue.pending().length,0);
+ assert.equal(offline.window.zukaitV2.queue.conflicts()[0].syncError,'spare_final_price_not_eligible');
+ assert.equal(offline.lists().flatMap(l=>l.items).some(i=>i.id===offline.partId),false);
+ assert.equal(offline.parts.reportRows().reduce((n,r)=>n+r.amount,0),0);
+ assert.equal(offline.serverRows.filter(r=>r.event_type==='SPARE_PART_FINAL_PRICE_RECORDED').length,0);
+});
