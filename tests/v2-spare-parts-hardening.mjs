@@ -152,3 +152,9 @@ assert.match(apiListCreated,/String\(p\.partId\|\|""\)!==String\(p\.listNo\|\|""
 assert.match(apiListCreated,/invalidTargetRole=String\(p\.targetRole\|\|""\)!=="Purchaser"/,'Created lists must route only to Purchaser');
 assert.match(apiListCreated,/invalidYear=[\s\S]*1900[\s\S]*2100/,'Optional vehicle year must be plausibly bounded');
 assert.match(apiListCreated,/spare_list_create_forbidden_or_invalid/,'Injected parent list state must be rejected');
+
+assert.match(main,/function spareConflictReason\(reason=''\)/,'Spare Parts must classify authoritative server conflicts');
+for(const code of ['stale_spare_part_status','stale_spare_manager_correction','duplicate_active_spare_part']) assert.match(main,new RegExp(code),'Known 409 conflict '+code+' must have explicit recovery');
+assert.match(main,/async function recoverSpareConflict\(reason\)[\s\S]*await hydrateAuthoritativeLists\(\)/,'Recognized conflicts must refresh authoritative Spare Parts state');
+assert.match(main,/const conflictMessage=await recoverSpareConflict\(reason\)/,'Commit failure path must invoke Spare Parts conflict recovery');
+assert.match(main,/if\(!synced\.conflictMessage\)\{list\.items\[idx\]=previous;write\(rows\)\}/,'Status transition must not overwrite freshly hydrated server state after a recognized conflict');
