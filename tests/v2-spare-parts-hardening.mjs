@@ -125,3 +125,10 @@ assert.match(apiCommercial,/offers\.length>3/,'Commercial payload must enforce t
 assert.match(apiCommercial,/\["supplier","amount","at"\]\.includes\(k\)/,'Each quotation offer must be field-allowlisted');
 assert.match(apiCommercial,/invalidKey \|\| invalidMoney \|\| invalidOffers/,'Malformed or injected commercial payloads must be rejected');
 assert.match(apiCommercial,/\["Manager","Purchaser"\]\.includes\(callerRole\)/,'Commercial workflow remains Manager/Purchaser only');
+
+const apiItemEdit=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+assert.match(apiItemEdit,/eventType==="SPARE_PART_ITEM_EDITED"[\s\S]*allowedPayloadKeys=new Set\(\["partId","listNo","jobCard","reason","before","after"\]\)/,'Generic item edit payload must be allowlisted');
+assert.match(apiItemEdit,/allowedAfterKeys=new Set\(\["deletedAt","deletedBy"\]\)/,'Generic item edit after-state must be deletion-only');
+assert.match(apiItemEdit,/invalidDeletedBy=String\(after\.deletedBy\|\|""\)!==String\(user\.id\)/,'Deletion actor must match authenticated user');
+assert.match(apiItemEdit,/invalidDeletedAt=[\s\S]*Date\.parse/,'Deletion timestamp must be valid');
+assert.match(apiItemEdit,/spare_item_edit_forbidden_or_invalid/,'Malformed generic item edits must be rejected');
