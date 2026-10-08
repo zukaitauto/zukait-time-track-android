@@ -106,3 +106,8 @@ assert.match(mainSource,/const amount=validMoney\(raw\);if\(amount==null\|\|amou
 assert.match(mainSource,/bucket==='PURCHASE_COMPLETED'.*?Number\(i\.purchaseAmount\)>0/s,'Purchase Completed requires positive final invoice amounts');
 
 assert.match(mainSource,/function reportAmount\(item\)\{const n=Number\(item\?\.purchaseAmount\);return Number\.isFinite\(n\)&&n>0\?n:0\}/,'parts reports use only positive final purchase amount, never quotation or supplier fallback');
+
+const apiCorrection=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+assert.match(apiCorrection,/allowedAfterKeys=new Set\(\["name","partNo","qty","supplier","purchaseAmount","finalPrice","purchaseRecordedAt","status"\]\)/,'Correction after payload must be field-allowlisted');
+assert.match(apiCorrection,/allowedBeforeKeys=new Set/,'Correction audit before payload must be field-allowlisted');
+assert.match(apiCorrection,/invalidAfterKey \|\| invalidBeforeKey \|\| invalidPurchaseAmount \|\| invalidQty \|\| invalidPurchaseDate/,'Correction API must reject injected fields and malformed values');
