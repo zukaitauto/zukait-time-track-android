@@ -113,3 +113,33 @@ This closes the automated/backend invoice–Return checkpoint; it does not certi
 - Report rows now expose the nonnegative recorded returned quantity. Added fresh-client Return/cancellation regression with quantity 3 and invoice total 7.32.
 - Direct actual-module rendering verified Returned Qty 3 and recorded amount 0. Full CI remains pending for this correction.
 - Physical-device acceptance and the remaining module audit are still outstanding; no release metadata was changed.
+
+
+## Consolidated automated audit checkpoint — 2026-10-08
+
+Validated implementation: c2e85c18de7ece664cbc0ff8499bea873d4b95fd, architecture-v2 only.
+Live workshop-api: version 56. Release metadata remains V300 / versionCode 263.
+
+### Verified evidence
+- GitHub APK job 113405144206 ran scripts/ci-full-regression.sh successfully. Entry regression: 47 tests, 47 passed, 0 failed, 0 skipped.
+- Android architecture-v2 build, APK build, Estimate Module Check and PC Pages deployment all succeeded for the validated implementation.
+- Entry coverage includes invoice validation and permissions; Manager Return and cancellation; replacement cycles; deletion; correction and quotation races; receipt quantities; offline queue replay and conflict quarantine; report quantity totals, Oman dates and pagination; returned quantity summary; immediate invoice read-after-write; Supervisor invoice response privacy.
+- Existing full-regression checks cover Spare Parts workflow, server/durable authority, edit/delete, state guards, return/cancel, pending/arrival dashboards, expense filters, employee financial privacy and report integration.
+- Previously passed rollback-only SQL fixtures are enumerated in earlier sections and repository tests/spare-*.sql; this checkpoint does not claim those were rerun in this final review.
+- Final live integrity query: 0 AUDIT-* fixture events, 0 invalid receipt/ordered quantities, 0 missing projection last_event_id.
+- User confirmed Shine's Supervisor account displays 0 Pending after the live fix. This verifies the reported invoice reappearance issue, not physical-device concurrency.
+
+### Final findings resolved
+- Operational Spare Parts reads bypass both the first-page short cache and pre-write in-flight report reuse.
+- Supervisor report responses preserve finalPrice, purchaseAmount, purchaseRecordedAt and purchaseAmountRevision so saved invoices survive refresh. Quotation/supplier fields stay hidden; Employee invoice fields stay hidden.
+- Returned Qty report summary receives the recorded returnedQty.
+- Partial/capped history cannot replace cached history; successful multi-page history updates the cache.
+
+### Remaining release gates
+The automated invoice/Return and follow-up audit checkpoint is complete. This is not certification of every module feature or actual simultaneous device execution.
+1. On two physical phones and a disposable test part, verify invoice-first/stale Return, Return-first/stale invoice, cancellation, replacement cycle and offline reconnect. Compare amounts, receipt quantities and report totals after refresh on both.
+2. Test Android Print/PDF/Share and back navigation on the release candidate.
+3. After acceptance, select the next version after already-released V300, sign the APK with the existing release key and verify update installation over V300 preserves data and authentication.
+4. Publish the new version only after those results are recorded. Unsigned CI artifacts are build evidence, not an install-ready signed release.
+
+No main changes, real employee work mutations or release version bump were made by this audit closeout.
