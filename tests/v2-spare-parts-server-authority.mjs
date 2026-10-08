@@ -39,5 +39,5 @@ assert.ok(api.includes('code:"stale_spare_manager_correction"},409'),'API must e
 
 assert.doesNotMatch(main,/SUPERVISOR_VERIFIED:!item\.arrivalAccepted\?\['Confirm Arrived','ACCEPTED'/,'Purchaser must not re-confirm a Supervisor-confirmed arrival');
 assert.ok(main.includes("targetRole:'Purchaser'"),'new Parts List/item events must target Purchaser');
-assert.ok(main.includes("targetRole:to==='RECEIVED'?'Supervisor':null"),'Received event must target Supervisor');
+assert.ok(main.includes("targetRole:to==='RECEIVED'?'Supervisor':(previous.status==='RECEIVED'&&to==='ORDERED'?'Purchaser':null)"),'Received event must target Supervisor');
 assert.ok(main.includes("name:previous.name||''"),'Received notification event must retain the part name');

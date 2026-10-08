@@ -23,6 +23,8 @@ Record device/app versions and test PL/JC numbers. Avoid changing real employee 
 
 | Check | Action | Expected result | Result/evidence |
 | --- | --- | --- | --- |
+| Arrival rejection | On both Supervisor and Manager, reject an unconfirmed arrived part using the red button; enter a reason; refresh Purchaser | Item returns to Parts Pending with full quantity; Purchaser receives Arrival Rejected with reason; confirmation and invoice entry require receiving it again | Pending |
+| Arrival decision race | Confirm on one device while the other holds a stale Reject view, then repeat with rejection first | Losing action refreshes authoritative state; neither overwrites the accepted decision | Pending |
 | Supervisor save | Save 2.440, immediately reopen Invoice Entry, refresh again | 0 pending for the test part; amount remains 2.440 | Pending |
 | Invoice first | Keep Manager's old view open; save invoice on Supervisor; attempt stale Return on Manager | Conflict refresh; reviewed Return succeeds; both show Returned and amount total 0 | Pending |
 | Return first | Return on Manager; attempt invoice from stale Supervisor view | Invoice rejected; refresh shows Returned; total 0 | Pending |
@@ -47,3 +49,9 @@ The existing Publish Approved Signed APK workflow creates and publishes the publ
 Do not dispatch it as a way to obtain a pre-acceptance candidate.
 Only after device and upgrade acceptance, update the version and release-request.json to the reviewed source and approved version, verify CI, then run publication on architecture-v2.
 Do not modify main or reuse V300's release approval for new source.
+
+
+## Arrival rejection addition — 2026-10-08
+The audited source above predates the new rejection feature. Revalidate against the latest architecture-v2 build.
+Supervisor and Manager can reject only an unconfirmed RECEIVED item, with a required reason. The status changes to ORDERED and receipt quantity clears; quotation history remains. Purchaser notification is derived from the committed event, so offline notification appears only after successful sync.
+Automated validation for this new feature must pass before this candidate is accepted.

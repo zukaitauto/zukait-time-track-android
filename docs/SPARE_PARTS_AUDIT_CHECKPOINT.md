@@ -143,3 +143,14 @@ The automated invoice/Return and follow-up audit checkpoint is complete. This is
 4. Publish the new version only after those results are recorded. Unsigned CI artifacts are build evidence, not an install-ready signed release.
 
 No main changes, real employee work mutations or release version bump were made by this audit closeout.
+
+
+## Arrival rejection feature — 2026-10-08
+- Supervisor and Manager now have a red Reject button beside Confirm Arrived. A reason is required.
+- Rejection uses the existing RECEIVED -> ORDERED status transition; receipt quantities clear in both hydration and live projection, returning the full ordered quantity to Parts Pending. This is not a financial Return.
+- Purchaser receives an Arrival Rejected notification containing JC/part/reason from the committed status event. Offline notification waits for sync.
+- Live API version 57 grants the narrowly scoped Supervisor transition, requires reviewer reasons and limits Purchaser notification targeting to rejection.
+- Direct workflow/API/notification checks passed. Rollback-only live SQL verified receipt reset, re-receipt/confirmation and both stale-decision orderings. Zero fixture events remain.
+- New regression coverage checks both reviewer roles, reason validation, queued state, fresh-client pending quantity and role-targeted notification.
+- CI initially exposed cache-version format and a source assertion tied to the old targetRole expression; these contracts were updated without weakening received-event targeting. Full new-feature CI still needs verification.
+- Previous automated closeout was for c2e85c18, before this feature. Device acceptance now also includes rejection and confirmation races.
