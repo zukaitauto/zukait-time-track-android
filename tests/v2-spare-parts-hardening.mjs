@@ -362,3 +362,25 @@ assert.match(guard,/upper\(st\)='SUPERVISOR_VERIFIED'[\s\S]*cur\.received_qty[\s
 }
 assert.match(guard,/new\.revision,0\)<=coalesce\(cur\.revision,0\)[\s\S]*stale_spare_part_status/,'Only one same-revision competing Spare Parts status transition may win');
 assert.match(guard,/trim\(coalesce\(p->>'from',''\)\)<>''[\s\S]*upper\(trim\(p->>'from'\)\)<>upper\(coalesce\(cur\.status,''\)\)[\s\S]*stale_spare_part_status/,'A losing return, reopen, or Supervisor verification must be rejected when authoritative status already changed');
+
+{
+ const received={id:'SP-VERIFIED-RETURN',status:'RECEIVED',qty:4,receivedQty:4,receivedAt:'2026-10-08T06:00:00.000Z',receivedBy:'P1',lastReceivedQty:1,revision:20};
+ const verified=spare.transition(received,'SUPERVISOR_VERIFIED',{role:'Supervisor',actorId:'S1',serverTime:'2026-10-08T06:05:00.000Z'});
+ assert.equal(verified.ok,true);
+ const returned=spare.transition(verified.item,'RETURNED',{role:'Manager',actorId:'M1',reason:'Wrong part',serverTime:'2026-10-08T06:10:00.000Z'});
+ assert.equal(returned.ok,true);
+ assert.equal(returned.item.preReturnSnapshot.status,'SUPERVISOR_VERIFIED');
+ assert.equal(returned.item.preReturnSnapshot.receivedQty,4);
+ assert.equal(returned.item.preReturnSnapshot.supervisorVerifiedAt,'2026-10-08T06:05:00.000Z');
+ assert.equal(returned.item.receivedQty,undefined);
+ assert.equal(returned.item.supervisorVerifiedAt,undefined);
+ assert.equal(spare.cancelReturn(returned.item,{role:'Purchaser',actorId:'P1',reason:'Undo'}).ok,false,'Purchaser must never cancel a Manager return');
+ const restored=spare.cancelReturn(returned.item,{role:'Manager',actorId:'M1',reason:'Return cancelled',serverTime:'2026-10-08T06:15:00.000Z'});
+ assert.equal(restored.ok,true);
+ assert.equal(restored.item.status,'SUPERVISOR_VERIFIED');
+ assert.equal(restored.item.receivedQty,4);
+ assert.equal(restored.item.supervisorVerifiedAt,'2026-10-08T06:05:00.000Z');
+ assert.equal(restored.item.preReturnSnapshot,undefined);
+}
+assert.match(mainModule,/function arrivalPendingItems\(list\)[\s\S]*status\|\|'\'\)==='RECEIVED'&&receiptComplete\(item\)/,'Cancel Return restoring SUPERVISOR_VERIFIED must not duplicate the Supervisor arrival-confirmation queue');
+assert.match(mainModule,/if\(!\['SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED'\]\.includes\(String\(item\.status\|\|'\'\)\)\)return alert\('Wait for Supervisor verification before final arrival confirmation\.'/,'Restored verified parts remain eligible only for the post-verification Purchaser acceptance step');
