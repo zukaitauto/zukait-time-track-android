@@ -916,6 +916,14 @@ Deno.serve(async (req: Request) => {
         const supervisorTargets=new Set(["SUPERVISOR_VERIFIED","SUPERVISOR_CONFIRMED","FITTED","RETURNED","UNAVAILABLE","CUSTOMER_SETTLEMENT"]);
         const allowed = callerRole==="Manager" || (callerRole==="Purchaser" && purchaserTargets.has(to)) || (callerRole==="Supervisor" && supervisorTargets.has(to));
         if(!allowed) return reply({ok:false,code:"spare_transition_forbidden"},403);
+        if(to==="RETURNED"){
+          const snapshot=event?.payload?.preReturnSnapshot;
+          const allowedSnapshotKeys=new Set(["status","receivedQty","receivedAt","receivedBy","lastReceivedQty","partialReceipt","arrivalAccepted","arrivalAcceptedAt","supervisorVerifiedAt","supervisorVerifiedBy","denterCheckedAt","denterCheckedBy","confirmedAt","confirmedBy","fittedAt","fittedBy","purchaseAmount","purchaseRecordedAt","purchaseAmountRevision","billAmount","supplierCost","quoteAmount","price","supplier","quotationOffers","commercialRevision"]);
+          const allowedSnapshotStatuses=new Set(["LISTED","ENQUIRY","QUOTED","ORDERED","RECEIVED","SUPERVISOR_VERIFIED","DENTER_CHECKED","SUPERVISOR_CONFIRMED","FITTED","UNAVAILABLE","CUSTOMER_SETTLEMENT"]);
+          const snapshotInvalid=!snapshot||typeof snapshot!=="object"||Array.isArray(snapshot)||Object.keys(snapshot).some(k=>!allowedSnapshotKeys.has(k))||!allowedSnapshotStatuses.has(String(snapshot.status||""));
+          const snapshotNumericInvalid=!snapshotInvalid&&["receivedQty","lastReceivedQty","purchaseAmount","billAmount","supplierCost","quoteAmount","price"].some(k=>snapshot[k]!=null&&(!Number.isFinite(Number(snapshot[k]))||Number(snapshot[k])<0||Number(snapshot[k])>1000000));
+          if(snapshotInvalid||snapshotNumericInvalid) return reply({ok:false,code:"spare_return_snapshot_invalid"},403);
+        }
       }
       if (eventType==="ID001_PRELIMINARY_LINKED" && !["Manager","Supervisor"].includes(callerRole)) return reply({ok:false,code:"preliminary_link_forbidden"},403);
       if (eventType==="ID001_PRELIMINARY_REVERSED" && callerRole!=="Manager") return reply({ok:false,code:"preliminary_reverse_forbidden"},403);
