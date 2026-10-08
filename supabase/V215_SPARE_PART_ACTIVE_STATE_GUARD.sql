@@ -81,7 +81,8 @@ begin
     if upper(trim(coalesce(p->>'from','')))<>upper(trim(coalesce(cur.status,''))) then
       raise exception 'stale_spare_part_status';
     end if;
-    if upper(st)='SUPERVISOR_VERIFIED' and coalesce(cur.received_qty,0)<coalesce(cur.ordered_qty,1) then raise exception 'spare_receipt_incomplete'; end if;
+    if upper(st)='RECEIVED' and coalesce(nullif(p->>'receivedQty','')::numeric,coalesce(cur.received_qty,0))>coalesce(cur.ordered_qty,1) then raise exception 'spare_received_quantity_exceeds_ordered'; end if;
+     if upper(st)='SUPERVISOR_VERIFIED' and coalesce(cur.received_qty,0)<coalesce(cur.ordered_qty,1) then raise exception 'spare_receipt_incomplete'; end if;
     if upper(st)='RETURNED' then
       if coalesce(nullif(p->>'returnedQty','')::numeric,0)<>least(coalesce(cur.received_qty,0),coalesce(cur.ordered_qty,1)) then raise exception 'spare_returned_quantity_mismatch'; end if;
     end if;
