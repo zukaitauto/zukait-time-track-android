@@ -40,3 +40,8 @@ assert.match(api,/const hasSnapshot=snapshot!=null/,'legacy RETURNED events with
 assert.match(api,/snapshotInvalid=hasSnapshot&&/,'server validates return snapshot whenever a modern client supplies one');
 assert.match(api,/spare_return_snapshot_invalid/,'invalid return snapshots are rejected before commit');
 console.log('Spare Parts cancel return: Manager-only audited restoration preserves original purchase amount/date and prevents duplicate cancellation.');
+
+// Manager UI must reject restoring a returned line when its active replacement already exists.
+const mainSource=fs.readFileSync(new URL('../app/src/main/assets/v2/features/spare-parts/main_module.js',import.meta.url),'utf8');
+assert.match(mainSource,/activeDuplicate=.*status\|\|''\)!=='RETURNED'/s);
+assert.match(mainSource,/Cancel Return blocked: an active replacement/);
