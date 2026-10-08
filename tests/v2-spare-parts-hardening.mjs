@@ -221,3 +221,8 @@ assert.match(guard,/upper\(st\)='RETURNED'[\s\S]*returnedQty[\s\S]*least\(coales
 assert.match(apiListCreated,/spare_returned_quantity_mismatch[^\n]*409/,'Returned quantity mismatch must surface as conflict');
 assert.match(workflow,/physicallyReceived=Math\.max\(0,Math\.min\(Number\(item\.qty\)\|\|0,Number\(item\.receivedQty\)\|\|0\)\)/,'Client return must record only physically received quantity');
 assert.match(workflow,/delete next\.purchaseAmount;delete next\.purchaseRecordedAt;delete next\.purchaseAmountRevision/,'Returned parts must clear active Purchase Expense fields');
+
+assert.match(guard,/new\.event_type='SPARE_PART_RETURN_CANCELLED'[\s\S]*afterv->>'receivedQty'[\s\S]*spare_return_restore_quantity_invalid/,'Cancel Return must validate restored received quantity');
+assert.match(guard,/new\.event_type='SPARE_PART_RETURN_CANCELLED' then least\([\s\S]*afterv->>'receivedQty'/,'Cancel Return must restore authoritative received quantity from the audited snapshot');
+assert.match(apiListCreated,/spare_return_restore_quantity_invalid[^\n]*409/,'Invalid Cancel Return quantity restoration must surface as conflict');
+assert.match(workflow,/Object\.assign\(\{\},item,snapshot/,'Cancel Return must restore the captured pre-return state rather than create a new purchase record');
