@@ -240,3 +240,7 @@ assert.match(mainModule,/monthSpend=items\.reduce\(\(sum,i\)=>\{const amount=rep
 assert.match(mainModule,/if\(p\.to==='RETURNED'\)[\s\S]*delete item\.purchaseAmount;delete item\.purchaseRecordedAt;delete item\.purchaseAmountRevision/,'Later Return hydration must clear a previously committed invoice from current state');
 
 assert.match(mainModule,/if\(bucket==='PURCHASE_COMPLETED'\)\{const active=items\.filter\(i=>String\(i\.status\|\|''\)\.toUpperCase\(\)!=='RETURNED'\);return active\.length>0&&active\.every\(arrivedConfirmed\)&&active\.every/,'Purchase Completed must evaluate active replacement lines while retaining returned history');
+
+assert.match(mainModule,/if\(bucket==='WAITING'\)\{const active=items\.filter\(i=>String\(i\.status\|\|''\)\.toUpperCase\(\)!=='RETURNED'\);return active\.length>0&&!active\.every\(partFullyArrived\)\}/,'Waiting must follow active replacement lines, not returned history');
+assert.match(mainModule,/function isPartPending\(item\)\{const status=String\(item\?\.status\|\|'LISTED'\)\.toUpperCase\(\);return !!item&&status!=='RETURNED'&&/,'Returned history must not inflate Parts Pending');
+assert.match(mainModule,/if\(bucket==='ATTENTION'\)return items\.some\(i=>\['RETURNED','UNAVAILABLE'\]\.includes\(i\.status\)/,'Returned history must remain visible in Attention');
