@@ -26,3 +26,6 @@ test -s app/src/main/assets/technician_workload.js
 test -s app/src/main/assets/time_management.js
 test -s app/src/main/assets/time_management_rules.js
 
+
+
+node scripts/check-production-assets.mjs

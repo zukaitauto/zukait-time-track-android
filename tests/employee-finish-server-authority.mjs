@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
-assert.match(api,/if \(k === "jobs"\) continue/,'Employee validator must special-case Job Card projection rather than grant general jobs permission');
-assert.match(api,/delete x\.status;delete x\.completedAt/,'Only status and completedAt may differ on Employee Finish');
-assert.match(api,/if \(!same\(strip\(before\),strip\(after\)\)\) return false/,'Employee must not edit other Job Card fields');
-assert.match(api,/assignments\.every\(\(a:any\)=>a\?\.completed===true\)/,'Completed status must be derived from all non-cancelled assignments');
-assert.match(api,/expectedStatus=done\?"Completed":"Open"/,'Job Card status must be server-validated from assignment completion');
-assert.match(api,/Math\.max\(\.\.\.assignments\.map/,'completedAt must be the latest assignment completion time');
-assert.match(api,/if \(!mine \|\| !assignments\.length\) return false/,'Employee Finish projection must belong to the employee');
-console.log('employee finish server authority regression passed');
+import {loadApi,fixture,clone,TEST_NOW} from './helpers/workshop-api.mjs';
+const before=fixture(),after=clone(before),start=TEST_NOW-60000;
+after.sessions=[{id:'s1',emp:'E1',job:'JC1',assignmentId:'a1',start,end:TEST_NOW,finished:true}];
+after.assign[0].completed=true;after.assign[0].completedAt=TEST_NOW;
+after.jobs[0].status='Completed';after.jobs[0].completedAt=TEST_NOW;
+const {helpers}=loadApi({state:before});
+assert.equal(helpers.validateEmployeeChange('E1',before,after),true,'own Finish derives job completion');
+for(const edit of [x=>x.jobs[0].vehicle='Spoofed',x=>x.jobs[0].completedAt++,x=>x.assign.push({id:'other',emp:'E2',job:'JC1',completed:false})]){
+ const bad=clone(after);edit(bad);assert.equal(helpers.validateEmployeeChange('E1',before,bad),false);
+}
+console.log('Employee Finish derives job completion without permitting metadata or other employee changes');

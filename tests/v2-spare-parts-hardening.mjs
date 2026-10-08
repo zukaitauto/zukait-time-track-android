@@ -345,7 +345,7 @@ assert.match(mainModule,/if\(synced\.queued\)\{list\.items\[idx\]\.pendingSync=t
 assert.match(mainModule,/function reconcileSyncMarkers[\s\S]*queueState\(item\.pendingEventId\)/,'After restart Spare Parts must reconcile the persisted part lock against the persisted queue event');
 
 assert.match(workshopApi,/if \(event\.actorId && String\(event\.actorId\) !== String\(user\.id\)\) return reply\(\{ok:false,code:"actor_mismatch"\},403\)/,'Queued V2 events must never commit under a different authenticated user');
-assert.match(cloudSync,/if\(code==='NETWORK'\|\|code==='TIMEOUT'\|\|code==='NO_SESSION'\)[\s\S]*q\.markConflict\?\.\(event\.eventId,code\)/,'Permanent ownership/auth rejections such as actor_mismatch must be quarantined rather than retried');
+assert.match(cloudSync,/if\((?:e\.retryable\|\|)?code==='NETWORK'\|\|code==='TIMEOUT'\|\|code==='NO_SESSION'\)[\s\S]*q\.markConflict\?\.\(event\.eventId,code\)/,'Permanent ownership/auth rejections such as actor_mismatch must be quarantined rather than retried');
 assert.match(cloudSync,/q\.markConflict\?\.\(event\.eventId,code\);if\(String\(event\?\.type\|\|'\'\)\.startsWith\('SPARE_PART_'\)\)spareConflict=true/,'A quarantined queued Spare Parts event from another user must trigger authoritative Parts reconciliation');
 
 assert.match(mainModule,/if\(r==='Supervisor'&&s==='RECEIVED'\)return receiptComplete\(item\)\?'<button[\s\S]*Partial receipt/,'Supervisor Waiting view must not offer confirmation until the full ordered quantity is received');
@@ -439,3 +439,4 @@ assert.match(mainModule,/spare_final_price_not_eligible[\s\S]*Latest Parts data 
  assert.match(alerts.at(-1),/Latest Parts data has been refreshed/);
 }
 console.log('Invoice-versus-Manager-Return runtime recovery passed');
+

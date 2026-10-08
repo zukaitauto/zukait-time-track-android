@@ -9,6 +9,7 @@
   let cloudDirty=localStorage.getItem(DIRTY_KEY)==='1';
   let cloudApplying=false;
   let cloudPushing=false;
+  let pushBlocked=false;
   let pushTimer=null;
   let dashboardRenderTimer=null;
   let pollTimer=null;
@@ -247,7 +248,7 @@
   }
   async function v2CommitEvent(event){
     const r=await api({action:'v2_commit_event',event});
-    if(!r.ok){const e=new Error(r.code||'V2_EVENT_COMMIT_FAILED');e.code=r.code||'V2_EVENT_COMMIT_FAILED';throw e;}
+    if(!r.ok){const e=new Error(r.code||'V2_EVENT_COMMIT_FAILED');e.code=r.code||'V2_EVENT_COMMIT_FAILED';e.retryable=Number(r._status)>=500||Number(r._status)===429||e.code==='invalid_session';throw e;}
     return r;
   }
   async function flushV2EventQueue(){
@@ -257,7 +258,7 @@
       try{const r=await v2CommitEvent(event);q.markSynced(event.eventId,{serverTime:r.server_time,serverRevision:r.server_revision});synced++;}
       catch(e){
         const code=String(e?.code||e?.message||'V2_EVENT_COMMIT_FAILED');
-        if(code==='NETWORK'||code==='TIMEOUT'||code==='NO_SESSION'){console.warn('V2 event sync deferred',event.eventId,e);break;}
+        if(e.retryable||code==='NETWORK'||code==='TIMEOUT'||code==='NO_SESSION'){console.warn('V2 event sync deferred',event.eventId,e);break;}
         q.markConflict?.(event.eventId,code);if(String(event?.type||'').startsWith('SPARE_PART_'))spareConflict=true;console.warn('V2 event quarantined for reconciliation',event.eventId,code);
       }
     }
@@ -377,24 +378,34 @@
   }
 
   function same(a,b){return JSON.stringify(a)===JSON.stringify(b)}
-  function clone(x){return JSON.parse(JSON.stringify(x))}
+  function clone(x){return x===undefined?undefined:JSON.parse(JSON.stringify(x))}
 
-  function threeWayMerge(base,remote,local){
+  function threeWayMerge(base,remote,local,path=''){
     if (same(local,base)) return clone(remote);
     if (same(remote,base)) return clone(local);
     if (Array.isArray(base)||Array.isArray(remote)||Array.isArray(local)) {
       const b=Array.isArray(base)?base:[], r=Array.isArray(remote)?remote:[], l=Array.isArray(local)?local:[];
-      const idBased=[...b,...r,...l].every(x=>!x || typeof x!=='object' || Array.isArray(x) || x.id!=null);
-      if(!idBased) return clone(l);
-      const bm=new Map(b.filter(x=>x&&x.id!=null).map(x=>[String(x.id),x]));
-      const rm=new Map(r.filter(x=>x&&x.id!=null).map(x=>[String(x.id),x]));
-      const lm=new Map(l.filter(x=>x&&x.id!=null).map(x=>[String(x.id),x]));
+      const key=path==='jobs'?'no':'id';
+      const keyed=[...b,...r,...l].every(x=>x==null||(typeof x==='object'&&!Array.isArray(x)&&x[key]!=null));
+      // Unkeyed lists (holidays, audit entries) use occurrence identities so
+      // concurrent additions survive without removing intentional duplicates.
+      const index=rows=>{
+        const counts=new Map(),out=new Map();
+        for(const x of rows){
+          if(x==null)continue;
+          const raw=keyed?String(x[key]):JSON.stringify(x);
+          const n=counts.get(raw)||0;counts.set(raw,n+1);
+          out.set(keyed?raw:raw+'#'+n,x);
+        }
+        return out;
+      };
+      const bm=index(b),rm=index(r),lm=index(l);
       const ids=[...new Set([...bm.keys(),...rm.keys(),...lm.keys()])];
       const out=[];
       for(const id of ids){
         const bv=bm.get(id),rv=rm.get(id),lv=lm.get(id);
         if(bv===undefined){
-          if(rv!==undefined&&lv!==undefined)out.push(threeWayMerge({},rv,lv));
+          if(rv!==undefined&&lv!==undefined)out.push(threeWayMerge({},rv,lv,path));
           else if(lv!==undefined)out.push(clone(lv));
           else if(rv!==undefined)out.push(clone(rv));
           continue;
@@ -408,7 +419,7 @@
           if(same(lv,bv))continue;
           out.push(clone(lv));continue;
         }
-        out.push(threeWayMerge(bv,rv,lv));
+        out.push(threeWayMerge(bv,rv,lv,path));
       }
       return out;
     }
@@ -427,7 +438,7 @@
           if(same(lv,bv))continue;
           out[k]=clone(lv);continue;
         }
-        out[k]=threeWayMerge(bv,rv,lv);
+        out[k]=threeWayMerge(bv,rv,lv,path?path+'.'+k:k);
       }
       return out;
     }
@@ -563,7 +574,7 @@
     if(pullInFlight)return false;
     if(!sessionToken()){status('LOGIN REQUIRED','local');initialDone=true;return false}
     if(!navigator.onLine){status(cloudDirty?'OFFLINE — CHANGE QUEUED':'OFFLINE — LOCAL CACHE','warn');initialDone=true;return false}
-    if(cloudDirty&&!force){status('CHANGE WAITING TO SYNC','warn');return false}
+    if(cloudDirty){status(pushBlocked?'CHANGE NEEDS REVIEW — KEPT ON DEVICE':'CHANGE WAITING TO SYNC','warn');return false}
     // Background revision checks keep the last successful indicator steady.
     if(!initialDone)status('SYNCING…','info');
     pullInFlight=true;
@@ -578,6 +589,7 @@
       throw new Error(r.code||'LOAD_FAILED');
     }
     const remoteRev=Number(r.revision||0);
+    if(remoteRev<cloudRevision)return false;
     // A user can mark leave while this request is awaiting the server. Do not
     // replace that newer local save (or a newer push acknowledgement) with the
     // older response. The queued push/subsequent poll will reconcile it.
@@ -643,8 +655,14 @@
     }
   }
 
+  function retainRejectedSnapshot(code){
+    pushBlocked=true;cloudDirty=true;localStorage.setItem(DIRTY_KEY,'1');
+    localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,code,data:payloadState()}));
+    status('CHANGE NEEDS REVIEW — KEPT ON DEVICE','warn');
+  }
+
   async function push(retry=0){
-    if(cloudPushing||!cloudDirty)return false;
+    if(cloudPushing||!cloudDirty||pushBlocked)return false;
     if(!sessionToken()){status('LOGIN REQUIRED','bad');return false}
     if(!navigator.onLine){status('OFFLINE — CHANGE QUEUED','warn');return false}
     cloudPushing=true;
@@ -662,7 +680,7 @@
         localStorage.setItem(REV_KEY,String(cloudRevision));
         const newerPending=dirtyGeneration!==pushGeneration;
         const authoritativeSnapshot=r.data&&typeof r.data==='object'
-          ? reconcileConsumablesDuplicates(clone(r.data))
+          ? clone(r.data)
           : clone(localSnapshot);
         lastSyncedState=clone(authoritativeSnapshot);
 
@@ -676,7 +694,7 @@
             ? mergeEmployeeConflict(authoritativeSnapshot,pendingSnapshot,me.id)
             : threeWayMerge(localSnapshot,authoritativeSnapshot,pendingSnapshot);
           cloudApplying=true;
-          try{state=reconcileConsumablesDuplicates(mergedPending);ensureShape();persistLocal()}finally{cloudApplying=false}
+          try{state=mergedPending;ensureShape();persistLocal()}finally{cloudApplying=false}
           cloudDirty=true;
           localStorage.setItem(DIRTY_KEY,'1');
           try{localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:payloadState()}))}catch(_){}
@@ -690,7 +708,7 @@
           if(r.data&&typeof r.data==='object'){
             const beforeAckRender=clone(state||{});
             cloudApplying=true;
-            try{normalizeRemote(r.data);reconcileConsumablesDuplicates(state);persistLocal()}finally{cloudApplying=false}
+            try{normalizeRemote(r.data);persistLocal()}finally{cloudApplying=false}
             if(me?.role==='Employee')finalizeEmployeeOfflineMarkers(state,me.id);
             lastSyncedState=clone(state||{});
             scheduleDashboardRender(beforeAckRender,state);
@@ -713,7 +731,7 @@
         try{if(me?.role==='Employee')window.zukaitV2?.reconnectAudit?.record?.({assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:cloudRevision,syncState:'pending'},{assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:Number(r.revision||cloudRevision)},'LEGACY_CONFLICT_MERGE')}catch(e){console.warn('V2 reconnect shadow audit skipped',e)}
         const beforeConflictRender=clone(state||{});
         cloudApplying=true;
-        try{state=merged;ensureShape();persistLocal()}finally{cloudApplying=false}
+        try{state=dirtyGeneration!==pushGeneration?threeWayMerge(localSnapshot,merged,payloadState()):merged;ensureShape();persistLocal()}finally{cloudApplying=false}
         cloudRevision=Number(r.revision||cloudRevision);
         localStorage.setItem(REV_KEY,String(cloudRevision));
         lastSyncedState=remote;
@@ -727,19 +745,12 @@
         }
         localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:merged}));
         status('SYNC BUSY — RETRYING','warn');
-        setTimeout(()=>{if(cloudDirty&&!cloudPushing)push(0)},700);
+        setTimeout(()=>{if(cloudDirty&&!cloudPushing&&!pushBlocked)push(0)},700);
         return false;
       }
 
       if(r.code==='id001_update_required'){
-        // The server rejected a legacy ID001 state. Discard the unsafe local queue and reload the clean shared state.
-        cloudDirty=false;
-        localStorage.removeItem(DIRTY_KEY);
-        localStorage.removeItem(PENDING_KEY);
-        status('RELOADING SAFE ID001 STATE…','info');
-        cloudPushing=false;
-        try{await pull(true)}catch(_){status('SYNC ERROR','bad')}
-        return false;
+        retainRejectedSnapshot(r.code);return false;
       }
 
       if(r.code==='forbidden_change'){
@@ -758,7 +769,7 @@
                 : threeWayMerge(base,remote,localSnapshot);
               try{if(me?.role==='Employee')window.zukaitV2?.reconnectAudit?.record?.({assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:cloudRevision,syncState:'pending'},{assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:Number(latest.revision||cloudRevision)},'LEGACY_PERMISSION_REBASE')}catch(e){console.warn('V2 reconnect shadow audit skipped',e)}
               cloudApplying=true;
-              try{state=merged;ensureShape();persistLocal()}finally{cloudApplying=false}
+              try{state=dirtyGeneration!==pushGeneration?threeWayMerge(localSnapshot,merged,payloadState()):merged;ensureShape();persistLocal()}finally{cloudApplying=false}
               cloudRevision=Number(latest.revision||cloudRevision);
               localStorage.setItem(REV_KEY,String(cloudRevision));
               lastSyncedState=remote;
@@ -770,15 +781,7 @@
             }
           }catch(e){console.warn('Permission rebase failed',e)}
         }
-        // Do not keep retrying an unauthorized full snapshot. Clear the dirty
-        // snapshot before pulling so every device returns to one clean revision.
-        cloudDirty=false;
-        localStorage.removeItem(DIRTY_KEY);
-        localStorage.removeItem(PENDING_KEY);
-        status('REFRESHING WORKSHOP DATA…','info');
-        cloudPushing=false;
-        try{await pull(true)}catch(_){status('SYNC ERROR','bad')}
-        return false;
+        retainRejectedSnapshot(r.code);return false;
       }
       if(r.code==='invalid_session'){
         status('LOGIN REQUIRED','bad');
@@ -794,7 +797,7 @@
       setServerConnection('offline',navigator.onLine?'Workshop server cannot be reached. Changes are queued and will sync after reconnection.':'Server connection unavailable. Changes are queued and will sync after reconnection.');
       try{localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:localSnapshot,error:lastSyncError}))}catch(_){}
       status(navigator.onLine?'SYNC ERROR — RETRYING':'OFFLINE — CHANGE QUEUED',navigator.onLine?'bad':'warn');
-      if(navigator.onLine&&sessionToken())setTimeout(()=>{if(cloudDirty&&!cloudPushing)push(0)},Math.min(15000,1000*Math.pow(2,Math.min(consecutiveSyncErrors,4))));
+      if(navigator.onLine&&sessionToken())setTimeout(()=>{if(cloudDirty&&!cloudPushing&&!pushBlocked)push(0)},Math.min(15000,1000*Math.pow(2,Math.min(consecutiveSyncErrors,4))));
       return false;
     }finally{
       cloudPushing=false;
@@ -817,6 +820,7 @@
   };
 
   async function syncNow(){
+    pushBlocked=false;
     if(!navigator.onLine)return status('OFFLINE — CHANGE QUEUED','warn');
     if(cloudDirty)await push(0);
     if(!cloudDirty)await pull(true);
@@ -924,3 +928,4 @@
     get pendingConflict(){try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'null')}catch(_){return null}}
   };
 })();
+
