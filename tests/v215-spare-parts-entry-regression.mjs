@@ -419,3 +419,53 @@ test('queued invoice after Manager Return is quarantined while an unrelated offl
  assert.equal(fresh.parts.reportRows().reduce((n,r)=>n+r.amount,0),0);
  assert.equal(offline.serverRows.filter(r=>r.event_type==='SPARE_PART_FINAL_PRICE_RECORDED').length,0);
 });
+
+test('late Cancel Return refreshes to a newer invoice instead of restoring the old snapshot',async()=>{
+ const first=fixture('Manager','M1');await first.invoice();
+ assert.equal((await first.parts.transitionItem(first.listNo,first.partId,'RETURNED','Wrong supplied part')).ok,true);
+ const stale=fixture('Manager','M2',first.serverRows);
+ first.window.prompt=()=> 'Restore part';await first.parts.cancelReturn(first.listNo,first.partId);
+ first.elements.get('invoicePrice').value='9.500';await first.invoice();
+ stale.window.prompt=()=> 'Stale restoration';
+ stale.onCommit(async event=>{
+   if(event.type==='SPARE_PART_RETURN_CANCELLED'){
+     const current=serverProjection(stale.serverRows)[0].items[0];
+     assert.equal(current.purchaseAmount,9.5);
+     assert.notEqual(current.status,'RETURNED');
+     throw Object.assign(new Error('stale_spare_part_status'),{code:'stale_spare_part_status'});
+   }
+ });
+ await stale.parts.cancelReturn(stale.listNo,stale.partId);
+ const item=stale.lists()[0].items[0];
+ assert.equal(item.status,'SUPERVISOR_VERIFIED');
+ assert.equal(item.purchaseAmount,9.5);
+ assert.equal(item.pendingSync,undefined);
+ assert.equal(stale.parts.reportRows().reduce((n,r)=>n+r.amount,0),9.5);
+ assert.ok(stale.alerts.some(s=>s.includes('Latest Parts data has been refreshed')));
+ assert.equal(stale.serverRows.filter(r=>r.event_type==='SPARE_PART_RETURN_CANCELLED').length,1);
+});
+
+test('queued Cancel Return conflict refreshes a newer invoice and stops automatic replay',async()=>{
+ const first=fixture('Manager','M1');await first.invoice();
+ assert.equal((await first.parts.transitionItem(first.listNo,first.partId,'RETURNED','Wrong supplied part')).ok,true);
+ const offline=fixture('Manager','M2',first.serverRows);
+ offline.window.prompt=()=> 'Restore offline';offline.fail('NETWORK');
+ await offline.parts.cancelReturn(offline.listNo,offline.partId);
+ assert.equal(offline.window.zukaitV2.queue.pending().length,1);
+ first.window.prompt=()=> 'Restore online';await first.parts.cancelReturn(first.listNo,first.partId);
+ first.elements.get('invoicePrice').value='6.000';await first.invoice();
+ offline.fail(null);
+ offline.onCommit(async event=>{
+   if(event.type==='SPARE_PART_RETURN_CANCELLED'){
+     assert.notEqual(serverProjection(offline.serverRows)[0].items[0].status,'RETURNED');
+     throw Object.assign(new Error('stale_spare_part_status'),{code:'stale_spare_part_status'});
+   }
+ });
+ const result=await queueFlusher(offline)();
+ assert.equal(result.pending,0);assert.equal(result.synced,0);
+ assert.equal(offline.window.zukaitV2.queue.conflicts()[0].syncError,'stale_spare_part_status');
+ assert.equal(offline.lists()[0].items[0].purchaseAmount,6);
+ assert.equal(offline.lists()[0].items[0].pendingSync,undefined);
+ assert.equal(offline.parts.reportRows().reduce((n,r)=>n+r.amount,0),6);
+ assert.equal((await queueFlusher(offline)()).pending,0);
+});
