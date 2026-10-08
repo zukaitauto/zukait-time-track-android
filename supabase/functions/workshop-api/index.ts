@@ -916,8 +916,21 @@ Deno.serve(async (req: Request) => {
           return reply({ok:false,code:"spare_final_price_forbidden_or_invalid"},403);
         }
       }
-      if (eventType==="SPARE_PART_COMMERCIAL_UPDATED" && !["Manager","Purchaser"].includes(callerRole)) {
-        return reply({ok:false,code:"spare_commercial_forbidden"},403);
+      if (eventType==="SPARE_PART_COMMERCIAL_UPDATED") {
+        const p=event.payload && typeof event.payload==="object" ? event.payload : {};
+        const allowedKeys=new Set(["partId","listNo","jobCard","supplier","quoteAmount","purchaseAmount","quotationOffers"]);
+        const invalidKey=Object.keys(p).some(k=>!allowedKeys.has(k));
+        const invalidMoney=["quoteAmount","purchaseAmount"].some(k=>p[k]!=null&&p[k]!==""&&(!Number.isFinite(Number(p[k]))||Number(p[k])<0||Number(p[k])>1000000));
+        const offers=p.quotationOffers;
+        const invalidOffers=offers!=null&&(!Array.isArray(offers)||offers.length>3||offers.some((o:any)=>{
+          if(!o||typeof o!=="object"||Array.isArray(o)) return true;
+          if(Object.keys(o).some(k=>!["supplier","amount","at"].includes(k))) return true;
+          if(!String(o.supplier||"").trim()||!Number.isFinite(Number(o.amount))||Number(o.amount)<0||Number(o.amount)>1000000) return true;
+          return o.at!=null&&o.at!==""&&Number.isNaN(Date.parse(String(o.at)));
+        }));
+        if (!["Manager","Purchaser"].includes(callerRole) || !String(p.partId||"") || !String(p.listNo||"") || !String(p.jobCard||"") || invalidKey || invalidMoney || invalidOffers) {
+          return reply({ok:false,code:"spare_commercial_forbidden_or_invalid"},403);
+        }
       }
       if (eventType==="SPARE_PART_STATUS_CHANGED") {
         const to=String(event?.payload?.to||"");
