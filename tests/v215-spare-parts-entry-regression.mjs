@@ -510,3 +510,29 @@ test('Manager and Supervisor corrections refresh a concurrent winning invoice af
    assert.equal(editor.serverRows.filter(r=>r.event_type.endsWith('_CORRECTED')).length,0);
  }
 });
+
+test('invoice expected amount refreshes a winning correction and permits a reviewed retry',async()=>{
+ const invoice=fixture(),manager=fixture('Manager','M1',invoice.serverRows);
+ invoice.onCommit(async event=>{
+   if(event.type==='SPARE_PART_FINAL_PRICE_RECORDED'){
+     assert.equal(event.payload.expectedPurchaseAmount,null);
+     invoice.serverRows.push({
+       event_id:'winning-correction',entity_id:invoice.partId,actor_id:'M1',
+       event_type:'SPARE_PART_MANAGER_CORRECTED',revision:1,server_time:new Date().toISOString(),
+       payload:{partId:invoice.partId,listNo:invoice.listNo,jobCard:invoice.jobCard,
+         before:{status:'SUPERVISOR_VERIFIED',purchaseAmount:null},
+         after:{status:'SUPERVISOR_VERIFIED',purchaseAmount:5,purchaseRecordedAt:new Date().toISOString()}}
+     });
+     throw Object.assign(new Error('stale_spare_final_price'),{code:'stale_spare_final_price'});
+   }
+ });
+ await invoice.invoice();
+ assert.equal(invoice.lists()[0].items[0].purchaseAmount,5);
+ assert.ok(invoice.alerts.some(s=>s.includes('Latest Parts data has been refreshed')));
+ assert.equal(invoice.serverRows.filter(r=>r.event_type==='SPARE_PART_FINAL_PRICE_RECORDED').length,0);
+ invoice.onCommit(null);await invoice.invoice();
+ assert.equal(invoice.commits.at(-1).payload.expectedPurchaseAmount,5);
+ await manager.parts.hydrateAuthoritativeLists();
+ assert.equal(manager.lists()[0].items[0].purchaseAmount,2.44);
+ assert.equal(manager.parts.reportRows().reduce((n,r)=>n+r.amount,0),2.44);
+});
