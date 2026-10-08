@@ -226,3 +226,8 @@ assert.match(guard,/new\.event_type='SPARE_PART_RETURN_CANCELLED'[\s\S]*afterv->
 assert.match(guard,/new\.event_type='SPARE_PART_RETURN_CANCELLED' then least\([\s\S]*afterv->>'receivedQty'/,'Cancel Return must restore authoritative received quantity from the audited snapshot');
 assert.match(apiListCreated,/spare_return_restore_quantity_invalid[^\n]*409/,'Invalid Cancel Return quantity restoration must surface as conflict');
 assert.match(workflow,/Object\.assign\(\{\},item,snapshot/,'Cancel Return must restore the captured pre-return state rather than create a new purchase record');
+
+assert.match(apiListCreated,/SPARE_PART_RETURN_CANCELLED[\s\S]*preReturnSnapshot[\s\S]*financialKeys=\["purchaseAmount","purchaseRecordedAt","purchaseAmountRevision"/,'Cancel Return must compare restored finances with immutable pre-return snapshot');
+assert.match(apiListCreated,/financialKeys\.some\(k=>!same\(after\[k\],snap\[k\]\)\)[\s\S]*spare_return_cancel_financial_mismatch/,'Cancel Return must reject altered purchase amount/date history');
+assert.match(mainModule,/type==='SPARE_PART_RETURN_CANCELLED'[\s\S]*Object\.assign\(item,p\.after\)[\s\S]*continue/,'Cancel Return hydration must restore snapshot values without assigning cancellation activity as purchase date');
+assert.match(mainModule,/omanMonthKey\(i\.purchaseRecordedAt\)===monthKey/,'Monthly purchase expense must use purchase transaction date');
