@@ -276,3 +276,8 @@ assert.match(mainModule,/type==='SPARE_PART_RETURN_CANCELLED'[\s\S]*delete item\
 assert.match(mainModule,/openProblemParts\(\)[\s\S]*\['RETURNED','UNAVAILABLE'\]\.includes\(String\(item\.status\|\|''\)\)\|\|item\.cashSettlementRequired/,'Returned/Problem must be driven by current problem status, not historical return metadata');
 assert.match(mainModule,/userRole==='Manager'[\s\S]*\['RECEIVED','SUPERVISOR_VERIFIED','DENTER_CHECKED','RETURNED','UNAVAILABLE'\]\.includes\(x\.item\.status\)/,'Manager Attention must use current restored status after Cancel Return');
 assert.match(mainModule,/userRole==='Purchaser'[\s\S]*purchaserAttentionItem/,'Purchaser Attention must recalculate from current item state after Cancel Return');
+
+assert.match(mainModule,/function arrivalPendingItems\(list\)\{return \(list\?\.items\|\|\[\]\)\.filter\(item=>String\(item\?\.status\|\|''\)==='RECEIVED'&&receiptComplete\(item\)\)\}/,'Arrival confirmation queue must contain only fully received items whose current status is exactly RECEIVED');
+assert.match(mainModule,/function arrivalPendingCount\(rows=read\(\)\)\{return \(rows\|\|\[\]\)\.reduce\(\(n,list\)=>n\+arrivalPendingItems\(list\)\.length,0\)\}/,'Arrival dashboard count must use the same strict queue selector');
+assert.match(mainModule,/type==='SPARE_PART_RETURN_CANCELLED'[\s\S]*Object\.assign\(item,p\.after\)/,'Cancel Return must restore the audited pre-return status before arrival queues are recalculated');
+assert.match(mainModule,/function partFullyArrived\(item\)[\s\S]*\['SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED'\]\.includes\(status\)/,'Restored verified/confirmed/fitted parts must remain classified as fully arrived');
