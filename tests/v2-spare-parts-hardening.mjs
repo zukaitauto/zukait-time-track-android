@@ -341,3 +341,8 @@ assert.match(mainModule,/function reconcileSyncMarkers[\s\S]*queueState\(item\.p
 assert.match(workshopApi,/if \(event\.actorId && String\(event\.actorId\) !== String\(user\.id\)\) return reply\(\{ok:false,code:"actor_mismatch"\},403\)/,'Queued V2 events must never commit under a different authenticated user');
 assert.match(cloudSync,/if\(code==='NETWORK'\|\|code==='TIMEOUT'\|\|code==='NO_SESSION'\)[\s\S]*q\.markConflict\?\.\(event\.eventId,code\)/,'Permanent ownership/auth rejections such as actor_mismatch must be quarantined rather than retried');
 assert.match(cloudSync,/q\.markConflict\?\.\(event\.eventId,code\);if\(String\(event\?\.type\|\|'\'\)\.startsWith\('SPARE_PART_'\)\)spareConflict=true/,'A quarantined queued Spare Parts event from another user must trigger authoritative Parts reconciliation');
+
+assert.match(mainModule,/if\(r==='Supervisor'&&s==='RECEIVED'\)return receiptComplete\(item\)\?'<button[\s\S]*Partial receipt/,'Supervisor Waiting view must not offer confirmation until the full ordered quantity is received');
+assert.match(mainModule,/function arrivalPendingItems\(list\)\{return \(list\?\.items\|\|\[\]\)\.filter\(item=>String\(item\?\.status\|\|'\'\)==='RECEIVED'&&receiptComplete\(item\)\)\}/,'Arrival confirmation queue must contain only complete RECEIVED quantities');
+assert.match(guard,/select \* into cur from public\.workshop_v2_spare_part_state where part_id=pid for update/,'Receipt and Supervisor confirmation races must serialize on the authoritative part row');
+assert.match(guard,/upper\(st\)='SUPERVISOR_VERIFIED'[\s\S]*cur\.received_qty[\s\S]*cur\.ordered_qty[\s\S]*spare_receipt_incomplete/,'Database must reject Supervisor verification unless the locked authoritative receipt quantity is complete');
