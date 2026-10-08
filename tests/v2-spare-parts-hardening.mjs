@@ -256,3 +256,8 @@ assert.match(mainModule,/function pendingSince\(item,list\)\{return item\?\.reEn
 assert.match(mainModule,/p\.from==='RETURNED'&&p\.to!=='RETURNED'[\s\S]*p\.to==='ENQUIRY'\)item\.reEnquiredAt=r\.activityAt/,'Server hydration must reproduce the re-enquiry age reset');
 assert.match(mainModule,/ACTIVE_REPLACEMENT_ALREADY_EXISTS/,'Client must block re-enquiry when an active replacement already exists');
 assert.match(guard,/duplicate_active_spare_part/,'Database must retain authoritative duplicate-active protection');
+
+assert.match(workflow,/if\(to==='RETURNED'\)[\s\S]*next\.preReturnSnapshot=snapshot/,'Every return cycle must replace the current pre-return snapshot');
+assert.match(workflow,/from==='RETURNED'&&to!=='RETURNED'[\s\S]*delete next\.preReturnSnapshot/,'Re-enquiry must retire the prior return snapshot before a new purchasing cycle');
+assert.match(apiListCreated,/latestStatusEvent[\s\S]*String\(latestStatusPayload\.to\|\|""\)!=="RETURNED"[\s\S]*spare_return_cancel_cycle_mismatch/,'Cancel Return must bind to the immediately current return cycle');
+assert.match(apiListCreated,/latestStatusPayload\.preReturnSnapshot/,'Cancel Return must restore the current cycle snapshot rather than searching an older returned event');
