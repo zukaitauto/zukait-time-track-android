@@ -689,3 +689,27 @@ test('stale quotation conflict refreshes the accepted invoice and leaves quotati
  assert.equal(supervisor.lists()[0].items[0].quoteAmount,3);
  assert.equal(supervisor.parts.reportRows().reduce((n,r)=>n+r.amount,0),2.44);
 });
+
+test('queued quotation replay cannot clear an invoice saved before reconnection',async()=>{
+ const purchaser=fixture('Purchaser','PUR001'),supervisor=fixture('Supervisor','SUP003',purchaser.serverRows);
+ purchaser.elements.set('v2SpQuote_0',{value:'3.000'});
+ purchaser.elements.set('v2SpVendor_0',{value:'Vendor B'});
+ purchaser.elements.set('v2SpQuoteMessage',{textContent:''});
+ const button={dataset:{list:purchaser.listNo,item:purchaser.partId,index:'0'},disabled:false};
+ purchaser.fail('NETWORK');await purchaser.parts.saveQuotationPrice(button);
+ assert.equal(purchaser.window.zukaitV2.queue.pending().length,1);
+ await supervisor.invoice();purchaser.fail(null);
+ purchaser.onCommit(async event=>{
+   if(event.type==='SPARE_PART_COMMERCIAL_UPDATED'){
+     const amount=serverProjection(purchaser.serverRows)[0].items[0].purchaseAmount;
+     assert.notEqual(event.payload.purchaseAmount,amount);
+     throw Object.assign(new Error('stale_spare_final_price'),{code:'stale_spare_final_price'});
+   }
+ });
+ await queueFlusher(purchaser)();
+ assert.equal(purchaser.window.zukaitV2.queue.pending().length,0);
+ assert.equal(purchaser.window.zukaitV2.queue.conflicts()[0].syncError,'stale_spare_final_price');
+ assert.equal(purchaser.lists()[0].items[0].purchaseAmount,2.44);
+ assert.equal(purchaser.lists()[0].items[0].quoteAmount,2.5);
+ assert.equal(purchaser.parts.reportRows().reduce((n,r)=>n+r.amount,0),2.44);
+});
