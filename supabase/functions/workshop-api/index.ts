@@ -1142,6 +1142,7 @@ Deno.serve(async (req: Request) => {
         if (message.includes("duplicate_active_spare_part")) return reply({ok:false,code:"duplicate_active_spare_part"},409);
         if (message.includes("stale_spare_part_status")) return reply({ok:false,code:"stale_spare_part_status"},409);
         if (message.includes("spare_receipt_incomplete")) return reply({ok:false,code:"spare_receipt_incomplete"},409);
+        if (message.includes("spare_arrival_acceptance_not_eligible")) return reply({ok:false,code:"spare_arrival_acceptance_not_eligible"},409);
         if (message.includes("spare_quantity_below_received")) return reply({ok:false,code:"spare_quantity_below_received"},409);
         if (message.includes("spare_verified_quantity_increase_requires_reopen")) return reply({ok:false,code:"spare_verified_quantity_increase_requires_reopen"},409);
         if (message.includes("spare_returned_quantity_mismatch")) return reply({ok:false,code:"spare_returned_quantity_mismatch"},409);
