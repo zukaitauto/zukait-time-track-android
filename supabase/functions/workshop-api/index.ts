@@ -1021,7 +1021,18 @@ Deno.serve(async (req: Request) => {
             ? await admin.rpc("zukait_v2_operational_report_page", { p_report: report, p_before: before, p_limit: limit, p_filters: filters, p_before_id: beforeId })
             : await admin.rpc("zukait_v2_report_page", { p_report: report, p_before: before, p_limit: limit, p_filters: filters, p_before_id: beforeId });
       if (error) throw error;
-      const rows = Array.isArray(data) ? data : [];
+      let rows = Array.isArray(data) ? data : [];
+      if (action === "v2_report_page" && report === "SPARE_PARTS" && !["Manager","Purchaser"].includes(String(user?.role||""))) {
+        const financialKeys=new Set(["purchaseAmount","purchaseRecordedAt","purchaseAmountRevision","billAmount","supplierCost","quoteAmount","price","supplier","quotationOffers","commercialRevision","finalPrice","preReturnSnapshot"]);
+        const scrub=(value:any):any=>{
+          if(Array.isArray(value)) return value.map(scrub);
+          if(!value||typeof value!=="object") return value;
+          const out:any={};
+          for(const [k,v] of Object.entries(value)) if(!financialKeys.has(k)) out[k]=scrub(v);
+          return out;
+        };
+        rows=rows.map((row:any)=>scrub(row));
+      }
       const cursorValue = action === "v2_search_jobcards" || report === "WIP" || report === "COMPLETION_TARGET"
         ? rows[rows.length - 1]?.updated_at
         : rows[rows.length - 1]?.sort_time || rows[rows.length - 1]?.updated_at;
