@@ -63,6 +63,14 @@ begin
     return new;
   end if;
 
+  if new.event_type='SPARE_PART_FINAL_PRICE_RECORDED' then
+    perform 1 from public.workshop_v2_events e
+      where e.entity_id=pid and e.event_type='SPARE_PART_FINAL_PRICE_RECORDED'
+        and coalesce(e.revision,0)>=coalesce(new.revision,0)
+      limit 1;
+    if found then raise exception 'stale_spare_final_price'; end if;
+  end if;
+
   if new.event_type='SPARE_PART_STATUS_CHANGED' then
     st:=trim(coalesce(p->>'to',''));
     if upper(trim(coalesce(p->>'from','')))<>upper(trim(coalesce(cur.status,''))) then
