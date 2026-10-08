@@ -30,4 +30,8 @@ assert.match(api,/allowedAfterKeys=new Set\(\["status","receivedQty"/,'Cancel Re
 assert.match(api,/invalidAfterKey=Object\.keys\(after\)\.some/,'Cancel Return API rejects injected fields');
 assert.match(api,/allowedRestoredStatuses=new Set/,'Cancel Return API validates restored status');
 assert.match(api,/invalidNumeric=\["receivedQty","lastReceivedQty","purchaseAmount"/,'Cancel Return API validates restored numeric values');
+assert.match(api,/if\(to==="RETURNED"\)\{/,'RETURNED status events receive dedicated server validation');
+assert.match(api,/allowedSnapshotKeys=new Set\(\["status","receivedQty"/,'server allowlists persisted return snapshot fields');
+assert.match(api,/snapshotInvalid=!snapshot\|\|typeof snapshot!=="object"/,'server requires a valid return snapshot');
+assert.match(api,/spare_return_snapshot_invalid/,'invalid return snapshots are rejected before commit');
 console.log('Spare Parts cancel return: Manager-only audited restoration preserves original purchase amount/date and prevents duplicate cancellation.');
