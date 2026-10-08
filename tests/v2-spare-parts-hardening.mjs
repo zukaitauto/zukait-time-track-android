@@ -22,7 +22,7 @@ assert.match(workflow,/if\(to==='FITTED'\)return role==='Supervisor'\|\|role==='
 assert.match(workflow,/if\(to==='SUPERVISOR_VERIFIED'\)return role==='Supervisor'\|\|role==='Manager'/,'Supervisor must retain physical-arrival verification authority');
 assert.match(workflow,/if\(to==='CUSTOMER_SETTLEMENT'\)return role==='Supervisor'\|\|role==='Manager'/,'Purchaser must not have customer-settlement authority');
 console.log('V2 Spare Parts hardening guard passed');
-assert.match(main,/if\(!\['Manager','Supervisor'\]\.includes\(role\(\)\)\)return;const rows=read\(\),list=/,'Audited correction save must allow Manager and Supervisor only');
+assert.match(main,/saveManagerItemEdit\(listNo,itemId\).*?if\(!\['Manager','Supervisor'\]\.includes\(role\(\)\)\)return;.*?await hydrateAuthoritativeLists\(\);const rows=read\(\),list=/s,'Audited correction save must allow Manager and Supervisor only and refresh server state before editing');
 assert.match(main,/Correction reason is required\./,'Manager parts correction must require a reason');
 assert.match(main,/SPARE_PART_MANAGER_CORRECTED/,'Manager correction must emit an auditable server event');assert.match(main,/SPARE_PART_SUPERVISOR_CORRECTED/,'Supervisor correction must emit a distinct auditable server event');
 assert.match(main,/managerCorrectionAudit/,'Manager correction must retain before\/after audit history');
