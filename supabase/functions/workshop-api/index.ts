@@ -860,8 +860,20 @@ Deno.serve(async (req: Request) => {
       if (eventType==="SPARE_PART_LISTED" && !["Manager","Supervisor"].includes(callerRole)) {
         return reply({ok:false,code:"spare_list_edit_forbidden"},403);
       }
-      if (eventType==="SPARE_PART_ITEM_EDITED" && !["Manager","Supervisor"].includes(callerRole)) {
-        return reply({ok:false,code:"spare_item_edit_forbidden"},403);
+      if (eventType==="SPARE_PART_ITEM_EDITED") {
+        const p=event.payload && typeof event.payload==="object" ? event.payload : {};
+        const before=p.before && typeof p.before==="object" && !Array.isArray(p.before) ? p.before : {};
+        const after=p.after && typeof p.after==="object" && !Array.isArray(p.after) ? p.after : {};
+        const allowedPayloadKeys=new Set(["partId","listNo","jobCard","reason","before","after"]);
+        const allowedAfterKeys=new Set(["deletedAt","deletedBy"]);
+        const invalidPayloadKey=Object.keys(p).some(k=>!allowedPayloadKeys.has(k));
+        const invalidAfterKey=Object.keys(after).some(k=>!allowedAfterKeys.has(k));
+        const deletionOnly=Object.keys(after).length>0&&Object.keys(after).every(k=>allowedAfterKeys.has(k));
+        const invalidDeletedAt=!String(after.deletedAt||"").trim()||Number.isNaN(Date.parse(String(after.deletedAt||"")));
+        const invalidDeletedBy=String(after.deletedBy||"")!==String(user.id);
+        if (!["Manager","Supervisor"].includes(callerRole) || !String(p.partId||"") || !String(p.listNo||"") || !String(p.jobCard||"") || !String(p.reason||"").trim() || !Object.keys(before).length || invalidPayloadKey || invalidAfterKey || !deletionOnly || invalidDeletedAt || invalidDeletedBy) {
+          return reply({ok:false,code:"spare_item_edit_forbidden_or_invalid"},403);
+        }
       }
       if (eventType==="SPARE_PART_MANAGER_CORRECTED" || eventType==="SPARE_PART_SUPERVISOR_CORRECTED") {
         const p=event.payload && typeof event.payload==="object" ? event.payload : {};
