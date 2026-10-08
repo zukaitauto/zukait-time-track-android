@@ -662,3 +662,30 @@ test('stale quantity correction refreshes the newer part identity and ordered qu
  assert.equal(item.status,'RECEIVED');assert.equal(item.pendingSync,undefined);
  assert.ok(editor.alerts.some(s=>s.includes('Latest Parts data has been refreshed')));
 });
+
+test('stale quotation conflict refreshes the accepted invoice and leaves quotation unchanged',async()=>{
+ const purchaser=fixture('Purchaser','PUR001'),supervisor=fixture('Supervisor','SUP003',purchaser.serverRows);
+ purchaser.elements.set('v2SpQuote_0',{value:'3.000'});
+ purchaser.elements.set('v2SpVendor_0',{value:'Vendor B'});
+ purchaser.elements.set('v2SpQuoteMessage',{textContent:''});
+ purchaser.onCommit(async event=>{
+   if(event.type==='SPARE_PART_COMMERCIAL_UPDATED'){
+     assert.equal(event.payload.purchaseAmount,null);
+     await supervisor.invoice();
+     throw Object.assign(new Error('stale_spare_final_price'),{code:'stale_spare_final_price'});
+   }
+ });
+ const button={dataset:{list:purchaser.listNo,item:purchaser.partId,index:'0'},disabled:false};
+ await purchaser.parts.saveQuotationPrice(button);
+ assert.equal(button.disabled,false);
+ assert.match(purchaser.elements.get('v2SpQuoteMessage').textContent,/Latest Parts data has been refreshed/);
+ const item=purchaser.lists()[0].items[0];
+ assert.equal(item.purchaseAmount,2.44);assert.equal(item.quoteAmount,2.5);
+ assert.equal(item.supplier,'Vendor A');
+ purchaser.onCommit(null);await purchaser.parts.saveQuotationPrice(button);
+ assert.equal(purchaser.commits.at(-1).payload.purchaseAmount,2.44);
+ await supervisor.parts.hydrateAuthoritativeLists();
+ assert.equal(supervisor.lists()[0].items[0].purchaseAmount,2.44);
+ assert.equal(supervisor.lists()[0].items[0].quoteAmount,3);
+ assert.equal(supervisor.parts.reportRows().reduce((n,r)=>n+r.amount,0),2.44);
+});
