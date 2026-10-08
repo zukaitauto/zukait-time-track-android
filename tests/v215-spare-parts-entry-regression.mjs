@@ -121,7 +121,7 @@ test('invoice validation and permissions reject bad inputs without committing',a
 });
 
 test('a rejected invoice retains its prior price and unrelated part fields',async()=>{
-  const f=fixture();f.setItem({purchaseAmount:3,purchaseAmountRevision:4});f.fail('event_id_conflict');
+  const f=fixture();f.setItem({purchaseAmount:3,purchaseAmountRevision:4});f.fail('spare_final_price_forbidden_or_invalid');
   await f.invoice();
   const item=f.lists()[0].items[0];
   assert.equal(item.purchaseAmount,3);assert.equal(item.purchaseAmountRevision,4);
@@ -343,4 +343,21 @@ test('invoice followed by Manager deletion removes its amount on a fresh client'
  const fresh=fixture('Supervisor','SUP003',manager.serverRows);
  assert.equal(fresh.lists().flatMap(l=>l.items).some(i=>i.id===fresh.partId),false);
  assert.equal(fresh.parts.reportRows().reduce((n,r)=>n+r.amount,0),0);
+});
+
+test('simultaneous invoice event identity conflict refreshes the winning amount before retry',async()=>{
+ const supervisor=fixture(),manager=fixture('Manager','M1',supervisor.serverRows);
+ supervisor.elements.get('invoicePrice').value='7.500';
+ supervisor.onCommit(async event=>{
+   if(event.type==='SPARE_PART_FINAL_PRICE_RECORDED')await manager.invoice();
+ });
+ await supervisor.invoice();
+ assert.equal(supervisor.serverRows.filter(r=>r.event_type==='SPARE_PART_FINAL_PRICE_RECORDED').length,1);
+ assert.equal(supervisor.lists()[0].items[0].purchaseAmount,2.44);
+ assert.ok(supervisor.alerts.some(s=>s.includes('Latest Parts data has been refreshed')));
+ supervisor.onCommit(null);await supervisor.invoice();
+ assert.equal(supervisor.serverRows.filter(r=>r.event_type==='SPARE_PART_FINAL_PRICE_RECORDED').length,2);
+ const fresh=fixture('Supervisor','SUP003',supervisor.serverRows);
+ assert.equal(fresh.lists()[0].items[0].purchaseAmount,7.5);
+ assert.equal(fresh.parts.reportRows().reduce((n,r)=>n+r.amount,0),7.5);
 });
