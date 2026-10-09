@@ -109,6 +109,13 @@
     const r = await res.json();
     if (!res.ok || !r.ok) {
       const msgs = {
+        reception_preliminary_forbidden:
+          "Only the Manager or Supervisor can edit preliminary parts.",
+        reception_duplicate_parts:
+          "This list contains duplicate parts. Combine their quantities or use distinct part names or numbers.",
+        reception_preliminary_already_linked:
+          "Use the Job Card parts workflow after a Job Card is created.",
+        reception_case_closed: "This insurance case is closed.",
         reception_stale_revision:
           "This checklist changed on another device. Open the list and reload it before editing.",
         reception_manager_required: "Only the Manager can perform this action.",
@@ -354,6 +361,7 @@
         (!r.job_card && !r.outcome
           ? '<button data-rc-action="outcome">Close Insurance Case</button>'
           : "") +
+        (current.preliminary_parts ? '<button data-rc-action="parts">Preliminary Parts</button>' : '') +
         '<button data-rc-action="print">Print</button><button data-rc-action="pdf">Share PDF</button></div><div class="rc-grid"><div class="rc-box"><h4>Customer & Vehicle</h4>' +
         [
           ["Insurance", r.insurance_company],
@@ -448,6 +456,46 @@
           .join("") +
         "</div></div>",
     );
+  }
+  function preliminaryParts() {
+    pending = null;
+    const r = current.record, draft = current.preliminary_parts;
+    const editable = draft.can_edit === true;
+    shell(r.rc_no + " · Preliminary Parts",
+      badges(r) + "<p>Parts preparation for insurance approval.</p>" +
+      (editable ? '<form id="rc-parts"><div id="rc-parts-rows"></div><div class="rc-actions"><button type="button" id="rc-add-part">+ Add Part</button></div>' +
+        input("reason", "Reason for this list / change", "", true) + '<div class="rc-actions"><button type="submit">Save Preliminary List</button></div></form>' :
+        '<div class="rc-box">' + (draft.items.map((x, i) => '<p><b>' + (i + 1) + '. ' + esc(x.name) + '</b><br>Qty: ' + esc(x.qty) + ' · Part No: ' + esc(x.part_no || "Not recorded") + '</p>').join("") || "No preliminary parts recorded.") + '</div>') +
+      '<div class="rc-actions"><button data-rc-action="view" data-rc="' + esc(r.rc_no) + '">Back to Checklist</button></div>');
+    if (!editable) return;
+    const rows = document.getElementById("rc-parts-rows");
+    function add(x = {}) {
+      const row = document.createElement("div");
+      row.className = "rc-box";
+      row.dataset.partId = x.id || uid();
+      row.innerHTML = input("part_name", "Part Name", x.name, true) + '<div class="rc-grid">' +
+        input("part_no", "Part Number (optional)", x.part_no) + input("part_qty", "Quantity", x.qty || 1, true, "number") +
+        '</div><div class="rc-actions"><button type="button" class="rc-remove-part">Remove Part</button></div>';
+      row.querySelector('[name="part_name"]').maxLength = 200;
+      row.querySelector('[name="part_no"]').maxLength = 100;
+      const qty = row.querySelector('[name="part_qty"]'); qty.min = "1"; qty.max = "100000"; qty.step = "1";
+      row.querySelector('.rc-remove-part').onclick = () => row.remove();
+      rows.appendChild(row);
+    }
+    draft.items.forEach(add);
+    document.getElementById("rc-add-part").onclick = () => { if (rows.children.length < 200) add(); };
+    document.getElementById("rc-parts").onsubmit = async (e) => {
+      e.preventDefault();
+      try {
+        const items = [...rows.children].map(row => ({id: row.dataset.partId,
+          name: row.querySelector('[name="part_name"]').value.trim(),
+          part_no: row.querySelector('[name="part_no"]').value.trim(),
+          qty: Number(row.querySelector('[name="part_qty"]').value)}));
+        const result = await mutate({operation: "SAVE_PARTS", rc_no: r.rc_no, expected_revision: r.revision,
+          items, reason: new FormData(e.target).get("reason").trim()});
+        if (result) await view(r.rc_no);
+      } catch (x) { error(x); }
+    };
   }
   async function mutate(command) {
     if (busy) return null;
@@ -739,6 +787,9 @@
           break;
         case "edit":
           await editor(current.record.rc_no);
+          break;
+        case "parts":
+          preliminaryParts();
           break;
         case "movement":
           movement();
