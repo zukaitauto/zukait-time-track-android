@@ -123,7 +123,7 @@ try{
  const link=await command(control,makeCommand('LINK_ADDITIONAL_ESTIMATE',nine,{round_id:round,estimate_no:quote.estimateNo,reason:'Review additional quotation'}));nine.revision=Number(link.record.revision);
  const additional=makeCommand('APPROVE_ADDITIONAL',nine,{round_id:round,quotation_id:link.quotation.id,reference:'QA-ADD',approval_date:await date(),approved_amount:'15.555',approved_parts:[{id:additionalPart,qty:1}],reason:'Surveyor approval'});
  const additionalRetry=await race('same additional approval UUID transfers once',c=>command(c,additional),c=>command(c,additional));assert.equal(additionalRetry.second.duplicate,true);
- assert.equal((await control.query('select count(*)::int n from workshop_reception_additional_transfers where rc_no=$1',[nine.rc])).rows[0].n,1);
+ assert.equal((await control.query('select count(*)::int n from workshop_reception_additional_transfers where approval_id=$1',[additionalRetry.first.approval.id])).rows[0].n,1);
  assert.equal((await control.query("select ordered_qty::text qty from workshop_v2_spare_part_state where job_card=$1 and part_no='QA-LAMP'",[nine.job])).rows[0].qty,'1');
  assert.equal((await readRecord(nine.rc)).location,'VWC');
  const final=await readState();for(const key of ['users','assign','sessions','expenses','consumables'])assert.deepEqual(final[key],initial[key],key+' changed');
