@@ -25,6 +25,10 @@
     const s=document.createElement("style");s.id="rdb-css";
     s.textContent=`
     #rc-root .rdb-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0 20px}
+    #rc-root .rdb-grid>*{min-width:0;max-width:100%}
+    #rc-root .rdb-content{min-width:0;overflow-wrap:anywhere;word-break:normal}
+    #rc-root .rdb-filter>label{min-width:0;max-width:100%}
+    #rc-root .rdb-filter>label input{min-width:0;max-width:100%}
     #rc-root .rdb-card{display:flex;align-items:center;gap:12px;text-align:left;padding:16px;min-height:94px;background:#fff;color:#15374d;border:1px solid #ccdfed;border-radius:15px;box-shadow:0 5px 15px #18324a12;cursor:pointer}
     #rc-root .rdb-card:focus-visible{outline:3px solid #138c91;outline-offset:2px}
     #rc-root .rdb-card[data-active=true]{background:#e6f8f5;border:2px solid #5bacaa}
@@ -41,7 +45,7 @@
     #rc-root .rdb-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between}
     #rc-root .rdb-toolbar h4{margin:0}#rc-root .rdb-status{font-size:14px;color:#42667c}
     @media(max-width:800px){#rc-root .rdb-filter{grid-template-columns:1fr 1fr}}
-    @media(max-width:550px){#rc-root .rdb-grid{gap:8px}#rc-root .rdb-card{padding:11px;min-height:100px;gap:7px}
+    @media(max-width:550px){#rc-root .rdb-grid{gap:8px}#rc-root .rdb-card{padding:11px;min-height:112px;gap:5px;flex-direction:column;align-items:flex-start;justify-content:center;min-width:0}
       #rc-root .rdb-emoji{font-size:19px}#rc-root .rdb-content b{font-size:14px}
       #rc-root .rdb-content small{font-size:11px}#rc-root .rdb-count{font-size:17px}
       #rc-root .rdb-filter{grid-template-columns:1fr 1fr}
