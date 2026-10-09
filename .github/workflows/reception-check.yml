@@ -1,4 +1,4 @@
-name: Reception Phase 1 verification
+name: Reception verification
 on:
   push:
     branches: [architecture-v2]
@@ -23,4 +23,6 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run test:reception
       - run: node tests/reception-api.mjs
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run test:reception:browser
       - run: bash scripts/ci-validate-js.sh

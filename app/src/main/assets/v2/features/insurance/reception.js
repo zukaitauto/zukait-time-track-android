@@ -77,18 +77,29 @@
     e.id = "rc-style";
     e.textContent = `
 .rc{font-size:17px;color:#18324a;background:#f3f8fc;padding:16px;border-radius:20px}.rc *{box-sizing:border-box}.rc h3{font-size:24px;margin:8px 0 16px}.rc h4{font-size:19px;margin:12px 0}.rc button{font-size:16px!important;min-height:46px;margin:0!important;border-radius:12px!important}.rc input,.rc select,.rc textarea{font-size:17px!important;width:100%;min-height:46px;background:white;color:#18324a;border:1px solid #b7cbd9;border-radius:10px;padding:10px;margin-top:6px}.rc label{display:block;font-weight:700}.rc textarea{min-height:95px;resize:vertical}.rc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.rc-box{padding:14px;border:1px solid #d2e1eb;background:#fff;border-radius:15px;margin-top:12px;overflow-wrap:anywhere}.rc-actions{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0}.rc-badge{display:inline-block;border-radius:20px;background:#e0eff8;color:#174b6b;padding:6px 11px;margin:3px;font-size:15px;font-weight:800}.rc-badge[data-value=VWC]{background:#fff0c9;color:#765000}.rc-badge[data-value=VIW]{background:#d9f5ea;color:#125340}.rc-badge[data-value=CTL],.rc-badge[data-value=CANCELLED]{background:#fee2e2;color:#8c2632}.rc-check{display:flex!important;gap:10px;align-items:center;font-weight:600!important}.rc-check input{width:24px!important;min-height:24px!important;margin:0}.rc-error{color:#9c2434;font-weight:700}.rc small{font-size:14px;color:#45627a}.rc-menu{background:linear-gradient(145deg,#e1f5f4,#f3faff)!important;color:#164e63!important;border:1px solid #afd8dc!important;box-shadow:0 6px 16px #163b5415}.rc-history{max-height:360px;overflow:auto}.rc summary{cursor:pointer;padding:10px;font-weight:700}@media(max-width:480px){.rc{padding:10px}.rc-grid{gap:9px}.rc-actions button{flex:1 1 40%}.rc-wide{grid-column:1/-1}}`;
+    e.textContent += `
+/* Reception owns its dialog width; other workshop dialogs retain their sizing. */
+.modal-box.rc-dialog, .modal-content.rc-dialog{width:min(1280px,96vw)!important;max-width:1280px!important;padding:0!important}
+.rc{max-width:1280px;margin:auto;min-width:0}.rc-topbar{background:transparent;color:inherit;padding:0;display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid #d2e1eb;margin-bottom:18px}.rc-topbar h3{margin:0;order:-1}.rc-topbar .rc-actions{margin:8px 0}
+.rc-table{width:100%;border-collapse:collapse;background:white;margin-top:18px;text-align:left}.rc-table th{padding:12px;background:#e5eff6;font-size:14px}.rc-table td{padding:14px 12px;border-bottom:1px solid #d2e1eb;vertical-align:top;overflow-wrap:anywhere}.rc-table small{display:block;margin-top:5px}.rc-table .rc-badge{font-size:13px;padding:4px 8px}.rc-table button{white-space:nowrap}.rc-table caption{text-align:left;font-weight:700;padding:10px 0}
+@media(min-width:900px){.rc{font-size:15px;padding:24px;border-radius:12px}.rc button{font-size:14px!important;min-height:40px;border-radius:7px!important}.rc input,.rc select,.rc textarea{font-size:15px!important;min-height:40px;border-radius:6px}.rc-grid{gap:16px}.rc-box{border-radius:8px}.rc-filters{grid-template-columns:minmax(0,3fr) minmax(200px,1fr)}#rc-form>.rc-grid{grid-template-columns:repeat(3,minmax(0,1fr));padding:20px;background:white;border:1px solid #d2e1eb;border-radius:8px}#rc-form>.rc-box:last-of-type{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}#rc-form>.rc-box:last-of-type>h4,#rc-form>.rc-box:last-of-type>label:first-of-type{grid-column:1/-1}.rc-accessories{grid-template-columns:repeat(3,minmax(0,1fr))}.rc-wide{grid-column:1/-1}}
+@media(max-width:700px){.rc-topbar{align-items:flex-start;flex-direction:column;gap:0}.rc-topbar h3{margin-bottom:12px}.rc-table,.rc-table tbody,.rc-table tr,.rc-table td{display:block}.rc-table thead{display:none}.rc-table tr{border:1px solid #d2e1eb;border-radius:12px;margin-bottom:12px;padding:10px}.rc-table td{border:0;padding:5px}.rc-table td:before{content:attr(data-label);display:block;font-size:13px;color:#45627a;font-weight:700;margin-bottom:3px}.rc-table td:last-child:before{display:none}.rc-table button{width:100%}.rc-filters{grid-template-columns:1fr}}
+`;
     document.head.appendChild(e);
   }
   function shell(title, body) {
     style();
     openModal(
-      '<section class="rc" id="rc-root"><div class="rc-actions"><button data-rc-action="home">Reception List</button><button data-rc-action="close">Close</button></div><h3>' +
+      '<section class="rc" id="rc-root"><header class="rc-topbar"><div class="rc-actions"><button data-rc-action="home">Reception List</button><button data-rc-action="close">Close</button></div><h3>' +
         esc(title) +
-        '</h3><div id="rc-error" class="rc-error" role="alert"></div>' +
+        '</h3></header><div id="rc-error" class="rc-error" role="alert"></div>' +
         body +
         "</section>",
     );
-    document.getElementById("rc-root").addEventListener("click", dispatch);
+    const root = document.getElementById("rc-root");
+    if (root.parentElement.matches(".modal-box,.modal-content"))
+      root.parentElement.classList.add("rc-dialog");
+    root.addEventListener("click", dispatch);
   }
   function error(e) {
     const el = document.getElementById("rc-error");
@@ -231,7 +242,7 @@
         (caps.manager
           ? '<button data-rc-action="staff">Reception Access</button>'
           : "") +
-        '</div><div class="rc-grid">' +
+        '</div><div class="rc-grid rc-filters">' +
         input("search", "Search RC / Reg / Customer / Insurance / VIN") +
         select(
           "filter",
@@ -267,31 +278,9 @@
     });
     if (seq !== listRequest || !el.isConnected) return;
     rows = more ? [...rows, ...r.rows] : r.rows;
-    el.innerHTML =
-      rows
-        .map(
-          (x) =>
-            '<article class="rc-box"><h4>' +
-            esc(x.rc_no) +
-            " · " +
-            esc(
-              [x.details.make, x.details.model, x.details.year]
-                .filter(Boolean)
-                .join(" "),
-            ) +
-            "</h4>" +
-            badges(x) +
-            "<p>" +
-            esc(x.details.registration || "Registration not recorded") +
-            "<br>" +
-            esc(x.insurance_company) +
-            "<br>" +
-            esc(x.details.customer || "Customer not recorded") +
-            '</p><button data-rc-action="view" data-rc="' +
-            esc(x.rc_no) +
-            '">Open Checklist</button></article>',
-        )
-        .join("") || "<p>No reception checklists found.</p>";
+    el.innerHTML = rows.length ?
+      '<table class="rc-table"><caption>' + rows.length + ' checklists shown</caption><thead><tr><th scope="col">Checklist / Vehicle</th><th scope="col">Registration / Customer</th><th scope="col">Insurance</th><th scope="col">Status / Location</th><th scope="col">Action</th></tr></thead><tbody>' +
+      rows.map(x => '<tr><td data-label="Checklist / Vehicle"><strong>' + esc(x.rc_no) + '</strong><small>' + esc([x.details.make, x.details.model, x.details.year].filter(Boolean).join(' ')) + '</small></td><td data-label="Registration / Customer">' + esc(x.details.registration || 'Registration not recorded') + '<small>' + esc(x.details.customer || 'Customer not recorded') + '</small></td><td data-label="Insurance">' + esc(x.insurance_company) + '</td><td data-label="Status / Location">' + badges(x) + '</td><td data-label="Action"><button data-rc-action="view" data-rc="' + esc(x.rc_no) + '">Open Checklist</button></td></tr>').join('') + '</tbody></table>' : '<p>No reception checklists found.</p>';
     document.getElementById("rc-more").hidden = r.rows.length < 100;
   }
   async function editor(no) {
@@ -326,7 +315,7 @@
           ],
           d.odometer_unit || "KM",
         ) +
-        '</div><div class="rc-box"><h4>Tools and Accessories</h4><p><small>Tick recorded accessories individually. Unticked means not recorded.</small></p><div class="rc-grid">' +
+        '</div><div class="rc-box"><h4>Tools and Accessories</h4><p><small>Tick recorded accessories individually. Unticked means not recorded.</small></p><div class="rc-grid rc-accessories">' +
         tools
           .map(
             ([k, l]) =>
@@ -339,7 +328,7 @@
               "</label>",
           )
           .join("") +
-        '</div></div><div class="rc-box">' +
+        '</div></div><div class="rc-box"><h4>Reception Observations</h4>' +
         select(
           "fuel",
           "Fuel Level",
