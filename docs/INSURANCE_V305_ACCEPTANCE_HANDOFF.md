@@ -14,7 +14,7 @@ Live remains V304 / 267, workshop-api 58 and staff-auth 4. No release authorizat
 | Android builds | 37979060455 and 37979060472 | PASS |
 | Signed ZIP artifact | 11640156376; expires 2026-10-23 | SHA-256 `963a8e92cdd66d2257449e136291bd93a93d977d3f91e77cea497ab631604c16` |
 | Publishing / Pages | 37979060430 / 37979060575 | SKIPPED |
-| Separate QA backend | No project/branch available in last access inspection | REQUIRED |
+| Separate QA backend | `omqgkqknbdcnotabffek` (`zukait-v305-qa`), Mumbai / `ap-south-1` | CREATED; schema and Edge Functions NOT DEPLOYED |
 | Physical devices | No Android, iPhone or Mac/Safari connection available | REQUIRED |
 
 The signed ZIP is build evidence, not an isolated QA installation. Its ZIP digest
@@ -22,20 +22,28 @@ is not the APK digest. Generate the separate QA-targeted build after the QA back
 is ready; it uses `com.zukait.timetrack.acceptance`, V305-ACCEPTANCE / 268 and disabled
 updates. It must not replace the live workshop app or contact the live backend.
 
-The only visible Supabase organization is `zukaitauto` (`hhzqrfyvjvrdjftlaimo`).
-The pricing connector requires the user's organization selection before lookup
-and cost confirmation before creating a backend. Organization selection and
-quoted cost confirmation remain pending. An existing explicitly designated QA
-project can be used instead. Production `pjknotnjkufadqavcmii` is not QA.
+On 2026-10-09, Supabase quoted **USD 0/month** for a new project in the
+already-selected `zukaitauto` organization (`hhzqrfyvjvrdjftlaimo`).
+Cost confirmation was obtained through the connector and the isolated project
+`zukait-v305-qa` (`omqgkqknbdcnotabffek`) was created successfully in
+`ap-south-1`. The project reports ACTIVE_HEALTHY, PostgreSQL 17.11, and its
+separate API URL is `https://omqgkqknbdcnotabffek.supabase.co`.
+QA is **schema-empty**: zero public workshop tables, zero Zukait SQL functions,
+zero migration records and zero Edge Functions at inspection. A modern publishable
+key is present, but neither public keys nor secret values are stored here.
+Do not run the nine pending migrations against an empty project until the
+production-compatible **schema-only** foundation is reconciled and verified.
+Production `pjknotnjkufadqavcmii` is not QA; no production data or credentials
+have been imported. No QA Phase 2 backend is deployed or accepted.
 
 ## Setup record
 
 Complete this record before any backend mutation or physical installation:
 
-- Confirmed QA reference, organization, owner, cost and expiry: PENDING.
-- QA schema inspection/export comparison and ordered nine-migration result: PENDING.
+- Confirmed QA reference and organization: `omqgkqknbdcnotabffek` / `zukaitauto`; cost quote USD 0/month. Owner / project expiry / allowed testers: TO RECORD.
+- QA schema inspection: VERIFIED EMPTY (PostgreSQL 17.11). Schema-only production parity reconciliation and ordered nine-migration result: PENDING.
 - QA staff-auth and complete workshop-api deployment source SHA: PENDING.
-- QA host, publishable-key configuration and protected session-file location: PENDING.
+- QA host: `https://omqgkqknbdcnotabffek.supabase.co`. Modern publishable key detected (value not recorded). Function allowlist and protected session-file location: PENDING.
 - Generated isolated APK SHA-256, package/version/certificate and web bundle SHA: PENDING.
 - Android model, OS and System WebView version: PENDING.
 - iPhone model, iOS and Safari version: PENDING.

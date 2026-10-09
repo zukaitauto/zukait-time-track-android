@@ -24,9 +24,16 @@ Reception RPC, and none of the eight Phase 2 migrations in production history.
 There are no existing development branches. The spare-part trigger EXECUTE advisor
 warnings remain live, as expected. The project name includes "test" but its reference
 `pjknotnjkufadqavcmii` is the live workshop and must always be treated as production.
-The cost-lookup connector returned UNAVAILABLE (get_cost not returned by tools/list);
-no priced branch was provisioned. A confirmed separate project or a priced,
-approved development branch is still needed.
+Update 2026-10-09: Supabase cost lookup returned USD 0/month and the
+confirmation tool authorized creation of isolated project `zukait-v305-qa`
+(`omqgkqknbdcnotabffek`) in organization `zukaitauto`, region `ap-south-1`.
+It reports ACTIVE_HEALTHY with PostgreSQL 17.11 and a modern publishable key.
+QA has **no public tables, Zukait functions, migrations or Edge Functions yet**.
+This project is separate from production. Build the verified, schema-only
+workshop foundation before applying the nine Phase 2 migrations; importing
+production data, credentials, sessions, business sequence values or the local
+PostgreSQL baseline fixture is prohibited. No QA migration or deployment was
+performed during project creation.
 
 Existing signed artifact `11627887497` from run `37955756227` is available until
 2026-10-23. Its source is `ec47e1c...` and ZIP digest is
@@ -39,7 +46,8 @@ isolated Phase 2 candidate**. This ZIP digest is not the APK digest.
 1. Record the non-production reference, owner, expiry, cost and allowed testers.
    Never infer safety from a project name. Obtain pricing confirmation before paid
    branch creation; reuse an existing explicitly designated QA project if available.
-2. Provision a schema-only branch without GitHub auto-merge or production deployment.
+2. On the confirmed separate QA project `omqgkqknbdcnotabffek`, establish
+   a schema-only baseline without GitHub auto-merge or production deployment.
    Inspect its actual tables, functions, triggers, policies and grants before use.
    Supabase dashboard branching can replay migration history instead of copying the
    complete schema, and custom roles may be missing. Reconcile against a read-only
