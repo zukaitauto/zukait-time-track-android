@@ -22,6 +22,15 @@ const transport=async(url,options)=>{
 const result=await preflight(config,fixtures,transport);
 assert.equal(result.transport_preflight,'PASS');assert.equal(result.mutating_flow,'NOT_RUN');assert.equal(result.physical_devices,'NOT_RUN');
 assert.equal(calls.length,23);assert.equal(result.receptionist_read_authorization,'PASS');
+// The isolated V305 backend uses this fixed synthetic namespace.
+const originals=fixtures.map(f=>f.id);
+fixtures.forEach(f=>{f.id='ZQA_RC_V305_'+f.name.toUpperCase();});
+assert.equal((await preflight(config,fixtures,transport)).transport_preflight,'PASS');
+for(const invalid of ['REAL_MANAGER','ZQA_RC_V305_EMPLOYEE','ZQA_RC_OTHER_MANAGER']){
+ const wrong=fixtures.map(f=>({...f}));wrong[0].id=invalid;
+ await assert.rejects(preflight(config,wrong,transport),/Dedicated QA identity/);
+}
+fixtures.forEach((f,i)=>{f.id=originals[i];});
 await assert.rejects(preflight(config,[...fixtures,fixtures[0]],transport));
 await assert.rejects(preflight(config,fixtures,async()=>new Response(null,{status:500})));
 console.log('Isolated transport runner self-test passed: production/key rejection, mismatched key denial for both Edge Functions, exact target, read-only commands, CORS/auth/direct-access checks and honest evidence labels. No real backend contacted.');

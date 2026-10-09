@@ -2,9 +2,62 @@
 
 Candidate: V305 / versionCode 268, architecture-v2 only.
 Verified application source: `e5ff093189758496db12e55d35a5583ce5311360`.
-Status 2026-10-09: isolated QA backend DEPLOYED; anonymous HTTPS denial/CORS smoke PASS;
-fully authenticated role transport and physical device acceptance NOT_RUN.
+Status 2026-10-10 (Oman): isolated QA backend DEPLOYED; authenticated read-only
+role transport PASS; mutating workflow and physical device acceptance NOT_RUN.
 Live remains V304 / 267, workshop-api 58 and staff-auth 4. No release authorization.
+
+## 2026-10-10 authenticated HTTPS checkpoint
+
+This section supersedes the earlier authenticated-transport/network-access
+blockers below; older preparation and SQL-only entries are historical evidence.
+Application branch inspected at `11eb200ca20e15ffb18e7b45733ea63fd8645167`.
+Actual isolated target: `omqgkqknbdcnotabffek`, staff-auth v1, workshop-api v2.
+The user explicitly approved use of saved synthetic QA credentials and temporary
+password rotation/restoration. No production endpoint or credential was used.
+
+- PASS: real Manager, Supervisor, Receptionist and Employee sign-in, password
+  change, rejection of the prior session, and acceptance of the replacement
+  session. Original saved QA passwords were restored; all four accounts now
+  have `must_change=false`, zero failed attempts and no lockout.
+- The saved Receptionist password initially failed. Read-only account inspection
+  confirmed an active account with an already-completed password change. A
+  concurrent session had updated the private tester file to version 2 after the
+  initial read. The QA Manager reset function restored the earlier credential,
+  then normal password
+  change and session-revocation checks passed. This was QA fixture recovery,
+  not evidence of an application authentication defect.
+  After testing, Receptionist was reconciled to the current version-2 tester
+  credential through normal password change; its reconciliation session was
+  revoked and rejected. Other saved account passwords were unchanged.
+- PASS: existing `reception-isolated-transport.mjs` preflight, all 23 real HTTPS
+  requests, using a local curl adapter for the environment connection proxy.
+  Checked CORS, exact API-key enforcement on both functions, four authenticated
+  session identities/roles, capabilities, authorized lists, Employee actor-spoof
+  rejection, guest/malformed rejection, Receptionist load/revision/STAFF denial,
+  restricted delivery-list fields, and direct table/RPC denial.
+- PASS: 36 real dashboard requests. Each of the nine list sections returned
+  confirmed data for Manager, Supervisor and Receptionist; Employee was denied
+  for every section. The ten UI tiles include create actions and shared VWC
+  lists; this is not a physical UI acceptance result.
+- Fixed the isolated runner to accept the deployed `ZQA_RC_V305_*` synthetic
+  account namespace alongside existing hexadecimal fixture namespaces. Self-test
+  covers the actual namespace and rejects real/unrelated/mismatched identities.
+  Production-host, exact-key and four-role restrictions remain enforced.
+- SQL read-back: zero Reception records; workshop revision still 1. Authentication
+  changed QA credential hashes/session history only; no workshop mutation was
+  tested. No password or session token is committed or included in this evidence.
+- Supporting local checks: all 18 Reception automated suites passed; isolated
+  transport self-test passed; diff whitespace check passed. Local responsive
+  browser rerun could not start: Chromium absent and its download returned an
+  invalid archive. Earlier CI layout evidence remains historical.
+
+PASS: all four temporary QA sessions were logged out through staff-auth, and
+each subsequent session check returned HTTP 401 / `invalid_session`.
+Remaining gates: actual mutating Edge workflows, disabled-account behavior,
+concurrent/lost-response/offline/restart tests, delivery synchronization and
+physical Android WebView/iPhone Safari/Mac Safari acceptance. Production backup,
+coordinated activation and explicit staff-release approval are still required.
+`release-request.json` remains `approvedForStaff=false`; V305 is not published.
 
 ## Available evidence and missing access
 

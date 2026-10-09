@@ -20,7 +20,7 @@ export async function preflight(config, fixtures, transport=fetch) {
   const actors=Object.fromEntries(fixtures.map(f=>[f.name,f]));
   for(const name of names) {
     const f=actors[name];
-    assert.ok(f && new RegExp(`^ZQA_RC_[a-f0-9]+_${name}$`,'i').test(f.id) && typeof f.token==='string' && f.token.length>0,'Dedicated QA identity/session required: '+name);
+    assert.ok(f && new RegExp(`^ZQA_RC_(?:[a-f0-9]+|V305)_${name}$`,'i').test(f.id) && typeof f.token==='string' && f.token.length>0,'Dedicated QA identity/session required: '+name);
   }
   const endpoint=config.root+'/functions/v1/workshop-api';
   const request=async(name,command,extra={})=>transport(endpoint,{
