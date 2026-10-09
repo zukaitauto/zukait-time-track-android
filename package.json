@@ -2,7 +2,7 @@
   "name": "zukait-workshop-regression-tests",
   "private": true,
   "scripts": {
-    "test:reception": "node tests/reception-phase1.mjs && node tests/reception-preliminary.mjs && node tests/reception-approval.mjs && node tests/reception-create-job.mjs && node tests/reception-vehicle-authority.mjs && node tests/reception-additional.mjs && node tests/reception-cancellation.mjs && node tests/reception-restart-retry.mjs && node tests/reception-restart-dom.mjs && node tests/reception-estimate-restart.mjs && node tests/reception-receptionist-auth.mjs && node tests/reception-receptionist-delivery.mjs && node tests/reception-receptionist-api.mjs && node tests/reception-receptionist-client.mjs && node tests/reception-direct-job.mjs && node tests/reception-dashboard-access.mjs",
+    "test:reception": "node tests/reception-phase1.mjs && node tests/reception-preliminary.mjs && node tests/reception-approval.mjs && node tests/reception-create-job.mjs && node tests/reception-vehicle-authority.mjs && node tests/reception-additional.mjs && node tests/reception-cancellation.mjs && node tests/reception-restart-retry.mjs && node tests/reception-restart-dom.mjs && node tests/reception-estimate-restart.mjs && node tests/reception-receptionist-auth.mjs && node tests/reception-receptionist-delivery.mjs && node tests/reception-receptionist-api.mjs && node tests/reception-receptionist-client.mjs && node tests/reception-direct-job.mjs && node tests/reception-dashboard-access.mjs && node tests/reception-dashboard-rules.mjs && node tests/reception-dashboard-client.mjs",
     "test:reception:browser": "node tests/reception-responsive.mjs && node tests/reception-receptionist-responsive.mjs",
     "test:reception:concurrency": "node tests/reception-concurrency.mjs"
   },
