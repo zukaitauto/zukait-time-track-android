@@ -24,6 +24,10 @@ The Reception GitHub workflow starts `postgres:17` and runs `npm run test:recept
 
 The runner also executes existing SQL creation/identity, additional approval, cancellation and trigger-privilege integration tests in rollback transactions. Final assertions preserve unrelated technician work, assignments, employee live statuses, consumables, expenses and RC/estimate/PL sequences.
 
+## Verified evidence
+
+Reception workflow run `37955756290` executed the real PostgreSQL suite for acceptance commit `ec47e1c6e291b5f03c0425df83b79452400ff30a`. All nine overlapping scenarios, the three existing SQL rollback groups and final preservation assertions passed. Chromium/WebKit viewport verification also passed. Debug APK run `37955756282`, unsigned Android run `37955756201` and signed acceptance run `37955756227` all passed. Publishing was skipped. No application behavior or database migration changed in this acceptance work.
+
 ## Remaining acceptance
 
 This verifies real PostgreSQL transaction overlap, not networked physical-device operation or the deployed Edge Function transport. Existing API tests verify sessions/permissions and Chromium/WebKit tests verify responsive UI. Physical Android WebView and iPhone/PC Safari acceptance, including lost connections and reconnection, remains required before activation. All eight pending migrations and matching API/client changes must activate together only after those gates pass. V304 stays live; no Phase 3 work.

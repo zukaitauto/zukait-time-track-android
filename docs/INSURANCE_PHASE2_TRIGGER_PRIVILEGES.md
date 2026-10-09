@@ -22,6 +22,6 @@ Post-rollback inspection confirmed no pending transfer/cancellation tables, zero
 
 ## Activation
 
-This is the eighth pending migration. Activate it with the complete ordered Phase 2 bundle after isolated concurrent-database, Android WebView and physical Safari acceptance. The existing Chromium/WebKit viewport checks use mocked API fixtures and do not complete those gates. No Phase 3 or release changes are included.
+This is the eighth pending migration. Activate it with the complete ordered Phase 2 bundle after the remaining Android WebView and physical Safari acceptance. Isolated PostgreSQL overlap acceptance now passes; see `INSURANCE_PHASE2_CONCURRENCY.md`. The existing Chromium/WebKit viewport checks use mocked API fixtures and do not complete those gates. No Phase 3 or release changes are included.
 
 Reference: https://www.postgresql.org/docs/current/sql-createtrigger.html
