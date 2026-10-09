@@ -2,7 +2,7 @@
   "name": "zukait-workshop-regression-tests",
   "private": true,
   "scripts": {
-    "test:reception": "node tests/reception-phase1.mjs && node tests/reception-preliminary.mjs && node tests/reception-approval.mjs"
+    "test:reception": "node tests/reception-phase1.mjs && node tests/reception-preliminary.mjs && node tests/reception-approval.mjs && node tests/reception-create-job.mjs"
   },
   "devDependencies": {
     "jsdom": "26.1.0"

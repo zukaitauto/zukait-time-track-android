@@ -109,6 +109,13 @@
     const r = await res.json();
     if (!res.ok || !r.ok) {
       const msgs = {
+        reception_job_number_exists: "This Job Card number is already in use. Choose another number.",
+        reception_job_already_created: "This checklist already has a Job Card. Reload it to continue.",
+        reception_invalid_job_number: "Enter a valid Job Card number. ID001 is reserved.",
+        reception_job_forbidden: "Only the Manager or Supervisor can create an insurance Job Card.",
+        reception_not_approved: "Record insurance approval before creating a Job Card.",
+        reception_approval_changed: "Approval needs review because source information changed. Refresh the quotation and approval first.",
+        reception_parts_allocation_failed: "Parts allocation failed. The Job Card was not created. Retry after checking the parts service.",
         reception_estimate_not_synced: "The estimate is not available on the server yet. Save it, allow sync to finish, then retry.",
         reception_estimate_vehicle_mismatch: "Estimate vehicle information differs from this checklist. Correct the checklist or prepare a matching estimate.",
         reception_estimate_changed: "The quotation changed. Link its latest saved version before recording approval.",
@@ -471,6 +478,9 @@
     shell(r.rc_no + " · Estimates & Approval", badges(r) +
       (r.approval_status === "APPROVED" && !info.approval_valid ? '<p class="rc-error">Approval needs review: source information changed or approval is incomplete.</p>' : '') +
       '<div class="rc-box"><h4>Linked Estimates</h4>' + (quotes.map(q => '<p><b>' + esc(q.estimate_no) + '</b><br>' + esc(stamp(q.linked_at)) + '</p>').join('') || '<p>No estimates linked.</p>') + '</div>' +
+      (current.job_creation?.can_create === true ? '<div class="rc-box"><h4>Create Approved Job Card</h4><p>Creates an unassigned insurance Job Card and transfers only approved parts. Vehicle location stays ' + esc(r.location) + '.</p><form id="rc-create-job">' +
+        input('job_card', 'Job Card Number', '', true) + input('reason', 'Creation Notes / Reason', '', true) + '<div class="rc-actions"><button type="submit">Create Job Card & Transfer Approved Parts</button></div></form></div>' : '') +
+      (r.job_card ? '<div class="rc-box"><h4>Linked Job Card ' + esc(r.job_card) + '</h4><p>Continue assignments, parts and repairs through the existing Job Card workflow.</p><p>' + esc(current.job_creation?.transfers?.length || 0) + ' approved part items transferred.</p></div>' : '') +
       (info.can_prepare ? '<div class="rc-box"><h4>Prepare / Link Estimate</h4><div class="rc-actions"><button data-rc-action="rc-estimate">+ New Estimate</button></div><p>Save the quotation and allow sync to finish before linking it here.</p><form id="rc-link-estimate">' +
         input('estimate_no', 'Estimate Number', '', true) + input('reason', 'Reason for linking / refreshing', '', true) + '<div class="rc-actions"><button type="submit">Link Saved Estimate</button></div></form></div>' : '') +
       (info.can_prepare && quotes.length ? '<div class="rc-box"><h4>Record Insurance Approval</h4><form id="rc-approval">' +
@@ -491,6 +501,20 @@
       } catch (x) { error(x); }
     }
     const link = document.getElementById('rc-link-estimate');
+    const createJob = document.getElementById('rc-create-job');
+    if (createJob) createJob.onsubmit = async e => {
+      e.preventDefault();
+      try {
+        const f = new FormData(createJob);
+        const result = await mutate({operation:'CREATE_JOB',rc_no:r.rc_no,expected_revision:r.revision,
+          job_card:f.get('job_card').trim().toUpperCase(),reason:f.get('reason').trim()});
+        if (!result) return;
+        // Pull the server result through the established conflict-aware sync.
+        // Never fabricate a local job or overwrite pending workshop work here.
+        try { await window.zukaitCloud?.pull?.(true); } catch (_) { /* normal sync retries */ }
+        await fetchRecord(r.rc_no); insuranceWorkspace();
+      } catch (x) { error(x); }
+    };
     if (link) link.onsubmit = e => submit(e, f => ({operation:'LINK_ESTIMATE', estimate_no:f.get('estimate_no').trim(), reason:f.get('reason').trim()}));
     const approval = document.getElementById('rc-approval');
     if (approval) {
