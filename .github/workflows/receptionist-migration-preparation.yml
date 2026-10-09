@@ -1,0 +1,30 @@
+name: Receptionist migration preparation
+on:
+  push:
+    branches: [architecture-v2]
+    paths: [".github/workflows/receptionist-migration-preparation.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+      - name: Discover CLI and generate pending migration name
+        run: |
+          supabase --version
+          supabase --help
+          supabase migration --help
+          supabase migration new --help
+          supabase migration new reception_receptionist
+          find supabase/migrations -name '*_reception_receptionist.sql' -print
+      - uses: actions/upload-artifact@v4
+        with:
+          name: receptionist-pending-migration
+          path: supabase/migrations/*_reception_receptionist.sql
+          if-no-files-found: error

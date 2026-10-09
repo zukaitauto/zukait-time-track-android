@@ -23,6 +23,48 @@ const cors = {
 function reply(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: cors });
 }
+
+// Receptionist is a separate, restricted role. Never route it through shared
+// state, financial, time, parts or Supervisor APIs, including direct requests.
+function receptionistRequestAllowed(action: string, body: any) {
+  return action === "reception" &&
+    ["CAPABILITIES", "MASTER", "LIST", "GET", "CREATE", "EDIT", "MOVE", "CREATE_JOB"]
+      .includes(body?.command?.operation);
+}
+
+function receptionistProjection(data: any) {
+  const pick = (value: any, fields: string[]) => Object.fromEntries(
+    fields.filter(k => value && Object.hasOwn(value, k)).map(k => [k, value[k]])
+  );
+  const record = (value: any) => {
+    const result = pick(value, ["rc_no", "sequence_no", "insurance_id", "insurance_company",
+      "location", "outcome", "approval_status", "job_card", "revision", "received_at",
+      "created_by", "updated_at", "updated_by", "closed_at", "can_edit"]);
+    result.details = pick(value?.details, ["make", "model", "customer", "contact",
+      "registration", "year", "vin", "odometer", "odometer_unit", "claim", "damage",
+      "other_accessories", "warnings", "remarks", "tools", "fuel"]);
+    return result;
+  };
+  const result: any = pick(data, ["ok", "duplicate"]);
+  if (Object.hasOwn(data || {}, "allowed")) {
+    result.allowed = data.allowed === true;
+    result.manager = false;
+  }
+  if (Array.isArray(data?.companies)) result.companies = data.companies.map((c: any) => pick(c, ["id", "name", "active"]));
+  if (Array.isArray(data?.rows)) result.rows = data.rows.map(record);
+  if (data?.record) result.record = record(data.record);
+  if (Array.isArray(data?.movements)) result.movements = data.movements.map((m: any) => pick(m,
+    ["id", "rc_no", "from_location", "to_location", "occurred_at", "recorded_at", "actor_id", "reason", "expected_return_date"]));
+  // Audit snapshots may include quotations, approved amounts and parts. Return
+  // only Reception action metadata; never forward entire nested module records.
+  if (Array.isArray(data?.audit)) result.audit = data.audit
+    .filter((a: any) => ["CREATE", "EDIT", "MOVE", "CREATE_JOB"].includes(a?.operation))
+    .map((a: any) => pick(a, ["id", "rc_no", "operation", "actor_id", "at", "reason"]));
+  if (data?.insurance) result.insurance = {can_prepare: false, can_revoke: false,
+    approval_valid: data.insurance.approval_valid === true};
+  if (data?.job_creation) result.job_creation = {can_create: data.job_creation.can_create === true};
+  return result;
+}
 function allowedApiKey(req: Request) {
   const supplied = req.headers.get("apikey") || "";
   if (!supplied) return false;
@@ -826,6 +868,10 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const action = String(body?.action || "load");
 
+    if (user.role === "Receptionist" && !receptionistRequestAllowed(action, body)) {
+      return reply({ok:false, code:"receptionist_forbidden"}, 403);
+    }
+
     if (action === "reception") {
       // Caller identity comes only from the verified, active staff session.
       // SQL validates the current role/designation again and owns all writes.
@@ -840,7 +886,7 @@ Deno.serve(async (req: Request) => {
         console.error("reception_command_failed",error);
         return reply({ok:false,code:"reception_unavailable"},503);
       }
-      return reply(data);
+      return reply(user.role === "Receptionist" ? receptionistProjection(data) : data);
     }
 
     if (action === "employee_time_action") {
@@ -1417,3 +1463,4 @@ Deno.serve(async (req: Request) => {
     return reply({ ok:false, code:"server_error" }, 500);
   }
 });
+
