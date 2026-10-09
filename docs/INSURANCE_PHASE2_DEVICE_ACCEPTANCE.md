@@ -64,7 +64,13 @@ isolated Phase 2 candidate**. This ZIP digest is not the APK digest.
    `qc_delivery_rules.js`, `time_management_rules.js`, `index.ts` and `deno.json`.
    Ensure staff-auth exists and its configuration uses QA credentials. Verify
    `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and publishable-key allowlist are
-   QA-owned; keep secrets server-side. Match the existing custom staff-session
+   QA-owned; keep secrets server-side. Both pending Edge Functions now **fail
+   closed** when neither `SUPABASE_PUBLISHABLE_KEY` nor a valid
+   `SUPABASE_PUBLISHABLE_KEYS` JSON allowlist is present. Supabase normally
+   injects the latter for modern project keys; inspect the QA Edge Function
+   secrets before deployment and test the real key, malformed/unrelated key,
+   and missing-key denial. Repeat this configuration check before production
+   activation so existing clients are not interrupted. Match the existing custom staff-session
    authentication and verify_jwt=false configuration, with unauthenticated denial
    confirmed over the real Edge endpoint. Do not copy a production service key.
 6. Run the real transport preflight with protected QA sessions:

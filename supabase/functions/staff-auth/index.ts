@@ -29,7 +29,10 @@ function allowedApiKey(req: Request) {
     const obj = JSON.parse(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS") || "{}");
     for (const v of Object.values(obj)) if (typeof v === "string") keys.push(v);
   } catch (_) {}
-  return keys.length ? keys.includes(supplied) : supplied.startsWith("sb_publishable_");
+  // No prefix-based fallback: this API is called with verify_jwt=false.
+  // Supabase supplies modern project keys through SUPABASE_PUBLISHABLE_KEYS.
+  // Missing or malformed allowlists must fail closed, not accept arbitrary keys.
+  return keys.length > 0 && keys.includes(supplied);
 }
 
 function b64ToBytes(s: string) {

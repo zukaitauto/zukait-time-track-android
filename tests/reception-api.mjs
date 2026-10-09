@@ -3,6 +3,7 @@ import vm from "node:vm";
 import assert from "node:assert/strict";
 import { stripTypeScriptTypes } from "node:module";
 import { webcrypto } from "node:crypto";
+let allowedSingleKey = "test-key", allowedKeyMap = "";
 let serve,
   actor = {
     user_id: "MGR001",
@@ -43,7 +44,7 @@ const source = fs
 const code = stripTypeScriptTypes(source);
 vm.runInNewContext(code, {
   Deno: {
-    env: { get: (k) => (k === "SUPABASE_PUBLISHABLE_KEY" ? "test-key" : "") },
+    env: { get: (k) => (k === "SUPABASE_PUBLISHABLE_KEY" ? allowedSingleKey : k === "SUPABASE_PUBLISHABLE_KEYS" ? allowedKeyMap : "") },
     serve: (f) => (serve = f),
   },
   createClient: () => admin,
@@ -170,3 +171,21 @@ console.log(
   "Reception API: verified-session identity, actor spoofing rejection, input limits, revoked sessions and conflict/permission status mapping passed.",
 );
 
+
+actor = {user_id:"QA-MGR",display_name:"QA Manager",role:"Manager",department:"Reception",active:true};
+rpcResult = {data:{ok:true},error:null};
+allowedSingleKey = "";
+allowedKeyMap = "";
+r = await call({action:"reception",command:{operation:"CAPABILITIES"}},{apikey:"sb_publishable_unrelated"});
+assert.equal(r.status,401,"No configured allowlist must reject a prefixed key");
+r = await call({action:"reception",command:{operation:"CAPABILITIES"}});
+assert.equal(r.status,401,"No configured allowlist must reject even a previously valid key");
+allowedKeyMap = "{malformed";
+r = await call({action:"reception",command:{operation:"CAPABILITIES"}});
+assert.equal(r.status,401,"Malformed key map must fail closed");
+allowedKeyMap = JSON.stringify({default:"test-key"});
+r = await call({action:"reception",command:{operation:"CAPABILITIES"}});
+assert.equal(r.status,200,"Supabase-provided publishable key map must allow its exact key");
+r = await call({action:"reception",command:{operation:"CAPABILITIES"}},{apikey:"sb_publishable_unrelated"});
+assert.equal(r.status,401,"Configured key map must deny other keys");
+console.log("Workshop Edge publishable API key: missing/malformed allowlist denied; exact configured JSON key accepted; arbitrary prefix denied.");
