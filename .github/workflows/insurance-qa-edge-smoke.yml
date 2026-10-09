@@ -56,6 +56,11 @@ jobs:
             '{"action":"login","user_id":"ZQA_DOES_NOT_EXIST","password":"INVALID"}'
           check_status "workshop-api denies nonexistent session" 401 "$API/functions/v1/workshop-api" POST "$QA_KEY" \
             '{"action":"reception","command":{"operation":"CAPABILITIES"}}'
+          # The two new Reception endpoints must never respond without a verified staff session.
+          check_status "Reception dashboard denies nonexistent session" 401 "$API/functions/v1/workshop-api" POST "$QA_KEY" \
+            '{"action":"reception_dashboard","section":"checklists","page":0}'
+          check_status "Promise Date update denies nonexistent session" 401 "$API/functions/v1/workshop-api" POST "$QA_KEY" \
+            '{"action":"reception_promise_date","job_card":"ZQA-TEST","promise_date":"2026-10-15","expected_promise_date":"","request_id":"f474101c-73a4-4c0b-930d-5aa5cd6feb64"}'
           WRONG='sb_publishable_zukait_reception_wrong_key_probe'
           test "$WRONG" != "$QA_KEY"
           check_status "staff-auth denies unrelated key" 401 "$API/functions/v1/staff-auth" POST "$WRONG" \
