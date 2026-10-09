@@ -83,13 +83,13 @@ function openHome(){
     '</div><h4>Recent</h4>'+(recent.length?recent.map(estimateCard).join(''):'<p class="muted">No estimates yet.</p>')+'</div>';
   openModal(html);
 }
-async function newEstimate(){
+async function newEstimate(reception=null,requestKey=null){
   if(!canUse())return;
   ensureState();
   if(!navigator.onLine||!window.zukaitCloud?.allocateEstimateNo){
     alert('Internet is required once to generate the official Zi-Qt estimate number.');return;
   }
-  const clientKey=uid();let a;
+  const clientKey=requestKey||uid();let a;
   try{a=await window.zukaitCloud.allocateEstimateNo(clientKey)}catch(e){alert('Unable to generate Estimate No. Please check connection and try again.');return}
   const u=currentUser()||{},e={
     id:clientKey,estimateNo:String(a?.estimate_no||''),sequenceNo:Number(a?.sequence_no||0),date:localDate(),type:'LS',vatEnabled:true,vatRate:.05,
@@ -98,8 +98,30 @@ async function newEstimate(){
     lsRows:[{id:uid(),description:'',amount:0}],labourRows:[{id:uid(),description:'',amount:0}],partRows:[{id:uid(),description:'',qty:1,unitPrice:0}],
     lsSpareParts:0,misc:0,status:'Draft',createdAt:Date.now(),createdBy:u.id||'',updatedAt:Date.now(),updatedBy:u.id||'',revision:0
   };
+  if(reception){
+    const d=reception.details;
+    Object.assign(e,{receptionNo:reception.rc_no,insuranceCompany:reception.insurance_company,
+      customerName:d.customer||'',mobile:d.contact||'',makeModel:[d.make,d.model].join(' '),year:d.year||'',
+      registration:d.registration||'',vin:d.vin||'',claimNo:d.claim||''});
+  }
   if(!e.estimateNo)return alert('Estimate number allocation failed.');
-  state.estimates.unshift(e);audit(e,'CREATE');saveState();openEditor(e.id);
+  state.estimates.unshift(e);audit(e,'CREATE');saveState();openEditor(e.id);return e.id;
+}
+const receptionEstimateRequests=new Map();
+let receptionEstimateBusy=false;
+async function newFromReception(rcNo){
+  if(!canUse()||receptionEstimateBusy)return;
+  receptionEstimateBusy=true;
+  try{
+    const response=await window.zukaitReception.call({operation:'GET',rc_no:rcNo});
+    const r=response.record;
+    if(r.outcome||r.job_card)throw Error('Prepare the initial estimate before Job Card creation on an open reception case.');
+    if(!receptionEstimateRequests.has(rcNo))receptionEstimateRequests.set(rcNo,uid());
+    const id=await newEstimate(r,receptionEstimateRequests.get(rcNo));
+    if(id)receptionEstimateRequests.delete(rcNo);
+    return id;
+  }catch(e){alert(e.message||'Could not load reception information.');}
+  finally{receptionEstimateBusy=false;}
 }
 function field(id,label,value,type='text',extra=''){
   return '<label>'+label+'<input id="'+id+'" type="'+type+'" value="'+esc(value||'')+'" '+extra+'></label>';
@@ -149,6 +171,12 @@ function openEditor(id){
   '<div class="est-bottom"><button class="green" onclick="zukaitEstimate.saveCurrent(\''+esc(e.id)+'\')">💾 Save</button><button class="blue" onclick="zukaitEstimate.preview(\''+esc(e.id)+'\')">👁 Preview</button><button class="blue" onclick="zukaitEstimate.printEstimate(\''+esc(e.id)+'\')">🖨 Print</button><button class="purple" onclick="zukaitEstimate.pdfEstimate(\''+esc(e.id)+'\')">PDF</button><button class="green" onclick="zukaitEstimate.whatsApp(\''+esc(e.id)+'\')">WhatsApp</button><button class="secondary" onclick="zukaitEstimate.shareEstimate(\''+esc(e.id)+'\')">↗ Share</button></div></div>';
   openModal(html);
   window.__zukaitEstimateCurrent=id;
+  if(e.receptionNo){
+    const banner=document.createElement('p');banner.textContent='Reception '+e.receptionNo+' · Vehicle details come from the checklist.';
+    document.querySelector('.est-home').prepend(banner);
+    for(const button of document.querySelectorAll('button[onclick*="zukaitVinScan"]'))button.disabled=true;
+    for(const name of ['estName','estMobile','estMakeModel','estYear','estReg','estVin','estClaim','estJobCard','estJobLookup'])document.getElementById(name).readOnly=true;
+  }
   requestAnimationFrame(()=>{setType(e.type||'LS',false);setVat(e.vatEnabled!==false,false);recalc()});
 }
 function setType(t,doRecalc=true){
@@ -220,6 +248,7 @@ function saveCurrent(id){
   audit(e,'EDIT',before);saveState();recalc();alert(e.estimateNo+' saved.');
 }
 function loadJob(){
+  if(findEstimate(window.__zukaitEstimateCurrent)?.receptionNo)return alert('Correct vehicle details in the reception checklist first.');
   const q=document.getElementById('estJobLookup')?.value||document.getElementById('estJobCard')?.value||document.getElementById('estReg')?.value||'';
   const j=jobByQuery(q);if(!j)return alert('Job Card / Registration not found. You can still enter all estimate details manually.');
   const put=(id,v)=>{const x=document.getElementById(id);if(x&&v!=null&&String(v)!=='')x.value=String(v)};
@@ -363,7 +392,7 @@ function wrapRender(name){
   const w=function(){const r=fn.apply(this,arguments);setTimeout(ensureDashboardCards,0);setTimeout(ensureDashboardCards,250);return r};w.__estimateWrapped=true;window[name]=w;
 }
 function boot(){ensureState();ensureStyle();wrapRender('renderSupervisor');wrapRender('renderManager');ensureDashboardCards()}
-window.zukaitEstimate={openHome,newEstimate,openEditor,setType,setVat,addRow,removeRow,recalc,saveCurrent,loadJob,openFind,renderFind,openRecent,openReports,preview,printEstimate,pdfEstimate,whatsApp,shareEstimate,ensureDashboardCards,totals,printable,estimateDocumentHtml,shareText,currentOutputEstimate,toggleCustomerParts};
+window.zukaitEstimate={openHome,newEstimate,newFromReception,openEditor,setType,setVat,addRow,removeRow,recalc,saveCurrent,loadJob,openFind,renderFind,openRecent,openReports,preview,printEstimate,pdfEstimate,whatsApp,shareEstimate,ensureDashboardCards,totals,printable,estimateDocumentHtml,shareText,currentOutputEstimate,toggleCustomerParts};
 window.openEstimateModule=openHome;
 document.addEventListener('DOMContentLoaded',boot);setTimeout(boot,0);setTimeout(boot,700);
 new MutationObserver(()=>{wrapRender('renderSupervisor');wrapRender('renderManager');ensureDashboardCards()}).observe(document.documentElement,{childList:true,subtree:true});

@@ -109,6 +109,12 @@
     const r = await res.json();
     if (!res.ok || !r.ok) {
       const msgs = {
+        reception_estimate_not_synced: "The estimate is not available on the server yet. Save it, allow sync to finish, then retry.",
+        reception_estimate_vehicle_mismatch: "Estimate vehicle information differs from this checklist. Correct the checklist or prepare a matching estimate.",
+        reception_estimate_changed: "The quotation changed. Link its latest saved version before recording approval.",
+        reception_estimate_already_linked: "This estimate belongs to another reception case.",
+        reception_approval_forbidden: "Only the Manager or Supervisor can record insurance approval.",
+        reception_approval_linked_requires_next_phase: "Additional approvals for a linked Job Card are not available yet.",
         reception_preliminary_forbidden:
           "Only the Manager or Supervisor can edit preliminary parts.",
         reception_duplicate_parts:
@@ -361,6 +367,7 @@
         (!r.job_card && !r.outcome
           ? '<button data-rc-action="outcome">Close Insurance Case</button>'
           : "") +
+        (current.insurance ? '<button data-rc-action="insurance">Estimates & Approval</button>' : '') +
         (current.preliminary_parts ? '<button data-rc-action="parts">Preliminary Parts</button>' : '') +
         '<button data-rc-action="print">Print</button><button data-rc-action="pdf">Share PDF</button></div><div class="rc-grid"><div class="rc-box"><h4>Customer & Vehicle</h4>' +
         [
@@ -456,6 +463,48 @@
           .join("") +
         "</div></div>",
     );
+  }
+  function insuranceWorkspace() {
+    pending = null;
+    const r = current.record, info = current.insurance;
+    const quotes = info.estimates || [], approvals = info.approvals || [], draft = current.preliminary_parts?.items || [];
+    shell(r.rc_no + " · Estimates & Approval", badges(r) +
+      (r.approval_status === "APPROVED" && !info.approval_valid ? '<p class="rc-error">Approval needs review: source information changed or approval is incomplete.</p>' : '') +
+      '<div class="rc-box"><h4>Linked Estimates</h4>' + (quotes.map(q => '<p><b>' + esc(q.estimate_no) + '</b><br>' + esc(stamp(q.linked_at)) + '</p>').join('') || '<p>No estimates linked.</p>') + '</div>' +
+      (info.can_prepare ? '<div class="rc-box"><h4>Prepare / Link Estimate</h4><div class="rc-actions"><button data-rc-action="rc-estimate">+ New Estimate</button></div><p>Save the quotation and allow sync to finish before linking it here.</p><form id="rc-link-estimate">' +
+        input('estimate_no', 'Estimate Number', '', true) + input('reason', 'Reason for linking / refreshing', '', true) + '<div class="rc-actions"><button type="submit">Link Saved Estimate</button></div></form></div>' : '') +
+      (info.can_prepare && quotes.length ? '<div class="rc-box"><h4>Record Insurance Approval</h4><form id="rc-approval">' +
+        select('quotation_id', 'Approved Quotation', quotes.map(q => [q.id, q.estimate_no]), quotes[0].id) +
+        input('reference', 'Approval Reference', '', true) + input('approval_date', 'Approval Date', new Date(Date.now() + 4 * 3600000).toISOString().slice(0, 10), true, 'date') +
+        input('approved_amount', 'Approved Amount (OMR)', '', true) + '<p>Select only approved parts and their approved quantities.</p>' +
+        draft.map(x => '<div class="rc-box"><label class="rc-check"><input type="checkbox" name="approve_part" value="' + esc(x.id) + '">' + esc(x.name) + ' · ' + esc(x.part_no || 'Part number not recorded') + '</label><label>Approved Quantity<input type="number" data-approved-id="' + esc(x.id) + '" min="1" max="' + esc(x.qty) + '" step="1" value="' + esc(x.qty) + '"></label></div>').join('') +
+        input('reason', 'Approval Notes / Reason', '', true) + '<div class="rc-actions"><button type="submit">Record Approval</button></div></form></div>' : '') +
+      (info.can_revoke && r.approval_status === 'APPROVED' ? '<div class="rc-box"><h4>Manager Approval Review</h4><form id="rc-revoke">' + input('reason', 'Reason for returning to waiting', '', true) + '<div class="rc-actions"><button type="submit">Return to Waiting for Approval</button></div></form></div>' : '') +
+      '<div class="rc-box"><h4>Approval History</h4>' + (approvals.map(a => '<p><b>' + esc(a.reference) + ' · OMR ' + Number(a.approved_amount).toFixed(3) + '</b><br>' + esc(a.approval_date) + ' · ' + esc(a.actor_id) + '<br>' + esc(a.reason) + '</p><ol>' + a.approved_parts.map(x => '<li>' + esc(x.name) + ' · Qty ' + esc(x.qty) + '</li>').join('') + '</ol>').join('') || '<p>No approval recorded.</p>') + '</div>' +
+      '<div class="rc-actions"><button data-rc-action="view" data-rc="' + esc(r.rc_no) + '">Back to Checklist</button></div>');
+    async function submit(e, fields) {
+      e.preventDefault();
+      try {
+        const f = new FormData(e.target), c = fields(f);
+        const result = await mutate({...c, rc_no:r.rc_no, expected_revision:r.revision});
+        if (result) { await fetchRecord(r.rc_no); insuranceWorkspace(); }
+      } catch (x) { error(x); }
+    }
+    const link = document.getElementById('rc-link-estimate');
+    if (link) link.onsubmit = e => submit(e, f => ({operation:'LINK_ESTIMATE', estimate_no:f.get('estimate_no').trim(), reason:f.get('reason').trim()}));
+    const approval = document.getElementById('rc-approval');
+    if (approval) {
+      const amount = approval.querySelector('[name="approved_amount"]'); amount.inputMode = 'decimal'; amount.maxLength = 13; amount.pattern = '[0-9]{1,9}([.][0-9]{1,3})?';
+      approval.querySelector('[name="reference"]').maxLength = 200;
+      for (const check of approval.querySelectorAll('[name="approve_part"]')) {
+        const qty = [...approval.querySelectorAll('[data-approved-id]')].find(el => el.dataset.approvedId === check.value);
+        qty.disabled = !check.checked; check.onchange = () => { qty.disabled = !check.checked; };
+      }
+    }
+    if (approval) approval.onsubmit = e => submit(e, f => ({operation:'RECORD_APPROVAL', quotation_id:f.get('quotation_id'),reference:f.get('reference').trim(),approval_date:f.get('approval_date'),approved_amount:f.get('approved_amount').trim(),reason:f.get('reason').trim(),
+      approved_parts:f.getAll('approve_part').map(id => ({id, qty:Number([...approval.querySelectorAll('[data-approved-id]')].find(el => el.dataset.approvedId === id).value)}))}));
+    const revoke = document.getElementById('rc-revoke');
+    if (revoke) revoke.onsubmit = e => submit(e, f => ({operation:'REVOKE_APPROVAL',reason:f.get('reason').trim()}));
   }
   function preliminaryParts() {
     pending = null;
@@ -787,6 +836,12 @@
           break;
         case "edit":
           await editor(current.record.rc_no);
+          break;
+        case "insurance":
+          insuranceWorkspace();
+          break;
+        case "rc-estimate":
+          await window.zukaitEstimate.newFromReception(current.record.rc_no);
           break;
         case "parts":
           preliminaryParts();
