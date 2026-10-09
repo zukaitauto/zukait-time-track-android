@@ -39,7 +39,7 @@ function safeJob(j,rc) {
  customer:text(rc?.customer),insurance_company:text(j.insuranceCompany||rc?.insurance_company),
  received_at:rc?.received_at||"",received_date:rc?.received_date||"",
  created_date:omanDate(j.createdAt)||rc?.received_date||"",
- delivered_date:omanDate(j.deliveredAt),promise_date:validPromiseDate(j.promiseDate)?j.promiseDate:"",
+ delivered_date:omanDate(j.deliveredAt),delivered_at:Number(j.deliveredAt||0),promise_date:validPromiseDate(j.promiseDate)?j.promiseDate:"",
  location:text(rc?.location||j.receptionLocation),outcome:text(rc?.outcome),
  approval_status:text(rc?.approval_status),
  status:j.delivered?"Delivered":text(j.status||"Open"),delivered:!!j.delivered,
@@ -77,7 +77,7 @@ export function receptionDashboardProjection(data,receptions,opts={}) {
  const followup=activeJobs.filter(r=>!r.outcome);
  const lists={checklists,jobs:allJobs.sort(sortJobs),waiting,approved,
  "vwc-checklists":vwcChecklists,"vwc-jobs":vwcJobs.sort(sortJobs),
- ready:ready.sort(sortJobs),delivered:delivered.sort((a,b)=>b.delivered_date.localeCompare(a.delivered_date)||sortJobs(a,b)),
+ ready:ready.sort(sortJobs),delivered:delivered.sort((a,b)=>b.delivered_at-a.delivered_at||sortJobs(a,b)),
  followup:followup.sort((a,b)=>(a.promise_date||"9999").localeCompare(b.promise_date||"9999")||sortJobs(a,b))};
  const counts=Object.fromEntries(Object.entries(lists).map(([k,v])=>[k,v.length]));
  counts.vwc=counts["vwc-checklists"]+counts["vwc-jobs"];
