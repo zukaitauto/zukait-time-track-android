@@ -163,7 +163,8 @@
     }else filters[k]=event.target.value;
     if(event.type==="input"&&k!=="search")return;
     clearTimeout(pendingTimer);page=0;
-    pendingTimer=setTimeout(()=>load(),k==="search"?280:0);
+    if(k==="search")pendingTimer=setTimeout(()=>load(),280);
+    else void load();
   }
   async function savePromise(jobCard,date,original){
     if(!writable())throw Error("Only Manager or Supervisor can enter Promise Date.");
