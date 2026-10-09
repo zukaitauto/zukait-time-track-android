@@ -1,6 +1,6 @@
 # Phase 2 physical-device acceptance preparation
 
-Status on 2026-10-09: **PREPARATION ONLY; ACCEPTANCE NOT PASSED**.
+Status on 2026-10-09: **QA DATABASE + EDGE DEPLOYED; HTTPS ANONYMOUS SECURITY SMOKE PASSED; AUTHENTICATED END-TO-END AND DEVICE ACCEPTANCE NOT PASSED**.
 Branch: architecture-v2 only. Source inspected: `52fa0d3d6e54d00ba3788f032816e55025245662`;
 previous verified implementation: `ec47e1c6e291b5f03c0425df83b79452400ff30a`.
 V304 / versionCode 267 and workshop-api 58 remain live.
@@ -28,12 +28,20 @@ Update 2026-10-09: Supabase cost lookup returned USD 0/month and the
 confirmation tool authorized creation of isolated project `zukait-v305-qa`
 (`omqgkqknbdcnotabffek`) in organization `zukaitauto`, region `ap-south-1`.
 It reports ACTIVE_HEALTHY with PostgreSQL 17.11 and a modern publishable key.
-QA has **no public tables, Zukait functions, migrations or Edge Functions yet**.
-This project is separate from production. Build the verified, schema-only
-workshop foundation before applying the nine Phase 2 migrations; importing
-production data, credentials, sessions, business sequence values or the local
-PostgreSQL baseline fixture is prohibited. No QA migration or deployment was
-performed during project creation.
+QA was empty at initial project creation. Subsequently its foundation was
+recreated from **schema metadata only** (25 tables, 25 routines, 65 constraints,
+56 indexes, 2 triggers, 7 sequences; all 25 tables RLS-enabled), nine pending
+Phase 2 migrations applied successfully, QA staff-auth v1 and workshop-api v1
+(with all local imports) deployed. Four synthetic staff accounts and minimal
+synthetic workshop data were seeded. No real production records or credentials
+were imported. [Live HTTPS smoke run 37985238583](https://github.com/zukaitauto/zukait-time-track-android/actions/runs/37985238583)
+passed both CORS checks, invalid sessions/users/keys denied (401), and direct
+REST staff access denied (401). [Isolated APK run 37985087786](https://github.com/zukaitauto/zukait-time-track-android/actions/runs/37985087786)
+passed, producing artifact `11642771036` with separate QA package. Real
+authenticated role transport, business mutation flows and physical devices
+remain NOT_RUN. Production app V304, API workshop-api v58 and staff-auth v4
+remain untouched; V305 remains unapproved. No QA sequence values were copied
+from production; the disposable PostgreSQL fixture was never deployed.
 
 Existing signed artifact `11627887497` from run `37955756227` is available until
 2026-10-23. Its source is `ec47e1c...` and ZIP digest is

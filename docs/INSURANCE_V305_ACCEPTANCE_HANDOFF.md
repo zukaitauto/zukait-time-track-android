@@ -2,7 +2,8 @@
 
 Candidate: V305 / versionCode 268, architecture-v2 only.
 Verified application source: `e5ff093189758496db12e55d35a5583ce5311360`.
-Status: automated verification passed; real Edge transport and physical acceptance NOT_RUN.
+Status 2026-10-09: isolated QA backend DEPLOYED; anonymous HTTPS denial/CORS smoke PASS;
+fully authenticated role transport and physical device acceptance NOT_RUN.
 Live remains V304 / 267, workshop-api 58 and staff-auth 4. No release authorization.
 
 ## Available evidence and missing access
@@ -14,13 +15,16 @@ Live remains V304 / 267, workshop-api 58 and staff-auth 4. No release authorizat
 | Android builds | 37979060455 and 37979060472 | PASS |
 | Signed ZIP artifact | 11640156376; expires 2026-10-23 | SHA-256 `963a8e92cdd66d2257449e136291bd93a93d977d3f91e77cea497ab631604c16` |
 | Publishing / Pages | 37979060430 / 37979060575 | SKIPPED |
-| Separate QA backend | `omqgkqknbdcnotabffek` (`zukait-v305-qa`), Mumbai / `ap-south-1` | CREATED; schema and Edge Functions NOT DEPLOYED |
+| Separate QA backend | `omqgkqknbdcnotabffek` (`zukait-v305-qa`), Mumbai / `ap-south-1` | DEPLOYED: 34 RLS tables, 15 QA migration records (6 schema foundation + nine Phase 2), Edge staff-auth v1 and workshop-api v1 |
 | Physical devices | No Android, iPhone or Mac/Safari connection available | REQUIRED |
 
-The signed ZIP is build evidence, not an isolated QA installation. Its ZIP digest
-is not the APK digest. Generate the separate QA-targeted build after the QA backend
-is ready; it uses `com.zukait.timetrack.acceptance`, V305-ACCEPTANCE / 268 and disabled
-updates. It must not replace the live workshop app or contact the live backend.
+The older signed ZIP is build evidence, not an isolated QA installation. Its ZIP digest
+is not the APK digest. The **separately packaged QA debug APK** was built by
+[run 37985087786](https://github.com/zukaitauto/zukait-time-track-android/actions/runs/37985087786),
+artifact `11642771036`, source `01a56d4249bea53170d98fc86b4bd4b042e5a4ed`.
+Its package is `com.zukait.timetrack.acceptance`, V305-ACCEPTANCE / 268,
+updater disabled; assets point to the QA backend only. It is *not* the
+production-signed staff release. Physical installation and acceptance remain NOT_RUN.
 
 On 2026-10-09, Supabase quoted **USD 0/month** for a new project in the
 already-selected `zukaitauto` organization (`hhzqrfyvjvrdjftlaimo`).
@@ -28,23 +32,40 @@ Cost confirmation was obtained through the connector and the isolated project
 `zukait-v305-qa` (`omqgkqknbdcnotabffek`) was created successfully in
 `ap-south-1`. The project reports ACTIVE_HEALTHY, PostgreSQL 17.11, and its
 separate API URL is `https://omqgkqknbdcnotabffek.supabase.co`.
-QA is **schema-empty**: zero public workshop tables, zero Zukait SQL functions,
-zero migration records and zero Edge Functions at inspection. A modern publishable
-key is present, but neither public keys nor secret values are stored here.
-Do not run the nine pending migrations against an empty project until the
-production-compatible **schema-only** foundation is reconciled and verified.
-Production `pjknotnjkufadqavcmii` is not QA; no production data or credentials
-have been imported. No QA Phase 2 backend is deployed or accepted.
+At initial inspection QA was schema-empty. It was then populated with the
+**schema-only** foundation reconstructed using read-only production catalog
+metadata: 25 tables, 25 routines, 65 constraints, 56 indexes, two triggers,
+seven sequences and RLS on all 25 tables. All nine Phase 2 migrations were
+then applied in order to QA only, adding nine tables and their functions,
+constraints and guards. QA migration history records 15 entries (six foundation
+and nine Phase 2). QA Edge Functions `staff-auth` and `workshop-api` were
+deployed as version 1 with source from the `41345bb...` branch commit.
+A real [HTTPS smoke](https://github.com/zukaitauto/zukait-time-track-android/actions/runs/37985238583)
+passed both CORS preflights, unknown-user/session HTTP 401 denials, mismatched
+publishable-key HTTP 401 denials and direct protected-staff-table HTTP 401 denial.
+This is **not** a successful authenticated Reception flow or physical
+acceptance test; those remain pending.
+
+Four **synthetic-only** QA staff credentials (Manager, Supervisor,
+Receptionist, Employee) with unique PBKDF2-SHA256 hashes and mandatory
+first-password change were generated locally and seeded without importing
+production credentials. A synthetic unrelated cash workshop job, finished
+session, expense, insurance company, and reception access grants were seeded;
+one QA employee live status was generated. No real customer, staff or
+production business records, sessions, keys or sequence states were copied.
+Test passwords are not committed to Git, screenshots or logs. The QA-only
+credentials were generated to a locally protected file for physical testers;
+protect them and rotate after testing.
 
 ## Setup record
 
 Complete this record before any backend mutation or physical installation:
 
 - Confirmed QA reference and organization: `omqgkqknbdcnotabffek` / `zukaitauto`; cost quote USD 0/month. Owner / project expiry / allowed testers: TO RECORD.
-- QA schema inspection: VERIFIED EMPTY (PostgreSQL 17.11). Schema-only production parity reconciliation and ordered nine-migration result: PENDING.
-- QA staff-auth and complete workshop-api deployment source SHA: PENDING.
-- QA host: `https://omqgkqknbdcnotabffek.supabase.co`. Modern publishable key detected (value not recorded). Function allowlist and protected session-file location: PENDING.
-- Generated isolated APK SHA-256, package/version/certificate and web bundle SHA: PENDING.
+- QA schema inspection: baseline recreated from production metadata (25 tables, 25 SQL functions, 65 constraints, 56 indexes, two triggers, seven sequences); nine Phase 2 migrations applied successfully. QA PostgreSQL 17.11.
+- QA staff-auth v1 and complete workshop-api v1 deployed from `41345bb659bbbf414aec462f0ae9626245712a47` source; all local imports included; QA only.
+- QA host: `https://omqgkqknbdcnotabffek.supabase.co`; QA-only public publishable key configured in isolated build workflow. Real CORS, invalid-user/session, invalid-key and protected REST denials PASSED; authenticated session fixture / protected token-file and full role transport: PENDING.
+- Generated isolated debug APK/web bundle: GitHub run `37985087786`, artifact `11642771036`, package `com.zukait.timetrack.acceptance`, version V305-ACCEPTANCE/268; archive includes APK SHA-256 and signature evidence, not yet copied into this handoff. Device installation: PENDING.
 - Android model, OS and System WebView version: PENDING.
 - iPhone model, iOS and Safari version: PENDING.
 - Mac model, macOS and Safari version: PENDING.
