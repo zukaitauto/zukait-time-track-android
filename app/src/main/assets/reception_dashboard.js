@@ -14,7 +14,6 @@
     ["delivered","Delivered Vehicle List","Latest delivered first","📦"],
     ["followup","Delivery Follow-up","Promise date · no promise date","📅"]
   ];
-  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;':'&quot;',"'":'&#39;'}[c]));
   // Correct the ampersand/angle/quote escapes without passing input as HTML.
   const safe=v=>String(v??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const role=()=>window.me?.role||"";
