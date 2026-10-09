@@ -350,7 +350,7 @@
               "</textarea></label>",
           )
           .join("") +
-        '</div><div class="rc-actions"><button type="submit">Save Checklist</button></div></form>',
+        '</div>' + (current?.record?.job_card ? input('reason', 'Reason for checklist / vehicle correction', '', true) : '') + '<div class="rc-actions"><button type="submit">Save Checklist</button></div></form>',
     );
     document.querySelector("#rc-form [name=insurance_id]").required = true;
     document.getElementById("rc-form").addEventListener("submit", saveForm);
@@ -606,10 +606,14 @@
           ? {
               rc_no: current.record.rc_no,
               expected_revision: current.record.revision,
+              ...(current.record.job_card ? {reason:String(f.get("reason") || "").trim()} : {}),
             }
           : {}),
       });
-      if (r) await view(r.record.rc_no);
+      if (r) {
+        if (r.record.job_card) { try { await window.zukaitCloud?.pull?.(true); } catch (_) {} }
+        await view(r.record.rc_no);
+      }
     } catch (x) {
       error(x);
     }
@@ -658,7 +662,10 @@
           expected_return_date:
             to === "VWC" ? String(f.get("expected_return_date") || "") : "",
         });
-        if (out) await view(r.rc_no);
+        if (out) {
+          if (r.job_card) { try { await window.zukaitCloud?.pull?.(true); } catch (_) {} }
+          await view(r.rc_no);
+        }
       } catch (x) {
         error(x);
       }
@@ -941,7 +948,7 @@
       (grid || root).appendChild(b);
     }
   }
-  window.zukaitReception = { open: home, documentHtml, ensureCards, call };
+  window.zukaitReception = { open: home, openRecord: no => view(no).catch(error), documentHtml, ensureCards, call };
   style();
   new MutationObserver(ensureCards).observe(document.documentElement, {
     childList: true,

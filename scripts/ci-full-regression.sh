@@ -147,3 +147,5 @@ node tests/manager-full-edit.cjs
 node tests/job-type-authority.mjs
 node tests/employee-parts-privacy.mjs
 node tests/technician-idle-time.mjs
+
+node tests/reception-vehicle-authority.mjs

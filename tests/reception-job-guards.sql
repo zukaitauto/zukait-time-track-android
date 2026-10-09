@@ -40,15 +40,24 @@ begin
  if zukait_reception_job_approval_valid(no,rc) then raise exception 'cancelled case accepted'; end if;
  update workshop_receptions set outcome=null,closed_at=null,job_card=no,details=details||'{"vin":"CHANGED"}' where rc_no=rc;
  if zukait_reception_job_approval_valid(no,rc) then raise exception 'changed identity accepted'; end if;
+ -- The fixture has not created its operational job yet: unlink before editing.
+ update workshop_receptions set job_card=null where rc_no=rc;
  update workshop_receptions set details=details-'vin' where rc_no=rc;
+ update workshop_receptions set job_card=no where rc_no=rc;
  insert into workshop_reception_preliminary_parts(rc_no,items,updated_by) values(rc,'[{"id":"qa","name":"changed","qty":1}]',mgr);
  if zukait_reception_job_approval_valid(no,rc) then raise exception 'changed parts accepted'; end if;
  update workshop_reception_preliminary_parts set items='[]' where rc_no=rc;
+ update workshop_receptions set job_card=null where rc_no=rc;
  update workshop_state set data=jsonb_set(data,'{estimates}',coalesce(original->'estimates','[]')||jsonb_build_array(quote||'{"updatedAt":2}')) where id='main';
+ update workshop_receptions set job_card=no where rc_no=rc;
  if zukait_reception_job_approval_valid(no,rc) then raise exception 'changed quotation accepted'; end if;
+ update workshop_receptions set job_card=null where rc_no=rc;
  update workshop_state set data=jsonb_set(data,'{estimates}',coalesce(original->'estimates','[]')||jsonb_build_array(quote)||jsonb_build_array(quote)) where id='main';
+ update workshop_receptions set job_card=no where rc_no=rc;
  if zukait_reception_job_approval_valid(no,rc) then raise exception 'duplicate quotation accepted'; end if;
+ update workshop_receptions set job_card=null where rc_no=rc;
  update workshop_state set data=jsonb_set(data,'{estimates}',coalesce(original->'estimates','[]')||jsonb_build_array(quote)) where id='main';
+ update workshop_receptions set job_card=no where rc_no=rc;
  -- A combined stale quote + new job save cannot use the previous server quote.
  begin update workshop_state set data=jsonb_set(jsonb_set(data,'{estimates}',coalesce(original->'estimates','[]')||jsonb_build_array(quote||'{"updatedAt":99}')),'{jobs}',coalesce(data->'jobs','[]')||jsonb_build_array(j)) where id='main'; raise exception 'combined stale quote creation accepted'; exception when others then if sqlerrm<>'insurance_job_requires_approved_reception' then raise; end if; end;
  -- The future atomic command can pass only after it links the approved RC.
@@ -62,6 +71,8 @@ begin
  begin update workshop_state set data=jsonb_set(data,'{jobs}',data->'jobs'||jsonb_build_array(jsonb_build_object('no',no||'-unapproved','jobType','INSURANCE'))) where id='main'; raise exception 'missing RC accepted'; exception when others then if sqlerrm<>'insurance_job_requires_approved_reception' then raise; end if; end;
  begin update workshop_state set data=jsonb_set(data,'{jobs}',(select jsonb_agg(case when v->>'no'=no||'-cash' then v||'{"jobType":"INSURANCE"}' else v end) from jsonb_array_elements(data->'jobs') v)) where id='main'; raise exception 'cash relabel accepted'; exception when others then if sqlerrm<>'insurance_job_requires_approved_reception' then raise; end if; end;
  execute 'reset role';
+ -- Explicit QA fixture teardown only; production removal remains guarded.
+ update workshop_receptions set job_card=null where rc_no=rc;
  -- Restoring data is itself compatible with grandfathered real jobs.
  update workshop_state set data=original,revision=rev where id='main';
  if (select data from workshop_state where id='main') is distinct from original then raise exception 'state changed'; end if;
