@@ -44,7 +44,6 @@
   let current = null,
     companies = [],
     busy = false,
-    pending = null,
     listRequest = 0,
     rows = [],
     caps = { allowed: false, manager: false },
@@ -64,6 +63,47 @@
     );
   const user = () => (typeof me !== "undefined" ? me : window.me);
   const uid = () => crypto.randomUUID();
+  const retryKey = () => {
+    const id = user()?.id;
+    if (!id) throw Error("Please sign in.");
+    return "zukait_reception_unconfirmed_v1:" + API + ":" + id;
+  };
+  function savedRequest(key = retryKey()) {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    try {
+      const saved = JSON.parse(raw), command = JSON.parse(saved.encoded);
+      if (!/^[0-9a-f-]{36}$/i.test(saved.request_id) || !command ||
+          Array.isArray(command) || typeof command.operation !== "string") throw Error();
+      return saved;
+    } catch (_) {
+      throw Error("The saved Reception action could not be read. Keep this device's data and ask the Manager to reconcile it before making another change.");
+    }
+  }
+  function clearRequest(key, request) {
+    if (savedRequest(key)?.request_id === request.request_id) localStorage.removeItem(key);
+    document.getElementById("rc-retry")?.remove();
+  }
+  function retryBanner() {
+    document.getElementById("rc-retry")?.remove();
+    if (!user()?.id) return;
+    const root = document.getElementById("rc-root");
+    if (!root) return;
+    try {
+      const saved = savedRequest();
+      if (!saved) return;
+      const command = JSON.parse(saved.encoded), box = document.createElement("div");
+      box.id = "rc-retry";
+      box.className = "rc-box";
+      box.setAttribute("role", "status");
+      box.innerHTML = '<p>A Reception action is awaiting server confirmation: <b>' +
+        esc(command.operation.replaceAll("_", " ")) + '</b>' +
+        (command.rc_no ? ' · ' + esc(command.rc_no) : '') +
+        '. Confirm the saved action before submitting another change. Its original details will be used.</p>' +
+        '<button data-rc-action="retry-pending">Confirm Saved Action</button>';
+      root.appendChild(box);
+    } catch (x) { error(x); }
+  }
   const stamp = (v) =>
     v
       ? new Date(v).toLocaleString("en-GB", {
@@ -100,6 +140,7 @@
     if (root.parentElement.matches(".modal-box,.modal-content"))
       root.parentElement.classList.add("rc-dialog");
     root.addEventListener("click", dispatch);
+    retryBanner();
   }
   function error(e) {
     const el = document.getElementById("rc-error");
@@ -164,13 +205,17 @@
         reception_linked_identity_requires_phase2:
           "Linked vehicle corrections require the Phase 2 integration.",
       };
-      throw Error(
+      const failure = Error(
         msgs[r.code] ||
           String(r.code || "Server could not confirm this action.").replaceAll(
             "_",
             " ",
           ),
       );
+      // An expired/revoked session cannot establish the outcome of an earlier write.
+      failure.definitive = [400, 404, 409].includes(res.status) &&
+        typeof r.code === "string" && r.code.startsWith("reception_") && !r.code.includes("request");
+      throw failure;
     }
     return r;
   }
@@ -284,7 +329,6 @@
     document.getElementById("rc-more").hidden = r.rows.length < 100;
   }
   async function editor(no) {
-    pending = null;
     await master();
     if (no) await fetchRecord(no);
     else current = null;
@@ -476,7 +520,6 @@
     );
   }
   function insuranceWorkspace() {
-    pending = null;
     const r = current.record, info = current.insurance;
     const quotes = info.estimates || [], approvals = info.approvals || [], draft = current.preliminary_parts?.items || [];
     shell(r.rc_no + " · Estimates & Approval", badges(r) +
@@ -561,7 +604,6 @@
       '<h4>Additional Approval History</h4>'+((extra.approvals||[]).map(a=>'<div class="rc-box"><b>'+esc(a.reference)+' · OMR '+Number(a.approved_amount).toFixed(3)+'</b><p>'+esc(a.approval_date)+' · '+esc(a.actor_id)+'</p><p>'+esc(a.reason)+'</p><ol>'+a.approved_parts.map(x=>'<li>'+esc(x.name)+' · Approved '+esc(x.qty)+'</li>').join('')+'</ol><p>'+((extra.transfers||[]).filter(t=>t.approval_id===a.id).map(t=>esc(t.list_no)+' · Qty '+esc(t.qty)).join('<br>')||'Labour-only approval · No parts transfer')+'</p></div>').join('')||'<p>No additional approvals recorded.</p>')+'</div>';
   }
   function preliminaryParts(additional=false) {
-    pending = null;
     const r = current.record, draft = additional ? ((current.additional.requests||[]).find(x=>x.status==='DRAFT')||{id:uid(),items:[],status:'DRAFT'}) : current.preliminary_parts;
     const editable = additional ? current.additional.can_prepare === true : draft.can_edit === true;
     shell(r.rc_no + (additional?" · Additional Request":" · Preliminary Parts"),
@@ -602,7 +644,6 @@
     };
   }
   async function cancellation(no=current?.record?.rc_no) {
-    pending=null;
     await fetchRecord(no);
     const r=current.record,c=current.cancellation;
     if(c?.history)return view(no);
@@ -622,15 +663,42 @@
   }
   async function mutate(command) {
     if (busy) return null;
-    busy = true;
+    const key = retryKey();
     const encoded = JSON.stringify(command);
-    if (!pending || pending.encoded !== encoded)
-      pending = { encoded, request_id: uid() };
+    let request = savedRequest(key);
+    if (request && request.encoded !== encoded)
+      throw Error("Confirm the saved Reception action before submitting a different change.");
+    if (!request) {
+      request = { encoded, request_id: uid() };
+      // Persist before transport; storage failure must not send an unrecoverable write.
+      localStorage.setItem(key, JSON.stringify(request));
+      if (localStorage.getItem(key) !== JSON.stringify(request))
+        throw Error("This device could not save the Reception retry. No request was sent.");
+    }
+    busy = true;
     try {
-      return await call({ ...command, request_id: pending.request_id });
+      const result = await call({ ...command, request_id: request.request_id });
+      clearRequest(key, request);
+      return result;
+    } catch (x) {
+      if (x.definitive) clearRequest(key, request);
+      throw x;
     } finally {
       busy = false;
+      retryBanner();
     }
+  }
+  async function retrySaved() {
+    const key = retryKey(), saved = savedRequest(key);
+    if (!saved) return;
+    const command = JSON.parse(saved.encoded), result = await mutate(command);
+    if (!result || retryKey() !== key) return;
+    if (["CREATE_JOB", "EDIT", "MOVE", "APPROVE_ADDITIONAL", "CANCEL_JOB"].includes(command.operation)) {
+      try { await window.zukaitCloud?.pull?.(true); await window.zukaitV2?.sparePartsMain?.hydrateAuthoritativeLists?.(); } catch (_) {}
+    }
+    const no = result.record?.rc_no || command.rc_no;
+    if (no) await view(no);
+    else await home();
   }
   async function saveForm(e) {
     e.preventDefault();
@@ -903,6 +971,9 @@
     if (busy) return;
     try {
       switch (b.dataset.rcAction) {
+        case "retry-pending":
+          await retrySaved();
+          break;
         case "close":
           closeModal();
           break;
@@ -1015,3 +1086,4 @@
   });
   setTimeout(ensureCards, 0);
 })();
+

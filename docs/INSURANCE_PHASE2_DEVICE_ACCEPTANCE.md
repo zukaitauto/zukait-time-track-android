@@ -184,6 +184,37 @@ not a production rollback procedure.
 
 ## Verification for this preparation change
 
+### Reception restart retry fix
+
+Further inspection reproduced a lifecycle defect in the original client: after a
+CREATE response was lost following commit, a fresh JS runtime submitted the same
+command under a different UUID. The mocked server recorded two writes. Request
+identity previously existed only in memory and was also reset by opening forms.
+
+Reception now persists one unresolved command/UUID per backend endpoint and staff
+identity before sending it. Closing/reopening forms or restarting the client does
+not discard it. The visible **Confirm Saved Action** button explicitly resends its
+original payload, then refreshes confirmed server state. No background auto-replay
+is introduced. A different mutation is blocked until the saved outcome is resolved.
+Confirmed success clears the journal so a deliberately new identical checklist
+gets a new UUID. Known Reception validation/stale/not-found responses clear it;
+transport/server/parse errors, auth/permission failures and conflicting request IDs
+retain it. Storage failure prevents transport; corrupt journals are kept for
+Manager reconciliation. Never clear device storage merely to bypass this guard.
+If the response arrives while another staff identity is active, recovery does not
+refresh the other actor's screen. No token/password is stored in the journal.
+
+`tests/reception-restart-retry.mjs` executes the actual mutator in fresh JS runtimes
+for 13 operation labels with shared synthetic local storage. It checks identical
+payload/UUID, one cached write, changed-command refusal, actor isolation, definitive
+rejection, storage failure, malformed/server/auth responses and explicit recovery.
+`tests/reception-restart-dom.mjs` recreates JSDOM windows after lost CREATE/MOVE
+responses, restores their saved storage, and exercises the actual recovery button.
+Both use mocked transport and are included in `npm run test:reception`; they do
+not establish physical WebView/Safari durability or actual Edge/cache behavior.
+Estimate-number allocation has its own retry path and still needs its lifecycle
+acceptance; this fix covers Reception RPC mutations only.
+
 - `python3 tests/reception-acceptance-preparation.py`: seven isolation/preservation
   tests passed locally. These use temporary synthetic build inputs, not an APK.
 - `node tests/reception-isolated-transport-selftest.mjs`: passed production/key
