@@ -1,7 +1,7 @@
 -- Run only inside the disposable PostgreSQL database's rollback transaction.
 set local role service_role;
 do $$
-declare cmd_rc text; cmd jsonb; result jsonb; retry jsonb; rc text; rev bigint; snapshot jsonb; n bigint;
+declare credit_rc text; cmd_rc text; cmd jsonb; result jsonb; retry jsonb; rc text; rev bigint; snapshot jsonb; n bigint;
 begin
  cmd:=jsonb_build_object('operation','CREATE_DIRECT_JOB','request_id',gen_random_uuid(),'job_type','CASH','job_card','QA-DIRECT-CASH','reason','QA direct cash intake','received_confirmed',true,
   'details',jsonb_build_object('make','Toyota','model','Corolla','customer','QA Cash Customer','contact','QA contact','registration','QA-CASH','remarks','Checklist observation only'));
@@ -20,7 +20,7 @@ begin
  cmd:=cmd||jsonb_build_object('request_id',gen_random_uuid(),'job_type','CREDIT','job_card','QA-DIRECT-CREDIT');
  begin perform zukait_reception_command('QA-RC',cmd); raise exception 'QA missing account accepted'; exception when others then assert sqlerrm='reception_credit_account_required'; end;
  cmd:=cmd||jsonb_build_object('credit_account','QA-FLEET-ACCOUNT');
- result:=zukait_reception_command('QA-RC',cmd);
+ result:=zukait_reception_command('QA-RC',cmd);credit_rc:=result->'record'->>'rc_no';
  select data into snapshot from workshop_state where id='main';
  assert (select j->>'creditAccount' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CREDIT')='QA-FLEET-ACCOUNT';
  assert (select j->>'jobType' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CREDIT')='CREDIT';
@@ -28,6 +28,16 @@ begin
  begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'received_confirmed',false)); raise exception 'QA physical receipt bypass accepted'; exception when others then assert sqlerrm='reception_received_confirmation_required'; end;
  begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'amount',100)); raise exception 'QA financial field accepted'; exception when others then assert sqlerrm='reception_invalid_fields'; end;
  begin perform zukait_reception_command('QA-EMP',cmd); raise exception 'QA employee direct access accepted'; exception when others then assert sqlerrm='reception_job_forbidden'; end;
+ -- Stale state cannot erase the authoritative credit reference or relabel its job.
+ snapshot:=jsonb_set(snapshot,'{jobs}',(select jsonb_agg(case when j->>'no'='QA-DIRECT-CREDIT' then j||'{"creditAccount":"QA-STALE","jobType":"CASH"}'::jsonb else j end) from jsonb_array_elements(snapshot->'jobs') j));
+ update workshop_state set data=snapshot where id='main';
+ select data into snapshot from workshop_state where id='main';
+ assert (select j->>'creditAccount' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CREDIT')='QA-FLEET-ACCOUNT';
+ assert (select j->>'jobType' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CREDIT')='CREDIT';
+ assert not has_table_privilege('anon','public.workshop_reception_external_approvals','SELECT');
+ assert not has_table_privilege('authenticated','public.workshop_reception_external_approvals','INSERT');
+ assert not has_function_privilege('anon','public.zukait_reception_command(text,jsonb)','EXECUTE');
+ assert not has_function_privilege('authenticated','public.zukait_reception_external_approval_valid(public.workshop_receptions)','EXECUTE');
  -- Existing issued insurance approval without making an artificial estimate.
  result:=zukait_reception_command('QA-RC',jsonb_build_object('operation','CREATE','request_id',gen_random_uuid(),'insurance_id',1,'details',jsonb_build_object('make','Toyota','model','Camry','registration','QA-EXTERNAL')));
  rc:=result->'record'->>'rc_no';cmd_rc:=rc;rev:=(result->'record'->>'revision')::bigint;

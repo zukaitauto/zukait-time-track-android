@@ -13,7 +13,9 @@ changes that password on first login, and sees only the Reception workspace.
 The Receptionist can:
 - Create and update Reception checklists, record checklist observations, and print.
 - Record confirmed physical vehicle movements using existing Reception rules.
-- See the approval status and create a Job Card only after authoritative approval.
+- Open cash/credit Job Cards directly from Reception with customer/account details.
+- See insurance approval status and create insurance Job Cards after authoritative
+  quotation approval or authorized recording of an already issued approval.
 - See a minimal list of linked vehicles ready for delivery and deliver only after
   existing work-completion and painting/final-QC checks pass.
 
@@ -260,3 +262,10 @@ intake. Do not deploy this migration or either API independently of the release.
 Acceptance must cover cash, credit and issued insurance approval on real devices
 and real isolated Edge transport, as well as the existing quotation flow. None
 of these paths has been activated in production or counted as physical testing.
+
+Direct-intake follow-up verification preserves the credit-account reference on
+the authoritative Reception row as well as the linked Job Card, so stale state
+saves cannot remove it. Browser checks also cover credit-field visibility, cash
+intake and the issued-approval creation form at every tested layout. The actual
+SQL overlap suite includes 14 scenarios (the original nine, four delivery races
+and one simultaneous direct-cash intake UUID).

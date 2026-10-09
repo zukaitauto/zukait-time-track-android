@@ -43,7 +43,7 @@ function receptionistProjection(data: any) {
   const record = (value: any) => {
     const result = pick(value, ["rc_no", "sequence_no", "insurance_id", "insurance_company",
       "location", "outcome", "approval_status", "job_card", "revision", "received_at",
-      "created_by", "updated_at", "updated_by", "closed_at", "can_edit", "job_type"]);
+      "created_by", "updated_at", "updated_by", "closed_at", "can_edit", "job_type", "credit_account"]);
     result.details = pick(value?.details, ["make", "model", "customer", "contact",
       "registration", "year", "vin", "odometer", "odometer_unit", "claim", "damage",
       "other_accessories", "warnings", "remarks", "tools", "fuel"]);

@@ -55,6 +55,9 @@ grant execute on function public.zukait_reception_command(text,jsonb) to service
 alter table public.workshop_receptions add column job_type text not null default 'INSURANCE'
  check(job_type in ('INSURANCE','CASH','CREDIT'));
 alter table public.workshop_receptions alter column insurance_id drop not null;
+alter table public.workshop_receptions add column credit_account text;
+alter table public.workshop_receptions add constraint reception_credit_account_by_type
+ check((job_type='CREDIT' and credit_account is not null and length(trim(credit_account)) between 1 and 200) or (job_type<>'CREDIT' and credit_account is null));
 alter table public.workshop_receptions add constraint reception_insurer_by_type
  check((job_type='INSURANCE' and insurance_id is not null) or (job_type in ('CASH','CREDIT') and insurance_id is null));
 do $$
@@ -80,7 +83,7 @@ begin
  'if (case when v_op=''CREATE'' then coalesce(p_command->>''job_type'',''INSURANCE'') else v_old.job_type end)=''INSURANCE'' and not exists(select 1 from public.workshop_insurance_companies where id=v_ins and (active or (v_op=''EDIT'' and id=v_old.insurance_id))) then');
  source:=replace(source,
  'insert into public.workshop_receptions(rc_no,sequence_no,insurance_id,details,created_by,updated_by) values(v_rc,v_seq,v_ins,v_details,p_actor_id,p_actor_id);',
- 'insert into public.workshop_receptions(rc_no,sequence_no,insurance_id,details,created_by,updated_by,job_type) values(v_rc,v_seq,v_ins,v_details,p_actor_id,p_actor_id,coalesce(p_command->>''job_type'',''INSURANCE''));');
+ 'insert into public.workshop_receptions(rc_no,sequence_no,insurance_id,details,created_by,updated_by,job_type,credit_account) values(v_rc,v_seq,v_ins,v_details,p_actor_id,p_actor_id,coalesce(p_command->>''job_type'',''INSURANCE''),nullif(trim(p_command->>''credit_account''),''''));');
  execute source;
 end $$;
 create or replace function public.zukait_reception_job_identity(r public.workshop_receptions)
@@ -93,7 +96,8 @@ returns jsonb language sql stable security invoker set search_path=public,pg_tem
  'customerName',coalesce(r.details->>'customer',''),'customer',coalesce(r.details->>'customer',''),
  'mobile',coalesce(r.details->>'contact',''),'jobType',r.job_type,
  'insuranceCompany',(select name from public.workshop_insurance_companies where id=r.insurance_id),
- 'insurance',(select name from public.workshop_insurance_companies where id=r.insurance_id));
+ 'insurance',(select name from public.workshop_insurance_companies where id=r.insurance_id))
+ ||case when r.job_type='CREDIT' then jsonb_build_object('creditAccount',r.credit_account) else '{}'::jsonb end;
 $$;
 
 create table public.workshop_reception_external_approvals (
@@ -203,7 +207,7 @@ begin
   -- lock before the shared-state lock as well.
   if op='CREATE_DIRECT_JOB' then
    receipt:=md5(request::text||':direct-intake')::uuid;
-   intake:=public.zukait_reception_phase1_command(p_actor_id,jsonb_build_object('operation','CREATE','request_id',receipt,'job_type',kind,'details',p_command->'details'));
+   intake:=public.zukait_reception_phase1_command(p_actor_id,jsonb_build_object('operation','CREATE','request_id',receipt,'job_type',kind,'details',p_command->'details','credit_account',case when kind='CREDIT' then p_command->>'credit_account' else null end));
    select * into r from public.workshop_receptions where rc_no=intake->'record'->>'rc_no' for update;
   end if;
   select * into snapshot from public.workshop_state where id='main' for update;
