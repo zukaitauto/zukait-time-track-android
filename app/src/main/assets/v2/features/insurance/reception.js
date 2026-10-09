@@ -48,7 +48,8 @@
     rows = [],
     caps = { allowed: false, manager: false },
     capUser = "",
-    capBusy = false;
+    capBusy = false,
+    capChecked = false;
   const esc = (v) =>
     String(v ?? "").replace(
       /[&<>"']/g,
@@ -117,6 +118,13 @@
     e.id = "rc-style";
     e.textContent = `
 .rc{font-size:17px;color:#18324a;background:#f3f8fc;padding:16px;border-radius:20px}.rc *{box-sizing:border-box}.rc h3{font-size:24px;margin:8px 0 16px}.rc h4{font-size:19px;margin:12px 0}.rc button{font-size:16px!important;min-height:46px;margin:0!important;border-radius:12px!important}.rc input,.rc select,.rc textarea{font-size:17px!important;width:100%;min-height:46px;background:white;color:#18324a;border:1px solid #b7cbd9;border-radius:10px;padding:10px;margin-top:6px}.rc label{display:block;font-weight:700}.rc [hidden]{display:none!important}.rc textarea{min-height:95px;resize:vertical}.rc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.rc-box{padding:14px;border:1px solid #d2e1eb;background:#fff;border-radius:15px;margin-top:12px;overflow-wrap:anywhere}.rc-actions{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0}.rc-badge{display:inline-block;border-radius:20px;background:#e0eff8;color:#174b6b;padding:6px 11px;margin:3px;font-size:15px;font-weight:800}.rc-badge[data-value=VWC]{background:#fff0c9;color:#765000}.rc-badge[data-value=VIW]{background:#d9f5ea;color:#125340}.rc-badge[data-value=CTL],.rc-badge[data-value=CANCELLED]{background:#fee2e2;color:#8c2632}.rc-check{display:flex!important;gap:10px;align-items:center;font-weight:600!important}.rc-check input{width:24px!important;min-height:24px!important;margin:0}.rc-error{color:#9c2434;font-weight:700}.rc small{font-size:14px;color:#45627a}.rc-menu{background:linear-gradient(145deg,#e1f5f4,#f3faff)!important;color:#164e63!important;border:1px solid #afd8dc!important;box-shadow:0 6px 16px #163b5415}.rc-history{max-height:360px;overflow:auto}.rc summary{cursor:pointer;padding:10px;font-weight:700}@media(max-width:480px){.rc{padding:10px}.rc-grid{gap:9px}.rc-actions button{flex:1 1 40%}.rc-wide{grid-column:1/-1}}`;
+    e.textContent += `
+/* Dedicated single-click Reception access on existing Manager / Supervisor dashboards. */
+.rc-dashboard-launcher{display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;gap:6px!important;width:100%!important;min-height:78px!important;margin:8px 0 14px!important;padding:14px 18px!important;text-align:left!important;background:linear-gradient(125deg,#dff7f3,#ebf5ff)!important;border:1px solid #97cfc9!important;border-radius:14px!important;color:#114b54!important;box-shadow:0 5px 16px #1347531a!important;cursor:pointer!important}
+.rc-dashboard-launcher b{font-size:19px!important;font-weight:900!important}.rc-dashboard-launcher small{font-size:13px!important;font-weight:700!important;color:#25626d!important}
+.rc-dashboard-launcher:focus-visible{outline:3px solid #147d92!important;outline-offset:2px}
+@media(min-width:900px){.rc-dashboard-launcher{min-height:72px!important}.rc-dashboard-launcher b{font-size:20px!important}}
+`;
     e.textContent += `
 /* Reception owns its dialog width; other workshop dialogs retain their sizing. */
 .modal-box.rc-dialog, .modal-content.rc-dialog{width:min(1280px,96vw)!important;max-width:1280px!important;padding:0!important}
@@ -1083,45 +1091,66 @@
       error(x);
     }
   }
+  // Manager and Supervisor use their existing workshop session.
+  // The dedicated Receptionist account signs in through receptionist.html.
   function ensureCards() {
-    const u = user();
-    if (!u?.id) return;
-    if (capUser !== u.id) {
-      capUser = u.id;
+    const u = user(), role = u?.role;
+    const dashboardId = role === "Manager" ? "managerView" :
+      role === "Supervisor" ? "supervisorView" : "";
+    for (const id of ["managerView", "supervisorView", "employeeView"]) {
+      const root = document.getElementById(id);
+      if (!root) continue;
+      if (!dashboardId || id !== dashboardId || root.classList.contains("hidden"))
+        root.querySelectorAll("[data-rc-menu]").forEach(b => b.remove());
+    }
+    if (!u?.id || !dashboardId) {
+      capUser = "";
+      capChecked = false;
       caps = { allowed: false, manager: false };
+      return;
+    }
+    const identity = String(u.id) + ":" + role;
+    if (capUser !== identity) {
+      capUser = identity;
+      capChecked = false;
+      caps = { allowed: false, manager: false };
+    }
+    if (!capChecked) {
       if (!capBusy) {
         capBusy = true;
         call({ operation: "CAPABILITIES" })
-          .then((r) => {
-            if (user()?.id === u.id) caps = r;
-            ensureCards();
+          .then(r => {
+            if (capUser === identity && user()?.id === u.id && user()?.role === role) {
+              caps = r;
+              capChecked = true;
+            }
           })
-          .catch(() => {})
-          .finally(() => (capBusy = false));
+          .catch(() => {
+            if (capUser === identity) capChecked = true;
+          })
+          .finally(() => {
+            capBusy = false;
+            ensureCards();
+          });
       }
       return;
     }
-    if (!caps.allowed) return;
-    for (const id of ["managerView", "supervisorView", "employeeView"]) {
-      const root = document.getElementById(id);
-      if (
-        !root ||
-        root.classList.contains("hidden") ||
-        root.querySelector("[data-rc-menu]")
-      )
-        continue;
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "card rc-menu";
-      b.dataset.rcMenu = "1";
-      b.innerHTML =
-        "<b>Insurance Reception</b><br><small>Checklists · Vehicle movements · Print</small>";
-      b.onclick = () => home().catch(error);
-      const grid = root.querySelector(
-        ".v67-control-grid,.v66-control-grid,.manager-actions",
-      );
-      (grid || root).appendChild(b);
-    }
+    if (!caps.allowed) return; // The server remains the authority for access.
+    const root = document.getElementById(dashboardId);
+    if (!root || root.classList.contains("hidden") || root.querySelector("[data-rc-menu]")) return;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "rc-dashboard-launcher rc-menu";
+    b.dataset.rcMenu = "1";
+    b.innerHTML = "<b>🚘 Reception</b><small>Checklists · Vehicle movements · Insurance</small>";
+    b.onclick = () => {
+      if (!["Manager", "Supervisor"].includes(user()?.role)) return;
+      home().catch(error);
+    };
+    // Keep Reception visible near the top, even when dashboard grids are rebuilt.
+    const header = root.querySelector(".v135-manager-header,.v91-role-identity,.v92-supervisor-top");
+    if (header?.parentElement === root) header.insertAdjacentElement("afterend", b);
+    else root.prepend(b);
   }
   window.zukaitReception = { endpoint: API, open: home, openCancellation: no => cancellation(no).catch(error), openRecord: no => view(no).catch(error), documentHtml, ensureCards, call };
   style();

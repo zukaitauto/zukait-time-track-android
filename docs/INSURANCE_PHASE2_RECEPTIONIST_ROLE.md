@@ -7,6 +7,16 @@ Production stays V304 / versionCode 267 until verified release authorization.
 
 ## User workflow
 
+**Login/launcher rule:** existing Manager and Supervisor users keep their
+current User IDs, passwords, and workshop sessions. Each signed-in Manager and
+Supervisor dashboard shows one near-top **Reception** button that launches
+Reception in the same application session, without reauthentication or opening
+the Receptionist-only login page. Other workshop dashboards must not display
+that button. Server-side role and Reception capability checks remain enforced.
+Only newly created dedicated Receptionist staff receive a separate Reception
+login, created by the Manager using existing User Management and forced
+first-password change; never create extra Manager/Supervisor credentials.
+
 A named Receptionist signs in with an individual User ID and temporary password,
 changes that password on first login, and sees only the Reception workspace.
 
