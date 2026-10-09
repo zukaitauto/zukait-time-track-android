@@ -2,7 +2,7 @@
 
 ## Architecture and scope
 
-Branch: `architecture-v2`. No version metadata or release request is changed.
+Branch: `architecture-v2`. Release candidate: V304 (version code 267). Publication remains gated by the signed acceptance build and the existing release approval workflow.
 
 The current application authenticates custom staff sessions through `staff-auth` and `workshop-api`. Operational jobs, technician sessions, leave, consumables, estimates and financial records live in `workshop_state`; V2 job/spare-part projections use separate server-controlled tables. Reception follows the latter pattern. Its RPC never updates `workshop_state`, job projections, employee sessions, parts, expenses or income.
 
@@ -45,17 +45,16 @@ Phase 1 exposes no approval setter, JC linker or operational preliminary-parts t
 - Typical print rendered using WeasyPrint as one A4 page; PNG visually inspected. Long optional observations intentionally flow to additional pages instead of being truncated.
 - `git diff --check`: passed.
 
-## Deployment and remaining acceptance
+## Deployment and release acceptance
 
-No persistent production migration, edge deployment, APK release or PC publication was performed during implementation. SQL test-created definitions/rows were rolled back; the disposable concurrency schema was removed.
+The migration was applied to the existing Supabase project `pjknotnjkufadqavcmii`. `workshop-api` version 58 is ACTIVE, preserving its established custom staff authentication and `verify_jwt: false` setting. Live grants, RLS and eight seeded insurance companies were verified.
 
-Direct `deno check` could not download the JSR manifest for `@supabase/functions-js`. Playwright Chromium downloads returned invalid archives. Full browser/mobile visual acceptance and native Android PDF sharing remain outstanding. The local environment has no Gradle/Android SDK; verify the Android build in GitHub Actions. Commit messages include `[verify-only]` to suppress the existing Pages publication job.
+`tests/reception-live.mjs` passed read-only deployed checks using dedicated temporary Manager, Supervisor, Employee and designated Reception identities: access, denied spoofed actors, denied undesignated staff, master/list reads, malformed/guest requests, direct REST denial, and existing revision/live-status endpoints. It creates no reception/customer records. QA accounts and their reception designation are now inactive and all QA sessions revoked; dormant QA rows remain. The RC sequence was verified unused, so the first real checklist remains RC0001.
 
-Before enabling this module:
+The initial source commit passed the Reception verification, Android debug build, unsigned APK/full regression, and Estimate GitHub Actions jobs. Chromium at 390px was visually inspected with the actual inherited application styles; no horizontal overflow. The release candidate makes the insurance selector full width on narrow screens for readability.
 
-1. Verify CI/Android build and review Phase 1 on target Android and Safari devices.
-2. Apply the reviewed migration through Supabase migration tooling; verify RLS/grants/advisors.
-3. Deploy the reviewed `workshop-api` after checking live source for newer changes; run authenticated end-to-end checks.
-4. Publish the PC/APK update only after acceptance, retaining the existing release approval process.
+Direct `deno check` could not download the JSR dependency manifest. Local Gradle/Android SDK and physical Android/Safari devices are unavailable. GitHub Actions supplies Android compilation/signing checks. Native Print/Share PDF bridge calls have automated coverage, but physical Android PDF sharing and Safari device acceptance cannot be claimed from this environment. Web sharing uses the browser's Print/Save as PDF followed by manual sharing.
 
-Then Phase 2 can add insurance approval, RC-linked estimates/preliminary parts, atomic JC creation/linkage, authoritative shared identity propagation, JC location badges and preservation-safe Manager cancellation. Phase 3 receivables/LPO/payments is not implemented.
+Release procedure: commit the candidate with `[verify-only]` (PC publication suppressed), obtain a successful signed acceptance run for that source, then approve that exact source/version through `release-request.json`. Verify signed APK publication, latest-version metadata and Pages deployment before reporting release success. No changes target `main`.
+
+Phase 2 remains separate: insurance approval, RC-linked estimates/preliminary parts, atomic JC creation/linkage, authoritative shared identity propagation, JC location badges and preservation-safe Manager cancellation. Phase 3 receivables/LPO/payments is not implemented.

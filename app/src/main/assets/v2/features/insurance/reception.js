@@ -170,7 +170,7 @@
   }
   function select(k, label, values, value) {
     return (
-      "<label>" +
+      '<label class="' + (k === "insurance_id" ? "rc-wide" : "") + '">' +
       esc(label) +
       '<select name="' +
       k +
