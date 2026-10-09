@@ -2,9 +2,86 @@
 
 Candidate: V305 / versionCode 268, architecture-v2 only.
 Verified application source: `e5ff093189758496db12e55d35a5583ce5311360`.
-Status 2026-10-10 (Oman): isolated QA backend DEPLOYED; authenticated read-only
-role transport PASS; mutating workflow and physical device acceptance NOT_RUN.
+Status 2026-10-10 (Oman): isolated QA backend DEPLOYED; authenticated role transport
+and the selected real mutation scenarios below PASS. Full fault/device acceptance
+is INCOMPLETE; physical device acceptance NOT_RUN.
 Live remains V304 / 267, workshop-api 58 and staff-auth 4. No release authorization.
+
+## 2026-10-10 real mutation checkpoint
+
+Tested source: `fa74ebca62eb4bb7745aa3f5862eb98af3684c3f` (same file tree as
+`8e1fe27bf4896fd1795fa85d6aa67ff2bbcfff42`). All network writes targeted only
+`https://omqgkqknbdcnotabffek.supabase.co`, using real staff-auth/workshop-api
+HTTPS endpoints and synthetic accounts. No schema, Edge implementation,
+production data, release metadata or application code was changed.
+
+The following supersedes earlier NOT_RUN entries only for these exact scopes:
+
+- PASS: Receptionist cash intake creates a linked checklist and shared Job Card.
+  Exact request replay returns the original result; changed body/actor conflict.
+  Credit rejects a missing account reference, then succeeds with one.
+  Both Receptionist and Supervisor dashboard searches see the created jobs.
+- PASS: VWC movement was committed, its response discarded, independently read
+  through Supervisor, and retried with the saved UUID/body. A new Python process
+  replayed both the original cash creation and movement without duplication.
+  This is transport/process evidence, not a browser crash/offline result.
+- PASS: Supervisor Promise Date is optional, audited and visible in follow-up;
+  a missing date remains visible. Receptionist cannot write it; stale expected
+  dates conflict; exact retry does not add a second audit.
+- PASS: Receptionist cannot record issued insurance approval. Manager approval
+  appears in Approved Vehicles; subsequent Receptionist JC creation removes it.
+  Exact creation retry returns duplicate rather than creating another job.
+- PASS: two concurrent HTTPS MOVE requests with one expected revision produced
+  exactly one success and one `reception_stale_revision` rejection.
+- PASS: Manager reviewed cancellation, Supervisor denial, exact cancellation
+  replay and removal from active Reception job lists. SQL confirms one
+  cancellation record, while the vehicle remains VWC. Active-work/parts-change
+  cancellation races remain covered by earlier local tests, not this HTTPS run.
+- PASS: linked identity correction is Manager-only and visible in Supervisor
+  shared state. A full-state save containing stale vehicle identity, location,
+  and Promise Date fields could not overwrite authoritative values.
+- PASS: normal insurance preliminary parts, real estimate number allocation,
+  estimate save/link, partial initial approval, Receptionist CREATE_JOB and
+  exact retry. Additional request, estimate allocation/save/link, partial
+  additional approval and exact retry also passed over HTTPS.
+- SQL readback: `RC0006` / `QAN28D65FD1J` has exactly one initial transfer,
+  one additional approval and one additional transfer. `PL001` contains one
+  Front bumper (approved 1 of requested 2) and one Additional lamp (approved
+  1 of requested 3); neither is received. No duplicate transfer on replay.
+- PASS: completed synthetic assignment/session fixtures were saved through the
+  Supervisor API. Dedicated synthetic QA SUP002/SUP001 accounts were created
+  through Manager staff-auth and completed password change. Their real
+  PAINTING_QC and FINAL_QC requests passed, followed by Receptionist delivery
+  and duplicate replay. Both Receptionist and Supervisor then show the job in
+  Delivered and omit it from Ready. SQL confirms one delivery audit, QC revision
+  3, and preserved Promise Date. Employee start/finish was not exercised here.
+- PASS: temporarily disabling the synthetic Employee rejected its existing
+  session at both Edge Functions and rejected fresh login. Account restored
+  active. Existing four saved tester passwords were unchanged.
+- PASS: all six test sessions logged out and subsequently returned HTTP 401.
+  The two temporary synthetic QC accounts are disabled; the original four QA
+  tester accounts remain active. No passwords or session tokens are committed.
+- PASS: comparison against QA state-history revision 1 confirms the unrelated
+  `ZQA-JC-UNRELATED`, expenses, leaves and users are unchanged.
+- PASS: all 18 local Reception suites and the isolated transport self-test.
+  Chromium/WebKit layout rerun BLOCKED: missing Chromium; install returned an
+  invalid/truncated archive. No physical Android/iPhone/Mac device available.
+
+Synthetic retained records: RC0004 cash `QA261010722E1FC` (VWC, identity corrected),
+RC0005 credit `QA261010722E1FR` (delivered), RC0006 normal insurance
+`QAN28D65FD1J` (approved, two parts), RC0007 issued insurance
+`QA261010722E1FI` (cancelled job, VWC). These are QA evidence, not real vehicles.
+The normal-flow harness initially attempted pre-JC parts allocation and correctly
+received 404; it resumed using CREATE_JOB's atomic allocator. A delivery harness
+field-name mismatch was corrected to `jobCard` before resuming. These were test
+harness corrections, not application changes or product defects.
+
+Still required: physical device scenarios below; actual browser offline/reconnect
+and termination with pending journals; complete response-loss/concurrency matrix
+across all mutation types; employee work-to-QC interaction; preservation scenarios
+with nonempty unrelated financial/work histories; release/recovery rehearsal,
+production backup and explicit staff-release approval. Do not infer full
+acceptance from the selected transport passes. V305 remains unapproved.
 
 ## 2026-10-10 authenticated HTTPS checkpoint
 
