@@ -3,10 +3,12 @@
   "private": true,
   "scripts": {
     "test:reception": "node tests/reception-phase1.mjs && node tests/reception-preliminary.mjs && node tests/reception-approval.mjs && node tests/reception-create-job.mjs && node tests/reception-vehicle-authority.mjs && node tests/reception-additional.mjs && node tests/reception-cancellation.mjs",
-    "test:reception:browser": "node tests/reception-responsive.mjs"
+    "test:reception:browser": "node tests/reception-responsive.mjs",
+    "test:reception:concurrency": "node tests/reception-concurrency.mjs"
   },
   "devDependencies": {
     "jsdom": "26.1.0",
+    "pg": "8.16.3",
     "playwright": "1.58.2"
   }
 }

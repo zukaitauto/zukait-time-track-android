@@ -6,6 +6,7 @@ on:
       - "app/src/main/assets/v2/features/insurance/**"
       - "supabase/functions/workshop-api/**"
       - "tests/reception-*"
+      - "tests/fixtures/reception-*"
       - "package*.json"
       - ".github/workflows/reception-check.yml"
   workflow_dispatch:
@@ -14,6 +15,19 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: reception-test-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,6 +36,13 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run test:reception
+      - name: Isolated PostgreSQL concurrent-device acceptance
+        run: npm run test:reception:concurrency
+        env:
+          ZUKAIT_RECEPTION_ISOLATED: "1"
+          PGHOST: 127.0.0.1
+          PGPORT: "5432"
+          PGPASSWORD: reception-test-only
       - run: node tests/reception-api.mjs
       - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:reception:browser
