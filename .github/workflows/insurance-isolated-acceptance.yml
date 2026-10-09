@@ -47,7 +47,8 @@ jobs:
           "$BT/apksigner" verify --verbose --print-certs "$APK" > "$CANDIDATE/signature.txt"
           "$BT/aapt" dump badging "$APK" > "$CANDIDATE/package.txt"
           grep -q "package: name='com.zukait.timetrack.acceptance'" "$CANDIDATE/package.txt"
-          grep -q "versionName='V304-ACCEPTANCE'" "$CANDIDATE/package.txt"
+          grep -q "versionName='V305-ACCEPTANCE'" "$CANDIDATE/package.txt"
+          grep -q "versionCode='268'" "$CANDIDATE/package.txt"
           cd "$CANDIDATE"
           sha256sum app/build/outputs/apk/debug/app-debug.apk > apk-sha256.txt
           echo 'Build preparation only. Backend and physical-device acceptance remain NOT_RUN.' >> "$GITHUB_STEP_SUMMARY"

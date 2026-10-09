@@ -10,8 +10,8 @@ android {
         applicationId 'com.zukait.timetrack'
         minSdk 24
         targetSdk 35
-        versionCode 267
-        versionName "V304"
+        versionCode 268
+        versionName "V305"
     }
 }
 
@@ -22,3 +22,4 @@ dependencies {
     implementation "com.google.android.gms:play-services-code-scanner:16.1.0"
     implementation "com.google.mlkit:text-recognition:16.0.1"
 }
+

@@ -1,9 +1,9 @@
 {
-  "versionName": "V304",
-  "versionCode": 267,
-  "approvedForStaff": true,
-  "approvedAt": "2026-10-09",
-  "sourceCommit": "ecb46de7e468630331b76eb3f37cd756ba9866ec",
-  "publishNonce": "v304-reception-user-proceed-release-20261009",
-  "signedAcceptanceRun": 37886836770
+  "versionName": "V305",
+  "versionCode": 268,
+  "approvedForStaff": false,
+  "approvedAt": null,
+  "sourceCommit": null,
+  "publishNonce": null,
+  "signedAcceptanceRun": null
 }

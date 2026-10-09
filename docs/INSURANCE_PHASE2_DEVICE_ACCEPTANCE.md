@@ -3,7 +3,8 @@
 Status on 2026-10-09: **PREPARATION ONLY; ACCEPTANCE NOT PASSED**.
 Branch: architecture-v2 only. Source inspected: `52fa0d3d6e54d00ba3788f032816e55025245662`;
 previous verified implementation: `ec47e1c6e291b5f03c0425df83b79452400ff30a`.
-V304 / versionCode 267 and workshop-api 58 remain live. No deployment, release,
+V304 / versionCode 267 and workshop-api 58 remain live.
+The next candidate is V305 / versionCode 268; it is not approved for publishing. No deployment, release,
 production writes, sequence allocation or Phase 3 work is part of this change.
 
 ## Access and evidence
@@ -97,7 +98,7 @@ and replaces the production backend reference/key throughout client text assets.
 It refuses unexpected additional Supabase hosts and verifies the auth/cloud/
 Reception replacements. Original source assets and version metadata stay untouched.
 The candidate uses `com.zukait.timetrack.acceptance`, label `Zukait ACCEPTANCE`,
-V304-ACCEPTANCE / 267, and disables native update checking/downloading/installing.
+V305-ACCEPTANCE / 268, and disables native update checking/downloading/installing.
 The separate package provides separate storage and cannot overwrite production.
 
 The artifact contains a debug-signed APK, web assets, package/signature evidence,

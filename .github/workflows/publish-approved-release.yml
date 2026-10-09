@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   release:
+    if: github.event_name != 'push' || !contains(github.event.head_commit.message, '[verify-only]')
     runs-on: ubuntu-latest
     env:
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
@@ -259,3 +260,4 @@ jobs:
           test "$(jq -r '.prerelease' /tmp/published-release.json)" = "false"
           test "$(jq -r '[.assets[].name] | index("ZUKAIT_TIME_TRACK_LATEST.apk") != null' /tmp/published-release.json)" = "true"
           jq '{tag_name,name,draft,prerelease,html_url,assets:[.assets[].name]}' /tmp/published-release.json
+

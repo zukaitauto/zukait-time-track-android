@@ -27,7 +27,7 @@ class AcceptancePreparation(unittest.TestCase):
         self.key = "sb_publishable_isolated_qa"
         self.sha = "a" * 40
         files = {
-            "app/build.gradle": "applicationId 'com.zukait.timetrack'\nversionCode 267\nversionName \"V304\"\n",
+            "app/build.gradle": "applicationId 'com.zukait.timetrack'\nversionCode 268\nversionName \"V305\"\n",
             "app/src/main/AndroidManifest.xml": 'android:label="Zukait Time Track"',
             "app/src/main/java/com/zukait/timetrack/MainActivity.java": "\n".join("private void " + method + "() {\n doUpdate();\n}" for method in ("checkForUpdatesNative", "startUpdateDownloadNative", "installDownloadedUpdateNative")),
             "app/src/main/assets/offline_test.html": "<html>acceptance fixture</html>",
@@ -57,8 +57,8 @@ class AcceptancePreparation(unittest.TestCase):
         result = self.run_prepare()
         self.assertEqual(before, {str(p.relative_to(self.source)): p.read_bytes() for p in self.source.rglob("*") if p.is_file()})
         self.assertIn("com.zukait.timetrack.acceptance", (self.output / "app/build.gradle").read_text())
-        self.assertIn('V304-ACCEPTANCE', (self.output / "app/build.gradle").read_text())
-        self.assertIn('versionCode 267', (self.output / "app/build.gradle").read_text())
+        self.assertIn('V305-ACCEPTANCE', (self.output / "app/build.gradle").read_text())
+        self.assertIn('versionCode 268', (self.output / "app/build.gradle").read_text())
         for tree in ("app/src/main/assets", "web"):
             for path in (self.output / tree).rglob("*"):
                 if path.is_file():
