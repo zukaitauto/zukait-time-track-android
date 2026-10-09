@@ -109,6 +109,14 @@
     const r = await res.json();
     if (!res.ok || !r.ok) {
       const msgs = {
+        reception_additional_forbidden: "Only the Manager or Supervisor can prepare or approve additional requests.",
+        reception_additional_job_required: "Create the approved insurance Job Card first.",
+        reception_additional_job_closed: "Additional approvals are unavailable for a closed, cancelled or delivered Job Card.",
+        reception_additional_already_approved: "This request was already approved. Reload its history.",
+        reception_additional_draft_exists: "Another additional request is being prepared. Reload to edit that request.",
+        reception_additional_quote_used: "Use a separate additional quotation. This quotation already has approval history.",
+        reception_additional_duplicate_active_part: "An active copy of this part already exists. Approval was not saved. Review existing parts before changing the request.",
+        reception_additional_source_reused: "Use new part rows for a new additional request.",
         reception_job_number_exists: "This Job Card number is already in use. Choose another number.",
         reception_job_already_created: "This checklist already has a Job Card. Reload it to continue.",
         reception_invalid_job_number: "Enter a valid Job Card number. ID001 is reserved.",
@@ -491,7 +499,7 @@
         input('reason', 'Approval Notes / Reason', '', true) + '<div class="rc-actions"><button type="submit">Record Approval</button></div></form></div>' : '') +
       (info.can_revoke && r.approval_status === 'APPROVED' ? '<div class="rc-box"><h4>Manager Approval Review</h4><form id="rc-revoke">' + input('reason', 'Reason for returning to waiting', '', true) + '<div class="rc-actions"><button type="submit">Return to Waiting for Approval</button></div></form></div>' : '') +
       '<div class="rc-box"><h4>Approval History</h4>' + (approvals.map(a => '<p><b>' + esc(a.reference) + ' · OMR ' + Number(a.approved_amount).toFixed(3) + '</b><br>' + esc(a.approval_date) + ' · ' + esc(a.actor_id) + '<br>' + esc(a.reason) + '</p><ol>' + a.approved_parts.map(x => '<li>' + esc(x.name) + ' · Qty ' + esc(x.qty) + '</li>').join('') + '</ol>').join('') || '<p>No approval recorded.</p>') + '</div>' +
-      '<div class="rc-actions"><button data-rc-action="view" data-rc="' + esc(r.rc_no) + '">Back to Checklist</button></div>');
+      additionalWorkspaceHtml() + '<div class="rc-actions"><button data-rc-action="view" data-rc="' + esc(r.rc_no) + '">Back to Checklist</button></div>');
     async function submit(e, fields) {
       e.preventDefault();
       try {
@@ -527,17 +535,43 @@
     }
     if (approval) approval.onsubmit = e => submit(e, f => ({operation:'RECORD_APPROVAL', quotation_id:f.get('quotation_id'),reference:f.get('reference').trim(),approval_date:f.get('approval_date'),approved_amount:f.get('approved_amount').trim(),reason:f.get('reason').trim(),
       approved_parts:f.getAll('approve_part').map(id => ({id, qty:Number([...approval.querySelectorAll('[data-approved-id]')].find(el => el.dataset.approvedId === id).value)}))}));
+    const additionalLink=document.getElementById('rc-additional-link');
+    if(additionalLink)additionalLink.onsubmit=e=>submit(e,f=>({operation:'LINK_ADDITIONAL_ESTIMATE',round_id:additionalLink.dataset.round,estimate_no:f.get('estimate_no').trim(),reason:f.get('reason').trim()}));
+    const additionalApproval=document.getElementById('rc-additional-approval');
+    if(additionalApproval){
+      for(const check of additionalApproval.querySelectorAll('[name="approve_part"]')){const qty=[...additionalApproval.querySelectorAll('[data-approved-id]')].find(el=>el.dataset.approvedId===check.value);qty.disabled=true;check.onchange=()=>qty.disabled=!check.checked}
+      additionalApproval.onsubmit=async e=>{
+        e.preventDefault();try{
+          const f=new FormData(additionalApproval);
+          const result=await mutate({operation:'APPROVE_ADDITIONAL',rc_no:r.rc_no,expected_revision:r.revision,round_id:additionalApproval.dataset.round,quotation_id:additionalApproval.dataset.quote,
+            reference:f.get('reference').trim(),approval_date:f.get('approval_date'),approved_amount:f.get('approved_amount').trim(),reason:f.get('reason').trim(),
+            approved_parts:f.getAll('approve_part').map(id=>({id,qty:Number([...additionalApproval.querySelectorAll('[data-approved-id]')].find(el=>el.dataset.approvedId===id).value)}))});
+          if(result){try{await window.zukaitCloud?.pull?.(true);await window.zukaitV2?.sparePartsMain?.hydrateAuthoritativeLists?.()}catch(_){}await fetchRecord(r.rc_no);insuranceWorkspace()}
+        }catch(x){error(x)}
+      };
+    }
     const revoke = document.getElementById('rc-revoke');
     if (revoke) revoke.onsubmit = e => submit(e, f => ({operation:'REVOKE_APPROVAL',reason:f.get('reason').trim()}));
   }
-  function preliminaryParts() {
+  function additionalWorkspaceHtml(){
+    const extra=current.additional;if(!extra)return '';
+    const draft=(extra.requests||[]).find(x=>x.status==='DRAFT');
+    const quote=draft&&(current.insurance?.estimates||[]).find(x=>x.id===draft.quotation_id);
+    return '<div class="rc-box"><h4>Additional Approvals</h4><p>Initial approval: OMR '+Number(extra.initial_amount||0).toFixed(3)+' · Additional approvals: OMR '+Number(extra.additional_amount||0).toFixed(3)+'</p><p>Additional amounts are incremental approvals, not payments or workshop income.</p>'+
+      (extra.can_prepare?'<div class="rc-actions"><button data-rc-action="additional-parts">'+(draft?'Edit Additional Request':'+ New Additional Request')+'</button></div>':'')+
+      (draft?'<p>Requested parts: '+draft.items.length+' · '+(quote?'Linked estimate: '+esc(quote.estimate_no):'No linked additional estimate')+'</p>':'')+
+      (extra.can_prepare&&draft?'<div class="rc-actions"><button data-rc-action="rc-additional-estimate" data-round="'+esc(draft.id)+'">+ New Additional Estimate</button></div><form id="rc-additional-link" data-round="'+esc(draft.id)+'">'+input('estimate_no','Additional Estimate Number','',true)+input('reason','Reason for linking / refreshing','',true)+'<div class="rc-actions"><button type="submit">Link Additional Estimate</button></div></form>':'')+
+      (extra.can_prepare&&draft&&quote?'<form id="rc-additional-approval" data-round="'+esc(draft.id)+'" data-quote="'+esc(quote.id)+'"><h4>Approve & Transfer Additional Parts</h4>'+input('reference','Approval Reference','',true)+input('approval_date','Approval Date',new Date(Date.now()+4*3600000).toISOString().slice(0,10),true,'date')+input('approved_amount','Additional Approved Amount (OMR)','',true)+'<p>Select approved quantities only. Existing orders and purchases are preserved. Duplicate active parts require separate review.</p>'+draft.items.map(x=>'<div class="rc-box"><label class="rc-check"><input type="checkbox" name="approve_part" value="'+esc(x.id)+'">'+esc(x.name)+' · Requested '+esc(x.qty)+'</label><label>Approved Quantity<input type="number" data-approved-id="'+esc(x.id)+'" min="1" max="'+esc(x.qty)+'" step="1" value="'+esc(x.qty)+'"></label></div>').join('')+input('reason','Approval Notes / Reason','',true)+'<div class="rc-actions"><button type="submit">Record Additional Approval & Transfer Parts</button></div></form>':'')+
+      '<h4>Additional Approval History</h4>'+((extra.approvals||[]).map(a=>'<div class="rc-box"><b>'+esc(a.reference)+' · OMR '+Number(a.approved_amount).toFixed(3)+'</b><p>'+esc(a.approval_date)+' · '+esc(a.actor_id)+'</p><p>'+esc(a.reason)+'</p><ol>'+a.approved_parts.map(x=>'<li>'+esc(x.name)+' · Approved '+esc(x.qty)+'</li>').join('')+'</ol><p>'+((extra.transfers||[]).filter(t=>t.approval_id===a.id).map(t=>esc(t.list_no)+' · Qty '+esc(t.qty)).join('<br>')||'Labour-only approval · No parts transfer')+'</p></div>').join('')||'<p>No additional approvals recorded.</p>')+'</div>';
+  }
+  function preliminaryParts(additional=false) {
     pending = null;
-    const r = current.record, draft = current.preliminary_parts;
-    const editable = draft.can_edit === true;
-    shell(r.rc_no + " · Preliminary Parts",
-      badges(r) + "<p>Parts preparation for insurance approval.</p>" +
+    const r = current.record, draft = additional ? ((current.additional.requests||[]).find(x=>x.status==='DRAFT')||{id:uid(),items:[],status:'DRAFT'}) : current.preliminary_parts;
+    const editable = additional ? current.additional.can_prepare === true : draft.can_edit === true;
+    shell(r.rc_no + (additional?" · Additional Request":" · Preliminary Parts"),
+      badges(r) + (additional?"<p>New parts or labour-only request for additional insurance approval. Requested quantities are not operational orders yet.</p>":"<p>Parts preparation for insurance approval.</p>") +
       (editable ? '<form id="rc-parts"><div id="rc-parts-rows"></div><div class="rc-actions"><button type="button" id="rc-add-part">+ Add Part</button></div>' +
-        input("reason", "Reason for this list / change", "", true) + '<div class="rc-actions"><button type="submit">Save Preliminary List</button></div></form>' :
+        input("reason", "Reason for this list / change", "", true) + '<div class="rc-actions"><button type="submit">'+(additional?'Save Additional Request':'Save Preliminary List')+'</button></div></form>' :
         '<div class="rc-box">' + (draft.items.map((x, i) => '<p><b>' + (i + 1) + '. ' + esc(x.name) + '</b><br>Qty: ' + esc(x.qty) + ' · Part No: ' + esc(x.part_no || "Not recorded") + '</p>').join("") || "No preliminary parts recorded.") + '</div>') +
       '<div class="rc-actions"><button data-rc-action="view" data-rc="' + esc(r.rc_no) + '">Back to Checklist</button></div>');
     if (!editable) return;
@@ -564,7 +598,8 @@
           name: row.querySelector('[name="part_name"]').value.trim(),
           part_no: row.querySelector('[name="part_no"]').value.trim(),
           qty: Number(row.querySelector('[name="part_qty"]').value)}));
-        const result = await mutate({operation: "SAVE_PARTS", rc_no: r.rc_no, expected_revision: r.revision,
+        const result = await mutate({operation: additional ? "SAVE_ADDITIONAL_REQUEST" : "SAVE_PARTS", rc_no: r.rc_no, expected_revision: r.revision,
+          ...(additional ? {round_id:draft.id}:{}),
           items, reason: new FormData(e.target).get("reason").trim()});
         if (result) await view(r.rc_no);
       } catch (x) { error(x); }
@@ -873,6 +908,12 @@
           break;
         case "rc-estimate":
           await window.zukaitEstimate.newFromReception(current.record.rc_no);
+          break;
+        case "additional-parts":
+          preliminaryParts(true);
+          break;
+        case "rc-additional-estimate":
+          await window.zukaitEstimate.newFromReception(current.record.rc_no,b.dataset.round);
           break;
         case "parts":
           preliminaryParts();

@@ -83,7 +83,7 @@ function openHome(){
     '</div><h4>Recent</h4>'+(recent.length?recent.map(estimateCard).join(''):'<p class="muted">No estimates yet.</p>')+'</div>';
   openModal(html);
 }
-async function newEstimate(reception=null,requestKey=null){
+async function newEstimate(reception=null,requestKey=null,additionalRequestId=null){
   if(!canUse())return;
   ensureState();
   if(!navigator.onLine||!window.zukaitCloud?.allocateEstimateNo){
@@ -103,22 +103,24 @@ async function newEstimate(reception=null,requestKey=null){
     Object.assign(e,{receptionNo:reception.rc_no,insuranceCompany:reception.insurance_company,
       customerName:d.customer||'',mobile:d.contact||'',makeModel:[d.make,d.model].join(' '),year:d.year||'',
       registration:d.registration||'',vin:d.vin||'',claimNo:d.claim||''});
+    if(additionalRequestId)Object.assign(e,{jobCard:reception.job_card,receptionAdditionalRequestId:additionalRequestId});
   }
   if(!e.estimateNo)return alert('Estimate number allocation failed.');
   state.estimates.unshift(e);audit(e,'CREATE');saveState();openEditor(e.id);return e.id;
 }
 const receptionEstimateRequests=new Map();
 let receptionEstimateBusy=false;
-async function newFromReception(rcNo){
+async function newFromReception(rcNo,additionalRequestId=null){
   if(!canUse()||receptionEstimateBusy)return;
   receptionEstimateBusy=true;
   try{
     const response=await window.zukaitReception.call({operation:'GET',rc_no:rcNo});
     const r=response.record;
-    if(r.outcome||r.job_card)throw Error('Prepare the initial estimate before Job Card creation on an open reception case.');
-    if(!receptionEstimateRequests.has(rcNo))receptionEstimateRequests.set(rcNo,uid());
-    const id=await newEstimate(r,receptionEstimateRequests.get(rcNo));
-    if(id)receptionEstimateRequests.delete(rcNo);
+    if(r.outcome||(!additionalRequestId&&r.job_card)||(additionalRequestId&&(!r.job_card||response.additional?.can_prepare!==true||!response.additional.requests?.some(x=>x.id===additionalRequestId&&x.status==='DRAFT'))))throw Error('This reception case is not available for the requested estimate.');
+    const requestMapKey=additionalRequestId?rcNo+':'+additionalRequestId:rcNo;
+    if(!receptionEstimateRequests.has(requestMapKey))receptionEstimateRequests.set(requestMapKey,uid());
+    const id=await newEstimate(r,receptionEstimateRequests.get(requestMapKey),additionalRequestId);
+    if(id)receptionEstimateRequests.delete(requestMapKey);
     return id;
   }catch(e){alert(e.message||'Could not load reception information.');}
   finally{receptionEstimateBusy=false;}
