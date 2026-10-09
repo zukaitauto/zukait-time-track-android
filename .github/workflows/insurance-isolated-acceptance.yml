@@ -1,6 +1,11 @@
 name: Prepare isolated insurance acceptance
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - architecture-v2
+    paths:
+      - .github/workflows/insurance-isolated-acceptance.yml
 permissions:
   contents: read
 jobs:
@@ -9,8 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      ZUKAIT_ACCEPTANCE_PROJECT_REF: ${{ vars.ZUKAIT_ACCEPTANCE_PROJECT_REF }}
-      ZUKAIT_ACCEPTANCE_PUBLISHABLE_KEY: ${{ vars.ZUKAIT_ACCEPTANCE_PUBLISHABLE_KEY }}
+      # Public QA-only publishable key; no secret or production service-role key.
+      ZUKAIT_ACCEPTANCE_PROJECT_REF: omqgkqknbdcnotabffek
+      ZUKAIT_ACCEPTANCE_PUBLISHABLE_KEY: sb_publishable_DBp6FI8Z4ThAq_4LXrZXSg_Xw2uPPgO
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
       ANDROID_HOME: /usr/local/lib/android/sdk
     steps:
