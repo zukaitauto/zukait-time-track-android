@@ -52,4 +52,4 @@ await click('home');await click('view');await click('insurance');
 assert.ok(w.document.getElementById('rc-external-job'));assert.equal(w.document.getElementById('rc-external-approval'),null);assert.equal(w.document.getElementById('rc-approval'),null);
 w.me={id:'QA-MGR',role:'Manager'};await w.zukaitReception.open();await click('view');await click('insurance');
 assert.ok(w.document.getElementById('rc-external-approval'));
-dom.window.close();console.log('Direct Reception Job Cards: cash/credit fields, stable lost-response UUID, customer account, role isolation and externally approved insurance controls passed (mock transport).');
+w.me=null;await settle();dom.window.close();console.log('Direct Reception Job Cards: cash/credit fields, stable lost-response UUID, customer account, role isolation and externally approved insurance controls passed (mock transport).');

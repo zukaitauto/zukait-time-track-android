@@ -104,6 +104,11 @@ try{
   try{for(const file of [...group,'reception-trigger-privileges.sql'])await control.query(fs.readFileSync('tests/'+file,'utf8'));}
   finally{await control.query('rollback');}
  }
+ const directCash={operation:'CREATE_DIRECT_JOB',request_id:randomUUID(),job_type:'CASH',job_card:'QA-CONCURRENT-CASH',details:{make:'Toyota',model:'Camry',customer:'QA Cash Customer',contact:'QA contact'},received_confirmed:true,reason:'QA multi-device cash intake'};
+ const directCashRetry=await race('same direct cash intake UUID creates one checklist and Job Card',c=>command(c,directCash,'QA-RC'),c=>command(c,directCash,'QA-RC'));
+ assert.equal(directCashRetry.second.duplicate,true);
+ assert.equal((await control.query("select count(*)::int n from workshop_receptions where job_card='QA-CONCURRENT-CASH'")).rows[0].n,1);
+ console.log('PASS SQL direct intake: cash/credit/customer reference, issued insurance approval, forbidden self-approval and exact retry/preservation checks');
  const sequences=await control.query('select (select last_value from workshop_reception_no_seq) rc,(select last_value from workshop_v2_estimate_no_seq) estimate,(select last_value from workshop_v2_spare_part_list_no_seq) pl');
  const live=await control.query("select to_jsonb(l)-'updated_at'-'updated_by'-'state_revision' as value from workshop_live_status l order by employee_id");
  // Identical lost-response retry must wait for the uncommitted command, then return its result.
@@ -180,7 +185,7 @@ try{
  const eleven=await readyFixture(),delivery11=deliveryRequest(eleven),snapshot11=await deliverySnapshot();
  const newWork=structuredClone(snapshot11.data),newAssignment={id:'QA-WORK-A-'+randomUUID(),emp:'QA-DELIVERY-EMP',job:eleven.job,completed:false,suggested:1,assignedAt:Date.now(),assignedBy:'QA-SUP'};
  newWork.assign.push(newAssignment);newWork.sessions.push({id:'QA-WORK-S-'+randomUUID(),assignmentId:newAssignment.id,emp:'QA-DELIVERY-EMP',job:eleven.job,start:Date.now(),end:0});
- const changedWork=await race('new work invalidates blocked Receptionist delivery',c=>c.query("update workshop_state set data=$1 where id='main'",[newWork]),c=>deliveryCommit(c,snapshot11,delivery11));assert.equal(changedWork.second.code,'conflict');
+ const changedWork=await race('new work invalidates blocked Receptionist delivery',c=>c.query("update workshop_state set data=$1,revision=revision+1 where id='main'",[newWork]),c=>deliveryCommit(c,snapshot11,delivery11));assert.equal(changedWork.second.code,'conflict');
  assert.equal(receptionistDeliveryTransition(await readState(),deliveryActor,delivery11,Date.now()).code,'work_not_finished');
  const twelve=await readyFixture(),delivery12=deliveryRequest(twelve),snapshot12=await deliverySnapshot(),cancellation12=await cancelCommand(twelve);
  const cancelledDelivery=await race('cancellation invalidates blocked Receptionist delivery',c=>command(c,cancellation12),c=>deliveryCommit(c,snapshot12,delivery12));assert.equal(cancelledDelivery.second.code,'conflict');

@@ -1,4 +1,5 @@
 -- Run only inside the disposable PostgreSQL database's rollback transaction.
+set local role service_role;
 do $$
 declare cmd_rc text; cmd jsonb; result jsonb; retry jsonb; rc text; rev bigint; snapshot jsonb; n bigint;
 begin

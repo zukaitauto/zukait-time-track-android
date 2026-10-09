@@ -139,7 +139,7 @@ begin
  if actor_role is null then raise exception 'reception_forbidden'; end if;
  if op not in ('CREATE_DIRECT_JOB','RECORD_EXTERNAL_APPROVAL','CREATE_EXTERNAL_JOB') or op is null then
   -- Cash/credit types cannot enter the insurance quotation command.
-  if op='CREATE_JOB' and exists(select 1 from public.workshop_receptions where rc_no=p_command->>'rc_no' and job_type<>'INSURANCE') then raise exception 'reception_invalid_job_type'; end if;
+  if op in ('CREATE_JOB','SAVE_PRELIMINARY','LINK_ESTIMATE','RECORD_APPROVAL','REVOKE_APPROVAL','SAVE_ADDITIONAL_REQUEST','LINK_ADDITIONAL_ESTIMATE','APPROVE_ADDITIONAL') and exists(select 1 from public.workshop_receptions where rc_no=p_command->>'rc_no' and job_type<>'INSURANCE') then raise exception 'reception_invalid_job_type'; end if;
   result:=public.zukait_reception_restricted_command(p_actor_id,p_command);
   if op='GET' then
    select * into r from public.workshop_receptions where rc_no=p_command->>'rc_no';

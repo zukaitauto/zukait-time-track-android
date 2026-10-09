@@ -161,6 +161,13 @@
     const r = await res.json();
     if (!res.ok || !r.ok) {
       const msgs = {
+        reception_invalid_job_type: "Choose Cash or Credit for direct intake. Insurance jobs require recorded approval.",
+        reception_received_confirmation_required: "Confirm the vehicle has been received at the workshop.",
+        reception_customer_required: "Enter the customer/company name and contact.",
+        reception_credit_account_required: "Enter the credit account or customer reference.",
+        reception_external_evidence_required: "Enter the issued approval reference and document evidence.",
+        reception_external_parts_review_required: "Use quotation approval to review and transfer preliminary parts.",
+        reception_external_approval_required: "Issued approval must be recorded and match the current vehicle details.",
         reception_cancellation_identity_required: "Type the linked Job Card number to confirm its identity.",
         reception_invalid_cancellation_date: "Use a valid cancellation date between Job Card creation and today.",
         reception_cancellation_active_work: "Finish or resolve active work before cancelling. Reload the review.",
@@ -283,7 +290,7 @@
     current = null;
     shell(
       "Reception",
-      '<div class="rc-actions"><button data-rc-action="new">+ New Checklist</button><button data-rc-action="direct-job">Open Cash / Credit Job Card</button>' +
+      '<div class="rc-actions"><button data-rc-action="new">+ New Checklist</button><button data-rc-action="direct-job">Open Job Card</button>' +
         (caps.manager
           ? '<button data-rc-action="staff">Reception Access</button>'
           : "") +
@@ -309,7 +316,7 @@
   }
   function directJob() {
     current = null;
-    shell("Open Job Card", '<form id="rc-direct-job"><p>For a vehicle received at the workshop. Insurance vehicles use their checklist and recorded approval.</p><div class="rc-grid">' +
+    shell("Open Job Card", '<form id="rc-direct-job"><p>For a vehicle received at the workshop. Insurance vehicles use their checklist and recorded approval.</p><button type="button" data-rc-action="new">New Insurance Checklist / Pre-approved Vehicle</button><div class="rc-grid">' +
       select('job_type','Job Type',[['CASH','Cash'],['CREDIT','Credit']],'CASH') +
       input('job_card','Job Card Number','',true) + input('make','Make','',true) + input('model','Model','',true) +
       input('registration','Registration') + input('year','Model Year') + input('vin','VIN / Chassis') +
