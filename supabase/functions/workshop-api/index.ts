@@ -4,6 +4,7 @@ const paintOrderRules = (globalThis as any).zukaitPaintOrderRules;
 import { qcTransition, preserveQcAuthority } from "./qc_delivery_rules.js";
 import { timeManagementTransition } from "./time_management_rules.js";
 import { receptionistDeliveryList, receptionistDeliveryRow, receptionistDeliveryTransition } from "./receptionist_delivery_rules.js";
+import { receptionDashboardProjection, receptionPromiseTransition, preserveReceptionPromiseAuthority } from "./reception_dashboard_rules.js";
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
@@ -29,6 +30,8 @@ function reply(body: unknown, status = 200) {
 // state, financial, time, parts or Supervisor APIs, including direct requests.
 function receptionistRequestAllowed(action: string, body: any) {
   if (action === "receptionist_delivery_list") return Object.keys(body).every(k => k === "action");
+  if (action === "reception_dashboard") return Object.keys(body).every(k =>
+    ["action","section","search","month","from","to","page","missing_only","dated_only"].includes(k));
   if (action === "receptionist_deliver") return body?.operation === "DELIVER" && Object.keys(body).every(k =>
     ["action", "operation", "jobCard", "expectedQcRevision", "expectedVehicleIdentity", "request_id"].includes(k));
   return action === "reception" &&
@@ -881,6 +884,61 @@ Deno.serve(async (req: Request) => {
       return reply({ok:false, code:"receptionist_forbidden"}, 403);
     }
 
+    if (action === "reception_dashboard") {
+      if (!["Manager","Supervisor","Receptionist"].includes(String(user.role))) return reply({ok:false,code:"reception_forbidden"},403);
+      if (Object.keys(body).some(k => !["action","section","search","month","from","to","page","missing_only","dated_only"].includes(k))
+          || JSON.stringify(body).length > 2500) return reply({ok:false,code:"reception_invalid_filter"},400);
+      const {data:cap,error:capError}=await admin.rpc("zukait_reception_command",
+        {p_actor_id:String(user.id),p_command:{operation:"CAPABILITIES"}});
+      if (capError) throw capError;
+      if (!cap?.allowed) return reply({ok:false,code:"reception_forbidden"},403);
+      const {data:state,error:stateError}=await admin.from("workshop_state")
+        .select("revision,data").eq("id","main").single();
+      if (stateError) throw stateError;
+      // Page through authoritative Reception cases; never silently drop old
+      // checklist numbers from totals or searches.
+      const receptionRows:any[]=[];
+      for(let offset=0;offset<=50000;offset+=500){
+        const {data:chunk,error}=await admin.from("workshop_receptions")
+          .select("rc_no,sequence_no,insurance_id,details,location,outcome,approval_status,job_card,job_type,received_at")
+          .order("sequence_no",{ascending:false}).range(offset,offset+499);
+        if(error)throw error;
+        receptionRows.push(...(chunk||[]));
+        if((chunk||[]).length<500)break;
+        if(offset>=50000)return reply({ok:false,code:"reception_dashboard_limit"},503);
+      }
+      const {data:insurance,error:insuranceError}=await admin.from("workshop_insurance_companies").select("id,name");
+      if(insuranceError)throw insuranceError;
+      const insuranceById=new Map((insurance||[]).map((c:any)=>[String(c.id),String(c.name)]));
+      const safeCases=receptionRows.map(r=>({...r,insurance_company:insuranceById.get(String(r.insurance_id))||""}));
+      const projected=receptionDashboardProjection(state.data,safeCases,{
+        section:body.section,search:body.search,month:body.month,from:body.from,to:body.to,
+        page:body.page,missing_only:body.missing_only,dated_only:body.dated_only
+      });
+      return reply(projected,projected.ok?200:400);
+    }
+
+    if (action === "reception_promise_date") {
+      if (!["Manager","Supervisor"].includes(String(user.role))) return reply({ok:false,code:"reception_promise_forbidden"},403);
+      for(let attempt=0;attempt<8;attempt++){
+        const {data:current,error:readError}=await admin.from("workshop_state")
+          .select("revision,data").eq("id","main").single();
+        if(readError)throw readError;
+        const result=receptionPromiseTransition(current.data,user,body,Date.now());
+        if(!result.ok)return reply({ok:false,code:result.code},/forbidden/.test(result.code)?403:409);
+        if(result.duplicate)return reply({ok:true,duplicate:true,job_card:result.job_card,promise_date:result.promise_date,server_revision:current.revision});
+        const nextRevision=Number(current.revision||0)+1;
+        const live=computeLiveStatus(result.data,nextRevision,String(user.id));
+        if(!live.length)return reply({ok:false,code:"reception_live_status_unavailable"},503);
+        const {data:committed,error:commitError}=await admin.rpc("zukait_commit_workshop_state_v2",{
+          p_expected_revision:Number(current.revision||0),p_data:result.data,p_changed_by:String(user.id),p_live:live});
+        if(commitError)throw commitError;
+        if(committed?.ok)return reply({ok:true,job_card:result.job_card,promise_date:result.promise_date,server_revision:committed.revision||nextRevision});
+        if(committed?.code!=="conflict")return reply({ok:false,code:"reception_promise_commit_failed"},409);
+      }
+      return reply({ok:false,code:"reception_promise_conflict"},409);
+    }
+
     if (action === "receptionist_delivery_list" || action === "receptionist_deliver") {
       if (user.role !== "Receptionist") return reply({ok:false, code:"receptionist_forbidden"},403);
       for (let attempt=0; attempt<8; attempt++) {
@@ -1383,6 +1441,8 @@ Deno.serve(async (req: Request) => {
         candidate = preserveManagerTimeAuthority(candidate, current.data);
       candidate = preserveAuthoritativeReopens(candidate, current.data);
         candidate = preserveJobTypeAuthority(candidate, current.data, user);
+        // Old phones must never erase or forge the server-owned promise-date audit.
+        candidate = preserveReceptionPromiseAuthority(candidate, current.data);
 
         const paintCorrectionIssue=validatePaintManagerCorrections(candidate,current.data,user);
         if (paintCorrectionIssue) return reply({ok:false,code:"paint_correction_forbidden",message:paintCorrectionIssue,revision:current.revision,data:current.data},403);
