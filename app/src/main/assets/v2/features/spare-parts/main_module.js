@@ -3,7 +3,8 @@ const KEY='zukait_v2_spare_parts_lists_v1';
 const DELETED_KEY='zukait_v2_spare_parts_deleted_v1';
 function deletedParts(){try{return JSON.parse(localStorage.getItem(DELETED_KEY)||'{}')}catch(_){return {}}}
 function rememberDeleted(id,at){const deleted=deletedParts();deleted[id]=at;localStorage.setItem(DELETED_KEY,JSON.stringify(deleted))}
-function read(){try{const deleted=deletedParts();return JSON.parse(localStorage.getItem(KEY)||'[]').map(list=>Object.assign({},list,{items:(list.items||[]).filter(item=>!item.deletedAt&&!deleted[item.id])}))}catch(_){return[]}}
+function linkedListIdentity(list){const live=job(list?.jobCard);if(!live?.receptionNo)return list;return {...list,vehicle:live.make||live.vehicle||'',model:live.model||'',year:live.year||'',registration:live.reg||'',vin:live.vin||'',customer:live.insuranceCompany||'',receptionNo:live.receptionNo,receptionLocation:live.receptionLocation}}
+function read(){try{const deleted=deletedParts();return JSON.parse(localStorage.getItem(KEY)||'[]').map(list=>Object.assign({},linkedListIdentity(list),{items:(list.items||[]).filter(item=>!item.deletedAt&&!deleted[item.id])}))}catch(_){return[]}}
 function write(v){const deleted=deletedParts(),rows=v.map(list=>Object.assign({},list,{items:(list.items||[]).filter(item=>!item.deletedAt&&!deleted[item.id])}));localStorage.setItem(KEY,JSON.stringify(rows));return rows}
 function normalizeJobCard(v){return String(v||'').trim().toUpperCase()}
 function partKey(name,partNo=''){return [String(name||'').trim().toLowerCase().replace(/\s+/g,' '),String(partNo||'').trim().toUpperCase()].join('|')}

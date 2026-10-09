@@ -42,5 +42,14 @@ w.eval(fs.readFileSync('app/src/main/assets/manager_job_edit.js','utf8'));
 w.editJobManager('QA001');assert.equal(w.document.getElementById('mje-make').readOnly,true);assert.equal(w.document.getElementById('mje-jobType').disabled,true);assert.equal(w.document.getElementById('mje-colorCode').readOnly,false);assert.equal(w.document.getElementById('mje-notes').readOnly,false);
 let opened;w.zukaitReception.openRecord=no=>opened=no;w.document.querySelector('.mje-form>button').click();assert.equal(opened,'RC-QA');
 assert.equal(w.state.sessions.length,0);assert.equal(w.state.assign.length,0);assert.equal(w.state.jobs[0].delivered,undefined);
+// Current display must override historical snapshots, including intentionally cleared fields.
+Object.assign(w.state.jobs[0],{vehicle:'Nissan Altima',make:'Nissan',model:'Altima',year:'',reg:'',vin:''});
+const display=master.display('QA001',{modelYear:'2015',VIN:'OLD',registrationNo:'OLD'});assert.equal(display.year,'');assert.equal(display.modelYear,undefined);assert.equal(display.VIN,undefined);
+const cached=[{listNo:'PL-QA',jobCard:'QA001',vehicle:'Toyota',model:'Camry',year:'2015',registration:'OLD',items:[{id:'PART-QA',name:'Lamp',qty:3,status:'ORDERED'}]}];
+const originalCache=JSON.stringify(cached);w.localStorage.setItem('zukait_v2_spare_parts_lists_v1',originalCache);
+w.eval(fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8'));
+const rows=w.zukaitV2.sparePartsMain.reportRows();assert.match(rows[0].vehicle,/Nissan.*Altima/);assert.doesNotMatch(rows[0].vehicle,/Toyota|Camry|2015|OLD/);assert.equal(rows[0].qty,3);assert.equal(rows[0].status,'ORDERED');assert.equal(w.localStorage.getItem('zukait_v2_spare_parts_lists_v1'),originalCache);
+w.esc=v=>String(v??'');w.eval(fs.readFileSync('app/src/main/assets/paint_module.js','utf8').split('\n').find(line=>line.startsWith('function orderHead(o)'))+'\nwindow.qaOrderHead=orderHead;');
+const paint=w.qaOrderHead({jobCard:'QA001',poNumber:'PO-QA',make:'Toyota Camry',modelYear:'2015'});assert.match(paint,/Nissan Altima/);assert.doesNotMatch(paint,/Toyota|Camry|2015/);
 console.log('Linked vehicle corrections and movements: mandatory reason, stable lost-response retries, no optimistic identity/location, confirmed refresh, badges, legacy edits and Paint PO color updates passed.');
 dom.window.close();

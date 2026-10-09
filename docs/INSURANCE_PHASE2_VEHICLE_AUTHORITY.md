@@ -27,7 +27,9 @@ flag old approval evidence as needing review; they do not stop existing repair o
 parts operations. A physical movement alone does not invalidate an approval.
 
 Parts, consumables, paint and delivered/360 views use the established Job Card
-master rather than duplicated reception observations. Fuel, tools, damage,
+master rather than duplicated reception observations. Parts reads overlay current linked
+identity onto display rows without rewriting cached source history. Linked paint
+views and shared resolution retain deliberately blank corrected fields. Fuel, tools, damage,
 odometer and remarks remain checklist-only; an observation-only edit does not
 advance workshop state. Existing paint color/code writes remain usable.
 
