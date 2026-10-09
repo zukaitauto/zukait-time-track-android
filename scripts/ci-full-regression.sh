@@ -155,3 +155,5 @@ node tests/technician-idle-time.mjs
 node tests/reception-vehicle-authority.mjs
 
 node tests/reception-additional.mjs
+
+node tests/reception-cancellation.mjs

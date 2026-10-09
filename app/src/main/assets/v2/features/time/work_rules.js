@@ -23,6 +23,8 @@
   function validate(type,assignment,state,ctx={}){
     const issues=[],ts=ctx.at||Date.now(),emp=assignment?.emp||ctx.employeeId,job=assignment?.job||ctx.job;
     if(!assignment||assignment.cancelled)issues.push('assignment-unavailable');
+    const jobRow=(state?.jobs||[]).find(j=>String(j?.no)===String(job));
+    if(jobRow?.cancelled||String(jobRow?.status||'').toUpperCase()==='CANCELLED')issues.push('job-cancelled');
     if(type==='WORK_START'||type==='WORK_RESUME'||type==='ID001_START'){
       const active=activeSession(state,emp);
       if(active)issues.push('employee-already-active');

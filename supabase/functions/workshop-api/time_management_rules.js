@@ -43,7 +43,7 @@ export function timeManagementTransition(current,actor,request,at=Date.now()){
  const a=(current.assign||[]).find(x=>x&&String(x.id)===command.assignmentId);
  if(!a||a.completed||a.cancelled||a.rework||String(a.job).toUpperCase()==='ID001')return fail('time_assignment_inactive');
  const j=(current.jobs||[]).find(x=>x&&String(x.no)===String(a.job));
- if(!j||j.delivered||j.archived||j.deleted)return fail('time_job_inactive');
+ if(!j||j.delivered||j.archived||j.deleted||j.cancelled)return fail('time_job_inactive');
  if(allocationToken(a)!==request.expectedSource)return fail('time_allocation_changed');
  const old=Number(a.suggested)||0,worked=workedMinutes(current,a,at),next=op==='ADD'?old+minutes:old-minutes;
  if(next<0||!Number.isSafeInteger(next)||next>60000)return fail('invalid_time_change');
@@ -91,7 +91,7 @@ function correctWorkTime(current,actor,request,at,id,reason){
  const a=(current.assign||[]).find(x=>x&&String(x.id)===assignmentId);
  if(!a||a.cancelled||String(a.job||'').toUpperCase()==='ID001')return fail('time_assignment_inactive');
  const j=(current.jobs||[]).find(x=>x&&String(x.no)===String(a.job));
- if(!j||j.archived||j.deleted)return fail('time_job_inactive');
+ if(!j||j.archived||j.deleted||j.cancelled)return fail('time_job_inactive');
  const employee=(current.users||[]).find(u=>u&&String(u.id)===String(a.emp)&&u.role==='Employee');
  if(!employee)return fail('time_employee_invalid');
  if(allocationToken(a)!==request.expectedSource)return fail('time_allocation_changed');
@@ -136,7 +136,7 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
  if(allocationToken(a)!==request.expectedSource)return fail('time_allocation_changed');
  if(employeeTimeToken(current,a.emp)!==request.expectedSessions)return fail('time_sessions_changed');
  const j=(current.jobs||[]).find(x=>x&&String(x.no)===String(a.job));
- if(!j||j.deleted)return fail('time_job_inactive');
+ if(!j||j.deleted||j.cancelled)return fail('time_job_inactive');
  const belongs=s=>s&&String(s.emp)===String(a.emp)&&(s.assignmentId?String(s.assignmentId)===String(a.id):String(s.job)===String(a.job));
  const own=(current.sessions||[]).filter(belongs),s=op==='ADD_SESSION'?null:own.find(x=>String(x.id)===command.sessionId);
  const data=copy(current),row=data.assign.find(x=>String(x.id)===String(a.id));let before=copy(a),after=null;

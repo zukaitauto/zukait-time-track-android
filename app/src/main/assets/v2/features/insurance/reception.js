@@ -109,6 +109,11 @@
     const r = await res.json();
     if (!res.ok || !r.ok) {
       const msgs = {
+        reception_cancellation_identity_required: "Type the linked Job Card number to confirm its identity.",
+        reception_invalid_cancellation_date: "Use a valid cancellation date between Job Card creation and today.",
+        reception_cancellation_active_work: "Finish or resolve active work before cancelling. Reload the review.",
+        reception_cancellation_review_changed: "Work or parts changed after review. Reload and review again before cancelling.",
+        reception_cancellation_job_closed: "This Job Card is already closed, cancelled or delivered.",
         reception_additional_forbidden: "Only the Manager or Supervisor can prepare or approve additional requests.",
         reception_additional_job_required: "Create the approved insurance Job Card first.",
         reception_additional_job_closed: "Additional approvals are unavailable for a closed, cancelled or delivered Job Card.",
@@ -374,15 +379,17 @@
     shell(
       r.rc_no + " · Reception Checklist",
       badges(r) +
+        (current.cancellation?.history ? '<div class="rc-box"><b>Job Card cancelled · '+esc(current.cancellation.history.cancellation_date)+'</b><p>'+esc(current.cancellation.history.reason)+' · '+esc(current.cancellation.history.actor_name)+' ('+esc(current.cancellation.history.actor_id)+')</p><p>History and costs retained. Vehicle location remains '+esc(r.location)+'.</p></div>' : '') +
         '<div class="rc-actions">' +
         (r.can_edit ? '<button data-rc-action="edit">Edit</button>' : "") +
-        (!r.outcome
+        (!r.outcome || current.cancellation?.history
           ? '<button data-rc-action="movement">Record Vehicle Movement</button>'
           : "") +
         (!r.job_card && !r.outcome
           ? '<button data-rc-action="outcome">Close Insurance Case</button>'
           : "") +
         (current.insurance ? '<button data-rc-action="insurance">Estimates & Approval</button>' : '') +
+        (current.cancellation?.can_review ? '<button data-rc-action="cancel-job">Review Job Card Cancellation</button>' : '') +
         (current.preliminary_parts ? '<button data-rc-action="parts">Preliminary Parts</button>' : '') +
         '<button data-rc-action="print">Print</button><button data-rc-action="pdf">Share PDF</button></div><div class="rc-grid"><div class="rc-box"><h4>Customer & Vehicle</h4>' +
         [
@@ -603,6 +610,25 @@
           items, reason: new FormData(e.target).get("reason").trim()});
         if (result) await view(r.rc_no);
       } catch (x) { error(x); }
+    };
+  }
+  async function cancellation(no=current?.record?.rc_no) {
+    pending=null;
+    await fetchRecord(no);
+    const r=current.record,c=current.cancellation;
+    if(c?.history)return view(no);
+    if(!c?.can_review)throw Error('Manager cancellation review is unavailable for this Job Card.');
+    const review=c.review,blocked=Number(review.active_assignments)+Number(review.active_sessions)+Number(review.projected_active_sessions)+Number(review.unresolved_projected_assignments)>0;
+    shell(r.rc_no+' · Job Card Cancellation',badges(r)+'<h4>'+esc(r.job_card)+' · '+esc([r.details.make,r.details.model].join(' '))+' · '+esc(r.details.registration||'Registration not recorded')+'</h4><p>Cancellation retains technician time, assignments, purchases, consumables and expenses. It is not delivery and does not move the vehicle.</p>'+
+      '<p>Active assignments: '+esc(review.active_assignments)+' · Open sessions: '+esc(review.active_sessions)+' · Projected active/paused sessions: '+esc(review.projected_active_sessions)+' · Unresolved projected assignments: '+esc(review.unresolved_projected_assignments)+'</p>'+
+      '<h4>Outstanding Parts: '+esc(review.outstanding_parts)+'</h4><ol>'+review.parts.map(p=>'<li>'+esc(p.part_name)+' · '+esc(p.list_no)+' · '+esc(p.status)+' · Ordered '+esc(p.ordered_qty)+' / Received '+esc(p.received_qty)+'</li>').join('')+'</ol><p>Outstanding orders are not cancelled automatically. Review supplier commitments and use the existing parts/return/settlement workflow.</p>'+
+      (blocked?'<p class="rc-box">Cancellation blocked by active or unresolved work. Use the existing work controls to resolve it, then reload this review.</p>':'<form id="rc-cancel-job">'+input('job_card','Type Job Card Number to Confirm Identity','',true)+input('cancellation_date','Cancellation Date',new Date(Date.now()+4*3600000).toISOString().slice(0,10),true,'date')+input('reason','Mandatory Cancellation Reason','',true)+'<label class="rc-check"><input type="checkbox" name="review_acknowledged" required>I reviewed work, outstanding parts and financial commitments.</label><div class="rc-actions"><button type="submit">Cancel Job Card & Keep History</button></div></form>')+
+      '<div class="rc-actions"><button data-rc-action="cancel-job">Reload Review</button><button data-rc-action="view" data-rc="'+esc(r.rc_no)+'">Back to Checklist</button></div>');
+    const form=document.getElementById('rc-cancel-job');if(form)form.onsubmit=async e=>{
+      e.preventDefault();try{
+        const f=new FormData(form);const result=await mutate({operation:'CANCEL_JOB',rc_no:r.rc_no,expected_revision:r.revision,job_card:f.get('job_card').trim().toUpperCase(),cancellation_date:f.get('cancellation_date'),reason:f.get('reason').trim(),review_fingerprint:review.fingerprint,review_acknowledged:f.get('review_acknowledged')==='on'});
+        if(result){try{await window.zukaitCloud?.pull?.(true)}catch(_){}await view(r.rc_no)}
+      }catch(x){error(x)}
     };
   }
   async function mutate(command) {
@@ -918,6 +944,9 @@
         case "parts":
           preliminaryParts();
           break;
+        case "cancel-job":
+          await cancellation();
+          break;
         case "movement":
           movement();
           break;
@@ -989,7 +1018,7 @@
       (grid || root).appendChild(b);
     }
   }
-  window.zukaitReception = { open: home, openRecord: no => view(no).catch(error), documentHtml, ensureCards, call };
+  window.zukaitReception = { open: home, openCancellation: no => cancellation(no).catch(error), openRecord: no => view(no).catch(error), documentHtml, ensureCards, call };
   style();
   new MutationObserver(ensureCards).observe(document.documentElement, {
     childList: true,

@@ -238,6 +238,7 @@
     window.confirmDeleteJob=async function(no){
     if(!me||me.role!=='Manager')return alert('Manager access required.');
     const j=job(no);
+    if(j?.receptionNo){if(window.zukaitReception?.openCancellation)return window.zukaitReception.openCancellation(j.receptionNo);return alert('Use Reception cancellation review for this linked insurance Job Card.');}
     const pw=document.getElementById('deleteJCPassword')?.value||'';
     const reason=document.getElementById('deleteJCReason')?.value.trim()||'';
     if(!j)return;

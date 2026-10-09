@@ -13,12 +13,12 @@ export function qcWork(data,no){
 export function qcStatus(data,job){
  const work=qcWork(data,job.no),qc=job.qcWorkflow||{},valid=work.complete&&qc.fingerprint===work.fingerprint;
  const painting=valid&&qc.painting?.result==='PASS',final=painting&&qc.final?.result==='PASS';
- return {workComplete:work.complete,painting,final,deliveryReady:final&&!job.delivered,stage:!work.complete?'WORK_PENDING':!painting?'PAINTING_QC':!final?'FINAL_QC':job.delivered?'DELIVERED':'DELIVERY'};
+ return {workComplete:work.complete,painting,final,deliveryReady:final&&!job.delivered&&!job.cancelled&&key(job.status)!=='CANCELLED',stage:job.cancelled||key(job.status)==='CANCELLED'?'CANCELLED':!work.complete?'WORK_PENDING':!painting?'PAINTING_QC':!final?'FINAL_QC':job.delivered?'DELIVERED':'DELIVERY'};
 }
 export function qcTransition(data,user,request,now){
  const candidate=JSON.parse(JSON.stringify(data)),job=(candidate.jobs||[]).find(j=>key(j?.no)===key(request.jobCard));
  const error=code=>({ok:false,code});
- if(!job||key(job.no)==='ID001'||job.deleted||job.archived)return error('job_not_available');
+ if(!job||key(job.no)==='ID001'||job.deleted||job.archived||job.cancelled||key(job.status)==='CANCELLED')return error('job_not_available');
  const op=request.operation,id=String(user.id||''),cash=String(job.jobType||'').toUpperCase()==='CASH';
  if(!['PAINTING_QC','FINAL_QC','DELIVER','CASH_AMOUNT_UPDATE','FINAL_INVOICE_CORRECTION','FINAL_INVOICE_ENTRY','DELIVERY_DATE_CORRECTION'].includes(op))return error('bad_qc_operation');
  if(op==='CASH_AMOUNT_UPDATE'){
