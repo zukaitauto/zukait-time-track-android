@@ -6,6 +6,9 @@ on:
       - architecture-v2
     paths:
       - .github/workflows/insurance-isolated-acceptance.yml
+      - app/src/main/assets/v2/features/insurance/reception.js
+      - app/src/main/assets/secure_auth.js
+      - app/src/main/assets/receptionist_session.js
 permissions:
   contents: read
 jobs:
