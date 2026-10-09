@@ -1,0 +1,64 @@
+name: Prepare isolated insurance acceptance
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/architecture-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      ZUKAIT_ACCEPTANCE_PROJECT_REF: ${{ vars.ZUKAIT_ACCEPTANCE_PROJECT_REF }}
+      ZUKAIT_ACCEPTANCE_PUBLISHABLE_KEY: ${{ vars.ZUKAIT_ACCEPTANCE_PUBLISHABLE_KEY }}
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      ANDROID_HOME: /usr/local/lib/android/sdk
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Verify isolation preparation
+        run: python3 tests/reception-acceptance-preparation.py
+      - name: Prepare separate client source
+        run: python3 scripts/prepare-insurance-acceptance.py --output "$RUNNER_TEMP/insurance-acceptance"
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Install required Android SDK packages
+        shell: bash
+        run: |
+          SDKMANAGER=$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | head -n 1)
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
+      - name: Build separate debug APK
+        working-directory: ${{ runner.temp }}/insurance-acceptance
+        run: gradle assembleDebug --stacktrace
+      - name: Verify package and archive evidence
+        shell: bash
+        run: |
+          CANDIDATE="$RUNNER_TEMP/insurance-acceptance"
+          APK="$CANDIDATE/app/build/outputs/apk/debug/app-debug.apk"
+          BT="$ANDROID_SDK_ROOT/build-tools/35.0.0"
+          "$BT/apksigner" verify --verbose --print-certs "$APK" > "$CANDIDATE/signature.txt"
+          "$BT/aapt" dump badging "$APK" > "$CANDIDATE/package.txt"
+          grep -q "package: name='com.zukait.timetrack.acceptance'" "$CANDIDATE/package.txt"
+          grep -q "versionName='V304-ACCEPTANCE'" "$CANDIDATE/package.txt"
+          cd "$CANDIDATE"
+          sha256sum app/build/outputs/apk/debug/app-debug.apk > apk-sha256.txt
+          echo 'Build preparation only. Backend and physical-device acceptance remain NOT_RUN.' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: INSURANCE_ISOLATED_ACCEPTANCE_${{ github.sha }}
+          retention-days: 14
+          path: |
+            ${{ runner.temp }}/insurance-acceptance/app/build/outputs/apk/debug/app-debug.apk
+            ${{ runner.temp }}/insurance-acceptance/web/
+            ${{ runner.temp }}/insurance-acceptance/acceptance-manifest.json
+            ${{ runner.temp }}/insurance-acceptance/apk-sha256.txt
+            ${{ runner.temp }}/insurance-acceptance/signature.txt
+            ${{ runner.temp }}/insurance-acceptance/package.txt

@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import {isolatedConfig,preflight} from './reception-isolated-transport.mjs';
+const env={ZUKAIT_RECEPTION_ISOLATED:'1',ZUKAIT_ACCEPTANCE_PROJECT_REF:'abcdefghijklmnopqrst',ZUKAIT_ACCEPTANCE_PUBLISHABLE_KEY:'sb_publishable_qa'};
+for(const patch of [{ZUKAIT_RECEPTION_ISOLATED:''},{ZUKAIT_ACCEPTANCE_PROJECT_REF:'pjknotnjkufadqavcmii'},{ZUKAIT_ACCEPTANCE_PUBLISHABLE_KEY:'sb_secret_qa'},{ZUKAIT_ACCEPTANCE_PROJECT_REF:'https://test.invalid'}]) assert.throws(()=>isolatedConfig({...env,...patch}));
+const config=isolatedConfig(env),fixtures=['manager','supervisor','reception','employee'].map(name=>({name,id:'ZQA_RC_abcdef_'+name,token:'qa-'+name}));
+const calls=[];
+const transport=async(url,options)=>{
+  assert.ok(url.startsWith(config.root+'/'));calls.push({url,options});
+  if(options.method==='OPTIONS')return new Response(null,{status:200,headers:{'access-control-allow-origin':'*','access-control-allow-headers':'apikey,content-type,x-zukait-session'}});
+  if(url.includes('/rest/v1/'))return new Response('{}',{status:403});
+  const body=JSON.parse(options.body),command=body.command, token=options.headers['x-zukait-session'];
+  if(!token)return new Response('{}',{status:401});
+  if(Array.isArray(command))return new Response('{}',{status:400});
+  assert.ok(['CAPABILITIES','LIST'].includes(command.operation),'Preflight must not send mutation commands');
+  if(command.operation==='LIST'&&token==='qa-employee')return new Response('{}',{status:403});
+  return Response.json({ok:true,allowed:token!=='qa-employee',rows:[]});
+};
+const result=await preflight(config,fixtures,transport);
+assert.equal(result.transport_preflight,'PASS');assert.equal(result.mutating_flow,'NOT_RUN');assert.equal(result.physical_devices,'NOT_RUN');
+assert.equal(calls.length,13);
+await assert.rejects(preflight(config,[...fixtures,fixtures[0]],transport));
+await assert.rejects(preflight(config,fixtures,async()=>new Response(null,{status:500})));
+console.log('Isolated transport runner self-test passed: production/key rejection, exact target, read-only commands, CORS/auth/direct-access checks and honest evidence labels. No real backend contacted.');
