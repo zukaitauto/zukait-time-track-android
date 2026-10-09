@@ -57,6 +57,51 @@ Test passwords are not committed to Git, screenshots or logs. The QA-only
 credentials were generated to a locally protected file for physical testers;
 protect them and rotate after testing.
 
+## 2026-10-10 live QA SQL RPC verification (transactionally rolled back)
+
+Source: actual PostgreSQL 17.11 in isolated Supabase project
+`omqgkqknbdcnotabffek`. These checks directly invoked the installed
+`public.zukait_reception_command` routine with synthetic QA actors inside
+`BEGIN; DO ... END; ROLLBACK`. They are **not** authenticated Edge HTTP
+transport tests and are **not** physical-device acceptance.
+
+- **PASS: Direct Reception Cash and Credit JCs.** Receptionist permission,
+  receipt and credit-account validation, durable UUID deduplication, read-back
+  through LIST/GET, employee-denied creation, Receptionist-denied STAFF, UUID
+  replay identity conflict, and preservation of unrelated cash job, expenses,
+  completed time session and nonempty authoritative live worker.
+- **PASS: Previously issued insurance approval.** Receptionist insurance
+  checklist and MASTER, denial of unapproved Job Card, denial of Receptionist
+  approval issuance, Manager-only external approval, duplicate approval retry,
+  authorized Receptionist external-approval-to-JC transition, duplicate JC retry,
+  preservation of unrelated worker sessions/expenses/live status, existence of
+  new JC projection during the transaction.
+- **PASS: QA database privileges.** No public-schema workshop SQL function
+  grants EXECUTE to `anon`/`authenticated`; no public workshop table grants
+  read/write privileges to those roles. QA Edge HTTPS test
+  [37985238583](https://github.com/zukaitauto/zukait-time-track-android/actions/runs/37985238583)
+  separately confirms unauthorized REST denial and both function HTTP 401 cases.
+- **PASS: credential-file integrity.** All four private local QA temporary
+  passwords were checked locally against their actual SHA-256 PBKDF2 hashes and
+  salts used to initialize QA. Passwords/tokens are not reproduced here. This
+  does not establish successful HTTPS sign-in or first-password-change flows.
+
+Post-rollback read-back: **0** Reception records, **0** Reception command
+receipts, **0** external approvals, **0** projected JCs, **0** staff sessions;
+the synthetic workshop stays at revision **1**, with four QA-only staff rows and
+one live worker. Because PostgreSQL `nextval` is not transactional, QA-only
+reception sequence advanced to **3** even though business rows were rolled back.
+No production sequence, record or workload was touched.
+
+**Still required:** real HTTPS sign-in, first-password-change, verified
+Manager/Supervisor/Receptionist/Employee sessions, authenticated Edge
+authorization/transactions and concurrent device races on QA; physical
+Android WebView, iPhone Safari and Mac Safari device reports; explicit
+release approval. The execution environment cannot directly reach the
+QA hostname, and the available GitHub connector cannot set protected
+GitHub Actions secrets; do not place QA passwords or staff session tokens
+in GitHub source or logs. Do not claim these remaining gates passed.
+
 ## Setup record
 
 Complete this record before any backend mutation or physical installation:
