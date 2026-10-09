@@ -184,7 +184,7 @@ begin
     'updated_by', p_changed_by
   );
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.zukait_refresh_live_status_from_state(p_data jsonb, p_revision bigint, p_changed_by text)
  RETURNS void
@@ -364,7 +364,7 @@ begin
      where not (employee_id = any(v_ids));
   end if;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.zukait_v2_allocate_spare_part_list(p_job_card text, p_actor_id text, p_client_key text)
  RETURNS TABLE(list_no text, job_card text, status text, created_at timestamp with time zone, created_by text)
@@ -378,7 +378,7 @@ return query select l.list_no,l.job_card,l.status,l.created_at,l.created_by from
 v_seq:=nextval('public.workshop_v2_spare_part_list_no_seq');
 insert into public.workshop_v2_spare_part_list_numbers(list_no,sequence_no,job_card,client_key,created_by) values('PL'||lpad(v_seq::text,3,'0'),v_seq,v_job,v_key,nullif(trim(coalesce(p_actor_id,'')),''));
 return query select l.list_no,l.job_card,l.status,l.created_at,l.created_by from public.workshop_v2_spare_part_list_numbers l where l.job_card=v_job;
-exception when unique_violation then return query select l.list_no,l.job_card,l.status,l.created_at,l.created_by from public.workshop_v2_spare_part_list_numbers l where l.job_card=v_job;end;$function$
+exception when unique_violation then return query select l.list_no,l.job_card,l.status,l.created_at,l.created_by from public.workshop_v2_spare_part_list_numbers l where l.job_card=v_job;end;$function$;
 
 CREATE OR REPLACE FUNCTION public.zukait_v2_apply_assignment_event(p_event_id text, p_entity_id text, p_event_type text, p_event_time timestamp with time zone, p_revision bigint, p_payload jsonb)
  RETURNS void
@@ -403,7 +403,7 @@ begin
  insert into public.workshop_v2_assignments(assignment_id,job_card,employee_id,status,suggested_minutes,assigned_at,revision,last_event_id)
  values(p_entity_id,job,emp,'ASSIGNED',greatest(coalesce((p_payload->>'suggestedMinutes')::integer,0),0),etime,coalesce(p_revision,0),p_event_id)
  on conflict(assignment_id) do update set job_card=excluded.job_card,employee_id=excluded.employee_id,status='ASSIGNED',suggested_minutes=excluded.suggested_minutes,updated_at=now(),revision=excluded.revision,last_event_id=excluded.last_event_id;
-end;$function$
+end;$function$;
 
 CREATE OR REPLACE FUNCTION public.zukait_v2_apply_calendar_event(p_event_id text, p_entity_id text, p_event_type text, p_event_time timestamp with time zone, p_payload jsonb)
  RETURNS void
@@ -421,7 +421,7 @@ begin
    insert into public.workshop_v2_calendar(work_date,is_public_holiday,label,updated_at,updated_by) values(d,false,labelv,now(),coalesce(p_payload->>'actorId',''))
    on conflict(work_date) do update set is_public_holiday=false,label=excluded.label,updated_at=now(),updated_by=excluded.updated_by;
  else raise exception 'unsupported_calendar_event'; end if;
-end;$function$
+end;$function$;
 
 CREATE OR REPLACE FUNCTION public.zukait_v2_apply_leave_event(p_event_id text, p_entity_id text, p_event_type text, p_event_time timestamp with time zone, p_payload jsonb)
  RETURNS void
@@ -438,7 +438,7 @@ begin
  if exists(select 1 from public.workshop_v2_leave l where l.employee_id=emp and l.leave_date=d and not l.cancelled and l.leave_id<>p_entity_id and (l.period='FULL' or per='FULL' or l.period=per)) then raise exception 'leave_overlap'; end if;
  insert into public.workshop_v2_leave(leave_id,employee_id,leave_date,period,cancelled,updated_at,updated_by) values(p_entity_id,emp,d,per,false,now(),coalesce(p_payload->>'actorId',''))
  on conflict(leave_id) do update set employee_id=excluded.employee_id,leave_date=excluded.leave_date,period=excluded.period,cancelled=false,updated_at=now(),updated_by=excluded.updated_by;
-end;$function$
+end;$function$;
 
 CREATE OR REPLACE FUNCTION public.zukait_v2_apply_preliminary_link_event(p_event_id text, p_entity_id text, p_event_type text, p_actor_id text, p_payload jsonb)
  RETURNS void
@@ -467,7 +467,7 @@ begin
     update public.workshop_v2_preliminary_links set reversed_event_id=p_event_id,reversed_by=nullif(p_actor_id,''),reversed_at=now(),reversal_reason=left(trim(p_payload->>'reason'),240) where session_id=v_session;
   else raise exception 'invalid_preliminary_event';
   end if;
-end;$function$
+end;$function$;
 
 CREATE OR REPLACE FUNCTION public.zukait_v2_apply_work_event(p_event_id text, p_entity_id text, p_event_type text, p_event_time timestamp with time zone, p_revision bigint, p_payload jsonb)
  RETURNS void
@@ -513,7 +513,7 @@ begin
    intervalmins:=case when cur.status='ACTIVE' then greatest(0,floor(extract(epoch from (etime-coalesce(cur.active_since,cur.started_at)))/60)::integer) else 0 end; dutymins:=case when cur.status='ACTIVE' then public.zukait_v2_duty_minutes(coalesce(cur.active_since,cur.started_at),etime) else 0 end; mins:=cur.accumulated_minutes+intervalmins;
    update public.workshop_v2_work_sessions set ended_at=etime,active_since=null,accumulated_minutes=mins,overtime_minutes=cur.overtime_minutes+greatest(intervalmins-dutymins,0),status=case when kind='ID001' then 'STOPPED' else 'FINISHED' end,actual_minutes=mins,last_event_id=p_event_id,revision=p_revision,updated_at=now() where session_id=p_entity_id;
  end if;
-end;$function$
+end;$function$;
 
 CREATE OR REPLACE FUNCTION public.zukait_v2_closed_day(p_day date)
  RETURNS boolean
@@ -522,7 +522,7 @@ CREATE OR REPLACE FUNCTION public.zukait_v2_closed_day(p_day date)
  SET search_path TO 'public'
 AS $function$
  select extract(isodow from p_day)=5 or exists(select 1 from public.workshop_v2_calendar c where c.work_date=p_day and c.is_public_holiday=true);
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.zukait_v2_commit_event(p_event_id text, p_entity_id text, p_actor_id text, p_device_id text, p_event_type text, p_client_time timestamp with time zone DEFAULT NULL::timestamp with time zone, p_revision bigint DEFAULT NULL::bigint, p_payload jsonb DEFAULT '{}'::jsonb)
  RETURNS TABLE(event_id text, server_time timestamp with time zone, revision bigint, inserted boolean)
@@ -578,7 +578,7 @@ begin
    if v.entity_id<>p_entity_id or v.event_type<>p_event_type or coalesce(v.actor_id,'')<>coalesce(p_actor_id,'') or coalesce(v.device_id,'')<>coalesce(p_device_id,'') or v.payload<>coalesce(p_payload,'{}'::jsonb) or coalesce(v.revision,-1)<>coalesce(p_revision,-1) or coalesce(v.client_time,'epoch'::timestamptz)<>coalesce(p_client_time,'epoch'::timestamptz) then raise exception 'event_id_conflict'; end if;
  end if;
  return query select v.event_id,v.server_time,v.revision,v_inserted;
-end;$function$
+end;$function$;
 
 CREATE OR REPLACE FUNCTION public.zukait_v2_duty_minutes(p_start timestamp with time zone, p_end timestamp with time zone)
  RETURNS integer
@@ -598,7 +598,7 @@ begin
    total:=total+greatest(0,floor(extract(epoch from (least(p_end,b)-greatest(p_start,a)))/60)::integer);
   end if; d=d+1;
  end loop; return total;
-end;$function$
+end;$function$;
 
 CREATE OR REPLACE FUNCTION public.zukait_v2_employee_on_leave(p_employee text, p_at timestamp with time zone)
  RETURNS boolean
@@ -613,7 +613,7 @@ AS $function$
       or (l.period='AM' and (p_at at time zone 'Asia/Muscat')::time>=time '08:00' and (p_at at time zone 'Asia/Muscat')::time<time '13:00')
       or (l.period='PM' and (p_at at time zone 'Asia/Muscat')::time>=time '15:00' and (p_at at time zone 'Asia/Muscat')::time<time '19:00'))
  );
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.zukait_v2_project_spare_part_event()
  RETURNS trigger
@@ -813,7 +813,7 @@ begin
   return new;
 exception when unique_violation then
   raise exception 'duplicate_active_spare_part';
-end;$function$
+end;$function$;
 
 CREATE OR REPLACE FUNCTION public.zukait_v2_spare_part_key(p_name text, p_part_no text)
  RETURNS text
@@ -823,7 +823,7 @@ CREATE OR REPLACE FUNCTION public.zukait_v2_spare_part_key(p_name text, p_part_n
 AS $function$
   select lower(regexp_replace(trim(coalesce(p_name,'')),'[^a-zA-Z0-9]+','','g')) || '|' ||
          upper(regexp_replace(trim(coalesce(p_part_no,'')),'[^a-zA-Z0-9]+','','g'));
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.zukait_v2_upsert_jobcard(p_job_card text, p_registration text DEFAULT ''::text, p_vehicle_make text DEFAULT ''::text, p_vehicle_model text DEFAULT ''::text, p_vehicle_year integer DEFAULT NULL::integer, p_workflow_stage text DEFAULT 'CREATED'::text, p_status text DEFAULT 'OPEN'::text, p_revision bigint DEFAULT 0, p_event_id text DEFAULT NULL::text, p_completed_at timestamp with time zone DEFAULT NULL::timestamp with time zone)
  RETURNS workshop_v2_jobcards
@@ -848,7 +848,7 @@ begin
    end if;
  end if;
  return outrow;
-end;$function$
+end;$function$;
 
 CREATE OR REPLACE FUNCTION public.zukait_workshop_state_live_status_trigger()
  RETURNS trigger
@@ -863,7 +863,7 @@ begin
   );
   return new;
 end;
-$function$
+$function$;
 
 CREATE TRIGGER trg_zukait_workshop_live_status AFTER INSERT OR UPDATE OF data, revision ON public.workshop_state FOR EACH ROW EXECUTE FUNCTION zukait_workshop_state_live_status_trigger();
 CREATE TRIGGER workshop_v2_spare_part_state_guard AFTER INSERT ON public.workshop_v2_events FOR EACH ROW EXECUTE FUNCTION zukait_v2_project_spare_part_event();
