@@ -80,7 +80,12 @@ isolated Phase 2 candidate**. This ZIP digest is not the APK digest.
    Fixture JSON is an array of four `{name,id,token}` records with the above
    manager/supervisor/reception/employee IDs. This checks real HTTPS CORS, verified
    sessions, permissions, actor spoofing, malformed/guest requests and direct REST
-   denial. Staff-session heartbeat may update QA last_seen_at. It does not write
+   denial. It also sends a syntactically valid but unrelated publishable key
+   with a valid QA session to both Edge Functions and requires HTTP 401. If
+   either accepts it, configure the QA-only `SUPABASE_PUBLISHABLE_KEY` or
+   `SUPABASE_PUBLISHABLE_KEYS` allowlist before retesting: a prefix-only
+   fallback is insufficient. The preflight never logs session tokens.
+   Staff-session heartbeat may update QA last_seen_at. It does not write
    Reception records or establish that Phase 2 schema/flows or devices pass.
 
 ## Concrete acceptance client preparation

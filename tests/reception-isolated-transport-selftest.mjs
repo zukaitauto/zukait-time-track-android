@@ -7,6 +7,7 @@ const calls=[];
 const transport=async(url,options)=>{
   assert.ok(url.startsWith(config.root+'/'));calls.push({url,options});
   if(options.method==='OPTIONS')return new Response(null,{status:200,headers:{'access-control-allow-origin':'*','access-control-allow-headers':'apikey,content-type,x-zukait-session'}});
+  if(options.headers.apikey!==config.key)return new Response('{}',{status:401});
   if(url.includes('/rest/v1/'))return new Response('{}',{status:403});
   const body=JSON.parse(options.body),command=body.command, token=options.headers['x-zukait-session'];
   if(url.endsWith('/staff-auth')){assert.equal(body.action,'session');const name=body.session_token.replace('qa-','');const roles={manager:'Manager',supervisor:'Supervisor',reception:'Receptionist',employee:'Employee'};return Response.json({ok:true,user:{id:fixtures.find(f=>f.name===name).id,role:roles[name]}});}
@@ -20,7 +21,7 @@ const transport=async(url,options)=>{
 };
 const result=await preflight(config,fixtures,transport);
 assert.equal(result.transport_preflight,'PASS');assert.equal(result.mutating_flow,'NOT_RUN');assert.equal(result.physical_devices,'NOT_RUN');
-assert.equal(calls.length,21);assert.equal(result.receptionist_read_authorization,'PASS');
+assert.equal(calls.length,23);assert.equal(result.receptionist_read_authorization,'PASS');
 await assert.rejects(preflight(config,[...fixtures,fixtures[0]],transport));
 await assert.rejects(preflight(config,fixtures,async()=>new Response(null,{status:500})));
-console.log('Isolated transport runner self-test passed: production/key rejection, exact target, read-only commands, CORS/auth/direct-access checks and honest evidence labels. No real backend contacted.');
+console.log('Isolated transport runner self-test passed: production/key rejection, mismatched key denial for both Edge Functions, exact target, read-only commands, CORS/auth/direct-access checks and honest evidence labels. No real backend contacted.');

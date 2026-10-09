@@ -31,6 +31,22 @@ export async function preflight(config, fixtures, transport=fetch) {
   assert.equal(options.status,200,'Edge CORS preflight failed');
   assert.equal(options.headers.get('access-control-allow-origin'),'*');
   assert.ok(options.headers.get('access-control-allow-headers')?.includes('x-zukait-session'));
+  // A well-formed but unrelated publishable key must not be accepted just
+  // because it shares the sb_publishable_ prefix. Use a valid QA staff
+  // session so 401 proves key enforcement rather than session rejection.
+  const wrongKey='sb_publishable_zukait_reception_wrong_key_probe';
+  assert.notEqual(wrongKey,config.key,'QA preflight probe key must differ from configured key');
+  for(const [path,payload] of [
+    ['/functions/v1/staff-auth',{action:'session',session_token:actors.manager.token}],
+    ['/functions/v1/workshop-api',{action:'reception',command:{operation:'CAPABILITIES'}}],
+  ]){
+    const response=await transport(config.root+path,{
+      method:'POST',
+      headers:{'Content-Type':'application/json',apikey:wrongKey,'x-zukait-session':actors.manager.token},
+      body:JSON.stringify(payload),signal:AbortSignal.timeout(30000),
+    });
+    assert.equal(response.status,401,path+' accepted an unrelated publishable key; configure the QA-only API-key allowlist');
+  }
   const roles={manager:'Manager',supervisor:'Supervisor',reception:'Receptionist',employee:'Employee'};
   for(const name of names){
     const res=await transport(config.root+'/functions/v1/staff-auth',{
