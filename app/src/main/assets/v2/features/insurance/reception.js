@@ -1094,6 +1094,8 @@
   // Manager and Supervisor use their existing workshop session.
   // The dedicated Receptionist account signs in through receptionist.html.
   function ensureCards() {
+    // A document may disappear while browser tests or mobile WebViews close.
+    if (typeof document === "undefined" || !document?.documentElement) return;
     const u = user(), role = u?.role;
     const dashboardId = role === "Manager" ? "managerView" :
       role === "Supervisor" ? "supervisorView" : "";
