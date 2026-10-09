@@ -7,6 +7,7 @@ on:
       - "supabase/functions/workshop-api/**"
       - "supabase/functions/staff-auth/**"
       - "supabase/migrations/**"
+      - "app/src/main/assets/reception_dashboard.js"
       - "app/src/main/assets/receptionist*"
       - "app/src/main/assets/secure_auth.js"
       - "app/src/main/assets/offline_test.html"
