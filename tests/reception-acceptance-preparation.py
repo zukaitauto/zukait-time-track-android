@@ -89,6 +89,28 @@ class AcceptancePreparation(unittest.TestCase):
             self.run_prepare()
         self.assertFalse(self.output.exists())
 
+    def test_receptionist_bundle_manifest(self):
+        result = self.run_prepare()
+        self.assertEqual(len(result["ordered_pending_migrations"]), 9)
+        self.assertEqual(result["ordered_pending_migrations"][-1]["file"], "20261009175402_reception_receptionist.sql")
+        expected = {name: module.digest(self.source / name) for name in
+                    ("supabase/functions/staff-auth/index.ts", "supabase/functions/staff-auth/deno.json")}
+        self.assertEqual(result["auth_files"], expected)
+        self.assertFalse((self.output / "web/supabase").exists())
+
+    def test_reject_missing_receptionist_inputs(self):
+        for name in ("supabase/migrations/20261009175402_reception_receptionist.sql",
+                     "supabase/functions/staff-auth/index.ts", "app/src/main/assets/receptionist_session.js"):
+            path = self.source / name
+            content = path.read_bytes()
+            path.unlink()
+            try:
+                with self.assertRaisesRegex(ValueError, "Incomplete source tree"):
+                    self.run_prepare()
+                self.assertFalse(self.output.exists())
+            finally:
+                path.write_bytes(content)
+
     def test_reject_unknown_backend_and_cleanup(self):
         (self.source / "app/src/main/assets/unknown.js").write_text("https://anotherproject.supabase.co")
         with self.assertRaisesRegex(ValueError, "Unexpected backend"):

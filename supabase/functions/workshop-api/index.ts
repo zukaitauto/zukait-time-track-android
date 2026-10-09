@@ -30,9 +30,9 @@ function reply(body: unknown, status = 200) {
 function receptionistRequestAllowed(action: string, body: any) {
   if (action === "receptionist_delivery_list") return Object.keys(body).every(k => k === "action");
   if (action === "receptionist_deliver") return body?.operation === "DELIVER" && Object.keys(body).every(k =>
-    ["action", "operation", "jobCard", "expectedQcRevision", "request_id"].includes(k));
+    ["action", "operation", "jobCard", "expectedQcRevision", "expectedVehicleIdentity", "request_id"].includes(k));
   return action === "reception" &&
-    ["CAPABILITIES", "MASTER", "LIST", "GET", "CREATE", "EDIT", "MOVE", "CREATE_JOB"]
+    ["CAPABILITIES", "MASTER", "LIST", "GET", "CREATE", "EDIT", "MOVE", "CREATE_JOB", "CREATE_DIRECT_JOB", "CREATE_EXTERNAL_JOB"]
       .includes(body?.command?.operation);
 }
 
@@ -43,7 +43,7 @@ function receptionistProjection(data: any) {
   const record = (value: any) => {
     const result = pick(value, ["rc_no", "sequence_no", "insurance_id", "insurance_company",
       "location", "outcome", "approval_status", "job_card", "revision", "received_at",
-      "created_by", "updated_at", "updated_by", "closed_at", "can_edit"]);
+      "created_by", "updated_at", "updated_by", "closed_at", "can_edit", "job_type"]);
     result.details = pick(value?.details, ["make", "model", "customer", "contact",
       "registration", "year", "vin", "odometer", "odometer_unit", "claim", "damage",
       "other_accessories", "warnings", "remarks", "tools", "fuel"]);
@@ -62,11 +62,12 @@ function receptionistProjection(data: any) {
   // Audit snapshots may include quotations, approved amounts and parts. Return
   // only Reception action metadata; never forward entire nested module records.
   if (Array.isArray(data?.audit)) result.audit = data.audit
-    .filter((a: any) => ["CREATE", "EDIT", "MOVE", "CREATE_JOB"].includes(a?.operation))
+    .filter((a: any) => ["CREATE", "EDIT", "MOVE", "CREATE_JOB", "CREATE_DIRECT_JOB", "CREATE_EXTERNAL_JOB"].includes(a?.operation))
     .map((a: any) => pick(a, ["id", "rc_no", "operation", "actor_id", "at", "reason"]));
   if (data?.insurance) result.insurance = {can_prepare: false, can_revoke: false,
     approval_valid: data.insurance.approval_valid === true};
   if (data?.job_creation) result.job_creation = {can_create: data.job_creation.can_create === true};
+  if (data?.external_approval) result.external_approval = {valid:data.external_approval.valid === true, can_record:false};
   return result;
 }
 function allowedApiKey(req: Request) {

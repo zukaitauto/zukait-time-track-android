@@ -282,8 +282,8 @@
   async function home() {
     current = null;
     shell(
-      "Insurance Reception",
-      '<div class="rc-actions"><button data-rc-action="new">+ New Checklist</button>' +
+      "Reception",
+      '<div class="rc-actions"><button data-rc-action="new">+ New Checklist</button><button data-rc-action="direct-job">Open Cash / Credit Job Card</button>' +
         (caps.manager
           ? '<button data-rc-action="staff">Reception Access</button>'
           : "") +
@@ -306,6 +306,31 @@
       .querySelector("[name=filter]")
       .addEventListener("change", () => loadList(false).catch(error));
     await loadList(false);
+  }
+  function directJob() {
+    current = null;
+    shell("Open Job Card", '<form id="rc-direct-job"><p>For a vehicle received at the workshop. Insurance vehicles use their checklist and recorded approval.</p><div class="rc-grid">' +
+      select('job_type','Job Type',[['CASH','Cash'],['CREDIT','Credit']],'CASH') +
+      input('job_card','Job Card Number','',true) + input('make','Make','',true) + input('model','Model','',true) +
+      input('registration','Registration') + input('year','Model Year') + input('vin','VIN / Chassis') +
+      input('customer','Customer / Company','',true) + input('contact','Contact','',true) +
+      '<label id="rc-credit-account" hidden>Credit Account / Customer Reference<input name="credit_account" maxlength="200"></label>' +
+      '</div><label>Reception Observations<textarea name="remarks" maxlength="2000"></textarea></label>' +
+      input('reason','Creation Notes','',true) +
+      '<label class="rc-check"><input type="checkbox" name="received_confirmed" required>I confirm the vehicle has been received at the workshop.</label><div class="rc-actions"><button type="submit">Open Job Card</button></div></form>');
+    const form=document.getElementById('rc-direct-job'),type=form.querySelector('[name="job_type"]'),account=form.querySelector('[name="credit_account"]');
+    type.onchange=()=>{document.getElementById('rc-credit-account').hidden=type.value!=='CREDIT';account.required=type.value==='CREDIT';};
+    form.onsubmit=async e=>{
+      e.preventDefault();
+      const f=new FormData(form),details={};
+      for(const k of ['make','model','registration','year','vin','customer','contact','remarks'])details[k]=String(f.get(k)||'').trim();
+      try {
+        const out=await mutate({operation:'CREATE_DIRECT_JOB',job_type:f.get('job_type'),job_card:String(f.get('job_card')).trim().toUpperCase(),details,
+          received_confirmed:f.has('received_confirmed'),reason:String(f.get('reason')).trim(),
+          ...(f.get('job_type')==='CREDIT'?{credit_account:String(f.get('credit_account')).trim()}: {})});
+        if(out){try{await window.zukaitCloud?.pull?.(true);}catch(_){}await view(out.record.rc_no);}
+      }catch(x){error(x);}
+    };
   }
   async function loadList(more) {
     const el = document.getElementById("rc-results");
@@ -398,7 +423,9 @@
           .join("") +
         '</div>' + (current?.record?.job_card ? input('reason', 'Reason for checklist / vehicle correction', '', true) : '') + '<div class="rc-actions"><button type="submit">Save Checklist</button></div></form>',
     );
-    document.querySelector("#rc-form [name=insurance_id]").required = true;
+    const insurer=document.querySelector("#rc-form [name=insurance_id]");
+    insurer.required=!r?.job_type || r.job_type==='INSURANCE';
+    if(!insurer.required)insurer.closest('label').hidden=true;
     document.getElementById("rc-form").addEventListener("submit", saveForm);
   }
   async function fetchRecord(no) {
@@ -421,7 +448,7 @@
         (user()?.role !== 'Receptionist' && !r.job_card && !r.outcome
           ? '<button data-rc-action="outcome">Close Insurance Case</button>'
           : "") +
-        (current.insurance ? '<button data-rc-action="insurance">' + (user()?.role === 'Receptionist' ? 'Approval & Job Card' : 'Estimates & Approval') + '</button>' : '') +
+        (current.insurance && (r.job_type || 'INSURANCE') === 'INSURANCE' ? '<button data-rc-action="insurance">' + (user()?.role === 'Receptionist' ? 'Approval & Job Card' : 'Estimates & Approval') + '</button>' : '') +
         (current.cancellation?.can_review ? '<button data-rc-action="cancel-job">Review Job Card Cancellation</button>' : '') +
         (current.preliminary_parts ? '<button data-rc-action="parts">Preliminary Parts</button>' : '') +
         '<button data-rc-action="print">Print</button><button data-rc-action="pdf">Share PDF</button></div><div class="rc-grid"><div class="rc-box"><h4>Customer & Vehicle</h4>' +
@@ -528,6 +555,8 @@
       (limited ? '<p>Insurance approval is recorded by authorized staff. Job Card creation is available only after valid approval.</p>' : '<div class="rc-box"><h4>Linked Estimates</h4>' + (quotes.map(q => '<p><b>' + esc(q.estimate_no) + '</b><br>' + esc(stamp(q.linked_at)) + '</p>').join('') || '<p>No estimates linked.</p>') + '</div>') +
       (current.job_creation?.can_create === true ? '<div class="rc-box"><h4>Create Approved Job Card</h4><p>Creates an unassigned insurance Job Card and transfers only approved parts. Vehicle location stays ' + esc(r.location) + '.</p><form id="rc-create-job">' +
         input('job_card', 'Job Card Number', '', true) + input('reason', 'Creation Notes / Reason', '', true) + '<div class="rc-actions"><button type="submit">Create Job Card & Transfer Approved Parts</button></div></form></div>' : '') +
+      (current.external_approval?.can_record && !draft.length ? '<div class="rc-box"><h4>Vehicle Already Approved by Insurance</h4><p>Record the issued approval document reference and evidence. No new quotation is required. Preliminary parts need the quotation approval flow.</p><form id="rc-external-approval">' + input('reference','Issued Approval Reference','',true) + input('approval_date','Approval Date',new Date(Date.now()+4*3600000).toISOString().slice(0,10),true,'date') + input('evidence','Approval Document Reference / Evidence','',true) + input('reason','Verification Notes','',true) + '<button type="submit">Record Existing Insurance Approval</button></form></div>' : '') +
+      (current.external_approval?.valid && !r.job_card && !r.outcome ? '<div class="rc-box"><h4>Open Pre-approved Insurance Job Card</h4><form id="rc-external-job">' + input('job_card','Job Card Number','',true) + input('reason','Creation Notes','',true) + '<p>Vehicle location remains '+esc(r.location)+'. Parts continue through the existing Job Card workflow.</p><button type="submit">Open Approved Job Card</button></form></div>' : '') +
       (r.job_card ? '<div class="rc-box"><h4>Linked Job Card ' + esc(r.job_card) + '</h4>' + (limited ? '<p>Approved parts were transferred by the server. Use Vehicle Delivery once work and QC are complete.</p>' : '<p>Continue assignments, parts and repairs through the existing Job Card workflow.</p><p>' + esc(current.job_creation?.transfers?.length || 0) + ' approved part items transferred.</p>') + '</div>' : '') +
       (!limited && info.can_prepare ? '<div class="rc-box"><h4>Prepare / Link Estimate</h4><div class="rc-actions"><button data-rc-action="rc-estimate">+ New Estimate</button></div><p>Save the quotation and allow sync to finish before linking it here.</p><form id="rc-link-estimate">' +
         input('estimate_no', 'Estimate Number', '', true) + input('reason', 'Reason for linking / refreshing', '', true) + '<div class="rc-actions"><button type="submit">Link Saved Estimate</button></div></form></div>' : '') +
@@ -547,6 +576,10 @@
         if (result) { await fetchRecord(r.rc_no); insuranceWorkspace(); }
       } catch (x) { error(x); }
     }
+    const external=document.getElementById('rc-external-approval');
+    if(external)external.onsubmit=e=>submit(e,f=>({operation:'RECORD_EXTERNAL_APPROVAL',reference:String(f.get('reference')).trim(),approval_date:f.get('approval_date'),evidence:String(f.get('evidence')).trim(),reason:String(f.get('reason')).trim()}));
+    const externalJob=document.getElementById('rc-external-job');
+    if(externalJob)externalJob.onsubmit=e=>submit(e,f=>({operation:'CREATE_EXTERNAL_JOB',job_card:String(f.get('job_card')).trim().toUpperCase(),reason:String(f.get('reason')).trim()}));
     const link = document.getElementById('rc-link-estimate');
     const createJob = document.getElementById('rc-create-job');
     if (createJob) createJob.onsubmit = async e => {
@@ -693,7 +726,7 @@
     if (!saved) return;
     const command = JSON.parse(saved.encoded), result = await mutate(command);
     if (!result || retryKey() !== key) return;
-    if (["CREATE_JOB", "EDIT", "MOVE", "APPROVE_ADDITIONAL", "CANCEL_JOB"].includes(command.operation)) {
+    if (["CREATE_JOB", "CREATE_DIRECT_JOB", "CREATE_EXTERNAL_JOB", "EDIT", "MOVE", "APPROVE_ADDITIONAL", "CANCEL_JOB"].includes(command.operation)) {
       try { await window.zukaitCloud?.pull?.(true); await window.zukaitV2?.sparePartsMain?.hydrateAuthoritativeLists?.(); } catch (_) {}
     }
     const no = result.record?.rc_no || command.rc_no;
@@ -718,7 +751,7 @@
     try {
       const r = await mutate({
         operation: current ? "EDIT" : "CREATE",
-        insurance_id: Number(f.get("insurance_id")),
+        insurance_id: current?.record.job_type && current.record.job_type !== "INSURANCE" ? null : Number(f.get("insurance_id")),
         details,
         ...(current
           ? {
@@ -988,6 +1021,9 @@
           break;
         case "edit":
           await editor(current.record.rc_no);
+          break;
+        case "direct-job":
+          directJob();
           break;
         case "insurance":
           insuranceWorkspace();

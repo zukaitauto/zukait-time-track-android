@@ -19,7 +19,7 @@ const admin={from(table){const chain={select:()=>chain,eq:()=>chain,maybeSingle:
 const source=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8').replace(/^import[^\n]*\n/gm,'');
 vm.runInNewContext(stripTypeScriptTypes(source),{Deno:{env:{get:k=>k==='SUPABASE_PUBLISHABLE_KEY'?'qa-key':''},serve:f=>serve=f},createClient:()=>admin,crypto:webcrypto,TextEncoder,Response,Date,console:{error:()=>{}},receptionistDeliveryList,receptionistDeliveryRow,receptionistDeliveryTransition});
 async function call(body){const res=await serve(new Request('https://qa.invalid',{method:'POST',headers:{apikey:'qa-key','x-zukait-session':'qa-session'},body:JSON.stringify(body)}));return {status:res.status,body:await res.json()};}
-const request=()=>({action:'receptionist_deliver',operation:'DELIVER',jobCard:'QA-JC',expectedQcRevision:2,request_id:randomUUID()});
+const request=()=>({action:'receptionist_deliver',operation:'DELIVER',jobCard:'QA-JC',expectedQcRevision:2,expectedVehicleIdentity:receptionistDeliveryRow(state,state.jobs[0]).expectedVehicleIdentity,request_id:randomUUID()});
 reset();let r=await call({action:'receptionist_delivery_list'});assert.equal(r.status,200);assert.equal(r.body.rows[0].deliveryReady,true);assert.ok(!JSON.stringify(r.body).includes('999'));assert.equal(writes,0);
 const body=request();r=await call(body);assert.equal(r.status,200);assert.equal(r.body.job.delivered,true);assert.ok(!JSON.stringify(r.body).includes('999'));assert.equal(writes,1);
 r=await call(body);assert.equal(r.status,200);assert.equal(r.body.duplicate,true);assert.equal(writes,1);

@@ -24,9 +24,10 @@ async function fetch(url,options){
   else if(op==='LIST')result={ok:true,rows:[]};
   else if(op==='GET')result={ok:true,record,insurance:{approval_valid:true,can_prepare:false,can_revoke:false},job_creation:{can_create:!record.job_card},movements:[],audit:[]};
   else throw Error('Unexpected Reception operation '+op);
- }else if(body.action==='receptionist_delivery_list')result={ok:true,rows:[{jobCard:'QA-JC',receptionNo:'RC-QA',vehicle:'Toyota Camry',registration:'QA123',stage:delivered?'DELIVERED':'DELIVERY',delivered,deliveryReady:!delivered,expectedQcRevision:2}]};
+ }else if(body.action==='receptionist_delivery_list')result={ok:true,rows:[{jobCard:'QA-JC',receptionNo:'RC-QA',vehicle:'Toyota Camry',registration:'QA123',stage:delivered?'DELIVERED':'DELIVERY',delivered,deliveryReady:!delivered,expectedQcRevision:2,expectedVehicleIdentity:'QA-VEHICLE'}]};
  else{
   uuids.push(body.request_id);
+  if(delivered&&body.request_id!==uuids[0])return {ok:false,status:409,json:async()=>({ok:false,code:'already_delivered'})};
   if(!delivered){writes++;delivered=true;}
   if(lost){lost=false;throw Error('Connection lost after commit');}
   result={ok:true,duplicate:true,job:{jobCard:'QA-JC',delivered:true}};
@@ -58,8 +59,9 @@ assert.equal(w.document.getElementById('rc-approval'),null);
 assert.equal(w.document.getElementById('rc-link-estimate'),null);
 assert.ok(!w.document.getElementById('workspace').textContent.includes('OMR'));
 await w.zukaitReceptionist.deliveries();
-const body={action:'receptionist_deliver',operation:'DELIVER',jobCard:'QA-JC',expectedQcRevision:2,request_id:randomUUID()};
+const body={action:'receptionist_deliver',operation:'DELIVER',jobCard:'QA-JC',expectedQcRevision:2,expectedVehicleIdentity:'QA-VEHICLE',request_id:randomUUID()};
 await w.zukaitReceptionist.deliver(body);assert.equal(writes,1);assert.deepEqual(JSON.parse(JSON.stringify(w.zukaitReceptionist.pending())),body);
+assert.ok(w.document.getElementById('retry-delivery'));
 const saved=Object.entries(w.localStorage);w.me=null;dom.window.close();
 ({dom,w}=await runtime(saved));await w.zukaitReceptionist.deliveries();
 assert.ok(w.document.getElementById('retry-delivery'));
@@ -68,10 +70,10 @@ await w.zukaitReceptionist.deliver(w.zukaitReceptionist.pending());
 assert.equal(writes,1);assert.deepEqual(uuids,[body.request_id,body.request_id]);assert.equal(w.zukaitReceptionist.pending(),null);
 // No request starts when storage cannot preserve its identity.
 const set=w.Storage.prototype.setItem;w.Storage.prototype.setItem=function(key,value){if(key.startsWith('zukait_receptionist_delivery_v1:'))throw Error('Storage unavailable');return set.call(this,key,value)};
-const before=requests.length;await w.zukaitReceptionist.deliver({...body,request_id:randomUUID()});assert.equal(requests.length,before);
+const before=uuids.length;await w.zukaitReceptionist.deliver({...body,request_id:randomUUID()});assert.equal(uuids.length,before);
 w.Storage.prototype.setItem=set;
 Object.defineProperty(w.navigator,'onLine',{configurable:true,value:false});
-const offline={...body,request_id:randomUUID()};await w.zukaitReceptionist.deliver(offline);assert.equal(requests.length,before);assert.deepEqual(JSON.parse(JSON.stringify(w.zukaitReceptionist.pending())),offline);
+const offlineBefore=requests.length,offline={...body,request_id:randomUUID()};await w.zukaitReceptionist.deliver(offline);assert.equal(requests.length,offlineBefore);assert.deepEqual(JSON.parse(JSON.stringify(w.zukaitReceptionist.pending())),offline);
 Object.defineProperty(w.navigator,'onLine',{configurable:true,value:true});await w.zukaitReceptionist.deliver(w.zukaitReceptionist.pending());assert.equal(w.zukaitReceptionist.pending(),null);
 const key='zukait_receptionist_delivery_v1:https://pjknotnjkufadqavcmii.supabase.co/functions/v1/:QA-RC';w.localStorage.setItem(key,'broken');
 const corruptionBefore=requests.length;await w.zukaitReceptionist.deliver({...body,request_id:randomUUID()});assert.equal(requests.length,corruptionBefore);assert.equal(w.localStorage.getItem(key),'broken');

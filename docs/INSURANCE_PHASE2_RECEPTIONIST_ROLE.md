@@ -1,6 +1,7 @@
 # Reception-only staff account requirement
 
-Status: code implemented; complete automated verification and physical acceptance pending. **Not activated**.
+Status: code implemented; automated results are recorded in branch CI. Real isolated
+Edge transport and physical acceptance remain pending. **Not activated**.
 Requested 2026-10-09. Applies only to architecture-v2.
 Production stays V304 / versionCode 267 until verified release authorization.
 
@@ -181,3 +182,81 @@ full checklist/approval/Job Card/additional approval/cancellation workflow with
 appropriate actors, then Receptionist delivery; repeat loss/restart/offline/reconnect
 and concurrent work/QC/cancellation changes. Record device, OS/browser, source SHA,
 QA project, migration hashes, API versions and retained request UUIDs.
+
+
+## Automated evidence and expanded checks
+
+The first complete implementation, 8c3a4cbd8a09dfa0e256c636252ff863a26c2d0b,
+passed Reception run 37971545407 (job 113959149352), debug APK 37971545604,
+unsigned Android 37971545602, signed acceptance 37971545411 and Estimate checks
+37971545636. Publishing run 37971545571 was skipped. This baseline included the
+new auth/PBKDF2, role API/privacy, delivery/CAS and restart/offline DOM tests,
+all existing rollback SQL integration tests and nine PG17 transaction overlaps.
+
+The expanded suite additionally exercises the dedicated Receptionist page on
+Chromium/WebKit at 1440, 1024, 768 and 390 pixels, and four real PostgreSQL
+state-lock overlaps for delivery: identical UUID/CAS retry, new work, cancellation
+and Manager vehicle correction. The suite checks both original and new work
+history, unrelated expenses/consumables, original employee live status and all
+business sequence values. It commits only in its generated disposable database.
+
+Delivery now includes the confirmed vehicle identity as well as the QC revision
+in its request fingerprint. A changed vehicle requires a fresh physical review;
+an exact lost-response retry still confirms the original committed receipt. The
+client displays the saved retry immediately after uncertainty, retains it through
+reconnection, and uses readable messages for review/session failures. Vehicle
+handover/location is recorded using Checklist movements; delivery is an independent
+QC-guarded confirmation and does not silently change VIW/VWC.
+
+The read-only real-transport preflight now checks authoritative roles for all four
+QA identities, requires Receptionist (not a designated Employee) for the reception
+identity, rejects shared-state/staff reads and verifies the minimal delivery DTO.
+Its self-test is mocked and is not evidence of real HTTPS or physical acceptance.
+
+Read-only live reinspection on 2026-10-09 still found staff-auth v4, workshop-api
+v58, the original role constraint and none of the nine pending migrations applied.
+Only the live project is connected; adb and xcrun are unavailable. No account,
+database object, deployment or release was created in production.
+
+The existing spare-parts trigger execution advisor warnings remain until the
+pending hardening is activated as part of the full bundle. Remediation references:
+[anon execution](https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable) and
+[authenticated execution](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable).
+
+Remaining acceptance: a separate QA project and protected QA sessions, actual
+Edge transport, multiple physical devices, Safari/WebView reconnect/lost-response
+checks and final release authorization. Actual Receptionist User ID/display name
+and production credential creation remain pending; Manager sets the temporary
+password privately after authorized activation.
+
+## Direct Job Card intake extension (pending acceptance)
+
+Reception now includes Open Cash / Credit Job Card. The server creates a linked
+checklist and an unassigned Job Card in one transaction. Make, model, customer,
+contact, creation reason and confirmation that the vehicle was received are
+required. Credit additionally requires an account/customer reference. This is
+an account reference, not a new credit-limit or lending authorization system.
+The established job classifications, work assignment, costs, invoices and QC
+remain in their existing modules. Receptionists cannot enter financial amounts.
+Intake observations remain on the checklist.
+
+For a vehicle arriving with insurance approval already issued, Manager or
+Supervisor records the approval reference, date, document evidence and reason
+on its checklist. This creates an immutable identity snapshot without generating
+a replacement estimate. The receptionist can then open the approved Job Card.
+The external route requires an empty preliminary-parts draft; existing drafted
+parts use the tested quotation/parts approval and exact transfer route. New
+Job Card parts continue through the established parts workflow. Receptionists
+cannot approve their own insurance jobs or change recorded approvals.
+
+The pending ninth migration is extended (it has never been deployed), after
+the original eight unchanged migrations. It adds authoritative job_type, permits
+a null insurer only for cash/credit, adjusts linked-vehicle authority to preserve
+classification, and adds the private RLS-protected immutable external-approval
+table and service-role-only RPCs. Existing rows default to INSURANCE. Retry UUIDs
+and actor/command fingerprints are enforced before any write, including atomic
+intake. Do not deploy this migration or either API independently of the release.
+
+Acceptance must cover cash, credit and issued insurance approval on real devices
+and real isolated Edge transport, as well as the existing quotation flow. None
+of these paths has been activated in production or counted as physical testing.

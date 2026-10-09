@@ -20,7 +20,7 @@ export async function preflight(config, fixtures, transport=fetch) {
   const actors=Object.fromEntries(fixtures.map(f=>[f.name,f]));
   for(const name of names) {
     const f=actors[name];
-    assert.ok(f && new RegExp(`^ZQA_RC_[a-f0-9]+_${name}$`).test(f.id) && typeof f.token==='string' && f.token.length>0,'Dedicated QA identity/session required: '+name);
+    assert.ok(f && new RegExp(`^ZQA_RC_[a-f0-9]+_${name}$`,'i').test(f.id) && typeof f.token==='string' && f.token.length>0,'Dedicated QA identity/session required: '+name);
   }
   const endpoint=config.root+'/functions/v1/workshop-api';
   const request=async(name,command,extra={})=>transport(endpoint,{
@@ -31,6 +31,14 @@ export async function preflight(config, fixtures, transport=fetch) {
   assert.equal(options.status,200,'Edge CORS preflight failed');
   assert.equal(options.headers.get('access-control-allow-origin'),'*');
   assert.ok(options.headers.get('access-control-allow-headers')?.includes('x-zukait-session'));
+  const roles={manager:'Manager',supervisor:'Supervisor',reception:'Receptionist',employee:'Employee'};
+  for(const name of names){
+    const res=await transport(config.root+'/functions/v1/staff-auth',{
+      method:'POST',headers:{'Content-Type':'application/json',apikey:config.key},
+      body:JSON.stringify({action:'session',session_token:actors[name].token}),signal:AbortSignal.timeout(30000)});
+    assert.equal(res.status,200,name+' auth session failed');
+    const body=await res.json();assert.equal(body.ok,true);assert.equal(body.user?.id,actors[name].id);assert.equal(body.user?.role,roles[name],name+' credential role mismatch');
+  }
   for(const name of names) {
     const res=await request(name,{operation:'CAPABILITIES'});
     assert.equal(res.status,200,name+' session failed');
@@ -44,12 +52,20 @@ export async function preflight(config, fixtures, transport=fetch) {
   assert.equal(spoof.status,403,'Actor spoofing must be rejected');
   assert.equal((await request('guest',{operation:'CAPABILITIES'})).status,401);
   assert.equal((await request('manager',[])).status,400);
+  for(const action of ['load','revision'])assert.equal((await request('reception',{operation:'LIST'},{action})).status,403,'Receptionist must not access '+action);
+  assert.equal((await request('reception',{operation:'STAFF'})).status,403,'Receptionist must not list staff');
+  const deliveries=await transport(endpoint,{method:'POST',headers:{'Content-Type':'application/json',apikey:config.key,'x-zukait-session':actors.reception.token},
+    body:JSON.stringify({action:'receptionist_delivery_list'}),signal:AbortSignal.timeout(30000)});
+  assert.equal(deliveries.status,200);
+  const deliveryBody=await deliveries.json();assert.equal(deliveryBody.ok,true);assert.ok(Array.isArray(deliveryBody.rows));
+  const deliveryFields=['jobCard','receptionNo','vehicle','registration','delivered','deliveredAt','stage','deliveryReady','expectedQcRevision','expectedVehicleIdentity'];
+  for(const row of deliveryBody.rows)assert.ok(Object.keys(row).every(k=>deliveryFields.includes(k)),'Receptionist delivery response includes unrelated module fields');
   for(const suffix of ['/rest/v1/workshop_receptions?select=rc_no&limit=1','/rest/v1/rpc/zukait_reception_command']) {
     const rpc=suffix.includes('/rpc/');
     const res=await transport(config.root+suffix,{method:rpc?'POST':'GET',headers:{apikey:config.key,'Content-Type':'application/json'},...(rpc?{body:JSON.stringify({p_actor_id:actors.manager.id,p_command:{operation:'LIST'}})}:{}),signal:AbortSignal.timeout(30000)});
     assert.ok([401,403,404].includes(res.status),'Direct unauthenticated Reception access must be denied');
   }
-  return {project_ref:new URL(config.root).hostname.split('.')[0],transport_preflight:'PASS',mutating_flow:'NOT_RUN',physical_devices:'NOT_RUN'};
+  return {project_ref:new URL(config.root).hostname.split('.')[0],transport_preflight:'PASS',receptionist_read_authorization:'PASS',mutating_flow:'NOT_RUN',physical_devices:'NOT_RUN'};
 }
 
 if(process.argv[1] && import.meta.url===pathToFileURL(process.argv[1]).href) {

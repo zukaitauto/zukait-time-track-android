@@ -6,6 +6,12 @@
  const el=id=>document.getElementById(id);
  const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const error=e=>{el('message').textContent=e?.message||String(e)};
+ const messages={invalid:'User ID or password is incorrect.',locked:'This account is temporarily locked. Try again later.',weak:'Password must be at least 8 characters.',forbidden:'This action is not allowed for this account.',
+  invalid_session:'Your session has expired. Sign in again; saved actions are retained.',receptionist_forbidden:'This action is not available in Reception.',
+  work_not_finished:'Work is still pending or active. Refresh Vehicle Delivery after it is complete.',both_qc_required:'Current painting and final QC must both pass before delivery.',
+  qc_conflict:'The work or QC review changed. Refresh Vehicle Delivery and review again.',job_not_available:'This Job Card is not available for delivery.',already_delivered:'This vehicle has already been delivered.',
+  receptionist_vehicle_changed:'Vehicle details changed. Refresh Vehicle Delivery and confirm the current vehicle.',receptionist_request_conflict:'The saved action conflicts with its server receipt. Keep this device data and ask the Manager to reconcile it.',
+  receptionist_delivery_reconcile:'Delivery history needs review. Keep the saved action and ask the Manager to reconcile it.',receptionist_live_status_unavailable:'Live staff status could not be verified. Try again or ask the Manager.'};
  const bridge=()=>window.AndroidBridge && typeof window.AndroidBridge.getSecureSessionToken==='function'&&typeof window.AndroidBridge.saveSecureSessionToken==='function'?window.AndroidBridge:null;
  function savedSession(){
   const saved=JSON.parse(localStorage.getItem(SESSION)||'null');
@@ -25,7 +31,7 @@
   try{
    const response=await fetch(BASE+functionName,{method:'POST',headers:{'Content-Type':'application/json',apikey:KEY,'x-zukait-session':token},body:JSON.stringify(body),signal:controller.signal});
    const result=await response.json();
-   if(!response.ok||!result.ok){const e=Error(result.code||'Server action could not be confirmed.');e.code=result.code;e.status=response.status;throw e;}
+   if(!response.ok||!result.ok){const e=Error(messages[result.code]||'The server action could not be confirmed. Check the connection and retry the saved action.');e.code=result.code;e.status=response.status;if(functionName==='workshop-api'&&response.status===401)clear();throw e;}
    return result;
   }finally{clearTimeout(timer)}
  }
@@ -33,6 +39,7 @@
  async function open(user){
   window.me=user;el('identity').textContent=user.name+' · Receptionist';el('login').classList.add('hidden');el('reception-app').classList.remove('hidden');el('message').textContent='';
   await window.zukaitReception.open();
+  if(pending())el('message').textContent='A delivery awaits confirmation. Open Vehicle Delivery and confirm the saved action.';
  }
  window.openModal=html=>{el('workspace').innerHTML=html};
  window.closeModal=()=>{el('workspace').innerHTML=''};
@@ -51,9 +58,9 @@
  el('change-password').onclick=async()=>{try{const current=prompt('Current password');if(current===null)return;const next=password();if(next===null)return;const user=window.me;const result=await request('staff-auth',{action:'change_password',user_id:user.id,current_password:current,new_password:next});saveSession(result.session_token,user)}catch(e){error(e)}};
  el('checklists').onclick=()=>window.zukaitReception.open().catch(error);
  const journalKey=()=>{if(!window.me?.id)throw Error('Sign in first.');return 'zukait_receptionist_delivery_v1:'+BASE+':'+window.me.id};
- function pending(){const raw=localStorage.getItem(journalKey());if(!raw)return null;try{const body=JSON.parse(raw);if(!body||Array.isArray(body)||Object.keys(body).some(k=>!['action','operation','jobCard','expectedQcRevision','request_id'].includes(k))||body.action!=='receptionist_deliver'||body.operation!=='DELIVER'||! /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.request_id)||typeof body.jobCard!=='string'||!body.jobCard.trim()||!Number.isSafeInteger(body.expectedQcRevision)||body.expectedQcRevision<0)throw Error();return body;}catch(_){throw Error('The saved delivery request is unreadable. Keep this device data and ask the Manager to reconcile it.');}}
+ function pending(){const raw=localStorage.getItem(journalKey());if(!raw)return null;try{const body=JSON.parse(raw);if(!body||Array.isArray(body)||Object.keys(body).some(k=>!['action','operation','jobCard','expectedQcRevision','expectedVehicleIdentity','request_id'].includes(k))||body.action!=='receptionist_deliver'||body.operation!=='DELIVER'||! /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.request_id)||typeof body.expectedVehicleIdentity!=='string'||typeof body.jobCard!=='string'||!body.jobCard.trim()||!Number.isSafeInteger(body.expectedQcRevision)||body.expectedQcRevision<0)throw Error();return body;}catch(_){throw Error('The saved delivery request is unreadable. Keep this device data and ask the Manager to reconcile it.');}}
  async function deliver(body){
-  if(busy)return;busy=true;const key=journalKey();
+  if(busy)return;if(!window.me?.id){error(Error('Sign in before confirming delivery.'));return;}const key=journalKey();busy=true;
   try{
    const saved=pending();if(saved&&JSON.stringify(saved)!==JSON.stringify(body))throw Error('Confirm the saved delivery action first.');
    if(!saved)localStorage.setItem(key,JSON.stringify(body));
@@ -61,7 +68,8 @@
    if(!result.job?.delivered)throw Error('Delivery was not confirmed by the server.');
    localStorage.removeItem(key);await deliveries();
   }catch(e){
-   if(['work_not_finished','both_qc_required','qc_conflict','job_not_available','already_delivered','receptionist_invalid_delivery','receptionist_request_required'].includes(e.code))localStorage.removeItem(key);
+   if(['work_not_finished','both_qc_required','qc_conflict','job_not_available','already_delivered','receptionist_invalid_delivery','receptionist_request_required','receptionist_vehicle_changed'].includes(e.code))localStorage.removeItem(key);
+   try{await deliveries()}catch(_){}
    error(e);
   }finally{busy=false}
  }
@@ -73,7 +81,7 @@
   const list=document.createElement('div');root.appendChild(list);
   for(const row of result.rows||[]){
    const card=document.createElement('div');card.className='delivery-card';card.innerHTML='<h3>'+escape(row.jobCard)+' · '+escape(row.receptionNo)+'</h3><p>'+escape(row.vehicle)+' · '+escape(row.registration)+'</p><p>'+escape(row.delivered?'Delivered':row.deliveryReady?'Ready for delivery':row.stage)+'</p>';
-   if(row.deliveryReady&&!saved){const button=document.createElement('button');button.textContent='Deliver Vehicle';button.onclick=()=>{if(confirm('Confirm physical delivery of '+row.jobCard+' / '+row.registration+' to the customer?'))deliver({action:'receptionist_deliver',operation:'DELIVER',jobCard:row.jobCard,expectedQcRevision:row.expectedQcRevision,request_id:crypto.randomUUID()})};card.appendChild(button);}
+   if(row.deliveryReady&&!saved){const button=document.createElement('button');button.textContent='Deliver Vehicle';button.onclick=()=>{if(confirm('Confirm physical delivery of '+row.jobCard+' / '+row.registration+' to the customer?'))deliver({action:'receptionist_deliver',operation:'DELIVER',jobCard:row.jobCard,expectedQcRevision:row.expectedQcRevision,expectedVehicleIdentity:row.expectedVehicleIdentity,request_id:crypto.randomUUID()})};card.appendChild(button);}
    list.appendChild(card);
   }
   if(!result.rows?.length)list.textContent='No linked vehicles to show.';

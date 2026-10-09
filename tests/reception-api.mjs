@@ -114,7 +114,7 @@ const sensitive = {
   cancellation: {review:{expenses:999}}, workshop_state: {expenses:[999]}, staff: [{password_hash:"SECRET"}],
 };
 rpcResult = {data:sensitive, error:null};
-for (const op of ["CAPABILITIES", "MASTER", "LIST", "GET", "CREATE", "EDIT", "MOVE", "CREATE_JOB"]) {
+for (const op of ["CAPABILITIES", "MASTER", "LIST", "GET", "CREATE", "EDIT", "MOVE", "CREATE_JOB", "CREATE_DIRECT_JOB", "CREATE_EXTERNAL_JOB"]) {
   lastRpc = null;
   r = await call({action:"reception", command:{operation:op}, user:{id:"MGR001", role:"Manager"}});
   assert.equal(r.status, 200, op);
@@ -139,7 +139,7 @@ for (const action of new Set([...actions, "load", "save", "qc_delivery", "unknow
   assert.equal(lastRpc, null, action);
   denials++;
 }
-for (const operation of ["STAFF", "ACCESS", "CLOSE", "CANCEL_JOB", "RECORD_APPROVAL", "REVOKE_APPROVAL", "LINK_ESTIMATE",
+for (const operation of ["STAFF", "ACCESS", "CLOSE", "CANCEL_JOB", "RECORD_APPROVAL", "RECORD_EXTERNAL_APPROVAL", "REVOKE_APPROVAL", "LINK_ESTIMATE",
   "SAVE_PRELIMINARY", "ADDITIONAL_REQUEST", "DELIVER", "GET ", "get", null, {}, ["GET"]]) {
   lastRpc = null;
   r = await call({action:"reception", command:{operation}, user:{role:"Manager"}});
@@ -157,7 +157,7 @@ actor = {...actor, role:"Manager"};
 rpcResult = {data:sensitive, error:null};
 r = await call({action:"reception", command:{operation:"GET"}});
 assert.deepEqual(r.body, sensitive); // Existing authorized roles retain their response.
-console.log(`Receptionist API: 8 allowed operations, ${denials + 1} forbidden requests, server identity, response privacy and SQL guard preservation passed.`);
+console.log(`Receptionist API: 10 allowed operations, ${denials + 1} forbidden requests, server identity, response privacy and SQL guard preservation passed.`);
 actor = null;
 r = await call({ action: "reception", command: { operation: "LIST" } });
 assert.equal(r.status, 401);

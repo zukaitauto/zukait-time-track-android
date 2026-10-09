@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import pg from 'pg';
+import {qcWork} from '../supabase/functions/workshop-api/qc_delivery_rules.js';
+import {receptionistDeliveryRow,receptionistDeliveryTransition} from '../supabase/functions/workshop-api/receptionist_delivery_rules.js';
 
 // Never accept a Supabase URL or a user-selected database for this destructive fixture.
 assert.equal(process.env.ZUKAIT_RECEPTION_ISOLATED, '1', 'Explicit isolated-test opt-in required');
@@ -89,6 +91,7 @@ try{
  assert.equal(createdByReceptionist.record.job_card,receptionistFixture.job);
  assert.equal((await command(control,receptionistCreate,'QA-RC')).duplicate,true);
  assert.equal((await control.query('select count(*)::int n from workshop_reception_part_transfers where rc_no=$1',[receptionistFixture.rc])).rows[0].n,1);
+ assert.equal((await control.query('select ordered_qty::text qty from workshop_v2_spare_part_state where job_card=$1',[receptionistFixture.job])).rows[0].qty,'2');
  const linkedReceptionist=await readRecord(receptionistFixture.rc);
  await assert.rejects(command(control,{operation:'EDIT',rc_no:receptionistFixture.rc,expected_revision:linkedReceptionist.revision,request_id:randomUUID(),insurance_id:1,details:{...linkedReceptionist.details,make:'Unauthorized'},reason:'Unauthorized'},'QA-RC'),/reception_manager_required/);
  await control.query("update staff_credentials set active=false where user_id='QA-RC'");
@@ -96,7 +99,7 @@ try{
  await control.query("update staff_credentials set active=true where user_id='QA-RC'");
  console.log('PASS PostgreSQL Receptionist role: restricted operations, approved atomic creation/retry, linked correction denial and disabled credential denial');
  // Existing integration tests also run here against the schema fixture, without production access.
- for(const group of [['reception-create-job.sql','reception-vehicle-authority.sql'],['reception-create-job.sql','reception-additional.sql'],['reception-cancellation-fixture.sql','reception-cancellation.sql']]){
+ for(const group of [['reception-direct-job.sql'],['reception-create-job.sql','reception-vehicle-authority.sql'],['reception-create-job.sql','reception-additional.sql'],['reception-cancellation-fixture.sql','reception-cancellation.sql']]){
   await control.query('begin');
   try{for(const file of [...group,'reception-trigger-privileges.sql'])await control.query(fs.readFileSync('tests/'+file,'utf8'));}
   finally{await control.query('rollback');}
@@ -146,8 +149,52 @@ try{
  assert.equal((await control.query('select count(*)::int n from workshop_reception_additional_transfers where approval_id=$1',[additionalRetry.first.approval.id])).rows[0].n,1);
  assert.equal((await control.query("select ordered_qty::text qty from workshop_v2_spare_part_state where job_card=$1 and part_no='QA-LAMP'",[nine.job])).rows[0].qty,'1');
  assert.equal((await readRecord(nine.rc)).location,'VWC');
- const final=await readState();for(const key of ['users','assign','sessions','expenses','consumables'])assert.deepEqual(final[key],initial[key],key+' changed');
- assert.deepEqual((await control.query("select to_jsonb(l)-'updated_at'-'updated_by'-'state_revision' as value from workshop_live_status l order by employee_id")).rows,live.rows,'live statuses changed');
+ // Real state-lock overlaps for the new delivery path. QA work belongs to a
+ // separate employee, so the original employee's live status remains unchanged.
+ await control.query("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt) values('QA-DELIVERY-EMP','QA Delivery Employee','Employee','Denter','not-a-credential','not-a-salt')");
+ let deliveryState=await readState();deliveryState.users.push({id:'QA-DELIVERY-EMP',name:'QA Delivery Employee',role:'Employee',department:'Denter'});
+ await control.query("update workshop_state set data=$1 where id='main'",[deliveryState]);
+ async function readyFixture(){
+  const f=await fixture(true),data=await readState(),at=Date.now();
+  const assignment={id:'QA-DA-'+randomUUID(),emp:'QA-DELIVERY-EMP',job:f.job,completed:true,completedAt:at-5000,assignedAt:at-20000,suggested:1,assignedBy:'QA-SUP'};
+  const session={id:'QA-DS-'+randomUUID(),assignmentId:assignment.id,emp:'QA-DELIVERY-EMP',job:f.job,start:at-15000,end:at-5000};
+  data.assign.push(assignment);data.sessions.push(session);
+  const job=data.jobs.find(j=>j.no===f.job);job.qcWorkflow={revision:2,fingerprint:qcWork(data,f.job).fingerprint,painting:{result:'PASS'},final:{result:'PASS'},history:[]};
+  await control.query("update workshop_state set data=$1 where id='main'",[data]);
+  return {...f,assignment,session,vehicleIdentity:receptionistDeliveryRow(data,job).expectedVehicleIdentity};
+ }
+ const deliveryActor={id:'QA-RC',name:'QA Receptionist',role:'Receptionist'};
+ const deliveryRequest=f=>({action:'receptionist_deliver',operation:'DELIVER',jobCard:f.job,expectedQcRevision:2,expectedVehicleIdentity:f.vehicleIdentity,request_id:randomUUID()});
+ const deliverySnapshot=()=>control.query("select revision,data from workshop_state where id='main'").then(r=>r.rows[0]);
+ async function deliveryCommit(client,snapshot,request){
+  const result=receptionistDeliveryTransition(snapshot.data,deliveryActor,request,Date.now());assert.equal(result.ok,true);assert.notEqual(result.duplicate,true);
+  const status=await control.query('select jsonb_agg(to_jsonb(l)) as rows from workshop_live_status l');assert.ok(status.rows[0].rows.length>0);
+  const committed=await client.query('select zukait_commit_workshop_state_v2($1,$2::jsonb,$3,$4::jsonb) as result',[snapshot.revision,JSON.stringify(result.data),deliveryActor.id,JSON.stringify(status.rows[0].rows)]);
+  return committed.rows[0].result;
+ }
+ const ten=await readyFixture(),delivery10=deliveryRequest(ten),snapshot10=await deliverySnapshot();
+ const deliveryRetry=await race('Receptionist delivery retries lose stale CAS then confirm one UUID',c=>deliveryCommit(c,snapshot10,delivery10),c=>deliveryCommit(c,snapshot10,delivery10));
+ assert.equal(deliveryRetry.first.ok,true);assert.equal(deliveryRetry.second.code,'conflict');
+ const confirmed10=receptionistDeliveryTransition(await readState(),deliveryActor,delivery10,Date.now());assert.equal(confirmed10.duplicate,true);assert.equal(confirmed10.job.deliveryAudit.length,1);
+ assert.equal(confirmed10.job.receptionLocation,'VWC');
+ const eleven=await readyFixture(),delivery11=deliveryRequest(eleven),snapshot11=await deliverySnapshot();
+ const newWork=structuredClone(snapshot11.data),newAssignment={id:'QA-WORK-A-'+randomUUID(),emp:'QA-DELIVERY-EMP',job:eleven.job,completed:false,suggested:1,assignedAt:Date.now(),assignedBy:'QA-SUP'};
+ newWork.assign.push(newAssignment);newWork.sessions.push({id:'QA-WORK-S-'+randomUUID(),assignmentId:newAssignment.id,emp:'QA-DELIVERY-EMP',job:eleven.job,start:Date.now(),end:0});
+ const changedWork=await race('new work invalidates blocked Receptionist delivery',c=>c.query("update workshop_state set data=$1 where id='main'",[newWork]),c=>deliveryCommit(c,snapshot11,delivery11));assert.equal(changedWork.second.code,'conflict');
+ assert.equal(receptionistDeliveryTransition(await readState(),deliveryActor,delivery11,Date.now()).code,'work_not_finished');
+ const twelve=await readyFixture(),delivery12=deliveryRequest(twelve),snapshot12=await deliverySnapshot(),cancellation12=await cancelCommand(twelve);
+ const cancelledDelivery=await race('cancellation invalidates blocked Receptionist delivery',c=>command(c,cancellation12),c=>deliveryCommit(c,snapshot12,delivery12));assert.equal(cancelledDelivery.second.code,'conflict');
+ assert.equal(receptionistDeliveryTransition(await readState(),deliveryActor,delivery12,Date.now()).code,'job_not_available');
+ const thirteen=await readyFixture(),delivery13=deliveryRequest(thirteen),snapshot13=await deliverySnapshot(),record13=await readRecord(thirteen.rc);
+ const correction13=makeCommand('EDIT',{...thirteen,revision:record13.revision},{insurance_id:1,details:{...record13.details,registration:'QA-READY-CORRECTED'},reason:'QA identity correction before delivery'});
+ const correctedDelivery=await race('vehicle correction invalidates blocked Receptionist delivery',c=>command(c,correction13),c=>deliveryCommit(c,snapshot13,delivery13));assert.equal(correctedDelivery.second.code,'conflict');
+ assert.equal(receptionistDeliveryTransition(await readState(),deliveryActor,delivery13,Date.now()).code,'receptionist_vehicle_changed');
+ const final=await readState();for(const key of ['users','assign','sessions']){
+  const originalIds=new Set(initial[key].map(row=>row.id));assert.deepEqual(final[key].filter(row=>originalIds.has(row.id)),initial[key],key+' original history changed');
+ }
+ for(const key of ['expenses','consumables'])assert.deepEqual(final[key],initial[key],key+' changed');
+ for(const f of [ten,eleven,twelve,thirteen]){assert.deepEqual(final.assign.find(a=>a.id===f.assignment.id),f.assignment);assert.deepEqual(final.sessions.find(s=>s.id===f.session.id),f.session);}
+ assert.deepEqual((await control.query("select to_jsonb(l)-'updated_at'-'updated_by'-'state_revision' as value from workshop_live_status l where employee_id='QA-EMP' order by employee_id")).rows,live.rows,'original employee live status changed');
  assert.deepEqual((await control.query('select (select last_value from workshop_reception_no_seq) rc,(select last_value from workshop_v2_estimate_no_seq) estimate,(select last_value from workshop_v2_spare_part_list_no_seq) pl')).rows,sequences.rows,'business sequence consumed');
  console.log('PASS: unrelated work, expenses, consumables, employee live status and business sequences preserved');
 }finally{

@@ -8,7 +8,7 @@ const initial={users:[{id:'QA-EMP',role:'Employee'}],jobs:[{no:'QA-JC',reception
  sessions:[{id:'QA-S',job:'QA-JC',emp:'QA-EMP',start:1,end:10}],
  expenses:[{id:'QA-E',amount:999}],consumables:[{id:'QA-C',amount:999}],parts:[{id:'QA-P',qty:2}]};
 initial.jobs[0].qcWorkflow={revision:2,fingerprint:qcWork(initial,'QA-JC').fingerprint,painting:{result:'PASS'},final:{result:'PASS'},history:[]};
-const body={action:'receptionist_deliver',operation:'DELIVER',jobCard:'QA-JC',expectedQcRevision:2,request_id:randomUUID()};
+const body={action:'receptionist_deliver',operation:'DELIVER',jobCard:'QA-JC',expectedQcRevision:2,expectedVehicleIdentity:receptionistDeliveryList(initial)[0].expectedVehicleIdentity,request_id:randomUUID()};
 const snapshot=structuredClone(initial);
 const result=receptionistDeliveryTransition(initial,user,body,100);
 assert.equal(result.ok,true);assert.equal(result.job.delivered,true);assert.equal(result.job.deliveredBy,user.id);
@@ -39,6 +39,8 @@ for(const mutate of [d=>d.assign[0].completed=false,d=>d.sessions[0].end=0,d=>de
  const changed=structuredClone(initial);mutate(changed);
  assert.equal(receptionistDeliveryTransition(changed,user,body,100).ok,false);
 }
+const corrected=structuredClone(initial);corrected.jobs[0].reg='QA-CORRECTED';assert.equal(receptionistDeliveryTransition(corrected,user,body,100).code,'receptionist_vehicle_changed');
+const deliveredCorrected=structuredClone(result.data);deliveredCorrected.jobs[0].reg='QA-CORRECTED';assert.equal(receptionistDeliveryTransition(deliveredCorrected,user,body,200).duplicate,true);
 const rows=receptionistDeliveryList({...initial,jobs:[...initial.jobs,{no:'OTHER',amount:999},{...initial.jobs[0],no:'CANCEL',cancelled:true}]});
 assert.equal(rows.length,1);assert.equal(rows[0].deliveryReady,true);assert.ok(!JSON.stringify(rows).includes('999'));
 assert.equal(qcTransition(initial,{id:'SUP001',name:'QA',role:'Supervisor'},body,100).ok,true);
