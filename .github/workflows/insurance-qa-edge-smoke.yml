@@ -1,0 +1,73 @@
+name: V305 Isolated QA Edge HTTPS smoke
+on:
+  push:
+    branches:
+      - architecture-v2
+    paths:
+      - .github/workflows/insurance-qa-edge-smoke.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    if: github.ref == 'refs/heads/architecture-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate QA target and test both deployed Edge APIs
+        shell: bash
+        env:
+          QA_REF: omqgkqknbdcnotabffek
+        run: |
+          set -euo pipefail
+          test "$QA_REF" = "omqgkqknbdcnotabffek"
+          # Only extract the client-public QA key from the isolated acceptance workflow.
+          # NEVER use the production key or any service-role/secret key.
+          QA_KEY="$(sed -n 's/^      ZUKAIT_ACCEPTANCE_PUBLISHABLE_KEY: //p' .github/workflows/insurance-isolated-acceptance.yml)"
+          [[ "$QA_KEY" =~ ^sb_publishable_[A-Za-z0-9_-]+$ ]]
+          API="https://${QA_REF}.supabase.co"
+          out="$(mktemp -d)"
+          trap 'rm -rf "$out"' EXIT
+          check_status() {
+            local description="$1" expected="$2" url="$3" method="$4" key="$5" body="$6"
+            local actual
+            actual="$(curl -sS --connect-timeout 10 --max-time 30 --output "$out/body" \
+              --write-out '%{http_code}' --request "$method" \
+              --header 'Content-Type: application/json' --header "apikey: $key" \
+              --header 'x-zukait-session: QA_DOES_NOT_EXIST' \
+              --data "$body" "$url")"
+            if [ "$actual" != "$expected" ]; then
+              echo "FAIL: $description returned HTTP $actual, expected $expected" >&2
+              exit 1
+            fi
+            echo "PASS: $description returned HTTP $expected"
+          }
+          for fn in staff-auth workshop-api; do
+            code="$(curl -sS --connect-timeout 10 --max-time 30 --output "$out/options-body" \
+              --dump-header "$out/headers" --write-out '%{http_code}' \
+              -X OPTIONS -H 'Origin: https://qa.example.invalid' \
+              -H 'Access-Control-Request-Method: POST' "$API/functions/v1/$fn")"
+            test "$code" = "200"
+            grep -qi 'access-control-allow-headers:.*x-zukait-session' "$out/headers"
+            echo "PASS: $fn CORS OPTIONS"
+          done
+          check_status "staff-auth denies unknown user" 401 "$API/functions/v1/staff-auth" POST "$QA_KEY" \
+            '{"action":"login","user_id":"ZQA_DOES_NOT_EXIST","password":"INVALID"}'
+          check_status "workshop-api denies nonexistent session" 401 "$API/functions/v1/workshop-api" POST "$QA_KEY" \
+            '{"action":"reception","command":{"operation":"CAPABILITIES"}}'
+          WRONG='sb_publishable_zukait_reception_wrong_key_probe'
+          test "$WRONG" != "$QA_KEY"
+          check_status "staff-auth denies unrelated key" 401 "$API/functions/v1/staff-auth" POST "$WRONG" \
+            '{"action":"session","session_token":"INVALID"}'
+          check_status "workshop-api denies unrelated key" 401 "$API/functions/v1/workshop-api" POST "$WRONG" \
+            '{"action":"reception","command":{"operation":"CAPABILITIES"}}'
+          # No sensitive staff records may be exposed through the unauthenticated REST API.
+          rest_status="$(curl -sS --connect-timeout 10 --max-time 30 --output "$out/rest" \
+            --write-out '%{http_code}' --header "apikey: $QA_KEY" \
+            "$API/rest/v1/staff_credentials?select=user_id&limit=1")"
+          case "$rest_status" in
+            401|403) echo "PASS: direct REST staff_credentials denied ($rest_status)" ;;
+            *) echo "FAIL: direct REST staff_credentials returned HTTP $rest_status" >&2; exit 1 ;;
+          esac
+          echo 'Read-only HTTPS smoke complete. No client login, mutations, physical-device test or production deployment performed.' >> "$GITHUB_STEP_SUMMARY"
