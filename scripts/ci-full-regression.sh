@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Every caller runs the same DOM tests with the pinned development dependencies.
+if ! node -e "require.resolve('jsdom')" >/dev/null 2>&1; then
+  npm ci --ignore-scripts --include=dev
+fi
 node tests/completed-overdue-runtime.mjs
 node tests/manager-header-menu-runtime.mjs
 node tests/app-exit.mjs

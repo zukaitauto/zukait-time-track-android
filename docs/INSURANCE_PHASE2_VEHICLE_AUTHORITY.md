@@ -57,7 +57,11 @@ parts arrival do not move the vehicle.
   validation passed.
 - Local regression programs passed except native-dialog-lifecycle, which cannot
   compile here because this environment has java but no javac. GitHub signed
-  acceptance runs the complete suite with its configured Java compiler.
+  acceptance run `37917044003` passed the complete suite, native dialog tests,
+  production asset gate, release compilation and APK signature verification.
+  Reception run `37917044192` and debug build `37917044156` also passed. The shared
+  regression runner installs pinned development dependencies when jsdom is absent,
+  so unsigned/review workflows execute the same new DOM test.
 - Post-rollback inspection found no persistent vehicle-authority function or RC QA
   fixtures. Tests allocate no live RC/quotation/PL business numbers.
 
