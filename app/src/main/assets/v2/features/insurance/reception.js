@@ -154,6 +154,16 @@
     const el = document.getElementById("rc-error");
     if (el) el.textContent = e.message || String(e);
   }
+  async function apiAction(body) {
+    const token=window.zukaitAuth?.getToken?.();
+    if(!token)throw Error("Please sign in.");
+    const response=await fetch(API,{method:"POST",
+      headers:{"Content-Type":"application/json",apikey:KEY,"x-zukait-session":token},
+      body:JSON.stringify(body)});
+    const result=await response.json();
+    if(!response.ok||!result?.ok){const e=Error(result?.code||"reception_unavailable");e.code=result?.code;throw e;}
+    return result;
+  }
   async function call(command) {
     const token = window.zukaitAuth?.getToken?.();
     if (!token) throw Error("Please sign in.");
@@ -295,6 +305,10 @@
     );
   }
   async function home() {
+    if (window.zukaitReceptionDashboard?.open) return window.zukaitReceptionDashboard.open();
+    return basicHome();
+  }
+  async function basicHome() {
     current = null;
     shell(
       "Reception",
@@ -328,6 +342,7 @@
       select('job_type','Job Type',[['CASH','Cash'],['CREDIT','Credit']],'CASH') +
       input('job_card','Job Card Number','',true) + input('make','Make','',true) + input('model','Model','',true) +
       input('registration','Registration') + input('year','Model Year') + input('vin','VIN / Chassis') +
+      (["Manager","Supervisor"].includes(user()?.role)?input('promise_date','Promise Date (optional)','',false,'date'):'') +
       input('customer','Customer / Company','',true) + input('contact','Contact','',true) +
       '<label id="rc-credit-account" hidden>Credit Account / Customer Reference<input name="credit_account" maxlength="200"></label>' +
       '</div><label>Reception Observations<textarea name="remarks" maxlength="2000"></textarea></label>' +
@@ -343,7 +358,15 @@
         const out=await mutate({operation:'CREATE_DIRECT_JOB',job_type:f.get('job_type'),job_card:String(f.get('job_card')).trim().toUpperCase(),details,
           received_confirmed:f.has('received_confirmed'),reason:String(f.get('reason')).trim(),
           ...(f.get('job_type')==='CREDIT'?{credit_account:String(f.get('credit_account')).trim()}: {})});
-        if(out){try{await window.zukaitCloud?.pull?.(true);}catch(_){}await view(out.record.rc_no);}
+        if(out){
+          const promise=String(f.get('promise_date')||'');
+          if(promise&&window.zukaitReceptionDashboard?.savePromise){
+            try{await window.zukaitReceptionDashboard.savePromise(String(f.get('job_card')).trim().toUpperCase(),promise,'');}
+            catch(err){alert('Job Card created, but Promise Date needs attention: '+(err.message||err)+'. Open Delivery Follow-up to retry.');}
+          }
+          try{await window.zukaitCloud?.pull?.(true);}catch(_){}
+          await view(out.record.rc_no);
+        }
       }catch(x){error(x);}
     };
   }
@@ -571,9 +594,13 @@
       (r.approval_status === "APPROVED" && !info.approval_valid ? '<p class="rc-error">Approval needs review: source information changed or approval is incomplete.</p>' : '') +
       (limited ? '<p>Insurance approval is recorded by authorized staff. Job Card creation is available only after valid approval.</p>' : '<div class="rc-box"><h4>Linked Estimates</h4>' + (quotes.map(q => '<p><b>' + esc(q.estimate_no) + '</b><br>' + esc(stamp(q.linked_at)) + '</p>').join('') || '<p>No estimates linked.</p>') + '</div>') +
       (current.job_creation?.can_create === true ? '<div class="rc-box"><h4>Create Approved Job Card</h4><p>Creates an unassigned insurance Job Card and transfers only approved parts. Vehicle location stays ' + esc(r.location) + '.</p><form id="rc-create-job">' +
-        input('job_card', 'Job Card Number', '', true) + input('reason', 'Creation Notes / Reason', '', true) + '<div class="rc-actions"><button type="submit">Create Job Card & Transfer Approved Parts</button></div></form></div>' : '') +
+        input('job_card', 'Job Card Number', '', true) +
+        (["Manager","Supervisor"].includes(user()?.role)?input('promise_date','Promise Date (optional)','',false,'date'):'') +
+        input('reason', 'Creation Notes / Reason', '', true) + '<div class="rc-actions"><button type="submit">Create Job Card & Transfer Approved Parts</button></div></form></div>' : '') +
       (current.external_approval?.can_record && !draft.length ? '<div class="rc-box"><h4>Vehicle Already Approved by Insurance</h4><p>Record the issued approval document reference and evidence. No new quotation is required. Preliminary parts need the quotation approval flow.</p><form id="rc-external-approval">' + input('reference','Issued Approval Reference','',true) + input('approval_date','Approval Date',new Date(Date.now()+4*3600000).toISOString().slice(0,10),true,'date') + input('evidence','Approval Document Reference / Evidence','',true) + input('reason','Verification Notes','',true) + '<button type="submit">Record Existing Insurance Approval</button></form></div>' : '') +
-      (current.external_approval?.valid && !r.job_card && !r.outcome ? '<div class="rc-box"><h4>Open Pre-approved Insurance Job Card</h4><form id="rc-external-job">' + input('job_card','Job Card Number','',true) + input('reason','Creation Notes','',true) + '<p>Vehicle location remains '+esc(r.location)+'. Parts continue through the existing Job Card workflow.</p><button type="submit">Open Approved Job Card</button></form></div>' : '') +
+      (current.external_approval?.valid && !r.job_card && !r.outcome ? '<div class="rc-box"><h4>Open Pre-approved Insurance Job Card</h4><form id="rc-external-job">' + input('job_card','Job Card Number','',true) +
+      (["Manager","Supervisor"].includes(user()?.role)?input('promise_date','Promise Date (optional)','',false,'date'):'') +
+      input('reason','Creation Notes','',true) + '<p>Vehicle location remains '+esc(r.location)+'. Parts continue through the existing Job Card workflow.</p><button type="submit">Open Approved Job Card</button></form></div>' : '') +
       (r.job_card ? '<div class="rc-box"><h4>Linked Job Card ' + esc(r.job_card) + '</h4>' + (limited ? '<p>Approved parts were transferred by the server. Use Vehicle Delivery once work and QC are complete.</p>' : '<p>Continue assignments, parts and repairs through the existing Job Card workflow.</p><p>' + esc(current.job_creation?.transfers?.length || 0) + ' approved part items transferred.</p>') + '</div>' : '') +
       (!limited && info.can_prepare ? '<div class="rc-box"><h4>Prepare / Link Estimate</h4><div class="rc-actions"><button data-rc-action="rc-estimate">+ New Estimate</button></div><p>Save the quotation and allow sync to finish before linking it here.</p><form id="rc-link-estimate">' +
         input('estimate_no', 'Estimate Number', '', true) + input('reason', 'Reason for linking / refreshing', '', true) + '<div class="rc-actions"><button type="submit">Link Saved Estimate</button></div></form></div>' : '') +
@@ -596,7 +623,23 @@
     const external=document.getElementById('rc-external-approval');
     if(external)external.onsubmit=e=>submit(e,f=>({operation:'RECORD_EXTERNAL_APPROVAL',reference:String(f.get('reference')).trim(),approval_date:f.get('approval_date'),evidence:String(f.get('evidence')).trim(),reason:String(f.get('reason')).trim()}));
     const externalJob=document.getElementById('rc-external-job');
-    if(externalJob)externalJob.onsubmit=e=>submit(e,f=>({operation:'CREATE_EXTERNAL_JOB',job_card:String(f.get('job_card')).trim().toUpperCase(),reason:String(f.get('reason')).trim()}));
+    if(externalJob)externalJob.onsubmit=async e=>{
+      e.preventDefault();
+      try{
+        const f=new FormData(externalJob);
+        const jc=String(f.get('job_card')).trim().toUpperCase();
+        const result=await mutate({operation:'CREATE_EXTERNAL_JOB',rc_no:r.rc_no,expected_revision:r.revision,
+          job_card:jc,reason:String(f.get('reason')).trim()});
+        if(!result)return;
+        const date=String(f.get('promise_date')||'');
+        if(date&&window.zukaitReceptionDashboard?.savePromise){
+          try{await window.zukaitReceptionDashboard.savePromise(jc,date,'');}
+          catch(err){alert('Job Card created; Promise Date was not confirmed: '+(err.message||err));}
+        }
+        try{await window.zukaitCloud?.pull?.(true);}catch(_){}
+        await view(r.rc_no);
+      }catch(err){error(err);}
+    };
     const link = document.getElementById('rc-link-estimate');
     const createJob = document.getElementById('rc-create-job');
     if (createJob) createJob.onsubmit = async e => {
@@ -606,6 +649,11 @@
         const result = await mutate({operation:'CREATE_JOB',rc_no:r.rc_no,expected_revision:r.revision,
           job_card:f.get('job_card').trim().toUpperCase(),reason:f.get('reason').trim()});
         if (!result) return;
+        const promise=String(f.get('promise_date')||'');
+        if(promise&&window.zukaitReceptionDashboard?.savePromise){
+          try{await window.zukaitReceptionDashboard.savePromise(String(f.get('job_card')).trim().toUpperCase(),promise,'');}
+          catch(err){alert('Job Card created; Promise Date was not confirmed: '+(err.message||err));}
+        }
         // Pull the server result through the established conflict-aware sync.
         // Never fabricate a local job or overwrite pending workshop work here.
         try { await window.zukaitCloud?.pull?.(true); } catch (_) { /* normal sync retries */ }
@@ -1154,7 +1202,7 @@
     if (header?.parentElement === root) header.insertAdjacentElement("afterend", b);
     else root.prepend(b);
   }
-  window.zukaitReception = { endpoint: API, open: home, openCancellation: no => cancellation(no).catch(error), openRecord: no => view(no).catch(error), documentHtml, ensureCards, call };
+  window.zukaitReception = { endpoint: API, open: home, dashboardShell:shell, newChecklist:()=>editor(), directJob, action:apiAction, openCancellation: no => cancellation(no).catch(error), openRecord: no => view(no).catch(error), documentHtml, ensureCards, call };
   style();
   new MutationObserver(ensureCards).observe(document.documentElement, {
     childList: true,

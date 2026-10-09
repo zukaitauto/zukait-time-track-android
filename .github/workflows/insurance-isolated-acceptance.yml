@@ -7,6 +7,9 @@ on:
     paths:
       - .github/workflows/insurance-isolated-acceptance.yml
       - app/src/main/assets/v2/features/insurance/reception.js
+      - app/src/main/assets/reception_dashboard.js
+      - app/src/main/assets/receptionist.html
+      - supabase/functions/workshop-api/reception_dashboard_rules.js
       - app/src/main/assets/secure_auth.js
       - app/src/main/assets/receptionist_session.js
 permissions:
