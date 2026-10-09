@@ -33,8 +33,11 @@ class AcceptancePreparation(unittest.TestCase):
             "app/src/main/assets/offline_test.html": "<html>acceptance fixture</html>",
             "build.gradle": "build", "settings.gradle": "settings", "gradle.properties": "properties",
             "supabase/functions/workshop-api/index.ts": "// source digest fixture",
+            "supabase/functions/staff-auth/index.ts": "// authentication digest fixture",
+            "supabase/functions/staff-auth/deno.json": "{}",
+            "app/src/main/assets/receptionist.html": "<html>Reception-only entry</html>",
         }
-        for name in ("cloud_sync.js", "secure_auth.js", "v2/features/insurance/reception.js", "nested/other.json"):
+        for name in ("cloud_sync.js", "secure_auth.js", "receptionist_session.js", "v2/features/insurance/reception.js", "nested/other.json"):
             files["app/src/main/assets/" + name] = "https://" + module.PRODUCTION_REF + ".supabase.co " + module.PRODUCTION_KEY
         for name in module.MIGRATIONS:
             files["supabase/migrations/" + name] = "-- " + name

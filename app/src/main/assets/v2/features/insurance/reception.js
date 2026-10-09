@@ -418,10 +418,10 @@
         (!r.outcome || current.cancellation?.history
           ? '<button data-rc-action="movement">Record Vehicle Movement</button>'
           : "") +
-        (!r.job_card && !r.outcome
+        (user()?.role !== 'Receptionist' && !r.job_card && !r.outcome
           ? '<button data-rc-action="outcome">Close Insurance Case</button>'
           : "") +
-        (current.insurance ? '<button data-rc-action="insurance">Estimates & Approval</button>' : '') +
+        (current.insurance ? '<button data-rc-action="insurance">' + (user()?.role === 'Receptionist' ? 'Approval & Job Card' : 'Estimates & Approval') + '</button>' : '') +
         (current.cancellation?.can_review ? '<button data-rc-action="cancel-job">Review Job Card Cancellation</button>' : '') +
         (current.preliminary_parts ? '<button data-rc-action="parts">Preliminary Parts</button>' : '') +
         '<button data-rc-action="print">Print</button><button data-rc-action="pdf">Share PDF</button></div><div class="rc-grid"><div class="rc-box"><h4>Customer & Vehicle</h4>' +
@@ -521,24 +521,24 @@
   }
   function insuranceWorkspace() {
     const r = current.record, info = current.insurance;
+    const limited = user()?.role === 'Receptionist';
     const quotes = info.estimates || [], approvals = info.approvals || [], draft = current.preliminary_parts?.items || [];
-    shell(r.rc_no + " · Estimates & Approval", badges(r) +
+    shell(r.rc_no + (limited ? " · Approval & Job Card" : " · Estimates & Approval"), badges(r) +
       (r.approval_status === "APPROVED" && !info.approval_valid ? '<p class="rc-error">Approval needs review: source information changed or approval is incomplete.</p>' : '') +
-      '<div class="rc-box"><h4>Linked Estimates</h4>' + (quotes.map(q => '<p><b>' + esc(q.estimate_no) + '</b><br>' + esc(stamp(q.linked_at)) + '</p>').join('') || '<p>No estimates linked.</p>') + '</div>' +
+      (limited ? '<p>Insurance approval is recorded by authorized staff. Job Card creation is available only after valid approval.</p>' : '<div class="rc-box"><h4>Linked Estimates</h4>' + (quotes.map(q => '<p><b>' + esc(q.estimate_no) + '</b><br>' + esc(stamp(q.linked_at)) + '</p>').join('') || '<p>No estimates linked.</p>') + '</div>') +
       (current.job_creation?.can_create === true ? '<div class="rc-box"><h4>Create Approved Job Card</h4><p>Creates an unassigned insurance Job Card and transfers only approved parts. Vehicle location stays ' + esc(r.location) + '.</p><form id="rc-create-job">' +
         input('job_card', 'Job Card Number', '', true) + input('reason', 'Creation Notes / Reason', '', true) + '<div class="rc-actions"><button type="submit">Create Job Card & Transfer Approved Parts</button></div></form></div>' : '') +
-      (r.job_card ? '<div class="rc-box"><h4>Linked Job Card ' + esc(r.job_card) + '</h4><p>Continue assignments, parts and repairs through the existing Job Card workflow.</p><p>' + esc(current.job_creation?.transfers?.length || 0) + ' approved part items transferred.</p></div>' : '') +
-      (info.can_prepare ? '<div class="rc-box"><h4>Prepare / Link Estimate</h4><div class="rc-actions"><button data-rc-action="rc-estimate">+ New Estimate</button></div><p>Save the quotation and allow sync to finish before linking it here.</p><form id="rc-link-estimate">' +
+      (r.job_card ? '<div class="rc-box"><h4>Linked Job Card ' + esc(r.job_card) + '</h4>' + (limited ? '<p>Approved parts were transferred by the server. Use Vehicle Delivery once work and QC are complete.</p>' : '<p>Continue assignments, parts and repairs through the existing Job Card workflow.</p><p>' + esc(current.job_creation?.transfers?.length || 0) + ' approved part items transferred.</p>') + '</div>' : '') +
+      (!limited && info.can_prepare ? '<div class="rc-box"><h4>Prepare / Link Estimate</h4><div class="rc-actions"><button data-rc-action="rc-estimate">+ New Estimate</button></div><p>Save the quotation and allow sync to finish before linking it here.</p><form id="rc-link-estimate">' +
         input('estimate_no', 'Estimate Number', '', true) + input('reason', 'Reason for linking / refreshing', '', true) + '<div class="rc-actions"><button type="submit">Link Saved Estimate</button></div></form></div>' : '') +
-      (info.can_prepare && quotes.length ? '<div class="rc-box"><h4>Record Insurance Approval</h4><form id="rc-approval">' +
+      (!limited && info.can_prepare && quotes.length ? '<div class="rc-box"><h4>Record Insurance Approval</h4><form id="rc-approval">' +
         select('quotation_id', 'Approved Quotation', quotes.map(q => [q.id, q.estimate_no]), quotes[0].id) +
         input('reference', 'Approval Reference', '', true) + input('approval_date', 'Approval Date', new Date(Date.now() + 4 * 3600000).toISOString().slice(0, 10), true, 'date') +
         input('approved_amount', 'Approved Amount (OMR)', '', true) + '<p>Select only approved parts and their approved quantities.</p>' +
         draft.map(x => '<div class="rc-box"><label class="rc-check"><input type="checkbox" name="approve_part" value="' + esc(x.id) + '">' + esc(x.name) + ' · ' + esc(x.part_no || 'Part number not recorded') + '</label><label>Approved Quantity<input type="number" data-approved-id="' + esc(x.id) + '" min="1" max="' + esc(x.qty) + '" step="1" value="' + esc(x.qty) + '"></label></div>').join('') +
         input('reason', 'Approval Notes / Reason', '', true) + '<div class="rc-actions"><button type="submit">Record Approval</button></div></form></div>' : '') +
-      (info.can_revoke && r.approval_status === 'APPROVED' ? '<div class="rc-box"><h4>Manager Approval Review</h4><form id="rc-revoke">' + input('reason', 'Reason for returning to waiting', '', true) + '<div class="rc-actions"><button type="submit">Return to Waiting for Approval</button></div></form></div>' : '') +
-      '<div class="rc-box"><h4>Approval History</h4>' + (approvals.map(a => '<p><b>' + esc(a.reference) + ' · OMR ' + Number(a.approved_amount).toFixed(3) + '</b><br>' + esc(a.approval_date) + ' · ' + esc(a.actor_id) + '<br>' + esc(a.reason) + '</p><ol>' + a.approved_parts.map(x => '<li>' + esc(x.name) + ' · Qty ' + esc(x.qty) + '</li>').join('') + '</ol>').join('') || '<p>No approval recorded.</p>') + '</div>' +
-      additionalWorkspaceHtml() + '<div class="rc-actions"><button data-rc-action="view" data-rc="' + esc(r.rc_no) + '">Back to Checklist</button></div>');
+      (!limited && info.can_revoke && r.approval_status === 'APPROVED' ? '<div class="rc-box"><h4>Manager Approval Review</h4><form id="rc-revoke">' + input('reason', 'Reason for returning to waiting', '', true) + '<div class="rc-actions"><button type="submit">Return to Waiting for Approval</button></div></form></div>' : '') +
+      (limited ? '' : '<div class="rc-box"><h4>Approval History</h4>' + (approvals.map(a => '<p><b>' + esc(a.reference) + ' · OMR ' + Number(a.approved_amount).toFixed(3) + '</b><br>' + esc(a.approval_date) + ' · ' + esc(a.actor_id) + '<br>' + esc(a.reason) + '</p><ol>' + a.approved_parts.map(x => '<li>' + esc(x.name) + ' · Qty ' + esc(x.qty) + '</li>').join('') + '</ol>').join('') || '<p>No approval recorded.</p>') + '</div>' + additionalWorkspaceHtml()) + '<div class="rc-actions"><button data-rc-action="view" data-rc="' + esc(r.rc_no) + '">Back to Checklist</button></div>');
     async function submit(e, fields) {
       e.preventDefault();
       try {

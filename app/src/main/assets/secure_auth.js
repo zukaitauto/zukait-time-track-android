@@ -102,6 +102,7 @@
   }
 
   function openApp(userObj){
+    if(userObj?.role==='Receptionist'){window.location.replace('receptionist.html');return;}
     me=userObj;
     window.me=userObj;window.currentUser=userObj;
     const login=document.getElementById('login');
@@ -136,6 +137,7 @@
       }
       saveSession(sessionToken,r.user);
       openApp(r.user);
+      if(r.user?.role==='Receptionist')return;
       try{render()}catch(err){
         console.error(err);
         alert('Dashboard loading error: '+(err?.message||err));
@@ -212,6 +214,7 @@
     if(password.length<8)return alert('Initial password must be at least 8 characters.');
     if(user(id).role!=='Unknown')return alert('That User ID already exists.');
     if(role==='Purchaser')department='Spare Parts';
+    if(role==='Receptionist')department='Reception';
     const managerPassword=prompt('Enter Manager password to create this user');
     if(managerPassword===null)return;
     if(!managerPassword)return alert('Enter Manager password.');
@@ -270,6 +273,7 @@
       if(!s?.token||!s?.user){showLogin();return false;}
       if(!navigator.onLine){
         openApp(s.user);
+        if(s.user?.role==='Receptionist')return true;
         try{render()}catch(e){console.warn('Offline restore render failed',e)}
         if(window.zukaitCloud?.init)window.zukaitCloud.init(false);
         return true;
@@ -281,6 +285,7 @@
       if(!r.ok)throw new Error(authMessage(r));
       saveSession(s.token,r.user);
       openApp(r.user);
+      if(r.user?.role==='Receptionist')return true;
       if(window.zukaitCloud?.init)await window.zukaitCloud.init(true);
       try{render()}catch(e){console.warn('Session restore render failed',e)}
       try{await window.zukaitV2?.pilot?.autoClaim?.()}catch(e){console.warn('V2 pilot auto-claim after session restore failed',e)}
@@ -290,6 +295,7 @@
       const s=savedSession();
       if(s?.token && s?.user){
         openApp(s.user);
+        if(s.user?.role==='Receptionist')return true;
         try{render()}catch(_){}
         return true;
       }
@@ -328,3 +334,4 @@
 
   setTimeout(()=>restoreSession(),50);
 })();
+

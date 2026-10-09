@@ -1,0 +1,36 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+import {webcrypto} from 'node:crypto';
+import {stripTypeScriptTypes} from 'node:module';
+const tables={staff_credentials:[],staff_sessions:[]};
+const admin={from(table){assert.ok(table in tables);let filters=[],operation='select',value;
+ const rows=()=>tables[table].filter(r=>filters.every(([k,v])=>v===null?r[k]==null:r[k]===v));
+ const execute=()=>{if(operation==='update')rows().forEach(r=>Object.assign(r,value));if(operation==='insert')tables[table].push({...value});return {data:operation==='select'?rows():null,error:null};};
+ const chain={select(){return chain},eq(k,v){filters.push([k,v]);return chain},is(k,v){filters.push([k,v]);return chain},update(v){operation='update';value=v;return chain},insert(v){operation='insert';value=v;return chain},async maybeSingle(){const result=execute();return {...result,data:result.data?.[0]||null}},then(resolve,reject){return Promise.resolve().then(execute).then(resolve,reject)}};
+ return chain;
+}};
+let serve;
+const ctx=vm.createContext({Deno:{env:{get:k=>k==='SUPABASE_PUBLISHABLE_KEY'?'qa-key':''},serve:f=>serve=f},createClient:()=>admin,crypto:webcrypto,TextEncoder,Response,console,Date,btoa,atob,Uint8Array});
+vm.runInContext(stripTypeScriptTypes(fs.readFileSync('supabase/functions/staff-auth/index.ts','utf8').replace(/^import[^\n]*\n/gm,'')),ctx);
+const fields=await vm.runInContext("passwordFields('qa-manager-password')",ctx);
+tables.staff_credentials.push({user_id:'QA-MGR',display_name:'QA Manager',role:'Manager',active:true,...fields});
+async function call(body){const r=await serve(new Request('https://qa.invalid',{method:'POST',headers:{apikey:'qa-key'},body:JSON.stringify(body)}));return {status:r.status,body:await r.json()};}
+const create={action:'manager_create',manager_id:'QA-MGR',manager_password:'qa-manager-password',user_id:'qa-rc',display_name:'QA Receptionist',role:'Receptionist',department:'Supervisor',password:'qa-temp-password'};
+let r=await call(create);assert.equal(r.status,200);assert.equal(r.body.user.id,'QA-RC');assert.equal(r.body.user.department,'Reception');
+const staff=tables.staff_credentials.find(x=>x.user_id==='QA-RC');
+assert.equal(staff.must_change,true);assert.equal(staff.password_iterations,210000);assert.ok(staff.password_hash&&!JSON.stringify(staff).includes(create.password));
+r=await call(create);assert.equal(r.status,409);
+r=await call({...create,user_id:'QA-OTHER',role:'Manager'});assert.equal(r.status,400);
+r=await call({...create,user_id:'QA-WEAK',password:'short'});assert.equal(r.status,400);
+r=await call({...create,manager_password:'bad'});assert.equal(r.status,401);
+r=await call({action:'login',user_id:'QA-RC',password:create.password});assert.equal(r.status,200);assert.equal(r.body.must_change,true);assert.equal(r.body.user.role,'Receptionist');const old=r.body.session_token;
+for(const action of ['manager_create','manager_reset']){r=await call({...create,action,manager_id:'QA-RC',manager_password:create.password,target_id:'QA-MGR'});assert.equal(r.status,403);}
+r=await call({action:'change_password',user_id:'QA-RC',current_password:create.password,new_password:'qa-permanent-password'});assert.equal(r.status,200);assert.equal(staff.must_change,false);const token=r.body.session_token;
+r=await call({action:'session',session_token:old});assert.equal(r.status,401);
+r=await call({action:'session',session_token:token});assert.equal(r.status,200);assert.equal(r.body.user.department,'Reception');
+staff.active=false;r=await call({action:'session',session_token:token});assert.equal(r.status,401);staff.active=true;
+r=await call({action:'logout',session_token:token});assert.equal(r.status,200);
+r=await call({action:'session',session_token:token});assert.equal(r.status,401);
+assert.equal(tables.staff_credentials.length,2);
+console.log('Receptionist staff-auth: Manager-only creation, forced department, real PBKDF2 hashing, first password change, revocation, disabled credentials and role escalation denial passed.');

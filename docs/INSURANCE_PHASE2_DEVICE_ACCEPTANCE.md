@@ -46,8 +46,8 @@ isolated Phase 2 candidate**. This ZIP digest is not the APK digest.
    sessions, credentials, storage objects or business sequence values.
    `tests/fixtures/reception-postgres17-baseline.sql` is for the loopback disposable
    PostgreSQL runner only: **never deploy it to Supabase**, including a QA branch.
-3. Apply all eight pending migrations in the order below only to that QA reference.
-   Keep the complete bundle unavailable to clients until all eight succeed. Verify
+3. Apply all nine pending migrations in the order below only to that QA reference.
+   Keep the complete bundle unavailable to clients until all nine succeed. Verify
    function signatures, service-only grants, trigger installation and advisors.
 4. Prepare synthetic `ZQA_RC_<run>_manager`, `_supervisor`, `_reception`, `_employee`
    credentials/access and isolated staff sessions using the actual staff-auth
@@ -160,6 +160,12 @@ on the exact release candidate and full CI passes. No guards-only deployment.
 6. `20261009104912_reception_additional_approvals.sql`
 7. `20261009111840_reception_job_cancellation.sql`
 8. `20261009153713_reception_trigger_privileges.sql`
+9. `20261009175402_reception_receptionist.sql`
+
+The ninth migration adds the requested restricted Receptionist role. Include
+`supabase/functions/staff-auth` and the complete workshop-api folder in the
+coordinated QA/activation bundle. See INSURANCE_PHASE2_RECEPTIONIST_ROLE.md for
+role permissions, device scenarios and credential creation/recovery requirements.
 
 Before activation record live schema/function/API versions, grants, backup/PITR
 availability and current sequence values using read-only queries. Rehearse recovery

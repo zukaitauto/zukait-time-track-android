@@ -75,6 +75,26 @@ try{
  await control.query("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt) values('QA-MGR','QA Manager','Manager','','not-a-credential','not-a-salt'),('QA-SUP','QA Supervisor','Supervisor','','not-a-credential','not-a-salt'),('QA-EMP','QA Employee','Employee','DENTING','not-a-credential','not-a-salt')");
  const initial={users:[{id:'QA-EMP',name:'QA Employee',role:'Employee',department:'DENTING'}],jobs:[{no:'QA-LEGACY',vehicle:'Legacy test vehicle',jobType:'CASH',status:'Open'}],assign:[{id:'QA-LEGACY-A',emp:'QA-EMP',job:'QA-LEGACY',completed:false}],sessions:[{id:'QA-LEGACY-S',assignmentId:'QA-LEGACY-A',emp:'QA-EMP',job:'QA-LEGACY',start:Date.now()-60000,end:0}],estimates:[],expenses:[{id:'QA-EXPENSE',job:'QA-LEGACY',amount:12.345}],consumables:[{id:'QA-MATERIAL',job:'QA-LEGACY',amount:3.21}]};
  await control.query("insert into workshop_state(id,data,revision,updated_by) values('main',$1,1,'QA-MGR')",[initial]);
+ await control.query("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt) values('QA-RC','QA Receptionist','Receptionist','Reception','not-a-credential','not-a-salt')");
+ const rcCaps=await command(control,{operation:'CAPABILITIES'},'QA-RC');assert.equal(rcCaps.allowed,true);assert.equal(rcCaps.manager,false);
+ for(const operation of ['STAFF','ACCESS','CLOSE','RECORD_APPROVAL','REVOKE_APPROVAL','LINK_ESTIMATE','SAVE_PRELIMINARY','CANCEL_JOB']){
+  await assert.rejects(command(control,{operation},'QA-RC'),/reception_forbidden/);
+ }
+ // Same tested atomic approval/parts-transfer body now permits the dedicated
+ // role; retries retain actor/UUID identity without granting parts privileges.
+ const receptionistFixture=await fixture();
+ assert.equal((await command(control,{operation:'GET',rc_no:receptionistFixture.rc},'QA-RC')).job_creation.can_create,true);
+ const receptionistCreate=makeCommand('CREATE_JOB',receptionistFixture,{job_card:receptionistFixture.job,reason:'Receptionist approved repair'});
+ const createdByReceptionist=await command(control,receptionistCreate,'QA-RC');
+ assert.equal(createdByReceptionist.record.job_card,receptionistFixture.job);
+ assert.equal((await command(control,receptionistCreate,'QA-RC')).duplicate,true);
+ assert.equal((await control.query('select count(*)::int n from workshop_reception_part_transfers where rc_no=$1',[receptionistFixture.rc])).rows[0].n,1);
+ const linkedReceptionist=await readRecord(receptionistFixture.rc);
+ await assert.rejects(command(control,{operation:'EDIT',rc_no:receptionistFixture.rc,expected_revision:linkedReceptionist.revision,request_id:randomUUID(),insurance_id:1,details:{...linkedReceptionist.details,make:'Unauthorized'},reason:'Unauthorized'},'QA-RC'),/reception_manager_required/);
+ await control.query("update staff_credentials set active=false where user_id='QA-RC'");
+ await assert.rejects(command(control,{operation:'GET',rc_no:receptionistFixture.rc},'QA-RC'),/reception_forbidden/);
+ await control.query("update staff_credentials set active=true where user_id='QA-RC'");
+ console.log('PASS PostgreSQL Receptionist role: restricted operations, approved atomic creation/retry, linked correction denial and disabled credential denial');
  // Existing integration tests also run here against the schema fixture, without production access.
  for(const group of [['reception-create-job.sql','reception-vehicle-authority.sql'],['reception-create-job.sql','reception-additional.sql'],['reception-cancellation-fixture.sql','reception-cancellation.sql']]){
   await control.query('begin');
@@ -135,3 +155,4 @@ try{
  // The name is generated in this process; no configurable database is ever dropped.
  try{await admin.query(`drop database if exists "${database}"`);}finally{await admin.end();}
 }
+

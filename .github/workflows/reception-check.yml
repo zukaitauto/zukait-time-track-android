@@ -5,6 +5,11 @@ on:
     paths:
       - "app/src/main/assets/v2/features/insurance/**"
       - "supabase/functions/workshop-api/**"
+      - "supabase/functions/staff-auth/**"
+      - "supabase/migrations/**"
+      - "app/src/main/assets/receptionist*"
+      - "app/src/main/assets/secure_auth.js"
+      - "app/src/main/assets/offline_test.html"
       - "tests/reception-*"
       - "tests/fixtures/reception-*"
       - "package*.json"

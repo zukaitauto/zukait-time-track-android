@@ -3,6 +3,7 @@ import "./paint_order_rules.js";
 const paintOrderRules = (globalThis as any).zukaitPaintOrderRules;
 import { qcTransition, preserveQcAuthority } from "./qc_delivery_rules.js";
 import { timeManagementTransition } from "./time_management_rules.js";
+import { receptionistDeliveryList, receptionistDeliveryRow, receptionistDeliveryTransition } from "./receptionist_delivery_rules.js";
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
@@ -27,6 +28,9 @@ function reply(body: unknown, status = 200) {
 // Receptionist is a separate, restricted role. Never route it through shared
 // state, financial, time, parts or Supervisor APIs, including direct requests.
 function receptionistRequestAllowed(action: string, body: any) {
+  if (action === "receptionist_delivery_list") return Object.keys(body).every(k => k === "action");
+  if (action === "receptionist_deliver") return body?.operation === "DELIVER" && Object.keys(body).every(k =>
+    ["action", "operation", "jobCard", "expectedQcRevision", "request_id"].includes(k));
   return action === "reception" &&
     ["CAPABILITIES", "MASTER", "LIST", "GET", "CREATE", "EDIT", "MOVE", "CREATE_JOB"]
       .includes(body?.command?.operation);
@@ -87,12 +91,13 @@ async function sessionUser(token: string) {
   // One relational read keeps per-request revocation + active-account checks
   // authoritative while avoiding a second REST round trip on every heartbeat.
   const { data: session } = await admin.from("staff_sessions")
-    .select("user_id,revoked_at,last_seen_at,staff_credentials!staff_sessions_user_id_fkey(user_id,display_name,role,department,active)")
+    .select("user_id,revoked_at,last_seen_at,staff_credentials!staff_sessions_user_id_fkey(user_id,display_name,role,department,active,must_change)")
     .eq("token_hash", hash).maybeSingle();
   if (!session || session.revoked_at) return null;
   const staffRaw = (session as any).staff_credentials;
   const staff = Array.isArray(staffRaw) ? staffRaw[0] : staffRaw;
   if (!staff || !staff.active || String(staff.user_id) !== String(session.user_id)) return null;
+  if (staff.role === "Receptionist" && staff.must_change) return null;
   // Revision probes can arrive every second from active phones. Keep session
   // liveness useful without turning every read into a database write.
   const lastSeen = session.last_seen_at ? Date.parse(String(session.last_seen_at)) : 0;
@@ -870,6 +875,26 @@ Deno.serve(async (req: Request) => {
 
     if (user.role === "Receptionist" && !receptionistRequestAllowed(action, body)) {
       return reply({ok:false, code:"receptionist_forbidden"}, 403);
+    }
+
+    if (action === "receptionist_delivery_list" || action === "receptionist_deliver") {
+      if (user.role !== "Receptionist") return reply({ok:false, code:"receptionist_forbidden"},403);
+      for (let attempt=0; attempt<8; attempt++) {
+        const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
+        if (readError) throw readError;
+        if (action === "receptionist_delivery_list") return reply({ok:true, rows:receptionistDeliveryList(current.data)});
+        const result = receptionistDeliveryTransition(current.data, user, body, Date.now());
+        if (!result.ok) return reply({ok:false,code:result.code}, result.code === "receptionist_forbidden"?403:409);
+        if (result.duplicate) return reply({ok:true,duplicate:true,job:receptionistDeliveryRow(current.data,result.job)});
+        const live=computeLiveStatus(result.data,Number(current.revision||0)+1,user.id);
+        if (!live.length) return reply({ok:false,code:"receptionist_live_status_unavailable"},503);
+        const {data:committed,error:commitError}=await admin.rpc("zukait_commit_workshop_state_v2",{
+          p_expected_revision:Number(current.revision||0),p_data:result.data,p_changed_by:user.id,p_live:live});
+        if (commitError) throw commitError;
+        if (committed?.ok) return reply({ok:true,job:receptionistDeliveryRow(result.data,result.job)});
+        if (committed?.code !== "conflict") return reply({ok:false,code:"receptionist_delivery_unavailable"},503);
+      }
+      return reply({ok:false,code:"receptionist_delivery_conflict"},409);
     }
 
     if (action === "reception") {

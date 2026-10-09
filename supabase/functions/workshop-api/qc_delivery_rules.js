@@ -68,7 +68,9 @@ export function qcTransition(data,user,request,now){
   if(cash)job.amount=to;job.finalInvoiceAmount=to;if('invoiceDate' in request)job.invoiceDate=request.invoiceDate;job.financialAudit=[...(job.financialAudit||[]),audit];job.qcWorkflow={...(job.qcWorkflow||{}),revision:revision+1,history:[...(job.qcWorkflow?.history||[]),audit]};
   return {ok:true,data:candidate,job};
  }
- if(user.role!=='Supervisor'||(op==='PAINTING_QC'&&id!=='SUP002')||(op==='FINAL_QC'&&id!=='SUP001'))return error('qc_permission_denied');
+ const receptionistDelivery=user.role==='Receptionist'&&op==='DELIVER'&&!!job.receptionNo;
+ if(receptionistDelivery&&(Object.prototype.hasOwnProperty.call(request,'finalInvoiceAmount')||Object.prototype.hasOwnProperty.call(request,'amount')||Object.prototype.hasOwnProperty.call(request,'invoiceDate')))return error('qc_permission_denied');
+ if((user.role!=='Supervisor'&&!receptionistDelivery)||(op==='PAINTING_QC'&&id!=='SUP002')||(op==='FINAL_QC'&&id!=='SUP001'))return error('qc_permission_denied');
  if(job.delivered)return error('already_delivered');
  const work=qcWork(candidate,job.no);if(!work.complete)return error('work_not_finished');
  const status=qcStatus(candidate,job),revision=Number(job.qcWorkflow?.revision||0);
@@ -111,3 +113,4 @@ export function preserveQcAuthority(candidate,current){
  }
  return candidate;
 }
+

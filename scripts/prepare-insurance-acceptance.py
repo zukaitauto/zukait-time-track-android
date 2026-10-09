@@ -20,6 +20,7 @@ MIGRATIONS = [
     "20261009104912_reception_additional_approvals.sql",
     "20261009111840_reception_job_cancellation.sql",
     "20261009153713_reception_trigger_privileges.sql",
+    "20261009175402_reception_receptionist.sql",
 ]
 
 
@@ -40,6 +41,8 @@ def prepare(source, output, project_ref, publishable_key, source_sha):
     required = ["app/build.gradle", "app/src/main/AndroidManifest.xml",
                 "app/src/main/assets/offline_test.html",
                 "app/src/main/assets/cloud_sync.js", "app/src/main/assets/secure_auth.js",
+                "app/src/main/assets/receptionist.html", "app/src/main/assets/receptionist_session.js",
+                "supabase/functions/staff-auth/index.ts", "supabase/functions/staff-auth/deno.json",
                 "app/src/main/assets/v2/features/insurance/reception.js",
                 "app/src/main/java/com/zukait/timetrack/MainActivity.java",
                 *["supabase/migrations/" + name for name in MIGRATIONS]]
@@ -100,6 +103,7 @@ def prepare(source, output, project_ref, publishable_key, source_sha):
             "updater_disabled": True, "rewritten_assets": changed,
             "ordered_pending_migrations": [{"file": n, "sha256": digest(source / "supabase/migrations" / n)} for n in MIGRATIONS],
             "api_files": {str(p.relative_to(source)): digest(p) for p in sorted((source / "supabase/functions/workshop-api").rglob("*")) if p.is_file()},
+            "auth_files": {str(p.relative_to(source)): digest(p) for p in sorted((source / "supabase/functions/staff-auth").rglob("*")) if p.is_file()},
             "client_files": {str(p.relative_to(output)): digest(p) for p in sorted((output / "app").rglob("*")) if p.is_file()},
         }
         (output / "acceptance-manifest.json").write_text(json.dumps(manifest_data, indent=2) + "\n")
