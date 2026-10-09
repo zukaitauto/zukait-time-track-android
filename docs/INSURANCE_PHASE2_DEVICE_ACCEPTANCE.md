@@ -212,8 +212,17 @@ rejection, storage failure, malformed/server/auth responses and explicit recover
 responses, restores their saved storage, and exercises the actual recovery button.
 Both use mocked transport and are included in `npm run test:reception`; they do
 not establish physical WebView/Safari durability or actual Edge/cache behavior.
-Estimate-number allocation has its own retry path and still needs its lifecycle
-acceptance; this fix covers Reception RPC mutations only.
+The RC-linked estimate allocator had the same in-memory lifecycle defect. Its
+initial/additional allocation key now persists per actor/backend/RC/round until
+a draft is saved. If a draft with that key is already present after a crash, it is
+opened without another allocation, duplicate draft or CREATE audit. Existing
+draft linkage must match the RC/round. Storage failure/corruption prevents a new
+allocation. `reception-estimate-restart.mjs` covers fresh runtimes, response loss,
+saved-draft recovery, scope isolation and storage refusal; the existing initial
+and additional estimate DOM tests now recreate module memory before retrying.
+These are mocked checks. Physical-device and actual Edge allocation/cache
+acceptance remain required for both retry fixes; generic unlinked estimate
+creation keeps its existing behavior.
 
 - `python3 tests/reception-acceptance-preparation.py`: seven isolation/preservation
   tests passed locally. These use temporary synthetic build inputs, not an APK.

@@ -10,6 +10,7 @@ function setup(){const dom=new JSDOM('<div id="modal"></div>',{url:'https://test
  w.save=()=>pulls++;w.zukaitCloud={allocateEstimateNo:async key=>{keys.push(key);if(fail){fail=false;throw Error('lost allocation')}return {estimate_no:'Zi-QtQA',sequence_no:1}}};
  w.eval(fs.readFileSync('app/src/main/assets/v2/features/estimate/main_module.js','utf8'));
  await w.zukaitEstimate.newFromReception('RC0001',round);assert.equal(w.state.estimates.length,0);
+ w.eval(fs.readFileSync('app/src/main/assets/v2/features/estimate/main_module.js','utf8')); // Discard the former in-memory retry map.
  await w.zukaitEstimate.newFromReception('RC0001',round);await settle();assert.equal(keys[0],keys[1]);
  const e=w.state.estimates[0];assert.equal(e.jobCard,'JC123');assert.equal(e.receptionNo,'RC0001');assert.equal(e.receptionAdditionalRequestId,round);assert.equal(e.makeModel,'Toyota Camry');assert.equal(pulls,1);assert.equal(w.document.getElementById('estJobCard').readOnly,true);
  allowed=false;await w.zukaitEstimate.newFromReception('RC0001',round);assert.equal(keys.length,2);
@@ -54,3 +55,4 @@ function setup(){const dom=new JSDOM('<div id="modal"></div>',{url:'https://test
  assert.equal(w.state.sessions.length,0);assert.equal(w.state.assignments.length,0);w.me=null;dom.window.close();
 }
 console.log('Additional approvals UI: server-gated estimates, reviewed quote linkage, stable draft/approval retries, partial quantities, confirmed-only parts refresh, immutable history rendering and unchanged VWC/workflows passed.');
+

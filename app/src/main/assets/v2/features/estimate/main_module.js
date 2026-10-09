@@ -86,6 +86,11 @@ function openHome(){
 async function newEstimate(reception=null,requestKey=null,additionalRequestId=null){
   if(!canUse())return;
   ensureState();
+  const existing=requestKey?findEstimate(requestKey):null;
+  if(existing){
+    if(reception&&(existing.receptionNo!==reception.rc_no||String(existing.receptionAdditionalRequestId||'')!==String(additionalRequestId||'')))throw Error('Saved estimate retry belongs to another reception request. Ask the Manager to reconcile it.');
+    openEditor(existing.id);return existing.id;
+  }
   if(!navigator.onLine||!window.zukaitCloud?.allocateEstimateNo){
     alert('Internet is required once to generate the official Zi-Qt estimate number.');return;
   }
@@ -108,7 +113,6 @@ async function newEstimate(reception=null,requestKey=null,additionalRequestId=nu
   if(!e.estimateNo)return alert('Estimate number allocation failed.');
   state.estimates.unshift(e);audit(e,'CREATE');saveState();openEditor(e.id);return e.id;
 }
-const receptionEstimateRequests=new Map();
 let receptionEstimateBusy=false;
 async function newFromReception(rcNo,additionalRequestId=null){
   if(!canUse()||receptionEstimateBusy)return;
@@ -117,10 +121,14 @@ async function newFromReception(rcNo,additionalRequestId=null){
     const response=await window.zukaitReception.call({operation:'GET',rc_no:rcNo});
     const r=response.record;
     if(r.outcome||(!additionalRequestId&&r.job_card)||(additionalRequestId&&(!r.job_card||response.additional?.can_prepare!==true||!response.additional.requests?.some(x=>x.id===additionalRequestId&&x.status==='DRAFT'))))throw Error('This reception case is not available for the requested estimate.');
-    const requestMapKey=additionalRequestId?rcNo+':'+additionalRequestId:rcNo;
-    if(!receptionEstimateRequests.has(requestMapKey))receptionEstimateRequests.set(requestMapKey,uid());
-    const id=await newEstimate(r,receptionEstimateRequests.get(requestMapKey),additionalRequestId);
-    if(id)receptionEstimateRequests.delete(requestMapKey);
+    const actor=currentUser()?.id;
+    if(!actor)throw Error('Please sign in.');
+    const requestKey='zukait_reception_estimate_request_v1:'+JSON.stringify([actor,window.zukaitReception.endpoint||window.location?.origin||'',rcNo,additionalRequestId||'']);
+    let clientKey=localStorage.getItem(requestKey);
+    if(clientKey&&!/^(?:[a-f0-9-]{36}|est-\d+-[a-z0-9]+)$/i.test(clientKey))throw Error('Saved estimate retry could not be read. Keep device data and ask the Manager to reconcile it.');
+    if(!clientKey){clientKey=uid();localStorage.setItem(requestKey,clientKey);if(localStorage.getItem(requestKey)!==clientKey)throw Error('This device could not save the estimate retry. No allocation was sent.');}
+    const id=await newEstimate(r,clientKey,additionalRequestId);
+    if(id&&localStorage.getItem(requestKey)===clientKey)localStorage.removeItem(requestKey);
     return id;
   }catch(e){alert(e.message||'Could not load reception information.');}
   finally{receptionEstimateBusy=false;}

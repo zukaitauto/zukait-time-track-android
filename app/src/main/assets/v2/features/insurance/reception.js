@@ -1078,7 +1078,7 @@
       (grid || root).appendChild(b);
     }
   }
-  window.zukaitReception = { open: home, openCancellation: no => cancellation(no).catch(error), openRecord: no => view(no).catch(error), documentHtml, ensureCards, call };
+  window.zukaitReception = { endpoint: API, open: home, openCancellation: no => cancellation(no).catch(error), openRecord: no => view(no).catch(error), documentHtml, ensureCards, call };
   style();
   new MutationObserver(ensureCards).observe(document.documentElement, {
     childList: true,
