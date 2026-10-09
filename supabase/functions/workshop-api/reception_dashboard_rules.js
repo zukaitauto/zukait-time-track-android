@@ -119,3 +119,17 @@ export function receptionPromiseTransition(data,user,request,now){
    {request_id:reqid,by:text(user.id),at:now,from:old,to:promise,expected}];
  return {ok:true,data:next,job_card:no,promise_date:promise};
 }
+
+export function preserveReceptionPromiseAuthority(candidate,current) {
+ const originals=new Map((current?.jobs||[]).filter(j=>j?.no).map(j=>[norm(j.no),j]));
+ for(const job of candidate?.jobs||[]) {
+  if(!job?.no)continue;
+  const before=originals.get(norm(job.no));
+  for(const field of ["promiseDate","promiseAudit"]) {
+   if(before&&Object.prototype.hasOwnProperty.call(before,field))
+     job[field]=structuredClone(before[field]);
+   else delete job[field];
+  }
+ }
+ return candidate;
+}
