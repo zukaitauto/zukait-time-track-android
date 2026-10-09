@@ -104,6 +104,42 @@ in GitHub source or logs. Do not claim these remaining gates passed.
 
 ## Setup record
 
+### 2026-10-10 authenticated HTTPS checkpoint
+
+Tested from a fresh Work session against isolated QA project
+`omqgkqknbdcnotabffek`; checked branch head
+`11eb200ca20e15ffb18e7b45733ea63fd8645167`. QA workshop-api v2 dashboard
+deployment is documented in INSURANCE_PHASE2_WEB_RECEPTION.md.
+
+- PASS: real HTTPS sign-in and staff-auth session validation for all four
+  synthetic Manager, Supervisor, Receptionist and Employee accounts.
+- PASS: Manager and Supervisor Reception capabilities and checklist dashboard
+  requests returned HTTP 200; Manager STAFF returned 200, Supervisor STAFF
+  returned 403 / reception_manager_required.
+- PASS: Receptionist temporary-password session was denied by workshop-api
+  with 401 / invalid_session, matching the explicit must_change guard.
+  Completed the real first-password change for this QA Receptionist;
+  the old session then returned 401. The replacement session returned 200
+  for Reception capabilities, checklist dashboard and delivery list, and
+  403 / receptionist_forbidden for STAFF and full workshop load.
+- PASS: Employee capabilities returned allowed=false; dashboard and STAFF
+  returned 403 / reception_forbidden.
+- All sessions created by these probes were logged out with HTTP 200.
+  The current Receptionist password is retained in the private tester file;
+  no password or session token is committed here. Other three accounts still
+  require their initial password change.
+- Local dashboard-rules and Receptionist authentication regression checks
+  passed. Remote architecture-v2 head matched the inspected commit before
+  this evidence update. No AGENTS.md was found in the checkout.
+
+These are authenticated HTTP access checks, not complete transport acceptance:
+filtered populated dashboard data, promise-date writes, actor spoofing,
+wrong-key checks with valid sessions, business mutations, response-loss races,
+disabled-account revocation and physical devices remain to be verified over
+HTTPS. No checklist, Job Card, financial or production data was changed by
+these probes. QA credential/session lifecycle writes were required for testing.
+V305 remains unapproved and unpublished.
+
 Complete this record before any backend mutation or physical installation:
 
 - Confirmed QA reference and organization: `omqgkqknbdcnotabffek` / `zukaitauto`; cost quote USD 0/month. Owner / project expiry / allowed testers: TO RECORD.
