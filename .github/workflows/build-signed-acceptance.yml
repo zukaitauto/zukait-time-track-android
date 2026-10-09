@@ -7,6 +7,8 @@ on:
     paths:
       - .github/workflows/build-signed-acceptance.yml
       - app/build.gradle
+      - app/src/main/assets/v2/features/insurance/**
+      - tests/reception-*
 
 permissions:
   contents: read
@@ -46,6 +48,18 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+
+      - name: Set up Node for reception acceptance
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Verify reception UI and API
+        run: |
+          npm ci --ignore-scripts
+          npm run test:reception
+          node tests/reception-api.mjs
 
       - name: Validate JavaScript
         shell: bash

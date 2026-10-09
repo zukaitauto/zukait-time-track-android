@@ -107,7 +107,11 @@ const submit = async (id) => {
     .dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
   await settle();
 };
-await settle();
+// Startup uses a browser timer; setImmediate alone does not wait for that timer
+// consistently across Node versions. Wait for the observable launcher instead.
+const launcherDeadline = Date.now() + 2000;
+while (!w.document.querySelector("[data-rc-menu]") && Date.now() < launcherDeadline)
+  await new Promise((resolve) => setTimeout(resolve, 10));
 assert.equal(w.document.querySelectorAll("[data-rc-menu]").length, 1);
 await w.zukaitReception.open();
 await click("new");
