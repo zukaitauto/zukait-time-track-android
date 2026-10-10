@@ -163,6 +163,13 @@ assert.match(
   w.document.getElementById("rc-root").textContent,
   /<script>unsafe<\/script>/,
 );
+assert.match(w.document.getElementById("rc-root").textContent,/Front Bumper: Dent/);
+await click("edit");
+assert.equal(w.document.querySelector('[data-rc-zone="front_bumper"]').textContent,"X","Saved dent restored on edit");
+assert.equal(w.document.querySelector('[data-rc-zone="roof"]').textContent,"S","Saved scratch restored on edit");
+assert.equal(w.document.querySelector('[data-rc-accessory="wheel_covers"]').getAttribute("aria-pressed"),"true","Extra accessory restored on edit");
+assert.equal(w.document.querySelector('[name=damage]').value,"<script>unsafe</script>","Legacy damage notes remain editable");
+await click("back");
 await click("movement");
 value("reason", "Waiting for parts");
 failMove = true;
