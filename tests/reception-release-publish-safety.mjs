@@ -22,6 +22,19 @@ assert.match(approved,/apksigner["']? verify/,'signed APK must verify signature'
 assert.match(pages,/scripts\/verify-pc-pages-publication\.cjs/,'PC release must validate approval');
 assert.match(pages,/git -c advice\.detachedHead=false checkout --detach --force/, 'PC release must publish pinned SHA');
 assert.equal(release.approvedForStaff,false,'V305 must not be released during QA');
-assert.equal(updater.versionName,'V304','staff updater must remain approved V304');
-assert.equal(updater.versionCode,267,'V304 version code must remain 267');
-console.log('PASS: Signed APK and Pages are manual-only on architecture-v2 with source/approval gates; V305 unpublished');
+const uiApproval = fs.existsSync('release-ui-request.json') ? JSON.parse(fs.readFileSync('release-ui-request.json','utf8')) : null;
+function verifyUpdaterAfterUiRelease(metadata) {
+ if (metadata.versionName === 'V304') { assert.equal(metadata.versionCode,267); return; }
+ assert.ok(uiApproval?.approvedForStaff, 'Published V305 requires explicit owner UI approval');
+ assert.equal(uiApproval.releaseScope,'phase1-compatible-ui');
+ assert.equal(uiApproval.productionBackendChanges,false);
+ assert.equal(uiApproval.phase2ActivationApproved,false);
+ assert.equal(uiApproval.physicalAcceptanceStatus,'NOT_RUN');
+ assert.equal(metadata.versionName,uiApproval.versionName);
+ assert.equal(metadata.versionCode,uiApproval.versionCode);
+ assert.equal(metadata.sourceCommit,uiApproval.sourceCommit);
+ assert.match(metadata.apkSha256,/^[a-f0-9]{64}$/);
+ assert.equal(metadata.releaseTag,'release-V305-architecture-v2');
+}
+verifyUpdaterAfterUiRelease(updater);
+console.log('PASS: Signed APK and Pages are manual-only on architecture-v2 with source/approval gates; explicit UI approval required');

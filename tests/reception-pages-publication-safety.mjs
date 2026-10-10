@@ -25,7 +25,21 @@ for(const [name,bad,ref] of [
  assert.throws(()=>validate(bad,updater,ref),undefined,name);
 }
 assert.equal(current.approvedForStaff,false,'V305 must remain unpublished during QA');
-assert.equal(latest.versionName,'V304','Staff updater must remain V304 until approval');
+const uiApproval = fs.existsSync('release-ui-request.json') ? JSON.parse(fs.readFileSync('release-ui-request.json','utf8')) : null;
+function verifyUpdaterAfterUiRelease(metadata) {
+ if (metadata.versionName === 'V304') { assert.equal(metadata.versionCode,267); return; }
+ assert.ok(uiApproval?.approvedForStaff, 'Published V305 requires explicit owner UI approval');
+ assert.equal(uiApproval.releaseScope,'phase1-compatible-ui');
+ assert.equal(uiApproval.productionBackendChanges,false);
+ assert.equal(uiApproval.phase2ActivationApproved,false);
+ assert.equal(uiApproval.physicalAcceptanceStatus,'NOT_RUN');
+ assert.equal(metadata.versionName,uiApproval.versionName);
+ assert.equal(metadata.versionCode,uiApproval.versionCode);
+ assert.equal(metadata.sourceCommit,uiApproval.sourceCommit);
+ assert.match(metadata.apkSha256,/^[a-f0-9]{64}$/);
+ assert.equal(metadata.releaseTag,'release-V305-architecture-v2');
+}
+verifyUpdaterAfterUiRelease(latest);
 assert.match(workflow,/^\s+workflow_dispatch:\s*$/m,'Manual Pages invocation required');
 assert.doesNotMatch(workflow,/^\s+push:\s*$/m,'Automatic Pages pushes prohibited');
 assert.match(workflow,/scripts\/verify-pc-pages-publication\.cjs/,'Pages must run approval validation');
@@ -39,4 +53,4 @@ assert.doesNotMatch(workflow,/main_module\.js\\n\s+grep/,
  'Pages shell must contain a real newline; literal backslash-n breaks publication asset checks');
 assert.match(workflow,/main_module\.js\n\s+grep -q 'open:render'/,
  'Both independent Parts module checks must be valid lines');
-console.log('PASS: manual-only PC publication, approval denial matrix, pinned source commit and V304 updater gates');
+console.log('PASS: manual-only PC publication, approval denial matrix, pinned source commit and owner-approved updater gates');

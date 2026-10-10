@@ -92,7 +92,7 @@ async function main() {
   const report={mode,sourceCommit:record.sourceCommit,checkedAt:new Date().toISOString(),passed:false};
   try {
     // Allow bounded propagation; retain failure rather than claiming publication.
-    for(let attempt=1;attempt<=6;attempt++) {
+    for(let attempt=1;attempt<=36;attempt++) {
       try {
         report.files=await verifyPages(record,dir);
         if(mode==='release'||mode==='apk') await verifyRelease(record,fetch,mode==='release');
@@ -100,8 +100,8 @@ async function main() {
         break;
       } catch(e) {
         report.error=e.message;
-        if(attempt===6) throw e;
-        await new Promise(resolve=>setTimeout(resolve,5000));
+        if(attempt===36) throw e;
+        await new Promise(resolve=>setTimeout(resolve,10000));
       }
     }
     delete report.error;
