@@ -22,22 +22,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify explicit release approval and current updater
+      - name: Verify approved release metadata
+        shell: bash
+        run: node scripts/verify-pc-pages-publication.cjs >> "$GITHUB_ENV"
+
+      - name: Checkout exact approved publication source
         shell: bash
         run: |
-          node <<'NODE'
+          test -n "${SOURCE_SHA}"
+          git fetch --no-tags --depth=1 origin "${SOURCE_SHA}"
+          git -c advice.detachedHead=false checkout --detach --force "${SOURCE_SHA}"
+          test "$(git rev-parse HEAD)" = "${SOURCE_SHA}"
+          # Fail closed if the approved source APK version disagrees with
+          # the source-of-truth release metadata checked in the previous step.
+          node - <<'NODE'
           const fs=require('node:fs');
-          const request=JSON.parse(fs.readFileSync('release-request.json','utf8'));
-          const latest=JSON.parse(fs.readFileSync('latest-version.json','utf8'));
-          if(request.approvedForStaff!==true||!request.approvedAt||
-             !/^[a-f0-9]{40}$/i.test(String(request.sourceCommit||''))||
-             !request.publishNonce||
-             request.versionCode!==latest.versionCode||
-             request.versionName!==latest.versionName){
-            throw Error('PC deployment blocked: approved release and matching updater are required.');
+          const gradle=fs.readFileSync('app/build.gradle','utf8');
+          const versionName=gradle.match(/\bversionName\s+["']([^"']+)["']/);
+          const versionCode=gradle.match(/\bversionCode\s+(\d+)/);
+          if(!versionName||!versionCode||
+             versionName[1]!==process.env.SOURCE_VERSION_NAME||
+             Number(versionCode[1])!==Number(process.env.SOURCE_VERSION_CODE)){
+            throw Error('PC publication blocked: approved source version does not match release');
           }
-          console.log('Manual PC deployment has approved release metadata.');
           NODE
+          echo "PC site assets pinned to approved source ${SOURCE_SHA}"
       - name: Prepare PC site
         shell: bash
         run: |

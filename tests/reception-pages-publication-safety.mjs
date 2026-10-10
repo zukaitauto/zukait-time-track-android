@@ -1,0 +1,38 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);
+const {validate}=require('../scripts/verify-pc-pages-publication.cjs');
+const current=JSON.parse(fs.readFileSync('release-request.json','utf8'));
+const latest=JSON.parse(fs.readFileSync('latest-version.json','utf8'));
+const workflow=fs.readFileSync('.github/workflows/pages.yml','utf8');
+const source={...current,approvedForStaff:true,approvedAt:'2026-10-10T06:00:00Z',
+ sourceCommit:'a'.repeat(40),publishNonce:'qa-only-test-nonce',signedAcceptanceRun:12345,
+ versionCode:268,versionName:'V305'};
+const updater={...latest,versionCode:268,versionName:'V305'};
+const branch='refs/heads/architecture-v2';
+assert.equal(validate(source,updater,branch).sha,'a'.repeat(40));
+for(const [name,bad,ref] of [
+ ['unapproved',{...source,approvedForStaff:false},branch],
+ ['unknown branch',source,'refs/heads/main'],
+ ['missing approval',{...source,approvedAt:null},branch],
+ ['invalid SHA',{...source,sourceCommit:'latest'},branch],
+ ['short nonce',{...source,publishNonce:'x'},branch],
+ ['missing signed acceptance',{...source,signedAcceptanceRun:null},branch],
+ ['version mismatch',{...source,versionCode:267},branch],
+ ['name mismatch',{...source,versionName:'V304'},branch]
+]){
+ assert.throws(()=>validate(bad,updater,ref),undefined,name);
+}
+assert.equal(current.approvedForStaff,false,'V305 must remain unpublished during QA');
+assert.equal(latest.versionName,'V304','Staff updater must remain V304 until approval');
+assert.match(workflow,/^\s+workflow_dispatch:\s*$/m,'Manual Pages invocation required');
+assert.doesNotMatch(workflow,/^\s+push:\s*$/m,'Automatic Pages pushes prohibited');
+assert.match(workflow,/scripts\/verify-pc-pages-publication\.cjs/,'Pages must run approval validation');
+assert.match(workflow,/git fetch --no-tags --depth=1 origin "\$\{SOURCE_SHA\}"/,'Source pin fetch required');
+assert.match(workflow,/git -c advice\.detachedHead=false checkout --detach --force "\$\{SOURCE_SHA\}"/,
+ 'Published contents must use exact approved source, not mutable branch HEAD');
+assert.match(workflow,/git rev-parse HEAD/,'Deployment must verify checked-out SHA');
+assert.match(workflow,/SOURCE_VERSION_NAME/,'APK version pin must be validated');
+assert.match(workflow,/SOURCE_VERSION_CODE/,'APK code pin must be validated');
+console.log('PASS: manual-only PC publication, approval denial matrix, pinned source commit and V304 updater gates');
