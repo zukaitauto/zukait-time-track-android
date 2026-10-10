@@ -7,6 +7,73 @@ and the selected real mutation scenarios below PASS. Full fault/device acceptanc
 is INCOMPLETE; physical device acceptance NOT_RUN.
 Live remains V304 / 267, workshop-api 58 and staff-auth 4. No release authorization.
 
+## 2026-10-10 actual-client recovery and CI checkpoint
+
+Runner/checklist commit: `7bc397b3682a201b1f29e67931d60e57ca0cf058`.
+No application/backend implementation changed. Real mutations still target only
+the isolated QA project `omqgkqknbdcnotabffek`.
+
+**PASS: 18 recovery cases across 15 Reception operations.** The runner executes
+the application's actual `mutate` function in a fresh Node/VM process for each
+stage, with file-backed localStorage and a minimal DOM adapter. Stage 1 simulates
+offline before transport (zero requests). Stage 2 sends the real HTTPS command,
+receives a committed success and discards its response. Independent Supervisor
+GET confirms the record revision. Stage 3 starts another process and retries the
+exact journaled command/UUID; the server returns duplicate and the journal clears.
+Loading the client never auto-replays. This is real transport plus actual client
+logic, **not a physical browser/network/OS termination result**.
+
+Covered: CREATE (Manager and Receptionist), EDIT, MOVE, SAVE_PARTS, LINK_ESTIMATE,
+RECORD_APPROVAL, CREATE_JOB, SAVE_ADDITIONAL_REQUEST, LINK_ADDITIONAL_ESTIMATE,
+APPROVE_ADDITIONAL, CANCEL_JOB, CREATE_DIRECT_JOB (cash and credit),
+RECORD_EXTERNAL_APPROVAL, CREATE_EXTERNAL_JOB and CLOSE. SQL readback confirms
+18 recorded requests for 18 unique tested UUIDs. Normal initial/additional parts
+transfer and cancellation each occur once; approved quantities remain one each.
+
+Additional evidence:
+
+- A genuine environment transport interruption left CREATE UUID
+  `3e09a0e2-548d-4575-be39-adc464be27bb` unresolved. SQL confirmed RC0008 had
+  committed. After session renewal, the actual client retried that saved request,
+  received duplicate, and cleared its journal without another creation.
+- A malformed/truncated real success response for RC0008 EDIT retained its UUID
+  and pending journal; a fresh-process retry confirmed the original result.
+- Fail-closed self-tests pass: production endpoint, wrong key, non-QA identity,
+  malformed session token, unknown mode and missing explicit opt-in are rejected.
+  Offline self-test sends no backend request and retains its UUID across processes.
+- The fixture estimate initially lacked matching customer/contact fields; the
+  server correctly rejected its link. The fixture was corrected before continuing.
+  This and a local resume-script variable error were harness-only issues.
+
+Retained synthetic fixtures: RC0008 (reconciled interruption), RC0009 normal
+insurance `QAFDDA0BFCEN` (cancelled job, VWC, parts preserved), RC0010 cash
+`QAFD2558DABC`, RC0011 credit `QAFD2558DABR`, RC0012 issued insurance
+`QAFD2558DABI`, RC0013 cancelled checklist without a Job Card.
+All four renewed test sessions were logged out and then rejected with HTTP 401.
+No pending retry journals remain. Saved tester passwords were unchanged.
+
+**CI PASS** at the runner commit:
+[Reception verification 38021866694](https://github.com/zukaitauto/zukait-time-track-android/actions/runs/38021866694).
+All 18 local suites, PostgreSQL 17 concurrency, API checks, both isolation
+self-tests, Chromium/WebKit responsive checks and JS validation passed.
+Browser coverage is both Reception views at widths 1440, 1024, 768 and 390,
+including keyboard and overflow checks (mock transport, not physical devices).
+The earlier run 37994426392 failed before checkout because Docker Hub timed out
+and rate-limited PostgreSQL. Its rerun also passed completely. No product fix
+was needed for that infrastructure failure.
+
+Release preparation: `INSURANCE_V305_RELEASE_CHECKLIST.md` records the verified
+production baseline, nine migration hashes, coordinated activation order and
+failure handling. It is a checklist, not a backup or a completed recovery rehearsal.
+
+Remaining gates: physical Android/iPhone/Mac Safari with real QA transport;
+actual browser offline/reconnect and OS restart behavior; delivery-specific
+client journal recovery over real HTTPS (earlier delivery replay and mocked DOM
+checks are supporting evidence); full two-device conflict matrix; nonempty
+financial/work preservation scenarios beyond current fixtures; backup/recovery
+rehearsal, fresh production recovery point and explicit staff-release approval.
+V305 remains unpublished and `approvedForStaff=false`.
+
 ## 2026-10-10 real mutation checkpoint
 
 Tested source: `fa74ebca62eb4bb7745aa3f5862eb98af3684c3f` (same file tree as
