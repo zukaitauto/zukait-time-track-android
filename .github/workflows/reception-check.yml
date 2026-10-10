@@ -53,6 +53,7 @@ jobs:
           PGPASSWORD: reception-test-only
       - run: node tests/reception-api.mjs
       - run: node tests/reception-isolated-transport-selftest.mjs
+      - run: node tests/reception-isolated-recovery-selftest.mjs
       - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:reception:browser
       - run: bash scripts/ci-validate-js.sh
