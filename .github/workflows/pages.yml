@@ -56,6 +56,8 @@ jobs:
           rm -rf _site
           mkdir -p _site
           cp app/src/main/assets/offline_test.html _site/index.html
+          cp app/src/main/assets/receptionist.html _site/receptionist.html
+          cp app/src/main/assets/receptionist_session.js _site/receptionist_session.js
           cp app/src/main/assets/consumables.js _site/consumables.js
           cp app/src/main/assets/consumables_ui.js _site/consumables_ui.js
           cp app/src/main/assets/paint_module.js _site/paint_module.js
@@ -109,6 +111,8 @@ jobs:
               copy2(origin, destination)
           print(f'Copied {len(parser.sources)} referenced scripts')
           PY
+          test -s _site/receptionist.html
+          test -s _site/receptionist_session.js
           test -s _site/consumables.js
           test -s _site/consumables_ui.js
           test -s _site/paint_module.js
@@ -136,6 +140,9 @@ jobs:
           test -s _site/vehicle-logos/ford.svg
           test -s _site/vehicle-logos/honda.svg
           touch _site/.nojekyll
+
+      - name: Verify staged shared Reception UI assets before public deployment
+        run: python3 scripts/verify-reception-platform-assets.py --site _site
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

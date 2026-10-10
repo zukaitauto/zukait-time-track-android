@@ -57,6 +57,7 @@ jobs:
       - run: node tests/reception-isolated-recovery-selftest.mjs
       - run: node tests/reception-isolated-delivery-selftest.mjs
       - run: node tests/reception-pages-publication-safety.mjs
+      - run: python3 scripts/verify-reception-platform-assets.py
       - run: node tests/reception-v305-acceptance.mjs
       - run: node tests/reception-backup-export-safety.mjs
       - run: node tests/reception-release-publish-safety.mjs

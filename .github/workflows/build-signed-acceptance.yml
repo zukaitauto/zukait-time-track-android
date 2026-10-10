@@ -137,6 +137,9 @@ jobs:
           grep -q "versionName='${{ steps.candidate.outputs.version_name }}'" /tmp/apk-badging.txt
 
 
+      - name: Verify signed APK and web share the exact Reception UI files
+        run: python3 scripts/verify-reception-platform-assets.py --apk ZUKAIT_TIME_TRACK_LATEST.apk
+
       - name: Upload signed acceptance APK
         uses: actions/upload-artifact@v4
         with:
