@@ -137,6 +137,49 @@
 @media(min-width:900px){.rc{font-size:15px;padding:24px;border-radius:12px}.rc button{font-size:14px!important;min-height:40px;border-radius:7px!important}.rc input,.rc select,.rc textarea{font-size:15px!important;min-height:40px;border-radius:6px}.rc-grid{gap:16px}.rc-box{border-radius:8px}.rc-filters{grid-template-columns:minmax(0,3fr) minmax(200px,1fr)}#rc-form>.rc-grid{grid-template-columns:repeat(3,minmax(0,1fr));padding:20px;background:white;border:1px solid #d2e1eb;border-radius:8px}#rc-form>.rc-box:last-of-type{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}#rc-form>.rc-box:last-of-type>h4,#rc-form>.rc-box:last-of-type>label:first-of-type{grid-column:1/-1}.rc-accessories{grid-template-columns:repeat(3,minmax(0,1fr))}.rc-wide{grid-column:1/-1}}
 @media(max-width:700px){.rc-form-top{grid-template-columns:1fr}.rc-topbar{align-items:stretch;flex-wrap:wrap;gap:8px;margin:-10px -10px 14px;padding:12px}.rc-topbar h3{order:-1;flex:0 0 100%}.rc-topbar .rc-actions{flex:1;justify-content:flex-end}.rc-topbar h3{margin-bottom:12px}.rc-table,.rc-table tbody,.rc-table tr,.rc-table td{display:block}.rc-table thead{display:none}.rc-table tr{border:1px solid #d2e1eb;border-radius:12px;margin-bottom:12px;padding:10px}.rc-table td{border:0;padding:5px}.rc-table td:before{content:attr(data-label);display:block;font-size:13px;color:#45627a;font-weight:700;margin-bottom:3px}.rc-table td:last-child:before{display:none}.rc-table button{width:100%}.rc-filters{grid-template-columns:1fr}}
 `;
+    e.textContent += `
+/* Reception V305: same assets/styles are packaged for desktop Pages and Android WebView. */
+#rc-root{background:linear-gradient(160deg,#ecf4fb 0%,#f6fafc 42%,#e8f2f7 100%);color:#16374d}
+#rc-root .rc-topbar{background:linear-gradient(115deg,#102c43,#0c5768 78%,#168e90);box-shadow:0 8px 22px #06273b25;min-height:66px}
+#rc-root .rc-topbar h3{font-size:clamp(19px,2vw,26px);letter-spacing:.1px;font-weight:850}
+#rc-root .rc-topbar button{border:1px solid #ffffff90!important;box-shadow:0 2px 9px #00172924}
+#rc-root .rc-topbar [data-rc-action=back]{background:#c7f6e9!important;color:#07515a!important;border-color:#9cebd7!important}
+#rc-root .rc-form-hint{font-size:15px;line-height:1.5;margin:7px 0 12px;padding:10px 14px;border-left:4px solid #0e989d;background:#e8f5f7;border-radius:8px;color:#25566a}
+#rc-root #rc-form .rc-form-top{background:linear-gradient(130deg,#e0f3f2,#eaf1fe);padding:15px 18px;border:1px solid #a8d6de;border-radius:14px;box-shadow:0 5px 18px #17475d0e}
+#rc-root #rc-form .rc-form-top label{font-size:16px;font-weight:800;color:#174c60}
+#rc-root #rc-form .rc-form-top select{font-size:17px!important;font-weight:750;background:#fff;min-height:49px;outline-offset:2px}
+#rc-root #rc-form .rc-form-top select:focus-visible,
+#rc-root #rc-form input:focus-visible,
+#rc-root #rc-form textarea:focus-visible{outline:3px solid #44aaa8;outline-offset:1px;border-color:#168d91}
+#rc-root #rc-form .rc-grid>label,
+#rc-root #rc-form .rc-grid>.rc-reading,
+#rc-root #rc-form .rc-grid>.rc-claim{min-width:0}
+#rc-root #rc-form>.rc-grid{background:#fff;box-shadow:0 8px 22px #204d640d;border:1px solid #d2e5ed;border-radius:15px}
+#rc-root #rc-form>.rc-grid label{font-weight:750;font-size:16px;color:#1c4258}
+#rc-root #rc-form>.rc-grid input,#rc-root #rc-form>.rc-grid select{font-size:17px!important;min-height:50px;border:1px solid #b8cedb;background:#fbfdff;border-radius:10px}
+#rc-root #rc-form .rc-reading{display:grid;grid-template-columns:minmax(92px,35%) minmax(0,1fr);gap:9px;align-items:end}
+#rc-root #rc-form .rc-reading>label:first-child{flex:auto;min-width:0}
+#rc-root #rc-form .rc-box{border-radius:15px;border-color:#d0e2eb;box-shadow:0 5px 15px #183b4e0b}
+#rc-root #rc-form>.rc-actions{position:sticky;bottom:0;z-index:4;background:#eff7fbf2;padding:12px;border-top:1px solid #c2dce8;backdrop-filter:blur(8px);margin:20px -10px -16px}
+#rc-root #rc-form>.rc-actions button[type=submit]{background:linear-gradient(125deg,#086f79,#119e9f)!important;color:#fff!important;font-size:17px!important;font-weight:850!important;border-color:#0c858c!important;box-shadow:0 5px 14px #0c657d33!important;padding:12px 28px!important}
+#rc-root #rc-form>.rc-actions button[type=submit]:focus-visible{outline:3px solid #1c6679;outline-offset:3px}
+@media(min-width:900px){
+  #rc-root{padding:24px}
+  #rc-root .rc-topbar{margin:-24px -24px 20px;padding:15px 24px}
+  #rc-root #rc-form>.rc-grid{padding:22px;gap:18px}
+}
+@media(max-width:700px){
+  #rc-root .rc-form-hint{padding:10px 12px}
+  #rc-root #rc-form .rc-form-top{padding:12px;grid-template-columns:1fr}
+  #rc-root #rc-form>.rc-grid{padding:12px;gap:11px}
+  #rc-root #rc-form>.rc-actions button[type=submit]{width:100%}
+}
+@media(max-width:480px){
+  #rc-root #rc-form>.rc-grid{grid-template-columns:1fr}
+  #rc-root #rc-form .rc-reading{grid-template-columns:minmax(105px,36%) minmax(0,1fr)}
+  #rc-root .rc-topbar{margin:-10px -10px 12px}
+}
+`;
     document.head.appendChild(e);
   }
   function shell(title, body) {

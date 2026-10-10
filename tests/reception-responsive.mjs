@@ -41,6 +41,16 @@ for (const engine of ['chromium', 'webkit']) {
       await page.locator('#rc-form').waitFor();
       assert.equal(await page.locator('#rc-form [name=make]').getAttribute('required'),'');
       assert.equal(await page.locator('#rc-form [name=tools]').count(),9);
+      // V305 shared desktop/WebView styling must remain prominent and readable.
+      const visual=await page.evaluate(()=>({
+        topbar:getComputedStyle(document.querySelector('.rc-topbar')).backgroundImage,
+        save:getComputedStyle(document.querySelector('#rc-form button[type=submit]')).color,
+        inputHeight:document.querySelector('#rc-form [name=registration]').getBoundingClientRect().height,
+        reading:document.querySelector('#rc-form .rc-reading').getBoundingClientRect().width
+      }));
+      assert.match(visual.topbar,/gradient/i,engine+' '+width+': updated V305 header missing');
+      assert.ok(visual.inputHeight>=49,engine+' '+width+': form input too small');
+      assert.ok(visual.reading>100,engine+' '+width+': KM/Mile reading cannot fit');
       // Desktop fullscreen modal, not the old 420px centered popup.
       const dialog=await page.locator('.modal-box.rc-dialog').boundingBox();
       assert.ok(dialog, `${engine} ${width}: Reception dialog not visible`);
