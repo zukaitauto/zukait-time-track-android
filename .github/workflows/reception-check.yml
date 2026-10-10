@@ -71,4 +71,14 @@ jobs:
       - run: node tests/reception-release-publish-safety.mjs
       - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:reception:browser
+      - name: Verify approved one-page A4 Reception PDF in Chromium
+        run: node tests/reception-print-a4.mjs
+      - name: Preserve A4 print preview for workshop review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reception-a4-print-preview-${{ github.run_id }}
+          path: artifacts/reception-a4/
+          if-no-files-found: warn
+          retention-days: 30
       - run: bash scripts/ci-validate-js.sh
