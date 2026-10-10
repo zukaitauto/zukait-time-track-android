@@ -1,0 +1,102 @@
+name: Rehearse isolated PC website archive restore
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [architecture-v2]
+    paths:
+      - ".github/workflows/reception-pages-rollback-rehearsal.yml"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  isolated-static-restore:
+    if: github.ref == 'refs/heads/architecture-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download verified rollback artifact (no deployment)
+        uses: actions/download-artifact@v4
+        with:
+          name: ZUKAIT_PC_PRE_V305_ROLLBACK_VERIFIED
+          run-id: 38044860788
+          repository: zukaitauto/zukait-time-track-android
+          github-token: ${{ github.token }}
+          path: archive-copy
+      - name: Verify archive and rehearse local HTTP restore
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib, http.server, json, tarfile, tempfile, threading, urllib.request
+          from pathlib import Path, PurePosixPath
+          originals={
+            "index.html":"f1a00d6208e3eed3cc02aafab51c70f5e4b45061513716048400f4019ea3a089",
+            "v2/features/insurance/reception.js":"ad6f061442ee606ab12ce981f659421efa6713c475b19e10115b34b9a195db91"
+          }
+          sha=lambda b:hashlib.sha256(b).hexdigest()
+          expected_archive_sha="7c519bd5481c2a66a68d06fd30f7850e2f10e834a9b93a7e81f7cf59483eb797"
+          candidates=list(Path("archive-copy").rglob("artifact.tar"))
+          if len(candidates)!=1:
+            raise SystemExit(f"Expected the preserved original artifact.tar; found {len(candidates)}")
+          archive=candidates[0]
+          if sha(archive.read_bytes())!=expected_archive_sha:
+            raise SystemExit("Preserved rollback archive hash mismatch")
+          result={"archive_sha256":expected_archive_sha,"source_run":38044860788,
+                  "target":"127.0.0.1 only; no public deployment","checked_files":{},"restore":"FAILED"}
+          with tempfile.TemporaryDirectory(prefix="zukait-pc-restore-") as folder:
+            site=Path(folder)
+            with tarfile.open(archive,"r:*") as tar:
+              for entry in tar:
+                member=PurePosixPath(entry.name.removeprefix("./"))
+                if str(member) in (".",""):continue
+                if member.is_absolute() or ".." in member.parts or entry.issym() or entry.islnk():
+                  raise SystemExit("Unsafe archive path or symlink; restore refused")
+                dest=site.joinpath(*member.parts)
+                if entry.isdir():
+                  dest.mkdir(parents=True,exist_ok=True)
+                elif entry.isfile():
+                  dest.parent.mkdir(parents=True,exist_ok=True)
+                  if entry.size>7*1024*1024:raise SystemExit("Oversized file in archive")
+                  data=tar.extractfile(entry).read()
+                  if len(data)!=entry.size:raise SystemExit("Truncated archive entry")
+                  dest.write_bytes(data)
+                else:
+                  raise SystemExit("Unsupported archive entry; restore refused")
+            handler=lambda *args,**kwargs:http.server.SimpleHTTPRequestHandler(
+                *args,directory=str(site),**kwargs)
+            server=http.server.ThreadingHTTPServer(("127.0.0.1",0),handler)
+            thread=threading.Thread(target=server.serve_forever,daemon=True)
+            thread.start()
+            try:
+              for name,checksum in originals.items():
+                url=f"http://127.0.0.1:{server.server_address[1]}/{name}"
+                with urllib.request.urlopen(url,timeout=10) as response:
+                  if response.status!=200:raise SystemExit("Local HTTP restore failed")
+                  data=response.read()
+                if sha(data)!=checksum:
+                  raise SystemExit("Local HTTP restored file does not match verified public website")
+                result["checked_files"][name]={"http":200,"sha256":checksum,"bytes":len(data)}
+            finally:
+              server.shutdown()
+              thread.join(timeout=5)
+              server.server_close()
+          result["restore"]="PASS_LOCAL_STATIC_ONLY"
+          result["limitations"]="Not production, no login, no staff flows, no database or browser acceptance"
+          Path("reception-pc-rollback-rehearsal.json").write_text(json.dumps(result,indent=2)+"\n")
+          print("ISOLATED_STATIC_RESTORE_PASS: served archived index.html and reception.js via localhost HTTP, both hashes matched.")
+          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"],"a") as f:
+            f.write("## Isolated PC site rollback rehearsal: PASS\n")
+            f.write("Recovered archived public HTML/JS to temporary files and read them from local HTTP; verified exact live file hashes.\n")
+            f.write("**Not a production restore, staff login test, database backup, or release authorization.**\n")
+          PY
+      - name: Save read-only restore evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZUKAIT_PC_STATIC_RESTORE_REHEARSAL
+          path: reception-pc-rollback-rehearsal.json
+          if-no-files-found: ignore
+          retention-days: 90
