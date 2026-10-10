@@ -35,10 +35,10 @@ async function fetch(url,options){
  return {ok:true,status:200,json:async()=>result};
 }
 const errors=[];
-async function runtime(saved=[]){
+async function runtime(saved=[],fetchImpl=fetch){
  const console=new VirtualConsole();console.on('jsdomError',e=>errors.push(e));
  const dom=new JSDOM(html,{url:'https://qa.invalid/receptionist.html',runScripts:'outside-only',virtualConsole:console});const w=dom.window;
- Object.defineProperty(w,'crypto',{value:webcrypto});w.fetch=fetch;w.AbortController=AbortController;w.confirm=()=>true;
+ Object.defineProperty(w,'crypto',{value:webcrypto});w.fetch=fetchImpl;w.AbortController=AbortController;w.confirm=()=>true;
  for(const [key,value] of saved)w.localStorage.setItem(key,value);
  if(!saved.length)w.localStorage.setItem('zukait_secure_session_v42',JSON.stringify({user,token:'qa-token'}));
  w.localStorage.setItem('prior-manager-private-cache','PRIVATE-MANAGER-DATA');
@@ -91,7 +91,67 @@ const key='zukait_receptionist_delivery_v1:https://pjknotnjkufadqavcmii.supabase
 assert.deepEqual(JSON.parse(JSON.stringify(w.zukaitReceptionist.pending())),offline,'An already-delivered response must preserve an unmatched UUID for reconciliation');
 w.localStorage.setItem(key,'broken');
 const corruptionBefore=requests.length;await w.zukaitReceptionist.deliver({...body,request_id:randomUUID()});assert.equal(requests.length,corruptionBefore);assert.equal(w.localStorage.getItem(key),'broken');
+// Real Receptionist source in a fresh JSDOM runtime must preserve the exact
+// request body and UUID when the server committed but transport confirmation
+// was lost, malformed, or missing its required Job Card identity.
+async function verifyRestartRecovery(fault) {
+ const job='QA-RECOVERY-'+fault.toUpperCase();
+ let committed=false,writes=0;
+ const deliveryRequests=[];
+ const transport=async(url,options)=>{
+  const body=JSON.parse(options.body);
+  if(body.action==='receptionist_delivery_list')
+   return {ok:true,status:200,json:async()=>({ok:true,rows:[{
+    jobCard:job,receptionNo:'RC-'+job,vehicle:'Toyota Camry',
+    registration:'QA-ONLY',delivered:committed,deliveryReady:!committed,
+    stage:committed?'DELIVERED':'DELIVERY',
+    expectedQcRevision:2,expectedVehicleIdentity:'QA-VEHICLE-'+job
+   }]})};
+  if(body.action!=='receptionist_deliver')return fetch(url,options);
+  deliveryRequests.push(body);
+  if(!committed){
+   writes++;committed=true; // Server committed before the response fault.
+   if(fault==='lost')throw Error('Lost HTTP response after server commit');
+   if(fault==='truncated')
+    return {ok:true,status:200,json:async()=>{throw SyntaxError('Truncated success JSON')}};
+   if(fault==='nojob')
+    return {ok:true,status:200,json:async()=>({ok:true,job:{delivered:true}})};
+  }
+  return {ok:true,status:200,json:async()=>({ok:true,duplicate:true,job:{jobCard:job,delivered:true}})};
+ };
+ let page=await runtime([],transport);
+ const command={action:'receptionist_deliver',operation:'DELIVER',jobCard:job,
+  expectedQcRevision:2,expectedVehicleIdentity:'QA-VEHICLE-'+job,request_id:randomUUID()};
+ await page.w.zukaitReceptionist.deliver(command);
+ assert.equal(writes,1,fault+' server committed once');
+ assert.equal(deliveryRequests.length,1,fault+' first transmission');
+ assert.deepEqual(JSON.parse(JSON.stringify(page.w.zukaitReceptionist.pending())),command,
+  fault+' should preserve original UUID and complete request body');
+ assert.ok(page.w.document.getElementById('retry-delivery'),
+  fault+' unconfirmed delivery must display a retry button');
+ assert.notEqual(page.w.document.getElementById('message').textContent,'',
+  fault+' must not show an optimistic success');
+ const savedState=Object.entries(page.w.localStorage);
+ page.dom.window.close();
+ // No saved request may replay merely because the real client script loads
+ // in a second page; only an explicit user retry can send the original UUID.
+ page=await runtime(savedState,transport);
+ assert.equal(deliveryRequests.length,1,fault+' load/restore must not auto-send');
+ assert.deepEqual(JSON.parse(JSON.stringify(page.w.zukaitReceptionist.pending())),command,
+  fault+' restart must load the same request');
+ await page.w.zukaitReceptionist.deliver(page.w.zukaitReceptionist.pending());
+ assert.equal(deliveryRequests.length,2,fault+' one explicit confirmation retry');
+ assert.deepEqual(deliveryRequests.map(x=>x.request_id),[command.request_id,command.request_id],
+  fault+' must reuse the original UUID');
+ assert.equal(writes,1,fault+' exact retry must not duplicate server delivery');
+ assert.equal(page.w.zukaitReceptionist.pending(),null,fault+' confirmed replay clears journal');
+ assert.equal(Object.keys(page.w.localStorage).some(k=>k.startsWith('zukait_receptionist_delivery_v1:')),false,
+  fault+' must not leave a second delivery journal');
+ page.dom.window.close();
+}
+for(const fault of ['lost','truncated','nojob'])await verifyRestartRecovery(fault);
+
 assert.ok(!storageReads.includes('prior-manager-private-cache'));
 assert.ok(!requests.some(r=>['load','save','qc_delivery'].includes(r.action)));
 w.me=null;dom.window.close();assert.deepEqual(errors,[]);
-console.log('Receptionist client DOM: dedicated workspace, no workshop-state/cache reads, approved Job Card controls, explicit restart retry with same UUID, offline journal, storage failure and corrupt-journal refusal passed.');
+console.log('Receptionist client DOM: dedicated role UI, lost/truncated/missing-confirmation response journal recovery across fresh runtime, exact UUID replays, no optimistic success, offline storage safety and no duplicate deliveries passed.');
