@@ -24,7 +24,7 @@
   else saved.token=value;
   localStorage.setItem(SESSION,JSON.stringify(saved));token=value;window.me=user;
  }
- function clear(){token='';window.me=null;try{bridge()?.clearSecureSessionToken?.()}catch(_){}localStorage.removeItem(SESSION);el('identity').textContent='';el('workspace').innerHTML='';el('reception-app').classList.add('hidden');el('login').classList.remove('hidden')}
+ function clear(){token='';window.me=null;document.body.classList.remove('receptionist-workspace');try{bridge()?.clearSecureSessionToken?.()}catch(_){}localStorage.removeItem(SESSION);el('identity').textContent='';el('workspace').innerHTML='';el('reception-app').classList.add('hidden');el('login').classList.remove('hidden')}
  async function request(functionName,body){
   if(!navigator.onLine)throw Error('Offline. Reconnect before confirming a server action.');
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
@@ -37,7 +37,7 @@
  }
  function password(){const first=prompt('New password (at least 8 characters)');if(first===null)return null;if(first.length<8)throw Error('Password must be at least 8 characters.');if(prompt('Confirm new password')!==first)throw Error('Passwords do not match.');return first;}
  async function open(user){
-  window.me=user;el('identity').textContent=user.name+' · Receptionist';el('login').classList.add('hidden');el('reception-app').classList.remove('hidden');el('message').textContent='';
+  window.me=user;document.body.classList.add('receptionist-workspace');el('identity').textContent=user.name+' · Receptionist';el('login').classList.add('hidden');el('reception-app').classList.remove('hidden');el('message').textContent='';
   await window.zukaitReception.open();
   if(pending())el('message').textContent='A delivery awaits confirmation. Open Vehicle Delivery and confirm the saved action.';
  }
@@ -75,7 +75,11 @@
  }
  async function deliveries(){
   el('message').textContent='';const saved=pending();
-  const root=el('workspace');root.innerHTML='<h2>Vehicle Delivery</h2><p>Delivery requires completed work and current passing painting and final QC. VWC is a location, not delivery.</p>'+(saved?'<div class="delivery-card"><p>Delivery awaits server confirmation: '+escape(saved.jobCard)+'</p><button id="retry-delivery">Confirm Saved Delivery</button></div>':'');
+  const root=el('workspace');root.innerHTML='<div class="reception-delivery-head"><button id="reception-delivery-back" type="button">← Back</button><h2>Vehicle Delivery</h2></div><p>Delivery requires completed work and current passing painting and final QC. VWC is a location, not delivery.</p>'+(saved?'<div class="delivery-card"><p>Delivery awaits server confirmation: '+escape(saved.jobCard)+'</p><button id="retry-delivery">Confirm Saved Delivery</button></div>':'');
+  el('reception-delivery-back').onclick=()=>{
+    const destination=window.zukaitReceptionDashboard?.resume?.() || window.zukaitReception?.open?.();
+    Promise.resolve(destination).catch(error);
+  };
   if(saved)el('retry-delivery').onclick=()=>deliver(saved);
   const result=await request('workshop-api',{action:'receptionist_delivery_list'});
   const list=document.createElement('div');root.appendChild(list);
