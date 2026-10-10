@@ -44,8 +44,9 @@ w.fetch = async (_url, args) => {
       const record = {
         rc_no: "RC" + String(++createCount).padStart(4, "0"),
         sequence_no: createCount,
-        insurance_id: 1,
-        insurance_company: "Liva Insurance",
+        insurance_id: c.insurance_id,
+        insurance_company: c.insurance_id ? "Liva Insurance" : null,
+        job_type: c.job_type || "INSURANCE",
         details: c.details,
         location: "VIW",
         approval_status: "WAITING",
@@ -211,6 +212,55 @@ if (process.env.ZUKAIT_RECEPTION_QA_HTML)
     process.env.ZUKAIT_RECEPTION_QA_HTML,
     w.zukaitReception.documentHtml(sample),
   );
+
+// Cash must create a checklist, not silently create a Job Card or send an
+// insurance company/claim. Reusing the form preserves original field order.
+await click("home");
+await click("new");
+const form=w.document.getElementById("rc-form");
+assert.deepEqual([...form.querySelectorAll(":scope > .rc-grid input,:scope > .rc-grid select")]
+  .map(x=>x.name),
+  ["registration","make","model","year","odometer_unit","odometer",
+   "vin","customer","contact","claim"]);
+assert.equal(form.elements.namedItem("job_type").value,"INSURANCE");
+value("job_type","CASH");
+form.elements.namedItem("job_type").dispatchEvent(new w.Event("change",{bubbles:true}));
+assert.equal(form.querySelector(".rc-insurance").hidden,true);
+assert.equal(form.querySelector(".rc-claim").hidden,true);
+assert.equal(form.elements.namedItem("customer").required,true);
+assert.equal(form.elements.namedItem("insurance_id").required,false);
+value("registration","OM-123");
+value("make","Toyota");
+value("model","Camry");
+value("year","2018");
+value("odometer_unit","Miles");
+value("odometer","52000");
+value("vin","ABC123");
+value("customer","Cash Customer");
+value("contact","90123456");
+// Even if a hidden field retains old content, it must never be submitted.
+value("claim","HIDDEN-CLAIM-SHOULD-BE-DROPPED");
+await submit("rc-form");
+const cash=commands.filter(c=>c.operation==="CREATE").at(-1);
+assert.equal(cash.job_type,"CASH");
+assert.equal(cash.insurance_id,null);
+assert.equal(cash.details.claim,"");
+assert.equal(cash.details.registration,"OM-123");
+assert.equal(cash.details.odometer_unit,"Miles");
+assert.equal(cash.details.customer,"Cash Customer");
+assert.equal(records.get("RC0003").job_type,"CASH");
+assert.equal(records.get("RC0003").job_card,undefined);
+const printedCash=w.zukaitReception.documentHtml(records.get("RC0003"));
+assert.match(printedCash,/Checklist Type/);
+assert.doesNotMatch(printedCash,/Insurance Company/);
+assert.doesNotMatch(printedCash,/Claim \/ Gate Pass/);
+await click("back");
+assert.ok(w.document.querySelector('[data-rc-action="new"]'),
+  "Back from checklist detail must restore Reception list");
+await click("new");
+await click("back");
+assert.ok(w.document.querySelector('[data-rc-action="new"]'),
+  "Back from new checklist must restore Reception list");
 w.me = null;
 await settle();
 dom.window.close();
