@@ -35,4 +35,8 @@ assert.match(workflow,/git -c advice\.detachedHead=false checkout --detach --for
 assert.match(workflow,/git rev-parse HEAD/,'Deployment must verify checked-out SHA');
 assert.match(workflow,/SOURCE_VERSION_NAME/,'APK version pin must be validated');
 assert.match(workflow,/SOURCE_VERSION_CODE/,'APK code pin must be validated');
+assert.doesNotMatch(workflow,/main_module\.js\\n\s+grep/,
+ 'Pages shell must contain a real newline; literal backslash-n breaks publication asset checks');
+assert.match(workflow,/main_module\.js\n\s+grep -q 'open:render'/,
+ 'Both independent Parts module checks must be valid lines');
 console.log('PASS: manual-only PC publication, approval denial matrix, pinned source commit and V304 updater gates');
