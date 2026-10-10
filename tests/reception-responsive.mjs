@@ -21,7 +21,7 @@ for (const engine of ['chromium', 'webkit']) {
           const body=JSON.parse(args.body);
           if(body.action==='reception_dashboard')return {ok:true,json:async()=>({ok:true,rows:[],counts:{checklists:0},total:0})};
           const c=body.command;
-          const result=c.operation==='CAPABILITIES'?{allowed:true,manager:true}:c.operation==='MASTER'?{companies:[{id:1,name:'Test Insurance'}]}:c.operation==='LIST'?{rows:[{rc_no:'RC-TEST',details:{make:'Toyota',model:'Corolla',registration:'TEST',customer:'Customer <script>unsafe</script>'},insurance_company:'Test Insurance',location:'VWC',approval_status:'APPROVED'}]}::c.operation==='GET'?{record:{rc_no:'RC-TEST',job_type:'INSURANCE',can_edit:true,revision:1,details:{make:'Toyota',model:'Corolla',registration:'TEST',customer:'Customer <script>unsafe</script>'},insurance_company:'Test Insurance',location:'VWC',approval_status:'APPROVED'},movements:[],audit:[]}:{};
+          const result=c.operation==='CAPABILITIES'?{allowed:true,manager:true}:c.operation==='MASTER'?{companies:[{id:1,name:'Test Insurance'}]}:c.operation==='LIST'?{rows:[{rc_no:'RC-TEST',details:{make:'Toyota',model:'Corolla',registration:'TEST',customer:'Customer <script>unsafe</script>'},insurance_company:'Test Insurance',location:'VWC',approval_status:'APPROVED'}]}:c.operation==='GET'?{record:{rc_no:'RC-TEST',job_type:'INSURANCE',can_edit:true,revision:1,details:{make:'Toyota',model:'Corolla',registration:'TEST',customer:'Customer <script>unsafe</script>'},insurance_company:'Test Insurance',location:'VWC',approval_status:'APPROVED'},movements:[],audit:[]}:{};
 
           return {ok:true,json:async()=>({ok:true,...result})};
         };
@@ -43,7 +43,7 @@ for (const engine of ['chromium', 'webkit']) {
       await page.locator('.rc-cl-grid > .rc-box').first().waitFor();
       const detail=await page.evaluate(()=>({
         cards:document.querySelectorAll('.rc-cl-grid > .rc-box').length,
-        columns:getComputedStyle(document.querySelector('.rc-cl-grid')).gridTemplateColumns.trim().split(/\\s+/).length,
+        columns:getComputedStyle(document.querySelector('.rc-cl-grid')).gridTemplateColumns.trim().split(/\s+/).length,
         overflow:document.documentElement.scrollWidth>innerWidth,
         map:!!document.querySelector('.rc-cl-diagram svg'),
         escaped:document.querySelectorAll('#rc-root script').length===0
