@@ -1,0 +1,17 @@
+{
+  "versionName": "V305",
+  "versionCode": 268,
+  "approvedForStaff": false,
+  "approvedAt": null,
+  "sourceCommit": null,
+  "publishNonce": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "releaseScope": "phase1-compatible-ui",
+  "ownerRequestedImmediateRelease": true,
+  "backupDeferredByOwner": true,
+  "productionBackendChanges": false,
+  "phase2ActivationApproved": false,
+  "physicalAcceptanceStatus": "NOT_RUN",
+  "authorization": "Workshop owner in Codex: i dont want backup now, just release; scope limited to existing Phase 1-compatible UI on Android and PC"
+}
