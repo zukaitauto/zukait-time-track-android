@@ -9,7 +9,7 @@
  const messages={invalid:'User ID or password is incorrect.',locked:'This account is temporarily locked. Try again later.',weak:'Password must be at least 8 characters.',forbidden:'This action is not allowed for this account.',
   invalid_session:'Your session has expired. Sign in again; saved actions are retained.',receptionist_forbidden:'This action is not available in Reception.',
   work_not_finished:'Work is still pending or active. Refresh Vehicle Delivery after it is complete.',both_qc_required:'Current painting and final QC must both pass before delivery.',
-  qc_conflict:'The work or QC review changed. Refresh Vehicle Delivery and review again.',job_not_available:'This Job Card is not available for delivery.',already_delivered:'This vehicle has already been delivered.',
+  qc_conflict:'The work or QC review changed. Refresh Vehicle Delivery and review again.',job_not_available:'This Job Card is not available for delivery. Keep any saved delivery request and ask the Manager to reconcile.',already_delivered:'Server reports this vehicle delivered, but this device’s saved request was not confirmed. Keep it and ask the Manager to reconcile.',
   receptionist_vehicle_changed:'Vehicle details changed. Refresh Vehicle Delivery and confirm the current vehicle.',receptionist_request_conflict:'The saved action conflicts with its server receipt. Keep this device data and ask the Manager to reconcile it.',
   receptionist_delivery_reconcile:'Delivery history needs review. Keep the saved action and ask the Manager to reconcile it.',receptionist_live_status_unavailable:'Live staff status could not be verified. Try again or ask the Manager.'};
  const bridge=()=>window.AndroidBridge && typeof window.AndroidBridge.getSecureSessionToken==='function'&&typeof window.AndroidBridge.saveSecureSessionToken==='function'?window.AndroidBridge:null;
@@ -65,10 +65,10 @@
    const saved=pending();if(saved&&JSON.stringify(saved)!==JSON.stringify(body))throw Error('Confirm the saved delivery action first.');
    if(!saved)localStorage.setItem(key,JSON.stringify(body));
    const result=await request('workshop-api',body);
-   if(!result.job?.delivered)throw Error('Delivery was not confirmed by the server.');
+   if(!result.job?.delivered||String(result.job.jobCard||'').trim().toUpperCase()!==String(body.jobCard||'').trim().toUpperCase())throw Error('Delivery was not confirmed for this Job Card. Keep the saved request and ask the Manager to reconcile.');
    localStorage.removeItem(key);await deliveries();
   }catch(e){
-   if(['work_not_finished','both_qc_required','qc_conflict','job_not_available','already_delivered','receptionist_invalid_delivery','receptionist_request_required','receptionist_vehicle_changed'].includes(e.code))localStorage.removeItem(key);
+   if(['work_not_finished','both_qc_required','qc_conflict','receptionist_invalid_delivery','receptionist_request_required','receptionist_vehicle_changed'].includes(e.code))localStorage.removeItem(key);
    try{await deliveries()}catch(_){}
    error(e);
   }finally{busy=false}

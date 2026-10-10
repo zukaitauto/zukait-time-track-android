@@ -68,14 +68,28 @@ assert.ok(w.document.getElementById('retry-delivery'));
 assert.ok(!w.document.getElementById('workspace').textContent.includes('Deliver Vehicle'));
 await w.zukaitReceptionist.deliver(w.zukaitReceptionist.pending());
 assert.equal(writes,1);assert.deepEqual(uuids,[body.request_id,body.request_id]);assert.equal(w.zukaitReceptionist.pending(),null);
+// A server success for a different Job Card must not discard this delivery UUID.
+const originalFetch=w.fetch;
+w.fetch=async(url,options)=>JSON.parse(options.body)?.action==='receptionist_deliver'
+ ? {ok:true,status:200,json:async()=>({ok:true,job:{jobCard:'QA-OTHER',delivered:true}})}
+ : originalFetch(url,options);
+const mismatch={...body,request_id:randomUUID()};
+await w.zukaitReceptionist.deliver(mismatch);
+assert.equal(w.zukaitReceptionist.pending()?.request_id,mismatch.request_id,'Mismatched success cannot clear journal');
+assert.match(w.document.getElementById('message').textContent,/not confirmed for this Job Card/);
+w.fetch=originalFetch;
+const confirmedTestKey='zukait_receptionist_delivery_v1:https://pjknotnjkufadqavcmii.supabase.co/functions/v1/:QA-RC';
+w.localStorage.removeItem(confirmedTestKey); // QA-only mock cleanup after asserting retention.
 // No request starts when storage cannot preserve its identity.
 const set=w.Storage.prototype.setItem;w.Storage.prototype.setItem=function(key,value){if(key.startsWith('zukait_receptionist_delivery_v1:'))throw Error('Storage unavailable');return set.call(this,key,value)};
 const before=uuids.length;await w.zukaitReceptionist.deliver({...body,request_id:randomUUID()});assert.equal(uuids.length,before);
 w.Storage.prototype.setItem=set;
 Object.defineProperty(w.navigator,'onLine',{configurable:true,value:false});
 const offlineBefore=requests.length,offline={...body,request_id:randomUUID()};await w.zukaitReceptionist.deliver(offline);assert.equal(requests.length,offlineBefore);assert.deepEqual(JSON.parse(JSON.stringify(w.zukaitReceptionist.pending())),offline);
-Object.defineProperty(w.navigator,'onLine',{configurable:true,value:true});await w.zukaitReceptionist.deliver(w.zukaitReceptionist.pending());assert.equal(w.zukaitReceptionist.pending(),null);
-const key='zukait_receptionist_delivery_v1:https://pjknotnjkufadqavcmii.supabase.co/functions/v1/:QA-RC';w.localStorage.setItem(key,'broken');
+Object.defineProperty(w.navigator,'onLine',{configurable:true,value:true});await w.zukaitReceptionist.deliver(w.zukaitReceptionist.pending());assert.ok(w.zukaitReceptionist.pending(),'An already-delivered response is not proof that this UUID was committed');
+const key='zukait_receptionist_delivery_v1:https://pjknotnjkufadqavcmii.supabase.co/functions/v1/:QA-RC';
+assert.deepEqual(JSON.parse(JSON.stringify(w.zukaitReceptionist.pending())),offline,'An already-delivered response must preserve an unmatched UUID for reconciliation');
+w.localStorage.setItem(key,'broken');
 const corruptionBefore=requests.length;await w.zukaitReceptionist.deliver({...body,request_id:randomUUID()});assert.equal(requests.length,corruptionBefore);assert.equal(w.localStorage.getItem(key),'broken');
 assert.ok(!storageReads.includes('prior-manager-private-cache'));
 assert.ok(!requests.some(r=>['load','save','qc_delivery'].includes(r.action)));
