@@ -14,7 +14,7 @@ for (const [name, workflow] of [['signed APK',approved],['PC Pages',pages]]) {
 assert.match(approved,/release-request\.json is not approved/,'signed APK must require staff approval');
 assert.match(approved,/git merge-base --is-ancestor/,'signed APK must verify source ancestry');
 assert.match(approved,/Production source drift detected/,'signed APK must reject unauthorized drift');
-assert.match(approved,/apksigner verify/,'signed APK must verify signature');
+assert.match(approved,/apksigner["']? verify/,'signed APK must verify signature');
 assert.match(pages,/scripts\/verify-pc-pages-publication\.cjs/,'PC release must validate approval');
 assert.match(pages,/git -c advice\.detachedHead=false checkout --detach --force/, 'PC release must publish pinned SHA');
 assert.equal(release.approvedForStaff,false,'V305 must not be released during QA');
