@@ -1,6 +1,7 @@
 (function(){'use strict';
 const POLL_MS=5000;
 let serverPartsEvents=null;
+let refreshInFlight=false,lastBackgroundRefreshAt=0;
 function meNow(){try{return (typeof me!=='undefined'&&me)||window.me||null}catch(_){return window.me||null}}
 function role(){return String(meNow()?.role||'')}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -35,7 +36,7 @@ function normalizeServerEvent(x={}){
  const p=payloadOf(x);
  return {eventId:String(x.event_id??x.eventId??''),eventType:String(x.event_type??x.eventType??''),at:eventTime(x.sort_time??x.server_time??x.serverTime??x.created_at??x.createdAt),partId:String(x.entity_id??x.entityId??p.partId??p.part_id??''),listNo:String(p.listNo??p.list_no??x.listNo??x.list_no??''),jobCard:String(p.jobCard??p.job_card??x.jobCard??x.job_card??''),name:String(p.name??p.partName??p.part_name??p.part??x.name??''),from:String(p.from??x.from??'').toUpperCase(),reason:String(p.reason||''),to:String(p.to??x.to??'').toUpperCase(),targetRole:String(p.targetRole??p.target_role??'')};
 }
-async function loadServerPartEvents(){
+async function loadServerPartEvents(hydrateLists=false){
  if(!navigator.onLine||!window.zukaitV2?.reports?.page)return null;
  let cursor=null,rows=[],pages=0;
  do{
@@ -43,6 +44,8 @@ async function loadServerPartEvents(){
   if(!Array.isArray(r?.rows)||r.source==='server-required')throw Error('SPARE_PARTS_REPORT_UNAVAILABLE');
   rows.push(...r.rows);cursor=r.nextCursor??null;pages++;
  }while(cursor&&pages<20);
+ if(cursor)throw Error('SPARE_PART_SERVER_HISTORY_INCOMPLETE');
+ if(hydrateLists)window.zukaitV2?.sparePartsMain?.hydrateFromServerRows?.(rows);
  serverPartsEvents=rows.map(normalizeServerEvent).filter(x=>x.eventId&&x.at);
  return serverPartsEvents;
 }
@@ -89,21 +92,29 @@ async function refresh(){
  // Never compete with authentication on the login screen. Server notification
  // hydration starts only after secure_auth has established the logged-in user.
  const u=meNow();if(!u||!u.id){inject();updateBadges();return}
+ if(refreshInFlight)return;
+ if(document.visibilityState==='hidden'){
+  if(Date.now()-lastBackgroundRefreshAt<30000)return;
+  lastBackgroundRefreshAt=Date.now();
+ }
+ refreshInFlight=true;
  try{
   if(navigator.onLine){
    const sp=window.zukaitV2?.sparePartsMain;
    const purchaser=role()==='Purchaser';
    const beforeParts=purchaser&&sp?.reportRows?JSON.stringify(sp.reportRows()):'';
-   if(sp?.hydrateAuthoritativeLists)await sp.hydrateAuthoritativeLists();
+   // Both consumers use the same complete SPARE_PARTS event history.
+   // Keep the older module fallback for mixed-version QA clients.
+   if(sp?.hydrateFromServerRows)await loadServerPartEvents(true);
+   else {if(sp?.hydrateAuthoritativeLists)await sp.hydrateAuthoritativeLists();await loadServerPartEvents();}
    const afterParts=purchaser&&sp?.reportRows?JSON.stringify(sp.reportRows()):'';
-   await loadServerPartEvents();
    if(role()==='Manager')await window.refreshManagerSparePartsSummary?.(true);
    if(purchaser&&beforeParts!==afterParts){
     const host=document.getElementById('managerView');
     if(host&&!host.classList.contains('hidden')&&host.dataset.zukaitPurchaserShell==='1')await sp?.renderPurchaserDashboard?.(true);
    }
   }
- }catch(_){}
+ }catch(_){}finally{refreshInFlight=false}
  inject();updateBadges();
 }
 window.zukaitNotificationCenter={open:openCenter,openPart,openPaintRecord,paintNotifications,refresh,all,unread,inject,eventPartsNotifications,normalizeServerEvent,loadServerPartEvents};

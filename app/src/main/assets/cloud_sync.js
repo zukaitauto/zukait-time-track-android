@@ -13,9 +13,11 @@
   let dashboardRenderTimer=null;
   let pollTimer=null;
   let livePollTimer=null;
+  let pollGeneration=0,pollActive=false;
   let liveInFlight=false;
   let revisionProbeInFlight=false;
   let lastRevisionProbeAt=0;
+  let lastProbedRevision=-1;
   // Monotonic local mutation generation. A save response may only clear dirty
   // state when no newer click happened while that request was in flight.
   let dirtyGeneration=cloudDirty?1:0;
@@ -34,6 +36,14 @@
   let serverConnectionState='connecting';
   let serverConnectionEverConfirmed=false;
   let serverConnectionBannerTimer=null;
+  const pollWarnings=new Map();
+  function warnPoll(message,error){
+    const code=String(error?.code||error?.message||'UNKNOWN');
+    const previous=pollWarnings.get(message),now=Date.now();
+    if(!previous||previous.code!==code||now-previous.at>=60000){
+      pollWarnings.set(message,{code,at:now});console.warn(message,error);
+    }
+  }
 
   function ensureServerConnectionUi(){
     let pill=document.getElementById('serverConnectionStatus');
@@ -318,10 +328,11 @@
       liveStatusRevision=Number(r.revision||0);
       liveStatusLastFetchedAt=Date.now();
       liveStatusServerTime=Number(r.server_time||0);
+      pollWarnings.delete('Authoritative live-status refresh failed');
       publishLiveStatus(true);
       return true;
     }catch(e){
-      console.warn('Authoritative live-status refresh failed',e);
+      warnPoll('Authoritative live-status refresh failed',e);
       publishLiveStatus(false);
       return false;
     }finally{
@@ -611,13 +622,18 @@
 
   async function probeRevision(){
     if(revisionProbeInFlight||!sessionToken()||!navigator.onLine)return false;
+    // Focus/visibility and the scheduled tick can arrive together. Reuse only
+    // a successful check of the snapshot we actually hold, within one tick.
+    if(!cloudDirty&&!cloudPushing&&lastProbedRevision===cloudRevision&&Date.now()-lastRevisionProbeAt<700)return false;
     revisionProbeInFlight=true;
     try{
       const r=await api({action:'revision'});
       if(!r.ok)throw new Error(r.code||'REVISION_CHECK_FAILED');
       lastRevisionProbeAt=Date.now();
+      pollWarnings.delete('Revision probe failed');
       setServerConnection('connected');
       const remoteRevision=Number(r.revision||0);
+      lastProbedRevision=remoteRevision;
       if(remoteRevision===cloudRevision)return false;
 
       // Never pull over a local click. Commit it first; the server will rebase
@@ -636,7 +652,7 @@
     }catch(e){
       lastSyncError=String(e?.code||e?.message||'REVISION_CHECK_FAILED');consecutiveSyncErrors++;
       setServerConnection('offline',navigator.onLine?'Workshop server cannot be reached. Check internet/Wi-Fi; changes may not sync until connection is restored.':'Server connection unavailable. Check Wi-Fi/internet; changes may not sync until connection is restored.');
-      console.warn('Revision probe failed',e);
+      warnPoll('Revision probe failed',e);
       return false;
     }finally{
       revisionProbeInFlight=false;
@@ -847,7 +863,34 @@
     if(b&&b.parentNode)b.parentNode.remove();
   }
 
+  function beginPolling(generation){
+    if(generation!==pollGeneration)return;
+    pollActive=true;
+    const pollMs=()=>document.visibilityState==='hidden'?30000:1000;
+    const liveMs=()=>document.visibilityState==='hidden'?60000:15000;
+    const schedulePoll=()=>{
+      if(!pollActive||generation!==pollGeneration)return;
+      clearTimeout(pollTimer);
+      pollTimer=setTimeout(async()=>{
+        if(generation!==pollGeneration)return;
+        if(sessionToken()&&navigator.onLine)await probeRevision();
+        schedulePoll();
+      },pollMs());
+    };
+    const scheduleLive=()=>{
+      if(!pollActive||generation!==pollGeneration)return;
+      clearTimeout(livePollTimer);
+      livePollTimer=setTimeout(()=>{
+        if(generation!==pollGeneration)return;
+        if(sessionToken()&&navigator.onLine&&liveRole())pullLiveStatus();
+        scheduleLive();
+      },liveMs());
+    };
+    schedulePoll();scheduleLive();
+  }
+
   async function init(force){
+    const generation=++pollGeneration;pollActive=false;
     removeSetupButton();
     clearTimeout(pollTimer);
     clearTimeout(livePollTimer);
@@ -868,19 +911,14 @@
       setServerConnection('offline',navigator.onLine?'Workshop server cannot be reached. Check internet/Wi-Fi.':'Server connection unavailable. Check Wi-Fi/internet.');
       initialDone=true;
     }
-    // Egress guard: foreground revision probes stay frequent enough for garage coordination,
-    // but no longer hammer Supabase every second on every open device. Local user
-    // actions still push immediately; focus/visibility/online events still force an
-    // immediate reconciliation. Hidden devices back off aggressively.
-    const pollMs=()=>document.visibilityState==='hidden'?30000:1000;
-    const liveMs=()=>document.visibilityState==='hidden'?60000:15000;
-    const schedulePoll=()=>{clearTimeout(pollTimer);pollTimer=setTimeout(async()=>{if(sessionToken()&&navigator.onLine)await probeRevision();schedulePoll()},pollMs())};
-    const scheduleLive=()=>{clearTimeout(livePollTimer);livePollTimer=setTimeout(()=>{if(sessionToken()&&navigator.onLine&&liveRole())pullLiveStatus();scheduleLive()},liveMs())};
-    schedulePoll();scheduleLive();
+    // Work-status revision detection stays at 1 second foreground / 30 seconds hidden.
+    // Explicit actions and reconnect still reconcile immediately.
+    beginPolling(generation);
     return true;
   }
 
   function stop(){
+    pollActive=false;pollGeneration++;
     clearTimeout(pollTimer);pollTimer=null;
     clearTimeout(livePollTimer);livePollTimer=null;
     clearTimeout(pushTimer);pushTimer=null;
@@ -894,11 +932,18 @@
     const ts=Date.now();if(ts-lastVisibleSyncAt<700)return;lastVisibleSyncAt=ts;
     try{
       if(cloudDirty&&!cloudPushing)await push(0);
-      if(!cloudDirty&&!cloudPushing&&!pullInFlight)await pull(true);
-      if(liveRole())await pullLiveStatus();
+      let refreshed=false;
+      if(!cloudDirty&&!cloudPushing&&!pullInFlight){
+        if(lastSyncedState)refreshed=await probeRevision();
+        else await pull(true);
+      }
+      if(liveRole()&&!refreshed)await pullLiveStatus();
     }catch(e){console.warn('Visible shared-state refresh failed',e)}
   }
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshVisibleSharedState()});
+  document.addEventListener('visibilitychange',()=>{
+    if(pollActive)beginPolling(++pollGeneration);
+    if(document.visibilityState==='visible')refreshVisibleSharedState();
+  });
   window.addEventListener('focus',refreshVisibleSharedState);
 
   window.addEventListener('online',async()=>{setServerConnection('connecting','Internet restored. Confirming workshop server connection…');status(cloudDirty?'ONLINE — SYNCING QUEUED CHANGES':'ONLINE','info');try{const pending=(()=>{try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'null')}catch(_){return null}})();if(pending&&pending.user&&me?.id&&String(pending.user)!==String(me.id)){localStorage.removeItem(PENDING_KEY);cloudDirty=false;localStorage.removeItem(DIRTY_KEY)}await init(false)}catch(e){lastSyncError=String(e?.code||e?.message||'RECONNECT_FAILED');consecutiveSyncErrors++;console.warn('Reconnect sync failed',e)}});
