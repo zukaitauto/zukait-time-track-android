@@ -4,6 +4,8 @@ const {validate}=createRequire(import.meta.url)('../scripts/verify-ui-only-relea
 const request={releaseScope:'phase1-compatible-ui',approvedForStaff:true,ownerRequestedImmediateRelease:true,backupDeferredByOwner:true,productionBackendChanges:false,phase2ActivationApproved:false,physicalAcceptanceStatus:'NOT_RUN',versionName:'V305',versionCode:268,sourceCommit:'a'.repeat(40),signedAcceptanceRun:123,verificationRun:124,approvedAt:'2026-10-10T13:00:00Z',publishNonce:'ui-only-test-nonce'};
 const record={checks:{fresh_backup_restored:{passed:false},physical_android:{passed:false},physical_safari:{passed:false}}};
 assert.equal(validate(request,'refs/heads/architecture-v2',record),true);
+assert.equal(validate({...request,versionName:'V306',versionCode:269},'refs/heads/architecture-v2',record),true);
+for(const bad of [{versionName:'main'},{versionName:'V304'},{versionCode:267},{versionCode:268.5}])assert.throws(()=>validate({...request,...bad},'refs/heads/architecture-v2',record));
 for(const bad of [{productionBackendChanges:true},{phase2ActivationApproved:true},{backupDeferredByOwner:false},{physicalAcceptanceStatus:'PASSED'},{sourceCommit:'main'},{approvedForStaff:false},{ownerRequestedImmediateRelease:false}])assert.throws(()=>validate({...request,...bad},'refs/heads/architecture-v2',record));
 assert.throws(()=>validate(request,'refs/heads/main',record));
 assert.throws(()=>validate(request,'refs/heads/architecture-v2',{checks:{physical_android:{passed:true}}}));

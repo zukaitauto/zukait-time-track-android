@@ -79,7 +79,7 @@ jobs:
           test "$(jq -r '.head_branch' /tmp/ui-verification-run.json)" = "architecture-v2"
           test "$(jq -r '.path' /tmp/ui-verification-run.json)" = ".github/workflows/reception-check.yml"
           test "$(jq -r '.conclusion' /tmp/ui-verification-run.json)" = "success"
-          echo 'Owner requested immediate Phase 1-compatible UI publication; backup deferred and physical acceptance NOT_RUN. No backend migration or Phase 2 activation.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Owner requested immediate client UI publication; backup deferred and physical acceptance NOT_RUN. This release performs no backend migration or activation; existing server capability is unchanged.' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Pin both clients to the approved source
         shell: bash
@@ -175,7 +175,7 @@ jobs:
             -f tag_name="$TAG" \
             -f target_commitish="${SOURCE_SHA}" \
             -f name="Zukait Time Track ${{ steps.approved.outputs.version_name }}" \
-            -f body="Owner-approved ${{ steps.approved.outputs.version_name }}. UI-only publication: ${UI_ONLY_PUBLICATION}. Source ${SOURCE_SHA}. No backend migrations. Backup deferred and physical acceptance NOT_RUN for UI-only publication; Phase 2 controls remain gated." \
+            -f body="Owner-approved ${{ steps.approved.outputs.version_name }}. UI-only publication: ${UI_ONLY_PUBLICATION}. Source ${SOURCE_SHA}. No backend migrations in this release. Existing live server capability is unchanged. Backup deferred and physical acceptance NOT_RUN for UI-only publication." \
             -F draft=true \
             -F prerelease=false)
           RELEASE_ID=$(printf '%s' "$RELEASE_JSON" | jq -r '.id // empty')

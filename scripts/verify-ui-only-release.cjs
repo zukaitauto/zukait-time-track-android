@@ -12,8 +12,9 @@ function validate(request,ref,record) {
  assert.equal(request.productionBackendChanges,false);
  assert.equal(request.phase2ActivationApproved,false);
  assert.equal(request.physicalAcceptanceStatus,'NOT_RUN');
- assert.equal(request.versionName,'V305');
- assert.equal(request.versionCode,268);
+ assert.match(request.versionName,/^V[1-9][0-9]*$/);
+ assert.ok(Number.isSafeInteger(request.versionCode)&&request.versionCode>=268,'Invalid UI release version code');
+ assert.ok(Number(request.versionName.slice(1))>=305,'UI release cannot downgrade V305');
  assert.match(request.sourceCommit,/^[a-f0-9]{40}$/);
  assert.ok(Number.isSafeInteger(request.signedAcceptanceRun)&&request.signedAcceptanceRun>0);
  assert.ok(Number.isSafeInteger(request.verificationRun)&&request.verificationRun>0);
