@@ -60,6 +60,35 @@ assert.equal(data.jobs.find(j=>j.no==="JC100").promiseDate,"");
 assert.deepEqual(first.data.expenses,data.expenses);
 assert.equal(first.data.assign.length,data.assign.length);
 assert.equal(receptionPromiseTransition(first.data,user,body,43).duplicate,true);
+const deliveredAfterPromise=structuredClone(first.data);
+const deliveredJob=deliveredAfterPromise.jobs.find(j=>j.no==="JC100");
+deliveredJob.delivered=true;deliveredJob.status="Delivered";deliveredJob.deliveredAt=123;
+const beforeDeliveredReplay=structuredClone(deliveredAfterPromise);
+const deliveredReplay=receptionPromiseTransition(deliveredAfterPromise,user,body,234);
+assert.equal(deliveredReplay.ok,true,"Lost promise response must remain confirmable after delivery");
+assert.equal(deliveredReplay.duplicate,true,"Saved UUID must deduplicate after delivery");
+assert.equal(deliveredReplay.data,undefined,"Promise retry must not commit another state revision");
+assert.deepEqual(deliveredAfterPromise,beforeDeliveredReplay,"Promise retry must not alter delivery");
+assert.equal(receptionPromiseTransition(deliveredAfterPromise,user,
+ {...body,request_id:"a474101c-73a4-4c0b-930d-5aa5cd6feb64"},235).code,"reception_job_not_open");
+assert.equal(receptionPromiseTransition(deliveredAfterPromise,user,
+ {...body,promise_date:"2026-10-16"},235).code,"reception_request_conflict");
+assert.equal(receptionPromiseTransition(deliveredAfterPromise,{...user,id:"DIFFERENT"},body,235).code,"reception_request_conflict");
+const cancelledAfterPromise=structuredClone(first.data);
+cancelledAfterPromise.jobs.find(j=>j.no==="JC100").cancelled=true;
+cancelledAfterPromise.jobs.find(j=>j.no==="JC100").status="CANCELLED";
+assert.equal(receptionPromiseTransition(cancelledAfterPromise,user,body,235).duplicate,true,
+ "Retry confirmation must survive cancellation after a completed promise write");
+const archivedAfterPromise=structuredClone(first.data);
+archivedAfterPromise.jobs.find(j=>j.no==="JC100").archived=true;
+assert.equal(receptionPromiseTransition(archivedAfterPromise,user,body,235).duplicate,true,
+ "Retry confirmation must survive archiving after a completed promise write");
+assert.equal(receptionPromiseTransition(first.data,user,{...body,job_card:"JC120"},235).code,
+ "reception_request_conflict","A request UUID must not be reused for a different Job Card");
+const upperUuid={...body,request_id:body.request_id.toUpperCase()};
+assert.equal(receptionPromiseTransition(first.data,user,upperUuid,235).duplicate,true,
+ "Promise receipt UUID comparison must be case-insensitive");
+
 assert.equal(receptionPromiseTransition(first.data,{...user,id:"DIFFERENT"},body,43).code,"reception_request_conflict");
 assert.equal(receptionPromiseTransition(first.data,user,{...body,request_id:"a474101c-73a4-4c0b-930d-5aa5cd6feb64"},43).code,"reception_promise_conflict");
 assert.equal(receptionPromiseTransition(data,{id:"QA-RC",role:"Receptionist"},body,42).code,"reception_promise_forbidden");

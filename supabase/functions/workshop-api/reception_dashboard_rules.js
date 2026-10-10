@@ -102,15 +102,23 @@ export function receptionPromiseTransition(data,user,request,now){
  if(!no||no==="ID001"||typeof promise!=="string"||(promise!==""&&!validPromiseDate(promise))||
     typeof expected!=="string"||(expected!==""&&!validPromiseDate(expected)))
   return {ok:false,code:"reception_promise_invalid_date"};
- const current=(data.jobs||[]).find(j=>norm(j?.no)===no);
- if(!current||current.deleted||current.archived||current.cancelled||norm(current.status)==="CANCELLED"||current.delivered)
-  return {ok:false,code:"reception_job_not_open"};
- const prev=(current.promiseAudit||[]).find(a=>a.request_id===reqid);
- if(prev){
-  return prev.by===text(user.id)&&prev.to===promise&&prev.expected===expected?
+ // A successful promise update may be followed by delivery/cancellation
+ // before its HTTP response reaches the Supervisor. Confirm the saved UUID
+ // receipt before checking whether the Job Card is still open. This replay
+ // is read-only and must never reopen, edit or mutate a delivered vehicle.
+ const matches=(data.jobs||[]).flatMap(j=>
+   (Array.isArray(j?.promiseAudit)?j.promiseAudit:[]).filter(a=>norm(a?.request_id)===norm(reqid))
+     .map(a=>({job:j,audit:a})));
+ if(matches.length){
+  if(matches.length!==1)return {ok:false,code:"reception_request_conflict"};
+  const {job:priorJob,audit:prev}=matches[0];
+  return norm(priorJob?.no)===no&&prev.by===text(user.id)&&prev.to===promise&&prev.expected===expected?
     {ok:true,duplicate:true,promise_date:prev.to,job_card:no}:
     {ok:false,code:"reception_request_conflict"};
  }
+ const current=(data.jobs||[]).find(j=>norm(j?.no)===no);
+ if(!current||current.deleted||current.archived||current.cancelled||norm(current.status)==="CANCELLED"||current.delivered)
+  return {ok:false,code:"reception_job_not_open"};
  const old=text(current.promiseDate);
  if(old!==expected)return {ok:false,code:"reception_promise_conflict"};
  const next=structuredClone(data),job=next.jobs.find(j=>norm(j?.no)===no);
