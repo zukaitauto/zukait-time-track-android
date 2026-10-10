@@ -491,14 +491,14 @@
     ["rear_glass","Rear Glass","الزجاج الخلفي",68,48],
     ["trunk","Trunk","الصندوق الخلفي",79,48],
     ["rear_bumper","Rear Bumper","الصدام الخلفي",93,48],
-    ["front_door_l","Front Door L","الباب الأمامي الأيسر",43,14],
-    ["rear_door_l","Rear Door L","الباب الخلفي الأيسر",62,14],
-    ["front_door_r","Front Door R","الباب الأمامي الأيمن",43,82],
-    ["rear_door_r","Rear Door R","الباب الخلفي الأيمن",62,82],
-    ["front_fender_l","Front Fender L","الرفرف الأمامي الأيسر",25,14],
-    ["front_fender_r","Front Fender R","الرفرف الأمامي الأيمن",25,82],
-    ["rear_fender_l","Rear Fender L","الرفرف الخلفي الأيسر",83,14],
-    ["rear_fender_r","Rear Fender R","الرفرف الخلفي الأيمن",83,82],
+    ["front_door_l","Front Door (LH)","الباب الأمامي الأيسر",43,82],
+    ["rear_door_l","Rear Door (LH)","الباب الخلفي الأيسر",62,82],
+    ["front_door_r","Front Door (RH)","الباب الأمامي الأيمن",43,14],
+    ["rear_door_r","Rear Door (RH)","الباب الخلفي الأيمن",62,14],
+    ["front_fender_l","Front Fender (LH)","الرفرف الأمامي الأيسر",25,82],
+    ["front_fender_r","Front Fender (RH)","الرفرف الأمامي الأيمن",25,14],
+    ["rear_fender_l","Rear Fender (LH)","الرفرف الخلفي الأيسر",83,82],
+    ["rear_fender_r","Rear Fender (RH)","الرفرف الخلفي الأيمن",83,14],
     ["head_lights","Headlights","المصابيح الأمامية",12,22],
     ["rear_lights","Rear Lights","المصابيح الخلفية",90,22]
   ];
@@ -1217,90 +1217,187 @@
         .join(""),
     );
   }
+
+  // Approved A4 portrait form: separate from the interactive/mobile dashboard.
+  // Keep saved names and marks authoritative; never derive printed marks from
+  // screen positions or alter persisted damage/accessory text envelopes.
+  function printCarGraphic(d) {
+    const marks=unpackChecklistText(d.damage,"DAMAGE",damageZones.map(x=>x[0])).marks;
+    // Front faces LEFT. Upper edge = vehicle RH; lower edge = vehicle LH.
+    const printPoints={
+      front_bumper:[74,166],bonnet:[172,166],windshield:[256,166],
+      roof:[350,166],rear_glass:[447,166],trunk:[506,166],
+      rear_bumper:[571,166],front_fender_r:[160,107],
+      front_door_r:[282,107],rear_door_r:[414,107],rear_fender_r:[528,107],
+      front_fender_l:[160,229],front_door_l:[282,229],
+      rear_door_l:[414,229],rear_fender_l:[528,229],
+      head_lights:[104,136],rear_lights:[550,136]
+    };
+    const labels=[
+      [153,"FRONT FENDER (RH)",159,106],[275,"FRONT DOOR (RH)",280,106],
+      [410,"REAR DOOR (RH)",410,106],[521,"REAR FENDER (RH)",523,106]
+    ].map(([x,label,cx,cy])=>
+      '<path d="M'+x+' 53 L'+cx+' '+cy+'" class="rc-leader"/>'+
+      '<text x="'+x+'" y="29" class="rc-callout">'+esc(label.split(" (")[0])+
+      '</text><text x="'+x+'" y="44" class="rc-callout">'+esc("("+label.split("(")[1])+'</text>'
+    ).join("");
+    const lower=[
+      [153,"FRONT FENDER (LH)",159,228],[275,"FRONT DOOR (LH)",280,228],
+      [410,"REAR DOOR (LH)",410,228],[521,"REAR FENDER (LH)",523,228]
+    ].map(([x,label,cx,cy])=>
+      '<path d="M'+cx+' '+cy+' L'+x+' 274" class="rc-leader"/>'+
+      '<text x="'+x+'" y="291" class="rc-callout">'+esc(label.split(" (")[0])+
+      '</text><text x="'+x+'" y="307" class="rc-callout">'+esc("("+label.split("(")[1])+'</text>'
+    ).join("");
+    const printMarks=Object.entries(marks).filter(([key])=>printPoints[key]).map(([key,code])=>{
+      const [cx,cy]=printPoints[key];
+      return '<g class="rc-damage-mark"><circle cx="'+cx+'" cy="'+cy+'" r="11"/>'+
+        '<text x="'+cx+'" y="'+(cy+4)+'">'+esc(code)+'</text></g>';
+    }).join("");
+    return '<svg xmlns="http://www.w3.org/2000/svg" class="rc-print-car" viewBox="0 0 660 320" aria-label="Horizontal top view of a vehicle, front at left; upper panels are right hand and lower panels are left hand">'+
+      '<style>.rc-car-line{fill:#fff;stroke:#222;stroke-width:2.5;stroke-linejoin:round}.rc-car-window{fill:#fafafa;stroke:#333;stroke-width:2}.rc-leader{fill:none;stroke:#222;stroke-width:1.5}.rc-callout{font:700 12px Arial,sans-serif;fill:#161616;text-anchor:middle}.rc-inside{font:700 13px Arial,sans-serif;fill:#222;text-anchor:middle}.rc-bumper{font:700 12px Arial,sans-serif;fill:#222;text-anchor:middle}.rc-damage-mark circle{fill:white;stroke:black;stroke-width:2.5}.rc-damage-mark text{font:900 15px Arial,sans-serif;fill:black;text-anchor:middle}</style>'+
+      '<rect x="151" y="92" width="63" height="24" rx="8" fill="#444"/><rect x="151" y="217" width="63" height="24" rx="8" fill="#444"/>'+
+      '<rect x="459" y="92" width="63" height="24" rx="8" fill="#444"/><rect x="459" y="217" width="63" height="24" rx="8" fill="#444"/>'+
+      '<path d="M91 136 Q107 112 143 111 L529 111 Q552 115 565 147 L572 167 L565 186 Q553 220 529 222 L143 222 Q107 222 91 199 Q74 168 91 136Z" class="rc-car-line"/>'+
+      '<path d="M127 125 Q143 116 220 122 L220 210 Q143 218 127 208 Q108 164 127 125Z" class="rc-car-line"/>'+
+      '<path d="M252 124 Q295 115 417 123 L453 140 L453 194 L417 211 Q294 219 252 208Z" class="rc-car-line"/>'+
+      '<path d="M241 129 L261 139 L261 192 L241 203Z" class="rc-car-window"/>'+
+      '<path d="M440 130 L462 147 L462 188 L440 202Z" class="rc-car-window"/>'+
+      '<path d="M281 129 Q340 120 418 133 L418 202 Q340 212 281 204Z" class="rc-car-window"/>'+
+      '<path d="M340 115 L340 126 M340 207 L340 220 M412 116 L412 128 M412 206 L412 218" class="rc-leader"/>'+
+      '<path d="M131 111 L145 104 L159 108 M131 222 L145 229 L159 225" class="rc-car-line"/>'+
+      '<path d="M134 128 L108 128 L100 146 M134 207 L108 207 L100 189" class="rc-leader"/>'+
+      '<path d="M531 129 L554 138 M531 206 L554 194" class="rc-leader"/>'+
+      '<text x="37" y="158" class="rc-bumper">FRONT</text><text x="37" y="173" class="rc-bumper">BUMPER</text>'+
+      '<text x="616" y="158" class="rc-bumper">REAR</text><text x="616" y="173" class="rc-bumper">BUMPER</text>'+
+      '<text x="171" y="172" class="rc-inside">BONNET</text>'+
+      '<text x="252" y="246" class="rc-inside">WINDSHIELD</text>'+
+      '<text x="349" y="168" class="rc-inside">ROOF</text>'+
+      '<text x="456" y="246" class="rc-inside">REAR GLASS</text>'+
+      '<text x="513" y="172" class="rc-inside">TRUNK</text>'+
+      labels+lower+printMarks+'</svg>';
+  }
   function documentHtml(r) {
-    const d = r.details;
-    return (
-      '<!doctype html><html><head><meta charset="UTF-8"><title>' +
-      esc(r.rc_no) +
-      "</title><style>@page{size:A4;margin:12mm}*{box-sizing:border-box}body{margin:0;color:#18324a;font:12px Arial,sans-serif}header{border-bottom:2px solid #165b68;display:flex;justify-content:space-between;padding-bottom:10px}h1{font-size:22px;margin:0}h2{font-size:16px;margin:5px 0}h3{font-size:13px;background:#edf4f7;padding:7px;margin:12px 0 5px}table{border-collapse:collapse;width:100%;table-layout:fixed}td{padding:6px;border-bottom:1px solid #dce5e9;vertical-align:top;overflow-wrap:anywhere}td small{display:block;color:#546977;margin-bottom:3px}.observation{white-space:pre-wrap;overflow-wrap:anywhere;min-height:35px;padding:5px;break-inside:avoid}.sign{display:flex;justify-content:space-between;margin-top:35px;break-inside:avoid}.sign div{width:43%;padding-top:20px;border-top:1px solid #475569}footer{margin-top:20px;font-size:10px;color:#546977}.tools td{padding:7px}section{break-inside:avoid}.printed-car{max-width:100%;max-height:155px;margin:2px auto;text-align:center}.printed-car svg{width:100%;max-height:155px}.rc-record-map svg{max-width:100%;max-height:260px}</style></head><body><header><div><h1>ZUKAIT AUTO SERVICES</h1><small>Zukait International LLC · Oman</small><h2>Vehicle Reception Checklist</h2></div><div><h2>" +
-      esc(r.rc_no) +
-      "</h2>" +
-      esc(stamp(r.received_at)) +
-      "<br>" +
-      esc(labels[r.location]) +
-      "</div></header><h3>Customer & Vehicle Details</h3><table>" +
-      [
-        [(r.job_type || "INSURANCE") === "INSURANCE" ? "Insurance Company" : "Checklist Type",
-          (r.job_type || "INSURANCE") === "INSURANCE" ? r.insurance_company : r.job_type,
-          "Customer", d.customer],
-        ["Contact", d.contact, "Registration", d.registration],
-        ["Make / Model", [d.make, d.model].join(" "), "Model Year", d.year],
-        [
-          "VIN",
-          d.vin,
-          "Reading",
-          [d.odometer, d.odometer ? d.odometer_unit : ""]
-            .filter(Boolean)
-            .join(" "),
-        ],
-        ...((r.job_type || "INSURANCE") === "INSURANCE" ?
-          [["Claim / Gate Pass", d.claim, "Case Status",
-            labels[r.outcome || r.approval_status]]] :
-          [["Case Status", labels[r.outcome || r.approval_status],
-            "Location", labels[r.location]]]),
-      ]
-        .map(
-          ([a, b, c, e]) =>
-            "<tr><td><small>" +
-            a +
-            "</small>" +
-            esc(b || "Not recorded") +
-            "</td><td><small>" +
-            c +
-            "</small>" +
-            esc(e || "Not recorded") +
-            "</td></tr>",
-        )
-        .join("") +
-      '</table><section><h3>Vehicle Damage Diagram / فحص أضرار المركبة</h3>'+
-      '<div class="printed-car">'+damagedGraphic(d)+'</div>'+
-      '<div class="observation"><b>X = Dent · S = Scratch · M = Missing</b><br>'+
-      esc(damageSummary(d)||"No diagram marks")+
-      '</div></section><section><h3>Damage Description</h3><div class="observation">' +
-      esc(unpackChecklistText(d.damage,"DAMAGE",damageZones.map(x=>x[0])).notes || "Not recorded") +
-      '</div></section><section><h3>Tools & Accessories</h3><table class="tools">' +
-      Array.from(
-        { length: 3 },
-        (_, i) =>
-          "<tr>" +
-          tools
-            .slice(i * 3, i * 3 + 3)
-            .map(
-              ([k, l]) =>
-                "<td>" +
-                ((d.tools || []).includes(k) ? "☑" : "☐") +
-                " " +
-                l +
-                "</td>",
-            )
-            .join("") +
-          "</tr>",
-      ).join("") +
-      '</table><small>Unticked accessories are not recorded.</small>'+
-      '<div class="observation"><b>Additional equipment:</b> '+
-      esc(extraAccessories.map(([key,label])=>(unpackChecklistText(d.other_accessories,"ACCESSORIES",extraAccessories.map(x=>x[0])).marks[key]?"✓ ":"□ ")+label).join(" · "))+
-      '</div><div class="observation">Other: ' +
-      esc(unpackChecklistText(d.other_accessories,"ACCESSORIES",extraAccessories.map(x=>x[0])).notes || "Not recorded") +
-      '</div></section><section><h3>Fuel Level & Dashboard Warnings</h3><div class="observation">Fuel: ' +
-      esc(d.fuel || "Not recorded") +
-      "<br>Warnings: " +
-      esc(d.warnings || "Not recorded") +
-      '</div></section><section><h3>Other Remarks</h3><div class="observation">' +
-      esc(d.remarks || "Not recorded") +
-      '</div></section><div class="sign"><div>Customer Signature</div><div>Reception Staff Signature</div></div><footer>Signatures to be completed by hand after printing. · ' +
-      esc(r.rc_no) +
-      "</footer></body></html>"
-    );
+    const d=r.details||{},insurance=(r.job_type||"INSURANCE")==="INSURANCE";
+    const damage=unpackChecklistText(d.damage,"DAMAGE",damageZones.map(x=>x[0]));
+    const accessories=unpackChecklistText(d.other_accessories,"ACCESSORIES",extraAccessories.map(x=>x[0]));
+    const checkedTool=key=>(d.tools||[]).includes(key);
+    const tick=checked=>'<span class="rc-checkbox">'+(checked?"✓":"")+'</span>';
+    const accessory=(key,label,extra=false)=>
+      '<div class="rc-item">'+esc(label)+tick(extra?!!accessories.marks[key]:checkedTool(key))+'</div>';
+    const info=(label,value)=>
+      '<div class="rc-field"><strong>'+esc(label)+'</strong><span>'+esc(value===null||value===undefined||value===""?"—":value)+'</span></div>';
+    const row=(klass,items)=>'<div class="rc-info-row '+klass+'">'+items.join("")+'</div>';
+    const details=[
+      row("rc-cols-two",[
+        info("Job Type / Checklist Type",r.job_type||"INSURANCE"),
+        insurance?info("Insurance Company",r.insurance_company):info("Vehicle location",labels[r.location])
+      ]),
+      row("rc-cols-three",[info("Vehicle Reg. No.",d.registration),info("Make",d.make),info("Model",d.model)]),
+      row("rc-cols-three",[info("Year",d.year),info("Odometer unit",d.odometer_unit||"KM"),info("Reading",d.odometer)]),
+      row("rc-cols-one",[info("VIN / Chassis No.",d.vin)]),
+      row("rc-cols-two",[info("Customer Name",d.customer),info("Contact No.",d.contact)]),
+      row("rc-cols-two",insurance?[
+        info("Claim / Gate Pass",d.claim),info("Status",labels[r.outcome||r.approval_status])
+      ]:[info("Status",labels[r.outcome||r.approval_status]),info("Vehicle location",labels[r.location])])
+    ].join("");
+    const additions=[
+      ["tool_kit","Tool kit",false],["spare_key","Spare key",false],
+      ["warning_triangle","Warning triangle",false],["first_aid_kit","First aid kit",false],
+      ["other","Other",false]
+    ].map(([key,label])=>accessory(key,label)).join("");
+    const fuel=[["Empty","E"],["Quarter","1/4"],["Half","1/2"],
+      ["Three quarters","3/4"],["Full","F"]].map(([key,label])=>
+      '<span class="rc-fuel-choice">'+tick(d.fuel===key)+esc(label)+'</span>').join("");
+    const observation=[
+      damage.notes?["Damage description",damage.notes]:null,
+      d.warnings?["Dashboard warnings",d.warnings]:null,
+      d.remarks?["Other remarks",d.remarks]:null
+    ].filter(Boolean);
+    const observationHtml=observation.map(([label,value])=>
+      '<p><b>'+esc(label)+':</b> '+esc(value)+'</p>').join("");
+    const notesLength=observation.map(([,value])=>String(value).length).reduce((a,b)=>a+b,0);
+    const notesSize=notesLength>2600?"rc-notes-tiny":notesLength>1600?"rc-notes-small":"";
+    const marksText=damageSummary(d);
+    const css=[
+      '@page{size:A4 portrait;margin:0}',
+      '*{box-sizing:border-box}',
+      'html,body{width:210mm;height:297mm;margin:0;padding:0;color:#15232b;background:#fff;font-family:Arial,"Noto Naskh Arabic",sans-serif}',
+      'body{-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+      '.rc-sheet{width:194mm;height:279mm;margin:8mm auto 10mm;display:flex;flex-direction:column;overflow:hidden}',
+      '.rc-head{height:22mm;flex:none;text-align:center;border-bottom:1px solid #33434e}',
+      '.rc-head h1{font-size:18pt;line-height:1.12;margin:0;font-weight:800;letter-spacing:.2px}',
+      '.rc-head .rc-arabic{font-size:11pt;margin:1mm 0 0;direction:rtl}',
+      '.rc-head .rc-subtitle{font-size:9pt;font-weight:700;margin-top:1mm}',
+      '.rc-number{height:9mm;flex:none;display:flex;justify-content:space-between;align-items:center;gap:8mm;font-size:9pt}',
+      '.rc-number span{width:48%;border-bottom:1px solid #526470;padding:0 1mm 1mm}',
+      '.rc-info{border:1px solid #657782;flex:none}',
+      '.rc-info-row{height:9mm;min-height:9mm;display:grid;border-bottom:1px solid #7d8d95}',
+      '.rc-info-row:last-child{border-bottom:0}',
+      '.rc-cols-one{grid-template-columns:1fr}.rc-cols-two{grid-template-columns:1fr 1fr}.rc-cols-three{grid-template-columns:1.2fr 1fr 1fr}',
+      '.rc-field{display:flex;align-items:center;min-width:0;gap:2mm;padding:1.5mm 2mm;font-size:8pt;overflow-wrap:anywhere}',
+      '.rc-field:not(:last-child){border-right:1px solid #7d8d95}',
+      '.rc-field strong{flex:none;max-width:50%;font-size:7.8pt}.rc-field span{font-weight:600;min-width:0}',
+      '.rc-damage-title{height:8mm;border:1px solid #657782;border-top:0;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 2.5mm;font-size:8pt}',
+      '.rc-damage-title b{font-size:9pt}.rc-damage-title span{margin-left:3mm}',
+      '.rc-inspection{height:74mm;flex:none;display:grid;grid-template-columns:57% 43%;border:1px solid #657782;border-top:0}',
+      '.rc-diagram{min-width:0;display:flex;flex-direction:column;justify-content:center;padding:1mm 1.5mm;border-right:1px solid #657782}',
+      '.rc-print-car{display:block;width:100%;height:auto;max-height:65mm}',
+      '.rc-marked{font-size:6.6pt;line-height:1.1;margin:0 1mm 1mm;overflow-wrap:anywhere;max-height:6mm;overflow:hidden}',
+      '.rc-accessories{min-width:0;display:flex;flex-direction:column}',
+      '.rc-accessory-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));flex:none;min-height:11mm}',
+      '.rc-item{min-width:0;border-bottom:1px solid #7d8d95;border-right:1px solid #7d8d95;text-align:center;font-size:6.7pt;padding:1.1mm .3mm;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:.5mm}',
+      '.rc-item:last-child{border-right:0}',
+      '.rc-checkbox{display:inline-flex;width:3.1mm;height:3.1mm;border:1px solid #475967;align-items:center;justify-content:center;font-size:8pt;font-weight:bold;line-height:1}',
+      '.rc-fuel{height:11mm;flex:none;border-bottom:1px solid #7d8d95;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-evenly;font-size:7pt;gap:1mm;padding:1mm}',
+      '.rc-fuel-choice{display:flex;align-items:center;gap:.6mm}',
+      '.rc-accessory-others{padding:1mm 1.5mm;flex:1;min-height:0;font-size:7pt;display:flex;flex-direction:column;gap:1mm}',
+      '.rc-mini-tools{display:flex;gap:1.2mm 2.5mm;flex-wrap:wrap;font-size:6.5pt}',
+      '.rc-mini-tools span{white-space:nowrap}',
+      '.rc-mini-tools .rc-checkbox{width:2.5mm;height:2.5mm;font-size:6.5pt;margin-left:.5mm}',
+      '.rc-other-notes{overflow-wrap:anywhere;line-height:1.15;overflow:hidden}',
+      '.rc-notes{border:1px solid #657782;border-top:0;flex:1;min-height:0;padding:3mm;overflow:hidden;overflow-wrap:anywhere}',
+      '.rc-notes h2{font-size:10pt;margin:0 0 1.5mm;display:flex;justify-content:space-between}',
+      '.rc-notes-content{font-size:9pt;line-height:1.25;white-space:pre-wrap}',
+      '.rc-notes-content p{margin:1mm 0}',
+      '.rc-notes-small .rc-notes-content{font-size:7pt;line-height:1.1}',
+      '.rc-notes-tiny .rc-notes-content{font-size:6pt;line-height:1.05}',
+      '.rc-footer{height:29mm;flex:none;text-align:center;padding-top:3mm;font-size:8pt}',
+      '.rc-footer .rc-arabic{direction:rtl;font-size:8.3pt;margin-top:1mm}',
+      '.rc-signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5mm;text-align:left;margin-top:9mm}',
+      '.rc-signatures div{border-top:1px solid #657782;padding-top:1.5mm;font-size:7.5pt}',
+      '@media print{html,body{width:210mm;height:297mm}.rc-sheet{break-inside:avoid;page-break-inside:avoid}}'
+    ].join("");
+    return '<!doctype html><html lang="en"><head><meta charset="UTF-8">'+
+      '<meta name="viewport" content="width=device-width, initial-scale=1">'+
+      '<title>'+esc(r.rc_no)+' - Vehicle Reception Checklist</title><style>'+css+'</style></head><body>'+
+      '<main class="rc-sheet"><header class="rc-head"><h1>ZUKAIT INTERNATIONAL LLC</h1>'+
+      '<div class="rc-arabic" lang="ar">شركة زكايت الدولية ذ.م.م</div>'+
+      '<div class="rc-subtitle">VEHICLE RECEPTION CHECKLIST / INSPECTION FORM</div></header>'+
+      '<div class="rc-number"><span><b>No.:</b> '+esc(r.rc_no)+'</span><span><b>Date:</b> '+esc(stamp(r.received_at))+'</span></div>'+
+      '<div class="rc-info">'+details+'</div>'+
+      '<div class="rc-damage-title"><div><b>Damages:</b><span>X = Dent</span><span>S = Scratch</span><span>M = Missing</span></div>'+
+      '<div lang="ar" dir="rtl">الأضرار: X ضربة · S خدش · M مفقود</div></div>'+
+      '<section class="rc-inspection"><div class="rc-diagram">'+printCarGraphic(d)+
+      '<div class="rc-marked"><b>Vehicle Damage Diagram:</b> '+esc(marksText||"No diagram marks")+'</div></div>'+
+      '<div class="rc-accessories">'+
+      '<div class="rc-accessory-row">'+
+      accessory("spare_tyre","Spare Tyre")+accessory("jack","Jack")+
+      accessory("jack_release","Jack Release",true)+accessory("wheel_spanner","Wheel Spanner")+'</div>'+
+      '<div class="rc-accessory-row">'+
+      accessory("wheel_covers","Wheel Covers",true)+accessory("upholstery","Upholstery",true)+
+      accessory("windshield","Wind Shield",true)+accessory("radio_tape","Radio / Tape",true)+'</div>'+
+      '<div class="rc-fuel"><b>Floor Mats</b>'+tick(checkedTool("floor_mats"))+'<b>Fuel</b>'+fuel+'</div>'+
+      '<div class="rc-accessory-others"><b>Other accessories / remarks:</b>'+
+      '<div class="rc-mini-tools">'+additions+'</div>'+
+      '<div class="rc-other-notes">'+esc(accessories.notes)+'</div></div></div></section>'+
+      '<section class="rc-notes '+notesSize+'"><h2><span>Notes:</span><span dir="rtl" lang="ar">ملاحظات</span></h2>'+
+      '<div class="rc-notes-content">'+(observationHtml||'<p>&nbsp;</p>')+'</div></section>'+
+      '<footer class="rc-footer"><div>I agree with the vehicle condition and damages marked above.</div>'+
+      '<div class="rc-arabic" lang="ar">أوافق على حالة المركبة والأضرار الموضحة أعلاه</div>'+
+      '<div class="rc-signatures"><div>Customer Signature / توقيع العميل</div>'+
+      '<div>Reception Staff Signature</div><div>Date / Time / التاريخ والوقت</div></div></footer>'+
+      '</main></body></html>';
   }
   async function output(pdf) {
     const native = !!(
