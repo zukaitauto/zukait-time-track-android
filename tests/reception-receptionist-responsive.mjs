@@ -45,7 +45,16 @@ for(const engine of ['chromium','webkit']){
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width} direct credit intake overflow`);
   await page.locator('[name=job_type]').selectOption('CASH');assert.equal(await page.locator('#rc-credit-account').isVisible(),false);
   await page.locator('#deliveries').click();await page.getByRole('button',{name:'Deliver Vehicle',exact:true}).waitFor();
+  assert.equal(await page.locator('#reception-delivery-back').count(),1);
+  assert.equal(await page.locator('body.receptionist-workspace').count(),1);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width} delivery overflow`);
+  if(width>=1024) {
+   const bounds=await page.locator('main').boundingBox();
+   assert.ok(bounds.width>=width-2,`${engine} ${width} Receptionist PC workspace not full-width`);
+  }
+  await page.locator('#reception-delivery-back').click();
+  await page.locator('[data-rdb=tile]').first().waitFor();
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width} Back return overflow`);
   assert.ok(!calls.some(c=>['load','save','qc_delivery'].includes(c.action)));
   assert.deepEqual(errors,[]);await context.close();console.log(`${engine} ${width}: Receptionist session, restricted checklist/Job Card/editor/delivery, keyboard and overflow checks passed (mock transport; not physical)`);
  }}finally{await browser.close();}
