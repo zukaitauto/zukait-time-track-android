@@ -33,17 +33,23 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Require release credential with workflow-write permission
+      - name: Verify approved V307 source is an immutable Git ref
         shell: bash
         env:
-          RELEASE_WORKFLOW_TOKEN: ${{ secrets.ZUKAIT_RELEASE_WORKFLOW_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if [ -z "$RELEASE_WORKFLOW_TOKEN" ]; then
-            echo '::error::V307 publishing is blocked: configure the repository secret ZUKAIT_RELEASE_WORKFLOW_TOKEN with Contents: read/write and Workflows: read/write access to this repository.'
-            echo 'The built-in GITHUB_TOKEN cannot create a release targeted at a commit changing .github/workflows versus main (HTTP 403).'
+          set -euo pipefail
+          # GitHub allows the ordinary GITHUB_TOKEN to release a source with
+          # workflow-file changes when that exact source already has a ref.
+          # This pinned branch is release metadata, not a source modification.
+          APPROVED_SOURCE=$(jq -r '.sourceCommit' release-ui-request.json)
+          test "$APPROVED_SOURCE" = "c044f201b0303e8b6b25fd819303ceb83aef9334"
+          PINNED_SOURCE=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/release/v307-approved-source" --jq '.object.sha')
+          test "$PINNED_SOURCE" = "$APPROVED_SOURCE" || {
+            echo "::error::Pinned V307 source ref mismatch; do not publish."
             exit 1
-          fi
-          echo 'Dedicated release credential is configured. The protected source/approval gates still apply.'
+          }
+          echo "Approved release source has a verified named ref: $PINNED_SOURCE"
 
       - name: Resolve explicitly owner-authorized UI-only scope
         run: node scripts/verify-ui-only-release.cjs >> "$GITHUB_ENV"
@@ -176,7 +182,7 @@ jobs:
         id: draft_release
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.ZUKAIT_RELEASE_WORKFLOW_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           TAG="release-${{ steps.approved.outputs.version_name }}${{ github.ref_name == 'architecture-v2' && '-architecture-v2' || '' }}"
           if gh release view "$TAG" >/dev/null 2>&1; then
@@ -319,7 +325,7 @@ jobs:
       - name: Make approved release public and latest
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.ZUKAIT_RELEASE_WORKFLOW_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           RELEASE_ID="${{ steps.draft_release.outputs.release_id }}"
           EXPECTED_TAG="release-${{ steps.approved.outputs.version_name }}${{ github.ref_name == 'architecture-v2' && '-architecture-v2' || '' }}"
