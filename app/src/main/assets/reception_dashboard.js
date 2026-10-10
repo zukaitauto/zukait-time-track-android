@@ -122,7 +122,7 @@
       home?'<p class="rdb-status">'+(backendAvailable?'Reception operations · Data confirmed by the server · Oman dates':'Checklist intake and list are available. The other dashboard functions need a server update.')+'</p>'+
         '<div class="rdb-grid">'+tiles()+'</div>'+
         (backendAvailable?'':'<section class="rc-box" id="rdb-unavailable" aria-live="polite"><h4>Your Reception dashboard</h4><p>Choose Create Checklist or Checklist List to use the current workshop service. Other sections are not yet available on this server; no counts or empty lists are assumed.</p></section>'):
-        '<nav class="rdb-section-nav"><button type="button" data-rdb="back-dashboard">← Reception Dashboard</button></nav>'+listHtml());
+        '<div class="rdb-section-nav"><button type="button" data-rdb="back-dashboard">← Reception Dashboard</button></div>'+listHtml());
     const root=document.getElementById("rc-root");if(!root)return;
     root.addEventListener("click",onClick);
     root.addEventListener("input",onFilter);
