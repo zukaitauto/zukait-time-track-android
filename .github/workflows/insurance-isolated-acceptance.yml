@@ -33,6 +33,51 @@ jobs:
         run: python3 tests/reception-acceptance-preparation.py
       - name: Prepare separate client source
         run: python3 scripts/prepare-insurance-acceptance.py --output "$RUNNER_TEMP/insurance-acceptance"
+      - name: Verify current V305 Reception UI and QA-only package
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])/"insurance-acceptance"
+          manifest=json.loads((root/"acceptance-manifest.json").read_text())
+          assert manifest["source_sha"]==os.environ["GITHUB_SHA"]
+          assert manifest["project_ref"]=="omqgkqknbdcnotabffek"
+          assert manifest["application_id"]=="com.zukait.timetrack.acceptance"
+          assert manifest["updater_disabled"] is True
+          assert len(manifest["ordered_pending_migrations"])==9
+          assets=root/"app/src/main/assets"
+          src=(assets/"v2/features/insurance/reception.js").read_text()
+          html=(assets/"offline_test.html").read_text()
+          assert "304-compat-reception-1" in html
+          assert "supportsPhase2()" in src
+          assert "rc-reading" in src
+          assert "rc-claim" in src
+          assert "pjknotnjkufadqavcmii" not in src
+          assert "pjknotnjkufadqavcmii" not in html
+          assert "omqgkqknbdcnotabffek.supabase.co" in src
+          print("PASS: current Reception controls, complete 9-migration manifest, QA-only isolated client and disabled updater")
+          PY
+      - name: Check live isolated QA endpoint authorization (no mutations)
+        shell: bash
+        run: |
+          set -euo pipefail
+          API="https://${ZUKAIT_ACCEPTANCE_PROJECT_REF}.supabase.co/functions/v1/workshop-api"
+          for action in reception_dashboard receptionist_delivery_list; do
+            body='{"action":"'"$action"'","section":"checklists","page":0}'
+            status="$(curl -sS --connect-timeout 10 --max-time 25 \
+              -o /dev/null -w '%{http_code}' \
+              -X POST -H "Content-Type: application/json" \
+              -H "apikey: ${ZUKAIT_ACCEPTANCE_PUBLISHABLE_KEY}" \
+              -H "x-zukait-session: ZQA_NO_SUCH_SESSION" \
+              --data "$body" "$API")"
+            if [ "$status" != 401 ]; then
+              echo "QA preflight failed: $action returned HTTP $status, expected 401"
+              exit 1
+            fi
+            echo "PASS: isolated QA $action refuses unauthenticated request"
+          done
+          echo 'Verified QA-only client source and read-only HTTPS rejection on the actual isolated QA backend. No authenticated client acceptance or production mutation.' >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
