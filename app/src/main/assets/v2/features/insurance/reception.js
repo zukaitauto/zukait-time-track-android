@@ -50,7 +50,8 @@
     capUser = "",
     capBusy = false,
     capChecked = false,
-    backTarget = "home";
+    backTarget = "home",
+    checklistSnapshots = new WeakMap();
   const esc = (v) =>
     String(v ?? "").replace(
       /[&<>"']/g,
@@ -486,7 +487,18 @@
     }
     type.addEventListener("change", applyType);
     applyType();
+    // Track an in-memory form baseline. Never persist unsaved customer details
+    // to localStorage or interfere with the existing server request journal.
+    checklistSnapshots.set(form, JSON.stringify([...new FormData(form)]));
     form.addEventListener("submit", saveForm);
+  }
+  function canLeaveChecklist() {
+    const form = document.getElementById("rc-form");
+    if (!form || !checklistSnapshots.has(form)) return true;
+    const changed = JSON.stringify([...new FormData(form)]) !== checklistSnapshots.get(form);
+    return !changed || window.confirm(
+      "This checklist has unsaved changes. Leave without saving?"
+    );
   }
   async function fetchRecord(no) {
     current = await call({ operation: "GET", rc_no: no });
@@ -1101,9 +1113,11 @@
           await retrySaved();
           break;
         case "close":
+          if (!canLeaveChecklist()) break;
           closeModal();
           break;
         case "back":
+          if (!canLeaveChecklist()) break;
           if (backTarget === "close") closeModal();
           else if (backTarget === "view" && current?.record?.rc_no)
             await view(current.record.rc_no);
@@ -1112,6 +1126,7 @@
           else await home();
           break;
         case "home":
+          if (!canLeaveChecklist()) break;
           await home();
           break;
         case "new":

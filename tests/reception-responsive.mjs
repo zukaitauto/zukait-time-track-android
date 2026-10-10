@@ -64,6 +64,15 @@ for (const engine of ['chromium', 'webkit']) {
       await page.locator('[name=make]').focus();
       await page.keyboard.press('Tab');
       assert.equal(await page.evaluate(()=>document.activeElement.name),'model');
+      // Back should preserve edited checklist data when the user cancels leaving.
+      await page.locator('#rc-form [name=registration]').fill('OM-UNSAVED');
+      let warning = '';
+      page.once('dialog', async dialog => {warning=dialog.message();await dialog.dismiss();});
+      await page.locator('[data-rc-action=back]').click();
+      assert.match(warning,/unsaved changes/i,engine+' '+width+': no unsaved-change warning');
+      assert.equal(await page.locator('#rc-form').count(),1,engine+' '+width+': cancel Back kept form');
+      assert.equal(await page.locator('#rc-form [name=registration]').inputValue(),'OM-UNSAVED');
+      page.once('dialog', dialog => dialog.accept());
       await page.locator('[data-rc-action=back]').click();
       await page.locator('[data-rc-action=new]').waitFor();
       assert.equal(await page.locator('#rc-form').count(),0,`${engine} ${width}: Back must leave checklist form`);
