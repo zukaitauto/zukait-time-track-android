@@ -39,10 +39,34 @@ for (const engine of ['chromium', 'webkit']) {
       await page.locator('#rc-form').waitFor();
       assert.equal(await page.locator('#rc-form [name=make]').getAttribute('required'),'');
       assert.equal(await page.locator('#rc-form [name=tools]').count(),9);
+      // Desktop fullscreen modal, not the old 420px centered popup.
+      const dialog=await page.locator('.modal-box.rc-dialog').boundingBox();
+      assert.ok(dialog, `${engine} ${width}: Reception dialog not visible`);
+      assert.ok(Math.abs(dialog.width-width)<=2,`${engine} ${width}: Reception not full-width`);
+      assert.ok(Math.abs(dialog.height-900)<=2,`${engine} ${width}: Reception not full-height`);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width}: editor overflow`);
+      const expected=['registration','make','model','year','odometer_unit','odometer',
+        'vin','customer','contact','claim'];
+      const order=await page.locator('#rc-form > .rc-grid input,#rc-form > .rc-grid select')
+        .evaluateAll(nodes=>nodes.map(n=>n.name));
+      assert.deepEqual(order,expected,`${engine} ${width}: ordered fields`);
+      assert.equal(await page.locator('#rc-form [name=job_type]').inputValue(),'INSURANCE');
+      assert.equal(await page.locator('#rc-form [name=insurance_id]').getAttribute('required'),'');
+      assert.equal(await page.locator('.rc-claim').isVisible(),true);
+      await page.locator('#rc-form [name=job_type]').selectOption('CASH');
+      assert.equal(await page.locator('.rc-insurance').isVisible(),false);
+      assert.equal(await page.locator('.rc-claim').isVisible(),false);
+      assert.equal(await page.locator('#rc-form [name=customer]').getAttribute('required'),'');
+      assert.equal(await page.locator('#rc-form [name=insurance_id]').getAttribute('required'),null);
+      await page.locator('#rc-form [name=job_type]').selectOption('INSURANCE');
+      assert.equal(await page.locator('.rc-insurance').isVisible(),true);
+      assert.equal(await page.locator('.rc-claim').isVisible(),true);
       await page.locator('[name=make]').focus();
       await page.keyboard.press('Tab');
       assert.equal(await page.evaluate(()=>document.activeElement.name),'model');
+      await page.locator('[data-rc-action=back]').click();
+      await page.locator('[data-rc-action=new]').waitFor();
+      assert.equal(await page.locator('#rc-form').count(),0,`${engine} ${width}: Back must leave checklist form`);
       await page.locator('[data-rc-action=close]').click();
       assert.equal(await page.locator('#rc-root').count(),0);
       await page.close();
