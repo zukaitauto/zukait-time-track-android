@@ -1,5 +1,43 @@
 # V305 acceptance handoff
 
+## 2026-10-10 QA delivery recovery fixtures — ready for HTTPS
+
+**QA only, no staff release.** On isolated project `omqgkqknbdcnotabffek`,
+synthetic Receptionist `ZQA_RC_V305_RECEPTION` created two cash/vehicle
+intakes through the production-shaped `zukait_reception_command` business RPC:
+
+| Scenario | Checklist | Job Card | Expected recovery |
+| --- | --- | --- | --- |
+| Successful commit, response lost | `RC0015` | `ZQA-DELIVERY-REC-A` | Same saved UUID returns duplicate; one delivery audit |
+| Successful commit, response truncated | `RC0016` | `ZQA-DELIVERY-REC-B` | Same saved UUID returns duplicate; one delivery audit |
+
+Both linked Job Cards had separate *synthetic* completed assignment/session fixtures
+and matching painting/final QC PASS fingerprints added with the existing revisioned
+state commit RPC. QA state revision advanced from **32 to 36**. A read-only
+recalculation using actual `qcWork` fingerprint shape verified both as
+**delivery-ready, undelivered**, with one completed assignment and one closed
+session each; this is fixture preparation, **not real employee/QC physical operation**.
+
+Preservation check against archived QA state revision 32: prior complete Job Card,
+assignment, session, and estimate JSON rows are still present, and expenses,
+consumables, staff users and leave arrays remain byte-equivalent as JSONB.
+This does not yet establish full post-delivery cost/history preservation.
+
+The actual Receptionist client over **real HTTPS remains NOT_RUN**: the current
+execution runtime cannot resolve the QA host. The privately stored synthetic
+Receptionist credential file was located but **never copied to GitHub**; no
+password, authentication token or browser journal was committed. In a
+network-enabled QA execution environment use the existing guarded runner:
+`tests/reception-isolated-delivery.mjs` with the protected original QA account,
+the two exact Job Card numbers above, and the modes described in the prior section.
+Do not treat seeded QC or SQL readbacks as HTTP/client acceptance. Independently
+verify duplicate audit count, expected delivered-list transition, and preservation
+after each HTTP scenario; revoke all QA sessions afterward.
+
+V305 remains `approvedForStaff=false`; do not deploy, publish, or alter live
+workshop production `pjknotnjkufadqavcmii`.
+
+
 Candidate: V305 / versionCode 268, architecture-v2 only.
 Verified application source: `e5ff093189758496db12e55d35a5583ce5311360`.
 Status 2026-10-10 (Oman): isolated QA backend DEPLOYED; authenticated role transport

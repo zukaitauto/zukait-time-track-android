@@ -31,8 +31,8 @@ schema change or Edge deployment invalidates assumptions until reviewed.
 | Fault recovery | Pending UUID/body retained, no optimistic success, no duplicate writes | 18 actual-client/real-HTTPS cases passed; physical and delivery-specific journal coverage pending |
 | Physical Android | QA package, keyboard/back/rotation/background/restart and employee work flow | NOT_RUN |
 | Physical iPhone/Mac Safari | Forms, tables, focus/scroll, restart/offline and two-device conflicts | NOT_RUN |
-| Preservation | Nonempty unrelated work, parts, costs, consumables and financial history retained | Broader nonempty-fixture matrix pending |
-| Backup and recovery | Fresh production recovery point plus successful isolated recovery rehearsal | NOT_RUN; do not claim a backup exists from this checklist |
+| Preservation | Nonempty unrelated work, parts, costs, consumables and financial history retained | QA baseline revision 32 vs 36 preserved existing job/work/estimates/expenses/consumables/users/leave arrays; comprehensive post-delivery matrix pending |
+| Backup and recovery | Fresh production recovery point plus successful isolated recovery rehearsal | Isolated disposable PostgreSQL 17 dump/restore CI PASS at `2eb1aa26`; fresh production backup/recovery point NOT_RUN |
 | Staff publication | User approval tied to exact candidate and acceptance evidence | NOT_GRANTED |
 
 ## Ordered coordinated activation
