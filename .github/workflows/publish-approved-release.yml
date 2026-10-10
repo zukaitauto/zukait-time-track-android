@@ -7,11 +7,21 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
+  actions: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
 
 jobs:
   release:
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/architecture-v2'
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     env:
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
       ANDROID_HOME: /usr/local/lib/android/sdk
@@ -38,7 +48,7 @@ jobs:
           if [ "$GITHUB_REF_NAME" = "architecture-v2" ]; then
             test "$(git rev-parse origin/architecture-v2)" = "$GITHUB_SHA" || { echo "architecture-v2 release must run from current branch HEAD"; exit 1; }
           fi
-          if ! git diff --quiet "$SOURCE_COMMIT" "$GITHUB_SHA" -- . ':(exclude)release-request.json' ':(exclude)latest-version.json' ':(exclude)app/build.gradle' ':(exclude)docs/INSURANCE_V305_ACCEPTANCE_GATE.json' ':(exclude).github/workflows/publish-approved-release.yml' ':(exclude).github/workflows/build-apk.yml'; then
+          if ! git diff --quiet "$SOURCE_COMMIT" "$GITHUB_SHA" -- . ':(exclude)release-request.json' ':(exclude)latest-version.json' ':(exclude)docs/INSURANCE_V305_ACCEPTANCE_GATE.json'; then
             echo "Production source drift detected after approved source commit:"
             git diff --name-only "$SOURCE_COMMIT" "$GITHUB_SHA" -- . ':(exclude)release-request.json'
             exit 1
@@ -48,6 +58,16 @@ jobs:
       - name: Verify complete V305 acceptance and recovery evidence
         run: node scripts/verify-v305-acceptance.cjs
 
+      - name: Pin both clients to the approved source
+        shell: bash
+        run: |
+          node scripts/verify-pc-pages-publication.cjs --coordinated >> "$GITHUB_ENV"
+          echo "SIGNED_ACCEPTANCE_RUN=$(jq -r '.signedAcceptanceRun' release-request.json)" >> "$GITHUB_ENV"
+          echo "APPROVAL_SHA=$GITHUB_SHA" >> "$GITHUB_ENV"
+          cp release-request.json /tmp/zukait-approved-request.json
+          git -c advice.detachedHead=false checkout --detach --force "$(jq -r '.sourceCommit' release-request.json)"
+          test "$(git rev-parse HEAD)" = "$(jq -r '.sourceCommit' /tmp/zukait-approved-request.json)"
+
       - name: Resolve approved version
         id: approved
         shell: bash
@@ -56,8 +76,8 @@ jobs:
           VERSION_CODE=$(sed -n 's/^[[:space:]]*versionCode[[:space:]]*\([0-9][0-9]*\).*/\1/p' app/build.gradle | head -n 1)
           test -n "$VERSION_NAME" || { echo "Could not read versionName from app/build.gradle"; exit 1; }
           test -n "$VERSION_CODE" || { echo "Could not read versionCode from app/build.gradle"; exit 1; }
-          test "$VERSION_NAME" = "$(jq -r '.versionName' release-request.json)" || { echo "Approved versionName does not match app"; exit 1; }
-          test "$VERSION_CODE" = "$(jq -r '.versionCode' release-request.json)" || { echo "Approved versionCode does not match app"; exit 1; }
+          test "$VERSION_NAME" = "$(jq -r '.versionName' /tmp/zukait-approved-request.json)" || { echo "Approved versionName does not match app"; exit 1; }
+          test "$VERSION_CODE" = "$(jq -r '.versionCode' /tmp/zukait-approved-request.json)" || { echo "Approved versionCode does not match app"; exit 1; }
           echo "Resolved production version: $VERSION_NAME (code $VERSION_CODE)"
           echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
           echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
@@ -89,52 +109,23 @@ jobs:
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.9'
-
-      - name: Build release APK
-        run: gradle assembleRelease --stacktrace
-
-      - name: Restore permanent signing key
+      - name: Retrieve the exact physically accepted signed APK
         shell: bash
         env:
-          NEW_KEYSTORE: ${{ secrets.ZUKAIT_SIGNING_JKS_BASE64 }}
-          LEGACY_KEYSTORE: ${{ secrets.ZUKAIT_KEYSTORE_BASE64 }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if [ -n "$NEW_KEYSTORE" ]; then
-            printf '%s' "$NEW_KEYSTORE" | base64 -d > /tmp/zukait-release.jks
-          elif [ -n "$LEGACY_KEYSTORE" ]; then
-            printf '%s' "$LEGACY_KEYSTORE" | base64 -d > /tmp/zukait-release.jks
-          else
-            echo "No permanent Zukait signing keystore secret is available."
-            exit 1
-          fi
-          test -s /tmp/zukait-release.jks
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SIGNED_ACCEPTANCE_RUN" > /tmp/acceptance-run.json
+          test "$(jq -r '.head_sha' /tmp/acceptance-run.json)" = "$SOURCE_SHA"
+          test "$(jq -r '.head_branch' /tmp/acceptance-run.json)" = "architecture-v2"
+          test "$(jq -r '.path' /tmp/acceptance-run.json)" = ".github/workflows/build-signed-acceptance.yml"
+          test "$(jq -r '.conclusion' /tmp/acceptance-run.json)" = "success"
+          gh run download "$SIGNED_ACCEPTANCE_RUN" --repo "$GITHUB_REPOSITORY" --name ZUKAIT_SIGNED_ACCEPTANCE_APK --dir /tmp/accepted-apk
+          cp /tmp/accepted-apk/ZUKAIT_TIME_TRACK_LATEST.apk ZUKAIT_TIME_TRACK_LATEST.apk
 
       - name: Sign and verify APK
         shell: bash
-        env:
-          ZUKAIT_KEY_ALIAS: ${{ secrets.ZUKAIT_KEY_ALIAS }}
-          NEW_STORE_PASSWORD: ${{ secrets.ZUKAIT_STORE_PASSWORD }}
-          LEGACY_STORE_PASSWORD: ${{ secrets.ZUKAIT_KEYSTORE_PASSWORD }}
-          ZUKAIT_KEY_PASSWORD: ${{ secrets.ZUKAIT_KEY_PASSWORD }}
         run: |
-          STORE_PASSWORD="$NEW_STORE_PASSWORD"
-          [ -n "$STORE_PASSWORD" ] || STORE_PASSWORD="$LEGACY_STORE_PASSWORD"
-          test -n "$ZUKAIT_KEY_ALIAS" || { echo "Missing signing key alias"; exit 1; }
-          test -n "$STORE_PASSWORD" || { echo "Missing keystore password"; exit 1; }
-          test -n "$ZUKAIT_KEY_PASSWORD" || { echo "Missing key password"; exit 1; }
           BT="$ANDROID_SDK_ROOT/build-tools/35.0.0"
-          "$BT/zipalign" -f 4 app/build/outputs/apk/release/app-release-unsigned.apk /tmp/aligned.apk
-          "$BT/apksigner" sign \
-            --ks /tmp/zukait-release.jks \
-            --ks-key-alias "$ZUKAIT_KEY_ALIAS" \
-            --ks-pass "pass:$STORE_PASSWORD" \
-            --key-pass "pass:$ZUKAIT_KEY_PASSWORD" \
-            --out ZUKAIT_TIME_TRACK_LATEST.apk \
-            /tmp/aligned.apk
           "$BT/apksigner" verify --verbose --print-certs ZUKAIT_TIME_TRACK_LATEST.apk | tee /tmp/apksigner-verify.txt
           ACTUAL_CERT=$(grep -i "Signer #1 certificate SHA-256 digest:" /tmp/apksigner-verify.txt | head -n 1 | sed 's/.*: //' | tr -d ':' | tr '[:upper:]' '[:lower:]')
           test "$ACTUAL_CERT" = "$EXPECTED_CERT_SHA256"
@@ -143,6 +134,9 @@ jobs:
           grep -q "versionCode='${{ steps.approved.outputs.version_code }}'" /tmp/apk-badging.txt
           grep -q "versionName='${{ steps.approved.outputs.version_name }}'" /tmp/apk-badging.txt
 
+      - name: Verify accepted APK embedded Reception assets
+        run: python3 scripts/verify-reception-platform-assets.py --apk ZUKAIT_TIME_TRACK_LATEST.apk
+
       - name: Create draft GitHub release
         id: draft_release
         shell: bash
@@ -150,10 +144,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="release-${{ steps.approved.outputs.version_name }}${{ github.ref_name == 'architecture-v2' && '-architecture-v2' || '' }}"
-          gh release view "$TAG" >/dev/null 2>&1 && gh release delete "$TAG" --yes --cleanup-tag || true
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release tag already exists; retain it and require operator reconciliation."
+            exit 1
+          fi
           RELEASE_JSON=$(gh api --method POST "repos/${GITHUB_REPOSITORY}/releases" \
             -f tag_name="$TAG" \
-            -f target_commitish="${GITHUB_SHA}" \
+            -f target_commitish="${SOURCE_SHA}" \
             -f name="Zukait Time Track ${{ steps.approved.outputs.version_name }}" \
             -f body="Approved signed production release ${{ steps.approved.outputs.version_name }}." \
             -F draft=true \
@@ -175,38 +172,114 @@ jobs:
           echo "release_url=$RELEASE_URL" >> "$GITHUB_OUTPUT"
           echo "release_id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
 
-      - name: Publish matching update metadata
+      - name: Prepare PC site
         shell: bash
         run: |
+          rm -rf _site
+          mkdir -p _site
+          cp app/src/main/assets/offline_test.html _site/index.html
+          cp app/src/main/assets/receptionist.html _site/receptionist.html
+          cp app/src/main/assets/receptionist_session.js _site/receptionist_session.js
+          cp app/src/main/assets/consumables.js _site/consumables.js
+          cp app/src/main/assets/consumables_ui.js _site/consumables_ui.js
+          cp app/src/main/assets/paint_module.js _site/paint_module.js
+          cp app/src/main/assets/job_cost_summary_v128.js _site/job_cost_summary_v128.js
+          cp app/src/main/assets/cloud_sync.js _site/cloud_sync.js
+          cp app/src/main/assets/secure_auth.js _site/secure_auth.js
+          cp app/src/main/assets/production_pilot.js _site/production_pilot.js
+          cp app/src/main/assets/professional_ux.js _site/professional_ux.js
+          cp app/src/main/assets/v54_improvements.js _site/v54_improvements.js
+          cp app/src/main/assets/v63_updates.js _site/v63_updates.js
+          cp app/src/main/assets/v65_updates.js _site/v65_updates.js
+          cp app/src/main/assets/v66_updates.js _site/v66_updates.js
+          cp app/src/main/assets/v67_updates.js _site/v67_updates.js
+          cp app/src/main/assets/v68_updates.js _site/v68_updates.js
+          cp app/src/main/assets/v69_updates.js _site/v69_updates.js
+          cp app/src/main/assets/v74_updates.js _site/v74_updates.js
+          mkdir -p _site/v2/features/spare-parts
+          cp app/src/main/assets/v2/features/spare-parts/workflow.js _site/v2/features/spare-parts/workflow.js
+          cp app/src/main/assets/v2/features/spare-parts/main_module.js _site/v2/features/spare-parts/main_module.js
+          cp app/src/main/assets/zukait_logo.webp _site/zukait_logo.webp
+          cp -R app/src/main/assets/vehicle-logos _site/vehicle-logos
+          cp app/src/main/assets/qc_delivery_rules.js _site/qc_delivery_rules.js
+          cp app/src/main/assets/time_management_rules.js _site/time_management_rules.js
           python3 - <<'PY'
-          import json
+          from html.parser import HTMLParser
           from pathlib import Path
-          p=Path('latest-version.json')
-          d={
-            "versionCode": int("${{ steps.approved.outputs.version_code }}"),
-            "versionName": "${{ steps.approved.outputs.version_name }}",
-            "status": "current",
-            "package": "com.zukait.timetrack"
-          }
-          p.write_text(json.dumps(d, indent=2)+"\n", encoding='utf-8')
+          from shutil import copy2
+
+          class Scripts(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.sources = []
+              def handle_starttag(self, tag, attrs):
+                  if tag == 'script':
+                      src = dict(attrs).get('src')
+                      if src:
+                          self.sources.append(src.split('?', 1)[0])
+
+          assets = Path('app/src/main/assets')
+          parser = Scripts()
+          parser.feed((assets / 'offline_test.html').read_text(encoding='utf-8'))
+          for source in parser.sources:
+              relative = Path(source)
+              if relative.is_absolute() or '..' in relative.parts:
+                  raise ValueError(f'Unsafe script path: {source}')
+              origin = assets / relative
+              if not origin.is_file():
+                  raise FileNotFoundError(origin)
+              destination = Path('_site') / relative
+              destination.parent.mkdir(parents=True, exist_ok=True)
+              copy2(origin, destination)
+          print(f'Copied {len(parser.sources)} referenced scripts')
           PY
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add latest-version.json
-          git diff --cached --quiet || git commit -m "Publish ${{ steps.approved.outputs.version_name }} update metadata"
-          # Main may advance while this signed release is building (for example a UI/cache-only commit).
-          # Rebase the metadata commit onto the newest main and retry instead of failing non-fast-forward.
-          for attempt in 1 2 3; do
-            git fetch origin "$GITHUB_REF_NAME"
-            git rebase "origin/$GITHUB_REF_NAME"
-            if git push origin "HEAD:$GITHUB_REF_NAME"; then
-              exit 0
-            fi
-            echo "Metadata push raced with another main update; retrying ($attempt/3)."
-            sleep 2
-          done
-          echo "Unable to publish update metadata after 3 rebased attempts."
-          exit 1
+          test -s _site/receptionist.html
+          test -s _site/receptionist_session.js
+          test -s _site/consumables.js
+          test -s _site/consumables_ui.js
+          test -s _site/paint_module.js
+          test -s _site/job_cost_summary_v128.js
+          grep -q 'openPaintModule' _site/paint_module.js
+          grep -q 'v128JobCostData' _site/job_cost_summary_v128.js
+          grep -q 'openConsumablesModule' _site/consumables_ui.js
+          grep -q 'consumables_ui.js' _site/index.html
+          test -s _site/v54_improvements.js
+          test -s _site/v63_updates.js
+          test -s _site/v65_updates.js
+          test -s _site/v66_updates.js
+          test -s _site/v67_updates.js
+          test -s _site/v68_updates.js
+          test -s _site/v69_updates.js
+          test -s _site/v74_updates.js
+          test -s _site/v2/features/spare-parts/workflow.js
+          test -s _site/v2/features/spare-parts/main_module.js
+          grep -q 'sparePartsMain:{' _site/v2/features/spare-parts/main_module.js
+          grep -q 'open:render' _site/v2/features/spare-parts/main_module.js
+          grep -q 'window.openSparePartsModule=render' _site/v2/features/spare-parts/main_module.js
+          test -s _site/vehicle-logos/cadillac.svg
+          test -s _site/vehicle-logos/gmc.svg
+          test -s _site/vehicle-logos/chevrolet.svg
+          test -s _site/vehicle-logos/ford.svg
+          test -s _site/vehicle-logos/honda.svg
+          touch _site/.nojekyll
+
+      - name: Verify staged shared Reception UI assets before public deployment
+        run: python3 scripts/verify-reception-platform-assets.py --site _site
+
+      - name: Create source and asset integrity manifest
+        run: node scripts/verify-coordinated-release.cjs manifest _site
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+      - name: Deploy coordinated Pages candidate
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Verify public Pages bytes before advancing staff APK
+        run: node scripts/verify-coordinated-release.cjs pages _site
 
       - name: Make approved release public and latest
         shell: bash
@@ -262,3 +335,49 @@ jobs:
           test "$(jq -r '[.assets[].name] | index("ZUKAIT_TIME_TRACK_LATEST.apk") != null' /tmp/published-release.json)" = "true"
           jq '{tag_name,name,draft,prerelease,html_url,assets:[.assets[].name]}' /tmp/published-release.json
 
+      - name: Verify public signed APK before updater publication
+        run: node scripts/verify-coordinated-release.cjs apk _site
+
+      - name: Publish matching update metadata
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('latest-version.json')
+          d={
+            "versionCode": int("${{ steps.approved.outputs.version_code }}"),
+            "versionName": "${{ steps.approved.outputs.version_name }}",
+            "status": "current",
+            "package": "com.zukait.timetrack",
+            "sourceCommit": __import__('os').environ['SOURCE_SHA'],
+            "apkSha256": __import__('hashlib').sha256(Path('ZUKAIT_TIME_TRACK_LATEST.apk').read_bytes()).hexdigest(),
+            "releaseTag": "release-${{ steps.approved.outputs.version_name }}-architecture-v2"
+
+          }
+          p.write_text(json.dumps(d, indent=2)+"\n", encoding='utf-8')
+          PY
+          cp latest-version.json /tmp/zukait-published-version.json
+          git checkout --detach --force "$APPROVAL_SHA"
+          cp /tmp/zukait-published-version.json latest-version.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add latest-version.json
+          git diff --cached --quiet || git commit -m "Publish ${{ steps.approved.outputs.version_name }} update metadata"
+          # Never rebase a release pointer onto unverified application changes.
+          test "$(git ls-remote origin refs/heads/architecture-v2 | cut -f1)" = "$APPROVAL_SHA"
+          git push --force-with-lease="refs/heads/architecture-v2:$APPROVAL_SHA" origin HEAD:architecture-v2
+
+      - name: Verify public updater and downloadable APK parity
+        run: node scripts/verify-coordinated-release.cjs release _site
+
+      - name: Preserve coordinated release evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coordinated-release-${{ github.run_id }}
+          path: |
+            _site/release-integrity.json
+            coordinated-*.json
+          if-no-files-found: warn
+          retention-days: 90

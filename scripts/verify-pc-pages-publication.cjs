@@ -18,7 +18,7 @@ function validate(request,latest,ref){
 if(require.main===module){
  const request=JSON.parse(fs.readFileSync('release-request.json','utf8'));
  const latest=JSON.parse(fs.readFileSync('latest-version.json','utf8'));
- const result=validate(request,latest,process.env.GITHUB_REF);
+ const result=validate(request,process.argv.includes('--coordinated')?request:latest,process.env.GITHUB_REF);
  process.stdout.write('SOURCE_SHA='+result.sha+'\n');
  process.stdout.write('SOURCE_VERSION_NAME='+result.versionName+'\n');
  process.stdout.write('SOURCE_VERSION_CODE='+result.versionCode+'\n');

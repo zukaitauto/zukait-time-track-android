@@ -12,6 +12,10 @@ on:
       - "app/src/main/assets/secure_auth.js"
       - "app/src/main/assets/offline_test.html"
       - "tests/reception-*"
+      - "scripts/verify-coordinated-release.cjs"
+      - "scripts/verify-pc-pages-publication.cjs"
+      - ".github/workflows/publish-approved-release.yml"
+      - ".github/workflows/pages.yml"
       - "tests/fixtures/reception-*"
       - "package*.json"
       - "scripts/prepare-insurance-acceptance.py"
@@ -56,6 +60,7 @@ jobs:
       - run: node tests/reception-isolated-transport-selftest.mjs
       - run: node tests/reception-isolated-recovery-selftest.mjs
       - run: node tests/reception-isolated-delivery-selftest.mjs
+      - run: node tests/reception-coordinated-release.mjs
       - run: node tests/reception-pages-publication-safety.mjs
       - run: python3 scripts/verify-reception-platform-assets.py
       - run: node tests/reception-v305-acceptance.mjs

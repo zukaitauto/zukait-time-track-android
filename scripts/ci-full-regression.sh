@@ -114,6 +114,7 @@ node tests/ci-release-gate-parity.mjs
 node tests/reception-v305-acceptance.mjs
 node tests/reception-backup-export-safety.mjs
 node tests/reception-release-publish-safety.mjs
+node tests/reception-coordinated-release.mjs
 
 node tests/v181-manager-performance-cost-drilldown.mjs
 node tests/v145-manager-consumables-expense-detail.mjs
