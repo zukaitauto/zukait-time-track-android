@@ -33,7 +33,7 @@ jobs:
         run: python3 tests/reception-acceptance-preparation.py
       - name: Prepare separate client source
         run: python3 scripts/prepare-insurance-acceptance.py --output "$RUNNER_TEMP/insurance-acceptance"
-      - name: Verify current V305 Reception UI and QA-only package
+      - name: Verify current Reception UI and QA-only package
         shell: bash
         run: |
           python3 - <<'PY'
@@ -104,8 +104,13 @@ jobs:
           "$BT/apksigner" verify --verbose --print-certs "$APK" > "$CANDIDATE/signature.txt"
           "$BT/aapt" dump badging "$APK" > "$CANDIDATE/package.txt"
           grep -q "package: name='com.zukait.timetrack.acceptance'" "$CANDIDATE/package.txt"
-          grep -q "versionName='V305-ACCEPTANCE'" "$CANDIDATE/package.txt"
-          grep -q "versionCode='268'" "$CANDIDATE/package.txt"
+          # The isolated QA build keeps the current source versionCode and
+          # appends -ACCEPTANCE to the versionName; do not pin to old V305.
+          SOURCE_VERSION_NAME=$(sed -nE 's/^[[:space:]]*versionName[[:space:]]+"([^"]+)".*/\1/p' app/build.gradle | head -n 1)
+          SOURCE_VERSION_CODE=$(sed -nE 's/^[[:space:]]*versionCode[[:space:]]+([0-9]+).*/\1/p' app/build.gradle | head -n 1)
+          test -n "$SOURCE_VERSION_NAME" && test -n "$SOURCE_VERSION_CODE"
+          grep -Fq "versionName='${SOURCE_VERSION_NAME}-ACCEPTANCE'" "$CANDIDATE/package.txt"
+          grep -Fq "versionCode='${SOURCE_VERSION_CODE}'" "$CANDIDATE/package.txt"
           cd "$CANDIDATE"
           sha256sum app/build/outputs/apk/debug/app-debug.apk > apk-sha256.txt
           echo 'Build preparation only. Backend and physical-device acceptance remain NOT_RUN.' >> "$GITHUB_STEP_SUMMARY"
