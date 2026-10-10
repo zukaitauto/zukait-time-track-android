@@ -82,6 +82,15 @@ for (const engine of ['chromium', 'webkit']) {
       assert.equal(await page.locator('#rc-root').count(),0);
       // A V304/Phase 1 endpoint must never expose the Phase 2 Cash save flow.
       await page.evaluate(() => {
+        // page.setContent() uses about:blank where browser storage is denied.
+        // Give the isolated fixture a local request journal without changing
+        // the production app's fail-closed saved-action behavior.
+        const journal=new Map();
+        Object.defineProperty(window,'localStorage',{configurable:true,value:{
+          getItem:k=>journal.has(k)?journal.get(k):null,
+          setItem:(k,v)=>journal.set(k,String(v)),
+          removeItem:k=>journal.delete(k)
+        }});
         const previous=window.fetch;
         window.zukaitAuth={getToken:()=> 'phase1-session'};
         window.zukaitReceptionForceBackendProbe=true;
