@@ -78,6 +78,19 @@ def main():
         assert file in scripts["offline_test.html"], f"Main workshop not loading {file}"
         assert file in scripts["receptionist.html"], f"Receptionist page not loading {file}"
     assert "receptionist_session.js" in scripts["receptionist.html"]
+    # Ensure each release refers to a new URL so browsers cannot keep an
+    # older cached Reception script after a valid gated Pages publication.
+    cache_tag = "v=305-reception-ui-20261010"
+    for page, targets in {
+        "offline_test.html": ["v2/features/insurance/reception.js", "reception_dashboard.js"],
+        "receptionist.html": ["receptionist_session.js", "v2/features/insurance/reception.js", "reception_dashboard.js"],
+    }.items():
+        markup = (ASSETS / page).read_text(encoding="utf8")
+        for source in targets:
+            assert 'src="' + source + "?" + cache_tag + '"' in markup, (
+                "Missing current V305 Reception cache version in " + page + ": " + source
+            )
+
 
     # Parity focuses on the exact shared UI inputs, never APK metadata/staff data.
     mappings = {
