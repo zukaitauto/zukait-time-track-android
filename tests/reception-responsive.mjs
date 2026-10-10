@@ -48,7 +48,8 @@ for (const engine of ['chromium', 'webkit']) {
         map:!!document.querySelector('.rc-cl-diagram svg'),
         escaped:document.querySelectorAll('#rc-root script').length===0
       }));
-      assert.equal(detail.cards,4,`${engine} ${width}: checklist cards missing`);
+      assert.equal(detail.cards,5,`${engine} ${width}: checklist cards missing`);
+      assert.equal(await page.locator('.rc-cl-card h4').count(),5,`${engine} ${width}: distinct heading cards`);
       assert.equal(detail.columns,width<=760?1:2,`${engine} ${width}: wrong checklist columns`);
       assert.equal(detail.overflow,false,`${engine} ${width}: checklist horizontal overflow`);
       assert.equal(detail.map,true,`${engine} ${width}: damage diagram missing`);
