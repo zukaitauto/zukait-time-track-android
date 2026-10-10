@@ -138,7 +138,7 @@
   }
   function shell(title, body) {
     style();
-    backTarget = title === "Reception" ? "close" :
+    backTarget = title === "Reception" || title === "Reception Dashboard" ? "close" :
       title.includes(" · Reception Checklist") || title === "New Reception Checklist" ||
       title === "Open Job Card" ? "home" :
       title.startsWith("Edit ") || current?.record?.rc_no ? "view" : "home";
@@ -392,8 +392,8 @@
     if (seq !== listRequest || !el.isConnected) return;
     rows = more ? [...rows, ...r.rows] : r.rows;
     el.innerHTML = rows.length ?
-      '<table class="rc-table"><caption>' + rows.length + ' checklists shown</caption><thead><tr><th scope="col">Checklist / Vehicle</th><th scope="col">Registration / Customer</th><th scope="col">Insurance</th><th scope="col">Status / Location</th><th scope="col">Action</th></tr></thead><tbody>' +
-      rows.map(x => '<tr><td data-label="Checklist / Vehicle"><strong>' + esc(x.rc_no) + '</strong><small>' + esc([x.details.make, x.details.model, x.details.year].filter(Boolean).join(' ')) + '</small></td><td data-label="Registration / Customer">' + esc(x.details.registration || 'Registration not recorded') + '<small>' + esc(x.details.customer || 'Customer not recorded') + '</small></td><td data-label="Insurance">' + esc(x.insurance_company) + '</td><td data-label="Status / Location">' + badges(x) + '</td><td data-label="Action"><button data-rc-action="view" data-rc="' + esc(x.rc_no) + '">Open Checklist</button></td></tr>').join('') + '</tbody></table>' : '<p>No reception checklists found.</p>';
+      '<table class="rc-table"><caption>' + rows.length + ' checklists shown</caption><thead><tr><th scope="col">Checklist / Vehicle</th><th scope="col">Registration / Customer</th><th scope="col">Type / Insurance</th><th scope="col">Status / Location</th><th scope="col">Action</th></tr></thead><tbody>' +
+      rows.map(x => '<tr><td data-label="Checklist / Vehicle"><strong>' + esc(x.rc_no) + '</strong><small>' + esc([x.details.make, x.details.model, x.details.year].filter(Boolean).join(' ')) + '</small></td><td data-label="Registration / Customer">' + esc(x.details.registration || 'Registration not recorded') + '<small>' + esc(x.details.customer || 'Customer not recorded') + '</small></td><td data-label="Type / Insurance">' + esc((x.job_type || "INSURANCE") === "INSURANCE" ? x.insurance_company : x.job_type) + '</td><td data-label="Status / Location">' + badges(x) + '</td><td data-label="Action"><button data-rc-action="view" data-rc="' + esc(x.rc_no) + '">Open Checklist</button></td></tr>').join('') + '</tbody></table>' : '<p>No reception checklists found.</p>';
     document.getElementById("rc-more").hidden = r.rows.length < 100;
   }
   async function editor(no) {
@@ -826,6 +826,8 @@
     const f = new FormData(e.target),
       details = {};
     fields.forEach(([k]) => (details[k] = String(f.get(k) || "")));
+    if ((current?.record.job_type || f.get("job_type")) !== "INSURANCE")
+      details.claim = ""; // Never save hidden insurance claims on cash checklists.
     textFields.forEach(([k]) => (details[k] = String(f.get(k) || "")));
     details.tools = f.getAll("tools");
     details.odometer_unit = String(f.get("odometer_unit"));
@@ -1104,6 +1106,8 @@
           if (backTarget === "close") closeModal();
           else if (backTarget === "view" && current?.record?.rc_no)
             await view(current.record.rc_no);
+          else if (window.zukaitReceptionDashboard?.resume)
+            await window.zukaitReceptionDashboard.resume();
           else await home();
           break;
         case "home":
