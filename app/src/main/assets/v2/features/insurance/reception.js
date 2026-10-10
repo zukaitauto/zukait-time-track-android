@@ -15,15 +15,15 @@
     ["other", "Other accessories"],
   ];
   const fields = [
+    ["registration", "Registration Number"],
     ["make", "Vehicle Make", true],
     ["model", "Vehicle Model", true],
+    ["year", "Model Year"],
+    ["odometer", "Reading"],
+    ["vin", "VIN / Chassis"],
     ["customer", "Customer Name"],
     ["contact", "Contact Number"],
-    ["registration", "Registration Number"],
-    ["year", "Model Year"],
-    ["vin", "VIN / Chassis"],
-    ["odometer", "KM / Miles Reading"],
-    ["claim", "Claim Number / Gate Pass"],
+    ["claim", "Claim Number"],
   ];
   const textFields = [
     ["damage", "Damage Description"],
@@ -49,7 +49,8 @@
     caps = { allowed: false, manager: false },
     capUser = "",
     capBusy = false,
-    capChecked = false;
+    capChecked = false,
+    backTarget = "home";
   const esc = (v) =>
     String(v ?? "").replace(
       /[&<>"']/g,
@@ -127,20 +128,24 @@
 `;
     e.textContent += `
 /* Reception owns its dialog width; other workshop dialogs retain their sizing. */
-.modal-box.rc-dialog, .modal-content.rc-dialog{width:min(1280px,96vw)!important;max-width:1280px!important;padding:0!important}
-.rc{max-width:1280px;margin:auto;min-width:0}.rc-topbar{background:transparent;color:inherit;padding:0;display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid #d2e1eb;margin-bottom:18px}.rc-topbar h3{margin:0;order:-1}.rc-topbar .rc-actions{margin:8px 0}
+.modal-box.rc-dialog, .modal-content.rc-dialog{position:fixed!important;inset:0!important;width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important;padding:0!important;border-radius:0!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain;box-sizing:border-box!important}
+.rc{max-width:none;width:100%;min-height:100%;margin:0;min-width:0}.rc-topbar{position:sticky;top:0;z-index:5;background:#143044;color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin:-16px -16px 18px}.rc-topbar h3{margin:0;flex:1;order:0;font-size:20px;color:#fff}.rc-topbar .rc-actions{margin:0;display:flex;gap:8px}.rc-topbar button{background:#ecf6fb!important;color:#123d53!important;font-weight:700!important}.rc-topbar [data-rc-action=back]{background:#bceee5!important}.rc-form-top{display:grid;grid-template-columns:minmax(210px,1fr) minmax(280px,2fr);gap:14px;margin:10px 0 12px}.rc-form-top>label,.rc-form-top>.rc-insurance{min-width:0}.rc-form-top .rc-insurance>label{margin:0}.rc-reading{display:flex;align-items:flex-end;gap:10px;min-width:0}.rc-reading>label{flex:1;min-width:0}.rc-reading>label:first-child{flex:0 0 35%}.rc-form-hint{font-size:14px;color:#486376}.rc-grid>.rc-claim{min-width:0}.rc-grid>.rc-claim>label{display:block}.rc-topbar [data-rc-action=back]:focus-visible{outline:3px solid #fff;outline-offset:2px}
 .rc-table{width:100%;border-collapse:collapse;background:white;margin-top:18px;text-align:left}.rc-table th{padding:12px;background:#e5eff6;font-size:14px}.rc-table td{padding:14px 12px;border-bottom:1px solid #d2e1eb;vertical-align:top;overflow-wrap:anywhere}.rc-table small{display:block;margin-top:5px}.rc-table .rc-badge{font-size:13px;padding:4px 8px}.rc-table button{white-space:nowrap}.rc-table caption{text-align:left;font-weight:700;padding:10px 0}
 @media(min-width:900px){.rc{font-size:15px;padding:24px;border-radius:12px}.rc button{font-size:14px!important;min-height:40px;border-radius:7px!important}.rc input,.rc select,.rc textarea{font-size:15px!important;min-height:40px;border-radius:6px}.rc-grid{gap:16px}.rc-box{border-radius:8px}.rc-filters{grid-template-columns:minmax(0,3fr) minmax(200px,1fr)}#rc-form>.rc-grid{grid-template-columns:repeat(3,minmax(0,1fr));padding:20px;background:white;border:1px solid #d2e1eb;border-radius:8px}#rc-form>.rc-box:last-of-type{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}#rc-form>.rc-box:last-of-type>h4,#rc-form>.rc-box:last-of-type>label:first-of-type{grid-column:1/-1}.rc-accessories{grid-template-columns:repeat(3,minmax(0,1fr))}.rc-wide{grid-column:1/-1}}
-@media(max-width:700px){.rc-topbar{align-items:flex-start;flex-direction:column;gap:0}.rc-topbar h3{margin-bottom:12px}.rc-table,.rc-table tbody,.rc-table tr,.rc-table td{display:block}.rc-table thead{display:none}.rc-table tr{border:1px solid #d2e1eb;border-radius:12px;margin-bottom:12px;padding:10px}.rc-table td{border:0;padding:5px}.rc-table td:before{content:attr(data-label);display:block;font-size:13px;color:#45627a;font-weight:700;margin-bottom:3px}.rc-table td:last-child:before{display:none}.rc-table button{width:100%}.rc-filters{grid-template-columns:1fr}}
+@media(max-width:700px){.rc-form-top{grid-template-columns:1fr}.rc-topbar{align-items:stretch;flex-wrap:wrap;gap:8px;margin:-10px -10px 14px;padding:12px}.rc-topbar h3{order:-1;flex:0 0 100%}.rc-topbar .rc-actions{flex:1;justify-content:flex-end}.rc-topbar h3{margin-bottom:12px}.rc-table,.rc-table tbody,.rc-table tr,.rc-table td{display:block}.rc-table thead{display:none}.rc-table tr{border:1px solid #d2e1eb;border-radius:12px;margin-bottom:12px;padding:10px}.rc-table td{border:0;padding:5px}.rc-table td:before{content:attr(data-label);display:block;font-size:13px;color:#45627a;font-weight:700;margin-bottom:3px}.rc-table td:last-child:before{display:none}.rc-table button{width:100%}.rc-filters{grid-template-columns:1fr}}
 `;
     document.head.appendChild(e);
   }
   function shell(title, body) {
     style();
+    backTarget = title === "Reception" ? "close" :
+      title.includes(" · Reception Checklist") || title === "New Reception Checklist" ||
+      title === "Open Job Card" ? "home" :
+      title.startsWith("Edit ") || current?.record?.rc_no ? "view" : "home";
     openModal(
-      '<section class="rc" id="rc-root"><header class="rc-topbar"><div class="rc-actions"><button data-rc-action="home">Reception List</button><button data-rc-action="close">Close</button></div><h3>' +
+      '<section class="rc" id="rc-root"><header class="rc-topbar"><button type="button" data-rc-action="back">← Back</button><h3>' +
         esc(title) +
-        '</h3></header><div id="rc-error" class="rc-error" role="alert"></div>' +
+        '</h3><div class="rc-actions"><button type="button" data-rc-action="home">Reception List</button><button type="button" data-rc-action="close">Close</button></div></header><div id="rc-error" class="rc-error" role="alert"></div>' +
         body +
         "</section>",
     );
@@ -1074,6 +1079,12 @@
           break;
         case "close":
           closeModal();
+          break;
+        case "back":
+          if (backTarget === "close") closeModal();
+          else if (backTarget === "view" && current?.record?.rc_no)
+            await view(current.record.rc_no);
+          else await home();
           break;
         case "home":
           await home();
