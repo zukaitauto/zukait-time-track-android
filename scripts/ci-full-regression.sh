@@ -112,6 +112,7 @@ node tests/v2-full-regression-manifest.mjs
 node tests/release-latest-integrity.mjs
 node tests/ci-release-gate-parity.mjs
 node tests/reception-v305-acceptance.mjs
+node tests/reception-backup-export-safety.mjs
 node tests/reception-release-publish-safety.mjs
 
 node tests/v181-manager-performance-cost-drilldown.mjs

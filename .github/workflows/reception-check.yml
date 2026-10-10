@@ -58,6 +58,7 @@ jobs:
       - run: node tests/reception-isolated-delivery-selftest.mjs
       - run: node tests/reception-pages-publication-safety.mjs
       - run: node tests/reception-v305-acceptance.mjs
+      - run: node tests/reception-backup-export-safety.mjs
       - run: node tests/reception-release-publish-safety.mjs
       - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:reception:browser
