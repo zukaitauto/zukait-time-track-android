@@ -153,6 +153,8 @@
   async function open(){section="checklists";vwcSection="vwc-checklists";page=0;
     filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false};
     latest=[];counts={};total=0;render();await load();}
+  // Keep the list section and filters when Back returns from a checklist.
+  async function resume(){render();await load();}
   async function choose(next){
     if(next==="new")return window.zukaitReception.newChecklist();
     if(next==="create-job")return window.zukaitReception.directJob();
@@ -235,5 +237,5 @@
       }
     }catch(e){const el=document.getElementById("rc-error");if(el)el.textContent=e.message||String(e);}
   }
-  window.zukaitReceptionDashboard={open,savePromise};
+  window.zukaitReceptionDashboard={open,resume,savePromise};
 })();
