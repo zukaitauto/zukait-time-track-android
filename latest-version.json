@@ -1,6 +1,9 @@
 {
-  "versionCode": 267,
-  "versionName": "V304",
+  "versionCode": 268,
+  "versionName": "V305",
   "status": "current",
-  "package": "com.zukait.timetrack"
+  "package": "com.zukait.timetrack",
+  "sourceCommit": "82710ba85ee10c2ae870ecd96a45280b4f896071",
+  "apkSha256": "2e003a3dd8019b0b9dc6231d93552a68f5c5f1163c7efcfb473d32fd44b4f407",
+  "releaseTag": "release-V305-architecture-v2"
 }
