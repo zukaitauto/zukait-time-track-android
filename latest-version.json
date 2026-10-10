@@ -1,9 +1,9 @@
 {
-  "versionCode": 269,
-  "versionName": "V306",
+  "versionCode": 270,
+  "versionName": "V307",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "9825baa247e466ca43e529f7d1077afea67a9dc5",
-  "apkSha256": "468a71d54a669ddb3d066f05473908497788e06984cc2f78fc105291a0458031",
-  "releaseTag": "release-V306-architecture-v2"
+  "sourceCommit": "c044f201b0303e8b6b25fd819303ceb83aef9334",
+  "apkSha256": "dcb915a8149d3e92178044377609c895fce2d987e563433041418d1a962d1367",
+  "releaseTag": "release-V307-architecture-v2"
 }
