@@ -181,6 +181,7 @@
 }
 `;
     e.textContent += "\n#rc-root #rc-form .rc-inspection-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(320px,1fr);align-items:start;gap:14px;margin-top:12px}\n#rc-root #rc-form .rc-inspection-layout>.rc-box{min-width:0;margin:0;overflow:hidden}\n#rc-root .rc-panel-head{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}\n#rc-root .rc-panel-head h4{margin:4px 0}\n#rc-root .rc-info-note{color:#466578;font-size:13px;margin:7px 0 12px}\n#rc-root .rc-damage-types{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0}\n#rc-root .rc-damage-types button{min-height:42px!important;padding:7px 11px!important;font-weight:800!important;background:#f4f9ff!important;color:#21455c!important;border:1px solid #b6cddb!important}\n#rc-root .rc-damage-types [aria-pressed=true]{background:#cce9f8!important;outline:2px solid #2789a2}\n#rc-root .rc-damage-clear{background:#edf7fd!important;color:#155b7b!important;border:1px solid #abcbdc!important}\n#rc-root .rc-car-stage{position:relative;width:100%;min-height:170px;aspect-ratio:840 / 310;background:linear-gradient(160deg,#f4faff,#e5f1f8);border:1px solid #d2e3ef;border-radius:16px;margin:14px 0;overflow:hidden}\n#rc-root .rc-car-svg{display:block;width:100%;height:100%}\n#rc-root .rc-car-stage .rc-zone{position:absolute;transform:translate(-50%,-50%);min-height:34px!important;width:34px!important;height:34px!important;padding:0!important;border-radius:50%!important;border:2px solid #fff!important;box-shadow:0 2px 6px #163b5480;background:#187eb1!important;color:#fff!important;font-weight:900!important;font-size:18px!important;line-height:1!important}\n#rc-root .rc-car-stage .rc-zone[data-mark=X]{background:#d73538!important}#rc-root .rc-car-stage .rc-zone[data-mark=S]{background:#176bc6!important}#rc-root .rc-car-stage .rc-zone[data-mark=M]{background:#dd850b!important}\n#rc-root .rc-car-stage .rc-zone:focus-visible{outline:3px solid #111!important;outline-offset:2px!important}\n#rc-root .rc-zone-legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-bottom:15px}\n#rc-root .rc-zone-legend span{font-size:12px;background:#f1f7fb;border:1px solid #e0eaf3;border-radius:8px;padding:6px 8px;font-weight:700}\n#rc-root .rc-zone-legend small{display:block;margin:2px 0 0;font-size:11px;line-height:1.2}\n#rc-root .rc-accessory-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}\n#rc-root .rc-accessory-items .rc-accessory-card,#rc-root .rc-accessory-items .rc-accessory-extra{display:flex!important;align-items:center!important;gap:8px!important;padding:11px 8px!important;min-width:0;min-height:65px!important;background:#f8fcff!important;border:1px solid #d3e1ed!important;border-radius:11px!important;text-align:left!important;color:#24465d!important;box-shadow:none!important;margin:0!important}\n#rc-root .rc-accessory-items .rc-accessory-card input{flex:0 0 23px;width:23px!important;height:23px!important}\n#rc-root .rc-accessory-items strong,#rc-root .rc-accessory-items b{font-weight:800;font-size:14px}\n#rc-root .rc-accessory-items small{display:block;font-size:12px;color:#567186}\n#rc-root .rc-accessory-extra[aria-pressed=true]{background:#e1f7ef!important;border-color:#63b3a4!important}\n#rc-root .rc-accessory-tick{font-style:normal;font-weight:900;background:#0d8a95;color:#fff;border-radius:6px;padding:4px;margin-left:auto}\n#rc-root .rc-fuel{margin:12px 0}#rc-root .rc-reception-notes{margin-top:12px}#rc-root .rc-customer-sign{margin-top:12px}\n@media(max-width:980px){#rc-root #rc-form .rc-inspection-layout{grid-template-columns:1fr}}\n@media(max-width:500px){#rc-root .rc-zone-legend{grid-template-columns:repeat(2,minmax(0,1fr))}#rc-root .rc-car-stage .rc-zone{width:28px!important;height:28px!important;min-height:28px!important;font-size:15px!important}#rc-root .rc-accessory-items{grid-template-columns:1fr 1fr}#rc-root .rc-accessory-items .rc-accessory-card,#rc-root .rc-accessory-items .rc-accessory-extra{padding:9px 5px!important}#rc-root .rc-accessory-items small{font-size:10px}}\n";
+    e.textContent += "#rc-root .rc-record-map{max-width:760px;background:#edf6fb;border-radius:14px;padding:5px;margin:8px auto}#rc-root .rc-record-map svg{width:100%;height:auto;max-height:240px}#rc-root #rc-form .rc-form-brand{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:13px 18px;background:#fff;border:1px solid #d4e2ec;border-radius:14px;color:#0e4664}#rc-root #rc-form .rc-form-brand strong{font-size:20px}#rc-root #rc-form .rc-form-brand small{font-size:13px;display:block}#rc-root #rc-form .rc-form-brand h3{color:#173f61;font-size:18px;margin:3px 0}";
     document.head.appendChild(e);
   }
   function shell(title, body) {
@@ -540,6 +541,15 @@
     const marks=unpackChecklistText(d.damage,"DAMAGE",damageZones.map(x=>x[0])).marks;
     return Object.entries(marks).map(([key,value])=>damageName[key]+": "+({X:"Dent",S:"Scratch",M:"Missing"}[value])).join("; ");
   }
+  function damagedGraphic(d){
+    const marks=unpackChecklistText(d.damage,"DAMAGE",damageZones.map(x=>x[0])).marks;
+    const points=damageZones.filter(([key])=>marks[key]).map(([key,label,ar,left,top])=>{
+      const code=marks[key],color={X:"#d73538",S:"#176bc6",M:"#dc850b"}[code];
+      return '<g><circle cx="'+(left*8.4)+'" cy="'+(top*3.1)+'" r="16" fill="'+color+'" stroke="white" stroke-width="3"/>'+
+        '<text x="'+(left*8.4)+'" y="'+(top*3.1+6)+'" font-size="18" fill="white" font-weight="900" text-anchor="middle">'+code+'</text></g>';
+    }).join("");
+    return carGraphic().replace("</svg>",points+"</svg>");
+  }
   function carGraphic(){
     return '<svg class="rc-car-svg" viewBox="0 0 840 310" role="img" aria-label="Top view vehicle damage diagram, front at left">'+
       '<rect x="98" y="23" width="102" height="36" rx="16" fill="#263b4c"/><rect x="98" y="251" width="102" height="36" rx="16" fill="#263b4c"/>'+
@@ -575,7 +585,7 @@
   function accessoriesPanel(d){
     const parsed=unpackChecklistText(d.other_accessories,"ACCESSORIES",extraAccessories.map(x=>x[0]));
     return '<section class="rc-box rc-accessory-panel"><h4>الملحقات والمعدات / Accessories & Equipment</h4>'+
-      '<p class="rc-info-note">Tick only accessories actually received or inspected.</p>'+
+      '<p class="rc-info-note">Tick recorded accessories individually. Unticked means not recorded.</p>'+
       '<div class="rc-accessory-items">'+
       tools.map(([key,name])=>'<label class="rc-check rc-accessory-card"><input type="checkbox" name="tools" value="'+key+'" '+
         ((d.tools||[]).includes(key)?"checked":"")+'><span><strong>'+esc(name)+'</strong><small lang="ar">'+esc(toolArabic[key])+'</small></span></label>').join("")+
@@ -654,7 +664,7 @@
     }).join("");
     shell(
       r ? "Edit " + r.rc_no : "New Reception Checklist",
-      '<form id="rc-form"><p class="rc-form-hint">' +
+      '<form id="rc-form"><div class="rc-form-brand"><div><strong>ZUKAIT AUTO SERVICES LLC.</strong><small>Vehicle Reception · Oman</small></div><div><h3 lang="ar">استمارة استلام المركبة</h3><b>Vehicle Reception Checklist</b></div></div><p class="rc-form-hint">' +
          (phase2 ? 'Make and Model are required. Cash requires Customer Name; Insurance requires an Insurance Company.' :
           'Insurance checklist only: Cash intake will be available after the verified V305 backend release.') + '</p>' +
         '<div class="rc-form-top">' +
@@ -744,13 +754,16 @@
           )
           .join("") +
         '</div><div class="rc-box"><h4>Reception Observations</h4>' +
+        '<div class="rc-record-map">'+damagedGraphic(d)+'</div><p><b>Damage marks:</b> '+esc(damageSummary(d)||"None recorded")+'</p>'+
+        '<p><b>Additional accessories checked:</b> '+esc(Object.keys(unpackChecklistText(d.other_accessories,"ACCESSORIES",extraAccessories.map(x=>x[0])).marks).map(x=>extraName[x]).join(", ")||"None recorded")+'</p>'+
         textFields
           .map(
             ([k, l]) =>
               "<p><small>" +
               l +
               "</small><br>" +
-              esc(d[k] || "Not recorded") +
+              esc((k==="damage"?unpackChecklistText(d.damage,"DAMAGE",damageZones.map(x=>x[0])).notes:
+                k==="other_accessories"?unpackChecklistText(d.other_accessories,"ACCESSORIES",extraAccessories.map(x=>x[0])).notes:d[k]) || "Not recorded") +
               "</p>",
           )
           .join("") +
@@ -1207,7 +1220,7 @@
     return (
       '<!doctype html><html><head><meta charset="UTF-8"><title>' +
       esc(r.rc_no) +
-      "</title><style>@page{size:A4;margin:12mm}*{box-sizing:border-box}body{margin:0;color:#18324a;font:12px Arial,sans-serif}header{border-bottom:2px solid #165b68;display:flex;justify-content:space-between;padding-bottom:10px}h1{font-size:22px;margin:0}h2{font-size:16px;margin:5px 0}h3{font-size:13px;background:#edf4f7;padding:7px;margin:12px 0 5px}table{border-collapse:collapse;width:100%;table-layout:fixed}td{padding:6px;border-bottom:1px solid #dce5e9;vertical-align:top;overflow-wrap:anywhere}td small{display:block;color:#546977;margin-bottom:3px}.observation{white-space:pre-wrap;overflow-wrap:anywhere;min-height:35px;padding:5px;break-inside:avoid}.sign{display:flex;justify-content:space-between;margin-top:35px;break-inside:avoid}.sign div{width:43%;padding-top:20px;border-top:1px solid #475569}footer{margin-top:20px;font-size:10px;color:#546977}.tools td{padding:7px}section{break-inside:avoid}</style></head><body><header><div><h1>ZUKAIT AUTO SERVICES</h1><small>Zukait International LLC · Oman</small><h2>Vehicle Reception Checklist</h2></div><div><h2>" +
+      "</title><style>@page{size:A4;margin:12mm}*{box-sizing:border-box}body{margin:0;color:#18324a;font:12px Arial,sans-serif}header{border-bottom:2px solid #165b68;display:flex;justify-content:space-between;padding-bottom:10px}h1{font-size:22px;margin:0}h2{font-size:16px;margin:5px 0}h3{font-size:13px;background:#edf4f7;padding:7px;margin:12px 0 5px}table{border-collapse:collapse;width:100%;table-layout:fixed}td{padding:6px;border-bottom:1px solid #dce5e9;vertical-align:top;overflow-wrap:anywhere}td small{display:block;color:#546977;margin-bottom:3px}.observation{white-space:pre-wrap;overflow-wrap:anywhere;min-height:35px;padding:5px;break-inside:avoid}.sign{display:flex;justify-content:space-between;margin-top:35px;break-inside:avoid}.sign div{width:43%;padding-top:20px;border-top:1px solid #475569}footer{margin-top:20px;font-size:10px;color:#546977}.tools td{padding:7px}section{break-inside:avoid}.printed-car{max-width:100%;max-height:155px;margin:2px auto;text-align:center}.printed-car svg{width:100%;max-height:155px}.rc-record-map svg{max-width:100%;max-height:260px}</style></head><body><header><div><h1>ZUKAIT AUTO SERVICES</h1><small>Zukait International LLC · Oman</small><h2>Vehicle Reception Checklist</h2></div><div><h2>" +
       esc(r.rc_no) +
       "</h2>" +
       esc(stamp(r.received_at)) +
@@ -1247,8 +1260,12 @@
             "</td></tr>",
         )
         .join("") +
-      '</table><section><h3>Damage Description</h3><div class="observation">' +
-      esc(d.damage || "Not recorded") +
+      '</table><section><h3>Vehicle Damage Diagram / فحص أضرار المركبة</h3>'+
+      '<div class="printed-car">'+damagedGraphic(d)+'</div>'+
+      '<div class="observation"><b>X = Dent · S = Scratch · M = Missing</b><br>'+
+      esc(damageSummary(d)||"No diagram marks")+
+      '</div></section><section><h3>Damage Description</h3><div class="observation">' +
+      esc(unpackChecklistText(d.damage,"DAMAGE",damageZones.map(x=>x[0])).notes || "Not recorded") +
       '</div></section><section><h3>Tools & Accessories</h3><table class="tools">' +
       Array.from(
         { length: 3 },
@@ -1267,8 +1284,11 @@
             .join("") +
           "</tr>",
       ).join("") +
-      '</table><small>Unticked accessories are not recorded.</small><div class="observation">Other: ' +
-      esc(d.other_accessories || "Not recorded") +
+      '</table><small>Unticked accessories are not recorded.</small>'+
+      '<div class="observation"><b>Additional equipment:</b> '+
+      esc(extraAccessories.map(([key,label])=>(unpackChecklistText(d.other_accessories,"ACCESSORIES",extraAccessories.map(x=>x[0])).marks[key]?"✓ ":"□ ")+label).join(" · "))+
+      '</div><div class="observation">Other: ' +
+      esc(unpackChecklistText(d.other_accessories,"ACCESSORIES",extraAccessories.map(x=>x[0])).notes || "Not recorded") +
       '</div></section><section><h3>Fuel Level & Dashboard Warnings</h3><div class="observation">Fuel: ' +
       esc(d.fuel || "Not recorded") +
       "<br>Warnings: " +
