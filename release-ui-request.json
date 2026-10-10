@@ -1,17 +1,17 @@
 {
-  "versionName": "V305",
-  "versionCode": 268,
+  "versionName": "V306",
+  "versionCode": 269,
   "approvedForStaff": true,
-  "approvedAt": "2026-10-10T13:48:16.971Z",
-  "sourceCommit": "82710ba85ee10c2ae870ecd96a45280b4f896071",
-  "publishNonce": "owner-ui-only-1791640096989",
-  "signedAcceptanceRun": 38056783393,
-  "verificationRun": 38056783460,
+  "approvedAt": "2026-10-10T15:15:58.267Z",
+  "sourceCommit": "9825baa247e466ca43e529f7d1077afea67a9dc5",
+  "publishNonce": "owner-publish-reception-work-type-1791645358268",
+  "signedAcceptanceRun": 38062763519,
+  "verificationRun": 38062763477,
   "releaseScope": "phase1-compatible-ui",
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "authorization": "Workshop owner in Codex: i dont want backup now, just release; scope limited to existing Phase 1-compatible UI on Android and PC"
+  "authorization": "Workshop owner in this chat: PUBLISH. Coordinated PC web and signed Android client update with Receptionist Work Type fix; no new backend changes. Existing production Reception integration remains active; physical acceptance pending."
 }
