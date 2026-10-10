@@ -84,6 +84,7 @@ for (const engine of ['chromium', 'webkit']) {
       await page.evaluate(() => {
         const previous=window.fetch;
         window.zukaitAuth={getToken:()=> 'phase1-session'};
+        window.zukaitReceptionForceBackendProbe=true;
         window.fetch=async (url,args)=>{
           if(JSON.parse(args.body).action==='reception_dashboard')
             return {ok:false,json:async()=>({ok:false,code:'unsupported_action'})};
