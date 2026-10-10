@@ -1,5 +1,38 @@
 # V305 acceptance handoff
 
+## 2026-10-10 real Chromium/WebKit Receptionist browser restart recovery — PASS (mock API)
+
+The unchanged `receptionist.html`, `receptionist_session.js`,
+`v2/features/insurance/reception.js` and `reception_dashboard.js`
+are loaded into real browser engines, with every API request intercepted
+to a deliberately synthetic server. Four cases passed in
+[Reception verification run 38030573046](https://github.com/zukaitauto/zukait-time-track-android/actions/runs/38030573046)
+at source `49e2f13023106532f25c4d8c377da8d946e16520`:
+
+| Engine | Failed response after simulated commit | Browser storage restored | Same UUID explicit retry | Duplicate delivery prevention |
+| --- | --- | --- | --- | --- |
+| Chromium | Lost | PASS | PASS | PASS |
+| Chromium | Truncated JSON | PASS | PASS | PASS |
+| WebKit | Lost | PASS | PASS | PASS |
+| WebKit | Truncated JSON | PASS | PASS | PASS |
+
+Test code: `tests/reception-receptionist-browser-recovery.mjs`; attached to
+`npm run test:reception:browser`. Each case closes the original context,
+opens a new context using its persisted storage state, verifies that session
+restore and Vehicle Delivery listing do not silently submit a request,
+then clicks Confirm Saved Delivery. The new server confirmation clears
+the journal. The mocked backend records exactly one delivery commit.
+No unexpected page errors were observed.
+
+**Scope restriction:** This genuinely exercises browser rendering, script,
+session reload, and persisted localStorage in desktop Chromium/WebKit, **not
+a physical iPhone/Mac Safari or Android WebView**. Backend responses are
+simulated, not sent to either real Supabase project. The separate real QA
+HTTPS server tests remain strong server evidence, but combined real
+browser-client over QA HTTPS fault recovery is NOT_RUN. QA fixtures
+RC0019/RC0020 remain reserved. The `client_https_restart` and physical
+release acceptance gates must remain `passed:false`.
+
 ## 2026-10-10 LIVE QA HTTPS concurrent delivery and external preservation — PASS
 
 **Synthetic QA only, no production writes.** Two independent temporary Receptionist

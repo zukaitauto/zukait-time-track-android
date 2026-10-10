@@ -26,13 +26,13 @@ schema change or Edge deployment invalidates assumptions until reviewed.
 | Gate | Required evidence | Current status |
 | --- | --- | --- |
 | Exact source | Application/backend source and final branch SHA recorded | Application source recorded in acceptance handoff; final release SHA pending |
-| Automated verification | All Reception, PostgreSQL concurrency, API, JS and browser checks green | PASS at `7bc397b3`, run `38021866694` |
+| Automated verification | All Reception, PostgreSQL concurrency, API, JS and browser checks green | PASS at `49e2f130`, Reception run `38030573046`: Chromium/WebKit restored browser context tests (4 cases) plus earlier Reception/PostgreSQL verification; Android architecture build PASS |
 | Real QA workflows | Permissions, mutations, quantities, revisions, shared lists and audit counts | Selected scenarios passed; see handoff for exact scope |
-| Fault recovery | Pending UUID/body retained, no optimistic success, no duplicate writes | 18 Reception recovery cases plus two server HTTPS replays and two concurrent QA HTTPS delivery cases passed (revisions 36–43); actual client delivery journal over HTTPS and physical fault recovery pending |
+| Fault recovery | Pending UUID/body retained, no optimistic success, no duplicate writes | Real Chromium/WebKit x lost/truncated response = 4 browser restart cases PASS using simulated transport (run `38030573046`). Earlier isolated QA HTTPS replay/concurrency PASS. Actual Receptionist client over real QA HTTPS and physical interruption/restart remain PENDING |
 | Physical Android | QA package, keyboard/back/rotation/background/restart and employee work flow | NOT_RUN |
 | Physical iPhone/Mac Safari | Forms, tables, focus/scroll, restart/offline and two-device conflicts | NOT_RUN |
 | Preservation | Nonempty unrelated work, parts, costs, consumables and financial history retained | QA revision 41→43: unrelated Jobs and all other workshop-state data exact-match; six external parts/events/job-card-mirror table JSONB hashes unchanged through concurrent HTTPS deliveries. Physical work and wider financial matrix pending |
-| Backup and recovery | Fresh production recovery point plus successful isolated recovery rehearsal | Isolated disposable PostgreSQL 17 dump/restore CI PASS at `2eb1aa26`; fresh production backup/recovery point NOT_RUN |
+| Backup and recovery | Fresh production recovery point plus successful isolated recovery rehearsal | BLOCKED: production Free plan, latest in-app backup 2026-10-03 (revision 11612) predates live 2026-10-10 work (revision 12582 at audit). Isolated synthetic restore rehearsal PASS; complete current production backup/off-site export and isolated restore NOT VERIFIED |
 | Staff publication | User approval tied to exact candidate and acceptance evidence | NOT_GRANTED |
 
 ## Ordered coordinated activation
