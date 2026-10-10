@@ -164,6 +164,15 @@ assert.match(
   /<script>unsafe<\/script>/,
 );
 assert.match(w.document.getElementById("rc-root").textContent,/Front Bumper: Dent/);
+// Compact detail cards are presentation-only; escaped values and existing actions remain.
+assert.ok(w.document.getElementById("rc-root").classList.contains("rc-checklist-view"));
+assert.equal(w.document.querySelectorAll(".rc-cl-grid > .rc-box").length,4);
+assert.ok(w.document.querySelector(".rc-cl-grid .rc-cl-diagram svg"));
+assert.match(w.document.querySelector(".rc-cl-grid").textContent,/Vehicle Information/);
+assert.match(w.document.querySelector(".rc-cl-grid").textContent,/Customer & Insurance/);
+assert.match(w.document.querySelector(".rc-cl-grid").textContent,/Tools & Accessories/);
+assert.ok(w.document.querySelector(".rc-cl-actions [data-rc-action=pdf]"));
+assert.equal(w.document.querySelectorAll("#rc-root script").length,0);
 await click("edit");
 assert.equal(w.document.querySelector('[data-rc-zone="front_bumper"]').textContent,"X","Saved dent restored on edit");
 assert.equal(w.document.querySelector('[data-rc-zone="roof"]').textContent,"S","Saved scratch restored on edit");
