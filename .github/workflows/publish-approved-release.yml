@@ -33,6 +33,18 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Require release credential with workflow-write permission
+        shell: bash
+        env:
+          RELEASE_WORKFLOW_TOKEN: ${{ secrets.ZUKAIT_RELEASE_WORKFLOW_TOKEN }}
+        run: |
+          if [ -z "$RELEASE_WORKFLOW_TOKEN" ]; then
+            echo '::error::V307 publishing is blocked: configure the repository secret ZUKAIT_RELEASE_WORKFLOW_TOKEN with Contents: read/write and Workflows: read/write access to this repository.'
+            echo 'The built-in GITHUB_TOKEN cannot create a release targeted at a commit changing .github/workflows versus main (HTTP 403).'
+            exit 1
+          fi
+          echo 'Dedicated release credential is configured. The protected source/approval gates still apply.'
+
       - name: Resolve explicitly owner-authorized UI-only scope
         run: node scripts/verify-ui-only-release.cjs >> "$GITHUB_ENV"
 
@@ -164,7 +176,7 @@ jobs:
         id: draft_release
         shell: bash
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.ZUKAIT_RELEASE_WORKFLOW_TOKEN }}
         run: |
           TAG="release-${{ steps.approved.outputs.version_name }}${{ github.ref_name == 'architecture-v2' && '-architecture-v2' || '' }}"
           if gh release view "$TAG" >/dev/null 2>&1; then
@@ -307,7 +319,7 @@ jobs:
       - name: Make approved release public and latest
         shell: bash
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.ZUKAIT_RELEASE_WORKFLOW_TOKEN }}
         run: |
           RELEASE_ID="${{ steps.draft_release.outputs.release_id }}"
           EXPECTED_TAG="release-${{ steps.approved.outputs.version_name }}${{ github.ref_name == 'architecture-v2' && '-architecture-v2' || '' }}"
