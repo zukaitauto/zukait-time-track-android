@@ -1,0 +1,30 @@
+name: V305 QA browser live HTTPS denial
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [architecture-v2]
+    paths:
+      - ".github/workflows/reception-qa-browser-live-https.yml"
+      - "tests/reception-qa-browser-live-https.mjs"
+      - "app/src/main/assets/receptionist.html"
+      - "app/src/main/assets/receptionist_session.js"
+
+permissions:
+  contents: read
+
+jobs:
+  verify-qa-browser:
+    if: github.ref == 'refs/heads/architecture-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Exercise actual Receptionist app in Chromium/WebKit against real isolated QA HTTPS
+        run: node tests/reception-qa-browser-live-https.mjs
