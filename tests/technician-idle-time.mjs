@@ -12,8 +12,8 @@ const session=(job,start,end,extra={})=>({emp:'E',job,start:at(start),end:end?at
 const idle=(job='ALL')=>rows('E','2026-10-06',job).filter(r=>r.action==='IDLE');
 state.sessions=[session('A','08:25:05','09:01:35'),session('B','09:20:16','09:20:22'),session('A','09:20:34','10:33:20'),session('B','10:33:49')];
 const saved=JSON.stringify(state);assert.equal(idle().length,2);assert.equal(idle()[0].duration,1505000);assert.equal(idle()[1].duration,1121000);
-let body=html('E','2026-10-06','ALL');assert.match(body,/IDLE TIME: 00:18/);assert.match(body,/<th>Time<\/th><th>Job Card<\/th><th>Car Make<\/th><th>Action<\/th>/);assert.doesNotMatch(body,/<th>Date/);assert.match(body,/Land Rover/);
-draw('E','2026-10-06','ALL');assert.ok(texts.includes('IDLE TIME: 00:18'));assert.ok(texts.includes('Car Make'));assert.ok(!texts.includes('Date'));assert.ok(canvas.height>1100);assert.equal(JSON.stringify(state),saved);
+let body=html('E','2026-10-06','ALL');assert.match(body,/IDLE TIME: 00:18/);assert.match(body,/<th>Time<\/th><th>Job Card<\/th><th>Vehicle<\/th><th>Action<\/th>/);assert.doesNotMatch(body,/<th>Date/);assert.match(body,/Land Rover/);
+draw('E','2026-10-06','ALL');assert.ok(texts.includes('IDLE TIME: 00:18'));assert.ok(texts.includes('Vehicle'));assert.ok(!texts.includes('Date'));assert.ok(canvas.height>1100);assert.equal(JSON.stringify(state),saved);
 for(const [end,expected] of [['09:10:00',0],['09:10:01',1],['09:09:59',0]]){state.sessions=[session('A','08:00:00','09:00:00'),session('B',end)];assert.equal(idle().length,expected);}
 state.sessions=[session('A','08:00:00','09:00:00'),session('B','08:30:00','10:00:00'),session('A','10:05:00')];assert.equal(idle().length,0,'overlapping work is not idle');assert.equal(idle('A').length,0,'filtered-out job is still working time');
 state.sessions=[session('A','08:00:00'),session('B','09:30:00','09:40:00'),session('B','10:00:00')];assert.equal(idle().length,0,'unknown end must not invent idle time');
