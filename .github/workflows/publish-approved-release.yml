@@ -42,14 +42,16 @@ jobs:
           # GitHub allows the ordinary GITHUB_TOKEN to release a source with
           # workflow-file changes when that exact source already has a ref.
           # This pinned branch is release metadata, not a source modification.
+          jq -e '.approvedForStaff == true and (.versionName | test("^V[1-9][0-9]*$"))' release-ui-request.json
           APPROVED_SOURCE=$(jq -r '.sourceCommit' release-ui-request.json)
-          test "$APPROVED_SOURCE" = "c044f201b0303e8b6b25fd819303ceb83aef9334"
-          PINNED_SOURCE=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/release/v307-approved-source" --jq '.object.sha')
+          APPROVED_VERSION=$(jq -r '.versionName' release-ui-request.json)
+          PINNED_REF="release/$(printf '%s' "$APPROVED_VERSION" | tr '[:upper:]' '[:lower:]')-approved-source"
+          PINNED_SOURCE=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$PINNED_REF" --jq '.object.sha')
           test "$PINNED_SOURCE" = "$APPROVED_SOURCE" || {
-            echo "::error::Pinned V307 source ref mismatch; do not publish."
+            echo "::error::Pinned source ref mismatch: $PINNED_REF; do not publish."
             exit 1
           }
-          echo "Approved release source has a verified named ref: $PINNED_SOURCE"
+          echo "Approved $APPROVED_VERSION source has a verified named ref: $PINNED_SOURCE"
 
       - name: Resolve explicitly owner-authorized UI-only scope
         run: node scripts/verify-ui-only-release.cjs >> "$GITHUB_ENV"
