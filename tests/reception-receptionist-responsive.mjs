@@ -34,7 +34,7 @@ for(const engine of ['chromium','webkit']){
   assert.equal(await page.locator('.rdb-grid').count(),0,'Checklist List opens without dashboard above');
   assert.equal(await page.locator('#reception-app nav button').count(),4);
   assert.equal(await page.locator('script').count(),3);
-  assert.equal(await page.locator('[data-rdb=tile]').count(),10);
+  assert.equal(await page.locator('[data-rdb=tile]').count(),0,'Dedicated Reception list hides dashboard cards');
   assert.equal(await page.locator('.rdb-row script').count(),0);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width} list overflow`);
   await page.locator('.rdb-row [data-rdb=open]').click();await page.locator('[data-rc-action=insurance]').click();await page.locator('#rc-create-job').waitFor();
