@@ -1,0 +1,1623 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Zukait Reception V305 — Sample Web Preview</title>
+<style>
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font:16px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#18324a;background:#eaf1f6}
+.hidden{display:none!important}.modal-backdrop{position:fixed;inset:0;z-index:40;background:#edf4f9;overflow:hidden}
+.modal-box{width:600px;max-width:95vw;height:95vh;margin:0 auto;overflow-y:auto;background:#fff}
+.sample-ribbon{background:#e5f2ff;color:#174363;font-weight:800;font-size:13px;padding:8px 14px;border-bottom:1px solid #a9cadc;position:relative;z-index:6}
+.preview-fallback{padding:35px;text-align:center}
+@media(max-width:700px){.sample-ribbon{font-size:12px;padding:8px 10px}}
+</style>
+</head><body><div id="modal"><div class="preview-fallback">Loading the updated Reception UI preview…</div></div><script>
+"use strict";
+const make=(i,kind,reg,make,model,location,approval,job)=>{
+ const data={registration:reg,make,model,year:"2018",odometer:"52000",odometer_unit:"KM",vin:"SAMPLE-VIN-"+i,customer:"Sample Customer "+i,contact:"00000000",claim:kind==="INSURANCE"?"SAMPLE-CLAIM-"+i:"",tools:[],fuel:"Half",damage:"Sample notes only.",warnings:"",remarks:"Sample vehicle for UI review"};
+ return {rc_no:"RC-SAMPLE-00"+i,sequence_no:i,revision:1,job_type:kind,
+  insurance_id:kind==="INSURANCE"?1:null,insurance_company:kind==="INSURANCE"?"Sample Insurance A":null,
+  details:data,location,approval_status:approval,received_at:"2026-10-10T08:00:00Z",
+  updated_at:"2026-10-10T08:00:00Z",job_card:job||null,outcome:null,can_edit:true}
+};
+let records=[make(1,"INSURANCE","SAMPLE-001","Toyota","Camry","VIW","WAITING"),
+ make(2,"CASH","SAMPLE-002","Nissan","Altima","VIW","WAITING"),
+ make(3,"INSURANCE","SAMPLE-003","Honda","Civic","VWC","APPROVED")];
+const clone=obj=>JSON.parse(JSON.stringify(obj));
+const companies=[{id:1,name:"Sample Insurance A",active:true},{id:2,name:"Sample Insurance B",active:true},{id:3,name:"Sample Insurance C",active:true}];
+window.me={id:"PREVIEW-MANAGER",name:"Sample Manager",role:"Manager",department:"Reception"};
+window.zukaitAuth={getToken:()=>"PREVIEW_SESSION_ONLY"};
+window.openModal=html=>{
+ const root=document.getElementById("modal");
+ root.className="modal-backdrop";
+ root.innerHTML='<div class="modal-box">'+html.replace(
+ '<section class="rc" id="rc-root">',
+ '<section class="rc" id="rc-root"><div class="sample-ribbon">SAMPLE DATA ONLY · Interactive Reception V305 preview · No live workshop connection</div>')+'</div>';
+};
+window.closeModal=()=>{
+ const root=document.getElementById("modal");
+ root.className="hidden";root.replaceChildren();
+};
+function counts(){
+ return {
+ checklists:records.filter(r=>!r.job_card).length,jobs:records.filter(r=>!!r.job_card).length,
+ waiting:records.filter(r=>r.job_type==="INSURANCE"&&r.approval_status==="WAITING").length,
+ approved:records.filter(r=>r.approval_status==="APPROVED"&&!r.job_card).length,
+ vwc:records.filter(r=>r.location==="VWC").length,
+ "vwc-checklists":records.filter(r=>r.location==="VWC"&&!r.job_card).length,
+ "vwc-jobs":records.filter(r=>r.location==="VWC"&&r.job_card).length,
+ ready:0,delivered:0,followup:0,no_promise_date:0
+ };
+}
+function dashboardReply(body){
+ const section=body.section||"checklists";
+ let selected=records.filter(r=>
+  section==="checklists"?!r.job_card:section==="jobs"?!!r.job_card:
+  section==="waiting"?r.job_type==="INSURANCE"&&r.approval_status==="WAITING":
+  section==="approved"?r.approval_status==="APPROVED"&&!r.job_card:
+  section==="vwc-checklists"?r.location==="VWC"&&!r.job_card:
+  section==="vwc-jobs"?r.location==="VWC"&&!!r.job_card:
+  section==="vwc"?r.location==="VWC":false);
+ const query=String(body.search||"").trim().toLowerCase();
+ if(query)selected=selected.filter(r=>[r.rc_no,r.job_card,r.details.registration,r.details.make,r.details.model,r.details.customer].join(" ").toLowerCase().includes(query));
+ selected=selected.sort((a,b)=>b.sequence_no-a.sequence_no);
+ const total=selected.length, page=Math.max(0,Number(body.page)||0);
+ return {ok:true,counts:counts(),total,page,page_size:50,rows:selected.slice(page*50,page*50+50).map(r=>({
+ rc_no:r.rc_no,sequence_no:r.sequence_no,job_card:r.job_card||"",job_type:r.job_type,
+ vehicle:[r.details.make,r.details.model,r.details.year].join(" "),registration:r.details.registration,
+ customer:r.details.customer,received_date:"2026-10-10",status:r.approval_status,
+ approval_status:r.approval_status,location:r.location,
+ promise_date:"",delivered:false}))};
+}
+function receptionReply(c){
+ switch(c.operation){
+ case "CAPABILITIES":return {ok:true,allowed:true,manager:true};
+ case "MASTER":return {ok:true,companies:clone(companies)};
+ case "LIST":return {ok:true,rows:clone(records),total:records.length};
+ case "GET":{
+  const record=records.find(r=>r.rc_no===c.rc_no);
+  return record?{ok:true,record:clone(record),movements:[],audit:[],
+   insurance:record.job_type==="INSURANCE"?{approval_valid:false,can_prepare:false}:null,
+   job_creation:{can_create:false},external_approval:{valid:false,can_record:false},
+   preliminary_parts:null,cancellation:{history:null,can_review:false}}
+   :{ok:false,code:"reception_not_found"};
+ }
+ case "CREATE":{
+  const kind=c.job_type||"INSURANCE";
+  if(!["CASH","INSURANCE"].includes(kind))return {ok:false,code:"reception_invalid_job_type"};
+  if(kind==="INSURANCE"&&!companies.some(x=>x.id===c.insurance_id))return {ok:false,code:"reception_insurance_required"};
+  const i=records.length+1;
+  const record=make(i,kind,String(c.details.registration||"SAMPLE-"+i),String(c.details.make||""),String(c.details.model||""),"VIW","WAITING");
+  record.insurance_id=kind==="INSURANCE"?c.insurance_id:null;
+  record.insurance_company=kind==="INSURANCE"?companies.find(x=>x.id===c.insurance_id)?.name:null;
+  record.details=clone(c.details);record.rc_no="RC-SAMPLE-"+String(i).padStart(3,"0");
+  records.push(record);return {ok:true,record:clone(record)};
+ }
+ case "EDIT":{
+  const record=records.find(r=>r.rc_no===c.rc_no);
+  if(!record)return {ok:false,code:"reception_not_found"};
+  if(c.expected_revision!==record.revision)return {ok:false,code:"reception_stale_revision"};
+  record.details=clone(c.details);record.revision++;
+  return {ok:true,record:clone(record)};
+ }
+ case "MOVE":{
+  const record=records.find(r=>r.rc_no===c.rc_no);
+  if(!record)return {ok:false,code:"reception_not_found"};
+  record.location=c.location;record.revision++;
+  return {ok:true,record:clone(record)};
+ }
+ default:return {ok:false,code:"preview_action_not_available"};
+ }
+}
+window.fetch=async(input,options={})=>{
+ const url=String(input);
+ if(url!=="https://reception-preview.invalid/functions/v1/workshop-api")
+  throw Error("Network blocked: this is an isolated sample-only preview.");
+ const body=JSON.parse(options.body||"{}");
+ const result=body.action==="reception"?receptionReply(body.command||{}):
+  body.action==="reception_dashboard"?dashboardReply(body):{ok:false,code:"preview_action_not_available"};
+ return new Response(JSON.stringify(result),{status:result.ok?200:403,headers:{"Content-Type":"application/json"}});
+};
+</script><script>(function () {
+  "use strict";
+  const API =
+      "https://reception-preview.invalid/functions/v1/workshop-api",
+    KEY = "SAMPLE_PREVIEW_NO_REAL_KEY";
+  const tools = [
+    ["spare_tyre", "Spare tyre"],
+    ["jack", "Jack"],
+    ["wheel_spanner", "Wheel spanner"],
+    ["tool_kit", "Tool kit"],
+    ["spare_key", "Spare key"],
+    ["warning_triangle", "Warning triangle"],
+    ["first_aid_kit", "First aid kit"],
+    ["floor_mats", "Floor mats"],
+    ["other", "Other accessories"],
+  ];
+  const fields = [
+    ["registration", "Registration Number"],
+    ["make", "Vehicle Make", true],
+    ["model", "Vehicle Model", true],
+    ["year", "Model Year"],
+    ["odometer", "Reading"],
+    ["vin", "VIN / Chassis"],
+    ["customer", "Customer Name"],
+    ["contact", "Contact Number"],
+    ["claim", "Claim Number"],
+  ];
+  const textFields = [
+    ["damage", "Damage Description"],
+    ["other_accessories", "Other Accessories"],
+    ["warnings", "Dashboard Warning Lights"],
+    ["remarks", "Other Remarks"],
+  ];
+  const labels = {
+    WAITING: "Waiting for approval",
+    APPROVED: "Approved",
+    VIW: "VIW · In workshop",
+    VWC: "VWC · With customer",
+    CTL: "CTL",
+    CASH_LOSS: "Cash Loss",
+    CANCELLED: "Cancelled",
+    JOB_CREATED: "Job Card created",
+  };
+  let current = null,
+    companies = [],
+    busy = false,
+    listRequest = 0,
+    rows = [],
+    caps = { allowed: false, manager: false },
+    capUser = "",
+    capBusy = false,
+    capChecked = false,
+    backTarget = "home",
+    checklistSnapshots = new WeakMap();
+  const esc = (v) =>
+    String(v ?? "").replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c],
+    );
+  const user = () => (typeof me !== "undefined" ? me : window.me);
+  const uid = () => crypto.randomUUID();
+  const retryKey = () => {
+    const id = user()?.id;
+    if (!id) throw Error("Please sign in.");
+    return "zukait_reception_unconfirmed_v1:" + API + ":" + id;
+  };
+  function savedRequest(key = retryKey()) {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    try {
+      const saved = JSON.parse(raw), command = JSON.parse(saved.encoded);
+      if (!/^[0-9a-f-]{36}$/i.test(saved.request_id) || !command ||
+          Array.isArray(command) || typeof command.operation !== "string") throw Error();
+      return saved;
+    } catch (_) {
+      throw Error("The saved Reception action could not be read. Keep this device's data and ask the Manager to reconcile it before making another change.");
+    }
+  }
+  function clearRequest(key, request) {
+    if (savedRequest(key)?.request_id === request.request_id) localStorage.removeItem(key);
+    document.getElementById("rc-retry")?.remove();
+  }
+  function retryBanner() {
+    document.getElementById("rc-retry")?.remove();
+    if (!user()?.id) return;
+    const root = document.getElementById("rc-root");
+    if (!root) return;
+    try {
+      const saved = savedRequest();
+      if (!saved) return;
+      const command = JSON.parse(saved.encoded), box = document.createElement("div");
+      box.id = "rc-retry";
+      box.className = "rc-box";
+      box.setAttribute("role", "status");
+      box.innerHTML = '<p>A Reception action is awaiting server confirmation: <b>' +
+        esc(command.operation.replaceAll("_", " ")) + '</b>' +
+        (command.rc_no ? ' · ' + esc(command.rc_no) : '') +
+        '. Confirm the saved action before submitting another change. Its original details will be used.</p>' +
+        '<button data-rc-action="retry-pending">Confirm Saved Action</button>';
+      root.appendChild(box);
+    } catch (x) { error(x); }
+  }
+  const stamp = (v) =>
+    v
+      ? new Date(v).toLocaleString("en-GB", {
+          timeZone: "Asia/Muscat",
+          hour12: true,
+        })
+      : "—";
+  function style() {
+    if (document.getElementById("rc-style")) return;
+    const e = document.createElement("style");
+    e.id = "rc-style";
+    e.textContent = `
+.rc{font-size:17px;color:#18324a;background:#f3f8fc;padding:16px;border-radius:20px}.rc *{box-sizing:border-box}.rc h3{font-size:24px;margin:8px 0 16px}.rc h4{font-size:19px;margin:12px 0}.rc button{font-size:16px!important;min-height:46px;margin:0!important;border-radius:12px!important}.rc input,.rc select,.rc textarea{font-size:17px!important;width:100%;min-height:46px;background:white;color:#18324a;border:1px solid #b7cbd9;border-radius:10px;padding:10px;margin-top:6px}.rc label{display:block;font-weight:700}.rc [hidden]{display:none!important}.rc textarea{min-height:95px;resize:vertical}.rc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.rc-box{padding:14px;border:1px solid #d2e1eb;background:#fff;border-radius:15px;margin-top:12px;overflow-wrap:anywhere}.rc-actions{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0}.rc-badge{display:inline-block;border-radius:20px;background:#e0eff8;color:#174b6b;padding:6px 11px;margin:3px;font-size:15px;font-weight:800}.rc-badge[data-value=VWC]{background:#fff0c9;color:#765000}.rc-badge[data-value=VIW]{background:#d9f5ea;color:#125340}.rc-badge[data-value=CTL],.rc-badge[data-value=CANCELLED]{background:#fee2e2;color:#8c2632}.rc-check{display:flex!important;gap:10px;align-items:center;font-weight:600!important}.rc-check input{width:24px!important;min-height:24px!important;margin:0}.rc-error{color:#9c2434;font-weight:700}.rc small{font-size:14px;color:#45627a}.rc-menu{background:linear-gradient(145deg,#e1f5f4,#f3faff)!important;color:#164e63!important;border:1px solid #afd8dc!important;box-shadow:0 6px 16px #163b5415}.rc-history{max-height:360px;overflow:auto}.rc summary{cursor:pointer;padding:10px;font-weight:700}@media(max-width:480px){.rc{padding:10px}.rc-grid{gap:9px}.rc-actions button{flex:1 1 40%}.rc-wide{grid-column:1/-1}}`;
+    e.textContent += `
+/* Dedicated single-click Reception access on existing Manager / Supervisor dashboards. */
+.rc-dashboard-launcher{display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;gap:6px!important;width:100%!important;min-height:78px!important;margin:8px 0 14px!important;padding:14px 18px!important;text-align:left!important;background:linear-gradient(125deg,#dff7f3,#ebf5ff)!important;border:1px solid #97cfc9!important;border-radius:14px!important;color:#114b54!important;box-shadow:0 5px 16px #1347531a!important;cursor:pointer!important}
+.rc-dashboard-launcher b{font-size:19px!important;font-weight:900!important}.rc-dashboard-launcher small{font-size:13px!important;font-weight:700!important;color:#25626d!important}
+.rc-dashboard-launcher:focus-visible{outline:3px solid #147d92!important;outline-offset:2px}
+@media(min-width:900px){.rc-dashboard-launcher{min-height:72px!important}.rc-dashboard-launcher b{font-size:20px!important}}
+`;
+    e.textContent += `
+/* Reception owns its dialog width; other workshop dialogs retain their sizing. */
+.modal-box.rc-dialog, .modal-content.rc-dialog{position:fixed!important;inset:0!important;width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important;padding:0!important;border-radius:0!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain;box-sizing:border-box!important;z-index:1100!important}
+.rc{max-width:none;width:100%;box-sizing:border-box;min-height:100%;margin:0;min-width:0}.rc-topbar{position:sticky;top:0;z-index:5;background:#143044;color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin:-16px -16px 18px}.rc-topbar h3{margin:0;flex:1;order:0;font-size:20px;color:#fff}.rc-topbar .rc-actions{margin:0;display:flex;gap:8px}.rc-topbar button{background:#ecf6fb!important;color:#123d53!important;font-weight:700!important}.rc-topbar [data-rc-action=back]{background:#bceee5!important}.rc-form-top{display:grid;grid-template-columns:minmax(210px,1fr) minmax(280px,2fr);gap:14px;margin:10px 0 12px}.rc-form-top>label,.rc-form-top>.rc-insurance{min-width:0}.rc-form-top .rc-insurance>label{margin:0}.rc-reading{display:flex;align-items:flex-end;gap:10px;min-width:0}.rc-reading>label{flex:1;min-width:0}.rc-reading>label:first-child{flex:0 0 35%}.rc-form-hint{font-size:14px;color:#486376}.rc-grid>.rc-claim{min-width:0}.rc-grid>.rc-claim>label{display:block}.rc-topbar [data-rc-action=back]:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.rc-table{width:100%;border-collapse:collapse;background:white;margin-top:18px;text-align:left}.rc-table th{padding:12px;background:#e5eff6;font-size:14px}.rc-table td{padding:14px 12px;border-bottom:1px solid #d2e1eb;vertical-align:top;overflow-wrap:anywhere}.rc-table small{display:block;margin-top:5px}.rc-table .rc-badge{font-size:13px;padding:4px 8px}.rc-table button{white-space:nowrap}.rc-table caption{text-align:left;font-weight:700;padding:10px 0}
+@media(min-width:900px){.rc{font-size:15px;padding:24px;border-radius:12px}.rc button{font-size:14px!important;min-height:40px;border-radius:7px!important}.rc input,.rc select,.rc textarea{font-size:15px!important;min-height:40px;border-radius:6px}.rc-grid{gap:16px}.rc-box{border-radius:8px}.rc-filters{grid-template-columns:minmax(0,3fr) minmax(200px,1fr)}#rc-form>.rc-grid{grid-template-columns:repeat(3,minmax(0,1fr));padding:20px;background:white;border:1px solid #d2e1eb;border-radius:8px}#rc-form>.rc-box:last-of-type{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}#rc-form>.rc-box:last-of-type>h4,#rc-form>.rc-box:last-of-type>label:first-of-type{grid-column:1/-1}.rc-accessories{grid-template-columns:repeat(3,minmax(0,1fr))}.rc-wide{grid-column:1/-1}}
+@media(max-width:700px){.rc-form-top{grid-template-columns:1fr}.rc-topbar{align-items:stretch;flex-wrap:wrap;gap:8px;margin:-10px -10px 14px;padding:12px}.rc-topbar h3{order:-1;flex:0 0 100%}.rc-topbar .rc-actions{flex:1;justify-content:flex-end}.rc-topbar h3{margin-bottom:12px}.rc-table,.rc-table tbody,.rc-table tr,.rc-table td{display:block}.rc-table thead{display:none}.rc-table tr{border:1px solid #d2e1eb;border-radius:12px;margin-bottom:12px;padding:10px}.rc-table td{border:0;padding:5px}.rc-table td:before{content:attr(data-label);display:block;font-size:13px;color:#45627a;font-weight:700;margin-bottom:3px}.rc-table td:last-child:before{display:none}.rc-table button{width:100%}.rc-filters{grid-template-columns:1fr}}
+`;
+    document.head.appendChild(e);
+  }
+  function shell(title, body) {
+    style();
+    backTarget = title === "Reception" || title === "Reception Dashboard" ? "close" :
+      title.includes(" · Reception Checklist") || title === "New Reception Checklist" ||
+      title === "Open Job Card" || title.startsWith("Job Card ") ||
+      title === "Reception Access" ? "home" :
+      title.startsWith("Edit ") || current?.record?.rc_no ? "view" : "home";
+    openModal(
+      '<section class="rc" id="rc-root"><header class="rc-topbar"><button type="button" data-rc-action="back">← Back</button><h3>' +
+        esc(title) +
+        '</h3><div class="rc-actions"><button type="button" data-rc-action="home">Reception List</button><button type="button" data-rc-action="close">Close</button></div></header><div id="rc-error" class="rc-error" role="alert"></div>' +
+        body +
+        "</section>",
+    );
+    const root = document.getElementById("rc-root");
+    if (root.parentElement.matches(".modal-box,.modal-content"))
+      root.parentElement.classList.add("rc-dialog");
+    root.addEventListener("click", dispatch);
+    retryBanner();
+  }
+  function error(e) {
+    const el = document.getElementById("rc-error");
+    if (el) el.textContent = e.message || String(e);
+  }
+  async function apiAction(body) {
+    const token=window.zukaitAuth?.getToken?.();
+    if(!token)throw Error("Please sign in.");
+    const response=await fetch(API,{method:"POST",
+      headers:{"Content-Type":"application/json",apikey:KEY,"x-zukait-session":token},
+      body:JSON.stringify(body)});
+    const result=await response.json();
+    if(!response.ok||!result?.ok){const e=Error(result?.code||"reception_unavailable");e.code=result?.code;throw e;}
+    return result;
+  }
+  async function call(command) {
+    const token = window.zukaitAuth?.getToken?.();
+    if (!token) throw Error("Please sign in.");
+    const res = await fetch(API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: KEY,
+        "x-zukait-session": token,
+      },
+      body: JSON.stringify({ action: "reception", command }),
+    });
+    const r = await res.json();
+    if (!res.ok || !r.ok) {
+      const msgs = {
+        reception_invalid_job_type: "Choose Cash or Credit for direct intake. Insurance jobs require recorded approval.",
+        reception_received_confirmation_required: "Confirm the vehicle has been received at the workshop.",
+        reception_customer_required: "Enter the customer/company name and contact.",
+        reception_credit_account_required: "Enter the credit account or customer reference.",
+        reception_external_evidence_required: "Enter the issued approval reference and document evidence.",
+        reception_external_parts_review_required: "Use quotation approval to review and transfer preliminary parts.",
+        reception_external_approval_required: "Issued approval must be recorded and match the current vehicle details.",
+        reception_cancellation_identity_required: "Type the linked Job Card number to confirm its identity.",
+        reception_invalid_cancellation_date: "Use a valid cancellation date between Job Card creation and today.",
+        reception_cancellation_active_work: "Finish or resolve active work before cancelling. Reload the review.",
+        reception_cancellation_review_changed: "Work or parts changed after review. Reload and review again before cancelling.",
+        reception_cancellation_job_closed: "This Job Card is already closed, cancelled or delivered.",
+        reception_additional_forbidden: "Only the Manager or Supervisor can prepare or approve additional requests.",
+        reception_additional_job_required: "Create the approved insurance Job Card first.",
+        reception_additional_job_closed: "Additional approvals are unavailable for a closed, cancelled or delivered Job Card.",
+        reception_additional_already_approved: "This request was already approved. Reload its history.",
+        reception_additional_draft_exists: "Another additional request is being prepared. Reload to edit that request.",
+        reception_additional_quote_used: "Use a separate additional quotation. This quotation already has approval history.",
+        reception_additional_duplicate_active_part: "An active copy of this part already exists. Approval was not saved. Review existing parts before changing the request.",
+        reception_additional_source_reused: "Use new part rows for a new additional request.",
+        reception_job_number_exists: "This Job Card number is already in use. Choose another number.",
+        reception_job_already_created: "This checklist already has a Job Card. Reload it to continue.",
+        reception_invalid_job_number: "Enter a valid Job Card number. ID001 is reserved.",
+        reception_job_forbidden: "Only the Manager or Supervisor can create an insurance Job Card.",
+        reception_not_approved: "Record insurance approval before creating a Job Card.",
+        reception_approval_changed: "Approval needs review because source information changed. Refresh the quotation and approval first.",
+        reception_parts_allocation_failed: "Parts allocation failed. The Job Card was not created. Retry after checking the parts service.",
+        reception_estimate_not_synced: "The estimate is not available on the server yet. Save it, allow sync to finish, then retry.",
+        reception_estimate_vehicle_mismatch: "Estimate vehicle information differs from this checklist. Correct the checklist or prepare a matching estimate.",
+        reception_estimate_changed: "The quotation changed. Link its latest saved version before recording approval.",
+        reception_estimate_already_linked: "This estimate belongs to another reception case.",
+        reception_approval_forbidden: "Only the Manager or Supervisor can record insurance approval.",
+        reception_approval_linked_requires_next_phase: "Additional approvals for a linked Job Card are not available yet.",
+        reception_preliminary_forbidden:
+          "Only the Manager or Supervisor can edit preliminary parts.",
+        reception_duplicate_parts:
+          "This list contains duplicate parts. Combine their quantities or use distinct part names or numbers.",
+        reception_preliminary_already_linked:
+          "Use the Job Card parts workflow after a Job Card is created.",
+        reception_case_closed: "This insurance case is closed.",
+        reception_stale_revision:
+          "This checklist changed on another device. Open the list and reload it before editing.",
+        reception_manager_required: "Only the Manager can perform this action.",
+        reception_forbidden:
+          "Reception access is not designated for your account.",
+        reception_handover_required:
+          "Confirm vehicle handover using VWC and enter the recipient before closing CTL or Cash Loss.",
+        reception_unavailable: "Reception backend is not available yet.",
+        reception_linked_identity_requires_phase2:
+          "Linked vehicle corrections require the Phase 2 integration.",
+      };
+      const failure = Error(
+        msgs[r.code] ||
+          String(r.code || "Server could not confirm this action.").replaceAll(
+            "_",
+            " ",
+          ),
+      );
+      // An expired/revoked session cannot establish the outcome of an earlier write.
+      failure.definitive = [400, 404, 409].includes(res.status) &&
+        typeof r.code === "string" && r.code.startsWith("reception_") && !r.code.includes("request");
+      throw failure;
+    }
+    return r;
+  }
+  async function master() {
+    companies = (await call({ operation: "MASTER" })).companies || [];
+  }
+  function badge(v) {
+    return (
+      '<span class="rc-badge" data-value="' +
+      esc(v) +
+      '">' +
+      esc(labels[v] || v) +
+      "</span>"
+    );
+  }
+  function badges(r) {
+    return (
+      badge(r.location) +
+      (r.outcome
+        ? badge(r.outcome)
+        : badge(r.job_card ? "JOB_CREATED" : r.approval_status))
+    );
+  }
+  function input(k, label, value = "", required = false, type = "text") {
+    return (
+      "<label>" +
+      esc(label) +
+      (required ? " *" : "") +
+      '<input name="' +
+      k +
+      '" type="' +
+      type +
+      '" maxlength="' +
+      (k === "year" ? 4 : k === "vin" ? 64 : 2000) +
+      '" value="' +
+      esc(value) +
+      '" ' +
+      (required ? "required" : "") +
+      "></label>"
+    );
+  }
+  function select(k, label, values, value) {
+    return (
+      '<label class="' + (k === "insurance_id" ? "rc-wide" : "") + '">' +
+      esc(label) +
+      '<select name="' +
+      k +
+      '">' +
+      values
+        .map(
+          ([v, l]) =>
+            '<option value="' +
+            esc(v) +
+            '" ' +
+            (String(v) === String(value) ? "selected" : "") +
+            ">" +
+            esc(l) +
+            "</option>",
+        )
+        .join("") +
+      "</select></label>"
+    );
+  }
+  async function home() {
+    if (window.zukaitReceptionDashboard?.open) return window.zukaitReceptionDashboard.open();
+    return basicHome();
+  }
+  async function basicHome() {
+    current = null;
+    shell(
+      "Reception",
+      '<div class="rc-actions"><button data-rc-action="new">+ New Checklist</button><button data-rc-action="direct-job">Open Job Card</button>' +
+        (caps.manager
+          ? '<button data-rc-action="staff">Reception Access</button>'
+          : "") +
+        '</div><div class="rc-grid rc-filters">' +
+        input("search", "Search RC / Reg / Customer / Insurance / VIN") +
+        select(
+          "filter",
+          "Status",
+          [["ALL", "All"], ...Object.entries(labels)],
+          "ALL",
+        ) +
+        '</div><div id="rc-results" aria-live="polite"></div><button data-rc-action="more" id="rc-more" hidden>Load more</button>',
+    );
+    const root = document.getElementById("rc-root");
+    root.querySelector("[name=search]").addEventListener("input", () => {
+      clearTimeout(home.timer);
+      home.timer = setTimeout(() => loadList(false).catch(error), 250);
+    });
+    root
+      .querySelector("[name=filter]")
+      .addEventListener("change", () => loadList(false).catch(error));
+    await loadList(false);
+  }
+  function directJob() {
+    current = null;
+    shell("Open Job Card", '<form id="rc-direct-job"><p>For a vehicle received at the workshop. Insurance vehicles use their checklist and recorded approval.</p><button type="button" data-rc-action="new">New Insurance Checklist / Pre-approved Vehicle</button><div class="rc-grid">' +
+      select('job_type','Job Type',[['CASH','Cash'],['CREDIT','Credit']],'CASH') +
+      input('job_card','Job Card Number','',true) + input('make','Make','',true) + input('model','Model','',true) +
+      input('registration','Registration') + input('year','Model Year') + input('vin','VIN / Chassis') +
+      (["Manager","Supervisor"].includes(user()?.role)?input('promise_date','Promise Date (optional)','',false,'date'):'') +
+      input('customer','Customer / Company','',true) + input('contact','Contact','',true) +
+      '<label id="rc-credit-account" hidden>Credit Account / Customer Reference<input name="credit_account" maxlength="200"></label>' +
+      '</div><label>Reception Observations<textarea name="remarks" maxlength="2000"></textarea></label>' +
+      input('reason','Creation Notes','',true) +
+      '<label class="rc-check"><input type="checkbox" name="received_confirmed" required>I confirm the vehicle has been received at the workshop.</label><div class="rc-actions"><button type="submit">Open Job Card</button></div></form>');
+    const form=document.getElementById('rc-direct-job'),type=form.querySelector('[name="job_type"]'),account=form.querySelector('[name="credit_account"]');
+    type.onchange=()=>{document.getElementById('rc-credit-account').hidden=type.value!=='CREDIT';account.required=type.value==='CREDIT';};
+    form.onsubmit=async e=>{
+      e.preventDefault();
+      const f=new FormData(form),details={};
+      for(const k of ['make','model','registration','year','vin','customer','contact','remarks'])details[k]=String(f.get(k)||'').trim();
+      try {
+        const out=await mutate({operation:'CREATE_DIRECT_JOB',job_type:f.get('job_type'),job_card:String(f.get('job_card')).trim().toUpperCase(),details,
+          received_confirmed:f.has('received_confirmed'),reason:String(f.get('reason')).trim(),
+          ...(f.get('job_type')==='CREDIT'?{credit_account:String(f.get('credit_account')).trim()}: {})});
+        if(out){
+          const promise=String(f.get('promise_date')||'');
+          if(promise&&window.zukaitReceptionDashboard?.savePromise){
+            try{await window.zukaitReceptionDashboard.savePromise(String(f.get('job_card')).trim().toUpperCase(),promise,'');}
+            catch(err){alert('Job Card created, but Promise Date needs attention: '+(err.message||err)+'. Open Delivery Follow-up to retry.');}
+          }
+          try{await window.zukaitCloud?.pull?.(true);}catch(_){}
+          await view(out.record.rc_no);
+        }
+      }catch(x){error(x);}
+    };
+  }
+  async function loadList(more) {
+    const el = document.getElementById("rc-results");
+    if (!el) return;
+    const seq = ++listRequest,
+      search = document.querySelector("#rc-root [name=search]").value,
+      filter = document.querySelector("#rc-root [name=filter]").value;
+    const r = await call({
+      operation: "LIST",
+      search,
+      filter,
+      ...(more && rows.length
+        ? { before_sequence: rows.at(-1).sequence_no }
+        : {}),
+    });
+    if (seq !== listRequest || !el.isConnected) return;
+    rows = more ? [...rows, ...r.rows] : r.rows;
+    el.innerHTML = rows.length ?
+      '<table class="rc-table"><caption>' + rows.length + ' checklists shown</caption><thead><tr><th scope="col">Checklist / Vehicle</th><th scope="col">Registration / Customer</th><th scope="col">Type / Insurance</th><th scope="col">Status / Location</th><th scope="col">Action</th></tr></thead><tbody>' +
+      rows.map(x => '<tr><td data-label="Checklist / Vehicle"><strong>' + esc(x.rc_no) + '</strong><small>' + esc([x.details.make, x.details.model, x.details.year].filter(Boolean).join(' ')) + '</small></td><td data-label="Registration / Customer">' + esc(x.details.registration || 'Registration not recorded') + '<small>' + esc(x.details.customer || 'Customer not recorded') + '</small></td><td data-label="Type / Insurance">' + esc((x.job_type || "INSURANCE") === "INSURANCE" ? x.insurance_company : x.job_type) + '</td><td data-label="Status / Location">' + badges(x) + '</td><td data-label="Action"><button data-rc-action="view" data-rc="' + esc(x.rc_no) + '">Open Checklist</button></td></tr>').join('') + '</tbody></table>' : '<p>No reception checklists found.</p>';
+    document.getElementById("rc-more").hidden = r.rows.length < 100;
+  }
+  async function editor(no) {
+    await master();
+    if (no) await fetchRecord(no);
+    else current = null;
+    const d = current?.record.details || {},
+      r = current?.record;
+    const options = [
+      ["", "Select Insurance Company"],
+      ...companies.map((c) => [c.id, c.name]),
+    ];
+    if (r && r.insurance_id && !companies.some((c) => c.id === r.insurance_id))
+      options.push([r.insurance_id, r.insurance_company]);
+    const kind = r?.job_type || "INSURANCE";
+    const typeOptions = [["INSURANCE", "Insurance"], ["CASH", "Cash"],
+      ...(kind === "CREDIT" ? [["CREDIT", "Credit"]] : [])];
+    const inputs = fields.map(([k, l, req]) => {
+      if (k === "odometer") return '<div class="rc-reading">' +
+        select("odometer_unit", "KM / Mile", [["KM", "KM"], ["Miles", "Mile"]],
+          d.odometer_unit || "KM") +
+        input("odometer", "Reading", d.odometer) + '</div>';
+      if (k === "claim") return '<div class="rc-claim">' +
+        input(k, l, d[k], req) + '</div>';
+      return input(k, l, d[k], req);
+    }).join("");
+    shell(
+      r ? "Edit " + r.rc_no : "New Reception Checklist",
+      '<form id="rc-form"><p class="rc-form-hint">Make and Model are required. Cash requires Customer Name; Insurance requires an Insurance Company.</p>' +
+        '<div class="rc-form-top">' +
+        select("job_type", "Checklist Type", typeOptions, kind) +
+        '<div class="rc-insurance">' +
+        select("insurance_id", "Insurance Company *", options, r?.insurance_id || "") +
+        '</div></div><div class="rc-grid">' + inputs +
+        '</div><div class="rc-box"><h4>Tools and Accessories</h4><p><small>Tick recorded accessories individually. Unticked means not recorded.</small></p><div class="rc-grid rc-accessories">' +
+        tools
+          .map(
+            ([k, l]) =>
+              '<label class="rc-check"><input type="checkbox" name="tools" value="' +
+              k +
+              '" ' +
+              ((d.tools || []).includes(k) ? "checked" : "") +
+              ">" +
+              l +
+              "</label>",
+          )
+          .join("") +
+        '</div></div><div class="rc-box"><h4>Reception Observations</h4>' +
+        select(
+          "fuel",
+          "Fuel Level",
+          [
+            ["", "Not recorded"],
+            ...["Empty", "Quarter", "Half", "Three quarters", "Full"].map(
+              (v) => [v, v],
+            ),
+          ],
+          d.fuel || "",
+        ) +
+        textFields
+          .map(
+            ([k, l]) =>
+              "<label>" +
+              l +
+              '<textarea name="' +
+              k +
+              '" maxlength="2000">' +
+              esc(d[k] || "") +
+              "</textarea></label>",
+          )
+          .join("") +
+        '</div>' + (current?.record?.job_card ? input('reason', 'Reason for checklist / vehicle correction', '', true) : '') + '<div class="rc-actions"><button type="submit">Save Checklist</button></div></form>',
+    );
+    const form = document.getElementById("rc-form");
+    const type = form.elements.namedItem("job_type");
+    const insurer = form.elements.namedItem("insurance_id");
+    const customer = form.elements.namedItem("customer");
+    const insurerGroup = form.querySelector(".rc-insurance");
+    const claimGroup = form.querySelector(".rc-claim");
+    // An existing checklist's type is authoritative. Never silently convert it.
+    if (r) type.disabled = true;
+    function applyType() {
+      const insurance = type.value === "INSURANCE";
+      insurerGroup.hidden = !insurance;
+      claimGroup.hidden = !insurance;
+      insurer.required = insurance;
+      customer.required = !insurance;
+      if (!insurance && !r) insurer.value = "";
+    }
+    type.addEventListener("change", applyType);
+    applyType();
+    // Track an in-memory form baseline. Never persist unsaved customer details
+    // to localStorage or interfere with the existing server request journal.
+    checklistSnapshots.set(form, JSON.stringify([...new FormData(form)]));
+    form.addEventListener("submit", saveForm);
+  }
+  function canLeaveChecklist() {
+    const form = document.getElementById("rc-form");
+    if (!form || !checklistSnapshots.has(form)) return true;
+    const changed = JSON.stringify([...new FormData(form)]) !== checklistSnapshots.get(form);
+    return !changed || window.confirm(
+      "This checklist has unsaved changes. Leave without saving?"
+    );
+  }
+  async function fetchRecord(no) {
+    current = await call({ operation: "GET", rc_no: no });
+    return current;
+  }
+  async function view(no) {
+    await fetchRecord(no);
+    const r = current.record,
+      d = r.details;
+    shell(
+      r.rc_no + " · Reception Checklist",
+      badges(r) +
+        (current.cancellation?.history ? '<div class="rc-box"><b>Job Card cancelled · '+esc(current.cancellation.history.cancellation_date)+'</b><p>'+esc(current.cancellation.history.reason)+' · '+esc(current.cancellation.history.actor_name)+' ('+esc(current.cancellation.history.actor_id)+')</p><p>History and costs retained. Vehicle location remains '+esc(r.location)+'.</p></div>' : '') +
+        '<div class="rc-actions">' +
+        (r.can_edit ? '<button data-rc-action="edit">Edit</button>' : "") +
+        (!r.outcome || current.cancellation?.history
+          ? '<button data-rc-action="movement">Record Vehicle Movement</button>'
+          : "") +
+        (user()?.role !== 'Receptionist' && !r.job_card && !r.outcome
+          ? '<button data-rc-action="outcome">Close Insurance Case</button>'
+          : "") +
+        (current.insurance && (r.job_type || 'INSURANCE') === 'INSURANCE' ? '<button data-rc-action="insurance">' + (user()?.role === 'Receptionist' ? 'Approval & Job Card' : 'Estimates & Approval') + '</button>' : '') +
+        (current.cancellation?.can_review ? '<button data-rc-action="cancel-job">Review Job Card Cancellation</button>' : '') +
+        (current.preliminary_parts ? '<button data-rc-action="parts">Preliminary Parts</button>' : '') +
+        '<button data-rc-action="print">Print</button><button data-rc-action="pdf">Share PDF</button></div><div class="rc-grid"><div class="rc-box"><h4>Customer & Vehicle</h4>' +
+        [
+          ...((r.job_type || "INSURANCE") === "INSURANCE" ? [["Insurance", r.insurance_company]] : []),
+          ...fields.filter(([k]) => k !== "claim" || (r.job_type || "INSURANCE") === "INSURANCE")
+            .map(([k, l]) => [l, d[k]]),
+          ["Reading Unit", d.odometer_unit],
+          ["Received", stamp(r.received_at)],
+          ["Job Card", r.job_card],
+          ["Job Type", r.job_type || "INSURANCE"],
+          ...(r.job_type === "CREDIT" ? [["Credit Account", r.credit_account]] : []),
+        ]
+          .map(
+            ([l, v]) =>
+              "<p><small>" +
+              esc(l) +
+              "</small><br><b>" +
+              esc(v || "Not recorded") +
+              "</b></p>",
+          )
+          .join("") +
+        '</div><div class="rc-box"><h4>Reception Observations</h4>' +
+        textFields
+          .map(
+            ([k, l]) =>
+              "<p><small>" +
+              l +
+              "</small><br>" +
+              esc(d[k] || "Not recorded") +
+              "</p>",
+          )
+          .join("") +
+        "<p>Fuel: " +
+        esc(d.fuel || "Not recorded") +
+        "</p><h4>Tools & Accessories</h4>" +
+        tools
+          .map(
+            ([k, l]) =>
+              "<p>" +
+              ((d.tools || []).includes(k) ? "✓ " : "□ ") +
+              l +
+              " · " +
+              ((d.tools || []).includes(k) ? "Recorded" : "Not recorded") +
+              "</p>",
+          )
+          .join("") +
+        "</div></div>" +
+        (r.decision
+          ? '<div class="rc-box"><h4>Case Decision</h4>' +
+            esc(r.decision.reason) +
+            "<p>Handover to: " +
+            esc(r.decision.handover_to || "Not recorded") +
+            "</p><p>" +
+            esc(stamp(r.decision.at)) +
+            " · " +
+            esc(r.decision.by) +
+            "</p></div>"
+          : "") +
+        '<div class="rc-box"><h4>Vehicle Movement History</h4><div class="rc-history">' +
+        current.movements
+          .map(
+            (m) =>
+              "<p><b>" +
+              esc(m.from_location || "Received") +
+              " → " +
+              esc(m.to_location) +
+              "</b><br>" +
+              esc(stamp(m.occurred_at)) +
+              " · " +
+              esc(m.actor_id) +
+              "<br>" +
+              esc(m.reason) +
+              (m.expected_return_date
+                ? "<br>Expected return: " + esc(m.expected_return_date)
+                : "") +
+              "</p>",
+          )
+          .join("") +
+        '</div></div><div class="rc-box"><h4>Audit History</h4><div class="rc-history">' +
+        current.audit
+          .map(
+            (a) =>
+              "<details><summary>" +
+              esc(a.operation) +
+              " · " +
+              esc(stamp(a.at)) +
+              " · " +
+              esc(a.actor_id) +
+              "</summary><p>" +
+              esc(a.reason || "") +
+              '</p><pre style="white-space:pre-wrap;font-size:13px">Before: ' +
+              esc(JSON.stringify(a.before_data, null, 2)) +
+              "\nAfter: " +
+              esc(JSON.stringify(a.after_data, null, 2)) +
+              "</pre></details>",
+          )
+          .join("") +
+        "</div></div>",
+    );
+  }
+  function insuranceWorkspace() {
+    const r = current.record, info = current.insurance;
+    const limited = user()?.role === 'Receptionist';
+    const quotes = info.estimates || [], approvals = info.approvals || [], draft = current.preliminary_parts?.items || [];
+    shell(r.rc_no + (limited ? " · Approval & Job Card" : " · Estimates & Approval"), badges(r) +
+      (r.approval_status === "APPROVED" && !info.approval_valid ? '<p class="rc-error">Approval needs review: source information changed or approval is incomplete.</p>' : '') +
+      (limited ? '<p>Insurance approval is recorded by authorized staff. Job Card creation is available only after valid approval.</p>' : '<div class="rc-box"><h4>Linked Estimates</h4>' + (quotes.map(q => '<p><b>' + esc(q.estimate_no) + '</b><br>' + esc(stamp(q.linked_at)) + '</p>').join('') || '<p>No estimates linked.</p>') + '</div>') +
+      (current.job_creation?.can_create === true ? '<div class="rc-box"><h4>Create Approved Job Card</h4><p>Creates an unassigned insurance Job Card and transfers only approved parts. Vehicle location stays ' + esc(r.location) + '.</p><form id="rc-create-job">' +
+        input('job_card', 'Job Card Number', '', true) +
+        (["Manager","Supervisor"].includes(user()?.role)?input('promise_date','Promise Date (optional)','',false,'date'):'') +
+        input('reason', 'Creation Notes / Reason', '', true) + '<div class="rc-actions"><button type="submit">Create Job Card & Transfer Approved Parts</button></div></form></div>' : '') +
+      (current.external_approval?.can_record && !draft.length ? '<div class="rc-box"><h4>Vehicle Already Approved by Insurance</h4><p>Record the issued approval document reference and evidence. No new quotation is required. Preliminary parts need the quotation approval flow.</p><form id="rc-external-approval">' + input('reference','Issued Approval Reference','',true) + input('approval_date','Approval Date',new Date(Date.now()+4*3600000).toISOString().slice(0,10),true,'date') + input('evidence','Approval Document Reference / Evidence','',true) + input('reason','Verification Notes','',true) + '<button type="submit">Record Existing Insurance Approval</button></form></div>' : '') +
+      (current.external_approval?.valid && !r.job_card && !r.outcome ? '<div class="rc-box"><h4>Open Pre-approved Insurance Job Card</h4><form id="rc-external-job">' + input('job_card','Job Card Number','',true) +
+      (["Manager","Supervisor"].includes(user()?.role)?input('promise_date','Promise Date (optional)','',false,'date'):'') +
+      input('reason','Creation Notes','',true) + '<p>Vehicle location remains '+esc(r.location)+'. Parts continue through the existing Job Card workflow.</p><button type="submit">Open Approved Job Card</button></form></div>' : '') +
+      (r.job_card ? '<div class="rc-box"><h4>Linked Job Card ' + esc(r.job_card) + '</h4>' + (limited ? '<p>Approved parts were transferred by the server. Use Vehicle Delivery once work and QC are complete.</p>' : '<p>Continue assignments, parts and repairs through the existing Job Card workflow.</p><p>' + esc(current.job_creation?.transfers?.length || 0) + ' approved part items transferred.</p>') + '</div>' : '') +
+      (!limited && info.can_prepare ? '<div class="rc-box"><h4>Prepare / Link Estimate</h4><div class="rc-actions"><button data-rc-action="rc-estimate">+ New Estimate</button></div><p>Save the quotation and allow sync to finish before linking it here.</p><form id="rc-link-estimate">' +
+        input('estimate_no', 'Estimate Number', '', true) + input('reason', 'Reason for linking / refreshing', '', true) + '<div class="rc-actions"><button type="submit">Link Saved Estimate</button></div></form></div>' : '') +
+      (!limited && info.can_prepare && quotes.length ? '<div class="rc-box"><h4>Record Insurance Approval</h4><form id="rc-approval">' +
+        select('quotation_id', 'Approved Quotation', quotes.map(q => [q.id, q.estimate_no]), quotes[0].id) +
+        input('reference', 'Approval Reference', '', true) + input('approval_date', 'Approval Date', new Date(Date.now() + 4 * 3600000).toISOString().slice(0, 10), true, 'date') +
+        input('approved_amount', 'Approved Amount (OMR)', '', true) + '<p>Select only approved parts and their approved quantities.</p>' +
+        draft.map(x => '<div class="rc-box"><label class="rc-check"><input type="checkbox" name="approve_part" value="' + esc(x.id) + '">' + esc(x.name) + ' · ' + esc(x.part_no || 'Part number not recorded') + '</label><label>Approved Quantity<input type="number" data-approved-id="' + esc(x.id) + '" min="1" max="' + esc(x.qty) + '" step="1" value="' + esc(x.qty) + '"></label></div>').join('') +
+        input('reason', 'Approval Notes / Reason', '', true) + '<div class="rc-actions"><button type="submit">Record Approval</button></div></form></div>' : '') +
+      (!limited && info.can_revoke && r.approval_status === 'APPROVED' ? '<div class="rc-box"><h4>Manager Approval Review</h4><form id="rc-revoke">' + input('reason', 'Reason for returning to waiting', '', true) + '<div class="rc-actions"><button type="submit">Return to Waiting for Approval</button></div></form></div>' : '') +
+      (limited ? '' : '<div class="rc-box"><h4>Approval History</h4>' + (approvals.map(a => '<p><b>' + esc(a.reference) + ' · OMR ' + Number(a.approved_amount).toFixed(3) + '</b><br>' + esc(a.approval_date) + ' · ' + esc(a.actor_id) + '<br>' + esc(a.reason) + '</p><ol>' + a.approved_parts.map(x => '<li>' + esc(x.name) + ' · Qty ' + esc(x.qty) + '</li>').join('') + '</ol>').join('') || '<p>No approval recorded.</p>') + '</div>' + additionalWorkspaceHtml()) + '<div class="rc-actions"><button data-rc-action="view" data-rc="' + esc(r.rc_no) + '">Back to Checklist</button></div>');
+    async function submit(e, fields) {
+      e.preventDefault();
+      try {
+        const f = new FormData(e.target), c = fields(f);
+        const result = await mutate({...c, rc_no:r.rc_no, expected_revision:r.revision});
+        if (result) { await fetchRecord(r.rc_no); insuranceWorkspace(); }
+      } catch (x) { error(x); }
+    }
+    const external=document.getElementById('rc-external-approval');
+    if(external)external.onsubmit=e=>submit(e,f=>({operation:'RECORD_EXTERNAL_APPROVAL',reference:String(f.get('reference')).trim(),approval_date:f.get('approval_date'),evidence:String(f.get('evidence')).trim(),reason:String(f.get('reason')).trim()}));
+    const externalJob=document.getElementById('rc-external-job');
+    if(externalJob)externalJob.onsubmit=async e=>{
+      e.preventDefault();
+      try{
+        const f=new FormData(externalJob);
+        const jc=String(f.get('job_card')).trim().toUpperCase();
+        const result=await mutate({operation:'CREATE_EXTERNAL_JOB',rc_no:r.rc_no,expected_revision:r.revision,
+          job_card:jc,reason:String(f.get('reason')).trim()});
+        if(!result)return;
+        const date=String(f.get('promise_date')||'');
+        if(date&&window.zukaitReceptionDashboard?.savePromise){
+          try{await window.zukaitReceptionDashboard.savePromise(jc,date,'');}
+          catch(err){alert('Job Card created; Promise Date was not confirmed: '+(err.message||err));}
+        }
+        try{await window.zukaitCloud?.pull?.(true);}catch(_){}
+        await view(r.rc_no);
+      }catch(err){error(err);}
+    };
+    const link = document.getElementById('rc-link-estimate');
+    const createJob = document.getElementById('rc-create-job');
+    if (createJob) createJob.onsubmit = async e => {
+      e.preventDefault();
+      try {
+        const f = new FormData(createJob);
+        const result = await mutate({operation:'CREATE_JOB',rc_no:r.rc_no,expected_revision:r.revision,
+          job_card:f.get('job_card').trim().toUpperCase(),reason:f.get('reason').trim()});
+        if (!result) return;
+        const promise=String(f.get('promise_date')||'');
+        if(promise&&window.zukaitReceptionDashboard?.savePromise){
+          try{await window.zukaitReceptionDashboard.savePromise(String(f.get('job_card')).trim().toUpperCase(),promise,'');}
+          catch(err){alert('Job Card created; Promise Date was not confirmed: '+(err.message||err));}
+        }
+        // Pull the server result through the established conflict-aware sync.
+        // Never fabricate a local job or overwrite pending workshop work here.
+        try { await window.zukaitCloud?.pull?.(true); } catch (_) { /* normal sync retries */ }
+        await fetchRecord(r.rc_no); insuranceWorkspace();
+      } catch (x) { error(x); }
+    };
+    if (link) link.onsubmit = e => submit(e, f => ({operation:'LINK_ESTIMATE', estimate_no:f.get('estimate_no').trim(), reason:f.get('reason').trim()}));
+    const approval = document.getElementById('rc-approval');
+    if (approval) {
+      const amount = approval.querySelector('[name="approved_amount"]'); amount.inputMode = 'decimal'; amount.maxLength = 13; amount.pattern = '[0-9]{1,9}([.][0-9]{1,3})?';
+      approval.querySelector('[name="reference"]').maxLength = 200;
+      for (const check of approval.querySelectorAll('[name="approve_part"]')) {
+        const qty = [...approval.querySelectorAll('[data-approved-id]')].find(el => el.dataset.approvedId === check.value);
+        qty.disabled = !check.checked; check.onchange = () => { qty.disabled = !check.checked; };
+      }
+    }
+    if (approval) approval.onsubmit = e => submit(e, f => ({operation:'RECORD_APPROVAL', quotation_id:f.get('quotation_id'),reference:f.get('reference').trim(),approval_date:f.get('approval_date'),approved_amount:f.get('approved_amount').trim(),reason:f.get('reason').trim(),
+      approved_parts:f.getAll('approve_part').map(id => ({id, qty:Number([...approval.querySelectorAll('[data-approved-id]')].find(el => el.dataset.approvedId === id).value)}))}));
+    const additionalLink=document.getElementById('rc-additional-link');
+    if(additionalLink)additionalLink.onsubmit=e=>submit(e,f=>({operation:'LINK_ADDITIONAL_ESTIMATE',round_id:additionalLink.dataset.round,estimate_no:f.get('estimate_no').trim(),reason:f.get('reason').trim()}));
+    const additionalApproval=document.getElementById('rc-additional-approval');
+    if(additionalApproval){
+      for(const check of additionalApproval.querySelectorAll('[name="approve_part"]')){const qty=[...additionalApproval.querySelectorAll('[data-approved-id]')].find(el=>el.dataset.approvedId===check.value);qty.disabled=true;check.onchange=()=>qty.disabled=!check.checked}
+      additionalApproval.onsubmit=async e=>{
+        e.preventDefault();try{
+          const f=new FormData(additionalApproval);
+          const result=await mutate({operation:'APPROVE_ADDITIONAL',rc_no:r.rc_no,expected_revision:r.revision,round_id:additionalApproval.dataset.round,quotation_id:additionalApproval.dataset.quote,
+            reference:f.get('reference').trim(),approval_date:f.get('approval_date'),approved_amount:f.get('approved_amount').trim(),reason:f.get('reason').trim(),
+            approved_parts:f.getAll('approve_part').map(id=>({id,qty:Number([...additionalApproval.querySelectorAll('[data-approved-id]')].find(el=>el.dataset.approvedId===id).value)}))});
+          if(result){try{await window.zukaitCloud?.pull?.(true);await window.zukaitV2?.sparePartsMain?.hydrateAuthoritativeLists?.()}catch(_){}await fetchRecord(r.rc_no);insuranceWorkspace()}
+        }catch(x){error(x)}
+      };
+    }
+    const revoke = document.getElementById('rc-revoke');
+    if (revoke) revoke.onsubmit = e => submit(e, f => ({operation:'REVOKE_APPROVAL',reason:f.get('reason').trim()}));
+  }
+  function additionalWorkspaceHtml(){
+    const extra=current.additional;if(!extra)return '';
+    const draft=(extra.requests||[]).find(x=>x.status==='DRAFT');
+    const quote=draft&&(current.insurance?.estimates||[]).find(x=>x.id===draft.quotation_id);
+    return '<div class="rc-box"><h4>Additional Approvals</h4><p>Initial approval: OMR '+Number(extra.initial_amount||0).toFixed(3)+' · Additional approvals: OMR '+Number(extra.additional_amount||0).toFixed(3)+'</p><p>Additional amounts are incremental approvals, not payments or workshop income.</p>'+
+      (extra.can_prepare?'<div class="rc-actions"><button data-rc-action="additional-parts">'+(draft?'Edit Additional Request':'+ New Additional Request')+'</button></div>':'')+
+      (draft?'<p>Requested parts: '+draft.items.length+' · '+(quote?'Linked estimate: '+esc(quote.estimate_no):'No linked additional estimate')+'</p>':'')+
+      (extra.can_prepare&&draft?'<div class="rc-actions"><button data-rc-action="rc-additional-estimate" data-round="'+esc(draft.id)+'">+ New Additional Estimate</button></div><form id="rc-additional-link" data-round="'+esc(draft.id)+'">'+input('estimate_no','Additional Estimate Number','',true)+input('reason','Reason for linking / refreshing','',true)+'<div class="rc-actions"><button type="submit">Link Additional Estimate</button></div></form>':'')+
+      (extra.can_prepare&&draft&&quote?'<form id="rc-additional-approval" data-round="'+esc(draft.id)+'" data-quote="'+esc(quote.id)+'"><h4>Approve & Transfer Additional Parts</h4>'+input('reference','Approval Reference','',true)+input('approval_date','Approval Date',new Date(Date.now()+4*3600000).toISOString().slice(0,10),true,'date')+input('approved_amount','Additional Approved Amount (OMR)','',true)+'<p>Select approved quantities only. Existing orders and purchases are preserved. Duplicate active parts require separate review.</p>'+draft.items.map(x=>'<div class="rc-box"><label class="rc-check"><input type="checkbox" name="approve_part" value="'+esc(x.id)+'">'+esc(x.name)+' · Requested '+esc(x.qty)+'</label><label>Approved Quantity<input type="number" data-approved-id="'+esc(x.id)+'" min="1" max="'+esc(x.qty)+'" step="1" value="'+esc(x.qty)+'"></label></div>').join('')+input('reason','Approval Notes / Reason','',true)+'<div class="rc-actions"><button type="submit">Record Additional Approval & Transfer Parts</button></div></form>':'')+
+      '<h4>Additional Approval History</h4>'+((extra.approvals||[]).map(a=>'<div class="rc-box"><b>'+esc(a.reference)+' · OMR '+Number(a.approved_amount).toFixed(3)+'</b><p>'+esc(a.approval_date)+' · '+esc(a.actor_id)+'</p><p>'+esc(a.reason)+'</p><ol>'+a.approved_parts.map(x=>'<li>'+esc(x.name)+' · Approved '+esc(x.qty)+'</li>').join('')+'</ol><p>'+((extra.transfers||[]).filter(t=>t.approval_id===a.id).map(t=>esc(t.list_no)+' · Qty '+esc(t.qty)).join('<br>')||'Labour-only approval · No parts transfer')+'</p></div>').join('')||'<p>No additional approvals recorded.</p>')+'</div>';
+  }
+  function preliminaryParts(additional=false) {
+    const r = current.record, draft = additional ? ((current.additional.requests||[]).find(x=>x.status==='DRAFT')||{id:uid(),items:[],status:'DRAFT'}) : current.preliminary_parts;
+    const editable = additional ? current.additional.can_prepare === true : draft.can_edit === true;
+    shell(r.rc_no + (additional?" · Additional Request":" · Preliminary Parts"),
+      badges(r) + (additional?"<p>New parts or labour-only request for additional insurance approval. Requested quantities are not operational orders yet.</p>":"<p>Parts preparation for insurance approval.</p>") +
+      (editable ? '<form id="rc-parts"><div id="rc-parts-rows"></div><div class="rc-actions"><button type="button" id="rc-add-part">+ Add Part</button></div>' +
+        input("reason", "Reason for this list / change", "", true) + '<div class="rc-actions"><button type="submit">'+(additional?'Save Additional Request':'Save Preliminary List')+'</button></div></form>' :
+        '<div class="rc-box">' + (draft.items.map((x, i) => '<p><b>' + (i + 1) + '. ' + esc(x.name) + '</b><br>Qty: ' + esc(x.qty) + ' · Part No: ' + esc(x.part_no || "Not recorded") + '</p>').join("") || "No preliminary parts recorded.") + '</div>') +
+      '<div class="rc-actions"><button data-rc-action="view" data-rc="' + esc(r.rc_no) + '">Back to Checklist</button></div>');
+    if (!editable) return;
+    const rows = document.getElementById("rc-parts-rows");
+    function add(x = {}) {
+      const row = document.createElement("div");
+      row.className = "rc-box";
+      row.dataset.partId = x.id || uid();
+      row.innerHTML = input("part_name", "Part Name", x.name, true) + '<div class="rc-grid">' +
+        input("part_no", "Part Number (optional)", x.part_no) + input("part_qty", "Quantity", x.qty || 1, true, "number") +
+        '</div><div class="rc-actions"><button type="button" class="rc-remove-part">Remove Part</button></div>';
+      row.querySelector('[name="part_name"]').maxLength = 200;
+      row.querySelector('[name="part_no"]').maxLength = 100;
+      const qty = row.querySelector('[name="part_qty"]'); qty.min = "1"; qty.max = "100000"; qty.step = "1";
+      row.querySelector('.rc-remove-part').onclick = () => row.remove();
+      rows.appendChild(row);
+    }
+    draft.items.forEach(add);
+    document.getElementById("rc-add-part").onclick = () => { if (rows.children.length < 200) add(); };
+    document.getElementById("rc-parts").onsubmit = async (e) => {
+      e.preventDefault();
+      try {
+        const items = [...rows.children].map(row => ({id: row.dataset.partId,
+          name: row.querySelector('[name="part_name"]').value.trim(),
+          part_no: row.querySelector('[name="part_no"]').value.trim(),
+          qty: Number(row.querySelector('[name="part_qty"]').value)}));
+        const result = await mutate({operation: additional ? "SAVE_ADDITIONAL_REQUEST" : "SAVE_PARTS", rc_no: r.rc_no, expected_revision: r.revision,
+          ...(additional ? {round_id:draft.id}:{}),
+          items, reason: new FormData(e.target).get("reason").trim()});
+        if (result) await view(r.rc_no);
+      } catch (x) { error(x); }
+    };
+  }
+  async function cancellation(no=current?.record?.rc_no) {
+    await fetchRecord(no);
+    const r=current.record,c=current.cancellation;
+    if(c?.history)return view(no);
+    if(!c?.can_review)throw Error('Manager cancellation review is unavailable for this Job Card.');
+    const review=c.review,blocked=Number(review.active_assignments)+Number(review.active_sessions)+Number(review.projected_active_sessions)+Number(review.unresolved_projected_assignments)>0;
+    shell(r.rc_no+' · Job Card Cancellation',badges(r)+'<h4>'+esc(r.job_card)+' · '+esc([r.details.make,r.details.model].join(' '))+' · '+esc(r.details.registration||'Registration not recorded')+'</h4><p>Cancellation retains technician time, assignments, purchases, consumables and expenses. It is not delivery and does not move the vehicle.</p>'+
+      '<p>Active assignments: '+esc(review.active_assignments)+' · Open sessions: '+esc(review.active_sessions)+' · Projected active/paused sessions: '+esc(review.projected_active_sessions)+' · Unresolved projected assignments: '+esc(review.unresolved_projected_assignments)+'</p>'+
+      '<h4>Outstanding Parts: '+esc(review.outstanding_parts)+'</h4><ol>'+review.parts.map(p=>'<li>'+esc(p.part_name)+' · '+esc(p.list_no)+' · '+esc(p.status)+' · Ordered '+esc(p.ordered_qty)+' / Received '+esc(p.received_qty)+'</li>').join('')+'</ol><p>Outstanding orders are not cancelled automatically. Review supplier commitments and use the existing parts/return/settlement workflow.</p>'+
+      (blocked?'<p class="rc-box">Cancellation blocked by active or unresolved work. Use the existing work controls to resolve it, then reload this review.</p>':'<form id="rc-cancel-job">'+input('job_card','Type Job Card Number to Confirm Identity','',true)+input('cancellation_date','Cancellation Date',new Date(Date.now()+4*3600000).toISOString().slice(0,10),true,'date')+input('reason','Mandatory Cancellation Reason','',true)+'<label class="rc-check"><input type="checkbox" name="review_acknowledged" required>I reviewed work, outstanding parts and financial commitments.</label><div class="rc-actions"><button type="submit">Cancel Job Card & Keep History</button></div></form>')+
+      '<div class="rc-actions"><button data-rc-action="cancel-job">Reload Review</button><button data-rc-action="view" data-rc="'+esc(r.rc_no)+'">Back to Checklist</button></div>');
+    const form=document.getElementById('rc-cancel-job');if(form)form.onsubmit=async e=>{
+      e.preventDefault();try{
+        const f=new FormData(form);const result=await mutate({operation:'CANCEL_JOB',rc_no:r.rc_no,expected_revision:r.revision,job_card:f.get('job_card').trim().toUpperCase(),cancellation_date:f.get('cancellation_date'),reason:f.get('reason').trim(),review_fingerprint:review.fingerprint,review_acknowledged:f.get('review_acknowledged')==='on'});
+        if(result){try{await window.zukaitCloud?.pull?.(true)}catch(_){}await view(r.rc_no)}
+      }catch(x){error(x)}
+    };
+  }
+  async function mutate(command) {
+    if (busy) return null;
+    const key = retryKey();
+    const encoded = JSON.stringify(command);
+    let request = savedRequest(key);
+    if (request && request.encoded !== encoded)
+      throw Error("Confirm the saved Reception action before submitting a different change.");
+    if (!request) {
+      request = { encoded, request_id: uid() };
+      // Persist before transport; storage failure must not send an unrecoverable write.
+      localStorage.setItem(key, JSON.stringify(request));
+      if (localStorage.getItem(key) !== JSON.stringify(request))
+        throw Error("This device could not save the Reception retry. No request was sent.");
+    }
+    busy = true;
+    try {
+      const result = await call({ ...command, request_id: request.request_id });
+      clearRequest(key, request);
+      return result;
+    } catch (x) {
+      if (x.definitive) clearRequest(key, request);
+      throw x;
+    } finally {
+      busy = false;
+      retryBanner();
+    }
+  }
+  async function retrySaved() {
+    const key = retryKey(), saved = savedRequest(key);
+    if (!saved) return;
+    const command = JSON.parse(saved.encoded), result = await mutate(command);
+    if (!result || retryKey() !== key) return;
+    if (["CREATE_JOB", "CREATE_DIRECT_JOB", "CREATE_EXTERNAL_JOB", "EDIT", "MOVE", "APPROVE_ADDITIONAL", "CANCEL_JOB"].includes(command.operation)) {
+      try { await window.zukaitCloud?.pull?.(true); await window.zukaitV2?.sparePartsMain?.hydrateAuthoritativeLists?.(); } catch (_) {}
+    }
+    const no = result.record?.rc_no || command.rc_no;
+    if (no) await view(no);
+    else await home();
+  }
+  async function saveForm(e) {
+    e.preventDefault();
+    const f = new FormData(e.target),
+      details = {};
+    fields.forEach(([k]) => (details[k] = String(f.get(k) || "")));
+    if ((current?.record.job_type || f.get("job_type")) !== "INSURANCE")
+      details.claim = ""; // Never save hidden insurance claims on cash checklists.
+    textFields.forEach(([k]) => (details[k] = String(f.get(k) || "")));
+    details.tools = f.getAll("tools");
+    details.odometer_unit = String(f.get("odometer_unit"));
+    details.fuel = String(f.get("fuel") || "");
+    if (window.zukaitNormalizeVehicle) {
+      const v =
+        window.zukaitNormalizeVehicle(details.make, details.model, "") || {};
+      details.make = v.make || details.make;
+      details.model = v.model || details.model;
+    }
+    try {
+      const r = await mutate({
+        operation: current ? "EDIT" : "CREATE",
+        insurance_id: (current?.record.job_type || f.get("job_type")) === "INSURANCE" ? Number(f.get("insurance_id")) : null,
+        ...(current ? {} : { job_type: f.get("job_type") }),
+        details,
+        ...(current
+          ? {
+              rc_no: current.record.rc_no,
+              expected_revision: current.record.revision,
+              ...(current.record.job_card ? {reason:String(f.get("reason") || "").trim()} : {}),
+            }
+          : {}),
+      });
+      if (r) {
+        if (r.record.job_card) { try { await window.zukaitCloud?.pull?.(true); } catch (_) {} }
+        await view(r.record.rc_no);
+      }
+    } catch (x) {
+      error(x);
+    }
+  }
+  function movement() {
+    const r = current.record;
+    const to = r.location === "VIW" ? "VWC" : "VIW";
+    shell(
+      r.rc_no + " · Vehicle Movement",
+      '<form id="rc-move">' +
+        badge(r.location) +
+        " → " +
+        badge(to) +
+        "<p>Times are recorded in Oman time. Leave the date/time empty to use server time.</p>" +
+        input(
+          "occurred_at",
+          "Movement Date & Time (Oman)",
+          "",
+          false,
+          "datetime-local",
+        ) +
+        input(
+          "expected_return_date",
+          "Expected Return Date (optional)",
+          "",
+          false,
+          "date",
+        ) +
+        input("reason", "Reason", "", true) +
+        '<div class="rc-actions"><button type="submit">Confirm ' +
+        to +
+        "</button></div></form>",
+    );
+    document.getElementById("rc-move").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const f = new FormData(e.target),
+        date = String(f.get("occurred_at") || "");
+      try {
+        const out = await mutate({
+          operation: "MOVE",
+          rc_no: r.rc_no,
+          expected_revision: r.revision,
+          location: to,
+          reason: String(f.get("reason")),
+          occurred_at: date ? new Date(date + "+04:00").toISOString() : null,
+          expected_return_date:
+            to === "VWC" ? String(f.get("expected_return_date") || "") : "",
+        });
+        if (out) {
+          if (r.job_card) { try { await window.zukaitCloud?.pull?.(true); } catch (_) {} }
+          await view(r.rc_no);
+        }
+      } catch (x) {
+        error(x);
+      }
+    });
+  }
+  function outcome() {
+    const r = current.record;
+    shell(
+      r.rc_no + " · Close Insurance Case",
+      '<form id="rc-outcome"><p>CTL and Cash Loss require a recorded handover (VWC). Closing a reception case does not record delivery or workshop income.</p>' +
+        select(
+          "outcome",
+          "Case Outcome",
+          [
+            ["CTL", "CTL"],
+            ["CASH_LOSS", "Cash Loss"],
+            ["CANCELLED", "Cancelled"],
+          ],
+          "CTL",
+        ) +
+        input("reason", "Decision / Reason", "", true) +
+        input("handover_to", "Handover Recipient (CTL / Cash Loss)") +
+        '<div class="rc-actions"><button type="submit">Confirm Case Closure</button></div></form>',
+    );
+    document
+      .getElementById("rc-outcome")
+      .addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const f = new FormData(e.target);
+        try {
+          const out = await mutate({
+            operation: "CLOSE",
+            rc_no: r.rc_no,
+            expected_revision: r.revision,
+            outcome: String(f.get("outcome")),
+            reason: String(f.get("reason")),
+            handover_to: String(f.get("handover_to")),
+          });
+          if (out) await view(r.rc_no);
+        } catch (x) {
+          error(x);
+        }
+      });
+  }
+  async function staff() {
+    const r = await call({ operation: "STAFF" });
+    shell(
+      "Designated Reception Staff",
+      r.staff
+        .map(
+          (s) =>
+            '<div class="rc-box"><b>' +
+            esc(s.name) +
+            "</b> · " +
+            esc(s.role) +
+            '<div class="rc-actions">' +
+            (["Manager", "Supervisor"].includes(s.role)
+              ? "Access included with role"
+              : '<button data-rc-action="access" data-user="' +
+                esc(s.id) +
+                '" data-active="' +
+                String(!s.designated) +
+                '">' +
+                (s.designated
+                  ? "Remove Reception Access"
+                  : "Designate Reception Access") +
+                "</button>") +
+            "</div></div>",
+        )
+        .join(""),
+    );
+  }
+  function documentHtml(r) {
+    const d = r.details;
+    return (
+      '<!doctype html><html><head><meta charset="UTF-8"><title>' +
+      esc(r.rc_no) +
+      "</title><style>@page{size:A4;margin:12mm}*{box-sizing:border-box}body{margin:0;color:#18324a;font:12px Arial,sans-serif}header{border-bottom:2px solid #165b68;display:flex;justify-content:space-between;padding-bottom:10px}h1{font-size:22px;margin:0}h2{font-size:16px;margin:5px 0}h3{font-size:13px;background:#edf4f7;padding:7px;margin:12px 0 5px}table{border-collapse:collapse;width:100%;table-layout:fixed}td{padding:6px;border-bottom:1px solid #dce5e9;vertical-align:top;overflow-wrap:anywhere}td small{display:block;color:#546977;margin-bottom:3px}.observation{white-space:pre-wrap;overflow-wrap:anywhere;min-height:35px;padding:5px;break-inside:avoid}.sign{display:flex;justify-content:space-between;margin-top:35px;break-inside:avoid}.sign div{width:43%;padding-top:20px;border-top:1px solid #475569}footer{margin-top:20px;font-size:10px;color:#546977}.tools td{padding:7px}section{break-inside:avoid}</style></head><body><header><div><h1>ZUKAIT AUTO SERVICES</h1><small>Zukait International LLC · Oman</small><h2>Vehicle Reception Checklist</h2></div><div><h2>" +
+      esc(r.rc_no) +
+      "</h2>" +
+      esc(stamp(r.received_at)) +
+      "<br>" +
+      esc(labels[r.location]) +
+      "</div></header><h3>Customer & Vehicle Details</h3><table>" +
+      [
+        [(r.job_type || "INSURANCE") === "INSURANCE" ? "Insurance Company" : "Checklist Type",
+          (r.job_type || "INSURANCE") === "INSURANCE" ? r.insurance_company : r.job_type,
+          "Customer", d.customer],
+        ["Contact", d.contact, "Registration", d.registration],
+        ["Make / Model", [d.make, d.model].join(" "), "Model Year", d.year],
+        [
+          "VIN",
+          d.vin,
+          "Reading",
+          [d.odometer, d.odometer ? d.odometer_unit : ""]
+            .filter(Boolean)
+            .join(" "),
+        ],
+        ...((r.job_type || "INSURANCE") === "INSURANCE" ?
+          [["Claim / Gate Pass", d.claim, "Case Status",
+            labels[r.outcome || r.approval_status]]] :
+          [["Case Status", labels[r.outcome || r.approval_status],
+            "Location", labels[r.location]]]),
+      ]
+        .map(
+          ([a, b, c, e]) =>
+            "<tr><td><small>" +
+            a +
+            "</small>" +
+            esc(b || "Not recorded") +
+            "</td><td><small>" +
+            c +
+            "</small>" +
+            esc(e || "Not recorded") +
+            "</td></tr>",
+        )
+        .join("") +
+      '</table><section><h3>Damage Description</h3><div class="observation">' +
+      esc(d.damage || "Not recorded") +
+      '</div></section><section><h3>Tools & Accessories</h3><table class="tools">' +
+      Array.from(
+        { length: 3 },
+        (_, i) =>
+          "<tr>" +
+          tools
+            .slice(i * 3, i * 3 + 3)
+            .map(
+              ([k, l]) =>
+                "<td>" +
+                ((d.tools || []).includes(k) ? "☑" : "☐") +
+                " " +
+                l +
+                "</td>",
+            )
+            .join("") +
+          "</tr>",
+      ).join("") +
+      '</table><small>Unticked accessories are not recorded.</small><div class="observation">Other: ' +
+      esc(d.other_accessories || "Not recorded") +
+      '</div></section><section><h3>Fuel Level & Dashboard Warnings</h3><div class="observation">Fuel: ' +
+      esc(d.fuel || "Not recorded") +
+      "<br>Warnings: " +
+      esc(d.warnings || "Not recorded") +
+      '</div></section><section><h3>Other Remarks</h3><div class="observation">' +
+      esc(d.remarks || "Not recorded") +
+      '</div></section><div class="sign"><div>Customer Signature</div><div>Reception Staff Signature</div></div><footer>Signatures to be completed by hand after printing. · ' +
+      esc(r.rc_no) +
+      "</footer></body></html>"
+    );
+  }
+  async function output(pdf) {
+    const native = !!(
+      (pdf && window.AndroidBridge?.shareHtmlAsPdf) ||
+      window.AndroidBridge?.printHtmlNamed
+    );
+    const w = native ? null : window.open("", "_blank");
+    if (!native && !w) throw Error("Allow popups to print this checklist.");
+    const r = (await call({ operation: "GET", rc_no: current.record.rc_no }))
+      .record;
+    const html = documentHtml(r);
+    if (pdf && window.AndroidBridge?.shareHtmlAsPdf) {
+      window.AndroidBridge.shareHtmlAsPdf(html, r.rc_no + ".pdf");
+      return;
+    }
+    if (window.AndroidBridge?.printHtmlNamed) {
+      window.AndroidBridge.printHtmlNamed(html, r.rc_no);
+      return;
+    }
+    w.document.write(html);
+    w.document.close();
+    if (pdf)
+      alert(
+        "Choose Save as PDF in the print dialog, then share the saved PDF.",
+      );
+    setTimeout(() => {
+      if (!w.closed) {
+        w.focus();
+        w.print();
+      }
+    }, 350);
+  }
+  async function dispatch(e) {
+    const b = e.target.closest("[data-rc-action]");
+    if (!b) return;
+    e.preventDefault();
+    if (busy) return;
+    try {
+      switch (b.dataset.rcAction) {
+        case "retry-pending":
+          await retrySaved();
+          break;
+        case "close":
+          if (!canLeaveChecklist()) break;
+          closeModal();
+          break;
+        case "back":
+          if (!canLeaveChecklist()) break;
+          if (backTarget === "close") closeModal();
+          else if (backTarget === "view" && current?.record?.rc_no)
+            await view(current.record.rc_no);
+          else if (window.zukaitReceptionDashboard?.resume)
+            await window.zukaitReceptionDashboard.resume();
+          else await home();
+          break;
+        case "home":
+          if (!canLeaveChecklist()) break;
+          await home();
+          break;
+        case "new":
+          await editor();
+          break;
+        case "view":
+          await view(b.dataset.rc);
+          break;
+        case "edit":
+          await editor(current.record.rc_no);
+          break;
+        case "direct-job":
+          directJob();
+          break;
+        case "insurance":
+          insuranceWorkspace();
+          break;
+        case "rc-estimate":
+          await window.zukaitEstimate.newFromReception(current.record.rc_no);
+          break;
+        case "additional-parts":
+          preliminaryParts(true);
+          break;
+        case "rc-additional-estimate":
+          await window.zukaitEstimate.newFromReception(current.record.rc_no,b.dataset.round);
+          break;
+        case "parts":
+          preliminaryParts();
+          break;
+        case "cancel-job":
+          await cancellation();
+          break;
+        case "movement":
+          movement();
+          break;
+        case "outcome":
+          outcome();
+          break;
+        case "print":
+          await output(false);
+          break;
+        case "pdf":
+          await output(true);
+          break;
+        case "more":
+          await loadList(true);
+          break;
+        case "staff":
+          await staff();
+          break;
+        case "access":
+          await mutate({
+            operation: "ACCESS",
+            user_id: b.dataset.user,
+            active: b.dataset.active === "true",
+          });
+          await staff();
+          break;
+      }
+    } catch (x) {
+      error(x);
+    }
+  }
+  // Manager and Supervisor use their existing workshop session.
+  // The dedicated Receptionist account signs in through receptionist.html.
+  function ensureCards() {
+    // A document may disappear while browser tests or mobile WebViews close.
+    if (typeof document === "undefined" || !document?.documentElement) return;
+    const u = user(), role = u?.role;
+    const dashboardId = role === "Manager" ? "managerView" :
+      role === "Supervisor" ? "supervisorView" : "";
+    for (const id of ["managerView", "supervisorView", "employeeView"]) {
+      const root = document.getElementById(id);
+      if (!root) continue;
+      if (!dashboardId || id !== dashboardId || root.classList.contains("hidden"))
+        root.querySelectorAll("[data-rc-menu]").forEach(b => b.remove());
+    }
+    if (!u?.id || !dashboardId) {
+      capUser = "";
+      capChecked = false;
+      caps = { allowed: false, manager: false };
+      return;
+    }
+    const identity = String(u.id) + ":" + role;
+    if (capUser !== identity) {
+      capUser = identity;
+      capChecked = false;
+      caps = { allowed: false, manager: false };
+    }
+    if (!capChecked) {
+      if (!capBusy) {
+        capBusy = true;
+        call({ operation: "CAPABILITIES" })
+          .then(r => {
+            if (capUser === identity && user()?.id === u.id && user()?.role === role) {
+              caps = r;
+              capChecked = true;
+            }
+          })
+          .catch(() => {
+            if (capUser === identity) capChecked = true;
+          })
+          .finally(() => {
+            capBusy = false;
+            ensureCards();
+          });
+      }
+      return;
+    }
+    if (!caps.allowed) return; // The server remains the authority for access.
+    const root = document.getElementById(dashboardId);
+    if (!root || root.classList.contains("hidden") || root.querySelector("[data-rc-menu]")) return;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "rc-dashboard-launcher rc-menu";
+    b.dataset.rcMenu = "1";
+    b.innerHTML = "<b>🚘 Reception</b><small>Checklists · Vehicle movements · Insurance</small>";
+    b.onclick = () => {
+      if (!["Manager", "Supervisor"].includes(user()?.role)) return;
+      home().catch(error);
+    };
+    // Keep Reception visible near the top, even when dashboard grids are rebuilt.
+    const header = root.querySelector(".v135-manager-header,.v91-role-identity,.v92-supervisor-top");
+    if (header?.parentElement === root) header.insertAdjacentElement("afterend", b);
+    else root.prepend(b);
+  }
+  window.zukaitReception = { endpoint: API, open: home, dashboardShell:shell, newChecklist:()=>editor(), directJob, action:apiAction, openCancellation: no => cancellation(no).catch(error), openRecord: no => view(no).catch(error), documentHtml, ensureCards, call };
+  style();
+  new MutationObserver(ensureCards).observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+  });
+  setTimeout(ensureCards, 0);
+})();
+
+</script><script>(function(){
+  "use strict";
+  // One Reception workspace for existing Manager/Supervisor sessions and
+  // the dedicated Receptionist session. All lists come from the same server.
+  const definitions=[
+    ["new","Create Checklist","New vehicle intake","📝"],
+    ["create-job","Create Job Card","Cash / Credit · approved Insurance","🚗"],
+    ["checklists","Checklist List","Number · date · month · search","📋"],
+    ["jobs","Job Card List","Number · date · month · search","🗂"],
+    ["waiting","Approval Waiting Insurance","Checklist not yet approved","⏳"],
+    ["vwc","Vehicle With Customer","Checklists and Job Cards separately","🏠"],
+    ["approved","Approved Vehicles","Until Job Card is opened","✅"],
+    ["ready","Ready to Deliver","Shared QC authority","🚙"],
+    ["delivered","Delivered Vehicle List","Latest delivered first","📦"],
+    ["followup","Delivery Follow-up","Promise date · no promise date","📅"]
+  ];
+  // Correct the ampersand/angle/quote escapes without passing input as HTML.
+  const safe=v=>String(v??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const role=()=>window.me?.role||"";
+  const writable=()=>["Manager","Supervisor"].includes(role());
+  let section="checklists",page=0,filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false};
+  let counts={},latest=[],total=0,loading=false,sequence=0,pendingTimer=null;
+  function css(){
+    if(document.getElementById("rdb-css"))return;
+    const s=document.createElement("style");s.id="rdb-css";
+    s.textContent=`
+    #rc-root .rdb-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0 20px}
+    #rc-root .rdb-grid>*{min-width:0;max-width:100%}
+    #rc-root .rdb-content{min-width:0;overflow-wrap:anywhere;word-break:normal}
+    #rc-root .rdb-filter>label{min-width:0;max-width:100%}
+    #rc-root .rdb-filter>label input{min-width:0;max-width:100%}
+    #rc-root .rdb-card{display:flex;align-items:center;gap:12px;text-align:left;padding:16px;min-height:94px;background:#fff;color:#15374d;border:1px solid #ccdfed;border-radius:15px;box-shadow:0 5px 15px #18324a12;cursor:pointer}
+    #rc-root .rdb-card:focus-visible{outline:3px solid #138c91;outline-offset:2px}
+    #rc-root .rdb-card[data-active=true]{background:#e6f8f5;border:2px solid #5bacaa}
+    #rc-root .rdb-emoji{font-size:27px}#rc-root .rdb-content{display:flex;flex:1;flex-direction:column;gap:4px}
+    #rc-root .rdb-content b{font-size:17px}#rc-root .rdb-content small{font-size:12px;color:#547085}
+    #rc-root .rdb-count{font-size:21px;color:#0f6671;font-weight:900}
+    #rc-root .rdb-filter{display:grid;grid-template-columns:2fr repeat(3,minmax(0,1fr));gap:10px}
+    #rc-root .rdb-row{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:start;gap:12px;border:1px solid #d1e0ec;border-radius:12px;background:white;margin:9px 0;padding:13px}
+    #rc-root .rdb-no{font-weight:900;color:#1a637e}#rc-root .rdb-row-content{min-width:0;overflow-wrap:anywhere}
+    #rc-root .rdb-row-content b{font-size:16px}#rc-root .rdb-row-content small{display:block;margin-top:5px;font-size:13px}
+    #rc-root .rdb-promise{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:8px}
+    #rc-root .rdb-promise input{max-width:188px;width:auto;margin:0}#rc-root .rdb-row-actions{display:flex;flex-direction:column;gap:6px}
+    #rc-root .rdb-row-actions button{margin:0!important;font-size:13px!important;min-height:37px!important}
+    #rc-root .rdb-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+    #rc-root .rdb-toolbar h4{margin:0}#rc-root .rdb-status{font-size:14px;color:#42667c}
+    @media(max-width:800px){#rc-root .rdb-filter{grid-template-columns:1fr 1fr}}
+    @media(max-width:550px){#rc-root .rdb-grid{gap:8px}#rc-root .rdb-card{padding:11px;min-height:112px;gap:5px;flex-direction:column;align-items:flex-start;justify-content:center;min-width:0}
+      #rc-root .rdb-emoji{font-size:19px}#rc-root .rdb-content b{font-size:14px}
+      #rc-root .rdb-content small{font-size:11px}#rc-root .rdb-count{font-size:17px}
+      #rc-root .rdb-filter{grid-template-columns:1fr 1fr}
+      #rc-root .rdb-row{grid-template-columns:25px 1fr}
+      #rc-root .rdb-row-actions{grid-column:2;flex-direction:row;flex-wrap:wrap}}
+    `;
+    document.head.appendChild(s);
+  }
+  const countFor=key=>key==="new"||key==="create-job"?"":key==="vwc"?counts.vwc??"":counts[key]??"";
+  function tiles(){
+    return definitions.map(([key,title,sub,icon])=>
+      '<button type="button" class="rdb-card" data-rdb="tile" data-section="'+key+'" data-active="'+(section===key)+'">'+
+      '<span class="rdb-emoji" aria-hidden="true">'+icon+'</span><span class="rdb-content"><b>'+safe(title)+
+      '</b><small>'+safe(sub)+'</small></span><span class="rdb-count">'+safe(countFor(key))+'</span></button>').join("");
+  }
+  const label=key=>definitions.find(x=>x[0]===key)?.[1]||"Reception";
+  function filterHtml(){
+    return '<div class="rdb-filter">'+
+      '<label>Search<input data-rdb-filter="search" placeholder="RC / JC / registration / vehicle" value="'+safe(filters.search)+'"></label>'+
+      '<label>Month<input type="month" data-rdb-filter="month" value="'+safe(filters.month)+'"></label>'+
+      '<label>From<input type="date" data-rdb-filter="from" value="'+safe(filters.from)+'"></label>'+
+      '<label>To<input type="date" data-rdb-filter="to" value="'+safe(filters.to)+'"></label></div>'+
+      (section==="followup"?'<label>Promise Date Filter<select data-rdb-filter="promise-mode"><option value="all">All undelivered vehicles</option>'+
+      '<option value="missing"'+(filters.missing_only?' selected':'')+'>No promise date ('+safe(counts.no_promise_date??0)+')</option>'+
+      '<option value="dated"'+(filters.dated_only?' selected':'')+'>With promise date</option></select></label>':'');
+  }
+  function rowHtml(row,index){
+    const isJob=!!row.job_card,live=!row.delivered&&isJob,canEdit=live&&writable();
+    const title=isJob?"JC "+safe(row.job_card):"Checklist "+safe(row.rc_no);
+    const date=section==="delivered"?"Delivered: "+(row.delivered_date||"Not recorded"):
+      section==="followup"?"Promise: "+(row.promise_date||"No promise date"):
+      "Received: "+(row.received_date||row.created_date||"Not recorded");
+    const promise=canEdit?
+      '<div class="rdb-promise"><label>Promise Date (optional)<input type="date" data-rdb-promise="'+safe(row.job_card)+
+      '" value="'+safe(row.promise_date)+'"></label><button type="button" data-rdb="promise" data-job="'+safe(row.job_card)+
+      '" data-original="'+safe(row.promise_date)+'">Save</button></div>':
+      isJob?'<small>Promise: '+safe(row.promise_date||"No promise date")+'</small>':'';
+    const open='<button type="button" data-rdb="open" data-rc="'+safe(row.rc_no)+'" data-job="'+safe(row.job_card)+'">'+
+      (row.rc_no?'Open Checklist':'View Job Card')+'</button>';
+    const deliver=section==="ready"?
+      '<button type="button" data-rdb="delivery" data-job="'+safe(row.job_card)+'">'+
+      (role()==="Manager"?"Open Ready List":"Vehicle Delivery")+'</button>':"";
+    return '<div class="rdb-row"><span class="rdb-no">'+(index+1+page*50)+'.</span>'+
+      '<div class="rdb-row-content"><b>'+title+' · '+safe(row.vehicle||"Vehicle not recorded")+
+      '</b><small>'+safe(row.registration||"Registration not recorded")+' · '+safe(row.job_type||"")+
+      (row.rc_no&&isJob?' · '+safe(row.rc_no):'')+'</small><small>'+safe(date)+
+      ' · '+safe(row.location||row.status||"")+'</small>'+promise+'</div>'+
+      '<div class="rdb-row-actions">'+open+deliver+'</div></div>';
+  }
+  function listHtml(){
+    const vwc=section==="vwc";
+    const requested=section==="vwc"?"vwc-checklists":section;
+    return '<section class="rc-box"><div class="rdb-toolbar"><h4>'+safe(label(section))+'</h4>'+
+      '<button type="button" data-rdb="refresh">↻ Refresh</button></div>'+
+      (vwc?'<div class="rc-actions"><button type="button" data-rdb="vwc" data-section="vwc-checklists">'+
+      'Checklists with Customer ('+safe(counts["vwc-checklists"]??0)+')</button>'+
+      '<button type="button" data-rdb="vwc" data-section="vwc-jobs">Job Cards with Customer ('+
+      safe(counts["vwc-jobs"]??0)+')</button></div>':'')+
+      filterHtml()+'<div id="rdb-results" aria-live="polite"></div>'+
+      '<div class="rdb-toolbar"><span id="rdb-page"></span><div>'+
+      '<button type="button" data-rdb="previous">Previous</button> '+
+      '<button type="button" data-rdb="next">Next</button></div></div></section>';
+  }
+  let vwcSection="vwc-checklists";
+  function render(){
+    css();window.zukaitReception.dashboardShell("Reception Dashboard",
+      '<p class="rdb-status">Reception operations · Data confirmed by the server · Oman dates</p>'+
+      '<div class="rdb-grid">'+tiles()+'</div>'+listHtml());
+    const root=document.getElementById("rc-root");if(!root)return;
+    root.addEventListener("click",onClick);
+    root.addEventListener("input",onFilter);
+    root.addEventListener("change",onFilter);
+    showRows();
+  }
+  function showRows(){
+    const host=document.getElementById("rdb-results"),foot=document.getElementById("rdb-page");
+    if(!host||!foot)return;
+    host.innerHTML=loading?'<p>Loading from Reception server…</p>':
+      latest.length?latest.map(rowHtml).join(""):'<p>No matching records found.</p>';
+    foot.textContent=(total?("Showing "+(page*50+1)+"–"+Math.min((page+1)*50,total)+" of "+total):"0 records");
+    const next=document.querySelector('#rc-root [data-rdb="next"]');
+    const prev=document.querySelector('#rc-root [data-rdb="previous"]');
+    if(next)next.disabled=(page+1)*50>=total;
+    if(prev)prev.disabled=page===0;
+  }
+  async function load(){
+    const request=++sequence;
+    loading=true;showRows();
+    const requestedSection=section==="vwc"?vwcSection:section;
+    try{
+      const r=await window.zukaitReception.action({action:"reception_dashboard",section:requestedSection,
+        ...filters,page});
+      if(request!==sequence)return;
+      counts=r.counts||{};latest=r.rows||[];total=Number(r.total||0);
+      const grid=document.querySelector("#rc-root .rdb-grid");
+      if(grid)grid.innerHTML=tiles();
+      const foot=document.getElementById("rdb-page");
+      if(foot&&section==="followup") {
+        const mode=document.querySelector('#rc-root [data-rdb-filter="promise-mode"] option[value="missing"]');
+        if(mode)mode.textContent="No promise date ("+(counts.no_promise_date||0)+")";
+      }
+    }catch(e){if(request===sequence){latest=[];total=0;const err=document.getElementById("rc-error");if(err)err.textContent=e.message||String(e);}}
+    finally{if(request===sequence){loading=false;showRows();}}
+  }
+  async function open(){section="checklists";vwcSection="vwc-checklists";page=0;
+    filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false};
+    latest=[];counts={};total=0;render();await load();}
+  // Keep the list section and filters when Back returns from a checklist.
+  async function resume(){render();await load();}
+  async function choose(next){
+    if(next==="new")return window.zukaitReception.newChecklist();
+    if(next==="create-job")return window.zukaitReception.directJob();
+    section=next;page=0;filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false};
+    latest=[];total=0;render();await load();
+  }
+  function onFilter(event){
+    const k=event.target?.dataset?.rdbFilter;if(!k)return;
+    if(k==="promise-mode"){
+      filters.missing_only=event.target.value==="missing";
+      filters.dated_only=event.target.value==="dated";
+    }else filters[k]=event.target.value;
+    if(event.type==="input"&&k!=="search")return;
+    clearTimeout(pendingTimer);page=0;
+    if(k==="search")pendingTimer=setTimeout(()=>load(),280);
+    else void load();
+  }
+  async function savePromise(jobCard,date,original){
+    if(!writable())throw Error("Only Manager or Supervisor can enter Promise Date.");
+    if(date&&!/^\d{4}-\d\d-\d\d$/.test(date))throw Error("Choose a valid Promise Date.");
+    const key="zukait_reception_promise_pending:"+window.zukaitReception.endpoint+":"+role()+":"+jobCard;
+    let pending;
+    const saved=localStorage.getItem(key);
+    if(saved){pending=JSON.parse(saved);
+      if(pending.promise_date!==date||pending.expected_promise_date!==original)
+        throw Error("A previous Promise Date change is unconfirmed. Retry that entry first.");
+    }else{
+      pending={action:"reception_promise_date",job_card:jobCard,promise_date:date,
+        expected_promise_date:original,request_id:crypto.randomUUID()};
+      localStorage.setItem(key,JSON.stringify(pending));
+      if(localStorage.getItem(key)!==JSON.stringify(pending))throw Error("Cannot safely save pending Promise Date.");
+    }
+    try{
+      const r=await window.zukaitReception.action(pending);
+      if(!r.ok)throw Error(r.code||"Promise Date not saved");
+      localStorage.removeItem(key);
+      try{await window.zukaitCloud?.pull?.(true);}catch(_){}
+      return r;
+    }catch(e){if(["reception_promise_conflict","reception_job_not_open","reception_promise_invalid_date"].includes(e.message))
+      localStorage.removeItem(key);
+      throw e;}
+  }
+  async function onClick(event){
+    const button=event.target.closest("[data-rdb]");if(!button)return;
+    event.preventDefault();
+    try{
+      const what=button.dataset.rdb;
+      if(what==="tile")return choose(button.dataset.section);
+      if(what==="vwc"){vwcSection=button.dataset.section;page=0;latest=[];total=0;return load();}
+      if(what==="refresh"){page=0;return load();}
+      if(what==="previous"&&page>0){page--;return load();}
+      if(what==="next"&&(page+1)*50<total){page++;return load();}
+      if(what==="promise"){
+        const jc=button.dataset.job;const inp=[...document.querySelectorAll("#rc-root [data-rdb-promise]")].find(x=>x.dataset.rdbPromise===jc);
+        if(!inp)return;
+        button.disabled=true;
+        try{await savePromise(jc,inp.value,button.dataset.original);await load();}
+        finally{button.disabled=false;}
+        return;
+      }
+      if(what==="open"){
+        if(button.dataset.rc)return window.zukaitReception.openRecord(button.dataset.rc);
+        const row=latest.find(x=>x.job_card===button.dataset.job);
+        if(!row)return;
+        const viewDelivered=row.delivered&&typeof window.zukaitOpenDeliveredRecord==="function";
+        if(viewDelivered)return window.zukaitOpenDeliveredRecord(row.job_card);
+        window.zukaitReception.dashboardShell("Job Card "+row.job_card,
+          '<div class="rc-box"><h4>'+safe(row.job_card)+" · "+safe(row.vehicle)+
+          '</h4><p>'+safe(row.registration)+'</p><p>Status: '+safe(row.status)+
+          '</p><p>Promise: '+safe(row.promise_date||"No promise date")+
+          '</p><button data-rdb="back">Back to Reception Dashboard</button></div>');
+        document.getElementById("rc-root")?.addEventListener("click",onClick);
+        return;
+      }
+      if(what==="back"){render();return load();}
+      if(what==="delivery"){
+        if(role()==="Receptionist")return window.zukaitReceptionist?.deliveries?.();
+        if(typeof window.v143OpenReadyForDelivery==="function")return window.v143OpenReadyForDelivery();
+        return window.v74Ready?.();
+      }
+    }catch(e){const el=document.getElementById("rc-error");if(el)el.textContent=e.message||String(e);}
+  }
+  window.zukaitReceptionDashboard={open,resume,savePromise};
+})();
+</script><script>window.zukaitReception.open().catch(e=>{document.getElementById("modal").innerHTML="<div class=preview-fallback>Preview could not load: "+String(e.message)+"</div>";});</script></body></html>
