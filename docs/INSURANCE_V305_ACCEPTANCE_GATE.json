@@ -1,6 +1,6 @@
 {
-  "versionName": "V306",
-  "versionCode": 269,
+  "versionName": "V307",
+  "versionCode": 270,
   "sourceCommit": null,
   "checks": {
     "client_https_restart": {
