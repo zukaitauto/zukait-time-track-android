@@ -111,6 +111,7 @@ node tests/v2-combined-module-integration.mjs
 node tests/v2-full-regression-manifest.mjs
 node tests/release-latest-integrity.mjs
 node tests/ci-release-gate-parity.mjs
+node tests/reception-release-publish-safety.mjs
 
 node tests/v181-manager-performance-cost-drilldown.mjs
 node tests/v145-manager-consumables-expense-detail.mjs
