@@ -18,7 +18,9 @@ for (const engine of ['chromium', 'webkit']) {
         window.openModal=h=>document.getElementById('modal').innerHTML='<div class="modal-box">'+h+'</div>';
         window.closeModal=()=>document.getElementById('modal').replaceChildren();
         window.fetch=async (_,args)=>{
-          const c=JSON.parse(args.body).command;
+          const body=JSON.parse(args.body);
+          if(body.action==='reception_dashboard')return {ok:true,json:async()=>({ok:true,rows:[],counts:{checklists:0},total:0})};
+          const c=body.command;
           const result=c.operation==='CAPABILITIES'?{allowed:true,manager:true}:c.operation==='MASTER'?{companies:[{id:1,name:'Test Insurance'}]}:c.operation==='LIST'?{rows:[{rc_no:'RC-TEST',details:{make:'Toyota',model:'Corolla',registration:'TEST',customer:'Customer <script>unsafe</script>'},insurance_company:'Test Insurance',location:'VWC',approval_status:'APPROVED'}]}:{};
           return {ok:true,json:async()=>({ok:true,...result})};
         };
@@ -78,6 +80,23 @@ for (const engine of ['chromium', 'webkit']) {
       assert.equal(await page.locator('#rc-form').count(),0,`${engine} ${width}: Back must leave checklist form`);
       await page.locator('[data-rc-action=close]').click();
       assert.equal(await page.locator('#rc-root').count(),0);
+      // A V304/Phase 1 endpoint must never expose the Phase 2 Cash save flow.
+      await page.evaluate(() => {
+        const previous=window.fetch;
+        window.zukaitAuth={getToken:()=> 'phase1-session'};
+        window.fetch=async (url,args)=>{
+          if(JSON.parse(args.body).action==='reception_dashboard')
+            return {ok:false,json:async()=>({ok:false,code:'unsupported_action'})};
+          return previous(url,args);
+        };
+      });
+      await page.evaluate(()=>window.zukaitReception.open());
+      await page.locator('[data-rc-action=new]').click();
+      await page.locator('#rc-form').waitFor();
+      assert.equal(await page.locator('#rc-form [name=job_type] option[value=CASH]').count(),0);
+      assert.match(await page.locator('.rc-form-hint').textContent(),/Insurance checklist only/);
+      assert.equal(await page.locator('#rc-form [name=insurance_id]').getAttribute('required'),'');
+      assert.equal(await page.locator('.modal-box.rc-dialog').isVisible(),true);
       await page.close();
       console.log(`${engine} ${width}: list, editor, keyboard and overflow checks passed`);
     }

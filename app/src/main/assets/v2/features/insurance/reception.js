@@ -51,7 +51,9 @@
     capBusy = false,
     capChecked = false,
     backTarget = "home",
-    checklistSnapshots = new WeakMap();
+    checklistSnapshots = new WeakMap(),
+    phase2CheckedToken = null,
+    phase2Enabled = false;
   const esc = (v) =>
     String(v ?? "").replace(
       /[&<>"']/g,
@@ -170,6 +172,25 @@
     const result=await response.json();
     if(!response.ok||!result?.ok){const e=Error(result?.code||"reception_unavailable");e.code=result?.code;throw e;}
     return result;
+  }
+  // A read-only, fail-closed capability check. The V304 server does not have
+  // the Phase 2 dashboard endpoint and must never offer unsaveable Cash intake.
+  // Verify the response shape, not just HTTP 200 or a client version number.
+  async function supportsPhase2() {
+    const token = window.zukaitAuth?.getToken?.();
+    if (!token) return false;
+    if (phase2CheckedToken === token) return phase2Enabled;
+    phase2CheckedToken = token;
+    phase2Enabled = false;
+    try {
+      const r = await apiAction({action: "reception_dashboard", section: "checklists", page: 0});
+      if (phase2CheckedToken === token)
+        phase2Enabled = r.ok === true && Array.isArray(r.rows) &&
+          r.counts !== null && typeof r.counts === "object";
+    } catch (_) {
+      // Unsupported or unavailable: retain the safe Phase 1 checklist only.
+    }
+    return phase2CheckedToken === token && phase2Enabled;
   }
   async function call(command) {
     const token = window.zukaitAuth?.getToken?.();
@@ -312,14 +333,17 @@
     );
   }
   async function home() {
-    if (window.zukaitReceptionDashboard?.open) return window.zukaitReceptionDashboard.open();
+    if (window.zukaitReceptionDashboard?.open && await supportsPhase2())
+      return window.zukaitReceptionDashboard.open();
     return basicHome();
   }
   async function basicHome() {
+    const phase2 = await supportsPhase2();
     current = null;
     shell(
       "Reception",
-      '<div class="rc-actions"><button data-rc-action="new">+ New Checklist</button><button data-rc-action="direct-job">Open Job Card</button>' +
+      '<div class="rc-actions"><button data-rc-action="new">+ New Checklist</button>' +
+        (phase2 ? '<button data-rc-action="direct-job">Open Job Card</button>' : '') +
         (caps.manager
           ? '<button data-rc-action="staff">Reception Access</button>'
           : "") +
@@ -344,6 +368,7 @@
     await loadList(false);
   }
   function directJob() {
+    if (!phase2Enabled) { error(Error("Direct Job Card intake requires the V305 backend.")); return; }
     current = null;
     shell("Open Job Card", '<form id="rc-direct-job"><p>For a vehicle received at the workshop. Insurance vehicles use their checklist and recorded approval.</p><button type="button" data-rc-action="new">New Insurance Checklist / Pre-approved Vehicle</button><div class="rc-grid">' +
       select('job_type','Job Type',[['CASH','Cash'],['CREDIT','Credit']],'CASH') +
@@ -400,6 +425,7 @@
   }
   async function editor(no) {
     await master();
+    const phase2 = await supportsPhase2();
     if (no) await fetchRecord(no);
     else current = null;
     const d = current?.record.details || {},
@@ -411,8 +437,10 @@
     if (r && r.insurance_id && !companies.some((c) => c.id === r.insurance_id))
       options.push([r.insurance_id, r.insurance_company]);
     const kind = r?.job_type || "INSURANCE";
-    const typeOptions = [["INSURANCE", "Insurance"], ["CASH", "Cash"],
-      ...(kind === "CREDIT" ? [["CREDIT", "Credit"]] : [])];
+    if (!phase2 && kind !== "INSURANCE")
+      throw Error("This Cash or Credit checklist requires the V305 backend. No data was changed.");
+    const typeOptions = [["INSURANCE", "Insurance"],
+      ...(phase2 ? [["CASH", "Cash"], ...(kind === "CREDIT" ? [["CREDIT", "Credit"]] : [])] : [])];
     const inputs = fields.map(([k, l, req]) => {
       if (k === "odometer") return '<div class="rc-reading">' +
         select("odometer_unit", "KM / Mile", [["KM", "KM"], ["Miles", "Mile"]],
@@ -424,7 +452,9 @@
     }).join("");
     shell(
       r ? "Edit " + r.rc_no : "New Reception Checklist",
-      '<form id="rc-form"><p class="rc-form-hint">Make and Model are required. Cash requires Customer Name; Insurance requires an Insurance Company.</p>' +
+      '<form id="rc-form"><p class="rc-form-hint">' +
+         (phase2 ? 'Make and Model are required. Cash requires Customer Name; Insurance requires an Insurance Company.' :
+          'Insurance checklist only: Cash intake will be available after the verified V305 backend release.') + '</p>' +
         '<div class="rc-form-top">' +
         select("job_type", "Checklist Type", typeOptions, kind) +
         '<div class="rc-insurance">' +
@@ -852,6 +882,8 @@
       details.model = v.model || details.model;
     }
     try {
+      if (!phase2Enabled && (current?.record?.job_type || f.get("job_type")) !== "INSURANCE")
+        throw Error("Cash checklist saving requires the V305 backend. No data was sent.");
       const r = await mutate({
         operation: current ? "EDIT" : "CREATE",
         insurance_id: (current?.record.job_type || f.get("job_type")) === "INSURANCE" ? Number(f.get("insurance_id")) : null,
