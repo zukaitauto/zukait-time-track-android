@@ -1,0 +1,49 @@
+{
+  "versionName": "V305",
+  "versionCode": 268,
+  "sourceCommit": null,
+  "checks": {
+    "client_https_restart": {
+      "passed": false,
+      "evidence": "",
+      "verifiedBy": "",
+      "verifiedAt": null
+    },
+    "physical_android": {
+      "passed": false,
+      "evidence": "",
+      "verifiedBy": "",
+      "verifiedAt": null
+    },
+    "physical_safari": {
+      "passed": false,
+      "evidence": "",
+      "verifiedBy": "",
+      "verifiedAt": null
+    },
+    "full_data_preservation": {
+      "passed": false,
+      "evidence": "",
+      "verifiedBy": "",
+      "verifiedAt": null
+    },
+    "fresh_backup_restored": {
+      "passed": false,
+      "evidence": "",
+      "verifiedBy": "",
+      "verifiedAt": null
+    },
+    "pc_site_reconciled": {
+      "passed": false,
+      "evidence": "",
+      "verifiedBy": "",
+      "verifiedAt": null
+    },
+    "production_backend_smoke": {
+      "passed": false,
+      "evidence": "",
+      "verifiedBy": "",
+      "verifiedAt": null
+    }
+  }
+}
