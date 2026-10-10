@@ -82,3 +82,50 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
       - run: bash scripts/ci-validate-js.sh
+
+  dispatch_pinned_v308:
+    name: One-time dispatch of owner-approved pinned V308 release
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/architecture-v2' &&
+      github.event.head_commit.message == 'Owner-approved one-time V308 dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify owner-approved A4 V308 source and safe release gates
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          APPROVED_SHA='45c6712460a2d675ac135e4ad440aa820417c15b'
+          jq -e --arg sha "$APPROVED_SHA" '
+            .approvedForStaff == true and .versionName == "V308" and
+            .versionCode == 271 and .sourceCommit == $sha and
+            .releaseScope == "phase1-compatible-ui" and
+            .productionBackendChanges == false and
+            .phase2ActivationApproved == false and
+            .physicalAcceptanceStatus == "NOT_RUN" and
+            .signedAcceptanceRun == 38082133296 and
+            .verificationRun == 38082133292
+          ' release-ui-request.json
+          jq -e '.approvedForStaff == false and .versionName == "V308" and .versionCode == 271' release-request.json
+          PINNED_SHA=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/release/v308-approved-source" --jq '.object.sha')
+          test "$PINNED_SHA" = "$APPROVED_SHA"
+          for RUN in 38082133296 38082133292; do
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN" | jq -e \
+              --arg sha "$APPROVED_SHA" \
+              '.conclusion == "success" and .head_sha == $sha and .head_branch == "architecture-v2"'
+          done
+      - name: Dispatch protected publisher on architecture-v2
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
+          echo 'Owner-approved V308 dispatch sent to protected architecture-v2 publisher'
