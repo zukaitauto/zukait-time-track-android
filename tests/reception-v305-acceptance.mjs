@@ -17,4 +17,4 @@ for(const key of required) {
 }
 assert.throws(()=>validate({...good,sourceCommit:'b'.repeat(40)},complete),/source SHA mismatch/);
 assert.throws(()=>validate({...good,signedAcceptanceRun:null},complete),/Signed acceptance run/);
-console.log('PASS: all 7 V305 acceptance gates fail closed until evidenced and linked to approved SHA');
+console.log('PASS: all 7 release acceptance gates fail closed until evidenced and linked to approved SHA');
