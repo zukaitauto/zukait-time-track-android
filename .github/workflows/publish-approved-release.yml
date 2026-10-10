@@ -1,18 +1,16 @@
 name: Publish Approved Signed APK
 
 on:
+  # Publishing a staff APK is an explicit action, never a side effect of a
+  # release-request edit, QA push, or a commit on main.
   workflow_dispatch:
-  push:
-    branches: [main, architecture-v2]
-    paths:
-      - 'release-request.json'
 
 permissions:
   contents: write
 
 jobs:
   release:
-    if: github.event_name != 'push' || !contains(github.event.head_commit.message, '[verify-only]')
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/architecture-v2'
     runs-on: ubuntu-latest
     env:
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
