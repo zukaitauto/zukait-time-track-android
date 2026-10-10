@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const role={value:'Receptionist'},dept={value:'Denter',disabled:false};
+const context={document:{getElementById:id=>id==='newUserRole'?role:dept}};
+vm.createContext(context);
+vm.runInContext(html.match(/function syncNewUserWorkType\(\)\{[^\n]+/)[0],context);
+context.syncNewUserWorkType();assert.equal(dept.value,'Reception');assert.equal(dept.disabled,true);
+role.value='Employee';context.syncNewUserWorkType();assert.equal(dept.value,'Denter');assert.equal(dept.disabled,false);
+role.value='Purchaser';context.syncNewUserWorkType();assert.equal(dept.value,'Spare Parts');assert.equal(dept.disabled,true);
+role.value='Receptionist';context.syncNewUserWorkType();role.value='Supervisor';context.syncNewUserWorkType();assert.equal(dept.value,'Supervisor');assert.equal(dept.disabled,false);
+assert.match(html,/<option value="Reception">Receptionist<\/option>/);
+assert.match(html,/id="newUserRole" onchange="syncNewUserWorkType\(\)"/);
+console.log('PASS Receptionist work type and role switching');

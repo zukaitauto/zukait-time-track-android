@@ -49,6 +49,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: python3 tests/reception-acceptance-preparation.py
       - run: npm run test:reception
+      - run: node tests/reception-user-work-type.mjs
       - name: Isolated PostgreSQL concurrent-device acceptance
         run: npm run test:reception:concurrency
         env:
