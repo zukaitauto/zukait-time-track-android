@@ -1322,9 +1322,9 @@
     const css=[
       '@page{size:A4 portrait;margin:0}',
       '*{box-sizing:border-box}',
-      'html,body{width:210mm;height:297mm;margin:0;padding:0;color:#15232b;background:#fff;font-family:Arial,"Noto Naskh Arabic",sans-serif}',
+      'html,body{width:210mm;margin:0;padding:0;color:#15232b;background:#fff;font-family:Arial,"Noto Naskh Arabic",sans-serif}',
       'body{-webkit-print-color-adjust:exact;print-color-adjust:exact}',
-      '.rc-sheet{width:194mm;height:279mm;margin:8mm auto 10mm;display:flex;flex-direction:column;overflow:hidden}',
+      '.rc-sheet{width:194mm;height:272mm;margin:7mm auto 8mm;display:flex;flex-direction:column;overflow:hidden}',
       '.rc-head{height:22mm;flex:none;text-align:center;border-bottom:1px solid #33434e}',
       '.rc-head h1{font-size:18pt;line-height:1.12;margin:0;font-weight:800;letter-spacing:.2px}',
       '.rc-head .rc-arabic{font-size:11pt;margin:1mm 0 0;direction:rtl}',
@@ -1366,7 +1366,7 @@
       '.rc-footer .rc-arabic{direction:rtl;font-size:8.3pt;margin-top:1mm}',
       '.rc-signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5mm;text-align:left;margin-top:9mm}',
       '.rc-signatures div{border-top:1px solid #657782;padding-top:1.5mm;font-size:7.5pt}',
-      '@media print{html,body{width:210mm;height:297mm}.rc-sheet{break-inside:avoid;page-break-inside:avoid}}'
+      '@media print{html,body{width:210mm;height:auto}.rc-sheet{break-inside:avoid;page-break-inside:avoid}}'
     ].join("");
     return '<!doctype html><html lang="en"><head><meta charset="UTF-8">'+
       '<meta name="viewport" content="width=device-width, initial-scale=1">'+
