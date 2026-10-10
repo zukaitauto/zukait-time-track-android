@@ -182,7 +182,7 @@
     // probe the authoritative server before exposing Phase 2 write controls.
     const protocol = window.location?.protocol || "";
     const host = window.location?.hostname || "";
-    const synthetic = protocol === "about:" || /(^|\\.)(invalid|test|localhost)$/i.test(host) ||
+    const synthetic = protocol === "about:" || /(^|\.)(invalid|test|localhost)$/i.test(host) ||
       host === "127.0.0.1";
     if (synthetic && window.zukaitReceptionForceBackendProbe !== true) {
       phase2Enabled = true;
