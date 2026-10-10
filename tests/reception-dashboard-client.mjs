@@ -41,6 +41,19 @@ for(const [i,name] of ["Create Checklist","Create Job Card","Checklist List","Jo
 "Vehicle With Customer","Approved Vehicles","Ready to Deliver","Delivered Vehicle List","Delivery Follow-up"].entries())
  assert.ok(buttons[i].textContent.includes(name),name+" label missing");
 const click=async(selector)=>{const b=w.document.querySelector(selector);assert.ok(b,selector);b.click();await settle();};
+const headings={checklists:"Checklist List",jobs:"Job Card List",waiting:"Approval Waiting Insurance",
+ vwc:"Vehicle With Customer",approved:"Approved Vehicles",ready:"Ready to Deliver",
+ delivered:"Delivered Vehicle List",followup:"Delivery Follow-up"};
+for(const [key,name] of Object.entries(headings)){
+ await click('#rc-root [data-rdb=tile][data-section='+key+']');
+ assert.match(w.document.querySelector(".rc-topbar h3").textContent,new RegExp(name));
+ assert.equal(w.document.querySelectorAll("[data-rdb=tile]").length,0,key+" should open a dedicated page, not show the dashboard above its list");
+ assert.equal(w.document.querySelector("#rdb-results")!==null,true,key+" needs its list content");
+ assert.equal(commands.at(-1).section,key==="vwc"?"vwc-checklists":key);
+ if(key==="vwc")assert.equal(w.document.querySelectorAll("[data-rdb=vwc]").length,2,"VWC has two separate lists");
+ await click('#rc-root [data-rdb=back-dashboard]');
+ assert.equal(w.document.querySelectorAll("[data-rdb=tile]").length,10,key+" Back restores all ten cards");
+}
 await click('#rc-root [data-rdb=tile][data-section=jobs]');
 assert.equal(w.document.querySelectorAll(".rdb-row").length,1);
 assert.equal(w.document.querySelector("#rc-root [data-rdb-promise]")?.value,"");
@@ -50,12 +63,15 @@ await click('#rc-root [data-rdb=promise]');
 assert.equal(promise,"2026-10-15");
 assert.equal(commands.filter(x=>x.action==="reception_promise_date").length,1);
 assert.equal(w.document.querySelector("#rc-root [data-rdb-promise]")?.value,"2026-10-15");
+await click('#rc-root [data-rc-action=back]');
+assert.equal(w.document.querySelectorAll('[data-rdb=tile]').length,10,"Header Back returns to Reception dashboard");
 await click('#rc-root [data-rdb=tile][data-section=followup]');
 const from=w.document.querySelector("[data-rdb-filter=from]");from.value="2026-10-10";
 from.dispatchEvent(new w.Event("change",{bubbles:true}));await settle();
 const to=w.document.querySelector("[data-rdb-filter=to]");to.value="2026-10-15";
 to.dispatchEvent(new w.Event("change",{bubbles:true}));await settle();
 assert.ok(commands.some(x=>x.action==="reception_dashboard"&&x.section==="followup"&&x.from==="2026-10-10"&&x.to==="2026-10-15"));
+await click('#rc-root [data-rdb=back-dashboard]');
 await click('#rc-root [data-rdb=tile][data-section=create-job]');
 assert.ok(w.document.querySelector("#rc-direct-job"));
 assert.ok(w.document.querySelector('#rc-direct-job input[name=promise_date]'),"Manager has optional date at JC creation");
