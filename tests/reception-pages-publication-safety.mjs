@@ -37,7 +37,7 @@ function verifyUpdaterAfterUiRelease(metadata) {
  assert.equal(metadata.versionCode,uiApproval.versionCode);
  assert.equal(metadata.sourceCommit,uiApproval.sourceCommit);
  assert.match(metadata.apkSha256,/^[a-f0-9]{64}$/);
- assert.equal(metadata.releaseTag,'release-V305-architecture-v2');
+ assert.equal(metadata.releaseTag,'release-'+metadata.versionName+'-architecture-v2');
 }
 verifyUpdaterAfterUiRelease(latest);
 assert.match(workflow,/^\s+workflow_dispatch:\s*$/m,'Manual Pages invocation required');
