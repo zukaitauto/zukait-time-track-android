@@ -2,6 +2,14 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Zukait Reception</title>
 <style>
 body{font-family:system-ui,sans-serif;margin:0;background:#f3f8fc;color:#18324a}main{max-width:1280px;margin:auto;padding:18px}header,nav{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:16px}h1{font-size:24px;margin-right:auto}button,input{font:inherit;min-height:44px;border-radius:8px;padding:10px;border:1px solid #b7cbd9}button{background:#e1f5f4;color:#164e63;cursor:pointer}button:disabled{opacity:.55}label{display:block;margin:12px 0}input{display:block;box-sizing:border-box;width:100%;margin-top:6px}.hidden{display:none!important}#login{max-width:420px;margin:40px auto;padding:22px;background:white;border-radius:16px}#message{color:#9c2434;white-space:pre-wrap}.delivery-card{background:white;padding:18px;margin:12px 0;border-radius:10px;border:1px solid #d2e1eb}.delivery-card h3{margin-top:0}
+.receptionist-workspace main{max-width:none;width:100%;min-height:100dvh;padding:0}
+.receptionist-workspace main>header{padding:12px 22px;margin:0;background:#143044;color:#fff}
+.receptionist-workspace #reception-app>nav{padding:12px 22px;margin:0;background:#e6f0f6}
+.receptionist-workspace #workspace{width:100%;min-width:0}
+.reception-delivery-head{display:flex;gap:14px;align-items:center;padding:12px 22px;background:#143044;color:#fff}
+.reception-delivery-head h2{margin:0}.reception-delivery-head button{background:#bceee5;color:#143044;font-weight:700}
+.receptionist-workspace #workspace>.delivery-card,.receptionist-workspace #workspace>p{margin-left:22px;margin-right:22px}
+@media(max-width:700px){.receptionist-workspace main>header,.receptionist-workspace #reception-app>nav,.reception-delivery-head{padding:12px}.receptionist-workspace #workspace>.delivery-card,.receptionist-workspace #workspace>p{margin-left:12px;margin-right:12px}}
 </style></head><body><main>
 <header><h1>Zukait Reception</h1><span id="identity"></span></header>
 <p id="message" role="alert"></p>
