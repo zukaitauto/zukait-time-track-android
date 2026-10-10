@@ -61,6 +61,7 @@ node --check app/src/main/assets/qc_delivery.js
 node --check app/src/main/assets/qc_delivery_rules.js
 
 node --check app/src/main/assets/technician_workload.js
+node tests/technician-time-vehicle-share.mjs
 
 node --check app/src/main/assets/time_management.js
 node --check app/src/main/assets/time_management_rules.js
