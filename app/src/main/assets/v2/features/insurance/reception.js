@@ -1164,7 +1164,7 @@
           if (backTarget === "close") closeModal();
           else if (backTarget === "view" && current?.record?.rc_no)
             await view(current.record.rc_no);
-          else if (window.zukaitReceptionDashboard?.resume)
+          else if (phase2Enabled && window.zukaitReceptionDashboard?.resume)
             await window.zukaitReceptionDashboard.resume();
           else await home();
           break;

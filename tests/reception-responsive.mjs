@@ -98,6 +98,14 @@ for (const engine of ['chromium', 'webkit']) {
       assert.match(await page.locator('.rc-form-hint').textContent(),/Insurance checklist only/);
       assert.equal(await page.locator('#rc-form [name=insurance_id]').getAttribute('required'),'');
       assert.equal(await page.locator('.modal-box.rc-dialog').isVisible(),true);
+      // A Phase 1 Back click must never invoke the Phase 2 dashboard.
+      await page.evaluate(() => {
+        window.zukaitReceptionDashboard={resume:()=>{throw Error("Phase 2 dashboard used on V304");}};
+      });
+      await page.locator('[data-rc-action=back]').click();
+      await page.locator('[data-rc-action=new]').waitFor();
+      assert.equal(await page.locator('#rc-form').count(),0);
+      assert.equal(await page.locator('#rc-error').textContent(),"");
       await page.close();
       console.log(`${engine} ${width}: list, editor, keyboard and overflow checks passed`);
     }
