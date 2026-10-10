@@ -1,5 +1,54 @@
 # V305 acceptance handoff
 
+## 2026-10-10 REAL QA HTTPS delivery replay and preservation — PASS (server-side transport)
+
+**Scope and method.** Isolated QA project `omqgkqknbdcnotabffek` only. Because
+the current local shell cannot resolve the QA host, the already installed
+PostgreSQL `http` extension made HTTPS POST requests to the **deployed**
+QA `staff-auth` and `workshop-api` Edge endpoints. A temporary
+cryptographically random synthetic Receptionist session was created using
+the existing token-hash mechanism. The real staff-auth `session` endpoint
+verified `ZQA_RC_V305_RECEPTION`. The temporary session was later revoked,
+and fresh HTTPS verification returned HTTP 401 / `invalid_session`.
+No customer or production credential was used; the raw token was not committed
+to source control or included in acceptance evidence.
+
+**Preconditions:** QA `workshop_state` revision **36**, with both prepared
+jobs READY, matching QC fingerprints and no prior deliveries.
+
+| Checklist | Synthetic job | Initial HTTPS DELIVER | Identical UUID replay | Delivery audit |
+| --- | --- | --- | --- | --- |
+| RC0015 | `ZQA-DELIVERY-REC-A` | HTTP 200 | HTTP 200, `duplicate=true` | Exactly one |
+| RC0016 | `ZQA-DELIVERY-REC-B` | HTTP 200 | HTTP 200, `duplicate=true` | Exactly one |
+
+For each job, the HTTP success was treated as **unconfirmed at the simulated
+caller**, then an independent SQL read verified the committed delivery and
+audit receipt before repeating the *exact* request body and UUID. Each
+replay left the original `deliveredAt` unchanged, with exactly one delivery
+audit and one QC-history event. A new UUID for RC0016 returned HTTP 409
+`already_delivered` and did not cause a second delivery.
+
+The authenticated HTTPS delivery list moved both Job Cards from
+`deliveryReady=true` to `delivered=true`, `deliveryReady=false`,
+`stage=DELIVERED`. The main QA state advanced **36 → 38** (one commit
+per Job Card, none on replay).
+
+**Preservation verified against archived QA revision 36:** all unrelated
+Job Card objects, all assignments, all sessions, estimates, expenses,
+consumables, staff users and leave JSONB arrays stayed exactly unchanged.
+This is a controlled server-side preservation matrix, not a comprehensive
+physical employee workflow or standalone external spare-parts-table audit.
+
+**Strict limits:** This test used real deployed HTTPS and server rules,
+but **did not execute the actual browser/Android Receptionist saved-request
+journal over HTTPS**, terminate a real browser process, emulate a truncated
+network response at the operating-system level, or exercise physical
+Android/Safari. The earlier client journal tests remain CI/mocked transport
+evidence. Both QA vehicle fixtures are **now delivered and consumed**;
+additional fresh synthetic READY vehicles are necessary for new first-delivery
+client-fault tests. Keep V305 unpublished and do not describe physical/client
+journal acceptance as complete.
+
 ## 2026-10-10 QA delivery recovery fixtures — ready for HTTPS
 
 **QA only, no staff release.** On isolated project `omqgkqknbdcnotabffek`,
