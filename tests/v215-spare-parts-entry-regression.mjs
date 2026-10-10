@@ -968,3 +968,65 @@ test('arrival rejection API denies blank reasons and non-review roles',async()=>
   assert.equal(result.ok,false,role);
  }
 });
+
+
+test('PL027 regression: server LISTED revision 1 is retained and first Purchaser status write uses revision 2',async()=>{
+  const f=fixture('Purchaser');
+  f.serverRows.splice(2); // Same initial listed-only state as live PL027 on 10 October.
+  f.parts.hydrateFromServerRows(copy(f.serverRows));
+  assert.equal(f.lists()[0].items[0].status,'LISTED');
+  assert.equal(f.lists()[0].items[0].revision,1,'hydration must honor the accepted listing revision');
+  const result=await f.parts.transitionItem(f.listNo,f.partId,'ENQUIRY');
+  assert.equal(result.ok,true,'listed part should advance normally');
+  assert.equal(f.commits.at(-1).type,'SPARE_PART_STATUS_CHANGED');
+  assert.equal(f.commits.at(-1).serverRevision,2,'the server rejects a status revision equal to the listed revision');
+  assert.equal(f.lists()[0].items[0].status,'ENQUIRY');
+});
+
+test('server correction revisions remain the starting point for later status transitions',async()=>{
+  const f=fixture('Purchaser');
+  f.serverRows.splice(2);
+  f.serverRows.push({
+    event_id:'correction-SP-existing-5',entity_id:f.partId,
+    event_type:'SPARE_PART_SUPERVISOR_CORRECTED',revision:5,server_time:'2026-09-30T06:00:03Z',
+    payload:{partId:f.partId,listNo:f.listNo,jobCard:f.jobCard,reason:'Updated description',
+      after:{name:'Head lamp RH',partNo:'',qty:1,status:'LISTED'}}
+  });
+  f.parts.hydrateFromServerRows(copy(f.serverRows));
+  assert.equal(f.lists()[0].items[0].revision,5);
+  const result=await f.parts.transitionItem(f.listNo,f.partId,'ENQUIRY');
+  assert.equal(result.ok,true);
+  assert.equal(f.commits.at(-1).serverRevision,6);
+});
+
+test('newly saved parts immediately carry the server listing revision on the same device',async()=>{
+  const f=fixture('Supervisor');
+  await f.parts.addFromUI(f.listNo);
+  const item=f.lists()[0].items.find(x=>x.name==='Front bumper');
+  assert.ok(item);
+  assert.equal(item.revision,1);
+  assert.equal(item.pendingSync,undefined);
+});
+
+test('first Manager correction and first deletion increment above listed revision',async()=>{
+  const edit=fixture('Manager');
+  edit.serverRows.splice(2);
+  edit.parts.hydrateFromServerRows(copy(edit.serverRows));
+  for(const [key,value] of Object.entries({
+    v2SpEditName:'Head lamp RH',v2SpEditPartNo:'',v2SpEditQty:'1',
+    v2SpEditSupplier:'',v2SpEditAmount:'',v2SpEditStatus:'LISTED',
+    v2SpEditReason:'Correct parts item description'
+  }))edit.elements.set(key,{value});
+  await edit.parts.saveManagerItemEdit(edit.listNo,edit.partId);
+  const event=edit.commits.find(e=>e.type==='SPARE_PART_MANAGER_CORRECTED');
+  assert.ok(event,'Manager correction should commit');
+  assert.equal(event.serverRevision,2);
+  assert.equal(edit.lists()[0].items[0].revision,2);
+
+  const removed=fixture('Supervisor');
+  removed.serverRows.splice(2);
+  removed.parts.hydrateFromServerRows(copy(removed.serverRows));
+  const deleted=await removed.parts.deleteItem(removed.listNo,removed.partId);
+  assert.equal(deleted.ok,true);
+  assert.equal(removed.commits.find(e=>e.type==='SPARE_PART_ITEM_EDITED').serverRevision,2);
+});
