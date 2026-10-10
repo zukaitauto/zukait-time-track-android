@@ -18,7 +18,7 @@
   const safe=v=>String(v??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const role=()=>window.me?.role||"";
   const writable=()=>["Manager","Supervisor"].includes(role());
-  let section="checklists",page=0,filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false};
+  let screen="home",section="checklists",page=0,filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false};
   let backendAvailable=false;
   let counts={},latest=[],total=0,loading=false,sequence=0,pendingTimer=null;
   function css(){
@@ -30,7 +30,11 @@
     #rc-root .rdb-content{min-width:0;overflow-wrap:anywhere;word-break:normal}
     #rc-root .rdb-filter>label{min-width:0;max-width:100%}
     #rc-root .rdb-filter>label input{min-width:0;max-width:100%}
-    #rc-root .rdb-card{display:flex;align-items:center;gap:12px;text-align:left;padding:16px;min-height:94px;background:#fff;color:#15374d;border:1px solid #ccdfed;border-radius:15px;box-shadow:0 5px 15px #18324a12;cursor:pointer}
+    #rc-root .rdb-card{display:flex;align-items:center;gap:12px;text-align:left;padding:16px;min-height:94px;width:100%;background:#fff;color:#15374d;border:1px solid #ccdfed;border-radius:15px;box-shadow:0 5px 15px #18324a12;cursor:pointer;touch-action:manipulation;transition:transform .12s ease,box-shadow .12s ease}
+    #rc-root .rdb-card:active{transform:translateY(2px);box-shadow:0 2px 8px #18324a12}
+    @media(hover:hover){#rc-root .rdb-card:hover{border-color:#5bacaa;box-shadow:0 7px 18px #18324a20}}
+    #rc-root .rdb-section-nav{display:flex;align-items:center;gap:12px;margin:8px 0 15px}
+    #rc-root .rdb-section-nav button{min-height:44px;background:#e4f6f3!important;color:#125d5c!important;border:1px solid #8bc8c1!important;border-radius:12px!important;font-weight:800!important}
     #rc-root .rdb-card:focus-visible{outline:3px solid #138c91;outline-offset:2px}
     #rc-root .rdb-card[data-active=true]{background:#e6f8f5;border:2px solid #5bacaa}
     #rc-root .rdb-emoji{font-size:27px}#rc-root .rdb-content{display:flex;flex:1;flex-direction:column;gap:4px}
@@ -58,7 +62,7 @@
   const countFor=key=>key==="new"||key==="create-job"?"":key==="vwc"?counts.vwc??"":counts[key]??"";
   function tiles(){
     return definitions.map(([key,title,sub,icon],index)=>
-      '<button type="button" class="rdb-card" data-rdb="tile" data-section="'+key+'" data-active="'+(section===key)+'">'+
+      '<button type="button" class="rdb-card" data-rdb="tile" data-section="'+key+'" data-active="false" aria-label="Open '+safe(title)+'">'+
       '<span class="rdb-emoji" aria-hidden="true">'+icon+'</span><span class="rdb-content"><b>'+(index+1)+'. '+safe(title)+
       '</b><small>'+safe(!backendAvailable&&!['new','checklists'].includes(key)?'Server update required':sub)+'</small></span><span class="rdb-count">'+safe(backendAvailable?countFor(key):'')+'</span></button>').join("");
   }
@@ -112,9 +116,13 @@
   }
   let vwcSection="vwc-checklists";
   function render(){
-    css();window.zukaitReception.dashboardShell("Reception Dashboard",
-      '<p class="rdb-status">'+(backendAvailable?'Reception operations · Data confirmed by the server · Oman dates':'Checklist intake and list are available. The other dashboard functions need a server update.')+'</p>'+
-      '<div class="rdb-grid">'+tiles()+'</div>'+(backendAvailable?listHtml():'<section class="rc-box" id="rdb-unavailable" aria-live="polite"><h4>Your Reception dashboard</h4><p>Choose Create Checklist or Checklist List to use the current workshop service. Other sections are not yet available on this server; no counts or empty lists are assumed.</p></section>'));
+    css();
+    const home=screen==="home";
+    window.zukaitReception.dashboardShell(home?"Reception Dashboard":"Reception · "+label(section),
+      home?'<p class="rdb-status">'+(backendAvailable?'Reception operations · Data confirmed by the server · Oman dates':'Checklist intake and list are available. The other dashboard functions need a server update.')+'</p>'+
+        '<div class="rdb-grid">'+tiles()+'</div>'+
+        (backendAvailable?'':'<section class="rc-box" id="rdb-unavailable" aria-live="polite"><h4>Your Reception dashboard</h4><p>Choose Create Checklist or Checklist List to use the current workshop service. Other sections are not yet available on this server; no counts or empty lists are assumed.</p></section>'):
+        '<nav class="rdb-section-nav"><button type="button" data-rdb="back-dashboard">← Reception Dashboard</button></nav>'+listHtml());
     const root=document.getElementById("rc-root");if(!root)return;
     root.addEventListener("click",onClick);
     root.addEventListener("input",onFilter);
@@ -136,7 +144,7 @@
     if(!backendAvailable)return;
     const request=++sequence;
     loading=true;showRows();
-    const requestedSection=section==="vwc"?vwcSection:section;
+    const requestedSection=screen==="home"?"checklists":section==="vwc"?vwcSection:section;
     try{
       const r=await window.zukaitReception.action({action:"reception_dashboard",section:requestedSection,
         ...filters,page});
@@ -152,11 +160,16 @@
     }catch(e){if(request===sequence){latest=[];total=0;const err=document.getElementById("rc-error");if(err)err.textContent=e.message||String(e);}}
     finally{if(request===sequence){loading=false;showRows();}}
   }
-  async function open(options={}){backendAvailable=options.backendAvailable===true;++sequence;clearTimeout(pendingTimer);loading=false;section="checklists";vwcSection="vwc-checklists";page=0;
+  async function open(options={}){backendAvailable=options.backendAvailable===true;++sequence;clearTimeout(pendingTimer);loading=false;screen="home";section="checklists";vwcSection="vwc-checklists";page=0;
     filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false};
     latest=[];counts={};total=0;render();await load();}
-  // Keep the list section and filters when Back returns from a checklist.
+  // Preserve the selected list and filters when returning from a checklist.
   async function resume(){render();await load();}
+  async function showDashboard(){
+    screen="home";section="checklists";page=0;
+    filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false};
+    latest=[];total=0;render();await load();
+  }
   async function choose(next){
     if(!backendAvailable){
       if(next==="new")return window.zukaitReception.newChecklist();
@@ -167,7 +180,7 @@
     }
     if(next==="new")return window.zukaitReception.newChecklist();
     if(next==="create-job")return window.zukaitReception.directJob();
-    section=next;page=0;filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false};
+    screen="list";section=next;page=0;filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false};
     latest=[];total=0;render();await load();
   }
   function onFilter(event){
@@ -212,7 +225,8 @@
     event.preventDefault();
     try{
       const what=button.dataset.rdb;
-      if(what==="tile")return choose(button.dataset.section);
+      if(what==="tile"){await choose(button.dataset.section);return;}
+      if(what==="back-dashboard"){await showDashboard();return;}
       if(what==="vwc"){vwcSection=button.dataset.section;page=0;latest=[];total=0;return load();}
       if(what==="refresh"){page=0;return load();}
       if(what==="previous"&&page>0){page--;return load();}
@@ -239,7 +253,7 @@
         document.getElementById("rc-root")?.addEventListener("click",onClick);
         return;
       }
-      if(what==="back"){render();return load();}
+      if(what==="back"){render();await load();return;}
       if(what==="delivery"){
         if(role()==="Receptionist")return window.zukaitReceptionist?.deliveries?.();
         if(typeof window.v143OpenReadyForDelivery==="function")return window.v143OpenReadyForDelivery();
@@ -247,5 +261,5 @@
       }
     }catch(e){const el=document.getElementById("rc-error");if(el)el.textContent=e.message||String(e);}
   }
-  window.zukaitReceptionDashboard={open,resume,savePromise};
+  window.zukaitReceptionDashboard={open,resume,home:showDashboard,savePromise};
 })();
