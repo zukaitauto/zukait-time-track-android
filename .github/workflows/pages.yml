@@ -1,8 +1,7 @@
 name: Deploy PC App to GitHub Pages
 
 on:
-  push:
-    branches: [ architecture-v2 ]
+  # PC publication is release-controlled, not an automatic effect of QA commits.
   workflow_dispatch:
 
 permissions:
@@ -16,13 +15,29 @@ concurrency:
 
 jobs:
   deploy:
-    # Allow fixes to be build-verified without publishing the PC app.
-    if: "!contains(github.event.head_commit.message, '[verify-only]')"
+    # Manual action alone is insufficient: approved matching release metadata is required.
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/architecture-v2'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Verify explicit release approval and current updater
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('node:fs');
+          const request=JSON.parse(fs.readFileSync('release-request.json','utf8'));
+          const latest=JSON.parse(fs.readFileSync('latest-version.json','utf8'));
+          if(request.approvedForStaff!==true||!request.approvedAt||
+             !/^[a-f0-9]{40}$/i.test(String(request.sourceCommit||''))||
+             !request.publishNonce||
+             request.versionCode!==latest.versionCode||
+             request.versionName!==latest.versionName){
+            throw Error('PC deployment blocked: approved release and matching updater are required.');
+          }
+          console.log('Manual PC deployment has approved release metadata.');
+          NODE
       - name: Prepare PC site
         shell: bash
         run: |

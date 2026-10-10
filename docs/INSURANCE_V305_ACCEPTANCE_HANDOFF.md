@@ -7,6 +7,23 @@ and the selected real mutation scenarios below PASS. Full fault/device acceptanc
 is INCOMPLETE; physical device acceptance NOT_RUN.
 Live remains V304 / 267, workshop-api 58 and staff-auth 4. No release authorization.
 
+## 2026-10-10 GitHub Pages publication control finding
+
+**Important:** GitHub Pages workflow `38023834857` succeeded against commit
+`8458b8082281779a0abb584cb6310354ebed1624` despite
+`release-request.json` still showing `approvedForStaff=false`.
+The old workflow automatically deployed PC assets on ordinary
+`architecture-v2` pushes unless the commit contained `[verify-only]`.
+That rule was insufficient to enforce V305 publication approval.
+
+The Pages workflow is now restricted to **manual dispatch only**, and
+must additionally verify `approvedForStaff=true`, approval metadata,
+and an updater matching the approved version. No next QA branch push
+should automatically publish the PC site. This prevents a recurrence;
+**it does not roll back the previously deployed Pages content**.
+Review the currently served PC site against the last approved version
+before claiming the entire deployed environment remains V304.
+
 ## Delivery-specific HTTPS recovery gate — guarded runner prepared
 
 A separate **QA-only** runner is available at `tests/reception-isolated-delivery.mjs`.
