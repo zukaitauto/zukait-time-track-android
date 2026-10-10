@@ -7,6 +7,33 @@ and the selected real mutation scenarios below PASS. Full fault/device acceptanc
 is INCOMPLETE; physical device acceptance NOT_RUN.
 Live remains V304 / 267, workshop-api 58 and staff-auth 4. No release authorization.
 
+## Delivery-specific HTTPS recovery gate — guarded runner prepared
+
+A separate **QA-only** runner is available at `tests/reception-isolated-delivery.mjs`.
+It executes the actual Receptionist session/delivery functions in independent Node/VM
+processes, with a persisted delivery UUID journal, true staff-auth session validation,
+and actual HTTPS delivery requests. It never runs on a production endpoint, rejects
+non-synthetic Job Cards, and has no production database credentials.
+
+**This is preparation, not a passing HTTPS test.** An isolated synthetic Reception
+Job Card must first reach completed work + painting/final QC PASS. With a current
+private QA Receptionist session, run the stages in order:
+`preflight`, `prepare`, `offline`, `drop`, `verify`, `retry`.
+Use the `prepare` output as the immutable `delivery` body in subsequent stages;
+reuse the **same journal file outside the repository** across stages. The `drop`
+stage discards a confirmed successful HTTPS response, `verify` checks the independently
+read delivery list without clearing the journal, and `retry` demands the original
+request UUID's `duplicate=true` receipt. Use a second READY synthetic job for
+`truncated`, `verify`, `retry`. Before a real write, set
+`ZUKAIT_RECEPTION_ISOLATED=1` and `ZUKAIT_DELIVERY_QA_ACCEPT=1` and pass
+protected JSON over stdin with `root`, `key`, `user`, `token`,
+`journal`, `mode`, and `delivery`. Never publish the token or journal.
+
+The CI self-test `tests/reception-isolated-delivery-selftest.mjs` proves safety
+guards without contacting the backend. Real delivery HTTPS evidence, physical
+browser/Android restart behavior, and full financial preservation remain outstanding.
+
+
 ## 2026-10-10 actual-client recovery and CI checkpoint
 
 Runner/checklist commit: `7bc397b3682a201b1f29e67931d60e57ca0cf058`.
