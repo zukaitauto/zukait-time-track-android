@@ -1,17 +1,17 @@
 {
-  "versionName": "V306",
-  "versionCode": 269,
+  "versionName": "V307",
+  "versionCode": 270,
   "approvedForStaff": true,
-  "approvedAt": "2026-10-10T15:15:58.267Z",
-  "sourceCommit": "9825baa247e466ca43e529f7d1077afea67a9dc5",
-  "publishNonce": "owner-publish-reception-work-type-1791645358268",
-  "signedAcceptanceRun": 38062763519,
-  "verificationRun": 38062763477,
+  "approvedAt": "2026-10-10T16:27:30.798Z",
+  "sourceCommit": "c044f201b0303e8b6b25fd819303ceb83aef9334",
+  "publishNonce": "owner-approved-v307-reception-layout-20261010",
+  "signedAcceptanceRun": 38067144236,
+  "verificationRun": 38067144278,
   "releaseScope": "phase1-compatible-ui",
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "authorization": "Workshop owner in this chat: PUBLISH. Coordinated PC web and signed Android client update with Receptionist Work Type fix; no new backend changes. Existing production Reception integration remains active; physical acceptance pending."
+  "authorization": "Workshop owner explicitly instructed 'Proceed and publish' V307 to existing web and Android while physical-device testing is pending. Earlier owner instruction deferred the backup. Do not claim physical or full acceptance completed. Only publish pinned source commit and signed candidate; no backend migrations or data modifications."
 }
