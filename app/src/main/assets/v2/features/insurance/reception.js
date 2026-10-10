@@ -185,6 +185,7 @@
   function shell(title, body) {
     style();
     backTarget = title === "Reception" || title === "Reception Dashboard" ? "close" :
+      title.startsWith("Reception · ") ? "reception-dashboard" :
       title.includes(" · Reception Checklist") || title === "New Reception Checklist" ||
       title === "Open Job Card" || title.startsWith("Job Card ") ||
       title === "Reception Access" ? "home" :
@@ -1205,6 +1206,8 @@
         case "back":
           if (!canLeaveChecklist()) break;
           if (backTarget === "close") closeModal();
+          else if (backTarget === "reception-dashboard")
+            await (window.zukaitReceptionDashboard?.home?.() || home());
           else if (backTarget === "view" && current?.record?.rc_no)
             await view(current.record.rc_no);
           else if (phase2Enabled && window.zukaitReceptionDashboard?.resume)
