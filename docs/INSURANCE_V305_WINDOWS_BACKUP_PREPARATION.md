@@ -34,9 +34,18 @@ ChatGPT, source control, CI logs or public documentation. Enter it locally as
 a temporary process environment variable without printing the value:
 
 ```powershell
-$env:ZUKAIT_PROD_DB_URL = Read-Host "Enter PRIVATE production PostgreSQL connection URI"
-pwsh -File scripts/backup-zukait-production-readonly.ps1 -BackupRoot "E:\\ZukaitEncryptedBackups" -EncryptedOffsiteConfirmed
-Remove-Item Env:\ZUKAIT_PROD_DB_URL
+$privateUri = Read-Host "Enter PRIVATE production PostgreSQL connection URI" -AsSecureString
+$ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($privateUri)
+try {
+  $env:ZUKAIT_PROD_DB_URL = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)
+} finally {
+  [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)
+}
+try {
+  pwsh -File scripts/backup-zukait-production-readonly.ps1 -BackupRoot "E:\\ZukaitEncryptedBackups" -EncryptedOffsiteConfirmed
+} finally {
+  Remove-Item Env:\ZUKAIT_PROD_DB_URL -ErrorAction SilentlyContinue
+}
 ```
 
 The helper checks that the URI identifies the *production* project, Docker and
