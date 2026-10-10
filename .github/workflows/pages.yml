@@ -26,6 +26,9 @@ jobs:
         shell: bash
         run: node scripts/verify-pc-pages-publication.cjs >> "$GITHUB_ENV"
 
+      - name: Verify complete V305 acceptance and recovery evidence
+        run: node scripts/verify-v305-acceptance.cjs
+
       - name: Checkout exact approved publication source
         shell: bash
         run: |

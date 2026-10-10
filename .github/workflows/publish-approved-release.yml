@@ -45,6 +45,9 @@ jobs:
           fi
           echo "Approved source commit verified: $SOURCE_COMMIT"
 
+      - name: Verify complete V305 acceptance and recovery evidence
+        run: node scripts/verify-v305-acceptance.cjs
+
       - name: Resolve approved version
         id: approved
         shell: bash
