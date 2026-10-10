@@ -1,5 +1,44 @@
 # V305 acceptance handoff
 
+## 2026-10-10 LIVE QA HTTPS concurrent delivery and external preservation — PASS
+
+**Synthetic QA only, no production writes.** Two independent temporary Receptionist
+sessions issued overlapping HTTPS requests to the deployed isolated QA
+`workshop-api` through the installed PostgreSQL `http` transport.
+Two newly created synthetic Job Cards had completed synthetic assignments,
+closed sessions, valid Painting/Final QC fingerprints and Ready status.
+The temporary sessions were revoked afterward; HTTPS calls then returned
+`invalid_session` / HTTP 401.
+
+| Race | Checklist / Job Card | Outcome | Final delivery audits |
+| --- | --- | --- | --- |
+| Same UUID, two sessions | RC0017 / `ZQA-DELIVERY-RACE-S` | HTTP 200 success and HTTP 200 `duplicate=true` | 1 |
+| Different UUIDs, two sessions | RC0018 / `ZQA-DELIVERY-RACE-D` | HTTP 200 success and HTTP 409 `already_delivered` | 1 |
+
+QA `workshop_state` advanced **revision 41 → 43**, precisely two commits.
+Both delivery-list rows changed from READY to DELIVERED; unrelated Job Cards
+and all non-Job-Card workshop JSONB data remained unchanged.
+
+**External-table preservation was independently measured before and after**
+the two concurrent deliveries. JSONB-content fingerprints remained exactly
+the same for six tables: `workshop_v2_spare_part_state`,
+`workshop_v2_spare_part_list_numbers`,
+`workshop_reception_part_transfers`,
+`workshop_reception_additional_transfers`, `workshop_v2_events`,
+and `workshop_v2_jobcards`. Baseline contained 4 parts, 2 parts lists,
+2 initial transfers, 2 additional transfers, and 6 spare-part events.
+
+A permanent disposable-PostgreSQL 17 regression assertion comparing those
+same six tables immediately before and after delivery was added to
+`tests/reception-concurrency.mjs`; confirm its CI result separately.
+
+**Limitations:** Concurrent server HTTPS testing is not physical-device
+testing or actual browser-journal recovery after network loss/restart.
+All four synthetic QA vehicles RC0015–RC0018 are now delivered and
+cannot be reused for fresh first-delivery tests. V305 remains unpublished;
+physical Android/Safari checks, actual-client recovery, PC site reconciliation,
+and production backup verification remain outstanding.
+
 ## 2026-10-10 REAL QA HTTPS delivery replay and preservation — PASS (server-side transport)
 
 **Scope and method.** Isolated QA project `omqgkqknbdcnotabffek` only. Because

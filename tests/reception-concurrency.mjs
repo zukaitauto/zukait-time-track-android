@@ -178,11 +178,26 @@ try{
   const committed=await client.query('select zukait_commit_workshop_state_v2($1,$2::jsonb,$3,$4::jsonb) as result',[snapshot.revision,JSON.stringify(result.data),deliveryActor.id,JSON.stringify(status.rows[0].rows)]);
   return committed.rows[0].result;
  }
+ // Capture the six independent parts/event/mirror tables after fixture creation.
+ // Receptionist delivery must not alter a purchase, part transfer, event or Job Card mirror.
+ const externalDeliverySnapshot=async()=>(
+  await control.query(`select
+   (select coalesce(jsonb_agg(to_jsonb(x) order by x.part_id),'[]'::jsonb) from workshop_v2_spare_part_state x) as parts,
+   (select coalesce(jsonb_agg(to_jsonb(x) order by x.list_no),'[]'::jsonb) from workshop_v2_spare_part_list_numbers x) as lists,
+   (select coalesce(jsonb_agg(to_jsonb(x) order by x.rc_no,x.source_item_id),'[]'::jsonb) from workshop_reception_part_transfers x) as initial_transfers,
+   (select coalesce(jsonb_agg(to_jsonb(x) order by x.approval_id,x.source_item_id),'[]'::jsonb) from workshop_reception_additional_transfers x) as additional_transfers,
+   (select coalesce(jsonb_agg(to_jsonb(x) order by x.event_id),'[]'::jsonb) from workshop_v2_events x) as events,
+   (select coalesce(jsonb_agg(to_jsonb(x) order by x.job_card),'[]'::jsonb) from workshop_v2_jobcards x) as jobcards`)
+ ).rows[0];
  const ten=await readyFixture(),delivery10=deliveryRequest(ten),snapshot10=await deliverySnapshot();
+ const externalBeforeDelivery=await externalDeliverySnapshot();
  const deliveryRetry=await race('Receptionist delivery retries lose stale CAS then confirm one UUID',c=>deliveryCommit(c,snapshot10,delivery10),c=>deliveryCommit(c,snapshot10,delivery10));
  assert.equal(deliveryRetry.first.ok,true);assert.equal(deliveryRetry.second.code,'conflict');
  const confirmed10=receptionistDeliveryTransition(await readState(),deliveryActor,delivery10,Date.now());assert.equal(confirmed10.duplicate,true);assert.equal(confirmed10.job.deliveryAudit.length,1);
  assert.equal(confirmed10.job.receptionLocation,'VWC');
+ assert.deepEqual(await externalDeliverySnapshot(),externalBeforeDelivery,
+  'Receptionist delivery changed spare parts, transfers, events or Job Card mirrors');
+ console.log('PASS: delivered vehicle preserved six external spare-parts/event/mirror tables');
  const eleven=await readyFixture(),delivery11=deliveryRequest(eleven),snapshot11=await deliverySnapshot();
  const newWork=structuredClone(snapshot11.data),newAssignment={id:'QA-WORK-A-'+randomUUID(),emp:'QA-DELIVERY-EMP',job:eleven.job,completed:false,suggested:1,assignedAt:Date.now(),assignedBy:'QA-SUP'};
  newWork.assign.push(newAssignment);newWork.sessions.push({id:'QA-WORK-S-'+randomUUID(),assignmentId:newAssignment.id,emp:'QA-DELIVERY-EMP',job:eleven.job,start:Date.now(),end:0});
