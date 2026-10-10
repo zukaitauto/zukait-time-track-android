@@ -181,7 +181,7 @@
 }
 `;
     e.textContent += "\n#rc-root #rc-form .rc-inspection-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(320px,1fr);align-items:start;gap:14px;margin-top:12px}\n#rc-root #rc-form .rc-inspection-layout>.rc-box{min-width:0;margin:0;overflow:hidden}\n#rc-root .rc-panel-head{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}\n#rc-root .rc-panel-head h4{margin:4px 0}\n#rc-root .rc-info-note{color:#466578;font-size:13px;margin:7px 0 12px}\n#rc-root .rc-damage-types{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0}\n#rc-root .rc-damage-types button{min-height:42px!important;padding:7px 11px!important;font-weight:800!important;background:#f4f9ff!important;color:#21455c!important;border:1px solid #b6cddb!important}\n#rc-root .rc-damage-types [aria-pressed=true]{background:#cce9f8!important;outline:2px solid #2789a2}\n#rc-root .rc-damage-clear{background:#edf7fd!important;color:#155b7b!important;border:1px solid #abcbdc!important}\n#rc-root .rc-car-stage{position:relative;width:100%;min-height:170px;aspect-ratio:840 / 310;background:linear-gradient(160deg,#f4faff,#e5f1f8);border:1px solid #d2e3ef;border-radius:16px;margin:14px 0;overflow:hidden}\n#rc-root .rc-car-svg{display:block;width:100%;height:100%}\n#rc-root .rc-car-stage .rc-zone{position:absolute;transform:translate(-50%,-50%);min-height:34px!important;width:34px!important;height:34px!important;padding:0!important;border-radius:50%!important;border:2px solid #fff!important;box-shadow:0 2px 6px #163b5480;background:#187eb1!important;color:#fff!important;font-weight:900!important;font-size:18px!important;line-height:1!important}\n#rc-root .rc-car-stage .rc-zone[data-mark=X]{background:#d73538!important}#rc-root .rc-car-stage .rc-zone[data-mark=S]{background:#176bc6!important}#rc-root .rc-car-stage .rc-zone[data-mark=M]{background:#dd850b!important}\n#rc-root .rc-car-stage .rc-zone:focus-visible{outline:3px solid #111!important;outline-offset:2px!important}\n#rc-root .rc-zone-legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-bottom:15px}\n#rc-root .rc-zone-legend span{font-size:12px;background:#f1f7fb;border:1px solid #e0eaf3;border-radius:8px;padding:6px 8px;font-weight:700}\n#rc-root .rc-zone-legend small{display:block;margin:2px 0 0;font-size:11px;line-height:1.2}\n#rc-root .rc-accessory-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}\n#rc-root .rc-accessory-items .rc-accessory-card,#rc-root .rc-accessory-items .rc-accessory-extra{display:flex!important;align-items:center!important;gap:8px!important;padding:11px 8px!important;min-width:0;min-height:65px!important;background:#f8fcff!important;border:1px solid #d3e1ed!important;border-radius:11px!important;text-align:left!important;color:#24465d!important;box-shadow:none!important;margin:0!important}\n#rc-root .rc-accessory-items .rc-accessory-card input{flex:0 0 23px;width:23px!important;height:23px!important}\n#rc-root .rc-accessory-items strong,#rc-root .rc-accessory-items b{font-weight:800;font-size:14px}\n#rc-root .rc-accessory-items small{display:block;font-size:12px;color:#567186}\n#rc-root .rc-accessory-extra[aria-pressed=true]{background:#e1f7ef!important;border-color:#63b3a4!important}\n#rc-root .rc-accessory-tick{font-style:normal;font-weight:900;background:#0d8a95;color:#fff;border-radius:6px;padding:4px;margin-left:auto}\n#rc-root .rc-fuel{margin:12px 0}#rc-root .rc-reception-notes{margin-top:12px}#rc-root .rc-customer-sign{margin-top:12px}\n@media(max-width:980px){#rc-root #rc-form .rc-inspection-layout{grid-template-columns:1fr}}\n@media(max-width:500px){#rc-root .rc-zone-legend{grid-template-columns:repeat(2,minmax(0,1fr))}#rc-root .rc-car-stage .rc-zone{width:28px!important;height:28px!important;min-height:28px!important;font-size:15px!important}#rc-root .rc-accessory-items{grid-template-columns:1fr 1fr}#rc-root .rc-accessory-items .rc-accessory-card,#rc-root .rc-accessory-items .rc-accessory-extra{padding:9px 5px!important}#rc-root .rc-accessory-items small{font-size:10px}}\n";
-    e.textContent += "#rc-root .rc-record-map{max-width:760px;background:#edf6fb;border-radius:14px;padding:5px;margin:8px auto}#rc-root .rc-record-map svg{width:100%;height:auto;max-height:240px}#rc-root #rc-form .rc-form-brand{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:13px 18px;background:#fff;border:1px solid #d4e2ec;border-radius:14px;color:#0e4664}#rc-root #rc-form .rc-form-brand strong{font-size:20px}#rc-root #rc-form .rc-form-brand small{font-size:13px;display:block}#rc-root #rc-form .rc-form-brand h3{color:#173f61;font-size:18px;margin:3px 0}";
+    e.textContent += "#rc-root .rc-vehicle-header{font-size:18px;margin:16px 0 8px;color:#174a63}#rc-root .rc-record-map{max-width:760px;background:#edf6fb;border-radius:14px;padding:5px;margin:8px auto}#rc-root .rc-record-map svg{width:100%;height:auto;max-height:240px}#rc-root #rc-form .rc-form-brand{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:13px 18px;background:#fff;border:1px solid #d4e2ec;border-radius:14px;color:#0e4664}#rc-root #rc-form .rc-form-brand strong{font-size:20px}#rc-root #rc-form .rc-form-brand small{font-size:13px;display:block}#rc-root #rc-form .rc-form-brand h3{color:#173f61;font-size:18px;margin:3px 0}";
     document.head.appendChild(e);
   }
   function shell(title, body) {
@@ -653,14 +653,16 @@
       throw Error("This Cash or Credit checklist requires the V305 backend. No data was changed.");
     const typeOptions = [["INSURANCE", "Insurance"],
       ...(phase2 ? [["CASH", "Cash"], ...(kind === "CREDIT" ? [["CREDIT", "Credit"]] : [])] : [])];
+    const bilingual={registration:"Registration No. / رقم المركبة",make:"Make / الشركة المصنعة",model:"Model / الموديل",year:"Year / سنة الصنع",vin:"VIN / رقم الهيكل",customer:"Customer / اسم العميل",contact:"Contact / رقم الهاتف",claim:"Claim No. / رقم المطالبة"};
     const inputs = fields.map(([k, l, req]) => {
+      const caption=bilingual[k]||l;
       if (k === "odometer") return '<div class="rc-reading">' +
-        select("odometer_unit", "KM / Mile", [["KM", "KM"], ["Miles", "Mile"]],
+        select("odometer_unit", "Unit / الوحدة (KM / Mile)", [["KM", "KM"], ["Miles", "Mile"]],
           d.odometer_unit || "KM") +
-        input("odometer", "Reading", d.odometer) + '</div>';
+        input("odometer", "Odometer / قراءة العداد", d.odometer) + '</div>';
       if (k === "claim") return '<div class="rc-claim">' +
-        input(k, l, d[k], req) + '</div>';
-      return input(k, l, d[k], req);
+        input(k, caption, d[k], req) + '</div>';
+      return input(k, caption, d[k], req);
     }).join("");
     shell(
       r ? "Edit " + r.rc_no : "New Reception Checklist",
@@ -668,10 +670,10 @@
          (phase2 ? 'Make and Model are required. Cash requires Customer Name; Insurance requires an Insurance Company.' :
           'Insurance checklist only: Cash intake will be available after the verified V305 backend release.') + '</p>' +
         '<div class="rc-form-top">' +
-        select("job_type", "Checklist Type", typeOptions, kind) +
+        select("job_type", "Checklist Type / نوع العمل", typeOptions, kind) +
         '<div class="rc-insurance">' +
-        select("insurance_id", "Insurance Company *", options, r?.insurance_id || "") +
-        '</div></div><div class="rc-grid">' + inputs +
+        select("insurance_id", "Insurance Company / شركة التأمين *", options, r?.insurance_id || "") +
+        '</div></div><h4 class="rc-vehicle-header">معلومات المركبة والعميل / Vehicle &amp; Customer Information</h4><div class="rc-grid">' + inputs +
         '</div><div class="rc-inspection-layout">'+damagePanel(d)+accessoriesPanel(d)+'</div>'+
         '<div class="rc-box rc-reception-notes"><h4>الملاحظات / Notes & Observations</h4>'+
         textFields.filter(([key])=>key==="warnings"||key==="remarks")
