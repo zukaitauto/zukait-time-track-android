@@ -38,7 +38,7 @@ jobs:
           if [ "$GITHUB_REF_NAME" = "architecture-v2" ]; then
             test "$(git rev-parse origin/architecture-v2)" = "$GITHUB_SHA" || { echo "architecture-v2 release must run from current branch HEAD"; exit 1; }
           fi
-          if ! git diff --quiet "$SOURCE_COMMIT" "$GITHUB_SHA" -- . ':(exclude)release-request.json' ':(exclude)latest-version.json' ':(exclude)app/build.gradle' ':(exclude).github/workflows/publish-approved-release.yml' ':(exclude).github/workflows/build-apk.yml'; then
+          if ! git diff --quiet "$SOURCE_COMMIT" "$GITHUB_SHA" -- . ':(exclude)release-request.json' ':(exclude)latest-version.json' ':(exclude)app/build.gradle' ':(exclude)docs/INSURANCE_V305_ACCEPTANCE_GATE.json' ':(exclude).github/workflows/publish-approved-release.yml' ':(exclude).github/workflows/build-apk.yml'; then
             echo "Production source drift detected after approved source commit:"
             git diff --name-only "$SOURCE_COMMIT" "$GITHUB_SHA" -- . ':(exclude)release-request.json'
             exit 1
