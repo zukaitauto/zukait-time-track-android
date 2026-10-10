@@ -406,27 +406,28 @@
       ["", "Select Insurance Company"],
       ...companies.map((c) => [c.id, c.name]),
     ];
-    if (r && !companies.some((c) => c.id === r.insurance_id))
+    if (r && r.insurance_id && !companies.some((c) => c.id === r.insurance_id))
       options.push([r.insurance_id, r.insurance_company]);
+    const kind = r?.job_type || "INSURANCE";
+    const typeOptions = [["INSURANCE", "Insurance"], ["CASH", "Cash"],
+      ...(kind === "CREDIT" ? [["CREDIT", "Credit"]] : [])];
+    const inputs = fields.map(([k, l, req]) => {
+      if (k === "odometer") return '<div class="rc-reading">' +
+        select("odometer_unit", "KM / Mile", [["KM", "KM"], ["Miles", "Mile"]],
+          d.odometer_unit || "KM") +
+        input("odometer", "Reading", d.odometer) + '</div>';
+      if (k === "claim") return '<div class="rc-claim">' +
+        input(k, l, d[k], req) + '</div>';
+      return input(k, l, d[k], req);
+    }).join("");
     shell(
       r ? "Edit " + r.rc_no : "New Reception Checklist",
-      '<form id="rc-form"><p>* ' + (r?.job_type && r.job_type !== 'INSURANCE' ? 'Make and Model are required.' : 'Only Insurance Company, Make and Model are required.') + '</p><div class="rc-grid">' +
-        select(
-          "insurance_id",
-          "Insurance Company *",
-          options,
-          r?.insurance_id || "",
-        ) +
-        fields.map(([k, l, req]) => input(k, l, d[k], req)).join("") +
-        select(
-          "odometer_unit",
-          "Reading Unit",
-          [
-            ["KM", "KM"],
-            ["Miles", "Miles"],
-          ],
-          d.odometer_unit || "KM",
-        ) +
+      '<form id="rc-form"><p class="rc-form-hint">Make and Model are required. Cash requires Customer Name; Insurance requires an Insurance Company.</p>' +
+        '<div class="rc-form-top">' +
+        select("job_type", "Checklist Type", typeOptions, kind) +
+        '<div class="rc-insurance">' +
+        select("insurance_id", "Insurance Company *", options, r?.insurance_id || "") +
+        '</div></div><div class="rc-grid">' + inputs +
         '</div><div class="rc-box"><h4>Tools and Accessories</h4><p><small>Tick recorded accessories individually. Unticked means not recorded.</small></p><div class="rc-grid rc-accessories">' +
         tools
           .map(
@@ -466,10 +467,25 @@
           .join("") +
         '</div>' + (current?.record?.job_card ? input('reason', 'Reason for checklist / vehicle correction', '', true) : '') + '<div class="rc-actions"><button type="submit">Save Checklist</button></div></form>',
     );
-    const insurer=document.querySelector("#rc-form [name=insurance_id]");
-    insurer.required=!r?.job_type || r.job_type==='INSURANCE';
-    if(!insurer.required)insurer.closest('label').hidden=true;
-    document.getElementById("rc-form").addEventListener("submit", saveForm);
+    const form = document.getElementById("rc-form");
+    const type = form.elements.namedItem("job_type");
+    const insurer = form.elements.namedItem("insurance_id");
+    const customer = form.elements.namedItem("customer");
+    const insurerGroup = form.querySelector(".rc-insurance");
+    const claimGroup = form.querySelector(".rc-claim");
+    // An existing checklist's type is authoritative. Never silently convert it.
+    if (r) type.disabled = true;
+    function applyType() {
+      const insurance = type.value === "INSURANCE";
+      insurerGroup.hidden = !insurance;
+      claimGroup.hidden = !insurance;
+      insurer.required = insurance;
+      customer.required = !insurance;
+      if (!insurance && !r) insurer.value = "";
+    }
+    type.addEventListener("change", applyType);
+    applyType();
+    form.addEventListener("submit", saveForm);
   }
   async function fetchRecord(no) {
     current = await call({ operation: "GET", rc_no: no });
@@ -496,8 +512,10 @@
         (current.preliminary_parts ? '<button data-rc-action="parts">Preliminary Parts</button>' : '') +
         '<button data-rc-action="print">Print</button><button data-rc-action="pdf">Share PDF</button></div><div class="rc-grid"><div class="rc-box"><h4>Customer & Vehicle</h4>' +
         [
-          ["Insurance", r.insurance_company],
-          ...fields.map(([k, l]) => [l, d[k]]),
+          ...((r.job_type || "INSURANCE") === "INSURANCE" ? [["Insurance", r.insurance_company]] : []),
+          ...fields.filter(([k]) => k !== "claim" || (r.job_type || "INSURANCE") === "INSURANCE")
+            .map(([k, l]) => [l, d[k]]),
+          ["Reading Unit", d.odometer_unit],
           ["Received", stamp(r.received_at)],
           ["Job Card", r.job_card],
           ["Job Type", r.job_type || "INSURANCE"],
@@ -821,7 +839,8 @@
     try {
       const r = await mutate({
         operation: current ? "EDIT" : "CREATE",
-        insurance_id: current?.record.job_type && current.record.job_type !== "INSURANCE" ? null : Number(f.get("insurance_id")),
+        insurance_id: (current?.record.job_type || f.get("job_type")) === "INSURANCE" ? Number(f.get("insurance_id")) : null,
+        ...(current ? {} : { job_type: f.get("job_type") }),
         details,
         ...(current
           ? {
@@ -972,7 +991,9 @@
       esc(labels[r.location]) +
       "</div></header><h3>Customer & Vehicle Details</h3><table>" +
       [
-        ["Insurance Company", r.insurance_company, "Customer", d.customer],
+        [(r.job_type || "INSURANCE") === "INSURANCE" ? "Insurance Company" : "Checklist Type",
+          (r.job_type || "INSURANCE") === "INSURANCE" ? r.insurance_company : r.job_type,
+          "Customer", d.customer],
         ["Contact", d.contact, "Registration", d.registration],
         ["Make / Model", [d.make, d.model].join(" "), "Model Year", d.year],
         [
@@ -983,12 +1004,11 @@
             .filter(Boolean)
             .join(" "),
         ],
-        [
-          "Claim / Gate Pass",
-          d.claim,
-          "Case Status",
-          labels[r.outcome || r.approval_status],
-        ],
+        ...((r.job_type || "INSURANCE") === "INSURANCE" ?
+          [["Claim / Gate Pass", d.claim, "Case Status",
+            labels[r.outcome || r.approval_status]]] :
+          [["Case Status", labels[r.outcome || r.approval_status],
+            "Location", labels[r.location]]]),
       ]
         .map(
           ([a, b, c, e]) =>
