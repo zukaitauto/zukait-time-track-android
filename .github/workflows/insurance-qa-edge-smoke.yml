@@ -61,6 +61,17 @@ jobs:
             '{"action":"reception_dashboard","section":"checklists","page":0}'
           check_status "Promise Date update denies nonexistent session" 401 "$API/functions/v1/workshop-api" POST "$QA_KEY" \
             '{"action":"reception_promise_date","job_card":"ZQA-TEST","promise_date":"2026-10-15","expected_promise_date":"","request_id":"f474101c-73a4-4c0b-930d-5aa5cd6feb64"}'
+          # Verify all user-data and delivery routes fail closed without a real staff session.
+          # The request UUID is a fixed synthetic test value; the server must reject
+          # the request before any database mutation can occur.
+          check_status "Receptionist delivery listing denies nonexistent session" 401 "$API/functions/v1/workshop-api" POST "$QA_KEY" \
+            '{"action":"receptionist_delivery_list"}'
+          check_status "Receptionist delivery mutation denies nonexistent session" 401 "$API/functions/v1/workshop-api" POST "$QA_KEY" \
+            '{"action":"receptionist_deliver","operation":"DELIVER","jobCard":"ZQA-NO-SESSION","expectedQcRevision":0,"expectedVehicleIdentity":"QA-INVALID","request_id":"a72ed813-bafb-4bb5-89d2-e620cde4dabe"}'
+          check_status "Reception direct-job creation denies nonexistent session" 401 "$API/functions/v1/workshop-api" POST "$QA_KEY" \
+            '{"action":"reception","command":{"operation":"CREATE_DIRECT_JOB","details":{"make":"QA-NO-SESSION","model":"NO-WRITE"}}}'
+          check_status "Shared workshop state denies nonexistent session" 401 "$API/functions/v1/workshop-api" POST "$QA_KEY" \
+            '{"action":"load"}'
           WRONG='sb_publishable_zukait_reception_wrong_key_probe'
           test "$WRONG" != "$QA_KEY"
           check_status "staff-auth denies unrelated key" 401 "$API/functions/v1/staff-auth" POST "$WRONG" \
