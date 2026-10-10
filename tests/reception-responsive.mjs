@@ -21,7 +21,8 @@ for (const engine of ['chromium', 'webkit']) {
           const body=JSON.parse(args.body);
           if(body.action==='reception_dashboard')return {ok:true,json:async()=>({ok:true,rows:[],counts:{checklists:0},total:0})};
           const c=body.command;
-          const result=c.operation==='CAPABILITIES'?{allowed:true,manager:true}:c.operation==='MASTER'?{companies:[{id:1,name:'Test Insurance'}]}:c.operation==='LIST'?{rows:[{rc_no:'RC-TEST',details:{make:'Toyota',model:'Corolla',registration:'TEST',customer:'Customer <script>unsafe</script>'},insurance_company:'Test Insurance',location:'VWC',approval_status:'APPROVED'}]}:{};
+          const result=c.operation==='CAPABILITIES'?{allowed:true,manager:true}:c.operation==='MASTER'?{companies:[{id:1,name:'Test Insurance'}]}:c.operation==='LIST'?{rows:[{rc_no:'RC-TEST',details:{make:'Toyota',model:'Corolla',registration:'TEST',customer:'Customer <script>unsafe</script>'},insurance_company:'Test Insurance',location:'VWC',approval_status:'APPROVED'}]}::c.operation==='GET'?{record:{rc_no:'RC-TEST',job_type:'INSURANCE',can_edit:true,revision:1,details:{make:'Toyota',model:'Corolla',registration:'TEST',customer:'Customer <script>unsafe</script>'},insurance_company:'Test Insurance',location:'VWC',approval_status:'APPROVED'},movements:[],audit:[]}:{};
+
           return {ok:true,json:async()=>({ok:true,...result})};
         };
       });
@@ -37,6 +38,22 @@ for (const engine of ['chromium', 'webkit']) {
       assert.equal(layout.overflow,false,`${engine} ${width}: horizontal overflow`);
       if(width>=1024) assert.ok(layout.dialog>900,`${engine}: desktop dialog remains narrow`);
       if(width===390) assert.equal(layout.row,'block');
+      // Detail view must fit Android width while preserving two PC columns.
+      await page.locator('[data-rc-action=view]').click();
+      await page.locator('.rc-cl-grid > .rc-box').first().waitFor();
+      const detail=await page.evaluate(()=>({
+        cards:document.querySelectorAll('.rc-cl-grid > .rc-box').length,
+        columns:getComputedStyle(document.querySelector('.rc-cl-grid')).gridTemplateColumns.trim().split(/\\s+/).length,
+        overflow:document.documentElement.scrollWidth>innerWidth,
+        map:!!document.querySelector('.rc-cl-diagram svg'),
+        escaped:document.querySelectorAll('#rc-root script').length===0
+      }));
+      assert.equal(detail.cards,4,`${engine} ${width}: checklist cards missing`);
+      assert.equal(detail.columns,width<=760?1:2,`${engine} ${width}: wrong checklist columns`);
+      assert.equal(detail.overflow,false,`${engine} ${width}: checklist horizontal overflow`);
+      assert.equal(detail.map,true,`${engine} ${width}: damage diagram missing`);
+      assert.equal(detail.escaped,true,`${engine} ${width}: unsafe detail HTML`);
+      await page.locator('[data-rc-action=home]').click();
       await page.locator('[data-rc-action=new]').click();
       await page.locator('#rc-form').waitFor();
       assert.equal(await page.locator('#rc-form [name=make]').getAttribute('required'),'');
