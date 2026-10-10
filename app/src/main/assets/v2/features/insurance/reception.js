@@ -387,15 +387,15 @@
     );
   }
   async function home() {
-    if (window.zukaitReceptionDashboard?.open && await supportsPhase2())
-      return window.zukaitReceptionDashboard.open();
+    if (window.zukaitReceptionDashboard?.open)
+      return window.zukaitReceptionDashboard.open({backendAvailable: await supportsPhase2()});
     return basicHome();
   }
-  async function basicHome() {
+  async function basicHome(checklistList = false) {
     const phase2 = await supportsPhase2();
     current = null;
     shell(
-      "Reception",
+      checklistList ? "Checklist List" : "Reception",
       '<div class="rc-actions"><button data-rc-action="new">+ New Checklist</button>' +
         (phase2 ? '<button data-rc-action="direct-job">Open Job Card</button>' : '') +
         (caps.manager
@@ -1339,7 +1339,7 @@
     if (header?.parentElement === root) header.insertAdjacentElement("afterend", b);
     else root.prepend(b);
   }
-  window.zukaitReception = { endpoint: API, open: home, dashboardShell:shell, newChecklist:()=>editor(), directJob, action:apiAction, openCancellation: no => cancellation(no).catch(error), openRecord: no => view(no).catch(error), documentHtml, ensureCards, call };
+  window.zukaitReception = { endpoint: API, open: home, dashboardShell:shell, checklistList:()=>basicHome(true), newChecklist:()=>editor(), directJob, action:apiAction, openCancellation: no => cancellation(no).catch(error), openRecord: no => view(no).catch(error), documentHtml, ensureCards, call };
   style();
   new MutationObserver(ensureCards).observe(document.documentElement, {
     childList: true,

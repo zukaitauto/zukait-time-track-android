@@ -80,7 +80,7 @@ def main():
     assert "receptionist_session.js" in scripts["receptionist.html"]
     # Ensure each release refers to a new URL so browsers cannot keep an
     # older cached Reception script after a valid gated Pages publication.
-    cache_tag = "v=305-reception-ui-20261010"
+    cache_tag = "v=305-reception-dashboard-20261010-r2"
     for page, targets in {
         "offline_test.html": ["v2/features/insurance/reception.js", "reception_dashboard.js"],
         "receptionist.html": ["receptionist_session.js", "v2/features/insurance/reception.js", "reception_dashboard.js"],

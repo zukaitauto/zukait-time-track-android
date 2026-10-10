@@ -19,6 +19,7 @@
   const role=()=>window.me?.role||"";
   const writable=()=>["Manager","Supervisor"].includes(role());
   let section="checklists",page=0,filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false};
+  let backendAvailable=false;
   let counts={},latest=[],total=0,loading=false,sequence=0,pendingTimer=null;
   function css(){
     if(document.getElementById("rdb-css"))return;
@@ -56,10 +57,10 @@
   }
   const countFor=key=>key==="new"||key==="create-job"?"":key==="vwc"?counts.vwc??"":counts[key]??"";
   function tiles(){
-    return definitions.map(([key,title,sub,icon])=>
+    return definitions.map(([key,title,sub,icon],index)=>
       '<button type="button" class="rdb-card" data-rdb="tile" data-section="'+key+'" data-active="'+(section===key)+'">'+
-      '<span class="rdb-emoji" aria-hidden="true">'+icon+'</span><span class="rdb-content"><b>'+safe(title)+
-      '</b><small>'+safe(sub)+'</small></span><span class="rdb-count">'+safe(countFor(key))+'</span></button>').join("");
+      '<span class="rdb-emoji" aria-hidden="true">'+icon+'</span><span class="rdb-content"><b>'+(index+1)+'. '+safe(title)+
+      '</b><small>'+safe(!backendAvailable&&!['new','checklists'].includes(key)?'Server update required':sub)+'</small></span><span class="rdb-count">'+safe(backendAvailable?countFor(key):'')+'</span></button>').join("");
   }
   const label=key=>definitions.find(x=>x[0]===key)?.[1]||"Reception";
   function filterHtml(){
@@ -112,8 +113,8 @@
   let vwcSection="vwc-checklists";
   function render(){
     css();window.zukaitReception.dashboardShell("Reception Dashboard",
-      '<p class="rdb-status">Reception operations · Data confirmed by the server · Oman dates</p>'+
-      '<div class="rdb-grid">'+tiles()+'</div>'+listHtml());
+      '<p class="rdb-status">'+(backendAvailable?'Reception operations · Data confirmed by the server · Oman dates':'Checklist intake and list are available. The other dashboard functions need a server update.')+'</p>'+
+      '<div class="rdb-grid">'+tiles()+'</div>'+(backendAvailable?listHtml():'<section class="rc-box" id="rdb-unavailable" aria-live="polite"><h4>Your Reception dashboard</h4><p>Choose Create Checklist or Checklist List to use the current workshop service. Other sections are not yet available on this server; no counts or empty lists are assumed.</p></section>'));
     const root=document.getElementById("rc-root");if(!root)return;
     root.addEventListener("click",onClick);
     root.addEventListener("input",onFilter);
@@ -132,6 +133,7 @@
     if(prev)prev.disabled=page===0;
   }
   async function load(){
+    if(!backendAvailable)return;
     const request=++sequence;
     loading=true;showRows();
     const requestedSection=section==="vwc"?vwcSection:section;
@@ -150,12 +152,19 @@
     }catch(e){if(request===sequence){latest=[];total=0;const err=document.getElementById("rc-error");if(err)err.textContent=e.message||String(e);}}
     finally{if(request===sequence){loading=false;showRows();}}
   }
-  async function open(){section="checklists";vwcSection="vwc-checklists";page=0;
+  async function open(options={}){backendAvailable=options.backendAvailable===true;++sequence;clearTimeout(pendingTimer);loading=false;section="checklists";vwcSection="vwc-checklists";page=0;
     filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false};
     latest=[];counts={};total=0;render();await load();}
   // Keep the list section and filters when Back returns from a checklist.
   async function resume(){render();await load();}
   async function choose(next){
+    if(!backendAvailable){
+      if(next==="new")return window.zukaitReception.newChecklist();
+      if(next==="checklists")return window.zukaitReception.checklistList();
+      const notice=document.getElementById("rdb-unavailable");
+      if(notice)notice.innerHTML="<h4>"+safe(label(next))+"</h4><p>This function needs the Reception server update. No records were loaded or changed. Use the existing workshop workflow until activation is verified.</p>";
+      return;
+    }
     if(next==="new")return window.zukaitReception.newChecklist();
     if(next==="create-job")return window.zukaitReception.directJob();
     section=next;page=0;filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false};
@@ -173,6 +182,7 @@
     else void load();
   }
   async function savePromise(jobCard,date,original){
+    if(!backendAvailable)throw Error("Promise Date needs the Reception server update.");
     if(!writable())throw Error("Only Manager or Supervisor can enter Promise Date.");
     if(date&&!/^\d{4}-\d\d-\d\d$/.test(date))throw Error("Choose a valid Promise Date.");
     const key="zukait_reception_promise_pending:"+window.zukaitReception.endpoint+":"+role()+":"+jobCard;

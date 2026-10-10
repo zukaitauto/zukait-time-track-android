@@ -62,5 +62,40 @@ assert.ok(w.document.querySelector('#rc-direct-job input[name=promise_date]'),"M
 await w.zukaitReception.open();await settle();
 await click('#rc-root [data-rdb=tile][data-section=new]');
 assert.ok(w.document.querySelector("#rc-form"),"New checklist launches existing server workflow");
+// Real production-like Phase 1 response must retain the ten-card layout.
+w.zukaitReceptionForceBackendProbe=true;
+w.zukaitAuth={getToken:()=>"PHASE1-SESSION"};
+const phase1Requests=[];
+w.fetch=async(_url,args)=>{
+ const body=JSON.parse(args.body);phase1Requests.push(body);
+ if(body.action==="reception_dashboard")return {ok:false,json:async()=>({ok:false,code:"unsupported_action"})};
+ assert.equal(body.action,"reception","No Phase 2 mutation can be sent in compatibility mode");
+ const c=body.command;
+ const result=c.operation==="CAPABILITIES"?{allowed:true,manager:true}:c.operation==="MASTER"?{companies:[{id:1,name:"Existing Insurer"}]}:c.operation==="LIST"?{rows:[]}:{};
+ return {ok:true,json:async()=>({ok:true,...result})};
+};
+await w.zukaitReception.open();await settle();
+buttons=w.document.querySelectorAll("#rc-root [data-rdb=tile]");
+assert.equal(buttons.length,10,"Production Phase 1 must not revert to old home");
+assert.ok(buttons[9].textContent.includes("10. Delivery Follow-up"));
+assert.equal(w.document.querySelectorAll("#rdb-results").length,0,"Unavailable data must not appear as an empty list");
+assert.ok([...w.document.querySelectorAll('.rdb-count')].every(x=>x.textContent===''),"No invented counts");
+const probeCount=phase1Requests.length;
+for(const key of ['create-job','jobs','waiting','vwc','approved','ready','delivered','followup']){
+ await click('#rc-root [data-rdb=tile][data-section='+key+']');
+ assert.match(w.document.querySelector('#rdb-unavailable').textContent,/needs the Reception server update/);
+}
+assert.equal(phase1Requests.length,probeCount,"Unavailable sections never call unsupported endpoints");
+await assert.rejects(()=>w.zukaitReceptionDashboard.savePromise('JC120','2026-10-15',''),/server update/);
+await click('#rc-root [data-rdb=tile][data-section=checklists]');
+assert.equal(w.document.querySelector('.rc-topbar h3').textContent,'Checklist List');
+await click('#rc-root [data-rc-action=back]');
+assert.equal(w.document.querySelectorAll('#rc-root [data-rdb=tile]').length,10,"Back from list returns to new dashboard");
+await click('#rc-root [data-rdb=tile][data-section=new]');
+assert.ok(w.document.querySelector('#rc-form'));
+assert.equal(w.document.querySelectorAll('#rc-form option[value=CASH]').length,0);
+await click('#rc-root [data-rc-action=back]');
+assert.equal(w.document.querySelectorAll('#rc-root [data-rdb=tile]').length,10,"Back from intake returns to new dashboard");
+assert.equal(phase1Requests.filter(x=>x.action==='reception_dashboard').length,1,"Only the read-only capability probe runs");
 dom.window.close();
 console.log("Reception dashboard UI: ten tiles, Manager session reuse, category list, date-range filtering, optional Job Card promise field and confirmed promise save passed.");
