@@ -25,10 +25,14 @@ function validate(request,ref,record) {
 }
 if(require.main===module) {
  const file='release-ui-request.json';
- if(!fs.existsSync(file)||JSON.parse(fs.readFileSync(file,'utf8')).approvedForStaff!==true) {
+ const candidate=JSON.parse(fs.readFileSync('release-request.json','utf8'));
+ const request=fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):null;
+ // Historical release approval must never authorize a different version.
+ if(!request||request.approvedForStaff!==true||
+    request.versionName!==candidate.versionName||
+    request.versionCode!==candidate.versionCode) {
   console.log('UI_ONLY_PUBLICATION=false');
  } else {
-  const request=JSON.parse(fs.readFileSync(file,'utf8'));
   validate(request,process.env.GITHUB_REF,JSON.parse(fs.readFileSync('docs/INSURANCE_V305_ACCEPTANCE_GATE.json','utf8')));
   const src=execFileSync('git',['show',request.sourceCommit+':app/src/main/assets/v2/features/insurance/reception.js'],{encoding:'utf8'});
   assert.ok(src.includes('async function supportsPhase2()')&&src.includes('if (!phase2 && kind !== "INSURANCE")')&&src.includes('if (!phase2Enabled &&'),'Pinned source must retain Phase 1 fail-closed controls');
