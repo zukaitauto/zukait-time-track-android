@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import pg from 'pg';
+import {rehearseRecovery} from './reception-backup-restore.mjs';
 import {qcWork} from '../supabase/functions/workshop-api/qc_delivery_rules.js';
 import {receptionistDeliveryRow,receptionistDeliveryTransition} from '../supabase/functions/workshop-api/receptionist_delivery_rules.js';
 
@@ -202,6 +203,9 @@ try{
  assert.deepEqual((await control.query("select to_jsonb(l)-'updated_at'-'updated_by'-'state_revision' as value from workshop_live_status l where employee_id='QA-EMP' order by employee_id")).rows,live.rows,'original employee live status changed');
  assert.deepEqual((await control.query('select (select last_value from workshop_reception_no_seq) rc,(select last_value from workshop_v2_estimate_no_seq) estimate,(select last_value from workshop_v2_spare_part_list_no_seq) pl')).rows,sequences.rows,'business sequence consumed');
  console.log('PASS: unrelated work, expenses, consumables, employee live status and business sequences preserved');
+ if(process.env.ZUKAIT_POSTGRES_CONTAINER)await rehearseRecovery({admin,control,config,database,
+  replays:[{actor:'QA-MGR',command:create},{actor:'QA-MGR',command:additional},{actor:'QA-MGR',command:cancellation8}]});
+ else console.log('NOT_RUN: database dump/restore requires a disposable PostgreSQL service container');
 }finally{
  await Promise.allSettled([a?.end(),b?.end(),control?.end()]);
  // The name is generated in this process; no configurable database is ever dropped.
