@@ -180,6 +180,7 @@
   #rc-root .rc-topbar{margin:-10px -10px 12px}
 }
 `;
+    e.textContent += "\n#rc-root #rc-form .rc-inspection-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(320px,1fr);align-items:start;gap:14px;margin-top:12px}\n#rc-root #rc-form .rc-inspection-layout>.rc-box{min-width:0;margin:0;overflow:hidden}\n#rc-root .rc-panel-head{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}\n#rc-root .rc-panel-head h4{margin:4px 0}\n#rc-root .rc-info-note{color:#466578;font-size:13px;margin:7px 0 12px}\n#rc-root .rc-damage-types{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0}\n#rc-root .rc-damage-types button{min-height:42px!important;padding:7px 11px!important;font-weight:800!important;background:#f4f9ff!important;color:#21455c!important;border:1px solid #b6cddb!important}\n#rc-root .rc-damage-types [aria-pressed=true]{background:#cce9f8!important;outline:2px solid #2789a2}\n#rc-root .rc-damage-clear{background:#edf7fd!important;color:#155b7b!important;border:1px solid #abcbdc!important}\n#rc-root .rc-car-stage{position:relative;width:100%;min-height:170px;aspect-ratio:840 / 310;background:linear-gradient(160deg,#f4faff,#e5f1f8);border:1px solid #d2e3ef;border-radius:16px;margin:14px 0;overflow:hidden}\n#rc-root .rc-car-svg{display:block;width:100%;height:100%}\n#rc-root .rc-car-stage .rc-zone{position:absolute;transform:translate(-50%,-50%);min-height:34px!important;width:34px!important;height:34px!important;padding:0!important;border-radius:50%!important;border:2px solid #fff!important;box-shadow:0 2px 6px #163b5480;background:#187eb1!important;color:#fff!important;font-weight:900!important;font-size:18px!important;line-height:1!important}\n#rc-root .rc-car-stage .rc-zone[data-mark=X]{background:#d73538!important}#rc-root .rc-car-stage .rc-zone[data-mark=S]{background:#176bc6!important}#rc-root .rc-car-stage .rc-zone[data-mark=M]{background:#dd850b!important}\n#rc-root .rc-car-stage .rc-zone:focus-visible{outline:3px solid #111!important;outline-offset:2px!important}\n#rc-root .rc-zone-legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-bottom:15px}\n#rc-root .rc-zone-legend span{font-size:12px;background:#f1f7fb;border:1px solid #e0eaf3;border-radius:8px;padding:6px 8px;font-weight:700}\n#rc-root .rc-zone-legend small{display:block;margin:2px 0 0;font-size:11px;line-height:1.2}\n#rc-root .rc-accessory-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}\n#rc-root .rc-accessory-items .rc-accessory-card,#rc-root .rc-accessory-items .rc-accessory-extra{display:flex!important;align-items:center!important;gap:8px!important;padding:11px 8px!important;min-width:0;min-height:65px!important;background:#f8fcff!important;border:1px solid #d3e1ed!important;border-radius:11px!important;text-align:left!important;color:#24465d!important;box-shadow:none!important;margin:0!important}\n#rc-root .rc-accessory-items .rc-accessory-card input{flex:0 0 23px;width:23px!important;height:23px!important}\n#rc-root .rc-accessory-items strong,#rc-root .rc-accessory-items b{font-weight:800;font-size:14px}\n#rc-root .rc-accessory-items small{display:block;font-size:12px;color:#567186}\n#rc-root .rc-accessory-extra[aria-pressed=true]{background:#e1f7ef!important;border-color:#63b3a4!important}\n#rc-root .rc-accessory-tick{font-style:normal;font-weight:900;background:#0d8a95;color:#fff;border-radius:6px;padding:4px;margin-left:auto}\n#rc-root .rc-fuel{margin:12px 0}#rc-root .rc-reception-notes{margin-top:12px}#rc-root .rc-customer-sign{margin-top:12px}\n@media(max-width:980px){#rc-root #rc-form .rc-inspection-layout{grid-template-columns:1fr}}\n@media(max-width:500px){#rc-root .rc-zone-legend{grid-template-columns:repeat(2,minmax(0,1fr))}#rc-root .rc-car-stage .rc-zone{width:28px!important;height:28px!important;min-height:28px!important;font-size:15px!important}#rc-root .rc-accessory-items{grid-template-columns:1fr 1fr}#rc-root .rc-accessory-items .rc-accessory-card,#rc-root .rc-accessory-items .rc-accessory-extra{padding:9px 5px!important}#rc-root .rc-accessory-items small{font-size:10px}}\n";
     document.head.appendChild(e);
   }
   function shell(title, body) {
@@ -478,6 +479,152 @@
       rows.map(x => '<tr><td data-label="Checklist / Vehicle"><strong>' + esc(x.rc_no) + '</strong><small>' + esc([x.details.make, x.details.model, x.details.year].filter(Boolean).join(' ')) + '</small></td><td data-label="Registration / Customer">' + esc(x.details.registration || 'Registration not recorded') + '<small>' + esc(x.details.customer || 'Customer not recorded') + '</small></td><td data-label="Type / Insurance">' + esc((x.job_type || "INSURANCE") === "INSURANCE" ? x.insurance_company : x.job_type) + '</td><td data-label="Status / Location">' + badges(x) + '</td><td data-label="Action"><button data-rc-action="view" data-rc="' + esc(x.rc_no) + '">Open Checklist</button></td></tr>').join('') + '</tbody></table>' : '<p>No reception checklists found.</p>';
     document.getElementById("rc-more").hidden = r.rows.length < 100;
   }
+
+  // Damage/accessory annotations use existing server-approved text fields.
+  // Older records remain free text; invalid or unrecognized envelopes are left untouched.
+  const damageZones=[
+    ["front_bumper","Front Bumper","الصدام الأمامي",9,48],
+    ["bonnet","Bonnet","غطاء المحرك",24,48],
+    ["windshield","Windshield","الزجاج الأمامي",37,48],
+    ["roof","Roof","السقف",53,48],
+    ["rear_glass","Rear Glass","الزجاج الخلفي",68,48],
+    ["trunk","Trunk","الصندوق الخلفي",79,48],
+    ["rear_bumper","Rear Bumper","الصدام الخلفي",93,48],
+    ["front_door_l","Front Door L","الباب الأمامي الأيسر",43,14],
+    ["rear_door_l","Rear Door L","الباب الخلفي الأيسر",62,14],
+    ["front_door_r","Front Door R","الباب الأمامي الأيمن",43,82],
+    ["rear_door_r","Rear Door R","الباب الخلفي الأيمن",62,82],
+    ["front_fender_l","Front Fender L","الرفرف الأمامي الأيسر",25,14],
+    ["front_fender_r","Front Fender R","الرفرف الأمامي الأيمن",25,82],
+    ["rear_fender_l","Rear Fender L","الرفرف الخلفي الأيسر",83,14],
+    ["rear_fender_r","Rear Fender R","الرفرف الخلفي الأيمن",83,82],
+    ["head_lights","Headlights","المصابيح الأمامية",12,22],
+    ["rear_lights","Rear Lights","المصابيح الخلفية",90,22]
+  ];
+  const extraAccessories=[
+    ["jack_release","Jack Release","ذراع الرافعة","🔧"],
+    ["wheel_covers","Wheel Covers","أغطية العجلات","◉"],
+    ["upholstery","Upholstery","المفروشات","▤"],
+    ["windshield","Wind Shield","الزجاج الأمامي","▱"],
+    ["radio_tape","Radio & Audio","الراديو والمسجل","▣"]
+  ];
+  const toolArabic={spare_tyre:"الإطار الاحتياطي",jack:"الرافعة",wheel_spanner:"مفتاح العجلات",
+    tool_kit:"عدة الأدوات",spare_key:"المفتاح الاحتياطي",warning_triangle:"مثلث التحذير",
+    first_aid_kit:"الإسعافات الأولية",floor_mats:"دواسات الأرضية",other:"ملحقات أخرى"};
+  const damageName=Object.fromEntries(damageZones.map(x=>[x[0],x[1]]));
+  const extraName=Object.fromEntries(extraAccessories.map(x=>[x[0],x[1]]));
+  function unpackChecklistText(raw,kind,allowed){
+    const source=String(raw||""),header="[[ZUKAIT-"+kind+"-V1]]\n",footer="\n[[/ZUKAIT-"+kind+"-V1]]";
+    if(!source.startsWith(header))return {marks:{},notes:source};
+    const end=source.indexOf(footer,header.length);
+    if(end<0)return {marks:{},notes:source};
+    try{
+      const data=JSON.parse(source.slice(header.length,end)),marks={};
+      if(!data||typeof data!=="object"||Array.isArray(data))throw Error("Invalid checklist map");
+      for(const [key,value] of Object.entries(data)){
+        if(!allowed.includes(key)||!(kind==="DAMAGE"?["X","S","M"].includes(value):value===true))throw Error("Invalid map value");
+        marks[key]=value;
+      }
+      return {marks,notes:source.slice(end+footer.length).replace(/^\n/,"")};
+    }catch(_){return {marks:{},notes:source};}
+  }
+  function packChecklistText(notes,kind,marks){
+    const cleaned={};
+    const allowed=kind==="DAMAGE"?damageZones.map(x=>x[0]):extraAccessories.map(x=>x[0]);
+    for(const [key,value] of Object.entries(marks||{}))
+      if(allowed.includes(key)&&(kind==="DAMAGE"?["X","S","M"].includes(value):value===true))cleaned[key]=value;
+    if(!Object.keys(cleaned).length)return String(notes||"");
+    return "[[ZUKAIT-"+kind+"-V1]]\n"+JSON.stringify(cleaned)+"\n[[/ZUKAIT-"+kind+"-V1]]\n"+String(notes||"");
+  }
+  function damageSummary(d){
+    const marks=unpackChecklistText(d.damage,"DAMAGE",damageZones.map(x=>x[0])).marks;
+    return Object.entries(marks).map(([key,value])=>damageName[key]+": "+({X:"Dent",S:"Scratch",M:"Missing"}[value])).join("; ");
+  }
+  function carGraphic(){
+    return '<svg class="rc-car-svg" viewBox="0 0 840 310" role="img" aria-label="Top view vehicle damage diagram, front at left">'+
+      '<rect x="98" y="23" width="102" height="36" rx="16" fill="#263b4c"/><rect x="98" y="251" width="102" height="36" rx="16" fill="#263b4c"/>'+
+      '<rect x="632" y="23" width="102" height="36" rx="16" fill="#263b4c"/><rect x="632" y="251" width="102" height="36" rx="16" fill="#263b4c"/>'+
+      '<path d="M92 77 Q108 54 164 52 L668 52 Q721 59 739 104 L747 150 L739 206 Q725 253 668 258 L164 258 Q108 256 92 234 Q65 198 65 154 Q65 109 92 77Z" fill="#e9f1f8" stroke="#2b5f80" stroke-width="5"/>'+
+      '<path d="M140 74 Q178 61 263 72 L263 239 Q178 250 140 235 Q114 153 140 74Z" fill="#f8fbfd" stroke="#aac3d6" stroke-width="3"/>'+
+      '<path d="M313 72 Q338 57 381 65 L619 65 Q647 70 661 88 L661 224 Q640 244 613 245 L376 245 Q335 244 313 232Z" fill="#dbe6ee" stroke="#6a94ae" stroke-width="4"/>'+
+      '<path d="M309 78 L337 91 L337 220 L309 234Z" fill="#44667d"/>'+
+      '<path d="M670 82 Q707 149 670 231 L636 225 L636 86Z" fill="#547a94"/>'+
+      '<rect x="390" y="82" width="178" height="145" rx="22" fill="#eff7fb" stroke="#97b9ca" stroke-width="3"/>'+
+      '<path d="M476 66 L476 242 M582 66 L582 242" stroke="#8eacbe" stroke-width="2"/>'+
+      '<path d="M90 113 L108 113 M90 196 L108 196 M731 108 L749 108 M731 203 L749 203" stroke="#e5ad4e" stroke-width="11" stroke-linecap="round"/>'+
+      '<text x="148" y="156" font-size="17" font-weight="700" fill="#607d91" text-anchor="middle">FRONT</text>'+
+      '<text x="684" y="156" font-size="17" font-weight="700" fill="#607d91" text-anchor="middle">REAR</text></svg>';
+  }
+  function damagePanel(d){
+    const parsed=unpackChecklistText(d.damage,"DAMAGE",damageZones.map(x=>x[0]));
+    return '<section class="rc-box rc-damage-panel"><div class="rc-panel-head"><h4>فحص أضرار المركبة / Vehicle Damages</h4>'+
+      '<button type="button" class="rc-damage-clear" data-rc-clear-marks>Clear Marks</button></div>'+
+      '<p class="rc-info-note">Choose Dent, Scratch, or Missing, then tap a vehicle part. Tap the same mark again to remove it.</p>'+
+      '<div class="rc-damage-types" role="group" aria-label="Damage marking type">'+
+      '<button type="button" class="rc-damage-mode" data-rc-mode="X" aria-pressed="true">🔴 X · Dent / ضربة</button>'+
+      '<button type="button" class="rc-damage-mode" data-rc-mode="S" aria-pressed="false">🔵 S · Scratch / خدش</button>'+
+      '<button type="button" class="rc-damage-mode" data-rc-mode="M" aria-pressed="false">🟠 M · Missing / مفقود</button></div>'+
+      '<input type="hidden" name="rc_damage_marks" value="'+esc(JSON.stringify(parsed.marks))+'">'+
+      '<div class="rc-car-stage">'+carGraphic()+
+      damageZones.map(([key,name,ar,left,top])=>
+        '<button type="button" class="rc-zone" data-rc-zone="'+key+'" data-mark="'+esc(parsed.marks[key]||"")+'" aria-label="'+esc(name+' / '+ar)+'" title="'+esc(name+' / '+ar)+'" style="left:'+left+'%;top:'+top+'%">'+esc(parsed.marks[key]||"+")+'</button>'
+      ).join("")+'</div>'+
+      '<div class="rc-zone-legend">'+damageZones.map(([key,name,ar])=>'<span>'+esc(name)+' <small lang="ar">'+esc(ar)+'</small></span>').join("")+'</div>'+
+      '<label>Damage notes / ملاحظات الأضرار<textarea name="damage" maxlength="1700" placeholder="Additional damage description">'+esc(parsed.notes)+'</textarea></label></section>';
+  }
+  function accessoriesPanel(d){
+    const parsed=unpackChecklistText(d.other_accessories,"ACCESSORIES",extraAccessories.map(x=>x[0]));
+    return '<section class="rc-box rc-accessory-panel"><h4>الملحقات والمعدات / Accessories & Equipment</h4>'+
+      '<p class="rc-info-note">Tick only accessories actually received or inspected.</p>'+
+      '<div class="rc-accessory-items">'+
+      tools.map(([key,name])=>'<label class="rc-check rc-accessory-card"><input type="checkbox" name="tools" value="'+key+'" '+
+        ((d.tools||[]).includes(key)?"checked":"")+'><span><strong>'+esc(name)+'</strong><small lang="ar">'+esc(toolArabic[key])+'</small></span></label>').join("")+
+      extraAccessories.map(([key,name,ar,icon])=>
+        '<button type="button" class="rc-accessory-extra" data-rc-accessory="'+key+'" aria-pressed="'+(!!parsed.marks[key])+'">'+
+        '<span aria-hidden="true">'+icon+'</span><span><b>'+esc(name)+'</b><small lang="ar">'+esc(ar)+'</small></span>'+
+        '<em class="rc-accessory-tick" aria-hidden="true">'+(parsed.marks[key]?"✓":"+ ")+'</em></button>').join("")+'</div>'+
+      '<input type="hidden" name="rc_extra_accessories" value="'+esc(JSON.stringify(parsed.marks))+'">'+
+      '<div class="rc-fuel">'+select("fuel","Fuel Level / مستوى الوقود",[["","Not recorded"],["Empty","E"],["Quarter","1/4"],["Half","1/2"],["Three quarters","3/4"],["Full","F"]],d.fuel||"")+'</div>'+
+      '<label>Other accessories / ملحقات أخرى<textarea name="other_accessories" maxlength="1400">'+esc(parsed.notes)+'</textarea></label></section>';
+  }
+  function bindInspection(form){
+    const panel=form.querySelector(".rc-damage-panel"),chosen={value:"X"};
+    panel?.addEventListener("click",e=>{
+      const mode=e.target.closest("[data-rc-mode]");
+      if(mode){
+        chosen.value=mode.dataset.rcMode;
+        panel.querySelectorAll("[data-rc-mode]").forEach(b=>b.setAttribute("aria-pressed",String(b===mode)));
+        return;
+      }
+      const reset=e.target.closest("[data-rc-clear-marks]");
+      if(reset){
+        const field=form.elements.namedItem("rc_damage_marks");
+        if(field.value!=="{}"&&!window.confirm("Clear all marked vehicle damage?"))return;
+        field.value="{}";
+        panel.querySelectorAll("[data-rc-zone]").forEach(b=>{b.dataset.mark="";b.textContent="+";});
+        return;
+      }
+      const zone=e.target.closest("[data-rc-zone]");
+      if(!zone)return;
+      const field=form.elements.namedItem("rc_damage_marks");
+      let marks={};try{marks=JSON.parse(field.value)||{}}catch(_){}
+      const next=marks[zone.dataset.rcZone]===chosen.value?"":chosen.value;
+      if(next)marks[zone.dataset.rcZone]=next;else delete marks[zone.dataset.rcZone];
+      field.value=JSON.stringify(marks);zone.dataset.mark=next;zone.textContent=next||"+";
+    });
+    form.querySelector(".rc-accessory-panel")?.addEventListener("click",e=>{
+      const accessory=e.target.closest("[data-rc-accessory]");if(!accessory)return;
+      const field=form.elements.namedItem("rc_extra_accessories");
+      let marks={};try{marks=JSON.parse(field.value)||{}}catch(_){}
+      if(marks[accessory.dataset.rcAccessory])delete marks[accessory.dataset.rcAccessory];
+      else marks[accessory.dataset.rcAccessory]=true;
+      field.value=JSON.stringify(marks);
+      const checked=!!marks[accessory.dataset.rcAccessory];
+      accessory.setAttribute("aria-pressed",String(checked));
+      accessory.querySelector(".rc-accessory-tick").textContent=checked?"✓":"+";
+    });
+  }
+
   async function editor(no) {
     await master();
     const phase2 = await supportsPhase2();
@@ -515,44 +662,11 @@
         '<div class="rc-insurance">' +
         select("insurance_id", "Insurance Company *", options, r?.insurance_id || "") +
         '</div></div><div class="rc-grid">' + inputs +
-        '</div><div class="rc-box"><h4>Tools and Accessories</h4><p><small>Tick recorded accessories individually. Unticked means not recorded.</small></p><div class="rc-grid rc-accessories">' +
-        tools
-          .map(
-            ([k, l]) =>
-              '<label class="rc-check"><input type="checkbox" name="tools" value="' +
-              k +
-              '" ' +
-              ((d.tools || []).includes(k) ? "checked" : "") +
-              ">" +
-              l +
-              "</label>",
-          )
-          .join("") +
-        '</div></div><div class="rc-box"><h4>Reception Observations</h4>' +
-        select(
-          "fuel",
-          "Fuel Level",
-          [
-            ["", "Not recorded"],
-            ...["Empty", "Quarter", "Half", "Three quarters", "Full"].map(
-              (v) => [v, v],
-            ),
-          ],
-          d.fuel || "",
-        ) +
-        textFields
-          .map(
-            ([k, l]) =>
-              "<label>" +
-              l +
-              '<textarea name="' +
-              k +
-              '" maxlength="2000">' +
-              esc(d[k] || "") +
-              "</textarea></label>",
-          )
-          .join("") +
-        '</div>' + (current?.record?.job_card ? input('reason', 'Reason for checklist / vehicle correction', '', true) : '') + '<div class="rc-actions"><button type="submit">Save Checklist</button></div></form>',
+        '</div><div class="rc-inspection-layout">'+damagePanel(d)+accessoriesPanel(d)+'</div>'+
+        '<div class="rc-box rc-reception-notes"><h4>الملاحظات / Notes & Observations</h4>'+
+        textFields.filter(([key])=>key==="warnings"||key==="remarks")
+        .map(([key,name])=>'<label>'+esc(name)+'<textarea name="'+key+'" maxlength="2000">'+esc(d[key]||"")+'</textarea></label>').join("")+
+        '</div><div class="rc-box rc-customer-sign"><strong>إقرار العميل / Customer Acknowledgement</strong><p>The customer signs the printed A4 checklist after inspection. No signature photo is stored.</p></div>' + (current?.record?.job_card ? input('reason', 'Reason for checklist / vehicle correction', '', true) : '') + '<div class="rc-actions"><button type="submit">Save Checklist</button></div></form>',
     );
     const form = document.getElementById("rc-form");
     const type = form.elements.namedItem("job_type");
@@ -572,6 +686,7 @@
     }
     type.addEventListener("change", applyType);
     applyType();
+    bindInspection(form);
     // Track an in-memory form baseline. Never persist unsaved customer details
     // to localStorage or interfere with the existing server request journal.
     checklistSnapshots.set(form, JSON.stringify([...new FormData(form)]));
@@ -930,6 +1045,13 @@
     details.tools = f.getAll("tools");
     details.odometer_unit = String(f.get("odometer_unit"));
     details.fuel = String(f.get("fuel") || "");
+    try{
+      details.damage=packChecklistText(details.damage,"DAMAGE",JSON.parse(String(f.get("rc_damage_marks")||"{}")));
+      details.other_accessories=packChecklistText(details.other_accessories,"ACCESSORIES",JSON.parse(String(f.get("rc_extra_accessories")||"{}")));
+    }catch(_){error(Error("Invalid damage or accessory markings; save was blocked."));return;}
+    if(details.damage.length>2000||details.other_accessories.length>2000){
+      error(Error("Damage/accessory notes are too long; shorten the notes before saving."));return;
+    }
     if (window.zukaitNormalizeVehicle) {
       const v =
         window.zukaitNormalizeVehicle(details.make, details.model, "") || {};
