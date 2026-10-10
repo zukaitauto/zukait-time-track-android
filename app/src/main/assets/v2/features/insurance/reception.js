@@ -140,7 +140,8 @@
     style();
     backTarget = title === "Reception" || title === "Reception Dashboard" ? "close" :
       title.includes(" · Reception Checklist") || title === "New Reception Checklist" ||
-      title === "Open Job Card" ? "home" :
+      title === "Open Job Card" || title.startsWith("Job Card ") ||
+      title === "Reception Access" ? "home" :
       title.startsWith("Edit ") || current?.record?.rc_no ? "view" : "home";
     openModal(
       '<section class="rc" id="rc-root"><header class="rc-topbar"><button type="button" data-rc-action="back">← Back</button><h3>' +
