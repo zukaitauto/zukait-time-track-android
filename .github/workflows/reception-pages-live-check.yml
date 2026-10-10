@@ -1,0 +1,39 @@
+name: Read-only live PC Reception source check
+
+on:
+  push:
+    branches: [architecture-v2]
+    paths:
+      - ".github/workflows/reception-pages-live-check.yml"
+      - "scripts/reception-pages-live-check.cjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-live-pages:
+    if: github.ref == 'refs/heads/architecture-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify diagnostic self-test
+        run: |
+          node --check scripts/reception-pages-live-check.cjs
+          node scripts/reception-pages-live-check.cjs --self-test
+      - name: Read existing public Pages assets without credentials
+        run: node scripts/reception-pages-live-check.cjs
+      - name: Retain hashes and classifications
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reception-pages-live-readonly-report
+          path: reception-pages-live-report.json
+          if-no-files-found: ignore
+          retention-days: 14
