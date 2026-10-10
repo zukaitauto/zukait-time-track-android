@@ -1,17 +1,17 @@
 {
-  "versionName": "V307",
-  "versionCode": 270,
+  "versionName": "V308",
+  "versionCode": 271,
   "approvedForStaff": true,
-  "approvedAt": "2026-10-10T16:27:30.798Z",
-  "sourceCommit": "c044f201b0303e8b6b25fd819303ceb83aef9334",
-  "publishNonce": "owner-approved-v307-reception-layout-20261010",
-  "signedAcceptanceRun": 38067144236,
-  "verificationRun": 38067144278,
+  "approvedAt": "2026-10-10T20:05:30.105Z",
+  "sourceCommit": "45c6712460a2d675ac135e4ad440aa820417c15b",
+  "publishNonce": "owner-approved-v308-a4-print-20261010",
+  "signedAcceptanceRun": 38082133296,
+  "verificationRun": 38082133292,
   "releaseScope": "phase1-compatible-ui",
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "authorization": "Workshop owner explicitly instructed 'Proceed and publish' V307 to existing web and Android while physical-device testing is pending. Earlier owner instruction deferred the backup. Do not claim physical or full acceptance completed. Only publish pinned source commit and signed candidate; no backend migrations or data modifications."
+  "authorization": "Workshop owner approved the one-page A4 print layout and explicitly directed 'Proceed with this ui', 'Proceed', 'Proceed release', then 'Next'. V308 is a UI-only release from the pinned, successfully tested commit. Prior workshop instruction deferred backup, and physical Android/Safari acceptance remains NOT_RUN. Preserve the existing production backend and Phase 1 compatibility; do not change workshop data or enable Phase 2."
 }
