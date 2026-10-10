@@ -73,3 +73,52 @@ jobs:
       - run: npm run test:reception:browser
       - run: bash scripts/ci-validate-js.sh
 
+
+  dispatch_approved_v307:
+    name: One-time owner-approved V307 release dispatch
+    needs: verify
+    # Only an explicit owner-authorized one-time push can dispatch a release.
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/architecture-v2' &&
+      github.event.head_commit.message == 'Owner-authorized one-time V307 dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require pinned owner approval and successful V307 candidate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/architecture-v2"
+          jq -e --arg source "c044f201b0303e8b6b25fd819303ceb83aef9334" '
+            .versionName == "V307" and .versionCode == 270 and
+            .sourceCommit == $source and .approvedForStaff == true and
+            .releaseScope == "phase1-compatible-ui" and
+            .productionBackendChanges == false and
+            .phase2ActivationApproved == false and
+            .physicalAcceptanceStatus == "NOT_RUN" and
+            .signedAcceptanceRun == 38067144236 and
+            .verificationRun == 38067144278
+          ' release-ui-request.json
+          jq -e '.versionName == "V307" and .versionCode == 270 and .approvedForStaff == false' release-request.json
+          jq -e '.versionName == "V306" and .versionCode == 269' latest-version.json
+          for run in 38067144236 38067144278; do
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run" | jq -e \
+              --arg source "c044f201b0303e8b6b25fd819303ceb83aef9334" \
+              '.head_sha == $source and .head_branch == "architecture-v2" and .conclusion == "success"'
+          done
+      - name: Dispatch protected coordinated publisher on architecture-v2
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" \
+            --raw-field ref=architecture-v2
+          echo "Dispatched protected V307 publishing workflow on architecture-v2"
