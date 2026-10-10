@@ -34,7 +34,7 @@ function verifyUpdaterAfterUiRelease(metadata) {
  assert.equal(metadata.versionCode,uiApproval.versionCode);
  assert.equal(metadata.sourceCommit,uiApproval.sourceCommit);
  assert.match(metadata.apkSha256,/^[a-f0-9]{64}$/);
- assert.equal(metadata.releaseTag,'release-V305-architecture-v2');
+ assert.equal(metadata.releaseTag,'release-'+metadata.versionName+'-architecture-v2');
 }
 verifyUpdaterAfterUiRelease(updater);
 console.log('PASS: Signed APK and Pages are manual-only on architecture-v2 with source/approval gates; explicit UI approval required');
