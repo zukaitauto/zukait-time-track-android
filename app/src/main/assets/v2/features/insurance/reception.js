@@ -182,6 +182,7 @@
 `;
     e.textContent += "\n#rc-root #rc-form .rc-inspection-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(320px,1fr);align-items:start;gap:14px;margin-top:12px}\n#rc-root #rc-form .rc-inspection-layout>.rc-box{min-width:0;margin:0;overflow:hidden}\n#rc-root .rc-panel-head{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}\n#rc-root .rc-panel-head h4{margin:4px 0}\n#rc-root .rc-info-note{color:#466578;font-size:13px;margin:7px 0 12px}\n#rc-root .rc-damage-types{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0}\n#rc-root .rc-damage-types button{min-height:42px!important;padding:7px 11px!important;font-weight:800!important;background:#f4f9ff!important;color:#21455c!important;border:1px solid #b6cddb!important}\n#rc-root .rc-damage-types [aria-pressed=true]{background:#cce9f8!important;outline:2px solid #2789a2}\n#rc-root .rc-damage-clear{background:#edf7fd!important;color:#155b7b!important;border:1px solid #abcbdc!important}\n#rc-root .rc-car-stage{position:relative;width:100%;min-height:170px;aspect-ratio:840 / 310;background:linear-gradient(160deg,#f4faff,#e5f1f8);border:1px solid #d2e3ef;border-radius:16px;margin:14px 0;overflow:hidden}\n#rc-root .rc-car-svg{display:block;width:100%;height:100%}\n#rc-root .rc-car-stage .rc-zone{position:absolute;transform:translate(-50%,-50%);min-height:34px!important;width:34px!important;height:34px!important;padding:0!important;border-radius:50%!important;border:2px solid #fff!important;box-shadow:0 2px 6px #163b5480;background:#187eb1!important;color:#fff!important;font-weight:900!important;font-size:18px!important;line-height:1!important}\n#rc-root .rc-car-stage .rc-zone[data-mark=X]{background:#d73538!important}#rc-root .rc-car-stage .rc-zone[data-mark=S]{background:#176bc6!important}#rc-root .rc-car-stage .rc-zone[data-mark=M]{background:#dd850b!important}\n#rc-root .rc-car-stage .rc-zone:focus-visible{outline:3px solid #111!important;outline-offset:2px!important}\n#rc-root .rc-zone-legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-bottom:15px}\n#rc-root .rc-zone-legend span{font-size:12px;background:#f1f7fb;border:1px solid #e0eaf3;border-radius:8px;padding:6px 8px;font-weight:700}\n#rc-root .rc-zone-legend small{display:block;margin:2px 0 0;font-size:11px;line-height:1.2}\n#rc-root .rc-accessory-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}\n#rc-root .rc-accessory-items .rc-accessory-card,#rc-root .rc-accessory-items .rc-accessory-extra{display:flex!important;align-items:center!important;gap:8px!important;padding:11px 8px!important;min-width:0;min-height:65px!important;background:#f8fcff!important;border:1px solid #d3e1ed!important;border-radius:11px!important;text-align:left!important;color:#24465d!important;box-shadow:none!important;margin:0!important}\n#rc-root .rc-accessory-items .rc-accessory-card input{flex:0 0 23px;width:23px!important;height:23px!important}\n#rc-root .rc-accessory-items strong,#rc-root .rc-accessory-items b{font-weight:800;font-size:14px}\n#rc-root .rc-accessory-items small{display:block;font-size:12px;color:#567186}\n#rc-root .rc-accessory-extra[aria-pressed=true]{background:#e1f7ef!important;border-color:#63b3a4!important}\n#rc-root .rc-accessory-tick{font-style:normal;font-weight:900;background:#0d8a95;color:#fff;border-radius:6px;padding:4px;margin-left:auto}\n#rc-root .rc-fuel{margin:12px 0}#rc-root .rc-reception-notes{margin-top:12px}#rc-root .rc-customer-sign{margin-top:12px}\n@media(max-width:980px){#rc-root #rc-form .rc-inspection-layout{grid-template-columns:1fr}}\n@media(max-width:500px){#rc-root .rc-zone-legend{grid-template-columns:repeat(2,minmax(0,1fr))}#rc-root .rc-car-stage .rc-zone{width:28px!important;height:28px!important;min-height:28px!important;font-size:15px!important}#rc-root .rc-accessory-items{grid-template-columns:1fr 1fr}#rc-root .rc-accessory-items .rc-accessory-card,#rc-root .rc-accessory-items .rc-accessory-extra{padding:9px 5px!important}#rc-root .rc-accessory-items small{font-size:10px}}\n";
     e.textContent += "#rc-root .rc-vehicle-header{font-size:18px;margin:16px 0 8px;color:#174a63}#rc-root .rc-record-map{max-width:760px;background:#edf6fb;border-radius:14px;padding:5px;margin:8px auto}#rc-root .rc-record-map svg{width:100%;height:auto;max-height:240px}#rc-root #rc-form .rc-form-brand{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:13px 18px;background:#fff;border:1px solid #d4e2ec;border-radius:14px;color:#0e4664}#rc-root #rc-form .rc-form-brand strong{font-size:20px}#rc-root #rc-form .rc-form-brand small{font-size:13px;display:block}#rc-root #rc-form .rc-form-brand h3{color:#173f61;font-size:18px;margin:3px 0}";
+    e.textContent += "\n/* Responsive read-only checklist detail: shared by Android WebView and desktop. */\n#rc-root.rc-checklist-view .rc-cl-summary{padding:14px 17px;margin:0 0 10px;border-radius:15px;background:linear-gradient(110deg,#dff5f2,#edf5fc);border:1px solid #aedbdd;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}\n#rc-root.rc-checklist-view .rc-cl-summary strong{display:block;font-size:clamp(24px,3vw,30px);line-height:1.2;overflow-wrap:anywhere}\n#rc-root.rc-checklist-view .rc-cl-summary small{display:block;font-size:12px;font-weight:700;color:#4a7082}\n#rc-root.rc-checklist-view .rc-cl-summary b{display:block;font-size:16px;color:#2d5064}\n#rc-root.rc-checklist-view .rc-cl-type{display:inline-block;font-size:12px;font-weight:800;border-radius:99px;background:#cfebfa;padding:4px 9px;margin:6px 0}\n#rc-root.rc-checklist-view .rc-cl-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}\n#rc-root.rc-checklist-view .rc-cl-grid>.rc-box{margin:0;min-width:0;padding:14px;border-radius:14px}\n#rc-root.rc-checklist-view .rc-cl-grid h4{margin:0 0 12px;color:#1a4e65;font-size:19px}\n#rc-root.rc-checklist-view .rc-cl-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}\n#rc-root.rc-checklist-view .rc-cl-fact{min-width:0;overflow-wrap:anywhere}\n#rc-root.rc-checklist-view .rc-cl-wide{grid-column:1/-1}\n#rc-root.rc-checklist-view .rc-cl-fact small{display:block;font-size:12px;font-weight:600;color:#577386;margin:0 0 3px}\n#rc-root.rc-checklist-view .rc-cl-fact b{display:block;font-size:16px;line-height:1.4;color:#172f43;overflow-wrap:anywhere}\n#rc-root.rc-checklist-view .rc-cl-fact b.rc-cl-missing{color:#728695;font-weight:500}\n#rc-root.rc-checklist-view .rc-cl-diagram{width:100%;margin:3px 0 12px;max-width:none}\n#rc-root.rc-checklist-view .rc-cl-diagram svg{display:block;width:100%;height:auto;max-height:310px}\n#rc-root.rc-checklist-view .rc-cl-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:12px}\n#rc-root.rc-checklist-view .rc-cl-tool{display:flex;gap:8px;align-items:center;background:#f2f8fc;border:1px solid #dce8ef;border-radius:9px;padding:8px;min-width:0;font-size:13px}\n#rc-root.rc-checklist-view .rc-cl-tool small{display:block;font-size:11px;color:#60788b}\n#rc-root.rc-checklist-view .rc-cl-tick{color:#15745b;font-weight:900;font-size:18px}\n#rc-root.rc-checklist-view .rc-cl-actions{gap:7px;margin:7px 0 12px}\n#rc-root.rc-checklist-view .rc-cl-actions button{font-size:14px!important;min-height:40px!important;padding:7px 12px!important}\n#rc-root.rc-checklist-view .rc-cl-actions [data-rc-action=print],#rc-root.rc-checklist-view .rc-cl-actions [data-rc-action=pdf]{background:#d6f3e9!important;color:#145b54!important}\n@media(max-width:760px){\n #rc-root.rc-checklist-view .rc-cl-grid{grid-template-columns:1fr;gap:10px}\n #rc-root.rc-checklist-view .rc-topbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}\n #rc-root.rc-checklist-view .rc-topbar h3{grid-column:1/-1;grid-row:1;order:initial;flex:initial;margin:0!important;font-size:19px}\n #rc-root.rc-checklist-view .rc-topbar>[data-rc-action=back]{grid-column:1;grid-row:2;justify-self:start}\n #rc-root.rc-checklist-view .rc-topbar>.rc-actions{grid-column:2;grid-row:2;order:initial;flex:initial;justify-content:flex-end}\n #rc-root.rc-checklist-view .rc-topbar button{min-height:38px!important;font-size:13px!important;padding:6px 9px!important}\n #rc-root.rc-checklist-view .rc-cl-grid>.rc-box{padding:13px}\n}\n@media(max-width:380px){#rc-root.rc-checklist-view .rc-cl-tools{grid-template-columns:1fr}}\n";
     document.head.appendChild(e);
   }
   function shell(title, body) {
@@ -716,15 +717,78 @@
     current = await call({ operation: "GET", rc_no: no });
     return current;
   }
+
+  // Presentation-only detail layout. Do not alter saved values or documentHtml().
+  function checklistFact(label, value, wide = false) {
+    const missing = value === null || value === undefined || String(value).trim() === "";
+    return '<div class="rc-cl-fact' + (wide ? ' rc-cl-wide' : '') + '"><small>' +
+      esc(label) + '</small><b' + (missing ? ' class="rc-cl-missing"' : '') +
+      '>' + esc(missing ? 'Not recorded' : value) + '</b></div>';
+  }
+  function checklistBox(title, html) {
+    return '<section class="rc-box"><h4>' + esc(title) + '</h4>' + html + '</section>';
+  }
+  function checklistSummary(r, d) {
+    const model = [d.make, d.model, d.year].filter(Boolean).join(" · ");
+    return '<div class="rc-cl-summary"><div><small>RECEPTION CHECKLIST · ' + esc(r.rc_no) +
+      '</small><strong>' + esc(d.registration || "Registration not recorded") +
+      '</strong><span class="rc-cl-type">' + esc(r.job_type || "INSURANCE") +
+      '</span><b>' + esc(model || "Vehicle details not recorded") + '</b></div>' +
+      '<div><small>Vehicle location</small><b>' +
+      esc(labels[r.location] || r.location || "Not recorded") +
+      '</b><small>Case status</small><b>' +
+      esc(labels[r.outcome || r.approval_status] || r.outcome || r.approval_status || "Not recorded") +
+      '</b></div></div>';
+  }
+  function checklistDetails(r, d) {
+    const insurance = (r.job_type || "INSURANCE") === "INSURANCE";
+    const damage = unpackChecklistText(d.damage,"DAMAGE",damageZones.map(x=>x[0]));
+    const extras = unpackChecklistText(d.other_accessories,"ACCESSORIES",extraAccessories.map(x=>x[0]));
+    const names = Object.keys(extras.marks).map(x => extraName[x] || x).join(", ");
+    const vehicle = checklistBox("Vehicle Information",'<div class="rc-cl-facts">' +
+      checklistFact("Make",d.make) + checklistFact("Model",d.model) +
+      checklistFact("Year",d.year) + checklistFact("Odometer",
+        [d.odometer,d.odometer_unit].filter(x=>x!==null&&x!==undefined&&x!=="").join(" ")) +
+      checklistFact("VIN / Chassis",d.vin,true) +
+      checklistFact("Received",stamp(r.received_at)) +
+      checklistFact("Job Card",r.job_card) + '</div>');
+    const customer = checklistBox(insurance ? "Customer & Insurance" : "Customer Details",
+      '<div class="rc-cl-facts">' +
+      checklistFact("Customer Name",d.customer) + checklistFact("Contact Number",d.contact) +
+      (insurance ? checklistFact("Insurance Company",r.insurance_company,true) +
+        checklistFact("Claim Number",d.claim,true) : "") +
+      (r.job_type==="CREDIT" ? checklistFact("Credit Account",r.credit_account,true) : "") +
+      '</div>');
+    const condition = checklistBox("Vehicle Condition & Damage",
+      '<div class="rc-record-map rc-cl-diagram">' + damagedGraphic(d) + '</div>' +
+      '<div class="rc-cl-facts">' +
+      checklistFact("Damage marks",damageSummary(d) || "Not marked",true) +
+      checklistFact("Damage Description",damage.notes,true) +
+      checklistFact("Dashboard Warning Lights",d.warnings) +
+      checklistFact("Fuel",d.fuel) +
+      checklistFact("Other Remarks",d.remarks,true) + '</div>');
+    const toolList = tools.map(([key,label])=>{
+      const recorded=(d.tools||[]).includes(key);
+      return '<div class="rc-cl-tool"><span aria-hidden="true" class="rc-cl-tick">' +
+        (recorded?'✓':'□')+'</span><span><b>'+esc(label)+'</b><small>'+
+        (recorded?'Recorded':'Not recorded')+'</small></span></div>';
+    }).join("");
+    const accessories = checklistBox("Tools & Accessories",'<div class="rc-cl-tools">' +
+      toolList + '</div><div class="rc-cl-facts">' +
+      checklistFact("Additional accessories checked",names || "Not marked",true) +
+      checklistFact("Other Accessories",extras.notes,true) + '</div>');
+    return '<div class="rc-cl-grid">' + vehicle + customer + condition + accessories + '</div>';
+  }
+
   async function view(no) {
     await fetchRecord(no);
     const r = current.record,
       d = r.details;
     shell(
       r.rc_no + " · Reception Checklist",
-      badges(r) +
+      checklistSummary(r, d) + badges(r) +
         (current.cancellation?.history ? '<div class="rc-box"><b>Job Card cancelled · '+esc(current.cancellation.history.cancellation_date)+'</b><p>'+esc(current.cancellation.history.reason)+' · '+esc(current.cancellation.history.actor_name)+' ('+esc(current.cancellation.history.actor_id)+')</p><p>History and costs retained. Vehicle location remains '+esc(r.location)+'.</p></div>' : '') +
-        '<div class="rc-actions">' +
+        '<div class="rc-actions rc-cl-actions">' +
         (r.can_edit ? '<button data-rc-action="edit">Edit</button>' : "") +
         (!r.outcome || current.cancellation?.history
           ? '<button data-rc-action="movement">Record Vehicle Movement</button>'
@@ -735,55 +799,8 @@
         (current.insurance && (r.job_type || 'INSURANCE') === 'INSURANCE' ? '<button data-rc-action="insurance">' + (user()?.role === 'Receptionist' ? 'Approval & Job Card' : 'Estimates & Approval') + '</button>' : '') +
         (current.cancellation?.can_review ? '<button data-rc-action="cancel-job">Review Job Card Cancellation</button>' : '') +
         (current.preliminary_parts ? '<button data-rc-action="parts">Preliminary Parts</button>' : '') +
-        '<button data-rc-action="print">Print</button><button data-rc-action="pdf">Share PDF</button></div><div class="rc-grid"><div class="rc-box"><h4>Customer & Vehicle</h4>' +
-        [
-          ...((r.job_type || "INSURANCE") === "INSURANCE" ? [["Insurance", r.insurance_company]] : []),
-          ...fields.filter(([k]) => k !== "claim" || (r.job_type || "INSURANCE") === "INSURANCE")
-            .map(([k, l]) => [l, d[k]]),
-          ["Reading Unit", d.odometer_unit],
-          ["Received", stamp(r.received_at)],
-          ["Job Card", r.job_card],
-          ["Job Type", r.job_type || "INSURANCE"],
-          ...(r.job_type === "CREDIT" ? [["Credit Account", r.credit_account]] : []),
-        ]
-          .map(
-            ([l, v]) =>
-              "<p><small>" +
-              esc(l) +
-              "</small><br><b>" +
-              esc(v || "Not recorded") +
-              "</b></p>",
-          )
-          .join("") +
-        '</div><div class="rc-box"><h4>Reception Observations</h4>' +
-        '<div class="rc-record-map">'+damagedGraphic(d)+'</div><p><b>Damage marks:</b> '+esc(damageSummary(d)||"None recorded")+'</p>'+
-        '<p><b>Additional accessories checked:</b> '+esc(Object.keys(unpackChecklistText(d.other_accessories,"ACCESSORIES",extraAccessories.map(x=>x[0])).marks).map(x=>extraName[x]).join(", ")||"None recorded")+'</p>'+
-        textFields
-          .map(
-            ([k, l]) =>
-              "<p><small>" +
-              l +
-              "</small><br>" +
-              esc((k==="damage"?unpackChecklistText(d.damage,"DAMAGE",damageZones.map(x=>x[0])).notes:
-                k==="other_accessories"?unpackChecklistText(d.other_accessories,"ACCESSORIES",extraAccessories.map(x=>x[0])).notes:d[k]) || "Not recorded") +
-              "</p>",
-          )
-          .join("") +
-        "<p>Fuel: " +
-        esc(d.fuel || "Not recorded") +
-        "</p><h4>Tools & Accessories</h4>" +
-        tools
-          .map(
-            ([k, l]) =>
-              "<p>" +
-              ((d.tools || []).includes(k) ? "✓ " : "□ ") +
-              l +
-              " · " +
-              ((d.tools || []).includes(k) ? "Recorded" : "Not recorded") +
-              "</p>",
-          )
-          .join("") +
-        "</div></div>" +
+        '<button data-rc-action="print">Print</button><button data-rc-action="pdf">Share PDF</button></div>' +
+        checklistDetails(r, d) +
         (r.decision
           ? '<div class="rc-box"><h4>Case Decision</h4>' +
             esc(r.decision.reason) +
@@ -836,6 +853,7 @@
           .join("") +
         "</div></div>",
     );
+    document.getElementById("rc-root")?.classList.add("rc-checklist-view");
   }
   function insuranceWorkspace() {
     const r = current.record, info = current.insurance;
