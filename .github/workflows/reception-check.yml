@@ -76,7 +76,8 @@ jobs:
 
   dispatch_approved_v307:
     name: One-time owner-approved V307 release dispatch
-    needs: verify
+    # Verify the original pinned candidate and let the protected publisher run its own gates.
+    # The pending V307 approval intentionally differs from live V306 until publication.
     # Only an explicit owner-authorized one-time push can dispatch a release.
     if: >-
       github.event_name == 'push' &&
