@@ -81,7 +81,7 @@ def main():
     # Ensure each release refers to a new URL so browsers cannot keep an
     # older cached Reception script after a valid gated Pages publication.
     cache_tags = {
-        "v2/features/insurance/reception.js": "v=20261010-interactive-damage-v1",
+        "v2/features/insurance/reception.js": "v=20261010-a4-print-v308",
         "reception_dashboard.js": "v=305-reception-dashboard-20261010-r2",
         "receptionist_session.js": "v=305-reception-dashboard-20261010-r2",
     }
