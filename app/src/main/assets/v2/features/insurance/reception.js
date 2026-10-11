@@ -876,7 +876,10 @@
       checklistFact("Damage Description",damage.notes,true) + '</div>', "rc-cl-condition");
     const observations = checklistBox("Reception Observations",
       '<div class="rc-cl-facts">' +
-      checklistFact("Dashboard Warning Lights",d.warnings) +
+      '<div class="rc-cl-warning-check"><strong>Dashboard Warning:</strong><span aria-label="Dashboard warning recorded">' +
+      (String(d.warnings||"").trim() ? "☑ Issue recorded" : "☐ No warning recorded") +
+      '</span></div>' +
+      (d.warnings ? checklistFact("Warning Details:",d.warnings,true) : "") +
       checklistFact("Fuel",d.fuel) +
       checklistFact("Other Remarks",d.remarks,true) + '</div>', "rc-cl-observations");
     const toolList = tools.map(([key,label])=>{
