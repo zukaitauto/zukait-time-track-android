@@ -261,5 +261,6 @@
       }
     }catch(e){const el=document.getElementById("rc-error");if(el)el.textContent=e.message||String(e);}
   }
-  window.zukaitReceptionDashboard={open,resume,home:showDashboard,savePromise};
+  async function showJobs(){if(!backendAvailable)return false;await choose('jobs');return true;}
+  window.zukaitReceptionDashboard={open,resume,home:showDashboard,showJobs,savePromise};
 })();
