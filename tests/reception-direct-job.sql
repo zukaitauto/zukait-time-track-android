@@ -97,7 +97,15 @@ begin
  end;
  select count(*) into n from workshop_v2_events where entity_id='QA-SECOND-LINKED' and event_type='JOB_CREATED';
  assert n=0,'Second linked Job Card must not publish an event';
+ assert (select count(*) from workshop_reception_audit where rc_no=rc and operation='CREATE_EXTERNAL_JOB')=1,
+  'Rejected competing Job Card must not append another creation audit';
+ assert (select count(*) from workshop_reception_commands where command->>'job_card'='QA-SECOND-LINKED')=0,
+  'Rejected competing Job Card must not cache a successful command';
+ assert (select job_card from workshop_receptions where rc_no=rc)='QA-DIRECT-INSURANCE',
+  'Original Job Card link must remain unchanged after rejected competing request';
  select data into snapshot from workshop_state where id='main';
+ assert (select count(*) from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-SECOND-LINKED')=0,
+  'Rejected competing request must not alter workshop job state';
  assert zukait_reception_job_approval_valid('QA-DIRECT-INSURANCE',rc,snapshot);
  assert (select details->>'odometer' from workshop_receptions where rc_no=rc)='53699', 'Original checklist reading must be immutable';
  assert (select j->>'jobIntakeOdometer' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-INSURANCE')='53845', 'Independent Job Card reading was not stored';
