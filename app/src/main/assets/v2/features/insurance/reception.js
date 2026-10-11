@@ -870,11 +870,11 @@
       checklistFact("Job Card:",r.job_card) +
       (r.job_type==="CREDIT"?checklistFact("Credit Account:",r.credit_account,true):"") +
       '</div>',"rc-cl-vehicle");
-    const condition = checklistBox("Vehicle Condition & Damage",
+    const condition = checklistBox("Exterior Check · Vehicle Condition & Damage",
       '<div class="rc-record-map rc-cl-diagram">' + damagedGraphic(d) + '</div>' +
       '<div class="rc-cl-facts">' +
       checklistFact("Damage Description",damage.notes,true) + '</div>', "rc-cl-condition");
-    const observations = checklistBox("Reception Observations",
+    const observations = checklistBox("Function Check · Reception Observations",
       '<div class="rc-cl-facts">' +
       '<div class="rc-cl-warning-check"><strong>Dashboard Warning:</strong><span aria-label="Dashboard warning recorded">' +
       (String(d.warnings||"").trim() ? "☑ Issue recorded" : "☐ Not recorded") +
@@ -888,7 +888,7 @@
         (recorded?'✓':'□')+'</span><span><b>'+esc(label)+'</b><small>'+
         (recorded?'Recorded':'Not recorded')+'</small></span></div>';
     }).join("");
-    const accessories = checklistBox("Tools & Accessories",'<div class="rc-cl-tools">' +
+    const accessories = checklistBox("Interior Check · Tools & Accessories",'<div class="rc-cl-tools">' +
       toolList + '</div><div class="rc-cl-facts">' +
       checklistFact("Additional accessories checked",names || "Not marked",true) +
       checklistFact("Other Accessories",extras.notes,true) + '</div>', "rc-cl-accessories");
