@@ -297,7 +297,7 @@ assert.equal(cash.details.customer,"Cash Customer");
 assert.equal(records.get("RC0003").job_type,"CASH");
 assert.equal(records.get("RC0003").job_card,undefined);
 const printedCash=w.zukaitReception.documentHtml(records.get("RC0003"));
-assert.match(printedCash,/Checklist Type/);
+assert.match(printedCash,/Job Type:/);
 assert.doesNotMatch(printedCash,/Insurance Company/);
 assert.doesNotMatch(printedCash,/Claim \/ Gate Pass/);
 await click("back");
