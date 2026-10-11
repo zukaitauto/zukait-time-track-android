@@ -426,8 +426,9 @@
       .addEventListener("change", () => loadList(false).catch(error));
     await loadList(false);
   }
-  function directJob() {
+  async function directJob() {
     if (!phase2Enabled) { error(Error("Direct Job Card intake requires the V305 backend.")); return; }
+    try { await master(); } catch (x) { error(x); return; }
     current = null;
     shell("Open Job Card", '<form id="rc-direct-job"><p>Open a Job Card with a manually entered number. A checklist is optional. Insurance requires verified approval details.</p><button type="button" data-rc-action="new">New Insurance Checklist / Pre-approved Vehicle</button><div class="rc-grid">' +
       select('job_type','Job Type',[['CASH','Cash'],['INSURANCE','Insurance'],['CREDIT','Credit']],'CASH') +
