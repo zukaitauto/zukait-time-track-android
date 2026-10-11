@@ -202,7 +202,7 @@ window.consFilterBrands=function(){
  sel.innerHTML='<option value="">Brand</option>'+brands.map(b=>'<option value="'+esc(b.id)+'">'+esc(b.name)+'</option>').join('');if(brands.length===1)sel.value=brands[0].id;
  const m=c.materials.find(x=>x.id===mid),q=document.getElementById('consQty');if(q)q.placeholder=m?.unit?'Quantity ('+m.unit+')':'Quantity';
 };
-window.consRefreshIssueFinishState=function(){const btn=document.getElementById('consFinishBtn');if(!btn)return false;const painter=draft.type==='additional'?(draft.additionalBase?.mainPainterId||''):(document.getElementById('consPainter')?.value||draft.jc?.painters?.[0]?.id||'');const ready=!!(draft.jc&&draft.lines.length);btn.disabled=!ready;btn.style.backgroundColor=ready?'#166534':'';btn.style.color=ready?'#ffffff':'';btn.style.fontWeight='900';btn.title=ready?'Finish and save materials':'Select a Job Card and add at least one material';return ready};
+window.consRefreshIssueFinishState=function(){const btn=document.getElementById('consFinishBtn');if(!btn)return false;const painter=draft.type==='additional'?(draft.additionalBase?.mainPainterId||''):(document.getElementById('consPainter')?.value||draft.jc?.painters?.[0]?.id||'');const ready=!!(draft.jc&&draft.lines.length);btn.disabled=!ready;if(btn.style){btn.style.backgroundColor=ready?'#166534':'';btn.style.color=ready?'#ffffff':'';btn.style.fontWeight='900';}btn.title=ready?'Finish and save materials':'Select a Job Card and add at least one material';return ready};
 window.consAddLine=function(){
  if(!draft.jc)return alert('Load a valid Job Card first.');
  const mid=document.getElementById('consMaterial')?.value,bid=document.getElementById('consBrand')?.value,q=Number(document.getElementById('consQty')?.value);
