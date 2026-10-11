@@ -81,7 +81,7 @@ begin
   'identity_updates',jsonb_build_object('model','Corolla','registration','QA-EXTERNAL-UPDATED'),
   'approval_confirmed',true,'reference','QA-UPDATED-CLAIM-APPROVAL',
   'approval_date',current_date,'evidence','Reconfirmed insurer approval after identity correction');
- begin perform zukait_reception_command('QA-RC',cmd); raise exception 'QA Receptionist identity correction accepted';
+ begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid())); raise exception 'QA Receptionist identity correction accepted';
   exception when others then assert sqlerrm='reception_manager_required'; end;
  result:=zukait_reception_command('QA-MGR',cmd);
  assert result->'record'->>'job_card'='QA-DIRECT-INSURANCE';
