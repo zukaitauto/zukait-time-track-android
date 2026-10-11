@@ -537,7 +537,7 @@
               evidence:String(f.get('evidence')||'').trim()}: {})});
           if(out){
             try{await window.zukaitCloud?.pull?.(true);}catch(_){}
-            await view(linkedChecklist.rc_no);
+            if(!await window.zukaitReceptionDashboard?.showJobs?.()) await view(linkedChecklist.rc_no);
           }
           return;
         }
@@ -556,7 +556,7 @@
             catch(err){alert('Job Card created, but Promise Date needs attention: '+(err.message||err)+'. Open Delivery Follow-up to retry.');}
           }
           try{await window.zukaitCloud?.pull?.(true);}catch(_){}
-          await view(out.record.rc_no);
+          if(!await window.zukaitReceptionDashboard?.showJobs?.()) await view(out.record.rc_no);
         }
       }catch(x){error(x);}
     };
