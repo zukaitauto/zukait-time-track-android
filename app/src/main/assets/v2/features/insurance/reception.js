@@ -527,7 +527,7 @@
     ["rear_fender_r","Rear Fender (RH)","الرفرف الخلفي الأيمن",83,14],
     ["head_lights","Headlights","المصابيح الأمامية",12,22],
     ["rear_lights","Rear Lights","المصابيح الخلفية",90,22]
-  ];
+  ].map(([key,name,ar,left,top])=>[key,name,ar,100-left,100-top]);
   const extraAccessories=[
     ["jack_release","Jack Release","ذراع الرافعة","🔧"],
     ["wheel_covers","Wheel Covers","أغطية العجلات","◉"],
@@ -577,21 +577,49 @@
     return carGraphic().replace("</svg>",points+"</svg>");
   }
   function carGraphic(){
-    return '<svg class="rc-car-svg" viewBox="0 0 840 310" role="img" aria-label="Top view vehicle damage diagram, front at left">'+
-      '<rect x="98" y="23" width="102" height="36" rx="16" fill="#263b4c"/><rect x="98" y="251" width="102" height="36" rx="16" fill="#263b4c"/>'+
-      '<rect x="632" y="23" width="102" height="36" rx="16" fill="#263b4c"/><rect x="632" y="251" width="102" height="36" rx="16" fill="#263b4c"/>'+
-      '<path d="M92 77 Q108 54 164 52 L668 52 Q721 59 739 104 L747 150 L739 206 Q725 253 668 258 L164 258 Q108 256 92 234 Q65 198 65 154 Q65 109 92 77Z" fill="#fff" stroke="#2b5f80" stroke-width="5"/>'+
-      '<path d="M140 74 Q178 61 263 72 L263 239 Q178 250 140 235 Q114 153 140 74Z" fill="#f8fbfd" stroke="#aac3d6" stroke-width="3"/>'+
-      '<path d="M313 72 Q338 57 381 65 L619 65 Q647 70 661 88 L661 224 Q640 244 613 245 L376 245 Q335 244 313 232Z" fill="#f9fbfd" stroke="#6a94ae" stroke-width="4"/>'+
-      '<path d="M309 78 L337 91 L337 220 L309 234Z" fill="#f7f9fa" stroke="#4d6473" stroke-width="3"/>'+
-      '<path d="M670 82 Q707 149 670 231 L636 225 L636 86Z" fill="#f7f9fa" stroke="#4d6473" stroke-width="3"/>'+
-      '<rect x="390" y="82" width="178" height="145" rx="22" fill="#eff7fb" stroke="#97b9ca" stroke-width="3"/>'+
-      '<path d="M476 66 L476 242 M582 66 L582 242" stroke="#8eacbe" stroke-width="2"/>'+
-      '<path d="M90 113 L108 113 M90 196 L108 196 M731 108 L749 108 M731 203 L749 203" stroke="#e5ad4e" stroke-width="11" stroke-linecap="round"/>'+
-      '<text x="35" y="156" font-size="21" font-weight="900" fill="#172e41" text-anchor="middle">FRONT</text>'+
-      '<path d="M263 74 L263 237 M338 71 L338 238 M477 67 L477 242 M582 74 L582 236" stroke="#516e82" stroke-width="3" fill="none"/>'+
-      '<path d="M94 76 Q102 146 94 231 M737 104 Q753 155 737 209" stroke="#516e82" stroke-width="3" fill="none"/>'+
-      '<text x="777" y="156" font-size="21" font-weight="900" fill="#172e41" text-anchor="middle">REAR</text></svg>';
+    // Rear-left / front-right in both print and screen. Upper side is vehicle LH.
+    // Keep the inspection zone IDs and stored damage annotations unchanged.
+    return '<svg class="rc-car-svg" viewBox="0 0 840 310" role="img" aria-label="Unfolded vehicle inspection diagram: rear left, front right, roof centered, left-side doors above, right-side doors below">'+
+      '<g fill="white" stroke="#151c22" stroke-width="3" stroke-linejoin="round">'+
+      // Main vehicle: bumper, tailgate, rear glass, roof, windshield, bonnet, front bumper.
+      '<path d="M57 116 Q42 129 42 155 Q42 181 57 194 L86 194 L86 116Z"/>'+
+      '<path d="M86 110 L163 105 L163 205 L86 200Z"/>'+
+      '<path d="M163 105 L215 111 L235 126 L235 184 L215 199 L163 205Z"/>'+
+      '<path d="M235 111 L489 111 L489 199 L235 199Z"/>'+
+      '<path d="M489 110 L542 107 L567 129 L567 181 L542 203 L489 200Z"/>'+
+      '<path d="M567 105 L698 111 Q716 115 723 133 L723 177 Q716 195 698 199 L567 205Z"/>'+
+      '<path d="M723 115 Q749 129 749 155 Q749 181 723 195 L723 115Z"/>'+
+      // Left upper unfolded fender, doors and rear quarter.
+      '<path d="M92 108 L191 108 L205 45 L109 45Z"/>'+
+      '<path d="M208 109 L333 109 L329 44 L215 44Z"/>'+
+      '<path d="M337 109 L478 109 L476 44 L333 44Z"/>'+
+      '<path d="M482 109 L608 109 L619 44 L481 44Z"/>'+
+      '<path d="M624 109 L702 109 L730 46 L625 46Z"/>'+
+      // Right lower unfolded quarter, doors and front fender.
+      '<path d="M92 202 L191 202 L205 265 L109 265Z"/>'+
+      '<path d="M208 201 L333 201 L329 266 L215 266Z"/>'+
+      '<path d="M337 201 L478 201 L476 266 L333 266Z"/>'+
+      '<path d="M482 201 L608 201 L619 266 L481 266Z"/>'+
+      '<path d="M624 201 L702 201 L730 264 L625 264Z"/>'+
+      '</g>'+
+      '<g fill="white" stroke="#151c22" stroke-width="2">'+
+      '<path d="M173 119 L221 131 L221 179 L173 191Z"/>'+
+      '<path d="M500 121 L540 116 L553 137 L553 173 L540 194 L500 189Z"/>'+
+      '<rect x="264" y="123" width="190" height="64" rx="7"/>'+
+      '<path d="M218 51 L322 51 L325 79 L210 79Z M342 51 L469 51 L469 79 L341 79Z"/>'+
+      '<path d="M218 231 L325 231 L322 259 L210 259Z M341 231 L469 231 L469 259 L342 259Z"/>'+
+      '</g>'+
+      '<g fill="#151c22" font-family="Arial,sans-serif" font-weight="700" text-anchor="middle">'+
+      '<text x="25" y="155" font-size="18" transform="rotate(-90 25 155)">REAR</text>'+
+      '<text x="798" y="155" font-size="18" transform="rotate(90 798 155)">FRONT</text>'+
+      '<text x="359" y="159" font-size="17">ROOF</text>'+
+      '<text x="272" y="96" font-size="12">LH REAR DOOR</text>'+
+      '<text x="409" y="96" font-size="12">LH FRONT DOOR</text>'+
+      '<text x="272" y="222" font-size="12">RH REAR DOOR</text>'+
+      '<text x="409" y="222" font-size="12">RH FRONT DOOR</text>'+
+      '<text x="625" y="156" font-size="15">BONNET</text>'+
+      '<text x="125" y="156" font-size="12">BOOT</text>'+
+      '</g></svg>';
   }
   function damagePanel(d){
     const parsed=unpackChecklistText(d.damage,"DAMAGE",damageZones.map(x=>x[0]));
