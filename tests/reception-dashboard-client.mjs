@@ -56,6 +56,12 @@ for(const [key,name] of Object.entries(headings)){
 }
 await click('#rc-root [data-rdb=tile][data-section=jobs]');
 assert.equal(w.document.querySelectorAll(".rdb-row").length,1);
+await w.zukaitReceptionDashboard.showJobs();
+await settle();
+assert.match(w.document.querySelector(".rc-topbar h3").textContent,/Job Card List/);
+assert.equal(commands.at(-1).action,"reception_dashboard");
+assert.equal(commands.at(-1).section,"jobs","Job Card intake should re-fetch newest server Job Card List");
+assert.equal(w.document.querySelectorAll(".rdb-row").length,1,"Refreshed list should render without duplicated rows");
 assert.equal(w.document.querySelector("#rc-root [data-rdb-promise]")?.value,"");
 const input=w.document.querySelector("#rc-root [data-rdb-promise]");
 input.value="2026-10-15";
