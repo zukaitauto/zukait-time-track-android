@@ -475,7 +475,7 @@
             for(const k of ['make','model','registration','year','vin','customer','contact','claim','remarks']){
               if(form.elements.namedItem(k))form.elements.namedItem(k).value=String(d[k]||'');
             }
-            type.value=r.job_type||'INSURANCE';type.onchange();
+            type.value=r.job_type||'INSURANCE';type.disabled=true;type.onchange();
             form.elements.namedItem('odometer_unit').value=String(d.odometer_unit||'KM');
             if(r.insurance_id&&form.elements.insurance_id)form.elements.insurance_id.value=String(r.insurance_id);
             const note=document.getElementById('rc-direct-checklist-note');
@@ -487,6 +487,7 @@
     document.getElementById('rc-direct-checklist-clear').onclick=()=>{
       linkedChecklist=null;
       linkedApprovalValid=false;
+      type.disabled=false;
       searchInput.value='';
       searchResults.textContent='';
       document.getElementById('rc-direct-checklist-note').textContent='Checklist selection cleared. This will create a NEW reception intake.';
