@@ -1,0 +1,165 @@
+name: Reception Web Preview Only (No APK)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  web-preview:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/architecture-v2'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout current architecture-v2 deployment controller
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require verified Reception preview source and successful testing
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SOURCE_SHA='e3d9ec06d092d92c749cd87f6b73fe7ad5fff3a8'
+          VERIFIED_RUN='38155439824'
+          test "$GITHUB_REF" = 'refs/heads/architecture-v2'
+          git cat-file -e "$SOURCE_SHA^{commit}"
+          git merge-base --is-ancestor "$SOURCE_SHA" "$GITHUB_SHA"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$VERIFIED_RUN" | jq -e --arg sha "$SOURCE_SHA" '.head_sha == $sha and .head_branch == "architecture-v2" and .conclusion == "success" and .path == ".github/workflows/reception-check.yml"'
+          git -c advice.detachedHead=false checkout --detach --force "$SOURCE_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          node --check app/src/main/assets/v2/features/insurance/reception.js
+          grep -q 'Three-view inspection layout' app/src/main/assets/v2/features/insurance/reception.js
+          if grep -Fq "'<div class=\"rc-zone-legend\">'" app/src/main/assets/v2/features/insurance/reception.js; then
+            echo 'Old redundant vehicle descriptions are still present'; exit 1
+          fi
+          echo 'WEB PREVIEW ONLY: no Android APK is built, signed, released, or linked by this workflow.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Prepare PC site
+        shell: bash
+        run: |
+          rm -rf _site
+          mkdir -p _site
+          cp app/src/main/assets/offline_test.html _site/index.html
+          cp app/src/main/assets/receptionist.html _site/receptionist.html
+          cp app/src/main/assets/receptionist_session.js _site/receptionist_session.js
+          cp app/src/main/assets/consumables.js _site/consumables.js
+          cp app/src/main/assets/consumables_ui.js _site/consumables_ui.js
+          cp app/src/main/assets/paint_module.js _site/paint_module.js
+          cp app/src/main/assets/job_cost_summary_v128.js _site/job_cost_summary_v128.js
+          cp app/src/main/assets/cloud_sync.js _site/cloud_sync.js
+          cp app/src/main/assets/secure_auth.js _site/secure_auth.js
+          cp app/src/main/assets/production_pilot.js _site/production_pilot.js
+          cp app/src/main/assets/professional_ux.js _site/professional_ux.js
+          cp app/src/main/assets/v54_improvements.js _site/v54_improvements.js
+          cp app/src/main/assets/v63_updates.js _site/v63_updates.js
+          cp app/src/main/assets/v65_updates.js _site/v65_updates.js
+          cp app/src/main/assets/v66_updates.js _site/v66_updates.js
+          cp app/src/main/assets/v67_updates.js _site/v67_updates.js
+          cp app/src/main/assets/v68_updates.js _site/v68_updates.js
+          cp app/src/main/assets/v69_updates.js _site/v69_updates.js
+          cp app/src/main/assets/v74_updates.js _site/v74_updates.js
+          mkdir -p _site/v2/features/spare-parts
+          cp app/src/main/assets/v2/features/spare-parts/workflow.js _site/v2/features/spare-parts/workflow.js
+          cp app/src/main/assets/v2/features/spare-parts/main_module.js _site/v2/features/spare-parts/main_module.js
+          cp app/src/main/assets/zukait_logo.webp _site/zukait_logo.webp
+          cp -R app/src/main/assets/vehicle-logos _site/vehicle-logos
+          cp app/src/main/assets/qc_delivery_rules.js _site/qc_delivery_rules.js
+          cp app/src/main/assets/time_management_rules.js _site/time_management_rules.js
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from shutil import copy2
+
+          class Scripts(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.sources = []
+              def handle_starttag(self, tag, attrs):
+                  if tag == 'script':
+                      src = dict(attrs).get('src')
+                      if src:
+                          self.sources.append(src.split('?', 1)[0])
+
+          assets = Path('app/src/main/assets')
+          parser = Scripts()
+          parser.feed((assets / 'offline_test.html').read_text(encoding='utf-8'))
+          for source in parser.sources:
+              relative = Path(source)
+              if relative.is_absolute() or '..' in relative.parts:
+                  raise ValueError(f'Unsafe script path: {source}')
+              origin = assets / relative
+              if not origin.is_file():
+                  raise FileNotFoundError(origin)
+              destination = Path('_site') / relative
+              destination.parent.mkdir(parents=True, exist_ok=True)
+              copy2(origin, destination)
+          print(f'Copied {len(parser.sources)} referenced scripts')
+          PY
+          test -s _site/receptionist.html
+          test -s _site/receptionist_session.js
+          test -s _site/consumables.js
+          test -s _site/consumables_ui.js
+          test -s _site/paint_module.js
+          test -s _site/job_cost_summary_v128.js
+          grep -q 'openPaintModule' _site/paint_module.js
+          grep -q 'v128JobCostData' _site/job_cost_summary_v128.js
+          grep -q 'openConsumablesModule' _site/consumables_ui.js
+          grep -q 'consumables_ui.js' _site/index.html
+          test -s _site/v54_improvements.js
+          test -s _site/v63_updates.js
+          test -s _site/v65_updates.js
+          test -s _site/v66_updates.js
+          test -s _site/v67_updates.js
+          test -s _site/v68_updates.js
+          test -s _site/v69_updates.js
+          test -s _site/v74_updates.js
+          test -s _site/v2/features/spare-parts/workflow.js
+          test -s _site/v2/features/spare-parts/main_module.js
+          grep -q 'sparePartsMain:{' _site/v2/features/spare-parts/main_module.js
+          grep -q 'open:render' _site/v2/features/spare-parts/main_module.js
+          grep -q 'window.openSparePartsModule=render' _site/v2/features/spare-parts/main_module.js
+          test -s _site/vehicle-logos/cadillac.svg
+          test -s _site/vehicle-logos/gmc.svg
+          test -s _site/vehicle-logos/chevrolet.svg
+          test -s _site/vehicle-logos/ford.svg
+          test -s _site/vehicle-logos/honda.svg
+          touch _site/.nojekyll
+
+      - name: Verify staged shared Reception UI assets before public deployment
+        run: python3 scripts/verify-reception-platform-assets.py --site _site
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+      - name: Deploy web-only preview to existing GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Verify public Reception script after deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://zukaitauto.github.io/zukait-time-track-android/v2/features/insurance/reception.js'
+          for attempt in 1 2 3 4 5 6; do
+            curl -fsSL -H 'Cache-Control: no-cache' "$URL?preview=e3d9ec06-$attempt" -o /tmp/reception-live.js || true
+            if grep -q 'Three-view inspection layout' /tmp/reception-live.js 2>/dev/null; then
+              echo 'Live website serves the approved vehicle diagram.' >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo 'Live website is still showing old Reception code.' >&2
+          exit 1
