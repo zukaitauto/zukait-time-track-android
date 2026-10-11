@@ -180,6 +180,7 @@
   #rc-root .rc-topbar{margin:-10px -10px 12px}
 }
 `;
+    e.textContent += "\\n#rc-root .rc-function-entry{display:grid;grid-template-columns:minmax(0,2fr) repeat(3,minmax(38px,1fr));align-items:center;gap:6px;padding:6px;border-bottom:1px solid #d9e6ed}#rc-root .rc-function-entry label{text-align:center}#rc-root .rc-function-entry input{width:19px;height:19px}#rc-root .rc-function-panel{min-width:0}";
     e.textContent += "\n#rc-root #rc-form .rc-inspection-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(320px,1fr);align-items:start;gap:14px;margin-top:12px}\n#rc-root #rc-form .rc-inspection-layout>.rc-box{min-width:0;margin:0;overflow:hidden}\n#rc-root .rc-panel-head{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}\n#rc-root .rc-panel-head h4{margin:4px 0}\n#rc-root .rc-info-note{color:#466578;font-size:13px;margin:7px 0 12px}\n#rc-root .rc-damage-types{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0}\n#rc-root .rc-damage-types button{min-height:42px!important;padding:7px 11px!important;font-weight:800!important;background:#f4f9ff!important;color:#21455c!important;border:1px solid #b6cddb!important}\n#rc-root .rc-damage-types [aria-pressed=true]{background:#cce9f8!important;outline:2px solid #2789a2}\n#rc-root .rc-damage-clear{background:#edf7fd!important;color:#155b7b!important;border:1px solid #abcbdc!important}\n#rc-root .rc-car-stage{position:relative;width:100%;min-height:170px;aspect-ratio:560 / 350;background:linear-gradient(160deg,#f4faff,#e5f1f8);border:1px solid #d2e3ef;border-radius:16px;margin:14px 0;overflow:hidden}\n#rc-root .rc-car-svg{display:block;width:100%;height:100%}\n#rc-root .rc-car-stage .rc-zone{position:absolute;transform:translate(-50%,-50%);min-height:34px!important;width:34px!important;height:34px!important;padding:0!important;border-radius:50%!important;border:2px solid #fff!important;box-shadow:0 2px 6px #163b5480;background:#187eb1!important;color:#fff!important;font-weight:900!important;font-size:18px!important;line-height:1!important}\n#rc-root .rc-car-stage .rc-zone[data-mark=X]{background:#d73538!important}#rc-root .rc-car-stage .rc-zone[data-mark=S]{background:#176bc6!important}#rc-root .rc-car-stage .rc-zone[data-mark=M]{background:#dd850b!important}\n#rc-root .rc-car-stage .rc-zone:focus-visible{outline:3px solid #111!important;outline-offset:2px!important}\n#rc-root .rc-zone-legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-bottom:15px}\n#rc-root .rc-zone-legend span{font-size:12px;background:#f1f7fb;border:1px solid #e0eaf3;border-radius:8px;padding:6px 8px;font-weight:700}\n#rc-root .rc-zone-legend small{display:block;margin:2px 0 0;font-size:11px;line-height:1.2}\n#rc-root .rc-accessory-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}\n#rc-root .rc-accessory-items .rc-accessory-card,#rc-root .rc-accessory-items .rc-accessory-extra{display:flex!important;align-items:center!important;gap:8px!important;padding:11px 8px!important;min-width:0;min-height:65px!important;background:#f8fcff!important;border:1px solid #d3e1ed!important;border-radius:11px!important;text-align:left!important;color:#24465d!important;box-shadow:none!important;margin:0!important}\n#rc-root .rc-accessory-items .rc-accessory-card input{flex:0 0 23px;width:23px!important;height:23px!important}\n#rc-root .rc-accessory-items strong,#rc-root .rc-accessory-items b{font-weight:800;font-size:14px}\n#rc-root .rc-accessory-items small{display:block;font-size:12px;color:#567186}\n#rc-root .rc-accessory-extra[aria-pressed=true]{background:#e1f7ef!important;border-color:#63b3a4!important}\n#rc-root .rc-accessory-tick{font-style:normal;font-weight:900;background:#0d8a95;color:#fff;border-radius:6px;padding:4px;margin-left:auto}\n#rc-root .rc-fuel{margin:12px 0}#rc-root .rc-reception-notes{margin-top:12px}#rc-root .rc-customer-sign{margin-top:12px}\n@media(max-width:980px){#rc-root #rc-form .rc-inspection-layout{grid-template-columns:1fr}}\n@media(max-width:500px){#rc-root .rc-zone-legend{grid-template-columns:repeat(2,minmax(0,1fr))}#rc-root .rc-car-stage .rc-zone{width:28px!important;height:28px!important;min-height:28px!important;font-size:15px!important}#rc-root .rc-accessory-items{grid-template-columns:1fr 1fr}#rc-root .rc-accessory-items .rc-accessory-card,#rc-root .rc-accessory-items .rc-accessory-extra{padding:9px 5px!important}#rc-root .rc-accessory-items small{font-size:10px}}\n";
     e.textContent += "#rc-root .rc-vehicle-header{font-size:18px;margin:16px 0 8px;color:#174a63}#rc-root .rc-record-map{max-width:760px;background:#edf6fb;border-radius:14px;padding:5px;margin:8px auto}#rc-root .rc-record-map svg{width:100%;height:auto;max-height:240px}#rc-root #rc-form .rc-form-brand{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:13px 18px;background:#fff;border:1px solid #d4e2ec;border-radius:14px;color:#0e4664}#rc-root #rc-form .rc-form-brand strong{font-size:20px}#rc-root #rc-form .rc-form-brand small{font-size:13px;display:block}#rc-root #rc-form .rc-form-brand h3{color:#173f61;font-size:18px;margin:3px 0}";
     e.textContent += "\n#rc-root .rc-cl-approved-rows{display:grid;gap:5px}#rc-root .rc-cl-approved-row{display:grid;gap:6px;min-width:0}#rc-root .rc-cl-r1{grid-template-columns:1fr 1.4fr}#rc-root .rc-cl-r2{grid-template-columns:.85fr 1.5fr 1.65fr}#rc-root .rc-cl-r3{grid-template-columns:2.5fr .7fr .85fr}#rc-root .rc-cl-r4{grid-template-columns:2.6fr 1fr}#rc-root .rc-cl-r5{grid-template-columns:1fr}#rc-root .rc-cl-approved-row .rc-cl-fact{min-width:0}#rc-root .rc-cl-approved-row .rc-cl-fact small{font-weight:900}@media(max-width:530px){#rc-root .rc-cl-approved-row{gap:3px}#rc-root .rc-cl-approved-row .rc-cl-fact{padding:6px 3px;font-size:11px}}";
@@ -806,6 +807,32 @@
 
       '<label>Damage notes / ملاحظات الأضرار<textarea name="damage" maxlength="1700" placeholder="Additional damage description">'+esc(parsed.notes)+'</textarea></label></section>';
   }
+  const functionChecks=["Lights","Wipers","Power Windows","Central Locking","Mirrors","Horn","Dashboard Warning","Air Conditioning"];
+  function parseFunctionChecks(raw){
+    const value=String(raw||""),match=value.match(/^\[\[ZUKAIT-FUNCTION-V1\]\]\n([\s\S]*?)\n\[\[\/ZUKAIT-FUNCTION-V1\]\](?:\n([\s\S]*))?$/);
+    if(!match)return {marks:{},details:value};
+    try{
+      const marks=JSON.parse(match[1]);
+      if(!marks||typeof marks!=="object"||Array.isArray(marks))throw Error("Invalid check");
+      const filtered={};
+      for(const [key,status] of Object.entries(marks))if(functionChecks.includes(key)&&["OK","ISSUE","NA"].includes(status))filtered[key]=status;
+      return {marks:filtered,details:match[2]||""};
+    }catch(_){return {marks:{},details:value};}
+  }
+  function packFunctionChecks(marks,details){
+    const valid={};
+    for(const [key,status] of Object.entries(marks||{}))if(functionChecks.includes(key)&&["OK","ISSUE","NA"].includes(status))valid[key]=status;
+    if(!Object.keys(valid).length)return String(details||"");
+    return "[[ZUKAIT-FUNCTION-V1]]\\n"+JSON.stringify(valid)+"\\n[[/ZUKAIT-FUNCTION-V1]]\\n"+String(details||"");
+  }
+  function functionPanel(d){
+    const parsed=parseFunctionChecks(d.warnings);
+    return '<section class="rc-box rc-function-panel"><h4>Function Check / فحص الوظائف</h4>'+
+      '<div class="rc-function-entry"><strong>Item</strong><strong>OK</strong><strong>ISSUE</strong><strong>N/A</strong></div>'+
+      functionChecks.map(name=>'<div class="rc-function-entry"><strong>'+esc(name)+'</strong>'+
+        ["OK","ISSUE","NA"].map(status=>'<label><input type="radio" name="rc-function-'+functionChecks.indexOf(name)+'" value="'+status+'" '+(parsed.marks[name]===status?'checked':'')+' aria-label="'+esc(name+' '+status)+'"></label>').join("")+'</div>').join("")+
+      '<label>Warning details (only when Dashboard Warning is ISSUE)<textarea name="warnings" maxlength="2000">'+esc(parsed.details)+'</textarea></label></section>';
+  }
   function accessoriesPanel(d){
     const parsed=unpackChecklistText(d.other_accessories,"ACCESSORIES",extraAccessories.map(x=>x[0]));
     return '<section class="rc-box rc-accessory-panel"><h4>الملحقات والمعدات / Accessories & Equipment</h4>'+
@@ -898,9 +925,9 @@
         '<div class="rc-insurance">' +
         select("insurance_id", "Insurance Company / شركة التأمين *", options, r?.insurance_id || "") +
         '</div></div><h4 class="rc-vehicle-header">معلومات المركبة والعميل / Vehicle &amp; Customer Information</h4><div class="rc-grid">' + inputs +
-        '</div><div class="rc-inspection-layout">'+damagePanel(d)+accessoriesPanel(d)+'</div>'+
+        '</div><div class="rc-inspection-layout">'+damagePanel(d)+accessoriesPanel(d)+functionPanel(d)+'</div>'+
         '<div class="rc-box rc-reception-notes"><h4>الملاحظات / Notes & Observations</h4>'+
-        textFields.filter(([key])=>key==="warnings"||key==="remarks")
+        textFields.filter(([key])=>key==="remarks")
         .map(([key,name])=>'<label>'+esc(name)+'<textarea name="'+key+'" maxlength="2000">'+esc(d[key]||"")+'</textarea></label>').join("")+
         '</div><div class="rc-box rc-customer-sign"><strong>إقرار العميل / Customer Acknowledgement</strong><p>The customer signs the printed A4 checklist after inspection. No signature photo is stored.</p></div>' + (current?.record?.job_card ? input('reason', 'Reason for checklist / vehicle correction', '', true) : '') + '<div class="rc-actions"><button type="submit">Save Checklist</button></div></form>',
     );
@@ -1308,6 +1335,9 @@
     if ((current?.record.job_type || f.get("job_type")) !== "INSURANCE")
       details.claim = ""; // Never save hidden insurance claims on cash checklists.
     textFields.forEach(([k]) => (details[k] = String(f.get(k) || "")));
+    const checks={};
+    functionChecks.forEach((name,i)=>{const status=String(f.get("rc-function-"+i)||"");if(["OK","ISSUE","NA"].includes(status))checks[name]=status;});
+    details.warnings=packFunctionChecks(checks,checks["Dashboard Warning"]==="ISSUE"?String(f.get("warnings")||""):"");
     details.tools = f.getAll("tools");
     details.odometer_unit = String(f.get("odometer_unit"));
     details.fuel = String(f.get("fuel") || "");
@@ -1507,7 +1537,7 @@
       '<span class="rc-fuel-choice">'+tick(d.fuel===key)+esc(label)+'</span>').join("");
     const observation=[
       damage.notes?["Damage Description",damage.notes]:null,
-      d.warnings?["Dashboard warnings",d.warnings]:null,
+      
       d.remarks?["Other remarks",d.remarks]:null
     ].filter(Boolean);
     const observationHtml=observation.map(([label,value])=>
@@ -1547,8 +1577,8 @@
       '.rc-checkbox{display:inline-flex;width:3.1mm;height:3.1mm;border:1px solid #475967;align-items:center;justify-content:center;font-size:8pt;font-weight:bold;line-height:1}',
       '.rc-fuel{height:11mm;flex:none;border-bottom:1px solid #7d8d95;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-evenly;font-size:7pt;gap:1mm;padding:1mm}',
       '.rc-fuel-choice{display:flex;align-items:center;gap:.6mm}',
-      '.rc-function-check{height:20mm;display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:.5mm;padding:1mm 1.5mm;font-size:6.6pt}',
-      '.rc-function-line{display:flex;align-items:center;gap:1mm;min-height:4mm;white-space:normal}',
+      '.rc-function-check{height:auto;min-height:20mm;display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:.3mm;padding:1mm 1.5mm;font-size:5.5pt}',
+      '.rc-function-line{display:flex;align-items:center;gap:1mm;min-height:2.6mm;white-space:normal}', '.rc-check-result{justify-content:space-between}.rc-check-result>span:last-child{display:flex;gap:.8mm}.rc-check-result .rc-checkbox{width:2mm;height:2mm;font-size:5pt}',
       '.rc-function-fuel{flex-wrap:wrap;gap:1.1mm;font-size:6.3pt}',
       '.rc-accessory-others{padding:1mm 1.5mm;flex:1;min-height:0;font-size:7pt;display:flex;flex-direction:column;gap:1mm}',
       '.rc-mini-tools{display:flex;gap:1.2mm 2.5mm;flex-wrap:wrap;font-size:6.5pt}',
@@ -1586,7 +1616,10 @@
       '<div class="rc-accessory-row">'+
       accessory("wheel_covers","Wheel Covers",true)+accessory("upholstery","Upholstery",true)+
       accessory("windshield","Wind Shield",true)+accessory("radio_tape","Radio / Tape",true)+'</div>'+
-      '<div class="rc-fuel rc-function-check"><div class="rc-function-line"><b>Floor Mats</b>'+tick(checkedTool("floor_mats"))+'<b>FUNCTION CHECK</b></div><div class="rc-function-line"><b>Dashboard Warning:</b> <span>'+(String(d.warnings||"").trim()?"Details recorded":"Not recorded")+'</span></div><div class="rc-function-line rc-function-fuel"><b>Fuel:</b>'+fuel+'</div></div>'+
+      '<div class="rc-fuel rc-function-check"><div class="rc-function-line"><b>Floor Mats</b>'+tick(checkedTool("floor_mats"))+'<b>FUNCTION CHECK</b></div>'+
+      functionChecks.map(name=>{const parsed=parseFunctionChecks(d.warnings);const status=parsed.marks[name]||"";return '<div class="rc-function-line rc-check-result"><span>'+esc(name)+'</span><span>'+["OK","ISSUE","NA"].map(k=>'<span>'+tick(status===k)+(k==="NA"?"N/A":k)+'</span>').join("")+'</span></div>';}).join("")+
+      (parseFunctionChecks(d.warnings).marks["Dashboard Warning"]==="ISSUE"&&parseFunctionChecks(d.warnings).details?'<div class="rc-function-line">Warning: '+esc(parseFunctionChecks(d.warnings).details)+'</div>':"")+
+      '<div class="rc-function-line rc-function-fuel"><b>Fuel:</b>'+fuel+'</div></div>'+
       '<div class="rc-accessory-others"><b>Other accessories / remarks:</b>'+
       '<div class="rc-mini-tools">'+additions+'</div>'+
       '<div class="rc-other-notes">'+esc(accessories.notes)+'</div></div></div></section>'+
