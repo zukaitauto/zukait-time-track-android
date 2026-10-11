@@ -24,7 +24,33 @@ begin
  select data into snapshot from workshop_state where id='main';
  assert (select j->>'creditAccount' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CREDIT')='QA-FLEET-ACCOUNT';
  assert (select j->>'jobType' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CREDIT')='CREDIT';
- begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'job_type','INSURANCE','job_card','QA-BYPASS')); raise exception 'QA insurance bypass accepted'; exception when others then assert sqlerrm='reception_invalid_job_type'; end;
+ -- Direct Insurance must require evidence and approved-vehicle confirmation, then create atomically.
+ cmd:=jsonb_build_object('operation','CREATE_DIRECT_JOB','request_id',gen_random_uuid(),
+  'job_type','INSURANCE','job_card','QA-DIRECT-APPROVED-INSURANCE','reason','Already approved insurance repair',
+  'received_confirmed',true,'insurance_id',1,'reference','QA-LPO-20261011',
+  'approval_date',(current_date)::text,'evidence','Insurance approval verified at reception',
+  'approval_confirmed',true,
+  'details',jsonb_build_object('make','Nissan','model','Altima','year','2014',
+    'registration','7561.BH','customer','QA Insured Customer','contact','QA contact'));
+ result:=zukait_reception_command('QA-RC',cmd);rc:=result->'record'->>'rc_no';
+ assert result->'record'->>'job_card'='QA-DIRECT-APPROVED-INSURANCE';
+ assert result->'record'->>'job_type'='INSURANCE';
+ assert result->'record'->>'approval_status'='APPROVED';
+ assert (zukait_reception_command('QA-RC',cmd)->>'duplicate')::boolean;
+ select data into snapshot from workshop_state where id='main';
+ assert (select count(*) from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-APPROVED-INSURANCE')=1;
+ assert (select j->>'jobType' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-APPROVED-INSURANCE')='INSURANCE';
+ assert (select j->>'reg' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-APPROVED-INSURANCE')='7561.BH';
+ assert zukait_reception_job_approval_valid('QA-DIRECT-APPROVED-INSURANCE',rc,snapshot);
+ assert (select count(*) from workshop_reception_external_approvals where rc_no=rc)=1;
+ assert (select count(*) from workshop_reception_estimates where rc_no=rc)=0;
+ begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'job_card','QA-INS-NO-APPROVAL','approval_confirmed',false));raise exception 'QA unapproved job accepted';exception when others then assert sqlerrm='reception_approval_confirmation_required';end;
+ begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'job_card','QA-INS-NO-EVIDENCE','evidence',''));raise exception 'QA missing evidence accepted';exception when others then assert sqlerrm='reception_external_evidence_required';end;
+ begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'job_card','QA-INS-DUPLICATE'));raise exception 'QA duplicate Job Card accepted';exception when others then assert sqlerrm='reception_job_number_exists' or sqlerrm='reception_request_conflict';end;
+ begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'received_confirmed',false));raise exception 'QA physical receipt bypass accepted';exception when others then assert sqlerrm='reception_received_confirmation_required';end;
+ -- Continue Cash/Credit backwards-compatibility test.
+ cmd:=jsonb_build_object('operation','CREATE_DIRECT_JOB','request_id',gen_random_uuid(),'job_type','CREDIT','job_card','QA-EXTRA-CREDIT','reason','QA credit','received_confirmed',true,
+  'details',jsonb_build_object('make','Toyota','model','Camry','customer','QA company','contact','QA contact'),'credit_account','QA-FLEET-ACCOUNT');
  begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'received_confirmed',false)); raise exception 'QA physical receipt bypass accepted'; exception when others then assert sqlerrm='reception_received_confirmation_required'; end;
  begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'amount',100)); raise exception 'QA financial field accepted'; exception when others then assert sqlerrm='reception_invalid_fields'; end;
  begin perform zukait_reception_command('QA-EMP',cmd); raise exception 'QA employee direct access accepted'; exception when others then assert sqlerrm='reception_job_forbidden'; end;
