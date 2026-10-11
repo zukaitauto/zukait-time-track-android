@@ -670,6 +670,12 @@
       '<text x="409" y="222" font-size="12">RH FRONT DOOR</text>'+
       '<text x="625" y="156" font-size="15">BONNET</text>'+
       '<text x="125" y="156" font-size="12">BOOT</text>'+
+      '<text x="62" y="155" font-size="9" transform="rotate(-90 62 155)">REAR BUMPER</text>'+
+      '<text x="737" y="155" font-size="9" transform="rotate(90 737 155)">FRONT BUMPER</text>'+
+      '<text x="147" y="34" font-size="10">LH REAR QUARTER</text>'+
+      '<text x="667" y="34" font-size="10">LH FRONT FENDER</text>'+
+      '<text x="147" y="282" font-size="10">RH REAR QUARTER</text>'+
+      '<text x="667" y="282" font-size="10">RH FRONT FENDER</text>'+
       '</g></svg>';
   }
   function damagePanel(d){
