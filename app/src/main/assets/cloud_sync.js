@@ -801,16 +801,29 @@
         alert('Your login was revoked. Please use Login again.');
         return false;
       }
+      if(r._status===403){
+        // The server was reached but denied this request. Preserve the local
+        // snapshot for review; do not misreport this as an internet outage.
+        const e=new Error(r.code||'PERMISSION_DENIED');
+        e.code=r.code||'PERMISSION_DENIED';
+        e.httpStatus=403;
+        throw e;
+      }
       throw new Error(r.code||'SAVE_FAILED');
     }catch(e){
       console.error('Cloud save failed',e);
       cloudDirty=true;
       localStorage.setItem(DIRTY_KEY,'1');
       lastSyncError=String(e?.code||e?.message||'SAVE_FAILED');consecutiveSyncErrors++;
-      setServerConnection('offline',navigator.onLine?'Workshop server cannot be reached. Changes are queued and will sync after reconnection.':'Server connection unavailable. Changes are queued and will sync after reconnection.');
+      const permissionDenied=e?.httpStatus===403;
+      if(permissionDenied){
+        setServerConnection('connected','Server reachable, but a change was rejected by permissions. Pending changes are preserved for review.');
+      }else{
+        setServerConnection('offline',navigator.onLine?'Workshop server cannot be reached. Changes are queued and will sync after reconnection.':'Server connection unavailable. Changes are queued and will sync after reconnection.');
+      }
       try{localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:localSnapshot,error:lastSyncError}))}catch(_){}
-      status(navigator.onLine?'SYNC ERROR — RETRYING':'OFFLINE — CHANGE QUEUED',navigator.onLine?'bad':'warn');
-      if(navigator.onLine&&sessionToken())setTimeout(()=>{if(cloudDirty&&!cloudPushing)push(0)},Math.min(15000,1000*Math.pow(2,Math.min(consecutiveSyncErrors,4))));
+      status(permissionDenied?'PERMISSION DENIED — CHANGE PRESERVED':(navigator.onLine?'SYNC ERROR — RETRYING':'OFFLINE — CHANGE QUEUED'),navigator.onLine?'bad':'warn');
+      if(!permissionDenied&&navigator.onLine&&sessionToken())setTimeout(()=>{if(cloudDirty&&!cloudPushing)push(0)},Math.min(15000,1000*Math.pow(2,Math.min(consecutiveSyncErrors,4))));
       return false;
     }finally{
       cloudPushing=false;
