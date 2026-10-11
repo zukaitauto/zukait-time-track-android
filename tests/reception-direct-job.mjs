@@ -63,6 +63,35 @@ assert.equal(insurance.reference,'QA-LPO-123');
 assert.equal(insurance.evidence,'Approval verified');
 assert.ok(!('credit_account' in insurance));
 assert.equal(receipts.size,3);
+// Existing checklist search must fill editable identity fields, preserve the original reading,
+// and refuse an unlinked second job until the atomic linked-update API is available.
+const searchRecord={rc_no:'RC0099',job_type:'INSURANCE',insurance_id:1,revision:2,location:'VWC',approval_status:'APPROVED',
+ details:{make:'Nissan',model:'Altima',registration:'7561.BH',year:'2014',vin:'QA-VIN',customer:'QA Customer',contact:'QA Phone',
+ claim:'QA-CLAIM',odometer:'53699',odometer_unit:'KM'}};
+const fetchBeforeSearch=w.fetch;
+w.fetch=async(url,args)=>{
+ const command=JSON.parse(args.body).command;
+ if(command.operation==='LIST'&&command.search)return {ok:true,json:async()=>({ok:true,rows:[searchRecord]})};
+ if(command.operation==='GET'&&command.rc_no===searchRecord.rc_no)return {ok:true,json:async()=>({ok:true,record:searchRecord})};
+ return fetchBeforeSearch(url,args);
+};
+await click('home');await click('direct-job');form=w.document.getElementById('rc-direct-job');
+assert.equal(w.document.querySelector('[data-rc-action="new"]'),null);
+w.document.getElementById('rc-direct-checklist-search').value='7561.BH';
+w.document.getElementById('rc-direct-checklist-find').click();await settle();
+const pick=w.document.querySelector('[data-rc-pick="0"]');assert.ok(pick,'Checklist search result available');
+pick.click();await settle();
+assert.equal(form.elements.registration.value,'7561.BH');
+assert.equal(form.elements.make.value,'Nissan');
+assert.equal(form.elements.model.value,'Altima');
+assert.equal(form.elements.claim.value,'QA-CLAIM');
+assert.equal(form.elements.insurance_id.value,'1');
+assert.equal(form.elements.odometer.value,'','Original checklist reading must never prefill as new intake');
+assert.match(w.document.getElementById('rc-direct-checklist-note').textContent,/53699/);
+form.elements.customer.value='Updated QA Customer';assert.equal(form.elements.customer.value,'Updated QA Customer');
+const beforeLinked=calls.filter(c=>c.operation==='CREATE_DIRECT_JOB').length;
+await submit();assert.equal(calls.filter(c=>c.operation==='CREATE_DIRECT_JOB').length,beforeLinked,'Linked checklist must never create a second direct intake');
+w.fetch=fetchBeforeSearch;
 record={rc_no:'RC-QA-INSURANCE',details:{make:'Toyota',model:'Camry'},job_type:'INSURANCE',location:'VWC',approval_status:'APPROVED',revision:2};
 // Only authorized staff can record issued approval. Receptionist only creates.
 await w.zukaitReception.open();
