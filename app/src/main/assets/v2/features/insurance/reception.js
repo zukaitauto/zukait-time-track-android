@@ -1423,9 +1423,10 @@
       '.rc-field strong{flex:none;max-width:50%;font-size:7.8pt}.rc-field span{font-weight:600;min-width:0}',
       '.rc-damage-title{height:8mm;border:1px solid #657782;border-top:0;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 2.5mm;font-size:8pt}',
       '.rc-damage-title b{font-size:9pt}.rc-damage-title span{margin-left:3mm}',
-      '.rc-inspection{height:74mm;flex:none;display:grid;grid-template-columns:57% 43%;border:1px solid #657782;border-top:0}',
+      '.rc-inspection{height:74mm;flex:none;display:grid;grid-template-columns:63% 37%;border:1px solid #657782;border-top:0}',
       '.rc-diagram{min-width:0;display:flex;flex-direction:column;justify-content:center;padding:1mm 1.5mm;border-right:1px solid #657782}',
-      '.rc-print-car{display:block;width:100%;height:auto;max-height:65mm}',
+      '.rc-print-car{display:block;width:100%;height:auto;max-height:69mm}',
+      '.rc-section-heading{display:block;font-size:7pt;letter-spacing:.2px;padding:.7mm 1mm;border-bottom:1px solid #95a2aa}',
       '.rc-marked{font-size:6.6pt;line-height:1.1;margin:0 1mm 1mm;overflow-wrap:anywhere;max-height:6mm;overflow:hidden}',
       '.rc-accessories{min-width:0;display:flex;flex-direction:column}',
       '.rc-accessory-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));flex:none;min-height:11mm}',
@@ -1461,16 +1462,16 @@
       '<div class="rc-info">'+details+'</div>'+
       '<div class="rc-damage-title"><div><b>Damages:</b><span>X = Dent</span><span>S = Scratch</span><span>M = Missing</span></div>'+
       '<div lang="ar" dir="rtl">الأضرار: X ضربة · S خدش · M مفقود</div></div>'+
-      '<section class="rc-inspection"><div class="rc-diagram">'+printCarGraphic(d)+
+      '<section class="rc-inspection"><div class="rc-diagram"><b class="rc-section-heading">EXTERIOR CHECK · DAMAGE MAP</b>'+printCarGraphic(d)+
       '</div>'+
-      '<div class="rc-accessories">'+
+      '<div class="rc-accessories"><b class="rc-section-heading">INTERIOR CHECK · ACCESSORIES</b>'+
       '<div class="rc-accessory-row">'+
       accessory("spare_tyre","Spare Tyre")+accessory("jack","Jack")+
       accessory("jack_release","Jack Release",true)+accessory("wheel_spanner","Wheel Spanner")+'</div>'+
       '<div class="rc-accessory-row">'+
       accessory("wheel_covers","Wheel Covers",true)+accessory("upholstery","Upholstery",true)+
       accessory("windshield","Wind Shield",true)+accessory("radio_tape","Radio / Tape",true)+'</div>'+
-      '<div class="rc-fuel"><b>Floor Mats</b>'+tick(checkedTool("floor_mats"))+'<b>Dashboard Warning</b>'+tick(!!String(d.warnings||"").trim())+'<b>Fuel</b>'+fuel+'</div>'+
+      '<div class="rc-fuel"><b>Floor Mats</b>'+tick(checkedTool("floor_mats"))+'<b>FUNCTION CHECK</b><span><b>Dashboard Warning:</b> '+(String(d.warnings||"").trim()?"Details recorded":"Not recorded")+'</span><b>Fuel</b>'+fuel+'</div>'+
       '<div class="rc-accessory-others"><b>Other accessories / remarks:</b>'+
       '<div class="rc-mini-tools">'+additions+'</div>'+
       '<div class="rc-other-notes">'+esc(accessories.notes)+'</div></div></div></section>'+
