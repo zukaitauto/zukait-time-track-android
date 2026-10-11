@@ -87,7 +87,7 @@ begin
  assert result->'record'->>'job_card'='QA-DIRECT-INSURANCE';
  assert result->'record'->'details'->>'model'='Corolla';
  assert result->'record'->'details'->>'registration'='QA-EXTERNAL-UPDATED';
- assert (zukait_reception_command('QA-RC',cmd)->>'duplicate')::boolean;
+ assert (zukait_reception_command('QA-MGR',cmd)->>'duplicate')::boolean;
  select data into snapshot from workshop_state where id='main';
  assert zukait_reception_job_approval_valid('QA-DIRECT-INSURANCE',rc,snapshot);
  assert (select details->>'odometer' from workshop_receptions where rc_no=rc)='53699', 'Original checklist reading must be immutable';
