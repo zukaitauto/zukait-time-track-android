@@ -11,8 +11,8 @@ begin
  definition:=pg_get_functiondef('public.zukait_reception_command(text,jsonb)'::regprocedure);
  if definition is null then raise exception 'linked_intake_command_missing'; end if;
 
- old_text:='''approval_confirmed'') then raise exception ''reception_invalid_fields''; end if;';
- new_text:='''approval_confirmed'',''identity_updates'') then raise exception ''reception_invalid_fields''; end if;';
+ old_text:='''approval_confirmed'',''job_intake_odometer'',''job_intake_unit'') then raise exception ''reception_invalid_fields''; end if;';
+ new_text:='''approval_confirmed'',''job_intake_odometer'',''job_intake_unit'',''identity_updates'') then raise exception ''reception_invalid_fields''; end if;';
  if (length(definition)-length(replace(definition,old_text,'')))/length(old_text)<>1 then
    raise exception 'linked_identity_outer_guard_drift';
  end if;
