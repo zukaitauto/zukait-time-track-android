@@ -180,7 +180,7 @@
   #rc-root .rc-topbar{margin:-10px -10px 12px}
 }
 `;
-    e.textContent += "\n#rc-root #rc-form .rc-inspection-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(320px,1fr);align-items:start;gap:14px;margin-top:12px}\n#rc-root #rc-form .rc-inspection-layout>.rc-box{min-width:0;margin:0;overflow:hidden}\n#rc-root .rc-panel-head{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}\n#rc-root .rc-panel-head h4{margin:4px 0}\n#rc-root .rc-info-note{color:#466578;font-size:13px;margin:7px 0 12px}\n#rc-root .rc-damage-types{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0}\n#rc-root .rc-damage-types button{min-height:42px!important;padding:7px 11px!important;font-weight:800!important;background:#f4f9ff!important;color:#21455c!important;border:1px solid #b6cddb!important}\n#rc-root .rc-damage-types [aria-pressed=true]{background:#cce9f8!important;outline:2px solid #2789a2}\n#rc-root .rc-damage-clear{background:#edf7fd!important;color:#155b7b!important;border:1px solid #abcbdc!important}\n#rc-root .rc-car-stage{position:relative;width:100%;min-height:170px;aspect-ratio:840 / 310;background:linear-gradient(160deg,#f4faff,#e5f1f8);border:1px solid #d2e3ef;border-radius:16px;margin:14px 0;overflow:hidden}\n#rc-root .rc-car-svg{display:block;width:100%;height:100%}\n#rc-root .rc-car-stage .rc-zone{position:absolute;transform:translate(-50%,-50%);min-height:34px!important;width:34px!important;height:34px!important;padding:0!important;border-radius:50%!important;border:2px solid #fff!important;box-shadow:0 2px 6px #163b5480;background:#187eb1!important;color:#fff!important;font-weight:900!important;font-size:18px!important;line-height:1!important}\n#rc-root .rc-car-stage .rc-zone[data-mark=X]{background:#d73538!important}#rc-root .rc-car-stage .rc-zone[data-mark=S]{background:#176bc6!important}#rc-root .rc-car-stage .rc-zone[data-mark=M]{background:#dd850b!important}\n#rc-root .rc-car-stage .rc-zone:focus-visible{outline:3px solid #111!important;outline-offset:2px!important}\n#rc-root .rc-zone-legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-bottom:15px}\n#rc-root .rc-zone-legend span{font-size:12px;background:#f1f7fb;border:1px solid #e0eaf3;border-radius:8px;padding:6px 8px;font-weight:700}\n#rc-root .rc-zone-legend small{display:block;margin:2px 0 0;font-size:11px;line-height:1.2}\n#rc-root .rc-accessory-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}\n#rc-root .rc-accessory-items .rc-accessory-card,#rc-root .rc-accessory-items .rc-accessory-extra{display:flex!important;align-items:center!important;gap:8px!important;padding:11px 8px!important;min-width:0;min-height:65px!important;background:#f8fcff!important;border:1px solid #d3e1ed!important;border-radius:11px!important;text-align:left!important;color:#24465d!important;box-shadow:none!important;margin:0!important}\n#rc-root .rc-accessory-items .rc-accessory-card input{flex:0 0 23px;width:23px!important;height:23px!important}\n#rc-root .rc-accessory-items strong,#rc-root .rc-accessory-items b{font-weight:800;font-size:14px}\n#rc-root .rc-accessory-items small{display:block;font-size:12px;color:#567186}\n#rc-root .rc-accessory-extra[aria-pressed=true]{background:#e1f7ef!important;border-color:#63b3a4!important}\n#rc-root .rc-accessory-tick{font-style:normal;font-weight:900;background:#0d8a95;color:#fff;border-radius:6px;padding:4px;margin-left:auto}\n#rc-root .rc-fuel{margin:12px 0}#rc-root .rc-reception-notes{margin-top:12px}#rc-root .rc-customer-sign{margin-top:12px}\n@media(max-width:980px){#rc-root #rc-form .rc-inspection-layout{grid-template-columns:1fr}}\n@media(max-width:500px){#rc-root .rc-zone-legend{grid-template-columns:repeat(2,minmax(0,1fr))}#rc-root .rc-car-stage .rc-zone{width:28px!important;height:28px!important;min-height:28px!important;font-size:15px!important}#rc-root .rc-accessory-items{grid-template-columns:1fr 1fr}#rc-root .rc-accessory-items .rc-accessory-card,#rc-root .rc-accessory-items .rc-accessory-extra{padding:9px 5px!important}#rc-root .rc-accessory-items small{font-size:10px}}\n";
+    e.textContent += "\n#rc-root #rc-form .rc-inspection-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(320px,1fr);align-items:start;gap:14px;margin-top:12px}\n#rc-root #rc-form .rc-inspection-layout>.rc-box{min-width:0;margin:0;overflow:hidden}\n#rc-root .rc-panel-head{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}\n#rc-root .rc-panel-head h4{margin:4px 0}\n#rc-root .rc-info-note{color:#466578;font-size:13px;margin:7px 0 12px}\n#rc-root .rc-damage-types{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0}\n#rc-root .rc-damage-types button{min-height:42px!important;padding:7px 11px!important;font-weight:800!important;background:#f4f9ff!important;color:#21455c!important;border:1px solid #b6cddb!important}\n#rc-root .rc-damage-types [aria-pressed=true]{background:#cce9f8!important;outline:2px solid #2789a2}\n#rc-root .rc-damage-clear{background:#edf7fd!important;color:#155b7b!important;border:1px solid #abcbdc!important}\n#rc-root .rc-car-stage{position:relative;width:100%;min-height:170px;aspect-ratio:560 / 350;background:linear-gradient(160deg,#f4faff,#e5f1f8);border:1px solid #d2e3ef;border-radius:16px;margin:14px 0;overflow:hidden}\n#rc-root .rc-car-svg{display:block;width:100%;height:100%}\n#rc-root .rc-car-stage .rc-zone{position:absolute;transform:translate(-50%,-50%);min-height:34px!important;width:34px!important;height:34px!important;padding:0!important;border-radius:50%!important;border:2px solid #fff!important;box-shadow:0 2px 6px #163b5480;background:#187eb1!important;color:#fff!important;font-weight:900!important;font-size:18px!important;line-height:1!important}\n#rc-root .rc-car-stage .rc-zone[data-mark=X]{background:#d73538!important}#rc-root .rc-car-stage .rc-zone[data-mark=S]{background:#176bc6!important}#rc-root .rc-car-stage .rc-zone[data-mark=M]{background:#dd850b!important}\n#rc-root .rc-car-stage .rc-zone:focus-visible{outline:3px solid #111!important;outline-offset:2px!important}\n#rc-root .rc-zone-legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-bottom:15px}\n#rc-root .rc-zone-legend span{font-size:12px;background:#f1f7fb;border:1px solid #e0eaf3;border-radius:8px;padding:6px 8px;font-weight:700}\n#rc-root .rc-zone-legend small{display:block;margin:2px 0 0;font-size:11px;line-height:1.2}\n#rc-root .rc-accessory-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}\n#rc-root .rc-accessory-items .rc-accessory-card,#rc-root .rc-accessory-items .rc-accessory-extra{display:flex!important;align-items:center!important;gap:8px!important;padding:11px 8px!important;min-width:0;min-height:65px!important;background:#f8fcff!important;border:1px solid #d3e1ed!important;border-radius:11px!important;text-align:left!important;color:#24465d!important;box-shadow:none!important;margin:0!important}\n#rc-root .rc-accessory-items .rc-accessory-card input{flex:0 0 23px;width:23px!important;height:23px!important}\n#rc-root .rc-accessory-items strong,#rc-root .rc-accessory-items b{font-weight:800;font-size:14px}\n#rc-root .rc-accessory-items small{display:block;font-size:12px;color:#567186}\n#rc-root .rc-accessory-extra[aria-pressed=true]{background:#e1f7ef!important;border-color:#63b3a4!important}\n#rc-root .rc-accessory-tick{font-style:normal;font-weight:900;background:#0d8a95;color:#fff;border-radius:6px;padding:4px;margin-left:auto}\n#rc-root .rc-fuel{margin:12px 0}#rc-root .rc-reception-notes{margin-top:12px}#rc-root .rc-customer-sign{margin-top:12px}\n@media(max-width:980px){#rc-root #rc-form .rc-inspection-layout{grid-template-columns:1fr}}\n@media(max-width:500px){#rc-root .rc-zone-legend{grid-template-columns:repeat(2,minmax(0,1fr))}#rc-root .rc-car-stage .rc-zone{width:28px!important;height:28px!important;min-height:28px!important;font-size:15px!important}#rc-root .rc-accessory-items{grid-template-columns:1fr 1fr}#rc-root .rc-accessory-items .rc-accessory-card,#rc-root .rc-accessory-items .rc-accessory-extra{padding:9px 5px!important}#rc-root .rc-accessory-items small{font-size:10px}}\n";
     e.textContent += "#rc-root .rc-vehicle-header{font-size:18px;margin:16px 0 8px;color:#174a63}#rc-root .rc-record-map{max-width:760px;background:#edf6fb;border-radius:14px;padding:5px;margin:8px auto}#rc-root .rc-record-map svg{width:100%;height:auto;max-height:240px}#rc-root #rc-form .rc-form-brand{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:13px 18px;background:#fff;border:1px solid #d4e2ec;border-radius:14px;color:#0e4664}#rc-root #rc-form .rc-form-brand strong{font-size:20px}#rc-root #rc-form .rc-form-brand small{font-size:13px;display:block}#rc-root #rc-form .rc-form-brand h3{color:#173f61;font-size:18px;margin:3px 0}";
     e.textContent += "\n#rc-root .rc-cl-approved-rows{display:grid;gap:5px}#rc-root .rc-cl-approved-row{display:grid;gap:6px;min-width:0}#rc-root .rc-cl-r1{grid-template-columns:1fr 1.4fr}#rc-root .rc-cl-r2{grid-template-columns:.85fr 1.5fr 1.65fr}#rc-root .rc-cl-r3{grid-template-columns:2.5fr .7fr .85fr}#rc-root .rc-cl-r4{grid-template-columns:2.6fr 1fr}#rc-root .rc-cl-r5{grid-template-columns:1fr}#rc-root .rc-cl-approved-row .rc-cl-fact{min-width:0}#rc-root .rc-cl-approved-row .rc-cl-fact small{font-weight:900}@media(max-width:530px){#rc-root .rc-cl-approved-row{gap:3px}#rc-root .rc-cl-approved-row .rc-cl-fact{padding:6px 3px;font-size:11px}}";
     e.textContent += "\n/* Responsive read-only checklist detail: shared by Android WebView and desktop. */\n#rc-root.rc-checklist-view .rc-cl-summary{padding:14px 17px;margin:0 0 10px;border-radius:15px;background:linear-gradient(110deg,#dff5f2,#edf5fc);border:1px solid #aedbdd;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}\n#rc-root.rc-checklist-view .rc-cl-summary strong{display:block;font-size:clamp(24px,3vw,30px);line-height:1.2;overflow-wrap:anywhere}\n#rc-root.rc-checklist-view .rc-cl-summary small{display:block;font-size:12px;font-weight:700;color:#4a7082}\n#rc-root.rc-checklist-view .rc-cl-summary b{display:block;font-size:16px;color:#2d5064}\n#rc-root.rc-checklist-view .rc-cl-type{display:inline-block;font-size:12px;font-weight:800;border-radius:99px;background:#cfebfa;padding:4px 9px;margin:6px 0}\n#rc-root.rc-checklist-view .rc-cl-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}\n#rc-root.rc-checklist-view .rc-cl-grid>.rc-box{margin:0;min-width:0;padding:14px;border-radius:14px}\n#rc-root.rc-checklist-view .rc-cl-grid h4{margin:0 0 12px;color:#1a4e65;font-size:19px}\n#rc-root.rc-checklist-view .rc-cl-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}\n#rc-root.rc-checklist-view .rc-cl-fact{min-width:0;overflow-wrap:anywhere}\n#rc-root.rc-checklist-view .rc-cl-wide{grid-column:1/-1}\n#rc-root.rc-checklist-view .rc-cl-fact small{display:block;font-size:12px;font-weight:600;color:#577386;margin:0 0 3px}\n#rc-root.rc-checklist-view .rc-cl-fact b{display:block;font-size:16px;line-height:1.4;color:#172f43;overflow-wrap:anywhere}\n#rc-root.rc-checklist-view .rc-cl-fact b.rc-cl-missing{color:#728695;font-weight:500}\n#rc-root.rc-checklist-view .rc-cl-diagram{width:100%;margin:3px 0 12px;max-width:none}\n#rc-root.rc-checklist-view .rc-cl-diagram svg{display:block;width:100%;height:auto;max-height:310px}\n#rc-root.rc-checklist-view .rc-cl-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:12px}\n#rc-root.rc-checklist-view .rc-cl-tool{display:flex;gap:8px;align-items:center;background:#f2f8fc;border:1px solid #dce8ef;border-radius:9px;padding:8px;min-width:0;font-size:13px}\n#rc-root.rc-checklist-view .rc-cl-tool small{display:block;font-size:11px;color:#60788b}\n#rc-root.rc-checklist-view .rc-cl-tick{color:#15745b;font-weight:900;font-size:18px}\n#rc-root.rc-checklist-view .rc-cl-actions{gap:7px;margin:7px 0 12px}\n#rc-root.rc-checklist-view .rc-cl-actions button{font-size:14px!important;min-height:40px!important;padding:7px 12px!important}\n#rc-root.rc-checklist-view .rc-cl-actions [data-rc-action=print],#rc-root.rc-checklist-view .rc-cl-actions [data-rc-action=pdf]{background:#d6f3e9!important;color:#145b54!important}\n@media(max-width:760px){\n #rc-root.rc-checklist-view .rc-cl-grid{grid-template-columns:1fr;gap:10px}\n #rc-root.rc-checklist-view .rc-topbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}\n #rc-root.rc-checklist-view .rc-topbar h3{grid-column:1/-1;grid-row:1;order:initial;flex:initial;margin:0!important;font-size:19px}\n #rc-root.rc-checklist-view .rc-topbar>[data-rc-action=back]{grid-column:1;grid-row:2;justify-self:start}\n #rc-root.rc-checklist-view .rc-topbar>.rc-actions{grid-column:2;grid-row:2;order:initial;flex:initial;justify-content:flex-end}\n #rc-root.rc-checklist-view .rc-topbar button{min-height:38px!important;font-size:13px!important;padding:6px 9px!important}\n #rc-root.rc-checklist-view .rc-cl-grid>.rc-box{padding:13px}\n}\n@media(max-width:380px){#rc-root.rc-checklist-view .rc-cl-tools{grid-template-columns:1fr}}\n";
@@ -587,25 +587,129 @@
 
   // Damage/accessory annotations use existing server-approved text fields.
   // Older records remain free text; invalid or unrecognized envelopes are left untouched.
+  // Coordinates are percentages of the approved three-view horizontal diagram.
+  // Keys remain unchanged to preserve existing saved checklist damage annotations.
   const damageZones=[
-    ["front_bumper","Front Bumper","الصدام الأمامي",9,48],
-    ["bonnet","Bonnet","غطاء المحرك",24,48],
-    ["windshield","Windshield","الزجاج الأمامي",37,48],
-    ["roof","Roof","السقف",53,48],
-    ["rear_glass","Rear Glass","الزجاج الخلفي",68,48],
-    ["trunk","Trunk","الصندوق الخلفي",79,48],
-    ["rear_bumper","Rear Bumper","الصدام الخلفي",93,48],
-    ["front_door_l","Front Door (LH)","الباب الأمامي الأيسر",43,82],
-    ["rear_door_l","Rear Door (LH)","الباب الخلفي الأيسر",62,82],
-    ["front_door_r","Front Door (RH)","الباب الأمامي الأيمن",43,14],
-    ["rear_door_r","Rear Door (RH)","الباب الخلفي الأيمن",62,14],
-    ["front_fender_l","Front Fender (LH)","الرفرف الأمامي الأيسر",25,82],
-    ["front_fender_r","Front Fender (RH)","الرفرف الأمامي الأيمن",25,14],
-    ["rear_fender_l","Rear Fender (LH)","الرفرف الخلفي الأيسر",83,82],
-    ["rear_fender_r","Rear Fender (RH)","الرفرف الخلفي الأيمن",83,14],
-    ["head_lights","Headlights","المصابيح الأمامية",12,22],
-    ["rear_lights","Rear Lights","المصابيح الخلفية",90,22]
-  ].map(([key,name,ar,left,top])=>[key,name,ar,100-left,100-top]);
+    [
+        "front_bumper",
+        "Front Bumper",
+        "الصدام الأمامي",
+        91,
+        49
+    ],
+    [
+        "bonnet",
+        "Bonnet",
+        "غطاء المحرك",
+        78,
+        49
+    ],
+    [
+        "windshield",
+        "Windshield",
+        "الزجاج الأمامي",
+        65,
+        49
+    ],
+    [
+        "roof",
+        "Roof",
+        "السقف",
+        46,
+        49
+    ],
+    [
+        "rear_glass",
+        "Rear Glass",
+        "الزجاج الخلفي",
+        31,
+        49
+    ],
+    [
+        "trunk",
+        "Trunk",
+        "الصندوق الخلفي",
+        20,
+        49
+    ],
+    [
+        "rear_bumper",
+        "Rear Bumper",
+        "الصدام الخلفي",
+        10,
+        49
+    ],
+    [
+        "front_door_l",
+        "Front Door (LH)",
+        "الباب الأمامي الأيسر",
+        60,
+        18
+    ],
+    [
+        "rear_door_l",
+        "Rear Door (LH)",
+        "الباب الخلفي الأيسر",
+        42,
+        18
+    ],
+    [
+        "front_door_r",
+        "Front Door (RH)",
+        "الباب الأمامي الأيمن",
+        60,
+        80
+    ],
+    [
+        "rear_door_r",
+        "Rear Door (RH)",
+        "الباب الخلفي الأيمن",
+        42,
+        80
+    ],
+    [
+        "front_fender_l",
+        "Front Fender (LH)",
+        "الرفرف الأمامي الأيسر",
+        77,
+        18
+    ],
+    [
+        "front_fender_r",
+        "Front Fender (RH)",
+        "الرفرف الأمامي الأيمن",
+        77,
+        80
+    ],
+    [
+        "rear_fender_l",
+        "Rear Fender (LH)",
+        "الرفرف الخلفي الأيسر",
+        23,
+        18
+    ],
+    [
+        "rear_fender_r",
+        "Rear Fender (RH)",
+        "الرفرف الخلفي الأيمن",
+        23,
+        80
+    ],
+    [
+        "head_lights",
+        "Headlights",
+        "المصابيح الأمامية",
+        89,
+        34
+    ],
+    [
+        "rear_lights",
+        "Rear Lights",
+        "المصابيح الخلفية",
+        11,
+        66
+    ]
+];
   const extraAccessories=[
     ["jack_release","Jack Release","ذراع الرافعة","🔧"],
     ["wheel_covers","Wheel Covers","أغطية العجلات","◉"],
@@ -649,60 +753,39 @@
     const marks=unpackChecklistText(d.damage,"DAMAGE",damageZones.map(x=>x[0])).marks;
     const points=damageZones.filter(([key])=>marks[key]).map(([key,label,ar,left,top])=>{
       const code=marks[key],color={X:"#d73538",S:"#176bc6",M:"#dc850b"}[code];
-      return '<g><circle cx="'+(left*8.4)+'" cy="'+(top*3.1)+'" r="16" fill="'+color+'" stroke="white" stroke-width="3"/>'+
-        '<text x="'+(left*8.4)+'" y="'+(top*3.1+6)+'" font-size="18" fill="white" font-weight="900" text-anchor="middle">'+code+'</text></g>';
+      return '<g><circle cx="'+(left*5.6)+'" cy="'+(top*3.5)+'" r="16" fill="'+color+'" stroke="white" stroke-width="3"/>'+
+        '<text x="'+(left*5.6)+'" y="'+(top*3.1+6)+'" font-size="18" fill="white" font-weight="900" text-anchor="middle">'+code+'</text></g>';
     }).join("");
     return carGraphic().replace("</svg>",points+"</svg>");
   }
   function carGraphic(){
-    // Rear-left / front-right in both print and screen. Upper side is vehicle LH.
-    // Keep the inspection zone IDs and stored damage annotations unchanged.
-    return '<svg class="rc-car-svg" viewBox="0 0 840 310" role="img" aria-label="Unfolded vehicle inspection diagram: rear left, front right, roof centered, left-side doors above, right-side doors below">'+
-      '<g fill="white" stroke="#151c22" stroke-width="3" stroke-linejoin="round">'+
-      // Main vehicle: bumper, tailgate, rear glass, roof, windshield, bonnet, front bumper.
-      '<path d="M57 116 Q42 129 42 155 Q42 181 57 194 L86 194 L86 116Z"/>'+
-      '<path d="M86 110 L163 105 L163 205 L86 200Z"/>'+
-      '<path d="M163 105 L215 111 L235 126 L235 184 L215 199 L163 205Z"/>'+
-      '<path d="M235 111 L489 111 L489 199 L235 199Z"/>'+
-      '<path d="M489 110 L542 107 L567 129 L567 181 L542 203 L489 200Z"/>'+
-      '<path d="M567 105 L698 111 Q716 115 723 133 L723 177 Q716 195 698 199 L567 205Z"/>'+
-      '<path d="M723 115 Q749 129 749 155 Q749 181 723 195 L723 115Z"/>'+
-      // Left upper unfolded fender, doors and rear quarter.
-      '<path d="M92 108 L191 108 L205 45 L109 45Z"/>'+
-      '<path d="M208 109 L333 109 L329 44 L215 44Z"/>'+
-      '<path d="M337 109 L478 109 L476 44 L333 44Z"/>'+
-      '<path d="M482 109 L608 109 L619 44 L481 44Z"/>'+
-      '<path d="M624 109 L702 109 L730 46 L625 46Z"/>'+
-      // Right lower unfolded quarter, doors and front fender.
-      '<path d="M92 202 L191 202 L205 265 L109 265Z"/>'+
-      '<path d="M208 201 L333 201 L329 266 L215 266Z"/>'+
-      '<path d="M337 201 L478 201 L476 266 L333 266Z"/>'+
-      '<path d="M482 201 L608 201 L619 266 L481 266Z"/>'+
-      '<path d="M624 201 L702 201 L730 264 L625 264Z"/>'+
+    // Three-view inspection layout: LH above, overhead center, RH below.
+    // Vehicle rear is left and front is right in all three views.
+    // Keep the zone IDs stable for historical checklists and PDF printing.
+    const upper = '<path d="M95 72 Q111 66 131 66 L165 62 Q181 47 204 47 L390 47 Q410 49 427 62 L455 70 L469 80 L469 107 L450 107 Q444 87 423 87 Q402 87 396 107 L223 107 Q217 87 197 87 Q176 87 170 107 L97 107Z"/>'+
+      '<path d="M165 62 L204 49 L279 49 L279 70 L173 70Z M283 49 L391 49 L420 70 L283 70Z"/>'+
+      '<path d="M223 71 L223 105 M316 71 L316 105 M394 72 L394 105 M180 75 L208 75 M239 75 L269 75 M334 75 L364 75"/>'+
+      '<path d="M103 78 L135 76 L125 86 L100 87 M435 78 L462 85 L462 91 L438 86"/>';
+    const lower = '<path d="M95 274 Q111 268 131 268 L165 264 Q181 249 204 249 L390 249 Q410 251 427 264 L455 272 L469 282 L469 309 L450 309 Q444 289 423 289 Q402 289 396 309 L223 309 Q217 289 197 289 Q176 289 170 309 L97 309Z"/>'+
+      '<path d="M165 264 L204 251 L279 251 L279 272 L173 272Z M283 251 L391 251 L420 272 L283 272Z"/>'+
+      '<path d="M223 273 L223 307 M316 273 L316 307 M394 274 L394 307 M180 277 L208 277 M239 277 L269 277 M334 277 L364 277"/>'+
+      '<path d="M103 280 L135 278 L125 288 L100 289 M435 280 L462 287 L462 293 L438 288"/>';
+    const overhead = '<path d="M116 140 Q128 128 156 128 L405 128 Q438 128 454 140 L454 225 Q436 237 405 237 L156 237 Q128 237 116 225Z"/>'+
+      '<path d="M143 140 L179 141 L179 224 L143 225Z M181 142 Q192 135 206 136 L206 229 Q190 230 181 223Z"/>'+
+      '<path d="M209 136 L318 136 L318 229 L209 229Z M320 138 L354 143 L354 222 L320 227Z M357 142 L434 145 L434 220 L357 223Z"/>'+
+      '<path d="M223 145 L303 145 L303 220 L223 220Z M121 146 L135 146 L135 219 L121 219Z"/>'+
+      '<path d="M223 127 Q231 115 246 126 M307 127 Q315 115 330 126 M223 238 Q231 250 246 238 M307 238 Q315 250 330 238"/>'+
+      '<path d="M145 152 L176 152 M145 213 L176 213 M371 153 L422 153 M371 212 L422 212"/>';
+    return '<svg class="rc-car-svg" viewBox="0 0 560 350" role="img" aria-label="Three-view vehicle inspection diagram with left side above, top view center, right side below; rear left, front right">'+
+      '<rect width="560" height="350" fill="white"/>'+
+      '<g fill="white" stroke="#15252e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">'+upper+overhead+lower+
+      '<path d="M86 143 Q75 160 75 181 L75 205 Q75 219 86 225 L101 225 L101 143Z M477 143 Q491 158 491 181 L491 204 Q491 221 477 225 L464 225 L464 143Z"/>'+
       '</g>'+
-      '<g fill="white" stroke="#151c22" stroke-width="2">'+
-      '<path d="M173 119 L221 131 L221 179 L173 191Z"/>'+
-      '<path d="M500 121 L540 116 L553 137 L553 173 L540 194 L500 189Z"/>'+
-      '<rect x="264" y="123" width="190" height="64" rx="7"/>'+
-      '<path d="M218 51 L322 51 L325 79 L210 79Z M342 51 L469 51 L469 79 L341 79Z"/>'+
-      '<path d="M218 231 L325 231 L322 259 L210 259Z M341 231 L469 231 L469 259 L342 259Z"/>'+
-      '</g>'+
-      '<g fill="#151c22" font-family="Arial,sans-serif" font-weight="700" text-anchor="middle">'+
-      '<text x="25" y="155" font-size="18" transform="rotate(-90 25 155)">REAR</text>'+
-      '<text x="798" y="155" font-size="18" transform="rotate(90 798 155)">FRONT</text>'+
-      '<text x="359" y="159" font-size="17">ROOF</text>'+
-      '<text x="272" y="96" font-size="12">LH REAR DOOR</text>'+
-      '<text x="409" y="96" font-size="12">LH FRONT DOOR</text>'+
-      '<text x="272" y="222" font-size="12">RH REAR DOOR</text>'+
-      '<text x="409" y="222" font-size="12">RH FRONT DOOR</text>'+
-      '<text x="625" y="156" font-size="15">BONNET</text>'+
-      '<text x="125" y="156" font-size="12">BOOT</text>'+
-      '<text x="62" y="155" font-size="9" transform="rotate(-90 62 155)">REAR BUMPER</text>'+
-      '<text x="737" y="155" font-size="9" transform="rotate(90 737 155)">FRONT BUMPER</text>'+
-      '<text x="147" y="34" font-size="10">LH REAR QUARTER</text>'+
-      '<text x="667" y="34" font-size="10">LH FRONT FENDER</text>'+
-      '<text x="147" y="282" font-size="10">RH REAR QUARTER</text>'+
-      '<text x="667" y="282" font-size="10">RH FRONT FENDER</text>'+
+      '<g fill="#122b3b" font-family="Arial,sans-serif" font-size="12" font-weight="700" text-anchor="middle">'+
+      '<text x="125" y="35">LH Rear Fender</text><text x="248" y="35">LH Rear Door</text><text x="340" y="35">LH Front Door</text><text x="438" y="35">LH Front Fender</text>'+
+      '<text x="90" y="340">RH Rear Fender</text><text x="244" y="340">RH Rear Door</text><text x="340" y="340">RH Front Door</text><text x="452" y="340">RH Front Fender</text>'+
+      '<text x="158" y="185">Boot</text><text x="263" y="185">Roof</text><text x="340" y="185" font-size="10">Windshield</text><text x="395" y="185">Bonnet</text>'+
+      '<text x="35" y="183" transform="rotate(-90 35 183)">REAR</text><text x="526" y="183" transform="rotate(90 526 183)">FRONT</text>'+
       '</g></svg>';
   }
   function damagePanel(d){
@@ -719,7 +802,8 @@
       damageZones.map(([key,name,ar,left,top])=>
         '<button type="button" class="rc-zone" data-rc-zone="'+key+'" data-mark="'+esc(parsed.marks[key]||"")+'" aria-label="'+esc(name+' / '+ar)+'" title="'+esc(name+' / '+ar)+'" style="left:'+left+'%;top:'+top+'%">'+esc(parsed.marks[key]||"+")+'</button>'
       ).join("")+'</div>'+
-      '<div class="rc-zone-legend">'+damageZones.map(([key,name,ar])=>'<span>'+esc(name)+' <small lang="ar">'+esc(ar)+'</small></span>').join("")+'</div>'+
+
+
       '<label>Damage notes / ملاحظات الأضرار<textarea name="damage" maxlength="1700" placeholder="Additional damage description">'+esc(parsed.notes)+'</textarea></label></section>';
   }
   function accessoriesPanel(d){
