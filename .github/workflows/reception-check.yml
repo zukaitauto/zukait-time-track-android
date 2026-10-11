@@ -289,3 +289,58 @@ jobs:
           set -euo pipefail
           gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
           echo 'Pinned V311 release dispatched'
+
+
+  dispatch_pinned_v312:
+    name: One-time dispatch of owner-approved pinned V312 release
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/architecture-v2' &&
+      github.event.head_commit.message == 'Owner-approved one-time V312 dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify pinned V312 source and owner approval
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SOURCE='ff27efcee1d3d9fe7d10152207bc8b1a4f80ab29'
+          jq -e --arg sha "$SOURCE" '
+            .approvedForStaff == true and .versionName == "V312" and
+            .versionCode == 275 and .sourceCommit == $sha and
+            .releaseScope == "phase1-compatible-ui" and
+            .ownerRequestedImmediateRelease == true and
+            .backupDeferredByOwner == true and
+            .productionBackendChanges == false and
+            .phase2ActivationApproved == false and
+            .physicalAcceptanceStatus == "NOT_RUN" and
+            .backendDeployedSeparately.workshopApiVersion == 60 and
+            .backendDeployedSeparately.permissionSmokePassed == true and
+            .signedAcceptanceRun == 38151860139 and
+            .verificationRun == 38151860080
+          ' release-ui-request.json
+          jq -e '.approvedForStaff == false and .versionName == "V312" and .versionCode == 275' release-request.json
+          PINNED=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/release/v312-approved-source" --jq '.object.sha')
+          test "$PINNED" = "$SOURCE"
+          for ITEM in "38151860139:.github/workflows/build-signed-acceptance.yml" "38151860080:.github/workflows/reception-check.yml"; do
+            RUN="${ITEM%%:*}"
+            WORKFLOW="${ITEM#*:}"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN" | jq -e --arg sha "$SOURCE" --arg workflow "$WORKFLOW" '
+              .conclusion == "success" and .head_sha == $sha and
+              .head_branch == "architecture-v2" and .path == $workflow
+            '
+          done
+      - name: Dispatch V312 publisher on architecture-v2
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
+          echo 'Owner-approved V312 release dispatched'
