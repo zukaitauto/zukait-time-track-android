@@ -1368,10 +1368,9 @@
         info("Job Type:",r.job_type||"INSURANCE"),
         ...(insurance?[info("Insurance:",r.insurance_company)]:[])
       ]),
-      row("rc-cols-three",[info("Reg No:",d.registration),info("Make:",d.make),info("Model:",d.model)]),
-      row("rc-cols-two",[info("Year:",d.year),info(String(d.odometer_unit||"KM").toUpperCase()==="MILES"?"Miles:":"KM:",d.odometer)]),
-      row("rc-cols-one",[info("VIN:",d.vin)]),
-      row("rc-cols-two",[info("Customer Name:",d.customer),info("Mob:",d.contact)]),
+      row("rc-cols-vehicle",[info("Reg No:",d.registration),info("Make:",d.make),info("Model:",d.model)]),
+      row("rc-cols-vin",[info("VIN:",d.vin),info("Year:",d.year),info(String(d.odometer_unit||"KM").toUpperCase()==="MILES"?"Miles:":"KM:",d.odometer)]),
+      row("rc-cols-customer",[info("Customer Name:",d.customer),info("Mob:",d.contact)]),
       ...(insurance?[row("rc-cols-one",[info("Claim Number:",d.claim)])]:[])
     ].join("");
     const additions=[
@@ -1406,7 +1405,7 @@
       '.rc-info{border:1px solid #657782;flex:none}',
       '.rc-info-row{height:9mm;min-height:9mm;display:grid;border-bottom:1px solid #7d8d95}',
       '.rc-info-row:last-child{border-bottom:0}',
-      '.rc-cols-one{grid-template-columns:1fr}.rc-cols-two{grid-template-columns:1fr 1fr}.rc-cols-three{grid-template-columns:1.2fr 1fr 1fr}',
+      '.rc-cols-one{grid-template-columns:1fr}.rc-cols-two{grid-template-columns:1fr 1fr}.rc-cols-three{grid-template-columns:1.2fr 1fr 1fr}.rc-cols-vehicle{grid-template-columns:0.85fr 1.5fr 1.65fr}.rc-cols-vin{grid-template-columns:2.5fr .7fr .85fr}.rc-cols-customer{grid-template-columns:2.6fr 1fr}',
       '.rc-field{display:flex;align-items:center;min-width:0;gap:2mm;padding:1.5mm 2mm;font-size:8pt;overflow-wrap:anywhere}',
       '.rc-field:not(:last-child){border-right:1px solid #7d8d95}',
       '.rc-field strong{flex:none;max-width:50%;font-size:7.8pt}.rc-field span{font-weight:600;min-width:0}',
