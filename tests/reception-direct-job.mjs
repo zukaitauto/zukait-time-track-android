@@ -87,6 +87,7 @@ assert.equal(form.elements.model.value,'Altima');
 assert.equal(form.elements.claim.value,'QA-CLAIM');
 assert.equal(form.elements.insurance_id.value,'1');
 assert.equal(form.elements.odometer.value,'','Original checklist reading must never prefill as new intake');
+assert.deepEqual([...form.elements.odometer_unit.options].map(x=>x.value),['KM','Miles'],'Units must match PostgreSQL validation');
 assert.match(w.document.getElementById('rc-direct-checklist-note').textContent,/53699/);
 form.elements.customer.value='Updated QA Customer';assert.equal(form.elements.customer.value,'Updated QA Customer');
 const beforeLinked=calls.filter(c=>c.operation==='CREATE_DIRECT_JOB').length;
