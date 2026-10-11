@@ -171,6 +171,8 @@ assert.match(
 );
 assert.doesNotMatch(w.document.querySelector(".rc-cl-condition").textContent,/Front Bumper: Dent/,"Detail screen must not list damage mark names");
 assert.match(w.document.querySelector(".rc-cl-condition").textContent,/Damage Description/);
+assert.match(w.document.querySelector(".rc-cl-observations").textContent,/Dashboard Warning:/);
+assert.doesNotMatch(w.document.querySelector(".rc-cl-observations").textContent,/Issue recorded/);
 assert.ok(w.document.querySelector(".rc-cl-diagram svg"),"Marked car diagram remains visible");
 // Compact detail cards are presentation-only; escaped values and existing actions remain.
 assert.ok(w.document.getElementById("rc-root").classList.contains("rc-checklist-view"));
