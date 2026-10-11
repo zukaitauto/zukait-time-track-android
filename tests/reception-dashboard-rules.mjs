@@ -51,6 +51,11 @@ const simultaneous=receptionDashboardProjection(simultaneousData,isolated,{secti
 assert.equal(simultaneous.rows[0].job_card,"JC-LINKED-NEW","New linked intake appears at top");
 assert.equal(simultaneous.rows.filter(r=>r.job_card==="JC-LINKED-NEW").length,1,"Duplicate state entries must not duplicate the visible Job Card");
 assert.equal(receptionDashboardProjection(simultaneousData,isolated,{section:"jobs",search:"JC-LINKED-NEW"}).total,1,"Job number lookup stays unique");
+assert.equal(receptionDashboardProjection(simultaneousData,isolated,{section:"jobs",search:"qa-11"}).rows.some(r=>r.job_card==="JC125"),true,"Registration search finds matching Job Card");
+assert.equal(receptionDashboardProjection(simultaneousData,isolated,{section:"jobs",search:"toyota camry"}).rows.some(r=>r.job_card==="JC125"),true,"Vehicle make and model search is supported");
+assert.equal(receptionDashboardProjection(simultaneousData,isolated,{section:"jobs",month:"2026-09"}).total,0,"Month filter excludes nonmatching Job Cards");
+assert.equal(receptionDashboardProjection(simultaneousData,isolated,{section:"jobs",from:"2026-10-12"}).total,0,"Date range excludes earlier Job Cards");
+assert.equal(receptionDashboardProjection(simultaneousData,isolated,{section:"jobs",search:"JC-LINKED-NEW",month:"2026-10"}).total,1,"Combined Job Card search and month filters preserve deduplication");
 
 assert.equal(projection({section:"checklists",search:"JC125"}).rows[0].rc_no,"RC0011");
 assert.equal(projection({section:"checklists",search:"qa-12"}).rows[0].rc_no,"RC0012");
