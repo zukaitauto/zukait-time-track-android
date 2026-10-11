@@ -764,7 +764,6 @@
     const condition = checklistBox("Vehicle Condition & Damage",
       '<div class="rc-record-map rc-cl-diagram">' + damagedGraphic(d) + '</div>' +
       '<div class="rc-cl-facts">' +
-      checklistFact("Damage marks",damageSummary(d) || "Not marked",true) +
       checklistFact("Damage Description",damage.notes,true) + '</div>', "rc-cl-condition");
     const observations = checklistBox("Reception Observations",
       '<div class="rc-cl-facts">' +
