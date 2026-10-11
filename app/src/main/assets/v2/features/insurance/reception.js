@@ -883,7 +883,7 @@
     const observations = checklistBox("Function Check · Reception Observations",
       '<div class="rc-cl-facts">' +
       '<div class="rc-cl-warning-check"><strong>Dashboard Warning:</strong><span aria-label="Dashboard warning recorded">' +
-      (String(d.warnings||"").trim() ? "☑ Issue recorded" : "☐ Not recorded") +
+      (String(d.warnings||"").trim() ? "☑ Notes recorded" : "☐ Not recorded") +
       '</span></div>' +
       (d.warnings ? checklistFact("Warning Details:",d.warnings,true) : "") +
       checklistFact("Fuel",d.fuel) +
