@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const source=fs.readFileSync('app/src/main/assets/qc_delivery.js','utf8');
+const queue=source.match(/function qcQueueMatches\(j\)\{[^\n]*\}/)?.[0]||'';
+assert.match(queue,/!s\.workComplete/, 'QC must wait for all work to finish');
+assert.match(queue,/me\?\.id==='SUP002'\)return s\.stage==='PAINTING_QC'/, 'Vinayan has painting queue');
+assert.match(queue,/me\?\.id==='SUP001'\)return s\.stage==='PAINTING_QC'\|\|s\.stage==='FINAL_QC'/, 'Shine sees pending and final stages');
+assert.match(source,/Waiting for Vinayan Painting QC — Final QC is locked/, 'Shine sees why approval is locked');
+assert.match(source,/canFinal=mode==='qc'&&me\?\.role==='Supervisor'&&me\.id==='SUP001'&&s\.stage==='FINAL_QC'/,'Shine approval stays locked until painting passes');
+console.log('PASS: dual visibility and sequential QC gate');
