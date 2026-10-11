@@ -83,6 +83,17 @@ begin
   'approval_date',current_date,'evidence','Reconfirmed insurer approval after identity correction');
  begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid())); raise exception 'QA Receptionist identity correction accepted';
   exception when others then assert sqlerrm='reception_manager_required'; end;
+ -- A changed insured vehicle identity cannot be created without renewed evidence.
+ begin
+  perform zukait_reception_command('QA-MGR',cmd||jsonb_build_object('request_id',gen_random_uuid(),'approval_confirmed',false));
+  raise exception 'QA identity correction without approval accepted';
+ exception when others then assert sqlerrm='reception_approval_confirmation_required'; end;
+ assert (select details->>'model' from workshop_receptions where rc_no=rc)='Camry',
+  'Failed correction must not update original vehicle identity';
+ assert (select details->>'odometer' from workshop_receptions where rc_no=rc)='53699',
+  'Failed correction must not update original odometer';
+ assert (select count(*) from workshop_reception_external_approvals where rc_no=rc)=1,
+  'Failed correction must not append approval history';
  result:=zukait_reception_command('QA-MGR',cmd);
  assert result->'record'->>'job_card'='QA-DIRECT-INSURANCE';
  assert result->'record'->'details'->>'model'='Corolla';
