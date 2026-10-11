@@ -497,6 +497,8 @@
       if(linkedChecklist){error(Error('Open the linked checklist and use its Job Card action. Direct creation here would create a second, unlinked checklist.'));return;}
       const f=new FormData(form),details={};
       for(const k of ['make','model','registration','year','vin','customer','contact','claim','remarks'])details[k]=String(f.get(k)||'').trim();
+      details.odometer=String(f.get('odometer')||'').trim();
+      details.odometer_unit=String(f.get('odometer_unit')||'KM');
       try {
         const out=await mutate({operation:'CREATE_DIRECT_JOB',job_type:f.get('job_type'),job_card:String(f.get('job_card')).trim().toUpperCase(),details,
           received_confirmed:f.has('received_confirmed'),reason:String(f.get('reason')).trim(),
