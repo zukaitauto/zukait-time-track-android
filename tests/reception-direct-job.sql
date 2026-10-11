@@ -46,7 +46,7 @@ begin
  assert (select count(*) from workshop_reception_estimates where rc_no=rc)=0;
  begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'job_card','QA-INS-NO-APPROVAL','approval_confirmed',false));raise exception 'QA unapproved job accepted';exception when others then assert sqlerrm='reception_approval_confirmation_required';end;
  begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'job_card','QA-INS-NO-EVIDENCE','evidence',''));raise exception 'QA missing evidence accepted';exception when others then assert sqlerrm='reception_external_evidence_required';end;
- begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'job_card','QA-INS-DUPLICATE'));raise exception 'QA duplicate Job Card accepted';exception when others then assert sqlerrm='reception_job_number_exists' or sqlerrm='reception_request_conflict';end;
+ begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'job_card','QA-DIRECT-APPROVED-INSURANCE'));raise exception 'QA duplicate Job Card accepted';exception when others then assert sqlerrm='reception_job_number_exists';end;
  begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'received_confirmed',false));raise exception 'QA physical receipt bypass accepted';exception when others then assert sqlerrm='reception_received_confirmation_required';end;
  -- Continue Cash/Credit backwards-compatibility test.
  cmd:=jsonb_build_object('operation','CREATE_DIRECT_JOB','request_id',gen_random_uuid(),'job_type','CREDIT','job_card','QA-EXTRA-CREDIT','reason','QA credit','received_confirmed',true,
