@@ -180,7 +180,7 @@ assert.match(w.document.querySelector(".rc-cl-grid").textContent,/Vehicle Inform
 assert.match(w.document.querySelector(".rc-cl-grid").textContent,/Customer & Insurance/);
 assert.match(w.document.querySelector(".rc-cl-grid").textContent,/Tools & Accessories/);
 assert.match(w.document.querySelector(".rc-cl-grid").textContent,/Reception Observations/);
-assert.match(w.document.querySelector(".rc-cl-grid").textContent,/Reading Unit/);
+assert.match(w.document.querySelector(".rc-cl-grid").textContent,/(?:KM|Miles):/);
 assert.ok(w.document.querySelector(".rc-cl-actions [data-rc-action=pdf]"));
 assert.equal(w.document.querySelectorAll("#rc-root script").length,0);
 await click("edit");
