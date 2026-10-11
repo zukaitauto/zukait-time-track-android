@@ -39,6 +39,30 @@ form.elements.job_type.value='CREDIT';form.elements.job_type.dispatchEvent(new w
 assert.equal(w.document.getElementById('rc-credit-account').hidden,false);assert.equal(form.elements.credit_account.required,true);
 for(const [k,v] of Object.entries({job_card:'QA-CREDIT',make:'Toyota',model:'Camry',customer:'QA Company',contact:'QA phone',reason:'QA credit',credit_account:'QA-FLEET'}))form.elements[k].value=v;
 form.elements.received_confirmed.checked=true;await submit();assert.equal(receipts.size,2);assert.equal(calls.filter(c=>c.operation==='CREATE_DIRECT_JOB').at(-1).credit_account,'QA-FLEET');
+await click('home');await click('direct-job');form=w.document.getElementById('rc-direct-job');
+assert.deepEqual([...form.elements.job_type.options].map(x=>x.value),['CASH','INSURANCE','CREDIT']);
+form.elements.job_type.value='INSURANCE';form.elements.job_type.dispatchEvent(new w.Event('change'));
+assert.equal(w.document.getElementById('rc-direct-insurance').hidden,false);
+assert.equal(form.elements.insurance_id.required,true);
+assert.equal(form.elements.reference.required,true);
+assert.equal(form.elements.approval_date.required,true);
+assert.equal(form.elements.evidence.required,true);
+assert.equal(form.elements.approval_confirmed.required,true);
+assert.equal(w.document.getElementById('rc-credit-account').hidden,true);
+for(const [k,v] of Object.entries({job_card:'12069',make:'Nissan',model:'Altima',registration:'7561.BH',
+ customer:'QA Insured Customer',contact:'QA phone',reason:'Approved repair',insurance_id:'1',
+ reference:'QA-LPO-123',approval_date:'2026-10-11',evidence:'Approval verified'}))form.elements[k].value=v;
+form.elements.approval_confirmed.checked=true;form.elements.received_confirmed.checked=true;
+await submit();
+const insurance=calls.filter(c=>c.operation==='CREATE_DIRECT_JOB').at(-1);
+assert.equal(insurance.job_type,'INSURANCE');
+assert.equal(insurance.job_card,'12069');
+assert.equal(insurance.insurance_id,1);
+assert.equal(insurance.approval_confirmed,true);
+assert.equal(insurance.reference,'QA-LPO-123');
+assert.equal(insurance.evidence,'Approval verified');
+assert.ok(!('credit_account' in insurance));
+assert.equal(receipts.size,3);
 record={rc_no:'RC-QA-INSURANCE',details:{make:'Toyota',model:'Camry'},job_type:'INSURANCE',location:'VWC',approval_status:'APPROVED',revision:2};
 // Only authorized staff can record issued approval. Receptionist only creates.
 await w.zukaitReception.open();
@@ -52,4 +76,4 @@ await click('home');await click('view');await click('insurance');
 assert.ok(w.document.getElementById('rc-external-job'));assert.equal(w.document.getElementById('rc-external-approval'),null);assert.equal(w.document.getElementById('rc-approval'),null);
 w.me={id:'QA-MGR',role:'Manager'};await w.zukaitReception.open();await click('view');await click('insurance');
 assert.ok(w.document.getElementById('rc-external-approval'));
-w.me=null;await settle();dom.window.close();console.log('Direct Reception Job Cards: cash/credit fields, stable lost-response UUID, customer account, role isolation and externally approved insurance controls passed (mock transport).');
+w.me=null;await settle();dom.window.close();console.log('Direct Reception Job Cards: Cash/Credit/Insurance fields, manually numbered approved insurance, stable lost-response UUID, role isolation and approval controls passed (mock transport).');
