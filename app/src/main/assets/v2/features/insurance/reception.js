@@ -556,16 +556,18 @@
     return '<svg class="rc-car-svg" viewBox="0 0 840 310" role="img" aria-label="Top view vehicle damage diagram, front at left">'+
       '<rect x="98" y="23" width="102" height="36" rx="16" fill="#263b4c"/><rect x="98" y="251" width="102" height="36" rx="16" fill="#263b4c"/>'+
       '<rect x="632" y="23" width="102" height="36" rx="16" fill="#263b4c"/><rect x="632" y="251" width="102" height="36" rx="16" fill="#263b4c"/>'+
-      '<path d="M92 77 Q108 54 164 52 L668 52 Q721 59 739 104 L747 150 L739 206 Q725 253 668 258 L164 258 Q108 256 92 234 Q65 198 65 154 Q65 109 92 77Z" fill="#e9f1f8" stroke="#2b5f80" stroke-width="5"/>'+
+      '<path d="M92 77 Q108 54 164 52 L668 52 Q721 59 739 104 L747 150 L739 206 Q725 253 668 258 L164 258 Q108 256 92 234 Q65 198 65 154 Q65 109 92 77Z" fill="#fff" stroke="#2b5f80" stroke-width="5"/>'+
       '<path d="M140 74 Q178 61 263 72 L263 239 Q178 250 140 235 Q114 153 140 74Z" fill="#f8fbfd" stroke="#aac3d6" stroke-width="3"/>'+
-      '<path d="M313 72 Q338 57 381 65 L619 65 Q647 70 661 88 L661 224 Q640 244 613 245 L376 245 Q335 244 313 232Z" fill="#dbe6ee" stroke="#6a94ae" stroke-width="4"/>'+
-      '<path d="M309 78 L337 91 L337 220 L309 234Z" fill="#44667d"/>'+
-      '<path d="M670 82 Q707 149 670 231 L636 225 L636 86Z" fill="#547a94"/>'+
+      '<path d="M313 72 Q338 57 381 65 L619 65 Q647 70 661 88 L661 224 Q640 244 613 245 L376 245 Q335 244 313 232Z" fill="#f9fbfd" stroke="#6a94ae" stroke-width="4"/>'+
+      '<path d="M309 78 L337 91 L337 220 L309 234Z" fill="#f7f9fa" stroke="#4d6473" stroke-width="3"/>'+
+      '<path d="M670 82 Q707 149 670 231 L636 225 L636 86Z" fill="#f7f9fa" stroke="#4d6473" stroke-width="3"/>'+
       '<rect x="390" y="82" width="178" height="145" rx="22" fill="#eff7fb" stroke="#97b9ca" stroke-width="3"/>'+
       '<path d="M476 66 L476 242 M582 66 L582 242" stroke="#8eacbe" stroke-width="2"/>'+
       '<path d="M90 113 L108 113 M90 196 L108 196 M731 108 L749 108 M731 203 L749 203" stroke="#e5ad4e" stroke-width="11" stroke-linecap="round"/>'+
-      '<text x="148" y="156" font-size="17" font-weight="700" fill="#607d91" text-anchor="middle">FRONT</text>'+
-      '<text x="684" y="156" font-size="17" font-weight="700" fill="#607d91" text-anchor="middle">REAR</text></svg>';
+      '<text x="35" y="156" font-size="21" font-weight="900" fill="#172e41" text-anchor="middle">FRONT</text>'+
+      '<path d="M263 74 L263 237 M338 71 L338 238 M477 67 L477 242 M582 74 L582 236" stroke="#516e82" stroke-width="3" fill="none"/>'+
+      '<path d="M94 76 Q102 146 94 231 M737 104 Q753 155 737 209" stroke="#516e82" stroke-width="3" fill="none"/>'+
+      '<text x="777" y="156" font-size="21" font-weight="900" fill="#172e41" text-anchor="middle">REAR</text></svg>';
   }
   function damagePanel(d){
     const parsed=unpackChecklistText(d.damage,"DAMAGE",damageZones.map(x=>x[0]));
@@ -1242,61 +1244,9 @@
   // Approved A4 portrait form: separate from the interactive/mobile dashboard.
   // Keep saved names and marks authoritative; never derive printed marks from
   // screen positions or alter persisted damage/accessory text envelopes.
+  // Match the screen diagram exactly. Its glass is white/light for low-ink A4 printing.
   function printCarGraphic(d) {
-    const marks=unpackChecklistText(d.damage,"DAMAGE",damageZones.map(x=>x[0])).marks;
-    // Front faces LEFT. Upper edge = vehicle RH; lower edge = vehicle LH.
-    const printPoints={
-      front_bumper:[74,166],bonnet:[172,166],windshield:[256,166],
-      roof:[350,166],rear_glass:[447,166],trunk:[506,166],
-      rear_bumper:[571,166],front_fender_r:[160,107],
-      front_door_r:[282,107],rear_door_r:[414,107],rear_fender_r:[528,107],
-      front_fender_l:[160,229],front_door_l:[282,229],
-      rear_door_l:[414,229],rear_fender_l:[528,229],
-      head_lights:[104,136],rear_lights:[550,136]
-    };
-    const labels=[
-      [153,"FRONT FENDER (RH)",159,106],[275,"FRONT DOOR (RH)",280,106],
-      [410,"REAR DOOR (RH)",410,106],[521,"REAR FENDER (RH)",523,106]
-    ].map(([x,label,cx,cy])=>
-      '<path d="M'+x+' 53 L'+cx+' '+cy+'" class="rc-leader"/>'+
-      '<text x="'+x+'" y="29" class="rc-callout">'+esc(label.split(" (")[0])+
-      '</text><text x="'+x+'" y="44" class="rc-callout">'+esc("("+label.split("(")[1])+'</text>'
-    ).join("");
-    const lower=[
-      [153,"FRONT FENDER (LH)",159,228],[275,"FRONT DOOR (LH)",280,228],
-      [410,"REAR DOOR (LH)",410,228],[521,"REAR FENDER (LH)",523,228]
-    ].map(([x,label,cx,cy])=>
-      '<path d="M'+cx+' '+cy+' L'+x+' 274" class="rc-leader"/>'+
-      '<text x="'+x+'" y="291" class="rc-callout">'+esc(label.split(" (")[0])+
-      '</text><text x="'+x+'" y="307" class="rc-callout">'+esc("("+label.split("(")[1])+'</text>'
-    ).join("");
-    const printMarks=Object.entries(marks).filter(([key])=>printPoints[key]).map(([key,code])=>{
-      const [cx,cy]=printPoints[key];
-      return '<g class="rc-damage-mark"><circle cx="'+cx+'" cy="'+cy+'" r="11"/>'+
-        '<text x="'+cx+'" y="'+(cy+4)+'">'+esc(code)+'</text></g>';
-    }).join("");
-    return '<svg xmlns="http://www.w3.org/2000/svg" class="rc-print-car" viewBox="0 0 660 320" aria-label="Horizontal top view of a vehicle, front at left; upper panels are right hand and lower panels are left hand">'+
-      '<style>.rc-car-line{fill:#fff;stroke:#222;stroke-width:2.5;stroke-linejoin:round}.rc-car-window{fill:#fafafa;stroke:#333;stroke-width:2}.rc-leader{fill:none;stroke:#222;stroke-width:1.5}.rc-callout{font:700 12px Arial,sans-serif;fill:#161616;text-anchor:middle}.rc-inside{font:700 13px Arial,sans-serif;fill:#222;text-anchor:middle}.rc-bumper{font:700 12px Arial,sans-serif;fill:#222;text-anchor:middle}.rc-damage-mark circle{fill:white;stroke:black;stroke-width:2.5}.rc-damage-mark text{font:900 15px Arial,sans-serif;fill:black;text-anchor:middle}</style>'+
-      '<rect x="151" y="92" width="63" height="24" rx="8" fill="#444"/><rect x="151" y="217" width="63" height="24" rx="8" fill="#444"/>'+
-      '<rect x="459" y="92" width="63" height="24" rx="8" fill="#444"/><rect x="459" y="217" width="63" height="24" rx="8" fill="#444"/>'+
-      '<path d="M91 136 Q107 112 143 111 L529 111 Q552 115 565 147 L572 167 L565 186 Q553 220 529 222 L143 222 Q107 222 91 199 Q74 168 91 136Z" class="rc-car-line"/>'+
-      '<path d="M127 125 Q143 116 220 122 L220 210 Q143 218 127 208 Q108 164 127 125Z" class="rc-car-line"/>'+
-      '<path d="M252 124 Q295 115 417 123 L453 140 L453 194 L417 211 Q294 219 252 208Z" class="rc-car-line"/>'+
-      '<path d="M241 129 L261 139 L261 192 L241 203Z" class="rc-car-window"/>'+
-      '<path d="M440 130 L462 147 L462 188 L440 202Z" class="rc-car-window"/>'+
-      '<path d="M281 129 Q340 120 418 133 L418 202 Q340 212 281 204Z" class="rc-car-window"/>'+
-      '<path d="M340 115 L340 126 M340 207 L340 220 M412 116 L412 128 M412 206 L412 218" class="rc-leader"/>'+
-      '<path d="M131 111 L145 104 L159 108 M131 222 L145 229 L159 225" class="rc-car-line"/>'+
-      '<path d="M134 128 L108 128 L100 146 M134 207 L108 207 L100 189" class="rc-leader"/>'+
-      '<path d="M531 129 L554 138 M531 206 L554 194" class="rc-leader"/>'+
-      '<text x="37" y="158" class="rc-bumper">FRONT</text><text x="37" y="173" class="rc-bumper">BUMPER</text>'+
-      '<text x="616" y="158" class="rc-bumper">REAR</text><text x="616" y="173" class="rc-bumper">BUMPER</text>'+
-      '<text x="171" y="172" class="rc-inside">BONNET</text>'+
-      '<text x="252" y="246" class="rc-inside">WINDSHIELD</text>'+
-      '<text x="349" y="168" class="rc-inside">ROOF</text>'+
-      '<text x="456" y="246" class="rc-inside">REAR GLASS</text>'+
-      '<text x="513" y="172" class="rc-inside">TRUNK</text>'+
-      labels+lower+printMarks+'</svg>';
+    return damagedGraphic(d).replace('class="rc-car-svg"', 'class="rc-print-car"');
   }
   function documentHtml(r) {
     const d=r.details||{},insurance=(r.job_type||"INSURANCE")==="INSURANCE";
@@ -1339,7 +1289,6 @@
       '<p><b>'+esc(label)+':</b> '+esc(value)+'</p>').join("");
     const notesLength=observation.map(([,value])=>String(value).length).reduce((a,b)=>a+b,0);
     const notesSize=notesLength>2600?"rc-notes-tiny":notesLength>1600?"rc-notes-small":"";
-    const marksText=damageSummary(d);
     const css=[
       '@page{size:A4 portrait;margin:0}',
       '*{box-sizing:border-box}',
@@ -1400,7 +1349,7 @@
       '<div class="rc-damage-title"><div><b>Damages:</b><span>X = Dent</span><span>S = Scratch</span><span>M = Missing</span></div>'+
       '<div lang="ar" dir="rtl">الأضرار: X ضربة · S خدش · M مفقود</div></div>'+
       '<section class="rc-inspection"><div class="rc-diagram">'+printCarGraphic(d)+
-      '<div class="rc-marked"><b>Vehicle Damage Diagram:</b> '+esc(marksText||"No diagram marks")+'</div></div>'+
+      '</div>'+
       '<div class="rc-accessories">'+
       '<div class="rc-accessory-row">'+
       accessory("spare_tyre","Spare Tyre")+accessory("jack","Jack")+
