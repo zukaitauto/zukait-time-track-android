@@ -17,7 +17,7 @@ execFileSync(process.execPath,["tests/reception-phase1.mjs"],{
 const html=fs.readFileSync(filename,"utf8");
 assert.match(html,/ZUKAIT INTERNATIONAL LLC/);
 assert.match(html,/@page\{size:A4 portrait;margin:0\}/);
-assert.match(html,/viewBox="0 0 840 310"/);
+assert.match(html,/viewBox="0 0 560 350"/);
 
 
 
@@ -36,8 +36,8 @@ assert.match(html,/Claim Number:/);
 assert.doesNotMatch(html,/Claim \/ Gate Pass/);
 assert.doesNotMatch(html,/Status: Waiting/);
 assert.match(html,/Checklist Date:/);
-assert.match(html,/LH FRONT DOOR/);
-assert.match(html,/RH FRONT DOOR/);
+assert.match(html,/LH Front Door/);
+assert.match(html,/RH Front Door/);
 assert.match(html,/rc-cols-vehicle/);
 assert.match(html,/rc-cols-vin/);
 assert.match(html,/rc-cols-customer/);
