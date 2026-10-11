@@ -15,7 +15,9 @@ begin
  assert (select count(*) from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CASH')=1;
  assert (select j->>'jobType' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CASH')='CASH', format('Cash Job Card type mismatch; actual=%s', (select j->>'jobType' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CASH'));
  assert (select j->>'remarks' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CASH') is null;
- assert (zukait_reception_command('QA-RC',jsonb_build_object('operation','LIST'))->'rows') @> jsonb_build_array(jsonb_build_object('rc_no',rc));
+ -- Direct Job Cards retain an audit-only reception record, never a visible checklist row.
+ assert not ((zukait_reception_command('QA-RC',jsonb_build_object('operation','LIST'))->'rows') @> jsonb_build_array(jsonb_build_object('rc_no',rc))), 'Direct Job Card was incorrectly shown as a checklist';
+ assert (select details->>'direct_job_only' from workshop_receptions where rc_no=rc)='true', 'Direct Job Card audit marker missing';
  begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('reason','Changed retry')); raise exception 'QA request conflict not enforced'; exception when others then assert sqlerrm='reception_request_conflict'; end;
  cmd:=cmd||jsonb_build_object('request_id',gen_random_uuid(),'job_type','CREDIT','job_card','QA-DIRECT-CREDIT');
  begin perform zukait_reception_command('QA-RC',cmd); raise exception 'QA missing account accepted'; exception when others then assert sqlerrm='reception_credit_account_required'; end;
