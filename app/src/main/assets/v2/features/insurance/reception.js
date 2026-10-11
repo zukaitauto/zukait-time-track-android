@@ -433,7 +433,7 @@
     if (!phase2Enabled) { error(Error("Direct Job Card intake requires the V305 backend.")); return; }
     try { await master(); } catch (x) { error(x); return; }
     current = null;
-    shell("Open Job Card", '<form id="rc-direct-job"><p>Open a Job Card with a manually entered number. A checklist is optional. Insurance requires verified approval details.</p><section class="rc-box"><label>Search Existing Checklist (Registration / Checklist Number)<input id="rc-direct-checklist-search" autocomplete="off" placeholder="Registration or RC number"></label><button type="button" id="rc-direct-checklist-find">Search Checklist</button><div id="rc-direct-checklist-results" aria-live="polite"></div><p id="rc-direct-checklist-note"></p></section><div class="rc-grid">' +
+    shell("Open Job Card", '<form id="rc-direct-job"><p>Open a Job Card with a manually entered number. A checklist is optional. Insurance requires verified approval details.</p><section class="rc-box"><label>Search Existing Checklist (Registration / Checklist Number)<input id="rc-direct-checklist-search" autocomplete="off" placeholder="Registration or RC number"></label><button type="button" id="rc-direct-checklist-find">Search Checklist</button><div id="rc-direct-checklist-results" aria-live="polite"></div><p id="rc-direct-checklist-note"></p><button type="button" id="rc-direct-checklist-clear" hidden>Clear Checklist Selection / Enter Manually</button></section><div class="rc-grid">' +
       select('job_type','Job Type',[['CASH','Cash'],['INSURANCE','Insurance'],['CREDIT','Credit']],'CASH') +
       input('job_card','Job Card Number','',true) + input('make','Make','',true) + input('model','Model','',true) +
       input('registration','Registration') + input('year','Model Year') + input('vin','VIN / Chassis') +
@@ -469,6 +469,7 @@
             const r=result.record,d=r.details||{};
             if(r.job_card){searchResults.textContent='Job Card '+r.job_card+' already exists for '+r.rc_no+'.';return;}
             linkedChecklist=r;
+            document.getElementById('rc-direct-checklist-clear').hidden=false;
             for(const k of ['make','model','registration','year','vin','customer','contact','claim','remarks']){
               if(form.elements.namedItem(k))form.elements.namedItem(k).value=String(d[k]||'');
             }
@@ -480,6 +481,17 @@
           }catch(err){error(err);}
         });
       }catch(err){searchResults.textContent='Checklist search failed: '+String(err.message||err);}
+    };
+    document.getElementById('rc-direct-checklist-clear').onclick=()=>{
+      linkedChecklist=null;
+      searchInput.value='';
+      searchResults.textContent='';
+      document.getElementById('rc-direct-checklist-note').textContent='Checklist selection cleared. This will create a NEW reception intake.';
+      document.getElementById('rc-direct-checklist-clear').hidden=true;
+      for(const k of ['make','model','registration','year','vin','customer','contact','claim','remarks','odometer'])
+        if(form.elements.namedItem(k))form.elements.namedItem(k).value='';
+      form.elements.insurance_id.value='';
+      form.elements.odometer_unit.value='KM';
     };
     searchInput.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('rc-direct-checklist-find').click();}};
     type.onchange=()=>{
