@@ -3,6 +3,7 @@ on:
   push:
     branches: [architecture-v2]
     paths:
+      - "app/build.gradle"
       - "app/src/main/assets/v2/features/insurance/**"
       - "supabase/functions/workshop-api/**"
       - "supabase/functions/staff-auth/**"

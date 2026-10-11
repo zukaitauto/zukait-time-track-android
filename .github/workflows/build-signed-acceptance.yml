@@ -5,6 +5,7 @@ on:
   push:
     branches: [architecture-v2]
     paths:
+      - .github/workflows/reception-check.yml
       - .github/workflows/build-signed-acceptance.yml
       - app/build.gradle
       - app/src/main/assets/v2/features/insurance/**
