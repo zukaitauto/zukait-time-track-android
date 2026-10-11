@@ -755,7 +755,7 @@
     const points=damageZones.filter(([key])=>marks[key]).map(([key,label,ar,left,top])=>{
       const code=marks[key],color={X:"#d73538",S:"#176bc6",M:"#dc850b"}[code];
       return '<g><circle cx="'+(left*5.6)+'" cy="'+(top*3.5)+'" r="16" fill="'+color+'" stroke="white" stroke-width="3"/>'+
-        '<text x="'+(left*5.6)+'" y="'+(top*3.1+6)+'" font-size="18" fill="white" font-weight="900" text-anchor="middle">'+code+'</text></g>';
+        '<text x="'+(left*5.6)+'" y="'+(top*3.5+6)+'" font-size="18" fill="white" font-weight="900" text-anchor="middle">'+code+'</text></g>';
     }).join("");
     return carGraphic().replace("</svg>",points+"</svg>");
   }
@@ -763,6 +763,7 @@
     // Three-view inspection layout: LH above, overhead center, RH below.
     // Vehicle rear is left and front is right in all three views.
     // Keep the zone IDs stable for historical checklists and PDF printing.
+    // Approved reference image is maintained separately; do not substitute this legacy outline for the requested final artwork.
     const upper = '<path d="M95 72 Q111 66 131 66 L165 62 Q181 47 204 47 L390 47 Q410 49 427 62 L455 70 L469 80 L469 107 L450 107 Q444 87 423 87 Q402 87 396 107 L223 107 Q217 87 197 87 Q176 87 170 107 L97 107Z"/>'+
       '<path d="M165 62 L204 49 L279 49 L279 70 L173 70Z M283 49 L391 49 L420 70 L283 70Z"/>'+
       '<path d="M223 71 L223 105 M316 71 L316 105 M394 72 L394 105 M180 75 L208 75 M239 75 L269 75 M334 75 L364 75"/>'+
