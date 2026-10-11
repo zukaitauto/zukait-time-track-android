@@ -71,18 +71,21 @@ begin
  assert not has_function_privilege('anon','public.zukait_reception_command(text,jsonb)','EXECUTE');
  assert not has_function_privilege('authenticated','public.zukait_reception_external_approval_valid(public.workshop_receptions)','EXECUTE');
  -- Existing issued insurance approval without making an artificial estimate.
- result:=zukait_reception_command('QA-RC',jsonb_build_object('operation','CREATE','request_id',gen_random_uuid(),'insurance_id',1,'details',jsonb_build_object('make','Toyota','model','Camry','registration','QA-EXTERNAL')));
+ result:=zukait_reception_command('QA-RC',jsonb_build_object('operation','CREATE','request_id',gen_random_uuid(),'insurance_id',1,'details',jsonb_build_object('make','Toyota','model','Camry','registration','QA-EXTERNAL','odometer','53699','odometer_unit','KM')));
  rc:=result->'record'->>'rc_no';cmd_rc:=rc;rev:=(result->'record'->>'revision')::bigint;
  cmd:=jsonb_build_object('operation','RECORD_EXTERNAL_APPROVAL','request_id',gen_random_uuid(),'rc_no',rc,'expected_revision',rev,'reference','QA-ISSUED-APPROVAL','approval_date',current_date,'evidence','QA approval letter reference','reason','Verified issued document');
  begin perform zukait_reception_command('QA-RC',cmd); raise exception 'QA receptionist self approval accepted'; exception when others then assert sqlerrm='reception_approval_forbidden'; end;
  result:=zukait_reception_command('QA-MGR',cmd);
  assert (zukait_reception_command('QA-RC',jsonb_build_object('operation','GET','rc_no',rc))->'external_approval'->>'valid')::boolean;
- cmd:=jsonb_build_object('operation','CREATE_EXTERNAL_JOB','request_id',gen_random_uuid(),'rc_no',rc,'expected_revision',(result->'record'->>'revision')::bigint,'job_card','QA-DIRECT-INSURANCE','reason','Create issued approved repair');
+ cmd:=jsonb_build_object('operation','CREATE_EXTERNAL_JOB','request_id',gen_random_uuid(),'rc_no',rc,'expected_revision',(result->'record'->>'revision')::bigint,'job_card','QA-DIRECT-INSURANCE','reason','Create issued approved repair','job_intake_odometer','53845','job_intake_unit','KM');
  result:=zukait_reception_command('QA-RC',cmd);
  assert result->'record'->>'job_card'='QA-DIRECT-INSURANCE';
  assert (zukait_reception_command('QA-RC',cmd)->>'duplicate')::boolean;
  select data into snapshot from workshop_state where id='main';
  assert zukait_reception_job_approval_valid('QA-DIRECT-INSURANCE',rc,snapshot);
+ assert (select details->>'odometer' from workshop_receptions where rc_no=rc)='53699', 'Original checklist reading must be immutable';
+ assert (select j->>'jobIntakeOdometer' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-INSURANCE')='53845', 'Independent Job Card reading was not stored';
+ assert (select j->>'jobIntakeUnit' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-INSURANCE')='KM', 'Independent Job Card unit was not stored';
  assert (select count(*) from workshop_reception_estimates where rc_no=cmd_rc)=0;
  assert (select count(*) from workshop_reception_part_transfers where rc_no=cmd_rc)=0;
  assert (select count(*) from workshop_reception_external_approvals where rc_no=cmd_rc)=1;
