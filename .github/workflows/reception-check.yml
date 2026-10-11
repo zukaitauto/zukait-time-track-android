@@ -181,3 +181,55 @@ jobs:
           set -euo pipefail
           gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
           echo 'Pinned V309 release dispatched to the existing coordinated publisher'
+
+  dispatch_pinned_v310:
+    name: One-time dispatch of owner-approved pinned V310 release
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/architecture-v2' &&
+      github.event.head_commit.message == 'Owner-approved one-time V310 dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify pinned V310 source and owner approval
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SOURCE='aa461aefda823f4093458649b185ff19fba32e86'
+          jq -e --arg sha "$SOURCE" '
+            .approvedForStaff == true and .versionName == "V310" and
+            .versionCode == 273 and .sourceCommit == $sha and
+            .releaseScope == "phase1-compatible-ui" and
+            .ownerRequestedImmediateRelease == true and
+            .backupDeferredByOwner == true and
+            .productionBackendChanges == false and
+            .phase2ActivationApproved == false and
+            .physicalAcceptanceStatus == "NOT_RUN" and
+            .signedAcceptanceRun == 38116959190 and
+            .verificationRun == 38116959208
+          ' release-ui-request.json
+          jq -e '.approvedForStaff == false and .versionName == "V310" and .versionCode == 273' release-request.json
+          PINNED=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/release/v310-approved-source" --jq '.object.sha')
+          test "$PINNED" = "$SOURCE"
+          for ITEM in "38116959190:.github/workflows/build-signed-acceptance.yml" "38116959208:.github/workflows/reception-check.yml"; do
+            RUN="${ITEM%%:*}"
+            WORKFLOW="${ITEM#*:}"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN" | jq -e --arg sha "$SOURCE" --arg workflow "$WORKFLOW" '
+              .conclusion == "success" and .head_sha == $sha and
+              .head_branch == "architecture-v2" and .path == $workflow
+            '
+          done
+      - name: Dispatch coordinated V310 publisher on architecture-v2
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
+          echo 'Pinned V310 owner-approved release dispatched'
