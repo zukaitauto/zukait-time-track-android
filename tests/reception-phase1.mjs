@@ -169,7 +169,9 @@ assert.match(
   w.document.getElementById("rc-root").textContent,
   /<script>unsafe<\/script>/,
 );
-assert.match(w.document.getElementById("rc-root").textContent,/Front Bumper: Dent/);
+assert.doesNotMatch(w.document.querySelector(".rc-cl-condition").textContent,/Front Bumper: Dent/,"Detail screen must not list damage mark names");
+assert.match(w.document.querySelector(".rc-cl-condition").textContent,/Damage Description/);
+assert.ok(w.document.querySelector(".rc-cl-diagram svg"),"Marked car diagram remains visible");
 // Compact detail cards are presentation-only; escaped values and existing actions remain.
 assert.ok(w.document.getElementById("rc-root").classList.contains("rc-checklist-view"));
 assert.equal(w.document.querySelectorAll(".rc-cl-grid > .rc-box").length,5);
