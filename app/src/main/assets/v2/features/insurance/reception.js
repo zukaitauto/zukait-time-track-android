@@ -1464,7 +1464,7 @@
       '<div class="rc-accessory-row">'+
       accessory("wheel_covers","Wheel Covers",true)+accessory("upholstery","Upholstery",true)+
       accessory("windshield","Wind Shield",true)+accessory("radio_tape","Radio / Tape",true)+'</div>'+
-      '<div class="rc-fuel"><b>Floor Mats</b>'+tick(checkedTool("floor_mats"))+'<b>Fuel</b>'+fuel+'</div>'+
+      '<div class="rc-fuel"><b>Floor Mats</b>'+tick(checkedTool("floor_mats"))+'<b>Dashboard Warning</b>'+tick(!!String(d.warnings||"").trim())+'<b>Fuel</b>'+fuel+'</div>'+
       '<div class="rc-accessory-others"><b>Other accessories / remarks:</b>'+
       '<div class="rc-mini-tools">'+additions+'</div>'+
       '<div class="rc-other-notes">'+esc(accessories.notes)+'</div></div></div></section>'+
