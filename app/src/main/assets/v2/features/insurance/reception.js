@@ -807,7 +807,7 @@
 
       '<label>Damage notes / ملاحظات الأضرار<textarea name="damage" maxlength="1700" placeholder="Additional damage description">'+esc(parsed.notes)+'</textarea></label></section>';
   }
-  const functionChecks=["Lights","Wipers","Power Windows","Central Locking","Mirrors","Horn","Dashboard Warning","Air Conditioning"];
+  const functionChecks=["Lights","Wipers","Power Windows","Central Locking","Mirrors","Horn","Air Conditioning"];
   function parseFunctionChecks(raw){
     const value=String(raw||""),match=value.match(/^\[\[ZUKAIT-FUNCTION-V1\]\]\n([\s\S]*?)\n\[\[\/ZUKAIT-FUNCTION-V1\]\](?:\n([\s\S]*))?$/);
     if(!match)return {marks:{},details:value};
@@ -827,11 +827,14 @@
   }
   function functionPanel(d){
     const parsed=parseFunctionChecks(d.warnings);
+    const warningStatus=parsed.marks["Dashboard Warning"]==="ISSUE"?"ISSUE":parsed.marks["Dashboard Warning"]==="OK"?"OK":parsed.details?"ISSUE":"";
     return '<section class="rc-box rc-function-panel"><h4>Function Check / فحص الوظائف</h4>'+
       '<div class="rc-function-entry"><strong>Item</strong><strong>OK</strong><strong>ISSUE</strong><strong>N/A</strong></div>'+
-      functionChecks.map(name=>'<div class="rc-function-entry"><strong>'+esc(name)+'</strong>'+
-        ["OK","ISSUE","NA"].map(status=>'<label><input type="radio" name="rc-function-'+functionChecks.indexOf(name)+'" value="'+status+'" '+(parsed.marks[name]===status?'checked':'')+' aria-label="'+esc(name+' '+status)+'"></label>').join("")+'</div>').join("")+
-      '<label>Warning details (only when Dashboard Warning is ISSUE)<textarea name="warnings" maxlength="2000">'+esc(parsed.details)+'</textarea></label></section>';
+      functionChecks.map((name,i)=>'<div class="rc-function-entry"><strong>'+esc(name)+'</strong>'+
+        ["OK","ISSUE","NA"].map(status=>'<label><input type="radio" name="rc-function-'+i+'" value="'+status+'" '+(parsed.marks[name]===status?'checked':'')+' aria-label="'+esc(name+' '+status)+'"></label>').join("")+'</div>').join("")+
+      '<div class="rc-dashboard-warning"><h4>Dashboard Warning</h4><label><input type="radio" name="rc-dashboard-warning" value="OK" '+(warningStatus==="OK"?'checked':'')+'> No Warning</label> '+
+      '<label><input type="radio" name="rc-dashboard-warning" value="ISSUE" '+(warningStatus==="ISSUE"?'checked':'')+'> Warning Available</label>'+
+      '<label data-rc-warning-details '+(warningStatus==="ISSUE"?'':'hidden')+'>Warning details (Airbag, Engine, ABS, etc.)<textarea name="warnings" maxlength="1400" placeholder="e.g. Airbag, Check Engine">'+esc(parsed.details)+'</textarea></label></div></section>';
   }
   function accessoriesPanel(d){
     const parsed=unpackChecklistText(d.other_accessories,"ACCESSORIES",extraAccessories.map(x=>x[0]));
@@ -849,6 +852,15 @@
       '<label>Other accessories / ملحقات أخرى<textarea name="other_accessories" maxlength="1400">'+esc(parsed.notes)+'</textarea></label></section>';
   }
   function bindInspection(form){
+    const warningSection=form.querySelector(".rc-dashboard-warning");
+    const syncWarning=()=>{
+      const checked=warningSection?.querySelector('[name="rc-dashboard-warning"]:checked');
+      const details=warningSection?.querySelector("[data-rc-warning-details]");
+      if(details)details.hidden=checked?.value!=="ISSUE";
+    };
+    warningSection?.addEventListener("change",syncWarning);
+    syncWarning();
+
     const panel=form.querySelector(".rc-damage-panel"),chosen={value:"X"};
     panel?.addEventListener("click",e=>{
       const mode=e.target.closest("[data-rc-mode]");
@@ -1021,9 +1033,9 @@
     const observations = checklistBox("Function Check · Reception Observations",
       '<div class="rc-cl-facts">' +
       '<div class="rc-cl-warning-check"><strong>Dashboard Warning:</strong><span aria-label="Dashboard warning recorded">' +
-      (String(d.warnings||"").trim() ? "☑ Notes recorded" : "☐ Not recorded") +
+      (parseFunctionChecks(d.warnings).marks["Dashboard Warning"]==="ISSUE"||(!parseFunctionChecks(d.warnings).marks["Dashboard Warning"]&&parseFunctionChecks(d.warnings).details)?"☑ Warning Available":"☐ No Warning") +
       '</span></div>' +
-      (d.warnings ? checklistFact("Warning Details:",d.warnings,true) : "") +
+      (parseFunctionChecks(d.warnings).details ? checklistFact("Warning Details:",parseFunctionChecks(d.warnings).details,true) : "") +
       checklistFact("Fuel",d.fuel) +
       checklistFact("Other Remarks",d.remarks,true) + '</div>', "rc-cl-observations");
     const toolList = tools.map(([key,label])=>{
@@ -1337,7 +1349,9 @@
     textFields.forEach(([k]) => (details[k] = String(f.get(k) || "")));
     const checks={};
     functionChecks.forEach((name,i)=>{const status=String(f.get("rc-function-"+i)||"");if(["OK","ISSUE","NA"].includes(status))checks[name]=status;});
-    details.warnings=packFunctionChecks(checks,checks["Dashboard Warning"]==="ISSUE"?String(f.get("warnings")||""):"");
+    const dashboardStatus=String(f.get("rc-dashboard-warning")||"");
+    if(dashboardStatus==="OK"||dashboardStatus==="ISSUE")checks["Dashboard Warning"]=dashboardStatus;
+    details.warnings=packFunctionChecks(checks,dashboardStatus==="ISSUE"?String(f.get("warnings")||""):"");
     details.tools = f.getAll("tools");
     details.odometer_unit = String(f.get("odometer_unit"));
     details.fuel = String(f.get("fuel") || "");
@@ -1617,7 +1631,7 @@
       accessory("wheel_covers","Wheel Covers",true)+accessory("upholstery","Upholstery",true)+
       accessory("windshield","Wind Shield",true)+accessory("radio_tape","Radio / Tape",true)+'</div>'+
       '<div class="rc-fuel rc-function-check"><div class="rc-function-line"><b>Floor Mats</b>'+tick(checkedTool("floor_mats"))+'<b>FUNCTION CHECK</b></div>'+
-      functionChecks.map(name=>{const parsed=parseFunctionChecks(d.warnings);const status=parsed.marks[name]||"";return '<div class="rc-function-line rc-check-result"><span>'+esc(name)+'</span><span>'+["OK","ISSUE","NA"].map(k=>'<span>'+tick(status===k)+(k==="NA"?"N/A":k)+'</span>').join("")+'</span></div>';}).join("")+
+      [...functionChecks,'Dashboard Warning'].map(name=>{const parsed=parseFunctionChecks(d.warnings);const status=parsed.marks[name]||"";return '<div class="rc-function-line rc-check-result"><span>'+esc(name)+'</span><span>'+["OK","ISSUE","NA"].map(k=>'<span>'+tick(status===k)+(k==="NA"?"N/A":k)+'</span>').join("")+'</span></div>';}).join("")+
       (parseFunctionChecks(d.warnings).marks["Dashboard Warning"]==="ISSUE"&&parseFunctionChecks(d.warnings).details?'<div class="rc-function-line">Warning: '+esc(parseFunctionChecks(d.warnings).details)+'</div>':"")+
       '<div class="rc-function-line rc-function-fuel"><b>Fuel:</b>'+fuel+'</div></div>'+
       '<div class="rc-accessory-others"><b>Other accessories / remarks:</b>'+
