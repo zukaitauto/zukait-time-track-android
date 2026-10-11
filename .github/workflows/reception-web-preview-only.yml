@@ -35,8 +35,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          SOURCE_SHA='e3d9ec06d092d92c749cd87f6b73fe7ad5fff3a8'
-          VERIFIED_RUN='38155439824'
+          SOURCE_SHA='e7ab55898fcdd0a8ddb4bf1008dbf9004b147a5c'
+          VERIFIED_RUN='38162539602'
           test "$GITHUB_REF" = 'refs/heads/architecture-v2'
           git cat-file -e "$SOURCE_SHA^{commit}"
           git merge-base --is-ancestor "$SOURCE_SHA" "$GITHUB_SHA"
@@ -45,6 +45,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           node --check app/src/main/assets/v2/features/insurance/reception.js
           grep -q 'Three-view inspection layout' app/src/main/assets/v2/features/insurance/reception.js
+          grep -q 'functionChecks=' app/src/main/assets/v2/features/insurance/reception.js
           if grep -Fq "'<div class=\"rc-zone-legend\">'" app/src/main/assets/v2/features/insurance/reception.js; then
             echo 'Old redundant vehicle descriptions are still present'; exit 1
           fi
@@ -158,8 +159,8 @@ jobs:
           set -euo pipefail
           URL='https://zukaitauto.github.io/zukait-time-track-android/v2/features/insurance/reception.js'
           for attempt in 1 2 3 4 5 6; do
-            curl -fsSL -H 'Cache-Control: no-cache' "$URL?preview=e3d9ec06-$attempt" -o /tmp/reception-live.js || true
-            if grep -q 'Three-view inspection layout' /tmp/reception-live.js 2>/dev/null; then
+            curl -fsSL -H 'Cache-Control: no-cache' "$URL?preview=e7ab5589-$attempt" -o /tmp/reception-live.js || true
+            if grep -q 'Three-view inspection layout' /tmp/reception-live.js 2>/dev/null && grep -q 'functionChecks=' /tmp/reception-live.js 2>/dev/null; then
               echo 'Live website serves the approved vehicle diagram.' >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
