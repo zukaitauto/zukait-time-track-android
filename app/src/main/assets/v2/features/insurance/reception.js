@@ -452,7 +452,7 @@
       input('reason','Work Description (optional)') +
       '<label class="rc-check"><input type="checkbox" name="received_confirmed" required>I confirm the vehicle has been received at the workshop.</label><div class="rc-actions"><button type="submit">Open Job Card</button></div></form>');
     const form=document.getElementById('rc-direct-job'),type=form.querySelector('[name="job_type"]'),account=form.querySelector('[name="credit_account"]');
-    let linkedChecklist=null;
+    let linkedChecklist=null,linkedApprovalValid=false;
     const searchInput=document.getElementById('rc-direct-checklist-search');
     const searchResults=document.getElementById('rc-direct-checklist-results');
     document.getElementById('rc-direct-checklist-find').onclick=async()=>{
@@ -470,21 +470,23 @@
             const r=result.record,d=r.details||{};
             if(r.job_card){searchResults.textContent='Job Card '+r.job_card+' already exists for '+r.rc_no+'.';return;}
             linkedChecklist=r;
+            linkedApprovalValid=!!result.external_approval?.valid;
             document.getElementById('rc-direct-checklist-clear').hidden=false;
             for(const k of ['make','model','registration','year','vin','customer','contact','claim','remarks']){
               if(form.elements.namedItem(k))form.elements.namedItem(k).value=String(d[k]||'');
             }
             type.value=r.job_type||'INSURANCE';type.onchange();
+            form.elements.namedItem('odometer_unit').value=String(d.odometer_unit||'KM');
             if(r.insurance_id&&form.elements.insurance_id)form.elements.insurance_id.value=String(r.insurance_id);
             const note=document.getElementById('rc-direct-checklist-note');
-            note.innerHTML='Selected '+esc(r.rc_no)+'. Vehicle details are editable. Original checklist odometer: '+esc(d.odometer||'Not recorded')+' '+esc(d.odometer_unit||'KM')+'. Enter the NEW Job Card reading. To keep the existing checklist linked, use <button type="button" id="rc-direct-linked-open">Open Linked Checklist</button> and its approved Job Card action.';
-            document.getElementById('rc-direct-linked-open').onclick=()=>view(r.rc_no).catch(error);
+            note.textContent='Selected '+r.rc_no+'. Original checklist odometer: '+(d.odometer||'Not recorded')+' '+(d.odometer_unit||'KM')+'. Enter the new Job Card reading; the original remains unchanged.'+(linkedApprovalValid?' Existing insurance approval verified.':' Approval must be completed before a linked Job Card can be opened.');
           }catch(err){error(err);}
         });
       }catch(err){searchResults.textContent='Checklist search failed: '+String(err.message||err);}
     };
     document.getElementById('rc-direct-checklist-clear').onclick=()=>{
       linkedChecklist=null;
+      linkedApprovalValid=false;
       searchInput.value='';
       searchResults.textContent='';
       document.getElementById('rc-direct-checklist-note').textContent='Checklist selection cleared. This will create a NEW reception intake.';
@@ -510,12 +512,35 @@
     type.onchange();
     form.onsubmit=async e=>{
       e.preventDefault();
-      if(linkedChecklist){error(Error('Open the linked checklist and use its Job Card action. Direct creation here would create a second, unlinked checklist.'));return;}
       const f=new FormData(form),details={};
       for(const k of ['make','model','registration','year','vin','customer','contact','claim','remarks'])details[k]=String(f.get(k)||'').trim();
       details.odometer=String(f.get('odometer')||'').trim();
       details.odometer_unit=String(f.get('odometer_unit')||'KM');
       try {
+        if(linkedChecklist){
+          if(!linkedApprovalValid || linkedChecklist.job_type!=='INSURANCE') throw Error('This checklist needs verified insurance approval before linked Job Card creation.');
+          const revised={};
+          for(const k of ['make','model','registration','year','vin','customer','contact','claim']){
+            if(details[k]!==String(linkedChecklist.details?.[k]||'')) revised[k]=details[k];
+          }
+          const company=Number(f.get('insurance_id'));
+          const changed=Object.keys(revised).length>0||company!==Number(linkedChecklist.insurance_id);
+          if(changed&&!['Manager','Supervisor'].includes(user()?.role)) throw Error('Manager or Supervisor must verify changes to an approved insurance vehicle.');
+          if(changed&&(!f.has('approval_confirmed')||!f.get('approval_date')||!f.get('evidence'))) throw Error('Confirm renewed insurance approval, date and evidence for corrected vehicle details.');
+          const jc=String(f.get('job_card')).trim().toUpperCase();
+          const out=await mutate({operation:'CREATE_EXTERNAL_JOB',rc_no:linkedChecklist.rc_no,
+            expected_revision:linkedChecklist.revision,job_card:jc,
+            reason:String(f.get('reason')||'Linked Job Card intake').trim()||'Linked Job Card intake',
+            job_intake_odometer:details.odometer,job_intake_unit:details.odometer_unit,
+            ...(changed?{identity_updates:revised,insurance_id:company,approval_confirmed:true,
+              reference:String(details.claim||'').trim(),approval_date:String(f.get('approval_date')||''),
+              evidence:String(f.get('evidence')||'').trim()}: {})});
+          if(out){
+            try{await window.zukaitCloud?.pull?.(true);}catch(_){}
+            await view(linkedChecklist.rc_no);
+          }
+          return;
+        }
         const out=await mutate({operation:'CREATE_DIRECT_JOB',job_type:f.get('job_type'),job_card:String(f.get('job_card')).trim().toUpperCase(),details,
           received_confirmed:f.has('received_confirmed'),reason:String(f.get('reason')).trim(),
           ...(f.get('job_type')==='CREDIT'?{credit_account:String(f.get('credit_account')).trim()}: {}),
