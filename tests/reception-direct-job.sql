@@ -42,7 +42,7 @@ begin
  assert result->'record'->>'job_card'='QA-DIRECT-APPROVED-INSURANCE';
  assert result->'record'->>'job_type'='INSURANCE';
  assert result->'record'->>'approval_status'='APPROVED';
- assert (zukait_reception_command('QA-MGR',cmd)->>'duplicate')::boolean;
+ assert (zukait_reception_command('QA-RC',cmd)->>'duplicate')::boolean;
  select data into snapshot from workshop_state where id='main';
  assert (select count(*) from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-APPROVED-INSURANCE')=1;
  assert (select j->>'jobType' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-APPROVED-INSURANCE')='INSURANCE';
