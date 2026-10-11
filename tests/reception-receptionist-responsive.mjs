@@ -33,11 +33,13 @@ for(const engine of ['chromium','webkit']){
   await page.locator('.rdb-row').waitFor();
   assert.equal(await page.locator('.rdb-grid').count(),0,'Checklist List opens without dashboard above');
   assert.equal(await page.locator('#reception-app nav button').count(),4);
-  assert.equal(await page.locator('script').count(),3);
+  assert.deepEqual(await page.locator('script').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('src').split('?')[0])),['receptionist_session.js','v2/features/insurance/reception.js','reception_dashboard.js','job_card_edit.js']);
   assert.equal(await page.locator('[data-rdb=tile]').count(),0,'Dedicated Reception list hides dashboard cards');
   assert.equal(await page.locator('.rdb-row script').count(),0);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width} list overflow`);
   await page.locator('.rdb-row [data-rdb=open]').click();await page.locator('[data-rc-action=insurance]').click();await page.locator('#rc-create-job').waitFor();
+  assert.equal(await page.locator('#rc-create-job [name=cash_amount]').isVisible(),true);
+  assert.equal(await page.locator('#rc-create-job [name=cash_amount]').inputValue(),'');
   assert.equal(await page.locator('#rc-approval,#rc-external-approval,#rc-link-estimate,[data-rc-action=parts],[data-rc-action=cancel-job]').count(),0);
   assert.equal(await page.locator('#rc-external-job').count(),1);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width} Job Card form overflow`);
