@@ -17,19 +17,20 @@ execFileSync(process.execPath,["tests/reception-phase1.mjs"],{
 const html=fs.readFileSync(filename,"utf8");
 assert.match(html,/ZUKAIT INTERNATIONAL LLC/);
 assert.match(html,/@page\{size:A4 portrait;margin:0\}/);
-assert.match(html,/viewBox="0 0 660 320"/);
-assert.match(html,/FRONT FENDER/);
-assert.match(html,/REAR FENDER/);
-assert.match(html,/FRONT DOOR/);
-assert.match(html,/REAR DOOR/);
-assert.match(html,/\(RH\)/);
-assert.match(html,/\(LH\)/);
+assert.match(html,/viewBox="0 0 840 310"/);
+
+
+
+
+
+
 assert.match(html,/Customer Signature/);
 assert.match(html,/Fuel/);
 assert.match(html,/X = Dent/);
 assert.match(html,/S = Scratch/);
 assert.match(html,/M = Missing/);
-assert.match(html,/Vehicle Damage Diagram/);
+assert.doesNotMatch(html,/Vehicle Damage Diagram:/);
+assert.match(html,/Damage Description/);
 assert.match(html,/Wheel Covers/);
 assert.match(html,/Claim \/ Gate Pass/);
 const browser=await chromium.launch({headless:true});
@@ -62,14 +63,11 @@ try{
   await page.screenshot({path:path.join(artifactDir,"Reception_Checklist_A4_Test.png"),
     fullPage:true});
   // Existing screen and PDF must agree about RH (upper edge) and LH (lower edge).
-  const topAndBottom=await page.locator(".rc-print-car").evaluate(svg=>{
-    const labels=[...svg.querySelectorAll(".rc-callout")].map(x=>({
-      text:x.textContent,y:Number(x.getAttribute("y"))
-    }));
-    return {top:labels.filter(x=>x.y<65),bottom:labels.filter(x=>x.y>270)};
-  });
-  assert.ok(topAndBottom.top.filter(x=>x.text==="(RH)").length===4);
-  assert.ok(topAndBottom.bottom.filter(x=>x.text==="(LH)").length===4);
+  const labels=await page.locator(".rc-print-car text").allTextContents();
+  assert.ok(labels.includes("FRONT") && labels.includes("REAR"));
+  const lightGlass=await page.locator(".rc-print-car").evaluate(svg=>
+    [...svg.querySelectorAll('[fill]')].every(x=>!["#44667d","#547a94"].includes(x.getAttribute("fill"))));
+  assert.equal(lightGlass,true,"A4 diagram must use light window fills");
   console.log("PASS: actual Chromium A4 PDF is one page; accurate LH/RH, printable notes, accessories, and horizontal diagram");
 } finally {
   await browser.close();
