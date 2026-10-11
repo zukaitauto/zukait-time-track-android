@@ -81,8 +81,8 @@ function jcData(no){
  const n=String(no||'').trim().toUpperCase(),j=(state.jobs||[]).find(x=>String(x.no||'').toUpperCase()===n);
  if(!j||n==='ID001')return null;
  const aa=(state.assign||[]).filter(a=>a&&!a.cancelled&&a.job===j.no);
- const painters=aa.map(a=>(users||[]).find(u=>u.id===a.emp)).filter(u=>u&&u.department==='Painter');
- const painterAssignments=aa.filter(a=>(users||[]).some(u=>u.id===a.emp&&u.department==='Painter')).sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));
+ const painters=aa.map(a=>(users||[]).find(u=>u.id===a.emp)).filter(u=>u&&/^paint(?:er|ing)?$/i.test(String(u.department||'').trim()));
+ const painterAssignments=aa.filter(a=>(users||[]).some(u=>u.id===a.emp&&/^paint(?:er|ing)?$/i.test(String(u.department||'').trim()))).sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));
  const supervisorId=painterAssignments.find(a=>a.assignedBy)?.assignedBy||aa.slice().sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0)).find(a=>a.assignedBy)?.assignedBy||'';
  const live=window.zukaitJobCardMaster?.display?.(j.no,j)||j,vehicle=live.vehicle||[live.make,live.model].filter(Boolean).join(' ')||j.vehicle||[j.make,j.model].filter(Boolean).join(' ')||'';
  return {job:j,vehicle,supervisorId,painters:[...new Map(painters.map(x=>[x.id,x])).values()]};
@@ -192,7 +192,7 @@ window.consLoadJC=function(type){
  if(v)v.value=d.vehicle||'';
  if(sup){const su=(users||[]).find(x=>x.id===d.supervisorId);sup.value=su?.name||d.supervisorId||me?.name||me?.id||'';}
  if(p){p.innerHTML=(d.painters.length>1?'<option value="">Choose Main Painter</option>':'')+d.painters.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');if(d.painters.length===1)p.value=d.painters[0].id}
- if(note)note.textContent=d.painters.length?'Job Card loaded.':'Job Card loaded, but no Painter is assigned.';
+ if(note)note.textContent=d.painters.length?'Job Card loaded.':'No Painter is assigned to this Job Card. You can save materials now and assign the Main Painter later.';
  consRefreshIssueFinishState();
 };
 window.consFilterBrands=function(){
@@ -202,7 +202,7 @@ window.consFilterBrands=function(){
  sel.innerHTML='<option value="">Brand</option>'+brands.map(b=>'<option value="'+esc(b.id)+'">'+esc(b.name)+'</option>').join('');if(brands.length===1)sel.value=brands[0].id;
  const m=c.materials.find(x=>x.id===mid),q=document.getElementById('consQty');if(q)q.placeholder=m?.unit?'Quantity ('+m.unit+')':'Quantity';
 };
-window.consRefreshIssueFinishState=function(){const btn=document.getElementById('consFinishBtn');if(!btn)return false;const painter=draft.type==='additional'?(draft.additionalBase?.mainPainterId||''):(document.getElementById('consPainter')?.value||draft.jc?.painters?.[0]?.id||'');const ready=!!(draft.jc&&draft.lines.length&&painter);btn.disabled=!ready;return ready};
+window.consRefreshIssueFinishState=function(){const btn=document.getElementById('consFinishBtn');if(!btn)return false;const painter=draft.type==='additional'?(draft.additionalBase?.mainPainterId||''):(document.getElementById('consPainter')?.value||draft.jc?.painters?.[0]?.id||'');const ready=!!(draft.jc&&draft.lines.length);btn.disabled=!ready;btn.style.backgroundColor=ready?'#166534':'';btn.style.color=ready?'#ffffff':'';btn.style.fontWeight='900';btn.title=ready?'Finish and save materials':'Select a Job Card and add at least one material';return ready};
 window.consAddLine=function(){
  if(!draft.jc)return alert('Load a valid Job Card first.');
  const mid=document.getElementById('consMaterial')?.value,bid=document.getElementById('consBrand')?.value,q=Number(document.getElementById('consQty')?.value);
@@ -222,7 +222,8 @@ window.consRenderRows=function(){
 window.consFinishIssue=function(){
  if(!draft.jc||!draft.lines.length)return alert('Load Job Card and add at least one material.');
  const base=draft.type==='additional'?(draft.additionalBase||consBaseIssued(draft.jc?.job?.no)):null;
- const painter=base?.mainPainterId||document.getElementById('consPainter')?.value||draft.jc?.painters?.[0]?.id;if(!painter)return alert(draft.type==='additional'?'Suggested / Issued material record is required before adding Additional Materials.':'Select the Main Painter.');
+ const painter=base?.mainPainterId||document.getElementById('consPainter')?.value||draft.jc?.painters?.[0]?.id;if(!painter&&draft.type==='additional')return alert('Suggested / Issued material record is required before adding Additional Materials.');
+ if(!painter&&draft.type!=='additional'&&!confirm('No Main Painter is assigned to this Job Card. Save materials with Main Painter unassigned?'))return;
  const issueType=draft.type==='additional'?C().TYPES.ADDITIONAL:C().TYPES.ISSUED,dup=consRecentDuplicate(issueType,draft.jc.job.no,draft.lines);
  if(dup&&!confirm('Possible duplicate entry: the same materials and quantities were saved for this Job Card within the last 15 minutes. Continue anyway?'))return;
  if(!confirm('Finish and lock this material issue?'))return;
