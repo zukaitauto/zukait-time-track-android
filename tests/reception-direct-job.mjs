@@ -75,7 +75,8 @@ const fetchBeforeSearch=w.fetch;
 w.fetch=async(url,args)=>{
  const command=JSON.parse(args.body).command;
  if(command.operation==='LIST'&&command.search)return {ok:true,json:async()=>({ok:true,rows:[searchRecord]})};
- if(command.operation==='GET'&&command.rc_no===searchRecord.rc_no)return {ok:true,json:async()=>({ok:true,record:searchRecord})};
+ if(command.operation==='GET'&&command.rc_no===searchRecord.rc_no)return {ok:true,json:async()=>({ok:true,record:searchRecord,external_approval:{valid:true}})};
+ if(command.operation==='CREATE_EXTERNAL_JOB')return {ok:true,json:async()=>({ok:true,record:{...searchRecord,job_card:command.job_card}})};
  return fetchBeforeSearch(url,args);
 };
 await click('home');await click('direct-job');form=w.document.getElementById('rc-direct-job');
@@ -99,6 +100,7 @@ assert.match(w.document.getElementById('rc-direct-checklist-note').textContent,/
 form.elements.customer.value='Updated QA Customer';assert.equal(form.elements.customer.value,'Updated QA Customer');
 const beforeLinked=calls.filter(c=>c.operation==='CREATE_DIRECT_JOB').length;
 await submit();assert.equal(calls.filter(c=>c.operation==='CREATE_DIRECT_JOB').length,beforeLinked,'Linked checklist must never create a second direct intake');
+assert.equal(calls.filter(c=>c.operation==='CREATE_EXTERNAL_JOB').length,0,'Receptionist cannot silently alter approved identity');
 assert.equal(w.document.getElementById('rc-direct-checklist-clear').hidden,false);
 w.document.getElementById('rc-direct-checklist-clear').click();await settle();
 assert.equal(w.document.getElementById('rc-direct-checklist-clear').hidden,true);
