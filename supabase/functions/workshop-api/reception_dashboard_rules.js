@@ -64,8 +64,13 @@ function matchFilter(row,opts,kind) {
 export function receptionDashboardProjection(data,receptions,opts={}) {
  const rows=(Array.isArray(receptions)?receptions:[]).map(x=>safeRc(x,x.insurance_company));
  const byRc=new Map(rows.map(x=>[x.rc_no,x]));
- const jobs=(data?.jobs||[]).filter(j=>j&&j.no&&norm(j.no)!=="ID001"&&!j.deleted&&!j.archived&&
-   !j.cancelled&&norm(j.status)!=="CANCELLED").map(j=>({raw:j,row:safeJob(j,byRc.get(text(j.receptionNo)))}));
+ const uniqueJobs=new Map();
+ for(const j of (data?.jobs||[])){
+  if(!j||!j.no||norm(j.no)==="ID001"||j.deleted||j.archived||j.cancelled||norm(j.status)==="CANCELLED")continue;
+  const key=norm(j.no),existing=uniqueJobs.get(key);
+  if(!existing||Number(j.createdAt||0)>Number(existing.createdAt||0))uniqueJobs.set(key,j);
+ }
+ const jobs=[...uniqueJobs.values()].map(j=>({raw:j,row:safeJob(j,byRc.get(text(j.receptionNo)))}));
  const allJobs=jobs.map(x=>x.row),activeJobs=jobs.filter(x=>!x.raw.delivered).map(x=>x.row);
  const checklists=rows.filter(r=>!r.direct_job_only).sort(sortRc);
  const waiting=checklists.filter(r=>r.job_type==="INSURANCE"&&!r.job_card&&!r.outcome&&r.approval_status==="WAITING");
