@@ -91,6 +91,12 @@ assert.match(w.document.getElementById('rc-direct-checklist-note').textContent,/
 form.elements.customer.value='Updated QA Customer';assert.equal(form.elements.customer.value,'Updated QA Customer');
 const beforeLinked=calls.filter(c=>c.operation==='CREATE_DIRECT_JOB').length;
 await submit();assert.equal(calls.filter(c=>c.operation==='CREATE_DIRECT_JOB').length,beforeLinked,'Linked checklist must never create a second direct intake');
+assert.equal(w.document.getElementById('rc-direct-checklist-clear').hidden,false);
+w.document.getElementById('rc-direct-checklist-clear').click();await settle();
+assert.equal(w.document.getElementById('rc-direct-checklist-clear').hidden,true);
+assert.equal(form.elements.make.value,'');
+assert.equal(form.elements.odometer.value,'');
+assert.match(w.document.getElementById('rc-direct-checklist-note').textContent,/NEW reception intake/);
 w.fetch=fetchBeforeSearch;
 record={rc_no:'RC-QA-INSURANCE',details:{make:'Toyota',model:'Camry'},job_type:'INSURANCE',location:'VWC',approval_status:'APPROVED',revision:2};
 // Only authorized staff can record issued approval. Receptionist only creates.
