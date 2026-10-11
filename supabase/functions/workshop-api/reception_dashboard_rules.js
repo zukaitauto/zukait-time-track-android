@@ -18,11 +18,11 @@ function omanDate(value) {
 }
 const serial=(a,b)=>String(b).localeCompare(String(a),"en",{numeric:true});
 const sortRc=(a,b)=>(Number(b.sequence_no||0)-Number(a.sequence_no||0))||serial(a.rc_no,b.rc_no);
-const sortJobs=(a,b)=>serial(a.job_card,b.job_card);
+const sortJobs=(a,b)=>Number(b.created_at||0)-Number(a.created_at||0)||serial(a.job_card,b.job_card);
 function safeRc(r,company) {
  const d=r?.details||{};
  return {rc_no:text(r.rc_no),sequence_no:Number(r.sequence_no||0),
- job_card:text(r.job_card),job_type:text(r.job_type||"INSURANCE"),
+ job_card:text(r.job_card),direct_job_only:d.direct_job_only===true,job_type:text(r.job_type||"INSURANCE"),
  vehicle:[d.make,d.model,d.year].filter(Boolean).join(" ").slice(0,240),
  registration:text(d.registration),customer:text(d.customer),
  insurance_company:company||"",received_at:r.received_at||"",
@@ -32,7 +32,7 @@ function safeRc(r,company) {
 }
 function safeJob(j,rc) {
  return {rc_no:text(j.receptionNo||rc?.rc_no),sequence_no:Number(rc?.sequence_no||0),
- job_card:text(j.no),job_type:text(j.jobType||rc?.job_type),vehicle:
+ job_card:text(j.no),created_at:Number(j.createdAt||0),job_type:text(j.jobType||rc?.job_type),vehicle:
    [j.make||j.brand,j.model,j.year||j.vehicleYear].filter(Boolean).join(" ").trim()||
    text(j.vehicle||rc?.vehicle),
  registration:text(j.reg||j.registration||rc?.registration),
@@ -67,7 +67,7 @@ export function receptionDashboardProjection(data,receptions,opts={}) {
  const jobs=(data?.jobs||[]).filter(j=>j&&j.no&&norm(j.no)!=="ID001"&&!j.deleted&&!j.archived&&
    !j.cancelled&&norm(j.status)!=="CANCELLED").map(j=>({raw:j,row:safeJob(j,byRc.get(text(j.receptionNo)))}));
  const allJobs=jobs.map(x=>x.row),activeJobs=jobs.filter(x=>!x.raw.delivered).map(x=>x.row);
- const checklists=rows.slice().sort(sortRc);
+ const checklists=rows.filter(r=>!r.direct_job_only).sort(sortRc);
  const waiting=checklists.filter(r=>r.job_type==="INSURANCE"&&!r.job_card&&!r.outcome&&r.approval_status==="WAITING");
  const approved=checklists.filter(r=>r.job_type==="INSURANCE"&&!r.job_card&&!r.outcome&&r.approval_status==="APPROVED");
  const vwcChecklists=checklists.filter(r=>r.location==="VWC"&&!r.job_card&&!r.outcome);
