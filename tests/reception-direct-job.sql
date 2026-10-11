@@ -88,6 +88,15 @@ begin
  assert result->'record'->'details'->>'model'='Corolla';
  assert result->'record'->'details'->>'registration'='QA-EXTERNAL-UPDATED';
  assert (zukait_reception_command('QA-MGR',cmd)->>'duplicate')::boolean;
+ -- Two devices attempting the same checklist must not create a second Job Card.
+ begin
+  perform zukait_reception_command('QA-MGR',cmd||jsonb_build_object('request_id',gen_random_uuid(),'job_card','QA-SECOND-LINKED'));
+  raise exception 'QA duplicate linked Job Card accepted';
+ exception when others then
+  assert sqlerrm='reception_stale_revision',format('Unexpected linked duplicate guard: %s',sqlerrm);
+ end;
+ select count(*) into n from workshop_v2_events where entity_id='QA-SECOND-LINKED' and event_type='JOB_CREATED';
+ assert n=0,'Second linked Job Card must not publish an event';
  select data into snapshot from workshop_state where id='main';
  assert zukait_reception_job_approval_valid('QA-DIRECT-INSURANCE',rc,snapshot);
  assert (select details->>'odometer' from workshop_receptions where rc_no=rc)='53699', 'Original checklist reading must be immutable';
