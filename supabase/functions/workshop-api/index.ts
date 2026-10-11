@@ -1287,6 +1287,7 @@ Deno.serve(async (req: Request) => {
       });
       if (error) {
         const message=String(error.message||"");
+        if (message.includes("insurance_job_requires_approved_reception")) return reply({ok:false,code:"insurance_job_requires_approved_reception"},409);
         if (message.includes("stale_jobcard_revision")) return reply({ok:false,code:"job_card_exists"},409);
         if (message.includes("preliminary_session_already_linked")) return reply({ok:false,code:"preliminary_session_already_linked"},409);
         if (message.includes("preliminary_link_not_active")) return reply({ok:false,code:"preliminary_link_not_active"},409);
