@@ -1,17 +1,17 @@
 {
-  "versionName": "V308",
-  "versionCode": 271,
+  "versionName": "V309",
+  "versionCode": 272,
   "approvedForStaff": true,
-  "approvedAt": "2026-10-10T20:05:30.105Z",
-  "sourceCommit": "45c6712460a2d675ac135e4ad440aa820417c15b",
-  "publishNonce": "owner-approved-v308-a4-print-20261010",
-  "signedAcceptanceRun": 38082133296,
-  "verificationRun": 38082133292,
+  "approvedAt": "2026-10-11T03:28:20.047Z",
+  "sourceCommit": "b1831b84e6e1dd9e2bba2dc2c39bd82a5dab071a",
+  "publishNonce": "owner-approved-v309-reception-card-ui-20261011",
+  "signedAcceptanceRun": 38107638774,
+  "verificationRun": 38107638819,
   "releaseScope": "phase1-compatible-ui",
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "authorization": "Workshop owner approved the one-page A4 print layout and explicitly directed 'Proceed with this ui', 'Proceed', 'Proceed release', then 'Next'. V308 is a UI-only release from the pinned, successfully tested commit. Prior workshop instruction deferred backup, and physical Android/Safari acceptance remains NOT_RUN. Preserve the existing production backend and Phase 1 compatibility; do not change workshop data or enable Phase 2."
+  "authorization": "Workshop owner explicitly requested 'Release' on 11 Oct 2026 after approval of the five-card responsive Reception Checklist UI. UI-only V309 publication: no database or backend change, no Phase 2 activation. Retain the prior owner deferral of backup; physical Android and Safari acceptance were NOT_RUN and must not be described as passed. Publish only exact tested architecture-v2 source b1831b84e6e1dd9e2bba2dc2c39bd82a5dab071a, with verified Reception CI and signed acceptance APK."
 }
