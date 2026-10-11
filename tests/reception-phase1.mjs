@@ -216,7 +216,7 @@ assert.match(pdf.s, /Customer Signature/);
 assert.match(pdf.s, /Reception Staff Signature/);
 assert.match(pdf.s, /&lt;script&gt;unsafe/);
 assert.match(pdf.s,/class="rc-print-car"/);
-assert.match(pdf.s,/viewBox="0 0 840 310"/,"Printed car must use the same proportions as the screen");
+assert.match(pdf.s,/viewBox="0 0 560 350"/,"Printed car must use the same three-view proportions as the screen");
 assert.match(pdf.s,/>REAR<\/text>/,"Rear label must remain readable on paper");
 assert.match(pdf.s,/<svg/);
 assert.doesNotMatch(pdf.s,/Front Bumper: Dent/);
