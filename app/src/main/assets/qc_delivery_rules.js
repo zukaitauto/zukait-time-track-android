@@ -53,7 +53,7 @@ export function qcTransition(data,user,request,now){
   if(reason.length>2000)return error('qc_reason_too_long');
   const revision=Number(job.qcWorkflow?.revision||0);if(Number(request.expectedQcRevision)!==revision)return error('qc_conflict');
   const from=Number(job.finalInvoiceAmount??job.amount??0),audit={operation:op,by:id,name:user.name,at:now,from,to,fromDate:job.invoiceDate||'',toDate:request.invoiceDate,reason};
-  if(cash)job.amount=to;job.finalInvoiceAmount=to;job.invoiceDate=request.invoiceDate;job.invoiceEnteredAt=now;job.invoiceEnteredBy=id;job.invoiceEnteredByName=user.name;job.financialAudit=[...(job.financialAudit||[]),audit];job.qcWorkflow={...(job.qcWorkflow||{}),revision:revision+1,history:[...(job.qcWorkflow?.history||[]),audit]};
+  job.amount=to;job.finalInvoiceAmount=to;job.invoiceDate=request.invoiceDate;job.invoiceEnteredAt=now;job.invoiceEnteredBy=id;job.invoiceEnteredByName=user.name;job.financialAudit=[...(job.financialAudit||[]),audit];job.qcWorkflow={...(job.qcWorkflow||{}),revision:revision+1,history:[...(job.qcWorkflow?.history||[]),audit]};
   return {ok:true,data:candidate,job};
  }
  if(op==='FINAL_INVOICE_CORRECTION'){
@@ -65,7 +65,7 @@ export function qcTransition(data,user,request,now){
   if('invoiceDate' in request&&!invoiceDateValid(request.invoiceDate))return error('invoice_date_required');
   const revision=Number(job.qcWorkflow?.revision||0);if(Number(request.expectedQcRevision)!==revision)return error('qc_conflict');
   const from=Number(job.finalInvoiceAmount??job.amount??0),to=Math.round(amount*1000)/1000,audit={operation:op,by:id,name:user.name,at:now,from,to,reason,fromDate:job.invoiceDate||'',toDate:request.invoiceDate||job.invoiceDate||''};
-  if(cash)job.amount=to;job.finalInvoiceAmount=to;if('invoiceDate' in request)job.invoiceDate=request.invoiceDate;job.financialAudit=[...(job.financialAudit||[]),audit];job.qcWorkflow={...(job.qcWorkflow||{}),revision:revision+1,history:[...(job.qcWorkflow?.history||[]),audit]};
+  job.amount=to;job.finalInvoiceAmount=to;if('invoiceDate' in request)job.invoiceDate=request.invoiceDate;job.financialAudit=[...(job.financialAudit||[]),audit];job.qcWorkflow={...(job.qcWorkflow||{}),revision:revision+1,history:[...(job.qcWorkflow?.history||[]),audit]};
   return {ok:true,data:candidate,job};
  }
  const receptionistDelivery=user.role==='Receptionist'&&op==='DELIVER'&&!!job.receptionNo;
