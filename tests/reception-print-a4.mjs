@@ -32,7 +32,12 @@ assert.match(html,/M = Missing/);
 assert.doesNotMatch(html,/Vehicle Damage Diagram:/);
 assert.match(html,/Damage Description/);
 assert.match(html,/Wheel Covers/);
-assert.match(html,/Claim \/ Gate Pass/);
+assert.match(html,/Claim Number:/);
+assert.doesNotMatch(html,/Claim \/ Gate Pass/);
+assert.doesNotMatch(html,/Status: Waiting/);
+assert.match(html,/Checklist Date:/);
+assert.match(html,/LH FRONT DOOR/);
+assert.match(html,/RH FRONT DOOR/);
 const browser=await chromium.launch({headless:true});
 try{
   const page=await browser.newPage({
@@ -62,7 +67,7 @@ try{
   fs.writeFileSync(path.join(artifactDir,"Reception_Checklist_A4_Test.pdf"),pdf);
   await page.screenshot({path:path.join(artifactDir,"Reception_Checklist_A4_Test.png"),
     fullPage:true});
-  // Existing screen and PDF must agree about RH (upper edge) and LH (lower edge).
+  // Vehicle orientation: rear at left, front at right; LH above and RH below.
   const labels=await page.locator(".rc-print-car text").allTextContents();
   assert.ok(labels.includes("FRONT") && labels.includes("REAR"));
   const lightGlass=await page.locator(".rc-print-car").evaluate(svg=>
