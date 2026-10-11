@@ -266,11 +266,14 @@
     const r = await res.json();
     if (!res.ok || !r.ok) {
       const msgs = {
-        reception_invalid_job_type: "Choose Cash or Credit for direct intake. Insurance jobs require recorded approval.",
+        reception_invalid_job_type: "Choose Cash, Insurance, or Credit. Insurance Job Cards require verified approval.",
+        reception_insurance_required: "Choose the approving insurance company.",
+        reception_approval_confirmation_required: "Confirm that insurance approval has been verified.",
+        reception_invalid_approval_date: "Enter a valid insurance approval date that is not in the future.",
         reception_received_confirmation_required: "Confirm the vehicle has been received at the workshop.",
         reception_customer_required: "Enter the customer/company name and contact.",
         reception_credit_account_required: "Enter the credit account or customer reference.",
-        reception_external_evidence_required: "Enter the issued approval reference and document evidence.",
+        reception_external_evidence_required: "Enter the approval/LPO reference and how insurance approval was verified.",
         reception_external_parts_review_required: "Use quotation approval to review and transfer preliminary parts.",
         reception_external_approval_required: "Issued approval must be recorded and match the current vehicle details.",
         reception_cancellation_identity_required: "Type the linked Job Card number to confirm its identity.",
@@ -289,7 +292,7 @@
         reception_job_number_exists: "This Job Card number is already in use. Choose another number.",
         reception_job_already_created: "This checklist already has a Job Card. Reload it to continue.",
         reception_invalid_job_number: "Enter a valid Job Card number. ID001 is reserved.",
-        reception_job_forbidden: "Only the Manager or Supervisor can create an insurance Job Card.",
+        reception_job_forbidden: "Your account does not have permission to create this Job Card.",
         reception_not_approved: "Record insurance approval before creating a Job Card.",
         reception_approval_changed: "Approval needs review because source information changed. Refresh the quotation and approval first.",
         reception_parts_allocation_failed: "Parts allocation failed. The Job Card was not created. Retry after checking the parts service.",
