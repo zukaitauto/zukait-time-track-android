@@ -38,6 +38,17 @@ assert.doesNotMatch(html,/Status: Waiting/);
 assert.match(html,/Checklist Date:/);
 assert.match(html,/LH FRONT DOOR/);
 assert.match(html,/RH FRONT DOOR/);
+assert.match(html,/rc-cols-vehicle/);
+assert.match(html,/rc-cols-vin/);
+assert.match(html,/rc-cols-customer/);
+assert.match(html,/Dashboard Warning/);
+const fieldOrder=["Job Type:","Insurance:","Reg No:","Make:","Model:","VIN:","Year:","KM:","Customer Name:","Mob:","Claim Number:"];
+let previous=-1;
+for(const field of fieldOrder){
+ const next=html.indexOf('<strong>'+field+'</strong>');
+ assert.ok(next>previous,"A4 field order or label missing: "+field);
+ previous=next;
+}
 const browser=await chromium.launch({headless:true});
 try{
   const page=await browser.newPage({
