@@ -5,6 +5,12 @@ const source = fs.readFileSync(
   "app/src/main/assets/v2/features/insurance/reception.js",
   "utf8",
 );
+// Candidate version must match Android packaging and never self-approve publication.
+const candidate = JSON.parse(fs.readFileSync("release-request.json", "utf8"));
+const gradle = fs.readFileSync("app/build.gradle", "utf8");
+assert.ok(gradle.includes('versionName "' + candidate.versionName + '"'));
+assert.ok(gradle.includes("versionCode " + candidate.versionCode));
+assert.equal(candidate.approvedForStaff,false);
 const html = fs.readFileSync("app/src/main/assets/offline_test.html", "utf8");
 const api = fs.readFileSync("supabase/functions/workshop-api/index.ts", "utf8");
 assert.match(html, /script src="v2\/features\/insurance\/reception.js/);
