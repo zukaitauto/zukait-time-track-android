@@ -105,7 +105,7 @@ try{
   try{for(const file of [...group,'reception-trigger-privileges.sql']){try{await control.query(fs.readFileSync('tests/'+file,'utf8'));}catch(error){console.error('Reception isolated SQL fixture failure:',file,error.message,error.where||'');throw error;}}}
   finally{await control.query('rollback');}
  }
- const directCash={operation:'CREATE_DIRECT_JOB',request_id:randomUUID(),job_type:'CASH',job_card:'QA-CONCURRENT-CASH',details:{make:'Toyota',model:'Camry',customer:'QA Cash Customer',contact:'QA contact'},received_confirmed:true,reason:'QA multi-device cash intake'};
+ const directCash={operation:'CREATE_DIRECT_JOB',request_id:randomUUID(),job_type:'CASH',job_card:'QA-CONCURRENT-CASH',details:{make:'Toyota',model:'Camry',year:'2023'},received_confirmed:true,reason:'QA multi-device cash intake'};
  const directCashRetry=await race('same direct cash intake UUID creates one checklist and Job Card',c=>command(c,directCash,'QA-RC'),c=>command(c,directCash,'QA-RC'));
  assert.equal(directCashRetry.second.duplicate,true);
  assert.equal((await control.query("select count(*)::int n from workshop_receptions where job_card='QA-CONCURRENT-CASH'")).rows[0].n,1);
