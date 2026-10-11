@@ -39,8 +39,8 @@ master.patchIdentity('QA001',{colorCode:'NEW'},{source:'PAINT_PURCHASE_ORDER'});
 w.state.jobs.push({no:'LEGACY',make:'Toyota',model:'Corolla'});assert.equal(master.locationBadge('LEGACY'),'');master.patchIdentity('LEGACY',{model:'Yaris'});assert.equal(w.state.jobs[1].model,'Yaris');
 w.state.jobs[0].reg='QA001';w.state.jobs[0].year='2018';w.users=[];
 w.eval(fs.readFileSync('app/src/main/assets/manager_job_edit.js','utf8'));
-w.editJobManager('QA001');assert.equal(w.document.getElementById('mje-make').readOnly,true);assert.equal(w.document.getElementById('mje-jobType').disabled,true);assert.equal(w.document.getElementById('mje-colorCode').readOnly,false);assert.equal(w.document.getElementById('mje-notes').readOnly,false);
-let opened;w.zukaitReception.openRecord=no=>opened=no;w.document.querySelector('.mje-form>button').click();assert.equal(opened,'RC-QA');
+w.editJobManager('QA001');assert.equal(w.document.getElementById('mje-make').readOnly,false);assert.equal(w.document.getElementById('mje-jobType').disabled,false);assert.equal(w.document.getElementById('mje-colorCode').readOnly,false);assert.equal(w.document.getElementById('mje-notes').readOnly,false);
+assert.match(w.document.querySelector('.mje-form').textContent,/Linked Reception details are corrected together/);assert.ok(w.document.getElementById('mje-amount'));
 assert.equal(w.state.sessions.length,0);assert.equal(w.state.assign.length,0);assert.equal(w.state.jobs[0].delivered,undefined);
 // Current display must override historical snapshots, including intentionally cleared fields.
 Object.assign(w.state.jobs[0],{vehicle:'Nissan Altima',make:'Nissan',model:'Altima',year:'',reg:'',vin:''});

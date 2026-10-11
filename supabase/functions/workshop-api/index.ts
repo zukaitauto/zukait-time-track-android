@@ -1,3 +1,4 @@
+import { jobEditTransition, jobEditProjection, preserveJobEditAuthority, optionalJobAmount } from "./job_edit_rules.js";
 import { preserveJobTypeAuthority } from "./job_type_authority.js";
 import "./paint_order_rules.js";
 const paintOrderRules = (globalThis as any).zukaitPaintOrderRules;
@@ -29,6 +30,7 @@ function reply(body: unknown, status = 200) {
 // Receptionist is a separate, restricted role. Never route it through shared
 // state, financial, time, parts or Supervisor APIs, including direct requests.
 function receptionistRequestAllowed(action: string, body: any) {
+  if (action === "job_card_edit") return ["GET","EDIT"].includes(body.operation) && Object.keys(body).every(k => ["action","operation","jobCard","patch","reason","expectedEditRevision"].includes(k));
   if (action === "receptionist_delivery_list") return Object.keys(body).every(k => k === "action");
   if (action === "reception_dashboard") return Object.keys(body).every(k =>
     ["action","section","search","month","from","to","page","missing_only","dated_only"].includes(k));
@@ -1014,6 +1016,43 @@ Deno.serve(async (req: Request) => {
       return reply({ok:false,code:"time_conflict"},409);
     }
 
+    if (action === "manager_job_full_edit") {
+      if(user.role!=="Manager")return reply({ok:false,code:"job_edit_manager_required"},403);
+      if(body.operation!=="FULL_EDIT")return reply({ok:false,code:"job_edit_invalid_fields"},400);
+      for(let attempt=0;attempt<8;attempt++){
+        const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
+        if(readError)throw readError;
+        const result=jobEditTransition(current.data,user,body,Date.now());
+        if(!result.ok)return reply({ok:false,code:result.code},409);
+        const {data:committed,error}=await admin.rpc("zukait_manager_full_job_edit",{p_expected_revision:Number(current.revision||0),p_data:result.data,p_actor_id:user.id,p_job_card:body.jobCard,p_reason:body.reason,p_live:computeLiveStatus(result.data,Number(current.revision||0)+1,user.id)});
+        if(error){const code=String(error.message||'').match(/reception_[a-z0-9_]+/)?.[0];return reply({ok:false,code:code||"job_edit_unavailable",message:code||'Job Card correction could not be saved.'},409);}
+        if(committed?.ok)return reply({ok:true,job:committed.job,server_revision:committed.revision});
+        if(committed?.code!=="conflict")return reply({ok:false,code:"job_edit_unavailable"},503);
+      }
+      return reply({ok:false,code:"job_edit_conflict"},409);
+    }
+
+    if (action === "job_card_edit") {
+      if (!["Manager","Supervisor","Receptionist"].includes(String(user.role))) return reply({ok:false,code:"job_edit_forbidden"},403);
+      if (!["GET","EDIT"].includes(body.operation) || JSON.stringify(body).length>10000) return reply({ok:false,code:"job_edit_invalid_fields"},400);
+      for(let attempt=0;attempt<8;attempt++){
+        const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
+        if(readError)throw readError;
+        if(body.operation==="GET"){
+          const job=(current.data.jobs||[]).find(j=>String(j.no)===String(body.jobCard));
+          if(!job||job.deleted||job.archived||job.cancelled||job.no==="ID001")return reply({ok:false,code:"job_not_available"},404);
+          return reply({ok:true,job:jobEditProjection(job),invoice_locked:job.finalInvoiceAmount!=null&&job.finalInvoiceAmount!==""});
+        }
+        const result=jobEditTransition(current.data,user,body,Date.now());
+        if(!result.ok)return reply({ok:false,code:result.code},/forbidden|manager_required/.test(result.code)?403:409);
+        const {data:committed,error}=await admin.rpc("zukait_commit_workshop_state_v2",{p_expected_revision:Number(current.revision||0),p_data:result.data,p_changed_by:user.id,p_live:computeLiveStatus(result.data,Number(current.revision||0)+1,user.id)});
+        if(error)throw error;
+        if(committed?.ok)return reply({ok:true,job:jobEditProjection(result.job),server_revision:committed.revision});
+        if(committed?.code!=="conflict")return reply({ok:false,code:"job_edit_unavailable"},503);
+      }
+      return reply({ok:false,code:"job_edit_conflict"},409);
+    }
+
     if (action === "qc_delivery") {
       for (let attempt=0;attempt<8;attempt++) {
         const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
@@ -1106,6 +1145,7 @@ Deno.serve(async (req: Request) => {
       const entityId = String(event.entityId).trim();
       const eventType = String(event.type).trim();
       const callerRole=String(user?.role||"");
+      if (eventType==="JOB_CREATED" && !optionalJobAmount(event.payload?.amount).ok) return reply({ok:false,code:"job_edit_invalid_amount"},400);
       if (eventType==="JOB_CREATED" && !["Manager","Supervisor"].includes(callerRole)) {
         return reply({ok:false,code:"job_create_forbidden"},403);
       }
@@ -1480,7 +1520,8 @@ Deno.serve(async (req: Request) => {
           return reply({ ok: false, code: "forbidden_change" }, 403);
         }
 
-        candidate = preserveQcAuthority(candidate, current.data);
+        candidate = preserveJobEditAuthority(candidate, current.data, user);
+        candidate = preserveQcAuthority(candidate, current.data, user);
         candidate = reconcilePaintOrderCosts(candidate);
 
         const next = currentRevision + 1;

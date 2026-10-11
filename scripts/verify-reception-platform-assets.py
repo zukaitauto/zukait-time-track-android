@@ -20,6 +20,7 @@ FILES = [
     "receptionist_session.js",
     "v2/features/insurance/reception.js",
     "reception_dashboard.js",
+    "job_card_edit.js",
 ]
 
 
@@ -74,19 +75,20 @@ def main():
         assert parsed.paths, f"No JS dependencies in {html}"
         for file in parsed.paths:
             assert (ASSETS / file).is_file(), f"Missing {html} dependency: {file}"
-    for file in ["v2/features/insurance/reception.js", "reception_dashboard.js"]:
+    for file in ["v2/features/insurance/reception.js", "reception_dashboard.js", "job_card_edit.js"]:
         assert file in scripts["offline_test.html"], f"Main workshop not loading {file}"
         assert file in scripts["receptionist.html"], f"Receptionist page not loading {file}"
     assert "receptionist_session.js" in scripts["receptionist.html"]
     # Ensure each release refers to a new URL so browsers cannot keep an
     # older cached Reception script after a valid gated Pages publication.
     cache_tags = {
-        "v2/features/insurance/reception.js": "v=20261011-job-intake-fields-v312",
+        "job_card_edit.js": "v=312-cash-edit-1",
+        "v2/features/insurance/reception.js": "v=312-cash-1",
         "reception_dashboard.js": "v=305-reception-dashboard-20261010-r2",
         "receptionist_session.js": "v=305-reception-dashboard-20261010-r2",
     }
     for page, targets in {
-        "offline_test.html": ["v2/features/insurance/reception.js", "reception_dashboard.js"],
+        "offline_test.html": ["v2/features/insurance/reception.js", "reception_dashboard.js", "job_card_edit.js"],
         "receptionist.html": ["receptionist_session.js", "v2/features/insurance/reception.js", "reception_dashboard.js"],
     }.items():
         markup = (ASSETS / page).read_text(encoding="utf8")
@@ -103,6 +105,7 @@ def main():
         "receptionist_session.js": "receptionist_session.js",
         "v2/features/insurance/reception.js": "v2/features/insurance/reception.js",
         "reception_dashboard.js": "reception_dashboard.js",
+        "job_card_edit.js": "job_card_edit.js",
     }
     if args.site:
         for source, deployed in mappings.items():

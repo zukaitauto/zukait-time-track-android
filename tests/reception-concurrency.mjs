@@ -100,14 +100,15 @@ try{
  await control.query("update staff_credentials set active=true where user_id='QA-RC'");
  console.log('PASS PostgreSQL Receptionist role: restricted operations, approved atomic creation/retry, linked correction denial and disabled credential denial');
  // Existing integration tests also run here against the schema fixture, without production access.
- for(const group of [['reception-direct-job.sql'],['reception-create-job.sql','reception-vehicle-authority.sql'],['reception-create-job.sql','reception-additional.sql'],['reception-cancellation-fixture.sql','reception-cancellation.sql']]){
+ for(const group of [['reception-direct-job.sql','reception-cash-amount.sql'],['reception-create-job.sql','reception-vehicle-authority.sql'],['reception-create-job.sql','reception-additional.sql'],['reception-cancellation-fixture.sql','reception-cancellation.sql']]){
   await control.query('begin');
   try{for(const file of [...group,'reception-trigger-privileges.sql']){try{await control.query(fs.readFileSync('tests/'+file,'utf8'));}catch(error){console.error('Reception isolated SQL fixture failure:',file,error.message,error.where||'');throw error;}}}
   finally{await control.query('rollback');}
  }
- const directCash={operation:'CREATE_DIRECT_JOB',request_id:randomUUID(),job_type:'CASH',job_card:'QA-CONCURRENT-CASH',details:{make:'Toyota',model:'Camry',year:'2023'},received_confirmed:true,reason:'QA multi-device cash intake'};
+ const directCash={operation:'CREATE_DIRECT_JOB',request_id:randomUUID(),job_type:'CASH',job_card:'QA-CONCURRENT-CASH',cash_amount:'12.345',details:{make:'Toyota',model:'Camry',year:'2023'},received_confirmed:true,reason:'QA multi-device cash intake'};
  const directCashRetry=await race('same direct cash intake UUID creates one checklist and Job Card',c=>command(c,directCash,'QA-RC'),c=>command(c,directCash,'QA-RC'));
  assert.equal(directCashRetry.second.duplicate,true);
+ assert.equal((await readState()).jobs.find(j=>j.no==='QA-CONCURRENT-CASH').amount,12.345);
  assert.equal((await control.query("select count(*)::int n from workshop_receptions where job_card='QA-CONCURRENT-CASH'")).rows[0].n,1);
  console.log('PASS SQL direct intake: cash/credit/customer reference, issued insurance approval, forbidden self-approval and exact retry/preservation checks');
  const sequences=await control.query('select (select last_value from workshop_reception_no_seq) rc,(select last_value from workshop_v2_estimate_no_seq) estimate,(select last_value from workshop_v2_spare_part_list_no_seq) pl');

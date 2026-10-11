@@ -151,6 +151,7 @@ node tests/manager-quick-view.cjs
 node tests/focused-job-navigation.cjs
 
 node tests/manager-full-edit.cjs
+node tests/reception-job-edit.mjs
 
 node tests/job-type-authority.mjs
 node tests/employee-parts-privacy.mjs

@@ -18,7 +18,7 @@ data=run(shine,'DELIVER').data;assert.equal(data.jobs[0].delivered,true);assert.
 const forged=copy(initial);forged.jobs[0].delivered=true;forged.jobs[0].status='Delivered';forged.jobs[0].qcWorkflow={painting:{result:'PASS'},final:{result:'PASS'}};protect(forged,initial);assert.equal(forged.jobs[0].delivered,undefined);assert.equal(forged.jobs[0].qcWorkflow,undefined);
 const stale=copy(data);delete stale.jobs[0].qcWorkflow;stale.jobs[0].delivered=false;protect(stale,data);assert.deepEqual(stale.jobs[0].qcWorkflow,data.jobs[0].qcWorkflow);assert.equal(stale.jobs[0].delivered,true);
 const active=copy(initial);active.sessions.push({id:'S2',job:'JC1',start:55});assert.equal(transition(active,vinayan,{jobCard:'JC1',operation:'PAINTING_QC',result:'PASS',expectedQcRevision:0},200).code,'work_not_finished');
-const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');assert.match(api,/candidate = preserveQcAuthority\(candidate, current.data\)/);assert.match(api,/action === "qc_delivery"[\s\S]*p_expected_revision:Number\(current.revision/);
+const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');assert.match(api,/candidate = preserveQcAuthority\(candidate, current.data, user\)/);assert.match(api,/action === "qc_delivery"[\s\S]*p_expected_revision:Number\(current.revision/);
 console.log('QC server rules passed: designated accounts, order, failures, unchanged repeat accounting, active work, repeat invalidation, stale devices, delivery audit and concurrency.');
 // Execute the actual endpoint block with concurrent DB revisions, without real garage writes.
 const block=api.slice(api.indexOf('    if (action === "qc_delivery") {'),api.indexOf('    if (action === "revision") {'));

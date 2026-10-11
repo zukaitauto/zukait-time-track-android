@@ -98,7 +98,7 @@
       '</b><small>'+safe(row.registration||"Registration not recorded")+' · '+safe(row.job_type||"")+
       (row.rc_no&&isJob?' · '+safe(row.rc_no):'')+'</small><small>'+safe(date)+
       ' · '+safe(row.location||row.status||"")+'</small>'+promise+'</div>'+
-      '<div class="rdb-row-actions">'+open+deliver+'</div></div>';
+      '<div class="rdb-row-actions">'+open+deliver+(isJob&&(!row.delivered||role()==='Manager')?'<button type="button" data-rdb="edit-job" data-job="'+safe(row.job_card)+'">Edit Job Card</button>':'')+'</div></div>';
   }
   function listHtml(){
     const vwc=section==="vwc";
@@ -225,6 +225,7 @@
     event.preventDefault();
     try{
       const what=button.dataset.rdb;
+      if(what==="edit-job")return window.zukaitJobEdit.open(button.dataset.job);
       if(what==="tile"){await choose(button.dataset.section);return;}
       if(what==="back-dashboard"){await showDashboard();return;}
       if(what==="vwc"){vwcSection=button.dataset.section;page=0;latest=[];total=0;return load();}
