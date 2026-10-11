@@ -123,6 +123,7 @@ assert.equal(form.elements.make.value,'');
 assert.equal(form.elements.odometer.value,'');
 assert.match(w.document.getElementById('rc-direct-checklist-note').textContent,/NEW reception intake/);
 w.fetch=fetchBeforeSearch;
+w.me={id:'QA-RC',role:'Receptionist'};
 record={rc_no:'RC-QA-INSURANCE',details:{make:'Toyota',model:'Camry'},job_type:'INSURANCE',location:'VWC',approval_status:'APPROVED',revision:2};
 // Only authorized staff can record issued approval. Receptionist only creates.
 await w.zukaitReception.open();
