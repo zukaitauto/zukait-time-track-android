@@ -1281,7 +1281,7 @@
       ["Three quarters","3/4"],["Full","F"]].map(([key,label])=>
       '<span class="rc-fuel-choice">'+tick(d.fuel===key)+esc(label)+'</span>').join("");
     const observation=[
-      damage.notes?["Damage description",damage.notes]:null,
+      damage.notes?["Damage Description",damage.notes]:null,
       d.warnings?["Dashboard warnings",d.warnings]:null,
       d.remarks?["Other remarks",d.remarks]:null
     ].filter(Boolean);
