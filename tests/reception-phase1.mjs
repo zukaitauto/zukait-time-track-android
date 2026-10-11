@@ -300,6 +300,8 @@ const printedCash=w.zukaitReception.documentHtml(records.get("RC0003"));
 assert.match(printedCash,/Job Type:/);
 assert.doesNotMatch(printedCash,/Insurance Company/);
 assert.doesNotMatch(printedCash,/Claim \/ Gate Pass/);
+assert.doesNotMatch(printedCash,/Claim Number:/);
+assert.match(printedCash,/Miles:/);
 await click("back");
 assert.ok(w.document.querySelector('[data-rc-action="new"]'),
   "Back from checklist detail must restore Reception list");
