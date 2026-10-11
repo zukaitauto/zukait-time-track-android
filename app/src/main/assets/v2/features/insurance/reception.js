@@ -436,19 +436,19 @@
     shell("Open Job Card", '<form id="rc-direct-job"><p>Open a Job Card with a manually entered number. A checklist is optional. Insurance requires verified approval details.</p><section class="rc-box"><label>Search Existing Checklist (Registration / Checklist Number)<input id="rc-direct-checklist-search" autocomplete="off" placeholder="Registration or RC number"></label><button type="button" id="rc-direct-checklist-find">Search Checklist</button><div id="rc-direct-checklist-results" aria-live="polite"></div><p id="rc-direct-checklist-note"></p><button type="button" id="rc-direct-checklist-clear" hidden>Clear Checklist Selection / Enter Manually</button></section><div class="rc-grid">' +
       select('job_type','Job Type',[['CASH','Cash'],['INSURANCE','Insurance'],['CREDIT','Credit']],'CASH') +
       input('job_card','Job Card Number','',true) + input('make','Make','',true) + input('model','Model','',true) +
-      input('registration','Registration') + input('year','Model Year') + input('vin','VIN / Chassis') +
+      input('registration','Registration') + input('year','Model Year','',true) + input('vin','VIN / Chassis') +
       input('odometer','Job Card KM / Miles Reading') + select('odometer_unit','Reading Unit',[['KM','KM'],['MILES','Miles']],'KM') + input('claim','Claim Number') +
       (["Manager","Supervisor"].includes(user()?.role)?input('promise_date','Promise Date (optional)','',false,'date'):'') +
-      input('customer','Customer / Company','',true) + input('contact','Contact','',true) +
+      input('customer','Customer / Company') + input('contact','Contact') +
       '<label id="rc-credit-account" hidden>Credit Account / Customer Reference<input name="credit_account" maxlength="200"></label>' +
       '<div id="rc-direct-insurance" class="rc-wide" hidden><h4>Insurance Approval</h4>' +
       select('insurance_id','Insurance Company',[['','Select Insurance Company'],...companies.map(c=>[c.id,c.name])],'') +
-      input('reference','Approval / LPO Reference','',false) +
+      
       input('approval_date','Approval Date','',false,'date') +
       '<label>Approval Evidence / Notes<input name="evidence" maxlength="2000" placeholder="Document reference or approval confirmation"></label>' +
       '<label class="rc-check"><input type="checkbox" name="approval_confirmed">I confirm that insurance approval has been verified.</label></div>' +
       '</div><label>Reception Observations<textarea name="remarks" maxlength="2000"></textarea></label>' +
-      input('reason','Creation Notes','',true) +
+      input('reason','Work Description (optional)') +
       '<label class="rc-check"><input type="checkbox" name="received_confirmed" required>I confirm the vehicle has been received at the workshop.</label><div class="rc-actions"><button type="submit">Open Job Card</button></div></form>');
     const form=document.getElementById('rc-direct-job'),type=form.querySelector('[name="job_type"]'),account=form.querySelector('[name="credit_account"]');
     let linkedChecklist=null;
@@ -500,8 +500,11 @@
       account.required=credit;
       const panel=document.getElementById('rc-direct-insurance');
       panel.hidden=!insurance;
-      for(const name of ['insurance_id','reference','approval_date','evidence','approval_confirmed'])
+      for(const name of ['insurance_id','approval_confirmed'])
         form.elements.namedItem(name).required=insurance;
+      form.elements.namedItem('claim').required=insurance;
+      form.elements.namedItem('approval_date').required=false;
+      form.elements.namedItem('evidence').required=false;
     };
     type.onchange();
     form.onsubmit=async e=>{
@@ -517,7 +520,7 @@
           ...(f.get('job_type')==='CREDIT'?{credit_account:String(f.get('credit_account')).trim()}: {}),
           ...(f.get('job_type')==='INSURANCE'?{
             insurance_id:Number(f.get('insurance_id')),
-            reference:String(f.get('reference')||'').trim(),approval_date:String(f.get('approval_date')||''),
+            reference:String(f.get('claim')||'').trim(),approval_date:String(f.get('approval_date')||''),
             evidence:String(f.get('evidence')||'').trim(),approval_confirmed:f.has('approval_confirmed')
           }: {})});
         if(out){
