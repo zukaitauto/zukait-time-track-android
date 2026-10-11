@@ -802,18 +802,20 @@
     const extras = unpackChecklistText(d.other_accessories,"ACCESSORIES",extraAccessories.map(x=>x[0]));
     const names = Object.keys(extras.marks).map(x => extraName[x] || x).join(", ");
     const vehicle = checklistBox("Vehicle Information",'<div class="rc-cl-facts">' +
-      checklistFact("Make",d.make) + checklistFact("Model",d.model) +
-      checklistFact("Year",d.year) + checklistFact("Reading",d.odometer) +
-      checklistFact("Reading Unit",d.odometer_unit) +
-      checklistFact("VIN / Chassis",d.vin,true) +
-      checklistFact("Received",stamp(r.received_at)) +
-      checklistFact("Job Card",r.job_card) + '</div>', "rc-cl-vehicle");
+      checklistFact("Checklist Date:",String(r.received_at||"").slice(0,10)) +
+      checklistFact("Job Type:",r.job_type||"INSURANCE") +
+      (insurance ? checklistFact("Insurance:",r.insurance_company,true) : "") +
+      checklistFact("Reg No:",d.registration) +
+      checklistFact("Make:",d.make) + checklistFact("Model:",d.model) +
+      checklistFact("Year:",d.year) +
+      checklistFact(String(d.odometer_unit||"KM").toUpperCase()==="MILES"?"Miles:":"KM:",d.odometer) +
+      checklistFact("VIN:",d.vin,true) +
+      checklistFact("Job Card:",r.job_card) + '</div>', "rc-cl-vehicle");
     const customer = checklistBox(insurance ? "Customer & Insurance" : "Customer Details",
       '<div class="rc-cl-facts">' +
-      checklistFact("Customer Name",d.customer) + checklistFact("Contact Number",d.contact) +
-      (insurance ? checklistFact("Insurance Company",r.insurance_company,true) +
-        checklistFact("Claim Number",d.claim,true) : "") +
-      (r.job_type==="CREDIT" ? checklistFact("Credit Account",r.credit_account,true) : "") +
+      checklistFact("Customer Name:",d.customer) + checklistFact("Mob:",d.contact) +
+      (insurance ? checklistFact("Claim Number:",d.claim,true) : "") +
+      (r.job_type==="CREDIT" ? checklistFact("Credit Account:",r.credit_account,true) : "") +
       '</div>', "rc-cl-customer");
     const condition = checklistBox("Vehicle Condition & Damage",
       '<div class="rc-record-map rc-cl-diagram">' + damagedGraphic(d) + '</div>' +
