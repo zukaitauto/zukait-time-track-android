@@ -6,8 +6,8 @@ do $migration$
 declare definition text; old_text text; new_text text;
 begin
  definition:=pg_get_functiondef('public.zukait_reception_command(text,jsonb)'::regprocedure);
- old_text:='''reason'',''reference'',''approval_date'',''evidence'',''insurance_id'',''approval_confirmed'') then raise exception ''reception_invalid_fields''; end if;';
- new_text:='''reason'',''reference'',''approval_date'',''evidence'',''insurance_id'',''approval_confirmed'',''job_intake_odometer'',''job_intake_unit'') then raise exception ''reception_invalid_fields''; end if;';
+ old_text:='''reason'',''reference'',''approval_date'',''evidence'',''insurance_id'',''approval_confirmed'')) then raise exception ''reception_invalid_fields''; end if;';
+ new_text:='''reason'',''reference'',''approval_date'',''evidence'',''insurance_id'',''approval_confirmed'',''job_intake_odometer'',''job_intake_unit'')) then raise exception ''reception_invalid_fields''; end if;';
  if (length(definition)-length(replace(definition,old_text,'')))/length(old_text)<>1 then raise exception 'linked_external_odometer_outer_guard_drift'; end if;
  definition:=replace(definition,old_text,new_text);
  old_text:='if op=''CREATE_EXTERNAL_JOB'' and exists(select 1 from jsonb_object_keys(p_command) k where k not in (''operation'',''rc_no'',''expected_revision'',''request_id'',''job_card'',''reason'')) then raise exception ''reception_invalid_fields''; end if;';
