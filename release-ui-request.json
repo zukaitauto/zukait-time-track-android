@@ -1,17 +1,17 @@
 {
-  "versionName": "V309",
-  "versionCode": 272,
+  "versionName": "V310",
+  "versionCode": 273,
   "approvedForStaff": true,
-  "approvedAt": "2026-10-11T03:28:20.047Z",
-  "sourceCommit": "b1831b84e6e1dd9e2bba2dc2c39bd82a5dab071a",
-  "publishNonce": "owner-approved-v309-reception-card-ui-20261011",
-  "signedAcceptanceRun": 38107638774,
-  "verificationRun": 38107638819,
+  "approvedAt": "2026-10-11T06:31:00.000Z",
+  "sourceCommit": "aa461aefda823f4093458649b185ff19fba32e86",
+  "publishNonce": "owner-approved-v310-low-ink-diagram-20261011",
+  "signedAcceptanceRun": 38116959190,
+  "verificationRun": 38116959208,
   "releaseScope": "phase1-compatible-ui",
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "authorization": "Workshop owner explicitly requested 'Release' on 11 Oct 2026 after approval of the five-card responsive Reception Checklist UI. UI-only V309 publication: no database or backend change, no Phase 2 activation. Retain the prior owner deferral of backup; physical Android and Safari acceptance were NOT_RUN and must not be described as passed. Publish only exact tested architecture-v2 source b1831b84e6e1dd9e2bba2dc2c39bd82a5dab071a, with verified Reception CI and signed acceptance APK."
+  "authorization": "Workshop owner explicitly requested 'Release' on 11 Oct 2026 for tested V310 Reception Checklist clearer shared vehicle diagram, light ink-saving glass and one-page PDF. UI-only publication with no database/backend changes and no Phase 2 activation. Physical Android/Safari acceptance remains NOT_RUN; previous backup deferral retained; do not represent these as completed. Publish only tested architecture-v2 source aa461aefda823f4093458649b185ff19fba32e86."
 }
