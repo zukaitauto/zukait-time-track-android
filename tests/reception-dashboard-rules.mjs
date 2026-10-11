@@ -44,6 +44,14 @@ const isolatedData={...data,jobs:[...jobs,{no:"JC-DIRECT",receptionNo:"RC-DIRECT
 const isolatedProjection=section=>receptionDashboardProjection(isolatedData,isolated,{section});
 assert.equal(isolatedProjection("checklists").rows.some(r=>r.rc_no==="RC-DIRECT"),false,"Direct Job Cards must not appear as checklists");
 assert.equal(isolatedProjection("jobs").rows[0].job_card,"JC-DIRECT","Newest Job Card appears first");
+const simultaneousData={...isolatedData,jobs:[...isolatedData.jobs,
+ {no:"JC-LINKED-NEW",receptionNo:"RC0010",createdAt:Date.parse("2026-10-11T13:00:00+04:00"),jobType:"INSURANCE",status:"Open"},
+ {no:"JC-LINKED-NEW",receptionNo:"RC0010",createdAt:Date.parse("2026-10-11T13:00:00+04:00"),jobType:"INSURANCE",status:"Open"}]};
+const simultaneous=receptionDashboardProjection(simultaneousData,isolated,{section:"jobs"});
+assert.equal(simultaneous.rows[0].job_card,"JC-LINKED-NEW","New linked intake appears at top");
+assert.equal(simultaneous.rows.filter(r=>r.job_card==="JC-LINKED-NEW").length,1,"Duplicate state entries must not duplicate the visible Job Card");
+assert.equal(receptionDashboardProjection(simultaneousData,isolated,{section:"jobs",search:"JC-LINKED-NEW"}).total,1,"Job number lookup stays unique");
+
 assert.equal(projection({section:"checklists",search:"JC125"}).rows[0].rc_no,"RC0011");
 assert.equal(projection({section:"checklists",search:"qa-12"}).rows[0].rc_no,"RC0012");
 assert.equal(projection({section:"checklists",search:"rc0010"}).rows[0].rc_no,"RC0010");
