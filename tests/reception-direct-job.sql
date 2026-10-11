@@ -4,7 +4,7 @@ do $$
 declare credit_rc text; cmd_rc text; cmd jsonb; result jsonb; retry jsonb; rc text; rev bigint; snapshot jsonb; n bigint;
 begin
  cmd:=jsonb_build_object('operation','CREATE_DIRECT_JOB','request_id',gen_random_uuid(),'job_type','CASH','job_card','QA-DIRECT-CASH','reason','QA direct cash intake','received_confirmed',true,
-  'details',jsonb_build_object('make','Toyota','model','Corolla','customer','QA Cash Customer','contact','QA contact','registration','QA-CASH','remarks','Checklist observation only'));
+  'details',jsonb_build_object('make','Toyota','model','Corolla','year','2023','registration','QA-CASH','remarks','Checklist observation only'));
  result:=zukait_reception_command('QA-RC',cmd); rc:=result->'record'->>'rc_no';
  assert result->'record'->>'job_card'='QA-DIRECT-CASH';
  assert result->'record'->>'approval_status'='WAITING';
@@ -18,6 +18,8 @@ begin
  -- Direct Job Cards retain an audit-only reception record, never a visible checklist row.
  assert not ((zukait_reception_command('QA-RC',jsonb_build_object('operation','LIST'))->'rows') @> jsonb_build_array(jsonb_build_object('rc_no',rc))), 'Direct Job Card was incorrectly shown as a checklist';
  assert (select details->>'direct_job_only' from workshop_receptions where rc_no=rc)='true', 'Direct Job Card audit marker missing';
+ assert coalesce((result->'record'->'details'->>'customer'),'')='', 'Customer must be optional in direct Job Card';
+ begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'job_card','QA-NO-YEAR','details',jsonb_build_object('make','Toyota','model','Corolla')));raise exception 'QA missing model year accepted';exception when others then assert sqlerrm='reception_vehicle_required';end;
  begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('reason','Changed retry')); raise exception 'QA request conflict not enforced'; exception when others then assert sqlerrm='reception_request_conflict'; end;
  cmd:=cmd||jsonb_build_object('request_id',gen_random_uuid(),'job_type','CREDIT','job_card','QA-DIRECT-CREDIT');
  begin perform zukait_reception_command('QA-RC',cmd); raise exception 'QA missing account accepted'; exception when others then assert sqlerrm='reception_credit_account_required'; end;
@@ -52,7 +54,7 @@ begin
  begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'received_confirmed',false));raise exception 'QA physical receipt bypass accepted';exception when others then assert sqlerrm='reception_received_confirmation_required';end;
  -- Continue Cash/Credit backwards-compatibility test.
  cmd:=jsonb_build_object('operation','CREATE_DIRECT_JOB','request_id',gen_random_uuid(),'job_type','CREDIT','job_card','QA-EXTRA-CREDIT','reason','QA credit','received_confirmed',true,
-  'details',jsonb_build_object('make','Toyota','model','Camry','customer','QA company','contact','QA contact'),'credit_account','QA-FLEET-ACCOUNT');
+  'details',jsonb_build_object('make','Toyota','model','Camry','year','2022'),'credit_account','QA-FLEET-ACCOUNT');
  begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'received_confirmed',false)); raise exception 'QA physical receipt bypass accepted'; exception when others then assert sqlerrm='reception_received_confirmation_required'; end;
  begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'amount',100)); raise exception 'QA financial field accepted'; exception when others then assert sqlerrm='reception_invalid_fields'; end;
  begin perform zukait_reception_command('QA-EMP',cmd); raise exception 'QA employee direct access accepted'; exception when others then assert sqlerrm='reception_job_forbidden'; end;
