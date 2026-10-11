@@ -1,17 +1,17 @@
 {
-  "versionName": "V310",
-  "versionCode": 273,
+  "versionName": "V311",
+  "versionCode": 274,
   "approvedForStaff": true,
-  "approvedAt": "2026-10-11T06:31:00.000Z",
-  "sourceCommit": "aa461aefda823f4093458649b185ff19fba32e86",
-  "publishNonce": "owner-approved-v310-low-ink-diagram-20261011",
-  "signedAcceptanceRun": 38116959190,
-  "verificationRun": 38116959208,
+  "approvedAt": "2026-10-11T07:45:00.000Z",
+  "sourceCommit": "02d068221a4d822d0dc21ff5bacbf0715f788b8a",
+  "publishNonce": "owner-approved-v311-reception-direct-insurance-20261011",
+  "signedAcceptanceRun": 38122578003,
+  "verificationRun": 38122577982,
   "releaseScope": "phase1-compatible-ui",
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "authorization": "Workshop owner explicitly requested 'Release' on 11 Oct 2026 for tested V310 Reception Checklist clearer shared vehicle diagram, light ink-saving glass and one-page PDF. UI-only publication with no database/backend changes and no Phase 2 activation. Physical Android/Safari acceptance remains NOT_RUN; previous backup deferral retained; do not represent these as completed. Publish only tested architecture-v2 source aa461aefda823f4093458649b185ff19fba32e86."
+  "authorization": "Workshop owner explicitly requested V311 publication to the existing web and Android on architecture-v2 only, 11 Oct 2026. Required direct Insurance Job Card database migration has already been applied separately. No additional production backend changes are part of this publication, no Phase 2 activation; physical device acceptance NOT_RUN. Publish only successfully tested source 02d068221a4d822d0dc21ff5bacbf0715f788b8a."
 }
