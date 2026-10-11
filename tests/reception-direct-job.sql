@@ -4,7 +4,7 @@ do $$
 declare credit_rc text; cmd_rc text; cmd jsonb; result jsonb; retry jsonb; rc text; rev bigint; snapshot jsonb; n bigint;
 begin
  cmd:=jsonb_build_object('operation','CREATE_DIRECT_JOB','request_id',gen_random_uuid(),'job_type','CASH','job_card','QA-DIRECT-CASH','reason','QA direct cash intake','received_confirmed',true,
-  'details',jsonb_build_object('make','Toyota','model','Corolla','year','2023','registration','QA-CASH','remarks','Checklist observation only'));
+  'details',jsonb_build_object('make','Toyota','model','Corolla','year','2023','registration','QA-CASH','odometer','53845','odometer_unit','Miles','remarks','Checklist observation only'));
  result:=zukait_reception_command('QA-RC',cmd); rc:=result->'record'->>'rc_no';
  assert result->'record'->>'job_card'='QA-DIRECT-CASH';
  assert result->'record'->>'approval_status'='WAITING';
@@ -14,6 +14,8 @@ begin
  select data into snapshot from workshop_state where id='main';
  assert (select count(*) from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CASH')=1;
  assert (select j->>'jobType' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CASH')='CASH', format('Cash Job Card type mismatch; actual=%s', (select j->>'jobType' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CASH'));
+ assert (select j->>'intakeOdometer' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CASH')='53845';
+ assert (select j->>'intakeOdometerUnit' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CASH')='Miles';
  assert (select j->>'remarks' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CASH') is null;
  -- Direct Job Cards retain an audit-only reception record, never a visible checklist row.
  assert not ((zukait_reception_command('QA-RC',jsonb_build_object('operation','LIST'))->'rows') @> jsonb_build_array(jsonb_build_object('rc_no',rc))), 'Direct Job Card was incorrectly shown as a checklist';
