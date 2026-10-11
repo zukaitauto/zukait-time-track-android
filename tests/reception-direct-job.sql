@@ -13,7 +13,7 @@ begin
  select count(*) into n from workshop_v2_events where entity_id='QA-DIRECT-CASH' and event_type='JOB_CREATED'; assert n=1;
  select data into snapshot from workshop_state where id='main';
  assert (select count(*) from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CASH')=1;
- assert (select j->>'jobType' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CASH')='CASH';
+ assert (select j->>'jobType' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CASH')='CASH', format('Cash Job Card type mismatch; actual=%s', (select j->>'jobType' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CASH'));
  assert (select j->>'remarks' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CASH') is null;
  assert (zukait_reception_command('QA-RC',jsonb_build_object('operation','LIST'))->'rows') @> jsonb_build_array(jsonb_build_object('rc_no',rc));
  begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('reason','Changed retry')); raise exception 'QA request conflict not enforced'; exception when others then assert sqlerrm='reception_request_conflict'; end;
