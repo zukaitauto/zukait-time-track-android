@@ -892,7 +892,7 @@
       toolList + '</div><div class="rc-cl-facts">' +
       checklistFact("Additional accessories checked",names || "Not marked",true) +
       checklistFact("Other Accessories",extras.notes,true) + '</div>', "rc-cl-accessories");
-    return '<div class="rc-cl-grid">' + vehicle + customer + condition + observations + accessories + '</div>';
+    return '<div class="rc-cl-grid">' + vehicle + condition + observations + accessories + '</div>';
   }
 
   async function view(no) {
