@@ -42,7 +42,7 @@ begin
  assert result->'record'->>'job_card'='QA-DIRECT-APPROVED-INSURANCE';
  assert result->'record'->>'job_type'='INSURANCE';
  assert result->'record'->>'approval_status'='APPROVED';
- assert (zukait_reception_command('QA-RC',cmd)->>'duplicate')::boolean;
+ assert (zukait_reception_command('QA-MGR',cmd)->>'duplicate')::boolean;
  select data into snapshot from workshop_state where id='main';
  assert (select count(*) from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-APPROVED-INSURANCE')=1;
  assert (select j->>'jobType' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-APPROVED-INSURANCE')='INSURANCE';
@@ -71,15 +71,22 @@ begin
  assert not has_function_privilege('anon','public.zukait_reception_command(text,jsonb)','EXECUTE');
  assert not has_function_privilege('authenticated','public.zukait_reception_external_approval_valid(public.workshop_receptions)','EXECUTE');
  -- Existing issued insurance approval without making an artificial estimate.
- result:=zukait_reception_command('QA-RC',jsonb_build_object('operation','CREATE','request_id',gen_random_uuid(),'insurance_id',1,'details',jsonb_build_object('make','Toyota','model','Camry','registration','QA-EXTERNAL','odometer','53699','odometer_unit','KM')));
+ result:=zukait_reception_command('QA-RC',jsonb_build_object('operation','CREATE','request_id',gen_random_uuid(),'insurance_id',1,'details',jsonb_build_object('make','Toyota','model','Camry','registration','QA-EXTERNAL','year','2023','claim','QA-CLAIM-2026','odometer','53699','odometer_unit','KM')));
  rc:=result->'record'->>'rc_no';cmd_rc:=rc;rev:=(result->'record'->>'revision')::bigint;
  cmd:=jsonb_build_object('operation','RECORD_EXTERNAL_APPROVAL','request_id',gen_random_uuid(),'rc_no',rc,'expected_revision',rev,'reference','QA-ISSUED-APPROVAL','approval_date',current_date,'evidence','QA approval letter reference','reason','Verified issued document');
  begin perform zukait_reception_command('QA-RC',cmd); raise exception 'QA receptionist self approval accepted'; exception when others then assert sqlerrm='reception_approval_forbidden'; end;
  result:=zukait_reception_command('QA-MGR',cmd);
  assert (zukait_reception_command('QA-RC',jsonb_build_object('operation','GET','rc_no',rc))->'external_approval'->>'valid')::boolean;
- cmd:=jsonb_build_object('operation','CREATE_EXTERNAL_JOB','request_id',gen_random_uuid(),'rc_no',rc,'expected_revision',(result->'record'->>'revision')::bigint,'job_card','QA-DIRECT-INSURANCE','reason','Create issued approved repair','job_intake_odometer','53845','job_intake_unit','KM');
- result:=zukait_reception_command('QA-RC',cmd);
+ cmd:=jsonb_build_object('operation','CREATE_EXTERNAL_JOB','request_id',gen_random_uuid(),'rc_no',rc,'expected_revision',(result->'record'->>'revision')::bigint,'job_card','QA-DIRECT-INSURANCE','reason','Create issued approved repair','job_intake_odometer','53845','job_intake_unit','KM',
+  'identity_updates',jsonb_build_object('model','Corolla','registration','QA-EXTERNAL-UPDATED'),
+  'approval_confirmed',true,'reference','QA-UPDATED-CLAIM-APPROVAL',
+  'approval_date',current_date,'evidence','Reconfirmed insurer approval after identity correction');
+ begin perform zukait_reception_command('QA-RC',cmd); raise exception 'QA Receptionist identity correction accepted';
+  exception when others then assert sqlerrm='reception_manager_required'; end;
+ result:=zukait_reception_command('QA-MGR',cmd);
  assert result->'record'->>'job_card'='QA-DIRECT-INSURANCE';
+ assert result->'record'->'details'->>'model'='Corolla';
+ assert result->'record'->'details'->>'registration'='QA-EXTERNAL-UPDATED';
  assert (zukait_reception_command('QA-RC',cmd)->>'duplicate')::boolean;
  select data into snapshot from workshop_state where id='main';
  assert zukait_reception_job_approval_valid('QA-DIRECT-INSURANCE',rc,snapshot);
@@ -88,5 +95,5 @@ begin
  assert (select j->>'jobIntakeUnit' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-INSURANCE')='KM', 'Independent Job Card unit was not stored';
  assert (select count(*) from workshop_reception_estimates where rc_no=cmd_rc)=0;
  assert (select count(*) from workshop_reception_part_transfers where rc_no=cmd_rc)=0;
- assert (select count(*) from workshop_reception_external_approvals where rc_no=cmd_rc)=1;
+ assert (select count(*) from workshop_reception_external_approvals where rc_no=cmd_rc)=2, 'Approval revision history must be retained';
 end $$;
