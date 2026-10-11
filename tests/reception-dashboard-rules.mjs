@@ -38,7 +38,7 @@ assert.equal(start.counts.no_promise_date,2);
 assert.deepEqual(projection({section:"ready"}).rows.map(r=>r.job_card),["JC125"]);
 assert.equal(projection({section:"delivered"}).rows[0].job_card,"JC199");
 assert.equal(projection({section:"approved"}).rows[0].rc_no,"RC0010");
-assert.deepEqual(projection({section:"jobs"}).rows.map(r=>r.job_card),["JC199","JC125","JC120","JC100"]);
+assert.deepEqual(projection({section:"jobs"}).rows.map(r=>r.job_card),["JC125","JC199","JC120","JC100"]);\nconst isolated=[...cases, {...rec("RC-DIRECT",99,"APPROVED","VIW","JC-DIRECT","INSURANCE"),details:{...rec("RC-DIRECT",99,"APPROVED","VIW").details,direct_job_only:true}}];\nconst isolatedData={...data,jobs:[...jobs,{no:"JC-DIRECT",receptionNo:"RC-DIRECT",createdAt:Date.parse("2026-10-11T12:00:00+04:00"),jobType:"INSURANCE",status:"Open"}]};\nconst isolatedProjection=section=>receptionDashboardProjection(isolatedData,isolated,{section});\nassert.equal(isolatedProjection("checklists").rows.some(r=>r.rc_no==="RC-DIRECT"),false,"Direct Job Cards must not appear as checklists");\nassert.equal(isolatedProjection("jobs").rows[0].job_card,"JC-DIRECT","Newest Job Card appears first");
 assert.equal(projection({section:"checklists",search:"JC125"}).rows[0].rc_no,"RC0011");
 assert.equal(projection({section:"checklists",search:"qa-12"}).rows[0].rc_no,"RC0012");
 assert.equal(projection({section:"checklists",search:"rc0010"}).rows[0].rc_no,"RC0010");
