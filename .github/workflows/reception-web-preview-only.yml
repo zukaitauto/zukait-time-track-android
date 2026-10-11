@@ -1,6 +1,10 @@
 name: Reception Web Preview Only (No APK)
 
 on:
+  push:
+    branches: [architecture-v2]
+    paths:
+      - '.github/workflows/reception-web-preview-only.yml'
   workflow_dispatch:
 
 permissions:
@@ -15,7 +19,7 @@ concurrency:
 
 jobs:
   web-preview:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/architecture-v2'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/architecture-v2'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
