@@ -95,6 +95,13 @@ assert.equal(r.status, 409);
 rpcResult = { data: null, error: { message: "reception_not_found" } };
 r = await call({ action: "reception", command: { operation: "GET" } });
 assert.equal(r.status, 404);
+// A legacy Supervisor attempt to create an unapproved Insurance job must return
+// an actionable conflict, never hide the real database guard behind server_error.
+rpcResult = {data:null,error:{message:"insurance_job_requires_approved_reception"}};
+r = await call({action:"v2_commit_event",event:{eventId:"QA-CREATE-12069",entityId:"12069",type:"JOB_CREATED",payload:{}}});
+assert.equal(r.status,409);
+assert.equal(r.body.code,"insurance_job_requires_approved_reception");
+rpcResult = {data:{ok:true},error:null};
 // Exercise the actual Edge handler with a server-verified Receptionist session.
 // The DB mock permits only session reads and Reception RPCs: a downstream
 // workshop read/write would throw, turning a missing guard into a test failure.
