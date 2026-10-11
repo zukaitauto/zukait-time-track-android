@@ -433,10 +433,11 @@
     if (!phase2Enabled) { error(Error("Direct Job Card intake requires the V305 backend.")); return; }
     try { await master(); } catch (x) { error(x); return; }
     current = null;
-    shell("Open Job Card", '<form id="rc-direct-job"><p>Open a Job Card with a manually entered number. A checklist is optional. Insurance requires verified approval details.</p><button type="button" data-rc-action="new">New Insurance Checklist / Pre-approved Vehicle</button><div class="rc-grid">' +
+    shell("Open Job Card", '<form id="rc-direct-job"><p>Open a Job Card with a manually entered number. A checklist is optional. Insurance requires verified approval details.</p><section class="rc-box"><label>Search Existing Checklist (Registration / Checklist Number)<input id="rc-direct-checklist-search" autocomplete="off" placeholder="Registration or RC number"></label><button type="button" id="rc-direct-checklist-find">Search Checklist</button><div id="rc-direct-checklist-results" aria-live="polite"></div><p id="rc-direct-checklist-note"></p></section><div class="rc-grid">' +
       select('job_type','Job Type',[['CASH','Cash'],['INSURANCE','Insurance'],['CREDIT','Credit']],'CASH') +
       input('job_card','Job Card Number','',true) + input('make','Make','',true) + input('model','Model','',true) +
       input('registration','Registration') + input('year','Model Year') + input('vin','VIN / Chassis') +
+      input('odometer','Job Card KM / Miles Reading') + select('odometer_unit','Reading Unit',[['KM','KM'],['MILES','Miles']],'KM') + input('claim','Claim Number') +
       (["Manager","Supervisor"].includes(user()?.role)?input('promise_date','Promise Date (optional)','',false,'date'):'') +
       input('customer','Customer / Company','',true) + input('contact','Contact','',true) +
       '<label id="rc-credit-account" hidden>Credit Account / Customer Reference<input name="credit_account" maxlength="200"></label>' +
@@ -450,6 +451,37 @@
       input('reason','Creation Notes','',true) +
       '<label class="rc-check"><input type="checkbox" name="received_confirmed" required>I confirm the vehicle has been received at the workshop.</label><div class="rc-actions"><button type="submit">Open Job Card</button></div></form>');
     const form=document.getElementById('rc-direct-job'),type=form.querySelector('[name="job_type"]'),account=form.querySelector('[name="credit_account"]');
+    let linkedChecklist=null;
+    const searchInput=document.getElementById('rc-direct-checklist-search');
+    const searchResults=document.getElementById('rc-direct-checklist-results');
+    document.getElementById('rc-direct-checklist-find').onclick=async()=>{
+      const query=searchInput.value.trim();
+      if(!query){searchResults.textContent='Enter a registration or checklist number.';return;}
+      searchResults.textContent='Searching…';
+      try{
+        const result=await call({operation:'LIST',search:query});
+        const items=(result.rows||[]).filter(r=>!r.outcome);
+        searchResults.innerHTML=items.length?items.map((r,i)=>'<div class="rc-actions"><button type="button" data-rc-pick="'+i+'">'+esc(r.rc_no)+' · '+esc(r.details?.registration||'No registration')+' · '+esc([r.details?.make,r.details?.model].filter(Boolean).join(' '))+'</button></div>').join(''):'No matching active checklist.';
+        searchResults.querySelectorAll('[data-rc-pick]').forEach(button=>button.onclick=async()=>{
+          try{
+            const item=items[Number(button.dataset.rcPick)];
+            const result=await call({operation:'GET',rc_no:item.rc_no});
+            const r=result.record,d=r.details||{};
+            if(r.job_card){searchResults.textContent='Job Card '+r.job_card+' already exists for '+r.rc_no+'.';return;}
+            linkedChecklist=r;
+            for(const k of ['make','model','registration','year','vin','customer','contact','claim','remarks']){
+              if(form.elements.namedItem(k))form.elements.namedItem(k).value=String(d[k]||'');
+            }
+            type.value=r.job_type||'INSURANCE';type.onchange();
+            if(r.insurance_id&&form.elements.insurance_id)form.elements.insurance_id.value=String(r.insurance_id);
+            const note=document.getElementById('rc-direct-checklist-note');
+            note.innerHTML='Selected '+esc(r.rc_no)+'. Vehicle details are editable. Original checklist odometer: '+esc(d.odometer||'Not recorded')+' '+esc(d.odometer_unit||'KM')+'. Enter the NEW Job Card reading. To keep the existing checklist linked, use <button type="button" id="rc-direct-linked-open">Open Linked Checklist</button> and its approved Job Card action.';
+            document.getElementById('rc-direct-linked-open').onclick=()=>view(r.rc_no).catch(error);
+          }catch(err){error(err);}
+        });
+      }catch(err){searchResults.textContent='Checklist search failed: '+String(err.message||err);}
+    };
+    searchInput.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('rc-direct-checklist-find').click();}};
     type.onchange=()=>{
       const credit=type.value==='CREDIT',insurance=type.value==='INSURANCE';
       document.getElementById('rc-credit-account').hidden=!credit;
@@ -462,8 +494,9 @@
     type.onchange();
     form.onsubmit=async e=>{
       e.preventDefault();
+      if(linkedChecklist){error(Error('Open the linked checklist and use its Job Card action. Direct creation here would create a second, unlinked checklist.'));return;}
       const f=new FormData(form),details={};
-      for(const k of ['make','model','registration','year','vin','customer','contact','remarks'])details[k]=String(f.get(k)||'').trim();
+      for(const k of ['make','model','registration','year','vin','customer','contact','claim','remarks'])details[k]=String(f.get(k)||'').trim();
       try {
         const out=await mutate({operation:'CREATE_DIRECT_JOB',job_type:f.get('job_type'),job_card:String(f.get('job_card')).trim().toUpperCase(),details,
           received_confirmed:f.has('received_confirmed'),reason:String(f.get('reason')).trim(),
