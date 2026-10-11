@@ -1,9 +1,9 @@
 {
-  "versionCode": 273,
-  "versionName": "V310",
+  "versionCode": 274,
+  "versionName": "V311",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "aa461aefda823f4093458649b185ff19fba32e86",
-  "apkSha256": "db9b7b18acf4e49911d9482c9926869dbda799b7ad8559f015e9586b085e928d",
-  "releaseTag": "release-V310-architecture-v2"
+  "sourceCommit": "02d068221a4d822d0dc21ff5bacbf0715f788b8a",
+  "apkSha256": "dcd4a672c66aa5bb26315ff99cdd6bacba67ccdee879701041dfd3a7866fa825",
+  "releaseTag": "release-V311-architecture-v2"
 }
