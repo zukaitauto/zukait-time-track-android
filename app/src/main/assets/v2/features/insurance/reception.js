@@ -1285,16 +1285,14 @@
     const row=(klass,items)=>'<div class="rc-info-row '+klass+'">'+items.join("")+'</div>';
     const details=[
       row("rc-cols-two",[
-        info("Job Type / Checklist Type",r.job_type||"INSURANCE"),
-        insurance?info("Insurance Company",r.insurance_company):info("Vehicle location",labels[r.location])
+        info("Job Type:",r.job_type||"INSURANCE"),
+        ...(insurance?[info("Insurance:",r.insurance_company)]:[])
       ]),
-      row("rc-cols-three",[info("Vehicle Reg. No.",d.registration),info("Make",d.make),info("Model",d.model)]),
-      row("rc-cols-three",[info("Year",d.year),info("Odometer unit",d.odometer_unit||"KM"),info("Reading",d.odometer)]),
-      row("rc-cols-one",[info("VIN / Chassis No.",d.vin)]),
-      row("rc-cols-two",[info("Customer Name",d.customer),info("Contact No.",d.contact)]),
-      row("rc-cols-two",insurance?[
-        info("Claim / Gate Pass",d.claim),info("Status",labels[r.outcome||r.approval_status])
-      ]:[info("Status",labels[r.outcome||r.approval_status]),info("Vehicle location",labels[r.location])])
+      row("rc-cols-three",[info("Reg No:",d.registration),info("Make:",d.make),info("Model:",d.model)]),
+      row("rc-cols-two",[info("Year:",d.year),info(String(d.odometer_unit||"KM").toUpperCase()==="MILES"?"Miles:":"KM:",d.odometer)]),
+      row("rc-cols-one",[info("VIN:",d.vin)]),
+      row("rc-cols-two",[info("Customer Name:",d.customer),info("Mob:",d.contact)]),
+      ...(insurance?[row("rc-cols-one",[info("Claim Number:",d.claim)])]:[])
     ].join("");
     const additions=[
       ["tool_kit","Tool kit",false],["spare_key","Spare key",false],
@@ -1368,7 +1366,7 @@
       '<main class="rc-sheet"><header class="rc-head"><h1>ZUKAIT INTERNATIONAL LLC</h1>'+
       '<div class="rc-arabic" lang="ar">شركة زكايت الدولية ذ.م.م</div>'+
       '<div class="rc-subtitle">VEHICLE RECEPTION CHECKLIST / INSPECTION FORM</div></header>'+
-      '<div class="rc-number"><span><b>No.:</b> '+esc(r.rc_no)+'</span><span><b>Date:</b> '+esc(stamp(r.received_at))+'</span></div>'+
+      '<div class="rc-number"><span><b>No.:</b> '+esc(r.rc_no)+'</span><span><b>Checklist Date:</b> '+esc(String(r.received_at||"").slice(0,10))+'</span></div>'+
       '<div class="rc-info">'+details+'</div>'+
       '<div class="rc-damage-title"><div><b>Damages:</b><span>X = Dent</span><span>S = Scratch</span><span>M = Missing</span></div>'+
       '<div lang="ar" dir="rtl">الأضرار: X ضربة · S خدش · M مفقود</div></div>'+
