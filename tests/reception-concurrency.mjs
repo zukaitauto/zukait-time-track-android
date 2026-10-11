@@ -102,7 +102,7 @@ try{
  // Existing integration tests also run here against the schema fixture, without production access.
  for(const group of [['reception-direct-job.sql'],['reception-create-job.sql','reception-vehicle-authority.sql'],['reception-create-job.sql','reception-additional.sql'],['reception-cancellation-fixture.sql','reception-cancellation.sql']]){
   await control.query('begin');
-  try{for(const file of [...group,'reception-trigger-privileges.sql'])await control.query(fs.readFileSync('tests/'+file,'utf8'));}
+  try{for(const file of [...group,'reception-trigger-privileges.sql']){try{await control.query(fs.readFileSync('tests/'+file,'utf8'));}catch(error){console.error('Reception isolated SQL fixture failure:',file,error.message,error.where||'');throw error;}}}
   finally{await control.query('rollback');}
  }
  const directCash={operation:'CREATE_DIRECT_JOB',request_id:randomUUID(),job_type:'CASH',job_card:'QA-CONCURRENT-CASH',details:{make:'Toyota',model:'Camry',customer:'QA Cash Customer',contact:'QA contact'},received_confirmed:true,reason:'QA multi-device cash intake'};
