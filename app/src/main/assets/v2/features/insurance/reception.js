@@ -1435,6 +1435,9 @@
       '.rc-checkbox{display:inline-flex;width:3.1mm;height:3.1mm;border:1px solid #475967;align-items:center;justify-content:center;font-size:8pt;font-weight:bold;line-height:1}',
       '.rc-fuel{height:11mm;flex:none;border-bottom:1px solid #7d8d95;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-evenly;font-size:7pt;gap:1mm;padding:1mm}',
       '.rc-fuel-choice{display:flex;align-items:center;gap:.6mm}',
+      '.rc-function-check{height:20mm;display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:.5mm;padding:1mm 1.5mm;font-size:6.6pt}',
+      '.rc-function-line{display:flex;align-items:center;gap:1mm;min-height:4mm;white-space:normal}',
+      '.rc-function-fuel{flex-wrap:wrap;gap:1.1mm;font-size:6.3pt}',
       '.rc-accessory-others{padding:1mm 1.5mm;flex:1;min-height:0;font-size:7pt;display:flex;flex-direction:column;gap:1mm}',
       '.rc-mini-tools{display:flex;gap:1.2mm 2.5mm;flex-wrap:wrap;font-size:6.5pt}',
       '.rc-mini-tools span{white-space:nowrap}',
@@ -1471,7 +1474,7 @@
       '<div class="rc-accessory-row">'+
       accessory("wheel_covers","Wheel Covers",true)+accessory("upholstery","Upholstery",true)+
       accessory("windshield","Wind Shield",true)+accessory("radio_tape","Radio / Tape",true)+'</div>'+
-      '<div class="rc-fuel"><b>Floor Mats</b>'+tick(checkedTool("floor_mats"))+'<b>FUNCTION CHECK</b><span><b>Dashboard Warning:</b> '+(String(d.warnings||"").trim()?"Details recorded":"Not recorded")+'</span><b>Fuel</b>'+fuel+'</div>'+
+      '<div class="rc-fuel rc-function-check"><div class="rc-function-line"><b>Floor Mats</b>'+tick(checkedTool("floor_mats"))+'<b>FUNCTION CHECK</b></div><div class="rc-function-line"><b>Dashboard Warning:</b> <span>'+(String(d.warnings||"").trim()?"Details recorded":"Not recorded")+'</span></div><div class="rc-function-line rc-function-fuel"><b>Fuel:</b>'+fuel+'</div></div>'+
       '<div class="rc-accessory-others"><b>Other accessories / remarks:</b>'+
       '<div class="rc-mini-tools">'+additions+'</div>'+
       '<div class="rc-other-notes">'+esc(accessories.notes)+'</div></div></div></section>'+
