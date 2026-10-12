@@ -12,8 +12,10 @@
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "managedBackup": null,
   "productionBackend": {
-    "status": "PENDING_DEPLOYMENT_VERIFICATION",
-    "previousPublishedVersion": 61
+    "status": "DEPLOYED_VERIFICATION_PENDING",
+    "version": 62,
+    "bundleSha256": "0e53adb852ffe51aa67364eedf683658d2eadec5a2d37e92895e3da9d937fa53",
+    "migration": "NONE_REQUIRED"
   },
   "evidence": {},
   "sourceCommit": null,
