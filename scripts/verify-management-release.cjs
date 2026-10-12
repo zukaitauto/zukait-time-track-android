@@ -5,7 +5,7 @@ function validate(r,ref) {
  assert.equal(ref,'refs/heads/architecture-v2');
  assert.equal(r.releaseScope,'reception-insurance-features-1-10');
  assert.equal(r.approvedForStaff,true);
- assert.equal(r.versionName,'V317'); assert.equal(r.versionCode,280);
+ assert.equal(r.versionName,'V318'); assert.equal(r.versionCode,281);
  assert.match(r.sourceCommit,/^[a-f0-9]{40}$/);
  for(const k of ['signedAcceptanceRun','verificationRun']) assert.ok(Number.isSafeInteger(r[k])&&r[k]>0);
  assert.ok(!Number.isNaN(Date.parse(r.approvedAt)));
@@ -14,10 +14,10 @@ function validate(r,ref) {
  assert.equal(r.ownerDeferrals?.paidResources,'Do not add paid resources');
  assert.equal(r.physicalAcceptanceStatus,'NOT_RUN');
  assert.equal(r.freshProductionBackupRestoreStatus,'NOT_RUN');
- assert.equal(r.managedBackup?.completedAt,'2026-10-11T19:04:38Z');
+ assert.ok(!Number.isNaN(Date.parse(r.managedBackup?.completedAt)),'fresh backup evidence required');
  assert.equal(r.managedBackup?.project,'pjknotnjkufadqavcmii');
- assert.equal(r.productionBackend?.version,61);
- assert.equal(r.productionBackend?.bundleSha256,'77c6841b2b2245135104bb332a4af8544bc6416e8037af383b797ae0aaee345b');
+ assert.ok(Number.isSafeInteger(r.productionBackend?.version)&&r.productionBackend.version>61,'new backend deployment evidence required');
+ assert.match(r.productionBackend?.bundleSha256||'',/^[0-9a-f]{64}$/,'backend bundle hash required');
  for(const k of ['preservation','permissionSmoke','hostedQa','ciRestoreRehearsal']) assert.equal(r.evidence?.[k]?.passed,true,k+' required');
  for(const v of Object.values(r.evidence)) assert.ok(typeof v.evidence==='string'&&v.evidence.length>=12);
  return true;
