@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);
+const {validate}=require('../scripts/verify-management-release.cjs');
+const r={releaseScope:'reception-insurance-features-1-10',approvedForStaff:true,versionName:'V318',versionCode:281,sourceCommit:'a'.repeat(40),signedAcceptanceRun:1,verificationRun:2,approvedAt:'2026-10-13T00:00:00Z',ownerDeferrals:{freshProductionBackupRestore:'Authorize backup deferral and release',physicalDevices:'Defer physical testing and release',paidResources:'Do not add paid resources'},physicalAcceptanceStatus:'NOT_RUN',freshProductionBackupRestoreStatus:'NOT_RUN',managedBackup:null,productionBackend:{version:63,bundleSha256:'b'.repeat(64)},evidence:{preservation:{passed:true,evidence:'verified preservation data'},permissionSmoke:{passed:true,evidence:'verified role permission matrix'},hostedQa:{passed:true,evidence:'verified hosted acceptance'},ciRestoreRehearsal:{passed:true,evidence:'isolated synthetic restore check'},productionBackupReadiness:{passed:false,evidence:'managed backup not verified'}}};
+assert.equal(validate(r,'refs/heads/architecture-v2'),true);
+assert.throws(()=>validate({...r,evidence:{...r.evidence,permissionSmoke:{passed:false,evidence:'not tested'}}},'refs/heads/architecture-v2'));
+assert.throws(()=>validate({...r,evidence:{...r.evidence,ciRestoreRehearsal:{passed:false,evidence:'not tested'}}},'refs/heads/architecture-v2'));
+assert.throws(()=>validate({...r,approvedForStaff:false},'refs/heads/architecture-v2'));
+assert.throws(()=>validate({...r,ownerDeferrals:{...r.ownerDeferrals,freshProductionBackupRestore:'NO'}} ,'refs/heads/architecture-v2'));
+assert.throws(()=>validate({...r,managedBackup:{project:'pjknotnjkufadqavcmii',completedAt:'invalid'}},'refs/heads/architecture-v2'));
+console.log('V318 explicit backup deferral with mandatory release guards: PASS');
