@@ -198,7 +198,7 @@
 #rc-root #rc-form .rc-create-vehicle>.rc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
 #rc-root #rc-form .rc-create-customer>.rc-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:15px}
 #rc-root #rc-form .rc-create-sections label{min-width:0;font-size:15px;line-height:1.4}
-#rc-root #rc-form .rc-create-sections input,#rc-root #rc-form .rc-create-sections select{font-size:17px!important;min-height:48px!important}
+#rc-root #rc-form .rc-create-sections input,#rc-root #rc-form .rc-create-sections select{font-size:17px!important;min-height:50px!important}
 #rc-root #rc-form .rc-create-vehicle .rc-reading{grid-column:1/-1}
 #rc-root #rc-form .rc-create-vehicle .rc-reading>label:first-child{flex:0 0 30%}
 #rc-root #rc-form .rc-create-vehicle label:has([name="vin"]){grid-column:1/-1}
