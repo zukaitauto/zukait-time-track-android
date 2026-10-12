@@ -550,7 +550,7 @@ function preserveOperationalHistory(candidate: any, current: any, user: any): an
   }
   // Audit entries are append-only. Some legacy audit arrays have no record ID,
   // so compare their full values when recovering them from a stale save.
-  for (const key of ["dutyEndAudit", "jobVehicleEdits", "statusCorrections", "suggestedEdits", "jobEdits", "jobDeletes", "additionalActions"] as const) {
+  for (const key of ["dutyEndAudit", "jobVehicleEdits", "statusCorrections", "suggestedEdits", "jobEdits", "jobDeletes", "additionalActions", "employeeTimeActionAudit", "jobIdentityAudit"] as const) {
     const incoming = Array.isArray(candidate?.[key]) ? candidate[key] : [];
     const seen = new Set(incoming.map((x: any) => JSON.stringify(x)));
     for (const record of Array.isArray(current?.[key]) ? current[key] : []) {
@@ -561,6 +561,26 @@ function preserveOperationalHistory(candidate: any, current: any, user: any): an
       }
     }
     if (incoming.length || Array.isArray(current?.[key])) candidate[key] = incoming;
+  }
+  // Legacy phones sometimes submit no notification collection (or an empty
+  // collection) while saving an unrelated field. Keep the server's records
+  // until an explicit, server-authorized notification lifecycle is implemented.
+  // Deduplicate by ID where available; do not resurrect records absent on the
+  // server from historical snapshots here.
+  const incomingNotifications = Array.isArray(candidate?.systemNotifications) ? candidate.systemNotifications : [];
+  const serverNotifications = Array.isArray(current?.systemNotifications) ? current.systemNotifications : [];
+  const notificationIdentity = (record: any) => record?.id != null
+    ? "id:" + String(record.id) : "json:" + JSON.stringify(record);
+  const knownNotifications = new Set(incomingNotifications.map(notificationIdentity));
+  for (const record of serverNotifications) {
+    const key = notificationIdentity(record);
+    if (!knownNotifications.has(key)) {
+      incomingNotifications.push(cloneValue(record));
+      knownNotifications.add(key);
+    }
+  }
+  if (serverNotifications.length || Array.isArray(current?.systemNotifications)) {
+    candidate.systemNotifications = incomingNotifications;
   }
   const previousReopens = new Set((current?.reopenLogs || []).map((x: any) => String(x?.id || "")));
   const allowedReopens = new Set((candidate?.reopenLogs || []).filter((x: any) =>
