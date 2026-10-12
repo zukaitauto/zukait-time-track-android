@@ -300,7 +300,7 @@ if (process.env.ZUKAIT_RECEPTION_QA_HTML)
 await click("home");
 await click("new");
 const form=w.document.getElementById("rc-form");
-assert.deepEqual([...form.querySelectorAll(":scope > .rc-grid input,:scope > .rc-grid select")]
+assert.deepEqual([...form.querySelectorAll(".rc-create-sections .rc-grid input,.rc-create-sections .rc-grid select")]
   .map(x=>x.name),
   ["registration","make","model","year","odometer_unit","odometer",
    "vin","customer","contact","claim"]);
