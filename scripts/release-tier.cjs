@@ -10,7 +10,8 @@ const majorRules=[
 function classify(changed) {
  const files=changed.filter(Boolean);
  const triggers=files.filter(f=>majorRules.some(re=>re.test(f)));
- const isUiAsset=f=>/^(app\/src\/main\/assets\/|app\/src\/main\/res\/|docs\/)/.test(f);
+ // Fail closed: JavaScript UI controllers can write business data and are not cosmetic by default.
+ const isUiAsset=f=>/^app\/src\/main\/res\/(layout|drawable|color|font|mipmap|values)\//.test(f) || /^app\/src\/main\/assets\/[^/]+\.(css|svg|png|jpg|webp)$/.test(f);
  const result=triggers.length?'MAJOR':files.length&&files.every(isUiAsset)?'NORMAL_UI':'REVIEW';
  return {tier:result,files,majorTriggers:triggers,advisoryOnly:true};
 }
