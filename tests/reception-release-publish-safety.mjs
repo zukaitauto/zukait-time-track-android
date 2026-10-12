@@ -41,10 +41,14 @@ function verifyUpdaterAfterUiRelease(metadata) {
  assert.match(metadata.apkSha256,/^[a-f0-9]{64}$/);
  assert.equal(metadata.releaseTag,'release-'+metadata.versionName+'-architecture-v2');
 }
-if (release.approvedForStaff && updater.versionCode < release.versionCode) {
- assert.equal(updater.versionName,'V312','Live updater must remain on last published version until release');
- assert.equal(updater.versionCode,275);
+if (updater.versionCode < release.versionCode) {
+ // A pending new release must not overwrite the last published updater.
+ assert.equal(updater.status,'current');
+ assert.match(updater.versionName,/^V[1-9][0-9]*$/);
  assert.match(updater.sourceCommit,/^[a-f0-9]{40}$/);
  assert.match(updater.apkSha256,/^[a-f0-9]{64}$/);
+ assert.equal(updater.releaseTag,'release-'+updater.versionName+'-architecture-v2');
+ assert.equal(uiApproval?.versionName,release.versionName,'Pending UI and APK release versions must match');
+ assert.equal(uiApproval?.versionCode,release.versionCode);
 } else verifyUpdaterAfterUiRelease(updater);
 console.log('PASS: Signed APK and Pages are manual-only on architecture-v2 with source/approval gates; explicit UI approval required');
