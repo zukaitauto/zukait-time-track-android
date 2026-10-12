@@ -12,12 +12,12 @@ w.zukaitReception.action=async body=>{requests.push(structuredClone(body));if(bo
 w.zukaitJobEdit={view:no=>viewed=no};w.zukaitReceptionDashboard={choose:s=>chosen=s};
 evaluate('insurance_management.js');await w.zukaitInsuranceManagement.open();
 assert.equal(w.document.querySelectorAll('.ins-summary button').length,4);assert.equal(w.document.querySelector('img'),null,'Vehicle text must be escaped');
-w.document.querySelector('[data-ins=job]').click();await settle();assert.equal(viewed,'JC100');
+w.document.querySelector('[data-ins=job]').click();await settle();assert.ok(w.document.querySelector('.ins-detail-grid'),'Opens the two-column Insurance detail page');assert.equal(w.document.querySelector('img'),null);await w.zukaitInsuranceManagement.open();
 w.document.querySelector('[data-section=approval]').click();await settle();assert.equal(chosen,'waiting');
-w.document.querySelector('[data-section=pending]').click();await settle();assert.ok(w.document.querySelector('[data-ins=lpo]'),'LPO entry belongs to Pending list');w.document.querySelector('[data-ins=lpo]').click();await settle();
+w.document.querySelector('[data-section=pending]').click();await settle();w.document.querySelector('[data-ins=job]').click();await settle();assert.ok(w.document.querySelector('[data-ins=lpo]'),'LPO entry belongs to Pending details');w.document.querySelector('[data-ins=lpo]').click();await settle();
 const form=w.document.querySelector('#ins-lpo');form.elements.amount.value='12.345';form.elements.date.value='2026-10-10';form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await settle();
 const pending=w.localStorage.getItem('zukait_insurance_lpo_pending:qa:QA-MGR');assert.ok(pending);assert.equal(writes,1);
-await w.zukaitInsuranceManagement.open();w.document.querySelector('[data-section=pending]').click();await settle();w.document.querySelector('[data-ins=lpo]').click();await settle();assert.ok(w.document.querySelector('[data-ins=retry]'));
+await w.zukaitInsuranceManagement.open();w.document.querySelector('[data-section=pending]').click();await settle();w.document.querySelector('[data-ins=job]').click();await settle();w.document.querySelector('[data-ins=lpo]').click();await settle();assert.ok(w.document.querySelector('[data-ins=retry]'));
 w.document.querySelector('[data-ins=retry]').click();await settle();assert.equal(writes,2);assert.deepEqual(requests.filter(r=>r.action==='insurance_lpo')[0],requests.filter(r=>r.action==='insurance_lpo')[1]);assert.equal(w.localStorage.getItem('zukait_insurance_lpo_pending:qa:QA-MGR'),null);
 w.me.role='Receptionist';const reads=requests.length;await w.zukaitInsuranceManagement.open();assert.equal(requests.length,reads,'Receptionist cannot open financial dashboard');
 // Native capture uses text recognition and retains ambiguous characters.
