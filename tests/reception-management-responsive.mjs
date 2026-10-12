@@ -15,7 +15,7 @@ for(const engine of [chromium,webkit]){
   await page.evaluate(()=>window.zukaitInsuranceManagement.open());
   const overflow=()=>page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
   assert.equal(await overflow(),false,'Insurance list overflow at '+width);
-  await page.locator('[data-ins=lpo]').click();assert.equal(await overflow(),false,'LPO form overflow at '+width);
+  await page.locator('[data-section=pending]').click();await page.locator('[data-ins=lpo]').click();assert.equal(await overflow(),false,'LPO form overflow at '+width);
   await page.close();
  }}finally{await browser.close();}
 }
