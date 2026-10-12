@@ -1,7 +1,7 @@
 {
   "versionName": "V317",
   "versionCode": 280,
-  "approvedForStaff": false,
+  "approvedForStaff": true,
   "releaseScope": "reception-insurance-features-1-10",
   "ownerDeferrals": {
     "freshProductionBackupRestore": "Authorize backup deferral and release",
@@ -37,9 +37,9 @@
       "evidence": "PostgreSQL17 34-table dump/restore, functions/grants/sequences/RLS and UUID retries verified in run 38268809683; synthetic data"
     }
   },
-  "sourceCommit": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "approvedAt": null,
-  "publishNonce": null
+  "sourceCommit": "0ba370922ecd54276056266c6c04609c5024365d",
+  "signedAcceptanceRun": 38282311087,
+  "verificationRun": 38282311001,
+  "approvedAt": "2026-10-12T17:13:46Z",
+  "publishNonce": "owner-v317-insurance-management-ui-20261012"
 }
