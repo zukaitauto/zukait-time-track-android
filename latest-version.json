@@ -1,9 +1,9 @@
 {
-  "versionCode": 275,
-  "versionName": "V312",
+  "versionCode": 276,
+  "versionName": "V313",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "ff27efcee1d3d9fe7d10152207bc8b1a4f80ab29",
-  "apkSha256": "d9e015f574c9dae14e2dfd5f2eea685e04a2da6788c5d11ab868e416da7a7a9c",
-  "releaseTag": "release-V312-architecture-v2"
+  "sourceCommit": "23bfccb02a6e5dff2c188390061ce82a486ad70f",
+  "apkSha256": "2119ea25cd1233bb22f8338ceaac487dcf5a7c916647ec78e0bebd4b7ba2cacb",
+  "releaseTag": "release-V313-architecture-v2"
 }
