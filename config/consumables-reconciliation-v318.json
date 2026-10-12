@@ -1,0 +1,68 @@
+{
+  "source": "Approved Zukait Time Track LIST.pdf",
+  "checkedAgainst": "Supabase pjknotnjkufadqavcmii / workshop_state revision 13107",
+  "mode": "READ_ONLY_PRODUCTION_COMPARISON",
+  "summary": {
+    "matched": 26,
+    "missing": 10,
+    "priceMismatch": 1
+  },
+  "missing": [
+    [
+      "2K BLACK",
+      "2K BLACK"
+    ],
+    [
+      "BASE BLACK",
+      "BASE BLACK"
+    ],
+    [
+      "BASE SILVER",
+      "BASE SILVER"
+    ],
+    [
+      "BASE WHTE",
+      "BASE WHITE"
+    ],
+    [
+      "Block 180",
+      "KARUSHI"
+    ],
+    [
+      "Block 320",
+      "KARUSHI"
+    ],
+    [
+      "Disc 320",
+      "KARUSHI"
+    ],
+    [
+      "Disc 80",
+      "MIRKA"
+    ],
+    [
+      "Fadeout Thinner",
+      "KAPCI"
+    ],
+    [
+      "Matte Black",
+      "MATTTE BLACK"
+    ]
+  ],
+  "priceMismatch": {
+    "material": "Block 80",
+    "brand": "3M",
+    "productionPriceOMR": 0.5,
+    "approvedPriceOMR": 0.2,
+    "issuedLines": 17,
+    "actualLines": 12
+  },
+  "requiredSafeguards": [
+    "Do not replace whole workshop_state JSON.",
+    "Preserve historic material and brand IDs, price history, issued/actual line snapshots, and current final costs.",
+    "Require optimistic concurrency protection and reject unexpected revision changes.",
+    "Audit every changed entry and compare business data before and after.",
+    "Do not mark preservation release gate passed until earlier lost-history issue is investigated."
+  ],
+  "status": "RECONCILIATION_IDENTIFIED_NOT_APPLIED"
+}
