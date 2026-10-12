@@ -55,6 +55,8 @@ for (const [jobType, expectedName] of [['INSURANCE','Al Madina Insurance'],['CAS
   const e=state.estimates.find(x=>x.id===id);
   assert.equal(e.customerName,expectedName,jobType+' checklist estimate recipient');
   assert.equal(e.receptionNo,'RC-DETAILS');
+  assert.equal(e.jobType,jobType,'Estimate retains the source checklist job type');
+  assert.equal(e.insuranceCompany,'Al Madina Insurance','Estimate retains the source insurance company without changing the displayed recipient rule');
   assert.equal(e.mobile,'90000000');
   assert.equal(e.makeModel,'Toyota Camry');
   assert.equal(e.year,'2022');
