@@ -85,7 +85,7 @@ for (const engine of ['chromium', 'webkit']) {
           count:rows.length,
           columns:getComputedStyle(rows[1]).gridTemplateColumns.trim().split(/\s+/).length,
           headings:[...rows[0].children].map(el=>el.textContent.trim()),
-          sameRow:bounds.every(box=>Math.abs(box.top-bounds[0].top)<6),
+          sameRow:bounds.every(box=>Math.abs((box.top+box.height/2)-(bounds[0].top+bounds[0].height/2))<12),
           shortRow:rows[1].getBoundingClientRect().height<75,
           radios:radios.length===3&&radios.every(el=>!!el),
           radioHoriz:radios.every((el,i)=>i===0||el.getBoundingClientRect().left>radios[i-1].getBoundingClientRect().left+15)
