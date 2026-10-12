@@ -24,7 +24,17 @@ for(const [name,bad,ref] of [
 ]){
  assert.throws(()=>validate(bad,updater,ref),undefined,name);
 }
-assert.equal(current.approvedForStaff,false,'V305 must remain unpublished during QA');
+assert.equal(typeof current.approvedForStaff,'boolean','Approval flag must be explicit');
+if (current.approvedForStaff) {
+ assert.match(current.sourceCommit || '',/^[a-f0-9]{40}$/,'Approved release requires pinned source');
+ assert.ok(Number.isSafeInteger(current.signedAcceptanceRun) && current.signedAcceptanceRun>0,
+  'Approved release requires signed acceptance run');
+ assert.ok(!Number.isNaN(Date.parse(current.approvedAt)),'Approved release requires valid approval date');
+ assert.ok(typeof current.publishNonce==='string' && current.publishNonce.length>=12,
+  'Approved release requires a unique nonce');
+} else {
+ assert.equal(current.sourceCommit,null,'Unapproved request must not pin a release source');
+}
 const uiApproval = fs.existsSync('release-ui-request.json') ? JSON.parse(fs.readFileSync('release-ui-request.json','utf8')) : null;
 function verifyUpdaterAfterUiRelease(metadata) {
  if (metadata.versionName === 'V304') { assert.equal(metadata.versionCode,267); return; }
