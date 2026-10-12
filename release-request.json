@@ -1,9 +1,9 @@
 {
   "versionName": "V315",
   "versionCode": 278,
-  "approvedForStaff": false,
-  "approvedAt": null,
-  "sourceCommit": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": null
+  "approvedForStaff": true,
+  "approvedAt": "2026-10-12T11:50:08Z",
+  "sourceCommit": "541181662aa34bf204135d82b6eb00f4326c8863",
+  "publishNonce": "owner-authorized-v315-20261012-function-layout",
+  "signedAcceptanceRun": 38244894729
 }
