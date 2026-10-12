@@ -552,13 +552,18 @@ function preserveOperationalHistory(candidate: any, current: any, user: any): an
   // so compare their full values when recovering them from a stale save.
   for (const key of ["dutyEndAudit", "jobVehicleEdits", "statusCorrections", "suggestedEdits", "jobEdits", "jobDeletes", "additionalActions", "employeeTimeActionAudit", "jobIdentityAudit"] as const) {
     const incoming = Array.isArray(candidate?.[key]) ? candidate[key] : [];
-    const seen = new Set(incoming.map((x: any) => JSON.stringify(x)));
+    // Preserve multiplicity: older audit arrays may contain identical but
+    // independently recorded entries without IDs. A Set silently loses them.
+    const remaining = new Map<string, number>();
+    for (const record of incoming) {
+      const id = JSON.stringify(record);
+      remaining.set(id, (remaining.get(id) || 0) + 1);
+    }
     for (const record of Array.isArray(current?.[key]) ? current[key] : []) {
       const identity = JSON.stringify(record);
-      if (!seen.has(identity)) {
-        incoming.push(cloneValue(record));
-        seen.add(identity);
-      }
+      const count = remaining.get(identity) || 0;
+      if (count > 0) remaining.set(identity, count - 1);
+      else incoming.push(cloneValue(record));
     }
     if (incoming.length || Array.isArray(current?.[key])) candidate[key] = incoming;
   }
