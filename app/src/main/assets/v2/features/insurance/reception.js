@@ -1511,7 +1511,7 @@
     const checkedTool=key=>(d.tools||[]).includes(key);
     const tick=checked=>'<span class="rc-checkbox">'+(checked?"✓":"")+'</span>';
     const accessory=(key,label,extra=false)=>
-      '<div class="rc-item">'+esc(label)+tick(extra?!!accessories.marks[key]:checkedTool(key))+'</div>';
+      '<div class="rc-item">'+tick(extra?!!accessories.marks[key]:checkedTool(key))+'<span>'+esc(label)+'</span></div>';
     const info=(label,value)=>
       '<div class="rc-field"><strong>'+esc(label)+'</strong><span>'+esc(value===null||value===undefined||value===""?"—":value)+'</span></div>';
     const row=(klass,items)=>'<div class="rc-info-row '+klass+'">'+items.join("")+'</div>';
@@ -1535,13 +1535,11 @@
     const warningDetails=warningState(d.warnings)==="ISSUE"?parseFunctionChecks(d.warnings).details:"";
     const observation=[
       warningDetails.length>90?["Dashboard Warning Details",warningDetails]:null,
-      damage.notes?["Previous damage notes",damage.notes]:null,
-      
-      accessories.notes?["Other accessories",accessories.notes]:null,
-      d.remarks?["Work Descriptions / Notes",d.remarks]:null
+      [d.remarks,damage.notes].filter(Boolean).join('\n')?["",[d.remarks,damage.notes].filter(Boolean).join('\n')]:null,
+      accessories.notes?["Other accessories",accessories.notes]:null
     ].filter(Boolean);
     const observationHtml=observation.map(([label,value])=>
-      '<p><b>'+esc(label)+':</b> '+esc(value)+'</p>').join("");
+      '<p>'+(label?'<b>'+esc(label)+':</b> ':'')+esc(value)+'</p>').join("");
     const notesLength=observation.map(([,value])=>String(value).length).reduce((a,b)=>a+b,0);
     const notesSize=notesLength>2600?"rc-notes-tiny":notesLength>1600?"rc-notes-small":"";
     const css=[
@@ -1583,7 +1581,7 @@
       '.rc-fuel-choice{display:flex;align-items:center;gap:.5mm}',
       '.rc-accessories{border:1px solid #657782;border-top:0;flex:none}',
       '.rc-accessory-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}',
-      '.rc-item{min-width:0;border-right:1px solid #bcc5cb;border-bottom:1px solid #bcc5cb;text-align:center;font-size:9pt;padding:1mm .5mm;min-height:12mm;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:.8mm}',
+      '.rc-item{min-width:0;border-right:1px solid #bcc5cb;border-bottom:1px solid #bcc5cb;text-align:left;font-size:8pt;padding:.8mm 1mm;min-height:8mm;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:1mm}.rc-item .rc-checkbox{width:3mm;height:3mm}.rc-item span:last-child{overflow-wrap:anywhere}',
       '.rc-item:nth-child(7n){border-right:0}',
       '.rc-notes{border:1px solid #657782;border-top:0;flex:1;min-height:0;padding:3mm;overflow:hidden;overflow-wrap:anywhere}',
       '.rc-notes h2{font-size:10pt;margin:0 0 1.5mm;display:flex;justify-content:space-between}',
