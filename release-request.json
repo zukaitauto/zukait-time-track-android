@@ -1,9 +1,9 @@
 {
   "versionName": "V313",
   "versionCode": 276,
-  "approvedForStaff": false,
-  "approvedAt": null,
-  "sourceCommit": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": null
+  "approvedForStaff": true,
+  "approvedAt": "2026-10-12T07:30:51.950Z",
+  "sourceCommit": "90267caada5663562b6d4a032b217a2906966fd0",
+  "publishNonce": "owner-authorized-v313-checklist-20261012",
+  "signedAcceptanceRun": 38217381414
 }
