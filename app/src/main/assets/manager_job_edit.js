@@ -25,7 +25,7 @@ window.editJobManager=function(no){
    if(field)field.closest('label').hidden=!visible;
   }
  };
- editType.addEventListener('change',updateInsuranceVisibility);
+ editType.onchange=updateInsuranceVisibility;
  updateInsuranceVisibility();
  if(j.finalInvoiceAmount!=null&&j.finalInvoiceAmount!==''){const note=document.createElement('p');note.textContent='Changing the amount also corrects the finalized invoice amount. Your reason is recorded in the audit history.';document.querySelector('.mje-form').prepend(note);}
  if(j.receptionNo){const link=document.createElement('p');link.textContent='Linked Reception details are corrected together with this Job Card. Insurance identity corrections require approval review.';document.querySelector('.mje-form').prepend(link);}
