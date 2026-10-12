@@ -22,7 +22,8 @@ window.editJobManager=function(no){
   const visible=editType.value==='Insurance';
   for(const key of ['insuranceCompany','claimNo']){
    const field=document.getElementById('mje-'+key);
-   if(field)field.closest('label').hidden=!visible;
+   const label=field?.closest?.('label');
+   if(label)label.hidden=!visible;
   }
  };
  editType.onchange=updateInsuranceVisibility;
