@@ -6,6 +6,7 @@ not mean the PC Pages site is already deployed or the APK is published.
 """
 import argparse
 import hashlib
+import gzip
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -130,8 +131,14 @@ def main():
             members = set(apk.namelist())
             for source in mappings:
                 member = "assets/" + source
+                expected = (ASSETS / source).read_bytes()
+                # AAPT expands .gz inputs and stores the filename without .gz.
+                # Compare the full decompressed bytes rather than skipping the asset.
+                if member not in members and source.endswith(".gz"):
+                    member = member[:-3]
+                    expected = gzip.decompress(expected)
                 assert member in members, f"Android APK missing {member}"
-                assert apk.read(member) == (ASSETS / source).read_bytes(), (
+                assert apk.read(member) == expected, (
                     f"Android APK has outdated Reception file: {member}"
                 )
 
