@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url),playwright=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const user={id:'QA-RC',name:'QA Receptionist',role:'Receptionist',department:'Reception'};
-const files=new Map(['receptionist.html','receptionist_session.js','v2/features/insurance/reception.js','reception_dashboard.js','reception_vin.js','reception_estimate.js','insurance_management.js','job_card_edit.js'].map(path=>['/'+path,fs.readFileSync('app/src/main/assets/'+path,'utf8')]));
+const files=new Map(['receptionist.html','receptionist_session.js','v2/features/insurance/reception.js','vin_scan.js','reception_estimate.js','v2/features/estimate/main_module.js','reception_vin.js','insurance_management.js','reception_dashboard.js','job_card_edit.js'].map(path=>['/'+path,fs.readFileSync('app/src/main/assets/'+path,'utf8')]));
 const record={rc_no:'RC-QA',revision:1,insurance_company:'QA Insurance',details:{make:'Toyota',model:'Camry',customer:'QA <script>unsafe</script>',registration:'QA123'},location:'VWC',approval_status:'APPROVED',can_edit:true};
 for(const engine of ['chromium','webkit']){
  const browser=await playwright[engine].launch({headless:true});
@@ -33,7 +33,7 @@ for(const engine of ['chromium','webkit']){
   await page.locator('.rdb-row').waitFor();
   assert.equal(await page.locator('.rdb-grid').count(),0,'Checklist List opens without dashboard above');
   assert.equal(await page.locator('#reception-app nav button').count(),4);
-  assert.deepEqual(await page.locator('script').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('src').split('?')[0])),['receptionist_session.js','v2/features/insurance/reception.js','reception_dashboard.js','job_card_edit.js']);
+  assert.deepEqual(await page.locator('script').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('src').split('?')[0])),["receptionist_session.js","v2/features/insurance/reception.js","vin_scan.js","reception_estimate.js","v2/features/estimate/main_module.js","reception_vin.js","insurance_management.js","reception_dashboard.js","job_card_edit.js"]);
   assert.equal(await page.locator('[data-rdb=tile]').count(),0,'Dedicated Reception list hides dashboard cards');
   assert.equal(await page.locator('.rdb-row script').count(),0);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width} list overflow`);
