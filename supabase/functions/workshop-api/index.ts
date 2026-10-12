@@ -929,13 +929,27 @@ Deno.serve(async (req: Request) => {
       if(readError)throw readError;
       const cases:any[]=[];
       for(let offset=0;offset<=50000;offset+=500){
-        const {data:chunk,error}=await admin.from('workshop_receptions').select('rc_no,job_card,job_type,details,outcome,approval_status,repair_status,released_date,insurance_id').order('sequence_no',{ascending:false}).range(offset,offset+499);
+        const {data:chunk,error}=await admin.from('workshop_receptions').select('rc_no,job_card,job_type,details,location,outcome,approval_status,repair_status,released_date,insurance_id').order('sequence_no',{ascending:false}).range(offset,offset+499);
         if(error)throw error;cases.push(...(chunk||[]));if((chunk||[]).length<500)break;
         if(offset>=50000)return reply({ok:false,code:'insurance_dashboard_limit'},503);
       }
       const {data:companies,error}=await admin.from('workshop_insurance_companies').select('id,name');if(error)throw error;
       const names=new Map((companies||[]).map((c:any)=>[c.id,c.name]));
       const result=insuranceProjection(current.data,cases.map(r=>({...r,insurance_company:names.get(r.insurance_id)||''})),body);
+      if(result.ok&&result.rows?.length){
+        // Fetch approval evidence only for the visible page: no repeated full-table history scan.
+        const rcByJob=new Map(cases.filter(r=>r.job_card).map(r=>[String(r.job_card).toUpperCase(),r.rc_no]));
+        const rcNumbers=[...new Set(result.rows.map((r:any)=>rcByJob.get(String(r.job_card).toUpperCase())).filter(Boolean))];
+        if(rcNumbers.length){
+          const {data:approvals,error:approvalError}=await admin.from('workshop_reception_approvals')
+            .select('rc_no,approval_date,id').in('rc_no',rcNumbers).order('id',{ascending:true}).limit(1000);
+          if(approvalError)throw approvalError;
+          if((approvals||[]).length===1000)return reply({ok:false,code:'insurance_approval_history_limit'},503);
+          const firstApproval=new Map();
+          for(const a of approvals||[])if(!firstApproval.has(a.rc_no))firstApproval.set(a.rc_no,a.approval_date);
+          for(const row of result.rows)row.approval_date=firstApproval.get(rcByJob.get(String(row.job_card).toUpperCase()))||'';
+        }
+      }
       return reply(result,result.ok?200:400);
     }
     if(action==='insurance_lpo'){
