@@ -43,4 +43,23 @@ for(const round of [null,'QA-ROUND']) {
   const key=[...storage.keys()][0];storage.set(key,'corrupt');const client=start(storage,state,allocate,'QA-A');
   await client.newFromReception('RC-QA');assert.equal(keys.length,3);assert.match(client.alerts[0],/could not be read/);assert.equal(storage.get(key),'corrupt');
 }
+// A checklist is authoritative for the estimate recipient and vehicle identity.
+for (const [jobType, expectedName] of [['INSURANCE','Al Madina Insurance'],['CASH','Cash Customer'],['CREDIT','Fleet Trading LLC']]) {
+  const storage=new Map(), state={estimates:[],estimateAudit:[]};
+  const client=start(storage,state,async()=>({estimate_no:'Zi-Qt-TEST',sequence_no:17}));
+  const checklist={rc_no:'RC-DETAILS',job_type:jobType,insurance_company:'Al Madina Insurance',details:{
+    customer:jobType==='CREDIT'?'Accounts Contact':'Cash Customer',company: 'Fleet Trading LLC',
+    contact:'90000000',make:'Toyota',model:'Camry',year:'2022',registration:'12345 AB',vin:'TESTVIN',claim:'CL-123'
+  }};
+  const id=await client.newEstimate(checklist);
+  const e=state.estimates.find(x=>x.id===id);
+  assert.equal(e.customerName,expectedName,jobType+' checklist estimate recipient');
+  assert.equal(e.receptionNo,'RC-DETAILS');
+  assert.equal(e.mobile,'90000000');
+  assert.equal(e.makeModel,'Toyota Camry');
+  assert.equal(e.year,'2022');
+  assert.equal(e.registration,'12345 AB');
+  assert.equal(e.vin,'TESTVIN');
+  assert.equal(e.claimNo,'CL-123');
+}
 console.log('RC estimate restart: initial/additional allocation keys survive response loss/restart, one allocation and draft/audit, saved-draft recovery, actor/backend isolation and storage/corruption refusal passed. Mocked transport only.');
