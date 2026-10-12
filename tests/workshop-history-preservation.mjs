@@ -5,7 +5,7 @@ const source=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
 const start=source.indexOf('function preserveOperationalHistory(');
 const end=source.indexOf('\nfunction threeWayMerge(',start);
 assert.ok(start>=0&&end>start,'Preservation function must be present');
-const fn=source.slice(start,end).replaceAll(': any','').replaceAll(' as const','').replaceAll('<string, number>','');
+const fn=source.slice(start,end).replace(/:\s*any\b/g,'').replace(/:\s*string\b/g,'').replace(/:\s*number\b/g,'').replaceAll(' as const','').replaceAll('<string, number>','');
 const context={cloneValue:(x)=>structuredClone(x)};
 vm.createContext(context);
 vm.runInContext(fn,context);
