@@ -13,8 +13,8 @@
   "managedBackup": null,
   "productionBackend": {
     "status": "DEPLOYED_VERIFICATION_PENDING",
-    "version": 62,
-    "bundleSha256": "0e53adb852ffe51aa67364eedf683658d2eadec5a2d37e92895e3da9d937fa53",
+    "version": 63,
+    "bundleSha256": "7851e6f24410ae095fae323f7535756f7b0a0d154faf2bccab59b0aa72135188",
     "migration": "NONE_REQUIRED"
   },
   "evidence": {
@@ -32,7 +32,7 @@
     },
     "productionBackendIdentity": {
       "passed": true,
-      "evidence": "Read-only Supabase list_edge_functions on 2026-10-12 confirms production pjknotnjkufadqavcmii workshop-api ACTIVE version 62 with ezbr_sha256 0e53adb852ffe51aa67364eedf683658d2eadec5a2d37e92895e3da9d937fa53. This verifies deployment identity only; authenticated permission smoke remains unverified."
+      "evidence": "Read-only list_edge_functions verified production pjknotnjkufadqavcmii workshop-api ACTIVE version 63, ezbr_sha256 7851e6f24410ae095fae323f7535756f7b0a0d154faf2bccab59b0aa72135188. Deployment identity only, not authenticated permission acceptance."
     },
     "preservation": {
       "passed": false,
@@ -356,7 +356,8 @@
             "table_name": "workshop_v2_work_sessions"
           }
         ]
-      }
+      },
+      "postRecoveryUpdate": "Targeted recovery committed workshop_state revision 13110; exact 46 employee-time audits, 4 job-identity audits and 45 notifications restored from revision 13106; all other workshop-state JSON equal to pre-recovery revision 13109. API v63 stale-save protections tested in CI. This does not replace production-authenticated concurrent-save acceptance, so original failed gate remains open."
     },
     "permissionSmoke": {
       "passed": false,
