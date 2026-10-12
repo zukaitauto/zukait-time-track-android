@@ -77,7 +77,7 @@ for (const engine of ['chromium', 'webkit']) {
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width}: editor overflow`);
       const expected=['registration','make','model','year','odometer_unit','odometer',
         'vin','customer','contact','claim'];
-      const order=await page.locator('#rc-form > .rc-grid input,#rc-form > .rc-grid select')
+      const order=await page.locator('#rc-form .rc-create-sections .rc-grid input,#rc-form .rc-create-sections .rc-grid select')
         .evaluateAll(nodes=>nodes.map(n=>n.name));
       assert.deepEqual(order,expected,`${engine} ${width}: ordered fields`);
       assert.equal(await page.locator('#rc-form [name=job_type]').inputValue(),'INSURANCE');
