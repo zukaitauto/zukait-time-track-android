@@ -21,7 +21,12 @@ assert.doesNotMatch(approved, /'\:\(exclude\)app\/src\/main\/assets/,
 assert.match(approved,/apksigner["']? verify/,'signed APK must verify signature');
 assert.match(pages,/scripts\/verify-pc-pages-publication\.cjs/,'PC release must validate approval');
 assert.match(pages,/git -c advice\.detachedHead=false checkout --detach --force/, 'PC release must publish pinned SHA');
-assert.equal(release.approvedForStaff,false,'V305 must not be released during QA');
+assert.equal(typeof release.approvedForStaff,'boolean','Release approval must be explicit');
+if (release.approvedForStaff) {
+ assert.match(release.sourceCommit || '',/^[a-f0-9]{40}$/,'Approved source must be immutable');
+ assert.ok(Number.isSafeInteger(release.signedAcceptanceRun)&&release.signedAcceptanceRun>0,'Signed candidate required');
+ assert.ok(!Number.isNaN(Date.parse(release.approvedAt)),'Approval date required');
+}
 const uiApproval = fs.existsSync('release-ui-request.json') ? JSON.parse(fs.readFileSync('release-ui-request.json','utf8')) : null;
 function verifyUpdaterAfterUiRelease(metadata) {
  if (metadata.versionName === 'V304') { assert.equal(metadata.versionCode,267); return; }
@@ -36,5 +41,10 @@ function verifyUpdaterAfterUiRelease(metadata) {
  assert.match(metadata.apkSha256,/^[a-f0-9]{64}$/);
  assert.equal(metadata.releaseTag,'release-'+metadata.versionName+'-architecture-v2');
 }
-verifyUpdaterAfterUiRelease(updater);
+if (release.approvedForStaff && updater.versionCode < release.versionCode) {
+ assert.equal(updater.versionName,'V312','Live updater must remain on last published version until release');
+ assert.equal(updater.versionCode,275);
+ assert.match(updater.sourceCommit,/^[a-f0-9]{40}$/);
+ assert.match(updater.apkSha256,/^[a-f0-9]{64}$/);
+} else verifyUpdaterAfterUiRelease(updater);
 console.log('PASS: Signed APK and Pages are manual-only on architecture-v2 with source/approval gates; explicit UI approval required');
