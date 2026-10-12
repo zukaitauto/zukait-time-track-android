@@ -208,6 +208,41 @@
 @media(max-width:900px){#rc-root #rc-form .rc-create-sections{grid-template-columns:1fr}#rc-root #rc-form .rc-create-customer>.rc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){#rc-root #rc-form .rc-form-brand{padding:14px}#rc-root #rc-form .rc-form-top{padding:12px}#rc-root #rc-form .rc-create-sections>.rc-box{padding:14px}#rc-root #rc-form .rc-create-vehicle>.rc-grid,#rc-root #rc-form .rc-create-customer>.rc-grid{grid-template-columns:1fr}#rc-root #rc-form .rc-create-vehicle .rc-reading{grid-column:auto}}
 `;
+    e.textContent += `
+/* V314: match the saved checklist's color-coded cards in the editable editor. */
+#rc-root #rc-form .rc-create-vehicle{border-top:6px solid #7cb8ef!important;background:linear-gradient(#edf6ff 0 66px,#fff 66px)!important}
+#rc-root #rc-form .rc-create-customer{border-top:6px solid #88d7c4!important;background:linear-gradient(#e9faf5 0 66px,#fff 66px)!important}
+#rc-root #rc-form .rc-damage-panel{border-top:6px solid #f0abb3!important;background:linear-gradient(#fff0f1 0 66px,#fff 66px)!important}
+#rc-root #rc-form .rc-accessory-panel{border-top:6px solid #91d8df!important;background:linear-gradient(#edfbfc 0 66px,#fff 66px)!important}
+#rc-root #rc-form .rc-function-panel{border-top:6px solid #efcf95!important;background:linear-gradient(#fff7e8 0 66px,#fff 66px)!important}
+#rc-root #rc-form .rc-reception-notes{border-top:6px solid #b9afe6!important;background:linear-gradient(#f4f1ff 0 66px,#fff 66px)!important}
+#rc-root #rc-form .rc-inspection-layout h4,#rc-root #rc-form .rc-reception-notes h4{font-size:clamp(17px,1.35vw,21px);margin:3px 0 13px;color:#173f58}
+#rc-root #rc-form .rc-function-entry{grid-template-columns:minmax(0,2fr) repeat(3,minmax(45px,.65fr));gap:4px;min-height:42px;padding:5px 7px}
+#rc-root #rc-form .rc-function-entry:first-of-type{background:#e7f0f6;border-radius:8px}
+#rc-root #rc-form .rc-function-entry strong{font-size:clamp(12px,1.1vw,15px);overflow-wrap:anywhere}
+#rc-root #rc-form .rc-function-entry label{display:flex;align-items:center;justify-content:center;min-height:30px}
+#rc-root #rc-form .rc-function-entry input[type=radio]{width:21px!important;height:21px!important;min-height:21px!important;margin:0!important;padding:0!important}
+#rc-root #rc-form .rc-accessory-items .rc-accessory-card,#rc-root #rc-form .rc-accessory-items .rc-accessory-extra{min-height:52px!important;padding:7px 9px!important}
+#rc-root #rc-form .rc-accessory-items strong,#rc-root #rc-form .rc-accessory-items b{font-size:13px}
+#rc-root #rc-form .rc-accessory-items small{font-size:11px}
+#rc-root #rc-form .rc-reception-notes textarea{min-height:210px!important}
+#rc-root #rc-form .rc-car-stage{max-width:940px;margin-inline:auto}
+@media(max-width:700px){
+ #rc-root #rc-form .rc-form-brand{gap:5px!important}
+ #rc-root #rc-form .rc-form-brand strong{font-size:19px!important}
+ #rc-root #rc-form .rc-form-brand h3{font-size:15px!important}
+ #rc-root #rc-form .rc-create-sections>.rc-box{padding:13px!important}
+ #rc-root #rc-form .rc-create-sections h4{font-size:17px!important}
+ #rc-root #rc-form .rc-inspection-layout{gap:12px}
+ #rc-root #rc-form .rc-inspection-layout>.rc-box{padding:12px}
+ #rc-root #rc-form .rc-car-stage{width:100%;max-width:none}
+ #rc-root #rc-form .rc-function-entry{grid-template-columns:minmax(0,1.8fr) repeat(3,minmax(40px,.55fr))}
+ #rc-root #rc-form .rc-function-entry strong{font-size:12px}
+ #rc-root #rc-form .rc-accessory-items{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #rc-root #rc-form .rc-accessory-items .rc-accessory-card,#rc-root #rc-form .rc-accessory-items .rc-accessory-extra{min-height:50px!important}
+ #rc-root #rc-form .rc-reception-notes textarea{min-height:190px!important}
+}
+`;
     document.head.appendChild(e);
   }
   function shell(title, body) {
