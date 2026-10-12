@@ -49,7 +49,15 @@ function verifyUpdaterAfterUiRelease(metadata) {
  assert.match(metadata.apkSha256,/^[a-f0-9]{64}$/);
  assert.equal(metadata.releaseTag,'release-'+metadata.versionName+'-architecture-v2');
 }
-verifyUpdaterAfterUiRelease(latest);
+// A newly approved candidate must not change the live updater until the publisher succeeds.
+if (current.approvedForStaff && latest.versionCode < current.versionCode) {
+ assert.equal(latest.versionName,'V312','Pending V313 approval must leave the last published V312 updater intact');
+ assert.equal(latest.versionCode,275);
+ assert.match(latest.sourceCommit,/^[a-f0-9]{40}$/);
+ assert.match(latest.apkSha256,/^[a-f0-9]{64}$/);
+} else {
+ verifyUpdaterAfterUiRelease(latest);
+}
 assert.match(workflow,/^\s+workflow_dispatch:\s*$/m,'Manual Pages invocation required');
 assert.doesNotMatch(workflow,/^\s+push:\s*$/m,'Automatic Pages pushes prohibited');
 assert.match(workflow,/scripts\/verify-pc-pages-publication\.cjs/,'Pages must run approval validation');
