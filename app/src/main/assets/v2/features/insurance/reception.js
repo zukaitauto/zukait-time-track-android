@@ -782,7 +782,7 @@
       ).join("")+'</div>'+
 
 
-      '<label>Damage notes / ملاحظات الأضرار<textarea name="damage" maxlength="1700" placeholder="Additional damage description">'+esc(parsed.notes)+'</textarea></label></section>';
+      '<textarea name="damage" hidden aria-hidden="true">'+esc(parsed.notes)+'</textarea></section>';
   }
   const functionChecks=["Lights","Wipers","Power Windows","Central Locking","Mirrors","Horn","Air Conditioning"];
   function parseFunctionChecks(raw){
@@ -922,9 +922,9 @@
         select("insurance_id", "Insurance Company / شركة التأمين *", options, r?.insurance_id || "") +
         '</div></div><h4 class="rc-vehicle-header">معلومات المركبة والعميل / Vehicle &amp; Customer Information</h4><div class="rc-grid">' + inputs +
         '</div><div class="rc-inspection-layout">'+damagePanel(d)+accessoriesPanel(d)+functionPanel(d)+'</div>'+
-        '<div class="rc-box rc-reception-notes"><h4>الملاحظات / Notes & Observations</h4>'+
+        '<div class="rc-box rc-reception-notes"><h4>Work Descriptions / Notes</h4>'+ 
         textFields.filter(([key])=>key==="remarks")
-        .map(([key,name])=>'<label>'+esc(name)+'<textarea name="'+key+'" maxlength="2000">'+esc(d[key]||"")+'</textarea></label>').join("")+
+        .map(([key,name])=>'<label>Work Descriptions / Notes<textarea name="'+key+'" rows="5" style="min-height:150px;width:100%;font-size:16px;line-height:1.6" maxlength="2000">'+esc(d[key]||"")+'</textarea></label>').join("")+
         '</div><div class="rc-box rc-customer-sign"><strong>إقرار العميل / Customer Acknowledgement</strong><p>The customer signs the printed A4 checklist after inspection. No signature photo is stored.</p></div>' + (current?.record?.job_card ? input('reason', 'Reason for checklist / vehicle correction', '', true) : '') + '<div class="rc-actions"><button type="submit">Save Checklist</button></div></form>',
     );
     const form = document.getElementById("rc-form");
@@ -1013,7 +1013,7 @@
     const condition = checklistBox("Exterior Check · Vehicle Condition & Damage",
       '<div class="rc-record-map rc-cl-diagram">' + damagedGraphic(d) + '</div>' +
       '<div class="rc-cl-facts">' +
-      checklistFact("Damage Description",damage.notes,true) + '</div>', "rc-cl-condition");
+      '</div>', "rc-cl-condition");
     const observations = checklistBox("Function Check · Reception Observations",
       '<div class="rc-cl-facts">' +
       '<div class="rc-cl-warning-check"><strong>Dashboard Warning:</strong><span aria-label="Dashboard warning recorded">' +
@@ -1021,7 +1021,7 @@
       '</span></div>' +
       (warningState(d.warnings)==="ISSUE"&&parseFunctionChecks(d.warnings).details ? checklistFact("Warning Details:",parseFunctionChecks(d.warnings).details,true) : "") +
       checklistFact("Fuel",d.fuel) +
-      checklistFact("Other Remarks",d.remarks,true) + '</div>', "rc-cl-observations");
+      '</div>', "rc-cl-observations");
     const toolList = tools.map(([key,label])=>{
       const recorded=(d.tools||[]).includes(key);
       return '<div class="rc-cl-tool"><span aria-hidden="true" class="rc-cl-tick">' +
@@ -1032,7 +1032,7 @@
       toolList + '</div><div class="rc-cl-facts">' +
       checklistFact("Additional accessories checked",names || "Not marked",true) +
       checklistFact("Other Accessories",extras.notes,true) + '</div>', "rc-cl-accessories");
-    return '<div class="rc-cl-grid">' + vehicle + condition + observations + accessories + '</div>';
+    return '<div class="rc-cl-grid">' + vehicle + condition + observations + accessories + '</div>' + checklistBox('Work Descriptions / Notes','<div style="min-height:100px;white-space:pre-wrap;line-height:1.7">'+esc([d.remarks,damage.notes].filter(Boolean).join('\n'))+'</div>','rc-cl-work-notes');
   }
 
   async function view(no) {
@@ -1535,10 +1535,10 @@
     const warningDetails=warningState(d.warnings)==="ISSUE"?parseFunctionChecks(d.warnings).details:"";
     const observation=[
       warningDetails.length>90?["Dashboard Warning Details",warningDetails]:null,
-      damage.notes?["Damage Description",damage.notes]:null,
+      damage.notes?["Previous damage notes",damage.notes]:null,
       
       accessories.notes?["Other accessories",accessories.notes]:null,
-      d.remarks?["Other remarks",d.remarks]:null
+      d.remarks?["Work Descriptions / Notes",d.remarks]:null
     ].filter(Boolean);
     const observationHtml=observation.map(([label,value])=>
       '<p><b>'+esc(label)+':</b> '+esc(value)+'</p>').join("");
@@ -1588,12 +1588,12 @@
       '.rc-notes{border:1px solid #657782;border-top:0;flex:1;min-height:0;padding:3mm;overflow:hidden;overflow-wrap:anywhere}',
       '.rc-notes h2{font-size:10pt;margin:0 0 1.5mm;display:flex;justify-content:space-between}',
       '.rc-notes-content{font-size:9pt;line-height:1.25;white-space:pre-wrap}',
-      '.rc-notes-content p{margin:1mm 0}',
+      '.rc-notes-content p{margin:1mm 0}'+'.rc-notes{min-height:37mm}.rc-notes-content{min-height:29mm;background:repeating-linear-gradient(to bottom,transparent 0,transparent 5.4mm,#ced5da 5.5mm,#ced5da 5.65mm);line-height:5.65mm}',
       '.rc-notes-small .rc-notes-content{font-size:7pt;line-height:1.1}',
       '.rc-notes-tiny .rc-notes-content{font-size:6pt;line-height:1.05}',
-      '.rc-footer{height:25mm;flex:none;text-align:center;padding-top:3mm;font-size:8pt}',
+      '.rc-footer{height:19mm;flex:none;text-align:center;padding-top:1mm;font-size:8pt}',
       '.rc-footer .rc-arabic{direction:rtl;font-size:8.3pt;margin-top:1mm}',
-      '.rc-signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5mm;text-align:left;margin-top:9mm}',
+      '.rc-signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5mm;text-align:left;margin-top:5mm}',
       '.rc-signatures div{border-top:1px solid #657782;padding-top:1.5mm;font-size:7.5pt}',
       '@media print{html,body{width:210mm;height:auto}.rc-sheet{break-inside:avoid;page-break-inside:avoid}}'
     ].join("");
@@ -1618,7 +1618,7 @@
       accessory("spare_tyre","Spare Tyre")+accessory("jack","Jack")+accessory("jack_release","Jack Release",true)+accessory("wheel_spanner","Wheel Spanner")+
       accessory("wheel_covers","Wheel Covers",true)+accessory("upholstery","Upholstery",true)+accessory("windshield","Wind Shield",true)+
       accessory("radio_tape","Radio / Tape",true)+accessory("floor_mats","Floor Mats")+additions+'</div></section>'+
-      '<section class="rc-notes '+notesSize+'"><h2><span>Notes:</span><span dir="rtl" lang="ar">ملاحظات</span></h2>'+
+      '<section class="rc-notes '+notesSize+'"><h2><span>WORK DESCRIPTIONS / NOTES</span><span dir="rtl" lang="ar">وصف العمل / ملاحظات</span></h2>'+
       '<div class="rc-notes-content">'+(observationHtml||'<p>&nbsp;</p>')+'</div></section>'+
       '<footer class="rc-footer"><div>I agree with the vehicle condition and damages marked above.</div>'+
       '<div class="rc-arabic" lang="ar">أوافق على حالة المركبة والأضرار الموضحة أعلاه</div>'+
