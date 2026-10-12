@@ -35,8 +35,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          SOURCE_SHA='b5a76bec1812ecd8bb8f571c1d625a8204a6d4ba'
-          VERIFIED_RUN='38204179554'
+          SOURCE_SHA='3b7afc4230bd37e1d2138742e0d1e40ee4068df6'
+          VERIFIED_RUN='38207888736'
           test "$GITHUB_REF" = 'refs/heads/architecture-v2'
           git cat-file -e "$SOURCE_SHA^{commit}"
           git merge-base --is-ancestor "$SOURCE_SHA" "$GITHUB_SHA"
@@ -160,12 +160,12 @@ jobs:
           set -euo pipefail
           BASE='https://zukaitauto.github.io/zukait-time-track-android'
           for attempt in 1 2 3 4 5 6; do
-            curl -fsSL -H 'Cache-Control: no-cache' "$BASE/v2/features/insurance/reception.js?approved=b5a76bec-$attempt" -o /tmp/reception-live.js || true
-            curl -fsSL -H 'Cache-Control: no-cache' "$BASE/v2/features/insurance/vehicle-inspection-approved.png?approved=b5a76bec-$attempt" -o /tmp/reception-live.png || true
-            curl -fsSL -H 'Cache-Control: no-cache' "$BASE/?approved=b5a76bec-$attempt" -o /tmp/index-live.html || true
-            curl -fsSL -H 'Cache-Control: no-cache' "$BASE/receptionist.html?approved=b5a76bec-$attempt" -o /tmp/receptionist-live.html || true
+            curl -fsSL -H 'Cache-Control: no-cache' "$BASE/v2/features/insurance/reception.js?approved=3b7afc42-$attempt" -o /tmp/reception-live.js || true
+            curl -fsSL -H 'Cache-Control: no-cache' "$BASE/v2/features/insurance/vehicle-inspection-approved.png?approved=3b7afc42-$attempt" -o /tmp/reception-live.png || true
+            curl -fsSL -H 'Cache-Control: no-cache' "$BASE/?approved=3b7afc42-$attempt" -o /tmp/index-live.html || true
+            curl -fsSL -H 'Cache-Control: no-cache' "$BASE/receptionist.html?approved=3b7afc42-$attempt" -o /tmp/receptionist-live.html || true
             if cmp -s _site/v2/features/insurance/reception.js /tmp/reception-live.js && cmp -s _site/v2/features/insurance/vehicle-inspection-approved.png /tmp/reception-live.png && cmp -s _site/index.html /tmp/index-live.html && cmp -s _site/receptionist.html /tmp/receptionist-live.html; then
-              echo 'Verified live website: exact approved PNG, Reception script, and both entry pages match tested source b5a76bec. No APK published.' >> "$GITHUB_STEP_SUMMARY"
+              echo 'Verified live website: organised CHECK LIST, exact approved PNG, Reception script, and both entry pages match tested source 3b7afc42. No APK published.' >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
             sleep 10
