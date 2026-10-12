@@ -57,6 +57,8 @@ jobs:
       - run: npm run test:management
       - name: Verify approved 37-row Consumables PDF master
         run: npm run test:consumables:pdf
+      - name: Prevent stale full-state saves from erasing workshop history
+        run: node tests/workshop-history-preservation.mjs
       - run: node tests/reception-user-work-type.mjs
       - name: Isolated PostgreSQL concurrent-device acceptance
         run: npm run test:reception:concurrency
