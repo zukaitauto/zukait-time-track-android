@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);
+const {classify}=require('../scripts/release-tier.cjs');
+assert.equal(classify(['app/src/main/assets/consumables_ui.js']).tier,'NORMAL_UI');
+assert.equal(classify(['app/src/main/res/layout/main.xml']).tier,'NORMAL_UI');
+assert.equal(classify(['supabase/functions/workshop-api/index.ts']).tier,'MAJOR');
+assert.equal(classify(['app/src/main/assets/v2/features/insurance/reception.js']).tier,'MAJOR');
+assert.equal(classify(['.github/workflows/publish-approved-release.yml']).tier,'MAJOR');
+assert.equal(classify(['app/src/main/assets/consumables_ui.js','supabase/migrations/1.sql']).tier,'MAJOR');
+assert.equal(classify(['scripts/some-unknown-task.cjs']).tier,'REVIEW');
+assert.equal(classify([]).tier,'REVIEW');
+assert.equal(classify(['app/src/main/assets/consumables_ui.js']).advisoryOnly,true);
+console.log('Advisory release tier classifier: PASS');
