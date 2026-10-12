@@ -20,6 +20,8 @@ on:
       - "tests/workshop-history-preservation.mjs"
       - "tests/release-tier.mjs"
       - "scripts/release-tier.cjs"
+      - "scripts/verify-management-release.cjs"
+      - "tests/management-release-deferral.mjs"
       - "scripts/verify-coordinated-release.cjs"
       - "scripts/verify-ui-only-release.cjs"
       - "scripts/verify-pc-pages-publication.cjs"
@@ -64,6 +66,8 @@ jobs:
         run: node tests/workshop-history-preservation.mjs
       - name: Verify safe advisory release classification
         run: node tests/release-tier.mjs
+      - name: Verify explicit backup deferral preserves release gates
+        run: node tests/management-release-deferral.mjs
       - run: node tests/reception-user-work-type.mjs
       - name: Isolated PostgreSQL concurrent-device acceptance
         run: npm run test:reception:concurrency
