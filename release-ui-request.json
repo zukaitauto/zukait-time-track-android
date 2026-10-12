@@ -3,10 +3,10 @@
   "versionCode": 276,
   "approvedForStaff": true,
   "approvedAt": "2026-10-12T07:30:51.950Z",
-  "sourceCommit": "90267caada5663562b6d4a032b217a2906966fd0",
+  "sourceCommit": "23bfccb02a6e5dff2c188390061ce82a486ad70f",
   "publishNonce": "owner-authorized-v313-checklist-20261012",
-  "signedAcceptanceRun": 38217381414,
-  "verificationRun": 38217381463,
+  "signedAcceptanceRun": 38221159831,
+  "verificationRun": 38221159979,
   "releaseScope": "phase1-compatible-ui",
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
@@ -19,5 +19,5 @@
     "migrationsApplied": 7,
     "permissionSmokePassed": true
   },
-  "authorization": "User explicitly requested release of the verified V313 Reception Checklist layout on 2026-10-12. Exact source 90267caada5663562b6d4a032b217a2906966fd0; publish existing web and Android via approved architecture-v2 workflow only. No new backend migrations or Phase 2 activation. Previous owner backup deferral remains historical; physical acceptance NOT_RUN, not falsely attested. Preserve existing staff data and V312 release."
+  "authorization": "Owner requested V313 release. Final source 23bfccb02a6e5dff2c188390061ce82a486ad70f passed Reception verification 38221159979 and signed APK acceptance 38221159831 on architecture-v2. No Phase 2 activation or backend change in this publication. Physical acceptance remains NOT_RUN and is not represented as completed; existing UI-only release authorization and owner backup deferral retained."
 }
