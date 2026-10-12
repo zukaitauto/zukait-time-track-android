@@ -62,7 +62,7 @@
  async function onClick(e){const button=e.target.closest('[data-ins]');if(!button)return;e.preventDefault();try{
   const action=button.dataset.ins;if(action==='summary'||action==='section'){if(button.dataset.section==='approval')return window.zukaitReceptionDashboard.choose('waiting');section=button.dataset.section;page=0;return load();}
   if(action==='lpo')return lpo(button.dataset.job);
-  if(action==='job')return window.zukaitJobEdit.view(button.dataset.job);
+  if(action==='job'){const overview=window.zukaitWorkshopOverview;if(overview?.detail)return overview.detail(button.dataset.job);return window.zukaitJobEdit.view(button.dataset.job);}
   if(action==='previous'&&page>0){page--;return load();}if(action==='next'&&(page+1)*50<result.total){page++;return load();}
   if(action==='refresh'||action==='back')return load();if(action==='print')return print();
   if(action==='retry'){const body=JSON.parse(localStorage.getItem(pendingKey())||'null');if(body)await save(body);}
