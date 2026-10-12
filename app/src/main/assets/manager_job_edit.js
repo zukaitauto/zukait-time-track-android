@@ -17,6 +17,16 @@ window.editJobManager=function(no){
  const input=(key,label,type='text')=>key==='insuranceCompany'?insuranceSelect(v[key]):'<label>'+esc(label)+'<input id="mje-'+key+'" type="'+type+'" '+(type==='number'?'min="0" step="0.001" ':'')+(key==='vin'?'maxlength="32" autocapitalize="characters" autocomplete="off" ':'')+'value="'+esc(v[key])+'">'+(key==='vin'?'<button type="button" class="secondary" onclick="zukaitVinScan?.open(\'mje-vin\')">▣ Scan Barcode</button><button type="button" class="secondary" onclick="zukaitVinScan?.capture(\'mje-vin\')">📷 Capture VIN</button>':'')+'</label>';
  const type=String(j.jobType||'Cash').toLowerCase();
  openModal('<section class="mje-form"><div class="section-title"><h3>Full Edit · '+esc(no)+'</h3><button class="secondary" onclick="closeModal()">Cancel</button></div><p>Job Card <b>'+esc(no)+'</b> · '+esc(j.vehicle)+' · '+esc(j.reg)+'</p><p class="muted">Job Card number is the permanent link to work, parts and purchases.</p><div class="grid">'+fields.filter(([k])=>k!=='deliveredAt'||j.delivered).map(f=>input(...f)).join('')+'<label>Job Type<select id="mje-jobType">'+['Cash','Credit','Insurance'].map(t=>'<option'+(t.toLowerCase()===type?' selected':'')+'>'+t+'</option>').join('')+'</select></label></div>'+'<h4>Technician Allocations</h4><div class="grid">'+assign.map((a,i)=>{const name=(typeof users!=='undefined'?users:[]).find(u=>u.id===a.emp)?.name||a.emp;return '<label>'+esc(name)+(a.rework?' · Repeat Work':'')+'<input id="mje-time-'+i+'" value="'+Math.floor((Number(a.suggested)||0)/60)+'.'+String(Math.round((Number(a.suggested)||0)%60)).padStart(2,'0')+'"><small>Hours.minutes, for example 1.30</small></label>'}).join('')+'</div><label>Reason for Change<textarea id="mje-reason" maxlength="2000" placeholder="Required for corrections"></textarea></label><p class="muted">Actual work history, QC results and delivery status are maintained by their own workflows.</p><button class="blue" onclick="zukaitSaveManagerFullEdit()">SAVE ALL CHANGES</button></section>');
+ const editType=document.getElementById('mje-jobType');
+ const updateInsuranceVisibility=()=>{
+  const visible=editType.value==='Insurance';
+  for(const key of ['insuranceCompany','claimNo']){
+   const field=document.getElementById('mje-'+key);
+   if(field)field.closest('label').hidden=!visible;
+  }
+ };
+ editType.addEventListener('change',updateInsuranceVisibility);
+ updateInsuranceVisibility();
  if(j.finalInvoiceAmount!=null&&j.finalInvoiceAmount!==''){const note=document.createElement('p');note.textContent='Changing the amount also corrects the finalized invoice amount. Your reason is recorded in the audit history.';document.querySelector('.mje-form').prepend(note);}
  if(j.receptionNo){const link=document.createElement('p');link.textContent='Linked Reception details are corrected together with this Job Card. Insurance identity corrections require approval review.';document.querySelector('.mje-form').prepend(link);}
 
