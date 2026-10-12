@@ -106,10 +106,10 @@ try{
   finally{await control.query('rollback');}
  }
  const directCash={operation:'CREATE_DIRECT_JOB',request_id:randomUUID(),job_type:'CASH',job_card:'QA-CONCURRENT-CASH',cash_amount:'12.345',details:{make:'Toyota',model:'Camry',year:'2023'},received_confirmed:true,reason:'QA multi-device cash intake'};
- const directCashRetry=await race('same direct cash intake UUID creates one checklist and Job Card',c=>command(c,directCash,'QA-RC'),c=>command(c,directCash,'QA-RC'));
+ const directCashRetry=await race('same direct cash intake UUID creates one Job Card and no checklist',c=>command(c,directCash,'QA-RC'),c=>command(c,directCash,'QA-RC'));
  assert.equal(directCashRetry.second.duplicate,true);
  assert.equal((await readState()).jobs.find(j=>j.no==='QA-CONCURRENT-CASH').amount,12.345);
- assert.equal((await control.query("select count(*)::int n from workshop_receptions where job_card='QA-CONCURRENT-CASH'")).rows[0].n,1);
+ assert.equal((await control.query("select count(*)::int n from workshop_receptions where job_card='QA-CONCURRENT-CASH'")).rows[0].n,0);
  console.log('PASS SQL direct intake: cash/credit/customer reference, issued insurance approval, forbidden self-approval and exact retry/preservation checks');
  const sequences=await control.query('select (select last_value from workshop_reception_no_seq) rc,(select last_value from workshop_v2_estimate_no_seq) estimate,(select last_value from workshop_v2_spare_part_list_no_seq) pl');
  const live=await control.query("select to_jsonb(l)-'updated_at'-'updated_by'-'state_revision' as value from workshop_live_status l order by employee_id");

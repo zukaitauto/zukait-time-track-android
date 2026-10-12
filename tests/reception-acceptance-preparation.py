@@ -91,8 +91,8 @@ class AcceptancePreparation(unittest.TestCase):
 
     def test_receptionist_bundle_manifest(self):
         result = self.run_prepare()
-        self.assertEqual(len(result["ordered_pending_migrations"]), 9)
-        self.assertEqual(result["ordered_pending_migrations"][-1]["file"], "20261009175402_reception_receptionist.sql")
+        self.assertEqual(len(result["ordered_pending_migrations"]), 18)
+        self.assertEqual(result["ordered_pending_migrations"][-1]["file"], "20261012131131_reception_insurance_management.sql")
         expected = {name: module.digest(self.source / name) for name in
                     ("supabase/functions/staff-auth/index.ts", "supabase/functions/staff-auth/deno.json")}
         self.assertEqual(result["auth_files"], expected)

@@ -21,6 +21,15 @@ MIGRATIONS = [
     "20261009111840_reception_job_cancellation.sql",
     "20261009153713_reception_trigger_privileges.sql",
     "20261009175402_reception_receptionist.sql",
+    "20261011111500_reception_direct_insurance_job.sql",
+    "20261011130000_reception_direct_job_list_separation.sql",
+    "20261011141000_direct_job_required_vehicle_fields.sql",
+    "20261011151000_direct_job_intake_odometer_projection.sql",
+    "20261011162000_reception_external_job_intake_odometer.sql",
+    "20261011165000_reception_external_linked_identity_intake.sql",
+    "20261011165001_optional_job_cash_amount.sql",
+    "20261011165002_manager_full_job_edit.sql",
+    "20261012131131_reception_insurance_management.sql",
 ]
 
 

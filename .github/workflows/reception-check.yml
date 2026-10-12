@@ -54,6 +54,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: python3 tests/reception-acceptance-preparation.py
       - run: npm run test:reception
+      - run: npm run test:management
       - run: node tests/reception-user-work-type.mjs
       - name: Isolated PostgreSQL concurrent-device acceptance
         run: npm run test:reception:concurrency
@@ -76,6 +77,7 @@ jobs:
       - run: node tests/reception-release-publish-safety.mjs
       - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:reception:browser
+      - run: node tests/reception-management-responsive.mjs
       - name: Verify approved one-page A4 Reception PDF in Chromium
         run: node tests/reception-print-a4.mjs
       - name: Preserve A4 print preview for workshop review
