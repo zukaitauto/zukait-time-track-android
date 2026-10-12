@@ -35,8 +35,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          SOURCE_SHA='e7ab55898fcdd0a8ddb4bf1008dbf9004b147a5c'
-          VERIFIED_RUN='38162539602'
+          SOURCE_SHA='b5a76bec1812ecd8bb8f571c1d625a8204a6d4ba'
+          VERIFIED_RUN='38204179554'
           test "$GITHUB_REF" = 'refs/heads/architecture-v2'
           git cat-file -e "$SOURCE_SHA^{commit}"
           git merge-base --is-ancestor "$SOURCE_SHA" "$GITHUB_SHA"
@@ -139,6 +139,7 @@ jobs:
           test -s _site/vehicle-logos/chevrolet.svg
           test -s _site/vehicle-logos/ford.svg
           test -s _site/vehicle-logos/honda.svg
+          cp app/src/main/assets/v2/features/insurance/vehicle-inspection-approved.png _site/v2/features/insurance/vehicle-inspection-approved.png
           touch _site/.nojekyll
 
       - name: Verify staged shared Reception UI assets before public deployment
@@ -157,14 +158,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          URL='https://zukaitauto.github.io/zukait-time-track-android/v2/features/insurance/reception.js'
+          BASE='https://zukaitauto.github.io/zukait-time-track-android'
           for attempt in 1 2 3 4 5 6; do
-            curl -fsSL -H 'Cache-Control: no-cache' "$URL?preview=e7ab5589-$attempt" -o /tmp/reception-live.js || true
-            if grep -q 'Three-view inspection layout' /tmp/reception-live.js 2>/dev/null && grep -q 'functionChecks=' /tmp/reception-live.js 2>/dev/null; then
-              echo 'Live website serves the approved vehicle diagram.' >> "$GITHUB_STEP_SUMMARY"
+            curl -fsSL -H 'Cache-Control: no-cache' "$BASE/v2/features/insurance/reception.js?approved=b5a76bec-$attempt" -o /tmp/reception-live.js || true
+            curl -fsSL -H 'Cache-Control: no-cache' "$BASE/v2/features/insurance/vehicle-inspection-approved.png?approved=b5a76bec-$attempt" -o /tmp/reception-live.png || true
+            curl -fsSL -H 'Cache-Control: no-cache' "$BASE/?approved=b5a76bec-$attempt" -o /tmp/index-live.html || true
+            curl -fsSL -H 'Cache-Control: no-cache' "$BASE/receptionist.html?approved=b5a76bec-$attempt" -o /tmp/receptionist-live.html || true
+            if cmp -s _site/v2/features/insurance/reception.js /tmp/reception-live.js && cmp -s _site/v2/features/insurance/vehicle-inspection-approved.png /tmp/reception-live.png && cmp -s _site/index.html /tmp/index-live.html && cmp -s _site/receptionist.html /tmp/receptionist-live.html; then
+              echo 'Verified live website: exact approved PNG, Reception script, and both entry pages match tested source b5a76bec. No APK published.' >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
             sleep 10
           done
-          echo 'Live website is still showing old Reception code.' >&2
+          echo 'Live website bytes do not match the verified Reception source.' >&2
           exit 1
