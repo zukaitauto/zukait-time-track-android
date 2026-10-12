@@ -10,7 +10,7 @@ const host='reception-recovery.invalid';
 const apiHost='pjknotnjkufadqavcmii.supabase.co';
 const user={id:'QA-RC',name:'QA Browser Receptionist',role:'Receptionist',department:'Reception'};
 const files=new Map(['receptionist.html','receptionist_session.js',
- 'v2/features/insurance/reception.js','reception_dashboard.js'].map(
+ 'v2/features/insurance/reception.js','reception_dashboard.js','reception_vin.js','reception_estimate.js','insurance_management.js','job_card_edit.js'].map(
   path=>['/'+path,fs.readFileSync('app/src/main/assets/'+path,'utf8')]));
 const testKey='zukait_receptionist_delivery_v1:https://'+apiHost+'/functions/v1/:QA-RC';
 const headers={'access-control-allow-origin':'*','access-control-allow-headers':'*',

@@ -167,7 +167,7 @@ for (const engine of ['chromium', 'webkit']) {
       await page.addScriptTag({content:fs.readFileSync('app/src/main/assets/reception_dashboard.js','utf8')});
       await page.evaluate(()=>window.zukaitReception.open());
       await page.locator('[data-rdb=tile][data-section=followup]').waitFor();
-      assert.equal(await page.locator('[data-rdb=tile]').count(),10);
+      assert.equal(await page.locator('[data-rdb=tile]').count(),13);
       assert.equal(await page.locator('#rdb-results').count(),0);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width}: Phase 1 dashboard overflow`);
       await page.locator('[data-rdb=tile][data-section=followup]').click();
@@ -177,7 +177,7 @@ for (const engine of ['chromium', 'webkit']) {
       assert.equal(await page.locator('#rc-form option[value=CASH]').count(),0);
       await page.locator('[data-rc-action=back]').click();
       await page.locator('[data-rdb=tile][data-section=followup]').waitFor();
-      assert.equal(await page.locator('[data-rdb=tile]').count(),10);
+      assert.equal(await page.locator('[data-rdb=tile]').count(),13);
       await page.close();
       console.log(`${engine} ${width}: list, editor, keyboard and overflow checks passed`);
     }

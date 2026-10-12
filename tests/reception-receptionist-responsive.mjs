@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url),playwright=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const user={id:'QA-RC',name:'QA Receptionist',role:'Receptionist',department:'Reception'};
-const files=new Map(['receptionist.html','receptionist_session.js','v2/features/insurance/reception.js','reception_dashboard.js'].map(path=>['/'+path,fs.readFileSync('app/src/main/assets/'+path,'utf8')]));
+const files=new Map(['receptionist.html','receptionist_session.js','v2/features/insurance/reception.js','reception_dashboard.js','reception_vin.js','reception_estimate.js','insurance_management.js','job_card_edit.js'].map(path=>['/'+path,fs.readFileSync('app/src/main/assets/'+path,'utf8')]));
 const record={rc_no:'RC-QA',revision:1,insurance_company:'QA Insurance',details:{make:'Toyota',model:'Camry',customer:'QA <script>unsafe</script>',registration:'QA123'},location:'VWC',approval_status:'APPROVED',can_edit:true};
 for(const engine of ['chromium','webkit']){
  const browser=await playwright[engine].launch({headless:true});
@@ -28,7 +28,7 @@ for(const engine of ['chromium','webkit']){
   await context.addInitScript(({user})=>localStorage.setItem('zukait_secure_session_v42',JSON.stringify({user,token:'qa-session'})),{user});
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto('https://reception-qa.invalid/receptionist.html');await page.locator('[data-rdb=tile]').first().waitFor();
-  assert.equal(await page.locator('[data-rdb=tile]').count(),10,'Ten Reception options on home screen');
+  assert.equal(await page.locator('[data-rdb=tile]').count(),12,'Twelve Reception options on home screen');
   await page.locator('[data-rdb=tile][data-section=checklists]').click();
   await page.locator('.rdb-row').waitFor();
   assert.equal(await page.locator('.rdb-grid').count(),0,'Checklist List opens without dashboard above');
