@@ -83,7 +83,7 @@ for (const engine of ['chromium', 'webkit']) {
         const radios=cells.slice(1).map(el=>el.querySelector('input[type=radio]'));
         return {
           count:rows.length,
-          columns:getComputedStyle(rows[1]).gridTemplateColumns.trim().split(/\\s+/).length,
+          columns:getComputedStyle(rows[1]).gridTemplateColumns.trim().split(/\s+/).length,
           headings:[...rows[0].children].map(el=>el.textContent.trim()),
           sameRow:bounds.every(box=>Math.abs(box.top-bounds[0].top)<6),
           shortRow:rows[1].getBoundingClientRect().height<75,
