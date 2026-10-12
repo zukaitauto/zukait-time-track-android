@@ -5,7 +5,7 @@ function validate(r,ref) {
  assert.equal(ref,'refs/heads/architecture-v2');
  assert.equal(r.releaseScope,'reception-insurance-features-1-10');
  assert.equal(r.approvedForStaff,true);
- assert.equal(r.versionName,'V316'); assert.equal(r.versionCode,279);
+ assert.equal(r.versionName,'V317'); assert.equal(r.versionCode,280);
  assert.match(r.sourceCommit,/^[a-f0-9]{40}$/);
  for(const k of ['signedAcceptanceRun','verificationRun']) assert.ok(Number.isSafeInteger(r[k])&&r[k]>0);
  assert.ok(!Number.isNaN(Date.parse(r.approvedAt)));
