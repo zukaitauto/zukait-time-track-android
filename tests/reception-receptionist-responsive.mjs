@@ -37,7 +37,7 @@ for(const engine of ['chromium','webkit']){
   assert.equal(await page.locator('[data-rdb=tile]').count(),0,'Dedicated Reception list hides dashboard cards');
   assert.equal(await page.locator('.rdb-row script').count(),0);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width} list overflow`);
-  await page.locator('.rdb-row [data-rdb=open]').click();await page.locator('[data-rc-action=insurance]').click();await page.locator('#rc-create-job').waitFor();
+  await page.locator('.rdb-row [data-rdb=open]').click();await page.locator('summary',{hasText:'Preparation & Historical Workflows'}).click();await page.locator('[data-rc-action=insurance]').click();await page.locator('#rc-create-job').waitFor();
   assert.equal(await page.locator('#rc-create-job [name=cash_amount]').isVisible(),true);
   assert.equal(await page.locator('#rc-create-job [name=cash_amount]').inputValue(),'');
   assert.equal(await page.locator('#rc-approval,#rc-external-approval,#rc-link-estimate,[data-rc-action=parts],[data-rc-action=cancel-job]').count(),0);
