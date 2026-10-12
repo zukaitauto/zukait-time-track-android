@@ -75,6 +75,26 @@ for (const engine of ['chromium', 'webkit']) {
       assert.ok(Math.abs(dialog.width-width)<=2,`${engine} ${width}: Reception not full-width`);
       assert.ok(Math.abs(dialog.height-900)<=2,`${engine} ${width}: Reception not full-height`);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width}: editor overflow`);
+      // Regression: Function Check must be a compact four-column row on real mobile and PC widths.
+      const functionGrid=await page.evaluate(()=>{
+        const rows=[...document.querySelectorAll('#rc-form .rc-function-entry')];
+        const cells=[...rows[1].children];
+        const bounds=cells.map(el=>el.getBoundingClientRect());
+        const radios=cells.slice(1).map(el=>el.querySelector('input[type=radio]'));
+        return {
+          count:rows.length,
+          columns:getComputedStyle(rows[1]).gridTemplateColumns.trim().split(/\\s+/).length,
+          headings:[...rows[0].children].map(el=>el.textContent.trim()),
+          sameRow:bounds.every(box=>Math.abs(box.top-bounds[0].top)<6),
+          shortRow:rows[1].getBoundingClientRect().height<75,
+          radios:radios.length===3&&radios.every(el=>!!el),
+          radioHoriz:radios.every((el,i)=>i===0||el.getBoundingClientRect().left>radios[i-1].getBoundingClientRect().left+15)
+        };
+      });
+      assert.deepEqual(functionGrid.headings,['Item','OK','ISSUE','N/A'],`${engine} ${width}: malformed Function Check headings`);
+      assert.equal(functionGrid.columns,4,`${engine} ${width}: Function Check not four columns`);
+      assert.ok(functionGrid.sameRow&&functionGrid.shortRow&&functionGrid.radios&&functionGrid.radioHoriz,
+        `${engine} ${width}: Function Check options must align horizontally in compact rows; ${JSON.stringify(functionGrid)}`);
       const expected=['registration','make','model','year','odometer_unit','odometer',
         'vin','customer','contact','claim'];
       const order=await page.locator('#rc-form .rc-create-sections .rc-grid input,#rc-form .rc-create-sections .rc-grid select')
