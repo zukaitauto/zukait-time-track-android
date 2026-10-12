@@ -20,6 +20,16 @@ async function open(no){
   if(!j.make||!j.model){const n=window.zukaitNormalizeVehicle?.(j.make||'',j.model||'',j.vehicle||'');if(n){j.make=j.make||n.make;j.model=j.model||n.model;}}
   const input=([key,label])=>'<label>'+esc(label)+'<input id="jce-'+key+'" '+(key==='amount'?'type="number" min="0" max="1000000" step="0.001" inputmode="decimal" ':'')+'value="'+esc(j[key])+'"'+(j.receptionNo&&linked.has(key)||key==='amount'&&result.invoice_locked?' readonly':'')+'></label>';
   openModal('<section class="jce-form"><h3>Edit Job Card · '+esc(j.no)+'</h3>'+(j.receptionNo?'<p>Vehicle identity is linked to '+esc(j.receptionNo)+'. Correct it in Reception Checklist.</p>':'')+(result.invoice_locked?'<p>Final invoice amount is authoritative. Use Invoice Entry for a correction.</p>':'')+'<form id="jce-form"><div class="grid">'+fields.map(input).join('')+'<label>Job Type<select id="jce-jobType"'+(j.receptionNo?' disabled':'')+'>'+['Cash','Credit','Insurance'].map(t=>'<option'+(t.toUpperCase()===String(j.jobType||'').toUpperCase()?' selected':'')+'>'+t+'</option>').join('')+'</select></label></div><label>Reason for Change<textarea id="jce-reason" maxlength="2000" required></textarea></label><button type="submit">Save Changes</button><button type="button" id="jce-cancel">Cancel</button></form></section>');
+  const editType=document.getElementById('jce-jobType');
+  const updateInsuranceVisibility=()=>{
+    const visible=String(editType.value).toUpperCase()==='INSURANCE';
+    for(const key of ['insuranceCompany','claimNo']){
+      const field=document.getElementById('jce-'+key);
+      if(field)field.closest('label').hidden=!visible;
+    }
+  };
+  editType.addEventListener('change',updateInsuranceVisibility);
+  updateInsuranceVisibility();
   document.getElementById('jce-form').onsubmit=e=>{e.preventDefault();save();};
   document.getElementById('jce-cancel').onclick=()=>{draft=null;loadId++;closeModal();window.zukaitReceptionDashboard?.showJobs?.();};
  }catch(e){alert(e.message);}
