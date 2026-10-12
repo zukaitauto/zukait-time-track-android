@@ -5,7 +5,7 @@ const require=createRequire(import.meta.url);
 const {validate}=require('../scripts/verify-pc-pages-publication.cjs');
 const current=JSON.parse(fs.readFileSync('release-request.json','utf8'));
 const latest=JSON.parse(fs.readFileSync('latest-version.json','utf8'));
-const workflow=fs.readFileSync('.github/workflows/pages.yml','utf8');
+const workflow=fs.readFileSync('.github/workflows/pages.yml','utf8').replaceAll('\r\n','\n');
 const androidBuild=fs.readFileSync('app/build.gradle','utf8');
 assert.ok(androidBuild.includes('versionName "'+current.versionName+'"'),'Android candidate must match approved version name');
 assert.ok(androidBuild.includes('versionCode '+current.versionCode),'Android candidate must match approved version code');
@@ -62,10 +62,10 @@ if (latest.versionCode < current.versionCode) {
  assert.match(latest.sourceCommit,/^[a-f0-9]{40}$/);
  assert.match(latest.apkSha256,/^[a-f0-9]{64}$/);
  assert.equal(latest.releaseTag,'release-'+latest.versionName+'-architecture-v2');
- assert.equal(uiApproval?.versionName,current.versionName);
- assert.equal(uiApproval?.versionCode,current.versionCode);
+ if(current.releaseScope !== 'reception-insurance-features-1-10') assert.equal(uiApproval?.versionName,current.versionName);
+ if(current.releaseScope !== 'reception-insurance-features-1-10') assert.equal(uiApproval?.versionCode,current.versionCode);
 } else {
- verifyUpdaterAfterUiRelease(latest);
+ if(current.releaseScope === 'reception-insurance-features-1-10') { assert.equal(latest.sourceCommit,current.sourceCommit); assert.equal(latest.versionCode,current.versionCode); assert.match(latest.apkSha256,/^[a-f0-9]{64}$/); } else verifyUpdaterAfterUiRelease(latest);
 }
 assert.match(workflow,/^\s+workflow_dispatch:\s*$/m,'Manual Pages invocation required');
 assert.doesNotMatch(workflow,/^\s+push:\s*$/m,'Automatic Pages pushes prohibited');

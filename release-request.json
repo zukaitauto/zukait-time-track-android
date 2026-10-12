@@ -36,5 +36,6 @@
       "passed": true,
       "evidence": "PostgreSQL17 34-table dump/restore, functions/grants/sequences/RLS and UUID retries verified in run 38268809683; synthetic data"
     }
-  }
+  },
+  "sourceCommit": null
 }
