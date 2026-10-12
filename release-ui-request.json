@@ -1,12 +1,12 @@
 {
-  "versionName": "V312",
-  "versionCode": 275,
+  "versionName": "V313",
+  "versionCode": 276,
   "approvedForStaff": true,
-  "approvedAt": "2026-10-11T15:48:53.000Z",
-  "sourceCommit": "ff27efcee1d3d9fe7d10152207bc8b1a4f80ab29",
-  "publishNonce": "owner-approved-v312-live-testing-20261011-154853",
-  "signedAcceptanceRun": 38151860139,
-  "verificationRun": 38151860080,
+  "approvedAt": "2026-10-12T07:30:51.950Z",
+  "sourceCommit": "90267caada5663562b6d4a032b217a2906966fd0",
+  "publishNonce": "owner-authorized-v313-checklist-20261012",
+  "signedAcceptanceRun": 38217381414,
+  "verificationRun": 38217381463,
   "releaseScope": "phase1-compatible-ui",
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
@@ -19,5 +19,5 @@
     "migrationsApplied": 7,
     "permissionSmokePassed": true
   },
-  "authorization": "Owner explicitly requested: release it and we will test for bugs. Owner separately chose to proceed without a live-data backup. V312 backend dependencies, optional amount and Manager full edit migrations and workshop-api were deployed separately before this client publication. Publish only verified source ff27efcee1d3d9fe7d10152207bc8b1a4f80ab29 to existing Android and web on architecture-v2. Physical device acceptance remains NOT_RUN; no main change or broader Phase 2 activation."
+  "authorization": "User explicitly requested release of the verified V313 Reception Checklist layout on 2026-10-12. Exact source 90267caada5663562b6d4a032b217a2906966fd0; publish existing web and Android via approved architecture-v2 workflow only. No new backend migrations or Phase 2 activation. Previous owner backup deferral remains historical; physical acceptance NOT_RUN, not falsely attested. Preserve existing staff data and V312 release."
 }
