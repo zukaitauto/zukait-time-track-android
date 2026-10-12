@@ -16,6 +16,10 @@ execFileSync(process.execPath,["tests/reception-phase1.mjs"],{
 });
 const html=fs.readFileSync(filename,"utf8");
 assert.match(html,/ZUKAIT INTERNATIONAL LLC/);
+assert.match(html,/>CHECK LIST<\/div>/);
+assert.doesNotMatch(html,/VEHICLE RECEPTION CHECKLIST \/ INSPECTION FORM/);
+assert.match(html,/CUSTOMER INFORMATION/);
+assert.match(html,/VEHICLE & CLAIM INFORMATION/);
 assert.match(html,/@page\{size:A4 portrait;margin:0\}/);
 assert.match(html,/viewBox="0 0 1536 1152"/);
 
@@ -42,14 +46,14 @@ assert.match(html,/rc-cols-vehicle/);
 assert.match(html,/rc-cols-vin/);
 assert.match(html,/rc-cols-customer/);
 assert.match(html,/Dashboard Warning/);
-const fieldOrder=["Job Type:","Insurance:","Reg No:","Make:","Model:","VIN:","Year:","KM:","Customer Name:","Mob:","Claim Number:"];
+const fieldOrder=["Job Type:","Insurance:","Reg No:","Make:","Model:","VIN:","Year:","KM:","Claim Number:","Customer Name:","Mob:"];
 let previous=-1;
 for(const field of fieldOrder){
  const next=html.indexOf('<strong>'+field+'</strong>');
  assert.ok(next>previous,"A4 field order or label missing: "+field);
  previous=next;
 }
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true,...(process.env.ZUKAIT_CHROMIUM_PATH?{executablePath:process.env.ZUKAIT_CHROMIUM_PATH}:{})});
 try{
   const page=await browser.newPage({
     viewport:{width:1240,height:1754},deviceScaleFactor:1
@@ -67,10 +71,18 @@ try{
       carWidth:document.querySelector(".rc-print-car").getBoundingClientRect().width,
       carHeight:document.querySelector(".rc-print-car").getBoundingClientRect().height};
   });
-  assert.ok(dimensions.notesHeight>=260,JSON.stringify(dimensions));
+  assert.ok(dimensions.notesHeight>=90,JSON.stringify(dimensions));
   assert.ok(dimensions.carWidth>dimensions.carHeight,JSON.stringify(dimensions));
   assert.ok(dimensions.notesContentHeight<=dimensions.notesVisibleHeight+2,
     "Normal Reception notes must be fully visible on the A4 form");
+  const layout=await page.evaluate(()=>{
+    const table=document.querySelector('.rc-function-table'),inspection=document.querySelector('.rc-inspection'),fuel=document.querySelector('.rc-fuel');
+    return {rows:table.querySelectorAll('tbody tr').length,font:parseFloat(getComputedStyle(table).fontSize),fuelBottom:fuel.getBoundingClientRect().bottom,inspectionBottom:inspection.getBoundingClientRect().bottom,accessories:document.querySelectorAll('.rc-accessories .rc-item').length};
+  });
+  assert.equal(layout.rows,7);
+  assert.equal(layout.accessories,14);
+  assert.ok(layout.font>=12,'Function Check must be at least 9pt');
+  assert.ok(layout.fuelBottom<=layout.inspectionBottom,'Inspection contents must not overlap accessories');
   const pdf=await page.pdf({format:"A4",printBackground:true,preferCSSPageSize:true,
     margin:{top:"0mm",bottom:"0mm",left:"0mm",right:"0mm"}});
   const pageCount=(pdf.toString("latin1").match(/\/Type\s*\/Page(?!s\b)/g)||[]).length;

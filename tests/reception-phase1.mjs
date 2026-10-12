@@ -274,6 +274,14 @@ sample.details = {
   warnings: "No warning lights recorded.",
   remarks: "Customer waiting for insurance approval.",
 };
+for(const raw of ["NO","No warning lights recorded."]){
+ const doc=new JSDOM(w.zukaitReception.documentHtml({...sample,details:{...sample.details,warnings:raw}})).window.document;
+ assert.equal(doc.querySelector('.rc-warning-options span').textContent.trim(),"✓ No Warning");
+ assert.equal(doc.querySelector('.rc-warning-description'),null);
+}
+const issueDoc=new JSDOM(w.zukaitReception.documentHtml({...sample,details:{...sample.details,warnings:'[[ZUKAIT-FUNCTION-V1]]\n{"Dashboard Warning":"ISSUE"}\n[[/ZUKAIT-FUNCTION-V1]]\nEngine'}})).window.document;
+assert.match(issueDoc.querySelector('.rc-warning-options').textContent,/✓ Warning Available/);
+assert.equal(issueDoc.querySelector('.rc-warning-description').textContent,"Engine");
 if (process.env.ZUKAIT_RECEPTION_QA_HTML)
   fs.writeFileSync(
     process.env.ZUKAIT_RECEPTION_QA_HTML,
