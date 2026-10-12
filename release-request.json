@@ -1,7 +1,7 @@
 {
   "versionName": "V316",
   "versionCode": 279,
-  "approvedForStaff": false,
+  "approvedForStaff": true,
   "releaseScope": "reception-insurance-features-1-10",
   "ownerDeferrals": {
     "freshProductionBackupRestore": "Authorize backup deferral and release",
@@ -37,5 +37,9 @@
       "evidence": "PostgreSQL17 34-table dump/restore, functions/grants/sequences/RLS and UUID retries verified in run 38268809683; synthetic data"
     }
   },
-  "sourceCommit": null
+  "sourceCommit": "b915a76bc47e368eb3fa730830f11b47a1edc35a",
+  "signedAcceptanceRun": 38273419242,
+  "verificationRun": 38273419152,
+  "approvedAt": "2026-10-12T15:55:31.269Z",
+  "publishNonce": "owner-v316-full-release-20261012-explicit-deferrals"
 }
