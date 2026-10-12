@@ -595,21 +595,21 @@
         "front_bumper",
         "Front Bumper",
         "الصدام الأمامي",
-        91,
+        88,
         49
     ],
     [
         "bonnet",
         "Bonnet",
         "غطاء المحرك",
-        78,
+        76,
         49
     ],
     [
         "windshield",
         "Windshield",
         "الزجاج الأمامي",
-        65,
+        64,
         49
     ],
     [
@@ -623,63 +623,63 @@
         "rear_glass",
         "Rear Glass",
         "الزجاج الخلفي",
-        31,
+        34,
         49
     ],
     [
         "trunk",
         "Trunk",
         "الصندوق الخلفي",
-        20,
+        22,
         49
     ],
     [
         "rear_bumper",
         "Rear Bumper",
         "الصدام الخلفي",
-        10,
+        12,
         49
     ],
     [
         "front_door_l",
         "Front Door (LH)",
         "الباب الأمامي الأيسر",
-        60,
+        62,
         18
     ],
     [
         "rear_door_l",
         "Rear Door (LH)",
         "الباب الخلفي الأيسر",
-        42,
+        44,
         18
     ],
     [
         "front_door_r",
         "Front Door (RH)",
         "الباب الأمامي الأيمن",
-        60,
+        62,
         80
     ],
     [
         "rear_door_r",
         "Rear Door (RH)",
         "الباب الخلفي الأيمن",
-        42,
+        44,
         80
     ],
     [
         "front_fender_l",
         "Front Fender (LH)",
         "الرفرف الأمامي الأيسر",
-        77,
+        79,
         18
     ],
     [
         "front_fender_r",
         "Front Fender (RH)",
         "الرفرف الأمامي الأيمن",
-        77,
+        79,
         80
     ],
     [
@@ -700,15 +700,15 @@
         "head_lights",
         "Headlights",
         "المصابيح الأمامية",
-        89,
-        34
+        88,
+        37
     ],
     [
         "rear_lights",
         "Rear Lights",
         "المصابيح الخلفية",
-        11,
-        66
+        12,
+        62
     ]
 ];
   const extraAccessories=[
