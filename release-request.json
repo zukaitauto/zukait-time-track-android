@@ -369,6 +369,18 @@
     "productionBackupReadiness": {
       "passed": false,
       "evidence": "BLOCKED: Supabase production backup dashboard redirected to sign-in; installed connector does not expose managed backup listing/export. No complete fresh production backup or isolated production restore was verified. Read-only workshop_backups query found 15 application snapshots, newest 2026-10-12T16:16:20.061295Z at revision 13102, versus current workshop_state revision 13106. Application JSON snapshots do not establish complete PostgreSQL backup/recovery readiness. managedBackup remains null."
+    },
+    "historyRecovery": {
+      "passed": true,
+      "evidence": "On 2026-10-12 production workshop_state revision 13110 restored employeeTimeActionAudit 46 rows, jobIdentityAudit 4 rows and systemNotifications 45 rows from retained revision 13106. Read-only verification confirmed exact equality of restored collections and unchanged all other workshop JSON vs pre-recovery revision 13109. Preserved revision 13109 snapshot. Does not constitute complete authenticated production preservation acceptance."
+    },
+    "historyProtection": {
+      "passed": true,
+      "evidence": "Supabase production workshop-api ACTIVE v63 contains stale-client employeeTimeActionAudit, jobIdentityAudit, systemNotifications and duplicate jobEdits preservation. GitHub Reception CI run 38302060794 passed on architecture-v2 commit 5fdf735c7d6e1bf7191fea116f2d4a7a25a79874, including tests/workshop-history-preservation.mjs. Authenticated live endpoint behavior remains unverified."
+    },
+    "materialReconciliation": {
+      "passed": true,
+      "evidence": "Production workshop_state rev 13109 compared 37/37 approved 2026-10-12 PDF material/brand/price/unit/effective-date rows, with no mismatches. Targeted transactions preserved all unrelated workshop state, issues and actuals; subsequent rev 13110 recovery also preserved unrelated state."
     }
   },
   "sourceCommit": null,
