@@ -1,6 +1,6 @@
 (function(){'use strict';
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- let section='jobs',filters={},page=0,result,serial=0;
+ let section='jobs',filters={},page=0,result,serial=0,summaryCache=null,companiesCache=[];
  function role(){return window.me?.role||'';}
  function style(){if(document.getElementById('ins-style'))return;const s=document.createElement('style');s.id='ins-style';s.textContent=`
  .ins-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px}.ins-summary button{background:#fff!important;color:#213547!important;text-align:left;padding:16px;border:1px solid #dae4ec!important;border-radius:14px;min-width:0;white-space:normal;box-shadow:0 2px 8px #16324b12;font-weight:700;font-size:15px}.ins-summary b{display:block;font-size:25px;margin-top:8px;color:#087b81}.ins-summary button:nth-child(2) b{color:#2563eb}.ins-summary button:nth-child(3) b{color:#b45309}.ins-summary button:nth-child(4) b{color:#7c3aed}
@@ -20,7 +20,7 @@
   if(section==='pending')return [['No.',esc(n)],['JC Number',jc],['Insurance',esc(r.insurance_company||'—')],['Status',badge],['LPO Enter','<button class="ins-lpo-entry" data-ins="lpo" data-job="'+esc(r.job_card)+'">'+(r.lpo_amount==null?'Enter LPO':'LPO Details')+'</button>','ins-actions']];
   return [['No.',esc(n)],['JC Number',jc],['Make / Model / Year',esc([r.vehicle,r.year].filter(Boolean).join(' ')||'—')],['Insurance Company',esc(r.insurance_company||'—')],['Status',badge]];
  }
- function sectionTitle(){return ({jobs:'Insurance Job Cards',pending:'LPO Pending',wip:'Work in Progress',delivered:'Delivered Vehicles',collected:'LPO Collected Amount'})[section]||'Insurance Job Cards';}
+ function sectionTitle(){return ({jobs:'Insurance Job Cards',pending:'LPO Pending',wip:'Work in Progress',delivered:'Delivered Vehicles',collected:'LPO Collected Amount',approval:'Approval Pending'})[section]||'Insurance Job Cards';}
  function jobDetails(no){
   const r=result?.rows?.find(x=>String(x.job_card)===String(no));if(!r)return;
   const cost=typeof window.v128JobCostData==='function'?window.v128JobCostData(no):null;
@@ -33,21 +33,21 @@
   document.getElementById('rc-root')?.addEventListener('click',onClick);
  }
  function render(){
-  style();const summary=result.summary;
+  style();const summary=result.summary||summaryCache||{collected_amount:0,delivered_count:0,approval_pending:0,wip_count:0};
   const summaries=[['collected','Monthly Insurance LPO Collected Amount','OMR '+money(summary.collected_amount)],['delivered','Monthly Delivered Insurance Vehicles',summary.delivered_count],['approval','Approval Pending',summary.approval_pending],['wip','Work in Progress',summary.wip_count]];
   window.zukaitReception.dashboardShell('Insurance Management',
    '<div class="ins-summary">'+summaries.map(([action,label,value])=>'<button data-ins="summary" data-section="'+action+'">'+esc(label)+'<b>'+esc(value)+'</b></button>').join('')+'</div>'+
    '<div class="ins-toolbar"><button data-ins="section" data-section="jobs" aria-pressed="'+(section==='jobs')+'">Insurance Job Cards</button><button data-ins="section" data-section="pending" aria-pressed="'+(section==='pending')+'">LPO Pending</button><button data-ins="print">Print</button><button data-ins="refresh">Refresh</button></div>'+
-   '<div class="ins-filters"><label>Insurance Company<select data-ins-filter="company"><option value="">All</option>'+result.companies.map(c=>'<option'+(filters.company===c?' selected':'')+'>'+esc(c)+'</option>').join('')+'</select></label><label>Month<input type="month" data-ins-filter="month" value="'+esc(filters.month)+'"></label></div>'+
+   '<div class="ins-filters"><label>Insurance Company<select data-ins-filter="company"><option value="">All</option>'+(result.companies||companiesCache).map(c=>'<option'+(filters.company===c?' selected':'')+'>'+esc(c)+'</option>').join('')+'</select></label><label>Month<input type="month" data-ins-filter="month" value="'+esc(filters.month)+'"></label></div>'+
    '<details class="ins-advanced"><summary>Advanced Date Filters</summary><div class="ins-filters"><label>From<input type="date" data-ins-filter="from" value="'+esc(filters.from)+'"></label><label>To<input type="date" data-ins-filter="to" value="'+esc(filters.to)+'"></label></div></details>'+
    '<label class="ins-search">Search<input data-ins-filter="search" value="'+esc(filters.search||'')+'" placeholder="JC / Vehicle / Insurance"></label>'+
    '<div class="ins-compact-heading">'+esc(sectionTitle())+' · '+result.total+' records</div>'+
-   '<div class="ins-compact">'+result.rows.map((r,i)=>'<button type="button" class="ins-compact-row '+(r.delivered_date?'ins-delivered':'')+'" data-ins="job" data-job="'+esc(r.job_card)+'" aria-label="Open Insurance Job '+esc(r.job_card)+'"><span class="ins-index">'+(page*50+i+1)+'.</span><span class="ins-content"><span class="ins-main">'+esc(r.job_card)+' · '+esc([r.vehicle,r.year].filter(Boolean).join(' ')||'Vehicle details unavailable')+'</span><span class="ins-sub">'+esc(r.insurance_company||'Insurance not recorded')+(section==='collected'?' · OMR '+esc(money(r.lpo_amount)):'')+'</span></span><span class="ins-arrow" aria-hidden="true">›</span></button>').join('')+'</div>'+
+   '<div class="ins-compact">'+result.rows.map((r,i)=>{const approval=section==='approval',no=approval?r.rc_no:r.job_card;return '<button type="button" class="ins-compact-row '+(r.delivered_date?'ins-delivered':'')+'" data-ins="'+(approval?'checklist':'job')+'" data-job="'+esc(no)+'" aria-label="Open '+(approval?'Checklist ':'Insurance Job ')+esc(no)+'"><span class="ins-index">'+(page*50+i+1)+'.</span><span class="ins-content"><span class="ins-main">'+esc(no||'—')+' · '+esc(approval?(r.vehicle||'Vehicle details unavailable'):[r.vehicle,r.year].filter(Boolean).join(' ')||'Vehicle details unavailable')+'</span><span class="ins-sub">'+esc(r.insurance_company||'Insurance not recorded')+(section==='collected'?' · OMR '+esc(money(r.lpo_amount)):'')+'</span></span><span class="ins-arrow" aria-hidden="true">›</span></button>';}).join('')+'</div>'
    '<div class="ins-toolbar"><button data-ins="previous"'+(page===0?' disabled':'')+'>Previous</button><span>Page '+(page+1)+'</span><button data-ins="next"'+((page+1)*50>=result.total?' disabled':'')+'>Next</button></div>');
   const root=document.getElementById('rc-root');root.addEventListener('click',onClick);root.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('.ins-record'))onClick(e);});root.addEventListener('change',e=>{const key=e.target.dataset.insFilter;if(!key)return;filters[key]=e.target.value;page=0;void load();});
  }
  async function load(){if(role()!=='Manager')return;const id=++serial;
-  try{const data=await window.zukaitReception.action({action:'insurance_dashboard',section,...filters,page});if(id!==serial)return;result=data;render();}
+  try{const approval=section==='approval';const data=await window.zukaitReception.action(approval?{action:'reception_dashboard',section:'waiting',...filters,page}:{action:'insurance_dashboard',section,...filters,page});if(id!==serial)return;if(!approval){summaryCache=data.summary;companiesCache=data.companies||[];}result=data;render();}
   catch(e){const host=document.getElementById('rc-error');if(host)host.textContent=e.message||String(e);}
  }
  async function open(){if(role()!=='Manager')return;filters={company:'',month:new Date(Date.now()+14400000).toISOString().slice(0,7),from:'',to:'',search:''};page=0;section='jobs';
@@ -74,9 +74,9 @@
   }catch(e){popup.close();throw e;}
  }
  async function onClick(e){const button=e.target.closest('[data-ins]');if(!button)return;e.preventDefault();try{
-  const action=button.dataset.ins;if(action==='summary'||action==='section'){if(button.dataset.section==='approval')return window.zukaitReceptionDashboard.choose('waiting');section=button.dataset.section;page=0;return load();}
+  const action=button.dataset.ins;if(action==='summary'||action==='section'){section=button.dataset.section;page=0;return load();}
   if(action==='lpo')return lpo(button.dataset.job);
-  if(action==='job')return jobDetails(button.dataset.job);
+  if(action==='checklist')return window.zukaitReception.openRecord(button.dataset.job);if(action==='job')return jobDetails(button.dataset.job);
   if(action==='previous'&&page>0){page--;return load();}if(action==='next'&&(page+1)*50<result.total){page++;return load();}
   if(action==='refresh'||action==='back')return load();if(action==='print')return print();
   if(action==='retry'){const body=JSON.parse(localStorage.getItem(pendingKey())||'null');if(body)await save(body);}
