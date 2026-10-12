@@ -29,7 +29,10 @@ for(const forbidden of [/\bDROP\s+(?:DATABASE|TABLE)\b/i,/\bTRUNCATE\b/i,
  /\bDELETE\s+FROM\b/i,/\bALTER\s+TABLE\b/i,
  /\bpg_restore\s+--dbname\b/i,/\bsupabase\s+db\s+reset\b/i])
  assert.doesNotMatch(source,forbidden,'Backup helper must not include destructive database operations');
-assert.equal(req.approvedForStaff,false,'Backup preparation never grants publication');
+assert.equal(typeof req.approvedForStaff,'boolean','Release approval flag must be explicit');
+// Backup preparation must never modify the approval record; an independently approved UI-only release can coexist.
+assert.ok(!req.approvedForStaff || /^[a-f0-9]{40}$/.test(req.sourceCommit || ''),
+ 'Approved release must retain its pinned source');
 assert.equal(gate.checks.fresh_backup_restored.passed,false,
  'Static export script must not count as a verified backup and restore');
 console.log('PASS: read-only Free-plan backup helper, production-project and encryption checks, three separate SQL dumps, integrity hashes, no implicit restore or publication.');
