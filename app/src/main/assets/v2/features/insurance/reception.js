@@ -871,9 +871,9 @@
     const parsed=parseFunctionChecks(d.warnings);
     const warningStatus=warningState(d.warnings);
     return '<section class="rc-box rc-function-panel"><h4>Function Check / فحص الوظائف</h4>'+
-      '<div class="rc-function-entry"><strong>Item</strong><strong>OK</strong><strong>ISSUE</strong><strong>N/A</strong></div>'+
-      functionChecks.map((name,i)=>'<div class="rc-function-entry"><strong>'+esc(name)+'</strong>'+
-        ["OK","ISSUE","NA"].map(status=>'<label><input type="radio" name="rc-function-'+i+'" value="'+status+'" '+(parsed.marks[name]===status?'checked':'')+' aria-label="'+esc(name+' '+status)+'"></label>').join("")+'</div>').join("")+
+      '<div class="rc-function-entry" style="display:grid!important;grid-template-columns:minmax(0,1.8fr) repeat(3,minmax(40px,.65fr))!important;align-items:center;gap:4px;min-height:38px"><strong>Item</strong><strong>OK</strong><strong>ISSUE</strong><strong>N/A</strong></div>'+
+      functionChecks.map((name,i)=>'<div class="rc-function-entry" style="display:grid!important;grid-template-columns:minmax(0,1.8fr) repeat(3,minmax(40px,.65fr))!important;align-items:center;gap:4px;min-height:42px"><strong>'+esc(name)+'</strong>'+
+        ["OK","ISSUE","NA"].map(status=>'<label style="display:flex!important;justify-content:center;align-items:center;min-height:32px"><input style="appearance:auto!important;display:inline-block!important;width:21px!important;height:21px!important;min-height:21px!important;margin:0!important;flex:none" type="radio" name="rc-function-'+i+'" value="'+status+'" '+(parsed.marks[name]===status?'checked':'')+' aria-label="'+esc(name+' '+status)+'"></label>').join("")+'</div>').join("")+
       '<div class="rc-dashboard-warning"><h4>Dashboard Warning</h4><label><input type="radio" name="rc-dashboard-warning" value="OK" '+(warningStatus==="OK"?'checked':'')+'> No Warning</label> '+
       '<label><input type="radio" name="rc-dashboard-warning" value="ISSUE" '+(warningStatus==="ISSUE"?'checked':'')+'> Warning Available</label>'+
       '<label data-rc-warning-details '+(warningStatus==="ISSUE"?'':'hidden')+'>Warning details (Airbag, Engine, ABS, etc.)<textarea name="warnings" maxlength="1400" placeholder="e.g. Airbag, Check Engine">'+esc(parsed.details)+'</textarea></label></div></section>';
