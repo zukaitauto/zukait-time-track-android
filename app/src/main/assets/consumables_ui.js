@@ -471,7 +471,7 @@ window.consSaveMasterRow=function(mid,bid,pid){
  const val=id=>String(document.getElementById(id)?.value||'').trim();
  const name=val('cmeName'),brand=val('cmeBrand'),category=val('cmeCategory'),unit=val('cmeUnit'),rawPrice=val('cmePrice'),price=Number(rawPrice),rawDate=val('cmeDate'),effective=Date.parse(rawDate+'T00:00:00'),reason=val('cmeReason');
  if(!reason)return alert('Reason is required.');
- if(!name||!brand||!['Paint','Consumable'].includes(category)||!['Liter','kg','Piece'].includes(unit)||!rawPrice||!Number.isFinite(price)||price<0||!/^\\d{4}-\\d{2}-\\d{2}$/.test(rawDate)||!Number.isFinite(effective))return alert('Check all material fields.');
+ if(!name||!brand||!['Paint','Consumable'].includes(category)||!['Liter','kg','Piece'].includes(unit)||!rawPrice||!Number.isFinite(price)||price<0||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(rawDate)||!Number.isFinite(effective))return alert('Check all material fields.');
  if(c.materials.some(x=>x!==m&&x.active!==false&&x.name.trim().toLowerCase()===name.toLowerCase()))return alert('Duplicate material name.');
  if(c.brands.some(x=>x!==b&&x.active!==false&&x.name.trim().toLowerCase()===brand.toLowerCase()))return alert('Duplicate brand name.');
  const unitChanged=unit!==m.unit,dateChanged=effective!==Number(p.effectiveFrom),priceChanged=Math.round(price*1000)!==Math.round(Number(p.pricePerUnit)*1000);
@@ -479,6 +479,7 @@ window.consSaveMasterRow=function(mid,bid,pid){
   const used=(c.issues||[]).some(x=>!x.voided&&(x.lines||[]).some(l=>l.materialId===mid))||(c.actuals||[]).some(x=>!x.voided&&(x.lines||[]).some(l=>l.materialId===mid));
   if(used)return alert('Unit change blocked: this material has recorded quantities. Historical conversions require a reviewed migration.');
  }
+ if(dateChanged&&(c.actuals||[]).some(x=>!x.voided&&(x.lines||[]).some(l=>l.materialId===mid&&l.brandId===bid)))return alert('Effective date change requires a reviewed costing migration because Actual Materials exist.');
  if(dateChanged&&c.prices.some(x=>x!==p&&!x.voided&&x.materialId===mid&&x.brandId===bid&&Number(x.effectiveFrom)===effective))return alert('Another price already exists on this effective date.');
  const changed=name!==m.name||brand!==b.name||category!==(m.category||'Consumable')||unitChanged||dateChanged||priceChanged;
  if(!changed)return alert('No changes detected.');
