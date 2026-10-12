@@ -1,14 +1,14 @@
 {
-  "versionName": "V314",
-  "versionCode": 277,
-  "approvedForStaff": true,
-  "approvedAt": "2026-10-12T10:02:00Z",
-  "sourceCommit": "d45ac2939b410a4cdbdeb54ea211fdf7c89c2a76",
-  "publishNonce": "owner-authorized-v314-web-app-20261012",
-  "signedAcceptanceRun": 38234045239,
-  "verificationRun": 38234045266,
+  "versionName": "V315",
+  "versionCode": 278,
+  "approvedForStaff": false,
+  "approvedAt": null,
+  "sourceCommit": null,
+  "publishNonce": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
   "releaseScope": "phase1-compatible-ui",
-  "ownerRequestedImmediateRelease": true,
+  "ownerRequestedImmediateRelease": false,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
@@ -19,5 +19,5 @@
     "migrationsApplied": 7,
     "permissionSmokePassed": true
   },
-  "authorization": "Owner explicitly requested V314 publication for live website and Android verification on 2026-10-12. Source d45ac2939b410a4cdbdeb54ea211fdf7c89c2a76 passed Reception verification 38234045266 and signed acceptance 38234045239. Phase 2 activation and backend changes remain unapproved; physical acceptance NOT_RUN, retained as such."
+  "authorization": "V315 candidate pending verified source and owner approval. Preserve V314 public release; no Phase 2 activation or backend changes."
 }
