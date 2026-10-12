@@ -60,6 +60,8 @@ jobs:
         run: npm run test:consumables:pdf
       - name: Prevent stale full-state saves from erasing workshop history
         run: node tests/workshop-history-preservation.mjs
+      - name: Verify safe advisory release classification
+        run: node tests/release-tier.mjs
       - run: node tests/reception-user-work-type.mjs
       - name: Isolated PostgreSQL concurrent-device acceptance
         run: npm run test:reception:concurrency
