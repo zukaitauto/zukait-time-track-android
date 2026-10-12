@@ -181,7 +181,8 @@ assert.match(
   /<script>unsafe<\/script>/,
 );
 assert.doesNotMatch(w.document.querySelector(".rc-cl-condition").textContent,/Front Bumper: Dent/,"Detail screen must not list damage mark names");
-assert.match(w.document.querySelector(".rc-cl-condition").textContent,/Damage Description/);
+assert.doesNotMatch(w.document.querySelector(".rc-cl-condition").textContent,/Damage Description/,"Separate damage description removed");
+assert.match(w.document.querySelector(".rc-cl-work-notes").textContent,/Work Descriptions \/ Notes/,"Unified notes shown");
 assert.match(w.document.querySelector(".rc-cl-observations").textContent,/Dashboard Warning:/);
 assert.doesNotMatch(w.document.querySelector(".rc-cl-observations").textContent,/Issue recorded/);
 assert.ok(w.document.querySelector(".rc-cl-diagram svg"),"Marked car diagram remains visible");
