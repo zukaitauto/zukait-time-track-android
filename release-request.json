@@ -17,10 +17,43 @@
     "bundleSha256": "0e53adb852ffe51aa67364eedf683658d2eadec5a2d37e92895e3da9d937fa53",
     "migration": "NONE_REQUIRED"
   },
-  "evidence": {},
-  "sourceCommit": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
+  "evidence": {
+    "signedCandidate": {
+      "passed": true,
+      "evidence": "GitHub run 38296018857 job 114967169696 completed successfully on b291c4656fff77e7cc7e2392e5b95b573cc72942. Logs verify com.zukait.timetrack V318 code 281 and signing certificate SHA256 63886438214503d468f053b44afe34baf008019f674e065a09b14ae8bf451af0. Artifact 11768097824 is unexpired. APK/web Reception asset parity passed; this is CI evidence, not physical-device acceptance."
+    },
+    "receptionCi": {
+      "passed": true,
+      "evidence": "GitHub run 38296018820 job 114967169558 completed successfully at source b291c4656fff77e7cc7e2392e5b95b573cc72942. Includes PostgreSQL concurrency, role guards, mock transport, Chromium/WebKit responsive checks, and one-page A4 checks. Does not prove authenticated production website behavior."
+    },
+    "ciRestoreRehearsal": {
+      "passed": true,
+      "evidence": "Run 38296018820 job 114967169558 log at 2026-10-12T19:12:30.2036646Z reports disposable PostgreSQL dump/restore PASS: 34 tables, rows, financial/work histories, sequences, RLS/grants, functions and guards identical; three old UUID retries deduplicated. Signature 5070a0cc869f0d07c08e6351570516af43298c28cbbae3cb01990a67a77a7dfc. Synthetic isolated CI only; not a production restore."
+    },
+    "productionBackendIdentity": {
+      "passed": true,
+      "evidence": "Read-only Supabase list_edge_functions on 2026-10-12 confirms production pjknotnjkufadqavcmii workshop-api ACTIVE version 62 with ezbr_sha256 0e53adb852ffe51aa67364eedf683658d2eadec5a2d37e92895e3da9d937fa53. This verifies deployment identity only; authenticated permission smoke remains unverified."
+    },
+    "preservation": {
+      "passed": false,
+      "evidence": "BLOCKED: no independently verified before/after production preservation comparison for this release was available. CI preservation tests are verified separately and must not be represented as production preservation."
+    },
+    "permissionSmoke": {
+      "passed": false,
+      "evidence": "BLOCKED: live site requires staff login. Read-only production query found ZQA_ accounts for Manager, Supervisor and Employee all inactive, and no Reception account with that prefix. Secure test-account sign-in request was declined. No account was enabled, session forged, or real staff credential changed."
+    },
+    "hostedQa": {
+      "passed": false,
+      "evidence": "BLOCKED: live website renders Staff Login, but no authorized authenticated session was available to exercise Reception, Insurance Management, or Checklist-to-Estimate autofill. Public release-integrity.json reports V317 code 280 source 0ba370922ecd54276056266c6c04609c5024365d, and GitHub latest release reports release-V317-architecture-v2. This is not V318 hosted acceptance."
+    },
+    "productionBackupReadiness": {
+      "passed": false,
+      "evidence": "BLOCKED: Supabase production backup dashboard redirected to sign-in; installed connector does not expose managed backup listing/export. No complete fresh production backup or isolated production restore was verified. Read-only workshop_backups query found 15 application snapshots, newest 2026-10-12T16:16:20.061295Z at revision 13102, versus current workshop_state revision 13106. Application JSON snapshots do not establish complete PostgreSQL backup/recovery readiness. managedBackup remains null."
+    }
+  },
+  "sourceCommit": "b291c4656fff77e7cc7e2392e5b95b573cc72942",
+  "signedAcceptanceRun": 38296018857,
+  "verificationRun": 38296018820,
   "approvedAt": null,
   "publishNonce": null
 }
