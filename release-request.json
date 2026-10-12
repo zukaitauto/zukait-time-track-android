@@ -18,9 +18,9 @@
     "migration": "NONE_REQUIRED"
   },
   "evidence": {},
-  "sourceCommit": "c0cc2e2af1384d44b2e92e955fc998c3301078f6",
-  "signedAcceptanceRun": 38289288700,
-  "verificationRun": 38289288737,
+  "sourceCommit": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
   "approvedAt": null,
   "publishNonce": null
 }
