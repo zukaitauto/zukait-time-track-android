@@ -371,7 +371,7 @@
       "evidence": "BLOCKED: Supabase production backup dashboard redirected to sign-in; installed connector does not expose managed backup listing/export. No complete fresh production backup or isolated production restore was verified. Read-only workshop_backups query found 15 application snapshots, newest 2026-10-12T16:16:20.061295Z at revision 13102, versus current workshop_state revision 13106. Application JSON snapshots do not establish complete PostgreSQL backup/recovery readiness. managedBackup remains null."
     }
   },
-  "sourceCommit": "b291c4656fff77e7cc7e2392e5b95b573cc72942",
+  "sourceCommit": null,
   "signedAcceptanceRun": 38296018857,
   "verificationRun": 38296018820,
   "approvedAt": null,
