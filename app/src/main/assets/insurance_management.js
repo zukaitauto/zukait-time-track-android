@@ -23,13 +23,16 @@
  function sectionTitle(){return ({jobs:'Insurance Job Cards',pending:'LPO Pending',wip:'Work in Progress',delivered:'Delivered Vehicles',collected:'LPO Collected Amount',approval:'Approval Pending'})[section]||'Insurance Job Cards';}
  function jobDetails(no){
   const r=result?.rows?.find(x=>String(x.job_card)===String(no));if(!r)return;
-  const cost=typeof window.v128JobCostData==='function'?window.v128JobCostData(no):null;
+  const master=window.zukaitJobCardMaster;
+  const identity=master?.identity?.(no)||null;
+  const cost=master?.costs?.(no)||(typeof window.v128JobCostData==='function'?window.v128JobCostData(no):null);
   const fmt=v=>v==null||!Number.isFinite(Number(v))?'—':Number(v).toFixed(3)+' OMR';
   const days=()=>{if(!r.date)return '—';const d=Date.parse(r.date+'T00:00:00Z');return Number.isFinite(d)?String(Math.max(0,Math.floor((Date.now()+14400000-d)/86400000)))+' days':'—';};
-  const local=typeof window.state==='object'?window.state:null;
-  const j=local?.jobs?.find(x=>String(x.no)===String(no));
-  const tiles=[['Approval Date',r.approval_date||'—'],['Job Card Date',r.date||'—'],['Status',r.reception_location==='VWC'?'VWC':r.delivered_date?'Delivered':'WIP'],['Days Since Open',days()],['LPO Status',r.lpo_amount==null?'Pending':'Received'],['Labour Hours',cost?.labourHours==null?'—':String(cost.labourHours)+' hours'],['Consumables',fmt(cost?.materials)],['Paint Total',fmt(cost?.paint)],['Parts Total',fmt(cost?.parts)],['Total Expense',fmt(cost?.total)]];
-  window.zukaitReception.dashboardShell('Insurance Job Details','<button type="button" class="ins-detail-back" data-ins="back">← Back to '+esc(sectionTitle())+'</button><div class="ins-detail-head"><h3>JC '+esc(r.job_card)+'</h3><strong>'+esc([r.vehicle,r.year].filter(Boolean).join(' '))+'</strong><p>'+esc(r.insurance_company||'—')+'</p></div><div class="ins-detail-grid">'+tiles.map(([k,v],i)=>'<div class="ins-detail-tile'+(i===9?' ins-detail-total':'')+'"><small>'+esc(k)+'</small><strong>'+esc(v)+'</strong></div>').join('')+'</div>'+(section==='pending'?'<button type="button" data-ins="lpo" data-job="'+esc(no)+'">Enter LPO</button>':''));
+  const vehicle=identity?.vehicle||r.vehicle||'Vehicle details unavailable';
+  const year=identity?.year||r.year||'';
+  const location=r.reception_location||identity?.receptionLocation||'';
+  const tiles=[['Approval Date',r.approval_date||'—'],['Job Card Date',r.date||'—'],['Status',r.delivered_date?'Delivered':location==='VWC'?'VWC':'WIP'],['Days Since Open',days()],['LPO Status',r.lpo_amount==null?'Pending':'Received'],['Labour Hours',cost?.labourHours==null?'—':String(cost.labourHours)+' hours'],['Consumables',fmt(cost?.materials)],['Paint Total',fmt(cost?.paint)],['Parts Total',fmt(cost?.parts)],['Total Expense',fmt(cost?.total)]];
+  window.zukaitReception.dashboardShell('Insurance Job Details','<button type="button" class="ins-detail-back" data-ins="back">← Back to '+esc(sectionTitle())+'</button><div class="ins-detail-head"><h3>JC '+esc(r.job_card)+'</h3><strong>'+esc([vehicle,year].filter(Boolean).join(' '))+'</strong><p>'+esc(r.insurance_company||'—')+'</p></div><div class="ins-detail-grid">'+tiles.map(([k,v],i)=>'<div class="ins-detail-tile'+(i===9?' ins-detail-total':'')+'"><small>'+esc(k)+'</small><strong>'+esc(v)+'</strong></div>').join('')+'</div>'+(section==='pending'?'<button type="button" data-ins="lpo" data-job="'+esc(no)+'">Enter LPO</button>':''));
   document.getElementById('rc-root')?.addEventListener('click',onClick);
  }
  function render(){
