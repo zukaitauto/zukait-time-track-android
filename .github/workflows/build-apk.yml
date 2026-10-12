@@ -64,7 +64,21 @@ jobs:
           gradle-version: '8.9'
 
       - name: Build release APK
-        run: gradle assembleRelease --stacktrace
+        shell: bash
+        run: |
+          # Maven repositories occasionally return transient missing-artifact results.
+          # Refresh dependencies and retry; never accept an unsuccessful build.
+          for attempt in 1 2 3; do
+            if gradle assembleRelease --stacktrace --refresh-dependencies; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::Release APK build failed after three attempts"
+              exit 1
+            fi
+            echo "::warning::Dependency resolution/build failed (attempt $attempt/3); retrying"
+            sleep 15
+          done
 
       - name: Rename unsigned APK
         shell: bash
