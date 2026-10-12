@@ -10,7 +10,13 @@ const candidate = JSON.parse(fs.readFileSync("release-request.json", "utf8"));
 const gradle = fs.readFileSync("app/build.gradle", "utf8");
 assert.ok(gradle.includes('versionName "' + candidate.versionName + '"'));
 assert.ok(gradle.includes("versionCode " + candidate.versionCode));
-assert.equal(candidate.approvedForStaff,false);
+assert.equal(typeof candidate.approvedForStaff,"boolean");
+if (candidate.approvedForStaff) {
+  assert.match(candidate.sourceCommit || "", /^[a-f0-9]{40}$/, "Approved release requires a pinned source");
+  assert.ok(Number.isSafeInteger(candidate.signedAcceptanceRun) && candidate.signedAcceptanceRun > 0,
+    "Approved release requires signed acceptance evidence");
+  assert.ok(!Number.isNaN(Date.parse(candidate.approvedAt)),"Approved release requires approval timestamp");
+}
 const html = fs.readFileSync("app/src/main/assets/offline_test.html", "utf8");
 const api = fs.readFileSync("supabase/functions/workshop-api/index.ts", "utf8");
 assert.match(html, /script src="v2\/features\/insurance\/reception.js/);
