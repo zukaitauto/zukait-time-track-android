@@ -382,6 +382,10 @@
     "materialReconciliation": {
       "passed": true,
       "evidence": "Production workshop_state rev 13109 compared 37/37 approved 2026-10-12 PDF material/brand/price/unit/effective-date rows, with no mismatches. Targeted transactions preserved all unrelated workshop state, issues and actuals; subsequent rev 13110 recovery also preserved unrelated state."
+    },
+    "postDeploymentHistoryPersistence": {
+      "passed": true,
+      "evidence": "Read-only comparison after production Manager save at workshop_state revision 13111 (updated_by MGR001): employeeTimeActionAudit 46/46 identical to revision 13110; jobIdentityAudit 4/4 identical; systemNotifications 45/45 identical; jobEdits grew from 90 to 91. Production workshop-api v63 active. This is observed preservation of audited collections through one live save, not a complete authenticated multi-role or full database backup/restore test."
     }
   },
   "sourceCommit": null,
