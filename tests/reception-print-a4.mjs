@@ -17,7 +17,7 @@ execFileSync(process.execPath,["tests/reception-phase1.mjs"],{
 const html=fs.readFileSync(filename,"utf8");
 assert.match(html,/ZUKAIT INTERNATIONAL LLC/);
 assert.match(html,/@page\{size:A4 portrait;margin:0\}/);
-assert.match(html,/viewBox="0 0 560 350"/);
+assert.match(html,/viewBox="0 0 1536 1152"/);
 
 
 
@@ -36,8 +36,8 @@ assert.match(html,/Claim Number:/);
 assert.doesNotMatch(html,/Claim \/ Gate Pass/);
 assert.doesNotMatch(html,/Status: Waiting/);
 assert.match(html,/Checklist Date:/);
-assert.match(html,/LH Front Door/);
-assert.match(html,/RH Front Door/);
+assert.match(html,/data:image\/png;base64,/);
+
 assert.match(html,/rc-cols-vehicle/);
 assert.match(html,/rc-cols-vin/);
 assert.match(html,/rc-cols-customer/);
@@ -80,7 +80,8 @@ try{
     fullPage:true});
   // Vehicle orientation: rear at left, front at right; LH above and RH below.
   const labels=await page.locator(".rc-print-car text").allTextContents();
-  assert.ok(labels.includes("FRONT") && labels.includes("REAR"));
+  const embedded=await page.locator(".rc-print-car image").getAttribute("href");
+  assert.deepEqual(Buffer.from(embedded.split(",")[1],"base64"),fs.readFileSync("app/src/main/assets/v2/features/insurance/vehicle-inspection-approved.png"),"Printed image must be byte-identical to the approved PNG");
   const lightGlass=await page.locator(".rc-print-car").evaluate(svg=>
     [...svg.querySelectorAll('[fill]')].every(x=>!["#44667d","#547a94"].includes(x.getAttribute("fill"))));
   assert.equal(lightGlass,true,"A4 diagram must use light window fills");

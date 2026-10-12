@@ -69,6 +69,10 @@ w.fetch = async (_url, args) => {
       throw Error("Network lost after commit");
     }
   }
+  if (c.operation === "EDIT") {
+    const record={...records.get(c.rc_no),details:c.details};
+    records.set(c.rc_no,record); result={ok:true,record};
+  }
   if (c.operation === "GET")
     result = {
       ok: true,
@@ -139,6 +143,13 @@ value("make", "Toyota");
 value("model", "Camry");
 value("insurance_id", "1");
 value("damage", "<script>unsafe</script>");
+const approvedBytes=fs.readFileSync("app/src/main/assets/v2/features/insurance/vehicle-inspection-approved.png");
+assert.deepEqual(Buffer.from(w.document.querySelector('.rc-car-svg image').getAttribute('href').split(',')[1], 'base64'),approvedBytes);
+assert.equal(w.document.querySelectorAll('.rc-zone-legend').length,0);
+w.document.querySelector('[name="rc-dashboard-warning"][value="ISSUE"]').click();
+assert.equal(w.document.querySelector('[data-rc-warning-details]').hidden,false);
+value("warnings","Airbag, Check Engine");
+w.document.querySelector('[name="rc-function-0"][value="OK"]').click();
 const zone=w.document.querySelector('[data-rc-zone="front_bumper"]');
 assert.ok(zone,"Bilingual damage diagram must expose a clickable front bumper");
 zone.click();assert.equal(zone.textContent,"X");
@@ -190,6 +201,14 @@ assert.equal(w.document.querySelector('[data-rc-zone="front_bumper"]').textConte
 assert.equal(w.document.querySelector('[data-rc-zone="roof"]').textContent,"S","Saved scratch restored on edit");
 assert.equal(w.document.querySelector('[data-rc-accessory="wheel_covers"]').getAttribute("aria-pressed"),"true","Extra accessory restored on edit");
 assert.equal(w.document.querySelector('[name=damage]').value,"<script>unsafe</script>","Legacy damage notes remain editable");
+assert.equal(w.document.querySelector('[name="rc-dashboard-warning"]:checked').value,"ISSUE");
+assert.equal(w.document.querySelector('[name="warnings"]').value,"Airbag, Check Engine");
+assert.equal(w.document.querySelector('[name="rc-function-0"]:checked').value,"OK");
+w.document.querySelector('[name="rc-dashboard-warning"][value="OK"]').click();
+assert.equal(w.document.querySelector('[data-rc-warning-details]').hidden,true);
+await submit("rc-form");
+await click("edit");
+assert.equal(w.document.querySelector('[name="rc-dashboard-warning"]:checked').value,"OK","No Warning survives save/reopen");
 await click("back");
 await click("movement");
 value("reason", "Waiting for parts");
@@ -216,8 +235,8 @@ assert.match(pdf.s, /Customer Signature/);
 assert.match(pdf.s, /Reception Staff Signature/);
 assert.match(pdf.s, /&lt;script&gt;unsafe/);
 assert.match(pdf.s,/class="rc-print-car"/);
-assert.match(pdf.s,/viewBox="0 0 560 350"/,"Printed car must use the same three-view proportions as the screen");
-assert.match(pdf.s,/>REAR<\/text>/,"Rear label must remain readable on paper");
+assert.match(pdf.s,/viewBox="0 0 1536 1152"/,"Printed car must use the same three-view proportions as the screen");
+assert.match(pdf.s,/data:image\/png;base64,/,"Exact approved image embedded for offline printing");
 assert.match(pdf.s,/<svg/);
 assert.doesNotMatch(pdf.s,/Front Bumper: Dent/);
 assert.doesNotMatch(pdf.s,/Roof: Scratch/);
