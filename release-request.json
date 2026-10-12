@@ -1,7 +1,7 @@
 {
-  "versionName": "V317",
-  "versionCode": 280,
-  "approvedForStaff": true,
+  "versionName": "V318",
+  "versionCode": 281,
+  "approvedForStaff": false,
   "releaseScope": "reception-insurance-features-1-10",
   "ownerDeferrals": {
     "freshProductionBackupRestore": "Authorize backup deferral and release",
@@ -10,36 +10,15 @@
   },
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "managedBackup": {
-    "completedAt": "2026-10-11T19:04:38Z",
-    "project": "pjknotnjkufadqavcmii"
-  },
+  "managedBackup": null,
   "productionBackend": {
-    "version": 61,
-    "bundleSha256": "77c6841b2b2245135104bb332a4af8544bc6416e8037af383b797ae0aaee345b",
-    "migration": "reception_insurance_management"
+    "status": "PENDING_DEPLOYMENT_VERIFICATION",
+    "previousPublishedVersion": 61
   },
-  "evidence": {
-    "preservation": {
-      "passed": true,
-      "evidence": "Atomic production migration asserts identical state/checklists/history; 73 jobs, four checklists, 12534 history rows, state MD5 954b647a560ed15da7216180a2ace433"
-    },
-    "permissionSmoke": {
-      "passed": true,
-      "evidence": "Production HTTPS Manager dashboard 200; Supervisor and Employee 403; temporary sessions revoked"
-    },
-    "hostedQa": {
-      "passed": true,
-      "evidence": "Hosted QA edge version 3 exact bundle: role permissions, two direct jobs with no RC, exact UUID retries, Manager LPO and Cash denial passed"
-    },
-    "ciRestoreRehearsal": {
-      "passed": true,
-      "evidence": "PostgreSQL17 34-table dump/restore, functions/grants/sequences/RLS and UUID retries verified in run 38268809683; synthetic data"
-    }
-  },
-  "sourceCommit": "0ba370922ecd54276056266c6c04609c5024365d",
-  "signedAcceptanceRun": 38282311087,
-  "verificationRun": 38282311001,
-  "approvedAt": "2026-10-12T17:13:46Z",
-  "publishNonce": "owner-v317-insurance-management-ui-20261012"
+  "evidence": {},
+  "sourceCommit": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "approvedAt": null,
+  "publishNonce": null
 }
