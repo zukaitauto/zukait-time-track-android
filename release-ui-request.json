@@ -1,14 +1,14 @@
 {
   "versionName": "V315",
   "versionCode": 278,
-  "approvedForStaff": false,
-  "approvedAt": null,
-  "sourceCommit": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
+  "approvedForStaff": true,
+  "approvedAt": "2026-10-12T11:50:21Z",
+  "sourceCommit": "541181662aa34bf204135d82b6eb00f4326c8863",
+  "publishNonce": "owner-authorized-v315-20261012-function-layout",
+  "signedAcceptanceRun": 38244894729,
+  "verificationRun": 38244894875,
   "releaseScope": "phase1-compatible-ui",
-  "ownerRequestedImmediateRelease": false,
+  "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
@@ -19,5 +19,5 @@
     "migrationsApplied": 7,
     "permissionSmokePassed": true
   },
-  "authorization": "V315 candidate pending verified source and owner approval. Preserve V314 public release; no Phase 2 activation or backend changes."
+  "authorization": "Owner explicitly requested publishing V315 to test the corrected Function Check on the existing web app. Source 541181662aa34bf204135d82b6eb00f4326c8863 passed Reception verification 38244894875, signed acceptance 38244894729, standard APK 38244895022 and Android build 38244894751. No backend changes or Phase 2 activation; physical acceptance remains NOT_RUN."
 }
