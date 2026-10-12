@@ -49,7 +49,7 @@ const cached=[{listNo:'PL-QA',jobCard:'QA001',vehicle:'Toyota',model:'Camry',yea
 const originalCache=JSON.stringify(cached);w.localStorage.setItem('zukait_v2_spare_parts_lists_v1',originalCache);
 w.eval(fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8'));
 const rows=w.zukaitV2.sparePartsMain.reportRows();assert.match(rows[0].vehicle,/Nissan.*Altima/);assert.doesNotMatch(rows[0].vehicle,/Toyota|Camry|2015|OLD/);assert.equal(rows[0].qty,3);assert.equal(rows[0].status,'ORDERED');assert.equal(w.localStorage.getItem('zukait_v2_spare_parts_lists_v1'),originalCache);
-w.esc=v=>String(v??'');w.eval(fs.readFileSync('app/src/main/assets/paint_module.js','utf8').split('\n').find(line=>line.startsWith('function orderHead(o)'))+'\nwindow.qaOrderHead=orderHead;');
+w.esc=v=>String(v??'');w.eval(fs.readFileSync('app/src/main/assets/paint_module.js','utf8').split('\n').filter(line=>line.startsWith('function orderHead(o)')||line.startsWith('function paintOrderStatus(o)')).join('\n')+'\nwindow.qaOrderHead=orderHead;');
 const paint=w.qaOrderHead({jobCard:'QA001',poNumber:'PO-QA',make:'Toyota Camry',modelYear:'2015'});assert.match(paint,/Nissan Altima/);assert.doesNotMatch(paint,/Toyota|Camry|2015/);
 console.log('Linked vehicle corrections and movements: mandatory reason, stable lost-response retries, no optimistic identity/location, confirmed refresh, badges, legacy edits and Paint PO color updates passed.');
 dom.window.close();
