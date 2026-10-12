@@ -107,7 +107,7 @@ async function newEstimate(reception=null,requestKey=null,additionalRequestId=nu
   if(reception){
     const d=reception.details;
     Object.assign(e,{receptionNo:reception.rc_no,jobType:reception.job_type||'INSURANCE',insuranceCompany:reception.insurance_company,
-      customerName:d.customer||'',mobile:d.contact||'',makeModel:[d.make,d.model].join(' '),year:d.year||'',
+      customerName:String(reception.job_type||'INSURANCE').toUpperCase()==='INSURANCE'?String(reception.insurance_company||'').trim():String(reception.job_type||'').toUpperCase()==='CREDIT'?String(d.company||d.company_name||d.customer||'').trim():String(d.customer||'').trim(),mobile:d.contact||'',makeModel:[d.make,d.model].filter(Boolean).join(' '),year:d.year||'',
       registration:d.registration||'',vin:d.vin||'',claimNo:d.claim||''});
     if(additionalRequestId)Object.assign(e,{jobCard:reception.job_card,receptionAdditionalRequestId:additionalRequestId});
   }
