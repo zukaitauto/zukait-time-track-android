@@ -1,0 +1,303 @@
+{
+  "source": "Zukait Time Track LIST.pdf (2026-10-12)",
+  "status": "STAGED_NOT_APPLIED",
+  "note": "PDF is authoritative for target list; preserve IDs/history and do not apply while production preservation gate is unresolved.",
+  "rows": [
+    {
+      "material": "Disc 3000",
+      "brand": "3M",
+      "category": "Consumable",
+      "unit": "Piece",
+      "priceOMR": 3,
+      "effectiveFrom": "2026-09-25"
+    },
+    {
+      "material": "Disc 1500",
+      "brand": "3M",
+      "category": "Consumable",
+      "unit": "Piece",
+      "priceOMR": 1.7,
+      "effectiveFrom": "2026-09-25"
+    },
+    {
+      "material": "Disc 80",
+      "brand": "3M",
+      "category": "Consumable",
+      "unit": "Piece",
+      "priceOMR": 0.105,
+      "effectiveFrom": "2026-09-25"
+    },
+    {
+      "material": "Disc 80",
+      "brand": "MIRKA",
+      "category": "Consumable",
+      "unit": "Piece",
+      "priceOMR": 0.14,
+      "effectiveFrom": "2026-10-12"
+    },
+    {
+      "material": "Disc 180",
+      "brand": "3M",
+      "category": "Consumable",
+      "unit": "Piece",
+      "priceOMR": 0.105,
+      "effectiveFrom": "2026-09-25"
+    },
+    {
+      "material": "Disc 320",
+      "brand": "3M",
+      "category": "Consumable",
+      "unit": "Piece",
+      "priceOMR": 0.105,
+      "effectiveFrom": "2026-09-25"
+    },
+    {
+      "material": "Disc 320",
+      "brand": "KARUSHI",
+      "category": "Consumable",
+      "unit": "Piece",
+      "priceOMR": 0.14,
+      "effectiveFrom": "2026-10-12"
+    },
+    {
+      "material": "Disc 500",
+      "brand": "3M",
+      "category": "Consumable",
+      "unit": "Piece",
+      "priceOMR": 0.105,
+      "effectiveFrom": "2026-09-25"
+    },
+    {
+      "material": "Block 80",
+      "brand": "3M",
+      "category": "Consumable",
+      "unit": "Piece",
+      "priceOMR": 0.2,
+      "effectiveFrom": "2026-09-25"
+    },
+    {
+      "material": "Block 180",
+      "brand": "3M",
+      "category": "Consumable",
+      "unit": "Piece",
+      "priceOMR": 0.2,
+      "effectiveFrom": "2026-09-25"
+    },
+    {
+      "material": "Block 180",
+      "brand": "KARUSHI",
+      "category": "Consumable",
+      "unit": "Piece",
+      "priceOMR": 0.28,
+      "effectiveFrom": "2026-10-12"
+    },
+    {
+      "material": "Block 320",
+      "brand": "3M",
+      "category": "Consumable",
+      "unit": "Piece",
+      "priceOMR": 0.2,
+      "effectiveFrom": "2026-09-25"
+    },
+    {
+      "material": "Block 320",
+      "brand": "KARUSHI",
+      "category": "Consumable",
+      "unit": "Piece",
+      "priceOMR": 0.28,
+      "effectiveFrom": "2026-10-12"
+    },
+    {
+      "material": "Water Paper 2000",
+      "brand": "CARSHINE",
+      "category": "Consumable",
+      "unit": "Piece",
+      "priceOMR": 0.11,
+      "effectiveFrom": "2026-09-25"
+    },
+    {
+      "material": "Water Paper 800",
+      "brand": "CARSHINE",
+      "category": "Consumable",
+      "unit": "Piece",
+      "priceOMR": 0.11,
+      "effectiveFrom": "2026-09-25"
+    },
+    {
+      "material": "Water Paper 400",
+      "brand": "CARSHINE",
+      "category": "Consumable",
+      "unit": "Piece",
+      "priceOMR": 0.11,
+      "effectiveFrom": "2026-09-25"
+    },
+    {
+      "material": "2K Primer",
+      "brand": "CAPCI",
+      "category": "Consumable",
+      "unit": "Liter",
+      "priceOMR": 5.5,
+      "effectiveFrom": "2026-09-25"
+    },
+    {
+      "material": "Clear+Hardener",
+      "brand": "SAYARA",
+      "category": "Consumable",
+      "unit": "Liter",
+      "priceOMR": 6.8,
+      "effectiveFrom": "2026-09-25"
+    },
+    {
+      "material": "2K Slow Thinner",
+      "brand": "SAYARA",
+      "category": "Consumable",
+      "unit": "Liter",
+      "priceOMR": 2,
+      "effectiveFrom": "2026-09-25"
+    },
+    {
+      "material": "Degreaser",
+      "brand": "DUXON",
+      "category": "Consumable",
+      "unit": "Liter",
+      "priceOMR": 3.5,
+      "effectiveFrom": "2026-09-25"
+    },
+    {
+      "material": "Plastic Primer",
+      "brand": "AUTO PAINT",
+      "category": "Consumable",
+      "unit": "Liter",
+      "priceOMR": 5,
+      "effectiveFrom": "2026-09-25"
+    },
+    {
+      "material": "Cleaning Thinner",
+      "brand": "RITVER",
+      "category": "Consumable",
+      "unit": "Liter",
+      "priceOMR": 1.1,
+      "effectiveFrom": "2026-09-25"
+    },
+    {
+      "material": "Masking Tape",
+      "brand": "MASKING TAPE",
+      "category": "Consumable",
+      "unit": "Piece",
+      "priceOMR": 0.13,
+      "effectiveFrom": "2026-09-25"
+    },
+    {
+      "material": "Under Coat",
+      "brand": "CARSHINE",
+      "category": "Consumable",
+      "unit": "Piece",
+      "priceOMR": 2.8,
+      "effectiveFrom": "2026-09-25"
+    },
+    {
+      "material": "2K Hardner",
+      "brand": "Z99",
+      "category": "Consumable",
+      "unit": "Liter",
+      "priceOMR": 5,
+      "effectiveFrom": "2026-09-27"
+    },
+    {
+      "material": "Clear HS+ Sikkens",
+      "brand": "SIKKENS",
+      "category": "Consumable",
+      "unit": "Liter",
+      "priceOMR": 10,
+      "effectiveFrom": "2026-09-29"
+    },
+    {
+      "material": "Hardener Sikkens",
+      "brand": "SIKKENS",
+      "category": "Consumable",
+      "unit": "Liter",
+      "priceOMR": 13.8,
+      "effectiveFrom": "2026-09-29"
+    },
+    {
+      "material": "Slow Thinner Sikkenz",
+      "brand": "SIKKENS",
+      "category": "Consumable",
+      "unit": "Liter",
+      "priceOMR": 5.6,
+      "effectiveFrom": "2026-09-29"
+    },
+    {
+      "material": "Putty Poly Dry",
+      "brand": "POLY DRY",
+      "category": "Consumable",
+      "unit": "kg",
+      "priceOMR": 1.65,
+      "effectiveFrom": "2026-09-29"
+    },
+    {
+      "material": "Spot Putty",
+      "brand": "NUMIX",
+      "category": "Consumable",
+      "unit": "kg",
+      "priceOMR": 3,
+      "effectiveFrom": "2026-09-29"
+    },
+    {
+      "material": "Fiber Putty",
+      "brand": "GOLDEN",
+      "category": "Consumable",
+      "unit": "kg",
+      "priceOMR": 4,
+      "effectiveFrom": "2026-09-29"
+    },
+    {
+      "material": "BASE WHTE",
+      "brand": "BASE WHITE",
+      "category": "Consumable",
+      "unit": "Liter",
+      "priceOMR": 4,
+      "effectiveFrom": "2026-10-12"
+    },
+    {
+      "material": "BASE SILVER",
+      "brand": "BASE SILVER",
+      "category": "Consumable",
+      "unit": "Liter",
+      "priceOMR": 5.14,
+      "effectiveFrom": "2026-10-12"
+    },
+    {
+      "material": "Matte Black",
+      "brand": "MATTTE BLACK",
+      "category": "Consumable",
+      "unit": "Liter",
+      "priceOMR": 1.42,
+      "effectiveFrom": "2026-10-12"
+    },
+    {
+      "material": "Fadeout Thinner",
+      "brand": "KAPCI",
+      "category": "Consumable",
+      "unit": "Liter",
+      "priceOMR": 3.6,
+      "effectiveFrom": "2026-10-12"
+    },
+    {
+      "material": "BASE BLACK",
+      "brand": "BASE BLACK",
+      "category": "Consumable",
+      "unit": "Liter",
+      "priceOMR": 4.5,
+      "effectiveFrom": "2026-10-12"
+    },
+    {
+      "material": "2K BLACK",
+      "brand": "2K BLACK",
+      "category": "Consumable",
+      "unit": "Liter",
+      "priceOMR": 4,
+      "effectiveFrom": "2026-10-12"
+    }
+  ]
+}
