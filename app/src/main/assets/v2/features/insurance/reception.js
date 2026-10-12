@@ -496,7 +496,7 @@
       select('job_type','Job Type',[['CASH','Cash'],['INSURANCE','Insurance'],['CREDIT','Credit']],'CASH') +
       input('cash_amount','Cash Amount (OMR) — optional','',false,'number') + input('job_card','Job Card Number','',true) + input('make','Make','',true) + input('model','Model','',true) +
       input('registration','Registration') + input('year','Model Year','',true) + input('vin','VIN / Chassis') +
-      input('odometer','Job Card KM / Miles Reading') + select('odometer_unit','Reading Unit',[['KM','KM'],['Miles','Miles']],'KM') + input('claim','Claim Number') +
+      input('odometer','Job Card KM / Miles Reading') + select('odometer_unit','Reading Unit',[['KM','KM'],['Miles','Miles']],'KM') + '<div id="rc-direct-claim">' + input('claim','Claim Number') + '</div>' +
       (["Manager","Supervisor"].includes(user()?.role)?input('promise_date','Promise Date (optional)','',false,'date'):'') +
       input('customer','Customer / Company') + input('contact','Contact') +
       '<label id="rc-credit-account" hidden>Credit Account / Customer Reference<input name="credit_account" maxlength="200"></label>' +
@@ -562,6 +562,7 @@
       account.required=credit;
       const panel=document.getElementById('rc-direct-insurance');
       panel.hidden=!insurance;
+      document.getElementById('rc-direct-claim').hidden=!insurance;
       for(const name of ['insurance_id','approval_confirmed'])
         form.elements.namedItem(name).required=insurance;
       form.elements.namedItem('claim').required=insurance;
