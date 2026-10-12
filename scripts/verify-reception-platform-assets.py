@@ -21,6 +21,17 @@ FILES = [
     "v2/features/insurance/reception.js",
     "reception_dashboard.js",
     "job_card_edit.js",
+    "reception_vin.js",
+    "reception_estimate.js",
+    "insurance_management.js",
+    "v2/features/estimate/main_module.js",
+    "vendor/vin-ocr/tesseract.min.js",
+    "vendor/vin-ocr/worker.min.js",
+    "vendor/vin-ocr/tesseract-core.wasm.js",
+    "vendor/vin-ocr/tesseract-core-simd.wasm.js",
+    "vendor/vin-ocr/tesseract-core-lstm.wasm.js",
+    "vendor/vin-ocr/tesseract-core-simd-lstm.wasm.js",
+    "vendor/vin-ocr/eng.traineddata.gz",
 ]
 
 
@@ -63,6 +74,8 @@ def main():
         "cp app/src/main/assets/receptionist.html _site/receptionist.html",
         "cp app/src/main/assets/receptionist_session.js _site/receptionist_session.js",
         "copy2(origin, destination)",
+        "parser.feed((assets / 'receptionist.html').read_text(encoding='utf-8'))",
+        "cp -R app/src/main/assets/vendor/vin-ocr _site/vendor/vin-ocr",
         "python3 scripts/verify-reception-platform-assets.py --site _site",
     ]:
         assert line in workflow, f"Pages workflow omits {line}"
@@ -82,9 +95,9 @@ def main():
     # Ensure each release refers to a new URL so browsers cannot keep an
     # older cached Reception script after a valid gated Pages publication.
     cache_tags = {
-        "job_card_edit.js": "v=312-cash-edit-1",
-        "v2/features/insurance/reception.js": "v=312-organised-print-2",
-        "reception_dashboard.js": "v=305-reception-dashboard-20261010-r2",
+        "job_card_edit.js": "v=316-management-1",
+        "v2/features/insurance/reception.js": "v=316-management-1",
+        "reception_dashboard.js": "v=316-management-1",
         "receptionist_session.js": "v=305-reception-dashboard-20261010-r2",
     }
     for page, targets in {
@@ -99,14 +112,8 @@ def main():
 
 
     # Parity focuses on the exact shared UI inputs, never APK metadata/staff data.
-    mappings = {
-        "offline_test.html": "index.html",
-        "receptionist.html": "receptionist.html",
-        "receptionist_session.js": "receptionist_session.js",
-        "v2/features/insurance/reception.js": "v2/features/insurance/reception.js",
-        "reception_dashboard.js": "reception_dashboard.js",
-        "job_card_edit.js": "job_card_edit.js",
-    }
+    mappings = {source: source for source in FILES}
+    mappings["offline_test.html"] = "index.html"
     if args.site:
         for source, deployed in mappings.items():
             actual = (args.site / deployed).read_bytes()

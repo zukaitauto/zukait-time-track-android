@@ -15,6 +15,19 @@ export function qcStatus(data,job){
  const painting=valid&&qc.painting?.result==='PASS',final=painting&&qc.final?.result==='PASS';
  return {workComplete:work.complete,painting,final,deliveryReady:final&&!job.delivered&&!job.cancelled&&key(job.status)!=='CANCELLED',stage:job.cancelled||key(job.status)==='CANCELLED'?'CANCELLED':!work.complete?'WORK_PENDING':!painting?'PAINTING_QC':!final?'FINAL_QC':job.delivered?'DELIVERED':'DELIVERY'};
 }
+function syncInsuranceLpo(job,user,amount,day,reason,now){
+ if(key(job.jobType)!=='INSURANCE'||!invoiceDateValid(day))return null;
+ const prior=job.insuranceLpo;
+ if(prior&&(prior.amount!==amount||prior.receivedDate!==day)){
+  if(user.role!=='Manager')return 'manager_required';
+  if(!reason)return 'financial_correction_reason_required';
+ }
+ if(prior&&prior.amount===amount&&prior.receivedDate===day)return null;
+ job.insuranceLpo={amount,receivedDate:day,revision:Number(prior?.revision||0)+1,
+  history:[...(prior?.history||[]),{by:String(user.id),name:user.name,at:now,source:'INVOICE_ENTRY',
+   fromAmount:prior?.amount??null,fromDate:prior?.receivedDate||'',toAmount:amount,toDate:day,reason}]};
+ return null;
+}
 export function qcTransition(data,user,request,now){
  const candidate=JSON.parse(JSON.stringify(data)),job=(candidate.jobs||[]).find(j=>key(j?.no)===key(request.jobCard));
  const error=code=>({ok:false,code});
@@ -53,6 +66,7 @@ export function qcTransition(data,user,request,now){
   if(reason.length>2000)return error('qc_reason_too_long');
   const revision=Number(job.qcWorkflow?.revision||0);if(Number(request.expectedQcRevision)!==revision)return error('qc_conflict');
   const from=Number(job.finalInvoiceAmount??job.amount??0),audit={operation:op,by:id,name:user.name,at:now,from,to,fromDate:job.invoiceDate||'',toDate:request.invoiceDate,reason};
+  const lpoError=syncInsuranceLpo(job,user,to,request.invoiceDate,reason,now);if(lpoError)return error(lpoError);
   job.amount=to;job.finalInvoiceAmount=to;job.invoiceDate=request.invoiceDate;job.invoiceEnteredAt=now;job.invoiceEnteredBy=id;job.invoiceEnteredByName=user.name;job.financialAudit=[...(job.financialAudit||[]),audit];job.qcWorkflow={...(job.qcWorkflow||{}),revision:revision+1,history:[...(job.qcWorkflow?.history||[]),audit]};
   return {ok:true,data:candidate,job};
  }
@@ -65,6 +79,7 @@ export function qcTransition(data,user,request,now){
   if('invoiceDate' in request&&!invoiceDateValid(request.invoiceDate))return error('invoice_date_required');
   const revision=Number(job.qcWorkflow?.revision||0);if(Number(request.expectedQcRevision)!==revision)return error('qc_conflict');
   const from=Number(job.finalInvoiceAmount??job.amount??0),to=Math.round(amount*1000)/1000,audit={operation:op,by:id,name:user.name,at:now,from,to,reason,fromDate:job.invoiceDate||'',toDate:request.invoiceDate||job.invoiceDate||''};
+  const lpoError=syncInsuranceLpo(job,user,to,request.invoiceDate||job.invoiceDate,reason,now);if(lpoError)return error(lpoError);
   job.amount=to;job.finalInvoiceAmount=to;if('invoiceDate' in request)job.invoiceDate=request.invoiceDate;job.financialAudit=[...(job.financialAudit||[]),audit];job.qcWorkflow={...(job.qcWorkflow||{}),revision:revision+1,history:[...(job.qcWorkflow?.history||[]),audit]};
   return {ok:true,data:candidate,job};
  }
@@ -106,7 +121,7 @@ export function preserveQcAuthority(candidate,current,user){
  for(const j of candidate.jobs||[]){const old=oldJobs.get(key(j?.no));if(!j)continue;
   if(old?.qcWorkflow)j.qcWorkflow=JSON.parse(JSON.stringify(old.qcWorkflow));else delete j.qcWorkflow;
   if(old?.financialAudit){j.financialAudit=JSON.parse(JSON.stringify(old.financialAudit));if(!user||!['Manager','Supervisor'].includes(user.role)||(old.delivered&&user.role!=='Manager'))j.amount=old.amount;if('finalInvoiceAmount' in old)j.finalInvoiceAmount=old.finalInvoiceAmount;else delete j.finalInvoiceAmount;}if(old?.deliveryAudit){j.deliveryAudit=JSON.parse(JSON.stringify(old.deliveryAudit));j.deliveredAt=old.deliveredAt;}
-  for(const field of ['finalInvoiceAmount','financialAudit','invoiceDate','invoiceEnteredAt','invoiceEnteredBy','invoiceEnteredByName']){if(old&&field in old)j[field]=JSON.parse(JSON.stringify(old[field]));else delete j[field];}
+  for(const field of ['insuranceLpo','finalInvoiceAmount','financialAudit','invoiceDate','invoiceEnteredAt','invoiceEnteredBy','invoiceEnteredByName']){if(old&&field in old)j[field]=JSON.parse(JSON.stringify(old[field]));else delete j[field];}
   // Legacy full-state clients cannot fabricate delivery or undo an audited delivery.
   if((!old?.delivered&&j.delivered)||old?.qcWorkflow){for(const field of ['delivered','deliveredAt','deliveredBy','deliveredByName']){if(old&&field in old)j[field]=old[field];else delete j[field]}if(old?.qcWorkflow&&old.delivered)j.status=old.status;else if(j.status==='Delivered'&&!old?.delivered)j.status=old?.status||'Open';}
   if(j.qcWorkflow)j.qcPassed=qcStatus(candidate,j).final;

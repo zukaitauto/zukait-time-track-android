@@ -34,12 +34,12 @@
   const labels = {
     WAITING: "Waiting for approval",
     APPROVED: "Approved",
-    VIW: "VIW · In workshop",
+    VIW: "VIG · Vehicle In Garage",
     VWC: "VWC · With customer",
     CTL: "CTL",
     CASH_LOSS: "Cash Loss",
     CANCELLED: "Cancelled",
-    JOB_CREATED: "Job Card created",
+    JOB_CREATED: "JC Opened",
   };
   let current = null,
     companies = [],
@@ -407,7 +407,7 @@
   }
   function badges(r) {
     return (
-      badge(r.location) +
+      badge(r.location) + (r.released_date?badge("Vehicle Released"):r.repair_status&&r.repair_status!=="PENDING"?badge(r.repair_status):"") +
       (r.outcome
         ? badge(r.outcome)
         : badge(r.job_card ? "JOB_CREATED" : r.approval_status))
@@ -617,7 +617,10 @@
             catch(err){alert('Job Card created, but Promise Date needs attention: '+(err.message||err)+'. Open Delivery Follow-up to retry.');}
           }
           try{await window.zukaitCloud?.pull?.(true);}catch(_){}
-          if(!await window.zukaitReceptionDashboard?.showJobs?.()) await view(out.record.rc_no);
+          if(!await window.zukaitReceptionDashboard?.showJobs?.()){
+            if(out.record?.rc_no)await view(out.record.rc_no);
+            else await home();
+          }
         }
       }catch(x){error(x);}
     };
@@ -965,6 +968,7 @@
         select("odometer_unit", "Unit / الوحدة (KM / Mile)", [["KM", "KM"], ["Miles", "Mile"]],
           d.odometer_unit || "KM") +
         input("odometer", "Odometer / قراءة العداد", d.odometer) + '</div>';
+      if(k==='vin')return input(k,caption,d[k],req)+'<button type="button" data-rc-action="scan-vin">Scan VIN</button>';
       if (k === "claim") return '<div class="rc-claim">' +
         input(k, caption, d[k], req) + '</div>';
       return input(k, caption, d[k], req);
@@ -1106,17 +1110,20 @@
         (current.cancellation?.history ? '<div class="rc-box"><b>Job Card cancelled · '+esc(current.cancellation.history.cancellation_date)+'</b><p>'+esc(current.cancellation.history.reason)+' · '+esc(current.cancellation.history.actor_name)+' ('+esc(current.cancellation.history.actor_id)+')</p><p>History and costs retained. Vehicle location remains '+esc(r.location)+'.</p></div>' : '') +
         '<div class="rc-actions rc-cl-actions">' +
         (r.can_edit ? '<button data-rc-action="edit">Edit</button>' : "") +
-        (!r.outcome || current.cancellation?.history
-          ? '<button data-rc-action="movement">Record Vehicle Movement</button>'
-          : "") +
-        (user()?.role !== 'Receptionist' && !r.job_card && !r.outcome
-          ? '<button data-rc-action="outcome">Close Insurance Case</button>'
-          : "") +
-        (current.insurance && (r.job_type || 'INSURANCE') === 'INSURANCE' ? '<button data-rc-action="insurance">' + (user()?.role === 'Receptionist' ? 'Approval & Job Card' : 'Estimates & Approval') + '</button>' : '') +
+        (r.repair_status!==undefined&&!r.job_card&&!r.outcome&&!r.released_date?
+          '<button data-rc-action="location-choice">VWC / VIG</button>'+
+          (r.repair_status==='PENDING'?'<button data-rc-action="management" data-operation="SET_CTL">CTL</button><button data-rc-action="rc-estimate">ESTIMATE</button><button data-rc-action="management" data-operation="SET_APPROVED">APPROVED</button><button data-rc-action="management" data-operation="SET_NOT_REPAIRED">NOT REPAIRED</button>':r.repair_status==='CTL'?'<button data-rc-action="management" data-operation="RELEASE_CTL">Deliver / Release</button>':''):'') +
         (current.cancellation?.can_review ? '<button data-rc-action="cancel-job">Review Job Card Cancellation</button>' : '') +
-        (current.preliminary_parts ? '<button data-rc-action="parts">Preliminary Parts</button>' : '') +
+
         '<button data-rc-action="print">Print</button><button data-rc-action="pdf">Share PDF</button></div>' +
         checklistDetails(r, d) +
+        (r.repair_notes?'<div class="rc-box"><b>'+esc(r.repair_status)+'</b><p>'+esc(r.repair_notes)+'</p>'+(r.released_date?'<p>Vehicle Released · '+esc(r.released_date)+' · '+esc(r.release_remark)+'</p>':'')+'</div>':'') +
+        '<details class="rc-box"><summary>Preparation &amp; Historical Workflows</summary><div class="rc-actions">'+
+        (current.insurance&&(r.job_type||'INSURANCE')==='INSURANCE'?'<button data-rc-action="insurance">Approval &amp; Job Card</button>':'')+
+        (r.repair_status==='PENDING'&&!r.job_card&&!r.outcome&&r.job_type!=='INSURANCE'?'<button data-rc-action="checklist-job">Open Linked Job Card</button>':'')+
+        (current.preliminary_parts?'<button data-rc-action="parts">Parts Preparation</button>':'')+
+        (!r.outcome||current.cancellation?.history?'<button data-rc-action="movement">Movement History Entry</button>':'')+
+        (user()?.role!=='Receptionist'&&!r.job_card&&!r.outcome?'<button data-rc-action="outcome">Historical Case Closure</button>':'')+'</div></details>' +
         (r.decision
           ? '<div class="rc-box"><h4>Case Decision</h4>' +
             esc(r.decision.reason) +
@@ -1382,6 +1389,7 @@
     }
     const no = result.record?.rc_no || command.rc_no;
     if (no) await view(no);
+    else if(result.job_card)await window.zukaitReceptionDashboard?.showJobs?.();
     else await home();
   }
   async function saveForm(e) {
@@ -1389,6 +1397,9 @@
     const f = new FormData(e.target),
       details = {};
     fields.forEach(([k]) => (details[k] = String(f.get(k) || "")));
+    if(details.vin && !/^[A-HJ-NPR-Z0-9]{17}$/.test(details.vin) && details.vin!==current?.record?.details?.vin){
+      error(Error('VIN must have 17 letters/numbers excluding I, O and Q. Verify and correct it before saving.'));return;
+    }
     if ((current?.record.job_type || f.get("job_type")) !== "INSURANCE")
       details.claim = ""; // Never save hidden insurance claims on cash checklists.
     textFields.forEach(([k]) => (details[k] = String(f.get(k) || "")));
@@ -1436,6 +1447,26 @@
     } catch (x) {
       error(x);
     }
+  }
+  function management(operation){
+    const r=current.record,release=operation==='RELEASE_CTL',approved=operation==='SET_APPROVED';
+    shell(release?'Deliver / Release CTL':approved?'Approval Date & Remark':operation==='SET_CTL'?'CTL Notes':'Reason for Not Repairing',
+      '<form id="rc-management">'+((release||approved)?input('date',release?'Release Date':'Approval Date',new Date(Date.now()+14400000).toISOString().slice(0,10),true,'date'):'')+
+      '<label>'+(release?'Release Remark':approved?'Approval Remark':operation==='SET_CTL'?'CTL Notes':'Reason')+'<textarea name="reason" maxlength="2000" required></textarea></label><button type="submit">Save</button></form>'+
+      (approved?'<p>For approvals with prepared parts, use the existing quotation approval workflow.</p><button data-rc-action="insurance">Open Quotation Approval</button>':''));
+    document.getElementById('rc-management').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);
+      try{const result=await mutate({operation,rc_no:r.rc_no,expected_revision:r.revision,reason:String(f.get('reason')||'').trim(),...((release||approved)?{date:f.get('date')}: {})});if(result)await view(r.rc_no);}catch(x){error(x);}};
+  }
+  function checklistJob(){
+    const r=current.record;
+    shell('Open Job Card from '+r.rc_no,'<form id="rc-linked-job">'+input('job_card','Job Card Number','',true)+input('cash_amount','Estimated Amount (optional)','',false,'number')+input('reason','Creation Remark','',true)+'<button type="submit">Open Linked Job Card</button></form>');
+    document.getElementById('rc-linked-job').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);try{const out=await mutate({operation:'CREATE_CHECKLIST_JOB',rc_no:r.rc_no,expected_revision:r.revision,job_card:String(f.get('job_card')).trim().toUpperCase(),cash_amount:String(f.get('cash_amount')||''),reason:String(f.get('reason')).trim()});if(out){try{await window.zukaitCloud?.pull?.(true);}catch(_){}await view(r.rc_no);}}catch(x){error(x);}};
+  }
+  function locationChoice(){
+    const r=current.record;
+    shell('Vehicle Location', '<form id="rc-location">'+select('location','Vehicle Location',[['VWC','VWC · Vehicle With Customer'],['VIW','VIG · Vehicle In Garage']],r.location)+input('reason','Movement Remark','',true)+'<button type="submit">Save Location</button></form>');
+    document.getElementById('rc-location').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);
+      try{if(f.get('location')===r.location){await view(r.rc_no);return;}const result=await mutate({operation:'MOVE',rc_no:r.rc_no,expected_revision:r.revision,location:f.get('location'),occurred_at:new Date().toISOString(),reason:String(f.get('reason')).trim()});if(result)await view(r.rc_no);}catch(x){error(x);}};
   }
   function movement() {
     const r = current.record;
@@ -1775,6 +1806,10 @@
         case "cancel-job":
           await cancellation();
           break;
+        case "management":management(b.dataset.operation);break;
+        case "checklist-job":checklistJob();break;
+        case "location-choice":locationChoice();break;
+        case "scan-vin":window.zukaitReceptionVin?.open(document.querySelector('#rc-form [name="vin"]'));break;
         case "movement":
           movement();
           break;

@@ -1,7 +1,7 @@
 (function(){'use strict';
 
 function currentUser(){try{return (typeof me!=='undefined'&&me)||window.me||null}catch(_){return window.me||null}}
-function canUse(){const r=String(currentUser()?.role||'');return r==='Manager'||r==='Supervisor'}
+function canUse(){const r=String(currentUser()?.role||'');return r==='Manager'||r==='Supervisor'||r==='Receptionist'}
 function ensureState(){
   if(typeof state==='undefined'||!state)return;
   state.estimates=Array.isArray(state.estimates)?state.estimates:[];
@@ -84,6 +84,7 @@ function openHome(){
   openModal(html);
 }
 async function newEstimate(reception=null,requestKey=null,additionalRequestId=null){
+  if(role()==='Receptionist'&&!reception)return alert('Open the Checklist to create its Estimate.');
   if(!canUse())return;
   ensureState();
   const existing=requestKey?findEstimate(requestKey):null;
@@ -105,7 +106,7 @@ async function newEstimate(reception=null,requestKey=null,additionalRequestId=nu
   };
   if(reception){
     const d=reception.details;
-    Object.assign(e,{receptionNo:reception.rc_no,insuranceCompany:reception.insurance_company,
+    Object.assign(e,{receptionNo:reception.rc_no,jobType:reception.job_type||'INSURANCE',insuranceCompany:reception.insurance_company,
       customerName:d.customer||'',mobile:d.contact||'',makeModel:[d.make,d.model].join(' '),year:d.year||'',
       registration:d.registration||'',vin:d.vin||'',claimNo:d.claim||''});
     if(additionalRequestId)Object.assign(e,{jobCard:reception.job_card,receptionAdditionalRequestId:additionalRequestId});
@@ -118,6 +119,7 @@ async function newFromReception(rcNo,additionalRequestId=null){
   if(!canUse()||receptionEstimateBusy)return;
   receptionEstimateBusy=true;
   try{
+    if(role()==='Receptionist')await window.zukaitReceptionEstimate.prepare(rcNo);
     const response=await window.zukaitReception.call({operation:'GET',rc_no:rcNo});
     const r=response.record;
     if(r.outcome||(!additionalRequestId&&r.job_card)||(additionalRequestId&&(!r.job_card||response.additional?.can_prepare!==true||!response.additional.requests?.some(x=>x.id===additionalRequestId&&x.status==='DRAFT'))))throw Error('This reception case is not available for the requested estimate.');
@@ -250,10 +252,17 @@ function recalc(){
     (d.vatEnabled?'<div class="est-summary-line"><span>VAT 5%</span><b>OMR '+money(t.vat)+'</b></div>':'')+
     '<div class="est-summary-line total"><span>TOTAL</span><span>OMR '+money(t.total)+'</span></div>';
 }
+let receptionSaveBusy=false;
 function saveCurrent(id){
   const e=findEstimate(id);if(!e)return;
   const before=totals(e).total,d=draftFromDom(e),u=currentUser()||{};
   if(d.jobCard){const canonicalVin=window.zukaitJobCardMaster?.vin?.(d.jobCard);if(canonicalVin!=null)d.vin=String(canonicalVin)}
+  if(role()==='Receptionist'){
+    if(receptionSaveBusy)return;receptionSaveBusy=true;
+    return window.zukaitReceptionEstimate.save({...e,...d},Number(e.revision||0)).then(saved=>{
+      Object.assign(e,saved);recalc();alert(e.estimateNo+' saved.');
+    }).catch(x=>alert(x.message||'Estimate was not confirmed. Retry Save with the same details.')).finally(()=>{receptionSaveBusy=false;});
+  }
   Object.assign(e,d,{updatedAt:Date.now(),updatedBy:u.id||'',status:'Saved',revision:Number(e.revision||0)+1});
   audit(e,'EDIT',before);saveState();recalc();alert(e.estimateNo+' saved.');
 }

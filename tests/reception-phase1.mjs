@@ -317,7 +317,7 @@ value("model","Camry");
 value("year","2018");
 value("odometer_unit","Miles");
 value("odometer","52000");
-value("vin","ABC123");
+value("vin","1HGCM82633A004352");
 value("customer","Cash Customer");
 value("contact","90123456");
 // Even if a hidden field retains old content, it must never be submitted.

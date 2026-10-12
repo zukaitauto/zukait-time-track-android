@@ -1,3 +1,4 @@
+import {insuranceProjection,insuranceLpoTransition} from './insurance_management_rules.js';
 import { jobEditTransition, jobEditProjection, preserveJobEditAuthority, optionalJobAmount } from "./job_edit_rules.js";
 import { preserveJobTypeAuthority } from "./job_type_authority.js";
 import "./paint_order_rules.js";
@@ -30,14 +31,15 @@ function reply(body: unknown, status = 200) {
 // Receptionist is a separate, restricted role. Never route it through shared
 // state, financial, time, parts or Supervisor APIs, including direct requests.
 function receptionistRequestAllowed(action: string, body: any) {
+  if(action==='reception_estimate')return Object.keys(body).every(k=>['action','command'].includes(k))&&['GET','ALLOCATE','SAVE'].includes(body.command?.operation);
   if (action === "job_card_edit") return ["GET","EDIT"].includes(body.operation) && Object.keys(body).every(k => ["action","operation","jobCard","patch","reason","expectedEditRevision"].includes(k));
   if (action === "receptionist_delivery_list") return Object.keys(body).every(k => k === "action");
   if (action === "reception_dashboard") return Object.keys(body).every(k =>
-    ["action","section","search","month","from","to","page","missing_only","dated_only"].includes(k));
+    ["action","section","search","month","from","to","page","missing_only","dated_only","checklist_status"].includes(k));
   if (action === "receptionist_deliver") return body?.operation === "DELIVER" && Object.keys(body).every(k =>
     ["action", "operation", "jobCard", "expectedQcRevision", "expectedVehicleIdentity", "request_id"].includes(k));
   return action === "reception" &&
-    ["CAPABILITIES", "MASTER", "LIST", "GET", "CREATE", "EDIT", "MOVE", "CREATE_JOB", "CREATE_DIRECT_JOB", "CREATE_EXTERNAL_JOB"]
+    ["CAPABILITIES", "MASTER", "LIST", "GET", "CREATE", "EDIT", "MOVE", "CREATE_JOB", "CREATE_DIRECT_JOB", "CREATE_EXTERNAL_JOB", "SET_CTL", "SET_NOT_REPAIRED", "RELEASE_CTL", "SET_APPROVED", "CREATE_CHECKLIST_JOB"]
       .includes(body?.command?.operation);
 }
 
@@ -48,13 +50,13 @@ function receptionistProjection(data: any) {
   const record = (value: any) => {
     const result = pick(value, ["rc_no", "sequence_no", "insurance_id", "insurance_company",
       "location", "outcome", "approval_status", "job_card", "revision", "received_at",
-      "created_by", "updated_at", "updated_by", "closed_at", "can_edit", "job_type", "credit_account"]);
+      "created_by", "updated_at", "updated_by", "closed_at", "can_edit", "job_type", "credit_account", "repair_status", "repair_notes", "released_date", "release_remark"]);
     result.details = pick(value?.details, ["make", "model", "customer", "contact",
       "registration", "year", "vin", "odometer", "odometer_unit", "claim", "damage",
       "other_accessories", "warnings", "remarks", "tools", "fuel"]);
     return result;
   };
-  const result: any = pick(data, ["ok", "duplicate"]);
+  const result: any = pick(data, ["ok", "duplicate", "management_v1", "job_card", "server_revision"]);
   if (Object.hasOwn(data || {}, "allowed")) {
     result.allowed = data.allowed === true;
     result.manager = false;
@@ -888,7 +890,7 @@ Deno.serve(async (req: Request) => {
 
     if (action === "reception_dashboard") {
       if (!["Manager","Supervisor","Receptionist"].includes(String(user.role))) return reply({ok:false,code:"reception_forbidden"},403);
-      if (Object.keys(body).some(k => !["action","section","search","month","from","to","page","missing_only","dated_only"].includes(k))
+      if (Object.keys(body).some(k => !["action","section","search","month","from","to","page","missing_only","dated_only","checklist_status"].includes(k))
           || JSON.stringify(body).length > 2500) return reply({ok:false,code:"reception_invalid_filter"},400);
       const {data:cap,error:capError}=await admin.rpc("zukait_reception_command",
         {p_actor_id:String(user.id),p_command:{operation:"CAPABILITIES"}});
@@ -902,7 +904,7 @@ Deno.serve(async (req: Request) => {
       const receptionRows:any[]=[];
       for(let offset=0;offset<=50000;offset+=500){
         const {data:chunk,error}=await admin.from("workshop_receptions")
-          .select("rc_no,sequence_no,insurance_id,details,location,outcome,approval_status,job_card,job_type,received_at")
+          .select("rc_no,sequence_no,insurance_id,details,location,outcome,approval_status,job_card,job_type,received_at,repair_status,repair_notes,released_date,release_remark")
           .order("sequence_no",{ascending:false}).range(offset,offset+499);
         if(error)throw error;
         receptionRows.push(...(chunk||[]));
@@ -915,9 +917,43 @@ Deno.serve(async (req: Request) => {
       const safeCases=receptionRows.map(r=>({...r,insurance_company:insuranceById.get(String(r.insurance_id))||""}));
       const projected=receptionDashboardProjection(state.data,safeCases,{
         section:body.section,search:body.search,month:body.month,from:body.from,to:body.to,
-        page:body.page,missing_only:body.missing_only,dated_only:body.dated_only
+        page:body.page,missing_only:body.missing_only,dated_only:body.dated_only,checklist_status:body.checklist_status
       });
       return reply(projected,projected.ok?200:400);
+    }
+
+    if(action==='insurance_dashboard'){
+      if(user.role!=='Manager')return reply({ok:false,code:'insurance_manager_required'},403);
+      if(Object.keys(body).some(k=>!['action','section','company','month','from','to','page','search'].includes(k))||JSON.stringify(body).length>2500)return reply({ok:false,code:'insurance_invalid_filter'},400);
+      const {data:current,error:readError}=await admin.from('workshop_state').select('data').eq('id','main').single();
+      if(readError)throw readError;
+      const cases:any[]=[];
+      for(let offset=0;offset<=50000;offset+=500){
+        const {data:chunk,error}=await admin.from('workshop_receptions').select('rc_no,job_card,job_type,details,outcome,approval_status,repair_status,released_date,insurance_id').order('sequence_no',{ascending:false}).range(offset,offset+499);
+        if(error)throw error;cases.push(...(chunk||[]));if((chunk||[]).length<500)break;
+        if(offset>=50000)return reply({ok:false,code:'insurance_dashboard_limit'},503);
+      }
+      const {data:companies,error}=await admin.from('workshop_insurance_companies').select('id,name');if(error)throw error;
+      const names=new Map((companies||[]).map((c:any)=>[c.id,c.name]));
+      const result=insuranceProjection(current.data,cases.map(r=>({...r,insurance_company:names.get(r.insurance_id)||''})),body);
+      return reply(result,result.ok?200:400);
+    }
+    if(action==='insurance_lpo'){
+      if(user.role!=='Manager')return reply({ok:false,code:'insurance_manager_required'},403);
+      for(let attempt=0;attempt<8;attempt++){
+        const {data:current,error}=await admin.from('workshop_state').select('revision,data').eq('id','main').single();if(error)throw error;
+        const result=insuranceLpoTransition(current.data,user,body,Date.now());
+        if(!result.ok)return reply({ok:false,code:result.code},409);
+        if(result.duplicate)return reply({ok:true,duplicate:true,job:result.job,server_revision:current.revision});
+        const next=Number(current.revision||0)+1;
+        const live=computeLiveStatus(result.data,next,user.id);
+        if(!live.length)return reply({ok:false,code:'insurance_live_status_unavailable'},503);
+        const {data:committed,error:commitError}=await admin.rpc('zukait_commit_workshop_state_v2',{p_expected_revision:Number(current.revision||0),p_data:result.data,p_changed_by:user.id,p_live:live});
+        if(commitError)throw commitError;
+        if(committed?.ok)return reply({ok:true,job:result.job,server_revision:committed.revision||next});
+        if(committed?.code!=='conflict')return reply({ok:false,code:'insurance_lpo_commit_failed'},409);
+      }
+      return reply({ok:false,code:'insurance_lpo_conflict'},409);
     }
 
     if (action === "reception_promise_date") {
@@ -961,6 +997,13 @@ Deno.serve(async (req: Request) => {
       return reply({ok:false,code:"receptionist_delivery_conflict"},409);
     }
 
+    if(action==='reception_estimate'){
+      if(!['Manager','Supervisor','Receptionist'].includes(String(user.role)))return reply({ok:false,code:'reception_forbidden'},403);
+      if(!body.command||typeof body.command!=='object'||Array.isArray(body.command)||JSON.stringify(body.command).length>64000)return reply({ok:false,code:'reception_invalid_command'},400);
+      const {data,error}=await admin.rpc('zukait_reception_estimate_command',{p_actor_id:String(user.id),p_command:body.command});
+      if(error){const code=String(error.message||'').match(/reception_[a-z0-9_]+/)?.[0]||'reception_unavailable';return reply({ok:false,code},/forbidden/.test(code)?403:409);}
+      return reply(data);
+    }
     if (action === "reception") {
       // Caller identity comes only from the verified, active staff session.
       // SQL validates the current role/designation again and owns all writes.
@@ -1045,7 +1088,10 @@ Deno.serve(async (req: Request) => {
         }
         const result=jobEditTransition(current.data,user,body,Date.now());
         if(!result.ok)return reply({ok:false,code:result.code},/forbidden|manager_required/.test(result.code)?403:409);
-        const {data:committed,error}=await admin.rpc("zukait_commit_workshop_state_v2",{p_expected_revision:Number(current.revision||0),p_data:result.data,p_changed_by:user.id,p_live:computeLiveStatus(result.data,Number(current.revision||0)+1,user.id)});
+        const directEdit=Boolean(result.job.directReceptionJob)&&user.role==="Manager";
+        const {data:committed,error}=await admin.rpc(directEdit?"zukait_manager_full_job_edit":"zukait_commit_workshop_state_v2",directEdit
+          ?{p_expected_revision:Number(current.revision||0),p_data:result.data,p_actor_id:user.id,p_job_card:body.jobCard,p_reason:body.reason,p_live:computeLiveStatus(result.data,Number(current.revision||0)+1,user.id)}
+          :{p_expected_revision:Number(current.revision||0),p_data:result.data,p_changed_by:user.id,p_live:computeLiveStatus(result.data,Number(current.revision||0)+1,user.id)});
         if(error)throw error;
         if(committed?.ok)return reply({ok:true,job:jobEditProjection(result.job),server_revision:committed.revision});
         if(committed?.code!=="conflict")return reply({ok:false,code:"job_edit_unavailable"},503);

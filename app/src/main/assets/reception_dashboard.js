@@ -10,6 +10,9 @@
     ["waiting","Approval Waiting Insurance","Checklist not yet approved","⏳"],
     ["vwc","Vehicle With Customer","Checklists and Job Cards separately","🏠"],
     ["approved","Approved Vehicles","Until Job Card is opened","✅"],
+    ["ctl","CTL Vehicles in Garage","Notes · Deliver / Release","🚘"],
+    ["not-repaired","Not Repaired Vehicles","Reason and original Checklist","📝"],
+    ["insurance","Insurance","Manager Insurance & LPO","📊"],
     ["ready","Ready to Deliver","Shared QC authority","🚙"],
     ["delivered","Delivered Vehicle List","Latest delivered first","📦"],
     ["followup","Delivery Follow-up","Promise date · no promise date","📅"]
@@ -18,7 +21,7 @@
   const safe=v=>String(v??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const role=()=>window.me?.role||"";
   const writable=()=>["Manager","Supervisor"].includes(role());
-  let screen="home",section="checklists",page=0,filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false};
+  let screen="home",section="checklists",page=0,filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false,checklist_status:"all"};
   let backendAvailable=false;
   let counts={},latest=[],total=0,loading=false,sequence=0,pendingTimer=null;
   function css(){
@@ -61,14 +64,14 @@
   }
   const countFor=key=>key==="new"||key==="create-job"?"":key==="vwc"?counts.vwc??"":counts[key]??"";
   function tiles(){
-    return definitions.map(([key,title,sub,icon],index)=>
+    return definitions.filter(d=>d[0]!=="insurance"||role()==="Manager").map(([key,title,sub,icon],index)=>
       '<button type="button" class="rdb-card" data-rdb="tile" data-section="'+key+'" data-active="false" aria-label="Open '+safe(title)+'">'+
       '<span class="rdb-emoji" aria-hidden="true">'+icon+'</span><span class="rdb-content"><b>'+(index+1)+'. '+safe(title)+
       '</b><small>'+safe(!backendAvailable&&!['new','checklists'].includes(key)?'Server update required':sub)+'</small></span><span class="rdb-count">'+safe(backendAvailable?countFor(key):'')+'</span></button>').join("");
   }
   const label=key=>definitions.find(x=>x[0]===key)?.[1]||"Reception";
   function filterHtml(){
-    return '<div class="rdb-filter">'+
+    return (section==='checklists'?'<label>Checklist Status<select data-rdb-filter="checklist_status"><option value="all">All</option><option value="pending"'+(filters.checklist_status==='pending'?' selected':'')+'>Pending</option><option value="opened"'+(filters.checklist_status==='opened'?' selected':'')+'>JC Opened</option></select></label>':'')+'<div class="rdb-filter">'+
       '<label>Search<input data-rdb-filter="search" placeholder="RC / JC / registration / vehicle" value="'+safe(filters.search)+'"></label>'+
       '<label>Month<input type="month" data-rdb-filter="month" value="'+safe(filters.month)+'"></label>'+
       '<label>From<input type="date" data-rdb-filter="from" value="'+safe(filters.from)+'"></label>'+
@@ -79,7 +82,7 @@
   }
   function rowHtml(row,index){
     const isJob=!!row.job_card,live=!row.delivered&&isJob,canEdit=live&&writable();
-    const title=isJob?"JC "+safe(row.job_card):"Checklist "+safe(row.rc_no);
+    const title=section==="checklists"?"Checklist "+safe(row.rc_no):isJob?"JC "+safe(row.job_card):"Checklist "+safe(row.rc_no);
     const date=section==="delivered"?"Delivered: "+(row.delivered_date||"Not recorded"):
       section==="followup"?"Promise: "+(row.promise_date||"No promise date"):
       "Received: "+(row.received_date||row.created_date||"Not recorded");
@@ -97,7 +100,7 @@
       '<div class="rdb-row-content"><b>'+title+' · '+safe(row.vehicle||"Vehicle not recorded")+
       '</b><small>'+safe(row.registration||"Registration not recorded")+' · '+safe(row.job_type||"")+
       (row.rc_no&&isJob?' · '+safe(row.rc_no):'')+'</small><small>'+safe(date)+
-      ' · '+safe(row.location||row.status||"")+'</small>'+promise+'</div>'+
+      ' · '+safe(row.status||row.location||"")+'</small>'+(section==='checklists'&&isJob?'<button type="button" data-rdb="open-job" data-job="'+safe(row.job_card)+'">JC Opened · '+safe(row.job_card)+'</button>':'')+promise+'</div>'+
       '<div class="rdb-row-actions">'+open+deliver+(isJob&&(!row.delivered||role()==='Manager')?'<button type="button" data-rdb="edit-job" data-job="'+safe(row.job_card)+'">Edit Job Card</button>':'')+'</div></div>';
   }
   function listHtml(){
@@ -161,13 +164,13 @@
     finally{if(request===sequence){loading=false;showRows();}}
   }
   async function open(options={}){backendAvailable=options.backendAvailable===true;++sequence;clearTimeout(pendingTimer);loading=false;screen="home";section="checklists";vwcSection="vwc-checklists";page=0;
-    filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false};
+    filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false,checklist_status:"all"};
     latest=[];counts={};total=0;render();await load();}
   // Preserve the selected list and filters when returning from a checklist.
   async function resume(){render();await load();}
   async function showDashboard(){
     screen="home";section="checklists";page=0;
-    filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false};
+    filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false,checklist_status:"all"};
     latest=[];total=0;render();await load();
   }
   async function choose(next){
@@ -178,9 +181,10 @@
       if(notice)notice.innerHTML="<h4>"+safe(label(next))+"</h4><p>This function needs the Reception server update. No records were loaded or changed. Use the existing workshop workflow until activation is verified.</p>";
       return;
     }
+    if(next==='insurance')return window.zukaitInsuranceManagement?.open();
     if(next==="new")return window.zukaitReception.newChecklist();
     if(next==="create-job")return window.zukaitReception.directJob();
-    screen="list";section=next;page=0;filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false};
+    screen="list";section=next;page=0;filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false,checklist_status:"all"};
     latest=[];total=0;render();await load();
   }
   function onFilter(event){
@@ -225,6 +229,9 @@
     event.preventDefault();
     try{
       const what=button.dataset.rdb;
+      if(what==='open-job'){
+        return window.zukaitJobEdit.view(button.dataset.job);
+      }
       if(what==="edit-job")return window.zukaitJobEdit.open(button.dataset.job);
       if(what==="tile"){await choose(button.dataset.section);return;}
       if(what==="back-dashboard"){await showDashboard();return;}
@@ -263,5 +270,5 @@
     }catch(e){const el=document.getElementById("rc-error");if(el)el.textContent=e.message||String(e);}
   }
   async function showJobs(){if(!backendAvailable)return false;await choose('jobs');return true;}
-  window.zukaitReceptionDashboard={open,resume,home:showDashboard,showJobs,savePromise};
+  window.zukaitReceptionDashboard={open,resume,home:showDashboard,showJobs,savePromise,choose};
 })();

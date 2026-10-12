@@ -84,6 +84,11 @@ jobs:
           cp app/src/main/assets/v2/features/spare-parts/main_module.js _site/v2/features/spare-parts/main_module.js
           cp app/src/main/assets/zukait_logo.webp _site/zukait_logo.webp
           cp -R app/src/main/assets/vehicle-logos _site/vehicle-logos
+          if [ -f app/src/main/assets/reception_vin.js ]; then
+            test -d app/src/main/assets/vendor/vin-ocr
+            mkdir -p _site/vendor
+            cp -R app/src/main/assets/vendor/vin-ocr _site/vendor/vin-ocr
+          fi
           cp app/src/main/assets/qc_delivery_rules.js _site/qc_delivery_rules.js
           cp app/src/main/assets/time_management_rules.js _site/time_management_rules.js
           python3 - <<'PY'
@@ -104,6 +109,7 @@ jobs:
           assets = Path('app/src/main/assets')
           parser = Scripts()
           parser.feed((assets / 'offline_test.html').read_text(encoding='utf-8'))
+          parser.feed((assets / 'receptionist.html').read_text(encoding='utf-8'))
           for source in parser.sources:
               relative = Path(source)
               if relative.is_absolute() or '..' in relative.parts:

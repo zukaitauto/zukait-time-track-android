@@ -163,3 +163,7 @@ node tests/reception-vehicle-authority.mjs
 node tests/reception-additional.mjs
 
 node tests/reception-cancellation.mjs
+node tests/insurance-management.mjs
+node tests/insurance-management-api.mjs
+node tests/reception-management-client.mjs
+node tests/reception-management-sql.mjs

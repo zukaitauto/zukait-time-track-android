@@ -50,6 +50,12 @@ async function save(){
   draft=null;closeModal();await window.zukaitCloud?.pull?.(true);window.dispatchEvent(new Event('zukait:state-updated'));await window.zukaitReceptionDashboard?.showJobs?.();
  }catch(e){alert(e.message);}finally{busy=false;if(button)button.disabled=false;}
 }
-window.zukaitJobEdit={open,save};
+async function view(no){
+ try{const {job:j}=await api({operation:'GET',jobCard:no});
+  openModal('<section class="jce-form"><h3>Job Card · '+esc(j.no)+'</h3><p>'+esc(j.delivered?'Delivered':'Active')+(j.receptionNo?' · Checklist '+esc(j.receptionNo):'')+'</p><div class="grid">'+[['jobType','Job Type'],...fields].map(([key,label])=>'<div><b>'+esc(label)+'</b><p>'+esc(j[key]??'—')+'</p></div>').join('')+'</div><button id="jce-view-close">Close</button></section>');
+  document.getElementById('jce-view-close').onclick=closeModal;
+ }catch(e){alert(e.message);}
+}
+window.zukaitJobEdit={open,save,view};
 window.v132OpenSupervisorVehicleEdit=open;
 })();

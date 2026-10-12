@@ -7,6 +7,7 @@ const source=fs.readFileSync('app/src/main/assets/v2/features/estimate/main_modu
 const functions=source.slice(source.indexOf('async function newEstimate('),source.indexOf('function field('));
 function start(storage,state,allocate,actor='QA-MANAGER',endpoint='https://qa.invalid/workshop-api') {
   const alerts=[],context={state,canUse:()=>true,currentUser:()=>({id:actor}),ensureState(){},findEstimate:id=>state.estimates.find(e=>e.id===id),uid:randomUUID,localDate:()=> '2026-10-09',navigator:{onLine:true},openEditor(){},audit:e=>state.estimateAudit.push(e.id),saveState(){},alert:m=>alerts.push(m),localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},window:{zukaitCloud:{allocateEstimateNo:allocate},zukaitReception:{endpoint,call:async()=>({record:{rc_no:'RC-QA',job_card:context.round?'JC-QA':null,insurance_company:'QA',details:{make:'Toyota',model:'Corolla'}},additional:{can_prepare:true,requests:[{id:context.round,status:'DRAFT'}]}})}}};
+  context.role=()=> 'Manager';
   vm.runInNewContext(functions,context);return {...context,alerts};
 }
 for(const round of [null,'QA-ROUND']) {

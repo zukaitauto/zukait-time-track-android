@@ -10,7 +10,7 @@ export function optionalJobAmount(value){
  const n=Number(value);return Number.isFinite(n)&&n>=0&&n<=1000000?{ok:true,value:n}:{ok:false};
 }
 export function jobEditProjection(job){
- return Object.fromEntries(['no','vehicle','createdAt','delivered','receptionNo','editRevision',...fields].filter(k=>k in job).map(k=>[k,copy(job[k])]));
+ return Object.fromEntries(['no','vehicle','createdAt','delivered','receptionNo','directReceptionJob','editRevision',...fields].filter(k=>k in job).map(k=>[k,copy(job[k])]));
 }
 export function jobEditTransition(data,user,request,now){
  const error=code=>({ok:false,code});
@@ -41,7 +41,7 @@ export function jobEditTransition(data,user,request,now){
    if(typeof v!=='string'||v.length>(k==='notes'?2000:200))return error('job_edit_invalid_fields');
    next[k]=v.trim();
   }
-  if(old.receptionNo&&!full&&identity.includes(k)&&String(next[k]||'')!==String(old[k]||''))return error('job_edit_linked_identity');
+  if(!full&&(old.receptionNo||(old.directReceptionJob&&user.role!=='Manager'))&&identity.includes(k)&&String(next[k]||'')!==String(old[k]||''))return error('job_edit_linked_identity');
  }
  if('reg' in patch)next.reg=next.reg.toUpperCase();
  if('vin' in patch){next.vin=next.vin.toUpperCase().replace(/[^A-Z0-9]/g,'');if(next.vin.length>32)return error('job_edit_invalid_fields');}
@@ -74,7 +74,7 @@ export function jobEditTransition(data,user,request,now){
 }
 export function preserveJobEditAuthority(candidate,current,user){
  const byNo=new Map((current.jobs||[]).map(j=>[String(j.no),j]));
- const protectedFields=[...fields,'createdAt','vehicle','brand','customerName','customerMobile','vinNumber','chassis','claimNumber','insurance','editRevision'];
+ const protectedFields=[...fields,'createdAt','vehicle','brand','customerName','customerMobile','vinNumber','chassis','claimNumber','insurance','editRevision','directReceptionJob'];
  for(const j of candidate.jobs||[]){const old=byNo.get(String(j.no));if(!old)continue;
   // Dedicated edits survive stale snapshot saves; all delivered details are Manager-only.
   if(Number(j.editRevision||0)!==Number(old.editRevision||0)||!['Manager','Supervisor'].includes(user?.role)||(old.delivered&&user.role!=='Manager')){

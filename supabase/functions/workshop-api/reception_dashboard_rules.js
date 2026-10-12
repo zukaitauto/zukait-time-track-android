@@ -18,7 +18,7 @@ function omanDate(value) {
 }
 const serial=(a,b)=>String(b).localeCompare(String(a),"en",{numeric:true});
 const sortRc=(a,b)=>(Number(b.sequence_no||0)-Number(a.sequence_no||0))||serial(a.rc_no,b.rc_no);
-const sortJobs=(a,b)=>Number(b.created_at||0)-Number(a.created_at||0)||serial(a.job_card,b.job_card);
+const sortJobs=(a,b)=>serial(a.job_card,b.job_card)||Number(b.created_at||0)-Number(a.created_at||0);
 function safeRc(r,company) {
  const d=r?.details||{};
  return {rc_no:text(r.rc_no),sequence_no:Number(r.sequence_no||0),
@@ -27,8 +27,8 @@ function safeRc(r,company) {
  registration:text(d.registration),customer:text(d.customer),
  insurance_company:company||"",received_at:r.received_at||"",
  received_date:omanDate(r.received_at),location:text(r.location),
- outcome:text(r.outcome),approval_status:text(r.approval_status),
- promise_date:"",delivered_date:"",created_date:omanDate(r.received_at),status:text(r.outcome||r.approval_status)};
+ outcome:text(r.outcome),repair_status:text(r.repair_status||"PENDING"),repair_notes:text(r.repair_notes),released_date:text(r.released_date),release_remark:text(r.release_remark),approval_status:text(r.approval_status),
+ promise_date:"",delivered_date:"",created_date:omanDate(r.received_at),status:r.released_date?"Vehicle Released":r.job_card?"JC Opened":text(r.repair_status!=="PENDING"&&r.repair_status||r.outcome||r.approval_status)};
 }
 function safeJob(j,rc) {
  return {rc_no:text(j.receptionNo||rc?.rc_no),sequence_no:Number(rc?.sequence_no||0),
@@ -48,6 +48,8 @@ function safeJob(j,rc) {
 function matchFilter(row,opts,kind) {
  const search=text(opts.search).toLowerCase();
  if(search&&![row.rc_no,row.job_card,row.registration,row.vehicle,row.customer,row.insurance_company].some(v=>text(v).toLowerCase().includes(search)))return false;
+ if(kind==="checklists"&&opts.checklist_status==="pending"&&(row.job_card||row.outcome||row.released_date||row.repair_status!=="PENDING"))return false;
+ if(kind==="checklists"&&opts.checklist_status==="opened"&&!row.job_card)return false;
  const month=text(opts.month),from=text(opts.from),to=text(opts.to);
  const date=kind==="delivered"?row.delivered_date:kind==="followup"?row.promise_date:
   (kind==="jobs"||kind==="ready"||kind==="vwc-jobs")?row.created_date:row.received_date;
@@ -73,14 +75,17 @@ export function receptionDashboardProjection(data,receptions,opts={}) {
  const jobs=[...uniqueJobs.values()].map(j=>({raw:j,row:safeJob(j,byRc.get(text(j.receptionNo)))}));
  const allJobs=jobs.map(x=>x.row),activeJobs=jobs.filter(x=>!x.raw.delivered).map(x=>x.row);
  const checklists=rows.filter(r=>!r.direct_job_only).sort(sortRc);
- const waiting=checklists.filter(r=>r.job_type==="INSURANCE"&&!r.job_card&&!r.outcome&&r.approval_status==="WAITING");
- const approved=checklists.filter(r=>r.job_type==="INSURANCE"&&!r.job_card&&!r.outcome&&r.approval_status==="APPROVED");
- const vwcChecklists=checklists.filter(r=>r.location==="VWC"&&!r.job_card&&!r.outcome);
+ const pendingRepair=r=>r.repair_status==="PENDING"&&!r.released_date;
+ const waiting=checklists.filter(r=>pendingRepair(r)&&r.job_type==="INSURANCE"&&!r.job_card&&!r.outcome&&r.approval_status==="WAITING");
+ const approved=checklists.filter(r=>pendingRepair(r)&&!r.job_card&&!r.outcome&&r.approval_status==="APPROVED");
+ const vwcChecklists=checklists.filter(r=>pendingRepair(r)&&r.location==="VWC"&&!r.job_card&&!r.outcome);
  const vwcJobs=activeJobs.filter(r=>r.location==="VWC"&&!r.outcome);
  const ready=jobs.filter(x=>!x.raw.delivered&&qcStatus(data,x.raw).deliveryReady).map(x=>x.row);
  const delivered=jobs.filter(x=>x.raw.delivered).map(x=>x.row);
  const followup=activeJobs.filter(r=>!r.outcome);
  const lists={checklists,jobs:allJobs.sort(sortJobs),waiting,approved,
+ ctl:checklists.filter(r=>r.repair_status==="CTL"&&r.location==="VIW"&&!r.released_date&&!r.job_card),
+ "not-repaired":checklists.filter(r=>r.repair_status==="NOT_REPAIRED"),
  "vwc-checklists":vwcChecklists,"vwc-jobs":vwcJobs.sort(sortJobs),
  ready:ready.sort(sortJobs),delivered:delivered.sort((a,b)=>b.delivered_at-a.delivered_at||sortJobs(a,b)),
  followup:followup.sort((a,b)=>(a.promise_date||"9999").localeCompare(b.promise_date||"9999")||sortJobs(a,b))};
@@ -88,6 +93,7 @@ export function receptionDashboardProjection(data,receptions,opts={}) {
  counts.vwc=counts["vwc-checklists"]+counts["vwc-jobs"];
  counts.no_promise_date=followup.filter(r=>!r.promise_date).length;
  const section=text(opts.section)||"checklists";
+ if(!["", "all", "pending", "opened"].includes(String(opts.checklist_status||"")))return {ok:false,code:"reception_invalid_filter"};
  if(!Object.hasOwn(lists,section))return {ok:false,code:"reception_invalid_section"};
  if(!["", "true", "false"].includes(String(opts.missing_only??"")))return {ok:false,code:"reception_invalid_filter"};
  const selected=lists[section].filter(x=>matchFilter(x,opts,section));

@@ -36,10 +36,10 @@ w.eval(fs.readFileSync("app/src/main/assets/reception_dashboard.js","utf8"));
 const settle=async()=>{for(let i=0;i<20;i++)await new Promise(resolve=>setImmediate(resolve));};
 await w.zukaitReception.open();await settle();
 let buttons=w.document.querySelectorAll("#rc-root [data-rdb=tile]");
-assert.equal(buttons.length,10,"Reception home shows ten requested cards");
+assert.equal(buttons.length,13,"Reception home retains ten cards and adds CTL, Not Repaired and Manager Insurance");
 for(const [i,name] of ["Create Checklist","Create Job Card","Checklist List","Job Card List","Approval Waiting Insurance",
 "Vehicle With Customer","Approved Vehicles","Ready to Deliver","Delivered Vehicle List","Delivery Follow-up"].entries())
- assert.ok(buttons[i].textContent.includes(name),name+" label missing");
+ assert.ok([...buttons].some(b=>b.textContent.includes(name)),name+" label missing");
 const click=async(selector)=>{const b=w.document.querySelector(selector);assert.ok(b,selector);b.click();await settle();};
 const headings={checklists:"Checklist List",jobs:"Job Card List",waiting:"Approval Waiting Insurance",
  vwc:"Vehicle With Customer",approved:"Approved Vehicles",ready:"Ready to Deliver",
@@ -52,7 +52,7 @@ for(const [key,name] of Object.entries(headings)){
  assert.equal(commands.at(-1).section,key==="vwc"?"vwc-checklists":key);
  if(key==="vwc")assert.equal(w.document.querySelectorAll("[data-rdb=vwc]").length,2,"VWC has two separate lists");
  await click('#rc-root [data-rdb=back-dashboard]');
- assert.equal(w.document.querySelectorAll("[data-rdb=tile]").length,10,key+" Back restores all ten cards");
+ assert.equal(w.document.querySelectorAll("[data-rdb=tile]").length,13,key+" Back restores all thirteen cards");
 }
 await click('#rc-root [data-rdb=tile][data-section=jobs]');
 assert.equal(w.document.querySelectorAll(".rdb-row").length,1);
@@ -70,7 +70,7 @@ assert.equal(promise,"2026-10-15");
 assert.equal(commands.filter(x=>x.action==="reception_promise_date").length,1);
 assert.equal(w.document.querySelector("#rc-root [data-rdb-promise]")?.value,"2026-10-15");
 await click('#rc-root [data-rc-action=back]');
-assert.equal(w.document.querySelectorAll('[data-rdb=tile]').length,10,"Header Back returns to Reception dashboard");
+assert.equal(w.document.querySelectorAll('[data-rdb=tile]').length,13,"Header Back returns to Reception dashboard");
 await click('#rc-root [data-rdb=tile][data-section=followup]');
 const from=w.document.querySelector("[data-rdb-filter=from]");from.value="2026-10-10";
 from.dispatchEvent(new w.Event("change",{bubbles:true}));await settle();
@@ -98,8 +98,8 @@ w.fetch=async(_url,args)=>{
 };
 await w.zukaitReception.open();await settle();
 buttons=w.document.querySelectorAll("#rc-root [data-rdb=tile]");
-assert.equal(buttons.length,10,"Production Phase 1 must not revert to old home");
-assert.ok(buttons[9].textContent.includes("10. Delivery Follow-up"));
+assert.equal(buttons.length,13,"Production Phase 1 must not revert to old home");
+assert.ok([...buttons].some(b=>b.textContent.includes("Delivery Follow-up")));
 assert.equal(w.document.querySelectorAll("#rdb-results").length,0,"Unavailable data must not appear as an empty list");
 assert.ok([...w.document.querySelectorAll('.rdb-count')].every(x=>x.textContent===''),"No invented counts");
 const probeCount=phase1Requests.length;
@@ -112,12 +112,12 @@ await assert.rejects(()=>w.zukaitReceptionDashboard.savePromise('JC120','2026-10
 await click('#rc-root [data-rdb=tile][data-section=checklists]');
 assert.equal(w.document.querySelector('.rc-topbar h3').textContent,'Checklist List');
 await click('#rc-root [data-rc-action=back]');
-assert.equal(w.document.querySelectorAll('#rc-root [data-rdb=tile]').length,10,"Back from list returns to new dashboard");
+assert.equal(w.document.querySelectorAll('#rc-root [data-rdb=tile]').length,13,"Back from list returns to new dashboard");
 await click('#rc-root [data-rdb=tile][data-section=new]');
 assert.ok(w.document.querySelector('#rc-form'));
 assert.equal(w.document.querySelectorAll('#rc-form option[value=CASH]').length,0);
 await click('#rc-root [data-rc-action=back]');
-assert.equal(w.document.querySelectorAll('#rc-root [data-rdb=tile]').length,10,"Back from intake returns to new dashboard");
+assert.equal(w.document.querySelectorAll('#rc-root [data-rdb=tile]').length,13,"Back from intake returns to new dashboard");
 assert.equal(phase1Requests.filter(x=>x.action==='reception_dashboard').length,1,"Only the read-only capability probe runs");
 dom.window.close();
-console.log("Reception dashboard UI: ten tiles, Manager session reuse, category list, date-range filtering, optional Job Card promise field and confirmed promise save passed.");
+console.log("Reception dashboard UI: thirteen Manager tiles, Manager session reuse, category list, date-range filtering, optional Job Card promise field and confirmed promise save passed.");

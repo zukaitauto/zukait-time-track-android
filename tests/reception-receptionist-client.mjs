@@ -5,7 +5,7 @@ import {JSDOM,VirtualConsole} from 'jsdom';
 const html=fs.readFileSync('app/src/main/assets/receptionist.html','utf8');
 const sessionSource=fs.readFileSync('app/src/main/assets/receptionist_session.js','utf8');
 const receptionSource=fs.readFileSync('app/src/main/assets/v2/features/insurance/reception.js','utf8');
-assert.ok(!/cloud_sync|secure_auth|estimate\/|spare_parts|consumables|production_pilot/.test(html));
+assert.ok(!/cloud_sync|secure_auth|spare_parts|consumables|production_pilot/.test(html));
 const user={id:'QA-RC',name:'QA Receptionist',role:'Receptionist',department:'Reception'};
 let delivered=false,lost=true,writes=0;
 const requests=[],storageReads=[];

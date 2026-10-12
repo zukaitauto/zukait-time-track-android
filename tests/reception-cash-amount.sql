@@ -29,8 +29,9 @@ begin
  begin perform zukait_manager_full_job_edit(snapshot.revision,candidate,'QA-SUP','QA-AMOUNT-CASH','Manager correction','[]');raise exception 'Supervisor full edit accepted';exception when others then assert sqlerrm='reception_manager_required';end;
  r:=zukait_manager_full_job_edit(snapshot.revision,candidate,'QA-MGR','QA-AMOUNT-CASH','Correct model and agreed amount','[]');assert (r->>'ok')::boolean;
  assert r->'job'->>'model'='Corolla';assert r->'job'->>'amount'='50.125';
- assert (select details->>'model' from workshop_receptions where job_card='QA-AMOUNT-CASH')='Corolla';
- assert exists(select 1 from workshop_reception_audit where rc_no=r->'job'->>'receptionNo' and operation='EDIT' and reason='Correct model and agreed amount');
+ assert not exists(select 1 from workshop_receptions where job_card='QA-AMOUNT-CASH');
+ assert (select identity->>'model' from workshop_direct_job_identity where job_card='QA-AMOUNT-CASH')='Corolla';
+ assert exists(select 1 from workshop_direct_job_audit where job_card='QA-AMOUNT-CASH' and actor_id='QA-MGR' and reason='Correct model and agreed amount');
  assert zukait_manager_full_job_edit(snapshot.revision,candidate,'QA-MGR','QA-AMOUNT-CASH','Stale edit','[]')->>'code'='conflict';
  select * into snapshot from workshop_state where id='main';candidate:=snapshot.data;
  select x into edited_job from jsonb_array_elements(candidate->'jobs') x where x->>'no'='QA-AMOUNT-CASH';

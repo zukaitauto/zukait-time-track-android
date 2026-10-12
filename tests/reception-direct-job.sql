@@ -5,10 +5,12 @@ declare credit_rc text; cmd_rc text; cmd jsonb; result jsonb; retry jsonb; rc te
 begin
  cmd:=jsonb_build_object('operation','CREATE_DIRECT_JOB','request_id',gen_random_uuid(),'job_type','CASH','job_card','QA-DIRECT-CASH','reason','QA direct cash intake','received_confirmed',true,
   'details',jsonb_build_object('make','Toyota','model','Corolla','year','2023','registration','QA-CASH','odometer','53845','odometer_unit','Miles','remarks','Checklist observation only'));
- result:=zukait_reception_command('QA-RC',cmd); rc:=result->'record'->>'rc_no';
- assert result->'record'->>'job_card'='QA-DIRECT-CASH';
- assert result->'record'->>'approval_status'='WAITING';
- assert result->'record'->>'insurance_id' is null;
+ select count(*) into n from workshop_receptions;
+ result:=zukait_reception_command('QA-RC',cmd); rc:=null;
+ assert (select count(*) from workshop_receptions)=n, 'Direct job inserted a Checklist';
+ assert result->>'job_card'='QA-DIRECT-CASH';
+ assert result->'job'->>'jobType'='CASH';
+ assert result->'record' is null;
  retry:=zukait_reception_command('QA-RC',cmd); assert (retry->>'duplicate')::boolean;
  select count(*) into n from workshop_v2_events where entity_id='QA-DIRECT-CASH' and event_type='JOB_CREATED'; assert n=1;
  select data into snapshot from workshop_state where id='main';
@@ -19,7 +21,7 @@ begin
  assert (select j->>'remarks' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-CASH') is null;
  -- Direct Job Cards retain an audit-only reception record, never a visible checklist row.
  assert not ((zukait_reception_command('QA-RC',jsonb_build_object('operation','LIST'))->'rows') @> jsonb_build_array(jsonb_build_object('rc_no',rc))), 'Direct Job Card was incorrectly shown as a checklist';
- assert (select details->>'direct_job_only' from workshop_receptions where rc_no=rc)='true', 'Direct Job Card audit marker missing';
+ assert exists(select 1 from workshop_direct_job_approvals where job_card='QA-DIRECT-CASH'), 'Direct Job Card audit missing';
  assert coalesce((result->'record'->'details'->>'customer'),'')='', 'Customer must be optional in direct Job Card';
  begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'job_card','QA-NO-YEAR','details',jsonb_build_object('make','Toyota','model','Corolla')));raise exception 'QA missing model year accepted';exception when others then assert sqlerrm='reception_vehicle_required';end;
  begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('reason','Changed retry')); raise exception 'QA request conflict not enforced'; exception when others then assert sqlerrm='reception_request_conflict'; end;
@@ -39,16 +41,16 @@ begin
   'details',jsonb_build_object('make','Nissan','model','Altima','year','2014',
     'registration','7561.BH','customer','QA Insured Customer','contact','QA contact'));
  result:=zukait_reception_command('QA-RC',cmd);rc:=result->'record'->>'rc_no';
- assert result->'record'->>'job_card'='QA-DIRECT-APPROVED-INSURANCE';
- assert result->'record'->>'job_type'='INSURANCE';
- assert result->'record'->>'approval_status'='APPROVED';
+ assert result->>'job_card'='QA-DIRECT-APPROVED-INSURANCE';
+ assert result->'job'->>'jobType'='INSURANCE';
+ assert result->'record' is null;
  assert (zukait_reception_command('QA-RC',cmd)->>'duplicate')::boolean;
  select data into snapshot from workshop_state where id='main';
  assert (select count(*) from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-APPROVED-INSURANCE')=1;
  assert (select j->>'jobType' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-APPROVED-INSURANCE')='INSURANCE';
  assert (select j->>'reg' from jsonb_array_elements(snapshot->'jobs') j where j->>'no'='QA-DIRECT-APPROVED-INSURANCE')='7561.BH';
  assert zukait_reception_job_approval_valid('QA-DIRECT-APPROVED-INSURANCE',rc,snapshot);
- assert (select count(*) from workshop_reception_external_approvals where rc_no=rc)=1;
+ assert (select count(*) from workshop_direct_job_approvals where job_card='QA-DIRECT-APPROVED-INSURANCE' and job_type='INSURANCE')=1;
  assert (select count(*) from workshop_reception_estimates where rc_no=rc)=0;
  begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'job_card','QA-INS-NO-APPROVAL','approval_confirmed',false));raise exception 'QA unapproved job accepted';exception when others then assert sqlerrm='reception_approval_confirmation_required';end;
  begin perform zukait_reception_command('QA-RC',cmd||jsonb_build_object('request_id',gen_random_uuid(),'job_card','QA-INS-NO-EVIDENCE','evidence',''));raise exception 'QA missing evidence accepted';exception when others then assert sqlerrm='reception_external_evidence_required';end;
