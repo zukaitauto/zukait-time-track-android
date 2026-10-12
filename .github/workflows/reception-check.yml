@@ -17,6 +17,7 @@ on:
       - "app/src/main/assets/secure_auth.js"
       - "app/src/main/assets/offline_test.html"
       - "tests/reception-*"
+      - "tests/workshop-history-preservation.mjs"
       - "scripts/verify-coordinated-release.cjs"
       - "scripts/verify-ui-only-release.cjs"
       - "scripts/verify-pc-pages-publication.cjs"
