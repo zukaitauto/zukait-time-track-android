@@ -6,6 +6,10 @@ const {validate}=require('../scripts/verify-pc-pages-publication.cjs');
 const current=JSON.parse(fs.readFileSync('release-request.json','utf8'));
 const latest=JSON.parse(fs.readFileSync('latest-version.json','utf8'));
 const workflow=fs.readFileSync('.github/workflows/pages.yml','utf8');
+const androidBuild=fs.readFileSync('app/build.gradle','utf8');
+assert.ok(androidBuild.includes('versionName "'+current.versionName+'"'),'Android candidate must match approved version name');
+assert.ok(androidBuild.includes('versionCode '+current.versionCode),'Android candidate must match approved version code');
+
 const source={...current,approvedForStaff:true,approvedAt:'2026-10-10T06:00:00Z',
  sourceCommit:'a'.repeat(40),publishNonce:'qa-only-test-nonce',signedAcceptanceRun:12345,
  versionCode:268,versionName:'V305'};
