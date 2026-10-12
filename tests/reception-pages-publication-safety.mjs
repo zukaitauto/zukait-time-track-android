@@ -49,12 +49,17 @@ function verifyUpdaterAfterUiRelease(metadata) {
  assert.match(metadata.apkSha256,/^[a-f0-9]{64}$/);
  assert.equal(metadata.releaseTag,'release-'+metadata.versionName+'-architecture-v2');
 }
-// A newly approved candidate must not change the live updater until the publisher succeeds.
-if (current.approvedForStaff && latest.versionCode < current.versionCode) {
- assert.equal(latest.versionName,'V312','Pending V313 approval must leave the last published V312 updater intact');
- assert.equal(latest.versionCode,275);
+// A pending newer release (approved or unapproved) must leave the last
+// published updater untouched. Publication still requires explicit approval.
+if (latest.versionCode < current.versionCode) {
+ assert.equal(latest.status,'current');
+ assert.match(latest.versionName,/^V[1-9][0-9]*$/);
+ assert.ok(Number.isSafeInteger(latest.versionCode) && latest.versionCode>0);
  assert.match(latest.sourceCommit,/^[a-f0-9]{40}$/);
  assert.match(latest.apkSha256,/^[a-f0-9]{64}$/);
+ assert.equal(latest.releaseTag,'release-'+latest.versionName+'-architecture-v2');
+ assert.equal(uiApproval?.versionName,current.versionName);
+ assert.equal(uiApproval?.versionCode,current.versionCode);
 } else {
  verifyUpdaterAfterUiRelease(latest);
 }
