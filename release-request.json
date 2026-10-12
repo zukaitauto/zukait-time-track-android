@@ -1,9 +1,9 @@
 {
-  "versionName": "V314",
-  "versionCode": 277,
-  "approvedForStaff": true,
-  "approvedAt": "2026-10-12T10:02:00Z",
-  "sourceCommit": "d45ac2939b410a4cdbdeb54ea211fdf7c89c2a76",
-  "publishNonce": "owner-authorized-v314-web-app-20261012",
-  "signedAcceptanceRun": 38234045239
+  "versionName": "V315",
+  "versionCode": 278,
+  "approvedForStaff": false,
+  "approvedAt": null,
+  "sourceCommit": null,
+  "publishNonce": null,
+  "signedAcceptanceRun": null
 }
