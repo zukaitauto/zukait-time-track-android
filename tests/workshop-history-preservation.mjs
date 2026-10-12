@@ -5,7 +5,7 @@ const source=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
 const start=source.indexOf('function preserveOperationalHistory(');
 const end=source.indexOf('\nfunction threeWayMerge(',start);
 assert.ok(start>=0&&end>start,'Preservation function must be present');
-const fn=source.slice(start,end).replaceAll(': any','').replaceAll(' as const','');
+const fn=source.slice(start,end).replaceAll(': any','').replaceAll(' as const','').replaceAll('<string, number>','');
 const context={cloneValue:(x)=>structuredClone(x)};
 vm.createContext(context);
 vm.runInContext(fn,context);
@@ -14,7 +14,7 @@ const current={
  employeeTimeActionAudit:[{id:'time1',action:'START'},{id:'time2',action:'PAUSE'}],
  jobIdentityAudit:[{id:'identity1',job:'12001'}],
  systemNotifications:[{id:'notice1',type:'MATERIAL'},{id:'notice2',type:'QC'}],
- jobEdits:[{id:'edit1'}],
+ jobEdits:[{id:'edit1'},{id:'edit1'}],
 };
 for(const missing of ['absent','empty']){
  const proposed={jobs:[{no:'12001'}],assign:[],sessions:[],jobEdits:[]};
@@ -32,4 +32,5 @@ const proposed={jobs:[{no:'12001'}],assign:[],sessions:[],systemNotifications:[{
 const result=context.preserveOperationalHistory(proposed,current,{role:'Supervisor',id:'SUP001'});
 assert.deepEqual(result.systemNotifications.map(x=>x.id),['notice1','notice3','notice2']);
 assert.equal(new Set(result.systemNotifications.map(x=>x.id)).size,3,'Notification ids must not duplicate');
+assert.equal(result.jobEdits.length,2,'Repeated identical historical job edits must retain their multiplicity');
 console.log('PASS: legacy saves retain server audits and notifications without duplicates');
