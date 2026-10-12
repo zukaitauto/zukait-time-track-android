@@ -1,9 +1,40 @@
 {
-  "versionName": "V315",
-  "versionCode": 278,
-  "approvedForStaff": true,
-  "approvedAt": "2026-10-12T11:50:08Z",
-  "sourceCommit": "541181662aa34bf204135d82b6eb00f4326c8863",
-  "publishNonce": "owner-authorized-v315-20261012-function-layout",
-  "signedAcceptanceRun": 38244894729
+  "versionName": "V316",
+  "versionCode": 279,
+  "approvedForStaff": false,
+  "releaseScope": "reception-insurance-features-1-10",
+  "ownerDeferrals": {
+    "freshProductionBackupRestore": "Authorize backup deferral and release",
+    "physicalDevices": "Defer physical testing and release",
+    "paidResources": "Do not add paid resources"
+  },
+  "physicalAcceptanceStatus": "NOT_RUN",
+  "freshProductionBackupRestoreStatus": "NOT_RUN",
+  "managedBackup": {
+    "completedAt": "2026-10-11T19:04:38Z",
+    "project": "pjknotnjkufadqavcmii"
+  },
+  "productionBackend": {
+    "version": 61,
+    "bundleSha256": "77c6841b2b2245135104bb332a4af8544bc6416e8037af383b797ae0aaee345b",
+    "migration": "reception_insurance_management"
+  },
+  "evidence": {
+    "preservation": {
+      "passed": true,
+      "evidence": "Atomic production migration asserts identical state/checklists/history; 73 jobs, four checklists, 12534 history rows, state MD5 954b647a560ed15da7216180a2ace433"
+    },
+    "permissionSmoke": {
+      "passed": true,
+      "evidence": "Production HTTPS Manager dashboard 200; Supervisor and Employee 403; temporary sessions revoked"
+    },
+    "hostedQa": {
+      "passed": true,
+      "evidence": "Hosted QA edge version 3 exact bundle: role permissions, two direct jobs with no RC, exact UUID retries, Manager LPO and Cash denial passed"
+    },
+    "ciRestoreRehearsal": {
+      "passed": true,
+      "evidence": "PostgreSQL17 34-table dump/restore, functions/grants/sequences/RLS and UUID retries verified in run 38268809683; synthetic data"
+    }
+  }
 }
