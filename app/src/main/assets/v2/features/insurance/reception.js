@@ -1588,7 +1588,7 @@
       '.rc-notes{border:1px solid #657782;border-top:0;flex:1;min-height:0;padding:3mm;overflow:hidden;overflow-wrap:anywhere}',
       '.rc-notes h2{font-size:10pt;margin:0 0 1.5mm;display:flex;justify-content:space-between}',
       '.rc-notes-content{font-size:9pt;line-height:1.25;white-space:pre-wrap}',
-      '.rc-notes-content p{margin:1mm 0}'+'.rc-notes{min-height:37mm}.rc-notes-content{min-height:29mm;line-height:1.4}',
+      '.rc-notes-content p{margin:1mm 0}'+'.rc-notes{min-height:0}.rc-notes-content{min-height:0;line-height:1.25}',
       '.rc-notes-small .rc-notes-content{font-size:7pt;line-height:1.1}',
       '.rc-notes-tiny .rc-notes-content{font-size:6pt;line-height:1.05}',
       '.rc-footer{height:19mm;flex:none;text-align:center;padding-top:1mm;font-size:8pt}',
