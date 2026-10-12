@@ -6,6 +6,10 @@ import {qcTransition,preserveQcAuthority} from '../supabase/functions/workshop-a
 import {receptionDashboardProjection} from '../supabase/functions/workshop-api/reception_dashboard_rules.js';
 const manager={id:'QA-MGR',role:'Manager',name:'QA Manager'},supervisor={id:'QA-SUP',role:'Supervisor'},now=Date.parse('2026-10-12T12:00:00Z');
 const base={jobs:[{no:'10',jobType:'Insurance',insuranceCompany:'A',claimNo:'C10',createdAt:1,delivered:true,deliveredAt:now,qcWorkflow:{revision:0}},{no:'2',jobType:'Cash',createdAt:now,delivered:true,qcWorkflow:{revision:0}},{no:'100',jobType:'INSURANCE',insuranceCompany:'B',createdAt:now}],assign:[],sessions:[],expenses:[{id:'retain'}]};
+const mapped=insuranceProjection({jobs:[{no:'12070',jobType:'INSURANCE',createdAt:now,year:'',vehicleYear:2022,make:'Nissan',model:'Altima',receptionNo:'RC70',receptionLocation:'VWC'}]},[{rc_no:'RC70',location:'VWC',insurance:{approvals:[{approval_date:'2026-10-09'}]}}],{month:'2026-10'}).rows[0];
+assert.equal(mapped.year,2022);assert.equal(mapped.reception_location,'VWC');assert.equal(mapped.approval_date,'2026-10-09');
+const unavailable=insuranceProjection({jobs:[{no:'12071',jobType:'INSURANCE',createdAt:now}]},[],{month:'2026-10'}).rows[0];
+assert.equal(unavailable.approval_date,'','Missing approval is not invented');
 const request={action:'insurance_lpo',job_card:'10',amount:'123.456',received_date:'2026-10-10',expected_revision:0,request_id:randomUUID(),reason:''};
 for(const role of ['Receptionist','Employee','Purchaser','Supervisor'])assert.equal(insuranceLpoTransition(base,{role},request,now).code,'insurance_manager_required');
 const first=insuranceLpoTransition(base,manager,request,now);assert.equal(first.ok,true);assert.deepEqual(first.data.expenses,base.expenses);assert.equal(first.job.finalInvoiceAmount,undefined,'LPO entry must not fabricate final invoice');
