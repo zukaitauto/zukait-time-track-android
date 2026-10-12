@@ -22,7 +22,7 @@ export function insuranceProjection(data,receptions,opts={}){
  if(!selected)return {ok:false,code:'insurance_invalid_section'};
  const search=String(opts.search||'').toLowerCase();
  const rows=selected.map(j=>({job_card:String(j.no),date:date(j.createdAt),vehicle:[j.make||j.brand,j.model].filter(Boolean).join(' ')||j.vehicle||'',
-  registration:j.reg||'',claim:j.claimNo||'',insurance_company:j.insuranceCompany||'',delivered_date:date(j.deliveredAt),
+  year:j.year||j.modelYear||'',registration:j.reg||'',claim:j.claimNo||'',insurance_company:j.insuranceCompany||'',delivered_date:date(j.deliveredAt),
   lpo_amount:lpoComplete(j)?j.insuranceLpo.amount:null,lpo_received_date:j.insuranceLpo?.receivedDate||'',
   lpo_revision:Number(j.insuranceLpo?.revision||0),lpo_history:j.insuranceLpo?.history||[],status:j.delivered?'Delivered':j.status||'Open'}))
  .filter(r=>{const day=section==='collected'?r.lpo_received_date:section==='delivered'?r.delivered_date:r.date;
