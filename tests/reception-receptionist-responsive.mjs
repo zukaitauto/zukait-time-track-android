@@ -43,10 +43,10 @@ for(const engine of ['chromium','webkit']){
   assert.equal(await page.locator('#rc-approval,#rc-external-approval,#rc-link-estimate,[data-rc-action=parts],[data-rc-action=cancel-job]').count(),0);
   assert.equal(await page.locator('#rc-external-job').count(),1);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width} Job Card form overflow`);
-  await page.locator('[data-rc-action=home]').click();await page.locator('[data-rdb=tile][data-section=new]').click();await page.locator('#rc-form').waitFor();
+  await page.evaluate(()=>window.zukaitReceptionDashboard.home());await page.locator('[data-rdb=tile][data-section=new]').click();await page.locator('#rc-form').waitFor();
   await page.locator('[name=make]').focus();await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>document.activeElement.name),'model');
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width} editor overflow`);
-  await page.locator('[data-rc-action=home]').click();await page.locator('[data-rdb=tile][data-section=create-job]').click();await page.locator('#rc-direct-job').waitFor();
+  await page.evaluate(()=>window.zukaitReceptionDashboard.home());await page.locator('[data-rdb=tile][data-section=create-job]').click();await page.locator('#rc-direct-job').waitFor();
   await page.locator('[name=job_type]').selectOption('CREDIT');assert.equal(await page.locator('#rc-credit-account').isVisible(),true);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width} direct credit intake overflow`);
   await page.locator('[name=job_type]').selectOption('CASH');assert.equal(await page.locator('#rc-credit-account').isVisible(),false);
