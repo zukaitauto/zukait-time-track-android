@@ -20,11 +20,11 @@
   "evidence": {
     "signedCandidate": {
       "passed": true,
-      "evidence": "GitHub signed acceptance run 38351235660 succeeded on architecture-v2 source b49eeb4e3aff8157e37a54b8fca1ed26be5ea554. Signed artifact 11790764189 (ZUKAIT_SIGNED_ACCEPTANCE_APK), sha256:dad39e9948b1d01095243176bf338ce8aa7767eb80747329414c23ae2d0a4c1f; signed certificate and APK/web Reception asset parity verified in workflow. This proves CI acceptance only, not physical installation or live authenticated role acceptance."
+      "evidence": "Signed acceptance workflow 38357642654 succeeded on exact source 4ba6d8641091d3980cdb0e3ec41432f75689f42d; signed acceptance APK artifact 11793576068. CI signing verification is not physical or authenticated production acceptance."
     },
     "receptionCi": {
       "passed": true,
-      "evidence": "Reception verification run 38349240612 succeeded on architecture-v2 source 5e56fa271aa30b8c772034a1ff8a5ff5f758c507, including updated Insurance list, browser responsiveness and functional tests. Signed acceptance run 38351235660 at b49eeb4e also passed npm run test:reception and other functional smoke tests. Neither is authenticated production website acceptance."
+      "evidence": "Reception verification workflow 38357642674 succeeded on exact source 4ba6d8641091d3980cdb0e3ec41432f75689f42d. Automated CI does not establish live V318 hosted acceptance."
     },
     "ciRestoreRehearsal": {
       "passed": true,
@@ -729,8 +729,8 @@
     }
   },
   "sourceCommit": null,
-  "signedAcceptanceRun": 38351235660,
-  "verificationRun": 38349240612,
+  "signedAcceptanceRun": 38357642654,
+  "verificationRun": 38357642674,
   "approvedAt": null,
   "publishNonce": null
 }
