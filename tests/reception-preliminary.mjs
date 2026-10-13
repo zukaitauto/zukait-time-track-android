@@ -28,6 +28,6 @@ const submit=async()=>{w.document.getElementById('rc-parts').dispatchEvent(new w
 fail=true;await submit();assert.match(w.document.getElementById('rc-error').textContent,/Response lost/);assert.ok(w.document.getElementById('rc-parts'),'keep form for retry');
 const request=commands.find(c=>c.operation==='SAVE_PARTS').request_id;
 await submit();assert.equal(items.length,1);assert.equal(record.revision,2);assert.equal(commands.filter(c=>c.operation==='SAVE_PARTS').at(-1).request_id,request);assert.equal(items[0].id,id);assert.equal(record.location,'VWC');assert.equal(record.approval_status,'WAITING');assert.equal(record.job_card,undefined);
-canEdit=false;await click('home');await click('view');await click('parts');assert.equal(w.document.getElementById('rc-parts'),null);assert.match(w.document.getElementById('rc-root').textContent,/<script>bumper<\/script>/);assert.equal(w.document.querySelectorAll('#rc-root script').length,0);
+canEdit=false;await w.zukaitReception.open();await click('view');await click('parts');assert.equal(w.document.getElementById('rc-parts'),null);assert.match(w.document.getElementById('rc-root').textContent,/<script>bumper<\/script>/);assert.equal(w.document.querySelectorAll('#rc-root script').length,0);
 assert.ok(commands.every(c=>['CAPABILITIES','LIST','GET','SAVE_PARTS'].includes(c.operation)),'no operational event or allocation');
 w.me=null;await settle();dom.window.close();console.log('Preliminary parts UI: stable item/request IDs, lost-response retry, preserved location/status, read-only access and escaping passed.');
