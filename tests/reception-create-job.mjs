@@ -32,6 +32,6 @@ assert.equal(commands[0].job_card,'JC12345');assert.equal(commands[0].reason,'Ap
 assert.equal(cache.size,1);assert.equal(pulls,1);assert.equal(r.location,'VWC');assert.equal(w.state.jobs.length,0);assert.equal(w.state.assign.length,0);assert.equal(w.state.sessions.length,0);
 assert.equal(w.document.getElementById('rc-create-job'),null);assert.match(w.document.getElementById('rc-root').textContent,/Linked Job Card JC12345/);
 assert.match(w.document.getElementById('rc-root').textContent,/1 approved part items transferred/);
-r={...r,job_card:null};enabled=false;await click('home');await click('view');await click('insurance');assert.equal(w.document.getElementById('rc-create-job'),null);
+r={...r,job_card:null};enabled=false;await w.zukaitReception.open();await click('view');await click('insurance');assert.equal(w.document.getElementById('rc-create-job'),null);
 w.me=null;dom.window.close();
 console.log('RC creation UI: server gate, normalized number, stable lost-response retry, confirmed linkage, failed pull recovery, no fabricated local work and read-only state passed.');
