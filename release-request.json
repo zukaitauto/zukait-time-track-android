@@ -726,6 +726,10 @@
     "releaseProvenanceRecheck": {
       "passed": false,
       "evidence": "Protected publisher requires signed acceptance and Reception verification runs to match one source SHA, and permits only listed release metadata differences after that source. Recorded signed run 38351235660 is at b49eeb4e, recorded Reception run 38349240612 is at 5e56fa27, and current HEAD f19a772f additionally changes staging workflow. Fresh matching-source runs are required before approval. No workflow safety change or branch rewind performed."
+    },
+    "ownerReleaseConfirmations": {
+      "passed": true,
+      "evidence": "Owner confirmed in ChatGPT on 2026-10-13: Manager, Supervisor, and Reception testing passed; encrypted Z: production backup file saved and backup restore verification passed; two-device concurrent-save test passed. These are owner-reported results, not independently observed authenticated test traces, production restore logs, or full permission-matrix evidence. Do not infer production preservation, backup provenance, or release authorization gates passed solely from these confirmations."
     }
   },
   "sourceCommit": null,
