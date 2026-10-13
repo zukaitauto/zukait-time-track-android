@@ -1035,14 +1035,33 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
      '<h3>Recent Leave</h3>'+(rows.length?'<div style="overflow:auto"><table><tr><th>Date</th><th>Type</th><th>Marked By</th><th>Remark</th></tr>'+
        rows.map(l=>'<tr><td>'+esc(l.date)+'</td><td>'+esc(leaveLabel(l))+'</td><td>'+esc(userSafe(l.by).name||l.by)+'</td><td>'+esc(l.remark||'—')+'</td></tr>').join('')+'</table></div>':'<div class="notice">No leave records.</div>'));
  };
+ let leaveSaveRefreshing=false;
  window.v755SaveLeave=function(emp,prefix='v755'){
+   if(!canManageTarget(emp))return;
+   const cloud=window.zukaitCloud;
+   // The live worker feed and shared workshop snapshot refresh independently.
+   // Validate against a fresh shared snapshot, never close or rewrite sessions.
+   if(typeof cloud?.pull==='function'&&window.navigator?.onLine){
+     if(leaveSaveRefreshing)return;
+     leaveSaveRefreshing=true;
+     const actor=me.id;
+     return Promise.resolve().then(()=>cloud.pull(true)).then(refreshed=>{
+       if(me?.id!==actor||!canManageTarget(emp))return;
+       if(!refreshed||cloud.dirty)return alert('Leave and work records are still syncing. Refresh and retry before marking leave.');
+       return commitLeave(emp,prefix);
+     }).catch(()=>alert('Unable to refresh leave and work records. Refresh and retry before marking leave.'))
+       .finally(()=>{leaveSaveRefreshing=false});
+   }
+   return commitLeave(emp,prefix);
+ };
+ function commitLeave(emp,prefix){
    if(!canManageTarget(emp))return;
    const date=document.getElementById(prefix+'LeaveDate')?.value,period=document.getElementById(prefix+'LeavePeriod')?.value,remark=document.getElementById(prefix+'LeaveRemark')?.value.trim()||'';
    if(!date||!['FULL','AM','PM'].includes(period))return alert('Select leave date and leave type.');
    let l={id:uid(),emp,date,period,remark,by:me.id,createdAt:Date.now(),cancelled:false};
    if(closedLeaveDay(l))return alert('Leave is not required on Friday or a workshop Public Holiday.');
-   l=prepareLeave(l,prefix);if(!l)return;
    if(hasDuplicate(emp,l))return alert('Leave is already recorded for this date/period.');
+   l=prepareLeave(l,prefix);if(!l)return;
    const who=userSafe(emp).name||emp;if(!confirm('Confirm Leave\n\nStaff: '+who+'\nDate: '+date+'\nLeave: '+leaveLabel(l)+'\n\nAre you sure you want to mark this leave?'))return;
    state.leaves=state.leaves||[];state.leaveAudit=state.leaveAudit||[];
    state.leaves.push(l);state.leaveAudit.push({id:uid(),action:l.managerOverride?'ADD_OVERRIDE':'ADD',leaveId:l.id,by:me.id,at:Date.now(),reason:l.managerOverrideReason||'',afterWork:!!l.afterWork,startAt:l.startAt??null});notifyLeave(l);

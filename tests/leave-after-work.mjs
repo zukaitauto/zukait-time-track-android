@@ -60,4 +60,33 @@ const validator=api.slice(api.indexOf('function same('),api.indexOf('function cl
 const server={};vm.createContext(server);vm.runInContext(stripTypeScriptTypes(validator)+';this.validate=validateEmployeeChange;',server);
 assert.equal(server.validate('EMP011',oldState,c.state),true,'employee self-entry must be accepted without permission-rebase retries');
 assert.equal(server.validate('OTHER',oldState,c.state),false,'other employees remain protected');
+// The live status feed can show Paused while shared state still has an open
+// session. Online leave entry must refresh shared state before validation.
+c.navigator={onLine:true};
+fields.v755LeavePeriod.value='PM';fields.v755LeaveDate.value='2026-10-03';
+reset();c.state.sessions=[{...work,end:null}];
+let pulls=0;
+c.zukaitCloud={dirty:false,pull:async()=>{pulls++;c.state.sessions=[work];return true}};
+await c.v755SaveLeave('EMP011');
+assert.equal(pulls,1);assert.equal(c.state.leaves.length,1);assert.equal(alerts.length,0);
+// A remotely saved Manager leave wins before stale work validation and is
+// neither duplicated nor overwritten.
+reset();c.state.sessions=[{...work,end:null}];
+const managerLeave={id:'manager-pm',emp:'EMP011',date:'2026-10-03',period:'PM',by:'MGR001'};
+c.zukaitCloud.pull=async()=>{c.state.leaves=[managerLeave];return true};
+await c.v755SaveLeave('EMP011');
+assert.equal(c.state.leaves.length,1);assert.match(alerts[0],/already recorded/);
+assert.equal(c.state.sessions[0].end,null,'preflight must not manufacture a pause');
+// Failed/skipped pulls and pending local writes cannot authorize stale entry.
+for(const mode of ['skipped','failed','dirty']){
+ reset();c.state.sessions=[];c.zukaitCloud.dirty=mode==='dirty';
+ c.zukaitCloud.pull=async()=>{if(mode==='failed')throw Error('offline');return mode!=='skipped'};
+ await c.v755SaveLeave('EMP011');assert.equal(c.state.leaves.length,0);assert.match(alerts[0],/refresh|syncing/i);
+}
+// Repeated clicks share one in-flight refresh; genuine active work still blocks.
+reset();c.zukaitCloud.dirty=false;c.state.sessions=[{...work,start:at(15),end:null}];
+let release;pulls=0;c.zukaitCloud.pull=()=>{pulls++;return new Promise(resolve=>release=resolve)};
+const pending=c.v755SaveLeave('EMP011');c.v755SaveLeave('EMP011');
+await Promise.resolve();release(true);await pending;
+assert.equal(pulls,1);assert.equal(c.state.leaves.length,0);assert.match(alerts[0],/Pause or stop/);
 console.log('Leave after work passed: Supervisor create, Manager edit/audit, exact cutoff, work retained, lunch, duplicates, active work and no remaining duty.');
