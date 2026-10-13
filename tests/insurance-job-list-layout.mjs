@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const source=fs.readFileSync('app/src/main/assets/insurance_management.js','utf8');
+new vm.Script(source,{filename:'insurance_management.js'});
+for(const field of ['Date','JC Number','Make / Model / Year','Claim Number','Insurance Company','Delivery Date','LPO Amount (OMR)'])assert.ok(source.includes("'"+field+"'"),'Missing list column: '+field);
+assert.ok(source.includes('ins-jobs-table')&&source.includes('ins-job-line'),'One-row table and clickable rows required');
+assert.ok(source.includes("if(action==='job')return jobDetails(button.dataset.job)"),'Row must open dedicated insurance details');
+assert.ok(!source.includes('360°'),'Insurance job list must not use 360° view');
+assert.ok(source.includes("if(action==='detail-print')"),'Dedicated details must support print');
+console.log('Insurance Job list and dedicated detail syntax/contract: PASS');
