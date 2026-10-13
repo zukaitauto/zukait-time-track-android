@@ -6,6 +6,9 @@ on:
     branches: [architecture-v2]
     paths:
       - "app/build.gradle"
+      - "app/src/main/assets/v2/features/estimate/**"
+      - "tests/v2-estimate-*"
+      - "tests/reception-pages-publication-safety.mjs"
       - "release-request.json"
       - "app/src/main/assets/v2/features/insurance/**"
       - "supabase/functions/workshop-api/**"
@@ -365,3 +368,4 @@ jobs:
           set -euo pipefail
           gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
           echo 'Owner-approved V312 release dispatched'
+
