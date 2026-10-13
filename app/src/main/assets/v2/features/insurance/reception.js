@@ -256,7 +256,7 @@
     openModal(
       '<section class="rc" id="rc-root"><header class="rc-topbar"><button type="button" data-rc-action="back">← Back</button><h3>' +
         esc(title) +
-        '</h3><div class="rc-actions"><button type="button" data-rc-action="home">Reception List</button><button type="button" data-rc-action="close">Close</button></div></header><div id="rc-error" class="rc-error" role="alert"></div>' +
+        '</h3><div class="rc-actions"><button type="button" data-rc-action="close">Close</button></div></header><div id="rc-error" class="rc-error" role="alert"></div>' +
         body +
         "</section>",
     );
