@@ -12,6 +12,7 @@ on:
       - "app/src/main/assets/reception_dashboard.js"
       - "app/src/main/assets/insurance_management.js"
       - "tests/insurance-job-list-layout.mjs"
+      - "tests/insurance-management.mjs"
       - "app/src/main/assets/job_card_edit.js"
       - "app/src/main/assets/manager_job_edit.js"
       - "app/src/main/assets/supervisor_stable.js"
