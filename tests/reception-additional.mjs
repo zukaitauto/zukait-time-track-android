@@ -51,7 +51,7 @@ function setup(){const dom=new JSDOM('<div id="modal"></div>',{url:'https://test
  fail=true;await submit('rc-additional-approval');assert.equal(pulls,0);assert.equal(hydrates,0);assert.equal(w.state.jobs.length,0);
  await submit('rc-additional-approval');const approved=calls.filter(c=>c.operation==='APPROVE_ADDITIONAL');assert.equal(approved[0].request_id,approved[1].request_id);assert.equal(approved[0].quotation_id,quote);assert.deepEqual(approved[0].approved_parts,[{id:saved[0].items[0].id,qty:1}]);assert.equal(pulls,1);assert.equal(hydrates,1);
  assert.equal(record.location,'VWC');assert.equal(w.document.querySelectorAll('#rc-root script').length,0);assert.match(w.document.getElementById('rc-root').textContent,/OMR 15.555/);assert.match(w.document.getElementById('rc-root').textContent,/incremental approvals/);assert.match(w.document.getElementById('rc-root').textContent,/PL-QA/);
- allowed=false;await click('home');await click('view');await click('insurance');assert.equal(w.document.querySelector('[data-rc-action="additional-parts"]'),null);assert.equal(w.document.getElementById('rc-additional-approval'),null);
+ allowed=false;await w.zukaitReception.open();await click('view');await click('insurance');assert.equal(w.document.querySelector('[data-rc-action="additional-parts"]'),null);assert.equal(w.document.getElementById('rc-additional-approval'),null);
  assert.equal(w.state.sessions.length,0);assert.equal(w.state.assignments.length,0);w.me=null;dom.window.close();
 }
 console.log('Additional approvals UI: server-gated estimates, reviewed quote linkage, stable draft/approval retries, partial quantities, confirmed-only parts refresh, immutable history rendering and unchanged VWC/workflows passed.');
