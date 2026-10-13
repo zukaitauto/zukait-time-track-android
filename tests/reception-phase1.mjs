@@ -298,7 +298,7 @@ if (process.env.ZUKAIT_RECEPTION_QA_HTML)
 
 // Cash must create a checklist, not silently create a Job Card or send an
 // insurance company/claim. Reusing the form preserves original field order.
-await click("home");
+await w.zukaitReception.open();
 await click("new");
 const form=w.document.getElementById("rc-form");
 assert.deepEqual([...form.querySelectorAll(".rc-create-sections .rc-grid input,.rc-create-sections .rc-grid select")]
