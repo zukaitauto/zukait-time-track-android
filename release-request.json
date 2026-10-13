@@ -20,11 +20,11 @@
   "evidence": {
     "signedCandidate": {
       "passed": true,
-      "evidence": "Signed acceptance workflow 38357642654 succeeded on exact source 4ba6d8641091d3980cdb0e3ec41432f75689f42d; signed acceptance APK artifact 11793576068. CI signing verification is not physical or authenticated production acceptance."
+      "evidence": "Signed acceptance run 38370705520 passed at exact source 2a2f45ad3a5c88982b899e18153a30273da05898. Does not attest production acceptance."
     },
     "receptionCi": {
       "passed": true,
-      "evidence": "Reception verification workflow 38357642674 succeeded on exact source 4ba6d8641091d3980cdb0e3ec41432f75689f42d. Automated CI does not establish live V318 hosted acceptance."
+      "evidence": "Reception verification run 38370705678 passed at exact source 2a2f45ad3a5c88982b899e18153a30273da05898, including isolated PostgreSQL concurrency, history protection and browser tests; production acceptance remains separate."
     },
     "ciRestoreRehearsal": {
       "passed": true,
@@ -729,8 +729,8 @@
     }
   },
   "sourceCommit": null,
-  "signedAcceptanceRun": 38357642654,
-  "verificationRun": 38357642674,
+  "signedAcceptanceRun": 38370705520,
+  "verificationRun": 38370705678,
   "approvedAt": null,
   "publishNonce": null
 }
