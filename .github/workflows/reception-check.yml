@@ -10,6 +10,8 @@ on:
       - "supabase/functions/staff-auth/**"
       - "supabase/migrations/**"
       - "app/src/main/assets/reception_dashboard.js"
+      - "app/src/main/assets/insurance_management.js"
+      - "tests/insurance-job-list-layout.mjs"
       - "app/src/main/assets/job_card_edit.js"
       - "app/src/main/assets/manager_job_edit.js"
       - "app/src/main/assets/supervisor_stable.js"
@@ -60,6 +62,8 @@ jobs:
       - run: python3 tests/reception-acceptance-preparation.py
       - run: npm run test:reception
       - run: npm run test:management
+      - name: Verify compact Insurance Job Cards and dedicated detail view
+        run: node tests/insurance-job-list-layout.mjs
       - name: Verify approved 37-row Consumables PDF master
         run: npm run test:consumables:pdf
       - name: Prevent stale full-state saves from erasing workshop history
