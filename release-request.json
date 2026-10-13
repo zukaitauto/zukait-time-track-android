@@ -730,9 +730,13 @@
     "ownerReleaseConfirmations": {
       "passed": true,
       "evidence": "Owner confirmed in ChatGPT on 2026-10-13: Manager, Supervisor, and Reception testing passed; encrypted Z: production backup file saved and backup restore verification passed; two-device concurrent-save test passed. These are owner-reported results, not independently observed authenticated test traces, production restore logs, or full permission-matrix evidence. Do not infer production preservation, backup provenance, or release authorization gates passed solely from these confirmations."
+    },
+    "originalAuditRetentionRecheck": {
+      "passed": true,
+      "evidence": "Read-only production SQL recheck on 2026-10-13 compared workshop_state revision 13268 with archived baseline revision 13106 using JSONB multiset counts: employeeTimeActionAudit 46 original/73 current, jobIdentityAudit 4/4, systemNotifications 45/47, jobEdits 99/146; zero missing original occurrences in all four. This does not establish complete production preservation, concurrent-save acceptance, role-permission smoke or hosted V318 QA; those aggregate gates remain false."
     }
   },
-  "sourceCommit": null,
+  "sourceCommit": "2a2f45ad3a5c88982b899e18153a30273da05898",
   "signedAcceptanceRun": 38370705520,
   "verificationRun": 38370705678,
   "approvedAt": null,
