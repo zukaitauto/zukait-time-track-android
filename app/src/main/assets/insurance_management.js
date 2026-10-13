@@ -20,7 +20,7 @@
   if(section==='pending')return [['No.',esc(n)],['JC Number',jc],['Insurance',esc(r.insurance_company||'—')],['Status',badge],['LPO Enter','<button class="ins-lpo-entry" data-ins="lpo" data-job="'+esc(r.job_card)+'">'+(r.lpo_amount==null?'Enter LPO':'LPO Details')+'</button>','ins-actions']];
   return [['No.',esc(n)],['JC Number',jc],['Make / Model / Year',esc([r.vehicle,r.year].filter(Boolean).join(' ')||'—')],['Insurance Company',esc(r.insurance_company||'—')],['Status',badge]];
  }
- function sectionTitle(){return ({jobs:'Insurance Job Cards',pending:'LPO Pending',wip:'Work in Progress',delivered:'Delivered Vehicles',collected:'LPO Collected Amount',approval:'Approval Pending'})[section]||'Insurance Job Cards';}
+ function sectionTitle(){return ({jobs:'Insurance Job Cards',pending:'LPO Pending',wip:'Work in Progress',delivered:'Delivered Insurance Job Cards',collected:'LPO Collected Amount',approval:'Approval Pending'})[section]||'Insurance Job Cards';}
  function jobDetails(no){
   const r=result?.rows?.find(x=>String(x.job_card)===String(no));if(!r)return;
   const master=window.zukaitJobCardMaster;
@@ -37,7 +37,7 @@
  }
  function render(){
   style();const summary=result.summary||summaryCache||{collected_amount:0,delivered_count:0,approval_pending:0,wip_count:0};
-  const summaries=[['collected','Monthly Insurance LPO Collected Amount','OMR '+money(summary.collected_amount)],['delivered','Monthly Delivered Insurance Vehicles',summary.delivered_count],['approval','Approval Pending',summary.approval_pending],['wip','Work in Progress',summary.wip_count]];
+  const summaries=[['collected','Monthly Insurance LPO Collected Amount','OMR '+money(summary.collected_amount)],['delivered','Monthly Delivered Insurance Job Cards',summary.delivered_count],['approval','Approval Pending',summary.approval_pending],['wip','Work in Progress',summary.wip_count]];
   window.zukaitReception.dashboardShell('Insurance Management',
    '<div class="ins-summary">'+summaries.map(([action,label,value])=>'<button data-ins="summary" data-section="'+action+'">'+esc(label)+'<b>'+esc(value)+'</b></button>').join('')+'</div>'+
    '<div class="ins-toolbar"><button data-ins="section" data-section="jobs" aria-pressed="'+(section==='jobs')+'">Insurance Job Cards</button><button data-ins="section" data-section="pending" aria-pressed="'+(section==='pending')+'">LPO Pending</button><button data-ins="print">Print</button><button data-ins="refresh">Refresh</button></div>'+
