@@ -20,11 +20,11 @@
   "evidence": {
     "signedCandidate": {
       "passed": true,
-      "evidence": "GitHub run 38296018857 job 114967169696 completed successfully on b291c4656fff77e7cc7e2392e5b95b573cc72942. Logs verify com.zukait.timetrack V318 code 281 and signing certificate SHA256 63886438214503d468f053b44afe34baf008019f674e065a09b14ae8bf451af0. Artifact 11768097824 is unexpired. APK/web Reception asset parity passed; this is CI evidence, not physical-device acceptance."
+      "evidence": "GitHub signed acceptance run 38351235660 succeeded on architecture-v2 source b49eeb4e3aff8157e37a54b8fca1ed26be5ea554. Signed artifact 11790764189 (ZUKAIT_SIGNED_ACCEPTANCE_APK), sha256:dad39e9948b1d01095243176bf338ce8aa7767eb80747329414c23ae2d0a4c1f; signed certificate and APK/web Reception asset parity verified in workflow. This proves CI acceptance only, not physical installation or live authenticated role acceptance."
     },
     "receptionCi": {
       "passed": true,
-      "evidence": "GitHub run 38296018820 job 114967169558 completed successfully at source b291c4656fff77e7cc7e2392e5b95b573cc72942. Includes PostgreSQL concurrency, role guards, mock transport, Chromium/WebKit responsive checks, and one-page A4 checks. Does not prove authenticated production website behavior."
+      "evidence": "Reception verification run 38349240612 succeeded on architecture-v2 source 5e56fa271aa30b8c772034a1ff8a5ff5f758c507, including updated Insurance list, browser responsiveness and functional tests. Signed acceptance run 38351235660 at b49eeb4e also passed npm run test:reception and other functional smoke tests. Neither is authenticated production website acceptance."
     },
     "ciRestoreRehearsal": {
       "passed": true,
@@ -389,8 +389,8 @@
     }
   },
   "sourceCommit": null,
-  "signedAcceptanceRun": 38296018857,
-  "verificationRun": 38296018820,
+  "signedAcceptanceRun": 38351235660,
+  "verificationRun": 38349240612,
   "approvedAt": null,
   "publishNonce": null
 }
