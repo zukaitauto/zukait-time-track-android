@@ -1,4 +1,5 @@
 name: Reception verification
+# Re-run isolated concurrent-save and history-preservation acceptance for V318.
 # V318: revalidate Reception and signed candidate together after staging and evidence updates.
 on:
   push:
