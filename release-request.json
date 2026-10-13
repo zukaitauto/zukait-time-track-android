@@ -32,11 +32,11 @@
     },
     "productionBackendIdentity": {
       "passed": true,
-      "evidence": "Read-only list_edge_functions verified production pjknotnjkufadqavcmii workshop-api ACTIVE version 63, ezbr_sha256 7851e6f24410ae095fae323f7535756f7b0a0d154faf2bccab59b0aa72135188. Deployment identity only, not authenticated permission acceptance."
+      "evidence": "Read-only list_edge_functions verified production pjknotnjkufadqavcmii workshop-api ACTIVE version 63, ezbr_sha256 7851e6f24410ae095fae323f7535756f7b0a0d154faf2bccab59b0aa72135188. Deployment identity only, not authenticated permission acceptance. Reconfirmed ACTIVE v63 and the same ezbr_sha256 through list_edge_functions on 2026-10-13."
     },
     "preservation": {
       "passed": false,
-      "evidence": "FAILED during live verification. Read-only SHA256 baseline of 31 operational tables at 2026-10-12T19:26:31.884195Z compared at 19:31:12.088904Z: 29 table hashes identical; workshop_state and workshop_live_status changed. State revision 13106 to 13107 was saved at 19:28:15.172351Z by MGR001 while no business edit was submitted by the test operator. Retained history revision 13106 reconstructs EXACT baseline workshop_state hash 814437ea7a5655ebfc051069fc5327c390969071617398687fba0f7f7595594c. employeeTimeActionAudit (46 entries) and jobIdentityAudit (4 entries) disappeared; jobEdits shrank 99 to 90; systemNotifications shrank 45 to 0; empty offlineActionLog, overdueTimeReviews, workshopHolidays disappeared; lastActions changed. Jobs count stayed 73, with changed fields limited to vehicleIdentityRepairedAt on JC1001/JC1002 and createdAt on ID001. Sessions, assignments, estimates, estimateAudit, consumables, paintCosting and paintPurchasing remained equal; no broad data-preservation pass is justified. Browser closed after detecting failure. No SQL mutation, recovery overwrite, or deployment performed. Root cause not yet confirmed; old history remains available for reviewed targeted recovery.",
+      "evidence": "FAILED during live verification. Read-only SHA256 baseline of 31 operational tables at 2026-10-12T19:26:31.884195Z compared at 19:31:12.088904Z: 29 table hashes identical; workshop_state and workshop_live_status changed. State revision 13106 to 13107 was saved at 19:28:15.172351Z by MGR001 while no business edit was submitted by the test operator. Retained history revision 13106 reconstructs EXACT baseline workshop_state hash 814437ea7a5655ebfc051069fc5327c390969071617398687fba0f7f7595594c. employeeTimeActionAudit (46 entries) and jobIdentityAudit (4 entries) disappeared; jobEdits shrank 99 to 90; systemNotifications shrank 45 to 0; empty offlineActionLog, overdueTimeReviews, workshopHolidays disappeared; lastActions changed. Jobs count stayed 73, with changed fields limited to vehicleIdentityRepairedAt on JC1001/JC1002 and createdAt on ID001. Sessions, assignments, estimates, estimateAudit, consumables, paintCosting and paintPurchasing remained equal; no broad data-preservation pass is justified. Browser closed after detecting failure. No SQL mutation, recovery overwrite, or deployment performed. Root cause not yet confirmed; old history remains available for reviewed targeted recovery. Read-only recheck 2026-10-13: current revision 13151 compared to restored revision 13110 retains all 46 original employee-time audit entries (now 52), 4 identity audits, 45 notifications and all 90 post-recovery jobEdits (now 101). Comparing the original pre-failure revision 13106 still finds 9 missing duplicate jobEdit occurrences (99 original occurrences, 90 retained; zero missing distinct audit values). Preservation cannot be marked passed until this discrepancy is reconciled. One historical ID001 session also lacks autoStoppedAt; its start/end/employee/job remain unchanged.",
       "before": {
         "captured_at": "2026-10-12 19:26:31.884195+00",
         "table_fingerprints": [
@@ -361,7 +361,7 @@
     },
     "permissionSmoke": {
       "passed": false,
-      "evidence": "Secure browser sign-in now succeeded as Manager and allowed read-only Reception/Insurance navigation. Supervisor and Receptionist authenticated permission tests remain NOT_RUN as requested by owner. Manager access alone is not the complete role matrix; no account permissions or credentials changed."
+      "evidence": "Secure browser sign-in now succeeded as Manager and allowed read-only Reception/Insurance navigation. Supervisor and Receptionist authenticated permission tests remain NOT_RUN as requested by owner. Manager access alone is not the complete role matrix; no account permissions or credentials changed. Owner-confirmed Supervisor and Reception live smoke checks are now recorded separately in ownerSupervisorConfirmation and ownerReceptionConfirmation. Full untested permission cases remain NOT_RUN; this aggregate gate remains false."
     },
     "hostedQa": {
       "passed": false,
@@ -386,6 +386,346 @@
     "postDeploymentHistoryPersistence": {
       "passed": true,
       "evidence": "Read-only comparison after production Manager save at workshop_state revision 13111 (updated_by MGR001): employeeTimeActionAudit 46/46 identical to revision 13110; jobIdentityAudit 4/4 identical; systemNotifications 45/45 identical; jobEdits grew from 90 to 91. Production workshop-api v63 active. This is observed preservation of audited collections through one live save, not a complete authenticated multi-role or full database backup/restore test."
+    },
+    "ownerSupervisorConfirmation": {
+      "passed": true,
+      "evidence": "Owner-reported authenticated check on 2026-10-13 05:44:13Z, existing live website (not established as V318): Supervisor dashboard, Job Card List with existing jobs, Job Card search and Suggested Materials open; Checklist/Reception permissions behave correctly for Supervisor; no red error banner or unexpected access-denied message. Reported by owner, not independently retested by this agent. Does not establish the complete mutation/denial permission matrix or V318 candidate acceptance."
+    },
+    "ownerReceptionConfirmation": {
+      "passed": true,
+      "evidence": "Owner confirmed Reception account/dashboard working and reported 'All working' on 2026-10-13 05:47:59Z on the existing live website. Owner-reported smoke only; exact individual actions and V318 source were not identified. Do not infer Checklist-to-Estimate autofill, restricted writes, delivered-job editing restrictions, or the complete permission matrix passed."
+    },
+    "productionReadOnlyRecheck": {
+      "passed": true,
+      "evidence": "2026-10-13 read-only repeatable-read SHA256 capture of the same 31 operational tables. The captures at 06:29:08Z and 06:30:26Z match for 29 of 31 tables; workshop_state and workshop_live_status changed during ongoing production use; verification submitted no business edit, SQL mutation, recovery overwrite or deployment. Relative to 2026-10-12 baseline, 26 table hashes are identical; five differ during continuing workshop operation (state, live status, estimate numbers, events, spare part state). Read-only state comparison against revision 13110 confirms all original job identities, session identities/start/end values and consumable issues retained; 11 sessions, 2 assignments, 1 issue and 1 estimate added. Existing assignment changed completed false to true; three session auto-pause reason strings changed; one session autoStoppedAt removed. This is a bounded observational comparison, not a pass for the full production preservation/concurrent-save acceptance gate.",
+      "before": {
+        "captured_at": "2026-10-13 06:29:08.231748+00",
+        "table_fingerprints": [
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_direct_job_approvals"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_direct_job_audit"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_direct_job_identity"
+          },
+          {
+            "sha256": "dfb6e5c642d5f4f5ea402bfbfcfd08efe60afa0bdadd4a65b4f486b31824d3ee",
+            "row_count": 8,
+            "table_name": "workshop_insurance_companies"
+          },
+          {
+            "sha256": "91fb27033be5f6fca143e7e6a5fddd84ede4f175d1ea447933daab3d0dc50d1d",
+            "row_count": 19,
+            "table_name": "workshop_live_status"
+          },
+          {
+            "sha256": "b0e70e6578c0b3d2884d0eb1496d5c310d2b5eeb11cddcab9f5ed6f4c8faf967",
+            "row_count": 1,
+            "table_name": "workshop_reception_access"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_reception_additional_approvals"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_reception_additional_requests"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_reception_additional_transfers"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_reception_approvals"
+          },
+          {
+            "sha256": "38d6ee447f496b12777ef7a649f82b43a0f8411c6e42b45eac94279d584bc5a7",
+            "row_count": 9,
+            "table_name": "workshop_reception_audit"
+          },
+          {
+            "sha256": "1d8e2013e0ece053fa6f28c033d39fe70e9363d828db4b30d098515883c9730b",
+            "row_count": 8,
+            "table_name": "workshop_reception_commands"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_reception_estimates"
+          },
+          {
+            "sha256": "294b1917a4b5d67a9dff9f472db4bc0d8fd62f021ad53424db624fec0c9f5f39",
+            "row_count": 2,
+            "table_name": "workshop_reception_external_approvals"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_reception_job_cancellations"
+          },
+          {
+            "sha256": "8adbbe2fc9d487a57e24dcafe753d5bdd8c2abd85dadeb1c43fdb2240b526d17",
+            "row_count": 4,
+            "table_name": "workshop_reception_movements"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_reception_part_transfers"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_reception_preliminary_parts"
+          },
+          {
+            "sha256": "695c40cb96120b82957b43c0ef202ad50a2441c1f6639fa2ba93c2c4ac5025cd",
+            "row_count": 4,
+            "table_name": "workshop_receptions"
+          },
+          {
+            "sha256": "abfc540f56817b0c6ee36690a5a6bd10e32a9a9aa8f2c68f96891967fd0b1bb4",
+            "row_count": 1,
+            "table_name": "workshop_state"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_v2_assignments"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_v2_calendar"
+          },
+          {
+            "sha256": "06f486d6227aad147f3c2ef96b8fdb17c99c8a214f6672283b8bbbe951dbf1ef",
+            "row_count": 14,
+            "table_name": "workshop_v2_estimate_numbers"
+          },
+          {
+            "sha256": "fd8bb53c79dd62e6b81b23709460b6ac06432c9520fffaf63a529421f46a2145",
+            "row_count": 519,
+            "table_name": "workshop_v2_events"
+          },
+          {
+            "sha256": "521259d6610131de452bdc291b5ce2753eb2d5545eac4ef1c1429189159eb982",
+            "row_count": 28,
+            "table_name": "workshop_v2_jobcards"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_v2_leave"
+          },
+          {
+            "sha256": "8677805bd1ed3d8549bbab2e6dd8b700f8e6086ba5b10f6b2e74460624996067",
+            "row_count": 1,
+            "table_name": "workshop_v2_preliminary_links"
+          },
+          {
+            "sha256": "76efaf43c19d9bef39a2e6668faec84081789be48e7a6d2a5f8fad00cdef5060",
+            "row_count": 22,
+            "table_name": "workshop_v2_spare_part_list_numbers"
+          },
+          {
+            "sha256": "c752b1b1167bf4ce71f2c0e1bd26815fe1f482c6bd2d92ba22818c0e23e75666",
+            "row_count": 89,
+            "table_name": "workshop_v2_spare_part_state"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_v2_spare_part_state_conflicts"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_v2_work_sessions"
+          }
+        ]
+      },
+      "after": {
+        "captured_at": "2026-10-13 06:30:26.473212+00",
+        "table_fingerprints": [
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_direct_job_approvals"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_direct_job_audit"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_direct_job_identity"
+          },
+          {
+            "sha256": "dfb6e5c642d5f4f5ea402bfbfcfd08efe60afa0bdadd4a65b4f486b31824d3ee",
+            "row_count": 8,
+            "table_name": "workshop_insurance_companies"
+          },
+          {
+            "sha256": "618389276e7726cbe14f9c338048796c7705284758b94d7554885f1cc0458b52",
+            "row_count": 19,
+            "table_name": "workshop_live_status"
+          },
+          {
+            "sha256": "b0e70e6578c0b3d2884d0eb1496d5c310d2b5eeb11cddcab9f5ed6f4c8faf967",
+            "row_count": 1,
+            "table_name": "workshop_reception_access"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_reception_additional_approvals"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_reception_additional_requests"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_reception_additional_transfers"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_reception_approvals"
+          },
+          {
+            "sha256": "38d6ee447f496b12777ef7a649f82b43a0f8411c6e42b45eac94279d584bc5a7",
+            "row_count": 9,
+            "table_name": "workshop_reception_audit"
+          },
+          {
+            "sha256": "1d8e2013e0ece053fa6f28c033d39fe70e9363d828db4b30d098515883c9730b",
+            "row_count": 8,
+            "table_name": "workshop_reception_commands"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_reception_estimates"
+          },
+          {
+            "sha256": "294b1917a4b5d67a9dff9f472db4bc0d8fd62f021ad53424db624fec0c9f5f39",
+            "row_count": 2,
+            "table_name": "workshop_reception_external_approvals"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_reception_job_cancellations"
+          },
+          {
+            "sha256": "8adbbe2fc9d487a57e24dcafe753d5bdd8c2abd85dadeb1c43fdb2240b526d17",
+            "row_count": 4,
+            "table_name": "workshop_reception_movements"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_reception_part_transfers"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_reception_preliminary_parts"
+          },
+          {
+            "sha256": "695c40cb96120b82957b43c0ef202ad50a2441c1f6639fa2ba93c2c4ac5025cd",
+            "row_count": 4,
+            "table_name": "workshop_receptions"
+          },
+          {
+            "sha256": "f2dc51471152cb50a3601a0ed01ebe369b343ecc53342717896344f8e6d34b04",
+            "row_count": 1,
+            "table_name": "workshop_state"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_v2_assignments"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_v2_calendar"
+          },
+          {
+            "sha256": "06f486d6227aad147f3c2ef96b8fdb17c99c8a214f6672283b8bbbe951dbf1ef",
+            "row_count": 14,
+            "table_name": "workshop_v2_estimate_numbers"
+          },
+          {
+            "sha256": "fd8bb53c79dd62e6b81b23709460b6ac06432c9520fffaf63a529421f46a2145",
+            "row_count": 519,
+            "table_name": "workshop_v2_events"
+          },
+          {
+            "sha256": "521259d6610131de452bdc291b5ce2753eb2d5545eac4ef1c1429189159eb982",
+            "row_count": 28,
+            "table_name": "workshop_v2_jobcards"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_v2_leave"
+          },
+          {
+            "sha256": "8677805bd1ed3d8549bbab2e6dd8b700f8e6086ba5b10f6b2e74460624996067",
+            "row_count": 1,
+            "table_name": "workshop_v2_preliminary_links"
+          },
+          {
+            "sha256": "76efaf43c19d9bef39a2e6668faec84081789be48e7a6d2a5f8fad00cdef5060",
+            "row_count": 22,
+            "table_name": "workshop_v2_spare_part_list_numbers"
+          },
+          {
+            "sha256": "c752b1b1167bf4ce71f2c0e1bd26815fe1f482c6bd2d92ba22818c0e23e75666",
+            "row_count": 89,
+            "table_name": "workshop_v2_spare_part_state"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_v2_spare_part_state_conflicts"
+          },
+          {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "row_count": 0,
+            "table_name": "workshop_v2_work_sessions"
+          }
+        ]
+      }
+    },
+    "pcStaging": {
+      "passed": true,
+      "evidence": "GitHub run 38353328579 succeeded at architecture-v2 f19a772fef4db70e4979c01ffc765819aab6bfcd. Full Pages packaging and shared Reception/Android source asset parity passed in isolated CI. STAGED_ONLY_NOT_PUBLISHED; does not establish authenticated hosted V318 acceptance."
+    },
+    "releaseProvenanceRecheck": {
+      "passed": false,
+      "evidence": "Protected publisher requires signed acceptance and Reception verification runs to match one source SHA, and permits only listed release metadata differences after that source. Recorded signed run 38351235660 is at b49eeb4e, recorded Reception run 38349240612 is at 5e56fa27, and current HEAD f19a772f additionally changes staging workflow. Fresh matching-source runs are required before approval. No workflow safety change or branch rewind performed."
     }
   },
   "sourceCommit": null,
