@@ -1,0 +1,56 @@
+name: Estimate Visual and PDF Check
+
+on:
+  push:
+    branches: [codex/professional-estimate-current]
+  pull_request:
+    branches: [architecture-v2]
+    paths:
+      - 'app/src/main/assets/v2/features/estimate/**'
+      - 'tests/v2-estimate-browser.cjs'
+      - '.github/workflows/estimate-visual.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install browser tooling
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+          python -m pip install pypdf==6.1.1
+      - name: Check editor layouts and interactions
+        run: node tests/v2-estimate-browser.cjs
+      - name: Check PDF pagination and retained content
+        run: |
+          python - <<'PY'
+          from pypdf import PdfReader
+          short = PdfReader('estimate-preview.pdf')
+          assert len(short.pages) == 1, f'Short estimate generated {len(short.pages)} pages'
+          assert '150' in short.pages[0].extract_text()
+          long = PdfReader('long-estimate.pdf')
+          assert len(long.pages) > 1, 'Long estimates must paginate'
+          text = '\n'.join(p.extract_text() for p in long.pages)
+          for expected in ['Part 1', 'Part 120', 'Authorized Signed', '93211154']:
+              assert expected in text, f'PDF lost {expected}'
+          assert all(p.extract_text().strip() for p in long.pages), 'Long PDF contains a blank page'
+          print(f'PDF pagination passed: short={len(short.pages)} page, long={len(long.pages)} pages')
+          PY
+      - name: Save review previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: estimate-design-previews
+          path: |
+            *.png
+            *.pdf
+            estimate-preview.html
+          if-no-files-found: warn
