@@ -57,7 +57,7 @@ function setup(){const dom=new JSDOM('<div id="modal"></div>',{url:'https://test
  fail=true;await submit('rc-approval');assert.match(w.document.getElementById('rc-error').textContent,/Approval response lost/);await submit('rc-approval');
  const calls=commands.filter(c=>c.operation==='RECORD_APPROVAL');assert.equal(calls[0].request_id,calls[1].request_id);assert.equal(calls[0].approved_amount,'120.555');assert.deepEqual(calls[0].approved_parts,[{id:partId,qty:1}]);assert.equal(approvals.length,1);assert.equal(record.revision,3);assert.equal(record.location,'VWC');assert.equal(record.job_card,undefined);assert.match(w.document.getElementById('rc-root').textContent,/OMR 120.555/);assert.equal(w.document.querySelectorAll('#rc-root script').length,0);
  set('rc-revoke','reason','Manager review');await submit('rc-revoke');assert.equal(record.approval_status,'WAITING');assert.equal(approvals.length,1);assert.equal(record.location,'VWC');
- canPrepare=false;record.approval_status='APPROVED';valid=false;await click('home');await click('view');await click('insurance');assert.equal(w.document.querySelectorAll('#rc-root form').length,0);assert.match(w.document.getElementById('rc-root').textContent,/Approval needs review/);
+ canPrepare=false;record.approval_status='APPROVED';valid=false;await w.zukaitReception.open();await click('view');await click('insurance');assert.equal(w.document.querySelectorAll('#rc-root form').length,0);assert.match(w.document.getElementById('rc-root').textContent,/Approval needs review/);
  assert.ok(commands.every(c=>['CAPABILITIES','LIST','GET','LINK_ESTIMATE','RECORD_APPROVAL','REVOKE_APPROVAL'].includes(c.operation)));
  w.me=null;await settle();dom.window.close();
 }
