@@ -1,4 +1,5 @@
 name: Validate staged PC website before V305 deployment
+# Run isolated V318 staging package verification without deploying live Pages.
 
 on:
   workflow_dispatch:
