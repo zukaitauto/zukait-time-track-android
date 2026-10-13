@@ -9,6 +9,8 @@ on:
       - .github/workflows/reception-check.yml
       - .github/workflows/build-signed-acceptance.yml
       - app/build.gradle
+      - app/src/main/assets/v2/features/estimate/**
+      - tests/v2-estimate-*
       - app/src/main/assets/v2/features/insurance/**
       - tests/reception-*
 
@@ -153,3 +155,4 @@ jobs:
         if: always()
         shell: bash
         run: rm -f /tmp/zukait-release.jks /tmp/aligned.apk
+

@@ -37,7 +37,16 @@ if (current.approvedForStaff) {
  assert.ok(typeof current.publishNonce==='string' && current.publishNonce.length>=12,
   'Approved release requires a unique nonce');
 } else {
- assert.equal(current.sourceCommit,null,'Unapproved request must not pin a release source');
+ // A QA candidate may be pinned before approval. A candidate SHA is evidence
+ // to test, not permission to publish it; the production validator must deny it.
+ if(current.sourceCommit !== null) {
+  assert.match(current.sourceCommit || '',/^[a-f0-9]{40}$/,'QA candidate requires a valid source SHA');
+ }
+ assert.equal(current.approvedAt,null,'Unapproved candidate must not claim an approval date');
+ assert.equal(current.publishNonce,null,'Unapproved candidate must not have a publication nonce');
+ assert.throws(()=>validate(current,{
+  ...latest,versionName:current.versionName,versionCode:current.versionCode
+ },branch),/Staff release approval required/,'Pinned QA candidate must not authorize publication');
 }
 const uiApproval = fs.existsSync('release-ui-request.json') ? JSON.parse(fs.readFileSync('release-ui-request.json','utf8')) : null;
 function verifyUpdaterAfterUiRelease(metadata) {
@@ -81,3 +90,4 @@ assert.doesNotMatch(workflow,/main_module\.js\\n\s+grep/,
 assert.match(workflow,/main_module\.js\n\s+grep -q 'open:render'/,
  'Both independent Parts module checks must be valid lines');
 console.log('PASS: manual-only PC publication, approval denial matrix, pinned source commit and owner-approved updater gates');
+
