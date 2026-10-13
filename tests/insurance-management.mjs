@@ -6,6 +6,12 @@ import {qcTransition,preserveQcAuthority} from '../supabase/functions/workshop-a
 import {receptionDashboardProjection} from '../supabase/functions/workshop-api/reception_dashboard_rules.js';
 const manager={id:'QA-MGR',role:'Manager',name:'QA Manager'},supervisor={id:'QA-SUP',role:'Supervisor'},now=Date.parse('2026-10-12T12:00:00Z');
 const base={jobs:[{no:'10',jobType:'Insurance',insuranceCompany:'A',claimNo:'C10',createdAt:1,delivered:true,deliveredAt:now,qcWorkflow:{revision:0}},{no:'2',jobType:'Cash',createdAt:now,delivered:true,qcWorkflow:{revision:0}},{no:'100',jobType:'INSURANCE',insuranceCompany:'B',createdAt:now}],assign:[],sessions:[],expenses:[{id:'retain'}]};
+// Insurance Management Delivered excludes Cash and Credit, even when delivered on the same date.
+const deliveryOnly=insuranceProjection({jobs:[...base.jobs,{no:'3',jobType:'Credit',createdAt:now,delivered:true,deliveredAt:now},{no:'4',jobType:'CASH',createdAt:now,delivered:true,deliveredAt:now}]},[],{section:'delivered',month:'2026-10'});
+assert.equal(deliveryOnly.ok,true);
+assert.deepEqual(deliveryOnly.rows.map(x=>x.job_card),['10']);
+assert.equal(deliveryOnly.summary.delivered_count,1);
+assert.ok(deliveryOnly.rows.every(x=>x.insurance_company),'Delivered insurance list should not include cash or credit records');
 const mapped=insuranceProjection({jobs:[{no:'12070',jobType:'INSURANCE',createdAt:now,year:'',vehicleYear:2022,make:'Nissan',model:'Altima',receptionNo:'RC70',receptionLocation:'VWC'}]},[{rc_no:'RC70',location:'VWC',insurance:{approvals:[{approval_date:'2026-10-09'}]}}],{month:'2026-10'}).rows[0];
 assert.equal(mapped.year,2022);assert.equal(mapped.reception_location,'VWC');assert.equal(mapped.approval_date,'2026-10-09');
 const unavailable=insuranceProjection({jobs:[{no:'12071',jobType:'INSURANCE',createdAt:now}]},[],{month:'2026-10'}).rows[0];
