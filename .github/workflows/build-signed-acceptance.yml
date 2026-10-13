@@ -1,4 +1,5 @@
 name: Build Signed Acceptance APK
+# Revalidate signed V318 acceptance candidate after Reception/Insurance UI corrections.
 
 on:
   workflow_dispatch:
