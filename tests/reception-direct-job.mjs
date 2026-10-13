@@ -34,12 +34,12 @@ await submit();assert.match(w.document.getElementById('rc-error').textContent,/r
 await submit();
 const cash=calls.filter(c=>c.operation==='CREATE_DIRECT_JOB');assert.equal(cash.length,2);assert.deepEqual(cash[0],cash[1]);assert.equal(cash[0].job_card,'QA-CASH');assert.equal(cash[0].job_type,'CASH');assert.ok(!('credit_account' in cash[0]));assert.equal(receipts.size,1);
 assert.equal(w.document.querySelector('[data-rc-action=insurance]'),null);
-await click('home');await click('direct-job');form=w.document.getElementById('rc-direct-job');
+await w.zukaitReception.open();await click('direct-job');form=w.document.getElementById('rc-direct-job');
 form.elements.job_type.value='CREDIT';form.elements.job_type.dispatchEvent(new w.Event('change'));
 assert.equal(w.document.getElementById('rc-credit-account').hidden,false);assert.equal(form.elements.credit_account.required,true);
 for(const [k,v] of Object.entries({job_card:'QA-CREDIT',make:'Toyota',model:'Camry',customer:'QA Company',contact:'QA phone',reason:'QA credit',credit_account:'QA-FLEET'}))form.elements[k].value=v;
 form.elements.received_confirmed.checked=true;await submit();assert.equal(receipts.size,2);assert.equal(calls.filter(c=>c.operation==='CREATE_DIRECT_JOB').at(-1).credit_account,'QA-FLEET');
-await click('home');await click('direct-job');form=w.document.getElementById('rc-direct-job');
+await w.zukaitReception.open();await click('direct-job');form=w.document.getElementById('rc-direct-job');
 assert.deepEqual([...form.elements.job_type.options].map(x=>x.value),['CASH','INSURANCE','CREDIT']);
 form.elements.job_type.value='INSURANCE';form.elements.job_type.dispatchEvent(new w.Event('change'));
 assert.equal(w.document.getElementById('rc-direct-insurance').hidden,false);
@@ -79,7 +79,7 @@ w.fetch=async(url,args)=>{
  if(command.operation==='CREATE_EXTERNAL_JOB'){calls.push(command);return {ok:true,json:async()=>({ok:true,record:{...searchRecord,job_card:command.job_card}})};}
  return fetchBeforeSearch(url,args);
 };
-await click('home');await click('direct-job');form=w.document.getElementById('rc-direct-job');
+await w.zukaitReception.open();await click('direct-job');form=w.document.getElementById('rc-direct-job');
 assert.equal(w.document.querySelector('[data-rc-action="new"]'),null);
 w.document.getElementById('rc-direct-checklist-search').value='7561.BH';
 w.document.getElementById('rc-direct-checklist-find').click();await settle();
@@ -135,7 +135,7 @@ const oldFetch=w.fetch;w.fetch=async(url,args)=>{
  if(c.operation==='LIST')return {ok:true,json:async()=>({ok:true,rows:[{...record,sequence_no:1}]})};
  return oldFetch(url,args);
 };
-await click('home');await click('view');await click('insurance');
+await w.zukaitReception.open();await click('view');await click('insurance');
 assert.ok(w.document.getElementById('rc-external-job'));assert.equal(w.document.getElementById('rc-external-approval'),null);assert.equal(w.document.getElementById('rc-approval'),null);
 w.me={id:'QA-MGR',role:'Manager'};await w.zukaitReception.open();await click('view');await click('insurance');
 assert.ok(w.document.getElementById('rc-external-approval'));
