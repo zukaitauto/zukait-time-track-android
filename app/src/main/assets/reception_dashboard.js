@@ -64,9 +64,9 @@
   }
   const countFor=key=>key==="new"||key==="create-job"?"":key==="vwc"?counts.vwc??"":counts[key]??"";
   function tiles(){
-    return definitions.filter(d=>d[0]!=="insurance"||role()==="Manager").map(([key,title,sub,icon],index)=>
+    return definitions.filter(d=>d[0]!=="insurance"||role()==="Manager").map(([key,title,sub,icon])=>
       '<button type="button" class="rdb-card" data-rdb="tile" data-section="'+key+'" data-active="false" aria-label="Open '+safe(title)+'">'+
-      '<span class="rdb-emoji" aria-hidden="true">'+icon+'</span><span class="rdb-content"><b>'+(index+1)+'. '+safe(title)+
+      '<span class="rdb-emoji" aria-hidden="true">'+icon+'</span><span class="rdb-content"><b>'+safe(title)+
       '</b><small>'+safe(!backendAvailable&&!['new','checklists'].includes(key)?'Server update required':sub)+'</small></span><span class="rdb-count">'+safe(backendAvailable?countFor(key):'')+'</span></button>').join("");
   }
   const label=key=>definitions.find(x=>x[0]===key)?.[1]||"Reception";
