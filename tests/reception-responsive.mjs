@@ -54,7 +54,7 @@ for (const engine of ['chromium', 'webkit']) {
       assert.equal(detail.overflow,false,`${engine} ${width}: checklist horizontal overflow`);
       assert.equal(detail.map,true,`${engine} ${width}: damage diagram missing`);
       assert.equal(detail.escaped,true,`${engine} ${width}: unsafe detail HTML`);
-      await page.locator('[data-rc-action=home]').click();
+      await page.evaluate(()=>window.zukaitReception.open());
       await page.locator('[data-rc-action=new]').click();
       await page.locator('#rc-form').waitFor();
       assert.equal(await page.locator('#rc-form [name=make]').getAttribute('required'),'');
