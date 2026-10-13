@@ -251,7 +251,8 @@ assert.match(pdf.s,/Wheel Covers/);
 assert.doesNotMatch(pdf.s, /<script>unsafe/);
 await click("print");
 assert.equal(printed.n, "RC0001");
-await click("home");
+// Reopen the Reception workspace directly; the redundant header Home button was removed.
+await w.zukaitReception.open();
 await click("new");
 value("make", "Toyota");
 value("model", "Camry");
