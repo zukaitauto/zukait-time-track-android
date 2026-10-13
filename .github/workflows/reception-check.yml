@@ -1,4 +1,5 @@
 name: Reception verification
+# V318: revalidate Reception and signed candidate together after staging and evidence updates.
 on:
   push:
     branches: [architecture-v2]
