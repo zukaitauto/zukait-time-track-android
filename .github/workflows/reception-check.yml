@@ -383,6 +383,8 @@ jobs:
       actions: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Verify exact owner-approved V319 source and matching checks
         shell: bash
         env:
