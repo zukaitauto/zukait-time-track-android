@@ -2,7 +2,11 @@ name: Estimate Visual and PDF Check
 
 on:
   push:
-    branches: [codex/professional-estimate-current]
+    branches: [codex/professional-estimate-current, architecture-v2]
+    paths:
+      - 'app/src/main/assets/v2/features/estimate/**'
+      - 'tests/v2-estimate-*'
+      - '.github/workflows/estimate-visual.yml'
   pull_request:
     branches: [architecture-v2]
     paths:
@@ -35,7 +39,9 @@ jobs:
           from pypdf import PdfReader
           short = PdfReader('estimate-preview.pdf')
           assert len(short.pages) == 1, f'Short estimate generated {len(short.pages)} pages'
-          assert '150' in short.pages[0].extract_text()
+          assert '150.000' in short.pages[0].extract_text()
+          assert 'about:blank' not in short.pages[0].extract_text(), 'Browser URL footer must be suppressed'
+          assert 'Authorized Signed' in short.pages[0].extract_text(), 'Signature must stay on the first page'
           long = PdfReader('long-estimate.pdf')
           assert len(long.pages) > 1, 'Long estimates must paginate'
           text = '\n'.join(p.extract_text() for p in long.pages)

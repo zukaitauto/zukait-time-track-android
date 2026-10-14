@@ -43,7 +43,19 @@ const fixture={id:'preview',estimateNo:'Zi-Qt018',date:'2026-10-13',type:'LS',va
  const html=await page.evaluate(e=>zukaitEstimate.estimateDocumentHtml(e),fixture);
  const longHtml=await page.evaluate(e=>zukaitEstimate.estimateDocumentHtml({...e,type:'PL',partRows:Array.from({length:120},(_,i)=>({id:'p'+i,description:'Part '+(i+1),qty:1,unitPrice:1}))}),fixture);
  fs.writeFileSync('estimate-preview.html',html);
- await page.setContent(html);await page.pdf({path:'estimate-preview.pdf',preferCSSPageSize:true,printBackground:true});
+ await page.setContent(html);
+ for(const width of [390,794]){
+  await page.setViewportSize({width,height:1123});
+  for(const table of await page.locator('.work-table,.totals').all()){
+   const head=table.locator('thead th.money-cell').last();
+   const amounts=table.locator('tbody td.money-cell');
+   const right=(await head.boundingBox()).x+(await head.boundingBox()).width;
+   for(const cell of await amounts.all()){const box=await cell.boundingBox();assert.ok(Math.abs(box.x+box.width-right)<1,'Amount heading and values must share the same right edge');}
+   assert.equal(await head.evaluate(el=>el.scrollWidth>el.clientWidth),false,'Amount heading must fit without wrapping');
+  }
+ }
+
+ await page.setContent(html);await page.pdf({path:'estimate-preview.pdf',preferCSSPageSize:true,printBackground:true,displayHeaderFooter:true});
  await page.setViewportSize({width:794,height:1123});await page.screenshot({path:'print-preview.png',fullPage:true});
  await page.setContent(longHtml);await page.pdf({path:'long-estimate.pdf',preferCSSPageSize:true,printBackground:true});
  assert.deepEqual(errors,[]);await browser.close();console.log('Desktop/mobile layout, item editing, VAT and PDF rendering: passed');

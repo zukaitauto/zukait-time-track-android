@@ -162,11 +162,11 @@ assert.ok(native.includes('int pageCount = Math.max(1'),'Android PDF renderer mu
 assert.ok(native.includes('pageIndex < pageCount'),'Android PDF renderer must render every calculated page');
 
 const printable=api.printable(state.estimates[0]);
-for(const text of ['ZUKAIT INTERNATIONAL LLC','REPAIR ESTIMATE','Zi-Qt001','Test Customer','Toyota Camry','Tel No.','Frame / VIN No.','Description','R.O.','Bz.','Total Labour / Lumpsum','SPARE PARTS REQUIRED — TO BE SUPPLIED BY CUSTOMER','Headlamp<br>Bracket','NOTES / CONDITIONS','Subject to inspection.','ESTIMATE VALID FOR 15 DAYS.','VAT 5%']){
+for(const text of ['ZUKAIT INTERNATIONAL LLC','REPAIR ESTIMATE','Zi-Qt001','Test Customer','Toyota Camry','Tel No.','Frame / VIN No.','Description','Amount OMR','Total Labour / Lumpsum','SPARE PARTS REQUIRED — TO BE SUPPLIED BY CUSTOMER','Headlamp<br>Bracket','NOTES / CONDITIONS','Subject to inspection.','ESTIMATE VALID FOR 15 DAYS.','VAT 5%']){
   assert.ok(printable.includes(text),'Printable estimate missing '+text);
 }
-assert.ok(printable.includes('<tr class="grand summary-row"><th>TOTAL</th><td class="money-cell">210</td><td class="money-cell">000</td></tr>'),'LS total must print in R.O. / Bz. columns');
-assert.ok(printable.includes('<tr class="summary-row"><th>VAT 5%</th><td class="money-cell">10</td><td class="money-cell">000</td></tr>'),'LS VAT must print in R.O. / Bz. columns');
+assert.ok(printable.includes('<tr class="grand summary-row"><th>TOTAL</th><td class="money-cell">210.000</td></tr>'),'LS total must print three OMR decimal places in one amount column');
+assert.ok(printable.includes('<tr class="summary-row"><th>VAT 5%</th><td class="money-cell">10.000</td></tr>'),'LS VAT must print three OMR decimal places');
 
 api.printEstimate('E1');
 assert.deepEqual(bridgeCalls[0].slice(0,2),['print-named','Estimate Zi-Qt001']);
@@ -239,7 +239,12 @@ console.log('V2 Estimate optional customer parts checkbox and simplified present
 assert.equal((plPrintable.match(/class="blank-print-row"/g)||[]).length,0);
 assert.equal((printable.match(/class="blank-print-row"/g)||[]).length,0);
 assert.ok(!longPl.includes('class="blank-print-row"'));
-assert.match(branded,/size:A4;margin:12mm/);
+assert.match(branded,/size:A4;margin:0/);
 assert.equal(api.totals(state.estimates[0]).total,210);
 console.log('V2 Estimate content-driven tables, A4 margins and unchanged totals: ok');
 
+
+const zeroParts=api.printable({...state.estimates[0],lsSpareParts:0});
+assert.ok(!zeroParts.includes('Spare Parts / Lumpsum'),'Zero lump-sum parts must not create an empty parts section');
+assert.ok(api.printable({...state.estimates[0],lsSpareParts:30}).includes('Spare Parts / Lumpsum'));
+assert.ok(!zeroParts.includes('R.O.')&&!zeroParts.includes('Bz.'),'Amount headings must use a single OMR column');
