@@ -117,7 +117,9 @@ assert.match(context.window.lastModal,/Two/); assert.doesNotMatch(context.window
 context.window.v74OT();
 assert.match(context.window.lastModal,/Four/); assert.doesNotMatch(context.window.lastModal,/One/);
 context.window.v92OpenAvailableWorkers();
-assert.match(context.window.lastModal,/Five/); assert.doesNotMatch(context.window.lastModal,/Four/);
+assert.match(context.window.lastModal,/Five/); assert.match(context.window.lastModal,/Three/,'ID001 workers must remain available for assignment'); assert.doesNotMatch(context.window.lastModal,/Four/); assert.doesNotMatch(context.window.lastModal,/One/); assert.doesNotMatch(context.window.lastModal,/Two/);
+context.window.v65OpenControl('available');
+assert.match(context.window.lastModal,/Three/,'both Available Workers entry points must include ID001'); assert.match(context.window.lastModal,/Five/);
 assert.equal(windowObj.legacyControl,undefined,'server-live Working/ID001 popups must not call legacy local control');
 assert.equal(windowObj.legacyGlance,undefined,'server-live Paused popup must not call legacy local glance');
 assert.equal(windowObj.legacyOvertime,undefined,'server-live Overtime popup must not call legacy local overtime');
@@ -148,6 +150,16 @@ assert.equal(writes,firstWrites,'unchanged worker counts must not be rewritten e
 windowObj.zukaitServerLive.fresh=false;
 windowObj.zukaitLiveStatusAuthority.apply();
 assert.equal(value,'3','brief live-status failures must preserve the last server count while syncing');
+
+
+// Supervisor count must include the same Available + ID001 rows as its popup.
+context.me.role='Supervisor';windowObj.me.role='Supervisor';
+windowObj.zukaitServerLive.fresh=true;
+const availableButton={textContent:'Available Workers',querySelector:()=>stat};
+const availableRoot={querySelectorAll(selector){return selector.includes('button')?[availableButton]:[]}};
+documentObj.getElementById=id=>id==='supervisorView'?availableRoot:null;
+windowObj.zukaitLiveStatusAuthority.apply();
+assert.equal(value,'2','Supervisor Available Workers count must include idle and ID001 technicians');
 
 context.navigator.onLine=false;
 assert.equal(context.window.currentStaffStatuses()[0].emp,'LOCAL','offline mode may use local cache as a fallback');
