@@ -1,23 +1,18 @@
 {
-  "versionName": "V315",
-  "versionCode": 278,
-  "approvedForStaff": true,
-  "approvedAt": "2026-10-12T11:50:21Z",
-  "sourceCommit": "541181662aa34bf204135d82b6eb00f4326c8863",
-  "publishNonce": "owner-authorized-v315-20261012-function-layout",
-  "signedAcceptanceRun": 38244894729,
-  "verificationRun": 38244894875,
+  "versionName": "V319",
+  "versionCode": 282,
   "releaseScope": "phase1-compatible-ui",
+  "approvedForStaff": false,
+  "sourceCommit": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "approvedAt": null,
+  "publishNonce": null,
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "backendDeployedSeparately": {
-    "project": "pjknotnjkufadqavcmii",
-    "workshopApiVersion": 60,
-    "migrationsApplied": 7,
-    "permissionSmokePassed": true
-  },
-  "authorization": "Owner explicitly requested publishing V315 to test the corrected Function Check on the existing web app. Source 541181662aa34bf204135d82b6eb00f4326c8863 passed Reception verification 38244894875, signed acceptance 38244894729, standard APK 38244895022 and Android build 38244894751. No backend changes or Phase 2 activation; physical acceptance remains NOT_RUN."
+  "freshProductionBackupRestoreStatus": "NOT_RUN",
+  "authorization": "Owner requested publication in this conversation: \"I want to to release new version, whatever required, you should do it and release new version, after that I will test it. You have all permission\". V319 publishes the professional estimate redesign and current client source using the existing owner-authorized UI release path. Automated checks are required before publication. Physical/hosted acceptance and fresh production backup verification are deferred and not claimed as passed. No backend or database deployments or new Phase 2 activation are included."
 }
