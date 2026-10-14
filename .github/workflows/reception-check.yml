@@ -369,3 +369,53 @@ jobs:
           gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
           echo 'Owner-approved V312 release dispatched'
 
+
+  dispatch_pinned_v319:
+    name: Publish owner-authorized V319 estimate redesign
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/architecture-v2' &&
+      github.event.head_commit.message == 'Owner-approved one-time V319 dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify exact owner-approved V319 source and matching checks
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SOURCE='3010e7d8850ee26c66c4cb467789422731d1bf4d'
+          jq -e --arg sha "$SOURCE" '
+            .approvedForStaff == true and .versionName == "V319" and
+            .versionCode == 282 and .sourceCommit == $sha and
+            .releaseScope == "phase1-compatible-ui" and
+            .ownerRequestedImmediateRelease == true and
+            .backupDeferredByOwner == true and
+            .productionBackendChanges == false and
+            .phase2ActivationApproved == false and
+            .physicalAcceptanceStatus == "NOT_RUN" and
+            .signedAcceptanceRun == 38509366887 and
+            .verificationRun == 38509366872
+          ' release-ui-request.json
+          node scripts/verify-ui-only-release.cjs
+          for ITEM in "38509366887:.github/workflows/build-signed-acceptance.yml" "38509366872:.github/workflows/reception-check.yml"; do
+            RUN="${ITEM%%:*}"
+            WORKFLOW="${ITEM#*:}"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN" | jq -e --arg sha "$SOURCE" --arg workflow "$WORKFLOW" '
+              .conclusion == "success" and .head_sha == $sha and
+              .head_branch == "architecture-v2" and .path == $workflow
+            '
+          done
+      - name: Dispatch existing coordinated V319 publisher
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
+          echo 'Owner-authorized V319 dispatched to the existing coordinated publisher'
