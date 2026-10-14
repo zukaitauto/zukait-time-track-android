@@ -49,7 +49,7 @@ public class PdfExportTest {
         Context app = InstrumentationRegistry.getInstrumentation().getTargetContext();
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
             final MainActivity.AndroidBridge[] bridge = new MainActivity.AndroidBridge[1];
-            scenario.onActivity(activity -> { bridge[0] = activity.new AndroidBridge(); bridge[0].shareHtmlAsPdf(html, name); });
+            scenario.onActivity(activity -> { bridge[0] = activity.new AndroidBridge(); assertTrue(bridge[0].supportsValidatedPdfExport()); bridge[0].shareHtmlAsPdf(html, name); });
             Field busy = bridge[0].getClass().getDeclaredField("pdfExportBusy"); busy.setAccessible(true);
             long deadline = System.currentTimeMillis() + 80000;
             while (System.currentTimeMillis() < deadline && busy.getBoolean(bridge[0])) Thread.sleep(100);

@@ -5,6 +5,11 @@ on:
     paths:
       - 'app/src/main/java/com/zukait/timetrack/MainActivity.java'
       - 'app/src/androidTest/**'
+      - 'app/src/main/assets/report_pdf_export.js'
+      - 'app/src/main/assets/vendor/pdf/**'
+      - '.github/workflows/estimate-check.yml'
+      - 'app/src/main/assets/v2/features/estimate/**'
+      - 'tests/generate-native-pdf-fixture.mjs'
       - 'app/build.gradle'
       - '.github/workflows/native-pdf-check.yml'
   workflow_dispatch:
@@ -23,6 +28,14 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Generate native fixture from current estimate renderer
+        run: |
+          npm ci --ignore-scripts
+          node tests/generate-native-pdf-fixture.mjs
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'

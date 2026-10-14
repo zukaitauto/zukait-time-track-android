@@ -41,6 +41,13 @@ jobs:
           node --check app/src/main/assets/v2/features/estimate/main_module.js
           node --check app/src/main/assets/cloud_sync.js
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install pinned integrated test dependencies
+        run: npm ci --ignore-scripts
+
       - name: Run Estimate tests
         run: |
           node tests/v2-estimate-smoke.mjs

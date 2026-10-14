@@ -1,20 +1,29 @@
 (function(){'use strict';
 let busy=false;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const timeout=(promise,ms)=>new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('Report rendering timed out')),ms);Promise.resolve(promise).then(v=>{clearTimeout(t);resolve(v)},e=>{clearTimeout(t);reject(e)})});
+const timeout=(promise,ms,stage='Report rendering')=>new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error(stage+' timed out')),ms);Promise.resolve(promise).then(v=>{clearTimeout(t);resolve(v)},e=>{clearTimeout(t);reject(e)})});
+function sanitizedDocument(html){
+ const doc=new DOMParser().parseFromString(String(html),'text/html');
+ doc.querySelectorAll('script,iframe,object,embed,base,meta[http-equiv]').forEach(el=>el.remove());
+ for(const el of doc.querySelectorAll('*'))for(const attr of Array.from(el.attributes)){
+  const name=attr.name.toLowerCase(),value=attr.value.replace(/[\u0000-\u0020]/g,'').toLowerCase();
+  if(name.startsWith('on')||name==='srcdoc'||(['href','src','action','formaction','xlink:href'].includes(name)&&/^(javascript|vbscript):/.test(value)))el.removeAttribute(attr.name);
+ }
+ return '<!doctype html>'+doc.documentElement.outerHTML;
+}
 async function generate(html,name='Zukait_Report.pdf'){
  if(!html||(!String(html).replace(/<style[\s\S]*?<\/style>|<script[\s\S]*?<\/script>/gi,'').replace(/<[^>]+>/g,'').trim()&&!/<(?:img|svg)\b/i.test(html)))throw Error('The report is empty. Reopen it and try again.');
  if(!window.html2canvas||!window.jspdf?.jsPDF)throw Error('PDF tools are unavailable. Reload the page and try again.');
- const frame=document.createElement('iframe');frame.title='PDF rendering';frame.setAttribute('aria-hidden','true');frame.setAttribute('sandbox','allow-same-origin');frame.style.cssText='position:fixed;left:-12000px;top:0;width:794px;height:1123px;border:0;pointer-events:none';
+ const frame=document.createElement('iframe');frame.title='PDF rendering';frame.setAttribute('aria-hidden','true');frame.setAttribute('sandbox','allow-same-origin allow-scripts');frame.style.cssText='position:fixed;left:-12000px;top:0;width:794px;height:1123px;border:0;pointer-events:none';
  try{
   const loaded=new Promise((resolve,reject)=>{frame.onload=resolve;frame.onerror=()=>reject(Error('Report could not load'))});
-  frame.srcdoc=String(html).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'');document.body.appendChild(frame);await timeout(loaded,15000);
+  frame.srcdoc=sanitizedDocument(html);document.body.appendChild(frame);await timeout(loaded,15000,'Report frame loading');
   const doc=frame.contentDocument;if(!doc?.body)throw Error('Report content is unavailable');
   const printStyle=doc.createElement('style');let rules='';
   for(const sheet of Array.from(doc.styleSheets)){try{for(const rule of Array.from(sheet.cssRules||[]))if(rule.type===4&&rule.conditionText.includes('print'))rules+=Array.from(rule.cssRules).map(r=>r.cssText).join('\n')}catch(_){}}
   printStyle.textContent=rules+'\nhtml,body{background:white!important;max-width:794px;overflow:visible!important}';doc.head.appendChild(printStyle);
-  await timeout(Promise.all([doc.fonts?.ready,...Array.from(doc.images).map(img=>img.complete?(img.naturalWidth?Promise.resolve():Promise.reject(Error('Report image is missing'))):new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('Report image is missing'))}))]),15000);
-  const canvas=await timeout(window.html2canvas(doc.body,{scale:2,backgroundColor:'#ffffff',logging:false,useCORS:true,windowWidth:794,windowHeight:1123}),30000);
+  await timeout(Promise.all([doc.fonts?.ready,...Array.from(doc.images).map(img=>img.complete?(img.naturalWidth?Promise.resolve():Promise.reject(Error('Report image is missing'))):new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('Report image is missing'))}))]),15000,'Report fonts/images');
+  const canvas=await timeout(window.html2canvas(doc.body,{scale:2,backgroundColor:'#ffffff',logging:false,useCORS:true,windowWidth:794,windowHeight:1123}),30000,'Report canvas rendering');
   if(!canvas.width||!canvas.height)throw Error('Report rendering returned an empty page');
   const context=canvas.getContext('2d');let ink=0;
   for(let y=0;y<canvas.height;y+=Math.max(1,Math.floor(canvas.height/128))){const pixels=context.getImageData(0,y,canvas.width,1).data;for(let i=0;i<pixels.length;i+=64)if(pixels[i+3]&&(pixels[i]<235||pixels[i+1]<235||pixels[i+2]<235))ink++;}
@@ -35,7 +44,7 @@ async function generate(html,name='Zukait_Report.pdf'){
 }
 async function share(html,name,whatsapp=false){
  if(busy)return;
- if(window.AndroidBridge){const fn=whatsapp?window.AndroidBridge.shareHtmlAsPdfWhatsApp:window.AndroidBridge.shareHtmlAsPdf;if(typeof fn==='function'){fn.call(window.AndroidBridge,html,name);return}}
+ if(window.AndroidBridge){const bridge=window.AndroidBridge;if(typeof bridge.supportsValidatedPdfExport!=='function'||!bridge.supportsValidatedPdfExport()){window.alert?.('Please update the Android app to share this PDF. Your report has not been changed.');return;}if(whatsapp&&typeof bridge.shareHtmlAsPdfWhatsApp==='function'){bridge.shareHtmlAsPdfWhatsApp(html,name);return;}if(typeof bridge.shareHtmlAsPdf==='function'){bridge.shareHtmlAsPdf(html,name);return;}}
  busy=true;
  try{
   const file=await generate(html,name),url=URL.createObjectURL(file);

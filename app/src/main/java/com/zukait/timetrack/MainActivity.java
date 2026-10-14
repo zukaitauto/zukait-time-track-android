@@ -530,6 +530,9 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public boolean supportsValidatedPdfExport() { return true; }
+
+        @JavascriptInterface
         public void shareHtmlAsPdf(String html, String filename) {
             shareHtmlAsPdfInternal(html, filename, false);
         }
