@@ -82,3 +82,5 @@ node tests/leave-sync-authority.mjs
 node tests/leave-sync-race.mjs
 node tests/supervisor-leave-dashboard.mjs
 node tests/shared-dashboard-read.mjs
+
+node --check app/src/main/assets/report_pdf_export.js

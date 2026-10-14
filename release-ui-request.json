@@ -8,13 +8,15 @@
   "verificationRun": null,
   "approvedAt": null,
   "publishNonce": null,
-  "ownerRequestedImmediateRelease": true,
+  "ownerRequestedImmediateRelease": false,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "authorization": "Owner authorized ongoing publication: \"I want to to release new version, whatever required, you should do it and release new version, after that I will test it. You have all permission\". V324 publishes the Invoice Entry synchronization correction using the existing owner-authorized client release path. Physical/hosted acceptance and fresh production backup verification remain deferred and are not claimed as passed. This release does not deploy backend changes or activate Phase 2.",
-  "verificationSummary": "Candidate: independent server report reads while synchronization is busy or edits are pending. Verification pending.",
-  "estimateChecksRun": 38561257940
+  "verificationSummary": "Unreleased Features 1\u20138 candidate. Owner requested a hold before release. Prepared native print-renderer PDF export and blank validation; web PDF export; approved bilingual estimate header, inline Add buttons and blur formatting; original creation-time Reception sorting and complete server Job Card view. Automated and native emulator verification pending. No deployment or production data writes.",
+  "estimateChecksRun": 38561257940,
+  "releaseHeldByOwner": true,
+  "backendDeploymentRequired": true
 }

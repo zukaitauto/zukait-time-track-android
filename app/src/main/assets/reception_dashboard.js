@@ -85,14 +85,14 @@
     const title=section==="checklists"?"Checklist "+safe(row.rc_no):isJob?"JC "+safe(row.job_card):"Checklist "+safe(row.rc_no);
     const date=section==="delivered"?"Delivered: "+(row.delivered_date||"Not recorded"):
       section==="followup"?"Promise: "+(row.promise_date||"No promise date"):
-      "Received: "+(row.received_date||row.created_date||"Not recorded");
+      section==="jobs"?"Created: "+(row.created_at?new Date(row.created_at).toLocaleString('en-GB',{timeZone:'Asia/Muscat'}):'Not recorded'):"Received: "+(row.received_date||row.created_date||"Not recorded");
     const promise=canEdit?
       '<div class="rdb-promise"><label>Promise Date (optional)<input type="date" data-rdb-promise="'+safe(row.job_card)+
       '" value="'+safe(row.promise_date)+'"></label><button type="button" data-rdb="promise" data-job="'+safe(row.job_card)+
       '" data-original="'+safe(row.promise_date)+'">Save</button></div>':
       isJob?'<small>Promise: '+safe(row.promise_date||"No promise date")+'</small>':'';
-    const open='<button type="button" data-rdb="open" data-rc="'+safe(row.rc_no)+'" data-job="'+safe(row.job_card)+'">'+
-      (row.rc_no?'Open Checklist':'View Job Card')+'</button>';
+    const open='<button type="button" data-rdb="open" data-rc="'+safe(isJob&&section!=='checklists'?'':row.rc_no)+'" data-job="'+safe(row.job_card)+'">'+
+      (isJob&&section!=='checklists'?'View Job Card':'Open Checklist')+'</button>';
     const deliver=section==="ready"?
       '<button type="button" data-rdb="delivery" data-job="'+safe(row.job_card)+'">'+
       (role()==="Manager"?"Open Ready List":"Vehicle Delivery")+'</button>':"";
@@ -230,7 +230,7 @@
     try{
       const what=button.dataset.rdb;
       if(what==='open-job'){
-        return window.zukaitJobEdit.view(button.dataset.job);
+        return window.zukaitJobEdit.view(button.dataset.job,{onBack:resume});
       }
       if(what==="edit-job")return window.zukaitJobEdit.open(button.dataset.job);
       if(what==="tile"){await choose(button.dataset.section);return;}
@@ -249,17 +249,7 @@
       }
       if(what==="open"){
         if(button.dataset.rc)return window.zukaitReception.openRecord(button.dataset.rc);
-        const row=latest.find(x=>x.job_card===button.dataset.job);
-        if(!row)return;
-        const viewDelivered=row.delivered&&typeof window.zukaitOpenDeliveredRecord==="function";
-        if(viewDelivered)return window.zukaitOpenDeliveredRecord(row.job_card);
-        window.zukaitReception.dashboardShell("Job Card "+row.job_card,
-          '<div class="rc-box"><h4>'+safe(row.job_card)+" · "+safe(row.vehicle)+
-          '</h4><p>'+safe(row.registration)+'</p><p>Status: '+safe(row.status)+
-          '</p><p>Promise: '+safe(row.promise_date||"No promise date")+
-          '</p><button data-rdb="back">Back to Reception Dashboard</button></div>');
-        document.getElementById("rc-root")?.addEventListener("click",onClick);
-        return;
+        return window.zukaitJobEdit.view(button.dataset.job,{onBack:resume});
       }
       if(what==="back"){render();await load();return;}
       if(what==="delivery"){
@@ -269,6 +259,12 @@
       }
     }catch(e){const el=document.getElementById("rc-error");if(el)el.textContent=e.message||String(e);}
   }
+  // Refresh only an open job list; preserve filters, pagination and typed forms.
+  setInterval(()=>{
+    const active=document.activeElement;
+    if(backendAvailable&&screen==='list'&&section==='jobs'&&!loading&&!document.hidden&&document.getElementById('rdb-results')&&
+       !active?.matches?.('#rc-root input,#rc-root textarea,#rc-root select'))void load();
+  },10000);
   async function showJobs(){if(!backendAvailable)return false;await choose('jobs');return true;}
   window.zukaitReceptionDashboard={open,resume,home:showDashboard,showJobs,savePromise,choose};
 })();

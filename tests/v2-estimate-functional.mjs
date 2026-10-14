@@ -158,8 +158,8 @@ const longPl=api.estimateDocumentHtml({
 });
 assert.ok(longPl.includes('Part 001'),'Long PL output must contain first part');
 assert.ok(longPl.includes('Part 120'),'Long PL output must contain final part');
-assert.ok(native.includes('int pageCount = Math.max(1'),'Android PDF renderer must calculate multiple pages');
-assert.ok(native.includes('pageIndex < pageCount'),'Android PDF renderer must render every calculated page');
+assert.ok(native.includes('PageRange.ALL_PAGES'),'Android print renderer must retain every document page');
+assert.ok(native.includes('verifyVisiblePdf(pdfFile)'),'Android export must validate visible PDF content before sharing');
 
 const printable=api.printable(state.estimates[0]);
 for(const text of ['ZUKAIT INTERNATIONAL LLC','REPAIR ESTIMATE','Zi-Qt001','Test Customer','Toyota Camry','Tel No.','Frame / VIN No.','Description','Amount OMR','Total Labour / Lumpsum','SPARE PARTS REQUIRED — TO BE SUPPLIED BY CUSTOMER','Headlamp<br>Bracket','NOTES / CONDITIONS','Subject to inspection.','ESTIMATE VALID FOR 15 DAYS.','VAT 5%']){
@@ -184,7 +184,7 @@ assert.equal(bridgeCalls[3][0],'share');
 assert.equal(bridgeCalls[3][1],'Estimate Zi-Qt001');
 assert.match(bridgeCalls[3][2],/Total: OMR 210\.000/);
 
-for(const required of ['public void printHtmlNamed(String html, String title)','public void shareHtmlAsPdfWhatsApp(String html, String filename)','whatsApp.setPackage("com.whatsapp")','whatsAppBusiness.setPackage("com.whatsapp.w4b")','public void openExternalUrl(String url)','public void shareText(String title, String text)','int pageCount = Math.max(1','for (int pageIndex = 0; pageIndex < pageCount; pageIndex++)']) {
+for(const required of ['public void printHtmlNamed(String html, String title)','public void shareHtmlAsPdfWhatsApp(String html, String filename)','whatsApp.setPackage("com.whatsapp")','whatsAppBusiness.setPackage("com.whatsapp.w4b")','public void openExternalUrl(String url)','public void shareText(String title, String text)','view.createPrintDocumentAdapter("Zukait Report")','verifyVisiblePdf(pdfFile)','PageRange.ALL_PAGES']) {
   assert.ok(native.includes(required),'Android Estimate integration missing '+required);
 }
 console.log('V2 Estimate functional calculations + Android bridge: ok');

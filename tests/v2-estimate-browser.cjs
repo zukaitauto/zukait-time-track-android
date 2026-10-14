@@ -36,6 +36,19 @@ const fixture={id:'preview',estimateNo:'Zi-Qt018',date:'2026-10-13',type:'LS',va
  await page.evaluate(()=>{zukaitEstimate.setType('PL');zukaitEstimate.setVat(true)});
  await page.locator('.est-amount:visible').fill('200');
  assert.match(await page.locator('.est-summary-line.total').innerText(),/236\.250/);
+ for(const header of await page.locator('.est-section-heading').all()){
+  const heading=await header.locator('h4').boundingBox(),button=await header.locator('button').boundingBox();
+  assert.ok(Math.abs(heading.y+heading.height/2-button.y-button.height/2)<5,'Add button must share the section heading row');
+ }
+ await page.evaluate(()=>zukaitEstimate.addRow('LAB'));
+ const amount=page.locator('[data-est-lab-row]').last().locator('.est-amount');
+ for(const [typed,formatted] of [['30','30.000'],['30.5','30.500'],['30.125','30.125'],['100','100.000'],['0','0.000']]){
+  await amount.fill('0.000');await amount.blur();await amount.focus();assert.equal(await amount.inputValue(),'','Zero-valued amount must clear on focus');
+  await amount.fill(typed);assert.equal(await amount.inputValue(),typed,'Typing must not insert decimals');await amount.blur();assert.equal(await amount.inputValue(),formatted);
+ }
+ await amount.fill('25.125');await amount.blur();await amount.focus();assert.equal(await amount.inputValue(),'25.125','Focus must preserve nonzero saved values');
+ await page.locator('[data-est-lab-row]').last().locator('button').click();
+
  await page.evaluate(()=>zukaitEstimate.addRow('PART'));
  assert.equal(await page.locator('[data-est-part-row]').count(),2);
  await page.locator('[data-est-part-row]').last().locator('button').click();
@@ -55,7 +68,7 @@ const fixture={id:'preview',estimateNo:'Zi-Qt018',date:'2026-10-13',type:'LS',va
   }
  }
 
- await page.setContent(html);await page.pdf({path:'estimate-preview.pdf',preferCSSPageSize:true,printBackground:true,displayHeaderFooter:true});
+ await page.setContent(html);assert.equal(await page.locator('.company-arabic').evaluate(el=>getComputedStyle(el).direction),'rtl');assert.match(await page.locator('.company-english').innerText(),/HI-TECH AUTOMOTIVE WORKSHOP/);assert.doesNotMatch(await page.locator('.head').innerText(),/93211154|1921|1194220/);await page.pdf({path:'estimate-preview.pdf',preferCSSPageSize:true,printBackground:true,displayHeaderFooter:true});
  await page.setViewportSize({width:794,height:1123});await page.screenshot({path:'print-preview.png',fullPage:true});
  await page.setContent(longHtml);await page.pdf({path:'long-estimate.pdf',preferCSSPageSize:true,printBackground:true});
  assert.deepEqual(errors,[]);await browser.close();console.log('Desktop/mobile layout, item editing, VAT and PDF rendering: passed');

@@ -1,5 +1,5 @@
 import {insuranceProjection,insuranceLpoTransition} from './insurance_management_rules.js';
-import { jobEditTransition, jobEditProjection, preserveJobEditAuthority, optionalJobAmount } from "./job_edit_rules.js";
+import { jobEditTransition, jobEditProjection,jobViewProjection, preserveJobEditAuthority, optionalJobAmount } from "./job_edit_rules.js";
 import { preserveJobTypeAuthority } from "./job_type_authority.js";
 import "./paint_order_rules.js";
 const paintOrderRules = (globalThis as any).zukaitPaintOrderRules;
@@ -1193,9 +1193,9 @@ Deno.serve(async (req: Request) => {
         const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
         if(readError)throw readError;
         if(body.operation==="GET"){
-          const job=(current.data.jobs||[]).find(j=>String(j.no)===String(body.jobCard));
+          const job=(current.data.jobs||[]).find(j=>String(j.no).trim().toUpperCase()===String(body.jobCard).trim().toUpperCase());
           if(!job||job.deleted||job.archived||job.cancelled||job.no==="ID001")return reply({ok:false,code:"job_not_available"},404);
-          return reply({ok:true,job:jobEditProjection(job),invoice_locked:job.finalInvoiceAmount!=null&&job.finalInvoiceAmount!==""});
+          return reply({ok:true,job:jobViewProjection(job),invoice_locked:job.finalInvoiceAmount!=null&&job.finalInvoiceAmount!==""});
         }
         const result=jobEditTransition(current.data,user,body,Date.now());
         if(!result.ok)return reply({ok:false,code:result.code},/forbidden|manager_required/.test(result.code)?403:409);

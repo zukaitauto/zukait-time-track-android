@@ -12,6 +12,15 @@ export function optionalJobAmount(value){
 export function jobEditProjection(job){
  return Object.fromEntries(['no','vehicle','createdAt','delivered','receptionNo','directReceptionJob','editRevision',...fields].filter(k=>k in job).map(k=>[k,copy(job[k])]));
 }
+// Read-only Job Card fields, separate from editable fields and cost/time records.
+export function jobViewProjection(job){
+ const viewFields=['id','status','completed','cancelled','deliveredAt','deliveryDate','promiseDate','finalInvoiceAmount','invoiceAmount','invoiceDate',
+ 'vehicleMake','vehicleModel','brand','modelYear','vehicleYear','registration','registrationNo','VIN','vinNumber','chassis','chassisNo',
+ 'customerName','customerMobile','customerContact','contact','phone','tel','email','customerAddress','address',
+ 'colour','colourCode','insurance','claimNumber','claim','jobNotes','workDescription','work_description','workDescriptions','description','descriptions','workDetails','requestedWork','remarks',
+ 'creditAccount','jobIntakeOdometer','jobIntakeOdometerUnit','jobIntakeUnit','odometer','odometerUnit'];
+ return {...jobEditProjection(job),...Object.fromEntries(viewFields.filter(k=>k in job).map(k=>[k,copy(job[k])]))};
+}
 export function jobEditTransition(data,user,request,now){
  const error=code=>({ok:false,code});
  if(!['Manager','Supervisor','Receptionist'].includes(user?.role))return error('job_edit_forbidden');

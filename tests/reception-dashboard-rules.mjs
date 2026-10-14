@@ -38,17 +38,17 @@ assert.equal(start.counts.no_promise_date,2);
 assert.deepEqual(projection({section:"ready"}).rows.map(r=>r.job_card),["JC125"]);
 assert.equal(projection({section:"delivered"}).rows[0].job_card,"JC199");
 assert.equal(projection({section:"approved"}).rows[0].rc_no,"RC0010");
-assert.deepEqual(projection({section:"jobs"}).rows.map(r=>r.job_card),["JC199","JC125","JC120","JC100"]);
+assert.deepEqual(projection({section:"jobs"}).rows.map(r=>r.job_card),["JC125","JC199","JC120","JC100"]);
 const isolated=[...cases, {...rec("RC-DIRECT",99,"APPROVED","VIW","JC-DIRECT","INSURANCE"),details:{...rec("RC-DIRECT",99,"APPROVED","VIW").details,direct_job_only:true}}];
 const isolatedData={...data,jobs:[...jobs,{no:"JC-DIRECT",receptionNo:"RC-DIRECT",createdAt:Date.parse("2026-10-11T12:00:00+04:00"),jobType:"INSURANCE",status:"Open"}]};
 const isolatedProjection=section=>receptionDashboardProjection(isolatedData,isolated,{section});
 assert.equal(isolatedProjection("checklists").rows.some(r=>r.rc_no==="RC-DIRECT"),false,"Direct Job Cards must not appear as checklists");
-assert.equal(isolatedProjection("jobs").rows[0].job_card,"JC199","Highest numeric Job Card appears first");
+assert.equal(isolatedProjection("jobs").rows[0].job_card,"JC-DIRECT","Newest creation timestamp appears first, regardless of Job Card number");
 const simultaneousData={...isolatedData,jobs:[...isolatedData.jobs,
  {no:"JC-LINKED-NEW",receptionNo:"RC0010",createdAt:Date.parse("2026-10-11T13:00:00+04:00"),jobType:"INSURANCE",status:"Open"},
  {no:"JC-LINKED-NEW",receptionNo:"RC0010",createdAt:Date.parse("2026-10-11T13:00:00+04:00"),jobType:"INSURANCE",status:"Open"}]};
 const simultaneous=receptionDashboardProjection(simultaneousData,isolated,{section:"jobs"});
-assert.equal(simultaneous.rows[0].job_card,"JC199","Numeric order survives newer nonnumeric linked intake");
+assert.equal(simultaneous.rows[0].job_card,"JC-LINKED-NEW","Newer linked intake precedes older numeric Job Cards");
 assert.equal(simultaneous.rows.filter(r=>r.job_card==="JC-LINKED-NEW").length,1,"Duplicate state entries must not duplicate the visible Job Card");
 assert.equal(receptionDashboardProjection(simultaneousData,isolated,{section:"jobs",search:"JC-LINKED-NEW"}).total,1,"Job number lookup stays unique");
 assert.equal(receptionDashboardProjection(simultaneousData,isolated,{section:"jobs",search:"qa-11"}).rows.some(r=>r.job_card==="JC125"),true,"Registration search finds matching Job Card");
@@ -116,4 +116,4 @@ const preserved=preserveReceptionPromiseAuthority({jobs:first.data.jobs.map(j=>(
 assert.equal(preserved.jobs.find(j=>j.no==="JC100").promiseDate,"2026-10-14");
 assert.equal(preserved.jobs.find(j=>j.no==="JC100").promiseAudit.length,1);
 assert.equal(JSON.stringify(start).includes("199.5"),false,"No expense data exposed to Reception");
-console.log("Reception dashboard: all ten categories, numeric sorting, month/date ranges, RC/JC/registration search, shared QC/delivery authority, no-date follow-up, audited promise date and old-client preservation passed.");
+console.log("Reception dashboard: all ten categories, creation-time sorting, month/date ranges, RC/JC/registration search, shared QC/delivery authority, no-date follow-up, audited promise date and old-client preservation passed.");

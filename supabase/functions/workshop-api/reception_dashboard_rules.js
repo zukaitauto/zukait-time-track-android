@@ -18,7 +18,8 @@ function omanDate(value) {
 }
 const serial=(a,b)=>String(b).localeCompare(String(a),"en",{numeric:true});
 const sortRc=(a,b)=>(Number(b.sequence_no||0)-Number(a.sequence_no||0))||serial(a.rc_no,b.rc_no);
-const sortJobs=(a,b)=>serial(a.job_card,b.job_card)||Number(b.created_at||0)-Number(a.created_at||0);
+const createdTime=value=>{if(value==null||value==='')return 0;const n=typeof value==='number'?value:/^\d+$/.test(String(value))?Number(value):Date.parse(value);return Number.isFinite(n)?n:0};
+const sortJobs=(a,b)=>createdTime(b.created_at)-createdTime(a.created_at)||serial(a.job_card,b.job_card)||String(b.job_card).localeCompare(String(a.job_card))||serial(a.job_id,b.job_id);
 function safeRc(r,company) {
  const d=r?.details||{};
  return {rc_no:text(r.rc_no),sequence_no:Number(r.sequence_no||0),
@@ -32,13 +33,13 @@ function safeRc(r,company) {
 }
 function safeJob(j,rc) {
  return {rc_no:text(j.receptionNo||rc?.rc_no),sequence_no:Number(rc?.sequence_no||0),
- job_card:text(j.no),created_at:Number(j.createdAt||0),job_type:text(j.jobType||rc?.job_type),vehicle:
+ job_card:text(j.no),job_id:text(j.id),created_at:createdTime(j.createdAt),job_type:text(j.jobType||rc?.job_type),vehicle:
    [j.make||j.brand,j.model,j.year||j.vehicleYear].filter(Boolean).join(" ").trim()||
    text(j.vehicle||rc?.vehicle),
  registration:text(j.reg||j.registration||rc?.registration),
  customer:text(rc?.customer),insurance_company:text(j.insuranceCompany||rc?.insurance_company),
  received_at:rc?.received_at||"",received_date:rc?.received_date||"",
- created_date:omanDate(j.createdAt)||rc?.received_date||"",
+ created_date:omanDate(j.createdAt),
  delivered_date:omanDate(j.deliveredAt),delivered_at:Number(j.deliveredAt||0),promise_date:validPromiseDate(j.promiseDate)?j.promiseDate:"",
  location:text(rc?.location||j.receptionLocation),outcome:text(rc?.outcome),
  approval_status:text(rc?.approval_status),
@@ -70,7 +71,7 @@ export function receptionDashboardProjection(data,receptions,opts={}) {
  for(const j of (data?.jobs||[])){
   if(!j||!j.no||norm(j.no)==="ID001"||j.deleted||j.archived||j.cancelled||norm(j.status)==="CANCELLED")continue;
   const key=norm(j.no),existing=uniqueJobs.get(key);
-  if(!existing||Number(j.createdAt||0)>Number(existing.createdAt||0))uniqueJobs.set(key,j);
+  if(!existing||createdTime(j.createdAt)>createdTime(existing.createdAt))uniqueJobs.set(key,j);
  }
  const jobs=[...uniqueJobs.values()].map(j=>({raw:j,row:safeJob(j,byRc.get(text(j.receptionNo)))}));
  const allJobs=jobs.map(x=>x.row),activeJobs=jobs.filter(x=>!x.raw.delivered).map(x=>x.row);

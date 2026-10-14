@@ -26,3 +26,7 @@ test -s app/src/main/assets/technician_workload.js
 test -s app/src/main/assets/time_management.js
 test -s app/src/main/assets/time_management_rules.js
 
+
+test -s app/src/main/assets/report_pdf_export.js
+test -s app/src/main/assets/vendor/pdf/html2canvas-1.4.1.min.js
+test -s app/src/main/assets/vendor/pdf/jspdf-4.2.1.min.js

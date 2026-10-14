@@ -1,0 +1,53 @@
+name: Native Android PDF verification
+on:
+  push:
+    branches: [architecture-v2]
+    paths:
+      - 'app/src/main/java/com/zukait/timetrack/MainActivity.java'
+      - 'app/src/androidTest/**'
+      - 'app/build.gradle'
+      - '.github/workflows/native-pdf-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/architecture-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Enable isolated emulator acceleration
+        run: sudo chmod a+rw /dev/kvm
+      - name: Verify native PDF generation with synthetic offline reports
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          disable-animations: true
+          script: |
+            chmod +x gradlew
+            ./gradlew --no-daemon connectedDebugAndroidTest
+            mkdir -p artifacts/native-pdf
+            adb exec-out run-as com.zukait.timetrack sh -c 'cd cache && tar -cf - reports' > artifacts/native-pdf/synthetic-reports.tar
+      - name: Retain native PDF test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-pdf-${{ github.sha }}
+          path: |
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
+            artifacts/native-pdf/
+          if-no-files-found: warn
+          retention-days: 14

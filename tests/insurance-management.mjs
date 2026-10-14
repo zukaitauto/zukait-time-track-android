@@ -41,6 +41,6 @@ let lists=receptionDashboardProjection(base,[rec],{section:'approved'});assert.e
 lists=receptionDashboardProjection(base,[{...rec,job_card:'10'}],{section:'checklists',checklist_status:'opened'});assert.equal(lists.rows[0].status,'JC Opened');assert.equal(lists.counts.approved,0);assert.equal(lists.counts['vwc-checklists'],0);
 lists=receptionDashboardProjection(base,[{...rec,location:'VIW',repair_status:'CTL'},{...rec,rc_no:'RC2',repair_status:'NOT_REPAIRED'}],{section:'ctl'});assert.equal(lists.counts.ctl,1);assert.equal(lists.counts['not-repaired'],1);assert.equal(lists.counts.waiting,0);
 assert.equal(receptionDashboardProjection(base,[{...rec,repair_status:'CTL',released_date:'2026-10-10'}],{section:'ctl'}).total,0);
-assert.deepEqual(receptionDashboardProjection(base,[],{section:'jobs'}).rows.map(r=>r.job_card),['100','10','2']);
+assert.deepEqual(receptionDashboardProjection(base,[],{section:'jobs'}).rows.map(r=>r.job_card),['100','2','10']);
 assert.equal(fs.readFileSync('app/src/main/assets/qc_delivery_rules.js','utf8'),fs.readFileSync('supabase/functions/workshop-api/qc_delivery_rules.js','utf8'));
 console.log('PASS: LPO/Invoice atomic rules, Cash separation, correction audits, received-month totals, numeric JC order and active-list removal');

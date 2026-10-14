@@ -2290,7 +2290,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(typeof openModal==='function')openModal(body);else if(typeof showSupervisorModal==='function')showSupervisorModal('Report Options',body);
  };
  window.v110PrintReport=function(){try{if(window.AndroidBridge&&typeof AndroidBridge.printHtml==='function'){AndroidBridge.printHtml(reportHtml);return}}catch(_){}const w=window.open('','_blank');if(w){w.document.write(reportHtml);w.document.close();setTimeout(()=>w.print(),250)}};
- window.v110ShareReport=function(){try{if(window.AndroidBridge&&typeof AndroidBridge.shareHtmlAsPdf==='function'){AndroidBridge.shareHtmlAsPdf(reportHtml,reportName);return}}catch(_){}alert('PDF sharing is available in the Android app.')};
+ window.v110ShareReport=function(){if(window.zukaitReportPdf)return window.zukaitReportPdf.share(reportHtml,reportName);try{if(window.AndroidBridge&&typeof AndroidBridge.shareHtmlAsPdf==='function'){AndroidBridge.shareHtmlAsPdf(reportHtml,reportName);return}}catch(_){}alert('PDF tools are unavailable. Reload and try again.')};
  window.v110ReportActionsReady=true;
 })();
 
