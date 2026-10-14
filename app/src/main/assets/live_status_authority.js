@@ -34,6 +34,8 @@
     }
     return issues;
   }
+  // ID001 workers remain eligible for a normal Job Card assignment.
+  function availableForAssignment(r){return r.status==='Available'||r.status==='ID001';}
   function serverRequired(){
     return !!window.me && navigator.onLine && (window.me.role==='Supervisor'||window.me.role==='Manager');
   }
@@ -246,7 +248,7 @@
     const rr=rows();
     if(rr&&type==='working'){const list=rr.filter(r=>['Working','Overtime','ID001'].includes(r.status));if(window.me?.role==='Manager')return managerWorkingList(list,'Working Now — Server Live');return workerTable(list,'Working Now — Server Live');}
     if(rr&&type==='waiting')return workerTable(rr.filter(r=>r.status==='ID001'),'Waiting / ID001 — Server Live');
-    if(rr&&type==='available')return workerTable(rr.filter(r=>r.status==='Available'||r.status==='ID001'),'Available Workers — Server Live');
+    if(rr&&type==='available')return workerTable(rr.filter(availableForAssignment),'Available Workers — Server Live');
     if(rr&&type==='paused')return workerTable(rr.filter(r=>r.status==='Paused'),'Paused — Server Live');
     if(serverRequired()&&type==='working'){
       if(typeof window.v74Msg==='function')return window.v74Msg('Live worker status is syncing with the server. Please retry after the SERVER LIVE indicator returns.','Live Status');
@@ -268,7 +270,7 @@
   };
   window.v92OpenAvailableWorkers=function(){
     const rr=rows();
-    if(rr)return workerTable(rr.filter(r=>r.status==='Available'),'Available Workers — Server Live');
+    if(rr)return workerTable(rr.filter(availableForAssignment),'Available Workers — Server Live');
     if(serverRequired())return typeof window.v74Msg==='function'?window.v74Msg('Live worker status is syncing with the server.','Live Status'):undefined;
     return typeof oldAvailable==='function'?oldAvailable.apply(this,arguments):undefined;
   };
@@ -329,7 +331,7 @@
       setCount(root,'Active Workers',active);
       setCount(root,'Working Now',working);
       setCount(root,'Paused Jobs',paused);
-      setCount(root,'Available Workers',available);
+      setCount(root,'Available Workers',available+waiting);
       setCount(root,'Overtime Now',overtime);
       applyDepartmentCounts(root,rr);
       root?.querySelectorAll('.v143-live,.v92-live-dot').forEach(b=>{if(b.textContent!=='● SERVER LIVE')b.textContent='● SERVER LIVE'});
