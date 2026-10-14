@@ -124,6 +124,7 @@
     try{window.v78RefreshSupervisorLeave?.()}catch(_){}
     try{window.zukaitLeaveHistory?.refresh?.()}catch(_){}
     try{window.zukaitEstimate?.refreshLists?.()}catch(_){}
+    try{window.zukaitInvoiceSyncRefresh?.()}catch(_){}
     let structuralChanged=true;
     try{
       structuralChanged=JSON.stringify(roleStructuralSnapshot(beforeState,me))!==JSON.stringify(roleStructuralSnapshot(afterState,me));

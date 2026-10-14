@@ -27,16 +27,28 @@ for(const user of [manager,supervisor,employee]){
  let modal='',calls=0;const dashboard=new Element(),events={};const nodes={managerView:dashboard,supervisorView:dashboard,invoiceBody:{innerHTML:''},invoiceSearch:{value:''},invoiceEntryAmount:{value:'100.125'},invoiceEntryDate:{value:'2026-10-04'},qcRows:{innerHTML:''}};
  const ctx={invoiceComplete,invoiceDateValid,qcStatus,state:structuredClone(base),me:user,window:{addEventListener(name,fn){events[name]=fn},zukaitAuth:{getToken(){return 'test'}},zukaitCloud:{syncHealth:{ready:true},async syncNow(){}}},navigator:{onLine:true},document:{getElementById(id){return nodes[id]||null},createElement(){return new Element()},head:{appendChild(){}}},openModal(html){modal=html},closeModal(){},alert(message){throw Error(message)},Date,console,async fetch(url,opts){calls++;let body=JSON.parse(opts.body);assert.equal(body.invoiceDate,'2026-10-04');assert.equal(body.operation,'FINAL_INVOICE_ENTRY');let result=qcTransition(ctx.state,user,body,1000);assert.equal(result.ok,true);ctx.state=result.data;return{ok:true,async json(){return result}}}};
  vm.runInNewContext(ui+'\nwindow.testPending=invoicePending;window.testRow=row;',ctx);
- ctx.window.zukaitOpenInvoiceEntry();assert.equal(modal.includes('Invoice Entry'),user.role!=='Employee');
+ await ctx.window.zukaitOpenInvoiceEntry();assert.equal(modal.includes('Invoice Entry'),user.role!=='Employee');
  if(user.role==='Employee'){await ctx.window.zukaitSaveInvoiceEntry('1');assert.equal(calls,0);continue;}
  const launcher=dashboard.querySelector('[data-invoice-entry]');assert.ok(launcher);assert.equal(launcher.dataset.qcCount,'3');launcher.onclick();assert.match(modal,/Invoice Entry/);ctx.window.render();assert.equal(dashboard.children.filter(x=>x.dataset.invoiceEntry).length,1);
  assert.equal((nodes.invoiceBody.innerHTML.match(/class="invoice-circle /g)||[]).length,3);
- ctx.window.zukaitOpenInvoiceEntry('Cash');assert.match(nodes.invoiceBody.innerHTML,/JC 1/);assert.doesNotMatch(nodes.invoiceBody.innerHTML,/JC 2/);
+ await ctx.window.zukaitOpenInvoiceEntry('Cash');assert.match(nodes.invoiceBody.innerHTML,/JC 1/);assert.doesNotMatch(nodes.invoiceBody.innerHTML,/JC 2/);
  ctx.window.zukaitOpenInvoiceJob('1');assert.match(modal,/Invoice Date/);assert.match(modal,/Save Invoice/);assert.match(modal,/Back to pending list/);
  await ctx.window.zukaitSaveInvoiceEntry('1');assert.equal(calls,1);assert.equal(ctx.window.testPending().length,2);assert.match(nodes.invoiceBody.innerHTML,/No pending invoices/);assert.equal(ctx.state.jobs[0].delivered,true);
  ctx.window.v42AfterCloudPull();assert.equal(launcher.dataset.qcCount,'2');events['zukait-live-status']();assert.equal(dashboard.children.filter(x=>x.dataset.invoiceEntry).length,1);
  ctx.window.zukaitOpenDeliveredRecord('1');assert.match(modal,/Invoice Saved/);assert.match(modal,/100\.125/);assert.match(modal,/2026-10-04/);
  assert.equal(ctx.window.testRow(ctx.state.jobs[1],'delivered').includes('Correct Final Invoice'),user.role==='Manager');
  ctx.window.zukaitOpenInvoiceJob('2');nodes.invoiceEntryDate.value='';assert.throws(()=>ctx.window.zukaitSaveInvoiceEntry('2'),/Invoice Date/);assert.equal(calls,1);
+ ctx.state=structuredClone(base);await ctx.window.zukaitOpenInvoiceEntry();
+ assert.match(nodes.invoiceBody.innerHTML,/<span>Cash<\/span><b>1<\/b>/);
+ ctx.state.jobs[0].finalInvoiceAmount=100.125;ctx.state.jobs[0].invoiceDate='2026-10-04';
+ ctx.window.zukaitInvoiceSyncRefresh();
+ assert.match(nodes.invoiceBody.innerHTML,/<span>Cash<\/span><b>0<\/b>/,'Remote invoice save must update the open Cash counter');
+ const current=structuredClone(ctx.state);ctx.state=structuredClone(base);let pulls=0;
+ ctx.window.zukaitCloud.pull=async()=>{pulls++;ctx.state=structuredClone(current);return true};
+ await ctx.window.zukaitOpenInvoiceEntry('Cash');
+ assert.equal(pulls,1,'Opening Invoice Entry must read current server records');
+ assert.match(nodes.invoiceBody.innerHTML,/No pending invoices/,'Manager and Supervisor must agree with server Cash pending');
+ assert.equal(calls,1,'Refreshing invoices must not write financial records');
+
 }
 console.log('Invoice Entry passed: all three types, roles, date/amount validation, legacy amount protection, audit, concurrency, pending navigation, saved delivery details and stale-client protection.');
