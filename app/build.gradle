@@ -30,3 +30,5 @@ dependencies {
 
 
 // V327: verify model code preservation and cash age display.
+
+// V327: synchronize pending UI release metadata before acceptance.
