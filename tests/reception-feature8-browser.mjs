@@ -4,6 +4,7 @@ const long='Saved repair description with all requested work.\n'.repeat(120)+'LA
 const base={no:'12079',jobType:'Cash',vehicle:'Toyota RAV4',make:'Toyota',model:'RAV4',year:'2020',reg:'TEST-80',vin:'JTMRF9EV6HJ151476',customer:'Browser Customer',mobile:'99990000',color:'White',amount:80,notes:long,createdAt:Date.parse('2026-10-14T12:00:00Z'),status:'Open',receptionNo:'RC-SEPARATE'};
 fs.mkdirSync('artifacts/features-1-8',{recursive:true});
 for(const [engineName,engine] of [['chromium',chromium],['webkit',webkit]]){
+ if(process.env.FEATURE8_BROWSER&&process.env.FEATURE8_BROWSER!==engineName)continue;
  const browser=await engine.launch();const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true});
  let data={jobs:[base]},printed=[];
  await page.exposeFunction('qaList',options=>receptionDashboardProjection(data,[],options));

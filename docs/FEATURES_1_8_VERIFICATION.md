@@ -11,8 +11,8 @@ were changed by this work. The published client remains V325.
 - Android PDF sharing used `WebView.draw()` on a detached view immediately after
   `onPageFinished`. Loading completion does not establish rendered pixels, font
   readiness, or correct pagination. Export now attaches a dedicated off-screen
-  renderer, waits for fonts/images and visual readiness, uses the same Android
-  print-document engine as printing, exports every page, checks the actual file
+  renderer, waits for fonts/images and visual readiness, uses the shared canonical-document renderer for Android and web,
+  exports every page, checks the actual file
   with `PdfRenderer`, and blocks empty/all-white PDFs before FileProvider sharing.
   Temporary files are isolated per export. Failure releases resources and permits
   retry. No WhatsApp messages are sent during tests.

@@ -22,6 +22,9 @@ FILES = [
     "v2/features/insurance/reception.js",
     "reception_dashboard.js",
     "job_card_edit.js",
+    "report_pdf_export.js",
+    "vendor/pdf/html2canvas-1.4.1.min.js",
+    "vendor/pdf/jspdf-4.2.1.min.js",
     "reception_vin.js",
     "reception_estimate.js",
     "insurance_management.js",
@@ -96,9 +99,9 @@ def main():
     # Ensure each release refers to a new URL so browsers cannot keep an
     # older cached Reception script after a valid gated Pages publication.
     cache_tags = {
-        "job_card_edit.js": "v=316-management-1",
+        "job_card_edit.js": "v=2026101405",
         "v2/features/insurance/reception.js": "v=316-management-1",
-        "reception_dashboard.js": "v=316-management-1",
+        "reception_dashboard.js": "v=2026101405",
         "receptionist_session.js": "v=305-reception-dashboard-20261010-r2",
     }
     for page, targets in {

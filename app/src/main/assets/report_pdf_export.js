@@ -16,8 +16,8 @@ async function generate(html,name='Zukait_Report.pdf'){
   await timeout(Promise.all([doc.fonts?.ready,...Array.from(doc.images).map(img=>img.complete?(img.naturalWidth?Promise.resolve():Promise.reject(Error('Report image is missing'))):new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('Report image is missing'))}))]),15000);
   const canvas=await timeout(window.html2canvas(doc.body,{scale:2,backgroundColor:'#ffffff',logging:false,useCORS:true,windowWidth:794,windowHeight:1123}),30000);
   if(!canvas.width||!canvas.height)throw Error('Report rendering returned an empty page');
-  const context=canvas.getContext('2d'),pixels=context.getImageData(0,0,canvas.width,canvas.height).data;let ink=0;
-  for(let i=0;i<pixels.length;i+=64)if(pixels[i+3]&&(pixels[i]<235||pixels[i+1]<235||pixels[i+2]<235))ink++;
+  const context=canvas.getContext('2d');let ink=0;
+  for(let y=0;y<canvas.height;y+=Math.max(1,Math.floor(canvas.height/128))){const pixels=context.getImageData(0,y,canvas.width,1).data;for(let i=0;i<pixels.length;i+=64)if(pixels[i+3]&&(pixels[i]<235||pixels[i+1]<235||pixels[i+2]<235))ink++;}
   if(ink<20)throw Error('The PDF has no visible report content. Reopen the report and try again.');
   const pdf=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
   const width=186,pageHeight=273,maxPixels=Math.floor(canvas.width*pageHeight/width),scale=canvas.width/doc.body.getBoundingClientRect().width;
@@ -30,7 +30,7 @@ async function generate(html,name='Zukait_Report.pdf'){
   }
   const blob=pdf.output('blob');if(blob.size<1000||await blob.slice(0,5).text()!=='%PDF-')throw Error('PDF generation failed');
   const filename=String(name||'Zukait_Report.pdf').replace(/[^A-Za-z0-9._-]/g,'_').replace(/(?:\.pdf)?$/i,'.pdf');
-  return new File([blob],filename,{type:'application/pdf'});
+  canvas.width=canvas.height=0;return new File([blob],filename,{type:'application/pdf'});
  }finally{frame.remove()}
 }
 async function share(html,name,whatsapp=false){

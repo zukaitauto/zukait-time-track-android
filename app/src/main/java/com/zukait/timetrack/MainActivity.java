@@ -540,7 +540,6 @@ public class MainActivity extends Activity {
         }
 
         private volatile boolean pdfExportBusy = false;
-
         private void shareHtmlAsPdfInternal(String html, String filename, boolean whatsappOnly) {
             runOnUiThread(() -> {
                 if (pdfExportBusy) {
@@ -554,17 +553,13 @@ public class MainActivity extends Activity {
                 pdfExportBusy = true;
                 class Export {
                     WebView view;
-                    PrintDocumentAdapter adapter;
-                    ParcelFileDescriptor destination;
                     File pdfFile;
                     boolean finished = false, started = false;
-                    final long deadline = android.os.SystemClock.uptimeMillis() + 25000;
+                    final String nonce = java.util.UUID.randomUUID().toString();
                     void release(boolean failed) {
                         if (finished) return;
                         finished = true;
-                        try { if (destination != null) destination.close(); } catch (Exception ignored) { }
-                        try { if (adapter != null) adapter.onFinish(); } catch (Exception ignored) { }
-                        try { if (view != null) { view.stopLoading(); view.setWebViewClient(null); if(view.getParent() instanceof android.view.ViewGroup)((android.view.ViewGroup)view.getParent()).removeView(view); view.destroy(); } } catch (Exception ignored) { }
+                        try { if (view != null) { view.stopLoading(); view.removeJavascriptInterface("ZukaitPdfCapture"); view.setWebViewClient(null); if(view.getParent() instanceof android.view.ViewGroup)((android.view.ViewGroup)view.getParent()).removeView(view); view.destroy(); } } catch (Exception ignored) { }
                         if (failed && pdfFile != null) pdfFile.delete();
                         pdfExportBusy = false;
                     }
@@ -574,88 +569,65 @@ public class MainActivity extends Activity {
                         release(true);
                         android.widget.Toast.makeText(MainActivity.this, "PDF generation failed. Reopen the report and try again.", android.widget.Toast.LENGTH_LONG).show();
                     }
-                    void awaitContent() {
+                    void complete(String data) {
                         if (finished) return;
-                        if (android.os.SystemClock.uptimeMillis() >= deadline) { fail("Report rendering timed out"); return; }
-                        view.evaluateJavascript("window.__zukaitPdfError ? 'error' : (window.__zukaitPdfReady ? 'ready' : 'wait')", result -> {
-                            if (finished) return;
-                            if ("\"error\"".equals(result)) { fail("Report resources did not load"); return; }
-                            if ("\"ready\"".equals(result)) {
-                                view.postVisualStateCallback(android.os.SystemClock.uptimeMillis(), new WebView.VisualStateCallback() {
-                                    @Override public void onComplete(long requestId) { writePdf(); }
-                                });
-                            } else view.postDelayed(this::awaitContent, 80);
-                        });
-                    }
-                    void writePdf() {
-                        if (finished || started) return;
-                        started = true;
                         try {
-                            adapter = view.createPrintDocumentAdapter("Zukait Report");
-                            PrintAttributes attrs = new PrintAttributes.Builder()
-                                .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
-                                .setResolution(new PrintAttributes.Resolution("pdf", "pdf", 300, 300))
-                                .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
-                                .setColorMode(PrintAttributes.COLOR_MODE_COLOR).build();
-                            adapter.onStart();
-                            adapter.onLayout(null, attrs, new CancellationSignal(), new PrintDocumentAdapter.LayoutResultCallback() {
-                                @Override public void onLayoutFinished(android.print.PrintDocumentInfo info, boolean changed) {
-                                    if (finished) return;
-                                    try {
-                                        destination = ParcelFileDescriptor.open(pdfFile, ParcelFileDescriptor.MODE_CREATE | ParcelFileDescriptor.MODE_TRUNCATE | ParcelFileDescriptor.MODE_READ_WRITE);
-                                        adapter.onWrite(new PageRange[]{PageRange.ALL_PAGES}, destination, new CancellationSignal(), new PrintDocumentAdapter.WriteResultCallback() {
-                                            @Override public void onWriteFinished(PageRange[] pages) {
-                                                if (finished) return;
-                                                try {
-                                                    destination.close(); destination = null;
-                                                    verifyVisiblePdf(pdfFile);
-                                                    Uri uri = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".updateprovider", pdfFile);
-                                                    Intent share = new Intent(Intent.ACTION_SEND);
-                                                    share.setType("application/pdf");
-                                                    share.putExtra(Intent.EXTRA_STREAM, uri);
-                                                    share.setClipData(android.content.ClipData.newRawUri("Zukait PDF", uri));
-                                                    share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                                                    release(false);
-                                                    if (whatsappOnly) {
-                                                        Intent whatsApp = new Intent(share); whatsApp.setPackage("com.whatsapp");
-                                                        if (whatsApp.resolveActivity(getPackageManager()) != null) { startActivity(whatsApp); return; }
-                                                        Intent whatsAppBusiness = new Intent(share); whatsAppBusiness.setPackage("com.whatsapp.w4b");
-                                                        if (whatsAppBusiness.resolveActivity(getPackageManager()) != null) { startActivity(whatsAppBusiness); return; }
-                                                    }
-                                                    startActivity(Intent.createChooser(share, "Share PDF"));
-                                                } catch (Exception e) { if(finished)android.widget.Toast.makeText(MainActivity.this,"PDF is ready, but sharing failed. Try sharing again.",android.widget.Toast.LENGTH_LONG).show();else fail("PDF validation/share failed: " + e.getClass().getSimpleName()); }
-                                            }
-                                            @Override public void onWriteFailed(CharSequence error) { fail("PDF write failed"); }
-                                            @Override public void onWriteCancelled() { fail("PDF write cancelled"); }
-                                        });
-                                    } catch (Exception e) { fail("PDF destination could not be opened"); }
-                                }
-                                @Override public void onLayoutFailed(CharSequence error) { fail("PDF layout failed"); }
-                                @Override public void onLayoutCancelled() { fail("PDF layout cancelled"); }
-                            }, new Bundle());
-                        } catch (Exception e) { fail("PDF renderer failed"); }
+                            if (data == null || data.length() > 64000000) throw new java.io.IOException("PDF size invalid");
+                            byte[] bytes = Base64.decode(data, Base64.DEFAULT);
+                            if (bytes.length < 1000 || !new String(bytes, 0, 5, java.nio.charset.StandardCharsets.US_ASCII).equals("%PDF-")) throw new java.io.IOException("PDF header invalid");
+                            try (java.io.FileOutputStream out = new java.io.FileOutputStream(pdfFile)) { out.write(bytes); }
+                            verifyVisiblePdf(pdfFile);
+                            Uri uri = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".updateprovider", pdfFile);
+                            Intent share = new Intent(Intent.ACTION_SEND);
+                            share.setType("application/pdf");share.putExtra(Intent.EXTRA_STREAM, uri);
+                            share.setClipData(android.content.ClipData.newRawUri("Zukait PDF", uri));share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            release(false);
+                            if (whatsappOnly) {
+                                Intent whatsApp = new Intent(share); whatsApp.setPackage("com.whatsapp");
+                                if (whatsApp.resolveActivity(getPackageManager()) != null) { startActivity(whatsApp); return; }
+                                Intent whatsAppBusiness = new Intent(share); whatsAppBusiness.setPackage("com.whatsapp.w4b");
+                                if (whatsAppBusiness.resolveActivity(getPackageManager()) != null) { startActivity(whatsAppBusiness); return; }
+                            }
+                            startActivity(Intent.createChooser(share, "Share PDF"));
+                        } catch (Exception e) {
+                            if(finished)android.widget.Toast.makeText(MainActivity.this,"PDF is ready, but sharing failed. Try again.",android.widget.Toast.LENGTH_LONG).show();
+                            else fail("PDF validation failed: " + e.getClass().getSimpleName());
+                        }
+                    }
+                    class Capture {
+                        @JavascriptInterface public void generated(String token, String data) { if(nonce.equals(token))runOnUiThread(() -> complete(data)); }
+                        @JavascriptInterface public void failed(String token) { if(nonce.equals(token))runOnUiThread(() -> fail("Document renderer rejected the PDF")); }
                     }
                     void begin() {
                         try {
                             String name = filename == null || filename.trim().isEmpty() ? "Zukait_Report.pdf" : filename.trim();
                             if (!name.toLowerCase().endsWith(".pdf")) name += ".pdf";
                             name = name.replaceAll("[^A-Za-z0-9._-]", "_");
-                            File folder = new File(getCacheDir(), "reports/" + java.util.UUID.randomUUID());
+                            File folder = new File(getCacheDir(), "reports/" + nonce);
                             if (!folder.mkdirs() && !folder.isDirectory()) throw new java.io.IOException("Report directory unavailable");
                             pdfFile = new File(folder, name);
-                            view = new WebView(MainActivity.this);
-                            view.getSettings().setJavaScriptEnabled(true);
+                            view = new WebView(MainActivity.this);view.getSettings().setJavaScriptEnabled(true);
                             view.setImportantForAccessibility(android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
-                            ((android.view.ViewGroup)getWindow().getDecorView()).addView(view, new android.view.ViewGroup.LayoutParams(794, 1123));
-                            view.setTranslationX(-10000f);
+                            ((android.view.ViewGroup)getWindow().getDecorView()).addView(view,new android.view.ViewGroup.LayoutParams(794,1123));view.setTranslationX(-10000f);
+                            final androidx.webkit.WebViewAssetLoader assets = new androidx.webkit.WebViewAssetLoader.Builder()
+                                .addPathHandler("/assets/", new androidx.webkit.WebViewAssetLoader.AssetsPathHandler(MainActivity.this)).build();
+                            view.addJavascriptInterface(new Capture(), "ZukaitPdfCapture");
                             view.setWebViewClient(new android.webkit.WebViewClient() {
+                                @Override public android.webkit.WebResourceResponse shouldInterceptRequest(WebView web, android.webkit.WebResourceRequest request) {
+                                    return assets.shouldInterceptRequest(request.getUrl());
+                                }
+                                @Override public boolean onRenderProcessGone(WebView web, android.webkit.RenderProcessGoneDetail detail) {
+                                    fail("PDF renderer stopped");return true;
+                                }
                                 @Override public void onPageFinished(WebView web, String url) {
-                                    if (finished || started) return;
-                                    web.evaluateJavascript("(function(){var pending=[document.fonts?document.fonts.ready:Promise.resolve()];Array.from(document.images).forEach(function(img){pending.push(new Promise(function(resolve,reject){if(img.complete){img.naturalWidth?resolve():reject();}else{img.addEventListener('load',resolve,{once:true});img.addEventListener('error',reject,{once:true});}}));});Promise.all(pending).then(function(){window.__zukaitPdfReady=!!(document.body&&(document.body.innerText.trim()||Array.from(document.images).some(function(img){return img.naturalWidth>0;})||document.querySelector('svg')));if(!window.__zukaitPdfReady)window.__zukaitPdfError=true;}).catch(function(){window.__zukaitPdfError=true;});})()", ignored -> awaitContent());
+                                    if(finished || started)return;started=true;
+                                    String token=org.json.JSONObject.quote(nonce),document=org.json.JSONObject.quote(html),title=org.json.JSONObject.quote(pdfFile.getName());
+                                    web.evaluateJavascript("(function(){if(!window.zukaitReportPdf){ZukaitPdfCapture.failed("+token+");return;}zukaitReportPdf.generate("+document+","+title+").then(function(file){var reader=new FileReader();reader.onload=function(){ZukaitPdfCapture.generated("+token+",String(reader.result).split(',')[1]);};reader.onerror=function(){ZukaitPdfCapture.failed("+token+");};reader.readAsDataURL(file);}).catch(function(){ZukaitPdfCapture.failed("+token+");});})()", ignored -> {});
                                 }
                             });
-                            view.postDelayed(() -> { if (!finished) fail("PDF generation timed out"); }, 30000);
-                            view.loadDataWithBaseURL("file:///android_asset/", html.replaceAll("(?is)<script\\b[^>]*>.*?</script>", ""), "text/html", "UTF-8", null);
+                            view.postDelayed(() -> { if(!finished)fail("PDF generation timed out"); },70000);
+                            String shell="<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=794'><script src='vendor/pdf/html2canvas-1.4.1.min.js'></script><script src='vendor/pdf/jspdf-4.2.1.min.js'></script><script src='report_pdf_export.js'></script></head><body>Preparing PDF</body></html>";
+                            view.loadDataWithBaseURL("https://appassets.androidplatform.net/assets/",shell,"text/html","UTF-8",null);
                         } catch (Exception e) { fail("PDF setup failed"); }
                     }
                 }

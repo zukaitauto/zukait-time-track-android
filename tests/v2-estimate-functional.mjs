@@ -158,7 +158,7 @@ const longPl=api.estimateDocumentHtml({
 });
 assert.ok(longPl.includes('Part 001'),'Long PL output must contain first part');
 assert.ok(longPl.includes('Part 120'),'Long PL output must contain final part');
-assert.ok(native.includes('PageRange.ALL_PAGES'),'Android print renderer must retain every document page');
+assert.ok(native.includes('zukaitReportPdf.generate('),'Android print renderer must retain every document page');
 assert.ok(native.includes('verifyVisiblePdf(pdfFile)'),'Android export must validate visible PDF content before sharing');
 
 const printable=api.printable(state.estimates[0]);
@@ -184,7 +184,7 @@ assert.equal(bridgeCalls[3][0],'share');
 assert.equal(bridgeCalls[3][1],'Estimate Zi-Qt001');
 assert.match(bridgeCalls[3][2],/Total: OMR 210\.000/);
 
-for(const required of ['public void printHtmlNamed(String html, String title)','public void shareHtmlAsPdfWhatsApp(String html, String filename)','whatsApp.setPackage("com.whatsapp")','whatsAppBusiness.setPackage("com.whatsapp.w4b")','public void openExternalUrl(String url)','public void shareText(String title, String text)','view.createPrintDocumentAdapter("Zukait Report")','verifyVisiblePdf(pdfFile)','PageRange.ALL_PAGES']) {
+for(const required of ['public void printHtmlNamed(String html, String title)','public void shareHtmlAsPdfWhatsApp(String html, String filename)','whatsApp.setPackage("com.whatsapp")','whatsAppBusiness.setPackage("com.whatsapp.w4b")','public void openExternalUrl(String url)','public void shareText(String title, String text)','WebViewAssetLoader.AssetsPathHandler','verifyVisiblePdf(pdfFile)','zukaitReportPdf.generate(']) {
   assert.ok(native.includes(required),'Android Estimate integration missing '+required);
 }
 console.log('V2 Estimate functional calculations + Android bridge: ok');

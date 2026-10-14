@@ -51,7 +51,7 @@ public class PdfExportTest {
             final MainActivity.AndroidBridge[] bridge = new MainActivity.AndroidBridge[1];
             scenario.onActivity(activity -> { bridge[0] = activity.new AndroidBridge(); bridge[0].shareHtmlAsPdf(html, name); });
             Field busy = bridge[0].getClass().getDeclaredField("pdfExportBusy"); busy.setAccessible(true);
-            long deadline = System.currentTimeMillis() + 40000;
+            long deadline = System.currentTimeMillis() + 80000;
             while (System.currentTimeMillis() < deadline && busy.getBoolean(bridge[0])) Thread.sleep(100);
             assertFalse("PDF exporter must complete or fail instead of hanging", busy.getBoolean(bridge[0]));
             List<File> reports = files(new File(app.getCacheDir(), "reports"), name);
@@ -76,7 +76,7 @@ public class PdfExportTest {
             return renderer.getPageCount();
         }
     }
-    @Test public void completeMultiPageReportUsesNativePrintRenderer() throws Exception {
+    @Test public void completeMultiPageReportUsesValidatedDocumentRenderer() throws Exception {
         StringBuilder rows = new StringBuilder();for(int i=1;i<=140;i++)rows.append("<tr><td>JC 12079 · Employee QA · Saved work "+i+"</td><td>OMR 80.000</td></tr>");
         File file=export("<!doctype html><html><head><meta charset='utf-8'><style>body{font:14px Arial}td{padding:8px;border-bottom:1px solid #ddd}tr{break-inside:avoid}</style></head><body><h1>Supervisor report · TEST ONLY</h1><table>"+rows+"</table><p>END OF ORIGINAL REPORT</p></body></html>","native-multipage-test.pdf");
         assertTrue("Long report must retain multiple pages",visiblePages(file)>1);
