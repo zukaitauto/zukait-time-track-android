@@ -2,12 +2,12 @@
   "versionName": "V320",
   "versionCode": 283,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
-  "sourceCommit": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "approvedAt": null,
-  "publishNonce": null,
+  "approvedForStaff": true,
+  "sourceCommit": "dd5ae09c006afe7a309816049cf0267a30b39f85",
+  "signedAcceptanceRun": 38512549895,
+  "verificationRun": 38512549809,
+  "approvedAt": "2026-10-14T04:43:28Z",
+  "publishNonce": "owner-authorized-v320-dd5ae09c006a-20261014044328",
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
@@ -15,5 +15,6 @@
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "authorization": "Owner requested publication in this conversation: \"I want to to release new version, whatever required, you should do it and release new version, after that I will test it. You have all permission\". V319 publishes the professional estimate redesign and current client source using the existing owner-authorized UI release path. Automated checks are required before publication. Physical/hosted acceptance and fresh production backup verification are deferred and not claimed as passed. No backend or database deployments or new Phase 2 activation are included.",
-  "verificationSummary": "V320 amount alignment, A4 pagination and fresh matching-source checks are pending. Blank customer fields remain unchanged. Previous release authorization and post-release manual testing deferrals persist."
+  "verificationSummary": "Matching-source signed APK, reception, estimate calculation, full regression, Android compilation and browser/PDF checks passed. Money headings and values align; the short estimate with signature/footer prints on one A4 page even with browser headers/footers enabled. A 120-part estimate retains all content across five pages. Blank customer fields remain blank. User's release authorization and post-release manual testing deferrals persist.",
+  "printChecksRun": 38512549819
 }

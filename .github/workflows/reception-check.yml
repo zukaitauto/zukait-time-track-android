@@ -421,3 +421,51 @@ jobs:
           set -euo pipefail
           gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
           echo 'Owner-authorized V319 dispatched to the existing coordinated publisher'
+
+  dispatch_pinned_v320:
+    name: Publish owner-authorized V320 estimate print correction
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/architecture-v2' &&
+      github.event.head_commit.message == 'Owner-approved one-time V320 dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify V320 approval and exact-source checks
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SOURCE='dd5ae09c006afe7a309816049cf0267a30b39f85'
+          jq -e --arg sha "$SOURCE" '
+            .approvedForStaff == true and .versionName == "V320" and
+            .versionCode == 283 and .sourceCommit == $sha and
+            .releaseScope == "phase1-compatible-ui" and
+            .productionBackendChanges == false and .phase2ActivationApproved == false and
+            .physicalAcceptanceStatus == "NOT_RUN" and
+            .signedAcceptanceRun == 38512549895 and .verificationRun == 38512549809 and
+            .printChecksRun == 38512549819
+          ' release-ui-request.json
+          node scripts/verify-ui-only-release.cjs
+          for ITEM in "38512549895:.github/workflows/build-signed-acceptance.yml" "38512549809:.github/workflows/reception-check.yml" "38512549819:.github/workflows/estimate-visual.yml"; do
+            RUN="${ITEM%%:*}"
+            WORKFLOW="${ITEM#*:}"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN" | jq -e --arg sha "$SOURCE" --arg workflow "$WORKFLOW" '
+              .conclusion == "success" and .head_sha == $sha and
+              .head_branch == "architecture-v2" and .path == $workflow
+            '
+          done
+      - name: Dispatch existing coordinated V320 publisher
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
