@@ -285,3 +285,6 @@ ctx.me.role='Employee';await api.deleteDraft('anything');assert.equal(deletedCal
 console.log('PASS: Manager/Supervisor/Receptionist draft delete, durable confirmation, recovery suppression and saved protection');
 
 await import('./technician-time-vehicle-share.mjs');
+
+// Run the Reception record/date/permission matrix with estimate acceptance.
+await import('./reception-feature8.mjs');

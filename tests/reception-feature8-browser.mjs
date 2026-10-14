@@ -18,7 +18,7 @@ for(const [engineName,engine] of [['chromium',chromium],['webkit',webkit]]){
  await page.addScriptTag({path:'app/src/main/assets/reception_dashboard.js'});await page.addScriptTag({path:'app/src/main/assets/job_card_edit.js'});
  await page.evaluate(()=>zukaitReceptionDashboard.open({backendAvailable:true}));await page.locator('[data-rdb=tile][data-section=jobs]').click();await page.locator('[data-rdb=open]').waitFor();
  assert.equal(await page.locator('[data-rdb=open]').innerText(),'View Job Card');
- data.jobs.push({...base,no:'1',createdAt:base.createdAt+1000});await page.locator('[data-rdb=refresh]').click();await page.waitForFunction(()=>document.querySelector('[data-rdb=open]')?.dataset.job==='1');
+ await page.locator('[data-rdb-filter=search]').focus();data.jobs.push({...base,no:'1',createdAt:base.createdAt+1000});await page.waitForFunction(()=>document.querySelector('[data-rdb=open]')?.dataset.job==='1',{},{timeout:15000});assert.equal(await page.locator('[data-rdb-filter=search]').evaluate(el=>el===document.activeElement),true,'Automatic refresh must retain search focus');
  await page.locator('[data-rdb-filter=search]').fill('12079');await page.waitForFunction(()=>document.querySelectorAll('[data-rdb=open]').length===1&&document.querySelector('[data-rdb=open]').dataset.job==='12079');
  for(const role of ['Receptionist','Supervisor','Manager'])for(const type of ['Cash','Credit','Insurance'])for(const delivered of [false,true]){
   data.jobs[0]={...base,jobType:type,delivered};await page.evaluate(role=>window.me.role=role,role);

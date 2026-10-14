@@ -135,18 +135,19 @@
   function showRows(){
     const host=document.getElementById("rdb-results"),foot=document.getElementById("rdb-page");
     if(!host||!foot)return;
-    host.innerHTML=loading?'<p>Loading from Reception server…</p>':
+    const markup=loading?'<p>Loading from Reception server…</p>':
       latest.length?latest.map(rowHtml).join(""):'<p>No matching records found.</p>';
+    if(host.innerHTML!==markup)host.innerHTML=markup;
     foot.textContent=(total?("Showing "+(page*50+1)+"–"+Math.min((page+1)*50,total)+" of "+total):"0 records");
     const next=document.querySelector('#rc-root [data-rdb="next"]');
     const prev=document.querySelector('#rc-root [data-rdb="previous"]');
     if(next)next.disabled=(page+1)*50>=total;
     if(prev)prev.disabled=page===0;
   }
-  async function load(){
+  async function load(background=false){
     if(!backendAvailable)return;
     const request=++sequence;
-    loading=true;showRows();
+    loading=true;if(!background)showRows();
     const requestedSection=screen==="home"?"checklists":section==="vwc"?vwcSection:section;
     try{
       const r=await window.zukaitReception.action({action:"reception_dashboard",section:requestedSection,
@@ -160,7 +161,7 @@
         const mode=document.querySelector('#rc-root [data-rdb-filter="promise-mode"] option[value="missing"]');
         if(mode)mode.textContent="No promise date ("+(counts.no_promise_date||0)+")";
       }
-    }catch(e){if(request===sequence){latest=[];total=0;const err=document.getElementById("rc-error");if(err)err.textContent=e.message||String(e);}}
+    }catch(e){if(request===sequence){if(!background){latest=[];total=0;}const err=document.getElementById("rc-error");if(err)err.textContent=e.message||String(e);}}
     finally{if(request===sequence){loading=false;showRows();}}
   }
   async function open(options={}){backendAvailable=options.backendAvailable===true;++sequence;clearTimeout(pendingTimer);loading=false;screen="home";section="checklists";vwcSection="vwc-checklists";page=0;
@@ -263,7 +264,7 @@
   setInterval(()=>{
     const active=document.activeElement;
     if(backendAvailable&&screen==='list'&&section==='jobs'&&!loading&&!document.hidden&&document.getElementById('rdb-results')&&
-       !active?.matches?.('#rc-root input,#rc-root textarea,#rc-root select'))void load();
+       !active?.matches?.('#rc-root [data-rdb-promise]'))void load(true);
   },10000);
   async function showJobs(){if(!backendAvailable)return false;await choose('jobs');return true;}
   window.zukaitReceptionDashboard={open,resume,home:showDashboard,showJobs,savePromise,choose};
