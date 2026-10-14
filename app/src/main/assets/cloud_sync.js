@@ -4,6 +4,14 @@
   const REV_KEY='zukait_cloud_revision_v42';
   const DIRTY_KEY='zukait_cloud_dirty_v42';
   const PENDING_KEY='zukait_cloud_pending_conflict_v42';
+  const DENIED_KEY='zukait_cloud_denied_snapshot_v42';
+  let deniedSnapshot=null;
+  try{deniedSnapshot=JSON.parse(localStorage.getItem(DENIED_KEY)||'null')}catch(_){}
+  function permissionBlocked(snapshot){
+    if(!deniedSnapshot)return false;
+    // A different account must never silently submit another user's queue.
+    return String(deniedSnapshot.user)!==String(me?.id||'') || JSON.stringify(deniedSnapshot.data)===JSON.stringify(snapshot);
+  }
 
   let cloudRevision=Number(localStorage.getItem(REV_KEY)||0)||0;
   let cloudDirty=localStorage.getItem(DIRTY_KEY)==='1';
@@ -665,6 +673,7 @@
 
   async function push(retry=0){
     if(cloudPushing||!cloudDirty)return false;
+    if(permissionBlocked(payloadState())){status('PERMISSION DENIED — CHANGE PRESERVED','bad');return false;}
     if(!sessionToken()){status('LOGIN REQUIRED','bad');return false}
     if(!navigator.onLine){status('OFFLINE — CHANGE QUEUED','warn');return false}
     cloudPushing=true;
@@ -675,6 +684,7 @@
     try{
       const r=await api({action:'save',expected_revision:cloudRevision,data:localSnapshot});
       if(r.ok){
+        deniedSnapshot=null;localStorage.removeItem(DENIED_KEY);
         // Acknowledge exactly the snapshot sent by this request. If another
         // Start/Pause/Stop/Assign click happened while it was in flight, keep
         // that newer mutation dirty and immediately send a second request.
@@ -825,7 +835,15 @@
       }else{
         setServerConnection('offline',navigator.onLine?'Workshop server cannot be reached. Changes are queued and will sync after reconnection.':'Server connection unavailable. Changes are queued and will sync after reconnection.');
       }
-      try{localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:localSnapshot,error:lastSyncError}))}catch(_){}
+      // Keep clicks made while the denied request was in flight, not just the
+      // older submitted snapshot. Persist the retry barrier across app restarts.
+      const pendingSnapshot=payloadState();
+      if(permissionDenied){
+        deniedSnapshot={user:me?.id||'',data:clone(pendingSnapshot),error:lastSyncError};
+        clearTimeout(pushTimer);
+        try{localStorage.setItem(DENIED_KEY,JSON.stringify(deniedSnapshot))}catch(_){}
+      }
+      try{localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:pendingSnapshot,error:lastSyncError}))}catch(_){}
       status(permissionDenied?'PERMISSION DENIED — CHANGE PRESERVED':(navigator.onLine?'SYNC ERROR — RETRYING':'OFFLINE — CHANGE QUEUED'),navigator.onLine?'bad':'warn');
       if(!permissionDenied&&navigator.onLine&&sessionToken())setTimeout(()=>{if(cloudDirty&&!cloudPushing)push(0)},Math.min(15000,1000*Math.pow(2,Math.min(consecutiveSyncErrors,4))));
       return false;
@@ -867,6 +885,12 @@
   }
 
   async function syncNow(){
+    if(cloudDirty&&permissionBlocked(payloadState())){
+      if(String(deniedSnapshot.user)!==String(me?.id||'')){alert('Pending changes belong to another account. They are preserved; sign in as their author to review them.');return;}
+      if(!confirm('The server rejected a pending change. Your local data is preserved. Retry this change once after its permission or attribution issue has been corrected?'))return;
+      // Only this explicit user action may retry the identical rejected queue.
+      deniedSnapshot=null;localStorage.removeItem(DENIED_KEY);
+    }
     if(!navigator.onLine)return status('OFFLINE — CHANGE QUEUED','warn');
     if(cloudDirty)await push(0);
     if(!cloudDirty)await pull(true);

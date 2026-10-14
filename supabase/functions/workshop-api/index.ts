@@ -381,6 +381,17 @@ function preserveConsumablesHistory(candidate: any, current: any): any {
 }
 
 
+// Compatibility for queued price recalculations from older clients. Accept only
+// a new, exact after-image audit attributed to the authenticated Manager. Never
+// infer authorship from role labels or rewrite an existing audit/financial value.
+function consumablesRepriceEvidence(candidate,current,after,user) {
+  if(!user?.id || String(after?.priceRecalculatedBy||'')!==String(user.id) || !(Number(after?.priceRecalculatedAt)>0)) return null;
+  const oldIds=new Set((current?.consumables?.audit||[]).map((x:any)=>String(x?.id||'')));
+  return (candidate?.consumables?.audit||[]).find((x:any)=>x?.id&&!oldIds.has(String(x.id))&&
+    x.type==='ACTUAL_PRICE_RECALCULATED'&&String(x.entityId)===String(after.id)&&
+    String(x.by||'')===String(user.id)&&Number(x.at)>=Number(after.priceRecalculatedAt)&&
+    String(x.reason||'').trim()&&same(x.after,after))||null;
+}
 function validateConsumablesManagerCorrections(candidate,current,user) {
   const oldActuals=new Map((current?.consumables?.actuals||[]).filter((x:any)=>x?.id).map((x:any)=>[String(x.id),x]));
   const newActuals=new Map((candidate?.consumables?.actuals||[]).filter((x:any)=>x?.id).map((x:any)=>[String(x.id),x]));
@@ -390,8 +401,12 @@ function validateConsumablesManagerCorrections(candidate,current,user) {
     const protectedChange=!same(before?.lines,after?.lines)||Number(before?.totalCost||0)!==Number(after?.totalCost||0)||before?.voided!==after?.voided;
     if(!protectedChange) continue;
     if(String(user?.role||'')!=='Manager') return 'manager_required_to_correct_final_consumables';
-    if(String(after?.correctedBy||after?.voidedBy||'')!==String(user?.id||'')) return 'consumables_correction_actor_invalid';
-    if(!String(after?.correctionReason||after?.voidReason||'').trim()) return 'consumables_correction_reason_required';
+    const isVoid=!!after?.voided&&!before?.voided;
+    const reprice=!isVoid?consumablesRepriceEvidence(candidate,current,after,user):null;
+    const author=isVoid?after?.voidedBy:after?.correctedBy;
+    const reason=isVoid?after?.voidReason:after?.correctionReason;
+    if(!user?.id || (String(author||'')!==String(user.id)&&!reprice)) return 'consumables_correction_actor_invalid';
+    if(!String(reason||reprice?.reason||'').trim()) return 'consumables_correction_reason_required';
   }
   const oldIssues=new Map((current?.consumables?.issues||[]).filter((x:any)=>x?.id).map((x:any)=>[String(x.id),x]));
   const newIssues=new Map((candidate?.consumables?.issues||[]).filter((x:any)=>x?.id).map((x:any)=>[String(x.id),x]));
@@ -401,8 +416,9 @@ function validateConsumablesManagerCorrections(candidate,current,user) {
     const protectedChange=!same(before?.lines,after?.lines)||String(before?.colourCode||'')!==String(after?.colourCode||'')||String(before?.mainPainterId||'')!==String(after?.mainPainterId||'')||String(before?.allottedSupervisorId||'')!==String(after?.allottedSupervisorId||'')||before?.voided!==after?.voided;
     if(!protectedChange) continue;
     if(String(user?.role||'')!=='Manager') return 'manager_required_to_correct_suggested_consumables';
-    if(String(after?.correctedBy||after?.voidedBy||'')!==String(user?.id||'')) return 'suggested_consumables_correction_actor_invalid';
-    if(!String(after?.correctionReason||after?.voidReason||'').trim()) return 'suggested_consumables_correction_reason_required';
+    const isVoid=!!after?.voided&&!before?.voided;
+    if(!user?.id || String((isVoid?after?.voidedBy:after?.correctedBy)||'')!==String(user.id)) return 'suggested_consumables_correction_actor_invalid';
+    if(!String((isVoid?after?.voidReason:after?.correctionReason)||'').trim()) return 'suggested_consumables_correction_reason_required';
   }
   return null;
 }
