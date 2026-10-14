@@ -47,7 +47,13 @@ jobs:
           APPROVED_VERSION=$(jq -r '.versionName' release-request.json)
           PINNED_REF="approved-$(printf '%s' "$APPROVED_VERSION" | tr '[:upper:]' '[:lower:]')-source"
           if ! gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$PINNED_REF" >/tmp/approved-ref.json 2>/dev/null; then
-            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$PINNED_REF" -f sha="$APPROVED_SOURCE" >/tmp/approved-ref.json
+            # A pre-created release metadata ref avoids granting the workflow
+            # permission to create refs for a source containing workflow edits.
+            # The exact source comparison below applies to either named ref.
+            PINNED_BRANCH="release/$(printf '%s' "$APPROVED_VERSION" | tr '[:upper:]' '[:lower:]')-approved-source"
+            if ! gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$PINNED_BRANCH" >/tmp/approved-ref.json 2>/dev/null; then
+              gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$PINNED_REF" -f sha="$APPROVED_SOURCE" >/tmp/approved-ref.json
+            fi
           fi
           PINNED_SOURCE=$(jq -r '.object.sha' /tmp/approved-ref.json)
           test "$PINNED_SOURCE" = "$APPROVED_SOURCE" || {
