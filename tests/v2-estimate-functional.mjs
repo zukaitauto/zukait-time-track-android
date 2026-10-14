@@ -191,8 +191,8 @@ console.log('V2 Estimate functional calculations + Android bridge: ok');
 
 // The same self-contained branding/footer must survive native WebViews with a null base URL.
 const branded=api.estimateDocumentHtml(state.estimates[0]);
-assert.match(branded,/<image href="data:image\/jpeg;base64,[A-Za-z0-9+/=]+" width="2172" height="724"\/>/);
-assert.match(branded,/viewBox="0 145 2172 375"/,'Header artwork must exclude contacts and old printed serial');
+assert.match(branded,/<image href="data:image\/jpeg;base64,[A-Za-z0-9+/=]+" width="3084" height="780" filter="url\(#estimate-paper-cleanup\)"\/>/);
+assert.match(branded,/viewBox="0 55 3084 510"/,'Header artwork must exclude contacts and old printed serial');
 assert.match(branded,/class="letterhead-artwork"/);
 for(const text of ['P.O. Box 1921','Barka','Postal Code 130','C.R.N. 1194220','93211154','Authorized Signed']) assert.ok(branded.includes(text),text);
 assert.ok(!plPrintable.includes('<b>Type:</b>'));
