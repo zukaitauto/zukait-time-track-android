@@ -222,7 +222,8 @@ function quickData(st,people,statuses,now=Date.now()){
  const runningIds=statuses===null?null:new Set(statuses.filter(s=>['Working','Overtime'].includes(s.status)).map(s=>norm(s.job||s.assignment?.job||s.session?.job)));
  const running=runningIds===null?null:open.filter(j=>runningIds.has(norm(j.no)));
  const today=list=>(list||[]).filter(x=>x&&!x.voided&&!x.deleted&&!x.cancelled&&workshopDay(x.createdAt)===day).sort((a,b)=>(Number(b.createdAt)||Date.parse(b.createdAt)||0)-(Number(a.createdAt)||Date.parse(a.createdAt)||0));
- return {idle:null,running,leave:leave.filter((l,i)=>leave.findIndex(x=>String(x.emp)===String(l.emp))===i),consumables:today(st.consumables?.issues),paint:today(st.paintPurchasing?.orders)};
+ const runningWorkers=statuses===null?null:statuses.filter(s=>['Working','Overtime'].includes(s.status)).map(s=>({emp:s.emp||s.assignment?.emp||s.session?.emp,job:s.job||s.assignment?.job||s.session?.job})).filter((s,i,all)=>s.emp&&runningIds.has(norm(s.job))&&all.findIndex(x=>String(x.emp)===String(s.emp)&&norm(x.job)===norm(s.job))===i);
+ return {idle:null,running,runningWorkers,leave:leave.filter((l,i)=>leave.findIndex(x=>String(x.emp)===String(l.emp))===i),consumables:today(st.consumables?.issues),paint:today(st.paintPurchasing?.orders)};
 }
 function quickViewData(){
  let statuses=null;
@@ -262,7 +263,12 @@ function openQuickDetails(type){
  const body=list.map(x=>{
   if(type==='idle')return row(name(x.id),esc(x.department||'Employee')+' · No active job assignment');
   if(type==='leave')return row(name(x.emp),esc(x.date||'')+' · '+esc(x.type||x.reason||'Leave'));
-  if(type==='running'){const assigned=(st.assign||[]).filter(a=>!a.cancelled&&!a.completed&&norm(a.job)===norm(x.no));return row('JC '+x.no,esc(x.vehicle||'Vehicle')+' · '+esc(x.reg||'—')+'<br>'+esc(assigned.map(a=>name(a.emp)).join(', ')),x.no)}
+  if(type==='running'){
+   const titleCase=v=>String(v||'').trim().toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase()).replace(/\b(Bmw|Gmc|Mg|Byd)\b/g,w=>w.toUpperCase());
+   const vehicle=titleCase(x.vehicle||[x.make,x.model].filter(Boolean).join(' ')||'Vehicle'),year=String(x.year||x.modelYear||x.vehicleYear||'');
+   const workers=(q.runningWorkers||[]).filter(s=>norm(s.job)===norm(x.no));
+   return workers.map(s=>row(titleCase(name(s.emp))+' · JC '+x.no,esc(vehicle)+(year&&!vehicle.includes(year)?' '+esc(year):'')+' <span class="wo-running-badge">Running</span><br>Registration: '+esc(x.reg||'—'),x.no)).join('')||row('JC '+x.no,esc(vehicle)+'<br>Employee details syncing',x.no);
+  }
   const lines=(x.lines||[]).map(l=>{const material=(st.consumables?.materials||[]).find(m=>m.id===l.materialId);return esc(l.name||l.paintType||l.description||l.item||material?.name||l.materialId||'Paint')+' · '+esc(l.quantity??l.qty??'—')+' '+esc(l.unit||material?.unit||'')}).join('<br>');
   if(type==='consumables')return row('JC '+x.jobCard+' · '+(x.type||'Consumables'),esc(name(x.mainPainterId))+' · '+esc(overdueDate(x.createdAt))+'<br>'+lines,x.jobCard,button('View Suggested Materials','quick-suggested',x.jobCard));
   return row(x.poNumber||'Paint Purchase Order',esc(x.vendor||'Supplier')+' · '+esc(x.status||'Ordered')+'<br>'+esc(overdueDate(x.createdAt))+'<br>'+lines,x.jobCard,'<button type="button" data-workshop-action="quick-paint-po" data-record-id="'+esc(x.id||'')+'">View Paint PO</button>');
@@ -270,6 +276,8 @@ function openQuickDetails(type){
  shell(titles[type],'<label>Search details<input id="woQuickSearch" placeholder="Employee, job card or item" autocomplete="off"></label><p>'+list.length+' record(s)</p>'+(body||'<p>No matching records.</p>'));
 }
 const quickStyle=document.createElement('style');quickStyle.textContent=`
+.workshop-overview .wo-running-badge{display:inline-block;padding:3px 8px;margin-left:5px;border-radius:999px;background:#dcfce7;color:#166534;font-size:11px;font-weight:800;white-space:nowrap}
+
 .workshop-overview .wo-quick-detail{margin:9px 0!important;padding:12px 13px!important;border:1px solid #dce6f0!important;border-radius:13px!important;background:linear-gradient(145deg,#fff,#f8fbfe)!important;box-shadow:0 3px 9px #17324b0c!important}.workshop-overview .wo-quick-detail>b{display:block!important;font-size:14px!important;color:#17324b!important}.workshop-overview .wo-quick-detail>p{margin:6px 0 9px!important;font-size:11px!important;line-height:1.45!important;color:#526579!important}.workshop-overview .wo-quick-detail-actions{display:flex!important;gap:7px!important;flex-wrap:wrap!important}.workshop-overview .wo-quick-detail-actions button{min-height:34px!important;padding:6px 10px!important;font-size:10px!important}.workshop-overview #woQuickSearch{min-height:40px!important}.workshop-overview:has(#woQuickSearch){max-width:860px!important;margin:0 auto!important}.workshop-overview:has(#woQuickSearch)>.wo-heading{margin-bottom:10px!important}@media(max-width:620px){.workshop-overview .wo-quick-detail{padding:10px!important}.workshop-overview .wo-quick-detail-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}.workshop-overview .wo-quick-detail-actions button{width:100%!important;min-width:0!important}}
  #woDailySummary .wo-quick-grid{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:14px!important;margin:18px 0!important}
 #woDailySummary .wo-quick-card{--wo-accent:#245ca5;display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-start!important;position:relative;min-width:0!important;min-height:176px!important;height:auto!important;text-align:left!important;padding:16px!important;border:1px solid #dce4ed!important;border-bottom:4px solid var(--wo-accent)!important;border-radius:16px!important;color:#172c46!important;background:linear-gradient(145deg,#fff,#edf3fa)!important;box-shadow:inset 0 2px 0 #fff,0 4px 0 #d6e0eb,0 9px 17px #203e5c17!important;gap:0!important;white-space:normal!important;transition:transform .15s}
@@ -456,3 +464,4 @@ const focusStyle=document.createElement('style');focusStyle.textContent='.wo-foc
   .workshop-overview:has(.wo-job-banner)>.wo-stats strong{font-size:20px!important}
  }`;document.head.appendChild(s);
 })();
+
