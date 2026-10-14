@@ -64,7 +64,7 @@ function viewCss(){return `
 `}
 function viewValue(value){if(value==null||value==='')return '—';if(typeof value==='object')return JSON.stringify(value,null,2);return String(value)}
 function jobDate(value){if(value==null||value==='')return 'Not recorded';const n=typeof value==='number'?value:/^\d+$/.test(String(value))?Number(value):Date.parse(value);return Number.isFinite(n)?new Date(n).toLocaleString('en-GB',{timeZone:'Asia/Muscat',dateStyle:'medium',timeStyle:'short'}):String(value)}
-function jobName(value){return String(value??'').trim().toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase()).replace(/\b(Bmw|Gmc|Mg|Byd|Uae|Llc)\b/g,w=>w.toUpperCase())}
+function jobName(value){return String(value??'').trim().toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase()).replace(/\b(Bmw|Gmc|Mg|Byd|Uae|Llc|Rav4)\b/g,w=>w.toUpperCase())}
 function viewHtml(j,actions=true){
  const first=(...keys)=>keys.map(k=>j[k]).find(v=>v!=null&&v!=='')??'';
  const money=v=>v==null||v===''?'Not entered':'OMR '+Number(v).toFixed(3);

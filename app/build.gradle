@@ -28,3 +28,5 @@ dependencies {
     implementation "com.google.mlkit:text-recognition:16.0.1"
 }
 
+
+// V327: verify model code preservation and cash age display.
