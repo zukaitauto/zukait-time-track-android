@@ -1,9 +1,9 @@
 {
-  "versionCode": 282,
-  "versionName": "V319",
+  "versionCode": 283,
+  "versionName": "V320",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "3010e7d8850ee26c66c4cb467789422731d1bf4d",
-  "apkSha256": "30d43be8cc19565bd00b7e5f614813b10bbc779a88e4edd8a59de3205b9dbea9",
-  "releaseTag": "release-V319-architecture-v2"
+  "sourceCommit": "dd5ae09c006afe7a309816049cf0267a30b39f85",
+  "apkSha256": "6e48e60f74cdc49e6bb569990ed6dcb97bc562a577e77ac91b5cc945f5848175",
+  "releaseTag": "release-V320-architecture-v2"
 }
