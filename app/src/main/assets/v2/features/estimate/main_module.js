@@ -167,8 +167,8 @@ async function newEstimate(reception=null,requestKey=null,additionalRequestId=nu
     if(additionalRequestId)Object.assign(e,{jobCard:reception.job_card,receptionAdditionalRequestId:additionalRequestId});
   }
   if(!e.estimateNo)return alert('Estimate number allocation failed.');
-  try{rememberEstimate(e)}catch(error){return alert('Could not retain this draft on the device. Estimate was not saved.');}
-  state.estimates.unshift(e);openEditor(e.id);return e.id;
+  try{if(!reception)rememberEstimate(e)}catch(error){return alert('Could not retain this draft on the device. Estimate was not saved.');}
+  state.estimates.unshift(e);if(reception){audit(e,'CREATE');saveState()}openEditor(e.id);return e.id;
 }
 let receptionEstimateBusy=false;
 async function newFromReception(rcNo,additionalRequestId=null){

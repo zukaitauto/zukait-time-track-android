@@ -13,10 +13,11 @@ function setup(){const dom=new JSDOM('<div id="modal"></div>',{url:'https://test
  w.eval(fs.readFileSync('app/src/main/assets/v2/features/estimate/main_module.js','utf8')); // Fresh module memory; device storage survives restart.
  const id=await w.zukaitEstimate.newFromReception(rc.rc_no);await new Promise(r=>setTimeout(r,25));assert.equal(keys[0],keys[1],'retry allocation key');assert.equal(id,keys[0]);
  const e=w.state.estimates[0];assert.equal(e.receptionNo,rc.rc_no);assert.equal(e.makeModel,'Toyota Camry');assert.equal(e.insuranceCompany,'Liva Insurance');assert.equal(e.vin,'QA-VIN');assert.equal(e.jobCard,'');assert.equal(saves,1);
- assert.equal(w.localStorage.length,0,'confirmed draft clears allocation retry');
+ assert.equal(Object.keys(w.localStorage).filter(k=>k.startsWith('zukait_reception_estimate_request_v1:')).length,0,'confirmed draft clears allocation retry');
+ assert.ok(w.localStorage.getItem('zukait_estimate_recovery_v1:'+w.me.id),'local recovery copy is independent of the cleared allocation retry');
  const retryKey='zukait_reception_estimate_request_v1:'+JSON.stringify([w.me.id,w.location.origin,rc.rc_no,'']);
  w.localStorage.setItem(retryKey,id);w.eval(fs.readFileSync('app/src/main/assets/v2/features/estimate/main_module.js','utf8'));
- await w.zukaitEstimate.newFromReception(rc.rc_no);assert.equal(keys.length,2,'saved draft recovery must not allocate again');assert.equal(w.state.estimates.length,1);assert.equal(saves,1);assert.equal(w.localStorage.length,0);
+ await w.zukaitEstimate.newFromReception(rc.rc_no);assert.equal(keys.length,2,'saved draft recovery must not allocate again');assert.equal(w.state.estimates.length,1);assert.equal(saves,1);assert.equal(w.localStorage.getItem(retryKey),null);
  for(const name of ['estName','estMobile','estMakeModel','estYear','estReg','estVin','estClaim','estJobCard'])assert.equal(w.document.getElementById(name).readOnly,true);
  assert.ok([...w.document.querySelectorAll('button[onclick*="zukaitVinScan"]')].every(b=>b.disabled));
  w.document.getElementById('estJobCard').value='FAKE-JC';w.zukaitEstimate.loadJob();assert.equal(w.state.jobs.length,0);assert.equal(w.state.sessions.length,0);assert.equal(w.state.assignments.length,0);
