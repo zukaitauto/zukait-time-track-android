@@ -9,13 +9,13 @@ function ensureState(){
   restoreLocalEstimates();
 }
 
-function recoveryKey(){return 'zukait_estimate_recovery_v1:'+String(currentUser()?.id||'')}
+function recoveryKey(owner=currentUser()?.id){return 'zukait_estimate_recovery_v1:'+String(owner||'')}
 function rememberEstimate(e){
-  if(!e||!currentUser()?.id)return;
-  const rows=JSON.parse(localStorage.getItem(recoveryKey())||'[]');
+  const owner=currentUser()?.id||e?.createdBy;if(!e||!owner)return;
+  const key=recoveryKey(owner),rows=JSON.parse(localStorage.getItem(key)||'[]');
   const index=rows.findIndex(x=>String(x.id)===String(e.id));
   const copy=JSON.parse(JSON.stringify(e));if(index<0)rows.push(copy);else rows[index]=copy;
-  localStorage.setItem(recoveryKey(),JSON.stringify(rows));
+  localStorage.setItem(key,JSON.stringify(rows));
 }
 function restoreLocalEstimates(){
   if(!currentUser()?.id)return;
@@ -472,6 +472,7 @@ function wrapRender(name){
   const fn=window[name];if(typeof fn!=='function'||fn.__estimateWrapped)return;
   const w=function(){const r=fn.apply(this,arguments);setTimeout(ensureDashboardCards,0);setTimeout(ensureDashboardCards,250);return r};w.__estimateWrapped=true;window[name]=w;
 }
+try{if(typeof state!=='undefined')for(const e of state.estimates||[])rememberEstimate(e)}catch(error){console.warn('Existing device estimates could not be retained',error)}
 function boot(){ensureState();ensureStyle();wrapRender('renderSupervisor');wrapRender('renderManager');ensureDashboardCards()}
 window.zukaitEstimate={openHome,openDrafts,newEstimate,newFromReception,openEditor,setType,setVat,addRow,removeRow,recalc,saveCurrent,loadJob,openFind,renderFind,openRecent,openReports,preview,printEstimate,pdfEstimate,whatsApp,shareEstimate,ensureDashboardCards,totals,printable,estimateDocumentHtml,shareText,currentOutputEstimate,toggleCustomerParts};
 window.openEstimateModule=openHome;
