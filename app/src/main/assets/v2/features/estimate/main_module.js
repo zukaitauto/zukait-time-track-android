@@ -63,7 +63,7 @@ async function deleteDraft(id){
     if(receipt.deleted_id!==String(id))throw Error('The server did not confirm this draft deletion. Retry the same draft.');
     forgetDraft(id);localStorage.removeItem(pending);
     await openDrafts();
-  }catch(error){alert(error.message||'Draft deletion was not confirmed. Retry after synchronization.')}
+  }catch(error){alert(error.code==='estimate_saved_protected'?'This estimate is saved on the server and cannot be deleted as a draft.':error.code==='estimate_delete_forbidden'?'Your account cannot delete this draft.':error.message||'Draft deletion was not confirmed. Retry after synchronization.')}
   finally{draftDeleteBusy=false;}
 }
 

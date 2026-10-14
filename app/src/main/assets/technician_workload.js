@@ -253,7 +253,7 @@
     if(!canView()||!u||u.role!=='Employee'||!departments[u.department])return;
     stop();
     const opening=++timeOpening;
-    if(window.zukaitCloud?.syncNow){try{await window.zukaitCloud.syncNow()}catch(error){console.warn('Time Details synchronization failed',error)}}
+    if(window.zukaitCloud?.pull){try{await window.zukaitCloud.pull(true)}catch(error){console.warn('Time Details synchronization failed',error)}}
     if(opening!==timeOpening||!canView())return;
     let dateFilter=dayKey(Date.now()),jobFilter='ALL';
     const shell=()=>'<div class="tw-workload-tools tw-time-tools"><button type="button" id="twTimeBack" class="secondary tw-back">← Back</button><button type="button" id="twTimeShare" class="tw-time-share">↗ Share Card</button></div><div id="twTimeDetails" class="'+deptClass(u.department)+'">'+timeDetailsBody(emp,dateFilter,jobFilter)+'</div>';
