@@ -3,8 +3,8 @@
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>'OMR '+Number(v||0).toFixed(3);
 function role(){return (typeof me==='undefined'?window.me:me)?.role||''}
-function snapshot(){return (typeof state==='undefined'?window.state:state)||{}}
-function live(j){const x=window.zukaitJobCardMaster?.display?.(j?.no,j);return x?{...j,...x,amount:j.amount,finalInvoiceAmount:j.finalInvoiceAmount}:j}
+function snapshot(){return window.zukaitCloud?.confirmedState||(typeof state==='undefined'?window.state:state)||{}}
+function live(j){const x=window.zukaitJobCardMaster?.display?.(j?.no,j);return x?{...j,vehicle:j.vehicle||x.vehicle,reg:j.reg||x.reg,year:j.year||x.year}:j}
 function all(){return (snapshot().jobs||[]).filter(j=>j&&j.no!=='ID001'&&!j.deleted&&!j.archived).map(live).filter(j=>String(j.jobType||'').trim().toUpperCase()==='CASH')}
 function month(){const d=new Date(),parts=new Intl.DateTimeFormat('en',{timeZone:'Asia/Muscat',year:'numeric',month:'numeric'}).formatToParts(d),y=Number(parts.find(x=>x.type==='year').value),m=Number(parts.find(x=>x.type==='month').value);return{from:Date.UTC(y,m-1,1)-4*3600000,to:Date.UTC(y,m,1)-4*3600000,label:d.toLocaleString('en',{timeZone:'Asia/Muscat',month:'long',year:'numeric'})}}
 function rows(kind){const {from,to}=month();return all().filter(j=>kind==='in'?Number(j.createdAt||0)>=from&&Number(j.createdAt||0)<to:j.delivered&&Number(j.deliveredAt||0)>=from&&Number(j.deliveredAt||0)<to)}
@@ -27,7 +27,7 @@ function install(){
  const markup=html(),old=slot.querySelector('[data-v251-cash-pulse]');
  if(!old||slot.__cashPulseMarkup!==markup){slot.innerHTML=markup;slot.__cashPulseMarkup=markup;}
 }
-async function confirmRead(){if(!window.zukaitCloud?.readLatest)return true;try{await window.zukaitCloud.readLatest();install();return ['Manager','Supervisor'].includes(role())}catch(e){window.alert?.('Could not confirm the latest server records. Check connection and pending synchronization, then try again.');return false}}
+async function confirmRead(){if(!window.zukaitCloud?.readLatest)return true;try{await window.zukaitCloud.readLatest();install();return ['Manager','Supervisor'].includes(role())}catch(e){const login=['invalid_session','NO_SESSION'].includes(e?.message);window.alert?.(login?'Your saved login is no longer valid. Please log in again.':'The server read failed ('+String(e?.message||'NETWORK')+'). Check your connection and try again. Your pending changes are preserved.');return false}}
 window.v251OpenCashPendingAll=async function(){if(!['Manager','Supervisor'].includes(role()))return;if(!await confirmRead())return;const a=pendingAll().slice().sort((x,y)=>Number(y.createdAt||0)-Number(x.createdAt||0));const body=a.length?a.map((j,n)=>'<div class="v251-cash-row"><b class="v251-no">'+(n+1)+'</b><div><strong>JC '+esc(j.no)+' · '+esc(j.reg||'—')+'</strong><small>'+esc(j.vehicle||'—')+' · In '+new Date(Number(j.createdAt||0)).toLocaleDateString('en-GB',{timeZone:'Asia/Muscat'})+' · Not delivered</small></div><b>'+money(j.amount)+'</b><button onclick="closeModal();zukaitOpenCashDetails(\''+esc(j.no)+'\')">Cash Details</button></div>').join(''):'<p class="muted">No undelivered Cash vehicles.</p>';openModal('<div class="section-title"><div><h2>Total Cash Jobs In · Not Delivered</h2><p class="muted">All months · outstanding Cash vehicles</p></div><button class="secondary" onclick="closeModal()">Close</button></div><div class="v251-cash-summary"><b>'+a.length+' Vehicles</b><strong>'+money(total(a))+'</strong></div>'+body)};
 window.v251OpenCashPulse=async function(kind){
  if(!['Manager','Supervisor'].includes(role()))return;

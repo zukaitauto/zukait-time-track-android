@@ -849,17 +849,21 @@
     pushTimer=setTimeout(()=>push(0),0);
   };
 
-  // Read-only lists must never silently present a pending local cache as current.
+  // Reports read a server snapshot independently of queued edits and polling.
+  let readLatestInFlight=null,confirmedReadState=null,confirmedReadRevision=-1;
   async function readLatest(){
     if(!navigator.onLine)throw new Error('OFFLINE');
-    const deadline=Date.now()+20000;
-    while(pullInFlight||cloudPushing){
-      if(Date.now()>=deadline)throw new Error('SYNC_BUSY');
-      await new Promise(resolve=>setTimeout(resolve,40));
-    }
-    if(cloudDirty)throw new Error('PENDING_LOCAL_CHANGES');
-    if(!(await pull(true)))throw new Error('SYNC_NOT_CONFIRMED');
-    return {revision:cloudRevision};
+    if(readLatestInFlight)return readLatestInFlight;
+    readLatestInFlight=(async()=>{
+      const r=await api({action:'load'});
+      if(!r.ok)throw new Error(r.code||'LOAD_FAILED');
+      if(!r.data||typeof r.data!=='object')throw new Error('INVALID_SERVER_RECORDS');
+      const revision=Number(r.revision||0);
+      if(revision>=confirmedReadRevision){confirmedReadState=clone(r.data);confirmedReadRevision=revision;}
+      // Neither state nor the dirty flag/conflict merge baseline is changed.
+      return {revision:confirmedReadRevision,data:clone(confirmedReadState)};
+    })();
+    try{return await readLatestInFlight}finally{readLatestInFlight=null}
   }
 
   async function syncNow(){
@@ -987,6 +991,7 @@
   window.zukaitCloud={
     init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,readLatest,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
     configured:()=>true,
+    get confirmedState(){return confirmedReadRevision>=cloudRevision?confirmedReadState:null},
     get revision(){return cloudRevision},
     get dirty(){return cloudDirty},
     get ready(){return initialDone},

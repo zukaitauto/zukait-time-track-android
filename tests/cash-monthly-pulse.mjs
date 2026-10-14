@@ -51,7 +51,7 @@ delete sandbox.window.zukaitJobCardMaster;
 let reads=0;sandbox.window.zukaitCloud={async readLatest(){reads++;vm.runInContext("state.jobs.push({no:'12079',jobType:'CASH',amount:80,createdAt:"+start+"})",ctx)}};
 await sandbox.window.v251OpenCashPendingAll();assert.equal(reads,1);assert.ok(modal.includes('JC 12079'));assert.ok(modal.includes('OMR 80.000'),'New Reception cash job must appear after confirmed read');
 const confirmedModal=modal;let warning='';sandbox.window.alert=message=>warning=message;sandbox.window.zukaitCloud.readLatest=async()=>{throw Error('PENDING_LOCAL_CHANGES')};
-await sandbox.window.v251OpenCashPulse('out');assert.equal(modal,confirmedModal,'An unconfirmed read cannot silently replace the list with stale records');assert.match(warning,/Could not confirm/);delete sandbox.window.zukaitCloud;
+await sandbox.window.v251OpenCashPulse('out');assert.equal(modal,confirmedModal,'An unconfirmed read cannot silently replace the list with stale records');assert.match(warning,/PENDING_LOCAL_CHANGES/);delete sandbox.window.zukaitCloud;
 
 vm.runInContext('me={role:"Employee"}',ctx);const before=modal;await sandbox.window.v251OpenCashPulse('in');assert.equal(modal,before);
 const stable=fs.readFileSync('app/src/main/assets/supervisor_stable.js','utf8'),managerSource=fs.readFileSync('app/src/main/assets/v67_updates.js','utf8');

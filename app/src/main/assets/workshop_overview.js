@@ -1,7 +1,7 @@
 (function(){'use strict';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=v=>String(v??'').toLowerCase().replace(/[^a-z0-9]/g,'');
-const stateNow=()=>typeof state==='undefined'?{}:state;
+const stateNow=()=>window.zukaitCloud?.confirmedState||(typeof state==='undefined'?{}:state);
 const role=()=>typeof me==='undefined'?'':me?.role||'';
 const allowed=()=>['Manager','Supervisor','Purchaser'].includes(role());
 let fullReviewJob='';
