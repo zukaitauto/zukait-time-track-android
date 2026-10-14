@@ -520,6 +520,28 @@ function preserveLeaveAuthority(candidate: any, current: any, user: any): any {
   return candidate;
 }
 
+
+function preserveEstimateHistory(candidate: any, current: any): any {
+  const incoming=Array.isArray(candidate?.estimates)?candidate.estimates:[];
+  const index=new Map(incoming.filter((e:any)=>e?.id).map((e:any)=>[String(e.id),e]));
+  for(const saved of Array.isArray(current?.estimates)?current.estimates:[]){
+    if(!saved?.id)continue;
+    const proposed:any=index.get(String(saved.id));
+    if(!proposed){incoming.push(cloneValue(saved));continue}
+    if(Number(proposed.revision||0)<Number(saved.revision||0)||(saved.status==="Saved"&&proposed.status!=="Saved")){
+      incoming[incoming.indexOf(proposed)]=cloneValue(saved);
+    }
+  }
+  candidate.estimates=incoming;
+  const audit=Array.isArray(candidate?.estimateAudit)?candidate.estimateAudit:[];
+  const seen=new Set(audit.map((e:any)=>String(e?.id||"")||JSON.stringify(e)));
+  for(const e of Array.isArray(current?.estimateAudit)?current.estimateAudit:[]){
+    const id=String(e?.id||"")||JSON.stringify(e);if(!seen.has(id)){audit.push(cloneValue(e));seen.add(id)}
+  }
+  candidate.estimateAudit=audit;
+  return candidate;
+}
+
 function preserveOperationalHistory(candidate: any, current: any, user: any): any {
   const earlier = new Set((current?.jobDeletes || []).map((x: any) => String(x?.job || "") + ":" + String(x?.deletedAt || "")));
   const deletedJobs = new Set((candidate?.jobDeletes || []).filter((x: any) =>
@@ -1563,6 +1585,7 @@ Deno.serve(async (req: Request) => {
         candidate = preservePaintPurchasingHistory(preserveConsumablesHistory(preserveOperationalHistory(reconcileAutoOvertime(preserveClosedSessions(candidate, current.data), current.data), current.data, user), current.data), current.data);
         const consumablesCorrectionIssue=validateConsumablesManagerCorrections(candidate,current.data,user);
         if(consumablesCorrectionIssue) return reply({ok:false,code:"consumables_correction_forbidden",message:consumablesCorrectionIssue,revision:current.revision,data:current.data},403);
+        candidate = preserveEstimateHistory(candidate, current.data);
         candidate = preserveLeaveAuthority(candidate, current.data, user);
         candidate = preserveManagerTimeAuthority(candidate, current.data);
       candidate = preserveAuthoritativeReopens(candidate, current.data);

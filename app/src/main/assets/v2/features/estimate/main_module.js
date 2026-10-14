@@ -6,7 +6,29 @@ function ensureState(){
   if(typeof state==='undefined'||!state)return;
   state.estimates=Array.isArray(state.estimates)?state.estimates:[];
   state.estimateAudit=Array.isArray(state.estimateAudit)?state.estimateAudit:[];
+  restoreLocalEstimates();
 }
+
+function recoveryKey(){return 'zukait_estimate_recovery_v1:'+String(currentUser()?.id||'')}
+function rememberEstimate(e){
+  if(!e||!currentUser()?.id)return;
+  const rows=JSON.parse(localStorage.getItem(recoveryKey())||'[]');
+  const index=rows.findIndex(x=>String(x.id)===String(e.id));
+  const copy=JSON.parse(JSON.stringify(e));if(index<0)rows.push(copy);else rows[index]=copy;
+  localStorage.setItem(recoveryKey(),JSON.stringify(rows));
+}
+function restoreLocalEstimates(){
+  if(!currentUser()?.id)return;
+  try{
+    const rows=JSON.parse(localStorage.getItem(recoveryKey())||'[]');
+    for(const e of Array.isArray(rows)?rows:[])if(e?.id&&!state.estimates.some(x=>String(x.id)===String(e.id))){
+      state.estimates.push({...e,status:'Draft',recoveredLocal:true});
+    }
+  }catch(error){console.warn('Estimate recovery cache could not be read',error)}
+}
+function savedEstimates(){return state.estimates.filter(e=>e&&e.status==='Saved')}
+function openDrafts(){ensureState();const rows=state.estimates.filter(e=>e&&e.status!=='Saved');openModal(nav('zukaitEstimate.openHome()')+'<div class="est-home"><h3>Draft estimates</h3><p class="est-help">Drafts are not saved quotes. Open one and press Save estimate to confirm it with the server.</p>'+(rows.length?rows.map(estimateCard).join(''):'<p>No drafts.</p>')+'</div>')}
+
 function uid(){return globalThis.crypto?.randomUUID?.()||('est-'+Date.now()+'-'+Math.random().toString(36).slice(2))}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function num(v){const n=Number(String(v??'').replace(',','.'));return Number.isFinite(n)&&n>=0?n:0}
@@ -99,17 +121,18 @@ function nav(back){
 function ensureSharedEstimateUi(){if(document.getElementById('estimateSharedUiStyle'))return;const s=document.createElement('style');s.id='estimateSharedUiStyle';s.textContent='.est-nav{display:flex;gap:5px;align-items:center;margin:0 0 6px}.est-nav button{height:28px!important;min-height:28px!important;width:auto!important;flex:0 0 auto!important;border-radius:8px!important;font-size:9px!important;line-height:1!important;font-weight:900!important;padding:4px 8px!important}.est-back{border:1px solid #93c5fd!important;background:#dbeafe!important;color:#1d4ed8!important}.est-close{border:1px solid #fca5a5!important;background:#fee2e2!important;color:#b91c1c!important}.est-grid2{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}.est-grid2 .est-action{min-height:88px!important;padding:10px 12px!important;border-radius:16px!important;box-shadow:0 3px 12px rgba(15,27,43,.07)!important}@media(max-width:700px){.est-grid2{grid-template-columns:repeat(2,minmax(0,1fr))!important}.est-grid2 .est-action b{font-size:13px!important}.est-grid2 .est-action small{font-size:10px!important}}';document.head.appendChild(s)}
 function estimateCard(e){
   const t=totals(e);
-  return '<button class="est-result" onclick="zukaitEstimate.openEditor(\''+esc(e.id)+'\')"><b>'+esc(e.estimateNo)+'</b> · '+esc(e.date||'')+
+  return '<button class="est-result" onclick="zukaitEstimate.openEditor(\''+esc(e.id)+'\')"><b>'+esc(e.estimateNo)+'</b> · '+(e.status==='Saved'?'Saved':'Draft — not saved')+' · '+esc(e.date||'')+
     '<br>'+esc(e.customerName||'')+' · '+esc(e.makeModel||'')+(e.year?' · '+esc(e.year):'')+
     '<br><span class="small">'+esc(e.registration||'')+' · '+esc(e.type||'LS')+' · '+(e.vatEnabled?'VAT 5%':'NO VAT')+' · OMR '+money(t.total)+'</span></button>';
 }
 function openHome(){
   if(!canUse())return alert('Supervisor or Manager access required.');
   ensureState();ensureStyle();ensureSharedEstimateUi();
-  const recent=state.estimates.slice().sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)).slice(0,4);
+  const recent=savedEstimates().slice().sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)).slice(0,4);
   const html=nav('closeModal()')+'<div class="est-home"><div class="est-hero"><span class="est-eyebrow">ZUKAIT AUTO · SERVICE DESK</span><h3>Repair estimates</h3><p>Create a clear quote, review the costs and share it with your customer.</p></div><div class="est-grid2">'+
     '<button class="est-action" onclick="zukaitEstimate.newEstimate()"><b>➕ New Estimate</b><small>LS or Parts + Labour</small></button>'+
     '<button class="est-action" onclick="zukaitEstimate.openFind()"><b>🔎 Find Estimate</b><small>Estimate / Reg / Mobile / Claim</small></button>'+
+    '<button class="est-action" onclick="zukaitEstimate.openDrafts()"><b>Draft estimates</b><small>Continue unsaved estimates</small></button>'+
     '<button class="est-action" onclick="zukaitEstimate.openRecent()"><b>🕘 Recent Estimates</b><small>Latest saved estimates</small></button>'+
     '<button class="est-action" onclick="zukaitEstimate.openReports()"><b>📊 Reports</b><small>Simple estimate totals</small></button>'+
     '</div><h4 class="est-recent-title">Recent estimates</h4>'+(recent.length?recent.map(estimateCard).join(''):'<div class="est-empty"><b>Your first estimate starts here</b><p>Create an estimate to keep customer details and repair costs together.</p></div>')+'</div>';
@@ -144,7 +167,8 @@ async function newEstimate(reception=null,requestKey=null,additionalRequestId=nu
     if(additionalRequestId)Object.assign(e,{jobCard:reception.job_card,receptionAdditionalRequestId:additionalRequestId});
   }
   if(!e.estimateNo)return alert('Estimate number allocation failed.');
-  state.estimates.unshift(e);audit(e,'CREATE');saveState();openEditor(e.id);return e.id;
+  try{rememberEstimate(e)}catch(error){return alert('Could not retain this draft on the device. Estimate was not saved.');}
+  state.estimates.unshift(e);openEditor(e.id);return e.id;
 }
 let receptionEstimateBusy=false;
 async function newFromReception(rcNo,additionalRequestId=null){
@@ -276,7 +300,9 @@ function draftFromDom(e){
 }
 function recalc(){
   const e=findEstimate(window.__zukaitEstimateCurrent);if(!e)return;
-  const d=draftFromDom(e),t=totals(d),box=document.getElementById('estSummary');if(!box)return;
+  const d=draftFromDom(e),t=totals(d),box=document.getElementById('estSummary');
+  try{rememberEstimate({...e,...d,status:'Draft'})}catch(error){console.warn('Estimate draft could not be retained',error)}
+  if(!box)return;
   const lines=d.type==='LS'
     ?[['Total Labour / Lumpsum',t.labour],['Spare Parts',t.parts],['Misc',t.misc]]
     :[['Total Labour',t.labour],['Total Parts',t.parts],['Misc',t.misc],['Subtotal',t.subtotal]];
@@ -284,8 +310,8 @@ function recalc(){
     (d.vatEnabled?'<div class="est-summary-line"><span>VAT 5%</span><b>OMR '+money(t.vat)+'</b></div>':'')+
     '<div class="est-summary-line total"><span>TOTAL</span><span>OMR '+money(t.total)+'</span></div>';
 }
-let receptionSaveBusy=false;
-function saveCurrent(id){
+let receptionSaveBusy=false,estimateSaveBusy=false;
+async function saveCurrent(id){
   const e=findEstimate(id);if(!e)return;
   const before=totals(e).total,d=draftFromDom(e),u=currentUser()||{};
   if(d.jobCard){const canonicalVin=window.zukaitJobCardMaster?.vin?.(d.jobCard);if(canonicalVin!=null)d.vin=String(canonicalVin)}
@@ -295,8 +321,28 @@ function saveCurrent(id){
       Object.assign(e,saved);recalc();alert(e.estimateNo+' saved.');
     }).catch(x=>alert(x.message||'Estimate was not confirmed. Retry Save with the same details.')).finally(()=>{receptionSaveBusy=false;});
   }
-  Object.assign(e,d,{updatedAt:Date.now(),updatedBy:u.id||'',status:'Saved',revision:Number(e.revision||0)+1});
-  audit(e,'EDIT',before);saveState();recalc();alert(e.estimateNo+' saved.');
+  if(estimateSaveBusy)return;
+  if(!navigator.onLine||!window.zukaitCloud?.syncNow)return alert('Connect to the workshop server before saving. Your draft is retained on this device.');
+  estimateSaveBusy=true;
+  const candidate={...e,...d,updatedAt:Date.now(),updatedBy:u.id||'',status:'Saved',revision:Number(e.revision||0)+1};
+  try{
+    rememberEstimate({...candidate,status:'Draft'});
+    Object.assign(e,candidate);audit(e,'EDIT',before);saveState();
+    const deadline=Date.now()+30000;
+    do{
+      await window.zukaitCloud.syncNow();
+      if(!window.zukaitCloud.dirty)break;
+      await new Promise(resolve=>setTimeout(resolve,300));
+    }while(Date.now()<deadline);
+    const confirmed=findEstimate(id);
+    const matches=confirmed&&confirmed.status==='Saved'&&Object.keys(d).every(key=>JSON.stringify(confirmed[key])===JSON.stringify(candidate[key]));
+    if(window.zukaitCloud.dirty||!matches)throw Error('The server has not confirmed these estimate details. Keep this device data and retry Save.');
+    rememberEstimate(confirmed);recalc();alert(confirmed.estimateNo+' saved on the server.');
+  }catch(error){
+    const current=findEstimate(id);if(current)current.status='Draft';
+    alert(error.message||'Estimate was not confirmed. Your draft remains on this device.');
+  }finally{estimateSaveBusy=false;}
+
 }
 function loadJob(){
   if(findEstimate(window.__zukaitEstimateCurrent)?.receptionNo)return alert('Correct vehicle details in the reception checklist first.');
@@ -314,9 +360,9 @@ function filtered(q){
   return rows.filter(e=>[e.estimateNo,e.customerName,e.mobile,e.makeModel,e.registration,e.vin,e.claimNo,e.jobCard].join(' ').toLowerCase().includes(q));
 }
 function renderFind(){const q=document.getElementById('estFindInput')?.value||'',rows=filtered(q).slice(0,100),el=document.getElementById('estFindResults');if(el)el.innerHTML=rows.length?rows.map(estimateCard).join(''):'<p class="muted">No matching estimate.</p>'}
-function openRecent(){ensureState();const rows=state.estimates.slice().sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)).slice(0,30);openModal(nav('zukaitEstimate.openHome()')+'<div class="est-home"><h3>🕘 Recent Estimates</h3>'+(rows.length?rows.map(estimateCard).join(''):'<div class="est-empty"><b>Your first estimate starts here</b><p>Create an estimate to keep customer details and repair costs together.</p></div>')+'</div>')}
+function openRecent(){ensureState();const rows=savedEstimates().slice().sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)).slice(0,30);openModal(nav('zukaitEstimate.openHome()')+'<div class="est-home"><h3>🕘 Recent Estimates</h3>'+(rows.length?rows.map(estimateCard).join(''):'<div class="est-empty"><b>Your first estimate starts here</b><p>Create an estimate to keep customer details and repair costs together.</p></div>')+'</div>')}
 function openReports(){
-  ensureState();const rows=state.estimates,t=rows.reduce((s,e)=>s+totals(e).total,0),ls=rows.filter(e=>e.type!=='PL').length,pl=rows.filter(e=>e.type==='PL').length;
+  ensureState();const rows=savedEstimates(),t=rows.reduce((s,e)=>s+totals(e).total,0),ls=rows.filter(e=>e.type!=='PL').length,pl=rows.filter(e=>e.type==='PL').length;
   openModal(nav('zukaitEstimate.openHome()')+'<div class="est-home"><h3>📊 Estimate Report</h3><div class="est-grid2"><div class="notice"><b>Total Estimates</b><div class="stat">'+rows.length+'</div></div><div class="notice"><b>Total Quoted</b><div class="stat">OMR '+money(t)+'</div></div><div class="notice"><b>LS</b><div class="stat">'+ls+'</div></div><div class="notice"><b>PL</b><div class="stat">'+pl+'</div></div></div></div>');
 }
 function splitMoney(v){v=Math.round(num(v)*1000);return {ro:Math.floor(v/1000),bz:String(v%1000).padStart(3,'0')}}
@@ -427,7 +473,7 @@ function wrapRender(name){
   const w=function(){const r=fn.apply(this,arguments);setTimeout(ensureDashboardCards,0);setTimeout(ensureDashboardCards,250);return r};w.__estimateWrapped=true;window[name]=w;
 }
 function boot(){ensureState();ensureStyle();wrapRender('renderSupervisor');wrapRender('renderManager');ensureDashboardCards()}
-window.zukaitEstimate={openHome,newEstimate,newFromReception,openEditor,setType,setVat,addRow,removeRow,recalc,saveCurrent,loadJob,openFind,renderFind,openRecent,openReports,preview,printEstimate,pdfEstimate,whatsApp,shareEstimate,ensureDashboardCards,totals,printable,estimateDocumentHtml,shareText,currentOutputEstimate,toggleCustomerParts};
+window.zukaitEstimate={openHome,openDrafts,newEstimate,newFromReception,openEditor,setType,setVat,addRow,removeRow,recalc,saveCurrent,loadJob,openFind,renderFind,openRecent,openReports,preview,printEstimate,pdfEstimate,whatsApp,shareEstimate,ensureDashboardCards,totals,printable,estimateDocumentHtml,shareText,currentOutputEstimate,toggleCustomerParts};
 window.openEstimateModule=openHome;
 document.addEventListener('DOMContentLoaded',boot);setTimeout(boot,0);setTimeout(boot,700);
 new MutationObserver(()=>{wrapRender('renderSupervisor');wrapRender('renderManager');ensureDashboardCards()}).observe(document.documentElement,{childList:true,subtree:true});

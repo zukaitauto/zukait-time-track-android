@@ -4,7 +4,7 @@ import vm from 'node:vm';
 
 const code=fs.readFileSync('app/src/main/assets/v2/features/estimate/main_module.js','utf8');
 const native=fs.readFileSync('app/src/main/java/com/zukait/timetrack/MainActivity.java','utf8');
-const bridgeCalls=[];
+const bridgeCalls=[];let modalHtml='',messages=[];const recovery=new Map();
 const bridge={
   printHtml:html=>bridgeCalls.push(['print',html]),
   printHtmlNamed:(html,title)=>bridgeCalls.push(['print-named',title,html]),
@@ -40,9 +40,9 @@ const ctx={
   document:documentStub,
   MutationObserver:class{constructor(){} observe(){}},
   navigator:{onLine:true,clipboard:{writeText:async()=>{}}},
-  localStorage:{getItem(){return null},setItem(){}},
-  alert(){},
-  openModal(){},
+  localStorage:{getItem:key=>recovery.get(key)||null,setItem:(key,value)=>recovery.set(key,value)},
+  alert:text=>messages.push(text),
+  openModal:html=>modalHtml=html,
   closeModal(){},
   save(){},
   user(id){return {id,name:id}},
@@ -248,3 +248,24 @@ const zeroParts=api.printable({...state.estimates[0],lsSpareParts:0});
 assert.ok(!zeroParts.includes('Spare Parts / Lumpsum'),'Zero lump-sum parts must not create an empty parts section');
 assert.ok(api.printable({...state.estimates[0],lsSpareParts:30}).includes('Spare Parts / Lumpsum'));
 assert.ok(!zeroParts.includes('R.O.')&&!zeroParts.includes('Bz.'),'Amount headings must use a single OMR column');
+
+state.estimates[0].status='Saved';
+state.estimates.push({...structuredClone(state.estimates[0]),id:'UNSAVED',estimateNo:'Zi-Qt016',status:'Draft',makeModel:'RAV4'});
+api.openRecent();assert.ok(!modalHtml.includes('Zi-Qt016'),'Unsaved draft must not appear in Recent Estimates');
+api.openDrafts();assert.ok(modalHtml.includes('Zi-Qt016'));assert.ok(modalHtml.includes('Draft — not saved'));
+let dirty=false,syncCalls=0;
+ctx.save=()=>{dirty=true};
+ctx.window.zukaitCloud={get dirty(){return dirty},async syncNow(){syncCalls++;dirty=false}};
+ctx.document.getElementById=id=>domValues[id]||null;
+ctx.document.querySelectorAll=sel=>sel==='[data-est-lab-row]'?[labRow]:sel==='[data-est-part-row]'?[partRow]:[];
+ctx.window.__zukaitEstimateCurrent='UNSAVED';
+await api.saveCurrent('UNSAVED');
+assert.ok(messages.at(-1).includes('saved on the server'));assert.equal(syncCalls,1);assert.equal(state.estimates.find(e=>e.id==='UNSAVED').status,'Saved');
+assert.ok(recovery.get('zukait_estimate_recovery_v1:SUP1').includes('UNSAVED'),'Confirmed estimate must retain a separate local recovery copy');
+ctx.window.zukaitCloud.syncNow=async()=>{dirty=false;state.estimates=state.estimates.filter(e=>e.id!=='UNSAVED')};
+await api.saveCurrent('UNSAVED');
+assert.ok(!messages.at(-1).includes('saved on the server'),'Remote loss must not be reported as a successful save');
+assert.equal(state.estimates.find(e=>e.id==='UNSAVED').status,'Draft','Missing remote quote must remain recoverable as local draft');
+console.log('PASS: Draft/Recent separation, server-confirmed save, failed confirmation and local recovery');
+
+await import('./estimate-history-authority.mjs');
