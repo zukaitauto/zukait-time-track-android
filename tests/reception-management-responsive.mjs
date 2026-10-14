@@ -15,6 +15,20 @@ for(const engine of [chromium,webkit]){
   await page.evaluate(()=>window.zukaitInsuranceManagement.open());
   const overflow=()=>page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
   assert.equal(await overflow(),false,'Insurance list overflow at '+width);
+
+  await page.locator('.ins-advanced summary').click();
+  await page.evaluate(()=>window.insFilterNodes=Object.fromEntries([...document.querySelectorAll('[data-ins-filter]')].map(el=>[el.dataset.insFilter,el])));
+  for(const [key,value] of [['from','2026-10-07'],['to','2026-10-14']]){
+   const control=page.locator('[data-ins-filter="'+key+'"]');await control.fill(value);await control.dispatchEvent('change');await page.waitForTimeout(30);
+   assert.equal(await control.evaluate((el,key)=>el===window.insFilterNodes[key]&&document.activeElement===el,key),true,'Date picker DOM/focus replaced at '+width);
+   assert.equal(await page.locator('.ins-advanced').evaluate(el=>el.open),true,'Advanced date panel closed at '+width);
+  }
+  const company=page.locator('[data-ins-filter="company"]');await company.focus();await company.selectOption('Long Insurance Company Name');await page.waitForTimeout(30);
+  assert.equal(await company.evaluate(el=>el===window.insFilterNodes.company&&document.activeElement===el),true,'Company picker DOM/focus replaced at '+width);
+  const search=page.locator('[data-ins-filter="search"]');await search.fill('Toyota');await page.waitForTimeout(350);
+  assert.equal(await search.evaluate(el=>el===window.insFilterNodes.search&&document.activeElement===el),true,'Search lost focus during filter results at '+width);
+  assert.equal(await page.locator('.ins-advanced').evaluate(el=>el.open),true,'Date panel must remain open across all filters');
+
   await page.locator('[data-section=pending]').click();await page.locator('[data-ins=job]').click();await page.locator('[data-ins=lpo]').click();assert.equal(await overflow(),false,'LPO form overflow at '+width);
   await page.close();
  }}finally{await browser.close();}

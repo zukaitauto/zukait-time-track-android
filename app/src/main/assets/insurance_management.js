@@ -1,6 +1,6 @@
 (function(){'use strict';
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- let section='jobs',filters={},page=0,result,serial=0,summaryCache=null,companiesCache=[];
+ let section='jobs',filters={},page=0,result,serial=0,summaryCache=null,companiesCache=[],filterTimer;
  function role(){return window.me?.role||'';}
  function style(){if(document.getElementById('ins-style'))return;const s=document.createElement('style');s.id='ins-style';s.textContent=`
  .ins-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px}.ins-summary button{background:#fff!important;color:#213547!important;text-align:left;padding:16px;border:1px solid #dae4ec!important;border-radius:14px;min-width:0;white-space:normal;box-shadow:0 2px 8px #16324b12;font-weight:700;font-size:15px}.ins-summary b{display:block;font-size:25px;margin-top:8px;color:#087b81}.ins-summary button:nth-child(2) b{color:#2563eb}.ins-summary button:nth-child(3) b{color:#b45309}.ins-summary button:nth-child(4) b{color:#7c3aed}
@@ -25,7 +25,7 @@
  }
  function sectionTitle(){return ({jobs:'Insurance Job Cards',pending:'LPO Pending',wip:'Work in Progress',delivered:'Delivered Insurance Job Cards',collected:'LPO Collected Amount',approval:'Approval Pending'})[section]||'Insurance Job Cards';}
  function jobDetails(no){
-  const r=result?.rows?.find(x=>String(x.job_card)===String(no));if(!r)return;
+  const r=result?.rows?.find(x=>String(x.job_card)===String(no));if(!r)return;cancelPendingList();
   const master=window.zukaitJobCardMaster;
   const identity=master?.identity?.(no)||null;
   const cost=master?.costs?.(no)||(typeof window.v128JobCostData==='function'?window.v128JobCostData(no):null);
@@ -38,28 +38,54 @@
   window.zukaitReception.dashboardShell('Insurance Job Details','<div class="ins-detail-actions"><button type="button" class="ins-detail-back" data-ins="back">← Back to '+esc(sectionTitle())+'</button><button type="button" data-ins="detail-print">Print</button></div><div class="ins-detail-head"><h3>JC '+esc(r.job_card)+'</h3><strong>'+esc([vehicle,year].filter(Boolean).join(' '))+'</strong><p>'+esc(r.insurance_company||'—')+'</p></div><div class="ins-detail-grid">'+tiles.map(([k,v],i)=>'<div class="ins-detail-tile'+(k==='Total Expense'?' ins-detail-total':'')+'"><small>'+esc(k)+'</small><strong>'+esc(v)+'</strong></div>').join('')+'</div>'+(section==='pending'?'<button type="button" data-ins="lpo" data-job="'+esc(no)+'">Enter LPO</button>':''));
   document.getElementById('rc-root')?.addEventListener('click',onClick);
  }
+ function listHtml(){return '<div class="ins-compact-heading">'+esc(sectionTitle())+' · '+result.total+' records</div>'+
+   '<div class="ins-list-scroll" role="region" aria-label="'+esc(sectionTitle())+' table" tabindex="0"><table class="ins-jobs-table"><thead><tr>'+['No.','Date','JC Number','Make / Model / Year','Claim Number','Insurance Company','Delivery Date','LPO Amount (OMR)'].map(h=>'<th scope="col">'+h+'</th>').join('')+'</tr></thead><tbody>'+result.rows.map((r,i)=>{const approval=section==='approval',no=approval?r.rc_no:r.job_card,identity=approval?null:window.zukaitJobCardMaster?.identity?.(no),vehicle=identity?.vehicle||r.vehicle||'',year=identity?.year||r.year||'',values=[page*50+i+1,r.date||'—',no||'—',[vehicle,year].filter(Boolean).join(' ')||'—',r.claim||'—',r.insurance_company||'—',r.delivered_date||'—',money(r.lpo_amount)];return '<tr tabindex="0" role="button" class="ins-job-line '+(r.delivered_date?'ins-delivered':'ins-wip')+'" data-ins="'+(approval?'checklist':'job')+'" data-job="'+esc(no)+'" aria-label="Open '+(approval?'Checklist ':'Insurance Job ')+esc(no)+'">'+values.map((v,k)=>'<td'+(k===2?' class="ins-jc-number"':'')+'>'+esc(v)+'</td>').join('')+'</tr>';}).join('')+'</tbody></table></div>'+
+   '<div class="ins-toolbar"><button data-ins="previous"'+(page===0?' disabled':'')+'>Previous</button><span>Page '+(page+1)+'</span><button data-ins="next"'+((page+1)*50>=result.total?' disabled':'')+'>Next</button></div>';}
+ function cancelPendingList(){++serial;clearTimeout(filterTimer);}
+ function syncCompanies(){
+  const select=document.querySelector('#rc-root [data-ins-filter="company"]');
+  if(!select||document.activeElement===select)return;
+  const values=[...(result?.companies||companiesCache)];
+  if(filters.company&&!values.includes(filters.company))values.push(filters.company);
+  const signature=JSON.stringify(values);
+  if(select.dataset.insCompanies===signature)return;
+  select.innerHTML='<option value="">All</option>'+values.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');
+  select.value=filters.company||'';select.dataset.insCompanies=signature;
+ }
+ function onFilter(e){
+  const key=e.target.dataset.insFilter;if(!key)return;
+  filters[key]=e.target.value;page=0;clearTimeout(filterTimer);
+  if(key==='search')filterTimer=setTimeout(()=>void load(),280);
+  else void load();
+ }
  function render(){
   style();const summary=result.summary||summaryCache||{collected_amount:0,delivered_count:0,approval_pending:0,wip_count:0};
   const summaries=[['collected','Monthly Insurance LPO Collected Amount','OMR '+money(summary.collected_amount)],['delivered','Monthly Delivered Insurance Job Cards',summary.delivered_count],['approval','Approval Pending',summary.approval_pending],['wip','Work in Progress',summary.wip_count]];
+  const existing=document.getElementById('rc-root'),results=existing?.querySelector('#ins-results');
+  if(results&&existing.querySelector('[data-ins-filter="company"]')){
+   summaries.forEach(([action,label,value])=>{const count=existing.querySelector('[data-ins="summary"][data-section="'+action+'"] b');if(count)count.textContent=String(value??'');});
+   existing.querySelectorAll('.ins-toolbar [data-ins="section"]').forEach(button=>button.setAttribute('aria-pressed',String(section===button.dataset.section)));
+   const left=results.querySelector('.ins-list-scroll')?.scrollLeft||0;
+   results.innerHTML=listHtml();const scroller=results.querySelector('.ins-list-scroll');if(scroller)scroller.scrollLeft=left;
+   syncCompanies();return;
+  }
   window.zukaitReception.dashboardShell('Insurance Management',
    '<div class="ins-summary">'+summaries.map(([action,label,value])=>'<button data-ins="summary" data-section="'+action+'">'+esc(label)+'<b>'+esc(value)+'</b></button>').join('')+'</div>'+
    '<div class="ins-toolbar"><button data-ins="section" data-section="jobs" aria-pressed="'+(section==='jobs')+'">Insurance Job Cards</button><button data-ins="section" data-section="pending" aria-pressed="'+(section==='pending')+'">LPO Pending</button><button data-ins="print">Print</button><button data-ins="refresh">Refresh</button></div>'+
    '<div class="ins-filters"><label>Insurance Company<select data-ins-filter="company"><option value="">All</option>'+(result.companies||companiesCache).map(c=>'<option'+(filters.company===c?' selected':'')+'>'+esc(c)+'</option>').join('')+'</select></label><label>Month<input type="month" data-ins-filter="month" value="'+esc(filters.month)+'"></label></div>'+
    '<details class="ins-advanced"><summary>Advanced Date Filters</summary><div class="ins-filters"><label>From<input type="date" data-ins-filter="from" value="'+esc(filters.from)+'"></label><label>To<input type="date" data-ins-filter="to" value="'+esc(filters.to)+'"></label></div></details>'+
    '<label class="ins-search">Search<input data-ins-filter="search" value="'+esc(filters.search||'')+'" placeholder="JC / Vehicle / Insurance"></label>'+
-   '<div class="ins-compact-heading">'+esc(sectionTitle())+' · '+result.total+' records</div>'+
-   '<div class="ins-list-scroll" role="region" aria-label="'+esc(sectionTitle())+' table" tabindex="0"><table class="ins-jobs-table"><thead><tr>'+['No.','Date','JC Number','Make / Model / Year','Claim Number','Insurance Company','Delivery Date','LPO Amount (OMR)'].map(h=>'<th scope="col">'+h+'</th>').join('')+'</tr></thead><tbody>'+result.rows.map((r,i)=>{const approval=section==='approval',no=approval?r.rc_no:r.job_card,identity=approval?null:window.zukaitJobCardMaster?.identity?.(no),vehicle=identity?.vehicle||r.vehicle||'',year=identity?.year||r.year||'',values=[page*50+i+1,r.date||'—',no||'—',[vehicle,year].filter(Boolean).join(' ')||'—',r.claim||'—',r.insurance_company||'—',r.delivered_date||'—',money(r.lpo_amount)];return '<tr tabindex="0" role="button" class="ins-job-line '+(r.delivered_date?'ins-delivered':'ins-wip')+'" data-ins="'+(approval?'checklist':'job')+'" data-job="'+esc(no)+'" aria-label="Open '+(approval?'Checklist ':'Insurance Job ')+esc(no)+'">'+values.map((v,k)=>'<td'+(k===2?' class="ins-jc-number"':'')+'>'+esc(v)+'</td>').join('')+'</tr>';}).join('')+'</tbody></table></div>'+
-   '<div class="ins-toolbar"><button data-ins="previous"'+(page===0?' disabled':'')+'>Previous</button><span>Page '+(page+1)+'</span><button data-ins="next"'+((page+1)*50>=result.total?' disabled':'')+'>Next</button></div>');
-  const root=document.getElementById('rc-root');root.addEventListener('click',onClick);root.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('.ins-job-line'))onClick(e);});root.addEventListener('change',e=>{const key=e.target.dataset.insFilter;if(!key)return;filters[key]=e.target.value;page=0;void load();});
+   '<div id="ins-results">'+listHtml()+'</div>');
+  const root=document.getElementById('rc-root');root.addEventListener('click',onClick);root.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('.ins-job-line'))onClick(e);});root.addEventListener('change',onFilter);root.addEventListener('input',e=>{if(e.target.dataset.insFilter==='search')onFilter(e);});root.addEventListener('focusout',e=>{if(e.target.dataset.insFilter==='company')setTimeout(syncCompanies,0);});syncCompanies();
  }
- async function load(){if(role()!=='Manager')return;const id=++serial;
-  try{const approval=section==='approval';const data=await window.zukaitReception.action(approval?{action:'reception_dashboard',section:'waiting',...filters,page}:{action:'insurance_dashboard',section,...filters,page});if(id!==serial)return;if(!approval){summaryCache=data.summary;companiesCache=data.companies||[];}result=data;render();}
+ async function load(){if(role()!=='Manager')return;const id=++serial,host=document.getElementById('rc-root'),view=host?.querySelector('#ins-results,[data-ins-loading],.ins-detail-grid,#ins-lpo');if(!view)return;
+  try{const approval=section==='approval';const data=await window.zukaitReception.action(approval?{action:'reception_dashboard',section:'waiting',...filters,page}:{action:'insurance_dashboard',section,...filters,page});if(id!==serial||!view.isConnected||document.getElementById('rc-root')!==host)return;if(!approval){summaryCache=data.summary;companiesCache=data.companies||[];}result=data;const error=document.getElementById('rc-error');if(error)error.textContent='';render();}
   catch(e){const host=document.getElementById('rc-error');if(host)host.textContent=e.message||String(e);}
  }
- async function open(){if(role()!=='Manager')return;filters={company:'',month:new Date(Date.now()+14400000).toISOString().slice(0,7),from:'',to:'',search:''};page=0;section='jobs';
-  window.zukaitReception.dashboardShell('Insurance Management','<p>Loading authoritative records…</p>');await load();}
+ async function open(){if(role()!=='Manager')return;cancelPendingList();filters={company:'',month:new Date(Date.now()+14400000).toISOString().slice(0,7),from:'',to:'',search:''};page=0;section='jobs';
+  window.zukaitReception.dashboardShell('Insurance Management','<p data-ins-loading>Loading authoritative records…</p>');await load();}
  function pendingKey(){return 'zukait_insurance_lpo_pending:'+window.zukaitReception.endpoint+':'+window.me.id;}
- function lpo(no){const row=result.rows.find(r=>r.job_card===no);if(!row)return;
+ function lpo(no){const row=result.rows.find(r=>r.job_card===no);if(!row)return;cancelPendingList();
   let pending=null;try{pending=JSON.parse(localStorage.getItem(pendingKey())||'null');}catch(e){alert('Saved LPO request could not be read. Ask the Manager to reconcile this device before making changes.');return;}
   window.zukaitReception.dashboardShell('LPO · Job Card '+no,'<p>Insurance LPO amount and received date are separate from the final invoice. Corrections require a remark and retain history.</p>'+
    (pending?'<p>A saved LPO entry for '+esc(pending.job_card)+' needs confirmation.</p><button data-ins="retry">Confirm Saved LPO Entry</button>':'')+
@@ -82,7 +108,7 @@
  async function onClick(e){const button=e.target.closest('[data-ins]');if(!button)return;e.preventDefault();try{
   const action=button.dataset.ins;if(action==='summary'||action==='section'){section=button.dataset.section;page=0;return load();}
   if(action==='lpo')return lpo(button.dataset.job);
-  if(action==='checklist')return window.zukaitReception.openRecord(button.dataset.job);if(action==='job')return jobDetails(button.dataset.job);
+  if(action==='checklist'){cancelPendingList();return window.zukaitReception.openRecord(button.dataset.job);}if(action==='job')return jobDetails(button.dataset.job);
   if(action==='previous'&&page>0){page--;return load();}if(action==='next'&&(page+1)*50<result.total){page++;return load();}
   if(action==='detail-print'){window.print();return;}if(action==='refresh'||action==='back')return load();if(action==='print')return print();
   if(action==='retry'){const body=JSON.parse(localStorage.getItem(pendingKey())||'null');if(body)await save(body);}
