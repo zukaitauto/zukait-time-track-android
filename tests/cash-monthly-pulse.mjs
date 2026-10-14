@@ -35,6 +35,20 @@ vm.runInContext('state={jobs:state.jobs.map(j=>j.no==="IN"?{...j,jobType:"INSURA
 vm.runInContext('me={role:"Manager"}',ctx);pulse.install();assert.equal(manager.children[1].id,'managerCashPulseSlot');assert.equal((manager.children[1].innerHTML.match(/class="v251-cash-circle /g)||[]).length,3);
 sandbox.window.v251OpenCashPulse('out');assert.ok(modal.includes('Cash Vehicle Out'));assert.ok(modal.includes('OMR 35.000'));assert.ok(modal.includes('OMR 0.000'));assert.ok(modal.includes('zukaitOpenCashDetails'));assert.ok(!modal.includes('360°'));
 sandbox.window.v251OpenCashPendingAll();assert.ok(modal.includes('JC OLD'));assert.ok(!modal.includes('JC IN'));assert.ok(modal.includes('Not delivered'));
+// Integration regression: identity display helpers must never overwrite financial fields.
+const octoberJobs=[['12053',35],['11944',400],['12045',60],['12051',65],['12047',35],['12020',230],['12041',42],['12026',200]].map(([no,amount])=>job(no,start+1,amount,{delivered:true,deliveredAt:start+2,finalInvoiceAmount:amount}));
+sandbox.fixture=octoberJobs;vm.runInContext('state={jobs:fixture}',ctx);
+sandbox.window.zukaitJobCardMaster={display:(no,j)=>({...j,vehicle:'Current identity',amount:0,finalInvoiceAmount:0})};
+for(const role of ['Manager','Supervisor']){
+ sandbox.fixtureRole=role;vm.runInContext('me={role:fixtureRole}',ctx);
+ assert.equal(pulse.rows('out').length,8);assert.equal(pulse.total(pulse.rows('out'),'out'),1067,'Identity overlay must not replace saved invoice amounts');
+ sandbox.window.v251OpenCashPulse('out');assert.ok(modal.includes('OMR 1067.000'));assert.ok(modal.includes('OMR 35.000'));
+}
+vm.runInContext("state.jobs[0]={...state.jobs[0],finalInvoiceAmount:undefined};",ctx);
+assert.equal(pulse.total(pulse.rows('out'),'out'),1067,'Unentered invoice must retain the cash amount fallback');
+vm.runInContext("state.jobs[0]={...state.jobs[0],finalInvoiceAmount:0};",ctx);
+assert.equal(pulse.total(pulse.rows('out'),'out'),1032,'A genuinely recorded zero invoice must remain zero');
+delete sandbox.window.zukaitJobCardMaster;
 vm.runInContext('me={role:"Employee"}',ctx);const before=modal;sandbox.window.v251OpenCashPulse('in');assert.equal(modal,before);
 const stable=fs.readFileSync('app/src/main/assets/supervisor_stable.js','utf8'),managerSource=fs.readFileSync('app/src/main/assets/v67_updates.js','utf8');
 assert.ok(stable.includes("v251KpiHTML()+"));assert.ok(stable.includes('window.v251CashPulse?.install?.()'));assert.ok(managerSource.includes('id="managerCashPulseSlot"'));assert.ok(managerSource.includes('window.v251CashPulse?.install?.()'));

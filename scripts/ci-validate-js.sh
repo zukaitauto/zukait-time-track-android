@@ -73,3 +73,11 @@ node --check app/src/main/assets/v2/features/insurance/reception.js
 
 node --check app/src/main/assets/job_card_edit.js
 node --check supabase/functions/workshop-api/job_edit_rules.js
+
+node tests/shared-financial-display.mjs
+node tests/cash-monthly-pulse.mjs
+node tests/invoice-entry.mjs
+node tests/cloud-dashboard-stability.mjs
+node tests/leave-sync-authority.mjs
+node tests/leave-sync-race.mjs
+node tests/supervisor-leave-dashboard.mjs

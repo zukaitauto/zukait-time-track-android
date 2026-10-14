@@ -31,7 +31,8 @@ for(const user of [manager,supervisor,employee]){
  if(user.role==='Employee'){await ctx.window.zukaitSaveInvoiceEntry('1');assert.equal(calls,0);continue;}
  const launcher=dashboard.querySelector('[data-invoice-entry]');assert.ok(launcher);assert.equal(launcher.dataset.qcCount,'3');launcher.onclick();assert.match(modal,/Invoice Entry/);ctx.window.render();assert.equal(dashboard.children.filter(x=>x.dataset.invoiceEntry).length,1);
  assert.equal((nodes.invoiceBody.innerHTML.match(/class="invoice-circle /g)||[]).length,3);
- await ctx.window.zukaitOpenInvoiceEntry('Cash');assert.match(nodes.invoiceBody.innerHTML,/JC 1/);assert.doesNotMatch(nodes.invoiceBody.innerHTML,/JC 2/);
+ ctx.window.zukaitJobCardMaster={display:(no,j)=>({...j,amount:0,finalInvoiceAmount:0})};
+ await ctx.window.zukaitOpenInvoiceEntry('Cash');assert.match(nodes.invoiceBody.innerHTML,/JC 1/);assert.match(nodes.invoiceBody.innerHTML,/id="invoiceAmount-1"[^>]*value=""/,'Missing invoice amount must remain blank despite a cached display helper');delete ctx.window.zukaitJobCardMaster;assert.doesNotMatch(nodes.invoiceBody.innerHTML,/JC 2/);
  ctx.window.zukaitOpenInvoiceJob('1');assert.match(modal,/Invoice Date/);assert.match(modal,/Save Invoice/);assert.match(modal,/Back to pending list/);
  await ctx.window.zukaitSaveInvoiceEntry('1');assert.equal(calls,1);assert.equal(ctx.window.testPending().length,2);assert.match(nodes.invoiceBody.innerHTML,/No pending invoices/);assert.equal(ctx.state.jobs[0].delivered,true);
  ctx.window.v42AfterCloudPull();assert.equal(launcher.dataset.qcCount,'2');events['zukait-live-status']();assert.equal(dashboard.children.filter(x=>x.dataset.invoiceEntry).length,1);
