@@ -126,6 +126,7 @@
     try{window.zukaitEstimate?.refreshLists?.()}catch(_){}
     try{window.zukaitInvoiceSyncRefresh?.()}catch(_){}
     try{window.v251CashPulse?.install?.()}catch(_){}
+    try{window.zukaitWorkshopOverview?.refreshShared?.()}catch(_){}
     let structuralChanged=true;
     try{
       structuralChanged=JSON.stringify(roleStructuralSnapshot(beforeState,me))!==JSON.stringify(roleStructuralSnapshot(afterState,me));
@@ -637,7 +638,7 @@
       setServerConnection('connected');
       const remoteRevision=Number(r.revision||0);
       lastProbedRevision=remoteRevision;
-      if(remoteRevision===cloudRevision)return false;
+      if(remoteRevision===cloudRevision&&(cloudDirty||Date.now()-lastSuccessfulSyncAt<30000))return false;
 
       // Never pull over a local click. Commit it first; the server will rebase
       // it transactionally if another device already advanced the revision.
@@ -848,6 +849,19 @@
     pushTimer=setTimeout(()=>push(0),0);
   };
 
+  // Read-only lists must never silently present a pending local cache as current.
+  async function readLatest(){
+    if(!navigator.onLine)throw new Error('OFFLINE');
+    const deadline=Date.now()+20000;
+    while(pullInFlight||cloudPushing){
+      if(Date.now()>=deadline)throw new Error('SYNC_BUSY');
+      await new Promise(resolve=>setTimeout(resolve,40));
+    }
+    if(cloudDirty)throw new Error('PENDING_LOCAL_CHANGES');
+    if(!(await pull(true)))throw new Error('SYNC_NOT_CONFIRMED');
+    return {revision:cloudRevision};
+  }
+
   async function syncNow(){
     if(!navigator.onLine)return status('OFFLINE — CHANGE QUEUED','warn');
     if(cloudDirty)await push(0);
@@ -971,7 +985,7 @@
     publishLiveStatus(false);
   });
   window.zukaitCloud={
-    init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
+    init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,readLatest,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
     configured:()=>true,
     get revision(){return cloudRevision},
     get dirty(){return cloudDirty},

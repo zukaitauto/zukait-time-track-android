@@ -33,8 +33,8 @@ const writes=slot.writes;pulse.install();assert.equal(slot.writes,writes,'unchan
 vm.runInContext('state={jobs:state.jobs.map(j=>j.no==="IN"?{...j,amount:15}:j)}',ctx);pulse.install();assert.ok(slot.innerHTML.includes('OMR 85.000'));
 vm.runInContext('state={jobs:state.jobs.map(j=>j.no==="IN"?{...j,jobType:"INSURANCE"}:j)}',ctx);pulse.install();assert.equal(pulse.rows('in').length,2);assert.equal(pulse.pendingAll().length,1);
 vm.runInContext('me={role:"Manager"}',ctx);pulse.install();assert.equal(manager.children[1].id,'managerCashPulseSlot');assert.equal((manager.children[1].innerHTML.match(/class="v251-cash-circle /g)||[]).length,3);
-sandbox.window.v251OpenCashPulse('out');assert.ok(modal.includes('Cash Vehicle Out'));assert.ok(modal.includes('OMR 35.000'));assert.ok(modal.includes('OMR 0.000'));assert.ok(modal.includes('zukaitOpenCashDetails'));assert.ok(!modal.includes('360°'));
-sandbox.window.v251OpenCashPendingAll();assert.ok(modal.includes('JC OLD'));assert.ok(!modal.includes('JC IN'));assert.ok(modal.includes('Not delivered'));
+await sandbox.window.v251OpenCashPulse('out');assert.ok(modal.includes('Cash Vehicle Out'));assert.ok(modal.includes('OMR 35.000'));assert.ok(modal.includes('OMR 0.000'));assert.ok(modal.includes('zukaitOpenCashDetails'));assert.ok(!modal.includes('360°'));
+await sandbox.window.v251OpenCashPendingAll();assert.ok(modal.includes('JC OLD'));assert.ok(!modal.includes('JC IN'));assert.ok(modal.includes('Not delivered'));
 // Integration regression: identity display helpers must never overwrite financial fields.
 const octoberJobs=[['12053',35],['11944',400],['12045',60],['12051',65],['12047',35],['12020',230],['12041',42],['12026',200]].map(([no,amount])=>job(no,start+1,amount,{delivered:true,deliveredAt:start+2,finalInvoiceAmount:amount}));
 sandbox.fixture=octoberJobs;vm.runInContext('state={jobs:fixture}',ctx);
@@ -42,13 +42,18 @@ sandbox.window.zukaitJobCardMaster={display:(no,j)=>({...j,vehicle:'Current iden
 for(const role of ['Manager','Supervisor']){
  sandbox.fixtureRole=role;vm.runInContext('me={role:fixtureRole}',ctx);
  assert.equal(pulse.rows('out').length,8);assert.equal(pulse.total(pulse.rows('out'),'out'),1067,'Identity overlay must not replace saved invoice amounts');
- sandbox.window.v251OpenCashPulse('out');assert.ok(modal.includes('OMR 1067.000'));assert.ok(modal.includes('OMR 35.000'));
+ await sandbox.window.v251OpenCashPulse('out');assert.ok(modal.includes('OMR 1067.000'));assert.ok(modal.includes('OMR 35.000'));
 }
 for(const invoice of [undefined,null,'','invalid',false]){sandbox.fixtureInvoice=invoice;vm.runInContext("state.jobs[0]={...state.jobs[0],finalInvoiceAmount:fixtureInvoice};",ctx);assert.equal(pulse.total(pulse.rows('out'),'out'),1067,'Unentered invoice must retain the cash amount fallback');}
 vm.runInContext("state.jobs[0]={...state.jobs[0],finalInvoiceAmount:0};",ctx);
 assert.equal(pulse.total(pulse.rows('out'),'out'),1032,'A genuinely recorded zero invoice must remain zero');
 delete sandbox.window.zukaitJobCardMaster;
-vm.runInContext('me={role:"Employee"}',ctx);const before=modal;sandbox.window.v251OpenCashPulse('in');assert.equal(modal,before);
+let reads=0;sandbox.window.zukaitCloud={async readLatest(){reads++;vm.runInContext("state.jobs.push({no:'12079',jobType:'CASH',amount:80,createdAt:"+start+"})",ctx)}};
+await sandbox.window.v251OpenCashPendingAll();assert.equal(reads,1);assert.ok(modal.includes('JC 12079'));assert.ok(modal.includes('OMR 80.000'),'New Reception cash job must appear after confirmed read');
+const confirmedModal=modal;let warning='';sandbox.window.alert=message=>warning=message;sandbox.window.zukaitCloud.readLatest=async()=>{throw Error('PENDING_LOCAL_CHANGES')};
+await sandbox.window.v251OpenCashPulse('out');assert.equal(modal,confirmedModal,'An unconfirmed read cannot silently replace the list with stale records');assert.match(warning,/Could not confirm/);delete sandbox.window.zukaitCloud;
+
+vm.runInContext('me={role:"Employee"}',ctx);const before=modal;await sandbox.window.v251OpenCashPulse('in');assert.equal(modal,before);
 const stable=fs.readFileSync('app/src/main/assets/supervisor_stable.js','utf8'),managerSource=fs.readFileSync('app/src/main/assets/v67_updates.js','utf8');
 assert.ok(stable.includes("v251KpiHTML()+"));assert.ok(stable.includes('window.v251CashPulse?.install?.()'));assert.ok(managerSource.includes('id="managerCashPulseSlot"'));assert.ok(managerSource.includes('window.v251CashPulse?.install?.()'));
 assert.ok(source.includes('grid-template-columns:repeat(3,minmax(0,1fr))'));
