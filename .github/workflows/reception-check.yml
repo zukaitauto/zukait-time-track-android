@@ -683,3 +683,56 @@ jobs:
           set -euo pipefail
           gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
           echo 'Owner-authorized V324 dispatched to the existing coordinated publisher'
+
+
+  dispatch_pinned_v325:
+    name: Publish owner-authorized V325 shared financial and dashboard read corrections
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/architecture-v2' &&
+      github.event.head_commit.message == 'Owner-approved one-time V325 dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify exact owner-approved V325 source and matching checks
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SOURCE='3188ebc895b616e42dda8487ad1bca4a00fb95c5'
+          jq -e --arg sha "$SOURCE" '
+            .approvedForStaff == true and .versionName == "V325" and
+            .versionCode == 288 and .sourceCommit == $sha and
+            .releaseScope == "phase1-compatible-ui" and
+            .ownerRequestedImmediateRelease == true and
+            .backupDeferredByOwner == true and
+            .productionBackendChanges == false and
+            .phase2ActivationApproved == false and
+            .physicalAcceptanceStatus == "NOT_RUN" and
+            .signedAcceptanceRun == 38578305226 and
+            .verificationRun == 38578305117
+          ' release-ui-request.json
+          node scripts/verify-ui-only-release.cjs
+          for ITEM in "38578305226:.github/workflows/build-signed-acceptance.yml" "38578305117:.github/workflows/reception-check.yml" "38578305381:.github/workflows/estimate-check.yml"; do
+            RUN="${ITEM%%:*}"
+            WORKFLOW="${ITEM#*:}"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN" | jq -e --arg sha "$SOURCE" --arg workflow "$WORKFLOW" '
+              .conclusion == "success" and .head_sha == $sha and
+              .head_branch == "architecture-v2" and .path == $workflow
+            '
+          done
+      - name: Dispatch existing coordinated V325 publisher
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
+          echo 'Owner-authorized V325 dispatched to the existing coordinated publisher'
