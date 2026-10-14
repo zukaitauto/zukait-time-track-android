@@ -8,8 +8,8 @@ class Clock extends Date {
   constructor(...args){super(...(args.length?args:[now]));}
   static now(){return now;}
 }
-const elements=new Map(),drawn=[],shared=[];
-const element=()=>({innerHTML:'',classList:{add(){}},onclick:null,onchange:null,focus(){},contains(){return true;}});
+const elements=new Map(),drawn=[],shared=[],ticks=[];
+const element=()=>({isConnected:true,value:'',innerHTML:'',classList:{add(){}},onclick:null,onchange:null,focus(){},contains(){return true;}});
 elements.set('modal',element());
 const canvasContext={
   font:'',fillStyle:'',textAlign:'',textBaseline:'',
@@ -43,7 +43,7 @@ const ctx={Date:Clock,users,state,me:{role:'Supervisor'},
   fmt:minutes=>String(minutes),
   empStatus(){return 'Paused';},
   totalForAssignment(){return 0;},
-  setInterval(){return 1;},clearInterval(){},
+  setInterval(fn){ticks.push(fn);return ticks.length;},clearInterval(){},
   showSupervisorModal(title,html){
     modalCalls++;
     for(const match of html.matchAll(/id="([^"]+)"/g))elements.set(match[1],element());
@@ -78,3 +78,18 @@ assert.equal(JSON.stringify(state),unchanged,'rendering/sharing must not mutate 
 ctx.me.role='Employee';ctx.openTechnicianTimeDetails('E1');
 assert.equal(modalCalls,1,'Employee must not gain Supervisor reporting permissions');
 console.log('Supervisor Time Details vehicle labels and native image sharing passed.');
+
+ctx.me.role='Manager';ctx.state.sessions=[];
+ctx.zukaitCloud={async syncNow(){ctx.state.sessions=[makeSession('SYNC','12062','2026-10-10T04:25:00Z','2026-10-10T05:00:00Z')]}};
+await ctx.openTechnicianTimeDetails('E1');
+assert.match(elements.get('twTimeDetails').innerHTML,/2 time events/,'Web Time Details must read sessions arriving during sync');
+const dateNode=elements.get('twTimeDate');dateNode.value='2026-10-10';
+ctx.state.sessions.push(makeSession('NEW','12063','2026-10-10T06:00:00Z','2026-10-10T06:30:00Z'));
+ticks.at(-1)();assert.match(elements.get('twTimeResults').innerHTML,/4 time events/,'Open Time Details must update after another sync');
+assert.equal(elements.get('twTimeDate'),dateNode,'Live refresh must preserve date control');assert.equal(dateNode.value,'2026-10-10');
+console.log('PASS: Manager Time Details waits for synchronized sessions and refreshes in place');
+
+for(let n=1;n<=19;n++)users.push({id:'EMP'+String(n).padStart(3,'0'),name:'Staff '+n,role:'Employee',department:'Denter'});
+ctx.zukaitCloud.syncNow=async()=>{ctx.state.sessions=users.filter(u=>u.id.startsWith('EMP')).map(u=>({...makeSession('S-'+u.id,'12062','2026-10-10T04:25:00Z','2026-10-10T05:00:00Z'),emp:u.id}))};
+for(let n=1;n<=19;n++){await ctx.openTechnicianTimeDetails('EMP'+String(n).padStart(3,'0'));assert.match(elements.get('twTimeDetails').innerHTML,/2 time events/,'Every employee must read exactly their own synchronized events');}
+console.log('PASS: Time Details synchronized reads for all 19 employees');

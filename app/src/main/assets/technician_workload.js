@@ -8,7 +8,7 @@
   const person=id=>(users||[]).find(u=>u&&same(u.id,id));
   const vehicle=j=>[j.vehicle||[j.make||j.brand,j.model].filter(Boolean).join(' '),j.year&&!String(j.vehicle||'').includes(String(j.year))?j.year:''].filter(Boolean).join(' ')||'—';
   const minutes=n=>fmt(Math.max(0,Number(n)||0));
-  let timer=null;
+  let timer=null,timeOpening=0;
 
   // Read the existing synced projection; never create a second assignment store.
   function present(emp){
@@ -245,13 +245,16 @@
     const tableRows=rows.map(r=>r.action==='IDLE'
       ?'<tr class="tw-time-idle"><td colspan="4"><strong>IDLE TIME: '+esc(idleText(r.duration))+'</strong><small>'+esc(timeText(r.from)+' – '+timeText(r.at))+'</small></td></tr>'
       :'<tr><td class="tw-history-clock">'+esc(timeText(r.at))+(!dateFilter?'<small>'+esc(dayKey(r.at))+'</small>':'')+'</td><td>'+esc(r.job)+'</td><td class="tw-time-vehicle">'+esc(r.vehicle)+'</td><td><b class="tw-time-action tw-time-'+esc(r.action.toLowerCase())+'">'+esc(r.action)+'</b></td></tr>').join('');
-    return '<div class="tw-time-filters"><label>Date<input id="twTimeDate" type="date" value="'+esc(dateFilter||'')+'"></label><label>Job Card<select id="twTimeJob"><option value="ALL">All Job Cards</option>'+jobs.map(j=>'<option value="'+esc(j)+'"'+(same(j,jobFilter)?' selected':'')+'>'+esc(j)+'</option>').join('')+'</select></label></div><p class="tw-history-explanation">Oman time · 12-hour AM/PM · Read only</p><div class="tw-time-count">'+count+' time event'+(count===1?'':'s')+'</div>'+(rows.length?'<div class="tw-history-table-scroll"><table class="tw-history-table tw-time-table"><thead><tr><th>Time</th><th>Job Card</th><th>Vehicle</th><th>Action</th></tr></thead><tbody>'+tableRows+'</tbody></table></div><p class="tw-time-legend">Red: idle time over 10 minutes · scheduled breaks excluded</p>':'<p class="notice">No time events match these filters.</p>');
+    return '<div class="tw-time-filters"><label>Date<input id="twTimeDate" type="date" value="'+esc(dateFilter||'')+'"></label><label>Job Card<select id="twTimeJob"><option value="ALL">All Job Cards</option>'+jobs.map(j=>'<option value="'+esc(j)+'"'+(same(j,jobFilter)?' selected':'')+'>'+esc(j)+'</option>').join('')+'</select></label></div><div id="twTimeResults"><p class="tw-history-explanation">Oman time · 12-hour AM/PM · Read only</p><div class="tw-time-count">'+count+' time event'+(count===1?'':'s')+'</div>'+(rows.length?'<div class="tw-history-table-scroll"><table class="tw-history-table tw-time-table"><thead><tr><th>Time</th><th>Job Card</th><th>Vehicle</th><th>Action</th></tr></thead><tbody>'+tableRows+'</tbody></table></div><p class="tw-time-legend">Red: idle time over 10 minutes · scheduled breaks excluded</p>':'<p class="notice">No time events match these filters.</p>')+'</div>';
   }
 
-  window.openTechnicianTimeDetails=function(emp){
+  window.openTechnicianTimeDetails=async function(emp){
     const u=person(emp);
     if(!canView()||!u||u.role!=='Employee'||!departments[u.department])return;
     stop();
+    const opening=++timeOpening;
+    if(window.zukaitCloud?.syncNow){try{await window.zukaitCloud.syncNow()}catch(error){console.warn('Time Details synchronization failed',error)}}
+    if(opening!==timeOpening||!canView())return;
     let dateFilter=dayKey(Date.now()),jobFilter='ALL';
     const shell=()=>'<div class="tw-workload-tools tw-time-tools"><button type="button" id="twTimeBack" class="secondary tw-back">← Back</button><button type="button" id="twTimeShare" class="tw-time-share">↗ Share Card</button></div><div id="twTimeDetails" class="'+deptClass(u.department)+'">'+timeDetailsBody(emp,dateFilter,jobFilter)+'</div>';
     showSupervisorModal(esc(u.name)+' · Time Details',shell());
@@ -259,12 +262,23 @@
     const back=document.getElementById('twTimeBack');back.onclick=()=>window.openTechnicianWorkload(emp);
     const share=document.getElementById('twTimeShare');share.onclick=()=>shareTimeDetailsCard(emp,dateFilter,jobFilter).catch(()=>alert('Unable to share Time Details card.'));
     const body=document.getElementById('twTimeDetails');
-    const bind=()=>{
-      const d=document.getElementById('twTimeDate'),j=document.getElementById('twTimeJob');
-      if(d)d.onchange=()=>{dateFilter=d.value;body.innerHTML=timeDetailsBody(emp,dateFilter,jobFilter);bind();};
-      if(j)j.onchange=()=>{jobFilter=j.value;body.innerHTML=timeDetailsBody(emp,dateFilter,jobFilter);bind();};
+    const refresh=()=>{
+      if(!body.isConnected||!canView()){stop();return;}
+      const html=timeDetailsBody(emp,dateFilter,jobFilter),marker='<div id="twTimeResults">';
+      const results=document.getElementById('twTimeResults'),content=html.slice(html.indexOf(marker)+marker.length,-6);
+      if(results&&results.innerHTML!==content)results.innerHTML=content;
+      const select=document.getElementById('twTimeJob');
+      if(select&&document.activeElement!==select){
+        const jobs=[...new Set(allEmployeeSessions(emp).map(sessionJob).filter(Boolean))];
+        if(jobFilter!=='ALL'&&!jobs.includes(jobFilter))jobs.push(jobFilter);
+        const options='<option value="ALL">All Job Cards</option>'+jobs.sort((a,b)=>String(b).localeCompare(String(a),undefined,{numeric:true})).map(no=>'<option value="'+esc(no)+'">'+esc(no)+'</option>').join('');
+        if(select.innerHTML!==options){select.innerHTML=options;select.value=jobFilter;}
+      }
     };
-    bind();
+    const date=document.getElementById('twTimeDate'),job=document.getElementById('twTimeJob');
+    if(date)date.onchange=()=>{dateFilter=date.value;refresh()};
+    if(job)job.onchange=()=>{jobFilter=job.value;refresh()};
+    timer=setInterval(()=>{if(!document.hidden)refresh()},1000);
   };
   window.openTechnicianWorkHistory=function(emp,no){
     const u=person(emp),row=present(emp).find(r=>same(r.job.no,no));
@@ -275,7 +289,7 @@
     const back=document.getElementById('twHistoryBack');back.onclick=()=>window.openTechnicianWorkload(emp);back.focus();
     watch(document.getElementById('twHistory'),()=>historyBody(emp,no,ids));
   };
-  function stop(){if(timer!==null)clearInterval(timer);timer=null;}
+  function stop(){++timeOpening;if(timer!==null)clearInterval(timer);timer=null;}
   function watch(body,render){
     stop();
     let previous=body.innerHTML;

@@ -15,6 +15,9 @@
   if(!window.state)window.state={jobs:[],estimates:[],estimateAudit:[]};
   const pending=localStorage.getItem(key());if(pending){if(!window.confirm('A saved Estimate action needs confirmation. Retry its original details now?'))throw Error('Confirm the saved Estimate action before creating or editing another estimate.');const command=JSON.parse(pending);const result=await saved(command);if(result.estimate?.id)window.state.estimates.push(result.estimate);}
   const result=await call({operation:'GET',rc_no:no});
+  window.state.estimateDraftDeletes=result.deleted_drafts||[];
+  const deleted=new Set(window.state.estimateDraftDeletes.map(e=>String(e.estimateId)));
+  window.state.estimates=window.state.estimates.filter(e=>!deleted.has(String(e.id)));
   const ids=new Set(result.estimates.map(e=>e.id));window.state.estimates=window.state.estimates.filter(e=>!ids.has(e.id)).concat(result.estimates);
   window.zukaitCloud={allocateEstimateNo:async client=>{const result=await saved({operation:'ALLOCATE',rc_no:rc,client_key:client,request_id:crypto.randomUUID()});return result.estimate;}};
  }

@@ -31,6 +31,7 @@ function reply(body: unknown, status = 200) {
 // Receptionist is a separate, restricted role. Never route it through shared
 // state, financial, time, parts or Supervisor APIs, including direct requests.
 function receptionistRequestAllowed(action: string, body: any) {
+  if(action==='estimate_delete_draft')return Object.keys(body).every(k=>['action','estimate_id','request_id','reception_no'].includes(k));
   if(action==='reception_estimate')return Object.keys(body).every(k=>['action','command'].includes(k))&&['GET','ALLOCATE','SAVE'].includes(body.command?.operation);
   if (action === "job_card_edit") return ["GET","EDIT"].includes(body.operation) && Object.keys(body).every(k => ["action","operation","jobCard","patch","reason","expectedEditRevision"].includes(k));
   if (action === "receptionist_delivery_list") return Object.keys(body).every(k => k === "action");
@@ -521,8 +522,31 @@ function preserveLeaveAuthority(candidate: any, current: any, user: any): any {
 }
 
 
+
+function estimateDraftDeleteTransition(current:any,allocation:any,linked:boolean,user:any,body:any,at:number){
+  if(!["Manager","Supervisor","Receptionist"].includes(String(user?.role)))return {ok:false,code:"estimate_delete_forbidden"};
+  const id=String(body?.estimate_id||"").trim();
+  if(!id||id.length>100||!String(body?.request_id||"").match(/^[a-f0-9-]{36}$/i))return {ok:false,code:"estimate_delete_invalid"};
+  const next=cloneValue(current),rows=Array.isArray(next.estimates)?next.estimates:[];
+  const quote=rows.find((e:any)=>String(e?.id)===id);
+  const old=(next.estimateDraftDeletes||[]).find((e:any)=>String(e.estimateId)===id);
+  const owner=quote?.createdBy||allocation?.created_by||old?.createdBy;
+  if(user.role==="Receptionist"&&String(owner)!==String(user.id))return {ok:false,code:"estimate_delete_forbidden"};
+  if(quote&&quote.status!=="Draft"||linked)return {ok:false,code:"estimate_saved_protected"};
+  if(old)return {ok:true,duplicate:true,data:next,deleted_id:id};
+  if(!quote&&!allocation)return {ok:false,code:"estimate_draft_not_found"};
+  next.estimates=rows.filter((e:any)=>String(e?.id)!==id);
+  const entry={estimateId:id,estimateNo:quote?.estimateNo||allocation?.estimate_no||"",createdBy:owner,receptionNo:quote?.receptionNo||String(body?.reception_no||""),deletedBy:user.id,deletedAt:at,requestId:body.request_id,original:quote||null};
+  next.estimateDraftDeletes=[...(next.estimateDraftDeletes||[]),entry];
+  next.estimateAudit=[...(next.estimateAudit||[]),{id:body.request_id,estimateId:id,estimateNo:entry.estimateNo,action:"DELETE_DRAFT",by:user.id,role:user.role,at}];
+  return {ok:true,data:next,deleted_id:id};
+}
+
 function preserveEstimateHistory(candidate: any, current: any): any {
-  const incoming=Array.isArray(candidate?.estimates)?candidate.estimates:[];
+  const deleted=Array.isArray(current?.estimateDraftDeletes)?current.estimateDraftDeletes:[];
+  const removed=new Set(deleted.map((e:any)=>String(e.estimateId)));
+  candidate.estimateDraftDeletes=cloneValue(deleted);
+  const incoming=(Array.isArray(candidate?.estimates)?candidate.estimates:[]).filter((e:any)=>!removed.has(String(e?.id)));
   const index=new Map(incoming.filter((e:any)=>e?.id).map((e:any)=>[String(e.id),e]));
   for(const saved of Array.isArray(current?.estimates)?current.estimates:[]){
     if(!saved?.id)continue;
@@ -1058,12 +1082,38 @@ Deno.serve(async (req: Request) => {
       return reply({ok:false,code:"receptionist_delivery_conflict"},409);
     }
 
+
+    if(action==="estimate_delete_draft"){
+      if(!["Manager","Supervisor","Receptionist"].includes(String(user.role)))return reply({ok:false,code:"estimate_delete_forbidden"},403);
+      const id=String(body.estimate_id||"");
+      const {data:allocation,error:allocationError}=await admin.from("workshop_v2_estimate_numbers").select("client_key,estimate_no,created_by").eq("client_key",id).maybeSingle();
+      if(allocationError)throw allocationError;
+      const {data:links,error:linkError}=await admin.from("workshop_reception_estimates").select("estimate_id").eq("estimate_id",id).limit(1);
+      if(linkError)throw linkError;
+      for(let attempt=0;attempt<8;attempt++){
+        const {data:current,error}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();if(error)throw error;
+        const change:any=estimateDraftDeleteTransition(current.data,allocation,Boolean(links?.length),user,body,Date.now());
+        if(!change.ok)return reply({ok:false,code:change.code},/forbidden/.test(change.code)?403:409);
+        if(change.duplicate)return reply({ok:true,deleted_id:id,duplicate:true,server_revision:current.revision});
+        const live=computeLiveStatus(change.data,Number(current.revision)+1,user.id);
+        if(!live.length)return reply({ok:false,code:"estimate_delete_live_unavailable"},503);
+        const {data:committed,error:commitError}=await admin.rpc("zukait_commit_workshop_state_v2",{p_expected_revision:Number(current.revision),p_data:change.data,p_changed_by:user.id,p_live:live});
+        if(commitError)throw commitError;
+        if(committed?.ok)return reply({ok:true,deleted_id:id,server_revision:committed.revision});
+        if(committed?.code!=="conflict")return reply({ok:false,code:"estimate_delete_unavailable"},409);
+      }
+      return reply({ok:false,code:"estimate_delete_conflict"},409);
+    }
+
     if(action==='reception_estimate'){
       if(!['Manager','Supervisor','Receptionist'].includes(String(user.role)))return reply({ok:false,code:'reception_forbidden'},403);
       if(!body.command||typeof body.command!=='object'||Array.isArray(body.command)||JSON.stringify(body.command).length>64000)return reply({ok:false,code:'reception_invalid_command'},400);
+      const {data:estimateState,error:estimateStateError}=await admin.from('workshop_state').select('data').eq('id','main').single();if(estimateStateError)throw estimateStateError;
+      const deletedDrafts=estimateState.data?.estimateDraftDeletes||[];
+      if(['SAVE','ALLOCATE'].includes(body.command.operation)&&deletedDrafts.some((e:any)=>String(e.estimateId)===String(body.command.client_key)))return reply({ok:false,code:'estimate_draft_deleted'},409);
       const {data,error}=await admin.rpc('zukait_reception_estimate_command',{p_actor_id:String(user.id),p_command:body.command});
       if(error){const code=String(error.message||'').match(/reception_[a-z0-9_]+/)?.[0]||'reception_unavailable';return reply({ok:false,code},/forbidden/.test(code)?403:409);}
-      return reply(data);
+      return reply(body.command.operation==='GET'?{...data,deleted_drafts:deletedDrafts.filter((e:any)=>e.receptionNo===body.command.rc_no||e.createdBy===user.id)}:data);
     }
     if (action === "reception") {
       // Caller identity comes only from the verified, active staff session.

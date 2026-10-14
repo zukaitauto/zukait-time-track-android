@@ -40,7 +40,7 @@ const ctx={
   document:documentStub,
   MutationObserver:class{constructor(){} observe(){}},
   navigator:{onLine:true,clipboard:{writeText:async()=>{}}},
-  localStorage:{getItem:key=>recovery.get(key)||null,setItem:(key,value)=>recovery.set(key,value)},
+  localStorage:{getItem:key=>recovery.get(key)||null,setItem:(key,value)=>recovery.set(key,value),removeItem:key=>recovery.delete(key)},
   alert:text=>messages.push(text),
   openModal:html=>modalHtml=html,
   closeModal(){},
@@ -251,8 +251,8 @@ assert.ok(!zeroParts.includes('R.O.')&&!zeroParts.includes('Bz.'),'Amount headin
 
 state.estimates[0].status='Saved';
 state.estimates.push({...structuredClone(state.estimates[0]),id:'UNSAVED',estimateNo:'Zi-Qt016',status:'Draft',makeModel:'RAV4'});
-api.openRecent();assert.ok(!modalHtml.includes('Zi-Qt016'),'Unsaved draft must not appear in Recent Estimates');
-api.openDrafts();assert.ok(modalHtml.includes('Zi-Qt016'));assert.ok(modalHtml.includes('Draft — not saved'));
+await api.openRecent();assert.ok(!modalHtml.includes('Zi-Qt016'),'Unsaved draft must not appear in Recent Estimates');
+await api.openDrafts();assert.ok(modalHtml.includes('Zi-Qt016'));assert.ok(modalHtml.includes('Draft — not saved'));
 let dirty=false,syncCalls=0;
 ctx.save=()=>{dirty=true};
 ctx.window.zukaitCloud={get dirty(){return dirty},async syncNow(){syncCalls++;dirty=false}};
@@ -269,3 +269,19 @@ assert.equal(state.estimates.find(e=>e.id==='UNSAVED').status,'Draft','Missing r
 console.log('PASS: Draft/Recent separation, server-confirmed save, failed confirmation and local recovery');
 
 await import('./estimate-history-authority.mjs');
+
+ctx.window.confirm=()=>true;let deletedCalls=0;
+ctx.window.zukaitReception={async action(body){deletedCalls++;return {ok:true,deleted_id:body.estimate_id}}};
+ctx.window.zukaitCloud.syncNow=async()=>{dirty=false};
+for(const role of ['Manager','Supervisor','Receptionist']){
+ ctx.me.role=role;
+ const id='draft-'+role;
+ state.estimates.push({...structuredClone(state.estimates[0]),id,estimateNo:'Draft-'+role,status:'Draft',createdBy:'SUP1'});
+ await api.deleteDraft(id);assert.ok(!state.estimates.some(e=>e.id===id),role+' can delete a draft');
+ await api.openDrafts();assert.ok(!state.estimates.some(e=>e.id===id),'Deleted draft must not return from recovery cache');
+}
+const beforeDelete=deletedCalls;ctx.me.role='Manager';await api.deleteDraft('E1');assert.equal(deletedCalls,beforeDelete,'Saved estimate cannot be deleted');
+ctx.me.role='Employee';await api.deleteDraft('anything');assert.equal(deletedCalls,beforeDelete,'Employee cannot delete drafts');
+console.log('PASS: Manager/Supervisor/Receptionist draft delete, durable confirmation, recovery suppression and saved protection');
+
+await import('./technician-time-vehicle-share.mjs');
