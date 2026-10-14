@@ -7,7 +7,7 @@
   "signedAcceptanceRun": null,
   "verificationRun": null,
   "approvedAt": null,
-  "publishNonce": "",
+  "publishNonce": null,
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,

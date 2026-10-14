@@ -8,7 +8,7 @@ function live(j){const x=window.zukaitJobCardMaster?.display?.(j?.no,j);return x
 function all(){return (snapshot().jobs||[]).filter(j=>j&&j.no!=='ID001'&&!j.deleted&&!j.archived).map(live).filter(j=>String(j.jobType||'').trim().toUpperCase()==='CASH')}
 function month(){const d=new Date(),parts=new Intl.DateTimeFormat('en',{timeZone:'Asia/Muscat',year:'numeric',month:'numeric'}).formatToParts(d),y=Number(parts.find(x=>x.type==='year').value),m=Number(parts.find(x=>x.type==='month').value);return{from:Date.UTC(y,m-1,1)-4*3600000,to:Date.UTC(y,m,1)-4*3600000,label:d.toLocaleString('en',{timeZone:'Asia/Muscat',month:'long',year:'numeric'})}}
 function rows(kind){const {from,to}=month();return all().filter(j=>kind==='in'?Number(j.createdAt||0)>=from&&Number(j.createdAt||0)<to:j.delivered&&Number(j.deliveredAt||0)>=from&&Number(j.deliveredAt||0)<to)}
-function amount(j,kind){const n=Number(kind==='out'?(j.finalInvoiceAmount??j.amount??0):(j.amount??0));return Number.isFinite(n)?n:0}
+function amount(j,kind){const invoice=j.finalInvoiceAmount,hasInvoice=invoice!==null&&invoice!==undefined&&invoice!==''&&typeof invoice!=='boolean'&&Number.isFinite(Number(invoice))&&Number(invoice)>=0;const n=Number(kind==='out'&&hasInvoice?invoice:(j.amount??0));return Number.isFinite(n)?n:0}
 function total(a,kind='in'){return a.reduce((n,j)=>n+amount(j,kind),0)}
 function pendingAll(){return all().filter(j=>!j.delivered)}
 function outstandingTotal(a){return a.reduce((n,j)=>n+(Number(j.amount)||0),0)}

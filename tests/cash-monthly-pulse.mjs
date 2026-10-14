@@ -44,8 +44,7 @@ for(const role of ['Manager','Supervisor']){
  assert.equal(pulse.rows('out').length,8);assert.equal(pulse.total(pulse.rows('out'),'out'),1067,'Identity overlay must not replace saved invoice amounts');
  sandbox.window.v251OpenCashPulse('out');assert.ok(modal.includes('OMR 1067.000'));assert.ok(modal.includes('OMR 35.000'));
 }
-vm.runInContext("state.jobs[0]={...state.jobs[0],finalInvoiceAmount:undefined};",ctx);
-assert.equal(pulse.total(pulse.rows('out'),'out'),1067,'Unentered invoice must retain the cash amount fallback');
+for(const invoice of [undefined,null,'','invalid',false]){sandbox.fixtureInvoice=invoice;vm.runInContext("state.jobs[0]={...state.jobs[0],finalInvoiceAmount:fixtureInvoice};",ctx);assert.equal(pulse.total(pulse.rows('out'),'out'),1067,'Unentered invoice must retain the cash amount fallback');}
 vm.runInContext("state.jobs[0]={...state.jobs[0],finalInvoiceAmount:0};",ctx);
 assert.equal(pulse.total(pulse.rows('out'),'out'),1032,'A genuinely recorded zero invoice must remain zero');
 delete sandbox.window.zukaitJobCardMaster;

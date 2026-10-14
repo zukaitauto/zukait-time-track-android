@@ -6,6 +6,10 @@ on:
     branches: [architecture-v2]
     paths:
       - "app/build.gradle"
+      - "app/src/main/assets/job_card_master.js"
+      - "app/src/main/assets/cash_monthly_pulse.js"
+      - "tests/shared-financial-display.mjs"
+      - "tests/cash-monthly-pulse.mjs"
       - "app/src/main/assets/v2/features/estimate/**"
       - "tests/v2-estimate-*"
       - "tests/reception-pages-publication-safety.mjs"
