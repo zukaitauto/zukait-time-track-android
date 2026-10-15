@@ -3,10 +3,10 @@
   "versionCode": 291,
   "releaseScope": "phase1-compatible-ui",
   "approvedForStaff": false,
-  "sourceCommit": "",
+  "sourceCommit": null,
   "signedAcceptanceRun": null,
   "verificationRun": null,
-  "publishNonce": "owner-publish-v327-layouts-20261014",
+  "publishNonce": null,
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
@@ -26,5 +26,6 @@
     "verifiedFileMatch": true,
     "deployedSeparately": true,
     "sourceCommit": "e6b570a4a626ce4351641afb714072dded346a88"
-  }
+  },
+  "approvedAt": null
 }
