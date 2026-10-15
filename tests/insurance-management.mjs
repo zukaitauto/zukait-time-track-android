@@ -44,3 +44,12 @@ assert.equal(receptionDashboardProjection(base,[{...rec,repair_status:'CTL',rele
 assert.deepEqual(receptionDashboardProjection(base,[],{section:'jobs'}).rows.map(r=>r.job_card),['100','2','10']);
 assert.equal(fs.readFileSync('app/src/main/assets/qc_delivery_rules.js','utf8'),fs.readFileSync('supabase/functions/workshop-api/qc_delivery_rules.js','utf8'));
 console.log('PASS: LPO/Invoice atomic rules, Cash separation, correction audits, received-month totals, numeric JC order and active-list removal');
+
+const insuranceOnly={...base,jobs:base.jobs.filter(j=>String(j.jobType).toUpperCase()==='INSURANCE')};
+const mixedTypes={...insuranceOnly,jobs:[...insuranceOnly.jobs,...['CASH','CREDIT',''].flatMap((jobType,i)=>[false,true].map(delivered=>({no:'NONINS-'+i+'-'+delivered,jobType,insuranceCompany:'A',createdAt:now,delivered,deliveredAt:delivered?now:undefined,insuranceLpo:{amount:999,receivedDate:'2026-10-12'}})))]};
+for(const section of ['jobs','pending','wip','delivered','collected']){
+ const expected=insuranceProjection(insuranceOnly,[],{section,month:'2026-10'});
+ const actual=insuranceProjection(mixedTypes,[],{section,month:'2026-10'});
+ assert.deepEqual(actual,expected,'Noninsurance jobs must not affect '+section+' rows, counts, companies or totals');
+}
+console.log('Insurance-only scope verified for every management job list and summary, including misleading company names');
