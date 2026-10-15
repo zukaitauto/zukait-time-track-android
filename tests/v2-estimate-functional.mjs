@@ -337,3 +337,6 @@ assert.equal(paymentEstimate.insuranceCompany,'Custom Insurance');
 paymentEstimate.receptionNo='RC-LOCKED';api.setPaymentType('CASH');
 assert.equal(paymentEstimate.jobType,'INSURANCE','Reception identity remains locked');
 console.log('Insurance/Cash selection: custom company, separate name retention and reception lock passed');
+
+assert.ok(printDate.includes('زكيت الدولي ش.م.م'),'Footer company name matches supplied Arabic letterhead');
+assert.ok(!printDate.includes('شركة زكايت العالمية'));
