@@ -144,7 +144,13 @@ function ensureStyle(){
   .est-empty{border:1px dashed #cbd5e1;border-radius:12px;background:white;padding:22px;text-align:center;font-size:13px}.est-empty p{color:#64748b;line-height:1.5;margin-bottom:0}
   .est-switches{gap:16px;margin:0 0 18px}.est-switch{padding:4px;background:#e9eef3;border-radius:10px;margin-top:6px;gap:4px}
   #modal .est-switch button,.est-switch button{font-size:12px!important;min-height:42px;border-radius:7px;background:transparent!important;color:#475569!important;font-weight:700}
-  .est-switch button.active{background:#fff!important;color:#1d6259!important;box-shadow:0 1px 4px #152f421c;outline:1px solid #d5e0e4}
+  #modal .est-editor .est-switch button,.est-editor .est-switch button{background:#fff!important;color:#334155!important;border:2px solid #b6c5d3!important;font-size:14px!important;min-height:48px;box-shadow:none;outline:none}
+  #modal .est-editor .est-switch button.active,.est-editor .est-switch button.active{background:#075985!important;color:#fff!important;border-color:#075985!important;box-shadow:0 2px 5px #0c4a6e33}
+  #modal .est-editor #estVatYes.active,#modal .est-editor #estVatNo.active{background:#166534!important;border-color:#166534!important}
+  #modal .est-editor #estPayINSURANCE.active,#modal .est-editor #estPayCASH.active{background:#6b21a8!important;border-color:#6b21a8!important}
+  .est-editor .est-switch button.active::before{content:'✓ ';font-weight:900}
+  #modal .est-editor .est-switch button:focus-visible{outline:3px solid #f59e0b!important;outline-offset:2px}
+  #modal .est-editor .est-switch button:disabled{opacity:.6;cursor:not-allowed}
   .est-section{margin-top:16px;border:1px solid #e0e6ed;border-radius:12px;padding:20px;background:#fff;box-shadow:0 2px 6px #17304d04}
   .est-lookup{background:#f5f7fa;padding:10px;border-radius:9px;flex-wrap:nowrap;margin-bottom:18px;gap:8px}.est-lookup input{min-width:0;width:100%}.est-lookup button{flex-shrink:0;font-size:11px!important;background:#183047!important;margin:0!important;min-height:44px}
   .est-fields{gap:16px 14px}.est-fields label{font-size:12px!important;color:#475569;font-weight:700}
