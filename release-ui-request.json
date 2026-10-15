@@ -2,11 +2,11 @@
   "versionName": "V329",
   "versionCode": 292,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
-  "sourceCommit": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "publishNonce": null,
+  "approvedForStaff": true,
+  "sourceCommit": "169b8dc97c52d7942a5564846e7379635adb98a6",
+  "signedAcceptanceRun": 38693550047,
+  "verificationRun": 38693519163,
+  "publishNonce": "owner-publish-v329-time-cancel-red-idle-20261015",
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
@@ -14,7 +14,7 @@
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "authorization": "Owner requested Cancel Allotted Work only in Time Management for Supervisor and Manager before work starts, then requested a red NO RUNNING WORK panel for paused/not-started employees. Proceed authorizes implementation and the established release process. Existing previously recorded physical-device/backup NOT_RUN status is retained.",
-  "verificationSummary": "Combined V329 candidate; exact-source build checks pending. Backend cancellation guard deployed and all function files verified against the intended bundle.",
+  "verificationSummary": "Exact combined V329 source passed signed acceptance APK 38693550047, Reception/browser verification 38693519163 and Android debug build 38693519157. Employee red idle-state and cancellation race/audit/role tests passed. Backend version 68 deployed separately, all files matched intended bundle. Physical device acceptance and fresh production backup remain NOT_RUN.",
   "estimateChecksRun": 38615198466,
   "releaseHeldByOwner": false,
   "backendDeploymentRequired": false,
@@ -27,5 +27,5 @@
     "deployedSeparately": true,
     "sourceCommit": "969454b1baeb7d18df164ded13d909209ebee113"
   },
-  "approvedAt": null
+  "approvedAt": "2026-10-15T06:41:01.928061Z"
 }
