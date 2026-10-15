@@ -25,6 +25,7 @@ node tests/consumables-ui.mjs
 node tests/material-list-navigation.mjs
 node tests/assignment-search-ui.mjs
 node tests/supervisor-stable-ui.mjs
+node tests/quick-entry-checklist.mjs
 node tests/live-status-authority.mjs
 node tests/paused-menu-consistency.mjs
 node tests/qc-delivery-authority.mjs
