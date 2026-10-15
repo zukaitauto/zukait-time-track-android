@@ -3357,7 +3357,7 @@ window.v2TogglePilotThisDevice=function(){
    // if ID001 is running, their button is enabled and START will auto-stop ID001 first.
    root.querySelectorAll('.v75s-card').forEach(card=>{
      const label=(card.querySelector('.v75s-card-top b')?.textContent||'').trim();
-     if(label==='JOB : ID001'){card.style.display='none';return}
+     if(label==='JOB : ID001'){card.style.display=root.querySelector('.v130-id001-current')?'none':'';return}
      if(activeHold){
        const b=card.querySelector('.v75s-start');
        const m=label.match(/^JOB\s*:\s*(.+)$/);
@@ -3366,7 +3366,7 @@ window.v2TogglePilotThisDevice=function(){
    });
    const count=root.querySelector('.v75s-count');
    if(count){
-     const n=openNormal(me.id).filter(a=>!active||!((active.assignmentId&&active.assignmentId===a.id)||(!active.assignmentId&&active.job===a.job))).length;const label=n+' Job'+(n===1?'':'s');if(count.textContent!==label)count.textContent=label;
+     const n=[...root.querySelectorAll('.v75s-grid .v75s-card')].filter(card=>card.style.display!=='none').length;const label=n+' Job'+(n===1?'':'s');if(count.textContent!==label)count.textContent=label;
    }
 
    // Monthly figures: productive and waiting hours remain separate, while Normal Working Hours includes both.
