@@ -13,19 +13,19 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "authorization": "Owner requested Cancel Allotted Work only in Time Management, for Supervisor and Manager, only before work starts. Proceed authorized implementation and existing coordinated release process.",
-  "verificationSummary": "Candidate cancellation feature awaiting exact-source acceptance.",
+  "authorization": "Owner requested Cancel Allotted Work only in Time Management for Supervisor and Manager before work starts, then requested a red NO RUNNING WORK panel for paused/not-started employees. Proceed authorizes implementation and the established release process. Existing previously recorded physical-device/backup NOT_RUN status is retained.",
+  "verificationSummary": "Combined V329 candidate; exact-source build checks pending. Backend cancellation guard deployed and all function files verified against the intended bundle.",
   "estimateChecksRun": 38615198466,
   "releaseHeldByOwner": false,
   "backendDeploymentRequired": false,
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "function": "workshop-api",
-    "version": 67,
-    "bundleSha256": "7f11934f98c317100d561f24fa9fdadfdd93b31c5b48b7dff856d2a22bee71a4",
+    "version": 68,
+    "bundleSha256": "ff236e85ccb7cf7d2c0109bf42e463bb5bb95de2fa4d16d9d882a674533a151a",
     "verifiedFileMatch": true,
     "deployedSeparately": true,
-    "sourceCommit": "e6b570a4a626ce4351641afb714072dded346a88"
+    "sourceCommit": "969454b1baeb7d18df164ded13d909209ebee113"
   },
   "approvedAt": null
 }

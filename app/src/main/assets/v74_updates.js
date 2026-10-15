@@ -4347,7 +4347,16 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  }
  function refresh(){
    const root=document.getElementById('employeeView');if(!root||!me||me.role!=='Employee')return;
-   const d=current();if(!d){root.classList.remove('ocean-employee');return}
+   const session=window.zukaitEmployeeDisplaySession?.(me.id)||null;
+   root.classList.toggle('ocean-no-running',!session);
+   const d=current();if(!d){
+     root.classList.remove('ocean-employee');
+     let banner=root.querySelector('.ocean-idle-banner');
+     if(!session&&!banner){banner=document.createElement('div');banner.className='ocean-idle-banner';banner.innerHTML='<strong>NO RUNNING WORK</strong><p>Select an allotted job and tap Start Work.</p>';root.prepend(banner)}
+     if(session&&banner)banner.remove();
+     return;
+   }
+   root.querySelector('.ocean-idle-banner')?.remove();
    const shell=root.querySelector('.v75s-shell');if(!shell)return;
    root.classList.add('ocean-employee');
    if(shell.dataset.oceanKey!==d.key){
@@ -4363,9 +4372,9 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
    const tone=d.extra>0?'over':d.allotted>0&&d.left/d.allotted<=.2?'near':'safe';
    shell.dataset.tone=tone;shell.dataset.working=d.s?'true':'false';
    put('oceanClock',clock(Date.now()));put('oceanWorkStatus',(d.s?'● ':d.status==='Paused'?'Ⅱ ':'○ ')+d.status);
-   put('oceanTimeLabel',d.allotted<=0?'NO ALLOTTED TIME':d.extra>0?'OVER ALLOTTED BY':'REMAINING TIME');
-   put('oceanRemaining',d.allotted>0?minutes(d.extra>0?d.extra:d.left):'—');
-   put('oceanTimeStatus',d.allotted<=0?'Allotted time has not been set':d.extra>0?'Allotted time exceeded':tone==='near'?'Nearing allotted time':'✓ Within allotted time');
+   put('oceanTimeLabel',!d.s?'WORK STATUS':d.allotted<=0?'NO ALLOTTED TIME':d.extra>0?'OVER ALLOTTED BY':'REMAINING TIME');
+   put('oceanRemaining',!d.s?'NO RUNNING WORK':d.allotted>0?minutes(d.extra>0?d.extra:d.left):'—');
+   put('oceanTimeStatus',!d.s?(d.status==='Paused'?'Work paused. Tap Resume Work to continue.':'Tap Start Work to begin.')+(d.allotted>0?' '+(d.extra>0?'Over allotted by: '+minutes(d.extra):'Remaining time: '+minutes(d.left))+'.':''):d.allotted<=0?'Allotted time has not been set':d.extra>0?'Allotted time exceeded':tone==='near'?'Nearing allotted time':'✓ Within allotted time');
    put('oceanAllotted',minutes(d.allotted));put('oceanUsed',minutes(d.used));put('oceanExceeded',d.extra>0?minutes(d.extra):'0 hrs');
    const pct=d.allotted>0?d.used/d.allotted*100:0,progress=document.getElementById('oceanProgress');if(progress)progress.value=Math.min(100,pct);
    put('oceanPercent',d.allotted>0?Math.round(pct)+'% used':'No allotted time');
@@ -4395,6 +4404,14 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  .ocean-time{text-align:center;padding:27px 12px;background:radial-gradient(ellipse at bottom right,#66e0e375,transparent 65%),linear-gradient(135deg,#c4f9fc,#e6fbff);border:2px solid #eaffff;box-shadow:inset 0 0 10px #fff9,0 8px 17px #1babbe26}.ocean-time h2{font-size:13px;letter-spacing:1.7px;margin:0 0 12px;color:#345e79}.ocean-time strong{font-size:clamp(36px,13vw,68px);line-height:1.12;letter-spacing:-2px;display:block}.ocean-time p{font-size:15px;font-weight:750;color:#087846;margin:14px 0 0}.ocean-columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.ocean-columns>div{padding-left:10px;border-left:1px solid #aed4e0}.ocean-columns>div:first-child{padding:0;border:0}.ocean-columns span{display:block;font-size:12px;color:#345570}.ocean-columns b{display:block;margin-top:8px;font-size:21px;line-height:1.2}.ocean-worked-note{font-size:11px;color:#456680;line-height:1.4;margin:15px 0}.ocean-stats progress{display:block;appearance:none;width:100%;height:15px;overflow:hidden;border:0;border-radius:20px;background:#b9d9e4}.ocean-stats progress::-webkit-progress-bar{background:#b9d9e4;box-shadow:inset 0 2px 4px #32627d20}.ocean-stats progress::-webkit-progress-value{background:linear-gradient(#20dcce,#009cac);border-radius:20px;box-shadow:inset 0 1px 2px #fff9}.ocean-stats progress::-moz-progress-bar{background:#00a5ad;border-radius:20px}#oceanPercent{text-align:right;font-size:12px;margin:8px 0 0;font-weight:700}
  .ocean-session{display:flex;gap:14px;align-items:center}.ocean-session>span{font-size:32px;color:#226886}.ocean-session p{margin:0 0 5px;font-size:12px;color:#456680}.ocean-session b{font-size:19px}#employeeView .ocean-request{width:100%;background:transparent!important;color:#153f61!important;box-shadow:none!important;text-align:left;padding:12px 7px!important;margin:0 0 10px!important;font-size:14px!important}.ocean-request span{float:right}
  #employeeView .ocean-actions{position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:86;display:flex;gap:12px;width:min(100%,660px);padding:15px 18px max(18px,env(safe-area-inset-bottom));background:#def5faed;border:1px solid white;border-radius:22px 22px 0 0;box-shadow:0 -4px 15px #24677c18;backdrop-filter:blur(15px)}#employeeView .ocean-actions button{flex:1;min-width:0;min-height:58px;padding:13px 6px!important;font-size:16px!important;font-weight:800;border-radius:17px!important;border:1px solid #ffffffb0!important;box-shadow:inset 0 2px 2px #ffffffb0,0 5px 9px #14557130!important}#employeeView .ocean-pause{background:linear-gradient(145deg,#ffda53,#ffa40b)!important;color:#12304d!important}#employeeView .ocean-finish{background:linear-gradient(145deg,#00adb4,#00617a)!important;color:white!important}.ocean-actions button:disabled{opacity:.48;cursor:default}.ocean-shell[data-tone=near] .ocean-time p{color:#985700}.ocean-shell[data-tone=over] .ocean-time{background:linear-gradient(135deg,#ffe5e6,#fff3f3)}.ocean-shell[data-tone=over] .ocean-time p{color:#b42138}.ocean-shell[data-tone=near] progress::-webkit-progress-value{background:#ffb32e}.ocean-shell[data-tone=over] progress::-webkit-progress-value{background:#e73750}.ocean-vehicle-window>svg{width:100%;max-width:340px;display:block;margin:auto}.ocean-vehicle-window p{overflow-wrap:anywhere}
+ #employeeView .ocean-shell[data-working=false] .ocean-time,#employeeView .ocean-idle-banner{background:linear-gradient(135deg,#cc263e,#9d1630)!important;border:2px solid #f7a4af!important;color:#fff!important;box-shadow:inset 0 1px #ffffff55,0 8px 18px #a51a3030!important}
+ #employeeView .ocean-shell[data-working=false] .ocean-time h2,#employeeView .ocean-shell[data-working=false] .ocean-time p{color:#fff!important}
+ #employeeView .ocean-shell[data-working=false] #oceanRemaining{font-size:clamp(32px,9vw,48px)!important;letter-spacing:.3px;line-height:1.12;max-width:400px;margin:auto;font-weight:900}
+ #employeeView .ocean-shell[data-working=false] #oceanWorkStatus{color:#b21e36!important}
+ #employeeView .ocean-idle-banner{text-align:center;padding:28px 18px;margin:10px;border-radius:22px}
+ #employeeView .ocean-idle-banner strong{display:block;font-size:clamp(30px,8vw,44px);line-height:1.15;font-weight:900;letter-spacing:.3px}
+ #employeeView .ocean-idle-banner p{color:white;font-size:15px;line-height:1.45;margin:14px 0 0}
+ #employeeView.ocean-no-running:not(.ocean-employee) .v75s-live{display:none!important}
  @media(max-width:370px){#employeeView .ocean-shell{padding:11px!important}.ocean-job{gap:7px;padding:13px}.ocean-job h2{font-size:19px}#employeeView .ocean-car{width:101px;flex-basis:101px}.ocean-columns span{font-size:10px}.ocean-columns b{font-size:18px}#employeeView .ocean-actions button{font-size:14px!important}}
  @media(prefers-reduced-motion:reduce){.ocean-shell .ocean-car-motion{animation:none!important}}
  `;document.head.appendChild(style);refresh();
