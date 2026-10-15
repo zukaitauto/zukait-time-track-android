@@ -2,19 +2,19 @@
   "versionName": "V328",
   "versionCode": 291,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
-  "sourceCommit": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "publishNonce": null,
+  "approvedForStaff": true,
+  "sourceCommit": "645df332361f53e7350ac10841b9df6f05891f20",
+  "signedAcceptanceRun": 38686944552,
+  "verificationRun": 38686944160,
+  "publishNonce": "owner-publish-v328-employee-ocean-20261015",
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "authorization": "Owner requested the approved Ocean and Teal employee screen globally and publication in this conversation. Candidate awaiting exact-source build checks.",
-  "verificationSummary": "Candidate; exact-source checks pending. No new production backend changes.",
+  "authorization": "Owner requested publication and global employee rollout of the approved Ocean and Teal design in this conversation, then provided this repository. UI-only client update. Existing recorded physical-device and backup NOT_RUN deferrals are retained; no backend deployment or production data writes.",
+  "verificationSummary": "Exact source passed signed acceptance APK run 38686944552, Reception/browser verification run 38686944160, Android debug build run 38686944207. New employee Ocean timer runtime regression passed for multiple employees, timing thresholds, pause/resume, server-pending controls, vehicle details, ID001 and role isolation. Physical device acceptance and fresh production backup remain NOT_RUN.",
   "estimateChecksRun": 38615198466,
   "releaseHeldByOwner": false,
   "backendDeploymentRequired": false,
@@ -27,5 +27,5 @@
     "deployedSeparately": true,
     "sourceCommit": "e6b570a4a626ce4351641afb714072dded346a88"
   },
-  "approvedAt": null
+  "approvedAt": "2026-10-15T05:31:33.584635+00:00"
 }
