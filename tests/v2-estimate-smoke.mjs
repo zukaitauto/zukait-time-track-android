@@ -24,7 +24,7 @@ for(const required of [
   'VAT 5%',
   'NO VAT',
   'Phone',
-  'Make & Model',
+  'Make',
   'Registration No.',
   'VIN',
   'Claim No.',

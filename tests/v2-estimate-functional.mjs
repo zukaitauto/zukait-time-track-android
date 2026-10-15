@@ -294,17 +294,20 @@ await import('./reception-feature8.mjs');
 const printDate=api.estimateDocumentHtml({...state.estimates[0],date:'2026-10-15',mobile:'',jobCard:'',claimNo:''});
 assert.match(printDate,/<b>Date[^]*?:<\/b> 15-10-2026/);
 assert.doesNotMatch(printDate,/93211154/);
-assert.match(printDate,/<th>Phone \/ <bdi[^>]*>رقم الهاتف<\/bdi><\/th><td><\/td>/);
-assert.match(printDate,/<th>JC\.NO \/ <bdi[^>]*>رقم بطاقة العمل<\/bdi><\/th><td><\/td>/);
-assert.match(printDate,/<th>Claim No\. \/ <bdi[^>]*>رقم المطالبة<\/bdi><\/th><td><\/td>/);
+assert.match(printDate,/<th>Phone \/ <bdi[^>]*>رقم الهاتف<\/bdi><\/th><td(?: colspan="2")?><\/td>/);
+assert.match(printDate,/<th>JC\.NO<\/th><td(?: colspan="2")?><\/td>/);
+assert.match(printDate,/<th>Claim No\. \/ <bdi[^>]*>رقم المطالبة<\/bdi><\/th><td(?: colspan="2")?><\/td>/);
 assert.match(printDate,/font:14px\/1\.45 Arial/);
 assert.equal(state.estimates[0].date,'2026-09-26','Display formatting must not mutate stored dates');
 console.log('Estimate print correction: vector header, larger type, both contact numbers, DD-MM-YYYY and blank optional fields passed');
 
-for(const [en,ar] of [['Make','الماركة'],['Model','الطراز'],['Year','سنة الصنع'],['Name','الاسم'],['Phone','رقم الهاتف'],['Description','الوصف'],['Amount OMR','المبلغ'],['TOTAL','الإجمالي']])assert.ok(printDate.includes(en+' / <bdi lang="ar" dir="rtl">'+ar+'</bdi>'),en+' must have an isolated Arabic translation');
+for(const [en,ar] of [['Make','الماركة'],['Year','سنة الصنع'],['Name','الاسم'],['Phone','رقم الهاتف'],['Description','الوصف'],['Amount OMR','المبلغ'],['TOTAL','الإجمالي']])assert.ok(printDate.includes(en+' / <bdi lang="ar" dir="rtl">'+ar+'</bdi>'),en+' must have an isolated Arabic translation');
 assert.ok(printDate.includes('Test Customer'),'Customer values remain as entered');
 assert.ok(printDate.includes('Toyota Camry'),'Combined stored make/model stays intact');
 console.log('Bilingual estimate labels passed: English / Arabic, blank values, unchanged customer data and amounts');
 
 assert.equal((printDate.match(/92403420/g)||[]).length,1);
 assert.equal((printDate.match(/72440918/g)||[]).length,1);
+
+assert.ok(!printDate.includes('Model /'));
+assert.ok(printDate.includes('<th>JC.NO</th>'));
