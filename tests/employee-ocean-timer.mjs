@@ -21,8 +21,14 @@ w.document.querySelector('.ocean-car').click();assert.match(modal,/Toyota Avalon
 used=170;w.refreshActiveRunningTime();assert.equal(w.document.querySelector('.ocean-shell').dataset.tone,'near');assert.match(text('oceanTimeStatus'),/Nearing/);
 used=195;w.refreshActiveRunningTime();assert.equal(text('oceanRemaining'),'15 min');assert.equal(text('oceanTimeLabel'),'OVER ALLOTTED BY');assert.equal(text('oceanExceeded'),'15 min');assert.equal(w.document.querySelector('.ocean-shell').dataset.tone,'over');
 w.zukaitEmployeeTimeAuthority={pending:{type:'PAUSE'}};w.refreshActiveRunningTime();assert.equal(w.document.querySelector('.ocean-pause').disabled,true);assert.equal(w.document.querySelector('.ocean-finish').disabled,true);w.zukaitEmployeeTimeAuthority.pending=null;
-session=null;status='Paused';w.renderEmployee();assert.equal(text('oceanRemaining'),'NO RUNNING WORK');assert.match(text('oceanTimeStatus'),/Work paused/);assert.doesNotMatch(text('oceanTimeStatus'),/Within allotted/);assert.equal(w.document.querySelector('.ocean-shell').dataset.working,'false');assert.match(w.document.querySelector('.ocean-pause').textContent,/Resume/);assert.equal(w.document.querySelector('.ocean-finish').disabled,true);w.document.querySelector('.ocean-pause').click();assert.equal(calls.at(-1),'start:12050');
-status='New';w.renderEmployee();assert.equal(text('oceanRemaining'),'NO RUNNING WORK');assert.match(text('oceanTimeStatus'),/Start Work/);
+session=null;status='Paused';w.renderEmployee();
+assert.match(w.document.querySelector('.ocean-idle-banner').textContent,/NO RUNNING WORK/);
+for(const selector of ['.ocean-job','.ocean-stats','.ocean-session','.ocean-actions','.ocean-pause','.ocean-finish'])assert.equal(w.document.querySelector(selector),null,'paused work has no top job details or controls');
+status='New';w.renderEmployee();assert.match(w.document.querySelector('.ocean-idle-banner').textContent,/Start Work or Resume Work/);assert.equal(w.document.querySelector('.ocean-job'),null);
+// Starting without a full redraw replaces the idle banner with the running job.
+session={id:'S1b',emp:'E1',job:'12050',assignmentId:'A1',start:Date.now()};w.refreshActiveRunningTime();assert.ok(w.document.querySelector('.ocean-job'));assert.equal(w.document.querySelector('.ocean-idle-banner'),null);
+// Pausing without a full redraw clears the previous job details and sticky controls.
+session=null;w.refreshActiveRunningTime();assert.ok(w.document.querySelector('.ocean-idle-banner'));assert.equal(w.document.querySelector('.ocean-actions'),null);
 w.me=employees[1];used=60;session={id:'S2',emp:'E2',assignmentId:'A2',job:'12060',start:Date.now()};w.renderEmployee();assert.match(w.document.querySelector('.ocean-header').textContent,/Nabeel/);assert.match(w.document.querySelector('.ocean-job').textContent,/Nissan Sunny/);assert.doesNotMatch(w.document.querySelector('.ocean-shell').textContent,/Afsal|4493.D/);assert.equal(text('oceanAllotted'),'4 hrs');assert.equal(text('oceanRemaining'),'3 hrs');
 assert.doesNotMatch(text('oceanRemaining'),/NO RUNNING/);assert.equal(w.document.querySelector('.ocean-shell').dataset.working,'true');
 w.state.assign[1].suggested=0;w.refreshActiveRunningTime();assert.equal(text('oceanRemaining'),'—');assert.equal(text('oceanPercent'),'No allotted time');assert.equal(text('oceanExceeded'),'0 hrs');

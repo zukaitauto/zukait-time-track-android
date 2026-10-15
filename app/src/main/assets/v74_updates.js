@@ -498,8 +498,9 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 
    window.v157OpenEmployeeParts=window.v157OpenEmployeeParts||function(no){const sp=window.zukaitV2?.sparePartsMain;if(sp&&typeof sp.openForJobCard==='function')return sp.openForJobCard(no);return typeof window.v74Msg==='function'?window.v74Msg('Parts List is not available yet. Please sync and try again.','Parts List'):undefined};
    const denterPartsButton=jobNo=>{if(dept!=='Denter'||jobNo===H)return'';const sp=window.zukaitV2?.sparePartsMain,s=sp?.partsSummary?sp.partsSummary(jobNo):{exists:false,count:0};return s.exists?'<button class="v75s-parts" onclick="event.stopPropagation();v157OpenEmployeeParts(\''+esc(jobNo)+'\')">🔩 PARTS LIST · '+s.count+'</button>':'<button class="v75s-parts empty" disabled>🔩 NO PARTS LIST</button>'};
-   const cards=open.length?open.map(a=>{const x=jj(a.job),run=!!active&&((active.assignmentId&&active.assignmentId===a.id)||(!active.assignmentId&&active.job===a.job)),holdCard=a.job===H,worked=actual(a),remaining=Math.max(0,(+a.suggested||0)-worked),exceeded=!holdCard&&worked>(+a.suggested||0),badge=exceeded?'EXCEEDED':run?'RUNNING':(worked>0?'PAUSED':'NOT STARTED');return '<div class="v75s-card '+(run?'running ':'')+(!run&&worked>0?'paused ':'')+(exceeded?'over ':'')+(holdCard?'ideal':'')+'"><div class="v75s-card-top"><b>JOB : '+esc(a.job)+'</b><span class="v75s-badge">'+badge+'</span></div><h3>'+esc(holdCard?'IDEAL TIME':(x.vehicle||'—'))+'</h3><p>'+esc(holdCard?'Waiting / No Assigned Work':(x.reg||'—'))+'</p>'+(holdCard?'<div class="v75s-gear" style="width:40px;height:40px;font-size:20px">◷</div>':vehicleBadge(x.vehicle))+'<div class="v75s-mini v197-time-history"><div>Allocated<b>'+fm(a.suggested)+'</b></div><div>Actual Worked<b>'+fm(worked)+'</b></div><div>Remaining<b>'+fm(remaining)+'</b></div></div>'+denterPartsButton(a.job)+(run?'<button class="v75s-start" disabled>CURRENTLY RUNNING</button>':active?'<button class="v75s-start" disabled>Pause current work first</button>':'<button class="v75s-start" onclick="start(\''+esc(a.job)+'\')">▶ START WORK</button>')+'</div>'}).join(''):'<div class="notice">No allotted job cards.</div>';
-   const allotted='<div class="v75s-allotted-head"><div style="font-size:22px">▣</div><div><h2>ALLOTTED WORK</h2><p>Your assigned job cards (Pause current work to start another)</p></div><span class="v75s-count">'+open.length+' Job'+(open.length===1?'':'s')+'</span></div><div class="v75s-grid">'+cards+'</div>'+(active&&open.some(a=>!((active.assignmentId&&active.assignmentId===a.id)||(!active.assignmentId&&active.job===a.job)))?'<div class="v75s-warning">⚠ Please pause your current work before starting another job. You can work on only one job at a time.</div>':'');
+   const pendingCards=open.filter(a=>!active||!((active.assignmentId&&active.assignmentId===a.id)||(!active.assignmentId&&active.job===a.job)));
+   const cards=pendingCards.length?pendingCards.map(a=>{const x=jj(a.job),run=!!active&&((active.assignmentId&&active.assignmentId===a.id)||(!active.assignmentId&&active.job===a.job)),holdCard=a.job===H,worked=actual(a),remaining=Math.max(0,(+a.suggested||0)-worked),exceeded=!holdCard&&worked>(+a.suggested||0),badge=exceeded?'EXCEEDED':run?'RUNNING':(worked>0?'PAUSED':'NOT STARTED');return '<div class="v75s-card '+(run?'running ':'')+(!run&&worked>0?'paused ':'')+(exceeded?'over ':'')+(holdCard?'ideal':'')+'"><div class="v75s-card-top"><b>JOB : '+esc(a.job)+'</b><span class="v75s-badge">'+badge+'</span></div><h3>'+esc(holdCard?'IDEAL TIME':(x.vehicle||'—'))+'</h3><p>'+esc(holdCard?'Waiting / No Assigned Work':(x.reg||'—'))+'</p>'+(holdCard?'<div class="v75s-gear" style="width:40px;height:40px;font-size:20px">◷</div>':vehicleBadge(x.vehicle))+'<div class="v75s-mini v197-time-history"><div>Allocated<b>'+fm(a.suggested)+'</b></div><div>Actual Worked<b>'+fm(worked)+'</b></div><div>Remaining<b>'+fm(remaining)+'</b></div></div>'+denterPartsButton(a.job)+(run?'<button class="v75s-start" disabled>CURRENTLY RUNNING</button>':active?'<button class="v75s-start" disabled>Pause current work first</button>':'<button class="v75s-start" onclick="start(\''+esc(a.job)+'\')">▶ '+(worked>0?'RESUME WORK':'START WORK')+'</button>')+'</div>'}).join(''):'<div class="notice">No allotted job cards.</div>';
+   const allotted='<div class="v75s-allotted-head"><div style="font-size:22px">▣</div><div><h2>ALLOTTED WORK</h2><p>Your assigned job cards (Pause current work to start another)</p></div><span class="v75s-count">'+pendingCards.length+' Job'+(pendingCards.length===1?'':'s')+'</span></div><div class="v75s-grid">'+cards+'</div>'+(active&&open.some(a=>!((active.assignmentId&&active.assignmentId===a.id)||(!active.assignmentId&&active.job===a.job)))?'<div class="v75s-warning">⚠ Please pause your current work before starting another job. You can work on only one job at a time.</div>':'');
 
    const nowTs=Date.now(),d=new Date(nowTs),mf=+new Date(d.getFullYear(),d.getMonth(),1),mt=+new Date(d.getFullYear(),d.getMonth()+1,1);
    const normalDone=done.filter(a=>a.job!==H&&(a.completedAt||0)>=mf&&(a.completedAt||0)<mt);
@@ -3365,7 +3366,7 @@ window.v2TogglePilotThisDevice=function(){
    });
    const count=root.querySelector('.v75s-count');
    if(count){
-     const n=openNormal(me.id).length;const label=n+' Job'+(n===1?'':'s');if(count.textContent!==label)count.textContent=label;
+     const n=openNormal(me.id).filter(a=>!active||!((active.assignmentId&&active.assignmentId===a.id)||(!active.assignmentId&&active.job===a.job))).length;const label=n+' Job'+(n===1?'':'s');if(count.textContent!==label)count.textContent=label;
    }
 
    // Monthly figures: productive and waiting hours remain separate, while Normal Working Hours includes both.
@@ -4327,7 +4328,7 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  function current(){
    if(!me||me.role!=='Employee')return null;
    const s=window.zukaitEmployeeDisplaySession?.(me.id)||null;
-   if(s&&String(s.job)==='ID001')return null;
+   if(!s||String(s.job)==='ID001')return null;
    const mine=(state.assign||[]).filter(a=>a&&String(a.emp)===String(me.id)&&!a.cancelled&&!a.completed);
    // Preserve the existing assigned ID001 waiting-card priority.
    if(!s&&mine.some(a=>String(a.job)==='ID001'))return null;
@@ -4350,10 +4351,16 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
    const session=window.zukaitEmployeeDisplaySession?.(me.id)||null;
    root.classList.toggle('ocean-no-running',!session);
    const d=current();if(!d){
-     root.classList.remove('ocean-employee');
-     let banner=root.querySelector('.ocean-idle-banner');
-     if(!session&&!banner){banner=document.createElement('div');banner.className='ocean-idle-banner';banner.innerHTML='<strong>NO RUNNING WORK</strong><p>Select an allotted job and tap Start Work.</p>';root.prepend(banner)}
-     if(session&&banner)banner.remove();
+     if(session){root.classList.remove('ocean-employee');root.querySelector('.ocean-idle-banner')?.remove();return}
+     const shell=root.querySelector('.v75s-shell');if(!shell)return;
+     root.classList.add('ocean-employee');shell.classList.add('ocean-shell');
+     const key='idle|'+me.id;
+     if(shell.dataset.oceanKey!==key){
+       shell.dataset.oceanKey=key;shell.dataset.working='false';
+       shell.innerHTML='<div class="ocean-header"><div><b>'+esc(me.name)+'</b><p>'+esc(me.department||'Employee')+'</p></div><div class="ocean-header-right"><time id="oceanClock"></time><p id="oceanWorkStatus">No running work</p></div><button type="button" class="ocean-account" aria-label="Open account menu">☰</button></div><div class="ocean-idle-banner"><strong>NO RUNNING WORK</strong><p>Select a job card below and tap Start Work or Resume Work.</p></div>';
+       shell.querySelector('.ocean-account').onclick=()=>window.v84EmployeeAccount();
+     }
+     const time=document.getElementById('oceanClock');if(time)time.textContent=clock(Date.now());
      return;
    }
    root.querySelector('.ocean-idle-banner')?.remove();
@@ -4395,6 +4402,7 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  window.zukaitEmployeeOceanTimer={refresh,current};
  const style=document.createElement('style');style.id='employeeOceanTimerStyle';style.textContent=`
  #employeeView.ocean-employee{padding-bottom:115px!important;color:#0b2e50;background:linear-gradient(145deg,#e8faff,#c8edf7);border-radius:22px}
+ #employeeView.ocean-employee.ocean-no-running{padding-bottom:16px!important}
  #employeeView.ocean-employee>.v75s-identity{display:none!important}
  #employeeView .ocean-shell{max-width:660px;margin:10px auto 18px!important;padding:18px!important;background:transparent!important;border:0!important;box-shadow:none!important}
  .ocean-header{display:flex;align-items:center;gap:12px;margin:0 0 20px}.ocean-header b{font-size:24px}.ocean-header p{margin:4px 0;font-size:13px;color:#456680}.ocean-header-right{margin-left:auto;text-align:right}.ocean-header time{font-size:17px;font-weight:800}.ocean-header-right p{color:#087b4a;font-weight:700}.ocean-account{background:#ffffffb3!important;color:#123c5b!important;min-width:38px;padding:5px!important;border:1px solid white!important;box-shadow:none!important}

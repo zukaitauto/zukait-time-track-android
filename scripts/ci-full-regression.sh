@@ -11,6 +11,7 @@ node tests/vin-scan-runtime.mjs
 node tests/secure-session-restore.mjs
 node tests/functional-smoke.mjs
 node tests/employee-ocean-timer.mjs
+node tests/employee-job-placement.mjs
 node tests/manager-time-management.mjs
 node tests/cancel-unstarted-allotted-work.mjs
 node tests/cash-monthly-pulse.mjs

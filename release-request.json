@@ -1,20 +1,20 @@
 {
-  "versionName": "V329",
-  "versionCode": 292,
+  "versionName": "V330",
+  "versionCode": 293,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "sourceCommit": "169b8dc97c52d7942a5564846e7379635adb98a6",
-  "signedAcceptanceRun": 38693550047,
-  "verificationRun": 38693519163,
-  "publishNonce": "owner-publish-v329-time-cancel-red-idle-20261015",
+  "approvedForStaff": false,
+  "sourceCommit": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "publishNonce": null,
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "authorization": "Owner requested Cancel Allotted Work only in Time Management for Supervisor and Manager before work starts, then requested a red NO RUNNING WORK panel for paused/not-started employees. Proceed authorizes implementation and the established release process. Existing previously recorded physical-device/backup NOT_RUN status is retained.",
-  "verificationSummary": "Exact combined V329 source passed signed acceptance APK 38693550047, Reception/browser verification 38693519163 and Android debug build 38693519157. Employee red idle-state and cancellation race/audit/role tests passed. Backend version 68 deployed separately, all files matched intended bundle. Physical device acceptance and fresh production backup remain NOT_RUN.",
+  "authorization": "Owner requested paused and new work appear only in lower cards, and a job appear at the top only after starting. No running work keeps the prominent red warning. Existing authorization covers the established client release process. No new backend or data changes.",
+  "verificationSummary": "V330 candidate: production renderer DOM tests passed for idle/paused/new and running transitions, card counts, start/resume and no duplicate running cards. Exact-source acceptance pending.",
   "estimateChecksRun": 38615198466,
   "releaseHeldByOwner": false,
   "backendDeploymentRequired": false,
@@ -27,5 +27,5 @@
     "deployedSeparately": true,
     "sourceCommit": "969454b1baeb7d18df164ded13d909209ebee113"
   },
-  "approvedAt": "2026-10-15T06:41:01.927847Z"
+  "approvedAt": null
 }
