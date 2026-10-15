@@ -322,3 +322,18 @@ assert.ok(printDate.includes('<th>JC.NO</th>'));
 
 assert.ok(printDate.includes('Toyota Camry 2024'));
 assert.ok(!printDate.includes('<th>Year /'));
+
+ctx.document.getElementById=id=>domValues[id]||null;
+ctx.document.querySelectorAll=()=>[];
+const paymentEstimate={...structuredClone(state.estimates[0]),id:'PAYMENT-TEST',jobType:'CASH',receptionNo:'',customerName:'Cash Customer'};
+state.estimates.push(paymentEstimate);ctx.window.__zukaitEstimateCurrent=paymentEstimate.id;
+domValues.estName.value='Cash Customer';domValues.estName.setAttribute=function(key,value){this[key]=value};
+api.setPaymentType('INSURANCE');
+assert.equal(domValues.estName.value,'');assert.equal(domValues.estName.list,'estCompanyOptions');
+domValues.estName.value='Custom Insurance';api.setPaymentType('CASH');
+assert.equal(domValues.estName.value,'Cash Customer');
+api.setPaymentType('INSURANCE');assert.equal(domValues.estName.value,'Custom Insurance');
+assert.equal(paymentEstimate.insuranceCompany,'Custom Insurance');
+paymentEstimate.receptionNo='RC-LOCKED';api.setPaymentType('CASH');
+assert.equal(paymentEstimate.jobType,'INSURANCE','Reception identity remains locked');
+console.log('Insurance/Cash selection: custom company, separate name retention and reception lock passed');
