@@ -20,6 +20,8 @@ const fixture={id:'preview',estimateNo:'Zi-Qt018',date:'2026-10-13',type:'LS',va
  await page.waitForTimeout(100);
  await page.locator('#estPayINSURANCE').click();
  assert.match(await page.locator('#estNameLabel').innerText(),/Insurance company/);
+ assert.equal(await page.locator('#estPayINSURANCE').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(107, 33, 168)');
+ assert.equal(await page.locator('#estPayINSURANCE').evaluate(el=>getComputedStyle(el,'::before').content),'"✓ "');
  await page.locator('#estName').fill('Custom Insurance');
  await page.locator('#estPayCASH').click();
  assert.equal(await page.locator('#estName').inputValue(),'Anil');

@@ -1,21 +1,20 @@
 {
-  "versionName": "V331",
-  "versionCode": 294,
+  "versionName": "V332",
+  "versionCode": 295,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "sourceCommit": "901157c4e8e51582de6b8f72eb02b75d85419dad",
-  "signedAcceptanceRun": 38735863080,
-  "verificationRun": 38735858698,
-  "publishNonce": "v331-owner-approved-e586e3dc05124594c67e",
+  "approvedForStaff": false,
+  "sourceCommit": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "publishNonce": null,
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "authorization": "Owner requested proceeding with Insurance/Cash selection, smaller estimate footer and server-confirmation comparison correction. No backend or data changes.",
-  "verificationSummary": "Functional and smoke tests passed, including JSON property-order independent confirmation with changed-value rejection and Insurance/Cash name retention. Exact-source browser/PDF checks passed with 9px footer, responsive layout and A4 pagination. Signed APK, shared Reception and native PDF workflow evidence pinned to source. Physical acceptance and fresh backup/restore remain NOT_RUN under existing owner deferral.",
-  "estimateChecksRun": 38735858761,
+  "authorization": "Owner requested release of all discussed changes: distinct estimate selection colors, header-matched Arabic footer, clear period material totals, vertical final-material pending list, custom-range job totals with material drill-down, refreshed report filters and explicit Supervisor checklist linking. Uses existing server operations; no backend or database changes.",
+  "verificationSummary": "Local feature tests passed. Exact-source CI pending.",
   "releaseHeldByOwner": false,
   "backendDeploymentRequired": false,
   "productionBackend": {
@@ -27,7 +26,5 @@
     "deployedSeparately": true,
     "sourceCommit": "969454b1baeb7d18df164ded13d909209ebee113"
   },
-  "approvedAt": "2026-10-15T12:38:01Z",
-  "estimateVisualRun": 38735858723,
-  "nativePdfRun": 38735858749
+  "approvedAt": null
 }
