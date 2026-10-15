@@ -26,6 +26,7 @@ export function timeManagementTransition(current,actor,request,at=Date.now()){
  const fail=code=>({ok:false,code});
  if(!actor||!['Manager','Supervisor'].includes(actor.role))return fail('time_permission_denied');
  request=request||{};
+ if(request.operation==='CANCEL_UNSTARTED')return cancelUnstartedAssignment(current,actor,request,at);
  // Preserve the deployed correction contract used by older clients.
  if(request.operation==='CORRECT_SESSION'&&request.expectedSessions===undefined&&'startAt' in request){
   const id=String(request.requestId||''),reason=String(request.reason||'').trim();
@@ -187,4 +188,30 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
  const labels={CORRECT_SESSION:'Time Correction',ADD_SESSION:'Add Missing Time',CANCEL_SESSION:'Cancel Time Entry',CANCEL_ASSIGNMENT:'Cancel Allotted Work',SET_ALLOCATION:'Edit Allocated Time',REOPEN:'Reopen Work',REASSIGN:'Reassign Work'};
  const audit={id,type:labels[op],command,managerTime:true,assignmentId:a.id,job:a.job,emp:a.emp,minutes:0,reason,by:actor.id,at,source:'Manager Time Management',before,after:copy(after)};
  data.additionalActions=data.additionalActions||[];data.additionalActions.push(audit);return{ok:true,data,audit,duplicate:false};
+}
+
+// A session is proof work started, even when it lasted zero minutes or was later corrected.
+export function assignmentHasStarted(data,a){
+ return (data.sessions||[]).some(s=>s&&String(s.emp)===String(a.emp)&&sessionAssignmentId(data,s)===String(a.id));
+}
+function cancelUnstartedAssignment(current,actor,request,at){
+ const fail=code=>({ok:false,code}),id=String(request.requestId||''),reason=String(request.reason||'').trim();
+ if(!/^tm-[a-zA-Z0-9-]{16,100}$/.test(id))return fail('invalid_time_change');
+ if(!reason||reason.length>500)return fail('time_reason_required');
+ const command={operation:'CANCEL_UNSTARTED',assignmentId:String(request.assignmentId||''),reason};
+ const prior=(current.additionalActions||[]).find(x=>x&&x.id===id);
+ if(prior)return prior.by===actor.id&&JSON.stringify(prior.command)===JSON.stringify(command)?{ok:true,data:current,audit:prior,duplicate:true}:fail('time_request_reused');
+ const a=(current.assign||[]).find(x=>x&&String(x.id)===command.assignmentId);
+ if(!a||a.completed||a.cancelled||a.rework||String(a.job)==='ID001')return fail('time_assignment_inactive');
+ const j=(current.jobs||[]).find(x=>x&&String(x.no)===String(a.job));
+ if(!j||j.delivered||j.archived||j.deleted||j.cancelled)return fail('time_job_inactive');
+ if(assignmentHasStarted(current,a))return fail('time_work_already_started');
+ if(allocationToken(a)!==request.expectedSource)return fail('time_allocation_changed');
+ if(employeeTimeToken(current,a.emp)!==request.expectedSessions)return fail('time_sessions_changed');
+ const data=JSON.parse(JSON.stringify(current)),row=data.assign.find(x=>String(x.id)===String(a.id));
+ row.cancelled=true;row.managerTimeCancellation=true;row.cancelledBy=actor.id;row.cancelledAt=at;row.cancelReason=reason;row.timeManagementRevision=(Number(a.timeManagementRevision)||0)+1;
+ data.cancelledAssignments=data.cancelledAssignments||[];data.cancelledAssignments.push({id,assignmentId:a.id,job:a.job,from:a.emp,by:actor.id,at,reason});
+ const audit={id,type:'Cancel Allotted Work',command,managerTime:true,assignmentId:a.id,job:a.job,emp:a.emp,minutes:0,reason,by:actor.id,at,source:'Time Management',before:a,after:JSON.parse(JSON.stringify(row))};
+ data.additionalActions=data.additionalActions||[];data.additionalActions.push(audit);
+ return {ok:true,data,audit,duplicate:false};
 }

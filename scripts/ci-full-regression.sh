@@ -12,6 +12,7 @@ node tests/secure-session-restore.mjs
 node tests/functional-smoke.mjs
 node tests/employee-ocean-timer.mjs
 node tests/manager-time-management.mjs
+node tests/cancel-unstarted-allotted-work.mjs
 node tests/cash-monthly-pulse.mjs
 node tests/leave-after-work.mjs
 node tests/supervisor-leave-dashboard.mjs
