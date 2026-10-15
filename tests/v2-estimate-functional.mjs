@@ -191,10 +191,10 @@ console.log('V2 Estimate functional calculations + Android bridge: ok');
 
 // The same self-contained branding/footer must survive native WebViews with a null base URL.
 const branded=api.estimateDocumentHtml(state.estimates[0]);
-assert.match(branded,/<image href="data:image\/jpeg;base64,[A-Za-z0-9+/=]+" width="3084" height="780" filter="url\(#estimate-paper-cleanup\)"\/>/);
-assert.match(branded,/viewBox="0 55 3084 510"/,'Header artwork must exclude contacts and old printed serial');
+assert.match(branded,/<image href="data:image\/svg\+xml;base64,[A-Za-z0-9+/=]+" width="596" height="142"\/>/);
+assert.match(branded,/viewBox="0 0 596 142"/,'Use the exact proportions of the supplied vector PDF header');
 assert.match(branded,/class="letterhead-artwork"/);
-for(const text of ['P.O. Box 1921','Barka','Postal Code 130','C.R.N. 1194220','93211154','Authorized Signed']) assert.ok(branded.includes(text),text);
+for(const text of ['P.O. Box 1921','Barka','Postal Code 130','C.R.N. 1194220','92403420, 72440918','Authorized Signed']) assert.ok(branded.includes(text),text);
 assert.ok(!plPrintable.includes('<b>Type:</b>'));
 assert.ok(!plPrintable.includes('<b>VAT:</b>'));
 assert.ok(plNoVat.includes('NOTES / CONDITIONS'),'Notes area remains present when empty');
@@ -290,3 +290,13 @@ await import('./technician-time-vehicle-share.mjs');
 
 // Run the Reception record/date/permission matrix with estimate acceptance.
 await import('./reception-feature8.mjs');
+
+const printDate=api.estimateDocumentHtml({...state.estimates[0],date:'2026-10-15',mobile:'',jobCard:'',claimNo:''});
+assert.match(printDate,/<b>Date:<\/b> 15-10-2026/);
+assert.doesNotMatch(printDate,/93211154/);
+assert.match(printDate,/<th>Tel No\.<\/th><td><\/td>/);
+assert.match(printDate,/<th>Job Card No\.<\/th><td><\/td>/);
+assert.match(printDate,/<th>Claim No\.<\/th><td><\/td>/);
+assert.match(printDate,/font:14px\/1\.45 Arial/);
+assert.equal(state.estimates[0].date,'2026-09-26','Display formatting must not mutate stored dates');
+console.log('Estimate print correction: vector header, larger type, both contact numbers, DD-MM-YYYY and blank optional fields passed');
