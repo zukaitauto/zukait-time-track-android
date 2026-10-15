@@ -1,9 +1,9 @@
 {
-  "versionCode": 291,
-  "versionName": "V328",
+  "versionCode": 292,
+  "versionName": "V329",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "645df332361f53e7350ac10841b9df6f05891f20",
-  "apkSha256": "bfca5912ecedcdb1ab28356f5cbefd783f4959798a9a744b9eec6c9ce2e2005b",
-  "releaseTag": "release-V328-architecture-v2"
+  "sourceCommit": "169b8dc97c52d7942a5564846e7379635adb98a6",
+  "apkSha256": "75a6e0188bd873a679a86edc0a0788a15938eb7035d1f4cd47f4bbb14706918b",
+  "releaseTag": "release-V329-architecture-v2"
 }
