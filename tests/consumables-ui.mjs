@@ -99,3 +99,23 @@ assert.match(uiSource,/\[\.\.\.c\.issues,\.\.\.c\.actuals\]/,'Recent Material Li
 assert.match(uiSource,/String\(x\.jobCard\|\|''\)\.toUpperCase\(\)===jc/,'material detail lookup must normalize stored Job Card numbers');
 assert.match(uiSource,/Material list not found\./,'missing local Job Card must not be reported as Job Card not found');
 const savedJobs=state.jobs.splice(0,state.jobs.length),orphanIssue={id:'server-restored-11969',type:C.TYPES.ISSUED,department:'Painting',jobCard:'11969',vehicle:'TOY. AURION. 2012',registration:'',locked:true,voided:false,createdAt:Date.now(),lines:[{materialId:m.id,brandId:b.id,unit:'Liter',quantity:1.25}]};state.consumables.issues.push(orphanIssue);await ctx.openConsumablesSearch();assert.match(ctx.modal,/RECENT MATERIAL LISTS/);assert.match(ctx.modal,/11969/,'server-restored Suggested\/Issued record must appear even when local Job Card cache is empty');assert.match(ctx.modal,/TOY\. AURION\. 2012/);fill({consSearchJc:'11969'});ctx.consSetSearchView('issued');ctx.consShowSearch();assert.match(element('consSearchResult').innerHTML,/SUGGESTED \/ ISSUED/);assert.match(element('consSearchResult').innerHTML,/1\.25 Liter/,'orphaned server Suggested\/Issued quantity must remain visible');state.consumables.issues.pop();state.jobs.push(...savedJobs);
+
+// Custom Range groups only filtered finalized actuals, preserving drill-down lines.
+vm.runInContext("me={id:'M1',role:'Manager'}",ctx);
+const originalActuals=state.consumables.actuals;
+const reportLine=(cost,quantity)=>({materialId:m.id,brandId:b.id,actualQuantity:quantity,unitPriceSnapshot:cost/quantity,lineCost:cost});
+state.consumables.actuals=[
+ {jobCard:'JC1',actualAt:new Date(2026,9,1,12).getTime(),locked:true,lines:[reportLine(3,1),reportLine(5,2)]},
+ {jobCard:'JC2',actualAt:new Date(2026,9,15,12).getTime(),locked:true,lines:[reportLine(4,1)]},
+ {jobCard:'EXCLUDED',actualAt:new Date(2026,9,16,12).getTime(),locked:true,lines:[reportLine(100,1)]}
+];
+fill({crMode:'custom',crFrom:'2026-10-01',crTo:'2026-10-15',crJc:'',crMat:'',crBrand:'',crPainter:'',crSupervisor:''});ctx.consRunReports();
+let report=element('crResult').innerHTML;
+assert.equal((report.match(/<details class="cons-job-report">/g)||[]).length,2);
+assert.match(report,/JC JC1/);assert.match(report,/OMR 8\.000/);assert.match(report,/OMR 12\.000/);
+assert.match(report,/3 Actual Material Lines/);assert.doesNotMatch(report,/EXCLUDED/);
+fill({crJc:'JC2'});ctx.consRunReports();report=element('crResult').innerHTML;
+assert.equal((report.match(/<details class="cons-job-report">/g)||[]).length,1);
+assert.match(report,/OMR 4\.000/);assert.doesNotMatch(report,/JC JC1/);
+state.consumables.actuals=originalActuals;
+console.log('Custom Range job totals and expandable material details respect inclusive dates and filters');
