@@ -18,6 +18,14 @@ const fixture={id:'preview',estimateNo:'Zi-Qt018',date:'2026-10-13',type:'LS',va
  await page.screenshot({path:'home-desktop.png'});
  await page.evaluate(()=>zukaitEstimate.openEditor('preview'));
  await page.waitForTimeout(100);
+ await page.locator('#estPayINSURANCE').click();
+ assert.match(await page.locator('#estNameLabel').innerText(),/Insurance company/);
+ await page.locator('#estName').fill('Custom Insurance');
+ await page.locator('#estPayCASH').click();
+ assert.equal(await page.locator('#estName').inputValue(),'Anil');
+ await page.locator('#estPayINSURANCE').click();
+ assert.equal(await page.locator('#estName').inputValue(),'Custom Insurance');
+ await page.locator('#estPayCASH').click();
  await page.screenshot({path:'editor-desktop.png'});
  for(const width of [360,390,768]){
   await page.setViewportSize({width,height:960});
@@ -74,6 +82,7 @@ const fixture={id:'preview',estimateNo:'Zi-Qt018',date:'2026-10-13',type:'LS',va
  assert.ok(Math.abs(art.width-headBox.width)<1,'Sample branding must fill the header width');
  assert.ok(art.height>185&&art.height<191,'Branding artwork must remain compact on A4');
  assert.equal(await page.locator('.letterhead-artwork image').getAttribute('href').then(x=>x.startsWith('data:image/svg+xml;base64,')),true,'Print artwork must be embedded for Android/offline sharing');
+ assert.equal(await page.locator('.doc-footer').evaluate(el=>getComputedStyle(el).fontSize),'9px');
  await page.pdf({path:'estimate-preview.pdf',preferCSSPageSize:true,printBackground:true,displayHeaderFooter:true});
  await page.setViewportSize({width:794,height:1123});await page.screenshot({path:'print-preview.png',fullPage:true});
  await page.setContent(partsHtml);await page.pdf({path:'estimate-parts-preview.pdf',preferCSSPageSize:true,printBackground:true});
