@@ -10,6 +10,7 @@ node tests/app-exit.mjs
 node tests/vin-scan-runtime.mjs
 node tests/secure-session-restore.mjs
 node tests/functional-smoke.mjs
+node tests/employee-ocean-timer.mjs
 node tests/manager-time-management.mjs
 node tests/cash-monthly-pulse.mjs
 node tests/leave-after-work.mjs

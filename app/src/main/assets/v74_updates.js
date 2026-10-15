@@ -4316,3 +4316,86 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
    refresh:async()=>{await window.zukaitCloud?.pull?.(true);await window.zukaitCloud?.pullLiveStatus?.();try{render()}catch(_){}}
  };
 })();
+
+/* EMPLOYEE OCEAN TIMER — shared presentation; existing server time controls remain authoritative. */
+(function(){
+ 'use strict';
+ if(typeof window.addEventListener!=='function'||typeof document.addEventListener!=='function')return;
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const minutes=v=>{const n=Math.max(0,Math.floor(Number(v)||0)),h=Math.floor(n/60),m=n%60;return h?h+' '+(h===1?'hr':'hrs')+(m?' '+m+' min':''):n+' min'};
+ const clock=t=>new Date(t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit',hour12:true});
+ function current(){
+   if(!me||me.role!=='Employee')return null;
+   const s=window.zukaitEmployeeDisplaySession?.(me.id)||null;
+   if(s&&String(s.job)==='ID001')return null;
+   const mine=(state.assign||[]).filter(a=>a&&String(a.emp)===String(me.id)&&!a.cancelled&&!a.completed);
+   // Preserve the existing assigned ID001 waiting-card priority.
+   if(!s&&mine.some(a=>String(a.job)==='ID001'))return null;
+   // An active session may only display its own assignment, never another employee's job.
+   const a=s?mine.find(a=>String(a.id)===String(s.assignmentId))||(!s.assignmentId?mine.find(a=>String(a.job)===String(s.job)):null):mine.filter(a=>a.job!=='ID001').sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0))[0];
+   if(!a)return null;
+   let status='Not started';if(s)status='Working';else{try{if(String(empStatus(a)).toLowerCase()==='paused')status='Paused'}catch(_){}}
+   const used=Math.max(0,Number(totalForAssignment(a))||0),allotted=Math.max(0,Number(a.suggested)||0),extra=allotted>0?Math.max(0,used-allotted):0;
+   return {a,s,status,used,allotted,extra,left:Math.max(0,allotted-used),j:job(a.job)||{},key:[me.id,a.id,s?.id||'',status].join('|')};
+ }
+ const car='<svg viewBox="0 0 240 125" role="img" aria-label="3D car illustration"><defs><linearGradient id="oceanPaint" x2=".2" y2="1"><stop stop-color="#edfaff"/><stop offset=".38" stop-color="#84c8e8"/><stop offset=".56" stop-color="#3d8cb9"/><stop offset=".8" stop-color="#156184"/><stop offset="1" stop-color="#b2deeb"/></linearGradient><linearGradient id="oceanGlass" x2=".5" y2="1"><stop stop-color="#afdfed"/><stop offset=".4" stop-color="#2e607d"/><stop offset="1" stop-color="#0b263f"/></linearGradient><radialGradient id="oceanWheel"><stop stop-color="#e1f4fa"/><stop offset=".3" stop-color="#618297"/><stop offset=".4" stop-color="#d8e8ef"/><stop offset=".63" stop-color="#607987"/><stop offset=".68" stop-color="#172333"/><stop offset="1" stop-color="#080f1a"/></radialGradient></defs><ellipse cx="126" cy="108" rx="102" ry="10" fill="#16617d" opacity=".15"/><g class="ocean-car-motion"><path d="M18 70L38 57 66 49 91 26Q100 18 127 20L160 25 185 48 216 56Q229 59 232 73L229 92 192 101 49 101 18 89Z" fill="url(#oceanPaint)" stroke="#3a7495" stroke-width="1.5"/><path d="M72 50L96 28 125 27 124 51Z M131 28L157 32 176 51 132 51Z" fill="url(#oceanGlass)" stroke="#d5edf8" stroke-width="2"/><path d="M40 59L182 55 215 63 192 70 25 75Z" fill="#c1e5f5" opacity=".65"/><path d="M181 55L215 63 229 72 195 80 177 69Z" fill="#81b6d0"/><path d="M194 82L229 75 227 89 194 96Z" fill="#10344c"/><path d="M197 85L225 80M197 90L225 85" stroke="#7bafc7" stroke-width="2"/><path d="M172 70L194 74 200 67 180 63Z M221 65L231 69 231 73 225 73Z" fill="#edfdff"/><path d="M22 69L36 66 34 73 19 77Z" fill="#f07763"/><path d="M123 56L123 88 87 91M68 58L62 84M165 57L175 83" fill="none" stroke="#2c6888" opacity=".7"/><path d="M130 62L141 62M76 63L85 63" stroke="#e4f7ff" stroke-width="3" stroke-linecap="round"/><ellipse cx="61" cy="92" rx="18" ry="23" fill="#122538"/><ellipse cx="63" cy="92" rx="14" ry="21" fill="url(#oceanWheel)"/><ellipse cx="178" cy="94" rx="18" ry="23" fill="#122538"/><ellipse cx="180" cy="94" rx="14" ry="21" fill="url(#oceanWheel)"/><path d="M45 81Q60 64 78 83M161 83Q178 65 196 84" fill="none" stroke="#b8e7f9" stroke-width="3"/><path d="M22 82L40 85M86 95L156 96" stroke="#d2eef9" stroke-width="2"/></g></svg>';
+ function details(){
+   const d=current();if(!d)return;
+   const sessions=(state.sessions||[]).filter(s=>s&&String(s.emp)===String(me.id)&&String(s.assignmentId)===String(d.a.id));
+   const history=sessions.map(s=>'<tr><td>'+esc(clock(s.start))+'</td><td>'+esc(s.end?clock(s.end):'Working')+'</td></tr>').join('');
+   openModal('<div class="section-title"><h2>Vehicle details</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="ocean-vehicle-window">'+car+'<h2>'+esc(d.j.vehicle||'Vehicle')+'</h2><p>Registration '+esc(d.j.reg||'—')+'</p><p>JC '+esc(d.a.job)+' · '+esc(me.name)+'</p><p>Allotted time: <b>'+minutes(d.allotted)+'</b></p><p>Total worked on this job: <b>'+minutes(d.used)+'</b></p>'+(history?'<h3>Your work sessions</h3><table><tr><th>Started</th><th>Ended</th></tr>'+history+'</table>':'')+'</div>');
+ }
+ function refresh(){
+   const root=document.getElementById('employeeView');if(!root||!me||me.role!=='Employee')return;
+   const d=current();if(!d){root.classList.remove('ocean-employee');return}
+   const shell=root.querySelector('.v75s-shell');if(!shell)return;
+   root.classList.add('ocean-employee');
+   if(shell.dataset.oceanKey!==d.key){
+     shell.dataset.oceanKey=d.key;shell.classList.add('ocean-shell');
+     shell.innerHTML='<div class="ocean-header"><div><b>'+esc(me.name)+'</b><p>'+esc(me.department||'Employee')+'</p></div><div class="ocean-header-right"><time id="oceanClock"></time><p id="oceanWorkStatus"></p></div><button type="button" class="ocean-account" aria-label="Open account menu">☰</button></div><div class="ocean-job ocean-panel"><div><small>JC '+esc(d.a.job)+'</small><h2>'+esc(d.j.vehicle||'Vehicle')+'</h2><p>Registration '+esc(d.j.reg||'—')+'</p></div><button type="button" class="ocean-car" aria-label="Open vehicle details window">'+car+'<span>Open vehicle ↗</span></button></div><div class="ocean-time ocean-panel"><h2 id="oceanTimeLabel"></h2><strong id="oceanRemaining"></strong><p id="oceanTimeStatus"></p></div><div class="ocean-stats ocean-panel"><div class="ocean-columns"><div><span>Allotted time</span><b id="oceanAllotted"></b></div><div><span>Used time</span><b id="oceanUsed"></b></div><div><span>Exceeded time</span><b id="oceanExceeded"></b></div></div><p class="ocean-worked-note">Total worked on this job · includes earlier sessions, normal duty time</p><progress id="oceanProgress" max="100" aria-label="Allotted time used"></progress><p id="oceanPercent"></p></div><div class="ocean-session ocean-panel"><span>◷</span><div><p id="oceanSessionLabel"></p><b id="oceanSessionTime"></b></div></div><button type="button" class="ocean-request">♧ Inform / Request <span>›</span></button><div class="ocean-actions"><button type="button" class="ocean-pause">Ⅱ Pause Work</button><button type="button" class="ocean-finish">✓ Finish Work</button></div>';
+     shell.querySelector('.ocean-account').onclick=()=>window.v84EmployeeAccount();
+     shell.querySelector('.ocean-car').onclick=details;
+     shell.querySelector('.ocean-request').onclick=()=>{const x=current();if(x)window.openEmployeeRequestMenu(x.a.job)};
+     shell.querySelector('.ocean-pause').onclick=()=>{const x=current();if(!x)return;x.s?window.pause():window.start(x.a.job)};
+     shell.querySelector('.ocean-finish').onclick=()=>{if(current()?.s)window.finish()};
+   }
+   const put=(id,v)=>{const el=document.getElementById(id);if(el&&el.textContent!==v)el.textContent=v};
+   const tone=d.extra>0?'over':d.allotted>0&&d.left/d.allotted<=.2?'near':'safe';
+   shell.dataset.tone=tone;shell.dataset.working=d.s?'true':'false';
+   put('oceanClock',clock(Date.now()));put('oceanWorkStatus',(d.s?'● ':d.status==='Paused'?'Ⅱ ':'○ ')+d.status);
+   put('oceanTimeLabel',d.allotted<=0?'NO ALLOTTED TIME':d.extra>0?'OVER ALLOTTED BY':'REMAINING TIME');
+   put('oceanRemaining',d.allotted>0?minutes(d.extra>0?d.extra:d.left):'—');
+   put('oceanTimeStatus',d.allotted<=0?'Allotted time has not been set':d.extra>0?'Allotted time exceeded':tone==='near'?'Nearing allotted time':'✓ Within allotted time');
+   put('oceanAllotted',minutes(d.allotted));put('oceanUsed',minutes(d.used));put('oceanExceeded',d.extra>0?minutes(d.extra):'0 hrs');
+   const pct=d.allotted>0?d.used/d.allotted*100:0,progress=document.getElementById('oceanProgress');if(progress)progress.value=Math.min(100,pct);
+   put('oceanPercent',d.allotted>0?Math.round(pct)+'% used':'No allotted time');
+   const last=(state.sessions||[]).filter(s=>s&&String(s.emp)===String(me.id)&&String(s.assignmentId)===String(d.a.id)).sort((a,b)=>b.start-a.start)[0];
+   put('oceanSessionLabel',d.s?'Current session started':last?'Last session started':'Session');
+   put('oceanSessionTime',d.s?clock(d.s.start):last?clock(last.start):'Not started');
+   const pending=!!window.zukaitEmployeeTimeAuthority?.pending;
+   shell.querySelector('.ocean-pause').textContent=d.s?'Ⅱ Pause Work':d.status==='Paused'?'▶ Resume Work':'▶ Start Work';
+   shell.querySelector('.ocean-pause').disabled=pending;shell.querySelector('.ocean-finish').disabled=pending||!d.s;
+ }
+ const priorRender=window.renderEmployee;
+ window.renderEmployee=function(){const result=priorRender?.apply(this,arguments);refresh();return result};
+ // Reuse the existing employee refresh scheduler; never create another timer or write work state.
+ const priorRefresh=window.refreshActiveRunningTime;
+ window.refreshActiveRunningTime=function(){const result=priorRefresh?.apply(this,arguments);refresh();return result};
+ window.addEventListener('zukait-live-status',refresh);window.addEventListener('focus',refresh);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
+ window.zukaitEmployeeOceanTimer={refresh,current};
+ const style=document.createElement('style');style.id='employeeOceanTimerStyle';style.textContent=`
+ #employeeView.ocean-employee{padding-bottom:115px!important;color:#0b2e50;background:linear-gradient(145deg,#e8faff,#c8edf7);border-radius:22px}
+ #employeeView.ocean-employee>.v75s-identity{display:none!important}
+ #employeeView .ocean-shell{max-width:660px;margin:10px auto 18px!important;padding:18px!important;background:transparent!important;border:0!important;box-shadow:none!important}
+ .ocean-header{display:flex;align-items:center;gap:12px;margin:0 0 20px}.ocean-header b{font-size:24px}.ocean-header p{margin:4px 0;font-size:13px;color:#456680}.ocean-header-right{margin-left:auto;text-align:right}.ocean-header time{font-size:17px;font-weight:800}.ocean-header-right p{color:#087b4a;font-weight:700}.ocean-account{background:#ffffffb3!important;color:#123c5b!important;min-width:38px;padding:5px!important;border:1px solid white!important;box-shadow:none!important}
+ .ocean-panel{border:1px solid #ffffffeb;border-radius:22px;background:linear-gradient(135deg,#ffffffc4,#dcf5fb9c);box-shadow:inset 0 1px white,0 7px 13px #267e981c;margin-bottom:15px;padding:18px}
+ .ocean-job{display:flex;align-items:center;gap:12px}.ocean-job>div{flex:1;min-width:0}.ocean-job small{color:#456680}.ocean-job h2{font-size:23px;line-height:1.15;margin:9px 0;overflow-wrap:anywhere}.ocean-job p{font-size:13px;color:#456680;margin:5px 0}
+ #employeeView .ocean-car{width:125px;flex:0 0 125px;min-height:113px;padding:8px 4px!important;border:1px solid #efffff!important;border-radius:18px!important;background:linear-gradient(145deg,#e1fbff,#8fd6e9)!important;color:#083b57!important;box-shadow:inset 0 1px 3px white,0 6px 12px #057f9a35!important}.ocean-car svg{width:100%;height:77px;display:block;filter:drop-shadow(0 4px 3px #0c587c30)}.ocean-car span{font-size:11px}.ocean-shell[data-working=true] .ocean-car-motion{animation:oceanDrive 1.8s ease-in-out infinite;transform-origin:center}@keyframes oceanDrive{50%{transform:translate(2px,-1px)}}
+ .ocean-time{text-align:center;padding:27px 12px;background:radial-gradient(ellipse at bottom right,#66e0e375,transparent 65%),linear-gradient(135deg,#c4f9fc,#e6fbff);border:2px solid #eaffff;box-shadow:inset 0 0 10px #fff9,0 8px 17px #1babbe26}.ocean-time h2{font-size:13px;letter-spacing:1.7px;margin:0 0 12px;color:#345e79}.ocean-time strong{font-size:clamp(36px,13vw,68px);line-height:1.12;letter-spacing:-2px;display:block}.ocean-time p{font-size:15px;font-weight:750;color:#087846;margin:14px 0 0}.ocean-columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.ocean-columns>div{padding-left:10px;border-left:1px solid #aed4e0}.ocean-columns>div:first-child{padding:0;border:0}.ocean-columns span{display:block;font-size:12px;color:#345570}.ocean-columns b{display:block;margin-top:8px;font-size:21px;line-height:1.2}.ocean-worked-note{font-size:11px;color:#456680;line-height:1.4;margin:15px 0}.ocean-stats progress{display:block;appearance:none;width:100%;height:15px;overflow:hidden;border:0;border-radius:20px;background:#b9d9e4}.ocean-stats progress::-webkit-progress-bar{background:#b9d9e4;box-shadow:inset 0 2px 4px #32627d20}.ocean-stats progress::-webkit-progress-value{background:linear-gradient(#20dcce,#009cac);border-radius:20px;box-shadow:inset 0 1px 2px #fff9}.ocean-stats progress::-moz-progress-bar{background:#00a5ad;border-radius:20px}#oceanPercent{text-align:right;font-size:12px;margin:8px 0 0;font-weight:700}
+ .ocean-session{display:flex;gap:14px;align-items:center}.ocean-session>span{font-size:32px;color:#226886}.ocean-session p{margin:0 0 5px;font-size:12px;color:#456680}.ocean-session b{font-size:19px}#employeeView .ocean-request{width:100%;background:transparent!important;color:#153f61!important;box-shadow:none!important;text-align:left;padding:12px 7px!important;margin:0 0 10px!important;font-size:14px!important}.ocean-request span{float:right}
+ #employeeView .ocean-actions{position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:86;display:flex;gap:12px;width:min(100%,660px);padding:15px 18px max(18px,env(safe-area-inset-bottom));background:#def5faed;border:1px solid white;border-radius:22px 22px 0 0;box-shadow:0 -4px 15px #24677c18;backdrop-filter:blur(15px)}#employeeView .ocean-actions button{flex:1;min-width:0;min-height:58px;padding:13px 6px!important;font-size:16px!important;font-weight:800;border-radius:17px!important;border:1px solid #ffffffb0!important;box-shadow:inset 0 2px 2px #ffffffb0,0 5px 9px #14557130!important}#employeeView .ocean-pause{background:linear-gradient(145deg,#ffda53,#ffa40b)!important;color:#12304d!important}#employeeView .ocean-finish{background:linear-gradient(145deg,#00adb4,#00617a)!important;color:white!important}.ocean-actions button:disabled{opacity:.48;cursor:default}.ocean-shell[data-tone=near] .ocean-time p{color:#985700}.ocean-shell[data-tone=over] .ocean-time{background:linear-gradient(135deg,#ffe5e6,#fff3f3)}.ocean-shell[data-tone=over] .ocean-time p{color:#b42138}.ocean-shell[data-tone=near] progress::-webkit-progress-value{background:#ffb32e}.ocean-shell[data-tone=over] progress::-webkit-progress-value{background:#e73750}.ocean-vehicle-window>svg{width:100%;max-width:340px;display:block;margin:auto}.ocean-vehicle-window p{overflow-wrap:anywhere}
+ @media(max-width:370px){#employeeView .ocean-shell{padding:11px!important}.ocean-job{gap:7px;padding:13px}.ocean-job h2{font-size:19px}#employeeView .ocean-car{width:101px;flex-basis:101px}.ocean-columns span{font-size:10px}.ocean-columns b{font-size:18px}#employeeView .ocean-actions button{font-size:14px!important}}
+ @media(prefers-reduced-motion:reduce){.ocean-shell .ocean-car-motion{animation:none!important}}
+ `;document.head.appendChild(style);refresh();
+})();
