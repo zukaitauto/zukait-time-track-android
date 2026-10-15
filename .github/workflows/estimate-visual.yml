@@ -45,7 +45,7 @@ jobs:
           long = PdfReader('long-estimate.pdf')
           assert len(long.pages) > 1, 'Long estimates must paginate'
           text = '\n'.join(p.extract_text() for p in long.pages)
-          for expected in ['Part 1', 'Part 120', 'Authorized Signed', '93211154']:
+          for expected in ['Part 1', 'Part 120', 'Authorized Signed', '92403420', '72440918']:
               assert expected in text, f'PDF lost {expected}'
           assert all(p.extract_text().strip() for p in long.pages), 'Long PDF contains a blank page'
           print(f'PDF pagination passed: short={len(short.pages)} page, long={len(long.pages)} pages')
