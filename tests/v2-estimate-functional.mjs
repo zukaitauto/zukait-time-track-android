@@ -296,7 +296,7 @@ assert.match(printDate,/<b>Date[^]*?:<\/b> 15-10-2026/);
 assert.doesNotMatch(printDate,/93211154/);
 assert.match(printDate,/<th>Tel\. No\. \/ <bdi[^>]*>رقم الهاتف<\/bdi><\/th><td(?: colspan="2")?><\/td>/);
 assert.match(printDate,/<th>JC\.NO<\/th><td(?: colspan="2")?><\/td>/);
-assert.match(printDate,/<th>Claim No\. \/ <bdi[^>]*>رقم المطالبة<\/bdi><\/th><td(?: colspan="2")?><\/td>/);
+assert.match(printDate,/<th style="white-space:nowrap">Claim No\. \/ <bdi[^>]*>رقم المطالبة<\/bdi><\/th><td(?: colspan="2")?><\/td>/);
 assert.match(printDate,/font:14px\/1\.45 Arial/);
 assert.equal(state.estimates[0].date,'2026-09-26','Display formatting must not mutate stored dates');
 console.log('Estimate print correction: vector header, larger type, both contact numbers, DD-MM-YYYY and blank optional fields passed');
