@@ -264,6 +264,14 @@ ctx.window.__zukaitEstimateCurrent='UNSAVED';
 await api.saveCurrent('UNSAVED');
 assert.ok(messages.at(-1).includes('saved on the server'));assert.equal(syncCalls,1);assert.equal(state.estimates.find(e=>e.id==='UNSAVED').status,'Saved');
 assert.ok(recovery.get('zukait_estimate_recovery_v1:SUP1').includes('UNSAVED'),'Confirmed estimate must retain a separate local recovery copy');
+// JSONB round trips preserve values but reorder object properties, including item rows.
+const reordered=value=>Array.isArray(value)?value.map(reordered):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().reverse().map(key=>[key,reordered(value[key])])):value;
+ctx.window.zukaitCloud.syncNow=async()=>{dirty=false;state.estimates=state.estimates.map(reordered)};
+await api.saveCurrent('UNSAVED');
+assert.ok(messages.at(-1).includes('saved on the server'),'Server-confirmed values must match regardless of JSON object key order');
+ctx.window.zukaitCloud.syncNow=async()=>{dirty=false;state.estimates=state.estimates.map(e=>e.id==='UNSAVED'?{...e,partRows:e.partRows.map((row,i)=>i?row:{...row,qty:Number(row.qty)+1})}:e)};
+await api.saveCurrent('UNSAVED');
+assert.ok(!messages.at(-1).includes('saved on the server'),'Different server item values must not be accepted');
 ctx.window.zukaitCloud.syncNow=async()=>{dirty=false;state.estimates=state.estimates.filter(e=>e.id!=='UNSAVED')};
 await api.saveCurrent('UNSAVED');
 assert.ok(!messages.at(-1).includes('saved on the server'),'Remote loss must not be reported as a successful save');

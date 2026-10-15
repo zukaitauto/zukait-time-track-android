@@ -367,6 +367,14 @@ function recalc(){
     (d.vatEnabled?'<div class="est-summary-line"><span>'+estimateLabel('VAT 5%')+'</span><b>OMR '+money(t.vat)+'</b></div>':'')+
     '<div class="est-summary-line total"><span>'+estimateLabel('TOTAL')+'</span><span>OMR '+money(t.total)+'</span></div>';
 }
+// JSON object property order can change on a database round trip; array order and values must match.
+function sameEstimateValue(a,b){
+  if(a===b)return true;
+  if(a===null||b===null||typeof a!=='object'||typeof b!=='object')return false;
+  if(Array.isArray(a)||Array.isArray(b))return Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.every((value,index)=>sameEstimateValue(value,b[index]));
+  const keys=Object.keys(a);
+  return keys.length===Object.keys(b).length&&keys.every(key=>Object.prototype.hasOwnProperty.call(b,key)&&sameEstimateValue(a[key],b[key]));
+}
 let receptionSaveBusy=false,estimateSaveBusy=false;
 async function saveCurrent(id){
   const e=findEstimate(id);if(!e)return;
@@ -392,7 +400,7 @@ async function saveCurrent(id){
       await new Promise(resolve=>setTimeout(resolve,300));
     }while(Date.now()<deadline);
     const confirmed=findEstimate(id);
-    const matches=confirmed&&confirmed.status==='Saved'&&Object.keys(d).every(key=>JSON.stringify(confirmed[key])===JSON.stringify(candidate[key]));
+    const matches=confirmed&&confirmed.status==='Saved'&&Object.keys(d).every(key=>sameEstimateValue(confirmed[key],candidate[key]));
     if(window.zukaitCloud.dirty||!matches)throw Error('The server has not confirmed these estimate details. Keep this device data and retry Save.');
     rememberEstimate(confirmed);recalc();alert(confirmed.estimateNo+' saved on the server.');
   }catch(error){
