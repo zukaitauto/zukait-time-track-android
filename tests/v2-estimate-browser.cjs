@@ -54,6 +54,7 @@ const fixture={id:'preview',estimateNo:'Zi-Qt018',date:'2026-10-13',type:'LS',va
  await page.locator('[data-est-part-row]').last().locator('button').click();
  assert.equal(await page.locator('[data-est-part-row]').count(),1);
  const html=await page.evaluate(e=>zukaitEstimate.estimateDocumentHtml(e),fixture);
+ const partsHtml=await page.evaluate(e=>zukaitEstimate.estimateDocumentHtml({...e,type:'PL',vatEnabled:true}),fixture);
  const longHtml=await page.evaluate(e=>zukaitEstimate.estimateDocumentHtml({...e,type:'PL',partRows:Array.from({length:120},(_,i)=>({id:'p'+i,description:'Part '+(i+1),qty:1,unitPrice:1}))}),fixture);
  fs.writeFileSync('estimate-preview.html',html);
  await page.setContent(html);
@@ -75,6 +76,7 @@ const fixture={id:'preview',estimateNo:'Zi-Qt018',date:'2026-10-13',type:'LS',va
  assert.equal(await page.locator('.letterhead-artwork image').getAttribute('href').then(x=>x.startsWith('data:image/svg+xml;base64,')),true,'Print artwork must be embedded for Android/offline sharing');
  await page.pdf({path:'estimate-preview.pdf',preferCSSPageSize:true,printBackground:true,displayHeaderFooter:true});
  await page.setViewportSize({width:794,height:1123});await page.screenshot({path:'print-preview.png',fullPage:true});
+ await page.setContent(partsHtml);await page.pdf({path:'estimate-parts-preview.pdf',preferCSSPageSize:true,printBackground:true});
  await page.setContent(longHtml);await page.pdf({path:'long-estimate.pdf',preferCSSPageSize:true,printBackground:true});
- assert.match(await page.locator('.estimate-meta').innerText(),/13-10-2026/);assert.match(await page.locator('.doc-footer').innerText(),/92403420, 72440918/);assert.ok(parseFloat(await page.locator('.estimate-print').evaluate(el=>getComputedStyle(el).fontSize))>=14);assert.deepEqual(errors,[]);await browser.close();console.log('Desktop/mobile layout, item editing, VAT and PDF rendering: passed');
+ assert.match(await page.locator('.estimate-meta').innerText(),/13-10-2026/);for(const arabic of ['الماركة','الطراز','سنة الصنع','الاسم','رقم الهاتف','أجور العمل','قطع الغيار','المبلغ'])assert.ok((await page.locator('.estimate-print').innerText()).includes(arabic));assert.match(await page.locator('.doc-footer').innerText(),/92403420, 72440918/);assert.ok(parseFloat(await page.locator('.estimate-print').evaluate(el=>getComputedStyle(el).fontSize))>=14);assert.deepEqual(errors,[]);await browser.close();console.log('Desktop/mobile layout, item editing, VAT and PDF rendering: passed');
 })().catch(e=>{console.error(e);process.exit(1)});
