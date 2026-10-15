@@ -162,7 +162,7 @@ assert.ok(native.includes('zukaitReportPdf.generate('),'Android print renderer m
 assert.ok(native.includes('verifyVisiblePdf(pdfFile)'),'Android export must validate visible PDF content before sharing');
 
 const printable=api.printable(state.estimates[0]);
-for(const text of ['ZUKAIT INTERNATIONAL LLC','REPAIR ESTIMATE','Zi-Qt001','Test Customer','Toyota Camry','Phone','VIN','Description','Amount OMR','Total Labour / Lumpsum','SPARE PARTS REQUIRED — TO BE SUPPLIED BY CUSTOMER','Headlamp<br>Bracket','NOTES / CONDITIONS','Subject to inspection.','ESTIMATE VALID FOR 15 DAYS.','VAT 5%']){
+for(const text of ['ZUKAIT INTERNATIONAL LLC','REPAIR ESTIMATE','Zi-Qt001','Test Customer','Toyota Camry','Tel. No.','VIN','Description','Amount OMR','Total Labour / Lumpsum','SPARE PARTS REQUIRED — TO BE SUPPLIED BY CUSTOMER','Headlamp<br>Bracket','NOTES / CONDITIONS','Subject to inspection.','ESTIMATE VALID FOR 15 DAYS.','VAT 5%']){
   assert.ok(printable.includes(text),'Printable estimate missing '+text);
 }
 assert.match(printable,/<tr class="grand summary-row"><th>TOTAL[^]*?<\/th><td class="money-cell">210\.000<\/td><\/tr>/,'LS total must print three OMR decimal places in one amount column');
@@ -294,14 +294,14 @@ await import('./reception-feature8.mjs');
 const printDate=api.estimateDocumentHtml({...state.estimates[0],date:'2026-10-15',mobile:'',jobCard:'',claimNo:''});
 assert.match(printDate,/<b>Date[^]*?:<\/b> 15-10-2026/);
 assert.doesNotMatch(printDate,/93211154/);
-assert.match(printDate,/<th>Phone \/ <bdi[^>]*>رقم الهاتف<\/bdi><\/th><td(?: colspan="2")?><\/td>/);
+assert.match(printDate,/<th>Tel\. No\. \/ <bdi[^>]*>رقم الهاتف<\/bdi><\/th><td(?: colspan="2")?><\/td>/);
 assert.match(printDate,/<th>JC\.NO<\/th><td(?: colspan="2")?><\/td>/);
 assert.match(printDate,/<th>Claim No\. \/ <bdi[^>]*>رقم المطالبة<\/bdi><\/th><td(?: colspan="2")?><\/td>/);
 assert.match(printDate,/font:14px\/1\.45 Arial/);
 assert.equal(state.estimates[0].date,'2026-09-26','Display formatting must not mutate stored dates');
 console.log('Estimate print correction: vector header, larger type, both contact numbers, DD-MM-YYYY and blank optional fields passed');
 
-for(const [en,ar] of [['Make','الماركة'],['Year','سنة الصنع'],['Name','الاسم'],['Phone','رقم الهاتف'],['Description','الوصف'],['Amount OMR','المبلغ'],['TOTAL','الإجمالي']])assert.ok(printDate.includes(en+' / <bdi lang="ar" dir="rtl">'+ar+'</bdi>'),en+' must have an isolated Arabic translation');
+for(const [en,ar] of [['Make','الماركة'],['Name','الاسم'],['Tel. No.','رقم الهاتف'],['Description','الوصف'],['Amount OMR','المبلغ'],['TOTAL','الإجمالي']])assert.ok(printDate.includes(en+' / <bdi lang="ar" dir="rtl">'+ar+'</bdi>'),en+' must have an isolated Arabic translation');
 assert.ok(printDate.includes('Test Customer'),'Customer values remain as entered');
 assert.ok(printDate.includes('Toyota Camry'),'Combined stored make/model stays intact');
 console.log('Bilingual estimate labels passed: English / Arabic, blank values, unchanged customer data and amounts');
@@ -311,3 +311,6 @@ assert.equal((printDate.match(/72440918/g)||[]).length,1);
 
 assert.ok(!printDate.includes('Model /'));
 assert.ok(printDate.includes('<th>JC.NO</th>'));
+
+assert.ok(printDate.includes('Toyota Camry 2024'));
+assert.ok(!printDate.includes('<th>Year /'));

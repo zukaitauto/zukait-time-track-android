@@ -23,7 +23,7 @@ for(const required of [
   'SPARE PARTS',
   'VAT 5%',
   'NO VAT',
-  'Phone',
+  'Tel. No.',
   'Make',
   'Registration No.',
   'VIN',
