@@ -60,6 +60,13 @@
       #rc-root .rdb-row{grid-template-columns:25px 1fr}
       #rc-root .rdb-row-actions{grid-column:2;flex-direction:row;flex-wrap:wrap}}
     `;
+    s.textContent+=`
+    #rc-root .rdb-toolbar:first-child{padding:16px;background:linear-gradient(120deg,#102c46,#075985);color:white;border-radius:13px;margin-bottom:14px}#rc-root .rdb-toolbar:first-child h4{color:#fff!important;font-size:18px}#rc-root .rdb-toolbar:first-child button{background:#fff!important;color:#075985!important;border-radius:9px;padding:9px 12px}#rc-root .rdb-filter{padding:14px;background:#eff6ff;border:1px solid #cbdff2;border-radius:13px;margin-bottom:16px;gap:12px}#rc-root .rdb-filter label{font-size:12px;font-weight:800;color:#334155}#rc-root .rdb-filter input{width:100%;box-sizing:border-box;background:white;border:1px solid #aec4d6;border-radius:9px;margin-top:6px;padding:10px;min-height:44px}#rc-root .rdb-row{border-left:4px solid #d97706;box-shadow:0 2px 7px #17304d0a;padding:16px}#rc-root .rdb-no{display:grid;place-items:center;background:#e0f2fe;border-radius:8px;min-height:28px;font-size:12px}#rc-root .rdb-row-content>b{line-height:1.5}#rc-root .rdb-location{display:inline-flex;font-size:10px;font-weight:900;padding:4px 8px;border-radius:20px;margin:0 0 5px 8px;vertical-align:middle;letter-spacing:.3px}#rc-root .rdb-vig{background:#ccfbf1;color:#115e59;border:1px solid #5eead4}#rc-root .rdb-vwc{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}#rc-root .rdb-state{display:inline-block;margin-top:9px;padding:5px 9px;border-radius:7px;font-size:11px;font-weight:800;background:#e2e8f0;color:#334155}#rc-root .rdb-state.waiting{background:#ffedd5;color:#9a3412}#rc-root .rdb-state.approved{background:#dcfce7;color:#166534}#rc-root .rdb-checklist-click{cursor:pointer}#rc-root .rdb-checklist-click:focus-visible{outline:3px solid #0284c7;outline-offset:2px}#rc-root .rdb-row-actions button[data-rdb="open"]{background:#0369a1!important;color:#fff!important;border-radius:9px;padding:8px 12px}#rc-root .rdb-row-content small{color:#526172;line-height:1.5}
+`;
+    s.textContent+=`
+    #rc-root .rdb-toolbar:first-child{padding:11px 13px;margin-bottom:10px;border-radius:10px}#rc-root .rdb-filter{padding:10px;gap:8px;margin-bottom:10px}#rc-root .rdb-filter input{min-height:38px!important;height:38px;margin-top:4px;padding:7px 8px!important;font-size:13px!important}#rc-root .rdb-row{padding:10px!important;margin:7px 0;gap:8px;grid-template-columns:23px minmax(0,1fr) auto;border-radius:10px}#rc-root .rdb-no{min-height:24px;font-size:11px}#rc-root .rdb-row-content>b{font-size:14px!important;line-height:1.35}#rc-root .rdb-row-content small{margin-top:3px;font-size:11px!important;line-height:1.35}#rc-root .rdb-location{padding:2px 6px;font-size:9px;margin-left:5px}#rc-root .rdb-state{margin-top:4px;padding:2px 6px;font-size:10px}#rc-root .rdb-promise{gap:6px;margin-top:7px}#rc-root .rdb-promise label{display:flex;align-items:center;gap:6px;font-size:11px!important;font-weight:600;min-width:0}#rc-root .rdb-promise input{width:138px!important;max-width:100%;height:34px!important;min-height:34px!important;margin:0!important;padding:4px 6px!important;font-size:12px!important;box-sizing:border-box}#rc-root .rdb-promise button{width:auto!important;min-height:34px!important;padding:5px 9px!important;font-size:11px!important;border-radius:7px;background:#0f766e!important;color:white!important}#rc-root .rdb-row-actions{gap:5px;align-self:center}#rc-root .rdb-row-actions button{width:auto!important;min-height:34px!important;padding:6px 9px!important;font-size:11px!important;border-radius:7px!important}#rc-root .rdb-row-actions button[data-rdb="edit-job"]{background:#fef3c7!important;color:#92400e!important;border:1px solid #fcd34d!important}@media(max-width:550px){#rc-root .rdb-row{grid-template-columns:21px minmax(0,1fr)}#rc-root .rdb-row-actions{grid-column:2;flex-direction:row;gap:7px;margin-top:0}#rc-root .rdb-promise{flex-wrap:nowrap}#rc-root .rdb-promise label{flex:1;justify-content:space-between}#rc-root .rdb-promise input{width:132px!important;flex:0 1 132px;min-width:0}#rc-root .rdb-filter{gap:8px}#rc-root .rdb-filter>label{font-size:11px}}@media(max-width:360px){#rc-root .rdb-promise label{flex-wrap:wrap;gap:3px}#rc-root .rdb-promise input{flex-basis:100%;width:100%!important}}
+`;
+    s.textContent+=`#rc-root .rdb-row-content>button[data-rdb="open-job"]{background:#dbeafe!important;color:#1e40af!important;border:1px solid #93c5fd!important;border-radius:7px;min-height:30px!important;padding:4px 8px!important;font-size:10px!important;margin:5px 0 0!important;width:auto!important}#rc-root .rdb-row-actions button[data-rdb="edit-job"]{background:#fef3c7!important;color:#92400e!important;border-color:#fcd34d!important}#rc-root .rdb-row-content>b{display:inline;letter-spacing:0}#rc-root .rdb-section-nav{margin:5px 0 10px}#rc-root .rdb-section-nav button{min-height:34px!important;font-size:11px!important;padding:6px 10px!important}`;
     document.head.appendChild(s);
   }
   const countFor=key=>key==="new"||key==="create-job"?"":key==="vwc"?counts.vwc??"":counts[key]??"";
@@ -80,9 +87,10 @@
       '<option value="missing"'+(filters.missing_only?' selected':'')+'>No promise date ('+safe(counts.no_promise_date??0)+')</option>'+
       '<option value="dated"'+(filters.dated_only?' selected':'')+'>With promise date</option></select></label>':'');
   }
+  function locationBadge(location){const code=String(location||'').toUpperCase();return code==='VIW'||code==='VIG'?'<span class="rdb-location rdb-vig" title="Vehicle in Garage">VIG</span>':code==='VWC'?'<span class="rdb-location rdb-vwc" title="Vehicle With Customer">VWC</span>':'';}
   function rowHtml(row,index){
     const isJob=!!row.job_card,live=!row.delivered&&isJob,canEdit=live&&writable();
-    const title=section==="checklists"?"Checklist "+safe(row.rc_no):isJob?"JC "+safe(row.job_card):"Checklist "+safe(row.rc_no);
+    const title=section==="checklists"?safe(row.rc_no):isJob?"JC "+safe(row.job_card):safe(row.rc_no);
     const date=section==="delivered"?"Delivered: "+(row.delivered_date||"Not recorded"):
       section==="followup"?"Promise: "+(row.promise_date||"No promise date"):
       section==="jobs"?"Created: "+(row.created_at?new Date(row.created_at).toLocaleString('en-GB',{timeZone:'Asia/Muscat'}):'Not recorded'):"Received: "+(row.received_date||row.created_date||"Not recorded");
@@ -96,11 +104,10 @@
     const deliver=section==="ready"?
       '<button type="button" data-rdb="delivery" data-job="'+safe(row.job_card)+'">'+
       (role()==="Manager"?"Open Ready List":"Vehicle Delivery")+'</button>':"";
-    return '<div class="rdb-row"><span class="rdb-no">'+(index+1+page*50)+'.</span>'+
+    return '<div class="rdb-row'+(!isJob?' rdb-checklist-click':'')+'"'+(!isJob?' role="button" tabindex="0" data-rdb="open" data-rc="'+safe(row.rc_no)+'" data-job=""':'')+'><span class="rdb-no">'+(index+1+page*50)+'.</span>'+
       '<div class="rdb-row-content"><b>'+title+' · '+safe(row.vehicle||"Vehicle not recorded")+
-      '</b><small>'+safe(row.registration||"Registration not recorded")+' · '+safe(row.job_type||"")+
-      (row.rc_no&&isJob?' · '+safe(row.rc_no):'')+'</small><small>'+safe(date)+
-      ' · '+safe(row.status||row.location||"")+'</small>'+(section==='checklists'&&isJob?'<button type="button" data-rdb="open-job" data-job="'+safe(row.job_card)+'">JC Opened · '+safe(row.job_card)+'</button>':'')+promise+'</div>'+
+      '</b>'+locationBadge(row.location)+'<small>'+safe(row.registration||"Registration not recorded")+' · '+safe(row.insurance_company||row.job_type||"")+
+      (row.rc_no&&isJob?' · '+safe(row.rc_no):'')+'</small><small>'+safe(date.replace(/(\d{4})-(\d{2})-(\d{2})/g,'$3-$2-$1'))+'</small><span class="rdb-state '+(String(row.status).toUpperCase()==='WAITING'?'waiting':String(row.status).toUpperCase()==='APPROVED'?'approved':'neutral')+'">'+safe(row.status==='WAITING'?'Approval Waiting':row.status||'Status not recorded')+'</span>'+(section==='checklists'&&isJob?'<button type="button" data-rdb="open-job" data-job="'+safe(row.job_card)+'">JC Opened · '+safe(row.job_card)+'</button>':'')+promise+'</div>'+
       '<div class="rdb-row-actions">'+open+deliver+(isJob&&(!row.delivered||role()==='Manager')?'<button type="button" data-rdb="edit-job" data-job="'+safe(row.job_card)+'">Edit Job Card</button>':'')+'</div></div>';
   }
   function listHtml(){
@@ -128,6 +135,7 @@
         '<div class="rdb-section-nav"><button type="button" data-rdb="back-dashboard">← Reception Dashboard</button></div>'+listHtml());
     const root=document.getElementById("rc-root");if(!root)return;
     root.addEventListener("click",onClick);
+    root.addEventListener('keydown',event=>{if(event.target.matches('.rdb-checklist-click')&&['Enter',' '].includes(event.key)){event.preventDefault();event.target.click()}});
     root.addEventListener("input",onFilter);
     root.addEventListener("change",onFilter);
     showRows();

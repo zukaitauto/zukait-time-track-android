@@ -1,20 +1,20 @@
 {
-  "versionName": "V332",
-  "versionCode": 295,
+  "versionName": "V333",
+  "versionCode": 296,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "sourceCommit": "88cc6b15ae0b63cc609541f262f16a507b9abea9",
-  "signedAcceptanceRun": 38763266695,
-  "verificationRun": 38763266781,
-  "publishNonce": "v332-owner-approved-2fa3b0d1f87da9d18099",
+  "approvedForStaff": false,
+  "sourceCommit": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "publishNonce": null,
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "authorization": "Owner requested release of all discussed changes: distinct estimate selection colors, header-matched Arabic footer, clear period material totals, vertical final-material pending list, custom-range job totals with material drill-down, refreshed report filters and explicit Supervisor checklist linking. Uses existing server operations; no backend or database changes.",
-  "verificationSummary": "Exact-source signed Android build, estimate browser and PDF checks passed. Local checklist-linking and consumables grouping/filter tests passed. Reception and native PDF evidence pinned to source; release dispatch waits for successful completion. Existing owner deferrals remain: physical acceptance and fresh backup/restore NOT_RUN. Uses existing server commands only.",
+  "authorization": "Owner requested release of all pending changes since V332: black estimate text and vehicle/registration PDF names, monthly expense category drilldowns, Manager Work in Progress list and details, pending-parts list layout, compact Reception lists and VIG/VWC display badges, simplified RC headings and Supervisor tile order/Idle Workers label. Partsouq integration excluded. No backend/database changes.",
+  "verificationSummary": "Feature checks running locally. Exact-source acceptance pending.",
   "releaseHeldByOwner": false,
   "backendDeploymentRequired": false,
   "productionBackend": {
@@ -26,8 +26,5 @@
     "deployedSeparately": true,
     "sourceCommit": "969454b1baeb7d18df164ded13d909209ebee113"
   },
-  "approvedAt": "2026-10-15T15:49:04Z",
-  "estimateChecksRun": 38763266716,
-  "estimateVisualRun": 38763266767,
-  "nativePdfRun": 38763266670
+  "approvedAt": null
 }

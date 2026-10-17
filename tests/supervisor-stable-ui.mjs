@@ -31,7 +31,9 @@ assert.ok(assignExistingBlock.indexOf('Confirm Job Card Assignment')>=0 && assig
 assert.doesNotMatch(stable,/setTimeout\(apply/,'stable Supervisor authority must not use post-render layout decorators');
 
 assert.match(stable,/class="v143-two"/,'stable UI must use deterministic two-column rows');
-assert.match(stable,/AVAILABLE WORKERS/,'Available Workers card must remain');
+assert.match(stable,/IDLE WORKERS/,'Idle Workers is the approved top-row label');
+assert.ok(stable.indexOf('class="v143-top requests"')<stable.indexOf('class="v143-top available"'));
+assert.ok(stable.indexOf('class="v143-top available"')<stable.indexOf('class="v143-top attention"'),'Idle Workers must precede Need Attention');
 assert.match(stable,/id="supervisorConsumablesTile"/,'Consumables must occupy the paired Supervisor resource slot');
 assert.match(stable,/Today at a Glance/,'Today at a Glance must remain');
 assert.match(stable,/class="ideal-worker"/,'Ideal Worker tile must occupy the authoritative Supervisor glance grid');

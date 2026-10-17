@@ -50,6 +50,17 @@ state.paintPurchasing={orders:[
 ]};
 ctx.v145OpenConsumablesPerformance();assert.match(ctx.modal,/Paint Expense<\/span><b>OMR 21\.000/);assert.match(ctx.modal,/Total Expense<\/span><b>OMR 22\.500/);assert.doesNotMatch(ctx.modal,/UNRECEIVED|VOIDPAINT/);
 ctx.v145OpenConsumablesJobCard('JC1');assert.match(ctx.modal,/Base Coat/);assert.match(ctx.modal,/PO-1/);assert.match(ctx.modal,/Paint Return/);assert.match(ctx.modal,/OMR -5\.000/);assert.match(ctx.modal,/Total Consumables Expense <b>OMR 22\.500/);
+ctx.v145SetExpenseCategory('other');
+assert.match(ctx.modal,/Other Consumables · Job Card Expenses/);
+assert.match(ctx.modal,/data-jc="JC1"/);assert.doesNotMatch(ctx.modal,/data-jc="JC2"/);
+ctx.v145OpenConsumablesJobCard('JC1');assert.match(ctx.modal,/Tape/);assert.doesNotMatch(ctx.modal,/Primer|Base Coat/);
+assert.match(ctx.modal,/Total Consumables Expense <b>OMR 1\.500/);
+ctx.v145SetExpenseCategory('paint');ctx.v145OpenConsumablesJobCard('JC1');
+assert.match(ctx.modal,/Base Coat/);assert.doesNotMatch(ctx.modal,/Tape/);
+ctx.v145SetExpenseMonth('2019-01');assert.match(ctx.modal,/value="2019-01"/);assert.doesNotMatch(ctx.modal,/data-jc=/);
+ctx.v145SetExpenseMonth('2020-01');assert.match(ctx.modal,/data-jc="OLD"/);assert.doesNotMatch(ctx.modal,/data-jc="JC1"/);
+ctx.v145SetExpenseMonth(new Date(now+14400000).toISOString().slice(0,7));
+ctx.v145SetExpenseCategory('all');
 delete ctx.ZukaitConsumables;delete state.consumables;ctx.v145OpenConsumablesPerformance();assert.match(ctx.modal,/Total Expense<\/span><b>OMR 13\.000/,'paint must work without consumables records');
-ctx.document.querySelector=()=>({});ctx.v145OpenConsumablesPerformance();assert.match(ctx.modal,/Today/);assert.match(ctx.modal,/OMR 13\.000/);
+ctx.document.querySelector=()=>({});ctx.v145OpenConsumablesPerformance();assert.match(ctx.modal,/Choose month/);assert.match(ctx.modal,/OMR 13\.000/);
 console.log('Consumables and paint: receipts, returns, periods, unreceived/void exclusion and matching job-card totals passed');

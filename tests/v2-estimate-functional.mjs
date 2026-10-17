@@ -169,14 +169,14 @@ assert.match(printable,/<tr class="grand summary-row"><th>TOTAL[^]*?<\/th><td cl
 assert.match(printable,/<tr class="summary-row"><th>VAT 5%[^]*?<\/th><td class="money-cell">10\.000<\/td><\/tr>/,'LS VAT must print three OMR decimal places');
 
 api.printEstimate('E1');
-assert.deepEqual(bridgeCalls[0].slice(0,2),['print-named','Estimate Zi-Qt001']);
+assert.deepEqual(bridgeCalls[0].slice(0,2),['print-named','Toyota_Camry_TEST1']);
 assert.match(bridgeCalls[0][2],/REPAIR ESTIMATE/);
 
 api.pdfEstimate('E1');
-assert.deepEqual(bridgeCalls[1].slice(0,2),['pdf','Zi-Qt001.pdf']);
+assert.deepEqual(bridgeCalls[1].slice(0,2),['pdf','Toyota_Camry_TEST1.pdf']);
 
 api.whatsApp('E1');
-assert.deepEqual(bridgeCalls[2].slice(0,2),['whatsapp-pdf','Zi-Qt001.pdf']);
+assert.deepEqual(bridgeCalls[2].slice(0,2),['whatsapp-pdf','Toyota_Camry_TEST1.pdf']);
 assert.match(bridgeCalls[2][2],/REPAIR ESTIMATE/);
 
 await api.shareEstimate('E1');
@@ -340,3 +340,9 @@ console.log('Insurance/Cash selection: custom company, separate name retention a
 
 assert.ok(printDate.includes('زكيت الدولي ش.م.م'),'Footer company name matches supplied Arabic letterhead');
 assert.ok(!printDate.includes('شركة زكايت العالمية'));
+
+assert.ok(printDate.includes('.estimate-print,.estimate-print *{color:#000!important;-webkit-text-fill-color:#000!important}'));
+
+assert.equal(api.estimatePdfFilename({makeModel:'Toyota camry',registration:'3180.RY'}),'Toyota_camry_3180_RY.pdf');
+assert.equal(api.estimatePdfFilename({makeModel:' Toyota / Camry ',registration:'3180 RY'}),'Toyota_Camry_3180_RY.pdf');
+assert.equal(api.estimatePdfFilename({estimateNo:'Zi-Qt099'}),'Zi_Qt099.pdf');

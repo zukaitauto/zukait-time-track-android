@@ -56,6 +56,9 @@ for(const [key,name] of Object.entries(headings)){
 }
 await click('#rc-root [data-rdb=tile][data-section=jobs]');
 assert.equal(w.document.querySelectorAll(".rdb-row").length,1);
+assert.equal(w.document.querySelector('.rdb-location').textContent,'VIG');
+assert.ok(w.document.querySelector('.rdb-location').classList.contains('rdb-vig'));
+assert.equal(commands.at(-1).action,'reception_dashboard','Location badges must not write or rename stored location codes');
 await w.zukaitReceptionDashboard.showJobs();
 await settle();
 assert.match(w.document.querySelector(".rc-topbar h3").textContent,/Job Card List/);
