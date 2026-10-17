@@ -2,11 +2,11 @@
   "versionName": "V336",
   "versionCode": 299,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
-  "sourceCommit": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "publishNonce": null,
+  "approvedForStaff": true,
+  "sourceCommit": "832566035e332ea52275480967b90a7504cb7ebe",
+  "signedAcceptanceRun": 39046938224,
+  "verificationRun": 39046938209,
+  "publishNonce": "v336-owner-approved-26e31bd589df5548e67e9eea",
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
@@ -14,7 +14,7 @@
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "authorization": "Owner requested releasing all saved Full Job Card Edit, Cash-view insurance visibility, work-description storage/display recovery, and delivered-vehicle Consumables/Paint record drill-down changes. Deploy matching API and description persistence separately before publication. Existing owner Phase 2 and backup deferrals remain unchanged.",
-  "verificationSummary": "Full-edit and description recovery API version 70 deployed separately; all 10 deployed files match candidate source. Description persistence migration 20261017154706 applied and verified. Local full-edit, Cash view/print, materials drill-down, audit recovery and isolated PostgreSQL checks passed. Exact-source Android/Reception CI pending.",
+  "verificationSummary": "Exact-source signed Android, Android architecture, APK, Reception/browser/concurrent PostgreSQL and native Android PDF CI passed. API version 70 deployed separately and all 10 files verified; description persistence migration 20261017154706 applied. Full job editing, Cash-view conditional fields, legacy description recovery and delivered material records verified.",
   "releaseHeldByOwner": false,
   "backendDeploymentRequired": false,
   "productionBackend": {
@@ -24,12 +24,12 @@
     "bundleSha256": "b25204bd2b4d5d65cebc6e76b97c96367f8ac119d62ef831ae875120208ec5fb",
     "verifiedFileMatch": true,
     "deployedSeparately": true,
-    "sourceCommit": null,
+    "sourceCommit": "832566035e332ea52275480967b90a7504cb7ebe",
     "databaseMigrations": [
       "20261017154706"
     ]
   },
-  "approvedAt": null,
-  "nativePdfRun": null,
-  "androidBuildRun": null
+  "approvedAt": "2026-10-17T15:57:14.364293Z",
+  "nativePdfRun": 39046938257,
+  "androidBuildRun": 39046938248
 }

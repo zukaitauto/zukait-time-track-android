@@ -969,3 +969,60 @@ jobs:
           set -euo pipefail
           gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
           echo 'Owner-authorized V335 dispatched to the existing coordinated publisher'
+
+  dispatch_pinned_v336:
+    name: Publish owner-authorized V336 verified coordinated update
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/architecture-v2' &&
+      github.event.head_commit.message == 'Owner-approved one-time V336 dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify exact owner-approved V336 source and matching checks
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SOURCE='832566035e332ea52275480967b90a7504cb7ebe'
+          jq -e --arg sha "$SOURCE" '
+            .approvedForStaff == true and .versionName == "V336" and
+            .versionCode == 299 and .sourceCommit == $sha and
+            .releaseScope == "phase1-compatible-ui" and
+            .ownerRequestedImmediateRelease == true and
+            .backupDeferredByOwner == true and
+            .productionBackendChanges == false and
+            .phase2ActivationApproved == false and
+            .releaseHeldByOwner == false and
+            .backendDeploymentRequired == false and
+            .productionBackend.version == 70 and
+            .productionBackend.verifiedFileMatch == true and
+            .productionBackend.bundleSha256 == "b25204bd2b4d5d65cebc6e76b97c96367f8ac119d62ef831ae875120208ec5fb" and
+            .physicalAcceptanceStatus == "NOT_RUN" and
+            .signedAcceptanceRun == 39046938224 and
+            .verificationRun == 39046938209
+          ' release-ui-request.json
+          node scripts/verify-ui-only-release.cjs
+          for ITEM in "39046938224:.github/workflows/build-signed-acceptance.yml" "39046938209:.github/workflows/reception-check.yml" "39046938248:.github/workflows/architecture-v2-android.yml" "39046938257:.github/workflows/native-pdf-check.yml"; do
+            RUN="${ITEM%%:*}"
+            WORKFLOW="${ITEM#*:}"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN" | jq -e --arg sha "$SOURCE" --arg workflow "$WORKFLOW" '
+              .conclusion == "success" and .head_sha == $sha and
+              .head_branch == "architecture-v2" and .path == $workflow
+            '
+          done
+      - name: Dispatch existing coordinated V336 publisher
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
+          echo 'Owner-authorized V336 dispatched to the existing coordinated publisher'
