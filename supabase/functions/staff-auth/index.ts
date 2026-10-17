@@ -231,8 +231,8 @@ Deno.serve(async (req: Request) => {
       const id = String(body.user_id || "").trim().toUpperCase();
       const name = String(body.display_name || "").trim();
       const role = String(body.role || "");
-      const department = role === "Receptionist" ? "Reception" : String(body.department || "").trim();
-      if (!/^[A-Z0-9_-]+$/.test(id) || !name || !["Employee","Supervisor","Purchaser","Receptionist"].includes(role) || !department) {
+      const department = role === "Receptionist" ? "Reception" : role === "Accountant" ? "Accounts" : String(body.department || "").trim();
+      if (!/^[A-Z0-9_-]+$/.test(id) || !name || !["Employee","Supervisor","Purchaser","Receptionist","Accountant"].includes(role) || !department) {
         return reply({ ok: false, code: "invalid_user" }, 400);
       }
       const fields = await passwordFields(String(body.password || ""));
