@@ -2,11 +2,11 @@
   "versionName": "V335",
   "versionCode": 298,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
-  "sourceCommit": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "publishNonce": null,
+  "approvedForStaff": true,
+  "sourceCommit": "99bd22ca63d82524c18c98cd5345eed30884a74d",
+  "signedAcceptanceRun": 39044463776,
+  "verificationRun": 39044463772,
+  "publishNonce": "v335-owner-approved-b5d0abb1ccbb69a4b4e2421f",
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
@@ -14,7 +14,7 @@
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "authorization": "Owner requested releasing all discussed changes: estimate row Add actions and automatic corrections, Cash claim visibility, colored compact letterhead, shared incentives sorted by achieved hours, Supervisor parts returns and separate returned list, one Material Summary report, and global print footer suppression. Deploy matching return API separately before app publication. Existing owner Phase 2 and backup deferrals remain unchanged.",
-  "verificationSummary": "Supervisor return API version 69 deployed separately; all 10 deployed files match local candidate exactly. Database timeout repair is already live. Exact-source app CI pending; physical device and fresh backup/restore checks remain NOT_RUN under existing owner deferral.",
+  "verificationSummary": "Exact-source full regression, signed APK, Android builds, Reception browser/concurrent-device verification, and estimate visual/browser/PDF checks passed. Native Android PDF emulator verification passed. Supervisor return API version 69 is active; all 10 deployed files match candidate source. Database timeout repair migration 20261017133706 is live. UI and Android are pinned to the verified source. Physical device and fresh backup/restore checks remain NOT_RUN under existing owner deferral.",
   "releaseHeldByOwner": false,
   "backendDeploymentRequired": false,
   "productionBackend": {
@@ -26,7 +26,7 @@
     "deployedSeparately": true,
     "sourceCommit": "7502500ef30ab2c876223c7048a19fdf7e288204"
   },
-  "approvedAt": null,
-  "nativePdfRun": null,
-  "androidBuildRun": null
+  "approvedAt": "2026-10-17T15:23:42Z",
+  "nativePdfRun": 39044463791,
+  "androidBuildRun": 39044463832
 }
