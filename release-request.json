@@ -2,11 +2,11 @@
   "versionName": "V334",
   "versionCode": 297,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
-  "sourceCommit": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "publishNonce": null,
+  "approvedForStaff": true,
+  "sourceCommit": "01ee5c843569cac5b7ab3e427e844c242d4124fb",
+  "signedAcceptanceRun": 39011024422,
+  "verificationRun": 39011024425,
+  "publishNonce": "v334-owner-approved-9b7e045bd19a4ebee47db734",
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
@@ -14,7 +14,7 @@
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "authorization": "Owner requested proceeding with larger multiline Work Description and swapping Ideal Workers to top quick access with Available Technicians in Today at a Glance. Preserve separate calculation authorities, counts and click actions. No backend or database changes.",
-  "verificationSummary": "Local checks pending; exact-source release checks required.",
+  "verificationSummary": "All local worker-placement, idle-time and direct Reception intake checks passed. Exact-source signed APK, full regression, Android builds, Reception browser verification, website packaging and native Android PDF verification passed. All 11 uploaded files matched local hashes. No backend/database changes. Physical device acceptance and fresh backup/restore remain NOT_RUN under the existing owner deferral.",
   "releaseHeldByOwner": false,
   "backendDeploymentRequired": false,
   "productionBackend": {
@@ -26,5 +26,7 @@
     "deployedSeparately": true,
     "sourceCommit": "969454b1baeb7d18df164ded13d909209ebee113"
   },
-  "approvedAt": null
+  "approvedAt": "2026-10-17T06:48:34Z",
+  "nativePdfRun": 39011024572,
+  "androidBuildRun": 39011024439
 }
