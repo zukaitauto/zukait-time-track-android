@@ -18,7 +18,7 @@ const before=JSON.stringify(state);ctx.window.v247IdealHistory('E1',om('2026-10-
 console.log('Ideal Time monitor passed: duty grace, lunch, ID001, short gaps, overlap merge, read-only.');
 
 const stable=fs.readFileSync('app/src/main/assets/supervisor_stable.js','utf8');
-assert.match(stable,/Today at a Glance[\s\S]*class="ideal-worker"/,'Ideal Worker placement targets the authoritative Today at a Glance renderer');
+assert.match(stable,/class="v143-top available ideal-worker"/,'Ideal Workers placement targets the top quick-access row');
 assert.match(stable,/\.v143-glance\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,'Ideal Worker remains inside the 3x2 stable glance grid');
 assert.match(stable,/onclick="v143OpenIdealWorker\(\)"/,'Ideal Worker tile opens the Ideal Time details');
 assert.doesNotMatch(stable,/class="ready" onclick="v143OpenReadyForDelivery\(\)"/,'Ready for Delivery does not reclaim the Ideal Worker glance slot');

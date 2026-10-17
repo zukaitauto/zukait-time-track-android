@@ -507,7 +507,7 @@
       '<label>Approval Evidence / Notes<input name="evidence" maxlength="2000" placeholder="Document reference or approval confirmation"></label>' +
       '<label class="rc-check"><input type="checkbox" name="approval_confirmed">I confirm that insurance approval has been verified.</label></div>' +
       '</div><label>Reception Observations<textarea name="remarks" maxlength="2000"></textarea></label>' +
-      input('reason','Work Description (optional)') +
+      '<label class="rc-wide">Work Description (optional)<textarea name="reason" rows="6" maxlength="2000" placeholder="Describe the repair work required…" style="display:block;width:100%;box-sizing:border-box;min-height:160px;margin-top:6px;padding:12px;font-size:16px;line-height:1.6;resize:vertical"></textarea></label>' +
       '<label class="rc-check"><input type="checkbox" name="received_confirmed" required>I confirm the vehicle has been received at the workshop.</label><div class="rc-actions"><button type="submit">Open Job Card</button></div></form>');
     const form=document.getElementById('rc-direct-job'),type=form.querySelector('[name="job_type"]'),account=form.querySelector('[name="credit_account"]');
     let linkedChecklist=null,linkedApprovalValid=false;

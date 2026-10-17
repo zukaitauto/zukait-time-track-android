@@ -3964,11 +3964,11 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
    if(!me||!['Manager','Supervisor'].includes(me.role))return;
    const root=document.getElementById(me.role==='Manager'?'managerView':'supervisorView');if(!root)return;
    if(me.role==='Supervisor'){
-     const tile=root.querySelector('.v143-glance .ideal-worker');
+     const tile=root.querySelector('.v143-top-three .ideal-worker');
      if(tile){
        const n=window.v247CurrentIdealRows?window.v247CurrentIdealRows().length:0;
        const stat=tile.querySelector('.stat,strong');if(stat)stat.textContent=String(n);
-       tile.setAttribute('onclick','v143OpenIdealWorker()');
+       tile.setAttribute('onclick','v143OpenIdealWorker()');tile.setAttribute('data-count-state',n>0?'active':'empty');
      }
      root.querySelectorAll('#v247IdealDashboard').forEach(x=>x.remove());
      return;

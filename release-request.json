@@ -1,20 +1,20 @@
 {
-  "versionName": "V333",
-  "versionCode": 296,
+  "versionName": "V334",
+  "versionCode": 297,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "sourceCommit": "4b2097d740512ff48ef5a5bc6d947110e7734aaa",
-  "signedAcceptanceRun": 39004745153,
-  "verificationRun": 39004745140,
-  "publishNonce": "v333-owner-approved-ccc4b9846e6ff688f6bda116",
+  "approvedForStaff": false,
+  "sourceCommit": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "publishNonce": null,
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "authorization": "Owner requested release of all pending changes since V332: black estimate text and vehicle/registration PDF names, monthly expense category drilldowns, Manager Work in Progress list and details, pending-parts list layout, compact Reception lists and VIG/VWC display badges, simplified RC headings and Supervisor tile order/Idle Workers label. Partsouq integration excluded. No backend/database changes.",
-  "verificationSummary": "Exact-source signed APK, full regression, Android build, Reception browser checks and native Android PDF verification passed. All 19 changed source files were verified byte-for-byte against the local candidate. Estimate visual/PDF checks passed against byte-identical runtime assets at the recorded visual source. No backend/data changes. Physical acceptance and fresh backup/restore remain NOT_RUN under the existing owner deferral.",
+  "authorization": "Owner requested proceeding with larger multiline Work Description and swapping Ideal Workers to top quick access with Available Technicians in Today at a Glance. Preserve separate calculation authorities, counts and click actions. No backend or database changes.",
+  "verificationSummary": "Local checks pending; exact-source release checks required.",
   "releaseHeldByOwner": false,
   "backendDeploymentRequired": false,
   "productionBackend": {
@@ -26,9 +26,5 @@
     "deployedSeparately": true,
     "sourceCommit": "969454b1baeb7d18df164ded13d909209ebee113"
   },
-  "approvedAt": "2026-10-17T05:22:11Z",
-  "nativePdfRun": 39004745181,
-  "androidBuildRun": 39004745135,
-  "estimateVisualRun": 39004613579,
-  "estimateVisualSourceCommit": "f1a57d51a6b74c0ea38eaab7dc18d1cf2a9fbaea"
+  "approvedAt": null
 }
