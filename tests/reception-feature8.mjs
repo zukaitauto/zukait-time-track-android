@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';import fs from 'node:fs';import {JSDOM} from 'jsdom';
 import {receptionDashboardProjection} from '../supabase/functions/workshop-api/reception_dashboard_rules.js';
-import {jobViewProjection,jobEditTransition} from '../supabase/functions/workshop-api/job_edit_rules.js';
+import {jobViewProjection,jobEditTransition,jobViewWithIntakeDescription} from '../supabase/functions/workshop-api/job_edit_rules.js';
 const original={jobs:[
  {no:'99999',jobType:'Cash',createdAt:1000,updatedAt:9999999,notes:'Old edited record'},
  {no:'12',jobType:'Credit',createdAt:'2026-10-14T12:00:00Z'},
@@ -28,7 +28,8 @@ for(const role of ['Receptionist','Supervisor','Manager'])for(const type of ['Ca
  w.eval(fs.readFileSync('app/src/main/assets/job_card_edit.js','utf8'));
  await w.zukaitJobEdit.view(data.no,{onBack:async()=>back++});
  const text=w.document.querySelector('.jce-view').textContent;
- for(const value of [data.no,type,'Toyota','RAV4','2020','TEST-80',data.vin,'White','Customer Eight','99990000','CL-8','Company Eight','80.000','FINAL DESCRIPTION MARKER','Original complete scope','RC-SEPARATE'])assert.ok(text.includes(value),'View must retain saved field '+value);
+ for(const value of [data.no,type,'Toyota','RAV4','2020','TEST-80',data.vin,'White','Customer Eight','99990000',...(type==='Insurance'?['CL-8','Company Eight']:[]),'80.000','FINAL DESCRIPTION MARKER','Original complete scope','RC-SEPARATE'])assert.ok(text.includes(value),'View must retain saved field '+value);
+ if(type!=='Insurance'){assert.ok(!text.includes('Claim number'));assert.ok(!text.includes('Insurance company'));assert.ok(!text.includes('Company Eight'));}
  assert.match(text,delivered?/Delivered/:/Approval Pending/);assert.equal(w.document.querySelector('.jce-view-value').textContent,'12079');
  w.document.getElementById('jce-view-print').click();assert.equal(printed[0].title,'Job Card 12079');assert.ok(printed[0].html.includes('FINAL DESCRIPTION MARKER'));assert.ok(printed[0].html.includes('80.000'));assert.ok(!printed[0].html.includes('jce-view-print'));
  w.document.getElementById('jce-view-back').click();await Promise.resolve();assert.equal(back,1);assert.equal(w.document.querySelector('.jce-view'),null);assert.equal(fetched.length,1,'View/Back/Print must not write or duplicate records');
@@ -42,3 +43,19 @@ w.me={role:'Receptionist'};w.openModal=html=>w.document.getElementById('modal').
 w.fetch=async()=>({ok:true,json:async()=>({ok:true,job:{no:'EMPTY',jobType:'Cash',amount:null}})});w.eval(fs.readFileSync('app/src/main/assets/job_card_edit.js','utf8'));let resumed=0;
 await w.zukaitJobEdit.view('EMPTY',{onBack:async()=>resumed++});assert.match(w.document.body.textContent,/Not recorded/);assert.match(w.document.body.textContent,/Not entered/);w.document.getElementById('jce-view-close').click();await Promise.resolve();assert.equal(resumed,1,'Reception Close cannot leave an empty workspace');dom.window.close();
 console.log('Feature 8 passed: creation dates/ties/pagination/filtering preserved, all job types and roles, full saved fields, long descriptions, missing fields, delivered restrictions, Back/Close/Print and read-only access');
+
+// Historical descriptions are recovered from the original creation audit only.
+function auditClient(direct,legacy){const calls=[];return {calls,from(table){calls.push(table);const q={select(){return q},eq(){return q},is(){return q},order(){return q},limit(){return q},async maybeSingle(){return {data:table==='workshop_direct_job_audit'?direct:legacy}}};return q}}}
+const legacyJob={no:'12084',jobType:'CASH',directReceptionJob:true,v2EventId:'rc-direct-test'};
+const savedScope='Repair damaged front bumper\nPaint both sides';
+const db=auditClient({reason:savedScope,after_data:{no:'12084'}});
+assert.equal((await jobViewWithIntakeDescription(db,legacyJob)).workDescription,savedScope);
+assert.equal(legacyJob.workDescription,undefined,'Read must not rewrite stored records');
+const clearedDb=auditClient({reason:savedScope,after_data:{no:'12084'}});
+assert.equal((await jobViewWithIntakeDescription(clearedDb,{...legacyJob,workDescription:''})).workDescription,'');assert.equal(clearedDb.calls.length,0);
+const correctedDb=auditClient({reason:savedScope,after_data:{no:'12084'}});
+assert.equal((await jobViewWithIntakeDescription(correctedDb,{...legacyJob,workDescription:'Manager correction'})).workDescription,'Manager correction');assert.equal(correctedDb.calls.length,0);
+assert.equal((await jobViewWithIntakeDescription(auditClient({reason:'Wrong job',after_data:{no:'OTHER'}}),legacyJob)).workDescription,undefined);
+assert.equal((await jobViewWithIntakeDescription(auditClient({reason:'Supervisor Quick Entry: confirmed existing checklist link',after_data:{no:'12084'}}),legacyJob)).workDescription,undefined);
+assert.equal((await jobViewWithIntakeDescription(auditClient(null,{reason:savedScope,after_data:{job_card:'12084'}}),{...legacyJob,receptionNo:'RC-OLD'})).workDescription,savedScope);
+console.log('Legacy direct-intake audit recovery: original description, corrected/cleared precedence, exact job match and no mutation passed');

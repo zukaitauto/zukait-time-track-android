@@ -14,6 +14,13 @@ async function open(no){
  if(!['Manager','Supervisor','Receptionist'].includes(actor()?.role))return;
  const id=++loadId;draft=null;
  try{
+  if(actor()?.role==='Manager'&&typeof window.editJobManager==='function'){
+   if(typeof window.zukaitCloud?.pull==='function')await window.zukaitCloud.pull(true);
+   if(id!==loadId||actor()?.role!=='Manager')return;
+   const details=await api({operation:'GET',jobCard:no});
+   if(id!==loadId||actor()?.role!=='Manager')return;
+   return window.editJobManager(no,{workDescription:details.job?.workDescription});
+  }
   const result=await api({operation:'GET',jobCard:no});if(id!==loadId)return;
   const j=result.job;if(j.delivered&&actor()?.role!=='Manager')throw Error(messages.job_edit_manager_required);
   draft={job:j,locked:result.invoice_locked};
@@ -70,6 +77,7 @@ function viewHtml(j,actions=true){
  const money=v=>v==null||v===''?'Not entered':'OMR '+Number(v).toFixed(3);
  const row=(label,value,wide=false)=>'<div class="jce-view-field'+(wide?' jce-view-wide':'')+'"><b>'+esc(label)+'</b><div class="jce-view-value">'+esc(viewValue(value))+'</div></div>';
  const section=(title,values)=>'<section class="jce-view-section"><h4>'+esc(title)+'</h4><div class="jce-view-fields">'+values.map(v=>row(...v)).join('')+'</div></section>';
+ const jobType=String(j.jobType||'CASH').toUpperCase();
  const vehicle=jobName(j.vehicle||[first('make','vehicleMake','brand'),first('model','vehicleModel')].filter(Boolean).join(' '));
  const work=['workDescription','work_description','workDescriptions','description','descriptions','workDetails','requestedWork','notes','jobNotes','remarks'];
  const descriptions=[...new Set(work.map(k=>j[k]).filter(v=>v!=null&&v!=='').map(viewValue))];
@@ -77,8 +85,8 @@ function viewHtml(j,actions=true){
  section('Job Details', [['Job Card number',j.no],['Created · Oman time',jobDate(j.createdAt)],['Job type',jobName(j.jobType)],['Status',j.delivered?'Delivered':jobName(j.status||(j.completed?'Completed':'Open'))],['Promise date',j.promiseDate],['Linked Reception Checklist',j.receptionNo]])+
  section('Vehicle Details', [['Make',jobName(first('make','vehicleMake','brand'))],['Model',jobName(first('model','vehicleModel'))],['Vehicle',vehicle],['Year',first('year','modelYear','vehicleYear')],['Registration',first('reg','registration','registrationNo')],['VIN / Chassis',String(first('vin','VIN','vinNumber','chassis','chassisNo')).toUpperCase(),true],['Vehicle colour',jobName(first('color','colour'))],['Paint colour code',first('colorCode','colourCode')],['Intake odometer',first('jobIntakeOdometer','odometer')],['Odometer unit',first('jobIntakeOdometerUnit','jobIntakeUnit','odometerUnit')]])+
  section('Customer Details', [['Customer',jobName(first('customer','customerName')),true],['Contact',first('mobile','customerMobile','customerContact','contact','phone','tel')],['Email',j.email],['Customer address',first('customerAddress','address'),true]])+
- section('Insurance & Payment', [['Insurance company',jobName(first('insuranceCompany','insurance'))],['Claim number',first('claimNo','claimNumber','claim')],['Amount',money(j.amount)],['Final invoice amount',money(j.finalInvoiceAmount??j.invoiceAmount)],['Invoice date',j.invoiceDate],['Credit account / reference',j.creditAccount],['Delivered · Oman time',j.deliveredAt||j.deliveryDate?jobDate(j.deliveredAt||j.deliveryDate):'Not delivered']])+
- '<section class="jce-view-section"><h4>Work Descriptions / Notes</h4><div class="jce-view-work">'+esc(descriptions.join('\n\n')||'No work description recorded.')+'</div></section></section>';
+ section(jobType==='INSURANCE'?'Insurance & Payment':'Payment Details', [...(jobType==='INSURANCE'?[['Insurance company',jobName(first('insuranceCompany','insurance'))],['Claim number',first('claimNo','claimNumber','claim')]]:[]),['Amount',money(j.amount)],['Final invoice amount',money(j.finalInvoiceAmount??j.invoiceAmount)],['Invoice date',j.invoiceDate],...(jobType==='CREDIT'?[['Credit account / reference',j.creditAccount]]:[]),['Delivered · Oman time',j.deliveredAt||j.deliveryDate?jobDate(j.deliveredAt||j.deliveryDate):'Not delivered']])+
+ '<section class="jce-view-section"><h4>Work Descriptions / Notes</h4><div class="jce-view-work">'+esc(descriptions.join('\n\n')||'No work description recorded.')+'</div></section>'+(actions&&j.delivered&&typeof window.zukaitDeliveredMaterialsSummary==='function'?window.zukaitDeliveredMaterialsSummary(j.no,'job-view'):'')+'</section>';
 }
 function printView(j){
  const html='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Job Card '+esc(j.no)+'</title><style>'+viewCss()+'</style></head><body>'+viewHtml(j,false)+'</body></html>';

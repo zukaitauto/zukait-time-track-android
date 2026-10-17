@@ -11,13 +11,16 @@ try{
  for(const file of fs.readdirSync('supabase/migrations').filter(x=>x.endsWith('.sql')).sort()){
   try{await db.exec(fs.readFileSync('supabase/migrations/'+file,'utf8'));}catch(e){console.error('Migration failed:',file,e.message,e.where||'');throw e;}
  }
+ await db.exec(fs.readFileSync('supabase/V336_JOB_DESCRIPTION_PERSISTENCE.sql','utf8'));
+ await db.exec(fs.readFileSync('supabase/V336_JOB_DESCRIPTION_PERSISTENCE.sql','utf8')); // idempotent retry
  await db.exec("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt) values('QA-MGR','Manager','Manager','','none','none'),('QA-RC','Reception','Receptionist','','none','none'),('QA-EMP','Employee','Employee','','none','none');insert into workshop_state(id,data,revision,updated_by) values('main','{\"jobs\":[],\"assign\":[],\"sessions\":[],\"estimates\":[]}',1,'QA-MGR');");
  await db.exec("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt) values('QA-SUP','Supervisor','Supervisor','','none','none');");
  await db.exec('set role service_role');
  const call=async(c,actor='QA-RC')=>(await db.query('select zukait_reception_command($1,$2::jsonb) result',[actor,JSON.stringify(c)])).rows[0].result;
  const details={make:'Toyota',model:'Camry',year:'2023',registration:'QA-123',vin:'1HGCM82633A004352',odometer:'500',odometer_unit:'KM'};
  const direct={operation:'CREATE_DIRECT_JOB',job_type:'CASH',job_card:'QA100',details,received_confirmed:true,reason:'QA direct',request_id:randomUUID()};
- let result=await call(direct);assert.equal(result.job_card,'QA100');assert.equal(result.record,undefined);
+ let result=await call(direct);assert.equal(result.job_card,'QA100');
+ assert.equal((await db.query("select j->>'workDescription' description from workshop_state,jsonb_array_elements(data->'jobs') j where j->>'no'='QA100'")).rows[0].description,'QA direct');assert.equal(result.record,undefined);
  assert.equal(Number((await db.query('select count(*) n from workshop_receptions')).rows[0].n),0,'Direct jobs must not insert checklists');
  assert.equal((await call(direct)).duplicate,true);
  await assert.rejects(call({...direct,reason:'changed'}),/reception_request_conflict/);

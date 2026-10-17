@@ -11,8 +11,8 @@ android {
         minSdk 24
         targetSdk 35
         // V333 packages the reviewed dashboard, Reception and estimate updates.
-        versionCode 298
-        versionName "V335" // Exact-source acceptance includes updated row actions, compact letterhead and return permissions.
+        versionCode 299
+        versionName "V336" // Exact-source acceptance includes updated row actions, compact letterhead and return permissions.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }

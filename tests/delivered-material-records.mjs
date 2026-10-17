@@ -1,0 +1,22 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';import {JSDOM} from 'jsdom';
+import {qcStatus,invoiceComplete,invoiceDateValid} from '../app/src/main/assets/qc_delivery_rules.js';
+const dom=new JSDOM('<div id="modal"></div>',{url:'https://qa.invalid',runScripts:'outside-only'}),w=dom.window;
+w.qcStatus=qcStatus;w.invoiceComplete=invoiceComplete;w.invoiceDateValid=invoiceDateValid;
+w.state={jobs:[{no:'JC1',vehicle:'Toyota Camry',reg:'123',delivered:true},{no:'EMPTY',delivered:true},{no:'OPEN',delivered:false}],assign:[],sessions:[],consumables:{materials:[{id:'m',name:'Primer',unit:'Liter'}],brands:[{id:'b',name:'Brand One'}],issues:[{id:'I',jobCard:'JC1',locked:true,type:'ISSUED',lines:[{materialId:'m',quantity:2}]},{id:'A',jobCard:'JC1',locked:true,type:'ADDITIONAL',lines:[{materialId:'m',quantity:1}]}],actuals:[{id:'ACT',jobCard:'JC1',locked:true,totalCost:17.25,lines:[{materialId:'m',brandId:'b',actualQuantity:3,lineCost:17.25}]},{id:'DRAFT',jobCard:'JC1',locked:false,lines:[]},{id:'OTHER',jobCard:'OTHER',locked:true,lines:[]},{id:'VOID',jobCard:'JC1',locked:true,voided:true,lines:[{name:'VOID-MATERIAL'}]}]},paintPurchasing:{orders:[{id:'P',jobCard:'JC1',poNumber:'PO-ONE',receivedAt:1000,lines:[{paintType:'Base White',quantity:1,pricePerLitre:4,lineTotal:4}],returns:[{paintType:'Base White',quantity:0.2,reason:'Excess'}]},{id:'NIL',jobCard:'JC1',poNumber:'PO-NIL',nilPaintPurchase:true,nilDescription:'Leftover paint'},{jobCard:'OTHER',poNumber:'OTHER-PO'},{jobCard:'JC1',voided:true,poNumber:'VOID-PO'}]}};
+w.me={role:'Manager',id:'M1'};w.openModal=h=>w.document.getElementById('modal').innerHTML=h;w.closeModal=()=>{};let refreshes=0,returned;
+w.zukaitCloud={pull:async()=>{refreshes++;return true}};w.alert=message=>{throw Error(message)};
+w.eval('const qcStatus=window.qcStatus,invoiceComplete=window.invoiceComplete,invoiceDateValid=window.invoiceDateValid;'+fs.readFileSync('app/src/main/assets/qc_delivery.js','utf8').replace(/^import[^\n]+\n/,''));
+const before=JSON.stringify(w.state);
+w.zukaitOpenDeliveredRecord('JC1');assert.match(w.document.body.textContent,/Materials Entry Check/);assert.equal(w.document.querySelectorAll('[data-kind]').length,2);
+await w.zukaitOpenDeliveredMaterials('JC1','consumables');
+let text=w.document.body.textContent;assert.match(text,/Primer/);assert.match(text,/Brand One/);assert.match(text,/Additional Materials/);assert.match(text,/Draft — not finalized/);assert.match(text,/17.250/);assert.doesNotMatch(text,/VOID-MATERIAL|OTHER/);
+await w.zukaitOpenDeliveredMaterials('JC1','paint');text=w.document.body.textContent;assert.match(text,/PO-ONE/);assert.match(text,/Base White/);assert.match(text,/Returns/);assert.match(text,/NIL — No purchase required/);assert.match(text,/Leftover paint/);assert.doesNotMatch(text,/VOID-PO|OTHER-PO/);
+await w.zukaitOpenDeliveredMaterials('EMPTY','consumables');assert.match(w.document.body.textContent,/No finalized actual consumables/);assert.match(w.document.body.textContent,/No consumables records/);
+await w.zukaitOpenDeliveredMaterials('EMPTY','paint');assert.match(w.document.body.textContent,/No paint records/);assert.match(w.document.body.textContent,/NIL paint purchase/);
+for(const role of ['Supervisor','Receptionist']){w.me.role=role;await w.zukaitOpenDeliveredMaterials('JC1','consumables');assert.match(w.document.body.textContent,/Primer/);assert.doesNotMatch(w.document.body.textContent,/17.250/);}
+w.me.role='Manager';w.zukaitJobEdit={view:no=>returned=no};await w.zukaitOpenDeliveredMaterials('JC1','paint','job-view');w.zukaitReturnDeliveredMaterials();assert.equal(returned,'JC1');
+assert.equal(w.zukaitDeliveredMaterialsSummary('OPEN'),'');
+w.me.role='Employee';assert.equal(w.zukaitDeliveredMaterialsSummary('JC1'),'');const prior=w.document.body.innerHTML;await w.zukaitOpenDeliveredMaterials('JC1','paint');assert.equal(w.document.body.innerHTML,prior);
+assert.equal(JSON.stringify(w.state),before,'Read-only material review must preserve business data');assert.ok(refreshes>=5);
+w.me.role='Manager';w.zukaitCloud.pull=async()=>false;let failure='';w.alert=x=>failure=x;await w.zukaitOpenDeliveredMaterials('JC1','paint');assert.match(failure,/Server refresh failed/);assert.equal(w.document.body.innerHTML,prior,'Failed refresh must not claim records are missing');
+dom.window.close();console.log('Delivered material drill-down: job-scoped actual/issued/draft/paint/returns/NIL, empty states, roles, safe refresh, Back and read-only behavior passed');

@@ -32,6 +32,7 @@ node tests/live-status-authority.mjs
 node tests/paused-menu-consistency.mjs
 node tests/qc-delivery-authority.mjs
 node tests/invoice-entry.mjs
+node tests/delivered-material-records.mjs
 node tests/spare-return-button.mjs
 node tests/v2-spare-parts-return-cancel.mjs
 node tests/job360-profit-loss.mjs
