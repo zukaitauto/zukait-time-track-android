@@ -346,3 +346,6 @@ assert.ok(printDate.includes('.estimate-print,.estimate-print *{color:#000!impor
 assert.equal(api.estimatePdfFilename({makeModel:'Toyota camry',registration:'3180.RY'}),'Toyota_camry_3180_RY.pdf');
 assert.equal(api.estimatePdfFilename({makeModel:' Toyota / Camry ',registration:'3180 RY'}),'Toyota_Camry_3180_RY.pdf');
 assert.equal(api.estimatePdfFilename({estimateNo:'Zi-Qt099'}),'Zi_Qt099.pdf');
+
+assert.ok(printDate.includes('.estimate-print .totals thead th{background:#e5e7eb;color:#000;'),'Black printed heading text requires a light background');
+assert.ok(api.estimateDocumentHtml({makeModel:'Toyota camry',registration:'3180 RY'}).includes('<title>Toyota_camry_3180_RY</title>'));
