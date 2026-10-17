@@ -226,6 +226,7 @@
     if(user(id).role!=='Unknown')return alert('That User ID already exists.');
     if(role==='Purchaser')department='Spare Parts';
     if(role==='Receptionist')department='Reception';
+    if(role==='Accountant')department='Accounts';
     const managerPassword=prompt('Enter Manager password to create this user');
     if(managerPassword===null)return;
     if(!managerPassword)return alert('Enter Manager password.');
@@ -320,7 +321,17 @@
     localStorage.setItem(KEY,JSON.stringify(state));
   }catch(e){console.warn('Credential cleanup warning',e)}
 
-  const observer=new MutationObserver(()=>{
+  function ensureAccountantRoleOption(){
+    const select=document.getElementById('newUserRole');
+    if(!select || [...select.options].some(o=>o.value==='Accountant'))return;
+    const option=document.createElement('option');
+    option.value='Accountant';
+    option.textContent='Accountant';
+    select.appendChild(option);
+  }
+
+  const observer=new MutationObserver(()=>{    ensureAccountantRoleOption();
+
     const app=document.getElementById('app');
     if(!app||app.classList.contains('hidden'))return;
     const row=app.querySelector(':scope > .row');
@@ -335,6 +346,7 @@
     }
   });
   observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+  ensureAccountantRoleOption();
 
   window.zukaitAuth={
     getToken:()=>token(),
