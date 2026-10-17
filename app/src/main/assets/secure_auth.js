@@ -103,17 +103,7 @@
 
   function openApp(userObj){
     if(userObj?.role==='Receptionist'){window.location.replace('receptionist.html');return;}
-    if(userObj?.role==='Accountant'){
-      // Fail closed until the dedicated Accountant dashboard and server permissions are deployed.
-      const login=document.getElementById('login');
-      const app=document.getElementById('app');
-      if(app)app.classList.add('hidden');
-      if(login)login.classList.remove('hidden');
-      let notice=document.getElementById('accountantAccessNotice');
-      if(!notice){notice=document.createElement('p');notice.id='accountantAccessNotice';notice.setAttribute('role','status');notice.style.cssText='padding:12px;color:#92400e;background:#fffbeb;border-radius:8px;';login?.appendChild(notice);}
-      notice.textContent='Accountant dashboard is not available yet. Please contact your Manager.';
-      return;
-    }
+    if(userObj?.role==='Accountant'){window.location.replace('accountant.html');return;}
     me=userObj;
     window.me=userObj;window.currentUser=userObj;
     const login=document.getElementById('login');
@@ -148,7 +138,7 @@
       }
       saveSession(sessionToken,r.user);
       openApp(r.user);
-      if(r.user?.role==='Receptionist')return;
+      if(['Receptionist','Accountant'].includes(r.user?.role))return;
       try{render()}catch(err){
         console.error(err);
         alert('Dashboard loading error: '+(err?.message||err));
@@ -285,7 +275,7 @@
       if(!s?.token||!s?.user){showLogin();return false;}
       if(!navigator.onLine){
         openApp(s.user);
-        if(s.user?.role==='Receptionist')return true;
+        if(['Receptionist','Accountant'].includes(s.user?.role))return true;
         try{render()}catch(e){console.warn('Offline restore render failed',e)}
         if(window.zukaitCloud?.init)window.zukaitCloud.init(false);
         return true;
