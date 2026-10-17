@@ -13,9 +13,30 @@
 const titles=['JC Search & 360° Financial View','Consumables Expenses','Paint Expenses','Spare Parts Expenses','Employee Leave Details','Cash In / Cash Out','Insurance LPO Tracking','Outstanding Payments','Monthly Financial Reports'];
 const key='zukait_secure_session_v42';
 let saved=null;try{saved=JSON.parse(localStorage.getItem(key)||'null')}catch(_){}
-const user=saved?.user;
-if(!user||user.role!=='Accountant'){location.replace('index.html');return;}
-document.getElementById('identity').textContent='Signed-in account: '+String(user.name||user.id||'Accountant');
+const notice=document.getElementById('notice');
+const identity=document.getElementById('identity');
+identity.textContent='Verifying Accountant session…';
+async function verify(){
+  const user=saved?.user;
+  if(!user||user.role!=='Accountant')throw Error('Accountant sign-in required.');
+  let token=String(saved?.token||'');
+  if(!token){try{token=String(window.AndroidBridge?.getSecureSessionToken?.()||'')}catch(_){}}
+  if(!token)throw Error('Session token unavailable. Sign in again.');
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),15000);
+  let response;
+  try{
+    response=await fetch('https://pjknotnjkufadqavcmii.supabase.co/functions/v1/staff-auth',{
+      method:'POST',headers:{'Content-Type':'application/json','apikey':'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A'},
+      body:JSON.stringify({action:'session',session_token:token}),signal:controller.signal
+    });
+  }finally{clearTimeout(timeout)}
+  const result=await response.json();
+  if(!response.ok||!result.ok||result.user?.role!=='Accountant'||result.user?.id!==user.id)throw Error('Accountant session invalid.');
+  identity.textContent='Signed-in account: '+String(result.user.name||result.user.id);
+  notice.textContent='Financial modules are being prepared. No accounting data or editing controls are available on this page yet.';
+}
+verify().catch(e=>{identity.textContent='Access not verified';notice.textContent=e.message+' Return to the sign-in screen.';document.getElementById('modules').replaceChildren();});
 document.getElementById('modules').replaceChildren(...titles.map(title=>{
  const card=document.createElement('article');card.className='tile';
  const h=document.createElement('h2');h.textContent=title;
@@ -23,6 +44,6 @@ document.getElementById('modules').replaceChildren(...titles.map(title=>{
  const status=document.createElement('span');status.className='status';status.textContent='Not available';
  card.append(h,p,status);return card;
 }));
-document.getElementById('back').onclick=()=>location.replace('index.html');
+document.getElementById('back').onclick=()=>history.back();
 })();
 </script></body></html>
