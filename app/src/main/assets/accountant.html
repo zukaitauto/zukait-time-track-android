@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Zukait Accountant</title>
+<style>
+:root{font-family:system-ui,sans-serif;color:#193247;background:#f3f7fa}*{box-sizing:border-box}body{margin:0}main{max-width:1120px;margin:auto;padding:22px}header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}h1{font-size:clamp(23px,4vw,32px)}.notice{padding:14px;border:1px solid #e6c77d;border-radius:10px;background:#fff9e8}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:22px}.tile{padding:20px;background:white;border:1px solid #d5e1e9;border-radius:12px}.tile h2{font-size:17px;margin:0 0 10px}.tile p{font-size:14px;color:#526879}.status{font-size:13px;color:#795b15}button{padding:11px 16px;border-radius:8px;border:1px solid #9cb5c7;background:#fff;color:#183a52;cursor:pointer}button:disabled{cursor:not-allowed;opacity:.6}
+</style></head><body><main>
+<header><h1>Zukait · Accountant Dashboard</h1><button id="back" type="button">Back to login</button></header>
+<p id="identity" role="status"></p>
+<p class="notice" id="notice">Financial modules are being prepared. No accounting data or editing controls are available on this page yet.</p>
+<section class="grid" aria-label="Accountant modules" id="modules"></section>
+</main><script>
+(function(){
+'use strict';
+const titles=['JC Search & 360° Financial View','Consumables Expenses','Paint Expenses','Spare Parts Expenses','Employee Leave Details','Cash In / Cash Out','Insurance LPO Tracking','Outstanding Payments','Monthly Financial Reports'];
+const key='zukait_secure_session_v42';
+let saved=null;try{saved=JSON.parse(localStorage.getItem(key)||'null')}catch(_){}
+const user=saved?.user;
+if(!user||user.role!=='Accountant'){location.replace('index.html');return;}
+document.getElementById('identity').textContent='Signed-in account: '+String(user.name||user.id||'Accountant');
+document.getElementById('modules').replaceChildren(...titles.map(title=>{
+ const card=document.createElement('article');card.className='tile';
+ const h=document.createElement('h2');h.textContent=title;
+ const p=document.createElement('p');p.textContent='Awaiting secured financial API and verified data mapping';
+ const status=document.createElement('span');status.className='status';status.textContent='Not available';
+ card.append(h,p,status);return card;
+}));
+document.getElementById('back').onclick=()=>location.replace('index.html');
+})();
+</script></body></html>
