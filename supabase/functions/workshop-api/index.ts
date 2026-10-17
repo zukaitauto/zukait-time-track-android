@@ -109,7 +109,7 @@ async function sessionUser(token: string) {
   const staffRaw = (session as any).staff_credentials;
   const staff = Array.isArray(staffRaw) ? staffRaw[0] : staffRaw;
   if (!staff || !staff.active || String(staff.user_id) !== String(session.user_id)) return null;
-  if (staff.role === "Receptionist" && staff.must_change) return null;
+  if (["Receptionist","Accountant"].includes(String(staff.role)) && staff.must_change) return null;
   // Revision probes can arrive every second from active phones. Keep session
   // liveness useful without turning every read into a database write.
   const lastSeen = session.last_seen_at ? Date.parse(String(session.last_seen_at)) : 0;
