@@ -103,6 +103,17 @@
 
   function openApp(userObj){
     if(userObj?.role==='Receptionist'){window.location.replace('receptionist.html');return;}
+    if(userObj?.role==='Accountant'){
+      // Fail closed until the dedicated Accountant dashboard and server permissions are deployed.
+      const login=document.getElementById('login');
+      const app=document.getElementById('app');
+      if(app)app.classList.add('hidden');
+      if(login)login.classList.remove('hidden');
+      let notice=document.getElementById('accountantAccessNotice');
+      if(!notice){notice=document.createElement('p');notice.id='accountantAccessNotice';notice.setAttribute('role','status');notice.style.cssText='padding:12px;color:#92400e;background:#fffbeb;border-radius:8px;';login?.appendChild(notice);}
+      notice.textContent='Accountant dashboard is not available yet. Please contact your Manager.';
+      return;
+    }
     me=userObj;
     window.me=userObj;window.currentUser=userObj;
     const login=document.getElementById('login');
