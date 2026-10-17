@@ -60,6 +60,30 @@ form.addEventListener('submit',async event=>{
   for(const row of data.rows){
    const item=document.createElement('p');
    item.textContent=[row.job_card,row.registration,row.vehicle,row.job_type].filter(Boolean).join(' · ');
+   const button=document.createElement('button');button.type='button';button.textContent='View financial details';
+   const details=document.createElement('div');
+   button.onclick=async()=>{
+     button.disabled=true;details.textContent='Loading verified details…';
+     try{
+       const response=await fetch('https://pjknotnjkufadqavcmii.supabase.co/functions/v1/workshop-api',{
+         method:'POST',headers:{'Content-Type':'application/json','apikey':'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A','x-zukait-session':token},
+         body:JSON.stringify({action:'accountant_jc_detail',job_card:row.job_card})
+       });
+       const payload=await response.json();if(!response.ok||!payload.ok)throw Error(payload.code||'Details unavailable');
+       const d=payload.detail;
+       details.replaceChildren();
+       for(const [label,value] of [
+         ['Job Card',d.job_card],['Registration',d.registration],['Vehicle',d.vehicle],
+         ['Customer',d.customer],['Job Type',d.job_type],
+         ['Actual consumables cost',Number(d.consumables_actual_cost_omr).toFixed(3)+' OMR'],
+         ['Actual consumables records',d.consumables_actual_records],
+         ['Paint cost',null],['Spare parts cost',null],['Labour cost',null],
+         ['Invoice amount',null],['Total cost',null],['Estimated gross profit',null]
+       ]){const line=document.createElement('p');line.textContent=label+': '+(value===null?'Not yet available':value);details.appendChild(line);}
+     }catch(e){details.textContent='Unable to load financial details: '+(e.message||'Try again.');}
+     finally{button.disabled=false;}
+   };
+   item.append(' ',button,details);
    results.appendChild(item);
   }
  }catch(e){status.textContent='Search failed: '+(e.message||'Please try again.');}
