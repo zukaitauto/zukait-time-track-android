@@ -83,7 +83,7 @@ const fixture={id:'preview',estimateNo:'Zi-Qt018',date:'2026-10-13',type:'LS',va
  await page.setContent(html);assert.equal(await page.locator('.company-arabic').evaluate(el=>getComputedStyle(el).direction),'rtl');assert.match(await page.locator('.company-english').innerText(),/HI-TECH AUTOMOTIVE WORKSHOP/);assert.doesNotMatch(await page.locator('.head').innerText(),/93211154|1921|1194220/);const art=await page.locator('.letterhead-artwork').boundingBox();
  const headBox=await page.locator('.head').boundingBox();
  assert.ok(Math.abs(art.width-headBox.width)<1,'Sample branding must fill the header width');
- assert.ok(art.height>185&&art.height<191,'Branding artwork must remain compact on A4');
+ assert.ok(art.height>165&&art.height<171,'Compact letterhead must reflect the reduced title gap on A4');
  assert.equal(await page.locator('.letterhead-artwork image').getAttribute('href').then(x=>x.startsWith('data:image/svg+xml;base64,')),true,'Print artwork must be embedded for Android/offline sharing');
  assert.equal(await page.locator('.doc-footer').evaluate(el=>getComputedStyle(el).fontSize),'9px');
  await page.pdf({path:'estimate-preview.pdf',preferCSSPageSize:true,printBackground:true,displayHeaderFooter:true});
