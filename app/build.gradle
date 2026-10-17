@@ -12,7 +12,7 @@ android {
         targetSdk 35
         // V333 packages the reviewed dashboard, Reception and estimate updates.
         versionCode 298
-        versionName "V335"
+        versionName "V335" // Exact-source acceptance includes updated row actions and return permissions.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }

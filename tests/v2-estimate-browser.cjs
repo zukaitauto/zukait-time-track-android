@@ -50,18 +50,19 @@ const fixture={id:'preview',estimateNo:'Zi-Qt018',date:'2026-10-13',type:'LS',va
   const heading=await header.locator('h4').boundingBox(),button=await header.locator('button').boundingBox();
   assert.ok(Math.abs(heading.y+heading.height/2-button.y-button.height/2)<5,'Add button must share the section heading row');
  }
- await page.evaluate(()=>zukaitEstimate.addRow('LAB'));
+ await page.locator('[data-est-lab-row]').first().locator('.est-row-add').click();
+ assert.equal(await page.locator('[data-est-lab-row]').count(),2);
  const amount=page.locator('[data-est-lab-row]').last().locator('.est-amount');
  for(const [typed,formatted] of [['30','30.000'],['30.5','30.500'],['30.125','30.125'],['100','100.000'],['0','0.000']]){
   await amount.fill('0.000');await amount.blur();await amount.focus();assert.equal(await amount.inputValue(),'','Zero-valued amount must clear on focus');
   await amount.fill(typed);assert.equal(await amount.inputValue(),typed,'Typing must not insert decimals');await amount.blur();assert.equal(await amount.inputValue(),formatted);
  }
  await amount.fill('25.125');await amount.blur();await amount.focus();assert.equal(await amount.inputValue(),'25.125','Focus must preserve nonzero saved values');
- await page.locator('[data-est-lab-row]').last().locator('button').click();
+ await page.locator('[data-est-lab-row]').last().locator('.est-remove').click();
 
- await page.evaluate(()=>zukaitEstimate.addRow('PART'));
+ await page.locator('[data-est-part-row]').first().locator('.est-row-add').click();
  assert.equal(await page.locator('[data-est-part-row]').count(),2);
- await page.locator('[data-est-part-row]').last().locator('button').click();
+ await page.locator('[data-est-part-row]').last().locator('.est-remove').click();
  assert.equal(await page.locator('[data-est-part-row]').count(),1);
  const html=await page.evaluate(e=>zukaitEstimate.estimateDocumentHtml(e),fixture);
  const partsHtml=await page.evaluate(e=>zukaitEstimate.estimateDocumentHtml({...e,type:'PL',vatEnabled:true}),fixture);
