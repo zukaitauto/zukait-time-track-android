@@ -11,8 +11,8 @@ android {
         minSdk 24
         targetSdk 35
         // V333 packages the reviewed dashboard, Reception and estimate updates.
-        versionCode 297
-        versionName "V334"
+        versionCode 298
+        versionName "V335"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }

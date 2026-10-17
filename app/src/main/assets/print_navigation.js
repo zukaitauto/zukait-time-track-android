@@ -1,4 +1,30 @@
 (function(){'use strict';
+// Browser-generated URL/date headers live in page margins, not report content.
+// Keep document size/orientation and move existing page insets into the body.
+function printPageCss(source){
+ let inset=null;const pages=String(source||'').match(/@page\s*\{[^{}]*\}/gi)||[];
+ for(const page of pages){const margin=page.match(/(?:[;{]\s*)margin\s*:\s*([^;}]+)/i);if(margin)inset=margin[1].replace(/!important/gi,'').trim();}
+ const padding=inset&&!/^0(?:px|mm|cm|in|pt)?$/.test(inset)?'padding:'+inset+'!important;':'';
+ return '@media print{@page{margin:0!important}html{margin:0!important;padding:0!important}body{margin:0!important;'+padding+'}}';
+}
+window.zukaitPrintWithoutBrowserHeaders=function(value){
+ const html=String(value||'');if(html.includes('id="zukait-print-page-policy"'))return html;
+ const style='<style id="zukait-print-page-policy">'+printPageCss(html)+'</style>';
+ return /<\/head>/i.test(html)?html.replace(/<\/head>/i,style+'</head>'):style+html;
+};
+function installPrintPolicy(target){
+ if(!target?.addEventListener)return;
+ target.addEventListener('beforeprint',()=>{try{
+  const d=target.document;if(!d?.head||d.getElementById('zukait-print-page-policy'))return;
+  const style=d.createElement('style');style.id='zukait-print-page-policy';style.textContent=printPageCss(d.documentElement?.outerHTML||'');d.head.appendChild(style);
+ }catch(_){}});
+}
+installPrintPolicy(window);
+// Legacy reports use a same-origin blank popup rather than the shared preview.
+if(typeof window.open==='function'){
+ const originalOpen=window.open;
+ window.open=function(url,...args){const popup=originalOpen.call(this,url,...args);if(!url||url==='about:blank')installPrintPolicy(popup);return popup;};
+}
 // Preview navigation belongs to the app, not popup history or window.close.
 let activeClose=null;
 window.zukaitOpenPrintPreview=function(title='Zukait Document'){
@@ -9,6 +35,7 @@ window.zukaitOpenPrintPreview=function(title='Zukait Document'){
  function escape(e){if(e.key==='Escape'){e.preventDefault();close()}}
  function print(){if(closed)return;if(native&&typeof native.printHtmlNamed==='function'){native.printHtmlNamed(html,String(title));return}if(!ready){pendingPrint=true;return}frame.contentWindow.focus();frame.contentWindow.print()}
  function mount(){
+  html=window.zukaitPrintWithoutBrowserHeaders(html);
   if(native&&typeof native.printHtmlNamed==='function')return;
   if(activeClose)activeClose();activeClose=close;
   overlay=document.createElement('div');overlay.className='zukait-print-overlay';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-label',String(title));overlay.setAttribute('aria-modal','true');overlay.style.cssText='position:fixed;inset:0;z-index:2147483000;background:#fff;display:flex;flex-direction:column';

@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const source=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
+const start=source.indexOf('/* V115 SUPERVISOR INCENTIVE WINDOW'),end=source.indexOf('})();',start)+5;
+let html='';const users=[{id:'A',name:'Aaron',role:'Employee'},{id:'Z',name:'Zaid',role:'Employee'},{id:'B',name:'Ben',role:'Employee'},{id:'M',name:'Manager',role:'Manager'}];
+const data={A:{achieved:60,incentive:500},Z:{achieved:180,incentive:0},B:{eligible:120,incentive:60}};
+const ctx={me:{role:'Manager'},users,openModal:x=>html=x,incentiveFor:id=>data[id]};ctx.window=ctx;
+vm.runInNewContext(source.slice(start,end),ctx);
+ctx.openIncentiveList();assert.match(html,/Monthly Incentive/);assert.ok(html.indexOf('Zaid')<html.indexOf('Ben'));assert.ok(html.indexOf('Ben')<html.indexOf('Aaron'),'Rank by achieved hours rather than name or incentive');const managerHtml=html;
+ctx.me.role='Supervisor';ctx.openIncentiveList();assert.equal(html,managerHtml,'Manager and Supervisor must use identical output and calculations');
+ctx.me.role='Employee';html='unchanged';ctx.openIncentiveList();assert.equal(html,'unchanged');
+assert.equal(data.A.incentive,500,'Opening report must not modify incentive values');
+console.log('Shared incentive: Manager opens, Supervisor matches, achieved-hours ranking with eligible fallback, role guard and read-only values passed');

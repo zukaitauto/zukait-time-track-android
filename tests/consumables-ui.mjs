@@ -119,3 +119,23 @@ assert.equal((report.match(/<details class="cons-job-report">/g)||[]).length,1);
 assert.match(report,/OMR 4\.000/);assert.doesNotMatch(report,/JC JC1/);
 state.consumables.actuals=originalActuals;
 console.log('Custom Range job totals and expandable material details respect inclusive dates and filters');
+
+// One Material Summary combines brands per material and respects the selected range.
+state.consumables.actuals=[
+ {jobCard:'JC1',actualAt:new Date(2026,9,1,12).getTime(),locked:true,lines:[reportLine(3,1),reportLine(5,2)]},
+ {jobCard:'JC2',actualAt:new Date(2026,9,15,12).getTime(),locked:true,lines:[reportLine(4,1)]},
+ {jobCard:'EXCLUDED',actualAt:new Date(2026,9,16,12).getTime(),locked:true,lines:[reportLine(100,1)]}
+];
+fill({crMode:'itemtotals',crJc:'',crFrom:'2026-10-01',crTo:'2026-10-15'});ctx.consRunReports();
+report=element('crResult').innerHTML;
+assert.match(report,/<h3>Material Summary<\/h3>/);
+assert.match(report,/OMR 12\.000/);assert.match(report,/>4<\/td><td>Liter/);
+assert.doesNotMatch(report,/Material Consumption Summary|Material \/ Brand Consumption|Price \/ Unit|EXCLUDED/);
+assert.equal((report.match(/<table>/g)||[]).length,1);
+fill({crJc:'JC2'});ctx.consRunReports();report=element('crResult').innerHTML;
+assert.match(report,/OMR 4\.000/);assert.match(report,/>1<\/td><td>Liter/);
+fill({crJc:'NO-MATCH'});ctx.consRunReports();assert.match(element('crResult').innerHTML,/No finalized consumption/);
+state.consumables.actuals=originalActuals;
+ctx.consOpenReports();assert.match(ctx.modal,/<option value="itemtotals">Material Summary<\/option>/);
+assert.doesNotMatch(ctx.modal,/<option value="material(?:brand)?">|Period Item Totals/);
+console.log('Single Material Summary: combined material totals, inclusive dates, JC filters and empty state passed');

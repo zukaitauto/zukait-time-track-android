@@ -216,13 +216,13 @@ test('Manager and Supervisor corrections validate before-state without a declara
   }
 });
 
-test('only Manager may return verified, confirmed, or fitted parts through the API',async()=>{
+test('Manager and Supervisor may return verified, confirmed, or fitted parts through the API',async()=>{
   for(const from of ['SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED']){
     for(const role of ['Manager','Supervisor','Purchaser']){
       const event={eventId:'return-'+from+'-'+role,entityId:'SP1',actorId:'USER1',type:'SPARE_PART_STATUS_CHANGED',payload:{partId:'SP1',listNo:'PL1',jobCard:'12029',from,to:'RETURNED',reason:'Wrong supplied part'}};
       const result=await validate({event},{id:'USER1',role},{});
-      if(role==='Manager')assert.deepEqual(result,{ok:true},from);
-      else {assert.equal(result.code,'spare_return_manager_required');assert.equal(result.status,403)}
+      if(['Manager','Supervisor'].includes(role))assert.deepEqual(result,{ok:true},from);
+      else {assert.equal(result.code,'spare_return_manager_or_supervisor_required');assert.equal(result.status,403)}
     }
   }
 });

@@ -20,7 +20,7 @@ function canAct(role,from,to){
  if(to==='DENTER_CHECKED')return false;
  if(to==='SUPERVISOR_CONFIRMED')return role==='Supervisor'||role==='Manager';
  if(to==='FITTED')return role==='Supervisor'||role==='Manager';
- if(to==='RETURNED'){if(['SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED'].includes(String(from||'')))return role==='Manager';return ['Purchaser','Manager'].includes(role);}
+ if(to==='RETURNED'){if(['SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED'].includes(String(from||'')))return ['Manager','Supervisor'].includes(role);return ['Purchaser','Manager','Supervisor'].includes(role);}
  if(to==='UNAVAILABLE')return ['Supervisor','Purchaser','Manager'].includes(role);
  if(to==='CUSTOMER_SETTLEMENT')return role==='Supervisor'||role==='Manager';
  return role==='Supervisor'||role==='Manager';

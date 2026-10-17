@@ -17,7 +17,7 @@ const state={
   estimates:[{
     id:'E1',estimateNo:'Zi-Qt001',date:'2026-09-26',type:'LS',vatEnabled:true,
     customerName:'Test Customer',mobile:'90000000',makeModel:'Toyota Camry',year:'2024',
-    registration:'TEST1',vin:'VIN1',claimNo:'CL1',jobCard:'',
+    jobType:'INSURANCE',registration:'TEST1',vin:'VIN1',claimNo:'CL1',jobCard:'',
     customerSuppliedParts:'Headlamp\nBracket',notes:'Subject to inspection.',
     lsRows:[{id:'L1',description:'Repair',amount:100},{id:'L2',description:'Paint',amount:50}],
     labourRows:[],partRows:[],lsSpareParts:30,misc:20,createdBy:'SUP1'
@@ -191,8 +191,8 @@ console.log('V2 Estimate functional calculations + Android bridge: ok');
 
 // The same self-contained branding/footer must survive native WebViews with a null base URL.
 const branded=api.estimateDocumentHtml(state.estimates[0]);
-assert.match(branded,/<image href="data:image\/svg\+xml;base64,[A-Za-z0-9+/=]+" width="529.6" height="142"\/>/);
-assert.match(branded,/viewBox="0 0 529.6 142"/,'Crop only the source side margins so branding aligns with the content borders');
+assert.match(branded,/<image href="data:image\/svg\+xml;base64,[A-Za-z0-9+/=]+" width="529.6" height="127"\/>/);
+assert.match(branded,/viewBox="0 0 529.6 127"/,'Crop only the source side margins so branding aligns with the content borders');
 assert.match(branded,/class="letterhead-artwork"/);
 for(const text of ['P.O. Box 1921','Barka','Postal Code 130','C.R.N. 1194220','92403420, 72440918','Authorized Signed']) assert.ok(branded.includes(text),text);
 assert.ok(!plPrintable.includes('<b>Type:</b>'));
@@ -349,3 +349,8 @@ assert.equal(api.estimatePdfFilename({estimateNo:'Zi-Qt099'}),'Zi_Qt099.pdf');
 
 assert.ok(printDate.includes('.estimate-print .totals thead th{background:#e5e7eb;color:#000;'),'Black printed heading text requires a light background');
 assert.ok(api.estimateDocumentHtml({makeModel:'Toyota camry',registration:'3180 RY'}).includes('<title>Toyota_camry_3180_RY</title>'));
+
+const cashPrint=api.printable({...state.estimates[0],jobType:'CASH',claimNo:'HIDDEN-CLAIM'});
+assert.ok(!cashPrint.includes('Claim No.'));
+assert.ok(!cashPrint.includes('HIDDEN-CLAIM'));
+assert.ok(cashPrint.includes('VIN'));

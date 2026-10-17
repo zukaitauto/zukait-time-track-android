@@ -27,10 +27,13 @@ node tests/assignment-search-ui.mjs
 node tests/supervisor-stable-ui.mjs
 node tests/quick-entry-checklist.mjs
 node tests/manager-work-in-progress.mjs
+node tests/shared-incentive-window.mjs
 node tests/live-status-authority.mjs
 node tests/paused-menu-consistency.mjs
 node tests/qc-delivery-authority.mjs
 node tests/invoice-entry.mjs
+node tests/spare-return-button.mjs
+node tests/v2-spare-parts-return-cancel.mjs
 node tests/job360-profit-loss.mjs
 node tests/consumables-backend-security.mjs
 node tests/v128-costing-safety.mjs

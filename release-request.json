@@ -1,22 +1,22 @@
 {
-  "versionName": "V334",
-  "versionCode": 297,
+  "versionName": "V335",
+  "versionCode": 298,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "sourceCommit": "01ee5c843569cac5b7ab3e427e844c242d4124fb",
-  "signedAcceptanceRun": 39011024422,
-  "verificationRun": 39011024425,
-  "publishNonce": "v334-owner-approved-9b7e045bd19a4ebee47db734",
+  "approvedForStaff": false,
+  "sourceCommit": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "publishNonce": "v335-release-preparation",
   "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "authorization": "Owner requested proceeding with larger multiline Work Description and swapping Ideal Workers to top quick access with Available Technicians in Today at a Glance. Preserve separate calculation authorities, counts and click actions. No backend or database changes.",
-  "verificationSummary": "All local worker-placement, idle-time and direct Reception intake checks passed. Exact-source signed APK, full regression, Android builds, Reception browser verification, website packaging and native Android PDF verification passed. All 11 uploaded files matched local hashes. No backend/database changes. Physical device acceptance and fresh backup/restore remain NOT_RUN under the existing owner deferral.",
+  "authorization": "Owner requested releasing all discussed changes: estimate row Add actions and automatic corrections, Cash claim visibility, colored compact letterhead, shared incentives sorted by achieved hours, Supervisor parts returns and separate returned list, one Material Summary report, and global print footer suppression. Deploy matching return API separately before app publication. Existing owner Phase 2 and backup deferrals remain unchanged.",
+  "verificationSummary": "Candidate pending exact-source CI and separate Supervisor return API deployment. Database timeout repair migration 20261017133706 is already live and verified.",
   "releaseHeldByOwner": false,
-  "backendDeploymentRequired": false,
+  "backendDeploymentRequired": true,
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "function": "workshop-api",
@@ -26,7 +26,7 @@
     "deployedSeparately": true,
     "sourceCommit": "969454b1baeb7d18df164ded13d909209ebee113"
   },
-  "approvedAt": "2026-10-17T06:48:34Z",
-  "nativePdfRun": 39011024572,
-  "androidBuildRun": 39011024439
+  "approvedAt": null,
+  "nativePdfRun": null,
+  "androidBuildRun": null
 }
