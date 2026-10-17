@@ -975,16 +975,39 @@ Deno.serve(async (req: Request) => {
     // Never expose shared workshop state, time controls or Manager operations.
     if (user.role === "Accountant") {
       // Explicit allowlist: no shared state, writes, time controls, or Manager APIs.
-      if (action !== "accountant_jc_search" ||
-          Object.keys(body).some(k => !["action","query"].includes(k))) {
+      if (!["accountant_jc_search","accountant_jc_detail"].includes(action) ||
+          Object.keys(body).some(k => !["action","query","job_card"].includes(k)) {
         return reply({ok:false,code:"accountant_forbidden"},403);
       }
       const query = String(body.query || "").trim().toLowerCase();
-      if (query.length < 2 || query.length > 80) return reply({ok:false,code:"invalid_query"},400);
+      const jobCard = String(body.job_card || "").trim().toUpperCase();
+      if (action === "accountant_jc_search" && (query.length < 2 || query.length > 80)) return reply({ok:false,code:"invalid_query"},400);
+      if (action === "accountant_jc_detail" && (!/^[A-Z0-9_-]{1,40}$/.test(jobCard) || body.query !== undefined)) return reply({ok:false,code:"invalid_job_card"},400);
       const {data: snapshot,error: snapshotError} = await admin.from("workshop_state")
         .select("data").eq("id","main").single();
       if (snapshotError) throw snapshotError;
       const jobs = Array.isArray(snapshot?.data?.jobs) ? snapshot.data.jobs : [];
+      if (action === "accountant_jc_detail") {
+        const j = jobs.find((row:any) => String(row?.no || "").trim().toUpperCase() === jobCard && !row?.deleted);
+        if (!j) return reply({ok:false,code:"job_not_found"},404);
+        const actuals = Array.isArray(snapshot?.data?.consumables?.actuals) ? snapshot.data.consumables.actuals : [];
+        const materialRows = actuals.filter((row:any) => !row?.voided && row?.locked &&
+          String(row?.jobCard || "").trim().toUpperCase() === jobCard);
+        const materialsCost = materialRows.reduce((sum:number,row:any) => {
+          const n = Number(row?.totalCost);
+          return sum + (Number.isFinite(n) && n >= 0 ? n : 0);
+        },0);
+        // Only authoritative, locked consumables actuals are currently mapped.
+        // Other financial figures remain unavailable rather than estimated as zero.
+        return reply({ok:true,detail:{
+          job_card:String(j.no),registration:String(j.reg || ""),vehicle:String(j.vehicle || ""),
+          job_type:String(j.jobType || j.type || ""),customer:String(j.customer || j.customerName || ""),
+          consumables_actual_cost_omr:Math.round(materialsCost*1000)/1000,
+          consumables_actual_records:materialRows.length,
+          paint_cost_omr:null,parts_cost_omr:null,labour_cost_omr:null,
+          invoice_amount_omr:null,total_cost_omr:null,estimated_gross_profit_omr:null
+        }});
+      }
       const rows = jobs.filter((j:any) => [j.no,j.reg,j.vehicle,j.customer,j.customerName]
         .some(v => String(v ?? "").toLowerCase().includes(query)))
         .slice(0,50).map((j:any) => ({
