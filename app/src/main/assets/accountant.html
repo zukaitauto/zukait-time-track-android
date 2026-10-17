@@ -6,6 +6,7 @@
 <header><h1>Zukait · Accountant Dashboard</h1><button id="back" type="button">Back to login</button></header>
 <p id="identity" role="status"></p>
 <p class="notice" id="notice">Financial modules are being prepared. No accounting data or editing controls are available on this page yet.</p>
+<section aria-label="Job Card Search" class="tile" style="margin-top:18px"><h2>JC Search</h2><form id="jc-form"><label for="jc-query">Job Card, registration or vehicle</label><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><input id="jc-query" minlength="2" maxlength="80" required style="flex:1;min-width:190px;padding:10px"><button type="submit">Search</button></div></form><p id="jc-status" role="status">Sign in to search Job Cards.</p><div id="jc-results"></div></section>
 <section class="grid" aria-label="Accountant modules" id="modules"></section>
 </main><script>
 (function(){
@@ -37,6 +38,32 @@ async function verify(){
   notice.textContent='Financial modules are being prepared. No accounting data or editing controls are available on this page yet.';
 }
 verify().catch(e=>{identity.textContent='Access not verified';notice.textContent=e.message+' Return to the sign-in screen.';document.getElementById('modules').replaceChildren();});
+const form=document.getElementById('jc-form');
+form.addEventListener('submit',async event=>{
+ event.preventDefault();
+ const status=document.getElementById('jc-status'),results=document.getElementById('jc-results');
+ results.replaceChildren();status.textContent='Searching…';
+ const query=document.getElementById('jc-query').value.trim();
+ if(query.length<2){status.textContent='Enter at least 2 characters.';return;}
+ let token=String(saved?.token||'');
+ if(!token){try{token=String(window.AndroidBridge?.getSecureSessionToken?.()||'')}catch(_){}}
+ if(!token){status.textContent='Session unavailable. Please sign in again.';return;}
+ try{
+  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),15000);
+  let response;
+  try{response=await fetch('https://pjknotnjkufadqavcmii.supabase.co/functions/v1/workshop-api',{
+    method:'POST',headers:{'Content-Type':'application/json','apikey':'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A','x-zukait-session':token},
+    body:JSON.stringify({action:'accountant_jc_search',query}),signal:controller.signal
+  });}finally{clearTimeout(timer)}
+  const data=await response.json();if(!response.ok||!data.ok)throw Error(data.code||'Search unavailable');
+  status.textContent=data.rows.length+' matching Job Cards (maximum 50 shown).';
+  for(const row of data.rows){
+   const item=document.createElement('p');
+   item.textContent=[row.job_card,row.registration,row.vehicle,row.job_type].filter(Boolean).join(' · ');
+   results.appendChild(item);
+  }
+ }catch(e){status.textContent='Search failed: '+(e.message||'Please try again.');}
+});
 document.getElementById('modules').replaceChildren(...titles.map(title=>{
  const card=document.createElement('article');card.className='tile';
  const h=document.createElement('h2');h.textContent=title;
