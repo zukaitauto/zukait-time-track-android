@@ -974,7 +974,26 @@ Deno.serve(async (req: Request) => {
     // Accountant is deny-by-default until dedicated audited finance endpoints exist.
     // Never expose shared workshop state, time controls or Manager operations.
     if (user.role === "Accountant") {
-      return reply({ok:false,code:"accountant_endpoint_unavailable"},403);
+      // Explicit allowlist: no shared state, writes, time controls, or Manager APIs.
+      if (action !== "accountant_jc_search" ||
+          Object.keys(body).some(k => !["action","query"].includes(k))) {
+        return reply({ok:false,code:"accountant_forbidden"},403);
+      }
+      const query = String(body.query || "").trim().toLowerCase();
+      if (query.length < 2 || query.length > 80) return reply({ok:false,code:"invalid_query"},400);
+      const {data: snapshot,error: snapshotError} = await admin.from("workshop_state")
+        .select("data").eq("id","main").single();
+      if (snapshotError) throw snapshotError;
+      const jobs = Array.isArray(snapshot?.data?.jobs) ? snapshot.data.jobs : [];
+      const rows = jobs.filter((j:any) => [j.no,j.reg,j.vehicle,j.customer,j.customerName]
+        .some(v => String(v ?? "").toLowerCase().includes(query)))
+        .slice(0,50).map((j:any) => ({
+          job_card: String(j.no ?? ""),
+          registration: String(j.reg ?? ""),
+          vehicle: String(j.vehicle ?? ""),
+          job_type: String(j.type ?? j.jobType ?? "")
+        }));
+      return reply({ok:true,rows,count:rows.length,limit:50});
     }
 
     if (user.role === "Receptionist" && !receptionistRequestAllowed(action, body)) {
