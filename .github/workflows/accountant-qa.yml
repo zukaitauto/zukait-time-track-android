@@ -1,0 +1,58 @@
+name: Accountant isolated acceptance
+on:
+  workflow_dispatch:
+  push:
+    branches: [architecture-v2]
+    paths:
+      - 'app/src/main/assets/accountant*'
+      - 'supabase/functions/workshop-api/accountant/**'
+      - 'supabase/functions/staff-auth/index.ts'
+      - 'supabase/migrations/*accountant*'
+      - 'tests/accountant*'
+      - '.github/workflows/accountant-qa.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-web:
+    if: github.ref == 'refs/heads/architecture-v2'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: npm ci --ignore-scripts --include=dev
+      - run: npx playwright install --with-deps chromium
+      - run: bash scripts/ci-validate-js.sh
+      - run: bash scripts/ci-full-regression.sh
+      - run: npm run test:reception
+      - run: node tests/accountant-responsive.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: accountant-browser-evidence
+          path: artifacts/accountant/
+  android-package:
+    if: github.ref == 'refs/heads/architecture-v2'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - run: gradle --no-daemon :app:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: accountant-debug-compile-only
+          path: app/build/outputs/apk/debug/*.apk

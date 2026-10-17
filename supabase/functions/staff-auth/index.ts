@@ -98,10 +98,10 @@ async function verifySession(token: string) {
   if (error || !session || session.revoked_at) return null;
 
   const { data: staff, error: staffError } = await admin.from("staff_credentials")
-    .select("user_id,display_name,role,department,active")
+    .select("user_id,display_name,role,department,active,must_change")
     .eq("user_id", session.user_id)
     .maybeSingle();
-  if (staffError || !staff || !staff.active) return null;
+  if (staffError || !staff || !staff.active || (staff.role==='Accountant'&&staff.must_change)) return null;
 
   await admin.from("staff_sessions").update({ last_seen_at: new Date().toISOString() })
     .eq("token_hash", hash);
@@ -112,11 +112,15 @@ async function verifySession(token: string) {
   };
 }
 async function authUser(userId: string, password: string) {
-  const id = String(userId || "").trim().toUpperCase();
-  const { data, error } = await admin.from("staff_credentials")
-    .select("user_id,display_name,role,department,password_hash,password_salt,password_iterations,active,must_change,failed_attempts,locked_until")
+  let id = String(userId || "").trim().toUpperCase();
+  if(!/^[A-Z0-9_-]{1,40}$/.test(id))return {ok:false,code:"invalid"};
+  let { data, error } = await admin.from("staff_credentials")
+    .select("user_id,display_name,role,department,login_id,password_hash,password_salt,password_iterations,active,must_change,failed_attempts,locked_until")
     .eq("user_id", id).maybeSingle();
-  if (error) throw error;
+  if(error)throw error;
+  if(!data){const alias=await admin.from('staff_credentials').select('user_id,display_name,role,department,login_id,password_hash,password_salt,password_iterations,active,must_change,failed_attempts,locked_until').eq('login_id',id).maybeSingle();if(alias.error)throw alias.error;data=alias.data;}
+  if(data?.login_id&&data.login_id!==id)return {ok:false,code:'invalid'};
+  if(data)id=data.user_id;
   if (!data || !data.active) return { ok: false, code: "invalid" };
 
   if (data.locked_until && new Date(data.locked_until).getTime() > Date.now()) {
@@ -202,11 +206,28 @@ Deno.serve(async (req: Request) => {
     if (action === "change_password") {
       const auth = await authUser(body.user_id, body.current_password);
       if (!auth.ok) return reply(auth, auth.code === "locked" ? 423 : 401);
-      const changed = await setPassword(body.user_id, body.new_password, false);
+      const changed = await setPassword(auth.user!.id, body.new_password, false);
       if (!changed.ok) return reply(changed, 400);
       await revokeSessions(auth.user!.id);
       const session_token = await createSession(auth.user!.id);
       return reply({ ok: true, session_token });
+    }
+
+    if(action==='manager_accountant'){
+      if(Object.keys(body).some(k=>!['action','session_token','request_id','command'].includes(k)))return reply({ok:false,code:'invalid_account_command'},400);
+      const session=await verifySession(String(body.session_token||''));if(!session||session.user.role!=='Manager')return reply({ok:false,code:'manager_required'},403);
+      const c=body.command;if(!c||typeof c!=='object'||Array.isArray(c)||Object.keys(c).some(k=>!['operation','target_id','login_id','name','temporary_password','active','reason','audit_offset'].includes(k))||!['LIST','CREATE','RESET','RENAME','ACTIVE'].includes(c.operation))return reply({ok:false,code:'invalid_account_command'},400);
+      if(c.audit_offset!==undefined&&(!Number.isInteger(c.audit_offset)||c.audit_offset<0||c.audit_offset>1000000))return reply({ok:false,code:'invalid_account_command'},400);
+      if(c.operation!=='LIST'&&(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.request_id||'')||typeof c.reason!=='string'||c.reason.trim().length<3||c.reason.length>2000))return reply({ok:false,code:'invalid_account_command'},400);
+      const canonical=(v:any):any=>v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,canonical(v[k])])):v;
+      const hkey=await crypto.subtle.importKey('raw',new TextEncoder().encode(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||''),{name:'HMAC',hash:'SHA-256'},false,['sign']);
+      const fingerprint=[...new Uint8Array(await crypto.subtle.sign('HMAC',hkey,new TextEncoder().encode(JSON.stringify(canonical(body)))))].map(x=>x.toString(16).padStart(2,'0')).join('');
+      const command:any={...c,target_id:String(c.target_id||'').trim().toUpperCase(),login_id:c.login_id?String(c.login_id).trim().toUpperCase():undefined};delete command.temporary_password;
+      if(['CREATE','RESET'].includes(c.operation)){const fields=await passwordFields(String(c.temporary_password||''));if(!fields)return reply({ok:false,code:'weak'},400);Object.assign(command,fields);}
+      if(c.operation==='CREATE'&&(!String(c.name||'').trim()||String(c.name).length>200))return reply({ok:false,code:'invalid_name'},400);
+      const result=await admin.rpc('zukait_manager_accountants',{p_actor_id:session.user.id,p_request_id:body.request_id||null,p_fingerprint:fingerprint,p_command:command});
+      if(result.error){const msg=String(result.error.message);const code=['manager_required','request_conflict','login_id_exists','invalid_login_id','accountant_not_found','invalid_account_command','invalid_active_flag'].find(x=>msg.includes(x));return reply({ok:false,code:code||'accountant_accounts_unavailable'},code==='manager_required'?403:code==='request_conflict'||code==='login_id_exists'?409:code?400:503);}
+      return reply(result.data);
     }
 
     if (action === "manager_reset") {
@@ -214,9 +235,10 @@ Deno.serve(async (req: Request) => {
       if (!manager.ok) return reply(manager, manager.code === "locked" ? 423 : 401);
       if (manager.user?.role !== "Manager") return reply({ ok: false, code: "forbidden" }, 403);
       const target = String(body.target_id || "").trim().toUpperCase();
-      const { data: exists } = await admin.from("staff_credentials").select("user_id")
+      const { data: exists } = await admin.from("staff_credentials").select("user_id,role")
         .eq("user_id", target).maybeSingle();
       if (!exists) return reply({ ok: false, code: "not_found" }, 404);
+      if(exists.role==='Accountant')return reply({ok:false,code:'use_accountant_accounts'},400);
       const changed = await setPassword(target, body.new_password, true);
       if (!changed.ok) return reply(changed, 400);
       await revokeSessions(target);
@@ -231,6 +253,7 @@ Deno.serve(async (req: Request) => {
       const id = String(body.user_id || "").trim().toUpperCase();
       const name = String(body.display_name || "").trim();
       const role = String(body.role || "");
+      if(role==='Accountant')return reply({ok:false,code:'use_accountant_accounts'},400);
       const department = role === "Receptionist" ? "Reception" : role === "Accountant" ? "Accounts" : String(body.department || "").trim();
       if (!/^[A-Z0-9_-]+$/.test(id) || !name || !["Employee","Supervisor","Purchaser","Receptionist","Accountant"].includes(role) || !department) {
         return reply({ ok: false, code: "invalid_user" }, 400);

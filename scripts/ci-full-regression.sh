@@ -9,6 +9,11 @@ node tests/manager-header-menu-runtime.mjs
 node tests/app-exit.mjs
 node tests/vin-scan-runtime.mjs
 node tests/secure-session-restore.mjs
+node tests/accountant-finance.mjs
+node tests/accountant-ledger-sql.mjs
+node tests/accountant-auth-api.mjs
+node tests/accountant-dashboard.mjs
+node tests/accountant-manager-dom.mjs
 node tests/functional-smoke.mjs
 node tests/employee-ocean-timer.mjs
 node tests/employee-job-placement.mjs

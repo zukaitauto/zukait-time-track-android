@@ -216,7 +216,7 @@
     if(user(id).role!=='Unknown')return alert('That User ID already exists.');
     if(role==='Purchaser')department='Spare Parts';
     if(role==='Receptionist')department='Reception';
-    if(role==='Accountant')department='Accounts';
+    if(role==='Accountant'){window.zukaitAccountantAccounts?.open();return;}
     const managerPassword=prompt('Enter Manager password to create this user');
     if(managerPassword===null)return;
     if(!managerPassword)return alert('Enter Manager password.');
@@ -313,7 +313,7 @@
 
   function ensureAccountantRoleOption(){
     const select=document.getElementById('newUserRole');
-    if(!select || [...select.options].some(o=>o.value==='Accountant'))return;
+    if(!select || !select.options || Array.from(select.options).some(o=>o.value==='Accountant'))return;
     const option=document.createElement('option');
     option.value='Accountant';
     option.textContent='Accountant';

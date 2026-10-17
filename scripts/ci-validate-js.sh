@@ -84,3 +84,10 @@ node tests/supervisor-leave-dashboard.mjs
 node tests/shared-dashboard-read.mjs
 
 node --check app/src/main/assets/report_pdf_export.js
+
+node --check app/src/main/assets/accountant.js
+node --check app/src/main/assets/accountant_accounts.js
+node --check app/src/main/assets/accountant_exports.js
+node --check supabase/functions/workshop-api/accountant/api.js
+node --check supabase/functions/workshop-api/accountant/finance_rules.js
+node --check supabase/functions/workshop-api/accountant/spare_projection.js

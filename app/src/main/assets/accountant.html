@@ -1,100 +1,12 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Zukait Accountant</title>
-<style>
-:root{font-family:system-ui,sans-serif;color:#193247;background:#f3f7fa}*{box-sizing:border-box}body{margin:0}main{max-width:1120px;margin:auto;padding:22px}header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}h1{font-size:clamp(23px,4vw,32px)}.notice{padding:14px;border:1px solid #e6c77d;border-radius:10px;background:#fff9e8}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:22px}.tile{padding:20px;background:white;border:1px solid #d5e1e9;border-radius:12px}.tile h2{font-size:17px;margin:0 0 10px}.tile p{font-size:14px;color:#526879}.status{font-size:13px;color:#795b15}button{padding:11px 16px;border-radius:8px;border:1px solid #9cb5c7;background:#fff;color:#183a52;cursor:pointer}button:disabled{cursor:not-allowed;opacity:.6}
-</style></head><body><main>
-<header><h1>Zukait · Accountant Dashboard</h1><button id="back" type="button">Back to login</button></header>
-<p id="identity" role="status"></p>
-<p class="notice" id="notice">Financial modules are being prepared. No accounting data or editing controls are available on this page yet.</p>
-<section aria-label="Job Card Search" class="tile" style="margin-top:18px"><h2>JC Search</h2><form id="jc-form"><label for="jc-query">Job Card, registration or vehicle</label><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><input id="jc-query" minlength="2" maxlength="80" required style="flex:1;min-width:190px;padding:10px"><button type="submit">Search</button></div></form><p id="jc-status" role="status">Sign in to search Job Cards.</p><div id="jc-results"></div></section>
-<section class="grid" aria-label="Accountant modules" id="modules"></section>
-</main><script>
-(function(){
-'use strict';
-const titles=['JC Search & 360° Financial View','Consumables Expenses','Paint Expenses','Spare Parts Expenses','Employee Leave Details','Cash In / Cash Out','Insurance LPO Tracking','Outstanding Payments','Monthly Financial Reports'];
-const key='zukait_secure_session_v42';
-let saved=null;try{saved=JSON.parse(localStorage.getItem(key)||'null')}catch(_){}
-const notice=document.getElementById('notice');
-const identity=document.getElementById('identity');
-identity.textContent='Verifying Accountant session…';
-async function verify(){
-  const user=saved?.user;
-  if(!user||user.role!=='Accountant')throw Error('Accountant sign-in required.');
-  let token=String(saved?.token||'');
-  if(!token){try{token=String(window.AndroidBridge?.getSecureSessionToken?.()||'')}catch(_){}}
-  if(!token)throw Error('Session token unavailable. Sign in again.');
-  const controller=new AbortController();
-  const timeout=setTimeout(()=>controller.abort(),15000);
-  let response;
-  try{
-    response=await fetch('https://pjknotnjkufadqavcmii.supabase.co/functions/v1/staff-auth',{
-      method:'POST',headers:{'Content-Type':'application/json','apikey':'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A'},
-      body:JSON.stringify({action:'session',session_token:token}),signal:controller.signal
-    });
-  }finally{clearTimeout(timeout)}
-  const result=await response.json();
-  if(!response.ok||!result.ok||result.user?.role!=='Accountant'||result.user?.id!==user.id)throw Error('Accountant session invalid.');
-  identity.textContent='Signed-in account: '+String(result.user.name||result.user.id);
-  notice.textContent='Financial modules are being prepared. No accounting data or editing controls are available on this page yet.';
-}
-verify().catch(e=>{identity.textContent='Access not verified';notice.textContent=e.message+' Return to the sign-in screen.';document.getElementById('modules').replaceChildren();});
-const form=document.getElementById('jc-form');
-form.addEventListener('submit',async event=>{
- event.preventDefault();
- const status=document.getElementById('jc-status'),results=document.getElementById('jc-results');
- results.replaceChildren();status.textContent='Searching…';
- const query=document.getElementById('jc-query').value.trim();
- if(query.length<2){status.textContent='Enter at least 2 characters.';return;}
- let token=String(saved?.token||'');
- if(!token){try{token=String(window.AndroidBridge?.getSecureSessionToken?.()||'')}catch(_){}}
- if(!token){status.textContent='Session unavailable. Please sign in again.';return;}
- try{
-  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),15000);
-  let response;
-  try{response=await fetch('https://pjknotnjkufadqavcmii.supabase.co/functions/v1/workshop-api',{
-    method:'POST',headers:{'Content-Type':'application/json','apikey':'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A','x-zukait-session':token},
-    body:JSON.stringify({action:'accountant_jc_search',query}),signal:controller.signal
-  });}finally{clearTimeout(timer)}
-  const data=await response.json();if(!response.ok||!data.ok)throw Error(data.code||'Search unavailable');
-  status.textContent=data.rows.length+' matching Job Cards (maximum 50 shown).';
-  for(const row of data.rows){
-   const item=document.createElement('p');
-   item.textContent=[row.job_card,row.registration,row.vehicle,row.job_type].filter(Boolean).join(' · ');
-   const button=document.createElement('button');button.type='button';button.textContent='View financial details';
-   const details=document.createElement('div');
-   button.onclick=async()=>{
-     button.disabled=true;details.textContent='Loading verified details…';
-     try{
-       const response=await fetch('https://pjknotnjkufadqavcmii.supabase.co/functions/v1/workshop-api',{
-         method:'POST',headers:{'Content-Type':'application/json','apikey':'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A','x-zukait-session':token},
-         body:JSON.stringify({action:'accountant_jc_detail',job_card:row.job_card})
-       });
-       const payload=await response.json();if(!response.ok||!payload.ok)throw Error(payload.code||'Details unavailable');
-       const d=payload.detail;
-       details.replaceChildren();
-       for(const [label,value] of [
-         ['Job Card',d.job_card],['Registration',d.registration],['Vehicle',d.vehicle],
-         ['Customer',d.customer],['Job Type',d.job_type],
-         ['Actual consumables cost',Number(d.consumables_actual_cost_omr).toFixed(3)+' OMR'],
-         ['Actual consumables records',d.consumables_actual_records],
-         ['Paint cost',null],['Spare parts cost',null],['Labour cost',null],
-         ['Invoice amount',null],['Total cost',null],['Estimated gross profit',null]
-       ]){const line=document.createElement('p');line.textContent=label+': '+(value===null?'Not yet available':value);details.appendChild(line);}
-     }catch(e){details.textContent='Unable to load financial details: '+(e.message||'Try again.');}
-     finally{button.disabled=false;}
-   };
-   item.append(' ',button,details);
-   results.appendChild(item);
-  }
- }catch(e){status.textContent='Search failed: '+(e.message||'Please try again.');}
-});
-document.getElementById('modules').replaceChildren(...titles.map(title=>{
- const card=document.createElement('article');card.className='tile';
- const h=document.createElement('h2');h.textContent=title;
- const p=document.createElement('p');p.textContent='Awaiting secured financial API and verified data mapping';
- const status=document.createElement('span');status.className='status';status.textContent='Not available';
- card.append(h,p,status);return card;
-}));
-document.getElementById('back').onclick=()=>history.back();
-})();
-</script></body></html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Zukait · Accountant</title><link rel="stylesheet" href="accountant.css?v=1"></head><body><main>
+<header><div class="brand"><span class="mark" aria-hidden="true">Z</span><div><h1>Accountant Dashboard</h1><p id="identity">Verifying secure session…</p></div></div><button id="logout" type="button">Sign out</button></header>
+<p id="message" role="status" aria-live="polite"></p><div id="pending" hidden class="notice"></div>
+<section id="app" hidden><nav id="navigation" aria-label="Accountant modules"></nav>
+<section class="filters"><label>Search<input id="query" type="search" maxlength="80" placeholder="JC / registration / customer / vehicle"></label><label>Month<input id="month" type="month"></label><label>From<input id="from" type="date"></label><label>To<input id="to" type="date"></label><label>Employee ID<input id="employee" maxlength="40"></label><label>Material<input id="material" maxlength="100"></label><label>Insurance company<input id="insurance" maxlength="100"></label><button id="refresh" type="button">Apply filters</button><button id="clear" type="button">Clear</button></section>
+<section id="summary" class="summary" aria-label="Financial summary"></section>
+<section class="panel"><div class="heading"><div><h2 id="title">JC Search &amp; 360° Financial View</h2><p id="report-meta"></p></div><div class="actions"><button id="cash-entry" type="button">＋ Cash entry</button><button id="pdf" type="button">PDF</button><button id="excel" type="button">Excel (.xml)</button></div></div><div id="notes" class="notice"></div><div id="rows"></div><div class="paging"><button id="previous" type="button">Previous</button><span id="page-status"></span><button id="next" type="button">Next</button></div></section>
+<section id="detail" class="panel" hidden></section>
+<form id="entry" class="panel" hidden><h2 id="entry-title">Cash transaction</h2><input id="operation" type="hidden" value="POST"><input id="entry-id" type="hidden"><div class="form-grid"><label>Direction<select id="kind"><option value="CASH_IN">Cash In</option><option value="CASH_OUT">Cash Out</option></select></label><label>Transaction date<input id="transaction-date" type="date" required></label><label>JC number (optional)<input id="entry-job" maxlength="40"></label><label>Customer / supplier / payee<input id="payee" required maxlength="200"></label><label>Amount (OMR)<input id="amount" type="number" min="0.001" max="1000000" step="0.001" required></label><label>Payment method<select id="method"><option>CASH</option><option>CARD</option><option>BANK</option><option>CHEQUE</option></select></label><label>Expense category (Cash Out)<input id="category" maxlength="100"></label><label>Reference number<input id="reference" maxlength="200"></label><label>Remarks<textarea id="remarks" maxlength="2000"></textarea></label><label>Reason / description<input id="reason" required minlength="3" maxlength="2000"></label></div><div class="actions"><button type="submit">Save with audit history</button><button id="cancel-entry" type="button">Cancel</button></div></form>
+<form id="correction" class="panel" hidden><h2>Financial correction</h2><p id="correction-target"></p><label>Corrected amount (OMR)<input id="corrected-value" type="number" min="0" max="1000000" step="0.001" required></label><label>Reason<textarea id="correction-reason" required minlength="3" maxlength="2000"></textarea></label><div class="actions"><button type="submit">Record correction</button><button id="cancel-correction" type="button">Cancel</button></div></form>
+<footer>Amounts are OMR · three decimal places. Financial records are corrected with an audit trail, never deleted.</footer></section>
+</main><script src="vendor/pdf/html2canvas-1.4.1.min.js"></script><script src="vendor/pdf/jspdf-4.2.1.min.js"></script><script src="report_pdf_export.js?v=2026101405"></script><script src="accountant_exports.js?v=1"></script><script src="accountant.js?v=1"></script></body></html>
