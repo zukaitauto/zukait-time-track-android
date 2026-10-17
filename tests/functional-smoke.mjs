@@ -1,5 +1,451 @@
-YªçŠx-®éÜj×¢ëiºÚ+Š§j[h‘éÜ¢éíÛ¾5Ý:-jZ.¶›­–)Þ³V–×÷'B76W'Bg&öÒvæöFS¦76W'B÷7G&–7Bs°¦–×÷'Bg2g&öÒvæöFS¦g2s° ¦6öç7B&VBÒÓâg2ç&VDf–ÆU7–æ2‡ÂwWFc‚r“°¦6öç7Bw&FÆRÒ&VB‚vö'V–ÆBæw&FÆRr“°¦6öç7BÖ–âÒ&VB‚v÷7&2öÖ–âö¦fö6öÒ÷§V¶—B÷F–ÖWG&6²ôÖ–ä7F—f—G’æ¦fr“°¦6öç7BWFFW2Ò&VB‚v÷7&2öÖ–âö76WG2÷csE÷WFFW2æ§2r“°¦6öç7B7WW'f—6÷%7F&ÆRÒ&VB‚v÷7&2öÖ–âö76WG2÷7WW'f—6÷%÷7F&ÆRæ§2r“°¦6öç7BccRÒ&VB‚v÷7&2öÖ–âö76WG2÷ccU÷WFFW2æ§2r“°¦6öç7BccbÒ&VB‚v÷7&2öÖ–âö76WG2÷cce÷WFFW2æ§2r“°¦6öç7BccrÒ&VB‚v÷7&2öÖ–âö76WG2÷ccu÷WFFW2æ§2r“°¦6öç7B‡FÖÂÒ&VB‚v÷7&2öÖ–âö76WG2ööffÆ–æU÷FW7Bæ‡FÖÂr“°¦6öç7B6Æ÷VBÒ&VB‚v÷7&2öÖ–âö76WG2ö6Æ÷VE÷7–æ2æ§2r“°¦6öç7BÆ—fU7FGW4WF†÷&—G’Ò&VB‚v÷7&2öÖ–âö76WG2öÆ—fU÷7FGW5öWF†÷&—G’æ§2r“°¦6öç7BÖWFFFÒ¥4ôâç'6R‡&VB‚vÆFW7B×fW'6–öâæ§6öâr’“°¦6öç7B&VÆV6Uv÷&¶fÆ÷rÒ&VB‚ræv—F‡V"÷v÷&¶fÆ÷w2÷V&Æ—6‚Ö&÷fVB×&VÆV6Rç–ÖÂr“°¦6öç7Bv÷&·6†÷’Ò&VB‚w7W&6RögVæ7F–öç2÷v÷&·6†÷Ö’ö–æFW‚çG2r“° ¦6öç7BfW'6–öä6öFRÒçVÖ&W"‚†w&FÆRæÖF6‚‚÷fW'6–öä6öFUÇ2²…ÆB²’ò—ÇÅµÒ•³Ò“°¦6öç7BfW'6–öäæÖRÒ†w&FÆRæÖF6‚‚÷fW'6–öäæÖUÇ2µ²r%Ò…µâr%Ò²•²r%Òò—ÇÅµÒ•³Ó°¦76W'Bæö²„çVÖ&W"æ—4–çFVvW"‡fW'6–öä6öFR’bbfW'6–öä6öFRâÂtæG&ö–BfW'6–öä6öFR×W7B&R÷6—F—fR–çFVvW"r“°¦76W'BæÖF6‚‡fW'6–öäæÖWÇÂrrÂõåeÆB²BòÂtæG&ö–BfW'6–öäæÖR×W7BW6RcÆçVÖ&W#âf÷&ÖBr“°¦76W'BæÖF6‚†Ö–âÂövWE6¶vT–æfõÂ†vWE6¶vTæÖUÂ…Â’ÂÂ’òÂvæF—fR'&–FvR×W7B&VBF†R–ç7FÆÆVB²6¶vR–æfòr“°¦76W'BæÖF6‚†Ö–âÂ÷&WGW&â–ç7FÆÆVEfW'6–öäæÖUÂ…Â“²òÂvæF—fR'&–FvR×W7B&W÷'B–ç7FÆÆVBfW'6–öäæÖRr“°¦76W'BæÖF6‚†Ö–âÂ÷&WGW&â–ç7FÆÆVEfW'6–öä6öFUÂ…Â“²òÂvæF—fR'&–FvR×W7B&W÷'B–ç7FÆÆVBfW'6–öä6öFRr“°¦76W'BæFöW4æ÷DÖF6‚†Ö–âÂövWDfW'6–öåÂ…Â•µÇ5Å5×³Ã#×&WGW&â%csB"òÂvæF—fRfW'6–öâæÖR×W7Bæ÷B&R†&BÖ6öFVBr“°¦76W'Bæö²„çVÖ&W"†ÖWFFFçfW'6–öä6öFR’ÃÒfW'6–öä6öFRÂwV&Æ—6†VBÖWFFF6ææ÷B&RæWvW"F†â6æF–FFR'V–ÆBr“°¦76W'BæWVÂ†ÖWFFFç6¶vRÂv6öÒç§V¶—BçF–ÖWG&6²r“°  ¢òò6öç7VÖ&ÆW2gVÆÂ×7FFR&W6W'fF–öã¢7FÆRFWf–6W2×W7Bæ÷BW&6RæW7FVB6†&VBFFà¦76W'BæÖF6‚‡v÷&·6†÷’ÂögVæ7F–öâ&W6W'fT6öç7VÖ&ÆW4†—7F÷'•Â†6æF–FFS¢ç’Â7W'&VçC¢ç•Â’òÂw6W'fW"×W7B&W6W'fR6öç7VÖ&ÆW2&V6÷&G27&÷727FÆRgVÆÂ×7FFR6fW2r“°¦76W'BæÖF6‚‡v÷&·6†÷’ÂõÅ²&ÖFW&–Ç2"Â&'&æG2"Â'&–6W2"Â&—77VW2"Â&7GVÇ2"Â&VF—B%ÅÒòÂw6W'fW"&W6W'fF–öâ×W7B6÷fW"WfW'’6öç7VÖ&ÆW26öÆÆV7F–öâr“°¦76W'BæÖF6‚‡v÷&·6†÷’Âö6æF–FFRÒ&W6W'fU–çEW&6†6–æt†—7F÷'•Â‡&W6W'fT6öç7VÖ&ÆW4†—7F÷'•Â‡&W6W'fT÷W&F–öæÄ†—7F÷'’òÂw6fRWF†÷&—G’×W7BÇ’–çB²6öç7VÖ&ÆW2&W6W'fF–öâ&Vf÷&R6öÖÖ—Br“° ¢òò&VÂ×F–ÖRÖævW"ò7WW'f—6÷"WF†÷&—G’6öçG&7G2à¦76W'BæÖF6‚†Æ—fU7FGW4WF†÷&—G’Â÷v–æF÷uÂæ7W'&VçE7Ffe7FGW6W3ÖgVæ7F–öåÂ…Â•µÇ5Å5Ò£ö–eÂ‡6W'fW%&WV—&VEÂ…Â•Â—&WGW&âÅµÅÒòÂvöæÆ–æRÖævW"õ7WW'f—6÷"7Ffb7FGW2×W7Bf–Â6Æ÷6VB–ç7FVBöbfÆÆ–ær&6²Fò7FÆRÆö6Â6W76–öç2r“°¦76W'BæÖF6‚†Æ—fU7FGW4WF†÷&—G’Â÷v–æF÷uÂæ7W'&VçD7F—fUv÷&¶W'3ÖgVæ7F–öåÂ…Â•µÇ5Å5Ò£ö–eÂ‡6W'fW%&WV—&VEÂ…Â•Â—&WGW&âÅµÅÒòÂvöæÆ–æR7F—fRv÷&¶W'2×W7Bæ÷BfÆÂ&6²Fò7FÆRÆö6Â6W76–öç2r“°¦76W'BæÖF6‚†Æ—fU7FGW4WF†÷&—G’Â÷v–æF÷uÂçcs”7W'&VçEv÷&¶W%&÷w3ÖgVæ7F–öåÂ…Â•µÇ5Å5Ò£ö–eÂ‡6W'fW%&WV—&VEÂ…Â•Â—&WGW&âÅµÅÒòÂvÆVv7’v÷&¶W"×&÷r’×W7B&VÖ–â6W'fW"WF†÷&—FF—fRöæÆ–æRr“°¦76W'BæÖF6‚†Æ—fU7FGW4WF†÷&—G’Â÷v–æF÷uÂçcƒEFV6…7FFSÖgVæ7F–öåÂ‡UÂ•µÇ5Å5Ò£ö–eÂ‡6W'fW%&WV—&VEÂ…Â•Â—&WGW&åÇ·6W76–öã¦çVÆÂÇ7FGW3¢u7–æ6–æruÇÒòÂwFV6†æ–6–â&ö&B×W7B6†÷r7–æ6–ær&F†W"F†â7FÆRÆö6Â7FGW2v†Vâ6W'fW"Æ—fRFF—2Væf–Æ&ÆRr“°¦76W'BæÖF6‚†Æ—fU7FGW4WF†÷&—G’Â÷v–æF÷uÂçccT÷Vä6öçG&öÃÖgVæ7F–öåÂ‡G—UÂ•µÇ5Å5Ò£÷6W'fW%&WV—&VEÂ…Â’bgG—SÓÓÒwv÷&¶–ærròÂtÖævW"v÷&¶–æræ÷rFWF–Ç2×W7B&VÖ–â6W'fW"WF†÷&—FF—fRr“°¦76W'BæÖF6‚†Æ—fU7FGW4WF†÷&—G’Â÷v–æF÷uÂæFDWfVçDÆ—7FVæW%Â‚w§V¶—BÖÆ—fR×7FGW2rÆÇ•Â’òÂvÆ—fR7FGW2WFFW2×W7B–ÖÖVF–FVÇ’&V6öæ6–ÆRÖævW"õ7WW'f—6÷"T’r“°¦76W'BæFöW4æ÷DÖF6‚†Æ—fU7FGW4WF†÷&—G’Â÷6WD–çFW'fÅÂ†Ç’ÃÂ’òÂtÖævW"õ7WW'f—6÷"Æ—fRT’×W7B&RWfVçBÖG&—fVâæB×W7Bæ÷B&W–çBF†RF6†&ö&BWfW'’6V6öæBr“°¦76W'BæÖF6‚†Æ—fU7FGW4WF†÷&—G’ÂöFDWfVçDÆ—7FVæW%Â‚w§V¶—BÖÆ—fR×7FGW2rÆÇ•Â’òÂtÖævW"õ7WW'f—6÷"Æ—fRT’×W7B&Vg&W6‚g&öÒWF†÷&—FF—fRÆ—fR×7FGW2WfVçG2r“°¦76W'BæÖF6‚‡7WW'f—6÷%7F&ÆRÂö–eÂ‡v–æF÷uÂæÖRbfæf–vF÷%ÂæöäÆ–æRbgv–æF÷uÂæÖUÂç&öÆSÓÓÒu7WW'f—6÷"uÂ—&WGW&åÅµÅÒòÂvWF†÷&—FF—fR7WW'f—6÷"&VæFW&W"×W7Bæ÷BW6RÆö6Â7F—fU6W76–öâfÆÆ&6²v†–ÆRöæÆ–æRr“°¦76W'BæÖF6‚‡7WW'f—6÷%7F&ÆRÂõFöF’BvÆæ6UµÇ5Å5Ò¤7F—fRv÷&¶W'5µÇ5Å5Ò¥v÷&¶–æræ÷uµÇ5Å5Ò¥W6VB¦ö'5µÇ5Å5Ò¤f–æ—6†VB¦ö'5µÇ5Å5Ò¤÷fW"ÆÆö6FVEµÇ5Å5Ò¤–FVÂv÷&¶W"òÂu7WW'f—6÷"7F&ÆR&VæFW&W"×W7B&WF–âF†R&÷fVB6—‚Ö6&BFöF’BvÆæ6RÆ–÷WBv—F‚–FVÂv÷&¶W"–â6Æ÷B6—‚r“°¦76W'BæÖF6‚‡7WW'f—6÷%7F&ÆRÂõÂçcC2ÖvÆæ6UÇ¶F—7Æ“¦w&–C¶w&–B×FV×ÆFRÖ6öÇVÖç3§&WVEÂƒ2ÆÖ–æÖ…ÂƒÃg%Â•Â’òÂu7WW'f—6÷"FöF’BvÆæ6R×W7B&VÖ–â2Ö6öÇVÖâ'’"×&÷rw&–Br“°¦76W'BæFöW4æ÷DÖF6‚‡7WW'f—6÷%7F&ÆRÂö6Æ73Ò'cC2Ö÷B"òÂu7WW'f—6÷"7F&ÆRF6†&ö&B×W7Bæ÷B&W7F÷&RF†R&VGVæFçB7FæFÆöæR÷fW'F–ÖRæ÷r&÷rr“°¦76W'Bæö²‡7WW'f—6÷%7F&ÆRæ–æ6ÇVFW2‚&öæ6Æ–6³ÕÂ'cS„÷Våv÷&¶–ætæ÷r‚•Â""’bb7WW'f—6÷%7F&ÆRæ–æ6ÇVFW2‚'v–æF÷rçcS„÷Våv÷&¶–ætæ÷sÖgVæ7F–öâ‚’"’Âuv÷&¶–æræ÷r6&B×W7B÷VâF‡&÷Vv‚F†R7F&ÆR7WW'f—6÷"7F–öâWF†÷&—G’r“°¦76W'BæÖF6‚‡7WW'f—6÷%7F&ÆRÂ÷v–æF÷uÂçcC4÷Vå&VG”f÷$FVÆ—fW'“ÖgVæ7F–öåÂ…Â’òÂu&VG’f÷"FVÆ—fW'’FWF–Â&÷WFR×W7B&VÖ–âf–Æ&ÆR26W&FRv÷&¶fÆ÷rr“°¦76W'BæÖF6‚‡7WW'f—6÷%7F&ÆRÂööæ6Æ–6³Ò'cC4÷Vä–FVÅv÷&¶W%Â…Â’"òÂt–FVÂv÷&¶W"6&B×W7BW6RF†R7F&ÆRWF†÷&—FF—fR–FVÂF–ÖRFWF–Â&÷WFRr“°     ¢òòV×Æ÷–VRv÷&²×7FFR6fWG“¢&VBF‡2×W7Bæ÷B×WFFR6W76–öç2ÂæB”C×W7BW6RW†7B76–væÖVçB6W76–öç2à¦76W'BæÖF6‚‡WFFW2Â÷v–æF÷uÂæ7F—fU6W76–öãÖgVæ7F–öåÂ†V×Â•ÇµµÇ5Å5Ò£ö6öç7BÆFW7CÖÆFW7E6W76–öäf÷$V×Æ÷–VUÂ†V×Â“µµÇ5Å5Ò£÷&WGW&âÆFW7BbbÆFW7EÂæVæEÃöÆFW7C¦çVÆÃµµÇ5Å5Ò£õÇÓ²òÂv7F—fU6W76–öâ×W7B&VÖ–â&VBÖöæÇ’7W'&VçB×6W76–öâÆöö·Wr“°¦76W'BæFöW4æ÷DÖF6‚‡WFFW2Â÷v–æF÷uÂæ7F—fU6W76–öãÖgVæ7F–öåÂ†V×Â•ÇµÇ2§&V6öæ6–ÆTV×Æ÷–VU6W76–öç5Â†V×Â’òÂv7F—fU6W76–öâ×W7BæWfW"&V6öæ6–ÆRö×WFFR6W76–öç2GW&–ær&VæFW"÷"'WGFöâ×7FFR&VG2r“°¦76W'BæÖF6‚‡WFFW2ÂögVæ7F–öâÆFW7E6W76–öäf÷$V×Æ÷–VUÂ†V×Â•µÇ5Å5Ò£õ7G&–æuÂ‡5ÂæV×Â“ÓÓÕ7G&–æuÂ†V×Â•µÇ5Å5Ò£öÂæVæCÓÖçVÆÅÃó£µÇ5Å5Ò£ö%ÂæVæCÓÖçVÆÅÃó£òÂvÆÂV×Æ÷–VW2×W7BFWFW&Ö–æ—7F–6ÆÇ’&VfW"â÷Vâ'Vææ–ær6W76–öâv†VâF–ÖW7F×2F–Rr“°¦76W'BæFöW4æ÷DÖF6‚‡WFFW2Âö6öç7B&öGV7F—fSÕÂ†V×Æg&öÒÇFõÂ“ÓåÇµÇ2§G'•Ç¶–eÂ‡G—Vöbv–æF÷uÂçcs•&V6öæ6–ÆUv÷&µ6W76–öç2òÂw&öGV7F—fR×F–ÖR&Vg&W6‚×W7Bæ÷B×WFFR÷&V6öæ6–ÆRV×Æ÷–VR6W76–öç2r“°¦76W'BæFöW4æ÷DÖF6‚‡WFFW2Âö6öç7Bv—F–æsÕÂ†V×Æg&öÒÇFõÂ“ÓåÇµÇ2§G'•Ç¶–eÂ‡G—Vöbv–æF÷uÂçcs•&V6öæ6–ÆUv÷&µ6W76–öç2òÂt”C×F–ÖR&Vg&W6‚×W7Bæ÷B×WFFR÷&V6öæ6–ÆRV×Æ÷–VR6W76–öç2r“°¦76W'BæFöW4æ÷DÖF6‚‡WFFW2Â÷v–æF÷uÂæ÷fW'F–ÖTf÷$V×Æ÷–VSÕÂ†V×Æg&öÒÇFõÂ“ÓåÇµÇ2§G'•Ç¶–eÂ‡G—Vöbv–æF÷uÂçcs•&V6öæ6–ÆUv÷&µ6W76–öç2òÂv÷fW'F–ÖR&Vg&W6‚×W7Bæ÷B×WFFR÷&V6öæ6–ÆRV×Æ÷–VR6W76–öç2r“°¦76W'BæFöW4æ÷DÖF6‚‡WFFW2Â÷v–æF÷uÂçcC$gFW$6Æ÷VEVÆÃÖgVæ7F–öåÂ…Â•µÇ5Å5×³ÃCÓ÷&V6öæ6–ÆTÆÅ6W76–öç5cs•Â…Â’òÂv6Æ÷VBVÆÂ÷&VæFW"F‚×W7Bæ÷BWFòÖ6Æ÷6Râ7F—fRV×Æ÷–VR6W76–öâr“°¦76W'BæFöW4æ÷DÖF6‚‡WFFW2Â÷v–æF÷uÂç&VæFW#ÖgVæ7F–öåÂ…Â•µÇ5Å5×³Ã3Ó÷&V6öæ6–ÆTÆÅ6W76–öç5cs•Â…Â’òÂvæ÷&ÖÂ&VæFW"×W7Bæ÷BWFòÖ6Æ÷6Râ7F—fRV×Æ÷–VR6W76–öâr“°¦76W'BæFöW4æ÷DÖF6‚‡WFFW2Â÷v–æF÷uÂæÖöçF†Ç”æ÷&ÖÄ7GVÄÖ–çWFW3ÖgVæ7F–öåÂ†V×Æg&öÒÇFõÂ•ÇµÇ2§&V6öæ6–ÆTV×Æ÷–VU6W76–öç5Â†V×Â’òÂvÖöçF†Ç’'Vææ–ær×F–ÖR6Æ7VÆF–öâ×W7B&R&VBÖöæÇ’r“°¦76W'BæFöW4æ÷DÖF6‚‡WFFW2Â÷v–æF÷uÂç7F'CÖgVæ7F–öåÂ†æõÂ•ÇµµÇ5Å5×³Ã#SÓ÷&V6öæ6–ÆTV×Æ÷–VU6W76–öç5Â†ÖUÂæ–EÂ’òÂvV×Æ÷–VR7F'B×W7Bæ÷B&Ww&—FR÷"6Æ÷6RW†—7F–ær6W76–öâ†—7F÷'’r“°  ¦76W'BæÖF6‚‡WFFW2Âö6öç7BW†7DÆFW7E6W76–öãÖÓåµÇ5Å5Ò£÷5Âæ76–væÖVçD–Bbe7G&–æuÂ‡5Âæ76–væÖVçD–EÂ“ÓÓÕ7G&–æuÂ†Âæ–EÂ’òÂt”CVÆ–v–&–Æ—G’×W7B–ç7V7BF†RW†7B76–væÖVçBÖ&÷VæBÆFW7B6W76–öâr“°¦76W'BæÖF6‚‡WFFW2Âö6öç7B76–væÖVçEW6VCÖÓåÇ¶6öç7B3ÖW†7DÆFW7E6W76–öåÂ†Â“·&WGW&âÂ‡2bg5ÂæVæBbg5ÂçW6VCÓÓ×G'VRbg5Âæf–æ—6†VBÓ×G'VUÂ•ÇÒòÂt”CW6VBÖöæÇ’VÆ–v–&–Æ—G’×W7B&WV—&RâVæFVBW6VBæöâÖf–æ—6†VB76–væÖVçB6W76–öâr“°¦76W'BæÖF6‚‡WFFW2Âö÷Väæ÷&ÖÅÂ†V×Â•Âç6öÖUÂ†Óâ76–væÖVçEW6VEÂ†Â•Â’òÂt”C76–væÖVçBwV&B×W7BW6RW†7BW"Ö76–væÖVçBW6VB7FFRr“° ¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚wc”C&W÷'D'WGFöâr’bbWFFW2æ–æ6ÇVFW2‚wc÷Vä”C&W÷'Br’Âu7WW'f—6÷"×W7B6†÷rF†R”C&W÷'B&W6–FRF†R7FæFÆöæR”C76–væÖVçB6öçG&öÂr“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚wc”CV×r’bbWFFW2æ–æ6ÇVFW2‚wc”Cg&öÒr’bbWFFW2æ–æ6ÇVFW2‚wc”CFòr’Ât”C&W÷'B×W7B7W÷'BV×Æ÷–VRæBFFRf–ÇFW&–ærr“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚wc&–çD”C&W÷'Br’bbWFFW2æ–æ6ÇVFW2‚u§V¶—Eô”Cõ&W÷'BçFbr’Ât”C&W÷'B×W7B7W÷'B&–çBòDb÷WGWBr“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚&w&–B×FV×ÆFRÖ6öÇVÖç3§&WVBƒ"ÆÖ–æÖ‚ƒÃg"’’"’bbWFFW2æ–æ6ÇVFW2‚wcÖ–C×—"r’Ât”C76–vâæB&W÷'B×W7B&VÖ–âGvòÖ6öÇVÖâ7WW'f—6÷"&÷rr“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚'v–æF÷rçc3T÷VäÖævW$ÖVçS×v–æF÷rçc÷VäÖævW$ÖVçR"’bbWFFW2æ–æ6ÇVFW2‚&Ö"æöæ6Æ–6³ÖgVæ7F–öâ†R—¶Rç&WfVçDFVfVÇB‚“¶Rç7F÷&÷vF–öâ‚“¶ÖVçR‚—Ò"’bbWFFW2æ–æ6ÇVFW2‚'&÷ræöæ6Æ–6³ÖçVÆÂ"’ÂtÖævW"ÖVçR'WGFöâ×W7B÷VâF†R6æöæ–6ÂÖVçRöæ6RæBF†R–FVçF—G’&÷r×W7B&VÖ–âæöæ–çFW&7F—fRr“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚'c34÷VäÖævW$ÆVfR‚’"’bbWFFW2æ–æ6ÇVFW2‚'cc4÷Vä&÷WB‚’"’bbWFFW2æ–æ6ÇVFW2‚&6Æ÷6TÖöFÂ‚“¶Æöv÷WB‚’"’ÂtÖævW"ÖVçR×W7B&WF–âÆVfR6öçG&öÂÂ&÷WBòWFFRÂæBÆöv÷WBr“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚uc3’ÔätU"4ôå5TÔ$ÄU2d”äÂUD„õ$•E’r’bbWFFW2æ–æ6ÇVFW2‚wc3”÷VäÖævW$6öç7VÖ&ÆW2r’ÂtÖævW"×W7B†fRöæRf–æÂ6öç7VÖ&ÆW2&÷WF–ærWF†÷&—G’r“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚ucSBÔätU"tõ$µ4„õ4ôåE$ôÂ$ôõBUD„õ$•E’r’bbWFFW2æ–æ6ÇVFW2‚vFF×cSB×7&Rr’bbWFFW2æ–æ6ÇVFW2‚wcSdÖævW%7&U'G4–çf&–çBr’Âvf–æÂÖævW"&VæFW"WF†÷&—G’×W7B&W6W'fRW†7FÇ’öæR7&R'G26öçG&öÂr“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚wcSdÖævW%7&U'G4–çf&–çBr’ÂtÖævW"7&R'G26öçG&öÂ×W7B&R&W6W'fVB'’F†Rf–æÂcSbÖævW"WF†÷&—G’v—F†÷WBFVÆ–VB&W–çBÆö÷2r“°¦76W'Bæö²‚WFFW2æ–æ6ÇVFW2‚v6öÆ÷#¢3s6#c2–×÷'FçC¶w&–BÖ6öÇVÖã£òÓ–×÷'FçGÒ6ÖævW%f–WrçcSB×7&RÖÆövòr’ÂtÖævW"7&R'G26&B×W7Bæ÷Bf÷&6RgVÆÂ×v–GF‚&÷rr“°¦76W'Bæö²‚öÖUÃõÂç&öÆSÓÓÒtÖævW"uÂ—&VæFW$ÖævW#cUÂ…Â’òçFW7B‡ccR’ÂuccRÖævW"&VæFW&W"×W7B&VÖ–â&WF—&VBFò&WfVçBÆöv–âT’fÆ6‚r“°¦76W'Bæö²‚öÖUÃõÂç&öÆSÓÓÒtÖævW"uÂ—&VæFW$ÖævW#ceÂ…Â’òçFW7B‡ccb’ÂuccbÖævW"&VæFW&W"×W7B&VÖ–â&WF—&VBFò&WfVçBÆöv–âT’fÆ6‚r“°¦76W'Bæö²‡ccræ–æ6ÇVFW2‚'v–æF÷rç&VæFW#ÖgVæ7F–öâ‚—¶–b†ÖSòç&öÆSÓÓÒtÖævW"r—&WGW&â&VæFW$ÖævW#cr‚“¶6öç7B#×&We&VæFW"‚“·&WGW&â'Ó²"’bbccræ–æ6ÇVFW2‚'v–æF÷rç&VæFW$ÖævW#×&VæFW$ÖævW#cs²"’bbccræ–æ6ÇVFW2‚'v–æF÷rç§V¶—DÖævW%&VæFW&W$WF†÷&—G“Òuccrs²"’ÂuccrÖævW"&VæFW&W"×W7B&RF†R7–æ6‡&öæ÷W2f—6–&ÆRÖævW"WF†÷&—G’r“°¦6öç7B7F&ÆS×7WW'f—6÷%7F&ÆS°¦76W'Bæö²‚7F&ÆRæ–æ6ÇVFW2‚&ÆW'B‚u7&R'G2(	B6öÖ–ær6ööâr’"’Âvf–æÂ7WW'f—6÷"&VæFW&W"×W7Bæ÷B÷fW'&–FRF†RÆ—fR7&R'G2ÖöGVÆRr“°¦76W'Bæö²‡7F&ÆRæ–æ6ÇVFW2‚wcC4&–æE7F&ÆT7F–öç2r’bb7F&ÆRæ–æ6ÇVFW2‚wcC4÷Vä6öç7VÖ&ÆW2r’bb7F&ÆRæ–æ6ÇVFW2‚v÷Vå7&U'G2r’Âvf–æÂ7WW'f—6÷"&VæFW&W"×W7B&–æB6öç7VÖ&ÆW2æB7&R'G2FòÆ—fRÖöGVÆRWF†÷&—F–W2r“°¦76W'Bæö²‡7F&ÆRæ–æ6ÇVFW2‚'cC4÷Vå&VG”f÷$FVÆ—fW'’"’bb7F&ÆRæ–æ6ÇVFW2‚'v–æF÷rçcsE&VG’‚w7WW'f—6÷"r’"’Âvf–æÂ7WW'f—6÷"&VG’f÷"FVÆ—fW'’×W7B&÷WFRFòF†RW†—7F–ærcsBÆ–fV7–6ÆRWF†÷&—G’r“°¦76W'Bæö²‚7F&ÆRæ–æ6ÇVFW2‚vöæ6Æ–6³Ò&÷Vå&VG”f÷$FVÆ—fW'’‚’"r’Âvf–æÂ7WW'f—6÷"&VæFW&W"×W7Bæ÷B6ÆÂVæFVf–æVB&VG’f÷"FVÆ—fW'’†æFÆW"r“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚wv–æF÷rçcSt÷VäV×Æ÷–VU'G3Òr’bbWFFW2æ–æ6ÇVFW2‚'cSt÷VäV×Æ÷–VU'G2…ÅÂrr¶W62†¦ö$æò’²uÅÂr’"’ÂtFVçFW"V×Æ÷–VR'G2Æ—7B×W7BW6RF†RwV&FVBV×Æ÷–VRÆVæ6†W"r“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚&6†ævVBbf÷WBbgG—Vöb÷WBçF†VãÓÓÒvgVæ7F–öâr"’Âvæ÷&ÖÂ¦ö"7F'BgFW"”C×W7B&W6W'fRF†R7–æ6‡&öæ÷W2×VÇF’ÖFWf–6R7F'B&÷VæF'’r“°¦76W'Bæö²…·ccRÇccbÇccuÒæWfW'’‡7&3Óç7&2æ–æ6ÇVFW2‚v÷Vä6öç7VÖ&ÆW4ÖöGVÆR‚’r’’ÂvÆÂÖævW"&VæFW&W"vVæW&F–öç2×W7B÷VâF†R&VÂ6öç7VÖ&ÆW2ÖöGVÆRr“°¦76W'Bæö²‚·ccRÇccbÇccrÇWFFW5Òç6öÖR‡7&3Óç7&2æ–æ6ÇVFW2‚t6öç7VÖ&ÆW2FWF–Ç2v–ÆÂ&RFFVBÆFW"âr’’ÂvæòÖævW"6öç7VÖ&ÆW2Æ6V†öÆFW"ÆW'BÖ’&VÖ–âr“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚&'WGFöç2æÆVæwFƒã"’bbWFFW2æ–æ6ÇVFW2‚&"æöæ6Æ–6³Ö÷Vâ"’Âvf–æÂÖævW"6öç7VÖ&ÆW2WF†÷&—G’×W7BFVGWÆ–6FR6öçG&öÇ2æB&–æBF†R&VÂ÷Vâ†æFÆW"r“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚wc34ÆVfTV×Æ÷–VRr’bbWFFW2æ–æ6ÇVFW2‚wc35&–çDÆVfRr’bbWFFW2æ–æ6ÇVFW2‚wc356†&TÆVfRr’ÂtÖævW"ÆVfRÖævVÖVçB×W7B&WF–âV×Æ÷–VRf–ÇFW"Â&–çBòDbÂæBv†G46†&–ærr“° ¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚wc“Ö–FVçF—G’ÖÖVçRr’ÂtV×Æ÷–VRÖVçR×W7B6—B–âF†R–FVçF—G’ööæÆ–æR&÷rr“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚wc“2ÖV×Æ÷–VRÖÖVçRr’bbWFFW2æ–æ6ÇVFW2‚wc“2ÖÖVçR×7–æ2r’bbWFFW2æ–æ6ÇVFW2‚wc“2ÖÖVçRÖÆVfRr’bbWFFW2æ–æ6ÇVFW2‚wc“2ÖÖVçR×WFFRr’bbWFFW2æ–æ6ÇVFW2‚wc“2ÖÖVçRÖÆöv÷WBr’ÂtV×Æ÷–VR66÷VçB7F–öç2×W7B&VÖ–âf—7VÆÇ’F—7F–æ7BæB6Æ–6¶&ÆRr“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚wcƒ×'ÒÖvVvRr’bbWFFW2æ–æ6ÇVFW2‚rçc“2×'Ò×&VFÆ–æRÂçc“2×'ÒÖæVVFÆRÂçc“2×'ÒÖ‡V'¶F—7Æ“¦æöæR–×÷'FçGÒr’ÂtV×Æ÷–VR'Vææ–æræB&VÖ–æ–ærF–ÖR×W7BW6RF†R%Ò×7G–ÆRvVvRv—F†÷WB&VFÆ–æRöæVVFÆRÖ&¶W'2r“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚'c“&öÆT†VFW"‚u7WW'f—6÷"r’"’Âu7WW'f—6÷"×W7BW6RF†R6ö×7B–FVçF—G’ööæÆ–æRöÖVçR&÷rr“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚'&ö÷BæFF6WBç7WW'f—6÷%V“Òwc2ÖWF†÷&—FF—fRr"’Âu7WW'f—6÷"f–æÂT’G&ç6f÷&ÖF–öâ×W7B'VâWfVâv†VâÆVv7’FöF’BvÆæ6Rv2Ç&VG’&WÆ6VBr“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚&ÆWB7W'&VçDf–æÃ×&ö÷BçVW'•6VÆV7F÷"‚rçcsB×7WW'f—6÷"Öf–æÂr’"’Âu7WW'f—6÷"f–æÆ—¦W"×W7BFWFV7BâW†—7F–ærWF†÷&—FF—fR÷fW'f–Wr–æFWVæFVçFÇ’öbF†RÆVv7’vÆæ6R6&Br“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚&–b†7W'&VçDf–æÂbf7W'&VçDf–æÂæ—46öææV7FVB–7W'&VçDf–æÂç&WÆ6Uv—F‚‡w&’"’Âu7WW'f—6÷"f–æÆ—¦W"×W7B&Vg&W6‚âW†—7F–ærWF†÷&—FF—fR÷fW'f–WröâWfW'’&VæFW"r“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚&VÇ6R–b†vÆæ6RbfvÆæ6Ræ—46öææV7FVB–vÆæ6Rç&WÆ6Uv—F‚‡w&’"’Âu7WW'f—6÷"f–æÆ—¦W"×W7BWw&FRÆVv7’vÆæ6R6&Bv†Vâ&W6VçBr“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚&æ6†÷"æ–ç6W'DF¦6VçDVÆVÖVçB‚vgFW&VæBrÇw&’"’Âu7WW'f—6÷"f–æÆ—¦W"×W7B–ç6W'BF†RWF†÷&—FF—fR÷fW'f–WrWfVâv†VâæòÆVv7’vÆæ6R6&BW†—7G2r“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚&f–ÇFW"‡ƒÓâw&æ6öçF–ç2‡‚’bb‡‚çVW'•6VÆV7F÷"‚vƒ2r“òçFW‡D6öçFVçGÇÂrr’æ–æ6ÇVFW2‚uFöF’BvÆæ6Rr’’æf÷$V6‚‡ƒÓç‚ç&VÖ÷fR‚’’"’Âu7WW'f—6÷"f–æÆ—¦W"×W7B&VÖ÷fRGWÆ–6FRÆVv7’vÆæ6R7W&f6W2r“°¦6öç7BcsD76WDÖF6ƒÖ‡FÖÂæÖF6‚‚÷csE÷WFFW5Âæ§5Ã÷cÒ…ÆB²’ò“°¦6öç7B7F&ÆT76WDÖF6ƒÖ‡FÖÂæÖF6‚‚÷7WW'f—6÷%÷7F&ÆUÂæ§5Ã÷cÒ…ÆB²’ò“°¦76W'Bæö²‡csD76WDÖF6‚ÂvÆVv7’csBWFFR'VæFÆR×W7B&R6†—VBr“°¦76W'Bæö²‡7F&ÆT76WDÖF6‚Âw7F&ÆR7WW'f—6÷"WF†÷&—G’76WB×W7B&R6†—VBr“°¦76W'Bæö²†‡FÖÂæ–æFW„öb‡7F&ÆT76WDÖF6…³Ò“æ‡FÖÂæ–æFW„öb‡csD76WDÖF6…³Ò’Âw7F&ÆR7WW'f—6÷"WF†÷&—G’×W7BÆöBgFW"F†RÆVv7’WFFR'VæFÆRr“°¦76W'Bæö²‚‡FÖÂæ–æ6ÇVFW2‚uc25UU%d•4õ"%TåD”ÔRÄô4²r’ÂvÆVv7’c27WW'f—6÷"'VçF–ÖRÆö6²×W7B7F’&WF—&VBr“°¦76W'BæÖF6‚‡7WW'f—6÷%7F&ÆRÂõcC25UU%d•4õ"5D$ÄRUD„õ$•E’òÂvf–æÂ7F&ÆR7WW'f—6÷"WF†÷&—G’×W7BW†—7Br“°¦76W'BæÖF6‚‡7WW'f—6÷%7F&ÆRÂ÷v–æF÷uÂç&VæFW%7WW'f—6÷#×&VæFW%7F&ÆRòÂw7F&ÆRWF†÷&—G’×W7B÷vâ&VæFW%7WW'f—6÷"r“°¦76W'BæÖF6‚‡7WW'f—6÷%7F&ÆRÂö–eÂ‡&öÆUÂ…Â“ÓÓÒu7WW'f—6÷"uÂ•Ç¶6öç7B#×&VæFW%7F&ÆUÂ…Â“¶&–æE7F&ÆT7F–öç5Â…Â“·&WGW&â%ÇÒòÂu7WW'f—6÷"&VæFW"×W7B'—72F†RÆVv7’&VæFW"6†–âæB&–æBf–æÂ7F–öç2r“°¦76W'BæFöW4æ÷DÖF6‚‡7WW'f—6÷%7F&ÆRÂô×WFF–öäö'6W'fW"òÂw7F&ÆR7WW'f—6÷"T’×W7Bæ÷BW6RDôÒö'6W'fW'2r“°¦76W'BæÖF6‚‡7WW'f—6÷%7F&ÆRÂöw&–B×FV×ÆFRÖ&V3¢&¦ö"FV6‚"'F–ÖR76–vâ"òÂw7F&ÆR76–våÂõWFFR×W7B¶VWF†Rw&VVB'ƒ"Æ–÷WBr“°¦76W'BæÖF6‚‡7WW'f—6÷%7F&ÆRÂö–CÒ'cC4¦ö%6V&6‚"òÂw7F&ÆR7WW'f—6÷"&VæFW&W"×W7B6öçF–âF†Rf—6–&ÆR¦ö"6&B6V&6‚r“°¦76W'BæÖF6‚‡7WW'f—6÷%7F&ÆRÂö–CÒ'6¢"6Æ73Ò'cC2Ö–çFW&æÂ"òÂw7F&ÆR7WW'f—6÷"&VæFW&W"×W7B¶VW†–FFVâ76¢6ö×F–&–Æ—G’r“°¦76W'BæÖF6‚‡7WW'f—6÷%7F&ÆRÂö–CÒ'7WW'f—6÷$6öç7VÖ&ÆW5F–ÆR"òÂw7F&ÆR7WW'f—6÷"&VæFW&W"×W7B6öçF–âF†R—&VB6öç7VÖ&ÆW26&Br“° ¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚wc“"×FV6‚Ö&ö&Br’Âu7WW'f—6÷"×W7B&VæFW"F†R&VFW6–væVBFV6†æ–6–â&ö&Br“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚wc“"×FV6‚ÖFWBr’ÂuFV6†æ–6–â&ö&BFW'FÖVçB6&G2×W7BW6RF†RWF†÷&—FF—fR&VFW6–væVBT’r“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚wc“"×7WW'f—6÷"×F÷r’Âu7WW'f—6÷"×W7B¶VWV×Æ÷–VR&WVW7G2æBf–Æ&ÆRv÷&¶W'2–âF†R6ö×7BF÷&÷rr“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚&–b‡&öÆSÓÓÒu7WW'f—6÷"r—²"’bbWFFW2æ–æ6ÇVFW2‚&v‚ç7G–ÆRç6WE&÷W'G’‚vF—7Æ’rÂvæöæRrÂv–×÷'FçBr’"’bbWFFW2æ–æ6ÇVFW2‚&†VFW$öæÆ–æU7FGW2"’Âu7WW'f—6÷"×W7B†–FRÆÂÆVv7’övÆö&ÂöæÆ–æR†VFW'2æB6†÷röæR–FVçF—G’&÷röæÇ’r“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚&6öç7B7F–öäw&–C×&ö÷BçVW'•6VÆV7F÷"‚rçcƒBÖ7F–öâÖw&–Br’"’Ât”CFWF–Ç2×W7B&RÆ6VB–âF†R6ö×7BÆ÷vW"7WW'f—6÷"7F–öâw&–Br“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚&f–ÇFW"‡ƒÓâ‡‚çFW‡D6öçFVçGÇÂrr’çG&–Ò‚’’æf÷$V6‚‡ƒÓç‚ç&VÖ÷fR‚’’"’Âu7WW'f—6÷"Æ÷vW"7F–öâw&–B×W7B&VÖ÷fRV×G’ÆVv7’F–ÆW2r“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚"õäFWF–Ç2Bö’"’bbWFFW2æ–æ6ÇVFW2‚'cƒBÖ¦ö"ÖFWF–Ç2"’ÂtÆVv7’7WW'f—6÷"FWF–Ç2F–ÆR×W7Bæ÷&ÖÆ—¦RFòöæR¦ö"6&BFWF–Ç26öçG&öÂr“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚wc“$÷Väf–Æ&ÆUv÷&¶W'2r’Âtf–Æ&ÆRv÷&¶W'2F÷6&B×W7B÷VâF†Rf–Æ&ÆRFV6†æ–6–âÆ—7Br“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚uFFòf–Wr(¢r’ÂuFV6†æ–6–â&ö&BFW'FÖVçB6&G2×W7BW‡÷6RF†V—"G&–ÆÂÖF÷vâff÷&Fæ6Rr“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚'c“&öÆT†VFW"‚tÖævW"r’"’ÂtÖævW"×W7BW6RF†R6ö×7B–FVçF—G’ööæÆ–æRöÖVçR&÷rr“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚ræÖævW"Ö†W&òç–ÆÇ¶F—7Æ“¦æöæR–×÷'FçGÒr’ÂtÖævW"GWÆ–6FRÆ—fRööæÆ–æR&FvR×W7B&R†–FFVâr“°¦76W'BæÖF6‚‡WFFW2Âÿ	ù8²¦ö"6&BFWF–Ç2òÂu7WW'f—6÷"FWF–Â6öçG&öÂ×W7B&RæÖVB¦ö"6&BFWF–Ç2r“°¦76W'BæÖF6‚‡WFFW2Â÷cƒ'Vææ–ætvVvRòÂvV×Æ÷–VR'Vææ–ærvVvR×W7BW†—7Br“°¦76W'BæÖF6‚‡WFFW2Â÷cƒ&VÖ–æ–ætvVvRòÂvV×Æ÷–VR&VÖ–æ–ærvVvR×W7BW†—7Br“°¦76W'BæÖF6‚‡WFFW2Â÷'%ÂçFW‡D6öçFVçCÖfÕÂ‡v÷&¶VEÂ’òÂw'Vææ–ærvVvR×W7BW6R67V×VÆFVB7GVÂ76–væÖVçBF–ÖRr“°¦76W'BæÖF6‚‡WFFW2Â÷ãÓÃòwcƒ×&VBs§ãsUÃòwcƒÖ÷&ævRs§ãSÃòwcƒÖ&ÇVRs¢wcƒÖw&VVâròÂw'Vææ–ærvVvR6öÆ÷"F‡&W6†öÆG2×W7B&R&W6W'fVBr“°¦76W'BæÖF6‚‡WFFW2ÂöÆVgCÃÓÃòwcƒ×&VBs¦ÆVgE7CÃ#UÃòwcƒÖ÷&ævRs¦ÆVgE7CÃSÃòwcƒÖ&ÇVRs¢wcƒÖw&VVâròÂw&VÖ–æ–ærvVvR6öÆ÷"F‡&W6†öÆG2×W7B&R&W6W'fVBr“°¦76W'BæÖF6‚‡WFFW2ÂôU„4TTDTBòÂw&VÖ–æ–ærvVvR×W7B6†÷rW†6VVFVB7FFRr“°¦76W'BæÖF6‚‡WFFW2Â÷fV†–6ÆT'&æBòÂwfV†–6ÆR'&æBFWFV7F–öâ×W7BW†—7Br“°¦76W'BæÖF6‚‡WFFW2Â÷fV†–6ÆT&FvRòÂwfV†–6ÆR&FvR&VæFW&–ær×W7BW†—7Br“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚&W62†ÖRææÖR’²r+rr¶W62†FWB’"’ÂvV×Æ÷–VR†VFW"×W7B6†÷ræÖRæBFW'FÖVçBr“°¦76W'Bæö²‚WFFW2æ–æ6ÇVFW2‚%tõ$²4Ô%DU"(
-"$UEDU"DôÔõ%$õr"’ÂvGWÆ–6FRV×Æ÷–VR&ææW"FvÆ–æR×W7B&R&VÖ÷fVBr“°¦76W'Bæö²‚WFFW2æ–æ6ÇVFW2‚&W62†ÖRææÖR’²r(	2V×Æ÷–VRr"’ÂvvVæW&–2GWÆ–6FRV×Æ÷–VR–FVçF—G’×W7B&R&VÖ÷fVBr“°¦76W'BæÖF6‚‡WFFW2Âö7W'&VçE&VÖ–æ–ærrÂ†4ÆÆö5Ãò~(	Bs¦ÆVgCÃÓÃòuÂ²uÂ¶fÒòÂw¦W&òÆÆö6F–öâ×W7B6†÷ræòÆÆö6FVBF–ÖRæBæVvF—fR&VÖ–æ–ærF–ÖR×W7BW6RW†6VVFVBF—7Æ’r“°¦76W'BæÖF6‚‡WFFW2ÂôäòÄÄô4DTBD”ÔRòÂw¦W&òÆÆö6F–öâ×W7B6†÷r6ÆV"æòÆÆö6FVBF–ÖR7FFRr“° ¢òò6†&VBFF6öç6—7FVæ7’6öçG&7G0¦76W'BæÖF6‚†6Æ÷VBÂö6öç7BöÆÄ×3ÕÂ…Â“ÓæFö7VÖVçEÂçf—6–&–Æ—G•7FFSÓÓÒv†–FFVâuÃó3£òÂv6Æ÷VB&Wf—6–öâ†V'F&VB×W7BFWFV7B7F—fRÖFWf–6R6†ævW2v—F†–â&÷WBöæR6V6öæBv†–ÆR&VÖ–æ–ær&GFW'’Öv&Rv†Vâ†–FFVâr“°¦76W'BæÖF6‚†6Æ÷VBÂ÷f—6–&–Æ—G–6†ævUµÇ5Å5Ò£÷&Vg&W6…f—6–&ÆU6†&VE7FFRòÂvF6†&ö&B×W7B&Vg&W6‚6†&VB7FFRv†VâF†R&V6öÖW2f—6–&ÆRr“°¦76W'BæÖF6‚†6Æ÷VBÂ÷v–æF÷uÂæFDWfVçDÆ—7FVæW%Â‚vfö7W2rÇ&Vg&W6…f—6–&ÆU6†&VE7FFUÂ’òÂvF6†&ö&B×W7B&Vg&W6‚6†&VB7FFRv†VâF†R&Vv–ç2fö7W2r“°¦76W'BæÖF6‚†6Æ÷VBÂö–eÂ†6Æ÷VDF—'G’bb6Æ÷VEW6†–æuÂ–v—BW6…ÂƒÂ’òÂvÆö6Â6†ævW2×W7B&RW6†VB&Vf÷&Rf÷&6VB6†&VB×7FFR&Vg&W6‚r“°¦76W'BæÖF6‚†6Æ÷VBÂ÷F‡&VUv”ÖW&vUÂ†&6RÇ&VÖ÷FRÆÆö6Å6æ6†÷EÂ’òÂu7WW'f—6÷"æBÖævW"6öæ7W'&VçB6†ævW2×W7BÖW&vRv–ç7BF†R6†&VB&Wf—6–öâr“°¦76W'BæÖF6‚†6Æ÷VBÂöÖW&vTV×Æ÷–VT6öæfÆ–7EÂ‡&VÖ÷FRÆÆö6Å6æ6†÷BÆÖUÂæ–EÂ’òÂtV×Æ÷–VR6öæ7W'&VçB6†ævW2×W7BÖW&vRöæÇ’F†V—"÷vâv÷&²–çFò6†&VB7FFRr“°¦76W'BæÖF6‚†6Æ÷VBÂö–eÂ†6†ævVEÂ’66†VGVÆTF6†&ö&E&VæFW%Â‡&Wf–÷W56æ6†÷BÇ7FFUÂ’òÂw&V6V—fVB6†&VB&Wf—6–öç2×W7B72F‡&÷Vv‚F†R&öÆR×66÷VB7G'V7GW&Â&VæFW"vFRr“°¦76W'BæFöW4æ÷DÖF6‚†6Æ÷VBÂö–eÂ†ÖUÂ—G'•Ç·&VæFW%Â…Â•ÇÒòÂv6Æ÷VB7–æ2×W7Bæ÷BF—&V7FÇ’&V'V–ÆBF6†&ö&B&ö÷G2r“° ¢òòV×Æ÷–VR6öçG&7G0¦76W'BæÖF6‚‡WFFW2Âö÷Väæ÷&ÖÃÖV×ÓåµÇ5Å5Ò£öÂæ¦ö"ÓÔ…µÇ5Å5Ò£òÂæ6æ6VÆÆVEµÇ5Å5Ò£òÂæ6ö×ÆWFVBòÂvæ÷&ÖÂ÷Vâv÷&²×W7B&RFWFV7FVBr“°¦76W'BæÖF6‚‡WFFW2Âöf–Æ&ÆTf÷$–FVÃÖV×Óâ7F—fU6W76–öåÂ†V×Â’bb÷Vä†öÆEÂ†V×Â’òÂt”C×W7B&Rf–Æ&ÆRv†VâF†W&R—2æò'Vææ–ær6W76–öâÂ–æ6ÇVF–ærv†Vâ&öGV7F—fRv÷&²—2W6VBr“°¦76W'BæÖF6‚‡WFFW2Â÷v–æF÷uÂçcsT76–vä–FVÅFôf–Æ&ÆSÖgVæ7F–öåÂ…Â•Ç·&WGW&åÇ¶ö³¦fÇ6RÇ&V6öã¢vöæUö'•ööæUööæÇ’ròÂt”C'VÆ²76–væÖVçB×W7B&R&WF—&VC²7WW'f—6÷"76–vç2öæRV×Æ÷–VRBF–ÖRr“°¦76W'BæÖF6‚‡WFFW2Âö–FVÅ6fUfW'6–öã£òÂvÆVv7’6fR”CÖ&¶W"×W7B&VÖ–â7W÷'FVBr“°¦76W'BæÖF6‚‡WFFW2Âõcb”Cd”äÂUD„õ$•E’òÂvf–æÂ”C76–væÖVçBWF†÷&—G’×W7B&R&W6VçBr“°¦76W'BæÖF6‚‡WFFW2Âö–FVÅ6fUfW'6–öã¥4dRòÂvf–æÂ”C76–væÖVçG2×W7Bw&—FRF†R7W'&VçB6fRÖ&¶W"r“°¦76W'BæÖF6‚‡WFFW2Â÷v–æF÷uÂçcd”Cf–æÄWF†÷&—G“×G'VRòÂvf–æÂ”CWF†÷&—G’Ö&¶W"×W7B&R&W6VçBr“°¦76W'BæÖF6‚‡WFFW2Â÷v–æF÷uÂçc3„6†V6´”CÖgVæ7F–öåÂ…Â•Ç·&WGW&âfÇ6UÇÒòÂvÆVv7’”CWFòÖf–æ—6‚×W7B&RF—6&ÆVBr“°¦76W'BæÖF6‚‡WFFW2Âõ5D%BÂò5DõöæÇ—Å5D%BÂò5DõòÂt”C×W7B&VÖ–â7F'B÷7F÷öæÇ’r“°¦76W'Bæö²‡WFFW2æ–æ6ÇVFW2‚"t÷fW'F–ÖRr"’bbWFFW2æ–æ6ÇVFW2‚v÷fW'F–ÖTÖ–âr’ÂtV×Æ÷–VRÖöçF†Ç’F6†&ö&B×W7B6†÷r÷fW'F–ÖRr“°¦76W'BæÖF6‚‡WFFW2Â÷…Âæ¦ö"ÓÔ…µÇ5Å5Ò£÷6W76–öä÷fW'F–ÖTÖ–çWFW2òÂt”C×W7B&RW†6ÇVFVBg&öÒÖöçF†Ç’÷fW'F–ÖRr“°¦76W'BæÖF6‚‡WFFW2Â÷v–æF÷uÂæÖöçF†Ç•7VvvW7FVDÖ–çWFW3ÕÂ†V×Æg&öÒÇFõÂ“ÓåÂ‡7FFUÂæ76–våÇÅÇÅÅµÅÕÂ•Âæf–ÇFW%Â†Óæbe7G&–æuÂ†ÂæV×Â“ÓÓÕ7G&–æuÂ†V×Â’bfÂæ¦ö"ÓÔ‚òÂvÖöçF†Ç’7VvvW7FVBF–ÖR×W7BW†6ÇVFR”Cr“°¦76W'BæÖF6‚‡WFFW2Âôf–æÂ67&VVç6†÷B×7G–ÆRV×Æ÷–VRF6†&ö&BòÂw7F&ÆRV×Æ÷–VR&VæFW&W"×W7B&RF†Rf–æÂ7FæFÆöæR&VæFW&W"r“° ¦76W'BæÖF6‚‡WFFW2ÂõcsUÂã"„ôÄ”D’Â²”C%TåD”ÔRUD„õ$•E’òÂucsRã"'VçF–ÖRWF†÷&—G’×W7B&R&W6VçBr“°¦76W'BæÖF6‚‡WFFW2ÂövWDF•Â…Â“ÓÓÓRòÂtg&–F’×W7BÇv—2&RG&VFVB2v÷&·6†÷†öÆ–F’r“°¦76W'BæÖF6‚‡WFFW2Â÷7FFUÂçv÷&·6†÷†öÆ–F—2òÂvÖævW"V&Æ–2Ö†öÆ–F’7FFR×W7BW†—7Br“°¦76W'BæÖF6‚‡WFFW2Â÷csT÷VåV&Æ–4†öÆ–F—2òÂtÖævW"FÖ–âV&Æ–2†öÆ–F’6öçG&öÂ×W7BW†—7Br“°¦76W'BæÖF6‚‡WFFW2Âô”C6â'VâöæÇ’GW&–ærGWG’†÷W'3¢ƒ£(	33£æBS£(	3“£òÂt”C7F'B×W7B&R&Æö6¶VB÷WG6–FRGWG’†÷W'2r“°¦76W'BæÖF6‚‡WFFW2Â÷7F÷”CDGWG”VæBòÂv7F—fR”C×W7B7F÷BF†RGWG’&÷VæF'’r“°¦76W'BæÖF6‚‡WFFW2Â÷v–æF÷uÂæÖöçF†Ç”–FVÅF–ÖTÖ–çWFW3Ö–FVÄvÖ–çWFW2òÂt–FVÂF–ÖR×W7BW6Rv2&WGvVVâ6W76–öç2Âæ÷B”CGW&F–öâr“°¦76W'BæÖF6‚‡WFFW2Â÷v–æF÷uÂæ÷fW'F–ÖTf÷$V×Æ÷–VSÒâ¦÷fW'F–ÖTÖ–çWFW2÷2Âv†öÆ–F’Öv&R÷fW'F–ÖR×W7B&RWF†÷&—FF—fRr“° ¢òòcsRã2”C&W÷'BòÖçVÂ×7F'B6öçG&7G0¦76W'BæÖF6‚‡WFFW2ÂõcsUÂã2”C$Uõ%BÂ²D”ÔR%$T´DõtâòÂucsRã2”C&W÷'B'VçF–ÖR×W7B&R&W6VçBr“°¦76W'BæÖF6‚‡WFFW2Â÷v–æF÷uÂçcsS4ÖçVÅ7F'DöæÇ“×G'VRòÂvÖçVÂ×7F'BÖöæÇ’6öçG&7BÖ&¶W"×W7B&R&W6VçBr“°¦76W'BæWVÂ‚‡WFFW2æÖF6‚‚÷7FFUÂç6W76–öç5ÂçW6…Ç2¥Â‚ör—ÇÅµÒ’æÆVæwF‚Ã"Âv6æF–FFRWFFRÆ–W"×W7B7&VFR6W76–öç2öæÇ’g&öÒF†RGvòW‡Æ–6—B7F'BfÆ÷w3¢æ÷&ÖÂv÷&²æB”Cr“°¦76W'BæÖF6‚‡WFFW2Âöf–æ—6†VDFöæSÖFöæUÂæf–ÇFW%Â†ÓæÂæ¦ö"ÓÔ…Â’òÂtV×Æ÷–VRf–æ—6†VB¦ö'2×W7BW†6ÇVFR”Cr“°¦76W'BæÖF6‚‡WFFW2Â÷csS4÷Vä”C&W÷'BòÂu7WW'f—6÷"ôÖævW"”C&W÷'B×W7BW†—7Br“°¦76W'BæÖF6‚‡WFFW2Â÷csS4g&öÒòÂt”C&W÷'B×W7B–æ6ÇVFRg&öÒFFRf–ÇFW"r“°¦76W'BæÖF6‚‡WFFW2Â÷csS5FòòÂt”C&W÷'B×W7B–æ6ÇVFRFòFFRf–ÇFW"r“°¦76W'BæÖF6‚‡WFFW2ÂõF÷FÂ7GVÂv÷&¶–æròÂtV×Æ÷–VRF6†&ö&B×W7B6†÷rF÷FÂ7GVÂv÷&¶–ærr“°¦76W'BæÖF6‚‡WFFW2Âõ&öGV7F—fR7GVÂòÂtV×Æ÷–VRF6†&ö&B×W7B6†÷r&öGV7F—fR7GVÂ6W&FVÇ’r“°¦76W'BæÖF6‚‡WFFW2Âô”CF–ÖRòÂtV×Æ÷–VRF6†&ö&B×W7B6†÷r”CF–ÖR6W&FVÇ’r“°¦76W'BæÖF6‚‡WFFW2Âô”CDUD”Å2Âò„õU%2òÂu7WW'f—6÷"ôÖævW"F6†&ö&G2×W7BW‡÷6RF†R”C&W÷'B6öçG&öÂr“°  ¦76W'BæÖF6‚‡WFFW2Âõc#d”ä•4„TBÂò$TE’DTÄ•dU%’5”4ÄRUD„õ$•E’òÂvf–æ—6†VBæB&VG’Öf÷"ÖFVÆ—fW'’×W7BW6RF†R7W'&VçBv÷&²Ö7–6ÆRWF†÷&—G’r“°¦76W'BæÖF6‚‡WFFW2ÂögVæ7F–öâ7–6ÆUÂ†æõÂ•Ç¶–eÂ‡G—Vöbv–æF÷uÂçc#T7W'&VçD7–6ÆSÓÓÒvgVæ7F–öâuÂ—&WGW&âv–æF÷uÂçc#T7W'&VçD7–6ÆUÂ†æõÂ’òÂvf–æ—6†VBæB&VG’Æöv–2×W7BW6RF†RW‡Æ–6—B7W'&VçB&WVB×v÷&²7–6ÆRr“°¦76W'BæÖF6‚‡WFFW2ÂögVæ7F–öâ6ö×ÆWFUÂ†æõÂ•Ç¶6öç7B&÷w3Ö7–6ÆUÂ†æõÂ“·&WGW&â&÷w5ÂæÆVæwFƒãbg&÷w5ÂæWfW'•Â†ÓæÂæ6ö×ÆWFVEÂ•ÇÒòÂv¦ö"6&B×W7Bf–æ—6‚öæÇ’v†VâWfW'’76–væÖVçB–âF†R7W'&VçB7–6ÆR—26ö×ÆWFRr“°¦76W'BæÖF6‚‡WFFW2ÂögVæ7F–öâ&VG”¦ö'5Â…Â•Ç·&WGW&âf–æ—6†VD¦ö'5Â†fÇ6UÂ•Âæf–ÇFW%Â†£Óâ¥ÂæFVÆ—fW&VEÂ•ÇÒòÂvFVÆ—fW&VB¦ö"6&G2×W7B&RW†6ÇVFVBg&öÒ&VG’f÷"FVÆ—fW'’r“°¦76W'BæÖF6‚‡WFFW2Âö÷Vå7WW'f—6÷$f–æ—6†VEv–æF÷sÖgVæ7F–öåÂ…Â•Ç·6†÷u7WW'f—6÷$ÖöFÅÂ‚~)ÈRf–æ—6†VB¦ö"6&G2FöF’rÇF&ÆUÂ†f–æ—6†VD¦ö'5Â‡G'VUÂ’Âw7WW'f—6÷"uÂ•Â•ÇÒòÂu7WW'f—6÷"f–æ—6†VB¦ö'2×W7B6†÷rVæ—VR6ö×ÆWFVB¦ö"6&G2r“°¦76W'BæÖF6‚‡WFFW2Â÷c#7–æ4¦ö$Æ–fV7–6ÆRòÂw&VçB¦ö"6&B7FGW2×W7B7–æ6‡&öæ—¦RFòF†R7W'&VçBæ÷&ÖÂ÷"&WVB×v÷&²7–6ÆRr“° ¢òòæF—fRF–Æör6öçG&7C¢æòvV%f–WrU$Â&ææW"6†÷VÆB&R6†÷vâFòW6W'2à¦76W'BæÖF6‚†Ö–âÂö&ööÆVâöä§4ÆW'EÂ…vV%f–Wrf–WrÂ7G&–ærW&ÂÂ7G&–ærÖW76vRÂ§5&W7VÇB&W7VÇEÂ’òÂtæG&ö–Bw&W"×W7B–çFW&6WB¦f67&—BÆW'G2r“°¦76W'BæÖF6‚†Ö–âÂö&ööÆVâöä§46öæf—&ÕÂ…vV%f–Wrf–WrÂ7G&–ærW&ÂÂ7G&–ærÖW76vRÂ§5&W7VÇB&W7VÇEÂ’òÂtæG&ö–Bw&W"×W7B–çFW&6WB¦f67&—B6öæf—&×2r“°¦76W'BæÖF6‚†Ö–âÂö&ööÆVâöä§5&ö×EÂ…vV%f–Wrf–WrÂ7G&–ærW&ÂÂ7G&–ærÖW76vRÂ7G&–ærFVfVÇEfÇVRÂ§5&ö×E&W7VÇB&W7VÇEÂ’òÂtæG&ö–Bw&W"×W7B–çFW&6WB¦f67&—B&ö×G2r“°¦76W'BæÖF6‚†Ö–âÂ÷6WEF—FÆUÂ‚%§V¶—BF–ÖRG&6²%Â’òÂvæF—fR¦f67&—BF–Æöw2×W7BW6R'&æF–ærr“°¦76W'BæÖF6‚†Ö–âÂ÷FW‡EÂç7F'G5v—F…Â‚%&WVW7B6VçBFò7WW'f—6÷"%Â’òÂw&WVW7B×6VçB7V66W726†÷VÆBW6RæF—fRFö7B–ç7FVBöb&Æö6¶–ær'&÷w6W"ÆW'Br“° ¢òòcsRãBf–æÂ'VçF–ÖR6öçG&7G0¦76W'BæÖF6‚‡WFFW2Â÷csTæ÷&ÖÄ76–væÖVçDf–Æ&ÆTÖ–çWFW2òÂt–FVÂF–ÖR×W7BW6R7GVÂæ÷&ÖÂ×v÷&²f–Æ&–Æ—G’r“°¦76W'BæÖF6‚‡WFFW2ÂöÂæ¦ö"Ó×&Wf–÷W4¦ö"òÂt–FVÂF–ÖR×W7B&WV—&R÷F†W"æ÷&ÖÂv÷&²Âæ÷B§W7BF†RW6VBöf–æ—6†VB¦ö"—G6VÆbr“°¦76W'BæÖF6‚‡WFFW2Â÷csSE&V6öæ6–ÆT”CvÆö&ÆÇ’òÂt”CGWG’ÖVæB&V6öæ6–Æ–F–öâ×W7B'VâvÆö&ÆÇ’f÷"ç’&öÆRöFWf–6Rr“°¦76W'BæÖF6‚‡WFFW2Â÷6WD–çFW'fÅÂ‡&V6öæ6–ÆT”CvÆö&ÆÇ’ÃSÂ’òÂvvÆö&Â”C&V6öæ6–Æ–F–öâF–ÖW"×W7B&R&W6VçBr“°¦76W'BæÖF6‚‡WFFW2Â÷cC$gFW$6Æ÷VEVÆÃÖgVæ7F–öâòÂt”C&V6öæ6–Æ–F–öâ×W7B'VâgFW"6Æ÷VBVÆÇ2r“°¦76W'BæÖF6‚‡WFFW2Âö6VÆÇ5Âç6öÖUÂ‡cÓçcÓÓÔ„ôÄBòÂvÆVv7’f–æ—6†VB÷&öGV7F–öâ6ÆVçW×W7B–ç7V7BÆÂF&ÆR6VÆÇ2r“°¦76W'BæÖF6‚‡WFFW2Â÷csS5&W÷'Df–ÇFW"òÂt”C&W÷'B×W7B&W6W'fR6VÆV7FVBFFRf–ÇFW'2r“°¦76W'BæÖF6‚‡WFFW2Â÷csS4÷Vä”C&W÷'EÂ‡G'VUÂ’òÂt”CV×Æ÷–VRÖFWF–Â&6²×W7B&W6W'fRf–ÇFW'2r“°¦76W'BæÖF6‚‡WFFW2Â÷v–æF÷uÂçcsS56fU&W÷'Df–ÇFW"òÂvFFRÖf–ÇFW"6ÆÆ&6²×W7B&RvÆö&ÆÇ’66W76–&ÆRFò–æÆ–æR6öçG&öÇ2r“°¦76W'BæÖF6‚‡WFFW2Â÷v–æF÷uÂçcsSDf–æÅ'VçF–ÖTf—†W3×G'VRòÂvf–æÂ'VçF–ÖRf—‚Ö&¶W"×W7B&R&W6VçBr“°    ¢òò7WW'f—6÷"6öçG&7G0¦76W'BæÖF6‚‡WFFW2Â÷v–æF÷uÂçcs&V÷Vå6ÖT76–væÖVçCÖgVæ7F–öâòÂu7WW'f—6÷"&V÷Vâ×6ÖRfÆ÷r×W7BW†—7Br“°¦76W'BæÖF6‚‡WFFW2Â÷&Wf–÷W46ö×ÆWFVDC¦f–æ—6†VDBòÂw&V÷Vâ×W7B&W6W'fR6ö×ÆWF–öâ†—7F÷'’r“°¦76W'BæÖF6‚‡WFFW2Âö7GVÄE&V÷Vã§v÷&¶VBòÂw&V÷Vâ×W7B&V6÷&B&WF–æVB7GVÂF–ÖRr“°¦76W'BæÖF6‚‡WFFW2Âö÷VäÖöFÅÂ‚sÆF—b6Æ73Ò'csBÖB#ãÆƒ#î(k²&V÷Vâ6ÖR76–væÖVçBòÂw&V÷Vâ×W7BW6R–âÖÖöFÂr“°¦76W'BæÖF6‚‡WFFW2Âö¥Âç7FGW3Òt÷Vâs¶FVÆWFR¥Âæ6ö×ÆWFVDBòÂw&V÷Vâ×W7B&W6WB&VçB¦ö"6&B7FGW2æB6ö×ÆWF–öâFFRr“°   ¢òòcB7WW'f—6÷"'VçF–ÖR&Vw&W76–öâwV&@¦76W'BæFöW4æ÷DÖF6‚†‡FÖÂÂõc25UU%d•4õ"%TåD”ÔRÄô4²òÂvÆVv7’c27WW'f—6÷"'VçF–ÖRÆö6²×W7B&VÖ–â&WF—&VBr“°¦76W'BæFöW4æ÷DÖF6‚†‡FÖÂÂ÷v–æF÷uÂçcƒu7WW'f—6÷%'VçF–ÖTÆö6³×G'VRòÂvÆVv7’cƒr'VçF–ÖRw&W"×W7B&VÖ–â&WF—&VBr“°¦76W'BæÖF6‚‡WFFW2Â÷cƒ’×GvòÖ6öÂòÂu7WW'f—6÷"V–6²VçG'’æB76–vâWFFR×W7BW6RF†RÆö6¶VBGvòÖ6öÇVÖâw&–Br“°¦76W'BæÖF6‚‡WFFW2ÂõÂçcƒ’×GvòÖ6öÅÇ¶F—7Æ“¦w&–B–×÷'FçC¶w&–B×FV×ÆFRÖ6öÇVÖç3§&WVEÂƒ"ÆÖ–æÖ…ÂƒÃg%Â•Â’–×÷'FçBòÂu7WW'f—6÷"GvòÖ6öÇVÖâÆ–÷WB×W7B÷fW'&–FRÆVv7’öÖö&–ÆR552r“°¦76W'BæÖF6‚‡WFFW2ÂõÂçcƒBÖ7F–öâÖw&–EÇ¶F—7Æ“¦w&–B–×÷'FçC¶w&–B×FV×ÆFRÖ6öÇVÖç3§&WVEÂƒ"ÆÖ–æÖ…ÂƒÃg%Â•Â’–×÷'FçBòÂu7WW'f—6÷"Æ÷vW"6öçG&öÇ2×W7B&VÖ–â6ö×7BGvòÖ6öÇVÖâ&÷†W2r“°¦76W'BæÖF6‚‡WFFW2ÂõÂçcƒBÖFWG5Ç¶F—7Æ“¦w&–B–×÷'FçC¶w&–B×FV×ÆFRÖ6öÇVÖç3§&WVEÂƒ2ÆÖ–æÖ…ÂƒÃg%Â•Â’–×÷'FçBòÂuFV6†æ–6–â&ö&B×W7B&VÖ–âF‡&VRFW'FÖVçB&÷†W2r“°¦76W'BæÖF6‚‡WFFW2ÂõÅ²tFVçFW"rÂtDTåD”äruµåÆåÒµÅ²u–çFW"rÂu”åD”äruµåÆåÒµÅ²tÖV6†æ–2rÂtÔT4„ä”4ÂròÂuFV6†æ–6–â&ö&B×W7BW‡÷6RFVçF–ærÂ–çF–æræBÖV6†æ–6Âr“°¦76W'BæÖF6‚‡WFFW2Â÷cƒD÷VäFWBòÂuFV6†æ–6–â&ö&BFW'FÖVçB÷W×W7BW†—7Br“°¦76W'BæÖF6‚‡WFFW2Â÷cƒEFövvÆUFV6‚òÂuFV6†æ–6–âFWF–Âæf–vF–öâ×W7BW†—7Br“°¦76W'BæWVÂ‚‡WFFW2æÖF6‚‚ögVæ7F–öâcƒEFV6†æ–6–ä&ö&EÂ‚ör—ÇÅµÒ’æÆVæwF‚ÃÂuFV6†æ–6–â&ö&B×W7B†fRW†7FÇ’öæRWF†÷&—FF—fR&VæFW&W"r“°¦76W'BæFöW4æ÷DÖF6‚†‡FÖÂÂ÷cSb×FV6†æ–6–âÖ&ö&BÖ6&BòÂv&6R…DÔÂ×W7Bæ÷B&V7&VFRF†RÆVv7’FV6†æ–6–â&ö&Br“°¦76W'BæFöW4æ÷DÖF6‚‡&VB‚v÷7&2öÖ–âö76WG2÷cSEö–×&÷fVÖVçG2æ§2r’Â÷cSD÷VåFV6†æ–6–ä&ö&BòÂucSBÆVv7’FV6†æ–6–â&ö&BÖöFÂ×W7B&VÖ–â&WF—&VBr“°¦76W'BæÖF6‚‡WFFW2Âö6öç7Bc57WW'f—6÷$÷fW'f–WtWF†÷&—G“×v–æF÷uÂç7WW'f—6÷$÷fW'f–WròÂuc2×W7B6GW&RF†RWF†÷&—FF—fR7WW'f—6÷"÷fW'f–Wr&Vf÷&RÆFW"w&W'2r“°¦76W'BæÖF6‚‡WFFW2Â÷…Âç7FGW3ÓÓÒuv÷&¶–æruÇÅÇÇ…Âç7FGW3ÓÓÒt÷fW'F–ÖRròÂuFV6†æ–6–â&ö&Bv÷&¶–ær6÷VçB×W7BW†6ÇVFRW6VBFV6†æ–6–ç2r“°¦76W'BæÖF6‚‡&VB‚v÷7&2öÖ–âö76WG2÷FV6†æ–6–å÷v÷&¶ÆöBæ§2r’Â÷5Âæ76–væÖVçD–EÃ÷6ÖUÂ†Âæ–BÇ5Âæ76–væÖVçD–EÂ’òÂuFV6†æ–6–âv÷&¶ÆöB×W7BÖF6‚F†R7W'&VçBÆ—fR76–væÖVçB'’”Br“°¦76W'Bæö²†‡FÖÂæ–æ6ÇVFW2‚'¶–C¢tTÕ"rÆæÖS¢t¦–¦W6‚rÇ&öÆS¢tV×Æ÷–VRrÆFW'FÖVçC¢u–çFW"wÒ"’Ât¦–¦W6‚&÷7FW"7VÆÆ–ær×W7B&VÖ–â6÷'&V7Br“°¦76W'BæÖF6‚‡WFFW2Â÷cƒ’ÖV×Æ÷–VRÖÆ÷vW"òÂtV×Æ÷–VRÆ÷vW"F6†&ö&B×W7BW6R6ö×7B6öçG&öÇ2r“°¦76W'BæÖF6‚‡WFFW2ÂõÂçcƒ’ÖV×Æ÷–VRÖÆ÷vW%Ç¶F—7Æ“¦w&–B–×÷'FçC¶w&–B×FV×ÆFRÖ6öÇVÖç3§&WVEÂƒ"ÆÖ–æÖ…ÂƒÃg%Â•Â’–×÷'FçBòÂtV×Æ÷–VRÆ÷vW"F6†&ö&B×W7B&VÖ–âGvò6öÇVÖç2r“°¦76W'BæÖF6‚‡WFFW2Â÷cƒ”÷VäV×Æ÷–VTf–æ—6†VBòÂtV×Æ÷–VRf–æ—6†VB¦ö'2FWF–Ç2×W7B÷Vâ6W&FVÇ’r“°¦76W'BæÖF6‚‡WFFW2Â÷cƒ”÷VäV×Æ÷–VU&WVG2òÂtV×Æ÷–VR&WVB¦ö'2FWF–Ç2×W7B÷Vâ6W&FVÇ’r“°¦76W'BæÖF6‚‡WFFW2Âõ7G&–æuÂ†ÂæÖ—7F¶TV×ÇÅÇÂruÂ“ÓÓÕ7G&–æuÂ†ÖUÂæ–EÂ’òÂtV×Æ÷–VR&WVB6÷VçB×W7B&VÆöærFòF†RÖ—7F¶RV×Æ÷–VRr“°¦76W'BæÖF6‚‡WFFW2Âö6öç7B—FV×3ÕÅ¶¦ö"Æ76–væVBÆFBÆ–CÅÒòÂu7WW'f—6÷"Æ÷vW"6öçG&öÂ6WB×W7B–æ6ÇVFR¦ö"6&BFWF–Ç2Â76–væVBÂFF—F–öæÂF–ÖRæB6ö×7B”Cv—F†÷WBGWÆ–6FR–æ6VçF—fRr“°¦76W'BæÖF6‚‡WFFW2Â÷cBÖ–æ6VçF—fR×F÷òÂu7WW'f—6÷"F÷&÷r×W7B6öçF–âF†R6Æ–6¶&ÆR–æ6VçF—fRF–ÆRr“° ¢òòc#ÖævW"f–æÂ×'VÆR&Vw&W76–öâwV&G2à¦76W'BæÖF6‚‡WFFW2Âõc#ÔätU"Äôt”2UD„õ$•E’òÂtÖævW"f–æÂÆöv–2WF†÷&—G’×W7B&R&W6VçBr“°¦76W'BæÖF6‚‡WFFW2Â÷v–æF÷uÂçc#ÖævW$ÖöçF…7VÖÖ'’òÂtÖævW"ÖöçF†Ç’7VÖÖ'’×W7B†fRf–æÂ×'VÆR6Æ7VÆF–öâWF†÷&—G’r“°¦76W'BæÖF6‚‡WFFW2ÂöÖöçF†Ç”æ÷&ÖÄ7GVÄÖ–çWFW2òÂtÖævW"7GVÂ†÷W'2×W7BW6Ræ÷&ÖÂÖGWG’7GVÂF–ÖRWF†÷&—G’r“°¦76W'BæÖF6‚‡WFFW2ÂöÖöçF†Ç•7VvvW7FVDÖ–çWFW2òÂtÖævW"7VvvW7FVB†÷W'2×W7BW6RF†Rf–æÂÖöçF†Ç’7VvvW7FVBWF†÷&—G’r“°¦76W'BæÖF6‚‡WFFW2Âö–eÂ†ÖUÃõÂç&öÆSÓÓÒtÖævW"uÂ—&WGW&âv–æF÷uÂæ÷VäÖævW$–æ6VçF—fTÆ—7EÂ…Â’òÂtÖævW"–æ6VçF—fR6Æ–6²×W7B&÷WFRFòF†Rf–æÂcrÖ6ö×F–&ÆR&W÷'Br“°¦76W'BæÖF6‚‡WFFW2Âô”CGWG’×F–ÖR—2–æ6ÇVFVB–â6†–WfVB'WBW†6ÇVFVBg&öÒ&öGV7F—fRVff–6–Væ7’æB¤2Æ&÷W"6÷7C²÷fW'F–ÖR—2W†6ÇVFVBòÂtÖævW"–æ6VçF—fRW‡ÆæF–öâ×W7BÖF6‚f–æÂ”C6†–WfVB'VÆRr“° ¦76W'BæÖF6‚‡WFFW2Âõc#"ÔätU"d”äÂDôÒÂò4õTåDU"UD„õ$•E’òÂtÖævW"f–æÂDôÒö6÷VçFW"WF†÷&—G’×W7B&R&W6VçBr“°¦76W'BæÖF6‚‡WFFW2Â÷c#f–æ—6†VD¦ö'5Â‚wG'VRuÂ—Çc#f–æ—6†VD¦ö'5Â‡G'VUÂ’òÂtÖævW"6ö×ÆWFVB6÷VçFW"×W7BW6RVæ—VR6ö×ÆWFVB¦ö"6&G2r“°¦76W'BæÖF6‚‡WFFW2Â÷c#&VG”¦ö'5Â…Â•ÂæÆVæwF‚òÂtÖævW"&VG’f÷"FVÆ—fW'’6÷VçFW"×W7BW6Rf–æÂ&VG’¦ö"6&G2r“°¦76W'BæÖF6‚‡WFFW2Âö–æ5Âç6Æ–6UÂƒÂ•Âæf÷$V6‚òÂtÖævW"×W7B7W&W72GWÆ–6FR–æ6VçF—fR6öçG&öÇ2r“° ¦76W'BæÖF6‚‡WFFW2Âõc#2ÔätU"tõ$µ4„õU$dõ$Ôä4RòÂtÖævW"v÷&·6†÷W&f÷&Öæ6R6V7F–öâ×W7B&R&W6VçBr“°¦76W'BæÖF6‚‡WFFW2Â÷c#4ÖævW%W&f÷&Öæ6U&ævRòÂtÖævW"W&f÷&Öæ6R×W7B7W÷'BFöF’æBF†—2ÖöçF‚&ævW2r“°¦76W'BæÖF6‚‡WFFW2Âõv÷&²–â&öw&W72òÂtÖævW"W&f÷&Öæ6R×W7BW‡÷6Rv÷&²–â&öw&W72r“°¦76W'BæÖF6‚‡WFFW2Âõ&VG’f÷"FVÆ—fW'’òÂtÖævW"W&f÷&Öæ6R×W7BW‡÷6R&VG’f÷"FVÆ—fW'’r“°¦76W'BæÖF6‚‡WFFW2Âô÷fW"ÆÆö6FVBòÂtÖævW"W&f÷&Öæ6R×W7BW‡÷6R÷fW"ÖÆÆö6FVBv÷&²r“°¦76W'BæÖF6‚‡WFFW2Âõv÷&·6†÷Vff–6–Væ7’òÂtÖævW"W&f÷&Öæ6R×W7BW‡÷6RVff–6–Væ7’r“°¦76W'BæÖF6‚‡WFFW2Âõ&WVBv÷&²òÂtÖævW"W&f÷&Öæ6R×W7BW‡÷6R&WVBv÷&²r“°¦76W'BæÖF6‚‡WFFW2ÂôÆ&÷W"6÷7BòÂtÖævW"W&f÷&Öæ6R×W7BW‡÷6RÆ&÷W"6÷7Br“° ¦76W'BæÖF6‚‡WFFW2Âö6öç7B7GVÃÕÂ†Æg&öÒÇFõÂ“ÓåÇ·G'•Ç·&WGW&âG—Vöbv–æF÷uÂçct76–væÖVçDæ÷&ÖÃÓÓÒvgVæ7F–öâròÂtÖævW"v÷&·6†÷W&f÷&Öæ6R×W7BW6Ræ÷&ÖÂÖGWG’76–væÖVçBF–ÖRæBW†6ÇVFR÷fW'F–ÖRr“°¦76W'BæÖF6‚‡WFFW2Âö6öç7BF÷FÄæ÷&ÖÃÖÓæ7GVÅÂ†ÃÄFFUÂææ÷uÂ…Â•Â’òÂt÷fW"ÖÆÆö6FVB7FGW2×W7B6ö×&R7V×VÆF—fRæ÷&ÖÂÖGWG’7GVÂF–ÖRv—F‚ÆÆö6FVBF–ÖRr“°¦76W'BæFöW4æ÷DÖF6‚‡WFFW2Â÷v–æF÷uÂæ76–væÖVçDæ÷&ÖÄÖ–çWFW2òÂtÖævW"W&f÷&Öæ6R×W7Bæ÷BFWVæBöâæöæW†—7FVçB76–væÖVçDæ÷&ÖÄÖ–çWFW2†VÇW"r“° ¢òòc#BFF—F–öæÂF–ÖRf–æÂÖWF†÷&—G’6öçG&7G2à¦76W'BæÖF6‚‡WFFW2Âõc#BDD•D”ôäÂD”ÔRd”äÂUD„õ$•E’òÂtFF—F–öæÂF–ÖR×W7B†fRöæRf–æÂ×WFF–öâWF†÷&—G’r“°¦76W'BæÖF6‚‡WFFW2Â÷&WVW7Bbg&WVW7EÂç7FGW2ÓÒtæWrròÂv&÷fVB&WVW7G2×W7Bæ÷BÇ’FF—F–öæÂF–ÖRGv–6Rr“°¦76W'BæÖF6‚‡WFFW2Âö76–væÖVçD–C¦Âæ–BòÂtFF—F–öæÂF–ÖRVF—B&÷w2×W7B–FVçF–g’F†RW†7B76–væÖVçBr“°¦76W'BæÖF6‚‡WFFW2ÂöFF—F–öæÄ7F–öäÆ–VC×G'VRòÂv&÷fVB&WVW7B×W7B&V6÷&BF†B—G2FF—F–öæÂF–ÖRv2Æ–VBr“°¦76W'BæÖF6‚‡WFFW2Âö–eÂ‡%Âç7FGW2ÓÒtæWruÂ—&WGW&âÆW'BòÂu7WW'f—6÷"&÷fÂ×W7B&V¦V7BâÇ&VG’†æFÆVB&WVW7Br“°¦76W'BæÖF6‚‡WFFW2Âöf–æD76–væÖVçEÂ‡%Âæ¦ö"Ç%ÂæV×Â’òÂv&÷fÂ×W7BF&vWBF†RÆFW7B7F—fR76–væÖVçBÂæ÷B†—7F÷&–6Â6ö×ÆWFVB76–væÖVçBr“° ¢òòc#R&WVBv÷&²Æ–fV7–6ÆRÖ7–6ÆR6öçG&7G2à¦76W'BæÖF6‚‡WFFW2Âõc#R$UTB5”4ÄRUD„õ$•E’òÂu&WVBv÷&²×W7B†fRâW‡Æ–6—BÆ–fV7–6ÆRÖ7–6ÆRWF†÷&—G’r“°¦76W'BæÖF6‚‡WFFW2Â÷&WVD7–6ÆT–C¦7–6ÆT–BòÂvæWr&WVB76–væÖVçG2×W7B6''’âW‡Æ–6—B&WVB7–6ÆR–Br“°¦76W'BæÖF6‚‡WFFW2Â÷&WVD7–6ÆTæó¦7–6ÆTæòòÂvæWr&WVB76–væÖVçG2×W7B6''’â÷&FW&VB&WVB7–6ÆRçVÖ&W"r“°¦76W'BæÖF6‚‡WFFW2ÂöW†—7F–æuÂç6öÖUÂ†ÓâÂæ6ö×ÆWFVEÂ’òÂvæWr&WVB7–6ÆR×W7B&R&Æö6¶VBv†–ÆRF†R7W'&VçB&WVB—2Væf–æ—6†VBr“°¦76W'BæÖF6‚‡WFFW2Âö¥Âç7FGW3Òt÷Vâs¶FVÆWFR¥Âæ6ö×ÆWFVDC¶¥ÂæFVÆ—fW&VCÖfÇ6RòÂv—77V–ær&WVBv÷&²×W7B&V÷VâF†R¦ö"6&BæB&VÖ÷fR&VG’Öf÷"ÔFVÆ—fW'’7FFRr“°¦76W'BæÖF6‚‡WFFW2Â÷G—Vöbv–æF÷uÂçc#T7W'&VçD7–6ÆSÓÓÒvgVæ7F–öâròÂtf–æ—6†VBæB&VG’Æöv–2×W7BW6RöæÇ’F†R7W'&VçB&WVB7–6ÆRr“°¦76W'BæÖF6‚‡WFFW2ÂöÆVv7’×&WVBÒòÂvÆVv7’&WVB76–væÖVçG2×W7B&V6V—fR7F&ÆRfÆÆ&6²7–6ÆR–FVçF—F–W2r“° ¢òòÖævW"òv†öÆRÖ¦ö"6öçG&7G0¦76W'BæÖF6‚‡WFFW2ÂôÂ‡…ÂææõÂ•ÂæWfW'•Â†ÓæÂæ6ö×ÆWFVEÂ’òÂu&VG’f÷"FVÆ—fW'’&WV—&W2ÆÂ76–væÖVçG26ö×ÆWFRr“°¦76W'BæÖF6‚‡WFFW2Â÷v–æF÷uÂæÆ&÷W$6÷7CÖgVæ7F–öåÂ†Â•Ç¶–eÂ†—4†öÆD76–væÖVçEÂ†Â•Â—&WGW&â²òÂt”CÆ&÷W"6÷7B×W7B&R¦W&òr“° ¢òò&VÆV6R÷WFFR6öçG&7G0¦76W'BæÖF6‚‡&VÆV6Uv÷&¶fÆ÷rÂöÆFW7B×fW'6–öåÂæ§6öâòÂv&÷fVB&VÆV6Rv÷&¶fÆ÷r×W7BWFFRV&Æ—6†VBÖWFFFr“°¦76W'BæÖF6‚‡&VÆV6Uv÷&¶fÆ÷rÂõ¥T´•EõD”ÔUõE$4µôÄDU5EÂæ²òÂv&÷fVB&VÆV6Rv÷&¶fÆ÷r×W7BV&Æ—6‚F†R7F&ÆRWFFR76WBr“°¦76W'BæÖF6‚‡&VÆV6Uv÷&¶fÆ÷rÂö·6–væW"â§fW&–g—ÇfW&–g’Ò×fW&&÷6RÒ×&–çBÖ6W'G2÷2Âv&÷fVB&VÆV6R×W7BfW&–g’²6–væGW&Rr“° ¦6öç7BƒÒt”Cs°¦6öç7B7F—fU6W76–öãÒ‡7FFRÆV×“Óâ‡7FFRç6W76–öç7ÇÅµÒ’æf–æB‡3Óç2æV×ÓÓÖV×bb2æVæB“°¦6öç7B÷Vä†öÆCÒ‡7FFRÆV×“Óâ‡7FFRæ76–vçÇÅµÒ’æf–æB†Óææ¦ö#ÓÓÔ‚bfæV×ÓÓÖV×bbæ6æ6VÆÆVBbbæ6ö×ÆWFVB“°¦6öç7B÷Väæ÷&ÖÃÒ‡7FFRÆV×“Óâ‡7FFRæ76–vçÇÅµÒ’æf–ÇFW"†Óææ¦ö"ÓÔ‚bfæV×ÓÓÖV×bbæ6æ6VÆÆVBbbæ6ö×ÆWFVB“°¦6öç7Bf–Æ&ÆTf÷$–FVÃÒ‡7FFRÆV×“Óâ7F—fU6W76–öâ‡7FFRÆV×’bf÷Väæ÷&ÖÂ‡7FFRÆV×’æÆVæwFƒÓÓÓbb÷Vä†öÆB‡7FFRÆV×“°¦6öç7B&VG“Ò‡7FFRÆ¦ö$æò“Óç°¢6öç7B&÷w3Ò‡7FFRæ76–vçÇÅµÒ’æf–ÇFW"†Óææ¦ö#ÓÓÖ¦ö$æòbbæ6æ6VÆÆVB“°¢&WGW&â&÷w2æÆVæwFƒãbg&÷w2æWfW'’†Óææ6ö×ÆWFVB“°§Ó°¦6öç7B7GVÄf÷#Ò‡7FFRÆ–B“Óâ‡7FFRç6W76–öç7ÇÅµÒ’æf–ÇFW"‡3Óç2æ76–væÖVçD–CÓÓÖ–B’ç&VGV6R‚†âÇ2“Óæâ´ÖF‚æÖ‚ƒÂ‚‡2æVæCó÷2ç7F'B’×2ç7F'B’óc’Ã“°¦6öç7B&V÷VãÒ‡7FFRÆ–B“Óç°¢6öç7B×7FFRæ76–vâæf–æB‡ƒÓç‚æ–CÓÓÖ–B“°¢6öç7B&Vf÷&S×¶–C¦æ–BÆ7GVÃ¦7GVÄf÷"‡7FFRÆ–B’Ç7VvvW7FVC¦ç7VvvW7FVBÆ6ö×ÆWFVDC¦æ6ö×ÆWFVDGÓ°¢æ6ö×ÆWFVCÖfÇ6S²FVÆWFRæ6ö×ÆWFVDC²ç&V÷VæVM¸×{h‘éì¶»§q«^w/leave/rules.js','utf8'), /return\[\[d\+8\*3600000,d\+13\*3600000\],\[d\+15\*3600000,d\+19\*3600000\]\]/, 'full-day leave must exclude the 13:00â€“15:00 lunch break');
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+const read = p => fs.readFileSync(p, 'utf8');
+const gradle = read('app/build.gradle');
+const main = read('app/src/main/java/com/zukait/timetrack/MainActivity.java');
+const updates = read('app/src/main/assets/v74_updates.js');
+const supervisorStable = read('app/src/main/assets/supervisor_stable.js');
+const v65 = read('app/src/main/assets/v65_updates.js');
+const v66 = read('app/src/main/assets/v66_updates.js');
+const v67 = read('app/src/main/assets/v67_updates.js');
+const html = read('app/src/main/assets/offline_test.html');
+const cloud = read('app/src/main/assets/cloud_sync.js');
+const liveStatusAuthority = read('app/src/main/assets/live_status_authority.js');
+const metadata = JSON.parse(read('latest-version.json'));
+const releaseWorkflow = read('.github/workflows/publish-approved-release.yml');
+const workshopApi = read('supabase/functions/workshop-api/index.ts');
+
+const versionCode = Number((gradle.match(/versionCode\s+(\d+)/)||[])[1]);
+const versionName = (gradle.match(/versionName\s+['"]([^'"]+)['"]/ )||[])[1];
+assert.ok(Number.isInteger(versionCode) && versionCode > 0, 'Android versionCode must be a positive integer');
+assert.match(versionName||'', /^V\d+$/, 'Android versionName must use V<number> format');
+assert.match(main, /getPackageInfo\(getPackageName\(\), 0\)/, 'native bridge must read the installed APK package info');
+assert.match(main, /return installedVersionName\(\);/, 'native bridge must report installed versionName');
+assert.match(main, /return installedVersionCode\(\);/, 'native bridge must report installed versionCode');
+assert.doesNotMatch(main, /getAppVersion\(\)[\s\S]{0,120}return "V74"/, 'native version name must not be hard-coded');
+assert.ok(Number(metadata.versionCode) <= versionCode, 'published metadata cannot be newer than candidate build');
+assert.equal(metadata.package, 'com.zukait.timetrack');
+
+
+// Consumables full-state preservation: stale devices must not erase nested shared data.
+assert.match(workshopApi,/function preserveConsumablesHistory\(candidate: any, current: any\)/,'server must preserve consumables records across stale full-state saves');
+assert.match(workshopApi,/\["materials","brands","prices","issues","actuals","audit"\]/,'server preservation must cover every consumables collection');
+assert.match(workshopApi,/candidate = preservePaintPurchasingHistory\(preserveConsumablesHistory\(preserveOperationalHistory/,'save authority must apply paint + consumables preservation before commit');
+
+// Real-time Manager / Supervisor authority contracts.
+assert.match(liveStatusAuthority, /window\.currentStaffStatuses=function\(\)[\s\S]*?if\(serverRequired\(\)\)return \[\]/, 'online Manager/Supervisor staff status must fail closed instead of falling back to stale local sessions');
+assert.match(liveStatusAuthority, /window\.currentActiveWorkers=function\(\)[\s\S]*?if\(serverRequired\(\)\)return \[\]/, 'online Active Workers must not fall back to stale local sessions');
+assert.match(liveStatusAuthority, /window\.v79CurrentWorkerRows=function\(\)[\s\S]*?if\(serverRequired\(\)\)return \[\]/, 'legacy worker-row API must remain server authoritative online');
+assert.match(liveStatusAuthority, /window\.v84TechState=function\(u\)[\s\S]*?if\(serverRequired\(\)\)return\{session:null,status:'Syncing'\}/, 'technician board must show Syncing rather than stale local status when server live data is unavailable');
+assert.match(liveStatusAuthority, /window\.v65OpenControl=function\(type\)[\s\S]*?serverRequired\(\)&&type==='working'/, 'Manager Working Now details must remain server authoritative');
+assert.match(liveStatusAuthority, /window\.addEventListener\('zukait-live-status',apply\)/, 'live status updates must immediately reconcile Manager/Supervisor UI');
+assert.doesNotMatch(liveStatusAuthority, /setInterval\(apply,1000\)/, 'Manager/Supervisor live UI must be event-driven and must not repaint the dashboard every second');
+assert.match(liveStatusAuthority, /addEventListener\('zukait-live-status',apply\)/, 'Manager/Supervisor live UI must refresh from authoritative live-status events');
+assert.match(supervisorStable, /if\(window\.me&&navigator\.onLine&&window\.me\.role==='Supervisor'\)return\[\]/, 'authoritative Supervisor renderer must not use local activeSession fallback while online');
+assert.match(supervisorStable, /Today at a Glance[\s\S]*Active Workers[\s\S]*Working Now[\s\S]*Paused Jobs[\s\S]*Finished Jobs[\s\S]*Over Allocated[\s\S]*Ideal Worker/, 'Supervisor stable renderer must retain the approved six-card Today at a Glance layout with Ideal Worker in slot six');
+assert.match(supervisorStable, /\.v143-glance\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, 'Supervisor Today at a Glance must remain a 3-column by 2-row grid');
+assert.doesNotMatch(supervisorStable, /class="v143-ot"/, 'Supervisor stable dashboard must not restore the redundant standalone Overtime Now row');
+assert.ok(supervisorStable.includes("onclick=\"v158OpenWorkingNow()\"") && supervisorStable.includes("window.v158OpenWorkingNow=function()"), 'Working Now card must open through the stable Supervisor action authority');
+assert.match(supervisorStable, /window\.v143OpenReadyForDelivery=function\(\)/, 'Ready for Delivery detail route must remain available as a separate workflow');
+assert.match(supervisorStable, /onclick="v143OpenIdealWorker\(\)"/, 'Ideal Worker card must use the stable authoritative Ideal Time detail route');
+
+
+
+
+
+// Employee work-state safety: read paths must not mutate sessions, and ID001 must use exact assignment sessions.
+assert.match(updates,/window\.activeSession=function\(emp\)\{[\s\S]*?const latest=latestSessionForEmployee\(emp\);[\s\S]*?return latest&&!latest\.end\?latest:null;[\s\S]*?\};/,'activeSession must remain a read-only current-session lookup');
+assert.doesNotMatch(updates,/window\.activeSession=function\(emp\)\{\s*reconcileEmployeeSessions\(emp\)/,'activeSession must never reconcile/mutate sessions during render or button-state reads');
+assert.match(updates,/function latestSessionForEmployee\(emp\)[\s\S]*?String\(s\.emp\)===String\(emp\)[\s\S]*?a\.end==null\?1:0[\s\S]*?b\.end==null\?1:0/,'all employees must deterministically prefer an open running session when timestamps tie');
+assert.doesNotMatch(updates,/const productive=\(emp,from,to\)=>\{\s*try\{if\(typeof window\.v79ReconcileWorkSessions/,'productive-time refresh must not mutate/reconcile employee sessions');
+assert.doesNotMatch(updates,/const waiting=\(emp,from,to\)=>\{\s*try\{if\(typeof window\.v79ReconcileWorkSessions/,'ID001-time refresh must not mutate/reconcile employee sessions');
+assert.doesNotMatch(updates,/window\.overtimeForEmployee=\(emp,from,to\)=>\{\s*try\{if\(typeof window\.v79ReconcileWorkSessions/,'overtime refresh must not mutate/reconcile employee sessions');
+assert.doesNotMatch(updates,/window\.v42AfterCloudPull=function\(\)[\s\S]{0,400}?reconcileAllSessionsV79\(\)/,'cloud pull/render path must not auto-close an active employee session');
+assert.doesNotMatch(updates,/window\.render=function\(\)[\s\S]{0,300}?reconcileAllSessionsV79\(\)/,'normal render must not auto-close an active employee session');
+assert.doesNotMatch(updates,/window\.monthlyNormalActualMinutes=function\(emp,from,to\)\{\s*reconcileEmployeeSessions\(emp\)/,'monthly running-time calculation must be read-only');
+assert.doesNotMatch(updates,/window\.start=function\(no\)\{[\s\S]{0,250}?reconcileEmployeeSessions\(me\.id\)/,'employee Start must not rewrite or close existing session history');
+
+
+assert.match(updates,/const exactLatestSession=a=>[\s\S]*?s\.assignmentId&&String\(s\.assignmentId\)===String\(a\.id\)/,'ID001 eligibility must inspect the exact assignment-bound latest session');
+assert.match(updates,/const assignmentPaused=a=>\{const s=exactLatestSession\(a\);return !!\(s&&s\.end&&s\.paused===true&&s\.finished!==true\)\}/,'ID001 paused-only eligibility must require an ended paused non-finished assignment session');
+assert.match(updates,/openNormal\(emp\)\.some\(a=>!assignmentPaused\(a\)\)/,'ID001 assignment guard must use exact per-assignment paused state');
+
+assert.ok(updates.includes('v110ID001ReportButton') && updates.includes('v110OpenID001Report'), 'Supervisor must show the ID001 Report beside the standalone ID001 assignment control');
+assert.ok(updates.includes('v110ID001Emp') && updates.includes('v110ID001From') && updates.includes('v110ID001To'), 'ID001 Report must support employee and date filtering');
+assert.ok(updates.includes('v110PrintID001Report') && updates.includes('Zukait_ID001_Report.pdf'), 'ID001 Report must support Print / PDF output');
+assert.ok(updates.includes("grid-template-columns:repeat(2,minmax(0,1fr))") && updates.includes('v110-id001-pair'), 'ID001 Assign and Report must remain a two-column Supervisor row');
+assert.ok(updates.includes("window.v135OpenManagerMenu=window.v111OpenManagerMenu") && updates.includes("mb.onclick=function(e){e.preventDefault();e.stopPropagation();menu()}") && updates.includes("row.onclick=null"), 'Manager menu button must open the canonical menu once and the identity row must remain noninteractive');
+assert.ok(updates.includes("v133OpenManagerLeave()") && updates.includes("v63OpenAbout()") && updates.includes("closeModal();logout()"), 'Manager menu must retain Leave Control, About / Update, and Logout');
+assert.ok(updates.includes('V139 MANAGER CONSUMABLES FINAL AUTHORITY') && updates.includes('v139OpenManagerConsumables'), 'Manager must have one final Consumables routing authority');
+assert.ok(updates.includes('V154 MANAGER WORKSHOP CONTROL ROOT AUTHORITY') && updates.includes('data-v154-spare') && updates.includes('v156ManagerSparePartsInvariant'), 'final Manager render authority must preserve exactly one Spare Parts control');
+assert.ok(updates.includes('v156ManagerSparePartsInvariant'), 'Manager Spare Parts control must be preserved by the final V156 Manager authority without delayed repaint loops');
+assert.ok(!updates.includes('color:#173b63!important;grid-column:1/-1!important}#managerView .v154-spare-logo'), 'Manager Spare Parts card must not force a full-width row');
+assert.ok(!/me\?\.role==='Manager'\)renderManager65\(\)/.test(v65), 'V65 Manager renderer must remain retired to prevent login UI flash');
+assert.ok(!/me\?\.role==='Manager'\)renderManager66\(\)/.test(v66), 'V66 Manager renderer must remain retired to prevent login UI flash');
+assert.ok(v67.includes("window.render=function(){if(me?.role==='Manager')return renderManager67();const r=prevRender();return r};") && v67.includes("window.renderManager=renderManager67;") && v67.includes("window.zukaitManagerRendererAuthority='V67';"), 'V67 Manager renderer must be the synchronous visible Manager authority');
+const stable=supervisorStable;
+assert.ok(!stable.includes("alert('Spare Parts â€” Coming Soon')"), 'final Supervisor renderer must not override the live Spare Parts module');
+assert.ok(stable.includes('v143BindStableActions') && stable.includes('v143OpenConsumables') && stable.includes('openSpareParts'), 'final Supervisor renderer must bind Consumables and Spare Parts to live module authorities');
+assert.ok(stable.includes("v143OpenReadyForDelivery") && stable.includes("window.v74Ready('supervisor')"), 'final Supervisor Ready for Delivery must route to the existing v74 lifecycle authority');
+assert.ok(!stable.includes('onclick="openReadyForDelivery()"'), 'final Supervisor renderer must not call undefined Ready for Delivery handler');
+assert.ok(updates.includes('window.v157OpenEmployeeParts=') && updates.includes("v157OpenEmployeeParts(\\''+esc(jobNo)+'\\')"), 'Denter Employee Parts List must use the guarded Employee launcher');
+assert.ok(updates.includes("changed&&out&&typeof out.then==='function'"), 'normal Job start after ID001 must preserve the asynchronous multi-device start boundary');
+assert.ok([v65,v66,v67].every(src=>src.includes('openConsumablesModule()')), 'all Manager renderer generations must open the real Consumables module');
+assert.ok(![v65,v66,v67,updates].some(src=>src.includes('Consumables details will be added later.')), 'no Manager Consumables placeholder alert may remain');
+assert.ok(updates.includes("buttons.length>1") && updates.includes("b.onclick=open"), 'final Manager Consumables authority must deduplicate controls and bind the real open handler');
+assert.ok(updates.includes('v133LeaveEmployee') && updates.includes('v133PrintLeave') && updates.includes('v133ShareLeave'), 'Manager Leave Management must retain employee filter, Print / PDF, and WhatsApp sharing');
+
+assert.ok(updates.includes('v91-identity-menu'), 'Employee menu must sit in the identity/online row');
+assert.ok(updates.includes('v93-employee-menu') && updates.includes('v93-menu-sync') && updates.includes('v93-menu-leave') && updates.includes('v93-menu-update') && updates.includes('v93-menu-logout'), 'Employee account actions must remain visually distinct and clickable');
+assert.ok(updates.includes('v80-rpm-gauge') && updates.includes('.v93-rpm-redline,.v93-rpm-needle,.v93-rpm-hub{display:none!important}'), 'Employee Running and Remaining Time must use the RPM-style gauge without redline/needle markers');
+assert.ok(updates.includes("v91RoleHeader('Supervisor')"), 'Supervisor must use the compact identity/online/menu row');
+assert.ok(updates.includes("root.dataset.supervisorUi='v103-authoritative'"), 'Supervisor final UI transformation must run even when legacy Today at a Glance was already replaced');
+assert.ok(updates.includes("let currentFinal=root.querySelector('.v74-supervisor-final')"), 'Supervisor finalizer must detect an existing authoritative overview independently of the legacy glance card');
+assert.ok(updates.includes("if(currentFinal&&currentFinal.isConnected)currentFinal.replaceWith(wrap)"), 'Supervisor finalizer must refresh an existing authoritative overview on every render');
+assert.ok(updates.includes("else if(glance&&glance.isConnected)glance.replaceWith(wrap)"), 'Supervisor finalizer must upgrade a legacy glance card when present');
+assert.ok(updates.includes("anchor.insertAdjacentElement('afterend',wrap)"), 'Supervisor finalizer must insert the authoritative overview even when no legacy glance card exists');
+assert.ok(updates.includes("filter(x=>!wrap.contains(x)&&(x.querySelector('h3')?.textContent||'').includes('Today at a Glance')).forEach(x=>x.remove())"), 'Supervisor finalizer must remove duplicate legacy glance surfaces');
+const v74AssetMatch=html.match(/v74_updates\.js\?v=(\d+)/);
+const stableAssetMatch=html.match(/supervisor_stable\.js\?v=(\d+)/);
+assert.ok(v74AssetMatch,'legacy v74 update bundle must be shipped');
+assert.ok(stableAssetMatch,'stable Supervisor authority asset must be shipped');
+assert.ok(html.indexOf(stableAssetMatch[0])>html.indexOf(v74AssetMatch[0]),'stable Supervisor authority must load after the legacy update bundle');
+assert.ok(!html.includes('V103 SUPERVISOR RUNTIME LOCK'), 'legacy V103 Supervisor runtime lock must stay retired');
+assert.match(supervisorStable,/V143 SUPERVISOR STABLE AUTHORITY/,'final stable Supervisor authority must exist');
+assert.match(supervisorStable,/window\.renderSupervisor=renderStable/,'stable authority must own renderSupervisor');
+assert.match(supervisorStable,/if\(role\(\)==='Supervisor'\)\{const r=renderStable\(\);bindStableActions\(\);return r\}/,'Supervisor render must bypass the legacy render chain and bind final actions');
+assert.doesNotMatch(supervisorStable,/MutationObserver/,'stable Supervisor UI must not use DOM observers');
+assert.match(supervisorStable,/grid-template-areas:"job tech" "time assign"/,'stable Assign\/Update must keep the agreed 2x2 layout');
+assert.match(supervisorStable,/id="v143JobSearch"/,'stable Supervisor renderer must contain the visible Job Card search');
+assert.match(supervisorStable,/id="sj" class="v143-internal"/,'stable Supervisor renderer must keep hidden #sj compatibility');
+assert.match(supervisorStable,/id="supervisorConsumablesTile"/,'stable Supervisor renderer must contain the paired Consumables card');
+
+assert.ok(updates.includes('v92-tech-board'), 'Supervisor must render the redesigned Technician Board');
+assert.ok(updates.includes('v92-tech-dept'), 'Technician Board department cards must use the authoritative redesigned UI');
+assert.ok(updates.includes('v92-supervisor-top'), 'Supervisor must keep Employee Requests and Available Workers in the compact top row');
+assert.ok(updates.includes("if(role==='Supervisor'){" ) && updates.includes("gh.style.setProperty('display','none','important')") && updates.includes("headerOnlineStatus"), 'Supervisor must hide all legacy/global online headers and show one identity row only');
+assert.ok(updates.includes("const actionGrid=root.querySelector('.v84-action-grid')"), 'ID001 Details must be placed in the compact lower Supervisor action grid');
+assert.ok(updates.includes("filter(x=>!(x.textContent||'').trim()).forEach(x=>x.remove())"), 'Supervisor lower action grid must remove empty legacy tiles');
+assert.ok(updates.includes("/^Details$/i") && updates.includes("v84-job-details"), 'Legacy Supervisor Details tile must normalize to one Job Card Details control');
+assert.ok(updates.includes('v92OpenAvailableWorkers'), 'Available Workers top card must open the available technician list');
+assert.ok(updates.includes('Tap to view â€º'), 'Technician Board department cards must expose their drill-down affordance');
+assert.ok(updates.includes("v91RoleHeader('Manager')"), 'Manager must use the compact identity/online/menu row');
+assert.ok(updates.includes('.manager-hero .pill{display:none!important}'), 'Manager duplicate live/online badge must be hidden');
+assert.match(updates, /ðŸ“‹ Job Card Details/, 'Supervisor detail control must be named Job Card Details');
+assert.match(updates, /v80RunningGauge/, 'employee running gauge must exist');
+assert.match(updates, /v80RemainingGauge/, 'employee remaining gauge must exist');
+assert.match(updates, /rr\.textContent=fm\(worked\)/, 'running gauge must use accumulated actual assignment time');
+assert.match(updates, /p>=100\?'v80-red':p>75\?'v80-orange':p>50\?'v80-blue':'v80-green'/, 'running gauge color thresholds must be preserved');
+assert.match(updates, /left<=0\?'v80-red':leftPct<25\?'v80-orange':leftPct<50\?'v80-blue':'v80-green'/, 'remaining gauge color thresholds must be preserved');
+assert.match(updates, /EXCEEDED/, 'remaining gauge must show exceeded state');
+assert.match(updates, /vehicleBrand/, 'vehicle brand detection must exist');
+assert.match(updates, /vehicleBadge/, 'vehicle badge rendering must exist');
+assert.ok(updates.includes("esc(me.name)+' Â· '+esc(dept)"), 'employee header must show name and department');
+assert.ok(!updates.includes("WORK SMARTER â€¢ BETTER TOMORROW"), 'duplicate employee banner tagline must be removed');
+assert.ok(!updates.includes("esc(me.name)+' â€“ Employee'"), 'generic duplicate Employee identity must be removed');
+assert.match(updates, /currentRemaining',!hasAlloc\?'â€”':left<=0\?'\+'\+fm/, 'zero allocation must show no allocated time and negative remaining time must use exceeded display');
+assert.match(updates, /NO ALLOCATED TIME/, 'zero allocation must show a clear no allocated time state');
+
+// Shared data consistency contracts
+assert.match(cloud, /const pollMs=\(\)=>document\.visibilityState==='hidden'\?30000:1000/, 'cloud revision heartbeat must detect active-device changes within about one second while remaining battery-aware when hidden');
+assert.match(cloud, /visibilitychange[\s\S]*?refreshVisibleSharedState/, 'dashboard must refresh shared state when the app becomes visible');
+assert.match(cloud, /window\.addEventListener\('focus',refreshVisibleSharedState\)/, 'dashboard must refresh shared state when the app regains focus');
+assert.match(cloud, /if\(cloudDirty&&!cloudPushing\)await push\(0\)/, 'local changes must be pushed before a forced shared-state refresh');
+assert.match(cloud, /threeWayMerge\(base,remote,localSnapshot\)/, 'Supervisor and Manager concurrent changes must merge against the shared revision');
+assert.match(cloud, /mergeEmployeeConflict\(remote,localSnapshot,me\.id\)/, 'Employee concurrent changes must merge only their own work into shared state');
+assert.match(cloud, /if\(changed\) scheduleDashboardRender\(previousSnapshot,state\)/, 'received shared revisions must pass through the role-scoped structural render gate');
+assert.doesNotMatch(cloud, /if\(me\)try\{render\(\)\}/, 'cloud sync must not directly rebuild dashboard roots');
+
+// Employee contracts
+assert.match(updates, /openNormal=emp=>[\s\S]*?a\.job!==H[\s\S]*?!a\.cancelled[\s\S]*?!a\.completed/, 'normal open work must be detected');
+assert.match(updates, /availableForIdeal=emp=>!activeSession\(emp\)&&!openHold\(emp\)/, 'ID001 must be available when there is no running session, including when productive work is paused');
+assert.match(updates, /window\.v75AssignIdealToAvailable=function\(\)\{return\{ok:false,reason:'one_by_one_only'/, 'ID001 bulk assignment must be retired; Supervisor assigns one employee at a time');
+assert.match(updates, /idealSafeVersion:1/, 'legacy safe ID001 marker must remain supported');
+assert.match(updates, /V106 ID001 FINAL AUTHORITY/, 'final ID001 assignment authority must be present');
+assert.match(updates, /idealSafeVersion:SAFE/, 'final ID001 assignments must write the current safe marker');
+assert.match(updates, /window\.v106ID001FinalAuthority=true/, 'final ID001 authority marker must be present');
+assert.match(updates, /window\.v38CheckID001=function\(\)\{return false\}/, 'legacy ID001 auto-finish must be disabled');
+assert.match(updates, /START \/ STOP only|START \/ STOP/, 'ID001 must remain start/stop only');
+assert.ok(updates.includes("'Overtime'") && updates.includes('overtimeMin'), 'Employee monthly dashboard must show Overtime');
+assert.match(updates, /x\.job!==H[\s\S]*?sessionOvertimeMinutes/, 'ID001 must be excluded from monthly overtime');
+assert.match(updates, /window\.monthlySuggestedMinutes=\(emp,from,to\)=>\(state\.assign\|\|\[\]\)\.filter\(a=>a&&String\(a\.emp\)===String\(emp\)&&a\.job!==H/, 'monthly Suggested Time must exclude ID001');
+assert.match(updates, /Final screenshot-style Employee dashboard/, 'stable Employee renderer must be the final standalone renderer');
+
+assert.match(updates, /V75\.2 HOLIDAY \+ ID001 RUNTIME AUTHORITY/, 'V75.2 runtime authority must be present');
+assert.match(updates, /getDay\(\)===5/, 'Friday must always be treated as a workshop holiday');
+assert.match(updates, /state\.workshopHolidays/, 'manager public-holiday state must exist');
+assert.match(updates, /v75OpenPublicHolidays/, 'Manager Admin public holiday control must exist');
+assert.match(updates, /ID001 can run only during duty hours: 08:00â€“13:00 and 15:00â€“19:00/, 'ID001 start must be blocked outside duty hours');
+assert.match(updates, /stopID001AtDutyEnd/, 'active ID001 must stop at the duty boundary');
+assert.match(updates, /window\.monthlyIdealTimeMinutes=idealGapMinutes/, 'Ideal Time must use gaps between sessions, not ID001 duration');
+assert.match(updates, /window\.overtimeForEmployee=.*overtimeMinutes/s, 'holiday-aware overtime must be authoritative');
+
+// V75.3 ID001 report / manual-start contracts
+assert.match(updates, /V75\.3 ID001 REPORT \+ TIME BREAKDOWN/, 'V75.3 ID001 report runtime must be present');
+assert.match(updates, /window\.v753ManualStartOnly=true/, 'manual-start-only contract marker must be present');
+assert.equal((updates.match(/state\.sessions\.push\s*\(/g)||[]).length,2,'candidate update layer must create sessions only from the two explicit Start flows: normal work and ID001');
+assert.match(updates, /finishedDone=done\.filter\(a=>a\.job!==H\)/, 'Employee Finished Jobs must exclude ID001');
+assert.match(updates, /v753OpenID001Report/, 'Supervisor/Manager ID001 report must exist');
+assert.match(updates, /v753From/, 'ID001 report must include From date filter');
+assert.match(updates, /v753To/, 'ID001 report must include To date filter');
+assert.match(updates, /Total Actual Working/, 'Employee dashboard must show Total Actual Working');
+assert.match(updates, /Productive Actual/, 'Employee dashboard must show Productive Actual separately');
+assert.match(updates, /ID001 Time/, 'Employee dashboard must show ID001 Time separately');
+assert.match(updates, /ID001 DETAILS \/ HOURS/, 'Supervisor/Manager dashboards must expose the ID001 report control');
+
+
+assert.match(updates, /V120 FINISHED \/ READY DELIVERY CYCLE AUTHORITY/, 'finished and ready-for-delivery must use the current work-cycle authority');
+assert.match(updates, /function cycle\(no\)\{if\(typeof window\.v125CurrentCycle==='function'\)return window\.v125CurrentCycle\(no\)/, 'finished and ready logic must use the explicit current repeat-work cycle');
+assert.match(updates, /function complete\(no\)\{const rows=cycle\(no\);return rows\.length>0&&rows\.every\(a=>a\.completed\)\}/, 'a Job Card must finish only when every assignment in the current cycle is complete');
+assert.match(updates, /function readyJobs\(\)\{return finishedJobs\(false\)\.filter\(j=>!j\.delivered\)\}/, 'delivered Job Cards must be excluded from Ready for Delivery');
+assert.match(updates, /openSupervisorFinishedWindow=function\(\)\{showSupervisorModal\('âœ… Finished Job Cards Today',table\(finishedJobs\(true\),'supervisor'\)\)\}/, 'Supervisor Finished Jobs must show unique completed Job Cards');
+assert.match(updates, /v120SyncJobLifecycle/, 'parent Job Card status must synchronize to the current normal or repeat-work cycle');
+
+// Native dialog contract: no WebView URL banner should be shown to users.
+assert.match(main, /boolean onJsAlert\(WebView view, String url, String message, JsResult result\)/, 'Android wrapper must intercept JavaScript alerts');
+assert.match(main, /boolean onJsConfirm\(WebView view, String url, String message, JsResult result\)/, 'Android wrapper must intercept JavaScript confirms');
+assert.match(main, /boolean onJsPrompt\(WebView view, String url, String message, String defaultValue, JsPromptResult result\)/, 'Android wrapper must intercept JavaScript prompts');
+assert.match(main, /setTitle\("Zukait Time Track"\)/, 'native JavaScript dialogs must use app branding');
+assert.match(main, /text\.startsWith\("Request sent to Supervisor"\)/, 'request-sent success should use a native toast instead of a blocking browser alert');
+
+// V75.4 final runtime contracts
+assert.match(updates, /v75NormalAssignmentAvailableMinutes/, 'Ideal Time must use actual normal-work availability');
+assert.match(updates, /a\.job!==previousJob/, 'Ideal Time must require other normal work, not just the paused/finished job itself');
+assert.match(updates, /v754ReconcileID001Globally/, 'ID001 duty-end reconciliation must run globally for any role/device');
+assert.match(updates, /setInterval\(reconcileID001Globally,15000\)/, 'global ID001 reconciliation timer must be present');
+assert.match(updates, /v42AfterCloudPull=function/, 'ID001 reconciliation must run after cloud pulls');
+assert.match(updates, /cells\.some\(v=>v===HOLD/, 'legacy finished/production cleanup must inspect all table cells');
+assert.match(updates, /v753ReportFilter/, 'ID001 report must preserve selected date filters');
+assert.match(updates, /v753OpenID001Report\(true\)/, 'ID001 employee-detail Back must preserve filters');
+assert.match(updates, /window\.v753SaveReportFilter/, 'date-filter callback must be globally accessible to inline controls');
+assert.match(updates, /window\.v754FinalRuntimeFixes=true/, 'final runtime fix marker must be present');
+
+
+
+
+// Supervisor contracts
+assert.match(updates, /window\.v71ReopenSameAssignment=function/, 'Supervisor reopen-same flow must exist');
+assert.match(updates, /previousCompletedAt:finishedAt/, 'reopen must preserve completion history');
+assert.match(updates, /actualAtReopen:worked/, 'reopen must record retained actual time');
+assert.match(updates, /openModal\('<div class="v74-d"><h2>â†» Reopen Same Assignment/, 'reopen must use in-app modal');
+assert.match(updates, /j\.status='Open';delete j\.completedAt/, 'reopen must reset parent Job Card status and completion date');
+
+
+
+// V104 Supervisor runtime regression guard
+assert.doesNotMatch(html, /V103 SUPERVISOR RUNTIME LOCK/, 'legacy V103 Supervisor runtime lock must remain retired');
+assert.doesNotMatch(html, /window\.v87SupervisorRuntimeLock=true/, 'legacy V87 runtime wrapper must remain retired');
+assert.match(updates, /v89-two-col/, 'Supervisor Quick Entry and Assign Update must use the locked two-column grid');
+assert.match(updates, /\.v89-two-col\{display:grid!important;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/, 'Supervisor two-column layout must override legacy/mobile CSS');
+assert.match(updates, /\.v84-action-grid\{display:grid!important;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/, 'Supervisor lower controls must remain compact two-column boxes');
+assert.match(updates, /\.v84-depts\{display:grid!important;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)!important/, 'Technician Board must remain three department boxes');
+assert.match(updates, /\['Denter','DENTING'[^\n]+\['Painter','PAINTING'[^\n]+\['Mechanic','MECHANICAL'/, 'Technician Board must expose Denting, Painting and Mechanical');
+assert.match(updates, /v84OpenDept/, 'Technician Board department popup must exist');
+assert.match(updates, /v84ToggleTech/, 'Technician detail navigation must exist');
+assert.equal((updates.match(/function v84TechnicianBoard\(/g)||[]).length,1,'Technician Board must have exactly one authoritative renderer');
+assert.doesNotMatch(html, /v56-technician-board-card/, 'base HTML must not recreate the legacy Technician Board');
+assert.doesNotMatch(read('app/src/main/assets/v54_improvements.js'), /v54OpenTechnicianBoard/, 'V54 legacy Technician Board modal must remain retired');
+assert.match(updates, /const v103SupervisorOverviewAuthority=window\.supervisorOverview/, 'V103 must capture the authoritative Supervisor overview before later wrappers');
+assert.match(updates, /x\.status==='Working'\|\|x\.status==='Overtime'/, 'Technician Board working count must exclude paused technicians');
+assert.match(read('app/src/main/assets/technician_workload.js'), /s\.assignmentId\?same\(a\.id,s\.assignmentId\)/, 'Technician workload must match the current live assignment by ID');
+assert.ok(html.includes("{id:'EMP012',name:'Jijesh',role:'Employee',department:'Painter'}"), 'Jijesh roster spelling must remain correct');
+assert.match(updates, /v89-employee-lower/, 'Employee lower dashboard must use compact controls');
+assert.match(updates, /\.v89-employee-lower\{display:grid!important;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/, 'Employee lower dashboard must remain two columns');
+assert.match(updates, /v89OpenEmployeeFinished/, 'Employee Finished Jobs details must open separately');
+assert.match(updates, /v89OpenEmployeeRepeats/, 'Employee Repeat Jobs details must open separately');
+assert.match(updates, /String\(a\.mistakeEmp\|\|''\)===String\(me\.id\)/, 'Employee repeat count must belong to the mistake employee');
+assert.match(updates, /const items=\[job,assigned,add,id001\]/, 'Supervisor lower control set must include Job Card Details, Assigned, Additional Time and compact ID001 without duplicate Incentive');
+assert.match(updates, /v104-incentive-top/, 'Supervisor top row must contain the clickable Incentive tile');
+
+// V121 Manager final-rule regression guards.
+assert.match(updates,/V121 MANAGER LOGIC AUTHORITY/,'Manager final logic authority must be present');
+assert.match(updates,/window\.v121ManagerMonthSummary/,'Manager monthly summary must have a final-rule calculation authority');
+assert.match(updates,/monthlyNormalActualMinutes/,'Manager actual hours must use normal-duty actual time authority');
+assert.match(updates,/monthlySuggestedMinutes/,'Manager suggested hours must use the final monthly suggested authority');
+assert.match(updates,/if\(me\?\.role==='Manager'\)return window\.openManagerIncentiveList\(\)/,'Manager incentive click must route to the final V107-compatible report');
+assert.match(updates,/ID001 duty-time is included in Achieved but excluded from productive efficiency and JC labour cost; overtime is excluded/,'Manager incentive explanation must match final ID001 achieved rule');
+
+assert.match(updates,/V122 MANAGER FINAL DOM \/ COUNTER AUTHORITY/,'Manager final DOM/counter authority must be present');
+assert.match(updates,/v120FinishedJobs\('true'\)|v120FinishedJobs\(true\)/,'Manager completed counter must use unique completed Job Cards');
+assert.match(updates,/v120ReadyJobs\(\)\.length/,'Manager Ready for Delivery counter must use final ready Job Cards');
+assert.match(updates,/inc\.slice\(1\)\.forEach/,'Manager must suppress duplicate incentive controls');
+
+assert.match(updates,/V123 MANAGER WORKSHOP PERFORMANCE/,'Manager Workshop Performance section must be present');
+assert.match(updates,/v123ManagerPerformanceRange/,'Manager performance must support Today and This Month ranges');
+assert.match(updates,/Work in Progress/,'Manager performance must expose Work in Progress');
+assert.match(updates,/Ready for Delivery/,'Manager performance must expose ready for delivery');
+assert.match(updates,/Over Allocated/,'Manager performance must expose over-allocated work');
+assert.match(updates,/Workshop Efficiency/,'Manager performance must expose efficiency');
+assert.match(updates,/Repeat Work/,'Manager performance must expose repeat work');
+assert.match(updates,/Labour Cost/,'Manager performance must expose labour cost');
+
+assert.match(updates,/const actual=\(a,from,to\)=>\{try\{return typeof window\.v107AssignmentNormal==='function'/,'Manager Workshop Performance must use normal-duty assignment time and exclude overtime');
+assert.match(updates,/const totalNormal=a=>actual\(a,0,Date\.now\(\)\)/,'Over-allocated status must compare cumulative normal-duty actual time with allocated time');
+assert.doesNotMatch(updates,/window\.assignmentNormalMinutes/,'Manager performance must not depend on a nonexistent assignmentNormalMinutes helper');
+
+// V124 Additional Time final-authority contracts.
+assert.match(updates,/V124 ADDITIONAL TIME FINAL AUTHORITY/,'Additional Time must have one final mutation authority');
+assert.match(updates,/request&&request\.status!=='New'/,'approved requests must not apply additional time twice');
+assert.match(updates,/assignmentId:a\.id/,'Additional Time audit rows must identify the exact assignment');
+assert.match(updates,/additionalActionApplied=true/,'approved request must record that its additional time was applied');
+assert.match(updates,/if\(r\.status!=='New'\)return alert/,'Supervisor approval must reject an already handled request');
+assert.match(updates,/findAssignment\(r\.job,r\.emp\)/,'approval must target the latest active assignment, not a historical completed assignment');
+
+// V125 Repeat Work lifecycle-cycle contracts.
+assert.match(updates,/V125 REPEAT CYCLE AUTHORITY/,'Repeat Work must have an explicit lifecycle-cycle authority');
+assert.match(updates,/repeatCycleId:cycleId/,'new repeat assignments must carry an explicit repeat cycle id');
+assert.match(updates,/repeatCycleNo:cycleNo/,'new repeat assignments must carry an ordered repeat cycle number');
+assert.match(updates,/existing\.some\(a=>!a\.completed\)/,'a new repeat cycle must be blocked while the current repeat is unfinished');
+assert.match(updates,/j\.status='Open';delete j\.completedAt;j\.delivered=false/,'issuing repeat work must reopen the Job Card and remove Ready-for-Delivery state');
+assert.match(updates,/typeof window\.v125CurrentCycle==='function'/,'Finished and Ready logic must use only the current repeat cycle');
+assert.match(updates,/legacy-repeat-/,'legacy repeat assignments must receive stable fallback cycle identities');
+
+// Manager / whole-job contracts
+assert.match(updates, /AA\(x\.no\)\.every\(a=>a\.completed\)/, 'Ready for Delivery requires all assignments complete');
+assert.match(updates, /window\.labourCost=function\(a\)\{if\(isHoldAssignment\(a\)\)return 0;/, 'ID001 labour cost must be zero');
+
+// Release/update contracts
+assert.match(releaseWorkflow, /latest-version\.json/, 'approved release workflow must update published metadata');
+assert.match(releaseWorkflow, /ZUKAIT_TIME_TRACK_LATEST\.apk/, 'approved release workflow must publish the stable update asset');
+assert.match(releaseWorkflow, /apksigner.*verify|verify --verbose --print-certs/s, 'approved release must verify APK signature');
+
+const H='ID001';
+const activeSession=(state,emp)=>(state.sessions||[]).find(s=>s.emp===emp&&!s.end);
+const openHold=(state,emp)=>(state.assign||[]).find(a=>a.job===H&&a.emp===emp&&!a.cancelled&&!a.completed);
+const openNormal=(state,emp)=>(state.assign||[]).filter(a=>a.job!==H&&a.emp===emp&&!a.cancelled&&!a.completed);
+const availableForIdeal=(state,emp)=>!activeSession(state,emp)&&openNormal(state,emp).length===0&&!openHold(state,emp);
+const ready=(state,jobNo)=>{
+  const rows=(state.assign||[]).filter(a=>a.job===jobNo&&!a.cancelled);
+  return rows.length>0&&rows.every(a=>a.completed);
+};
+const actualFor=(state,id)=>(state.sessions||[]).filter(s=>s.assignmentId===id).reduce((n,s)=>n+Math.max(0,((s.end??s.start)-s.start)/60000),0);
+const reopen=(state,id)=>{
+  const a=state.assign.find(x=>x.id===id);
+  const before={id:a.id,actual:actualFor(state,id),suggested:a.suggested,completedAt:a.completedAt};
+  a.completed=false; delete a.completedAt; a.reopened=true;
+  return before;
+};
+
+const base={assign:[],sessions:[]};
+assert.equal(availableForIdeal(base,'E1'),true,'employee with no work is eligible for ID001');
+const normalOpen={assign:[{id:'A1',job:'JC1',emp:'E1',completed:false,cancelled:false}],sessions:[]};
+assert.equal(availableForIdeal(normalOpen,'E1'),false,'employee with open normal job is not eligible for ID001');
+const active={assign:[],sessions:[{id:'S1',job:'JC1',emp:'E1',start:1,end:null}]};
+assert.equal(availableForIdeal(active,'E1'),false,'employee with active work is not eligible for ID001');
+const twoFree={assign:[],sessions:[]};
+assert.equal(availableForIdeal(twoFree,'E1'),true);
+assert.equal(availableForIdeal(twoFree,'E2'),true,'multiple free employees can receive ID001 simultaneously');
+
+const multi={assign:[
+  {id:'A1',job:'JC9',emp:'E1',completed:true,cancelled:false},
+  {id:'A2',job:'JC9',emp:'E2',completed:false,cancelled:false}
+],sessions:[]};
+assert.equal(ready(multi,'JC9'),false,'whole job stays open while one employee is unfinished');
+multi.assign[1].completed=true;
+assert.equal(ready(multi,'JC9'),true,'whole job becomes ready only after all employees finish');
+
+const reopenState={assign:[{id:'A3',job:'JC10',emp:'E3',suggested:120,completed:true,completedAt:5000}],sessions:[
+  {id:'S3',assignmentId:'A3',job:'JC10',emp:'E3',start:0,end:3600000}
+]};
+const before=reopen(reopenState,'A3');
+assert.equal(reopenState.assign[0].id,before.id,'reopen keeps same assignment id');
+assert.equal(actualFor(reopenState,'A3'),before.actual,'reopen keeps previous actual time');
+assert.equal(reopenState.assign[0].suggested,before.suggested,'reopen keeps allocated time');
+assert.equal(reopenState.assign[0].completed,false,'reopen returns assignment to open state');
+
+
+// Holiday / duty-time contracts
+const dateKey=ts=>{const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const dayStart=ts=>{const d=new Date(ts);return new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()};
+const declared=new Set(['2026-11-18']);
+const closedDay=ts=>new Date(ts).getDay()===5||declared.has(dateKey(ts));
+const dutyWindow=ts=>{
+  if(closedDay(ts))return null;
+  const d=new Date(ts),m=d.getHours()*60+d.getMinutes(),ds=dayStart(ts);
+  if(m>=480&&m<780)return {start:ds+480*60000,end:ds+780*60000};
+  if(m>=900&&m<1140)return {start:ds+900*60000,end:ds+1140*60000};
+  return null;
+};
+const normalMinutes=(start,end)=>{
+  let total=0,cur=start;
+  while(cur<end){
+    const ds=dayStart(cur),de=ds+86400000,se=Math.min(end,de);
+    if(!closedDay(cur)){
+      for(const [a,b] of [[480,780],[900,1140]]) total+=Math.max(0,(Math.min(se,ds+b*60000)-Math.max(cur,ds+a*60000))/60000);
+    }
+    cur=de;
+  }
+  return total;
+};
+const overtimeMinutes=(start,end)=>{
+  let total=0,cur=start;
+  while(cur<end){
+    const ds=dayStart(cur),de=ds+86400000,se=Math.min(end,de);
+    if(closedDay(cur)) total+=(se-cur)/60000;
+    else {
+      total+=Math.max(0,(Math.min(se,ds+900*60000)-Math.max(cur,ds+780*60000))/60000);
+      total+=Math.max(0,(se-Math.max(cur,ds+1140*60000))/60000);
+    }
+    cur=de;
+  }
+  return total;
+};
+
+const workingMorning=new Date(2026,8,21,10,0).getTime(); // Monday
+const lunch=new Date(2026,8,21,14,0).getTime();
+const fridayMorning=new Date(2026,8,25,10,0).getTime();
+const publicHolidayMorning=new Date(2026,10,18,10,0).getTime();
+assert.ok(dutyWindow(workingMorning), 'ID001 must be allowed inside normal duty time');
+assert.equal(dutyWindow(lunch),null,'ID001 must be blocked during the 13:00â€“15:00 break');
+assert.equal(dutyWindow(fridayMorning),null,'ID001 must be blocked all Friday');
+assert.equal(dutyWindow(publicHolidayMorning),null,'ID001 must be blocked on manager-declared public holidays');
+
+const friStart=new Date(2026,8,25,9,0).getTime(),friEnd=new Date(2026,8,25,11,0).getTime();
+assert.equal(normalMinutes(friStart,friEnd),0,'Friday work must have zero normal minutes');
+assert.equal(Math.round(overtimeMinutes(friStart,friEnd)),120,'Friday work must be 100% overtime');
+const holStart=new Date(2026,10,18,9,0).getTime(),holEnd=new Date(2026,10,18,11,30).getTime();
+assert.equal(normalMinutes(holStart,holEnd),0,'public-holiday work must have zero normal minutes');
+assert.equal(Math.round(overtimeMinutes(holStart,holEnd)),150,'public-holiday work must be 100% overtime');
+
+const idealGap=(sessions,from,to)=>{
+  const rows=sessions.map(x=>({start:Math.max(x.start,from),end:Math.min(x.end,to)})).filter(x=>x.end>x.start).sort((a,b)=>a.start-b.start);
+  let sum=0,lastEnd=null;
+  for(const x of rows){if(lastEnd!==null&&x.start>lastEnd)sum+=normalMinutes(lastEnd,x.start);lastEnd=lastEnd===null?x.end:Math.max(lastEnd,x.end)}
+  return sum;
+};
+const day=new Date(2026,8,21,0,0).getTime();
+assert.equal(Math.round(idealGap([{start:day+8*3600000,end:day+9*3600000},{start:day+9.5*3600000,end:day+10*3600000}],day,day+86400000)),30,'Ideal Time must count only the duty-hour gap between sessions');
+assert.equal(Math.round(idealGap([{start:day+8*3600000,end:day+9*3600000},{start:day+9*3600000,end:day+9.5*3600000},{start:day+9.5*3600000,end:day+10*3600000}],day,day+86400000)),0,'ID001/waiting session occupying the gap must prevent Ideal Time');
+
+const reopenJobState={jobs:[{no:'JC10',status:'Completed',completedAt:5000}],assign:[{id:'A3',job:'JC10',emp:'E3',completed:true,completedAt:5000}]};
+reopenJobState.assign[0].completed=false; delete reopenJobState.assign[0].completedAt;
+reopenJobState.jobs[0].status='Open'; delete reopenJobState.jobs[0].completedAt;
+assert.equal(reopenJobState.jobs[0].status,'Open','reopen must reset parent Job Card to Open');
+assert.equal('completedAt' in reopenJobState.jobs[0],false,'reopen must clear parent completion date');
+
+
+// V75.4 Ideal Time availability simulation
+const availabilityMinutes=(assignments,emp,gapStart,gapEnd,previousJob)=>{
+  const intervals=assignments.filter(a=>a.emp===emp&&a.job!=='ID001'&&a.job!==previousJob).map(a=>{
+    const st=Math.max(gapStart,a.assignedAt||gapStart);
+    const en=Math.min(gapEnd,a.completedAt||a.cancelledAt||gapEnd);
+    return {start:st,end:en};
+  }).filter(x=>x.end>x.start).sort((a,b)=>a.start-b.start);
+  if(!intervals.length)return 0;
+  let total=0,cs=intervals[0].start,ce=intervals[0].end;
+  for(let i=1;i<intervals.length;i++){const x=intervals[i];if(x.start<=ce)ce=Math.max(ce,x.end);else{total+=(ce-cs)/60000;cs=x.start;ce=x.end}}
+  return total+(ce-cs)/60000;
+};
+const g0=new Date(2026,8,21,10,0).getTime(),g1=new Date(2026,8,21,10,30).getTime();
+assert.equal(availabilityMinutes([], 'E1', g0, g1, 'JC1'),0,'gap with no other assigned work must not be Ideal Time');
+assert.equal(availabilityMinutes([{emp:'E1',job:'JC2',assignedAt:g0-60000}], 'E1', g0, g1, 'JC1'),30,'gap with another normal job already available must be Ideal Time');
+assert.equal(availabilityMinutes([{emp:'E1',job:'JC1',assignedAt:g0-60000}], 'E1', g0, g1, 'JC1'),0,'paused prior job by itself must not create Ideal Time when no other work exists');
+
+
+// V75.5 Leave + paused-ID001 contracts
+assert.match(updates, /V75\.5 LEAVE CONTROL \+ PAUSED-JOB ID001 AUTHORITY/, 'V75.5 leave/ID001 authority must be present');
+assert.match(fs.readFileSync('app/src/main/assets/v2/features/leave/rules.js','utf8'), /return\[\[d\+8\*3600000,d\+13\*3600000\],\[d\+15\*3600000,d\+19\*3600000\]\]/, 'full-day leave must exclude the 13:00â€“15:00 lunch break');
 assert.match(updates, /TODAYâ€™S LEAVE/, 'Manager Workshop Control Center must show Todayâ€™s Leave');
 assert.match(updates, /THIS MONTH LEAVE/, 'Manager Workshop Control Center must show This Month Leave');
 assert.match(updates, /v755-leave-control-row/, 'Manager leave controls must use a dedicated two-column row');

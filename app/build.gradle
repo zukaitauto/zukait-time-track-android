@@ -10,6 +10,7 @@ android {
         applicationId 'com.zukait.timetrack'
         minSdk 24
         targetSdk 35
+        // V333 packages the reviewed dashboard, Reception and estimate updates.
         versionCode 296
         versionName "V333"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
