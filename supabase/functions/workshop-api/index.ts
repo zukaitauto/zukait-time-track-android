@@ -971,6 +971,12 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const action = String(body?.action || "load");
 
+    // Accountant is deny-by-default until dedicated audited finance endpoints exist.
+    // Never expose shared workshop state, time controls or Manager operations.
+    if (user.role === "Accountant") {
+      return reply({ok:false,code:"accountant_endpoint_unavailable"},403);
+    }
+
     if (user.role === "Receptionist" && !receptionistRequestAllowed(action, body)) {
       return reply({ok:false, code:"receptionist_forbidden"}, 403);
     }
