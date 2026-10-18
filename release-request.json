@@ -1,9 +1,9 @@
 {
-  "versionName": "V337",
-  "versionCode": 300,
+  "versionName": "V338",
+  "versionCode": 301,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": true,
-  "sourceCommit": "c88a058d755e89a86c059576ec8670a5e4a00a16",
+  "approvedForStaff": false,
+  "sourceCommit": null,
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,12 +19,12 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-18T08:57:41.084Z",
-  "publishNonce": "cd1f0069c67a2ca454fca6aee42c08b9c036508f526c277b",
-  "signedAcceptanceRun": 39112910326,
-  "verificationRun": 39112910362,
-  "accountantVerificationRun": 39112910350,
-  "androidBuildRun": 39112910365,
+  "approvedAt": null,
+  "publishNonce": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "accountantVerificationRun": null,
+  "androidBuildRun": null,
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -46,5 +46,5 @@
       "accountant_append_only_corrections"
     ]
   },
-  "verificationSummary": "Exact-source signed certificate/APK, Android compilation, full shared regression, Reception/Chromium/concurrent PostgreSQL, Accountant calculations/permissions/Manager access, and live unauthenticated HTTP rejection passed. Staff count and credential checksum preserved. Physical device/business acceptance NOT_RUN; owner requested testing through live Manager Accounts. No fake production financial transactions."
+  "verificationSummary": "Pending exact-source V338 verification. Search-first JC financial view and unified Accountant creation; no backend deployment required."
 }

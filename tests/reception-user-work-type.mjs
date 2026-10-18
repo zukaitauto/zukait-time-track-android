@@ -13,3 +13,5 @@ role.value='Receptionist';context.syncNewUserWorkType();role.value='Supervisor';
 assert.match(html,/<option value="Reception">Receptionist<\/option>/);
 assert.match(html,/id="newUserRole" onchange="syncNewUserWorkType\(\)"/);
 console.log('PASS Receptionist work type and role switching');
+
+role.value='Accountant';context.syncNewUserWorkType();assert.equal(dept.value,'Accounts');assert.equal(dept.disabled,true);role.value='Employee';context.syncNewUserWorkType();assert.equal(dept.value,'Denter');assert.equal(dept.disabled,false);

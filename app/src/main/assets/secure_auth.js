@@ -216,7 +216,14 @@
     if(user(id).role!=='Unknown')return alert('That User ID already exists.');
     if(role==='Purchaser')department='Spare Parts';
     if(role==='Receptionist')department='Reception';
-    if(role==='Accountant'){window.zukaitAccountantAccounts?.open();return;}
+    if(role==='Accountant'){
+      if(!window.zukaitAccountantAccounts?.createFromUserForm)return alert('Account creation is still loading. Please try again.');
+      if(btn){btn.disabled=true;btn.textContent='CREATING...';}
+      try{await window.zukaitAccountantAccounts.createFromUserForm({id,name,password});if(typeof filterUserMgmt==='function')filterUserMgmt();alert('Accountant created. The temporary password must be changed at first login.');}
+      catch(e){alert(e.message||'Accountant could not be created.');}
+      finally{if(btn&&document.body.contains(btn)){btn.disabled=false;btn.textContent='CREATE USER';}}
+      return;
+    }
     const managerPassword=prompt('Enter Manager password to create this user');
     if(managerPassword===null)return;
     if(!managerPassword)return alert('Enter Manager password.');

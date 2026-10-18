@@ -25,6 +25,15 @@ function dashboardEntry(){
   const b=document.createElement('button');b.type='button';b.className='rc-dashboard-launcher';b.id='manager-accounts-launcher';b.style.cssText='width:100%;min-width:0;margin:0;background:linear-gradient(135deg,#edf0ff,#d9f5ed);color:#183c56';b.innerHTML='<b>📊 Accounts</b><small>Financial reports · Payments · Expenses</small>';b.onclick=()=>{if(current()?.role==='Manager')location.assign('accountant.html')};row.append(b);
  }
 }
-function inject(){dashboardEntry();if(current()?.role!=='Manager')return;const host=document.getElementById('userMgmtList');if(!host||document.getElementById('accountant-accounts-entry'))return;const b=document.createElement('button');b.type='button';b.id='accountant-accounts-entry';b.textContent='Accountant Accounts';b.className='secondary';b.onclick=()=>{auditOffset=0;open()};host.parentNode.insertBefore(b,host);}
-window.zukaitAccountantAccounts={open};new MutationObserver(inject).observe(document.body,{subtree:true,childList:true});inject();
+async function createFromUserForm({id,name,password}){
+ if(current()?.role!=='Manager')throw Error('Manager access required');
+ if(busy)throw Error('An account request is already in progress');
+ const command={operation:'CREATE',target_id:id,login_id:id,name,temporary_password:password,reason:'Manager Create User: Accountant account'};
+ const body=retry||{action:'manager_accountant',session_token:token(),request_id:crypto.randomUUID(),command};
+ if(retry&&JSON.stringify(retry.command)!==JSON.stringify(command))throw Error('Retry the previous account creation before changing these fields.');
+ busy=true;retry=body;
+ try{await request(command,body);retry=null;}catch(e){if(e.status>=400&&e.status<500)retry=null;throw e;}finally{busy=false;}
+}
+function inject(){if(typeof document==='undefined'||!document?.documentElement)return;dashboardEntry();document.getElementById('accountant-accounts-entry')?.remove();}
+window.zukaitAccountantAccounts={open,createFromUserForm};new MutationObserver(inject).observe(document.body,{subtree:true,childList:true});inject();
 })();
