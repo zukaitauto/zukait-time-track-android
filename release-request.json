@@ -12,5 +12,7 @@
   "phase2ActivationApproved": false,
   "backendDeploymentRequired": true,
   "releaseHeldByOwner": false,
-  "evidence": {}
+  "evidence": {},
+  "approvedAt": null,
+  "publishNonce": null
 }

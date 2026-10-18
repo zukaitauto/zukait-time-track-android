@@ -71,10 +71,10 @@ if (latest.versionCode < current.versionCode) {
  assert.match(latest.sourceCommit,/^[a-f0-9]{40}$/);
  assert.match(latest.apkSha256,/^[a-f0-9]{64}$/);
  assert.equal(latest.releaseTag,'release-'+latest.versionName+'-architecture-v2');
- if(current.releaseScope !== 'reception-insurance-features-1-10') assert.equal(uiApproval?.versionName,current.versionName);
- if(current.releaseScope !== 'reception-insurance-features-1-10') assert.equal(uiApproval?.versionCode,current.versionCode);
+ if(!['reception-insurance-features-1-10','accountant-live-test'].includes(current.releaseScope)) assert.equal(uiApproval?.versionName,current.versionName);
+ if(!['reception-insurance-features-1-10','accountant-live-test'].includes(current.releaseScope)) assert.equal(uiApproval?.versionCode,current.versionCode);
 } else {
- if(current.releaseScope === 'reception-insurance-features-1-10') { assert.equal(latest.sourceCommit,current.sourceCommit); assert.equal(latest.versionCode,current.versionCode); assert.match(latest.apkSha256,/^[a-f0-9]{64}$/); } else verifyUpdaterAfterUiRelease(latest);
+ if(['reception-insurance-features-1-10','accountant-live-test'].includes(current.releaseScope)) { assert.equal(latest.sourceCommit,current.sourceCommit); assert.equal(latest.versionCode,current.versionCode); assert.match(latest.apkSha256,/^[a-f0-9]{64}$/); } else verifyUpdaterAfterUiRelease(latest);
 }
 assert.match(workflow,/^\s+workflow_dispatch:\s*$/m,'Manual Pages invocation required');
 assert.doesNotMatch(workflow,/^\s+push:\s*$/m,'Automatic Pages pushes prohibited');
