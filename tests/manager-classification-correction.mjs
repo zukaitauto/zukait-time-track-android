@@ -1,0 +1,37 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';import {PGlite} from '@electric-sql/pglite';import {randomUUID} from 'node:crypto';
+const db=new PGlite();
+try{
+ await db.exec(fs.readFileSync('tests/fixtures/reception-postgres17-baseline.sql','utf8').replace('create extension if not exists pgcrypto;',''));
+ for(const file of fs.readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(fs.readFileSync('supabase/migrations/'+file,'utf8'));
+ await db.exec("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt) values('M','Manager','Manager','','x','x'),('S','Supervisor','Supervisor','','x','x');insert into workshop_state(id,data,revision,updated_by) values('main','{\"jobs\":[{\"no\":\"LEGACY\",\"jobType\":\"Cash\",\"reg\":\"QA\"}],\"assign\":[],\"sessions\":[],\"estimates\":[]}',1,'M');insert into workshop_insurance_companies(name,active) values('QA Insurance',true);");
+ await db.exec('set role service_role');
+ const state=async()=>(await db.query("select data,revision from workshop_state where id='main'")).rows[0];
+ const convert=async(no,actor='M',reason='Correct mistaken cash classification',company='QA Insurance')=>{const s=await state();const data=structuredClone(s.data);const j=data.jobs.find(j=>j.no===no);Object.assign(j,{jobType:'Insurance',insuranceCompany:company,claimNo:'QA-CLAIM'});return (await db.query('select zukait_manager_full_job_edit($1,$2,$3,$4,$5,$6) as result',[s.revision,JSON.stringify(data),actor,no,reason,'[]'])).rows[0].result;};
+ await assert.rejects(convert('LEGACY','S'),/reception_manager_required/);
+ await assert.rejects(convert('LEGACY','M',''),/reception_reason_required/);
+ await assert.rejects(convert('LEGACY','M','Correction','Unknown Insurance'),/reception_insurance_required/);
+ let before=await state(),bad=structuredClone(before.data);bad.jobs[0].jobType='Insurance';bad.jobs[0].insuranceCompany='QA Insurance';
+ await assert.rejects(db.query('update workshop_state set data=$1 where id=\'main\'',[JSON.stringify(bad)]),/insurance_job_requires_approved_reception/);
+ let r=await convert('LEGACY');assert.equal(r.ok,true);assert.equal(r.job.jobType,'Insurance');
+ let audit=(await db.query('select * from workshop_job_classification_audit')).rows;assert.equal(audit.length,1);assert.equal(audit[0].before_data.jobType,'Cash');assert.equal(audit[0].after_data.jobType,'Insurance');assert.equal(audit[0].actor_id,'M');
+ assert.equal((await db.query("select count(*)::int n from workshop_direct_job_approvals where job_card='LEGACY'")).rows[0].n,0,'Correction must not fabricate external approval');
+ assert.equal((await db.query("select zukait_reception_job_approval_valid('LEGACY',null) as valid")).rows[0].valid,false);
+ const s=await state();bad=structuredClone(s.data);bad.jobs.push({no:'NEW',jobType:'Insurance',insuranceCompany:'QA Insurance'});await assert.rejects(db.query('update workshop_state set data=$1 where id=\'main\'',[JSON.stringify(bad)]),/insurance_job_requires_approved_reception/);
+ r=(await db.query('select zukait_manager_full_job_edit($1,$2,$3,$4,$5,$6) as result',[before.revision,JSON.stringify(before.data),'M','LEGACY','Stale request','[]'])).rows[0].result;assert.equal(r.code,'conflict');
+ const call=async c=>(await db.query('select zukait_reception_command($1,$2::jsonb) result',['M',JSON.stringify(c)])).rows[0].result;
+ const details={make:'Toyota',model:'Camry',year:'2020',registration:'QA-DIRECT',vin:'1HGCM82633A004352',odometer:'500',odometer_unit:'KM'};
+ await call({operation:'CREATE_DIRECT_JOB',job_type:'CASH',job_card:'DIRECT',details,received_confirmed:true,reason:'QA direct',request_id:randomUUID()});
+ r=await convert('DIRECT');assert.equal(r.ok,true);assert.equal(r.job.jobType,'Insurance');
+ assert.equal((await db.query("select identity->>'jobType' kind from workshop_direct_job_identity where job_card='DIRECT'")).rows[0].kind,'Insurance');
+ r=await convert('DIRECT','M','Correct claim again');assert.equal(r.ok,true,'Subsequent insurance edits still work');
+ assert.equal((await db.query('select count(*)::int n from workshop_job_classification_audit')).rows[0].n,2,'Repeat save does not create duplicate conversion');
+ let rc=(await call({operation:'CREATE',job_type:'CASH',insurance_id:null,details:{...details,registration:'QA-LINK'},request_id:randomUUID()})).record;
+ const day=new Date().toISOString().slice(0,10);
+ rc=(await call({operation:'SET_APPROVED',rc_no:rc.rc_no,expected_revision:rc.revision,request_id:randomUUID(),reason:'QA cash approval',date:day})).record;
+ rc=(await call({operation:'CREATE_CHECKLIST_JOB',rc_no:rc.rc_no,expected_revision:rc.revision,request_id:randomUUID(),reason:'QA cash job',job_card:'LINKED'})).record;
+ r=await convert('LINKED');assert.equal(r.ok,true);assert.equal(r.job.jobType.toUpperCase(),'INSURANCE');assert.equal((await db.query('select approval_status from workshop_receptions where rc_no=$1',[rc.rc_no])).rows[0].approval_status,'WAITING');
+ assert.equal((await db.query('select job_type from workshop_receptions where rc_no=$1',[rc.rc_no])).rows[0].job_type,'INSURANCE');
+ await assert.rejects(db.query("delete from workshop_job_classification_audit"),/permission denied/);
+ await db.exec('reset role');await assert.rejects(db.exec('delete from workshop_job_classification_audit'),/classification_audit_immutable/);
+ console.log('PASS: Manager legacy/direct Cash-to-Insurance correction; immutable old/new audit; no fake insurer approval; permission/reason/insurer/conflict checks; ordinary-save and new-job bypass blocked; repeat save works.');
+}finally{await db.close()}
