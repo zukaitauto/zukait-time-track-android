@@ -10,10 +10,10 @@ android {
         applicationId 'com.zukait.timetrack'
         minSdk 24
         targetSdk 35
-        // V340 release candidate: nine Accounts module cards, preserved correction dates,
-        // session-scoped account retries and cancellation of stale report exports.
-        versionCode 303
-        versionName "V340" // Exact-source acceptance covers card navigation, financial workflows and shared role regressions.
+        // V341: Supervisor-style Accounts menu, itemized JC 360 expenses,
+        // and owner-confirmed Cash invoice receipt reconciliation.
+        versionCode 304
+        versionName "V341" // Exact-source acceptance covers card navigation, financial workflows and shared role regressions.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }

@@ -1,5 +1,5 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Zukait · Accountant</title><link rel="stylesheet" href="accountant.css?v=340"></head><body><main>
-<header><div class="brand"><span class="mark" aria-hidden="true">Z</span><div><h1>Accounts Dashboard</h1><p id="identity">Verifying secure session…</p></div></div><div class="actions"><button id="manager-back" type="button" hidden>← Manager dashboard</button><button id="logout" type="button">Sign out</button></div></header>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Zukait · Accountant</title><link rel="stylesheet" href="accountant.css?v=341"></head><body><main>
+<header><div class="brand"><span class="mark" aria-hidden="true">Z</span><div><h1 id="account-name">Accounts Dashboard</h1><p id="identity">Verifying secure session…</p></div></div><div class="actions"><button id="manager-back" type="button" hidden>← Manager dashboard</button><span id="account-network" class="account-network" title="Device network status">Online</span><button id="account-menu-button" class="account-menu-button" type="button" aria-label="Open account menu" aria-haspopup="dialog" disabled>☰</button><button id="logout" type="button">Logout</button></div></header>
 <p id="message" role="status" aria-live="polite"></p><div id="pending" hidden class="notice"></div>
 <section id="app" hidden>
 <section id="accounts-home">
@@ -17,4 +17,17 @@
 <form id="correction" class="panel" hidden><h2>Financial correction</h2><p id="correction-target"></p><label>Corrected amount (OMR)<input id="corrected-value" type="number" min="0" max="1000000" step="0.001" required></label><label>Reason<textarea id="correction-reason" required minlength="3" maxlength="2000"></textarea></label><div class="actions"><button type="submit">Record correction</button><button id="cancel-correction" type="button">Cancel</button></div></form>
 </section>
 <footer>Amounts are OMR · three decimal places. Financial records are corrected with an audit trail, never deleted.</footer></section>
-</main><script src="vendor/pdf/html2canvas-1.4.1.min.js"></script><script src="vendor/pdf/jspdf-4.2.1.min.js"></script><script src="report_pdf_export.js?v=2026101405"></script><script src="accountant_exports.js?v=1"></script><script src="accountant.js?v=340"></script></body></html>
+</main>
+<dialog id="account-menu" aria-labelledby="account-menu-title"><div class="heading"><div><span class="eyebrow">ZUKAIT · ACCOUNT</span><h2 id="account-menu-title">Account menu</h2></div><button id="account-menu-close" type="button" aria-label="Close account menu">×</button></div>
+<p id="account-menu-identity"></p>
+<div class="account-menu-grid">
+<button id="account-refresh" type="button"><span aria-hidden="true">↻</span><b>Refresh reports</b><small>Load verified financial records</small></button>
+<button id="account-update" type="button"><span aria-hidden="true">⬆</span><b>App Update</b><small>About and software updates</small></button>
+<button id="account-password" type="button"><span aria-hidden="true">♧</span><b>Change password</b><small>Protect your account</small></button>
+<button id="account-menu-logout" class="account-menu-danger" type="button"><span aria-hidden="true">↪</span><b>Logout</b><small>Sign out safely</small></button>
+<button id="account-exit" type="button" hidden><span aria-hidden="true">⏻</span><b>Exit App</b><small>Close Zukait Time Track</small></button>
+</div>
+<section id="account-update-panel" class="notice" hidden><h3>App Update</h3><p id="account-version"></p><p id="account-update-status" role="status" aria-live="polite"></p><div class="actions"><button id="account-check-update" type="button">Check for updates</button><button id="account-install-update" type="button" hidden>Download &amp; install update</button><button id="account-web-reload" type="button" hidden>Reload web app</button></div></section>
+<form id="account-password-form" hidden><h3>Change password</h3><label>Current password<input id="account-current-password" type="password" autocomplete="current-password" required></label><label>New password<input id="account-new-password" type="password" autocomplete="new-password" minlength="8" required></label><label>Confirm new password<input id="account-confirm-password" type="password" autocomplete="new-password" minlength="8" required></label><p id="account-password-status" role="status"></p><button id="account-save-password" type="submit">Save new password</button></form>
+</dialog>
+<script src="vendor/pdf/html2canvas-1.4.1.min.js"></script><script src="vendor/pdf/jspdf-4.2.1.min.js"></script><script src="report_pdf_export.js?v=2026101405"></script><script src="accountant_exports.js?v=1"></script><script src="accountant.js?v=341"></script><script src="accountant_shell.js?v=341"></script></body></html>

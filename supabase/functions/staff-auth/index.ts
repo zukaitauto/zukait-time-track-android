@@ -206,7 +206,18 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "change_password") {
-      const auth = await authUser(body.user_id, body.current_password);
+      let loginId=body.user_id;
+      // Authenticated account menus use the immutable session identity, even
+      // after a Manager changes the login alias. First-login flow stays intact.
+      if(body.session_token!==undefined){
+        const own=await verifySession(String(body.session_token||""));
+        if(!own)return reply({ok:false,code:"invalid_session"},401);
+        if(String(body.user_id||"")!==own.user.id)return reply({ok:false,code:"account_mismatch"},403);
+        const staff=await admin.from("staff_credentials").select("login_id").eq("user_id",own.user.id).maybeSingle();
+        if(staff.error)throw staff.error;
+        loginId=staff.data?.login_id||own.user.id;
+      }
+      const auth = await authUser(loginId, body.current_password);
       if (!auth.ok) return reply(auth, auth.code === "locked" ? 423 : 401);
       const changed = await setPassword(auth.user!.id, body.new_password, false);
       if (!changed.ok) return reply(changed, 400);

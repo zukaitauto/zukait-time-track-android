@@ -1,16 +1,16 @@
 {
-  "versionName": "V340",
-  "versionCode": 303,
+  "versionName": "V341",
+  "versionCode": 304,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": true,
-  "sourceCommit": "0e912dfa66029a0c06e7e0b9e454f771400bc809",
+  "approvedForStaff": false,
+  "sourceCommit": null,
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "productionBackendChanges": true,
   "phase2ActivationApproved": false,
-  "backendDeploymentRequired": false,
+  "backendDeploymentRequired": true,
   "releaseHeldByOwner": false,
   "evidence": {
     "credentialPreservation": true,
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-18T21:09:20.305Z",
-  "publishNonce": "96f665d8d6ade03404bbda1a030d6afd93649f2771b9c99f",
+  "approvedAt": null,
+  "publishNonce": null,
   "signedAcceptanceRun": 39165875905,
   "verificationRun": 39165875995,
   "accountantVerificationRun": 39165876121,
@@ -31,12 +31,12 @@
       "staff-auth": {
         "version": 7,
         "bundleSha256": "4029737a89f1fe5edb4b8c53f78def741d49b58136bb3cd6c6775ae74e841f45",
-        "verifiedFileMatch": true
+        "verifiedFileMatch": false
       },
       "workshop-api": {
         "version": 71,
         "bundleSha256": "3952968e96a2b96e4afc9ef3876b90a8382b52f1eb8489e5ea6a59002641ee8d",
-        "verifiedFileMatch": true
+        "verifiedFileMatch": false
       }
     },
     "migrations": [
@@ -46,5 +46,5 @@
       "accountant_append_only_corrections"
     ]
   },
-  "verificationSummary": "V340 exact-source both-role Accounts browser/card navigation/financial/permission/export, full shared regression, Reception browser/concurrent database, native PDF, Android and signed APK checks passed. Reception WebKit initially timed out; unchanged-source rerun attempt 2 passed. Includes nine Accounts module cards, original correction dates, pending-request privacy, report/export navigation guards and Manager administration session-scoped retries. No backend deployment or production record changes. Physical-device/business acceptance NOT_RUN."
+  "verificationSummary": "V341 pending verification: Accountant role menu/updater/password/logout, itemized JC 360 expenses and owner-confirmed existing/new Cash invoice receipts. Updated workshop-api must be verified/deployed before release; production remains V340."
 }

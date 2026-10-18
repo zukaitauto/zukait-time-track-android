@@ -37,7 +37,7 @@ export async function accountantApi(admin,user,body,secret,now=Date.now()){
   }
   const posted=await admin.rpc('zukait_accountant_post',{p_actor_id:user.id,p_request_id:body.request_id,p_fingerprint:fp,p_command:c});if(posted.error)throw posted.error;return {status:200,body:posted.data};
  }
- if(action==='accountant_jc_detail'){const d=full.details.find(d=>d.job_card===key(body.job_card));return d?{status:200,body:{ok:true,detail:d,snapshot_revision:full.snapshot_revision,finance_revision:full.finance_revision}}:fail('job_not_found',404);}
+ if(action==='accountant_jc_detail'){const d=full.details.find(d=>d.job_card===key(body.job_card));return d?{status:200,body:{ok:true,detail:d,breakdown:Object.fromEntries(['consumables','paint','parts'].map(k=>[k,full.rows[k].filter(r=>r.job_card===d.job_card)])),snapshot_revision:full.snapshot_revision,finance_revision:full.finance_revision}}:fail('job_not_found',404);}
  let rows;
  if(action==='accountant_jc_search'){const q=searchKey(body.query);rows=full.details.filter(d=>[d.job_card,d.registration,d.vehicle,d.customer].some(v=>searchKey(v).includes(q))).map(d=>({job_card:d.job_card,registration:d.registration,vehicle:d.vehicle,customer:d.customer,job_type:d.job_type}));}
  else if(body.report==='monthly'){

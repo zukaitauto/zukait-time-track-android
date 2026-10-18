@@ -85,6 +85,7 @@ node tests/shared-dashboard-read.mjs
 
 node --check app/src/main/assets/report_pdf_export.js
 
+node --check app/src/main/assets/accountant_shell.js
 node --check app/src/main/assets/accountant.js
 node --check app/src/main/assets/accountant_accounts.js
 node --check app/src/main/assets/accountant_exports.js
