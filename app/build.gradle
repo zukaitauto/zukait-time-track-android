@@ -10,9 +10,9 @@ android {
         applicationId 'com.zukait.timetrack'
         minSdk 24
         targetSdk 35
-        // V333 packages the reviewed dashboard, Reception and estimate updates.
+        // V340 includes the Accounts module dashboard and reviewed audit corrections.
         versionCode 303
-        versionName "V340" // Exact-source acceptance includes full job editing, persisted descriptions and delivered material records.
+        versionName "V340" // Exact-source acceptance covers card navigation, financial workflows and shared role regressions.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }

@@ -9,6 +9,14 @@ const wait=async f=>{for(let i=0;i<500;i++){if(f())return;await new Promise(r=>s
 await wait(()=>w.document.getElementById('rows').textContent.includes('Search for a job card'));
 assert.equal(w.document.querySelectorAll('#rows [data-job]').length,0);
 assert.equal(w.document.getElementById('pdf').disabled,true);
+assert.equal(w.document.getElementById('accounts-home').hidden,false);
+assert.equal(w.document.getElementById('accounts-workspace').hidden,true);
+assert.equal(w.document.querySelectorAll('#navigation .module-card').length,9);
+w.document.querySelector('#navigation [data-report="jobs"]').click();
+await wait(()=>!w.document.getElementById('cash-entry').disabled);
+assert.equal(w.document.getElementById('accounts-home').hidden,true);
+assert.equal(w.document.getElementById('accounts-workspace').hidden,false);
+
 w.document.getElementById('cash-entry').click();
 for(const [id,value] of [['transaction-date','2026-10-01'],['payee','QA'],['amount','1.000'],['reason','QA no-write revision validation']])w.document.getElementById(id).value=value;
 rejectEntry=true;w.document.getElementById('entry').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
@@ -25,7 +33,7 @@ const older=w.zukaitAccountant.openJob('J1');await w.zukaitAccountant.openJob('J
 assert.match(w.document.getElementById('detail').textContent,/JC J2/,'late J1 cannot overwrite J2');
 holdDetail=new Promise(resolve=>releaseDetail=resolve);const abandoned=w.zukaitAccountant.openJob('J1');
 w.zukaitAccountant.switchReport('paint');releaseDetail();await abandoned;assert.equal(w.document.getElementById('detail').hidden,true,'late detail cannot reopen after module navigation');
-for(const module of ['consumables','paint','parts','leave','cash','lpo','outstanding','monthly']){w.zukaitAccountant.switchReport(module);await wait(()=>w.document.getElementById('title').textContent===({consumables:'Consumables Expenses',paint:'Paint Expenses',parts:'Spare Parts Expenses',leave:'Employee Leave Details',cash:'Cash In / Cash Out',lpo:'Insurance LPO Tracking',outstanding:'Outstanding Payments',monthly:'Monthly Financial Reports'})[module]);}
+for(const module of ['consumables','paint','parts','leave','cash','lpo','outstanding','monthly']){w.document.getElementById('accounts-back').click();w.document.querySelector('#navigation [data-report="'+module+'"]').click();await wait(()=>w.document.getElementById('title').textContent===({consumables:'Consumables Expenses',paint:'Paint Expenses',parts:'Spare Parts Expenses',leave:'Employee Leave Details',cash:'Cash In / Cash Out',lpo:'Insurance LPO Tracking',outstanding:'Outstanding Payments',monthly:'Monthly Financial Reports'})[module]);}
 w.zukaitAccountant.switchReport('cash');await wait(()=>w.document.getElementById('title').textContent==='Cash In / Cash Out');
 lose=true;await w.zukaitAccountant.submit({operation:'POST',expected_snapshot_revision:7,expected_finance_revision:0,transaction_date:'2026-10-01',kind:'CASH_IN',job_card:'J1',payee:'QA payer',amount:'10.125',payment_method:'CASH',reference:'DOM-QA',reason:'QA receipt'});assert.equal(w.document.getElementById('pending').hidden,false);const persisted=JSON.parse([...Array(w.localStorage.length)].map((_,i)=>w.localStorage.key(i)).filter(k=>k.startsWith('zukait_accountant_pending')).map(k=>w.localStorage.getItem(k))[0]);await w.zukaitAccountant.submit(persisted.command,persisted);assert.equal((await db.query('select count(*)::int n from workshop_accounting_entries')).rows[0].n,1,'lost acknowledgement retry cannot duplicate payment');assert.equal(w.document.getElementById('pending').hidden,true);
 w.document.querySelector('#rows [data-correct]').click();
@@ -39,5 +47,9 @@ await wait(()=>w.document.getElementById('title').textContent==='Paint Expenses'
 w.zukaitAccountant.switchReport('cash');await wait(()=>w.document.getElementById('title').textContent==='Cash In / Cash Out');
 lose=true;await w.zukaitAccountant.submit({operation:'POST',expected_snapshot_revision:7,expected_finance_revision:1,transaction_date:'2026-10-01',kind:'CASH_IN',job_card:'J1',payee:'QA pending payer',amount:'1.111',payment_method:'CASH',reference:'DOM-PENDING',reason:'QA pending privacy'});
 assert.equal(w.document.getElementById('pending').hidden,false);
+w.document.getElementById('accounts-back').click();
+assert.equal(w.document.getElementById('accounts-home').hidden,false);
+assert.equal(w.document.getElementById('accounts-workspace').hidden,true);
+await wait(()=>!w.document.getElementById('cash-entry').disabled);
 w.localStorage.setItem('zukait_secure_session_v42',JSON.stringify({user:{id:'B',role:'Accountant'},token:'another-token'}));w.dispatchEvent(new w.StorageEvent('storage',{key:'zukait_secure_session_v42'}));assert.equal(w.document.getElementById('app').hidden,true);assert.equal(w.document.getElementById('rows').textContent,'');assert.equal(w.document.getElementById('pending').hidden,true);assert.equal(w.document.getElementById('pending').textContent,'');assert.ok([...Array(w.localStorage.length)].some((_,i)=>w.localStorage.key(i).startsWith('zukait_accountant_pending')),'original account retains recoverable retry');
 dom.window.close();await db.close();console.log('Accountant DOM/API/Postgres: nine modules, summary cards, escaped data, financial detail, durable lost-response retry, exact three-decimal PDF/Excel payloads and account-switch clearing passed');
