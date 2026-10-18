@@ -14,6 +14,15 @@ async function open(){if(current()?.role!=='Manager')return;const roleAtStart=cu
  document.getElementById('acc-retry').onclick=()=>mutate(retry?.command,retry);
  }catch(e){msg(e.message);if(!document.getElementById('accountant-accounts'))window.alert(e.message)}}
 async function mutate(command,payload=null){if(busy||!command)return;if(retry&&!payload)return msg('Retry the previous request before another account change.');busy=true;const body=payload||{action:'manager_accountant',session_token:token(),request_id:crypto.randomUUID(),command};retry=body;try{msg('Waiting for the server…');await request(command,body);retry=null;await open();msg('Account change confirmed. Existing sessions were revoked.');}catch(e){if(e.status>=400&&e.status<500)retry=null;msg(e.message);const b=document.getElementById('acc-retry');if(b)b.hidden=!retry;}finally{busy=false;}}
-function inject(){if(current()?.role!=='Manager')return;const host=document.getElementById('userMgmtList');if(!host||document.getElementById('accountant-accounts-entry'))return;const b=document.createElement('button');b.type='button';b.id='accountant-accounts-entry';b.textContent='Accountant Accounts';b.className='secondary';b.onclick=()=>{auditOffset=0;open()};host.parentNode.insertBefore(b,host);}
+function dashboardEntry(){
+ if(current()?.role!=='Manager')return;
+ for(const reception of document.querySelectorAll('[data-rc-menu]')){
+  if(reception.parentElement?.dataset.accountsRow)return;
+  const row=document.createElement('div');row.dataset.accountsRow='1';row.style.cssText='display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin:10px 0';
+  reception.before(row);row.append(reception);reception.style.cssText+=';width:100%;min-width:0;margin:0';
+  const b=document.createElement('button');b.type='button';b.className='rc-dashboard-launcher';b.id='manager-accounts-launcher';b.style.cssText='width:100%;min-width:0;margin:0;background:linear-gradient(135deg,#edf0ff,#d9f5ed);color:#183c56';b.innerHTML='<b>📊 Accounts</b><small>Financial reports · Payments · Expenses</small>';b.onclick=()=>{if(current()?.role==='Manager')location.assign('accountant.html')};row.append(b);
+ }
+}
+function inject(){dashboardEntry();if(current()?.role!=='Manager')return;const host=document.getElementById('userMgmtList');if(!host||document.getElementById('accountant-accounts-entry'))return;const b=document.createElement('button');b.type='button';b.id='accountant-accounts-entry';b.textContent='Accountant Accounts';b.className='secondary';b.onclick=()=>{auditOffset=0;open()};host.parentNode.insertBefore(b,host);}
 window.zukaitAccountantAccounts={open};new MutationObserver(inject).observe(document.body,{subtree:true,childList:true});inject();
 })();

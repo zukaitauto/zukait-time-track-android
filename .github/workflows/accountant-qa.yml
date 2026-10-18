@@ -32,6 +32,7 @@ jobs:
       - run: bash scripts/ci-full-regression.sh
       - run: npm run test:reception
       - run: node tests/accountant-responsive.mjs
+      - run: ACCOUNTANT_TEST_ROLE=Manager node tests/accountant-responsive.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

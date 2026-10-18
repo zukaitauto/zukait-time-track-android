@@ -51,3 +51,7 @@ QA recheck: all three synthetic staff accounts inactive; all three Accountant jo
 Release readiness: browser automation and Android compilation are verified. Physical Android device acceptance, actual PDF sharing/printing, Excel application opening and business acceptance against representative QA invoices remain release gates; payload generation/escaping/numeric precision are automated. Production migrations/functions and application publication still require explicit owner approval after those gates. No production schema, production records or main commits were changed.
 
 Final QA source update: workshop-api version8, bundle SHA256 b73ca0a5508ea8c2e7a7225d59a40d117de4ede04b0809850278ceeddc0654bb. LPO report now includes latest collection date derived only from verified, unreversed receipts. Final financial, actual auth/API, PostgreSQL and DOM/export tests were rerun successfully after this change.
+
+## Manager dashboard access
+
+Manager now has Accounts in the second column beside Reception. It opens the financial workspace using the existing verified Manager session; a Back to Manager dashboard action preserves that session. The server already explicitly permits Manager for scoped Accountant reporting/commands. Other operational roles remain denied. Accountant account administration remains a separate Manager-only User Management action. DOM/API tests exercise both Manager and Accountant financial flows; responsive CI runs both roles. This change is development-only on architecture-v2 and does not publish the live app.
