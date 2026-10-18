@@ -89,3 +89,11 @@ Fixed four findings:
 - Exporting after editing filters used the draft inputs instead of the displayed report filters. Exports now use the captured applied filters and existing revision checks.
 
 Local verification: both-role DOM/API/PostgreSQL dashboard tests, Manager account management DOM/PostgreSQL, actual auth/API permissions and first-login restrictions, ledger correction/reversal/idempotency/grants tests, and JavaScript syntax checks. Added explicit late-response, module-navigation, initial-screen Cash Entry revision, normal Existing Users maintenance, and draft-filter export regressions. Physical-device acceptance remains unperformed. This audit does not itself publish a new version.
+
+## Financial-entry and account-switch follow-up audit — V340 candidate
+
+Cash correction now preserves the original transaction date instead of silently replacing it with today's date. The date remains explicitly editable. Pending financial requests stay recoverable under their original account key, while session invalidation/logout removes the pending notice from the visible page. Financial submissions recheck account identity on entry and after failed requests. The shared request handler also rechecks identity on network failure.
+
+Starting a report load clears the previous result and disables financial entry/exports until verified revisions arrive. Stale row actions are ignored. In-flight exports reject report navigation rather than producing a file after the user selects a different module.
+
+Both-role DOM/API/PostgreSQL regressions cover historical correction dates, unchanged correction amounts, interrupted-payment retry retention without cross-account display, and delayed export cancellation. Actual auth/API permission and append-only ledger tests remain passing locally. No backend, schema or production data changes are part of this pass. V340 publication is disabled until verified and explicitly released.
