@@ -1,9 +1,9 @@
 {
-  "versionCode": 301,
-  "versionName": "V338",
+  "versionCode": 302,
+  "versionName": "V339",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "3507fe9e5f7e1c881d56d3a670fd3dc3fd50ede5",
-  "apkSha256": "609b91bfb58c5049abd14af680c8724755eeb60cdc4d72ce4e23c9438cb61910",
-  "releaseTag": "release-V338-architecture-v2"
+  "sourceCommit": "dd4281259f49880b020917698af98b580b7eb6ac",
+  "apkSha256": "d865a36d968de2d5013754fe4242473b7be587f4bf68e0b83e1e9d8338590281",
+  "releaseTag": "release-V339-architecture-v2"
 }
