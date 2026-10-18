@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+node --check app/src/main/assets/workshop_periods.js
 node --check app/src/main/assets/cloud_sync.js
 node --check app/src/main/assets/leave_history.js
 node --check app/src/main/assets/cash_monthly_pulse.js

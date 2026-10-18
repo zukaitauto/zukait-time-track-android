@@ -139,8 +139,9 @@ function controlCard(type,label,count,accent){
 function hoursButton(kind,label){
  let val='—';try{
    const n=new Date(),day=startDay(n);let from,to;
-   if(kind==='day'){from=day;to=day+86400000}
-   else if(kind==='week'){const wd=(n.getDay()+6)%7;from=day-wd*86400000;to=from+7*86400000}
+   if(window.zukaitWorkshopPeriods){[from,to]=window.zukaitWorkshopPeriods.bounds(kind)}
+   else if(kind==='day'){from=day;to=day+86400000}
+   else if(kind==='week'){const wd=(n.getDay()+1)%7;from=day-wd*86400000;to=from+6*86400000}
    else{from=new Date(n.getFullYear(),n.getMonth(),1).getTime();to=new Date(n.getFullYear(),n.getMonth()+1,1).getTime()}
    const mins=users.filter(u=>u.role==='Employee').reduce((sum,u)=>(state.sessions||[]).filter(s=>s.emp===u.id&&s.job!==HOLD&&s.start<to&&(s.end||Date.now())>from).reduce((z,s)=>z+normalSessionMinutes({start:Math.max(s.start,from),end:Math.min(s.end||Date.now(),to)},to),sum),0);
    val=fmtSafe(mins);

@@ -65,9 +65,10 @@ window.v67OpenActiveJobs=function(){
 };
 
 function period(kind){
+ if(window.zukaitWorkshopPeriods)return window.zukaitWorkshopPeriods.bounds(kind);
  const n=new Date(),d=startDay(n);
  if(kind==='day')return[d,d+86400000];
- if(kind==='week'){const wd=(n.getDay()+6)%7,from=d-wd*86400000;return[from,from+7*86400000]}
+ if(kind==='week'){const wd=(n.getDay()+1)%7,from=d-wd*86400000;return[from,from+6*86400000]}
  return[new Date(n.getFullYear(),n.getMonth(),1).getTime(),new Date(n.getFullYear(),n.getMonth()+1,1).getTime()];
 }
 function worked(kind){
@@ -90,7 +91,7 @@ function controlCard(type,label,count,cls){
  return '<button class="v67-control '+cls+'" onclick="v65OpenControl(\''+type+'\')"><span>'+label+'</span><b>'+count+'</b><small>View details</small><em>›</em></button>';
 }
 function roundHour(kind,label,cls){
- return '<button class="v67-round '+cls+'" onclick="v65OpenHours(\''+kind+'\')"><span>'+label+'</span><b>'+fmtSafe(worked(kind))+'</b><small>View technicians</small></button>';
+ return '<button class="v67-round '+cls+'" onclick="v65OpenHours(\''+kind+'\')"><span>'+label+'</span><b>'+fmtSafe(worked(kind))+'</b><small>'+(kind==='week'?'Sat–Thu · View technicians':'View technicians')+'</small></button>';
 }
 function toolBox(cls,title,sub,buttons){
  return '<div class="v67-toolbox '+cls+'"><div class="v67-tool-head"><h4>'+title+'</h4><p>'+sub+'</p></div><div class="v67-tool-actions">'+buttons+'</div></div>';
