@@ -15,6 +15,7 @@ async function open(){if(current()?.role!=='Manager')return;const roleAtStart=cu
  }catch(e){msg(e.message);if(!document.getElementById('accountant-accounts'))window.alert(e.message)}}
 async function mutate(command,payload=null){if(busy||!command)return;if(retry&&!payload)return msg('Retry the previous request before another account change.');busy=true;const body=payload||{action:'manager_accountant',session_token:token(),request_id:crypto.randomUUID(),command};retry=body;try{msg('Waiting for the server…');await request(command,body);retry=null;await open();msg('Account change confirmed. Existing sessions were revoked.');}catch(e){if(e.status>=400&&e.status<500)retry=null;msg(e.message);const b=document.getElementById('acc-retry');if(b)b.hidden=!retry;}finally{busy=false;}}
 function dashboardEntry(){
+ if(typeof document==='undefined'||!document?.documentElement)return;
  for(const row of document.querySelectorAll('[data-accounts-row]')){const root=row.closest('#managerView');if(current()?.role!=='Manager'||!root||root.classList.contains('hidden')||!row.querySelector('[data-rc-menu]'))row.remove();}
  if(current()?.role!=='Manager')return;
  for(const reception of document.querySelectorAll('#managerView:not(.hidden) [data-rc-menu]')){
