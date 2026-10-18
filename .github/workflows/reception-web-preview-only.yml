@@ -1,10 +1,6 @@
 name: Reception Web Preview Only (No APK)
 
 on:
-  push:
-    branches: [architecture-v2]
-    paths:
-      - '.github/workflows/reception-web-preview-only.yml'
   workflow_dispatch:
 
 permissions:
@@ -19,7 +15,7 @@ concurrency:
 
 jobs:
   web-preview:
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/architecture-v2'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/architecture-v2'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -56,11 +52,6 @@ jobs:
           rm -rf _site
           mkdir -p _site
           cp app/src/main/assets/offline_test.html _site/index.html
-          cp app/src/main/assets/accountant.html _site/accountant.html
-          cp app/src/main/assets/accountant.js _site/accountant.js
-          cp app/src/main/assets/accountant.css _site/accountant.css
-          cp app/src/main/assets/accountant_exports.js _site/accountant_exports.js
-          cp app/src/main/assets/accountant_accounts.js _site/accountant_accounts.js
           cp app/src/main/assets/receptionist.html _site/receptionist.html
           cp app/src/main/assets/receptionist_session.js _site/receptionist_session.js
           cp app/src/main/assets/consumables.js _site/consumables.js

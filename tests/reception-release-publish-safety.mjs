@@ -6,7 +6,7 @@ const pages = fs.readFileSync('.github/workflows/pages.yml','utf8');
 const release = JSON.parse(fs.readFileSync('release-request.json','utf8'));
 const updater = JSON.parse(fs.readFileSync('latest-version.json','utf8'));
 
-for (const [name, workflow] of [['signed APK',approved],['PC Pages',pages]]) {
+for (const [name, workflow] of [['signed APK',approved],['PC Pages',pages],['Reception preview',fs.readFileSync('.github/workflows/reception-web-preview-only.yml','utf8')]]) {
  assert.match(workflow,/^on:\s*\n(?:[\s\S]*?)\s+workflow_dispatch:/m,name+' must support explicit dispatch');
  assert.doesNotMatch(workflow,/^\s+push:\s*$/m,name+' cannot publish from Git push');
  assert.match(workflow,/github\.event_name == 'workflow_dispatch' && github\.ref == 'refs\/heads\/architecture-v2'/,name+' must refuse main and other branches');
