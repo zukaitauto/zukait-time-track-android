@@ -77,3 +77,15 @@ Production Supabase default service-role grants were broader than isolated fixtu
 The V337 acceptance workflow now also checks the deployed production HTTP endpoints with a nonexistent session. These requests must be rejected; they contain no real staff credentials and cannot post financial records. Production authenticated functional testing remains the owner's live-app acceptance step. Existing V336 updater metadata is retained until successful coordinated V337 publication. No main changes are authorized.
 
 The least-privilege check additionally executes POST/CORRECT/REVERSE with `SET ROLE service_role` in isolated PostgreSQL. The forward `accountant_append_only_corrections` migration removes an unnecessary FOR UPDATE on immutable journal source rows; the existing journal advisory transaction lock still serializes all corrections. This permits service-role corrections using SELECT/INSERT only, without restoring UPDATE grants. The exact forward migration passed isolated tests and was applied to QA and production before publishing the UI. No real production journal transaction was posted for this test.
+
+## Follow-up audit after V338
+
+Scope: Accountant client navigation, existing-user administration, financial-entry revision provenance, exports, and the existing server permission/append-only tests. No production writes or schema changes were made.
+
+Fixed four findings:
+- Removing the standalone Accountant Accounts button made maintenance inaccessible from normal User Management. Authoritative Accountant rows now appear in Existing Users, with a per-row Manage account action, role/status/search filtering, and verified Manager/session checks. The removed standalone button stays removed.
+- A delayed financial-detail response could replace a newer job selection or reopen details after navigation. Detail requests now have a selection generation; navigation also closes stale correction targets.
+- The search-only initial screen discarded the report revision needed by Cash Entry. Snapshot and finance revisions are retained independently of result visibility/export availability.
+- Exporting after editing filters used the draft inputs instead of the displayed report filters. Exports now use the captured applied filters and existing revision checks.
+
+Local verification: both-role DOM/API/PostgreSQL dashboard tests, Manager account management DOM/PostgreSQL, actual auth/API permissions and first-login restrictions, ledger correction/reversal/idempotency/grants tests, and JavaScript syntax checks. Added explicit late-response, module-navigation, initial-screen Cash Entry revision, normal Existing Users maintenance, and draft-filter export regressions. Physical-device acceptance remains unperformed. This audit does not itself publish a new version.

@@ -2,8 +2,8 @@
   "versionName": "V338",
   "versionCode": 301,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": true,
-  "sourceCommit": "3507fe9e5f7e1c881d56d3a670fd3dc3fd50ede5",
+  "approvedForStaff": false,
+  "sourceCommit": null,
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-18T13:04:16.126Z",
-  "publishNonce": "dc8da753308c4c53ff54de96fd7270ad4de06ac772872ffe",
+  "approvedAt": null,
+  "publishNonce": null,
   "signedAcceptanceRun": 39129300438,
   "verificationRun": 39129300450,
   "accountantVerificationRun": 39129300399,
@@ -46,5 +46,5 @@
       "accountant_append_only_corrections"
     ]
   },
-  "verificationSummary": "V338 exact-source signed APK, Android compilation, full shared regression, Reception browser/concurrency, and Accountant Manager/Accountant browser/finance/permissions/export checks passed. Search-first JC finance and unified Accountant creation verified with isolated fixtures. Existing production backend unchanged; no production records modified. Physical-device/business acceptance NOT_RUN."
+  "verificationSummary": "Post-V338 Accountant audit changes pending exact-source CI and a new release approval record. Production remains on V338."
 }

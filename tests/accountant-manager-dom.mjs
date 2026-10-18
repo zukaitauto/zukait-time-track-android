@@ -6,7 +6,12 @@ w.eval(fs.readFileSync('app/src/main/assets/accountant_accounts.js','utf8'));ass
 const created=(await db.query("select role,department,must_change from staff_credentials where user_id='ACCNORMAL'")).rows[0];
 assert.deepEqual(created,{role:'Accountant',department:'Accounts',must_change:true});
 assert.ok(!w.document.body.innerHTML.includes('QA-normal-password'));
-await w.zukaitAccountantAccounts.open();
+w.document.getElementById('modal').innerHTML='<input id="userMgmtSearch"><select id="userMgmtRole"><option>All</option><option>Employee</option></select><select id="userMgmtStatus"><option>All</option><option>Active</option><option>Inactive</option></select><div id="userMgmtList"><table><tr><th>User</th><th>Role</th><th>Work Type</th><th>Status</th><th>Action</th></tr></table></div>';
+await wait(()=>w.document.querySelector('[data-accountant-user="ACCNORMAL"]'));
+assert.equal(w.document.querySelectorAll('[data-accountant-user="ACCNORMAL"]').length,1);
+assert.equal(w.document.getElementById('accountant-accounts-entry'),null);
+w.document.querySelector('[data-accountant-user="ACCNORMAL"] button').click();
+await wait(()=>w.document.getElementById('acc-create'));
 for(const [id,value] of [['acc-name','QA Accounts'],['acc-login','ACCUI'],['acc-password','QA-temp-password'],['acc-create-reason','QA UI creation']])w.document.getElementById(id).value=value;
 w.document.getElementById('acc-create').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
 async function wait(f){for(let i=0;i<500;i++){if(f())return;await new Promise(r=>setTimeout(r,10))}throw Error('Manager UI timeout: '+w.document.body.textContent)}

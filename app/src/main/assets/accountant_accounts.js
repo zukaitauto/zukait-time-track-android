@@ -1,6 +1,6 @@
 (function(){'use strict';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const cfg=window.ZUKAIT_ACCOUNTANT_CONFIG||{},url=cfg.url||'https://pjknotnjkufadqavcmii.supabase.co',key=cfg.key||'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A';let busy=false,retry=null,auditOffset=0;
+const cfg=window.ZUKAIT_ACCOUNTANT_CONFIG||{},url=cfg.url||'https://pjknotnjkufadqavcmii.supabase.co',key=cfg.key||'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A';let busy=false,retry=null,auditOffset=0,roster=null,rosterOwner=null,rosterToken=null,rosterLoading=false,rosterHost=null;
 const current=()=> (typeof me!=='undefined'&&me)||window.me;
 const token=()=>window.zukaitAuth?.getToken?.()||'';
 const msg=t=>{const e=document.getElementById('acc-manager-message');if(e)e.textContent=t};
@@ -13,7 +13,7 @@ async function open(){if(current()?.role!=='Manager')return;const roleAtStart=cu
  document.getElementById('accountant-accounts').onclick=e=>{const b=e.target.closest('[data-op]');if(!b)return;const c={operation:b.dataset.op,target_id:b.dataset.id};if(c.operation==='RESET'){const p=prompt('New temporary password (at least 8 characters)');if(p===null)return;if(p.length<8)return msg('Minimum 8 characters required.');c.temporary_password=p;}if(c.operation==='RENAME'){const login=prompt('New login ID. The internal account ID and audit history will stay unchanged.');if(!login)return;c.login_id=login.trim().toUpperCase();}if(c.operation==='ACTIVE')c.active=b.dataset.active==='true';const reason=prompt('Reason for this account change?');if(!reason||reason.trim().length<3)return;c.reason=reason.trim();mutate(c);};
  document.getElementById('acc-retry').onclick=()=>mutate(retry?.command,retry);
  }catch(e){msg(e.message);if(!document.getElementById('accountant-accounts'))window.alert(e.message)}}
-async function mutate(command,payload=null){if(busy||!command)return;if(retry&&!payload)return msg('Retry the previous request before another account change.');busy=true;const body=payload||{action:'manager_accountant',session_token:token(),request_id:crypto.randomUUID(),command};retry=body;try{msg('Waiting for the server…');await request(command,body);retry=null;await open();msg('Account change confirmed. Existing sessions were revoked.');}catch(e){if(e.status>=400&&e.status<500)retry=null;msg(e.message);const b=document.getElementById('acc-retry');if(b)b.hidden=!retry;}finally{busy=false;}}
+async function mutate(command,payload=null){if(busy||!command)return;if(retry&&!payload)return msg('Retry the previous request before another account change.');busy=true;const body=payload||{action:'manager_accountant',session_token:token(),request_id:crypto.randomUUID(),command};retry=body;try{msg('Waiting for the server…');await request(command,body);retry=null;roster=null;rosterHost=null;await open();msg('Account change confirmed. Existing sessions were revoked.');}catch(e){if(e.status>=400&&e.status<500)retry=null;msg(e.message);const b=document.getElementById('acc-retry');if(b)b.hidden=!retry;}finally{busy=false;}}
 function dashboardEntry(){
  if(typeof document==='undefined'||!document?.documentElement)return;
  for(const row of document.querySelectorAll('[data-accounts-row]')){const root=row.closest('#managerView');if(current()?.role!=='Manager'||!root||root.classList.contains('hidden')||!row.querySelector('[data-rc-menu]'))row.remove();}
@@ -32,8 +32,36 @@ async function createFromUserForm({id,name,password}){
  const body=retry||{action:'manager_accountant',session_token:token(),request_id:crypto.randomUUID(),command};
  if(retry&&JSON.stringify(retry.command)!==JSON.stringify(command))throw Error('Retry the previous account creation before changing these fields.');
  busy=true;retry=body;
- try{await request(command,body);retry=null;}catch(e){if(e.status>=400&&e.status<500)retry=null;throw e;}finally{busy=false;}
+ try{await request(command,body);retry=null;roster=null;rosterHost=null;}catch(e){if(e.status>=400&&e.status<500)retry=null;throw e;}finally{busy=false;}
 }
-function inject(){if(typeof document==='undefined'||!document?.documentElement)return;dashboardEntry();document.getElementById('accountant-accounts-entry')?.remove();}
+function userListAccounts(){
+ const host=document.getElementById('userMgmtList'),table=host?.querySelector('table'),role=document.getElementById('userMgmtRole');
+ if(current()?.role!=='Manager'){roster=null;rosterHost=null;rosterOwner=null;rosterToken=null;return;}
+ if(!host||!table||host.querySelector('#newUserRole'))return;
+ if(role&&!Array.from(role.options).some(o=>o.value==='Accountant')){const o=document.createElement('option');o.value=o.textContent='Accountant';role.append(o);}
+ const owner=current().id,t=token();
+ if(rosterOwner!==owner||rosterToken!==t){roster=null;rosterHost=null;rosterOwner=owner;rosterToken=t;}
+ if(!roster||rosterHost!==host){
+  if(rosterLoading)return;rosterLoading=true;rosterHost=host;
+  request({operation:'LIST',audit_offset:0}).then(r=>{if(current()?.id===owner&&current()?.role==='Manager'&&token()===t){roster=r.accounts;renderUserAccounts();}}).catch(()=>{if(document.contains(host)&&!host.querySelector('[data-accountant-load-error]')){const e=document.createElement('p');e.dataset.accountantLoadError='1';e.textContent='Accountant accounts could not be loaded. ';const b=document.createElement('button');b.textContent='Retry';b.onclick=()=>{e.remove();rosterHost=null;roster=null;userListAccounts()};e.append(b);host.append(e);}}).finally(()=>{rosterLoading=false;});
+  return;
+ }
+ renderUserAccounts();
+}
+function renderUserAccounts(){
+ const host=document.getElementById('userMgmtList'),table=host?.querySelector('table');
+ if(current()?.role!=='Manager'||!table||!roster||rosterOwner!==current().id||rosterToken!==token())return;
+ const q=(document.getElementById('userMgmtSearch')?.value||'').trim().toLowerCase(),role=document.getElementById('userMgmtRole')?.value||'All',status=document.getElementById('userMgmtStatus')?.value||'All';
+ const signature=JSON.stringify([q,role,status,roster]);
+ if(table.dataset.accountantRoster===signature)return;table.dataset.accountantRoster=signature;
+ for(const row of [...table.rows].slice(1))if(row.dataset.accountantUser||row.cells[1]?.textContent.trim()==='Accountant')row.remove();
+ if(!['All','Accountant'].includes(role))return;
+ for(const a of roster.filter(a=>(!q||[a.name,a.id,a.login_id].join(' ').toLowerCase().includes(q))&&(status==='All'||(status==='Active')===a.active))){
+  const row=table.insertRow();row.dataset.accountantUser=a.id;
+  for(const v of [a.name+' · '+a.login_id,'Accountant','Accounts',a.active?'Active':'Inactive'])row.insertCell().textContent=v;
+  const b=document.createElement('button');b.type='button';b.textContent='Manage account';b.onclick=()=>{if(current()?.role==='Manager'){auditOffset=0;open()}};row.insertCell().append(b);
+ }
+}
+function inject(){if(typeof document==='undefined'||!document?.documentElement)return;dashboardEntry();document.getElementById('accountant-accounts-entry')?.remove();userListAccounts();}
 window.zukaitAccountantAccounts={open,createFromUserForm};new MutationObserver(inject).observe(document.body,{subtree:true,childList:true});inject();
 })();
