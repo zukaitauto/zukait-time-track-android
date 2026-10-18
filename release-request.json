@@ -2,8 +2,8 @@
   "versionName": "V338",
   "versionCode": 301,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": false,
-  "sourceCommit": null,
+  "approvedForStaff": true,
+  "sourceCommit": "3507fe9e5f7e1c881d56d3a670fd3dc3fd50ede5",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,12 +19,12 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "accountantVerificationRun": null,
-  "androidBuildRun": null,
+  "approvedAt": "2026-10-18T13:02:39.641074+00:00",
+  "publishNonce": "bd96eeadd3753bee639ed38696dcca50aaf8154b2a7bb3a5",
+  "signedAcceptanceRun": 39129300438,
+  "verificationRun": 39129300450,
+  "accountantVerificationRun": 39129300399,
+  "androidBuildRun": 39129300424,
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -46,5 +46,5 @@
       "accountant_append_only_corrections"
     ]
   },
-  "verificationSummary": "Pending exact-source V338 verification. Search-first JC financial view and unified Accountant creation; no backend deployment required."
+  "verificationSummary": "V338 exact-source signed APK, Android compilation, full shared regression, Reception browser/concurrency, and Accountant Manager/Accountant browser/finance/permissions/export checks passed. Search-first JC finance and unified Accountant creation verified with isolated fixtures. Existing production backend unchanged; no production records modified. Physical-device/business acceptance NOT_RUN."
 }
