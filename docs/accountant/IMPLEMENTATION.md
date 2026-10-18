@@ -97,3 +97,9 @@ Cash correction now preserves the original transaction date instead of silently 
 Starting a report load clears the previous result and disables financial entry/exports until verified revisions arrive. Stale row actions are ignored. In-flight exports reject report navigation rather than producing a file after the user selects a different module.
 
 Both-role DOM/API/PostgreSQL regressions cover historical correction dates, unchanged correction amounts, interrupted-payment retry retention without cross-account display, and delayed export cancellation. Actual auth/API permission and append-only ledger tests remain passing locally. No backend, schema or production data changes are part of this pass. V340 publication is disabled until verified and explicitly released.
+
+## Accountant administration navigation/retry audit — included in V340
+
+Delayed account-list responses now apply only to the original modal and latest list request. Confirmed account changes no longer reopen a modal after the Manager navigates elsewhere. Retry commands (which may contain a temporary password in memory) are scoped to the initiating Manager identity and session token; a new identity/session clears the old in-memory retry instead of carrying its credentials or blocking a new request. No passwords are persisted to browser storage.
+
+Isolated DOM/PostgreSQL tests cover leaving during list loading, leaving during password-reset acknowledgement, a server-committed creation with a lost response, and starting a different creation after session renewal without sending the stale token. Existing rename/activation/first-login/session-revocation/ledger permission tests remain unchanged. No backend deployment or production mutation is required. These fixes join the pending V340 financial-entry fixes; V339 remains the live release.
