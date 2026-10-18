@@ -14,3 +14,5 @@ const timed=fixture();timed.state.sessions=[{id:'LUNCH',emp:'E',job:'J1',start:a
 timed.state.sessions[0].end=null;assert.equal(financialReport(timed,{},at('17:00')).details[0].labour_cost_omr,null,'running work remains pending');
 const source=fixture();source.state.consumables.actuals[0].lines[0].unitPriceSnapshot=4;source.state.consumables.issues=[{id:'ISS',jobCard:'J1',mainPainterId:'E'}];const selected=financialReport(source,{employee:'E'},at('12:00'));assert.equal(selected.rows.consumables.length,1);assert.equal(selected.rows.consumables[0].unit_price_omr,4,'historical price snapshot wins over fallback');
 console.log('Additional finance checks: older outstanding carry-forward, as-of receipts, archive history, lunch/overtime/overlap, open-session pending and issued-painter/historical price filters passed');
+
+assert.equal(financialReport(fixture(),{},Date.parse('2026-10-18T08:00:00Z')).rows.lpo[0].collection_date,'2026-10-01','LPO collection date follows verified receipt, not document receipt');
