@@ -2,8 +2,8 @@
   "versionName": "V340",
   "versionCode": 303,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": false,
-  "sourceCommit": null,
+  "approvedForStaff": true,
+  "sourceCommit": "0e912dfa66029a0c06e7e0b9e454f771400bc809",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,12 +19,12 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": 39151901649,
-  "verificationRun": 39151901639,
-  "accountantVerificationRun": 39151901650,
-  "androidBuildRun": 39151901651,
+  "approvedAt": "2026-10-18T21:09:20.305Z",
+  "publishNonce": "96f665d8d6ade03404bbda1a030d6afd93649f2771b9c99f",
+  "signedAcceptanceRun": 39165875905,
+  "verificationRun": 39165875995,
+  "accountantVerificationRun": 39165876121,
+  "androidBuildRun": 39165876119,
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -46,5 +46,5 @@
       "accountant_append_only_corrections"
     ]
   },
-  "verificationSummary": "V340 financial-entry/account-switch/export audit candidate. Awaiting exact-source checks and publication approval; production remains V339."
+  "verificationSummary": "V340 exact-source both-role Accounts browser/card navigation/financial/permission/export, full shared regression, Reception browser/concurrent database, native PDF, Android and signed APK checks passed. Reception WebKit initially timed out; unchanged-source rerun attempt 2 passed. Includes nine Accounts module cards, original correction dates, pending-request privacy, report/export navigation guards and Manager administration session-scoped retries. No backend deployment or production record changes. Physical-device/business acceptance NOT_RUN."
 }
