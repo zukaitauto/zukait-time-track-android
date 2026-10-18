@@ -33,7 +33,7 @@ begin
  if not coalesce((result->>'ok')::boolean,false) then raise exception 'reception_full_edit_commit_failed'; end if;
  select x into j from public.workshop_state s,jsonb_array_elements(s.data->'jobs') x where s.id='main' and x->>'no'=p_job_card;
  return result||jsonb_build_object('job',j);
-end $function$
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.zukait_manager_linked_full_job_edit(p_expected_revision bigint, p_data jsonb, p_actor_id text, p_job_card text, p_reason text, p_live jsonb)
  RETURNS jsonb
@@ -73,7 +73,7 @@ begin
  if not coalesce((result->>'ok')::boolean,false) then raise exception 'reception_full_edit_commit_failed'; end if;
  select x into j from public.workshop_state s,jsonb_array_elements(s.data->'jobs') x where s.id='main' and x->>'no'=p_job_card;
  return result||jsonb_build_object('job',j);
-end $function$
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.zukait_reception_guard_job_creation()
  RETURNS trigger
@@ -106,6 +106,6 @@ begin
  end loop;
  return new;
 end;
-$function$
+$function$;
 
 commit;

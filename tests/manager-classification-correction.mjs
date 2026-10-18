@@ -33,5 +33,6 @@ try{
  assert.equal((await db.query('select job_type from workshop_receptions where rc_no=$1',[rc.rc_no])).rows[0].job_type,'INSURANCE');
  await assert.rejects(db.query("delete from workshop_job_classification_audit"),/permission denied/);
  await db.exec('reset role');await assert.rejects(db.exec('delete from workshop_job_classification_audit'),/classification_audit_immutable/);
+ await db.exec(fs.readFileSync('docs/job-classification/DISABLE_CORRECTION.sql','utf8'));assert.equal((await db.query('select count(*)::int n from workshop_job_classification_audit')).rows[0].n,3,'Disable preserves classification audit');assert.equal((await db.query("select approval_status from workshop_receptions where job_card='LINKED'")).rows[0].approval_status,'WAITING','Disable preserves corrected linked job');console.log('Rollback SQL executes and retains corrected linked job and all immutable audit records.');
  console.log('PASS: Manager legacy/direct Cash-to-Insurance correction; immutable old/new audit; no fake insurer approval; permission/reason/insurer/conflict checks; ordinary-save and new-job bypass blocked; repeat save works.');
 }finally{await db.close()}
