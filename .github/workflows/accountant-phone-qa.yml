@@ -1,0 +1,92 @@
+name: Accountant isolated phone test package
+on:
+  workflow_dispatch:
+  push:
+    branches: [architecture-v2]
+    paths: ['.github/workflows/accountant-phone-qa.yml']
+permissions:
+  contents: read
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/architecture-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Public QA-only publishable key; no secret or production service-role key.
+      ZUKAIT_ACCEPTANCE_PROJECT_REF: omqgkqknbdcnotabffek
+      ZUKAIT_ACCEPTANCE_PUBLISHABLE_KEY: sb_publishable_DBp6FI8Z4ThAq_4LXrZXSg_Xw2uPPgO
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      ANDROID_HOME: /usr/local/lib/android/sdk
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Verify isolation preparation
+        run: python3 tests/reception-acceptance-preparation.py
+      - name: Prepare separate client source
+        run: python3 scripts/prepare-insurance-acceptance.py --output "$RUNNER_TEMP/insurance-acceptance"
+      - name: Verify Accountant and Manager QA isolation
+        run: |
+          python3 - <<'PYCODE'
+          import os,json
+          from pathlib import Path
+          root=Path(os.environ['RUNNER_TEMP'])/'insurance-acceptance'
+          m=json.loads((root/'acceptance-manifest.json').read_text())
+          assert m['source_sha']==os.environ['GITHUB_SHA']
+          assert m['project_ref']=='omqgkqknbdcnotabffek'
+          assert m['application_id']=='com.zukait.timetrack.acceptance'
+          assert m['updater_disabled'] is True
+          for file in ['accountant.js','accountant_accounts.js','secure_auth.js']:
+            s=(root/'app/src/main/assets'/file).read_text()
+            assert 'omqgkqknbdcnotabffek.supabase.co' in s
+            assert 'pjknotnjkufadqavcmii' not in s
+          assert 'manager-accounts-launcher' in (root/'web/accountant_accounts.js').read_text()
+          print('PASS: Accountant, Manager and authentication use QA only; separate app ID; native updater disabled.')
+          PYCODE
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Install required Android SDK packages
+        shell: bash
+        run: |
+          SDKMANAGER=$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | head -n 1)
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
+      - name: Build separate debug APK
+        working-directory: ${{ runner.temp }}/insurance-acceptance
+        run: gradle assembleDebug --stacktrace
+      - name: Verify package and archive evidence
+        shell: bash
+        run: |
+          CANDIDATE="$RUNNER_TEMP/insurance-acceptance"
+          APK="$CANDIDATE/app/build/outputs/apk/debug/app-debug.apk"
+          BT="$ANDROID_SDK_ROOT/build-tools/35.0.0"
+          "$BT/apksigner" verify --verbose --print-certs "$APK" > "$CANDIDATE/signature.txt"
+          "$BT/aapt" dump badging "$APK" > "$CANDIDATE/package.txt"
+          grep -q "package: name='com.zukait.timetrack.acceptance'" "$CANDIDATE/package.txt"
+          # The isolated QA build keeps the current source versionCode and
+          # appends -ACCEPTANCE to the versionName; do not pin to old V305.
+          SOURCE_VERSION_NAME=$(sed -nE 's/^[[:space:]]*versionName[[:space:]]+"([^"]+)".*/\1/p' app/build.gradle | head -n 1)
+          SOURCE_VERSION_CODE=$(sed -nE 's/^[[:space:]]*versionCode[[:space:]]+([0-9]+).*/\1/p' app/build.gradle | head -n 1)
+          test -n "$SOURCE_VERSION_NAME" && test -n "$SOURCE_VERSION_CODE"
+          grep -Fq "versionName='${SOURCE_VERSION_NAME}-ACCEPTANCE'" "$CANDIDATE/package.txt"
+          grep -Fq "versionCode='${SOURCE_VERSION_CODE}'" "$CANDIDATE/package.txt"
+          cd "$CANDIDATE"
+          sha256sum app/build/outputs/apk/debug/app-debug.apk > apk-sha256.txt
+          echo 'Build preparation only. Backend and physical-device acceptance remain NOT_RUN.' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ACCOUNTANT_PHONE_QA_${{ github.sha }}
+          retention-days: 14
+          path: |
+            ${{ runner.temp }}/insurance-acceptance/app/build/outputs/apk/debug/app-debug.apk
+            ${{ runner.temp }}/insurance-acceptance/web/
+            ${{ runner.temp }}/insurance-acceptance/acceptance-manifest.json
+            ${{ runner.temp }}/insurance-acceptance/apk-sha256.txt
+            ${{ runner.temp }}/insurance-acceptance/signature.txt
+            ${{ runner.temp }}/insurance-acceptance/package.txt

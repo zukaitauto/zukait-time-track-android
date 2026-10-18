@@ -55,3 +55,7 @@ Final QA source update: workshop-api version8, bundle SHA256 b73ca0a5508ea8c2e7a
 ## Manager dashboard access
 
 Manager now has Accounts in the second column beside Reception. It opens the financial workspace using the existing verified Manager session; a Back to Manager dashboard action preserves that session. The server already explicitly permits Manager for scoped Accountant reporting/commands. Other operational roles remain denied. Accountant account administration remains a separate Manager-only User Management action. DOM/API tests exercise both Manager and Accountant financial flows; responsive CI runs both roles. This change is development-only on architecture-v2 and does not publish the live app.
+
+## Physical-phone QA package
+
+`accountant-phone-qa.yml` builds a separate `com.zukait.timetrack.acceptance` application and a QA web asset bundle using the established isolated preparation script. It rewrites all client backend references to omqgkqknbdcnotabffek, verifies Accountant/account-management/authentication endpoints, and disables the native production updater. It cannot replace the installed production application. The artifact contains no passwords or server credentials, and is not a production release. Its manifest records source identity; it does not apply migrations or certify physical acceptance. A dedicated QA login is required; production staff credentials must not be reused for testing.
