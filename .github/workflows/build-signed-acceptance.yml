@@ -9,6 +9,8 @@ on:
       - .github/workflows/reception-check.yml
       - .github/workflows/build-signed-acceptance.yml
       - app/build.gradle
+      - tests/accountant-*
+      - supabase/migrations/*accountant*
       - app/src/main/assets/v2/features/estimate/**
       - tests/v2-estimate-*
       - app/src/main/assets/v2/features/insurance/**

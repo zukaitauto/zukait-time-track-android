@@ -12,7 +12,7 @@ function validate(r,ref){
  for(const k of ['signedAcceptanceRun','verificationRun','accountantVerificationRun'])assert.ok(Number.isSafeInteger(r[k])&&r[k]>0,k+' required');
  assert.equal(r.productionBackend.project,'pjknotnjkufadqavcmii');
  for(const slug of ['staff-auth','workshop-api']){const e=r.productionBackend.functions[slug];assert.ok(e.version>0);assert.match(e.bundleSha256,/^[a-f0-9]{64}$/);assert.equal(e.verifiedFileMatch,true);}
- for(const n of ['accountant_financial_ledger','accountant_lpo_audit'])assert.ok(r.productionBackend.migrations.includes(n));
+ for(const n of ['accountant_financial_ledger','accountant_lpo_audit','accountant_append_only_grants'])assert.ok(r.productionBackend.migrations.includes(n));
  for(const k of ['credentialPreservation','qaFinancialAcceptance','serverPermissions','rollbackPrepared','legacyLoginCompatibility'])assert.equal(r.evidence[k],true,k+' not verified');
  return true;
 }

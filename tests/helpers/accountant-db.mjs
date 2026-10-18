@@ -9,5 +9,5 @@ grant select,insert,update on staff_credentials,staff_sessions,workshop_state,wo
 insert into staff_credentials(user_id,display_name,role) values('M','Manager','Manager'),('A','Accountant','Accountant'),('E','Employee','Employee');
 insert into workshop_state values('main','{"jobs":[{"no":"J1","jobType":"CASH","finalInvoiceAmount":100,"invoiceDate":"2026-10-01"}]}',1,now(),'M');`);
 await db.exec(fs.readFileSync('supabase/migrations/20261017195634_accountant_financial_ledger.sql','utf8'));
-await db.exec(fs.readFileSync('supabase/migrations/20261017202257_accountant_lpo_audit.sql','utf8'));return db;
+await db.exec(fs.readFileSync('supabase/migrations/20261017202257_accountant_lpo_audit.sql','utf8'));await db.exec(fs.readFileSync('supabase/migrations/20261018092000_accountant_append_only_grants.sql','utf8'));return db;
 }

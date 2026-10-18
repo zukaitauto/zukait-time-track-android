@@ -36,6 +36,17 @@ jobs:
       - run: npm run test:reception
       - run: node tests/accountant-responsive.mjs
       - run: ACCOUNTANT_TEST_ROLE=Manager node tests/accountant-responsive.mjs
+      - name: Verify live Accountant endpoints reject unauthenticated requests
+        run: |
+          set -euo pipefail
+          BASE='https://pjknotnjkufadqavcmii.supabase.co/functions/v1'
+          KEY='sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A'
+          for ACTION in accountant_dashboard accountant_report load; do
+            STATUS=$(curl --silent --show-error --max-time 25 --output /tmp/accountant-denied.json --write-out '%{http_code}' --request POST --header "Content-Type: application/json" --header "apikey: $KEY" --header 'x-zukait-session: NONEXISTENT_ACCOUNTANT_RELEASE_TEST' --data "{\"action\":\"$ACTION\"}" "$BASE/workshop-api")
+            test "$STATUS" = '401'
+          done
+          STATUS=$(curl --silent --show-error --max-time 25 --output /tmp/accountant-auth-denied.json --write-out '%{http_code}' --request POST --header "Content-Type: application/json" --header "apikey: $KEY" --data '{"action":"manager_accountant","session_token":"NONEXISTENT_ACCOUNTANT_RELEASE_TEST","command":{"operation":"LIST"}}' "$BASE/staff-auth")
+          test "$STATUS" = '403'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
