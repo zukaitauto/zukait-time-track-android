@@ -68,6 +68,9 @@ jobs:
       - name: Resolve explicitly owner-authorized UI-only scope
         run: node scripts/verify-ui-only-release.cjs >> "$GITHUB_ENV"
 
+      - name: Verify explicitly owner-approved Accountant live-test scope
+        run: node scripts/verify-accountant-release.cjs >> "$GITHUB_ENV"
+
       - name: Verify approved source commit
         shell: bash
         run: |
@@ -83,7 +86,7 @@ jobs:
           if [ "$GITHUB_REF_NAME" = "architecture-v2" ]; then
             test "$(git rev-parse origin/architecture-v2)" = "$GITHUB_SHA" || { echo "architecture-v2 release must run from current branch HEAD"; exit 1; }
           fi
-          EXCLUDES=(':(exclude)release-request.json' ':(exclude)latest-version.json' ':(exclude)docs/INSURANCE_V305_ACCEPTANCE_GATE.json')
+          EXCLUDES=(':(exclude)release-request.json' ':(exclude)latest-version.json' ':(exclude)release-accountant-activation.json' ':(exclude)docs/INSURANCE_V305_ACCEPTANCE_GATE.json')
           if [ "$UI_ONLY_PUBLICATION" = "true" ]; then
             # Runtime assets stay strictly pinned. Only this reviewed publication
             # controller, its waiver record, and controller tests may differ.
@@ -97,11 +100,11 @@ jobs:
           echo "Approved source commit verified: $SOURCE_COMMIT"
 
       - name: Verify complete V305 acceptance and recovery evidence
-        if: env.UI_ONLY_PUBLICATION != 'true' && env.MANAGEMENT_PUBLICATION != 'true'
+        if: env.UI_ONLY_PUBLICATION != 'true' && env.MANAGEMENT_PUBLICATION != 'true' && env.ACCOUNTANT_PUBLICATION != 'true'
         run: node scripts/verify-v305-acceptance.cjs
 
       - name: Verify UI-only compatibility source CI provenance
-        if: env.UI_ONLY_PUBLICATION == 'true' || env.MANAGEMENT_PUBLICATION == 'true'
+        if: env.UI_ONLY_PUBLICATION == 'true' || env.MANAGEMENT_PUBLICATION == 'true' || env.ACCOUNTANT_PUBLICATION == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -112,6 +115,15 @@ jobs:
           test "$(jq -r '.path' /tmp/ui-verification-run.json)" = ".github/workflows/reception-check.yml"
           test "$(jq -r '.conclusion' /tmp/ui-verification-run.json)" = "success"
           echo 'Owner-authorized publication. Consult release-request.json for exact scope, server deployment evidence, and explicitly deferred backup/physical checks.' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify Accountant browser and financial acceptance provenance
+        if: env.ACCOUNTANT_PUBLICATION == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RUN=$(jq -r '.accountantVerificationRun' release-request.json)
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN" > /tmp/accountant-verification.json
+          jq -e --arg sha "$(jq -r .sourceCommit release-request.json)" '.head_sha==$sha and .head_branch=="architecture-v2" and .path==".github/workflows/accountant-qa.yml" and .conclusion=="success"' /tmp/accountant-verification.json
 
       - name: Pin both clients to the approved source
         shell: bash
@@ -207,7 +219,7 @@ jobs:
             -f tag_name="$TAG" \
             -f target_commitish="${SOURCE_SHA}" \
             -f name="Zukait Time Track ${{ steps.approved.outputs.version_name }}" \
-            -f body="Owner-approved ${{ steps.approved.outputs.version_name }}. UI-only publication: ${UI_ONLY_PUBLICATION}. Source ${SOURCE_SHA}. Scope $(jq -r .releaseScope /tmp/zukait-approved-request.json). Server deployment and owner-authorized deferrals are documented in release-request.json. Physical acceptance NOT_RUN; fresh production backup/restore deferred by owner." \
+            -f body="Owner-approved ${{ steps.approved.outputs.version_name }}. UI-only publication: ${UI_ONLY_PUBLICATION}. Source ${SOURCE_SHA}. Scope $(jq -r .releaseScope /tmp/zukait-approved-request.json). Server deployment and owner-authorized deferrals are documented in release-request.json. Physical acceptance status and rollback/backup evidence are recorded in the owner-approved release request." \
             -F draft=true \
             -F prerelease=false)
           RELEASE_ID=$(printf '%s' "$RELEASE_JSON" | jq -r '.id // empty')

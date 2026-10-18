@@ -9,6 +9,7 @@ node tests/manager-header-menu-runtime.mjs
 node tests/app-exit.mjs
 node tests/vin-scan-runtime.mjs
 node tests/secure-session-restore.mjs
+node tests/accountant-release-gate.cjs
 node tests/accountant-finance.mjs
 node tests/accountant-ledger-sql.mjs
 node tests/accountant-auth-api.mjs

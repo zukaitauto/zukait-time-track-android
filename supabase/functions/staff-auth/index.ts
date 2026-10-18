@@ -113,7 +113,9 @@ async function verifySession(token: string) {
 }
 async function authUser(userId: string, password: string) {
   let id = String(userId || "").trim().toUpperCase();
-  if(!/^[A-Z0-9_-]{1,40}$/.test(id))return {ok:false,code:"invalid"};
+  // Existing staff may have legacy punctuation in their immutable login ID.
+  // New Accountant aliases remain strictly validated by account management.
+  if(!id||id.length>200||/[\u0000-\u001f\u007f]/.test(id))return {ok:false,code:"invalid"};
   let { data, error } = await admin.from("staff_credentials")
     .select("user_id,display_name,role,department,login_id,password_hash,password_salt,password_iterations,active,must_change,failed_attempts,locked_until")
     .eq("user_id", id).maybeSingle();

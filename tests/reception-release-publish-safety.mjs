@@ -48,7 +48,7 @@ if (updater.versionCode < release.versionCode) {
  assert.match(updater.sourceCommit,/^[a-f0-9]{40}$/);
  assert.match(updater.apkSha256,/^[a-f0-9]{64}$/);
  assert.equal(updater.releaseTag,'release-'+updater.versionName+'-architecture-v2');
- if(release.releaseScope !== 'reception-insurance-features-1-10') assert.equal(uiApproval?.versionName,release.versionName,'Pending UI and APK release versions must match');
- if(release.releaseScope !== 'reception-insurance-features-1-10') assert.equal(uiApproval?.versionCode,release.versionCode);
-} else if(release.releaseScope === 'reception-insurance-features-1-10') { assert.equal(updater.sourceCommit,release.sourceCommit); assert.equal(updater.versionCode,release.versionCode); assert.match(updater.apkSha256,/^[a-f0-9]{64}$/); } else verifyUpdaterAfterUiRelease(updater);
+ if(!['reception-insurance-features-1-10','accountant-live-test'].includes(release.releaseScope)) assert.equal(uiApproval?.versionName,release.versionName,'Pending UI and APK release versions must match');
+ if(!['reception-insurance-features-1-10','accountant-live-test'].includes(release.releaseScope)) assert.equal(uiApproval?.versionCode,release.versionCode);
+} else if(['reception-insurance-features-1-10','accountant-live-test'].includes(release.releaseScope)) { assert.equal(updater.sourceCommit,release.sourceCommit); assert.equal(updater.versionCode,release.versionCode); assert.match(updater.apkSha256,/^[a-f0-9]{64}$/); } else verifyUpdaterAfterUiRelease(updater);
 console.log('PASS: Signed APK and Pages are manual-only on architecture-v2 with source/approval gates; explicit UI approval required');

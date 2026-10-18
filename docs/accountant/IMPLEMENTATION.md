@@ -59,3 +59,11 @@ Manager now has Accounts in the second column beside Reception. It opens the fin
 ## Physical-phone QA package
 
 `accountant-phone-qa.yml` builds a separate `com.zukait.timetrack.acceptance` application and a QA web asset bundle using the established isolated preparation script. It rewrites all client backend references to omqgkqknbdcnotabffek, verifies Accountant/account-management/authentication endpoints, and disables the native production updater. It cannot replace the installed production application. The artifact contains no passwords or server credentials, and is not a production release. Its manifest records source identity; it does not apply migrations or certify physical acceptance. A dedicated QA login is required; production staff credentials must not be reused for testing.
+
+## Owner-authorized live-app testing release preparation — V337
+
+The owner approved activating the Accountant backend and publishing Accounts inside the existing Manager module with “PROCEED” after an explicit production approval question. Physical acceptance remains NOT_RUN; testing is requested inside the live app. This approval does not activate unrelated Phase 2 features.
+
+The production compatibility check found four pre-existing staff IDs outside the new-account alias format. Staff authentication now preserves legacy immutable login IDs (including punctuation) while Accountant account management still enforces strict unique alias validation. A real auth/API regression covers this case before deployment.
+
+V337 has a dedicated Accountant release scope with explicit owner authorization, exact-source signed/Reception/Accountant workflow provenance, backend file/hash/version evidence, credential preservation, financial QA and rollback evidence. The coordinated publisher remains manual-dispatch and retains its source-drift, signed certificate, accepted APK bytes, public Pages and updater-parity gates. The approval dispatcher only invokes that publisher after matching an explicit approved activation record; it cannot publish directly or run on main. Historical V336 UI approval cannot authorize V337. Existing job-type correction remains installed independently.

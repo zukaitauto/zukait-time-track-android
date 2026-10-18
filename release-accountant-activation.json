@@ -1,0 +1,6 @@
+{
+  "approved": false,
+  "sourceCommit": null,
+  "release": "V337",
+  "purpose": "Owner-approved Accountant live-app testing; dispatch existing coordinated publisher only after exact-source gates pass."
+}

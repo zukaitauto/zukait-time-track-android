@@ -5,6 +5,8 @@ on:
     branches: [architecture-v2]
     paths:
       - 'app/src/main/assets/accountant*'
+      - 'app/build.gradle'
+      - 'scripts/verify-accountant-release.cjs'
       - 'supabase/functions/workshop-api/accountant/**'
       - 'supabase/functions/staff-auth/index.ts'
       - 'supabase/migrations/*accountant*'

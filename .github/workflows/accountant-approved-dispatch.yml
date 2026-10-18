@@ -1,0 +1,49 @@
+name: Dispatch owner-approved Accountant publication
+on:
+  push:
+    branches: [architecture-v2]
+    paths: [release-accountant-activation.json]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: write
+jobs:
+  dispatch:
+    if: github.ref == 'refs/heads/architecture-v2'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Resolve explicit Accountant activation request
+        id: request
+        run: |
+          node - <<'JS'
+          const fs=require('fs'),assert=require('assert/strict');
+          const a=JSON.parse(fs.readFileSync('release-accountant-activation.json'));
+          if(a.approved!==true){fs.appendFileSync(process.env.GITHUB_OUTPUT,'approved=false\n');process.exit(0);}
+          const r=JSON.parse(fs.readFileSync('release-request.json'));
+          require('./scripts/verify-accountant-release.cjs').validate(r,process.env.GITHUB_REF);
+          assert.equal(a.sourceCommit,r.sourceCommit);assert.equal(a.release,r.versionName);assert.equal(a.publishNonce,r.publishNonce);
+          assert.equal(a.authorization,r.authorization);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,'approved=true\n');
+          JS
+      - name: Verify immutable source, successful runs and dispatch coordinated publisher
+        if: steps.request.outputs.approved == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(gh api repos/$GITHUB_REPOSITORY/git/ref/heads/architecture-v2 --jq .object.sha)" = "$GITHUB_SHA"
+          SOURCE=$(jq -r .sourceCommit release-request.json)
+          git merge-base --is-ancestor "$SOURCE" "$GITHUB_SHA"
+          git diff --exit-code "$SOURCE" "$GITHUB_SHA" -- . ':(exclude)release-request.json' ':(exclude)release-accountant-activation.json' ':(exclude)latest-version.json' ':(exclude)docs/INSURANCE_V305_ACCEPTANCE_GATE.json'
+          for PAIR in 'signedAcceptanceRun:build-signed-acceptance.yml' 'verificationRun:reception-check.yml' 'accountantVerificationRun:accountant-qa.yml'; do
+            FIELD=${PAIR%%:*}
+            WORKFLOW=${PAIR#*:}
+            RUN=$(jq -r ".$FIELD" release-request.json)
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN" | jq -e --arg sha "$SOURCE" --arg path ".github/workflows/$WORKFLOW" '.head_sha==$sha and .head_branch=="architecture-v2" and .path==$path and .conclusion=="success"'
+          done
+          # Dispatch retains every existing publisher check, signed-byte and
+          # Pages/APK/updater verification gate. It does not publish directly.
+          gh workflow run publish-approved-release.yml --ref architecture-v2
