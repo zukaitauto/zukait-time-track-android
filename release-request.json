@@ -2,8 +2,8 @@
   "versionName": "V339",
   "versionCode": 302,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": false,
-  "sourceCommit": null,
+  "approvedForStaff": true,
+  "sourceCommit": "dd4281259f49880b020917698af98b580b7eb6ac",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,12 +19,12 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": 39129300438,
-  "verificationRun": 39129300450,
-  "accountantVerificationRun": 39129300399,
-  "androidBuildRun": 39129300424,
+  "approvedAt": "2026-10-18T20:32:02.049Z",
+  "publishNonce": "de66ddabf06ed1682aeb6670d5b85dedfef5b87e4be603d3",
+  "signedAcceptanceRun": 39151901649,
+  "verificationRun": 39151901639,
+  "accountantVerificationRun": 39151901650,
+  "androidBuildRun": 39151901651,
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -46,5 +46,5 @@
       "accountant_append_only_corrections"
     ]
   },
-  "verificationSummary": "Post-V338 Accountant audit changes pending exact-source CI and a new release approval record. Production remains on V338."
+  "verificationSummary": "V339 exact-source Accountant both-role browser/financial/permissions/export, full shared regression, Reception browser/concurrent database, native PDF, Android compilation and signed APK checks passed. Audit fixes restore Accountant maintenance through Existing Users, reject stale financial details, preserve initial Cash Entry revisions and pin exports to applied filters. No backend deployment or production record changes. Physical-device/business acceptance NOT_RUN."
 }
