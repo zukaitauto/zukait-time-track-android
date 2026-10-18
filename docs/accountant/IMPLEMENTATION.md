@@ -109,3 +109,7 @@ Isolated DOM/PostgreSQL tests cover leaving during list loading, leaving during 
 Accounts now opens a Reception-style home with six linked financial summary tiles and nine coloured module cards. Selecting a card opens the existing report workspace; filters, tables, entry and correction forms stay out of the home view. Back to Accounts Dashboard closes entry/correction details and reloads the unfiltered summary. Module cards use readable dark text, distinct pastel colours, compact icon badges and a responsive two-column phone/three-column desktop layout. Reduced-motion settings are respected.
 
 The financial APIs, permissions and calculations are unchanged. DOM tests click every module card, verify home/workspace visibility and exercise Back navigation. Both-role Chromium tests capture home and report screens at 320/375/768/1280 pixels. Existing financial-entry, retry, export and account-switch regressions remain included. These UI changes join the unreleased V340 audit fixes.
+
+## V340 final coordinated acceptance
+
+The owner requested publication after the Accounts redesign. The final candidate includes the V340 financial-entry and administration audit fixes plus the Reception-style module home and 320-pixel header-wrap correction. All signed APK, Accountant, Reception and Android checks must reference this final candidate before publication approval is recorded. No backend deployment or production database writes are required. Physical-device/business acceptance remains NOT_RUN.
