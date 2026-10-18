@@ -1,6 +1,7 @@
 {
-  "approved": false,
-  "sourceCommit": null,
+  "approved": true,
+  "sourceCommit": "c88a058d755e89a86c059576ec8670a5e4a00a16",
   "release": "V337",
-  "purpose": "Owner-approved Accountant live-app testing; dispatch existing coordinated publisher only after exact-source gates pass."
+  "publishNonce": "cd1f0069c67a2ca454fca6aee42c08b9c036508f526c277b",
+  "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED."
 }

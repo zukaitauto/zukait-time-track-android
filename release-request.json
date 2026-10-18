@@ -2,17 +2,49 @@
   "versionName": "V337",
   "versionCode": 300,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": false,
-  "sourceCommit": null,
+  "approvedForStaff": true,
+  "sourceCommit": "c88a058d755e89a86c059576ec8670a5e4a00a16",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "productionBackendChanges": true,
   "phase2ActivationApproved": false,
-  "backendDeploymentRequired": true,
+  "backendDeploymentRequired": false,
   "releaseHeldByOwner": false,
-  "evidence": {},
-  "approvedAt": null,
-  "publishNonce": null
+  "evidence": {
+    "credentialPreservation": true,
+    "qaFinancialAcceptance": true,
+    "serverPermissions": true,
+    "rollbackPrepared": true,
+    "legacyLoginCompatibility": true
+  },
+  "approvedAt": "2026-10-18T08:57:41.084Z",
+  "publishNonce": "cd1f0069c67a2ca454fca6aee42c08b9c036508f526c277b",
+  "signedAcceptanceRun": 39112910326,
+  "verificationRun": 39112910362,
+  "accountantVerificationRun": 39112910350,
+  "androidBuildRun": 39112910365,
+  "productionBackend": {
+    "project": "pjknotnjkufadqavcmii",
+    "functions": {
+      "staff-auth": {
+        "version": 7,
+        "bundleSha256": "4029737a89f1fe5edb4b8c53f78def741d49b58136bb3cd6c6775ae74e841f45",
+        "verifiedFileMatch": true
+      },
+      "workshop-api": {
+        "version": 71,
+        "bundleSha256": "3952968e96a2b96e4afc9ef3876b90a8382b52f1eb8489e5ea6a59002641ee8d",
+        "verifiedFileMatch": true
+      }
+    },
+    "migrations": [
+      "accountant_financial_ledger",
+      "accountant_lpo_audit",
+      "accountant_append_only_grants",
+      "accountant_append_only_corrections"
+    ]
+  },
+  "verificationSummary": "Exact-source signed certificate/APK, Android compilation, full shared regression, Reception/Chromium/concurrent PostgreSQL, Accountant calculations/permissions/Manager access, and live unauthenticated HTTP rejection passed. Staff count and credential checksum preserved. Physical device/business acceptance NOT_RUN; owner requested testing through live Manager Accounts. No fake production financial transactions."
 }
