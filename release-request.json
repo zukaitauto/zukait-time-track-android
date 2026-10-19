@@ -2,15 +2,15 @@
   "versionName": "V342",
   "versionCode": 305,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": false,
-  "sourceCommit": null,
+  "approvedForStaff": true,
+  "sourceCommit": "61c81dcaa5d2f74a1c4b19704cec97fca4a8c375",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "productionBackendChanges": true,
   "phase2ActivationApproved": false,
-  "backendDeploymentRequired": true,
+  "backendDeploymentRequired": false,
   "releaseHeldByOwner": false,
   "evidence": {
     "credentialPreservation": true,
@@ -19,12 +19,12 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": 39169106243,
-  "verificationRun": 39169106215,
-  "accountantVerificationRun": 39169106158,
-  "androidBuildRun": 39169106272,
+  "approvedAt": "2026-10-19T04:43:35.493Z",
+  "publishNonce": "b59863484891408d89056188ebf7e35bad70679e27d48f47",
+  "signedAcceptanceRun": 39200417745,
+  "verificationRun": 39200417792,
+  "accountantVerificationRun": 39200417724,
+  "androidBuildRun": 39200417737,
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -34,9 +34,9 @@
         "verifiedFileMatch": true
       },
       "workshop-api": {
-        "version": 72,
-        "bundleSha256": "6ba1f8634dbc73c279d8bc58a4218ea0eb27bce1312dccdb5b5c7a20777956d2",
-        "verifiedFileMatch": false
+        "version": 73,
+        "bundleSha256": "50f26fdfb5286df20393f5cd0d1ba1b8455d4c61bb7549f5d1be1b2831f287f3",
+        "verifiedFileMatch": true
       }
     },
     "migrations": [
@@ -46,5 +46,5 @@
       "accountant_append_only_corrections"
     ]
   },
-  "verificationSummary": "V342 pending exact-source release checks: paint vendor mapping and insurance-company linked receipt/invoice totals. Production remains V341 until QA and deployment verification."
+  "verificationSummary": "V342 exact-source Accountant, full regression, Reception/browser/PDF, native PDF, signed APK and Android checks passed. Paint vendor mapping and insurance-company linked financial totals corrected. Production workshop-api73 matches QA11 byte-for-byte; only accountant/finance_rules.js changed. Staff-auth8 unchanged. 29 staff credentials unchanged before/after. No production record writes or migrations. Rollback bundle captured; physical acceptance NOT_RUN."
 }
