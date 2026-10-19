@@ -13,6 +13,7 @@ on:
       - "tests/shared-dashboard-read.mjs"
       - "app/src/main/assets/workshop_overview.js"
       - "tests/cash-monthly-pulse.mjs"
+      - "tests/monthly-followup-responsive.mjs"
       - "app/src/main/assets/v2/features/estimate/**"
       - "tests/v2-estimate-*"
       - "tests/reception-pages-publication-safety.mjs"
@@ -106,6 +107,14 @@ jobs:
       - run: node tests/reception-backup-export-safety.mjs
       - run: node tests/reception-release-publish-safety.mjs
       - run: npx playwright install --with-deps chromium webkit
+      - name: Verify Cash and Insurance monthly dashboard cards
+        run: node tests/cash-monthly-pulse.mjs && node tests/monthly-followup-responsive.mjs
+      - name: Save monthly dashboard previews
+        uses: actions/upload-artifact@v4
+        with:
+          name: monthly-followup-preview-${{ github.run_id }}
+          path: artifacts/monthly-followup/
+          retention-days: 14
       - run: npm run test:reception:browser
       - name: Verify approved one-page A4 Reception PDF in Chromium
         run: node tests/reception-print-a4.mjs

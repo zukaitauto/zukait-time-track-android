@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import {insuranceProjection} from '../supabase/functions/workshop-api/insurance_management_rules.js';
 class Element {
  constructor(id=''){this.id=id;this.children=[];this.classList={contains:()=>false};this.writes=0;}
  prepend(el){if(el.parent)el.parent.children.splice(el.parent.children.indexOf(el),1);this.children.unshift(el);el.parent=this;}
@@ -53,8 +54,29 @@ await sandbox.window.v251OpenCashPendingAll();assert.equal(reads,1);assert.ok(mo
 const confirmedModal=modal;let warning='';sandbox.window.alert=message=>warning=message;sandbox.window.zukaitCloud.readLatest=async()=>{throw Error('PENDING_LOCAL_CHANGES')};
 await sandbox.window.v251OpenCashPulse('out');assert.equal(modal,confirmedModal,'An unconfirmed read cannot silently replace the list with stale records');assert.match(warning,/PENDING_LOCAL_CHANGES/);delete sandbox.window.zukaitCloud;
 
+// Insurance cards use authoritative job dates, valid received LPOs and eligibility.
+const day=new Date(start+14400000).toISOString().slice(0,10),previousDay=new Date(start-1+14400000).toISOString().slice(0,10);
+const ins=(no,extra={})=>job(no,start+1,999,{jobType:'INSURANCE',insuranceCompany:'Liva <Insurance>',claimNo:'CL-1',...extra});
+const insurance=[ins('I-IN'),ins('I-OUT',{createdAt:start-1,delivered:true,deliveredAt:start,insuranceLpo:{amount:42.125,receivedDate:day}}),ins('I-ZERO',{delivered:true,deliveredAt:end-1,insuranceLpo:{amount:0,receivedDate:day}}),ins('I-OLD',{createdAt:start-1,delivered:true,deliveredAt:start-1,insuranceLpo:{amount:50,receivedDate:previousDay}}),ins('I-FUTURE',{createdAt:end,delivered:true,deliveredAt:end}),ins('I-DELETED',{deleted:true}),ins('I-ARCHIVED',{archived:true}),ins('I-CANCELLED',{cancelled:true}),ins('I-STATUS',{status:'CANCELLED'}),ins('ID001'),ins('I-IN',{createdAt:start-1}),ins('I-NIL',{insuranceLpo:{amount:null,receivedDate:day}}),ins('I-STRING',{insuranceLpo:{amount:'10',receivedDate:day}}),ins('I-INVALID',{insuranceLpo:{amount:90,receivedDate:'2026-02-30'}}),job('CASH-ONLY',start,200)];
+sandbox.fixture=insurance;vm.runInContext('me={role:"Manager"};state={jobs:fixture}',ctx);
+const ids=a=>Array.from(a,j=>j.no).sort();
+for(const [kind,section] of [['in','jobs'],['out','delivered'],['collected','collected']]){
+ const expected=insuranceProjection({jobs:insurance},[],{section,month:day.slice(0,7)});
+ assert.deepEqual(ids(pulse.insuranceRows(kind)),expected.rows.map(r=>r.job_card).sort(),'Dashboard must match Insurance Management '+kind);
+}
+assert.equal(pulse.insuranceTotal(pulse.insuranceRows('collected')),42.125);
+pulse.install();assert.equal((manager.children[1].innerHTML.match(/class="v251-followup-card insurance-/g)||[]).length,3);assert.match(manager.children[1].innerHTML,/Insurance Monthly Follow-up/);
+await sandbox.window.v251OpenInsurancePulse('in');assert.match(modal,/JC I-IN/);assert.ok(!modal.includes('CASH-ONLY'));assert.match(modal,/Liva &lt;Insurance&gt;/);
+await sandbox.window.v251OpenInsurancePulse('out');assert.match(modal,/JC I-OUT/);assert.ok(!modal.includes('JC I-OLD'));assert.match(modal,/JC I-ZERO/);
+await sandbox.window.v251OpenInsurancePulse('collected');assert.match(modal,/OMR 42.125/);assert.match(modal,/OMR 0.000/);assert.ok(!modal.includes('JC I-NIL'));assert.match(modal,/not cash payment receipts/);
+const insuranceModal=modal;await sandbox.window.v251OpenInsurancePulse('invalid');assert.equal(modal,insuranceModal);
+let insuranceWarning='';sandbox.window.alert=v=>insuranceWarning=v;sandbox.window.zukaitCloud={readLatest:async()=>{throw Error('NETWORK')}};
+await sandbox.window.v251OpenInsurancePulse('in');assert.equal(modal,insuranceModal);assert.match(insuranceWarning,/server read failed/);delete sandbox.window.zukaitCloud;
+vm.runInContext('me={role:"Supervisor"}',ctx);pulse.install();assert.ok(!supervisor.children[1].innerHTML.includes('Insurance Monthly Follow-up'));await sandbox.window.v251OpenInsurancePulse('in');assert.equal(modal,insuranceModal);
+sandbox.fixture=[];vm.runInContext('me={role:"Manager"};state={jobs:fixture}',ctx);await sandbox.window.v251OpenInsurancePulse('in');assert.match(modal,/No insurance in records/);
+
 vm.runInContext('me={role:"Employee"}',ctx);const before=modal;await sandbox.window.v251OpenCashPulse('in');assert.equal(modal,before);
 const stable=fs.readFileSync('app/src/main/assets/supervisor_stable.js','utf8'),managerSource=fs.readFileSync('app/src/main/assets/v67_updates.js','utf8');
 assert.ok(stable.includes("v251KpiHTML()+"));assert.ok(stable.includes('window.v251CashPulse?.install?.()'));assert.ok(managerSource.includes('id="managerCashPulseSlot"'));assert.ok(managerSource.includes('window.v251CashPulse?.install?.()'));
 assert.ok(source.includes('grid-template-columns:repeat(3,minmax(0,1fr))'));
-console.log('Cash dashboard: lexical state, three circles, monthly boundaries, live edits, final invoice, both roles and clickable lists passed');
+console.log('Cash dashboard: lexical state, cash boxes, manager insurance cards, source parity, monthly boundaries, live edits, final invoice, both roles and clickable lists passed');
