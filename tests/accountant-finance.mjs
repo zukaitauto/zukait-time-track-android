@@ -32,3 +32,22 @@ paid.entries[1].amount=130;assert.equal(financialReport(paid,{},Date.parse('2026
 const credit=fixture();credit.state.jobs[0].jobType='CREDIT';assert.equal(financialReport(credit).details[0].outstanding_omr,90,'Credit stays receipt-based');
 const unverified=fixture();delete unverified.state.jobs[0].invoiceDate;assert.equal(financialReport(unverified).rows.cash.filter(r=>r.invoice_receipt).length,0,'missing verified invoice is not marked paid');
 console.log('Cash invoice receipt policy: existing/new invoices, deposits, late duplicate reconciliation, period totals, excess, Credit and missing invoices passed');
+
+// Exercise the real Paint module field, not a fixture-only supplier alias.
+const vendorSource=fixture();vendorSource.state.paintPurchasing.orders[0].vendor='Workshop Paint Vendor';
+assert.equal(financialReport(vendorSource).rows.paint[0].supplier,'Workshop Paint Vendor','paint vendor is visible in expense rows and JC360/export source');
+vendorSource.state.paintPurchasing.orders[0].supplier='Imported Supplier';
+assert.equal(financialReport(vendorSource).rows.paint[0].supplier,'Imported Supplier','existing supplier aliases retain precedence');
+
+// Insurance filtering applies to linked receipts/invoices as well as LPO documents.
+const insured=fixture(),insuredBefore=JSON.stringify(insured);
+const companyReport=financialReport(insured,{insurance:'Liva'},at('12:00'));
+assert.equal(companyReport.summary.lpo_collected.amount_omr,20,'company-filtered receipts remain counted');
+assert.equal(companyReport.summary.cash_in.amount_omr,20,'Cash job receipts are excluded from the company filter');
+assert.equal(companyReport.summary.invoiced_revenue.amount_omr,100,'linked invoice uses authoritative company');
+assert.deepEqual(companyReport.rows.cash.map(r=>r.id),['cash2']);
+assert.equal(companyReport.rows.lpo[0].collected_amount_omr,20);
+assert.equal(companyReport.summary.outstanding.amount_omr,80);
+assert.equal(financialReport(insured,{insurance:'Unknown'},at('12:00')).rows.cash.length,0);
+assert.equal(JSON.stringify(insured),insuredBefore,'report enrichment does not mutate authoritative state');
+console.log('Real paint vendor and insurance-filter receipt/invoice reconciliation passed');
