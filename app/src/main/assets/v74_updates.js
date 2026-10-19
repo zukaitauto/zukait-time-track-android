@@ -1029,12 +1029,13 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const u=userSafe(target),today=dateKey(Date.now()),self=String(target)===String(me.id);
    const rows=activeLeaveRows().filter(l=>l.emp===target).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,12);
    openModal('<div class="section-title"><h2>Leave — '+esc(u.name)+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
-     '<div class="grid"><label>Date<br><input type="date" id="v755LeaveDate" min="'+today+'" value="'+today+'"></label><label>Leave Type<br><select id="v755LeavePeriod"><option value="FULL">Full Day</option><option value="AM">Morning Half Day — 8:00 AM to 1:00 PM</option><option value="PM">Afternoon Half Day — 3:00 PM to 7:00 PM</option></select></label></div>'+
+     (me.role==='Manager'?'<p class="notice">Forgotten leave? Choose a past date and enter a reason.</p>':'')+
+     '<div class="grid"><label>Date<br><input type="date" id="v755LeaveDate" '+(me.role==='Manager'?'':'min="'+today+'" ')+'value="'+today+'"></label><label>Leave Type<br><select id="v755LeavePeriod"><option value="FULL">Full Day</option><option value="AM">Morning Half Day — 8:00 AM to 1:00 PM</option><option value="PM">Afternoon Half Day — 3:00 PM to 7:00 PM</option></select></label></div>'+
      leaveTimeField('v755')+overrideField('v755')+
-     '<label>Remark / Reason (optional)<br><input id="v755LeaveRemark" style="width:100%" placeholder=""></label>'+
+     '<label>Remark / Reason '+(me.role==='Manager'?'(required for past dates)':'(optional)')+'<br><input id="v755LeaveRemark" style="width:100%" placeholder=""></label>'+
      '<p><button class="green big-action" onclick="v755SaveLeave(\''+esc(target)+'\')">'+(self?'MARK MY LEAVE':'MARK LEAVE')+'</button></p>'+
      '<h3>Recent Leave</h3>'+(rows.length?'<div style="overflow:auto"><table><tr><th>Date</th><th>Type</th><th>Marked By</th><th>Remark</th></tr>'+
-       rows.map(l=>'<tr><td>'+esc(l.date)+'</td><td>'+esc(leaveLabel(l))+'</td><td>'+esc(userSafe(l.by).name||l.by)+'</td><td>'+esc(l.remark||'—')+'</td></tr>').join('')+'</table></div>':'<div class="notice">No leave records.</div>'));
+       rows.map(l=>'<tr><td>'+esc(l.date)+'</td><td>'+esc(leaveLabel(l))+'</td><td>'+esc(userSafe(l.by).name||l.by)+'</td><td>'+esc(l.remark||'—')+(me.role==='Manager'?'<br><button type="button" class="danger" data-leave-delete="'+esc(l.id)+'">Delete leave</button>':'')+'</td></tr>').join('')+'</table></div>':'<div class="notice">No leave records.</div>'));
  };
  let leaveSaveRefreshing=false;
  window.v755SaveLeave=function(emp,prefix='v755'){
@@ -1059,13 +1060,17 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(!canManageTarget(emp))return;
    const date=document.getElementById(prefix+'LeaveDate')?.value,period=document.getElementById(prefix+'LeavePeriod')?.value,remark=document.getElementById(prefix+'LeaveRemark')?.value.trim()||'';
    if(!date||!['FULL','AM','PM'].includes(period))return alert('Select leave date and leave type.');
+   const pastDate=date<dateKey(Date.now());
+   if(pastDate&&me.role!=='Manager')return alert('Only a Manager can mark leave for a past date.');
+   if(pastDate&&!remark)return alert('Enter a reason for marking forgotten leave.');
    let l={id:uid(),emp,date,period,remark,by:me.id,createdAt:Date.now(),cancelled:false};
+   if(pastDate){l.backdated=true;l.backdateReason=remark;}
    if(closedLeaveDay(l))return alert('Leave is not required on Friday or a workshop Public Holiday.');
    if(hasDuplicate(emp,l))return alert('Leave is already recorded for this date/period.');
    l=prepareLeave(l,prefix);if(!l)return;
    const who=userSafe(emp).name||emp;if(!confirm('Confirm Leave\n\nStaff: '+who+'\nDate: '+date+'\nLeave: '+leaveLabel(l)+'\n\nAre you sure you want to mark this leave?'))return;
    state.leaves=state.leaves||[];state.leaveAudit=state.leaveAudit||[];
-   state.leaves.push(l);state.leaveAudit.push({id:uid(),action:l.managerOverride?'ADD_OVERRIDE':'ADD',leaveId:l.id,by:me.id,at:Date.now(),reason:l.managerOverrideReason||'',afterWork:!!l.afterWork,startAt:l.startAt??null});notifyLeave(l);
+   state.leaves.push(l);state.leaveAudit.push({id:uid(),action:l.managerOverride?'ADD_OVERRIDE':'ADD',leaveId:l.id,by:me.id,at:Date.now(),reason:l.managerOverrideReason||l.backdateReason||'',backdated:!!l.backdated,leaveDate:l.date,afterWork:!!l.afterWork,startAt:l.startAt??null});notifyLeave(l);
    save();closeModal();render();
    setTimeout(()=>{if(window.zukaitLeaveHistory?.confirmSaved)return window.zukaitLeaveHistory.confirmSaved(l.id);alert('Leave saved on this device. Synchronize to share it with Manager and Supervisor.')},0);
  };
@@ -1127,14 +1132,29 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    state.leaveAudit=state.leaveAudit||[];state.leaveAudit.push({id:uid(),action:'EDIT',leaveId:l.id,by:me.id,at:Date.now(),before,after:{...candidate}});
    save();closeModal();render();
  };
- window.v114DeleteLeave=function(id){
+ let leaveDeleteRefreshing=false;
+ window.v114DeleteLeave=async function(id){
    if(!me||me.role!=='Manager')return;
+   if(leaveDeleteRefreshing)return;
+   leaveDeleteRefreshing=true;
+   const actor=me.id;
+   try{
+   const cloud=window.zukaitCloud;
+   if(typeof cloud?.pull==='function'&&window.navigator?.onLine){
+     const refreshed=await cloud.pull(true);
+     if(!refreshed||cloud.dirty)return alert('Leave records are still syncing. Synchronize pending changes and retry.');
+   }
+   if(me?.id!==actor||me?.role!=='Manager')return;
    const l=(state.leaves||[]).find(x=>x&&String(x.id)===String(id)&&!x.cancelled);if(!l)return;
    const reason=prompt('Reason for deleting/cancelling this leave record:','Correction');if(reason===null)return;if(!String(reason).trim())return alert('Enter a reason.');
-   if(!confirm('Confirm Delete Leave\n\nThis will cancel the selected leave record. Continue?'))return;
+   if(!confirm('Confirm Delete Leave\n\nStaff: '+(userSafe(l.emp).name||l.emp)+'\nDate: '+l.date+'\nLeave: '+leaveLabel(l)+'\nReason: '+String(reason).trim()+'\n\nRemove this leave from attendance totals? The correction stays in history.'))return;
+   const before={...l};
    l.cancelled=true;l.cancelledAt=Date.now();l.cancelledBy=me.id;l.cancelReason=String(reason).trim();
-   state.leaveAudit=state.leaveAudit||[];state.leaveAudit.push({id:uid(),action:'DELETE',leaveId:l.id,by:me.id,at:Date.now(),reason:l.cancelReason,before:{emp:l.emp,date:l.date,period:l.period,remark:l.remark||''}});
+   state.leaveAudit=state.leaveAudit||[];state.leaveAudit.push({id:uid(),action:'DELETE',leaveId:l.id,by:me.id,at:l.cancelledAt,reason:l.cancelReason,before});
    save();closeModal();render();
+   setTimeout(()=>window.zukaitLeaveHistory?.confirmDeleted?.(l.id),0);
+   }catch(_){alert('Unable to refresh leave records. Retry before deleting leave.');}
+   finally{leaveDeleteRefreshing=false;}
  };
  const v114BaseLeaveListHtml=leaveListHtml;
  leaveListHtml=function(rows){
@@ -4432,3 +4452,4 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  @media(prefers-reduced-motion:reduce){.ocean-shell .ocean-car-motion{animation:none!important}}
  `;document.head.appendChild(style);refresh();
 })();
+

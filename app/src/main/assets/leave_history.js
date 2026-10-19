@@ -16,7 +16,7 @@
   patch('leaveHistoryEmployee','<option value="">All employees / supervisors</option>'+staff.map(id=>'<option value="'+E(id)+'" '+(filters.employee===id?'selected':'')+'>'+E(person(id).name||id)+'</option>').join(''));
  }
  function table(list,actions=true){
-  return list.length?'<div class="v78-leave-table"><table><thead><tr><th>Staff</th><th>Date</th><th>Leave</th><th>Status</th><th>Remark</th><th>Marked by</th>'+(actions&&me.role==='Manager'?'<th>Action</th>':'')+'</tr></thead><tbody>'+list.map(l=>'<tr><td>'+E(person(l.emp).name)+'</td><td>'+E(l.date)+'</td><td>'+E(rules.label(l))+'</td><td>'+E(l.cancelled?'Cancelled':'Recorded')+'</td><td>'+E(l.remark||'—')+'</td><td>'+E(person(l.by).name||'—')+'</td>'+(actions&&me.role==='Manager'?'<td>'+(l.cancelled?'':'<button type="button" data-leave-edit="'+E(l.id)+'">Edit</button>')+'</td>':'')+'</tr>').join('')+'</tbody></table></div>':'<div class="notice">No leave records match these filters.</div>';
+  return list.length?'<div class="v78-leave-table"><table><thead><tr><th>Staff</th><th>Date</th><th>Leave</th><th>Status</th><th>Remark</th><th>Marked by</th>'+(actions&&me.role==='Manager'?'<th>Action</th>':'')+'</tr></thead><tbody>'+list.map(l=>'<tr><td>'+E(person(l.emp).name)+'</td><td>'+E(l.date)+'</td><td>'+E(rules.label(l))+'</td><td>'+E(l.cancelled?'Cancelled':'Recorded')+'</td><td>'+E(l.remark||'—')+(l.cancelled?'<br><small>Deleted by '+E(person(l.cancelledBy).name)+' · '+E(l.cancelReason||'Correction')+'</small>':'')+'</td><td>'+E(person(l.by).name||'—')+'</td>'+(actions&&me.role==='Manager'?'<td>'+(l.cancelled?'':'<button type="button" data-leave-edit="'+E(l.id)+'">Edit</button> <button type="button" class="danger" data-leave-delete="'+E(l.id)+'">Delete leave</button>')+'</td>':'')+'</tr>').join('')+'</tbody></table></div>':'<div class="notice">No leave records match these filters.</div>';
  }
  function results(){
   const list=rows(),active=list.filter(l=>!l.cancelled),days=active.reduce((n,l)=>n+rules.days(l),0);
@@ -40,7 +40,7 @@
   const title=mode==='today'?'Today’s Leave':'Leave History';
   openModal('<section id="zukaitLeaveHistory"><div class="section-title"><h2>'+title+'</h2><button type="button" class="secondary" onclick="closeModal()">Close</button></div>'+
    '<div class="grid"><label>Month<select id="leaveHistoryMonth" onchange="zukaitLeaveHistory.filter(\'month\',this.value)"></select></label><label>Staff<select id="leaveHistoryEmployee" onchange="zukaitLeaveHistory.filter(\'employee\',this.value)"></select></label><label>Status<select id="leaveHistoryStatus" onchange="zukaitLeaveHistory.filter(\'status\',this.value)"><option value="active">Non-cancelled</option><option value="all">All records</option><option value="cancelled">Cancelled only</option></select></label></div>'+
-   '<div class="v74-actions"><button type="button" onclick="zukaitLeaveHistory.open(\'history\')">All Month History</button><button type="button" onclick="v755OpenLeaveHub()">Mark Leave</button><button type="button" onclick="zukaitLeaveHistory.sync()">Refresh</button><button type="button" onclick="zukaitLeaveHistory.print()">Print / PDF</button><button type="button" onclick="zukaitLeaveHistory.share()">WhatsApp</button></div>'+
+   '<div class="v74-actions"><button type="button" onclick="zukaitLeaveHistory.open(\'history\')">All Month History</button><button type="button" onclick="v755OpenLeaveHub()">'+(me.role==='Manager'?'Mark / Forgotten Leave':'Mark Leave')+'</button><button type="button" onclick="zukaitLeaveHistory.sync()">Refresh</button><button type="button" onclick="zukaitLeaveHistory.print()">Print / PDF</button><button type="button" onclick="zukaitLeaveHistory.share()">WhatsApp</button></div>'+
    (filters.day?'<p id="leaveHistoryDayNote" class="notice">Showing '+E(filters.day)+' (Asia/Muscat). Choose a month or All Month History for other dates.</p>':'')+
    '<p id="leaveHistorySync" class="muted" role="status"></p><div id="leaveHistoryResults"></div></section>');
   refresh();
@@ -61,14 +61,23 @@
   const message=!retained?'This leave could not be confirmed after synchronization. Check Leave History before marking it again.':shared?'Leave synchronized. Manager and Supervisor can see it.':'Leave saved on this device. Waiting to synchronize with Manager and Supervisor; use Refresh to retry.';
   if(typeof window.v74Msg==='function')window.v74Msg(message,'Leave');else alert(message);
  }
- window.zukaitLeaveHistory={open,filter,refresh,sync,print,share,rows,confirmSaved};
+ async function confirmDeleted(id){
+  let shared=false;
+  try{if(navigator.onLine&&window.zukaitCloud){await window.zukaitCloud.syncNow();shared=!window.zukaitCloud.dirty&&window.zukaitCloud.ready}}catch(_){}
+  refresh();
+  const retained=rules.rows().some(l=>l&&String(l.id)===String(id)&&l.cancelled);
+  const message=!retained?'The deletion could not be confirmed. Refresh Leave History before retrying.':shared?'Leave deleted and synchronized. It no longer counts as leave; the correction remains in history.':'Leave deleted on this device. Waiting to synchronize; the correction remains in history.';
+  if(typeof window.v74Msg==='function')window.v74Msg(message,'Leave');else alert(message);
+ }
+ window.zukaitLeaveHistory={open,filter,refresh,sync,print,share,rows,confirmSaved,confirmDeleted};
  // Last-loaded authority prevents older decorators from overriding history.
  window.v755OpenLeaveList=open;
  window.v133OpenManagerLeave=()=>open('history');
  window.v133LeaveRows=rows;window.v133PrintLeave=print;window.v133ShareLeave=share;
- document.addEventListener('click',e=>{const b=e.target.closest?.('[data-leave-edit]');if(b&&allowed()&&me.role==='Manager')window.v114EditLeave(b.dataset.leaveEdit)});
+ document.addEventListener('click',e=>{if(!allowed()||me.role!=='Manager')return;const del=e.target.closest?.('[data-leave-delete]');if(del){window.v114DeleteLeave(del.dataset.leaveDelete);return}const b=e.target.closest?.('[data-leave-edit]');if(b)window.v114EditLeave(b.dataset.leaveEdit)});
  const prevPull=window.v42AfterCloudPull;window.v42AfterCloudPull=function(){const r=prevPull?.apply(this,arguments);refresh();return r};
  window.addEventListener('focus',refresh);
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refresh()});
  setInterval(()=>{if(document.visibilityState!=='hidden')refresh()},30000);
 })();
+
