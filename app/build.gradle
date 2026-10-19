@@ -36,3 +36,5 @@ dependencies {
 // V327: synchronize pending UI release metadata before acceptance.
 
 // V327: include responsive Paint PO list and received/waiting colours.
+
+// V346: verify the refreshed leave cache keys in the exact signed candidate.
