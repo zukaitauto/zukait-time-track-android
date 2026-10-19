@@ -32,6 +32,11 @@ for(const role of ['Supervisor','Manager']){
  h.share();assert.match(decodeURIComponent(shared),/2026-10-01/);assert.doesNotMatch(decodeURIComponent(shared),/2026-09-01/);
  h.open('today');assert.equal(h.rows().length,2);assert.equal(h.rows().length,r.dashboard(vm.runInContext('state',c)).today.length);
  assert.equal(nodes.leaveHistoryResults.innerHTML.includes('data-leave-edit'),role==='Manager');
+ assert.equal(nodes.leaveHistoryResults.innerHTML.includes('data-leave-delete'),role==='Manager');
+ if(role==='Manager')assert.match(html,/Mark \/ Forgotten Leave/);
+ let deletedId=null;c.window.v114DeleteLeave=id=>deletedId=id;
+ events.click({target:{closest:selector=>selector==='[data-leave-delete]'?{dataset:{leaveDelete:'b'}}:null}});
+ assert.equal(deletedId,role==='Manager'?'b':null,'only Managers can use direct delete');
  h.open('history');h.filter('status','cancelled');assert.equal(h.rows().length,1);assert.match(nodes.leaveHistoryResults.innerHTML,/<b>0<\/b> leave days/);
  h.filter('status','all');assert.equal(h.rows().length,4);
 }
@@ -44,8 +49,12 @@ vm.runInContext("state.leaves=state.leaves.map(l=>l.id==='new'?{...l,cancelled:t
 let message='';c.window.v74Msg=m=>message=m;c.window.zukaitCloud={dirty:true,ready:true,async syncNow(){}};
 await h.confirmSaved();assert.match(message,/Waiting to synchronize/);
 c.window.zukaitCloud.dirty=false;await h.confirmSaved();assert.match(message,/Leave synchronized/);
+await h.confirmDeleted('new');assert.match(message,/deleted and synchronized/);
+c.window.zukaitCloud.dirty=true;await h.confirmDeleted('new');assert.match(message,/Waiting to synchronize/);
+await h.confirmDeleted('missing');assert.match(message,/could not be confirmed/);
 vm.runInContext("me.role='Employee'",c);const previousHtml=html;h.open();assert.equal(html,previousHtml,'employees cannot open global staff history');
 vm.runInContext("state={leaves:[]}",c);assert.equal(r.active().length,0,'empty current state cannot reuse stale leave');
 const entry=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
 assert.ok(entry.indexOf('src="leave_history.js')>entry.indexOf('src="v74_updates.js'),'final history handler loads after legacy overrides');
 console.log('Global leave history: lexical authority, both roles, all months/staff/status, print/share parity, remote refresh, privacy, save status passed.');
+

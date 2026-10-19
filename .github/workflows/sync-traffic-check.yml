@@ -4,6 +4,11 @@ on:
     paths:
       - 'supabase/functions/workshop-api/**'
       - 'app/src/main/assets/cloud_sync.js'
+      - 'app/src/main/assets/v74_updates.js'
+      - 'app/src/main/assets/leave_history.js'
+      - 'tests/manager-leave-corrections.mjs'
+      - 'tests/global-leave-history.mjs'
+      - 'tests/leave-after-work.mjs'
       - 'tests/sync-traffic-compatibility.mjs'
       - 'tests/live-projection-traffic.mjs'
       - '.github/workflows/sync-traffic-check.yml'
@@ -13,6 +18,11 @@ on:
       - 'app/build.gradle'
       - 'supabase/functions/workshop-api/**'
       - 'app/src/main/assets/cloud_sync.js'
+      - 'app/src/main/assets/v74_updates.js'
+      - 'app/src/main/assets/leave_history.js'
+      - 'tests/manager-leave-corrections.mjs'
+      - 'tests/global-leave-history.mjs'
+      - 'tests/leave-after-work.mjs'
       - 'tests/sync-traffic-compatibility.mjs'
       - 'tests/live-projection-traffic.mjs'
       - '.github/workflows/sync-traffic-check.yml'
@@ -36,3 +46,6 @@ jobs:
           node tests/cloud-save-permission-rejection.mjs
           node tests/leave-sync-authority.mjs
           node tests/employee-finish-server-authority.mjs
+          node tests/manager-leave-corrections.mjs
+          node tests/leave-after-work.mjs
+          node tests/global-leave-history.mjs
