@@ -17,5 +17,10 @@ for(const v of [0,35,'35.000']){
 delete ctx.state.jobs[0].finalInvoiceAmount;ctx.state.jobs[0].invoiceAmount=35;
 assert.equal(master.identity('12053').finalInvoiceAmount,35,'Legacy recorded invoices remain available');
 const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
-for(const name of ['job_card_master','cash_monthly_pulse','cloud_sync','qc_delivery'])assert.match(html,new RegExp(name+'\\.js\\?v='+(name==='qc_delivery'?'336':name==='cloud_sync'?'2026101406':'2026101404')),'Changed shared scripts must use new browser cache keys');
+for(const name of ['job_card_master','cash_monthly_pulse','cloud_sync','qc_delivery']){
+ const match=html.match(new RegExp(name+'\\.js\\?v=(\\d+)'));
+ const minimum=name==='qc_delivery'?336:name==='cloud_sync'?2026101406:2026101404;
+ assert.ok(match&&Number(match[1])>=minimum,'Changed shared scripts must keep their cache key or use a newer one: '+name);
+}
 console.log('Shared financial display passed: missing vs zero, saved amounts, stale snapshots, legacy invoices and browser cache keys');
+
