@@ -1,16 +1,16 @@
 {
-  "versionName": "V342",
-  "versionCode": 305,
+  "versionName": "V343",
+  "versionCode": 306,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": true,
-  "sourceCommit": "61c81dcaa5d2f74a1c4b19704cec97fca4a8c375",
+  "approvedForStaff": false,
+  "sourceCommit": null,
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "productionBackendChanges": true,
   "phase2ActivationApproved": false,
-  "backendDeploymentRequired": false,
+  "backendDeploymentRequired": true,
   "releaseHeldByOwner": false,
   "evidence": {
     "credentialPreservation": true,
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-19T04:43:35.493Z",
-  "publishNonce": "b59863484891408d89056188ebf7e35bad70679e27d48f47",
+  "approvedAt": null,
+  "publishNonce": null,
   "signedAcceptanceRun": 39200417745,
   "verificationRun": 39200417792,
   "accountantVerificationRun": 39200417724,
@@ -36,7 +36,7 @@
       "workshop-api": {
         "version": 73,
         "bundleSha256": "50f26fdfb5286df20393f5cd0d1ba1b8455d4c61bb7549f5d1be1b2831f287f3",
-        "verifiedFileMatch": true
+        "verifiedFileMatch": false
       }
     },
     "migrations": [
@@ -46,5 +46,5 @@
       "accountant_append_only_corrections"
     ]
   },
-  "verificationSummary": "V342 exact-source Accountant, full regression, Reception/browser/PDF, native PDF, signed APK and Android checks passed. Paint vendor mapping and insurance-company linked financial totals corrected. Production workshop-api73 matches QA11 byte-for-byte; only accountant/finance_rules.js changed. Staff-auth8 unchanged. 29 staff credentials unchanged before/after. No production record writes or migrations. Rollback bundle captured; physical acceptance NOT_RUN."
+  "verificationSummary": "V343 pending exact-source release verification: paint receipt/return date movements, cancelled paint return exclusion, partial parts receipt costs, pending purchases and saved return values. Published release remains V342."
 }
