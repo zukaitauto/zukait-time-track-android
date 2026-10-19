@@ -1,9 +1,9 @@
 {
-  "versionCode": 308,
-  "versionName": "V345",
+  "versionCode": 309,
+  "versionName": "V346",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "3d5676a9dba1771934b0d88b4b294011513b28ea",
-  "apkSha256": "d807746aa486842b9beb865b0888b3becbea63891cca86dc5b11559c34a5ed00",
-  "releaseTag": "release-V345-architecture-v2"
+  "sourceCommit": "1d4c6b36b4341d74cdffdbd5884d661fd206022f",
+  "apkSha256": "e3c63588ad572cb41777b9a50f1c986e7314d3cc2846cefeea29e016517b8cd5",
+  "releaseTag": "release-V346-architecture-v2"
 }
