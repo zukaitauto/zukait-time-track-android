@@ -3199,7 +3199,7 @@ window.v2TogglePilotThisDevice=function(){
  const H='ID001',SAFE=130;
  const msg=(m,t='ID001')=>typeof window.v74Msg==='function'?window.v74Msg(m,t):alert(m);
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const openHold=emp=>(state.assign||[]).filter(a=>a&&a.job===H&&String(a.emp)===String(emp)&&!a.cancelled&&!a.completed).sort((a,b)=>(+b.assignedAt||0)-(+a.assignedAt||0))[0]||null;
+ const openHold=emp=>(state.assign||[]).filter(a=>a&&String(a.job||'').trim().toUpperCase()===H&&String(a.emp||'').trim().toUpperCase()===String(emp||'').trim().toUpperCase()&&!a.cancelled&&!a.completed).sort((a,b)=>(+b.assignedAt||0)-(+a.assignedAt||0))[0]||null;
  const openNormal=emp=>(state.assign||[]).filter(a=>a&&a.job!==H&&String(a.emp)===String(emp)&&!a.cancelled&&!a.completed);
  const status=a=>{try{return typeof empStatus==='function'?empStatus(a):(a.completed?'Finished':'New')}catch(_){return a?.completed?'Finished':'New'}};
  const exactLatestSession=a=>{

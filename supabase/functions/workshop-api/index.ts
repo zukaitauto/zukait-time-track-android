@@ -963,6 +963,19 @@ function employeeTimeTransition(data:any,user:any,body:any,serverNow:number){
   return {ok:true,data:next,audit,status,session,assignment};
 }
 
+// ID001_ASSIGNMENT_RULE_BEGIN
+function id001AssignmentConflict(candidate: any, previous: any) {
+  const key=(v: any)=>String(v??'').trim().toUpperCase();
+  const rows=(data: any)=>(Array.isArray(data?.assign)?data.assign:[]).filter((a: any)=>a&&key(a.job)==='ID001'&&!a.completed&&!a.cancelled);
+  const identity=(a: any)=>String(a.id||('legacy:'+key(a.emp)+':'+String(a.assignedAt||'')));
+  const before=new Map<string,Set<string>>();
+  for(const a of rows(previous)){const emp=key(a.emp),ids=before.get(emp)||new Set<string>();ids.add(identity(a));before.set(emp,ids);}
+  const grouped=new Map<string,any[]>();for(const a of rows(candidate)){const emp=key(a.emp),as=grouped.get(emp)||[];as.push(a);grouped.set(emp,as);}
+  for(const [employee,as] of grouped){const ids=new Set(as.map(identity)),prior=before.get(employee)||new Set<string>();if(ids.size>1&&[...ids].some(id=>!prior.has(id)))return {employee,assignment_ids:[...ids]};}
+  return null;
+}
+// ID001_ASSIGNMENT_RULE_END
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return reply({ ok: false, code: "method" }, 405);
@@ -1701,6 +1714,9 @@ Deno.serve(async (req: Request) => {
         // Old phones must never erase or forge the server-owned promise-date audit.
         candidate = preserveReceptionPromiseAuthority(candidate, current.data);
 
+        const idleConflict=id001AssignmentConflict(candidate,current.data);
+        if(idleConflict)return reply({ok:false,code:"id001_already_assigned",message:"This technician already has an unfinished ID001 assignment. Review the existing assignment; pending changes are preserved.",employee:idleConflict.employee,revision:current.revision,data:current.data},409);
+
         const paintCorrectionIssue=validatePaintManagerCorrections(candidate,current.data,user);
         if (paintCorrectionIssue) return reply({ok:false,code:"paint_correction_forbidden",message:paintCorrectionIssue,revision:current.revision,data:current.data},403);
 
@@ -1810,5 +1826,4 @@ Deno.serve(async (req: Request) => {
     return reply({ ok:false, code:"server_error" }, 500);
   }
 });
-
 

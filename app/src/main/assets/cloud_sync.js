@@ -822,6 +822,9 @@
         alert('Your login was revoked. Please use Login again.');
         return false;
       }
+      if(r.code==='id001_already_assigned'){
+        const e=new Error(r.message||'ID001 already assigned. Pending changes preserved for review.');e.code='id001_already_assigned';e.httpStatus=409;throw e;
+      }
       if(r._status===403){
         // The server was reached but denied this request. Preserve the local
         // snapshot for review; do not misreport this as an internet outage.
@@ -836,8 +839,11 @@
       cloudDirty=true;
       localStorage.setItem(DIRTY_KEY,'1');
       lastSyncError=String(e?.code||e?.message||'SAVE_FAILED');consecutiveSyncErrors++;
-      const permissionDenied=e?.httpStatus===403;
-      if(permissionDenied){
+      const assignmentConflict=e?.code==='id001_already_assigned'&&e?.httpStatus===409;
+      const permissionDenied=e?.httpStatus===403,blocked=permissionDenied||assignmentConflict;
+      if(assignmentConflict){
+        setServerConnection('connected','Server reachable. ID001 is already assigned; pending changes are preserved for review.');
+      }else if(permissionDenied){
         setServerConnection('connected','Server reachable, but a change was rejected by permissions. Pending changes are preserved for review.');
       }else{
         setServerConnection('offline',navigator.onLine?'Workshop server cannot be reached. Changes are queued and will sync after reconnection.':'Server connection unavailable. Changes are queued and will sync after reconnection.');
@@ -845,14 +851,14 @@
       // Keep clicks made while the denied request was in flight, not just the
       // older submitted snapshot. Persist the retry barrier across app restarts.
       const pendingSnapshot=payloadState();
-      if(permissionDenied){
+      if(blocked){
         deniedSnapshot={user:me?.id||'',data:clone(pendingSnapshot),error:lastSyncError};
         clearTimeout(pushTimer);
         try{localStorage.setItem(DENIED_KEY,JSON.stringify(deniedSnapshot))}catch(_){}
       }
       try{localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:pendingSnapshot,error:lastSyncError}))}catch(_){}
-      status(permissionDenied?'PERMISSION DENIED — CHANGE PRESERVED':(navigator.onLine?'SYNC ERROR — RETRYING':'OFFLINE — CHANGE QUEUED'),navigator.onLine?'bad':'warn');
-      if(!permissionDenied&&navigator.onLine&&sessionToken())setTimeout(()=>{if(cloudDirty&&!cloudPushing)push(0)},Math.min(15000,1000*Math.pow(2,Math.min(consecutiveSyncErrors,4))));
+      status(assignmentConflict?'ID001 ALREADY ASSIGNED — CHANGE PRESERVED':permissionDenied?'PERMISSION DENIED — CHANGE PRESERVED':(navigator.onLine?'SYNC ERROR — RETRYING':'OFFLINE — CHANGE QUEUED'),navigator.onLine?'bad':'warn');
+      if(!blocked&&navigator.onLine&&sessionToken())setTimeout(()=>{if(cloudDirty&&!cloudPushing)push(0)},Math.min(15000,1000*Math.pow(2,Math.min(consecutiveSyncErrors,4))));
       return false;
     }finally{
       cloudPushing=false;
