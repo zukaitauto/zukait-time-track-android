@@ -2,8 +2,8 @@
   "versionName": "V346",
   "versionCode": 309,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": false,
-  "sourceCommit": null,
+  "approvedForStaff": true,
+  "sourceCommit": "1d4c6b36b4341d74cdffdbd5884d661fd206022f",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -13,18 +13,18 @@
   "backendDeploymentRequired": false,
   "releaseHeldByOwner": false,
   "evidence": {
-    "credentialPreservation": false,
-    "qaFinancialAcceptance": false,
-    "serverPermissions": false,
-    "rollbackPrepared": false,
-    "legacyLoginCompatibility": false
+    "credentialPreservation": true,
+    "qaFinancialAcceptance": true,
+    "serverPermissions": true,
+    "rollbackPrepared": true,
+    "legacyLoginCompatibility": true
   },
-  "approvedAt": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "accountantVerificationRun": null,
-  "androidBuildRun": null,
+  "approvedAt": "2026-10-19T14:17:53Z",
+  "publishNonce": "1ed90e3c49f3edbf05ac18bfd1eb1ffadde43a9da8c5c371",
+  "signedAcceptanceRun": 39266915410,
+  "verificationRun": 39266915450,
+  "accountantVerificationRun": 39266915443,
+  "androidBuildRun": 39266915550,
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -39,7 +39,7 @@
         "bundleSha256": "e0ed86417b288d83d4ed0584a1cdd4eb98987046698b3ae8ca80f879aedb2e4d",
         "verifiedFileMatch": true,
         "repositorySourceMatchesDeployed": false,
-        "verificationBasis": "Exact readback matches all thirteen files of the captured deployed workshop-api78 traffic-optimization bundle. Repository also contains separately staged backend changes; V345 is client-only and does not deploy them. Live unauthenticated guards and conditional protocol are covered by exact-source CI."
+        "verificationBasis": "Exact readback matches all thirteen files of the captured deployed workshop-api78 traffic-optimization bundle. Repository also contains separately staged backend changes; V346 is client-only and does not deploy them. Live unauthenticated guards and conditional protocol are covered by exact-source CI."
       }
     },
     "migrations": [
@@ -50,13 +50,13 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V346 candidate: Manager-only past-date leave marking with reason and direct audited deletion; active leave totals exclude deleted entries. Exact-source acceptance pending. No new backend deployment, schema migration or production leave edits. Physical-device acceptance NOT_RUN.",
+  "verificationSummary": "V346 Manager leave corrections: Manager-only past-date marking requires a reason; direct deletion cancels the active record and preserves actor/time/reason plus before-state audit. Exact-source full regression, signed APK, sync compatibility, Accountant browser/financial acceptance and Reception/browser acceptance passed. Native Android emulator PDF verification passed. No new backend deployment, schema migration or production leave edits. Physical-device acceptance and fresh production backup restore NOT_RUN.",
   "productionBackendDeploymentPerformed": false,
   "releaseChangeScope": "manager-forgotten-leave-and-audited-deletion",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
-  "syncVerificationRun": null,
-  "nativePdfVerificationRun": null,
+  "syncVerificationRun": 39266917802,
+  "nativePdfVerificationRun": 39266915416,
   "rollback": {
     "previousRelease": "release-V345-architecture-v2",
     "strategy": "Publish a higher-version signed recovery build with the previous client assets; retain app storage and all leave/audit records.",

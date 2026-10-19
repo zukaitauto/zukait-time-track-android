@@ -1,7 +1,10 @@
 {
-  "approved": false,
+  "approved": true,
   "release": "V346",
-  "sourceCommit": null,
-  "publishNonce": null,
-  "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED."
+  "sourceCommit": "1d4c6b36b4341d74cdffdbd5884d661fd206022f",
+  "publishNonce": "1ed90e3c49f3edbf05ac18bfd1eb1ffadde43a9da8c5c371",
+  "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
+  "approvedAt": "2026-10-19T14:17:53Z",
+  "releaseChangeScope": "manager-forgotten-leave-and-audited-deletion",
+  "managerLeaveCorrectionsAuthorization": "Owner requested Manager dashboard forgotten leave marking and deletion of mistaken leave, and explicitly confirmed Managers may select past dates."
 }
