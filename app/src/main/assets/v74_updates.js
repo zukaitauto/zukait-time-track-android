@@ -2855,7 +2855,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 /* V130 ID001 NORMAL WORKING HOURS FINAL AUTHORITY
    Final workshop rules:
    - Supervisor assigns ID001 to one employee at a time; no suggested/allocated time.
-   - Employee may receive ID001 with no normal work, or when every open normal job is Paused.
+   - Employee may receive ID001 whenever no work session is running; pending jobs do not block waiting time.
    - Once assigned, ID001 is the employee's Current Work (Assigned until START).
    - START/STOP only. Starting/resuming a normal Job Card automatically closes ID001 first.
    - ID001 actual duty-time counts in Normal Working Hours, but remains separate from Productive Actual.
@@ -2871,7 +2871,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  const closed=t=>typeof window.v75IsClosedWorkshopDay==='function'&&window.v75IsClosedWorkshopDay(t);
  const duty=t=>typeof window.v75IsID001DutyTime!=='function'||window.v75IsID001DutyTime(t);
  const leave=(emp,t)=>typeof window.v63IsOnLeave==='function'&&window.v63IsOnLeave(emp,t);
- const eligible=(emp,t=Date.now())=>!closed(t)&&duty(t)&&!leave(emp,t)&&!activeSession(emp)&&!openHold(emp)&&(openNormal(emp).length===0||pausedOnly(emp));
+ const eligible=(emp,t=Date.now())=>!closed(t)&&duty(t)&&!leave(emp,t)&&!activeSession(emp)&&!openHold(emp);
  window.v130ID001Eligible=eligible;
  window.v75IdealAvailableEmployees=()=> (users||[]).filter(u=>u&&u.role==='Employee'&&eligible(u.id));
 
@@ -2886,7 +2886,6 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    if(leave(emp,t))return msg(n+' is on leave. ID001 cannot be assigned.','Assign ID001');
    if(openHold(emp))return msg('ID001 is already assigned to '+n+'.','Assign ID001');
    if(activeSession(emp))return msg(n+' has an active running job. ID001 cannot be assigned.','Assign ID001');
-   if(openNormal(emp).some(a=>status(a)!=='Paused'))return msg(n+' has normal work available. ID001 is allowed only when there is no normal work, or all current normal work is Paused.','Assign ID001');
    state.assign=state.assign||[];
    const a={id:uid(),job:H,emp,suggested:0,completed:false,cancelled:false,rework:false,idealCard:true,noSuggestedTime:true,countsAsNormalWorking:true,idealSafeVersion:SAFE,assignedBy:me?.id||'SYSTEM',assignedAt:t,pausedJobFallback:pausedOnly(emp)};
    state.assign.push(a);
@@ -2900,7 +2899,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v106OpenAssignID001=function(){
    if(!me||me.role!=='Supervisor')return;
    const people=window.v75IdealAvailableEmployees();
-   if(!people.length)return msg('No employee is currently available for ID001. The employee must have no running job and either no normal work or only paused normal work.','Assign ID001');
+   if(!people.length)return msg('No employee is currently available for ID001. The employee must have no running job or existing ID001 assignment and must be available during duty hours.','Assign ID001');
    const opts=people.map(u=>'<option value="'+esc(u.id)+'">'+esc(u.name)+' — '+esc(u.department||'')+'</option>').join('');
    const body='<div class="v74-d"><div class="section-title"><h2>◷ Assign ID001</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
      '<div class="notice"><b>ID001 / Waiting Time</b><br>Select one employee. No suggested time is required.</div>'+
