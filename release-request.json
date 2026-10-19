@@ -2,8 +2,8 @@
   "versionName": "V344",
   "versionCode": 307,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": false,
-  "sourceCommit": null,
+  "approvedForStaff": true,
+  "sourceCommit": "62e60514716b371860b0e12bb5cc228fdcce93cb",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,12 +19,12 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": 39204787549,
-  "verificationRun": 39204787348,
-  "accountantVerificationRun": 39204787445,
-  "androidBuildRun": 39204787356,
+  "approvedAt": "2026-10-19T05:59:34.568Z",
+  "publishNonce": "7387a2af41a833307daa4ddca1801060c082ab246be953fd",
+  "signedAcceptanceRun": 39206894022,
+  "verificationRun": 39206894037,
+  "accountantVerificationRun": 39206894110,
+  "androidBuildRun": 39206894059,
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -34,9 +34,10 @@
         "verifiedFileMatch": true
       },
       "workshop-api": {
-        "version": 74,
-        "bundleSha256": "357a01a7b6a045599fcf590545ff972a441a5ae276bbe645c8e89cee02017129",
-        "verifiedFileMatch": true
+        "version": 76,
+        "bundleSha256": "ae137fc8c08a09140e538ed0decdf717fc4ff9c61a439a9dbce9fb9e3d99ab9d",
+        "verifiedFileMatch": true,
+        "verificationBasis": "Current separately deployed production baseline matches QA13 byte-for-byte. V344 does not deploy backend changes. Repository index.ts is the earlier compatible baseline; concurrent revision-probe change is preserved."
       }
     },
     "migrations": [
@@ -46,5 +47,6 @@
       "accountant_append_only_corrections"
     ]
   },
-  "verificationSummary": "V344 updater recovery pending exact-source acceptance: show blocked sync/permission status, direct Android installer intent, stop recursive failed installations and complete Accountant download/install safety flow. Backend and records unchanged."
+  "verificationSummary": "V344 exact-source Android/signed APK, Accountant/full regression/browser, Reception/PDF, Estimate and native PDF checks passed. Fixes hidden sync/permission status, visibility-safe installer handoff, recursive failure retries and Accountant download/install safety. Screenshot showed V340 and queued changes during a temporary PGRST002 outage; schema cache recovered at 09:49:23 Oman. No production backend/schema/record changes performed by this release. Separately deployed workshop-api76 is preserved, reviewed and matched to QA13 readback; QA missing-RPC fallback rejects nonexistent session with401. Native guard retains queued changes. Physical-device install acceptance NOT_RUN; older installed updaters may require direct APK installation.",
+  "productionBackendDeploymentPerformed": false
 }
