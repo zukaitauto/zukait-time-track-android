@@ -1,0 +1,29 @@
+name: Sync traffic compatibility
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/workshop-api/**'
+      - 'app/src/main/assets/cloud_sync.js'
+      - 'tests/sync-traffic-compatibility.mjs'
+      - 'tests/live-projection-traffic.mjs'
+      - '.github/workflows/sync-traffic-check.yml'
+permissions:
+  contents: read
+jobs:
+  compatibility:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify sync compatibility and live projection parity
+        run: |
+          node tests/live-projection-traffic.mjs
+          node --experimental-vm-modules tests/sync-traffic-compatibility.mjs
+          node tests/leave-sync-race.mjs
+          node tests/cloud-dashboard-stability.mjs
+          node tests/cloud-permission-retry-barrier.mjs
+          node tests/cloud-save-permission-rejection.mjs
+          node tests/leave-sync-authority.mjs
+          node tests/employee-finish-server-authority.mjs
