@@ -1,9 +1,9 @@
 {
-  "versionName": "V343",
-  "versionCode": 306,
+  "versionName": "V344",
+  "versionCode": 307,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": true,
-  "sourceCommit": "2ec6585d5da8b8efb43de4d3269c993d4f0524ee",
+  "approvedForStaff": false,
+  "sourceCommit": null,
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-19T05:34:37.917Z",
-  "publishNonce": "0d3f490fcfc52c8d9c63610fa56ac739bba70894b603f31e",
+  "approvedAt": null,
+  "publishNonce": null,
   "signedAcceptanceRun": 39204787549,
   "verificationRun": 39204787348,
   "accountantVerificationRun": 39204787445,
@@ -46,5 +46,5 @@
       "accountant_append_only_corrections"
     ]
   },
-  "verificationSummary": "V343 exact-source Accountant/full regression/browser, Reception/PDF, native PDF, signed APK and Android checks passed. Includes both audited paint and parts fixes: paint return-date cost movements, cancelled return exclusion, partial-receipt costs, pending purchases and snapshot-based return values. Production workshop-api74 matches QA12 byte-for-byte; only accountant/finance_rules.js changed on server. Staff-auth8 unchanged. 29 staff credentials unchanged before/after. No production record writes or migrations. Rollback captured. Physical acceptance NOT_RUN."
+  "verificationSummary": "V344 updater recovery pending exact-source acceptance: show blocked sync/permission status, direct Android installer intent, stop recursive failed installations and complete Accountant download/install safety flow. Backend and records unchanged."
 }

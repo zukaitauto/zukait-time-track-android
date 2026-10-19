@@ -1367,8 +1367,12 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
      if(inst)inst.style.display='none';
    }else if(status==='COMPLETE'){
      if(st)st.innerHTML='<b class="ok">Download complete. Ready to install.</b>';
-     if(down)down.style.display='none';if(inst)inst.style.display='inline-block';
+     if(down)down.style.display='none';if(inst){inst.style.display='inline-block';inst.disabled=false;inst.textContent='INSTALL UPDATE'};
      if(bar)bar.style.width='100%';if(pct)pct.textContent='100%';
+   }else if(['SYNCING','INSTALLING','PERMISSION_REQUIRED','SYNC_REQUIRED'].includes(status)){
+     if(st)st.textContent=message||'Update kept ready. Retry installation after syncing.';
+     if(down)down.style.display='none';
+     if(inst){inst.style.display='inline-block';inst.disabled=status==='SYNCING'||status==='INSTALLING';inst.textContent=status==='SYNC_REQUIRED'?'RETRY SYNC & INSTALL':status==='PERMISSION_REQUIRED'?'RETRY INSTALL':status==='SYNCING'?'SYNCING BEFORE INSTALL…':'OPENING ANDROID INSTALLER…'}
    }else if(status==='INSTALL_DIAGNOSTIC'){
      if(st)st.innerHTML='<b style="color:#b91c1c">INSTALLER DIAGNOSTIC</b><div style="margin-top:8px;word-break:break-word">'+E(message||'Unknown installer error')+'</div>';
      if(inst){inst.style.display='inline-block';inst.disabled=false;inst.textContent='RETRY INSTALL'}

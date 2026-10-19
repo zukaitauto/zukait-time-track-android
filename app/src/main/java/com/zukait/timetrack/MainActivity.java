@@ -1240,6 +1240,9 @@ public class MainActivity extends Activity {
         // pull is already running. Require confirmed, fresh workshop sync.
         webView.evaluateJavascript(
                 "(async function(){try{" +
+                "if(window.zukaitAccountant&&typeof window.zukaitAccountant.prepareForUpdate==='function'){" +
+                "var financialSafe=await window.zukaitAccountant.prepareForUpdate();" +
+                "if(window.AndroidBridge&&window.AndroidBridge.completeUpdatePreInstallSync)window.AndroidBridge.completeUpdatePreInstallSync(financialSafe===true);return;}" +
                 "if(!window.zukaitCloud||!window.zukaitCloud.syncNow)throw new Error('SYNC_UNAVAILABLE');" +
                 "var startedAt=Date.now();" +
                 "await window.zukaitCloud.syncNow();" +
@@ -1335,12 +1338,9 @@ public class MainActivity extends Activity {
             install.setClipData(android.content.ClipData.newRawUri("Zukait Time Track Update", apk));
             install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
 
-            android.content.pm.ResolveInfo resolved =
-                    getPackageManager().resolveActivity(install, PackageManager.MATCH_DEFAULT_ONLY);
-            if (resolved == null || resolved.activityInfo == null) {
-                throw new android.content.ActivityNotFoundException("No Android package installer available");
-            }
-            grantUriPermission(resolved.activityInfo.packageName, apk, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            // Android 11+ package visibility can hide the installer from
+            // resolveActivity even when startActivity is permitted. Let Android
+            // resolve the APK intent and grant its recipient the URI permission.
             startActivity(install);
             notifyUpdateDownloadToWeb("INSTALLING", 100, 0, 0,
                     "Android installer opened. Tap Install to update.");
@@ -1423,12 +1423,14 @@ public class MainActivity extends Activity {
                     return;
                 } catch (Exception ignored) { }
             }
-            if (!openDownloadedUpdateWithSystemInstaller()) installDownloadedUpdateWithPackageInstaller();
+            notifyUpdateDownloadToWeb("INSTALL_DIAGNOSTIC", 100, 0, 0,
+                    "Android could not open installation confirmation. Open the downloaded APK from Downloads, or retry Install.");
         } else if (status == PackageInstaller.STATUS_SUCCESS) {
             clearInstalledUpdateDownloadIfNeeded();
         } else {
             android.util.Log.e("ZukaitUpdate", "Install status " + status + ": " + detail);
-            if (!openDownloadedUpdateWithSystemInstaller()) installDownloadedUpdateWithPackageInstaller();
+            notifyUpdateDownloadToWeb("INSTALL_DIAGNOSTIC", 100, 0, 0,
+                    "Installation was not completed: " + (detail == null ? "Android status " + status : detail) + ". The downloaded update is retained; retry when ready.");
         }
         intent.setAction(null);
     }

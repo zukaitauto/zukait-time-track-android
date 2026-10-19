@@ -73,5 +73,9 @@ async function changePassword(currentPassword,newPassword){
  }catch{invalidate();localStorage.removeItem(sessionKey);try{window.AndroidBridge?.clearSecureSessionToken?.()}catch{}throw Error('Password changed. Sign in again to continue.');}
  await load();
 }
-window.zukaitAccountant={load,openJob,switchReport,submit,exportRows,changePassword,getUser:()=>verified?{...user}:null};boot();
+async function prepareForUpdate(){
+ const clean=()=>verified&&!busy&&navigator.onLine!==false&&localStorage.getItem(pendingKey())===null&&$('entry').hidden&&$('correction').hidden&&$('account-password-form').hidden;
+ try{if(!clean())return false;token();await request('workshop-api',{action:'accountant_dashboard',limit:1});return clean();}catch{return false;}
+}
+window.zukaitAccountant={load,openJob,switchReport,submit,exportRows,changePassword,prepareForUpdate,getUser:()=>verified?{...user}:null};boot();
 })();

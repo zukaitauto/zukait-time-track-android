@@ -60,6 +60,7 @@ node tests/paint-invoice-pending.mjs
 node tests/vehicle-logo-assets.mjs
 node tests/native-update-integrity.mjs
 node tests/native-update-sync-safety.mjs
+node tests/native-installer-status.mjs
 node tests/release-latest-integrity.mjs
 node tests/architecture-v2.mjs
 node tests/v2-work-events.mjs

@@ -192,5 +192,7 @@ await check('a pending workshop conflict stays available and blocks installation
   assert.equal(h.storage.get('zukait_cloud_pending_conflict_v42'), conflict);
 });
 
+for(const outcome of [true,false,'true'])await check('Accountant pre-install result '+outcome,async()=>{const h=mockedCloud(cleanHealth());delete h.context.window.zukaitCloud;h.context.window.zukaitAccountant={prepareForUpdate:async()=>outcome};await h.run();assert.deepEqual(h.decisions,[outcome===true]);});
+await check('Accountant pre-install rejects failed finance verification',async()=>{const h=mockedCloud(cleanHealth());delete h.context.window.zukaitCloud;h.context.window.zukaitAccountant={prepareForUpdate:async()=>{throw Error('NETWORK')}};await h.run();assert.deepEqual(h.decisions,[false]);});
 assert.deepEqual(failures, [], 'Android pre-install sync safety failures');
 console.log(`Native update pre-install sync: ${checks} runtime safety checks passed`);
