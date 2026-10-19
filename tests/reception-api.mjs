@@ -14,7 +14,7 @@ let serve,
     active: true,
   },
   rpcResult = { data: { ok: true }, error: null },
-  lastRpc;
+  lastRpc, authProbes=0;
 const admin = {
   from: (table) => {
     assert.equal(table, "staff_sessions");
@@ -35,6 +35,11 @@ const admin = {
     return chain;
   },
   rpc: async (name, args) => {
+    if(name==='zukait_workshop_revision_probe'){
+      authProbes++;assert.match(args.p_token_hash,/^[a-f0-9]{64}$/);
+      const allowed=actor&&actor.active!==false&&!(['Receptionist','Accountant'].includes(actor.role)&&actor.must_change);
+      return {data:allowed?{ok:true,user:{id:actor.user_id,name:actor.display_name,role:actor.role,department:actor.department}}:{ok:false,code:'invalid_session'},error:null};
+    }
     lastRpc = { name, args };
     return rpcResult;
   },
@@ -151,6 +156,7 @@ for (const action of new Set([...actions, "load", "save", "qc_delivery", "unknow
   assert.equal(lastRpc, null, action);
   denials++;
 }
+assert.equal(authProbes,1,'revision authentication uses one probe while role denial prevents business RPC access');
 for (const operation of ["STAFF", "ACCESS", "CLOSE", "CANCEL_JOB", "RECORD_APPROVAL", "RECORD_EXTERNAL_APPROVAL", "REVOKE_APPROVAL", "LINK_ESTIMATE",
   "SAVE_PRELIMINARY", "ADDITIONAL_REQUEST", "DELIVER", "GET ", "get", null, {}, ["GET"]]) {
   lastRpc = null;
