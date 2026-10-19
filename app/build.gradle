@@ -10,10 +10,10 @@ android {
         applicationId 'com.zukait.timetrack'
         minSdk 24
         targetSdk 35
-        // V341: Accounts menu, Cash invoice receipts and itemized JC 360 expenses.
+        // V345: Skip unchanged snapshot downloads using a server-confirmed baseline.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
-        versionCode 307
-        versionName "V344" // Exact-source acceptance covers card navigation, financial workflows and shared role regressions.
+        versionCode 308
+        versionName "V345" // Exact-source acceptance covers card navigation, financial workflows and shared role regressions.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }

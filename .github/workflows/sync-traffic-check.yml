@@ -7,6 +7,15 @@ on:
       - 'tests/sync-traffic-compatibility.mjs'
       - 'tests/live-projection-traffic.mjs'
       - '.github/workflows/sync-traffic-check.yml'
+  push:
+    branches: [architecture-v2]
+    paths:
+      - 'app/build.gradle'
+      - 'supabase/functions/workshop-api/**'
+      - 'app/src/main/assets/cloud_sync.js'
+      - 'tests/sync-traffic-compatibility.mjs'
+      - 'tests/live-projection-traffic.mjs'
+      - '.github/workflows/sync-traffic-check.yml'
 permissions:
   contents: read
 jobs:
