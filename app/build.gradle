@@ -38,3 +38,5 @@ dependencies {
 // V327: include responsive Paint PO list and received/waiting colours.
 
 // V346: verify the refreshed leave cache keys in the exact signed candidate.
+
+// Revalidate V346 against current pending-work eligibility contracts.

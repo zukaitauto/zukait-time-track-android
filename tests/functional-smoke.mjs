@@ -69,7 +69,7 @@ assert.doesNotMatch(updates,/window\.start=function\(no\)\{[\s\S]{0,250}?reconci
 
 assert.match(updates,/const exactLatestSession=a=>[\s\S]*?s\.assignmentId&&String\(s\.assignmentId\)===String\(a\.id\)/,'ID001 eligibility must inspect the exact assignment-bound latest session');
 assert.match(updates,/const assignmentPaused=a=>\{const s=exactLatestSession\(a\);return !!\(s&&s\.end&&s\.paused===true&&s\.finished!==true\)\}/,'ID001 paused-only eligibility must require an ended paused non-finished assignment session');
-assert.match(updates,/openNormal\(emp\)\.some\(a=>!assignmentPaused\(a\)\)/,'ID001 assignment guard must use exact per-assignment paused state');
+assert.match(updates,/if\(activeSession\(emp\)\)return msg\(n\+' has an active running job/,'ID001 assignment must reject running work while permitting pending normal assignments');
 
 assert.ok(updates.includes('v110ID001ReportButton') && updates.includes('v110OpenID001Report'), 'Supervisor must show the ID001 Report beside the standalone ID001 assignment control');
 assert.ok(updates.includes('v110ID001Emp') && updates.includes('v110ID001From') && updates.includes('v110ID001To'), 'ID001 Report must support employee and date filtering');
