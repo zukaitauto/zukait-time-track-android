@@ -51,3 +51,25 @@ assert.equal(companyReport.summary.outstanding.amount_omr,80);
 assert.equal(financialReport(insured,{insurance:'Unknown'},at('12:00')).rows.cash.length,0);
 assert.equal(JSON.stringify(insured),insuredBefore,'report enrichment does not mutate authoritative state');
 console.log('Real paint vendor and insurance-filter receipt/invoice reconciliation passed');
+
+// Receipt and return months must reconcile with the Manager expense report.
+const paintPeriods=fixture();paintPeriods.state.paintPurchasing.orders=[{id:'CROSS',poNumber:'PO-CROSS',jobCard:'J1',vendor:'Paint Vendor',receivedAt:Date.parse('2026-09-30T19:59:59Z'),lines:[{id:'LINE',quantity:2,pricePerLitre:10}],returns:[{id:'RETURN',lineId:'LINE',quantity:.5,value:5,returnedAt:Date.parse('2026-09-30T20:00:00Z')},{id:'CANCELLED',lineId:'LINE',quantity:.2,value:2,returnedAt:Date.parse('2026-10-02T08:00:00Z'),voided:true}]}];
+const paintSourceBefore=JSON.stringify(paintPeriods),reportNow=Date.parse('2026-11-02T08:00:00Z');
+assert.equal(financialReport(paintPeriods,{month:'2026-09'},reportNow).summary.paint.amount_omr,20,'receipt before Oman midnight belongs to September');
+const octoberPaint=financialReport(paintPeriods,{month:'2026-10'},reportNow);
+assert.equal(octoberPaint.summary.paint.amount_omr,-5,'later return reduces October, not September');
+assert.equal(octoberPaint.rows.paint.length,1,'cancelled returns are not financial movements');
+assert.equal(octoberPaint.rows.paint[0].status,'Returned paint');
+assert.equal(octoberPaint.rows.paint[0].supplier,'Paint Vendor');
+assert.equal(financialReport(paintPeriods,{from:'2026-10-01',to:'2026-10-01'},reportNow).summary.paint.amount_omr,-5,'custom range follows Oman return day');
+const fullPaint=financialReport(paintPeriods,{},reportNow);
+assert.equal(fullPaint.summary.paint.amount_omr,15);
+assert.equal(fullPaint.details[0].paint_cost_omr,15,'JC360 current net equals the sum of all movements');
+assert.equal(JSON.stringify(paintPeriods),paintSourceBefore);
+console.log('Paint receipt/return months, Oman midnight, custom ranges, cancelled returns and JC360 reconciliation passed');
+const undatedPaint=structuredClone(paintPeriods);delete undatedPaint.state.paintPurchasing.orders[0].returns[0].returnedAt;
+const undatedReport=financialReport(undatedPaint,{},reportNow);
+assert.equal(undatedReport.summary.paint.amount_omr,15,'undated return remains in complete cost');
+assert.equal(undatedReport.rows.paint.find(r=>r.status==='Returned paint').date,'','missing return date must not be invented');
+assert.equal(financialReport(undatedPaint,{month:'2026-09'},reportNow).summary.paint.amount_omr,20,'undated return must not be assigned to receipt month');
+assert.match(undatedReport.notes.join(' '),/Undated returns/);

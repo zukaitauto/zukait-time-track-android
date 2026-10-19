@@ -43,7 +43,7 @@ assert.match(ctx.modal,/Tape/);
 assert.match(ctx.modal,/Total Consumables Expense <b>OMR 7\.500/);
 assert.match(ctx.modal,/v145OpenConsumablesPerformance\(\)">Back/);
 state.paintPurchasing={orders:[
- {id:'P1',jobCard:'JC1',poNumber:'PO-1',receivedAt:now,lines:[{id:'L1',paintType:'Base Coat',quantity:2,pricePerLitre:10,lineTotal:20}],returns:[{lineId:'L1',quantity:.5,value:5,returnedAt:now}]},
+ {id:'P1',jobCard:'JC1',poNumber:'PO-1',receivedAt:now,lines:[{id:'L1',paintType:'Base Coat',quantity:2,pricePerLitre:10,lineTotal:20}],returns:[{lineId:'L1',quantity:.5,value:5,returnedAt:now},{lineId:'L1',quantity:.2,value:2,returnedAt:now,voided:true}]},
  {id:'P2',jobCard:'JC2',poNumber:'PO-2',receivedAt:old,lines:[{id:'L2',quantity:2,pricePerLitre:4}],returns:[{lineId:'L2',quantity:.5,returnedAt:now}]},
  {jobCard:'UNRECEIVED',lines:[{quantity:10,pricePerLitre:100}]},
  {jobCard:'VOIDPAINT',voided:true,receivedAt:now,lines:[{quantity:10,pricePerLitre:100}]}
