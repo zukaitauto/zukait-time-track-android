@@ -3,7 +3,7 @@ const src=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
 const a=src.indexOf('  async function pull(force){'),b=src.indexOf('  async function probeRevision(){',a);
 async function race(acknowledged){
  let resolve;const pending=new Promise(r=>resolve=r);
- const c={state:{leaves:[]},cloudRevision:1,cloudDirty:false,dirtyGeneration:0,pullInFlight:false,initialDone:true,
+ const c={state:{leaves:[]},lastSyncedState:null,cloudRevision:1,cloudDirty:false,dirtyGeneration:0,pullInFlight:false,initialDone:true,
   me:{id:'S',role:'Supervisor'},navigator:{onLine:true},sessionToken:()=>true,status(){},clone:structuredClone,api:()=>pending,
   normalizeRemote(){throw Error('stale response must not replace new leave')},console};
  vm.createContext(c);vm.runInContext(src.slice(a,b)+';this.pull=pull',c);
@@ -20,3 +20,4 @@ const local={leaves:[{id:'old',emp:'E',by:'E',cancelled:false,date:'2026-10-01',
 const merged=c.merge(remote,local,'E');assert.equal(merged.leaves.length,2);assert.equal(merged.leaves[0].cancelled,true);assert.equal(merged.leaves[0].period,'AM');assert.equal(merged.leaves[1].id,'new');
 assert.equal(merged.leaveAudit.length,2);assert.equal(remote.leaves.length,1,'merge must not mutate server snapshot');
 console.log('Leave sync: in-flight pull cannot erase saves; stale Employee replay retains Manager edits/cancellations and own pending additions.');
+

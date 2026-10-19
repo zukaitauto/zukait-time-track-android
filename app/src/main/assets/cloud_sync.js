@@ -593,8 +593,11 @@
     const before=clone(state||{});
     const pullGeneration=dirtyGeneration;
     const pullRevision=cloudRevision;
+    // Only an in-memory server-confirmed baseline can satisfy not_modified.
+    // A persisted revision alone cannot prove that a cold-start cache is valid.
+    const pullBaseline=lastSyncedState?clone(lastSyncedState):null;
     let r;
-    try{r=await api({action:'load'})}finally{pullInFlight=false}
+    try{r=await api(pullBaseline?{action:'load',known_revision:pullRevision}:{action:'load'})}finally{pullInFlight=false}
     if(!r.ok){
       if(r.code==='invalid_session')status('LOGIN REQUIRED','bad');
       else status('SYNC ERROR','bad');
@@ -605,6 +608,10 @@
     // replace that newer local save (or a newer push acknowledgement) with the
     // older response. The queued push/subsequent poll will reconcile it.
     if(cloudDirty||dirtyGeneration!==pullGeneration||cloudRevision!==pullRevision)return false;
+    if(r.not_modified===true){
+      if(!pullBaseline||remoteRev!==pullRevision)throw new Error('INVALID_NOT_MODIFIED');
+      r.data=pullBaseline;
+    }
     if(force||remoteRev!==cloudRevision){
       // A forced refresh may return the same snapshot (for example on focus).
       // Render helpers may adjust the local cache without creating a new server
@@ -1028,3 +1035,4 @@
     get pendingConflict(){try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'null')}catch(_){return null}}
   };
 })();
+

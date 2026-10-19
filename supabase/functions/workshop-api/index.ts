@@ -22,6 +22,8 @@ const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-zukait-session",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Max-Age": "600",
+  "Cache-Control": "private, no-store",
   "Content-Type": "application/json"
 };
 
@@ -821,10 +823,12 @@ function computeLiveStatus(data: any, revision: number, changedBy: string) {
 
 async function loadAuthoritativeLiveStatus() {
   const { data: current, error: stateError } = await admin.from("workshop_state")
-    .select("revision,data,updated_at,updated_by").eq("id","main").single();
+    .select("revision,users:data->users,sessions:data->sessions,assign:data->assign,jobs:data->jobs,updated_at,updated_by").eq("id","main").single();
   if (stateError) throw stateError;
   const revision = Number(current.revision || 0);
-  const expected = computeLiveStatus(current.data || {}, revision, String(current.updated_by || ""));
+  // The projection uses exactly these four inputs. Financial data, documents,
+  // purchasing and audit history never need to cross the database/API boundary.
+  const expected = computeLiveStatus({users:current.users,sessions:current.sessions,assign:current.assign,jobs:current.jobs}, revision, String(current.updated_by || ""));
   const expectedIds = new Set(expected.map((x:any)=>String(x.employee_id)));
   let { data: rows, error } = await admin.from("workshop_live_status")
     .select("employee_id,employee_name,department,status,job_no,assignment_id,session_id,session_start,suggested_minutes,vehicle,registration,overtime,state_revision,updated_at,updated_by")
@@ -965,12 +969,34 @@ Deno.serve(async (req: Request) => {
   if (!allowedApiKey(req)) return reply({ ok: false, code: "bad_api_key" }, 401);
 
   const token = req.headers.get("x-zukait-session") || "";
-  const user = await sessionUser(token);
-  if (!user) return reply({ ok: false, code: "invalid_session" }, 401);
+  if (!token) return reply({ ok: false, code: "invalid_session" }, 401);
 
   try {
     const body = await req.json();
     const action = String(body?.action || "load");
+    // A heartbeat validates the session and reads the revision in one database
+    // round trip. Never cache authorization: revocations apply to every probe.
+    let revisionProbe: any = null;
+    let user: any;
+    if (action === "revision") {
+      const { data, error } = await admin.rpc("zukait_workshop_revision_probe", {
+        p_token_hash: await sha256Hex(token)
+      });
+      if (error?.code === "PGRST202") {
+        // Rolling schema-cache reloads must not interrupt existing clients.
+        user = await sessionUser(token);
+      } else {
+        if (error) throw error;
+        revisionProbe = data;
+        user = data?.user;
+        if (!data?.ok && data?.code !== "invalid_session") {
+          return reply({ok:false,code:data?.code||"revision_failed"},503);
+        }
+      }
+    } else {
+      user = await sessionUser(token);
+    }
+    if (!user) return reply({ ok: false, code: "invalid_session" }, 401);
 
     if (user.role === 'Accountant' || action.startsWith('accountant_')) {
       try {const result=await accountantApi(admin,user,body,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);return reply(result.body,result.status);}
@@ -1247,13 +1273,23 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "revision") {
-      const { data, error } = await admin.from("workshop_state")
+      if (revisionProbe) return reply({ ...revisionProbe, server_time:Date.now(), user });
+      const {data,error} = await admin.from("workshop_state")
         .select("revision,updated_at,updated_by").eq("id","main").single();
       if (error) throw error;
-      return reply({ ok:true, ...data, server_time:Date.now(), user });
+      return reply({ok:true,...data,server_time:Date.now(),user});
     }
 
     if (action === "load") {
+      // Opt-in only: older clients continue to receive the full response.
+      if (Number.isSafeInteger(body.known_revision) && body.known_revision >= 0) {
+        const {data: metadata,error: metadataError} = await admin.from("workshop_state")
+          .select("revision,updated_at,updated_by").eq("id","main").single();
+        if (metadataError) throw metadataError;
+        if (Number(metadata.revision) === body.known_revision) {
+          return reply({ok:true,...metadata,not_modified:true,user});
+        }
+      }
       const { data, error } = await admin.from("workshop_state")
         .select("revision,data,updated_at,updated_by").eq("id","main").single();
       if (error) throw error;
@@ -1774,4 +1810,5 @@ Deno.serve(async (req: Request) => {
     return reply({ ok:false, code:"server_error" }, 500);
   }
 });
+
 
