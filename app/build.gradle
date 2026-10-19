@@ -10,10 +10,10 @@ android {
         applicationId 'com.zukait.timetrack'
         minSdk 24
         targetSdk 35
-        // V345: Skip unchanged snapshot downloads using a server-confirmed baseline.
+        // V346: Manager past-date leave entry and audited deletion of mistaken leave.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
-        versionCode 308
-        versionName "V345" // Exact-source acceptance covers card navigation, financial workflows and shared role regressions.
+        versionCode 309
+        versionName "V346" // Exact-source acceptance covers card navigation, financial workflows and shared role regressions.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }

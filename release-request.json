@@ -1,9 +1,9 @@
 {
-  "versionName": "V345",
-  "versionCode": 308,
+  "versionName": "V346",
+  "versionCode": 309,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": true,
-  "sourceCommit": "3d5676a9dba1771934b0d88b4b294011513b28ea",
+  "approvedForStaff": false,
+  "sourceCommit": null,
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -13,18 +13,18 @@
   "backendDeploymentRequired": false,
   "releaseHeldByOwner": false,
   "evidence": {
-    "credentialPreservation": true,
-    "qaFinancialAcceptance": true,
-    "serverPermissions": true,
-    "rollbackPrepared": true,
-    "legacyLoginCompatibility": true
+    "credentialPreservation": false,
+    "qaFinancialAcceptance": false,
+    "serverPermissions": false,
+    "rollbackPrepared": false,
+    "legacyLoginCompatibility": false
   },
-  "approvedAt": "2026-10-19T06:27:10Z",
-  "publishNonce": "1e8c2f11917b1a806f1bec05e673b5f62b2e841fa6f195e6",
-  "signedAcceptanceRun": 39209520675,
-  "verificationRun": 39209520802,
-  "accountantVerificationRun": 39209520723,
-  "androidBuildRun": 39209520746,
+  "approvedAt": null,
+  "publishNonce": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "accountantVerificationRun": null,
+  "androidBuildRun": null,
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -50,16 +50,19 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V345 exact-source sync compatibility, signed APK/certificate, Android builds, full regression, Accountant financial/browser, Reception/concurrency/browser and native Android emulator report checks passed. Conditional downloads retain a server-confirmed baseline, protect in-flight local edits/acknowledgements and support old servers. Shared production workshop-api78 and staff-auth8 are preserved. No backend deployment, schema migration or production record changes in this client release. Physical-device acceptance and fresh production backup restore remain NOT_RUN under the existing owner-authorized live-app release scope. Rollback uses a higher-version signed recovery build without clearing app storage.",
+  "verificationSummary": "V346 candidate: Manager-only past-date leave marking with reason and direct audited deletion; active leave totals exclude deleted entries. Exact-source acceptance pending. No new backend deployment, schema migration or production leave edits. Physical-device acceptance NOT_RUN.",
   "productionBackendDeploymentPerformed": false,
-  "releaseChangeScope": "compatible-sync-traffic-reduction",
+  "releaseChangeScope": "manager-forgotten-leave-and-audited-deletion",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
-  "syncVerificationRun": 39209520815,
-  "nativePdfVerificationRun": 39209520754,
+  "syncVerificationRun": null,
+  "nativePdfVerificationRun": null,
   "rollback": {
-    "previousRelease": "release-V344-architecture-v2",
-    "strategy": "Revert the conditional client change and publish a higher-version signed recovery build with the permanent certificate; never uninstall or clear storage.",
+    "previousRelease": "release-V345-architecture-v2",
+    "strategy": "Publish a higher-version signed recovery build with the previous client assets; retain app storage and all leave/audit records.",
     "dataResetRequired": false
-  }
+  },
+  "releaseBackendChanges": false,
+  "managerLeaveCorrectionsAuthorizedByOwner": true,
+  "managerLeaveCorrectionsAuthorization": "Owner requested Manager dashboard forgotten leave marking and deletion of mistaken leave, and explicitly confirmed Managers may select past dates."
 }
