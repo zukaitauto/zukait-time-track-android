@@ -1,16 +1,16 @@
 {
-  "versionName": "V341",
-  "versionCode": 304,
+  "versionName": "V342",
+  "versionCode": 305,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": true,
-  "sourceCommit": "8f6e06b74c0f3ea952cf8d1ea08789547e534e1d",
+  "approvedForStaff": false,
+  "sourceCommit": null,
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "productionBackendChanges": true,
   "phase2ActivationApproved": false,
-  "backendDeploymentRequired": false,
+  "backendDeploymentRequired": true,
   "releaseHeldByOwner": false,
   "evidence": {
     "credentialPreservation": true,
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-19T04:20:33.068Z",
-  "publishNonce": "5aa8b0620ffde19bf648068a64c8625a6161c50ab82161a4",
+  "approvedAt": null,
+  "publishNonce": null,
   "signedAcceptanceRun": 39169106243,
   "verificationRun": 39169106215,
   "accountantVerificationRun": 39169106158,
@@ -36,7 +36,7 @@
       "workshop-api": {
         "version": 72,
         "bundleSha256": "6ba1f8634dbc73c279d8bc58a4218ea0eb27bce1312dccdb5b5c7a20777956d2",
-        "verifiedFileMatch": true
+        "verifiedFileMatch": false
       }
     },
     "migrations": [
@@ -46,5 +46,5 @@
       "accountant_append_only_corrections"
     ]
   },
-  "verificationSummary": "V341 exact-source signed Android, Accountant, Reception and native PDF checks passed. Saturday\u2013Thursday Oman workshop week; Accountant menu/update/password/logout; JC360 itemized expenses; existing/new Cash invoice receipt rule with deposit reconciliation. Production backend files match QA byte-for-byte; 29 staff credential records unchanged before/after. No production record writes or migrations performed. Rollback bundles captured. Physical acceptance NOT_RUN."
+  "verificationSummary": "V342 pending exact-source release checks: paint vendor mapping and insurance-company linked receipt/invoice totals. Production remains V341 until QA and deployment verification."
 }
