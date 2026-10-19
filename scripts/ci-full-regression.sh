@@ -53,6 +53,7 @@ node tests/id001-preliminary-labour.mjs
 node tests/id001-achieved-classification.mjs
 node tests/id001-preliminary-classification.mjs
 node tests/id001-preliminary-end-to-end.mjs
+node tests/id001-assignment-uniqueness.mjs
 node tests/v156-id001-preliminary-server-deployment.mjs
 node tests/paint-safety.mjs
 node tests/paint-order-authority.mjs
