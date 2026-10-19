@@ -13,6 +13,7 @@ node tests/secure-session-restore.mjs
 node tests/accountant-release-gate.cjs
 node tests/accountant-finance.mjs
 node tests/accountant-paint-periods.mjs
+node tests/accountant-parts-costs.mjs
 node tests/accountant-ledger-sql.mjs
 node tests/accountant-auth-api.mjs
 node tests/accountant-dashboard.mjs
