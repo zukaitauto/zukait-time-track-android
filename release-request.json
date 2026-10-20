@@ -2,8 +2,8 @@
   "versionName": "V347",
   "versionCode": 310,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": false,
-  "sourceCommit": null,
+  "approvedForStaff": true,
+  "sourceCommit": "ffbc6454871644e8e7db82612d1fe03aff7b1bef",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -13,18 +13,18 @@
   "backendDeploymentRequired": false,
   "releaseHeldByOwner": false,
   "evidence": {
-    "credentialPreservation": false,
-    "qaFinancialAcceptance": false,
-    "serverPermissions": false,
-    "rollbackPrepared": false,
-    "legacyLoginCompatibility": false
+    "credentialPreservation": true,
+    "qaFinancialAcceptance": true,
+    "serverPermissions": true,
+    "rollbackPrepared": true,
+    "legacyLoginCompatibility": true
   },
-  "approvedAt": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "accountantVerificationRun": null,
-  "androidBuildRun": null,
+  "approvedAt": "2026-10-20T08:53:50.297582+00:00",
+  "publishNonce": "afe96fc41329fe063eb1820a2c4422988c830e5e87fb74fb",
+  "signedAcceptanceRun": 39396157382,
+  "verificationRun": 39396157298,
+  "accountantVerificationRun": 39396157385,
+  "androidBuildRun": 39396157373,
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -39,7 +39,7 @@
         "bundleSha256": "e0ed86417b288d83d4ed0584a1cdd4eb98987046698b3ae8ca80f879aedb2e4d",
         "verifiedFileMatch": true,
         "repositorySourceMatchesDeployed": false,
-        "verificationBasis": "Exact readback matches all thirteen files of the captured deployed workshop-api78 traffic-optimization bundle. Repository also contains separately staged backend changes; V346 is client-only and does not deploy them. Live unauthenticated guards and conditional protocol are covered by exact-source CI."
+        "verificationBasis": "Production workshop-api v78 bundle hash rechecked unchanged for V347. No Edge deployment is part of this client-only release. Repository also contains separately staged backend changes."
       }
     },
     "migrations": [
@@ -50,13 +50,13 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V347 candidate: hidden notifications/live reads paused, hidden revision probes slowed; foreground actions, offline writes and visibility resume preserved. Exact-source checks pending.",
+  "verificationSummary": "V347: hidden notification report hydration and periodic live reads paused, hidden revision probes reduced to two-minute cadence. Foreground one-second revision detection, live updates, immediate action writes, offline queue and visibility resume preserved. Exact-source sync/runtime, full regression, signed APK, Accountant browser/financial, Reception/browser and native PDF checks passed. No backend deployment, schema migration or production data edits. Physical-device acceptance and fresh production backup restore NOT_RUN.",
   "productionBackendDeploymentPerformed": false,
   "releaseChangeScope": "hidden-screen-read-traffic-reduction",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
-  "syncVerificationRun": null,
-  "nativePdfVerificationRun": null,
+  "syncVerificationRun": 39396157346,
+  "nativePdfVerificationRun": 39396157368,
   "rollback": {
     "previousRelease": "release-V346-architecture-v2",
     "strategy": "Publish a higher-version signed recovery build with the previous client assets; retain app storage and all leave/audit records.",
