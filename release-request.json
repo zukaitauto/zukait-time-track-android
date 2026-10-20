@@ -2,8 +2,8 @@
   "versionName": "V350",
   "versionCode": 313,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": false,
-  "sourceCommit": null,
+  "approvedForStaff": true,
+  "sourceCommit": "2ae52bc85f96b3f7dda6c7e4390ae14df5bf59cc",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,12 +19,12 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "accountantVerificationRun": null,
-  "androidBuildRun": null,
+  "approvedAt": "2026-10-20T15:40:10.329683Z",
+  "publishNonce": "eeac3ab689b4b796dd7b00b8ad31e6affdbd19a8ae31ac4c",
+  "signedAcceptanceRun": 39449664423,
+  "verificationRun": 39449664841,
+  "accountantVerificationRun": 39449664555,
+  "androidBuildRun": 39449664704,
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -32,14 +32,14 @@
         "version": 8,
         "bundleSha256": "dfac91c48aa7969d67f9f6a6ee8613fbf7090862261cc262adb34730794fc532",
         "verifiedFileMatch": true,
-        "verificationBasis": "Production index.ts exactly matches the candidate; deno.json differs only by explicit versus implicit empty imports. Authentication bundle remains unchanged."
+        "verificationBasis": "Read-only production V350 verification: deployed version and complete bundle hash match the approved live V349 baseline. This client-only release deploys no backend files; unrelated staged backend changes remain excluded."
       },
       "workshop-api": {
         "version": 79,
         "bundleSha256": "1e1f27723c3b3e42bd4cb283d2b22c0c2d1a7c17ed9c31932a27b65a334d30c8",
         "verifiedFileMatch": true,
         "repositorySourceMatchesDeployed": false,
-        "verificationBasis": "All 13 files read back match the exact prior live v78 bundle plus JSON field-order equality helper fix. Only that helper was deployed; unrelated staged repository backend changes were excluded."
+        "verificationBasis": "Read-only production V350 verification: deployed version and complete bundle hash match the approved live V349 baseline. This client-only release deploys no backend files; unrelated staged backend changes remain excluded."
       }
     },
     "migrations": [
@@ -50,13 +50,13 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V350 candidate: coloured Suggested, Total Actual and Exceeded time in the staff screen, PDF and image cards, plus exact-assignment Delivered Vehicle Time Review drill-down. Exact-source release acceptance pending. No production backend, schema or record changes.",
+  "verificationSummary": "V350 exact-source acceptance passed: coloured staff time-review summaries in screen/PDF/PNG, exact assignment Delivered Vehicle drill-down, stale signature and role guards, real browser exports at phone/tablet/desktop widths, Reception and concurrency regressions, Accountant financial acceptance, sync compatibility, signed APK/certificate and native Android PDF emulator verification. No production backend deployment, schema or record changes. Backend staff-auth8 and workshop-api79 readback match the live V349 baseline. Physical-device acceptance and fresh production backup restore remain NOT_RUN under the existing approved release scope.",
   "productionBackendDeploymentPerformed": false,
   "releaseChangeScope": "staff-time-review-metrics-and-delivered-drill-down",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
-  "syncVerificationRun": null,
-  "nativePdfVerificationRun": null,
+  "syncVerificationRun": 39449664299,
+  "nativePdfVerificationRun": 39449664489,
   "rollback": {
     "previousRelease": "release-V349-architecture-v2",
     "strategy": "Publish a higher-version signed recovery build with the previous client assets; retain app storage and all workshop records.",
