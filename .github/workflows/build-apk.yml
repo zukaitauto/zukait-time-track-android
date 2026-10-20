@@ -75,6 +75,7 @@ jobs:
         with:
           name: ZUKAIT_TIME_TRACK_UNSIGNED_RELEASE
           path: ZUKAIT_TIME_TRACK_UNSIGNED_RELEASE.apk
+          retention-days: 7
           if-no-files-found: error
 
       - name: Prepare Android signing tools
@@ -91,3 +92,4 @@ jobs:
         with:
           name: ANDROID_SIGNING_TOOLS_35
           path: signing-tools
+          retention-days: 7
