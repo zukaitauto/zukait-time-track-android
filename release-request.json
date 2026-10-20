@@ -2,8 +2,8 @@
   "versionName": "V349",
   "versionCode": 312,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": false,
-  "sourceCommit": null,
+  "approvedForStaff": true,
+  "sourceCommit": "742b32e645a5953d1c97c2178cc4386aa0856270",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -13,18 +13,18 @@
   "backendDeploymentRequired": false,
   "releaseHeldByOwner": false,
   "evidence": {
-    "credentialPreservation": false,
-    "qaFinancialAcceptance": false,
-    "serverPermissions": false,
-    "rollbackPrepared": false,
-    "legacyLoginCompatibility": false
+    "credentialPreservation": true,
+    "qaFinancialAcceptance": true,
+    "serverPermissions": true,
+    "rollbackPrepared": true,
+    "legacyLoginCompatibility": true
   },
-  "approvedAt": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "accountantVerificationRun": null,
-  "androidBuildRun": null,
+  "approvedAt": "2026-10-20T14:36:35Z",
+  "publishNonce": "742b32e645a5953d1c97c2178cc4386aa08562701a159be42d8",
+  "signedAcceptanceRun": 39440051995,
+  "verificationRun": 39440052251,
+  "accountantVerificationRun": 39440051951,
+  "androidBuildRun": 39440051972,
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -50,13 +50,13 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "Candidate: Manager Time Management reads confirmed server history without submitting unrelated pending saves; time edits retain clean-sync and server validation barriers. No workshop data reset or deletion.",
+  "verificationSummary": "V349: Manager Time Management reads confirmed server history without retrying unrelated pending saves. Separate view preserves local state and blocked changes; account-switch checks reject stale read results; time mutations retain clean-sync and server permission/reason/conflict checks. Exact-source full regression, sync and permission tests, signed APK, browser and financial acceptance, staging and native PDF verification passed before publication. No production database changes or record deletion. Physical-device acceptance and fresh production backup restore NOT_RUN.",
   "productionBackendDeploymentPerformed": false,
   "releaseChangeScope": "manager-time-management-read-only-navigation",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
-  "syncVerificationRun": null,
-  "nativePdfVerificationRun": null,
+  "syncVerificationRun": 39440051979,
+  "nativePdfVerificationRun": 39440051942,
   "rollback": {
     "previousRelease": "release-V348-architecture-v2",
     "strategy": "Publish a higher-version signed recovery build with the previous client assets; retain app storage and all leave/audit records.",
