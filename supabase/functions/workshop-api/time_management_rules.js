@@ -130,6 +130,7 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
  if(!/^tm-[a-zA-Z0-9-]{16,100}$/.test(id))return fail('invalid_time_change');
  if(!reason||reason.length>500)return fail('time_reason_required');
  const command={operation:op,assignmentId:String(request.assignmentId||''),sessionId:String(request.sessionId||''),start:request.start??null,end:request.end??null,minutes:request.minutes??null,targetEmployeeId:String(request.targetEmployeeId||''),reason};
+ if(request.workStatus!==undefined){if(op!=='CORRECT_SESSION'||!['PAUSED','FINISHED'].includes(request.workStatus))return fail('invalid_work_status');command.workStatus=request.workStatus;}
  const prior=(current.additionalActions||[]).find(x=>x?.id===id);
  if(prior)return prior.by===actor.id&&JSON.stringify(prior.command)===JSON.stringify(command)?{ok:true,data:current,audit:prior,duplicate:true}:fail('time_request_reused');
  const a=(current.assign||[]).find(x=>x&&String(x.id)===command.assignmentId);
@@ -144,6 +145,14 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
  const running=own.some(x=>!x.end);
  if(['CORRECT_SESSION','ADD_SESSION','CANCEL_SESSION'].includes(op)){
   if(op!=='ADD_SESSION'&&(!s||!s.end||s.cancelled))return fail('time_session_inactive');
+  if(command.workStatus){
+   if(own.some(x=>!x.cancelled&&!x.end))return fail('time_work_running');
+   // Historical intervals may be corrected without changing the disposition of later work.
+   if(own.some(x=>!x.cancelled&&x.id!==s.id&&(Number(x.end)>Number(s.end)||Number(x.end)>Number(command.end))))return fail('time_later_session');
+   if(command.workStatus==='PAUSED'&&a.completed)return fail('time_reopen_required');
+   if(!a.completed&&(j.delivered||j.archived))return fail('time_job_inactive');
+   if((current.sessions||[]).some(x=>x&&!x.cancelled&&!x.assignmentId&&String(x.emp)===String(a.emp)&&String(x.job)===String(a.job)&&(current.assign||[]).filter(y=>!y.cancelled&&String(y.emp)===String(a.emp)&&String(y.job)===String(a.job)).length>1))return fail('time_assignment_ambiguous');
+  }
   before=s?copy(s):null;
   if(op==='CANCEL_SESSION'){
    // Zero the effective interval for legacy reports; retain the original in the row and audit.
@@ -155,6 +164,10 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
    if(op==='ADD_SESSION'){
     after={id:id+'-session',assignmentId:a.id,job:a.job,emp:a.emp,start,end,paused:true,pauseReason:'Manager added missing time',rework:!!a.rework,manual:true,createdBy:actor.id,createdAt:at};data.sessions=data.sessions||[];data.sessions.push(after);
    }else{after=data.sessions.find(x=>String(x.id)===String(s.id));after.start=start;after.end=end;}
+  }
+  if(command.workStatus){
+   after.paused=command.workStatus==='PAUSED';after.finished=!after.paused;
+   if(after.finished){row.completed=true;row.completedAt=after.end;row.managerTimeCompletion=true;row.timeManagementRevision=(Number(a.timeManagementRevision)||0)+1;}
   }
   after.managerTimeRevision=(Number(s?.managerTimeRevision)||0)+1;after.correctedBy=actor.id;after.correctedAt=at;
   data.corrections=data.corrections||[];data.corrections.push({id,session:after.id,assignmentId:a.id,operation:op,oldStart:before?.start??null,oldEnd:before?.end??null,newStart:after.start,newEnd:after.end,reason,by:actor.id,at});
@@ -171,7 +184,7 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
   }else if(op==='REOPEN'){
    if(!a.completed)return fail('time_assignment_inactive');
    if((current.assign||[]).some(x=>x&&x.id!==a.id&&!x.cancelled&&!x.completed&&x.job===a.job&&String(x.emp)===String(a.emp)))return fail('time_target_changed');
-   row.completed=false;delete row.completedAt;row.reopened=true;row.lastReopenedAt=at;row.lastReopenedBy=actor.id;
+   row.completed=false;delete row.completedAt;delete row.managerTimeCompletion;row.reopened=true;row.lastReopenedAt=at;row.lastReopenedBy=actor.id;
    const jobRow=data.jobs.find(x=>String(x.no)===String(a.job));jobRow.status='Open';delete jobRow.completedAt;
    data.reopenLogs=data.reopenLogs||[];data.reopenLogs.push({id,assignmentId:a.id,job:a.job,emp:a.emp,suggested:a.suggested,actualAtReopen:workedMinutes(current,a,at),previousCompletedAt:a.completedAt,reason,by:actor.id,at});
   }else if(op==='REASSIGN'){
@@ -187,6 +200,7 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
  }
  const labels={CORRECT_SESSION:'Time Correction',ADD_SESSION:'Add Missing Time',CANCEL_SESSION:'Cancel Time Entry',CANCEL_ASSIGNMENT:'Cancel Allotted Work',SET_ALLOCATION:'Edit Allocated Time',REOPEN:'Reopen Work',REASSIGN:'Reassign Work'};
  const audit={id,type:labels[op],command,managerTime:true,assignmentId:a.id,job:a.job,emp:a.emp,minutes:0,reason,by:actor.id,at,source:'Manager Time Management',before,after:copy(after)};
+ if(command.workStatus){audit.assignmentBefore=copy(a);audit.assignmentAfter=copy(row);}
  data.additionalActions=data.additionalActions||[];data.additionalActions.push(audit);return{ok:true,data,audit,duplicate:false};
 }
 

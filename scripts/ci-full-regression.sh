@@ -24,6 +24,7 @@ node tests/published-stylesheets.mjs
 node tests/employee-ocean-timer.mjs
 node tests/employee-job-placement.mjs
 node tests/manager-time-management.mjs
+node tests/time-correction-disposition.mjs
 node tests/cancel-unstarted-allotted-work.mjs
 node tests/cash-monthly-pulse.mjs
 node tests/leave-after-work.mjs
