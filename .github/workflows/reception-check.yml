@@ -12,6 +12,8 @@ on:
       - "tests/shared-financial-display.mjs"
       - "tests/shared-dashboard-read.mjs"
       - "app/src/main/assets/workshop_overview.js"
+      - "app/src/main/assets/labour_history.js"
+      - "tests/labour-history*.mjs"
       - "tests/cash-monthly-pulse.mjs"
       - "tests/monthly-followup-responsive.mjs"
       - "app/src/main/assets/v2/features/estimate/**"
@@ -109,6 +111,14 @@ jobs:
       - run: npx playwright install --with-deps chromium webkit
       - name: Verify Cash and Insurance monthly dashboard cards
         run: node tests/cash-monthly-pulse.mjs && node tests/monthly-followup-responsive.mjs
+      - name: Verify staff labour sessions and real PDF/image exports
+        run: node tests/labour-history.mjs && node tests/labour-history-responsive.mjs
+      - name: Save staff labour report previews
+        uses: actions/upload-artifact@v4
+        with:
+          name: staff-labour-preview-${{ github.run_id }}
+          path: artifacts/labour-history/
+          retention-days: 14
       - name: Save monthly dashboard previews
         uses: actions/upload-artifact@v4
         with:

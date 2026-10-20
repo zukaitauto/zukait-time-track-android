@@ -5,7 +5,7 @@ const stateNow=()=>window.zukaitCloud?.confirmedState||(typeof state==='undefine
 const role=()=>typeof me==='undefined'?'':me?.role||'';
 const allowed=()=>['Manager','Supervisor','Purchaser'].includes(role());
 let fullReviewJob='';
-document.addEventListener('click',e=>{if(!e.target.closest?.('.wo-360-page'))fullReviewJob=''},true);
+document.addEventListener('click',e=>{if(!e.target.closest?.('.wo-360-page,.lh-view'))fullReviewJob=''},true);
 const parts=()=>window.zukaitV2?.sparePartsMain;
 const jobs=()=> (stateNow().jobs||[]).filter(j=>j&&j.no&&norm(j.no)!=='id001'&&!j.deleted);
 function unassigned(list,assignments){return list.filter(j=>j&&j.no&&norm(j.no)!=='id001'&&!j.delivered&&!j.archived&&!j.deleted&&!['closed','completed','delivered','cancelled'].includes(String(j.status||'').toLowerCase())&&!assignments.some(a=>!a.cancelled&&norm(a.job)===norm(j.no))).sort((a,b)=>(+a.createdAt||Date.parse(a.createdAt)||Number.MAX_SAFE_INTEGER)-(+b.createdAt||Date.parse(b.createdAt)||Number.MAX_SAFE_INTEGER));}
@@ -109,10 +109,11 @@ function woPaintDetail(no){
  shell('Paint · '+no,body,no);
 }
 function woLabourDetail(no){
+ if(!['Manager','Supervisor'].includes(role()))return;
  const d=window.v128JobCostData?.(no),st=stateNow(),aa=(st.assign||[]).filter(x=>x&&!x.cancelled&&norm(x.job)===norm(no)),people=typeof users==='undefined'?[]:users,rate=Number(d?.rate??st.labourRate??2.5);
  const name=id=>people.find(u=>String(u.id)===String(id))?.name||id||'Technician';
- const rows=aa.map(a=>{const minutes=(st.sessions||[]).filter(x=>x&&x.emp===a.emp&&x.job===a.job&&!x.preliminaryLinkedJob).reduce((n,x)=>n+Math.max(0,((Number(x.end)||Date.now())-(Number(x.start)||0))/60000),0);let cost=minutes/60*rate;try{if(typeof labourCost==='function'){const v=Number(labourCost(a));if(Number.isFinite(v))cost=v}}catch(_){}return '<div class="wo-row"><div><b>'+esc(name(a.emp))+'</b><span>'+esc(woDept(a)||'Technician')+' · '+esc(woMins(minutes))+(a.rework?' · Repeat work':'')+'</span></div><b>'+woMoney(cost)+'</b></div>'}).join('');
- const preliminary=(st.sessions||[]).filter(x=>x&&norm(x.preliminaryLinkedJob)===norm(no)&&x.end).map(x=>{const minutes=Math.max(0,(Number(x.end)-Number(x.start||0))/60000);return '<div class="wo-row"><div><b>'+esc(name(x.emp))+'</b><span>Preliminary transfer · '+esc(woMins(minutes))+'</span></div><b>'+woMoney(minutes/60*rate)+'</b></div>'}).join('');
+ const rows=aa.map(a=>{const minutes=(st.sessions||[]).filter(x=>x&&x.emp===a.emp&&x.job===a.job&&!x.preliminaryLinkedJob).reduce((n,x)=>n+Math.max(0,((Number(x.end)||Date.now())-(Number(x.start)||0))/60000),0);let cost=minutes/60*rate;try{if(typeof labourCost==='function'){const v=Number(labourCost(a));if(Number.isFinite(v))cost=v}}catch(_){}return '<div class="wo-row"><div><button type="button" class="wo-labour-staff" data-labour-action="staff" data-job="'+esc(no)+'" data-emp="'+esc(a.emp)+'">'+esc(name(a.emp))+'</button><span>'+esc(woDept(a)||'Technician')+' · '+esc(woMins(minutes))+(a.rework?' · Repeat work':'')+'</span></div><b>'+woMoney(cost)+'</b></div>'}).join('');
+ const preliminary=(st.sessions||[]).filter(x=>x&&norm(x.preliminaryLinkedJob)===norm(no)&&x.end).map(x=>{const minutes=Math.max(0,(Number(x.end)-Number(x.start||0))/60000);return '<div class="wo-row"><div><button type="button" class="wo-labour-staff" data-labour-action="staff" data-job="'+esc(no)+'" data-emp="'+esc(x.emp)+'">'+esc(name(x.emp))+'</button><span>Preliminary transfer · '+esc(woMins(minutes))+'</span></div><b>'+woMoney(minutes/60*rate)+'</b></div>'}).join('');
  shell('Labour · '+no,'<div class="wo-stats"><b>Rate<strong>'+woMoney(rate)+' / h</strong></b><b>Total Labour<strong>'+woMoney(d?.labour)+'</strong></b></div>'+(rows||preliminary?rows+preliminary:'<p>No labour recorded.</p>'),no);
 }
 function woProfitData(job,cost){
@@ -357,7 +358,7 @@ window.openSupervisorJob=no=>focusedDetail(no,'assignments');
 window.v132OpenSupervisorJobFull=no=>focusedDetail(no,'assignments');
 window.zukaitJob360Ready=true;
 function refreshShared(){if(!allowed())return;const box=document.getElementById('woDailySummary');if(box){const html=summaryHtml();if(box.innerHTML!==html)box.innerHTML=html;removeManagerSummaryReady()}if(document.getElementById('woResults'))updateSearch()}
-window.zukaitWorkshopOverview={refreshShared,focusedDetail,quickData,quickViewData,summaryHtml,unassigned,search,summary,integrityIssues,openSearch,detail,refresh,overdueTimeRows,completedTimeHtml:overdueTimeHtml,openOverdueReview:overdueReviewDetail,confirmOverdueReview,overdueTimeHistory};
+window.zukaitWorkshopOverview={labour:woLabourDetail,refreshShared,focusedDetail,quickData,quickViewData,summaryHtml,unassigned,search,summary,integrityIssues,openSearch,detail,refresh,overdueTimeRows,completedTimeHtml:overdueTimeHtml,openOverdueReview:overdueReviewDetail,confirmOverdueReview,overdueTimeHistory};
 
 /* Delivered Vehicle Time Review detail — visual redesign only; data/actions unchanged. */
 (function(){
