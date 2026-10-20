@@ -13,6 +13,7 @@ f.parts.hydrateFromServerRows(rows);
 let item=f.lists()[0].items[0];
 assert.equal(item.status,'RECEIVED');assert.equal(Number(item.receivedQty||0),0);
 assert.equal(f.parts.arrivalPendingCount(f.lists()),0);
+await f.parts.openList(f.listNo);assert.match(f.html(),/Record Arrived Quantity/,'Manager must see the recovery action on the actual Parts List screen');
 assert.equal(f.parts.nextActionFor(item,'Manager')[1],'RECEIVED');
 assert.equal(f.parts.nextActionFor(item,'Purchaser')[1],'RECEIVED');
 assert.equal(f.parts.nextActionFor(item,'Supervisor'),null,'zero quantity cannot be verified');
