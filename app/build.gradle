@@ -10,7 +10,7 @@ android {
         applicationId 'com.zukait.timetrack'
         minSdk 24
         targetSdk 35
-        // V351: Recover missing receipt quantities and explicitly pause or finish corrected work.
+        // V351: Receipt quantity recovery and explicit Pause / Finished corrections; verify updated asset cache.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
         versionCode 314
         versionName "V351" // Exact-source acceptance covers card navigation, financial workflows and shared role regressions.
