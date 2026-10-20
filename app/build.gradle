@@ -10,10 +10,10 @@ android {
         applicationId 'com.zukait.timetrack'
         minSdk 24
         targetSdk 35
-        // V347: Pause hidden report/live polling; retain immediate foreground actions and resume sync.
+        // V350: Show coloured staff time review totals in screen, PDF and cards.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
-        versionCode 312
-        versionName "V349" // Exact-source acceptance covers card navigation, financial workflows and shared role regressions.
+        versionCode 313
+        versionName "V350" // Exact-source acceptance covers card navigation, financial workflows and shared role regressions.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }

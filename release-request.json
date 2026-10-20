@@ -1,9 +1,9 @@
 {
-  "versionName": "V349",
-  "versionCode": 312,
+  "versionName": "V350",
+  "versionCode": 313,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": true,
-  "sourceCommit": "742b32e645a5953d1c97c2178cc4386aa0856270",
+  "approvedForStaff": false,
+  "sourceCommit": null,
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,12 +19,12 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-20T14:36:35Z",
-  "publishNonce": "742b32e645a5953d1c97c2178cc4386aa08562701a159be42d8",
-  "signedAcceptanceRun": 39440051995,
-  "verificationRun": 39440052251,
-  "accountantVerificationRun": 39440051951,
-  "androidBuildRun": 39440051972,
+  "approvedAt": null,
+  "publishNonce": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "accountantVerificationRun": null,
+  "androidBuildRun": null,
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -50,21 +50,23 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V349: Manager Time Management reads confirmed server history without retrying unrelated pending saves. Separate view preserves local state and blocked changes; account-switch checks reject stale read results; time mutations retain clean-sync and server permission/reason/conflict checks. Exact-source full regression, sync and permission tests, signed APK, browser and financial acceptance, staging and native PDF verification passed before publication. No production database changes or record deletion. Physical-device acceptance and fresh production backup restore NOT_RUN.",
+  "verificationSummary": "V350 candidate: coloured Suggested, Total Actual and Exceeded time in the staff screen, PDF and image cards, plus exact-assignment Delivered Vehicle Time Review drill-down. Exact-source release acceptance pending. No production backend, schema or record changes.",
   "productionBackendDeploymentPerformed": false,
-  "releaseChangeScope": "manager-time-management-read-only-navigation",
+  "releaseChangeScope": "staff-time-review-metrics-and-delivered-drill-down",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
-  "syncVerificationRun": 39440051979,
-  "nativePdfVerificationRun": 39440051942,
+  "syncVerificationRun": null,
+  "nativePdfVerificationRun": null,
   "rollback": {
-    "previousRelease": "release-V348-architecture-v2",
-    "strategy": "Publish a higher-version signed recovery build with the previous client assets; retain app storage and all leave/audit records.",
+    "previousRelease": "release-V349-architecture-v2",
+    "strategy": "Publish a higher-version signed recovery build with the previous client assets; retain app storage and all workshop records.",
     "dataResetRequired": false
   },
   "releaseBackendChanges": false,
   "managerLeaveCorrectionsAuthorizedByOwner": true,
   "managerLeaveCorrectionsAuthorization": "Owner requested Manager dashboard forgotten leave marking and deletion of mistaken leave, and explicitly confirmed Managers may select past dates.",
   "hiddenReadOptimizationAuthorizedByOwner": true,
-  "hiddenReadOptimizationAuthorization": "Owner instructed PROCEED after review of last-24-hour traffic and proposal to reduce background reads without changing garage workflows."
+  "hiddenReadOptimizationAuthorization": "Owner instructed PROCEED after review of last-24-hour traffic and proposal to reduce background reads without changing garage workflows.",
+  "staffTimeReviewReleaseAuthorizedByOwner": true,
+  "staffTimeReviewReleaseAuthorization": "Owner instructed PUBLISH IT for staff labour reporting, requested coloured time review totals, and reported the live card still missing those totals. Publish the tested correction through the existing coordinated safeguards."
 }
