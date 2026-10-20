@@ -1,7 +1,7 @@
 (function(){'use strict';
 const POLL_MS=5000;
 let serverPartsEvents=null;
-let refreshInFlight=false,lastBackgroundRefreshAt=0;
+let refreshInFlight=false;
 function meNow(){try{return (typeof me!=='undefined'&&me)||window.me||null}catch(_){return window.me||null}}
 function role(){return String(meNow()?.role||'')}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -93,10 +93,8 @@ async function refresh(){
  // hydration starts only after secure_auth has established the logged-in user.
  const u=meNow();if(!u||!u.id){inject();updateBadges();return}
  if(refreshInFlight)return;
- if(document.visibilityState==='hidden'){
-  if(Date.now()-lastBackgroundRefreshAt<30000)return;
-  lastBackgroundRefreshAt=Date.now();
- }
+ // Hidden screens do not consume complete report history. Resume refreshes immediately.
+ if(document.visibilityState==='hidden')return;
  refreshInFlight=true;
  try{
   if(navigator.onLine){
@@ -118,7 +116,7 @@ async function refresh(){
  inject();updateBadges();
 }
 window.zukaitNotificationCenter={open:openCenter,openPart,openPaintRecord,paintNotifications,refresh,all,unread,inject,eventPartsNotifications,normalizeServerEvent,loadServerPartEvents};
-document.addEventListener('DOMContentLoaded',()=>{inject();refresh()});window.addEventListener('online',refresh);window.addEventListener('focus',refresh);setTimeout(()=>{inject();refresh()},700);setInterval(refresh,POLL_MS);
+document.addEventListener('DOMContentLoaded',()=>{inject();refresh()});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refresh()});window.addEventListener('online',refresh);window.addEventListener('focus',refresh);setTimeout(()=>{inject();refresh()},700);setInterval(refresh,POLL_MS);
 new MutationObserver(()=>inject()).observe(document.documentElement,{childList:true,subtree:true});
 window.addEventListener('zukait-live-status',updateBadges);
 })();

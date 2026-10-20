@@ -937,7 +937,7 @@
   function beginPolling(generation){
     if(generation!==pollGeneration)return;
     pollActive=true;
-    const pollMs=()=>document.visibilityState==='hidden'?30000:1000;
+    const pollMs=()=>document.visibilityState==='hidden'?120000:1000;
     const liveMs=()=>document.visibilityState==='hidden'?60000:15000;
     const schedulePoll=()=>{
       if(!pollActive||generation!==pollGeneration)return;
@@ -953,7 +953,7 @@
       clearTimeout(livePollTimer);
       livePollTimer=setTimeout(()=>{
         if(generation!==pollGeneration)return;
-        if(sessionToken()&&navigator.onLine&&liveRole())pullLiveStatus();
+        if(document.visibilityState!=='hidden'&&sessionToken()&&navigator.onLine&&liveRole())pullLiveStatus();
         scheduleLive();
       },liveMs());
     };
@@ -982,7 +982,7 @@
       setServerConnection('offline',navigator.onLine?'Workshop server cannot be reached. Check internet/Wi-Fi.':'Server connection unavailable. Check Wi-Fi/internet.');
       initialDone=true;
     }
-    // Work-status revision detection stays at 1 second foreground / 30 seconds hidden.
+    // Work-status revision detection stays at 1 second foreground / 120 seconds hidden; writes retain their independent immediate queue.
     // Explicit actions and reconnect still reconcile immediately.
     beginPolling(generation);
     return true;

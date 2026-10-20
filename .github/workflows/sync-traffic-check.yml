@@ -9,6 +9,8 @@ on:
       - 'tests/manager-leave-corrections.mjs'
       - 'tests/global-leave-history.mjs'
       - 'tests/leave-after-work.mjs'
+      - 'app/src/main/assets/v2/features/notifications/center.js'
+      - 'tests/hidden-read-traffic.mjs'
       - 'tests/sync-traffic-compatibility.mjs'
       - 'tests/live-projection-traffic.mjs'
       - '.github/workflows/sync-traffic-check.yml'
@@ -23,6 +25,8 @@ on:
       - 'tests/manager-leave-corrections.mjs'
       - 'tests/global-leave-history.mjs'
       - 'tests/leave-after-work.mjs'
+      - 'app/src/main/assets/v2/features/notifications/center.js'
+      - 'tests/hidden-read-traffic.mjs'
       - 'tests/sync-traffic-compatibility.mjs'
       - 'tests/live-projection-traffic.mjs'
       - '.github/workflows/sync-traffic-check.yml'
@@ -38,6 +42,8 @@ jobs:
           node-version: '24'
       - name: Verify sync compatibility and live projection parity
         run: |
+          node tests/hidden-read-traffic.mjs
+          node tests/v2-notification-center.mjs
           node tests/live-projection-traffic.mjs
           node --experimental-vm-modules tests/sync-traffic-compatibility.mjs
           node tests/leave-sync-race.mjs

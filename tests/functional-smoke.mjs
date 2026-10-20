@@ -148,7 +148,7 @@ assert.match(updates, /currentRemaining',!hasAlloc\?'—':left<=0\?'\+'\+fm/, 'z
 assert.match(updates, /NO ALLOCATED TIME/, 'zero allocation must show a clear no allocated time state');
 
 // Shared data consistency contracts
-assert.match(cloud, /const pollMs=\(\)=>document\.visibilityState==='hidden'\?30000:1000/, 'cloud revision heartbeat must detect active-device changes within about one second while remaining battery-aware when hidden');
+assert.match(cloud, /const pollMs=\(\)=>document\.visibilityState==='hidden'\?120000:1000/, 'cloud revision heartbeat must detect active-device changes within about one second while remaining battery-aware when hidden');
 assert.match(cloud, /visibilitychange[\s\S]*?refreshVisibleSharedState/, 'dashboard must refresh shared state when the app becomes visible');
 assert.match(cloud, /window\.addEventListener\('focus',refreshVisibleSharedState\)/, 'dashboard must refresh shared state when the app regains focus');
 assert.match(cloud, /if\(cloudDirty&&!cloudPushing\)await push\(0\)/, 'local changes must be pushed before a forced shared-state refresh');
@@ -735,7 +735,7 @@ assert.doesNotMatch(updates,/setTimeout\(injectManagerLeaveRow,0\)/,'legacy Mana
 // V115 shared live-worker authority regression guards.
 assert.match(updates,/V115 SHARED LIVE WORKER AUTHORITY/,'shared live-worker authority must remain present');
 assert.match(updates,/window\.currentActiveWorkers=liveRows/,'Manager and Supervisor must share one active-worker source');
-assert.ok(cloud.includes("document.visibilityState==='hidden'?30000:1000")&&cloud.includes("document.visibilityState==='hidden'?60000:15000"),'cloud revision and live-status polling must remain visibility-aware');
+assert.ok(cloud.includes("document.visibilityState==='hidden'?120000:1000")&&cloud.includes("document.visibilityState==='hidden'?60000:15000"),'cloud revision and live-status polling must remain visibility-aware');
 assert.doesNotMatch(updates,/const scheduleSync=\(\)=>/,'legacy dashboard must not force another periodic cloud pull');
 assert.ok(updates.includes("const scheduleWorkers=()=>")&&updates.includes("document.visibilityState==='visible'?3000:30000"),'live worker counts must use visibility-aware refresh cadence');
 assert.match(updates,/replaceCount\(root,'Working Now',work\.length\)/,'Manager Working Now must use shared authority');

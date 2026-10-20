@@ -1,9 +1,9 @@
 {
-  "versionName": "V346",
-  "versionCode": 309,
+  "versionName": "V347",
+  "versionCode": 310,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": true,
-  "sourceCommit": "1d4c6b36b4341d74cdffdbd5884d661fd206022f",
+  "approvedForStaff": false,
+  "sourceCommit": null,
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -13,18 +13,18 @@
   "backendDeploymentRequired": false,
   "releaseHeldByOwner": false,
   "evidence": {
-    "credentialPreservation": true,
-    "qaFinancialAcceptance": true,
-    "serverPermissions": true,
-    "rollbackPrepared": true,
-    "legacyLoginCompatibility": true
+    "credentialPreservation": false,
+    "qaFinancialAcceptance": false,
+    "serverPermissions": false,
+    "rollbackPrepared": false,
+    "legacyLoginCompatibility": false
   },
-  "approvedAt": "2026-10-19T14:17:53Z",
-  "publishNonce": "1ed90e3c49f3edbf05ac18bfd1eb1ffadde43a9da8c5c371",
-  "signedAcceptanceRun": 39266915410,
-  "verificationRun": 39266915450,
-  "accountantVerificationRun": 39266915443,
-  "androidBuildRun": 39266915550,
+  "approvedAt": null,
+  "publishNonce": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "accountantVerificationRun": null,
+  "androidBuildRun": null,
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -50,19 +50,21 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V346 Manager leave corrections: Manager-only past-date marking requires a reason; direct deletion cancels the active record and preserves actor/time/reason plus before-state audit. Exact-source full regression, signed APK, sync compatibility, Accountant browser/financial acceptance and Reception/browser acceptance passed. Native Android emulator PDF verification passed. No new backend deployment, schema migration or production leave edits. Physical-device acceptance and fresh production backup restore NOT_RUN.",
+  "verificationSummary": "V347 candidate: hidden notifications/live reads paused, hidden revision probes slowed; foreground actions, offline writes and visibility resume preserved. Exact-source checks pending.",
   "productionBackendDeploymentPerformed": false,
-  "releaseChangeScope": "manager-forgotten-leave-and-audited-deletion",
+  "releaseChangeScope": "hidden-screen-read-traffic-reduction",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
-  "syncVerificationRun": 39266917802,
-  "nativePdfVerificationRun": 39266915416,
+  "syncVerificationRun": null,
+  "nativePdfVerificationRun": null,
   "rollback": {
-    "previousRelease": "release-V345-architecture-v2",
+    "previousRelease": "release-V346-architecture-v2",
     "strategy": "Publish a higher-version signed recovery build with the previous client assets; retain app storage and all leave/audit records.",
     "dataResetRequired": false
   },
   "releaseBackendChanges": false,
   "managerLeaveCorrectionsAuthorizedByOwner": true,
-  "managerLeaveCorrectionsAuthorization": "Owner requested Manager dashboard forgotten leave marking and deletion of mistaken leave, and explicitly confirmed Managers may select past dates."
+  "managerLeaveCorrectionsAuthorization": "Owner requested Manager dashboard forgotten leave marking and deletion of mistaken leave, and explicitly confirmed Managers may select past dates.",
+  "hiddenReadOptimizationAuthorizedByOwner": true,
+  "hiddenReadOptimizationAuthorization": "Owner instructed PROCEED after review of last-24-hour traffic and proposal to reduce background reads without changing garage workflows."
 }

@@ -10,10 +10,10 @@ android {
         applicationId 'com.zukait.timetrack'
         minSdk 24
         targetSdk 35
-        // V346: Manager past-date leave entry and audited deletion of mistaken leave.
+        // V347: Pause hidden report/live polling; retain immediate foreground actions and resume sync.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
-        versionCode 309
-        versionName "V346" // Exact-source acceptance covers card navigation, financial workflows and shared role regressions.
+        versionCode 310
+        versionName "V347" // Exact-source acceptance covers card navigation, financial workflows and shared role regressions.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }
