@@ -42,3 +42,5 @@ dependencies {
 // Revalidate V346 against current pending-work eligibility contracts.
 
 // Revalidate V347 hidden-read cadence with matching runtime and authority contracts.
+
+// V348 staging and public packages include the same Manager stylesheet.
