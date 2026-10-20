@@ -12,8 +12,8 @@ android {
         targetSdk 35
         // V347: Pause hidden report/live polling; retain immediate foreground actions and resume sync.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
-        versionCode 311
-        versionName "V348" // Exact-source acceptance covers card navigation, financial workflows and shared role regressions.
+        versionCode 312
+        versionName "V349" // Exact-source acceptance covers card navigation, financial workflows and shared role regressions.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }

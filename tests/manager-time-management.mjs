@@ -51,7 +51,7 @@ const ui=fs.readFileSync('app/src/main/assets/time_management.js','utf8'),dashbo
 function harness(role='Manager'){
  const elements=new Map();class Element{value='';hidden=false;disabled=false;textContent='';focus(){}get innerHTML(){return this.html||''}set innerHTML(v){this.html=v;const options=[...v.matchAll(/<option value="([^"]*)"/g)].map(m=>({value:m[1]}));if(options.length){this.options=options;this.value=options[0].value}for(const m of v.matchAll(/<[^>]*\bid="([^"]+)"[^>]*>/g)){const el=new Element();el.hidden=/\bhidden\b/.test(m[0]);el.value=m[0].match(/\bvalue="([^"]*)"/)?.[1]||'';elements.set(m[1],el)}}}
  const ctx={state:fixture(),users:fixture().users,me:{...manager,role},allocationToken,workedMinutes,employeeTimeToken,assignmentHasStarted,crypto:{randomUUID},navigator:{onLine:true},Date,console,document:{getElementById:id=>elements.get(id)||null,createElement:()=>new Element(),head:{appendChild(){}}},alert(msg){ctx.lastAlert=msg},openModal(html){elements.clear();ctx.html=html;new Element().innerHTML=html},closeModal(){elements.clear()}};ctx.window=ctx;
- ctx.zukaitCloud={syncHealth:{ready:true},async syncNow(){},async timeManagement(command){ctx.calls=(ctx.calls||0)+1;const r=transition(ctx.state,ctx.me,command,Date.now());if(!r.ok)throw Object.assign(Error(r.code),{code:r.code});ctx.state=r.data;return r}};
+ ctx.zukaitCloud={syncHealth:{ready:true},async syncNow(){ctx.syncCalls=(ctx.syncCalls||0)+1},async readLatest(){ctx.readCalls=(ctx.readCalls||0)+1;return{revision:10,data:clone(ctx.serverState||ctx.state)}},async timeManagement(command){ctx.calls=(ctx.calls||0)+1;const r=transition(ctx.state,ctx.me,command,Date.now());if(!r.ok)throw Object.assign(Error(r.code),{code:r.code});ctx.state=r.data;return r}};
  vm.createContext(ctx);vm.runInContext(ui.replace(/^import[^\n]+\n/,''),ctx);return{ctx,get:id=>elements.get(id),click:async handler=>await vm.runInContext(handler,ctx)};
 }
 const launcher=dashboard.match(/data-manager-time-management="1" onclick="([^"]+)"/);assert.ok(launcher);assert.equal(dashboard.match(/data-manager-time-management="1"/g).length,1);
@@ -65,4 +65,18 @@ for(const role of ['Supervisor','Employee','Purchaser']){h=harness(role);await h
 h=harness();h.ctx.navigator.onLine=false;await h.click(launcher[1]);assert.match(h.ctx.lastAlert,/Connection/);assert.equal(h.ctx.html,undefined);
 h=harness();h.ctx.state.sessions=[];await h.click(launcher[1]);h.ctx.zukaitManagerTimeSelect('A1');h.ctx.zukaitManagerTimeAction('CANCEL_ASSIGNMENT');h.get('mtReason').value='Wrong allocation';h.ctx.zukaitManagerTimeReview();const save=h.ctx.zukaitCloud.timeManagement;let requestId;h.ctx.zukaitCloud.timeManagement=async req=>{requestId=req.requestId;await save(req);throw Error('TIMEOUT')};await h.ctx.zukaitManagerTimeConfirm();assert.match(h.get('mtNotice').textContent,/timed out/);h.ctx.zukaitCloud.timeManagement=async req=>{assert.equal(req.requestId,requestId);return save(req)};await h.ctx.zukaitManagerTimeConfirm();assert.equal(h.ctx.state.additionalActions.length,1);assert.equal(h.ctx.state.assign[0].cancelled,true);
 h=harness();h.ctx.state.sessions=[];await h.click(launcher[1]);h.ctx.zukaitManagerTimeSelect('A1');h.ctx.zukaitManagerTimeAction('CANCEL_ASSIGNMENT');h.get('mtReason').value='Wrong allocation';h.ctx.zukaitManagerTimeReview();h.ctx.zukaitCloud.timeManagement=async()=>{h.ctx.closeModal();return{ok:true}};await h.ctx.zukaitManagerTimeConfirm();assert.equal(h.get('mtReview'),undefined);
+
+// Opening is a read, even when an unrelated financial save is permission-blocked.
+h=harness();h.ctx.serverState=fixture();h.ctx.state.assign=[];h.ctx.state.consumables={pending:'must be preserved'};
+h.ctx.zukaitCloud.syncHealth={ready:true,dirty:true,pendingConflict:true,lastError:'consumables_correction_forbidden'};
+const pendingBefore=JSON.stringify(h.ctx.state);await h.click(launcher[1]);
+assert.equal(h.ctx.readCalls,1);assert.equal(h.ctx.syncCalls,undefined);assert.equal(h.ctx.lastAlert,undefined);
+assert.equal(JSON.stringify(h.ctx.state),pendingBefore);assert.match(h.ctx.html,/Pending workshop changes are preserved/);assert.match(h.get('mtRows').innerHTML,/JC1/);
+h.ctx.zukaitManagerTimeSelect('A1');assert.match(h.ctx.html,/Work History/);h.ctx.zukaitManagerTimeAction('CORRECT_SESSION','S1');assert.match(h.ctx.lastAlert,/Resolve the pending save/);assert.equal(h.ctx.calls,undefined);
+h.ctx.zukaitManagerTimeHistory(true);assert.match(h.ctx.html,/Work History/);assert.equal(JSON.stringify(h.ctx.state),pendingBefore);
+await h.ctx.zukaitOpenTimeManagement();assert.equal(h.ctx.syncCalls,undefined);
+// A delayed read must not display one manager's records to a different login.
+h=harness();let finish;h.ctx.zukaitCloud.readLatest=()=>new Promise(r=>finish=r);const opening=h.ctx.zukaitOpenManagerTimeManagement();h.ctx.me={id:'MGR2',role:'Manager'};finish({revision:10,data:fixture()});await opening;assert.equal(h.ctx.html,undefined);
+h=harness();h.ctx.zukaitCloud.readLatest=async()=>{throw Error('NETWORK')};await h.ctx.zukaitOpenManagerTimeManagement();assert.equal(h.ctx.html,undefined);assert.match(h.ctx.lastAlert,/Connection/);
+
 console.log('Manager Time Management: permissions, correction, missing time, cancellation, reopen/reassign, audit, stale writes, retries and real click handlers passed.');
