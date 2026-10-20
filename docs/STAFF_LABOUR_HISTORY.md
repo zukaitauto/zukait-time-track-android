@@ -15,3 +15,11 @@ Verification:
 - Existing 360 detail, Profit/Loss and Workshop Overview regression tests.
 
 Development only until the existing coordinated release process publishes a verified version. Physical-device sharing acceptance is separate from browser/native-bridge contract checks.
+
+## Time review summaries and delivered navigation
+
+The screen, PDF and each PNG card show Suggested Time (blue), Total Actual Time (green) and Exceeded Time (red; green when within time). Metrics reuse Workshop Overview's existing authoritative assignment calculations. Approved additional time is already part of suggested time and is not added again. Actual/exceeded totals are normal duty only, excluding overtime; the separate recorded-session total retains raw pause-excluded session hours. Missing metrics remain Pending.
+
+Manager Delivered Vehicle Time Review has an Open Time Review button beside its existing Review action and in the confirmation detail. It opens the same staff screen with the exact selected assignment and current review signature. Repeat work, other staff, transferred preliminary work and ambiguously owned legacy sessions do not leak into an assignment review. Stale/reviewed signatures cannot open a fresh review. System-reconciled/recovery periods retain warnings in UI, PDF and PNG. Back returns to the original confirmation detail; no new confirmation or source mutation occurs. Supervisor retains ordinary staff reports but cannot open Manager-only delivered reviews.
+
+`tests/staff-time-review.mjs` verifies actual button navigation, exact totals, extra-time handling, assignment scope, integrity attention, stale signatures, back and role isolation. The responsive export suite checks the new summary cards at all four sizes.

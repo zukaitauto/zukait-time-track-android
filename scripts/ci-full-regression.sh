@@ -149,6 +149,7 @@ node tests/workshop-overview.cjs
 node tests/manager-overdue-time-review.cjs
 node tests/job360-details.mjs
 node tests/labour-history.mjs
+node tests/staff-time-review.mjs
 node tests/v200-manager-workshop-overview-placement.mjs
 node tests/v194-manager-menu-authority.mjs
 node tests/v195-manager-consumables-single-launcher.mjs
