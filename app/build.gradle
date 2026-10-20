@@ -10,10 +10,10 @@ android {
         applicationId 'com.zukait.timetrack'
         minSdk 24
         targetSdk 35
-        // V350: Show coloured staff time review totals in screen, PDF and cards.
+        // V351: Recover missing receipt quantities and explicitly pause or finish corrected work.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
-        versionCode 313
-        versionName "V350" // Exact-source acceptance covers card navigation, financial workflows and shared role regressions.
+        versionCode 314
+        versionName "V351" // Exact-source acceptance covers card navigation, financial workflows and shared role regressions.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }
