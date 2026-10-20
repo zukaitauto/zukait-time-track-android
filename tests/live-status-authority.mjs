@@ -20,7 +20,7 @@ assert.ok(html.indexOf(liveTag[0])>html.indexOf(stableTag[0]),'server live autho
 assert.match(cloud,/action:'live_status'/,'cloud layer must call the server live-status endpoint');
 assert.match(cloud,/livePollTimer=setTimeout/,'cloud layer must keep a slower server-live recovery heartbeat');
 assert.match(cloud,/action:'revision'/,'cloud layer must use a lightweight authenticated revision heartbeat');
-assert.match(cloud,/document\.visibilityState==='hidden'\?30000:1000/,'visible clients must detect shared-state revisions within about one second');
+assert.match(cloud,/document\.visibilityState==='hidden'\?120000:1000/,'visible clients must detect shared-state revisions within about one second');
 assert.match(cloud,/dirtyGeneration\+\+/,'every local save must advance a monotonic mutation generation');
 assert.match(cloud,/const newerPending=dirtyGeneration!==pushGeneration/,'a save acknowledgement must not clear a newer in-flight click');
 assert.match(cloud,/pushTimer=setTimeout\(\(\)=>push\(0\),0\)/,'Start/Pause/Stop/Assign saves must be dispatched immediately');

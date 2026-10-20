@@ -40,3 +40,5 @@ dependencies {
 // V346: verify the refreshed leave cache keys in the exact signed candidate.
 
 // Revalidate V346 against current pending-work eligibility contracts.
+
+// Revalidate V347 hidden-read cadence with matching runtime and authority contracts.
