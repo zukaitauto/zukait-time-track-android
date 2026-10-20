@@ -19,7 +19,7 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-20T08:53:50.297582+00:00",
+  "approvedAt": "2026-10-20T08:53:50.297582Z",
   "publishNonce": "afe96fc41329fe063eb1820a2c4422988c830e5e87fb74fb",
   "signedAcceptanceRun": 39396157382,
   "verificationRun": 39396157298,
