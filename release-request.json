@@ -2,15 +2,15 @@
   "versionName": "V351",
   "versionCode": 314,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": false,
-  "sourceCommit": null,
+  "approvedForStaff": true,
+  "sourceCommit": "e077f5409b1cfe26120bcef3b3be1b756ee81295",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "productionBackendChanges": true,
   "phase2ActivationApproved": false,
-  "backendDeploymentRequired": true,
+  "backendDeploymentRequired": false,
   "releaseHeldByOwner": false,
   "evidence": {
     "credentialPreservation": true,
@@ -19,12 +19,12 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "accountantVerificationRun": null,
-  "androidBuildRun": null,
+  "approvedAt": "2026-10-20T16:37:09Z",
+  "publishNonce": "904165cec81cb996089b5f48e24fdb039cddaad90ae28100",
+  "signedAcceptanceRun": 39457838161,
+  "verificationRun": 39457838047,
+  "accountantVerificationRun": 39457837906,
+  "androidBuildRun": 39457837850,
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -32,14 +32,15 @@
         "version": 8,
         "bundleSha256": "dfac91c48aa7969d67f9f6a6ee8613fbf7090862261cc262adb34730794fc532",
         "verifiedFileMatch": true,
-        "verificationBasis": "Read-only production V350 verification: deployed version and complete bundle hash match the approved live V349 baseline. This client-only release deploys no backend files; unrelated staged backend changes remain excluded."
+        "repositorySourceMatchesDeployed": true,
+        "verificationBasis": "Readback confirms unchanged staff-auth8 and its complete bundle hash."
       },
       "workshop-api": {
-        "version": 79,
-        "bundleSha256": "1e1f27723c3b3e42bd4cb283d2b22c0c2d1a7c17ed9c31932a27b65a334d30c8",
+        "version": 80,
+        "bundleSha256": "a7ea0f11f4efa84e264e0b86e3be8eda0f9d5e6224aa8cb5877b6fcec54f1b38",
         "verifiedFileMatch": true,
         "repositorySourceMatchesDeployed": false,
-        "verificationBasis": "Read-only production V350 verification: deployed version and complete bundle hash match the approved live V349 baseline. This client-only release deploys no backend files; unrelated staged backend changes remain excluded."
+        "verificationBasis": "All 13 deployed files match QA15 byte-for-byte. Preserved production v79 bundle with only time-management rules and assignment completion-authority edits; unrelated staged backend changes excluded."
       }
     },
     "migrations": [
@@ -50,16 +51,18 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V351 candidate: parts receipt recovery and explicit Pause / Finished time correction. Exact-source acceptance pending.",
-  "productionBackendDeploymentPerformed": false,
+  "verificationSummary": "V351 exact-source signed acceptance, Reception/browser, Accountant financial, sync compatibility, Android build and native PDF emulator checks all passed. Adds visible Manager/Purchaser recovery for arrived parts with missing receipt quantities; preserves physical arrival confirmation before invoicing. Adds required Pause / Finished selection to Manager time correction, audit of assignment/session values, costing retention, stale-save and later-session protection. QA workshop-api15 and production workshop-api80 are byte-identical for all 13 files; production deployment patches only time-management rules and completion authority over the preserved v79 bundle. staff-auth8 unchanged. No production schema or workshop-record writes. Physical-device acceptance and fresh backup restore remain NOT_RUN under the existing release scope.",
+  "productionBackendDeploymentPerformed": true,
   "releaseChangeScope": "parts-receipt-recovery-and-time-correction-disposition",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
-  "syncVerificationRun": null,
-  "nativePdfVerificationRun": null,
+  "syncVerificationRun": 39457838036,
+  "nativePdfVerificationRun": 39457837856,
   "rollback": {
-    "previousRelease": "release-V349-architecture-v2",
-    "strategy": "Publish a higher-version signed recovery build with the previous client assets; retain app storage and all workshop records.",
+    "previousRelease": "release-V350-architecture-v2",
+    "previousWorkshopApiVersion": 79,
+    "previousWorkshopApiBundleSha256": "1e1f27723c3b3e42bd4cb283d2b22c0c2d1a7c17ed9c31932a27b65a334d30c8",
+    "strategy": "Publish a higher-version recovery APK with previous assets; if necessary redeploy the captured v79 function bundle. Preserve app storage, audit history and all workshop records.",
     "dataResetRequired": false
   },
   "releaseBackendChanges": true,
@@ -68,5 +71,7 @@
   "hiddenReadOptimizationAuthorizedByOwner": true,
   "hiddenReadOptimizationAuthorization": "Owner instructed PROCEED after review of last-24-hour traffic and proposal to reduce background reads without changing garage workflows.",
   "staffTimeReviewReleaseAuthorizedByOwner": true,
-  "staffTimeReviewReleaseAuthorization": "Owner instructed PUBLISH IT for staff labour reporting, requested coloured time review totals, and reported the live card still missing those totals. Publish the tested correction through the existing coordinated safeguards."
+  "staffTimeReviewReleaseAuthorization": "Owner instructed PUBLISH IT for staff labour reporting, requested coloured time review totals, and reported the live card still missing those totals. Publish the tested correction through the existing coordinated safeguards.",
+  "receiptAndTimeCorrectionsAuthorizedByOwner": true,
+  "receiptAndTimeCorrectionsAuthorization": "Owner instructed PUBLISH after review of PL030 receipt recovery and the pending explicit Pause / Finished time correction."
 }
