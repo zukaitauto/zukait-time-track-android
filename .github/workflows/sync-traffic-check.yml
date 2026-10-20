@@ -12,6 +12,7 @@ on:
       - 'app/src/main/assets/v2/features/notifications/center.js'
       - 'tests/hidden-read-traffic.mjs'
       - 'tests/sync-traffic-compatibility.mjs'
+      - 'tests/json-field-order-save.mjs'
       - 'tests/live-projection-traffic.mjs'
       - '.github/workflows/sync-traffic-check.yml'
   push:
@@ -44,6 +45,7 @@ jobs:
         run: |
           node tests/hidden-read-traffic.mjs
           node tests/v2-notification-center.mjs
+          node tests/json-field-order-save.mjs
           node tests/live-projection-traffic.mjs
           node --experimental-vm-modules tests/sync-traffic-compatibility.mjs
           node tests/leave-sync-race.mjs
@@ -55,3 +57,6 @@ jobs:
           node tests/manager-leave-corrections.mjs
           node tests/leave-after-work.mjs
           node tests/global-leave-history.mjs
+
+      - name: Full save and permission regression
+        run: bash scripts/ci-full-regression.sh

@@ -122,8 +122,18 @@ async function sessionUser(token: string) {
   }
   return { id: staff.user_id, name: staff.display_name, role: staff.role, department: staff.department };
 }
-function same(a: unknown, b: unknown) {
-  return JSON.stringify(a) === JSON.stringify(b);
+function same(a: any, b: any) {
+  // JSON object field order is not business data; JSONB and clients reorder keys.
+  // Arrays remain ordered and scalar types, missing fields and null stay distinct.
+  if (a === b) return true;
+  if (a === null || b === null || typeof a !== "object" || typeof b !== "object") return false;
+  if (Array.isArray(a) || Array.isArray(b)) {
+    return Array.isArray(a) && Array.isArray(b) && a.length === b.length &&
+      a.every((value: any, index: any) => same(value, b[index]));
+  }
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length &&
+    keys.every(key => Object.prototype.hasOwnProperty.call(b, key) && same(a[key], b[key]));
 }
 function mapById(arr: any[]) {
   const m = new Map<string, any>();
