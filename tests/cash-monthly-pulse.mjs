@@ -65,10 +65,20 @@ for(const [kind,section] of [['in','jobs'],['out','delivered'],['collected','col
  assert.deepEqual(ids(pulse.insuranceRows(kind)),expected.rows.map(r=>r.job_card).sort(),'Dashboard must match Insurance Management '+kind);
 }
 assert.equal(pulse.insuranceTotal(pulse.insuranceRows('collected')),42.125);
+assert.equal(pulse.approximateRepairSummary(pulse.insuranceRows('in')).amount,4995);
+assert.equal(pulse.approximateRepairSummary(pulse.insuranceRows('out')).amount,1998,'Approximate Out must use Amount, not final invoice or LPO');
+for(const amount of [undefined,null,'','  ',false,{},[],'invalid',-1])assert.equal(pulse.approximateRepairValue({amount}),null);
+assert.equal(pulse.approximateRepairValue({amount:0}),0);
+assert.equal(pulse.approximateRepairValue({amount:'123.456',finalInvoiceAmount:9999,insuranceLpo:{amount:8888}}),123.456);
+assert.equal(pulse.approximateRepairSummary([{amount:0.1},{amount:0.2},{amount:null}]).amount,0.3);
+assert.equal(pulse.approximateRepairSummary([{amount:0.1},{amount:0.2},{amount:null}]).pending,1);
 pulse.install();assert.equal((manager.children[1].innerHTML.match(/class="v251-followup-card insurance-/g)||[]).length,3);assert.match(manager.children[1].innerHTML,/Insurance Monthly Follow-up/);
 await sandbox.window.v251OpenInsurancePulse('in');assert.match(modal,/JC I-IN/);assert.ok(!modal.includes('CASH-ONLY'));assert.match(modal,/Liva &lt;Insurance&gt;/);
-await sandbox.window.v251OpenInsurancePulse('out');assert.match(modal,/JC I-OUT/);assert.ok(!modal.includes('JC I-OLD'));assert.match(modal,/JC I-ZERO/);
+await sandbox.window.v251OpenInsurancePulse('out');assert.match(modal,/JC I-OUT/);assert.match(modal,/OMR 1998.000/);assert.match(modal,/Approx. repair value/);assert.ok(!modal.includes('JC I-OLD'));assert.match(modal,/JC I-ZERO/);
 await sandbox.window.v251OpenInsurancePulse('collected');assert.match(modal,/OMR 42.125/);assert.match(modal,/OMR 0.000/);assert.ok(!modal.includes('JC I-NIL'));assert.match(modal,/not cash payment receipts/);
+sandbox.fixture=[ins('I-PENDING',{amount:null}),ins('I-VALUED',{amount:25,finalInvoiceAmount:999})];vm.runInContext('state={jobs:fixture}',ctx);
+await sandbox.window.v251OpenInsurancePulse('in');assert.match(modal,/OMR 25.000/);assert.match(modal,/1 amount\(s\) pending/);assert.match(modal,/Pending/);assert.ok(!modal.includes('OMR 999.000'));
+sandbox.fixture=[ins('I-PENDING',{amount:null})];vm.runInContext('state={jobs:fixture}',ctx);await sandbox.window.v251OpenInsurancePulse('in');assert.ok(!modal.includes('OMR 0.000'),'Missing repair value must not become zero');
 const insuranceModal=modal;await sandbox.window.v251OpenInsurancePulse('invalid');assert.equal(modal,insuranceModal);
 let insuranceWarning='';sandbox.window.alert=v=>insuranceWarning=v;sandbox.window.zukaitCloud={readLatest:async()=>{throw Error('NETWORK')}};
 await sandbox.window.v251OpenInsurancePulse('in');assert.equal(modal,insuranceModal);assert.match(insuranceWarning,/server read failed/);delete sandbox.window.zukaitCloud;

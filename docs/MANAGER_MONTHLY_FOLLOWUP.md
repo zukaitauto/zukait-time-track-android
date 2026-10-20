@@ -1,6 +1,8 @@
 # Manager monthly Cash and Insurance follow-up
 
-The Manager dashboard shows Cash and Insurance in adjacent panels on wide screens, stacked on mobile. Cash retains its existing three actions and amounts; the shared Supervisor cash panel uses the same rectangular card styling. Insurance is Manager-only.
+Design uses solid white report cards, dark navy section headers, coloured side rails, compact icon chips and separated repair-value amounts, replacing the earlier pastel gradient pattern. Below 600px, each section uses three compact full-width rows with the count on the right and a readable 15px amount beneath its label. Desktop retains the approved six-card layout.
+
+The Manager dashboard shows Cash and Insurance in adjacent panels on wide screens, stacked on mobile. Cash retains its existing three actions and amounts; the shared Supervisor cash panel uses the same rectangular card styling. Insurance is Manager-only. Insurance In and Out also show approximate repair totals from the job card `amount` field, and each list shows its per-vehicle value. Missing/invalid amounts remain Pending; partial totals explicitly count pending amounts. Final invoices and LPO amounts never replace these approximate values. Final LPO reporting remains separate.
 
 The three Insurance cards open read-only monthly lists:
 

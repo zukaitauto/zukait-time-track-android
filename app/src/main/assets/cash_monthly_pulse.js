@@ -37,11 +37,21 @@ function insuranceRows(kind){
  }).map(live);
 }
 const insuranceTotal=a=>a.reduce((n,j)=>n+Math.round(j.insuranceLpo.amount*1000),0)/1000;
+function approximateRepairValue(j){
+ const v=j.amount;
+ return v===null||v===undefined||(typeof v==='string'&&!v.trim())||!['number','string'].includes(typeof v)||!Number.isFinite(Number(v))||Number(v)<0?null:Number(v);
+}
+function approximateRepairSummary(a){
+ const values=a.map(approximateRepairValue),pending=values.filter(v=>v===null).length;
+ return {amount:values.reduce((sum,v)=>sum+(v===null?0:Math.round(v*1000)),0)/1000,pending};
+}
+function repairTotalLabel(a){const r=approximateRepairSummary(a);return a.length&&r.pending===a.length?'Pending':money(r.amount);}
+function repairCaption(a){const r=approximateRepairSummary(a);return 'Approx. repair value'+(r.pending?' · '+r.pending+' amount(s) pending':'');}
 function insuranceHtml(){
  const i=insuranceRows('in'),o=insuranceRows('out'),l=insuranceRows('collected');
  return '<section class="v251-cash-pulse v251-insurance-pulse" aria-label="Insurance monthly follow-up"><div class="v251-cash-title"><b>Insurance Monthly Follow-up</b><small>'+esc(month().label)+'</small></div><div class="v251-cash-grid">'+[
-  ['in','INSURANCE IN',i.length,'Vehicles opened this month','↘'],['out','INSURANCE OUT',o.length,'Vehicles delivered this month','↗'],['collected','LPO COLLECTED',l.length,'LPOs received this month','✓']
- ].map(([kind,title,count,caption,icon])=>'<button type="button" class="v251-followup-card insurance-'+kind+'" onclick="v251OpenInsurancePulse(\''+kind+'\')"><span class="v251-followup-icon" aria-hidden="true">'+icon+'</span><b>'+title+'</b><strong>'+count+'</strong>'+(kind==='collected'?'<em>'+money(insuranceTotal(l))+'</em>':'')+'<small>'+caption+'</small><span class="v251-card-link">View list →</span></button>').join('')+'</div></section>';
+  ['in','INSURANCE IN',i.length,'Vehicles opened this month','↓'],['out','INSURANCE OUT',o.length,'Vehicles delivered this month','↑'],['collected','LPO COLLECTED',l.length,'LPOs received this month','✓']
+ ].map(([kind,title,count,caption,icon])=>'<button type="button" class="v251-followup-card insurance-'+kind+'" onclick="v251OpenInsurancePulse(\''+kind+'\')"><span class="v251-followup-icon" aria-hidden="true">'+icon+'</span><b>'+title+'</b><strong>'+count+'</strong>'+'<em>'+(kind==='collected'?money(insuranceTotal(l)):repairTotalLabel(kind==='in'?i:o))+'</em>'+(kind==='collected'?'':'<small>'+repairCaption(kind==='in'?i:o)+'</small>')+'<small>'+caption+'</small><span class="v251-card-link">View list →</span></button>').join('')+'</div></section>';
 }
 window.v251OpenInsurancePulse=async function(kind){
  if(role()!=='Manager'||!['in','out','collected'].includes(kind))return;
@@ -49,13 +59,13 @@ window.v251OpenInsurancePulse=async function(kind){
  const dateKey=kind==='out'?'deliveredAt':'createdAt',a=insuranceRows(kind).slice().sort((x,y)=>kind==='collected'?y.insuranceLpo.receivedDate.localeCompare(x.insuranceLpo.receivedDate):Number(y[dateKey]||0)-Number(x[dateKey]||0));
  const title=kind==='in'?'Insurance In':kind==='out'?'Insurance Out':'LPO Collected';
  const dateText=j=>kind==='collected'?j.insuranceLpo.receivedDate.split('-').reverse().join('-'):new Date(Number(j[dateKey])).toLocaleDateString('en-GB',{timeZone:'Asia/Muscat'}).replaceAll('/','-');
- const body=a.length?a.map((j,n)=>'<div class="v251-cash-row v251-insurance-row"><b class="v251-no">'+(n+1)+'</b><div><strong>JC '+esc(j.no)+' · '+esc(j.reg||'Not recorded')+'</strong><small>'+esc([j.vehicle,j.year].filter(Boolean).join(' '))+'</small><small>'+esc(j.insuranceCompany||'Insurance company not recorded')+' · '+esc(dateText(j))+'</small>'+(j.claimNo?'<small>Claim: '+esc(j.claimNo)+'</small>':'')+'</div>'+(kind==='collected'?'<b>'+money(j.insuranceLpo.amount)+'</b>':'')+'</div>').join(''):'<p class="muted">No '+esc(title.toLowerCase())+' records for '+esc(month().label)+'.</p>';
- openModal('<div class="section-title"><div><h2>'+title+'</h2><p class="muted">'+esc(month().label)+(kind==='collected'?' · LPO documents received; not cash payment receipts':'')+'</p></div><button class="secondary" onclick="closeModal()">Close</button></div><div class="v251-cash-summary"><b>'+a.length+(kind==='collected'?' LPOs':' Vehicles')+'</b>'+(kind==='collected'?'<strong>'+money(insuranceTotal(a))+'</strong>':'')+'</div>'+body);
+ const body=a.length?a.map((j,n)=>'<div class="v251-cash-row v251-insurance-row"><b class="v251-no">'+(n+1)+'</b><div><strong>JC '+esc(j.no)+' · '+esc(j.reg||'Not recorded')+'</strong><small>'+esc([j.vehicle,j.year].filter(Boolean).join(' '))+'</small><small>'+esc(j.insuranceCompany||'Insurance company not recorded')+' · '+esc(dateText(j))+'</small>'+(j.claimNo?'<small>Claim: '+esc(j.claimNo)+'</small>':'')+'</div>'+'<b>'+(kind==='collected'?money(j.insuranceLpo.amount):'<small>Approx. repair value</small>'+(approximateRepairValue(j)===null?'Pending':money(approximateRepairValue(j))))+'</b>'+'</div>').join(''):'<p class="muted">No '+esc(title.toLowerCase())+' records for '+esc(month().label)+'.</p>';
+ openModal('<div class="section-title"><div><h2>'+title+'</h2><p class="muted">'+esc(month().label)+(kind==='collected'?' · LPO documents received; not cash payment receipts':' · '+repairCaption(a))+'</p></div><button class="secondary" onclick="closeModal()">Close</button></div><div class="v251-cash-summary"><b>'+a.length+(kind==='collected'?' LPOs':' Vehicles')+'</b>'+'<strong>'+(kind==='collected'?money(insuranceTotal(a)):repairTotalLabel(a))+'</strong>'+'</div>'+body);
 };
 function html(){
  const i=rows('in'),o=rows('out'),label=month().label;
  const p=pendingAll();
- return '<section class="v251-cash-pulse" data-v251-cash-pulse><div class="v251-cash-title"><b>Cash Monthly Follow-up</b><small>'+esc(label)+' · Vehicle count & current accurate amount</small></div><div class="v251-cash-grid"><button class="v251-cash-circle in" onclick="v251OpenCashPulse(\'in\')"><span>↘</span><b>CASH IN</b><strong>'+i.length+'</strong><em>'+money(total(i))+'</em><small>THIS MONTH</small><span class="v251-card-link">View list →</span></button><button class="v251-cash-circle pending" onclick="v251OpenCashPendingAll()"><span>◷</span><b>CASH IN PENDING</b><strong>'+p.length+'</strong><em>'+money(outstandingTotal(p))+'</em><small>ALL MONTHS · NOT DELIVERED</small><span class="v251-card-link">View list →</span></button><button class="v251-cash-circle out" onclick="v251OpenCashPulse(\'out\')"><span>↗</span><b>CASH OUT</b><strong>'+o.length+'</strong><em>'+money(total(o,'out'))+'</em><small>THIS MONTH</small><span class="v251-card-link">View list →</span></button></div></section>';
+ return '<section class="v251-cash-pulse" data-v251-cash-pulse><div class="v251-cash-title"><b>Cash Monthly Follow-up</b><small>'+esc(label)+'</small></div><div class="v251-cash-grid"><button class="v251-cash-circle in" onclick="v251OpenCashPulse(\'in\')"><span>↓</span><b>CASH IN</b><strong>'+i.length+'</strong><em>'+money(total(i))+'</em><small>THIS MONTH</small><span class="v251-card-link">View list →</span></button><button class="v251-cash-circle pending" onclick="v251OpenCashPendingAll()"><span>◷</span><b>CASH IN PENDING</b><strong>'+p.length+'</strong><em>'+money(outstandingTotal(p))+'</em><small>ALL MONTHS · NOT DELIVERED</small><span class="v251-card-link">View list →</span></button><button class="v251-cash-circle out" onclick="v251OpenCashPulse(\'out\')"><span>↑</span><b>CASH OUT</b><strong>'+o.length+'</strong><em>'+money(total(o,'out'))+'</em><small>THIS MONTH</small><span class="v251-card-link">View list →</span></button></div></section>';
 }
 function install(){
  if(!['Manager','Supervisor'].includes(role()))return;
@@ -99,7 +109,37 @@ const s=document.createElement('style');s.id='v251CashPulseStyle';s.textContent=
 @media(max-width:520px){.v251-followup-layout .v251-cash-pulse{padding:12px}.v251-followup-layout .v251-cash-grid{gap:7px}.v251-followup-layout .v251-cash-circle,.v251-followup-card{padding:10px!important;min-height:167px}.v251-followup-layout .v251-cash-circle b,.v251-followup-card b{font-size:11px}.v251-followup-layout .v251-cash-circle em,.v251-followup-card em{font-size:12px}.v251-followup-layout .v251-cash-circle small,.v251-followup-card small{font-size:10px}}
 @media(max-width:359px){.v251-followup-layout .v251-cash-grid{grid-template-columns:1fr}.v251-followup-layout .v251-cash-circle,.v251-followup-card{min-height:0}}
 @media(prefers-reduced-motion:reduce){.v251-followup-layout button{transition:none;transform:none}}
+
+/* Alternate report-card pattern: solid surfaces, navy headers and colour rails. */
+.v251-followup-layout .v251-cash-pulse{padding:0;overflow:hidden;border:1px solid #dce4ee;background:#fff;box-shadow:0 6px 20px #162c4610;border-radius:18px}
+.v251-followup-layout .v251-cash-title{padding:16px 18px;margin:0;background:#172c46;color:#fff;min-height:68px;align-items:center}
+.v251-followup-layout .v251-cash-title b{font-size:16px;letter-spacing:.01em}.v251-followup-layout .v251-cash-title small{color:#cbd8e8;font-size:11px}
+.v251-followup-layout .v251-insurance-pulse .v251-cash-title{background:#213a50}
+.v251-followup-layout .v251-cash-grid{padding:14px;background:#f5f7fb;gap:10px}
+.v251-followup-layout .v251-cash-circle,.v251-followup-layout .v251-followup-card{background:#fff!important;color:#21324a!important;border:1px solid #dce4ef!important;border-left:4px solid var(--card-accent)!important;border-radius:12px!important;box-shadow:0 2px 5px #162c4608!important;padding:14px 12px!important;gap:9px}
+.v251-followup-layout .in{--card-accent:#2674bd;--card-tint:#eaf3fc}.v251-followup-layout .pending{--card-accent:#b77909;--card-tint:#fff4db}.v251-followup-layout .out{--card-accent:#18836a;--card-tint:#e8f6ef}
+.v251-followup-layout .insurance-in{--card-accent:#5362bd;--card-tint:#eef0fe}.v251-followup-layout .insurance-out{--card-accent:#14818b;--card-tint:#e7f6f7}.v251-followup-layout .insurance-collected{--card-accent:#8852ad;--card-tint:#f5edfb}
+.v251-followup-layout .v251-cash-circle span:first-child,.v251-followup-layout .v251-followup-icon{background:var(--card-tint);color:var(--card-accent);border-radius:8px;font-size:20px;font-weight:800}
+.v251-followup-layout .v251-cash-circle strong,.v251-followup-layout .v251-followup-card strong{color:#172c46;font-size:34px;letter-spacing:-.03em}
+.v251-followup-layout .v251-cash-circle em,.v251-followup-layout .v251-followup-card em{color:#172c46;font-size:14px;padding-top:8px;border-top:1px solid #e4eaf2;width:100%}
+.v251-followup-layout .v251-cash-circle small,.v251-followup-layout .v251-followup-card small{color:#56677d;font-weight:500}
+.v251-followup-layout .v251-cash-circle .v251-card-link,.v251-followup-layout .v251-card-link{color:var(--card-accent);padding-top:8px}
+@media(max-width:520px){.v251-followup-layout .v251-cash-title{padding:14px}.v251-followup-layout .v251-cash-grid{padding:10px;gap:7px}.v251-followup-layout .v251-cash-circle,.v251-followup-layout .v251-followup-card{padding:10px 8px!important;gap:7px}.v251-followup-layout .v251-cash-circle em,.v251-followup-layout .v251-followup-card em{font-size:12px}}
+
+/* Phone layout: wide, compact rows keep counts and OMR amounts legible. */
+@media(max-width:599px){
+ .v251-followup-layout .v251-cash-grid{grid-template-columns:minmax(0,1fr);gap:9px}
+ .v251-followup-layout .v251-cash-circle,.v251-followup-layout .v251-followup-card{display:grid!important;grid-template-columns:30px minmax(0,1fr) auto;min-height:100px;padding:13px!important;gap:4px 10px;align-items:center}
+ .v251-followup-layout .v251-cash-circle>span:first-child,.v251-followup-layout .v251-followup-card>.v251-followup-icon{grid-column:1;grid-row:1/3}
+ .v251-followup-layout .v251-cash-circle>b,.v251-followup-layout .v251-followup-card>b{grid-column:2;grid-row:1;font-size:12px}
+ .v251-followup-layout .v251-cash-circle>strong,.v251-followup-layout .v251-followup-card>strong{grid-column:3;grid-row:1/3;font-size:30px;text-align:right}
+ .v251-followup-layout .v251-cash-circle>em,.v251-followup-layout .v251-followup-card>em{grid-column:2;grid-row:2;border:0;padding:0;font-size:15px;overflow-wrap:anywhere}
+ .v251-followup-layout .v251-cash-circle>small,.v251-followup-layout .v251-followup-card>small{grid-column:2;font-size:12px;line-height:1.4}
+ .v251-followup-layout .v251-cash-circle>.v251-card-link,.v251-followup-layout .v251-followup-card>.v251-card-link{grid-column:3;grid-row:3/5;font-size:11px;align-self:end;white-space:nowrap}
+ .v251-insurance-row{grid-template-columns:23px minmax(0,1fr);padding:12px;gap:6px 10px}
+ .v251-insurance-row>b:nth-of-type(2){grid-column:2;font-size:14px;text-align:left}.v251-insurance-row small{font-size:13px}
+}
 `;document.head.appendChild(s);
 let scheduled=false;function schedule(){if(scheduled)return;scheduled=true;setTimeout(()=>{scheduled=false;install()},0)}new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});['zukait:state-synced','zukait:state-updated','zukait:cloud-sync','online','focus'].forEach(n=>window.addEventListener(n,schedule));document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule()});schedule();setInterval(install,2000);
-window.v251CashPulse={install,html,rows,total,pendingAll,insuranceRows,insuranceHtml,insuranceTotal};
+window.v251CashPulse={install,html,rows,total,pendingAll,insuranceRows,insuranceHtml,insuranceTotal,approximateRepairValue,approximateRepairSummary};
 })();
