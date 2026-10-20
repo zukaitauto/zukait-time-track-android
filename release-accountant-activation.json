@@ -1,9 +1,7 @@
 {
-  "sourceCommit": "ffbc6454871644e8e7db82612d1fe03aff7b1bef",
-  "publishNonce": "afe96fc41329fe063eb1820a2c4422988c830e5e87fb74fb",
-  "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
-  "approvedAt": "2026-10-20T08:53:50.297582Z",
-  "approved": true,
-  "release": "V347",
-  "releaseChangeScope": "hidden-screen-read-traffic-reduction"
+  "approved": false,
+  "release": "V348",
+  "sourceCommit": null,
+  "publishNonce": null,
+  "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED."
 }

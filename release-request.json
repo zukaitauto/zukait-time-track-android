@@ -1,9 +1,9 @@
 {
-  "versionName": "V347",
-  "versionCode": 310,
+  "versionName": "V348",
+  "versionCode": 311,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": true,
-  "sourceCommit": "ffbc6454871644e8e7db82612d1fe03aff7b1bef",
+  "approvedForStaff": false,
+  "sourceCommit": null,
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -13,18 +13,18 @@
   "backendDeploymentRequired": false,
   "releaseHeldByOwner": false,
   "evidence": {
-    "credentialPreservation": true,
-    "qaFinancialAcceptance": true,
-    "serverPermissions": true,
-    "rollbackPrepared": true,
-    "legacyLoginCompatibility": true
+    "credentialPreservation": false,
+    "qaFinancialAcceptance": false,
+    "serverPermissions": false,
+    "rollbackPrepared": false,
+    "legacyLoginCompatibility": false
   },
-  "approvedAt": "2026-10-20T08:53:50.297582Z",
-  "publishNonce": "afe96fc41329fe063eb1820a2c4422988c830e5e87fb74fb",
-  "signedAcceptanceRun": 39396157382,
-  "verificationRun": 39396157298,
-  "accountantVerificationRun": 39396157385,
-  "androidBuildRun": 39396157373,
+  "approvedAt": null,
+  "publishNonce": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "accountantVerificationRun": null,
+  "androidBuildRun": null,
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -35,11 +35,11 @@
         "verificationBasis": "Production index.ts exactly matches the candidate; deno.json differs only by explicit versus implicit empty imports. Authentication bundle remains unchanged."
       },
       "workshop-api": {
-        "version": 78,
-        "bundleSha256": "e0ed86417b288d83d4ed0584a1cdd4eb98987046698b3ae8ca80f879aedb2e4d",
+        "version": 79,
+        "bundleSha256": "1e1f27723c3b3e42bd4cb283d2b22c0c2d1a7c17ed9c31932a27b65a334d30c8",
         "verifiedFileMatch": true,
         "repositorySourceMatchesDeployed": false,
-        "verificationBasis": "Production workshop-api v78 bundle hash rechecked unchanged for V347. No Edge deployment is part of this client-only release. Repository also contains separately staged backend changes."
+        "verificationBasis": "All 13 files read back match the exact prior live v78 bundle plus JSON field-order equality helper fix. Only that helper was deployed; unrelated staged repository backend changes were excluded."
       }
     },
     "migrations": [
@@ -50,15 +50,15 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V347: hidden notification report hydration and periodic live reads paused, hidden revision probes reduced to two-minute cadence. Foreground one-second revision detection, live updates, immediate action writes, offline queue and visibility resume preserved. Exact-source sync/runtime, full regression, signed APK, Accountant browser/financial, Reception/browser and native PDF checks passed. No backend deployment, schema migration or production data edits. Physical-device acceptance and fresh production backup restore NOT_RUN.",
+  "verificationSummary": "V348 candidate: publish missing Manager Job Card stylesheet. Shared save field-order fix deployed separately as workshop-api v79 and tested. No record deletion. Full client checks pending.",
   "productionBackendDeploymentPerformed": false,
-  "releaseChangeScope": "hidden-screen-read-traffic-reduction",
+  "releaseChangeScope": "manager-stylesheet-publication-and-save-comparison",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
-  "syncVerificationRun": 39396157346,
-  "nativePdfVerificationRun": 39396157368,
+  "syncVerificationRun": null,
+  "nativePdfVerificationRun": null,
   "rollback": {
-    "previousRelease": "release-V346-architecture-v2",
+    "previousRelease": "release-V347-architecture-v2",
     "strategy": "Publish a higher-version signed recovery build with the previous client assets; retain app storage and all leave/audit records.",
     "dataResetRequired": false
   },

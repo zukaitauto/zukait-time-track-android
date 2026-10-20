@@ -20,6 +20,7 @@ node tests/accountant-dashboard.mjs
 ACCOUNTANT_TEST_ROLE=Manager node tests/accountant-dashboard.mjs
 node tests/accountant-manager-dom.mjs
 node tests/functional-smoke.mjs
+node tests/published-stylesheets.mjs
 node tests/employee-ocean-timer.mjs
 node tests/employee-job-placement.mjs
 node tests/manager-time-management.mjs
