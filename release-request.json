@@ -2,15 +2,15 @@
   "versionName": "V355",
   "versionCode": 318,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": false,
-  "sourceCommit": null,
+  "approvedForStaff": true,
+  "sourceCommit": "6adb6ae882eb667ab4d60b1dd84ecfbbefb686ab",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "productionBackendChanges": true,
   "phase2ActivationApproved": false,
-  "backendDeploymentRequired": true,
+  "backendDeploymentRequired": false,
   "releaseHeldByOwner": false,
   "evidence": {
     "credentialPreservation": true,
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": null,
-  "publishNonce": null,
+  "approvedAt": "2026-10-21T16:08:00Z",
+  "publishNonce": "3d018f425f2e878846a7aebe6b77a5b1559d6a215ba953b5",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -29,14 +29,14 @@
         "bundleSha256": "dfac91c48aa7969d67f9f6a6ee8613fbf7090862261cc262adb34730794fc532",
         "verifiedFileMatch": true,
         "repositorySourceMatchesDeployed": true,
-        "verificationBasis": "V354 read-only production verification: complete deployed bundle hash and version match V353. This client-only release deploys no backend files."
+        "verificationBasis": "Unchanged authentication bundle retained from verified V354; no authentication deployment in V355."
       },
       "workshop-api": {
-        "version": 80,
-        "bundleSha256": "a7ea0f11f4efa84e264e0b86e3be8eda0f9d5e6224aa8cb5877b6fcec54f1b38",
+        "version": 81,
+        "bundleSha256": "971564feb17c1ac6bba5158755d5c0b7a6e0ba7a853b89d87e19dc9b2afcb105",
         "verifiedFileMatch": true,
         "repositorySourceMatchesDeployed": false,
-        "verificationBasis": "V354 read-only production verification: complete deployed bundle hash and version match V353. This client-only release deploys no backend files."
+        "verificationBasis": "Production81 full bundle readback equals tested QA16. Patch applied to captured live80 only; repository-only staged features were preserved in Git and not inadvertently deployed."
       }
     },
     "migrations": [
@@ -47,14 +47,16 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "Candidate: transport-enforced retry cooldown across poll/focus/reconnect, clear banner on successful save, distinguish delayed server from offline internet, limit server conflict work, and typed database-pressure responses. No schema or record migration.",
-  "productionBackendDeploymentPerformed": false,
+  "verificationSummary": "V355 exact-source checks passed: Reception/browser, signed Android acceptance, Accountant, sync/permissions, Android build, estimate and native PDF. Runtime tests cover shared jittered cooldown across poll/focus/save/reconnect, independent failed-save history, stale-success ordering, queue preservation, permission barriers and clearing the banner on confirmed save. Real save-route tests verify bounded CAS conflict/time-budget work without changing authorities. QA live Manager revision/load returned 200, invalid save 400, Accountant load/save 403 and invalid session 401. QA fixtures revoked. Production workshop-api81 matches QA16 full bundle hash; only bounded save loop and database-pressure mapping changed from deployed80, all other files preserved. No schema or business-record migrations. Physical-device acceptance and fresh restore NOT_RUN. Monitor infrastructure/timeouts after rollout; this does not guarantee absence of future resource outages.",
+  "productionBackendDeploymentPerformed": true,
   "releaseChangeScope": "bounded-sync-retries-and-database-pressure-recovery",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
-    "previousRelease": "release-V353-architecture-v2",
-    "strategy": "Publish a higher-version signed recovery build with previous client assets, preserving app storage and all workshop records. No backend rollback is required.",
+    "previousRelease": "release-V354-architecture-v2",
+    "strategy": "Publish a higher-version signed recovery APK restoring previous assets; redeploy captured complete production workshop-api80 bundle if necessary. Preserve all local queues, workshop data and audit history.",
+    "backendBundleVersion": 80,
+    "backendBundleSha256": "a7ea0f11f4efa84e264e0b86e3be8eda0f9d5e6224aa8cb5877b6fcec54f1b38",
     "dataResetRequired": false
   },
   "releaseBackendChanges": true,
@@ -69,5 +71,26 @@
   "mobileReadabilityAuthorizedByOwner": true,
   "mobileReadabilityAuthorization": "Owner requested readable material rows without repeated Material labels, three coloured mobile cards per monthly group with short labels, then explicitly instructed PUBLIC and PUBLISH.",
   "arrivalConsistencyAuthorizedByOwner": true,
-  "arrivalConsistencyAuthorization": "Owner reported Parts Arrived 3 opens empty, clarified required quantity is already shown, and explicitly instructed FIX AND PUBLISH."
+  "arrivalConsistencyAuthorization": "Owner reported Parts Arrived 3 opens empty, clarified required quantity is already shown, and explicitly instructed FIX AND PUBLISH.",
+  "signedAcceptanceRun": 39631149189,
+  "verificationRun": 39631149195,
+  "accountantVerificationRun": 39631149209,
+  "androidBuildRun": 39631149272,
+  "syncVerificationRun": 39631149241,
+  "nativePdfVerificationRun": 39631149294,
+  "syncRecoveryAuthorizedByOwner": true,
+  "syncRecoveryAuthorization": "Owner reported the warning on all devices, requested a deep check, and instructed NEED PERMANANT FIX. Prior FIX AND PUBLISH authorization covers the coordinated tested web/Android repair.",
+  "qaSyncRecovery": {
+    "project": "omqgkqknbdcnotabffek",
+    "version": 16,
+    "bundleSha256": "971564feb17c1ac6bba5158755d5c0b7a6e0ba7a853b89d87e19dc9b2afcb105",
+    "managerRevision": 200,
+    "managerLoad": 200,
+    "managerInvalidSave": 400,
+    "accountantLoad": 403,
+    "accountantSave": 403,
+    "invalidSession": 401,
+    "fixturesRevoked": true,
+    "workshopRecordsChanged": false
+  }
 }
