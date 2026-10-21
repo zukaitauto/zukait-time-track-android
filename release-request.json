@@ -2,8 +2,8 @@
   "versionName": "V354",
   "versionCode": 317,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": false,
-  "sourceCommit": null,
+  "approvedForStaff": true,
+  "sourceCommit": "58aa10756fa00aed0bc7ccff1b90d3087094c78a",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": null,
-  "publishNonce": null,
+  "approvedAt": "2026-10-21T15:29:33Z",
+  "publishNonce": "172e077613bf6956529fefd56e78a67c28cc5b5579605485",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -29,14 +29,14 @@
         "bundleSha256": "dfac91c48aa7969d67f9f6a6ee8613fbf7090862261cc262adb34730794fc532",
         "verifiedFileMatch": true,
         "repositorySourceMatchesDeployed": true,
-        "verificationBasis": "V353 read-only production verification: deployed version and complete bundle hash match the V352 baseline. This client-only publication deploys no backend files."
+        "verificationBasis": "V354 read-only production verification: complete deployed bundle hash and version match V353. This client-only release deploys no backend files."
       },
       "workshop-api": {
         "version": 80,
         "bundleSha256": "a7ea0f11f4efa84e264e0b86e3be8eda0f9d5e6224aa8cb5877b6fcec54f1b38",
         "verifiedFileMatch": true,
         "repositorySourceMatchesDeployed": false,
-        "verificationBasis": "V353 read-only production verification: deployed version and complete bundle hash match the V352 baseline. This client-only publication deploys no backend files."
+        "verificationBasis": "V354 read-only production verification: complete deployed bundle hash and version match V353. This client-only release deploys no backend files."
       }
     },
     "migrations": [
@@ -47,14 +47,14 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "Candidate: align arrival badges with fully received unconfirmed items, expose audited incomplete receipt recovery, and distinguish required/received quantities.",
+  "verificationSummary": "V354 aligns Manager and Supervisor Parts Arrived badges with fully received unconfirmed items and exposes incomplete RECEIVED records with required/received quantities. Manager/Purchaser can record actual receipts through the existing audited receipt workflow; Supervisor cannot post receipts. Confirmation remains required before invoice entry. Dedicated PL030-shaped isolated regression covers count/list parity, recovery, confirmation, refresh and permissions. No production record, schema or backend deployment changes. Physical-device acceptance and fresh backup restore remain NOT_RUN. Exact-source Reception/browser, Accountant, sync/permissions, signed acceptance APK, Android build and native Android PDF verification all passed.",
   "productionBackendDeploymentPerformed": false,
   "releaseChangeScope": "parts-arrival-count-and-receipt-recovery",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
-    "previousRelease": "release-V352-architecture-v2",
-    "strategy": "Publish a higher-version signed recovery build with previous client assets, preserving app storage and all workshop records. No backend rollback is required for this client-only release.",
+    "previousRelease": "release-V353-architecture-v2",
+    "strategy": "Publish a higher-version signed recovery build with previous client assets, preserving app storage and all workshop records. No backend rollback is required.",
     "dataResetRequired": false
   },
   "releaseBackendChanges": false,
@@ -67,5 +67,13 @@
   "receiptAndTimeCorrectionsAuthorizedByOwner": true,
   "receiptAndTimeCorrectionsAuthorization": "Owner instructed PUBLISH after review of PL030 receipt recovery and the pending explicit Pause / Finished time correction.",
   "mobileReadabilityAuthorizedByOwner": true,
-  "mobileReadabilityAuthorization": "Owner requested readable material rows without repeated Material labels, three coloured mobile cards per monthly group with short labels, then explicitly instructed PUBLIC and PUBLISH."
+  "mobileReadabilityAuthorization": "Owner requested readable material rows without repeated Material labels, three coloured mobile cards per monthly group with short labels, then explicitly instructed PUBLIC and PUBLISH.",
+  "signedAcceptanceRun": 39625535433,
+  "verificationRun": 39625535445,
+  "accountantVerificationRun": 39625535402,
+  "androidBuildRun": 39625535410,
+  "syncVerificationRun": 39625535426,
+  "nativePdfVerificationRun": 39625535539,
+  "arrivalConsistencyAuthorizedByOwner": true,
+  "arrivalConsistencyAuthorization": "Owner reported Parts Arrived 3 opens empty, clarified required quantity is already shown, and explicitly instructed FIX AND PUBLISH."
 }
