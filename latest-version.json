@@ -1,9 +1,9 @@
 {
-  "versionCode": 316,
-  "versionName": "V353",
+  "versionCode": 317,
+  "versionName": "V354",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "af73629a5dd05972cae4de3ad9a9507342e8ce2f",
-  "apkSha256": "3aaf5e37d7e3c2522e0e57520d789d3012ff663792eb57814f5d43a71eae54b8",
-  "releaseTag": "release-V353-architecture-v2"
+  "sourceCommit": "58aa10756fa00aed0bc7ccff1b90d3087094c78a",
+  "apkSha256": "22d53db699ff4aaffa7bb74d580867300112040b2048744ebd3122aa18ae04a9",
+  "releaseTag": "release-V354-architecture-v2"
 }
