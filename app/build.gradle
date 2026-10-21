@@ -58,3 +58,5 @@ dependencies {
 // Include delayed-state banner refresh coverage in exact-source V355 acceptance.
 
 // V357: Verify scoped Cash/Insurance reads while preserving staged Sublet changes.
+
+// Verify a concurrent shared revision cannot substitute unsynced values in monthly lists.

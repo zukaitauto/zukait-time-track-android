@@ -6,12 +6,12 @@ function role(){return (typeof me==='undefined'?window.me:me)?.role||''}
 let monthlyConfirmed=null;
 function snapshot(){if(monthlyConfirmed&&monthlyConfirmed.revision>=Number(window.zukaitCloud?.revision||0))return monthlyConfirmed.data;return window.zukaitCloud?.confirmedState||(typeof state==='undefined'?window.state:state)||{}}
 function live(j){const x=window.zukaitJobCardMaster?.display?.(j?.no,j);return x?{...j,vehicle:j.vehicle||x.vehicle,reg:j.reg||x.reg,year:j.year||x.year}:j}
-function all(){return (snapshot().jobs||[]).filter(j=>j&&j.no!=='ID001'&&!j.deleted&&!j.archived).map(live).filter(j=>String(j.jobType||'').trim().toUpperCase()==='CASH')}
+function all(data=snapshot()){return (data.jobs||[]).filter(j=>j&&j.no!=='ID001'&&!j.deleted&&!j.archived).map(live).filter(j=>String(j.jobType||'').trim().toUpperCase()==='CASH')}
 function month(){const d=new Date(),parts=new Intl.DateTimeFormat('en',{timeZone:'Asia/Muscat',year:'numeric',month:'numeric'}).formatToParts(d),y=Number(parts.find(x=>x.type==='year').value),m=Number(parts.find(x=>x.type==='month').value);return{from:Date.UTC(y,m-1,1)-4*3600000,to:Date.UTC(y,m,1)-4*3600000,label:d.toLocaleString('en',{timeZone:'Asia/Muscat',month:'long',year:'numeric'})}}
-function rows(kind){const {from,to}=month();return all().filter(j=>kind==='in'?Number(j.createdAt||0)>=from&&Number(j.createdAt||0)<to:j.delivered&&Number(j.deliveredAt||0)>=from&&Number(j.deliveredAt||0)<to)}
+function rows(kind,data){const {from,to}=month();return all(data).filter(j=>kind==='in'?Number(j.createdAt||0)>=from&&Number(j.createdAt||0)<to:j.delivered&&Number(j.deliveredAt||0)>=from&&Number(j.deliveredAt||0)<to)}
 function amount(j,kind){const invoice=j.finalInvoiceAmount,hasInvoice=invoice!==null&&invoice!==undefined&&invoice!==''&&typeof invoice!=='boolean'&&Number.isFinite(Number(invoice))&&Number(invoice)>=0;const n=Number(kind==='out'&&hasInvoice?invoice:(j.amount??0));return Number.isFinite(n)?n:0}
 function total(a,kind='in'){return a.reduce((n,j)=>n+amount(j,kind),0)}
-function pendingAll(){return all().filter(j=>!j.delivered)}
+function pendingAll(data){return all(data).filter(j=>!j.delivered)}
 function outstandingTotal(a){return a.reduce((n,j)=>n+(Number(j.amount)||0),0)}
 function cashStatus(j,now=Date.now()){
  if(j.delivered)return '<span class="v251-job-status delivered">🟢 Delivered</span>';
@@ -21,9 +21,9 @@ function cashStatus(j,now=Date.now()){
  return '<span class="v251-job-status open">🟡 '+esc(text)+'</span>';
 }
 // Follow the authoritative Insurance Management eligibility and LPO completion rules.
-function insuranceRows(kind){
+function insuranceRows(kind,data=snapshot()){
  const {from,to}=month(),monthKey=new Date(from+14400000).toISOString().slice(0,7),unique=new Map();
- for(const j of snapshot().jobs||[]){
+ for(const j of data.jobs||[]){
   const key=String(j?.no||'').trim().toUpperCase();
   if(!key||key==='ID001'||String(j.jobType||'').trim().toUpperCase()!=='INSURANCE'||j.deleted||j.archived||j.cancelled||String(j.status||'').trim().toUpperCase()==='CANCELLED')continue;
   const old=unique.get(key);if(!old||Number(j.createdAt||0)>Number(old.createdAt||0))unique.set(key,j);
@@ -58,7 +58,7 @@ function insuranceHtml(){
 window.v251OpenInsurancePulse=async function(kind){
  if(role()!=='Manager'||!['in','out','collected'].includes(kind))return;
  if(!await confirmRead()||role()!=='Manager')return;
- const dateKey=kind==='out'?'deliveredAt':'createdAt',a=insuranceRows(kind).slice().sort((x,y)=>kind==='collected'?y.insuranceLpo.receivedDate.localeCompare(x.insuranceLpo.receivedDate):Number(y[dateKey]||0)-Number(x[dateKey]||0));
+ const dateKey=kind==='out'?'deliveredAt':'createdAt',a=insuranceRows(kind,monthlyConfirmed?.data).slice().sort((x,y)=>kind==='collected'?y.insuranceLpo.receivedDate.localeCompare(x.insuranceLpo.receivedDate):Number(y[dateKey]||0)-Number(x[dateKey]||0));
  const title=kind==='in'?'Insurance In':kind==='out'?'Insurance Out':'LPO Collected';
  const dateText=j=>kind==='collected'?j.insuranceLpo.receivedDate.split('-').reverse().join('-'):new Date(Number(j[dateKey])).toLocaleDateString('en-GB',{timeZone:'Asia/Muscat'}).replaceAll('/','-');
  const body=a.length?a.map((j,n)=>'<div class="v251-cash-row v251-insurance-row"><b class="v251-no">'+(n+1)+'</b><div><strong>JC '+esc(j.no)+' · '+esc(j.reg||'Not recorded')+'</strong><small>'+esc([j.vehicle,j.year].filter(Boolean).join(' '))+'</small><small>'+esc(j.insuranceCompany||'Insurance company not recorded')+' · '+esc(dateText(j))+'</small>'+(j.claimNo?'<small>Claim: '+esc(j.claimNo)+'</small>':'')+'</div>'+'<b>'+(kind==='collected'?money(j.insuranceLpo.amount):'<small>Approx. repair value</small>'+(approximateRepairValue(j)===null?'Pending':money(approximateRepairValue(j))))+'</b>'+'</div>').join(''):'<p class="muted">No '+esc(title.toLowerCase())+' records for '+esc(month().label)+'.</p>';
@@ -93,11 +93,11 @@ async function confirmRead(){
   return false;
  }
 }
-window.v251OpenCashPendingAll=async function(){if(!['Manager','Supervisor'].includes(role()))return;if(!await confirmRead())return;const a=pendingAll().slice().sort((x,y)=>Number(y.createdAt||0)-Number(x.createdAt||0));const body=a.length?a.map((j,n)=>'<div class="v251-cash-row"><b class="v251-no">'+(n+1)+'</b><div><strong>JC '+esc(j.no)+' · '+esc(j.reg||'—')+'</strong><small>'+esc(j.vehicle||'—')+' · In '+new Date(Number(j.createdAt||0)).toLocaleDateString('en-GB',{timeZone:'Asia/Muscat'})+'</small>'+cashStatus(j)+'</div><b>'+money(j.amount)+'</b><button onclick="closeModal();zukaitOpenCashDetails(\''+esc(j.no)+'\')">Cash Details</button></div>').join(''):'<p class="muted">No undelivered Cash vehicles.</p>';openModal('<div class="section-title"><div><h2>Total Cash Jobs In · Not delivered</h2><p class="muted">All months · outstanding Cash vehicles</p></div><button class="secondary" onclick="closeModal()">Close</button></div><div class="v251-cash-summary"><b>'+a.length+' Vehicles</b><strong>'+money(total(a))+'</strong></div>'+body)};
+window.v251OpenCashPendingAll=async function(){if(!['Manager','Supervisor'].includes(role()))return;if(!await confirmRead())return;const a=pendingAll(monthlyConfirmed?.data).slice().sort((x,y)=>Number(y.createdAt||0)-Number(x.createdAt||0));const body=a.length?a.map((j,n)=>'<div class="v251-cash-row"><b class="v251-no">'+(n+1)+'</b><div><strong>JC '+esc(j.no)+' · '+esc(j.reg||'—')+'</strong><small>'+esc(j.vehicle||'—')+' · In '+new Date(Number(j.createdAt||0)).toLocaleDateString('en-GB',{timeZone:'Asia/Muscat'})+'</small>'+cashStatus(j)+'</div><b>'+money(j.amount)+'</b><button onclick="closeModal();zukaitOpenCashDetails(\''+esc(j.no)+'\')">Cash Details</button></div>').join(''):'<p class="muted">No undelivered Cash vehicles.</p>';openModal('<div class="section-title"><div><h2>Total Cash Jobs In · Not delivered</h2><p class="muted">All months · outstanding Cash vehicles</p></div><button class="secondary" onclick="closeModal()">Close</button></div><div class="v251-cash-summary"><b>'+a.length+' Vehicles</b><strong>'+money(total(a))+'</strong></div>'+body)};
 window.v251OpenCashPulse=async function(kind){
  if(!['Manager','Supervisor'].includes(role()))return;
  if(!await confirmRead())return;
- const a=rows(kind),dateKey=kind==='out'?'deliveredAt':'createdAt',title=kind==='out'?'Cash Vehicle Out':'Cash Vehicle In',pending=pendingAll();
+ const a=rows(kind,monthlyConfirmed?.data),dateKey=kind==='out'?'deliveredAt':'createdAt',title=kind==='out'?'Cash Vehicle Out':'Cash Vehicle In',pending=pendingAll(monthlyConfirmed?.data);
  const pendingSummary=kind==='in'?'<button class="v251-pending-total" onclick="v251OpenCashPendingAll()"><span>TOTAL CASH JOBS IN · NOT DELIVERED</span><b>'+pending.length+' Vehicles</b><strong>'+money(outstandingTotal(pending))+'</strong><small>All months · current cash amount expected when these vehicles are delivered</small></button>':'';
  const body=a.length?a.slice().sort((x,y)=>Number(y[dateKey]||0)-Number(x[dateKey]||0)).map((j,n)=>'<div class="v251-cash-row"><b class="v251-no">'+(n+1)+'</b><div><strong>JC '+esc(j.no)+' · '+esc(j.reg||'—')+'</strong><small>'+esc(j.vehicle||'—')+' · '+new Date(Number(j[dateKey]||0)).toLocaleDateString('en-GB',{timeZone:'Asia/Muscat'})+'</small>'+cashStatus(j)+'</div><b>'+money(amount(j,kind))+'</b><button onclick="closeModal();zukaitOpenCashDetails(\''+esc(j.no)+'\')">Cash Details</button></div>').join(''):'<p class="muted">No Cash vehicles in this section for '+esc(month().label)+'.</p>';
  openModal('<div class="section-title"><div><h2>'+title+'</h2><p class="muted">'+esc(month().label)+'</p></div><button class="secondary" onclick="closeModal()">Close</button></div>'+pendingSummary+'<div class="v251-cash-summary"><b>'+a.length+' Vehicles</b><strong>'+money(total(a,kind))+'</strong></div>'+body);
