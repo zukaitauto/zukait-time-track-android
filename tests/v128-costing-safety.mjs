@@ -56,12 +56,12 @@ assert.equal(ctx.v128JobCostData('JC1').consumablesStatus,'Not Started');
 const src=fs.readFileSync('app/src/main/assets/job_cost_summary_v128.js','utf8');
 assert.match(src,/TOTAL JOB COST/);
 assert.match(src,/CONSUMABLES COST/);
-assert.match(src,/PARTS COST/);
-assert.match(src,/Parts \+ Consumables \+ Labour/);
+assert.match(src,/PURCHASE COST/);
+assert.match(src,/Parts \+ Sublet \+ Consumables \+ Labour/);
 assert.doesNotMatch(src,/Cost source check/,'Source descriptions are removed from the compact UI');
 assert.match(src,/costPill\('CONSUMABLES COST'.*'cost-materials-paint'/,'Combined consumables opens materials and paint breakdown');
 assert.match(src,/paintRow\?\.netPaintCost\?\?j\.paintCost/,'Paint costing must prefer finalized net cost after returns');
-assert.match(src,/total:Math\.round\(\(labour\+consumables\+parts\)\*1000\)\/1000/,'Manager total must sum each cost bucket exactly once');
+assert.match(src,/total:Math\.round\(\(labour\+consumables\+parts\+sublet\)\*1000\)\/1000/,'Manager total must sum each cost bucket exactly once');
 assert.match(src,/data-workshop-action/,'Cost cards must open itemized details');
 assert.match(src,/openManagerJobDetails/);
 assert.match(src,/openSupervisorJob/);
@@ -69,3 +69,7 @@ console.log('V128 combined Job Cost and consumables/paint status tests passed');
 
 assert.match(src,/chargeable=new Set\(\['RECEIVED','SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED','CUSTOMER_SETTLEMENT'\]\)/,'actual Parts Cost must start only after physical receipt');
 assert.doesNotMatch(src,/chargeable=new Set\([^\n]*'ORDERED'/,'ordered-not-received parts must not inflate actual Job Card cost');
+
+state.sublets=[{jobCard:'JC1',amountMills:12345},{jobCard:'OTHER',amountMills:999999}];
+assert.equal(ctx.v128JobCostData('JC1').purchase,24.845);
+assert.equal(ctx.v128JobCostData('JC1').total,30.945,'parts, sublet and labour counted once after consumables cleared');

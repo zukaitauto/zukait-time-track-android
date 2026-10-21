@@ -50,6 +50,7 @@ node tests/v2-spare-parts-return-cancel.mjs
 node tests/job360-profit-loss.mjs
 node tests/consumables-backend-security.mjs
 node tests/v128-costing-safety.mjs
+node tests/sublet-expenses.mjs
 node tests/registration-authority.mjs
 node tests/id001-preliminary-labour.mjs
 node tests/id001-achieved-classification.mjs
