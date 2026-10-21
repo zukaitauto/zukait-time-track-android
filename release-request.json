@@ -1,9 +1,9 @@
 {
-  "versionName": "V353",
-  "versionCode": 316,
+  "versionName": "V354",
+  "versionCode": 317,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": true,
-  "sourceCommit": "af73629a5dd05972cae4de3ad9a9507342e8ce2f",
+  "approvedForStaff": false,
+  "sourceCommit": null,
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,12 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-21T14:39:33Z",
-  "publishNonce": "8e49d6133c601c2029fefc5b3c4b79f6c6cedf6e794948b7",
-  "signedAcceptanceRun": 39616979707,
-  "verificationRun": 39616979798,
-  "accountantVerificationRun": 39616979710,
-  "androidBuildRun": 39616979786,
+  "approvedAt": null,
+  "publishNonce": null,
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -51,13 +47,11 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V353 exact-source acceptance passed: readable actual-material rows with full-width names/brands on phones, removed repeated Material labels, touch-friendly quantity inputs; three Cash and three Insurance follow-up cards remain in one row at phone widths with short labels, full OMR precision, estimate/pending context, preserved accessible labels and click-through lists. Browser geometry checks cover 320–1280px including long material/brand names and large financial amounts. Full functional, Reception/browser, Accountant, sync/permission, signed APK, Android build and native PDF checks passed on this source. Read-only backend verification confirms staff-auth8 and workshop-api80 unchanged. No production deployment, schema or workshop-record writes. Physical-device acceptance and fresh backup restore remain NOT_RUN under the existing approved release scope.",
+  "verificationSummary": "Candidate: align arrival badges with fully received unconfirmed items, expose audited incomplete receipt recovery, and distinguish required/received quantities.",
   "productionBackendDeploymentPerformed": false,
-  "releaseChangeScope": "readable-material-rows-and-three-card-mobile-followups",
+  "releaseChangeScope": "parts-arrival-count-and-receipt-recovery",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
-  "syncVerificationRun": 39616979682,
-  "nativePdfVerificationRun": 39616979668,
   "rollback": {
     "previousRelease": "release-V352-architecture-v2",
     "strategy": "Publish a higher-version signed recovery build with previous client assets, preserving app storage and all workshop records. No backend rollback is required for this client-only release.",
@@ -73,12 +67,5 @@
   "receiptAndTimeCorrectionsAuthorizedByOwner": true,
   "receiptAndTimeCorrectionsAuthorization": "Owner instructed PUBLISH after review of PL030 receipt recovery and the pending explicit Pause / Finished time correction.",
   "mobileReadabilityAuthorizedByOwner": true,
-  "mobileReadabilityAuthorization": "Owner requested readable material rows without repeated Material labels, three coloured mobile cards per monthly group with short labels, then explicitly instructed PUBLIC and PUBLISH.",
-  "syncVerificationEvidence": {
-    "jobId": 119280522336,
-    "jobConclusion": "success",
-    "completedAt": "2026-10-21T14:28:23Z",
-    "parentWorkflowStatusObserved": "in_progress",
-    "note": "All sync/permission tests and the job completed successfully. Parent workflow status lagged; no publication gate was removed or bypassed. Publisher independently re-runs full regressions and requires successful signed, Reception and Accountant workflows."
-  }
+  "mobileReadabilityAuthorization": "Owner requested readable material rows without repeated Material labels, three coloured mobile cards per monthly group with short labels, then explicitly instructed PUBLIC and PUBLISH."
 }
