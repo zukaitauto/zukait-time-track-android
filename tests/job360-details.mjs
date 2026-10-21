@@ -30,7 +30,7 @@ for(const excluded of ['VOIDED','DRAFT','OTHER','999.000'])assert.ok(!modal.incl
 assert.ok(modal.includes('data-workshop-action="detail"'),'drilldown back restores overview');
 click('detail');assert.ok(modal.includes('Job Card & Vehicle'));
 click('cost-paint');for(const value of ['Basecoat','PO001','040','Returns','Excess paint','OMR 7.500','OMR 2.500'])assert.ok(modal.includes(value),value);
-click('cost-parts');assert.ok(modal.includes('Bumper Replacement'));assert.ok(modal.includes('Charged Purchase · OMR 24.000'));assert.ok(!modal.includes('Bumper Returned'));assert.ok(!modal.includes('Charged Purchase · OMR 20.000'));assert.ok(modal.includes('Pending'));
+click('cost-parts');assert.ok(modal.includes('Bumper Replacement'));assert.ok(modal.includes('Parts Total · OMR 24.000'));assert.ok(!modal.includes('Bumper Returned'));assert.ok(!modal.includes('Parts Total · OMR 20.000'));assert.ok(modal.includes('Pending'));assert.ok(modal.includes('Total Sublet'));assert.ok(modal.includes('Total Purchase · Parts + Sublet'));
 click('cost-labour');assert.ok(modal.includes('Surab'));assert.ok(modal.includes('OMR 2.500'));
 click('cost-total');assert.ok(modal.includes('OMR 69.000'));for(const type of ['parts','consumables','paint','labour'])assert.ok(modal.includes('data-workshop-action="cost-'+type+'"'));
 click('cost-materials-paint');assert.ok(modal.includes('OMR 42.500'));assert.ok(modal.includes('cost-consumables'));assert.ok(modal.includes('cost-paint'));
