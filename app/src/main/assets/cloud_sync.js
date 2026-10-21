@@ -266,6 +266,12 @@
     throw e;
   }
 
+  async function editSublet(command){
+    if(!me||!['Manager','Supervisor'].includes(me.role))throw new Error('sublet_forbidden');
+    const r=await api({...command,action:'sublet_edit'});
+    if(!r.ok)throw new Error(r.code||'SUBLET_EDIT_FAILED');
+    await syncNow();return r;
+  }
   async function addSublet(command){
     if(!me||!['Manager','Purchaser'].includes(me.role))throw new Error('sublet_forbidden');
     const r=await api({...command,action:'sublet_add'});
@@ -1071,7 +1077,7 @@
     publishLiveStatus(false);
   });
   window.zukaitCloud={
-    init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,readLatest,addSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
+    init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,readLatest,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
     configured:()=>true,
     get confirmedState(){return confirmedReadRevision>=cloudRevision?confirmedReadState:null},
     get revision(){return cloudRevision},

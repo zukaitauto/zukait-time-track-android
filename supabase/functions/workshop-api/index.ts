@@ -1282,8 +1282,8 @@ Deno.serve(async (req: Request) => {
       return reply({ok:false,code:"job_edit_conflict"},409);
     }
 
-    if (action === "sublet_add") {
-      if(!["Manager","Purchaser"].includes(String(user.role)))return reply({ok:false,code:"sublet_forbidden"},403);
+    if (action === "sublet_add" || action === "sublet_edit") {
+      if(!(action==="sublet_edit"?["Manager","Supervisor"]:["Manager","Purchaser"]).includes(String(user.role)))return reply({ok:false,code:"sublet_forbidden"},403);
       for(let attempt=0;attempt<3;attempt++){
         const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
         if(readError)throw readError;
@@ -1737,6 +1737,7 @@ Deno.serve(async (req: Request) => {
         candidate = preservePaintPurchasingHistory(preserveConsumablesHistory(preserveOperationalHistory(reconcileAutoOvertime(preserveClosedSessions(candidate, current.data), current.data), current.data, user), current.data), current.data);
         // Sublets are append-only through the authenticated command; old full-state clients cannot erase or forge them.
         candidate.sublets = cloneValue(current.data?.sublets || []);
+        candidate.subletAudit = cloneValue(current.data?.subletAudit || []);
         const consumablesCorrectionIssue=validateConsumablesManagerCorrections(candidate,current.data,user);
         if(consumablesCorrectionIssue) return reply({ok:false,code:"consumables_correction_forbidden",message:consumablesCorrectionIssue,revision:current.revision,data:current.data},403);
         candidate = preserveEstimateHistory(candidate, current.data);

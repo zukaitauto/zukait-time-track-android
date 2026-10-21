@@ -19,7 +19,7 @@ assert.equal(subletTotal(second.data.sublets,'12050'),0);
 assert.equal(read('app/src/main/assets/sublet_rules.js'),read('supabase/functions/workshop-api/sublet_rules.js'));
 
 const server=read('supabase/functions/workshop-api/index.ts');
-const start=server.indexOf('    if (action === "sublet_add")'),end=server.indexOf('    if (action === "qc_delivery")',start);
+const start=server.indexOf('    if (action === "sublet_add"'),end=server.indexOf('    if (action === "qc_delivery")',start);
 let db=structuredClone(state),revision=1,commits=0,race=true;
 const admin={from:()=>({select(){return this},eq(){return this},single:async()=>({data:{revision,data:structuredClone(db)}})}),rpc:async(_name,args)=>{commits++;if(race){race=false;db=subletTransition(db,user,{...cmd,id:'other-device-001',amount:'1'},now).data;revision++;return {data:{ok:false,code:'conflict'}};}assert.equal(args.p_expected_revision,revision);db=args.p_data;revision++;return {data:{ok:true,revision}};}};
 const env={subletTransition,Date:{now:()=>now},admin,reply:(body,status=200)=>({body,status}),computeLiveStatus:()=>[]};
@@ -56,3 +56,31 @@ assert.ok(overview.includes("Total Purchase · Parts + Sublet"));
 for(const p of ['cloud_sync.js','job_card_master.js','job_cost_summary_v128.js','v74_updates.js','workshop_overview.js','sublet.js','v2/features/spare-parts/main_module.js'])new vm.Script(read('app/src/main/assets/'+p));
 const html=read('app/src/main/assets/offline_test.html');for(const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))new vm.Script(match[1]);
 console.log('Sublet validation, permissions, idempotency, concurrent save, costing, search/list UI and JavaScript syntax passed');
+
+const edit={action:'sublet_edit',id:'correction-0001',entryId:first.entry.id,expectedRevision:1,date:'2026-10-20',description:'Corrected repair charge',amount:'20.500'};
+for(const role of ['Manager','Supervisor']){
+ const result=subletTransition(first.data,{id:'SUP001',role},edit,now);
+ assert.ok(result.ok,role+' may correct');
+ assert.equal(result.data.sublets.length,1,'edits replace the current expense rather than add a charge');
+ assert.equal(result.entry.amountMills,20500);
+ assert.equal(result.entry.revision,2);
+ assert.equal(result.data.subletAudit[0].before.amountMills,12345);
+ assert.equal(result.data.subletAudit[0].after.description,'Corrected repair charge');
+ assert.equal(subletTotal(result.data.sublets,'12043'),20.5);
+ assert.ok(subletTransition(result.data,{id:'SUP001',role},edit,now).duplicate,'edit retry does not double-charge');
+ assert.equal(subletTransition(result.data,{id:'SUP001',role},{...edit,id:'correction-0002'},now).code,'sublet_edit_conflict','concurrent correction requires refresh');
+}
+for(const role of ['Purchaser','Employee','Receptionist','Accountant'])assert.equal(subletTransition(first.data,{id:'X',role},edit,now).code,'sublet_forbidden');
+db=structuredClone(first.data);revision=1;race=false;
+const edited=await env.run('sublet_edit',edit,{id:'SUP001',role:'Supervisor'});
+assert.equal(edited.body.ok,true);assert.equal(db.sublets[0].amountMills,20500);
+assert.equal((await env.run('sublet_edit',edit,user)).status,403);
+assert.ok(server.includes('candidate.subletAudit = cloneValue(current.data?.subletAudit || [])'),'old saves preserve correction audit');
+uiContext.window.me={id:'SUP001',role:'Supervisor'};
+await uiContext.window.zukaitSublet.open('12043');
+assert.ok(screen.includes('data-sublet="edit"'),'Supervisor sees Edit');
+assert.ok(!screen.includes('id="subletForm"'),'Supervisor cannot create an expense');
+listeners.click({target:{closest:()=>({dataset:{sublet:'edit',id:first.entry.id}})}});
+assert.ok(screen.includes('Save Changes'));
+assert.ok(screen.includes('value="12.345"'));
+console.log('Supervisor/Manager corrections, role boundaries, correction history and edit concurrency passed');
