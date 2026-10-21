@@ -28,10 +28,10 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --ignore-scripts --include=dev
-      - name: Verify the CLI-generated migration is tracked
+      - name: Verify the deployed migration is tracked
         run: |
-          test -f supabase/migrations/20261021115755_optimize_live_status_session_partition.sql
-          echo 'GENERATED_MIGRATION_PATH=supabase/migrations/20261021115755_optimize_live_status_session_partition.sql'
+          test -f supabase/migrations/20261021125524_optimize_live_status_session_partition.sql
+          echo 'TRACKED_MIGRATION_PATH=supabase/migrations/20261021125524_optimize_live_status_session_partition.sql'
       - name: Existing native save, reception and delivery concurrency acceptance
         run: node tests/reception-concurrency.mjs
         env:
