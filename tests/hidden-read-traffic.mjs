@@ -24,5 +24,5 @@ c.document.visibilityState='visible';vm.runInContext('beginPolling(++pollGenerat
 const previous=probes;await tasks[0].fn();assert.equal(probes,previous,'old-generation timer cannot duplicate polling');
 assert.match(cloud,/if\(cloudDirty&&!cloudPushing\)await push\(0\)/,'resume flushes queued actions');
 assert.match(cloud,/if\(document.visibilityState==='visible'\)refreshVisibleSharedState\(\)/,'visibility resume retains immediate shared-state refresh');
-const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');assert.match(html,/cloud_sync\.js\?v=20261020347/);assert.match(html,/notifications\/center\.js\?v=20261020347/);
+const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');assert.match(html,/cloud_sync\.js\?v=2026102104/);assert.match(html,/notifications\/center\.js\?v=20261020347/);
 console.log('Hidden read traffic: no hidden report/live requests, foreground cadence, resume, offline/login and timer generation passed.');
