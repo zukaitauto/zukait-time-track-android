@@ -4339,6 +4339,24 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
    return run(type,{job:String(s.job),assignment_id:String(s.assignmentId||''),session_id:String(s.id||'')},type==='STOP_ID001'?'Stopping ID001':'Finishing '+String(s.job));
  };
 
+ // ID001 must use the same server-confirmed path as every other time action.
+ // The older finish modal closes local state directly and can strand server work.
+ const priorFinish=window.finish;
+ let idleStop=null;
+ window.finish=function(){
+   if(!me||me.role!=='Employee')return typeof priorFinish==='function'?priorFinish.apply(this,arguments):undefined;
+   const s=active();
+   if(!s||String(s.job)!=='ID001')return typeof priorFinish==='function'?priorFinish.apply(this,arguments):undefined;
+   if(pending)return msg('Another work action is waiting for server confirmation.','Please Wait');
+   idleStop={actor:String(me.id),session:{...s}};
+   openModal('<div class="v74-d"><h2>■ Stop Ideal Time</h2><div class="notice">Stop ID001 Ideal Time Card now?</div><div class="v74-actions"><button class="secondary" onclick="closeModal()">CANCEL</button><button class="danger" onclick="zukaitConfirmID001Stop()">■ STOP</button></div></div>');
+ };
+ window.zukaitConfirmID001Stop=function(){
+   if(!me||me.role!=='Employee'||!idleStop||idleStop.actor!==String(me.id))return;
+   const s=idleStop.session;
+   return run('STOP_ID001',{job:'ID001',assignment_id:String(s.assignmentId||''),session_id:String(s.id||'')},'Stopping ID001');
+ };
+
  window.zukaitEmployeeTimeAuthority={
    get pending(){return pending?{...pending}:null},
    get serverRow(){return liveRow()},

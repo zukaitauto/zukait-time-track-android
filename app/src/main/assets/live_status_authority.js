@@ -106,6 +106,16 @@
   }
   function employeeDisplaySession(emp){
     const local=localEmployeeSession(emp),cloud=window.zukaitCloud,x=live();
+    // With server-confirmed controls, an unsaved legacy Stop is not a stop.
+    // Keep the server session visible so the employee can actually stop it.
+    if(window.zukaitEmployeeTimeAuthority&&typeof cloud?.employeeTimeAction==='function'&&x&&Number(x.revision)>=Number(cloud?.revision||0)){
+      const r=x.rows.find(r=>String(r.employee_id)===String(emp));
+      if(r&&ACTIVE.has(r.status)&&r.session_id){
+        const persisted=((typeof state==='object'&&state?state.sessions:window.state?.sessions)||[]).find(s=>s&&String(s.emp)===String(emp)&&String(s.id)===String(r.session_id));
+        return persisted&&!persisted.end?persisted:{...statusObject(r).session,server:true};
+      }
+      if(r)return null;
+    }
     const localChangedAt=local?Math.max(Number(local.end||0),Number(local.start||0),Number(local.correctedAt||0),Number(local.finishDeviceTime||0),Number(local.pauseDeviceTime||0)):0;
     // START / PAUSE / FINISH must render immediately. If the local session changed
     // after the currently visible server snapshot was fetched, that local action is
@@ -134,7 +144,7 @@
     if(typeof action!=='function')continue;
     window[name]=function(){
       const s=window.me?.role==='Employee'?employeeDisplaySession(window.me.id):null;
-      if(s?.server){
+      if(s?.server&&!(window.zukaitEmployeeTimeAuthority&&typeof window.zukaitCloud?.employeeTimeAction==='function')){
         window.zukaitCloud?.syncNow?.();
         const message='Running work is syncing. Please retry Pause or Finish after the refresh.';
         return typeof window.v74Msg==='function'?window.v74Msg(message,'Running Work'):alert(message);

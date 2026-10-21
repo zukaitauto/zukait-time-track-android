@@ -196,3 +196,5 @@ node tests/reception-management-client.mjs
 node tests/reception-management-sql.mjs
 
 node tests/reception-management-release.mjs
+
+node tests/id001-server-stop.mjs
