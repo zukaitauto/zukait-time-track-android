@@ -34,7 +34,8 @@ function data(no){
  const consumables=Math.round((materials+paint)*1000)/1000;
  let parts=0;
  try{const rows=window.zukaitV2?.sparePartsMain?.reportRows?.()||[],chargeable=new Set(['RECEIVED','SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED','CUSTOMER_SETTLEMENT']);parts=Math.round(rows.filter(x=>String(x?.jobCard||'')===String(no)&&chargeable.has(String(x?.status||'').toUpperCase())).reduce((n,x)=>n+num(x.amount),0)*1000)/1000}catch(_){}
- return {job:j,labour,materials,paint,consumables,parts,total:Math.round((labour+consumables+parts)*1000)/1000,consumablesStatus:consumablesStatus(no),paintStatus:paintStatus(no),rate,labourHours:rate>0?Math.round((labour/rate)*1000)/1000:0};
+ const sublet=(state.sublets||[]).filter(x=>x&&String(x.jobCard).trim().toUpperCase()===String(no).trim().toUpperCase()).reduce((n,x)=>n+(Number.isSafeInteger(x.amountMills)&&x.amountMills>0?x.amountMills:0),0)/1000;
+ return {job:j,labour,materials,paint,consumables,parts,sublet,purchase:Math.round((parts+sublet)*1000)/1000,total:Math.round((labour+consumables+parts+sublet)*1000)/1000,consumablesStatus:consumablesStatus(no),paintStatus:paintStatus(no),rate,labourHours:rate>0?Math.round((labour/rate)*1000)/1000:0};
 }
 window.v128JobCostData=data;
 function pill(label,value,cls){return '<div class="v128-status '+(cls||'')+'"><small>'+esc(label)+'</small><b>'+esc(value)+'</b></div>'}
@@ -47,7 +48,7 @@ function preliminaryHtml(no){
 window.v128ReversePreliminary=async function(sessionId){if(typeof me==='undefined'||me?.role!=='Manager')return alert('Manager access required.');if(!confirm('Reverse this transferred preliminary work back to ID001? The Job Card labour and cost will be recalculated.'))return;const reason=prompt('Reason for reversing this preliminary work to ID001:','');if(reason===null)return;const why=String(reason).trim();if(!why)return alert('Enter a reversal reason.');if(typeof window.v143ReversePreliminaryWork!=='function')return alert('Preliminary reversal is unavailable.');return window.v143ReversePreliminaryWork(sessionId,why)};
 function managerHtml(no){
  const d=data(no);if(!d)return'';
- return '<section class="v128-job-cost"><div class="v128-cost-head"><div><b>Total Job Card Cost</b><small>Actual recorded cost · Parts + Consumables + Labour</small></div></div><div class="v128-status-grid">'+pill('CONSUMABLES',d.consumablesStatus,'materials')+pill('PAINT',d.paintStatus,'paint')+'</div><div class="v128-cost-grid">'+costPill('PARTS COST','OMR '+d.parts.toFixed(3),'parts','cost-parts',no)+costPill('CONSUMABLES COST','OMR '+d.consumables.toFixed(3),'materials','cost-materials-paint',no)+costPill('LABOUR COST','OMR '+d.labour.toFixed(3),'labour','cost-labour',no)+costPill('TOTAL JOB COST','OMR '+d.total.toFixed(3),'total','cost-total',no)+'</div>'+preliminaryHtml(no)+'</section>';
+ return '<section class="v128-job-cost"><div class="v128-cost-head"><div><b>Total Job Card Cost</b><small>Actual recorded cost · Parts + Sublet + Consumables + Labour</small></div></div><div class="v128-status-grid">'+pill('CONSUMABLES',d.consumablesStatus,'materials')+pill('PAINT',d.paintStatus,'paint')+'</div><div class="v128-cost-grid">'+costPill('PURCHASE COST','OMR '+(d.purchase??d.parts).toFixed(3),'parts','cost-parts',no)+costPill('CONSUMABLES COST','OMR '+d.consumables.toFixed(3),'materials','cost-materials-paint',no)+costPill('LABOUR COST','OMR '+d.labour.toFixed(3),'labour','cost-labour',no)+costPill('TOTAL JOB COST','OMR '+d.total.toFixed(3),'total','cost-total',no)+'</div>'+preliminaryHtml(no)+'</section>';
 }
 function supervisorHtml(no){
  const d=data(no);if(!d)return'';

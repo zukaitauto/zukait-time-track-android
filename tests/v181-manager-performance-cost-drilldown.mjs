@@ -9,12 +9,12 @@ assert.match(b,/backdrop-filter:blur\(14px\) saturate\(145%\)/,'performance card
 assert.match(b,/card\('purchase','Purchase Expenses'/,'Purchase Expenses card must exist');
 assert.match(b,/const p=Number\(x\.purchaseAmount\)/,'Spare Parts Expense must use the saved final purchase amount');
 assert.match(b,/p\*q/,'Spare Parts Expense must multiply unit price by quantity');
-assert.match(b,/No final Spare Parts invoice costs yet/);
+assert.match(b,/No purchase costs yet/);
 assert.match(b,/zukaitV2\.sparePartsMain\.openList/,'clicking a purchase JC must open its Parts List');
 assert.match(b,/c\.actuals/,'Consumables Expense must use finalized actual records');
 assert.match(b,/!x\.voided&&x\.locked/,'Consumables Expense must exclude voided/unfinalized records');
 assert.match(b,/consSelectTotalJC/,'clicking a consumables JC must drill into its consumables detail');
-assert.match(b,/No\.<\/b><b>Job Card<\/b><b>Vehicle<\/b><b>Spare Parts/,'spare parts drilldown columns must match requested format');
+assert.match(b,/No\.<\/b><b>Job Card<\/b><b>Vehicle<\/b><b>Purchase/,'spare parts drilldown columns must match requested format');
 assert.doesNotMatch(b,/card\('consumables','Consumables Expense'/,'V123 must not render the duplicate Consumables Expense card; V145 owns it');
 const v145=s.slice(s.indexOf('V145 MANAGER WORKSHOP PERFORMANCE'));
 assert.match(v145,/grid\.querySelector\('\.v145-consumables'\)/,'Consumables Expense card must be reused on each render');

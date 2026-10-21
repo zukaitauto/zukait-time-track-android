@@ -1,3 +1,4 @@
+import { subletTransition } from './sublet_rules.js';
 import {accountantApi,accountantError} from './accountant/api.js';
 import {insuranceProjection,insuranceLpoTransition} from './insurance_management_rules.js';
 import { jobEditTransition, jobEditProjection,jobViewProjection,jobViewWithIntakeDescription, preserveJobEditAuthority, optionalJobAmount } from "./job_edit_rules.js";
@@ -1281,6 +1282,23 @@ Deno.serve(async (req: Request) => {
       return reply({ok:false,code:"job_edit_conflict"},409);
     }
 
+    if (action === "sublet_add" || action === "sublet_edit") {
+      if(!(action==="sublet_edit"?["Manager","Supervisor"]:["Manager","Purchaser"]).includes(String(user.role)))return reply({ok:false,code:"sublet_forbidden"},403);
+      for(let attempt=0;attempt<3;attempt++){
+        const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
+        if(readError)throw readError;
+        const result=subletTransition(current.data,user,body,Date.now());
+        if(!result.ok)return reply({ok:false,code:result.code},400);
+        if(result.duplicate)return reply({ok:true,entry:result.entry,server_revision:current.revision});
+        const next=Number(current.revision||0)+1;
+        const {data:committed,error:commitError}=await admin.rpc("zukait_commit_workshop_state_v2",{p_expected_revision:Number(current.revision||0),p_data:result.data,p_changed_by:user.id,p_live:computeLiveStatus(result.data,next,user.id)});
+        if(commitError)throw commitError;
+        if(committed?.ok)return reply({ok:true,entry:result.entry,server_revision:committed.revision||next});
+        if(committed?.code!=="conflict")return reply({ok:false,code:"sublet_unavailable"},503);
+      }
+      return reply({ok:false,code:"sublet_conflict"},409);
+    }
+
     if (action === "qc_delivery") {
       for (let attempt=0;attempt<8;attempt++) {
         const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
@@ -1717,6 +1735,9 @@ Deno.serve(async (req: Request) => {
         }
 
         candidate = preservePaintPurchasingHistory(preserveConsumablesHistory(preserveOperationalHistory(reconcileAutoOvertime(preserveClosedSessions(candidate, current.data), current.data), current.data, user), current.data), current.data);
+        // Sublets are append-only through the authenticated command; old full-state clients cannot erase or forge them.
+        candidate.sublets = cloneValue(current.data?.sublets || []);
+        candidate.subletAudit = cloneValue(current.data?.subletAudit || []);
         const consumablesCorrectionIssue=validateConsumablesManagerCorrections(candidate,current.data,user);
         if(consumablesCorrectionIssue) return reply({ok:false,code:"consumables_correction_forbidden",message:consumablesCorrectionIssue,revision:current.revision,data:current.data},403);
         candidate = preserveEstimateHistory(candidate, current.data);
