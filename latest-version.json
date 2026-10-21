@@ -1,9 +1,9 @@
 {
-  "versionCode": 314,
-  "versionName": "V351",
+  "versionCode": 315,
+  "versionName": "V352",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "e077f5409b1cfe26120bcef3b3be1b756ee81295",
-  "apkSha256": "c05fd858d15e8a87bcd4c8781ea5862a146bdeb49957a9060781aa63ee1d28c8",
-  "releaseTag": "release-V351-architecture-v2"
+  "sourceCommit": "d76f0961d010de11c3988b35006027bead3d3d8d",
+  "apkSha256": "dca2a929b4123173d5a96c359ea21bb2b7653050dde1e164ed29ea3112ad2150",
+  "releaseTag": "release-V352-architecture-v2"
 }
