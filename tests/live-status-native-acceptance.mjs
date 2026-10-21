@@ -106,11 +106,11 @@ try{
   const first=(await ca.query('select public.zukait_commit_workshop_state_v2($1,$2::jsonb,$3,$4::jsonb) r',[snap.revision,JSON.stringify({...snap.data,syntheticAcceptanceMarker:'winner'}),'QA',JSON.stringify(live)])).rows[0].r;
   const waiting=cb.query('select public.zukait_commit_workshop_state_v2($1,$2::jsonb,$3,$4::jsonb) r',[snap.revision,JSON.stringify({...snap.data,syntheticAcceptanceMarker:'stale'}),'QA',JSON.stringify(live)]);
   let blocked=false;const deadline=Date.now()+5000;
-  while(Date.now()<deadline){if((await dcb.query('select $2::int=any(pg_blocking_pids($1::int)) blocked',[cb.processID,ca.processID])).rows[0].blocked){blocked=true;break;}await new Promise(r=>setTimeout(r,20));}
+  while(Date.now()<deadline){if((await db.query('select $2::int=any(pg_blocking_pids($1::int)) blocked',[cb.processID,ca.processID])).rows[0].blocked){blocked=true;break;}await new Promise(r=>setTimeout(r,20));}
   assert.ok(blocked,'Second save must wait for the first transaction lock');await ca.query('commit');
   const second=(await waiting).rows[0].r;await cb.query('rollback');
   assert.equal(first.ok,true);assert.equal(second.code,'conflict');
-  const current=(await dcb.query("select revision,data from workshop_state where id='main'")).rows[0];assert.equal(current.data.syntheticAcceptanceMarker,'winner');assert.equal(Number(current.revision),Number(snap.revision)+1);
+  const current=(await db.query("select revision,data from workshop_state where id='main'")).rows[0];assert.equal(current.data.syntheticAcceptanceMarker,'winner');assert.equal(Number(current.revision),Number(snap.revision)+1);
  }finally{await ca.query('rollback');await cb.query('rollback');await Promise.all([ca.end(),cb.end()]);}
  report.full_save_trials=fullTrials;report.concurrent_save='PASS: lock, one winner, stale revision rejected';report.identical_save_guard='PASS: revision unchanged';
  console.log('PASS native complete-save triggers, history preservation, identical-save guard and overlapping-device CAS protection');
