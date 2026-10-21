@@ -2,15 +2,15 @@
   "versionName": "V357",
   "versionCode": 320,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": false,
-  "sourceCommit": null,
+  "approvedForStaff": true,
+  "sourceCommit": "deabc6b0f93047c634935fd9acff82e327470983",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "productionBackendChanges": true,
   "phase2ActivationApproved": false,
-  "backendDeploymentRequired": true,
+  "backendDeploymentRequired": false,
   "releaseHeldByOwner": false,
   "evidence": {
     "credentialPreservation": true,
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": null,
-  "publishNonce": null,
+  "approvedAt": "2026-10-21T19:18:48Z",
+  "publishNonce": "71fe299d4b374f894c2f2edc20abdb09de34284d8fff7b88",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -29,14 +29,14 @@
         "bundleSha256": "dfac91c48aa7969d67f9f6a6ee8613fbf7090862261cc262adb34730794fc532",
         "verifiedFileMatch": true,
         "repositorySourceMatchesDeployed": true,
-        "verificationBasis": "Unchanged authentication bundle retained from verified V354; no authentication deployment in V355."
+        "verificationBasis": "Read-only production verification; unchanged staff-auth8. No authentication deployment."
       },
       "workshop-api": {
-        "version": 81,
-        "bundleSha256": "971564feb17c1ac6bba5158755d5c0b7a6e0ba7a853b89d87e19dc9b2afcb105",
+        "version": 83,
+        "bundleSha256": "aac6ae87ac5ad70c477f9e7a17a63957e720e210c18eb71e08a758c6cbb9d1c3",
         "verifiedFileMatch": true,
         "repositorySourceMatchesDeployed": false,
-        "verificationBasis": "Production81 full bundle readback equals tested QA16. Patch applied to captured live80 only; repository-only staged features were preserved in Git and not inadvertently deployed."
+        "verificationBasis": "Complete production83 readback equals live-tested QA18. Production82 baseline and all Sublet dependencies preserved; repository-only staged backend differences were not inadvertently deployed."
       }
     },
     "migrations": [
@@ -47,16 +47,16 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "Candidate: Cash/Insurance follow-up reads only authoritative job fields instead of full workshop state. Preserve current Sublet source and deployed backend. No schema or workshop record migration.",
-  "productionBackendDeploymentPerformed": false,
+  "verificationSummary": "V357 final source passed signed Android, Reception/browser, Accountant, sync compatibility, Android build and native PDF checks. Monthly route tests verify role checks before DB reads, exact null/zero/LPO preservation, payload reduction, deduplicated requests and separation from full-state/queued-edit baselines. Monthly UI tests verify confirmed lists during a concurrent shared revision, no full-download retry after timeout, and old-server compatibility. Live QA18 returned HTTP200 and 4048-byte/19-job responses for Manager and Supervisor; Accountant was rejected403. Temporary QA fixture sessions revoked. Production83 complete bundle matches QA18 exactly, preserving current Sublet and other production82 dependencies; only the new read-only endpoint was added. No schema/business-record migrations. Physical-device acceptance and fresh restore remain NOT_RUN.",
+  "productionBackendDeploymentPerformed": true,
   "releaseChangeScope": "scoped-cash-insurance-monthly-reads-preserving-sublet",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
-    "previousRelease": "release-V354-architecture-v2",
-    "strategy": "Publish a higher-version signed recovery APK restoring previous assets; redeploy captured complete production workshop-api80 bundle if necessary. Preserve all local queues, workshop data and audit history.",
-    "backendBundleVersion": 80,
-    "backendBundleSha256": "a7ea0f11f4efa84e264e0b86e3be8eda0f9d5e6224aa8cb5877b6fcec54f1b38",
+    "previousRelease": "release-V355-architecture-v2",
+    "strategy": "Restore captured complete production82 bundle if necessary; publish a higher-version signed recovery APK with previous client assets. Never clear local queues or reset workshop records.",
+    "backendBundleVersion": 82,
+    "backendBundleSha256": "da34cb1852dc571ce0c08e5d81354ef35ffa586d124e84b845f2dcade99ba996",
     "dataResetRequired": false
   },
   "releaseBackendChanges": true,
@@ -84,6 +84,26 @@
     "accountantLoad": 403,
     "accountantSave": 403,
     "invalidSession": 401,
+    "fixturesRevoked": true,
+    "workshopRecordsChanged": false
+  },
+  "signedAcceptanceRun": 39658311131,
+  "verificationRun": 39658311328,
+  "accountantVerificationRun": 39658311193,
+  "androidBuildRun": 39658311278,
+  "syncVerificationRun": 39658311326,
+  "nativePdfVerificationRun": 39658311152,
+  "monthlyReadAuthorizedByOwner": true,
+  "monthlyReadAuthorization": "Owner requested Fix it properly for monthly read TIMEOUT, reviewed the remaining deployment/publication steps, and explicitly instructed Proceed.",
+  "qaMonthlyRead": {
+    "project": "omqgkqknbdcnotabffek",
+    "version": 18,
+    "bundleSha256": "aac6ae87ac5ad70c477f9e7a17a63957e720e210c18eb71e08a758c6cbb9d1c3",
+    "managerStatus": 200,
+    "supervisorStatus": 200,
+    "accountantStatus": 403,
+    "responseBytes": 4048,
+    "jobs": 19,
     "fixturesRevoked": true,
     "workshopRecordsChanged": false
   }
