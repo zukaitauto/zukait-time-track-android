@@ -2,8 +2,8 @@
   "versionName": "V352",
   "versionCode": 315,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": false,
-  "sourceCommit": null,
+  "approvedForStaff": true,
+  "sourceCommit": "d76f0961d010de11c3988b35006027bead3d3d8d",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -13,18 +13,18 @@
   "backendDeploymentRequired": false,
   "releaseHeldByOwner": false,
   "evidence": {
-    "credentialPreservation": false,
-    "qaFinancialAcceptance": false,
-    "serverPermissions": false,
-    "rollbackPrepared": false,
-    "legacyLoginCompatibility": false
+    "credentialPreservation": true,
+    "qaFinancialAcceptance": true,
+    "serverPermissions": true,
+    "rollbackPrepared": true,
+    "legacyLoginCompatibility": true
   },
-  "approvedAt": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "accountantVerificationRun": null,
-  "androidBuildRun": null,
+  "approvedAt": "2026-10-21T06:45:53Z",
+  "publishNonce": "d76f0961d010de11c3988b35006027bead3d3d8d1a15d35c3fa",
+  "signedAcceptanceRun": 39556932636,
+  "verificationRun": 39556932637,
+  "accountantVerificationRun": 39556932606,
+  "androidBuildRun": 39556932711,
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -51,13 +51,13 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V352 candidate: route employee ID001 Stop through the server-confirmed time action; keep fresh server work visible after an unconfirmed legacy local Stop. Preserve pending data and verify retry/account isolation. No backend deployment. Separate owner-authorized Jomir time recovery was audited with the full prior revision preserved.",
+  "verificationSummary": "V352: employee ID001 STOP now uses the existing server-confirmed STOP_ID001 command. Fresh confirmed running sessions stay visible after an unconfirmed legacy local Stop; detached sessions use server controls. Stop confirmations are scoped to the employee and original session, with double-tap and network-failure protection. Full regression, sync/permission, accounting, browser, signed Android and native PDF checks passed on this exact source before publication. No backend deployment. Separate owner-authorized Jomir time recovery stopped ID001 at 10:30 and started existing JC 12079 at 10:31 on 21 October 2026 Oman time, with audit and full prior revision 14534 retained; other staff sessions and unrelated data verified unchanged. Physical-device acceptance and fresh production backup restore NOT_RUN.",
   "productionBackendDeploymentPerformed": false,
   "releaseChangeScope": "server-confirmed-id001-stop-and-visible-running-session",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
-  "syncVerificationRun": null,
-  "nativePdfVerificationRun": null,
+  "syncVerificationRun": 39556932654,
+  "nativePdfVerificationRun": 39556932559,
   "rollback": {
     "previousRelease": "release-V351-architecture-v2",
     "previousWorkshopApiVersion": 79,
