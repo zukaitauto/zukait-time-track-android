@@ -1692,7 +1692,10 @@ Deno.serve(async (req: Request) => {
       let baseData:any = null;
       let lastCurrent:any = null;
 
-      for (let attempt = 0; attempt < 8; attempt++) {
+      // Bound conflict work per request: old 8-pass rebases multiplied wide
+      // snapshot reads while all devices retried the same shared revision.
+      const saveStartedAt=Date.now();
+      for (let attempt = 0; attempt < 3 && Date.now()-saveStartedAt<5000; attempt++) {
         const { data: current, error: currentError } = await admin.from("workshop_state")
           .select("revision,data").eq("id","main").single();
         if (currentError) throw currentError;
@@ -1805,7 +1808,7 @@ Deno.serve(async (req: Request) => {
       }
 
       const latest = lastCurrent || (await admin.from("workshop_state").select("revision,data").eq("id","main").single()).data;
-      return reply({ ok: false, code: "conflict_busy", revision: latest?.revision, data: latest?.data }, 409);
+      return reply({ ok: false, code: "conflict_busy", revision: latest?.revision, data: latest?.data, retryable:true, retry_after_ms:3000 }, 409);
     }
 
     if (action === "backup") {
@@ -1833,6 +1836,11 @@ Deno.serve(async (req: Request) => {
     return reply({ ok:false, code:"unknown_action" }, 400);
   } catch (e) {
     console.error(e);
+    // A database deadline is temporary server pressure, not a broken network.
+    const databaseCode=String((e as any)?.code||"");
+    if(["57014","55P03","53300","53400","PGRST003"].includes(databaseCode)){
+      return reply({ok:false,code:"database_busy",retryable:true,retry_after_ms:5000},503);
+    }
     return reply({ ok:false, code:"server_error" }, 500);
   }
 });

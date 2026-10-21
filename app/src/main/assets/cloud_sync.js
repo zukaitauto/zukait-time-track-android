@@ -68,13 +68,13 @@
   function setServerConnection(state,message){
     const previous=serverConnectionState;serverConnectionState=state;
     const ui=ensureServerConnectionUi();
-    const labels={connected:'● Server Connected',connecting:'● Connecting…',offline:'● Server Offline'};
+    const labels={connected:'● Server Connected',busy:'● Sync Delayed',connecting:'● Connecting…',offline:'● Server Offline'};
     if(ui.pill){ui.pill.textContent=labels[state]||labels.connecting;ui.pill.dataset.serverState=state;ui.pill.title=message||''}
     clearTimeout(serverConnectionBannerTimer);
     if(!ui.banner)return;
-    if(state==='offline'){
+    if(state==='offline'||state==='busy'){
       ui.banner.textContent=message||'Server connection unavailable. Changes may not sync until connection is restored.';
-      ui.banner.className='server-connection-banner server-connection-banner-offline';
+      ui.banner.className='server-connection-banner '+(state==='busy'?'server-connection-banner-busy':'server-connection-banner-offline');
     }else if(state==='connected'&&previous!=='connected'&&serverConnectionEverConfirmed){
       ui.banner.textContent='Server connected — synchronization restored.';
       ui.banner.className='server-connection-banner server-connection-banner-restored';
@@ -172,34 +172,65 @@
     if(el.dataset.syncKind!==kind){el.style.background=c[0];el.style.color=c[1];el.dataset.syncKind=kind}
   }
 
+  // One transport circuit for background sync. Every caller (poll, focus,
+  // scheduled save and reconnect) must respect it; a timer alone is not a barrier.
+  const syncRecovery=new Map();
+  let syncRequestSequence=0;
+  const syncRecoveryKey=action=>action==='save'?'save':['revision','load','live_status'].includes(action)?'read':null;
+  const retryDelay=()=>Math.max(0,...[...syncRecovery.values()].map(x=>x.until-Date.now()));
   async function api(payload){
     const token=sessionToken();
     if(!token)throw new Error('NO_SESSION');
     if(!navigator.onLine)throw new Error('NETWORK');
+    const key=syncRecoveryKey(payload.action);
+    if(key&&retryDelay()>0){
+      const e=new Error('SYNC_BACKOFF');e.code='SYNC_BACKOFF';
+      e.retryAfterMs=retryDelay();e.httpStatus=503;throw e;
+    }
+    const sequence=++syncRequestSequence;
     const controller=new AbortController();
     const timer=setTimeout(()=>controller.abort(),15000);
     let res;
+    function failed(code,httpStatus,retryAfter=0){
+      if(key){
+        const prior=syncRecovery.get(key);
+        const failures=Math.min(6,(prior?.failures||0)+1);
+        const delay=Math.min(60000,Math.max(retryAfter,Math.min(30000,2000*2**(failures-1))*(1+Math.random()*0.25)));
+        if(!prior||sequence>=prior.sequence)syncRecovery.set(key,{until:Date.now()+delay,failures,sequence});
+      }
+      const e=new Error(code);e.code=code;e.httpStatus=httpStatus||0;
+      e.retryAfterMs=key?retryDelay():0;return e;
+    }
     try{
       res=await fetch(API_URL,{
         method:'POST',
-        headers:{
-          'Content-Type':'application/json',
-          'apikey':CLOUD_KEY,
-          'x-zukait-session':token
-        },
-        body:JSON.stringify(payload),
-        signal:controller.signal
+        headers:{'Content-Type':'application/json','apikey':CLOUD_KEY,'x-zukait-session':token},
+        body:JSON.stringify(payload),signal:controller.signal
       });
+      let body;
+      try{body=await res.json()}catch(e){
+        if(e?.name==='AbortError')throw e;
+        throw failed('INVALID_SERVER_RESPONSE',res.status>=400?res.status:502);
+      }
+      if(!body||typeof body!=='object')throw failed('INVALID_SERVER_RESPONSE',502);
+      body._status=res.status;
+      if(res.status>=500||res.status===429||['server_error','database_busy','conflict_busy'].includes(body.code)){
+        const retryAfter=Math.max(Number(res.headers?.get?.('Retry-After')||0)*1000,Number(body.retry_after_ms||0));
+        // Keep the existing response contract for older action handlers.
+        const error=failed(body.code||'SERVER_BUSY',res.status,Number.isFinite(retryAfter)?retryAfter:0);
+        body._retryAfterMs=error.retryAfterMs;
+      }else if(body.ok===true&&key){
+        // A delayed success cannot erase a newer failure's retry barrier.
+        const prior=syncRecovery.get(key);
+        if(!prior||sequence>=prior.sequence)syncRecovery.delete(key);
+      }
+      return body;
     }catch(e){
-      throw new Error(e && e.name==='AbortError'?'TIMEOUT':'NETWORK');
-    }finally{
-      clearTimeout(timer);
-    }
-    let body={};
-    try{body=await res.json()}catch(_){}
-    body._status=res.status;
-    return body;
+      if(e?.retryAfterMs!==undefined)throw e;
+      throw failed(e?.name==='AbortError'?'TIMEOUT':'NETWORK',0);
+    }finally{clearTimeout(timer)}
   }
+  api.retryAfter=action=>syncRecoveryKey(action)?retryDelay():0;
 
   async function employeeTimeAction(command){
     if(!me||me.role!=='Employee')throw new Error('employee_time_forbidden');
@@ -641,6 +672,7 @@
 
   async function probeRevision(){
     if(revisionProbeInFlight||!sessionToken()||!navigator.onLine)return false;
+    if(api.retryAfter?.('revision')>0)return false;
     // Focus/visibility and the scheduled tick can arrive together. Reuse only
     // a successful check of the snapshot we actually hold, within one tick.
     if(!cloudDirty&&!cloudPushing&&lastProbedRevision===cloudRevision&&Date.now()-lastRevisionProbeAt<700)return false;
@@ -670,7 +702,7 @@
       return true;
     }catch(e){
       lastSyncError=String(e?.code||e?.message||'REVISION_CHECK_FAILED');consecutiveSyncErrors++;
-      setServerConnection('offline',navigator.onLine?'Workshop server cannot be reached. Check internet/Wi-Fi; changes may not sync until connection is restored.':'Server connection unavailable. Check Wi-Fi/internet; changes may not sync until connection is restored.');
+      setServerConnection(navigator.onLine?'busy':'offline',navigator.onLine?'Workshop sync is delayed. Retrying automatically; keep this page open.':'No internet connection. Check Wi-Fi/internet.');
       warnPoll('Revision probe failed',e);
       return false;
     }finally{
@@ -680,6 +712,7 @@
 
   async function push(retry=0){
     if(cloudPushing||!cloudDirty)return false;
+    if(api.retryAfter?.('save')>0)return false;
     if(permissionBlocked(payloadState())){status('PERMISSION DENIED — CHANGE PRESERVED','bad');return false;}
     if(!sessionToken()){status('LOGIN REQUIRED','bad');return false}
     if(!navigator.onLine){status('OFFLINE — CHANGE QUEUED','warn');return false}
@@ -691,6 +724,8 @@
     try{
       const r=await api({action:'save',expected_revision:cloudRevision,data:localSnapshot});
       if(r.ok){
+        lastSuccessfulSyncAt=Date.now();lastSyncError='';consecutiveSyncErrors=0;initialDone=true;
+        setServerConnection('connected');
         deniedSnapshot=null;localStorage.removeItem(DENIED_KEY);
         // Acknowledge exactly the snapshot sent by this request. If another
         // Start/Pause/Stop/Assign click happened while it was in flight, keep
@@ -833,7 +868,9 @@
         e.httpStatus=403;
         throw e;
       }
-      throw new Error(r.code||'SAVE_FAILED');
+      const saveError=new Error(r.code||'SAVE_FAILED');
+      saveError.code=r.code||'SAVE_FAILED';saveError.httpStatus=r._status||0;
+      throw saveError;
     }catch(e){
       console.error('Cloud save failed',e);
       cloudDirty=true;
@@ -846,7 +883,7 @@
       }else if(permissionDenied){
         setServerConnection('connected','Server reachable, but a change was rejected by permissions. Pending changes are preserved for review.');
       }else{
-        setServerConnection('offline',navigator.onLine?'Workshop server cannot be reached. Changes are queued and will sync after reconnection.':'Server connection unavailable. Changes are queued and will sync after reconnection.');
+        setServerConnection(navigator.onLine?'busy':'offline',navigator.onLine?'Workshop sync is delayed. Pending changes are saved on this device and will retry automatically.':'No internet connection. Pending changes are saved on this device.');
       }
       // Keep clicks made while the denied request was in flight, not just the
       // older submitted snapshot. Persist the retry barrier across app restarts.
@@ -858,7 +895,7 @@
       }
       try{localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:pendingSnapshot,error:lastSyncError}))}catch(_){}
       status(assignmentConflict?'ID001 ALREADY ASSIGNED — CHANGE PRESERVED':permissionDenied?'PERMISSION DENIED — CHANGE PRESERVED':(navigator.onLine?'SYNC ERROR — RETRYING':'OFFLINE — CHANGE QUEUED'),navigator.onLine?'bad':'warn');
-      if(!blocked&&navigator.onLine&&sessionToken())setTimeout(()=>{if(cloudDirty&&!cloudPushing)push(0)},Math.min(15000,1000*Math.pow(2,Math.min(consecutiveSyncErrors,4))));
+      if(!blocked&&navigator.onLine&&sessionToken())setTimeout(()=>{if(cloudDirty&&!cloudPushing)push(0)},Math.max(api.retryAfter?.('save')||0,Math.min(15000,1000*Math.pow(2,Math.min(consecutiveSyncErrors,4)))));
       return false;
     }finally{
       cloudPushing=false;
@@ -979,7 +1016,7 @@
     }catch(e){
       console.error('Cloud initialization failed',e);
       status(navigator.onLine?'SYNC ERROR':'OFFLINE — LOCAL CACHE',navigator.onLine?'bad':'warn');
-      setServerConnection('offline',navigator.onLine?'Workshop server cannot be reached. Check internet/Wi-Fi.':'Server connection unavailable. Check Wi-Fi/internet.');
+      setServerConnection(navigator.onLine?'busy':'offline',navigator.onLine?'Workshop sync is delayed. Retrying automatically; keep this page open.':'No internet connection. Check Wi-Fi/internet.');
       initialDone=true;
     }
     // Work-status revision detection stays at 1 second foreground / 120 seconds hidden; writes retain their independent immediate queue.
