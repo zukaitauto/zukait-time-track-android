@@ -52,3 +52,5 @@ dependencies {
 // V354: Verify shared arrival counts and audited receipt recovery.
 
 // V355: Verify outage retry barriers and database-pressure recovery.
+
+// Revalidate V355 with the matching sync cache-key assertion.
