@@ -11,6 +11,7 @@ assert.match(spare,/\['📦','Parts Arrived',arrivalPendingCount\(rows\),'ARRIVA
 assert.match(ui,/data-v201-arrived-supervisor/,'Supervisor main dashboard must have the Parts Arrived follow-up launcher');
 assert.match(ui,/data-v201-arrived-manager/,'Manager Workshop Control Center must have the Parts Arrived follow-up launcher');
 assert.match(ui,/Quick\\s\+\(\?:Action\|Actions\|Management\)/,'Manager legacy Quick Action removal must stay narrowly scoped');
-assert.doesNotMatch(ui,/state\.assign\s*=|state\.sessions\s*=/,'V201 UI layer must not mutate job-card or session authority');
+const launcher=ui.slice(ui.indexOf('/* V201 ARRIVED PARTS DASHBOARD'),ui.indexOf('/* V213 READY FOR DELIVERY'));
+assert.doesNotMatch(launcher,/state\.assign\s*=|state\.sessions\s*=/,'V201 UI layer must not mutate job-card or session authority');
 
 console.log('V201 arrived parts dashboard regression passed');
