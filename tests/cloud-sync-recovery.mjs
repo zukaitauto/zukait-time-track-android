@@ -65,4 +65,12 @@ p.api.retryAfter=()=>0;reply={ok:true,server_revision:2};
 await p.push();assert.equal(connection,'connected');assert.equal(p.cloudDirty,false);
 assert.equal(storage.has('zukait_cloud_pending_conflict_v42'),false);
 assert.ok(p.lastSuccessfulSyncAt>0);assert.equal(p.lastSyncError,'');
+const ui={pill:{dataset:{}},banner:{}};
+const u={serverConnectionState:'connected',serverConnectionEverConfirmed:true,serverConnectionBannerTimer:null,
+  ensureServerConnectionUi:()=>ui,setTimeout(){},clearTimeout(){},window:{dispatchEvent(){}},CustomEvent:class{}};
+vm.createContext(u);vm.runInContext(source.slice(source.indexOf('  function setServerConnection('),source.indexOf('  window.zukaitServerConnection=')),u);
+u.setServerConnection('busy');assert.match(ui.pill.textContent,/Sync Delayed/);
+assert.match(ui.banner.textContent,/sync is delayed/);assert.doesNotMatch(ui.banner.textContent,/cannot be reached/);
+assert.match(ui.banner.className,/banner-busy/);
+u.setServerConnection('connected');assert.match(ui.banner.textContent,/restored/);
 console.log('PASS: shared outage cooldown, bounded retry load, read/write recovery isolation, queue preservation and successful-save banner recovery.');

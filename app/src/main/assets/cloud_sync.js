@@ -73,7 +73,7 @@
     clearTimeout(serverConnectionBannerTimer);
     if(!ui.banner)return;
     if(state==='offline'||state==='busy'){
-      ui.banner.textContent=message||'Server connection unavailable. Changes may not sync until connection is restored.';
+      ui.banner.textContent=message||(state==='busy'?'Workshop sync is delayed. Pending changes stay on this device until confirmed.':'Server connection unavailable. Changes may not sync until connection is restored.');
       ui.banner.className='server-connection-banner '+(state==='busy'?'server-connection-banner-busy':'server-connection-banner-offline');
     }else if(state==='connected'&&previous!=='connected'&&serverConnectionEverConfirmed){
       ui.banner.textContent='Server connected — synchronization restored.';

@@ -54,3 +54,5 @@ dependencies {
 // V355: Verify outage retry barriers and database-pressure recovery.
 
 // Revalidate V355 with the matching sync cache-key assertion.
+
+// Include delayed-state banner refresh coverage in exact-source V355 acceptance.
