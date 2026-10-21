@@ -28,15 +28,10 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --ignore-scripts --include=dev
-      - name: Generate migration using the Supabase CLI
+      - name: Verify the CLI-generated migration is tracked
         run: |
-          npx --yes supabase@2.81.3 --help
-          npx --yes supabase@2.81.3 migration new --help
-          npx --yes supabase@2.81.3 migration new optimize_live_status_session_partition
-          MIGRATION_PATH=$(find supabase/migrations -name '*_optimize_live_status_session_partition.sql')
-          test -n "$MIGRATION_PATH"
-          cp experiments/live-status-session-partition.sql "$MIGRATION_PATH"
-          echo "GENERATED_MIGRATION_PATH=$MIGRATION_PATH"
+          test -f supabase/migrations/20261021115755_optimize_live_status_session_partition.sql
+          echo 'GENERATED_MIGRATION_PATH=supabase/migrations/20261021115755_optimize_live_status_session_partition.sql'
       - name: Existing native save, reception and delivery concurrency acceptance
         run: node tests/reception-concurrency.mjs
         env:
