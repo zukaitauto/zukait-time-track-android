@@ -19,10 +19,16 @@ try {
   assert.equal(await page.locator('.v251-followup-card').count(),3);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'Page overflow at '+width);
   if(width<600){
-   const cards=await page.locator('.v251-cash-circle').evaluateAll(els=>els.map(el=>({top:el.getBoundingClientRect().top,bottom:el.getBoundingClientRect().bottom,width:el.clientWidth})));
-   assert.ok(cards[1].top>=cards[0].bottom,'Mobile cards must stack as wide rows');
-   assert.ok(cards[0].width>width*0.7,'Mobile cards must use available width');
-   assert.equal(await page.locator('.insurance-in em').evaluate(el=>getComputedStyle(el).fontSize),'15px','Phone OMR amount must remain readable');
+   for(const selector of ['.v251-cash-circle','.v251-followup-card']){
+    const cards=await page.locator(selector).evaluateAll(els=>els.map(el=>({top:el.getBoundingClientRect().top,left:el.getBoundingClientRect().left,right:el.getBoundingClientRect().right,width:el.clientWidth})));
+    assert.equal(cards.length,3);assert.ok(cards.every(c=>Math.abs(c.top-cards[0].top)<1),'Three mobile cards must share one row at '+width);
+    assert.ok(cards[1].left>=cards[0].right&&cards[2].left>=cards[1].right,'Mobile cards must not overlap');
+    assert.ok(cards[0].width>width*0.2,'Mobile cards must retain usable width');
+   }
+   assert.ok(parseFloat(await page.locator('.insurance-in em').evaluate(el=>getComputedStyle(el).fontSize))>=11,'Phone amount must remain readable');
+   assert.equal(await page.locator('.pending b').getAttribute('data-short'),'Pending');
+   assert.equal(await page.locator('.insurance-collected b').getAttribute('data-short'),'LPO');
+   assert.equal(await page.locator('.pending').getAttribute('data-phone-note'),'All open','Pending includes all undelivered months');
   }
   const boxes=await page.locator('.v251-cash-circle,.v251-followup-card').evaluateAll(els=>els.map(el=>({radius:getComputedStyle(el).borderRadius,width:el.clientWidth,scroll:el.scrollWidth,height:el.clientHeight,scrollHeight:el.scrollHeight})));
   for(const box of boxes){assert.equal(box.radius,'12px');assert.ok(box.scroll<=box.width+1,'Card horizontal overflow at '+width);assert.ok(box.scrollHeight<=box.height+1,'Card vertical overflow at '+width);}

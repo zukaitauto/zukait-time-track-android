@@ -47,11 +47,12 @@ function approximateRepairSummary(a){
 }
 function repairTotalLabel(a){const r=approximateRepairSummary(a);return a.length&&r.pending===a.length?'Pending':money(r.amount);}
 function repairCaption(a){const r=approximateRepairSummary(a);return 'Approx. repair value'+(r.pending?' · '+r.pending+' amount(s) pending':'');}
+const cardAmount=label=>'<data aria-label="'+esc(label)+'">'+esc(label).replace(/^OMR /,'OMR <br class="v251-phone-break">')+'</data>';
 function insuranceHtml(){
  const i=insuranceRows('in'),o=insuranceRows('out'),l=insuranceRows('collected');
  return '<section class="v251-cash-pulse v251-insurance-pulse" aria-label="Insurance monthly follow-up"><div class="v251-cash-title"><b>Insurance Monthly Follow-up</b><small>'+esc(month().label)+'</small></div><div class="v251-cash-grid">'+[
   ['in','INSURANCE IN',i.length,'Vehicles opened this month','↓'],['out','INSURANCE OUT',o.length,'Vehicles delivered this month','↑'],['collected','LPO COLLECTED',l.length,'LPOs received this month','✓']
- ].map(([kind,title,count,caption,icon])=>'<button type="button" class="v251-followup-card insurance-'+kind+'" onclick="v251OpenInsurancePulse(\''+kind+'\')"><span class="v251-followup-icon" aria-hidden="true">'+icon+'</span><b>'+title+'</b><strong>'+count+'</strong>'+'<em>'+(kind==='collected'?money(insuranceTotal(l)):repairTotalLabel(kind==='in'?i:o))+'</em>'+(kind==='collected'?'':'<small>'+repairCaption(kind==='in'?i:o)+'</small>')+'<small>'+caption+'</small><span class="v251-card-link">View list →</span></button>').join('')+'</div></section>';
+ ].map(([kind,title,count,caption,icon])=>'<button type="button" class="v251-followup-card insurance-'+kind+'" data-phone-note="'+esc(kind==='collected'?'Received':(approximateRepairSummary(kind==='in'?i:o).pending?'Est. · '+approximateRepairSummary(kind==='in'?i:o).pending+' pending':'Est. repair'))+'" aria-label="'+esc(title+' · '+count+' · '+(kind==='collected'?money(insuranceTotal(l)):repairTotalLabel(kind==='in'?i:o))+' · '+(kind==='collected'?caption:repairCaption(kind==='in'?i:o)+' · '+caption))+'" onclick="v251OpenInsurancePulse(\''+kind+'\')"><span class="v251-followup-icon" aria-hidden="true">'+icon+'</span><b data-short="'+(kind==='collected'?'LPO':kind==='in'?'In':'Out')+'">'+title+'</b><strong>'+count+'</strong>'+'<em>'+cardAmount(kind==='collected'?money(insuranceTotal(l)):repairTotalLabel(kind==='in'?i:o))+'</em>'+(kind==='collected'?'':'<small>'+repairCaption(kind==='in'?i:o)+'</small>')+'<small>'+caption+'</small><span class="v251-card-link">View list →</span></button>').join('')+'</div></section>';
 }
 window.v251OpenInsurancePulse=async function(kind){
  if(role()!=='Manager'||!['in','out','collected'].includes(kind))return;
@@ -65,7 +66,7 @@ window.v251OpenInsurancePulse=async function(kind){
 function html(){
  const i=rows('in'),o=rows('out'),label=month().label;
  const p=pendingAll();
- return '<section class="v251-cash-pulse" data-v251-cash-pulse><div class="v251-cash-title"><b>Cash Monthly Follow-up</b><small>'+esc(label)+'</small></div><div class="v251-cash-grid"><button class="v251-cash-circle in" onclick="v251OpenCashPulse(\'in\')"><span>↓</span><b>CASH IN</b><strong>'+i.length+'</strong><em>'+money(total(i))+'</em><small>THIS MONTH</small><span class="v251-card-link">View list →</span></button><button class="v251-cash-circle pending" onclick="v251OpenCashPendingAll()"><span>◷</span><b>CASH IN PENDING</b><strong>'+p.length+'</strong><em>'+money(outstandingTotal(p))+'</em><small>ALL MONTHS · NOT DELIVERED</small><span class="v251-card-link">View list →</span></button><button class="v251-cash-circle out" onclick="v251OpenCashPulse(\'out\')"><span>↑</span><b>CASH OUT</b><strong>'+o.length+'</strong><em>'+money(total(o,'out'))+'</em><small>THIS MONTH</small><span class="v251-card-link">View list →</span></button></div></section>';
+ return '<section class="v251-cash-pulse" data-v251-cash-pulse><div class="v251-cash-title"><b>Cash Monthly Follow-up</b><small>'+esc(label)+'</small></div><div class="v251-cash-grid"><button class="v251-cash-circle in" aria-label="CASH IN: '+i.length+' vehicles, '+money(total(i))+' this month" data-phone-note="This month" onclick="v251OpenCashPulse(\'in\')"><span>↓</span><b data-short="Cash In">CASH IN</b><strong>'+i.length+'</strong><em>'+cardAmount(money(total(i)))+'</em><small>THIS MONTH</small><span class="v251-card-link">View list →</span></button><button class="v251-cash-circle pending" aria-label="CASH IN PENDING: '+p.length+' vehicles, '+money(outstandingTotal(p))+' all months, not delivered" data-phone-note="All open" onclick="v251OpenCashPendingAll()"><span>◷</span><b data-short="Pending">CASH IN PENDING</b><strong>'+p.length+'</strong><em>'+cardAmount(money(outstandingTotal(p)))+'</em><small>ALL MONTHS · NOT DELIVERED</small><span class="v251-card-link">View list →</span></button><button class="v251-cash-circle out" aria-label="CASH OUT: '+o.length+' vehicles, '+money(total(o,'out'))+' delivered this month" data-phone-note="This month" onclick="v251OpenCashPulse(\'out\')"><span>↑</span><b data-short="Cash Out">CASH OUT</b><strong>'+o.length+'</strong><em>'+cardAmount(money(total(o,'out')))+'</em><small>THIS MONTH</small><span class="v251-card-link">View list →</span></button></div></section>';
 }
 function install(){
  if(!['Manager','Supervisor'].includes(role()))return;
@@ -126,16 +127,18 @@ const s=document.createElement('style');s.id='v251CashPulseStyle';s.textContent=
 .v251-followup-layout .v251-cash-circle .v251-card-link,.v251-followup-layout .v251-card-link{color:var(--card-accent);padding-top:8px}
 @media(max-width:520px){.v251-followup-layout .v251-cash-title{padding:14px}.v251-followup-layout .v251-cash-grid{padding:10px;gap:7px}.v251-followup-layout .v251-cash-circle,.v251-followup-layout .v251-followup-card{padding:10px 8px!important;gap:7px}.v251-followup-layout .v251-cash-circle em,.v251-followup-layout .v251-followup-card em{font-size:12px}}
 
-/* Phone layout: wide, compact rows keep counts and OMR amounts legible. */
+/* Phone layout: three compact coloured cards in each monthly group. */
+.v251-phone-break{display:none}
 @media(max-width:599px){
- .v251-followup-layout .v251-cash-grid{grid-template-columns:minmax(0,1fr);gap:9px}
- .v251-followup-layout .v251-cash-circle,.v251-followup-layout .v251-followup-card{display:grid!important;grid-template-columns:30px minmax(0,1fr) auto;min-height:100px;padding:13px!important;gap:4px 10px;align-items:center}
- .v251-followup-layout .v251-cash-circle>span:first-child,.v251-followup-layout .v251-followup-card>.v251-followup-icon{grid-column:1;grid-row:1/3}
- .v251-followup-layout .v251-cash-circle>b,.v251-followup-layout .v251-followup-card>b{grid-column:2;grid-row:1;font-size:12px}
- .v251-followup-layout .v251-cash-circle>strong,.v251-followup-layout .v251-followup-card>strong{grid-column:3;grid-row:1/3;font-size:30px;text-align:right}
- .v251-followup-layout .v251-cash-circle>em,.v251-followup-layout .v251-followup-card>em{grid-column:2;grid-row:2;border:0;padding:0;font-size:15px;overflow-wrap:anywhere}
- .v251-followup-layout .v251-cash-circle>small,.v251-followup-layout .v251-followup-card>small{grid-column:2;font-size:12px;line-height:1.4}
- .v251-followup-layout .v251-cash-circle>.v251-card-link,.v251-followup-layout .v251-followup-card>.v251-card-link{grid-column:3;grid-row:3/5;font-size:11px;align-self:end;white-space:nowrap}
+ .v251-followup-layout .v251-cash-title{min-height:56px;padding:12px;gap:6px}.v251-followup-layout .v251-cash-title b{font-size:14px}.v251-followup-layout .v251-cash-title small{font-size:11px}
+ .v251-followup-layout .v251-cash-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;padding:10px;gap:7px}
+ .v251-followup-layout .v251-cash-circle,.v251-followup-layout .v251-followup-card{display:flex!important;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;min-height:190px;padding:10px 6px!important;gap:7px;border-left:1px solid #dce4ef!important;border-top:3px solid var(--card-accent)!important;background:linear-gradient(160deg,#fff 35%,var(--card-tint))!important;box-shadow:0 4px 10px #162c4610!important}
+ .v251-followup-layout .v251-cash-circle>span:first-child,.v251-followup-layout .v251-followup-icon{width:27px;height:27px;font-size:18px}
+ .v251-followup-layout .v251-cash-circle>b,.v251-followup-layout .v251-followup-card>b{font-size:0;line-height:1.3;letter-spacing:0}.v251-followup-layout button>b:after{content:attr(data-short);font-size:12px;font-weight:850;color:#233b55}
+ .v251-followup-layout .v251-cash-circle>strong,.v251-followup-layout .v251-followup-card>strong{font-size:30px;line-height:1.1;color:var(--card-accent)}
+ .v251-followup-layout .v251-cash-circle>em,.v251-followup-layout .v251-followup-card>em{width:100%;font-size:clamp(11px,3.3vw,14px);line-height:1.4;letter-spacing:-.02em;padding-top:6px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.v251-phone-break{display:block}
+ .v251-followup-layout .v251-cash-circle>small,.v251-followup-layout .v251-followup-card>small,.v251-followup-layout button>.v251-card-link{display:none!important}
+ .v251-followup-layout .v251-cash-circle:after,.v251-followup-layout .v251-followup-card:after{content:attr(data-phone-note);font-size:11px;line-height:1.4;color:#52657c;margin-top:auto;overflow-wrap:anywhere}
  .v251-insurance-row{grid-template-columns:23px minmax(0,1fr);padding:12px;gap:6px 10px}
  .v251-insurance-row>b:nth-of-type(2){grid-column:2;font-size:14px;text-align:left}.v251-insurance-row small{font-size:13px}
 }
