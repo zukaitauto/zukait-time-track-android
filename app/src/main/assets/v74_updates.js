@@ -4354,6 +4354,8 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  window.zukaitConfirmID001Stop=function(){
    if(!me||me.role!=='Employee'||!idleStop||idleStop.actor!==String(me.id))return;
    const s=idleStop.session;
+   const current=active();
+   if(!current||String(current.id)!==String(s.id)||String(current.job)!=='ID001')return msg('Running work changed on another device. Reopen the work controls before stopping.','Work Changed');
    return run('STOP_ID001',{job:'ID001',assignment_id:String(s.assignmentId||''),session_id:String(s.id||'')},'Stopping ID001');
  };
 

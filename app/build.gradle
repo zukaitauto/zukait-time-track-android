@@ -44,3 +44,5 @@ dependencies {
 // Revalidate V347 hidden-read cadence with matching runtime and authority contracts.
 
 // V348 staging and public packages include the same Manager stylesheet.
+
+// V352 acceptance also verifies stale ID001 stop confirmations.
