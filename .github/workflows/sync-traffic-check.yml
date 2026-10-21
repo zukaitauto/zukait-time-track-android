@@ -50,6 +50,7 @@ jobs:
           node tests/hidden-read-traffic.mjs
           node tests/v2-notification-center.mjs
           node tests/json-field-order-save.mjs
+          node tests/monthly-followup-read.mjs
           node tests/cloud-sync-recovery.mjs
           node tests/workshop-save-pressure.mjs
           node tests/live-projection-traffic.mjs

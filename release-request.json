@@ -1,16 +1,16 @@
 {
-  "versionName": "V355",
-  "versionCode": 318,
+  "versionName": "V357",
+  "versionCode": 320,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": true,
-  "sourceCommit": "6adb6ae882eb667ab4d60b1dd84ecfbbefb686ab",
+  "approvedForStaff": false,
+  "sourceCommit": null,
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "productionBackendChanges": true,
   "phase2ActivationApproved": false,
-  "backendDeploymentRequired": false,
+  "backendDeploymentRequired": true,
   "releaseHeldByOwner": false,
   "evidence": {
     "credentialPreservation": true,
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-21T16:08:00Z",
-  "publishNonce": "3d018f425f2e878846a7aebe6b77a5b1559d6a215ba953b5",
+  "approvedAt": null,
+  "publishNonce": null,
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -47,9 +47,9 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V355 exact-source checks passed: Reception/browser, signed Android acceptance, Accountant, sync/permissions, Android build, estimate and native PDF. Runtime tests cover shared jittered cooldown across poll/focus/save/reconnect, independent failed-save history, stale-success ordering, queue preservation, permission barriers and clearing the banner on confirmed save. Real save-route tests verify bounded CAS conflict/time-budget work without changing authorities. QA live Manager revision/load returned 200, invalid save 400, Accountant load/save 403 and invalid session 401. QA fixtures revoked. Production workshop-api81 matches QA16 full bundle hash; only bounded save loop and database-pressure mapping changed from deployed80, all other files preserved. No schema or business-record migrations. Physical-device acceptance and fresh restore NOT_RUN. Monitor infrastructure/timeouts after rollout; this does not guarantee absence of future resource outages.",
-  "productionBackendDeploymentPerformed": true,
-  "releaseChangeScope": "bounded-sync-retries-and-database-pressure-recovery",
+  "verificationSummary": "Candidate: Cash/Insurance follow-up reads only authoritative job fields instead of full workshop state. Preserve current Sublet source and deployed backend. No schema or workshop record migration.",
+  "productionBackendDeploymentPerformed": false,
+  "releaseChangeScope": "scoped-cash-insurance-monthly-reads-preserving-sublet",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
@@ -72,12 +72,6 @@
   "mobileReadabilityAuthorization": "Owner requested readable material rows without repeated Material labels, three coloured mobile cards per monthly group with short labels, then explicitly instructed PUBLIC and PUBLISH.",
   "arrivalConsistencyAuthorizedByOwner": true,
   "arrivalConsistencyAuthorization": "Owner reported Parts Arrived 3 opens empty, clarified required quantity is already shown, and explicitly instructed FIX AND PUBLISH.",
-  "signedAcceptanceRun": 39631149189,
-  "verificationRun": 39631149195,
-  "accountantVerificationRun": 39631149209,
-  "androidBuildRun": 39631149272,
-  "syncVerificationRun": 39631149241,
-  "nativePdfVerificationRun": 39631149294,
   "syncRecoveryAuthorizedByOwner": true,
   "syncRecoveryAuthorization": "Owner reported the warning on all devices, requested a deep check, and instructed NEED PERMANANT FIX. Prior FIX AND PUBLISH authorization covers the coordinated tested web/Android repair.",
   "qaSyncRecovery": {

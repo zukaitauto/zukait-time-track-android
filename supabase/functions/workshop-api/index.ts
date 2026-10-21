@@ -1321,6 +1321,23 @@ Deno.serve(async (req: Request) => {
       return reply({ok:true,...data,server_time:Date.now(),user});
     }
 
+    // Monthly follow-up needs job financial/vehicle fields, not the full
+    // session/material/audit snapshot. Keep authorization before the DB read.
+    if (action === "monthly_followup") {
+      if (!["Manager","Supervisor"].includes(String(user.role||""))) return reply({ok:false,code:"forbidden"},403);
+      const {data:current,error}=await admin.from("workshop_state")
+        .select("revision,jobs:data->jobs").eq("id","main").single();
+      if(error)throw error;
+      const fields=["no","jobType","createdAt","delivered","deliveredAt","deleted","archived","cancelled","status","amount","finalInvoiceAmount","vehicle","reg","year","insuranceCompany","claimNo"];
+      const jobs=(Array.isArray(current?.jobs)?current.jobs:[]).filter((j:any)=>j&&typeof j==="object").map((j:any)=>{
+        const row:any=Object.fromEntries(fields.filter(k=>Object.hasOwn(j,k)).map(k=>[k,j[k]]));
+        if(j.insuranceLpo&&typeof j.insuranceLpo==="object")row.insuranceLpo=Object.fromEntries(
+          ["amount","receivedDate"].filter(k=>Object.hasOwn(j.insuranceLpo,k)).map(k=>[k,j.insuranceLpo[k]]));
+        return row;
+      });
+      return reply({ok:true,revision:Number(current?.revision||0),data:{jobs},server_time:Date.now()});
+    }
+
     if (action === "load") {
       // Opt-in only: older clients continue to receive the full response.
       if (Number.isSafeInteger(body.known_revision) && body.known_revision >= 0) {

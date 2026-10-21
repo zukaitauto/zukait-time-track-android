@@ -176,7 +176,7 @@
   // scheduled save and reconnect) must respect it; a timer alone is not a barrier.
   const syncRecovery=new Map();
   let syncRequestSequence=0;
-  const syncRecoveryKey=action=>action==='save'?'save':['revision','load','live_status'].includes(action)?'read':null;
+  const syncRecoveryKey=action=>action==='save'?'save':['revision','load','live_status','monthly_followup'].includes(action)?'read':null;
   const retryDelay=()=>Math.max(0,...[...syncRecovery.values()].map(x=>x.until-Date.now()));
   async function api(payload){
     const token=sessionToken();
@@ -948,6 +948,21 @@
     try{return await readLatestInFlight}finally{readLatestInFlight=null}
   }
 
+  let monthlyReadInFlight=null;
+  async function readMonthlyFollowup(){
+    if(!navigator.onLine)throw new Error('OFFLINE');
+    if(monthlyReadInFlight)return monthlyReadInFlight;
+    monthlyReadInFlight=(async()=>{
+      const r=await api({action:'monthly_followup'});
+      // Compatibility only: do not fall back to a wide load on timeout/error.
+      if(!r.ok&&r.code==='unknown_action')return readLatest();
+      if(!r.ok)throw new Error(r.code||'MONTHLY_READ_FAILED');
+      if(!r.data||!Array.isArray(r.data.jobs)||(!Number.isSafeInteger(Number(r.revision))||Number(r.revision)<0))throw new Error('INVALID_SERVER_RECORDS');
+      return {revision:Number(r.revision),data:clone(r.data)};
+    })();
+    try{return await monthlyReadInFlight}finally{monthlyReadInFlight=null}
+  }
+
   async function syncNow(){
     if(cloudDirty&&permissionBlocked(payloadState())){
       if(String(deniedSnapshot.user)!==String(me?.id||'')){alert('Pending changes belong to another account. They are preserved; sign in as their author to review them.');return;}
@@ -1077,7 +1092,7 @@
     publishLiveStatus(false);
   });
   window.zukaitCloud={
-    init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,readLatest,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
+    init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
     configured:()=>true,
     get confirmedState(){return confirmedReadRevision>=cloudRevision?confirmedReadState:null},
     get revision(){return cloudRevision},

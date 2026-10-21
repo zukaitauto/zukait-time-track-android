@@ -90,3 +90,14 @@ const stable=fs.readFileSync('app/src/main/assets/supervisor_stable.js','utf8'),
 assert.ok(stable.includes("v251KpiHTML()+"));assert.ok(stable.includes('window.v251CashPulse?.install?.()'));assert.ok(managerSource.includes('id="managerCashPulseSlot"'));assert.ok(managerSource.includes('window.v251CashPulse?.install?.()'));
 assert.ok(source.includes('grid-template-columns:repeat(3,minmax(0,1fr))'));
 console.log('Cash dashboard: lexical state, cash boxes, manager insurance cards, source parity, monthly boundaries, live edits, final invoice, both roles and clickable lists passed');
+
+
+// Scoped read is authoritative for lists without replacing queued local edits.
+vm.runInContext('me={role:"Manager"};state={jobs:[{no:"UNSYNCED",jobType:"CASH",amount:999,createdAt:'+start+'}]}',ctx);
+let scopedReads=0,wideReads=0;
+sandbox.window.zukaitCloud={revision:10,async readMonthlyFollowup(){scopedReads++;return {revision:10,data:{jobs:[job('SCOPED',start+1,42)]}}},async readLatest(){wideReads++;throw Error('Wide read must not run')}};
+await sandbox.window.v251OpenCashPulse('in');assert.equal(scopedReads,1);assert.equal(wideReads,0);assert.match(modal,/JC SCOPED/);assert.doesNotMatch(modal,/JC UNSYNCED/);
+assert.equal(vm.runInContext('state.jobs[0].no',ctx),'UNSYNCED','queue stays intact');
+const scopedModal=modal;sandbox.window.zukaitCloud.readMonthlyFollowup=async()=>{throw Error('TIMEOUT')};
+await sandbox.window.v251OpenCashPulse('in');assert.equal(modal,scopedModal);assert.match(insuranceWarning,/taking too long/);assert.equal(wideReads,0);
+console.log('Scoped monthly list uses confirmed job projection, preserves pending edits and never retries a timeout as a full snapshot.');
