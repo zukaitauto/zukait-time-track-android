@@ -1,9 +1,15 @@
 // Server-only adapter; not routed. It emits a bounded delta, never the full workshop state.
 import {mechanicalCommandFingerprint} from './mechanical_rules.js';
-export async function mechanicalPersistenceRequest(records,snapshot,command,transition){
+export async function mechanicalPersistenceRequest(records,snapshot,command,transition,clientCommand=command){
  if(!transition?.ok||transition.duplicate||!transition.records||!transition.workshopData)throw new Error('fresh_transition_required');
  const receipt=transition.records.receipts.find(r=>r.requestId===command.requestId);
- if(!receipt||receipt.fingerprint!==await mechanicalCommandFingerprint(command)||receipt.actorId!==command.actorId||transition.records.revision!==records.revision+1)throw new Error('invalid_transition_receipt');
+ // Only server-derived handover tokens may differ from the stable input digest.
+ const stable=JSON.parse(JSON.stringify(command));
+ if(clientCommand!==command&&command.operation==='TASK_HANDOVER'){
+  delete stable.payload.expectedSource;delete stable.payload.expectedEmployeeSessions;
+ }
+ if(await mechanicalCommandFingerprint(stable)!==await mechanicalCommandFingerprint(clientCommand))throw new Error('client_command_mismatch');
+ if(!receipt||receipt.fingerprint!==await mechanicalCommandFingerprint(clientCommand)||receipt.actorId!==command.actorId||transition.records.revision!==records.revision+1)throw new Error('invalid_transition_receipt');
  let plan;
  if(command.operation==='MC_CREATE')plan={record:transition.records.checklists.find(c=>c.id===command.entityId)};
  else if(command.operation==='TASK_CREATE')plan={record:transition.records.tasks.find(t=>t.id===command.entityId)};

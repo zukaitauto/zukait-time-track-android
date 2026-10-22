@@ -1,6 +1,7 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';import {randomUUID} from 'node:crypto';
 import {mechanicalTransition,mechanicalCommandFingerprint} from '../supabase/functions/workshop-api/extensions/mechanical_rules.js';
 import {mechanicalPersistenceRequest} from '../supabase/functions/workshop-api/extensions/mechanical_persistence_plan.js';
+import {mechanicalCommandApi} from '../supabase/functions/workshop-api/extensions/mechanical_api.js';
 import {allocationToken,employeeTimeToken,workedMinutes} from '../supabase/functions/workshop-api/time_management_rules.js';
 const native=process.env.ZUKAIT_MECHANICAL_NATIVE==='1';let db,client,admin,config,database,pg;
 if(native){
@@ -23,6 +24,7 @@ try{
  const initial={users:[{id:'QA_A',role:'Employee',department:'QA_MECHANICAL'},{id:'QA_B',role:'Employee',department:'QA_MECHANICAL'}],jobs:Array.from({length:12},(_,i)=>({no:'QA_JC_'+i,status:'Open'})),assign:[],sessions:[],expenses:[{id:'preserve',amount:12.345}],leaves:[{emp:'OTHER'}]};
  await db.query("insert into workshop_state(id,revision,data,updated_by) values('main',1,$1::jsonb,'QA_SUP')",[JSON.stringify(initial)]);
  await db.exec(fs.readFileSync('experiments/mechanical-persistence.sql','utf8'));
+ await db.exec(fs.readFileSync('experiments/mechanical-authority-guard.sql','utf8'));
  // Trusted fixture only. Production defaults must remain disabled and unmapped.
  assert.equal(await scalar('select count(*)::int n from zukait_mechanical.settings where not enabled'),1);
  const policy={flags:{mechanical:true},mechanicalDepartment:'QA_MECHANICAL',manualJcDuplicateMode:'deny',mcNumbering:{minimumDigits:3},mechanicalStaff:{QA_SUP:['MC_CREATE','TASK_CREATE','TASK_ASSIGN','TASK_HANDOVER']}};
@@ -51,8 +53,50 @@ try{
  s.data.sessions.push(...Array.from({length:400},(_,i)=>({id:'QA_HISTORY_'+i,emp:'QA_A',job:'QA_OTHER_HISTORY',assignmentId:'QA_OLD_'+i,start:at-(i+1)*86400000,end:at-(i+1)*86400000+60000,notes:'Synthetic history '.repeat(20)})));await db.query("update workshop_state set data=$1::jsonb,revision=revision+1 where id='main'",[JSON.stringify(s.data)]);
  s=await snapshot();const originalSessions=JSON.stringify(s.data.sessions),source=s.data.assign[0],successor=randomUUID();const h=await prepare('TASK_HANDOVER',task,{sourceAssignmentId:sourceId,targetEmployeeId:'QA_B',successorAssignmentId:successor,suggestedMinutes:30,reason:'QA audited handover',expectedSource:allocationToken(source),expectedEmployeeSessions:employeeTimeToken(s.data,'QA_A')});
  const forged=structuredClone(h);forged.p_plan.sourceAfter.emp='QA_B';await assert.rejects(call(forged),/handover_history_protected/);assert.equal(Number(await scalar('select count(*) n from zukait_mechanical.links')),1);
- const handover=await call(h);assert.equal(handover.assignmentId,successor);assert.equal((await call(h)).duplicate,true);s=await snapshot();assert.equal(JSON.stringify(s.data.sessions),originalSessions);assert.equal(s.data.assign[0].emp,'QA_A');assert.equal(s.data.assign[0].completed,true);assert.equal(workedMinutes(s.data,s.data.assign[0],at),60);assert.equal(s.data.assign[1].handoverFromAssignmentId,sourceId);assert.deepEqual(s.data.expenses,initial.expenses);assert.deepEqual(s.data.leaves,initial.leaves);
+ // Exercise the boundary against the real SQL receipt, not only a mock store.
+ const clientHandover={operation:'TASK_HANDOVER',entityId:task,requestId:h.p_request,deviceId:'QA_DEVICE',expectedRevision:h.p_expected_records,expectedWorkshopRevision:h.p_expected_workshop,payload:{sourceAssignmentId:sourceId,targetEmployeeId:'QA_B',successorAssignmentId:successor,suggestedMinutes:30,reason:'QA audited handover'}};
+ let apiPlan;const apiActor={id:'QA_SUP',role:'Supervisor',active:true};
+ const apiServer={enabled:true,actor:apiActor,policy,now:()=>at,verifySession:async()=>apiActor,
+  readReceipt:async requestId=>{const row=(await db.query('select actor_id,fingerprint,result from zukait_mechanical.receipts where request_id=$1::uuid',[requestId])).rows[0];return row&&{actorId:row.actor_id,fingerprint:row.fingerprint,result:row.result}},
+  readContext:async()=>({records:await records(),snapshot:await snapshot()}),
+  commit:async plan=>{apiPlan=plan;await call(plan);throw new Error('QA_REAL_SQL_LOST_ACK')}
+ };
+ await assert.rejects(mechanicalCommandApi(clientHandover,apiServer),/QA_REAL_SQL_LOST_ACK/);
+ const recovered=await mechanicalCommandApi(clientHandover,{...apiServer,readContext:async()=>{throw new Error('Retry must not read history')}});
+ assert.equal(recovered.body.duplicate,true);assert.equal(recovered.body.result.assignmentId,successor);assert.equal((await call(apiPlan)).duplicate,true);
+ await assert.rejects(call(h),/mechanical_request_reused/,'Internal enriched command cannot replace the stable client identity');
+ s=await snapshot();assert.equal(JSON.stringify(s.data.sessions),originalSessions);assert.equal(s.data.assign[0].emp,'QA_A');assert.equal(s.data.assign[0].completed,true);assert.equal(workedMinutes(s.data,s.data.assign[0],at),60);assert.equal(s.data.assign[1].handoverFromAssignmentId,sourceId);assert.deepEqual(s.data.expenses,initial.expenses);assert.deepEqual(s.data.leaves,initial.leaves);
  assert.equal(Number(await scalar('select count(*) n from zukait_mechanical.links')),2);assert.equal(Number(await scalar('select count(*) n from workshop_state_history')),2);
+ // Current-revision old-app payloads still cannot undo normalized authority.
+ // Exercise the REAL full-save RPC, including its later p_live override stage.
+ const saved=await snapshot(),liveBefore=(await db.query('select * from workshop_live_status order by employee_id')).rows;
+ const historyBefore=Number(await scalar('select count(*) n from workshop_state_history'));
+ const staleVariants=[
+  d=>{d.assign[0].completed=false;delete d.assign[0].handedOverToAssignmentId},
+  d=>{d.assign=d.assign.filter(a=>a.id!==successor)},
+  d=>{delete d.assign[1].mechanicalTaskId},
+  d=>{d.assign[0].emp='QA_B'},
+  d=>{d.assign[0].suggested=0},
+  d=>{d.assign[0].completedAt+=1},
+  d=>{d.assign.push(structuredClone(d.assign[0]))}
+ ];
+ for(const mutate of staleVariants){
+  const staleData=structuredClone(saved.data);mutate(staleData);
+  await assert.rejects(db.query('select public.zukait_commit_workshop_state_v2($1,$2::jsonb,$3,$4::jsonb)',[saved.revision,JSON.stringify(staleData),'QA_SUP',JSON.stringify([{employee_id:'QA_A',status:'Working',assignment_id:sourceId,job_no:'QA_JC_0'}])]),/mechanical_authority_conflict/);
+  assert.deepEqual(await snapshot(),saved,'Rejected stale save cannot alter revision or any business data');
+  assert.deepEqual((await db.query('select * from workshop_live_status order by employee_id')).rows,liveBefore,'Rejected save cannot reach/retain a stale live-status override');
+  assert.equal(Number(await scalar('select count(*) n from workshop_state_history')),historyBefore,'Archive insertion rolls back too');
+ }
+ await db.exec('update zukait_mechanical.settings set enabled=false');
+ const undo=structuredClone(saved.data);undo.assign[0].completed=false;
+ await assert.rejects(db.query("update workshop_state set data=$1::jsonb where id='main'",[JSON.stringify(undo)]),/mechanical_authority_conflict/,'Turning off new commands must preserve existing handovers');
+ await db.exec('update zukait_mechanical.settings set enabled=true');
+ await assert.rejects(db.query('select public.zukait_commit_workshop_state_v2($1,$2::jsonb,$3,$4::jsonb)',[saved.revision,JSON.stringify(saved.data),'QA_SUP',JSON.stringify([{employee_id:'QA_A',status:'Working',assignment_id:sourceId,job_no:'QA_JC_0'}])]),/mechanical_live_authority_conflict/,'Identical-state RPC retry cannot revive a handed-over source through p_live');
+ assert.deepEqual((await db.query('select * from workshop_live_status order by employee_id')).rows,liveBefore);
+ const fresh=structuredClone(saved.data);fresh.expenses.push({id:'QA_UNRELATED',amount:1.234});
+ const ordinary=(await db.query('select public.zukait_commit_workshop_state_v2($1,$2::jsonb,$3,$4::jsonb) r',[saved.revision,JSON.stringify(fresh),'QA_SUP',JSON.stringify(liveBefore)])).rows[0].r;
+ assert.equal(ordinary.ok,true,'Fresh ordinary full save preserves linked assignments and succeeds');
+ assert.deepEqual((await snapshot()).data.sessions,saved.data.sessions);
  assert.equal(Number(await scalar("select count(*) n from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='zukait_mechanical' and c.relkind='r' and c.relrowsecurity")),7);
  await assert.rejects(db.exec("update zukait_mechanical.audit set actor_id='QA_SUP'"),/mechanical_append_only/,'append-only trigger also rejects owner updates');
  // Both revisions are checked before any metadata or shared writes.
