@@ -1,0 +1,45 @@
+name: Isolated reception identity performance
+on:
+  push:
+    branches: [perf/reception-identity-single-pass]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: traffic-test-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGPASSWORD: traffic-test-only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts --include=dev
+      - name: Native baseline/candidate parity and full-save benchmark
+        run: node tests/reception-identity-performance.mjs
+        env:
+          ZUKAIT_GUARD_NATIVE: '1'
+      - name: Business and concurrency acceptance with candidate guard
+        run: node tests/reception-concurrency.mjs
+        env:
+          ZUKAIT_RECEPTION_ISOLATED: '1'
+          ZUKAIT_IDENTITY_GUARD_CANDIDATE: '1'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reception-identity-performance
+          path: artifacts/reception-identity/
+          retention-days: 14
