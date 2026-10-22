@@ -28,15 +28,15 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --ignore-scripts --include=dev
-      - name: Native baseline/candidate parity and full-save benchmark
-        run: node tests/reception-identity-performance.mjs
-        env:
-          ZUKAIT_GUARD_NATIVE: '1'
       - name: Business and concurrency acceptance with candidate guard
         run: node tests/reception-concurrency.mjs
         env:
           ZUKAIT_RECEPTION_ISOLATED: '1'
           ZUKAIT_IDENTITY_GUARD_CANDIDATE: '1'
+      - name: Native baseline/candidate parity and full-save benchmark
+        run: node tests/reception-identity-performance.mjs
+        env:
+          ZUKAIT_GUARD_NATIVE: '1'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
