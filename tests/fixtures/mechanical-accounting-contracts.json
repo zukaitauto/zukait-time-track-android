@@ -1,0 +1,11 @@
+{
+  "syntheticOnly": true,
+  "firstChecklist": "MC001",
+  "immutableChecklistId": "71000000-0000-4000-8000-000000000001",
+  "manualJobCard": {"number": "QA-MANUAL-1", "date": "2026-10-22"},
+  "parallelLabour": {"mechanics": [{"staffId": "QA_MECH_A", "minutes": 60}, {"staffId": "QA_MECH_B", "minutes": 60}], "labourMinutes": 120, "elapsedMinutes": 60},
+  "handover": {"outgoingAssignmentId": "QA_ASSIGN_A", "outgoingEmployeeId": "QA_MECH_A", "outgoingMinutes": 60, "successorAssignmentId": "QA_ASSIGN_B", "successorEmployeeId": "QA_MECH_B"},
+  "unknownDecisions": {"jibinStaffId": null, "mechanicalQcMapping": null, "mcAnnualReset": null, "manualJcCardinality": null, "openingCutover": null, "bankIdentity": null, "salaryRules": null},
+  "financialApprovalRoles": ["Accountant", "Manager"],
+  "examplesOMRMills": [0, 1, 12345]
+}
