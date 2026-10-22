@@ -13,6 +13,15 @@
     return String(deniedSnapshot.user)!==String(me?.id||'') || JSON.stringify(deniedSnapshot.data)===JSON.stringify(snapshot);
   }
 
+  // In-memory acknowledgement only; never trust a persisted dirty cache.
+  let acknowledgedUpload=null;
+  function uploadScope(){return JSON.stringify([sessionToken(),me?.id||'',me?.role||''])}
+  function unchangedAcknowledgedUpload(snapshot){
+    return !!acknowledgedUpload && !deniedSnapshot && !localStorage.getItem(PENDING_KEY)
+      && acknowledgedUpload.scope===uploadScope() && acknowledgedUpload.revision===cloudRevision
+      && acknowledgedUpload.snapshot===JSON.stringify(snapshot);
+  }
+
   let cloudRevision=Number(localStorage.getItem(REV_KEY)||0)||0;
   let cloudDirty=localStorage.getItem(DIRTY_KEY)==='1';
   let cloudApplying=false;
@@ -342,11 +351,21 @@
   window.zukaitServerHistory={page:v2EventPage};
   window.zukaitServerRecent={page:opts=>v2EventPage({...opts,cursor:null})};
 
+  // Share only overlapping requests. Completed reports are never cached.
+  const reportRequests=new Map();
   async function v2ReportPage({report,cursor=null,limit=100,filters={}}={}){
-    const r=await api({action:'v2_report_page',report:String(report||'').toUpperCase(),before:cursor?.before||cursor||null,before_id:cursor?.before_id||null,limit:Math.max(1,Math.min(Number(limit)||100,500)),filters:filters||{}});
-    if(!r.ok)throw new Error(r.code||'V2_REPORT_FAILED');
-    const rows=Array.isArray(r.rows)?r.rows:[];
-    return {rows,nextCursor:r.next_cursor||null,hasMore:!!r.next_cursor,source:'server'};
+    const payload={action:'v2_report_page',report:String(report||'').toUpperCase(),before:cursor?.before||cursor||null,before_id:cursor?.before_id||null,limit:Math.max(1,Math.min(Number(limit)||100,500)),filters:filters||{}};
+    const key=JSON.stringify([sessionToken(),me?.id||'',me?.role||'',payload]);
+    let request=reportRequests.get(key);
+    if(!request){
+      request=(async()=>{
+        const r=await api(payload);
+        if(!r.ok)throw new Error(r.code||'V2_REPORT_FAILED');
+        return {rows:Array.isArray(r.rows)?r.rows:[],nextCursor:r.next_cursor||null,hasMore:!!r.next_cursor,source:'server'};
+      })();
+      reportRequests.set(key,request);
+    }
+    try{return clone(await request)}finally{if(reportRequests.get(key)===request)reportRequests.delete(key)}
   }
   async function v2SearchJobCards({query,cursor=null,limit=50}={}){
     const q=String(query||'').trim();
@@ -730,9 +749,15 @@
     if(permissionBlocked(payloadState())){status('PERMISSION DENIED — CHANGE PRESERVED','bad');return false;}
     if(!sessionToken()){status('LOGIN REQUIRED','bad');return false}
     if(!navigator.onLine){status('OFFLINE — CHANGE QUEUED','warn');return false}
+    const localSnapshot=payloadState();
+    if(unchangedAcknowledgedUpload(localSnapshot)){
+      cloudDirty=false;
+      localStorage.removeItem(DIRTY_KEY);
+      return true;
+    }
+    const requestScope=uploadScope();
     cloudPushing=true;
     status('SAVING…','info');
-    const localSnapshot=payloadState();
     const pushGeneration=dirtyGeneration;
     let followupPush=false;
     try{
@@ -751,6 +776,7 @@
           ? reconcileConsumablesDuplicates(clone(r.data))
           : clone(localSnapshot);
         lastSyncedState=clone(authoritativeSnapshot);
+        acknowledgedUpload={scope:requestScope,revision:cloudRevision,snapshot:JSON.stringify(authoritativeSnapshot)};
 
         if(newerPending){
           // Preserve server-side rebase/reconciliation while replaying only the
