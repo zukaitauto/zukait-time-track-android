@@ -21,7 +21,7 @@ assert.equal(run(mechanical,supervisor).ok,true);
 assert.equal(run({...mechanical,operation:'MECHANICAL_QC'},supervisor).code,'mechanical_capability_required','Generic supervisor cannot inherit QC');
 assert.equal(run(mechanical,supervisor,{...policy,mechanicalStaff:{}}).code,'mechanical_capability_required');
 assert.equal(checklistNumberFromAllocatedSequence(1),fixture.firstChecklist);
-assert.throws(()=>checklistNumberFromAllocatedSequence(2),/mc_number_policy_required/);
+assert.equal(checklistNumberFromAllocatedSequence(2),'MC002');
 assert.equal(checklistNumberFromAllocatedSequence(999,{minimumDigits:3}),'MC999');assert.equal(checklistNumberFromAllocatedSequence(1000,{minimumDigits:3}),'MC1000');
 for(const n of [0,-1,1.5,NaN,Number.MAX_SAFE_INTEGER+1])assert.throws(()=>checklistNumberFromAllocatedSequence(n));
 for(const n of fixture.examplesOMRMills)assert.equal(validOMRMills(n),true);

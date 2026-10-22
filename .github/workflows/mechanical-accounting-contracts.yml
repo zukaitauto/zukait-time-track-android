@@ -20,3 +20,28 @@ jobs:
           node tests/mechanical-task-transitions.mjs
           node tests/time-management.mjs
           node tests/manager-time-management.mjs
+  persistence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: mechanical-test-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGPASSWORD: mechanical-test-only
+      ZUKAIT_MECHANICAL_NATIVE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --include=dev
+      - name: Native transactional persistence and overlapping writers
+        run: node tests/mechanical-persistence.mjs

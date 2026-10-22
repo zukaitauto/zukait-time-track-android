@@ -13,13 +13,19 @@ function order(x){if(Array.isArray(x))return x.map(order);if(x&&typeof x==='obje
 function knownFields(value,fields){return value&&typeof value==='object'&&!Array.isArray(value)&&Object.keys(value).every(k=>fields.includes(k));}
 function technician(data,id,policy){return typeof policy.mechanicalDepartment==='string'&&policy.mechanicalDepartment.length>0&&(data.users||[]).find(u=>u&&u.id===id&&u.role==='Employee'&&u.active!==false&&u.department===policy.mechanicalDepartment);}
 function liveJob(data,number){return (data.jobs||[]).find(j=>j&&j.no===number&&!j.delivered&&!j.cancelled&&!j.archived&&!j.deleted);}
+export async function mechanicalCommandFingerprint(command){
+ if(!globalThis.crypto?.subtle)throw new Error('cryptographic_digest_required');
+ const digest=await globalThis.crypto.subtle.digest('SHA-256',new TextEncoder().encode(canonical(command)));
+ return [...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
 export function mechanicalTransition(records,snapshot,command,context={},policy={},at=Date.now()){
  const access=extensionCommandPreflight(command,context,policy);if(!access.ok)return access;
  if(access.domain!=='mechanical')return fail('not_mechanical_command');
  if(!records||!snapshot||!Array.isArray(records.checklists)||!Array.isArray(records.tasks)||!Array.isArray(records.links)||!Array.isArray(records.receipts)||!Array.isArray(records.audit)||!snapshot.data)return fail('invalid_mechanical_snapshot');
  if(['checklists','tasks','links','receipts','audit'].some(k=>records[k].some(x=>!x||typeof x!=='object'||Array.isArray(x))))return fail('invalid_mechanical_snapshot');
  if(!knownFields(command,['operation','requestId','actorId','entityId','deviceId','expectedRevision','expectedWorkshopRevision','payload']))return fail('invalid_command');
- const fingerprint=canonical(command),prior=records.receipts.find(r=>r.requestId===command.requestId);
+ if(context.commandFingerprint!==undefined&&!/^[0-9a-f]{64}$/.test(context.commandFingerprint))return fail('invalid_fingerprint_context');
+ const fingerprint=context.commandFingerprint||canonical(command),prior=records.receipts.find(r=>r.requestId===command.requestId);
  if(prior)return prior.actorId===context.actor.id&&prior.fingerprint===fingerprint?{ok:true,duplicate:true,result:clone(prior.result)}:fail('request_reused');
  if(!Number.isSafeInteger(records.revision)||records.revision<0||records.revision>=Number.MAX_SAFE_INTEGER)return fail('invalid_records_revision');
  if(!Array.isArray(snapshot.data.assign)||!Array.isArray(snapshot.data.sessions)||!Array.isArray(snapshot.data.users)||!Array.isArray(snapshot.data.jobs))return fail('invalid_workshop_snapshot');
@@ -30,7 +36,7 @@ export function mechanicalTransition(records,snapshot,command,context={},policy=
  let entity,before=null,assignment=null,source=null;
  if(command.operation==='MC_CREATE'){
   if(!knownFields(p,['manualJobCard'])||!knownFields(p.manualJobCard,['number','date'])||!text(p.manualJobCard.number,80)||!date(p.manualJobCard.date))return fail('invalid_manual_jc');
-  if(!['allow','deny'].includes(policy.manualJcDuplicateMode))return fail('manual_jc_policy_required');
+  if(policy.manualJcDuplicateMode!=='deny')return fail('manual_jc_policy_required');
   if(!liveJob(data,p.manualJobCard.number))return fail('existing_active_jc_required');
   if(records.checklists.some(c=>c.id===command.entityId))return fail('checklist_id_exists');
   if(policy.manualJcDuplicateMode==='deny'&&records.checklists.some(c=>c.manualJobCard.number===p.manualJobCard.number))return fail('manual_jc_duplicate');

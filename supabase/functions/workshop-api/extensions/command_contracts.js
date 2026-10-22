@@ -35,7 +35,7 @@ export function extensionCommandPreflight(command,context={},policy={}){
 // Amounts enter future domain transitions as exact integer OMR mills.
 // This does not replace existing invoice/receipt/ledger projections.
 export function validOMRMills(value){return Number.isSafeInteger(value)&&value>=0;}
-export function checklistNumberFromAllocatedSequence(sequence,policy={}){
+export function checklistNumberFromAllocatedSequence(sequence,policy={minimumDigits:3}){
  if(!Number.isSafeInteger(sequence)||sequence<1)throw new Error('invalid_mc_sequence');
  // Pure display formatting only: allocation/retries remain a future atomic RPC.
  if(sequence===1)return 'MC001';
