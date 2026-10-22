@@ -1884,6 +1884,11 @@ Deno.serve(async (req: Request) => {
     return reply({ ok:false, code:"unknown_action" }, 400);
   } catch (e) {
     console.error(e);
+    // Old clients already preserve 403 queues rather than retry them forever.
+    // New clients can explicitly reconcile this authority conflict from Sync.
+    if (["mechanical_authority_conflict","mechanical_live_authority_conflict"].includes(String((e as any)?.message||""))) {
+      return reply({ok:false,code:String((e as any).message),retryable:false},403);
+    }
     // A database deadline is temporary server pressure, not a broken network.
     const databaseCode=String((e as any)?.code||"");
     if(["57014","55P03","53300","53400","PGRST003"].includes(databaseCode)){

@@ -20,6 +20,7 @@ jobs:
           node tests/mechanical-task-transitions.mjs
           node tests/mechanical-api.mjs
           node --experimental-vm-modules tests/mechanical-route.mjs
+          node tests/mechanical-recovery.mjs
           node tests/time-management.mjs
           node tests/manager-time-management.mjs
   persistence:

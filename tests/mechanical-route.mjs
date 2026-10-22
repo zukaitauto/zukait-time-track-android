@@ -4,8 +4,8 @@ import {mechanicalRoute} from '../supabase/functions/workshop-api/extensions/mec
 const id=n=>'75000000-0000-4000-8000-'+String(n).padStart(12,'0');
 const source=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
 const policy={flags:{mechanical:true},mechanicalStaff:{QA_SUP:['MC_CREATE']},mechanicalDepartment:'QA_MECH',manualJcDuplicateMode:'deny',mcNumbering:{minimumDigits:3}};
-let handler,flag,invalid=false,role='Supervisor',revoke=false,authReads=0,calls=[],failCommit=false;
-const admin={from:table=>{assert.equal(table,'staff_sessions');const chain={select(){return chain},eq(){return chain},maybeSingle:async()=>{authReads++;return {data:invalid||(revoke&&authReads===3)?null:{user_id:'QA_SUP',revoked_at:null,last_seen_at:new Date().toISOString(),staff_credentials:{user_id:'QA_SUP',display_name:'QA supervisor',role,department:'QA_MECH',active:true,must_change:false}}}}};return chain},
+let handler,flag,invalid=false,role='Supervisor',revoke=false,authReads=0,calls=[],failCommit=false,guardError;
+const admin={from:table=>{if(table!=='staff_sessions'&&guardError)throw Error(guardError);assert.equal(table,'staff_sessions');const chain={select(){return chain},eq(){return chain},maybeSingle:async()=>{authReads++;return {data:invalid||(revoke&&authReads===3)?null:{user_id:'QA_SUP',revoked_at:null,last_seen_at:new Date().toISOString(),staff_credentials:{user_id:'QA_SUP',display_name:'QA supervisor',role,department:'QA_MECH',active:true,must_change:false}}}}};return chain},
  rpc:async(name,p)=>{
   calls.push({name,p});assert.equal(p.p_actor,'QA_SUP');assert.match(p.p_session_hash,/^[0-9a-f]{64}$/);assert.notEqual(p.p_session_hash,'qa-synthetic-session');
   if(name==='zukait_mechanical_read'){
@@ -35,4 +35,5 @@ let r=await request();assert.equal(r.status,200);assert.equal(r.body.result.numb
 revoke=true;r=await request();assert.equal(r.status,401);assert.equal(calls.some(c=>c.name.endsWith('_commit')),false);revoke=false;
 failCommit=true;r=await request();assert.equal(r.status,401);assert.equal(r.body.code,'invalid_session');failCommit=false;
 role='Accountant';assert.equal((await request({action:'accountant_dashboard'})).body.accountant,true,'Existing Accountant routing remains available');
+role='Supervisor';for(const code of ['mechanical_authority_conflict','mechanical_live_authority_conflict']){guardError=code;r=await request({action:'load'});assert.equal(r.status,403);assert.equal(r.body.code,code);assert.equal(r.body.retryable,false);}guardError=null;
 console.log('PASS real Edge handler: exact default-off environment flag, existing auth gate, role isolation, trusted hash binding, strict body, safe errors, no snapshot exposure, pre-commit revocation, existing Accountant route. Synthetic only.');

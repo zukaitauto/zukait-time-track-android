@@ -3,6 +3,11 @@ import {mechanicalTransition,mechanicalCommandFingerprint} from '../supabase/fun
 import {mechanicalPersistenceRequest} from '../supabase/functions/workshop-api/extensions/mechanical_persistence_plan.js';
 import {mechanicalCommandApi} from '../supabase/functions/workshop-api/extensions/mechanical_api.js';
 import {mechanicalRoute} from '../supabase/functions/workshop-api/extensions/mechanical_route.js';
+import {stripTypeScriptTypes} from 'node:module';
+import {qcWork,qcStatus,qcTransition} from '../supabase/functions/workshop-api/qc_delivery_rules.js';
+import {managerTimeTransition} from '../supabase/functions/workshop-api/time_management_rules.js';
+const apiSource=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+const employeeTransition=new Function('cloneValue','crypto',stripTypeScriptTypes(apiSource.slice(apiSource.indexOf('function employeeTimeTransition('),apiSource.indexOf('// ID001_ASSIGNMENT_RULE_BEGIN')))+';return employeeTimeTransition;')(structuredClone,globalThis.crypto);
 import {allocationToken,employeeTimeToken,workedMinutes} from '../supabase/functions/workshop-api/time_management_rules.js';
 const native=process.env.ZUKAIT_MECHANICAL_NATIVE==='1';let db,client,admin,config,database,pg;
 if(native){
@@ -84,7 +89,9 @@ try{
   d=>{d.assign[0].emp='QA_B'},
   d=>{d.assign[0].suggested=0},
   d=>{d.assign[0].completedAt+=1},
-  d=>{d.assign.push(structuredClone(d.assign[0]))}
+  d=>{d.assign.push(structuredClone(d.assign[0]))},
+  d=>{d.sessions.push({id:'QA_OLD_PHONE_RESUME',assignmentId:sourceId,emp:'QA_A',job:'QA_JC_0',start:at,end:null})},
+  d=>{d.sessions.push({id:'QA_OLD_PHONE_LATE_WORK',assignmentId:sourceId,emp:'QA_A',job:'QA_JC_0',start:at,end:at+60000})}
  ];
  await db.exec('set role service_role');
  for(const mutate of staleVariants){
@@ -132,6 +139,35 @@ try{
  await db.exec('set role service_role');const routeResult=await mechanicalRoute(routeAdmin,routeActor,routeBody,routeOptions);assert.equal(routeResult.status,200,JSON.stringify(routeResult));assert.equal(routeResult.body.result.entityId,routeCommand.entityId);assert.ok(!JSON.stringify(routeResult).includes('snapshot'));
  assert.equal((await mechanicalRoute(routeAdmin,routeActor,routeBody,routeOptions)).body.duplicate,true);
  await db.exec('reset role');await db.query('update staff_sessions set revoked_at=now() where token_hash=$1',[sessionHash]);assert.equal((await mechanicalRoute(routeAdmin,routeActor,routeBody,routeOptions)).status,401);await db.query('update staff_sessions set revoked_at=null where token_hash=$1',[sessionHash]);
+ // Existing shared time rules operate on the linked successor; the source
+ // retains its original hours. This does not invent Mechanical QC mapping.
+ let flow=(await snapshot()).data;
+ assert.equal(employeeTransition(flow,{id:'QA_A',role:'Employee'},{event_type:'START',action_id:'QA_BAD_RESTART',assignment_id:sourceId,job:'QA_JC_0'},at+1000).code,'employee_time_assignment_not_open');
+ const sourceAssignment=flow.assign.find(a=>a.id===sourceId);
+ const tmRequest={operation:'REOPEN',assignmentId:sourceId,requestId:'tm-'+randomUUID(),reason:'Do not undo handover',expectedSource:allocationToken(sourceAssignment),expectedSessions:employeeTimeToken(flow,'QA_A')};
+ assert.equal(managerTimeTransition(flow,{id:'QA_MANAGER',role:'Manager'},tmRequest,at+1000).code,'time_handover_source_locked');
+ const historic=flow.sessions.find(s=>s.id==='QA_SESSION');
+ const correction={...tmRequest,operation:'CORRECT_SESSION',sessionId:historic.id,start:historic.start+60000,end:historic.end};
+ assert.equal(managerTimeTransition(flow,{id:'QA_MANAGER',role:'Manager'},correction,at+1000).ok,true,'Existing audited closed-history correction remains available');
+ assert.equal(managerTimeTransition(flow,{id:'QA_MANAGER',role:'Manager'},{...correction,end:sourceAssignment.completedAt+60000},at+120000).code,'time_handover_cutoff');
+ const commitFlow=async(data,live)=>{const current=await snapshot();const r=(await db.query('select public.zukait_commit_workshop_state_v2($1,$2::jsonb,$3,$4::jsonb) r',[current.revision,JSON.stringify(data),'QA_SUP',JSON.stringify(live)])).rows[0].r;assert.equal(r.ok,true);return (await snapshot()).data};
+ const action=(data,type,actionId,extra={},now=at+60000)=>employeeTransition(data,{id:'QA_B',role:'Employee'},{event_type:type,action_id:actionId,assignment_id:successor,job:'QA_JC_0',...extra},now);
+ const started=action(flow,'START','QA_SUCCESSOR_START',{new_session_id:'QA_SUCCESSOR_PERIOD'});assert.equal(started.ok,true);
+ flow=await commitFlow(started.data,[{employee_id:'QA_A',status:'Available'},{employee_id:'QA_B',status:'Working',assignment_id:successor,session_id:started.session.id,session_start:started.session.start,job_no:'QA_JC_0'}]);
+ const repeated=action(flow,'START','QA_SUCCESSOR_ALREADY_ACTIVE',{new_session_id:'QA_MUST_NOT_CREATE'});assert.equal(repeated.ok,true);assert.equal(repeated.data.sessions.filter(s=>s.emp==='QA_B'&&s.end==null).length,1);
+ assert.equal(action(flow,'START','QA_SECOND_JOB_DENIED',{assignment_id:'QA_OTHER_ASSIGNMENT'}).code,'employee_time_already_active');
+ assert.equal(flow.sessions.filter(s=>s.emp==='QA_B'&&s.end==null).length,1);assert.equal(workedMinutes(flow,flow.assign.find(a=>a.id===sourceId),at+60000),60);
+ assert.equal(qcWork(flow,'QA_JC_0').complete,false);assert.equal(qcTransition(flow,{id:'SUP002',role:'Supervisor'},{operation:'PAINTING_QC',jobCard:'QA_JC_0',expectedQcRevision:0,result:'PASS'},at+60000).code,'work_not_finished');
+ const paused=action(flow,'PAUSE','QA_SUCCESSOR_PAUSE',{session_id:started.session.id},at+1860000);assert.equal(paused.ok,true);flow=await commitFlow(paused.data,[{employee_id:'QA_A',status:'Available'},{employee_id:'QA_B',status:'Paused',assignment_id:successor,job_no:'QA_JC_0'}]);
+ const resumed=action(flow,'START','QA_SUCCESSOR_RESUME',{new_session_id:'QA_SUCCESSOR_SECOND'},at+1920000);assert.equal(resumed.ok,true);flow=await commitFlow(resumed.data,[{employee_id:'QA_A',status:'Available'},{employee_id:'QA_B',status:'Working',assignment_id:successor,session_id:resumed.session.id,session_start:resumed.session.start,job_no:'QA_JC_0'}]);
+ const finished=action(flow,'FINISH','QA_SUCCESSOR_FINISH',{session_id:resumed.session.id},at+2520000);assert.equal(finished.ok,true);flow=await commitFlow(finished.data,[{employee_id:'QA_A',status:'Available'},{employee_id:'QA_B',status:'Available'}]);
+ assert.equal(action(flow,'FINISH','QA_SUCCESSOR_FINISH',{session_id:resumed.session.id},at+2520000).duplicate,true);
+ assert.equal(workedMinutes(flow,flow.assign.find(a=>a.id===sourceId),at+2520000),60);assert.equal(workedMinutes(flow,flow.assign.find(a=>a.id===successor),at+2520000),40);
+ assert.equal(qcWork(flow,'QA_JC_0').complete,true);assert.equal(qcStatus(flow,flow.jobs.find(j=>j.no==='QA_JC_0')).deliveryReady,false);
+ assert.equal(qcTransition(flow,{id:'QA_SUP',role:'Supervisor'},{operation:'PAINTING_QC',jobCard:'QA_JC_0',expectedQcRevision:0,result:'PASS'},at+2520000).code,'qc_permission_denied','No guessed Mechanical supervisor/QC bypass');
+ const qc=qcTransition(flow,{id:'SUP002',role:'Supervisor'},{operation:'PAINTING_QC',jobCard:'QA_JC_0',expectedQcRevision:0,result:'PASS'},at+2520000);assert.equal(qc.ok,true,'Existing painting gate remains');
+ assert.equal(qcTransition(qc.data,{id:'SUP002',role:'Supervisor'},{operation:'FINAL_QC',jobCard:'QA_JC_0',expectedQcRevision:1,result:'PASS'},at+2520000).code,'qc_permission_denied');
+ const reopened=structuredClone(qc.data);reopened.assign.find(a=>a.id===successor).completed=false;assert.equal(qcStatus(reopened,reopened.jobs.find(j=>j.no==='QA_JC_0')).painting,false,'Changed work invalidates existing QC fingerprint');
  if(native){
   // Real concurrent retries/different requests with observable lock contention.
   const a=new pg.Client({...config,database}),b=new pg.Client({...config,database});await Promise.all([a.connect(),b.connect()]);await Promise.all([a.query('set role service_role'),b.query('set role service_role')]);

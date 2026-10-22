@@ -7,10 +7,11 @@
   const DENIED_KEY='zukait_cloud_denied_snapshot_v42';
   let deniedSnapshot=null;
   try{deniedSnapshot=JSON.parse(localStorage.getItem(DENIED_KEY)||'null')}catch(_){}
+  function isMechanicalConflict(code){return ['mechanical_authority_conflict','mechanical_live_authority_conflict'].includes(code)}
   function permissionBlocked(snapshot){
     if(!deniedSnapshot)return false;
     // A different account must never silently submit another user's queue.
-    return String(deniedSnapshot.user)!==String(me?.id||'') || JSON.stringify(deniedSnapshot.data)===JSON.stringify(snapshot);
+    return String(deniedSnapshot.user)!==String(me?.id||'') || isMechanicalConflict(deniedSnapshot.error) || JSON.stringify(deniedSnapshot.data)===JSON.stringify(snapshot);
   }
 
   let cloudRevision=Number(localStorage.getItem(REV_KEY)||0)||0;
@@ -727,7 +728,15 @@
   async function push(retry=0){
     if(cloudPushing||!cloudDirty)return false;
     if(api.retryAfter?.('save')>0)return false;
-    if(permissionBlocked(payloadState())){status('PERMISSION DENIED — CHANGE PRESERVED','bad');return false;}
+    if(permissionBlocked(payloadState())){
+      const mechanicalBlocked=isMechanicalConflict(deniedSnapshot?.error);
+      // A later click must also survive a restart while this queue is blocked.
+      if(mechanicalBlocked&&String(deniedSnapshot.user)===String(me?.id||'')){
+        const pending=payloadState();deniedSnapshot={...deniedSnapshot,data:clone(pending)};
+        try{localStorage.setItem(DENIED_KEY,JSON.stringify(deniedSnapshot));localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:pending,error:deniedSnapshot.error}))}catch(_){}
+      }
+      status(mechanicalBlocked?'WORK CHANGED — SYNC REVIEW REQUIRED':'PERMISSION DENIED — CHANGE PRESERVED','bad');return false;
+    }
     if(!sessionToken()){status('LOGIN REQUIRED','bad');return false}
     if(!navigator.onLine){status('OFFLINE — CHANGE QUEUED','warn');return false}
     cloudPushing=true;
@@ -891,8 +900,11 @@
       localStorage.setItem(DIRTY_KEY,'1');
       lastSyncError=String(e?.code||e?.message||'SAVE_FAILED');consecutiveSyncErrors++;
       const assignmentConflict=e?.code==='id001_already_assigned'&&e?.httpStatus===409;
+      const mechanicalConflict=['mechanical_authority_conflict','mechanical_live_authority_conflict'].includes(e?.code);
       const permissionDenied=e?.httpStatus===403,blocked=permissionDenied||assignmentConflict;
-      if(assignmentConflict){
+      if(mechanicalConflict){
+        setServerConnection('connected','Server reachable. A Mechanical handover changed this work. Pending changes are preserved; use Sync to review.');
+      }else if(assignmentConflict){
         setServerConnection('connected','Server reachable. ID001 is already assigned; pending changes are preserved for review.');
       }else if(permissionDenied){
         setServerConnection('connected','Server reachable, but a change was rejected by permissions. Pending changes are preserved for review.');
@@ -908,7 +920,7 @@
         try{localStorage.setItem(DENIED_KEY,JSON.stringify(deniedSnapshot))}catch(_){}
       }
       try{localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:pendingSnapshot,error:lastSyncError}))}catch(_){}
-      status(assignmentConflict?'ID001 ALREADY ASSIGNED — CHANGE PRESERVED':permissionDenied?'PERMISSION DENIED — CHANGE PRESERVED':(navigator.onLine?'SYNC ERROR — RETRYING':'OFFLINE — CHANGE QUEUED'),navigator.onLine?'bad':'warn');
+      status(mechanicalConflict?'WORK CHANGED — SYNC REVIEW REQUIRED':assignmentConflict?'ID001 ALREADY ASSIGNED — CHANGE PRESERVED':permissionDenied?'PERMISSION DENIED — CHANGE PRESERVED':(navigator.onLine?'SYNC ERROR — RETRYING':'OFFLINE — CHANGE QUEUED'),navigator.onLine?'bad':'warn');
       if(!blocked&&navigator.onLine&&sessionToken())setTimeout(()=>{if(cloudDirty&&!cloudPushing)push(0)},Math.max(api.retryAfter?.('save')||0,Math.min(15000,1000*Math.pow(2,Math.min(consecutiveSyncErrors,4)))));
       return false;
     }finally{
@@ -963,12 +975,84 @@
     try{return await monthlyReadInFlight}finally{monthlyReadInFlight=null}
   }
 
+  // Rebase only unchanged stale authority. An actual local attempt to change
+  // handed-over work or its periods requires review; never discard that queue.
+  function mechanicalConflictRebase(base,remote,pending){
+    const fail=reason=>({ok:false,reason});
+    if(!base||!Array.isArray(base.assign)||!Array.isArray(remote?.assign)||!Array.isArray(pending?.assign))return fail('baseline_unavailable');
+    const bm=new Map(base.assign.map(a=>[a?.id,a])),pm=new Map(pending.assign.map(a=>[a?.id,a]));
+    const linked=remote.assign.filter(a=>a?.mechanicalTaskId&&a?.mechanicalChecklistId);
+    if(!linked.length)return fail('authority_unavailable');
+    const baseSessions=new Map((base.sessions||[]).map(s=>[s?.id,s]));
+    const remoteSessions=new Map((remote.sessions||[]).map(s=>[s?.id,s]));
+    const pendingSessions=new Map((pending.sessions||[]).map(s=>[s?.id,s]));
+    const sourceJobs=new Set();
+    for(const current of linked){
+      const before=bm.get(current.id),local=pm.get(current.id);
+      if(before&&!local)return fail('allocation_removed');
+      const fields=['id','emp','job','mechanicalTaskId','mechanicalChecklistId','handoverFromAssignmentId','handedOverToAssignmentId'];
+      if(current.handedOverToAssignmentId){fields.push('completed','completedAt','suggested','assignedBy','assignedAt');sourceJobs.add(current.job)}
+      if(local)for(const k of fields){
+        if(!same(local[k],before?.[k])&&!same(local[k],current[k]))return fail('allocation_edited');
+      }
+      if(current.handedOverToAssignmentId){
+        for(const period of base.sessions||[])if(period&&(period.assignmentId===current.id||(!period.assignmentId&&period.emp===current.emp&&period.job===current.job))&&!pendingSessions.has(period.id)&&remoteSessions.has(period.id))return fail('source_time_removed');
+        for(const period of pending.sessions||[]){
+          if(period&&(period.assignmentId===current.id||(!period.assignmentId&&period.emp===current.emp&&period.job===current.job))&&!same(period,baseSessions.get(period.id))&&!same(period,remoteSessions.get(period.id)))return fail('source_time_edited');
+        }
+      }
+    }
+    const baseJobs=new Map((base.jobs||[]).map(j=>[j?.no,j])),remoteJobs=new Map((remote.jobs||[]).map(j=>[j?.no,j]));
+    for(const job of pending.jobs||[])if(sourceJobs.has(job?.no))for(const k of ['status','completedAt']){
+      if(!same(job[k],baseJobs.get(job.no)?.[k])&&!same(job[k],remoteJobs.get(job.no)?.[k]))return fail('source_finish_edited');
+    }
+    const merged=threeWayMerge(base,remote,pending),out=new Map((merged.assign||[]).map(a=>[a?.id,a]));
+    for(const current of linked){
+      let row=out.get(current.id);if(!row){row=clone(current);merged.assign.push(row);out.set(current.id,row)}
+      const fields=['id','emp','job','mechanicalTaskId','mechanicalChecklistId','handoverFromAssignmentId','handedOverToAssignmentId'];
+      if(current.handedOverToAssignmentId)fields.push('completed','completedAt','suggested','assignedBy','assignedAt');
+      for(const k of fields){if(current[k]===undefined)delete row[k];else row[k]=clone(current[k])}
+    }
+    return {ok:true,data:merged};
+  }
+  let mechanicalRecoveryInFlight=false;
+  async function recoverMechanicalQueue(){
+    if(mechanicalRecoveryInFlight||cloudPushing||!navigator.onLine||!sessionToken())return false;
+    if(!lastSyncedState){status('CHANGE PRESERVED — MANAGER REVIEW REQUIRED','bad');return false;}
+    const author=String(me?.id||''),token=sessionToken(),base=clone(lastSyncedState);
+    if(author!==String(deniedSnapshot?.user||''))return false;
+    mechanicalRecoveryInFlight=true;
+    try{
+      const latest=await api({action:'load'});
+      if(String(me?.id||'')!==author||sessionToken()!==token)return false;
+      if(!latest?.ok||!latest.data||!Number.isSafeInteger(Number(latest.revision))||Number(latest.revision)<cloudRevision)return false;
+      // Include every click made while the refresh was in flight.
+      const before=clone(state||{}),result=mechanicalConflictRebase(base,latest.data,payloadState());
+      if(!result.ok){status('CHANGE PRESERVED — MANAGER REVIEW REQUIRED','bad');return false;}
+      const priorPending=localStorage.getItem(PENDING_KEY);
+      try{
+        localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:author,revision:Number(latest.revision),data:result.data}));
+        cloudApplying=true;state=result.data;ensureShape();persistLocal();
+      }catch(error){state=before;try{if(priorPending!==null)localStorage.setItem(PENDING_KEY,priorPending)}catch(_){}throw error}
+      finally{cloudApplying=false}
+      cloudRevision=Number(latest.revision);lastSyncedState=clone(latest.data);cloudDirty=true;
+      localStorage.setItem(REV_KEY,String(cloudRevision));localStorage.setItem(DIRTY_KEY,'1');
+      deniedSnapshot=null;localStorage.removeItem(DENIED_KEY);
+      scheduleDashboardRender(before,state);status('HANDOVER REFRESHED — SAVING PENDING CHANGES','info');return true;
+    }catch(error){console.warn('Mechanical refresh failed; pending changes preserved',error);return false}
+    finally{mechanicalRecoveryInFlight=false}
+  }
+
   async function syncNow(){
     if(cloudDirty&&permissionBlocked(payloadState())){
       if(String(deniedSnapshot.user)!==String(me?.id||'')){alert('Pending changes belong to another account. They are preserved; sign in as their author to review them.');return;}
-      if(!confirm('The server rejected a pending change. Your local data is preserved. Retry this change once after its permission or attribution issue has been corrected?'))return;
-      // Only this explicit user action may retry the identical rejected queue.
-      deniedSnapshot=null;localStorage.removeItem(DENIED_KEY);
+      if(isMechanicalConflict(deniedSnapshot.error)){
+        if(!await recoverMechanicalQueue())return;
+      }else{
+        if(!confirm('The server rejected a pending change. Your local data is preserved. Retry this change once after its permission or attribution issue has been corrected?'))return;
+        // Only this explicit user action may retry the identical rejected queue.
+        deniedSnapshot=null;localStorage.removeItem(DENIED_KEY);
+      }
     }
     if(!navigator.onLine)return status('OFFLINE — CHANGE QUEUED','warn');
     if(cloudDirty)await push(0);

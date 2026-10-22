@@ -2,7 +2,7 @@
 -- Reject stale full-state writes atomically; do not merge stale employee history.
 create function zukait_mechanical.protect_assignment_authority() returns trigger
 language plpgsql security invoker set search_path=pg_catalog as $$
-declare by_id jsonb; old_by_id jsonb; link record; candidate jsonb; previous jsonb; field text;
+declare by_id jsonb; old_by_id jsonb; link record; candidate jsonb; previous jsonb; field text; source_ids text[];
 begin
  -- Disabling new commands must never disable protection of existing handovers.
  if new.data is not distinct from old.data then return new;end if;
@@ -33,6 +33,19 @@ begin
    end if;
   end if;
  end loop;
+ -- Older full-state clients must not resume a completed handover source by
+ -- inserting a fresh session while leaving completed=true on the assignment.
+ select array_agg(assignment_id::text) into source_ids from zukait_mechanical.links where successor_id is not null;
+ if source_ids is not null then
+ if exists(select 1 from jsonb_array_elements(coalesce(new.data->'sessions','[]')) s
+  where s->>'assignmentId'=any(source_ids) and not coalesce((s->>'cancelled')::boolean,false)
+   and not coalesce((s->>'voided')::boolean,false) and not coalesce((s->>'deleted')::boolean,false)
+   and case when coalesce(s->>'start','') ~ '^[0-9]+$' and coalesce(s->>'end','') ~ '^[0-9]+$'
+     then (s->>'start')::numeric<=0 or (s->>'end')::numeric<(s->>'start')::numeric or
+       (s->>'end')::numeric>(by_id->(s->>'assignmentId')->>'completedAt')::numeric
+     else true end)
+ then raise exception 'mechanical_authority_conflict';end if;
+ end if;
  return new;
 end $$;
 revoke all on function zukait_mechanical.protect_assignment_authority() from public,anon,authenticated;
