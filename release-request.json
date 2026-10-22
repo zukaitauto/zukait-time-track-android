@@ -1,6 +1,6 @@
 {
-  "versionName": "V359",
-  "versionCode": 322,
+  "versionName": "V360",
+  "versionCode": 323,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
   "sourceCommit": "3c72057a8659178c475cba931fb1dcdddb12a9eb",
@@ -48,8 +48,8 @@
     ]
   },
   "verificationSummary": "V359 restricts Current Without Work to workshop duty hours: 08:00\u201313:00 and 15:00\u201319:00 on working days. Live list is empty during lunch, after 19:00, before duty, Fridays and holidays. Existing duty-time history and accumulated worked hours are preserved. Local boundary and history regression tests passed. CI and signed APK provenance are pinned by workflow IDs. No backend, schema or workshop-record changes for this release. Physical-device acceptance and fresh restore remain NOT_RUN.",
-  "productionBackendDeploymentPerformed": false,
-  "releaseChangeScope": "ideal-time-current-list-duty-hours",
+  "productionBackendDeploymentPerformed": true,
+  "releaseChangeScope": "supervisor-sublet-create",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
@@ -59,7 +59,7 @@
     "backendBundleSha256": "703867a1d81479650efcdf933afb623b1dc489a6e08b9e0a4131355562dad92c",
     "dataResetRequired": false
   },
-  "releaseBackendChanges": false,
+  "releaseBackendChanges": true,
   "managerLeaveCorrectionsAuthorizedByOwner": true,
   "managerLeaveCorrectionsAuthorization": "Owner requested Manager dashboard forgotten leave marking and deletion of mistaken leave, and explicitly confirmed Managers may select past dates.",
   "hiddenReadOptimizationAuthorizedByOwner": true,
@@ -110,5 +110,7 @@
   "missingTimeDispositionAuthorizedByOwner": true,
   "missingTimeDispositionAuthorization": "Owner requested Pause or Finish selection for Manager Add Missing Time and explicitly instructed DEPLOY.",
   "idealTimeDutyHoursAuthorizedByOwner": true,
-  "idealTimeDutyHoursAuthorization": "Owner reported Current Without Work showing after duty time and instructed Proceed to publish the verified duty-hours fix."
+  "idealTimeDutyHoursAuthorization": "Owner reported Current Without Work showing after duty time and instructed Proceed to publish the verified duty-hours fix.",
+  "supervisorSubletCreateAuthorizedByOwner": true,
+  "supervisorSubletCreateAuthorization": "Owner explicitly confirmed Yes, allow Supervisors to add entries, including Sublet description and amount."
 }

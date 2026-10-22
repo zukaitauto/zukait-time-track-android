@@ -1,7 +1,7 @@
 const norm=v=>String(v??'').trim().toUpperCase();
 export function subletTransition(current,user,command,at=Date.now()){
  const editing=command?.action==='sublet_edit';
- if(!(editing?['Manager','Supervisor']:['Manager','Purchaser']).includes(user?.role))return {ok:false,code:'sublet_forbidden'};
+ if(!(editing?['Manager','Supervisor']:['Manager','Purchaser','Supervisor']).includes(user?.role))return {ok:false,code:'sublet_forbidden'};
  const allowed=editing?['action','id','entryId','expectedRevision','date','description','amount']:['action','id','jobCard','date','description','amount'];
  if(!command||Object.keys(command).some(k=>!allowed.includes(k)))return {ok:false,code:'sublet_invalid'};
  const id=String(command.id||''),date=String(command.date||''),description=String(command.description||'').trim(),raw=String(command.amount??'');

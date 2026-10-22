@@ -10,7 +10,7 @@ const first=subletTransition(state,user,cmd,now);
 assert.ok(first.ok);assert.equal(first.entry.amountMills,12345);assert.equal(state.sublets.length,0);
 assert.ok(subletTransition(first.data,user,cmd,now).duplicate,'retry returns existing entry');
 assert.equal(subletTransition(first.data,user,{...cmd,amount:'10'},now).code,'sublet_id_conflict');
-for(const role of ['Employee','Supervisor','Receptionist','Accountant'])assert.equal(subletTransition(state,{...user,role},cmd,now).code,'sublet_forbidden');
+for(const role of ['Employee','Receptionist','Accountant'])assert.equal(subletTransition(state,{...user,role},cmd,now).code,'sublet_forbidden');
 assert.ok(subletTransition(state,{...user,role:'Manager'},cmd,now).ok);
 for(const patch of [{amount:''},{amount:'-1'},{amount:'0'},{amount:'1.2345'},{amount:'Infinity'},{amount:'1000001'},{description:''},{date:'2026-02-30'},{date:'2026-10-22'},{jobCard:'ID001'},{jobCard:'missing'},{extra:'forged'}])assert.equal(subletTransition(state,user,{...cmd,...patch},now).ok,false,JSON.stringify(patch));
 const second=subletTransition(first.data,user,{...cmd,id:'entry-12043-002',amount:'2.005'},now);
@@ -79,8 +79,18 @@ assert.ok(server.includes('candidate.subletAudit = cloneValue(current.data?.subl
 uiContext.window.me={id:'SUP001',role:'Supervisor'};
 await uiContext.window.zukaitSublet.open('12043');
 assert.ok(screen.includes('data-sublet="edit"'),'Supervisor sees Edit');
-assert.ok(!screen.includes('id="subletForm"'),'Supervisor cannot create an expense');
+assert.ok(screen.includes('id="subletForm"'),'Supervisor can enter a new expense');
 listeners.click({target:{closest:()=>({dataset:{sublet:'edit',id:first.entry.id}})}});
 assert.ok(screen.includes('Save Changes'));
 assert.ok(screen.includes('value="12.345"'));
 console.log('Supervisor/Manager corrections, role boundaries, correction history and edit concurrency passed');
+
+const sup={id:'SUP001',role:'Supervisor'};
+const supCmd={...cmd,id:'supervisor-add-001',description:'Supervisor outside repair',amount:'3.125'};
+const supResult=subletTransition(state,sup,supCmd,now);
+assert.ok(supResult.ok);assert.equal(supResult.entry.createdBy,'SUP001');assert.equal(supResult.entry.amountMills,3125);
+assert.ok(subletTransition(supResult.data,sup,supCmd,now).duplicate);
+db=structuredClone(state);revision=1;race=false;
+assert.equal((await env.run('sublet_add',supCmd,sup)).body.ok,true,'server route allows Supervisor creation');
+assert.equal(db.sublets[0].createdBy,'SUP001');
+console.log('Supervisor creation: visible form, server authorization, exact OMR amount, attribution and idempotency passed');

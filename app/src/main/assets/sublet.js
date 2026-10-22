@@ -4,7 +4,7 @@ const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt
 const norm=v=>String(v??'').trim().toUpperCase();
 const permitted=()=>['Manager','Purchaser','Supervisor'].includes((typeof me==='undefined'?window.me:me)?.role);
 const actor=()=>typeof me==='undefined'?window.me:me;
-const canAdd=()=>['Manager','Purchaser'].includes(actor()?.role),canEdit=()=>['Manager','Supervisor'].includes(actor()?.role);
+const canAdd=()=>['Manager','Purchaser','Supervisor'].includes(actor()?.role),canEdit=()=>['Manager','Supervisor'].includes(actor()?.role);
 const snap=()=>window.zukaitCloud?.confirmedState||(typeof state==='undefined'?{}:state);
 let latest=null,selected='',mode='search',busy=false,requestId='',draft=null,editing=null;
 const today=()=>new Date(Date.now()+4*3600000).toISOString().slice(0,10);

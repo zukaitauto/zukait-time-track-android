@@ -1283,7 +1283,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "sublet_add" || action === "sublet_edit") {
-      if(!(action==="sublet_edit"?["Manager","Supervisor"]:["Manager","Purchaser"]).includes(String(user.role)))return reply({ok:false,code:"sublet_forbidden"},403);
+      if(!(action==="sublet_edit"?["Manager","Supervisor"]:["Manager","Purchaser","Supervisor"]).includes(String(user.role)))return reply({ok:false,code:"sublet_forbidden"},403);
       for(let attempt=0;attempt<3;attempt++){
         const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
         if(readError)throw readError;

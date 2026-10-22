@@ -273,7 +273,7 @@
     await syncNow();return r;
   }
   async function addSublet(command){
-    if(!me||!['Manager','Purchaser'].includes(me.role))throw new Error('sublet_forbidden');
+    if(!me||!['Manager','Purchaser','Supervisor'].includes(me.role))throw new Error('sublet_forbidden');
     const r=await api({...command,action:'sublet_add'});
     if(!r.ok)throw new Error(r.code||'SUBLET_SAVE_FAILED');
     await syncNow();
