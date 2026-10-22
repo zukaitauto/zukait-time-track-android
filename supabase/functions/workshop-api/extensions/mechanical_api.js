@@ -1,4 +1,4 @@
-// Inactive server boundary candidate. No deployed router imports this module.
+// Default-off server boundary candidate; routed only in the undeployed draft.
 // All dependencies/policy/session checks are server-owned, never request fields.
 import {extensionCommandPreflight,checklistNumberFromAllocatedSequence} from './command_contracts.js';
 import {mechanicalCommandFingerprint,mechanicalTransition} from './mechanical_rules.js';
@@ -47,7 +47,7 @@ export async function mechanicalCommandApi(input,server={}){
  const transition=mechanicalTransition(records,snapshot,command,context,server.policy,server.now?.()??Date.now());
  if(!transition.ok)return response(transition.code,409);
  const plan=await mechanicalPersistenceRequest(records,snapshot,command,transition,clientCommand);
- // The future SQL adapter must additionally bind/check this session atomically.
+ // The SQL adapter additionally binds/checks this session under row locks.
  const current=await server.verifySession();
  if(!current||current.active!==true||current.id!==actor.id||current.role!==actor.role)return response('session_changed',401);
  const result=await server.commit(plan);

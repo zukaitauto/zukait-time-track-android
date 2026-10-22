@@ -2,6 +2,7 @@ import fs from 'node:fs';import assert from 'node:assert/strict';import {randomU
 import {mechanicalTransition,mechanicalCommandFingerprint} from '../supabase/functions/workshop-api/extensions/mechanical_rules.js';
 import {mechanicalPersistenceRequest} from '../supabase/functions/workshop-api/extensions/mechanical_persistence_plan.js';
 import {mechanicalCommandApi} from '../supabase/functions/workshop-api/extensions/mechanical_api.js';
+import {mechanicalRoute} from '../supabase/functions/workshop-api/extensions/mechanical_route.js';
 import {allocationToken,employeeTimeToken,workedMinutes} from '../supabase/functions/workshop-api/time_management_rules.js';
 const native=process.env.ZUKAIT_MECHANICAL_NATIVE==='1';let db,client,admin,config,database,pg;
 if(native){
@@ -11,8 +12,9 @@ if(native){
  assert.ok(Number((await db.query('show server_version_num')).rows[0].server_version_num)>=170000&&Number((await db.query('show server_version_num')).rows[0].server_version_num)<180000);
  for(const role of ['anon','authenticated','service_role'])if(!(await db.query('select 1 from pg_roles where rolname=$1',[role])).rows.length)await db.exec('create role '+role+' nologin'+(role==='service_role'?' bypassrls':''));
 }else{const {PGlite}=await import('@electric-sql/pglite');db=new PGlite();}
-const rpcSql='select public.zukait_mechanical_commit($1,$2::uuid,$3,$4,$5,$6,$7::uuid,$8,$9::jsonb) r';
-const values=p=>[p.p_actor,p.p_request,p.p_fingerprint,p.p_expected_records,p.p_expected_workshop,p.p_operation,p.p_entity,p.p_device,JSON.stringify(p.p_plan)];
+const sessionHash='a'.repeat(64); // Synthetic hash only, never a production token.
+const rpcSql='select public.zukait_mechanical_commit($1,$2::uuid,$3,$4,$5,$6,$7::uuid,$8,$9::jsonb,$10) r';
+const values=p=>[p.p_actor,p.p_request,p.p_fingerprint,p.p_expected_records,p.p_expected_workshop,p.p_operation,p.p_entity,p.p_device,JSON.stringify(p.p_plan),Object.hasOwn(p,'p_session_hash')?p.p_session_hash:sessionHash];
 const call=p=>db.query(rpcSql,values(p)).then(r=>r.rows[0].r);
 const scalar=async sql=>(await db.query(sql)).rows[0].n;
 let at=Date.parse('2026-10-19T04:00:00Z');
@@ -21,10 +23,14 @@ try{
  for(const f of fs.readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(fs.readFileSync('supabase/migrations/'+f,'utf8'));
  await db.exec(fs.readFileSync('tests/fixtures/workshop-save-live-functions.sql','utf8'));await db.exec(fs.readFileSync('experiments/live-status-session-partition.sql','utf8'));
  await db.exec("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt,must_change) values('QA_SUP','QA supervisor','Supervisor','QA_MECHANICAL','none','none',false),('QA_A','QA mechanic A','Employee','QA_MECHANICAL','none','none',false),('QA_B','QA mechanic B','Employee','QA_MECHANICAL','none','none',false),('QA_OTHER','Other','Employee','OTHER','none','none',false)");
+ // Minimal schema-only session fixture, matched to read-only live metadata.
+ await db.exec('create table public.staff_sessions(token_hash text primary key,user_id text not null references public.staff_credentials(user_id),created_at timestamptz not null default now(),last_seen_at timestamptz not null default now(),revoked_at timestamptz);alter table public.staff_sessions enable row level security;grant all on public.staff_sessions to service_role');
+ await db.query('insert into staff_sessions(token_hash,user_id) values($1,$2),($3,$4)',[sessionHash,'QA_SUP','b'.repeat(64),'QA_A']);
  const initial={users:[{id:'QA_A',role:'Employee',department:'QA_MECHANICAL'},{id:'QA_B',role:'Employee',department:'QA_MECHANICAL'}],jobs:Array.from({length:12},(_,i)=>({no:'QA_JC_'+i,status:'Open'})),assign:[],sessions:[],expenses:[{id:'preserve',amount:12.345}],leaves:[{emp:'OTHER'}]};
  await db.query("insert into workshop_state(id,revision,data,updated_by) values('main',1,$1::jsonb,'QA_SUP')",[JSON.stringify(initial)]);
  await db.exec(fs.readFileSync('experiments/mechanical-persistence.sql','utf8'));
  await db.exec(fs.readFileSync('experiments/mechanical-authority-guard.sql','utf8'));
+ await db.exec(fs.readFileSync('experiments/mechanical-readers.sql','utf8'));
  // Trusted fixture only. Production defaults must remain disabled and unmapped.
  assert.equal(await scalar('select count(*)::int n from zukait_mechanical.settings where not enabled'),1);
  const policy={flags:{mechanical:true},mechanicalDepartment:'QA_MECHANICAL',manualJcDuplicateMode:'deny',mcNumbering:{minimumDigits:3},mechanicalStaff:{QA_SUP:['MC_CREATE','TASK_CREATE','TASK_ASSIGN','TASK_HANDOVER']}};
@@ -107,11 +113,36 @@ try{
  const stale=await prepare('TASK_CREATE',randomUUID(),{checklistId:firstId,title:'Stale'});await db.exec("update workshop_state set revision=revision+1 where id='main'");const count=Number(await scalar('select count(*) n from zukait_mechanical.tasks'));await assert.rejects(call(stale),/workshop_revision_conflict/);assert.equal(Number(await scalar('select count(*) n from zukait_mechanical.tasks')),count);
  for(const role of ['anon','authenticated']){await db.exec('set role '+role);await assert.rejects(db.query('select * from zukait_mechanical.receipts'),/permission denied/);await assert.rejects(call(first),/permission denied/);await db.exec('reset role');}
  await db.exec('set role service_role');await assert.rejects(db.exec("update zukait_mechanical.links set employee_id='QA_B'"),/permission denied/,'original employee link is not updateable');for(const table of ['audit','receipts'])for(const statement of ['update '+table+" set actor_id='QA_SUP'",'delete from '+table,'truncate '+table])await assert.rejects(db.exec(statement.replace(table,'zukait_mechanical.'+table)),/permission denied|mechanical_append_only/);await assert.rejects(db.exec('update zukait_mechanical.settings set enabled=true'),/permission denied/);await db.exec('reset role');
+ // A receipt is never an authentication bypass. No raw session tokens enter SQL.
+ for(const hash of [null,'raw-token','f'.repeat(64),'b'.repeat(64)])await assert.rejects(call({...first,p_session_hash:hash}),/mechanical_invalid_session/);
+ await db.query('update staff_sessions set revoked_at=now() where token_hash=$1',[sessionHash]);await assert.rejects(call(first),/mechanical_invalid_session/);await db.query('update staff_sessions set revoked_at=null where token_hash=$1',[sessionHash]);
+ await db.exec("update staff_credentials set active=false where user_id='QA_SUP'");await assert.rejects(call(first),/mechanical_forbidden/);await db.exec("update staff_credentials set active=true,role='Employee' where user_id='QA_SUP'");await assert.rejects(call(first),/mechanical_forbidden/);await db.exec("update staff_credentials set role='Supervisor' where user_id='QA_SUP'");
+ const readSql='select public.zukait_mechanical_read($1,$2,$3,$4,$5::uuid,$6::uuid,$7::jsonb) r';
+ const read=async(kind,op='TASK_CREATE',entity=task,payload={checklistId:firstId},request=null)=>(await db.query(readSql,['QA_SUP',sessionHash,op,kind,request,entity,JSON.stringify(payload)])).rows[0].r;
+ const scoped=await read('context');assert.equal(scoped.records.checklists.length,1);assert.equal(scoped.records.tasks.length,1);assert.equal(scoped.records.links.length,2);assert.deepEqual(scoped.records.receipts,[]);assert.deepEqual(scoped.records.audit,[]);
+ assert.equal((await read('policy')).mechanicalStaff.QA_SUP.includes('TASK_HANDOVER'),true);assert.equal((await read('receipt','MC_CREATE',null,{},first.p_request)).result.number,'MC001');
+ for(const role of ['anon','authenticated']){await db.exec('set role '+role);await assert.rejects(read('policy'),/permission denied/);await db.exec('reset role');}
+ // Use the same service RPC adapter as the disabled router, against real SQL.
+ let routeCalls=0;const routeAdmin={rpc:async(name,p)=>{routeCalls++;try{return {data:name==='zukait_mechanical_read'?(await db.query(readSql,[p.p_actor,p.p_session_hash,p.p_operation,p.p_kind,p.p_request,p.p_entity,JSON.stringify(p.p_payload)])).rows[0].r:await call(p)}}catch(error){return {error:{message:error.message}}}}};
+ const routeActor={id:'QA_SUP',role:'Supervisor'};
+ const routeContext=await read('context');const routeCommand={operation:'TASK_CREATE',entityId:randomUUID(),requestId:randomUUID(),deviceId:'QA_ROUTE',expectedRevision:routeContext.records.revision,expectedWorkshopRevision:routeContext.snapshot.revision,payload:{checklistId:firstId,title:'API adapter SQL acceptance'}};
+ const routeBody={action:'mechanical_command',command:routeCommand};
+ assert.equal((await mechanicalRoute(routeAdmin,routeActor,routeBody)).body.code,'extension_disabled');assert.equal(routeCalls,0);
+ const routeOptions={enabled:true,sessionHash,verifySession:async()=>routeActor};
+ await db.exec('set role service_role');const routeResult=await mechanicalRoute(routeAdmin,routeActor,routeBody,routeOptions);assert.equal(routeResult.status,200,JSON.stringify(routeResult));assert.equal(routeResult.body.result.entityId,routeCommand.entityId);assert.ok(!JSON.stringify(routeResult).includes('snapshot'));
+ assert.equal((await mechanicalRoute(routeAdmin,routeActor,routeBody,routeOptions)).body.duplicate,true);
+ await db.exec('reset role');await db.query('update staff_sessions set revoked_at=now() where token_hash=$1',[sessionHash]);assert.equal((await mechanicalRoute(routeAdmin,routeActor,routeBody,routeOptions)).status,401);await db.query('update staff_sessions set revoked_at=null where token_hash=$1',[sessionHash]);
  if(native){
   // Real concurrent retries/different requests with observable lock contention.
   const a=new pg.Client({...config,database}),b=new pg.Client({...config,database});await Promise.all([a.connect(),b.connect()]);await Promise.all([a.query('set role service_role'),b.query('set role service_role')]);
+  try{
+  async function blocked(waiter,holder){for(let i=0;i<100;i++){if((await db.query('select $2::int=any(pg_blocking_pids($1::int)) blocked',[waiter.processID,holder.processID])).rows[0].blocked)return;await new Promise(r=>setTimeout(r,20));}assert.fail('Expected session/credential lock contention');}
+  // Valid command owns a shared session lock until its transaction commits.
+  await a.query('begin');await a.query(rpcSql,values(first));const revoke=b.query('update staff_sessions set revoked_at=now() where token_hash=$1',[sessionHash]);await blocked(b,a);await a.query('commit');await revoke;await assert.rejects(call(first),/mechanical_invalid_session/);await db.query('update staff_sessions set revoked_at=null where token_hash=$1',[sessionHash]);
+  // If revocation wins first, a command waits, rechecks the changed row and fails.
+  await b.query('begin');await b.query('update staff_sessions set revoked_at=now() where token_hash=$1',[sessionHash]);const waiting=a.query(rpcSql,values(first)).then(()=>({ok:true}),error=>({error}));await blocked(a,b);await b.query('commit');assert.match((await waiting).error.message,/mechanical_invalid_session/);await db.query('update staff_sessions set revoked_at=null where token_hash=$1',[sessionHash]);
   async function race(p1,p2,duplicate){await a.query('begin');await b.query('begin');try{const one=(await a.query(rpcSql,values(p1))).rows[0].r;const pending=b.query(rpcSql,values(p2)).then(r=>({row:r.rows[0].r}),error=>({error}));let blocked=false;for(let i=0;i<100;i++){if((await db.query('select $2::int=any(pg_blocking_pids($1::int)) blocked',[b.processID,a.processID])).rows[0].blocked){blocked=true;break}await new Promise(r=>setTimeout(r,20));}assert.ok(blocked,'Second writer must wait on the tested lock');await a.query('commit');const two=await pending;if(duplicate){assert.equal(two.row.duplicate,true);assert.equal(two.row.number,one.number);await b.query('commit')}else{assert.match(two.error.message,/mechanical_revision_conflict/);await b.query('rollback')}}finally{await a.query('rollback');await b.query('rollback')}}
-  try{const p=await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_2',date:'2026-10-19'}});await race(p,p,true);const p1=await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_3',date:'2026-10-19'}}),p2=await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_4',date:'2026-10-19'}});await race(p1,p2,false);assert.equal((await call(await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_4',date:'2026-10-19'}}))).number,'MC005');}finally{await Promise.all([a.end(),b.end()]);}
+  const p=await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_2',date:'2026-10-19'}});await race(p,p,true);const p1=await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_3',date:'2026-10-19'}}),p2=await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_4',date:'2026-10-19'}});await race(p1,p2,false);assert.equal((await call(await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_4',date:'2026-10-19'}}))).number,'MC005');}finally{await Promise.all([a.query('rollback'),b.query('rollback')]);await Promise.all([a.end(),b.end()]);}
  }
  console.log('PASS '+(native?'native PostgreSQL 17 concurrent':'PGlite')+' persistence: MC001/MC002, retry identity, one JC/MC, rollback/no consumed number, metadata without full-state writes, atomic assignment/handover/history/live triggers, dual revision checks, append-only and private service ACL. No production access.');
 }finally{if(native){await client.end();await admin.query('drop database "'+database+'" with (force)');await admin.end();}else await db.close();}

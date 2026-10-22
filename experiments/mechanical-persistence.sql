@@ -72,8 +72,27 @@ create trigger immutable_receipt before update or delete or truncate on zukait_m
 create trigger immutable_audit before update or delete or truncate on zukait_mechanical.audit for each statement execute function zukait_mechanical.append_only();
 revoke all on function zukait_mechanical.append_only() from public,anon,authenticated;
 
+-- Lock credentials then session in the same order as account administration.
+-- Revocation/deactivation cannot pass this point until the command finishes.
+create function zukait_mechanical.authorize_session(p_actor text,p_session_hash text,p_operation text)
+returns jsonb language plpgsql security invoker set search_path=pg_catalog as $$
+declare cfg zukait_mechanical.settings; staff_role text;
+begin
+ select * into cfg from zukait_mechanical.settings where singleton;
+ if not coalesce(cfg.enabled,false) then raise exception 'mechanical_disabled';end if;
+ if p_session_hash is null or p_session_hash !~ '^[0-9a-f]{64}$' then raise exception 'mechanical_invalid_session';end if;
+ select role into staff_role from public.staff_credentials where user_id=p_actor and active for share;
+ if staff_role is null or staff_role not in ('Manager','Supervisor') then raise exception 'mechanical_forbidden';end if;
+ perform 1 from public.staff_sessions where token_hash=p_session_hash and user_id=p_actor and revoked_at is null for share;
+ if not found then raise exception 'mechanical_invalid_session';end if;
+ if p_operation is null or jsonb_typeof(cfg.capabilities->p_actor) is distinct from 'array' or not coalesce((cfg.capabilities->p_actor) ? p_operation,false) then raise exception 'mechanical_forbidden';end if;
+ return jsonb_build_object('flags',jsonb_build_object('mechanical',true),'mechanicalStaff',jsonb_build_object(p_actor,cfg.capabilities->p_actor),'mechanicalDepartment',cfg.department,'manualJcDuplicateMode',cfg.duplicate_jc_mode,'mcNumbering',jsonb_build_object('minimumDigits',cfg.minimum_digits));
+end $$;
+revoke all on function zukait_mechanical.authorize_session(text,text,text) from public,anon,authenticated;
+grant execute on function zukait_mechanical.authorize_session(text,text,text) to service_role;
+
 create function public.zukait_mechanical_commit(
- p_actor text,p_request uuid,p_fingerprint text,p_expected_records bigint,p_expected_workshop bigint,p_operation text,p_entity uuid,p_device text,p_plan jsonb
+ p_actor text,p_request uuid,p_fingerprint text,p_expected_records bigint,p_expected_workshop bigint,p_operation text,p_entity uuid,p_device text,p_plan jsonb,p_session_hash text
 ) returns jsonb language plpgsql security invoker set search_path=pg_catalog,public,zukait_mechanical as $$
 declare
  cfg zukait_mechanical.settings; ctl zukait_mechanical.control; receipt zukait_mechanical.receipts;
@@ -82,6 +101,7 @@ declare
  jc text; number_text text; linked_job text; successor uuid; target text; assigned jsonb; next_assign jsonb;
  result jsonb; is_shared boolean:=false;
 begin
+ perform zukait_mechanical.authorize_session(p_actor,p_session_hash,p_operation);
  select * into cfg from zukait_mechanical.settings where singleton;
  if not coalesce(cfg.enabled,false) then raise exception 'mechanical_disabled';end if;
  select role into staff_role from public.staff_credentials where user_id=p_actor and active;
@@ -164,5 +184,5 @@ begin
  insert into zukait_mechanical.audit(request_id,actor_id,operation,entity_id,device_id,reason,before_value,after_value) values(p_request,p_actor,p_operation,p_entity,p_device,coalesce(p_plan->>'reason',''),source_before,coalesce(assignment,item));
  return result;
 end $$;
-revoke all on function public.zukait_mechanical_commit(text,uuid,text,bigint,bigint,text,uuid,text,jsonb) from public,anon,authenticated;
-grant execute on function public.zukait_mechanical_commit(text,uuid,text,bigint,bigint,text,uuid,text,jsonb) to service_role;
+revoke all on function public.zukait_mechanical_commit(text,uuid,text,bigint,bigint,text,uuid,text,jsonb,text) from public,anon,authenticated;
+grant execute on function public.zukait_mechanical_commit(text,uuid,text,bigint,bigint,text,uuid,text,jsonb,text) to service_role;

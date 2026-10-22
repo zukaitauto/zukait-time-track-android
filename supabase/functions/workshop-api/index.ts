@@ -1,3 +1,4 @@
+import { mechanicalRoute } from "./extensions/mechanical_route.js";
 import { subletTransition } from './sublet_rules.js';
 import {accountantApi,accountantError} from './accountant/api.js';
 import {insuranceProjection,insuranceLpoTransition} from './insurance_management_rules.js';
@@ -1021,6 +1022,15 @@ Deno.serve(async (req: Request) => {
       user = await sessionUser(token);
     }
     if (!user) return reply({ ok: false, code: "invalid_session" }, 401);
+
+    if (action.startsWith("mechanical_")) {
+      const enabled = Deno.env.get("ZUKAIT_MECHANICAL_ENABLED") === "true";
+      const result = await mechanicalRoute(admin, user, body, {
+        enabled, sessionHash: enabled ? await sha256Hex(token) : "",
+        verifySession: () => sessionUser(token)
+      });
+      return reply(result.body, result.status);
+    }
 
     if (user.role === 'Accountant' || action.startsWith('accountant_')) {
       try {const result=await accountantApi(admin,user,body,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);return reply(result.body,result.status);}
