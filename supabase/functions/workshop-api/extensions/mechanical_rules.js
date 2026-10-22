@@ -60,7 +60,7 @@ export function mechanicalTransition(records,snapshot,command,context={},policy=
    if(p.expectedSource!==allocationToken(source)||p.expectedEmployeeSessions!==employeeTimeToken(data,source.emp))return fail('handover_source_changed');
    // STOP/PAUSE must already be acknowledged by existing time authority.
    if((data.sessions||[]).some(s=>s&&s.emp===source.emp&&active(s)))return fail('stop_outgoing_work_first');
-   if((data.sessions||[]).some(s=>s&&s.assignmentId===source.id&&(!Number.isFinite(Number(s.start))||!Number.isFinite(Number(s.end))||Number(s.start)<=0||Number(s.end)<Number(s.start)||Number(s.end)>at)))return fail('handover_time_review_required');
+   if((data.sessions||[]).some(s=>s&&(s.assignmentId===source.id||(!s.assignmentId&&s.emp===source.emp&&s.job===source.job))&&(!Number.isFinite(Number(s.start))||!Number.isFinite(Number(s.end))||Number(s.start)<=0||Number(s.end)<Number(s.start)||Number(s.end)>at)))return fail('handover_time_review_required');
    employeeId=p.targetEmployeeId;assignmentId=p.successorAssignmentId;
    if(employeeId===source.emp)return fail('handover_same_employee');
    if((data.sessions||[]).some(s=>s&&s.emp===employeeId&&active(s)))return fail('target_employee_working');

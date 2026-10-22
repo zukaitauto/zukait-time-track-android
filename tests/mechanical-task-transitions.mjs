@@ -44,6 +44,8 @@ const h=handover();assert.equal(run(h,records,snapshot,{...context,timeSnapshotC
 const running=structuredClone(snapshot);running.data.sessions.push({id:'QA_OTHER_RUNNING',emp:'QA_A',job:'ID001',start});
 const hr={...h,payload:{...h.payload,expectedEmployeeSessions:employeeTimeToken(running.data,'QA_A')}};assert.equal(run(hr,records,running).code,'stop_outgoing_work_first');
 const targetRunning=structuredClone(snapshot);targetRunning.data.sessions.push({id:'QA_TARGET_RUNNING',emp:'QA_D',job:'ID001',start});assert.equal(run(h,records,targetRunning).code,'target_employee_working');
+const futureLegacy=structuredClone(snapshot);futureLegacy.data.sessions.push({id:'QA_LEGACY_FUTURE',emp:'QA_A',job:'QA_JC',start:at+1,end:at+60000});
+assert.equal(run({...h,payload:{...h.payload,expectedEmployeeSessions:employeeTimeToken(futureLegacy.data,'QA_A')}},records,futureLegacy).code,'handover_time_review_required');
 const beforeSessions=JSON.stringify(snapshot.data.sessions),beforeData=JSON.stringify(snapshot.data);
 const stale={...h,payload:{...h.payload,expectedSource:'stale'}};assert.equal(run(stale).code,'handover_source_changed');
 apply(run(h));assert.equal(JSON.stringify(snapshot.data.sessions),beforeSessions);assert.equal(records.audit.at(-1).before.emp,'QA_A');assert.equal(records.audit.at(-1).reason,'Audited shift handover');
