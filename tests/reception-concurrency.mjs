@@ -76,6 +76,7 @@ try{
  await control.query(fs.readFileSync('tests/fixtures/reception-postgres17-baseline.sql','utf8'));
  for(const file of fs.readdirSync('supabase/migrations').filter(x=>x.endsWith('.sql')).sort())await control.query(fs.readFileSync('supabase/migrations/'+file,'utf8'));
  await control.query(fs.readFileSync('supabase/V336_JOB_DESCRIPTION_PERSISTENCE.sql','utf8'));
+ if(process.env.ZUKAIT_IDENTITY_GUARD_CANDIDATE==='1')await control.query(fs.readFileSync('experiments/reception-identity-single-pass.sql','utf8'));
  await control.query("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt) values('QA-MGR','QA Manager','Manager','','not-a-credential','not-a-salt'),('QA-SUP','QA Supervisor','Supervisor','','not-a-credential','not-a-salt'),('QA-EMP','QA Employee','Employee','DENTING','not-a-credential','not-a-salt')");
  const initial={users:[{id:'QA-EMP',name:'QA Employee',role:'Employee',department:'DENTING'}],jobs:[{no:'QA-LEGACY',vehicle:'Legacy test vehicle',jobType:'CASH',status:'Open'}],assign:[{id:'QA-LEGACY-A',emp:'QA-EMP',job:'QA-LEGACY',completed:false}],sessions:[{id:'QA-LEGACY-S',assignmentId:'QA-LEGACY-A',emp:'QA-EMP',job:'QA-LEGACY',start:Date.now()-60000,end:0}],estimates:[],expenses:[{id:'QA-EXPENSE',job:'QA-LEGACY',amount:12.345}],consumables:[{id:'QA-MATERIAL',job:'QA-LEGACY',amount:3.21}]};
  await control.query("insert into workshop_state(id,data,revision,updated_by) values('main',$1,1,'QA-MGR')",[initial]);
