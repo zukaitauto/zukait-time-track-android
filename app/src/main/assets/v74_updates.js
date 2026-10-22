@@ -3951,7 +3951,7 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
      .sort((a,b)=>(+b.start||0)-(+a.start||0))[0]||null;
  }
  function currentRow(u,at=Date.now()){
-   if(activeAnyWork(u.id,at)||activeProductive(u.id,at)||leave(u.id,at)||closed(at))return null;
+   if(!dutySegments(at,at+1).length||activeAnyWork(u.id,at)||activeProductive(u.id,at)||leave(u.id,at)||closed(at))return null;
    const prev=lastProductive(u.id,at);if(!prev||!prev.end)return null;
    const gap=uncovered(u.id,+prev.end,at);if(gap.minutes<5)return null;
    return{u,prev,status:statusFor(prev),since:+prev.end,minutes:gap.minutes};
@@ -3971,7 +3971,8 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  function renderLive(){
    const host=document.getElementById('v247Live');if(!host)return;
    const rows=window.v247CurrentIdealRows();
-   const empty='<div class="notice">No employee has been without productive work for more than 5 minutes.</div>';
+   const onDuty=dutySegments(Date.now(),Date.now()+1).length>0;
+   const empty='<div class="notice">'+(onDuty?'No employee has been without productive work for more than 5 minutes.':'Outside duty hours. Current Without Work is shown only from 08:00–13:00 and 15:00–19:00 on workshop working days.')+'</div>';
    const table=rows.length?'<div class="v74-scroll"><table><tr><th>Employee</th><th>Department</th><th>Previous JC</th><th>Status</th><th>Without Work Since</th><th>Ideal Time</th></tr>'+rows.map(x=>'<tr><td><b>'+esc(x.u.name)+'</b></td><td>'+esc(x.u.department||'—')+'</td><td><b>'+esc(x.prev.job)+'</b></td><td>'+esc(x.status)+'</td><td>'+esc(tm(x.since))+'</td><td><b>'+fm(x.minutes)+'</b></td></tr>').join('')+'</table></div>':empty;
    host.innerHTML='<h3>Current Without Work <span class="pill">'+rows.length+'</span></h3><div class="small muted">Appears after 5 minutes without starting another productive Job Card.</div>'+table;
  }

@@ -1,6 +1,6 @@
 {
-  "versionName": "V358",
-  "versionCode": 321,
+  "versionName": "V359",
+  "versionCode": 322,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
   "sourceCommit": "df122be9618d189e92164452c0abd4a364c4233d",
@@ -49,7 +49,7 @@
   },
   "verificationSummary": "V358 adds required Pause/Finish selection to Manager Add Missing Time. Tests cover both saved dispositions, assignment completion, retained worked hours, audit, idempotency, permissions, later-session safety and stale-save preservation. QA19 and production85 deploy only the modified rules file over the complete production84 bundle; readback matches exactly. No schema or workshop-record changes in this deployment. Physical-device acceptance and fresh restore remain NOT_RUN. Signed APK and CI provenance are pinned by workflow IDs.",
   "productionBackendDeploymentPerformed": true,
-  "releaseChangeScope": "manager-missing-time-pause-finish",
+  "releaseChangeScope": "ideal-time-current-list-duty-hours",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
@@ -108,5 +108,7 @@
     "workshopRecordsChanged": false
   },
   "missingTimeDispositionAuthorizedByOwner": true,
-  "missingTimeDispositionAuthorization": "Owner requested Pause or Finish selection for Manager Add Missing Time and explicitly instructed DEPLOY."
+  "missingTimeDispositionAuthorization": "Owner requested Pause or Finish selection for Manager Add Missing Time and explicitly instructed DEPLOY.",
+  "idealTimeDutyHoursAuthorizedByOwner": true,
+  "idealTimeDutyHoursAuthorization": "Owner reported Current Without Work showing after duty time and instructed Proceed to publish the verified duty-hours fix."
 }

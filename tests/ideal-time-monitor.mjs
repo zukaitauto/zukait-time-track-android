@@ -1,7 +1,7 @@
 import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';process.env.TZ='Asia/Muscat';
 const src=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8'),mark=src.indexOf('V247 IDEAL TIME MONITOR'),start=src.indexOf("(function(){'use strict';",mark),end=src.indexOf('window.v247IdealTimeReady=true',start),block=src.slice(start,end+'window.v247IdealTimeReady=true'.length+7);
 assert.ok(start>0&&end>start,'Ideal Time monitor block exists');
-const om=s=>Date.parse(s),now=om('2026-10-01T11:10:00Z');
+const om=s=>Date.parse(s);let now=om('2026-10-01T11:10:00Z');
 class Clock extends Date{constructor(...a){super(...(a.length?a:[now]))}static now(){return now}}
 const users=[{id:'E1',role:'Employee',name:'Babu',department:'Denter'}],state={sessions:[],assign:[],leaves:[],workshopHolidays:[]};
 const ctx={state,users,Date:Clock,window:{v75IsClosedWorkshopDay(t){const d=new Clock(t);return d.getDay()===5||state.workshopHolidays.some(h=>h.dateKey===d.toISOString().slice(0,10))},v63IsOnLeave(){return false}},activeSession(id){return state.sessions.find(s=>s.emp===id&&!s.end)||null},fmt:m=>m+'m',me:{role:'Supervisor'},document:{getElementById(){return null},createElement(){return{}},head:{appendChild(){}}},setInterval(){},setTimeout(){},openModal(){}};
@@ -29,3 +29,14 @@ state.leaves=[{emp:'E1',date:'2026-10-01',period:'FULL',startAt:om('2026-10-01T0
 h=ctx.window.v247IdealHistory('E1',om('2026-10-01T04:00:00Z'),om('2026-10-01T06:00:00Z'),false);
 assert.equal(h[0].minutes,40,'a later leave must not hide idle time before its start');
 console.log('Remaining-day leave preserves earlier Ideal Time gaps.');
+
+// The live list stops at lunch and duty end; historical duty minutes stay intact.
+state.leaves=[];state.sessions=[S('A','2026-10-01T04:00:00Z','2026-10-01T05:00:00Z')];
+for(const stamp of ['2026-10-01T03:59:59Z','2026-10-01T09:00:00Z','2026-10-01T10:59:59Z','2026-10-01T15:00:00Z','2026-10-01T15:23:00Z','2026-10-02T06:00:00Z']){
+ now=om(stamp);assert.equal(ctx.window.v247CurrentIdealRows().length,0,'outside duty: '+stamp);
+}
+now=om('2026-10-01T14:59:59Z');assert.equal(ctx.window.v247CurrentIdealRows().length,1,'live list remains active before 19:00');
+now=om('2026-10-01T15:23:00Z');
+h=ctx.window.v247IdealHistory('E1',om('2026-10-01T04:00:00Z'),now,true);assert.equal(h[0].minutes,480,'after duty history retains only the 8 duty hours since 09:00');
+state.workshopHolidays=[{dateKey:'2026-10-01'}];now=om('2026-10-01T11:10:00Z');assert.equal(ctx.window.v247CurrentIdealRows().length,0,'holiday hides live idle list');
+console.log('Live Ideal Time duty boundaries: before shift, lunch, 19:00, after duty, Friday and holiday passed; history retained.');
