@@ -14,4 +14,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: node tests/mechanical-accounting-contracts.mjs
+      - name: Inactive extension contracts and Mechanical task transitions
+        run: |
+          node tests/mechanical-accounting-contracts.mjs
+          node tests/mechanical-task-transitions.mjs
+          node tests/time-management.mjs
+          node tests/manager-time-management.mjs

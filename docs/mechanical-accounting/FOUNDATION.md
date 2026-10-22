@@ -16,7 +16,7 @@ Only MC001 is confirmed. Pure formatting returns MC001 for allocated sequence 1;
 
 ## Fixtures and tests
 
-Synthetic fixture documents separate immutable MC UUID, display number and manual JC/date. It records the accepted 2-mechanics/120-labour/60-elapsed example and a linked handover preserving outgoing employee/history. These are requirements fixtures; this phase does NOT implement or qualify the task/hour/handover algorithms.
+Synthetic fixture documents separate immutable MC UUID, display number and manual JC/date. It records the accepted 2-mechanics/120-labour/60-elapsed example and a linked handover preserving outgoing employee/history. These are requirements fixtures; the initial fixture alone did not qualify task/hour/handover algorithms. The later inactive transition candidate and its precise limits are documented below.
 
 Executable tests cover inactive defaults, role/operation isolation, explicit Mechanical QC capability, configurable Accountant approvals, offline/account switch/actor/revision denial, MC formatting decision gate, exact integer amount contract and immutable inputs. CI invokes only local Node tests; no external API, database service, credentials or production probes.
 
@@ -29,3 +29,15 @@ Next independent work: define additive record schemas and idempotent MC allocati
 The existing nine-module Accountant workspace, shared time/leave/ID001/repeat/delivery/export rules and append-only journal remain authoritative. Cash final invoice receipt policy follows V341, including deposit/late receipt reconciliation and posted versus counted distinction. All financial writes remain online-only. Warranty and expense attachments are excluded.
 
 Production migration/deployment/publication requires separate exact-source/environment approval. Full plan approval is already recorded and is not requested again.
+
+## Inactive checklist/task transition candidate
+
+`extensions/mechanical_rules.js` now adds pure MC registration, task creation, multiple-mechanic assignment and audited handover plans. It is not imported by any API route or UI. MC registration requires an existing active JC, a valid explicit manual JC date, configured duplicate policy and a server-verified allocated MC identity tied to the same request UUID. It does not allocate sequence numbers or create JC records. Mechanical department identity must be supplied explicitly in trusted policy; no production Jibin/department mapping is guessed.
+
+Handover is distinct from existing REASSIGN. It requires server-confirmed closed/paused outgoing work, unchanged allocation and employee-session tokens, an inactive-free target, an explicit reason and explicit successor allocation. It marks the source assignment completed, retains its employee, suggested time and all recorded sessions, creates a linked successor assignment and records before/after attribution. It never starts a timer or silently stops running work. Task assignment only schedules work; Start/Pause/Stop remains the existing shared time authority. The prototype does not establish duty/leave/overtime eligibility for a future Start command or change labour/payroll/QC calculations.
+
+The pure function returns dedicated scoped Mechanical record updates and shared workshop assignment updates. A future server handler MUST persist both atomically, check both revisions, enforce immutable UUID/fingerprint receipts and database constraints, and read current verified time in that same transaction. The test harness exercising revision conflicts is not a replacement for real PostgreSQL concurrency/allocator qualification. Receipt/audit arrays in the prototype input/output model scoped database projections; they must not be appended to the production full-state JSON or loaded as unbounded history.
+
+Tests exercise separate MC/manual-JC identity, request retry/misuse, configured duplicate gating, independent tasks, multiple mechanics, wrong-department/inactive employee denial, target/source running work, changed session/allocation tokens, handed-over original session/hour preservation, reason/audit, no implicit timer start, lost-ack successor deduplication, metadata/workshop revision checks and source immutability. Two simultaneous 60-minute synthetic periods are checked using the existing shared workedMinutes helper, yielding 120 labour minutes and 60 elapsed minutes. Existing time-management and Manager correction/reassignment tests remain gates.
+
+Unimplemented: atomic allocator/persistence, API and UI integration, Start/Finish integration, Mechanical QC routes, holds/promises/priority authority, PDFs/signatures, payroll and banking. No production deployment is authorized by these candidate tests.
