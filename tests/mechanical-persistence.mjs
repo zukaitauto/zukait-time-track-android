@@ -80,6 +80,7 @@ try{
   d=>{d.assign[0].completedAt+=1},
   d=>{d.assign.push(structuredClone(d.assign[0]))}
  ];
+ await db.exec('set role service_role');
  for(const mutate of staleVariants){
   const staleData=structuredClone(saved.data);mutate(staleData);
   await assert.rejects(db.query('select public.zukait_commit_workshop_state_v2($1,$2::jsonb,$3,$4::jsonb)',[saved.revision,JSON.stringify(staleData),'QA_SUP',JSON.stringify([{employee_id:'QA_A',status:'Working',assignment_id:sourceId,job_no:'QA_JC_0'}])]),/mechanical_authority_conflict/);
@@ -87,16 +88,19 @@ try{
   assert.deepEqual((await db.query('select * from workshop_live_status order by employee_id')).rows,liveBefore,'Rejected save cannot reach/retain a stale live-status override');
   assert.equal(Number(await scalar('select count(*) n from workshop_state_history')),historyBefore,'Archive insertion rolls back too');
  }
+ await db.exec('reset role');
  await db.exec('update zukait_mechanical.settings set enabled=false');
  const undo=structuredClone(saved.data);undo.assign[0].completed=false;
  await assert.rejects(db.query("update workshop_state set data=$1::jsonb where id='main'",[JSON.stringify(undo)]),/mechanical_authority_conflict/,'Turning off new commands must preserve existing handovers');
  await db.exec('update zukait_mechanical.settings set enabled=true');
+ await db.exec('set role service_role');
  await assert.rejects(db.query('select public.zukait_commit_workshop_state_v2($1,$2::jsonb,$3,$4::jsonb)',[saved.revision,JSON.stringify(saved.data),'QA_SUP',JSON.stringify([{employee_id:'QA_A',status:'Working',assignment_id:sourceId,job_no:'QA_JC_0'}])]),/mechanical_live_authority_conflict/,'Identical-state RPC retry cannot revive a handed-over source through p_live');
  assert.deepEqual((await db.query('select * from workshop_live_status order by employee_id')).rows,liveBefore);
  const fresh=structuredClone(saved.data);fresh.expenses.push({id:'QA_UNRELATED',amount:1.234});
  const ordinary=(await db.query('select public.zukait_commit_workshop_state_v2($1,$2::jsonb,$3,$4::jsonb) r',[saved.revision,JSON.stringify(fresh),'QA_SUP',JSON.stringify(liveBefore)])).rows[0].r;
  assert.equal(ordinary.ok,true,'Fresh ordinary full save preserves linked assignments and succeeds');
  assert.deepEqual((await snapshot()).data.sessions,saved.data.sessions);
+ await db.exec('reset role');
  assert.equal(Number(await scalar("select count(*) n from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='zukait_mechanical' and c.relkind='r' and c.relrowsecurity")),7);
  await assert.rejects(db.exec("update zukait_mechanical.audit set actor_id='QA_SUP'"),/mechanical_append_only/,'append-only trigger also rejects owner updates');
  // Both revisions are checked before any metadata or shared writes.
