@@ -1,0 +1,29 @@
+name: Isolated client traffic acceptance
+on:
+  push:
+    branches: [perf/client-traffic-coalescing-draft]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --include=dev
+      - name: Client coalescing and simultaneous-device acceptance
+        run: |
+          node tests/client-traffic-coalescing.mjs
+          node tests/client-traffic-concurrency.mjs
+          node tests/cloud-sync-recovery.mjs
+          node tests/cloud-permission-retry-barrier.mjs
+          node tests/leave-sync-race.mjs
+          node tests/leave-sync-authority.mjs
+          node tests/hidden-read-traffic.mjs
+          node tests/native-update-sync-safety.mjs
+          node tests/cloud-dashboard-stability.mjs
+          node --experimental-vm-modules tests/sync-traffic-compatibility.mjs
