@@ -1,9 +1,9 @@
 {
-  "versionCode": 320,
-  "versionName": "V357",
+  "versionCode": 321,
+  "versionName": "V358",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "deabc6b0f93047c634935fd9acff82e327470983",
-  "apkSha256": "194836032fd67e535f843247b7d98181892a1c12fb740a84b4c1668a9219c2f2",
-  "releaseTag": "release-V357-architecture-v2"
+  "sourceCommit": "df122be9618d189e92164452c0abd4a364c4233d",
+  "apkSha256": "d22284b76c7520ab6c023eb58410d5997bd57207348d7e9d6a31b0785a469440",
+  "releaseTag": "release-V358-architecture-v2"
 }
