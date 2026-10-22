@@ -63,7 +63,8 @@ alter table zukait_mechanical.receipts enable row level security;
 alter table zukait_mechanical.audit enable row level security;
 revoke all on all tables in schema zukait_mechanical from public,anon,authenticated,service_role;
 grant select on all tables in schema zukait_mechanical to service_role;
-grant update on zukait_mechanical.control,zukait_mechanical.links to service_role;
+grant update(revision,next_sequence) on zukait_mechanical.control to service_role;
+grant update(successor_id) on zukait_mechanical.links to service_role;
 grant insert on zukait_mechanical.checklists,zukait_mechanical.tasks,zukait_mechanical.links,zukait_mechanical.receipts,zukait_mechanical.audit to service_role;
 create function zukait_mechanical.append_only() returns trigger language plpgsql security invoker set search_path=pg_catalog as $$
 begin raise exception 'mechanical_append_only'; end $$;

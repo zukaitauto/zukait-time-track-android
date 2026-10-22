@@ -18,7 +18,7 @@ At the initial checkpoint only MC001 was confirmed. The owner subsequently confi
 
 Synthetic fixture documents separate immutable MC UUID, display number and manual JC/date. It records the accepted 2-mechanics/120-labour/60-elapsed example and a linked handover preserving outgoing employee/history. These are requirements fixtures; the initial fixture alone did not qualify task/hour/handover algorithms. The later inactive transition candidate and its precise limits are documented below.
 
-Executable tests cover inactive defaults, role/operation isolation, explicit Mechanical QC capability, configurable Accountant approvals, offline/account switch/actor/revision denial, MC formatting decision gate, exact integer amount contract and immutable inputs. CI invokes only local Node tests; no external API, database service, credentials or production probes.
+Executable tests cover inactive defaults, role/operation isolation, explicit Mechanical QC capability, configurable Accountant approvals, offline/account switch/actor/revision denial, MC formatting decision gate, exact integer amount contract and immutable inputs. CI runs local Node contracts and a disposable loopback-only PostgreSQL 17 service for the later persistence experiment; no production credentials, external business API calls or production probes.
 
 ## Decisions and next phases
 
@@ -40,7 +40,7 @@ The pure function returns dedicated scoped Mechanical record updates and shared 
 
 Tests exercise separate MC/manual-JC identity, request retry/misuse, configured duplicate gating, independent tasks, multiple mechanics, wrong-department/inactive employee denial, target/source running work, changed session/allocation tokens, handed-over original session/hour preservation, reason/audit, no implicit timer start, lost-ack successor deduplication, metadata/workshop revision checks and source immutability. Two simultaneous 60-minute synthetic periods are checked using the existing shared workedMinutes helper, yielding 120 labour minutes and 60 elapsed minutes. Existing time-management and Manager correction/reassignment tests remain gates.
 
-Unimplemented: atomic allocator/persistence, API and UI integration, Start/Finish integration, Mechanical QC routes, holds/promises/priority authority, PDFs/signatures, payroll and banking. No production deployment is authorized by these candidate tests.
+At this transition-only checkpoint, atomic allocator/persistence was still unimplemented; the later isolated SQL prototype below supersedes that status. API/UI and Start/Finish/QC integration, holds/promises/priority authority, PDFs/signatures, payroll and banking remain unimplemented. No production deployment is authorized by these candidate tests.
 
 ## Confirmed numbering and draft persistence — supersedes earlier open decisions
 
@@ -57,3 +57,5 @@ For assignment/handover, the RPC applies only a small assignment delta under the
 Qualification runs a fresh in-memory PGlite fixture locally and a loopback-only disposable native PostgreSQL 17 database in CI, loading the full existing migrations and live-state trigger fixture. Tests include MC001/MC002, lost acknowledgements, duplicate JC denial, injected audit failure with no consumed number/partial rows, no full-state writes for metadata, atomic handover/history/status preservation, 400 synthetic historical periods without sending their array in the RPC, both revision conflicts, append-only operations and ACL denials. Native CI additionally overlaps same-UUID retries and competing distinct UUIDs, observes row-lock waits, rejects stale writers, retries at the next number and confirms continuous MC005. No production access or records are used.
 
 Still not activated/qualified: API routes and current-session binding, applied/generated migration, production settings, MC UI, financial posting, real-device acceptance, old-client full-save authority preservation and end-to-end Start/Finish/QC/delivery integration. In particular, existing full-state saves and their live-status payloads must preserve Mechanical handover authority before activation; this isolated persistence prototype alone does not establish old-client compatibility. Do not deploy independently of those integration gates. The existing Accountant ledger and financial rights remain unchanged.
+
+Final persistence candidate tested: ff2d319881d4f7012214dee5e942fbb42896afce. Native/contract CI 39835087638 and existing sync/full-save/permission CI 39835096981 both passed. These results qualify isolated transactions, not production integration or rollout.
