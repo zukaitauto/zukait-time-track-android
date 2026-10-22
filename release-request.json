@@ -3,7 +3,7 @@
   "versionCode": 322,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
-  "sourceCommit": "df122be9618d189e92164452c0abd4a364c4233d",
+  "sourceCommit": "3c72057a8659178c475cba931fb1dcdddb12a9eb",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-22T15:07:16.319991Z",
-  "publishNonce": "bd46c9f1638d42b45f4e294c583ba713fa207b378794100d",
+  "approvedAt": "2026-10-22T15:27:27.186196Z",
+  "publishNonce": "0164b7fb66716177297f42a5c746a929a8618691b7410407",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -47,19 +47,19 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V358 adds required Pause/Finish selection to Manager Add Missing Time. Tests cover both saved dispositions, assignment completion, retained worked hours, audit, idempotency, permissions, later-session safety and stale-save preservation. QA19 and production85 deploy only the modified rules file over the complete production84 bundle; readback matches exactly. No schema or workshop-record changes in this deployment. Physical-device acceptance and fresh restore remain NOT_RUN. Signed APK and CI provenance are pinned by workflow IDs.",
-  "productionBackendDeploymentPerformed": true,
+  "verificationSummary": "V359 restricts Current Without Work to workshop duty hours: 08:00\u201313:00 and 15:00\u201319:00 on working days. Live list is empty during lunch, after 19:00, before duty, Fridays and holidays. Existing duty-time history and accumulated worked hours are preserved. Local boundary and history regression tests passed. CI and signed APK provenance are pinned by workflow IDs. No backend, schema or workshop-record changes for this release. Physical-device acceptance and fresh restore remain NOT_RUN.",
+  "productionBackendDeploymentPerformed": false,
   "releaseChangeScope": "ideal-time-current-list-duty-hours",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
-    "previousRelease": "release-V357-architecture-v2",
-    "strategy": "Restore captured complete production84 bundle; publish a higher-version recovery APK using V357 assets. Preserve workshop history and local queues.",
+    "previousRelease": "release-V358-architecture-v2",
+    "strategy": "Publish a higher-version recovery APK with V358 client assets. No backend rollback or workshop data reset is required for this client-only release.",
     "backendBundleVersion": 84,
     "backendBundleSha256": "703867a1d81479650efcdf933afb623b1dc489a6e08b9e0a4131355562dad92c",
     "dataResetRequired": false
   },
-  "releaseBackendChanges": true,
+  "releaseBackendChanges": false,
   "managerLeaveCorrectionsAuthorizedByOwner": true,
   "managerLeaveCorrectionsAuthorization": "Owner requested Manager dashboard forgotten leave marking and deletion of mistaken leave, and explicitly confirmed Managers may select past dates.",
   "hiddenReadOptimizationAuthorizedByOwner": true,
@@ -87,12 +87,12 @@
     "fixturesRevoked": true,
     "workshopRecordsChanged": false
   },
-  "signedAcceptanceRun": 39801402422,
-  "verificationRun": 39801402489,
-  "accountantVerificationRun": 39801402660,
-  "androidBuildRun": 39801402412,
-  "syncVerificationRun": 39801402364,
-  "nativePdfVerificationRun": 39801402317,
+  "signedAcceptanceRun": 39804933408,
+  "verificationRun": 39804933298,
+  "accountantVerificationRun": 39804933219,
+  "androidBuildRun": 39804933118,
+  "syncVerificationRun": 39804933220,
+  "nativePdfVerificationRun": 39804933077,
   "monthlyReadAuthorizedByOwner": true,
   "monthlyReadAuthorization": "Owner requested Fix it properly for monthly read TIMEOUT, reviewed the remaining deployment/publication steps, and explicitly instructed Proceed.",
   "qaMonthlyRead": {
