@@ -3,7 +3,7 @@
   "versionCode": 323,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
-  "sourceCommit": "3c72057a8659178c475cba931fb1dcdddb12a9eb",
+  "sourceCommit": "b3e60356070aa1738b624bc9380369c51144873a",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-22T15:27:27.186196Z",
-  "publishNonce": "0164b7fb66716177297f42a5c746a929a8618691b7410407",
+  "approvedAt": "2026-10-22T15:41:15.336443Z",
+  "publishNonce": "c0c0868be547b392a89c9dd941f2d8c9fa81d98941f910c1",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -32,11 +32,11 @@
         "verificationBasis": "Read-only production verification; unchanged staff-auth8. No authentication deployment."
       },
       "workshop-api": {
-        "version": 85,
-        "bundleSha256": "ab64ab292f0284273b95d824602086e2a9ec535f0bf8a85a11f7aa8c9da29bb2",
+        "version": 86,
+        "bundleSha256": "4f48d646ef02d3c99f915dfa6c618685d9009523699280b4297852c8a7f350a0",
         "verifiedFileMatch": true,
         "repositorySourceMatchesDeployed": false,
-        "verificationBasis": "Complete production85 readback equals the tested QA19 bundle. Production84 dependencies preserved byte-for-byte; only Manager Add Missing Time Pause/Finish rules changed."
+        "verificationBasis": "Complete production86 readback matches tested QA20 bundle exactly. Production85 preserved except the Supervisor sublet_add permission in the endpoint and Sublet rules."
       }
     },
     "migrations": [
@@ -47,16 +47,16 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V359 restricts Current Without Work to workshop duty hours: 08:00\u201313:00 and 15:00\u201319:00 on working days. Live list is empty during lunch, after 19:00, before duty, Fridays and holidays. Existing duty-time history and accumulated worked hours are preserved. Local boundary and history regression tests passed. CI and signed APK provenance are pinned by workflow IDs. No backend, schema or workshop-record changes for this release. Physical-device acceptance and fresh restore remain NOT_RUN.",
+  "verificationSummary": "V360 authorizes Supervisors to add Sublet entries with Date, Description and OMR Amount in the form, client bridge and server. Existing correction permissions, exact milli-OMR amounts, validation, idempotency, audit attribution, concurrent saves and totals are retained and covered by regression tests. Production86 exact readback matches QA20. Only two existing backend permission lists changed; no schema or workshop-record changes. V359 duty-hour Ideal Time fix is retained. Physical-device acceptance and fresh restore remain NOT_RUN. CI and signed APK provenance are pinned by workflow IDs.",
   "productionBackendDeploymentPerformed": true,
   "releaseChangeScope": "supervisor-sublet-create",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
-    "previousRelease": "release-V358-architecture-v2",
-    "strategy": "Publish a higher-version recovery APK with V358 client assets. No backend rollback or workshop data reset is required for this client-only release.",
-    "backendBundleVersion": 84,
-    "backendBundleSha256": "703867a1d81479650efcdf933afb623b1dc489a6e08b9e0a4131355562dad92c",
+    "previousRelease": "release-V359-architecture-v2",
+    "strategy": "Restore complete production85 bundle if needed; publish a higher-version recovery APK with V359 client assets. Preserve all Sublet records, audit history and local queues.",
+    "backendBundleVersion": 85,
+    "backendBundleSha256": "ab64ab292f0284273b95d824602086e2a9ec535f0bf8a85a11f7aa8c9da29bb2",
     "dataResetRequired": false
   },
   "releaseBackendChanges": true,
@@ -87,12 +87,12 @@
     "fixturesRevoked": true,
     "workshopRecordsChanged": false
   },
-  "signedAcceptanceRun": 39804933408,
-  "verificationRun": 39804933298,
-  "accountantVerificationRun": 39804933219,
-  "androidBuildRun": 39804933118,
-  "syncVerificationRun": 39804933220,
-  "nativePdfVerificationRun": 39804933077,
+  "signedAcceptanceRun": 39807016150,
+  "verificationRun": 39807016149,
+  "accountantVerificationRun": 39807016238,
+  "androidBuildRun": 39807016135,
+  "syncVerificationRun": 39807016182,
+  "nativePdfVerificationRun": 39807016176,
   "monthlyReadAuthorizedByOwner": true,
   "monthlyReadAuthorization": "Owner requested Fix it properly for monthly read TIMEOUT, reviewed the remaining deployment/publication steps, and explicitly instructed Proceed.",
   "qaMonthlyRead": {
