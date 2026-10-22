@@ -1,3 +1,4 @@
+import { createDatabaseFetch } from './database_fetch.js';
 import { subletTransition } from './sublet_rules.js';
 import {accountantApi,accountantError} from './accountant/api.js';
 import {insuranceProjection,insuranceLpoTransition} from './insurance_management_rules.js';
@@ -16,7 +17,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 const admin = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-  { auth: { persistSession: false, autoRefreshToken: false } }
+  { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: createDatabaseFetch() } }
 );
 
 const cors = {
@@ -106,9 +107,10 @@ async function sessionUser(token: string) {
   const hash = await sha256Hex(token);
   // One relational read keeps per-request revocation + active-account checks
   // authoritative while avoiding a second REST round trip on every heartbeat.
-  const { data: session } = await admin.from("staff_sessions")
+  const { data: session, error: sessionError } = await admin.from("staff_sessions")
     .select("user_id,revoked_at,last_seen_at,staff_credentials!staff_sessions_user_id_fkey(user_id,display_name,role,department,active,must_change)")
     .eq("token_hash", hash).maybeSingle();
+  if (sessionError) throw sessionError;
   if (!session || session.revoked_at) return null;
   const staffRaw = (session as any).staff_credentials;
   const staff = Array.isArray(staffRaw) ? staffRaw[0] : staffRaw;
