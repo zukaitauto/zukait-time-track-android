@@ -1,9 +1,9 @@
 {
-  "versionCode": 322,
-  "versionName": "V359",
+  "versionCode": 323,
+  "versionName": "V360",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "3c72057a8659178c475cba931fb1dcdddb12a9eb",
-  "apkSha256": "7c4db0fab13aa7d0a1f4ef1f5bb36df0d8341a4088971a57cd7ca85796f4b29b",
-  "releaseTag": "release-V359-architecture-v2"
+  "sourceCommit": "b3e60356070aa1738b624bc9380369c51144873a",
+  "apkSha256": "91578afad1d17a046d9fe2ad6b2cac379d5705e09ef15a6d05533a55f8082573",
+  "releaseTag": "release-V360-architecture-v2"
 }
