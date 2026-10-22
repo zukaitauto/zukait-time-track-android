@@ -130,7 +130,7 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
  if(!/^tm-[a-zA-Z0-9-]{16,100}$/.test(id))return fail('invalid_time_change');
  if(!reason||reason.length>500)return fail('time_reason_required');
  const command={operation:op,assignmentId:String(request.assignmentId||''),sessionId:String(request.sessionId||''),start:request.start??null,end:request.end??null,minutes:request.minutes??null,targetEmployeeId:String(request.targetEmployeeId||''),reason};
- if(request.workStatus!==undefined){if(op!=='CORRECT_SESSION'||!['PAUSED','FINISHED'].includes(request.workStatus))return fail('invalid_work_status');command.workStatus=request.workStatus;}
+ if(request.workStatus!==undefined){if(!['CORRECT_SESSION','ADD_SESSION'].includes(op)||!['PAUSED','FINISHED'].includes(request.workStatus))return fail('invalid_work_status');command.workStatus=request.workStatus;}
  const prior=(current.additionalActions||[]).find(x=>x?.id===id);
  if(prior)return prior.by===actor.id&&JSON.stringify(prior.command)===JSON.stringify(command)?{ok:true,data:current,audit:prior,duplicate:true}:fail('time_request_reused');
  const a=(current.assign||[]).find(x=>x&&String(x.id)===command.assignmentId);
@@ -148,7 +148,7 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
   if(command.workStatus){
    if(own.some(x=>!x.cancelled&&!x.end))return fail('time_work_running');
    // Historical intervals may be corrected without changing the disposition of later work.
-   if(own.some(x=>!x.cancelled&&x.id!==s.id&&(Number(x.end)>Number(s.end)||Number(x.end)>Number(command.end))))return fail('time_later_session');
+   if(own.some(x=>!x.cancelled&&x.id!==s?.id&&(op==='ADD_SESSION'?Number(x.end)>Number(command.end):(Number(x.end)>Number(s.end)||Number(x.end)>Number(command.end)))))return fail('time_later_session');
    if(command.workStatus==='PAUSED'&&a.completed)return fail('time_reopen_required');
    if(!a.completed&&(j.delivered||j.archived))return fail('time_job_inactive');
    if((current.sessions||[]).some(x=>x&&!x.cancelled&&!x.assignmentId&&String(x.emp)===String(a.emp)&&String(x.job)===String(a.job)&&(current.assign||[]).filter(y=>!y.cancelled&&String(y.emp)===String(a.emp)&&String(y.job)===String(a.job)).length>1))return fail('time_assignment_ambiguous');

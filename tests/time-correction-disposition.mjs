@@ -32,3 +32,25 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 const protect=new Function('cloneValue',block.replace(/: any\b/g,'').replace(/:any\b/g,'').replace(/ as const/g,'')+';return preserveManagerTimeAuthority;')(clone);
 const protectedData=protect(clone(d),r.data);assert.equal(protectedData.assign[0].completed,true);assert.equal(protectedData.sessions[0].finished,true,'stale full-state save cannot undo finished correction');
 console.log('Time correction disposition: finish/pause, costing retention, permissions, historical safety, audit, idempotency and stale-save protection passed.');
+
+// Missing intervals use the same explicit disposition as corrected intervals.
+for(const status of ['PAUSED','FINISHED']){
+ const missing=fixture();missing.sessions=[];
+ const add=command(missing,status,{operation:'ADD_SESSION',sessionId:''});
+ const result=change(missing,manager,add,at);
+ assert.equal(result.ok,true);
+ assert.equal(result.data.sessions[0].paused,status==='PAUSED');
+ assert.equal(result.data.sessions[0].finished,status==='FINISHED');
+ assert.equal(result.data.assign[0].completed,status==='FINISHED');
+ assert.equal(workedMinutes(result.data,result.data.assign[0],at),30);
+ assert.equal(result.audit.command.workStatus,status);
+ assert.equal(change(result.data,manager,add,at+1).duplicate,true);
+ assert.equal(change(result.data,manager,{...add,workStatus:status==='PAUSED'?'FINISHED':'PAUSED'},at).code,'time_request_reused');
+ const guarded=protect(clone(missing),result.data);
+ assert.equal(guarded.sessions[0].finished,status==='FINISHED');
+ if(status==='FINISHED')assert.equal(guarded.assign[0].completed,true);
+}
+const missing=fixture();missing.sessions=[];
+assert.equal(change(missing,manager,command(missing,'INVALID',{operation:'ADD_SESSION'}),at).code,'invalid_work_status');
+assert.equal(change(d,manager,command(d,'FINISHED',{operation:'ADD_SESSION',start:at-7200000,end:at-3600000}),at).code,'time_later_session');
+console.log('Missing Time Pause/Finish: saved status, completion, hours, audit, retries and stale-save protection passed.');

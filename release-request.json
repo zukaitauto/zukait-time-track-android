@@ -1,6 +1,6 @@
 {
-  "versionName": "V357",
-  "versionCode": 320,
+  "versionName": "V358",
+  "versionCode": 321,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
   "sourceCommit": "deabc6b0f93047c634935fd9acff82e327470983",
@@ -49,7 +49,7 @@
   },
   "verificationSummary": "V357 final source passed signed Android, Reception/browser, Accountant, sync compatibility, Android build and native PDF checks. Monthly route tests verify role checks before DB reads, exact null/zero/LPO preservation, payload reduction, deduplicated requests and separation from full-state/queued-edit baselines. Monthly UI tests verify confirmed lists during a concurrent shared revision, no full-download retry after timeout, and old-server compatibility. Live QA18 returned HTTP200 and 4048-byte/19-job responses for Manager and Supervisor; Accountant was rejected403. Temporary QA fixture sessions revoked. Production83 complete bundle matches QA18 exactly, preserving current Sublet and other production82 dependencies; only the new read-only endpoint was added. No schema/business-record migrations. Physical-device acceptance and fresh restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": true,
-  "releaseChangeScope": "scoped-cash-insurance-monthly-reads-preserving-sublet",
+  "releaseChangeScope": "manager-missing-time-pause-finish",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
@@ -106,5 +106,7 @@
     "jobs": 19,
     "fixturesRevoked": true,
     "workshopRecordsChanged": false
-  }
+  },
+  "missingTimeDispositionAuthorizedByOwner": true,
+  "missingTimeDispositionAuthorization": "Owner requested Pause or Finish selection for Manager Add Missing Time and explicitly instructed DEPLOY."
 }

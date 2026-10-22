@@ -80,3 +80,20 @@ h=harness();let finish;h.ctx.zukaitCloud.readLatest=()=>new Promise(r=>finish=r)
 h=harness();h.ctx.zukaitCloud.readLatest=async()=>{throw Error('NETWORK')};await h.ctx.zukaitOpenManagerTimeManagement();assert.equal(h.ctx.html,undefined);assert.match(h.ctx.lastAlert,/Connection/);
 
 console.log('Manager Time Management: permissions, correction, missing time, cancellation, reopen/reassign, audit, stale writes, retries and real click handlers passed.');
+
+for(const status of ['PAUSED','FINISHED']){
+ h=harness();h.ctx.state.sessions=[];
+ await h.ctx.zukaitOpenManagerTimeManagement();
+ h.ctx.zukaitManagerTimeSelect('A1');h.ctx.zukaitManagerTimeAction('ADD_SESSION');
+ assert.match(h.ctx.html,/id="mtWorkStatus"/,'Add Missing Time must show Pause/Finish selection');
+ h.get('mtStart').value=inputTime(at-1800000);h.get('mtEnd').value=inputTime(at);h.get('mtReason').value='Missing work interval';
+ h.ctx.zukaitManagerTimeReview();assert.match(h.get('mtNotice').textContent,/Choose Pause/);
+ assert.equal(h.ctx.calls,undefined);
+ h.get('mtWorkStatus').value=status;h.ctx.zukaitManagerTimeReview();
+ assert.match(h.get('mtReview').innerHTML,/Work status/);
+ await h.ctx.zukaitManagerTimeConfirm();
+ assert.equal(h.ctx.state.sessions[0].paused,status==='PAUSED');
+ assert.equal(h.ctx.state.sessions[0].finished,status==='FINISHED');
+ assert.equal(h.ctx.state.assign[0].completed,status==='FINISHED');
+}
+console.log('Add Missing Time real form: required Pause/Finish selection and confirmed save passed.');
