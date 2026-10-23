@@ -78,6 +78,8 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: python3 tests/reception-acceptance-preparation.py
       - run: npm run test:reception
+      - name: Verify editable Job Card number transport and permissions
+        run: node tests/job-number-edit.mjs
       - run: npm run test:management
       - name: Verify compact Insurance Job Cards and dedicated detail view
         run: node tests/insurance-job-list-layout.mjs
@@ -126,6 +128,15 @@ jobs:
         run: node tests/reception-delivered-status-browser.mjs
       - name: Verify Days Open and company filters for all Reception roles
         run: node tests/reception-company-age-browser.mjs
+      - name: Verify organized Job Card editor and number confirmation on phones
+        run: node tests/job-number-edit-browser.mjs
+      - name: Save Job Card editor previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: job-card-edit-previews-${{ github.run_id }}
+          path: artifacts/job-edit/
+          retention-days: 14
       - name: Verify shared dashboard cards on phones and desktop
         run: node tests/shared-dashboard-cards.mjs && node tests/shared-dashboard-cards-responsive.mjs
       - name: Save shared dashboard card previews

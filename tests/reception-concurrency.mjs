@@ -1,3 +1,4 @@
+import {jobNumberAcceptance} from './job-number-concurrency.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
@@ -224,6 +225,7 @@ try{
  if(process.env.ZUKAIT_POSTGRES_CONTAINER)await rehearseRecovery({admin,control,config,database,
   replays:[{actor:'QA-MGR',command:create},{actor:'QA-MGR',command:additional},{actor:'QA-MGR',command:cancellation8}]});
  else console.log('NOT_RUN: database dump/restore requires a disposable PostgreSQL service container');
+ await jobNumberAcceptance({control,race});
 }finally{
  await Promise.allSettled([a?.end(),b?.end(),control?.end()]);
  // The name is generated in this process; no configurable database is ever dropped.

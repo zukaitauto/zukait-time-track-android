@@ -28,7 +28,7 @@ const cors = {
   "Content-Type": "application/json"
 };
 
-function reply(body: unknown, status = 200) {
+function baseReply(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: cors });
 }
 
@@ -106,9 +106,10 @@ async function sessionUser(token: string) {
   const hash = await sha256Hex(token);
   // One relational read keeps per-request revocation + active-account checks
   // authoritative while avoiding a second REST round trip on every heartbeat.
-  const { data: session } = await admin.from("staff_sessions")
-    .select("user_id,revoked_at,last_seen_at,staff_credentials!staff_sessions_user_id_fkey(user_id,display_name,role,department,active,must_change)")
+  const { data: session, error: sessionError } = await admin.from("staff_sessions")
+    .select("user_id,revoked_at,last_seen_at,job_numbers:workshop_session_job_numbers(number,stable_job,current_number),staff_credentials!staff_sessions_user_id_fkey(user_id,display_name,role,department,active,must_change)")
     .eq("token_hash", hash).maybeSingle();
+  if (sessionError) throw sessionError;
   if (!session || session.revoked_at) return null;
   const staffRaw = (session as any).staff_credentials;
   const staff = Array.isArray(staffRaw) ? staffRaw[0] : staffRaw;
@@ -121,7 +122,10 @@ async function sessionUser(token: string) {
     await admin.from("staff_sessions").update({ last_seen_at: new Date().toISOString() })
       .eq("token_hash", hash);
   }
-  return { id: staff.user_id, name: staff.display_name, role: staff.role, department: staff.department };
+  const authenticatedUser = { id: staff.user_id, name: staff.display_name, role: staff.role, department: staff.department };
+  if ((session.job_numbers || []).length >= 1000) throw Error("job_number_directory_limit");
+  Object.defineProperty(authenticatedUser,"_jobNumbers",{value:session.job_numbers || [],enumerable:false});
+  return authenticatedUser;
 }
 function same(a: any, b: any) {
   // JSON object field order is not business data; JSONB and clients reorder keys.
@@ -987,7 +991,40 @@ function id001AssignmentConflict(candidate: any, previous: any) {
 }
 // ID001_ASSIGNMENT_RULE_END
 
+// Public numbers can change; stored work, events and append-only accounting keys cannot.
+const key=v=>String(v??'').trim().toUpperCase();
+const references=new Set(['job','jobCard','job_card','job_no','jobNo','jobCardNo','job_card_no','jobNumber','job_number','preliminaryLinkedJob','preliminarySourceJob','sourceJob','source_job','previousJob','nextJob','previous_job','next_job']);
+const dictionaries=new Set(['paintCosting','managerReviews']);
+function jobNumberCodec(rows=[]){
+ const input=new Map(),output=new Map();
+ for(const r of rows){input.set(key(r.number),r.stable_job);output.set(key(r.stable_job),r.current_number);}
+ const ref=(v,map)=>typeof v==='string'||typeof v==='number'?(map.get(key(v))??v):v;
+ function walk(v,map,parent=''){
+  if(Array.isArray(v))return v.map(x=>walk(x,map,parent));
+  if(!v||typeof v!=='object')return v;
+  const jobObject=['jobs','job','expectedJob','linked_job'].includes(parent)||('no' in v&&['jobType','make','reg','receptionNo'].some(k=>k in v));
+  return Object.fromEntries(Object.entries(v).map(([k,value])=>[
+   dictionaries.has(parent)?String(ref(k,map)):k,
+   references.has(k)||k==='no'&&jobObject||['entityId','entity_id'].includes(k)&&/^JOB_/.test(String(v.eventType||v.event_type||''))?walk(ref(value,map),map,k):walk(value,map,k)
+  ]));
+ }
+ return {
+  toInternal:value=>walk(value,input),toPublic:value=>walk(value,output),
+  // Search/cursor identifiers are not free text fields in stored records.
+  internalNumber:value=>ref(value,input),publicNumber:value=>ref(value,output)
+ };
+}
+function jobNumberChange(request){
+ if(request.newJobNumber===undefined)return null;
+ const number=String(request.newJobNumber).trim();
+ if(!/^[1-9]\d{0,9}$/.test(number))return {ok:false,code:'job_number_invalid'};
+ if(request.numberChangeConfirmed!==true||typeof request.expectedJobNumber!=='string')return {ok:false,code:'job_number_confirmation_required'};
+ return {ok:true,number,expected:request.expectedJobNumber};
+}
+
 Deno.serve(async (req: Request) => {
+  let numberCodec: any = null;
+  const reply = (body: unknown,status=200) => baseReply(numberCodec ? numberCodec.toPublic(body) : body,status);
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return reply({ ok: false, code: "method" }, 405);
   if (!allowedApiKey(req)) return reply({ ok: false, code: "bad_api_key" }, 401);
@@ -996,7 +1033,7 @@ Deno.serve(async (req: Request) => {
   if (!token) return reply({ ok: false, code: "invalid_session" }, 401);
 
   try {
-    const body = await req.json();
+    let body = await req.json();
     const action = String(body?.action || "load");
     // A heartbeat validates the session and reads the revision in one database
     // round trip. Never cache authorization: revocations apply to every probe.
@@ -1021,6 +1058,12 @@ Deno.serve(async (req: Request) => {
       user = await sessionUser(token);
     }
     if (!user) return reply({ ok: false, code: "invalid_session" }, 401);
+    if (user._jobNumbers?.length) {
+      numberCodec = jobNumberCodec(user._jobNumbers);
+      body = numberCodec.toInternal(body);
+      for (const field of ["search","query"]) if (typeof body[field] === "string") body[field] = numberCodec.internalNumber(body[field]);
+    }
+    if(body.newJobNumber !== undefined && action !== "manager_job_full_edit") return reply({ok:false,code:"job_edit_invalid_fields"},400);
 
     if (user.role === 'Accountant' || action.startsWith('accountant_')) {
       try {const result=await accountantApi(admin,user,body,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);return reply(result.body,result.status);}
@@ -1184,7 +1227,7 @@ Deno.serve(async (req: Request) => {
       const deletedDrafts=estimateState.data?.estimateDraftDeletes||[];
       if(['SAVE','ALLOCATE'].includes(body.command.operation)&&deletedDrafts.some((e:any)=>String(e.estimateId)===String(body.command.client_key)))return reply({ok:false,code:'estimate_draft_deleted'},409);
       const {data,error}=await admin.rpc('zukait_reception_estimate_command',{p_actor_id:String(user.id),p_command:body.command});
-      if(error){const code=String(error.message||'').match(/reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0]||'reception_unavailable';return reply({ok:false,code},/forbidden/.test(code)?403:409);}
+      if(error){const code=String(error.message||'').match(/job_number_[a-z0-9_]+|job_edit_manager_required|reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0]||'reception_unavailable';return reply({ok:false,code},/forbidden/.test(code)?403:409);}
       return reply(body.command.operation==='GET'?{...data,deleted_drafts:deletedDrafts.filter((e:any)=>e.receptionNo===body.command.rc_no||e.createdBy===user.id)}:data);
     }
     if (action === "reception") {
@@ -1251,14 +1294,19 @@ Deno.serve(async (req: Request) => {
     if (action === "manager_job_full_edit") {
       if(user.role!=="Manager")return reply({ok:false,code:"job_edit_manager_required"},403);
       if(body.operation!=="FULL_EDIT")return reply({ok:false,code:"job_edit_invalid_fields"},400);
+      const numberChange=jobNumberChange(body);
+      if(numberChange&&!numberChange.ok)return reply({ok:false,code:numberChange.code},400);
       for(let attempt=0;attempt<8;attempt++){
         const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
         if(readError)throw readError;
         const result=jobEditTransition(current.data,user,body,Date.now());
         if(!result.ok)return reply({ok:false,code:result.code},409);
-        const {data:committed,error}=await admin.rpc("zukait_manager_full_job_edit",{p_expected_revision:Number(current.revision||0),p_data:result.data,p_actor_id:user.id,p_job_card:body.jobCard,p_reason:body.reason,p_live:computeLiveStatus(result.data,Number(current.revision||0)+1,user.id)});
+        const {data:committed,error}=await admin.rpc(numberChange?"zukait_manager_numbered_job_edit":"zukait_manager_full_job_edit",{p_expected_revision:Number(current.revision||0),p_data:result.data,p_actor_id:user.id,p_job_card:body.jobCard,p_reason:body.reason,p_live:computeLiveStatus(result.data,Number(current.revision||0)+1,user.id),...(numberChange?{p_new_number:numberChange.number,p_expected_number:numberChange.expected,p_confirmed:true}:{})});
         if(error){const code=String(error.message||'').match(/reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0];return reply({ok:false,code:code||"job_edit_unavailable",message:code||'Job Card correction could not be saved.'},409);}
-        if(committed?.ok)return reply({ok:true,job:committed.job,server_revision:committed.revision});
+        if(committed?.ok){
+          if(numberChange)numberCodec=jobNumberCodec(committed.number_rows || []);
+          return reply({ok:true,job:committed.job,server_revision:committed.revision,...(numberChange?{data:committed.data}:{})});
+        }
         if(committed?.code!=="conflict")return reply({ok:false,code:"job_edit_unavailable"},503);
       }
       return reply({ok:false,code:"job_edit_conflict"},409);

@@ -1,6 +1,6 @@
 {
-  "versionName": "V370",
-  "versionCode": 333,
+  "versionName": "V371",
+  "versionCode": 334,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
   "sourceCommit": "2cf2034022e5f727571b8b091893c857de80b2a9",
@@ -49,7 +49,7 @@
   },
   "verificationSummary": "V370 adds Oman calendar Days Open to Reception Job Card rows (opening day zero; delivered age stops at delivery) and company/job-type selection for Cash, Credit, all insurance, and individual insurers. Filtering precedes pagination and combines with search, date and promise filters; options use the entire section. Unit tests cover dates, exact company isolation and pagination; phone browser tests pass for Manager, Supervisor and Receptionist. Exact-source signed APK, Reception, Accountant, Android, sync and native PDF verification all passed. QA23 and production88 match all files and bundle hash. No workshop record, schema, authentication or password changes. Physical-device acceptance and fresh restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": true,
-  "releaseChangeScope": "reception-company-filter-and-job-age",
+  "releaseChangeScope": "organized-manager-editor-and-confirmed-job-card-number-correction",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
@@ -142,5 +142,7 @@
     "version": 23,
     "bundleSha256": "0a893e8e7d15eec811105fc63d4672e3e3626eeb6fbeddcbe49a031193ef3b3f",
     "allFilesMatchProduction": true
-  }
+  },
+  "jobNumberCorrectionAuthorizedByOwner": true,
+  "jobNumberCorrectionAuthorization": "Owner requested an organized Job Card edit screen, editable Job Card number, no duplicate numbers, and another confirmation before saving a number change. Standing owner instruction: Release after all fix complete."
 }
