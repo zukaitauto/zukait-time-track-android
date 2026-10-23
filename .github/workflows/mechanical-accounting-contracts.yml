@@ -66,7 +66,7 @@ jobs:
       - run: node tests/mechanical-tracking-ui.mjs
       - run: node tests/mechanical-qc-projection.mjs
       - run: node tests/mechanical-navigation.mjs
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install chromium
       - run: node tests/mechanical-workspace-responsive.mjs
       - run: node tests/mechanical-tracking-responsive.mjs
       - uses: actions/upload-artifact@v4
