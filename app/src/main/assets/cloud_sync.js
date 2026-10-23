@@ -996,6 +996,19 @@
     });return true;
   }
 
+  async function installMechanicalMenu(){
+    if(window.ZUKAIT_MECHANICAL_ENABLED!==true)return;
+    const module=await import('./mechanical_navigation.js');
+    module.installMechanicalNavigation({host:window,document,
+      getUser:()=>typeof me==='undefined'?null:me,
+      enabled:()=>window.ZUKAIT_MECHANICAL_ENABLED===true,
+      open:openMechanicalWorkspace});
+  }
+  // Existing role menus are assigned by scripts loaded after cloud_sync.js.
+  // Install only after those scripts finish; default-off adds no module/RPC.
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>installMechanicalMenu().catch(e=>console.warn('Mechanical menu unavailable',e)),{once:true});
+  else installMechanicalMenu().catch(e=>console.warn('Mechanical menu unavailable',e));
+
   // Rebase only unchanged stale authority. An actual local attempt to change
   // handed-over work or its periods requires review; never discard that queue.
   function mechanicalConflictRebase(base,remote,pending){
