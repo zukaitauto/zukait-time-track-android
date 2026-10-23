@@ -2,7 +2,7 @@ import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:asser
 const source=fs.readFileSync('app/src/main/assets/v2/features/insurance/reception.js','utf8');
 const get=(a,b)=>source.slice(source.indexOf(a),source.indexOf(b,source.indexOf(a)));
 const rec={rc_no:'RC0005',job_card:'12078',location:'VIW',approval_status:'APPROVED',job_type:'INSURANCE'};
-const ctx={current:{record:rec,linked_job:{no:'12078',delivered:true,deliveredAt:Date.parse('2026-10-16T00:00:00+04:00')}},labels:{VIW:'VIG · Vehicle In Garage',APPROVED:'Approved'},esc:v=>String(v??''),call:async()=>({record:rec}),apiAction:async request=>({job:{no:request.jobCard,delivered:true,deliveryDate:'2026-10-16'}})};
+const ctx={current:{record:rec,linked_job:{no:'12078',delivered:true,deliveredAt:Date.parse('2026-10-16T00:00:00+04:00')}},labels:{VIW:'VIG · Vehicle In Garage',APPROVED:'Approved'},esc:v=>String(v??''),call:async()=>({record:rec,linked_job:{no:'12078',delivered:true,deliveryDate:'2026-10-16'}})};
 vm.createContext(ctx);vm.runInContext(get('  function badge(v) {','  function input(')+get('  async function fetchRecord(no) {','  // Presentation-only')+get('  function checklistSummary(r, d) {','  function checklistDetails('),ctx);
 let html=ctx.checklistSummary(rec,{registration:'21224.AA',make:'Range Rover',model:'Velar'});
 assert.match(html,/Delivered/);assert.match(html,/16\/10\/2026/);assert.doesNotMatch(html,/VIG|Vehicle In Garage|JC Opened/);
@@ -11,7 +11,7 @@ assert.doesNotMatch(ctx.badges(rec),/VIW|JOB_CREATED/);
 await ctx.fetchRecord('RC0005');assert.equal(ctx.current.linked_job.delivered,true,'Checklist detail reads authoritative linked job');
 ctx.current={record:rec,linked_job:{no:'12078',delivered:false,status:'Open'}};
 assert.match(ctx.checklistSummary(rec,{}),/VIG/);assert.match(ctx.badges(rec),/JOB_CREATED/);
-ctx.apiAction=async()=>{throw Error('offline')};await ctx.fetchRecord('RC0005');assert.equal(ctx.current.delivery_status_unavailable,true);
+ctx.call=async()=>({record:rec,delivery_status_unavailable:true});await ctx.fetchRecord('RC0005');assert.equal(ctx.current.delivery_status_unavailable,true);
 assert.equal(ctx.current.linked_job,undefined,'Failed lookup must not reuse an old delivery');
 assert.equal(rec.location,'VIW');assert.equal(rec.approval_status,'APPROVED');
 console.log('Checklist delivery precedence, authoritative lookup, date, preserved approval and unavailable-state checks passed');

@@ -1201,7 +1201,13 @@ Deno.serve(async (req: Request) => {
         console.error("reception_command_failed",error);
         return reply({ok:false,code:"reception_unavailable"},503);
       }
-      return reply(user.role === "Receptionist" ? receptionistProjection(data) : data);
+      let response=user.role === "Receptionist" ? receptionistProjection(data) : data;
+      if(String(command.operation||"").toUpperCase()==="GET"&&data?.record?.job_card){
+        const {data:snapshot,error:deliveryError}=await admin.from("workshop_state").select("data").eq("id","main").single();
+        const job=!deliveryError?(snapshot?.data?.jobs||[]).find((j:any)=>String(j.no)===String(data.record.job_card)):null;
+        response=job?{...response,linked_job:{no:job.no,delivered:job.delivered===true,status:job.delivered?"Delivered":String(job.status||"Open"),deliveredAt:job.deliveredAt||null,deliveryDate:job.deliveryDate||null}}:{...response,delivery_status_unavailable:true};
+      }
+      return reply(response);
     }
 
     if (action === "employee_time_action") {

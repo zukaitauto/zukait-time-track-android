@@ -1038,15 +1038,8 @@
   }
   async function fetchRecord(no) {
     current = await call({ operation: "GET", rc_no: no });
-    const loaded=current;
-    if(loaded.record?.job_card){
-      try{
-        const result=await apiAction({action:'job_card_edit',operation:'GET',jobCard:loaded.record.job_card});
-        if(String(result.job?.no)===String(loaded.record.job_card))loaded.linked_job=result.job;
-        else loaded.delivery_status_unavailable=true;
-      }catch(_){loaded.delivery_status_unavailable=true;}
-    }
-    return loaded;
+    if(current.record?.job_card&&!current.linked_job)current.delivery_status_unavailable=true;
+    return current;
   }
 
   // Presentation-only detail layout. Do not alter saved values or documentHtml().

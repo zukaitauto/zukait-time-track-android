@@ -67,4 +67,4 @@ dependencies {
 
 // V368: Validate Paint Reports with reliable HTTPS browser dependency setup.
 
-// V369: Verify recorded delivery time in both checklist and Job Card status.
+// V369: Verify delivery status in the existing authoritative checklist response.

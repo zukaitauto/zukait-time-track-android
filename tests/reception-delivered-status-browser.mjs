@@ -10,7 +10,7 @@ try{
    window.fixtureJob={no:'12078',reg:'21224.AA',vehicle:'Range Rover Velar',make:'Range Rover',model:'Velar',jobType:'INSURANCE',receptionNo:'RC0005',delivered:true,status:'Delivered',deliveryDate:'2026-10-16',deliveredAt:Date.parse('2026-10-16T19:00:00+04:00')};
    window.fetch=async(_url,args)=>{const body=JSON.parse(args.body),c=body.command||{};
     if(body.action==='job_card_edit')return {ok:true,json:async()=>({ok:true,job:window.fixtureJob})};
-    return {ok:true,json:async()=>({ok:true,record:{rc_no:'RC0005',job_card:'12078',job_type:'INSURANCE',location:'VIW',approval_status:'APPROVED',details:{make:'Range Rover',model:'Velar',registration:'21224.AA'},revision:2},movements:[],audit:[]})};
+    return {ok:true,json:async()=>({ok:true,record:{rc_no:'RC0005',job_card:'12078',job_type:'INSURANCE',location:'VIW',approval_status:'APPROVED',details:{make:'Range Rover',model:'Velar',registration:'21224.AA'},revision:2},linked_job:window.fixtureJob,movements:[],audit:[]})};
    };
    window.v112PrintHtml=(html)=>{window.printedJob=html};
   },role);
