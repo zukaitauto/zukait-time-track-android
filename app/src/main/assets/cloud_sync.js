@@ -989,7 +989,7 @@
       api:async body=>{
         if(window.ZUKAIT_MECHANICAL_ENABLED!==true||String(me?.id||'')!==owner||sessionToken()!==token)throw Error('invalid_session');
         if(!navigator.onLine)throw Error('OFFLINE');
-        if(!['mechanical_dashboard','mechanical_command'].includes(body?.action))throw Error('mechanical_forbidden');
+        if(!['mechanical_dashboard','mechanical_command','mechanical_qc_readiness'].includes(body?.action))throw Error('mechanical_forbidden');
         if(body.action==='mechanical_command'&&(cloudDirty||cloudPushing||pullInFlight))throw Error('WORKSHOP_SYNC_PENDING');
         return api(body);
       }

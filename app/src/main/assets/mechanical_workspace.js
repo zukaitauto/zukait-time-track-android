@@ -6,7 +6,7 @@ export async function mountMechanicalWorkspace(root,options={}){
  const online=()=>options.online?.()??globalThis.navigator?.onLine!==false;
  const uuid=options.uuid||(()=>globalThis.crypto.randomUUID());
  const storage=options.storage||globalThis.localStorage;
- let disposed=false,busy=false,model=null,selected=null,after=0,pending=null,notice='',readGeneration=0;
+ let disposed=false,busy=false,model=null,qc=null,selected=null,after=0,pending=null,notice='',readGeneration=0;
  const node=(tag,text,attrs={})=>{const e=doc.createElement(tag);if(text!==null)e.textContent=text;for(const [k,v] of Object.entries(attrs)){if(k==='onClick')e.addEventListener('click',v);else e.setAttribute(k,String(v));}return e};
  const key='zukait_mechanical_pending_v1:'+String(initial?.id||'');
  if(options.enabled!==true||!['Manager','Supervisor'].includes(initial?.role)||!initial?.id||!initial?.key||typeof options.api!=='function'){
@@ -16,15 +16,15 @@ export async function mountMechanicalWorkspace(root,options={}){
  try{if(!device){device=storage.getItem('zukait_mechanical_device_v1');if(!device){device=uuid();storage.setItem('zukait_mechanical_device_v1',device)}}const saved=storage.getItem(key);if(saved){pending=JSON.parse(saved);if(pending.owner!==initial.id||!pending.command||typeof pending.command.operation!=='string'||!pending.command.payload)throw Error('invalid_pending');selected=pending.checklistId||null}}catch{pending=null;notice='This device cannot keep a safe retry. Pending changes need review.';device=null;}
  const savePending=()=>{storage.setItem(key,JSON.stringify(pending))};
  const errors={workshop_revision_conflict:'Work changed on another device. Refresh and review before confirming again.',mechanical_revision_conflict:'The checklist changed. Refresh and review before confirming again.',manual_jc_duplicate:'This Job Card already has a Mechanical checklist.',stop_work_before_handover:'Pause or stop the outgoing and incoming mechanic’s running work first.',stop_outgoing_work_first:'Pause or stop the outgoing mechanic’s running work first.',target_employee_working:'The incoming mechanic has running work. Pause or stop it first.',mechanical_forbidden:'Your login does not have permission for this action.',invalid_session:'Your login changed. Sign in again to review the pending change.',mechanical_dashboard_limit:'This record needs a more specific view. Ask the Manager to review it.'};
- function message(code){return errors[code]||'The change was not accepted. Refresh the record and review it.'}
+ function message(code){return ({mechanical_qc_work_changed:'Work changed after the QC check. Refresh and review it before confirming again.',mechanical_mixed_qc_policy_required:'The QC approval policy for this mixed job needs Manager review.',mechanical_qc_approver_required:'Only Jibin (SUP003) can record Mechanical QC.',mechanical_work_not_finished:'Complete every task and stop running work before QC.',mechanical_qc_disabled:'Mechanical QC is unavailable.',extension_disabled:'This action is unavailable.'})[code]||errors[code]||'The change was not accepted. Refresh the record and review it.'}
  function button(text,fn,attrs={}){const e=node('button',text,{type:'button',...attrs,onClick:fn});e.disabled=busy||!active();return e}
- function valueFor(f,name,fallback=''){const p=f._draft;if(!p)return fallback;return ({job:p.manualJobCard?.number,date:p.manualJobCard?.date,employee:p.employeeId,source:p.sourceAssignmentId,target:p.targetEmployeeId,minutes:p.suggestedMinutes,title:p.title,reason:p.reason})[name]??fallback}
+ function valueFor(f,name,fallback=''){const p=f._draft;if(!p)return fallback;return ({job:p.manualJobCard?.number,date:p.manualJobCard?.date,employee:p.employeeId,source:p.sourceAssignmentId,target:p.targetEmployeeId,minutes:p.suggestedMinutes,title:p.title,reason:p.reason,result:p.result})[name]??fallback}
  function input(form,label,name,type='text',value='',required=true){const l=node('label',label),e=node('input',null,{name,type});e.value=valueFor(form,name,value);if(required)e.required=true;l.append(e);form.append(l);return e}
  function choice(form,label,name,choices){const l=node('label',label),e=node('select',null,{name});e.required=true;e.append(node('option','Select…',{value:''}));for(const c of choices)e.append(node('option',c.name,{value:c.id}));e.value=valueFor(form,name);l.append(e);form.append(l);return e}
  function form(title,operation,entity,payload){
   const f=node('form',null,{'data-operation':operation});f.append(node('h3',title));
   if(pending?.editing&&pending.command.operation===operation&&(operation==='MC_CREATE'||(operation==='TASK_CREATE'?pending.command.payload.checklistId===model.detail?.checklist.id:pending.command.entityId===entity())))f._draft=pending.command.payload;
-  f.addEventListener('submit',e=>{e.preventDefault();for(const input of f.querySelectorAll('input[type=text]'))input.setCustomValidity(input.required&&!input.value.trim()?'Enter a value.':'');if(!f.reportValidity()||busy||(pending&&!pending.editing))return;const values=new doc.defaultView.FormData(f);send(operation,entity(),payload(values))});return f;
+  f.addEventListener('submit',e=>{e.preventDefault();for(const input of f.querySelectorAll('input[type=text]'))input.setCustomValidity(input.required&&!input.value.trim()?'Enter a value.':'');if(operation==='MECHANICAL_QC'){const reason=f.querySelector('[name=reason]');reason.setCustomValidity(f.querySelector('[name=result]').value==='FAIL'&&!reason.value.trim()?'Enter the reason for failing QC.':'')}if(!f.reportValidity()||busy||(pending&&!pending.editing))return;const values=new doc.defaultView.FormData(f);send(operation,entity(),payload(values))});return f;
  }
  function submit(f,label){const b=node('button',label,{type:'submit'});b.disabled=busy||!!(pending&&!pending.editing)||!device;f.append(b)}
  function render(){
@@ -33,11 +33,11 @@ export async function mountMechanicalWorkspace(root,options={}){
   const style=node('style',null);style.textContent='.mc-workspace{box-sizing:border-box;color:#142536;background:#f5f7fa;padding:16px;font:16px system-ui;max-width:1100px;margin:auto;overflow-wrap:anywhere}.mc-workspace *{box-sizing:border-box}.mc-workspace header,.mc-workspace .mc-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.mc-workspace h2{flex:1;margin:0}.mc-workspace button{min-height:44px;padding:10px 14px;border:1px solid #b8c6d6;border-radius:9px;background:white;color:#142536;font:inherit;cursor:pointer}.mc-workspace button[type=submit]{background:#164a79;color:white}.mc-workspace button:disabled{opacity:.55;cursor:default}.mc-workspace form,.mc-workspace article,.mc-workspace .mc-pending{background:white;border:1px solid #dbe2eb;border-radius:12px;padding:14px;margin:12px 0;min-width:0}.mc-workspace label{display:flex;flex-direction:column;gap:6px;margin:12px 0}.mc-workspace input,.mc-workspace select,.mc-workspace textarea{font:inherit;width:100%;min-width:0;min-height:44px;padding:10px;border:1px solid #a9b8c9;border-radius:7px}.mc-workspace .mc-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}.mc-workspace .mc-list{display:grid;gap:8px}.mc-workspace .mc-list button{text-align:left;width:100%}.mc-workspace [role=status]{min-height:24px;margin:14px 0;color:#854200}.mc-workspace .mc-muted{color:#54677b}.mc-workspace h3{margin-top:0}.mc-workspace ul{padding-left:20px}@media(max-width:760px){.mc-workspace{padding:10px}.mc-workspace .mc-grid{grid-template-columns:minmax(0,1fr)}}';root.append(style);
   const header=node('header',null);header.append(node('h2','Mechanical Department'),button('Refresh',()=>refresh()),button('Close',()=>{destroy();options.onClose?.()}));root.append(header);
   root.append(node('p',notice,{role:'status','aria-live':'polite'}));
-  if(pending){const box=node('section',null,{class:'mc-pending'});box.append(node('h3',pending.editing?'Review rejected change':'Pending confirmation'),node('p',({MC_CREATE:'Checklist registration',TASK_CREATE:'New task',TASK_ASSIGN:'Mechanic assignment',TASK_HANDOVER:'Work handover'})[pending.command.operation]||'Saved change'),node('p',JSON.stringify(pending.command.payload)));
+  if(pending){const box=node('section',null,{class:'mc-pending'});box.append(node('h3',pending.editing?'Review rejected change':'Pending confirmation'),node('p',({MC_CREATE:'Checklist registration',TASK_CREATE:'New task',TASK_ASSIGN:'Mechanic assignment',TASK_HANDOVER:'Work handover',MECHANICAL_QC:'Mechanical QC result'})[pending.command.operation]||'Saved change'),node('p',JSON.stringify(pending.command.operation==='MECHANICAL_QC'?{result:pending.command.payload.result,reason:pending.command.payload.reason}:pending.command.payload)));
    if(!pending.editing)box.append(button('Retry same change',()=>post()));
    if(pending.rejected&&['manual_jc_duplicate','invalid_assignment','invalid_task','invalid_manual_jc','existing_active_jc_required','duplicate_task_employee','stop_work_before_handover','stop_outgoing_work_first','target_employee_working','handover_source_changed','handover_source_inactive'].includes(pending.error))box.append(button('Edit rejected change',()=>{pending.editing=true;try{savePending();render()}catch{notice='Unable to keep this draft safely.';render()}}));
-   if(pending.rejected&&['mechanical_revision_conflict','workshop_revision_conflict'].includes(pending.error))box.append(button('Refresh for review',async()=>{if(await refresh()){pending.reviewed=true;try{savePending();render()}catch{notice='Unable to keep this review safely.';render()}}}));
-   if(pending.reviewed)box.append(button('Confirm reviewed change',()=>{pending.command={...pending.command,requestId:uuid(),expectedRevision:model.recordsRevision,expectedWorkshopRevision:model.workshopRevision};delete pending.reviewed;delete pending.rejected;try{savePending();post()}catch{notice='Unable to keep a safe retry.';render()}}));root.append(box);
+   if(pending.rejected&&['mechanical_revision_conflict','workshop_revision_conflict','mechanical_qc_work_changed'].includes(pending.error))box.append(button('Refresh for review',async()=>{if(await refresh()){if(pending.command.operation==='MECHANICAL_QC'&&!(await loadQc()))return;pending.reviewed=true;try{savePending();render()}catch{notice='Unable to keep this review safely.';render()}}}));
+   if(pending.reviewed)box.append(button('Confirm reviewed change',()=>{const isQc=pending.command.operation==='MECHANICAL_QC';if(isQc&&(!qc?.workComplete||qc.delivered||qc.checklistId!==pending.command.entityId)){notice='Refresh the QC check before confirming this change.';render();return}pending.command={...pending.command,requestId:uuid(),expectedRevision:isQc?qc.recordsRevision:model.recordsRevision,expectedWorkshopRevision:isQc?qc.workshopRevision:model.workshopRevision,...(isQc?{payload:{...pending.command.payload,expectedFingerprint:qc.workToken}}:{})};delete pending.reviewed;delete pending.rejected;try{savePending();post()}catch{notice='Unable to keep a safe retry.';render()}}));root.append(box);
   }
   if(!model)return;
   const caps=new Set(model.capabilities||[]),grid=node('div',null,{class:'mc-grid'}),list=node('section',null),detail=node('section',null);grid.append(list,detail);root.append(grid);
@@ -51,6 +51,15 @@ export async function mountMechanicalWorkspace(root,options={}){
   }
   const d=model.detail;if(!d){detail.append(node('p','Select a checklist to view its tasks.'));return}
   detail.append(node('h3',d.checklist.number+' · JC '+d.checklist.jobCard),node('p','Manual date: '+d.checklist.manualDate));
+  if(model.qcAvailable){
+   const box=node('article',null,{'data-mechanical-qc':'true'});box.append(node('h3','Mechanical quality check'),button('Check QC status',()=>loadQc()));
+   if(qc?.checklistId===d.checklist.id){
+    box.append(node('p',qc.delivered?'Delivered':!qc.workComplete?'Work is not complete.':!qc.mechanicalRequired?'Mechanical QC is not required for this job.':qc.mechanicalPassed?'Mechanical QC passed.':'Mechanical QC is pending.'));
+    if(qc.workComplete&&!qc.delivered&&initial.id==='SUP003'&&initial.role==='Supervisor'&&caps.has('MECHANICAL_QC')&&qc.mechanicalRequired){
+     const f=form('Record QC result','MECHANICAL_QC',()=>d.checklist.id,v=>({result:v.get('result'),reason:String(v.get('reason')).trim(),expectedFingerprint:qc.workToken}));choice(f,'QC result','result',[{id:'PASS',name:'Pass'},{id:'FAIL',name:'Fail'}]);input(f,'QC notes (required for Fail)','reason','text','',false).maxLength=500;submit(f,'Confirm QC result');box.append(f);
+    }
+   }detail.append(box);
+  }
   for(const task of d.tasks||[]){const card=node('article',null,{'data-task':task.id});card.append(node('h3',task.title));
    const allocations=(d.assignments||[]).filter(a=>a.taskId===task.id),ul=node('ul',null);
    for(const a of allocations){ul.append(node('li',a.employeeName+' · '+(a.handedOverTo?'Handed over':a.cancelled?'Cancelled':a.completed?'Completed':a.running?'Working':'Open')+' · '+String(a.suggestedMinutes??0)+' allocated min'));}
@@ -69,13 +78,20 @@ export async function mountMechanicalWorkspace(root,options={}){
  }
  async function refresh(){
   if(!active()||busy)return false;if(!online()){notice='Reconnect to load workshop records.';render();return false}
-  busy=true;render();const generation=++readGeneration;
+  busy=true;qc=null;render();const generation=++readGeneration;
   try{const r=await options.api({action:'mechanical_dashboard',after,checklistId:selected});if(!active()||generation!==readGeneration)return false;if(!r?.ok)throw Error(r?.code||'NETWORK');model=r;if(!pending)notice='';return true}catch(e){if(active())notice=message(e.message);return false}finally{busy=false;render()}
+ }
+ async function loadQc(){
+  if(!active()||busy||!selected||!model?.qcAvailable)return false;
+  if(!online()){notice='Reconnect to check QC status.';render();return false}
+  busy=true;qc=null;render();const generation=++readGeneration,checklistId=selected;
+  try{const r=await options.api({action:'mechanical_qc_readiness',checklistId});if(!active()||generation!==readGeneration||selected!==checklistId)return false;if(!r?.ok||r.status?.checklistId!==checklistId)throw Error(r?.code||'NETWORK');qc=r.status;notice='';return true}catch(e){if(active())notice=message(e.message);return false}finally{busy=false;render()}
  }
  async function send(operation,entityId,payload){
   if(!active()||busy||(pending&&!pending.editing)||!model)return;if(!online()){notice='Reconnect before saving. No change was sent.';render();return}
   if(!device){notice='This device cannot keep a safe retry.';render();return}
-  const previous=pending;pending={owner:initial.id,checklistId:selected,command:{operation,entityId,requestId:uuid(),deviceId:device,expectedRevision:model.recordsRevision,expectedWorkshopRevision:model.workshopRevision,payload}};
+  if(operation==='MECHANICAL_QC'&&(!qc?.workComplete||qc.delivered||qc.checklistId!==entityId)){notice='Refresh the QC check before confirming this change.';render();return}
+  const previous=pending;pending={owner:initial.id,checklistId:selected,command:{operation,entityId,requestId:uuid(),deviceId:device,expectedRevision:operation==='MECHANICAL_QC'?qc.recordsRevision:model.recordsRevision,expectedWorkshopRevision:operation==='MECHANICAL_QC'?qc.workshopRevision:model.workshopRevision,payload}};
   try{savePending()}catch{pending=previous;notice='This device cannot keep a safe retry. No change was sent.';render();return}await post();
  }
  async function post(){

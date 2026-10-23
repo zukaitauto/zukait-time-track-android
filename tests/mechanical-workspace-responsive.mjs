@@ -11,13 +11,18 @@ try{for(const width of [320,375,768,1280]){
    checklists:[{id:'MC_TEST',number:'MC001',jobCard:'12079',manualDate:'2026-10-22'}],mechanics:[{id:'QA_A',name:'Mechanic A'},{id:'QA_B',name:'Mechanic B <script>unsafe</script>'}],detail:null};
   const detail={checklist:data.checklists[0],tasks:[{id:'TASK',title:'Inspect brakes and suspension — '+ 'LongTaskDescription'.repeat(8)}],assignments:[{id:'ASSIGNMENT',taskId:'TASK',employeeId:'QA_A',employeeName:'Mechanic A',suggestedMinutes:60,completed:false,running:false}]};
   window.calls=[];
-  const store=new Map();await window.mountMechanicalWorkspace(document.getElementById('root'),{enabled:true,getSession:()=>({id:'QA_SUP',role:'Supervisor',key:'QA_SYNTHETIC'}),online:()=>true,storage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)},deviceId:'QA_DEVICE',uuid:()=>String(++serial),api:async body=>{window.calls.push(body);return {...data,detail:body.checklistId?detail:null}}});
+  const store=new Map();const controller=await window.mountMechanicalWorkspace(document.getElementById('root'),{enabled:true,getSession:()=>({id:'SUP003',role:'Supervisor',key:'QA_SYNTHETIC'}),online:()=>true,storage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)},deviceId:'QA_DEVICE',uuid:()=>String(++serial),api:async body=>{window.calls.push(body);if(body.action==='mechanical_qc_readiness')return {ok:true,status:{checklistId:'MC_TEST',workComplete:true,mechanicalRequired:true,mechanicalPassed:false,delivered:false,workToken:'a'.repeat(64),recordsRevision:2,workshopRevision:8}};return {...data,detail:body.checklistId?detail:null}}});
+  window.enableQcPreview=async()=>{data.qcAvailable=true;data.capabilities.push('MECHANICAL_QC');detail.assignments[0].completed=true;await controller.refresh()};
  });
  await page.getByRole('button',{name:'MC001 · JC 12079 · 2026-10-22',exact:true}).click();await page.locator('[data-operation=TASK_HANDOVER]').waitFor();
  const shape=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth,columns:getComputedStyle(document.querySelector('.mc-grid')).gridTemplateColumns.split(' ').length,unsafe:document.querySelectorAll('#root script,#root img').length,tooNarrow:[...document.querySelectorAll('#root input,#root select,#root button')].some(e=>e.getBoundingClientRect().height<43)}));
  assert.equal(shape.overflow,false,width+'px horizontal overflow');assert.equal(shape.columns,width<=760?1:2);assert.equal(shape.unsafe,0);assert.equal(shape.tooNarrow,false,'Touch controls need at least 44px');
  assert.equal(await page.locator('[data-operation=TASK_CREATE]').count(),1);assert.equal(await page.locator('[data-operation=TASK_ASSIGN]').count(),1);
  if([375,1280].includes(width))await page.screenshot({path:'test-results/mechanical/workspace-'+width+'.png',fullPage:true});
+ await page.evaluate(()=>window.enableQcPreview());await page.getByRole('button',{name:'Check QC status',exact:true}).click();await page.locator('[data-operation=MECHANICAL_QC]').waitFor();
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'QC '+width+'px overflow');
+ assert.equal(await page.locator('[data-operation=MECHANICAL_QC] input,[data-operation=MECHANICAL_QC] select,[data-operation=MECHANICAL_QC] button').evaluateAll(es=>es.some(e=>e.getBoundingClientRect().height<43)),false);
+ if([375,1280].includes(width))await page.screenshot({path:'test-results/mechanical/qc-'+width+'.png',fullPage:true});
  await page.addScriptTag({content:navigation});
  for(const role of ['Manager','Supervisor']){
   await page.evaluate(role=>{

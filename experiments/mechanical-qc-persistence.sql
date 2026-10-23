@@ -1,5 +1,5 @@
 -- Disposable fixture candidate ONLY; not a generated/applied production migration.
--- No public route calls this. Delivery integration/authority guards remain required.
+-- Draft route is gated off separately. Delivery integration/guards remain required.
 alter table zukait_mechanical.settings add column qc_enabled boolean not null default false;
 -- NULL means the owner has not selected a mixed-job policy. Never infer true/false.
 alter table zukait_mechanical.settings add column mixed_mechanical_qc_required boolean;

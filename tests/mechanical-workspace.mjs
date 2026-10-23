@@ -64,4 +64,26 @@ let revision=4;const reviewed=[];x=await setup({apiOverride:async body=>{if(body
 let resolve;x=await setup();x.controller.destroy();assert.equal(x.root.childNodes.length,0);
 const dom=new JSDOM('<div id="root"></div>',{url:'https://example.invalid'}),root=dom.window.document.getElementById('root');let who=session;
 const promise=mountMechanicalWorkspace(root,{enabled:true,getSession:()=>who,api:()=>new Promise(r=>resolve=r),storage:dom.window.localStorage,uuid:()=>id(serial++)});who={...session,key:'ROTATED'};resolve(fixture());await promise;assert.match(root.textContent,/login changed/);assert.equal(root.querySelectorAll('form').length,0);
-console.log('PASS Mechanical screens: disabled/role/capability gates, list/detail/task/assignment controls, escaping, durable exact retry, reload/account isolation, offline protection, no automatic writes and session-switch suppression.');
+// QC is foreground-only, opaque-token bound and SUP003-only. It shares the
+// same durable request/review lifecycle; an acknowledgement is not delivery.
+const qcUser={id:'SUP003',role:'Supervisor',key:'QA_QC_SESSION'},qcStatus=()=>({ok:true,checklistId:id(1),workComplete:true,mechanicalPassed:false,mechanicalRequired:true,delivered:false,workToken:'a'.repeat(64),recordsRevision:8,workshopRevision:12});
+let qcWrites=[],qcLost=true,qcReads=0;
+const qcApi=async body=>{
+ if(body.action==='mechanical_dashboard')return {...fixture(),qcAvailable:true,capabilities:['MECHANICAL_QC'],detail:body.checklistId?structuredClone(detail):null};
+ if(body.action==='mechanical_qc_readiness'){qcReads++;return {ok:true,status:qcStatus()}}
+ qcWrites.push(structuredClone(body.command));if(qcLost){qcLost=false;throw Error('QA_LOST_QC_ACK')}return {ok:true,duplicate:true,requiresReadinessRefresh:true};
+};
+x=await setup({user:qcUser,apiOverride:qcApi});await click(x.root,'MC001 · JC QA_JC · 2026-10-22');assert.equal(qcReads,0);assert.equal(x.root.querySelector('[data-operation=MECHANICAL_QC]'),null);
+await click(x.root,'Check QC status');form=x.root.querySelector('[data-operation=MECHANICAL_QC]');assert.ok(form);form.querySelector('[name=result]').value='FAIL';form.dispatchEvent(new x.dom.window.Event('submit',{cancelable:true}));await settle();assert.equal(qcWrites.length,0,'Fail needs a reason before posting');
+form.querySelector('[name=reason]').value=' Brake noise <script>unsafe</script> ';form.dispatchEvent(new x.dom.window.Event('submit',{cancelable:true}));await settle();assert.equal(qcWrites.length,1);assert.equal(qcWrites[0].expectedRevision,8);assert.equal(qcWrites[0].expectedWorkshopRevision,12);assert.equal(qcWrites[0].payload.expectedFingerprint,'a'.repeat(64));assert.equal(qcWrites[0].payload.reason,'Brake noise <script>unsafe</script>');assert.equal(x.root.querySelectorAll('script,img').length,0);assert.ok(!x.root.textContent.includes('a'.repeat(64)),'No digest in product copy');
+await click(x.root,'Retry same change');assert.deepEqual(qcWrites[0],qcWrites[1]);assert.equal(x.storage.has('zukait_mechanical_pending_v1:SUP003'),false);assert.equal(x.root.querySelector('[data-operation=MECHANICAL_QC]'),null,'Acknowledgement requires a new QC read');
+x=await setup({user:session,apiOverride:qcApi});await click(x.root,'MC001 · JC QA_JC · 2026-10-22');await click(x.root,'Check QC status');assert.equal(x.root.querySelector('[data-operation=MECHANICAL_QC]'),null,'Another Supervisor cannot approve even with a displayed capability');
+let qcRevision=8,qcToken='a'.repeat(64);qcWrites=[];
+x=await setup({user:qcUser,apiOverride:async body=>{
+ if(body.action==='mechanical_dashboard')return {...fixture(),qcAvailable:true,capabilities:['MECHANICAL_QC'],detail:body.checklistId?structuredClone(detail):null};
+ if(body.action==='mechanical_qc_readiness')return {ok:true,status:{...qcStatus(),recordsRevision:qcRevision,workToken:qcToken}};
+ qcWrites.push(structuredClone(body.command));return {ok:false,code:'mechanical_qc_work_changed'};
+}});
+await click(x.root,'MC001 · JC QA_JC · 2026-10-22');await click(x.root,'Check QC status');form=x.root.querySelector('[data-operation=MECHANICAL_QC]');form.querySelector('[name=result]').value='PASS';form.dispatchEvent(new x.dom.window.Event('submit',{cancelable:true}));await settle();
+qcRevision=9;qcToken='b'.repeat(64);await click(x.root,'Refresh for review');assert.equal(qcWrites.length,1,'Refresh must never post QC');await click(x.root,'Confirm reviewed change');assert.equal(qcWrites.length,2);assert.notEqual(qcWrites[0].requestId,qcWrites[1].requestId);assert.equal(qcWrites[1].payload.expectedFingerprint,qcToken);assert.equal(qcWrites[1].expectedRevision,9);
+console.log('PASS Mechanical screens: existing forms/retries/account guards, explicit QC read, SUP003-only result controls, Fail reason, opaque revisions, lost-ack/reviewed-token retry and no automatic writes/delivery.');

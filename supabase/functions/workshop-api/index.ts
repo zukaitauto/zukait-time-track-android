@@ -1026,7 +1026,7 @@ Deno.serve(async (req: Request) => {
     if (action.startsWith("mechanical_")) {
       const enabled = Deno.env.get("ZUKAIT_MECHANICAL_ENABLED") === "true";
       const result = await mechanicalRoute(admin, user, body, {
-        enabled, sessionHash: enabled ? await sha256Hex(token) : "",
+        enabled, qcEnabled: Deno.env.get("ZUKAIT_MECHANICAL_QC_ENABLED") === "true", sessionHash: enabled ? await sha256Hex(token) : "",
         verifySession: () => sessionUser(token)
       });
       return reply(result.body, result.status);

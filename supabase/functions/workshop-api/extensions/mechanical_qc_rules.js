@@ -1,4 +1,4 @@
-// Inactive QC contract. Not imported by routes or the existing QC/delivery API.
+// Pure draft QC rules; only the separately gated Mechanical QC boundary uses them.
 import {extensionCommandPreflight} from './command_contracts.js';
 import {mechanicalCommandFingerprint} from './mechanical_rules.js';
 import {qcWork,qcStatus} from '../qc_delivery_rules.js';

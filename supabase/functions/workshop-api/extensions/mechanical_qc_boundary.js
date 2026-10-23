@@ -1,4 +1,4 @@
-// Unrouted server candidate. Dependencies must be trusted adapters, never request fields.
+// Default-off draft server boundary. Adapters are trusted, never request fields.
 import {extensionCommandPreflight} from './command_contracts.js';
 import {mechanicalCommandFingerprint as digest} from './mechanical_rules.js';
 import {mechanicalQcEvaluation,mechanicalQcProposal} from './mechanical_qc_rules.js';
