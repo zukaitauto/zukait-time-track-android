@@ -1,6 +1,6 @@
 {
-  "versionName": "V364",
-  "versionCode": 327,
+  "versionName": "V365",
+  "versionCode": 328,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
   "sourceCommit": "439c7a59d179050d7f3f8f617af5a005fff365da",
@@ -49,7 +49,7 @@
   },
   "verificationSummary": "V364 prefills the original checklist odometer reading and unit when selecting an existing checklist in Open Job Card and when opening the pre-approved Job Card from the checklist. Reading and KM/Miles unit remain editable. The original checklist remains unchanged; edited reading is sent separately as job_intake_odometer/job_intake_unit. Existing browser/DOM acceptance verifies prefill, editability, edited reading and unit payload, and clear-selection behavior. Signed APK, Reception browser, financial and sync CI passed for the exact source. No backend/schema changes or workshop record mutations in this client release. Physical-device acceptance and fresh restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": false,
-  "releaseChangeScope": "checklist-job-odometer-prefill",
+  "releaseChangeScope": "reception-insurer-name-highlight",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
@@ -118,5 +118,7 @@
   "purchasePrintCleanupAuthorizedByOwner": true,
   "purchasePrintCleanupAuthorization": "Owner requested a nice clean Purchase Completed print page with number-only row amounts and OMR only on the final amount.",
   "checklistOdometerPrefillAuthorizedByOwner": true,
-  "checklistOdometerPrefillAuthorization": "Owner requested checklist Job Card opening to prefill kilometers automatically and allow editing."
+  "checklistOdometerPrefillAuthorization": "Owner requested checklist Job Card opening to prefill kilometers automatically and allow editing.",
+  "insurerNameHighlightAuthorizedByOwner": true,
+  "insurerNameHighlightAuthorization": "Owner requested insurance company names to be slightly bold or colored for faster recognition on Approval Waiting Insurance screen."
 }
