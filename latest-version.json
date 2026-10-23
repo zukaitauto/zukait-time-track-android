@@ -1,9 +1,9 @@
 {
-  "versionCode": 327,
-  "versionName": "V364",
+  "versionCode": 328,
+  "versionName": "V365",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "439c7a59d179050d7f3f8f617af5a005fff365da",
-  "apkSha256": "8b666d8ee4926fe3649e1adc0e479e2aac0a8b68bc40710c922c91f902c97fda",
-  "releaseTag": "release-V364-architecture-v2"
+  "sourceCommit": "748cc89f9a699304d9272707142dae997f444c4b",
+  "apkSha256": "dc578675cbe6b37b799b74bef79f73b39f48409828fe286aa9e603a4b6a31939",
+  "releaseTag": "release-V365-architecture-v2"
 }
