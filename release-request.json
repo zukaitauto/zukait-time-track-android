@@ -3,7 +3,7 @@
   "versionCode": 334,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
-  "sourceCommit": "2cf2034022e5f727571b8b091893c857de80b2a9",
+  "sourceCommit": "96e3219573804707e8a69f9e2e6b635058ca0949",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-23T18:59:07.006Z",
-  "publishNonce": "2cf2034022e5f727571b8b091893c857de80b2a9370",
+  "approvedAt": "2026-10-23T19:40:26.144Z",
+  "publishNonce": "96e3219573804707e8a69f9e2e6b635058ca0949371",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -32,11 +32,11 @@
         "verificationBasis": "Read-only production verification; unchanged staff-auth8. No authentication deployment."
       },
       "workshop-api": {
-        "version": 88,
-        "bundleSha256": "0a893e8e7d15eec811105fc63d4672e3e3626eeb6fbeddcbe49a031193ef3b3f",
+        "version": 89,
+        "bundleSha256": "c6864c82d4c1bf231d295e5e22d1b17dd3b942b96519d63373ea138e051a80e4",
         "verifiedFileMatch": true,
         "repositorySourceMatchesDeployed": false,
-        "verificationBasis": "All production88 files match tested QA23 exactly. Production87 preserved except read-only company filter allowlist/pass-through and Reception dashboard company filtering and job-age projection. Repository index retains pre-existing differences outside this change."
+        "verificationBasis": "All production89 files match tested QA25 exactly. Production88 bundle preserved except scoped Job Card public-number transport, private computed session relationship and Manager numbered-edit RPC routing. Existing repository index differences remain outside this change."
       }
     },
     "migrations": [
@@ -44,17 +44,26 @@
       "accountant_lpo_audit",
       "accountant_append_only_grants",
       "accountant_append_only_corrections",
-      "workshop_single_round_trip_revision_probe"
-    ]
+      "workshop_single_round_trip_revision_probe",
+      "editable_job_card_numbers"
+    ],
+    "jobNumberPrivilegeHardening": {
+      "sql": "revoke update,delete,truncate,references,trigger on public.workshop_job_number_audit,public.workshop_job_number_aliases from service_role;\nrevoke delete,truncate,references,trigger on public.workshop_job_numbers from service_role;",
+      "reason": "Production default service_role privileges include extra table mutations. Explicitly revoke these after migration; retain required SELECT/INSERT and registry UPDATE. Immutable audit triggers are also enabled.",
+      "verifiedAuditUpdateDeleteDenied": true,
+      "verifiedAliasUpdateDeleteDenied": true,
+      "verifiedRegistryDeleteDenied": true,
+      "requiredInsertsAndRegistryUpdatePreserved": true
+    }
   },
-  "verificationSummary": "V370 adds Oman calendar Days Open to Reception Job Card rows (opening day zero; delivered age stops at delivery) and company/job-type selection for Cash, Credit, all insurance, and individual insurers. Filtering precedes pagination and combines with search, date and promise filters; options use the entire section. Unit tests cover dates, exact company isolation and pagination; phone browser tests pass for Manager, Supervisor and Receptionist. Exact-source signed APK, Reception, Accountant, Android, sync and native PDF verification all passed. QA23 and production88 match all files and bundle hash. No workshop record, schema, authentication or password changes. Physical-device acceptance and fresh restore remain NOT_RUN.",
+  "verificationSummary": "V371 organizes Manager Full Edit into Job Details, Vehicle, Customer, Dates & Payment, Work & Notes, Technician Allocations and Save Correction, with readable header and scoped responsive layout. Job Card number is editable for Manager only. A changed number requires explicit old-to-new confirmation before saving. Database uniqueness/reservations cover active, historical and retired numbers, raw snapshot/projection creation, two-device conflicts and stale confirmations. Stable stored job identifiers, work, parts, paint, Sublet, Reception links, events and append-only accounting entries remain unchanged; a private public-number directory translates typed request/response references. Pending offline parts adopt the authoritative visible number without dropping queued updates. Number changes use the existing Manager full-edit transaction plus an immutable audited registry. Existing session validation, revocation, roles and passwords are preserved; numbering is embedded into the existing session read without another database request. Exact-source numbering/API/permission tests, PostgreSQL overlap and preservation tests, Chromium/WebKit phone/tablet confirmation/layout checks, Reception, Accountant, sync, signed/unsigned Android and native PDF checks all passed. QA25 real API confirmed initial/second correction 200, old/current-number lookup 200 and duplicate rejection 409 with job_number_duplicate; temporary fixture session revoked and account disabled, fixture display restored. Production89 readback matches all QA25 files and hash. Number registry initialized without changing existing public numbers or workshop records; production number audit remains empty. Production default service_role table privileges explicitly narrowed and verified; no security warnings. Physical-device acceptance and fresh production restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": true,
   "releaseChangeScope": "organized-manager-editor-and-confirmed-job-card-number-correction",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
-    "previousRelease": "release-V369-architecture-v2",
-    "strategy": "Publish a higher-version recovery APK with V369 client assets if needed; retain backward-compatible backend88. Any backend recovery must preserve company_filter allowlist compatibility for V370 clients. No data reset.",
+    "previousRelease": "release-V370-architecture-v2",
+    "strategy": "Publish a higher-version recovery APK using V370 client assets if needed, retaining backend89 public-number translation and the numbering registry/audit. Disable only new number-edit entry points if necessary. Never drop the number directory or reuse retired numbers after corrections; stable stored work, events and accounting keys must remain intact. No data reset.",
     "dataResetRequired": false
   },
   "releaseBackendChanges": true,
@@ -85,12 +94,12 @@
     "fixturesRevoked": true,
     "workshopRecordsChanged": false
   },
-  "signedAcceptanceRun": 40006449528,
-  "verificationRun": 40006449190,
-  "accountantVerificationRun": 40006449411,
-  "androidBuildRun": 40006449357,
-  "syncVerificationRun": 40006449334,
-  "nativePdfVerificationRun": 40006449449,
+  "signedAcceptanceRun": 40012405398,
+  "verificationRun": 40012405425,
+  "accountantVerificationRun": 40012405378,
+  "androidBuildRun": 40012405295,
+  "syncVerificationRun": 40012405319,
+  "nativePdfVerificationRun": 40012405229,
   "monthlyReadAuthorizedByOwner": true,
   "monthlyReadAuthorization": "Owner requested Fix it properly for monthly read TIMEOUT, reviewed the remaining deployment/publication steps, and explicitly instructed Proceed.",
   "qaMonthlyRead": {
@@ -157,6 +166,10 @@
     "fixtureSessionRevoked": true,
     "fixtureAccountDisabled": true,
     "storedKeysUnchanged": true,
-    "productionRecordsChanged": false
+    "productionRecordsChanged": false,
+    "allFilesMatchProduction": true,
+    "realPostgresConcurrencyPassed": true,
+    "browserChromiumWebKitPassed": true,
+    "pendingOfflinePartsPreserved": true
   }
 }
