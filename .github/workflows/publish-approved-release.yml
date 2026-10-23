@@ -249,6 +249,7 @@ jobs:
           cp app/src/main/assets/accountant.js _site/accountant.js
           cp app/src/main/assets/accountant.css _site/accountant.css
           cp app/src/main/assets/manager_job_edit.css _site/manager_job_edit.css
+          cp app/src/main/assets/dashboard_cards.css _site/dashboard_cards.css
           cp app/src/main/assets/accountant_exports.js _site/accountant_exports.js
           cp app/src/main/assets/accountant_accounts.js _site/accountant_accounts.js
           cp app/src/main/assets/receptionist.html _site/receptionist.html
