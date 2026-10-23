@@ -66,3 +66,5 @@ dependencies {
 // V367: Verify sandbox-external navigation with bounded browser setup time.
 
 // V368: Validate Paint Reports with reliable HTTPS browser dependency setup.
+
+// V369: Verify recorded delivery time in both checklist and Job Card status.
