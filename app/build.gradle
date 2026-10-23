@@ -13,7 +13,7 @@ android {
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
         versionCode 324
-        versionName "V361" // Exact-source acceptance covers card navigation, financial workflows and shared role regressions.
+        versionName "V361" // Shared raised cards, readable parts dashboards and responsive browser acceptance.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }
