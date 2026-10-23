@@ -17,9 +17,9 @@ export async function mountMechanicalTracking(root,options={}){
    if(pending.command.entityId!==options.checklistId||pending.role!==initial.role){box.append(el('p','Reopen the original checklist with the original account role to review this saved change.'));return}
    box.append(button('Retry saved change',post));
    if(pending.rejected)box.append(button('Refresh for review',async()=>{if(await load()){pending.reviewed=true;try{save();render()}catch{notice='The review could not be stored safely.';render()}}}));
-   if(pending.reviewed&&model?.active){
-    if(matches())box.append(button('Keep current server value and resolve draft',()=>{try{store.removeItem(key);pending=null;notice='Draft resolved. The current server value was retained.';render()}catch{notice='The saved request is retained.';render()}}));
-    else box.append(button('Confirm reviewed change',()=>{pending.command={...pending.command,requestId:uuid(),expectedRevision:model.recordsRevision,expectedWorkshopRevision:model.workshopRevision};pending.rejected=false;pending.reviewed=false;try{save();post()}catch{notice='No change sent: the request could not be stored safely.';render()}}));
+   if(pending.reviewed&&pending.rejected&&model?.active){
+    box.append(button('Keep current server value and resolve draft',()=>{try{store.removeItem(key);pending=null;notice='Draft resolved. The current server value was retained.';render()}catch{notice='The saved request is retained.';render()}}));
+    if(!matches())box.append(button('Confirm reviewed change',()=>{pending.command={...pending.command,requestId:uuid(),expectedRevision:model.recordsRevision,expectedWorkshopRevision:model.workshopRevision};pending.rejected=false;pending.reviewed=false;try{save();post()}catch{notice='No change sent: the request could not be stored safely.';render()}}));
    }
   }
   if(!model)return;const t=model.tracking,card=el('article');card.append(el('h3','JC '+model.jobCard),el('p','Priority: '+(t.priority??'Not set')),el('p','Promise date (Oman): '+(t.promiseDate??'Not set')),el('p','Waiting for parts: '+(t.waitingForParts?'Yes':'No')));if(t.updatedBy)card.append(el('p','Last changed by '+t.updatedBy));root.append(card);
@@ -46,7 +46,7 @@ export async function mountMechanicalTracking(root,options={}){
  }
  async function post(){
   if(!active()||busy||!pending||pending.role!==initial.role||pending.command.entityId!==options.checklistId)return;if(!online()){notice='Connect before retrying the saved change.';render();return}
-  busy=true;render();let refresh=false;try{
+  busy=true;pending.rejected=false;pending.reviewed=false;try{save()}catch{busy=false;notice='No change sent: the retry could not be stored safely.';render();return}render();let refresh=false;try{
    const r=await options.api({action:'mechanical_tracking_command',command:pending.command});if(!active())return;if(!r?.ok){pending.rejected=knownRejection(r?.code);pending.error=r?.code;save();notice=message(r?.code);return}
    if(r.requestId!==pending.command.requestId)throw Error('wrong_ack');store.removeItem(key);pending=null;notice='Change confirmed.';refresh=true;try{options.onChanged?.()}catch{}
   }catch(e){if(active()){const code=e.code||e.message;if(knownRejection(code)){pending.rejected=true;pending.error=code;try{save()}catch{}}notice=message(code)}}finally{busy=false;render();if(refresh)await load()}
