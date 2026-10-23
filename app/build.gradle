@@ -60,3 +60,5 @@ dependencies {
 // V357: Verify scoped Cash/Insurance reads while preserving staged Sublet changes.
 
 // Verify a concurrent shared revision cannot substitute unsynced values in monthly lists.
+
+// V365: Verify readable insurer labels in the coordinated web and Android release.
