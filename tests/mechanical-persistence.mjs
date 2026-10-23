@@ -3,6 +3,7 @@ import {mechanicalTransition,mechanicalCommandFingerprint} from '../supabase/fun
 import {mechanicalPersistenceRequest} from '../supabase/functions/workshop-api/extensions/mechanical_persistence_plan.js';
 import {mechanicalCommandApi} from '../supabase/functions/workshop-api/extensions/mechanical_api.js';
 import {mechanicalRoute} from '../supabase/functions/workshop-api/extensions/mechanical_route.js';
+import {mechanicalTrackingPersistence} from './mechanical-tracking-persistence.mjs';
 import {mechanicalQcPersistenceTests} from './mechanical-qc-persistence.mjs';
 import {stripTypeScriptTypes} from 'node:module';
 import {qcWork,qcStatus,qcTransition} from '../supabase/functions/workshop-api/qc_delivery_rules.js';
@@ -203,5 +204,6 @@ try{
   const p=await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_2',date:'2026-10-19'}});await race(p,p,true);const p1=await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_3',date:'2026-10-19'}}),p2=await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_4',date:'2026-10-19'}});await race(p1,p2,false);assert.equal((await call(await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_4',date:'2026-10-19'}}))).number,'MC005');}finally{await Promise.all([a.query('rollback'),b.query('rollback')]);await Promise.all([a.end(),b.end()]);}
  }
  await mechanicalQcPersistenceTests({db,records,snapshot,native,pg,config,database});
+ await mechanicalTrackingPersistence({db,records,snapshot,native,pg,config,database});
  console.log('PASS '+(native?'native PostgreSQL 17 concurrent':'PGlite')+' persistence: MC001/MC002, retry identity, one JC/MC, rollback/no consumed number, metadata without full-state writes, atomic assignment/handover/history/live triggers, dual revision checks, append-only and private service ACL. No production access.');
 }finally{if(native){await client.end();await admin.query('drop database "'+database+'" with (force)');await admin.end();}else await db.close();}

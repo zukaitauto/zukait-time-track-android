@@ -51,6 +51,7 @@ export async function mountMechanicalWorkspace(root,options={}){
   }
   const d=model.detail;if(!d){detail.append(node('p','Select a checklist to view its tasks.'));return}
   detail.append(node('h3',d.checklist.number+' · JC '+d.checklist.jobCard),node('p','Manual date: '+d.checklist.manualDate));
+  if(typeof options.openTracking==='function')detail.append(button('Priority / promise / parts status',()=>options.openTracking(d.checklist.id)));
   if(model.qcAvailable){
    const box=node('article',null,{'data-mechanical-qc':'true'});box.append(node('h3','Mechanical quality check'),button('Check QC status',()=>loadQc()));
    if(qc?.checklistId===d.checklist.id){

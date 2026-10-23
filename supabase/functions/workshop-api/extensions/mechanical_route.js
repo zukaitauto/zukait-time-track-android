@@ -1,6 +1,7 @@
 import {mechanicalCommandApi} from './mechanical_api.js';
 import {mechanicalQcCommandApi,mechanicalQcReadiness} from './mechanical_qc_boundary.js';
 import {mechanicalDeliveryCommandApi} from './mechanical_delivery_api.js';
+import {mechanicalTrackingApi} from './mechanical_tracking.js';
 import {mechanicalQcOverview} from './mechanical_qc_overview.js';
 const uuid=x=>typeof x==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(x);
 const response=(code,status)=>({status,body:{ok:false,code}});
@@ -8,10 +9,10 @@ const conflicts=new Set(['mechanical_request_reused','mechanical_revision_confli
 export function mechanicalApiError(error){
  const code=String(error?.message||'');
  if(code==='mechanical_invalid_session')return response('invalid_session',401);
- if(['mechanical_disabled','mechanical_forbidden','mechanical_qc_disabled','mechanical_qc_approver_required','mechanical_delivery_disabled'].includes(code))return response(code,403);
+ if(['mechanical_disabled','mechanical_forbidden','mechanical_qc_disabled','mechanical_qc_approver_required','mechanical_delivery_disabled','mechanical_tracking_disabled'].includes(code))return response(code,403);
  if(conflicts.has(code))return response(code,409);
  if(['invalid_mechanical_command','mechanical_operation_not_implemented','invalid_mechanical_delivery'].includes(code))return response(code,400);
- if(['mechanical_context_limit','mechanical_dashboard_limit','mechanical_overview_limit','mechanical_checklist_missing','mechanical_mixed_qc_policy_required','mechanical_mixed_qc_not_required','mechanical_qc_policy_required','mechanical_delivery_not_ready','mechanical_qc_scope_review','job_inactive'].includes(code))return response(code,409);
+ if(['mechanical_context_limit','mechanical_dashboard_limit','mechanical_overview_limit','mechanical_checklist_missing','mechanical_mixed_qc_policy_required','mechanical_mixed_qc_not_required','mechanical_qc_policy_required','mechanical_delivery_not_ready','mechanical_qc_scope_review','job_inactive','checklist_inactive','tracking_priority_policy_required','tracking_hold_policy_required','tracking_no_change','invalid_tracking_change','invalid_promise_date'].includes(code))return response(code,409);
  return response('mechanical_unavailable',503);
 }
 export async function mechanicalRoute(admin,user,body,options={}){
@@ -40,6 +41,19 @@ export async function mechanicalRoute(admin,user,body,options={}){
   }catch(error){return mechanicalApiError(error)}
  }
  if(user?.active===false||!['Manager','Supervisor'].includes(user?.role))return response('mechanical_forbidden',403);
+ if(['mechanical_tracking_view','mechanical_tracking_command'].includes(body?.action)){
+  if(options.trackingEnabled!==true)return response('extension_disabled',403);
+  if(!/^[0-9a-f]{64}$/.test(options.sessionHash||'')||typeof options.verifySession!=='function')return response('invalid_session',401);
+  const command=body.command,read=async(kind,entity=null,request=null)=>{const {data,error}=await admin.rpc('zukait_mechanical_tracking_read',{p_actor:user.id,p_session_hash:options.sessionHash,p_kind:kind,p_operation:body.action==='mechanical_tracking_command'?command?.operation:null,p_entity:entity,p_request:request});if(error)throw error;return data};
+  try{
+   if(body.action==='mechanical_tracking_view'){
+    if(Object.keys(body).some(k=>!['action','checklistId'].includes(k))||!uuid(body.checklistId))return response('invalid_command',400);
+    return {status:200,body:await read('view',body.checklistId)};
+   }
+   if(Object.keys(body).some(k=>!['action','command'].includes(k))||!uuid(command?.entityId)||JSON.stringify(body).length>5000)return response('invalid_command',400);
+   return await mechanicalTrackingApi(command,{enabled:true,trackingEnabled:true,actor:user,policy:await read('policy'),verifySession:async()=>{const current=await options.verifySession();return current&&current.active!==false?{...current,active:true}:null},readReceipt:id=>read('receipt',null,id),readContext:id=>read('context',id),commit:async plan=>{const {data,error}=await admin.rpc('zukait_mechanical_tracking_commit',{...plan,p_session_hash:options.sessionHash});if(error)throw error;return data}});
+  }catch(error){return mechanicalApiError(error)}
+ }
  if(body?.action==='mechanical_qc_overview'){
   if(options.qcEnabled!==true)return response('extension_disabled',403);
   if(Object.keys(body).some(k=>k!=='action'))return response('invalid_command',400);

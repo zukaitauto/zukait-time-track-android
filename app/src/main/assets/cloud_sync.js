@@ -980,6 +980,16 @@
     return api({action:'mechanical_qc_overview'});
   }
 
+  async function openMechanicalTracking(checklistId){
+    if(window.ZUKAIT_MECHANICAL_ENABLED!==true||window.ZUKAIT_MECHANICAL_TRACKING_ENABLED!==true||!['Manager','Supervisor'].includes(me?.role)||!sessionToken())return false;
+    const owner=String(me.id),token=sessionToken(),current=()=>String(me?.id||'')===owner&&sessionToken()===token;
+    const module=await import('./mechanical_tracking.js');if(!current())return false;
+    openModal('<div id="zukaitMechanicalTracking"></div>');const root=document.getElementById('zukaitMechanicalTracking');if(!root)return false;
+    await module.mountMechanicalTracking(root,{enabled:true,checklistId,storage:localStorage,getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()}),online:()=>navigator.onLine,
+      api:async body=>{if(!current()||window.ZUKAIT_MECHANICAL_ENABLED!==true||window.ZUKAIT_MECHANICAL_TRACKING_ENABLED!==true)throw Error('invalid_session');if(!navigator.onLine)throw Error('OFFLINE');if(!['mechanical_tracking_view','mechanical_tracking_command'].includes(body.action))throw Error('mechanical_forbidden');return api(body)},
+      onChanged:()=>window.dispatchEvent(new CustomEvent('zukait-mechanical-change')),onClose:()=>{if(root.isConnected)closeModal()}});return true;
+  }
+
   async function openMechanicalWorkspace(checklistId=null){
     if(window.ZUKAIT_MECHANICAL_ENABLED!==true||!['Manager','Supervisor'].includes(me?.role)||!sessionToken())return false;
     const owner=String(me.id),token=sessionToken();
@@ -988,7 +998,7 @@
     openModal('<div id="zukaitMechanicalWorkspace"></div>');
     const root=document.getElementById('zukaitMechanicalWorkspace');if(!root)return false;
     const modal=root.closest('.modal-box');if(modal){modal.style.width='1100px';modal.style.maxWidth='95vw'}
-    await module.mountMechanicalWorkspace(root,{enabled:true,storage:localStorage,checklistId,
+    await module.mountMechanicalWorkspace(root,{enabled:true,storage:localStorage,checklistId,openTracking:window.ZUKAIT_MECHANICAL_TRACKING_ENABLED===true?openMechanicalTracking:null,
       getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()}),online:()=>navigator.onLine,
       onClose:()=>{if(root.isConnected)closeModal()},
       openDelivery:window.ZUKAIT_MECHANICAL_DELIVERY_ENABLED===true?openMechanicalDelivery:null,
