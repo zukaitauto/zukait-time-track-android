@@ -109,8 +109,15 @@ jobs:
       - run: node tests/reception-v305-acceptance.mjs
       - run: node tests/reception-backup-export-safety.mjs
       - run: node tests/reception-release-publish-safety.mjs
+      - name: Use HTTPS Ubuntu mirrors for browser dependencies
+        run: |
+          for source in /etc/apt/apt-mirrors.txt /etc/apt/sources.list.d/ubuntu.sources; do
+            if [ -f "$source" ]; then
+              sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g; s|http://security.ubuntu.com/ubuntu|https://security.ubuntu.com/ubuntu|g' "$source"
+            fi
+          done
       - run: npx playwright install --with-deps chromium webkit
-        timeout-minutes: 5
+        timeout-minutes: 10
       - name: Verify print preview navigation outside the sandbox on Chromium and WebKit
         run: node tests/print-navigation-browser.mjs
       - name: Verify monthly and date-range Paint Reports on phones

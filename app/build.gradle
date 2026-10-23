@@ -65,4 +65,4 @@ dependencies {
 
 // V367: Verify sandbox-external navigation with bounded browser setup time.
 
-// V368: Verify report totals and print navigation at phone/tablet widths.
+// V368: Validate Paint Reports with reliable HTTPS browser dependency setup.
