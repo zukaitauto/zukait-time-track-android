@@ -3,7 +3,7 @@
   "versionCode": 331,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
-  "sourceCommit": "20a1ca3555910c65fea3463bf4f2e49366fb1877",
+  "sourceCommit": "f497e65a454b79e08ef561f36f7363bb1dee542d",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-23T17:19:47.750Z",
-  "publishNonce": "20a1ca3555910c65fea3463bf4f2e49366fb1877367",
+  "approvedAt": "2026-10-23T17:53:40.155Z",
+  "publishNonce": "f497e65a454b79e08ef561f36f7363bb1dee542d368",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -47,14 +47,14 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V367 moves shared print preview Back, Close and Print controls into the host overlay outside the sandboxed report iframe; embedded legacy navigation is removed. Materials previews close safely without popup history/window.close and restore focus. Painter-wise reports start with expandable per-painter totals, distinct staff-ID grouping, job and material counts, and full filtered material detail sorted by Job Card. Print preview preserves painter expansion state. Navigation unit tests and real Chromium/WebKit tests passed for Back/Close/Print, opener focus and Escape; Consumables tests cover costs, same-name staff isolation, filters, drilldown and unchanged state. Signed APK, Reception browser/responsive, financial, native PDF and sync CI passed for exact final source. Browser setup timeout bounds stalled runner installation. No backend/schema/data changes. Physical-device acceptance and fresh restore remain NOT_RUN.",
+  "verificationSummary": "V368 adds Reports to the Paint menu for Manager/Supervisor. Month selection fills inclusive From/To dates; custom periods and paint-type filters cover Base Coat, Pearl Coat, 2K Paint and saved other types. Read-only receipt/return events use Oman dates, receipt dates for incoming quantities/costs and return dates for credits. Each expandable type shows received/returned/net litres and costs, Job Cards, PO/vendor detail and Print/PDF with working shared navigation. Waiting/NIL/voided orders and voided returns are excluded; unknown prices and undated entries are explicitly flagged. Tests cover historical receipts/current returns, additional orders, boundaries, type/custom filters, leap months, pending prices, roles and unchanged data. Phone/tablet widths 360/390/768 and shared print preview passed. Exact-source signed Android, Reception browser/responsive, financial, sync and native PDF checks passed. CI dependency mirror uses standard HTTPS Ubuntu archive after Azure HTTP package-download timeouts. No backend/schema/data changes. Physical-device acceptance and fresh restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": false,
   "releaseChangeScope": "paint-reports-month-period-type",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
-    "previousRelease": "release-V366-architecture-v2",
-    "strategy": "Publish a higher-version recovery APK with V366 client assets if required. No backend rollback or data reset.",
+    "previousRelease": "release-V367-architecture-v2",
+    "strategy": "Publish a higher-version recovery APK with V367 client assets if required. No backend rollback or data reset.",
     "dataResetRequired": false
   },
   "releaseBackendChanges": false,
@@ -85,12 +85,12 @@
     "fixturesRevoked": true,
     "workshopRecordsChanged": false
   },
-  "signedAcceptanceRun": 39993134828,
-  "verificationRun": 39993134803,
-  "accountantVerificationRun": 39993134864,
-  "androidBuildRun": 39993134784,
-  "syncVerificationRun": 39993134779,
-  "nativePdfVerificationRun": 39993134772,
+  "signedAcceptanceRun": 39998136413,
+  "verificationRun": 39998136484,
+  "accountantVerificationRun": 39998136456,
+  "androidBuildRun": 39998136412,
+  "syncVerificationRun": 39998136420,
+  "nativePdfVerificationRun": 39998136461,
   "monthlyReadAuthorizedByOwner": true,
   "monthlyReadAuthorization": "Owner requested Fix it properly for monthly read TIMEOUT, reviewed the remaining deployment/publication steps, and explicitly instructed Proceed.",
   "qaMonthlyRead": {
