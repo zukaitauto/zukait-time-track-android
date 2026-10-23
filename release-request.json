@@ -1,6 +1,6 @@
 {
-  "versionName": "V365",
-  "versionCode": 328,
+  "versionName": "V366",
+  "versionCode": 329,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
   "sourceCommit": "748cc89f9a699304d9272707142dae997f444c4b",
@@ -49,7 +49,7 @@
   },
   "verificationSummary": "V365 highlights insurance company names in Reception list rows using bold dark-blue text on a light-blue background. Shared styling covers Approval Waiting Insurance and other Reception lists; long names wrap within the card. Registration, status, click actions and escaped company text remain unchanged. JavaScript validation, signed Android APK, Reception browser/responsive, financial and sync checks passed for the exact source. No backend, schema or workshop data changes. Physical-device acceptance and fresh restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": false,
-  "releaseChangeScope": "reception-insurer-name-highlight",
+  "releaseChangeScope": "consumables-job-card-summary",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
@@ -120,5 +120,7 @@
   "checklistOdometerPrefillAuthorizedByOwner": true,
   "checklistOdometerPrefillAuthorization": "Owner requested checklist Job Card opening to prefill kilometers automatically and allow editing.",
   "insurerNameHighlightAuthorizedByOwner": true,
-  "insurerNameHighlightAuthorization": "Owner requested insurance company names to be slightly bold or colored for faster recognition on Approval Waiting Insurance screen."
+  "insurerNameHighlightAuthorization": "Owner requested insurance company names to be slightly bold or colored for faster recognition on Approval Waiting Insurance screen.",
+  "consumablesJobSummaryAuthorizedByOwner": true,
+  "consumablesJobSummaryAuthorization": "Owner requested the long consumables report to sort by Job Card number with total consumables."
 }
