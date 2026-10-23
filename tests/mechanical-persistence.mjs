@@ -3,6 +3,7 @@ import {mechanicalTransition,mechanicalCommandFingerprint} from '../supabase/fun
 import {mechanicalPersistenceRequest} from '../supabase/functions/workshop-api/extensions/mechanical_persistence_plan.js';
 import {mechanicalCommandApi} from '../supabase/functions/workshop-api/extensions/mechanical_api.js';
 import {mechanicalRoute} from '../supabase/functions/workshop-api/extensions/mechanical_route.js';
+import {mechanicalQcPersistenceTests} from './mechanical-qc-persistence.mjs';
 import {stripTypeScriptTypes} from 'node:module';
 import {qcWork,qcStatus,qcTransition} from '../supabase/functions/workshop-api/qc_delivery_rules.js';
 import {managerTimeTransition} from '../supabase/functions/workshop-api/time_management_rules.js';
@@ -201,5 +202,6 @@ try{
   async function race(p1,p2,duplicate){await a.query('begin');await b.query('begin');try{const one=(await a.query(rpcSql,values(p1))).rows[0].r;const pending=b.query(rpcSql,values(p2)).then(r=>({row:r.rows[0].r}),error=>({error}));let blocked=false;for(let i=0;i<100;i++){if((await db.query('select $2::int=any(pg_blocking_pids($1::int)) blocked',[b.processID,a.processID])).rows[0].blocked){blocked=true;break}await new Promise(r=>setTimeout(r,20));}assert.ok(blocked,'Second writer must wait on the tested lock');await a.query('commit');const two=await pending;if(duplicate){assert.equal(two.row.duplicate,true);assert.equal(two.row.number,one.number);await b.query('commit')}else{assert.match(two.error.message,/mechanical_revision_conflict/);await b.query('rollback')}}finally{await a.query('rollback');await b.query('rollback')}}
   const p=await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_2',date:'2026-10-19'}});await race(p,p,true);const p1=await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_3',date:'2026-10-19'}}),p2=await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_4',date:'2026-10-19'}});await race(p1,p2,false);assert.equal((await call(await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_4',date:'2026-10-19'}}))).number,'MC005');}finally{await Promise.all([a.query('rollback'),b.query('rollback')]);await Promise.all([a.end(),b.end()]);}
  }
+ await mechanicalQcPersistenceTests({db,records,snapshot,native,pg,config,database});
  console.log('PASS '+(native?'native PostgreSQL 17 concurrent':'PGlite')+' persistence: MC001/MC002, retry identity, one JC/MC, rollback/no consumed number, metadata without full-state writes, atomic assignment/handover/history/live triggers, dual revision checks, append-only and private service ACL. No production access.');
 }finally{if(native){await client.end();await admin.query('drop database "'+database+'" with (force)');await admin.end();}else await db.close();}
