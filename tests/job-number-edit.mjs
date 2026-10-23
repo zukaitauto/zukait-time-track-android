@@ -25,3 +25,11 @@ result=await call({action:'manager_job_full_edit',operation:'FULL_EDIT',jobCard:
 rejectNumber=true;result=await call({action:'manager_job_full_edit',operation:'FULL_EDIT',jobCard:'13965',expectedEditRevision:1,expectedJob:{...state.jobs[0],no:'13965'},expectedAssignments:[],allocations:[],patch:{},reason:'Duplicate check',newJobNumber:'14965',expectedJobNumber:'13965',numberChangeConfirmed:true});assert.equal(result.status,409);assert.equal(result.body.code,'job_number_duplicate');assert.equal(state.jobs[0].no,'11965');
 for(const role of ['Supervisor','Receptionist','Employee']){actor={...actor,role};result=await call({action:'manager_job_full_edit',operation:'FULL_EDIT',jobCard:'13965',newJobNumber:'14965'});assert.notEqual(result.status,200);}
 console.log('Job numbers: reference round-trip, immutable amounts/text, dictionaries, confirmation, format, real API normalization, exact edit RPC and role restrictions passed.');
+// A device with an offline part update must adopt the server's current number
+// while retaining its queued part update, rather than leaving a detached cache.
+const cache=new Map(),box={window:{me:{id:'M',role:'Manager'}},localStorage:{getItem:k=>cache.get(k)||null,setItem:(k,v)=>cache.set(k,v)},navigator:{onLine:true},document:{getElementById:()=>null},alert:()=>{},Date,console};
+vm.createContext(box);vm.runInContext(fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8'),box);
+cache.set('zukait_v2_spare_parts_lists_v1',JSON.stringify([{listNo:'PL001',jobCard:'11965',items:[{id:'part-1',name:'Bumper',qty:1,status:'ORDERED',pendingSync:true,pendingEventId:'offline-1'}]}]));
+box.window.zukaitV2.sparePartsMain.hydrateFromServerRows([{event_type:'SPARE_PART_LIST_CREATED',list_no:'PL001',job_card:'12965',payload:{listNo:'PL001',jobCard:'12965'}}]);
+const cached=JSON.parse(cache.get('zukait_v2_spare_parts_lists_v1'))[0];assert.equal(cached.jobCard,'12965');assert.equal(cached.items[0].pendingEventId,'offline-1');assert.equal(cached.items[0].status,'ORDERED');
+console.log('Pending Spare Parts cache adopts corrected number without losing queued work.');

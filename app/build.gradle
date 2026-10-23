@@ -13,7 +13,7 @@ android {
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
         versionCode 334
-        versionName "V371" // Organized Manager editor and confirmed unique public Job Card numbers.
+        versionName "V371" // Organized Manager editor; confirmed unique numbers retain linked records and queued parts.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }

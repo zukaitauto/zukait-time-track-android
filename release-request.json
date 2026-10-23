@@ -144,5 +144,19 @@
     "allFilesMatchProduction": true
   },
   "jobNumberCorrectionAuthorizedByOwner": true,
-  "jobNumberCorrectionAuthorization": "Owner requested an organized Job Card edit screen, editable Job Card number, no duplicate numbers, and another confirmation before saving a number change. Standing owner instruction: Release after all fix complete."
+  "jobNumberCorrectionAuthorization": "Owner requested an organized Job Card edit screen, editable Job Card number, no duplicate numbers, and another confirmation before saving a number change. Standing owner instruction: Release after all fix complete.",
+  "qaJobNumberCorrection": {
+    "project": "omqgkqknbdcnotabffek",
+    "version": 25,
+    "bundleSha256": "c6864c82d4c1bf231d295e5e22d1b17dd3b942b96519d63373ea138e051a80e4",
+    "apiRenumber": 200,
+    "apiSecondCorrection": 200,
+    "apiCurrentAndPriorNumberLookup": 200,
+    "apiDuplicate": 409,
+    "duplicateCode": "job_number_duplicate",
+    "fixtureSessionRevoked": true,
+    "fixtureAccountDisabled": true,
+    "storedKeysUnchanged": true,
+    "productionRecordsChanged": false
+  }
 }
