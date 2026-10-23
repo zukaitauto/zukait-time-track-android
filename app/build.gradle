@@ -13,7 +13,7 @@ android {
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
         versionCode 327
-        versionName "V364" // Prefill editable Job Card odometer from selected checklist.
+        versionName "V364" // Editable checklist odometer in both Job Card opening screens.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }
