@@ -29,7 +29,16 @@ begin
  from (select * from zukait_mechanical.links where task_id=p_entity order by assignment_id limit 501) l;
  if jsonb_array_length(links)>500 then raise exception 'mechanical_context_limit';end if;
  select * into ctl from zukait_mechanical.control where singleton;
- select jsonb_build_object('revision',revision,'data',data) into snapshot from public.workshop_state where id='main';
+ if p_operation in ('MC_CREATE','TASK_CREATE') then
+  -- Metadata commands need only the selected JC's active flags. Never carry
+  -- all employee history through an internal RPC to register a title/date.
+  select jsonb_build_object('revision',w.revision,'data',jsonb_build_object('users','[]'::jsonb,'assign','[]'::jsonb,'sessions','[]'::jsonb,
+    'jobs',coalesce((select jsonb_agg(jsonb_build_object('no',j->>'no','delivered',j->'delivered','cancelled',j->'cancelled','archived',j->'archived','deleted',j->'deleted'))
+      from jsonb_array_elements(coalesce(w.data->'jobs','[]')) j where j->>'no'=case when p_operation='MC_CREATE' then p_payload->'manualJobCard'->>'number'
+      else (select c.job_card from zukait_mechanical.checklists c where c.id=checklist_id) end),'[]'::jsonb))) into snapshot from public.workshop_state w where w.id='main';
+ else
+  select jsonb_build_object('revision',revision,'data',data) into snapshot from public.workshop_state where id='main';
+ end if;
  if snapshot is null then raise exception 'workshop_missing';end if;
  records:=jsonb_build_object('revision',ctl.revision,'checklists',checklists,'tasks',tasks,'links',links,'receipts','[]'::jsonb,'audit','[]'::jsonb);
  return jsonb_build_object('records',records,'snapshot',snapshot,'nextSequence',ctl.next_sequence);

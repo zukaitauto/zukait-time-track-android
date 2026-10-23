@@ -8,6 +8,7 @@ let handler,flag,invalid=false,role='Supervisor',revoke=false,authReads=0,calls=
 const admin={from:table=>{if(table!=='staff_sessions'&&guardError)throw Error(guardError);assert.equal(table,'staff_sessions');const chain={select(){return chain},eq(){return chain},maybeSingle:async()=>{authReads++;return {data:invalid||(revoke&&authReads===3)?null:{user_id:'QA_SUP',revoked_at:null,last_seen_at:new Date().toISOString(),staff_credentials:{user_id:'QA_SUP',display_name:'QA supervisor',role,department:'QA_MECH',active:true,must_change:false}}}}};return chain},
  rpc:async(name,p)=>{
   calls.push({name,p});assert.equal(p.p_actor,'QA_SUP');assert.match(p.p_session_hash,/^[0-9a-f]{64}$/);assert.notEqual(p.p_session_hash,'qa-synthetic-session');
+  if(name==='zukait_mechanical_dashboard')return {data:{ok:true,checklists:[],nextAfter:null,detail:null,recordsRevision:0,workshopRevision:1}};
   if(name==='zukait_mechanical_read'){
    if(p.p_kind==='policy')return {data:policy};
    if(p.p_kind==='receipt')return {data:null};
@@ -32,6 +33,8 @@ assert.equal((await request({action:'mechanical_unknown',command})).status,400);
 assert.equal((await request({action:'mechanical_command',command,enabled:true})).status,400);assert.equal(calls.length,0);
 assert.equal((await request({action:'mechanical_command',command:{...command,actorId:'QA_OTHER'}})).body.code,'invalid_command');assert.equal(calls.some(c=>c.name.endsWith('_commit')),false);
 let r=await request();assert.equal(r.status,200);assert.equal(r.body.result.number,'MC001');assert.equal(authReads,3);assert.deepEqual(calls.map(c=>c.p.p_kind||'commit'),['policy','receipt','context','commit']);assert.ok(!JSON.stringify(r).includes('snapshot'));assert.ok(!JSON.stringify(r).includes('qa-synthetic-session'));
+r=await request({action:'mechanical_dashboard',after:0});assert.equal(r.status,200);assert.deepEqual(r.body.checklists,[]);assert.equal(calls.length,1);assert.equal(calls[0].name,'zukait_mechanical_dashboard');
+for(const extra of [{after:'0'},{after:-1},{after:1.5},{checklistId:'wrong'},{policy:{enabled:true}}]){assert.equal((await request({action:'mechanical_dashboard',...extra})).status,400);assert.equal(calls.length,0)}
 revoke=true;r=await request();assert.equal(r.status,401);assert.equal(calls.some(c=>c.name.endsWith('_commit')),false);revoke=false;
 failCommit=true;r=await request();assert.equal(r.status,401);assert.equal(r.body.code,'invalid_session');failCommit=false;
 role='Accountant';assert.equal((await request({action:'accountant_dashboard'})).body.accountant,true,'Existing Accountant routing remains available');

@@ -1,0 +1,93 @@
+// Draft workspace. Host must opt in; server enablement/capabilities are separate.
+export async function mountMechanicalWorkspace(root,options={}){
+ const doc=root.ownerDocument,session=()=>options.getSession?.(),initial=session();
+ const identity=s=>JSON.stringify([s?.id,s?.role,s?.key]);
+ const owner=identity(initial),active=()=>!disposed&&identity(session())===owner;
+ const online=()=>options.online?.()??globalThis.navigator?.onLine!==false;
+ const uuid=options.uuid||(()=>globalThis.crypto.randomUUID());
+ const storage=options.storage||globalThis.localStorage;
+ let disposed=false,busy=false,model=null,selected=null,after=0,pending=null,notice='',readGeneration=0;
+ const node=(tag,text,attrs={})=>{const e=doc.createElement(tag);if(text!==null)e.textContent=text;for(const [k,v] of Object.entries(attrs)){if(k==='onClick')e.addEventListener('click',v);else e.setAttribute(k,String(v));}return e};
+ const key='zukait_mechanical_pending_v1:'+String(initial?.id||'');
+ if(options.enabled!==true||!['Manager','Supervisor'].includes(initial?.role)||!initial?.id||!initial?.key||typeof options.api!=='function'){
+  root.replaceChildren(node('p','Mechanical workspace is unavailable.'));return {destroy(){root.replaceChildren()}};
+ }
+ let device=options.deviceId;
+ try{if(!device){device=storage.getItem('zukait_mechanical_device_v1');if(!device){device=uuid();storage.setItem('zukait_mechanical_device_v1',device)}}const saved=storage.getItem(key);if(saved){pending=JSON.parse(saved);if(pending.owner!==initial.id||!pending.command||typeof pending.command.operation!=='string'||!pending.command.payload)throw Error('invalid_pending');selected=pending.checklistId||null}}catch{pending=null;notice='This device cannot keep a safe retry. Pending changes need review.';device=null;}
+ const savePending=()=>{storage.setItem(key,JSON.stringify(pending))};
+ const errors={workshop_revision_conflict:'Work changed on another device. Refresh and review before confirming again.',mechanical_revision_conflict:'The checklist changed. Refresh and review before confirming again.',manual_jc_duplicate:'This Job Card already has a Mechanical checklist.',stop_work_before_handover:'Pause or stop the outgoing and incoming mechanic’s running work first.',stop_outgoing_work_first:'Pause or stop the outgoing mechanic’s running work first.',target_employee_working:'The incoming mechanic has running work. Pause or stop it first.',mechanical_forbidden:'Your login does not have permission for this action.',invalid_session:'Your login changed. Sign in again to review the pending change.',mechanical_dashboard_limit:'This record needs a more specific view. Ask the Manager to review it.'};
+ function message(code){return errors[code]||'The change was not accepted. Refresh the record and review it.'}
+ function button(text,fn,attrs={}){const e=node('button',text,{type:'button',...attrs,onClick:fn});e.disabled=busy||!active();return e}
+ function valueFor(f,name,fallback=''){const p=f._draft;if(!p)return fallback;return ({job:p.manualJobCard?.number,date:p.manualJobCard?.date,employee:p.employeeId,source:p.sourceAssignmentId,target:p.targetEmployeeId,minutes:p.suggestedMinutes,title:p.title,reason:p.reason})[name]??fallback}
+ function input(form,label,name,type='text',value='',required=true){const l=node('label',label),e=node('input',null,{name,type});e.value=valueFor(form,name,value);if(required)e.required=true;l.append(e);form.append(l);return e}
+ function choice(form,label,name,choices){const l=node('label',label),e=node('select',null,{name});e.required=true;e.append(node('option','Select…',{value:''}));for(const c of choices)e.append(node('option',c.name,{value:c.id}));e.value=valueFor(form,name);l.append(e);form.append(l);return e}
+ function form(title,operation,entity,payload){
+  const f=node('form',null,{'data-operation':operation});f.append(node('h3',title));
+  if(pending?.editing&&pending.command.operation===operation&&(operation==='MC_CREATE'||(operation==='TASK_CREATE'?pending.command.payload.checklistId===model.detail?.checklist.id:pending.command.entityId===entity())))f._draft=pending.command.payload;
+  f.addEventListener('submit',e=>{e.preventDefault();for(const input of f.querySelectorAll('input[type=text]'))input.setCustomValidity(input.required&&!input.value.trim()?'Enter a value.':'');if(!f.reportValidity()||busy||(pending&&!pending.editing))return;const values=new doc.defaultView.FormData(f);send(operation,entity(),payload(values))});return f;
+ }
+ function submit(f,label){const b=node('button',label,{type:'submit'});b.disabled=busy||!!(pending&&!pending.editing)||!device;f.append(b)}
+ function render(){
+  if(disposed)return;if(!active()){root.replaceChildren(node('p','Your login changed. Reopen the workspace after signing in.'));return;}
+  root.replaceChildren();root.className='mc-workspace';
+  const style=node('style',null);style.textContent='.mc-workspace{box-sizing:border-box;color:#142536;background:#f5f7fa;padding:16px;font:16px system-ui;max-width:1100px;margin:auto;overflow-wrap:anywhere}.mc-workspace *{box-sizing:border-box}.mc-workspace header,.mc-workspace .mc-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.mc-workspace h2{flex:1;margin:0}.mc-workspace button{min-height:44px;padding:10px 14px;border:1px solid #b8c6d6;border-radius:9px;background:white;color:#142536;font:inherit;cursor:pointer}.mc-workspace button[type=submit]{background:#164a79;color:white}.mc-workspace button:disabled{opacity:.55;cursor:default}.mc-workspace form,.mc-workspace article,.mc-workspace .mc-pending{background:white;border:1px solid #dbe2eb;border-radius:12px;padding:14px;margin:12px 0;min-width:0}.mc-workspace label{display:flex;flex-direction:column;gap:6px;margin:12px 0}.mc-workspace input,.mc-workspace select,.mc-workspace textarea{font:inherit;width:100%;min-width:0;min-height:44px;padding:10px;border:1px solid #a9b8c9;border-radius:7px}.mc-workspace .mc-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}.mc-workspace .mc-list{display:grid;gap:8px}.mc-workspace .mc-list button{text-align:left;width:100%}.mc-workspace [role=status]{min-height:24px;margin:14px 0;color:#854200}.mc-workspace .mc-muted{color:#54677b}.mc-workspace h3{margin-top:0}.mc-workspace ul{padding-left:20px}@media(max-width:760px){.mc-workspace{padding:10px}.mc-workspace .mc-grid{grid-template-columns:minmax(0,1fr)}}';root.append(style);
+  const header=node('header',null);header.append(node('h2','Mechanical Department'),button('Refresh',()=>refresh()),button('Close',()=>{destroy();options.onClose?.()}));root.append(header);
+  root.append(node('p',notice,{role:'status','aria-live':'polite'}));
+  if(pending){const box=node('section',null,{class:'mc-pending'});box.append(node('h3',pending.editing?'Review rejected change':'Pending confirmation'),node('p',({MC_CREATE:'Checklist registration',TASK_CREATE:'New task',TASK_ASSIGN:'Mechanic assignment',TASK_HANDOVER:'Work handover'})[pending.command.operation]||'Saved change'),node('p',JSON.stringify(pending.command.payload)));
+   if(!pending.editing)box.append(button('Retry same change',()=>post()));
+   if(pending.rejected&&['manual_jc_duplicate','invalid_assignment','invalid_task','invalid_manual_jc','existing_active_jc_required','duplicate_task_employee','stop_work_before_handover','stop_outgoing_work_first','target_employee_working','handover_source_changed','handover_source_inactive'].includes(pending.error))box.append(button('Edit rejected change',()=>{pending.editing=true;try{savePending();render()}catch{notice='Unable to keep this draft safely.';render()}}));
+   if(pending.rejected&&['mechanical_revision_conflict','workshop_revision_conflict'].includes(pending.error))box.append(button('Refresh for review',async()=>{if(await refresh()){pending.reviewed=true;try{savePending();render()}catch{notice='Unable to keep this review safely.';render()}}}));
+   if(pending.reviewed)box.append(button('Confirm reviewed change',()=>{pending.command={...pending.command,requestId:uuid(),expectedRevision:model.recordsRevision,expectedWorkshopRevision:model.workshopRevision};delete pending.reviewed;delete pending.rejected;try{savePending();post()}catch{notice='Unable to keep a safe retry.';render()}}));root.append(box);
+  }
+  if(!model)return;
+  const caps=new Set(model.capabilities||[]),grid=node('div',null,{class:'mc-grid'}),list=node('section',null),detail=node('section',null);grid.append(list,detail);root.append(grid);
+  list.append(node('h3','Mechanical checklists'));const rows=node('div',null,{class:'mc-list'});
+  for(const row of model.checklists||[])rows.append(button(row.number+' · JC '+row.jobCard+' · '+row.manualDate,()=>{selected=row.id;refresh()}));
+  if(!rows.childNodes.length)rows.append(node('p','No checklists on this page.'));list.append(rows);
+  if(after)list.append(button('First page',()=>{after=0;refresh()}));if(model.nextAfter!=null)list.append(button('Next page',()=>{after=model.nextAfter;refresh()}));
+  if(caps.has('MC_CREATE')){
+   const f=form('Register checklist','MC_CREATE',uuid,v=>({manualJobCard:{number:String(v.get('job')).trim(),date:v.get('date')}}));
+   input(f,'Existing Job Card number','job').maxLength=80;input(f,'Manual Job Card date','date','date');f.append(node('p','The MC number is assigned when registration is confirmed.',{class:'mc-muted'}));submit(f,'Register checklist');list.append(f);
+  }
+  const d=model.detail;if(!d){detail.append(node('p','Select a checklist to view its tasks.'));return}
+  detail.append(node('h3',d.checklist.number+' · JC '+d.checklist.jobCard),node('p','Manual date: '+d.checklist.manualDate));
+  for(const task of d.tasks||[]){const card=node('article',null,{'data-task':task.id});card.append(node('h3',task.title));
+   const allocations=(d.assignments||[]).filter(a=>a.taskId===task.id),ul=node('ul',null);
+   for(const a of allocations){ul.append(node('li',a.employeeName+' · '+(a.handedOverTo?'Handed over':a.cancelled?'Cancelled':a.completed?'Completed':a.running?'Working':'Open')+' · '+String(a.suggestedMinutes??0)+' allocated min'));}
+   if(!allocations.length)ul.append(node('li','No mechanic assigned.'));card.append(ul);
+   const available=(model.mechanics||[]).filter(m=>!allocations.some(a=>a.employeeId===m.id&&!a.completed&&!a.cancelled&&!a.handedOverTo));
+   if(model.departmentConfigured&&caps.has('TASK_ASSIGN')){
+    const f=form('Assign mechanic','TASK_ASSIGN',()=>task.id,v=>({employeeId:v.get('employee'),assignmentId:uuid(),suggestedMinutes:Number(v.get('minutes'))}));choice(f,'Mechanic','employee',available);const n=input(f,'Allocated minutes','minutes','number','60');n.min='0';n.max='60000';n.step='1';submit(f,'Assign mechanic');card.append(f);
+   }
+   const sources=allocations.filter(a=>!a.completed&&!a.cancelled&&!a.handedOverTo&&!a.running);
+   if(model.departmentConfigured&&caps.has('TASK_HANDOVER')&&sources.length){
+    const f=form('Handover paused work','TASK_HANDOVER',()=>task.id,v=>({sourceAssignmentId:v.get('source'),targetEmployeeId:v.get('target'),successorAssignmentId:uuid(),suggestedMinutes:Number(v.get('minutes')),reason:String(v.get('reason')).trim()}));choice(f,'Outgoing mechanic','source',sources.map(a=>({id:a.id,name:a.employeeName})));choice(f,'Incoming mechanic','target',available);const n=input(f,'New allocated minutes','minutes','number','30');n.min='0';n.max='60000';n.step='1';input(f,'Handover reason','reason').maxLength=500;f.append(node('p','Pause or stop running work before handing it over. Recorded time stays with the original mechanic.',{class:'mc-muted'}));submit(f,'Confirm handover');card.append(f);
+   }
+   detail.append(card);
+  }
+  if(caps.has('TASK_CREATE')){const f=form('Add independent task','TASK_CREATE',uuid,v=>({checklistId:d.checklist.id,title:String(v.get('title')).trim()}));input(f,'Task description','title').maxLength=200;submit(f,'Add task');detail.append(f)}
+ }
+ async function refresh(){
+  if(!active()||busy)return false;if(!online()){notice='Reconnect to load workshop records.';render();return false}
+  busy=true;render();const generation=++readGeneration;
+  try{const r=await options.api({action:'mechanical_dashboard',after,checklistId:selected});if(!active()||generation!==readGeneration)return false;if(!r?.ok)throw Error(r?.code||'NETWORK');model=r;if(!pending)notice='';return true}catch(e){if(active())notice=message(e.message);return false}finally{busy=false;render()}
+ }
+ async function send(operation,entityId,payload){
+  if(!active()||busy||(pending&&!pending.editing)||!model)return;if(!online()){notice='Reconnect before saving. No change was sent.';render();return}
+  if(!device){notice='This device cannot keep a safe retry.';render();return}
+  const previous=pending;pending={owner:initial.id,checklistId:selected,command:{operation,entityId,requestId:uuid(),deviceId:device,expectedRevision:model.recordsRevision,expectedWorkshopRevision:model.workshopRevision,payload}};
+  try{savePending()}catch{pending=previous;notice='This device cannot keep a safe retry. No change was sent.';render();return}await post();
+ }
+ async function post(){
+  if(!active()||busy||!pending)return;if(!online()){notice='Reconnect to retry the pending change.';render();return}
+  try{savePending()}catch{notice='This device cannot keep a safe retry. No change was sent.';render();return}
+  busy=true;notice='Confirming change…';render();let success=false;
+  try{const r=await options.api({action:'mechanical_command',command:JSON.parse(JSON.stringify(pending.command))});if(!active())return;
+   if(!r?.ok){pending.error=r?.code||'NETWORK';pending.rejected=!!r?.code&&r.code!=='database_busy';savePending();notice=message(pending.error);return}
+   const command=pending.command;storage.removeItem(key);pending=null;if(command.operation==='MC_CREATE')selected=r.result?.entityId||command.entityId;notice='Change confirmed.';success=true;
+  }catch{if(active())notice='Response not confirmed. Retry the same change.'}finally{busy=false;render()}
+  if(success&&active())await refresh();
+ }
+ function destroy(){disposed=true;readGeneration++;root.replaceChildren()}
+ render();await refresh();return {refresh,destroy};
+}

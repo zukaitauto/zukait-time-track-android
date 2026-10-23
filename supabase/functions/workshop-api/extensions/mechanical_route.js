@@ -8,7 +8,7 @@ export function mechanicalApiError(error){
  if(['mechanical_disabled','mechanical_forbidden'].includes(code))return response(code,403);
  if(conflicts.has(code))return response(code,409);
  if(['invalid_mechanical_command','mechanical_operation_not_implemented'].includes(code))return response(code,400);
- if(code==='mechanical_context_limit')return response(code,409);
+ if(['mechanical_context_limit','mechanical_dashboard_limit','mechanical_checklist_missing'].includes(code))return response(code,409);
  return response('mechanical_unavailable',503);
 }
 export async function mechanicalRoute(admin,user,body,options={}){
@@ -16,6 +16,11 @@ export async function mechanicalRoute(admin,user,body,options={}){
  // performs zero extra database reads when the trusted environment flag is off.
  if(options.enabled!==true)return response('extension_disabled',403);
  if(user?.active===false||!['Manager','Supervisor'].includes(user?.role))return response('mechanical_forbidden',403);
+ if(body?.action==='mechanical_dashboard'){
+  if(Object.keys(body).some(k=>!['action','after','checklistId'].includes(k))||!Number.isSafeInteger(body.after??0)||(body.after??0)<0||(body.checklistId!=null&&!uuid(body.checklistId)))return response('invalid_command',400);
+  if(!/^[0-9a-f]{64}$/.test(options.sessionHash||''))return response('invalid_session',401);
+  try{const {data,error}=await admin.rpc('zukait_mechanical_dashboard',{p_actor:user.id,p_session_hash:options.sessionHash,p_after:body.after??0,p_checklist:body.checklistId??null});if(error)throw error;return {status:200,body:data}}catch(error){return mechanicalApiError(error)}
+ }
  if(!body||body.action!=='mechanical_command'||Object.keys(body).some(k=>!['action','command'].includes(k))||!body.command||!uuid(body.command.entityId)||!uuid(body.command.requestId)||JSON.stringify(body).length>9000)return response('invalid_command',400);
  if(!/^[0-9a-f]{64}$/.test(options.sessionHash||'')||typeof options.verifySession!=='function')return response('invalid_session',401);
  const actor={...user,active:true},command=body.command;

@@ -36,6 +36,7 @@ try{
  await db.exec(fs.readFileSync('experiments/mechanical-persistence.sql','utf8'));
  await db.exec(fs.readFileSync('experiments/mechanical-authority-guard.sql','utf8'));
  await db.exec(fs.readFileSync('experiments/mechanical-readers.sql','utf8'));
+ await db.exec(fs.readFileSync('experiments/mechanical-dashboard.sql','utf8'));
  // Trusted fixture only. Production defaults must remain disabled and unmapped.
  assert.equal(await scalar('select count(*)::int n from zukait_mechanical.settings where not enabled'),1);
  const policy={flags:{mechanical:true},mechanicalDepartment:'QA_MECHANICAL',manualJcDuplicateMode:'deny',mcNumbering:{minimumDigits:3},mechanicalStaff:{QA_SUP:['MC_CREATE','TASK_CREATE','TASK_ASSIGN','TASK_HANDOVER']}};
@@ -168,6 +169,26 @@ try{
  const qc=qcTransition(flow,{id:'SUP002',role:'Supervisor'},{operation:'PAINTING_QC',jobCard:'QA_JC_0',expectedQcRevision:0,result:'PASS'},at+2520000);assert.equal(qc.ok,true,'Existing painting gate remains');
  assert.equal(qcTransition(qc.data,{id:'SUP002',role:'Supervisor'},{operation:'FINAL_QC',jobCard:'QA_JC_0',expectedQcRevision:1,result:'PASS'},at+2520000).code,'qc_permission_denied');
  const reopened=structuredClone(qc.data);reopened.assign.find(a=>a.id===successor).completed=false;assert.equal(qcStatus(reopened,reopened.jobs.find(j=>j.no==='QA_JC_0')).painting,false,'Changed work invalidates existing QC fingerprint');
+ // Bounded foreground responses with 2k/10k current synthetic history. No
+ // historical workshop_state_history JSON is read or exported by this test.
+ const dashboardSql='select public.zukait_mechanical_dashboard($1,$2,$3,$4::uuid) r';
+ const dashboard=async(after=0,checklist=firstId)=>(await db.query(dashboardSql,['QA_SUP',sessionHash,after,checklist])).rows[0].r;
+ await db.exec('set role service_role');const display=await dashboard();assert.equal(display.detail.checklist.number,'MC001');assert.equal(display.detail.assignments.length,2);assert.ok(!JSON.stringify(display).includes('password'));assert.ok(!JSON.stringify(display).includes('QA_SESSION'));await db.exec('reset role');
+ // Synthetic pagination fixtures only; never inserted into a live project.
+ for(let i=0;i<27;i++)await db.query("insert into zukait_mechanical.checklists(id,number,sequence_no,job_card,manual_jc_date,created_by) values($1::uuid,$2,$3,$4,'2026-10-22','QA_SUP')",[randomUUID(),'MC'+(1000+i),1000+i,'QA_PAGE_'+i]);
+ const firstPage=await dashboard(0,null);assert.equal(firstPage.checklists.length,25);assert.ok(firstPage.nextAfter>0);const secondPage=await dashboard(firstPage.nextAfter,null);assert.equal(secondPage.checklists.length,4);assert.equal(secondPage.nextAfter,null);assert.equal(new Set([...firstPage.checklists,...secondPage.checklists].map(c=>c.id)).size,29);
+ await db.query('update staff_sessions set revoked_at=now() where token_hash=$1',[sessionHash]);await assert.rejects(dashboard(),/mechanical_invalid_session/);await db.query('update staff_sessions set revoked_at=null where token_hash=$1',[sessionHash]);
+ for(const size of [2000,10000]){
+  const large=(await snapshot()).data;large.sessions=large.sessions.filter(s=>!String(s.id).startsWith('QA_LARGE_HISTORY_'));
+  large.sessions.push(...Array.from({length:size},(_,i)=>({id:'QA_LARGE_HISTORY_'+i,emp:'QA_OTHER',job:'QA_UNRELATED',assignmentId:'QA_UNRELATED_'+i,start:at-(i+1)*86400000,end:at-(i+1)*86400000+60000,notes:'Synthetic unrelated period '.repeat(8)})));
+  const startMs=performance.now();await commitFlow(large,[{employee_id:'QA_A',status:'Available'},{employee_id:'QA_B',status:'Available'}]);const saveMs=performance.now()-startMs;
+  const readMs=performance.now(),view=await dashboard(),metadata=await read('context','TASK_CREATE',randomUUID(),{checklistId:firstId});
+  assert.equal(metadata.snapshot.data.sessions.length,0);assert.equal(metadata.snapshot.data.assign.length,0);
+  const viewBytes=Buffer.byteLength(JSON.stringify(view)),metadataBytes=Buffer.byteLength(JSON.stringify(metadata));assert.ok(viewBytes<16000);assert.ok(metadataBytes<16000);assert.ok(!JSON.stringify({view,metadata}).includes('QA_LARGE_HISTORY_'));
+  assert.equal(workedMinutes((await snapshot()).data,sourceAssignment,at+2520000),60);
+  console.log(JSON.stringify({fixture:'synthetic current history',periods:size,dashboardBytes:viewBytes,metadataContextBytes:metadataBytes,readMs:Number((performance.now()-readMs).toFixed(2)),saveMs:Number(saveMs.toFixed(2)),productionSavingsVerified:false}));
+ }
+ for(const role of ['anon','authenticated']){await db.exec('set role '+role);await assert.rejects(dashboard(),/permission denied/);await db.exec('reset role');}
  if(native){
   // Real concurrent retries/different requests with observable lock contention.
   const a=new pg.Client({...config,database}),b=new pg.Client({...config,database});await Promise.all([a.connect(),b.connect()]);await Promise.all([a.query('set role service_role'),b.query('set role service_role')]);

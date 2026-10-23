@@ -975,6 +975,27 @@
     try{return await monthlyReadInFlight}finally{monthlyReadInFlight=null}
   }
 
+  async function openMechanicalWorkspace(){
+    if(window.ZUKAIT_MECHANICAL_ENABLED!==true||!['Manager','Supervisor'].includes(me?.role)||!sessionToken())return false;
+    const owner=String(me.id),token=sessionToken();
+    const module=await import('./mechanical_workspace.js');
+    if(String(me?.id||'')!==owner||sessionToken()!==token)return false;
+    openModal('<div id="zukaitMechanicalWorkspace"></div>');
+    const root=document.getElementById('zukaitMechanicalWorkspace');if(!root)return false;
+    const modal=root.closest('.modal-box');if(modal){modal.style.width='1100px';modal.style.maxWidth='95vw'}
+    await module.mountMechanicalWorkspace(root,{enabled:true,storage:localStorage,
+      getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()}),online:()=>navigator.onLine,
+      onClose:()=>{if(root.isConnected)closeModal()},
+      api:async body=>{
+        if(window.ZUKAIT_MECHANICAL_ENABLED!==true||String(me?.id||'')!==owner||sessionToken()!==token)throw Error('invalid_session');
+        if(!navigator.onLine)throw Error('OFFLINE');
+        if(!['mechanical_dashboard','mechanical_command'].includes(body?.action))throw Error('mechanical_forbidden');
+        if(body.action==='mechanical_command'&&(cloudDirty||cloudPushing||pullInFlight))throw Error('WORKSHOP_SYNC_PENDING');
+        return api(body);
+      }
+    });return true;
+  }
+
   // Rebase only unchanged stale authority. An actual local attempt to change
   // handed-over work or its periods requires review; never discard that queue.
   function mechanicalConflictRebase(base,remote,pending){
@@ -1176,7 +1197,7 @@
     publishLiveStatus(false);
   });
   window.zukaitCloud={
-    init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
+    init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,openMechanicalWorkspace,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
     configured:()=>true,
     get confirmedState(){return confirmedReadRevision>=cloudRevision?confirmedReadState:null},
     get revision(){return cloudRevision},
