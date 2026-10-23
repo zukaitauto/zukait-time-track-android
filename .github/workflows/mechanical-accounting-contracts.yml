@@ -22,6 +22,7 @@ jobs:
           node --experimental-vm-modules tests/mechanical-route.mjs
           node tests/mechanical-recovery.mjs
           node tests/mechanical-qc.mjs
+          node tests/mechanical-qc-overview.mjs
           node tests/qc-delivery-authority.mjs
           node tests/time-management.mjs
           node tests/manager-time-management.mjs
@@ -61,6 +62,7 @@ jobs:
       - run: npm ci --ignore-scripts --include=dev
       - run: node tests/mechanical-workspace.mjs
       - run: node tests/mechanical-delivery-ui.mjs
+      - run: node tests/mechanical-qc-projection.mjs
       - run: node tests/mechanical-navigation.mjs
       - run: npx playwright install --with-deps chromium
       - run: node tests/mechanical-workspace-responsive.mjs

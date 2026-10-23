@@ -975,7 +975,12 @@
     try{return await monthlyReadInFlight}finally{monthlyReadInFlight=null}
   }
 
-  async function openMechanicalWorkspace(){
+  async function readMechanicalQcOverview(){
+    if(window.ZUKAIT_MECHANICAL_ENABLED!==true||!['Manager','Supervisor'].includes(me?.role)||!sessionToken())throw Error('extension_disabled');
+    return api({action:'mechanical_qc_overview'});
+  }
+
+  async function openMechanicalWorkspace(checklistId=null){
     if(window.ZUKAIT_MECHANICAL_ENABLED!==true||!['Manager','Supervisor'].includes(me?.role)||!sessionToken())return false;
     const owner=String(me.id),token=sessionToken();
     const module=await import('./mechanical_workspace.js');
@@ -983,7 +988,7 @@
     openModal('<div id="zukaitMechanicalWorkspace"></div>');
     const root=document.getElementById('zukaitMechanicalWorkspace');if(!root)return false;
     const modal=root.closest('.modal-box');if(modal){modal.style.width='1100px';modal.style.maxWidth='95vw'}
-    await module.mountMechanicalWorkspace(root,{enabled:true,storage:localStorage,
+    await module.mountMechanicalWorkspace(root,{enabled:true,storage:localStorage,checklistId,
       getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()}),online:()=>navigator.onLine,
       onClose:()=>{if(root.isConnected)closeModal()},
       openDelivery:window.ZUKAIT_MECHANICAL_DELIVERY_ENABLED===true?openMechanicalDelivery:null,
@@ -992,7 +997,7 @@
         if(!navigator.onLine)throw Error('OFFLINE');
         if(!['mechanical_dashboard','mechanical_command','mechanical_qc_readiness'].includes(body?.action))throw Error('mechanical_forbidden');
         if(body.action==='mechanical_command'&&(cloudDirty||cloudPushing||pullInFlight))throw Error('WORKSHOP_SYNC_PENDING');
-        return api(body);
+        const result=await api(body);if(body.action==='mechanical_command'&&result?.ok)window.dispatchEvent(new CustomEvent('zukait-mechanical-change'));return result;
       }
     });return true;
   }
@@ -1009,7 +1014,7 @@
     const module=await import('./mechanical_delivery.js');if(!current())throw Error('Your login changed.');
     openModal('<div id="zukaitMechanicalDelivery"></div>');const root=document.getElementById('zukaitMechanicalDelivery');if(!root)return false;
     await module.mountMechanicalDelivery(root,{enabled:true,checklistId:probe.checklistId,storage:localStorage,getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()}),online:()=>navigator.onLine,
-      api:async body=>{if(!current())throw Error('invalid_session');if(!navigator.onLine)throw Error('OFFLINE');if(body.action==='mechanical_command'&&(cloudDirty||cloudPushing||pullInFlight))throw Error('WORKSHOP_SYNC_PENDING');return api(body)},
+      api:async body=>{if(!current())throw Error('invalid_session');if(!navigator.onLine)throw Error('OFFLINE');if(body.action==='mechanical_command'&&(cloudDirty||cloudPushing||pullInFlight))throw Error('WORKSHOP_SYNC_PENDING');const result=await api(body);if(body.action==='mechanical_command'&&result?.ok)window.dispatchEvent(new CustomEvent('zukait-mechanical-change'));return result},
       onClose:()=>{if(root.isConnected)closeModal()},onDone:async()=>{if(root.isConnected)closeModal();await syncNow()}});return true;
   }
 
@@ -1223,7 +1228,7 @@
     publishLiveStatus(false);
   });
   window.zukaitCloud={
-    init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,openMechanicalWorkspace,openMechanicalDelivery,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
+    init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,readMechanicalQcOverview,openMechanicalWorkspace,openMechanicalDelivery,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
     configured:()=>true,
     get confirmedState(){return confirmedReadRevision>=cloudRevision?confirmedReadState:null},
     get revision(){return cloudRevision},

@@ -43,6 +43,23 @@ try{for(const width of [320,375,768,1280]){
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,role+' menu '+width+'px overflow');
   assert.ok(await page.locator('[data-mechanical-navigation]').evaluate(e=>e.getBoundingClientRect().height)>=44);
  }
+ // Main QC/Ready projection in a separate document (no network or active pilot).
+ const overviewPage=await browser.newPage({viewport:{width,height:1000}});
+ await overviewPage.setContent('<style>body{margin:0;font:16px system-ui}#modal,#managerView{box-sizing:border-box;width:100%;padding:8px}button{min-height:44px}.v67-control-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}</style><div id="managerView"><div class="v67-control-grid"></div></div><div id="modal"></div>');
+ await overviewPage.addScriptTag({content:fs.readFileSync('app/src/main/assets/qc_delivery_rules.js','utf8').replaceAll('export ','')});
+ await overviewPage.addScriptTag({content:fs.readFileSync('app/src/main/assets/mechanical_qc_projection.js','utf8').replace('export function createMechanicalQcProjection','window.createMechanicalQcProjection=function')});
+ await overviewPage.evaluate(()=>{
+  window.state={jobs:[],assign:[],sessions:[]};window.me={id:'QA_MGR',role:'Manager'};window.ZUKAIT_MECHANICAL_ENABLED=true;window.zukaitAuth={getToken:()=> 'QA_SYNTHETIC'};window.overviewReads=0;
+  window.openModal=html=>document.getElementById('modal').innerHTML=html;window.closeModal=()=>{};
+  window.zukaitCloud={syncHealth:{ready:true,dirty:false,revision:8},readMechanicalQcOverview:async()=>{window.overviewReads++;return {ok:true,actorId:'QA_MGR',actorRole:'Manager',workshopRevision:8,recordsRevision:2,capturedAt:Date.now(),counts:{qc:1,ready:1,review:0},rows:[{jobCard:'12079',vehicle:'SyntheticLongVehicle'.repeat(15)+'<img src=x>',registration:'QA001',mechanical:true,checklistId:'MC001',mechanicalRequired:true,mechanicalPassed:true,deliveryReady:true,stage:'DELIVERY',readyAt:1},{jobCard:'12080',vehicle:'Synthetic pending vehicle',mechanical:true,checklistId:'MC002',mechanicalRequired:true,mechanicalPassed:false,deliveryReady:false,stage:'MECHANICAL_QC',qcVisible:true,readyAt:0}]}}};
+ });
+ await overviewPage.addScriptTag({content:fs.readFileSync('app/src/main/assets/qc_delivery.js','utf8').replace(/^import[^\n]+\n/,'').replace("import('./mechanical_qc_projection.js')","Promise.resolve({createMechanicalQcProjection:window.createMechanicalQcProjection})")});
+ await overviewPage.waitForFunction(()=>document.querySelector('[data-manager-ready-slot] .qc-card-count')?.textContent==='1');
+ await overviewPage.evaluate(()=>window.zukaitOpenReadyToDeliver());
+ assert.equal(await overviewPage.locator('#qcRows .qc-overview-row').count(),1);assert.equal(await overviewPage.locator('#qcRows img').count(),0);assert.equal(await overviewPage.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Main Ready '+width+'px overflow');
+ await overviewPage.evaluate(()=>window.zukaitOpenQCQueue());assert.equal(await overviewPage.locator('#qcRows .qc-overview-row').count(),1);assert.equal(await overviewPage.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Main QC '+width+'px overflow');
+ const overviewReads=await overviewPage.evaluate(()=>window.overviewReads);await overviewPage.evaluate(()=>{for(let i=0;i<10;i++)window.dispatchEvent(new Event('zukait-live-status'))});assert.equal(await overviewPage.evaluate(()=>window.overviewReads),overviewReads);
+ if([375,1280].includes(width))await overviewPage.screenshot({path:'test-results/mechanical/qc-overview-'+width+'.png',fullPage:true});await overviewPage.close();
  await page.close();
 }console.log('PASS Chromium Mechanical layout at 320/375/768/1280: cards/forms, single-column phones, touch targets, escaping and no horizontal overflow. Not physical-device acceptance.');}
 finally{await browser.close()}

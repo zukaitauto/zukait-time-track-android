@@ -7,6 +7,7 @@ import {mechanicalRoute,mechanicalLegacyDeliveryCheck} from '../supabase/functio
 export async function mechanicalDeliveryTests({db,records,snapshot,checklist,actor,sessionHash,policy,approve,planQcFail,native,pg,config,database}){
  await db.exec(fs.readFileSync('experiments/mechanical-delivery.sql','utf8'));
  await db.exec(fs.readFileSync('experiments/mechanical-delivery-readers.sql','utf8'));
+ await db.exec(fs.readFileSync('experiments/mechanical-qc-overview.sql','utf8'));
  const scalar=async sql=>(await db.query(sql)).rows[0].n;
  assert.equal(await scalar('select count(*)::int n from zukait_mechanical.settings where not delivery_enabled'),1);
  await db.exec("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt,must_change) values('QA_DEL_MGR','Synthetic Manager','Manager','','none','none',false),('QA_DEL_REC','Synthetic Receptionist','Receptionist','','none','none',false)");
@@ -25,12 +26,27 @@ export async function mechanicalDeliveryTests({db,records,snapshot,checklist,act
  let rpcCalls=0,loseAck=false;
  const admin={rpc:async(name,p)=>{rpcCalls++;await db.exec('set role service_role');try{
   let data;if(name==='zukait_mechanical_delivery_lookup')data=(await db.query('select public.zukait_mechanical_delivery_lookup($1,$2,$3) r',[p.p_actor,p.p_session_hash,p.p_job_card])).rows[0].r;
+  else if(name==='zukait_mechanical_qc_overview_read')data=(await db.query('select public.zukait_mechanical_qc_overview_read($1,$2) r',[p.p_actor,p.p_session_hash])).rows[0].r;
   else if(name==='zukait_mechanical_delivery_read')data=(await db.query('select public.zukait_mechanical_delivery_read($1,$2,$3,$4::uuid,$5::uuid) r',[p.p_actor,p.p_session_hash,p.p_kind,p.p_entity,p.p_request])).rows[0].r;
   else{assert.equal(name,'zukait_mechanical_deliver');data=(await db.query(sql,values(p))).rows[0].r;if(loseAck){loseAck=false;return {error:{message:'QA_LOST_ACK'}}}}
   return {data};
  }catch(error){return {error}}finally{await db.exec('reset role')}}};
  const options=(who=actor,hash=sessionHash)=>({enabled:true,qcEnabled:true,deliveryEnabled:true,sessionHash:hash,verifySession:async()=>who});
  const route=(body,who=actor,hash=sessionHash,extra={})=>mechanicalRoute(admin,who,body,{...options(who,hash),...extra});
+ // The real overview route performs one bounded read, strips internal tokens,
+ // and must not change state, normalized records, receipts, audit or history.
+ const overview=async(who=actor,hash=sessionHash,extra={})=>route({action:'mechanical_qc_overview'},who,hash,extra);
+ const overviewBefore=JSON.stringify({s:await snapshot(),r:await records(),history:await scalar('select count(*)::int n from workshop_state_history')});
+ const priorCalls=rpcCalls,summary=await overview();assert.equal(summary.status,200,JSON.stringify(summary));assert.equal(rpcCalls-priorCalls,1);assert.equal(summary.body.rows.find(r=>r.jobCard==='QA_JC_11').deliveryReady,true);assert.equal(summary.body.rows.find(r=>r.jobCard==='QA_JC_11').paintingRequired,false);
+ assert.equal(JSON.stringify({s:await snapshot(),r:await records(),history:await scalar('select count(*)::int n from workshop_state_history')}),overviewBefore,'Overview is read-only');
+ for(const secret of ['workFingerprint','workToken','fingerprint','financialAudit','amount','password','token_hash','QA_QC_PRIVATE_PERIOD'])assert.equal(JSON.stringify(summary.body).includes(secret),false,'No private '+secret);
+ const manager={id:'QA_DEL_MGR',role:'Manager',active:true},rec={id:'QA_DEL_REC',role:'Receptionist',active:true};
+ assert.equal((await overview(manager,'d'.repeat(64))).status,200,'Existing Manager read needs no new Mechanical command capability');assert.equal((await overview(rec,'e'.repeat(64))).status,403);assert.equal((await overview(actor,'f'.repeat(64))).status,401);
+ assert.equal((await overview(actor,sessionHash,{qcEnabled:false})).status,403);assert.equal((await route({action:'mechanical_qc_overview',jobCard:'QA_JC_11'})).status,400);
+ for(const role of ['anon','authenticated'])assert.equal(await scalar(`select has_function_privilege('${role}','public.zukait_mechanical_qc_overview_read(text,text)','execute')::int n`),0);
+ assert.equal(await scalar("select prosecdef::int n from pg_proc where oid='public.zukait_mechanical_qc_overview_read(text,text)'::regprocedure"),0);
+ await db.exec("update zukait_mechanical.settings set qc_enabled=false");try{assert.equal((await overview()).status,403)}finally{await db.exec("update zukait_mechanical.settings set qc_enabled=true")}
+ await db.query('update staff_sessions set revoked_at=now() where token_hash=$1',[sessionHash]);try{assert.equal((await overview()).status,401)}finally{await db.query('update staff_sessions set revoked_at=null where token_hash=$1',[sessionHash])}
  async function legacy(data,by=actor.id,overrideLive=null){const current=await snapshot(),live=overrideLive??(await db.query('select * from workshop_live_status')).rows;await db.exec('set role service_role');try{return (await db.query('select public.zukait_commit_workshop_state_v2($1,$2::jsonb,$3,$4::jsonb) r',[current.revision,JSON.stringify(data),by,JSON.stringify(live)])).rows[0].r}finally{await db.exec('reset role')}}
  let p=await prepare();assert.equal(p.plan.ok,true,'SUP003 approval alone enables Mechanical-only planner without fake legacy QC');assert.ok(Buffer.byteLength(JSON.stringify(p.plan.request))<1400);assert.equal('qcWorkflow' in p.plan.request.p_plan,false);
  assert.equal((await mechanicalDeliveryRequest(p.r,p.s,p.command,context,{...policy,mechanicalDeliveryEnabled:false},p.approval)).code,'mechanical_delivery_disabled');
@@ -75,7 +91,7 @@ export async function mechanicalDeliveryTests({db,records,snapshot,checklist,act
  await assert.rejects(call({...p.plan.request,p_actor:'QA_DEL_MGR',p_session_hash:'d'.repeat(64)}),/mechanical_forbidden/);
  await assert.rejects(call({...p.plan.request,p_session_hash:'f'.repeat(64)}),/mechanical_invalid_session/);
  // A FAIL that lands after planning must win over the planned PASS.
- await approve('FAIL','QA later defect');await assert.rejects(call(p.plan.request),/mechanical_revision_conflict/);await assert.rejects(call({...p.plan.request,p_expected_records:(await records()).revision}),/mechanical_delivery_not_ready/);await approve();p=await prepare();
+ await approve('FAIL','QA later defect');assert.equal((await overview()).body.rows.find(r=>r.jobCard==='QA_JC_11').deliveryReady,false,'Latest normalized FAIL removes readiness');await assert.rejects(call(p.plan.request),/mechanical_revision_conflict/);await assert.rejects(call({...p.plan.request,p_expected_records:(await records()).revision}),/mechanical_delivery_not_ready/);await approve();p=await prepare();
  // A work revision after planning must reject; no stale reviewed status writes.
  await db.exec("update workshop_state set revision=revision+1 where id='main'");await assert.rejects(call(p.plan.request),/workshop_revision_conflict/);p=await prepare();
  const before=await snapshot(),beforeRecords=(await records()).revision,history=await scalar('select count(*)::int n from workshop_state_history');
@@ -99,6 +115,7 @@ export async function mechanicalDeliveryTests({db,records,snapshot,checklist,act
  }else await call(p.plan.request);
  assert.equal((await call(p.plan.request)).duplicate,true,'Lost acknowledgement replays receipt without a second delivery/history write');await assert.rejects(call({...p.plan.request,p_fingerprint:'0'.repeat(64)}),/mechanical_request_reused/);
  await db.query('update staff_sessions set revoked_at=now() where token_hash=$1',[sessionHash]);await assert.rejects(call(p.plan.request),/mechanical_invalid_session/);assert.equal((await route(previewBody)).status,401);const replay={...p.command};delete replay.actorId;assert.equal((await route({action:'mechanical_command',command:replay})).status,401);await db.query('update staff_sessions set revoked_at=null where token_hash=$1',[sessionHash]);
+ assert.equal((await overview()).body.rows.some(r=>r.jobCard==='QA_JC_11'),false,'Delivered job leaves overview');
  const after=await snapshot(),delivered=after.data.jobs.find(j=>j.no==='QA_JC_11'),original=before.data.jobs.find(j=>j.no==='QA_JC_11');assert.equal(delivered.delivered,true);assert.equal(delivered.deliveredBy,'SUP003');assert.equal(delivered.qcPassed,true);assert.ok(delivered.deliveredAt>0);assert.deepEqual(delivered.mechanicalDelivery,{requestId:p.plan.request.p_request,checklistId:checklist});
  for(const section of Object.keys(before.data).filter(k=>k!=='jobs'))assert.deepEqual(after.data[section],before.data[section],'Preserve '+section);
  for(const field of Object.keys(original).filter(k=>!['status','qcWorkflow','qcPassed'].includes(k)))assert.deepEqual(delivered[field],original[field],'Preserve original job '+field);
