@@ -119,6 +119,15 @@ jobs:
           name: dashboard-card-previews-${{ github.run_id }}
           path: artifacts/dashboard-cards/
           retention-days: 14
+      - name: Verify clean Purchase Completed A4 print layout
+        run: node tests/purchase-completed-print-responsive.mjs
+      - name: Save Purchase Completed print previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: purchase-print-preview-${{ github.run_id }}
+          path: artifacts/purchase-print/
+          retention-days: 14
       - name: Verify Cash and Insurance monthly dashboard cards
         run: node tests/cash-monthly-pulse.mjs && node tests/monthly-followup-responsive.mjs
       - name: Verify staff labour sessions and real PDF/image exports

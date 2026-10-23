@@ -1,6 +1,6 @@
 {
-  "versionName": "V362",
-  "versionCode": 325,
+  "versionName": "V363",
+  "versionCode": 326,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
   "sourceCommit": "b3337d3055b4dbc0c51bb6ec42ee0eb7c0906ef2",
@@ -49,7 +49,7 @@
   },
   "verificationSummary": "V362 removes the duplicate monthly Total Purchase Amount card from Manager Workshop Performance. Retains one Purchase Expenses card with Today/This Month and Parts + Sublet subtitle, using existing period-aware calculations and matching detail period. Regression tests exercise repeated renders, removal of old duplicate nodes, mixed-date parts/sublet totals, matching drilldown filters and unchanged records. No backend, schema or financial-record changes. Physical-device acceptance and fresh restore remain NOT_RUN. Signed APK and source-specific CI evidence are pinned by workflow IDs.",
   "productionBackendDeploymentPerformed": false,
-  "releaseChangeScope": "single-manager-purchase-expense-card",
+  "releaseChangeScope": "clean-purchase-completed-print",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
@@ -114,5 +114,7 @@
   "sharedDashboardCardsAuthorizedByOwner": true,
   "sharedDashboardCardsAuthorization": "Owner requested readable cards and layout fixes for all dashboards, asked for all cards to have 3D design, and instructed Proceed and Next to publish.",
   "singlePurchaseCardAuthorizedByOwner": true,
-  "singlePurchaseCardAuthorization": "Owner reported duplicate Purchase Expenses and Total Purchase Amount cards and instructed Fix; retain one period-aware Parts + Sublet purchase card."
+  "singlePurchaseCardAuthorization": "Owner reported duplicate Purchase Expenses and Total Purchase Amount cards and instructed Fix; retain one period-aware Parts + Sublet purchase card.",
+  "purchasePrintCleanupAuthorizedByOwner": true,
+  "purchasePrintCleanupAuthorization": "Owner requested a nice clean Purchase Completed print page with number-only row amounts and OMR only on the final amount."
 }

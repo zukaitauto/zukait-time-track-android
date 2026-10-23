@@ -167,6 +167,7 @@ node tests/print-navigation.mjs
 
 node tests/spare-parts-expense-filters.mjs
 node tests/manager-single-purchase-card.mjs
+node tests/purchase-completed-print-clean.mjs
 
 node tests/time-management.mjs
 node tests/ideal-time-monitor.mjs
