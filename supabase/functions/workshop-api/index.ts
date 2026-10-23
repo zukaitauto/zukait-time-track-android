@@ -1,4 +1,4 @@
-import { mechanicalRoute } from "./extensions/mechanical_route.js";
+import { mechanicalRoute, mechanicalLegacyDeliveryCheck } from "./extensions/mechanical_route.js";
 import { subletTransition } from './sublet_rules.js';
 import {accountantApi,accountantError} from './accountant/api.js';
 import {insuranceProjection,insuranceLpoTransition} from './insurance_management_rules.js';
@@ -1026,7 +1026,7 @@ Deno.serve(async (req: Request) => {
     if (action.startsWith("mechanical_")) {
       const enabled = Deno.env.get("ZUKAIT_MECHANICAL_ENABLED") === "true";
       const result = await mechanicalRoute(admin, user, body, {
-        enabled, qcEnabled: Deno.env.get("ZUKAIT_MECHANICAL_QC_ENABLED") === "true", sessionHash: enabled ? await sha256Hex(token) : "",
+        enabled, qcEnabled: Deno.env.get("ZUKAIT_MECHANICAL_QC_ENABLED") === "true", deliveryEnabled: Deno.env.get("ZUKAIT_MECHANICAL_DELIVERY_ENABLED") === "true", sessionHash: enabled ? await sha256Hex(token) : "",
         verifySession: () => sessionUser(token)
       });
       return reply(result.body, result.status);
@@ -1039,6 +1039,11 @@ Deno.serve(async (req: Request) => {
 
     if (user.role === "Receptionist" && !receptionistRequestAllowed(action, body)) {
       return reply({ok:false, code:"receptionist_forbidden"}, 403);
+    }
+
+    if ((action === "qc_delivery" || action === "receptionist_deliver") && body.operation === "DELIVER" && Deno.env.get("ZUKAIT_MECHANICAL_ENABLED") === "true" && Deno.env.get("ZUKAIT_MECHANICAL_QC_ENABLED") === "true" && Deno.env.get("ZUKAIT_MECHANICAL_DELIVERY_ENABLED") === "true") {
+      const decision = await mechanicalLegacyDeliveryCheck(admin,user,body,{enabled:true,qcEnabled:true,deliveryEnabled:true,sessionHash:await sha256Hex(token)});
+      if(decision) return reply(decision.body,decision.status);
     }
 
     if (action === "reception_dashboard") {

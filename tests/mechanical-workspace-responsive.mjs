@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';import fs from 'node:fs';import {chromium} from 'playwright';
 const source=fs.readFileSync('app/src/main/assets/mechanical_workspace.js','utf8').replace('export async function mountMechanicalWorkspace','window.mountMechanicalWorkspace=async function');
 const navigation=fs.readFileSync('app/src/main/assets/mechanical_navigation.js','utf8').replace('export function installMechanicalNavigation','window.installMechanicalNavigation=function');
+const delivery=fs.readFileSync('app/src/main/assets/mechanical_delivery.js','utf8').replace('export async function mountMechanicalDelivery','window.mountMechanicalDelivery=async function');
 const browser=await chromium.launch({headless:true});fs.mkdirSync('test-results/mechanical',{recursive:true});
 try{for(const width of [320,375,768,1280]){
  const page=await browser.newPage({viewport:{width,height:1000}});
@@ -23,6 +24,14 @@ try{for(const width of [320,375,768,1280]){
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'QC '+width+'px overflow');
  assert.equal(await page.locator('[data-operation=MECHANICAL_QC] input,[data-operation=MECHANICAL_QC] select,[data-operation=MECHANICAL_QC] button').evaluateAll(es=>es.some(e=>e.getBoundingClientRect().height<43)),false);
  if([375,1280].includes(width))await page.screenshot({path:'test-results/mechanical/qc-'+width+'.png',fullPage:true});
+ await page.addScriptTag({content:delivery});
+ for(const role of ['Supervisor','Receptionist']){
+  await page.evaluate(async role=>{const store=new Map();await window.mountMechanicalDelivery(document.getElementById('root'),{enabled:true,checklistId:'MC_TEST',getSession:()=>({id:'QA_DELIVERY',role,key:'QA_SYNTHETIC'}),online:()=>true,storage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)},uuid:()=> '78000000-0000-4000-8000-000000000001',api:async()=>({ok:true,status:{checklistId:'MC_TEST',deliveryReady:true,workComplete:true,delivered:false,recordsRevision:2,workshopRevision:8,workToken:'a'.repeat(64)},vehicle:{jobCard:'12079',description:'Synthetic vehicle '+ 'LongDescription'.repeat(8),registration:'QA <script>unsafe</script>'}})})},role);
+  assert.equal(await page.getByRole('button',{name:'Confirm vehicle delivered',exact:true}).count(),1);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Delivery '+role+' '+width+'px overflow');
+  assert.equal(await page.locator('.mechanical-delivery button').evaluateAll(es=>es.some(e=>e.getBoundingClientRect().height<43)),false);assert.equal(await page.locator('#root script,#root img').count(),0);
+  if([375,1280].includes(width))await page.screenshot({path:'test-results/mechanical/delivery-'+role+'-'+width+'.png',fullPage:true});
+ }
  await page.addScriptTag({content:navigation});
  for(const role of ['Manager','Supervisor']){
   await page.evaluate(role=>{

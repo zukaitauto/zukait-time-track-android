@@ -1,4 +1,4 @@
--- Disposable fixture candidate ONLY. No Edge/client route calls this yet.
+-- Disposable fixture candidate ONLY. Draft route requires separate off-by-default gates.
 alter table zukait_mechanical.settings add column delivery_enabled boolean not null default false;
 create table zukait_mechanical.deliveries (
  request_id uuid primary key references zukait_mechanical.receipts(request_id),

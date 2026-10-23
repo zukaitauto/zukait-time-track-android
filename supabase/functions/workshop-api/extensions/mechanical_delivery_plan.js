@@ -1,4 +1,4 @@
-// Unrouted server candidate. Latest approval/context must come from trusted SQL.
+// Default-off server planner. Latest approval/context come from trusted SQL.
 import {extensionCommandPreflight} from './command_contracts.js';
 import {mechanicalCommandFingerprint} from './mechanical_rules.js';
 import {mechanicalQcReadiness} from './mechanical_qc_boundary.js';

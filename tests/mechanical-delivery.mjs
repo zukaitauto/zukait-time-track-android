@@ -3,8 +3,10 @@ import fs from 'node:fs';import assert from 'node:assert/strict';import {randomU
 import {mechanicalDeliveryRequest} from '../supabase/functions/workshop-api/extensions/mechanical_delivery_plan.js';
 import {mechanicalQcReadiness} from '../supabase/functions/workshop-api/extensions/mechanical_qc_boundary.js';
 import {qcTransition,preserveQcAuthority} from '../supabase/functions/workshop-api/qc_delivery_rules.js';
+import {mechanicalRoute,mechanicalLegacyDeliveryCheck} from '../supabase/functions/workshop-api/extensions/mechanical_route.js';
 export async function mechanicalDeliveryTests({db,records,snapshot,checklist,actor,sessionHash,policy,approve,planQcFail,native,pg,config,database}){
  await db.exec(fs.readFileSync('experiments/mechanical-delivery.sql','utf8'));
+ await db.exec(fs.readFileSync('experiments/mechanical-delivery-readers.sql','utf8'));
  const scalar=async sql=>(await db.query(sql)).rows[0].n;
  assert.equal(await scalar('select count(*)::int n from zukait_mechanical.settings where not delivery_enabled'),1);
  await db.exec("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt,must_change) values('QA_DEL_MGR','Synthetic Manager','Manager','','none','none',false),('QA_DEL_REC','Synthetic Receptionist','Receptionist','','none','none',false)");
@@ -20,6 +22,15 @@ export async function mechanicalDeliveryTests({db,records,snapshot,checklist,act
  const sql='select public.zukait_mechanical_deliver($1,$2::uuid,$3,$4,$5,$6::uuid,$7,$8::jsonb,$9) r';
  const values=p=>[p.p_actor,p.p_request,p.p_fingerprint,p.p_expected_records,p.p_expected_workshop,p.p_entity,p.p_device,JSON.stringify(p.p_plan),p.p_session_hash??sessionHash];
  async function call(p){await db.exec('set role service_role');try{return (await db.query(sql,values(p))).rows[0].r}finally{await db.exec('reset role')}}
+ let rpcCalls=0,loseAck=false;
+ const admin={rpc:async(name,p)=>{rpcCalls++;await db.exec('set role service_role');try{
+  let data;if(name==='zukait_mechanical_delivery_lookup')data=(await db.query('select public.zukait_mechanical_delivery_lookup($1,$2,$3) r',[p.p_actor,p.p_session_hash,p.p_job_card])).rows[0].r;
+  else if(name==='zukait_mechanical_delivery_read')data=(await db.query('select public.zukait_mechanical_delivery_read($1,$2,$3,$4::uuid,$5::uuid) r',[p.p_actor,p.p_session_hash,p.p_kind,p.p_entity,p.p_request])).rows[0].r;
+  else{assert.equal(name,'zukait_mechanical_deliver');data=(await db.query(sql,values(p))).rows[0].r;if(loseAck){loseAck=false;return {error:{message:'QA_LOST_ACK'}}}}
+  return {data};
+ }catch(error){return {error}}finally{await db.exec('reset role')}}};
+ const options=(who=actor,hash=sessionHash)=>({enabled:true,qcEnabled:true,deliveryEnabled:true,sessionHash:hash,verifySession:async()=>who});
+ const route=(body,who=actor,hash=sessionHash,extra={})=>mechanicalRoute(admin,who,body,{...options(who,hash),...extra});
  async function legacy(data,by=actor.id,overrideLive=null){const current=await snapshot(),live=overrideLive??(await db.query('select * from workshop_live_status')).rows;await db.exec('set role service_role');try{return (await db.query('select public.zukait_commit_workshop_state_v2($1,$2::jsonb,$3,$4::jsonb) r',[current.revision,JSON.stringify(data),by,JSON.stringify(live)])).rows[0].r}finally{await db.exec('reset role')}}
  let p=await prepare();assert.equal(p.plan.ok,true,'SUP003 approval alone enables Mechanical-only planner without fake legacy QC');assert.ok(Buffer.byteLength(JSON.stringify(p.plan.request))<1400);assert.equal('qcWorkflow' in p.plan.request.p_plan,false);
  assert.equal((await mechanicalDeliveryRequest(p.r,p.s,p.command,context,{...policy,mechanicalDeliveryEnabled:false},p.approval)).code,'mechanical_delivery_disabled');
@@ -46,7 +57,18 @@ export async function mechanicalDeliveryTests({db,records,snapshot,checklist,act
  await assert.rejects(legacy(bypass.data),/mechanical_delivery_authority_conflict/,'Legacy painting/final delivery cannot bypass normalized Mechanical permit');
  await db.exec('update zukait_mechanical.settings set enabled=false,qc_enabled=false');await assert.rejects(legacy(bypass.data),/mechanical_delivery_authority_conflict/,'Flag disable never disables registered-job authority');await db.exec('update zukait_mechanical.settings set enabled=true,qc_enabled=true');
  await assert.rejects(call(p.plan.request),/mechanical_delivery_disabled/);await db.exec('update zukait_mechanical.settings set delivery_enabled=true');
- await db.exec('begin');try{const receptionist=(await prepare({id:'QA_DEL_REC',role:'Receptionist',active:true})).plan.request;const result=await call({...receptionist,p_session_hash:'e'.repeat(64)});assert.equal(result.ok,true);assert.equal((await snapshot()).data.jobs.find(j=>j.no==='QA_JC_11').deliveredBy,'QA_DEL_REC')}finally{await db.exec('rollback')}
+ const probe={action:'mechanical_delivery_probe',jobCard:'QA_JC_11'},previewBody={action:'mechanical_delivery_preview',checklistId:checklist};
+ const beforeCalls=rpcCalls;assert.equal((await route(probe,actor,sessionHash,{deliveryEnabled:false})).body.code,'extension_disabled');assert.equal(rpcCalls,beforeCalls);
+ assert.equal((await route(probe)).body.checklistId,checklist);assert.equal((await route({...probe,jobCard:'QA_NO_MECHANICAL'})).body.registered,false);
+ const preview=await route(previewBody);assert.equal(preview.body.status.deliveryReady,true);assert.equal(preview.body.vehicle.jobCard,'QA_JC_11');assert.ok(!JSON.stringify(preview).includes('QA_QC_PRIVATE_PERIOD'));assert.equal('snapshot' in preview.body,false);
+ assert.equal((await mechanicalLegacyDeliveryCheck(admin,actor,{action:'qc_delivery',operation:'DELIVER',jobCard:'QA_JC_11'},options())).body.code,'mechanical_delivery_review_required');
+ assert.equal(await mechanicalLegacyDeliveryCheck(admin,actor,{action:'qc_delivery',operation:'DELIVER',jobCard:'QA_NO_MECHANICAL'},options()),null);
+ const incoming={...p.command};delete incoming.actorId;let verifies=0;assert.equal((await route({action:'mechanical_command',command:incoming},actor,sessionHash,{verifySession:async()=>++verifies===1?actor:null})).body.code,'session_changed');
+ const receptionistActor={id:'QA_DEL_REC',role:'Receptionist',active:true};
+ await db.exec('begin');try{const prepared=await prepare(receptionistActor),command={...prepared.command};delete command.actorId;loseAck=true;
+  assert.equal((await route({action:'mechanical_command',command},receptionistActor,'e'.repeat(64))).status,503);
+  const recovered=await route({action:'mechanical_command',command},receptionistActor,'e'.repeat(64));assert.equal(recovered.body.duplicate,true);assert.equal(recovered.body.requestId,command.requestId);assert.equal((await snapshot()).data.jobs.find(j=>j.no==='QA_JC_11').deliveredBy,'QA_DEL_REC');
+ }finally{await db.exec('rollback')}
  assert.equal(await scalar('select count(*)::int n from zukait_mechanical.deliveries'),0,'Receptionist test transaction leaves no fixture delivery');
  await assert.rejects(call({...p.plan.request,p_plan:{...p.plan.request.p_plan,amount:0}}),/invalid_mechanical_delivery/);
  await assert.rejects(call({...p.plan.request,p_plan:{...p.plan.request.p_plan,qcRequestId:randomUUID()}}),/mechanical_delivery_not_ready/);
@@ -76,7 +98,7 @@ export async function mechanicalDeliveryTests({db,records,snapshot,checklist,act
   }finally{await Promise.all(clients.map(c=>c.query('rollback')));await Promise.all(clients.map(c=>c.end()))}
  }else await call(p.plan.request);
  assert.equal((await call(p.plan.request)).duplicate,true,'Lost acknowledgement replays receipt without a second delivery/history write');await assert.rejects(call({...p.plan.request,p_fingerprint:'0'.repeat(64)}),/mechanical_request_reused/);
- await db.query('update staff_sessions set revoked_at=now() where token_hash=$1',[sessionHash]);await assert.rejects(call(p.plan.request),/mechanical_invalid_session/);await db.query('update staff_sessions set revoked_at=null where token_hash=$1',[sessionHash]);
+ await db.query('update staff_sessions set revoked_at=now() where token_hash=$1',[sessionHash]);await assert.rejects(call(p.plan.request),/mechanical_invalid_session/);assert.equal((await route(previewBody)).status,401);const replay={...p.command};delete replay.actorId;assert.equal((await route({action:'mechanical_command',command:replay})).status,401);await db.query('update staff_sessions set revoked_at=null where token_hash=$1',[sessionHash]);
  const after=await snapshot(),delivered=after.data.jobs.find(j=>j.no==='QA_JC_11'),original=before.data.jobs.find(j=>j.no==='QA_JC_11');assert.equal(delivered.delivered,true);assert.equal(delivered.deliveredBy,'SUP003');assert.equal(delivered.qcPassed,true);assert.ok(delivered.deliveredAt>0);assert.deepEqual(delivered.mechanicalDelivery,{requestId:p.plan.request.p_request,checklistId:checklist});
  for(const section of Object.keys(before.data).filter(k=>k!=='jobs'))assert.deepEqual(after.data[section],before.data[section],'Preserve '+section);
  for(const field of Object.keys(original).filter(k=>!['status','qcWorkflow','qcPassed'].includes(k)))assert.deepEqual(delivered[field],original[field],'Preserve original job '+field);
@@ -94,8 +116,9 @@ export async function mechanicalDeliveryTests({db,records,snapshot,checklist,act
  await db.exec('update zukait_mechanical.settings set enabled=false,qc_enabled=false,delivery_enabled=false');await assert.rejects(legacy(forged),/mechanical_delivery_authority_conflict/);await db.exec('update zukait_mechanical.settings set enabled=true,qc_enabled=true,delivery_enabled=true');
  for(const mutation of ['update zukait_mechanical.deliveries set projection=projection','delete from zukait_mechanical.deliveries','truncate zukait_mechanical.deliveries'])await assert.rejects(db.exec(mutation),/mechanical_append_only/);
  for(const role of ['anon','authenticated']){assert.equal(await scalar(`select has_function_privilege('${role}','public.zukait_mechanical_deliver(text,uuid,text,bigint,bigint,uuid,text,jsonb,text)','execute')::int n`),0);assert.equal(await scalar(`select has_table_privilege('${role}','zukait_mechanical.deliveries','SELECT')::int n`),0)}
+ for(const role of ['anon','authenticated'])for(const signature of ['public.zukait_mechanical_delivery_lookup(text,text,text)','public.zukait_mechanical_delivery_read(text,text,text,uuid,uuid)'])assert.equal(await scalar(`select has_function_privilege('${role}','${signature}','execute')::int n`),0);
  assert.equal(await scalar("select prosecdef::int n from pg_proc where oid='public.zukait_mechanical_deliver(text,uuid,text,bigint,bigint,uuid,text,jsonb,text)'::regprocedure"),0);
  assert.equal(await scalar("select relrowsecurity::int n from pg_class where oid='zukait_mechanical.deliveries'::regclass"),1);
  for(const action of ['UPDATE','DELETE','TRUNCATE'])assert.equal(await scalar(`select has_table_privilege('service_role','zukait_mechanical.deliveries','${action}')::int n`),0);
- console.log('PASS unrouted delivery backend: SUP003-only QC evidence, legacy/full-save bypass denial even with flags off, dual revisions/latest FAIL, atomic history/receipt/permit/audit rollback, safe retry'+(native?', overlapping requests':'')+', preserved labour/money and audited Manager date correction. No activation.');
+ console.log('PASS draft delivery: session-bound Supervisor/Receptionist route/readers, legacy review gate, real lost-ack recovery, SUP003 QC evidence, full-save bypass denial even with flags off, dual revisions/latest FAIL, atomic rollback'+(native?', overlapping requests':'')+', preserved labour/money and audited Manager date correction. No activation.');
 }

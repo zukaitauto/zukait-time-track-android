@@ -7,7 +7,7 @@ declare cfg zukait_mechanical.settings; operation text; policy jsonb; rows jsonb
 begin
  select * into cfg from zukait_mechanical.settings where singleton;
  select value into operation from jsonb_array_elements_text(case when jsonb_typeof(cfg.capabilities->p_actor)='array' then cfg.capabilities->p_actor else '[]'::jsonb end)
- where value in ('MC_CREATE','TASK_CREATE','TASK_ASSIGN','TASK_HANDOVER','MECHANICAL_QC') limit 1;
+ where value in ('MC_CREATE','TASK_CREATE','TASK_ASSIGN','TASK_HANDOVER','MECHANICAL_QC','MECHANICAL_DELIVER') limit 1;
  policy:=zukait_mechanical.authorize_session(p_actor,p_session_hash,operation);
  if p_after is null or p_after not between 0 and 9007199254740991 then raise exception 'invalid_mechanical_command';end if;
  select c.revision into revision from zukait_mechanical.control c where singleton;
@@ -38,7 +38,7 @@ begin
   detail:=jsonb_build_object('checklist',selected,'tasks',tasks,'assignments',assignments);
  end if;
  return jsonb_build_object('ok',true,'recordsRevision',revision,'workshopRevision',workshop_revision,'capabilities',policy->'mechanicalStaff'->p_actor,
-  'departmentConfigured',cfg.department is not null,'qcAvailable',coalesce((to_jsonb(cfg)->>'qc_enabled')::boolean,false),'mechanics',mechanics,'checklists',rows,'nextAfter',next_after,'detail',detail);
+  'departmentConfigured',cfg.department is not null,'qcAvailable',coalesce((to_jsonb(cfg)->>'qc_enabled')::boolean,false),'deliveryAvailable',coalesce((to_jsonb(cfg)->>'delivery_enabled')::boolean,false),'mechanics',mechanics,'checklists',rows,'nextAfter',next_after,'detail',detail);
 end $$;
 revoke all on function public.zukait_mechanical_dashboard(text,text,bigint,uuid) from public,anon,authenticated;
 grant execute on function public.zukait_mechanical_dashboard(text,text,bigint,uuid) to service_role;

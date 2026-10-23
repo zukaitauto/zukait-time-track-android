@@ -6,7 +6,7 @@
  const el=id=>document.getElementById(id);
  const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const error=e=>{el('message').textContent=e?.message||String(e)};
- const messages={invalid:'User ID or password is incorrect.',locked:'This account is temporarily locked. Try again later.',weak:'Password must be at least 8 characters.',forbidden:'This action is not allowed for this account.',
+ const messages={mechanical_delivery_review_required:'This Mechanical job needs its new delivery review. The saved action is retained; ask the Manager to reconcile it before retrying.',invalid:'User ID or password is incorrect.',locked:'This account is temporarily locked. Try again later.',weak:'Password must be at least 8 characters.',forbidden:'This action is not allowed for this account.',
   invalid_session:'Your session has expired. Sign in again; saved actions are retained.',receptionist_forbidden:'This action is not available in Reception.',
   work_not_finished:'Work is still pending or active. Refresh Vehicle Delivery after it is complete.',both_qc_required:'Current painting and final QC must both pass before delivery.',
   qc_conflict:'The work or QC review changed. Refresh Vehicle Delivery and review again.',job_not_available:'This Job Card is not available for delivery. Keep any saved delivery request and ask the Manager to reconcile.',already_delivered:'Server reports this vehicle delivered, but this device’s saved request was not confirmed. Keep it and ask the Manager to reconcile.',
@@ -27,10 +27,12 @@
  function clear(){token='';window.me=null;document.body.classList.remove('receptionist-workspace');try{bridge()?.clearSecureSessionToken?.()}catch(_){}localStorage.removeItem(SESSION);el('identity').textContent='';el('workspace').innerHTML='';el('reception-app').classList.add('hidden');el('login').classList.remove('hidden')}
  async function request(functionName,body){
   if(!navigator.onLine)throw Error('Offline. Reconnect before confirming a server action.');
+  const requestToken=token,requestOwner=window.me?.id;
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
   try{
    const response=await fetch(BASE+functionName,{method:'POST',headers:{'Content-Type':'application/json',apikey:KEY,'x-zukait-session':token},body:JSON.stringify(body),signal:controller.signal});
    const result=await response.json();
+   if(token!==requestToken||window.me?.id!==requestOwner)throw Error('Your login changed. Reopen the action.');
    if(!response.ok||!result.ok){const e=Error(messages[result.code]||'The server action could not be confirmed. Check the connection and retry the saved action.');e.code=result.code;e.status=response.status;if(functionName==='workshop-api'&&response.status===401)clear();throw e;}
    return result;
   }finally{clearTimeout(timer)}
@@ -75,7 +77,7 @@
  }
  async function deliveries(){
   el('message').textContent='';const saved=pending();
-  const root=el('workspace');root.innerHTML='<div class="reception-delivery-head"><button id="reception-delivery-back" type="button">← Back</button><h2>Vehicle Delivery</h2></div><p>Delivery requires completed work and current passing painting and final QC. VWC is a location, not delivery.</p>'+(saved?'<div class="delivery-card"><p>Delivery awaits server confirmation: '+escape(saved.jobCard)+'</p><button id="retry-delivery">Confirm Saved Delivery</button></div>':'');
+  const root=el('workspace');root.innerHTML='<div class="reception-delivery-head"><button id="reception-delivery-back" type="button">← Back</button><h2>Vehicle Delivery</h2></div><p>Delivery requires completed work and current QC for the job. VWC is a location, not delivery.</p>'+(saved?'<div class="delivery-card"><p>Delivery awaits server confirmation: '+escape(saved.jobCard)+'</p><button id="retry-delivery">Confirm Saved Delivery</button></div>':'');
   el('reception-delivery-back').onclick=()=>{
     const destination=window.zukaitReceptionDashboard?.resume?.() || window.zukaitReception?.open?.();
     Promise.resolve(destination).catch(error);
@@ -85,7 +87,15 @@
   const list=document.createElement('div');root.appendChild(list);
   for(const row of result.rows||[]){
    const card=document.createElement('div');card.className='delivery-card';card.innerHTML='<h3>'+escape(row.jobCard)+' · '+escape(row.receptionNo)+'</h3><p>'+escape(row.vehicle)+' · '+escape(row.registration)+'</p><p>'+escape(row.delivered?'Delivered':row.deliveryReady?'Ready for delivery':row.stage)+'</p>';
-   if(row.deliveryReady&&!saved){const button=document.createElement('button');button.textContent='Deliver Vehicle';button.onclick=()=>{if(confirm('Confirm physical delivery of '+row.jobCard+' / '+row.registration+' to the customer?'))deliver({action:'receptionist_deliver',operation:'DELIVER',jobCard:row.jobCard,expectedQcRevision:row.expectedQcRevision,expectedVehicleIdentity:row.expectedVehicleIdentity,request_id:crypto.randomUUID()})};card.appendChild(button);}
+   if(!saved&&!row.delivered&&window.ZUKAIT_MECHANICAL_ENABLED===true&&window.ZUKAIT_MECHANICAL_DELIVERY_ENABLED===true){const button=document.createElement('button');button.textContent='Review vehicle delivery';button.onclick=async()=>{try{
+    const owner=String(window.me?.id||''),key=token;
+    const probe=await request('workshop-api',{action:'mechanical_delivery_probe',jobCard:row.jobCard});
+    if(window.me?.id!==owner||token!==key)throw Error('Your login changed. Reopen delivery.');
+    if(!probe.registered){if(!row.deliveryReady)throw Error('Required QC is still pending. Refresh delivery after QC.');if(confirm('Confirm physical delivery of '+row.jobCard+' / '+row.registration+' to the customer?'))await deliver({action:'receptionist_deliver',operation:'DELIVER',jobCard:row.jobCard,expectedQcRevision:row.expectedQcRevision,expectedVehicleIdentity:row.expectedVehicleIdentity,request_id:crypto.randomUUID()});return}
+    const module=await import('./mechanical_delivery.js');if(window.me?.id!==owner||token!==key)throw Error('Your login changed. Reopen delivery.');
+    const host=document.createElement('div');root.replaceChildren(host);await module.mountMechanicalDelivery(host,{enabled:true,checklistId:probe.checklistId,storage:localStorage,getSession:()=>({id:window.me?.id,role:window.me?.role,key:token}),online:()=>navigator.onLine,api:async body=>{if(window.me?.id!==owner||token!==key)throw Error('invalid_session');try{return await request('workshop-api',body)}catch(e){if(e.code)return {ok:false,code:e.code};throw e}},onDone:deliveries,onClose:()=>deliveries().catch(error)});
+   }catch(e){error(e)}};card.appendChild(button);}
+   else if(row.deliveryReady&&!saved){const button=document.createElement('button');button.textContent='Deliver Vehicle';button.onclick=()=>{if(confirm('Confirm physical delivery of '+row.jobCard+' / '+row.registration+' to the customer?'))deliver({action:'receptionist_deliver',operation:'DELIVER',jobCard:row.jobCard,expectedQcRevision:row.expectedQcRevision,expectedVehicleIdentity:row.expectedVehicleIdentity,request_id:crypto.randomUUID()})};card.appendChild(button);}
    list.appendChild(card);
   }
   if(!result.rows?.length)list.textContent='No linked vehicles to show.';

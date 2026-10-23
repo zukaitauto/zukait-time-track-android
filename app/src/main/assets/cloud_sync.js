@@ -986,6 +986,7 @@
     await module.mountMechanicalWorkspace(root,{enabled:true,storage:localStorage,
       getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()}),online:()=>navigator.onLine,
       onClose:()=>{if(root.isConnected)closeModal()},
+      openDelivery:window.ZUKAIT_MECHANICAL_DELIVERY_ENABLED===true?openMechanicalDelivery:null,
       api:async body=>{
         if(window.ZUKAIT_MECHANICAL_ENABLED!==true||String(me?.id||'')!==owner||sessionToken()!==token)throw Error('invalid_session');
         if(!navigator.onLine)throw Error('OFFLINE');
@@ -994,6 +995,22 @@
         return api(body);
       }
     });return true;
+  }
+
+  async function openMechanicalDelivery(jobCard){
+    if(window.ZUKAIT_MECHANICAL_ENABLED!==true||window.ZUKAIT_MECHANICAL_DELIVERY_ENABLED!==true||!['Supervisor','Receptionist'].includes(me?.role)||!sessionToken())return false;
+    if(cloudDirty||cloudPushing||pullInFlight)throw Error('Sync pending workshop changes before delivery.');
+    const owner=String(me.id),token=sessionToken();
+    const current=()=>String(me?.id||'')===owner&&sessionToken()===token&&window.ZUKAIT_MECHANICAL_ENABLED===true&&window.ZUKAIT_MECHANICAL_DELIVERY_ENABLED===true;
+    const probe=await api({action:'mechanical_delivery_probe',jobCard:String(jobCard)});
+    if(!current())throw Error('Your login changed. Reopen delivery.');
+    if(!probe.ok)throw Error('Delivery review is unavailable. Refresh or ask the Manager.');
+    if(!probe.registered)return false;
+    const module=await import('./mechanical_delivery.js');if(!current())throw Error('Your login changed.');
+    openModal('<div id="zukaitMechanicalDelivery"></div>');const root=document.getElementById('zukaitMechanicalDelivery');if(!root)return false;
+    await module.mountMechanicalDelivery(root,{enabled:true,checklistId:probe.checklistId,storage:localStorage,getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()}),online:()=>navigator.onLine,
+      api:async body=>{if(!current())throw Error('invalid_session');if(!navigator.onLine)throw Error('OFFLINE');if(body.action==='mechanical_command'&&(cloudDirty||cloudPushing||pullInFlight))throw Error('WORKSHOP_SYNC_PENDING');return api(body)},
+      onClose:()=>{if(root.isConnected)closeModal()},onDone:async()=>{if(root.isConnected)closeModal();await syncNow()}});return true;
   }
 
   async function installMechanicalMenu(){
@@ -1206,7 +1223,7 @@
     publishLiveStatus(false);
   });
   window.zukaitCloud={
-    init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,openMechanicalWorkspace,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
+    init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,openMechanicalWorkspace,openMechanicalDelivery,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
     configured:()=>true,
     get confirmedState(){return confirmedReadRevision>=cloudRevision?confirmedReadState:null},
     get revision(){return cloudRevision},

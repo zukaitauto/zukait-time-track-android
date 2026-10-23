@@ -55,6 +55,7 @@ export async function mountMechanicalWorkspace(root,options={}){
    const box=node('article',null,{'data-mechanical-qc':'true'});box.append(node('h3','Mechanical quality check'),button('Check QC status',()=>loadQc()));
    if(qc?.checklistId===d.checklist.id){
     box.append(node('p',qc.delivered?'Delivered':!qc.workComplete?'Work is not complete.':!qc.mechanicalRequired?'Mechanical QC is not required for this job.':qc.mechanicalPassed?'Mechanical QC passed.':'Mechanical QC is pending.'));
+    if(qc.deliveryReady&&model.deliveryAvailable&&initial.role==='Supervisor'&&caps.has('MECHANICAL_DELIVER')&&typeof options.openDelivery==='function')box.append(button('Review vehicle delivery',async()=>{try{await options.openDelivery(d.checklist.jobCard)}catch(e){notice=e.message;render()}}));
     if(qc.workComplete&&!qc.delivered&&initial.id==='SUP003'&&initial.role==='Supervisor'&&caps.has('MECHANICAL_QC')&&qc.mechanicalRequired){
      const f=form('Record QC result','MECHANICAL_QC',()=>d.checklist.id,v=>({result:v.get('result'),reason:String(v.get('reason')).trim(),expectedFingerprint:qc.workToken}));choice(f,'QC result','result',[{id:'PASS',name:'Pass'},{id:'FAIL',name:'Fail'}]);input(f,'QC notes (required for Fail)','reason','text','',false).maxLength=500;submit(f,'Confirm QC result');box.append(f);
     }

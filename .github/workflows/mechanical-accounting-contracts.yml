@@ -60,6 +60,7 @@ jobs:
           node-version: '24'
       - run: npm ci --ignore-scripts --include=dev
       - run: node tests/mechanical-workspace.mjs
+      - run: node tests/mechanical-delivery-ui.mjs
       - run: node tests/mechanical-navigation.mjs
       - run: npx playwright install --with-deps chromium
       - run: node tests/mechanical-workspace-responsive.mjs
