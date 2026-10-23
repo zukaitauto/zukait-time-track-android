@@ -1239,7 +1239,7 @@ Deno.serve(async (req: Request) => {
       }
       const {data,error} = await admin.rpc("zukait_reception_command",{p_actor_id:String(user.id),p_command:command});
       if (error) {
-        const code = String(error.message || "").match(/reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0];
+        const code = String(error.message || "").match(/job_number_[a-z0-9_]+|job_edit_manager_required|reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0];
         if (code) return reply({ok:false,code}, /forbidden|manager_required/.test(code)?403:/not_found/.test(code)?404:409);
         console.error("reception_command_failed",error);
         return reply({ok:false,code:"reception_unavailable"},503);
@@ -1302,7 +1302,7 @@ Deno.serve(async (req: Request) => {
         const result=jobEditTransition(current.data,user,body,Date.now());
         if(!result.ok)return reply({ok:false,code:result.code},409);
         const {data:committed,error}=await admin.rpc(numberChange?"zukait_manager_numbered_job_edit":"zukait_manager_full_job_edit",{p_expected_revision:Number(current.revision||0),p_data:result.data,p_actor_id:user.id,p_job_card:body.jobCard,p_reason:body.reason,p_live:computeLiveStatus(result.data,Number(current.revision||0)+1,user.id),...(numberChange?{p_new_number:numberChange.number,p_expected_number:numberChange.expected,p_confirmed:true}:{})});
-        if(error){const code=String(error.message||'').match(/reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0];return reply({ok:false,code:code||"job_edit_unavailable",message:code||'Job Card correction could not be saved.'},409);}
+        if(error){const code=String(error.message||'').match(/job_number_[a-z0-9_]+|job_edit_manager_required|reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0];return reply({ok:false,code:code||"job_edit_unavailable",message:code||'Job Card correction could not be saved.'},409);}
         if(committed?.ok){
           if(numberChange)numberCodec=jobNumberCodec(committed.number_rows || []);
           return reply({ok:true,job:committed.job,server_revision:committed.revision,...(numberChange?{data:committed.data}:{})});
