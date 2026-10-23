@@ -41,5 +41,5 @@ for(const extra of [{after:'0'},{after:-1},{after:1.5},{checklistId:'wrong'},{po
 revoke=true;r=await request();assert.equal(r.status,401);assert.equal(calls.some(c=>c.name.endsWith('_commit')),false);revoke=false;
 failCommit=true;r=await request();assert.equal(r.status,401);assert.equal(r.body.code,'invalid_session');failCommit=false;
 role='Accountant';assert.equal((await request({action:'accountant_dashboard'})).body.accountant,true,'Existing Accountant routing remains available');
-role='Supervisor';for(const code of ['mechanical_authority_conflict','mechanical_live_authority_conflict']){guardError=code;r=await request({action:'load'});assert.equal(r.status,403);assert.equal(r.body.code,code);assert.equal(r.body.retryable,false);}guardError=null;
+role='Supervisor';for(const code of ['mechanical_authority_conflict','mechanical_live_authority_conflict','mechanical_delivery_authority_conflict']){guardError=code;r=await request({action:'load'});assert.equal(r.status,403);assert.equal(r.body.code,code);assert.equal(r.body.retryable,false);}guardError=null;
 console.log('PASS real Edge handler: exact default-off environment flag, existing auth gate, role isolation, trusted hash binding, strict body, safe errors, no snapshot exposure, pre-commit revocation, existing Accountant route. Synthetic only.');

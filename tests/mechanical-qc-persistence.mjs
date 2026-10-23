@@ -5,6 +5,7 @@ import {randomUUID} from 'node:crypto';
 import {mechanicalQcCommandApi,mechanicalQcReadiness} from '../supabase/functions/workshop-api/extensions/mechanical_qc_boundary.js';
 import {MECHANICAL_QC_OWNER_DECISIONS as qc} from '../supabase/functions/workshop-api/extensions/mechanical_qc_rules.js';
 import {mechanicalRoute} from '../supabase/functions/workshop-api/extensions/mechanical_route.js';
+import {mechanicalDeliveryTests} from './mechanical-delivery.mjs';
 export async function mechanicalQcPersistenceTests({db,records,snapshot,native,pg,config,database}){
  await db.exec(fs.readFileSync('experiments/mechanical-qc-persistence.sql','utf8'));
  await db.exec(fs.readFileSync('experiments/mechanical-qc-readers.sql','utf8'));
@@ -117,5 +118,6 @@ export async function mechanicalQcPersistenceTests({db,records,snapshot,native,p
    await b.query('begin');await b.query('update staff_sessions set revoked_at=now() where token_hash=$1',[sessionHash]);const waiting=a.query(sql,values(savedPlan)).then(()=>({ok:true}),error=>({error}));await waitBlocked(a,b);await b.query('commit');assert.match((await waiting).error.message,/mechanical_invalid_session/);await db.query('update staff_sessions set revoked_at=null where token_hash=$1',[sessionHash]);
   }finally{await Promise.all([a.query('rollback'),b.query('rollback')]);await Promise.all([a.end(),b.end()])}
  }
- console.log('PASS draft QC: scoped trusted reader/latest FAIL, SUP003-only dashboard/route, opaque readiness and session gates, atomic receipt/event/audit/revision, lost acknowledgement, invalidation, rollback, private invoker ACLs and append-only protection'+(native?', concurrent same/distinct requests':'')+'. Undeployed; delivery integration remains blocked.');
+ await mechanicalDeliveryTests({db,records,snapshot,checklist,actor,sessionHash,policy,approve:async(result='PASS',reason='Inspected')=>{const r=await mechanicalQcCommandApi(await command(result,reason),server);assert.equal(r.status,200)},planQcFail:async()=>{let plan;const r=await mechanicalQcCommandApi(await command('FAIL','QA concurrent defect'),{...server,commit:async p=>{plan=p;return {ok:true,requestId:p.p_request}}});assert.equal(r.status,200);return plan},native,pg,config,database});
+ console.log('PASS draft QC: scoped trusted reader/latest FAIL, SUP003-only dashboard/route, opaque readiness and session gates, atomic receipt/event/audit/revision, lost acknowledgement, invalidation, rollback, private invoker ACLs and append-only protection'+(native?', concurrent same/distinct requests':'')+'. Undeployed; delivery routing remains blocked.');
 }

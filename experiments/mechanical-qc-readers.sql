@@ -10,7 +10,7 @@ begin
  where value in ('MC_CREATE','TASK_CREATE','TASK_ASSIGN','TASK_HANDOVER','MECHANICAL_QC') limit 1;
  policy:=zukait_mechanical.authorize_session(p_actor,p_session_hash,operation);
  if not cfg.qc_enabled then raise exception 'mechanical_qc_disabled';end if;
- policy:=policy||jsonb_build_object('qc',jsonb_build_object('mechanicalApproverId','SUP003','mechanicalOnlyMode','SOLE_MECHANICAL_APPROVER','mixedPaintingApproverId','SUP002','mixedFinalApproverId','SUP001','mixedMechanicalRequired',cfg.mixed_mechanical_qc_required));
+ policy:=policy||jsonb_build_object('mechanicalDeliveryEnabled',coalesce((to_jsonb(cfg)->>'delivery_enabled')::boolean,false),'qc',jsonb_build_object('mechanicalApproverId','SUP003','mechanicalOnlyMode','SOLE_MECHANICAL_APPROVER','mixedPaintingApproverId','SUP002','mixedFinalApproverId','SUP001','mixedMechanicalRequired',cfg.mixed_mechanical_qc_required));
  if p_kind='policy' then return policy;end if;
  if p_kind='receipt' then
   if p_request is null then raise exception 'invalid_mechanical_command';end if;
@@ -39,9 +39,9 @@ begin
  if jsonb_array_length(tasks)>100 or jsonb_array_length(links)>500 or jsonb_array_length(assignments)>500 or jsonb_array_length(sessions)>10000 then raise exception 'mechanical_context_limit';end if;
  -- Departments come from trusted credentials, not client-editable user JSON.
  select coalesce(jsonb_agg(jsonb_build_object('id',c.user_id,'department',c.department)),'[]') into users from public.staff_credentials c where c.user_id in (select a->>'emp' from jsonb_array_elements(assignments) a);
- select coalesce(jsonb_agg(jsonb_build_object('no',j->'no','status',j->'status','delivered',j->'delivered','cancelled',j->'cancelled','deleted',j->'deleted','archived',j->'archived','qcWorkflow',j->'qcWorkflow')),'[]') into jobs from jsonb_array_elements(coalesce(ws->'jobs','[]')) j where upper(trim(j->>'no'))=upper(trim(jc));
+ select coalesce(jsonb_agg(jsonb_build_object('no',j->'no','receptionNo',j->'receptionNo','status',j->'status','delivered',j->'delivered','cancelled',j->'cancelled','deleted',j->'deleted','archived',j->'archived','qcWorkflow',j->'qcWorkflow')),'[]') into jobs from jsonb_array_elements(coalesce(ws->'jobs','[]')) j where upper(trim(j->>'no'))=upper(trim(jc));
  if jsonb_array_length(jobs)<>1 then raise exception 'mechanical_qc_scope_review';end if;
- select jsonb_build_object('by',e.actor_id,'result',e.result,'workFingerprint',e.work_fingerprint) into approval from zukait_mechanical.qc_events e where e.checklist_id=p_entity order by e.records_revision desc limit 1;
+ select jsonb_build_object('requestId',e.request_id,'by',e.actor_id,'result',e.result,'workFingerprint',e.work_fingerprint) into approval from zukait_mechanical.qc_events e where e.checklist_id=p_entity order by e.records_revision desc limit 1;
  if revision is distinct from (select c.revision from zukait_mechanical.control c where c.singleton) or ws_revision is distinct from (select w.revision from public.workshop_state w where w.id='main') then raise exception 'mechanical_revision_conflict';end if;
  return jsonb_build_object('policy',policy,'records',jsonb_build_object('revision',revision,'checklists',checklists,'tasks',tasks,'links',links,'receipts','[]'::jsonb,'audit','[]'::jsonb),
   'snapshot',jsonb_build_object('revision',ws_revision,'data',jsonb_build_object('users',users,'jobs',jobs,'assign',assignments,'sessions',sessions)),'approval',approval);

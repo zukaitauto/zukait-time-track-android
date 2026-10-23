@@ -7,7 +7,7 @@
   const DENIED_KEY='zukait_cloud_denied_snapshot_v42';
   let deniedSnapshot=null;
   try{deniedSnapshot=JSON.parse(localStorage.getItem(DENIED_KEY)||'null')}catch(_){}
-  function isMechanicalConflict(code){return ['mechanical_authority_conflict','mechanical_live_authority_conflict'].includes(code)}
+  function isMechanicalConflict(code){return ['mechanical_authority_conflict','mechanical_live_authority_conflict','mechanical_delivery_authority_conflict'].includes(code)}
   function permissionBlocked(snapshot){
     if(!deniedSnapshot)return false;
     // A different account must never silently submit another user's queue.
@@ -900,7 +900,7 @@
       localStorage.setItem(DIRTY_KEY,'1');
       lastSyncError=String(e?.code||e?.message||'SAVE_FAILED');consecutiveSyncErrors++;
       const assignmentConflict=e?.code==='id001_already_assigned'&&e?.httpStatus===409;
-      const mechanicalConflict=['mechanical_authority_conflict','mechanical_live_authority_conflict'].includes(e?.code);
+      const mechanicalConflict=['mechanical_authority_conflict','mechanical_live_authority_conflict','mechanical_delivery_authority_conflict'].includes(e?.code);
       const permissionDenied=e?.httpStatus===403,blocked=permissionDenied||assignmentConflict;
       if(mechanicalConflict){
         setServerConnection('connected','Server reachable. A Mechanical handover changed this work. Pending changes are preserved; use Sync to review.');

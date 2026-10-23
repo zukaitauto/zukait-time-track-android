@@ -17,7 +17,7 @@ function context(initial=base){
  vm.createContext(c);vm.runInContext(prefix+merge+recovery,c);c.getDenied=()=>vm.runInContext('deniedSnapshot',c);
  return {c,storage,events,timers};
 }
-let {c}=context();let pending=structuredClone(base);pending.expenses.push({id:'LOCAL',amount:2.345});
+let {c}=context();assert.equal(c.isMechanicalConflict('mechanical_delivery_authority_conflict'),true);let pending=structuredClone(base);pending.expenses.push({id:'LOCAL',amount:2.345});
 const before=JSON.stringify({base,remote,pending}),result=c.mechanicalConflictRebase(base,remote,pending);
 assert.equal(result.ok,true);assert.equal(result.data.assign[0].completed,true);assert.equal(result.data.assign[0].handedOverToAssignmentId,'SUCCESSOR');assert.equal(result.data.assign.length,2);assert.equal(result.data.expenses.at(-1).amount,2.345);assert.equal(JSON.stringify({base,remote,pending}),before,'Pure recovery cannot mutate its inputs');
 for(const mutate of [d=>{d.assign=[]},d=>{d.assign[0].emp='QA_OTHER'},d=>{d.assign[0].suggested=0},d=>{d.sessions.push({id:'LOCAL_START',assignmentId:'SOURCE',emp:'QA_A',job:'QA_JC',start:5000000})},d=>{d.sessions=[]},d=>{d.sessions[0].end+=60000},d=>{d.jobs[0].status='Completed'}]){

@@ -2,7 +2,7 @@
 // Context/policy must come from the authenticated server, never request JSON.
 export const EXTENSION_DEFAULTS=Object.freeze({mechanical:false,financeExpansion:false});
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const mechanicalOperations=new Set(['MC_CREATE','TASK_CREATE','TASK_ASSIGN','TASK_HANDOVER','HOLD_SET','PROMISE_SET','MECHANICAL_QC']);
+const mechanicalOperations=new Set(['MC_CREATE','TASK_CREATE','TASK_ASSIGN','TASK_HANDOVER','HOLD_SET','PROMISE_SET','MECHANICAL_QC','MECHANICAL_DELIVER']);
 const financeOperations=new Set(['BILL_APPROVE','OPENING_APPROVE','CREDIT_APPROVE','PAYROLL_APPROVE']);
 const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const identifier=x=>typeof x==='string'&&x.trim()===x&&x.length>0&&x.length<=128;
@@ -21,7 +21,7 @@ export function extensionCommandPreflight(command,context={},policy={}){
  // Actor ownership comes only from the verified context; reject spoofed envelopes.
  if(command.actorId!==actor.id)return denied('actor_mismatch');
  if(domain==='mechanical'){
-  if(!['Manager','Supervisor'].includes(actor.role))return denied('mechanical_forbidden');
+  if(!(command.operation==='MECHANICAL_DELIVER'?['Supervisor','Receptionist']:['Manager','Supervisor']).includes(actor.role))return denied('mechanical_forbidden');
   const capabilities=policy.mechanicalStaff?.[actor.id];
   if(!Array.isArray(capabilities)||!capabilities.includes(command.operation))return denied('mechanical_capability_required');
  }else{
