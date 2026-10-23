@@ -20,7 +20,7 @@
     "legacyLoginCompatibility": true
   },
   "approvedAt": "2026-10-23T14:52:52.766Z",
-  "publishNonce": "cards-ad343c965908de771ba06a63bf0659780fc13b5a-v361",
+  "publishNonce": "ad343c965908de771ba06a63bf0659780fc13b5a361",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
