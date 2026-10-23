@@ -5,7 +5,7 @@ export async function mechanicalTrackingPersistence({db,records,snapshot,native,
  await db.exec(fs.readFileSync('experiments/mechanical-tracking.sql','utf8'));
  const actor={id:'QA_SUP',role:'Supervisor',active:true},sessionHash='a'.repeat(64),entity=(await records()).checklists.find(c=>c.manualJobCard.number==='QA_JC_0').id;
  const scalar=async sql=>(await db.query(sql)).rows[0].n,baseline=JSON.stringify(await snapshot()),history=await scalar('select count(*)::int n from workshop_state_history');
- assert.equal(await scalar('select count(*)::int n from zukait_mechanical.settings where not tracking_enabled and hold_mode is null and priority_values=\'[]\''),1);
+ assert.equal(await scalar("select count(*)::int n from zukait_mechanical.settings where not tracking_enabled and hold_mode='STATUS_ONLY' and priority_values='[]'"),1);
  await db.exec("update zukait_mechanical.settings set tracking_enabled=true,priority_values='[\"NORMAL\",\"URGENT\"]',capabilities=capabilities||'{\"QA_SUP\":[\"PRIORITY_SET\",\"PROMISE_SET\",\"HOLD_SET\"]}'");
  const sql='select public.zukait_mechanical_tracking_commit($1,$2,$3,$4::uuid,$5,$6::uuid,$7,$8,$9,$10::jsonb) r',values=p=>[p.p_actor,p.p_session_hash,p.p_operation,p.p_request,p.p_fingerprint,p.p_entity,p.p_device,p.p_expected_records,p.p_expected_workshop,JSON.stringify(p.p_payload)];
  const admin={rpc:async(name,p)=>{await db.exec('set role service_role');try{const result=name==='zukait_mechanical_tracking_read'?await db.query('select public.zukait_mechanical_tracking_read($1,$2,$3,$4,$5::uuid,$6::uuid) r',[p.p_actor,p.p_session_hash,p.p_kind,p.p_operation,p.p_entity,p.p_request]):await db.query(sql,values(p));return {data:result.rows[0].r}}catch(error){return {error}}finally{await db.exec('reset role')}}};
@@ -18,7 +18,7 @@ export async function mechanicalTrackingPersistence({db,records,snapshot,native,
  let c=await command('PRIORITY_SET',{priority:'URGENT',reason:'Confirmed booking'});const initialRevision=(await records()).revision;
  let result=await send(c);assert.equal(result.status,200,JSON.stringify(result));assert.equal((await view()).tracking.priority,'URGENT');assert.equal((await records()).revision,initialRevision+1);
  assert.equal((await send(c)).body.duplicate,true);assert.equal((await send(await command('PRIORITY_SET',{priority:'URGENT',reason:'Same value'}))).body.code,'tracking_no_change');assert.equal((await records()).revision,initialRevision+1);assert.equal((await send({...c,payload:{...c.payload,reason:'Altered'}})).status,409);
- assert.equal((await send(await command('HOLD_SET',{waiting:true,reason:'Parts pending'}))).body.code,'tracking_hold_policy_required');
+ await db.exec('update zukait_mechanical.settings set hold_mode=null');assert.equal((await send(await command('HOLD_SET',{waiting:true,reason:'Parts pending'}))).body.code,'tracking_hold_policy_required');
  await db.exec("update zukait_mechanical.settings set hold_mode='STATUS_ONLY'");for(const waiting of [true,false]){result=await send(await command('HOLD_SET',{waiting,reason:waiting?'Parts pending':'Parts received'}));assert.equal(result.status,200,JSON.stringify(result));assert.equal((await view()).tracking.waitingForParts,waiting)}
  for(const date of ['2026-10-24',null])assert.equal((await send(await command('PROMISE_SET',{date,reason:'Schedule reviewed'}))).status,200);
  assert.equal((await send(await command('PROMISE_SET',{date:'2026-02-30',reason:'QA'}))).body.code,'invalid_promise_date');

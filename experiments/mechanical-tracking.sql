@@ -1,7 +1,7 @@
 -- Disposable fixture candidate ONLY. No generated/applied migration.
 alter table zukait_mechanical.settings add column tracking_enabled boolean not null default false;
 alter table zukait_mechanical.settings add column priority_values jsonb not null default '[]' check(jsonb_typeof(priority_values)='array');
-alter table zukait_mechanical.settings add column hold_mode text default null check(hold_mode is null or hold_mode='STATUS_ONLY');
+alter table zukait_mechanical.settings add column hold_mode text default 'STATUS_ONLY' check(hold_mode is null or hold_mode='STATUS_ONLY');
 create table zukait_mechanical.tracking (
  checklist_id uuid primary key references zukait_mechanical.checklists(id),priority text,promise_date date,waiting_for_parts boolean not null default false,
  updated_by text not null references public.staff_credentials(user_id),updated_at timestamptz not null default clock_timestamp()
