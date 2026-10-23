@@ -1,6 +1,6 @@
 {
-  "versionName": "V363",
-  "versionCode": 326,
+  "versionName": "V364",
+  "versionCode": 327,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
   "sourceCommit": "1f2d184063f4bc638118af20e3284c94fcf90ee1",
@@ -49,7 +49,7 @@
   },
   "verificationSummary": "V363 cleans Purchase Completed print layout: one OMR label beside confirmed total; exact three-decimal row prices without repeated currency; right-aligned prices, clear vehicle/registration metadata and dedicated total block; entirely empty Vendor/Agreed columns hidden while populated fields remain. Vehicle/model repetition removed. Calculation and purchase records are unchanged. Tests cover sample total 37.130 OMR, optional columns, missing prices, escaping and read-only behavior. Source-specific CI passed the one-page A4 PDF sample, long text/column layout and print-preview checks; signed APK, browser, financial and sync checks passed. No backend or schema changes. Physical-device acceptance and fresh restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": false,
-  "releaseChangeScope": "clean-purchase-completed-print",
+  "releaseChangeScope": "checklist-job-odometer-prefill",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
@@ -116,5 +116,7 @@
   "singlePurchaseCardAuthorizedByOwner": true,
   "singlePurchaseCardAuthorization": "Owner reported duplicate Purchase Expenses and Total Purchase Amount cards and instructed Fix; retain one period-aware Parts + Sublet purchase card.",
   "purchasePrintCleanupAuthorizedByOwner": true,
-  "purchasePrintCleanupAuthorization": "Owner requested a nice clean Purchase Completed print page with number-only row amounts and OMR only on the final amount."
+  "purchasePrintCleanupAuthorization": "Owner requested a nice clean Purchase Completed print page with number-only row amounts and OMR only on the final amount.",
+  "checklistOdometerPrefillAuthorizedByOwner": true,
+  "checklistOdometerPrefillAuthorization": "Owner requested checklist Job Card opening to prefill kilometers automatically and allow editing."
 }

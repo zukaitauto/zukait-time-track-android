@@ -530,14 +530,14 @@
             linkedChecklist=r;
             linkedApprovalValid=!!result.external_approval?.valid;
             document.getElementById('rc-direct-checklist-clear').hidden=false;
-            for(const k of ['make','model','registration','year','vin','customer','contact','claim','remarks']){
-              if(form.elements.namedItem(k))form.elements.namedItem(k).value=String(d[k]||'');
+            for(const k of ['make','model','registration','year','vin','customer','contact','claim','remarks','odometer']){
+              if(form.elements.namedItem(k))form.elements.namedItem(k).value=String(d[k]??'');
             }
             type.value=r.job_type||'INSURANCE';type.disabled=true;type.onchange();
             form.elements.namedItem('odometer_unit').value=String(d.odometer_unit||'KM');
             if(r.insurance_id&&form.elements.insurance_id)form.elements.insurance_id.value=String(r.insurance_id);
             const note=document.getElementById('rc-direct-checklist-note');
-            note.textContent='Selected '+r.rc_no+'. Original checklist odometer: '+(d.odometer||'Not recorded')+' '+(d.odometer_unit||'KM')+'. Enter the new Job Card reading; the original remains unchanged.'+(linkedApprovalValid?' Existing insurance approval verified.':' Approval must be completed before a linked Job Card can be opened.');
+            note.textContent='Selected '+r.rc_no+'. Original checklist odometer: '+(d.odometer||'Not recorded')+' '+(d.odometer_unit||'KM')+'. The Job Card reading is filled from this checklist. You can edit the reading and unit; the original checklist remains unchanged.'+(linkedApprovalValid?' Existing insurance approval verified.':' Approval must be completed before a linked Job Card can be opened.');
           }catch(err){error(err);}
         });
       }catch(err){searchResults.textContent='Checklist search failed: '+String(err.message||err);}
