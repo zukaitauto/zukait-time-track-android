@@ -64,3 +64,5 @@ dependencies {
 // V365: Verify readable insurer labels in the coordinated web and Android release.
 
 // V367: Verify sandbox-external navigation with bounded browser setup time.
+
+// V368: Verify report totals and print navigation at phone/tablet widths.

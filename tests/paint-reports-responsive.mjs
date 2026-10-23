@@ -17,7 +17,7 @@ try{
   await page.evaluate(()=>{openPaintReports();document.getElementById('paintReportMonth').value='2026-10';paintReportSetMonth()});
   assert.equal(await page.locator('.paint-type-report').count(),3);
   assert.equal(await page.locator('.paint-type-report[open]').count(),0);
-  assert.match(await page.locator('#paintReportResult').innerText,/30.000/);
+  assert.match(await page.locator('#paintReportResult').innerText(),/30.000/);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Report summary must fit the phone');
   await page.locator('.paint-type-report summary').filter({hasText:'Base Coat'}).click();
   assert.equal(await page.locator('.paint-type-report[open]').count(),1);
