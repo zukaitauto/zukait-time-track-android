@@ -17,6 +17,9 @@ let serve,
   lastRpc, authProbes=0;
 const admin = {
   from: (table) => {
+    if(table==="workshop_state"){
+      const chain={select:()=>chain,eq:()=>chain,single:async()=>({data:{data:{jobs:[{no:"QA-JC",delivered:true,status:"Delivered",deliveredAt:1792162800000,deliveryDate:"2026-10-16",amount:999,private:"SECRET"}]}},error:null})};return chain;
+    }
     assert.equal(table, "staff_sessions");
     const chain = {
       select: () => chain,
@@ -140,6 +143,7 @@ for (const op of ["CAPABILITIES", "MASTER", "LIST", "GET", "CREATE", "EDIT", "MO
   assert.deepEqual(r.body.insurance, {can_prepare:false, can_revoke:false, approval_valid:true});
   assert.deepEqual(r.body.job_creation, {can_create:true});
   assert.equal(r.body.record.details.remarks, "Checklist observation");
+  if(op==="GET")assert.deepEqual(r.body.linked_job,{no:"QA-JC",delivered:true,status:"Delivered",deliveredAt:1792162800000,deliveryDate:"2026-10-16"},"Checklist delivery metadata must be narrow and server-authoritative");
   assert.equal(r.body.movements[0].to_location, "VWC");
   assert.equal(r.body.audit.length, 1);
   assert.ok(!JSON.stringify(r.body).includes("999"), op + " financial leak");
