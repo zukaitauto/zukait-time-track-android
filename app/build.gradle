@@ -67,4 +67,4 @@ dependencies {
 
 // V368: Validate Paint Reports with reliable HTTPS browser dependency setup.
 
-// V369: Verify delivery metadata read boundaries and updated checklist status expectations.
+// V369: Verify additive delivery fields preserve authorized API responses and privacy.

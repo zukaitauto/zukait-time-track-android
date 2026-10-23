@@ -178,7 +178,7 @@ assert.equal(r.status, 403); // Edge allowlist never overrides SQL authorization
 actor = {...actor, role:"Manager"};
 rpcResult = {data:sensitive, error:null};
 r = await call({action:"reception", command:{operation:"GET"}});
-assert.deepEqual(r.body, sensitive); // Existing authorized roles retain their response.
+assert.deepEqual(r.body, {...sensitive,linked_job:{no:'QA-JC',delivered:true,status:'Delivered',deliveredAt:1792162800000,deliveryDate:'2026-10-16'}}); // Existing authorized fields are preserved alongside narrow delivery metadata.
 console.log(`Receptionist API: 10 allowed operations, ${denials + 1} forbidden requests, server identity, response privacy and SQL guard preservation passed.`);
 actor = null;
 r = await call({ action: "reception", command: { operation: "LIST" } });
