@@ -1,6 +1,6 @@
 {
-  "versionName": "V366",
-  "versionCode": 329,
+  "versionName": "V367",
+  "versionCode": 330,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
   "sourceCommit": "d00440a516ec69434a2cc772ed8867a8a7ec5c8e",
@@ -49,7 +49,7 @@
   },
   "verificationSummary": "V366 displays Monthly Expense, Custom Range and Job Card Cost consumables reports as compact expandable Job Card summaries in ascending numeric Job Card order. Each summary includes vehicle/registration, material-line count and total actual cost. The overall filtered expense total, inclusive filters, all material drilldowns, print expansion and monthly comparison remain. Tests exercise multiple actual records per job, numeric JC2 before JC10 order, date filtering, void/draft exclusion, filtered totals, comparison retention and unchanged state. Source-specific signed Android, Reception browser/responsive, financial and sync checks passed. No backend, schema or workshop data changes. Physical-device acceptance and fresh restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": false,
-  "releaseChangeScope": "consumables-job-card-summary",
+  "releaseChangeScope": "materials-preview-navigation-and-painter-totals",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
@@ -122,5 +122,7 @@
   "insurerNameHighlightAuthorizedByOwner": true,
   "insurerNameHighlightAuthorization": "Owner requested insurance company names to be slightly bold or colored for faster recognition on Approval Waiting Insurance screen.",
   "consumablesJobSummaryAuthorizedByOwner": true,
-  "consumablesJobSummaryAuthorization": "Owner requested the long consumables report to sort by Job Card number with total consumables."
+  "consumablesJobSummaryAuthorization": "Owner requested the long consumables report to sort by Job Card number with total consumables.",
+  "materialsPreviewPainterTotalsAuthorizedByOwner": true,
+  "materialsPreviewPainterTotalsAuthorization": "Owner reported Materials print Back and Close not working and requested Painter-wise total amounts with full list opening only after selecting a painter."
 }

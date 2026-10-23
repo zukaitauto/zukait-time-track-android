@@ -110,6 +110,8 @@ jobs:
       - run: node tests/reception-backup-export-safety.mjs
       - run: node tests/reception-release-publish-safety.mjs
       - run: npx playwright install --with-deps chromium webkit
+      - name: Verify print preview navigation outside the sandbox on Chromium and WebKit
+        run: node tests/print-navigation-browser.mjs
       - name: Verify shared dashboard cards on phones and desktop
         run: node tests/shared-dashboard-cards.mjs && node tests/shared-dashboard-cards-responsive.mjs
       - name: Save shared dashboard card previews
