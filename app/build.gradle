@@ -62,3 +62,5 @@ dependencies {
 // Verify a concurrent shared revision cannot substitute unsynced values in monthly lists.
 
 // V365: Verify readable insurer labels in the coordinated web and Android release.
+
+// V367: Verify sandbox-external navigation with bounded browser setup time.
