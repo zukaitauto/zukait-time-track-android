@@ -1,8 +1,7 @@
 {
   "approved": true,
-  "release": "V357",
-  "sourceCommit": "deabc6b0f93047c634935fd9acff82e327470983",
-  "publishNonce": "71fe299d4b374f894c2f2edc20abdb09de34284d8fff7b88",
-  "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
-  "approvedAt": "2026-10-21T19:18:48Z"
+  "sourceCommit": "ad343c965908de771ba06a63bf0659780fc13b5a",
+  "release": "V361",
+  "publishNonce": "cards-ad343c965908de771ba06a63bf0659780fc13b5a-v361",
+  "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED."
 }

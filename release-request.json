@@ -3,7 +3,7 @@
   "versionCode": 324,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
-  "sourceCommit": "b3e60356070aa1738b624bc9380369c51144873a",
+  "sourceCommit": "ad343c965908de771ba06a63bf0659780fc13b5a",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-22T15:41:15.336443Z",
-  "publishNonce": "c0c0868be547b392a89c9dd941f2d8c9fa81d98941f910c1",
+  "approvedAt": "2026-10-23T14:52:52.766Z",
+  "publishNonce": "cards-ad343c965908de771ba06a63bf0659780fc13b5a-v361",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -47,16 +47,14 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V360 authorizes Supervisors to add Sublet entries with Date, Description and OMR Amount in the form, client bridge and server. Existing correction permissions, exact milli-OMR amounts, validation, idempotency, audit attribution, concurrent saves and totals are retained and covered by regression tests. Production86 exact readback matches QA20. Only two existing backend permission lists changed; no schema or workshop-record changes. V359 duty-hour Ideal Time fix is retained. Physical-device acceptance and fresh restore remain NOT_RUN. CI and signed APK provenance are pinned by workflow IDs.",
+  "verificationSummary": "V361 introduces a shared raised-card stylesheet across Android and web dashboards. Fixes Invoice/Sublet contrast, normal-flow Close navigation, clearer parts-list/part/invoice/Sublet count labels, pending-work priority and repeated vehicle models in Recent Activity. Preserves role permissions, action routing, counts and all workshop records. Existing spare-parts regressions and new generated dashboard role checks passed locally. Responsive browser checks and previews at 320, 390, 768 and 1280 pixels passed in CI on the final source. Signed APK, role/financial and sync checks passed; public stylesheet packaging was verified. No backend or schema changes for this release. Physical-device acceptance and fresh restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": false,
   "releaseChangeScope": "shared-dashboard-raised-card-readability",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
-    "previousRelease": "release-V359-architecture-v2",
-    "strategy": "Restore complete production85 bundle if needed; publish a higher-version recovery APK with V359 client assets. Preserve all Sublet records, audit history and local queues.",
-    "backendBundleVersion": 85,
-    "backendBundleSha256": "ab64ab292f0284273b95d824602086e2a9ec535f0bf8a85a11f7aa8c9da29bb2",
+    "previousRelease": "release-V360-architecture-v2",
+    "strategy": "Publish a higher-version recovery APK with V360 client assets if required. No backend rollback or data reset is required for this presentation-only release.",
     "dataResetRequired": false
   },
   "releaseBackendChanges": false,
@@ -87,12 +85,12 @@
     "fixturesRevoked": true,
     "workshopRecordsChanged": false
   },
-  "signedAcceptanceRun": 39807016150,
-  "verificationRun": 39807016149,
-  "accountantVerificationRun": 39807016238,
-  "androidBuildRun": 39807016135,
-  "syncVerificationRun": 39807016182,
-  "nativePdfVerificationRun": 39807016176,
+  "signedAcceptanceRun": 39973257584,
+  "verificationRun": 39973257123,
+  "accountantVerificationRun": 39973257418,
+  "androidBuildRun": 39973257373,
+  "syncVerificationRun": 39973257104,
+  "nativePdfVerificationRun": 39973257326,
   "monthlyReadAuthorizedByOwner": true,
   "monthlyReadAuthorization": "Owner requested Fix it properly for monthly read TIMEOUT, reviewed the remaining deployment/publication steps, and explicitly instructed Proceed.",
   "qaMonthlyRead": {
