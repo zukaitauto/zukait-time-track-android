@@ -3,7 +3,7 @@
   "versionCode": 328,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
-  "sourceCommit": "439c7a59d179050d7f3f8f617af5a005fff365da",
+  "sourceCommit": "748cc89f9a699304d9272707142dae997f444c4b",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-23T16:27:06.675Z",
-  "publishNonce": "439c7a59d179050d7f3f8f617af5a005fff365da364",
+  "approvedAt": "2026-10-23T16:37:53.436Z",
+  "publishNonce": "748cc89f9a699304d9272707142dae997f444c4b365",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -47,14 +47,14 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V364 prefills the original checklist odometer reading and unit when selecting an existing checklist in Open Job Card and when opening the pre-approved Job Card from the checklist. Reading and KM/Miles unit remain editable. The original checklist remains unchanged; edited reading is sent separately as job_intake_odometer/job_intake_unit. Existing browser/DOM acceptance verifies prefill, editability, edited reading and unit payload, and clear-selection behavior. Signed APK, Reception browser, financial and sync CI passed for the exact source. No backend/schema changes or workshop record mutations in this client release. Physical-device acceptance and fresh restore remain NOT_RUN.",
+  "verificationSummary": "V365 highlights insurance company names in Reception list rows using bold dark-blue text on a light-blue background. Shared styling covers Approval Waiting Insurance and other Reception lists; long names wrap within the card. Registration, status, click actions and escaped company text remain unchanged. JavaScript validation, signed Android APK, Reception browser/responsive, financial and sync checks passed for the exact source. No backend, schema or workshop data changes. Physical-device acceptance and fresh restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": false,
   "releaseChangeScope": "reception-insurer-name-highlight",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
-    "previousRelease": "release-V363-architecture-v2",
-    "strategy": "Publish a higher-version recovery APK with V363 client assets if required. No backend rollback or data reset.",
+    "previousRelease": "release-V364-architecture-v2",
+    "strategy": "Publish a higher-version recovery APK with V364 client assets if required. No backend rollback or data reset.",
     "dataResetRequired": false
   },
   "releaseBackendChanges": false,
@@ -85,12 +85,12 @@
     "fixturesRevoked": true,
     "workshopRecordsChanged": false
   },
-  "signedAcceptanceRun": 39986383960,
-  "verificationRun": 39986384162,
-  "accountantVerificationRun": 39986384084,
-  "androidBuildRun": 39986384076,
-  "syncVerificationRun": 39986383902,
-  "nativePdfVerificationRun": 39986383711,
+  "signedAcceptanceRun": 39987835303,
+  "verificationRun": 39987835146,
+  "accountantVerificationRun": 39987835401,
+  "androidBuildRun": 39987835167,
+  "syncVerificationRun": 39987835249,
+  "nativePdfVerificationRun": 39987835220,
   "monthlyReadAuthorizedByOwner": true,
   "monthlyReadAuthorization": "Owner requested Fix it properly for monthly read TIMEOUT, reviewed the remaining deployment/publication steps, and explicitly instructed Proceed.",
   "qaMonthlyRead": {
