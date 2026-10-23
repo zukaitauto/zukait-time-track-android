@@ -1004,10 +1004,6 @@
       enabled:()=>window.ZUKAIT_MECHANICAL_ENABLED===true,
       open:openMechanicalWorkspace});
   }
-  // Existing role menus are assigned by scripts loaded after cloud_sync.js.
-  // Install only after those scripts finish; default-off adds no module/RPC.
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>installMechanicalMenu().catch(e=>console.warn('Mechanical menu unavailable',e)),{once:true});
-  else installMechanicalMenu().catch(e=>console.warn('Mechanical menu unavailable',e));
 
   // Rebase only unchanged stale authority. An actual local attempt to change
   // handed-over work or its periods requires review; never discard that queue.
@@ -1224,5 +1220,11 @@
     get syncHealth(){return {online:navigator.onLine,revision:cloudRevision,dirty:cloudDirty,pushing:cloudPushing,pulling:pullInFlight,ready:initialDone,lastSuccessfulSyncAt,lastSyncAgeMs:lastSuccessfulSyncAt?Math.max(0,Date.now()-lastSuccessfulSyncAt):null,lastError:lastSyncError,consecutiveErrors:consecutiveSyncErrors,pendingConflict:!!localStorage.getItem(PENDING_KEY),liveFresh:liveStatusLastFetchedAt>0&&Date.now()-liveStatusLastFetchedAt<7000&&navigator.onLine,liveAgeMs:liveStatusLastFetchedAt?Math.max(0,Date.now()-liveStatusLastFetchedAt):null}},
     get pendingConflict(){try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'null')}catch(_){return null}}
   };
+  // Existing role menus are assigned by scripts loaded after cloud_sync.js.
+  // Keep optional UI startup with host wiring, outside reusable read helpers.
+  if(window.ZUKAIT_MECHANICAL_ENABLED===true){
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>installMechanicalMenu().catch(e=>console.warn('Mechanical menu unavailable',e)),{once:true});
+    else installMechanicalMenu().catch(e=>console.warn('Mechanical menu unavailable',e));
+  }
 })();
 
