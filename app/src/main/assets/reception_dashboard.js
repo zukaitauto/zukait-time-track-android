@@ -88,11 +88,11 @@
       '<option value="missing"'+(filters.missing_only?' selected':'')+'>No promise date ('+safe(counts.no_promise_date??0)+')</option>'+
       '<option value="dated"'+(filters.dated_only?' selected':'')+'>With promise date</option></select></label>':'');
   }
-  function locationBadge(location){const code=String(location||'').toUpperCase();return code==='VIW'||code==='VIG'?'<span class="rdb-location rdb-vig" title="Vehicle in Garage">VIG</span>':code==='VWC'?'<span class="rdb-location rdb-vwc" title="Vehicle With Customer">VWC</span>':'';}
+  function locationBadge(location){const code=String(location||'').toUpperCase();return code==='DELIVERED'?'<span class="rdb-location" style="background:#dcfce7;color:#166534;font-weight:800">Delivered</span>':code==='VIW'||code==='VIG'?'<span class="rdb-location rdb-vig" title="Vehicle in Garage">VIG</span>':code==='VWC'?'<span class="rdb-location rdb-vwc" title="Vehicle With Customer">VWC</span>':'';}
   function rowHtml(row,index){
     const isJob=!!row.job_card,live=!row.delivered&&isJob,canEdit=live&&writable();
     const title=section==="checklists"?safe(row.rc_no):isJob?"JC "+safe(row.job_card):safe(row.rc_no);
-    const date=section==="delivered"?"Delivered: "+(row.delivered_date||"Not recorded"):
+    const date=row.delivered||section==="delivered"?"Delivered: "+(row.delivered_date||"Not recorded"):
       section==="followup"?"Promise: "+(row.promise_date||"No promise date"):
       section==="jobs"?"Created: "+(row.created_at?new Date(row.created_at).toLocaleString('en-GB',{timeZone:'Asia/Muscat'}):'Not recorded'):"Received: "+(row.received_date||row.created_date||"Not recorded");
     const promise=canEdit?
@@ -108,7 +108,7 @@
     return '<div class="rdb-row'+(!isJob?' rdb-checklist-click':'')+'"'+(!isJob?' role="button" tabindex="0" data-rdb="open" data-rc="'+safe(row.rc_no)+'" data-job=""':'')+'><span class="rdb-no">'+(index+1+page*50)+'.</span>'+
       '<div class="rdb-row-content"><b>'+title+' · '+safe(row.vehicle||"Vehicle not recorded")+
       '</b>'+locationBadge(row.location)+'<small>'+safe(row.registration||"Registration not recorded")+' · '+(row.insurance_company?'<span class="rdb-insurer">'+safe(row.insurance_company)+'</span>':safe(row.job_type||''))+
-      (row.rc_no&&isJob?' · '+safe(row.rc_no):'')+'</small><small>'+safe(date.replace(/(\d{4})-(\d{2})-(\d{2})/g,'$3-$2-$1'))+'</small><span class="rdb-state '+(String(row.status).toUpperCase()==='WAITING'?'waiting':String(row.status).toUpperCase()==='APPROVED'?'approved':'neutral')+'">'+safe(row.status==='WAITING'?'Approval Waiting':row.status||'Status not recorded')+'</span>'+(section==='checklists'&&isJob?'<button type="button" data-rdb="open-job" data-job="'+safe(row.job_card)+'">JC Opened · '+safe(row.job_card)+'</button>':'')+promise+'</div>'+
+      (row.rc_no&&isJob?' · '+safe(row.rc_no):'')+'</small><small>'+safe(date.replace(/(\d{4})-(\d{2})-(\d{2})/g,'$3-$2-$1'))+'</small><span class="rdb-state '+(String(row.status).toUpperCase()==='WAITING'?'waiting':String(row.status).toUpperCase()==='APPROVED'?'approved':'neutral')+'">'+safe(row.delivered?'Delivered':row.status==='WAITING'?'Approval Waiting':row.status||'Status not recorded')+'</span>'+(section==='checklists'&&isJob?'<button type="button" data-rdb="open-job" data-job="'+safe(row.job_card)+'">'+(row.delivered?'Delivered · JC ':'JC Opened · ')+safe(row.job_card)+'</button>':'')+promise+'</div>'+
       '<div class="rdb-row-actions">'+open+deliver+(isJob&&(!row.delivered||role()==='Manager')?'<button type="button" data-rdb="edit-job" data-job="'+safe(row.job_card)+'">Edit Job Card</button>':'')+'</div></div>';
   }
   function listHtml(){

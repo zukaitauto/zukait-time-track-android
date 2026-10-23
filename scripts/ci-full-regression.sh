@@ -165,6 +165,7 @@ node tests/technician-workload.mjs
 
 
 node tests/print-navigation.mjs
+node tests/reception-delivered-status.mjs
 
 node tests/spare-parts-expense-filters.mjs
 node tests/manager-single-purchase-card.mjs

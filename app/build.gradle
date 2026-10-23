@@ -12,8 +12,8 @@ android {
         targetSdk 35
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
-        versionCode 331
-        versionName "V368" // Paint Reports by month, custom period and paint type.
+        versionCode 332
+        versionName "V369" // Delivered status in checklist, Reception lists and Job Card details.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }

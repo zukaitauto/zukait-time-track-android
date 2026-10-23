@@ -405,7 +405,19 @@
       "</span>"
     );
   }
+  function checklistDelivered(r) {
+    const j=current?.record?.rc_no===r.rc_no?current.linked_job:null;
+    return r.delivered===true||j?.delivered===true||String(j?.status||'').toUpperCase()==='DELIVERED';
+  }
+  function checklistDeliveryDate(r) {
+    const j=current?.record?.rc_no===r.rc_no?current.linked_job:null;
+    const value=j?.deliveryDate||j?.deliveredAt||r.delivered_date||r.delivered_at;
+    if(!value)return '';
+    const n=typeof value==='number'?value:/^\d+$/.test(String(value))?Number(value):Date.parse(value);
+    return Number.isFinite(n)?new Date(n).toLocaleDateString('en-GB',{timeZone:'Asia/Muscat'}):'';
+  }
   function badges(r) {
+    if(checklistDelivered(r))return badge('Delivered')+(checklistDeliveryDate(r)?badge(checklistDeliveryDate(r)):'');
     return (
       badge(r.location) + (r.released_date?badge("Vehicle Released"):r.repair_status&&r.repair_status!=="PENDING"?badge(r.repair_status):"") +
       (r.outcome
@@ -1026,7 +1038,15 @@
   }
   async function fetchRecord(no) {
     current = await call({ operation: "GET", rc_no: no });
-    return current;
+    const loaded=current;
+    if(loaded.record?.job_card){
+      try{
+        const result=await apiAction({action:'job_card_edit',operation:'GET',jobCard:loaded.record.job_card});
+        if(String(result.job?.no)===String(loaded.record.job_card))loaded.linked_job=result.job;
+        else loaded.delivery_status_unavailable=true;
+      }catch(_){loaded.delivery_status_unavailable=true;}
+    }
+    return loaded;
   }
 
   // Presentation-only detail layout. Do not alter saved values or documentHtml().
@@ -1047,9 +1067,10 @@
       '</strong><span class="rc-cl-type">' + esc(r.job_type || "INSURANCE") +
       '</span><b>' + esc(model || "Vehicle details not recorded") + '</b></div>' +
       '<div><small>Vehicle location</small><b>' +
-      esc(labels[r.location] || r.location || "Not recorded") +
+      esc(checklistDelivered(r)?"Delivered":labels[r.location] || r.location || "Not recorded") +
       '</b><small>Case status</small><b>' +
-      esc(labels[r.outcome || r.approval_status] || r.outcome || r.approval_status || "Not recorded") +
+      esc(checklistDelivered(r)?"Delivered":labels[r.outcome || r.approval_status] || r.outcome || r.approval_status || "Not recorded") +
+      (checklistDelivered(r)?'</b><small>Delivery date</small><b>'+esc(checklistDeliveryDate(r)||"Not recorded")+'</b><small>Insurance approval</small><b>'+esc(labels[r.approval_status]||r.approval_status||"Not recorded"):"") +
       '</b></div></div>';
   }
   function checklistDetails(r, d) {
@@ -1107,6 +1128,7 @@
     shell(
       r.rc_no + " · Reception Checklist",
       checklistSummary(r, d) + badges(r) +
+        (current.delivery_status_unavailable?'<p class="notice">Current delivery status could not be checked. The garage location shown is the saved checklist location; reconnect and reopen to verify.</p>':'') +
         (current.cancellation?.history ? '<div class="rc-box"><b>Job Card cancelled · '+esc(current.cancellation.history.cancellation_date)+'</b><p>'+esc(current.cancellation.history.reason)+' · '+esc(current.cancellation.history.actor_name)+' ('+esc(current.cancellation.history.actor_id)+')</p><p>History and costs retained. Vehicle location remains '+esc(r.location)+'.</p></div>' : '') +
         '<div class="rc-actions rc-cl-actions">' +
         (r.can_edit ? '<button data-rc-action="edit">Edit</button>' : "") +

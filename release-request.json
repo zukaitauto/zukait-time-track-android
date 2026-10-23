@@ -1,6 +1,6 @@
 {
-  "versionName": "V368",
-  "versionCode": 331,
+  "versionName": "V369",
+  "versionCode": 332,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
   "sourceCommit": "f497e65a454b79e08ef561f36f7363bb1dee542d",
@@ -49,7 +49,7 @@
   },
   "verificationSummary": "V368 adds Reports to the Paint menu for Manager/Supervisor. Month selection fills inclusive From/To dates; custom periods and paint-type filters cover Base Coat, Pearl Coat, 2K Paint and saved other types. Read-only receipt/return events use Oman dates, receipt dates for incoming quantities/costs and return dates for credits. Each expandable type shows received/returned/net litres and costs, Job Cards, PO/vendor detail and Print/PDF with working shared navigation. Waiting/NIL/voided orders and voided returns are excluded; unknown prices and undated entries are explicitly flagged. Tests cover historical receipts/current returns, additional orders, boundaries, type/custom filters, leap months, pending prices, roles and unchanged data. Phone/tablet widths 360/390/768 and shared print preview passed. Exact-source signed Android, Reception browser/responsive, financial, sync and native PDF checks passed. CI dependency mirror uses standard HTTPS Ubuntu archive after Azure HTTP package-download timeouts. No backend/schema/data changes. Physical-device acceptance and fresh restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": false,
-  "releaseChangeScope": "paint-reports-month-period-type",
+  "releaseChangeScope": "delivered-status-checklist-jobcard",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
@@ -57,7 +57,7 @@
     "strategy": "Publish a higher-version recovery APK with V367 client assets if required. No backend rollback or data reset.",
     "dataResetRequired": false
   },
-  "releaseBackendChanges": false,
+  "releaseBackendChanges": true,
   "managerLeaveCorrectionsAuthorizedByOwner": true,
   "managerLeaveCorrectionsAuthorization": "Owner requested Manager dashboard forgotten leave marking and deletion of mistaken leave, and explicitly confirmed Managers may select past dates.",
   "hiddenReadOptimizationAuthorizedByOwner": true,
@@ -126,5 +126,7 @@
   "materialsPreviewPainterTotalsAuthorizedByOwner": true,
   "materialsPreviewPainterTotalsAuthorization": "Owner reported Materials print Back and Close not working and requested Painter-wise total amounts with full list opening only after selecting a painter. Owner explicitly instructed Release after all fix complete; both fixes and exact-source acceptance are complete before publication.",
   "paintReportsAuthorizedByOwner": true,
-  "paintReportsAuthorization": "Owner requested Reports in the Paint menu for monthly and particular periods, with Base Coat, Pearl Coat, 2K and other paint type totals. Existing instruction is to release after all fixes are complete."
+  "paintReportsAuthorization": "Owner requested Reports in the Paint menu for monthly and particular periods, with Base Coat, Pearl Coat, 2K and other paint type totals. Existing instruction is to release after all fixes are complete.",
+  "deliveredStatusAuthorizedByOwner": true,
+  "deliveredStatusAuthorization": "Owner requested delivered vehicles to show Delivered in checklist and Job Card, and confirmed 21224.AA / JC12078 was delivered 16 October 2026 at 7 PM Oman time. Original conflicting work history was explicitly preserved and noted for review."
 }

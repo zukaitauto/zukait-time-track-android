@@ -41,7 +41,7 @@ function safeJob(j,rc) {
  received_at:rc?.received_at||"",received_date:rc?.received_date||"",
  created_date:omanDate(j.createdAt),
  delivered_date:omanDate(j.deliveredAt),delivered_at:Number(j.deliveredAt||0),promise_date:validPromiseDate(j.promiseDate)?j.promiseDate:"",
- location:text(rc?.location||j.receptionLocation),outcome:text(rc?.outcome),
+ location:j.delivered?'DELIVERED':text(rc?.location||j.receptionLocation),outcome:text(rc?.outcome),
  approval_status:text(rc?.approval_status),
  status:j.delivered?"Delivered":text(j.status||"Open"),delivered:!!j.delivered,
  qc_revision:Number(j.qcWorkflow?.revision||0)};
@@ -74,6 +74,8 @@ export function receptionDashboardProjection(data,receptions,opts={}) {
   if(!existing||createdTime(j.createdAt)>createdTime(existing.createdAt))uniqueJobs.set(key,j);
  }
  const jobs=[...uniqueJobs.values()].map(j=>({raw:j,row:safeJob(j,byRc.get(text(j.receptionNo)))}));
+ const deliveredByJob=new Map(jobs.filter(x=>x.row.delivered).map(x=>[norm(x.row.job_card),x.row]));
+ for(const row of rows){const job=deliveredByJob.get(norm(row.job_card));if(job)Object.assign(row,{delivered:true,delivered_date:job.delivered_date,delivered_at:job.delivered_at,status:'Delivered',location:'DELIVERED'});}
  const allJobs=jobs.map(x=>x.row),activeJobs=jobs.filter(x=>!x.raw.delivered).map(x=>x.row);
  const checklists=rows.filter(r=>!r.direct_job_only).sort(sortRc);
  const pendingRepair=r=>r.repair_status==="PENDING"&&!r.released_date;

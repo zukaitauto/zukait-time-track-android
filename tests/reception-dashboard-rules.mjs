@@ -117,3 +117,13 @@ assert.equal(preserved.jobs.find(j=>j.no==="JC100").promiseDate,"2026-10-14");
 assert.equal(preserved.jobs.find(j=>j.no==="JC100").promiseAudit.length,1);
 assert.equal(JSON.stringify(start).includes("199.5"),false,"No expense data exposed to Reception");
 console.log("Reception dashboard: all ten categories, creation-time sorting, month/date ranges, RC/JC/registration search, shared QC/delivery authority, no-date follow-up, audited promise date and old-client preservation passed.");
+
+const deliveredCase=projection({section:'checklists',search:'RC0013'}).rows[0];
+assert.equal(deliveredCase.status,'Delivered');
+assert.equal(deliveredCase.location,'DELIVERED');
+assert.equal(deliveredCase.delivered,true);
+assert.equal(deliveredCase.delivered_date,'2026-10-11');
+assert.equal(projection({section:'jobs',search:'JC199'}).rows[0].location,'DELIVERED');
+assert.equal(cases.find(r=>r.rc_no==='RC0013').location,'VIW','Projection must preserve intake history');
+assert.equal(jobs.find(j=>j.no==='JC199').delivered,true);
+console.log('Delivered checklist and Job Card projections agree without rewriting intake locations');
