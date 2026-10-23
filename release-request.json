@@ -3,7 +3,7 @@
   "versionCode": 330,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
-  "sourceCommit": "d00440a516ec69434a2cc772ed8867a8a7ec5c8e",
+  "sourceCommit": "20a1ca3555910c65fea3463bf4f2e49366fb1877",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-23T16:59:08.778Z",
-  "publishNonce": "d00440a516ec69434a2cc772ed8867a8a7ec5c8e366",
+  "approvedAt": "2026-10-23T17:19:47.750Z",
+  "publishNonce": "20a1ca3555910c65fea3463bf4f2e49366fb1877367",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -47,14 +47,14 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V366 displays Monthly Expense, Custom Range and Job Card Cost consumables reports as compact expandable Job Card summaries in ascending numeric Job Card order. Each summary includes vehicle/registration, material-line count and total actual cost. The overall filtered expense total, inclusive filters, all material drilldowns, print expansion and monthly comparison remain. Tests exercise multiple actual records per job, numeric JC2 before JC10 order, date filtering, void/draft exclusion, filtered totals, comparison retention and unchanged state. Source-specific signed Android, Reception browser/responsive, financial and sync checks passed. No backend, schema or workshop data changes. Physical-device acceptance and fresh restore remain NOT_RUN.",
+  "verificationSummary": "V367 moves shared print preview Back, Close and Print controls into the host overlay outside the sandboxed report iframe; embedded legacy navigation is removed. Materials previews close safely without popup history/window.close and restore focus. Painter-wise reports start with expandable per-painter totals, distinct staff-ID grouping, job and material counts, and full filtered material detail sorted by Job Card. Print preview preserves painter expansion state. Navigation unit tests and real Chromium/WebKit tests passed for Back/Close/Print, opener focus and Escape; Consumables tests cover costs, same-name staff isolation, filters, drilldown and unchanged state. Signed APK, Reception browser/responsive, financial, native PDF and sync CI passed for exact final source. Browser setup timeout bounds stalled runner installation. No backend/schema/data changes. Physical-device acceptance and fresh restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": false,
   "releaseChangeScope": "materials-preview-navigation-and-painter-totals",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
-    "previousRelease": "release-V365-architecture-v2",
-    "strategy": "Publish a higher-version recovery APK with V365 client assets if required. No backend rollback or data reset.",
+    "previousRelease": "release-V366-architecture-v2",
+    "strategy": "Publish a higher-version recovery APK with V366 client assets if required. No backend rollback or data reset.",
     "dataResetRequired": false
   },
   "releaseBackendChanges": false,
@@ -85,12 +85,12 @@
     "fixturesRevoked": true,
     "workshopRecordsChanged": false
   },
-  "signedAcceptanceRun": 39990809493,
-  "verificationRun": 39990809467,
-  "accountantVerificationRun": 39990809464,
-  "androidBuildRun": 39990809480,
-  "syncVerificationRun": 39990809484,
-  "nativePdfVerificationRun": 39990809592,
+  "signedAcceptanceRun": 39993134828,
+  "verificationRun": 39993134803,
+  "accountantVerificationRun": 39993134864,
+  "androidBuildRun": 39993134784,
+  "syncVerificationRun": 39993134779,
+  "nativePdfVerificationRun": 39993134772,
   "monthlyReadAuthorizedByOwner": true,
   "monthlyReadAuthorization": "Owner requested Fix it properly for monthly read TIMEOUT, reviewed the remaining deployment/publication steps, and explicitly instructed Proceed.",
   "qaMonthlyRead": {
@@ -124,5 +124,5 @@
   "consumablesJobSummaryAuthorizedByOwner": true,
   "consumablesJobSummaryAuthorization": "Owner requested the long consumables report to sort by Job Card number with total consumables.",
   "materialsPreviewPainterTotalsAuthorizedByOwner": true,
-  "materialsPreviewPainterTotalsAuthorization": "Owner reported Materials print Back and Close not working and requested Painter-wise total amounts with full list opening only after selecting a painter."
+  "materialsPreviewPainterTotalsAuthorization": "Owner reported Materials print Back and Close not working and requested Painter-wise total amounts with full list opening only after selecting a painter. Owner explicitly instructed Release after all fix complete; both fixes and exact-source acceptance are complete before publication."
 }
