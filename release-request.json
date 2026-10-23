@@ -3,7 +3,7 @@
   "versionCode": 325,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
-  "sourceCommit": "ad343c965908de771ba06a63bf0659780fc13b5a",
+  "sourceCommit": "b3337d3055b4dbc0c51bb6ec42ee0eb7c0906ef2",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-23T14:52:52.766Z",
-  "publishNonce": "ad343c965908de771ba06a63bf0659780fc13b5a361",
+  "approvedAt": "2026-10-23T15:55:18.234Z",
+  "publishNonce": "b3337d3055b4dbc0c51bb6ec42ee0eb7c0906ef2362",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -47,14 +47,14 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V361 introduces a shared raised-card stylesheet across Android and web dashboards. Fixes Invoice/Sublet contrast, normal-flow Close navigation, clearer parts-list/part/invoice/Sublet count labels, pending-work priority and repeated vehicle models in Recent Activity. Preserves role permissions, action routing, counts and all workshop records. Existing spare-parts regressions and new generated dashboard role checks passed locally. Responsive browser checks and previews at 320, 390, 768 and 1280 pixels passed in CI on the final source. Signed APK, role/financial and sync checks passed; public stylesheet packaging was verified. No backend or schema changes for this release. Physical-device acceptance and fresh restore remain NOT_RUN.",
+  "verificationSummary": "V362 removes the duplicate monthly Total Purchase Amount card from Manager Workshop Performance. Retains one Purchase Expenses card with Today/This Month and Parts + Sublet subtitle, using existing period-aware calculations and matching detail period. Regression tests exercise repeated renders, removal of old duplicate nodes, mixed-date parts/sublet totals, matching drilldown filters and unchanged records. No backend, schema or financial-record changes. Physical-device acceptance and fresh restore remain NOT_RUN. Signed APK and source-specific CI evidence are pinned by workflow IDs.",
   "productionBackendDeploymentPerformed": false,
   "releaseChangeScope": "single-manager-purchase-expense-card",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
-    "previousRelease": "release-V360-architecture-v2",
-    "strategy": "Publish a higher-version recovery APK with V360 client assets if required. No backend rollback or data reset is required for this presentation-only release.",
+    "previousRelease": "release-V361-architecture-v2",
+    "strategy": "Publish a higher-version client recovery APK with V361 assets if needed; no backend rollback or data reset is required.",
     "dataResetRequired": false
   },
   "releaseBackendChanges": false,
@@ -85,12 +85,12 @@
     "fixturesRevoked": true,
     "workshopRecordsChanged": false
   },
-  "signedAcceptanceRun": 39973257584,
-  "verificationRun": 39973257123,
-  "accountantVerificationRun": 39973257418,
-  "androidBuildRun": 39973257373,
-  "syncVerificationRun": 39973257104,
-  "nativePdfVerificationRun": 39973257326,
+  "signedAcceptanceRun": 39982299973,
+  "verificationRun": 39982300190,
+  "accountantVerificationRun": 39982300046,
+  "androidBuildRun": 39982299996,
+  "syncVerificationRun": 39982300248,
+  "nativePdfVerificationRun": 39982300040,
   "monthlyReadAuthorizedByOwner": true,
   "monthlyReadAuthorization": "Owner requested Fix it properly for monthly read TIMEOUT, reviewed the remaining deployment/publication steps, and explicitly instructed Proceed.",
   "qaMonthlyRead": {
