@@ -1192,6 +1192,7 @@
       (current.external_approval?.can_record && !draft.length ? '<div class="rc-box"><h4>Vehicle Already Approved by Insurance</h4><p>Record the issued approval document reference and evidence. No new quotation is required. Preliminary parts need the quotation approval flow.</p><form id="rc-external-approval">' + input('reference','Issued Approval Reference','',true) + input('approval_date','Approval Date',new Date(Date.now()+4*3600000).toISOString().slice(0,10),true,'date') + input('evidence','Approval Document Reference / Evidence','',true) + input('reason','Verification Notes','',true) + '<button type="submit">Record Existing Insurance Approval</button></form></div>' : '') +
       (current.external_approval?.valid && !r.job_card && !r.outcome ? '<div class="rc-box"><h4>Open Pre-approved Insurance Job Card</h4><form id="rc-external-job">' + input('cash_amount','Cash Amount (OMR) — optional','',false,'number') + input('job_card','Job Card Number','',true) +
       (["Manager","Supervisor"].includes(user()?.role)?input('promise_date','Promise Date (optional)','',false,'date'):'') +
+      input('odometer','Job Card KM / Miles Reading',r.details?.odometer??'') + select('odometer_unit','Reading Unit',[['KM','KM'],['Miles','Miles']],r.details?.odometer_unit||'KM') + '<p>Reading copied from the checklist. Edit it if needed; the original checklist reading stays unchanged.</p>' +
       input('reason','Creation Notes','',true) + '<p>Vehicle location remains '+esc(r.location)+'. Parts continue through the existing Job Card workflow.</p><button type="submit">Open Approved Job Card</button></form></div>' : '') +
       (r.job_card ? '<div class="rc-box"><h4>Linked Job Card ' + esc(r.job_card) + '</h4>' + (limited ? '<p>Approved parts were transferred by the server. Use Vehicle Delivery once work and QC are complete.</p>' : '<p>Continue assignments, parts and repairs through the existing Job Card workflow.</p><p>' + esc(current.job_creation?.transfers?.length || 0) + ' approved part items transferred.</p>') + '</div>' : '') +
       (!limited && info.can_prepare ? '<div class="rc-box"><h4>Prepare / Link Estimate</h4><div class="rc-actions"><button data-rc-action="rc-estimate">+ New Estimate</button></div><p>Save the quotation and allow sync to finish before linking it here.</p><form id="rc-link-estimate">' +
@@ -1221,7 +1222,7 @@
         const f=new FormData(externalJob);
         const jc=String(f.get('job_card')).trim().toUpperCase();
         const result=await mutate({operation:'CREATE_EXTERNAL_JOB',cash_amount:String(f.get('cash_amount')||'').trim(),rc_no:r.rc_no,expected_revision:r.revision,
-          job_card:jc,reason:String(f.get('reason')).trim()});
+          job_card:jc,job_intake_odometer:String(f.get('odometer')||'').trim(),job_intake_unit:String(f.get('odometer_unit')||'KM'),reason:String(f.get('reason')).trim()});
         if(!result)return;
         const date=String(f.get('promise_date')||'');
         if(date&&window.zukaitReceptionDashboard?.savePromise){

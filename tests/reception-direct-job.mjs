@@ -129,7 +129,7 @@ assert.equal(form.elements.odometer.value,'');
 assert.match(w.document.getElementById('rc-direct-checklist-note').textContent,/NEW reception intake/);
 w.fetch=fetchBeforeSearch;
 w.me={id:'QA-RC',role:'Receptionist'};
-record={rc_no:'RC-QA-INSURANCE',details:{make:'Toyota',model:'Camry'},job_type:'INSURANCE',location:'VWC',approval_status:'APPROVED',revision:2};
+record={rc_no:'RC-QA-INSURANCE',details:{make:'Toyota',model:'Camry',odometer:'53699',odometer_unit:'KM'},job_type:'INSURANCE',location:'VWC',approval_status:'APPROVED',revision:2};
 // Only authorized staff can record issued approval. Receptionist only creates.
 await w.zukaitReception.open();
 // Go through the public list/view events with a QA record row.
@@ -139,6 +139,9 @@ const oldFetch=w.fetch;w.fetch=async(url,args)=>{
  return oldFetch(url,args);
 };
 await w.zukaitReception.open();await click('view');await click('insurance');
+assert.equal(w.document.getElementById('rc-external-job').elements.odometer.value,'53699');
+assert.equal(w.document.getElementById('rc-external-job').elements.odometer_unit.value,'KM');
+assert.equal(w.document.getElementById('rc-external-job').elements.odometer.readOnly,false);
 assert.ok(w.document.getElementById('rc-external-job'));assert.equal(w.document.getElementById('rc-external-approval'),null);assert.equal(w.document.getElementById('rc-approval'),null);
 w.me={id:'QA-MGR',role:'Manager'};await w.zukaitReception.open();await click('view');await click('insurance');
 assert.ok(w.document.getElementById('rc-external-approval'));
