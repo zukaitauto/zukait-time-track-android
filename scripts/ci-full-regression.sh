@@ -61,6 +61,7 @@ node tests/v156-id001-preliminary-server-deployment.mjs
 node tests/paint-safety.mjs
 node tests/paint-order-authority.mjs
 node tests/paint-invoice-pending.mjs
+node tests/paint-reports.mjs
 node tests/vehicle-logo-assets.mjs
 node tests/native-update-integrity.mjs
 node tests/native-update-sync-safety.mjs

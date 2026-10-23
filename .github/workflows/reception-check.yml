@@ -113,6 +113,8 @@ jobs:
         timeout-minutes: 5
       - name: Verify print preview navigation outside the sandbox on Chromium and WebKit
         run: node tests/print-navigation-browser.mjs
+      - name: Verify monthly and date-range Paint Reports on phones
+        run: node tests/paint-reports-responsive.mjs
       - name: Verify shared dashboard cards on phones and desktop
         run: node tests/shared-dashboard-cards.mjs && node tests/shared-dashboard-cards-responsive.mjs
       - name: Save shared dashboard card previews

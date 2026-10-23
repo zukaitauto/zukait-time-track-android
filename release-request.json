@@ -1,6 +1,6 @@
 {
-  "versionName": "V367",
-  "versionCode": 330,
+  "versionName": "V368",
+  "versionCode": 331,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
   "sourceCommit": "20a1ca3555910c65fea3463bf4f2e49366fb1877",
@@ -49,7 +49,7 @@
   },
   "verificationSummary": "V367 moves shared print preview Back, Close and Print controls into the host overlay outside the sandboxed report iframe; embedded legacy navigation is removed. Materials previews close safely without popup history/window.close and restore focus. Painter-wise reports start with expandable per-painter totals, distinct staff-ID grouping, job and material counts, and full filtered material detail sorted by Job Card. Print preview preserves painter expansion state. Navigation unit tests and real Chromium/WebKit tests passed for Back/Close/Print, opener focus and Escape; Consumables tests cover costs, same-name staff isolation, filters, drilldown and unchanged state. Signed APK, Reception browser/responsive, financial, native PDF and sync CI passed for exact final source. Browser setup timeout bounds stalled runner installation. No backend/schema/data changes. Physical-device acceptance and fresh restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": false,
-  "releaseChangeScope": "materials-preview-navigation-and-painter-totals",
+  "releaseChangeScope": "paint-reports-month-period-type",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
@@ -124,5 +124,7 @@
   "consumablesJobSummaryAuthorizedByOwner": true,
   "consumablesJobSummaryAuthorization": "Owner requested the long consumables report to sort by Job Card number with total consumables.",
   "materialsPreviewPainterTotalsAuthorizedByOwner": true,
-  "materialsPreviewPainterTotalsAuthorization": "Owner reported Materials print Back and Close not working and requested Painter-wise total amounts with full list opening only after selecting a painter. Owner explicitly instructed Release after all fix complete; both fixes and exact-source acceptance are complete before publication."
+  "materialsPreviewPainterTotalsAuthorization": "Owner reported Materials print Back and Close not working and requested Painter-wise total amounts with full list opening only after selecting a painter. Owner explicitly instructed Release after all fix complete; both fixes and exact-source acceptance are complete before publication.",
+  "paintReportsAuthorizedByOwner": true,
+  "paintReportsAuthorization": "Owner requested Reports in the Paint menu for monthly and particular periods, with Base Coat, Pearl Coat, 2K and other paint type totals. Existing instruction is to release after all fixes are complete."
 }
