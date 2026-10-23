@@ -3,7 +3,7 @@
   "versionCode": 327,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
-  "sourceCommit": "1f2d184063f4bc638118af20e3284c94fcf90ee1",
+  "sourceCommit": "439c7a59d179050d7f3f8f617af5a005fff365da",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-23T16:07:56.578Z",
-  "publishNonce": "1f2d184063f4bc638118af20e3284c94fcf90ee1363",
+  "approvedAt": "2026-10-23T16:27:06.675Z",
+  "publishNonce": "439c7a59d179050d7f3f8f617af5a005fff365da364",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -47,14 +47,14 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V363 cleans Purchase Completed print layout: one OMR label beside confirmed total; exact three-decimal row prices without repeated currency; right-aligned prices, clear vehicle/registration metadata and dedicated total block; entirely empty Vendor/Agreed columns hidden while populated fields remain. Vehicle/model repetition removed. Calculation and purchase records are unchanged. Tests cover sample total 37.130 OMR, optional columns, missing prices, escaping and read-only behavior. Source-specific CI passed the one-page A4 PDF sample, long text/column layout and print-preview checks; signed APK, browser, financial and sync checks passed. No backend or schema changes. Physical-device acceptance and fresh restore remain NOT_RUN.",
+  "verificationSummary": "V364 prefills the original checklist odometer reading and unit when selecting an existing checklist in Open Job Card and when opening the pre-approved Job Card from the checklist. Reading and KM/Miles unit remain editable. The original checklist remains unchanged; edited reading is sent separately as job_intake_odometer/job_intake_unit. Existing browser/DOM acceptance verifies prefill, editability, edited reading and unit payload, and clear-selection behavior. Signed APK, Reception browser, financial and sync CI passed for the exact source. No backend/schema changes or workshop record mutations in this client release. Physical-device acceptance and fresh restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": false,
   "releaseChangeScope": "checklist-job-odometer-prefill",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
-    "previousRelease": "release-V362-architecture-v2",
-    "strategy": "Publish a higher-version recovery APK with V362 client assets if required. No backend rollback or record changes are needed.",
+    "previousRelease": "release-V363-architecture-v2",
+    "strategy": "Publish a higher-version recovery APK with V363 client assets if required. No backend rollback or data reset.",
     "dataResetRequired": false
   },
   "releaseBackendChanges": false,
@@ -85,12 +85,12 @@
     "fixturesRevoked": true,
     "workshopRecordsChanged": false
   },
-  "signedAcceptanceRun": 39984086500,
-  "verificationRun": 39984086290,
-  "accountantVerificationRun": 39984086308,
-  "androidBuildRun": 39984086420,
-  "syncVerificationRun": 39984086531,
-  "nativePdfVerificationRun": 39984086621,
+  "signedAcceptanceRun": 39986383960,
+  "verificationRun": 39986384162,
+  "accountantVerificationRun": 39986384084,
+  "androidBuildRun": 39986384076,
+  "syncVerificationRun": 39986383902,
+  "nativePdfVerificationRun": 39986383711,
   "monthlyReadAuthorizedByOwner": true,
   "monthlyReadAuthorization": "Owner requested Fix it properly for monthly read TIMEOUT, reviewed the remaining deployment/publication steps, and explicitly instructed Proceed.",
   "qaMonthlyRead": {
