@@ -3,7 +3,7 @@
   "versionCode": 332,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
-  "sourceCommit": "f497e65a454b79e08ef561f36f7363bb1dee542d",
+  "sourceCommit": "33558d7e31a12fdc70086435b11534e56bda8df3",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-23T17:53:40.155Z",
-  "publishNonce": "f497e65a454b79e08ef561f36f7363bb1dee542d368",
+  "approvedAt": "2026-10-23T18:18:14.466Z",
+  "publishNonce": "33558d7e31a12fdc70086435b11534e56bda8df3369",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -32,11 +32,11 @@
         "verificationBasis": "Read-only production verification; unchanged staff-auth8. No authentication deployment."
       },
       "workshop-api": {
-        "version": 86,
-        "bundleSha256": "4f48d646ef02d3c99f915dfa6c618685d9009523699280b4297852c8a7f350a0",
+        "version": 87,
+        "bundleSha256": "29c737e6f9810c8c1373c552e40f9deffea42c2d1b395a11498cfd2b9befe1bd",
         "verifiedFileMatch": true,
         "repositorySourceMatchesDeployed": false,
-        "verificationBasis": "Complete production86 readback matches tested QA20 bundle exactly. Production85 preserved except the Supervisor sublet_add permission in the endpoint and Sublet rules."
+        "verificationBasis": "All production87 files match tested QA22 bundle exactly. Production86 retained, changing only the existing Reception GET to return narrow linked-job delivery metadata and the read-only Reception dashboard delivery projection; repository index retains pre-existing differences outside this change."
       }
     },
     "migrations": [
@@ -47,14 +47,14 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V368 adds Reports to the Paint menu for Manager/Supervisor. Month selection fills inclusive From/To dates; custom periods and paint-type filters cover Base Coat, Pearl Coat, 2K Paint and saved other types. Read-only receipt/return events use Oman dates, receipt dates for incoming quantities/costs and return dates for credits. Each expandable type shows received/returned/net litres and costs, Job Cards, PO/vendor detail and Print/PDF with working shared navigation. Waiting/NIL/voided orders and voided returns are excluded; unknown prices and undated entries are explicitly flagged. Tests cover historical receipts/current returns, additional orders, boundaries, type/custom filters, leap months, pending prices, roles and unchanged data. Phone/tablet widths 360/390/768 and shared print preview passed. Exact-source signed Android, Reception browser/responsive, financial, sync and native PDF checks passed. CI dependency mirror uses standard HTTPS Ubuntu archive after Azure HTTP package-download timeouts. No backend/schema/data changes. Physical-device acceptance and fresh restore remain NOT_RUN.",
-  "productionBackendDeploymentPerformed": false,
+  "verificationSummary": "V369 shows Delivered and delivery date across Reception checklist summary/badges, checklist list rows, Job Card lists/detail header and Job Card print. Checklist GET now returns narrow delivery metadata after role projection in its existing request; no full workshop state or finances exposed. Dashboard projection overlays linked delivery status while retaining saved intake location and approval history. Browser checks passed for Manager/Supervisor/Receptionist without cached jobs. API tests verify exact permitted metadata, preserved response fields, receptionist privacy, and guards. Signed APK, Reception browser/responsive, financial and sync checks passed for final source. QA workshop-api22 and production87 readbacks match all files and bundle hash exactly; production86 retained except the two read-only delivery changes. No schema/auth/password changes. Owner-authorized historical correction marks JC12078 / RC0005 /21224.AA delivered 16 October 2026 19:00 Oman time, with audit and before snapshots; existing work/financial records remain unchanged. Conflicting work dates and one unfinished assignment are noted for review, without fabricated QC passes. Physical-device acceptance and fresh restore remain NOT_RUN.",
+  "productionBackendDeploymentPerformed": true,
   "releaseChangeScope": "delivered-status-checklist-jobcard",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
-    "previousRelease": "release-V367-architecture-v2",
-    "strategy": "Publish a higher-version recovery APK with V367 client assets if required. No backend rollback or data reset.",
+    "previousRelease": "release-V368-architecture-v2",
+    "strategy": "Publish a higher-version recovery APK with V368 client assets if needed. The read-only backend87 is backward-compatible; preserved production86 bundle is available for backend recovery. Retain owner-confirmed historical delivery correction; no data reset.",
     "dataResetRequired": false
   },
   "releaseBackendChanges": true,
@@ -85,12 +85,12 @@
     "fixturesRevoked": true,
     "workshopRecordsChanged": false
   },
-  "signedAcceptanceRun": 39998136413,
-  "verificationRun": 39998136484,
-  "accountantVerificationRun": 39998136456,
-  "androidBuildRun": 39998136412,
-  "syncVerificationRun": 39998136420,
-  "nativePdfVerificationRun": 39998136461,
+  "signedAcceptanceRun": 40001498776,
+  "verificationRun": 40001498845,
+  "accountantVerificationRun": 40001498862,
+  "androidBuildRun": 40001498767,
+  "syncVerificationRun": 40001498766,
+  "nativePdfVerificationRun": 40001498815,
   "monthlyReadAuthorizedByOwner": true,
   "monthlyReadAuthorization": "Owner requested Fix it properly for monthly read TIMEOUT, reviewed the remaining deployment/publication steps, and explicitly instructed Proceed.",
   "qaMonthlyRead": {
@@ -128,5 +128,11 @@
   "paintReportsAuthorizedByOwner": true,
   "paintReportsAuthorization": "Owner requested Reports in the Paint menu for monthly and particular periods, with Base Coat, Pearl Coat, 2K and other paint type totals. Existing instruction is to release after all fixes are complete.",
   "deliveredStatusAuthorizedByOwner": true,
-  "deliveredStatusAuthorization": "Owner requested delivered vehicles to show Delivered in checklist and Job Card, and confirmed 21224.AA / JC12078 was delivered 16 October 2026 at 7 PM Oman time. Original conflicting work history was explicitly preserved and noted for review."
+  "deliveredStatusAuthorization": "Owner requested delivered vehicles to show Delivered in checklist and Job Card, and confirmed 21224.AA / JC12078 was delivered 16 October 2026 at 7 PM Oman time. Original conflicting work history was explicitly preserved and noted for review.",
+  "qaDeliveryStatus": {
+    "project": "omqgkqknbdcnotabffek",
+    "version": 22,
+    "bundleSha256": "29c737e6f9810c8c1373c552e40f9deffea42c2d1b395a11498cfd2b9befe1bd",
+    "allFilesMatchProduction": true
+  }
 }
