@@ -1,6 +1,6 @@
 {
-  "versionName": "V360",
-  "versionCode": 323,
+  "versionName": "V361",
+  "versionCode": 324,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
   "sourceCommit": "b3e60356070aa1738b624bc9380369c51144873a",
@@ -48,8 +48,8 @@
     ]
   },
   "verificationSummary": "V360 authorizes Supervisors to add Sublet entries with Date, Description and OMR Amount in the form, client bridge and server. Existing correction permissions, exact milli-OMR amounts, validation, idempotency, audit attribution, concurrent saves and totals are retained and covered by regression tests. Production86 exact readback matches QA20. Only two existing backend permission lists changed; no schema or workshop-record changes. V359 duty-hour Ideal Time fix is retained. Physical-device acceptance and fresh restore remain NOT_RUN. CI and signed APK provenance are pinned by workflow IDs.",
-  "productionBackendDeploymentPerformed": true,
-  "releaseChangeScope": "supervisor-sublet-create",
+  "productionBackendDeploymentPerformed": false,
+  "releaseChangeScope": "shared-dashboard-raised-card-readability",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
@@ -59,7 +59,7 @@
     "backendBundleSha256": "ab64ab292f0284273b95d824602086e2a9ec535f0bf8a85a11f7aa8c9da29bb2",
     "dataResetRequired": false
   },
-  "releaseBackendChanges": true,
+  "releaseBackendChanges": false,
   "managerLeaveCorrectionsAuthorizedByOwner": true,
   "managerLeaveCorrectionsAuthorization": "Owner requested Manager dashboard forgotten leave marking and deletion of mistaken leave, and explicitly confirmed Managers may select past dates.",
   "hiddenReadOptimizationAuthorizedByOwner": true,
@@ -112,5 +112,7 @@
   "idealTimeDutyHoursAuthorizedByOwner": true,
   "idealTimeDutyHoursAuthorization": "Owner reported Current Without Work showing after duty time and instructed Proceed to publish the verified duty-hours fix.",
   "supervisorSubletCreateAuthorizedByOwner": true,
-  "supervisorSubletCreateAuthorization": "Owner explicitly confirmed Yes, allow Supervisors to add entries, including Sublet description and amount."
+  "supervisorSubletCreateAuthorization": "Owner explicitly confirmed Yes, allow Supervisors to add entries, including Sublet description and amount.",
+  "sharedDashboardCardsAuthorizedByOwner": true,
+  "sharedDashboardCardsAuthorization": "Owner requested readable cards and layout fixes for all dashboards, asked for all cards to have 3D design, and instructed Proceed and Next to publish."
 }
