@@ -1,6 +1,6 @@
 {
-  "versionName": "V361",
-  "versionCode": 324,
+  "versionName": "V362",
+  "versionCode": 325,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
   "sourceCommit": "ad343c965908de771ba06a63bf0659780fc13b5a",
@@ -49,7 +49,7 @@
   },
   "verificationSummary": "V361 introduces a shared raised-card stylesheet across Android and web dashboards. Fixes Invoice/Sublet contrast, normal-flow Close navigation, clearer parts-list/part/invoice/Sublet count labels, pending-work priority and repeated vehicle models in Recent Activity. Preserves role permissions, action routing, counts and all workshop records. Existing spare-parts regressions and new generated dashboard role checks passed locally. Responsive browser checks and previews at 320, 390, 768 and 1280 pixels passed in CI on the final source. Signed APK, role/financial and sync checks passed; public stylesheet packaging was verified. No backend or schema changes for this release. Physical-device acceptance and fresh restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": false,
-  "releaseChangeScope": "shared-dashboard-raised-card-readability",
+  "releaseChangeScope": "single-manager-purchase-expense-card",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
@@ -112,5 +112,7 @@
   "supervisorSubletCreateAuthorizedByOwner": true,
   "supervisorSubletCreateAuthorization": "Owner explicitly confirmed Yes, allow Supervisors to add entries, including Sublet description and amount.",
   "sharedDashboardCardsAuthorizedByOwner": true,
-  "sharedDashboardCardsAuthorization": "Owner requested readable cards and layout fixes for all dashboards, asked for all cards to have 3D design, and instructed Proceed and Next to publish."
+  "sharedDashboardCardsAuthorization": "Owner requested readable cards and layout fixes for all dashboards, asked for all cards to have 3D design, and instructed Proceed and Next to publish.",
+  "singlePurchaseCardAuthorizedByOwner": true,
+  "singlePurchaseCardAuthorization": "Owner reported duplicate Purchase Expenses and Total Purchase Amount cards and instructed Fix; retain one period-aware Parts + Sublet purchase card."
 }
