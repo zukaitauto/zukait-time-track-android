@@ -21,7 +21,9 @@
   const safe=v=>String(v??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const role=()=>window.me?.role||"";
   const writable=()=>["Manager","Supervisor"].includes(role());
-  let screen="home",section="checklists",page=0,filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false,checklist_status:"all"};
+  let screen="home",section="checklists",page=0,filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false,checklist_status:"all",company_filter:"all"};
+  let companyOptions=[{value:'all',label:'All companies / job types'},{value:'cash',label:'Cash'},{value:'credit',label:'Credit'},{value:'insurance',label:'All insurance'}];
+  const companyOptionsHtml=()=>companyOptions.map(x=>'<option value="'+safe(x.value)+'"'+(String(filters.company_filter||'all')===String(x.value)?' selected':'')+'>'+safe(x.label)+'</option>').join('');
   let backendAvailable=false;
   let counts={},latest=[],total=0,loading=false,sequence=0,pendingTimer=null;
   function css(){
@@ -68,6 +70,7 @@
 `;
     s.textContent+=`#rc-root .rdb-row-content>button[data-rdb="open-job"]{background:#dbeafe!important;color:#1e40af!important;border:1px solid #93c5fd!important;border-radius:7px;min-height:30px!important;padding:4px 8px!important;font-size:10px!important;margin:5px 0 0!important;width:auto!important}#rc-root .rdb-row-actions button[data-rdb="edit-job"]{background:#fef3c7!important;color:#92400e!important;border-color:#fcd34d!important}#rc-root .rdb-row-content>b{display:inline;letter-spacing:0}#rc-root .rdb-section-nav{margin:5px 0 10px}#rc-root .rdb-section-nav button{min-height:34px!important;font-size:11px!important;padding:6px 10px!important}`;
     s.textContent+=`#rc-root .rdb-row-content .rdb-insurer{display:inline-block;max-width:100%;box-sizing:border-box;padding:2px 7px;margin:2px 0;border-radius:6px;background:#e0f2fe;color:#075985;font-weight:700;line-height:1.5;white-space:normal;overflow-wrap:anywhere;vertical-align:baseline}`;
+    s.textContent+=`#rc-root .rdb-company-filter{grid-column:1/-1}#rc-root .rdb-company-filter select{width:100%;box-sizing:border-box;min-height:40px;font-size:13px}#rc-root .rdb-open-days{display:inline-block;margin-top:5px;padding:3px 7px;border-radius:6px;background:#eff6ff;color:#1e40af;font-size:11px;font-weight:700}`;
     document.head.appendChild(s);
   }
   const countFor=key=>key==="new"||key==="create-job"?"":key==="vwc"?counts.vwc??"":counts[key]??"";
@@ -80,12 +83,13 @@
   const label=key=>definitions.find(x=>x[0]===key)?.[1]||"Reception";
   function filterHtml(){
     return (section==='checklists'?'<label>Checklist Status<select data-rdb-filter="checklist_status"><option value="all">All</option><option value="pending"'+(filters.checklist_status==='pending'?' selected':'')+'>Pending</option><option value="opened"'+(filters.checklist_status==='opened'?' selected':'')+'>JC Opened</option></select></label>':'')+'<div class="rdb-filter">'+
+      '<label class="rdb-company-filter">Company / Job Type<select data-rdb-filter="company_filter">'+companyOptionsHtml()+'</select></label>'+
       '<label>Search<input data-rdb-filter="search" placeholder="RC / JC / registration / vehicle" value="'+safe(filters.search)+'"></label>'+
       '<label>Month<input type="month" data-rdb-filter="month" value="'+safe(filters.month)+'"></label>'+
       '<label>From<input type="date" data-rdb-filter="from" value="'+safe(filters.from)+'"></label>'+
       '<label>To<input type="date" data-rdb-filter="to" value="'+safe(filters.to)+'"></label></div>'+
       (section==="followup"?'<label>Promise Date Filter<select data-rdb-filter="promise-mode"><option value="all">All undelivered vehicles</option>'+
-      '<option value="missing"'+(filters.missing_only?' selected':'')+'>No promise date ('+safe(counts.no_promise_date??0)+')</option>'+
+      '<option value="missing"'+(filters.missing_only?' selected':'')+'>No promise date'+(filters.company_filter==='all'?' ('+safe(counts.no_promise_date??0)+')':'')+'</option>'+
       '<option value="dated"'+(filters.dated_only?' selected':'')+'>With promise date</option></select></label>':'');
   }
   function locationBadge(location){const code=String(location||'').toUpperCase();return code==='DELIVERED'?'<span class="rdb-location" style="background:#dcfce7;color:#166534;font-weight:800">Delivered</span>':code==='VIW'||code==='VIG'?'<span class="rdb-location rdb-vig" title="Vehicle in Garage">VIG</span>':code==='VWC'?'<span class="rdb-location rdb-vwc" title="Vehicle With Customer">VWC</span>':'';}
@@ -95,6 +99,7 @@
     const date=row.delivered||section==="delivered"?"Delivered: "+(row.delivered_date||"Not recorded"):
       section==="followup"?"Promise: "+(row.promise_date||"No promise date"):
       section==="jobs"?"Created: "+(row.created_at?new Date(row.created_at).toLocaleString('en-GB',{timeZone:'Asia/Muscat'}):'Not recorded'):"Received: "+(row.received_date||row.created_date||"Not recorded");
+    const age=isJob?'<span class="rdb-open-days">'+(row.delivered?'Days to delivery: ':'Days open: ')+(Number.isInteger(row.days_open)?safe(row.days_open):'Not recorded')+'</span>':'';
     const promise=canEdit?
       '<div class="rdb-promise"><label>Promise Date (optional)<input type="date" data-rdb-promise="'+safe(row.job_card)+
       '" value="'+safe(row.promise_date)+'"></label><button type="button" data-rdb="promise" data-job="'+safe(row.job_card)+
@@ -108,7 +113,7 @@
     return '<div class="rdb-row'+(!isJob?' rdb-checklist-click':'')+'"'+(!isJob?' role="button" tabindex="0" data-rdb="open" data-rc="'+safe(row.rc_no)+'" data-job=""':'')+'><span class="rdb-no">'+(index+1+page*50)+'.</span>'+
       '<div class="rdb-row-content"><b>'+title+' · '+safe(row.vehicle||"Vehicle not recorded")+
       '</b>'+locationBadge(row.location)+'<small>'+safe(row.registration||"Registration not recorded")+' · '+(row.insurance_company?'<span class="rdb-insurer">'+safe(row.insurance_company)+'</span>':safe(row.job_type||''))+
-      (row.rc_no&&isJob?' · '+safe(row.rc_no):'')+'</small><small>'+safe(date.replace(/(\d{4})-(\d{2})-(\d{2})/g,'$3-$2-$1'))+'</small><span class="rdb-state '+(String(row.status).toUpperCase()==='WAITING'?'waiting':String(row.status).toUpperCase()==='APPROVED'?'approved':'neutral')+'">'+safe(row.delivered?'Delivered':row.status==='WAITING'?'Approval Waiting':row.status||'Status not recorded')+'</span>'+(section==='checklists'&&isJob?'<button type="button" data-rdb="open-job" data-job="'+safe(row.job_card)+'">'+(row.delivered?'Delivered · JC ':'JC Opened · ')+safe(row.job_card)+'</button>':'')+promise+'</div>'+
+      (row.rc_no&&isJob?' · '+safe(row.rc_no):'')+'</small><small>'+safe(date.replace(/(\d{4})-(\d{2})-(\d{2})/g,'$3-$2-$1'))+'</small><span class="rdb-state '+(String(row.status).toUpperCase()==='WAITING'?'waiting':String(row.status).toUpperCase()==='APPROVED'?'approved':'neutral')+'">'+safe(row.delivered?'Delivered':row.status==='WAITING'?'Approval Waiting':row.status||'Status not recorded')+'</span>'+(section==='checklists'&&isJob?'<button type="button" data-rdb="open-job" data-job="'+safe(row.job_card)+'">'+(row.delivered?'Delivered · JC ':'JC Opened · ')+safe(row.job_card)+'</button>':'')+age+promise+'</div>'+
       '<div class="rdb-row-actions">'+open+deliver+(isJob&&(!row.delivered||role()==='Manager')?'<button type="button" data-rdb="edit-job" data-job="'+safe(row.job_card)+'">Edit Job Card</button>':'')+'</div></div>';
   }
   function listHtml(){
@@ -163,24 +168,25 @@
         ...filters,page});
       if(request!==sequence)return;
       counts=r.counts||{};latest=r.rows||[];total=Number(r.total||0);
+      if(Array.isArray(r.company_options)){companyOptions=r.company_options;const select=document.querySelector('#rc-root [data-rdb-filter="company_filter"]');if(select&&select!==document.activeElement)select.innerHTML=companyOptionsHtml();}
       const grid=document.querySelector("#rc-root .rdb-grid");
       if(grid)grid.innerHTML=tiles();
       const foot=document.getElementById("rdb-page");
       if(foot&&section==="followup") {
         const mode=document.querySelector('#rc-root [data-rdb-filter="promise-mode"] option[value="missing"]');
-        if(mode)mode.textContent="No promise date ("+(counts.no_promise_date||0)+")";
+        if(mode)mode.textContent="No promise date"+(filters.company_filter==='all'?" ("+(counts.no_promise_date||0)+")":"");
       }
     }catch(e){if(request===sequence){if(!background){latest=[];total=0;}const err=document.getElementById("rc-error");if(err)err.textContent=e.message||String(e);}}
     finally{if(request===sequence){loading=false;showRows();}}
   }
   async function open(options={}){backendAvailable=options.backendAvailable===true;++sequence;clearTimeout(pendingTimer);loading=false;screen="home";section="checklists";vwcSection="vwc-checklists";page=0;
-    filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false,checklist_status:"all"};
+    filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false,checklist_status:"all",company_filter:"all"};
     latest=[];counts={};total=0;render();await load();}
   // Preserve the selected list and filters when returning from a checklist.
   async function resume(){render();await load();}
   async function showDashboard(){
     screen="home";section="checklists";page=0;
-    filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false,checklist_status:"all"};
+    filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false,checklist_status:"all",company_filter:"all"};
     latest=[];total=0;render();await load();
   }
   async function choose(next){
@@ -194,7 +200,7 @@
     if(next==='insurance')return window.zukaitInsuranceManagement?.open();
     if(next==="new")return window.zukaitReception.newChecklist();
     if(next==="create-job")return window.zukaitReception.directJob();
-    screen="list";section=next;page=0;filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false,checklist_status:"all"};
+    screen="list";section=next;page=0;filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false,checklist_status:"all",company_filter:"all"};
     latest=[];total=0;render();await load();
   }
   function onFilter(event){

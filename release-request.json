@@ -1,6 +1,6 @@
 {
-  "versionName": "V369",
-  "versionCode": 332,
+  "versionName": "V370",
+  "versionCode": 333,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
   "sourceCommit": "33558d7e31a12fdc70086435b11534e56bda8df3",
@@ -49,7 +49,7 @@
   },
   "verificationSummary": "V369 shows Delivered and delivery date across Reception checklist summary/badges, checklist list rows, Job Card lists/detail header and Job Card print. Checklist GET now returns narrow delivery metadata after role projection in its existing request; no full workshop state or finances exposed. Dashboard projection overlays linked delivery status while retaining saved intake location and approval history. Browser checks passed for Manager/Supervisor/Receptionist without cached jobs. API tests verify exact permitted metadata, preserved response fields, receptionist privacy, and guards. Signed APK, Reception browser/responsive, financial and sync checks passed for final source. QA workshop-api22 and production87 readbacks match all files and bundle hash exactly; production86 retained except the two read-only delivery changes. No schema/auth/password changes. Owner-authorized historical correction marks JC12078 / RC0005 /21224.AA delivered 16 October 2026 19:00 Oman time, with audit and before snapshots; existing work/financial records remain unchanged. Conflicting work dates and one unfinished assignment are noted for review, without fabricated QC passes. Physical-device acceptance and fresh restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": true,
-  "releaseChangeScope": "delivered-status-checklist-jobcard",
+  "releaseChangeScope": "reception-company-filter-and-job-age",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
@@ -134,5 +134,7 @@
     "version": 22,
     "bundleSha256": "29c737e6f9810c8c1373c552e40f9deffea42c2d1b395a11498cfd2b9befe1bd",
     "allFilesMatchProduction": true
-  }
+  },
+  "companyFilterJobAgeAuthorizedByOwner": true,
+  "companyFilterJobAgeAuthorization": "Owner requested each Job Card to show days since opening and a filter to select individual insurance companies or Cash in Delivery Follow-up."
 }

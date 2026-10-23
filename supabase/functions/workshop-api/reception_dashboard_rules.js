@@ -31,7 +31,21 @@ function safeRc(r,company) {
  outcome:text(r.outcome),repair_status:text(r.repair_status||"PENDING"),repair_notes:text(r.repair_notes),released_date:text(r.released_date),release_remark:text(r.release_remark),approval_status:text(r.approval_status),
  promise_date:"",delivered_date:"",created_date:omanDate(r.received_at),status:r.released_date?"Vehicle Released":r.job_card?"JC Opened":text(r.repair_status!=="PENDING"&&r.repair_status||r.outcome||r.approval_status)};
 }
-function safeJob(j,rc) {
+export function receptionCompanyMatches(row,value){
+ const filter=String(value||'all');
+ if(filter==='all')return true;
+ const type=norm(row.job_type);
+ if(filter==='cash')return type==='CASH';
+ if(filter==='credit')return type==='CREDIT';
+ if(filter==='insurance')return type==='INSURANCE';
+ return filter.startsWith('insurer:')&&type==='INSURANCE'&&norm(row.insurance_company)===norm(filter.slice(8));
+}
+function receptionOpenDays(j,now){
+ const opened=createdTime(j.createdAt),start=opened?omanDate(opened):'',end=omanDate(j.delivered?(j.deliveredAt||j.deliveryDate):now);
+ if(!start||!end)return null;
+ return Math.max(0,Math.floor((Date.parse(end+'T00:00:00Z')-Date.parse(start+'T00:00:00Z'))/86400000));
+}
+function safeJob(j,rc,now) {
  return {rc_no:text(j.receptionNo||rc?.rc_no),sequence_no:Number(rc?.sequence_no||0),
  job_card:text(j.no),job_id:text(j.id),created_at:createdTime(j.createdAt),job_type:text(j.jobType||rc?.job_type),vehicle:
    [j.make||j.brand,j.model,j.year||j.vehicleYear].filter(Boolean).join(" ").trim()||
@@ -39,7 +53,7 @@ function safeJob(j,rc) {
  registration:text(j.reg||j.registration||rc?.registration),
  customer:text(rc?.customer),insurance_company:text(j.insuranceCompany||rc?.insurance_company),
  received_at:rc?.received_at||"",received_date:rc?.received_date||"",
- created_date:omanDate(j.createdAt),
+ created_date:omanDate(j.createdAt),days_open:receptionOpenDays(j,now),
  delivered_date:omanDate(j.deliveredAt),delivered_at:Number(j.deliveredAt||0),promise_date:validPromiseDate(j.promiseDate)?j.promiseDate:"",
  location:j.delivered?'DELIVERED':text(rc?.location||j.receptionLocation),outcome:text(rc?.outcome),
  approval_status:text(rc?.approval_status),
@@ -47,6 +61,7 @@ function safeJob(j,rc) {
  qc_revision:Number(j.qcWorkflow?.revision||0)};
 }
 function matchFilter(row,opts,kind) {
+ if(!receptionCompanyMatches(row,opts.company_filter))return false;
  const search=text(opts.search).toLowerCase();
  if(search&&![row.rc_no,row.job_card,row.registration,row.vehicle,row.customer,row.insurance_company].some(v=>text(v).toLowerCase().includes(search)))return false;
  if(kind==="checklists"&&opts.checklist_status==="pending"&&(row.job_card||row.outcome||row.released_date||row.repair_status!=="PENDING"))return false;
@@ -64,7 +79,7 @@ function matchFilter(row,opts,kind) {
  if(to && (!validPromiseDate(to)||!date||date>to))return false;
  return true;
 }
-export function receptionDashboardProjection(data,receptions,opts={}) {
+export function receptionDashboardProjection(data,receptions,opts={},now=Date.now()) {
  const rows=(Array.isArray(receptions)?receptions:[]).map(x=>safeRc(x,x.insurance_company));
  const byRc=new Map(rows.map(x=>[x.rc_no,x]));
  const uniqueJobs=new Map();
@@ -73,7 +88,9 @@ export function receptionDashboardProjection(data,receptions,opts={}) {
   const key=norm(j.no),existing=uniqueJobs.get(key);
   if(!existing||createdTime(j.createdAt)>createdTime(existing.createdAt))uniqueJobs.set(key,j);
  }
- const jobs=[...uniqueJobs.values()].map(j=>({raw:j,row:safeJob(j,byRc.get(text(j.receptionNo)))}));
+ const jobs=[...uniqueJobs.values()].map(j=>({raw:j,row:safeJob(j,byRc.get(text(j.receptionNo)),now)}));
+ const jobByNumber=new Map(jobs.map(x=>[norm(x.row.job_card),x.row]));
+ for(const row of rows){const job=jobByNumber.get(norm(row.job_card));if(job)Object.assign(row,{days_open:job.days_open,job_created_date:job.created_date});}
  const deliveredByJob=new Map(jobs.filter(x=>x.row.delivered).map(x=>[norm(x.row.job_card),x.row]));
  for(const row of rows){const job=deliveredByJob.get(norm(row.job_card));if(job)Object.assign(row,{delivered:true,delivered_date:job.delivered_date,delivered_at:job.delivered_at,status:'Delivered',location:'DELIVERED'});}
  const allJobs=jobs.map(x=>x.row),activeJobs=jobs.filter(x=>!x.raw.delivered).map(x=>x.row);
@@ -99,10 +116,14 @@ export function receptionDashboardProjection(data,receptions,opts={}) {
  if(!["", "all", "pending", "opened"].includes(String(opts.checklist_status||"")))return {ok:false,code:"reception_invalid_filter"};
  if(!Object.hasOwn(lists,section))return {ok:false,code:"reception_invalid_section"};
  if(!["", "true", "false"].includes(String(opts.missing_only??"")))return {ok:false,code:"reception_invalid_filter"};
+ const companyFilter=opts.company_filter??'all';
+ if(typeof companyFilter!=='string'||companyFilter.length>260||!(['','all','cash','credit','insurance'].includes(companyFilter)||(companyFilter.startsWith('insurer:')&&text(companyFilter.slice(8)))))return {ok:false,code:'reception_invalid_filter'};
  const selected=lists[section].filter(x=>matchFilter(x,opts,section));
  const page=Math.max(0,Math.min(100000,Number.isInteger(Number(opts.page))?Number(opts.page):0));
  const limit=50;
- return {ok:true,counts,section,total:selected.length,page,page_size:limit,
+ const companyNames=new Map();for(const row of lists[section])if(norm(row.job_type)==='INSURANCE'&&text(row.insurance_company))companyNames.set(norm(row.insurance_company),text(row.insurance_company));
+ const company_options=[{value:'all',label:'All companies / job types'},{value:'cash',label:'Cash'},{value:'credit',label:'Credit'},{value:'insurance',label:'All insurance'},...[...companyNames.values()].sort((a,b)=>a.localeCompare(b)).map(name=>({value:'insurer:'+norm(name),label:name}))];
+ return {ok:true,counts,section,company_options,total:selected.length,page,page_size:limit,
  rows:selected.slice(page*limit,(page+1)*limit)};
 }
 export function receptionPromiseTransition(data,user,request,now){

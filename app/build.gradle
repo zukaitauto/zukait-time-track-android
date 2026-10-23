@@ -12,8 +12,8 @@ android {
         targetSdk 35
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
-        versionCode 332
-        versionName "V369" // Delivered status in checklist, Reception lists and Job Card details.
+        versionCode 333
+        versionName "V370" // Days Open and insurance company / Cash filters in Reception lists.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }

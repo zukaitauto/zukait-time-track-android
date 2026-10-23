@@ -40,7 +40,7 @@ function receptionistRequestAllowed(action: string, body: any) {
   if (action === "job_card_edit") return ["GET","EDIT"].includes(body.operation) && Object.keys(body).every(k => ["action","operation","jobCard","patch","reason","expectedEditRevision"].includes(k));
   if (action === "receptionist_delivery_list") return Object.keys(body).every(k => k === "action");
   if (action === "reception_dashboard") return Object.keys(body).every(k =>
-    ["action","section","search","month","from","to","page","missing_only","dated_only","checklist_status"].includes(k));
+    ["action","section","search","month","from","to","page","missing_only","dated_only","checklist_status","company_filter"].includes(k));
   if (action === "receptionist_deliver") return body?.operation === "DELIVER" && Object.keys(body).every(k =>
     ["action", "operation", "jobCard", "expectedQcRevision", "expectedVehicleIdentity", "request_id"].includes(k));
   return action === "reception" &&
@@ -1033,7 +1033,7 @@ Deno.serve(async (req: Request) => {
 
     if (action === "reception_dashboard") {
       if (!["Manager","Supervisor","Receptionist"].includes(String(user.role))) return reply({ok:false,code:"reception_forbidden"},403);
-      if (Object.keys(body).some(k => !["action","section","search","month","from","to","page","missing_only","dated_only","checklist_status"].includes(k))
+      if (Object.keys(body).some(k => !["action","section","search","month","from","to","page","missing_only","dated_only","checklist_status","company_filter"].includes(k))
           || JSON.stringify(body).length > 2500) return reply({ok:false,code:"reception_invalid_filter"},400);
       const {data:cap,error:capError}=await admin.rpc("zukait_reception_command",
         {p_actor_id:String(user.id),p_command:{operation:"CAPABILITIES"}});
@@ -1060,7 +1060,7 @@ Deno.serve(async (req: Request) => {
       const safeCases=receptionRows.map(r=>({...r,insurance_company:insuranceById.get(String(r.insurance_id))||""}));
       const projected=receptionDashboardProjection(state.data,safeCases,{
         section:body.section,search:body.search,month:body.month,from:body.from,to:body.to,
-        page:body.page,missing_only:body.missing_only,dated_only:body.dated_only,checklist_status:body.checklist_status
+        page:body.page,missing_only:body.missing_only,dated_only:body.dated_only,checklist_status:body.checklist_status,company_filter:body.company_filter
       });
       return reply(projected,projected.ok?200:400);
     }

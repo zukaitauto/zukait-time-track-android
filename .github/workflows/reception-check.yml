@@ -124,6 +124,8 @@ jobs:
         run: node tests/paint-reports-responsive.mjs
       - name: Verify delivered checklist and Job Card status for all Reception roles
         run: node tests/reception-delivered-status-browser.mjs
+      - name: Verify Days Open and company filters for all Reception roles
+        run: node tests/reception-company-age-browser.mjs
       - name: Verify shared dashboard cards on phones and desktop
         run: node tests/shared-dashboard-cards.mjs && node tests/shared-dashboard-cards-responsive.mjs
       - name: Save shared dashboard card previews
