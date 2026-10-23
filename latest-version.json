@@ -1,9 +1,9 @@
 {
-  "versionCode": 331,
-  "versionName": "V368",
+  "versionCode": 332,
+  "versionName": "V369",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "f497e65a454b79e08ef561f36f7363bb1dee542d",
-  "apkSha256": "145c6500715c859ea1ae2b4040899c9bd94be25e1f75b93b73dfd4a099317432",
-  "releaseTag": "release-V368-architecture-v2"
+  "sourceCommit": "33558d7e31a12fdc70086435b11534e56bda8df3",
+  "apkSha256": "d03df55752913f50ea426285d9e162f5df30635bdbec41a59ab142c1de2ce3a9",
+  "releaseTag": "release-V369-architecture-v2"
 }
