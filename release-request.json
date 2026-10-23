@@ -3,7 +3,7 @@
   "versionCode": 326,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
-  "sourceCommit": "b3337d3055b4dbc0c51bb6ec42ee0eb7c0906ef2",
+  "sourceCommit": "1f2d184063f4bc638118af20e3284c94fcf90ee1",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-23T15:55:18.234Z",
-  "publishNonce": "b3337d3055b4dbc0c51bb6ec42ee0eb7c0906ef2362",
+  "approvedAt": "2026-10-23T16:07:56.578Z",
+  "publishNonce": "1f2d184063f4bc638118af20e3284c94fcf90ee1363",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -47,14 +47,14 @@
       "workshop_single_round_trip_revision_probe"
     ]
   },
-  "verificationSummary": "V362 removes the duplicate monthly Total Purchase Amount card from Manager Workshop Performance. Retains one Purchase Expenses card with Today/This Month and Parts + Sublet subtitle, using existing period-aware calculations and matching detail period. Regression tests exercise repeated renders, removal of old duplicate nodes, mixed-date parts/sublet totals, matching drilldown filters and unchanged records. No backend, schema or financial-record changes. Physical-device acceptance and fresh restore remain NOT_RUN. Signed APK and source-specific CI evidence are pinned by workflow IDs.",
+  "verificationSummary": "V363 cleans Purchase Completed print layout: one OMR label beside confirmed total; exact three-decimal row prices without repeated currency; right-aligned prices, clear vehicle/registration metadata and dedicated total block; entirely empty Vendor/Agreed columns hidden while populated fields remain. Vehicle/model repetition removed. Calculation and purchase records are unchanged. Tests cover sample total 37.130 OMR, optional columns, missing prices, escaping and read-only behavior. Source-specific CI passed the one-page A4 PDF sample, long text/column layout and print-preview checks; signed APK, browser, financial and sync checks passed. No backend or schema changes. Physical-device acceptance and fresh restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": false,
   "releaseChangeScope": "clean-purchase-completed-print",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
-    "previousRelease": "release-V361-architecture-v2",
-    "strategy": "Publish a higher-version client recovery APK with V361 assets if needed; no backend rollback or data reset is required.",
+    "previousRelease": "release-V362-architecture-v2",
+    "strategy": "Publish a higher-version recovery APK with V362 client assets if required. No backend rollback or record changes are needed.",
     "dataResetRequired": false
   },
   "releaseBackendChanges": false,
@@ -85,12 +85,12 @@
     "fixturesRevoked": true,
     "workshopRecordsChanged": false
   },
-  "signedAcceptanceRun": 39982299973,
-  "verificationRun": 39982300190,
-  "accountantVerificationRun": 39982300046,
-  "androidBuildRun": 39982299996,
-  "syncVerificationRun": 39982300248,
-  "nativePdfVerificationRun": 39982300040,
+  "signedAcceptanceRun": 39984086500,
+  "verificationRun": 39984086290,
+  "accountantVerificationRun": 39984086308,
+  "androidBuildRun": 39984086420,
+  "syncVerificationRun": 39984086531,
+  "nativePdfVerificationRun": 39984086621,
   "monthlyReadAuthorizedByOwner": true,
   "monthlyReadAuthorization": "Owner requested Fix it properly for monthly read TIMEOUT, reviewed the remaining deployment/publication steps, and explicitly instructed Proceed.",
   "qaMonthlyRead": {

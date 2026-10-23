@@ -1,7 +1,7 @@
 {
   "approved": true,
-  "sourceCommit": "b3337d3055b4dbc0c51bb6ec42ee0eb7c0906ef2",
-  "release": "V362",
-  "publishNonce": "b3337d3055b4dbc0c51bb6ec42ee0eb7c0906ef2362",
+  "sourceCommit": "1f2d184063f4bc638118af20e3284c94fcf90ee1",
+  "release": "V363",
+  "publishNonce": "1f2d184063f4bc638118af20e3284c94fcf90ee1363",
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED."
 }
