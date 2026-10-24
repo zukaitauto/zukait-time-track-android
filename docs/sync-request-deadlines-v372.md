@@ -1,0 +1,12 @@
+# V372: slow sync acknowledgement and redundant reads
+Production evidence on 24 October 2026, 08:40–09:40 Oman: 71 workshop HTTP 503 responses and database request deadline exceeded errors. Database statement timeouts were also recorded for the existing workshop commit RPC. Successful requests continued. A persistent blocker, CPU exhaustion or storage shortage was not established, and direct management SQL later timed out, so this does not claim to identify every infrastructure bottleneck.
+
+The deployed database HTTP wrapper had a 4-second deadline while database statements can run for about 8 seconds. That prematurely abandoned slow commit acknowledgements and returned retryable errors. The wrapper now allows 10 seconds, including response-body consumption. It sends a write once, does not retry writes, keeps caller cancellation intact, and still returns retryable 503 for genuinely stalled requests. No database statement timeout is changed.
+
+The client's revision probe retains its 15-second deadline. Other cloud operations allow 45 seconds for sequential authentication, state/baseline reads and commit acknowledgement, plus transfer time. Existing queue durability, local-click generations, CAS conflict checks, recovery cooldowns, role checks and server guards are retained.
+
+A successful unchanged-revision probe is enough to confirm an existing in-memory server baseline. It updates the confirmation time without the redundant periodic load/known_revision round trip and re-normalization. A cold cache still requires a real load. Changed revisions still load. Live-status polling retains its separate cadence. Errors still show the real delayed/offline state; no warning suppression is added.
+
+Acceptance covers a synthetic 8-second single commit, actual default deadlines, stalled fetch/body cancellation, caller cancellation, unchanged permission/conflict statuses, cold-cache and changed-revision loading, delayed/out-of-order responses, durable pending changes, simultaneous state updates and existing authority guards. All fake-time tests avoid production record writes.
+
+Deploy from the complete current production bundle, changing only database_fetch.js. Repository index still has pre-existing differences; do not overwrite production with that staged index. Verify QA and production file parity, then publish the matched client. Monitor post-deployment errors and successful writes before declaring all live delays resolved. Do not delete workshop history, reset phones, disable checks, or change paid resources.

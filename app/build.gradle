@@ -12,8 +12,8 @@ android {
         targetSdk 35
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
-        versionCode 334
-        versionName "V371" // Organized Manager editor; confirmed unique numbers retain linked records and queued parts.
+        versionCode 335
+        versionName "V372" // Match database and client deadlines; confirm unchanged revisions without redundant loads.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }

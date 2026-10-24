@@ -189,7 +189,10 @@
     }
     const sequence=++syncRequestSequence;
     const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(),15000);
+    // A save may authenticate, read/rebase and commit sequentially. Its deadline
+    // must exceed the database transport's 10s per-operation guard.
+    const timeoutMs=payload.action==='revision'?15000:45000;
+    const timer=setTimeout(()=>controller.abort(),timeoutMs);
     let res;
     function failed(code,httpStatus,retryAfter=0){
       if(key){
@@ -699,7 +702,15 @@
       setServerConnection('connected');
       const remoteRevision=Number(r.revision||0);
       lastProbedRevision=remoteRevision;
-      if(remoteRevision===cloudRevision&&(cloudDirty||Date.now()-lastSuccessfulSyncAt<30000))return false;
+      if(remoteRevision===cloudRevision&&(cloudDirty||lastSyncedState)){
+        // A successful revision probe confirms the in-memory server baseline.
+        // Do not reload the same workshop snapshot every 30 seconds.
+        if(!cloudDirty&&lastSyncedState){
+          lastSuccessfulSyncAt=Date.now();lastSyncError='';consecutiveSyncErrors=0;
+          status('SYNCED','ok');initialDone=true;
+        }
+        return false;
+      }
 
       // Never pull over a local click. Commit it first; the server will rebase
       // it transactionally if another device already advanced the revision.

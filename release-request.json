@@ -1,6 +1,6 @@
 {
-  "versionName": "V371",
-  "versionCode": 334,
+  "versionName": "V372",
+  "versionCode": 335,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
   "sourceCommit": "96e3219573804707e8a69f9e2e6b635058ca0949",
@@ -58,7 +58,7 @@
   },
   "verificationSummary": "V371 organizes Manager Full Edit into Job Details, Vehicle, Customer, Dates & Payment, Work & Notes, Technician Allocations and Save Correction, with readable header and scoped responsive layout. Job Card number is editable for Manager only. A changed number requires explicit old-to-new confirmation before saving. Database uniqueness/reservations cover active, historical and retired numbers, raw snapshot/projection creation, two-device conflicts and stale confirmations. Stable stored job identifiers, work, parts, paint, Sublet, Reception links, events and append-only accounting entries remain unchanged; a private public-number directory translates typed request/response references. Pending offline parts adopt the authoritative visible number without dropping queued updates. Number changes use the existing Manager full-edit transaction plus an immutable audited registry. Existing session validation, revocation, roles and passwords are preserved; numbering is embedded into the existing session read without another database request. Exact-source numbering/API/permission tests, PostgreSQL overlap and preservation tests, Chromium/WebKit phone/tablet confirmation/layout checks, Reception, Accountant, sync, signed/unsigned Android and native PDF checks all passed. QA25 real API confirmed initial/second correction 200, old/current-number lookup 200 and duplicate rejection 409 with job_number_duplicate; temporary fixture session revoked and account disabled, fixture display restored. Production89 readback matches all QA25 files and hash. Number registry initialized without changing existing public numbers or workshop records; production number audit remains empty. Production default service_role table privileges explicitly narrowed and verified; no security warnings. Physical-device acceptance and fresh production restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": true,
-  "releaseChangeScope": "organized-manager-editor-and-confirmed-job-card-number-correction",
+  "releaseChangeScope": "slow-database-acknowledgement-and-sync-recovery",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
@@ -171,5 +171,7 @@
     "realPostgresConcurrencyPassed": true,
     "browserChromiumWebKitPassed": true,
     "pendingOfflinePartsPreserved": true
-  }
+  },
+  "syncDeadlineCorrectionAuthorizedByOwner": true,
+  "syncDeadlineCorrectionAuthorization": "Owner reported Workshop sync is delayed always showing, reviewed the confirmed database deadline errors, and instructed FIX. Standing instruction is to publish after all fixes pass."
 }
