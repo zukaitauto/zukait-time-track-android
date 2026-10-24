@@ -43,7 +43,7 @@ const client=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
 const start=client.indexOf('  async function pull(force){'),end=client.indexOf('  async function probeRevision(){',start);
 async function clientPull({baseline=fixture,response={ok:true,revision:42,not_modified:true},dirty=false,revision=42,onRequest}={}){
  const sent=[];let ctx;
- ctx={state:structuredClone(fixture),lastSyncedState:baseline?structuredClone(baseline):null,cloudRevision:revision,cloudDirty:false,dirtyGeneration:0,pullInFlight:false,initialDone:true,cloudApplying:false,
+ ctx={sessionEpoch:0,stale:()=>false,state:structuredClone(fixture),lastSyncedState:baseline?structuredClone(baseline):null,cloudRevision:revision,cloudDirty:false,dirtyGeneration:0,pullInFlight:false,initialDone:true,cloudApplying:false,
  me:{id:'TEST',role:'Employee'},navigator:{onLine:true},sessionToken:()=>true,status(){},clone:structuredClone,
  api:async body=>{sent.push(body);if(onRequest)onRequest(ctx);if(dirty){ctx.state.leaves.push({id:'pending'});ctx.cloudDirty=true;ctx.dirtyGeneration++}return structuredClone(response)},
  normalizeRemote(data){ctx.state=structuredClone(data)},REV_KEY:'revision',localStorage:{setItem(){}},window:{},scheduleDashboardRender(){},setServerConnection(){},Date,console};

@@ -6,7 +6,7 @@ const source=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
 const transport=source.slice(source.indexOf('  // One transport circuit'),source.indexOf('  async function employeeTimeAction'));
 let now=100000,calls=0,response={status:500,body:{ok:false,code:'server_error'}};
 const timers=new Map();let timerId=0;
-const c={Date:{now:()=>now},Math:Object.assign(Object.create(Math),{random:()=>0}),Map,AbortController,
+const c={sessionEpoch:0,stale:()=>false,requestControllers:new Set(),Date:{now:()=>now},Math:Object.assign(Object.create(Math),{random:()=>0}),Map,AbortController,
   sessionToken:()=> 'fixture-only',navigator:{onLine:true},API_URL:'https://fixture.invalid',CLOUD_KEY:'fixture',
   setTimeout(fn,ms){timers.set(++timerId,{fn,ms});return timerId},clearTimeout(id){timers.delete(id)},
   fetch:async()=>{calls++;const r=response;if(r instanceof Error)throw r;return {status:r.status,headers:{get:()=>null},json:async()=>{if(r.body instanceof Error)throw r.body;return r.body}}}};
