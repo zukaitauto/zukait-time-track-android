@@ -135,6 +135,8 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
  if(prior)return prior.by===actor.id&&JSON.stringify(prior.command)===JSON.stringify(command)?{ok:true,data:current,audit:prior,duplicate:true}:fail('time_request_reused');
  const a=(current.assign||[]).find(x=>x&&String(x.id)===command.assignmentId);
  if(!a||a.cancelled)return fail('time_assignment_inactive');
+ if(a.handedOverToAssignmentId&&(['REOPEN','REASSIGN','SET_ALLOCATION','CANCEL_ASSIGNMENT'].includes(op)||request.workStatus!==undefined))return fail('time_handover_source_locked');
+ if(a.handedOverToAssignmentId&&['ADD_SESSION','CORRECT_SESSION'].includes(op)&&Number(command.end)>Number(a.completedAt||0))return fail('time_handover_cutoff');
  if(allocationToken(a)!==request.expectedSource)return fail('time_allocation_changed');
  if(employeeTimeToken(current,a.emp)!==request.expectedSessions)return fail('time_sessions_changed');
  const j=(current.jobs||[]).find(x=>x&&String(x.no)===String(a.job));

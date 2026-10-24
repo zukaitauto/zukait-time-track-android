@@ -1,3 +1,5 @@
+import {billRoute} from './accountant/extensions/bill_route.js';
+import { mechanicalRoute, mechanicalLegacyDeliveryCheck } from "./extensions/mechanical_route.js";
 import { subletTransition } from './sublet_rules.js';
 import {accountantApi,accountantError} from './accountant/api.js';
 import {insuranceProjection,insuranceLpoTransition} from './insurance_management_rules.js';
@@ -1092,6 +1094,22 @@ Deno.serve(async (req: Request) => {
     }
     if(body.newJobNumber !== undefined && action !== "manager_job_full_edit") return reply({ok:false,code:"job_edit_invalid_fields"},400);
 
+    if (action.startsWith("mechanical_")) {
+      const enabled = Deno.env.get("ZUKAIT_MECHANICAL_ENABLED") === "true";
+      const result = await mechanicalRoute(admin, user, body, {
+        enabled, qcEnabled: Deno.env.get("ZUKAIT_MECHANICAL_QC_ENABLED") === "true", deliveryEnabled: Deno.env.get("ZUKAIT_MECHANICAL_DELIVERY_ENABLED") === "true",
+        reportsEnabled: Deno.env.get("ZUKAIT_MECHANICAL_REPORTS_ENABLED") === "true", signaturesEnabled: Deno.env.get("ZUKAIT_MECHANICAL_SIGNATURES_ENABLED") === "true", documentsEnabled: Deno.env.get("ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED") === "true", trackingEnabled: Deno.env.get("ZUKAIT_MECHANICAL_TRACKING_ENABLED") === "true", sessionHash: enabled ? await sha256Hex(token) : "",
+        verifySession: () => sessionUser(token)
+      });
+      return reply(result.body, result.status);
+    }
+
+    if (action.startsWith('accountant_bill_')) {
+      const enabled = Deno.env.get('ZUKAIT_BILLS_ENABLED') === 'true';
+      const result = await billRoute(admin,user,body,{enabled,sessionHash:enabled?await sha256Hex(token):'',secret:Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!});
+      return reply(result.body,result.status);
+    }
+
     if (user.role === 'Accountant' || action.startsWith('accountant_')) {
       try {const result=await accountantApi(admin,user,body,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);return reply(result.body,result.status);}
       catch(error){const result=accountantError(error);return reply(result.body,result.status);}
@@ -1099,6 +1117,11 @@ Deno.serve(async (req: Request) => {
 
     if (user.role === "Receptionist" && !receptionistRequestAllowed(action, body)) {
       return reply({ok:false, code:"receptionist_forbidden"}, 403);
+    }
+
+    if ((action === "qc_delivery" || action === "receptionist_deliver") && body.operation === "DELIVER" && Deno.env.get("ZUKAIT_MECHANICAL_ENABLED") === "true" && Deno.env.get("ZUKAIT_MECHANICAL_QC_ENABLED") === "true" && Deno.env.get("ZUKAIT_MECHANICAL_DELIVERY_ENABLED") === "true") {
+      const decision = await mechanicalLegacyDeliveryCheck(admin,user,body,{enabled:true,qcEnabled:true,deliveryEnabled:true,sessionHash:await sha256Hex(token)});
+      if(decision) return reply(decision.body,decision.status);
     }
 
     if (action === "reception_dashboard") {
@@ -1962,6 +1985,11 @@ Deno.serve(async (req: Request) => {
     return reply({ ok:false, code:"unknown_action" }, 400);
   } catch (e) {
     console.error(e);
+    // Old clients already preserve 403 queues rather than retry them forever.
+    // New clients can explicitly reconcile this authority conflict from Sync.
+    if (["mechanical_authority_conflict","mechanical_live_authority_conflict","mechanical_delivery_authority_conflict"].includes(String((e as any)?.message||""))) {
+      return reply({ok:false,code:String((e as any).message),retryable:false},403);
+    }
     // A database deadline is temporary server pressure, not a broken network.
     const databaseCode=String((e as any)?.code||"");
     if(["57014","55P03","53300","53400","PGRST003"].includes(databaseCode)){

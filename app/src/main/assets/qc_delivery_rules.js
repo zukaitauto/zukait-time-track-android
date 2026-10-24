@@ -124,7 +124,10 @@ export function preserveQcAuthority(candidate,current,user){
   for(const field of ['insuranceLpo','finalInvoiceAmount','financialAudit','invoiceDate','invoiceEnteredAt','invoiceEnteredBy','invoiceEnteredByName']){if(old&&field in old)j[field]=JSON.parse(JSON.stringify(old[field]));else delete j[field];}
   // Legacy full-state clients cannot fabricate delivery or undo an audited delivery.
   if((!old?.delivered&&j.delivered)||old?.qcWorkflow){for(const field of ['delivered','deliveredAt','deliveredBy','deliveredByName']){if(old&&field in old)j[field]=old[field];else delete j[field]}if(old?.qcWorkflow&&old.delivered)j.status=old.status;else if(j.status==='Delivered'&&!old?.delivered)j.status=old?.status||'Open';}
-  if(j.qcWorkflow)j.qcPassed=qcStatus(candidate,j).final;
+  // Mechanical delivery identity is server-owned, including older full saves.
+  if(old?.mechanicalDelivery)j.mechanicalDelivery=JSON.parse(JSON.stringify(old.mechanicalDelivery));else delete j.mechanicalDelivery;
+  if(old?.deliveryAudit)j.deliveryAudit=JSON.parse(JSON.stringify(old.deliveryAudit));else delete j.deliveryAudit;
+  if(old?.mechanicalDelivery)j.qcPassed=old.qcPassed;else if(j.qcWorkflow)j.qcPassed=qcStatus(candidate,j).final;
  }
  return candidate;
 }
