@@ -218,7 +218,7 @@
     if(!backendAvailable)throw Error("Promise Date needs the Reception server update.");
     if(!writable())throw Error("Only Manager or Supervisor can enter Promise Date.");
     if(date&&!/^\d{4}-\d\d-\d\d$/.test(date))throw Error("Choose a valid Promise Date.");
-    const key="zukait_reception_promise_pending:"+window.zukaitReception.endpoint+":"+role()+":"+jobCard;
+    const key="zukait_reception_promise_pending:"+window.zukaitReception.endpoint+":"+role()+":"+String(window.me?.id||'')+":"+jobCard;
     let pending;
     const saved=localStorage.getItem(key);
     if(saved){pending=JSON.parse(saved);

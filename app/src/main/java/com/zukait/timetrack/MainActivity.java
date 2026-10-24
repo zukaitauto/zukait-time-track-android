@@ -328,7 +328,7 @@ public class MainActivity extends Activity {
 
     private void clearSecureSessionToken() {
         getSharedPreferences(SESSION_PREFS, MODE_PRIVATE).edit()
-                .remove(SESSION_TOKEN_PREF).remove(SESSION_IV_PREF).apply();
+                .remove(SESSION_TOKEN_PREF).remove(SESSION_IV_PREF).commit();
     }
 
     private void deliverVinScanResult(String value, String error) {
@@ -347,7 +347,52 @@ public class MainActivity extends Activity {
         });
     }
 
+    private boolean deletePrivateCache(File target) {
+        try {
+            String parent = getCacheDir().getCanonicalPath() + File.separator;
+            if (!target.getCanonicalPath().startsWith(parent)) return false;
+            File[] children = target.listFiles();
+            boolean success = true;
+            if (children != null) for (File child : children) success &= deletePrivateCache(child);
+            return (!target.exists() || target.delete()) && success;
+        } catch (java.io.IOException error) {
+            android.util.Log.w("ZukaitAuth", "Private cache cleanup failed", error);
+            return false;
+        }
+    }
+
     public class AndroidBridge {
+        @JavascriptInterface
+        public void clearPrivateWebData() {
+            MainActivity.this.clearSecureSessionToken();
+            runOnUiThread(() -> {
+                if (webView == null) return;
+                webView.clearCache(true);
+                webView.clearHistory();
+                webView.clearFormData();
+                pendingExportData = null;
+                if (voiceNoteRecorder != null) stopNativeVoiceNoteInternal(true);
+                android.app.NotificationManager notifications =
+                        (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                if (notifications != null) notifications.cancelAll();
+                // Only disposable private output; never downloads or server data.
+                boolean cleaned = true;
+                for (String name : new String[]{"reports", "vin"}) {
+                    cleaned &= deletePrivateCache(new File(getCacheDir(), name));
+                }
+                File[] files = getCacheDir().listFiles();
+                if (files != null) for (File file : files) {
+                    if (file.getName().startsWith("voice_note_")) cleaned &= deletePrivateCache(file);
+                }
+                final boolean cleanupSucceeded = cleaned;
+                android.webkit.CookieManager.getInstance().removeAllCookies(removed -> {
+                    android.webkit.CookieManager.getInstance().flush();
+                    if (webView != null) webView.evaluateJavascript(
+                            "window.zukaitPrivateDataCleared&&window.zukaitPrivateDataCleared(" + cleanupSucceeded + ")", null);
+                });
+            });
+        }
+
         @JavascriptInterface
         public void exitApp() {
             runOnUiThread(() -> {

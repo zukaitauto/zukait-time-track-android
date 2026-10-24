@@ -14,6 +14,7 @@ async function run(remote,initial,baseline=null,afterPull=null,who={role:'Employ
   const statuses=[];
   let renders=0;
   const ctx={
+    sessionEpoch:0,stale:()=>false,
     state:structuredClone(initial),cloudRevision:1,cloudDirty:false,dirtyGeneration:0,pullInFlight:false,
     initialDone:true,lastSyncedState:baseline,lastSuccessfulSyncAt:0,lastSyncError:'',
     consecutiveSyncErrors:0,conflictAlerted:false,cloudApplying:false,

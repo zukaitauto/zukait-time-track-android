@@ -10,6 +10,7 @@ node tests/manager-header-menu-runtime.mjs
 node tests/app-exit.mjs
 node tests/vin-scan-runtime.mjs
 node tests/secure-session-restore.mjs
+node tests/account-session-isolation.mjs
 node tests/accountant-release-gate.cjs
 node tests/accountant-finance.mjs
 node tests/accountant-paint-periods.mjs

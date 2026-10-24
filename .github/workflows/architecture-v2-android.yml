@@ -29,6 +29,7 @@ jobs:
           node tests/manager-overdue-time-review.cjs
           node tests/manager-header-menu-runtime.mjs
           node tests/secure-session-restore.mjs
+          node tests/account-session-isolation.mjs
           node tests/v2-jobcard-projection.mjs
           node tests/v2-jobcard-event-projection.mjs
           node tests/vin-scan-integration.mjs
