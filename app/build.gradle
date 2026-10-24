@@ -13,7 +13,7 @@ android {
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
         versionCode 336
-        versionName "V373" // Confirm time receipts without reusing stale snapshots; stop ID001 permanently.
+        versionName "V373" // Confirm time receipts without reusing stale snapshots; retain closed ID001 history.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }

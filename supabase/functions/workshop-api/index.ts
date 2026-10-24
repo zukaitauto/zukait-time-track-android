@@ -321,6 +321,13 @@ function preserveClosedSessions(candidate: any, current: any): any {
          ...Object.fromEntries(["finished","serverFinishedAt","serverAuthoritative","autoStopped","autoStoppedAt","autoStopReason","autoStoppedForNormalWork"].filter(k=>k in authoritative).map(k=>[k,authoritative[k]]))}
       : s;
   });
+  // The earlier completed-assignment filter may remove a stale open copy.
+  // Keep its already-closed ID001 history rather than dropping that session.
+  const retained=new Set(candidate.sessions.map((s: any)=>String(s?.id||"")));
+  for(const [id,session] of closed){
+    const saved: any=session;
+    if(saved.job==="ID001"&&!retained.has(id))candidate.sessions.push({...saved});
+  }
   return candidate;
 }
 

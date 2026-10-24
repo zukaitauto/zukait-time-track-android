@@ -14,6 +14,9 @@ assert.equal(transition(result.data,{...actor,id:'EMP004'},stop,300).code,'emplo
 const guardStart=source.indexOf('function preserveClosedSessions('),guardEnd=source.indexOf('\nfunction reconcileAutoOvertime(',guardStart);
 const guard=vm.runInNewContext(stripTypeScriptTypes(source.slice(guardStart,guardEnd))+';preserveClosedSessions',{});
 const stale=structuredClone(initial);guard(stale,result.data);assert.equal(stale.sessions[0].finished,true);assert.equal(stale.sessions[0].end,200);assert.equal(stale.assign[0].completed,true);
+const historyStart=source.indexOf('function preserveOperationalHistory('),historyEnd=source.indexOf('\nfunction ',historyStart+5);
+const operational=vm.runInNewContext(stripTypeScriptTypes(source.slice(historyStart,historyEnd))+';preserveOperationalHistory',{cloneValue:structuredClone});
+const oldDevice=structuredClone(initial);operational(oldDevice,result.data,actor);guard(oldDevice,result.data);assert.equal(oldDevice.sessions.length,1,'stale open copy must not erase closed ID001 history');assert.equal(oldDevice.sessions[0].finished,true);assert.equal(oldDevice.sessions[0].end,200);
 assert.equal(transition(stale,actor,{event_type:'START',action_id:'restart',job:'ID001',assignment_id:'idle-a'},300).code,'employee_time_assignment_not_open');
 const next=structuredClone(result.data);next.assign.push({id:'new-idle-a',emp:'EMP003',job:'ID001',completed:false});
 const newIdle=transition(next,actor,{event_type:'START',action_id:'new-start',job:'ID001',assignment_id:'new-idle-a',new_session_id:'new-idle-s'},300);assert.equal(newIdle.ok,true);
