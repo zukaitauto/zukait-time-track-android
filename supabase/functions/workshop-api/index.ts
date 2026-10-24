@@ -1027,7 +1027,7 @@ Deno.serve(async (req: Request) => {
       const enabled = Deno.env.get("ZUKAIT_MECHANICAL_ENABLED") === "true";
       const result = await mechanicalRoute(admin, user, body, {
         enabled, qcEnabled: Deno.env.get("ZUKAIT_MECHANICAL_QC_ENABLED") === "true", deliveryEnabled: Deno.env.get("ZUKAIT_MECHANICAL_DELIVERY_ENABLED") === "true",
-        documentsEnabled: Deno.env.get("ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED") === "true", trackingEnabled: Deno.env.get("ZUKAIT_MECHANICAL_TRACKING_ENABLED") === "true", sessionHash: enabled ? await sha256Hex(token) : "",
+        signaturesEnabled: Deno.env.get("ZUKAIT_MECHANICAL_SIGNATURES_ENABLED") === "true", documentsEnabled: Deno.env.get("ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED") === "true", trackingEnabled: Deno.env.get("ZUKAIT_MECHANICAL_TRACKING_ENABLED") === "true", sessionHash: enabled ? await sha256Hex(token) : "",
         verifySession: () => sessionUser(token)
       });
       return reply(result.body, result.status);

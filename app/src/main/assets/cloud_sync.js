@@ -1006,6 +1006,18 @@
     });return true;
   }
 
+  async function openMechanicalSignature(input){
+    const enabled=()=>window.ZUKAIT_MECHANICAL_ENABLED===true&&window.ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED===true&&window.ZUKAIT_MECHANICAL_SIGNATURES_ENABLED===true;
+    if(!enabled()||me?.id!=='SUP003'||me?.role!=='Supervisor'||!sessionToken())return false;
+    if(cloudDirty||cloudPushing||pullInFlight)throw Error('Sync pending workshop changes before signing.');
+    const owner=String(me.id),token=sessionToken(),current=()=>enabled()&&String(me?.id||'')===owner&&me?.role==='Supervisor'&&sessionToken()===token;
+    const module=await import('./mechanical_signature_capture.js');if(!current())return false;
+    let deviceId=localStorage.getItem('zukait_mechanical_device_v1');if(!deviceId){deviceId=crypto.randomUUID();localStorage.setItem('zukait_mechanical_device_v1',deviceId)}
+    openModal('<div id="zukaitMechanicalSignature"></div>');const root=document.getElementById('zukaitMechanicalSignature');if(!root)return false;
+    await module.mountMechanicalSignature(root,{enabled:true,isEnabled:enabled,...input,deviceId,getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()}),online:()=>navigator.onLine,
+      api:async body=>{if(!current()||!root.isConnected)throw Error('invalid_session');if(!navigator.onLine)throw Error('OFFLINE');if(cloudDirty||cloudPushing||pullInFlight)throw Error('WORKSHOP_SYNC_PENDING');if(!['mechanical_document','mechanical_signature_status','mechanical_signature_command'].includes(body.action))throw Error('mechanical_forbidden');return api(body)}});return true;
+  }
+
   async function openMechanicalWorkspace(checklistId=null){
     if(window.ZUKAIT_MECHANICAL_ENABLED!==true||!['Manager','Supervisor'].includes(me?.role)||!sessionToken())return false;
     const owner=String(me.id),token=sessionToken();
@@ -1014,7 +1026,7 @@
     openModal('<div id="zukaitMechanicalWorkspace"></div>');
     const root=document.getElementById('zukaitMechanicalWorkspace');if(!root)return false;
     const modal=root.closest('.modal-box');if(modal){modal.style.width='1100px';modal.style.maxWidth='95vw'}
-    await module.mountMechanicalWorkspace(root,{enabled:true,storage:localStorage,checklistId,openDocument:window.ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED===true?openMechanicalDocument:null,openTracking:window.ZUKAIT_MECHANICAL_TRACKING_ENABLED===true?openMechanicalTracking:null,
+    await module.mountMechanicalWorkspace(root,{enabled:true,storage:localStorage,checklistId,openSignature:window.ZUKAIT_MECHANICAL_SIGNATURES_ENABLED===true?openMechanicalSignature:null,openDocument:window.ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED===true?openMechanicalDocument:null,openTracking:window.ZUKAIT_MECHANICAL_TRACKING_ENABLED===true?openMechanicalTracking:null,
       getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()}),online:()=>navigator.onLine,
       onClose:()=>{if(root.isConnected)closeModal()},
       openDelivery:window.ZUKAIT_MECHANICAL_DELIVERY_ENABLED===true?openMechanicalDelivery:null,
