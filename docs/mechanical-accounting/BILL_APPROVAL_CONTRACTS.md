@@ -1,0 +1,29 @@
+# Bill / credit approval contracts — inactive planning boundary
+
+Owner confirmed on24 October2026: **only record confirmed received-material costs for now**. The fixed candidate amount mode is CONFIRMED_RECEIVED_MATERIALS_ONLY. No full-invoice tax/delivery charge inclusion or tax rate/claim policy is inferred.
+
+The new server-only bill_contracts.js is a pure plan builder, not a posting API, database writer, applied migration, usable Accountant screen or real document/receipt verifier. No production data is queried or changed. No current route imports it. `billEvidenceHash` hashes a strict reviewed evidence shape; it does not establish evidence authenticity. A future trusted reader must reconstruct actual vendor-document/receipt facts, and a future atomic writer must independently revalidate them. Fixture proofs are synthetic contracts, not production financial evidence.
+
+## Bill component and differences
+
+A bill plan requires an active explicitly identified supplier; unique supplier invoice reference and source IDs; positive exact integer OMR mills; invoice/accounting dates no later than the current server day in Asia/Muscat; optional due date; reason; explicit reviewed-document confirmation; and both supplier/payable revisions. Client actor/policy/source amounts/tax fields are rejected. A separately verified period authority must permit the transaction; valid date formatting never implies an open accounting period. This authority is synthetic in tests and not yet implemented for production. The reviewed document and confirmed receipt facts arrive only through separately verified trusted context, bound to the hashes reviewed in the command.
+
+Only Paint/parts receipt contracts are described here. Source-existence previews cannot satisfy the confirmed receipt schema. Received-cost proofs require a confirmed receipt-line identity, supplier, receipt date, exact cost and revision. Duplicate source or receipt-line IDs, changed hashes, missing/returned receipts, mismatched supplier mappings and unequal summed material cost fail review. No unknown cost is converted to zero.
+
+Recorded component amount must equal the selected confirmed received costs. If the reviewed invoice total is greater, the difference is returned/audited as PENDING_NOT_POSTED; it is neither added to the bill nor silently treated as zero. If confirmed costs exceed the invoice, approval requires review rather than overstating debt. This is a material component, not a claim that the complete vendor invoice balance is recognized. Total supplier outstanding remains Pending because openings/unmatched history/unposted differences are uncertified.
+
+Source-level uniqueness currently matches the prior projection. Multiple partial invoices against one PO/part line require finer authoritative receipt identities and allocation rules before posting; this candidate must not block or reinterpret the real garage workflow by activation. No bill posting is authorized merely because this pure plan succeeds.
+
+## Credit and time safety
+
+Credits require their own reviewed vendor credit-note reference/date/amount; a physical return alone never creates credit. They can explicitly allocate to same-supplier approved bills or remain unapplied. Existing settlement and credit coverage cannot be exceeded. The existing as-of projection is checked for the transaction date and current Oman day. Backdated allocations with later linked payments/reversals/credits require timeline review instead of rewriting historical balances. Credit approval remains blocked unless an explicit future trusted credit policy is configured; positive tests configure only synthetic policy, not owner approval of a live credit workflow.
+
+## Permissions, retries and preservation
+
+The default approver roles remain Accountant and Manager, configurable for the new operations. No mandatory Manager-only or no-self-approval rule is added. Online/current-session/active-account/first-login gates precede replay. Immutable command UUID/device/entity, supplier/payable revision expectations and the existing Accountant HMAC helper bind exact intent under a separate action namespace. An existing matching shared receipt resolves before stale revision/evidence checks; changed actor/fingerprint/entity/operation conflicts. The plan targets the existing workshop_accountant_commands receipt shape, not another receipt store.
+
+A successful plan contains one metadata row, document/evidence references, before/after audit and receipt/result for a FUTURE atomic writer. It contains no cash entry and explicitly has NONE_METADATA_ONLY expense effect. Posting a bill or supplier settlement must not duplicate costs already recognized from material workflows, alter Cash-invoice receipt projection, treat LPO collection as money or infer historical cash/bank attribution.
+
+Tests cover owner cost mode and pending differences, authentic-shape/hash/source mapping gates, exact amounts, duplicate references/sources, both roles/configuration/offline/account/revisions, exact lost-ack replay/request conflict, current/as-of credit limits/timeline review, Oman day rollover, immutable inputs and unchanged existing Accountant calculations. No native posting/concurrency acceptance is claimed for this pure layer.
+
+Next: actual scoped vendor-document and physical receipt authorities, finer partial-invoice source allocation, then private default-off atomic persistence with current session/revision/receipt/audit/ACL/concurrency/rollback qualification. Gated integration belongs in the existing Accountant workspace. Opening cutover/control totals, credit/period/tax policy, bank attribution, salary/payroll and production release remain separate decisions/qualification. Separate exact-source/environment approval remains mandatory for production.

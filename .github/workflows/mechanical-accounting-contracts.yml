@@ -20,6 +20,7 @@ jobs:
           node tests/accountant-payables.mjs
           node tests/accountant-supplier-contracts.mjs
           node tests/accountant-supplier-reads.mjs
+          node tests/accountant-bill-contracts.mjs
           node tests/mechanical-task-transitions.mjs
           node tests/mechanical-api.mjs
           node --experimental-vm-modules tests/mechanical-route.mjs
