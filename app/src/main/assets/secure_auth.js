@@ -2,7 +2,25 @@
   const AUTH_URL='https://pjknotnjkufadqavcmii.supabase.co/functions/v1/staff-auth';
   const PUBLISHABLE_KEY='sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A';
   const SESSION_KEY='zukait_secure_session_v42';
-  let restoring=false;
+  let restoring=false,authGeneration=0,loginBusy=false;
+  const privacy=()=>window.zukaitSessionPrivacy;
+  function current(ticket){if(ticket!==authGeneration||!navigator.onLine)throw Error('STALE_SESSION');}
+  async function verifiedDashboard(userObj,ticket){
+    if(!userObj?.id||!['Manager','Supervisor','Employee','Purchaser','Receptionist','Accountant'].includes(userObj.role))throw Error('Invalid server identity');
+    current(ticket);
+    if(['Receptionist','Accountant'].includes(userObj.role)){openApp(userObj);return;}
+    me=userObj;window.me=userObj;window.currentUser=userObj;
+    if(!window.zukaitCloud?.init||!(await window.zukaitCloud.init(true)))throw Error('Connection unavailable. Dashboard could not be verified.');
+    current(ticket);
+    render();current(ticket);openApp(userObj);privacy()?.unlock();
+    try{await window.zukaitV2?.pilot?.autoClaim?.();current(ticket);}catch(e){console.warn('V2 pilot session setup failed',e);}
+  }
+  function resetDashboard(){
+    window.zukaitCloud?.resetForSession?.();
+    privacy()?.clearCachedStorage();
+    if(typeof closeModal==='function')closeModal();
+    for(const id of ['employeeView','supervisorView','managerView','modal'])document.getElementById(id)?.replaceChildren?.();
+  }
   let nativeTokenCache='';
 
   function secureBridge(){
@@ -30,7 +48,7 @@
     }catch(_){return null}
   }
   function saveSession(token,user){
-    if(!token||!user)return;
+    if(!token||!user?.id||!user?.role)throw Error('Invalid server session');
     nativeTokenCache=String(token);
     const b=secureBridge();
     const s={user,savedAt:Date.now()};
@@ -121,39 +139,34 @@
   }
 
   window.login=async function(){
+    if(loginBusy)return;loginBusy=true;
+    const ticket=++authGeneration;
     const id=(document.getElementById('uid')?.value||'').trim().toUpperCase();
     const p=document.getElementById('pw')?.value||'';
-    if(!id||!p)return alert('Enter User ID and password.');
+    if(!id||!p){loginBusy=false;return alert('Enter User ID and password.');}
+    showLogin();resetDashboard();privacy()?.lock('Verifying account and loading workshop data…');
 
     const btn=document.querySelector('#login button.big-action');
     if(btn){btn.disabled=true;btn.textContent='Checking...';}
     try{
       const r=await callAuth({action:'login',user_id:id,password:p});
-      if(!r.ok){alert(authMessage(r));return;}
+      if(!r.ok){privacy()?.unlock();alert(authMessage(r));return;}
+      if(r.user?.id!==id)throw Error('Login identity mismatch');
       let sessionToken=r.session_token||'';
       if(r.must_change){
         const replacement=await forceFirstChange(id,p);
         if(!replacement)return;
         sessionToken=replacement;
       }
+      current(ticket);
       saveSession(sessionToken,r.user);
-      openApp(r.user);
-      if(['Receptionist','Accountant'].includes(r.user?.role))return;
-      try{render()}catch(err){
-        console.error(err);
-        alert('Dashboard loading error: '+(err?.message||err));
-      }
-      // Do not hold the login flow while cloud state initializes.
-      if(window.zukaitCloud?.init){
-        Promise.resolve(window.zukaitCloud.init(true)).then(async()=>{
-          try{render()}catch(_){}
-          try{await window.zukaitV2?.pilot?.autoClaim?.()}catch(e){console.warn('V2 pilot auto-claim failed',e)}
-        }).catch(err=>console.warn('Cloud init after login failed',err));
-      }
+      await verifiedDashboard(r.user,ticket);
     }catch(err){
       console.error(err);
-      alert(err?.message||'Login failed.');
+      if(ticket===authGeneration){showLogin();if(savedSession()?.token)privacy()?.lock('Connection or session unavailable. Reconnect or sign out.');else privacy()?.unlock();alert(err?.message||'Login failed.');}
     }finally{
+      loginBusy=false;
+      if(!me&&!savedSession()?.token&&navigator.onLine)privacy()?.unlock();
       if(btn){btn.disabled=false;btn.textContent='Login';}
       const pw=document.getElementById('pw');if(pw)pw.value='';
     }
@@ -162,15 +175,12 @@
   window.quickLogin=function(){alert('Quick Login is disabled. Use your individual User ID and password.');};
 
   window.logout=async function(){
-    const s=savedSession();
-    if(s?.token && navigator.onLine){
-      try{await callAuth({action:'logout',session_token:s.token})}catch(_){}
-    }
-    clearSession();
+    ++authGeneration;showLogin();
     if(employeeClockTimer)clearInterval(employeeClockTimer);employeeClockTimer=null;
     if(liveSupervisorTimer)clearInterval(liveSupervisorTimer);liveSupervisorTimer=null;
-    showLogin();
-    if(window.zukaitCloud?.stop)window.zukaitCloud.stop();
+    // Invalidate transports before any cache deletion or asynchronous revocation.
+    if(privacy()){const done=privacy().signOut();resetDashboard();return done;}
+    window.zukaitCloud?.stop?.();clearSession();resetDashboard();
   };
 
   window.changeOwnPassword=async function(){
@@ -275,43 +285,23 @@
   };
 
   async function restoreSession(){
-    if(restoring)return;
-    restoring=true;
+    if(restoring||loginBusy)return false;
+    restoring=true;const ticket=++authGeneration;
+    showLogin();resetDashboard();
     try{
       const s=savedSession();
-      if(!s?.token||!s?.user){showLogin();return false;}
-      if(!navigator.onLine){
-        openApp(s.user);
-        if(['Receptionist','Accountant'].includes(s.user?.role))return true;
-        try{render()}catch(e){console.warn('Offline restore render failed',e)}
-        if(window.zukaitCloud?.init)window.zukaitCloud.init(false);
-        return true;
-      }
-      const r=await callAuth({action:'session',session_token:s.token});
-      if(!r.ok && (r.code==='invalid_session'||r._status===401)){
-        clearSession();showLogin();return false;
-      }
-      if(!r.ok)throw new Error(authMessage(r));
+      if(!s?.token||!s?.user){privacy()?.unlock();return false;}
+      if(!navigator.onLine){privacy()?.lock();return false;}
+      const r=await callAuth({action:'session',session_token:s.token});current(ticket);
+      if(!r.ok){if(r.code==='invalid_session'||r._status===401)clearSession();throw Error(authMessage(r));}
+      if(r.user?.id!==s.user.id)throw Error('Saved session identity mismatch');
       saveSession(s.token,r.user);
-      openApp(r.user);
-      if(r.user?.role==='Receptionist')return true;
-      if(window.zukaitCloud?.init)await window.zukaitCloud.init(true);
-      try{render()}catch(e){console.warn('Session restore render failed',e)}
-      try{await window.zukaitV2?.pilot?.autoClaim?.()}catch(e){console.warn('V2 pilot auto-claim after session restore failed',e)}
-      return true;
+      await verifiedDashboard(r.user,ticket);return true;
     }catch(e){
-      console.warn('Session restore check failed',e);
-      const s=savedSession();
-      if(s?.token && s?.user){
-        openApp(s.user);
-        if(s.user?.role==='Receptionist')return true;
-        try{render()}catch(_){}
-        return true;
-      }
-      showLogin();return false;
+      if(ticket===authGeneration){showLogin();privacy()?.lock('Connection or session unavailable. Reconnect or sign out.');}
+      console.warn('Session verification failed',e);return false;
     }finally{restoring=false}
   }
-
   try{
     passwords={};
     delete state.passwords;
@@ -352,6 +342,6 @@
     clearSession
   };
 
+  window.addEventListener?.('offline',()=>{++authGeneration;showLogin();});
   setTimeout(()=>restoreSession(),50);
 })();
-

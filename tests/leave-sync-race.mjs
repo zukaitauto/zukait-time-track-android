@@ -3,7 +3,7 @@ const src=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
 const a=src.indexOf('  async function pull(force){'),b=src.indexOf('  async function probeRevision(){',a);
 async function race(acknowledged){
  let resolve;const pending=new Promise(r=>resolve=r);
- const c={state:{leaves:[]},lastSyncedState:null,cloudRevision:1,cloudDirty:false,dirtyGeneration:0,pullInFlight:false,initialDone:true,
+ const c={sessionEpoch:0,stale:()=>false,window:{},state:{leaves:[]},lastSyncedState:null,cloudRevision:1,cloudDirty:false,dirtyGeneration:0,pullInFlight:false,initialDone:true,
   me:{id:'S',role:'Supervisor'},navigator:{onLine:true},sessionToken:()=>true,status(){},clone:structuredClone,api:()=>pending,
   normalizeRemote(){throw Error('stale response must not replace new leave')},console};
  vm.createContext(c);vm.runInContext(src.slice(a,b)+';this.pull=pull',c);

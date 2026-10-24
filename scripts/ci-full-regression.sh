@@ -10,6 +10,7 @@ node tests/manager-header-menu-runtime.mjs
 node tests/app-exit.mjs
 node tests/vin-scan-runtime.mjs
 node tests/secure-session-restore.mjs
+node tests/account-session-isolation.mjs
 node tests/accountant-release-gate.cjs
 node tests/accountant-finance.mjs
 node tests/accountant-paint-periods.mjs
@@ -61,6 +62,7 @@ node tests/v156-id001-preliminary-server-deployment.mjs
 node tests/paint-safety.mjs
 node tests/paint-order-authority.mjs
 node tests/paint-invoice-pending.mjs
+node tests/paint-reports.mjs
 node tests/vehicle-logo-assets.mjs
 node tests/native-update-integrity.mjs
 node tests/native-update-sync-safety.mjs
@@ -164,8 +166,11 @@ node tests/technician-workload.mjs
 
 
 node tests/print-navigation.mjs
+node tests/reception-delivered-status.mjs
 
 node tests/spare-parts-expense-filters.mjs
+node tests/manager-single-purchase-card.mjs
+node tests/purchase-completed-print-clean.mjs
 
 node tests/time-management.mjs
 node tests/ideal-time-monitor.mjs

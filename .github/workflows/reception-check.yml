@@ -78,6 +78,12 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: python3 tests/reception-acceptance-preparation.py
       - run: npm run test:reception
+      - name: Verify editable Job Card number transport and permissions
+        run: node tests/job-number-edit.mjs
+      - name: Verify slow database acknowledgement and sync recovery
+        run: node tests/cloud-sync-recovery.mjs && node tests/workshop-save-pressure.mjs && node tests/sync-request-deadlines.mjs
+      - name: Verify confirmed ID001 stops cannot return from stale snapshots
+        run: node tests/id001-stop-receipt.mjs && node tests/id001-server-stop.mjs && node tests/legacy-closed-session-authority.mjs
       - run: npm run test:management
       - name: Verify compact Insurance Job Cards and dedicated detail view
         run: node tests/insurance-job-list-layout.mjs
@@ -109,7 +115,50 @@ jobs:
       - run: node tests/reception-v305-acceptance.mjs
       - run: node tests/reception-backup-export-safety.mjs
       - run: node tests/reception-release-publish-safety.mjs
+      - name: Use HTTPS Ubuntu mirrors for browser dependencies
+        run: |
+          for source in /etc/apt/apt-mirrors.txt /etc/apt/sources.list.d/ubuntu.sources; do
+            if [ -f "$source" ]; then
+              sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g; s|http://security.ubuntu.com/ubuntu|https://security.ubuntu.com/ubuntu|g' "$source"
+            fi
+          done
       - run: npx playwright install --with-deps chromium webkit
+        timeout-minutes: 10
+      - name: Verify print preview navigation outside the sandbox on Chromium and WebKit
+        run: node tests/print-navigation-browser.mjs
+      - name: Verify monthly and date-range Paint Reports on phones
+        run: node tests/paint-reports-responsive.mjs
+      - name: Verify delivered checklist and Job Card status for all Reception roles
+        run: node tests/reception-delivered-status-browser.mjs
+      - name: Verify Days Open and company filters for all Reception roles
+        run: node tests/reception-company-age-browser.mjs
+      - name: Verify organized Job Card editor and number confirmation on phones
+        run: node tests/job-number-edit-browser.mjs
+      - name: Save Job Card editor previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: job-card-edit-previews-${{ github.run_id }}
+          path: artifacts/job-edit/
+          retention-days: 14
+      - name: Verify shared dashboard cards on phones and desktop
+        run: node tests/shared-dashboard-cards.mjs && node tests/shared-dashboard-cards-responsive.mjs
+      - name: Save shared dashboard card previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-card-previews-${{ github.run_id }}
+          path: artifacts/dashboard-cards/
+          retention-days: 14
+      - name: Verify clean Purchase Completed A4 print layout
+        run: node tests/purchase-completed-print-responsive.mjs
+      - name: Save Purchase Completed print previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: purchase-print-preview-${{ github.run_id }}
+          path: artifacts/purchase-print/
+          retention-days: 14
       - name: Verify Cash and Insurance monthly dashboard cards
         run: node tests/cash-monthly-pulse.mjs && node tests/monthly-followup-responsive.mjs
       - name: Verify staff labour sessions and real PDF/image exports

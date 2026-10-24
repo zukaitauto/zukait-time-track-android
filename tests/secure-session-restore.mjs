@@ -9,7 +9,7 @@ function boot(store,bridge,response={ok:true,user},online=true){
   navigator:{onLine:online},localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)},
   document:{documentElement:{},querySelector:()=>null,getElementById:id=>({value:id==='uid'?'M1':id==='pw'?'test-only-password':'',classList:{add(){classes.set(id,true)},remove(){classes.set(id,false)},contains(){return false}}})},
   me:null,employeeClockTimer:null,liveSupervisorTimer:null,clearInterval(){},state:{},passwords:{},KEY:'state',render(){},fetch:async(_url,opts)=>{requests.push(JSON.parse(opts.body));return{status:response.status||200,json:async()=>response}},
-  window:{AndroidBridge:bridge}};
+  window:{AndroidBridge:bridge,zukaitCloud:{init:async()=>true}}};
  vm.runInNewContext(source,context);return{api:context.window.zukaitAuth,context,requests,classes};
 }
 for(const kind of ['browser','android']){
@@ -19,7 +19,7 @@ for(const kind of ['browser','android']){
  assert.equal(Boolean(JSON.parse(store.get(key)).token),kind==='browser');
  b=boot(store,bridge);assert.equal(await b.api.restoreSession(),true);assert.equal(b.requests[0].session_token,'legacy');
  assert.equal(b.context.window.currentUser.id,user.id);assert.equal(b.classes.get('app'),false);
- b=boot(store,bridge,{ok:false,status:503});assert.equal(await b.api.restoreSession(),true);assert.equal(b.api.getToken(),'legacy');
+ b=boot(store,bridge,{ok:false,status:503});assert.equal(await b.api.restoreSession(),false);assert.equal(b.api.getToken(),'legacy');assert.equal(b.classes.get('app'),true);
  b=boot(store,bridge,{ok:false,code:'invalid_session',status:401});assert.equal(await b.api.restoreSession(),false);assert.equal(store.has(key),false);
  if(bridge)assert.equal(native,'');
 }
@@ -28,7 +28,7 @@ const b=boot(failed,{saveSecureSessionToken(){throw Error('locked')},getSecureSe
 assert.equal(b.api.getToken(),'keep');assert.equal(JSON.parse(failed.get(key)).token,'keep');
 const missing=boot(new Map([[key,JSON.stringify({user})]]),undefined,{ok:false,status:503});
 assert.equal(await missing.api.restoreSession(),false);
-console.log('PASS: browser reload, Android secure migration/reload, failed migration retention, transient server failure, invalid session clearing, V2 user publication.');
+console.log('PASS: browser/Android secure storage, failed migration retention, fail-closed server errors, invalid session clearing and verified user publication.');
 // Start with empty storage and exercise the real login writer before reloads.
 for(const kind of ['browser','android']){
  const store=new Map();let native='';

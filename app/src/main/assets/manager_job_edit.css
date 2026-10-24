@@ -33,3 +33,26 @@
 @media(min-width:760px){.mje-form .mje-stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:420px){.mje-form .grid{gap:10px}.mje-form .section-title{padding:14px}.mje-form .section-title h3{font-size:18px}.mje-form .mje-employee{padding:12px!important;font-size:12px}.mje-form .mje-employee b{font-size:14px}.mje-form .mje-employee b:before{width:23px;height:23px;margin-right:5px}.mje-form .notice{padding:12px}.mje-form .notice b{font-size:14px}}
 @media(prefers-reduced-motion:reduce){.mje-form button{transition:none}}
+
+/* Full Edit: a single readable form hierarchy, scoped away from detail cards. */
+.mje-editor-modal{box-sizing:border-box!important;width:calc(100vw - 24px)!important;max-width:960px!important;max-height:calc(100dvh - 24px)!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch}
+.mje-form.mje-editor{padding:4px;overflow-wrap:anywhere;color:#17324b}
+.mje-editor .mje-editor-header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 18px;border-radius:14px;background:#173c72;color:#fff}
+.mje-editor .mje-editor-header h3{margin:2px 0!important;color:#fff!important;font-size:22px!important;line-height:1.25}
+.mje-editor .mje-editor-header small{color:#dceaff;font-weight:700;font-size:11px;letter-spacing:1px}
+.mje-editor .mje-editor-header button{flex:none;background:#fff!important;color:#173c72!important}
+.mje-editor .mje-vehicle-summary{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 4px;color:#254568}
+.mje-editor .mje-vehicle-summary span{flex:none;background:#e7f0fb;border-radius:7px;padding:5px 9px;font-weight:800}
+.mje-editor .mje-section{min-width:0;margin:16px 0;padding:14px;border:1px solid #cfdeec;border-radius:12px;background:#fff;box-shadow:0 3px 0 #e4edf5}
+.mje-editor .mje-section legend{padding:0 7px;font-weight:800;color:#1d4976;font-size:15px}
+.mje-editor .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:4px 0}
+.mje-editor .mje-wide{grid-column:1/-1}
+.mje-editor label{padding:0;border:0;background:transparent;border-radius:0;color:#3b526c;font-size:13px}
+.mje-editor input,.mje-editor select,.mje-editor textarea{margin-top:6px;min-height:46px;background:#f9fbfe;border-color:#b9cbde;font-size:16px}
+.mje-editor label[hidden]{display:none!important}
+.mje-editor label button{display:inline-block;margin:8px 6px 0 0;padding:9px 11px!important;font-size:12px;min-height:40px}
+.mje-editor label small{line-height:1.4;color:#536c84}
+.mje-editor .mje-editor-actions{position:sticky;bottom:-8px;display:flex;justify-content:flex-end;gap:10px;margin-top:16px;padding:12px 0 4px;background:#fff;border-top:1px solid #d7e2ee;z-index:2}
+.mje-editor .mje-editor-actions button{min-width:110px}
+.mje-editor button:disabled{opacity:.65;cursor:wait}
+@media(max-width:520px){.mje-editor .grid{grid-template-columns:1fr;gap:14px}.mje-editor .mje-section{padding:12px}.mje-editor .mje-editor-header{padding:13px}.mje-editor .mje-editor-header h3{font-size:19px!important}.mje-editor .mje-vehicle-summary{align-items:flex-start;flex-direction:column;gap:5px}.mje-editor .mje-editor-actions button{flex:1;min-width:0}}

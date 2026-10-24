@@ -1,0 +1,38 @@
+/* Shared raised dashboard surfaces. No perspective or continuous animation. */
+:root{--card-edge:#b7cadc;--card-shadow:rgba(24,49,77,.15)}
+:is(#managerView,#supervisorView,#employeeView,#purchaserView) :is(.card,.v143-top,.v143-resource,.v143-glance>button,.v143-tech>button,.v143-actions>button,.v67-feature,.v67-control,.v75s-card,.v75s-hero),
+.workshop-overview :is(.wo-quick-card,.wo-360-card,.wo-stats>button,.wo-tools>button),
+:is(.module-card,.pending-card,.summary>div,.summary>button,.delivery-card,.rdb-card,.ocean-job,.ocean-time),
+#modal.v2-sp-modal-host :is(.v2-sp-tile,.v2-sp-liquid-tile,.v2-sp-summary>.notice,.v2-sp-recent){
+ border-radius:18px!important;
+ box-shadow:inset 0 2px 1px #ffffffd9,0 5px 0 var(--card-edge),0 11px 20px var(--card-shadow)!important;
+ margin-bottom:7px;
+}
+:is(#managerView,#supervisorView,#employeeView,#purchaserView) :is(.card,.v143-top,.v143-resource,.v143-glance>button,.v67-feature,.v67-control),
+:is(.module-card,.pending-card,.delivery-card){border:1px solid var(--card-edge)}
+#modal.v2-sp-modal-host .v2-sp-grid2{gap:15px 12px!important;padding:3px 0 8px}
+#modal.v2-sp-modal-host .v2-sp-tile{
+ --card-edge:#b7d2ee;background:linear-gradient(145deg,#fff,#e6f1fc)!important;
+ border:1px solid var(--card-edge)!important;color:#163b60!important;
+ min-width:0;min-height:130px!important;height:auto!important;
+ padding:13px!important;text-align:left;white-space:normal!important;overflow-wrap:anywhere;
+}
+#modal.v2-sp-modal-host .v2-sp-tile[data-sp-card="INVOICE"]{--card-edge:#c6b4eb;background:linear-gradient(145deg,#faf7ff,#eadffb)!important;color:#513081!important}
+#modal.v2-sp-modal-host .v2-sp-tile[data-sp-card="SUBLET"]{--card-edge:#a6d7cf;background:linear-gradient(145deg,#f4fffc,#d9f1e9)!important;color:#17564c!important}
+#modal.v2-sp-modal-host .v2-sp-tile:is([data-sp-card="WAITING"],[data-sp-card="DELIVERED_PENDING"]){--card-edge:#e7c17b;background:linear-gradient(145deg,#fffcf2,#fcebc8)!important;color:#704711!important}
+#modal.v2-sp-modal-host .v2-sp-tile[data-sp-card="RETURNED"]{--card-edge:#b0d8bf;background:linear-gradient(145deg,#f5fff8,#dbf1e2)!important;color:#24583c!important}
+#modal.v2-sp-modal-host .v2-sp-tile[data-sp-card="PURCHASE_COMPLETED"]{--card-edge:#b4d5df;background:linear-gradient(145deg,#f8fdff,#deeff4)!important;color:#245365!important}
+#modal.v2-sp-modal-host .v2-sp-tile :is(b,strong,.v271-sp-label,.v271-sp-count){color:inherit!important;line-height:1.25!important}
+#modal.v2-sp-modal-host .v2-sp-tile>b{display:block;margin:10px 0 5px;font-size:14px!important}
+#modal.v2-sp-modal-host .v2-sp-tile>strong{display:block;font-size:25px!important}
+#modal.v2-sp-modal-host .sp-card-unit{display:block;margin-top:6px;font-size:11px!important;line-height:1.35;color:inherit!important;font-weight:600}
+#modal.v2-sp-modal-host .v2-sp-tile>span:first-child{box-shadow:inset 0 1px 1px #fff,0 3px 6px #17304d16!important}
+#modal.v2-sp-modal-host .v2-sp-nav{position:relative!important;top:auto!important;min-height:44px;margin:0 0 12px!important;padding:4px 0 8px!important;z-index:1!important}
+#modal.v2-sp-modal-host .v2-sp-recent{height:auto!important;min-height:76px!important;padding:12px!important;background:#fff!important;color:#17304d!important}
+#modal.v2-sp-modal-host .v2-sp-recent :is(strong,b){color:#17304d!important}
+#modal.v2-sp-modal-host .v2-sp-recent small{color:#455e75!important;line-height:1.45;white-space:normal;overflow-wrap:anywhere}
+:is(.module-card,.pending-card,.v2-sp-tile,.v2-sp-liquid-tile,.v143-top,.v143-resource,.wo-quick-card):focus-visible{outline:3px solid #1763c7!important;outline-offset:4px}
+:is(button.module-card,button.pending-card,button.v2-sp-tile,button.v2-sp-liquid-tile,button.v143-top,button.v143-resource,button.wo-quick-card):active:not(:disabled){transform:translateY(3px)!important;box-shadow:inset 0 1px 2px #17304d20,0 2px 0 var(--card-edge),0 5px 9px var(--card-shadow)!important}
+@media(max-width:380px){#modal.v2-sp-modal-host .v2-sp-grid2{gap:13px 8px!important}#modal.v2-sp-modal-host .v2-sp-tile{padding:10px!important}#modal.v2-sp-modal-host .v2-sp-tile>b{font-size:13px!important}}
+@media(prefers-reduced-motion:reduce){:is(.module-card,.pending-card,.v2-sp-tile,.v2-sp-liquid-tile,.v143-top,.v143-resource,.wo-quick-card){transition:none!important}}
+@media print{:is(.card,.module-card,.pending-card,.summary>button,.rdb-card,.ocean-job,.v2-sp-tile,.v2-sp-recent,.v143-top,.wo-360-card){box-shadow:none!important;transform:none!important}}

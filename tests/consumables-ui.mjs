@@ -120,6 +120,58 @@ assert.match(report,/OMR 4\.000/);assert.doesNotMatch(report,/JC JC1/);
 state.consumables.actuals=originalActuals;
 console.log('Custom Range job totals and expandable material details respect inclusive dates and filters');
 
+// Job summaries use numeric JC order, combine all selected actuals and preserve state.
+state.consumables.actuals=[
+ {jobCard:'JC10',actualAt:new Date(2026,9,3,12).getTime(),locked:true,lines:[reportLine(6,1)]},
+ {jobCard:'JC2',actualAt:new Date(2026,9,2,12).getTime(),locked:true,lines:[reportLine(3,1),reportLine(5,2)]},
+ {jobCard:'JC2',actualAt:new Date(2026,9,4,12).getTime(),locked:true,lines:[reportLine(4,1)]},
+ {jobCard:'OLD',actualAt:new Date(2026,8,1,12).getTime(),locked:true,lines:[reportLine(2,1)]},
+ {jobCard:'VOID',actualAt:new Date(2026,9,4,12).getTime(),locked:true,voided:true,lines:[reportLine(100,1)]},
+ {jobCard:'DRAFT',actualAt:new Date(2026,9,4,12).getTime(),locked:false,lines:[reportLine(100,1)]}
+];
+const snapshot=JSON.stringify(state);
+for(const mode of ['monthly','custom','jc']){
+ fill({crMode:mode,crFrom:'2026-10-01',crTo:'2026-10-15',crJc:mode==='jc'?'JC2':''});
+ ctx.consRunReports();report=element('crResult').innerHTML;
+ assert.equal((report.match(/<details class="cons-job-report">/g)||[]).length,mode==='jc'?1:2);
+ assert.match(report,/JC JC2 total: OMR 12\.000/);
+ assert.doesNotMatch(report,/JC VOID|JC DRAFT|JC OLD/);
+ if(mode!=='jc'){assert.ok(report.indexOf('JC JC2</b>')<report.indexOf('JC JC10</b>'));assert.match(report,/Total Actual Expense: OMR 18\.000/);}
+ if(mode==='monthly')assert.match(report,/Workshop Month-to-Month Total/,'Monthly comparison must remain available');
+ assert.equal(JSON.stringify(state),snapshot,'Reporting must not change stored records');
+}
+state.consumables.actuals=originalActuals;
+console.log('Monthly/custom/job cost summaries: numeric JC order, combined costs, filters, comparison and unchanged records passed');
+
+
+
+// Painter totals stay compact, keep distinct staff IDs, and preserve filtered amounts.
+const savedIssues=state.consumables.issues,savedUsers=ctx.users;
+state.consumables.issues=[
+ {jobCard:'JC2',type:C.TYPES.ISSUED,mainPainterId:'P1'},
+ {jobCard:'JC10',type:C.TYPES.ISSUED,mainPainterId:'P2'}
+];
+ctx.users=[...savedUsers,{id:'P2',name:'Painter',department:'Painter'}];
+state.consumables.actuals=[
+ {jobCard:'JC10',actualAt:new Date(2026,9,3,12).getTime(),locked:true,lines:[reportLine(6,1)]},
+ {jobCard:'JC2',actualAt:new Date(2026,9,2,12).getTime(),locked:true,lines:[reportLine(3,1),reportLine(5,2)]},
+ {jobCard:'JC2',actualAt:new Date(2026,9,4,12).getTime(),locked:true,lines:[reportLine(4,1)]}
+];
+const painterSnapshot=JSON.stringify(state);
+fill({crMode:'painter',crFrom:'2026-10-01',crTo:'2026-10-15',crJc:'',crMat:'',crBrand:'',crPainter:'',crSupervisor:''});ctx.consRunReports();
+report=element('crResult').innerHTML;
+assert.equal((report.match(/cons-painter-report/g)||[]).length,2,'Distinct staff with the same name must not merge');
+assert.doesNotMatch(report,/<details[^>]*\\sopen/,'Painter lists start collapsed');
+assert.match(report,/Total Actual Expense: OMR 18.000/);
+assert.match(report,/Painter total: OMR 12.000/);assert.match(report,/Painter total: OMR 6.000/);
+assert.match(report,/<th>JC<\/th>/,'Full material details retain Job Card numbers');
+fill({crPainter:'P1'});ctx.consRunReports();report=element('crResult').innerHTML;
+assert.equal((report.match(/cons-painter-report/g)||[]).length,1);
+assert.match(report,/Total Actual Expense: OMR 12.000/);assert.doesNotMatch(report,/>JC10<\/td>/);
+assert.equal(JSON.stringify(state),painterSnapshot);
+state.consumables.actuals=originalActuals;state.consumables.issues=savedIssues;ctx.users=savedUsers;fill({crPainter:''});
+console.log('Painter report: compact totals, same-name staff isolation, drilldown, filters and unchanged records passed');
+
 // One Material Summary combines brands per material and respects the selected range.
 state.consumables.actuals=[
  {jobCard:'JC1',actualAt:new Date(2026,9,1,12).getTime(),locked:true,lines:[reportLine(3,1),reportLine(5,2)]},

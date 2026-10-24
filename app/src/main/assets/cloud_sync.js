@@ -14,6 +14,9 @@
     return String(deniedSnapshot.user)!==String(me?.id||'') || isMechanicalConflict(deniedSnapshot.error) || JSON.stringify(deniedSnapshot.data)===JSON.stringify(snapshot);
   }
 
+  let sessionEpoch=0;
+  const requestControllers=new Set();
+  const stale=epoch=>epoch!==sessionEpoch;
   let cloudRevision=Number(localStorage.getItem(REV_KEY)||0)||0;
   let cloudDirty=localStorage.getItem(DIRTY_KEY)==='1';
   let cloudApplying=false;
@@ -180,7 +183,9 @@
   const syncRecoveryKey=action=>action==='save'?'save':['revision','load','live_status','monthly_followup'].includes(action)?'read':null;
   const retryDelay=()=>Math.max(0,...[...syncRecovery.values()].map(x=>x.until-Date.now()));
   async function api(payload){
+    const epoch=sessionEpoch;
     const token=sessionToken();
+    const checkSession=()=>{if(stale(epoch)||token!==sessionToken())throw Error('STALE_SESSION');};
     if(!token)throw new Error('NO_SESSION');
     if(!navigator.onLine)throw new Error('NETWORK');
     const key=syncRecoveryKey(payload.action);
@@ -189,8 +194,11 @@
       e.retryAfterMs=retryDelay();e.httpStatus=503;throw e;
     }
     const sequence=++syncRequestSequence;
-    const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(),15000);
+    const controller=new AbortController();requestControllers.add(controller);
+    // A save may authenticate, read/rebase and commit sequentially. Its deadline
+    // must exceed the database transport's 10s per-operation guard.
+    const timeoutMs=payload.action==='revision'?15000:45000;
+    const timer=setTimeout(()=>controller.abort(),timeoutMs);
     let res;
     function failed(code,httpStatus,retryAfter=0){
       if(key){
@@ -213,6 +221,7 @@
         if(e?.name==='AbortError')throw e;
         throw failed('INVALID_SERVER_RESPONSE',res.status>=400?res.status:502);
       }
+      checkSession();
       if(!body||typeof body!=='object')throw failed('INVALID_SERVER_RESPONSE',502);
       body._status=res.status;
       if(res.status>=500||res.status===429||['server_error','database_busy','conflict_busy'].includes(body.code)){
@@ -229,17 +238,20 @@
     }catch(e){
       if(e?.retryAfterMs!==undefined)throw e;
       throw failed(e?.name==='AbortError'?'TIMEOUT':'NETWORK',0);
-    }finally{clearTimeout(timer)}
+    }finally{clearTimeout(timer);requestControllers.delete(controller)}
   }
   api.retryAfter=action=>syncRecoveryKey(action)?retryDelay():0;
 
   async function employeeTimeAction(command){
+    const epoch=sessionEpoch;
     if(!me||me.role!=='Employee')throw new Error('employee_time_forbidden');
+    const actorId=String(me.id),actionGeneration=dirtyGeneration;
     if(!navigator.onLine)throw new Error('NETWORK');
     const started=Date.now();
     const payload={...command,action:'employee_time_action'};
     let lastError=null;
     while(Date.now()-started<30000){
+      if(stale(epoch))throw Error('STALE_SESSION');
       try{
         const r=await api(payload);
         if(!r.ok){
@@ -248,11 +260,40 @@
         // The mutation response itself is the authoritative confirmation. Pull
         // the committed state + live row before allowing the employee UI to leave
         // its pending state.
-        cloudRevision=Math.max(cloudRevision,Number(r.server_revision||0));
+        if(!me||me.role!=='Employee'||String(me.id)!==actorId)throw new Error('EMPLOYEE_TIME_ACTOR_CHANGED');
+        const receiptRevision=Number(r.server_revision||0);
+        // A mutation receipt is not a complete workshop snapshot. Never attach
+        // the new revision to the old baseline and accept not_modified for it.
+        if(receiptRevision>cloudRevision)lastSyncedState=null;
+        cloudRevision=Math.max(cloudRevision,receiptRevision);
+        const audit=r.audit;
+        if(audit?.confirmed===true&&String(audit.type)===String(payload.event_type).toUpperCase()&&String(audit.emp)===String(me.id)&&String(audit.id)===String(payload.action_id)){
+          const applyOwn=(key,rows)=>{
+            state[key]=Array.isArray(state[key])?state[key]:[];
+            for(const row of rows.filter(x=>x&&String(x.emp)===String(me.id))){
+              const i=state[key].findIndex(x=>String(x?.id)===String(row.id));
+              if(i<0)state[key].push(clone(row));else state[key][i]={...state[key][i],...clone(row)};
+            }
+          };
+          // Apply only server-confirmed after-images. No optimistic timestamps.
+          if(receiptRevision>=cloudRevision){
+            applyOwn('sessions',[...(r.closed_sessions||[]),r.session]);
+            applyOwn('assign',[...(r.closed_assignments||[]),r.assignment]);
+            if(r.live_row&&String(r.live_row.employee_id)===String(me.id)&&receiptRevision>=liveStatusRevision){
+              liveStatusRows=[clone(r.live_row)];liveStatusRevision=receiptRevision;
+              liveStatusLastFetchedAt=Date.now();liveStatusServerTime=Number(r.server_time||audit.serverAt||0);
+              publishLiveStatus(true);
+            }
+            persistLocal();
+          }
+        }
         localStorage.setItem(REV_KEY,String(cloudRevision));
-        cloudDirty=false;localStorage.removeItem(DIRTY_KEY);localStorage.removeItem(PENDING_KEY);
+        if(!cloudDirty&&dirtyGeneration===actionGeneration){
+          localStorage.removeItem(DIRTY_KEY);localStorage.removeItem(PENDING_KEY);
+        }
         try{await pull(true)}catch(_){}
         try{await pullLiveStatus()}catch(_){}
+        if(stale(epoch))throw Error('STALE_SESSION');
         return r;
       }catch(e){
         lastError=e;
@@ -377,6 +418,7 @@
   }
 
   async function pullLiveStatus(){
+    const epoch=sessionEpoch;
     if(liveInFlight||!sessionToken()||!navigator.onLine||!liveRole())return false;
     liveInFlight=true;
     try{
@@ -390,11 +432,12 @@
       publishLiveStatus(true);
       return true;
     }catch(e){
+      if(stale(epoch))return false;
       warnPoll('Authoritative live-status refresh failed',e);
       publishLiveStatus(false);
       return false;
     }finally{
-      liveInFlight=false;
+      if(!stale(epoch))liveInFlight=false;
     }
   }
 
@@ -629,9 +672,10 @@
   }
 
   async function pull(force){
+    const epoch=sessionEpoch;
     if(pullInFlight)return false;
     if(!sessionToken()){status('LOGIN REQUIRED','local');initialDone=true;return false}
-    if(!navigator.onLine){status(cloudDirty?'OFFLINE — CHANGE QUEUED':'OFFLINE — LOCAL CACHE','warn');initialDone=true;return false}
+    if(!navigator.onLine){initialDone=false;return false}
     if(cloudDirty&&!force){status('CHANGE WAITING TO SYNC','warn');return false}
     // Background revision checks keep the last successful indicator steady.
     if(!initialDone)status('SYNCING…','info');
@@ -643,12 +687,23 @@
     // A persisted revision alone cannot prove that a cold-start cache is valid.
     const pullBaseline=lastSyncedState?clone(lastSyncedState):null;
     let r;
-    try{r=await api(pullBaseline?{action:'load',known_revision:pullRevision}:{action:'load'})}finally{pullInFlight=false}
+    try{
+      const confirmedRevision=arguments[1];
+      // The probe has just authenticated and confirmed this exact revision.
+      // Reapply the immutable in-memory baseline for periodic cache repair;
+      // no duplicate load request is needed. Cold/changed revisions still load.
+      if(pullBaseline&&confirmedRevision===pullRevision&&lastProbedRevision===pullRevision&&Date.now()-lastRevisionProbeAt<700){
+        r={ok:true,revision:pullRevision,not_modified:true,user:me};
+      }else{
+        r=await api(pullBaseline?{action:'load',known_revision:pullRevision}:{action:'load'});
+      }
+    }finally{if(!stale(epoch))pullInFlight=false}
     if(!r.ok){
       if(r.code==='invalid_session')status('LOGIN REQUIRED','bad');
       else status('SYNC ERROR','bad');
       throw new Error(r.code||'LOAD_FAILED');
     }
+    if(window.zukaitSessionPrivacy&&(!r.user||r.user.id!==me?.id||r.user.role!==me?.role))throw Error('SESSION_IDENTITY_MISMATCH');
     const remoteRev=Number(r.revision||0);
     // A user can mark leave while this request is awaiting the server. Do not
     // replace that newer local save (or a newer push acknowledgement) with the
@@ -686,6 +741,7 @@
   }
 
   async function probeRevision(){
+    const epoch=sessionEpoch;
     if(revisionProbeInFlight||!sessionToken()||!navigator.onLine)return false;
     if(api.retryAfter?.('revision')>0)return false;
     // Focus/visibility and the scheduled tick can arrive together. Reuse only
@@ -712,20 +768,22 @@
       }
       if(cloudPushing)return false;
 
-      await pull(true);
+      await pull(true,remoteRevision);
       if(liveRole())await pullLiveStatus();
       return true;
     }catch(e){
+      if(stale(epoch))return false;
       lastSyncError=String(e?.code||e?.message||'REVISION_CHECK_FAILED');consecutiveSyncErrors++;
       setServerConnection(navigator.onLine?'busy':'offline',navigator.onLine?'Workshop sync is delayed. Retrying automatically; keep this page open.':'No internet connection. Check Wi-Fi/internet.');
       warnPoll('Revision probe failed',e);
       return false;
     }finally{
-      revisionProbeInFlight=false;
+      if(!stale(epoch))revisionProbeInFlight=false;
     }
   }
 
   async function push(retry=0){
+    const epoch=sessionEpoch;
     if(cloudPushing||!cloudDirty)return false;
     if(api.retryAfter?.('save')>0)return false;
     if(permissionBlocked(payloadState())){
@@ -895,6 +953,7 @@
       saveError.code=r.code||'SAVE_FAILED';saveError.httpStatus=r._status||0;
       throw saveError;
     }catch(e){
+      if(stale(epoch)||e?.message==='STALE_SESSION')return false;
       console.error('Cloud save failed',e);
       cloudDirty=true;
       localStorage.setItem(DIRTY_KEY,'1');
@@ -924,16 +983,18 @@
       if(!blocked&&navigator.onLine&&sessionToken())setTimeout(()=>{if(cloudDirty&&!cloudPushing)push(0)},Math.max(api.retryAfter?.('save')||0,Math.min(15000,1000*Math.pow(2,Math.min(consecutiveSyncErrors,4)))));
       return false;
     }finally{
+      if(!stale(epoch)){
       cloudPushing=false;
       if(followupPush&&cloudDirty&&navigator.onLine&&sessionToken()){
         clearTimeout(pushTimer);
         pushTimer=setTimeout(()=>push(0),0);
       }
+      }
     }
   }
 
   window.cloudScheduleSave=function(){
-    if(cloudApplying)return;
+    if(cloudApplying||window.zukaitSessionPrivacy?.locked||!me||!navigator.onLine)return;
     dirtyGeneration++;
     cloudDirty=true;
     localStorage.setItem(DIRTY_KEY,'1');
@@ -1216,6 +1277,7 @@
   }
 
   async function init(force){
+    const epoch=sessionEpoch;
     const generation=++pollGeneration;pollActive=false;
     removeSetupButton();
     clearTimeout(pollTimer);
@@ -1223,7 +1285,7 @@
     if(!sessionToken()){
       status('LOGIN REQUIRED','local');
       setServerConnection(navigator.onLine?'connecting':'offline',navigator.onLine?'Login required before server connection can be confirmed.':'No internet connection.');
-      initialDone=true;
+      initialDone=false;
       return false;
     }
     try{
@@ -1232,11 +1294,13 @@
       if(!cloudDirty)await pull(!!force);
       if(liveRole())await pullLiveStatus();
     }catch(e){
+      if(stale(epoch))return false;
       console.error('Cloud initialization failed',e);
       status(navigator.onLine?'SYNC ERROR':'OFFLINE — LOCAL CACHE',navigator.onLine?'bad':'warn');
       setServerConnection(navigator.onLine?'busy':'offline',navigator.onLine?'Workshop sync is delayed. Retrying automatically; keep this page open.':'No internet connection. Check Wi-Fi/internet.');
-      initialDone=true;
+      initialDone=false;return false;
     }
+    if(stale(epoch)||!navigator.onLine||!lastSyncedState)return false;
     // Work-status revision detection stays at 1 second foreground / 120 seconds hidden; writes retain their independent immediate queue.
     // Explicit actions and reconnect still reconcile immediately.
     beginPolling(generation);
@@ -1244,6 +1308,7 @@
   }
 
   function stop(){
+    sessionEpoch++;for(const c of requestControllers)c.abort();requestControllers.clear();
     pollActive=false;pollGeneration++;
     clearTimeout(pollTimer);pollTimer=null;
     clearTimeout(livePollTimer);livePollTimer=null;
@@ -1251,6 +1316,16 @@
     clearTimeout(dashboardRenderTimer);dashboardRenderTimer=null;
   }
 
+
+  function resetForSession(){
+    stop();cloudDirty=false;cloudPushing=false;cloudApplying=false;pullInFlight=false;liveInFlight=false;revisionProbeInFlight=false;
+    cloudRevision=0;dirtyGeneration=0;initialDone=false;lastSyncedState=null;deniedSnapshot=null;
+    lastSuccessfulSyncAt=0;lastRevisionProbeAt=0;lastProbedRevision=-1;lastSyncError='';consecutiveSyncErrors=0;
+    liveStatusRows=[];liveStatusRevision=0;liveStatusLastFetchedAt=0;liveStatusServerTime=0;
+    readLatestInFlight=null;monthlyReadInFlight=null;confirmedReadState=null;confirmedReadRevision=-1;syncRecovery.clear();
+    for(const key of [REV_KEY,DIRTY_KEY,PENDING_KEY,DENIED_KEY,KEY])localStorage.removeItem(key);
+    state={};users=[];ensureShape();window.zukaitDataIndex?.invalidate?.();publishLiveStatus(false);
+  }
 
   // V100 shared-dashboard consistency: every logged-in device refreshes immediately when the app becomes visible again.
   async function refreshVisibleSharedState(){
@@ -1281,7 +1356,7 @@
     publishLiveStatus(false);
   });
   window.zukaitCloud={
-    init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,readMechanicalQcOverview,openMechanicalWorkspace,openMechanicalDelivery,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
+    resetForSession,init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,readMechanicalQcOverview,openMechanicalWorkspace,openMechanicalDelivery,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
     configured:()=>true,
     get confirmedState(){return confirmedReadRevision>=cloudRevision?confirmedReadState:null},
     get revision(){return cloudRevision},
@@ -1302,4 +1377,3 @@
     else installMechanicalMenu().catch(e=>console.warn('Mechanical menu unavailable',e));
   }
 })();
-

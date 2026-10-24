@@ -22,6 +22,11 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Install pinned test dependencies
+        # The session-isolation test executes the real DOM/auth/sync integration.
+        # Install the repository's pinned test dependencies before that test.
+        run: npm ci --ignore-scripts --include=dev
+
       - name: Verify loaded scripts and regression paths
         run: |
           bash scripts/ci-validate-js.sh
@@ -29,6 +34,7 @@ jobs:
           node tests/manager-overdue-time-review.cjs
           node tests/manager-header-menu-runtime.mjs
           node tests/secure-session-restore.mjs
+          node tests/account-session-isolation.mjs
           node tests/v2-jobcard-projection.mjs
           node tests/v2-jobcard-event-projection.mjs
           node tests/vin-scan-integration.mjs

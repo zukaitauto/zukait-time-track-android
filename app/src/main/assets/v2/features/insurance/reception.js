@@ -405,7 +405,19 @@
       "</span>"
     );
   }
+  function checklistDelivered(r) {
+    const j=current?.record?.rc_no===r.rc_no?current.linked_job:null;
+    return r.delivered===true||j?.delivered===true||String(j?.status||'').toUpperCase()==='DELIVERED';
+  }
+  function checklistDeliveryDate(r) {
+    const j=current?.record?.rc_no===r.rc_no?current.linked_job:null;
+    const value=j?.deliveryDate||j?.deliveredAt||r.delivered_date||r.delivered_at;
+    if(!value)return '';
+    const n=typeof value==='number'?value:/^\d+$/.test(String(value))?Number(value):Date.parse(value);
+    return Number.isFinite(n)?new Date(n).toLocaleDateString('en-GB',{timeZone:'Asia/Muscat'}):'';
+  }
   function badges(r) {
+    if(checklistDelivered(r))return badge('Delivered')+(checklistDeliveryDate(r)?badge(checklistDeliveryDate(r)):'');
     return (
       badge(r.location) + (r.released_date?badge("Vehicle Released"):r.repair_status&&r.repair_status!=="PENDING"?badge(r.repair_status):"") +
       (r.outcome
@@ -530,14 +542,14 @@
             linkedChecklist=r;
             linkedApprovalValid=!!result.external_approval?.valid;
             document.getElementById('rc-direct-checklist-clear').hidden=false;
-            for(const k of ['make','model','registration','year','vin','customer','contact','claim','remarks']){
-              if(form.elements.namedItem(k))form.elements.namedItem(k).value=String(d[k]||'');
+            for(const k of ['make','model','registration','year','vin','customer','contact','claim','remarks','odometer']){
+              if(form.elements.namedItem(k))form.elements.namedItem(k).value=String(d[k]??'');
             }
             type.value=r.job_type||'INSURANCE';type.disabled=true;type.onchange();
             form.elements.namedItem('odometer_unit').value=String(d.odometer_unit||'KM');
             if(r.insurance_id&&form.elements.insurance_id)form.elements.insurance_id.value=String(r.insurance_id);
             const note=document.getElementById('rc-direct-checklist-note');
-            note.textContent='Selected '+r.rc_no+'. Original checklist odometer: '+(d.odometer||'Not recorded')+' '+(d.odometer_unit||'KM')+'. Enter the new Job Card reading; the original remains unchanged.'+(linkedApprovalValid?' Existing insurance approval verified.':' Approval must be completed before a linked Job Card can be opened.');
+            note.textContent='Selected '+r.rc_no+'. Original checklist odometer: '+(d.odometer||'Not recorded')+' '+(d.odometer_unit||'KM')+'. The Job Card reading is filled from this checklist. You can edit the reading and unit; the original checklist remains unchanged.'+(linkedApprovalValid?' Existing insurance approval verified.':' Approval must be completed before a linked Job Card can be opened.');
           }catch(err){error(err);}
         });
       }catch(err){searchResults.textContent='Checklist search failed: '+String(err.message||err);}
@@ -1026,6 +1038,7 @@
   }
   async function fetchRecord(no) {
     current = await call({ operation: "GET", rc_no: no });
+    if(current.record?.job_card&&!current.linked_job)current.delivery_status_unavailable=true;
     return current;
   }
 
@@ -1047,9 +1060,10 @@
       '</strong><span class="rc-cl-type">' + esc(r.job_type || "INSURANCE") +
       '</span><b>' + esc(model || "Vehicle details not recorded") + '</b></div>' +
       '<div><small>Vehicle location</small><b>' +
-      esc(labels[r.location] || r.location || "Not recorded") +
+      esc(checklistDelivered(r)?"Delivered":labels[r.location] || r.location || "Not recorded") +
       '</b><small>Case status</small><b>' +
-      esc(labels[r.outcome || r.approval_status] || r.outcome || r.approval_status || "Not recorded") +
+      esc(checklistDelivered(r)?"Delivered":labels[r.outcome || r.approval_status] || r.outcome || r.approval_status || "Not recorded") +
+      (checklistDelivered(r)?'</b><small>Delivery date</small><b>'+esc(checklistDeliveryDate(r)||"Not recorded")+'</b><small>Insurance approval</small><b>'+esc(labels[r.approval_status]||r.approval_status||"Not recorded"):"") +
       '</b></div></div>';
   }
   function checklistDetails(r, d) {
@@ -1107,6 +1121,7 @@
     shell(
       r.rc_no + " · Reception Checklist",
       checklistSummary(r, d) + badges(r) +
+        (current.delivery_status_unavailable?'<p class="notice">Current delivery status could not be checked. The garage location shown is the saved checklist location; reconnect and reopen to verify.</p>':'') +
         (current.cancellation?.history ? '<div class="rc-box"><b>Job Card cancelled · '+esc(current.cancellation.history.cancellation_date)+'</b><p>'+esc(current.cancellation.history.reason)+' · '+esc(current.cancellation.history.actor_name)+' ('+esc(current.cancellation.history.actor_id)+')</p><p>History and costs retained. Vehicle location remains '+esc(r.location)+'.</p></div>' : '') +
         '<div class="rc-actions rc-cl-actions">' +
         (r.can_edit ? '<button data-rc-action="edit">Edit</button>' : "") +
@@ -1192,6 +1207,7 @@
       (current.external_approval?.can_record && !draft.length ? '<div class="rc-box"><h4>Vehicle Already Approved by Insurance</h4><p>Record the issued approval document reference and evidence. No new quotation is required. Preliminary parts need the quotation approval flow.</p><form id="rc-external-approval">' + input('reference','Issued Approval Reference','',true) + input('approval_date','Approval Date',new Date(Date.now()+4*3600000).toISOString().slice(0,10),true,'date') + input('evidence','Approval Document Reference / Evidence','',true) + input('reason','Verification Notes','',true) + '<button type="submit">Record Existing Insurance Approval</button></form></div>' : '') +
       (current.external_approval?.valid && !r.job_card && !r.outcome ? '<div class="rc-box"><h4>Open Pre-approved Insurance Job Card</h4><form id="rc-external-job">' + input('cash_amount','Cash Amount (OMR) — optional','',false,'number') + input('job_card','Job Card Number','',true) +
       (["Manager","Supervisor"].includes(user()?.role)?input('promise_date','Promise Date (optional)','',false,'date'):'') +
+      input('odometer','Job Card KM / Miles Reading',r.details?.odometer??'') + select('odometer_unit','Reading Unit',[['KM','KM'],['Miles','Miles']],r.details?.odometer_unit||'KM') + '<p>Reading copied from the checklist. Edit it if needed; the original checklist reading stays unchanged.</p>' +
       input('reason','Creation Notes','',true) + '<p>Vehicle location remains '+esc(r.location)+'. Parts continue through the existing Job Card workflow.</p><button type="submit">Open Approved Job Card</button></form></div>' : '') +
       (r.job_card ? '<div class="rc-box"><h4>Linked Job Card ' + esc(r.job_card) + '</h4>' + (limited ? '<p>Approved parts were transferred by the server. Use Vehicle Delivery once work and QC are complete.</p>' : '<p>Continue assignments, parts and repairs through the existing Job Card workflow.</p><p>' + esc(current.job_creation?.transfers?.length || 0) + ' approved part items transferred.</p>') + '</div>' : '') +
       (!limited && info.can_prepare ? '<div class="rc-box"><h4>Prepare / Link Estimate</h4><div class="rc-actions"><button data-rc-action="rc-estimate">+ New Estimate</button></div><p>Save the quotation and allow sync to finish before linking it here.</p><form id="rc-link-estimate">' +
@@ -1221,7 +1237,7 @@
         const f=new FormData(externalJob);
         const jc=String(f.get('job_card')).trim().toUpperCase();
         const result=await mutate({operation:'CREATE_EXTERNAL_JOB',cash_amount:String(f.get('cash_amount')||'').trim(),rc_no:r.rc_no,expected_revision:r.revision,
-          job_card:jc,reason:String(f.get('reason')).trim()});
+          job_card:jc,job_intake_odometer:String(f.get('odometer')||'').trim(),job_intake_unit:String(f.get('odometer_unit')||'KM'),reason:String(f.get('reason')).trim()});
         if(!result)return;
         const date=String(f.get('promise_date')||'');
         if(date&&window.zukaitReceptionDashboard?.savePromise){

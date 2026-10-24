@@ -40,7 +40,7 @@
  function password(){const first=prompt('New password (at least 8 characters)');if(first===null)return null;if(first.length<8)throw Error('Password must be at least 8 characters.');if(prompt('Confirm new password')!==first)throw Error('Passwords do not match.');return first;}
  async function open(user){
   window.me=user;document.body.classList.add('receptionist-workspace');el('identity').textContent=user.name+' · Receptionist';el('login').classList.add('hidden');el('reception-app').classList.remove('hidden');el('message').textContent='';
-  await window.zukaitReception.open();
+  await window.zukaitReception.open();window.zukaitSessionPrivacy?.unlock();
   if(pending())el('message').textContent='A delivery awaits confirmation. Open Vehicle Delivery and confirm the saved action.';
  }
  window.openModal=html=>{el('workspace').innerHTML=html};
@@ -56,7 +56,7 @@
    saveSession(result.session_token,result.user);await open(result.user);
   }catch(e){error(e)}finally{el('password').value='';button.disabled=false;busy=false}
  };
- el('logout').onclick=async()=>{const old=token;clear();if(old)try{await request('staff-auth',{action:'logout',session_token:old})}catch(e){error(Error('Local sign-out complete. Ask the Manager to revoke the old session if the server could not be reached.'))}};
+ el('logout').onclick=async()=>{if(window.zukaitSessionPrivacy)return window.zukaitSessionPrivacy.signOut();const old=token;clear();if(old)try{await request('staff-auth',{action:'logout',session_token:old})}catch(e){error(Error('Local sign-out complete. Ask the Manager to revoke the old session if the server could not be reached.'))}};
  el('change-password').onclick=async()=>{try{const current=prompt('Current password');if(current===null)return;const next=password();if(next===null)return;const user=window.me;const result=await request('staff-auth',{action:'change_password',user_id:user.id,current_password:current,new_password:next});saveSession(result.session_token,user)}catch(e){error(e)}};
  el('checklists').onclick=()=>window.zukaitReception.open().catch(error);
  const journalKey=()=>{if(!window.me?.id)throw Error('Sign in first.');return 'zukait_receptionist_delivery_v1:'+BASE+':'+window.me.id};
@@ -108,5 +108,5 @@
  window.zukaitReceptionist={deliver,deliveries,pending,restore};
  window.addEventListener('online',()=>{if(!window.me)restore();else el('message').textContent='Reconnected. Confirm any saved action before starting another.'});
  window.addEventListener('offline',()=>error(Error('Offline. Server actions cannot be confirmed until reconnection.')));
- window.addEventListener('load',restore,{once:true});
+ window.addEventListener('load',async()=>{await restore();if(!savedSession()?.token)window.zukaitSessionPrivacy?.unlock();},{once:true});
 })();

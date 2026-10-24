@@ -17,6 +17,9 @@ let serve,
   lastRpc, authProbes=0;
 const admin = {
   from: (table) => {
+    if(table==="workshop_state"){
+      const chain={select:()=>chain,eq:()=>chain,single:async()=>({data:{data:{jobs:[{no:"QA-JC",delivered:true,status:"Delivered",deliveredAt:1792162800000,deliveryDate:"2026-10-16",amount:999,private:"SECRET"}]}},error:null})};return chain;
+    }
     assert.equal(table, "staff_sessions");
     const chain = {
       select: () => chain,
@@ -140,6 +143,7 @@ for (const op of ["CAPABILITIES", "MASTER", "LIST", "GET", "CREATE", "EDIT", "MO
   assert.deepEqual(r.body.insurance, {can_prepare:false, can_revoke:false, approval_valid:true});
   assert.deepEqual(r.body.job_creation, {can_create:true});
   assert.equal(r.body.record.details.remarks, "Checklist observation");
+  if(op==="GET")assert.deepEqual(r.body.linked_job,{no:"QA-JC",delivered:true,status:"Delivered",deliveredAt:1792162800000,deliveryDate:"2026-10-16"},"Checklist delivery metadata must be narrow and server-authoritative");
   assert.equal(r.body.movements[0].to_location, "VWC");
   assert.equal(r.body.audit.length, 1);
   assert.ok(!JSON.stringify(r.body).includes("999"), op + " financial leak");
@@ -174,7 +178,7 @@ assert.equal(r.status, 403); // Edge allowlist never overrides SQL authorization
 actor = {...actor, role:"Manager"};
 rpcResult = {data:sensitive, error:null};
 r = await call({action:"reception", command:{operation:"GET"}});
-assert.deepEqual(r.body, sensitive); // Existing authorized roles retain their response.
+assert.deepEqual(r.body, {...sensitive,linked_job:{no:'QA-JC',delivered:true,status:'Delivered',deliveredAt:1792162800000,deliveryDate:'2026-10-16'}}); // Existing authorized fields are preserved alongside narrow delivery metadata.
 console.log(`Receptionist API: 10 allowed operations, ${denials + 1} forbidden requests, server identity, response privacy and SQL guard preservation passed.`);
 actor = null;
 r = await call({ action: "reception", command: { operation: "LIST" } });

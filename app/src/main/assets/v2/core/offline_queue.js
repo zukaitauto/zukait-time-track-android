@@ -4,6 +4,7 @@
   function read(){try{const x=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(x)?x:[]}catch(_){return []}}
   function write(rows){localStorage.setItem(KEY,JSON.stringify(rows||[]));return rows}
   function enqueue(event){
+    if(window.zukaitSessionPrivacy&&(window.zukaitSessionPrivacy.locked||!navigator.onLine))throw new Error('SERVER_CONFIRMATION_REQUIRED');
     if(!event?.eventId)throw new Error('eventId required');
     const rows=read();
     if(rows.some(x=>x.eventId===event.eventId))return event;

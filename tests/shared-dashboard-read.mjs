@@ -11,7 +11,7 @@ let release;const gate=new Promise(r=>release=r);c.api=async()=>{reads++;await g
 const first=c.readLatest(),second=c.readLatest();release();await Promise.all([first,second]);assert.equal(reads,2,'Concurrent report reads share one request');
 c.api=async()=>({ok:false,code:'invalid_session'});await assert.rejects(c.readLatest(),/invalid_session/);
 c.navigator.onLine=false;await assert.rejects(c.readLatest(),/OFFLINE/);c.navigator.onLine=true;
-const p=vm.createContext({revisionProbeInFlight:false,pullInFlight:false,cloudDirty:false,cloudPushing:false,cloudRevision:4,lastProbedRevision:-1,lastRevisionProbeAt:0,lastSuccessfulSyncAt:Date.now()-31000,pollWarnings:new Map(),navigator:{onLine:true},sessionToken:()=>true,Date,api:async()=>({ok:true,revision:4}),setServerConnection(){},liveRole:()=>false,warnPoll(){},
+const p=vm.createContext({sessionEpoch:0,stale:()=>false,revisionProbeInFlight:false,pullInFlight:false,cloudDirty:false,cloudPushing:false,cloudRevision:4,lastProbedRevision:-1,lastRevisionProbeAt:0,lastSuccessfulSyncAt:Date.now()-31000,pollWarnings:new Map(),navigator:{onLine:true},sessionToken:()=>true,Date,api:async()=>({ok:true,revision:4}),setServerConnection(){},liveRole:()=>false,warnPoll(){},
  async pull(force){assert.equal(force,true);patches++;p.lastSuccessfulSyncAt=Date.now();return true;}});
 vm.runInContext(slice('  async function probeRevision(){','  async function push(')+';globalThis.probe=probeRevision;',p);
 assert.equal(await p.probe(),true);assert.equal(patches,1,'Same revision must still repair an old mutable local snapshot');

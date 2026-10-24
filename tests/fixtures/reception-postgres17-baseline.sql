@@ -887,3 +887,8 @@ grant usage on schema public to service_role;
 grant all on all tables in schema public to service_role;
 grant usage,select on all sequences in schema public to service_role;
 
+
+-- Current session row type, needed for the public-number computed relationship.
+create table public.staff_sessions(token_hash text primary key,user_id text not null references public.staff_credentials(user_id),created_at timestamptz not null default now(),last_seen_at timestamptz not null default now(),revoked_at timestamptz);
+alter table public.staff_sessions enable row level security;
+grant select,insert,update on public.staff_sessions to service_role;

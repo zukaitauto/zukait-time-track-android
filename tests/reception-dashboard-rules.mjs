@@ -117,3 +117,41 @@ assert.equal(preserved.jobs.find(j=>j.no==="JC100").promiseDate,"2026-10-14");
 assert.equal(preserved.jobs.find(j=>j.no==="JC100").promiseAudit.length,1);
 assert.equal(JSON.stringify(start).includes("199.5"),false,"No expense data exposed to Reception");
 console.log("Reception dashboard: all ten categories, creation-time sorting, month/date ranges, RC/JC/registration search, shared QC/delivery authority, no-date follow-up, audited promise date and old-client preservation passed.");
+
+const deliveredCase=projection({section:'checklists',search:'RC0013'}).rows[0];
+assert.equal(deliveredCase.status,'Delivered');
+assert.equal(deliveredCase.location,'DELIVERED');
+assert.equal(deliveredCase.delivered,true);
+assert.equal(deliveredCase.delivered_date,'2026-10-11');
+assert.equal(projection({section:'jobs',search:'JC199'}).rows[0].location,'DELIVERED');
+assert.equal(cases.find(r=>r.rc_no==='RC0013').location,'VIW','Projection must preserve intake history');
+assert.equal(jobs.find(j=>j.no==='JC199').delivered,true);
+console.log('Delivered checklist and Job Card projections agree without rewriting intake locations');
+
+const ageNow=Date.parse('2026-10-23T20:00:00Z');
+const ageData={jobs:[
+ {no:'AGE1',jobType:'INSURANCE',insuranceCompany:'Alpha Insurance',createdAt:Date.parse('2026-10-23T19:59:00Z'),status:'Open'},
+ {no:'AGE2',jobType:'CASH',insuranceCompany:'Alpha Insurance',createdAt:Date.parse('2026-10-24T00:01:00+04:00'),status:'Open'},
+ {no:'AGE3',jobType:'INSURANCE',insuranceCompany:'Beta Insurance',createdAt:Date.parse('2026-10-13T00:00:00+04:00'),delivered:true,deliveredAt:Date.parse('2026-10-16T19:00:00+04:00'),status:'Delivered'},
+ {no:'AGE4',jobType:'CREDIT',status:'Open'}
+]};
+const ageSnapshot=JSON.stringify(ageData);
+const ages=receptionDashboardProjection(ageData,[],{section:'jobs'},ageNow).rows;
+assert.equal(ages.find(r=>r.job_card==='AGE1').days_open,1,'Oman midnight advances calendar-day age');
+assert.equal(ages.find(r=>r.job_card==='AGE2').days_open,0,'Same-day opening starts at zero');
+assert.equal(ages.find(r=>r.job_card==='AGE3').days_open,3,'Delivered age stops on delivery date');
+assert.equal(ages.find(r=>r.job_card==='AGE4').days_open,null,'Missing opening date cannot invent an age');
+for(const [filter,nos] of [['cash',['AGE2']],['credit',['AGE4']],['insurer:ALPHA INSURANCE',['AGE1']],['insurance',['AGE1','AGE3']]]){
+ const result=receptionDashboardProjection(ageData,[],{section:'jobs',company_filter:filter},ageNow);
+ assert.deepEqual(result.rows.map(r=>r.job_card).sort(),nos.sort());
+}
+assert.equal(receptionDashboardProjection(ageData,[],{section:'followup',company_filter:'insurer:ALPHA INSURANCE',missing_only:true},ageNow).total,1,'Promise filters cannot bypass the company restriction');
+const many={jobs:Array.from({length:70},(_,i)=>({no:'PAGE'+i,createdAt:Date.parse('2026-10-01T00:00:00Z')+i*1000,jobType:i===0?'INSURANCE':'CASH',insuranceCompany:i===0?'Last Page Insurer':'',status:'Open'}))};
+const firstPage=receptionDashboardProjection(many,[],{section:'jobs'},ageNow);
+assert.equal(firstPage.rows.length,50);
+assert.ok(firstPage.company_options.some(x=>x.value==='insurer:LAST PAGE INSURER'),'Options include companies outside the visible page');
+const lastInsurer=receptionDashboardProjection(many,[],{section:'jobs',company_filter:'insurer:LAST PAGE INSURER'},ageNow);
+assert.equal(lastInsurer.total,1);assert.equal(lastInsurer.rows[0].job_card,'PAGE0');
+for(const value of [{},'unknown','insurer:','x'.repeat(261)])assert.equal(receptionDashboardProjection(ageData,[],{section:'jobs',company_filter:value}).code,'reception_invalid_filter');
+assert.equal(JSON.stringify(ageData),ageSnapshot);
+console.log('Days-open calendar boundaries, delivery cutoff, company/type isolation and filter-before-pagination passed');

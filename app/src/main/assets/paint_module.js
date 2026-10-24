@@ -25,13 +25,82 @@ function recentPaintPO(jc,lines){const cut=Date.now()-15*60*1000,key=paintFinger
 function syncCost(o){const cost=window.zukaitPaintOrderRules.costForJob(root().orders,o.jobCard),j=(state.jobs||[]).find(x=>String(x.no)===String(o.jobCard));if(!cost){delete state.paintCosting[o.jobCard];if(j)j.paintCost=0;return}state.paintCosting[o.jobCard]={...cost,updatedAt:Date.now()};if(j)j.paintCost=cost.netPaintCost}
 function audit(type,o,before,reason){root().audit.push({id:uid('paint-audit'),type,orderId:o.id,poNumber:o.poNumber,jobCard:o.jobCard,by:actor().id,byName:actor().name,at:Date.now(),reason:String(reason||''),before:before?JSON.parse(JSON.stringify(before)):null,after:JSON.parse(JSON.stringify(o))})}
 function btn(label,sub,fn,cls){return '<button class="cons-action paint-action '+(cls||'')+'" onclick="'+fn+'"><b>'+label+'</b><small>'+sub+'</small></button>'}
-window.openPaintModule=function(){if(!['Supervisor','Manager'].includes(r()))return;let x=btn('Paint Purchase Order','One main order per Job Card','openPaintPO()','issued')+btn('Additional Paint Order','Reference the original paint PO','openPaintAdditionalPO()','additional')+btn('Received Paint','Enter litre price or actual cost','openPaintReceived()','actual')+btn('Invoice Pending','Delivered vehicles awaiting Received Paint','openPaintInvoicePending()','additional')+btn('Returned Paint','Record vendor returns and adjust cost','openPaintReturn()','additional')+btn('Search','PO / JC / vendor / vehicle / date','openPaintSearch()','search');if(r()==='Manager')x+=btn('Edit Paint Records','Manager correction with audit history','openPaintEdit()','manager');modal('🎨 PAINT','<div class="cons-actions paint-menu-grid">'+x+'</div>','openConsumablesModule()')};
+window.openPaintModule=function(){if(!['Supervisor','Manager'].includes(r()))return;let x=btn('Paint Purchase Order','One main order per Job Card','openPaintPO()','issued')+btn('Additional Paint Order','Reference the original paint PO','openPaintAdditionalPO()','additional')+btn('Received Paint','Enter litre price or actual cost','openPaintReceived()','actual')+btn('Invoice Pending','Delivered vehicles awaiting Received Paint','openPaintInvoicePending()','additional')+btn('Returned Paint','Record vendor returns and adjust cost','openPaintReturn()','additional')+btn('Search','PO / JC / vendor / vehicle / date','openPaintSearch()','search')+btn('Reports','Monthly / period / paint type totals','openPaintReports()','search');if(r()==='Manager')x+=btn('Edit Paint Records','Manager correction with audit history','openPaintEdit()','manager');modal('🎨 PAINT','<div class="cons-actions paint-menu-grid">'+x+'</div>','openConsumablesModule()')};
 window.paintOpenNotificationOrder=function(id){
  if(r()!=='Manager')return false;
  if(!root().orders.some(o=>o.id===id&&!o.voided)){alert('This purchase order is no longer available.');return false}
  modal('Paint Purchase Order — Details','<div id="psOut"></div>','zukaitNotificationCenter.open()');
  paintRunSearch(id);return true;
 };
+
+function paintReportDay(value){
+ const n=Number(value)||(typeof value==='string'?Date.parse(value):0);
+ return Number.isFinite(n)&&n>0?new Date(n+4*3600000).toISOString().slice(0,10):'';
+}
+function paintReportType(value){const text=String(value||'').trim();const key=text.toLowerCase().replace(/[^a-z0-9]/g,'');return ({basecoat:'Base Coat',pearlcoat:'Pearl Coat','2k':'2K Paint','2kpaint':'2K Paint'})[key]||text||'Not recorded'}
+function paintReportLineValue(line){return line.lineTotal!==null&&line.lineTotal!==undefined&&line.lineTotal!==''&&Number.isFinite(Number(line.lineTotal))&&Number(line.lineTotal)>=0?money(line.lineTotal):money(Number(line.quantity)*Number(line.pricePerLitre))}
+function paintReportCostKnown(line){return (line.lineTotal!==null&&line.lineTotal!==undefined&&line.lineTotal!==''&&Number.isFinite(Number(line.lineTotal))&&Number(line.lineTotal)>=0)||(line.pricePerLitre!==null&&line.pricePerLitre!==undefined&&line.pricePerLitre!==''&&Number.isFinite(Number(line.pricePerLitre))&&Number(line.pricePerLitre)>=0)}
+window.openPaintReports=function(){
+ if(!['Manager','Supervisor'].includes(r()))return;
+ const types=[...new Set(['Base Coat','Pearl Coat','2K Paint',...(state.paintPurchasing?.orders||[]).filter(o=>o&&!o.voided&&!o.nilPaintPurchase).flatMap(o=>(o.lines||[]).map(l=>paintReportType(l.paintType)))])];
+ const month=paintReportDay(Date.now()).slice(0,7);
+ modal('Paint Reports','<div class="paint-report-filters"><label>Month<input id="paintReportMonth" type="month" value="'+esc(month)+'" onchange="paintReportSetMonth()"></label><label>From<input id="paintReportFrom" type="date" onchange="document.getElementById(\'paintReportMonth\').value=\'\'"></label><label>To<input id="paintReportTo" type="date" onchange="document.getElementById(\'paintReportMonth\').value=\'\'"></label><label>Paint Type<select id="paintReportType"><option value="">All paint types</option>'+types.map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join('')+'</select></label><button class="blue" type="button" onclick="paintRunReports()">VIEW REPORT</button></div><p>Oman dates · Both dates included. Paint receipts and vendor returns are counted on their own recorded dates. Waiting and NIL orders are excluded.</p><div id="paintReportResult"></div>');
+ const input=document.getElementById('paintReportMonth');if(input)input.value=month;
+ paintReportSetMonth();
+};
+window.paintReportSetMonth=function(){
+ if(!['Manager','Supervisor'].includes(r()))return;
+ const month=document.getElementById('paintReportMonth')?.value||'';
+ if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))return;
+ const [year,m]=month.split('-').map(Number);
+ document.getElementById('paintReportFrom').value=month+'-01';
+ document.getElementById('paintReportTo').value=new Date(Date.UTC(year,m,0)).toISOString().slice(0,10);
+ paintRunReports();
+};
+window.paintRunReports=function(){
+ if(!['Manager','Supervisor'].includes(r()))return;
+ const out=document.getElementById('paintReportResult');if(!out)return;
+ const from=document.getElementById('paintReportFrom')?.value||'',to=document.getElementById('paintReportTo')?.value||'',type=document.getElementById('paintReportType')?.value||'';
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(from)||!/^\d{4}-\d{2}-\d{2}$/.test(to)||from>to){out.innerHTML='<p class="notice">Select a valid From and To date range.</p>';return}
+ const groups=new Map(),jobs=new Set();let undated=0;
+ function add(o,paintType,at,quantity,cost,returned){
+  const name=paintReportType(paintType);if(type&&name!==type)return;
+  const date=paintReportDay(at);if(!date){undated++;return}if(date<from||date>to)return;
+  const qty=Number(quantity);if(!Number.isFinite(qty)||qty<0)return;
+  const g=groups.get(name)||{name,received:0,returned:0,gross:0,credit:0,pending:0,jobs:new Set(),rows:[]};
+  if(returned){g.returned+=qty;if(cost!==null)g.credit+=cost}else{g.received+=qty;if(cost!==null)g.gross+=cost}
+  if(cost===null)g.pending++;
+  g.jobs.add(String(o.jobCard||''));jobs.add(String(o.jobCard||''));
+  g.rows.push({date,jc:o.jobCard||'—',po:o.poNumber||'—',vendor:o.vendor||'—',returned,qty,cost});groups.set(name,g);
+ }
+ for(const o of state.paintPurchasing?.orders||[]){
+  if(!o||o.voided||o.nilPaintPurchase||!o.receivedAt)continue;
+  for(const l of o.lines||[])add(o,l.paintType,o.receivedAt,l.quantity,paintReportCostKnown(l)?paintReportLineValue(l):null,false);
+  for(const x of o.returns||[]){
+   if(!x||x.voided)continue;
+   const l=(o.lines||[]).find(l=>l.id===x.lineId);
+   const stored=x.value!==null&&x.value!==undefined&&x.value!==''&&Number.isFinite(Number(x.value))&&Number(x.value)>=0;
+   const known=stored||(l&&Number(l.quantity)>0&&paintReportCostKnown(l))||(x.pricePerLitre!==null&&x.pricePerLitre!==undefined&&x.pricePerLitre!==''&&Number.isFinite(Number(x.pricePerLitre))&&Number(x.pricePerLitre)>=0);
+   add(o,x.paintType||l?.paintType,x.returnedAt,x.quantity,known?(stored?money(x.value):l&&Number(l.quantity)>0&&paintReportCostKnown(l)?money(paintReportLineValue(l)*Number(x.quantity)/Number(l.quantity)):money(Number(x.quantity)*Number(x.pricePerLitre))):null,true);
+  }
+ }
+ const list=[...groups.values()].sort((a,b)=>a.name.localeCompare(b.name)),sum=key=>list.reduce((n,g)=>n+g[key],0),pending=sum('pending'),amount=n=>money(n).toFixed(3),litres=n=>money(n).toFixed(3);
+ out.innerHTML='<h3>Paint Report · '+esc(type||'All Paint Types')+'</h3><p>'+esc(from)+' to '+esc(to)+' · '+jobs.size+' Job Cards</p><div class="paint-report-kpis"><div><small>Received (OMR)</small><b>'+amount(sum('gross'))+'</b></div><div><small>Returns (OMR)</small><b>'+amount(sum('credit'))+'</b></div><div><small>'+(pending?'Known Net Cost':'Net Paint Cost')+' (OMR)</small><b>'+amount(sum('gross')-sum('credit'))+'</b></div></div>'+
+ (pending?'<p class="notice">'+pending+' lines have missing prices. Amounts above include known costs only; review the receipt records.</p>':'')+
+ (undated?'<p class="notice">'+undated+' entries have no valid recorded date and are excluded from this period.</p>':'')+
+ (list.length?'<p>Open a paint type for Job Card and PO details.</p>'+list.map(g=>'<details class="paint-type-report"><summary><b>'+esc(g.name)+'</b><span>Net '+litres(g.received-g.returned)+' L · '+g.jobs.size+' Job Cards</span><strong>'+amount(g.gross-g.credit)+' OMR'+(g.pending?' + pending':'')+'</strong></summary><p>Received: '+litres(g.received)+' L · '+amount(g.gross)+' OMR<br>Returned: '+litres(g.returned)+' L · '+amount(g.credit)+' OMR</p><div class="paint-report-table"><table><thead><tr><th>Date</th><th>JC</th><th>PO / Vendor</th><th>Entry</th><th>Litres</th><th>Amount (OMR)</th></tr></thead><tbody>'+g.rows.sort((a,b)=>a.date.localeCompare(b.date)||String(a.jc).localeCompare(String(b.jc),'en',{numeric:true})).map(x=>'<tr><td>'+esc(x.date)+'</td><td>'+esc(x.jc)+'</td><td>'+esc(x.po)+'<br>'+esc(x.vendor)+'</td><td>'+(x.returned?'Returned':'Received')+'</td><td>'+litres(x.qty)+'</td><td>'+(x.cost===null?'Pending':amount(x.cost))+'</td></tr>').join('')+'</tbody></table></div></details>').join(''):'<p class="notice">No received paint or returns match this period and paint type.</p>')+
+ '<div class="cons-export-actions"><button class="secondary" type="button" onclick="paintPrintReport()">PRINT / PDF</button></div>';
+};
+window.paintPrintReport=function(){
+ if(!['Manager','Supervisor'].includes(r()))return;
+ const result=document.getElementById('paintReportResult');if(!result)return;
+ const copy=result.cloneNode(true);copy.querySelectorAll('.cons-export-actions,button').forEach(n=>n.remove());
+ const preview=window.zukaitOpenPrintPreview('Paint Report');if(!preview)return;
+ preview.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Paint Report</title><style>@page{size:A4;margin:15mm}body{font:14px Arial,sans-serif;color:#172033;padding:16px}h1{font-size:20px}.paint-report-kpis{display:flex;flex-wrap:wrap;gap:16px;margin:16px 0}.paint-report-kpis small,.paint-report-kpis b{display:block}.paint-type-report{border:1px solid #cbd5e1;border-radius:8px;padding:12px;margin:10px 0}.paint-type-report summary{cursor:pointer;line-height:1.6}.paint-type-report summary span{margin:0 12px}.paint-type-report summary strong{display:inline-block}table{width:100%;border-collapse:collapse;margin-top:12px}td,th{border-bottom:1px solid #cbd5e1;text-align:left;padding:7px;vertical-align:top}td:last-child,th:last-child{text-align:right;white-space:nowrap}.paint-report-table{overflow:auto}@media(max-width:500px){.paint-type-report summary span{display:block;margin:4px 0}table{min-width:560px}}@media print{body{padding:0}.paint-report-table{overflow:visible}table{min-width:0!important;font-size:10px}thead{display:table-header-group}tr{break-inside:avoid}}</style></head><body><h1>ZUKAIT AUTO · PAINT REPORT</h1><p>Receipt and return dates · Oman time</p>'+copy.innerHTML+'</body></html>');
+ preview.document.close();preview.focus();
+};
+const paintReportStyle=document.createElement('style');paintReportStyle.textContent='.paint-report-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.paint-report-filters label{min-width:0;font-weight:700}.paint-report-filters input,.paint-report-filters select{width:100%;box-sizing:border-box;min-width:0}.paint-report-filters button{grid-column:1/-1}.paint-report-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0}.paint-report-kpis>div{border:1px solid #dbe5f0;border-radius:10px;background:#f0f9ff;padding:10px;min-width:0}.paint-report-kpis small,.paint-report-kpis b{display:block;overflow-wrap:anywhere}.paint-report-kpis b{font-size:18px;margin-top:5px}.paint-type-report{border:1px solid #dbe5f0;border-radius:12px;padding:12px;margin:10px 0;background:#fff}.paint-type-report summary{cursor:pointer;line-height:1.6}.paint-type-report summary span{display:block;color:#475569}.paint-type-report summary strong{color:#166534}.paint-report-table{overflow:auto;max-width:100%}.paint-report-table table{width:100%;min-width:560px;border-collapse:collapse}.paint-report-table th,.paint-report-table td{padding:8px;border-bottom:1px solid #dbe5f0;text-align:left;vertical-align:top}.paint-report-table td:last-child,.paint-report-table th:last-child{text-align:right;white-space:nowrap}@media(max-width:380px){.paint-report-kpis{grid-template-columns:1fr}}';document.head.appendChild(paintReportStyle);
+
 let pd={job:null,lines:[]};
 window.openPaintAdditionalPO=function(){openPaintPO(true)};
 window.openPaintPO=function(additional=false){if(!['Manager','Supervisor'].includes(r()))return;pd={job:null,lines:[],additional:additional===true,parent:null,nil:false};const vendors=recentVendors();modal(pd.additional?'Additional Paint Order':'Paint Purchase Order','<div id="ppOrderNotice"></div><div class="paint-po-head"><label>PO Number<input id="ppPo" value="'+esc(poNum())+'" readonly></label><label>Original PO<input id="ppParentPO" readonly placeholder="Main order"></label><label>Date<input value="'+new Date().toLocaleDateString()+'" readonly></label><label class="paint-wide paint-search-wide">Search Job Card<input id="ppJc" placeholder="JC / Registration / Vehicle" oninput="paintLoadPOJob()"></label><label>Job Number<input id="ppJob" readonly></label><label>Registration No.<input id="ppReg" readonly></label><label>Vehicle<input id="ppMake" readonly></label><label>Model Year<input id="ppYear" readonly></label><label>VIN / Chassis<input id="ppVin" readonly></label><label class="paint-color-code">Color Code<input id="ppColor"></label><label class="paint-wide">Supervisor Name<input id="ppSup" readonly></label><label class="paint-wide">Vendor Name<input id="ppVendor" list="paintVendorList" placeholder="Select recent or type vendor"><datalist id="paintVendorList">'+vendors.map(v=>'<option value="'+esc(v)+'"></option>').join('')+'</datalist></label><label class="paint-wide">'+(pd.additional?'Reason for additional order':'Remarks')+'<input id="ppRemarks" placeholder="Optional instructions / colour matching / urgent order"></label></div>'+(!pd.additional?'<label class="paint-nil-option"><input id="ppNil" type="checkbox" onchange="paintToggleNil()"> <b>NIL PAINT PURCHASE</b><span>No new paint purchase · Description: Leftover Paint · OMR 0.000</span></label>':'')+'<div id="ppPaintEntry"><div class="paint-line-add"><select id="ppType"><option>2K Paint</option><option>Base Coat</option><option>Pearl Coat</option></select><input id="ppQty" type="number" min="0" step="0.001" placeholder="Quantity (Liter)"><span class="paint-fixed-unit">Liter</span><button class="blue" onclick="paintAddPOLine()">+ ADD PAINT</button></div><div id="ppRows" class="notice">Add paint lines.</div></div><div id="ppNilNotice"></div><div class="cons-entry-actions"><button class="secondary" onclick="openPaintModule()">← BACK</button><button class="green" onclick="paintFinishPO()">FINISH</button></div>')};

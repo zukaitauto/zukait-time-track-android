@@ -9,6 +9,7 @@ node --check app/src/main/assets/consumables_ui.js
 node --check app/src/main/assets/paint_module.js
 node --check app/src/main/assets/paint_order_rules.js
 node --check app/src/main/assets/secure_auth.js
+node --check app/src/main/assets/session_privacy.js
 node --check app/src/main/assets/production_pilot.js
 node --check app/src/main/assets/professional_ux.js
 node --check app/src/main/assets/v54_improvements.js

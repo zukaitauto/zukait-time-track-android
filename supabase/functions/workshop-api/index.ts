@@ -29,7 +29,7 @@ const cors = {
   "Content-Type": "application/json"
 };
 
-function reply(body: unknown, status = 200) {
+function baseReply(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: cors });
 }
 
@@ -41,7 +41,7 @@ function receptionistRequestAllowed(action: string, body: any) {
   if (action === "job_card_edit") return ["GET","EDIT"].includes(body.operation) && Object.keys(body).every(k => ["action","operation","jobCard","patch","reason","expectedEditRevision"].includes(k));
   if (action === "receptionist_delivery_list") return Object.keys(body).every(k => k === "action");
   if (action === "reception_dashboard") return Object.keys(body).every(k =>
-    ["action","section","search","month","from","to","page","missing_only","dated_only","checklist_status"].includes(k));
+    ["action","section","search","month","from","to","page","missing_only","dated_only","checklist_status","company_filter"].includes(k));
   if (action === "receptionist_deliver") return body?.operation === "DELIVER" && Object.keys(body).every(k =>
     ["action", "operation", "jobCard", "expectedQcRevision", "expectedVehicleIdentity", "request_id"].includes(k));
   return action === "reception" &&
@@ -107,9 +107,10 @@ async function sessionUser(token: string) {
   const hash = await sha256Hex(token);
   // One relational read keeps per-request revocation + active-account checks
   // authoritative while avoiding a second REST round trip on every heartbeat.
-  const { data: session } = await admin.from("staff_sessions")
-    .select("user_id,revoked_at,last_seen_at,staff_credentials!staff_sessions_user_id_fkey(user_id,display_name,role,department,active,must_change)")
+  const { data: session, error: sessionError } = await admin.from("staff_sessions")
+    .select("user_id,revoked_at,last_seen_at,job_numbers:workshop_session_job_numbers(number,stable_job,current_number),staff_credentials!staff_sessions_user_id_fkey(user_id,display_name,role,department,active,must_change)")
     .eq("token_hash", hash).maybeSingle();
+  if (sessionError) throw sessionError;
   if (!session || session.revoked_at) return null;
   const staffRaw = (session as any).staff_credentials;
   const staff = Array.isArray(staffRaw) ? staffRaw[0] : staffRaw;
@@ -122,7 +123,10 @@ async function sessionUser(token: string) {
     await admin.from("staff_sessions").update({ last_seen_at: new Date().toISOString() })
       .eq("token_hash", hash);
   }
-  return { id: staff.user_id, name: staff.display_name, role: staff.role, department: staff.department };
+  const authenticatedUser = { id: staff.user_id, name: staff.display_name, role: staff.role, department: staff.department };
+  if ((session.job_numbers || []).length >= 1000) throw Error("job_number_directory_limit");
+  Object.defineProperty(authenticatedUser,"_jobNumbers",{value:session.job_numbers || [],enumerable:false});
+  return authenticatedUser;
 }
 function same(a: any, b: any) {
   // JSON object field order is not business data; JSONB and clients reorder keys.
@@ -302,6 +306,11 @@ function preserveAuthoritativeReopens(candidate: any, current: any): any {
 // Only synthetic overtime sessions absent from the current server snapshot are removed.
 function preserveClosedSessions(candidate: any, current: any): any {
   const closed = new Map((current?.sessions || []).filter((s: any) => Number(s?.end || 0) > 0).map((s: any) => [String(s.id),s]));
+  const completedIdle = new Map((current?.assign || []).filter((a: any)=>a&&a.job==="ID001"&&a.completed).map((a: any)=>[String(a.id),a]));
+  for(const a of candidate?.assign || []){
+    const done: any=completedIdle.get(String(a?.id||""));
+    if(done&&a.job==="ID001"){a.completed=true;a.completedAt=done.completedAt;}
+  }
   candidate.sessions = (candidate?.sessions || []).map((s: any) => {
     const authoritative: any = closed.get(String(s?.id || ""));
     // A stale device can also hold an earlier end value. Once the server has
@@ -309,9 +318,17 @@ function preserveClosedSessions(candidate: any, current: any): any {
     // restart must create a new session ID.
     return authoritative
       ? {...s,end:authoritative.end,paused:authoritative.paused,autoPausedAt:authoritative.autoPausedAt,
-         pauseReason:authoritative.pauseReason,closeReason:authoritative.closeReason}
+         pauseReason:authoritative.pauseReason,closeReason:authoritative.closeReason,
+         ...Object.fromEntries(["finished","serverFinishedAt","serverAuthoritative","autoStopped","autoStoppedAt","autoStopReason","autoStoppedForNormalWork"].filter(k=>k in authoritative).map(k=>[k,authoritative[k]]))}
       : s;
   });
+  // The earlier completed-assignment filter may remove a stale open copy.
+  // Keep its already-closed ID001 history rather than dropping that session.
+  const retained=new Set(candidate.sessions.map((s: any)=>String(s?.id||"")));
+  for(const [id,session] of closed){
+    const saved: any=session;
+    if(saved.job==="ID001"&&!retained.has(id))candidate.sessions.push({...saved});
+  }
   return candidate;
 }
 
@@ -901,7 +918,11 @@ function employeeTimeTransition(data:any,user:any,body:any,serverNow:number){
   next.lastActions=next.lastActions&&typeof next.lastActions==="object"?next.lastActions:{};
 
   const prior=next.employeeTimeActionAudit.find((x:any)=>String(x?.id||"")===actionId);
-  if(prior) return {ok:true,duplicate:true,data:next,audit:prior,status:String(prior.status||"")};
+  if(prior){
+    if(String(prior.emp)!==String(user.id)||String(prior.type)!==type||
+      ["job","assignment_id","session_id"].some(k=>body?.[k]&&String(body[k])!==String(prior[k==="job"?"job":k==="assignment_id"?"assignmentId":"sessionId"])))return {ok:false,code:"employee_time_action_id_conflict"};
+    return {ok:true,duplicate:true,data:next,audit:prior,status:String(prior.status||"")};
+  }
 
   const emp=String(user.id);
   const requestedJob=String(body?.job||"").trim();
@@ -909,32 +930,41 @@ function employeeTimeTransition(data:any,user:any,body:any,serverNow:number){
   const requestedSession=String(body?.session_id||"").trim();
   const ownAssignments=next.assign.filter((a:any)=>a&&String(a.emp)===emp&&!a.cancelled);
   const openSessions=next.sessions.filter((s:any)=>s&&String(s.emp)===emp&&s.end==null&&!s.cancelled);
-  const findAssignment=()=>ownAssignments.find((a:any)=>requestedAssignment&&String(a.id)===requestedAssignment)
-    || ownAssignments.filter((a:any)=>!a.completed&&(!requestedJob||String(a.job)===requestedJob))
-      .sort((a:any,b:any)=>Number(b.assignedAt||0)-Number(a.assignedAt||0))[0] || null;
-  const findSession=()=>openSessions.find((s:any)=>requestedSession&&String(s.id)===requestedSession)
-    || openSessions.find((s:any)=>!requestedJob||String(s.job)===requestedJob)
-    || (requestedSession?next.sessions.find((s:any)=>s&&String(s.emp)===emp&&String(s.id)===requestedSession):null)
-    || null;
+  const findAssignment=()=>requestedAssignment
+    ? ownAssignments.find((a:any)=>String(a.id)===requestedAssignment&&(!requestedJob||String(a.job)===requestedJob))||null
+    : ownAssignments.filter((a:any)=>!a.completed&&(!requestedJob||String(a.job)===requestedJob))
+      .sort((a:any,b:any)=>Number(b.assignedAt||0)-Number(a.assignedAt||0))[0]||null;
+  // An explicit stop targets that session only, never a later session on another device.
+  const findSession=()=>requestedSession
+    ? next.sessions.find((s:any)=>s&&String(s.emp)===emp&&String(s.id)===requestedSession&&(!requestedJob||String(s.job)===requestedJob))||null
+    : openSessions.find((s:any)=>!requestedJob||String(s.job)===requestedJob)||null;
 
   let session:any=null,assignment:any=null,status="";
+  const closedSessions:any[]=[],closedAssignments:any[]=[];
   if(type==="START"){
-    if(openSessions.length){
-      const already=openSessions.find((s:any)=>(!requestedJob||String(s.job)===requestedJob)&&(!requestedAssignment||String(s.assignmentId||"")===requestedAssignment));
-      if(already){
-        session=already;
-        assignment=ownAssignments.find((a:any)=>String(a.id)===String(already.assignmentId||""))||null;
-        status=String(already.job)==="ID001"?"ID001":"Working";
-      }else return {ok:false,code:"employee_time_already_active"};
+    const already=openSessions.find((s:any)=>(!requestedJob||String(s.job)===requestedJob)&&(!requestedAssignment||String(s.assignmentId||"")===requestedAssignment));
+    if(already){
+      session=already;assignment=ownAssignments.find((a:any)=>String(a.id)===String(already.assignmentId||""))||null;
+      status=String(already.job)==="ID001"?"ID001":"Working";
     }else{
       assignment=findAssignment();
-      if(!assignment||assignment.completed||assignment.cancelled) return {ok:false,code:"employee_time_assignment_not_open"};
+      if(!assignment||assignment.completed||assignment.cancelled)return {ok:false,code:"employee_time_assignment_not_open"};
       const job=String(assignment.job||requestedJob);
+      // Validate the target first. Starting productive work closes waiting time
+      // and starts the requested work in the same CAS transaction.
+      if(openSessions.some((s:any)=>String(s.job)!=="ID001")||job==="ID001"&&openSessions.length)return {ok:false,code:"employee_time_already_active"};
+      for(const idle of openSessions){
+        idle.end=serverNow;idle.finished=true;idle.paused=false;idle.serverFinishedAt=serverNow;
+        idle.serverAuthoritative=true;idle.autoStoppedForNormalWork=true;idle.autoStoppedAt=serverNow;
+        const hold=ownAssignments.find((a:any)=>String(a.id)===String(idle.assignmentId||"")&&String(a.job)==="ID001");
+        if(hold){hold.completed=true;hold.completedAt=serverNow;hold.autoStoppedForNormalWork=true;closedAssignments.push(hold);}
+        closedSessions.push(idle);
+      }
       const sid=String(body?.new_session_id||"").trim()||crypto.randomUUID();
+      if(next.sessions.some((s:any)=>String(s.id)===sid))return {ok:false,code:"employee_time_session_id_conflict"};
       session={id:sid,assignmentId:String(assignment.id),job,emp,start:serverNow,end:null,paused:false,finished:false,rework:assignment.rework===true,v79Integrity:true,serverAuthoritative:true,serverStartedAt:serverNow};
       if(job==="ID001"){session.idealCard=true;session.idealSafeVersion=1}
-      next.sessions.push(session);
-      status=job==="ID001"?"ID001":"Working";
+      next.sessions.push(session);status=job==="ID001"?"ID001":"Working";
       next.lastActions[emp]={text:"Started "+job,at:serverNow};
     }
   }else{
@@ -968,11 +998,12 @@ function employeeTimeTransition(data:any,user:any,body:any,serverNow:number){
   const audit={
     id:actionId,type,emp,job:String(session?.job||requestedJob||""),assignmentId:String(assignment?.id||session?.assignmentId||requestedAssignment||""),
     sessionId:String(session?.id||requestedSession||""),clientAt:Number(body?.client_time||0)||null,serverAt:serverNow,status,
-    confirmed:true,deviceId:String(body?.device_id||"").slice(0,160)
+    confirmed:true,deviceId:String(body?.device_id||"").slice(0,160),
+    ...(closedSessions.length?{autoStoppedSessionIds:closedSessions.map((s:any)=>String(s.id)),autoStoppedAssignmentIds:closedAssignments.map((a:any)=>String(a.id))}:{})
   };
   next.employeeTimeActionAudit.push(audit);
   if(next.employeeTimeActionAudit.length>5000)next.employeeTimeActionAudit=next.employeeTimeActionAudit.slice(-5000);
-  return {ok:true,data:next,audit,status,session,assignment};
+  return {ok:true,data:next,audit,status,session,assignment,closedSessions,closedAssignments};
 }
 
 // ID001_ASSIGNMENT_RULE_BEGIN
@@ -988,7 +1019,40 @@ function id001AssignmentConflict(candidate: any, previous: any) {
 }
 // ID001_ASSIGNMENT_RULE_END
 
+// Public numbers can change; stored work, events and append-only accounting keys cannot.
+const key=v=>String(v??'').trim().toUpperCase();
+const references=new Set(['job','jobCard','job_card','job_no','jobNo','jobCardNo','job_card_no','jobNumber','job_number','preliminaryLinkedJob','preliminarySourceJob','sourceJob','source_job','previousJob','nextJob','previous_job','next_job']);
+const dictionaries=new Set(['paintCosting','managerReviews']);
+function jobNumberCodec(rows=[]){
+ const input=new Map(),output=new Map();
+ for(const r of rows){input.set(key(r.number),r.stable_job);output.set(key(r.stable_job),r.current_number);}
+ const ref=(v,map)=>typeof v==='string'||typeof v==='number'?(map.get(key(v))??v):v;
+ function walk(v,map,parent=''){
+  if(Array.isArray(v))return v.map(x=>walk(x,map,parent));
+  if(!v||typeof v!=='object')return v;
+  const jobObject=['jobs','job','expectedJob','linked_job'].includes(parent)||('no' in v&&['jobType','make','reg','receptionNo'].some(k=>k in v));
+  return Object.fromEntries(Object.entries(v).map(([k,value])=>[
+   dictionaries.has(parent)?String(ref(k,map)):k,
+   references.has(k)||k==='no'&&jobObject||['entityId','entity_id'].includes(k)&&/^JOB_/.test(String(v.eventType||v.event_type||''))?walk(ref(value,map),map,k):walk(value,map,k)
+  ]));
+ }
+ return {
+  toInternal:value=>walk(value,input),toPublic:value=>walk(value,output),
+  // Search/cursor identifiers are not free text fields in stored records.
+  internalNumber:value=>ref(value,input),publicNumber:value=>ref(value,output)
+ };
+}
+function jobNumberChange(request){
+ if(request.newJobNumber===undefined)return null;
+ const number=String(request.newJobNumber).trim();
+ if(!/^[1-9]\d{0,9}$/.test(number))return {ok:false,code:'job_number_invalid'};
+ if(request.numberChangeConfirmed!==true||typeof request.expectedJobNumber!=='string')return {ok:false,code:'job_number_confirmation_required'};
+ return {ok:true,number,expected:request.expectedJobNumber};
+}
+
 Deno.serve(async (req: Request) => {
+  let numberCodec: any = null;
+  const reply = (body: unknown,status=200) => baseReply(numberCodec ? numberCodec.toPublic(body) : body,status);
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return reply({ ok: false, code: "method" }, 405);
   if (!allowedApiKey(req)) return reply({ ok: false, code: "bad_api_key" }, 401);
@@ -997,7 +1061,7 @@ Deno.serve(async (req: Request) => {
   if (!token) return reply({ ok: false, code: "invalid_session" }, 401);
 
   try {
-    const body = await req.json();
+    let body = await req.json();
     const action = String(body?.action || "load");
     // A heartbeat validates the session and reads the revision in one database
     // round trip. Never cache authorization: revocations apply to every probe.
@@ -1022,6 +1086,12 @@ Deno.serve(async (req: Request) => {
       user = await sessionUser(token);
     }
     if (!user) return reply({ ok: false, code: "invalid_session" }, 401);
+    if (user._jobNumbers?.length) {
+      numberCodec = jobNumberCodec(user._jobNumbers);
+      body = numberCodec.toInternal(body);
+      for (const field of ["search","query"]) if (typeof body[field] === "string") body[field] = numberCodec.internalNumber(body[field]);
+    }
+    if(body.newJobNumber !== undefined && action !== "manager_job_full_edit") return reply({ok:false,code:"job_edit_invalid_fields"},400);
 
     if (action.startsWith("mechanical_")) {
       const enabled = Deno.env.get("ZUKAIT_MECHANICAL_ENABLED") === "true";
@@ -1049,7 +1119,7 @@ Deno.serve(async (req: Request) => {
 
     if (action === "reception_dashboard") {
       if (!["Manager","Supervisor","Receptionist"].includes(String(user.role))) return reply({ok:false,code:"reception_forbidden"},403);
-      if (Object.keys(body).some(k => !["action","section","search","month","from","to","page","missing_only","dated_only","checklist_status"].includes(k))
+      if (Object.keys(body).some(k => !["action","section","search","month","from","to","page","missing_only","dated_only","checklist_status","company_filter"].includes(k))
           || JSON.stringify(body).length > 2500) return reply({ok:false,code:"reception_invalid_filter"},400);
       const {data:cap,error:capError}=await admin.rpc("zukait_reception_command",
         {p_actor_id:String(user.id),p_command:{operation:"CAPABILITIES"}});
@@ -1076,7 +1146,7 @@ Deno.serve(async (req: Request) => {
       const safeCases=receptionRows.map(r=>({...r,insurance_company:insuranceById.get(String(r.insurance_id))||""}));
       const projected=receptionDashboardProjection(state.data,safeCases,{
         section:body.section,search:body.search,month:body.month,from:body.from,to:body.to,
-        page:body.page,missing_only:body.missing_only,dated_only:body.dated_only,checklist_status:body.checklist_status
+        page:body.page,missing_only:body.missing_only,dated_only:body.dated_only,checklist_status:body.checklist_status,company_filter:body.company_filter
       });
       return reply(projected,projected.ok?200:400);
     }
@@ -1200,7 +1270,7 @@ Deno.serve(async (req: Request) => {
       const deletedDrafts=estimateState.data?.estimateDraftDeletes||[];
       if(['SAVE','ALLOCATE'].includes(body.command.operation)&&deletedDrafts.some((e:any)=>String(e.estimateId)===String(body.command.client_key)))return reply({ok:false,code:'estimate_draft_deleted'},409);
       const {data,error}=await admin.rpc('zukait_reception_estimate_command',{p_actor_id:String(user.id),p_command:body.command});
-      if(error){const code=String(error.message||'').match(/reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0]||'reception_unavailable';return reply({ok:false,code},/forbidden/.test(code)?403:409);}
+      if(error){const code=String(error.message||'').match(/job_number_[a-z0-9_]+|job_edit_manager_required|reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0]||'reception_unavailable';return reply({ok:false,code},/forbidden/.test(code)?403:409);}
       return reply(body.command.operation==='GET'?{...data,deleted_drafts:deletedDrafts.filter((e:any)=>e.receptionNo===body.command.rc_no||e.createdBy===user.id)}:data);
     }
     if (action === "reception") {
@@ -1212,12 +1282,18 @@ Deno.serve(async (req: Request) => {
       }
       const {data,error} = await admin.rpc("zukait_reception_command",{p_actor_id:String(user.id),p_command:command});
       if (error) {
-        const code = String(error.message || "").match(/reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0];
+        const code = String(error.message || "").match(/job_number_[a-z0-9_]+|job_edit_manager_required|reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0];
         if (code) return reply({ok:false,code}, /forbidden|manager_required/.test(code)?403:/not_found/.test(code)?404:409);
         console.error("reception_command_failed",error);
         return reply({ok:false,code:"reception_unavailable"},503);
       }
-      return reply(user.role === "Receptionist" ? receptionistProjection(data) : data);
+      let response=user.role === "Receptionist" ? receptionistProjection(data) : data;
+      if(String(command.operation||"").toUpperCase()==="GET"&&data?.record?.job_card){
+        const {data:snapshot,error:deliveryError}=await admin.from("workshop_state").select("data").eq("id","main").single();
+        const job=!deliveryError?(snapshot?.data?.jobs||[]).find((j:any)=>String(j.no)===String(data.record.job_card)):null;
+        response=job?{...response,linked_job:{no:job.no,delivered:job.delivered===true,status:job.delivered?"Delivered":String(job.status||"Open"),deliveredAt:job.deliveredAt||null,deliveryDate:job.deliveryDate||null}}:{...response,delivery_status_unavailable:true};
+      }
+      return reply(response);
     }
 
     if (action === "employee_time_action") {
@@ -1226,7 +1302,14 @@ Deno.serve(async (req: Request) => {
         if(readError)throw readError;
         const result:any=employeeTimeTransition(current.data,user,body,Date.now());
         if(!result.ok)return reply({ok:false,code:result.code,server_time:Date.now()},result.code==="employee_time_forbidden"?403:409);
-        if(result.duplicate)return reply({ok:true,duplicate:true,status:result.status,audit:result.audit,server_revision:current.revision,server_time:Date.now()});
+        if(result.duplicate){
+          const row=computeLiveStatus(current.data,Number(current.revision||0),String(user.id)).find((x:any)=>String(x.employee_id)===String(user.id))||null;
+          const session=(current.data.sessions||[]).find((x:any)=>String(x.emp)===String(user.id)&&String(x.id)===String(result.audit?.sessionId))||null;
+          const assignment=(current.data.assign||[]).find((x:any)=>String(x.emp)===String(user.id)&&String(x.id)===String(result.audit?.assignmentId))||null;
+          const closed_sessions=(current.data.sessions||[]).filter((x:any)=>String(x.emp)===String(user.id)&&(result.audit?.autoStoppedSessionIds||[]).includes(String(x.id)));
+          const closed_assignments=(current.data.assign||[]).filter((x:any)=>String(x.emp)===String(user.id)&&(result.audit?.autoStoppedAssignmentIds||[]).includes(String(x.id)));
+          return reply({ok:true,duplicate:true,status:row?.status||result.status,live_row:row,session,assignment,closed_sessions,closed_assignments,audit:result.audit,server_revision:current.revision,server_time:Date.now()});
+        }
         const nextRevision=Number(current.revision||0)+1;
         const live=computeLiveStatus(result.data,nextRevision,String(user.id));
         const {data:committed,error:commitError}=await admin.rpc("zukait_commit_workshop_state_v2",{
@@ -1235,7 +1318,7 @@ Deno.serve(async (req: Request) => {
         if(commitError)throw commitError;
         if(committed?.ok){
           const row=live.find((x:any)=>String(x.employee_id)===String(user.id))||null;
-          return reply({ok:true,status:row?.status||result.status,job_no:row?.job_no||"",session_id:row?.session_id||"",assignment_id:row?.assignment_id||"",audit:result.audit,server_revision:committed.revision||nextRevision,server_time:Date.now()});
+          return reply({ok:true,status:row?.status||result.status,job_no:row?.job_no||"",session_id:row?.session_id||"",assignment_id:row?.assignment_id||"",live_row:row,session:result.session,assignment:result.assignment,closed_sessions:result.closedSessions||[],closed_assignments:result.closedAssignments||[],audit:result.audit,server_revision:committed.revision||nextRevision,server_time:Date.now()});
         }
         if(committed?.code!=="conflict")return reply({ok:false,code:committed?.code||"employee_time_commit_failed"},409);
       }
@@ -1261,14 +1344,19 @@ Deno.serve(async (req: Request) => {
     if (action === "manager_job_full_edit") {
       if(user.role!=="Manager")return reply({ok:false,code:"job_edit_manager_required"},403);
       if(body.operation!=="FULL_EDIT")return reply({ok:false,code:"job_edit_invalid_fields"},400);
+      const numberChange=jobNumberChange(body);
+      if(numberChange&&!numberChange.ok)return reply({ok:false,code:numberChange.code},400);
       for(let attempt=0;attempt<8;attempt++){
         const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
         if(readError)throw readError;
         const result=jobEditTransition(current.data,user,body,Date.now());
         if(!result.ok)return reply({ok:false,code:result.code},409);
-        const {data:committed,error}=await admin.rpc("zukait_manager_full_job_edit",{p_expected_revision:Number(current.revision||0),p_data:result.data,p_actor_id:user.id,p_job_card:body.jobCard,p_reason:body.reason,p_live:computeLiveStatus(result.data,Number(current.revision||0)+1,user.id)});
-        if(error){const code=String(error.message||'').match(/reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0];return reply({ok:false,code:code||"job_edit_unavailable",message:code||'Job Card correction could not be saved.'},409);}
-        if(committed?.ok)return reply({ok:true,job:committed.job,server_revision:committed.revision});
+        const {data:committed,error}=await admin.rpc(numberChange?"zukait_manager_numbered_job_edit":"zukait_manager_full_job_edit",{p_expected_revision:Number(current.revision||0),p_data:result.data,p_actor_id:user.id,p_job_card:body.jobCard,p_reason:body.reason,p_live:computeLiveStatus(result.data,Number(current.revision||0)+1,user.id),...(numberChange?{p_new_number:numberChange.number,p_expected_number:numberChange.expected,p_confirmed:true}:{})});
+        if(error){const code=String(error.message||'').match(/job_number_[a-z0-9_]+|job_edit_manager_required|reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0];return reply({ok:false,code:code||"job_edit_unavailable",message:code||'Job Card correction could not be saved.'},409);}
+        if(committed?.ok){
+          if(numberChange)numberCodec=jobNumberCodec(committed.number_rows || []);
+          return reply({ok:true,job:committed.job,server_revision:committed.revision,...(numberChange?{data:committed.data}:{})});
+        }
         if(committed?.code!=="conflict")return reply({ok:false,code:"job_edit_unavailable"},503);
       }
       return reply({ok:false,code:"job_edit_conflict"},409);

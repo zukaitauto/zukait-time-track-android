@@ -18,7 +18,7 @@ const journalKey='zukait_receptionist_delivery_v1:'+endpoint+':'+actor.id;
 const pending={action:'receptionist_deliver',operation:'DELIVER',
  jobCard:'ZQA-BROWSER-NOAUTH',expectedQcRevision:0,expectedVehicleIdentity:'QA-ONLY',
  request_id:'c614d286-bae9-4c65-a105-1a3f2a809dbb'};
-const assetNames=['receptionist.html','receptionist_session.js',
+const assetNames=['session_privacy.js','receptionist.html','receptionist_session.js',
  'v2/features/insurance/reception.js','reception_dashboard.js'];
 const assets=new Map(assetNames.map(name=>{
  const src=fs.readFileSync('app/src/main/assets/'+name,'utf8');

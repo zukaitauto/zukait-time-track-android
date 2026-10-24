@@ -37,8 +37,7 @@ try{
  for(const f of fs.readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(fs.readFileSync('supabase/migrations/'+f,'utf8'));
  await db.exec(fs.readFileSync('tests/fixtures/workshop-save-live-functions.sql','utf8'));await db.exec(fs.readFileSync('experiments/live-status-session-partition.sql','utf8'));
  await db.exec("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt,must_change) values('QA_SUP','QA supervisor','Supervisor','QA_MECHANICAL','none','none',false),('QA_A','QA mechanic A','Employee','QA_MECHANICAL','none','none',false),('QA_B','QA mechanic B','Employee','QA_MECHANICAL','none','none',false),('QA_OTHER','Other','Employee','OTHER','none','none',false)");
- // Minimal schema-only session fixture, matched to read-only live metadata.
- await db.exec('create table public.staff_sessions(token_hash text primary key,user_id text not null references public.staff_credentials(user_id),created_at timestamptz not null default now(),last_seen_at timestamptz not null default now(),revoked_at timestamptz);alter table public.staff_sessions enable row level security;grant all on public.staff_sessions to service_role');
+ // Shared baseline now provides the session schema and least-privilege grants.
  await db.query('insert into staff_sessions(token_hash,user_id) values($1,$2),($3,$4)',[sessionHash,'QA_SUP','b'.repeat(64),'QA_A']);
  const initial={users:[{id:'QA_A',role:'Employee',department:'QA_MECHANICAL'},{id:'QA_B',role:'Employee',department:'QA_MECHANICAL'}],jobs:Array.from({length:12},(_,i)=>({no:'QA_JC_'+i,status:'Open'})),assign:[],sessions:[],expenses:[{id:'preserve',amount:12.345}],leaves:[{emp:'OTHER'}]};
  await db.query("insert into workshop_state(id,revision,data,updated_by) values('main',1,$1::jsonb,'QA_SUP')",[JSON.stringify(initial)]);
@@ -165,7 +164,9 @@ try{
  const started=action(flow,'START','QA_SUCCESSOR_START',{new_session_id:'QA_SUCCESSOR_PERIOD'});assert.equal(started.ok,true);
  flow=await commitFlow(started.data,[{employee_id:'QA_A',status:'Available'},{employee_id:'QA_B',status:'Working',assignment_id:successor,session_id:started.session.id,session_start:started.session.start,job_no:'QA_JC_0'}]);
  const repeated=action(flow,'START','QA_SUCCESSOR_ALREADY_ACTIVE',{new_session_id:'QA_MUST_NOT_CREATE'});assert.equal(repeated.ok,true);assert.equal(repeated.data.sessions.filter(s=>s.emp==='QA_B'&&s.end==null).length,1);
- assert.equal(action(flow,'START','QA_SECOND_JOB_DENIED',{assignment_id:'QA_OTHER_ASSIGNMENT'}).code,'employee_time_already_active');
+ assert.equal(action(flow,'START','QA_MISSING_JOB_DENIED',{assignment_id:'QA_MISSING_ASSIGNMENT'}).code,'employee_time_assignment_not_open');
+ const competing=structuredClone(flow);competing.assign.push({id:'QA_OTHER_ASSIGNMENT',emp:'QA_B',job:'QA_JC_1',suggested:5});
+ assert.equal(action(competing,'START','QA_SECOND_JOB_DENIED',{assignment_id:'QA_OTHER_ASSIGNMENT',job:'QA_JC_1'}).code,'employee_time_already_active');
  assert.equal(flow.sessions.filter(s=>s.emp==='QA_B'&&s.end==null).length,1);assert.equal(workedMinutes(flow,flow.assign.find(a=>a.id===sourceId),at+60000),60);
  assert.equal(qcWork(flow,'QA_JC_0').complete,false);assert.equal(qcTransition(flow,{id:'SUP002',role:'Supervisor'},{operation:'PAINTING_QC',jobCard:'QA_JC_0',expectedQcRevision:0,result:'PASS'},at+60000).code,'work_not_finished');
  const paused=action(flow,'PAUSE','QA_SUCCESSOR_PAUSE',{session_id:started.session.id},at+1860000);assert.equal(paused.ok,true);flow=await commitFlow(paused.data,[{employee_id:'QA_A',status:'Available'},{employee_id:'QA_B',status:'Paused',assignment_id:successor,job_no:'QA_JC_0'}]);
