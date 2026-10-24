@@ -5,7 +5,7 @@ export async function mechanicalDocument(input,server={}){
  if(!input||Object.keys(input).some(k=>!['checklistId','expectedRevision','expectedWorkshopRevision'].includes(k))||typeof input.checklistId!=='string'||!valid(input.expectedRevision)||!valid(input.expectedWorkshopRevision))return fail('invalid_document_request');
  if(typeof server.verifySession!=='function'||typeof server.readContext!=='function')return fail('mechanical_document_adapter_required');
  const actor=await server.verifySession();
- if(!actor?.active||actor.id!==server.actor?.id||!['Manager','Supervisor'].includes(actor.role)||!server.policy.documentReaders?.[actor.id]?.includes('UNPRICED'))return fail('mechanical_document_forbidden');
+ if(actor?.active!==true||actor.id!==server.actor?.id||!['Manager','Supervisor'].includes(actor.role)||!Array.isArray(server.policy.documentReaders?.[actor.id])||!server.policy.documentReaders[actor.id].includes('UNPRICED'))return fail('mechanical_document_forbidden');
  // Trusted reader must bind its own SQL session and return the two revisions from
  // one consistent snapshot. Never supply context from the client request.
  const {records,snapshot}=await server.readContext(input.checklistId);
@@ -29,7 +29,7 @@ export async function mechanicalDocument(input,server={}){
  const document={schema:'zukait-mechanical-unpriced-v1',checklistNumber:String(c.number),jobCard:String(jc),manualDate:String(c.manualJobCard.date),recordsRevision:records.revision,workshopRevision:snapshot.revision,rows};
  if(document.checklistNumber.length>80||document.jobCard.length>80||!/^\d{4}-\d{2}-\d{2}$/.test(document.manualDate)||rows.some(t=>!t.title||t.title.length>200||t.allocations.some(a=>a.employee.length>128)))return fail('mechanical_document_scope_review');
  const current=await server.verifySession();
- if(!current?.active||current.id!==actor.id||current.role!==actor.role)return fail('session_changed');
+ if(current?.active!==true||current.id!==actor.id||current.role!==actor.role)return fail('session_changed');
  // Adapter must recheck both revisions AND its bound session before returning.
  if(typeof server.verifyCurrent!=='function'||await server.verifyCurrent({checklistId:c.id,recordsRevision:records.revision,workshopRevision:snapshot.revision})!==true)return fail('mechanical_document_changed');
  return {ok:true,document};
