@@ -3,7 +3,7 @@
   "versionCode": 335,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
-  "sourceCommit": "96e3219573804707e8a69f9e2e6b635058ca0949",
+  "sourceCommit": "26b458e4f02e33ef3b8dfec411ce6c00fcd9bb4c",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-23T19:40:26.144Z",
-  "publishNonce": "96e3219573804707e8a69f9e2e6b635058ca0949371",
+  "approvedAt": "2026-10-24T06:11:32.399Z",
+  "publishNonce": "26b458e4f02e33ef3b8dfec411ce6c00fcd9bb4c372",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -32,11 +32,11 @@
         "verificationBasis": "Read-only production verification; unchanged staff-auth8. No authentication deployment."
       },
       "workshop-api": {
-        "version": 89,
-        "bundleSha256": "c6864c82d4c1bf231d295e5e22d1b17dd3b942b96519d63373ea138e051a80e4",
+        "version": 90,
+        "bundleSha256": "6daf75cdd02c90bfaf31f6dc68dea3b090605a6c38b534b6a546cebf5fec9e55",
         "verifiedFileMatch": true,
         "repositorySourceMatchesDeployed": false,
-        "verificationBasis": "All production89 files match tested QA25 exactly. Production88 bundle preserved except scoped Job Card public-number transport, private computed session relationship and Manager numbered-edit RPC routing. Existing repository index differences remain outside this change."
+        "verificationBasis": "All production90 files match QA26 exactly. Complete deployed production89 bundle preserved; only database_fetch.js changed from a 4-second HTTP deadline to 10 seconds, including the response body, without any write retries. Pre-existing repository index differences remain outside this release."
       }
     },
     "migrations": [
@@ -56,14 +56,14 @@
       "requiredInsertsAndRegistryUpdatePreserved": true
     }
   },
-  "verificationSummary": "V371 organizes Manager Full Edit into Job Details, Vehicle, Customer, Dates & Payment, Work & Notes, Technician Allocations and Save Correction, with readable header and scoped responsive layout. Job Card number is editable for Manager only. A changed number requires explicit old-to-new confirmation before saving. Database uniqueness/reservations cover active, historical and retired numbers, raw snapshot/projection creation, two-device conflicts and stale confirmations. Stable stored job identifiers, work, parts, paint, Sublet, Reception links, events and append-only accounting entries remain unchanged; a private public-number directory translates typed request/response references. Pending offline parts adopt the authoritative visible number without dropping queued updates. Number changes use the existing Manager full-edit transaction plus an immutable audited registry. Existing session validation, revocation, roles and passwords are preserved; numbering is embedded into the existing session read without another database request. Exact-source numbering/API/permission tests, PostgreSQL overlap and preservation tests, Chromium/WebKit phone/tablet confirmation/layout checks, Reception, Accountant, sync, signed/unsigned Android and native PDF checks all passed. QA25 real API confirmed initial/second correction 200, old/current-number lookup 200 and duplicate rejection 409 with job_number_duplicate; temporary fixture session revoked and account disabled, fixture display restored. Production89 readback matches all QA25 files and hash. Number registry initialized without changing existing public numbers or workshop records; production number audit remains empty. Production default service_role table privileges explicitly narrowed and verified; no security warnings. Physical-device acceptance and fresh production restore remain NOT_RUN.",
+  "verificationSummary": "V372 corrects the deployed database HTTP guard that aborted requests at four seconds although existing database statements can run for about eight seconds. The guard now permits ten seconds including body consumption, preserves cancellation/error statuses, and never replays writes. Client revision probes remain bounded at fifteen seconds; other cloud operations allow forty-five seconds for sequential authentication/read/rebase/commit acknowledgement and transfer. Existing cooldowns, pending snapshots, generation checks, three-attempt/five-second rebase-start budget, CAS, role/financial/work-history guards and live polling cadence are preserved. A freshly authenticated matching revision reuses the confirmed in-memory baseline for periodic mutable-cache repair without a redundant load request; cold, changed or expired proof still loads. Real failures still show warning. Exact-source synthetic late-commit/stall/body/cancellation/permission/probe/cache tests, existing queue/recovery, simultaneous-save, Reception/Accountant, sync, signed/unsigned Android and native PDF checks all passed. QA26 and production90 readbacks match all files and hash. Only the deployed database_fetch.js changed server-side; no schema, database statement timeout, paid resources, authentication, passwords or workshop records changed. Short live observation recorded41 HTTP200,3 HTTP401 and no HTTP503 after rollout; monitoring limits are recorded separately. Physical-device acceptance and fresh restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": true,
   "releaseChangeScope": "slow-database-acknowledgement-and-sync-recovery",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
-    "previousRelease": "release-V370-architecture-v2",
-    "strategy": "Publish a higher-version recovery APK using V370 client assets if needed, retaining backend89 public-number translation and the numbering registry/audit. Disable only new number-edit entry points if necessary. Never drop the number directory or reuse retired numbers after corrections; stable stored work, events and accounting keys must remain intact. No data reset.",
+    "previousRelease": "release-V371-architecture-v2",
+    "strategy": "If client cache handling regresses, publish a higher-version recovery APK with V371 client assets while retaining stable record IDs and the numbering registry. Preserve the complete backend89 bundle for recovery of the transport change if necessary; do not drop number aliases, audit history, workshop records or pending device changes. No data reset.",
     "dataResetRequired": false
   },
   "releaseBackendChanges": true,
@@ -94,12 +94,12 @@
     "fixturesRevoked": true,
     "workshopRecordsChanged": false
   },
-  "signedAcceptanceRun": 40012405398,
-  "verificationRun": 40012405425,
-  "accountantVerificationRun": 40012405378,
-  "androidBuildRun": 40012405295,
-  "syncVerificationRun": 40012405319,
-  "nativePdfVerificationRun": 40012405229,
+  "signedAcceptanceRun": 40068820152,
+  "verificationRun": 40068820218,
+  "accountantVerificationRun": 40068820133,
+  "androidBuildRun": 40068820128,
+  "syncVerificationRun": 40068820149,
+  "nativePdfVerificationRun": 40068820169,
   "monthlyReadAuthorizedByOwner": true,
   "monthlyReadAuthorization": "Owner requested Fix it properly for monthly read TIMEOUT, reviewed the remaining deployment/publication steps, and explicitly instructed Proceed.",
   "qaMonthlyRead": {
@@ -173,5 +173,27 @@
     "pendingOfflinePartsPreserved": true
   },
   "syncDeadlineCorrectionAuthorizedByOwner": true,
-  "syncDeadlineCorrectionAuthorization": "Owner reported Workshop sync is delayed always showing, reviewed the confirmed database deadline errors, and instructed FIX. Standing instruction is to publish after all fixes pass."
+  "syncDeadlineCorrectionAuthorization": "Owner reported Workshop sync is delayed always showing, reviewed the confirmed database deadline errors, and instructed FIX. Standing instruction is to publish after all fixes pass.",
+  "qaSyncDeadlineCorrection": {
+    "project": "omqgkqknbdcnotabffek",
+    "version": 26,
+    "bundleSha256": "6daf75cdd02c90bfaf31f6dc68dea3b090605a6c38b534b6a546cebf5fec9e55",
+    "allFilesMatchProduction": true,
+    "lateCommitAcknowledgedOnce": true,
+    "stalledResponseBounded": true,
+    "callerCancellationPreserved": true,
+    "permissionStatusesPreserved": true,
+    "confirmedBaselineRepairPassed": true,
+    "coldCacheAndChangedRevisionLoadPassed": true,
+    "existingQueueAndConcurrencyTestsPassed": true,
+    "workshopRecordsChanged": false
+  },
+  "syncPostDeploymentObservation": {
+    "from": "2026-10-24T06:06:02.365Z",
+    "to": "2026-10-24T06:10:46.251Z",
+    "http200": 41,
+    "http401": 3,
+    "http503": 0,
+    "scope": "Short observation of workshop-api90 logged requests; not a guarantee against future infrastructure or network failures."
+  }
 }
