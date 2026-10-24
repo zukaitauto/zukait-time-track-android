@@ -39,7 +39,7 @@
     try{
       const response=await originalFetch(input,{...options,signal:controller.signal,cache:'no-store'});check();
       const json=response.json.bind(response);
-      response.json=async()=>{try{const body=await json();check();if((response.status>=500||body?.code==='invalid_session')&&url.endsWith('/workshop-api'))lock('Server or session unavailable. Reconnect to verify your session.');return body;}finally{controllers.delete(controller);options.signal?.removeEventListener('abort',abort);}};
+      response.json=async()=>{try{const body=await json();check();if((response.status>=500||body?.code==='invalid_session')&&url.endsWith('/workshop-api'))lock('Server or session unavailable. Reconnect to verify your session.');return body;}catch(error){if(ticket===generation&&url.endsWith('/workshop-api'))lock();throw error;}finally{controllers.delete(controller);options.signal?.removeEventListener('abort',abort);}};
       return response;
     }catch(error){controllers.delete(controller);options.signal?.removeEventListener('abort',abort);if(url.endsWith('/workshop-api')&&ticket===generation)lock();throw error;}
   };

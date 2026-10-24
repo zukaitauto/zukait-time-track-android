@@ -9,7 +9,7 @@ const playwright=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const host='reception-recovery.invalid';
 const apiHost='pjknotnjkufadqavcmii.supabase.co';
 const user={id:'QA-RC',name:'QA Browser Receptionist',role:'Receptionist',department:'Reception'};
-const files=new Map(['receptionist.html','vendor/pdf/html2canvas-1.4.1.min.js','vendor/pdf/jspdf-4.2.1.min.js','report_pdf_export.js','receptionist_session.js',
+const files=new Map(['session_privacy.js','receptionist.html','vendor/pdf/html2canvas-1.4.1.min.js','vendor/pdf/jspdf-4.2.1.min.js','report_pdf_export.js','receptionist_session.js',
  'v2/features/insurance/reception.js','vin_scan.js','reception_estimate.js','v2/features/estimate/main_module.js','reception_vin.js','insurance_management.js','reception_dashboard.js','job_card_edit.js'].map(
   path=>['/'+path,fs.readFileSync('app/src/main/assets/'+path,'utf8')]));
 const testKey='zukait_receptionist_delivery_v1:https://'+apiHost+'/functions/v1/:QA-RC';
@@ -85,7 +85,8 @@ for(const engine of ['chromium','webkit']){
    await page.locator('#deliveries').click();
    await page.getByRole('button',{name:'Deliver Vehicle',exact:true}).waitFor();
    await page.getByRole('button',{name:'Deliver Vehicle',exact:true}).click();
-   await page.locator('#retry-delivery').waitFor();
+   await page.locator('#retry-delivery').waitFor({state:'attached'});
+   assert.equal(await page.locator('#sessionPrivacyScreen').isVisible(),true,'Unconfirmed transport locks the workspace until fresh verification');
    assert.equal(commits,1,engine+' '+fault+' must commit mock delivery once');
    assert.equal(wire.length,1,engine+' '+fault+' must send once before restart');
    const pending=await page.evaluate(()=>window.zukaitReceptionist.pending());
