@@ -1,10 +1,10 @@
 -- Disposable candidate only; not generated/applied production migration.
 create schema zukait_bills;
 revoke all on schema zukait_bills from public,anon,authenticated;grant usage on schema zukait_bills to service_role;
-create table zukait_bills.control(singleton boolean primary key default true check(singleton),enabled boolean not null default false,revision bigint not null default 0 check(revision>=0),period_from date,period_through date,roles jsonb not null default '["Accountant","Manager"]' check(jsonb_typeof(roles)='array'),check(period_from is null or period_through is null or period_from<=period_through));insert into zukait_bills.control default values;
+create table zukait_bills.control(singleton boolean primary key default true check(singleton),enabled boolean not null default false,parts_enabled boolean not null default false,revision bigint not null default 0 check(revision>=0),period_from date,period_through date,roles jsonb not null default '["Accountant","Manager"]' check(jsonb_typeof(roles)='array'),check(period_from is null or period_through is null or period_from<=period_through));insert into zukait_bills.control default values;
 create table zukait_bills.documents(id uuid primary key,supplier_id uuid not null references zukait_suppliers.suppliers(id),reference text not null,invoice_date date not null,invoice_total_mills bigint not null check(invoice_total_mills>0 and invoice_total_mills<=9007199254740991),reviewed_by text not null,reviewed_at timestamptz not null default now(),request_id uuid not null unique references public.workshop_accountant_commands(request_id),unique(supplier_id,reference));
 create table zukait_bills.bills(id uuid primary key references zukait_bills.documents(id),supplier_id uuid not null references zukait_suppliers.suppliers(id),transaction_date date not null,due_date date,amount_mills bigint not null check(amount_mills>0 and amount_mills<=9007199254740991),invoice_difference_mills bigint not null check(invoice_difference_mills>=0),supplier_revision bigint not null,workshop_revision bigint not null,revision bigint not null unique,request_id uuid not null unique references public.workshop_accountant_commands(request_id));
-create table zukait_bills.sources(source_type text not null check(source_type='PAINT_ORDER'),source_id text not null,bill_id uuid not null references zukait_bills.bills(id),received_cost_mills bigint not null,receipt_digest text not null,primary key(source_type,source_id));
+create table zukait_bills.sources(source_type text not null check(source_type in ('PAINT_ORDER','SPARE_PART_LINE')),source_id text not null,bill_id uuid not null references zukait_bills.bills(id),received_cost_mills bigint not null,receipt_digest text not null,primary key(source_type,source_id));
 create table zukait_bills.audit(request_id uuid primary key references public.workshop_accountant_commands(request_id),bill_id uuid not null references zukait_bills.bills(id),actor_id text not null,device_id text not null,reason text not null,result jsonb not null,created_at timestamptz not null default now());
 create index bills_supplier_page on zukait_bills.bills(supplier_id,id);
 alter table zukait_bills.control enable row level security;alter table zukait_bills.documents enable row level security;alter table zukait_bills.bills enable row level security;alter table zukait_bills.sources enable row level security;alter table zukait_bills.audit enable row level security;
@@ -74,15 +74,16 @@ begin
  if jsonb_typeof(source_ids) is distinct from 'array' or jsonb_array_length(source_ids) not between 1 and 20 then raise exception 'bill_invalid';end if;
  if p_kind='post' then select revision,data into wv,ws from public.workshop_state where id='main' for update;else select revision,data into wv,ws from public.workshop_state where id='main' for share;end if;
  if p_kind='post' and (coalesce(p_input->>'expectedWorkshopRevision','')!~'^[0-9]{1,16}$' or (p_input->>'expectedWorkshopRevision')::bigint<>wv) then raise exception 'bill_revision_conflict';end if;
- orders:=ws->'paintPurchasing'->'orders';if jsonb_typeof(orders) is distinct from 'array' then raise exception 'bill_receipt_review';end if;if jsonb_array_length(orders)>10000 then raise exception 'bill_scope_limit';end if;
- for entry in select value from jsonb_array_elements(source_ids) loop
-  if jsonb_typeof(entry)<>'object' or exists(select 1 from jsonb_object_keys(entry) k where k not in('type','id','expectedReceiptDigest')) or entry->>'type' is distinct from 'PAINT_ORDER' or jsonb_typeof(entry->'id') is distinct from 'string' or length(entry->>'id') not between 1 and 128 then raise exception 'bill_source_unsupported';end if;wanted_source:=entry->>'id';
-  if exists(select 1 from jsonb_array_elements(proofs) r where r->>'id'=wanted_source) then raise exception 'bill_duplicate_source';end if;
-  if not exists(select 1 from zukait_suppliers.source_links where source_type='PAINT_ORDER' and source_id=wanted_source and supplier_id=sup) then raise exception 'bill_supplier_review';end if;
-  select count(*),jsonb_agg(value)->0 into matches,o from(select value from jsonb_array_elements(orders) where value->>'id'=wanted_source limit 2)x;if matches<>1 then raise exception 'bill_receipt_review';end if;proof:=zukait_bills.paint_receipt(o);
-  if p_kind='post' and (proof->>'receiptDate')::date>tx_date then raise exception 'bill_receipt_review';end if;
+ orders:=ws->'paintPurchasing'->'orders';if exists(select 1 from jsonb_array_elements(source_ids) x where x->>'type'='PAINT_ORDER') then if jsonb_typeof(orders) is distinct from 'array' then raise exception 'bill_receipt_review';end if;if jsonb_array_length(orders)>10000 then raise exception 'bill_scope_limit';end if;end if;
+ for entry in select value from jsonb_array_elements(source_ids) order by value->>'type',value->>'id' loop
+  if jsonb_typeof(entry)<>'object' or exists(select 1 from jsonb_object_keys(entry) k where k not in('type','id','expectedReceiptDigest')) or coalesce(entry->>'type','') not in ('PAINT_ORDER','SPARE_PART_LINE') or jsonb_typeof(entry->'id') is distinct from 'string' or length(entry->>'id') not between 1 and 128 then raise exception 'bill_source_unsupported';end if;wanted_source:=entry->>'id';
+  if exists(select 1 from jsonb_array_elements(proofs) r where r->>'id'=wanted_source and r->>'type'=entry->>'type') then raise exception 'bill_duplicate_source';end if;
+  if not exists(select 1 from zukait_suppliers.source_links where source_type=entry->>'type' and source_id=wanted_source and supplier_id=sup) then raise exception 'bill_supplier_review';end if;
+  if entry->>'type'='SPARE_PART_LINE' then if not bc.parts_enabled then raise exception 'bill_source_unsupported';end if;proof:=zukait_bills.parts_receipt(wanted_source);else
+  select count(*),jsonb_agg(value)->0 into matches,o from(select value from jsonb_array_elements(orders) where value->>'id'=wanted_source limit 2)x;if matches<>1 then raise exception 'bill_receipt_review';end if;proof:=zukait_bills.paint_receipt(o);end if;proof:=proof||jsonb_build_object('type',entry->>'type');
+  if p_kind='post' and ((proof->>'receiptDate')::date>tx_date or (proof->>'costDate')::date>tx_date) then raise exception 'bill_receipt_review';end if;
   if p_kind='post' and (jsonb_typeof(entry->'expectedReceiptDigest') is distinct from 'string' or entry->>'expectedReceiptDigest' is distinct from proof->>'receiptDigest') then raise exception 'bill_receipt_changed';end if;
-  if exists(select 1 from zukait_bills.sources where source_type='PAINT_ORDER' and source_id=wanted_source) then raise exception 'bill_source_already_billed';end if;
+  if exists(select 1 from zukait_bills.sources where source_type=entry->>'type' and source_id=wanted_source) then raise exception 'bill_source_already_billed';end if;
   amount:=amount+(proof->>'receivedCostMills')::bigint;proofs:=proofs||jsonb_build_array(proof);
  end loop;
  if amount>9007199254740991 then raise exception 'bill_amount_review';end if;
@@ -93,7 +94,7 @@ begin
  insert into public.workshop_accountant_commands values(p_request,p_actor,p_fingerprint,result,now());
  insert into zukait_bills.documents values(eid,sup,ref,doc_date,invoice::bigint,p_actor,now(),p_request);
  insert into zukait_bills.bills values(eid,sup,tx_date,due_date,amount::bigint,(invoice-amount)::bigint,sc.revision,wv,rev,p_request);
- for proof in select value from jsonb_array_elements(proofs) loop insert into zukait_bills.sources values('PAINT_ORDER',proof->>'id',eid,(proof->>'receivedCostMills')::bigint,proof->>'receiptDigest');end loop;
+ for proof in select value from jsonb_array_elements(proofs) loop insert into zukait_bills.sources values(proof->>'type',proof->>'id',eid,(proof->>'receivedCostMills')::bigint,proof->>'receiptDigest');end loop;
  insert into zukait_bills.audit values(p_request,eid,p_actor,p_input->>'deviceId',p_input->>'reason',result,now());update zukait_bills.control set revision=rev where singleton;return result;
 end $$;
 revoke all on function public.zukait_bill_pipeline(text,text,text,uuid,text,jsonb) from public,anon,authenticated;grant execute on function public.zukait_bill_pipeline(text,text,text,uuid,text,jsonb) to service_role;

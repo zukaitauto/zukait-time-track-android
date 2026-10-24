@@ -1,3 +1,4 @@
+import {accountantPartsPosting} from './accountant-parts-posting.mjs';
 import {accountantBillPosting} from './accountant-bill-posting.mjs';
 import {accountantSupplierReadPersistence} from './accountant-supplier-read-persistence.mjs';
 import {accountantSupplierPersistence} from './accountant-supplier-persistence.mjs';
@@ -222,5 +223,6 @@ try{
  await accountantSupplierPersistence({db,native,pg,config,database});
  await accountantSupplierReadPersistence({db});
  await accountantBillPosting({db,native,pg,config,database});
+ await accountantPartsPosting({db,native,pg,config,database});
  console.log('PASS '+(native?'native PostgreSQL 17 concurrent':'PGlite')+' persistence: MC001/MC002, retry identity, one JC/MC, rollback/no consumed number, metadata without full-state writes, atomic assignment/handover/history/live triggers, dual revision checks, append-only and private service ACL. No production access.');
 }finally{if(native){await client.end();await admin.query('drop database "'+database+'" with (force)');await admin.end();}else await db.close();}
