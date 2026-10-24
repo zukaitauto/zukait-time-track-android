@@ -67,6 +67,7 @@ jobs:
       - run: node tests/mechanical-tracking-ui.mjs
       - run: node tests/mechanical-repeat-ui.mjs
       - run: node tests/mechanical-document.mjs
+      - run: node tests/mechanical-document-export-ui.mjs
       - run: node tests/mechanical-qc-projection.mjs
       - run: node tests/mechanical-navigation.mjs
       - run: npx playwright install chromium
@@ -74,6 +75,7 @@ jobs:
       - run: node tests/mechanical-tracking-responsive.mjs
       - run: node tests/mechanical-repeat-responsive.mjs
       - run: node tests/mechanical-document-browser.mjs
+      - run: node tests/mechanical-document-export-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

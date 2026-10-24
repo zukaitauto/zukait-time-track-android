@@ -990,6 +990,22 @@
       onChanged:()=>window.dispatchEvent(new CustomEvent('zukait-mechanical-change')),onClose:()=>{if(root.isConnected)closeModal()}});return true;
   }
 
+  async function openMechanicalDocument(input){
+    const enabled=()=>window.ZUKAIT_MECHANICAL_ENABLED===true&&window.ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED===true;
+    if(!enabled()||!['Manager','Supervisor'].includes(me?.role)||!sessionToken())return false;
+    if(cloudDirty||cloudPushing||pullInFlight)throw Error('Sync pending workshop changes before export.');
+    const owner=String(me.id),token=sessionToken(),role=me.role,current=()=>enabled()&&String(me?.id||'')===owner&&sessionToken()===token&&me?.role===role;
+    const module=await import('./mechanical_document_export.js');if(!current())return false;
+    openModal('<div id="zukaitMechanicalDocument"></div>');const root=document.getElementById('zukaitMechanicalDocument');if(!root)return false;
+    const check=()=>{if(!current()||!root.isConnected)throw Error('invalid_session');if(!navigator.onLine)throw Error('OFFLINE');if(cloudDirty||cloudPushing||pullInFlight)throw Error('WORKSHOP_SYNC_PENDING')};
+    module.mountMechanicalDocumentExport(root,{enabled:true,isEnabled:enabled,...input,online:()=>navigator.onLine,getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()}),
+      api:async body=>{check();if(!['mechanical_document','mechanical_document_verify'].includes(body.action))throw Error('mechanical_forbidden');const r=await api(body);check();return r},
+      native:!!window.AndroidBridge,generate:(html,name)=>{check();return window.zukaitReportPdf.generate(html,name)},
+      download:file=>{check();const url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download=file.name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000)},
+      canShare:file=>!!(navigator.share&&navigator.canShare?.({files:[file]})),share:async prepared=>{check();if(window.AndroidBridge)return window.zukaitReportPdf.share(prepared.html,prepared.name);return navigator.share({title:prepared.name,files:[prepared.file]})}
+    });return true;
+  }
+
   async function openMechanicalWorkspace(checklistId=null){
     if(window.ZUKAIT_MECHANICAL_ENABLED!==true||!['Manager','Supervisor'].includes(me?.role)||!sessionToken())return false;
     const owner=String(me.id),token=sessionToken();
@@ -998,7 +1014,7 @@
     openModal('<div id="zukaitMechanicalWorkspace"></div>');
     const root=document.getElementById('zukaitMechanicalWorkspace');if(!root)return false;
     const modal=root.closest('.modal-box');if(modal){modal.style.width='1100px';modal.style.maxWidth='95vw'}
-    await module.mountMechanicalWorkspace(root,{enabled:true,storage:localStorage,checklistId,openTracking:window.ZUKAIT_MECHANICAL_TRACKING_ENABLED===true?openMechanicalTracking:null,
+    await module.mountMechanicalWorkspace(root,{enabled:true,storage:localStorage,checklistId,openDocument:window.ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED===true?openMechanicalDocument:null,openTracking:window.ZUKAIT_MECHANICAL_TRACKING_ENABLED===true?openMechanicalTracking:null,
       getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()}),online:()=>navigator.onLine,
       onClose:()=>{if(root.isConnected)closeModal()},
       openDelivery:window.ZUKAIT_MECHANICAL_DELIVERY_ENABLED===true?openMechanicalDelivery:null,

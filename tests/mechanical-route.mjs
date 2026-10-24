@@ -4,10 +4,11 @@ import {mechanicalRoute,mechanicalLegacyDeliveryCheck} from '../supabase/functio
 const id=n=>'75000000-0000-4000-8000-'+String(n).padStart(12,'0');
 const source=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
 const policy={flags:{mechanical:true},mechanicalStaff:{QA_SUP:['MC_CREATE']},mechanicalDepartment:'QA_MECH',manualJcDuplicateMode:'deny',mcNumbering:{minimumDigits:3}};
-let handler,flag,qcFlag,deliveryFlag,trackingFlag,invalid=false,role='Supervisor',revoke=false,authReads=0,calls=[],failCommit=false,guardError;
+let handler,flag,qcFlag,deliveryFlag,trackingFlag,documentsFlag,invalid=false,role='Supervisor',revoke=false,authReads=0,calls=[],failCommit=false,guardError;
 const admin={from:table=>{if(table!=='staff_sessions'&&guardError)throw Error(guardError);assert.equal(table,'staff_sessions');const chain={select(){return chain},eq(){return chain},maybeSingle:async()=>{authReads++;return {data:invalid||(revoke&&authReads===3)?null:{user_id:'QA_SUP',revoked_at:null,last_seen_at:new Date().toISOString(),staff_credentials:{user_id:'QA_SUP',display_name:'QA supervisor',role,department:'QA_MECH',active:true,must_change:false}}}}};return chain},
  rpc:async(name,p)=>{
   calls.push({name,p});assert.equal(p.p_actor,'QA_SUP');assert.match(p.p_session_hash,/^[0-9a-f]{64}$/);assert.notEqual(p.p_session_hash,'qa-synthetic-session');
+  if(name==='zukait_mechanical_document_read')return {data:p.p_kind==='policy'?{documentsEnabled:true,documentReaders:{QA_SUP:['UNPRICED']}}:p.p_kind==='verify'?{ok:true,checklistId:p.p_entity,recordsRevision:0,workshopRevision:1}:{records:{revision:0,checklists:[{id:id(1),number:'MC001',manualJobCard:{number:'QA_JC',date:'2026-10-24'}}],tasks:[],links:[]},snapshot:{revision:1,data:{jobs:[{no:'QA_JC'}],assign:[],users:[]}}}};
   if(name==='zukait_mechanical_qc_overview_read')return {data:{actor:{id:'QA_SUP',role,active:true},policy,records:{revision:0,checklists:[],tasks:[],links:[]},snapshot:{revision:1,data:{jobs:[],assign:[],sessions:[],users:[]}},approvals:[]}};
   if(name==='zukait_mechanical_tracking_read')return {data:{ok:true,checklistId:p.p_entity,jobCard:'QA_JC',tracking:{priority:null,promiseDate:null,waitingForParts:false},recordsRevision:0,workshopRevision:1,capabilities:[],priorityValues:[],holdMode:null,active:true}};
   if(name==='zukait_mechanical_dashboard')return {data:{ok:true,checklists:[],nextAfter:null,detail:null,recordsRevision:0,workshopRevision:1}};
@@ -20,7 +21,7 @@ const admin={from:table=>{if(table!=='staff_sessions'&&guardError)throw Error(gu
   }
   assert.equal(name,'zukait_mechanical_commit');return failCommit?{error:{message:'mechanical_invalid_session'}}:{data:{entityId:p.p_entity,number:'MC001',recordsRevision:1,workshopRevision:1}};
  }};
-globalThis.Deno={env:{get:k=>k==='ZUKAIT_MECHANICAL_ENABLED'?flag:k==='ZUKAIT_MECHANICAL_QC_ENABLED'?qcFlag:k==='ZUKAIT_MECHANICAL_DELIVERY_ENABLED'?deliveryFlag:k==='ZUKAIT_MECHANICAL_TRACKING_ENABLED'?trackingFlag:({SUPABASE_URL:'https://example.invalid',SUPABASE_SERVICE_ROLE_KEY:'qa-service',SUPABASE_PUBLISHABLE_KEY:'qa-key'}[k])},serve:fn=>{handler=fn}};
+globalThis.Deno={env:{get:k=>k==='ZUKAIT_MECHANICAL_ENABLED'?flag:k==='ZUKAIT_MECHANICAL_QC_ENABLED'?qcFlag:k==='ZUKAIT_MECHANICAL_DELIVERY_ENABLED'?deliveryFlag:k==='ZUKAIT_MECHANICAL_TRACKING_ENABLED'?trackingFlag:k==='ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED'?documentsFlag:({SUPABASE_URL:'https://example.invalid',SUPABASE_SERVICE_ROLE_KEY:'qa-service',SUPABASE_PUBLISHABLE_KEY:'qa-key'}[k])},serve:fn=>{handler=fn}};
 const module=new SourceTextModule(stripTypeScriptTypes(source));
 await module.link(async spec=>{const line=source.split('\n').find(s=>s.includes('from')&&s.includes(spec));const names=line?.match(/import\s*\{([^}]+)\}/)?.[1].split(',').map(s=>s.trim())||[];return new SyntheticModule(names,function(){for(const name of names)this.setExport(name,name==='createClient'?()=>admin:name==='mechanicalRoute'?mechanicalRoute:name==='mechanicalLegacyDeliveryCheck'?mechanicalLegacyDeliveryCheck:name==='accountantApi'?async()=>({status:200,body:{ok:true,accountant:true}}):()=>{throw Error('unexpected import '+name)})})});
 await module.evaluate();
@@ -55,4 +56,7 @@ revoke=true;r=await request();assert.equal(r.status,401);assert.equal(calls.some
 failCommit=true;r=await request();assert.equal(r.status,401);assert.equal(r.body.code,'invalid_session');failCommit=false;
 role='Accountant';assert.equal((await request({action:'accountant_dashboard'})).body.accountant,true,'Existing Accountant routing remains available');
 role='Supervisor';for(const code of ['mechanical_authority_conflict','mechanical_live_authority_conflict','mechanical_delivery_authority_conflict']){guardError=code;r=await request({action:'load'});assert.equal(r.status,403);assert.equal(r.body.code,code);assert.equal(r.body.retryable,false);}guardError=null;
+const printInput={action:'mechanical_document',checklistId:id(1),expectedRevision:0,expectedWorkshopRevision:1};
+for(const value of [undefined,'false','TRUE','1']){documentsFlag=value;assert.equal((await request(printInput)).body.code,'extension_disabled');assert.equal(calls.length,0)}
+documentsFlag='true';r=await request(printInput);assert.equal(r.status,200,JSON.stringify(r));assert.equal(r.body.document.schema,'zukait-mechanical-unpriced-v1');assert.deepEqual(calls.map(c=>c.p.p_kind),['policy','context','verify']);assert.equal('snapshot' in r.body,false);assert.equal((await request({...printInput,prices:true})).status,400);for(const roleValue of ['Employee','Receptionist','Accountant']){role=roleValue;assert.equal((await request(printInput)).status,403);assert.equal(calls.length,0)}role='Supervisor';documentsFlag=undefined;
 console.log('PASS real Edge handler: exact default-off environment flag, existing auth gate, role isolation, trusted hash binding, strict body, safe errors, no snapshot exposure, pre-commit revocation, existing Accountant route. Synthetic only.');
