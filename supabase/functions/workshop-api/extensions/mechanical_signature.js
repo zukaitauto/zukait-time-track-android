@@ -8,7 +8,7 @@ export function validSignatureInk(strokes){
 }
 export async function mechanicalSignatureCommand(input,server={}){
  if(server.enabled!==true||server.signaturesEnabled!==true)return fail('mechanical_signatures_disabled');
- if(!input||Object.keys(input).some(k=>!['requestId','checklistId','deviceId','expectedRevision','expectedWorkshopRevision','consent','strokes'].includes(k))||!uuid(input.requestId)||!uuid(input.checklistId)||typeof input.deviceId!=='string'||!input.deviceId.trim()||input.deviceId.length>128||![input.expectedRevision,input.expectedWorkshopRevision].every(n=>Number.isSafeInteger(n)&&n>=0)||input.consent!==true||!validSignatureInk(input.strokes))return fail('invalid_mechanical_signature');
+ if(!input||Object.keys(input).some(k=>!['requestId','checklistId','deviceId','expectedRevision','expectedWorkshopRevision','consent','strokes','expectedSourceHash'].includes(k))||!uuid(input.requestId)||!uuid(input.checklistId)||typeof input.deviceId!=='string'||!input.deviceId.trim()||input.deviceId.length>128||![input.expectedRevision,input.expectedWorkshopRevision].every(n=>Number.isSafeInteger(n)&&n>=0)||!/^[0-9a-f]{64}$/.test(input.expectedSourceHash||'')||input.consent!==true||!validSignatureInk(input.strokes))return fail('invalid_mechanical_signature');
  if(!['verifySession','readReceipt','readDocument','commit'].every(k=>typeof server[k]==='function'))return fail('mechanical_signature_adapter_required');
  const actor=await server.verifySession();if(actor?.id!=='SUP003'||actor.role!=='Supervisor'||actor.active!==true)return fail('mechanical_signature_forbidden');
  // Policy must come from a separately session-bound trusted reader. Existing
@@ -19,6 +19,7 @@ export async function mechanicalSignatureCommand(input,server={}){
  const source=await server.readDocument(input);
  if(!source?.ok||source.checklistId!==input.checklistId||source.document?.recordsRevision!==input.expectedRevision||source.document?.workshopRevision!==input.expectedWorkshopRevision)return fail('mechanical_document_changed');
  const sourceHash=await digest({domain:'mechanical-unpriced-signature-source-v1',checklistId:input.checklistId,document:source.document});
+ if(sourceHash!==input.expectedSourceHash)return fail('mechanical_document_changed');
  const current=await server.verifySession();if(current?.id!==actor.id||current?.role!==actor.role||current.active!==true)return fail('session_changed');
  const result=await server.commit({actorId:actor.id,requestId:input.requestId,deviceId:input.deviceId,checklistId:input.checklistId,recordsRevision:input.expectedRevision,workshopRevision:input.expectedWorkshopRevision,sourceHash,fingerprint,strokes:structuredClone(input.strokes)});
  return {ok:true,result,requiresRefresh:true};

@@ -69,6 +69,7 @@ jobs:
       - run: node tests/mechanical-document.mjs
       - run: node tests/mechanical-document-export-ui.mjs
       - run: node tests/mechanical-signature-ui.mjs
+      - run: node tests/mechanical-signed-document.mjs
       - run: node tests/mechanical-qc-projection.mjs
       - run: node tests/mechanical-navigation.mjs
       - run: npx playwright install chromium
@@ -78,6 +79,7 @@ jobs:
       - run: node tests/mechanical-document-browser.mjs
       - run: node tests/mechanical-document-export-browser.mjs
       - run: node tests/mechanical-signature-browser.mjs
+      - run: node tests/mechanical-signed-document-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -3,6 +3,7 @@ import {mechanicalTransition,mechanicalCommandFingerprint} from '../supabase/fun
 import {mechanicalPersistenceRequest} from '../supabase/functions/workshop-api/extensions/mechanical_persistence_plan.js';
 import {mechanicalCommandApi} from '../supabase/functions/workshop-api/extensions/mechanical_api.js';
 import {mechanicalRoute} from '../supabase/functions/workshop-api/extensions/mechanical_route.js';
+import {mechanicalSignedDocumentPersistence} from './mechanical-signed-document-persistence.mjs';
 import {mechanicalSignaturePersistence} from './mechanical-signature-persistence.mjs';
 import {mechanicalDocumentPersistence} from './mechanical-document-persistence.mjs';
 import {mechanicalRepeatPersistence} from './mechanical-repeat-persistence.mjs';
@@ -211,5 +212,6 @@ try{
  await mechanicalTrackingPersistence({db,records,snapshot,native,pg,config,database});
  await mechanicalDocumentPersistence({db,records,snapshot,native,pg,config,database});
  await mechanicalSignaturePersistence({db,records,snapshot,native,pg,config,database});
+ await mechanicalSignedDocumentPersistence({db,records,snapshot});
  console.log('PASS '+(native?'native PostgreSQL 17 concurrent':'PGlite')+' persistence: MC001/MC002, retry identity, one JC/MC, rollback/no consumed number, metadata without full-state writes, atomic assignment/handover/history/live triggers, dual revision checks, append-only and private service ACL. No production access.');
 }finally{if(native){await client.end();await admin.query('drop database "'+database+'" with (force)');await admin.end();}else await db.close();}

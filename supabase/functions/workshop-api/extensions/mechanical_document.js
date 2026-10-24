@@ -1,3 +1,4 @@
+import {mechanicalCommandFingerprint as digest} from './mechanical_rules.js';
 // Inactive server-only unpriced projection. No routes or grants are created here.
 const fail=code=>({ok:false,code}),valid=x=>Number.isSafeInteger(x)&&x>=0;
 export async function mechanicalDocument(input,server={}){
@@ -32,5 +33,5 @@ export async function mechanicalDocument(input,server={}){
  if(current?.active!==true||current.id!==actor.id||current.role!==actor.role)return fail('session_changed');
  // Adapter must recheck both revisions AND its bound session before returning.
  if(typeof server.verifyCurrent!=='function'||await server.verifyCurrent({checklistId:c.id,recordsRevision:records.revision,workshopRevision:snapshot.revision})!==true)return fail('mechanical_document_changed');
- return {ok:true,document};
+ return {ok:true,document,sourceHash:await digest({domain:'mechanical-unpriced-signature-source-v1',checklistId:input.checklistId,document})};
 }

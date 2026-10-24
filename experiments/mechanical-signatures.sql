@@ -5,7 +5,7 @@ create table zukait_mechanical.signatures(
  request_id uuid primary key,checklist_id uuid not null references zukait_mechanical.checklists(id),actor_id text not null references public.staff_credentials(user_id),
  device_id text not null check(length(device_id) between 1 and 128),records_revision bigint not null,workshop_revision bigint not null,
  source_hash text not null check(source_hash ~ '^[0-9a-f]{64}$'),fingerprint text not null check(fingerprint ~ '^[0-9a-f]{64}$'),
- consent_version text not null default 'OWN_CHECKLIST_SIGNATURE_V1' check(consent_version='OWN_CHECKLIST_SIGNATURE_V1'),strokes jsonb not null,signed_at timestamptz not null default clock_timestamp(),unique(checklist_id,records_revision,workshop_revision)
+ consent_version text not null default 'OWN_CHECKLIST_SIGNATURE_V1' check(consent_version='OWN_CHECKLIST_SIGNATURE_V1'),strokes jsonb not null,signed_at timestamptz not null default clock_timestamp(),unique(checklist_id,records_revision,workshop_revision,source_hash)
 );
 alter table zukait_mechanical.signatures enable row level security;
 revoke all on zukait_mechanical.signatures from public,anon,authenticated,service_role;
@@ -27,7 +27,7 @@ begin
 end $$;
 revoke all on function zukait_mechanical.authorize_signature(text,text) from public,anon,authenticated;
 grant execute on function zukait_mechanical.authorize_signature(text,text) to service_role;
-create function public.zukait_mechanical_signature_read(p_actor text,p_session_hash text,p_kind text,p_request uuid default null,p_entity uuid default null,p_records bigint default null,p_workshop bigint default null) returns jsonb language plpgsql security invoker set search_path=pg_catalog as $$
+create function public.zukait_mechanical_signature_read(p_actor text,p_session_hash text,p_kind text,p_request uuid default null,p_entity uuid default null,p_records bigint default null,p_workshop bigint default null,p_source_hash text default null) returns jsonb language plpgsql security invoker set search_path=pg_catalog as $$
 declare policy jsonb;r zukait_mechanical.signatures;verification jsonb;
 begin
  policy:=zukait_mechanical.authorize_signature(p_actor,p_session_hash);
@@ -36,16 +36,18 @@ begin
   select * into r from zukait_mechanical.signatures where request_id=p_request;
   if not found then return 'null'::jsonb;end if;
   if r.actor_id<>p_actor then raise exception 'mechanical_signature_forbidden';end if;
- elsif p_kind='current' then
+ elsif p_kind in('current','export','verify_export') then
+  if p_kind in('export','verify_export') and not coalesce((policy->'signatureWriters'->p_actor)?'SIGNED_UNPRICED',false) then raise exception 'mechanical_signature_forbidden';end if;
+  if p_source_hash is null or p_source_hash !~ '^[0-9a-f]{64}$' then raise exception 'invalid_mechanical_signature';end if;
   verification:=public.zukait_mechanical_document_read(p_actor,p_session_hash,'verify',p_entity,p_records,p_workshop);
-  select * into r from zukait_mechanical.signatures where checklist_id=p_entity and records_revision=p_records and workshop_revision=p_workshop;
+  select * into r from zukait_mechanical.signatures where checklist_id=p_entity and records_revision=p_records and workshop_revision=p_workshop and source_hash=p_source_hash;
   if not found then return 'null'::jsonb;end if;
  else raise exception 'invalid_mechanical_signature';end if;
  -- This private reader is not exposed to ordinary unpriced document recipients.
- return jsonb_build_object('actorId',r.actor_id,'fingerprint',r.fingerprint,'result',jsonb_build_object('requestId',r.request_id,'checklistId',r.checklist_id,'actorId',r.actor_id,'recordsRevision',r.records_revision,'workshopRevision',r.workshop_revision,'sourceHash',r.source_hash,'signedAt',r.signed_at));
+ return jsonb_build_object('actorId',r.actor_id,'fingerprint',r.fingerprint,'result',jsonb_build_object('requestId',r.request_id,'checklistId',r.checklist_id,'actorId',r.actor_id,'recordsRevision',r.records_revision,'workshopRevision',r.workshop_revision,'sourceHash',r.source_hash,'signedAt',r.signed_at))||case when p_kind='export' then jsonb_build_object('strokes',r.strokes) else '{}'::jsonb end;
 end $$;
-revoke all on function public.zukait_mechanical_signature_read(text,text,text,uuid,uuid,bigint,bigint) from public,anon,authenticated;
-grant execute on function public.zukait_mechanical_signature_read(text,text,text,uuid,uuid,bigint,bigint) to service_role;
+revoke all on function public.zukait_mechanical_signature_read(text,text,text,uuid,uuid,bigint,bigint,text) from public,anon,authenticated;
+grant execute on function public.zukait_mechanical_signature_read(text,text,text,uuid,uuid,bigint,bigint,text) to service_role;
 create function public.zukait_mechanical_signature_commit(p_actor text,p_session_hash text,p_request uuid,p_entity uuid,p_records bigint,p_workshop bigint,p_device text,p_source_hash text,p_fingerprint text,p_strokes jsonb) returns jsonb language plpgsql security invoker set search_path=pg_catalog as $$
 declare prior jsonb;r zukait_mechanical.signatures;stroke jsonb;point jsonb;first_point jsonb;count_points integer:=0;moved boolean:=false;verification jsonb;
 begin
@@ -71,12 +73,12 @@ begin
  end loop;
  if not moved then raise exception 'invalid_mechanical_signature';end if;
  -- Serialize on a signature-only advisory key; two different UUIDs cannot sign the
- -- same source twice, without advancing unrelated workshop/control revisions.
+ -- same print source twice, without advancing unrelated workshop/control revisions.
  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('mechanical-signature:'||p_entity::text,0));
  select * into r from zukait_mechanical.signatures where request_id=p_request;
  if found then
   if r.actor_id<>p_actor or r.fingerprint<>p_fingerprint then raise exception 'mechanical_signature_request_reused';end if;
- elsif exists(select 1 from zukait_mechanical.signatures where checklist_id=p_entity and records_revision=p_records and workshop_revision=p_workshop) then raise exception 'mechanical_signature_already_recorded';
+ elsif exists(select 1 from zukait_mechanical.signatures where checklist_id=p_entity and records_revision=p_records and workshop_revision=p_workshop and source_hash=p_source_hash) then raise exception 'mechanical_signature_already_recorded';
  else
   insert into zukait_mechanical.signatures(request_id,checklist_id,actor_id,device_id,records_revision,workshop_revision,source_hash,fingerprint,strokes) values(p_request,p_entity,p_actor,p_device,p_records,p_workshop,p_source_hash,p_fingerprint,p_strokes) returning * into r;
  end if;
