@@ -23,7 +23,7 @@ export function recordedBillBalances(context,filters={},policy={}){
   for(const [key,max]of [['suppliers',2000],['sourceLinks',5000],['bills',2000],['credits',2000],['settlementLinks',5000],['entries',10000]])if(!Array.isArray(context[key])||context[key].length>max)throw Error('payable_context_limit');
   const {suppliers,mapping}=registry(context),bills=unique(context.bills,'bill'),credits=unique(context.credits,'credit'),entries=unique(context.entries,'journal_entry');unique(context.settlementLinks,'settlement_link');
   if(filters.supplierId&&!suppliers.has(filters.supplierId))throw Error('supplier_not_found');
-  const invoiceKeys=new Set(),sources=new Set(),selected=new Map(),paymentUsed=new Map(),perBillCredits=new Map(),perBillPayments=new Map(),supplierCredits=new Map(),supplierPayments=new Map();
+  const invoiceKeys=new Set(),creditKeys=new Set(),sources=new Set(),selected=new Map(),paymentUsed=new Map(),perBillCredits=new Map(),perBillPayments=new Map(),supplierCredits=new Map(),supplierPayments=new Map();
   for(const b of bills.values()){
    if(!exact(b,['id','supplierId','invoiceReference','transactionDate','dueDate','amountMills','status','sourceRefs'])||!suppliers.has(b.supplierId)||typeof b.invoiceReference!=='string'||!b.invoiceReference.trim()||b.invoiceReference.length>200||!day(b.transactionDate)||(b.dueDate!==null&&!day(b.dueDate))||(b.amountMills!==null&&!mills(b.amountMills))||!['DRAFT','APPROVED'].includes(b.status)||!Array.isArray(b.sourceRefs)||b.sourceRefs.length>100)throw Error('invalid_supplier_bill');
    // Deliberately retain punctuation: fuzzy name/invoice matching may merge debts.
@@ -32,7 +32,8 @@ export function recordedBillBalances(context,filters={},policy={}){
    if(b.status==='APPROVED'&&b.transactionDate<=filters.asOf)selected.set(b.id,b);
   }
   for(const c of credits.values()){
-   if(!exact(c,['id','supplierId','transactionDate','amountMills','status','allocations'])||!suppliers.has(c.supplierId)||!day(c.transactionDate)||!mills(c.amountMills)||c.amountMills===0||!['DRAFT','APPROVED'].includes(c.status)||!Array.isArray(c.allocations)||c.allocations.length>100)throw Error('invalid_supplier_credit');
+   if(!exact(c,['id','supplierId','creditReference','transactionDate','amountMills','status','allocations'])||!suppliers.has(c.supplierId)||typeof c.creditReference!=='string'||!c.creditReference.trim()||c.creditReference.length>200||!day(c.transactionDate)||!mills(c.amountMills)||c.amountMills===0||!['DRAFT','APPROVED'].includes(c.status)||!Array.isArray(c.allocations)||c.allocations.length>100)throw Error('invalid_supplier_credit');
+   const creditKey=JSON.stringify([c.supplierId,c.creditReference.trim().toUpperCase()]);if(creditKeys.has(creditKey))throw Error('duplicate_supplier_credit');creditKeys.add(creditKey);
    const allocated=new Set();let used=0;for(const a of c.allocations){const b=bills.get(a.billId);if(!exact(a,['billId','amountMills','effectiveDate'])||!b||b.supplierId!==c.supplierId||!mills(a.amountMills)||a.amountMills===0||!day(a.effectiveDate)||a.effectiveDate<c.transactionDate||a.effectiveDate<b.transactionDate||allocated.has(a.billId))throw Error('invalid_credit_allocation');allocated.add(a.billId);used=sum([used,a.amountMills]);if(c.status==='APPROVED'&&a.effectiveDate<=filters.asOf){if(!selected.has(b.id)||b.amountMills===null)throw Error('credit_bill_not_approved');perBillCredits.set(b.id,sum([perBillCredits.get(b.id)||0,a.amountMills]))}}
    if(used>c.amountMills)throw Error('credit_overallocated');if(c.status==='APPROVED'&&c.transactionDate<=filters.asOf)supplierCredits.set(c.supplierId,sum([supplierCredits.get(c.supplierId)||0,c.amountMills]));
   }

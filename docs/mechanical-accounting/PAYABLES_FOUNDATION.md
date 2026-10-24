@@ -8,7 +8,7 @@ Supplier IDs are independent of display names and remain the shared identity acr
 
 Approved bills carry an explicit supplier, invoice reference, accounting transaction date, optional due date, amount in integer OMR mills (or null/Pending) and reviewed source references. Amounts are not inferred from Paint/Parts/Consumables costs, purchase orders, LPO collections or Cash customer invoices. Same supplier/invoice reference (trimmed/case-insensitive, punctuation retained) and reused purchase sources fail closed. Partial invoicing spanning a purchase source needs finer reviewed receipt/source identity before activation; this candidate must not silently assume one PO equals one supplier invoice.
 
-DRAFT bills/credits are not liabilities. Approved credits have their own transaction date, explicit same-supplier bill allocations and separate unapplied balance. Physical returns do not automatically prove a supplier credit. No tax or credit-policy assumption is encoded.
+DRAFT bills/credits are not liabilities. Approved credits require a unique per-supplier credit-note reference and have their own transaction date, explicit same-supplier bill allocations and separate unapplied balance. Physical returns do not automatically prove a supplier credit. No tax or credit-policy assumption is encoded.
 
 ## Settlement and as-of arithmetic
 
