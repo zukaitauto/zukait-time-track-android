@@ -2,7 +2,7 @@
 -- Reject stale full-state writes atomically; do not merge stale employee history.
 create function zukait_mechanical.protect_assignment_authority() returns trigger
 language plpgsql security invoker set search_path=pg_catalog as $$
-declare by_id jsonb; old_by_id jsonb; link record; candidate jsonb; previous jsonb; field text; source_ids text[];
+declare by_id jsonb; old_by_id jsonb; link record; candidate jsonb; previous jsonb; field text; source_ids text[]; repeat_logs jsonb;
 begin
  -- Disabling new commands must never disable protection of existing handovers.
  if new.data is not distinct from old.data then return new;end if;
@@ -11,8 +11,12 @@ begin
  if exists(select 1 from jsonb_array_elements(new.data->'assign') a group by a->>'id' having count(*)>1) then raise exception 'mechanical_authority_conflict';end if;
  select coalesce(jsonb_object_agg(a->>'id',a) filter(where a->>'id' is not null),'{}') into by_id from jsonb_array_elements(new.data->'assign') a;
  select coalesce(jsonb_object_agg(a->>'id',a) filter(where a->>'id' is not null),'{}') into old_by_id from jsonb_array_elements(coalesce(old.data->'assign','[]')) a;
- for link in select l.*,t.checklist_id,c.job_card from zukait_mechanical.links l
-  join zukait_mechanical.tasks t on t.id=l.task_id join zukait_mechanical.checklists c on c.id=t.checklist_id
+ if exists(select 1 from zukait_mechanical.repeat_repairs) then
+  if jsonb_typeof(new.data->'reworkLogs') is distinct from 'array' then raise exception 'mechanical_authority_conflict';end if;
+  select coalesce(jsonb_object_agg(id,jsonb_build_object('count',n,'log',item)),'{}') into repeat_logs from (select r->>'id' id,count(*) n,jsonb_agg(r)->0 item from jsonb_array_elements(new.data->'reworkLogs') r where r->>'id' is not null group by r->>'id') x;
+ end if;
+ for link in select l.*,t.checklist_id,c.job_card,r.projection repeat_projection,r.log_projection,r.request_id repeat_request from zukait_mechanical.links l
+  join zukait_mechanical.tasks t on t.id=l.task_id join zukait_mechanical.checklists c on c.id=t.checklist_id left join zukait_mechanical.repeat_repairs r on r.assignment_id=l.assignment_id
  loop
   candidate:=by_id->link.assignment_id::text;previous:=old_by_id->link.assignment_id::text;
   if candidate is null or candidate->>'emp' is distinct from link.employee_id
@@ -22,6 +26,12 @@ begin
    or candidate->>'handoverFromAssignmentId' is distinct from link.predecessor_id::text
    or candidate->>'handedOverToAssignmentId' is distinct from link.successor_id::text
   then raise exception 'mechanical_authority_conflict';end if;
+  if link.repeat_projection is not null then
+   foreach field in array array['rework','repeatCycleId','repeatCycleNo','repeatReason','mistakeEmp','repeatSameEmployee','v125Cycle','assignedBy','assignedAt','mechanicalRepeatOfAssignmentId'] loop
+    if candidate->field is distinct from link.repeat_projection->field then raise exception 'mechanical_authority_conflict';end if;
+   end loop;
+   if repeat_logs->link.repeat_request::text->'count' is distinct from '1'::jsonb or not coalesce((repeat_logs->link.repeat_request::text->'log') @> link.log_projection,false) then raise exception 'mechanical_authority_conflict';end if;
+  end if;
   if link.successor_id is not null then
    if candidate->'completed' is distinct from 'true'::jsonb then raise exception 'mechanical_authority_conflict';end if;
    -- Once handed over, preserve the original allocation and completion stamp.

@@ -9,10 +9,10 @@ const conflicts=new Set(['mechanical_request_reused','mechanical_revision_confli
 export function mechanicalApiError(error){
  const code=String(error?.message||'');
  if(code==='mechanical_invalid_session')return response('invalid_session',401);
- if(['mechanical_disabled','mechanical_forbidden','mechanical_qc_disabled','mechanical_qc_approver_required','mechanical_delivery_disabled','mechanical_tracking_disabled'].includes(code))return response(code,403);
+ if(['mechanical_disabled','mechanical_forbidden','mechanical_qc_disabled','mechanical_qc_approver_required','mechanical_delivery_disabled','mechanical_tracking_disabled','mechanical_repeat_disabled'].includes(code))return response(code,403);
  if(conflicts.has(code))return response(code,409);
  if(['invalid_mechanical_command','mechanical_operation_not_implemented','invalid_mechanical_delivery'].includes(code))return response(code,400);
- if(['mechanical_context_limit','mechanical_dashboard_limit','mechanical_overview_limit','mechanical_checklist_missing','mechanical_mixed_qc_policy_required','mechanical_mixed_qc_not_required','mechanical_qc_policy_required','mechanical_delivery_not_ready','mechanical_qc_scope_review','job_inactive','checklist_inactive','tracking_priority_policy_required','tracking_hold_policy_required','tracking_no_change','invalid_tracking_change','invalid_promise_date'].includes(code))return response(code,409);
+ if(['mechanical_context_limit','mechanical_dashboard_limit','mechanical_overview_limit','mechanical_checklist_missing','mechanical_mixed_qc_policy_required','mechanical_mixed_qc_not_required','mechanical_qc_policy_required','mechanical_delivery_not_ready','mechanical_qc_scope_review','job_inactive','checklist_inactive','tracking_priority_policy_required','tracking_hold_policy_required','tracking_no_change','invalid_tracking_change','invalid_promise_date','invalid_repeat','invalid_repeat_employee','repeat_work_not_finished','repeat_source_inactive','repeat_cycle_review_required'].includes(code))return response(code,409);
  return response('mechanical_unavailable',503);
 }
 export async function mechanicalRoute(admin,user,body,options={}){

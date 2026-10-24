@@ -1,6 +1,7 @@
 // Inactive pure transition candidate. Persist both outputs in one future CAS transaction.
 // records is a bounded/scoped projection of dedicated future records, not workshop JSON history.
 import {extensionCommandPreflight,checklistNumberFromAllocatedSequence} from './command_contracts.js';
+import {mechanicalRepeat} from './mechanical_repeat_rules.js';
 import {allocationToken,employeeTimeToken} from '../time_management_rules.js';
 const clone=x=>JSON.parse(JSON.stringify(x));
 const fail=code=>({ok:false,code});
@@ -33,7 +34,7 @@ export function mechanicalTransition(records,snapshot,command,context={},policy=
  if(!Number.isSafeInteger(snapshot.revision)||snapshot.revision<0||!Number.isSafeInteger(command.expectedWorkshopRevision)||command.expectedWorkshopRevision!==snapshot.revision)return fail('workshop_revision_conflict');
  if(!Number.isSafeInteger(at)||at<=0)return fail('invalid_server_time');
  const p=command.payload,data=snapshot.data;
- let entity,before=null,assignment=null,source=null;
+ let entity,before=null,assignment=null,source=null,repeat=null;
  if(command.operation==='MC_CREATE'){
   if(!knownFields(p,['manualJobCard'])||!knownFields(p.manualJobCard,['number','date'])||!text(p.manualJobCard.number,80)||!date(p.manualJobCard.date))return fail('invalid_manual_jc');
   if(policy.manualJcDuplicateMode!=='deny')return fail('manual_jc_policy_required');
@@ -77,6 +78,8 @@ export function mechanicalTransition(records,snapshot,command,context={},policy=
   if(records.links.some(l=>l.taskId===task.id&&l.employeeId===employeeId&&!l.handedOverTo&&(data.assign||[]).some(a=>a&&a.id===l.assignmentId&&!a.cancelled&&!a.completed)))return fail('duplicate_task_employee');
   assignment={id:assignmentId,job:checklist.manualJobCard.number,emp:employeeId,suggested:p.suggestedMinutes,completed:false,cancelled:false,rework:false,assignedBy:context.actor.id,assignedAt:at,mechanicalChecklistId:checklist.id,mechanicalTaskId:task.id,...(source?{handoverFromAssignmentId:source.id}:{})};
   entity={taskId:task.id,assignmentId,employeeId,...(source?{handoverFromAssignmentId:source.id}:{})};
+ }else if(command.operation==='TASK_REPEAT'){
+  repeat=mechanicalRepeat(records,snapshot,command,context,policy,at);if(!repeat.ok)return repeat;assignment=repeat.assignment;before=clone(repeat.source);entity={taskId:command.entityId,assignmentId:assignment.id,employeeId:assignment.emp,repeatOf:repeat.source.id};
  }else return fail('mechanical_operation_not_implemented');
  const next=clone(records),workshop=clone(data);next.revision++;
  if(command.operation==='MC_CREATE')next.checklists.push(entity);
@@ -85,6 +88,7 @@ export function mechanicalTransition(records,snapshot,command,context={},policy=
   next.links.push(entity);workshop.assign=workshop.assign||[];
   if(source){const old=workshop.assign.find(a=>a&&a.id===source.id);old.completed=true;old.completedAt=at;old.handedOverToAssignmentId=assignment.id;next.links.find(l=>l.assignmentId===source.id).handedOverTo=assignment.id;}
   workshop.assign.push(assignment);
+  if(repeat){workshop.reworkLogs=[...(workshop.reworkLogs||[]),clone(repeat.log)];const job=workshop.jobs.find(j=>j.no===assignment.job);job.status='Open';delete job.completedAt;}
  }
  const result={entityId:command.entityId,recordsRevision:next.revision,expectedWorkshopRevision:snapshot.revision,assignmentId:assignment?.id||null};
  const audit={requestId:command.requestId,operation:command.operation,actorId:context.actor.id,deviceId:command.deviceId,recordedAt:at,reason:p.reason||'',before,after:clone(assignment||entity)};

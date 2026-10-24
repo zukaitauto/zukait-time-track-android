@@ -3,6 +3,7 @@ import {mechanicalTransition,mechanicalCommandFingerprint} from '../supabase/fun
 import {mechanicalPersistenceRequest} from '../supabase/functions/workshop-api/extensions/mechanical_persistence_plan.js';
 import {mechanicalCommandApi} from '../supabase/functions/workshop-api/extensions/mechanical_api.js';
 import {mechanicalRoute} from '../supabase/functions/workshop-api/extensions/mechanical_route.js';
+import {mechanicalRepeatPersistence} from './mechanical-repeat-persistence.mjs';
 import {mechanicalTrackingPersistence} from './mechanical-tracking-persistence.mjs';
 import {mechanicalQcPersistenceTests} from './mechanical-qc-persistence.mjs';
 import {stripTypeScriptTypes} from 'node:module';
@@ -117,7 +118,7 @@ try{
  assert.equal(ordinary.ok,true,'Fresh ordinary full save preserves linked assignments and succeeds');
  assert.deepEqual((await snapshot()).data.sessions,saved.data.sessions);
  await db.exec('reset role');
- assert.equal(Number(await scalar("select count(*) n from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='zukait_mechanical' and c.relkind='r' and c.relrowsecurity")),7);
+ assert.equal(Number(await scalar("select count(*) n from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='zukait_mechanical' and c.relkind='r' and c.relrowsecurity")),8);
  await assert.rejects(db.exec("update zukait_mechanical.audit set actor_id='QA_SUP'"),/mechanical_append_only/,'append-only trigger also rejects owner updates');
  // Both revisions are checked before any metadata or shared writes.
  const stale=await prepare('TASK_CREATE',randomUUID(),{checklistId:firstId,title:'Stale'});await db.exec("update workshop_state set revision=revision+1 where id='main'");const count=Number(await scalar('select count(*) n from zukait_mechanical.tasks'));await assert.rejects(call(stale),/workshop_revision_conflict/);assert.equal(Number(await scalar('select count(*) n from zukait_mechanical.tasks')),count);
@@ -204,6 +205,7 @@ try{
   const p=await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_2',date:'2026-10-19'}});await race(p,p,true);const p1=await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_3',date:'2026-10-19'}}),p2=await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_4',date:'2026-10-19'}});await race(p1,p2,false);assert.equal((await call(await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_4',date:'2026-10-19'}}))).number,'MC005');}finally{await Promise.all([a.query('rollback'),b.query('rollback')]);await Promise.all([a.end(),b.end()]);}
  }
  await mechanicalQcPersistenceTests({db,records,snapshot,native,pg,config,database});
+ await mechanicalRepeatPersistence({db,records,snapshot,prepare,call,employeeTransition,native,pg,config,database});
  await mechanicalTrackingPersistence({db,records,snapshot,native,pg,config,database});
  console.log('PASS '+(native?'native PostgreSQL 17 concurrent':'PGlite')+' persistence: MC001/MC002, retry identity, one JC/MC, rollback/no consumed number, metadata without full-state writes, atomic assignment/handover/history/live triggers, dual revision checks, append-only and private service ACL. No production access.');
 }finally{if(native){await client.end();await admin.query('drop database "'+database+'" with (force)');await admin.end();}else await db.close();}

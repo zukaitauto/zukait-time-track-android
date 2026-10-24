@@ -2,7 +2,7 @@
 // Context/policy must come from the authenticated server, never request JSON.
 export const EXTENSION_DEFAULTS=Object.freeze({mechanical:false,financeExpansion:false});
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const mechanicalOperations=new Set(['MC_CREATE','TASK_CREATE','TASK_ASSIGN','TASK_HANDOVER','HOLD_SET','PROMISE_SET','PRIORITY_SET','MECHANICAL_QC','MECHANICAL_DELIVER']);
+const mechanicalOperations=new Set(['MC_CREATE','TASK_CREATE','TASK_ASSIGN','TASK_HANDOVER','TASK_REPEAT','HOLD_SET','PROMISE_SET','PRIORITY_SET','MECHANICAL_QC','MECHANICAL_DELIVER']);
 const financeOperations=new Set(['BILL_APPROVE','OPENING_APPROVE','CREDIT_APPROVE','PAYROLL_APPROVE']);
 const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const identifier=x=>typeof x==='string'&&x.trim()===x&&x.length>0&&x.length<=128;

@@ -23,6 +23,7 @@ jobs:
           node tests/mechanical-recovery.mjs
           node tests/mechanical-qc.mjs
           node tests/mechanical-tracking.mjs
+          node tests/mechanical-repeat.mjs
           node tests/mechanical-qc-overview.mjs
           node tests/qc-delivery-authority.mjs
           node tests/time-management.mjs
@@ -64,11 +65,13 @@ jobs:
       - run: node tests/mechanical-workspace.mjs
       - run: node tests/mechanical-delivery-ui.mjs
       - run: node tests/mechanical-tracking-ui.mjs
+      - run: node tests/mechanical-repeat-ui.mjs
       - run: node tests/mechanical-qc-projection.mjs
       - run: node tests/mechanical-navigation.mjs
       - run: npx playwright install chromium
       - run: node tests/mechanical-workspace-responsive.mjs
       - run: node tests/mechanical-tracking-responsive.mjs
+      - run: node tests/mechanical-repeat-responsive.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
