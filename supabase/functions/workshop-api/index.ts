@@ -305,6 +305,11 @@ function preserveAuthoritativeReopens(candidate: any, current: any): any {
 // Only synthetic overtime sessions absent from the current server snapshot are removed.
 function preserveClosedSessions(candidate: any, current: any): any {
   const closed = new Map((current?.sessions || []).filter((s: any) => Number(s?.end || 0) > 0).map((s: any) => [String(s.id),s]));
+  const completedIdle = new Map((current?.assign || []).filter((a: any)=>a&&a.job==="ID001"&&a.completed).map((a: any)=>[String(a.id),a]));
+  for(const a of candidate?.assign || []){
+    const done: any=completedIdle.get(String(a?.id||""));
+    if(done&&a.job==="ID001"){a.completed=true;a.completedAt=done.completedAt;}
+  }
   candidate.sessions = (candidate?.sessions || []).map((s: any) => {
     const authoritative: any = closed.get(String(s?.id || ""));
     // A stale device can also hold an earlier end value. Once the server has
@@ -312,7 +317,8 @@ function preserveClosedSessions(candidate: any, current: any): any {
     // restart must create a new session ID.
     return authoritative
       ? {...s,end:authoritative.end,paused:authoritative.paused,autoPausedAt:authoritative.autoPausedAt,
-         pauseReason:authoritative.pauseReason,closeReason:authoritative.closeReason}
+         pauseReason:authoritative.pauseReason,closeReason:authoritative.closeReason,
+         ...Object.fromEntries(["finished","serverFinishedAt","serverAuthoritative","autoStopped","autoStoppedAt","autoStopReason","autoStoppedForNormalWork"].filter(k=>k in authoritative).map(k=>[k,authoritative[k]]))}
       : s;
   });
   return candidate;
@@ -904,7 +910,11 @@ function employeeTimeTransition(data:any,user:any,body:any,serverNow:number){
   next.lastActions=next.lastActions&&typeof next.lastActions==="object"?next.lastActions:{};
 
   const prior=next.employeeTimeActionAudit.find((x:any)=>String(x?.id||"")===actionId);
-  if(prior) return {ok:true,duplicate:true,data:next,audit:prior,status:String(prior.status||"")};
+  if(prior){
+    if(String(prior.emp)!==String(user.id)||String(prior.type)!==type||
+      ["job","assignment_id","session_id"].some(k=>body?.[k]&&String(body[k])!==String(prior[k==="job"?"job":k==="assignment_id"?"assignmentId":"sessionId"])))return {ok:false,code:"employee_time_action_id_conflict"};
+    return {ok:true,duplicate:true,data:next,audit:prior,status:String(prior.status||"")};
+  }
 
   const emp=String(user.id);
   const requestedJob=String(body?.job||"").trim();
@@ -912,32 +922,41 @@ function employeeTimeTransition(data:any,user:any,body:any,serverNow:number){
   const requestedSession=String(body?.session_id||"").trim();
   const ownAssignments=next.assign.filter((a:any)=>a&&String(a.emp)===emp&&!a.cancelled);
   const openSessions=next.sessions.filter((s:any)=>s&&String(s.emp)===emp&&s.end==null&&!s.cancelled);
-  const findAssignment=()=>ownAssignments.find((a:any)=>requestedAssignment&&String(a.id)===requestedAssignment)
-    || ownAssignments.filter((a:any)=>!a.completed&&(!requestedJob||String(a.job)===requestedJob))
-      .sort((a:any,b:any)=>Number(b.assignedAt||0)-Number(a.assignedAt||0))[0] || null;
-  const findSession=()=>openSessions.find((s:any)=>requestedSession&&String(s.id)===requestedSession)
-    || openSessions.find((s:any)=>!requestedJob||String(s.job)===requestedJob)
-    || (requestedSession?next.sessions.find((s:any)=>s&&String(s.emp)===emp&&String(s.id)===requestedSession):null)
-    || null;
+  const findAssignment=()=>requestedAssignment
+    ? ownAssignments.find((a:any)=>String(a.id)===requestedAssignment&&(!requestedJob||String(a.job)===requestedJob))||null
+    : ownAssignments.filter((a:any)=>!a.completed&&(!requestedJob||String(a.job)===requestedJob))
+      .sort((a:any,b:any)=>Number(b.assignedAt||0)-Number(a.assignedAt||0))[0]||null;
+  // An explicit stop targets that session only, never a later session on another device.
+  const findSession=()=>requestedSession
+    ? next.sessions.find((s:any)=>s&&String(s.emp)===emp&&String(s.id)===requestedSession&&(!requestedJob||String(s.job)===requestedJob))||null
+    : openSessions.find((s:any)=>!requestedJob||String(s.job)===requestedJob)||null;
 
   let session:any=null,assignment:any=null,status="";
+  const closedSessions:any[]=[],closedAssignments:any[]=[];
   if(type==="START"){
-    if(openSessions.length){
-      const already=openSessions.find((s:any)=>(!requestedJob||String(s.job)===requestedJob)&&(!requestedAssignment||String(s.assignmentId||"")===requestedAssignment));
-      if(already){
-        session=already;
-        assignment=ownAssignments.find((a:any)=>String(a.id)===String(already.assignmentId||""))||null;
-        status=String(already.job)==="ID001"?"ID001":"Working";
-      }else return {ok:false,code:"employee_time_already_active"};
+    const already=openSessions.find((s:any)=>(!requestedJob||String(s.job)===requestedJob)&&(!requestedAssignment||String(s.assignmentId||"")===requestedAssignment));
+    if(already){
+      session=already;assignment=ownAssignments.find((a:any)=>String(a.id)===String(already.assignmentId||""))||null;
+      status=String(already.job)==="ID001"?"ID001":"Working";
     }else{
       assignment=findAssignment();
-      if(!assignment||assignment.completed||assignment.cancelled) return {ok:false,code:"employee_time_assignment_not_open"};
+      if(!assignment||assignment.completed||assignment.cancelled)return {ok:false,code:"employee_time_assignment_not_open"};
       const job=String(assignment.job||requestedJob);
+      // Validate the target first. Starting productive work closes waiting time
+      // and starts the requested work in the same CAS transaction.
+      if(openSessions.some((s:any)=>String(s.job)!=="ID001")||job==="ID001"&&openSessions.length)return {ok:false,code:"employee_time_already_active"};
+      for(const idle of openSessions){
+        idle.end=serverNow;idle.finished=true;idle.paused=false;idle.serverFinishedAt=serverNow;
+        idle.serverAuthoritative=true;idle.autoStoppedForNormalWork=true;idle.autoStoppedAt=serverNow;
+        const hold=ownAssignments.find((a:any)=>String(a.id)===String(idle.assignmentId||"")&&String(a.job)==="ID001");
+        if(hold){hold.completed=true;hold.completedAt=serverNow;hold.autoStoppedForNormalWork=true;closedAssignments.push(hold);}
+        closedSessions.push(idle);
+      }
       const sid=String(body?.new_session_id||"").trim()||crypto.randomUUID();
+      if(next.sessions.some((s:any)=>String(s.id)===sid))return {ok:false,code:"employee_time_session_id_conflict"};
       session={id:sid,assignmentId:String(assignment.id),job,emp,start:serverNow,end:null,paused:false,finished:false,rework:assignment.rework===true,v79Integrity:true,serverAuthoritative:true,serverStartedAt:serverNow};
       if(job==="ID001"){session.idealCard=true;session.idealSafeVersion=1}
-      next.sessions.push(session);
-      status=job==="ID001"?"ID001":"Working";
+      next.sessions.push(session);status=job==="ID001"?"ID001":"Working";
       next.lastActions[emp]={text:"Started "+job,at:serverNow};
     }
   }else{
@@ -971,11 +990,12 @@ function employeeTimeTransition(data:any,user:any,body:any,serverNow:number){
   const audit={
     id:actionId,type,emp,job:String(session?.job||requestedJob||""),assignmentId:String(assignment?.id||session?.assignmentId||requestedAssignment||""),
     sessionId:String(session?.id||requestedSession||""),clientAt:Number(body?.client_time||0)||null,serverAt:serverNow,status,
-    confirmed:true,deviceId:String(body?.device_id||"").slice(0,160)
+    confirmed:true,deviceId:String(body?.device_id||"").slice(0,160),
+    ...(closedSessions.length?{autoStoppedSessionIds:closedSessions.map((s:any)=>String(s.id)),autoStoppedAssignmentIds:closedAssignments.map((a:any)=>String(a.id))}:{})
   };
   next.employeeTimeActionAudit.push(audit);
   if(next.employeeTimeActionAudit.length>5000)next.employeeTimeActionAudit=next.employeeTimeActionAudit.slice(-5000);
-  return {ok:true,data:next,audit,status,session,assignment};
+  return {ok:true,data:next,audit,status,session,assignment,closedSessions,closedAssignments};
 }
 
 // ID001_ASSIGNMENT_RULE_BEGIN
@@ -1259,7 +1279,14 @@ Deno.serve(async (req: Request) => {
         if(readError)throw readError;
         const result:any=employeeTimeTransition(current.data,user,body,Date.now());
         if(!result.ok)return reply({ok:false,code:result.code,server_time:Date.now()},result.code==="employee_time_forbidden"?403:409);
-        if(result.duplicate)return reply({ok:true,duplicate:true,status:result.status,audit:result.audit,server_revision:current.revision,server_time:Date.now()});
+        if(result.duplicate){
+          const row=computeLiveStatus(current.data,Number(current.revision||0),String(user.id)).find((x:any)=>String(x.employee_id)===String(user.id))||null;
+          const session=(current.data.sessions||[]).find((x:any)=>String(x.emp)===String(user.id)&&String(x.id)===String(result.audit?.sessionId))||null;
+          const assignment=(current.data.assign||[]).find((x:any)=>String(x.emp)===String(user.id)&&String(x.id)===String(result.audit?.assignmentId))||null;
+          const closed_sessions=(current.data.sessions||[]).filter((x:any)=>String(x.emp)===String(user.id)&&(result.audit?.autoStoppedSessionIds||[]).includes(String(x.id)));
+          const closed_assignments=(current.data.assign||[]).filter((x:any)=>String(x.emp)===String(user.id)&&(result.audit?.autoStoppedAssignmentIds||[]).includes(String(x.id)));
+          return reply({ok:true,duplicate:true,status:row?.status||result.status,live_row:row,session,assignment,closed_sessions,closed_assignments,audit:result.audit,server_revision:current.revision,server_time:Date.now()});
+        }
         const nextRevision=Number(current.revision||0)+1;
         const live=computeLiveStatus(result.data,nextRevision,String(user.id));
         const {data:committed,error:commitError}=await admin.rpc("zukait_commit_workshop_state_v2",{
@@ -1268,7 +1295,7 @@ Deno.serve(async (req: Request) => {
         if(commitError)throw commitError;
         if(committed?.ok){
           const row=live.find((x:any)=>String(x.employee_id)===String(user.id))||null;
-          return reply({ok:true,status:row?.status||result.status,job_no:row?.job_no||"",session_id:row?.session_id||"",assignment_id:row?.assignment_id||"",audit:result.audit,server_revision:committed.revision||nextRevision,server_time:Date.now()});
+          return reply({ok:true,status:row?.status||result.status,job_no:row?.job_no||"",session_id:row?.session_id||"",assignment_id:row?.assignment_id||"",live_row:row,session:result.session,assignment:result.assignment,closed_sessions:result.closedSessions||[],closed_assignments:result.closedAssignments||[],audit:result.audit,server_revision:committed.revision||nextRevision,server_time:Date.now()});
         }
         if(committed?.code!=="conflict")return reply({ok:false,code:committed?.code||"employee_time_commit_failed"},409);
       }

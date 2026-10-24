@@ -237,6 +237,7 @@
 
   async function employeeTimeAction(command){
     if(!me||me.role!=='Employee')throw new Error('employee_time_forbidden');
+    const actorId=String(me.id),actionGeneration=dirtyGeneration;
     if(!navigator.onLine)throw new Error('NETWORK');
     const started=Date.now();
     const payload={...command,action:'employee_time_action'};
@@ -250,9 +251,37 @@
         // The mutation response itself is the authoritative confirmation. Pull
         // the committed state + live row before allowing the employee UI to leave
         // its pending state.
-        cloudRevision=Math.max(cloudRevision,Number(r.server_revision||0));
+        if(!me||me.role!=='Employee'||String(me.id)!==actorId)throw new Error('EMPLOYEE_TIME_ACTOR_CHANGED');
+        const receiptRevision=Number(r.server_revision||0);
+        // A mutation receipt is not a complete workshop snapshot. Never attach
+        // the new revision to the old baseline and accept not_modified for it.
+        if(receiptRevision>cloudRevision)lastSyncedState=null;
+        cloudRevision=Math.max(cloudRevision,receiptRevision);
+        const audit=r.audit;
+        if(audit?.confirmed===true&&String(audit.type)===String(payload.event_type).toUpperCase()&&String(audit.emp)===String(me.id)&&String(audit.id)===String(payload.action_id)){
+          const applyOwn=(key,rows)=>{
+            state[key]=Array.isArray(state[key])?state[key]:[];
+            for(const row of rows.filter(x=>x&&String(x.emp)===String(me.id))){
+              const i=state[key].findIndex(x=>String(x?.id)===String(row.id));
+              if(i<0)state[key].push(clone(row));else state[key][i]={...state[key][i],...clone(row)};
+            }
+          };
+          // Apply only server-confirmed after-images. No optimistic timestamps.
+          if(receiptRevision>=cloudRevision){
+            applyOwn('sessions',[...(r.closed_sessions||[]),r.session]);
+            applyOwn('assign',[...(r.closed_assignments||[]),r.assignment]);
+            if(r.live_row&&String(r.live_row.employee_id)===String(me.id)&&receiptRevision>=liveStatusRevision){
+              liveStatusRows=[clone(r.live_row)];liveStatusRevision=receiptRevision;
+              liveStatusLastFetchedAt=Date.now();liveStatusServerTime=Number(r.server_time||audit.serverAt||0);
+              publishLiveStatus(true);
+            }
+            persistLocal();
+          }
+        }
         localStorage.setItem(REV_KEY,String(cloudRevision));
-        cloudDirty=false;localStorage.removeItem(DIRTY_KEY);localStorage.removeItem(PENDING_KEY);
+        if(!cloudDirty&&dirtyGeneration===actionGeneration){
+          localStorage.removeItem(DIRTY_KEY);localStorage.removeItem(PENDING_KEY);
+        }
         try{await pull(true)}catch(_){}
         try{await pullLiveStatus()}catch(_){}
         return r;

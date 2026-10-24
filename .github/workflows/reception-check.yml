@@ -82,6 +82,8 @@ jobs:
         run: node tests/job-number-edit.mjs
       - name: Verify slow database acknowledgement and sync recovery
         run: node tests/cloud-sync-recovery.mjs && node tests/workshop-save-pressure.mjs && node tests/sync-request-deadlines.mjs
+      - name: Verify confirmed ID001 stops cannot return from stale snapshots
+        run: node tests/id001-stop-receipt.mjs && node tests/id001-server-stop.mjs && node tests/legacy-closed-session-authority.mjs
       - run: npm run test:management
       - name: Verify compact Insurance Job Cards and dedicated detail view
         run: node tests/insurance-job-list-layout.mjs

@@ -1,6 +1,6 @@
 {
-  "versionName": "V372",
-  "versionCode": 335,
+  "versionName": "V373",
+  "versionCode": 336,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
   "sourceCommit": "26b458e4f02e33ef3b8dfec411ce6c00fcd9bb4c",
@@ -58,7 +58,7 @@
   },
   "verificationSummary": "V372 corrects the deployed database HTTP guard that aborted requests at four seconds although existing database statements can run for about eight seconds. The guard now permits ten seconds including body consumption, preserves cancellation/error statuses, and never replays writes. Client revision probes remain bounded at fifteen seconds; other cloud operations allow forty-five seconds for sequential authentication/read/rebase/commit acknowledgement and transfer. Existing cooldowns, pending snapshots, generation checks, three-attempt/five-second rebase-start budget, CAS, role/financial/work-history guards and live polling cadence are preserved. A freshly authenticated matching revision reuses the confirmed in-memory baseline for periodic mutable-cache repair without a redundant load request; cold, changed or expired proof still loads. Real failures still show warning. Exact-source synthetic late-commit/stall/body/cancellation/permission/probe/cache tests, existing queue/recovery, simultaneous-save, Reception/Accountant, sync, signed/unsigned Android and native PDF checks all passed. QA26 and production90 readbacks match all files and hash. Only the deployed database_fetch.js changed server-side; no schema, database statement timeout, paid resources, authentication, passwords or workshop records changed. Short live observation recorded41 HTTP200,3 HTTP401 and no HTTP503 after rollout; monitoring limits are recorded separately. Physical-device acceptance and fresh restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": true,
-  "releaseChangeScope": "slow-database-acknowledgement-and-sync-recovery",
+  "releaseChangeScope": "confirmed-id001-stop-baseline-and-restart-protection",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
@@ -195,5 +195,7 @@
     "http401": 3,
     "http503": 0,
     "scope": "Short observation of workshop-api90 logged requests; not a guarantee against future infrastructure or network failures."
-  }
+  },
+  "id001StopRecoveryAuthorizedByOwner": true,
+  "id001StopRecoveryAuthorization": "Owner reported Soman ID001 not stopping and coming back automatically, confirmed this happens after pressing STOP and confirming, and reported Babu has the same issue. Repair shared employee stop/sync authority and protect all employees. Standing owner instruction: release after all fixes are complete."
 }

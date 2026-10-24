@@ -4322,7 +4322,7 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  window.start=function(no){
    if(!me||me.role!=='Employee')return;
    const current=active();
-   if(current)return msg('Server shows active work on '+String(current.job||'another job')+'. Pause, finish or stop it first.','One Job at a Time');
+   if(current&&!(String(current.job)==='ID001'&&String(no)!=='ID001'))return msg('Server shows active work on '+String(current.job||'another job')+'. Pause, finish or stop it first.','One Job at a Time');
    const a=openAssignment(no);
    if(!a)return msg('No open assignment was found for '+String(no)+'. Refresh and try again.','Start Work');
    return run('START',{job:String(a.job),assignment_id:String(a.id),new_session_id:actionId()},'Starting '+String(a.job));
