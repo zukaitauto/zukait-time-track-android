@@ -1,3 +1,4 @@
+import {billRoute} from './accountant/extensions/bill_route.js';
 import { mechanicalRoute, mechanicalLegacyDeliveryCheck } from "./extensions/mechanical_route.js";
 import { subletTransition } from './sublet_rules.js';
 import {accountantApi,accountantError} from './accountant/api.js';
@@ -1101,6 +1102,12 @@ Deno.serve(async (req: Request) => {
         verifySession: () => sessionUser(token)
       });
       return reply(result.body, result.status);
+    }
+
+    if (action.startsWith('accountant_bill_')) {
+      const enabled = Deno.env.get('ZUKAIT_BILLS_ENABLED') === 'true';
+      const result = await billRoute(admin,user,body,{enabled,sessionHash:enabled?await sha256Hex(token):'',secret:Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!});
+      return reply(result.body,result.status);
     }
 
     if (user.role === 'Accountant' || action.startsWith('accountant_')) {
