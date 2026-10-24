@@ -1,3 +1,4 @@
+import {mechanicalReportApi} from './mechanical_report.js';
 import {mechanicalSignedDocument} from './mechanical_signed_document.js';
 import {mechanicalSignatureCommand} from './mechanical_signature.js';
 import {mechanicalDocument} from './mechanical_document.js';
@@ -12,10 +13,10 @@ const conflicts=new Set(['mechanical_request_reused','mechanical_revision_confli
 export function mechanicalApiError(error){
  const code=String(error?.message||'');
  if(code==='mechanical_invalid_session')return response('invalid_session',401);
- if(['mechanical_disabled','mechanical_forbidden','mechanical_qc_disabled','mechanical_qc_approver_required','mechanical_delivery_disabled','mechanical_tracking_disabled','mechanical_repeat_disabled','mechanical_documents_disabled','mechanical_document_forbidden','mechanical_signatures_disabled','mechanical_signature_forbidden'].includes(code))return response(code,403);
+ if(['mechanical_disabled','mechanical_forbidden','mechanical_qc_disabled','mechanical_qc_approver_required','mechanical_delivery_disabled','mechanical_tracking_disabled','mechanical_repeat_disabled','mechanical_documents_disabled','mechanical_document_forbidden','mechanical_signatures_disabled','mechanical_signature_forbidden','mechanical_reports_disabled','mechanical_report_forbidden'].includes(code))return response(code,403);
  if(conflicts.has(code))return response(code,409);
- if(['invalid_mechanical_command','mechanical_operation_not_implemented','invalid_mechanical_delivery','invalid_document_request','invalid_mechanical_signature'].includes(code))return response(code,400);
- if(['mechanical_context_limit','mechanical_dashboard_limit','mechanical_overview_limit','mechanical_checklist_missing','mechanical_mixed_qc_policy_required','mechanical_mixed_qc_not_required','mechanical_qc_policy_required','mechanical_delivery_not_ready','mechanical_qc_scope_review','job_inactive','checklist_inactive','tracking_priority_policy_required','tracking_hold_policy_required','tracking_no_change','invalid_tracking_change','invalid_promise_date','invalid_repeat','invalid_repeat_employee','repeat_work_not_finished','repeat_source_inactive','repeat_cycle_review_required','mechanical_document_changed','mechanical_document_limit','mechanical_document_scope_review','mechanical_signature_request_reused','mechanical_signature_already_recorded','mechanical_signature_missing'].includes(code))return response(code,409);
+ if(['invalid_mechanical_command','mechanical_operation_not_implemented','invalid_mechanical_delivery','invalid_document_request','invalid_mechanical_signature','invalid_mechanical_report'].includes(code))return response(code,400);
+ if(['mechanical_context_limit','mechanical_dashboard_limit','mechanical_overview_limit','mechanical_checklist_missing','mechanical_mixed_qc_policy_required','mechanical_mixed_qc_not_required','mechanical_qc_policy_required','mechanical_delivery_not_ready','mechanical_qc_scope_review','job_inactive','checklist_inactive','tracking_priority_policy_required','tracking_hold_policy_required','tracking_no_change','invalid_tracking_change','invalid_promise_date','invalid_repeat','invalid_repeat_employee','repeat_work_not_finished','repeat_source_inactive','repeat_cycle_review_required','mechanical_document_changed','mechanical_document_limit','mechanical_document_scope_review','mechanical_signature_request_reused','mechanical_signature_already_recorded','mechanical_signature_missing','mechanical_report_changed','mechanical_report_scope_review','mechanical_report_limit'].includes(code))return response(code,409);
  return response('mechanical_unavailable',503);
 }
 export async function mechanicalRoute(admin,user,body,options={}){
@@ -44,6 +45,18 @@ export async function mechanicalRoute(admin,user,body,options={}){
   }catch(error){return mechanicalApiError(error)}
  }
  if(user?.active===false||!['Manager','Supervisor'].includes(user?.role))return response('mechanical_forbidden',403);
+ if(['mechanical_task_report','mechanical_task_report_verify'].includes(body?.action)){
+  if(options.reportsEnabled!==true)return response('extension_disabled',403);
+  if(!/^[0-9a-f]{64}$/.test(options.sessionHash||'')||typeof options.verifySession!=='function')return response('invalid_session',401);
+  const verify=body.action==='mechanical_task_report_verify',allowed=verify?['action','checklistId','recordsRevision','workshopRevision']:['action','checklistId','from','to','employeeId'];
+  if(Object.keys(body).some(k=>!allowed.includes(k))||!uuid(body.checklistId)||(verify&&![body.recordsRevision,body.workshopRevision].every(n=>Number.isSafeInteger(n)&&n>=0)))return response('invalid_mechanical_report',400);
+  const read=async(kind,revisions={})=>{const {data,error}=await admin.rpc('zukait_mechanical_report_read',{p_actor:user.id,p_session_hash:options.sessionHash,p_entity:body.checklistId,p_kind:kind,p_records:revisions.recordsRevision??null,p_workshop:revisions.workshopRevision??null,p_employee:typeof body.employeeId==='string'?body.employeeId:null});if(error)throw error;return data};
+  try{
+   if(verify)return {status:200,body:await read('verify',body)};
+   const result=await mechanicalReportApi({checklistId:body.checklistId,from:body.from,to:body.to,employeeId:body.employeeId??''},{enabled:true,reportsEnabled:true,actor:user,verifySession:async()=>{const current=await options.verifySession();return current&&current.active!==false?{...current,active:true}:null},readContext:()=>read('context'),verifyCurrent:async revisions=>(await read('verify',revisions))?.ok===true});
+   return result.ok?{status:200,body:result}:response(result.code,result.code==='invalid_mechanical_report'?400:['invalid_session','session_changed'].includes(result.code)?401:result.code.includes('forbidden')?403:409);
+  }catch(error){return mechanicalApiError(error)}
+ }
  if(['mechanical_signed_document','mechanical_signed_document_verify'].includes(body?.action)){
   if(options.documentsEnabled!==true||options.signaturesEnabled!==true)return response('extension_disabled',403);
   if(user?.id!=='SUP003'||user.role!=='Supervisor')return response('mechanical_signature_forbidden',403);
@@ -115,7 +128,7 @@ export async function mechanicalRoute(admin,user,body,options={}){
  if(body?.action==='mechanical_dashboard'){
   if(Object.keys(body).some(k=>!['action','after','checklistId'].includes(k))||!Number.isSafeInteger(body.after??0)||(body.after??0)<0||(body.checklistId!=null&&!uuid(body.checklistId)))return response('invalid_command',400);
   if(!/^[0-9a-f]{64}$/.test(options.sessionHash||''))return response('invalid_session',401);
-  try{const {data,error}=await admin.rpc('zukait_mechanical_dashboard',{p_actor:user.id,p_session_hash:options.sessionHash,p_after:body.after??0,p_checklist:body.checklistId??null});if(error)throw error;return {status:200,body:{...data,qcAvailable:data?.qcAvailable===true&&options.qcEnabled===true,signedDocumentsAvailable:data?.signedDocumentsAvailable===true&&options.documentsEnabled===true&&options.signaturesEnabled===true,signaturesAvailable:data?.signaturesAvailable===true&&options.documentsEnabled===true&&options.signaturesEnabled===true,documentsAvailable:data?.documentsAvailable===true&&options.documentsEnabled===true,deliveryAvailable:data?.deliveryAvailable===true&&options.qcEnabled===true&&options.deliveryEnabled===true}}}catch(error){return mechanicalApiError(error)}
+  try{const {data,error}=await admin.rpc('zukait_mechanical_dashboard',{p_actor:user.id,p_session_hash:options.sessionHash,p_after:body.after??0,p_checklist:body.checklistId??null});if(error)throw error;return {status:200,body:{...data,qcAvailable:data?.qcAvailable===true&&options.qcEnabled===true,reportsAvailable:data?.reportsAvailable===true&&options.reportsEnabled===true,signedDocumentsAvailable:data?.signedDocumentsAvailable===true&&options.documentsEnabled===true&&options.signaturesEnabled===true,signaturesAvailable:data?.signaturesAvailable===true&&options.documentsEnabled===true&&options.signaturesEnabled===true,documentsAvailable:data?.documentsAvailable===true&&options.documentsEnabled===true,deliveryAvailable:data?.deliveryAvailable===true&&options.qcEnabled===true&&options.deliveryEnabled===true}}}catch(error){return mechanicalApiError(error)}
  }
  if(!body||body.action!=='mechanical_command'||Object.keys(body).some(k=>!['action','command'].includes(k))||!body.command||!uuid(body.command.entityId)||!uuid(body.command.requestId)||JSON.stringify(body).length>9000)return response('invalid_command',400);
  if(!/^[0-9a-f]{64}$/.test(options.sessionHash||'')||typeof options.verifySession!=='function')return response('invalid_session',401);

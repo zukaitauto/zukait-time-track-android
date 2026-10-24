@@ -1019,6 +1019,20 @@
       api:async body=>{if(!current()||!root.isConnected)throw Error('invalid_session');if(!navigator.onLine)throw Error('OFFLINE');if(cloudDirty||cloudPushing||pullInFlight)throw Error('WORKSHOP_SYNC_PENDING');if(!['mechanical_document','mechanical_signature_status','mechanical_signature_command'].includes(body.action))throw Error('mechanical_forbidden');return api(body)}});return true;
   }
 
+  async function openMechanicalReport(checklistId){
+    const enabled=()=>window.ZUKAIT_MECHANICAL_ENABLED===true&&window.ZUKAIT_MECHANICAL_REPORTS_ENABLED===true;
+    if(!enabled()||!['Manager','Supervisor'].includes(me?.role)||!sessionToken())return false;
+    if(cloudDirty||cloudPushing||pullInFlight)throw Error('Sync pending workshop changes before reporting.');
+    const owner=String(me.id),token=sessionToken(),role=me.role,current=()=>enabled()&&String(me?.id||'')===owner&&me?.role===role&&sessionToken()===token;
+    const module=await import('./mechanical_report_view.js');if(!current())return false;
+    openModal('<div id="zukaitMechanicalReport"></div>');const root=document.getElementById('zukaitMechanicalReport');if(!root)return false;
+    const check=()=>{if(!current()||!root.isConnected)throw Error('invalid_session');if(!navigator.onLine)throw Error('OFFLINE');if(cloudDirty||cloudPushing||pullInFlight)throw Error('WORKSHOP_SYNC_PENDING')};
+    module.mountMechanicalReport(root,{enabled:true,isEnabled:enabled,checklistId,online:()=>navigator.onLine,getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()}),native:!!window.AndroidBridge,
+      api:async body=>{check();if(!['mechanical_task_report','mechanical_task_report_verify'].includes(body.action))throw Error('mechanical_forbidden');const r=await api(body);check();return r},
+      generate:(html,name)=>{check();return window.zukaitReportPdf.generate(html,name)},spreadsheet:async report=>{check();if(!window.zukaitAccountantExports)await import('./accountant_exports.js');check();return module.mechanicalReportSpreadsheet(report,window.zukaitAccountantExports.spreadsheet)},
+      download:file=>{check();const url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download=file.name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000)},canShare:file=>!!(navigator.share&&navigator.canShare?.({files:[file]})),share:prepared=>{check();return window.AndroidBridge?window.zukaitReportPdf.share(prepared.html,prepared.name):navigator.share({title:prepared.name,files:[prepared.file]})}});return true;
+  }
+
   async function openMechanicalWorkspace(checklistId=null){
     if(window.ZUKAIT_MECHANICAL_ENABLED!==true||!['Manager','Supervisor'].includes(me?.role)||!sessionToken())return false;
     const owner=String(me.id),token=sessionToken();
@@ -1027,7 +1041,7 @@
     openModal('<div id="zukaitMechanicalWorkspace"></div>');
     const root=document.getElementById('zukaitMechanicalWorkspace');if(!root)return false;
     const modal=root.closest('.modal-box');if(modal){modal.style.width='1100px';modal.style.maxWidth='95vw'}
-    await module.mountMechanicalWorkspace(root,{enabled:true,storage:localStorage,checklistId,openSignature:window.ZUKAIT_MECHANICAL_SIGNATURES_ENABLED===true?openMechanicalSignature:null,openDocument:window.ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED===true?openMechanicalDocument:null,openTracking:window.ZUKAIT_MECHANICAL_TRACKING_ENABLED===true?openMechanicalTracking:null,
+    await module.mountMechanicalWorkspace(root,{enabled:true,storage:localStorage,checklistId,openReport:window.ZUKAIT_MECHANICAL_REPORTS_ENABLED===true?openMechanicalReport:null,openSignature:window.ZUKAIT_MECHANICAL_SIGNATURES_ENABLED===true?openMechanicalSignature:null,openDocument:window.ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED===true?openMechanicalDocument:null,openTracking:window.ZUKAIT_MECHANICAL_TRACKING_ENABLED===true?openMechanicalTracking:null,
       getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()}),online:()=>navigator.onLine,
       onClose:()=>{if(root.isConnected)closeModal()},
       openDelivery:window.ZUKAIT_MECHANICAL_DELIVERY_ENABLED===true?openMechanicalDelivery:null,
