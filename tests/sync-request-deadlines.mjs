@@ -33,11 +33,20 @@ for(const [action,ms] of [['save',45000],['load',45000],['revision',15000]]){con
 
 const probe=source.slice(source.indexOf('  async function probeRevision()'),source.indexOf('  async function push(retry=0)'));
 let clock=100000,reads=0,pulls=0,live=0,warning='';const baseline={jobs:[{no:'12001'}]};
-const p={Date:{now:()=>clock},revisionProbeInFlight:false,sessionToken:()=> 'fixture',navigator:{onLine:true},cloudDirty:false,cloudPushing:false,lastProbedRevision:1,cloudRevision:1,lastRevisionProbeAt:0,lastSuccessfulSyncAt:1,lastSyncedState:baseline,pollWarnings:new Set(),setServerConnection:s=>warning=s,status(){},initialDone:true,lastSyncError:'',consecutiveSyncErrors:0,api:async()=>{reads++;return {ok:true,revision:1}},pull:async()=>{pulls++},push:async()=>{},liveRole:()=>true,pullLiveStatus:async()=>{live++},warnPoll(){}};
+const p={Date:{now:()=>clock},revisionProbeInFlight:false,sessionToken:()=> 'fixture',navigator:{onLine:true},cloudDirty:false,cloudPushing:false,lastProbedRevision:1,cloudRevision:1,lastRevisionProbeAt:0,lastSuccessfulSyncAt:1,lastSyncedState:baseline,pollWarnings:new Set(),setServerConnection:s=>warning=s,status(){},initialDone:true,lastSyncError:'',consecutiveSyncErrors:0,api:async()=>{reads++;return {ok:true,revision:1}},pull:async()=>{pulls++;p.lastSuccessfulSyncAt=clock},push:async()=>{},liveRole:()=>true,pullLiveStatus:async()=>{live++},warnPoll(){}};
 vm.createContext(p);vm.runInContext(probe,p);
 for(let i=0;i<100;i++){clock+=1000;await p.probeRevision()}
-assert.equal(reads,100);assert.equal(pulls,0,'an acknowledged unchanged revision must not reload the whole workshop');assert.equal(live,0,'independent live polling retains its own cadence');assert.equal(p.lastSuccessfulSyncAt,clock);assert.equal(p.lastSyncedState,baseline);
-p.lastSyncedState=null;clock+=1000;await p.probeRevision();assert.equal(pulls,1,'cold-start cache cannot substitute for a confirmed baseline');
-p.lastSyncedState=baseline;p.api=async()=>({ok:true,revision:2});clock+=1000;await p.probeRevision();assert.equal(pulls,2,'changed workshop revision still loads');
+assert.equal(reads,100);assert.ok(pulls>=3&&pulls<=4,'periodic local snapshot repair is retained');assert.equal(live,pulls,'existing live refresh behavior retained');assert.ok(clock-p.lastSuccessfulSyncAt<30000);assert.equal(p.lastSyncedState,baseline);
+const repaired=pulls;p.lastSyncedState=null;p.lastSuccessfulSyncAt=clock-31000;clock+=1000;await p.probeRevision();assert.equal(pulls,repaired+1,'cold-start cache still loads');
+p.lastSyncedState=baseline;p.api=async()=>({ok:true,revision:2});clock+=1000;await p.probeRevision();assert.equal(pulls,repaired+2,'changed workshop revision still loads');
 p.api=async()=>{throw Error('database_busy')};clock+=1000;await p.probeRevision();assert.equal(warning,'busy');assert.equal(p.lastSyncError,'database_busy');assert.equal(p.lastSyncedState,baseline);
+// Execute the actual pull path: repair mutable local display state only from
+// a recent authenticated probe of the same confirmed in-memory revision.
+let loads=0;const confirmed={jobs:[{no:'12001',amount:80}]},storage=new Map();
+const cache={Date:{now:()=>clock},state:{jobs:[{no:'12001',amount:999}]},lastSyncedState:structuredClone(confirmed),cloudRevision:4,lastProbedRevision:4,lastRevisionProbeAt:clock,dirtyGeneration:0,cloudDirty:false,pullInFlight:false,initialDone:true,cloudApplying:false,conflictAlerted:false,lastSuccessfulSyncAt:0,lastSyncError:'',consecutiveSyncErrors:0,navigator:{onLine:true},sessionToken:()=> 'fixture',clone:structuredClone,status(){},window:{},localStorage:{setItem:(k,v)=>storage.set(k,v)},REV_KEY:'revision',scheduleDashboardRender(){},setServerConnection(){},normalizeRemote:data=>{cache.state=structuredClone(data)},api:async()=>{loads++;return {ok:true,revision:4,data:structuredClone(confirmed)}}};
+vm.createContext(cache);vm.runInContext(source.slice(source.indexOf('  async function pull(force){'),source.indexOf('  async function probeRevision(){')),cache);
+await cache.pull(true,4);assert.equal(loads,0);assert.deepEqual(cache.state,confirmed,'local mutations repaired from the confirmed baseline');
+cache.lastSyncedState=null;await cache.pull(true,4);assert.equal(loads,1,'cold cache still requires a real server load');
+cache.lastProbedRevision=5;await cache.pull(true,5);assert.equal(loads,2,'changed server revision requires real data');
+cache.lastProbedRevision=4;cache.lastRevisionProbeAt=clock-701;await cache.pull(true,4);assert.equal(loads,3,'expired revision proof cannot bypass a load');
 console.log('PASS: late commits acknowledged once, bounded stalled reads/bodies, preserved cancellation/permissions, coordinated client deadlines, unchanged-revision read reduction and genuine-outage warning.');

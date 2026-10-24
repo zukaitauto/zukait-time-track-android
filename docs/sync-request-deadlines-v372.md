@@ -5,7 +5,7 @@ The deployed database HTTP wrapper had a 4-second deadline while database statem
 
 The client's revision probe retains its 15-second deadline. Other cloud operations allow 45 seconds for sequential authentication, state/baseline reads and commit acknowledgement, plus transfer time. Existing queue durability, local-click generations, CAS conflict checks, recovery cooldowns, role checks and server guards are retained.
 
-A successful unchanged-revision probe is enough to confirm an existing in-memory server baseline. It updates the confirmation time without the redundant periodic load/known_revision round trip and re-normalization. A cold cache still requires a real load. Changed revisions still load. Live-status polling retains its separate cadence. Errors still show the real delayed/offline state; no warning suppression is added.
+A successful unchanged-revision probe is enough to confirm an existing in-memory server baseline. Periodic mutable-cache repair is retained, but it reapplies the in-memory baseline after a recent matching authenticated probe rather than issuing another load/known_revision round trip. Proofs older than 700ms do not bypass a load. A cold cache still requires a real load. Changed revisions still load. Live-status polling retains its separate cadence. Errors still show the real delayed/offline state; no warning suppression is added.
 
 Acceptance covers a synthetic 8-second single commit, actual default deadlines, stalled fetch/body cancellation, caller cancellation, unchanged permission/conflict statuses, cold-cache and changed-revision loading, delayed/out-of-order responses, durable pending changes, simultaneous state updates and existing authority guards. All fake-time tests avoid production record writes.
 

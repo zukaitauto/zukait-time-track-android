@@ -645,7 +645,17 @@
     // A persisted revision alone cannot prove that a cold-start cache is valid.
     const pullBaseline=lastSyncedState?clone(lastSyncedState):null;
     let r;
-    try{r=await api(pullBaseline?{action:'load',known_revision:pullRevision}:{action:'load'})}finally{pullInFlight=false}
+    try{
+      const confirmedRevision=arguments[1];
+      // The probe has just authenticated and confirmed this exact revision.
+      // Reapply the immutable in-memory baseline for periodic cache repair;
+      // no duplicate load request is needed. Cold/changed revisions still load.
+      if(pullBaseline&&confirmedRevision===pullRevision&&lastProbedRevision===pullRevision&&Date.now()-lastRevisionProbeAt<700){
+        r={ok:true,revision:pullRevision,not_modified:true};
+      }else{
+        r=await api(pullBaseline?{action:'load',known_revision:pullRevision}:{action:'load'});
+      }
+    }finally{pullInFlight=false}
     if(!r.ok){
       if(r.code==='invalid_session')status('LOGIN REQUIRED','bad');
       else status('SYNC ERROR','bad');
@@ -702,15 +712,7 @@
       setServerConnection('connected');
       const remoteRevision=Number(r.revision||0);
       lastProbedRevision=remoteRevision;
-      if(remoteRevision===cloudRevision&&(cloudDirty||lastSyncedState)){
-        // A successful revision probe confirms the in-memory server baseline.
-        // Do not reload the same workshop snapshot every 30 seconds.
-        if(!cloudDirty&&lastSyncedState){
-          lastSuccessfulSyncAt=Date.now();lastSyncError='';consecutiveSyncErrors=0;
-          status('SYNCED','ok');initialDone=true;
-        }
-        return false;
-      }
+      if(remoteRevision===cloudRevision&&(cloudDirty||Date.now()-lastSuccessfulSyncAt<30000))return false;
 
       // Never pull over a local click. Commit it first; the server will rebase
       // it transactionally if another device already advanced the revision.
@@ -722,7 +724,7 @@
       }
       if(cloudPushing)return false;
 
-      await pull(true);
+      await pull(true,remoteRevision);
       if(liveRole())await pullLiveStatus();
       return true;
     }catch(e){

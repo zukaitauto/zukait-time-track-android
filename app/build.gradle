@@ -13,7 +13,7 @@ android {
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
         versionCode 335
-        versionName "V372" // Match database and client deadlines; confirm unchanged revisions without redundant loads.
+        versionName "V372" // Match database and client deadlines; retain cache repair without redundant loads.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }
