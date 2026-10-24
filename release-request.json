@@ -3,7 +3,7 @@
   "versionCode": 336,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": true,
-  "sourceCommit": "26b458e4f02e33ef3b8dfec411ce6c00fcd9bb4c",
+  "sourceCommit": "3e15d073af32eabcedf76eacebb064b52a9e6bfa",
   "ownerApprovedLiveAccountantTesting": true,
   "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -19,8 +19,8 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true
   },
-  "approvedAt": "2026-10-24T06:11:32.399Z",
-  "publishNonce": "26b458e4f02e33ef3b8dfec411ce6c00fcd9bb4c372",
+  "approvedAt": "2026-10-24T06:46:39.425Z",
+  "publishNonce": "3e15d073af32eabcedf76eacebb064b52a9e6bfa373",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -32,11 +32,11 @@
         "verificationBasis": "Read-only production verification; unchanged staff-auth8. No authentication deployment."
       },
       "workshop-api": {
-        "version": 90,
-        "bundleSha256": "6daf75cdd02c90bfaf31f6dc68dea3b090605a6c38b534b6a546cebf5fec9e55",
+        "version": 92,
+        "bundleSha256": "21b53272151915ebb3809515be1acfcf1cff3b4da1281622b24c2efc038be2b8",
         "verifiedFileMatch": true,
         "repositorySourceMatchesDeployed": false,
-        "verificationBasis": "All production90 files match QA26 exactly. Complete deployed production89 bundle preserved; only database_fetch.js changed from a 4-second HTTP deadline to 10 seconds, including the response body, without any write retries. Pre-existing repository index differences remain outside this release."
+        "verificationBasis": "All production92 files match QA28 exactly. Full production90 bundle preserved except employee time-transition/receipt routing and closed ID001 preservation in index.ts. Database deadline fix, numbering, permissions and all other modules retained. Existing repository index differences remain outside this release."
       }
     },
     "migrations": [
@@ -56,14 +56,14 @@
       "requiredInsertsAndRegistryUpdatePreserved": true
     }
   },
-  "verificationSummary": "V372 corrects the deployed database HTTP guard that aborted requests at four seconds although existing database statements can run for about eight seconds. The guard now permits ten seconds including body consumption, preserves cancellation/error statuses, and never replays writes. Client revision probes remain bounded at fifteen seconds; other cloud operations allow forty-five seconds for sequential authentication/read/rebase/commit acknowledgement and transfer. Existing cooldowns, pending snapshots, generation checks, three-attempt/five-second rebase-start budget, CAS, role/financial/work-history guards and live polling cadence are preserved. A freshly authenticated matching revision reuses the confirmed in-memory baseline for periodic mutable-cache repair without a redundant load request; cold, changed or expired proof still loads. Real failures still show warning. Exact-source synthetic late-commit/stall/body/cancellation/permission/probe/cache tests, existing queue/recovery, simultaneous-save, Reception/Accountant, sync, signed/unsigned Android and native PDF checks all passed. QA26 and production90 readbacks match all files and hash. Only the deployed database_fetch.js changed server-side; no schema, database statement timeout, paid resources, authentication, passwords or workshop records changed. Short live observation recorded41 HTTP200,3 HTTP401 and no HTTP503 after rollout; monitoring limits are recorded separately. Physical-device acceptance and fresh restore remain NOT_RUN.",
+  "verificationSummary": "V373 fixes confirmed Employee time actions tagging an old full-state baseline with a new server revision. Advancing time receipts invalidate that baseline and force a real load. Server-confirmed own session/assignment/live after-images keep STOP visible even if refresh fails; other pending changes and account boundaries remain protected. Explicit STOP targets its exact session, completed ID001 assignments cannot be reopened by stale snapshots, terminal fields retain authority, and closed ID001 history is recovered after the earlier completed-assignment filter drops a stale open copy. Productive START atomically stops ID001 and starts a validated normal assignment; invalid targets leave waiting time untouched. Duplicate action IDs cannot switch employee/type/target; duplicate responses use current own after-images. The shared fix covers all employees. Exact-source stop/receipt, Soman/Babu ID fixtures, failed refresh, pending queue, account switching, stale STOP vs new session, full-save history pipeline and productive handoff tests passed; existing role/financial/privacy, concurrent saves, Reception browser, signed/unsigned Android, sync and native PDF gates all passed. QA28 and production92 match every file and bundle hash. Actual commit/guards accepted both exact stop changes in a rolled-back rehearsal. One owner-reported stuck ID001 session was then closed through the audited workshop commit at current server time; the second employee's own confirmed STOP was observed immediately before recovery. Both exact sessions remain closed with history retained, and the second employee subsequently resumed normal work. No historical stop time was invented or backdated. No schema, credentials, authentication, paid resources or unrelated work/financial records changed. Physical-device acceptance and fresh restore remain NOT_RUN.",
   "productionBackendDeploymentPerformed": true,
   "releaseChangeScope": "confirmed-id001-stop-baseline-and-restart-protection",
   "trafficOptimizationAuthorizedByOwner": true,
   "trafficOptimizationAuthorization": "Owner requested traffic reduction without changing workshop data/workflow, then instructed PROCEED INTELLIGENTLY AND LIGICALLY and PROCEED for the coordinated client rollout.",
   "rollback": {
-    "previousRelease": "release-V371-architecture-v2",
-    "strategy": "If client cache handling regresses, publish a higher-version recovery APK with V371 client assets while retaining stable record IDs and the numbering registry. Preserve the complete backend89 bundle for recovery of the transport change if necessary; do not drop number aliases, audit history, workshop records or pending device changes. No data reset.",
+    "previousRelease": "release-V372-architecture-v2",
+    "strategy": "If a client regression requires recovery, publish a higher-version APK using V372 assets while retaining the server's closed-session/history guards and stable numbering registry. Keep the complete production90 bundle available for targeted backend recovery if necessary. Preserve the owner-authorized stop and all original time/audit/financial records; no reset or backdating.",
     "dataResetRequired": false
   },
   "releaseBackendChanges": true,
@@ -94,12 +94,12 @@
     "fixturesRevoked": true,
     "workshopRecordsChanged": false
   },
-  "signedAcceptanceRun": 40068820152,
-  "verificationRun": 40068820218,
-  "accountantVerificationRun": 40068820133,
-  "androidBuildRun": 40068820128,
-  "syncVerificationRun": 40068820149,
-  "nativePdfVerificationRun": 40068820169,
+  "signedAcceptanceRun": 40071147500,
+  "verificationRun": 40071147536,
+  "accountantVerificationRun": 40071147512,
+  "androidBuildRun": 40071147586,
+  "syncVerificationRun": 40071147538,
+  "nativePdfVerificationRun": 40071147506,
   "monthlyReadAuthorizedByOwner": true,
   "monthlyReadAuthorization": "Owner requested Fix it properly for monthly read TIMEOUT, reviewed the remaining deployment/publication steps, and explicitly instructed Proceed.",
   "qaMonthlyRead": {
@@ -197,5 +197,32 @@
     "scope": "Short observation of workshop-api90 logged requests; not a guarantee against future infrastructure or network failures."
   },
   "id001StopRecoveryAuthorizedByOwner": true,
-  "id001StopRecoveryAuthorization": "Owner reported Soman ID001 not stopping and coming back automatically, confirmed this happens after pressing STOP and confirming, and reported Babu has the same issue. Repair shared employee stop/sync authority and protect all employees. Standing owner instruction: release after all fixes are complete."
+  "id001StopRecoveryAuthorization": "Owner reported Soman ID001 not stopping and coming back automatically, confirmed this happens after pressing STOP and confirming, and reported Babu has the same issue. Repair shared employee stop/sync authority and protect all employees. Standing owner instruction: release after all fixes are complete.",
+  "qaId001StopRecovery": {
+    "project": "omqgkqknbdcnotabffek",
+    "version": 28,
+    "bundleSha256": "21b53272151915ebb3809515be1acfcf1cff3b4da1281622b24c2efc038be2b8",
+    "allFilesMatchProduction": true,
+    "stopReceiptBaselineInvalidation": true,
+    "failedRefreshRetainsConfirmedStop": true,
+    "pendingChangesRetained": true,
+    "accountSwitchProtection": true,
+    "strictSessionTargeting": true,
+    "staleRestartRejected": true,
+    "closedHistoryPreservedThroughFullSavePipeline": true,
+    "atomicId001ToProductiveHandoff": true,
+    "testsCoverBothReportedEmployeeIds": true,
+    "productionRollbackRehearsalPassed": true
+  },
+  "ownerReportedStopRecovery": {
+    "at": "2026-10-24T06:37:10.718Z",
+    "timezone": "Asia/Muscat",
+    "supportActionCount": 1,
+    "otherReportedEmployeeStopConfirmedAt": "2026-10-24T06:36:58.802Z",
+    "bothReportedId001SessionsClosed": true,
+    "previousConfirmedStartAndPauseHistoryPreserved": true,
+    "backdated": false,
+    "unrelatedRecordsChanged": false,
+    "auditedThroughWorkshopCommit": true
+  }
 }
