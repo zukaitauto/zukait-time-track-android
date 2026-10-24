@@ -6,6 +6,8 @@ on:
   push:
     branches: [architecture-v2]
     paths:
+      - "app/src/main/assets/consumables_ui.js"
+      - "tests/consumables-readable-responsive.mjs"
       - "app/build.gradle"
       - "app/src/main/assets/job_card_master.js"
       - "app/src/main/assets/cash_monthly_pulse.js"
