@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';import http from 'node:http';import fs from 'node:fs';import {chromium} from 'playwright';
+const html=fs.readFileSync('app/src/main/assets/accountant.html','utf8').replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'');
+const server=http.createServer((req,res)=>{const name=req.url.split('?')[0];if(['/accountant.js','/accountant_bill_intent.mjs','/accountant_exports.js'].includes(name)){res.setHeader('Content-Type','text/javascript');res.end(fs.readFileSync('app/src/main/assets'+name));}else{res.setHeader('Content-Type','text/html');res.end(html)}});await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;
+try{
+ browser=await chromium.launch({headless:true});const p=await browser.newPage();let bills=0,ordinary=0,lose=true;
+ await p.route('https://qa.invalid/**',async route=>{const b=route.request().postDataJSON();let response;
+ if(b.action==='session')response={ok:true,user:{id:'QA_A',role:'Accountant',name:'QA'}};
+ else if(b.action==='accountant_bill_post'){bills++;if(lose)return route.abort();response={ok:true,duplicate:true};}
+ else if(b.action==='accountant_command'){ordinary++;response={ok:true};}
+ else response={ok:true,rows:[],notes:[],summary:Object.fromEntries(['cash_in','cash_out','lpo_collected','outstanding','total_expenses','estimated_gross_profit'].map(k=>[k,{amount_omr:0}])),as_of:'2026-10-25T08:00:00Z',next_offset:null,total_count:0};
+ await route.fulfill({json:response});});
+ await p.goto(`http://127.0.0.1:${server.address().port}`);
+ await p.evaluate(()=>{window.ZUKAIT_ACCOUNTANT_CONFIG={url:'https://qa.invalid',key:'qa',billsEnabled:true};localStorage.setItem('zukait_secure_session_v42',JSON.stringify({user:{id:'QA_A',role:'Accountant'},token:'synthetic-token'}))});
+ await p.addScriptTag({url:'/accountant_exports.js'});await p.addScriptTag({url:'/accountant.js'});await p.waitForFunction(()=>window.zukaitAccountant?.getUser());
+ const c={requestId:'79000000-0000-4000-8000-000000000001',entityId:'79000000-0000-4000-8000-000000000002',supplierId:'79000000-0000-4000-8000-000000000003',deviceId:'QA',reason:'Reviewed invoice',expectedSupplierRevision:1,expectedPayableRevision:1,expectedWorkshopRevision:1,invoiceReference:'QA',invoiceDate:'2026-10-21',transactionDate:'2026-10-21',invoiceTotalMills:1000,expectedMaterialMills:1000,invoiceReviewed:true,sources:[{type:'PAINT_ORDER',id:'PO_QA',expectedReceiptDigest:'a'.repeat(32)}]};
+ await p.evaluate(c=>zukaitAccountant.submitBill(c).catch(e=>e.message),c);assert.equal(bills,1);assert.match(await p.locator('#pending').innerText(),/supplier bill/i);
+ await p.evaluate(()=>zukaitAccountant.submit({operation:'POST'}));assert.equal(ordinary,0,'ordinary cash cannot bypass pending bill');assert.equal(await p.evaluate(()=>zukaitAccountant.prepareForUpdate()),false);
+ lose=false;await p.getByRole('button',{name:'Retry pending supplier bill'}).click();await p.waitForFunction(()=>document.getElementById('pending').hidden);assert.equal(bills,2);
+ await p.evaluate(()=>zukaitAccountant.submit({operation:'POST'}));assert.equal(ordinary,1,'ordinary submission restored after confirmation');
+ await p.close();const disabled=await browser.newPage();let imports=0;disabled.on('request',r=>{if(r.url().includes('accountant_bill_intent.mjs'))imports++});
+ await disabled.route('https://qa.invalid/**',route=>route.fulfill({json:route.request().postDataJSON().action==='session'?{ok:true,user:{id:'QA_A',role:'Accountant'}}:{ok:true,rows:[],notes:[],summary:{},as_of:'2026-10-25T08:00:00Z',next_offset:null,total_count:0}}));
+ await disabled.goto(`http://127.0.0.1:${server.address().port}`);await disabled.evaluate(()=>{window.ZUKAIT_ACCOUNTANT_CONFIG={url:'https://qa.invalid',key:'qa'};localStorage.setItem('zukait_secure_session_v42',JSON.stringify({user:{id:'QA_A',role:'Accountant'},token:'synthetic-token'}))});await disabled.addScriptTag({url:'/accountant_exports.js'});await disabled.addScriptTag({url:'/accountant.js'});await disabled.waitForFunction(()=>window.zukaitAccountant?.getUser());assert.equal(await disabled.evaluate(()=>zukaitAccountant.submitBill({}).catch(e=>e.message)),'bill_recovery_unavailable');assert.equal(imports,0);await disabled.close();console.log('PASS actual Accountant workspace: opt-in bill recovery uses existing verified session/transport, lost-ack retry UI, shared cash/pending/update gates and legacy financial submission recovery. Synthetic API only.');
+}finally{await browser?.close();await new Promise(r=>server.close(r));}

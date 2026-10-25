@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import fs from 'node:fs';
 import {chromium} from 'playwright';
-const source=fs.readFileSync('experiments/accountant-client/bill_intent.mjs');
+const source=fs.readFileSync('app/src/main/assets/accountant_bill_intent.mjs');
 const server=http.createServer((req,res)=>{res.setHeader('Content-Type',req.url==='/intent.mjs'?'text/javascript':'text/html');res.end(req.url==='/intent.mjs'?source:'<!doctype html><title>Synthetic bill recovery</title>');});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 let browser;
