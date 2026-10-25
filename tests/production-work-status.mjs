@@ -57,3 +57,34 @@ delete st.sessions[1].assignmentId;detail();assert.ok(modal.includes('Paused / T
 st.assign.push({id:'older',job:'12078',emp:'E2',cancelled:true});
 click('prod-painting');assert.ok(modal.includes('Status unavailable'));
 console.log('PASS: employee names/statuses in both screens, fresh/stale live status, other-job and repeat isolation, safe legacy matching, escaping and read-only rendering');
+
+vm.runInContext(fs.readFileSync('app/src/main/assets/labour_history.js','utf8'),ctx);
+live.fresh=true;live.rows.E2={emp:'E2',status:'Working',assignment:{id:'repeat'}};
+sandbox.window.zukaitWorkshopOverview.labour('12078');
+for(const label of ['Finished','Working now','Not started'])assert.ok(modal.includes(label),'Labour list: '+label);
+const history=sandbox.window.zukaitLabourHistory;
+for(const [emp,label] of [['E1','Finished'],['E2','Working now'],['E3','Not started']]){
+ const report=history.getReport('12078',emp);
+ assert.ok(history.html(report).includes(label),'Print/PDF report: '+label);
+ history.openStaff('12078',emp);
+ assert.ok(modal.includes(label),'Staff history: '+label);
+ assert.ok(modal.includes('Recorded status'));
+}
+const both=history.getReport('12078','E2');
+assert.ok(both.workStatuses.some(s=>s.scope==='Repeat work'&&s.label==='Working now'));
+assert.ok(both.workStatuses.some(s=>s.scope==='Assigned work'&&s.label==='Status unavailable'));
+live.fresh=false;
+assert.ok(history.html(history.getReport('12078','E2')).includes('Waiting for live status'));
+assert.ok(history.html(history.getReport('12078','E1')).includes('Finished'));
+console.log('PASS: Labour list, staff history, print/PDF share recorded status consistently; normal and repeat status remain separate');
+
+live.fresh=true;
+sandbox.File=File;sandbox.URL={createObjectURL:()=> 'blob:test',revokeObjectURL(){}};
+const cardText=[];
+sandbox.document.createElement=tag=>tag==='canvas'?{width:0,height:0,
+ getContext:()=>({fillRect(){},fillText(text){cardText.push(text)}}),
+ toBlob:cb=>cb(new Blob(['test'],{type:'image/png'}))}:{};
+history.openStaff('12078','E2');
+await Promise.all(handlers.map(fn=>fn({target:{closest:selector=>selector==='[data-labour-action]'?{dataset:{labourAction:'card'}}:null},preventDefault(){},stopPropagation(){}})));
+assert.ok(cardText.some(text=>text.includes('Repeat work · Working now')),'Shared card must draw employee work status');
+console.log('PASS: shared image card includes recorded assignment status');
