@@ -15,7 +15,8 @@ export function validBillCommand(c){
   &&Array.isArray(c.sources)&&c.sources.length>0&&c.sources.length<=20
   &&c.sources.every(s=>exact(s,['type','id','expectedReceiptDigest'])&&['PAINT_ORDER','SPARE_PART_LINE'].includes(s.type)&&text(s.id,1,200)&&/^[a-f0-9]{32}$/.test(s.expectedReceiptDigest||''))&&new Set(c.sources.map(s=>s.type+':'+s.id)).size===c.sources.length;
 }
-export function billIntents({storage,project,session,online,send,locks=globalThis.navigator?.locks}) {
+export const financialLockKey=(project,actor)=>'zukait_accountant_financial_v1:'+encodeURIComponent(project)+':'+encodeURIComponent(actor);
+export function billIntents({storage,project,session,online,send,beforeSubmit=()=>{},locks=globalThis.navigator?.locks}) {
  const identity=()=>{const s=session();if(!s||!s.verified||!['Accountant','Manager'].includes(s.role)||!s.id||!s.sessionId)throw Error('bill_session_required');return s;};
  const key=s=>'zukait_bill_intent_v1:'+encodeURIComponent(project)+':'+encodeURIComponent(s.id);
  const read=s=>{const raw=storage.getItem(key(s));if(raw===null)return null;let p;try{p=JSON.parse(raw)}catch{throw Error('bill_pending_corrupt')}
@@ -25,9 +26,10 @@ export function billIntents({storage,project,session,online,send,locks=globalThi
   if(busy)throw Error('bill_busy');const s=identity();if(!online())throw Error('bill_online_required');busy=true;
   try {
    if(typeof locks?.request!=='function')throw Error('bill_lock_unavailable');
-   return await locks.request(key(s),{mode:'exclusive',ifAvailable:true},async lock=>{
+   return await locks.request(financialLockKey(project,s.id),{mode:'exclusive',ifAvailable:true},async lock=>{
    if(!lock)throw Error('bill_busy');
    const checked=identity();if(checked.id!==s.id||checked.role!==s.role||checked.sessionId!==s.sessionId)throw Error('bill_account_changed');
+   beforeSubmit();
    let pending=read(s);
    if(retry){if(!pending)throw Error('bill_no_pending');}
    else {

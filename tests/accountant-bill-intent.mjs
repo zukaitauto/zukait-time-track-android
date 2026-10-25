@@ -18,3 +18,6 @@ console.log('PASS inactive bill intents: offline/storage block before send, immu
 for(const patch of [{requestId:'bad'},{invoiceReviewed:false},{expectedMaterialMills:1.5},{transactionDate:'2026-02-30'},{extra:'token'},{sources:[{type:'PAINT_ORDER',id:'PO',expectedReceiptDigest:'bad'}]}])assert.equal(validBillCommand({...command,...patch}),false);
 await assert.rejects(billIntents({...options,locks:null}).submit(command),/lock_unavailable/);assert.equal(values.size,0);
 console.log('PASS strict restored-command validation and exclusive cross-instance locking; unsupported lock environments fail before storage/send.');
+
+const guarded=billIntents({...options,beforeSubmit:()=>{throw Error('cash_pending')}});await assert.rejects(guarded.submit(command),/cash_pending/);assert.equal(values.size,0);assert.equal(calls.length,4);
+console.log('PASS shared-lock guard blocks pending cash before persisting/sending a bill.');
