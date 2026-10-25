@@ -1,0 +1,9 @@
+# Inactive bill intent recovery candidate
+
+`experiments/accountant-client/bill_intent.mjs` is an isolated client candidate, not loaded by the Accountant dashboard. It reuses the real bill action and caller-supplied existing session/transport; it creates no auth, ledger, backend or production configuration.
+
+Before transport, the complete reviewed command (including existing UUIDs) is serialized and storage round-trip verified. Offline devices, failed storage, malformed pending records and second submissions are blocked. A reload retries the exact stored request. Network errors and rejected/ambiguous responses retain intent; only an explicit successful response in the same verified session can clear the identical pending record. Account switches cannot clear or expose another actor's intent. A newly verified session for the original actor may retry; server current-auth/shared-receipt checks remain authoritative. No session token is persisted by this module.
+
+Qualification: `node tests/accountant-bill-intent.mjs` covers lost acknowledgements, reload, immutable requests, concurrent same-instance clicks, account/session switch, corrupt storage and offline/quota failures. These are synthetic tests, not physical Android acceptance.
+
+Before UI integration, connect the existing verified session lifecycle, schema-validate restored bill commands, coordinate multiple tabs through an exclusive lock, share the existing Accountant financial busy/pending gate, and implement explicit server-reviewed rejection resolution without silently discarding uncertain requests. LocalStorage does not provide cross-tab compare-and-swap. This module does not yet supply those integration guarantees. Returns, allocations, corrections, opening balances and other bill activation gates remain. No production activation or publication.

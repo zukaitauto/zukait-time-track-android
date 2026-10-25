@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {billIntents} from '../experiments/accountant-client/bill_intent.mjs';
+const values=new Map(),storage={getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
+let current={verified:true,id:'QA_A',role:'Accountant',sessionId:'session-A'},connected=true,calls=[],mode='lost',release;
+const options={storage,project:'qa-only',session:()=>current,online:()=>connected,send:async body=>{calls.push(body);if(mode==='lost')throw Error('lost_ack');if(mode==='wait')return new Promise(r=>release=r);return {ok:true,duplicate:true}}};
+let client=billIntents(options);const command={requestId:'qa-request',entityId:'qa-entity',invoiceReference:'reviewed',sources:[]};
+connected=false;await assert.rejects(client.submit(command),/online_required/);assert.equal(values.size,0);assert.equal(calls.length,0);connected=true;
+await assert.rejects(client.submit(command),/lost_ack/);command.invoiceReference='changed';assert.equal(client.pending().command.invoiceReference,'reviewed');
+await assert.rejects(client.submit(command),/pending_exists/);assert.equal(calls.length,1);
+client=billIntents(options);mode='success';assert.equal((await client.retry()).duplicate,true);assert.deepEqual(calls[0],calls[1]);assert.equal(values.size,0);
+mode='wait';const waiting=client.submit(command);await assert.rejects(client.retry(),/busy/);current={...current,id:'QA_B',sessionId:'session-B'};assert.equal(client.pending(),null);release({ok:true});await assert.rejects(waiting,/account_changed/);assert.equal(values.size,1);
+current={...current,id:'QA_A',sessionId:'new-session-A'};mode='success';await client.retry();assert.equal(values.size,0);
+storage.setItem('zukait_bill_intent_v1:qa-only:QA_A','corrupt');await assert.rejects(client.submit(command),/pending_corrupt/);assert.equal(calls.length,4);values.clear();
+const blocked=billIntents({...options,storage:{...storage,setItem:()=>{throw Error('storage_full')}}});await assert.rejects(blocked.submit(command),/storage_full/);assert.equal(calls.length,4);
+console.log('PASS inactive bill intents: offline/storage block before send, immutable lost-ack retry across reload, pending exclusion, account/session isolation, corrupt record retention and duplicate acknowledgement.');
