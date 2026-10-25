@@ -28,7 +28,7 @@ async function initializeBills(){
   billClient.pending();billBlocked=false;
   const {mountBillReview}=await import('./accountant_bill_review.mjs');
   if(!verified)return;
-  billReview=mountBillReview({root:$('accounts-home'),request:body=>request('workshop-api',body),canReview:()=>verified&&!busy&&!hasBillPending()&&localStorage.getItem(pendingKey())===null});
+  billReview=mountBillReview({root:$('accounts-home'),submitBill,request:body=>request('workshop-api',body),canReview:()=>verified&&!busy&&!hasBillPending()&&localStorage.getItem(pendingKey())===null});
  }catch{billBlocked=true;}
 }
 async function submitBill(command,retry=false){
