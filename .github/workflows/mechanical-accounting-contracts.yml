@@ -17,7 +17,6 @@ jobs:
       - name: Inactive extension contracts and Mechanical task transitions
         run: |
           node tests/mechanical-accounting-contracts.mjs
-          node tests/mechanical-role-privacy.mjs
           node tests/reception-receptionist-auth.mjs
           node tests/accountant-payables.mjs
           node tests/accountant-supplier-contracts.mjs
@@ -70,6 +69,7 @@ jobs:
         with:
           node-version: '24'
       - run: npm ci --ignore-scripts --include=dev
+      - run: node tests/mechanical-role-privacy.mjs
       - run: node tests/mechanical-workspace.mjs
       - run: node tests/mechanical-delivery-ui.mjs
       - run: node tests/mechanical-tracking-ui.mjs
