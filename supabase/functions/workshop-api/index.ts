@@ -1658,7 +1658,9 @@ Deno.serve(async (req: Request) => {
           ["SUPERVISOR_VERIFIED",new Set(["SUPERVISOR_CONFIRMED","RETURNED"])],["DENTER_CHECKED",new Set(["SUPERVISOR_CONFIRMED","RETURNED"])],
           ["SUPERVISOR_CONFIRMED",new Set(["FITTED","RETURNED"])],["FITTED",new Set(["RETURNED"])],["UNAVAILABLE",new Set(["CUSTOMER_SETTLEMENT"])],["RETURNED",new Set(["ENQUIRY","UNAVAILABLE"])]
         ]);
-        if(!allowedTransitions.get(from)?.has(to)) return reply({ok:false,code:"spare_transition_sequence_invalid"},409);
+        const directManagerArrival=callerRole==="Manager"&&["LISTED","ENQUIRY","QUOTED"].includes(from)&&to==="RECEIVED";
+        if(!allowedTransitions.get(from)?.has(to)&&!directManagerArrival) return reply({ok:false,code:"spare_transition_sequence_invalid"},409);
+        if(directManagerArrival&&!String(p.reason||"").trim())return reply({ok:false,code:"spare_direct_arrival_reason_required"},400);
         const purchaserTargets=new Set(["ENQUIRY","QUOTED","ORDERED","RECEIVED","RETURNED","UNAVAILABLE"]);
         const supervisorTargets=new Set(["SUPERVISOR_VERIFIED","SUPERVISOR_CONFIRMED","FITTED","RETURNED","UNAVAILABLE","CUSTOMER_SETTLEMENT"]);
         const arrivalRejected=from==="RECEIVED"&&to==="ORDERED";

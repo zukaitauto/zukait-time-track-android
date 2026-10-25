@@ -12,6 +12,7 @@ function canSeePrice(role){return PRICE_ROLES.has(String(role||''))}
 function allowed(from,to){return (transitions[String(from||'')]||[]).includes(String(to||''))}
 function canAct(role,from,to){
  role=String(role||'');
+ if(role==='Manager'&&['LISTED','ENQUIRY','QUOTED'].includes(from)&&to==='RECEIVED')return true;
  if(!allowed(from,to))return false;
  if(from==='RECEIVED'&&to==='ORDERED')return ['Supervisor','Purchaser','Manager'].includes(role);
  if((from==='ENQUIRY'&&to==='LISTED')||(from==='ORDERED'&&to==='ENQUIRY')||(from==='RECEIVED'&&to==='ORDERED'))return role==='Purchaser'||role==='Manager';
@@ -34,6 +35,7 @@ function transition(item,to,ctx={}){
  const from=String(item?.status||'LISTED');
  if(!canAct(ctx.role,from,to))return {ok:false,reason:'FORBIDDEN_OR_INVALID_TRANSITION',from,to};
  if(from==='RECEIVED'&&to==='ORDERED'&&['Supervisor','Manager'].includes(ctx.role)&&!String(ctx.reason||'').trim())return {ok:false,reason:'ARRIVAL_REJECTION_REASON_REQUIRED'};
+ if(['LISTED','ENQUIRY','QUOTED'].includes(from)&&to==='RECEIVED'&&!String(ctx.reason||'').trim())return {ok:false,reason:'DIRECT_ARRIVAL_REASON_REQUIRED'};
  const now=ctx.serverTime||new Date().toISOString();
  const next=Object.assign({},item,{status:to,updatedAt:now,updatedBy:ctx.actorId||null});
  if(from==='RETURNED'&&to!=='RETURNED'){delete next.preReturnSnapshot;delete next.returnedAt;delete next.returnedBy;delete next.returnReason;delete next.returnedQty;if(to==='ENQUIRY')next.reEnquiredAt=now}if(to==='UNAVAILABLE')next.cashSettlementRequired=true;

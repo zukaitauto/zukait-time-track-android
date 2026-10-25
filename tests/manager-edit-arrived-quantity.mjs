@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const suite=fs.readFileSync('tests/v215-spare-parts-entry-regression.mjs','utf8');
 const prefix=suite.slice(0,suite.indexOf('\ntest('));
-const {fixture}=await import('data:text/javascript;base64,'+Buffer.from(prefix+'\nexport {fixture};').toString('base64'));
+const {fixture,validate}=await import('data:text/javascript;base64,'+Buffer.from(prefix+'\nexport {fixture,validate};').toString('base64'));
 function ordered(role='Manager'){
  const f=fixture(role,'M1');
  f.serverRows.splice(3);
@@ -54,4 +54,15 @@ for(const raw of [null,'','0','2','NaN']){
  while(!release)await new Promise(resolve=>setImmediate(resolve));
  release();await first;assert.equal(prompts,1);assert.equal(f.commits.length,1);
 }
-console.log('PASS: Arrived selection records quantity; cancellation, validation, permissions, failure and duplicate clicks preserve the editor.');
+for(const from of ['LISTED','ENQUIRY','QUOTED']){
+ const f=fixture('Manager','M1');f.serverRows.splice(2);
+ if(from!=='LISTED')f.serverRows.push({event_id:'prior',entity_id:f.partId,event_type:'SPARE_PART_STATUS_CHANGED',revision:2,server_time:'2026-10-23T08:00:00Z',payload:{partId:f.partId,listNo:f.listNo,jobCard:f.jobCard,from:'LISTED',to:from}});
+ f.parts.hydrateFromServerRows(f.serverRows);const select={value:'RECEIVED',disabled:false};let n=0;f.window.prompt=()=>++n===1?'1':'Physically received without order';
+ await f.parts.managerEditStatusChange(f.listNo,f.partId,select);
+ assert.equal(select.value,'RECEIVED',from);assert.equal(f.commits.length,1);assert.equal(f.commits[0].payload.from,from);assert.equal(f.commits[0].payload.reason,'Physically received without order');
+ await f.parts.hydrateAuthoritativeLists();assert.equal(f.lists()[0].items[0].receivedQty,1);assert.equal(f.parts.arrivalPendingCount(f.lists()),1);
+ const denied=await validate({event:f.commits[0]},{id:'P1',role:'Purchaser'},{});assert.equal(denied.ok,false,'server must reject non-Manager direct arrival');
+ const missing=await validate({event:{...f.commits[0],payload:{...f.commits[0].payload,reason:''}}},{id:'M1',role:'Manager'},{});assert.equal(missing.code,'spare_direct_arrival_reason_required');
+}
+console.log('PASS: Arrived quantity, direct Manager receipt with reason, API role guards, cancellation, failure and duplicate clicks preserve the editor.');
+
