@@ -1,7 +1,6 @@
 {
-  "approved": true,
-  "sourceCommit": "3e15d073af32eabcedf76eacebb064b52a9e6bfa",
-  "release": "V373",
-  "publishNonce": "3e15d073af32eabcedf76eacebb064b52a9e6bfa373",
-  "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED."
+  "approved": false,
+  "release": "V374",
+  "sourceCommit": "2280c2a9a37251b1a83d68cd717956bdd358eb7f",
+  "reason": "V373 approval does not authorize a new mixed security and financial release. Normal release checks pending."
 }
