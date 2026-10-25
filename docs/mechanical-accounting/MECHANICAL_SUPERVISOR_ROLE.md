@@ -14,7 +14,7 @@ Per-account pending Mechanical command/tracking/delivery receipts and device ide
 
 ## Schema and rollout
 
-experiments/mechanical-supervisor-role.sql is a disposable additive constraint candidate preserving the six known existing role values and adding the new one. It creates/converts no user and enables no flags/grants. It was exercised with the Mechanical fixture schema. It is NOT a generated/applied production migration; current live constraints must be rechecked and a normal exact-source migration packet generated before approval. All changed experiments remain disposable candidates, not edits to applied migrations.
+supabase/migrations/20261025073416_mechanical_supervisor_role.sql was generated using verified official Supabase CLI2.81.3 and adds the role with a single atomic constraint replacement, preserving the six known existing roles. It creates/converts no user and enables no flags/grants. The inspected live role constraint has those six roles, but the migration has NOT been applied. experiments/mechanical-supervisor-role.sql remains a disposable fixture. Other Mechanical schema candidates still require a generated/reviewed production migration packet; the role migration alone does not install the Mechanical workspace. No applied migration was edited.
 
 Production rollout must coordinate the role constraint, staff-auth/workshop-api deployment, all Mechanical SQL changes and new web/Android assets before creating SUP003 as Mechanical Supervisor. Existing standing approval and physical/old-client acceptance gates still apply. Do not select generic Supervisor or create a live account as a workaround. Main is untouched.
 
