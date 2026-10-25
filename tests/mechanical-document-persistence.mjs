@@ -1,6 +1,6 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';import {mechanicalRoute} from '../supabase/functions/workshop-api/extensions/mechanical_route.js';
 export async function mechanicalDocumentPersistence({db,records,snapshot,native,pg,config,database}){
- await db.exec(fs.readFileSync('experiments/mechanical-documents.sql','utf8'));
+ /* Mechanical DDL is installed from the real migration before fixtures. */
  const actor={id:'SUP003',role:'Mechanical Supervisor',active:true},hash='c'.repeat(64),entity=(await records()).checklists.find(c=>c.manualJobCard.number==='QA_JC_0').id;
  const before=JSON.stringify(await snapshot()),rev=(await records()).revision,history=(await db.query('select count(*) n from workshop_state_history')).rows[0].n;
  assert.equal((await db.query('select documents_enabled,document_readers from zukait_mechanical.settings')).rows[0].documents_enabled,false);

@@ -2,7 +2,7 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';import {randomUUID} from 'node:crypto';
 import {mechanicalRoute} from '../supabase/functions/workshop-api/extensions/mechanical_route.js';
 export async function mechanicalTrackingPersistence({db,records,snapshot,native,pg,config,database}){
- await db.exec(fs.readFileSync('experiments/mechanical-tracking.sql','utf8'));
+ /* Mechanical DDL is installed from the real migration before fixtures. */
  const actor={id:'QA_SUP',role:'Supervisor',active:true},sessionHash='a'.repeat(64),entity=(await records()).checklists.find(c=>c.manualJobCard.number==='QA_JC_0').id;
  const scalar=async sql=>(await db.query(sql)).rows[0].n,baseline=JSON.stringify(await snapshot()),history=await scalar('select count(*)::int n from workshop_state_history');
  assert.equal(await scalar("select count(*)::int n from zukait_mechanical.settings where not tracking_enabled and hold_mode='STATUS_ONLY' and priority_values='[]'"),1);

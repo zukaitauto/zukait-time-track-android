@@ -6,9 +6,9 @@ import {qcTransition,preserveQcAuthority} from '../supabase/functions/workshop-a
 import {deliveryAuthorizationChecks,deliveryRevocationFirstChecks,waitForSessionLock} from './mechanical-delivery-sessions.mjs';
 import {mechanicalRoute,mechanicalLegacyDeliveryCheck} from '../supabase/functions/workshop-api/extensions/mechanical_route.js';
 export async function mechanicalDeliveryTests({db,records,snapshot,checklist,actor,sessionHash,policy,approve,planQcFail,native,pg,config,database}){
- await db.exec(fs.readFileSync('experiments/mechanical-delivery.sql','utf8'));
- await db.exec(fs.readFileSync('experiments/mechanical-delivery-readers.sql','utf8'));
- await db.exec(fs.readFileSync('experiments/mechanical-qc-overview.sql','utf8'));
+ /* Mechanical DDL is installed from the real migration before fixtures. */
+ /* Mechanical DDL is installed from the real migration before fixtures. */
+ /* Mechanical DDL is installed from the real migration before fixtures. */
  const scalar=async sql=>(await db.query(sql)).rows[0].n;
  assert.equal(await scalar('select count(*)::int n from zukait_mechanical.settings where not delivery_enabled'),1);
  await db.exec("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt,must_change) values('QA_DEL_MGR','Synthetic Manager','Manager','','none','none',false),('QA_DEL_REC','Synthetic Receptionist','Receptionist','','none','none',false)");

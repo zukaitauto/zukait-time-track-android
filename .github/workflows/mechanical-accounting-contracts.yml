@@ -17,6 +17,7 @@ jobs:
       - name: Inactive extension contracts and Mechanical task transitions
         run: |
           node tests/mechanical-accounting-contracts.mjs
+          node tests/mechanical-schema-bundle.mjs
           node tests/reception-receptionist-auth.mjs
           node tests/accountant-payables.mjs
           node tests/accountant-supplier-contracts.mjs
@@ -59,7 +60,9 @@ jobs:
           node-version: '24'
       - run: npm ci --ignore-scripts --include=dev
       - name: Native transactional persistence and overlapping writers
-        run: node tests/mechanical-persistence.mjs
+        run: |
+          ZUKAIT_MECHANICAL_INSTALL_MODE=fresh node tests/mechanical-persistence.mjs
+          node tests/mechanical-persistence.mjs
   workspace:
     runs-on: ubuntu-latest
     timeout-minutes: 10

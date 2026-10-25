@@ -36,17 +36,25 @@ const scalar=async sql=>(await db.query(sql)).rows[0].n;
 let at=Date.parse('2026-10-19T04:00:00Z');
 try{
  let base=fs.readFileSync('tests/fixtures/reception-postgres17-baseline.sql','utf8');base=native?base.replace(/create role (anon|authenticated|service_role)[^;]+;/g,''):base.replace('create extension if not exists pgcrypto;','');await db.exec(base);
- for(const f of fs.readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')).sort())await db.exec(fs.readFileSync('supabase/migrations/'+f,'utf8'));
+ const foundation='20261025073818_mechanical_department_inactive_foundation.sql',freshInstall=process.env.ZUKAIT_MECHANICAL_INSTALL_MODE==='fresh';
+ for(const f of fs.readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')&&(freshInstall||f!==foundation)).sort())await db.exec(fs.readFileSync('supabase/migrations/'+f,'utf8'));
  await db.exec(fs.readFileSync('tests/fixtures/workshop-save-live-functions.sql','utf8'));await db.exec(fs.readFileSync('experiments/live-status-session-partition.sql','utf8'));
  await db.exec("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt,must_change) values('QA_SUP','QA supervisor','Supervisor','QA_MECHANICAL','none','none',false),('QA_A','QA mechanic A','Employee','QA_MECHANICAL','none','none',false),('QA_B','QA mechanic B','Employee','QA_MECHANICAL','none','none',false),('QA_OTHER','Other','Employee','OTHER','none','none',false)");
  // Shared baseline now provides the session schema and least-privilege grants.
  await db.query('insert into staff_sessions(token_hash,user_id) values($1,$2),($3,$4)',[sessionHash,'QA_SUP','b'.repeat(64),'QA_A']);
  const initial={users:[{id:'QA_A',role:'Employee',department:'QA_MECHANICAL'},{id:'QA_B',role:'Employee',department:'QA_MECHANICAL'}],jobs:Array.from({length:12},(_,i)=>({no:'QA_JC_'+i,status:'Open'})),assign:[],sessions:[],expenses:[{id:'preserve',amount:12.345}],leaves:[{emp:'OTHER'}]};
  await db.query("insert into workshop_state(id,revision,data,updated_by) values('main',1,$1::jsonb,'QA_SUP')",[JSON.stringify(initial)]);
- await db.exec(fs.readFileSync('experiments/mechanical-persistence.sql','utf8'));
- await db.exec(fs.readFileSync('experiments/mechanical-authority-guard.sql','utf8'));
- await db.exec(fs.readFileSync('experiments/mechanical-readers.sql','utf8'));
- await db.exec(fs.readFileSync('experiments/mechanical-dashboard.sql','utf8'));
+ // Exercise the real generated migration against an existing synthetic garage.
+ if(!freshInstall){
+  const beforeState=(await db.query('select * from workshop_state')).rows,beforeStaff=(await db.query('select user_id,role,department,must_change from staff_credentials order by user_id')).rows;
+  await db.exec(fs.readFileSync('supabase/migrations/'+foundation,'utf8'));
+  assert.deepEqual((await db.query('select * from workshop_state')).rows,beforeState,'Upgrade must not touch existing garage JSON or revisions');
+  assert.deepEqual((await db.query('select user_id,role,department,must_change from staff_credentials order by user_id')).rows,beforeStaff,'Upgrade must not create or convert accounts');
+ }
+ const defaults=(await db.query('select to_jsonb(s) settings from zukait_mechanical.settings s')).rows[0].settings;
+ for(const [key,value] of Object.entries(defaults))if(key==='enabled'||key.endsWith('_enabled'))assert.equal(value,false,key+' must remain off');
+ assert.deepEqual(defaults.capabilities,{});assert.equal(defaults.department,null);
+ console.log('PASS real Mechanical migration '+(freshInstall?'fresh-install':'existing-data upgrade')+': no account conversion/business-data rewrite and activation defaults off.');
  // Trusted fixture only. Production defaults must remain disabled and unmapped.
  assert.equal(await scalar('select count(*)::int n from zukait_mechanical.settings where not enabled'),1);
  const policy={flags:{mechanical:true},mechanicalDepartment:'QA_MECHANICAL',manualJcDuplicateMode:'deny',mcNumbering:{minimumDigits:3},mechanicalStaff:{QA_SUP:['MC_CREATE','TASK_CREATE','TASK_ASSIGN','TASK_HANDOVER']}};
@@ -125,7 +133,8 @@ try{
  assert.equal(ordinary.ok,true,'Fresh ordinary full save preserves linked assignments and succeeds');
  assert.deepEqual((await snapshot()).data.sessions,saved.data.sessions);
  await db.exec('reset role');
- assert.equal(Number(await scalar("select count(*) n from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='zukait_mechanical' and c.relkind='r' and c.relrowsecurity")),8);
+ assert.equal(Number(await scalar("select count(*) n from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='zukait_mechanical' and c.relkind='r' and c.relrowsecurity")),12,'All12 bundled Mechanical tables require RLS');
+ assert.equal(Number(await scalar("select count(*) n from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='zukait_mechanical' and c.relkind='r' and not c.relrowsecurity")),0);
  await assert.rejects(db.exec("update zukait_mechanical.audit set actor_id='QA_SUP'"),/mechanical_append_only/,'append-only trigger also rejects owner updates');
  // Both revisions are checked before any metadata or shared writes.
  const stale=await prepare('TASK_CREATE',randomUUID(),{checklistId:firstId,title:'Stale'});await db.exec("update workshop_state set revision=revision+1 where id='main'");const count=Number(await scalar('select count(*) n from zukait_mechanical.tasks'));await assert.rejects(call(stale),/workshop_revision_conflict/);assert.equal(Number(await scalar('select count(*) n from zukait_mechanical.tasks')),count);

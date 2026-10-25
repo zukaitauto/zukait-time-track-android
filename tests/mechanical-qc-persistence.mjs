@@ -7,11 +7,11 @@ import {MECHANICAL_QC_OWNER_DECISIONS as qc} from '../supabase/functions/worksho
 import {mechanicalRoute} from '../supabase/functions/workshop-api/extensions/mechanical_route.js';
 import {mechanicalDeliveryTests} from './mechanical-delivery.mjs';
 export async function mechanicalQcPersistenceTests({db,records,snapshot,native,pg,config,database}){
- await db.exec(fs.readFileSync('experiments/mechanical-qc-persistence.sql','utf8'));
- await db.exec(fs.readFileSync('experiments/mechanical-qc-readers.sql','utf8'));
+ /* Mechanical DDL is installed from the real migration before fixtures. */
+ /* Mechanical DDL is installed from the real migration before fixtures. */
  const scalar=async sql=>(await db.query(sql)).rows[0].n;
  assert.equal(await scalar('select count(*)::int n from zukait_mechanical.settings where not qc_enabled and mixed_mechanical_qc_required is null'),1);
- await db.exec(fs.readFileSync('experiments/mechanical-supervisor-role.sql','utf8'));
+ /* Mechanical DDL is installed from the real migration before fixtures. */
  const sessionHash='c'.repeat(64),actor={id:'SUP003',role:'Mechanical Supervisor',active:true};
  await db.exec("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt,must_change) values('SUP003','SYNTHETIC QC','Mechanical Supervisor','QA_MECHANICAL','none','none',true)");
  await db.query('insert into staff_sessions(token_hash,user_id) values($1,$2)',[sessionHash,actor.id]);
@@ -89,7 +89,7 @@ export async function mechanicalQcPersistenceTests({db,records,snapshot,native,p
  await db.exec("create function qa_fail_qc_audit() returns trigger language plpgsql as $$begin if new.operation='MECHANICAL_QC' then raise exception 'QA_QC_ROLLBACK';end if;return new;end$$;create trigger qa_fail_qc_audit after insert on zukait_mechanical.audit for each row execute function qa_fail_qc_audit()");
  await assert.rejects(mechanicalQcCommandApi(next,server),/QA_QC_ROLLBACK/);assert.equal(await scalar('select count(*)::int n from zukait_mechanical.qc_events'),beforeRollback);assert.equal((await records()).revision,revisionBefore);assert.equal(await server.readReceipt(next.requestId),undefined);
  await db.exec('drop trigger qa_fail_qc_audit on zukait_mechanical.audit');
- for(const mutation of ['update zukait_mechanical.qc_events set reason=reason','delete from zukait_mechanical.qc_events','truncate zukait_mechanical.qc_events'])await assert.rejects(db.exec(mutation),/mechanical_append_only/);
+ for(const mutation of ['update zukait_mechanical.qc_events set reason=reason','delete from zukait_mechanical.qc_events','truncate zukait_mechanical.qc_events cascade'])await assert.rejects(db.exec(mutation),/mechanical_append_only/);
  for(const role of ['anon','authenticated']){
   assert.equal(await scalar(`select has_function_privilege('${role}','public.zukait_mechanical_qc_commit(text,uuid,text,bigint,bigint,uuid,text,jsonb,text)','execute')::int n`),0);
   assert.equal(await scalar(`select has_function_privilege('${role}','public.zukait_mechanical_qc_read(text,text,text,uuid,uuid)','execute')::int n`),0);
