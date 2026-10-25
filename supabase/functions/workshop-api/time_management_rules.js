@@ -148,11 +148,16 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
  if(['CORRECT_SESSION','ADD_SESSION','CANCEL_SESSION'].includes(op)){
   if(op!=='ADD_SESSION'&&(!s||!s.end||s.cancelled))return fail('time_session_inactive');
   if(command.workStatus){
+   const historicalFinish=op==='ADD_SESSION'&&command.workStatus==='FINISHED'&&(j.delivered||j.archived);
    if(own.some(x=>!x.cancelled&&!x.end))return fail('time_work_running');
    // Historical intervals may be corrected without changing the disposition of later work.
-   if(own.some(x=>!x.cancelled&&x.id!==s?.id&&(op==='ADD_SESSION'?Number(x.end)>Number(command.end):(Number(x.end)>Number(s.end)||Number(x.end)>Number(command.end)))))return fail('time_later_session');
+   if(!historicalFinish&&own.some(x=>!x.cancelled&&x.id!==s?.id&&(op==='ADD_SESSION'?Number(x.end)>Number(command.end):(Number(x.end)>Number(s.end)||Number(x.end)>Number(command.end)))))return fail('time_later_session');
    if(command.workStatus==='PAUSED'&&a.completed)return fail('time_reopen_required');
-   if(!a.completed&&(j.delivered||j.archived))return fail('time_job_inactive');
+   if(!a.completed&&(j.delivered||j.archived)&&!historicalFinish)return fail('time_job_inactive');
+   if(historicalFinish){
+    const closedAt=Math.min(...[j.delivered?Number(j.deliveredAt):NaN,j.archived?Number(j.archivedAt):NaN].filter(x=>Number.isFinite(x)&&x>0));
+    if(Number(command.end)>closedAt)return fail('time_after_job_closed');
+   }
    if((current.sessions||[]).some(x=>x&&!x.cancelled&&!x.assignmentId&&String(x.emp)===String(a.emp)&&String(x.job)===String(a.job)&&(current.assign||[]).filter(y=>!y.cancelled&&String(y.emp)===String(a.emp)&&String(y.job)===String(a.job)).length>1))return fail('time_assignment_ambiguous');
   }
   before=s?copy(s):null;
@@ -169,7 +174,7 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
   }
   if(command.workStatus){
    after.paused=command.workStatus==='PAUSED';after.finished=!after.paused;
-   if(after.finished){row.completed=true;row.completedAt=after.end;row.managerTimeCompletion=true;row.timeManagementRevision=(Number(a.timeManagementRevision)||0)+1;}
+   if(after.finished){row.completed=true;row.completedAt=op==='ADD_SESSION'&&(j.delivered||j.archived)?Math.max(Number(a.completedAt)||0,after.end,...own.filter(x=>!x.cancelled).map(x=>Number(x.end)||0)):after.end;row.managerTimeCompletion=true;row.timeManagementRevision=(Number(a.timeManagementRevision)||0)+1;}
   }
   after.managerTimeRevision=(Number(s?.managerTimeRevision)||0)+1;after.correctedBy=actor.id;after.correctedAt=at;
   data.corrections=data.corrections||[];data.corrections.push({id,session:after.id,assignmentId:a.id,operation:op,oldStart:before?.start??null,oldEnd:before?.end??null,newStart:after.start,newEnd:after.end,reason,by:actor.id,at});

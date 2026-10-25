@@ -4,6 +4,9 @@ on:
   push:
     branches: [architecture-v2]
     paths:
+      - 'app/src/main/assets/manager_profit_performance.js'
+      - 'app/src/main/assets/offline_test.html'
+      - 'tests/manager-profit-*'
       - 'app/src/main/assets/accountant*'
       - 'app/build.gradle'
       - 'scripts/verify-accountant-release.cjs'

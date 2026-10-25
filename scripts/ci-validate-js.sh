@@ -4,6 +4,8 @@ node --check app/src/main/assets/workshop_periods.js
 node --check app/src/main/assets/cloud_sync.js
 node --check app/src/main/assets/leave_history.js
 node --check app/src/main/assets/cash_monthly_pulse.js
+node --check app/src/main/assets/manager_profit_performance.js
+node --check supabase/functions/workshop-api/accountant/profit_performance.js
 node --check app/src/main/assets/consumables.js
 node --check app/src/main/assets/consumables_ui.js
 node --check app/src/main/assets/paint_module.js

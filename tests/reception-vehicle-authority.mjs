@@ -37,6 +37,14 @@ const master=w.zukaitJobCardMaster;assert.equal(master.identity('QA001').recepti
 master.patchIdentity('QA001',{make:'Stale'});assert.equal(w.state.jobs[0].make,'Toyota');
 master.patchIdentity('QA001',{colorCode:'NEW'},{source:'PAINT_PURCHASE_ORDER'});assert.equal(w.state.jobs[0].colorCode,'NEW');
 w.state.jobs.push({no:'LEGACY',make:'Toyota',model:'Corolla'});assert.equal(master.locationBadge('LEGACY'),'');master.patchIdentity('LEGACY',{model:'Yaris'});assert.equal(w.state.jobs[1].model,'Yaris');
+for(const previousLocation of ['VIW','VWC']){
+ w.state.jobs[0].receptionLocation=previousLocation;w.state.jobs[0].delivered=true;
+ const before=JSON.stringify(w.state);assert.match(master.locationBadge('QA001'),/>Delivered</);assert.doesNotMatch(master.locationBadge('QA001'),/In workshop|With customer|VIW|VWC/);assert.equal(JSON.stringify(w.state),before,'badge must not rewrite movement history');
+ w.state.jobs[0].delivered=false;assert.match(master.locationBadge('QA001'),previousLocation==='VIW'?/VIW.*In workshop/:/VWC.*With customer/);
+}
+w.state.jobs[0].receptionLocation='VWC';
+delete w.state.jobs[0].delivered;
+assert.equal(master.locationBadge('MISSING'),'');
 w.state.jobs[0].reg='QA001';w.state.jobs[0].year='2018';w.users=[];
 w.eval(fs.readFileSync('app/src/main/assets/manager_job_edit.js','utf8'));
 w.editJobManager('QA001');assert.equal(w.document.getElementById('mje-make').readOnly,false);assert.equal(w.document.getElementById('mje-jobType').disabled,false);assert.equal(w.document.getElementById('mje-colorCode').readOnly,false);assert.equal(w.document.getElementById('mje-notes').readOnly,false);

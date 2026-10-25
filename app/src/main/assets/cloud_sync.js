@@ -1209,6 +1209,14 @@
     finally{mechanicalRecoveryInFlight=false}
   }
 
+  async function readManagerProfit({month,offset=0}={}){
+    if(!me||me.role!=='Manager')throw Error('manager_required');
+    if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(String(month||'')))throw Error('invalid_filters');
+    const r=await api({action:'accountant_report',report:'manager_profit',filters:{month},offset,limit:500});
+    if(!r.ok)throw Error(r.code||'REPORT_UNAVAILABLE');
+    return r;
+  }
+
   async function syncNow(){
     if(cloudDirty&&permissionBlocked(payloadState())){
       if(String(deniedSnapshot.user)!==String(me?.id||'')){alert('Pending changes belong to another account. They are preserved; sign in as their author to review them.');return;}
@@ -1356,7 +1364,7 @@
     publishLiveStatus(false);
   });
   window.zukaitCloud={
-    resetForSession,init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,readMechanicalQcOverview,openMechanicalWorkspace,openMechanicalDelivery,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
+    resetForSession,init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,readManagerProfit,readMechanicalQcOverview,openMechanicalWorkspace,openMechanicalDelivery,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
     configured:()=>true,
     get confirmedState(){return confirmedReadRevision>=cloudRevision?confirmedReadState:null},
     get revision(){return cloudRevision},
