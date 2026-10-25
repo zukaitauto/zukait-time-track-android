@@ -1,3 +1,5 @@
+> Latest owner scope and account/device status: MECHANICAL_COMPLETION.md. Priced checklist PDFs are no longer required. Description-only unsigned/signed A4 outputs are implemented and browser-tested; physical Android/share/print remain pending. Earlier “after PDFs are implemented” wording refers now to physical acceptance, not missing unpriced PDF code.
+
 # Mechanical qualification and remaining acceptance
 
 This is a draft qualification record for PR49 against `architecture-v2`. It is not deployment, account-creation or pilot approval. All Mechanical settings and client/server flags remain disabled. Fixture identities and data are synthetic. Existing tests execute against disposable PGlite or loopback PostgreSQL17, never the live garage database.

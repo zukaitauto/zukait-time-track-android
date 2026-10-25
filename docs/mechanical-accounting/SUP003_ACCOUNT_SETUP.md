@@ -1,3 +1,5 @@
+> Current status: see MECHANICAL_COMPLETION.md (25 October2026). SUP003 still absent in the read-only live existence check; no account was created. Mechanical checklist PDFs are work-description-only, with no prices. The later implemented routed/persisted QC/document/delivery candidates supersede this file’s early “pure proposal” descriptions, while production activation remains blocked.
+
 # SUP003 account and QC decision
 
 Owner decisions in this thread: create a new Jibin account as SUP003; SUP003 is the sole QC approver for Mechanical-only jobs. Mixed Mechanical/paint jobs retain the existing painting and final QC checks. Whether to add Jibin as a third mixed-job approver is pending explicit confirmation; the draft leaves that policy unset/inactive.
