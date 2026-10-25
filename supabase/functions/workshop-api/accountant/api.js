@@ -1,6 +1,7 @@
 import {financialReport,validateFilters,validDay,key,milli,day,searchKey} from './finance_rules.js';
+import {managerProfitReport} from './profit_performance.js';
 const actions=new Set(['accountant_dashboard','accountant_jc_search','accountant_jc_detail','accountant_report','accountant_command']);
-const reportNames=new Set(['jobs','consumables','paint','parts','leave','cash','lpo','outstanding','monthly','audit','labour','invoices']);
+const reportNames=new Set(['jobs','consumables','paint','parts','leave','cash','lpo','outstanding','monthly','audit','labour','invoices','manager_profit']);
 const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
 export const canonical=v=>Array.isArray(v)?v.map(canonical):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,canonical(v[k])])):v;
 export async function fingerprint(value,secret){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);return [...new Uint8Array(await crypto.subtle.sign('HMAC',k,new TextEncoder().encode(JSON.stringify(canonical(value)))))].map(x=>x.toString(16).padStart(2,'0')).join('');}
@@ -11,6 +12,8 @@ export async function accountantApi(admin,user,body,secret,now=Date.now()){
  const filters=body.filters||{};if(!validateFilters(filters))return fail('invalid_filters');
  if(body.offset!==undefined&&(!Number.isInteger(body.offset)||body.offset<0)||body.limit!==undefined&&(!Number.isInteger(body.limit)||body.limit<1||body.limit>500))return fail('invalid_pagination');
  if(action==='accountant_report'&&!reportNames.has(body.report))return fail('invalid_report');
+ if(body.report==='manager_profit'&&(action!=='accountant_report'||user.role!=='Manager'))return fail('manager_required',403);
+ if(body.report==='manager_profit'&&Object.keys(filters).some(k=>!['month','insurance','query','job_card','from','to'].includes(k)))return fail('invalid_filters');
  if(action==='accountant_jc_search'&&(typeof body.query!=='string'||body.query.trim().length<2||body.query.length>80||searchKey(body.query).length<2))return fail('invalid_query');
  if(action==='accountant_jc_detail'&&(!/^[A-Z0-9_-]{1,40}$/.test(key(body.job_card))||body.query!==undefined))return fail('invalid_job_card');
  let fp;
@@ -21,7 +24,11 @@ export async function accountantApi(admin,user,body,secret,now=Date.now()){
   if(receipt.data)return receipt.data.actor_id===user.id&&receipt.data.fingerprint===fp?{status:200,body:receipt.data.result}:fail('request_conflict',409);
  }
  const loaded=await admin.rpc('zukait_accountant_context',{p_actor_id:user.id});if(loaded.error)throw loaded.error;
- const context=loaded.data,full=financialReport(context,{},now),report=Object.keys(filters).length?financialReport(context,filters,now):full;
+ const context=loaded.data,full=financialReport(context,{},now),report=Object.keys(filters).length&&body.report!=='manager_profit'?financialReport(context,filters,now):full;
+ if(body.report==='manager_profit'){
+  const result=managerProfitReport(context,full,filters,now),offset=body.offset||0,limit=body.limit||100;
+  return {status:200,body:{ok:true,...result,rows:result.rows.slice(offset,offset+limit),total_count:result.rows.length,next_offset:offset+limit<result.rows.length?offset+limit:null,as_of:full.as_of,snapshot_revision:full.snapshot_revision,finance_revision:full.finance_revision}};
+ }
  if(action==='accountant_command'){
   const c=body.command,allowed=['operation','expected_snapshot_revision','expected_finance_revision','transaction_date','kind','job_card','payee','payment_method','amount','category','reference','remarks','entry_id','reason','old_value','new_value'];
   if(Object.keys(c).some(k=>!allowed.includes(k))||!['POST','CORRECT','REVERSE','ADJUST_COST','CORRECT_INVOICE'].includes(c.operation)||typeof c.reason!=='string'||c.reason.trim().length<3||c.reason.length>2000||!validDay(c.transaction_date)||c.transaction_date>day(now)||!Number.isInteger(c.expected_snapshot_revision)||!Number.isInteger(c.expected_finance_revision))return fail('invalid_financial_command');
