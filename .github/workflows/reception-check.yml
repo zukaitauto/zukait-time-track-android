@@ -1099,3 +1099,5 @@ jobs:
           set -euo pipefail
           gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
           echo 'Owner-authorized V336 dispatched to the existing coordinated publisher'
+
+# V374: revalidate current candidate after physical Android QA and direct arrival fix.

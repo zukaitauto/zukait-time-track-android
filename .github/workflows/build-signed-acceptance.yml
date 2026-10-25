@@ -162,3 +162,5 @@ jobs:
         shell: bash
         run: rm -f /tmp/zukait-release.jks /tmp/aligned.apk
 
+
+# V374: revalidate current candidate after physical Android QA and direct arrival fix.

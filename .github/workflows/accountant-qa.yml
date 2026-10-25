@@ -82,3 +82,5 @@ jobs:
         with:
           name: accountant-debug-compile-only
           path: app/build/outputs/apk/debug/*.apk
+
+# V374: revalidate current candidate after physical Android QA and direct arrival fix.
