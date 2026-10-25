@@ -97,3 +97,10 @@ for(const status of ['PAUSED','FINISHED']){
  assert.equal(h.ctx.state.assign[0].completed,status==='FINISHED');
 }
 console.log('Add Missing Time real form: required Pause/Finish selection and confirmed save passed.');
+
+h=harness();h.ctx.state.sessions=[];h.ctx.state.jobs[0].delivered=true;h.ctx.state.jobs[0].deliveredAt=at;h.ctx.state.jobs[0].status='Delivered';
+await h.ctx.zukaitOpenManagerTimeManagement();h.ctx.zukaitManagerTimeSelect('A1');h.ctx.zukaitManagerTimeAction('ADD_SESSION');
+assert.match(h.ctx.html,/job stays closed/);assert.match(h.ctx.html,/Finished — record historical time only/);assert.doesNotMatch(h.ctx.html,/value="PAUSED"/);
+h.get('mtStart').value=inputTime(at-1800000);h.get('mtEnd').value=inputTime(at);h.get('mtReason').value='Historical missing time on delivered job';h.get('mtWorkStatus').value='FINISHED';h.ctx.zukaitManagerTimeReview();await h.ctx.zukaitManagerTimeConfirm();
+assert.equal(h.ctx.state.jobs[0].delivered,true);assert.equal(h.ctx.state.jobs[0].status,'Delivered');assert.equal(h.ctx.state.assign[0].completed,true);
+console.log('Delivered job form: historical Finish only, server-confirmed save and delivery status preservation passed.');

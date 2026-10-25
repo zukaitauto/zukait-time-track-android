@@ -54,3 +54,25 @@ const missing=fixture();missing.sessions=[];
 assert.equal(change(missing,manager,command(missing,'INVALID',{operation:'ADD_SESSION'}),at).code,'invalid_work_status');
 assert.equal(change(d,manager,command(d,'FINISHED',{operation:'ADD_SESSION',start:at-7200000,end:at-3600000}),at).code,'time_later_session');
 console.log('Missing Time Pause/Finish: saved status, completion, hours, audit, retries and stale-save protection passed.');
+
+// JC 12070 regression: delivered job, Mohammed assignment left incomplete.
+for(const closedFlag of ['delivered','archived']){
+ const closed=fixture();closed.jobs[0]={no:'12070',status:'Delivered',[closedFlag]:true,[closedFlag+'At']:at};
+ closed.assign[0].job='12070';closed.assign[0].emp='EMP005';closed.sessions[0]={id:'S',assignmentId:'A',job:'12070',emp:'EMP005',start:at-3600000,end:at,paused:true};
+ const add={...command(closed,'FINISHED',{operation:'ADD_SESSION',sessionId:'',start:at-7200000,end:at-3600000}),expectedSessions:employeeTimeToken(closed,'EMP005')};
+ const before=structuredClone(closed),result=change(closed,manager,add,at);
+ assert.equal(result.ok,true);assert.deepEqual(closed,before,'no mutation before confirmation');
+ assert.deepEqual(result.data.jobs,closed.jobs,'delivery/archive and job details unchanged');
+ assert.deepEqual(result.data.sessions[0],closed.sessions[0],'later historical session is retained');
+ assert.equal(result.data.sessions[1].finished,true);assert.equal(result.data.sessions[1].paused,false);
+ assert.equal(result.data.assign[0].completed,true);assert.equal(result.data.assign[0].completedAt,at,'older interval must not backdate latest work completion');
+ assert.equal(result.audit.type,'Add Missing Time');assert.equal(result.audit.before,null);assert.equal(result.audit.assignmentBefore.completed,false);
+ assert.equal(change(result.data,manager,add,at+1).duplicate,true);
+ assert.equal(change(closed,manager,{...add,workStatus:'PAUSED',end:at},at).code,'time_job_inactive');
+ assert.equal(change(closed,manager,{...add,start:at,end:at+60000},at+60000).code,'time_after_job_closed');
+ for(const flag of ['deleted','cancelled']){const invalid=structuredClone(closed);invalid.jobs[0][flag]=true;assert.equal(change(invalid,manager,add,at).code,'time_job_inactive');}
+ for(const role of ['Supervisor','Employee','Accountant'])assert.equal(change(closed,{id:'X',role},add,at).code,'time_permission_denied');
+ const overlap={...add,start:at-1800000,end:at};assert.equal(change(closed,manager,overlap,at).code,'time_session_overlap');
+ const running=structuredClone(closed);delete running.sessions[0].end;assert.equal(change(running,manager,{...add,expectedSessions:employeeTimeToken(running,'EMP005')},at).code,'time_work_running');
+}
+console.log('Delivered/archived missing-time regression: Manager-only historical Finish, closure preserved, no overlap/running work, cutoff, audit and exact retry passed.');
