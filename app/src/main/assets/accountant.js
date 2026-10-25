@@ -7,7 +7,7 @@ const columns={jobs:[['JC','job_card'],['Registration','registration'],['Vehicle
 let user=null,report='jobs',offset=0,next=null,result=null,generation=0,detailGeneration=0,busy=false,target=null,verified=false;
 const saved=()=>{try{return JSON.parse(localStorage.getItem(sessionKey)||'null')}catch{return null}};
 const token=()=>{const s=saved();if(!s||s.user?.id!==user?.id||s.user?.role!==user?.role||!['Accountant','Manager'].includes(s.user?.role)){invalidate();throw Error('ACCOUNT_CHANGED');}return String(s.token||window.AndroidBridge?.getSecureSessionToken?.()||'')};
-let billClient=null,billBlocked=false,financialLockKey=null;
+let billClient=null,billBlocked=false,financialLockKey=null,billReview=null;
 const billsEnabled=config.billsEnabled===true;
 const pendingKey=()=> 'zukait_accountant_pending_v1:'+encodeURIComponent(url)+':'+encodeURIComponent(user?.id||'');
 const say=text=>{$('message').textContent=text};
@@ -26,6 +26,9 @@ async function initializeBills(){
  try{const recovery=await import('./accountant_bill_intent.mjs');const {billIntents}=recovery;financialLockKey=recovery.financialLockKey;
   billClient=billIntents({storage:localStorage,project:url,session:()=>{if(!verified)return null;return {verified,id:user.id,role:user.role,sessionId:token()}},online:()=>navigator.onLine!==false,beforeSubmit:()=>{if(localStorage.getItem(pendingKey())!==null)throw Error('Resolve the pending financial request first.');},send:body=>request('workshop-api',body)});
   billClient.pending();billBlocked=false;
+  const {mountBillReview}=await import('./accountant_bill_review.mjs');
+  if(!verified)return;
+  billReview=mountBillReview({root:$('accounts-home'),request:body=>request('workshop-api',body),canReview:()=>verified&&!busy&&!hasBillPending()&&localStorage.getItem(pendingKey())===null});
  }catch{billBlocked=true;}
 }
 async function submitBill(command,retry=false){
@@ -37,7 +40,7 @@ async function submitBill(command,retry=false){
  catch(e){say(e.message);throw e;}
  finally{busy=false;showPending();}
 }
-function invalidate(){verified=false;generation++;closeDetail();result=null;target=null;$('app').hidden=true;for(const id of ['rows','detail','summary','pending'])$(id).replaceChildren();$('pending').hidden=true;window.dispatchEvent(new Event('zukait-accountant-session'));}
+function invalidate(){billReview?.reset();verified=false;generation++;closeDetail();result=null;target=null;$('app').hidden=true;for(const id of ['rows','detail','summary','pending'])$(id).replaceChildren();$('pending').hidden=true;window.dispatchEvent(new Event('zukait-accountant-session'));}
 window.addEventListener('storage',e=>{if(verified&&billsEnabled&&(e.key===pendingKey()||e.key==='zukait_bill_intent_v1:'+encodeURIComponent(url)+':'+encodeURIComponent(user.id)))showPending();});
 window.addEventListener('storage',e=>{if(e.key===sessionKey&&verified){try{token()}catch{say('Account changed. Sign in again.')}}});
 async function request(endpoint,body){const t=token();if(!t)throw Error('Sign in required');const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),15000);let r;try{r=await fetch(url+'/functions/v1/'+endpoint,{method:'POST',headers:{'Content-Type':'application/json',apikey:publicKey,'x-zukait-session':t},body:JSON.stringify(body),signal:controller.signal})}catch(e){if(token()!==t){invalidate();throw Error('ACCOUNT_CHANGED');}throw e;}finally{clearTimeout(timeout)}const data=await r.json();if(token()!==t){invalidate();throw Error('ACCOUNT_CHANGED');}if(!r.ok||!data.ok){const error=new Error(data.code||'Request unavailable');error.status=r.status;throw error;}return data;}

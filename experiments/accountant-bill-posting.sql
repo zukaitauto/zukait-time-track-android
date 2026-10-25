@@ -49,6 +49,12 @@ begin
  if p_hash is null or p_hash!~'^[0-9a-f]{64}$' then raise exception 'invalid_session';end if;
  perform 1 from public.staff_sessions where user_id=p_actor and token_hash=p_hash and revoked_at is null for share;if not found then raise exception 'invalid_session';end if;
  if jsonb_typeof(p_input) is distinct from 'object' or octet_length(p_input::text)>16000 then raise exception 'bill_invalid';end if;
+ if p_kind='suppliers' then
+  if p_request is not null or p_fingerprint is not null or exists(select 1 from jsonb_object_keys(p_input) k where k<>'afterId') then raise exception 'bill_invalid';end if;
+  after_id:=(p_input->>'afterId')::uuid;
+  select coalesce(jsonb_agg(r order by r->>'id'),'[]') into rows from (select jsonb_build_object('id',id,'name',name) r from zukait_suppliers.current_suppliers where active and (after_id is null or id>after_id) order by id limit 51)x;
+  return jsonb_build_object('ok',true,'rows',case when jsonb_array_length(rows)>50 then rows-50 else rows end,'nextAfter',case when jsonb_array_length(rows)>50 then rows->49->>'id' else null end,'totalSupplierOutstandingMills',null);
+ end if;
  if p_kind='post' then
   if p_request is null or p_fingerprint is null or p_fingerprint!~'^[0-9a-f]{64}$' then raise exception 'bill_invalid';end if;
   select * into receipt from public.workshop_accountant_commands where request_id=p_request;
