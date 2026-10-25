@@ -92,3 +92,5 @@ jobs:
             ${{ runner.temp }}/insurance-acceptance/package.txt
 
 # V374: prepare isolated account-privacy and Cash/Insurance phone acceptance candidate.
+
+# Verify Manager direct parts arrival against QA workshop-api30.
