@@ -53,3 +53,69 @@ for(const user of [manager,supervisor,employee]){
 
 }
 console.log('Invoice Entry passed: all three types, roles, date/amount validation, legacy amount protection, audit, concurrency, pending navigation, saved delivery details and stale-client protection.');
+
+ // The host setter recreates inputs like a real innerHTML write. A value-only mock
+ // misses the regression where background rendering erases an in-progress edit.
+for(const user of [manager,supervisor])for(const type of ['Cash','Credit','Insurance']){
+ const no='draft-'+type;let modal='',writes=0,replacements=0;
+ const initial={jobs:[{no,jobType:type,delivered:true,qcWorkflow:{revision:0,history:[]}}],assign:[],sessions:[]};
+ let server=structuredClone(initial);
+ const nodes={invoiceSearch:{value:''}},events={};
+ let body='';
+ nodes.invoiceBody={get innerHTML(){return body},set innerHTML(html){
+  body=html;replacements++;
+  for(const id of Object.keys(nodes))if(id.startsWith('invoiceAmount-')||id.startsWith('invoiceDate-'))delete nodes[id];
+  for(const match of html.matchAll(/<input\b([^>]+)>/g)){
+   const attrs=match[1],id=attrs.match(/\bid="([^"]+)"/)?.[1],value=attrs.match(/\bvalue="([^"]*)"/)?.[1]||'';
+   if(id)nodes[id]={value};
+  }
+ }};
+ const ctx={invoiceComplete,invoiceDateValid,qcStatus,state:structuredClone(initial),me:user,Date,console,
+ navigator:{onLine:true},window:{addEventListener:(name,fn)=>events[name]=fn,zukaitAuth:{getToken:()=> 'test'},zukaitCloud:{syncHealth:{ready:true},async syncNow(){}}},
+ document:{getElementById:id=>nodes[id]||null,createElement:()=>new Element(),head:{appendChild(){}}},
+ openModal(html){modal=html},closeModal(){},alert(message){throw Error(message)},
+ async fetch(url,opts){writes++;const body=JSON.parse(opts.body);assert.equal(body.amount,123.456);assert.equal(body.invoiceDate,'2026-10-25');const result=qcTransition(server,user,body,1000);assert.equal(result.ok,true);server=result.data;ctx.state=structuredClone(server);return {ok:true,json:async()=>result};}};
+ vm.runInNewContext(ui,ctx);
+ const enter=async()=>{
+  await ctx.window.zukaitOpenInvoiceEntry(type);
+  nodes['invoiceAmount-'+no].value='123.456';
+  ctx.window.zukaitInvoiceDraft?.(no,'amount','123.456');
+ };
+ await enter();
+ const input=nodes['invoiceAmount-'+no],before=replacements;
+ events['zukait-live-status']();
+ assert.equal(replacements,before,'Unchanged background refresh must not rebuild active inputs');
+ assert.equal(nodes['invoiceAmount-'+no],input);
+ assert.equal(input.value,'123.456');
+ // A new pending vehicle forces a real list redraw; this row's draft must survive.
+ ctx.state.jobs.push({no:'OTHER',jobType:type,delivered:true});
+ ctx.window.v42AfterCloudPull();
+ assert.equal(nodes['invoiceAmount-'+no].value,'123.456');
+ nodes['invoiceDate-'+no].value='2026-10-25';ctx.window.zukaitInvoiceDraft?.(no,'date','2026-10-25');
+ nodes.invoiceSearch.value='not found';ctx.window.zukaitInvoiceRefresh();
+ nodes.invoiceSearch.value='';ctx.window.zukaitInvoiceRefresh();
+ assert.equal(nodes['invoiceAmount-'+no].value,'123.456');
+ assert.equal(nodes['invoiceDate-'+no].value,'2026-10-25');
+ ctx.window.zukaitInvoiceSyncRefresh();
+ await ctx.window.zukaitSaveInvoiceRow(no);
+ assert.equal(writes,1);assert.equal(server.jobs[0].finalInvoiceAmount,123.456);
+ assert.equal(server.jobs[0].invoiceDate,'2026-10-25');
+ assert.equal(server.jobs[0].financialAudit.length,1);
+ // A concurrent edit is never silently overwritten with the preserved draft.
+ ctx.state=structuredClone(initial);await enter();
+ ctx.state.jobs[0].qcWorkflow.revision=1;
+ assert.throws(()=>ctx.window.zukaitSaveInvoiceRow(no),/Another device updated/);
+ assert.equal(writes,1);
+ ctx.state=structuredClone(initial);await enter();
+ ctx.me={...user,id:'DIFFERENT'};
+ assert.throws(()=>ctx.window.zukaitSaveInvoiceRow(no),/current login/);
+ assert.equal(writes,1);
+ if(user.role==='Manager'&&type==='Insurance'){
+  ctx.me=user;ctx.state=structuredClone(initial);ctx.state.jobs[0].insuranceLpo={amount:123.456,receivedDate:'2026-10-25'};
+  await enter();nodes['invoiceDate-'+no].value='2026-10-25';ctx.window.zukaitInvoiceDraft?.(no,'date','2026-10-25');
+  ctx.window.zukaitSaveInvoiceRow(no);
+  assert.match(modal,/id="invoiceEntryAmount"[^>]*value="123.456"/);
+  assert.match(modal,/id="invoiceEntryDate"[^>]*value="2026-10-25"/,'Manager LPO review must carry the typed date');
+ }
+}
+console.log('PASS: Cash/Credit/Insurance amount and date survive background sync, forced redraw and filtering; one audited save; concurrent-edit and account guards; Insurance Manager review preserves both fields.');
