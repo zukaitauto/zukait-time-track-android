@@ -8,7 +8,7 @@ export function mountMechanicalDocumentExport(root,options={}){
  const online=()=>options.online?.()!==false;
  const node=(tag,text)=>{const e=doc.createElement(tag);e.textContent=text;return e},status=node('p','');status.setAttribute('role','status');
  root.replaceChildren(node('h2','Unpriced Mechanical checklist'),node('p','Prepare a current A4 snapshot. Signatures are optional. This copy contains no prices.'),status);
- const include=node('input',null);include.type='checkbox';const includeLabel=node('label','Include my current Mechanical Supervisor signature ');includeLabel.style.cssText='display:block;min-height:44px;padding:8px 0';include.style.cssText='min-width:24px;min-height:24px;vertical-align:middle';includeLabel.prepend(include);if(options.signedAvailable===true&&initial?.id==='SUP003'&&initial?.role==='Supervisor')root.append(includeLabel);
+ const include=node('input',null);include.type='checkbox';const includeLabel=node('label','Include my current Mechanical Supervisor signature ');includeLabel.style.cssText='display:block;min-height:44px;padding:8px 0';include.style.cssText='min-width:24px;min-height:24px;vertical-align:middle';includeLabel.prepend(include);if(options.signedAvailable===true&&initial?.id==='SUP003'&&['Supervisor','Mechanical Supervisor'].includes(initial?.role))root.append(includeLabel);
  const actions=node('div','');root.append(actions);
  const message=e=>e?.message==='mechanical_signature_missing'?'No current signature is recorded. Prepare without a signature, or close and record one first.':e?.message==='mechanical_document_changed'?'The checklist changed. Close this view, refresh the checklist and prepare it again.':'Unable to confirm this export. Reconnect or sign in again, then retry.';
  const input={checklistId:options.checklistId,expectedRevision:options.expectedRevision,expectedWorkshopRevision:options.expectedWorkshopRevision};
@@ -16,7 +16,7 @@ export function mountMechanicalDocumentExport(root,options={}){
  async function verify(evidence){check();if(evidence.signed&&(options.signedEnabled?.()??true)!==true)throw Error('session_changed');const r=await options.api({action:evidence.signed?'mechanical_signed_document_verify':'mechanical_document_verify',...input});check();if(evidence.signed&&(options.signedEnabled?.()??true)!==true)throw Error('session_changed');if(r?.ok!==true||r.checklistId!==input.checklistId||r.recordsRevision!==input.expectedRevision||r.workshopRevision!==input.expectedWorkshopRevision||(evidence.signed&&(r.signatureId!==evidence.signatureId||r.sourceHash!==evidence.sourceHash)))throw Error('mechanical_document_changed')}
  function button(label,fn){const b=node('button',label);b.type='button';b.style.minHeight='44px';b.style.margin='6px';b.onclick=async()=>{if(busy)return;busy=true;for(const x of actions.querySelectorAll('button'))x.disabled=true;try{check();await fn()}catch(e){prepared=null;include.disabled=false;actions.replaceChildren();addPrepare();status.textContent=message(e)}finally{busy=false;for(const x of actions.querySelectorAll('button'))x.disabled=!current()}};actions.append(b)}
  function addPrepare(){button('Prepare PDF',async()=>{
-  const signed=options.signedAvailable===true&&initial.id==='SUP003'&&initial.role==='Supervisor'&&include.checked;if(signed&&(options.signedEnabled?.()??true)!==true)throw Error('session_changed');
+  const signed=options.signedAvailable===true&&initial.id==='SUP003'&&['Supervisor','Mechanical Supervisor'].includes(initial.role)&&include.checked;if(signed&&(options.signedEnabled?.()??true)!==true)throw Error('session_changed');
   const r=await options.api({action:signed?'mechanical_signed_document':'mechanical_document',...input});check();if(!r?.ok)throw Error(r?.code||'NETWORK');if(r.checklistId!==input.checklistId)throw Error('mechanical_document_changed');
   if(r.document?.recordsRevision!==input.expectedRevision||r.document?.workshopRevision!==input.expectedWorkshopRevision)throw Error('mechanical_document_changed');
   if(signed&&r.signature?.checklistId!==input.checklistId)throw Error('mechanical_document_changed');
@@ -26,6 +26,6 @@ export function mountMechanicalDocumentExport(root,options={}){
   if(!options.native)button('Download PDF',async()=>{await verify(prepared);options.download(prepared.file)});
   if(options.native||options.canShare?.(file))button('Share PDF',async()=>{await verify(prepared);await options.share(prepared)});
  })}
- if(options.enabled===true&&['Manager','Supervisor'].includes(initial?.role)&&initial?.id&&initial?.key&&typeof options.api==='function')addPrepare();else status.textContent='Checklist export is unavailable.';
+ if(options.enabled===true&&['Manager','Supervisor','Mechanical Supervisor'].includes(initial?.role)&&initial?.id&&initial?.key&&typeof options.api==='function')addPrepare();else status.textContent='Checklist export is unavailable.';
  return {destroy(){disposed=true;prepared=null;root.replaceChildren()}};
 }

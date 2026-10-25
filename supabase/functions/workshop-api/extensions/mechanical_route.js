@@ -26,7 +26,7 @@ export async function mechanicalRoute(admin,user,body,options={}){
  const delivery=body?.action==='mechanical_delivery_probe'||body?.action==='mechanical_delivery_preview'||(body?.action==='mechanical_command'&&body.command?.operation==='MECHANICAL_DELIVER');
  if(delivery){
   if(options.qcEnabled!==true||options.deliveryEnabled!==true)return response('extension_disabled',403);
-  if(user?.active===false||!['Supervisor','Receptionist'].includes(user?.role))return response('mechanical_forbidden',403);
+  if(user?.active===false||!['Supervisor','Receptionist','Mechanical Supervisor'].includes(user?.role))return response('mechanical_forbidden',403);
   if(!/^[0-9a-f]{64}$/.test(options.sessionHash||''))return response('invalid_session',401);
   try{
    if(body.action==='mechanical_delivery_probe'){
@@ -44,7 +44,7 @@ export async function mechanicalRoute(admin,user,body,options={}){
    return await mechanicalDeliveryCommandApi(body.command,{enabled:true,deliveryEnabled:true,actor:{...user,active:true},policy:await read('policy'),verifySession:async()=>{const current=await options.verifySession();return current&&current.active!==false?{...current,active:true}:null},readReceipt:id=>read('receipt',null,id),readContext:cmd=>read('context',cmd.entityId),commit:async plan=>{const {data,error}=await admin.rpc('zukait_mechanical_deliver',{...plan,p_session_hash:options.sessionHash});if(error)throw error;return data}});
   }catch(error){return mechanicalApiError(error)}
  }
- if(user?.active===false||!['Manager','Supervisor'].includes(user?.role))return response('mechanical_forbidden',403);
+ if(user?.active===false||!['Manager','Supervisor','Mechanical Supervisor'].includes(user?.role))return response('mechanical_forbidden',403);
  if(['mechanical_task_report','mechanical_task_report_verify'].includes(body?.action)){
   if(options.reportsEnabled!==true)return response('extension_disabled',403);
   if(!/^[0-9a-f]{64}$/.test(options.sessionHash||'')||typeof options.verifySession!=='function')return response('invalid_session',401);
@@ -59,7 +59,7 @@ export async function mechanicalRoute(admin,user,body,options={}){
  }
  if(['mechanical_signed_document','mechanical_signed_document_verify'].includes(body?.action)){
   if(options.documentsEnabled!==true||options.signaturesEnabled!==true)return response('extension_disabled',403);
-  if(user?.id!=='SUP003'||user.role!=='Supervisor')return response('mechanical_signature_forbidden',403);
+  if(user?.id!=='SUP003'||!['Supervisor','Mechanical Supervisor'].includes(user.role))return response('mechanical_signature_forbidden',403);
   if(!/^[0-9a-f]{64}$/.test(options.sessionHash||'')||typeof options.verifySession!=='function')return response('invalid_session',401);
   if(Object.keys(body).some(k=>!['action','checklistId','expectedRevision','expectedWorkshopRevision'].includes(k))||!uuid(body.checklistId)||![body.expectedRevision,body.expectedWorkshopRevision].every(n=>Number.isSafeInteger(n)&&n>=0))return response('invalid_document_request',400);
   const input={checklistId:body.checklistId,expectedRevision:body.expectedRevision,expectedWorkshopRevision:body.expectedWorkshopRevision,verify:body.action==='mechanical_signed_document_verify'};
@@ -70,7 +70,7 @@ export async function mechanicalRoute(admin,user,body,options={}){
  }
  if(['mechanical_signature_command','mechanical_signature_status'].includes(body?.action)){
   if(options.documentsEnabled!==true||options.signaturesEnabled!==true)return response('extension_disabled',403);
-  if(user?.id!=='SUP003'||user.role!=='Supervisor')return response('mechanical_signature_forbidden',403);
+  if(user?.id!=='SUP003'||!['Supervisor','Mechanical Supervisor'].includes(user.role))return response('mechanical_signature_forbidden',403);
   if(!/^[0-9a-f]{64}$/.test(options.sessionHash||'')||typeof options.verifySession!=='function')return response('invalid_session',401);
   const input=body.command||body,read=async(kind,request=null,sourceHash=null)=>{const {data,error}=await admin.rpc('zukait_mechanical_signature_read',{p_actor:user.id,p_session_hash:options.sessionHash,p_kind:kind,p_request:request,p_entity:input.checklistId??null,p_records:input.expectedRevision??null,p_workshop:input.expectedWorkshopRevision??null,p_source_hash:sourceHash});if(error)throw error;return data};
   try{
@@ -155,7 +155,7 @@ export async function mechanicalRoute(admin,user,body,options={}){
 // reinterpret financial fields or mint an unreviewed protected command.
 export async function mechanicalLegacyDeliveryCheck(admin,user,body,options={}){
  if(options.enabled!==true||options.qcEnabled!==true||options.deliveryEnabled!==true)return null;
- if(!['Supervisor','Receptionist'].includes(user?.role))return null;
+ if(!['Supervisor','Receptionist','Mechanical Supervisor'].includes(user?.role))return null;
  if(!['qc_delivery','receptionist_deliver'].includes(body?.action)||body.operation!=='DELIVER')return null;
  const result=await mechanicalRoute(admin,user,{action:'mechanical_delivery_probe',jobCard:body.jobCard},options);
  if(result.status!==200)return result;

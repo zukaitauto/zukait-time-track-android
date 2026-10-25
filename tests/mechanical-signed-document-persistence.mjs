@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';import {randomUUID} from 'node:crypto';import {mechanicalRoute} from '../supabase/functions/workshop-api/extensions/mechanical_route.js';
 export async function mechanicalSignedDocumentPersistence({db,records,snapshot}){
- const actor={id:'SUP003',role:'Supervisor',active:true},hash='c'.repeat(64),state=await snapshot(),revision=(await records()).revision;
+ const actor={id:'SUP003',role:'Mechanical Supervisor',active:true},hash='c'.repeat(64),state=await snapshot(),revision=(await records()).revision;
  const row=(await db.query('select * from zukait_mechanical.signatures where records_revision=$1 and workshop_revision=$2 limit 1',[revision,state.revision])).rows[0];assert.ok(row);
  const input={checklistId:row.checklist_id,expectedRevision:revision,expectedWorkshopRevision:state.revision};let calls=[],revokeGrant=false;
  const admin={rpc:async(name,p)=>{calls.push({name,kind:p.p_kind});if(revokeGrant&&p.p_kind==='verify_export'){revokeGrant=false;await db.exec("update zukait_mechanical.settings set signature_writers='{\"SUP003\":[\"OWN_SIGNATURE\"]}'")}

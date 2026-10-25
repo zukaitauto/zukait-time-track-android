@@ -4,7 +4,7 @@ export async function mountMechanicalDelivery(root,options={}){
  let disposed=false,busy=false,preview=null,pending=null,notice='',storageReady=true;
  const active=()=>!disposed&&identity(options.getSession?.())===owner,online=()=>options.online?.()??globalThis.navigator?.onLine!==false;
  const el=(tag,text)=>{const n=doc.createElement(tag);if(text!=null)n.textContent=text;return n};
- if(options.enabled!==true||!['Supervisor','Receptionist'].includes(initial?.role)||!initial.id||!initial.key||!options.checklistId||typeof options.api!=='function'){root.replaceChildren(el('p','Delivery review is unavailable.'));return {destroy(){root.replaceChildren()}}}
+ if(options.enabled!==true||!['Supervisor','Receptionist','Mechanical Supervisor'].includes(initial?.role)||!initial.id||!initial.key||!options.checklistId||typeof options.api!=='function'){root.replaceChildren(el('p','Delivery review is unavailable.'));return {destroy(){root.replaceChildren()}}}
  const key='zukait_mechanical_delivery_pending_v1:'+initial.id;
  let device;
  try{device=store.getItem('zukait_mechanical_device_v1');if(!device){device=uuid();store.setItem('zukait_mechanical_device_v1',device)}const saved=store.getItem(key);if(saved){pending=JSON.parse(saved);if(pending?.owner!==initial.id||pending.command?.operation!=='MECHANICAL_DELIVER'||typeof pending.command.requestId!=='string'||typeof pending.command.entityId!=='string'||!/^[0-9a-f]{64}$/.test(pending.command.payload?.expectedFingerprint||''))throw Error('invalid_pending')}}catch{storageReady=false;pending=null;notice='Saved delivery needs review. Keep this device data and ask the Manager.'}

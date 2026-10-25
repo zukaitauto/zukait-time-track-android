@@ -31,7 +31,7 @@ begin
  -- Keep settings read-only for service_role; no privilege to enable itself.
  select * into cfg from zukait_mechanical.settings where singleton;
  if not cfg.qc_enabled then raise exception 'mechanical_qc_disabled';end if;
- if p_actor is distinct from 'SUP003' or not exists(select 1 from public.staff_credentials where user_id=p_actor and role='Supervisor' and active) then raise exception 'mechanical_qc_approver_required';end if;
+ if p_actor is distinct from 'SUP003' or not exists(select 1 from public.staff_credentials where user_id=p_actor and role in ('Supervisor','Mechanical Supervisor') and active) then raise exception 'mechanical_qc_approver_required';end if;
  if cfg.department is null then raise exception 'mechanical_qc_policy_required';end if;
  if p_request is null or p_entity is null or p_fingerprint is null or p_fingerprint !~ '^[0-9a-f]{64}$' or p_device is null or length(p_device) not between 1 and 128 or jsonb_typeof(p_plan) is distinct from 'object' or octet_length(p_plan::text)>4096 then raise exception 'invalid_mechanical_qc_plan';end if;
  if (p_plan-array['result','reason','route','workFingerprint'])<>'{}'::jsonb or coalesce(p_plan->>'result','') not in ('PASS','FAIL') or jsonb_typeof(p_plan->'reason') is distinct from 'string' or length(p_plan->>'reason')>500 or (p_plan->>'result'='FAIL' and length(trim(p_plan->>'reason'))=0) or coalesce(p_plan->>'route','') not in ('MECHANICAL_ONLY','MIXED') or coalesce(p_plan->>'workFingerprint','') !~ '^[0-9a-f]{64}$' then raise exception 'invalid_mechanical_qc_plan';end if;

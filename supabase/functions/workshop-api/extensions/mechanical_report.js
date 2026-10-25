@@ -43,7 +43,7 @@ export async function mechanicalReportApi(input,server={}){
  if(!input||Object.keys(input).some(k=>!['checklistId','from','to','employeeId'].includes(k)))return fail('invalid_mechanical_report');
  const from=reportDay(input.from),to=reportDay(input.to);if(from===null||to===null||to<from||to-from>=31*DAY||typeof(input.employeeId??'')!=='string'||String(input.employeeId??'').length>128)return fail('invalid_mechanical_report');
  if(typeof server.readContext!=='function'||typeof server.verifyCurrent!=='function')return fail('mechanical_report_adapter_required');
- const actor=await server.verifySession?.();if(!actor||actor.id!==server.actor?.id||actor.active!==true||!['Manager','Supervisor'].includes(actor.role))return fail('mechanical_report_forbidden');
+ const actor=await server.verifySession?.();if(!actor||actor.id!==server.actor?.id||actor.active!==true||!['Manager','Supervisor','Mechanical Supervisor'].includes(actor.role))return fail('mechanical_report_forbidden');
  const ctx=await server.readContext(input.checklistId);if(ctx?.records?.checklists?.[0]?.id!==input.checklistId)return fail('mechanical_report_scope_review');
  const result=mechanicalTaskReport(ctx,input);if(!result.ok)return result;
  const current=await server.verifySession();if(!current||current.id!==actor.id||current.role!==actor.role||current.active!==true)return fail('session_changed');

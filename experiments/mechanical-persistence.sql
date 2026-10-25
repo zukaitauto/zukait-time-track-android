@@ -94,7 +94,7 @@ begin
  if not coalesce(cfg.enabled,false) then raise exception 'mechanical_disabled';end if;
  if p_session_hash is null or p_session_hash !~ '^[0-9a-f]{64}$' then raise exception 'mechanical_invalid_session';end if;
  select role into staff_role from public.staff_credentials where user_id=p_actor and active for share;
- if staff_role is null or staff_role not in ('Manager','Supervisor') then raise exception 'mechanical_forbidden';end if;
+ if staff_role is null or staff_role not in ('Manager','Supervisor','Mechanical Supervisor') then raise exception 'mechanical_forbidden';end if;
  perform 1 from public.staff_sessions where token_hash=p_session_hash and user_id=p_actor and revoked_at is null for share;
  if not found then raise exception 'mechanical_invalid_session';end if;
  if p_operation is null or jsonb_typeof(cfg.capabilities->p_actor) is distinct from 'array' or not coalesce((cfg.capabilities->p_actor) ? p_operation,false) then raise exception 'mechanical_forbidden';end if;
@@ -119,7 +119,7 @@ begin
  select * into cfg from zukait_mechanical.settings where singleton;
  if not coalesce(cfg.enabled,false) then raise exception 'mechanical_disabled';end if;
  select role into staff_role from public.staff_credentials where user_id=p_actor and active;
- if staff_role is null or staff_role not in ('Manager','Supervisor') or jsonb_typeof(cfg.capabilities->p_actor) is distinct from 'array' or not coalesce((cfg.capabilities->p_actor) ? p_operation,false) then raise exception 'mechanical_forbidden';end if;
+ if staff_role is null or staff_role not in ('Manager','Supervisor','Mechanical Supervisor') or jsonb_typeof(cfg.capabilities->p_actor) is distinct from 'array' or not coalesce((cfg.capabilities->p_actor) ? p_operation,false) then raise exception 'mechanical_forbidden';end if;
  if p_operation not in ('MC_CREATE','TASK_CREATE','TASK_ASSIGN','TASK_HANDOVER','TASK_REPEAT') then raise exception 'mechanical_operation_not_implemented';end if;
  if length(coalesce(p_plan->>'reason',''))>500 then raise exception 'invalid_reason';end if;
  if p_request is null or p_entity is null or p_fingerprint is null or p_fingerprint !~ '^[0-9a-f]{64}$' or p_device is null or length(p_device) not between 1 and 128 or jsonb_typeof(p_plan) is distinct from 'object' or octet_length(p_plan::text)>131072 then raise exception 'invalid_mechanical_plan';end if;

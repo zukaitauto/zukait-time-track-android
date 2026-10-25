@@ -51,7 +51,7 @@ export async function mountMechanicalTracking(root,options={}){
    if(r.requestId!==pending.command.requestId)throw Error('wrong_ack');store.removeItem(key);pending=null;notice='Change confirmed.';refresh=true;try{options.onChanged?.()}catch{}
   }catch(e){if(active()){const code=e.code||e.message;if(knownRejection(code)){pending.rejected=true;pending.error=code;try{save()}catch{}}notice=message(code)}}finally{busy=false;render();if(refresh)await load()}
  }
- if(options.enabled!==true||!initial?.key||!['Supervisor','Manager'].includes(initial.role)||typeof options.api!=='function'){root.replaceChildren(el('p','Checklist tracking is unavailable.'));return {destroy(){disposed=true}}}
+ if(options.enabled!==true||!initial?.key||!['Supervisor','Manager','Mechanical Supervisor'].includes(initial.role)||typeof options.api!=='function'){root.replaceChildren(el('p','Checklist tracking is unavailable.'));return {destroy(){disposed=true}}}
  try{const raw=store.getItem(key);if(raw){pending=JSON.parse(raw);if(!pending?.command||!['PRIORITY_SET','PROMISE_SET','HOLD_SET'].includes(pending.command.operation))throw Error('invalid_saved_tracking')}}catch{root.replaceChildren(el('p','Saved tracking data needs review. No change was sent.'));return {destroy(){disposed=true}}}
  render();if(!pending||(pending.role===initial.role&&pending.command.entityId===options.checklistId))await load();return {refresh:load,destroy(){disposed=true}};
 }

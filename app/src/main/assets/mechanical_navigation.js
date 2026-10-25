@@ -3,14 +3,14 @@ export function installMechanicalNavigation({host,document:doc,getUser,enabled,o
  const originals=new Map(),marker='data-mechanical-navigation';
  function enhance(){
   const modal=doc.getElementById('modal'),user=getUser();if(!modal)return;
-  if(enabled()!==true||!['Manager','Supervisor'].includes(user?.role)){modal.querySelectorAll('['+marker+']').forEach(e=>e.remove());return}
+  if(enabled()!==true||!['Manager','Supervisor','Mechanical Supervisor'].includes(user?.role)){modal.querySelectorAll('['+marker+']').forEach(e=>e.remove());return}
   const menu=user.role==='Manager'?modal.querySelector('.v135-manager-menu,.v88-role-account'):modal.querySelector('.v88-role-account,.v88-header-menu-grid');
   if(!menu||menu.querySelector('['+marker+']'))return;
   const button=doc.createElement('button');button.type='button';button.setAttribute(marker,user.role);button.className=user.role==='Manager'?'v135-action mechanical':'v88-mechanical';
   button.style.minHeight='44px';button.style.minWidth='0';button.style.overflowWrap='anywhere';
   const icon=doc.createElement('i'),label=doc.createElement('span'),title=doc.createElement('b');icon.textContent='🔧';title.textContent='Mechanical Department';label.append(title);button.append(icon,label);
   button.addEventListener('click',async()=>{
-   const current=getUser();if(enabled()!==true||!['Manager','Supervisor'].includes(current?.role)||current.id!==user.id||current.role!==user.role)return;
+   const current=getUser();if(enabled()!==true||!['Manager','Supervisor','Mechanical Supervisor'].includes(current?.role)||current.id!==user.id||current.role!==user.role)return;
    button.disabled=true;
    try{await open()}catch{let notice=menu.querySelector('[data-mechanical-menu-notice]');if(!notice){notice=doc.createElement('p');notice.setAttribute('data-mechanical-menu-notice','');notice.setAttribute('role','status');menu.append(notice)}notice.textContent='Unable to open Mechanical Department. Sync and try again.'}
    finally{button.disabled=false}

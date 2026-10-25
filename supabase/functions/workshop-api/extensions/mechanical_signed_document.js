@@ -5,7 +5,7 @@ export async function mechanicalSignedDocument(input,server={}){
  const fail=code=>({ok:false,code});
  if(server.enabled!==true||server.signaturesEnabled!==true)return fail('mechanical_signatures_disabled');
  if(!['verifySession','readDocument','readSignature'].every(k=>typeof server[k]==='function'))return fail('mechanical_signature_adapter_required');
- const actor=await server.verifySession();if(actor?.active!==true)return fail('invalid_session');if(actor.id!=='SUP003'||actor.role!=='Supervisor')return fail('mechanical_signature_forbidden');
+ const actor=await server.verifySession();if(actor?.active!==true)return fail('invalid_session');if(actor.id!=='SUP003'||!['Supervisor','Mechanical Supervisor'].includes(actor.role))return fail('mechanical_signature_forbidden');
  // The private SQL reader separately requires OWN_SIGNATURE + SIGNED_UNPRICED,
  // and binds credentials/session/checklist/current revisions under locks.
  const source=await server.readDocument(input);

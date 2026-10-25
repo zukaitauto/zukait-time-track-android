@@ -1,7 +1,7 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';import {mechanicalRoute} from '../supabase/functions/workshop-api/extensions/mechanical_route.js';
 export async function mechanicalDocumentPersistence({db,records,snapshot,native,pg,config,database}){
  await db.exec(fs.readFileSync('experiments/mechanical-documents.sql','utf8'));
- const actor={id:'SUP003',role:'Supervisor',active:true},hash='c'.repeat(64),entity=(await records()).checklists.find(c=>c.manualJobCard.number==='QA_JC_0').id;
+ const actor={id:'SUP003',role:'Mechanical Supervisor',active:true},hash='c'.repeat(64),entity=(await records()).checklists.find(c=>c.manualJobCard.number==='QA_JC_0').id;
  const before=JSON.stringify(await snapshot()),rev=(await records()).revision,history=(await db.query('select count(*) n from workshop_state_history')).rows[0].n;
  assert.equal((await db.query('select documents_enabled,document_readers from zukait_mechanical.settings')).rows[0].documents_enabled,false);
  const sql='select public.zukait_mechanical_document_read($1,$2,$3,$4::uuid,$5,$6) r',values=p=>[p.p_actor,p.p_session_hash,p.p_kind,p.p_entity,p.p_expected_records,p.p_expected_workshop];let calls=[],hook=null;
@@ -14,7 +14,7 @@ export async function mechanicalDocumentPersistence({db,records,snapshot,native,
  assert.equal((await route({...input,prices:true})).status,400);assert.equal((await route({...input,expectedWorkshopRevision:input.expectedWorkshopRevision-1})).body.code,'mechanical_document_changed');calls=[];assert.equal((await route(input,{documentsEnabled:false})).status,403);assert.equal(calls.length,0);
  await db.query('update staff_sessions set revoked_at=now() where token_hash=$1',[hash]);assert.equal((await route(input)).status,401);await db.query('update staff_sessions set revoked_at=null where token_hash=$1',[hash]);
  await db.exec("update staff_credentials set active=false where user_id='SUP003'");assert.equal((await route(input)).status,403);await db.exec("update staff_credentials set active=true where user_id='SUP003'");
- await db.exec("update staff_credentials set role='Employee' where user_id='SUP003'");assert.equal((await route(input)).status,403);await db.exec("update staff_credentials set role='Supervisor' where user_id='SUP003'");
+ await db.exec("update staff_credentials set role='Employee' where user_id='SUP003'");assert.equal((await route(input)).status,403);await db.exec("update staff_credentials set role='Mechanical Supervisor' where user_id='SUP003'");
  // Change between context projection and its final verify cannot escape as current.
  hook=async p=>{if(p.p_kind==='verify'){hook=null;await db.exec("update workshop_state set revision=revision+1 where id='main'")}};assert.equal((await route(input)).body.code,'mechanical_document_changed');input=await request();
  result=await route({...input,action:'mechanical_document_verify'});assert.equal(result.body.ok,true);assert.equal(result.body.checklistId,entity);

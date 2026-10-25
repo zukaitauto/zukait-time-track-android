@@ -4,7 +4,7 @@ import {mechanicalQcReadiness} from './mechanical_qc_boundary.js';
 const key=x=>String(x??'').trim().toUpperCase(),group=(rows,fn)=>{const m=new Map();for(const r of rows){const k=fn(r);if(!m.has(k))m.set(k,[]);m.get(k).push(r)}return m};
 export async function mechanicalQcOverview(context,at=Date.now()){
  const {actor,policy,records,snapshot,approvals}=context||{},data=snapshot?.data;
- if(!actor?.active||!['Manager','Supervisor'].includes(actor.role)||!data||!Array.isArray(approvals)||!['jobs','assign','sessions','users'].every(k=>Array.isArray(data[k]))||!['checklists','tasks','links'].every(k=>Array.isArray(records?.[k])))return {ok:false,code:'mechanical_qc_scope_review'};
+ if(!actor?.active||!['Manager','Supervisor','Mechanical Supervisor'].includes(actor.role)||!data||!Array.isArray(approvals)||!['jobs','assign','sessions','users'].every(k=>Array.isArray(data[k]))||!['checklists','tasks','links'].every(k=>Array.isArray(records?.[k])))return {ok:false,code:'mechanical_qc_scope_review'};
  if(data.jobs.length>1000||data.assign.length>10000||data.sessions.length>50000||records.checklists.length>1000||records.tasks.length>5000||records.links.length>10000)return {ok:false,code:'mechanical_overview_limit'};
  const assignments=group(data.assign,a=>key(a.job)),sessions=group(data.sessions,s=>key(s.job)),checklists=group(records.checklists,c=>key(c.manualJobCard?.number)),tasks=group(records.tasks,t=>t.checklistId),links=group(records.links,l=>l.taskId),users=new Map(data.users.map(u=>[u.id,u])),events=new Map(approvals.map(e=>[e.checklistId,e]));
  const rows=[],seen=new Set();
@@ -26,11 +26,11 @@ export async function mechanicalQcOverview(context,at=Date.now()){
   if(!row.reviewRequired)row.stage=!row.workComplete?'WORK_PENDING':row.paintingRequired&&!row.painting?'PAINTING_QC':row.finalRequired&&!row.final?'FINAL_QC':row.mechanicalRequired&&!row.mechanicalPassed?'MECHANICAL_QC':'DELIVERY';
   row.canPaint=actor.role==='Supervisor'&&actor.id==='SUP002'&&row.workComplete&&row.paintingRequired&&!row.painting;
   row.canFinal=actor.role==='Supervisor'&&actor.id==='SUP001'&&row.workComplete&&row.finalRequired&&row.painting&&!row.final;
-  row.canMechanical=actor.role==='Supervisor'&&actor.id==='SUP003'&&row.workComplete&&row.mechanicalRequired&&!row.mechanicalPassed&&!row.reviewRequired&&policy.mechanicalStaff?.[actor.id]?.includes('MECHANICAL_QC')===true;
+  row.canMechanical=['Supervisor','Mechanical Supervisor'].includes(actor.role)&&actor.id==='SUP003'&&row.workComplete&&row.mechanicalRequired&&!row.mechanicalPassed&&!row.reviewRequired&&policy.mechanicalStaff?.[actor.id]?.includes('MECHANICAL_QC')===true;
   row.qcVisible=actor.role==='Manager'?(row.reviewRequired||(row.workComplete&&!row.deliveryReady)):
    actor.id==='SUP003'?(row.mechanical&&(row.reviewRequired||(row.workComplete&&row.mechanicalRequired&&!row.mechanicalPassed))):
    actor.id==='SUP002'?row.canPaint:actor.id==='SUP001'?(row.workComplete&&row.finalRequired&&(!row.painting||!row.final)):false;
-  rows.push(row);
+  if(actor.role!=='Mechanical Supervisor'||row.mechanical)rows.push(row);
  }
  return {ok:true,actorId:actor.id,actorRole:actor.role,recordsRevision:records.revision,workshopRevision:snapshot.revision,capturedAt:at,rows,counts:{qc:rows.filter(r=>r.qcVisible).length,ready:rows.filter(r=>r.deliveryReady).length,review:rows.filter(r=>r.reviewRequired).length}};
 }

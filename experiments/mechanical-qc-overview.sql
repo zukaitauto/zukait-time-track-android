@@ -8,7 +8,7 @@ begin
  if not coalesce(cfg.enabled and cfg.qc_enabled,false) then raise exception 'mechanical_qc_disabled';end if;
  if p_session_hash is null or p_session_hash !~ '^[0-9a-f]{64}$' then raise exception 'mechanical_invalid_session';end if;
  select role into staff_role from public.staff_credentials where user_id=p_actor and active for share;
- if staff_role is null or staff_role not in ('Supervisor','Manager') then raise exception 'mechanical_forbidden';end if;
+ if staff_role is null or staff_role not in ('Supervisor','Manager','Mechanical Supervisor') then raise exception 'mechanical_forbidden';end if;
  perform 1 from public.staff_sessions where token_hash=p_session_hash and user_id=p_actor and revoked_at is null for share;
  if not found then raise exception 'mechanical_invalid_session';end if;
  select c.revision,w.revision,w.data into revision,ws_revision,ws from zukait_mechanical.control c cross join public.workshop_state w where c.singleton and w.id='main';

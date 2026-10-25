@@ -11,8 +11,9 @@ export async function mechanicalQcPersistenceTests({db,records,snapshot,native,p
  await db.exec(fs.readFileSync('experiments/mechanical-qc-readers.sql','utf8'));
  const scalar=async sql=>(await db.query(sql)).rows[0].n;
  assert.equal(await scalar('select count(*)::int n from zukait_mechanical.settings where not qc_enabled and mixed_mechanical_qc_required is null'),1);
- const sessionHash='c'.repeat(64),actor={id:'SUP003',role:'Supervisor',active:true};
- await db.exec("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt,must_change) values('SUP003','SYNTHETIC QC','Supervisor','QA_MECHANICAL','none','none',true)");
+ await db.exec(fs.readFileSync('experiments/mechanical-supervisor-role.sql','utf8'));
+ const sessionHash='c'.repeat(64),actor={id:'SUP003',role:'Mechanical Supervisor',active:true};
+ await db.exec("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt,must_change) values('SUP003','SYNTHETIC QC','Mechanical Supervisor','QA_MECHANICAL','none','none',true)");
  await db.query('insert into staff_sessions(token_hash,user_id) values($1,$2)',[sessionHash,actor.id]);
  await db.exec("update zukait_mechanical.settings set capabilities=capabilities||'{\"SUP003\":[\"MECHANICAL_QC\"]}'::jsonb");
  const policy={flags:{mechanical:true},mechanicalDepartment:'QA_MECHANICAL',mechanicalStaff:{SUP003:['MECHANICAL_QC']},qc};
@@ -66,7 +67,7 @@ export async function mechanicalQcPersistenceTests({db,records,snapshot,native,p
  async function latest(){const r=(await db.query('select * from zukait_mechanical.qc_events where checklist_id=$1 order by records_revision desc limit 1',[checklist])).rows[0];return r&&{by:r.actor_id,result:r.result,workFingerprint:r.work_fingerprint}}
  assert.equal((await mechanicalQcReadiness(await records(),await snapshot(),'QA_JC_11',policy,await latest())).deliveryReady,true);
  assert.equal((await mechanicalQcCommandApi({...first,payload:{...first.payload,reason:'Different'}},server)).body.code,'mechanical_request_reused');
- await db.exec("update staff_credentials set role='Manager' where user_id='SUP003'");await assert.rejects(commit(savedPlan),/mechanical_qc_approver_required/);await db.exec("update staff_credentials set role='Supervisor' where user_id='SUP003'");
+ await db.exec("update staff_credentials set role='Manager' where user_id='SUP003'");await assert.rejects(commit(savedPlan),/mechanical_qc_approver_required/);await db.exec("update staff_credentials set role='Mechanical Supervisor' where user_id='SUP003'");
  const freshPlan={...savedPlan,p_request:randomUUID(),p_expected_records:(await records()).revision};
  await assert.rejects(commit({...freshPlan,p_expected_records:freshPlan.p_expected_records-1}),/mechanical_revision_conflict/);
  await assert.rejects(commit({...freshPlan,p_plan:{...freshPlan.p_plan,route:'MIXED'}}),/mechanical_mixed_qc_policy_required/);

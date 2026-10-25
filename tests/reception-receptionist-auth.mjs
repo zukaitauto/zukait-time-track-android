@@ -50,3 +50,6 @@ assert.equal(r.status,200,"staff-auth must allow an exact modern configured key"
 r = await serve(new Request('https://qa.invalid',{method:'POST',headers:{apikey:'sb_publishable_unrelated'},body:JSON.stringify({action:'login',user_id:'QA-MGR',password:'qa-manager-password'})}));
 assert.equal(r.status,401,"staff-auth configured key map must reject arbitrary prefixed keys");
 console.log('Staff-auth publishable API key: missing/malformed allowlist denied; exact configured JSON key accepted; arbitrary prefix denied.');
+
+r=await call({...create,user_id:'SUP003',display_name:'Jibin',role:'Mechanical Supervisor',department:'Painter'});assert.equal(r.status,200,JSON.stringify(r));assert.equal(r.body.user.role,'Mechanical Supervisor');assert.equal(r.body.user.department,'Mechanic');assert.equal(tables.staff_credentials.find(x=>x.user_id==='SUP003').must_change,true);r=await call({action:'login',user_id:'SUP003',password:create.password});assert.equal(r.body.user.role,'Mechanical Supervisor');assert.equal(r.body.must_change,true);
+console.log('PASS new Mechanical Supervisor Manager creation: canonical Mechanic department, distinct persisted/login role and mandatory first password change. Synthetic credentials only.');

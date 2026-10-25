@@ -9,7 +9,7 @@ export async function mountMechanicalWorkspace(root,options={}){
  let disposed=false,busy=false,model=null,qc=null,selected=options.checklistId||null,after=0,pending=null,notice='',readGeneration=0;
  const node=(tag,text,attrs={})=>{const e=doc.createElement(tag);if(text!==null)e.textContent=text;for(const [k,v] of Object.entries(attrs)){if(k==='onClick')e.addEventListener('click',v);else e.setAttribute(k,String(v));}return e};
  const key='zukait_mechanical_pending_v1:'+String(initial?.id||'');
- if(options.enabled!==true||!['Manager','Supervisor'].includes(initial?.role)||!initial?.id||!initial?.key||typeof options.api!=='function'){
+ if(options.enabled!==true||!['Manager','Supervisor','Mechanical Supervisor'].includes(initial?.role)||!initial?.id||!initial?.key||typeof options.api!=='function'){
   root.replaceChildren(node('p','Mechanical workspace is unavailable.'));return {destroy(){root.replaceChildren()}};
  }
  let device=options.deviceId;
@@ -53,15 +53,15 @@ export async function mountMechanicalWorkspace(root,options={}){
   const d=model.detail;if(!d){detail.append(node('p','Select a checklist to view its tasks.'));return}
   detail.append(node('h3',d.checklist.number+' · JC '+d.checklist.jobCard),node('p','Manual date: '+d.checklist.manualDate));
   if(model.reportsAvailable&&typeof options.openReport==='function'&&!pending)detail.append(button('Task labour report',async()=>{if(!online()){notice='Reconnect before reporting.';render();return}busy=true;render();try{await options.openReport(d.checklist.id)}catch{notice='Unable to open report. Refresh and retry.'}finally{busy=false;if(active())render()}}));
-  if(model.signaturesAvailable&&initial.id==='SUP003'&&initial.role==='Supervisor'&&typeof options.openSignature==='function'&&!pending)detail.append(button('Optional supervisor signature',async()=>{if(!online()){notice='Reconnect before signing.';render();return}busy=true;render();try{await options.openSignature({checklistId:d.checklist.id,expectedRevision:model.recordsRevision,expectedWorkshopRevision:model.workshopRevision})}catch{notice='Unable to open signature capture. Refresh and retry.'}finally{busy=false;if(active())render()}}));
+  if(model.signaturesAvailable&&initial.id==='SUP003'&&['Supervisor','Mechanical Supervisor'].includes(initial.role)&&typeof options.openSignature==='function'&&!pending)detail.append(button('Optional supervisor signature',async()=>{if(!online()){notice='Reconnect before signing.';render();return}busy=true;render();try{await options.openSignature({checklistId:d.checklist.id,expectedRevision:model.recordsRevision,expectedWorkshopRevision:model.workshopRevision})}catch{notice='Unable to open signature capture. Refresh and retry.'}finally{busy=false;if(active())render()}}));
   if(model.documentsAvailable&&typeof options.openDocument==='function'&&!pending)detail.append(button('Unpriced checklist PDF',async()=>{if(!online()){notice='Reconnect before exporting.';render();return}busy=true;render();try{await options.openDocument({checklistId:d.checklist.id,expectedRevision:model.recordsRevision,expectedWorkshopRevision:model.workshopRevision,...(model.signedDocumentsAvailable?{signedAvailable:true}:{})})}catch{notice='Unable to open checklist export. Refresh and retry.'}finally{busy=false;if(active())render()}}));
   if(typeof options.openTracking==='function')detail.append(button('Priority / promise / parts status',()=>options.openTracking(d.checklist.id)));
   if(model.qcAvailable){
    const box=node('article',null,{'data-mechanical-qc':'true'});box.append(node('h3','Mechanical quality check'),button('Check QC status',()=>loadQc()));
    if(qc?.checklistId===d.checklist.id){
     box.append(node('p',qc.delivered?'Delivered':!qc.workComplete?'Work is not complete.':!qc.mechanicalRequired?'Mechanical QC is not required for this job.':qc.mechanicalPassed?'Mechanical QC passed.':'Mechanical QC is pending.'));
-    if(qc.deliveryReady&&model.deliveryAvailable&&initial.role==='Supervisor'&&caps.has('MECHANICAL_DELIVER')&&typeof options.openDelivery==='function')box.append(button('Review vehicle delivery',async()=>{try{await options.openDelivery(d.checklist.jobCard)}catch(e){notice=e.message;render()}}));
-    if(qc.workComplete&&!qc.delivered&&initial.id==='SUP003'&&initial.role==='Supervisor'&&caps.has('MECHANICAL_QC')&&qc.mechanicalRequired){
+    if(qc.deliveryReady&&model.deliveryAvailable&&['Supervisor','Mechanical Supervisor'].includes(initial.role)&&caps.has('MECHANICAL_DELIVER')&&typeof options.openDelivery==='function')box.append(button('Review vehicle delivery',async()=>{try{await options.openDelivery(d.checklist.jobCard)}catch(e){notice=e.message;render()}}));
+    if(qc.workComplete&&!qc.delivered&&initial.id==='SUP003'&&['Supervisor','Mechanical Supervisor'].includes(initial.role)&&caps.has('MECHANICAL_QC')&&qc.mechanicalRequired){
      const f=form('Record QC result','MECHANICAL_QC',()=>d.checklist.id,v=>({result:v.get('result'),reason:String(v.get('reason')).trim(),expectedFingerprint:qc.workToken}));choice(f,'QC result','result',[{id:'PASS',name:'Pass'},{id:'FAIL',name:'Fail'}]);input(f,'QC notes (required for Fail)','reason','text','',false).maxLength=500;submit(f,'Confirm QC result');box.append(f);
     }
    }detail.append(box);

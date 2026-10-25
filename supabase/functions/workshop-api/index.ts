@@ -1094,6 +1094,10 @@ Deno.serve(async (req: Request) => {
     }
     if(body.newJobNumber !== undefined && action !== "manager_job_full_edit") return reply({ok:false,code:"job_edit_invalid_fields"},400);
 
+    // Mechanical Supervisors cannot use legacy full-state/bodyshop/financial APIs.
+    if (user.role === 'Mechanical Supervisor' && !action.startsWith('mechanical_')) {
+      return reply({ok:false,code:'mechanical_role_only'},403);
+    }
     if (action.startsWith("mechanical_")) {
       const enabled = Deno.env.get("ZUKAIT_MECHANICAL_ENABLED") === "true";
       const result = await mechanicalRoute(admin, user, body, {

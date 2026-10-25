@@ -25,7 +25,7 @@ export async function mechanicalQcCommandApi(input,server={}){
  if(!actor||actor.id!==server.actor?.id)return fail('session_changed',401);
  const command={...clone(input),actorId:actor.id},context={actor,sessionCurrent:true,online:true};
  const access=extensionCommandPreflight(command,context,server.policy);if(!access.ok)return fail(access.code,403);
- if(actor.id!=='SUP003'||actor.role!=='Supervisor')return fail('mechanical_qc_approver_required',403);
+ if(actor.id!=='SUP003'||!['Supervisor','Mechanical Supervisor'].includes(actor.role))return fail('mechanical_qc_approver_required',403);
  if(!Number.isSafeInteger(input.expectedWorkshopRevision)||input.expectedWorkshopRevision<0)return fail('invalid_revision',400);
  if(!/^[0-9a-f]{64}$/.test(input.payload.expectedFingerprint||'')||!['PASS','FAIL'].includes(input.payload.result)||typeof input.payload.reason!=='string'||input.payload.reason.length>500||(input.payload.result==='FAIL'&&!input.payload.reason.trim()))return fail('invalid_mechanical_qc',400);
  const fingerprint=await digest(command),prior=await server.readReceipt(command.requestId);

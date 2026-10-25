@@ -1,3 +1,5 @@
+> Later owner decision: Jibin must have the distinct **Mechanical Supervisor** role, not generic Supervisor. The development implementation and isolation tests are in MECHANICAL_SUPERVISOR_ROLE.md; this supersedes the profile/role wording below. No live account or rollout occurred.
+
 # Mechanical completion checkpoint — 25 October 2026
 
 This supersedes earlier requirements for priced checklist PDFs. Owner: “CHECK LIST NO NEED PRICE, ONLY WORK DISCRIPTION” and “MECHANICAL CHECKLIST ONLY MECHANICAL WORK”. Checklist output therefore contains Mechanical work descriptions, once per task, with MC/manual JC/date identification and optional own-supervisor signature. No price, mechanic, allocated time or status columns print. Employee-hour records/reports remain separate and unchanged. The existing server allocation validation and signature source/revision verification remain intact; no labour history is moved. No priced schema/API/grant is introduced.

@@ -6,7 +6,7 @@ begin
  if not coalesce(cfg.enabled and cfg.qc_enabled and cfg.delivery_enabled,false) then raise exception 'mechanical_delivery_disabled';end if;
  if p_session_hash is null or p_session_hash !~ '^[0-9a-f]{64}$' then raise exception 'mechanical_invalid_session';end if;
  select role into staff_role from public.staff_credentials where user_id=p_actor and active for share;
- if staff_role is null or staff_role not in ('Supervisor','Receptionist') or jsonb_typeof(cfg.capabilities->p_actor) is distinct from 'array' or not coalesce((cfg.capabilities->p_actor)?'MECHANICAL_DELIVER',false) then raise exception 'mechanical_forbidden';end if;
+ if staff_role is null or staff_role not in ('Supervisor','Receptionist','Mechanical Supervisor') or jsonb_typeof(cfg.capabilities->p_actor) is distinct from 'array' or not coalesce((cfg.capabilities->p_actor)?'MECHANICAL_DELIVER',false) then raise exception 'mechanical_forbidden';end if;
  perform 1 from public.staff_sessions where token_hash=p_session_hash and user_id=p_actor and revoked_at is null for share;
  if not found then raise exception 'mechanical_invalid_session';end if;
  return jsonb_build_object('flags',jsonb_build_object('mechanical',true),'mechanicalDeliveryEnabled',true,'mechanicalDepartment',cfg.department,'mechanicalStaff',jsonb_build_object(p_actor,cfg.capabilities->p_actor),'qc',jsonb_build_object('mechanicalApproverId','SUP003','mechanicalOnlyMode','SOLE_MECHANICAL_APPROVER','mixedPaintingApproverId','SUP002','mixedFinalApproverId','SUP001','mixedMechanicalRequired',cfg.mixed_mechanical_qc_required));
@@ -21,7 +21,7 @@ declare staff_role text; checklist uuid; linked boolean;
 begin
  if p_session_hash is null or p_session_hash !~ '^[0-9a-f]{64}$' then raise exception 'mechanical_invalid_session';end if;
  select role into staff_role from public.staff_credentials where user_id=p_actor and active for share;
- if staff_role is null or staff_role not in ('Supervisor','Receptionist') then raise exception 'mechanical_forbidden';end if;
+ if staff_role is null or staff_role not in ('Supervisor','Receptionist','Mechanical Supervisor') then raise exception 'mechanical_forbidden';end if;
  perform 1 from public.staff_sessions where token_hash=p_session_hash and user_id=p_actor and revoked_at is null for share;
  if not found then raise exception 'mechanical_invalid_session';end if;
  if p_job_card is null or length(trim(p_job_card)) not between 1 and 80 then raise exception 'invalid_mechanical_command';end if;

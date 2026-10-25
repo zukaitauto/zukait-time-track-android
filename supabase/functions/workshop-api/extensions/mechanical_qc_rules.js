@@ -42,7 +42,7 @@ export async function mechanicalQcProposal(records,snapshot,command,context,poli
  if(command.operation!=='MECHANICAL_QC')return fail('mechanical_qc_operation_required');
  if(Object.keys(command).some(k=>!['operation','requestId','entityId','actorId','deviceId','expectedRevision','expectedWorkshopRevision','payload'].includes(k)))return fail('invalid_command');
  if(!records||!Array.isArray(records.receipts))return fail('mechanical_qc_records_required');
- if(context.actor.id!=='SUP003'||context.actor.role!=='Supervisor')return fail('mechanical_qc_approver_required');
+ if(context.actor.id!=='SUP003'||!['Supervisor','Mechanical Supervisor'].includes(context.actor.role))return fail('mechanical_qc_approver_required');
  const fingerprint=await mechanicalCommandFingerprint(command),prior=(records.receipts||[]).find(r=>r.requestId===command.requestId);
  if(prior)return prior.actorId===context.actor.id&&prior.fingerprint===fingerprint?{ok:true,duplicate:true,event:clone(prior.event),requiresReadinessRefresh:true}:fail('mechanical_request_reused');
  if(!Number.isSafeInteger(records.revision)||records.revision<0||records.revision>=Number.MAX_SAFE_INTEGER||!Number.isSafeInteger(snapshot?.revision)||snapshot.revision<0||!Number.isSafeInteger(command.expectedWorkshopRevision)||command.expectedWorkshopRevision<0)return fail('invalid_revision');

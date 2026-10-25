@@ -21,7 +21,7 @@ export function extensionCommandPreflight(command,context={},policy={}){
  // Actor ownership comes only from the verified context; reject spoofed envelopes.
  if(command.actorId!==actor.id)return denied('actor_mismatch');
  if(domain==='mechanical'){
-  if(!(command.operation==='MECHANICAL_DELIVER'?['Supervisor','Receptionist']:['Manager','Supervisor']).includes(actor.role))return denied('mechanical_forbidden');
+  if(!(command.operation==='MECHANICAL_DELIVER'?['Supervisor','Receptionist','Mechanical Supervisor']:['Manager','Supervisor','Mechanical Supervisor']).includes(actor.role))return denied('mechanical_forbidden');
   const capabilities=policy.mechanicalStaff?.[actor.id];
   if(!Array.isArray(capabilities)||!capabilities.includes(command.operation))return denied('mechanical_capability_required');
  }else{

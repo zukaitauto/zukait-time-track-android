@@ -267,8 +267,8 @@ Deno.serve(async (req: Request) => {
       const name = String(body.display_name || "").trim();
       const role = String(body.role || "");
       if(role==='Accountant')return reply({ok:false,code:'use_accountant_accounts'},400);
-      const department = role === "Receptionist" ? "Reception" : role === "Accountant" ? "Accounts" : String(body.department || "").trim();
-      if (!/^[A-Z0-9_-]+$/.test(id) || !name || !["Employee","Supervisor","Purchaser","Receptionist","Accountant"].includes(role) || !department) {
+      const department = role === "Mechanical Supervisor" ? "Mechanic" : role === "Receptionist" ? "Reception" : role === "Accountant" ? "Accounts" : String(body.department || "").trim();
+      if (!/^[A-Z0-9_-]+$/.test(id) || !name || !["Employee","Supervisor","Mechanical Supervisor","Purchaser","Receptionist","Accountant"].includes(role) || !department) {
         return reply({ ok: false, code: "invalid_user" }, 400);
       }
       const fields = await passwordFields(String(body.password || ""));

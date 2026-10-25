@@ -6,7 +6,7 @@ export async function mechanicalDocument(input,server={}){
  if(!input||Object.keys(input).some(k=>!['checklistId','expectedRevision','expectedWorkshopRevision'].includes(k))||typeof input.checklistId!=='string'||!valid(input.expectedRevision)||!valid(input.expectedWorkshopRevision))return fail('invalid_document_request');
  if(typeof server.verifySession!=='function'||typeof server.readContext!=='function')return fail('mechanical_document_adapter_required');
  const actor=await server.verifySession();
- if(actor?.active!==true||actor.id!==server.actor?.id||!['Manager','Supervisor'].includes(actor.role)||!Array.isArray(server.policy.documentReaders?.[actor.id])||!server.policy.documentReaders[actor.id].includes('UNPRICED'))return fail('mechanical_document_forbidden');
+ if(actor?.active!==true||actor.id!==server.actor?.id||!['Manager','Supervisor','Mechanical Supervisor'].includes(actor.role)||!Array.isArray(server.policy.documentReaders?.[actor.id])||!server.policy.documentReaders[actor.id].includes('UNPRICED'))return fail('mechanical_document_forbidden');
  // Trusted reader must bind its own SQL session and return the two revisions from
  // one consistent snapshot. Never supply context from the client request.
  const {records,snapshot}=await server.readContext(input.checklistId);

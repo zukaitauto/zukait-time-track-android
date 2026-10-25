@@ -18,7 +18,7 @@ begin
  if not coalesce(cfg.enabled and cfg.documents_enabled and cfg.signatures_enabled,false) then raise exception 'mechanical_signatures_disabled';end if;
  if p_actor is distinct from 'SUP003' then raise exception 'mechanical_signature_forbidden';end if;
  select role into staff_role from public.staff_credentials where user_id=p_actor and active for share;
- if staff_role is distinct from 'Supervisor' then raise exception 'mechanical_signature_forbidden';end if;
+ if staff_role is null or staff_role not in ('Supervisor','Mechanical Supervisor') then raise exception 'mechanical_signature_forbidden';end if;
  if p_session_hash is null or p_session_hash !~ '^[0-9a-f]{64}$' then raise exception 'mechanical_invalid_session';end if;
  perform 1 from public.staff_sessions where user_id=p_actor and token_hash=p_session_hash and revoked_at is null for share;
  if not found then raise exception 'mechanical_invalid_session';end if;

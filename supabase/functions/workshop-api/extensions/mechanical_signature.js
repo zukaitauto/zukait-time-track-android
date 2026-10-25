@@ -10,7 +10,7 @@ export async function mechanicalSignatureCommand(input,server={}){
  if(server.enabled!==true||server.signaturesEnabled!==true)return fail('mechanical_signatures_disabled');
  if(!input||Object.keys(input).some(k=>!['requestId','checklistId','deviceId','expectedRevision','expectedWorkshopRevision','consent','strokes','expectedSourceHash'].includes(k))||!uuid(input.requestId)||!uuid(input.checklistId)||typeof input.deviceId!=='string'||!input.deviceId.trim()||input.deviceId.length>128||![input.expectedRevision,input.expectedWorkshopRevision].every(n=>Number.isSafeInteger(n)&&n>=0)||!/^[0-9a-f]{64}$/.test(input.expectedSourceHash||'')||input.consent!==true||!validSignatureInk(input.strokes))return fail('invalid_mechanical_signature');
  if(!['verifySession','readReceipt','readDocument','commit'].every(k=>typeof server[k]==='function'))return fail('mechanical_signature_adapter_required');
- const actor=await server.verifySession();if(actor?.id!=='SUP003'||actor.role!=='Supervisor'||actor.active!==true)return fail('mechanical_signature_forbidden');
+ const actor=await server.verifySession();if(actor?.id!=='SUP003'||!['Supervisor','Mechanical Supervisor'].includes(actor.role)||actor.active!==true)return fail('mechanical_signature_forbidden');
  // Policy must come from a separately session-bound trusted reader. Existing
  // unpriced access does not confer signature capture or reading rights.
  if(server.policy?.signaturesEnabled!==true||!Array.isArray(server.policy.signatureWriters?.[actor.id])||!server.policy.signatureWriters[actor.id].includes('OWN_SIGNATURE'))return fail('mechanical_signature_forbidden');
