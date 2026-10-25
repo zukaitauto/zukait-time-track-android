@@ -12,5 +12,9 @@
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
   "releaseHeldByOwner": false,
-  "verificationSummary": "Candidate only. Automated feature checks passed at 2280c2a9a37251b1a83d68cd717956bdd358eb7f. Physical acceptance and normal release evidence remain pending. Do not reuse V373 live-test waiver."
+  "verificationSummary": "Candidate only. Automated feature checks passed at 2280c2a9a37251b1a83d68cd717956bdd358eb7f. Physical acceptance and normal release evidence remain pending. Do not reuse V373 live-test waiver.",
+  "approvedAt": null,
+  "publishNonce": null,
+  "ownerPublicationRequested": true,
+  "publicationAuthorization": "Owner explicitly instructed PUBLISH on 2026-10-25. Publication remains subject to required release checks."
 }
