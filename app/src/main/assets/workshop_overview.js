@@ -253,7 +253,7 @@ function quickViewData(){
  if(!stale&&typeof window.v247CurrentIdealRows==='function')result.idle=window.v247CurrentIdealRows();
  return result;
 }
-function quickCard(label,n,action,glyph,color,note){return '<button type="button" class="wo-quick-card" data-workshop-action="'+esc(action)+'" style="--wo-accent:'+color+'" aria-label="'+esc(label+' · '+(n??'Waiting for sync'))+'"><span class="wo-quick-icon" aria-hidden="true">'+glyph+'</span><strong class="wo-quick-number">'+esc(n??'—')+'</strong><span class="wo-quick-label">'+esc(label)+'</span><small>'+esc(n===null?'Waiting for live status':note)+'</small></button>'}
+function quickCard(label,n,action,glyph,color,note){return '<button type="button" class="wo-quick-card" data-workshop-action="'+esc(action)+'" style="--wo-accent:'+color+'" aria-label="'+esc(label+' · '+(n??'Waiting for sync'))+'"><span class="wo-quick-icon" aria-hidden="true">'+glyph+'</span><strong class="wo-quick-number">'+esc(n??'—')+'</strong><span class="wo-quick-label">'+esc(label)+'</span><small>'+esc(n===null?(action==='quick-qc'&&window.ZUKAIT_MECHANICAL_ENABLED===true?'Refresh QC status':'Waiting for live status'):note)+'</small></button>'}
 function summaryHtml(){
  const s=summary(),q=quickViewData(),date=new Date().toLocaleDateString('en-GB',{timeZone:'Asia/Muscat',weekday:'long',day:'numeric',month:'short'}),qc=window.zukaitQCPendingJobs?.();
  const cards=[
@@ -263,7 +263,7 @@ function summaryHtml(){
  ['Unassigned Job Cards',s.unassigned,'queue','▤','#aa6a11','Oldest waiting jobs first'],
  ['Parts Awaiting Delivery',s.waiting,'waiting','▰','#1c71ac','Parts lists awaiting arrival'],
  ['Parts Pending',s.partsPending,'parts-pending','⚙','#b55427','All outstanding parts'],
- ['QC Pending',Array.isArray(qc)?qc.length:null,'quick-qc','✓','#8c7710','Painting / final inspection'],
+ ['QC Pending',Array.isArray(qc)?qc.length:null,'quick-qc','✓','#8c7710',window.ZUKAIT_MECHANICAL_ENABLED===true?'Mechanical / painting / final inspection':'Painting / final inspection'],
  ['Consumables Assigned Today',q.consumables.length,'quick-consumables','▥','#167c64','Issues recorded today'],
  ['Paint Purchase Orders Today',q.paint.length,'quick-paint','◩','#7754b6','Purchase orders created today'],
  ['Today’s Running Jobs',q.running?.length??null,'quick-running','▶','#245ca5','Active jobs, including earlier days']

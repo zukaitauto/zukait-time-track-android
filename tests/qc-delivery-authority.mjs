@@ -43,9 +43,9 @@ for(const person of [vinayan,shine,manager]){
 
 assert.match(ui,/function qcQueueMatches\(j\)/,'QC queue must have an explicit stage filter');
 assert.match(ui,/function readyMatches\(j\)/,'Ready to Deliver must be a separate filter');
-assert.match(ui,/window\.zukaitOpenReadyToDeliver=\(\)=>openPage\('ready'\)/,'Ready to Deliver must have its own launcher');
-assert.match(ui,/<b>QC<\/b><small>Painting \/ Final quality check<\/small>/,'QC launcher must be separate from delivery');
-assert.match(ui,/<b>Ready to Deliver<\/b><small>Both QC stages passed<\/small>/,'Ready to Deliver launcher must be separate from QC');
+assert.match(ui,/window\.zukaitOpenReadyToDeliver=\(\)=>openProjectedPage\('ready'\)/,'Ready to Deliver must have its own launcher');
+assert.match(ui,/'Painting \/ Final quality check'/,'QC launcher must be separate from delivery');
+assert.match(ui,/'Both QC stages passed'/,'Ready to Deliver launcher must be separate from QC');
 assert.match(ui,/function queueSince\(j\)/,'QC queue must sort by waiting age');
 assert.match(ui,/function readySince\(j\)/,'Ready to Deliver must sort by ready age');
 assert.match(ui,/qc-fail-badge/,'QC failures must show a visible FAIL badge');
