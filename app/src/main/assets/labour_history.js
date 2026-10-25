@@ -31,7 +31,7 @@ function periods(st,no,emp,now=Date.now(),context={}){
    if(cursor!==null&&p.start>=cursor)push(cursor,p.start,'Paused');
    if(p.end>p.start&&p.end<=end)cursor=Math.max(cursor??start,p.end);else if(!p.end)cursor=null;else{invalid++;cursor=null;}
   }
-  if(cursor!==null)push(cursor,end,ended?(s.paused?'Paused':s.finished?'Finished':'Ended'):'Running');
+  if(cursor!==null)push(cursor,end,ended?(s.finished?'Finished':s.paused?'Paused':'Ended'):'Running');
  }
  rows.sort((a,b)=>a.start-b.start);
  return {rows,totalMs:rows.reduce((n,r)=>n+r.end-r.start,0),invalid};
