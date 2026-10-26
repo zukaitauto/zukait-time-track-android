@@ -1,0 +1,105 @@
+name: Inactive Mechanical and Accountant contracts
+on:
+  push:
+    branches: [architecture-v2, feature/mechanical-accounting-foundation]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Inactive extension contracts and Mechanical task transitions
+        run: |
+          node tests/mechanical-accounting-contracts.mjs
+          node tests/mechanical-schema-bundle.mjs
+          node tests/finished-session-status.mjs
+          node tests/reception-receptionist-auth.mjs
+          node tests/accountant-payables.mjs
+          node tests/accountant-supplier-contracts.mjs
+          node tests/accountant-supplier-reads.mjs
+          node tests/accountant-bill-contracts.mjs
+          node tests/accountant-bill-intent.mjs
+          node --experimental-vm-modules tests/accountant-bill-route.mjs
+          node tests/mechanical-task-transitions.mjs
+          node tests/mechanical-api.mjs
+          node --experimental-vm-modules tests/mechanical-route.mjs
+          node tests/mechanical-recovery.mjs
+          node tests/mechanical-qc.mjs
+          node tests/mechanical-tracking.mjs
+          node tests/mechanical-repeat.mjs
+          node tests/mechanical-qc-overview.mjs
+          node tests/qc-delivery-authority.mjs
+          node tests/time-management.mjs
+          node tests/manager-time-management.mjs
+  persistence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: mechanical-test-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGPASSWORD: mechanical-test-only
+      ZUKAIT_MECHANICAL_NATIVE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --include=dev
+      - name: Native transactional persistence and overlapping writers
+        run: |
+          ZUKAIT_MECHANICAL_INSTALL_MODE=fresh node tests/mechanical-persistence.mjs
+          node tests/mechanical-persistence.mjs
+  workspace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --include=dev
+      - run: node tests/mechanical-role-privacy.mjs
+      - run: node tests/mechanical-workspace.mjs
+      - run: node tests/mechanical-delivery-ui.mjs
+      - run: node tests/mechanical-tracking-ui.mjs
+      - run: node tests/mechanical-repeat-ui.mjs
+      - run: node tests/mechanical-document.mjs
+      - run: node tests/mechanical-document-export-ui.mjs
+      - run: node tests/mechanical-signature-ui.mjs
+      - run: node tests/mechanical-signed-document.mjs
+      - run: node tests/mechanical-qc-projection.mjs
+      - run: node tests/mechanical-navigation.mjs
+      - run: node tests/mechanical-report.mjs
+      - run: node tests/mechanical-report-ui.mjs
+      - run: npx playwright install chromium
+      - run: node tests/accountant-bill-intent-browser.mjs
+      - run: node tests/accountant-bill-workspace-browser.mjs
+      - run: node tests/mechanical-supervisor-role-browser.mjs
+      - run: node tests/mechanical-workspace-responsive.mjs
+      - run: node tests/mechanical-tracking-responsive.mjs
+      - run: node tests/mechanical-repeat-responsive.mjs
+      - run: node tests/mechanical-document-browser.mjs
+      - run: node tests/mechanical-document-export-browser.mjs
+      - run: node tests/mechanical-signature-browser.mjs
+      - run: node tests/mechanical-signed-document-browser.mjs
+      - run: node tests/mechanical-report-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mechanical-workspace-preview
+          path: test-results/mechanical

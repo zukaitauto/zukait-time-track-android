@@ -1,0 +1,14 @@
+# Generated Mechanical migration preparation
+
+Both files were created using official Supabase CLI2.81.3 after verifying its release archive checksum. Neither has been applied to the live garage.
+
+1. 20261025073416_mechanical_supervisor_role.sql adds Mechanical Supervisor to the existing six-role constraint in one atomic ALTER TABLE. No account creation/conversion.
+2. 20261025073818_mechanical_department_inactive_foundation.sql installs the Mechanical schema/private invoker RPCs and legacy authority guards, compiled in dependency order from13 reviewed Mechanical SQL sources. No Accountant/supplier/bill schema is included. All settings start disabled, department unset, explicit capabilities/read/signature mappings empty. It installs no business fixtures and backfills no workshop/history JSON.
+
+The real generated migration is now installed by the persistence runner; tests no longer reconstruct Mechanical DDL incrementally from experiment files. Fresh-install and existing-data-upgrade modes exercise the same migration, followed by all MC/task/handover/repeat/QC/delivery/document/signature/report and garage financial compatibility assertions. Upgrade compares pre/post workshop state/revision and existing account identities/roles. All12 Mechanical tables require RLS. QC TRUNCATE CASCADE is tested against the append-only trigger even with the complete delivery foreign-key graph installed. tests/mechanical-schema-bundle.mjs prevents a reviewed experiment from diverging silently from the generated migration.
+
+Local fresh/upgrade PGlite runs passed. The feature CI runs both modes in native PostgreSQL17; check the exact resulting commit/run before claiming native qualification of this bundle. Existing compatibility CI remains separate. These checks do not prove that production applied history matches the repository, nor replace physical Android, signed APK, old-client coexistence or rollout rehearsal evidence.
+
+Preflight/release still requires current architecture-v2 reconciliation; catalog checks of live migration history/dependencies; isolated upgrade and rollback review; coordinated staff-auth/workshop-api and web/Android assets; Mechanical-specific publication metadata; and separate exact-source/environment production approval. Do not reuse existing release-request.json for another source/scope. New-role account creation alone does not activate the department.
+
+Rollback is additive: turn off new command/UI gates while retaining protected records, append-only history and legacy authority guards. Do not drop the schema/columns/tables, delete business records, rewrite old migrations or remove the new role while accounts reference it. Mixed-JC policy remains unset, so no painting/final checks are bypassed. Owner credentials and the supplied initial password are excluded from all release artifacts.

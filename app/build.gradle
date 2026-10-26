@@ -12,8 +12,8 @@ android {
         targetSdk 35
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
-        versionCode 337
-        versionName "V374" // Account privacy, historical time and Manager Cash/Insurance performance.
+        versionCode 338
+        versionName "V375" // Inactive Mechanical qualification candidate; public V374 stays current.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }

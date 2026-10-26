@@ -1,6 +1,6 @@
 {
   "approved": false,
-  "release": "V374",
-  "sourceCommit": "2280c2a9a37251b1a83d68cd717956bdd358eb7f",
-  "reason": "V373 approval does not authorize a new mixed security and financial release. Normal release checks pending."
+  "release": "V375",
+  "sourceCommit": null,
+  "reason": "Mechanical candidate only; no Accountant expansion or automatic publication approval."
 }

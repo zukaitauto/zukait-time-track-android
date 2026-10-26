@@ -1,49 +1,49 @@
 {
-  "versionName": "V374",
-  "versionCode": 337,
-  "sourceCommit": "1ca1cf378eef4a22e4cfdff7d55691ea65a99475",
+  "versionName": "V375",
+  "versionCode": 338,
+  "sourceCommit": null,
   "checks": {
     "client_https_restart": {
-      "passed": true,
-      "evidence": "Exact signed V374/code337 Android staff APK cold restart displayed Verifying session and server connection before verified Supervisor ONLINE via production HTTPS APIs. Airplane-mode cold restart displayed only Connection unavailable, Reconnect/Sign out and no workshop data. Reconnected successfully. 26 October 2026 vivo Y04 physical run.",
-      "verifiedBy": "Codex",
-      "verifiedAt": "2026-10-26T08:16:42Z"
+      "passed": false,
+      "evidence": "",
+      "verifiedBy": "",
+      "verifiedAt": null
     },
     "physical_android": {
-      "passed": true,
-      "evidence": "Codex USB physical vivo Y04/V2430 Android15: signed acceptance run40203606944 exact APK SHA256 66dcf7b4e47623dc463d06757bc52a84a1f864b8962713c9f593ccf70609efe6 installed in place, offline/online cold starts and background/resume passed. QA source26e6b5f0 account switch, offline actions hidden, Manager Cash/Insurance and partial/full direct parts receipt passed; final candidate differs only in workflow comments/docs. Native Back exits root task; no claim it dismisses reports.",
-      "verifiedBy": "Codex",
-      "verifiedAt": "2026-10-26T08:16:42Z"
+      "passed": false,
+      "evidence": "",
+      "verifiedBy": "",
+      "verifiedAt": null
     },
     "physical_safari": {
-      "passed": true,
-      "evidence": "Owner explicitly confirmed all four scenarios on physical iPhone Safari private V374 QA: account switching, offline privacy/action blocking, Cash/Insurance filters/graphs, Manager Arrived. Recorded 25 October 2026 15:08 UTC. QA artifact source26e6b5f0e36eb2b0a1b1a0254f78bd0493eb278d has identical runtime to approved source; iPhone model/iOS unspecified. User-reported evidence, not automated observation.",
-      "verifiedBy": "Application owner (direct report)",
-      "verifiedAt": "2026-10-25T15:08:00Z"
+      "passed": false,
+      "evidence": "",
+      "verifiedBy": "",
+      "verifiedAt": null
     },
     "full_data_preservation": {
-      "passed": true,
-      "evidence": "Production workshop-api92 to93 deployment: before/after sorted row-content hash snapshots of 41 public-table/history summaries found zero changes; existing staff credential digest unchanged excluding named temporary smoke accounts. No migrations or business writes. Smoke accounts disabled and sessions revoked afterward. Existing jobs, timing, reception, invoices and costs preserved.",
-      "verifiedBy": "Codex",
-      "verifiedAt": "2026-10-26T08:16:42Z"
+      "passed": false,
+      "evidence": "",
+      "verifiedBy": "",
+      "verifiedAt": null
     },
     "fresh_backup_restored": {
-      "passed": true,
-      "evidence": "Fresh production logical dump SHA256 0eaebdbfa96b892914f45ab4c10a743c175ae17be586870ade61e6419deb24ea restored locally into matching official Supabase Postgres17.6.1.166 without pg_restore errors. All85 archived tables/17346 rows matched independent archive COPY counts; invalid public indexes0, RLS44 tables. Isolated restore container/volumes removed. Encrypted local supplemental backup independently hash-verified for all9 Edge Functions and all8 Storage objects. Runtime environment secret values require separate private recovery records; no secrets changed by this release.",
-      "verifiedBy": "Codex",
-      "verifiedAt": "2026-10-26T08:16:42Z"
+      "passed": false,
+      "evidence": "",
+      "verifiedBy": "",
+      "verifiedAt": null
     },
     "pc_site_reconciled": {
-      "passed": true,
-      "evidence": "191 QA web assets byte-identical to APK assets; APK-only generated OCR models intentionally native. Final candidate1ca1cf3 runtime identical to tested26e6b5f0. Desktop exact QA web assets served loopback: Manager login, Cash report, reload/session verification and logout passed using HTTPS QA APIs. Owner physical Safari tested private HTTPS site. Public PC manifest/byte parity remains enforced by coordinated publication workflow before updater advancement.",
-      "verifiedBy": "Codex",
-      "verifiedAt": "2026-10-26T08:16:42Z"
+      "passed": false,
+      "evidence": "",
+      "verifiedBy": "",
+      "verifiedAt": null
     },
     "production_backend_smoke": {
-      "passed": true,
-      "evidence": "Production workshop-api93 exact reviewed QA30 bundle hash e7f8e7809d6e8299b1188ab386d6949eba49dc2def41f5d3d78293e3c85571ad. Real staff-auth temporary role smoke: Manager profit200, Supervisor report403, Accountant manager report403, Accountant dashboard200, Manager revision/load200, invalid session401. Temporary smoke identities disabled and sessions revoked; no production job mutations.",
-      "verifiedBy": "Codex",
-      "verifiedAt": "2026-10-26T08:16:42Z"
+      "passed": false,
+      "evidence": "",
+      "verifiedBy": "",
+      "verifiedAt": null
     }
   }
 }

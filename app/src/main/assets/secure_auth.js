@@ -6,9 +6,9 @@
   const privacy=()=>window.zukaitSessionPrivacy;
   function current(ticket){if(ticket!==authGeneration||!navigator.onLine)throw Error('STALE_SESSION');}
   async function verifiedDashboard(userObj,ticket){
-    if(!userObj?.id||!['Manager','Supervisor','Employee','Purchaser','Receptionist','Accountant'].includes(userObj.role))throw Error('Invalid server identity');
+    if(!userObj?.id||!['Manager','Supervisor','Mechanical Supervisor','Employee','Purchaser','Receptionist','Accountant'].includes(userObj.role))throw Error('Invalid server identity');
     current(ticket);
-    if(['Receptionist','Accountant'].includes(userObj.role)){openApp(userObj);return;}
+    if(['Receptionist','Accountant','Mechanical Supervisor'].includes(userObj.role)){openApp(userObj);return;}
     me=userObj;window.me=userObj;window.currentUser=userObj;
     if(!window.zukaitCloud?.init||!(await window.zukaitCloud.init(true)))throw Error('Connection unavailable. Dashboard could not be verified.');
     current(ticket);
@@ -120,6 +120,7 @@
   }
 
   function openApp(userObj){
+    if(userObj?.role==='Mechanical Supervisor'){window.location.replace('mechanical_supervisor.html');return;}
     if(userObj?.role==='Receptionist'){window.location.replace('receptionist.html');return;}
     if(userObj?.role==='Accountant'){window.location.replace('accountant.html');return;}
     me=userObj;
@@ -224,6 +225,7 @@
     if(!id||!name||!password)return alert('Enter all required fields.');
     if(password.length<8)return alert('Initial password must be at least 8 characters.');
     if(user(id).role!=='Unknown')return alert('That User ID already exists.');
+    if(role==='Mechanical Supervisor')department='Mechanic';
     if(role==='Purchaser')department='Spare Parts';
     if(role==='Receptionist')department='Reception';
     if(role==='Accountant'){

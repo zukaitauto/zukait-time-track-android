@@ -1,3 +1,5 @@
+import {billRoute} from './accountant/extensions/bill_route.js';
+import { mechanicalRoute, mechanicalLegacyDeliveryCheck } from "./extensions/mechanical_route.js";
 import { subletTransition } from './sublet_rules.js';
 import {accountantApi,accountantError} from './accountant/api.js';
 import {insuranceProjection,insuranceLpoTransition} from './insurance_management_rules.js';
@@ -782,6 +784,38 @@ async function baseStateForRevision(revision: number, currentRevision: number, c
 }
 
 
+// FINAL_SESSION_STATUS_BEGIN
+function normalizeCompletedSessionStatuses(data, at=Date.now()) {
+  if(!data||!Array.isArray(data.assign)||!Array.isArray(data.sessions))return data;
+  const groups=new Map(),byId=new Map(),duplicateAssignments=new Set(),sessionCounts=new Map();
+  for(const a of data.assign){if(!a||a.cancelled)continue;const id=String(a.id||'');if(byId.has(id))duplicateAssignments.add(id);byId.set(id,a);const key=JSON.stringify([String(a.emp),String(a.job)]);const rows=groups.get(key)||[];rows.push(a);groups.set(key,rows);}
+  for(const s of data.sessions)if(s?.id)sessionCounts.set(String(s.id),(sessionCounts.get(String(s.id))||0)+1);
+  const grouped=new Map();
+  for(const s of data.sessions){
+    if(!s||s.cancelled||s.voided||s.deleted||!s.id||sessionCounts.get(String(s.id))!==1)continue;
+    const possible=s.assignmentId?[byId.get(String(s.assignmentId))]:(groups.get(JSON.stringify([String(s.emp),String(s.job)]))||[]);
+    if(possible.length!==1)continue;const a=possible[0];
+    if(!a||duplicateAssignments.has(String(a.id))||String(a.emp)!==String(s.emp)||String(a.job)!==String(s.job)||a.completed!==true||a.cancelled||a.handedOverToAssignmentId||String(a.job).toUpperCase()==='ID001')continue;
+    const start=Number(s.start);if(!Number.isFinite(start)||start<=0||start>at)continue;
+    const rows=grouped.get(String(a.id))||[];rows.push(s);grouped.set(String(a.id),rows);
+  }
+  const targets=new Set();
+  for(const rows of grouped.values()){
+    if(rows.some(s=>s.end==null))continue;
+    const valid=rows.filter(s=>Number.isFinite(Number(s.end))&&Number(s.end)>=Number(s.start)&&Number(s.end)<=at);
+    const positive=valid.filter(s=>Number(s.end)>Number(s.start)).sort((a,b)=>Number(b.start)-Number(a.start));
+    if(!positive.length)continue;const last=positive[0];
+    if(positive.length>1&&Number(positive[1].start)===Number(last.start))continue;
+    if(valid.some(s=>Number(s.start)>Number(last.start)&&Number(s.end)>Number(last.end)))continue;
+    targets.add(String(last.id));
+    // A zero-duration closure marker at the same end is not extra work.
+    for(const s of valid)if(Number(s.start)===Number(s.end)&&Number(s.end)===Number(last.end))targets.add(String(s.id));
+  }
+  if(!data.sessions.some(s=>targets.has(String(s?.id))&&(!s.finished||s.paused)))return data;
+  return {...data,sessions:data.sessions.map(s=>targets.has(String(s?.id))?{...s,finished:true,paused:false}:s)};
+}
+// FINAL_SESSION_STATUS_END
+
 function computeLiveStatus(data: any, revision: number, changedBy: string) {
   const users = Array.isArray(data?.users) ? data.users : [];
   const sessions = Array.isArray(data?.sessions) ? data.sessions : [];
@@ -1092,6 +1126,26 @@ Deno.serve(async (req: Request) => {
     }
     if(body.newJobNumber !== undefined && action !== "manager_job_full_edit") return reply({ok:false,code:"job_edit_invalid_fields"},400);
 
+    // Mechanical Supervisors cannot use legacy full-state/bodyshop/financial APIs.
+    if (user.role === 'Mechanical Supervisor' && !action.startsWith('mechanical_')) {
+      return reply({ok:false,code:'mechanical_role_only'},403);
+    }
+    if (action.startsWith("mechanical_")) {
+      const enabled = Deno.env.get("ZUKAIT_MECHANICAL_ENABLED") === "true";
+      const result = await mechanicalRoute(admin, user, body, {
+        enabled, qcEnabled: Deno.env.get("ZUKAIT_MECHANICAL_QC_ENABLED") === "true", deliveryEnabled: Deno.env.get("ZUKAIT_MECHANICAL_DELIVERY_ENABLED") === "true",
+        reportsEnabled: Deno.env.get("ZUKAIT_MECHANICAL_REPORTS_ENABLED") === "true", signaturesEnabled: Deno.env.get("ZUKAIT_MECHANICAL_SIGNATURES_ENABLED") === "true", documentsEnabled: Deno.env.get("ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED") === "true", trackingEnabled: Deno.env.get("ZUKAIT_MECHANICAL_TRACKING_ENABLED") === "true", sessionHash: enabled ? await sha256Hex(token) : "",
+        verifySession: () => sessionUser(token)
+      });
+      return reply(result.body, result.status);
+    }
+
+    if (action.startsWith('accountant_bill_')) {
+      const enabled = Deno.env.get('ZUKAIT_BILLS_ENABLED') === 'true';
+      const result = await billRoute(admin,user,body,{enabled,sessionHash:enabled?await sha256Hex(token):'',secret:Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!});
+      return reply(result.body,result.status);
+    }
+
     if (user.role === 'Accountant' || action.startsWith('accountant_')) {
       try {const result=await accountantApi(admin,user,body,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);return reply(result.body,result.status);}
       catch(error){const result=accountantError(error);return reply(result.body,result.status);}
@@ -1099,6 +1153,11 @@ Deno.serve(async (req: Request) => {
 
     if (user.role === "Receptionist" && !receptionistRequestAllowed(action, body)) {
       return reply({ok:false, code:"receptionist_forbidden"}, 403);
+    }
+
+    if ((action === "qc_delivery" || action === "receptionist_deliver") && body.operation === "DELIVER" && Deno.env.get("ZUKAIT_MECHANICAL_ENABLED") === "true" && Deno.env.get("ZUKAIT_MECHANICAL_QC_ENABLED") === "true" && Deno.env.get("ZUKAIT_MECHANICAL_DELIVERY_ENABLED") === "true") {
+      const decision = await mechanicalLegacyDeliveryCheck(admin,user,body,{enabled:true,qcEnabled:true,deliveryEnabled:true,sessionHash:await sha256Hex(token)});
+      if(decision) return reply(decision.body,decision.status);
     }
 
     if (action === "reception_dashboard") {
@@ -1316,6 +1375,7 @@ Deno.serve(async (req: Request) => {
         const result=timeManagementTransition(current.data,user,body,Date.now());
         if(!result.ok)return reply({ok:false,code:result.code},result.code==="time_permission_denied"?403:409);
         if(result.duplicate)return reply({ok:true,audit:result.audit,duplicate:true,server_revision:current.revision});
+        result.data=normalizeCompletedSessionStatuses(result.data);
         const next=Number(current.revision||0)+1;
         const {data:committed,error:commitError}=await admin.rpc("zukait_commit_workshop_state_v2",{p_expected_revision:Number(current.revision||0),p_data:result.data,p_changed_by:user.id,p_live:computeLiveStatus(result.data,next,user.id)});
         if(commitError)throw commitError;
@@ -1895,7 +1955,7 @@ Deno.serve(async (req: Request) => {
 
         candidate = preserveJobEditAuthority(candidate, current.data, user);
         candidate = preserveQcAuthority(candidate, current.data, user);
-        candidate = reconcilePaintOrderCosts(candidate);
+        candidate = normalizeCompletedSessionStatuses(reconcilePaintOrderCosts(candidate));
 
         const next = currentRevision + 1;
         const live = computeLiveStatus(candidate, next, user.id);
@@ -1964,6 +2024,11 @@ Deno.serve(async (req: Request) => {
     return reply({ ok:false, code:"unknown_action" }, 400);
   } catch (e) {
     console.error(e);
+    // Old clients already preserve 403 queues rather than retry them forever.
+    // New clients can explicitly reconcile this authority conflict from Sync.
+    if (["mechanical_authority_conflict","mechanical_live_authority_conflict","mechanical_delivery_authority_conflict","mechanical_job_identity_conflict","mechanical_mixed_job_not_allowed"].includes(String((e as any)?.message||""))) {
+      return reply({ok:false,code:String((e as any).message),retryable:false},403);
+    }
     // A database deadline is temporary server pressure, not a broken network.
     const databaseCode=String((e as any)?.code||"");
     if(["57014","55P03","53300","53400","PGRST003"].includes(databaseCode)){

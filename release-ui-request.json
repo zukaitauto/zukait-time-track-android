@@ -1,13 +1,15 @@
 {
-  "versionName": "V374",
-  "versionCode": 337,
+  "versionName": "V375",
+  "versionCode": 338,
   "releaseScope": "standard",
   "approvedForStaff": false,
-  "sourceCommit": "2280c2a9a37251b1a83d68cd717956bdd358eb7f",
+  "sourceCommit": null,
   "approvedAt": null,
   "publishNonce": null,
   "productionBackendChanges": true,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "reason": "Coordinated standard release candidate; no UI-only waiver."
+  "reason": "Coordinated standard release candidate; no UI-only waiver.",
+  "backendDeploymentRequired": true,
+  "verificationSummary": "Inactive Mechanical integration candidate. Native/physical and exact-source release acceptance pending; published V374 unchanged."
 }
