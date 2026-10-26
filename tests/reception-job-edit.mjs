@@ -18,6 +18,15 @@ for(const role of ['Manager','Supervisor','Receptionist']){
  for(const amount of [-1,'1e3','NaN',Infinity,1000001,'0.0001',{},true])assert.equal(jobEditTransition(initial,actor,{...request,patch:{amount}},1).code,'job_edit_invalid_amount');
 }
 for(const role of ['Employee','Purchaser','Denter'])assert.equal(jobEditTransition(initial,{id:'u',role},request,1).code,'job_edit_forbidden');
+// Directly created job cards have no linked Reception Checklist. Supervisor
+// identity edits must not be rejected as linked-identity changes.
+const direct=clone(initial);direct.jobs[0].directReceptionJob=true;
+for(const role of ['Supervisor','Receptionist']){
+ const changed=jobEditTransition(direct,{id:'u',role},{...request,patch:{vin:'JTEBU11F4GK233167',customer:'Updated Customer'}},1);
+ assert.equal(changed.ok,true,'direct job should be editable by '+role);
+ assert.equal(changed.job.vin,'JTEBU11F4GK233167');
+ assert.equal(changed.job.customer,'Updated Customer');
+}
 const linked=clone(initial);linked.jobs[0].receptionNo='RC1';
 assert.equal(jobEditTransition(linked,{id:'u',role:'Supervisor'},{...request,patch:{model:'Corolla'}},1).code,'job_edit_linked_identity');
 assert.equal(jobEditTransition(linked,{id:'u',role:'Receptionist'},request,1).ok,true);
