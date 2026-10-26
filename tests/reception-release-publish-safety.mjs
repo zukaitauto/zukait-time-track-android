@@ -1,3 +1,4 @@
+import {createRequire} from 'node:module';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
@@ -50,5 +51,12 @@ if (updater.versionCode < release.versionCode) {
  assert.equal(updater.releaseTag,'release-'+updater.versionName+'-architecture-v2');
  if(!['reception-insurance-features-1-10','accountant-live-test'].includes(release.releaseScope)) assert.equal(uiApproval?.versionName,release.versionName,'Pending UI and APK release versions must match');
  if(!['reception-insurance-features-1-10','accountant-live-test'].includes(release.releaseScope)) assert.equal(uiApproval?.versionCode,release.versionCode);
+} else if(release.releaseScope==='standard') {
+ const require=createRequire(import.meta.url);
+ require('../scripts/verify-v305-acceptance.cjs').validate(release,JSON.parse(fs.readFileSync('docs/INSURANCE_V305_ACCEPTANCE_GATE.json','utf8')));
+ require('../scripts/verify-pc-pages-publication.cjs').validate(release,updater,'refs/heads/architecture-v2');
+ assert.equal(updater.sourceCommit,release.sourceCommit);
+ assert.match(updater.apkSha256,/^[a-f0-9]{64}$/);
+ assert.equal(updater.releaseTag,'release-'+updater.versionName+'-architecture-v2');
 } else if(['reception-insurance-features-1-10','accountant-live-test'].includes(release.releaseScope)) { assert.equal(updater.sourceCommit,release.sourceCommit); assert.equal(updater.versionCode,release.versionCode); assert.match(updater.apkSha256,/^[a-f0-9]{64}$/); } else verifyUpdaterAfterUiRelease(updater);
 console.log('PASS: Signed APK and Pages are manual-only on architecture-v2 with source/approval gates; explicit UI approval required');

@@ -1,3 +1,4 @@
+import {createRequire} from 'node:module';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const file='scripts/backup-zukait-production-readonly.ps1';
@@ -33,6 +34,10 @@ assert.equal(typeof req.approvedForStaff,'boolean','Release approval flag must b
 // Backup preparation must never modify the approval record; an independently approved UI-only release can coexist.
 assert.ok(!req.approvedForStaff || /^[a-f0-9]{40}$/.test(req.sourceCommit || ''),
  'Approved release must retain its pinned source');
-assert.equal(gate.checks.fresh_backup_restored.passed,false,
- 'Static export script must not count as a verified backup and restore');
+assert.doesNotMatch(source,/INSURANCE_V305_ACCEPTANCE_GATE|release-request\.json/,
+ 'Static backup helper must not write approval or acceptance records');
+if(gate.checks.fresh_backup_restored.passed) {
+ createRequire(import.meta.url)('../scripts/verify-v305-acceptance.cjs').validate(req,gate);
+ assert.match(gate.checks.fresh_backup_restored.evidence,/restor/i,'Separate restore evidence required');
+}
 console.log('PASS: read-only Free-plan backup helper, production-project and encryption checks, three separate SQL dumps, integrity hashes, no implicit restore or publication.');

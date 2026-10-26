@@ -73,6 +73,12 @@ if (latest.versionCode < current.versionCode) {
  assert.equal(latest.releaseTag,'release-'+latest.versionName+'-architecture-v2');
  if(!['reception-insurance-features-1-10','accountant-live-test'].includes(current.releaseScope)) assert.equal(uiApproval?.versionName,current.versionName);
  if(!['reception-insurance-features-1-10','accountant-live-test'].includes(current.releaseScope)) assert.equal(uiApproval?.versionCode,current.versionCode);
+} else if(current.releaseScope==='standard') {
+ assert.equal(validate(current,latest,branch).sha,current.sourceCommit);
+ require('../scripts/verify-v305-acceptance.cjs').validate(current,JSON.parse(fs.readFileSync('docs/INSURANCE_V305_ACCEPTANCE_GATE.json','utf8')));
+ assert.equal(latest.sourceCommit,current.sourceCommit);
+ assert.match(latest.apkSha256,/^[a-f0-9]{64}$/);
+ assert.equal(latest.releaseTag,'release-'+latest.versionName+'-architecture-v2');
 } else {
  if(['reception-insurance-features-1-10','accountant-live-test'].includes(current.releaseScope)) { assert.equal(latest.sourceCommit,current.sourceCommit); assert.equal(latest.versionCode,current.versionCode); assert.match(latest.apkSha256,/^[a-f0-9]{64}$/); } else verifyUpdaterAfterUiRelease(latest);
 }
