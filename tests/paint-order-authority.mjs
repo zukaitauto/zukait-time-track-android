@@ -20,4 +20,7 @@ const merged=vm.runInContext('reconcilePaintOrderCosts(preservePaintPurchasingHi
 assert.ok(api.includes('code:"paint_po_invalid"'));
 console.log('Paint PO authority: one main, concurrent duplicates, original references, additional reasons, received-only aggregate costing, returns and stale-void protection passed');
 
-assert.ok(api.indexOf('!validateEmployeeChange(user.id, current.data, candidate)')<api.indexOf('candidate = reconcilePaintOrderCosts('),'Derived paint costing must follow employee authorization');
+const authorization=api.indexOf('!validateEmployeeChange(user.id, current.data, candidate)'),costing=api.indexOf('reconcilePaintOrderCosts(candidate)');
+assert.ok(authorization>=0&&costing>=0,'Both employee authorization and derived paint costing must remain in the save route');
+assert.ok(authorization<costing,'Derived paint costing must follow employee authorization, including when wrapped by session normalization');
+
