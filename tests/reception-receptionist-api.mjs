@@ -1,3 +1,4 @@
+import {createDatabaseFetch} from '../supabase/functions/workshop-api/database_fetch.js';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
@@ -17,7 +18,7 @@ const admin={from(table){const chain={select:()=>chain,eq:()=>chain,maybeSingle:
  return {data:{ok:true,revision},error:null};
 }};
 const source=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8').replace(/^import[^\n]*\n/gm,'');
-vm.runInNewContext(stripTypeScriptTypes(source),{Deno:{env:{get:k=>k==='SUPABASE_PUBLISHABLE_KEY'?'qa-key':''},serve:f=>serve=f},createClient:()=>admin,crypto:webcrypto,TextEncoder,Response,Date,console:{error:()=>{}},receptionistDeliveryList,receptionistDeliveryRow,receptionistDeliveryTransition});
+vm.runInNewContext(stripTypeScriptTypes(source),{Deno:{env:{get:k=>k==='SUPABASE_PUBLISHABLE_KEY'?'qa-key':''},serve:f=>serve=f},createDatabaseFetch,createClient:()=>admin,crypto:webcrypto,TextEncoder,Response,Date,console:{error:()=>{}},receptionistDeliveryList,receptionistDeliveryRow,receptionistDeliveryTransition});
 async function call(body){const res=await serve(new Request('https://qa.invalid',{method:'POST',headers:{apikey:'qa-key','x-zukait-session':'qa-session'},body:JSON.stringify(body)}));return {status:res.status,body:await res.json()};}
 const request=()=>({action:'receptionist_deliver',operation:'DELIVER',jobCard:'QA-JC',expectedQcRevision:2,expectedVehicleIdentity:receptionistDeliveryRow(state,state.jobs[0]).expectedVehicleIdentity,request_id:randomUUID()});
 const safeDeliveryFields=['jobCard','receptionNo','vehicle','registration','delivered','deliveredAt','stage','deliveryReady','expectedQcRevision','expectedVehicleIdentity'].sort();

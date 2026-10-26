@@ -1,3 +1,4 @@
+import {createDatabaseFetch} from '../supabase/functions/workshop-api/database_fetch.js';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
@@ -14,7 +15,7 @@ const admin={from(table){const chain={select:()=>chain,eq:()=>chain,order:()=>ch
  assert.equal(args.p_expected_revision,revision);state=structuredClone(args.p_data);revision++;writes++;
  if(mode==='lost'){mode='';return {error:{message:'Lost response'}};}return {data:{ok:true,revision}};
 }};
-vm.runInNewContext(stripTypeScriptTypes(fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8').replace(/^import[^\n]*\n/gm,'')),{Deno:{env:{get:k=>k==='SUPABASE_PUBLISHABLE_KEY'?'qa-key':''},serve:f=>serve=f},createClient:()=>admin,crypto:webcrypto,TextEncoder,Response,Date,structuredClone,console:{error:()=>{}},insuranceProjection,insuranceLpoTransition});
+vm.runInNewContext(stripTypeScriptTypes(fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8').replace(/^import[^\n]*\n/gm,'')),{Deno:{env:{get:k=>k==='SUPABASE_PUBLISHABLE_KEY'?'qa-key':''},serve:f=>serve=f},createDatabaseFetch,createClient:()=>admin,crypto:webcrypto,TextEncoder,Response,Date,structuredClone,console:{error:()=>{}},insuranceProjection,insuranceLpoTransition});
 const reset=m=>{state=structuredClone(baseline);revision=1;writes=0;attempts=0;mode=m||'';role='Manager';};
 async function call(body){const res=await serve(new Request('https://qa.invalid',{method:'POST',headers:{apikey:'qa-key','x-zukait-session':'qa'},body:JSON.stringify(body)}));return {status:res.status,body:await res.json()};}
 const request=()=>({action:'insurance_lpo',job_card:'JC100',amount:'25.125',received_date:'2026-10-10',expected_revision:0,request_id:randomUUID(),reason:''});

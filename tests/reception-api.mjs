@@ -1,3 +1,4 @@
+import {createDatabaseFetch} from '../supabase/functions/workshop-api/database_fetch.js';
 import fs from "node:fs";
 import * as jobEditRules from "../supabase/functions/workshop-api/job_edit_rules.js";
 import vm from "node:vm";
@@ -57,7 +58,7 @@ vm.runInNewContext(code, {
     env: { get: (k) => (k === "SUPABASE_PUBLISHABLE_KEY" ? allowedSingleKey : k === "SUPABASE_PUBLISHABLE_KEYS" ? allowedKeyMap : "") },
     serve: (f) => (serve = f),
   },
-  createClient: () => admin,
+  createDatabaseFetch,createClient:()=>admin,
   crypto: webcrypto,
   TextEncoder,
   Response,

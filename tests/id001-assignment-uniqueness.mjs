@@ -1,3 +1,4 @@
+import {createDatabaseFetch} from '../supabase/functions/workshop-api/database_fetch.js';
 import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';import {webcrypto} from 'node:crypto';import {stripTypeScriptTypes} from 'node:module';
 const source=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8'),a=source.indexOf('// ID001_ASSIGNMENT_RULE_BEGIN'),b=source.indexOf('// ID001_ASSIGNMENT_RULE_END');
 const rules=vm.createContext({});vm.runInContext(stripTypeScriptTypes(source.slice(a,b)),rules);const check=rules.id001AssignmentConflict;
@@ -15,7 +16,7 @@ let serve,state,base,revision,role='Manager',race=false,commits=0;
 const admin={from(table){const chain={select:()=>chain,eq:()=>chain,in:()=>chain,update:()=>chain,insert:()=>chain,order:()=>chain,
  maybeSingle:async()=>table==='staff_sessions'?{data:{user_id:'M',last_seen_at:new Date().toISOString(),staff_credentials:{user_id:'M',display_name:'Manager',role,active:true,must_change:false}}}:{data:{data:structuredClone(base)}},
  single:async()=>({data:{revision,data:structuredClone(state)}}),then:resolve=>resolve({data:[]})};return chain;},async rpc(name,args){assert.equal(name,'zukait_commit_workshop_state_v2');commits++;if(race){race=false;state.assign.push(hold('OTHER_DEVICE'));revision++;return {data:{ok:false,code:'conflict'}};}state=structuredClone(args.p_data);revision++;return {data:{ok:true,revision}};}};
-const globals={...deps,zukaitPaintOrderRules:globalThis.zukaitPaintOrderRules,createClient:()=>admin,Deno:{env:{get:k=>k==='SUPABASE_PUBLISHABLE_KEY'?'qa-key':''},serve:f=>serve=f},crypto:webcrypto,TextEncoder,Response,Date,structuredClone,console:{error(){}}};
+const globals={...deps,zukaitPaintOrderRules:globalThis.zukaitPaintOrderRules,createDatabaseFetch,createClient:()=>admin,Deno:{env:{get:k=>k==='SUPABASE_PUBLISHABLE_KEY'?'qa-key':''},serve:f=>serve=f},crypto:webcrypto,TextEncoder,Response,Date,structuredClone,console:{error(){}}};
 vm.runInNewContext(stripTypeScriptTypes(source.replace(/^import[^\n]*\n/gm,'')),globals);
 const reset=(assign=[])=>{state={users:[{id:'EMP008',name:'QA',role:'Employee'}],jobs:[{no:'ID001'}],assign,sessions:[]};base=structuredClone(state);revision=1;commits=0;race=false;};
 async function save(data){const r=await serve(new Request('https://qa.invalid',{method:'POST',headers:{apikey:'qa-key','x-zukait-session':'QA'},body:JSON.stringify({action:'save',expected_revision:1,data})}));return {status:r.status,body:await r.json()};}

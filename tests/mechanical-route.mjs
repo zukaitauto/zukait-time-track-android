@@ -1,3 +1,4 @@
+import {createDatabaseFetch} from '../supabase/functions/workshop-api/database_fetch.js';
 import assert from 'node:assert/strict';import fs from 'node:fs';
 import {SourceTextModule,SyntheticModule} from 'node:vm';import {stripTypeScriptTypes} from 'node:module';
 import {mechanicalRoute,mechanicalLegacyDeliveryCheck} from '../supabase/functions/workshop-api/extensions/mechanical_route.js';
@@ -23,7 +24,7 @@ const admin={from:table=>{if(table!=='staff_sessions'&&guardError)throw Error(gu
  }};
 globalThis.Deno={env:{get:k=>k==='ZUKAIT_MECHANICAL_ENABLED'?flag:k==='ZUKAIT_MECHANICAL_QC_ENABLED'?qcFlag:k==='ZUKAIT_MECHANICAL_DELIVERY_ENABLED'?deliveryFlag:k==='ZUKAIT_MECHANICAL_TRACKING_ENABLED'?trackingFlag:k==='ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED'?documentsFlag:k==='ZUKAIT_MECHANICAL_SIGNATURES_ENABLED'?signaturesFlag:k==='ZUKAIT_MECHANICAL_REPORTS_ENABLED'?reportsFlag:({SUPABASE_URL:'https://example.invalid',SUPABASE_SERVICE_ROLE_KEY:'qa-service',SUPABASE_PUBLISHABLE_KEY:'qa-key'}[k])},serve:fn=>{handler=fn}};
 const module=new SourceTextModule(stripTypeScriptTypes(source));
-await module.link(async spec=>{const line=source.split('\n').find(s=>s.includes('from')&&s.includes(spec));const names=line?.match(/import\s*\{([^}]+)\}/)?.[1].split(',').map(s=>s.trim())||[];return new SyntheticModule(names,function(){for(const name of names)this.setExport(name,name==='createClient'?()=>admin:name==='mechanicalRoute'?mechanicalRoute:name==='mechanicalLegacyDeliveryCheck'?mechanicalLegacyDeliveryCheck:name==='accountantApi'?async()=>({status:200,body:{ok:true,accountant:true}}):()=>{throw Error('unexpected import '+name)})})});
+await module.link(async spec=>{const line=source.split('\n').find(s=>s.includes('from')&&s.includes(spec));const names=line?.match(/import\s*\{([^}]+)\}/)?.[1].split(',').map(s=>s.trim())||[];return new SyntheticModule(names,function(){for(const name of names)this.setExport(name,name==='createDatabaseFetch'?createDatabaseFetch:name==='createClient'?()=>admin:name==='mechanicalRoute'?mechanicalRoute:name==='mechanicalLegacyDeliveryCheck'?mechanicalLegacyDeliveryCheck:name==='accountantApi'?async()=>({status:200,body:{ok:true,accountant:true}}):()=>{throw Error('unexpected import '+name)})})});
 await module.evaluate();
 const command={operation:'MC_CREATE',entityId:id(1),requestId:id(2),deviceId:'QA_DEVICE',expectedRevision:0,expectedWorkshopRevision:1,payload:{manualJobCard:{number:'QA_JC',date:'2026-10-22'}}};
 async function request(body={action:'mechanical_command',command},token='qa-synthetic-session'){
