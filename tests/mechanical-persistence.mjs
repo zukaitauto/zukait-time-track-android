@@ -8,6 +8,7 @@ import {mechanicalPersistenceRequest} from '../supabase/functions/workshop-api/e
 import {mechanicalCommandApi} from '../supabase/functions/workshop-api/extensions/mechanical_api.js';
 import {mechanicalRoute} from '../supabase/functions/workshop-api/extensions/mechanical_route.js';
 import {mechanicalReportPersistence} from './mechanical-report-persistence.mjs';
+import {mechanicalCorrectionsPersistence} from './mechanical-corrections-persistence.mjs';
 import {mechanicalSignedDocumentPersistence} from './mechanical-signed-document-persistence.mjs';
 import {mechanicalSignaturePersistence} from './mechanical-signature-persistence.mjs';
 import {mechanicalDocumentPersistence} from './mechanical-document-persistence.mjs';
@@ -37,7 +38,8 @@ let at=Date.parse('2026-10-19T04:00:00Z');
 try{
  let base=fs.readFileSync('tests/fixtures/reception-postgres17-baseline.sql','utf8');base=native?base.replace(/create role (anon|authenticated|service_role)[^;]+;/g,''):base.replace('create extension if not exists pgcrypto;','');await db.exec(base);
  const foundation='20261025073818_mechanical_department_inactive_foundation.sql',freshInstall=process.env.ZUKAIT_MECHANICAL_INSTALL_MODE==='fresh';
- for(const f of fs.readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')&&(freshInstall||f!==foundation)).sort())await db.exec(fs.readFileSync('supabase/migrations/'+f,'utf8'));
+ const mechanicalMigrations=fs.readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')&&f.includes('_mechanical_')).sort();
+ for(const f of fs.readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')&&(freshInstall||!mechanicalMigrations.includes(f))).sort())await db.exec(fs.readFileSync('supabase/migrations/'+f,'utf8'));
  await db.exec(fs.readFileSync('tests/fixtures/workshop-save-live-functions.sql','utf8'));await db.exec(fs.readFileSync('experiments/live-status-session-partition.sql','utf8'));
  await db.exec("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt,must_change) values('QA_SUP','QA supervisor','Supervisor','QA_MECHANICAL','none','none',false),('QA_A','QA mechanic A','Employee','QA_MECHANICAL','none','none',false),('QA_B','QA mechanic B','Employee','QA_MECHANICAL','none','none',false),('QA_OTHER','Other','Employee','OTHER','none','none',false)");
  // Shared baseline now provides the session schema and least-privilege grants.
@@ -47,7 +49,7 @@ try{
  // Exercise the real generated migration against an existing synthetic garage.
  if(!freshInstall){
   const beforeState=(await db.query('select * from workshop_state')).rows,beforeStaff=(await db.query('select user_id,role,department,must_change from staff_credentials order by user_id')).rows;
-  await db.exec(fs.readFileSync('supabase/migrations/'+foundation,'utf8'));
+  for(const f of mechanicalMigrations)await db.exec(fs.readFileSync('supabase/migrations/'+f,'utf8'));
   assert.deepEqual((await db.query('select * from workshop_state')).rows,beforeState,'Upgrade must not touch existing garage JSON or revisions');
   assert.deepEqual((await db.query('select user_id,role,department,must_change from staff_credentials order by user_id')).rows,beforeStaff,'Upgrade must not create or convert accounts');
  }
@@ -145,7 +147,7 @@ try{
  assert.equal(ordinary.ok,true,'Fresh ordinary full save preserves linked assignments and succeeds');
  assert.deepEqual((await snapshot()).data.sessions,saved.data.sessions);
  await db.exec('reset role');
- assert.equal(Number(await scalar("select count(*) n from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='zukait_mechanical' and c.relkind='r' and c.relrowsecurity")),12,'All12 bundled Mechanical tables require RLS');
+ assert.equal(Number(await scalar("select count(*) n from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='zukait_mechanical' and c.relkind='r' and c.relrowsecurity")),13,'All13 Mechanical tables require RLS, including signature corrections');
  assert.equal(Number(await scalar("select count(*) n from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='zukait_mechanical' and c.relkind='r' and not c.relrowsecurity")),0);
  await assert.rejects(db.exec("update zukait_mechanical.audit set actor_id='QA_SUP'"),/mechanical_append_only/,'append-only trigger also rejects owner updates');
  // Both revisions are checked before any metadata or shared writes.
@@ -244,6 +246,7 @@ try{
  await mechanicalSignaturePersistence({db,records,snapshot,native,pg,config,database});
  await mechanicalSignedDocumentPersistence({db,records,snapshot});
  await mechanicalReportPersistence({db,records,snapshot});
+ await mechanicalCorrectionsPersistence({db,records,snapshot,native,pg,config,database});
  await accountantSupplierPersistence({db,native,pg,config,database});
  await accountantSupplierReadPersistence({db});
  await accountantBillPosting({db,native,pg,config,database});

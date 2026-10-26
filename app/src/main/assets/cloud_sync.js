@@ -1077,7 +1077,7 @@
     let deviceId=localStorage.getItem('zukait_mechanical_device_v1');if(!deviceId){deviceId=crypto.randomUUID();localStorage.setItem('zukait_mechanical_device_v1',deviceId)}
     openModal('<div id="zukaitMechanicalSignature"></div>');const root=document.getElementById('zukaitMechanicalSignature');if(!root)return false;
     await module.mountMechanicalSignature(root,{enabled:true,isEnabled:enabled,...input,deviceId,getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()}),online:()=>navigator.onLine,
-      api:async body=>{if(!current()||!root.isConnected)throw Error('invalid_session');if(!navigator.onLine)throw Error('OFFLINE');if(cloudDirty||cloudPushing||pullInFlight)throw Error('WORKSHOP_SYNC_PENDING');if(!['mechanical_document','mechanical_signature_status','mechanical_signature_command'].includes(body.action))throw Error('mechanical_forbidden');return api(body)}});return true;
+      api:async body=>{if(!current()||!root.isConnected)throw Error('invalid_session');if(!navigator.onLine)throw Error('OFFLINE');if(cloudDirty||cloudPushing||pullInFlight)throw Error('WORKSHOP_SYNC_PENDING');if(!['mechanical_document','mechanical_signature_status','mechanical_signature_command','mechanical_signature_correction'].includes(body.action))throw Error('mechanical_forbidden');return api(body)}});return true;
   }
 
   async function openMechanicalReport(checklistId){

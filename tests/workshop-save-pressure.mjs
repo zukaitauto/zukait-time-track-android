@@ -31,4 +31,3 @@ const handle=new Function('e','reply',stripBody(busy));
 for(const errorCode of ['57014','55P03','53300','53400','PGRST003']){const result=handle({code:errorCode},(body,status)=>({body,status}));assert.equal(result.status,503);assert.equal(result.body.code,'database_busy');assert.equal(result.body.retry_after_ms,5000);}
 assert.equal(handle({code:'23505'},(body,status)=>({body,status})).status,500,'unrelated failures must not be mislabeled as database pressure');
 console.log('PASS: real save route bounds conflicting/slow rebases, preserves CAS and authorities, and classifies database pressure as retryable.');
-

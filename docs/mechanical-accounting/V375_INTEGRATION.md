@@ -8,7 +8,7 @@ The original Windows master specification, execution prompt and foundation contr
 
 ## Separation and identity protection
 
-Mechanical registration rejects a card with active bodyshop or unknown-department assignments. SQL independently checks staff departments. Registered MC identity cannot disappear or silently follow a renamed JC in an old/full-state save. The database guard rejects cross-department assignments even before delivery and remains installed when command/UI flags are rolled back. It does not move work, rename historical records or delete data. Manager correction of a registered JC requires a separately designed audited rebinding operation; the ordinary rename must fail closed.
+Mechanical registration rejects a card with active bodyshop or unknown-department assignments. SQL independently checks staff departments. Registered MC identity cannot disappear or silently follow a renamed stored JC key in an old/full-state save. The database guard rejects cross-department assignments even before delivery and remains installed when command/UI flags are rolled back. Manager public-number correction uses the existing audited alias directory, preserving stored identities and every work record. See CORRECTIONS.md for registered-card and optional own-signature correction qualification.
 
 Mixed-card QC/readiness/delivery is rejected regardless of the old nullable mixed-policy setting, including true/false settings and forged route requests. Owner policy is not a new permission bypass. Ordinary bodyshop jobs retain their existing QC sequence and authorities.
 

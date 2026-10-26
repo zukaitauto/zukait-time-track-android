@@ -1,6 +1,7 @@
 import {mechanicalReportApi} from './mechanical_report.js';
 import {mechanicalSignedDocument} from './mechanical_signed_document.js';
 import {mechanicalSignatureCommand} from './mechanical_signature.js';
+import {mechanicalSignatureCorrection} from './mechanical_signature_correction.js';
 import {mechanicalDocument} from './mechanical_document.js';
 import {mechanicalCommandApi} from './mechanical_api.js';
 import {mechanicalQcCommandApi,mechanicalQcReadiness} from './mechanical_qc_boundary.js';
@@ -12,6 +13,8 @@ const response=(code,status)=>({status,body:{ok:false,code}});
 const conflicts=new Set(['mechanical_request_reused','mechanical_revision_conflict','workshop_revision_conflict','mc_allocation_conflict','manual_jc_duplicate','assignment_id_exists','duplicate_task_employee','handover_source_changed','handover_source_inactive','stop_work_before_handover','handover_time_review_required','handover_history_protected']);
 export function mechanicalApiError(error){
  const code=String(error?.message||'');
+ if(code==='invalid_mechanical_signature_correction')return response(code,400);
+ if(['mechanical_mixed_job_not_allowed','mechanical_job_identity_conflict'].includes(code))return response(code,409);
  if(code==='mechanical_invalid_session')return response('invalid_session',401);
  if(['mechanical_disabled','mechanical_forbidden','mechanical_qc_disabled','mechanical_qc_approver_required','mechanical_delivery_disabled','mechanical_tracking_disabled','mechanical_repeat_disabled','mechanical_documents_disabled','mechanical_document_forbidden','mechanical_signatures_disabled','mechanical_signature_forbidden','mechanical_reports_disabled','mechanical_report_forbidden'].includes(code))return response(code,403);
  if(conflicts.has(code))return response(code,409);
@@ -68,7 +71,7 @@ export async function mechanicalRoute(admin,user,body,options={}){
    return result.ok?{status:200,body:result}:response(result.code,['invalid_session','session_changed'].includes(result.code)?401:result.code.includes('forbidden')||result.code.endsWith('disabled')?403:result.code.includes('unavailable')?503:409);
   }catch(error){return mechanicalApiError(error)}
  }
- if(['mechanical_signature_command','mechanical_signature_status'].includes(body?.action)){
+ if(['mechanical_signature_command','mechanical_signature_status','mechanical_signature_correction'].includes(body?.action)){
   if(options.documentsEnabled!==true||options.signaturesEnabled!==true)return response('extension_disabled',403);
   if(user?.id!=='SUP003'||!['Supervisor','Mechanical Supervisor'].includes(user.role))return response('mechanical_signature_forbidden',403);
   if(!/^[0-9a-f]{64}$/.test(options.sessionHash||'')||typeof options.verifySession!=='function')return response('invalid_session',401);
@@ -79,8 +82,11 @@ export async function mechanicalRoute(admin,user,body,options={}){
     const source=await mechanicalRoute(admin,user,{action:'mechanical_document',checklistId:body.checklistId,expectedRevision:body.expectedRevision,expectedWorkshopRevision:body.expectedWorkshopRevision},options);if(source.status!==200)return source;return {status:200,body:{ok:true,sourceHash:source.body.sourceHash,signature:await read('current',null,source.body.sourceHash)}};
    }
    if(Object.keys(body).some(k=>!['action','command'].includes(k))||!body.command||!uuid(body.command.requestId)||!uuid(body.command.checklistId)||![body.command.expectedRevision,body.command.expectedWorkshopRevision].every(n=>Number.isSafeInteger(n)&&n>=0)||JSON.stringify(body).length>50000)return response('invalid_mechanical_signature',400);
-   const result=await mechanicalSignatureCommand(body.command,{enabled:true,signaturesEnabled:true,policy:await read('policy'),verifySession:async()=>{const current=await options.verifySession();return current&&current.active!==false?{...current,active:true}:null},readReceipt:id=>read('receipt',id),readDocument:async cmd=>(await mechanicalRoute(admin,user,{action:'mechanical_document',checklistId:cmd.checklistId,expectedRevision:cmd.expectedRevision,expectedWorkshopRevision:cmd.expectedWorkshopRevision},options)).body,commit:async p=>{const {data,error}=await admin.rpc('zukait_mechanical_signature_commit',{p_actor:p.actorId,p_session_hash:options.sessionHash,p_request:p.requestId,p_entity:p.checklistId,p_records:p.recordsRevision,p_workshop:p.workshopRevision,p_device:p.deviceId,p_source_hash:p.sourceHash,p_fingerprint:p.fingerprint,p_strokes:p.strokes});if(error)throw error;return data}});
-   return result.ok?{status:200,body:result}:response(result.code,result.code.includes('forbidden')?403:result.code==='invalid_mechanical_signature'?400:409);
+   const adapter={enabled:true,signaturesEnabled:true,policy:await read('policy'),verifySession:async()=>{const current=await options.verifySession();return current&&current.active!==false?{...current,active:true}:null},readDocument:async cmd=>(await mechanicalRoute(admin,user,{action:'mechanical_document',checklistId:cmd.checklistId,expectedRevision:cmd.expectedRevision,expectedWorkshopRevision:cmd.expectedWorkshopRevision},options)).body};
+   const result=body.action==='mechanical_signature_correction'
+    ?await mechanicalSignatureCorrection(body.command,{...adapter,readReceipt:async id=>{const {data,error}=await admin.rpc('zukait_mechanical_signature_correction_read',{p_actor:user.id,p_session_hash:options.sessionHash,p_request:id});if(error)throw error;return data},readSignature:hash=>read('current',null,hash),commit:async p=>{const {data,error}=await admin.rpc('zukait_mechanical_signature_correct',{p_actor:p.actorId,p_session_hash:options.sessionHash,p_request:p.requestId,p_entity:p.checklistId,p_records:p.expectedRevision,p_workshop:p.expectedWorkshopRevision,p_device:p.deviceId,p_source_hash:p.sourceHash,p_fingerprint:p.fingerprint,p_signature:p.signatureId,p_reason:p.reason});if(error)throw error;return data}})
+    :await mechanicalSignatureCommand(body.command,{...adapter,readReceipt:id=>read('receipt',id),commit:async p=>{const {data,error}=await admin.rpc('zukait_mechanical_signature_commit',{p_actor:p.actorId,p_session_hash:options.sessionHash,p_request:p.requestId,p_entity:p.checklistId,p_records:p.recordsRevision,p_workshop:p.workshopRevision,p_device:p.deviceId,p_source_hash:p.sourceHash,p_fingerprint:p.fingerprint,p_strokes:p.strokes});if(error)throw error;return data}});
+   return result.ok?{status:200,body:result}:response(result.code,result.code.includes('forbidden')?403:result.code.startsWith('invalid_mechanical_signature')?400:409);
   }catch(error){return mechanicalApiError(error)}
  }
  if(['mechanical_document','mechanical_document_verify'].includes(body?.action)){

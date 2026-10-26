@@ -1,7 +1,7 @@
 // Optional own-signature capture; vectors only, never localStorage or image URLs.
 export async function mountMechanicalSignature(root,options={}){
  const doc=root.ownerDocument,initial=options.getSession?.(),identity=s=>JSON.stringify([s?.id,s?.role,s?.key]),owner=identity(initial);
- let disposed=false,busy=false,source=null,sourceHash=null,pending=null,strokes=[],stroke=null,pointer=null,loaded=false;
+ let disposed=false,busy=false,source=null,sourceHash=null,pending=null,pendingCorrection=null,strokes=[],stroke=null,pointer=null,loaded=false;
  const current=()=>!disposed&&root.isConnected&&identity(options.getSession?.())===owner&&(options.isEnabled?.()??true)===true;
  const check=()=>{if(!current())throw Error('session_changed');if(options.online?.()===false)throw Error('OFFLINE')};
  const node=(tag,text)=>{const e=doc.createElement(tag);if(text!==null)e.textContent=text;return e},notice=node('p',''),actions=node('div',''),view=node('section','');notice.setAttribute('role','status');root.style.overflowWrap='anywhere';root.replaceChildren(node('h2','Optional Mechanical Supervisor signature'),notice,view,actions);
@@ -20,11 +20,20 @@ export async function mountMechanicalSignature(root,options={}){
   if(!r?.ok||r.result?.requestId!==pending.requestId||r.result?.checklistId!==input.checklistId||r.result?.actorId!=='SUP003'||r.result?.recordsRevision!==pending.expectedRevision||r.result?.workshopRevision!==pending.expectedWorkshopRevision||r.result?.sourceHash!==pending.expectedSourceHash)throw Error(r?.code||'unconfirmed');
   strokes=[];pending=null;stroke=null;paint();actions.replaceChildren();notice.textContent='Signature recorded for the displayed checklist copy. Refresh before exporting. Signing did not change QC, delivery or recorded work.';
  }
+ function correctionForms(signature){
+  const reason=node('textarea',null);reason.maxLength=500;reason.setAttribute('aria-label','Signature correction reason');reason.style.cssText='display:block;width:100%;box-sizing:border-box;min-height:72px';view.append(node('p','Enter why your signature needs correction. The original is retained in the audit history.'),reason);
+  function controls(){actions.replaceChildren();button(pendingCorrection?'Retry same correction':'Correct my signature',async()=>{
+   if(!pendingCorrection){if(reason.value.trim().length<5){notice.textContent='Enter a correction reason of at least five characters.';return}pendingCorrection={requestId:(options.uuid||(()=>crypto.randomUUID()))(),...input,deviceId:options.deviceId,expectedSourceHash:sourceHash,signatureId:signature.result.requestId,reason:reason.value.trim()};reason.disabled=true;controls()}
+   check();const r=await options.api({action:'mechanical_signature_correction',command:structuredClone(pendingCorrection)});check();
+   if(!r?.ok||r.result?.requestId!==pendingCorrection.requestId||r.result?.checklistId!==input.checklistId||r.result?.actorId!=='SUP003'||r.result?.signatureId!==pendingCorrection.signatureId||r.result?.recordsRevision!==input.expectedRevision+1||r.result?.workshopRevision!==input.expectedWorkshopRevision||r.result?.requiresRedraw!==true)throw Error(r?.code||'unconfirmed');
+   pendingCorrection=null;actions.replaceChildren();notice.textContent='Correction recorded; the original signature is retained. Close, refresh the checklist, and draw your corrected signature. Recorded work, QC and delivery are unchanged.';
+  })}controls();
+ }
  if(options.enabled!==true||initial?.id!=='SUP003'||!['Supervisor','Mechanical Supervisor'].includes(initial?.role)||!initial?.key||!options.deviceId){notice.textContent='Signature capture is unavailable.';return {destroy(){disposed=true;root.replaceChildren()}}}
  try{check();const r=await options.api({action:'mechanical_document',...input});check();if(!r?.ok||r.checklistId!==input.checklistId||r.document?.recordsRevision!==input.expectedRevision||r.document?.workshopRevision!==input.expectedWorkshopRevision)throw Error('mechanical_document_changed');source=r.document;sourceHash=r.sourceHash;if(!/^[0-9a-f]{64}$/.test(sourceHash||''))throw Error('mechanical_document_changed');
   view.append(node('h3',source.checklistNumber+' · JC '+source.jobCard),node('p','Checklist revision '+source.recordsRevision+' · Workshop revision '+source.workshopRevision));
   for(const t of source.rows||[])view.append(node('p',t.title+' — '+t.allocations.map(a=>a.employee+': '+a.status+' / '+a.allocatedMinutes+' allocated min').join('; ')));
-  const status=await options.api({action:'mechanical_signature_status',...input});check();if(!status?.ok)throw Error(status?.code||'unconfirmed');if(status.sourceHash!==sourceHash)throw Error('mechanical_document_changed');if(status.signature){notice.textContent='A signature is already recorded for this checklist copy. Signing again is unnecessary.'}else{view.append(pad,label);loaded=true;forms();notice.textContent='Review the checklist, then draw your own signature if needed. You may close without signing.'}
+  const status=await options.api({action:'mechanical_signature_status',...input});check();if(!status?.ok)throw Error(status?.code||'unconfirmed');if(status.sourceHash!==sourceHash)throw Error('mechanical_document_changed');if(status.signature){notice.textContent='A signature is already recorded for this checklist copy. You may correct your own signature with an audit reason.';correctionForms(status.signature)}else{view.append(pad,label);loaded=true;forms();notice.textContent='Review the checklist, then draw your own signature if needed. You may close without signing.'}
  }catch(e){notice.textContent=e.message==='mechanical_document_changed'?'Checklist changed. Close and refresh before signing.':'Unable to load current signature status. No signature was sent.'}
- return {destroy(){disposed=true;pending=null;strokes=[];root.replaceChildren()}};
+ return {destroy(){disposed=true;pending=null;pendingCorrection=null;strokes=[];root.replaceChildren()}};
 }
