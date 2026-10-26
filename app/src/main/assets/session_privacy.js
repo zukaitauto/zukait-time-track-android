@@ -17,11 +17,27 @@
     }
     const text=document.getElementById('sessionPrivacyMessage');if(text)text.textContent=message;
   }
+  // Retry transport failures using a fresh authenticated document. Never
+  // reveal a cached dashboard merely because the network appears online.
+  let retryTimer=null;
+  function cancelRetry(){if(retryTimer!==null){clearTimeout(retryTimer);retryTimer=null;}}
+  function retryVerification(){
+    if(retryTimer!==null||!navigator.onLine)return;
+    let attempt=0;
+    try{attempt=Math.max(0,Math.min(5,Number(sessionStorage.getItem('zukait_session_retry_attempt')||0)||0));}catch(_){}
+    const delay=Math.min(60000,12000*Math.pow(2,attempt));
+    retryTimer=setTimeout(()=>{
+      retryTimer=null;
+      if(!locked||!navigator.onLine)return;
+      try{sessionStorage.setItem('zukait_session_retry_attempt',String(Math.min(5,attempt+1)));}catch(_){}
+      location.reload();
+    },delay);
+  }
   function lock(message='Connection unavailable. Reconnect to verify your session.'){
     locked=true;root.setAttribute('data-session-locked','');screen(message);
   }
-  function unlock(){if(!navigator.onLine)return;locked=false;root.removeAttribute('data-session-locked');}
-  function invalidate(){generation++;for(const c of controllers)c.abort();controllers.clear();lock();}
+  function unlock(){if(!navigator.onLine)return;cancelRetry();try{sessionStorage.removeItem('zukait_session_retry_attempt');}catch(_){}locked=false;root.removeAttribute('data-session-locked');}
+  function invalidate(){cancelRetry();generation++;for(const c of controllers)c.abort();controllers.clear();lock();}
   const identity=()=>{try{const s=JSON.parse(localStorage.getItem('zukait_secure_session_v42')||'null');return JSON.stringify([s?.user?.id,s?.user?.role,s?.token||window.AndroidBridge?.getSecureSessionToken?.()||'']);}catch(_){return '';}};
   const originalFetch=window.fetch.bind(window);
   window.fetch=async function(input,options={}){
@@ -39,9 +55,9 @@
     try{
       const response=await originalFetch(input,{...options,signal:controller.signal,cache:'no-store'});check();
       const json=response.json.bind(response);
-      response.json=async()=>{try{const body=await json();check();if((response.status>=500||body?.code==='invalid_session')&&url.endsWith('/workshop-api'))lock('Server or session unavailable. Reconnect to verify your session.');return body;}catch(error){if(ticket===generation&&url.endsWith('/workshop-api'))lock();throw error;}finally{controllers.delete(controller);options.signal?.removeEventListener('abort',abort);}};
+      response.json=async()=>{try{const body=await json();check();if(url.endsWith('/workshop-api')){if(body?.code==='invalid_session')lock('Session expired. Sign in again to verify your account.');else if(response.status>=500){lock('Server temporarily unavailable. Rechecking connection automatically.');retryVerification();}}return body;}catch(error){if(ticket===generation&&url.endsWith('/workshop-api')&&error?.message!=='STALE_SESSION'){lock();retryVerification();}throw error;}finally{controllers.delete(controller);options.signal?.removeEventListener('abort',abort);}};
       return response;
-    }catch(error){controllers.delete(controller);options.signal?.removeEventListener('abort',abort);if(url.endsWith('/workshop-api')&&ticket===generation)lock();throw error;}
+    }catch(error){controllers.delete(controller);options.signal?.removeEventListener('abort',abort);if(url.endsWith('/workshop-api')&&ticket===generation&&error?.message!=='STALE_SESSION'){lock();retryVerification();}throw error;}
   };
   // These are device settings or account-scoped idempotency journals, not a
   // renderable workshop cache. Retain journals to reconcile uncertain commits.
