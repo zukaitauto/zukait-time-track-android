@@ -81,7 +81,7 @@ export function jobEditTransition(data,user,request,now){
    if(k==='email'&&next[k]&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next[k]))return error('job_edit_invalid_fields');
    if(k==='jobIntakeOdometerUnit'&&!['KM','MILES'].includes(next[k].toUpperCase()))return error('job_edit_invalid_fields');
   }
-  if(!full&&(old.receptionNo||(old.directReceptionJob&&user.role!=='Manager'))&&identity.includes(k)&&String(next[k]||'')!==String(old[k]||''))return error('job_edit_linked_identity');
+  if(!full&&old.receptionNo&&identity.includes(k)&&String(next[k]||'')!==String(old[k]||''))return error('job_edit_linked_identity');
  }
  if(full&&'jobIntakeOdometerUnit' in patch)next.jobIntakeOdometerUnit=next.jobIntakeOdometerUnit.toUpperCase();
  if(full&&'jobIntakeOdometer' in patch&&'odometer' in old)next.odometer=next.jobIntakeOdometer;
