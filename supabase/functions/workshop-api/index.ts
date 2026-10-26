@@ -1,3 +1,4 @@
+import { createDatabaseFetch } from './database_fetch.js';
 import {billRoute} from './accountant/extensions/bill_route.js';
 import { mechanicalRoute, mechanicalLegacyDeliveryCheck } from "./extensions/mechanical_route.js";
 import { subletTransition } from './sublet_rules.js';
@@ -18,7 +19,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 const admin = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-  { auth: { persistSession: false, autoRefreshToken: false } }
+  { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: createDatabaseFetch() } }
 );
 
 const cors = {

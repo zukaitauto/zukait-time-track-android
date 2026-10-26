@@ -3,6 +3,10 @@ import vm from 'node:vm';
 import assert from 'node:assert/strict';
 import {createDatabaseFetch} from '../supabase/functions/workshop-api/database_fetch.js';
 
+// Importing the deadline helper alone does not protect production database calls.
+const apiSource=fs.readFileSync(new URL('../supabase/functions/workshop-api/index.ts',import.meta.url),'utf8');
+assert.match(apiSource,/global:\s*\{\s*fetch:\s*createDatabaseFetch\(\)\s*\}/,'The real database client must retain the deployed request deadline');
+
 // Fake time exercises an actual 8-second commit and a 10-second deadline
 // without sleeping or issuing any database mutations.
 const nativeSet=globalThis.setTimeout,nativeClear=globalThis.clearTimeout;

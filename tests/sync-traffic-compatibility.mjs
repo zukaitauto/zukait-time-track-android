@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import vm, {SourceTextModule,SyntheticModule} from 'node:vm';
 import {stripTypeScriptTypes} from 'node:module';
 import {createHash} from 'node:crypto';
+import {createDatabaseFetch} from '../supabase/functions/workshop-api/database_fetch.js';
 const fixture={jobs:Array.from({length:2000},(_,i)=>({no:'QA-'+i,vehicle:'Synthetic vehicle '+i%40,reg:'TEST-'+i,status:i%2?'Open':'Completed',notes:createHash('sha256').update('fixture-'+i).digest('hex')})),assign:[],sessions:[],leaves:[]};
 const payload=JSON.stringify({ok:true,revision:42,data:fixture,user:{id:'TEST',role:'Manager'}});
 let handler,mode,reads=[];
@@ -20,7 +21,7 @@ const module=new SourceTextModule(stripTypeScriptTypes(source));
 await module.link(async spec=>{
  const line=source.split('\n').find(s=>s.includes('from')&&s.includes(spec));
  const names=line?.match(/import\s*\{([^}]+)\}/)?.[1].split(',').map(n=>n.trim())||[];
- return new SyntheticModule(names,function(){for(const name of names)this.setExport(name,name==='createClient'?()=>admin:name==='accountantApi'?async()=>({body:{ok:false,code:'accountant_forbidden'},status:403}):()=>{throw Error('unexpected import '+name)})});
+ return new SyntheticModule(names,function(){for(const name of names)this.setExport(name,name==='createDatabaseFetch'?createDatabaseFetch:name==='createClient'?()=>admin:name==='accountantApi'?async()=>({body:{ok:false,code:'accountant_forbidden'},status:403}):()=>{throw Error('unexpected import '+name)})});
 });
 await module.evaluate();
 async function call(body,scenario='valid',key='qa-key'){
