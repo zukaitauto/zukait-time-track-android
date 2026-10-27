@@ -95,4 +95,58 @@ for(const action of ['load','save','live_status']){
  const b=boot();await b.w.login();const journal='zukait_accountant_pending_v1:qa:M1';b.w.localStorage.setItem(journal,'receipt');b.w.localStorage.setItem('zukait_v2_event_queue_v1','old');b.w.sessionStorage.setItem('detail','private');
  await b.w.logout();assert.equal(b.w.localStorage.getItem(journal),'receipt');assert.equal(b.w.localStorage.getItem('zukait_v2_event_queue_v1'),null);assert.equal(b.w.sessionStorage.length,0);b.close();
 }
-console.log('PASS account isolation: slow login, offline/failed verification, identity mismatch, late load/save/live responses, immediate logout, blocked offline commands and scoped receipts.');
+// Mid-task transport failures recover through an authenticated read without
+// resetting the document, current identity, task or uncertain command journal.
+const workshop='https://pjknotnjkufadqavcmii.supabase.co/functions/v1/workshop-api';
+const request=(w,action)=>w.fetch(workshop,{headers:{},body:JSON.stringify({action})}).then(r=>r.json());
+{
+ const b=boot();await b.w.login();
+ b.w.eval('state.jobs.push({no:"UNCONFIRMED-TASK"})');
+ const journal='zukait_employee_time_pending_v1:M1';b.w.localStorage.setItem(journal,'original-command');
+ const before=b.requests.length,hold=deferred();
+ b.handler(body=>body.action==='save'?Promise.resolve({status:503,json:async()=>({ok:false,code:'database_busy'})}):body.action==='revision'?hold.promise:null);
+ await request(b.w,'save');assert.equal(b.w.zukaitSessionPrivacy.locked,true);
+ const recovery=b.w.zukaitSessionPrivacy.reconnect();await tick();
+ assert.equal(b.w.zukaitSessionPrivacy.locked,true,'network online alone does not unlock');
+ assert.ok(b.w.eval('state.jobs.some(j=>j.no==="UNCONFIRMED-TASK")'));
+ hold.resolve({status:200,json:async()=>({ok:true,user:manager,revision:5})});
+ assert.equal(await recovery,true);assert.equal(b.w.zukaitSessionPrivacy.locked,false);
+ assert.equal(b.w.me.id,'M1');assert.equal(b.w.localStorage.getItem(journal),'original-command');
+ assert.ok(b.w.eval('state.jobs.some(j=>j.no==="UNCONFIRMED-TASK")'));
+ assert.deepEqual(b.requests.slice(before).map(x=>x.body.action),['save','revision'],'recovery performs no login, reset or mutation replay');
+ b.close();
+}
+for(const fault of ['network','html','wrong-user','invalid-session']){
+ const b=boot();await b.w.login();
+ b.handler(body=>body.action==='save'?Promise.reject(Error('network')):null);
+ await assert.rejects(request(b.w,'save'));assert.equal(b.w.zukaitSessionPrivacy.locked,true);
+ b.handler(body=>{
+   if(body.action!=='revision')return null;
+   if(fault==='network')return Promise.reject(Error('network'));
+   return Promise.resolve({status:fault==='invalid-session'?401:200,json:async()=>{
+     if(fault==='html')throw SyntaxError('HTML');
+     return fault==='invalid-session'?{ok:false,code:'invalid_session'}:{ok:true,user:supervisor,revision:5};
+   }});
+ });
+ assert.equal(await b.w.zukaitSessionPrivacy.reconnect(),false);assert.equal(b.w.zukaitSessionPrivacy.locked,true);b.close();
+}
+{
+ const b=boot();await b.w.login();const hold=deferred();
+ b.handler(body=>body.action==='revision'?Promise.resolve({status:200,json:()=>hold.promise}):body.action==='save'?Promise.reject(Error('network')):null);
+ const old=request(b.w,'revision');await tick();await assert.rejects(request(b.w,'save'));
+ hold.resolve({ok:true,user:manager,revision:5});await old;
+ assert.equal(b.w.zukaitSessionPrivacy.locked,true,'success started before a newer failure cannot unlock');b.close();
+}
+{
+ const b=boot();await b.w.login();
+ b.handler(body=>body.action==='save'?Promise.reject(Error('network')):null);await assert.rejects(request(b.w,'save'));
+ const hold=deferred();b.handler(body=>body.action==='revision'?Promise.resolve({status:200,json:()=>hold.promise}):null);
+ const recovery=b.w.zukaitSessionPrivacy.reconnect();await tick();await b.w.logout();
+ hold.resolve({ok:true,user:manager,revision:5});assert.equal(await recovery,false);
+ assert.equal(b.w.zukaitSessionPrivacy.locked,true);assert.equal(b.w.localStorage.getItem(session),null);b.close();
+}
+{
+ const b=boot({saved:manager});b.handler(body=>body.action==='revision'?Promise.resolve({status:200,json:async()=>({ok:true,user:manager,revision:5})}):null);
+ await request(b.w,'revision');assert.equal(b.w.zukaitSessionPrivacy.locked,true,'a cold saved token cannot use warm-session recovery');b.close();
+}
+console.log('PASS account isolation and mid-task recovery: preserved task/journal, authenticated read-only reconnect, cold-start lock, identity mismatch, stale response, logout and malformed/offline failure safety.');
