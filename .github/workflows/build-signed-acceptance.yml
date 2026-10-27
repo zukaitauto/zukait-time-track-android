@@ -8,6 +8,11 @@ on:
     paths:
       - app/src/main/assets/manager_profit_performance.js
       - app/src/main/assets/offline_test.html
+      - app/src/main/assets/time_management*
+      - app/src/main/assets/session_privacy.js
+      - app/src/main/assets/cloud_sync.js
+      - app/src/main/assets/v74_updates.js
+      - .github/workflows/mechanical-phone-qa.yml
       - supabase/functions/workshop-api/accountant/**
       - tests/manager-profit-*
       - .github/workflows/reception-check.yml
