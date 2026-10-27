@@ -103,7 +103,7 @@ function managerTimeJournal(){
  if(saved.actor!==String(me.id)||saved.command?.operation!=='ADD_SESSION'||saved.command?.workStatus!=='CONTINUE'||!/^tm-[a-zA-Z0-9-]{16,100}$/.test(saved.command.requestId||''))throw Error('time_pending_invalid');
  return saved.command;
 }
-function keepManagerTimeJournal(command){localStorage.setItem(managerTimeJournalKey(),JSON.stringify({actor:String(me.id),command}));}
+function keepManagerTimeJournal(command){const prior=managerTimeJournal();if(prior&&JSON.stringify(prior)!==JSON.stringify(command))throw Error('time_request_reused');localStorage.setItem(managerTimeJournalKey(),JSON.stringify({actor:String(me.id),command}));}
 window.zukaitManagerTimeRetry=function(){
  if(!manager()||managerBusy)return;
  try{const command=managerTimeJournal();if(!command)return;managerRequest=command;managerAssignment=command.assignmentId;
@@ -160,7 +160,7 @@ window.zukaitManagerTimeAction=function(op,sessionId=''){
 };
 window.zukaitManagerTimeStatusChanged=function(){const continuing=get('mtWorkStatus')?.value==='CONTINUE';if(get('mtEndLabel'))get('mtEndLabel').hidden=continuing;if(get('mtEnd'))get('mtEnd').disabled=continuing;};
 window.zukaitManagerTimeReview=function(){
- if(!manager()||managerBusy||!managerRequest)return;const reason=String(get('mtReason')?.value||'').trim(),out=get('mtNotice');if(!reason)return out.textContent=errors.time_reason_required;
+ if(!manager()||managerBusy||!managerRequest)return;try{if(managerTimeJournal()){window.zukaitManagerTimeRetry();return}}catch{return alert('Pending time change needs reconciliation. Preserve device data.')}const reason=String(get('mtReason')?.value||'').trim(),out=get('mtNotice');if(!reason)return out.textContent=errors.time_reason_required;
  const req={...managerRequest,reason};
  if(['CORRECT_SESSION','ADD_SESSION'].includes(req.operation)){req.workStatus=get('mtWorkStatus')?.value;if(!['PAUSED','FINISHED','CONTINUE'].includes(req.workStatus)||(req.workStatus==='CONTINUE'&&req.operation!=='ADD_SESSION'))return out.textContent=managerErrors.invalid_work_status;}
  if(['ADD_SESSION','CORRECT_SESSION'].includes(req.operation)){req.start=new Date(get('mtStart').value).getTime();req.end=req.workStatus==='CONTINUE'?null:new Date(get('mtEnd').value).getTime();if(!Number.isSafeInteger(req.start)||req.start>Date.now()||(req.workStatus!=='CONTINUE'&&(!Number.isSafeInteger(req.end)||req.end<=req.start||req.end>Date.now())))return out.textContent=managerErrors.invalid_session_time;}
@@ -169,7 +169,7 @@ window.zukaitManagerTimeReview=function(){
  managerRequest=req;get('mtInputs').disabled=true;out.textContent='';const review=get('mtReview');review.hidden=false;
  review.innerHTML='<div class="tm-review"><h3>Confirm '+esc(managerLabels[req.operation])+'</h3>'+(req.start?'<p>'+esc(new Date(req.start).toLocaleString())+' → '+(req.end===null?'Running — no end time':esc(new Date(req.end).toLocaleString()))+'</p>':'')+(req.minutes!==undefined?'<p>New allocation: '+fmtTime(req.minutes)+'</p>':'')+(req.targetEmployeeId?'<p>New technician: '+esc(managerStaff(req.targetEmployeeId)?.name||req.targetEmployeeId)+'</p>':'')+(req.workStatus?'<p><b>Work status:</b> '+(req.workStatus==='CONTINUE'?'Continue Working — timer runs from the entered start time.':req.workStatus==='FINISHED'?'Finished — removed from active work; hours retained for costing.':'Paused — available to resume.')+'</p>':'')+'<p><b>Reason:</b> '+esc(reason)+'</p><div class="tm-actions"><button type="button" class="tm-back" onclick="zukaitManagerTimeEdit()">← Edit</button><button id="mtConfirm" type="button" class="tm-save" onclick="zukaitManagerTimeConfirm()">Confirm Save</button></div></div>';
 };
-window.zukaitManagerTimeEdit=function(){if(!manager()||managerBusy)return;get('mtInputs').disabled=false;get('mtReview').hidden=true};
+window.zukaitManagerTimeEdit=function(){if(!manager()||managerBusy)return;try{if(managerTimeJournal()){window.zukaitManagerTimeRetry();return}}catch{return alert('Pending time change needs reconciliation. Preserve device data.')}get('mtInputs').disabled=false;get('mtReview').hidden=true};
 window.zukaitManagerTimeConfirm=async function(){
  if(!manager()||managerBusy||!managerRequest||get('mtReview')?.hidden!==false)return;managerBusy=true;const host=get('mtReview'),req=managerRequest,actor=String(me.id);get('mtConfirm').disabled=true;
  try{const continuing=req.operation==='ADD_SESSION'&&req.workStatus==='CONTINUE';if(managerPending()&&!continuing)throw Error('TIME_SYNC_PENDING');if(continuing)keepManagerTimeJournal(req);const result=await window.zukaitCloud.timeManagement(req);if(continuing){if(result?.audit?.id!==req.requestId||String(result?.audit?.by)!==actor)throw Error('time_receipt_unconfirmed');localStorage.removeItem('zukait_manager_time_pending_v1:'+actor);}if(!manager()||String(me.id)!==actor||get('mtReview')!==host)return;managerView=JSON.parse(JSON.stringify({...state,users:typeof users!=='undefined'?users:state.users||[]}));managerViewer=actor;managerRequest=null;managerBusy=false;window.zukaitManagerTimeSelect(req.assignmentId);}
