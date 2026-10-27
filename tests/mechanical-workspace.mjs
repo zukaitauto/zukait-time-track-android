@@ -31,6 +31,21 @@ await click(x.root,'Retry same change');assert.equal(writes().length,2);assert.d
 // A loaded pending command is not automatically posted; a reload permits only
 // an explicit same-command retry, using the durable device identifier.
 const pending={owner:'QA_SUP',checklistId:id(1),command:original};const saved=[['zukait_mechanical_pending_v1:QA_SUP',JSON.stringify(pending)],['zukait_mechanical_device_v1','QA_DEVICE']];
+// Dedicated host throws explicit API rejections. An inactive old card must
+// not permanently block registration; uncertain transport failures stay saved.
+for(const code of ['task_inactive','checklist_inactive','existing_active_jc_required'])for(const thrown of [true,false]){
+ x=await setup({stored:saved,apiOverride:async b=>{if(b.action==='mechanical_dashboard')return {...fixture(),detail:b.checklistId?structuredClone(detail):null};if(thrown)throw Error(code);return {ok:false,code}}});
+ await click(x.root,'Retry same change');assert.ok(x.storage.has('zukait_mechanical_pending_v1:QA_SUP'));
+ assert.equal(x.root.querySelector('[data-operation=MC_CREATE] button').disabled,true);
+ const sent=x.calls.filter(c=>c.action==='mechanical_command').length;await click(x.root,'Dismiss rejected change');
+ assert.equal(x.storage.has('zukait_mechanical_pending_v1:QA_SUP'),false);assert.equal(x.root.querySelector('[data-operation=MC_CREATE] button').disabled,false);
+ assert.equal(x.calls.filter(c=>c.action==='mechanical_command').length,sent,'Dismissing a rejected journal never writes server records');
+}
+for(const code of ['NETWORK','TIMEOUT','database_busy','mechanical_unavailable','invalid_session']){
+ x=await setup({stored:saved,apiOverride:async b=>{if(b.action==='mechanical_dashboard')return {...fixture(),detail:structuredClone(detail)};throw Error(code)}});
+ await click(x.root,'Retry same change');assert.ok(x.storage.has('zukait_mechanical_pending_v1:QA_SUP'));
+ assert.ok(![...x.root.querySelectorAll('button')].some(b=>b.textContent==='Dismiss rejected change'),'Uncertain/unauthenticated result cannot be discarded');
+}
 x=await setup({stored:saved});assert.equal(x.calls.filter(c=>c.action==='mechanical_command').length,0);await click(x.root,'Retry same change');assert.deepEqual(x.calls.find(c=>c.action==='mechanical_command').command,original);
 // A different login cannot load or submit another owner's pending request.
 x=await setup({stored:saved,user:{id:'OTHER',role:'Supervisor',key:'OTHER_SESSION'}});assert.equal(x.root.textContent.includes('Pending confirmation'),false);
