@@ -19,6 +19,9 @@ jobs:
       - name: Verify outages, identity, time authority and deadlines
         run: |
           set -e
+          node tests/continue-working.mjs
+          node tests/time-correction-disposition.mjs
+          node tests/manager-time-management.mjs
           node tests/connection-outage-safety.mjs
           node tests/sync-request-deadlines.mjs
           node tests/cloud-sync-recovery.mjs

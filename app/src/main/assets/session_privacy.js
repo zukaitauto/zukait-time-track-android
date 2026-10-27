@@ -95,7 +95,7 @@
   };
   // These are device settings or account-scoped idempotency journals, not a
   // renderable workshop cache. Retain journals to reconcile uncertain commits.
-  function retained(key){return ['zukait_device_id','zukaitDeviceId','zukait_device_id_v42','zukait_v2_pilot_device','zukait_mechanical_device_v1','zukait_employee_time_device_v1'].includes(key)||/^(zukait_employee_time_pending_v1:|zukait_mechanical_pending_v1:|zukait_mechanical_tracking_pending_v1:|zukait_mechanical_delivery_pending_v1:|zukait_accountant_pending_v1:|zukait_receptionist_delivery_v1:|zukait_reception_unconfirmed_v1:|zukait_reception_estimate_pending:|zukait_quick_checklist_v1:|zukait_reception_promise_pending:)/.test(key);}
+  function retained(key){return ['zukait_device_id','zukaitDeviceId','zukait_device_id_v42','zukait_v2_pilot_device','zukait_mechanical_device_v1','zukait_employee_time_device_v1'].includes(key)||/^(zukait_manager_time_pending_v1:|zukait_employee_time_pending_v1:|zukait_mechanical_pending_v1:|zukait_mechanical_tracking_pending_v1:|zukait_mechanical_delivery_pending_v1:|zukait_accountant_pending_v1:|zukait_receptionist_delivery_v1:|zukait_reception_unconfirmed_v1:|zukait_reception_estimate_pending:|zukait_quick_checklist_v1:|zukait_reception_promise_pending:)/.test(key);}
   function clearCachedStorage(){
     for(const key of Object.keys(localStorage))if(/^zukait/i.test(key)&&!retained(key)&&key!=='zukait_secure_session_v42')localStorage.removeItem(key);
     sessionStorage.clear();

@@ -130,7 +130,7 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
  if(!/^tm-[a-zA-Z0-9-]{16,100}$/.test(id))return fail('invalid_time_change');
  if(!reason||reason.length>500)return fail('time_reason_required');
  const command={operation:op,assignmentId:String(request.assignmentId||''),sessionId:String(request.sessionId||''),start:request.start??null,end:request.end??null,minutes:request.minutes??null,targetEmployeeId:String(request.targetEmployeeId||''),reason};
- if(request.workStatus!==undefined){if(!['CORRECT_SESSION','ADD_SESSION'].includes(op)||!['PAUSED','FINISHED'].includes(request.workStatus))return fail('invalid_work_status');command.workStatus=request.workStatus;}
+ if(request.workStatus!==undefined){if(!['CORRECT_SESSION','ADD_SESSION'].includes(op)||!['PAUSED','FINISHED','CONTINUE'].includes(request.workStatus)||(request.workStatus==='CONTINUE'&&op!=='ADD_SESSION'))return fail('invalid_work_status');command.workStatus=request.workStatus;}
  const prior=(current.additionalActions||[]).find(x=>x?.id===id);
  if(prior)return prior.by===actor.id&&JSON.stringify(prior.command)===JSON.stringify(command)?{ok:true,data:current,audit:prior,duplicate:true}:fail('time_request_reused');
  const a=(current.assign||[]).find(x=>x&&String(x.id)===command.assignmentId);
@@ -148,10 +148,18 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
  if(['CORRECT_SESSION','ADD_SESSION','CANCEL_SESSION'].includes(op)){
   if(op!=='ADD_SESSION'&&(!s||!s.end||s.cancelled))return fail('time_session_inactive');
   if(command.workStatus){
+   if(command.workStatus==='CONTINUE'){
+    if(String(a.job).toUpperCase()==='ID001'||j.delivered||j.archived)return fail('time_job_inactive');
+    if(a.completed)return fail('time_reopen_required');
+    const employee=(current.users||[]).find(u=>u&&String(u.id)===String(a.emp)&&u.role==='Employee'&&u.active!==false);
+    if(!employee)return fail('time_employee_invalid');
+    if(command.end!==null)return fail('invalid_session_time');
+    if((current.sessions||[]).some(x=>x&&!x.cancelled&&String(x.emp)===String(a.emp)&&!x.end&&String(x.job).toUpperCase()==='ID001'))return fail('time_id001_conflict');
+   }
    const historicalFinish=op==='ADD_SESSION'&&command.workStatus==='FINISHED'&&(j.delivered||j.archived);
    if(own.some(x=>!x.cancelled&&!x.end))return fail('time_work_running');
    // Historical intervals may be corrected without changing the disposition of later work.
-   if(!historicalFinish&&own.some(x=>!x.cancelled&&x.id!==s?.id&&(op==='ADD_SESSION'?Number(x.end)>Number(command.end):(Number(x.end)>Number(s.end)||Number(x.end)>Number(command.end)))))return fail('time_later_session');
+   if(command.workStatus!=='CONTINUE'&&!historicalFinish&&own.some(x=>!x.cancelled&&x.id!==s?.id&&(op==='ADD_SESSION'?Number(x.end)>Number(command.end):(Number(x.end)>Number(s.end)||Number(x.end)>Number(command.end)))))return fail('time_later_session');
    if(command.workStatus==='PAUSED'&&a.completed)return fail('time_reopen_required');
    if(!a.completed&&(j.delivered||j.archived)&&!historicalFinish)return fail('time_job_inactive');
    if(historicalFinish){
@@ -165,15 +173,21 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
    // Zero the effective interval for legacy reports; retain the original in the row and audit.
    const dest=data.sessions.find(x=>String(x.id)===String(s.id));dest.originalTime=dest.originalTime||{start:s.start,end:s.end};dest.end=dest.start;dest.paused=false;dest.cancelled=true;dest.cancelledBy=actor.id;dest.cancelledAt=at;dest.cancelReason=reason;after=dest;
   }else{
-   const start=Number(command.start),end=Number(command.end);
-   if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start<=0||end<=start||end>at||end-start>7*DAY)return fail('invalid_session_time');
-   if((current.sessions||[]).some(x=>x&&!x.cancelled&&String(x.emp)===String(a.emp)&&String(x.id)!==String(s?.id)&&start<Number(x.end||at)&&end>Number(x.start)))return fail('time_session_overlap');
+   const continuing=command.workStatus==='CONTINUE',start=Number(command.start),end=continuing?null:Number(command.end);
+   if(!Number.isSafeInteger(start)||start<=0||start>at||(continuing&&at-start>7*DAY)||(!continuing&&(!Number.isSafeInteger(end)||end<=start||end>at||end-start>7*DAY)))return fail('invalid_session_time');
+   if((current.sessions||[]).some(x=>x&&!x.cancelled&&String(x.emp)===String(a.emp)&&String(x.id)!==String(s?.id)&&(continuing?(x.end==null||Number(x.end)>start):(start<Number(x.end||at)&&end>Number(x.start)))))return fail('time_session_overlap');
    if(op==='ADD_SESSION'){
     after={id:id+'-session',assignmentId:a.id,job:a.job,emp:a.emp,start,end,paused:true,pauseReason:'Manager added missing time',rework:!!a.rework,manual:true,createdBy:actor.id,createdAt:at};data.sessions=data.sessions||[];data.sessions.push(after);
    }else{after=data.sessions.find(x=>String(x.id)===String(s.id));after.start=start;after.end=end;}
   }
   if(command.workStatus){
-   after.paused=command.workStatus==='PAUSED';after.finished=!after.paused;
+   after.paused=command.workStatus==='PAUSED';after.finished=command.workStatus==='FINISHED';
+   if(command.workStatus==='CONTINUE'){
+    after.serverAuthoritative=true;after.serverStartedAt=after.start;
+    row.completed=false;
+    const jobRow=data.jobs.find(x=>String(x.no)===String(a.job));jobRow.status='Open';delete jobRow.completedAt;
+    data.lastActions=data.lastActions||{};data.lastActions[a.emp]={text:'Started '+String(a.job)+' (Manager corrected)',at};
+   }
    if(after.finished){row.completed=true;row.completedAt=op==='ADD_SESSION'&&(j.delivered||j.archived)?Math.max(Number(a.completedAt)||0,after.end,...own.filter(x=>!x.cancelled).map(x=>Number(x.end)||0)):after.end;row.managerTimeCompletion=true;row.timeManagementRevision=(Number(a.timeManagementRevision)||0)+1;}
   }
   after.managerTimeRevision=(Number(s?.managerTimeRevision)||0)+1;after.correctedBy=actor.id;after.correctedAt=at;
