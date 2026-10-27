@@ -1,0 +1,28 @@
+name: Connection outage safety
+on:
+  pull_request:
+    branches: [architecture-v2]
+  push:
+    branches: [architecture-v2]
+permissions:
+  contents: read
+jobs:
+  outage-safety:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify outages, identity, time authority and deadlines
+        run: |
+          set -e
+          node tests/connection-outage-safety.mjs
+          node tests/sync-request-deadlines.mjs
+          node tests/cloud-sync-recovery.mjs
+          node tests/secure-session-restore.mjs
+          node tests/account-session-isolation.mjs
+          node tests/employee-finish-server-authority.mjs
+          node tests/id001-server-stop.mjs

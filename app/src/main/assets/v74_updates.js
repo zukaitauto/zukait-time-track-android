@@ -4261,6 +4261,22 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
 (()=>{
  'use strict';
  let pending=null;
+ // Keep uncertain commands across reload, privacy cleanup and lost receipts.
+ // Only the same employee can explicitly retry; no automatic background writes.
+ const journalKey=()=> 'zukait_employee_time_pending_v1:'+String(me?.id||'');
+ const readCommand=()=>{
+   const raw=localStorage.getItem(journalKey());
+   if(!raw)return null;
+   const saved=JSON.parse(raw);
+   if(saved.actor!==String(me?.id)||!saved.command?.action_id)throw Error('EMPLOYEE_TIME_JOURNAL_INVALID');
+   return saved;
+ };
+ const retryPending=(type,job)=>{
+   try{const saved=readCommand();if(!saved)return null;
+     if(saved.command.event_type!==type||(job!==undefined&&String(saved.command.job)!==String(job)))return Promise.resolve(msg('An earlier '+saved.command.event_type+' for '+saved.command.job+' is unconfirmed. Retry that original work control first.','Work Pending'));
+     return run(saved.command.event_type,saved.command,saved.label)}
+   catch(e){return Promise.resolve(msg('Pending work could not be read safely. Keep this device data and contact support.','Work Pending'))}
+ };
  const ACTIVE=new Set(['Working','Overtime','ID001']);
  const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
  const msg=(m,t='Work Status')=>typeof window.v74Msg==='function'?window.v74Msg(m,t):alert(m);
@@ -4300,16 +4316,28 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
      :code==='employee_time_assignment_not_open'?'Server says this assignment is not open for work.'
      :'Server did not confirm this action ('+code+'). Refresh and retry.';
    try{window.zukaitCloud?.pull?.(true).then(()=>window.zukaitCloud?.pullLiveStatus?.()).finally(()=>{try{render()}catch(_){}})}catch(_){}
-   return msg(text,'Not Confirmed');
+   return msg(text+' The original command is saved. Retry the same work control to check it; do not clear app data.','Not Confirmed');
  };
  const run=async(type,payload,label)=>{
    if(pending)return msg('Another work action is waiting for server confirmation.','Please Wait');
    if(!window.zukaitCloud?.employeeTimeAction)return msg('This app version does not yet contain server-confirmed time controls. Please install the latest version.','Update Required');
-   pending={type,at:Date.now()};pendingUi(label);
+   const actor=String(me?.id||''),key=journalKey();
+   let command;
    try{
-     const r=await window.zukaitCloud.employeeTimeAction({
-       event_type:type,action_id:actionId(),device_id:deviceId(),client_time:Date.now(),...payload
-     });
+     const saved=readCommand();
+     if(saved){command=saved.command;label=saved.label;}
+     else{
+       command={event_type:type,action_id:actionId(),device_id:deviceId(),client_time:Date.now(),...payload};
+       localStorage.setItem(key,JSON.stringify({actor,command,label}));
+       if(localStorage.getItem(key)!==JSON.stringify({actor,command,label}))throw Error('journal_write_failed');
+     }
+   }catch(e){return msg('Cannot safely save the pending work command. No work request was sent. Keep device data and contact support.','Work Pending')}
+   pending={type:command.event_type,at:Date.now()};pendingUi(label);
+   try{
+     const r=await window.zukaitCloud.employeeTimeAction(command);
+     if(String(me?.id)!==actor)throw Error('EMPLOYEE_TIME_ACTOR_CHANGED');
+     if(r?.ok!==true||r.audit?.confirmed!==true||String(r.audit.id)!==String(command.action_id)||String(r.audit.emp)!==actor||String(r.audit.type)!==String(command.event_type))throw Error('EMPLOYEE_TIME_RECEIPT_MISMATCH');
+     localStorage.removeItem(key);
      clearPendingUi();pending=null;
      try{if(typeof closeModal==='function')closeModal()}catch(_){}
      try{render()}catch(_){}
@@ -4321,6 +4349,7 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  // returns the authoritative timestamp/revision before the UI changes.
  window.start=function(no){
    if(!me||me.role!=='Employee')return;
+   const retry=retryPending('START',no);if(retry)return retry;
    const current=active();
    if(current&&!(String(current.job)==='ID001'&&String(no)!=='ID001'))return msg('Server shows active work on '+String(current.job||'another job')+'. Pause, finish or stop it first.','One Job at a Time');
    const a=openAssignment(no);
@@ -4333,6 +4362,7 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  // the server commits Paused.
  window.v74Pause=function(){
    if(!me||me.role!=='Employee')return;
+   const retry=retryPending('PAUSE');if(retry)return retry;
    const s=active();
    if(!s){
      const r=liveRow();
@@ -4348,6 +4378,7 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  // the server first. No local completion is trusted ahead of confirmation.
  window.v74Finish=function(){
    if(!me||me.role!=='Employee')return;
+   const retry=retryPending(active()?.job==='ID001'?'STOP_ID001':'FINISH');if(retry)return retry;
    const s=active();
    if(!s)return msg('Server does not show an active work session. Refresh and try again.','Finish Work');
    const type=String(s.job)==='ID001'?'STOP_ID001':'FINISH';
@@ -4360,6 +4391,7 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  let idleStop=null;
  window.finish=function(){
    if(!me||me.role!=='Employee')return typeof priorFinish==='function'?priorFinish.apply(this,arguments):undefined;
+   try{if(readCommand()?.command.event_type==='STOP_ID001')return retryPending('STOP_ID001')}catch(_){return retryPending('STOP_ID001')}
    const s=active();
    if(!s||String(s.job)!=='ID001')return typeof priorFinish==='function'?priorFinish.apply(this,arguments):undefined;
    if(pending)return msg('Another work action is waiting for server confirmation.','Please Wait');

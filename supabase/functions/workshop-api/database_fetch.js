@@ -11,6 +11,11 @@ export function createDatabaseFetch(fetchImpl=globalThis.fetch,timeoutMs=10000){
   try{
    const response=await fetchImpl(input,{...init,signal:controller.signal});
    const body=[204,205,304].includes(response.status)?null:await response.arrayBuffer();
+   // The origin may return an HTML Cloudflare error rather than PostgREST JSON.
+   // Normalize only upstream failures; never replay a possibly committed write.
+   if(response.status>=500||response.status===429){
+    return new Response(JSON.stringify({code:'PGRST003',message:'Database upstream temporarily unavailable',details:null,hint:null}),{status:503,headers:{'Content-Type':'application/json','Retry-After':'5'}});
+   }
    return new Response(body,{status:response.status,statusText:response.statusText,headers:response.headers});
   }catch(error){
    if(expired)return new Response(JSON.stringify({code:'57014',message:'Database request deadline exceeded',details:null,hint:null}),{status:503,headers:{'Content-Type':'application/json','Retry-After':'5'}});
