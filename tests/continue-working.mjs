@@ -20,6 +20,12 @@ assert.equal(result.audit.before,null);assert.equal(result.audit.after.end,null)
 assert.equal(workedMinutes(result.data,result.data.assign[0],at),180,'11–13 and15–16 Oman, excluding lunch');
 assert.equal(workedMinutes(result.data,result.data.assign[0],at+60000),181,'running timer grows');
 assert.equal(change(result.data,manager,req,at+1).duplicate,true);
+// A real JSONB roundtrip reorders every command object's keys.
+const jsonb=value=>Array.isArray(value)?value.map(jsonb):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort((a,b)=>a.length-b.length||a.localeCompare(b)).map(k=>[k,jsonb(value[k])])):value;
+const stored=JSON.parse(JSON.stringify(jsonb(result.data)));
+assert.equal(change(stored,manager,req,at+1).duplicate,true,'JSONB key order must not reject an unchanged Manager retry');
+assert.equal(change(stored,manager,{...req,start:start-1},at).code,'time_request_reused','changed values remain rejected');
+
 assert.equal(change(result.data,manager,{...req,start:start-1},at).code,'time_request_reused');
 for(const role of ['Employee','Supervisor','Accountant','Mechanical Supervisor'])assert.equal(change(initial,{id:'X',role},req,at).code,'time_permission_denied');
 for(const extra of [{start:at+1},{start:0},{end:at}])assert.equal(change(initial,manager,command(initial,extra),at).code,'invalid_session_time');
@@ -68,7 +74,7 @@ async function boot(id='M1',{broken=false}={}){
  const dom=new JSDOM('<html><head></head><body><div id="modal"></div></body></html>',{url:'https://qa.invalid',runScripts:'outside-only'}),w=dom.window;
  Object.assign(w,{me:{...manager,id},state:structuredClone(server),users:server.users,allocationToken,employeeTimeToken,workedMinutes,assignmentHasStarted,alert:m=>{w.lastAlert=m},openModal:html=>{w.document.getElementById('modal').innerHTML=html},closeModal(){}});
  Object.defineProperty(w,'localStorage',{value:{getItem:k=>saved.get(k)||null,setItem:(k,v)=>{if(broken)throw Error('quota');saved.set(k,v)},removeItem:k=>saved.delete(k)}});
- w.zukaitCloud={syncHealth:{ready:true},readLatest:async()=>({data:structuredClone(server)}),timeManagement:async q=>{sends.push(structuredClone(q));const r=change(server,w.me,q,Date.now());if(!r.ok)throw Object.assign(Error(r.code),{code:r.code});if(!r.duplicate){uiCommits++;server=r.data}if(lose){lose=false;throw Error('NETWORK')}w.state=structuredClone(server);return r}};
+ w.zukaitCloud={syncHealth:{ready:true},readLatest:async()=>({data:structuredClone(server)}),timeManagement:async q=>{sends.push(structuredClone(q));const r=change(server,w.me,q,Date.now());if(!r.ok)throw Object.assign(Error(r.code),{code:r.code});if(!r.duplicate){uiCommits++;server=JSON.parse(JSON.stringify(jsonb(r.data)))}if(lose){lose=false;throw Error('NETWORK')}w.state=structuredClone(server);return r}};
  w.eval(ui);await w.zukaitOpenManagerTimeManagement();return w;
 }
 let w=await boot();w.zukaitManagerTimeSelect('A1');w.zukaitManagerTimeAction('ADD_SESSION');

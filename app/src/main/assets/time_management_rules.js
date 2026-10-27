@@ -1,5 +1,12 @@
 // Shared server and client rules. Split changes allocations, never recorded sessions.
 const DAY=86400000,OMAN=4*3600000;
+// JSONB reorders object keys. Retry identity compares values, never key order.
+function timeCommandKey(value){
+ if(Array.isArray(value))return value.map(timeCommandKey);
+ if(value&&typeof value==='object')return Object.fromEntries(Object.keys(value).sort().map(k=>[k,timeCommandKey(value[k])]));
+ return value;
+}
+const sameTimeCommand=(a,b)=>JSON.stringify(timeCommandKey(a))===JSON.stringify(timeCommandKey(b));
 export function allocationToken(a){return a?JSON.stringify([String(a.id),String(a.job),String(a.emp),Number(a.suggested)||0,!!a.completed,!!a.cancelled,!!a.rework,Number(a.assignedAt)||0,Number(a.timeManagementRevision)||0]):null}
 export function workedMinutes(data,a,at=Date.now()){
  const holidays=new Set((data.workshopHolidays||[]).map(h=>String(typeof h==='object'?(h.date||h.dateKey||h.day||''):h).slice(0,10)));
@@ -40,7 +47,7 @@ export function timeManagementTransition(current,actor,request,at=Date.now()){
  if(!reason||reason.length>500)return fail('time_reason_required');
  const command={operation:op,minutes,reason,assignmentId:String(request.assignmentId||''),targetEmployeeId:op==='SPLIT'?String(request.targetEmployeeId||''):''};
  const prior=(current.additionalActions||[]).find(x=>x&&x.id===id);
- if(prior)return prior.by===actor.id&&JSON.stringify(prior.command)===JSON.stringify(command)?{ok:true,data:current,audit:prior,duplicate:true}:fail('time_request_reused');
+ if(prior)return prior.by===actor.id&&sameTimeCommand(prior.command,command)?{ok:true,data:current,audit:prior,duplicate:true}:fail('time_request_reused');
  const a=(current.assign||[]).find(x=>x&&String(x.id)===command.assignmentId);
  if(!a||a.completed||a.cancelled||a.rework||String(a.job).toUpperCase()==='ID001')return fail('time_assignment_inactive');
  const j=(current.jobs||[]).find(x=>x&&String(x.no)===String(a.job));
@@ -88,7 +95,7 @@ function correctWorkTime(current,actor,request,at,id,reason){
  const assignmentId=String(request.assignmentId||''),sessionId=String(request.sessionId||''),start=Number(request.startAt),end=request.endAt==null||request.endAt===''?null:Number(request.endAt);
  const command={operation:'CORRECT_SESSION',assignmentId,sessionId,startAt:start,endAt:end,reason,expectedSource:request.expectedSource,expectedSession:request.expectedSession??null};
  const prior=(current.corrections||[]).find(x=>x&&String(x.id)===id);
- if(prior)return prior.by===actor.id&&JSON.stringify(prior.command)===JSON.stringify(command)?{ok:true,data:current,audit:prior,duplicate:true}:fail('time_request_reused');
+ if(prior)return prior.by===actor.id&&sameTimeCommand(prior.command,command)?{ok:true,data:current,audit:prior,duplicate:true}:fail('time_request_reused');
  const a=(current.assign||[]).find(x=>x&&String(x.id)===assignmentId);
  if(!a||a.cancelled||String(a.job||'').toUpperCase()==='ID001')return fail('time_assignment_inactive');
  const j=(current.jobs||[]).find(x=>x&&String(x.no)===String(a.job));
@@ -132,7 +139,7 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
  const command={operation:op,assignmentId:String(request.assignmentId||''),sessionId:String(request.sessionId||''),start:request.start??null,end:request.end??null,minutes:request.minutes??null,targetEmployeeId:String(request.targetEmployeeId||''),reason};
  if(request.workStatus!==undefined){if(!['CORRECT_SESSION','ADD_SESSION'].includes(op)||!['PAUSED','FINISHED','CONTINUE'].includes(request.workStatus)||(request.workStatus==='CONTINUE'&&op!=='ADD_SESSION'))return fail('invalid_work_status');command.workStatus=request.workStatus;}
  const prior=(current.additionalActions||[]).find(x=>x?.id===id);
- if(prior)return prior.by===actor.id&&JSON.stringify(prior.command)===JSON.stringify(command)?{ok:true,data:current,audit:prior,duplicate:true}:fail('time_request_reused');
+ if(prior)return prior.by===actor.id&&sameTimeCommand(prior.command,command)?{ok:true,data:current,audit:prior,duplicate:true}:fail('time_request_reused');
  const a=(current.assign||[]).find(x=>x&&String(x.id)===command.assignmentId);
  if(!a||a.cancelled)return fail('time_assignment_inactive');
  if(a.handedOverToAssignmentId&&(['REOPEN','REASSIGN','SET_ALLOCATION','CANCEL_ASSIGNMENT'].includes(op)||request.workStatus!==undefined))return fail('time_handover_source_locked');
@@ -235,7 +242,7 @@ function cancelUnstartedAssignment(current,actor,request,at){
  if(!reason||reason.length>500)return fail('time_reason_required');
  const command={operation:'CANCEL_UNSTARTED',assignmentId:String(request.assignmentId||''),reason};
  const prior=(current.additionalActions||[]).find(x=>x&&x.id===id);
- if(prior)return prior.by===actor.id&&JSON.stringify(prior.command)===JSON.stringify(command)?{ok:true,data:current,audit:prior,duplicate:true}:fail('time_request_reused');
+ if(prior)return prior.by===actor.id&&sameTimeCommand(prior.command,command)?{ok:true,data:current,audit:prior,duplicate:true}:fail('time_request_reused');
  const a=(current.assign||[]).find(x=>x&&String(x.id)===command.assignmentId);
  if(!a||a.completed||a.cancelled||a.rework||String(a.job)==='ID001')return fail('time_assignment_inactive');
  const j=(current.jobs||[]).find(x=>x&&String(x.no)===String(a.job));
