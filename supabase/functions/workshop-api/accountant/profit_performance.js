@@ -26,9 +26,30 @@ export function managerProfitReport(context,financial,filters={},now=Date.now())
    if(subletIds.has(id)){if(subletIds.get(id)!==row.amountMills)subletPending=true;continue;}subletIds.set(id,row.amountMills);
    if(!Number.isSafeInteger(row.amountMills)||row.amountMills<0)subletPending=true;else sublet+=row.amountMills;
   }
-  const verifiedCost=milli(detail.total_cost_omr),totalCost=verifiedCost===null||subletPending?null:verifiedCost+sublet;
+  // An absent category is a verified zero only if the job has no source activity
+  // for it. Unfinalized records must remain pending rather than silently zero.
+  const sources={
+   consumables:array(s.consumables?.actuals).filter(x=>x&&!x.voided&&key(x.jobCard)===no).concat(array(s.consumables?.issues).filter(x=>x&&!x.voided&&key(x.jobCard)===no)),
+   paint:array(s.paintPurchasing?.orders).filter(x=>x&&!x.voided&&key(x.jobCard)===no),
+   parts:array(financial.rows?.parts).filter(x=>key(x.job_card)===no)
+  };
+  const costFields={consumables:'consumables_cost_omr',paint:'paint_cost_omr',parts:'parts_cost_omr',labour:'labour_cost_omr'};
+  const costs={},notes=[];
+  for(const [category,field] of Object.entries(costFields)){
+   const recorded=milli(detail[field]);
+   const isAbsent=category!=='labour'&&sources[category].length===0;
+   costs[category]=recorded===null&&isAbsent?0:recorded;
+   if(costs[category]===null)notes.push(...array(detail.warnings).filter(w=>w===category+' cost pending'||w.toLowerCase().includes(category)));
+   if(costs[category]===null&&!notes.includes(category+' cost pending'))notes.push(category+' cost pending');
+  }
+  // An unresolved parts receipt, running shift, or other explicit warning is
+  // authoritative even if category totals are otherwise known.
+  const incompleteParts=array(detail.warnings).some(w=>/spare parts receipts are incomplete/i.test(w));
+  if(incompleteParts){costs.parts=null;notes.push('Spare parts receipts are incomplete');}
+  const baseCost=Object.values(costs).some(v=>v===null)?null:Object.values(costs).reduce((a,b)=>a+b,0);
+  const totalCost=baseCost===null||subletPending?null:baseCost+sublet;
   const profit=totalCost===null?null:amount-totalCost;
-  rows.push({kind,job_card:no,date,vehicle,registration:detail.registration||'',insurance_company:company,amount_omr:money(amount),total_cost_omr:money(totalCost),sublet_cost_omr:subletPending?null:money(sublet),profit_omr:money(profit),profit_percentage:profit===null||amount===0?null:profit/amount*100,costs_complete:totalCost!==null,cost_notes:[...array(detail.warnings).filter(x=>x!=='Verified final invoice unavailable'),...(subletPending?['Sublet cost pending']:[])]});
+  rows.push({kind,job_card:no,date,vehicle,registration:detail.registration||'',insurance_company:company,amount_omr:money(amount),total_cost_omr:money(totalCost),sublet_cost_omr:subletPending?null:money(sublet),profit_omr:money(profit),profit_percentage:profit===null||amount===0?null:profit/amount*100,costs_complete:totalCost!==null,cost_breakdown_omr:Object.fromEntries(Object.entries(costs).map(([k,v])=>[k,money(v)])),cost_notes:[...new Set([...notes,...(subletPending?['Sublet cost pending']:[])])]});
  }
  rows.sort((a,b)=>a.date.localeCompare(b.date)||a.job_card.localeCompare(b.job_card,undefined,{numeric:true}));
  return {rows,month,undated_records:undated,basis:'Cash: final invoice date/amount counted once as received. Insurance: LPO document received date/amount, not insurer payment. Profit uses recorded job costs including sublet; overheads and tax adjustments are not included.'};
