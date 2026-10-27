@@ -26,6 +26,12 @@ try{
  const body=bodyStall('https://fixture.invalid');await flush();await advance(10000);assert.equal((await body).status,503,'response-body stalls remain bounded');
  const controller=new AbortController(),cancelled=stuck('https://fixture.invalid',{signal:controller.signal});const rejection=assert.rejects(cancelled,e=>e.name==='AbortError');controller.abort();await rejection;assert.equal(timers.size,0,'caller cancellation stays cancellation');
  for(const status of [401,403,409]){let n=0;const result=await createDatabaseFetch(async()=>{n++;return new Response('{"ok":false}',{status})})('https://fixture.invalid');assert.equal(result.status,status);assert.equal(n,1);}
+ for(const status of [502,503,504,521,525]){
+  let n=0;const read=await createDatabaseFetch(async()=>new Response('{}',{status:++n===1?status:200}))('https://fixture.invalid/table');assert.equal(read.status,200);assert.equal(n,2);
+  n=0;const write=await createDatabaseFetch(async()=>{n++;return new Response('{}',{status})})('https://fixture.invalid/rpc/command',{method:'POST'});assert.equal(write.status,503);assert.equal((await write.json()).code,'PGRST003');assert.equal(n,1,'uncertain writes must never replay');
+ }
+ let failures=0;const unavailable=await createDatabaseFetch(async()=>{failures++;return new Response('{}',{status:503})})('https://fixture.invalid/table');assert.equal(unavailable.status,503);assert.equal(failures,2,'persistent failure is bounded');
+ let readAttempts=0;const budgeted=createDatabaseFetch(async(_url,{signal})=>{readAttempts++;await wait(6000,signal);return new Response('{}',{status:503})});const budget=budgeted('https://fixture.invalid/table');await advance(10000);assert.equal((await budget).status,503);assert.equal(readAttempts,2);assert.equal(timers.size,0,'retry cannot extend original deadline');
 }finally{globalThis.setTimeout=nativeSet;globalThis.clearTimeout=nativeClear;}
 
 const source=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
