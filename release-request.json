@@ -3,25 +3,117 @@
   "versionCode": 339,
   "releaseScope": "standard",
   "approvedForStaff": false,
-  "sourceCommit": "6ab119a5772b71a636d31c8c42a9369ef6f09d66",
+  "sourceCommit": "f70dafbf80866d0b29d659fa872e069d0e7fda8c",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": true,
-  "authorization": "Owner requested preserving the Parts + Sublet and monthly Cash/Insurance report fixes through bcaf027331a2998fc3c061a81741f6555cc037a4, combining the Mechanical UI change, running final checks and publishing once all fixes are combined. Existing Reception destinations were approved for users who already have access; Jibin permissions remain unchanged. Publication remains subject to existing release requirements.",
+  "authorization": "Owner explicitly requested: do this fix and release new version, you have my permission; then instructed Proceed. This supersedes the separate-publication-instruction hold. Existing release requirements still apply; authorization does not attest to unperformed tests.",
   "approvedAt": null,
   "publishNonce": null,
-  "physicalAcceptanceStatus": "NOT_RUN",
+  "physicalAcceptanceStatus": "ANDROID_OWNER_CONFIRMED_SAFARI_PENDING",
   "freshProductionBackupRestoreStatus": "REVIEW_REQUIRED_FOR_CANDIDATE",
   "productionBackendChanges": true,
   "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
   "releaseHeldByOwner": false,
-  "verificationSummary": "Frozen V376/code339 source 6ab119a5772b71a636d31c8c42a9369ef6f09d66 passed all nine automated workflows: signed APK/source/signature parity, Reception/full regression, Accountant, Mechanical DOM/Chromium/native fresh+upgrade persistence, native PDF, Android builds, sync compatibility and outage safety. All eleven Mechanical cards tested at 320/375/768/1280. Parts + Sublet and monthly Cash/Insurance fixes through bcaf027 preserved. Physical Android/Safari/HTTPS and source-linked operational release gates remain unperformed; no reuse of V375 attestations and no publication.",
-  "signedAcceptanceRun": 40699716543,
-  "verificationRun": 40699716555,
-  "contractVerificationRun": 40699716550,
-  "accountantVerificationRun": 40699716620,
-  "nativePdfVerificationRun": 40699716569,
+  "verificationSummary": "Final V376/code339 source f70dafbf80866d0b29d659fa872e069d0e7fda8c passed all nine triggered workflows, including signed APK, staged PC, Reception/browser, Accountant, Manager row, Mechanical/Accountant contracts, Android/APK builds and outage safety. Exact runtime source d0888e4 additionally passed sync compatibility and Mechanical phone QA. Owner confirmed Android Parts + Sublet totals and Mechanical navigation as good on signed d0888e4; final source changes only two web cache query identifiers. No production data/database/main changes. Publication is owner-authorized but pending current HTTPS restart, Safari and recovery/backend acceptance evidence, not a new permission request.",
+  "signedAcceptanceRun": 40735064773,
+  "verificationRun": 40735064778,
+  "contractVerificationRun": 40735064717,
+  "accountantVerificationRun": 40735064878,
+  "nativePdfVerificationRun": null,
   "automatedVerification": {
+    "sourceCommit": "f70dafbf80866d0b29d659fa872e069d0e7fda8c",
+    "allPassed": true,
+    "runs": [
+      {
+        "id": 40735064723,
+        "name": "Validate staged PC website before V305 deployment",
+        "conclusion": "success"
+      },
+      {
+        "id": 40735064737,
+        "name": "Connection outage safety",
+        "conclusion": "success"
+      },
+      {
+        "id": 40735064724,
+        "name": "Manager department row UI",
+        "conclusion": "success"
+      },
+      {
+        "id": 40735064717,
+        "name": "Inactive Mechanical and Accountant contracts",
+        "conclusion": "success"
+      },
+      {
+        "id": 40735064786,
+        "name": "Android architecture-v2 build\\n# Build verification revision 2",
+        "conclusion": "success"
+      },
+      {
+        "id": 40735064773,
+        "name": "Build Signed Acceptance APK",
+        "conclusion": "success"
+      },
+      {
+        "id": 40735064878,
+        "name": "Accountant isolated acceptance",
+        "conclusion": "success"
+      },
+      {
+        "id": 40735064697,
+        "name": "Build Zukait Time Track APK",
+        "conclusion": "success"
+      },
+      {
+        "id": 40735064778,
+        "name": "Reception verification",
+        "conclusion": "success"
+      }
+    ],
+    "signedArtifact": {
+      "id": 12836334531,
+      "name": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
+      "runId": 40735064773,
+      "package": "com.zukait.timetrack",
+      "versionName": "V376",
+      "versionCode": 339,
+      "certificateSha256": "63886438214503d468f053b44afe34baf008019f674e065a09b14ae8bf451af0",
+      "artifactZipDigest": "bc5dee17c19b3c4289b73ac317143aff49b8de7fe67395d508619217c63fdf32"
+    },
+    "previousRuntimeSource": "d0888e43ca508d314f35d7aed4a6444a35b1f213",
+    "previousRuntimeAllEightChecksPassed": true,
+    "verifiedAt": "2026-10-28T17:27:02Z"
+  },
+  "additionalDatabaseCorrection": {
+    "migration": "20261028141914_manager_unclassified_job_type_correction.sql",
+    "status": "APPLIED_AND_VERIFIED",
+    "issue": "JC11992 missing historical jobType rejected by the Cash/Credit-only audited correction branch",
+    "businessRecordsChanged": false,
+    "clientRuntimeChanged": false,
+    "recovery": "Three exact pre-change function definitions captured; preserve audit and business data on rollback",
+    "evidence": "docs/job-classification/UNCLASSIFIED_LEGACY_FIX.md"
+  },
+  "classificationDatabasePatch": {
+    "status": "APPLIED_AND_VERIFIED",
+    "project": "pjknotnjkufadqavcmii",
+    "sourceCommit": "cd0644a9c61370cdf1688f7fcda1d0cc858969cc",
+    "migration": "20261028141914_manager_unclassified_job_type_correction.sql",
+    "recordedMigrationVersion": "20261028141914",
+    "originalToolTrackingVersion": "20261028144623",
+    "recordedSqlMatchesApprovedSource": true,
+    "statementMd5": "8def35f24120cdc0f072b807bb39f118",
+    "verifiedAt": "2026-10-28T14:47:35Z",
+    "functionsChanged": 3,
+    "functionOwnershipSearchPathsAndAclsPreserved": true,
+    "anonAndAuthenticatedExecuteDenied": true,
+    "jc11992Unchanged": true,
+    "managerRetryPending": true,
+    "rollbackOutput": "JC11992-classification-functions-rollback.sql",
+    "rollbackSha256": "1dc2700679c3e7eef64cac5e4558c6a84463e360c7ceaf1a1ed977981ed365e7"
+  },
+  "publicationRequiresSeparateInstruction": false,
+  "previousCandidateVerification": {
     "sourceCommit": "6ab119a5772b71a636d31c8c42a9369ef6f09d66",
     "allPassed": true,
     "runs": [
@@ -81,32 +173,27 @@
       "certificateSha256": "63886438214503d468f053b44afe34baf008019f674e065a09b14ae8bf451af0"
     }
   },
-  "additionalDatabaseCorrection": {
-    "migration": "20261028141914_manager_unclassified_job_type_correction.sql",
-    "status": "QA_PASSED_PRODUCTION_NOT_APPLIED",
-    "issue": "JC11992 missing historical jobType rejected by the Cash/Credit-only audited correction branch",
+  "purchaseCostFix": {
+    "sourceCommit": "f70dafbf80866d0b29d659fa872e069d0e7fda8c",
+    "runtimeSource": "d0888e43ca508d314f35d7aed4a6444a35b1f213",
+    "status": "VERIFIED_CANDIDATE",
     "businessRecordsChanged": false,
-    "clientRuntimeChanged": false,
-    "recovery": "Three exact pre-change function definitions captured; preserve audit and business data on rollback",
-    "evidence": "docs/job-classification/UNCLASSIFIED_LEGACY_FIX.md"
+    "ownerAndroidConfirmation": "Owner replied good to requested signed V376 Android Parts + Sublet total and Mechanical navigation checks, without changing records.",
+    "ownerTestedSignedRun": 40733582261,
+    "ownerTestedArtifact": 12836262116,
+    "finalSourceDiff": "offline_test.html: cache query identifiers only; corrected runtime scripts and native build configuration unchanged.",
+    "localChecks": [
+      "manager-single-purchase-card.mjs",
+      "spare-parts-expense-filters.mjs",
+      "v181-manager-performance-cost-drilldown.mjs",
+      "JavaScript syntax"
+    ],
+    "additionalHistoricalCheck": "v161-spare-parts-actual-cost.mjs has a pre-existing obsolete Quotation OMR static-markup assertion, absent on baseline and candidate; not modified or represented as passed."
   },
-  "classificationDatabasePatch": {
-    "status": "APPLIED_AND_VERIFIED",
-    "project": "pjknotnjkufadqavcmii",
-    "sourceCommit": "cd0644a9c61370cdf1688f7fcda1d0cc858969cc",
-    "migration": "20261028141914_manager_unclassified_job_type_correction.sql",
-    "recordedMigrationVersion": "20261028141914",
-    "originalToolTrackingVersion": "20261028144623",
-    "recordedSqlMatchesApprovedSource": true,
-    "statementMd5": "8def35f24120cdc0f072b807bb39f118",
-    "verifiedAt": "2026-10-28T14:47:35Z",
-    "functionsChanged": 3,
-    "functionOwnershipSearchPathsAndAclsPreserved": true,
-    "anonAndAuthenticatedExecuteDenied": true,
-    "jc11992Unchanged": true,
-    "managerRetryPending": true,
-    "rollbackOutput": "JC11992-classification-functions-rollback.sql",
-    "rollbackSha256": "1dc2700679c3e7eef64cac5e4558c6a84463e360c7ceaf1a1ed977981ed365e7"
-  },
-  "publicationRequiresSeparateInstruction": true
+  "remainingAcceptance": [
+    "client_https_restart",
+    "physical_safari",
+    "fresh_backup_restored",
+    "production_backend_smoke"
+  ]
 }
