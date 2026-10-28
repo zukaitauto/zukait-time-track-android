@@ -5,7 +5,7 @@ function deletedParts(){try{return JSON.parse(localStorage.getItem(DELETED_KEY)|
 function rememberDeleted(id,at){const deleted=deletedParts();deleted[id]=at;localStorage.setItem(DELETED_KEY,JSON.stringify(deleted))}
 function linkedListIdentity(list){const live=job(list?.jobCard);if(!live?.receptionNo)return list;return {...list,vehicle:live.make||live.vehicle||'',model:live.model||'',year:live.year||'',registration:live.reg||'',vin:live.vin||'',customer:live.insuranceCompany||'',receptionNo:live.receptionNo,receptionLocation:live.receptionLocation}}
 function read(){try{const deleted=deletedParts();return JSON.parse(localStorage.getItem(KEY)||'[]').map(list=>Object.assign({},linkedListIdentity(list),{items:(list.items||[]).filter(item=>!item.deletedAt&&!deleted[item.id])}))}catch(_){return[]}}
-function write(v){const deleted=deletedParts(),rows=v.map(list=>Object.assign({},list,{items:(list.items||[]).filter(item=>!item.deletedAt&&!deleted[item.id])}));localStorage.setItem(KEY,JSON.stringify(rows));return rows}
+function write(v){const deleted=deletedParts(),rows=v.map(list=>Object.assign({},list,{items:(list.items||[]).filter(item=>!item.deletedAt&&!deleted[item.id])}));localStorage.setItem(KEY,JSON.stringify(rows));try{if(role()==='Manager')window.v123ApplyManagerPerformance?.()}catch(_){}return rows}
 function normalizeJobCard(v){return String(v||'').trim().toUpperCase()}
 function partKey(name,partNo=''){return [String(name||'').trim().toLowerCase().replace(/\s+/g,' '),String(partNo||'').trim().toUpperCase()].join('|')}
 function existingOpen(rows,jobCard){return rows.find(r=>normalizeJobCard(r.jobCard)===jobCard&&r.status!=='CLOSED')}

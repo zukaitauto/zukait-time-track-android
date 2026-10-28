@@ -30,12 +30,17 @@ assert.equal(JSON.stringify(context.state),snapshot,'presentation changes preser
 const cache=new Map(),parts={window:{zukaitV2:{}},me:{role:'Manager'},navigator:{onLine:false},localStorage:{getItem:k=>cache.get(k)||null,setItem:(k,v)=>cache.set(k,v)},document:{},console};
 vm.createContext(parts);vm.runInContext(fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8'),parts);
 const event=(type,time,payload,revision=1)=>({event_type:type,sort_time:time,server_time:time,entity_id:'P1',revision,payload:{listNo:'PL1',jobCard:'11975',partId:'P1',...payload}});
+context.zukaitV2=parts.window.zukaitV2;
+let recalculations=0;
+parts.window.v123ApplyManagerPerformance=()=>{recalculations++;context.v123ApplyManagerPerformance()};
 parts.window.zukaitV2.sparePartsMain.hydrateFromServerRows([
  event('SPARE_PART_LISTED','2026-09-01T00:00:00Z',{name:'Bumper',qty:3}),
  event('SPARE_PART_FINAL_PRICE_RECORDED','2026-09-30T20:00:00Z',{finalPrice:10}),
  event('SPARE_PART_STATUS_CHANGED','2026-11-01T08:00:00Z',{to:'FITTED'},2)
 ]);
 context.zukaitV2=parts.window.zukaitV2;
+assert.equal(recalculations,1,'authoritative parts hydration refreshes the already-rendered Manager card without another network request');
+assert.ok(panel.innerHTML.includes('37.000 OMR'),'loaded parts replace the initial sublet-only amount automatically');
 assert.equal(context.zukaitV2.sparePartsMain.reportRows()[0].amount,30);
 context.state.sublets.push({id:'sublet-only',jobCard:'999',date:'2026-10-05',amountMills:1005});
 const combinedSnapshot=JSON.stringify(context.state),partsSnapshot=JSON.stringify([...cache]);
