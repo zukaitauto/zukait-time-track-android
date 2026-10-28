@@ -1,47 +1,47 @@
 {
   "versionName": "V376",
   "versionCode": 339,
-  "sourceCommit": null,
+  "sourceCommit": "6ab119a5772b71a636d31c8c42a9369ef6f09d66",
   "checks": {
     "client_https_restart": {
       "passed": false,
-      "evidence": "Pending V376 source-linked review and acceptance. Historical V375 evidence remains in Git history and is not automatically retargeted to this candidate.",
+      "evidence": "Not attested for V376. See release-request.json for passing automated tests; these do not substitute for the separate standard client_https_restart gate. Historical V375 evidence remains in Git history.",
       "verifiedBy": null,
       "verifiedAt": null
     },
     "physical_android": {
       "passed": false,
-      "evidence": "Pending V376 source-linked review and acceptance. Historical V375 evidence remains in Git history and is not automatically retargeted to this candidate.",
+      "evidence": "Not attested for V376. See release-request.json for passing automated tests; these do not substitute for the separate standard physical_android gate. Historical V375 evidence remains in Git history.",
       "verifiedBy": null,
       "verifiedAt": null
     },
     "physical_safari": {
       "passed": false,
-      "evidence": "Pending V376 source-linked review and acceptance. Historical V375 evidence remains in Git history and is not automatically retargeted to this candidate.",
+      "evidence": "Not attested for V376. See release-request.json for passing automated tests; these do not substitute for the separate standard physical_safari gate. Historical V375 evidence remains in Git history.",
       "verifiedBy": null,
       "verifiedAt": null
     },
     "full_data_preservation": {
       "passed": false,
-      "evidence": "Pending V376 source-linked review and acceptance. Historical V375 evidence remains in Git history and is not automatically retargeted to this candidate.",
+      "evidence": "Not attested for V376. See release-request.json for passing automated tests; these do not substitute for the separate standard full_data_preservation gate. Historical V375 evidence remains in Git history.",
       "verifiedBy": null,
       "verifiedAt": null
     },
     "fresh_backup_restored": {
       "passed": false,
-      "evidence": "Pending V376 source-linked review and acceptance. Historical V375 evidence remains in Git history and is not automatically retargeted to this candidate.",
+      "evidence": "Not attested for V376. See release-request.json for passing automated tests; these do not substitute for the separate standard fresh_backup_restored gate. Historical V375 evidence remains in Git history.",
       "verifiedBy": null,
       "verifiedAt": null
     },
     "pc_site_reconciled": {
       "passed": false,
-      "evidence": "Pending V376 source-linked review and acceptance. Historical V375 evidence remains in Git history and is not automatically retargeted to this candidate.",
+      "evidence": "Not attested for V376. See release-request.json for passing automated tests; these do not substitute for the separate standard pc_site_reconciled gate. Historical V375 evidence remains in Git history.",
       "verifiedBy": null,
       "verifiedAt": null
     },
     "production_backend_smoke": {
       "passed": false,
-      "evidence": "Pending V376 source-linked review and acceptance. Historical V375 evidence remains in Git history and is not automatically retargeted to this candidate.",
+      "evidence": "Not attested for V376. See release-request.json for passing automated tests; these do not substitute for the separate standard production_backend_smoke gate. Historical V375 evidence remains in Git history.",
       "verifiedBy": null,
       "verifiedAt": null
     }

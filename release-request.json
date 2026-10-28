@@ -3,7 +3,7 @@
   "versionCode": 339,
   "releaseScope": "standard",
   "approvedForStaff": false,
-  "sourceCommit": null,
+  "sourceCommit": "6ab119a5772b71a636d31c8c42a9369ef6f09d66",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": true,
   "authorization": "Owner requested preserving the Parts + Sublet and monthly Cash/Insurance report fixes through bcaf027331a2998fc3c061a81741f6555cc037a4, combining the Mechanical UI change, running final checks and publishing once all fixes are combined. Existing Reception destinations were approved for users who already have access; Jibin permissions remain unchanged. Publication remains subject to existing release requirements.",
@@ -15,5 +15,70 @@
   "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
   "releaseHeldByOwner": false,
-  "verificationSummary": "V376 coordinated Android/web candidate: preserved Parts + Sublet and monthly Cash/Insurance reports, Manager three-column department row, light Mechanical workspace and eleven cards using existing destinations/permissions. Mechanical DOM/browser/native contracts passed before version freeze; final versioned source, signed candidate, physical and publication gates pending. No backend or live business data changes."
+  "verificationSummary": "Frozen V376/code339 source 6ab119a5772b71a636d31c8c42a9369ef6f09d66 passed all nine automated workflows: signed APK/source/signature parity, Reception/full regression, Accountant, Mechanical DOM/Chromium/native fresh+upgrade persistence, native PDF, Android builds, sync compatibility and outage safety. All eleven Mechanical cards tested at 320/375/768/1280. Parts + Sublet and monthly Cash/Insurance fixes through bcaf027 preserved. Physical Android/Safari/HTTPS and source-linked operational release gates remain unperformed; no reuse of V375 attestations and no publication.",
+  "signedAcceptanceRun": 40699716543,
+  "verificationRun": 40699716555,
+  "contractVerificationRun": 40699716550,
+  "accountantVerificationRun": 40699716620,
+  "nativePdfVerificationRun": 40699716569,
+  "automatedVerification": {
+    "sourceCommit": "6ab119a5772b71a636d31c8c42a9369ef6f09d66",
+    "allPassed": true,
+    "runs": [
+      {
+        "id": 40699716519,
+        "name": "Connection outage safety",
+        "conclusion": "success"
+      },
+      {
+        "id": 40699716550,
+        "name": "Inactive Mechanical and Accountant contracts",
+        "conclusion": "success"
+      },
+      {
+        "id": 40699716543,
+        "name": "Build Signed Acceptance APK",
+        "conclusion": "success"
+      },
+      {
+        "id": 40699716555,
+        "name": "Reception verification",
+        "conclusion": "success"
+      },
+      {
+        "id": 40699716569,
+        "name": "Native Android PDF verification",
+        "conclusion": "success"
+      },
+      {
+        "id": 40699716627,
+        "name": "Sync traffic compatibility",
+        "conclusion": "success"
+      },
+      {
+        "id": 40699716518,
+        "name": "Android architecture-v2 build\\n# Build verification revision 2",
+        "conclusion": "success"
+      },
+      {
+        "id": 40699716620,
+        "name": "Accountant isolated acceptance",
+        "conclusion": "success"
+      },
+      {
+        "id": 40699716563,
+        "name": "Build Zukait Time Track APK",
+        "conclusion": "success"
+      }
+    ],
+    "signedArtifact": {
+      "id": 12820439168,
+      "name": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
+      "runId": 40699716543,
+      "package": "com.zukait.timetrack",
+      "versionName": "V376",
+      "versionCode": 339,
+      "certificateSha256": "63886438214503d468f053b44afe34baf008019f674e065a09b14ae8bf451af0"
+    }
+  }
 }
