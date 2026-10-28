@@ -1,49 +1,49 @@
 {
   "versionName": "V375",
   "versionCode": 338,
-  "sourceCommit": null,
+  "sourceCommit": "fc5d18699269abe4ba7fd1ca584486b6cb0ce1c0",
   "checks": {
     "client_https_restart": {
-      "passed": false,
-      "evidence": "",
-      "verifiedBy": "",
-      "verifiedAt": null
+      "passed": true,
+      "evidence": "Final source fc5d186: restricted HTTPS Safari Site version5 deployed, owner confirmed refresh/checklist/PDF/offline/reconnect; vivo HTTPS WebView online/offline cold restart and same SUP003 recovery passed. See physical source parity (203 identical files) and final candidate supplement.",
+      "verifiedBy": "Codex + owner (iPhone Safari)",
+      "verifiedAt": "2026-10-28T07:31:12.061Z"
     },
     "physical_android": {
-      "passed": false,
-      "evidence": "",
-      "verifiedBy": "",
-      "verifiedAt": null
+      "passed": true,
+      "evidence": "vivo Y04/V2430 Android15, final isolated QA APK from CI40639305440, SHA256 2249059666d75c9bd3aaa9f06c34e1db93fea757aba4f98fe23c6ade50f94e5c: Supervisor/checklist/PDF preparation, offline hiding/blocking, offline/online cold restart, background and same-account recovery passed. Earlier ab86 Employee Pause/Resume/Finish and dropped-response exact receipt tests retained for 203 byte-identical runtime files and unchanged Java/manifest/build settings; changed hosts only add the seven QA-qualified availability flags. Signed staff APK itself was not installed in this supplement; signed source/embedded assets verified by CI40639305408.",
+      "verifiedBy": "Codex on owner-authorized vivo",
+      "verifiedAt": "2026-10-28T07:31:12.061Z"
     },
     "physical_safari": {
-      "passed": false,
-      "evidence": "",
-      "verifiedBy": "",
-      "verifiedAt": null
+      "passed": true,
+      "evidence": "Owner explicitly confirmed all final fc5d186 Safari checks passed on iPhone: refreshed restricted QA version5, SUP003/MC002 checklist and PDF preparation, offline data hiding, reconnect to same Supervisor. Earlier ab86 Continue Working Confirm Save/server receipt and refresh Running/offline/same Manager tests separately retained for unchanged runtime. Model/Safari version not supplied; no invented device details.",
+      "verifiedBy": "Owner on iPhone Safari",
+      "verifiedAt": "2026-10-28T07:31:12.061Z"
     },
     "full_data_preservation": {
-      "passed": false,
-      "evidence": "",
-      "verifiedBy": "",
-      "verifiedAt": null
+      "passed": true,
+      "evidence": "Reviewed additive Mechanical schema/append-only audit/authority protections; actual PostgreSQL fresh/upgrade/concurrency contracts CI40639305425 succeeded. No production job/time/QC/delivery data deleted or restored. Authorized Jibin credential/profile created by normal Manager API/CAS (revision15128). Production read-only smoke PASSED with businessWrites0. Existing uncertain command journals retained; canonical JSONB receipt matching and data-preservation regressions passed. Fresh restore compared85tables/17591rows with0mismatches; do not interpret this as row-by-row checksumming of current concurrent production.",
+      "verifiedBy": "Codex: source review, CI and production read-only verification",
+      "verifiedAt": "2026-10-28T07:31:12.061Z"
     },
     "fresh_backup_restored": {
-      "passed": false,
-      "evidence": "",
-      "verifiedBy": "",
-      "verifiedAt": null
+      "passed": true,
+      "evidence": "Encrypted Z: Production-20261027T132120Z-78bed118 database.dump1033519262bytes SHA256726e06c4540236ca4e68af511803b26877122c740c6f3535b2eed1e0ea0658d6. Isolated official Supabase PostgreSQL17.6 restore on28Oct exited0:85tables/17591rows/0mismatches,44RLS public tables,0invalid public indexes; no network/ports, cron off; container/data copies removed. All8Storage files matched bytes/ETags and existing archive hashes. Current9Edge/26source rollback archive independently checksum-verified on Z: (8e6e7f5e1f0698c2269d2d7ede734d8135f6f3b7b430be0372c0163afe55b38c). No custom secrets existed before the seven documented boolean flags; managed credentials/role passwords require separate private recovery, not included.",
+      "verifiedBy": "Owner export/copy + Codex independent restore/integrity checks",
+      "verifiedAt": "2026-10-28T07:31:12.061Z"
     },
     "pc_site_reconciled": {
-      "passed": false,
-      "evidence": "",
-      "verifiedBy": "",
-      "verifiedAt": null
+      "passed": true,
+      "evidence": "Exact source fc5d186 staged-PC CI40639305470 and signed APK CI40639305408 succeeded. Shared asset verifier includes Mechanical host/dynamic JS modules; both real publisher recipes ship the dependency graph. Source https://github.com/zukaitauto/zukait-time-track-android/commit/fc5d18699269abe4ba7fd1ca584486b6cb0ce1c0. Coordinated publisher will reverify actual staged bytes before live deployment; this check does not claim the staff site is already updated.",
+      "verifiedBy": "GitHub Actions + Codex source/parity review",
+      "verifiedAt": "2026-10-28T07:31:12.061Z"
     },
     "production_backend_smoke": {
-      "passed": false,
-      "evidence": "",
-      "verifiedBy": "",
-      "verifiedAt": null
+      "passed": true,
+      "evidence": "Owner-run normal Manager read-only full-edge smoke PASSED at2026-10-28T07:26:29.225Z: unauthenticated401; existing workshop load200; activated Mechanical dashboard/features and approved MGR001 scope200; Manager Mechanical delivery probe denied403; current Cash/Insurance report200; helper session revoked. businessWrites0. Production workshop-api95 SHA25685f1168930c967670565f5a9edad3dd9423bdb0ba2ecd6a47774743afde2fa33, staff-auth10 SHA2560724d8de8be61d8d469e2536c48f48f7404e4b96a7151baf0fc6d45489e616ac. Scoped activation approved by owner; zero anon/authenticated Mechanical RPC execute grants. SU-528323 provider identified Nano memory/swap/I/O pressure; free Micro upgrade completed and initial recovery verified. Long-term optimization remains; no claim of permanent provider stability from a smoke test.",
+      "verifiedBy": "Owner private Manager authentication + Codex result/SQL/ACL verification",
+      "verifiedAt": "2026-10-28T07:31:12.061Z"
     }
   }
 }
