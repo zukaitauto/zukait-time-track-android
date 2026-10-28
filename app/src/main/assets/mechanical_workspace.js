@@ -32,8 +32,41 @@ export async function mountMechanicalWorkspace(root,options={}){
  function render(){
   if(disposed)return;if(!active()){root.replaceChildren(node('p','Your login changed. Reopen the workspace after signing in.'));return;}
   root.replaceChildren();root.className='mc-workspace';
-  const style=node('style',null);style.textContent='.mc-workspace{box-sizing:border-box;color:#142536;background:#f5f7fa;padding:16px;font:16px system-ui;max-width:1100px;margin:auto;overflow-wrap:anywhere}.mc-workspace *{box-sizing:border-box}.mc-workspace header,.mc-workspace .mc-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.mc-workspace h2{flex:1;margin:0}.mc-workspace button{min-height:44px;padding:10px 14px;border:1px solid #b8c6d6;border-radius:9px;background:white;color:#142536;font:inherit;cursor:pointer}.mc-workspace button[type=submit]{background:#164a79;color:white}.mc-workspace button:disabled{opacity:.55;cursor:default}.mc-workspace form,.mc-workspace article,.mc-workspace .mc-pending{background:white;border:1px solid #dbe2eb;border-radius:12px;padding:14px;margin:12px 0;min-width:0}.mc-workspace label{display:flex;flex-direction:column;gap:6px;margin:12px 0}.mc-workspace input,.mc-workspace select,.mc-workspace textarea{font:inherit;width:100%;min-width:0;min-height:44px;padding:10px;border:1px solid #a9b8c9;border-radius:7px}.mc-workspace .mc-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}.mc-workspace .mc-list{display:grid;gap:8px}.mc-workspace .mc-list button{text-align:left;width:100%}.mc-workspace [role=status]{min-height:24px;margin:14px 0;color:#854200}.mc-workspace .mc-muted{color:#54677b}.mc-workspace h3{margin-top:0}.mc-workspace ul{padding-left:20px}@media(max-width:760px){.mc-workspace{padding:10px}.mc-workspace .mc-grid{grid-template-columns:minmax(0,1fr)}}';root.append(style);
-  const header=node('header',null);header.append(node('h2','Mechanical Department'),button('Refresh',()=>refresh()),button('Close',()=>{destroy();options.onClose?.()}));root.append(header);
+  const style=node('style',null);style.textContent=`
+  .mc-workspace{box-sizing:border-box;color:#21334b;background:radial-gradient(ellipse at top left,#e6f4ff 0,transparent 55%),linear-gradient(145deg,#f4f8ff,#f5f3fa);padding:20px;font:15px/1.5 system-ui,-apple-system,sans-serif;max-width:1100px;margin:auto;border:1px solid #e0e8f1;border-radius:22px;overflow-wrap:anywhere}
+  .mc-workspace *{box-sizing:border-box}
+  .mc-workspace .mc-workspace-head{display:flex!important;gap:10px;align-items:center;flex-wrap:wrap;background:linear-gradient(120deg,#ffffffed,#f2f7ffed)!important;color:#21334b!important;border:1px solid #fff!important;border-radius:17px;padding:14px!important;margin:0 0 16px;box-shadow:inset 0 1px 0 #fff,0 6px 18px #263b5d0a;backdrop-filter:blur(10px)}
+  .mc-workspace .mc-brand{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border-radius:12px;background:linear-gradient(145deg,#eaf5ff,#cddff7);color:#315e87;font-size:23px;box-shadow:inset 0 1px 1px #fff,0 3px 6px #29456712}
+  .mc-workspace .mc-workspace-head h2{flex:1;min-width:120px;margin:0;color:#21334b!important;font-size:18px!important;line-height:1.3}
+  .mc-workspace .mc-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .mc-workspace button{min-height:44px;min-width:0;padding:10px 14px;border:1px solid #c7d5e5;border-radius:11px;background:#fff;color:#21334b;font:inherit;font-weight:650;white-space:normal;overflow-wrap:anywhere;cursor:pointer;box-shadow:inset 0 1px 0 #fff,0 3px 7px #263b5d08;transition:box-shadow .12s ease,transform .12s ease}
+  .mc-workspace .mc-workspace-head button{flex:0 0 auto;padding:8px 12px;font-size:12px;background:#fff!important;color:#30455f!important;border:1px solid #ccd9e8!important}
+  .mc-workspace button[type=submit]{background:linear-gradient(130deg,#326c9f,#24527f);color:#fff;border-color:#24527f;box-shadow:inset 0 1px 0 #ffffff30,0 3px 7px #24527f20}
+  .mc-workspace button:disabled{opacity:.55;cursor:default}
+  .mc-workspace button:focus-visible,.mc-workspace :is(input,select,textarea):focus-visible{outline:3px solid #357db5;outline-offset:3px}
+  .mc-workspace button:active:not(:disabled){transform:translateY(1px)}
+  .mc-workspace form,.mc-workspace article,.mc-workspace .mc-pending{background:linear-gradient(140deg,#fffffff5,#ffffffde);border:1px solid #dbe5f0;border-radius:17px;padding:17px;margin:14px 0;min-width:0;box-shadow:inset 0 1px 0 #fff,0 5px 14px #2d456b09}
+  .mc-workspace form[data-operation=MC_CREATE]{background:linear-gradient(145deg,#fff,#eff8f7);border-color:#c9e5df}
+  .mc-workspace [data-mechanical-qc]{background:linear-gradient(145deg,#fff,#f2edfc);border-color:#ddd2ed}
+  .mc-workspace .mc-pending{background:#fff9ed;border-color:#e8d6a9}
+  .mc-workspace label{display:flex;flex-direction:column;gap:7px;margin:14px 0;font-size:12px;font-weight:700;color:#40566f}
+  .mc-workspace input,.mc-workspace select,.mc-workspace textarea{font:15px system-ui;width:100%;min-width:0;min-height:44px;padding:10px;border:1px solid #bccddd;border-radius:10px;background:#fff;color:#21334b;box-shadow:inset 0 1px 2px #263b5d06}
+  .mc-workspace .mc-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+  .mc-workspace .mc-grid>section{min-width:0}
+  .mc-workspace .mc-list{display:grid;gap:10px}
+  .mc-workspace .mc-list button{text-align:left;width:100%;min-height:66px;padding:13px 15px;border-color:#cbdff0;background:linear-gradient(135deg,#fff,#eaf4ff);box-shadow:inset 0 1px 0 #fff,0 3px 0 #d7e4f1,0 7px 12px #29456709}
+  .mc-workspace .mc-list button:nth-child(3n+2){background:linear-gradient(135deg,#fff,#ebf8f2);border-color:#c4e1d4}
+  .mc-workspace .mc-list button:nth-child(3n){background:linear-gradient(135deg,#fff,#f4edff);border-color:#ddd1ed}
+  .mc-workspace [role=status]{min-height:24px;margin:14px 0;color:#7b541c}
+  .mc-workspace .mc-muted{color:#526981;font-size:13px}
+  .mc-workspace h3{margin:0 0 12px;color:#263b55;font-size:16px;line-height:1.4}
+  .mc-workspace ul{padding-left:20px}
+  @media(max-width:760px){.mc-workspace{padding:12px;border-radius:17px}.mc-workspace .mc-grid{grid-template-columns:minmax(0,1fr);gap:16px}.mc-workspace .mc-workspace-head{padding:10px!important;gap:8px}.mc-workspace .mc-workspace-head h2{font-size:16px!important}.mc-workspace form,.mc-workspace article{padding:14px}}
+  @media(max-width:380px){.mc-workspace .mc-workspace-head h2{min-width:130px}.mc-workspace .mc-workspace-head button{flex:1}}
+  @media(prefers-reduced-motion:reduce){.mc-workspace button{transition:none}}
+  @media print{.mc-workspace,.mc-workspace form,.mc-workspace article,.mc-workspace .mc-workspace-head{background:#fff!important;box-shadow:none!important;backdrop-filter:none}}
+  `;root.append(style);
+  const header=node('header',null,{class:'mc-workspace-head'});header.append(node('span','⚙',{class:'mc-brand','aria-hidden':'true'}),node('h2','Mechanical Department'),button('Refresh',()=>refresh()),button('Close',()=>{destroy();options.onClose?.()}));root.append(header);
   root.append(node('p',notice,{role:'status','aria-live':'polite'}));
   if(pending){const box=node('section',null,{class:'mc-pending'});box.append(node('h3',pending.editing?'Review rejected change':'Pending confirmation'),node('p',({MC_CREATE:'Checklist registration',TASK_CREATE:'New task',TASK_ASSIGN:'Mechanic assignment',TASK_HANDOVER:'Work handover',TASK_REPEAT:'Repeat repair',MECHANICAL_QC:'Mechanical QC result'})[pending.command.operation]||'Saved change'),node('p',JSON.stringify(pending.command.operation==='MECHANICAL_QC'?{result:pending.command.payload.result,reason:pending.command.payload.reason}:pending.command.payload)));
    if(!pending.editing)box.append(button('Retry same change',()=>post()));
