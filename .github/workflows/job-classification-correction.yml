@@ -1,0 +1,22 @@
+name: Audited job classification correction
+on:
+  push:
+    branches: [architecture-v2]
+    paths:
+      - 'supabase/migrations/**classification**.sql'
+      - 'tests/manager-classification-correction.mjs'
+      - '.github/workflows/job-classification-correction.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: node tests/manager-classification-correction.mjs
