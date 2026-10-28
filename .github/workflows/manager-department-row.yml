@@ -1,0 +1,38 @@
+name: Manager department row UI
+on:
+  push:
+    branches: [architecture-v2]
+    paths:
+      - app/src/main/assets/accountant_accounts.js
+      - app/src/main/assets/v2/features/insurance/reception.js
+      - app/src/main/assets/offline_test.html
+      - tests/accountant-department-row.mjs
+      - .github/workflows/manager-department-row.yml
+  pull_request:
+    branches: [architecture-v2]
+    paths:
+      - app/src/main/assets/accountant_accounts.js
+      - tests/accountant-department-row.mjs
+      - .github/workflows/manager-department-row.yml
+permissions:
+  contents: read
+jobs:
+  synthetic-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --include=dev
+      - run: npx playwright install --with-deps chromium
+      - run: node --check app/src/main/assets/accountant_accounts.js
+      - run: node tests/accountant-department-row.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: manager-department-row
+          path: artifacts/department-row
+          if-no-files-found: ignore
