@@ -19,3 +19,38 @@ Isolated QA migration applied. Actual PostgreSQL service-role full-edit RPC pass
 Production definitions captured before modification in the task output `JC11992-classification-functions-rollback.sql`. Three functions were SECURITY INVOKER and executable only by postgres/service_role. Production baseline Edge Function97/bundle53fb220b remains unchanged by this database-only fix.
 
 At this commit: production patch is NOT APPLIED; source CI pending. V376 is still unapproved for staff, and its release metadata must treat this database correction as a backend change. Do not publish or reuse historical acceptance attestations to bypass the coordinated release gates. Append actual deployment evidence in the task outputs after verification.
+
+## Production deployment — 28 October 2026
+
+The owner explicitly approved **Apply the live patch**. The exact migration from
+`cd0644a9c61370cdf1688f7fcda1d0cc858969cc` was applied to live project
+`pjknotnjkufadqavcmii` and verified at 14:47 UTC (18:47 Oman).
+
+All three functions retain owner postgres, SECURITY INVOKER, their original search
+paths, and execute permission only for postgres/service_role. Explicit privilege
+checks deny anon/authenticated. The full-edit definition differs only at the
+approved old-type predicate. Live negative tests for missing/null/blank/unknown
+types without the transaction-bound audit, and for a nonexistent linked audit,
+all returned false; these checks do not claim a completed Manager save.
+
+Migration history records source version `20261028141914`. The migration tool first
+assigned tracking version `20261028144623`; only that new receipt's version was
+aligned to the approved filename after its stored SQL was verified byte-for-byte.
+The SQL statement was not modified (MD5 `8def35f24120cdc0f072b807bb39f118`). No
+business data or existing audit was changed by the patch or receipt alignment.
+
+JC11992's complete saved-job hash matched before/after; its jobType remains absent
+and classification audit count remains zero. Workshop revision advanced normally
+from 15169 to 15170 during the checks; do not attribute that concurrent save to the
+DDL-only patch. The Manager must refresh/reopen JC11992 and save the intended type,
+insurer and reason using the existing app. No APK update is needed for this fix.
+
+Fresh pre-deployment rollback definitions/ACLs are retained in the task output
+`JC11992-classification-functions-rollback.sql`, SHA256
+`1dc2700679c3e7eef64cac5e4558c6a84463e360c7ceaf1a1ed977981ed365e7`.
+Review compatibility before restoring old guards after any unclassified job has
+been corrected; never remove the immutable classification audit.
+
+V376 client assets and main were untouched. No app/site was published and no
+historical V375 acceptance was reused. Backend deployment is complete for this
+patch; coordinated publication still needs its own current-source release evidence.

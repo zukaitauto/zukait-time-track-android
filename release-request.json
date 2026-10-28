@@ -12,7 +12,7 @@
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "REVIEW_REQUIRED_FOR_CANDIDATE",
   "productionBackendChanges": true,
-  "backendDeploymentRequired": true,
+  "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
   "releaseHeldByOwner": false,
   "verificationSummary": "Frozen V376/code339 source 6ab119a5772b71a636d31c8c42a9369ef6f09d66 passed all nine automated workflows: signed APK/source/signature parity, Reception/full regression, Accountant, Mechanical DOM/Chromium/native fresh+upgrade persistence, native PDF, Android builds, sync compatibility and outage safety. All eleven Mechanical cards tested at 320/375/768/1280. Parts + Sublet and monthly Cash/Insurance fixes through bcaf027 preserved. Physical Android/Safari/HTTPS and source-linked operational release gates remain unperformed; no reuse of V375 attestations and no publication.",
@@ -89,5 +89,24 @@
     "clientRuntimeChanged": false,
     "recovery": "Three exact pre-change function definitions captured; preserve audit and business data on rollback",
     "evidence": "docs/job-classification/UNCLASSIFIED_LEGACY_FIX.md"
-  }
+  },
+  "classificationDatabasePatch": {
+    "status": "APPLIED_AND_VERIFIED",
+    "project": "pjknotnjkufadqavcmii",
+    "sourceCommit": "cd0644a9c61370cdf1688f7fcda1d0cc858969cc",
+    "migration": "20261028141914_manager_unclassified_job_type_correction.sql",
+    "recordedMigrationVersion": "20261028141914",
+    "originalToolTrackingVersion": "20261028144623",
+    "recordedSqlMatchesApprovedSource": true,
+    "statementMd5": "8def35f24120cdc0f072b807bb39f118",
+    "verifiedAt": "2026-10-28T14:47:35Z",
+    "functionsChanged": 3,
+    "functionOwnershipSearchPathsAndAclsPreserved": true,
+    "anonAndAuthenticatedExecuteDenied": true,
+    "jc11992Unchanged": true,
+    "managerRetryPending": true,
+    "rollbackOutput": "JC11992-classification-functions-rollback.sql",
+    "rollbackSha256": "1dc2700679c3e7eef64cac5e4558c6a84463e360c7ceaf1a1ed977981ed365e7"
+  },
+  "publicationRequiresSeparateInstruction": true
 }
