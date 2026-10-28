@@ -2134,7 +2134,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
   const rows=purchaseRows(filter),total=rows.reduce((s,x)=>s+x.total,0);
   body.innerHTML='<p class="small">'+e(filter.from?filter.from+' to '+filter.to:'All dates')+' · Oman time'+(filter.jc?' · JC '+e(filter.jc):'')+'</p>'+
    (rows.length?'<div class="v123-cost-list"><div class="v123-cost-head"><b>No.</b><b>Job Card</b><b>Vehicle</b><b>Purchase</b></div>'+rows.map((x,i)=>'<button type="button" class="v123-cost-row" data-list="'+e(x.lists[0])+'" data-jc="'+e(x.jc)+'" onclick="if(this.dataset.list)zukaitV2.sparePartsMain.openList(this.dataset.list);else zukaitSublet.open(this.dataset.jc)"><span>'+(i+1)+'</span><b>'+e(x.jc)+'</b><span>'+e(x.vehicle)+'</span><strong>'+x.total.toFixed(3)+'</strong></button>').join('')+'</div>':'<div class="notice">No purchase costs yet for these filters.</div>')+
-   '<div class="v123-cost-total"><span>Total Sublet</span><b>'+rows.reduce((n,x)=>n+(x.sublet||0),0).toFixed(3)+' OMR</b></div><div class="v123-cost-total"><span>Total Purchase Expense</span><b>'+total.toFixed(3)+' OMR</b><small>'+rows.length+' job cards</small></div>';
+   '<div class="v123-cost-total"><span>Total Parts</span><b>'+rows.reduce((n,x)=>n+(x.total-(x.sublet||0)),0).toFixed(3)+' OMR</b></div><div class="v123-cost-total"><span>Total Sublet</span><b>'+rows.reduce((n,x)=>n+(x.sublet||0),0).toFixed(3)+' OMR</b></div><div class="v123-cost-total"><span>Total Purchase Expense · Parts + Sublet</span><b>'+total.toFixed(3)+' OMR</b><small>'+rows.length+' job cards</small></div>';
  }
  window.v123PurchaseExpensePreset=function(){
   const mode=document.getElementById('v123PurchasePeriod')?.value;if(!mode)return;
