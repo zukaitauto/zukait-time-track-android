@@ -1098,11 +1098,12 @@
     if(window.ZUKAIT_MECHANICAL_ENABLED!==true||!['Manager','Supervisor'].includes(me?.role)||!sessionToken())return false;
     const owner=String(me.id),token=sessionToken();
     const module=await import('./mechanical_workspace.js');
+    const {createMechanicalShortcuts}=await import('./mechanical_shortcuts.js');
     if(String(me?.id||'')!==owner||sessionToken()!==token)return false;
     openModal('<div id="zukaitMechanicalWorkspace"></div>');
     const root=document.getElementById('zukaitMechanicalWorkspace');if(!root)return false;
     const modal=root.closest('.modal-box');if(modal){modal.style.width='1100px';modal.style.maxWidth='95vw'}
-    await module.mountMechanicalWorkspace(root,{enabled:true,storage:localStorage,checklistId,openReport:window.ZUKAIT_MECHANICAL_REPORTS_ENABLED===true?openMechanicalReport:null,openSignature:window.ZUKAIT_MECHANICAL_SIGNATURES_ENABLED===true?openMechanicalSignature:null,openDocument:window.ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED===true?openMechanicalDocument:null,openTracking:window.ZUKAIT_MECHANICAL_TRACKING_ENABLED===true?openMechanicalTracking:null,
+    await module.mountMechanicalWorkspace(root,{enabled:true,navigation:createMechanicalShortcuts({host:window,document,getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()})}),storage:localStorage,checklistId,openReport:window.ZUKAIT_MECHANICAL_REPORTS_ENABLED===true?openMechanicalReport:null,openSignature:window.ZUKAIT_MECHANICAL_SIGNATURES_ENABLED===true?openMechanicalSignature:null,openDocument:window.ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED===true?openMechanicalDocument:null,openTracking:window.ZUKAIT_MECHANICAL_TRACKING_ENABLED===true?openMechanicalTracking:null,
       getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()}),online:()=>navigator.onLine,
       onClose:()=>{if(root.isConnected)closeModal()},
       openDelivery:window.ZUKAIT_MECHANICAL_DELIVERY_ENABLED===true?openMechanicalDelivery:null,
@@ -1385,3 +1386,4 @@
     else installMechanicalMenu().catch(e=>console.warn('Mechanical menu unavailable',e));
   }
 })();
+

@@ -54,7 +54,7 @@ x=await setup({stored:[['zukait_mechanical_pending_v1:QA_SUP',JSON.stringify({..
 x=await setup();await click(x.root,'MC001 · JC QA_JC · 2026-10-22');x.offline();form=x.root.querySelector('[data-operation=TASK_CREATE]');form.querySelector('[name=title]').value='Offline task';form.dispatchEvent(new x.dom.window.Event('submit',{cancelable:true}));await settle();assert.equal(x.calls.filter(c=>c.action==='mechanical_command').length,0);assert.match(x.root.textContent,/Reconnect before saving/);
 // Only operation capabilities expose controls; unconfirmed QC/finance/hold
 // operations are absent. No interval or background request is created.
-x=await setup({caps:['TASK_CREATE']});await click(x.root,'MC001 · JC QA_JC · 2026-10-22');assert.equal(x.root.querySelector('[data-operation=MC_CREATE]'),null);assert.equal(x.root.querySelector('[data-operation=TASK_ASSIGN]'),null);assert.ok(x.root.querySelector('[data-operation=TASK_CREATE]'));assert.equal(x.root.textContent.includes('QC'),false);
+x=await setup({caps:['TASK_CREATE']});await click(x.root,'MC001 · JC QA_JC · 2026-10-22');assert.equal(x.root.querySelector('[data-operation=MC_CREATE]'),null);assert.equal(x.root.querySelector('[data-operation=TASK_ASSIGN]'),null);assert.ok(x.root.querySelector('[data-operation=TASK_CREATE]'));assert.equal(x.root.querySelector('[data-mechanical-qc]'),null);assert.equal(x.root.querySelector('[data-mc-card=qc]').dataset.restricted,'true');
 // Every initial form emits the agreed API contract, without time history or
 // a guessed MC number. The server remains the allocator/time authority.
 for(const operation of ['MC_CREATE','TASK_CREATE','TASK_HANDOVER']){

@@ -20,6 +20,37 @@ export async function mountMechanicalWorkspace(root,options={}){
  const terminalRejection=code=>['task_inactive','checklist_inactive','existing_active_jc_required'].includes(code);
  function message(code){return ({mechanical_mixed_job_not_allowed:'Mechanical and bodyshop must use separate job cards. Ask the Manager to review this card.',mechanical_job_identity_conflict:'This registered Mechanical job card cannot be renamed or removed. Ask the Manager to review it.',repeat_work_not_finished:'Finish all original and earlier repeat work before issuing another repeat.',repeat_source_inactive:'Choose completed source work from this task.',invalid_repeat_employee:'Choose valid repeat and responsible employees.',invalid_repeat:'Enter the source, responsible employee, allocated minutes and repeat reason.',mechanical_repeat_disabled:'Repeat repair is unavailable.',mechanical_qc_work_changed:'Work changed after the QC check. Refresh and review it before confirming again.',mechanical_mixed_qc_policy_required:'The QC approval policy for this mixed job needs Manager review.',mechanical_qc_approver_required:'Only Jibin (SUP003) can record Mechanical QC.',mechanical_work_not_finished:'Complete every task and stop running work before QC.',mechanical_qc_disabled:'Mechanical QC is unavailable.',extension_disabled:'This action is unavailable.'})[code]||errors[code]||'The change was not accepted. Refresh the record and review it.'}
  function button(text,fn,attrs={}){const e=node('button',text,{type:'button',...attrs,onClick:fn});e.disabled=busy||!active();return e}
+ function jumpTo(selector,missing){
+  const target=root.querySelector(selector);
+  if(!target){notice=missing;render();root.querySelector('[role=status]')?.focus();return}
+  target.scrollIntoView?.({block:'start',behavior:'auto'});if(!target.matches('input,button,select'))target.setAttribute('tabindex','-1');target.focus({preventScroll:true});
+ }
+ function dashboard(){
+  const definitions=[['estimate','Estimate','✎','blue'],['estimate-list','Estimate List','▤','violet'],['create-checklist','Create Checklist','＋','mint'],['checklists','Check Lists','☑','cyan'],['create-job','Create Job Card','▣','peach'],['jobs','Job Cards','▦','blue'],['wip','WIP','⚙','violet'],['qc','QC Pending','✓','amber'],['ready','Ready for Delivery','↗','mint'],['delivered','Delivered Vehicles','⌂','cyan'],['exceeded','Suggested Time Exceed','◷','rose']];
+  const caps=new Set(model?.capabilities||[]),nav=options.navigation;
+  const local={
+   'create-checklist':caps.has('MC_CREATE')?()=>jumpTo('[data-operation=MC_CREATE] input','Checklist registration is unavailable for this login.'):null,
+   checklists:()=>jumpTo('[data-mc-checklists]','Refresh to load Mechanical checklists.'),
+   qc:model?.qcAvailable?()=>jumpTo('[data-mechanical-qc]','Select a Mechanical checklist below, then choose Check QC status.'):null,
+   ready:model?.qcAvailable&&model?.deliveryAvailable?()=>jumpTo('[data-mechanical-qc]','Select a Mechanical checklist below and check QC status before reviewing delivery.'):null
+  };
+  const grid=node('nav',null,{class:'mc-dashboard-grid','aria-label':'Mechanical sections'});
+  let counts={};try{counts=nav?.counts?.()||{}}catch{}
+  for(const [key,title,icon,tone] of definitions){
+   const shared=nav?.available?.(key)===true,available=shared||typeof local[key]==='function';
+   const card=button(null,async()=>{
+    if(!active()||busy)return;
+    if(!available){notice='This shortcut is unavailable for this login. Existing permissions are unchanged.';render();root.querySelector('[role=status]')?.focus();return}
+    if(shared){if(pending){notice='Resolve the saved pending change before opening another section.';render();return}busy=true;render();try{await nav.open(key)}catch(e){if(active())notice=e.message||'Unable to open this section. Refresh and retry.'}finally{busy=false;if(active()&&root.isConnected)render()}}
+    else local[key]();
+   },{'data-mc-card':key,class:'mc-dashboard-card mc-tone-'+tone,'aria-label':title});
+   card.append(node('span',icon,{class:'mc-card-icon','aria-hidden':'true'}),node('b',title),node('small',available?(shared?nav.scope(key):key==='create-checklist'?'Mechanical registration':key==='checklists'?'Mechanical records':'Select checklist · existing checks'):'Restricted for this login'));
+   if(!available)card.setAttribute('data-restricted','true');
+   if(counts[key]!=null&&/^\d+$/.test(String(counts[key])))card.append(node('span',String(counts[key]),{class:'mc-card-count','aria-label':title+' count'}));
+   grid.append(card);
+  }
+  return grid;
+ }
  function valueFor(f,name,fallback=''){const p=f._draft;if(!p)return fallback;return ({job:p.manualJobCard?.number,date:p.manualJobCard?.date,employee:p.employeeId,source:p.sourceAssignmentId,target:p.targetEmployeeId,minutes:p.suggestedMinutes,title:p.title,mistake:p.mistakeEmployeeId,reason:p.reason,result:p.result})[name]??fallback}
  function input(form,label,name,type='text',value='',required=true){const l=node('label',label),e=node('input',null,{name,type});e.value=valueFor(form,name,value);if(required)e.required=true;l.append(e);form.append(l);return e}
  function choice(form,label,name,choices){const l=node('label',label),e=node('select',null,{name});e.required=true;e.append(node('option','Select…',{value:''}));for(const c of choices)e.append(node('option',c.name,{value:c.id}));e.value=valueFor(form,name);l.append(e);form.append(l);return e}
@@ -39,6 +70,14 @@ export async function mountMechanicalWorkspace(root,options={}){
   .mc-workspace .mc-brand{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border-radius:12px;background:linear-gradient(145deg,#eaf5ff,#cddff7);color:#315e87;font-size:23px;box-shadow:inset 0 1px 1px #fff,0 3px 6px #29456712}
   .mc-workspace .mc-workspace-head h2{flex:1;min-width:120px;margin:0;color:#21334b!important;font-size:18px!important;line-height:1.3}
   .mc-workspace .mc-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .mc-workspace .mc-dashboard-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:104px;gap:12px;margin:0 0 24px}
+  .mc-workspace .mc-dashboard-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;width:100%;height:100%;padding:12px 15px!important;text-align:left;border:1px solid var(--mc-edge,#c8dcef)!important;border-radius:17px!important;background:linear-gradient(140deg,#ffffffee,var(--mc-tint,#e8f3ff))!important;color:#22354d!important;box-shadow:inset 0 2px 1px #fff,0 3px 0 var(--mc-edge,#c8dcef),0 8px 13px #2945670b!important}
+  .mc-workspace .mc-dashboard-card b{font-size:14px!important;line-height:1.25;color:#22354d!important}
+  .mc-workspace .mc-dashboard-card small{font-size:11px;line-height:1.3;color:#4d6178}
+  .mc-workspace .mc-card-icon{display:grid;place-items:center;width:25px;height:25px;border-radius:8px;font-size:18px;background:#ffffffc9;color:#315571;box-shadow:inset 0 1px 0 #fff,0 2px 4px #29456710}
+  .mc-workspace .mc-card-count{position:absolute;right:12px;top:12px;min-width:24px;border-radius:20px;padding:2px 6px;font-size:12px;background:#ffffffdc;color:#22354d;text-align:center}
+  .mc-workspace .mc-tone-violet{--mc-tint:#eee6fb;--mc-edge:#d9cbee}.mc-workspace .mc-tone-mint{--mc-tint:#e0f4e9;--mc-edge:#bedfce}.mc-workspace .mc-tone-cyan{--mc-tint:#e0f3f6;--mc-edge:#bedee4}.mc-workspace .mc-tone-peach{--mc-tint:#fae9dc;--mc-edge:#e9ccb5}.mc-workspace .mc-tone-amber{--mc-tint:#fbefce;--mc-edge:#e7d59d}.mc-workspace .mc-tone-rose{--mc-tint:#f9e3e9;--mc-edge:#e9c4cf}
+  @media(max-width:480px){.mc-workspace .mc-dashboard-grid{gap:10px;grid-auto-rows:110px}.mc-workspace .mc-dashboard-card{padding:10px!important}.mc-workspace .mc-dashboard-card b{font-size:13px!important}.mc-workspace .mc-dashboard-card small{font-size:10px}}
   .mc-workspace button{min-height:44px;min-width:0;padding:10px 14px;border:1px solid #c7d5e5;border-radius:11px;background:#fff;color:#21334b;font:inherit;font-weight:650;white-space:normal;overflow-wrap:anywhere;cursor:pointer;box-shadow:inset 0 1px 0 #fff,0 3px 7px #263b5d08;transition:box-shadow .12s ease,transform .12s ease}
   .mc-workspace .mc-workspace-head button{flex:0 0 auto;padding:8px 12px;font-size:12px;background:#fff!important;color:#30455f!important;border:1px solid #ccd9e8!important}
   .mc-workspace button[type=submit]{background:linear-gradient(130deg,#326c9f,#24527f);color:#fff;border-color:#24527f;box-shadow:inset 0 1px 0 #ffffff30,0 3px 7px #24527f20}
@@ -67,7 +106,8 @@ export async function mountMechanicalWorkspace(root,options={}){
   @media print{.mc-workspace,.mc-workspace form,.mc-workspace article,.mc-workspace .mc-workspace-head{background:#fff!important;box-shadow:none!important;backdrop-filter:none}}
   `;root.append(style);
   const header=node('header',null,{class:'mc-workspace-head'});header.append(node('span','⚙',{class:'mc-brand','aria-hidden':'true'}),node('h2','Mechanical Department'),button('Refresh',()=>refresh()),button('Close',()=>{destroy();options.onClose?.()}));root.append(header);
-  root.append(node('p',notice,{role:'status','aria-live':'polite'}));
+  root.append(node('p',notice,{role:'status','aria-live':'polite',tabindex:'-1'}));
+  if(model)root.append(dashboard());
   if(pending){const box=node('section',null,{class:'mc-pending'});box.append(node('h3',pending.editing?'Review rejected change':'Pending confirmation'),node('p',({MC_CREATE:'Checklist registration',TASK_CREATE:'New task',TASK_ASSIGN:'Mechanic assignment',TASK_HANDOVER:'Work handover',TASK_REPEAT:'Repeat repair',MECHANICAL_QC:'Mechanical QC result'})[pending.command.operation]||'Saved change'),node('p',JSON.stringify(pending.command.operation==='MECHANICAL_QC'?{result:pending.command.payload.result,reason:pending.command.payload.reason}:pending.command.payload)));
    if(!pending.editing)box.append(button('Retry same change',()=>post()));
    if(pending.rejected&&terminalRejection(pending.error))box.append(button('Dismiss rejected change',async()=>{try{storage.removeItem(key)}catch{notice='Unable to resolve this saved change safely.';render();return}pending=null;selected=null;qc=null;await refresh();if(active()){notice='Rejected change dismissed. No server records were changed.';render()}}));
@@ -77,7 +117,7 @@ export async function mountMechanicalWorkspace(root,options={}){
   }
   if(!model)return;
   const caps=new Set(model.capabilities||[]),grid=node('div',null,{class:'mc-grid'}),list=node('section',null),detail=node('section',null);grid.append(list,detail);root.append(grid);
-  list.append(node('h3','Mechanical checklists'));const rows=node('div',null,{class:'mc-list'});
+  list.append(node('h3','Mechanical checklists',{'data-mc-checklists':'true'}));const rows=node('div',null,{class:'mc-list'});
   for(const row of model.checklists||[])rows.append(button(row.number+' · JC '+row.jobCard+' · '+row.manualDate,()=>{selected=row.id;refresh()}));
   if(!rows.childNodes.length)rows.append(node('p','No checklists on this page.'));list.append(rows);
   if(after)list.append(button('First page',()=>{after=0;refresh()}));if(model.nextAfter!=null)list.append(button('Next page',()=>{after=model.nextAfter;refresh()}));
