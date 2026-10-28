@@ -6,7 +6,7 @@ assert.ok(start>=0&&end>start,'Manager Workshop Performance block must exist');
 const b=s.slice(start,end);
 assert.match(b,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,'Workshop Performance must stay three-column');
 assert.match(b,/backdrop-filter:blur\(14px\) saturate\(145%\)/,'performance cards must use liquid-glass treatment');
-assert.match(b,/card\('purchase','Purchase Expenses'/,'Purchase Expenses card must exist');
+assert.match(b,/card\('purchase','Purchase Cost'/,'Combined Purchase Cost card must exist');
 assert.match(b,/const p=Number\(x\.purchaseAmount\)/,'Spare Parts Expense must use the saved final purchase amount');
 assert.match(b,/p\*q/,'Spare Parts Expense must multiply unit price by quantity');
 assert.match(b,/No purchase costs yet/);
@@ -21,3 +21,4 @@ assert.match(v145,/grid\.querySelector\('\.v145-consumables'\)/,'Consumables Exp
 assert.match(v145,/a&&!a\.voided&&a\.locked/,'Consumables Expense must count finalized, non-voided records');
 assert.match(v145,/Paint Expense.*Other Consumables.*Total Expense.*Job Cards/,'Consumables detail must show its breakdown');
 console.log('Manager Workshop Performance spare-parts/consumables regression passed');
+

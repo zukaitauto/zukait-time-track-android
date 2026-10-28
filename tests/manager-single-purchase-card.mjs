@@ -60,3 +60,26 @@ for(const [range,total,sublet] of [['month','38.005','8.005'],['today','6.005','
 }
 assert.equal(JSON.stringify(context.state),combinedSnapshot);assert.equal(JSON.stringify([...cache]),partsSnapshot,'report does not change parts or sublet records');
 console.log('Single Manager purchase card: duplicate cleanup, Today/Month parts + sublet amounts, matching detail period and read-only behavior passed.');
+
+// Fresh Manager dashboard must load Parts without first opening the Parts report.
+let reportReads=0,releaseReport;
+context.navigator={onLine:true};context.me.id='M';context.zukaitCloud={revision:7};
+parts.navigator.onLine=true;
+parts.window.zukaitV2.reports={page:async()=>{reportReads++;await new Promise(resolve=>releaseReport=resolve);return {rows:[
+ event('SPARE_PART_LISTED','2026-09-01T00:00:00Z',{name:'Bumper',qty:3}),
+ event('SPARE_PART_FINAL_PRICE_RECORDED','2026-09-30T20:00:00Z',{finalPrice:10})
+],source:'server',nextCursor:null};}};
+context.v123ManagerPerformanceRange('month');
+assert.ok(panel.innerHTML.includes('Syncing…'),'partial sublet total is not presented as the final purchase total');
+context.v123ApplyManagerPerformance();context.v123ApplyManagerPerformance();
+await new Promise(resolve=>setImmediate(resolve));assert.equal(reportReads,1,'repaints share the pending read');
+releaseReport();await new Promise(resolve=>setImmediate(resolve));
+assert.ok(panel.innerHTML.includes('38.005 OMR'),'dashboard loads Parts + Sublet without visiting another page');
+context.v123ApplyManagerPerformance();await new Promise(resolve=>setImmediate(resolve));assert.equal(reportReads,1,'unchanged revision does not create more report traffic');
+context.zukaitCloud.revision=8;context.v123ApplyManagerPerformance();await new Promise(resolve=>setImmediate(resolve));assert.equal(reportReads,1,'rapid revision changes are throttled');
+// A report arriving after account switch cannot hydrate the new account cache.
+const savedCache=JSON.stringify([...cache]);
+const switching=parts.window.zukaitV2.sparePartsMain.loadAuthoritativeManagerReport();
+await new Promise(resolve=>setImmediate(resolve));parts.me={id:'NEW',role:'Manager'};releaseReport();
+assert.equal((await switching).source,'forbidden');assert.equal(JSON.stringify([...cache]),savedCache);
+console.log('Fresh Manager Parts hydration, partial-total loading, request deduplication/throttle and account-switch isolation passed.');
