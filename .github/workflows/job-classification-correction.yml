@@ -3,7 +3,7 @@ on:
   push:
     branches: [architecture-v2]
     paths:
-      - 'supabase/migrations/**classification**.sql'
+      - 'supabase/migrations/**'
       - 'tests/manager-classification-correction.mjs'
       - '.github/workflows/job-classification-correction.yml'
 permissions:
