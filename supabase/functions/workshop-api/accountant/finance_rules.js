@@ -46,7 +46,9 @@ export function financialReport(context,filters={},now=Date.now()){
    parts.push({id:i.id,job_card:no,list_no:i.listNo,date:day(i.purchaseRecordedAt||i.updatedAt||i.createdAt),part:i.name,quantity:qty,supplier:i.supplier||snapshot.supplier||'',status:i.status,purchase_amount_omr:returned?money(returnedValue):known?money(Math.round(price*qty)):null,unit_price_omr:money(price),received_quantity:validReceipt?received:null,pending_quantity:Number.isFinite(pendingQty)?pendingQty:null,pending_purchase_omr:money(pendingAmount),returned_quantity:validReturn?returnedQty:returned?null:0,confirmed,invoice_reference:i.invoiceNo||i.invoiceReference||null,net_cost_omr:money(net),returns_omr:money(returnedValue)});
   }
   if(partsPending)warnings.push('Spare parts receipts are incomplete; unreceived quantities remain pending');
-  const rate=milli(s.labourRate),holidays=new Set(arr(s.workshopHolidays).map(h=>typeof h==='string'?h:String(h?.date||h?.dateKey||h?.day||''))),groups=new Map();let open=false,invalid=false;
+  // Job Card 360 and production summaries already use OMR2.500/hour when
+  // no rate is saved. Use that same policy; an invalid explicit rate stays pending.
+  const rate=milli(s.labourRate===undefined||s.labourRate===null||s.labourRate===''?2.5:s.labourRate),holidays=new Set(arr(s.workshopHolidays).map(h=>typeof h==='string'?h:String(h?.date||h?.dateKey||h?.day||''))),groups=new Map();let open=false,invalid=false;
   for(const r of unique(arr(s.sessions))){if(r.cancelled||r.voided||!(key(r.preliminaryLinkedJob)===no||key(r.job)===no&&!r.preliminaryLinkedJob))continue;if(!r.end){open=true;continue;}const a=Number(r.start),b=Number(r.end);if(!Number.isFinite(a)||!Number.isFinite(b)||b<a||b>now||!r.emp){invalid=true;continue;}const xs=groups.get(String(r.emp))||[];xs.push([a,b]);groups.set(String(r.emp),xs);}
   let minutes=0;for(const intervals of groups.values())for(const [a,b] of unionIntervals(intervals))minutes+=normalMinutes(a,b,holidays);
   const labourCost=rate!==null&&rate>=0&&!open&&!invalid&&groups.size?Math.round(minutes/60*rate):null;

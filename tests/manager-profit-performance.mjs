@@ -4,6 +4,20 @@ import {managerProfitReport} from '../supabase/functions/workshop-api/accountant
 import {accountantApi} from '../supabase/functions/workshop-api/accountant/api.js';
 import {fixture} from './accountant-finance.mjs';
 const now=Date.parse('2026-10-25T08:00:00Z'),manager={id:'M',role:'Manager'};
+// Actual 360 calculator and the server must agree when the saved rate is absent.
+const rateContext={state:{jobs:[{no:'RATE-JC',jobType:'INSURANCE',insuranceLpo:{amount:100,receivedDate:'2026-10-01'}}],users:[{id:'E',role:'Employee'}],assign:[{id:'A',job:'RATE-JC',emp:'E'}],sessions:[{id:'S',emp:'E',job:'RATE-JC',start:Date.parse('2026-10-01T04:00:00Z'),end:Date.parse('2026-10-01T05:00:00Z')} ]},events:[],entries:[]};
+const rateDom=new JSDOM('',{runScripts:'outside-only'});rateDom.window.state=structuredClone(rateContext.state);rateDom.window.eval(fs.readFileSync('app/src/main/assets/job_card_master.js','utf8'));
+const actual360=rateDom.window.zukaitJobCardMaster.costs('RATE-JC');assert.equal(actual360.rate,2.5);
+for(const missing of [undefined,null,'']){
+ const c=structuredClone(rateContext);if(missing!==undefined)c.state.labourRate=missing;
+ const row=managerProfitReport(c,financialReport(c,{},now),{month:'2026-10'},now).rows[0];
+ assert.equal(row.costs_complete,true);assert.equal(Number(row.cost_breakdown_omr.labour),actual360.labour);assert.equal(Number(row.total_cost_omr),actual360.total);assert.equal(row.profit_omr,'97.500');
+ assert.equal(Object.hasOwn(c.state,'labourRate'),missing!==undefined,'read-only costing does not save defaults into production state');
+}
+const explicitRate=structuredClone(rateContext);explicitRate.state.labourRate=4;assert.equal(financialReport(explicitRate,{},now).details[0].labour_cost_omr,4);
+explicitRate.state.labourRate='invalid';assert.equal(financialReport(explicitRate,{},now).details[0].labour_cost_omr,null,'malformed configured rate cannot become a guessed cost');
+const stillRunning=structuredClone(rateContext);stillRunning.state.sessions[0].end=null;assert.equal(managerProfitReport(stillRunning,financialReport(stillRunning,{},now),{month:'2026-10'},now).rows[0].costs_complete,false,'running time remains incomplete');
+rateDom.window.close();
 const context=fixture();context.state.jobs[0].year='2017';context.state.sublets=[{id:'SUBLET-1',jobCard:'J1',amountMills:12345,date:'2026-09-01'}];
 context.entries.push({id:'duplicate-cash',kind:'CASH_IN',job_card:'J1',amount:150,transaction_date:'2026-10-02'});
 const before=JSON.stringify(context),full=financialReport(context,{},now);
