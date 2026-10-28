@@ -26,4 +26,26 @@ for(const [range,amount,subtitle] of [['month','37.000','This Month'],['today','
  assert.ok(modal.includes('<option value="'+range+'" selected>'),'detail period matches selected dashboard period');
 }
 assert.equal(JSON.stringify(context.state),snapshot,'presentation changes preserve all purchase records');
+// Feed the dashboard actual reportRows output: amount is already unit price × qty.
+const cache=new Map(),parts={window:{zukaitV2:{}},me:{role:'Manager'},navigator:{onLine:false},localStorage:{getItem:k=>cache.get(k)||null,setItem:(k,v)=>cache.set(k,v)},document:{},console};
+vm.createContext(parts);vm.runInContext(fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8'),parts);
+const event=(type,time,payload,revision=1)=>({event_type:type,sort_time:time,server_time:time,entity_id:'P1',revision,payload:{listNo:'PL1',jobCard:'11975',partId:'P1',...payload}});
+parts.window.zukaitV2.sparePartsMain.hydrateFromServerRows([
+ event('SPARE_PART_LISTED','2026-09-01T00:00:00Z',{name:'Bumper',qty:3}),
+ event('SPARE_PART_FINAL_PRICE_RECORDED','2026-09-30T20:00:00Z',{finalPrice:10}),
+ event('SPARE_PART_STATUS_CHANGED','2026-11-01T08:00:00Z',{to:'FITTED'},2)
+]);
+context.zukaitV2=parts.window.zukaitV2;
+assert.equal(context.zukaitV2.sparePartsMain.reportRows()[0].amount,30);
+context.state.sublets.push({id:'sublet-only',jobCard:'999',date:'2026-10-05',amountMills:1005});
+const combinedSnapshot=JSON.stringify(context.state),partsSnapshot=JSON.stringify([...cache]);
+for(const [range,total,sublet] of [['month','38.005','8.005'],['today','6.005','6.005']]){
+ context.v123ManagerPerformanceRange(range);
+ assert.ok(panel.innerHTML.includes(total+' OMR'),'card adds each parts line once plus sublet, using the purchase date');
+ fields.get('v123PurchasePeriod').value=range;fields.get('v123PurchaseMonth').value='2026-10';fields.get('v123PurchaseDate').value='2026-10-05';
+ context.v123ApplyPurchaseExpenseFilters();
+ assert.ok(fields.get('v123PurchaseBody').innerHTML.includes(total+' OMR'),'detail equals dashboard total');
+ assert.ok(fields.get('v123PurchaseBody').innerHTML.includes(sublet+' OMR'),'sublet-only jobs are included');
+}
+assert.equal(JSON.stringify(context.state),combinedSnapshot);assert.equal(JSON.stringify([...cache]),partsSnapshot,'report does not change parts or sublet records');
 console.log('Single Manager purchase card: duplicate cleanup, Today/Month parts + sublet amounts, matching detail period and read-only behavior passed.');

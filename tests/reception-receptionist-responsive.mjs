@@ -50,7 +50,7 @@ for(const engine of ['chromium','webkit']){
   await page.locator('[name=job_type]').selectOption('CREDIT');assert.equal(await page.locator('#rc-credit-account').isVisible(),true);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width} direct credit intake overflow`);
   await page.locator('[name=job_type]').selectOption('CASH');assert.equal(await page.locator('#rc-credit-account').isVisible(),false);
-  await page.locator('#deliveries').click();await page.getByRole('button',{name:'Deliver Vehicle',exact:true}).waitFor();
+  await page.locator('#deliveries').click();await page.getByRole('button',{name:'Review vehicle delivery',exact:true}).waitFor();
   assert.equal(await page.locator('#reception-delivery-back').count(),1);
   assert.equal(await page.locator('body.receptionist-workspace').count(),1);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width} delivery overflow`);
