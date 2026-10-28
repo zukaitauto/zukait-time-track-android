@@ -2123,14 +2123,14 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v284OpenMonthlyPurchases=()=>openPurchaseList('month');
  // Parts live in the event projection, separately from workshop-state sublets.
  // Warm it on a visible Manager render; never poll or fetch on every repaint.
- let purchaseLoad=null,purchaseActor='',purchaseRevision=null,purchaseCheckedAt=0,purchaseSource='';
+ let purchaseLoad=null,purchaseActor='',purchaseCheckedAt=0,purchaseSource='';
  function ensurePurchaseParts(){
   const loader=window.zukaitV2?.sparePartsMain?.loadAuthoritativeManagerReport;
   if(typeof loader!=='function'||typeof navigator==='undefined'||!navigator.onLine||document.hidden)return;
-  const actor=String(me?.id||'')+'|'+String(window.zukaitAuth?.getToken?.()||''),revision=window.zukaitCloud?.revision??null,now=Date.now();
+  const actor=String(me?.id||'')+'|'+String(window.zukaitAuth?.getToken?.()||''),now=Date.now();
   if(purchaseLoad)return;
-  if(actor===purchaseActor&&purchaseCheckedAt&&((purchaseSource==='server'&&revision===purchaseRevision)||now-purchaseCheckedAt<60000))return;
-  purchaseActor=actor;purchaseRevision=revision;purchaseCheckedAt=now;
+  if(actor===purchaseActor&&purchaseCheckedAt&&(purchaseSource==='server'||now-purchaseCheckedAt<60000))return;
+  purchaseActor=actor;purchaseCheckedAt=now;
   purchaseLoad=Promise.resolve().then(()=>loader()).then(result=>{purchaseSource=result?.source==='server'?'server':'cached';}).catch(()=>{purchaseSource='cached';}).finally(()=>{
    purchaseLoad=null;
    if(me?.role==='Manager'&&actor===String(me?.id||'')+'|'+String(window.zukaitAuth?.getToken?.()||''))apply();
