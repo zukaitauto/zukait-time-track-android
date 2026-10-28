@@ -62,7 +62,9 @@ try{
   assert.ok(layout.boxes.every(b=>b.height>=44&&!b.overflow),'Readable touch targets without clipping at '+width);
   await page.locator('[data-rc-menu]').click();assert.equal(await page.evaluate(()=>window.receptionOpens),1,'Original Reception handler retained');
   await page.locator('#manager-mechanical-launcher').click();assert.equal(await page.evaluate(()=>window.mechanicalOpens),1,'Existing Mechanical action used');
-  await page.locator('#manager-mechanical-launcher').focus();assert.notEqual(await page.locator('#manager-mechanical-launcher').evaluate(e=>getComputedStyle(e).outlineStyle),'none','Keyboard focus visible');
+  await page.locator('[data-rc-menu]').focus();await page.keyboard.press('Tab');await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'manager-mechanical-launcher','Keyboard order follows the three cards');
+  assert.notEqual(await page.locator('#manager-mechanical-launcher').evaluate(e=>getComputedStyle(e).outlineStyle),'none','Keyboard focus visible');
   await page.screenshot({path:'artifacts/department-row/'+width+'.png',fullPage:true});
   await Promise.all([page.waitForURL('**/accountant.html'),page.locator('#manager-accounts-launcher').click()]);
   assert.equal(await page.locator('h1').textContent(),'Accounts destination');
