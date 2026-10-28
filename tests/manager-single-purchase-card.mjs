@@ -17,7 +17,7 @@ context.v134ApplyManagerCapacity();context.v134ApplyManagerCapacity();assert.equ
 const snapshot=JSON.stringify(context.state);
 for(const [range,amount,subtitle] of [['month','37.000','This Month'],['today','5.000','Today'],['month','37.000','This Month']]){
  context.v123ManagerPerformanceRange(range);
- assert.equal((panel.innerHTML.match(/<span>Purchase Expenses<\/span>/g)||[]).length,1,'one purchase card per render');
+ assert.equal((panel.innerHTML.match(/<span>Purchase Cost<\/span>/g)||[]).length,1,'one combined purchase-cost card per render');
  assert.doesNotMatch(panel.innerHTML,/Total Purchase Amount/);
  assert.match(panel.innerHTML,new RegExp(amount.replace('.','\\.')+' OMR'));
  assert.ok(panel.innerHTML.includes(subtitle+' · Parts + Sublet'));
