@@ -9,6 +9,8 @@ on:
       - ".github/workflows/reception-pages-staging-test.yml"
       - ".github/workflows/pages.yml"
       - "scripts/verify-reception-platform-assets.py"
+      - ".github/workflows/mechanical-phone-qa.yml"
+      - ".github/workflows/build-signed-acceptance.yml"
       - "app/src/main/assets/offline_test.html"
       - "app/src/main/assets/receptionist.html"
       - "app/src/main/assets/receptionist_session.js"

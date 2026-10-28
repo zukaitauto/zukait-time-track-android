@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [architecture-v2]
-    paths: ['.github/workflows/mechanical-phone-qa.yml', 'scripts/prepare-mechanical-acceptance.py', 'app/src/main/assets/mechanical_*', 'app/src/main/assets/receptionist.html', 'app/src/main/assets/time_management*', 'app/src/main/assets/session_privacy.js', 'app/src/main/assets/cloud_sync.js', 'app/src/main/assets/v74_updates.js', 'supabase/functions/workshop-api/extensions/mechanical_*', 'supabase/migrations/*_mechanical_*']
+    paths: ['.github/workflows/mechanical-phone-qa.yml', 'scripts/prepare-mechanical-acceptance.py', 'scripts/verify-reception-platform-assets.py', '.github/workflows/pages.yml', '.github/workflows/publish-approved-release.yml', 'app/src/main/assets/mechanical_*', 'app/src/main/assets/receptionist.html', 'app/src/main/assets/time_management*', 'app/src/main/assets/session_privacy.js', 'app/src/main/assets/cloud_sync.js', 'app/src/main/assets/v74_updates.js', 'supabase/functions/workshop-api/extensions/mechanical_*', 'supabase/migrations/*_mechanical_*']
 permissions:
   contents: read
 jobs:

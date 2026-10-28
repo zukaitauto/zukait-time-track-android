@@ -6,6 +6,10 @@ on:
   push:
     branches: [architecture-v2]
     paths:
+      - scripts/verify-reception-platform-assets.py
+      - app/src/main/assets/mechanical_*
+      - .github/workflows/pages.yml
+      - .github/workflows/publish-approved-release.yml
       - app/src/main/assets/manager_profit_performance.js
       - app/src/main/assets/offline_test.html
       - app/src/main/assets/time_management*
