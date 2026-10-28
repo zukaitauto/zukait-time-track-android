@@ -22,11 +22,34 @@ function dashboardEntry(){
  if(typeof document==='undefined'||!document?.documentElement)return;
  for(const row of document.querySelectorAll('[data-accounts-row]')){const root=row.closest('#managerView');if(current()?.role!=='Manager'||!root||root.classList.contains('hidden')||!row.querySelector('[data-rc-menu]'))row.remove();}
  if(current()?.role!=='Manager')return;
+ if(!document.getElementById('manager-department-row-style')){
+  const style=document.createElement('style');style.id='manager-department-row-style';style.textContent=`
+  #managerView [data-accounts-row]{display:grid;gap:10px;margin:10px 0;align-items:stretch}
+  #managerView [data-accounts-row]>.rc-dashboard-launcher{box-sizing:border-box;min-width:0!important;width:100%!important;height:100%;min-height:96px!important;margin:0!important;padding:12px!important;white-space:normal!important;overflow-wrap:anywhere;border-radius:16px!important;box-shadow:inset 0 1px 1px #ffffffdf,0 4px 12px #17304d14!important}
+  #managerView [data-accounts-row]>.rc-dashboard-launcher b{font-size:17px!important;line-height:1.3}
+  #managerView [data-accounts-row]>.rc-dashboard-launcher small{font-size:11px!important;line-height:1.4}
+  #managerView #manager-accounts-launcher{background:linear-gradient(135deg,#f5f1ff,#e8e8ff)!important;border-color:#c8bee8!important;color:#39305b!important}
+  #managerView #manager-accounts-launcher small{color:#554c70!important}
+  #managerView #manager-mechanical-launcher{background:linear-gradient(135deg,#fff7e8,#f8e7ce)!important;border-color:#e3c59c!important;color:#583d20!important}
+  #managerView #manager-mechanical-launcher small{color:#705537!important}
+  #managerView [data-accounts-row]>.rc-dashboard-launcher:focus-visible{outline:3px solid #147d92!important;outline-offset:2px}
+  @media(max-width:480px){#managerView [data-accounts-row]{gap:7px}#managerView [data-accounts-row]>.rc-dashboard-launcher{padding:9px 7px!important;min-height:106px!important}#managerView [data-accounts-row]>.rc-dashboard-launcher b{font-size:13px!important}#managerView [data-accounts-row]>.rc-dashboard-launcher small{font-size:10px!important}}
+  `;document.head.append(style);
+ }
  for(const reception of document.querySelectorAll('#managerView:not(.hidden) [data-rc-menu]')){
-  if(reception.parentElement?.dataset.accountsRow)return;
-  const row=document.createElement('div');row.dataset.accountsRow='1';row.style.cssText='display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin:10px 0';
-  reception.before(row);row.append(reception);reception.style.cssText+=';width:100%;min-width:0;margin:0';
-  const b=document.createElement('button');b.type='button';b.className='rc-dashboard-launcher';b.id='manager-accounts-launcher';b.style.cssText='width:100%;min-width:0;margin:0;background:linear-gradient(135deg,#edf0ff,#d9f5ed);color:#183c56';b.innerHTML='<b>📊 Accounts</b><small>Financial reports · Payments · Expenses</small>';b.onclick=()=>{if(current()?.role==='Manager')location.assign('accountant.html')};row.append(b);
+  let row=reception.parentElement?.dataset.accountsRow?reception.parentElement:null;
+  if(!row){
+   row=document.createElement('div');row.dataset.accountsRow='1';
+   reception.before(row);row.append(reception);
+   const b=document.createElement('button');b.type='button';b.className='rc-dashboard-launcher';b.id='manager-accounts-launcher';b.innerHTML='<b>📊 Accounts</b><small>Financial reports · Payments · Expenses</small>';b.onclick=()=>{if(current()?.role==='Manager')location.assign('accountant.html')};row.append(b);
+  }
+  let mechanical=row.querySelector('#manager-mechanical-launcher');
+  if(window.ZUKAIT_MECHANICAL_ENABLED===true&&!mechanical){
+   const owner=current().id,b=document.createElement('button');b.type='button';b.className='rc-dashboard-launcher';b.id='manager-mechanical-launcher';b.innerHTML='<b>🔧 Mechanical</b><small>Checklists · Tasks · QC</small>';
+   b.onclick=async()=>{if(current()?.role!=='Manager'||current()?.id!==owner||window.ZUKAIT_MECHANICAL_ENABLED!==true)return;b.disabled=true;try{if(typeof window.zukaitCloud?.openMechanicalWorkspace!=='function'||await window.zukaitCloud.openMechanicalWorkspace()===false)throw Error('Mechanical workspace unavailable');}catch{if(current()?.role==='Manager'&&current()?.id===owner)window.alert('Unable to open Mechanical Department. Sync and try again.');}finally{b.disabled=false}};
+   row.append(b);mechanical=b;
+  }else if(window.ZUKAIT_MECHANICAL_ENABLED!==true&&mechanical){mechanical.remove();mechanical=null;}
+  row.style.gridTemplateColumns='repeat('+(mechanical?3:2)+',minmax(0,1fr))';
  }
 }
 async function createFromUserForm({id,name,password}){
