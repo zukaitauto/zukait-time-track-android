@@ -13,7 +13,8 @@ import { timeManagementTransition } from "./time_management_rules.js";
 import { receptionistDeliveryList, receptionistDeliveryRow, receptionistDeliveryTransition } from "./receptionist_delivery_rules.js";
 import { receptionDashboardProjection, receptionPromiseTransition, preserveReceptionPromiseAuthority } from "./reception_dashboard_rules.js";
 
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+// This handler uses standard Deno globals. Avoid a runtime network import of
+// declaration-only editor types, which can block otherwise unchanged deployments.
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const admin = createClient(
