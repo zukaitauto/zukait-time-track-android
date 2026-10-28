@@ -301,9 +301,14 @@ jobs:
                           self.sources.append(src.split('?', 1)[0])
 
           assets = Path('app/src/main/assets')
+          # Include the dedicated host and every dynamically imported Mechanical module.
+          for origin in assets.glob('mechanical_*'):
+              if origin.is_file():
+                  copy2(origin, Path('_site') / origin.name)
           parser = Scripts()
           parser.feed((assets / 'offline_test.html').read_text(encoding='utf-8'))
           parser.feed((assets / 'receptionist.html').read_text(encoding='utf-8'))
+          parser.feed((assets / 'mechanical_supervisor.html').read_text(encoding='utf-8'))
           for source in parser.sources:
               relative = Path(source)
               if relative.is_absolute() or '..' in relative.parts:

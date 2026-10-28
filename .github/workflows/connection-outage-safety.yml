@@ -19,6 +19,7 @@ jobs:
       - name: Verify outages, identity, time authority and deadlines
         run: |
           set -e
+          node tests/mechanical-release-assets.mjs
           node tests/continue-working.mjs
           node tests/time-correction-disposition.mjs
           node tests/manager-time-management.mjs

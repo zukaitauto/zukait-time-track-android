@@ -84,6 +84,11 @@ def main():
     ]:
         assert line in workflow, f"Pages workflow omits {line}"
 
+    # Mechanical is shipped on both platforms, including dynamic imports.
+    for name in ['mechanical_supervisor.html', *sorted(p.name for p in ASSETS.glob('mechanical_*.js'))]:
+        if name not in FILES:
+            FILES.append(name)
+
     scripts = {}
     for html in ["offline_test.html", "receptionist.html"]:
         parsed = HtmlScripts()
