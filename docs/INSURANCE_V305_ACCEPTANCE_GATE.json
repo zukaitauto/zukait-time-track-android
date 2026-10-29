@@ -1,7 +1,7 @@
 {
   "versionName": "V376",
   "versionCode": 339,
-  "sourceCommit": "51106997d48357090f04b92b91bde89f3ae8b9b8",
+  "sourceCommit": "50c5b0ab2aaa288eca6be48ccd2119c009996941",
   "checks": {
     "client_https_restart": {
       "passed": false,
@@ -10,10 +10,10 @@
       "verifiedAt": null
     },
     "physical_android": {
-      "passed": false,
-      "evidence": "Current twelve-screen candidate5110699 requires reconciled evidence. Prior f70dafb tests are retained separately as historical, not new-screen acceptance.",
-      "verifiedBy": null,
-      "verifiedAt": null
+      "passed": true,
+      "evidence": "Owner confirmed updated twelve-screen signed V376 candidate40885648299/artifact12902736665 as working, including every Mechanical card and Time Management opened without saving; owner separately confirmed BOTH Manager and Jibin/SUP003 were used. Tested runtimebd8f977 is byte-identical in app/backend/migrations to5110699; candidate50c5b0a changes only release documents/metadata and QA workflow path filters. No invented device model, OS, offline/cold restart or Safari result.",
+      "verifiedBy": "Owner on Android; Codex runtime/source comparison",
+      "verifiedAt": "2026-10-29T17:56:56Z"
     },
     "physical_safari": {
       "passed": false,
@@ -23,9 +23,9 @@
     },
     "full_data_preservation": {
       "passed": true,
-      "evidence": "Current Mechanical/Accountant contracts40885929158 and runtime-equivalent bd8f977 isolated persistence/rollback/scope tests passed. This is source data-preservation evidence; production unchanged and backend deployment still pending.",
+      "evidence": "Current Mechanical/Accountant contracts40885929158 and runtime-equivalent bd8f977 isolated persistence/rollback/scope tests passed. This is source data-preservation evidence; production unchanged and backend deployment still pending. Current final-source contracts40925418984 and full regression40925418934 passed.",
       "verifiedBy": "GitHub Actions and Codex source/preflight review",
-      "verifiedAt": "2026-10-29T17:41:13Z"
+      "verifiedAt": "2026-10-29T17:56:56Z"
     },
     "fresh_backup_restored": {
       "passed": false,
@@ -34,16 +34,16 @@
       "verifiedAt": null
     },
     "pc_site_reconciled": {
-      "passed": false,
-      "evidence": "Current twelve-screen candidate5110699 requires reconciled evidence. Prior f70dafb tests are retained separately as historical, not new-screen acceptance.",
-      "verifiedBy": null,
-      "verifiedAt": null
+      "passed": true,
+      "evidence": "Current candidate50c5b0a staged PC validation40925418940 succeeded. App source remains identical to the owner-tested twelve-screen runtime. Coordinated publisher remains unchanged and must verify actual public Pages/APK/updater parity after publication; no staff site update is claimed.",
+      "verifiedBy": "GitHub Actions and source review",
+      "verifiedAt": "2026-10-29T17:56:56Z"
     },
     "production_backend_smoke": {
-      "passed": false,
-      "evidence": "Current twelve-screen candidate5110699 requires reconciled evidence. Prior f70dafb tests are retained separately as historical, not new-screen acceptance.",
-      "verifiedBy": null,
-      "verifiedAt": null
+      "passed": true,
+      "evidence": "Owner-confirmed read-only Android smoke of all twelve Mechanical screens and Time Management passed for BOTH Manager and Jibin/SUP003 against deployed workshop-api98; the new scoped sections/time reads use the live API. Server-side verification additionally confirmed approved SQL bodies, private RLS/execute permissions, original Reception-only guard change, all38 bundled source files/relative imports, and invalid-actor RPC denial before writes. No synthetic production records were created; new private tables were empty after deployment. This verifies changed-path read access and security checks; it does not claim save/time-correction/delivery business lifecycle testing or physical HTTPS restart/Safari acceptance.",
+      "verifiedBy": "Owner live role checks plus Codex deployed-source/SQL security verification",
+      "verifiedAt": "2026-10-29T17:56:56Z"
     }
   },
   "previousPurchaseCandidate": {

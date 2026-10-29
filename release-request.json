@@ -3,130 +3,75 @@
   "versionCode": 339,
   "releaseScope": "standard",
   "approvedForStaff": false,
-  "sourceCommit": "51106997d48357090f04b92b91bde89f3ae8b9b8",
+  "sourceCommit": "50c5b0ab2aaa288eca6be48ccd2119c009996941",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": true,
   "authorization": "Owner explicitly requested: do this fix and release new version, you have my permission; then instructed Proceed. This supersedes the separate-publication-instruction hold. Existing release requirements still apply; authorization does not attest to unperformed tests.",
   "approvedAt": null,
   "publishNonce": null,
-  "physicalAcceptanceStatus": "NEW_MECHANICAL_SCREENS_NOT_PHYSICALLY_TESTED",
+  "physicalAcceptanceStatus": "ANDROID_MANAGER_AND_SUP003_OWNER_CONFIRMED_SAFARI_PENDING",
   "freshProductionBackupRestoreStatus": "REVIEW_REQUIRED_FOR_CANDIDATE",
   "productionBackendChanges": true,
   "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
   "releaseHeldByOwner": false,
-  "verificationSummary": "Saved PC work adds twelve scoped Mechanical screens and audited Time Management. Latest five triggered checks pass; runtime-equivalent bd8f977 signed APK, Reception/browser, Mechanical phone QA, Accountant and staged PC checks pass. Its outdated cache-identifier sync assertion failed;5110699 corrects it and latest sync passes. New migrations and backend are NOT deployed. Prior f70dafb tests are historical and not acceptance of the new screens. Publication authorization persists; new production migrations/backend require separate exact-source/environment approval. On29Oct owner explicitly approved both new migrations and matching workshop-api from5110699 for live projectpjknotnjkufadqavcmii. Both migrations are now applied and byte-verified; workshop-api98 is ACTIVE with38 bundled files matching approved source and all relative imports present. SQL bodies/permissions/RLS and invalid-actor denial verified; original Reception function changed only by approved scoped guard. No customer/work/time records changed by deployment; new private tables remain empty. Frontend not published; physical/HTTPS/recovery/Manager full Edge smoke still pending.",
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "contractVerificationRun": 40735064717,
+  "verificationSummary": "Final source50c5b0a passed all seven triggered workflows including signed APK, full Reception/browser regression, staged PC, contracts, Android/APK and outage. Missing QA path coverage for Mechanical backend and regression changes is corrected; publication triggers/gates unchanged. Owner confirmed all twelve Mechanical cards and Time Management work on Android for BOTH Manager and Jibin/SUP003. Their tested runtimebd8f977 is app/backend/migration-identical to5110699 and50c5b0a. Deployed workshop-api98 and both approved migrations are verified. Current source signed provenance and changed-path authenticated backend read smoke are complete. No frontend publication; actual HTTPS restart, physical Safari and backup restore verification remain.",
+  "signedAcceptanceRun": 40925418946,
+  "verificationRun": 40925418934,
+  "contractVerificationRun": 40925418984,
   "accountantVerificationRun": 40735064878,
   "nativePdfVerificationRun": null,
   "automatedVerification": {
-    "sourceCommit": "51106997d48357090f04b92b91bde89f3ae8b9b8",
+    "sourceCommit": "50c5b0ab2aaa288eca6be48ccd2119c009996941",
     "allTriggeredPassed": true,
+    "allPassed": true,
     "runs": [
       {
-        "id": 40885929199,
-        "name": "Connection outage safety",
-        "conclusion": "success"
-      },
-      {
-        "id": 40885929055,
-        "name": "Sync traffic compatibility",
-        "conclusion": "success"
-      },
-      {
-        "id": 40885929054,
-        "name": "Android architecture-v2 build\\n# Build verification revision 2",
-        "conclusion": "success"
-      },
-      {
-        "id": 40885929158,
-        "name": "Inactive Mechanical and Accountant contracts",
-        "conclusion": "success"
-      },
-      {
-        "id": 40885929148,
-        "name": "Build Zukait Time Track APK",
-        "conclusion": "success"
-      }
-    ],
-    "runtimeEquivalentSource": "bd8f97777395ad654d17edd64cb315a845f50f53",
-    "runtimeDifference": "Only tests/hidden-read-traffic.mjs cache identifier assertion changed; app/backend/migrations identical.",
-    "runtimeEquivalentRuns": [
-      {
-        "id": 40885648390,
-        "name": "Sync traffic compatibility",
-        "conclusion": "failure"
-      },
-      {
-        "id": 40885648569,
-        "name": "Connection outage safety",
-        "conclusion": "success"
-      },
-      {
-        "id": 40885648339,
+        "id": 40925418940,
         "name": "Validate staged PC website before V305 deployment",
         "conclusion": "success"
       },
       {
-        "id": 40885648353,
-        "name": "Inactive Mechanical and Accountant contracts",
+        "id": 40925418983,
+        "name": "Connection outage safety",
         "conclusion": "success"
       },
       {
-        "id": 40885648293,
-        "name": "Mechanical isolated phone acceptance",
-        "conclusion": "success"
-      },
-      {
-        "id": 40885648294,
-        "name": "Build Zukait Time Track APK",
-        "conclusion": "success"
-      },
-      {
-        "id": 40885648377,
-        "name": "Accountant isolated acceptance",
-        "conclusion": "success"
-      },
-      {
-        "id": 40885648299,
-        "name": "Build Signed Acceptance APK",
-        "conclusion": "success"
-      },
-      {
-        "id": 40885648346,
-        "name": "Manager department row UI",
-        "conclusion": "success"
-      },
-      {
-        "id": 40885648311,
+        "id": 40925419133,
         "name": "Android architecture-v2 build\\n# Build verification revision 2",
         "conclusion": "success"
       },
       {
-        "id": 40885648336,
-        "name": "Estimate Module Check",
+        "id": 40925418984,
+        "name": "Inactive Mechanical and Accountant contracts",
         "conclusion": "success"
       },
       {
-        "id": 40885648344,
-        "name": "Prepare isolated insurance acceptance",
+        "id": 40925418938,
+        "name": "Build Zukait Time Track APK",
         "conclusion": "success"
       },
       {
-        "id": 40885648310,
-        "name": "V305 QA browser live HTTPS denial",
+        "id": 40925418946,
+        "name": "Build Signed Acceptance APK",
         "conclusion": "success"
       },
       {
-        "id": 40885647900,
+        "id": 40925418934,
         "name": "Reception verification",
         "conclusion": "success"
       }
     ],
-    "signedCandidateRun": 40885648299,
-    "exactSourceSignedRunRequired": true
+    "signedArtifact": {
+      "id": 12920427036,
+      "name": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
+      "runId": 40925418946,
+      "versionName": "V376",
+      "versionCode": 339,
+      "package": "com.zukait.timetrack",
+      "certificateSha256": "63886438214503d468f053b44afe34baf008019f674e065a09b14ae8bf451af0",
+      "artifactZipDigest": "fd4d4f8c2a9a56282a120c3d8d58725f5bf0ba93ff92382db8c61cb04bc1aeee"
+    }
   },
   "additionalDatabaseCorrection": {
     "migration": "20261028141914_manager_unclassified_job_type_correction.sql",
@@ -235,11 +180,8 @@
   },
   "remainingAcceptance": [
     "client_https_restart",
-    "physical_android",
     "physical_safari",
-    "fresh_backup_restored",
-    "pc_site_reconciled",
-    "production_backend_smoke"
+    "fresh_backup_restored"
   ],
   "previousPurchaseCandidate": {
     "sourceCommit": "f70dafbf80866d0b29d659fa872e069d0e7fda8c",
@@ -320,7 +262,7 @@
     "currentWorkshopApiVersion": 98,
     "existingReceptionGuardMatches": true,
     "rollbackDefinitionsCaptured": true,
-    "requiredAction": "New app screens still require physical/HTTPS/recovery acceptance and exact-source release provenance before coordinated publication.",
+    "requiredAction": "Backend deployment verified. Complete remaining HTTPS restart, physical Safari and backup/recovery acceptance before unchanged coordinated publisher.",
     "deployedAt": "2026-10-29T17:49:12Z",
     "staffAuthVersion": 11,
     "migrationVersions": [
@@ -336,6 +278,114 @@
     "anonAndAuthenticatedExecuteDenied": true,
     "privateTablesRlsEnabled": true,
     "invalidActorCallsRejected": true,
-    "syntheticProductionRecordsCreated": 0
+    "syntheticProductionRecordsCreated": 0,
+    "authenticatedReadSmoke": "Owner confirmed both Manager and SUP003 all twelve screens plus Time Management; read-only, no saved changes."
+  },
+  "previousMechanicalCandidateVerification": {
+    "sourceCommit": "51106997d48357090f04b92b91bde89f3ae8b9b8",
+    "allTriggeredPassed": true,
+    "runs": [
+      {
+        "id": 40885929199,
+        "name": "Connection outage safety",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885929055,
+        "name": "Sync traffic compatibility",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885929054,
+        "name": "Android architecture-v2 build\\n# Build verification revision 2",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885929158,
+        "name": "Inactive Mechanical and Accountant contracts",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885929148,
+        "name": "Build Zukait Time Track APK",
+        "conclusion": "success"
+      }
+    ],
+    "runtimeEquivalentSource": "bd8f97777395ad654d17edd64cb315a845f50f53",
+    "runtimeDifference": "Only tests/hidden-read-traffic.mjs cache identifier assertion changed; app/backend/migrations identical.",
+    "runtimeEquivalentRuns": [
+      {
+        "id": 40885648390,
+        "name": "Sync traffic compatibility",
+        "conclusion": "failure"
+      },
+      {
+        "id": 40885648569,
+        "name": "Connection outage safety",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885648339,
+        "name": "Validate staged PC website before V305 deployment",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885648353,
+        "name": "Inactive Mechanical and Accountant contracts",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885648293,
+        "name": "Mechanical isolated phone acceptance",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885648294,
+        "name": "Build Zukait Time Track APK",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885648377,
+        "name": "Accountant isolated acceptance",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885648299,
+        "name": "Build Signed Acceptance APK",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885648346,
+        "name": "Manager department row UI",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885648311,
+        "name": "Android architecture-v2 build\\n# Build verification revision 2",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885648336,
+        "name": "Estimate Module Check",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885648344,
+        "name": "Prepare isolated insurance acceptance",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885648310,
+        "name": "V305 QA browser live HTTPS denial",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885647900,
+        "name": "Reception verification",
+        "conclusion": "success"
+      }
+    ],
+    "signedCandidateRun": 40885648299,
+    "exactSourceSignedRunRequired": true
   }
 }
