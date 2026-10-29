@@ -21,12 +21,10 @@ export function createMechanicalShortcuts({host,document:doc,getSession}){
   async open(key){if(!available(key))throw Error('This shortcut is unavailable for this login.');return routes[key].run()},
   counts(){
    if(!permitted())return {};
-   const root=doc.getElementById(getSession().role==='Manager'?'managerView':'supervisorView'),counts={};
-   // Copy the already displayed authority counts. Unknown is left unknown.
-   for(const [key,selector] of Object.entries({qc:'[data-qc-queue] .qc-card-count',ready:'[data-qc-ready] .qc-card-count',delivered:'[data-qc-delivered] .qc-card-count'})){
-    const text=root?.querySelector(selector)?.textContent?.trim();if(/^\d+$/.test(text||''))counts[key]=text;
-   }
-   return counts;
+   // Shared Body Workshop counters are not Mechanical department counts.
+   // Do not display them here. A Mechanical-specific authoritative response
+   // must supply counts before badges can safely be shown.
+   return {};
   }
  };
 }
