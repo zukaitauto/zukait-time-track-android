@@ -21,7 +21,8 @@ let controller=await mount();
 assert.deepEqual([...root.querySelectorAll('[data-mc-card]')].map(e=>e.dataset.mcCard),keys);
 for(const key of ['qc','ready','delivered'])assert.equal(root.querySelector('[data-mc-card='+key+'] .mc-card-count'),null,'Shared Body Workshop counts must not appear in Mechanical dashboard');
 for(const key of keys){root.querySelector('[data-mc-card="'+key+'"]').click();await tick();}
-assert.deepEqual(opens,['estimate','estimate-list','create-job','reception','jobs','wip','qc','ready','delivered','exceeded','filtered']);
+assert.deepEqual(opens,['estimate','estimate-list','create-job','reception','jobs','exceeded','filtered'],'Mechanical shortcuts must not open shared Workshop queues');
+for(const key of ['wip','qc','ready','delivered'])assert.equal(navigation.available(key),false,'Shared Workshop shortcut must be blocked: '+key);
 assert.equal(calls.length,1,'Card navigation adds no polling, fetches or automatic commands');
 root.querySelector('[data-mc-card=create-checklist]').click();assert.equal(w.document.activeElement.name,'job');
 root.querySelector('[data-mc-card=checklists]').click();assert.ok(w.document.activeElement.hasAttribute('data-mc-checklists'));
