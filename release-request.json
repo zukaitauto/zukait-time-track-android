@@ -3,87 +3,130 @@
   "versionCode": 339,
   "releaseScope": "standard",
   "approvedForStaff": false,
-  "sourceCommit": "f70dafbf80866d0b29d659fa872e069d0e7fda8c",
+  "sourceCommit": "51106997d48357090f04b92b91bde89f3ae8b9b8",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": true,
   "authorization": "Owner explicitly requested: do this fix and release new version, you have my permission; then instructed Proceed. This supersedes the separate-publication-instruction hold. Existing release requirements still apply; authorization does not attest to unperformed tests.",
   "approvedAt": null,
   "publishNonce": null,
-  "physicalAcceptanceStatus": "ANDROID_OWNER_CONFIRMED_SAFARI_PENDING",
+  "physicalAcceptanceStatus": "NEW_MECHANICAL_SCREENS_NOT_PHYSICALLY_TESTED",
   "freshProductionBackupRestoreStatus": "REVIEW_REQUIRED_FOR_CANDIDATE",
   "productionBackendChanges": true,
-  "backendDeploymentRequired": false,
+  "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
   "releaseHeldByOwner": false,
-  "verificationSummary": "Final V376/code339 source f70dafbf80866d0b29d659fa872e069d0e7fda8c passed all nine triggered workflows, including signed APK, staged PC, Reception/browser, Accountant, Manager row, Mechanical/Accountant contracts, Android/APK builds and outage safety. Exact runtime source d0888e4 additionally passed sync compatibility and Mechanical phone QA. Owner confirmed Android Parts + Sublet totals and Mechanical navigation as good on signed d0888e4; final source changes only two web cache query identifiers. No production data/database/main changes. Publication is owner-authorized but pending current HTTPS restart, Safari and recovery/backend acceptance evidence, not a new permission request.",
-  "signedAcceptanceRun": 40735064773,
-  "verificationRun": 40735064778,
+  "verificationSummary": "Saved PC work adds twelve scoped Mechanical screens and audited Time Management. Latest five triggered checks pass; runtime-equivalent bd8f977 signed APK, Reception/browser, Mechanical phone QA, Accountant and staged PC checks pass. Its outdated cache-identifier sync assertion failed;5110699 corrects it and latest sync passes. New migrations and backend are NOT deployed. Prior f70dafb tests are historical and not acceptance of the new screens. Publication authorization persists; new production migrations/backend require separate exact-source/environment approval.",
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
   "contractVerificationRun": 40735064717,
   "accountantVerificationRun": 40735064878,
   "nativePdfVerificationRun": null,
   "automatedVerification": {
-    "sourceCommit": "f70dafbf80866d0b29d659fa872e069d0e7fda8c",
-    "allPassed": true,
+    "sourceCommit": "51106997d48357090f04b92b91bde89f3ae8b9b8",
+    "allTriggeredPassed": true,
     "runs": [
       {
-        "id": 40735064723,
-        "name": "Validate staged PC website before V305 deployment",
-        "conclusion": "success"
-      },
-      {
-        "id": 40735064737,
+        "id": 40885929199,
         "name": "Connection outage safety",
         "conclusion": "success"
       },
       {
-        "id": 40735064724,
-        "name": "Manager department row UI",
+        "id": 40885929055,
+        "name": "Sync traffic compatibility",
         "conclusion": "success"
       },
       {
-        "id": 40735064717,
-        "name": "Inactive Mechanical and Accountant contracts",
-        "conclusion": "success"
-      },
-      {
-        "id": 40735064786,
+        "id": 40885929054,
         "name": "Android architecture-v2 build\\n# Build verification revision 2",
         "conclusion": "success"
       },
       {
-        "id": 40735064773,
-        "name": "Build Signed Acceptance APK",
+        "id": 40885929158,
+        "name": "Inactive Mechanical and Accountant contracts",
         "conclusion": "success"
       },
       {
-        "id": 40735064878,
-        "name": "Accountant isolated acceptance",
+        "id": 40885929148,
+        "name": "Build Zukait Time Track APK",
+        "conclusion": "success"
+      }
+    ],
+    "runtimeEquivalentSource": "bd8f97777395ad654d17edd64cb315a845f50f53",
+    "runtimeDifference": "Only tests/hidden-read-traffic.mjs cache identifier assertion changed; app/backend/migrations identical.",
+    "runtimeEquivalentRuns": [
+      {
+        "id": 40885648390,
+        "name": "Sync traffic compatibility",
+        "conclusion": "failure"
+      },
+      {
+        "id": 40885648569,
+        "name": "Connection outage safety",
         "conclusion": "success"
       },
       {
-        "id": 40735064697,
+        "id": 40885648339,
+        "name": "Validate staged PC website before V305 deployment",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885648353,
+        "name": "Inactive Mechanical and Accountant contracts",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885648293,
+        "name": "Mechanical isolated phone acceptance",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885648294,
         "name": "Build Zukait Time Track APK",
         "conclusion": "success"
       },
       {
-        "id": 40735064778,
+        "id": 40885648377,
+        "name": "Accountant isolated acceptance",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885648299,
+        "name": "Build Signed Acceptance APK",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885648346,
+        "name": "Manager department row UI",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885648311,
+        "name": "Android architecture-v2 build\\n# Build verification revision 2",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885648336,
+        "name": "Estimate Module Check",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885648344,
+        "name": "Prepare isolated insurance acceptance",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885648310,
+        "name": "V305 QA browser live HTTPS denial",
+        "conclusion": "success"
+      },
+      {
+        "id": 40885647900,
         "name": "Reception verification",
         "conclusion": "success"
       }
     ],
-    "signedArtifact": {
-      "id": 12836334531,
-      "name": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
-      "runId": 40735064773,
-      "package": "com.zukait.timetrack",
-      "versionName": "V376",
-      "versionCode": 339,
-      "certificateSha256": "63886438214503d468f053b44afe34baf008019f674e065a09b14ae8bf451af0",
-      "artifactZipDigest": "bc5dee17c19b3c4289b73ac317143aff49b8de7fe67395d508619217c63fdf32"
-    },
-    "previousRuntimeSource": "d0888e43ca508d314f35d7aed4a6444a35b1f213",
-    "previousRuntimeAllEightChecksPassed": true,
-    "verifiedAt": "2026-10-28T17:27:02Z"
+    "signedCandidateRun": 40885648299,
+    "exactSourceSignedRunRequired": true
   },
   "additionalDatabaseCorrection": {
     "migration": "20261028141914_manager_unclassified_job_type_correction.sql",
@@ -192,8 +235,91 @@
   },
   "remainingAcceptance": [
     "client_https_restart",
+    "physical_android",
     "physical_safari",
     "fresh_backup_restored",
+    "pc_site_reconciled",
     "production_backend_smoke"
-  ]
+  ],
+  "previousPurchaseCandidate": {
+    "sourceCommit": "f70dafbf80866d0b29d659fa872e069d0e7fda8c",
+    "automatedVerification": {
+      "sourceCommit": "f70dafbf80866d0b29d659fa872e069d0e7fda8c",
+      "allPassed": true,
+      "runs": [
+        {
+          "id": 40735064723,
+          "name": "Validate staged PC website before V305 deployment",
+          "conclusion": "success"
+        },
+        {
+          "id": 40735064737,
+          "name": "Connection outage safety",
+          "conclusion": "success"
+        },
+        {
+          "id": 40735064724,
+          "name": "Manager department row UI",
+          "conclusion": "success"
+        },
+        {
+          "id": 40735064717,
+          "name": "Inactive Mechanical and Accountant contracts",
+          "conclusion": "success"
+        },
+        {
+          "id": 40735064786,
+          "name": "Android architecture-v2 build\\n# Build verification revision 2",
+          "conclusion": "success"
+        },
+        {
+          "id": 40735064773,
+          "name": "Build Signed Acceptance APK",
+          "conclusion": "success"
+        },
+        {
+          "id": 40735064878,
+          "name": "Accountant isolated acceptance",
+          "conclusion": "success"
+        },
+        {
+          "id": 40735064697,
+          "name": "Build Zukait Time Track APK",
+          "conclusion": "success"
+        },
+        {
+          "id": 40735064778,
+          "name": "Reception verification",
+          "conclusion": "success"
+        }
+      ],
+      "signedArtifact": {
+        "id": 12836334531,
+        "name": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
+        "runId": 40735064773,
+        "package": "com.zukait.timetrack",
+        "versionName": "V376",
+        "versionCode": 339,
+        "certificateSha256": "63886438214503d468f053b44afe34baf008019f674e065a09b14ae8bf451af0",
+        "artifactZipDigest": "bc5dee17c19b3c4289b73ac317143aff49b8de7fe67395d508619217c63fdf32"
+      },
+      "previousRuntimeSource": "d0888e43ca508d314f35d7aed4a6444a35b1f213",
+      "previousRuntimeAllEightChecksPassed": true,
+      "verifiedAt": "2026-10-28T17:27:02Z"
+    },
+    "physicalAcceptanceStatus": "ANDROID_OWNER_CONFIRMED_SAFARI_PENDING"
+  },
+  "pendingMechanicalBackend": {
+    "project": "pjknotnjkufadqavcmii",
+    "sourceCommit": "51106997d48357090f04b92b91bde89f3ae8b9b8",
+    "migrations": [
+      "20261029055636_mechanical_time_session_commit.sql",
+      "20261029060242_mechanical_scoped_sections.sql"
+    ],
+    "status": "READ_ONLY_PREFLIGHT_PASSED_NOT_DEPLOYED",
+    "currentWorkshopApiVersion": 97,
+    "existingReceptionGuardMatches": true,
+    "rollbackDefinitionsCaptured": true,
+    "requiredAction": "After exact-source/environment approval apply migrations in order and deploy matching workshop-api; preserve staff-auth and existing flags."
+  }
 }
