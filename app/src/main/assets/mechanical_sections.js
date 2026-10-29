@@ -18,6 +18,17 @@ export async function mountMechanicalSection(root,options={}){
  function jobForm(){const form=n('form',null);form.append(n('h3','New Mechanical Job Card'));label(form,'Job Card number','job_card');
   const typeLabel=n('label','Job type'),type=n('select',null,{name:'job_type'});for(const v of ['CASH','CREDIT'])type.append(n('option',v,{value:v}));type.value=draft.job_type||'CASH';typeLabel.append(type);form.append(typeLabel);
   for(const [text,name,required] of [['Make','make',true],['Model','model',true],['Year','year',true],['Registration','registration',true],['VIN (optional)','vin',false],['Customer','customer',true],['Contact','contact',true],['Remarks (optional)','remarks',false]])label(form,text,name,'text',required);
+  // Only offer customers from this authorized Mechanical API response; never mix in
+  // cached records from a different login or an unverified Body Workshop list.
+  const customerInput=form.querySelector('input[name="customer"]');
+  const customerNames=[...new Set((model?.customers||[]).map(x=>typeof x==='string'?x:x?.name).filter(x=>typeof x==='string'&&x.trim()).map(x=>x.trim()))].sort((a,b)=>a.localeCompare(b));
+  if(customerInput&&customerNames.length){
+   const suggestions=n('datalist',null,{id:'mc-customer-suggestions'});
+   for(const name of customerNames)suggestions.append(n('option',null,{value:name}));
+   customerInput.setAttribute('list','mc-customer-suggestions');
+   customerInput.setAttribute('autocomplete','off');
+   customerInput.parentElement.append(suggestions);
+  }
   const credit=label(form,'Credit account','credit_account'),cash=label(form,'Cash amount (optional)','cash_amount','number',false);cash.min='0';cash.step='0.001';
   const insurerLabel=n('label','Insurance company'),insurer=n('select',null,{name:'insurance_id'});insurer.append(n('option','Select…',{value:''}));for(const company of model?.companies||[])insurer.append(n('option',company.name,{value:company.id}));insurer.value=draft.insurance_id||'';insurerLabel.append(insurer);form.append(insurerLabel);
   const reference=label(form,'Approval reference','reference'),date=label(form,'Approval date','approval_date','date'),evidence=label(form,'Approval evidence / notes','evidence');
