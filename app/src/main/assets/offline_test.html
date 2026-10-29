@@ -1814,6 +1814,15 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
    if(button.dataset.perfIcon!==entry[2])button.dataset.perfIcon=entry[2];
   }
  }
+ // Route the Manager Workshop Efficiency tile to the completed-job employee ranking.
+ // Capture the click to avoid opening an older report from the tile's legacy handler.
+ document.addEventListener('click',function(event){
+  const tile=event.target.closest?.('#managerView .v123-manager-performance button.v123-perf[data-perf-key="efficiency"]');
+  if(!tile)return;
+  if(typeof window.openEmployeeEfficiency!=='function')return;
+  event.preventDefault();event.stopImmediatePropagation();
+  window.openEmployeeEfficiency();
+ },true);
  function queue(){if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;apply()})}
  function watch(){const root=document.getElementById('managerView');if(root){new MutationObserver(queue).observe(root,{childList:true,subtree:true});queue()}}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',watch,{once:true});else watch();
