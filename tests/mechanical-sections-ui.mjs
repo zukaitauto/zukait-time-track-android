@@ -16,7 +16,7 @@ for(const role of ['Manager','Mechanical Supervisor']){
   if(section==='ready'){assert.match(root.textContent,/JC M3/);assert.equal(root.textContent.includes('JC M1'),false);}
   if(section==='create-job'){
    const f=root.querySelector('form');for(const [name,value] of Object.entries({job_card:'975901',make:'Toyota',model:'Corolla',year:'2022',registration:'QA-M',customer:'Synthetic',contact:'90000000',reason:'QA Mechanical creation'}))f.elements[name].value=value;f.elements.received_confirmed.checked=true;f.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
-   assert.equal(calls.filter(c=>c.command.operation==='CREATE_JOB').length,0);assert.match(root.textContent,/Review new Mechanical/);assert.equal(root.textContent.includes('request_id'),false);[...root.querySelectorAll('button')].find(b=>b.textContent==='Confirm and create').click();await tick();assert.equal(calls.filter(c=>c.command.operation==='CREATE_JOB').length,1);assert.equal(w.localStorage.getItem('zukait_mechanical_section_pending_v1:'+who.id),null);
+   assert.equal(calls.filter(c=>c.command.operation==='CREATE_JOB').length,0);assert.match(root.textContent,/Review Job Card/);assert.equal(root.textContent.includes('request_id'),false);[...root.querySelectorAll('button')].find(b=>b.textContent==='Confirm and create').click();await tick();assert.equal(calls.filter(c=>c.command.operation==='CREATE_JOB').length,1);assert.equal(w.localStorage.getItem('zukait_mechanical_section_pending_v1:'+who.id),null);
   }
   controller.destroy();
  }
