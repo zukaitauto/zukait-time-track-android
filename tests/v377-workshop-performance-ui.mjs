@@ -8,10 +8,11 @@ assert.ok(start>=0,'Workshop Performance theme script exists');
 const section=html.slice(start,html.indexOf('})();',start)+5);
 assert.match(section,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/,'two-column desktop grid');
 for(const [key,order] of [['progress',2],['repeat',3],['efficiency',4],['labour',1],['parts',5],['consumables',6],['cash',7],['insurance',8]]){
- const rule=section.split('\n').find(line=>line.includes('data-perf-key=') && line.includes(key+'\\"]{'));
- assert.ok(rule,key+' card style exists');
+ const marker='data-perf-key=\\\"'+key+'\\\"]{';
+ const pos=section.indexOf(marker);
+ assert.ok(pos>=0,key+' card style exists');
+ const rule=section.slice(pos,section.indexOf('}',pos));
  assert.ok(rule.includes('order:'+order+';'),key+' card order');
-
 }
 assert.match(section,/window\.openEmployeeEfficiency\(\)/,'efficiency tile opens employee ranking');
 assert.match(section,/event\.stopImmediatePropagation\(\)/,'legacy handler blocked');
