@@ -1095,7 +1095,7 @@
   }
 
   async function openMechanicalTimeManagement(){
-    if(window.ZUKAIT_MECHANICAL_ENABLED!==true||me?.role!=='Manager'||!sessionToken())return false;
+    if(window.ZUKAIT_MECHANICAL_ENABLED!==true||!(me?.role==='Manager'||me?.id==='SUP003'&&me?.role==='Supervisor')||!sessionToken())return false;
     if(cloudDirty||cloudPushing||pullInFlight)throw Error('Sync pending workshop changes before editing time.');
     const owner=String(me.id),token=sessionToken(),current=()=>window.ZUKAIT_MECHANICAL_ENABLED===true&&String(me?.id||'')===owner&&me?.role==='Manager'&&sessionToken()===token;
     const module=await import('./mechanical_time_management.js');if(!current())return false;
@@ -1110,7 +1110,7 @@
     if(window.ZUKAIT_MECHANICAL_ENABLED!==true||me?.role!=='Manager'||!sessionToken())return false;
     if(cloudDirty||cloudPushing||pullInFlight)throw Error('Sync pending workshop changes before opening this screen.');
     const owner=String(me.id),token=sessionToken();let targetRoot=null;
-    const current=()=>window.ZUKAIT_MECHANICAL_ENABLED===true&&String(me?.id||'')===owner&&me?.role==='Manager'&&sessionToken()===token&&(!targetRoot||targetRoot.isConnected);
+    const current=()=>window.ZUKAIT_MECHANICAL_ENABLED===true&&String(me?.id||'')===owner&&(me?.role==='Manager'||me?.id==='SUP003'&&me?.role==='Supervisor')&&sessionToken()===token&&(!targetRoot||targetRoot.isConnected);
     const module=await import('./mechanical_sections.js');if(!current())return false;
     openModal('<div id="zukaitMechanicalSection"></div>');targetRoot=document.getElementById('zukaitMechanicalSection');if(!targetRoot)return false;const sectionModal=targetRoot.closest('.modal-box');if(sectionModal){sectionModal.style.width='100vw';sectionModal.style.maxWidth='100vw';sectionModal.style.height='100dvh';sectionModal.style.maxHeight='100dvh';sectionModal.style.boxSizing='border-box';sectionModal.style.overflowY='auto';sectionModal.style.borderRadius='0';sectionModal.style.margin='0';sectionModal.style.padding='clamp(12px,2vw,24px)'}
     await module.mountMechanicalSection(targetRoot,{section,isEnabled:current,getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()}),online:()=>navigator.onLine,storage:localStorage,onBack:()=>openMechanicalWorkspace(),openChecklist:id=>openMechanicalWorkspace(id,'checklists'),createChecklist:job=>openMechanicalWorkspace(null,'create-checklist',job),
@@ -1126,7 +1126,7 @@
     openModal('<div id="zukaitMechanicalWorkspace"></div>');
     const root=document.getElementById('zukaitMechanicalWorkspace');if(!root)return false;
     const modal=root.closest('.modal-box');if(modal){modal.style.width='100vw';modal.style.maxWidth='100vw';modal.style.height='100dvh';modal.style.maxHeight='100dvh';modal.style.boxSizing='border-box';modal.style.overflowY='auto';modal.style.borderRadius='0';modal.style.margin='0';modal.style.padding='clamp(12px,2vw,24px)'}
-    await module.mountMechanicalWorkspace(root,{enabled:true,navigation:createMechanicalShortcuts({host:window,document,getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()})}),storage:localStorage,checklistId,section,jobCard,openSection:me.role==='Manager'?openMechanicalSection:null,openReport:window.ZUKAIT_MECHANICAL_REPORTS_ENABLED===true?openMechanicalReport:null,openSignature:window.ZUKAIT_MECHANICAL_SIGNATURES_ENABLED===true?openMechanicalSignature:null,openDocument:window.ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED===true?openMechanicalDocument:null,openTracking:window.ZUKAIT_MECHANICAL_TRACKING_ENABLED===true?openMechanicalTracking:null,
+    await module.mountMechanicalWorkspace(root,{enabled:true,navigation:createMechanicalShortcuts({host:window,document,getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()})}),storage:localStorage,checklistId,section,jobCard,openSection:(me.role==='Manager'||me.id==='SUP003'&&me.role==='Supervisor')?openMechanicalSection:null,openReport:window.ZUKAIT_MECHANICAL_REPORTS_ENABLED===true?openMechanicalReport:null,openSignature:window.ZUKAIT_MECHANICAL_SIGNATURES_ENABLED===true?openMechanicalSignature:null,openDocument:window.ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED===true?openMechanicalDocument:null,openTracking:window.ZUKAIT_MECHANICAL_TRACKING_ENABLED===true?openMechanicalTracking:null,
       getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()}),online:()=>navigator.onLine,
       onClose:()=>{if(root.isConnected){if(section)openMechanicalWorkspace();else closeModal();}},
       openDelivery:window.ZUKAIT_MECHANICAL_DELIVERY_ENABLED===true?openMechanicalDelivery:null,
