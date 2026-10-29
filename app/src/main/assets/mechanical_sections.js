@@ -18,6 +18,36 @@ export async function mountMechanicalSection(root,options={}){
  function jobForm(){const form=n('form',null);form.append(n('h3','New Mechanical Job Card'));label(form,'Job Card number','job_card');
   const typeLabel=n('label','Job type'),type=n('select',null,{name:'job_type'});for(const v of ['CASH','CREDIT'])type.append(n('option',v,{value:v}));type.value=draft.job_type||'CASH';typeLabel.append(type);form.append(typeLabel);
   for(const [text,name,required] of [['Make','make',true],['Model','model',true],['Year','year',true],['Registration','registration',true],['VIN (optional)','vin',false],['Customer','customer',true],['Contact','contact',true],['Remarks (optional)','remarks',false]])label(form,text,name,'text',required);
+  // Capture VIN label with the phone camera. Use native OCR only when provided by the host;
+  // never guess or silently save an uncertain recognition.
+  const vinInput=form.querySelector('input[name="vin"]');
+  if(vinInput){
+   vinInput.maxLength=17;vinInput.autocapitalize='characters';vinInput.setAttribute('autocomplete','off');
+   const camera=n('input',null,{type:'file',accept:'image/*',capture:'environment','aria-label':'Photograph VIN label'});
+   camera.style.cssText='position:absolute;width:1px;height:1px;opacity:0;pointer-events:none';
+   const scan=n('button','📷 Capture VIN photo',{type:'button'});
+   const status=n('p','',{role:'status'});status.style.cssText='font-size:14px;color:#334b66';
+   scan.onclick=()=>camera.click();
+   camera.onchange=async()=>{
+    const file=camera.files?.[0];if(!file)return;
+    status.textContent='Photo captured. Checking whether this device supports VIN text recognition…';
+    try{
+     if(typeof win.TextDetector!=='function'){status.textContent='Automatic VIN reading is not supported on this device yet. Please enter the VIN manually from the photo.';return;}
+     const bitmap=await win.createImageBitmap(file);
+     let blocks;
+     try{blocks=await (new win.TextDetector()).detect(bitmap);}finally{bitmap.close?.();}
+     const text=blocks.map(x=>x.rawValue||'').join(' ').toUpperCase();
+     const candidates=text.replace(/[^A-Z0-9]/g,' ').split(/\\s+/).filter(x=>/^[A-HJ-NPR-Z0-9]{17}$/.test(x));
+     const unique=[...new Set(candidates)];
+     if(unique.length!==1){status.textContent='Could not confidently identify one 17-character VIN. Retake the photo or enter it manually.';return;}
+     if(win.confirm('VIN detected: '+unique[0]+'\\nConfirm this matches the vehicle?')){vinInput.value=unique[0];status.textContent='VIN inserted. Please verify it before saving.';}
+     else status.textContent='VIN not inserted. Retake the photo or enter it manually.';
+    }catch{status.textContent='VIN reading unavailable. Please enter the VIN manually.';}
+    finally{camera.value='';}
+   };
+   vinInput.addEventListener('input',()=>{vinInput.value=vinInput.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,17);});
+   vinInput.parentElement.append(scan,camera,status);
+  }
   // Only offer customers from this authorized Mechanical API response; never mix in
   // cached records from a different login or an unverified Body Workshop list.
   const customerInput=form.querySelector('input[name="customer"]');
