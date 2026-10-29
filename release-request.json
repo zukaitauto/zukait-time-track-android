@@ -6,11 +6,11 @@
   "sourceCommit": "50c5b0ab2aaa288eca6be48ccd2119c009996941",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": true,
-  "authorization": "Owner explicitly requested: do this fix and release new version, you have my permission; then instructed Proceed. This supersedes the separate-publication-instruction hold. Existing release requirements still apply; authorization does not attest to unperformed tests.",
+  "authorization": "Owner explicitly requested: do this fix and release new version, you have my permission; then instructed Proceed. This supersedes the separate-publication-instruction hold. Existing release requirements still apply; authorization does not attest to unperformed tests. Owner subsequently explicitly waived the fresh backup restore test for V376; see ownerBackupRestoreWaiver. No other unperformed tests are represented as passed.",
   "approvedAt": null,
   "publishNonce": null,
   "physicalAcceptanceStatus": "ANDROID_MANAGER_AND_SUP003_OWNER_CONFIRMED_SAFARI_PENDING",
-  "freshProductionBackupRestoreStatus": "REVIEW_REQUIRED_FOR_CANDIDATE",
+  "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
   "productionBackendChanges": true,
   "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
@@ -387,5 +387,21 @@
     ],
     "signedCandidateRun": 40885648299,
     "exactSourceSignedRunRequired": true
+  },
+  "ownerBackupRestoreWaiver": {
+    "check": "fresh_backup_restored",
+    "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+    "versionName": "V376",
+    "versionCode": 339,
+    "sourceCommit": "50c5b0ab2aaa288eca6be48ccd2119c009996941",
+    "authorizedBy": "Owner in this conversation",
+    "recordedAt": "2026-10-29T18:52:58Z",
+    "instruction": "I don't want backup test, bypass it and release, we can do backup test later",
+    "scope": "Fresh production backup restore test only, for this release. Does not attest that a fresh backup exists or that restore testing passed. Does not waive other checks."
+  },
+  "ownerBrowserReport": {
+    "versionReported": "V376",
+    "result": "Owner reports web restart tested and both browsers; exact URL/build provenance unavailable.",
+    "exactSourceVerified": false
   }
 }

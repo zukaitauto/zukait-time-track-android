@@ -29,9 +29,20 @@
     },
     "fresh_backup_restored": {
       "passed": false,
-      "evidence": "Current twelve-screen candidate5110699 requires reconciled evidence. Prior f70dafb tests are retained separately as historical, not new-screen acceptance.",
+      "evidence": "Fresh backup restore test was not performed. Owner explicitly instructed that it be deferred until after V376 publication; waiver recorded separately. Historical October 27 backup predates October 29 Mechanical migrations.",
       "verifiedBy": null,
-      "verifiedAt": null
+      "verifiedAt": null,
+      "ownerWaiver": {
+        "check": "fresh_backup_restored",
+        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+        "versionName": "V376",
+        "versionCode": 339,
+        "sourceCommit": "50c5b0ab2aaa288eca6be48ccd2119c009996941",
+        "authorizedBy": "Owner in this conversation",
+        "recordedAt": "2026-10-29T18:52:58Z",
+        "instruction": "I don't want backup test, bypass it and release, we can do backup test later",
+        "scope": "Fresh production backup restore test only, for this release. Does not attest that a fresh backup exists or that restore testing passed. Does not waive other checks."
+      }
     },
     "pc_site_reconciled": {
       "passed": true,
