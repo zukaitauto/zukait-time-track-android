@@ -72,6 +72,18 @@ function group(summary,key){
  const m=new Map();for(const r of summary?.rows||[]){const k=id(typeof key==='function'?key(r):r[key])||'Unassigned';if(!m.has(k))m.set(k,[]);m.get(k).push(r)}
  return [...m].map(([name,rows])=>({name,...aggregate(rows)}));
 }
+// Employee ranking uses qualifying completed assignments only. Summing minutes before
+// division prevents distorted results from averaging per-job percentages.
+function completedEmployeeRanking(summary,options={}){
+ const rows=(summary?.rows||[]).filter(r=>r&&r.completedInPeriod===true&&!r.repeat&&!r.orphanSession&&num(r.actualMinutes)>0&&num(r.suggestedMinutes)>=0);
+ const employees=group({rows},'employeeId').map(e=>({...e,jobCount:e.rows.length}));
+ return employees.sort((a,b)=>{
+  const ae=a.efficiency,be=b.efficiency;
+  if(ae==null&&be!=null)return 1;
+  if(be==null&&ae!=null)return -1;
+  return (be??0)-(ae??0)||String(a.name).localeCompare(String(b.name));
+ });
+}
 function formatPercent(v){return Number.isFinite(Number(v))?Number(v).toFixed(2)+'%':'—'}
 function selfTest(){
  const at=(y,m,d,h,min=0)=>new Date(y,m,d,h,min,0,0).getTime(),state={holidays:[],sessions:[],assign:[]};
@@ -91,7 +103,18 @@ function selfTest(){
  calc('overrun-zero-balance',20,22,20/22*100);
  calc('transfer-raw-total',20,18,20/18*100);
  calc('repeat-extra-actual',10,12,10/12*100);
+ const ranked=completedEmployeeRanking({rows:[
+  {employeeId:'A',suggestedMinutes:120,actualMinutes:60,completedInPeriod:true},
+  {employeeId:'A',suggestedMinutes:60,actualMinutes:60,completedInPeriod:true},
+  {employeeId:'B',suggestedMinutes:60,actualMinutes:60,completedInPeriod:true},
+  {employeeId:'B',suggestedMinutes:1000,actualMinutes:1,completedInPeriod:false},
+  {employeeId:'C',suggestedMinutes:1000,actualMinutes:1,completedInPeriod:true,repeat:true},
+  {employeeId:'D',suggestedMinutes:1000,actualMinutes:1,completedInPeriod:true,orphanSession:true}
+ ]});
+ tests.push(['employee-weighted-ranking',ranked[0]?.efficiency,150]);
+ tests.push(['employee-ranking-exclusions',ranked.length,2]);
+ tests.push(['employee-ranking-order',ranked[0]?.name==='A'?1:0,1]);
  return {ok:tests.every(x=>Math.abs(x[1]-x[2])<0.001),tests:tests.map(([name,actual,expected])=>({name,actual,expected,ok:Math.abs(actual-expected)<0.001}))};
 }
-window.zukaitV2=Object.assign(window.zukaitV2||{},{efficiency:{DUTY,monthBounds,currentMonthBounds,eligibleSegments,eligibleMinutes,summarize,aggregate,group,formatPercent,selfTest}});
+window.zukaitV2=Object.assign(window.zukaitV2||{},{efficiency:{DUTY,monthBounds,currentMonthBounds,eligibleSegments,eligibleMinutes,summarize,aggregate,group,completedEmployeeRanking,formatPercent,selfTest}});
 })();
