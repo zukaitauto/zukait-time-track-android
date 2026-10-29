@@ -52,7 +52,7 @@ export async function mountMechanicalSection(root,options={}){
   const list=n('div',null,{'data-mechanical-section-list':''});root.append(list);
   function renderRows(){list.replaceChildren();const qc=new Map((model.qc?.rows||[]).map(r=>[String(r.jobCard),r]));let jobs=(model.jobs||[]).filter(j=>!j.deleted&&!j.cancelled);
    if(section==='delivered')jobs=jobs.filter(j=>j.delivered);else jobs=jobs.filter(j=>!j.delivered&&!j.archived);
-   if(section==='qc')jobs=jobs.filter(j=>qc.get(String(j.no))?.qcVisible);if(section==='ready')jobs=jobs.filter(j=>qc.get(String(j.no))?.deliveryReady);
+   if(section==='qc')jobs=jobs.filter(j=>qc.get(String(j.no))?.qcVisible);if(section==='ready')jobs=jobs.filter(j=>qc.get(String(j.no))?.deliveryReady);if(section==='wip')jobs=jobs.filter(j=>!qc.get(String(j.no))?.deliveryReady);
    if(section==='exceeded')jobs=jobs.filter(j=>(model.assign||[]).some(a=>a.job===j.no&&!a.cancelled&&!a.handedOverToAssignmentId&&a.workedMinutes>Number(a.suggested||0)));
    const q=search.toLowerCase().trim();jobs=jobs.filter(j=>!q||[j.no,j.reg,j.vehicle,j.make,j.model].some(v=>String(v||'').toLowerCase().includes(q)));
    for(const job of jobs){const row=n('article',null);row.append(n('h3','JC '+job.no),n('p',[job.vehicle||[job.make,job.model].filter(Boolean).join(' '),job.year,job.reg].filter(Boolean).join(' · ')),n('p',job.delivered?'Delivered':qc.get(String(job.no))?.deliveryReady?'Ready for delivery':qc.get(String(job.no))?.qcVisible?'QC pending':String(job.status||'Open')));
