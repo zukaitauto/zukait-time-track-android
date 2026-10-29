@@ -26,9 +26,10 @@ export async function mountMechanicalWorkspace(root,options={}){
   target.scrollIntoView?.({block:'start',behavior:'auto'});if(!target.matches('input,button,select'))target.setAttribute('tabindex','-1');target.focus({preventScroll:true});
  }
  function dashboard(){
-  const definitions=[['estimate','Estimate','✎','blue'],['estimate-list','Estimate List','▤','violet'],['create-checklist','Create Checklist','＋','mint'],['checklists','Check Lists','☑','cyan'],['create-job','Create Job Card','▣','peach'],['jobs','Job Cards','▦','blue'],['wip','WIP','⚙','violet'],['qc','QC Pending','✓','amber'],['ready','Ready for Delivery','↗','mint'],['delivered','Delivered Vehicles','⌂','cyan'],['exceeded','Suggested Time Exceed','◷','rose']];
+  const definitions=[['estimate','Estimate','✎','blue'],['estimate-list','Estimate List','▤','violet'],['create-checklist','Create Checklist','＋','mint'],['checklists','Check Lists','☑','cyan'],['create-job','Create Job Card','▣','peach'],['jobs','Job Cards','▦','blue'],['wip','WIP','⚙','violet'],['qc','QC Pending','✓','amber'],['ready','Ready for Delivery','↗','mint'],['delivered','Delivered Vehicles','⌂','cyan'],['exceeded','Suggested Time Exceed','◷','rose'],['time-management','Time Management','⏱','peach']];
   const caps=new Set(model?.capabilities||[]),nav=options.navigation;
   const local={
+   'time-management':typeof options.openTimeManagement==='function'&&(initial.role==='Manager'||initial.id==='SUP003'&&['Supervisor','Mechanical Supervisor'].includes(initial.role))?async()=>{if(pending){notice='Resolve the saved pending change before opening another section.';render();return;}await options.openTimeManagement();}:null,
    'create-checklist':caps.has('MC_CREATE')?()=>jumpTo('[data-operation=MC_CREATE] input','Checklist registration is unavailable for this login.'):null,
    checklists:()=>jumpTo('[data-mc-checklists]','Refresh to load Mechanical checklists.'),
    qc:model?.qcAvailable?()=>jumpTo('[data-mechanical-qc]','Select a Mechanical checklist below, then choose Check QC status.'):null,
@@ -37,14 +38,15 @@ export async function mountMechanicalWorkspace(root,options={}){
   const grid=node('nav',null,{class:'mc-dashboard-grid','aria-label':'Mechanical sections'});
   let counts={};try{counts=nav?.counts?.()||{}}catch{}
   for(const [key,title,icon,tone] of definitions){
-   const shared=nav?.available?.(key)===true,available=shared||typeof local[key]==='function';
+   const separate=typeof options.openSection==='function',shared=nav?.available?.(key)===true,available=separate||shared||typeof local[key]==='function';
    const card=button(null,async()=>{
     if(!active()||busy)return;
+    if(separate){if(pending){notice='Resolve the saved pending change before opening another section.';render();return;}try{await options.openSection(key);}catch(e){if(active()){notice=e.message||'Unable to open this section.';render();}}return;}
     if(!available){notice='This shortcut is unavailable for this login. Existing permissions are unchanged.';render();root.querySelector('[role=status]')?.focus();return}
     if(shared){if(pending){notice='Resolve the saved pending change before opening another section.';render();return}busy=true;render();try{await nav.open(key)}catch(e){if(active())notice=e.message||'Unable to open this section. Refresh and retry.'}finally{busy=false;if(active()&&root.isConnected)render()}}
     else local[key]();
    },{'data-mc-card':key,class:'mc-dashboard-card mc-tone-'+tone,'aria-label':title});
-   card.append(node('span',icon,{class:'mc-card-icon','aria-hidden':'true'}),node('b',title),node('small',available?(shared?nav.scope(key):key==='create-checklist'?'Mechanical registration':key==='checklists'?'Mechanical records':'Select checklist · existing checks'):'Restricted for this login'));
+   card.append(node('span',icon,{class:'mc-card-icon','aria-hidden':'true'}),node('b',title),node('small',separate?'Open Mechanical screen':available?(shared?nav.scope(key):key==='create-checklist'?'Mechanical registration':key==='checklists'?'Mechanical records':'Select checklist · existing checks'):'Restricted for this login'));
    if(!available)card.setAttribute('data-restricted','true');
    if(counts[key]!=null&&/^\d+$/.test(String(counts[key])))card.append(node('span',String(counts[key]),{class:'mc-card-count','aria-label':title+' count'}));
    grid.append(card);
@@ -105,9 +107,9 @@ export async function mountMechanicalWorkspace(root,options={}){
   @media(prefers-reduced-motion:reduce){.mc-workspace button{transition:none}}
   @media print{.mc-workspace,.mc-workspace form,.mc-workspace article,.mc-workspace .mc-workspace-head{background:#fff!important;box-shadow:none!important;backdrop-filter:none}}
   `;root.append(style);
-  const header=node('header',null,{class:'mc-workspace-head'});header.append(node('span','⚙',{class:'mc-brand','aria-hidden':'true'}),node('h2','Mechanical Department'),button('Refresh',()=>refresh()),button('Close',()=>{destroy();options.onClose?.()}));root.append(header);
+  const header=node('header',null,{class:'mc-workspace-head'});header.append(node('span','⚙',{class:'mc-brand','aria-hidden':'true'}),node('h2',options.section==='create-checklist'?'Create Checklist':options.section?'Mechanical Check Lists':'Mechanical Department'),button('Refresh',()=>refresh()),button(options.section?'← Mechanical dashboard':'Close',()=>{if(pending){notice='Resolve the saved pending change before leaving.';render();return;}destroy();options.onClose?.()}));root.append(header);
   root.append(node('p',notice,{role:'status','aria-live':'polite',tabindex:'-1'}));
-  if(model)root.append(dashboard());
+  if(model&&!options.section)root.append(dashboard());
   if(pending){const box=node('section',null,{class:'mc-pending'});box.append(node('h3',pending.editing?'Review rejected change':'Pending confirmation'),node('p',({MC_CREATE:'Checklist registration',TASK_CREATE:'New task',TASK_ASSIGN:'Mechanic assignment',TASK_HANDOVER:'Work handover',TASK_REPEAT:'Repeat repair',MECHANICAL_QC:'Mechanical QC result'})[pending.command.operation]||'Saved change'),node('p',JSON.stringify(pending.command.operation==='MECHANICAL_QC'?{result:pending.command.payload.result,reason:pending.command.payload.reason}:pending.command.payload)));
    if(!pending.editing)box.append(button('Retry same change',()=>post()));
    if(pending.rejected&&terminalRejection(pending.error))box.append(button('Dismiss rejected change',async()=>{try{storage.removeItem(key)}catch{notice='Unable to resolve this saved change safely.';render();return}pending=null;selected=null;qc=null;await refresh();if(active()){notice='Rejected change dismissed. No server records were changed.';render()}}));
@@ -116,14 +118,15 @@ export async function mountMechanicalWorkspace(root,options={}){
    if(pending.reviewed)box.append(button('Confirm reviewed change',()=>{const isQc=pending.command.operation==='MECHANICAL_QC';if(isQc&&(!qc?.workComplete||qc.delivered||qc.checklistId!==pending.command.entityId)){notice='Refresh the QC check before confirming this change.';render();return}pending.command={...pending.command,requestId:uuid(),expectedRevision:isQc?qc.recordsRevision:model.recordsRevision,expectedWorkshopRevision:isQc?qc.workshopRevision:model.workshopRevision,...(isQc?{payload:{...pending.command.payload,expectedFingerprint:qc.workToken}}:{})};delete pending.reviewed;delete pending.rejected;try{savePending();post()}catch{notice='Unable to keep a safe retry.';render()}}));root.append(box);
   }
   if(!model)return;
+  if(!options.section&&!selected&&typeof options.openSection==='function')return;
   const caps=new Set(model.capabilities||[]),grid=node('div',null,{class:'mc-grid'}),list=node('section',null),detail=node('section',null);grid.append(list,detail);root.append(grid);
   list.append(node('h3','Mechanical checklists',{'data-mc-checklists':'true'}));const rows=node('div',null,{class:'mc-list'});
   for(const row of model.checklists||[])rows.append(button(row.number+' · JC '+row.jobCard+' · '+row.manualDate,()=>{selected=row.id;refresh()}));
-  if(!rows.childNodes.length)rows.append(node('p','No checklists on this page.'));list.append(rows);
+  if(!rows.childNodes.length)rows.append(node('p','No checklists on this page.'));if(options.section!=='create-checklist')list.append(rows);
   if(after)list.append(button('First page',()=>{after=0;refresh()}));if(model.nextAfter!=null)list.append(button('Next page',()=>{after=model.nextAfter;refresh()}));
-  if(caps.has('MC_CREATE')){
+  if(caps.has('MC_CREATE')&&options.section!=='checklists'){
    const f=form('Register checklist','MC_CREATE',uuid,v=>({manualJobCard:{number:String(v.get('job')).trim(),date:v.get('date')}}));
-   input(f,'Existing Job Card number','job').maxLength=80;input(f,'Manual Job Card date','date','date');f.append(node('p','The MC number is assigned when registration is confirmed.',{class:'mc-muted'}));submit(f,'Register checklist');list.append(f);
+   input(f,'Existing Job Card number','job','text',options.jobCard||'').maxLength=80;input(f,'Manual Job Card date','date','date');f.append(node('p','The MC number is assigned when registration is confirmed.',{class:'mc-muted'}));submit(f,'Register checklist');list.append(f);
   }
   const d=model.detail;if(!d){detail.append(node('p','Select a checklist to view its tasks.'));return}
   detail.append(node('h3',d.checklist.number+' · JC '+d.checklist.jobCard),node('p','Manual date: '+d.checklist.manualDate));

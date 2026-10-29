@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {mechanicalTimeApi} from '../supabase/functions/workshop-api/extensions/mechanical_time_api.js';
+const actor={id:'SUP003',role:'Mechanical Supervisor',active:true};
+let snapshot={revision:1,data:{users:[],jobs:[{no:'M1',reg:'M-REG'},{no:'B1',reg:'BODYSHOP-PRIVATE'}],assign:[{id:'MA',job:'M1',emp:'M',suggested:60,assignedAt:1}],sessions:[],expenses:[{private:'FINANCIAL-PRIVATE'}]}},writes=0,revoked=false,loseAck=false;
+const checklist={id:'C',jobCard:'M1'},staff=[{user_id:'M',display_name:'Mechanic',role:'Employee',department:'Mechanic',active:true}];
+const admin={rpc:async(name,args)=>{if(name==='zukait_mechanical_read')return {data:{mechanicalDepartment:'Mechanic'}};if(name==='zukait_mechanical_dashboard')return {data:{ok:true,checklists:[checklist],nextAfter:null,recordsRevision:2,...(args.p_checklist?{detail:{checklist,tasks:[{id:'T',title:'Service'}],assignments:[{id:'MA',taskId:'T',employeeId:'M'}]}}:{})}};throw Error('Unexpected RPC '+name);},from:table=>({select:()=>({eq:()=>({single:async()=>({data:structuredClone(snapshot)})}),then:resolve=>resolve({data:staff})})})};
+const options={enabled:true,sessionHash:'0'.repeat(64),verifySession:async()=>revoked?null:actor,commit:async(revision,data)=>{assert.equal(revision,snapshot.revision);writes++;snapshot={revision:revision+1,data:structuredClone(data)};if(loseAck){loseAck=false;throw Error('lost acknowledgement');}return {ok:true,revision:snapshot.revision};}};
+const call=body=>mechanicalTimeApi(admin,actor,{action:'mechanical_time_management',...body},options);
+let read=await call({operation:'READ',jobCard:'M1'});assert.equal(read.status,200,JSON.stringify(read));assert.equal(writes,0);assert.equal(read.body.assign[0].suggested,60);assert.match(read.body.employeeTokens.M,/^[0-9a-f]{64}$/);
+assert.equal(JSON.stringify(read).includes('BODYSHOP-PRIVATE'),false);assert.equal(JSON.stringify(read).includes('FINANCIAL-PRIVATE'),false);
+const command={operation:'SET_ALLOCATION',requestId:'tm-12345678-1234-4123-8123-123456789012',assignmentId:'MA',minutes:90,reason:'Owner requested correction',expectedSource:read.body.assign[0].allocationToken,expectedSessions:read.body.employeeTokens.M};
+const change={operation:'CHANGE',jobCard:'M1',command};loseAck=true;assert.equal((await call(change)).status,503);assert.equal(writes,1);const retry=await call(change);assert.equal(retry.body.duplicate,true,JSON.stringify(retry));assert.equal(writes,1);assert.equal(retry.body.audit.actorRole,'Mechanical Supervisor');
+assert.equal((await call({...change,command:{...command,minutes:99}})).body.code,'time_request_reused');assert.equal(writes,1);
+read=await call({operation:'READ',jobCard:'M1'});revoked=true;assert.equal((await call({...change,command:{...command,requestId:'tm-22345678-1234-4123-8123-123456789012',expectedSource:read.body.assign[0].allocationToken,minutes:120}})).body.code,'invalid_session');assert.equal(writes,1);revoked=false;
+assert.equal((await call({operation:'READ',jobCard:'B1'})).status,403);
+assert.equal((await mechanicalTimeApi(admin,{id:'SUP002',role:'Supervisor'},{action:'mechanical_time_management',operation:'READ'},options)).status,403);
+assert.equal((await mechanicalTimeApi(admin,actor,{action:'mechanical_time_management',operation:'READ'},{...options,enabled:false})).status,403);
+console.log('PASS Mechanical time API scoped projection, opaque conflict tokens, read-only search, recorded correction, lost acknowledgement/exact retry, changed-request denial and revocation before commit.');

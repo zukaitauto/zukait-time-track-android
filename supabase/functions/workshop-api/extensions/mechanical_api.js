@@ -5,7 +5,7 @@ import {mechanicalCommandFingerprint,mechanicalTransition} from './mechanical_ru
 import {mechanicalPersistenceRequest} from './mechanical_persistence_plan.js';
 import {allocationToken,employeeTimeToken} from '../time_management_rules.js';
 const fields=['operation','requestId','entityId','deviceId','expectedRevision','expectedWorkshopRevision','payload'];
-const payloadFields={TASK_REPEAT:['sourceAssignmentId','employeeId','mistakeEmployeeId','assignmentId','suggestedMinutes','reason'],MC_CREATE:['manualJobCard'],TASK_CREATE:['checklistId','title'],TASK_ASSIGN:['employeeId','assignmentId','suggestedMinutes'],TASK_HANDOVER:['sourceAssignmentId','targetEmployeeId','successorAssignmentId','suggestedMinutes','reason']};
+const payloadFields={TASK_REPEAT:['sourceAssignmentId','employeeId','mistakeEmployeeId','assignmentId','suggestedMinutes','reason'],MC_CREATE:['manualJobCard'],TASK_CREATE:['checklistId','title'],TASK_ASSIGN:['employeeId','assignmentId','suggestedMinutes','reason'],TASK_HANDOVER:['sourceAssignmentId','targetEmployeeId','successorAssignmentId','suggestedMinutes','reason']};
 const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const response=(code,status=400)=>({status,body:{ok:false,code}});
 const clone=x=>JSON.parse(JSON.stringify(x));

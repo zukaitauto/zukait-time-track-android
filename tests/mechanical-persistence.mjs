@@ -9,6 +9,7 @@ import {mechanicalCommandApi} from '../supabase/functions/workshop-api/extension
 import {mechanicalRoute} from '../supabase/functions/workshop-api/extensions/mechanical_route.js';
 import {mechanicalReportPersistence} from './mechanical-report-persistence.mjs';
 import {mechanicalCorrectionsPersistence} from './mechanical-corrections-persistence.mjs';
+import {mechanicalTimePersistence} from './mechanical-time-persistence.mjs';
 import {mechanicalSignedDocumentPersistence} from './mechanical-signed-document-persistence.mjs';
 import {mechanicalSignaturePersistence} from './mechanical-signature-persistence.mjs';
 import {mechanicalDocumentPersistence} from './mechanical-document-persistence.mjs';
@@ -78,8 +79,10 @@ try{
  // Failure after allocation/receipt insert must roll back all rows and number advancement.
  await db.exec("create function qa_fail_mechanical() returns trigger language plpgsql as $$begin raise exception 'QA_FAIL_AT_AUDIT';end$$;create trigger qa_fail after insert on zukait_mechanical.audit for each row execute function qa_fail_mechanical()");
  const second=await prepare('MC_CREATE',randomUUID(),{manualJobCard:{number:'QA_JC_1',date:'2026-10-19'}});await assert.rejects(call(second),/QA_FAIL_AT_AUDIT/);assert.equal(Number(await scalar('select next_sequence n from zukait_mechanical.control')),2);assert.equal(Number(await scalar('select count(*) n from zukait_mechanical.checklists')),1);await db.exec('drop trigger qa_fail on zukait_mechanical.audit');assert.equal((await call(second)).number,'MC002');
- const task=randomUUID();await call(await prepare('TASK_CREATE',task,{checklistId:firstId,title:'Synthetic task'}));const sourceId=randomUUID();await call(await prepare('TASK_ASSIGN',task,{employeeId:'QA_A',assignmentId:sourceId,suggestedMinutes:60}));
+ const task=randomUUID();await call(await prepare('TASK_CREATE',task,{checklistId:firstId,title:'Synthetic task'}));const sourceId=randomUUID();await call(await prepare('TASK_ASSIGN',task,{employeeId:'QA_A',assignmentId:sourceId,suggestedMinutes:60,reason:'Audited initial Mechanical assignment'}));
+ assert.equal((await db.query("select reason from zukait_mechanical.audit where operation='TASK_ASSIGN' and entity_id=$1",[task])).rows[0].reason,'Audited initial Mechanical assignment');
  let s=await snapshot();assert.equal(s.data.assign.length,1);assert.deepEqual(s.data.expenses,initial.expenses);assert.equal(Number(await scalar('select count(*) n from workshop_state_history')),1);assert.equal(Number(await scalar('select count(*) n from workshop_live_status')),2,'Existing live-status trigger remains active');
+ await mechanicalTimePersistence({db,snapshot});
  // Server-confirmed synthetic pause; never create fixtures against the live project.
  at+=7200000;s.data.sessions=[{id:'QA_SESSION',emp:'QA_A',job:'QA_JC_0',assignmentId:sourceId,start:at-3600000,end:at,paused:true}];
  s.data.sessions.push(...Array.from({length:400},(_,i)=>({id:'QA_HISTORY_'+i,emp:'QA_A',job:'QA_OTHER_HISTORY',assignmentId:'QA_OLD_'+i,start:at-(i+1)*86400000,end:at-(i+1)*86400000+60000,notes:'Synthetic history '.repeat(20)})));await db.query("update workshop_state set data=$1::jsonb,revision=revision+1 where id='main'",[JSON.stringify(s.data)]);
@@ -147,7 +150,7 @@ try{
  assert.equal(ordinary.ok,true,'Fresh ordinary full save preserves linked assignments and succeeds');
  assert.deepEqual((await snapshot()).data.sessions,saved.data.sessions);
  await db.exec('reset role');
- assert.equal(Number(await scalar("select count(*) n from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='zukait_mechanical' and c.relkind='r' and c.relrowsecurity")),13,'All13 Mechanical tables require RLS, including signature corrections');
+ assert.equal(Number(await scalar("select count(*) n from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='zukait_mechanical' and c.relkind='r' and c.relrowsecurity")),17,'All17 Mechanical tables require RLS, including scoped intake membership, receipts and audit');
  assert.equal(Number(await scalar("select count(*) n from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='zukait_mechanical' and c.relkind='r' and not c.relrowsecurity")),0);
  await assert.rejects(db.exec("update zukait_mechanical.audit set actor_id='QA_SUP'"),/mechanical_append_only/,'append-only trigger also rejects owner updates');
  // Both revisions are checked before any metadata or shared writes.

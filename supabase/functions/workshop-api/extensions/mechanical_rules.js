@@ -58,7 +58,7 @@ export function mechanicalTransition(records,snapshot,command,context={},policy=
   if(!task||!checklist||!liveJob(data,checklist.manualJobCard.number))return fail('task_inactive');
   let employeeId,assignmentId;
   if(command.operation==='TASK_ASSIGN'){
-   if(!knownFields(p,['employeeId','assignmentId','suggestedMinutes']))return fail('invalid_assignment');
+   if(!knownFields(p,['employeeId','assignmentId','suggestedMinutes','reason'])||(p.reason!==undefined&&!text(p.reason,500)))return fail('invalid_assignment');
    employeeId=p.employeeId;assignmentId=p.assignmentId;
   }else{
    if(!knownFields(p,['sourceAssignmentId','targetEmployeeId','successorAssignmentId','suggestedMinutes','reason','expectedSource','expectedEmployeeSessions'])||!text(p.reason,500))return fail('handover_reason_required');

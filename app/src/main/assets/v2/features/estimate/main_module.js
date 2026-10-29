@@ -1,7 +1,7 @@
 (function(){'use strict';
 
 function currentUser(){try{return (typeof me!=='undefined'&&me)||window.me||null}catch(_){return window.me||null}}
-function canUse(){const r=String(currentUser()?.role||'');return r==='Manager'||r==='Supervisor'||r==='Receptionist'}
+function canUse(){const r=String(currentUser()?.role||'');return r==='Manager'||r==='Supervisor'||r==='Receptionist'||window.zukaitMechanicalEstimate?.active?.()===true}
 function ensureState(){
   if(typeof state==='undefined'||!state)return;
   state.estimates=Array.isArray(state.estimates)?state.estimates:[];
@@ -10,7 +10,7 @@ function ensureState(){
   restoreLocalEstimates();
 }
 
-function recoveryKey(owner=currentUser()?.id){return 'zukait_estimate_recovery_v1:'+String(owner||'')}
+function recoveryKey(owner=currentUser()?.id){return (window.zukaitMechanicalEstimate?.active?.()===true?'zukait_mechanical_estimate_recovery_v1:':'zukait_estimate_recovery_v1:')+String(owner||'')}
 function rememberEstimate(e){
   const owner=currentUser()?.id||e?.createdBy;if(!e||!owner)return;
   const key=recoveryKey(owner),rows=JSON.parse(localStorage.getItem(key)||'[]');
@@ -297,6 +297,7 @@ function setPaymentType(type){
 }
 function openEditor(id){
   const e=findEstimate(id);if(!e)return alert('Estimate not found.');ensureStyle();
+  if(window.zukaitMechanicalEstimate?.active?.()===true&&e.receptionNo){openModal(nav('zukaitEstimate.openFind()')+'<p>This estimate is linked to a Reception approval. Ask the Manager to amend it through the original Reception record.</p>'+printable(e));return;}
   const html=nav('zukaitEstimate.openHome()')+
   '<div class="est-home est-editor"><div class="est-hero"><span class="est-eyebrow">REPAIR ESTIMATE</span><h3>'+esc(e.estimateNo)+'</h3><p>Prepare the repair scope and costs for your customer.</p></div>'+
   '<div class="est-switches"><div><b class="small">Estimate Type</b><div class="est-switch"><button id="estTypeLS" onclick="zukaitEstimate.setType(\'LS\')">Lumpsum</button><button id="estTypePL" onclick="zukaitEstimate.setType(\'PL\')">Parts + labour</button></div></div>'+
@@ -428,6 +429,12 @@ async function saveCurrent(id,quiet=false){
   if(quiet)notify('Saving…');
   const e=findEstimate(id);if(!e)return;
   const before=totals(e).total,d=draftFromDom(e),u=currentUser()||{};
+  if(window.zukaitMechanicalEstimate?.active?.()===true){
+    if(estimateSaveBusy)return;estimateSaveBusy=true;
+    try{const saved=await window.zukaitMechanicalEstimate.save({...e,...d},Number(e.revision||0));Object.assign(e,saved);rememberEstimate(e);recalc();notify(e.estimateNo+' saved on the server.');}
+    catch(error){notify(error.message||'Estimate was not confirmed. Keep this device data and retry Save.');}
+    finally{estimateSaveBusy=false;}return;
+  }
   if(d.jobCard){const canonicalVin=window.zukaitJobCardMaster?.vin?.(d.jobCard);if(canonicalVin!=null)d.vin=String(canonicalVin)}
   if(role()==='Receptionist'){
     if(receptionSaveBusy)return;receptionSaveBusy=true;

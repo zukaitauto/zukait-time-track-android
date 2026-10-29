@@ -1,6 +1,8 @@
 import { createDatabaseFetch } from './database_fetch.js';
 import {billRoute} from './accountant/extensions/bill_route.js';
 import { mechanicalRoute, mechanicalLegacyDeliveryCheck } from "./extensions/mechanical_route.js";
+import { mechanicalTimeApi } from './extensions/mechanical_time_api.js';
+import { mechanicalSectionApi } from './extensions/mechanical_section_api.js';
 import { subletTransition } from './sublet_rules.js';
 import {accountantApi,accountantError} from './accountant/api.js';
 import {insuranceProjection,insuranceLpoTransition} from './insurance_management_rules.js';
@@ -1134,6 +1136,19 @@ Deno.serve(async (req: Request) => {
     }
     if (action.startsWith("mechanical_")) {
       const enabled = Deno.env.get("ZUKAIT_MECHANICAL_ENABLED") === "true";
+      if(action==='mechanical_section'){
+        const result=await mechanicalSectionApi(admin,user,body,{enabled,qcEnabled:Deno.env.get('ZUKAIT_MECHANICAL_QC_ENABLED')==='true',deliveryEnabled:Deno.env.get('ZUKAIT_MECHANICAL_DELIVERY_ENABLED')==='true',sessionHash:enabled?await sha256Hex(token):'',verifySession:()=>sessionUser(token)});
+        return reply(result.body,result.status);
+      }
+      if(action==='mechanical_time_management'){
+        const result=await mechanicalTimeApi(admin,user,body,{enabled,sessionHash:enabled?await sha256Hex(token):'',verifySession:()=>sessionUser(token),
+          commit:async(revision:number,data:any,actorId:string,assignmentId:string)=>{
+            const next=Number(revision)+1;
+            const {data:committed,error}=await admin.rpc('zukait_mechanical_time_commit',{p_actor:actorId,p_session_hash:await sha256Hex(token),p_expected_revision:Number(revision),p_assignment:assignmentId,p_data:data,p_live:computeLiveStatus(data,next,actorId)});
+            if(error)throw error;return committed;
+          }});
+        return reply(result.body,result.status);
+      }
       const result = await mechanicalRoute(admin, user, body, {
         enabled, qcEnabled: Deno.env.get("ZUKAIT_MECHANICAL_QC_ENABLED") === "true", deliveryEnabled: Deno.env.get("ZUKAIT_MECHANICAL_DELIVERY_ENABLED") === "true",
         reportsEnabled: Deno.env.get("ZUKAIT_MECHANICAL_REPORTS_ENABLED") === "true", signaturesEnabled: Deno.env.get("ZUKAIT_MECHANICAL_SIGNATURES_ENABLED") === "true", documentsEnabled: Deno.env.get("ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED") === "true", trackingEnabled: Deno.env.get("ZUKAIT_MECHANICAL_TRACKING_ENABLED") === "true", sessionHash: enabled ? await sha256Hex(token) : "",

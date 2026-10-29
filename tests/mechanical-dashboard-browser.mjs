@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import {chromium} from 'playwright';
 const source=fs.readFileSync('app/src/main/assets/mechanical_workspace.js','utf8').replace('export async function mountMechanicalWorkspace','window.mountMechanicalWorkspace=async function');
 const shortcuts=fs.readFileSync('app/src/main/assets/mechanical_shortcuts.js','utf8').replace('export function createMechanicalShortcuts','window.createMechanicalShortcuts=function');
-const keys=['estimate','estimate-list','create-checklist','checklists','create-job','jobs','wip','qc','ready','delivered','exceeded'];
+const keys=['estimate','estimate-list','create-checklist','checklists','create-job','jobs','wip','qc','ready','delivered','exceeded','time-management'];
 const browser=await chromium.launch({headless:true});
 fs.mkdirSync('test-results/mechanical-dashboard',{recursive:true});
 try{for(const role of ['Manager','Mechanical Supervisor'])for(const width of [320,375,768,1280]){

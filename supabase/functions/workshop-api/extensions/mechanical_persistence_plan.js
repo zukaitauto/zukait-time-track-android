@@ -15,7 +15,7 @@ export async function mechanicalPersistenceRequest(records,snapshot,command,tran
  else if(command.operation==='TASK_CREATE')plan={record:transition.records.tasks.find(t=>t.id===command.entityId)};
  else if(['TASK_ASSIGN','TASK_HANDOVER','TASK_REPEAT'].includes(command.operation)){
   const assignment=transition.workshopData.assign.find(a=>a.id===transition.result.assignmentId);
-  plan={assignment};
+  plan={assignment,...(command.payload.reason?{reason:command.payload.reason}:{})};
   if(command.operation==='TASK_REPEAT')plan={...plan,sourceBefore:snapshot.data.assign.find(a=>a.id===command.payload.sourceAssignmentId),reason:command.payload.reason};
   if(command.operation==='TASK_HANDOVER'){
    const sourceBefore=snapshot.data.assign.find(a=>a.id===command.payload.sourceAssignmentId);

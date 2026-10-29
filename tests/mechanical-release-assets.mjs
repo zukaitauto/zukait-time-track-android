@@ -19,7 +19,9 @@ for(const file of ['.github/workflows/pages.yml','.github/workflows/publish-appr
  assert.ok(source.includes("parser.feed((assets / 'mechanical_supervisor.html').read_text(encoding='utf-8'))"));
 }
 const modules=fs.readdirSync(root).filter(n=>n.startsWith('mechanical_')&&n.endsWith('.js'));
-const shipped=new Set([...modules,'accountant_exports.js']);
+const shipped=new Set([...modules,'accountant_exports.js','v2/features/estimate/main_module.js']);
+assert.ok(fs.readFileSync(root+'offline_test.html','utf8').includes('src="v2/features/estimate/main_module.js'),'Both publishers must copy the shared estimate editor referenced by the main host');
+assert.ok(fs.existsSync(root+'mechanical_estimate.html'),'The separate estimate document must ship with all mechanical_* assets');
 for(const name of modules){
  const source=fs.readFileSync(root+name,'utf8');
  for(const m of source.matchAll(/(?:from\s*|import\s*\()\s*['"]\.\/([^'"]+)['"]/g)){

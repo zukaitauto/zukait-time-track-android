@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import {JSDOM} from 'jsdom';
 import {mountMechanicalWorkspace} from '../app/src/main/assets/mechanical_workspace.js';
 import {createMechanicalShortcuts} from '../app/src/main/assets/mechanical_shortcuts.js';
-const keys=['estimate','estimate-list','create-checklist','checklists','create-job','jobs','wip','qc','ready','delivered','exceeded'];
+const keys=['estimate','estimate-list','create-checklist','checklists','create-job','jobs','wip','qc','ready','delivered','exceeded','time-management'];
 const tick=()=>new Promise(r=>setImmediate(r));
 const dom=new JSDOM('<div id="managerView"><button data-qc-queue><span class="qc-card-count">4</span></button><button data-qc-ready><span class="qc-card-count">0</span></button><button data-qc-delivered><span class="qc-card-count">—</span></button></div><div id="root"></div>',{url:'https://qa.invalid'}),w=dom.window,root=w.document.getElementById('root');
 let session={id:'MGR_QA',role:'Manager',key:'QA'},opens=[],calls=[],sequence=0;
@@ -32,7 +32,7 @@ controller.destroy();session={id:'SUP003',role:'Mechanical Supervisor',key:'QA_J
 const restricted=createMechanicalShortcuts({host:w,document:w.document,getSession:()=>session});
 for(const key of ['estimate','estimate-list','create-job','jobs','wip','qc','ready','delivered','exceeded'])assert.equal(restricted.available(key),false,'Mechanical role does not inherit shared access');
 controller=await mountMechanicalWorkspace(root,{enabled:true,deviceId:'QA_DEVICE',storage:w.localStorage,getSession:()=>session,online:()=>true,api});
-assert.equal(root.querySelectorAll('[data-mc-card]').length,11);
+assert.equal(root.querySelectorAll('[data-mc-card]').length,12);
 root.querySelector('[data-mc-card=estimate]').click();await tick();assert.match(root.querySelector('[role=status]').textContent,/unavailable for this login/);assert.equal(opens.length,before);
 root.querySelector('[data-mc-card=qc]').click();await tick();assert.match(root.querySelector('[role=status]').textContent,/Select a Mechanical checklist/);assert.equal(calls.length,2,'QC shortcut cannot approve, deliver or fetch every checklist');
 controller.destroy();dom.window.close();

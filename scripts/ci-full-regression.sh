@@ -5,6 +5,10 @@ if ! node -e "require.resolve('jsdom')" >/dev/null 2>&1; then
   npm ci --ignore-scripts --include=dev
 fi
 node tests/workshop-week.mjs
+node tests/mechanical-time-ui.mjs
+node tests/mechanical-sections-ui.mjs
+node tests/mechanical-time-scope.mjs
+node tests/mechanical-time-api.mjs
 node tests/completed-overdue-runtime.mjs
 node tests/manager-header-menu-runtime.mjs
 node tests/app-exit.mjs

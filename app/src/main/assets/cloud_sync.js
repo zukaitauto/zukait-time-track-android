@@ -1094,7 +1094,30 @@
       download:file=>{check();const url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download=file.name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000)},canShare:file=>!!(navigator.share&&navigator.canShare?.({files:[file]})),share:prepared=>{check();return window.AndroidBridge?window.zukaitReportPdf.share(prepared.html,prepared.name):navigator.share({title:prepared.name,files:[prepared.file]})}});return true;
   }
 
-  async function openMechanicalWorkspace(checklistId=null){
+  async function openMechanicalTimeManagement(){
+    if(window.ZUKAIT_MECHANICAL_ENABLED!==true||me?.role!=='Manager'||!sessionToken())return false;
+    if(cloudDirty||cloudPushing||pullInFlight)throw Error('Sync pending workshop changes before editing time.');
+    const owner=String(me.id),token=sessionToken(),current=()=>window.ZUKAIT_MECHANICAL_ENABLED===true&&String(me?.id||'')===owner&&me?.role==='Manager'&&sessionToken()===token;
+    const module=await import('./mechanical_time_management.js');if(!current())return false;
+    openModal('<div id="zukaitMechanicalTime"></div>');const root=document.getElementById('zukaitMechanicalTime');if(!root)return false;
+    await module.mountMechanicalTimeManagement(root,{isEnabled:current,getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()}),online:()=>navigator.onLine,storage:localStorage,onBack:()=>openMechanicalWorkspace(),
+      api:async body=>{if(!current()||!root.isConnected)throw Error('invalid_session');if(!navigator.onLine)throw Error('OFFLINE');if(cloudDirty||cloudPushing||pullInFlight)throw Error('WORKSHOP_SYNC_PENDING');if(!['mechanical_time_management','mechanical_command'].includes(body.action))throw Error('mechanical_forbidden');const result=await api(body);if(!current())throw Error('invalid_session');if(result?.ok&&(body.operation==='CHANGE'||body.action==='mechanical_command'))window.dispatchEvent(new CustomEvent('zukait-mechanical-change'));return result;}});return true;
+  }
+
+  async function openMechanicalSection(section){
+    if(section==='time-management')return openMechanicalTimeManagement();
+    if(['create-checklist','checklists'].includes(section))return openMechanicalWorkspace(null,section);
+    if(window.ZUKAIT_MECHANICAL_ENABLED!==true||me?.role!=='Manager'||!sessionToken())return false;
+    if(cloudDirty||cloudPushing||pullInFlight)throw Error('Sync pending workshop changes before opening this screen.');
+    const owner=String(me.id),token=sessionToken();let targetRoot=null;
+    const current=()=>window.ZUKAIT_MECHANICAL_ENABLED===true&&String(me?.id||'')===owner&&me?.role==='Manager'&&sessionToken()===token&&(!targetRoot||targetRoot.isConnected);
+    const module=await import('./mechanical_sections.js');if(!current())return false;
+    openModal('<div id="zukaitMechanicalSection"></div>');targetRoot=document.getElementById('zukaitMechanicalSection');if(!targetRoot)return false;
+    await module.mountMechanicalSection(targetRoot,{section,isEnabled:current,getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()}),online:()=>navigator.onLine,storage:localStorage,onBack:()=>openMechanicalWorkspace(),openChecklist:id=>openMechanicalWorkspace(id,'checklists'),createChecklist:job=>openMechanicalWorkspace(null,'create-checklist',job),
+      api:async body=>{if(!current())throw Error('invalid_session');if(!navigator.onLine)throw Error('OFFLINE');if(body.action!=='mechanical_section')throw Error('mechanical_forbidden');if(cloudDirty||cloudPushing||pullInFlight)throw Error('WORKSHOP_SYNC_PENDING');const result=await api(body);if(!current())throw Error('invalid_session');if(result?.ok&&body.command?.operation!=='READ')window.dispatchEvent(new CustomEvent('zukait-mechanical-change'));return result;}});return true;
+  }
+
+  async function openMechanicalWorkspace(checklistId=null,section=null,jobCard=''){
     if(window.ZUKAIT_MECHANICAL_ENABLED!==true||!['Manager','Supervisor'].includes(me?.role)||!sessionToken())return false;
     const owner=String(me.id),token=sessionToken();
     const module=await import('./mechanical_workspace.js');
@@ -1103,10 +1126,11 @@
     openModal('<div id="zukaitMechanicalWorkspace"></div>');
     const root=document.getElementById('zukaitMechanicalWorkspace');if(!root)return false;
     const modal=root.closest('.modal-box');if(modal){modal.style.width='1100px';modal.style.maxWidth='95vw'}
-    await module.mountMechanicalWorkspace(root,{enabled:true,navigation:createMechanicalShortcuts({host:window,document,getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()})}),storage:localStorage,checklistId,openReport:window.ZUKAIT_MECHANICAL_REPORTS_ENABLED===true?openMechanicalReport:null,openSignature:window.ZUKAIT_MECHANICAL_SIGNATURES_ENABLED===true?openMechanicalSignature:null,openDocument:window.ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED===true?openMechanicalDocument:null,openTracking:window.ZUKAIT_MECHANICAL_TRACKING_ENABLED===true?openMechanicalTracking:null,
+    await module.mountMechanicalWorkspace(root,{enabled:true,navigation:createMechanicalShortcuts({host:window,document,getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()})}),storage:localStorage,checklistId,section,jobCard,openSection:me.role==='Manager'?openMechanicalSection:null,openReport:window.ZUKAIT_MECHANICAL_REPORTS_ENABLED===true?openMechanicalReport:null,openSignature:window.ZUKAIT_MECHANICAL_SIGNATURES_ENABLED===true?openMechanicalSignature:null,openDocument:window.ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED===true?openMechanicalDocument:null,openTracking:window.ZUKAIT_MECHANICAL_TRACKING_ENABLED===true?openMechanicalTracking:null,
       getSession:()=>({id:me?.id,role:me?.role,key:sessionToken()}),online:()=>navigator.onLine,
-      onClose:()=>{if(root.isConnected)closeModal()},
+      onClose:()=>{if(root.isConnected){if(section)openMechanicalWorkspace();else closeModal();}},
       openDelivery:window.ZUKAIT_MECHANICAL_DELIVERY_ENABLED===true?openMechanicalDelivery:null,
+      openTimeManagement:openMechanicalTimeManagement,
       api:async body=>{
         if(window.ZUKAIT_MECHANICAL_ENABLED!==true||String(me?.id||'')!==owner||sessionToken()!==token)throw Error('invalid_session');
         if(!navigator.onLine)throw Error('OFFLINE');
