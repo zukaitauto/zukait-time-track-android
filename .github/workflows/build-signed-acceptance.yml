@@ -17,7 +17,11 @@ on:
       - app/src/main/assets/cloud_sync.js
       - app/src/main/assets/v74_updates.js
       - .github/workflows/mechanical-phone-qa.yml
-      - supabase/functions/workshop-api/accountant/**
+      - supabase/functions/workshop-api/**
+      - supabase/migrations/*mechanical*
+      - tests/mechanical-*
+      - tests/hidden-read-traffic.mjs
+      - scripts/ci-full-regression.sh
       - tests/manager-profit-*
       - .github/workflows/reception-check.yml
       - .github/workflows/build-signed-acceptance.yml

@@ -7,6 +7,10 @@ on:
     branches: [architecture-v2]
     paths:
       - "app/src/main/assets/v74_updates.js"
+      - "app/src/main/assets/mechanical_*"
+      - "tests/mechanical-*"
+      - "tests/hidden-read-traffic.mjs"
+      - "scripts/ci-full-regression.sh"
       - "tests/manager-single-purchase-card.mjs"
       - "app/src/main/assets/manager_profit_performance.js"
       - "tests/manager-profit-*"
