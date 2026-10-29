@@ -25,7 +25,7 @@ assert.ok(fs.existsSync(root+'mechanical_estimate.html'),'The separate estimate 
 for(const name of modules){
  const source=fs.readFileSync(root+name,'utf8');
  for(const m of source.matchAll(/(?:from\s*|import\s*\()\s*['"]\.\/([^'"]+)['"]/g)){
-  assert.ok(shipped.has(m[1]),'Missing Mechanical module dependency: '+name+' -> '+m[1]);
+  assert.ok(shipped.has(m[1].split('?')[0]),'Missing Mechanical module dependency: '+name+' -> '+m[1]);
  }
 }
 const {mechanicalRoute}=await import('../supabase/functions/workshop-api/extensions/mechanical_route.js');

@@ -30,7 +30,7 @@ window.addEventListener('storage',event=>{if(event.key===key&&!current())lock();
 try{
  document.documentElement.setAttribute('data-estimate-locked','');const s=saved();actor=s?.user;if(!allowed(actor))throw Error('Mechanical Estimate access required.');sessionToken=String(s.token||window.AndroidBridge?.getSecureSessionToken?.()||'');
  const auth=await request('staff-auth',{action:'session',session_token:sessionToken},true);if(auth.user?.id!==actor.id||auth.user.role!==actor.role)throw Error('Your login changed.');actor=auth.user;verified=true;window.me=actor;window.state={jobs:[],estimates:[],estimateAudit:[]};
- await import('./v2/features/estimate/main_module.js');if(!current())throw Error('Your login changed.');document.documentElement.removeAttribute('data-estimate-locked');notice.textContent='Mechanical records only';
+ await import('./v2/features/estimate/main_module.js?v=20261029037612');if(!current())throw Error('Your login changed.');document.documentElement.removeAttribute('data-estimate-locked');notice.textContent='Mechanical records only';
  // Pending commands are never replayed merely because a document reopens.
  const pending=Object.keys(localStorage).filter(k=>k.startsWith('zukait_mechanical_estimate_pending_v1:'+actor.id+':'));
  if(pending.length){notice.textContent='A previous Mechanical estimate change needs confirmation.';const retry=document.createElement('button');retry.textContent='Retry saved change';retry.onclick=async()=>{try{const command=JSON.parse(localStorage.getItem(pending[0]));await mutate(command);await refresh();await window.zukaitEstimate.openFind();notice.textContent='Saved change confirmed.';retry.remove();}catch(error){notice.textContent=error.message;}};notice.after(retry);}

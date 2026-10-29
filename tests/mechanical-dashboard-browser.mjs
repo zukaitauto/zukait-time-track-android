@@ -37,7 +37,7 @@ try{for(const role of ['Manager','Mechanical Supervisor'])for(const width of [32
  assert.equal(await page.evaluate(()=>window.calls.length),1,'No card triggers a background scan or business write');
  const opened=await page.evaluate(()=>window.opened);
  if(role==='Manager')assert.deepEqual(opened,['estimate','estimate-list','create-job','jobs','wip','qc','ready','delivered','exceeded']);
- else{assert.deepEqual(opened,[]);assert.equal(await page.locator('[data-mc-card][data-restricted=true]').count(),7);}
+ else{assert.deepEqual(opened,[]);assert.equal(await page.locator('[data-mc-card][data-restricted=true]').count(),8);}
  await page.close();
-}console.log('PASS all 11 Mechanical cards in real Chromium: requested two-column order, equal compact sizing, six soft colors, icons/light header, 320/375/768/1280 widths, existing destinations and Jibin restrictions. No network or business writes.');}
+}console.log('PASS all 12 Mechanical cards in real Chromium: requested two-column order, equal compact sizing, six soft colors, icons/light header, 320/375/768/1280 widths, existing destinations and legacy restrictions. No network or business writes.');}
 finally{await browser.close()}

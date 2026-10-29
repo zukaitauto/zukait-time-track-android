@@ -1120,7 +1120,7 @@
   async function openMechanicalWorkspace(checklistId=null,section=null,jobCard=''){
     if(window.ZUKAIT_MECHANICAL_ENABLED!==true||!['Manager','Supervisor'].includes(me?.role)||!sessionToken())return false;
     const owner=String(me.id),token=sessionToken();
-    const module=await import('./mechanical_workspace.js');
+    const module=await import('./mechanical_workspace.js?v=20261029037612');
     const {createMechanicalShortcuts}=await import('./mechanical_shortcuts.js');
     if(String(me?.id||'')!==owner||sessionToken()!==token)return false;
     openModal('<div id="zukaitMechanicalWorkspace"></div>');
