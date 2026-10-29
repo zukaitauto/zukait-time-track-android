@@ -77,3 +77,11 @@ backup/recovery review and read-only production Manager smoke remain required.
 The earlier f70dafb workflow/owner Android evidence remains historical evidence
 for that source, not acceptance of these new screens. The coordinated publisher
 and seven-check acceptance validator are unchanged. V376 remains unpublished.
+
+## Live deployment — 29 October 2026
+
+Owner separately approved both source51106997d48357090f04b92b91bde89f3ae8b9b8 migrations and matching workshop-api for pjknotnjkufadqavcmii. Both are now applied; workshop-api98 ACTIVE, staff-auth11 unchanged. Migration receipts were byte-matched to source and canonical source versions20261029055636/20261029060242 verified (tool originally assigned20261029174612/20261029174619; only those new tracking versions were aligned).
+
+All38 bundled files match approved source byte-for-byte; five unused source files were omitted by the bundler, and every relative import resolves. New function bodies match SQL, ownerpostgres/SECURITY INVOKER/search_pathpg_catalog, with anon/authenticated execute denied. Four private tables haveRLS. Existing Reception owner/search_path/ACL preserved; its body differs only in the approved scoped direct-job guard. Invalid actors are denied before writes; all four new tables remain empty. No business records or synthetic production fixtures were created.
+
+Initial Edge deployment failed because the deployment service retained an obsolete absolute import-map path. Explicitly passing source deno.json corrected it; final version98 is ACTIVE. No client publication occurred. Current-screen Android/Safari/HTTPS/recovery and authenticated end-to-end Edge smoke remain separate requirements; SQL denial tests do not replace those checks. Exact pre-change Reception and workshop-api97 source were captured locally before deployment; preserve any new records/audits and domain protections when reviewing rollback.

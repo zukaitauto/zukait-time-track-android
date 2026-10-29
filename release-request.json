@@ -12,10 +12,10 @@
   "physicalAcceptanceStatus": "NEW_MECHANICAL_SCREENS_NOT_PHYSICALLY_TESTED",
   "freshProductionBackupRestoreStatus": "REVIEW_REQUIRED_FOR_CANDIDATE",
   "productionBackendChanges": true,
-  "backendDeploymentRequired": true,
+  "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
   "releaseHeldByOwner": false,
-  "verificationSummary": "Saved PC work adds twelve scoped Mechanical screens and audited Time Management. Latest five triggered checks pass; runtime-equivalent bd8f977 signed APK, Reception/browser, Mechanical phone QA, Accountant and staged PC checks pass. Its outdated cache-identifier sync assertion failed;5110699 corrects it and latest sync passes. New migrations and backend are NOT deployed. Prior f70dafb tests are historical and not acceptance of the new screens. Publication authorization persists; new production migrations/backend require separate exact-source/environment approval.",
+  "verificationSummary": "Saved PC work adds twelve scoped Mechanical screens and audited Time Management. Latest five triggered checks pass; runtime-equivalent bd8f977 signed APK, Reception/browser, Mechanical phone QA, Accountant and staged PC checks pass. Its outdated cache-identifier sync assertion failed;5110699 corrects it and latest sync passes. New migrations and backend are NOT deployed. Prior f70dafb tests are historical and not acceptance of the new screens. Publication authorization persists; new production migrations/backend require separate exact-source/environment approval. On29Oct owner explicitly approved both new migrations and matching workshop-api from5110699 for live projectpjknotnjkufadqavcmii. Both migrations are now applied and byte-verified; workshop-api98 is ACTIVE with38 bundled files matching approved source and all relative imports present. SQL bodies/permissions/RLS and invalid-actor denial verified; original Reception function changed only by approved scoped guard. No customer/work/time records changed by deployment; new private tables remain empty. Frontend not published; physical/HTTPS/recovery/Manager full Edge smoke still pending.",
   "signedAcceptanceRun": null,
   "verificationRun": null,
   "contractVerificationRun": 40735064717,
@@ -316,10 +316,26 @@
       "20261029055636_mechanical_time_session_commit.sql",
       "20261029060242_mechanical_scoped_sections.sql"
     ],
-    "status": "READ_ONLY_PREFLIGHT_PASSED_NOT_DEPLOYED",
-    "currentWorkshopApiVersion": 97,
+    "status": "APPLIED_AND_VERIFIED",
+    "currentWorkshopApiVersion": 98,
     "existingReceptionGuardMatches": true,
     "rollbackDefinitionsCaptured": true,
-    "requiredAction": "After exact-source/environment approval apply migrations in order and deploy matching workshop-api; preserve staff-auth and existing flags."
+    "requiredAction": "New app screens still require physical/HTTPS/recovery acceptance and exact-source release provenance before coordinated publication.",
+    "deployedAt": "2026-10-29T17:49:12Z",
+    "staffAuthVersion": 11,
+    "migrationVersions": [
+      "20261029055636",
+      "20261029060242"
+    ],
+    "migrationTrackingAlignedToSource": true,
+    "sourceSqlReceiptsByteMatched": true,
+    "sourceBundleFilesMatched": 38,
+    "unusedSourceFilesOmittedByBundler": 5,
+    "reachableRelativeDependenciesComplete": true,
+    "receptionOnlyApprovedGuardChanged": true,
+    "anonAndAuthenticatedExecuteDenied": true,
+    "privateTablesRlsEnabled": true,
+    "invalidActorCallsRejected": true,
+    "syntheticProductionRecordsCreated": 0
   }
 }
