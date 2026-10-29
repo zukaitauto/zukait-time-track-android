@@ -1,29 +1,57 @@
 {
   "versionName": "V376",
   "versionCode": 339,
-  "sourceCommit": "50c5b0ab2aaa288eca6be48ccd2119c009996941",
+  "sourceCommit": "52bf09188c11803af736de67da69ef584f60292b",
   "checks": {
     "client_https_restart": {
       "passed": false,
-      "evidence": "Current twelve-screen candidate5110699 requires reconciled evidence. Prior f70dafb tests are retained separately as historical, not new-screen acceptance.",
+      "evidence": "Owner reports V376 restart tests in Chrome/Safari, but the exact tested web build is unavailable. Owner explicitly authorized deferring exact browser-build verification and releasing V376.",
       "verifiedBy": null,
-      "verifiedAt": null
+      "verifiedAt": null,
+      "ownerWaiver": {
+        "checks": [
+          "client_https_restart",
+          "physical_safari"
+        ],
+        "status": "OWNER_REPORTED_BUILD_UNVERIFIED_DEFERRED",
+        "versionName": "V376",
+        "versionCode": 339,
+        "sourceCommit": "52bf09188c11803af736de67da69ef584f60292b",
+        "authorizedBy": "Owner in this conversation",
+        "recordedAt": "2026-10-29T19:09:44Z",
+        "instruction": "Defer browser-build verification and release",
+        "scope": "Owner reports V376 browser tests; exact tested browser build cannot be established. Defer only this release's exact-source HTTPS restart/Safari verification."
+      }
     },
     "physical_android": {
       "passed": true,
-      "evidence": "Owner confirmed updated twelve-screen signed V376 candidate40885648299/artifact12902736665 as working, including every Mechanical card and Time Management opened without saving; owner separately confirmed BOTH Manager and Jibin/SUP003 were used. Tested runtimebd8f977 is byte-identical in app/backend/migrations to5110699; candidate50c5b0a changes only release documents/metadata and QA workflow path filters. No invented device model, OS, offline/cold restart or Safari result.",
+      "evidence": "Owner confirmed updated twelve-screen signed V376 candidate40885648299/artifact12902736665 as working, including every Mechanical card and Time Management opened without saving; owner separately confirmed BOTH Manager and Jibin/SUP003 were used. Tested runtimebd8f977 is byte-identical in app/backend/migrations to5110699; candidate50c5b0a changes only release documents/metadata and QA workflow path filters. No invented device model, OS, offline/cold restart or Safari result. Final release source52bf091 changes only release metadata, acceptance validator and regression tests; application/native/backend/migrations remain identical to qualified50c5b0a and owner-tested runtime. New signed run40937518458 passed.",
       "verifiedBy": "Owner on Android; Codex runtime/source comparison",
       "verifiedAt": "2026-10-29T17:56:56Z"
     },
     "physical_safari": {
       "passed": false,
-      "evidence": "Current twelve-screen candidate5110699 requires reconciled evidence. Prior f70dafb tests are retained separately as historical, not new-screen acceptance.",
+      "evidence": "Owner reports V376 restart tests in Chrome/Safari, but the exact tested web build is unavailable. Owner explicitly authorized deferring exact browser-build verification and releasing V376.",
       "verifiedBy": null,
-      "verifiedAt": null
+      "verifiedAt": null,
+      "ownerWaiver": {
+        "checks": [
+          "client_https_restart",
+          "physical_safari"
+        ],
+        "status": "OWNER_REPORTED_BUILD_UNVERIFIED_DEFERRED",
+        "versionName": "V376",
+        "versionCode": 339,
+        "sourceCommit": "52bf09188c11803af736de67da69ef584f60292b",
+        "authorizedBy": "Owner in this conversation",
+        "recordedAt": "2026-10-29T19:09:44Z",
+        "instruction": "Defer browser-build verification and release",
+        "scope": "Owner reports V376 browser tests; exact tested browser build cannot be established. Defer only this release's exact-source HTTPS restart/Safari verification."
+      }
     },
     "full_data_preservation": {
       "passed": true,
-      "evidence": "Current Mechanical/Accountant contracts40885929158 and runtime-equivalent bd8f977 isolated persistence/rollback/scope tests passed. This is source data-preservation evidence; production unchanged and backend deployment still pending. Current final-source contracts40925418984 and full regression40925418934 passed.",
+      "evidence": "Current application/backend/migrations are unchanged from qualified50c5b0a. Contracts40925418984 and regression40925418934 passed; isolated tests verify preservation. Mechanical backend98 was subsequently deployed and verified as recorded. This is preservation test evidence, not a fresh production backup restore. Final-source contracts40937518270 and full regression40937518333 passed.",
       "verifiedBy": "GitHub Actions and Codex source/preflight review",
       "verifiedAt": "2026-10-29T17:56:56Z"
     },
@@ -37,7 +65,7 @@
         "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
         "versionName": "V376",
         "versionCode": 339,
-        "sourceCommit": "50c5b0ab2aaa288eca6be48ccd2119c009996941",
+        "sourceCommit": "52bf09188c11803af736de67da69ef584f60292b",
         "authorizedBy": "Owner in this conversation",
         "recordedAt": "2026-10-29T18:52:58Z",
         "instruction": "I don't want backup test, bypass it and release, we can do backup test later",
@@ -46,7 +74,7 @@
     },
     "pc_site_reconciled": {
       "passed": true,
-      "evidence": "Current candidate50c5b0a staged PC validation40925418940 succeeded. App source remains identical to the owner-tested twelve-screen runtime. Coordinated publisher remains unchanged and must verify actual public Pages/APK/updater parity after publication; no staff site update is claimed.",
+      "evidence": "Current candidate50c5b0a staged PC validation40925418940 succeeded. App source remains identical to the owner-tested twelve-screen runtime. Coordinated publisher remains unchanged and must verify actual public Pages/APK/updater parity after publication; no staff site update is claimed. Final source52bf091 differs from50c5b0a only in release metadata and acceptance validator/tests, with no web or app asset changes.",
       "verifiedBy": "GitHub Actions and source review",
       "verifiedAt": "2026-10-29T17:56:56Z"
     },

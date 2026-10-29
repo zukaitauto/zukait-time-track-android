@@ -2,75 +2,70 @@
   "versionName": "V376",
   "versionCode": 339,
   "releaseScope": "standard",
-  "approvedForStaff": false,
-  "sourceCommit": "50c5b0ab2aaa288eca6be48ccd2119c009996941",
+  "approvedForStaff": true,
+  "sourceCommit": "52bf09188c11803af736de67da69ef584f60292b",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": true,
-  "authorization": "Owner explicitly requested: do this fix and release new version, you have my permission; then instructed Proceed. This supersedes the separate-publication-instruction hold. Existing release requirements still apply; authorization does not attest to unperformed tests. Owner subsequently explicitly waived the fresh backup restore test for V376; see ownerBackupRestoreWaiver. No other unperformed tests are represented as passed.",
-  "approvedAt": null,
-  "publishNonce": null,
-  "physicalAcceptanceStatus": "ANDROID_MANAGER_AND_SUP003_OWNER_CONFIRMED_SAFARI_PENDING",
+  "authorization": "Owner explicitly requested: do this fix and release new version, you have my permission; then instructed Proceed. This supersedes the separate-publication-instruction hold. Existing release requirements still apply; authorization does not attest to unperformed tests. Owner subsequently explicitly waived the fresh backup restore test for V376; see ownerBackupRestoreWaiver. No other unperformed tests are represented as passed. Owner also explicitly instructed: Defer browser-build verification and release. Both deferrals are limited to V376; tests remain unverified rather than marked passed.",
+  "approvedAt": "2026-10-29T19:09:44Z",
+  "publishNonce": "v376-owner-deferrals-52bf09188c11803af736de67da69ef584f60292b",
+  "physicalAcceptanceStatus": "ANDROID_CONFIRMED_BROWSER_BUILD_VERIFICATION_DEFERRED_BY_OWNER",
   "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
   "productionBackendChanges": true,
   "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
   "releaseHeldByOwner": false,
-  "verificationSummary": "Final source50c5b0a passed all seven triggered workflows including signed APK, full Reception/browser regression, staged PC, contracts, Android/APK and outage. Missing QA path coverage for Mechanical backend and regression changes is corrected; publication triggers/gates unchanged. Owner confirmed all twelve Mechanical cards and Time Management work on Android for BOTH Manager and Jibin/SUP003. Their tested runtimebd8f977 is app/backend/migration-identical to5110699 and50c5b0a. Deployed workshop-api98 and both approved migrations are verified. Current source signed provenance and changed-path authenticated backend read smoke are complete. No frontend publication; actual HTTPS restart, physical Safari and backup restore verification remain.",
-  "signedAcceptanceRun": 40925418946,
-  "verificationRun": 40925418934,
-  "contractVerificationRun": 40925418984,
+  "verificationSummary": "Application, backend and migration files unchanged from qualified source50c5b0a. Current source changes only release evidence, acceptance validator and regression tests implementing explicit owner deferrals for V376. Android Manager/SUP003 acceptance and deployed backend evidence preserved. Backup restore and exact browser-build verification remain unverified and explicitly deferred. No publication claimed before coordinated workflow succeeds. All six final-source triggered workflows passed, including signed APK40937518458 and full Reception/browser regression40937518333. Signed artifact12924943742 remains available.",
+  "signedAcceptanceRun": 40937518458,
+  "verificationRun": 40937518333,
+  "contractVerificationRun": 40937518270,
   "accountantVerificationRun": 40735064878,
   "nativePdfVerificationRun": null,
   "automatedVerification": {
-    "sourceCommit": "50c5b0ab2aaa288eca6be48ccd2119c009996941",
+    "sourceCommit": "52bf09188c11803af736de67da69ef584f60292b",
     "allTriggeredPassed": true,
     "allPassed": true,
     "runs": [
       {
-        "id": 40925418940,
-        "name": "Validate staged PC website before V305 deployment",
-        "conclusion": "success"
-      },
-      {
-        "id": 40925418983,
-        "name": "Connection outage safety",
-        "conclusion": "success"
-      },
-      {
-        "id": 40925419133,
-        "name": "Android architecture-v2 build\\n# Build verification revision 2",
-        "conclusion": "success"
-      },
-      {
-        "id": 40925418984,
-        "name": "Inactive Mechanical and Accountant contracts",
-        "conclusion": "success"
-      },
-      {
-        "id": 40925418938,
-        "name": "Build Zukait Time Track APK",
-        "conclusion": "success"
-      },
-      {
-        "id": 40925418946,
+        "id": 40937518458,
         "name": "Build Signed Acceptance APK",
         "conclusion": "success"
       },
       {
-        "id": 40925418934,
+        "id": 40937518348,
+        "name": "Build Zukait Time Track APK",
+        "conclusion": "success"
+      },
+      {
+        "id": 40937518274,
+        "name": "Connection outage safety",
+        "conclusion": "success"
+      },
+      {
+        "id": 40937518313,
+        "name": "Android architecture-v2 build\\n# Build verification revision 2",
+        "conclusion": "success"
+      },
+      {
+        "id": 40937518270,
+        "name": "Inactive Mechanical and Accountant contracts",
+        "conclusion": "success"
+      },
+      {
+        "id": 40937518333,
         "name": "Reception verification",
         "conclusion": "success"
       }
     ],
     "signedArtifact": {
-      "id": 12920427036,
+      "id": 12924943742,
       "name": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
-      "runId": 40925418946,
+      "runId": 40937518458,
       "versionName": "V376",
       "versionCode": 339,
       "package": "com.zukait.timetrack",
       "certificateSha256": "63886438214503d468f053b44afe34baf008019f674e065a09b14ae8bf451af0",
-      "artifactZipDigest": "fd4d4f8c2a9a56282a120c3d8d58725f5bf0ba93ff92382db8c61cb04bc1aeee"
+      "artifactZipDigest": "b8e9769c843a8fef450885be6c38ad2643140e6b3bd9b60ede3e5afff2554b1b"
     }
   },
   "additionalDatabaseCorrection": {
@@ -178,11 +173,7 @@
     ],
     "additionalHistoricalCheck": "v161-spare-parts-actual-cost.mjs has a pre-existing obsolete Quotation OMR static-markup assertion, absent on baseline and candidate; not modified or represented as passed."
   },
-  "remainingAcceptance": [
-    "client_https_restart",
-    "physical_safari",
-    "fresh_backup_restored"
-  ],
+  "remainingAcceptance": [],
   "previousPurchaseCandidate": {
     "sourceCommit": "f70dafbf80866d0b29d659fa872e069d0e7fda8c",
     "automatedVerification": {
@@ -262,7 +253,7 @@
     "currentWorkshopApiVersion": 98,
     "existingReceptionGuardMatches": true,
     "rollbackDefinitionsCaptured": true,
-    "requiredAction": "Backend deployment verified. Complete remaining HTTPS restart, physical Safari and backup/recovery acceptance before unchanged coordinated publisher.",
+    "requiredAction": "Backend already deployed and verified. Publish approved V376 through manual coordinated publisher after final-source CI; owner explicitly deferred backup restore and exact browser-build verification.",
     "deployedAt": "2026-10-29T17:49:12Z",
     "staffAuthVersion": 11,
     "migrationVersions": [
@@ -393,7 +384,7 @@
     "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
     "versionName": "V376",
     "versionCode": 339,
-    "sourceCommit": "50c5b0ab2aaa288eca6be48ccd2119c009996941",
+    "sourceCommit": "52bf09188c11803af736de67da69ef584f60292b",
     "authorizedBy": "Owner in this conversation",
     "recordedAt": "2026-10-29T18:52:58Z",
     "instruction": "I don't want backup test, bypass it and release, we can do backup test later",
@@ -403,5 +394,76 @@
     "versionReported": "V376",
     "result": "Owner reports web restart tested and both browsers; exact URL/build provenance unavailable.",
     "exactSourceVerified": false
+  },
+  "ownerBrowserBuildWaiver": {
+    "checks": [
+      "client_https_restart",
+      "physical_safari"
+    ],
+    "status": "OWNER_REPORTED_BUILD_UNVERIFIED_DEFERRED",
+    "versionName": "V376",
+    "versionCode": 339,
+    "sourceCommit": "52bf09188c11803af736de67da69ef584f60292b",
+    "authorizedBy": "Owner in this conversation",
+    "recordedAt": "2026-10-29T19:09:44Z",
+    "instruction": "Defer browser-build verification and release",
+    "scope": "Owner reports V376 browser tests; exact tested browser build cannot be established. Defer only this release's exact-source HTTPS restart/Safari verification."
+  },
+  "deferredAcceptance": [
+    "fresh_backup_restored",
+    "client_https_restart",
+    "physical_safari"
+  ],
+  "previousQualifiedSourceVerification": {
+    "sourceCommit": "50c5b0ab2aaa288eca6be48ccd2119c009996941",
+    "allTriggeredPassed": true,
+    "allPassed": true,
+    "runs": [
+      {
+        "id": 40925418940,
+        "name": "Validate staged PC website before V305 deployment",
+        "conclusion": "success"
+      },
+      {
+        "id": 40925418983,
+        "name": "Connection outage safety",
+        "conclusion": "success"
+      },
+      {
+        "id": 40925419133,
+        "name": "Android architecture-v2 build\\n# Build verification revision 2",
+        "conclusion": "success"
+      },
+      {
+        "id": 40925418984,
+        "name": "Inactive Mechanical and Accountant contracts",
+        "conclusion": "success"
+      },
+      {
+        "id": 40925418938,
+        "name": "Build Zukait Time Track APK",
+        "conclusion": "success"
+      },
+      {
+        "id": 40925418946,
+        "name": "Build Signed Acceptance APK",
+        "conclusion": "success"
+      },
+      {
+        "id": 40925418934,
+        "name": "Reception verification",
+        "conclusion": "success"
+      }
+    ],
+    "signedArtifact": {
+      "id": 12920427036,
+      "name": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
+      "runId": 40925418946,
+      "versionName": "V376",
+      "versionCode": 339,
+      "package": "com.zukait.timetrack",
+      "certificateSha256": "63886438214503d468f053b44afe34baf008019f674e065a09b14ae8bf451af0",
+      "artifactZipDigest": "fd4d4f8c2a9a56282a120c3d8d58725f5bf0ba93ff92382db8c61cb04bc1aeee"
+    }
   }
 }
