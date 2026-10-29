@@ -1814,7 +1814,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     button.dataset.perfKey='overallocated';
     button.dataset.perfIcon='⏱';
     const assignments=(typeof state!=='undefined'&&Array.isArray(state.assign))?state.assign:[];
-    const exceeded=assignments.filter(a=>a&&!a.completed&&!a.rework&&!a.repeat&&a.job!==HOLD).map(a=>{
+    const exceeded=assignments.filter(a=>a&&!a.completed&&!a.rework&&!a.repeat&&a.job!=='ID001'&&!a.cancelled).map(a=>{
      const suggested=Number(a.suggested),actual=typeof totalForAssignment==='function'?Number(totalForAssignment(a)):NaN;
      return Number.isFinite(suggested)&&Number.isFinite(actual)?Math.max(0,actual-suggested):0;
     }).reduce((sum,n)=>sum+n,0);
