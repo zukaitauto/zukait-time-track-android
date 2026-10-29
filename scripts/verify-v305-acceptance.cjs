@@ -13,6 +13,23 @@ function validate(approval,record) {
  assert.equal(record.sourceCommit,approval.sourceCommit,'Acceptance source SHA mismatch');
  for(const key of required) {
   const check=record.checks?.[key];
+  if(['client_https_restart','physical_safari'].includes(key) && approval.ownerBrowserBuildWaiver) {
+   const waiver=approval.ownerBrowserBuildWaiver;
+   assert.equal(approval.versionName,'V376','Browser waiver is limited to V376');
+   assert.equal(approval.versionCode,339,'Browser waiver version code mismatch');
+   assert.deepEqual(waiver.checks,['client_https_restart','physical_safari'],'Browser waiver checks mismatch');
+   assert.equal(waiver.status,'OWNER_REPORTED_BUILD_UNVERIFIED_DEFERRED','Browser waiver status mismatch');
+   assert.equal(waiver.versionName,approval.versionName,'Browser waiver version mismatch');
+   assert.equal(waiver.versionCode,approval.versionCode,'Browser waiver version code mismatch');
+   assert.equal(waiver.sourceCommit,approval.sourceCommit,'Browser waiver source mismatch');
+   assert.equal(waiver.authorizedBy,'Owner in this conversation','Browser waiver owner required');
+   assert.equal(waiver.instruction,'Defer browser-build verification and release','Explicit browser deferral required');
+   assert.ok(typeof waiver.recordedAt==='string'&&!Number.isNaN(Date.parse(waiver.recordedAt)),'Browser waiver timestamp required');
+   assert.equal(check?.passed,false,'Unverified browser build must remain not passed');
+   assert.deepEqual(check?.ownerWaiver,waiver,'Browser waiver records must match');
+   assert.ok(typeof check.evidence==='string'&&check.evidence.trim().length>=12,'Browser deferral evidence required');
+   continue;
+  }
   // One-release owner exception: never represent a deferred restore as passed.
   if(key==='fresh_backup_restored' && approval.ownerBackupRestoreWaiver) {
    const waiver=approval.ownerBackupRestoreWaiver;
@@ -45,6 +62,7 @@ if(require.main===module) {
  const record=JSON.parse(fs.readFileSync('docs/INSURANCE_V305_ACCEPTANCE_GATE.json','utf8'));
  validate(approval,record);
  console.log('V305 acceptance requirements satisfied for approved source '+approval.sourceCommit);
+ if(approval.ownerBrowserBuildWaiver) console.log('OWNER-DEFERRED: exact browser build verification; owner reports V376 browser tests.');
  if(approval.ownerBackupRestoreWaiver) console.log('OWNER-DEFERRED: fresh backup restore NOT PERFORMED for V376.');
 }
 module.exports={validate,required};

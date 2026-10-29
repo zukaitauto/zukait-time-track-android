@@ -14,7 +14,7 @@ else if (request.releaseScope==='standard') {
 } else if (required.some(key=>actual.checks[key]?.passed!==true)) {
  assert.throws(()=>validate(request,actual),'Incomplete evidence must not validate under another release scope');
 } else assert.equal(validate(request,actual),true);
-const good={...request,ownerBackupRestoreWaiver:undefined,approvedForStaff:true,sourceCommit:'a'.repeat(40),approvedAt:'2026-10-10T06:00:00Z',publishNonce:'fixture-only-nonce',signedAcceptanceRun:12345};
+const good={...request,ownerBackupRestoreWaiver:undefined,ownerBrowserBuildWaiver:undefined,approvedForStaff:true,sourceCommit:'a'.repeat(40),approvedAt:'2026-10-10T06:00:00Z',publishNonce:'fixture-only-nonce',signedAcceptanceRun:12345};
 const complete={...actual,versionName:good.versionName,versionCode:good.versionCode,sourceCommit:good.sourceCommit,checks:Object.fromEntries(required.map(k=>[k,{passed:true,evidence:'docs/QA-'+k+'.md',verifiedBy:'QA Reviewer',verifiedAt:'2026-10-10T05:00:00Z'}]))};
 assert.equal(validate(good,complete),true,'Synthetic complete attestation must validate');
 for(const key of required) {
@@ -47,3 +47,21 @@ const mismatch=structuredClone(deferred);delete mismatch.checks.fresh_backup_res
 assert.throws(()=>validate(waivedApproval,mismatch),/records must match/);
 assert.throws(()=>validate({...waivedApproval,ownerBackupRestoreWaiver:undefined},deferred),/fresh_backup_restored/);
 console.log('PASS: V376 owner backup deferral is explicit, source-bound, not a test pass, and cannot waive other checks');
+
+const browserWaiver={checks:['client_https_restart','physical_safari'],status:'OWNER_REPORTED_BUILD_UNVERIFIED_DEFERRED',versionName:'V376',versionCode:339,sourceCommit:good.sourceCommit,authorizedBy:'Owner in this conversation',recordedAt:'2026-10-29T19:00:00Z',instruction:'Defer browser-build verification and release'};
+const bothApproval={...waivedApproval,ownerBrowserBuildWaiver:browserWaiver};
+const bothRecord=structuredClone(deferred);
+for(const k of browserWaiver.checks) bothRecord.checks[k]={passed:false,evidence:'Owner reports V376 browser tests; exact tested build unknown and explicitly deferred.',ownerWaiver:structuredClone(browserWaiver)};
+assert.equal(validate(bothApproval,bothRecord),true);
+for(const k of ['physical_android','full_data_preservation','pc_site_reconciled','production_backend_smoke']) {
+ const bad=structuredClone(bothRecord);bad.checks[k].passed=false;
+ assert.throws(()=>validate(bothApproval,bad),new RegExp(k));
+}
+for(const [key,value] of Object.entries({checks:['physical_android'],status:'PASSED',versionName:'V377',versionCode:340,sourceCommit:'b'.repeat(40),authorizedBy:'agent',instruction:'release',recordedAt:'invalid'})) {
+ const bad=structuredClone(bothApproval);bad.ownerBrowserBuildWaiver[key]=value;
+ assert.throws(()=>validate(bad,bothRecord),'Reject browser waiver '+key);
+}
+assert.throws(()=>validate({...bothApproval,ownerBrowserBuildWaiver:undefined},bothRecord),/client_https_restart/);
+const fakeBrowser=structuredClone(bothRecord);fakeBrowser.checks.physical_safari.passed=true;
+assert.throws(()=>validate(bothApproval,fakeBrowser),/must remain not passed/);
+console.log('PASS: explicit browser-build deferral cannot bypass Android, preservation, deployment or source checks');
