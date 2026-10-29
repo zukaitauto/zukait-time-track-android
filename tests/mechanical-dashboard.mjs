@@ -19,7 +19,7 @@ const api=async body=>{calls.push(structuredClone(body));assert.equal(body.actio
 const mount=()=>mountMechanicalWorkspace(root,{enabled:true,deviceId:'QA_DEVICE',uuid:()=>String(++sequence),storage:w.localStorage,getSession:()=>session,online:()=>true,navigation,api});
 let controller=await mount();
 assert.deepEqual([...root.querySelectorAll('[data-mc-card]')].map(e=>e.dataset.mcCard),keys);
-assert.equal(root.querySelector('[data-mc-card=qc] .mc-card-count').textContent,'4');assert.equal(root.querySelector('[data-mc-card=ready] .mc-card-count').textContent,'0');assert.equal(root.querySelector('[data-mc-card=delivered] .mc-card-count'),null,'Unknown must not become zero');
+for(const key of ['qc','ready','delivered'])assert.equal(root.querySelector('[data-mc-card='+key+'] .mc-card-count'),null,'Shared Body Workshop counts must not appear in Mechanical dashboard');
 for(const key of keys){root.querySelector('[data-mc-card="'+key+'"]').click();await tick();}
 assert.deepEqual(opens,['estimate','estimate-list','create-job','reception','jobs','wip','qc','ready','delivered','exceeded','filtered']);
 assert.equal(calls.length,1,'Card navigation adds no polling, fetches or automatic commands');
@@ -37,4 +37,4 @@ root.querySelector('[data-mc-card=estimate]').click();await tick();assert.match(
 root.querySelector('[data-mc-card=qc]').click();await tick();assert.match(root.querySelector('[role=status]').textContent,/Select a Mechanical checklist/);assert.equal(calls.length,2,'QC shortcut cannot approve, deliver or fetch every checklist');
 controller.destroy();dom.window.close();
 const cloud=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');assert.ok(cloud.includes("import('./mechanical_shortcuts.js')"));assert.ok(cloud.includes('navigation:createMechanicalShortcuts('));
-console.log('PASS all 11 Mechanical cards: existing destination adapters, original counts/unknowns, form/list focus, Mechanical-only QC guidance, no automatic writes/reads/polling, unavailable-role handling, activation and stale-account denial.');
+console.log('PASS all 11 Mechanical cards: existing destination adapters, no leaked shared workshop counts, form/list focus, Mechanical-only QC guidance, no automatic writes/reads/polling, unavailable-role handling, activation and stale-account denial.');
