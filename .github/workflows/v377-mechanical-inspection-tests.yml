@@ -42,6 +42,35 @@ jobs:
           npm run test:mechanical:inspection
           node tests/mechanical-inspection-view.mjs
 
+
+  isolated-chromium-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Use HTTPS Ubuntu mirrors for Chromium dependencies
+        run: |
+          for source in /etc/apt/apt-mirrors.txt /etc/apt/sources.list.d/ubuntu.sources; do
+            if [ -f "$source" ]; then
+              sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g; s|http://security.ubuntu.com/ubuntu|https://security.ubuntu.com/ubuntu|g' "$source"
+            fi
+          done
+      - run: npx playwright install --with-deps chromium
+      - name: Verify real mobile and desktop Chromium inspection flow
+        run: node tests/mechanical-inspection-browser.mjs
+      - name: Save Mechanical inspection screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v377-inspection-browser-${{ github.run_id }}
+          path: artifacts/v377-inspection/
+          if-no-files-found: warn
+          retention-days: 14
+
   isolated-postgres-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 15
