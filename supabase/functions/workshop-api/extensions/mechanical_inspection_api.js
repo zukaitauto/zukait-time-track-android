@@ -42,13 +42,13 @@ export async function mechanicalInspectionApi(input,server={}){
    return {status:200,body:{ok:true,inspection:record??null}};
   }catch(e){return storageError(e);}
  }
- if(!uuid(input.requestId)||!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<0)return fail('invalid_command');
+ if(!uuid(input.requestId)||!Number.isSafeInteger(input.expectedRevision)||(input.expectedRevision<0||input.expectedRevision>=Number.MAX_SAFE_INTEGER))return fail('invalid_command');
  const validated=validateMechanicalInspection(input.inspection);
  if(!validated.ok)return fail(validated.code);
  if(typeof server.saveInspection!=='function')return fail('mechanical_adapter_unavailable',503);
  let current;
   try{current=await server.verifySession();}catch{return fail('invalid_session',401);}
- if(!current||current.active!==true||current.id!==actor.id||current.role!==actor.role)return fail('session_changed',401);
+ if(!current||current.active!==true||current.id!==actor.id||current.role!==actor.role||current.department!==actor.department)return fail('session_changed',401);
  // The adapter MUST atomically enforce checklist ownership, current session,
  // compare-and-swap revision, request-id fingerprint, receipt and audit.
  try{
