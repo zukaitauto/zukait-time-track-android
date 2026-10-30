@@ -28,6 +28,17 @@ begin
  then
   raise exception 'inspection_invalid' using errcode='22023';
  end if;
+ -- Revalidate current staff status and role in this transaction.
+ -- Session and checklist authorization must additionally be enforced by the
+ -- trusted server; this experimental function is not a public RPC.
+ if not exists (
+  select 1 from public.staff_credentials sc
+  where sc.user_id = p_actor and sc.active = true
+    and (sc.role = 'Manager' or
+         (sc.user_id = 'SUP003' and sc.role in ('Supervisor','Mechanical Supervisor')))
+ ) then
+  raise exception 'mechanical_forbidden' using errcode = '42501';
+ end if;
  -- Serialize all writers and retries for the same checklist.
  perform 1 from zukait_mechanical.checklists where id=p_checklist for update;
  if not found then
