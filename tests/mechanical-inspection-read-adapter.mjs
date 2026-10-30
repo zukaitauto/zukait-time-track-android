@@ -42,4 +42,14 @@ await assert.rejects(()=>denied(id,actor),e=>e.code==='42501');
 assert.equal(queries,1,'denied read must not query inspection details');
 await assert.rejects(()=>createMechanicalInspectionReadAdapter({db})(id,actor),e=>e.code==='08006');
 await assert.rejects(()=>adapter('bad',actor),e=>e.code==='22023');
+const mismatchedDb={
+ schema:()=>({from:()=>({select:()=>({eq:()=>({maybeSingle:async()=>({data:{
+ checklist_id:'33333333-3333-4333-8333-333333333333',revision:1,job_type:'CASH',
+ vehicle:{},damage_marks:[],function_checks:{},work_description:'Other'
+},error:null})})})})})
+};
+await assert.rejects(
+ ()=>createMechanicalInspectionReadAdapter({db:mismatchedDb,authorizeChecklist:async()=>true})(id,actor),
+ e=>e.code==='08006'
+);
 console.log('PASS inactive Mechanical inspection read adapter authorization');
