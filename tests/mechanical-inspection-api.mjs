@@ -4,7 +4,11 @@ import {INSPECTION_FUNCTIONS} from '../supabase/functions/workshop-api/extension
 const id='11111111-1111-4111-8111-111111111111';
 const requestId='22222222-2222-4222-8222-222222222222';
 const inspection={jobType:'CASH',vehicle:{registration:'1234 AB',make:'Toyota',model:'Camry',year:'2022',customer:'Test',contact:'90000000'},damageMarks:[],functions:Object.fromEntries(INSPECTION_FUNCTIONS.map(k=>[k,{status:'NOT_CHECKED'}])),workDescription:'Inspection'};
-const server={enabled:true,policy:{flags:{mechanical:true}},actor:{id:'SUP003',role:'Supervisor',department:'Mechanical'},verifySession:async()=>({id:'SUP003',active:true,role:'Supervisor',department:'Mechanical'}),readInspection:async()=>null,saveInspection:async x=>({revision:x.expectedRevision+1})};
+const server={enabled:true,policy:{flags:{mechanical:true}},actor:{id:'SUP003',role:'Supervisor',department:'Mechanical'},verifySession:async()=>({id:'SUP003',active:true,role:'Supervisor',department:'Mechanical'}),authorizeChecklist:async()=>true,readInspection:async()=>null,saveInspection:async x=>({revision:x.expectedRevision+1})};
+const denied=await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id},{...server,authorizeChecklist:async()=>false});
+assert.equal(denied.status,403);
+const missingPolicy=await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id},{...server,authorizeChecklist:undefined});
+assert.equal(missingPolicy.status,503);
 const read=await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id},server);
 assert.equal(read.status,200);assert.equal(read.body.inspection,null);
 const saved=await mechanicalInspectionApi({operation:'SAVE_INSPECTION',checklistId:id,requestId,expectedRevision:0,inspection},server);
