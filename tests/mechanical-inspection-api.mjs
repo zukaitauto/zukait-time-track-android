@@ -18,4 +18,10 @@ assert.equal((await mechanicalInspectionApi({operation:'SAVE_INSPECTION',checkli
 let sessionChecks=0;
 const changedSession={...server,verifySession:async()=>++sessionChecks===1?{id:'SUP003',active:true,role:'Supervisor'}:{id:'SUP003',active:false,role:'Supervisor'}};
 assert.equal((await mechanicalInspectionApi({operation:'SAVE_INSPECTION',checklistId:id,requestId,expectedRevision:0,inspection},changedSession)).status,401);
+let readCalls=0;
+const guardedRead={...server,readInspection:async()=>{readCalls++;return null;}};
+assert.equal((await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id,requestId},guardedRead)).body.code,'invalid_command');
+assert.equal(readCalls,0,'malformed read must not invoke adapter');
+assert.equal((await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id,inspection},guardedRead)).body.code,'invalid_command');
+assert.equal(readCalls,0);
 console.log('PASS inactive Mechanical inspection API boundary');
