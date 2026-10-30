@@ -30,6 +30,8 @@ await assert.rejects(()=>denied(command),e=>e.code==='42501');
 assert.equal(writes,1,'denied save must not execute');
 await assert.rejects(()=>createMechanicalInspectionSaveAdapter({executeAtomicSave:async()=>{writes++;}})(command),e=>e.code==='08006');
 await assert.rejects(()=>adapter({...command,requestId:'invalid'}),e=>e.code==='22023');
+await assert.rejects(()=>adapter({...command,expectedRevision:Number.MAX_SAFE_INTEGER}),e=>e.code==='22023');
+await assert.rejects(()=>adapter({...command,expectedRevision:Number.MAX_SAFE_INTEGER-1}),e=>e.code==='08006');
 await assert.rejects(()=>adapter({...command,inspection:{...command.inspection,jobType:'INSURANCE'}}),e=>e.code==='22023');
 const wrongRevision=createMechanicalInspectionSaveAdapter({
  authorizeChecklist:async()=>true,
