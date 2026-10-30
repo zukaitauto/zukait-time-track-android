@@ -7,6 +7,7 @@ on:
       - 'tests/mechanical-inspection-*.mjs'
       - '.github/workflows/v377-mechanical-inspection-tests.yml'
       - 'package.json'
+      - 'experiments/v377-mechanical-inspection-*.sql'
   workflow_dispatch:
 permissions:
   contents: read
@@ -29,3 +30,32 @@ jobs:
       - name: Run isolated tests
         run: |
           npm run test:mechanical:inspection
+
+  isolated-postgres-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: isolated-test-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      ZUKAIT_MECHANICAL_NATIVE: '1'
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGDATABASE: postgres
+      PGPASSWORD: isolated-test-only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install local PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Execute isolated SQL schema and atomic-save regression
+        run: node tests/mechanical-inspection-postgres.mjs
