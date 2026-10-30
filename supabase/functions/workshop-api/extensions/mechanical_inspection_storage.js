@@ -28,7 +28,8 @@ export function createMechanicalInspectionStorage({admin,actor,sessionHash}={}){
   return result?.ok===true&&result.checklist?.id===checklistId;
  };
  const executeAtomicSave=async command=>{
-  if(!valid||command?.actorId!==actor.id||!uuid(command?.checklistId)||
+  if(!valid){const e=new Error('invalid_session');e.code='42501';throw e;}
+  if(command?.actorId!==actor.id||!uuid(command?.checklistId)||
      !uuid(command?.requestId)){const e=new Error('invalid_command');e.code='22023';throw e;}
   const result=await call('zukait_mechanical_inspection_save',{
    p_actor:actor.id,p_session_hash:sessionHash,p_checklist:command.checklistId,
