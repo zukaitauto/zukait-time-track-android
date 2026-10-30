@@ -1,0 +1,33 @@
+name: V377 Mechanical Inspection Isolated Tests
+on:
+  push:
+    branches: [architecture-v2]
+    paths:
+      - 'supabase/functions/workshop-api/extensions/mechanical_inspection_*.js'
+      - 'tests/mechanical-inspection-*.mjs'
+      - '.github/workflows/v377-mechanical-inspection-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-node-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check
+        run: |
+          node --check supabase/functions/workshop-api/extensions/mechanical_inspection_api.js
+          node --check supabase/functions/workshop-api/extensions/mechanical_inspection_read_adapter.js
+          node --check supabase/functions/workshop-api/extensions/mechanical_inspection_save_adapter.js
+          node --check supabase/functions/workshop-api/extensions/mechanical_inspection_boundary.js
+          for file in tests/mechanical-inspection-*.mjs; do node --check "$file"; done
+      - name: Run isolated tests
+        run: |
+          node tests/mechanical-inspection-api.mjs
+          node tests/mechanical-inspection-read-adapter.mjs
+          node tests/mechanical-inspection-save-adapter.mjs
+          node tests/mechanical-inspection-boundary.mjs
