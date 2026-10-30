@@ -18,7 +18,8 @@ declare
  v_before jsonb;
 begin
  if p_checklist is null or p_request is null or p_actor is null
-    or p_session_hash is null or p_session_hash !~ '^[0-9a-f]{64} or p_expected >= 9223372036854775807
+    or p_session_hash is null or p_session_hash !~ '^[0-9a-f]{64}$'
+    or p_expected is null or p_expected < 0 or p_expected >= 9223372036854775807
     or p_inspection is null or jsonb_typeof(p_inspection) is distinct from 'object'
     or coalesce(p_inspection->>'jobType','') not in ('CASH','CREDIT')
     or jsonb_typeof(p_inspection->'vehicle') is distinct from 'object'
