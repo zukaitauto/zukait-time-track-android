@@ -122,6 +122,26 @@ BEGIN
   RAISE EXCEPTION 'immutable audit was deleted';
  EXCEPTION WHEN SQLSTATE '55000' THEN NULL;
  END;
+ -- A previously valid session must lose access immediately after revocation.
+ UPDATE public.staff_sessions SET revoked_at=clock_timestamp() WHERE user_id='SUP003';
+ BEGIN
+  PERFORM zukait_mechanical.save_inspection_draft(
+   '11111111-1111-4111-8111-111111111111',
+   'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','SUP003',1,payload,repeat('a',64));
+  RAISE EXCEPTION 'revoked session incorrectly accepted';
+ EXCEPTION WHEN SQLSTATE '42501' THEN NULL;
+ END;
+ UPDATE public.staff_sessions SET revoked_at=null WHERE user_id='SUP003';
+ -- A role change must invalidate an otherwise active session.
+ UPDATE public.staff_credentials SET role='Employee' WHERE user_id='SUP003';
+ BEGIN
+  PERFORM zukait_mechanical.save_inspection_draft(
+   '11111111-1111-4111-8111-111111111111',
+   'cccccccc-cccc-4ccc-8ccc-cccccccccccc','SUP003',1,payload,repeat('a',64));
+  RAISE EXCEPTION 'role downgrade incorrectly accepted';
+ EXCEPTION WHEN SQLSTATE '42501' THEN NULL;
+ END;
+ UPDATE public.staff_credentials SET role='Supervisor' WHERE user_id='SUP003';
  next_result := zukait_mechanical.save_inspection_draft('11111111-1111-4111-8111-111111111111','44444444-4444-4444-8444-444444444444','SUP003',1,payload,repeat('a',64));
  IF next_result->>'revision' <> '2' THEN RAISE EXCEPTION 'revision advance failed'; END IF;
  IF (SELECT count(*) FROM zukait_mechanical.inspection_receipts) <> 2
