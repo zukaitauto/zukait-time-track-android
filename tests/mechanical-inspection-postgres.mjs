@@ -4,8 +4,13 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 assert.equal(process.env.ZUKAIT_MECHANICAL_NATIVE,'1','isolated PostgreSQL opt-in required');
 const setup=`
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role NOLOGIN; END IF; END $$;
-CREATE SCHEMA public_test_guard;
+DO $ DECLARE role_name text; BEGIN
+ FOR role_name IN SELECT unnest(ARRAY['service_role','anon','authenticated']) LOOP
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname=role_name) THEN
+   EXECUTE format('CREATE ROLE %I NOLOGIN',role_name);
+  END IF;
+ END LOOP;
+END $;
 CREATE TABLE IF NOT EXISTS public.staff_credentials(user_id text primary key);
 CREATE SCHEMA zukait_mechanical;
 CREATE TABLE zukait_mechanical.checklists(id uuid primary key);
