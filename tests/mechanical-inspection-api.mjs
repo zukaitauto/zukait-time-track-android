@@ -47,4 +47,12 @@ for(const [code,status,expected] of [
 }
 const readFailure=await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id},{...server,readInspection:async()=>{throw {code:'08006'};}});
 assert.equal(readFailure.status,503);
+let saveAfterFailure=0;
+const throwingFirst={...server,verifySession:async()=>{throw Error('session backend offline');},saveInspection:async()=>{saveAfterFailure++;}};
+assert.equal((await mechanicalInspectionApi({operation:'SAVE_INSPECTION',checklistId:id,requestId,expectedRevision:0,inspection},throwingFirst)).status,401);
+assert.equal(saveAfterFailure,0);
+let recheckCount=0;
+const throwingSecond={...server,verifySession:async()=>{if(++recheckCount===2)throw Error('session revoked');return {id:'SUP003',active:true,role:'Supervisor'};},saveInspection:async()=>{saveAfterFailure++;}};
+assert.equal((await mechanicalInspectionApi({operation:'SAVE_INSPECTION',checklistId:id,requestId,expectedRevision:0,inspection},throwingSecond)).status,401);
+assert.equal(saveAfterFailure,0,'failed verification must never reach storage');
 console.log('PASS inactive Mechanical inspection API boundary');
