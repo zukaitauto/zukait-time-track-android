@@ -3,10 +3,10 @@
   "versionCode": 340,
   "releaseScope": "standard",
   "approvedForStaff": false,
-  "sourceCommit": "3fe496a8f7e8edfa12184f43aa4f0fded8fcbd5f",
+  "sourceCommit": "8113a98c9d2b0413e2d45fdc4040079ee8346ed7",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": false,
-  "authorization": "Development and isolated testing only. Do not publish until owner explicitly says FINAL \u2014 RELEASE V377. Prior V376 deferrals do not apply.",
+  "authorization": "Development, isolated testing and release evidence preparation only. Owner approval required separately for V377 publication and for backend activation. Do not publish or enable production Mechanical inspection.",
   "approvedAt": null,
   "publishNonce": null,
   "releaseHeldByOwner": true,
@@ -16,11 +16,32 @@
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
+  "signedAcceptanceRun": 41125369887,
+  "verificationRun": 41125370742,
   "previousPublishedRelease": {
     "versionName": "V376",
     "versionCode": 339,
     "sourceCommit": "52bf09188c11803af736de67da69ef584f60292b"
+  },
+  "v377VerificationEvidence": {
+    "androidBuildRun": 41125370256,
+    "mechanicalContractsRun": 41125369868,
+    "connectionOutageRun": 41125369877,
+    "appBuildRun": 41125370005,
+    "mechanicalInspectionRun": 41124838680,
+    "mechanicalInspectionSourceCommit": "260e62b52d83642abd13a476e9571ee88646b0aa",
+    "inspectionScope": "Isolated PostgreSQL, Node API and Chromium mobile/desktop",
+    "signedAcceptanceArtifact": {
+      "runId": 41125369887,
+      "artifactName": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
+      "artifactId": 13010118403
+    }
+  },
+  "v377RecoveryEvidence": {
+    "priorRestoreDate": "2026-10-27",
+    "priorVersion": "V375",
+    "priorStatus": "ISOLATED_RESTORE_PASS",
+    "freshV377BackupAndRestore": "NOT_VERIFIED",
+    "productionChanged": false
   }
 }
