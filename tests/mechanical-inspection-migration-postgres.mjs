@@ -31,7 +31,7 @@ create table public.staff_credentials(
 create table public.staff_sessions(
  token_hash text primary key,user_id text not null references public.staff_credentials(user_id),revoked_at timestamptz
 );
-grant select on public.staff_credentials,public.staff_sessions to service_role;
+grant select,update on public.staff_credentials,public.staff_sessions to service_role;
 create schema zukait_mechanical;
 grant usage on schema zukait_mechanical to service_role;
 create table zukait_mechanical.settings(
