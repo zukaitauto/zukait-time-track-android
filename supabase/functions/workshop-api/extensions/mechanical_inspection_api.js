@@ -14,8 +14,8 @@ export async function mechanicalInspectionApi(input,server={}){
  if(!actor||actor.active!==true||actor.id!==server.actor?.id)return fail('session_changed',401);
  if(!(actor.role==='Manager'||actor.id==='SUP003'&&['Supervisor','Mechanical Supervisor'].includes(actor.role)))return fail('mechanical_forbidden',403);
  if(input.operation==='READ_INSPECTION'){
-  if(typeof server.readInspection!=='function')return fail('mechanical_adapter_unavailable',503);
   if('inspection'in input||'requestId'in input||'expectedRevision'in input)return fail('invalid_command');
+  if(typeof server.readInspection!=='function')return fail('mechanical_adapter_unavailable',503);
   const record=await server.readInspection(input.checklistId,actor);
   return {status:200,body:{ok:true,inspection:record??null}};
  }
