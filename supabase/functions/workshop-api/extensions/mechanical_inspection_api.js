@@ -24,21 +24,21 @@ export async function mechanicalInspectionApi(input,server={}){
  if(typeof server.verifySession!=='function')return fail('invalid_session',401);
  let actor;
  try{actor=await server.verifySession();}catch{return fail('invalid_session',401);}
- if(!actor||actor.active!==true||actor.id!==server.actor?.id)return fail('session_changed',401);
+ if(!actor||actor.active!==true||actor.id!==server.actor?.id||actor.role!==server.actor?.role&&server.actor?.role!==undefined)return fail('session_changed',401);
  if(!(actor.role==='Manager'||actor.id==='SUP003'&&['Supervisor','Mechanical Supervisor'].includes(actor.role)))return fail('mechanical_forbidden',403);
  if(input.operation==='READ_INSPECTION'){
   if('inspection'in input||'requestId'in input||'expectedRevision'in input)return fail('invalid_command');
   if(typeof server.readInspection!=='function')return fail('mechanical_adapter_unavailable',503);
   let current;
   try{current=await server.verifySession();}catch{return fail('invalid_session',401);}
-  if(!current||current.active!==true||current.id!==actor.id||current.role!==actor.role)return fail('session_changed',401);
+  if(!current||current.active!==true||current.id!==actor.id||current.role!==actor.role||current.department!==actor.department)return fail('session_changed',401);
   try{
    const record=await server.readInspection(input.checklistId,current);
    // Recheck before releasing inspection data if the session was revoked
    // while the database read was in flight.
    let after;
    try{after=await server.verifySession();}catch{return fail('invalid_session',401);}
-   if(!after||after.active!==true||after.id!==current.id||after.role!==current.role)return fail('session_changed',401);
+   if(!after||after.active!==true||after.id!==current.id||after.role!==current.role||after.department!==current.department)return fail('session_changed',401);
    return {status:200,body:{ok:true,inspection:record??null}};
   }catch(e){return storageError(e);}
  }
