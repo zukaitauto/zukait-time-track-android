@@ -26,7 +26,8 @@ export function createMechanicalInspectionSaveAdapter({authorizeChecklist,execut
    inspection:JSON.parse(JSON.stringify(command.inspection))
   });
   if(!result||!Number.isSafeInteger(result.revision)||result.revision<1||
-   typeof result.replayed!=='boolean')error('08006');
+   typeof result.replayed!=='boolean'||
+   result.revision!==command.expectedRevision+1)error('08006');
   return {revision:result.revision,replayed:result.replayed};
  };
 }
