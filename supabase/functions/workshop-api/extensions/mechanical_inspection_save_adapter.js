@@ -1,3 +1,4 @@
+import {validateMechanicalInspection} from './mechanical_inspection_contract.js';
 // Inactive V377 trusted-server adapter. The SQL draft is not deployed.
 // executeAtomicSave must run inside a trusted, authenticated transaction
 // and must enforce the authoritative session/checklist permission again.
@@ -10,6 +11,8 @@ export function createMechanicalInspectionSaveAdapter({authorizeChecklist,execut
    typeof command.actorId!=='string'||!command.actorId.trim()||
    !command.inspection||typeof command.inspection!=='object'||Array.isArray(command.inspection))
    error('22023');
+  const validated=validateMechanicalInspection(command.inspection);
+  if(!validated.ok)error('22023');
   if(typeof authorizeChecklist!=='function'||typeof executeAtomicSave!=='function')
    error('08006');
   const permitted=await authorizeChecklist({
