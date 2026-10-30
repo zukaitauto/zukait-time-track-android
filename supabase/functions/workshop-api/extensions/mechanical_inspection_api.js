@@ -11,6 +11,7 @@ const storageError=e=>{
  if(code==='23505')return fail('inspection_request_conflict',409);
  if(code==='P0002')return fail('inspection_checklist_not_found',404);
  if(code==='22023')return fail('invalid_inspection');
+ if(code==='42501')return fail('mechanical_forbidden',403);
  return fail('mechanical_storage_unavailable',503);
 };
 export async function mechanicalInspectionApi(input,server={}){
