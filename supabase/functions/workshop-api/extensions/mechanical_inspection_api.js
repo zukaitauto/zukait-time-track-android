@@ -24,7 +24,7 @@ export async function mechanicalInspectionApi(input,server={}){
  if(typeof server.verifySession!=='function')return fail('invalid_session',401);
  let actor;
  try{actor=await server.verifySession();}catch{return fail('invalid_session',401);}
- if(!actor||actor.active!==true||actor.id!==server.actor?.id||actor.role!==server.actor?.role&&server.actor?.role!==undefined)return fail('session_changed',401);
+ if(!actor||actor.active!==true||!server.actor?.id||!server.actor?.role||!server.actor?.department||actor.id!==server.actor.id||actor.role!==server.actor.role||actor.department!==server.actor.department)return fail('session_changed',401);
  if(!(actor.role==='Manager'||actor.id==='SUP003'&&['Supervisor','Mechanical Supervisor'].includes(actor.role)))return fail('mechanical_forbidden',403);
  if(input.operation==='READ_INSPECTION'){
   if('inspection'in input||'requestId'in input||'expectedRevision'in input)return fail('invalid_command');
