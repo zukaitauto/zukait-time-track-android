@@ -37,7 +37,7 @@ const revokedRead={...server,verifySession:async()=>++readSessionChecks===1
 assert.equal((await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id},revokedRead)).status,401);
 assert.equal(guardedReadCalls,0,'revoked session must not reach read adapter');
 let lateChecks=0;
-const revokedDuringRead={...server,verifySession:async()=>({id:'SUP003',active:++lateChecks<3,role:'Supervisor'}),readInspection:async()=>({revision:1})};
+const revokedDuringRead={...server,verifySession:async()=>({id:'SUP003',active:++lateChecks<3,role:'Supervisor',department:'Mechanical'}),readInspection:async()=>({revision:1})};
 const lateResult=await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id},revokedDuringRead);
 assert.equal(lateResult.status,401);
 assert.equal(lateResult.body.ok,false);
