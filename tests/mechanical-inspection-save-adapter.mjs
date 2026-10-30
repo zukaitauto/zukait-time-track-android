@@ -43,5 +43,5 @@ const replay=createMechanicalInspectionSaveAdapter({
  executeAtomicSave:async()=>({revision:1,replayed:true})
 });
 assert.deepEqual(await replay(command),{revision:1,replayed:true});
-assert.equal(writes,1);
+assert.equal(writes,2,'the valid high-revision request reaches the transactional executor, then fails its response check');
 console.log('PASS inactive Mechanical inspection save adapter authorization');
