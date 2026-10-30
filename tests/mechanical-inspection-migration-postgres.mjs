@@ -93,7 +93,11 @@ BEGIN
   jsonb_set(p,'{vehicle,year}','2022'::jsonb),
   jsonb_set(p,'{vehicle,vin}','12345'::jsonb),
   jsonb_set(p,'{workDescription}','1234'::jsonb),
-  jsonb_set(p,'{damageMarks}','[{"part":42,"mark":"X"}]'::jsonb)
+  jsonb_set(p,'{damageMarks}','[{"part":42,"mark":"X"}]'::jsonb),
+  jsonb_set(p,'{functions,lights}','{}'::jsonb),
+  jsonb_set(p,'{functions,lights}','{"status":null}'::jsonb),
+  jsonb_set(p,'{damageMarks}','[{"part":"Front Bumper"}]'::jsonb),
+  jsonb_set(p,'{damageMarks}','[{"part":"Front Bumper","mark":null}]'::jsonb)
  ] LOOP
   BEGIN
    PERFORM public.zukait_mechanical_inspection_save('SUP003',repeat('a',64),
