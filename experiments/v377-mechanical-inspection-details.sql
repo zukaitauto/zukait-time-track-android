@@ -19,6 +19,40 @@ create table zukait_mechanical.inspection_details (
 alter table zukait_mechanical.inspection_details enable row level security;
 revoke all on zukait_mechanical.inspection_details from public,anon,authenticated,service_role;
 grant select,insert,update on zukait_mechanical.inspection_details to service_role;
+-- Append-only request receipts support atomic retry and duplicate detection.
+-- A future save RPC must lock the checklist row, compare expected revision,
+-- check request_id plus fingerprint, write inspection, receipt and audit together.
+create table zukait_mechanical.inspection_receipts (
+ request_id uuid primary key,
+ checklist_id uuid not null references zukait_mechanical.checklists(id) on delete restrict,
+ actor_id text not null references public.staff_credentials(user_id),
+ fingerprint text not null check (fingerprint ~ '^[0-9a-f]{64}
+-- by the server contract inside the future atomic write boundary.
+commit;
+),
+ expected_revision bigint not null check (expected_revision >= 0),
+ result_revision bigint not null check (result_revision > 0),
+ created_at timestamptz not null default clock_timestamp(),
+ unique (checklist_id,result_revision)
+);
+create table zukait_mechanical.inspection_audit (
+ request_id uuid primary key references zukait_mechanical.inspection_receipts(request_id) on delete restrict,
+ checklist_id uuid not null references zukait_mechanical.checklists(id) on delete restrict,
+ actor_id text not null references public.staff_credentials(user_id),
+ before_value jsonb,
+ after_value jsonb not null,
+ recorded_at timestamptz not null default clock_timestamp()
+);
+alter table zukait_mechanical.inspection_receipts enable row level security;
+alter table zukait_mechanical.inspection_audit enable row level security;
+revoke all on zukait_mechanical.inspection_receipts,zukait_mechanical.inspection_audit from public,anon,authenticated,service_role;
+grant select,insert on zukait_mechanical.inspection_receipts,zukait_mechanical.inspection_audit to service_role;
+create trigger immutable_inspection_receipts before update or delete or truncate
+ on zukait_mechanical.inspection_receipts for each statement
+ execute function zukait_mechanical.append_only();
+create trigger immutable_inspection_audit before update or delete or truncate
+ on zukait_mechanical.inspection_audit for each statement
+ execute function zukait_mechanical.append_only();
 -- JSON shape, VIN, odometer, and functional checks must also be validated
 -- by the server contract inside the future atomic write boundary.
 commit;
