@@ -14,7 +14,6 @@ END $roles$;
 CREATE TABLE IF NOT EXISTS public.staff_credentials(user_id text primary key);
 CREATE SCHEMA zukait_mechanical;
 CREATE TABLE zukait_mechanical.checklists(id uuid primary key);
-CREATE FUNCTION zukait_mechanical.append_only() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'mechanical_append_only'; END $$;
 `;
 const sql=fs.readFileSync('experiments/v377-mechanical-inspection-details.sql','utf8');
 const probe=`
