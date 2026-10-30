@@ -21,11 +21,18 @@ export async function mechanicalInspectionApi(input,server={}){
  try{serialized=JSON.stringify(input);}catch{return fail('invalid_command');}
  if(typeof serialized!=='string'||serialized.length>16384)return fail('invalid_command');
  if(!['READ_INSPECTION','SAVE_INSPECTION'].includes(input.operation)||!uuid(input.checklistId))return fail('invalid_command');
+ // A dedicated policy gate must resolve checklist access from authoritative
+ // server data, never from the request payload.
+ if(typeof server.authorizeChecklist!=='function')return fail('mechanical_adapter_unavailable',503);
  if(typeof server.verifySession!=='function')return fail('invalid_session',401);
  let actor;
  try{actor=await server.verifySession();}catch{return fail('invalid_session',401);}
  if(!actor||actor.active!==true||!server.actor?.id||!server.actor?.role||!server.actor?.department||actor.id!==server.actor.id||actor.role!==server.actor.role||actor.department!==server.actor.department)return fail('session_changed',401);
  if(!(actor.role==='Manager'||actor.id==='SUP003'&&['Supervisor','Mechanical Supervisor'].includes(actor.role)))return fail('mechanical_forbidden',403);
+ let permitted;
+ try{permitted=await server.authorizeChecklist({checklistId:input.checklistId,actor,operation:input.operation});}
+ catch{return fail('mechanical_storage_unavailable',503);}
+ if(permitted!==true)return fail('mechanical_forbidden',403);
  if(input.operation==='READ_INSPECTION'){
   if('inspection'in input||'requestId'in input||'expectedRevision'in input)return fail('invalid_command');
   if(typeof server.readInspection!=='function')return fail('mechanical_adapter_unavailable',503);
