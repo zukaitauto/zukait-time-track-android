@@ -162,7 +162,9 @@ begin
  end loop;
  -- Locks credential+session in authorize_session, then the checklist row.
  perform zukait_mechanical.inspection_authorize(p_actor,p_session_hash,p_checklist);
- perform 1 from zukait_mechanical.checklists where id=p_checklist for update;
+ -- Advisory transaction lock serializes edits without granting UPDATE on
+ -- the append-only authoritative Mechanical checklist registry.
+ perform pg_advisory_xact_lock(hashtextextended('zukait:inspection:'||p_checklist::text,0));
  fingerprint:=encode(sha256(convert_to(jsonb_build_object(
    'actor',p_actor,'checklist',p_checklist,'expected',p_expected,'inspection',p_inspection)::text,'UTF8')),'hex');
  select * into prior from zukait_mechanical.inspection_receipts where request_id=p_request;
