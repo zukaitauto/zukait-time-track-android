@@ -1,7 +1,7 @@
 // Test the deployable V377 migration against a disposable local PostgreSQL 17 DB.
 // Never connects to production. The actual production authorization definition
 // is extracted from the committed foundation migration.
-import {execFileSync} from 'node:child_process';
+import {execFileSync,spawn} from 'node:child_process';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 assert.equal(process.env.ZUKAIT_MECHANICAL_NATIVE,'1');
@@ -160,3 +160,43 @@ BEGIN
 END $test$;`;
 run(probe);
 console.log('PASS deployable V377 migration isolated authorization, read, atomic save, CAS, idempotency, audit');
+
+// Exercise true concurrent writers through separate PostgreSQL connections.
+// Exactly one compare-and-swap may succeed. This test never uses production.
+const concurrentChecklist='aaaaaaaa-1111-4111-8111-111111111111';
+run(`insert into zukait_mechanical.checklists values
+ ('${concurrentChecklist}','MC0002','MJC002',current_date,'SUP003');`);
+function saveInSeparateConnection(requestId){
+ return new Promise((resolve,reject)=>{
+  const process=spawn('psql',[...args,'-d','v377_inspection_test'],{
+   env:processEnv(),stdio:['pipe','pipe','pipe']
+  });
+  let output='',error='';
+  process.stdout.setEncoding('utf8').on('data',data=>output+=data);
+  process.stderr.setEncoding('utf8').on('data',data=>error+=data);
+  process.on('error',reject);
+  process.on('close',code=>resolve({code,output,error}));
+  process.stdin.end(`set role service_role;
+select public.zukait_mechanical_inspection_save('SUP003',repeat('a',64),
+ '${concurrentChecklist}','${requestId}',0,'${escaped}'::jsonb);`);
+ });
+}
+function processEnv(){
+ // Keep the isolated loopback PostgreSQL target set by this test's mandatory guards.
+ return {...process.env,PGHOST:'127.0.0.1',PGPORT:'5432',
+  PGDATABASE:'v377_inspection_test',PGUSER:'postgres'};
+}
+const writers=await Promise.all([
+ saveInSeparateConnection('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
+ saveInSeparateConnection('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')
+]);
+const winners=writers.filter(x=>x.code===0&&x.output.includes('"revision": 1'));
+const conflicts=writers.filter(x=>x.code!==0&&/inspection_revision_conflict/.test(x.error));
+assert.equal(winners.length,1,'exactly one concurrent writer should commit');
+assert.equal(conflicts.length,1,'losing writer must receive revision conflict');
+const concurrentCounts=run(`
+select count(*) from zukait_mechanical.inspection_receipts where checklist_id='${concurrentChecklist}';
+select count(*) from zukait_mechanical.inspection_audit where checklist_id='${concurrentChecklist}';
+select revision from zukait_mechanical.inspection_details where checklist_id='${concurrentChecklist}';`).trim().split('\n');
+assert.deepEqual(concurrentCounts,['1','1','1'],'concurrency must leave one revision, receipt and audit');
+console.log('PASS V377 concurrent PostgreSQL saves: exactly one commit, loser conflicts, audit counts consistent');
