@@ -130,9 +130,17 @@ export async function mountMechanicalWorkspace(root,options={}){
   }
   const d=model.detail;if(!d){detail.append(node('p','Select a checklist to view its tasks.'));return}
   detail.append(node('h3',d.checklist.number+' · JC '+d.checklist.jobCard),node('p','Manual date: '+d.checklist.manualDate));
-  if(typeof options.openInspection==='function'&&!pending)
-   detail.append(button('Open vehicle inspection · Cash / Credit',
-    ()=>options.openInspection(d.checklist.id,d.checklist.jobCard)));
+  if(!pending)detail.append(button('Open vehicle inspection · Cash / Credit',async()=>{
+   if(!active()||busy||!online()){notice='Reconnect before opening the vehicle inspection.';render();return;}
+   const id=d.checklist.id,job=d.checklist.jobCard;
+   if(typeof options.openInspection==='function')return options.openInspection(id,job);
+   // Manager-host fallback: the standalone form reuses this authorized host's API.
+   // No extra full-state data or legacy Reception screen is exposed.
+   destroy();
+   const {mountMechanicalInspection}=await import('./mechanical_inspection_view.js');
+   return mountMechanicalInspection(root,{...options,checklistId:id,jobCard:job,
+    onBack:()=>mountMechanicalWorkspace(root,{...options,checklistId:id})});
+  }));
   if(model.reportsAvailable&&typeof options.openReport==='function'&&!pending)detail.append(button('Task labour report',async()=>{if(!online()){notice='Reconnect before reporting.';render();return}busy=true;render();try{await options.openReport(d.checklist.id)}catch{notice='Unable to open report. Refresh and retry.'}finally{busy=false;if(active())render()}}));
   if(model.signaturesAvailable&&initial.id==='SUP003'&&['Supervisor','Mechanical Supervisor'].includes(initial.role)&&typeof options.openSignature==='function'&&!pending)detail.append(button('Optional supervisor signature',async()=>{if(!online()){notice='Reconnect before signing.';render();return}busy=true;render();try{await options.openSignature({checklistId:d.checklist.id,expectedRevision:model.recordsRevision,expectedWorkshopRevision:model.workshopRevision})}catch{notice='Unable to open signature capture. Refresh and retry.'}finally{busy=false;if(active())render()}}));
   if(model.documentsAvailable&&typeof options.openDocument==='function'&&!pending)detail.append(button('Unpriced checklist PDF',async()=>{if(!online()){notice='Reconnect before exporting.';render();return}busy=true;render();try{await options.openDocument({checklistId:d.checklist.id,expectedRevision:model.recordsRevision,expectedWorkshopRevision:model.workshopRevision,...(model.signedDocumentsAvailable?{signedAvailable:true}:{})})}catch{notice='Unable to open checklist export. Refresh and retry.'}finally{busy=false;if(active())render()}}));
