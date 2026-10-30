@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';import {JSDOM} from 'jsdom';import {mountMechanicalWorkspace} from '../app/src/main/assets/mechanical_workspace.js';
 const id=n=>'76000000-0000-4000-8000-'+String(n).padStart(12,'0');let serial=100;
-const session={id:'QA_SUP',role:'Supervisor',key:'QA_SESSION'};
+const session={id:'SUP003',role:'Supervisor',key:'QA_SESSION'};
 const fixture=()=>({ok:true,recordsRevision:4,workshopRevision:10,capabilities:['MC_CREATE','TASK_CREATE','TASK_ASSIGN','TASK_HANDOVER'],departmentConfigured:true,nextAfter:null,
  checklists:[{id:id(1),number:'MC001',jobCard:'QA_JC',manualDate:'2026-10-22'}],mechanics:[{id:'QA_A',name:'Mechanic <script>unsafe</script>'},{id:'QA_B',name:'Mechanic B'}],detail:null});
 const detail={checklist:{id:id(1),number:'MC001',jobCard:'QA_JC',manualDate:'2026-10-22'},tasks:[{id:id(2),title:'Inspect <img src=x onerror=alert(1)>'}],assignments:[{id:id(3),taskId:id(2),employeeId:'QA_A',employeeName:'Mechanic A',suggestedMinutes:60,completed:false,running:false}]};
@@ -21,35 +21,36 @@ async function setup({enabled=true,user=session,caps,stored,apiOverride}={}){
 const click=async(root,text)=>{const b=[...root.querySelectorAll('button')].find(b=>b.textContent===text);assert.ok(b,'Missing button '+text);b.click();await settle();return b};
 let x=await setup({enabled:false});assert.equal(x.calls.length,0);assert.match(x.root.textContent,/unavailable/);
 for(const role of ['Employee','Receptionist','Accountant']){x=await setup({user:{...session,role}});assert.equal(x.calls.length,0)}
+x=await setup({user:{id:'QA_OTHER_SUP',role:'Supervisor',key:'QA_SESSION'}});assert.equal(x.calls.length,0,'Non-Mechanical Supervisor must not access the Mechanical workspace');
 x=await setup();assert.equal(x.calls.length,1);assert.equal(x.calls[0].action,'mechanical_dashboard');assert.equal(x.root.querySelectorAll('form[data-operation=MC_CREATE]').length,1);
 await click(x.root,'MC001 · JC QA_JC · 2026-10-22');assert.equal(x.root.querySelectorAll('script,img').length,0,'Dynamic labels must be text only');assert.match(x.root.textContent,/Inspect <img/);
 let form=x.root.querySelector('[data-operation=TASK_ASSIGN]');form.querySelector('[name=employee]').value='QA_B';form.querySelector('[name=minutes]').value='75';
 x.loseAck();form.dispatchEvent(new x.dom.window.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.match(x.root.textContent,/Response not confirmed/);
 const writes=()=>x.calls.filter(c=>c.action==='mechanical_command');assert.equal(writes().length,1);const original=writes()[0].command;
-assert.equal(original.payload.suggestedMinutes,75);assert.ok(!('actorId' in original));assert.ok(!JSON.stringify(original).includes('QA_SESSION'));assert.ok(x.storage.has('zukait_mechanical_pending_v1:QA_SUP'));
-await click(x.root,'Retry same change');assert.equal(writes().length,2);assert.deepEqual(writes()[1].command,original,'Lost-ack retry must reuse exact command/UUID');assert.equal(x.storage.has('zukait_mechanical_pending_v1:QA_SUP'),false);
+assert.equal(original.payload.suggestedMinutes,75);assert.ok(!('actorId' in original));assert.ok(!JSON.stringify(original).includes('QA_SESSION'));assert.ok(x.storage.has('zukait_mechanical_pending_v1:SUP003'));
+await click(x.root,'Retry same change');assert.equal(writes().length,2);assert.deepEqual(writes()[1].command,original,'Lost-ack retry must reuse exact command/UUID');assert.equal(x.storage.has('zukait_mechanical_pending_v1:SUP003'),false);
 // A loaded pending command is not automatically posted; a reload permits only
 // an explicit same-command retry, using the durable device identifier.
-const pending={owner:'QA_SUP',checklistId:id(1),command:original};const saved=[['zukait_mechanical_pending_v1:QA_SUP',JSON.stringify(pending)],['zukait_mechanical_device_v1','QA_DEVICE']];
+const pending={owner:'SUP003',checklistId:id(1),command:original};const saved=[['zukait_mechanical_pending_v1:SUP003',JSON.stringify(pending)],['zukait_mechanical_device_v1','QA_DEVICE']];
 // Dedicated host throws explicit API rejections. An inactive old card must
 // not permanently block registration; uncertain transport failures stay saved.
 for(const code of ['task_inactive','checklist_inactive','existing_active_jc_required'])for(const thrown of [true,false]){
  x=await setup({stored:saved,apiOverride:async b=>{if(b.action==='mechanical_dashboard')return {...fixture(),detail:b.checklistId?structuredClone(detail):null};if(thrown)throw Error(code);return {ok:false,code}}});
- await click(x.root,'Retry same change');assert.ok(x.storage.has('zukait_mechanical_pending_v1:QA_SUP'));
+ await click(x.root,'Retry same change');assert.ok(x.storage.has('zukait_mechanical_pending_v1:SUP003'));
  assert.equal(x.root.querySelector('[data-operation=MC_CREATE] button').disabled,true);
  const sent=x.calls.filter(c=>c.action==='mechanical_command').length;await click(x.root,'Dismiss rejected change');
- assert.equal(x.storage.has('zukait_mechanical_pending_v1:QA_SUP'),false);assert.equal(x.root.querySelector('[data-operation=MC_CREATE] button').disabled,false);
+ assert.equal(x.storage.has('zukait_mechanical_pending_v1:SUP003'),false);assert.equal(x.root.querySelector('[data-operation=MC_CREATE] button').disabled,false);
  assert.equal(x.calls.filter(c=>c.action==='mechanical_command').length,sent,'Dismissing a rejected journal never writes server records');
 }
 for(const code of ['NETWORK','TIMEOUT','database_busy','mechanical_unavailable','invalid_session']){
  x=await setup({stored:saved,apiOverride:async b=>{if(b.action==='mechanical_dashboard')return {...fixture(),detail:structuredClone(detail)};throw Error(code)}});
- await click(x.root,'Retry same change');assert.ok(x.storage.has('zukait_mechanical_pending_v1:QA_SUP'));
+ await click(x.root,'Retry same change');assert.ok(x.storage.has('zukait_mechanical_pending_v1:SUP003'));
  assert.ok(![...x.root.querySelectorAll('button')].some(b=>b.textContent==='Dismiss rejected change'),'Uncertain/unauthenticated result cannot be discarded');
 }
 x=await setup({stored:saved});assert.equal(x.calls.filter(c=>c.action==='mechanical_command').length,0);await click(x.root,'Retry same change');assert.deepEqual(x.calls.find(c=>c.action==='mechanical_command').command,original);
 // A different login cannot load or submit another owner's pending request.
 x=await setup({stored:saved,user:{id:'OTHER',role:'Supervisor',key:'OTHER_SESSION'}});assert.equal(x.root.textContent.includes('Pending confirmation'),false);
-x=await setup({stored:[['zukait_mechanical_pending_v1:QA_SUP',JSON.stringify({...pending,owner:'OTHER'})]]});assert.equal(x.root.textContent.includes('75'),false);assert.equal(x.calls.filter(c=>c.action==='mechanical_command').length,0);
+x=await setup({stored:[['zukait_mechanical_pending_v1:SUP003',JSON.stringify({...pending,owner:'OTHER'})]]});assert.equal(x.root.textContent.includes('75'),false);assert.equal(x.calls.filter(c=>c.action==='mechanical_command').length,0);
 // Offline submission does not enqueue a new write or start automatic retry.
 x=await setup();await click(x.root,'MC001 · JC QA_JC · 2026-10-22');x.offline();form=x.root.querySelector('[data-operation=TASK_CREATE]');form.querySelector('[name=title]').value='Offline task';form.dispatchEvent(new x.dom.window.Event('submit',{cancelable:true}));await settle();assert.equal(x.calls.filter(c=>c.action==='mechanical_command').length,0);assert.match(x.root.textContent,/Reconnect before saving/);
 // Only operation capabilities expose controls; unconfirmed QC/finance/hold
