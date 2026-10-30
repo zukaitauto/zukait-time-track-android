@@ -15,7 +15,10 @@ const storageError=e=>{
 };
 export async function mechanicalInspectionApi(input,server={}){
  if(server.enabled!==true||server.policy?.flags?.mechanical!==true)return fail('extension_disabled',403);
- if(!obj(input)||Object.keys(input).some(k=>!['operation','checklistId','requestId','expectedRevision','inspection'].includes(k))||JSON.stringify(input).length>16384)return fail('invalid_command');
+ if(!obj(input)||Object.keys(input).some(k=>!['operation','checklistId','requestId','expectedRevision','inspection'].includes(k)))return fail('invalid_command');
+ let serialized;
+ try{serialized=JSON.stringify(input);}catch{return fail('invalid_command');}
+ if(typeof serialized!=='string'||serialized.length>16384)return fail('invalid_command');
  if(!['READ_INSPECTION','SAVE_INSPECTION'].includes(input.operation)||!uuid(input.checklistId))return fail('invalid_command');
  if(typeof server.verifySession!=='function')return fail('invalid_session',401);
  let actor;
