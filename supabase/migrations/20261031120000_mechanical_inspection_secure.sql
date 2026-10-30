@@ -134,24 +134,30 @@ begin
     or (p_inspection->'vehicle' ? 'vin' and
         coalesce(p_inspection->'vehicle'->>'vin','') <> '' and
         upper(p_inspection->'vehicle'->>'vin') !~ '^[A-HJ-NPR-Z0-9]{17}$')
-    or (p_inspection->'vehicle' ? 'odometerKm' and
-        (jsonb_typeof(p_inspection->'vehicle'->'odometerKm') <> 'number' or
-         (p_inspection->'vehicle'->>'odometerKm')::numeric not between 0 and 999999999))
  then raise exception 'invalid_vehicle' using errcode='22023';end if;
+ if p_inspection->'vehicle' ? 'odometerKm' then
+  if jsonb_typeof(p_inspection->'vehicle'->'odometerKm') is distinct from 'number'
+  then raise exception 'invalid_vehicle' using errcode='22023';end if;
+  if (p_inspection->'vehicle'->>'odometerKm')::numeric not between 0 and 999999999
+  then raise exception 'invalid_vehicle' using errcode='22023';end if;
+ end if;
  if (select count(*) from jsonb_object_keys(p_inspection->'functions'))<>8
  then raise exception 'invalid_functions' using errcode='22023';end if;
  foreach k in array array['lights','wipers','powerWindows','centralLocking','mirrors','horn','dashboardWarning','airConditioning'] loop
   check_value:=p_inspection->'functions'->k;
   if jsonb_typeof(check_value) is distinct from 'object'
-   or check_value->>'status' not in ('OK','ISSUE','NOT_CHECKED')
+  then raise exception 'invalid_functions' using errcode='22023';end if;
+  if check_value->>'status' not in ('OK','ISSUE','NOT_CHECKED')
    or (check_value->>'status'='ISSUE' and length(trim(coalesce(check_value->>'note','')))=0)
    or length(coalesce(check_value->>'note',''))>300
+   or (check_value ? 'note' and jsonb_typeof(check_value->'note') is distinct from 'string')
    or exists(select 1 from jsonb_object_keys(check_value) k2 where k2 not in ('status','note'))
   then raise exception 'invalid_functions' using errcode='22023';end if;
  end loop;
  for mark in select value from jsonb_array_elements(p_inspection->'damageMarks') loop
   if jsonb_typeof(mark) is distinct from 'object'
-   or length(trim(coalesce(mark->>'part',''))) not between 1 and 80
+  then raise exception 'invalid_marks' using errcode='22023';end if;
+  if length(trim(coalesce(mark->>'part',''))) not between 1 and 80
    or mark->>'mark' not in ('X','S','M')
    or exists(select 1 from jsonb_object_keys(mark) k2 where k2 not in ('part','mark'))
   then raise exception 'invalid_marks' using errcode='22023';end if;
