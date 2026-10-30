@@ -21,7 +21,7 @@ DO $roles$ DECLARE role_name text; BEGIN
   END IF;
  END LOOP;
 END $roles$;
-CREATE TABLE IF NOT EXISTS public.staff_credentials(user_id text primary key);
+CREATE TABLE IF NOT EXISTS public.staff_credentials(user_id text primary key, role text not null, active boolean not null);
 CREATE SCHEMA zukait_mechanical;
 CREATE TABLE zukait_mechanical.checklists(id uuid primary key);
 `;
@@ -39,7 +39,7 @@ console.log('PASS isolated PostgreSQL Mechanical inspection draft and RLS');
 
 const saveDraft=fs.readFileSync('experiments/v377-mechanical-inspection-save-draft.sql','utf8');
 const saveProbe=`
-INSERT INTO public.staff_credentials(user_id) VALUES ('SUP003');
+INSERT INTO public.staff_credentials(user_id,role,active) VALUES ('SUP003','Supervisor',true),('EMP001','Employee',true),('SUP004','Supervisor',false);
 INSERT INTO zukait_mechanical.checklists(id) VALUES ('11111111-1111-4111-8111-111111111111');
 DO $test$
 DECLARE
@@ -65,6 +65,20 @@ BEGIN
  END;
  IF (SELECT count(*) FROM zukait_mechanical.inspection_receipts) <> 0
  THEN RAISE EXCEPTION 'invalid saves created receipts'; END IF;
+ BEGIN
+  PERFORM zukait_mechanical.save_inspection_draft(
+   '11111111-1111-4111-8111-111111111111',
+   '88888888-8888-4888-8888-888888888888','EMP001',0,payload);
+  RAISE EXCEPTION 'employee save incorrectly accepted';
+ EXCEPTION WHEN SQLSTATE '42501' THEN NULL;
+ END;
+ BEGIN
+  PERFORM zukait_mechanical.save_inspection_draft(
+   '11111111-1111-4111-8111-111111111111',
+   '99999999-9999-4999-8999-999999999999','SUP004',0,payload);
+  RAISE EXCEPTION 'inactive supervisor save incorrectly accepted';
+ EXCEPTION WHEN SQLSTATE '42501' THEN NULL;
+ END;
  first_result := zukait_mechanical.save_inspection_draft('11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','SUP003',0,payload);
  IF first_result->>'revision' <> '1' OR first_result->>'replayed' <> 'false' THEN
   RAISE EXCEPTION 'initial save failed: %',first_result;
