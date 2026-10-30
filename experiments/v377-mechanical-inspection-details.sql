@@ -26,10 +26,7 @@ create table zukait_mechanical.inspection_receipts (
  request_id uuid primary key,
  checklist_id uuid not null references zukait_mechanical.checklists(id) on delete restrict,
  actor_id text not null references public.staff_credentials(user_id),
- fingerprint text not null check (fingerprint ~ '^[0-9a-f]{64}
--- by the server contract inside the future atomic write boundary.
-commit;
-),
+ fingerprint text not null check (fingerprint ~ '^[0-9a-f]{64}$'),
  expected_revision bigint not null check (expected_revision >= 0),
  result_revision bigint not null check (result_revision > 0),
  created_at timestamptz not null default clock_timestamp(),
