@@ -77,6 +77,8 @@ jobs:
           cp experiments/v377-mechanical-intake.sql "$draft_path"
           echo "V377_GENERATED_MIGRATION=$draft_path"
           sha256sum "$draft_path"
+      - name: Execute inactive Mechanical inspection schema in isolated PostgreSQL
+        run: node tests/mechanical-inspection-postgres.mjs
       - name: Native transactional persistence and overlapping writers
         run: |
           ZUKAIT_MECHANICAL_INSTALL_MODE=fresh node tests/mechanical-persistence.mjs
