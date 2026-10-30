@@ -44,12 +44,21 @@ alter table zukait_mechanical.inspection_receipts enable row level security;
 alter table zukait_mechanical.inspection_audit enable row level security;
 revoke all on zukait_mechanical.inspection_receipts,zukait_mechanical.inspection_audit from public,anon,authenticated,service_role;
 grant select,insert on zukait_mechanical.inspection_receipts,zukait_mechanical.inspection_audit to service_role;
+-- Dedicated immutable trigger; does not depend on other Mechanical drafts.
+create function zukait_mechanical.inspection_immutable_guard()
+returns trigger language plpgsql set search_path = pg_catalog
+as $guard$
+begin
+ raise exception 'mechanical_inspection_append_only' using errcode = '55000';
+end;
+$guard$;
+revoke all on function zukait_mechanical.inspection_immutable_guard() from public,anon,authenticated;
 create trigger immutable_inspection_receipts before update or delete or truncate
  on zukait_mechanical.inspection_receipts for each statement
- execute function zukait_mechanical.append_only();
+ execute function zukait_mechanical.inspection_immutable_guard();
 create trigger immutable_inspection_audit before update or delete or truncate
  on zukait_mechanical.inspection_audit for each statement
- execute function zukait_mechanical.append_only();
+ execute function zukait_mechanical.inspection_immutable_guard();
 -- JSON shape, VIN, odometer, and functional checks must also be validated
 -- by the server contract inside the future atomic write boundary.
 commit;
