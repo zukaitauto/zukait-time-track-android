@@ -132,7 +132,7 @@ END;
 $test$;
 `;
 execFileSync('psql',psqlArgs,{input:saveDraft+saveProbe,encoding:'utf8'});
-const functionGrants=execFileSync('psql',psqlArgs,{input:`SELECT has_function_privilege('anon','zukait_mechanical.save_inspection_draft(uuid,uuid,text,bigint,jsonb,text)','EXECUTE');\nSELECT has_function_privilege('authenticated','zukait_mechanical.save_inspection_draft(uuid,uuid,text,bigint,jsonb)','EXECUTE');\nSELECT has_function_privilege('service_role','zukait_mechanical.save_inspection_draft(uuid,uuid,text,bigint,jsonb)','EXECUTE');\n`,encoding:'utf8'}).trim().split('\n');
+const functionGrants=execFileSync('psql',psqlArgs,{input:`SELECT has_function_privilege('anon','zukait_mechanical.save_inspection_draft(uuid,uuid,text,bigint,jsonb,text)','EXECUTE');\nSELECT has_function_privilege('authenticated','zukait_mechanical.save_inspection_draft(uuid,uuid,text,bigint,jsonb,text)','EXECUTE');\nSELECT has_function_privilege('service_role','zukait_mechanical.save_inspection_draft(uuid,uuid,text,bigint,jsonb,text)','EXECUTE');\n`,encoding:'utf8'}).trim().split('\n');
 assert.deepEqual(functionGrants,['f','f','f'],'experimental save function must be inaccessible to API roles');
 console.log('PASS isolated Mechanical inspection atomic save, replay, conflict and audit');
 
