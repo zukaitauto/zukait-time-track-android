@@ -34,6 +34,11 @@ export async function mechanicalInspectionApi(input,server={}){
   if(!current||current.active!==true||current.id!==actor.id||current.role!==actor.role)return fail('session_changed',401);
   try{
    const record=await server.readInspection(input.checklistId,current);
+   // Recheck before releasing inspection data if the session was revoked
+   // while the database read was in flight.
+   let after;
+   try{after=await server.verifySession();}catch{return fail('invalid_session',401);}
+   if(!after||after.active!==true||after.id!==current.id||after.role!==current.role)return fail('session_changed',401);
    return {status:200,body:{ok:true,inspection:record??null}};
   }catch(e){return storageError(e);}
  }
