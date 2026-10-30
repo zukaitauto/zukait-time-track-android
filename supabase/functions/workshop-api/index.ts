@@ -5,6 +5,7 @@ import { mechanicalTimeApi } from './extensions/mechanical_time_api.js';
 import { mechanicalSectionApi } from './extensions/mechanical_section_api.js';
 import { mechanicalInspectionBoundary } from './extensions/mechanical_inspection_boundary.js';
 import { createMechanicalInspectionSessionVerifier } from './extensions/mechanical_inspection_session.js';
+import { createMechanicalInspectionStorage } from './extensions/mechanical_inspection_storage.js';
 import { subletTransition } from './sublet_rules.js';
 import {accountantApi,accountantError} from './accountant/api.js';
 import {insuranceProjection,insuranceLpoTransition} from './insurance_management_rules.js';
@@ -1144,15 +1145,15 @@ Deno.serve(async (req: Request) => {
         // Never route this action through generic Mechanical commands.
         const inspectionEnabled = enabled &&
           Deno.env.get('ZUKAIT_MECHANICAL_INSPECTION_ENABLED') === 'true';
+        const storage=inspectionEnabled
+          ?createMechanicalInspectionStorage({admin,actor:user,sessionHash:await sha256Hex(token)})
+          :{};
         const result=await mechanicalInspectionBoundary(body.command,{
           enabled:inspectionEnabled,policy:{flags:{mechanical:enabled}},
-          actor:user,
+          actor:user,...storage,
           verifySession:createMechanicalInspectionSessionVerifier({
             sessionUser,token,expectedActor:user
           })
-          // authorizeChecklist and executeAtomicSave intentionally absent:
-          // neither is safe to provide until the DB transaction enforces
-          // checklist ownership. The boundary returns 503 if enabled.
         });
         return reply(result.body,result.status);
       }
