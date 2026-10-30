@@ -127,7 +127,7 @@ begin
    raise exception 'invalid_vehicle' using errcode='22023';
   end if;
  end loop;
- if (p_inspection->'vehicle'->>'year') !~ '^\\d{4}$'
+ if (p_inspection->'vehicle'->>'year') !~ '^[0-9]{4}$'
     or (p_inspection->'vehicle'->>'year')::integer not between 1886 and extract(year from now())::integer+1
     or exists(select 1 from jsonb_object_keys(p_inspection->'vehicle') k2 where k2 not in
          ('registration','make','model','year','vin','odometerKm','customer','contact'))
