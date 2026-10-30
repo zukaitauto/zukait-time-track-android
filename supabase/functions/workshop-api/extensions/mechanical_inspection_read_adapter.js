@@ -15,6 +15,9 @@ export function createMechanicalInspectionReadAdapter({db,authorizeChecklist}={}
   const {data,error}=await table.select('checklist_id,revision,job_type,vehicle,damage_marks,function_checks,work_description,updated_at,updated_by').eq('checklist_id',checklistId).maybeSingle();
   if(error)throw error;
   if(!data)return null;
+  // Never return another checklist's inspection if the storage adapter
+  // or query layer supplies an inconsistent row.
+  if(data.checklist_id!==checklistId||!Number.isSafeInteger(data.revision)||data.revision<1)deny('08006');
   return {
    checklistId:data.checklist_id,revision:data.revision,
    inspection:{jobType:data.job_type,vehicle:data.vehicle,damageMarks:data.damage_marks,
