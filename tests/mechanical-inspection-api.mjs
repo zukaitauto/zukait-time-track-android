@@ -46,6 +46,7 @@ let saveDeptChecks=0,saveDeptCalls=0;
 const changedSaveDepartment={...server,verifySession:async()=>({id:'SUP003',active:true,role:'Supervisor',department:++saveDeptChecks===2?'Body':'Mechanical'}),saveInspection:async()=>{saveDeptCalls++;}};
 assert.equal((await mechanicalInspectionApi({operation:'SAVE_INSPECTION',checklistId:id,requestId,expectedRevision:0,inspection},changedSaveDepartment)).status,401);
 assert.equal(saveDeptCalls,0);
+assert.equal((await mechanicalInspectionApi({operation:'SAVE_INSPECTION',checklistId:id,requestId,expectedRevision:Number.MAX_SAFE_INTEGER,inspection},server)).body.code,'invalid_command');
 for(const [code,status,expected] of [
  ['40001',409,'inspection_revision_conflict'],
  ['23505',409,'inspection_request_conflict'],
