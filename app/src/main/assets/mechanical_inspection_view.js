@@ -126,7 +126,7 @@ export async function mountMechanicalInspection(root,options={}){
    .mechanical-inspection-view .mi-note{margin:10px 0;color:#2b5b80}
    .mechanical-inspection-view .mi-error{font-weight:650;color:#8c3838}
    @media(max-width:700px){.mechanical-inspection-view .mi-fields{grid-template-columns:1fr}.mechanical-inspection-view .mi-function{grid-template-columns:1fr}.mechanical-inspection-view{padding:10px}}
-   @media print{.mechanical-inspection-view{background:white;max-width:none}.mechanical-inspection-view section{break-inside:avoid}.mechanical-inspection-view .mi-actions,.mechanical-inspection-view .mi-diagram{display:none}}
+   @media print{.mechanical-inspection-view{background:white;max-width:none}.mechanical-inspection-view section{break-inside:avoid}.mechanical-inspection-view .mi-actions{display:none}}
   `);
   root.append(style);
   const header=elem('header');
@@ -178,7 +178,7 @@ export async function mountMechanicalInspection(root,options={}){
    const row=elem('div',null,{class:'mi-function'});
    row.append(elem('strong',title),selector(title+' status',
     [['NOT_CHECKED','Not checked'],['OK','OK'],['ISSUE','Issue']],check.status,v=>{
-     draft.functions[key]={...check,status:v};render();
+     draft.functions[key]={...draft.functions[key],status:v};render();
     }),input('Issue note',check.note||'',v=>{
      draft.functions[key]={...draft.functions[key],note:v};
     },{maxLength:300}));
