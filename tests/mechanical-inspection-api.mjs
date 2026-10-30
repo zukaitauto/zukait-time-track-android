@@ -32,6 +32,12 @@ const revokedRead={...server,verifySession:async()=>++readSessionChecks===1
  readInspection:async()=>{guardedReadCalls++;return null;}};
 assert.equal((await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id},revokedRead)).status,401);
 assert.equal(guardedReadCalls,0,'revoked session must not reach read adapter');
+let lateChecks=0;
+const revokedDuringRead={...server,verifySession:async()=>({id:'SUP003',active:++lateChecks<3,role:'Supervisor'}),readInspection:async()=>({revision:1})};
+const lateResult=await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id},revokedDuringRead);
+assert.equal(lateResult.status,401);
+assert.equal(lateResult.body.ok,false);
+assert.equal(lateChecks,3,'must verify again before returning private inspection');
 for(const [code,status,expected] of [
  ['40001',409,'inspection_revision_conflict'],
  ['23505',409,'inspection_request_conflict'],
