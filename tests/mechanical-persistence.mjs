@@ -28,7 +28,16 @@ if(native){
  config={host,port:Number(process.env.PGPORT||5432),user:'postgres',password:process.env.PGPASSWORD||'mechanical-test-only'};database='zukait_mechanical_qa_'+randomUUID().replaceAll('-','');
  admin=new pg.Client({...config,database:'postgres'});await admin.connect();await admin.query('create database "'+database+'"');client=new pg.Client({...config,database});await client.connect();db={exec:s=>client.query(s),query:(...args)=>client.query(...args)};
  assert.ok(Number((await db.query('show server_version_num')).rows[0].server_version_num)>=170000&&Number((await db.query('show server_version_num')).rows[0].server_version_num)<180000);
- for(const role of ['anon','authenticated','service_role'])if(!(await db.query('select 1 from pg_roles where rolname=$1',[role])).rows.length)await db.exec('create role '+role+' nologin'+(role==='service_role'?' bypassrls':''));
+ // A prior isolated SQL suite may have created service_role without BYPASSRLS.
+ // Match the real Supabase service-role contract in this disposable loopback cluster
+ // rather than depending on which test created this cluster-wide role first.
+ for(const role of ['anon','authenticated','service_role']){
+  if(!(await db.query('select 1 from pg_roles where rolname=$1',[role])).rows.length)
+   await db.exec('create role '+role+' nologin'+(role==='service_role'?' bypassrls':''));
+ }
+ await db.exec('alter role service_role bypassrls');
+ assert.equal((await db.query("select rolbypassrls from pg_roles where rolname='service_role'")).rows[0]?.rolbypassrls,true,
+  'Disposable service_role must match the Supabase RLS bypass contract');
 }else{const {PGlite}=await import('@electric-sql/pglite');db=new PGlite();}
 const sessionHash='a'.repeat(64); // Synthetic hash only, never a production token.
 const rpcSql='select public.zukait_mechanical_commit($1,$2::uuid,$3,$4,$5,$6,$7::uuid,$8,$9::jsonb,$10) r';
