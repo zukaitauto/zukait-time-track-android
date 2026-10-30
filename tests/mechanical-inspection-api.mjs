@@ -32,4 +32,19 @@ const revokedRead={...server,verifySession:async()=>++readSessionChecks===1
  readInspection:async()=>{guardedReadCalls++;return null;}};
 assert.equal((await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id},revokedRead)).status,401);
 assert.equal(guardedReadCalls,0,'revoked session must not reach read adapter');
+for(const [code,status,expected] of [
+ ['40001',409,'inspection_revision_conflict'],
+ ['23505',409,'inspection_request_conflict'],
+ ['P0002',404,'inspection_checklist_not_found'],
+ ['22023',400,'invalid_inspection'],
+ ['08006',503,'mechanical_storage_unavailable']
+]){
+ const failing={...server,saveInspection:async()=>{throw {code};}};
+ const result=await mechanicalInspectionApi({operation:'SAVE_INSPECTION',checklistId:id,requestId,expectedRevision:0,inspection},failing);
+ assert.equal(result.status,status);
+ assert.equal(result.body.code,expected);
+ assert.equal(result.body.ok,false);
+}
+const readFailure=await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id},{...server,readInspection:async()=>{throw {code:'08006'};}});
+assert.equal(readFailure.status,503);
 console.log('PASS inactive Mechanical inspection API boundary');
