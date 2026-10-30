@@ -137,7 +137,7 @@ export async function mountMechanicalInspection(root,options={}){
    .mechanical-inspection-view .mi-diagram button{background:#fff;min-height:56px}
    .mechanical-inspection-view .mi-diagram button[aria-pressed=true]{background:#cde8ff;border-color:#377ab0}
    .mechanical-inspection-view .mi-marks{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-   .mechanical-inspection-view .mi-marks button{min-height:36px}
+   .mechanical-inspection-view .mi-marks button{min-height:44px}
    .mechanical-inspection-view .mi-note{margin:10px 0;color:#2b5b80}
    .mechanical-inspection-view .mi-error{font-weight:650;color:#8c3838}
    @media(max-width:700px){.mechanical-inspection-view .mi-fields{grid-template-columns:1fr}.mechanical-inspection-view .mi-function{grid-template-columns:1fr}.mechanical-inspection-view{padding:10px}}
