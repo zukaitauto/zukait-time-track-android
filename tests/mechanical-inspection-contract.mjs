@@ -9,4 +9,13 @@ for(const mark of ['Z','',null]){const x=good();x.damageMarks[0].mark=mark;asser
 {const x=good();x.vehicle.odometerKm=-1;assert.equal(validateMechanicalInspection(x).code,'invalid_odometer')}
 {const x=good();x.workDescription=' ';assert.equal(validateMechanicalInspection(x).code,'invalid_work_description')}
 {const x=good();x.extra='unknown';assert.equal(validateMechanicalInspection(x).code,'invalid_inspection')}
+
+// Additional contract regression coverage before persistence/API activation.
+{const x=good();x.jobType='CREDIT';x.vehicle.vin='JTNB11HK0K3000001';assert.deepEqual(validateMechanicalInspection(x),{ok:true})}
+for(const mark of ['X','S','M']){const x=good();x.damageMarks[0].mark=mark;assert.equal(validateMechanicalInspection(x).ok,true)}
+for(const key of INSPECTION_FUNCTIONS){const x=good();delete x.functions[key];assert.equal(validateMechanicalInspection(x).code,'invalid_function_checks')}
+{const x=good();x.functions.horn={status:'ISSUE',note:'   '};assert.equal(validateMechanicalInspection(x).code,'invalid_function_checks')}
+{const x=good();x.vehicle.odometerKm=1000000000;assert.equal(validateMechanicalInspection(x).code,'invalid_odometer')}
+{const x=good();x.vehicle.extra='not allowed';assert.equal(validateMechanicalInspection(x).code,'invalid_vehicle')}
+
 console.log('PASS inactive Mechanical inspection contract: valid details, Cash/Credit only, damage marks, functional issues, KM and unknown-field rejection');
