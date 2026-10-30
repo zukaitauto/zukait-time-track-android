@@ -14,7 +14,7 @@ const empty=()=>({jobType:'CASH',vehicle:{registration:'',make:'',model:'',year:
  workDescription:''});
 export async function mountMechanicalInspection(root,options={}){
  const doc=root.ownerDocument,win=doc.defaultView,identity=JSON.stringify(options.getSession?.());
- let disposed=false,loading=false,saving=false,revision=0,record=null,
+ let disposed=false,loading=false,saving=false,loaded=false,revision=0,record=null,
   draft=empty(),message='',pending=null;
  const live=()=>!disposed&&options.isEnabled?.()!==false&&
   JSON.stringify(options.getSession?.())===identity;
@@ -35,12 +35,14 @@ export async function mountMechanicalInspection(root,options={}){
  };
  async function load(){
   if(!live()||saving||pending)return;
+  loaded=false;
   if(!online()){message='Reconnect to load the Mechanical Checklist.';render();return;}
   loading=true;message='';render();
   try{
    const result=await options.api({action:'mechanical_inspection',
     command:{operation:'READ_INSPECTION',checklistId:options.checklistId}});
    if(!live())return;
+   loaded=true;
    record=result.inspection??null;
    revision=record?.revision??0;
    draft=record?.inspection?structuredClone(record.inspection):empty();
@@ -51,6 +53,7 @@ export async function mountMechanicalInspection(root,options={}){
  }
  async function save(){
   if(!live()||loading||saving||!online()){message='Reconnect before saving. No change was sent.';render();return;}
+  if(!loaded){message='Load the checklist from the server before saving.';render();return;}
   const payload={...draft,vehicle:cleanVehicle()};
   if(!checks.every(([k])=>payload.functions?.[k]?.status&&
     (payload.functions[k].status!=='ISSUE'||String(payload.functions[k].note||'').trim()))){
@@ -74,8 +77,19 @@ export async function mountMechanicalInspection(root,options={}){
    pending=null;
    message='Saved and confirmed by the server (revision '+revision+').';
   }catch(error){
-   if(live())message=String(error.message||'Save not confirmed.')+
-    ' The same request ID is retained for a safe retry.';
+   if(live()){
+    const code=String(error?.code||error?.message||'Save not confirmed.');
+    const rejected=['inspection_revision_conflict','inspection_request_conflict',
+     'invalid_inspection','invalid_mechanical_job_type','invalid_vehicle',
+     'invalid_vehicle_year','invalid_vin','invalid_odometer',
+     'invalid_work_description','invalid_damage_marks','invalid_function_checks',
+     'mechanical_forbidden','inspection_checklist_not_found',
+     'extension_disabled','session_changed','invalid_session'].includes(code);
+    if(rejected)pending=null;
+    message=code+(rejected
+     ?' The server rejected this request. Reload to review the current checklist.'
+     :' Save status is uncertain. Retry with the same request ID or reopen to verify.');
+   }
   }finally{saving=false;if(live())render();}
  }
  function input(label,value,onInput,attrs={}){
@@ -118,6 +132,7 @@ export async function mountMechanicalInspection(root,options={}){
    .mechanical-inspection-view .mi-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
    .mechanical-inspection-view .mi-functions{display:grid;gap:10px}
    .mechanical-inspection-view .mi-function{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(120px,1fr) minmax(0,2fr);align-items:center;gap:12px}
+   .mechanical-inspection-view .mi-vehicle-image{display:block;max-width:100%;width:100%;max-height:420px;object-fit:contain;background:white;border:1px solid #d8e4f0;border-radius:12px;margin:12px 0}
    .mechanical-inspection-view .mi-diagram{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;background:#edf5fc;padding:13px;border-radius:12px}
    .mechanical-inspection-view .mi-diagram button{background:#fff;min-height:56px}
    .mechanical-inspection-view .mi-diagram button[aria-pressed=true]{background:#cde8ff;border-color:#377ab0}
@@ -137,9 +152,7 @@ export async function mountMechanicalInspection(root,options={}){
   const status=elem('p',message||(!online()?'Offline — saving disabled.':'Revision '+revision),{role:'status',class:message?'mi-error':'mi-note'});
   root.append(status);
   if(loading){root.append(elem('p','Loading checklist from server…'));return;}
-  if(!record&&message&&revision===0&&/disabled|unavailable|forbidden|sign in/i.test(message)){
-   root.append(btn('Retry loading',load));return;
-  }
+  if(!loaded){root.append(btn('Retry loading',load));return;}
   const form=elem('form');
   form.onsubmit=e=>{e.preventDefault();if(form.reportValidity())save();};
   const identity=elem('section');identity.append(elem('h3','Vehicle and customer'));
@@ -153,7 +166,10 @@ export async function mountMechanicalInspection(root,options={}){
     type:key==='odometerKm'?'number':'text',min:key==='odometerKm'?0:undefined,max:key==='odometerKm'?999999999:undefined}));
   }
   identity.append(vehicle);form.append(identity);
-  const damage=elem('section');damage.append(elem('h3','Vehicle damage diagram'),elem('p','Select a body panel, then choose X (damage), S (scratch), or M (missing).'));
+  const damage=elem('section');damage.append(elem('h3','Vehicle damage diagram'),elem('p','Use the approved vehicle view and select a panel below, then choose X (damage), S (scratch), or M (missing).'));
+  damage.append(elem('img',null,{class:'mi-vehicle-image',
+   src:new URL('./v2/features/insurance/vehicle-inspection-approved.png',import.meta.url).href,
+   alt:'Approved vehicle inspection illustration — front, rear, sides and top'}));
   const type=selector('Mark type',[['X','X · Damage'],['S','S · Scratch'],['M','M · Missing']],'X',v=>{markType=v;});
   let markType='X';damage.append(type);
   const panels=elem('div',null,{class:'mi-diagram'});
@@ -195,8 +211,20 @@ export async function mountMechanicalInspection(root,options={}){
    if(pending){message='Resolve the unconfirmed request before reloading.';render();return;}
    if(win.confirm('Discard unsaved edits and reload this checklist?'))load();
   });reload.disabled=saving;actions.append(reload);
-  const print=btn('Print checklist',()=>win.print());print.disabled=saving||!record;actions.append(print);
-  if(pending)actions.append(elem('span','Unconfirmed request — retry uses the SAME request ID.'));
+  const print=btn('Print checklist',()=>{
+   if(JSON.stringify({...draft,vehicle:cleanVehicle()})!==JSON.stringify(record?.inspection)){
+    message='Save your changes before printing the confirmed checklist.';render();return;
+   }
+   win.print();
+  });print.disabled=saving||!record||!!pending;actions.append(print);
+  if(pending){
+   actions.append(elem('span','Unconfirmed request — retry uses the SAME request ID.'));
+   actions.append(btn('Back and verify later',()=>{
+    if(win.confirm('This save has not been confirmed. Reopen the checklist and verify its server revision before editing again.')){
+     destroy();options.onBack?.();
+    }
+   }));
+  }
   form.append(actions);root.append(form);
   // Keep edits immutable during an uncertain or ongoing save.
   if(pending||saving){for(const control of form.querySelectorAll('input,select,textarea'))control.disabled=true;
