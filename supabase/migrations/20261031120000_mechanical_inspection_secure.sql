@@ -117,13 +117,15 @@ begin
     or jsonb_typeof(p_inspection->'damageMarks') is distinct from 'array'
     or jsonb_array_length(p_inspection->'damageMarks')>100
     or jsonb_typeof(p_inspection->'functions') is distinct from 'object'
+    or jsonb_typeof(p_inspection->'workDescription') is distinct from 'string'
     or length(trim(coalesce(p_inspection->>'workDescription',''))) not between 1 and 2000
     or exists(select 1 from jsonb_object_keys(p_inspection) k2
               where k2 not in ('jobType','vehicle','damageMarks','functions','workDescription'))
  then raise exception 'invalid_inspection' using errcode='22023';end if;
  -- Validate required vehicle keys even if this RPC is called outside JavaScript.
  foreach k in array array['registration','make','model','year','customer','contact'] loop
-  if length(trim(coalesce(p_inspection->'vehicle'->>k,''))) not between 1 and 120 then
+  if jsonb_typeof(p_inspection->'vehicle'->k) is distinct from 'string'
+     or length(trim(coalesce(p_inspection->'vehicle'->>k,''))) not between 1 and 120 then
    raise exception 'invalid_vehicle' using errcode='22023';
   end if;
  end loop;
@@ -133,8 +135,9 @@ begin
     or exists(select 1 from jsonb_object_keys(p_inspection->'vehicle') k2 where k2 not in
          ('registration','make','model','year','vin','odometerKm','customer','contact'))
     or (p_inspection->'vehicle' ? 'vin' and
-        coalesce(p_inspection->'vehicle'->>'vin','') <> '' and
-        upper(p_inspection->'vehicle'->>'vin') !~ '^[A-HJ-NPR-Z0-9]{17}$')
+        (jsonb_typeof(p_inspection->'vehicle'->'vin') is distinct from 'string' or
+        (coalesce(p_inspection->'vehicle'->>'vin','') <> '' and
+         upper(trim(p_inspection->'vehicle'->>'vin')) !~ '^[A-HJ-NPR-Z0-9]{17}$')))
  then raise exception 'invalid_vehicle' using errcode='22023';end if;
  if p_inspection->'vehicle' ? 'odometerKm' then
   if jsonb_typeof(p_inspection->'vehicle'->'odometerKm') is distinct from 'number'
@@ -158,7 +161,8 @@ begin
  for mark in select value from jsonb_array_elements(p_inspection->'damageMarks') loop
   if jsonb_typeof(mark) is distinct from 'object'
   then raise exception 'invalid_marks' using errcode='22023';end if;
-  if length(trim(coalesce(mark->>'part',''))) not between 1 and 80
+  if jsonb_typeof(mark->'part') is distinct from 'string'
+   or length(trim(coalesce(mark->>'part',''))) not between 1 and 80
    or mark->>'mark' not in ('X','S','M')
    or exists(select 1 from jsonb_object_keys(mark) k2 where k2 not in ('part','mark'))
   then raise exception 'invalid_marks' using errcode='22023';end if;
