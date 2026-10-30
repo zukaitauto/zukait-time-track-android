@@ -13,4 +13,9 @@ assert.equal((await mechanicalInspectionApi({operation:'SAVE_INSPECTION',checkli
 assert.equal((await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id},{...server,enabled:false})).status,403);
 assert.equal((await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id},{...server,actor:{id:'SUP001'},verifySession:async()=>({id:'SUP001',active:true,role:'Supervisor'})})).status,403);
 assert.equal((await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id},{...server,readInspection:undefined})).status,503);
+assert.equal((await mechanicalInspectionApi({operation:'SAVE_INSPECTION',checklistId:id,requestId,expectedRevision:0,inspection},{...server,readInspection:undefined})).status,200);
+assert.equal((await mechanicalInspectionApi({operation:'SAVE_INSPECTION',checklistId:id,requestId,expectedRevision:0,inspection:{...inspection,workDescription:'x'.repeat(17000)}},server)).body.code,'invalid_command');
+let sessionChecks=0;
+const changedSession={...server,verifySession:async()=>++sessionChecks===1?{id:'SUP003',active:true,role:'Supervisor'}:{id:'SUP003',active:false,role:'Supervisor'}};
+assert.equal((await mechanicalInspectionApi({operation:'SAVE_INSPECTION',checklistId:id,requestId,expectedRevision:0,inspection},changedSession)).status,401);
 console.log('PASS inactive Mechanical inspection API boundary');
