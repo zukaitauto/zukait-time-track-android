@@ -6,23 +6,29 @@ let queries=0;
 const db={
  schema:name=>{
   assert.equal(name,'zukait_mechanical');
-  return {from:table=>{
-   assert.equal(table,'inspection_details');
-   return {select:()=>({
-    eq:(key,value)=>{
-     assert.equal(key,'checklist_id');
-     assert.equal(value,id);
-     return {maybeSingle:async()=>{
-      queries++;
-      return {data:{
-       checklist_id:id,revision:2,job_type:'CASH',
-       vehicle:{registration:'1234 AB'},damage_marks:[],function_checks:{},
-       work_description:'Inspection',updated_at:'2026-10-30',updated_by:'SUP003'
-      },error:null};
-     }};
-    }
-   })};
-  }};
+  return {
+   from:table=>{
+    assert.equal(table,'inspection_details');
+    return {
+     select:()=>({
+      eq:(key,value)=>{
+       assert.equal(key,'checklist_id');
+       assert.equal(value,id);
+       return {
+        maybeSingle:async()=>{
+         queries++;
+         return {data:{
+          checklist_id:id,revision:2,job_type:'CASH',
+          vehicle:{registration:'1234 AB'},damage_marks:[],function_checks:{},
+          work_description:'Inspection',updated_at:'2026-10-30',updated_by:'SUP003'
+         },error:null};
+        }
+       };
+      }
+     })
+    };
+   }
+  };
  }
 };
 const adapter=createMechanicalInspectionReadAdapter({db,authorizeChecklist:async()=>true});
