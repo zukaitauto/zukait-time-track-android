@@ -18,6 +18,7 @@ jobs:
         run: |
           node tests/mechanical-accounting-contracts.mjs
           node tests/mechanical-inspection-contract.mjs
+          node tests/mechanical-inspection-api.mjs
           node tests/mechanical-schema-bundle.mjs
           node tests/finished-session-status.mjs
           node tests/reception-receptionist-auth.mjs
