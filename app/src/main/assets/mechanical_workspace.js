@@ -9,7 +9,7 @@ export async function mountMechanicalWorkspace(root,options={}){
  let disposed=false,busy=false,model=null,qc=null,selected=options.checklistId||null,after=0,pending=null,notice='',readGeneration=0;
  const node=(tag,text,attrs={})=>{const e=doc.createElement(tag);if(text!==null)e.textContent=text;for(const [k,v] of Object.entries(attrs)){if(k==='onClick')e.addEventListener('click',v);else e.setAttribute(k,String(v));}return e};
  const key='zukait_mechanical_pending_v1:'+String(initial?.id||'');
- if(options.enabled!==true||!['Manager','Supervisor','Mechanical Supervisor'].includes(initial?.role)||!initial?.id||!initial?.key||typeof options.api!=='function'){
+ if(options.enabled!==true||!(initial?.role==='Manager'||initial?.id==='SUP003'&&['Supervisor','Mechanical Supervisor'].includes(initial?.role))||!initial?.id||!initial?.key||typeof options.api!=='function'){
   root.replaceChildren(node('p','Mechanical workspace is unavailable.'));return {destroy(){root.replaceChildren()}};
  }
  let device=options.deviceId;
