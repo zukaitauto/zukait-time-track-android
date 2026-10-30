@@ -6,6 +6,7 @@ on:
       - 'supabase/functions/workshop-api/extensions/mechanical_inspection_*.js'
       - 'tests/mechanical-inspection-*.mjs'
       - '.github/workflows/v377-mechanical-inspection-tests.yml'
+      - 'package.json'
   workflow_dispatch:
 permissions:
   contents: read
@@ -27,7 +28,4 @@ jobs:
           for file in tests/mechanical-inspection-*.mjs; do node --check "$file"; done
       - name: Run isolated tests
         run: |
-          node tests/mechanical-inspection-api.mjs
-          node tests/mechanical-inspection-read-adapter.mjs
-          node tests/mechanical-inspection-save-adapter.mjs
-          node tests/mechanical-inspection-boundary.mjs
+          npm run test:mechanical:inspection
