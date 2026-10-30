@@ -3,6 +3,10 @@ import {execFileSync} from 'node:child_process';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 assert.equal(process.env.ZUKAIT_MECHANICAL_NATIVE,'1','isolated PostgreSQL opt-in required');
+assert.equal(process.env.PGHOST,'127.0.0.1','refuse non-local PostgreSQL host');
+assert.equal(process.env.PGPORT,'5432','refuse unexpected PostgreSQL port');
+assert.equal(process.env.PGUSER??'postgres','postgres','isolated test requires postgres user');
+assert.equal(process.env.PGDATABASE??'postgres','postgres','isolated test requires postgres database');
 const setup=`
 DO $roles$ DECLARE role_name text; BEGIN
  FOR role_name IN SELECT unnest(ARRAY['service_role','anon','authenticated']) LOOP
