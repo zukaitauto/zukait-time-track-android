@@ -5,6 +5,10 @@ on:
     paths:
       - 'supabase/functions/workshop-api/extensions/mechanical_inspection_*.js'
       - 'tests/mechanical-inspection-*.mjs'
+      - 'app/src/main/assets/mechanical_inspection_view.js'
+      - 'app/src/main/assets/mechanical_supervisor.js'
+      - 'app/src/main/assets/mechanical_workspace.js'
+      - 'supabase/migrations/20261031120000_mechanical_inspection_secure.sql'
       - '.github/workflows/v377-mechanical-inspection-tests.yml'
       - 'package.json'
       - 'experiments/v377-mechanical-inspection-*.sql'
@@ -26,6 +30,10 @@ jobs:
           node --check supabase/functions/workshop-api/extensions/mechanical_inspection_read_adapter.js
           node --check supabase/functions/workshop-api/extensions/mechanical_inspection_save_adapter.js
           node --check supabase/functions/workshop-api/extensions/mechanical_inspection_boundary.js
+          node --check supabase/functions/workshop-api/extensions/mechanical_inspection_storage.js
+          node --check app/src/main/assets/mechanical_inspection_view.js
+          node --check app/src/main/assets/mechanical_supervisor.js
+          node --check app/src/main/assets/mechanical_workspace.js
           for file in tests/mechanical-inspection-*.mjs; do node --check "$file"; done
       - name: Run isolated tests
         run: |
