@@ -11,6 +11,7 @@ export function validateMechanicalInspection(value){
  const v=value.vehicle;
  if(!fields(v,['registration','make','model','year','vin','odometerKm','customer','contact']))return {ok:false,code:'invalid_vehicle'};
  for(const k of ['registration','make','model','year','customer','contact'])if(!string(v[k],120)||!v[k].trim())return {ok:false,code:'invalid_vehicle'};
+ if(!/^\d{4}$/.test(v.year)||Number(v.year)<1886||Number(v.year)>new Date().getUTCFullYear()+1)return {ok:false,code:'invalid_vehicle_year'};
  if(v.vin!==undefined&&(typeof v.vin!=='string'||(v.vin.trim()!==''&&!/^[A-HJ-NPR-Z0-9]{17}$/.test(v.vin.trim().toUpperCase()))))return {ok:false,code:'invalid_vin'};
  if(v.odometerKm!==undefined&&(!Number.isFinite(v.odometerKm)||v.odometerKm<0||v.odometerKm>999999999))return {ok:false,code:'invalid_odometer'};
  if(!string(value.workDescription,2000)||value.workDescription.trim().length===0)return {ok:false,code:'invalid_work_description'};
