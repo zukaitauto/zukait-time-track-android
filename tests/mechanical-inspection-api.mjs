@@ -38,6 +38,14 @@ const lateResult=await mechanicalInspectionApi({operation:'READ_INSPECTION',chec
 assert.equal(lateResult.status,401);
 assert.equal(lateResult.body.ok,false);
 assert.equal(lateChecks,3,'must verify again before returning private inspection');
+let deptChecks=0;
+const changedDepartment={...server,verifySession:async()=>({id:'SUP003',active:true,role:'Supervisor',department:++deptChecks===3?'Body':'Mechanical'}),readInspection:async()=>({revision:1})};
+assert.equal((await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id},changedDepartment)).status,401);
+assert.equal(deptChecks,3);
+let saveDeptChecks=0,saveDeptCalls=0;
+const changedSaveDepartment={...server,verifySession:async()=>({id:'SUP003',active:true,role:'Supervisor',department:++saveDeptChecks===2?'Body':'Mechanical'}),saveInspection:async()=>{saveDeptCalls++;}};
+assert.equal((await mechanicalInspectionApi({operation:'SAVE_INSPECTION',checklistId:id,requestId,expectedRevision:0,inspection},changedSaveDepartment)).status,401);
+assert.equal(saveDeptCalls,0);
 for(const [code,status,expected] of [
  ['40001',409,'inspection_revision_conflict'],
  ['23505',409,'inspection_request_conflict'],
