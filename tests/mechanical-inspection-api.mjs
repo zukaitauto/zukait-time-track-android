@@ -37,6 +37,7 @@ for(const [code,status,expected] of [
  ['23505',409,'inspection_request_conflict'],
  ['P0002',404,'inspection_checklist_not_found'],
  ['22023',400,'invalid_inspection'],
+ ['42501',403,'mechanical_forbidden'],
  ['08006',503,'mechanical_storage_unavailable']
 ]){
  const failing={...server,saveInspection:async()=>{throw {code};}};
