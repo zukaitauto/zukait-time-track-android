@@ -5,6 +5,14 @@ import {validateMechanicalInspection} from './mechanical_inspection_contract.js'
 const uuid=x=>typeof x==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(x);
 const fail=(code,status=400)=>({status,body:{ok:false,code}});
 const obj=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
+const storageError=e=>{
+ const code=String(e?.code??'');
+ if(code==='40001')return fail('inspection_revision_conflict',409);
+ if(code==='23505')return fail('inspection_request_conflict',409);
+ if(code==='P0002')return fail('inspection_checklist_not_found',404);
+ if(code==='22023')return fail('invalid_inspection');
+ return fail('mechanical_storage_unavailable',503);
+};
 export async function mechanicalInspectionApi(input,server={}){
  if(server.enabled!==true||server.policy?.flags?.mechanical!==true)return fail('extension_disabled',403);
  if(!obj(input)||Object.keys(input).some(k=>!['operation','checklistId','requestId','expectedRevision','inspection'].includes(k))||JSON.stringify(input).length>16384)return fail('invalid_command');
@@ -18,8 +26,10 @@ export async function mechanicalInspectionApi(input,server={}){
   if(typeof server.readInspection!=='function')return fail('mechanical_adapter_unavailable',503);
   const current=await server.verifySession();
   if(!current||current.active!==true||current.id!==actor.id||current.role!==actor.role)return fail('session_changed',401);
-  const record=await server.readInspection(input.checklistId,current);
-  return {status:200,body:{ok:true,inspection:record??null}};
+  try{
+   const record=await server.readInspection(input.checklistId,current);
+   return {status:200,body:{ok:true,inspection:record??null}};
+  }catch(e){return storageError(e);}
  }
  if(!uuid(input.requestId)||!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<0)return fail('invalid_command');
  const validated=validateMechanicalInspection(input.inspection);
@@ -29,10 +39,12 @@ export async function mechanicalInspectionApi(input,server={}){
  if(!current||current.active!==true||current.id!==actor.id||current.role!==actor.role)return fail('session_changed',401);
  // The adapter MUST atomically enforce checklist ownership, current session,
  // compare-and-swap revision, request-id fingerprint, receipt and audit.
+ try{
  const result=await server.saveInspection({
   checklistId:input.checklistId,requestId:input.requestId,
   expectedRevision:input.expectedRevision,
   inspection:JSON.parse(JSON.stringify(input.inspection)),actorId:actor.id
  });
  return {status:200,body:{ok:true,result}};
+ }catch(e){return storageError(e);}
 }
