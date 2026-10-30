@@ -18,4 +18,6 @@ for(const key of INSPECTION_FUNCTIONS){const x=good();delete x.functions[key];as
 {const x=good();x.vehicle.odometerKm=1000000000;assert.equal(validateMechanicalInspection(x).code,'invalid_odometer')}
 {const x=good();x.vehicle.extra='not allowed';assert.equal(validateMechanicalInspection(x).code,'invalid_vehicle')}
 
+for(const vin of ['123','JTNB11HK0K300000I','JTNB11HK0K300000O','JTNB11HK0K300000Q']){const x=good();x.vehicle.vin=vin;assert.equal(validateMechanicalInspection(x).code,'invalid_vin')}
+{const x=good();x.vehicle.vin='jtnb11hk0k3000001';assert.equal(validateMechanicalInspection(x).ok,true)}
 console.log('PASS inactive Mechanical inspection contract: valid details, Cash/Credit only, damage marks, functional issues, KM and unknown-field rejection');
