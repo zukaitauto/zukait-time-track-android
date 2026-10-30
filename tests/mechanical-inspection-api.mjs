@@ -55,4 +55,8 @@ let recheckCount=0;
 const throwingSecond={...server,verifySession:async()=>{if(++recheckCount===2)throw Error('session revoked');return {id:'SUP003',active:true,role:'Supervisor'};},saveInspection:async()=>{saveAfterFailure++;}};
 assert.equal((await mechanicalInspectionApi({operation:'SAVE_INSPECTION',checklistId:id,requestId,expectedRevision:0,inspection},throwingSecond)).status,401);
 assert.equal(saveAfterFailure,0,'failed verification must never reach storage');
+const circular={operation:'READ_INSPECTION',checklistId:id};
+circular.self=circular;
+assert.equal((await mechanicalInspectionApi(circular,server)).body.code,'invalid_command');
+assert.equal((await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id,unexpected:1n},server)).body.code,'invalid_command');
 console.log('PASS inactive Mechanical inspection API boundary');
