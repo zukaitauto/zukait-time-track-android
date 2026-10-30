@@ -31,5 +31,15 @@ assert.equal(writes,1,'denied save must not execute');
 await assert.rejects(()=>createMechanicalInspectionSaveAdapter({executeAtomicSave:async()=>{writes++;}})(command),e=>e.code==='08006');
 await assert.rejects(()=>adapter({...command,requestId:'invalid'}),e=>e.code==='22023');
 await assert.rejects(()=>adapter({...command,inspection:{...command.inspection,jobType:'INSURANCE'}}),e=>e.code==='22023');
+const wrongRevision=createMechanicalInspectionSaveAdapter({
+ authorizeChecklist:async()=>true,
+ executeAtomicSave:async()=>({revision:9,replayed:false})
+});
+await assert.rejects(()=>wrongRevision(command),e=>e.code==='08006');
+const replay=createMechanicalInspectionSaveAdapter({
+ authorizeChecklist:async()=>true,
+ executeAtomicSave:async()=>({revision:1,replayed:true})
+});
+assert.deepEqual(await replay(command),{revision:1,replayed:true});
 assert.equal(writes,1);
 console.log('PASS inactive Mechanical inspection save adapter authorization');
