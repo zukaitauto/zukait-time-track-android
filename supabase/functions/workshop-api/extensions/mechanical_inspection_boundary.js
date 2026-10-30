@@ -9,6 +9,6 @@ export async function mechanicalInspectionBoundary(input,context={}){
  const readInspection=createMechanicalInspectionReadAdapter({db,authorizeChecklist});
  const saveInspection=createMechanicalInspectionSaveAdapter({authorizeChecklist,executeAtomicSave});
  return mechanicalInspectionApi(input,{
-  enabled,policy,actor,verifySession,readInspection,saveInspection
+  enabled,policy,actor,verifySession,authorizeChecklist,readInspection,saveInspection
  });
 }
