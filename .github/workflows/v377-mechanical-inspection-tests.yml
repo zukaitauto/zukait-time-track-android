@@ -58,5 +58,5 @@ jobs:
       - name: Install local PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Execute isolated SQL schema and atomic-save regression
-        run: node tests/mechanical-inspection-postgres.mjs
-          node tests/mechanical-inspection-migration-postgres.mjs
+        run: node tests/mechanical-inspection-migration-postgres.mjs
+          node tests/mechanical-inspection-postgres.mjs
