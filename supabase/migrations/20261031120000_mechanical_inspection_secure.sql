@@ -151,7 +151,7 @@ begin
   check_value:=p_inspection->'functions'->k;
   if jsonb_typeof(check_value) is distinct from 'object'
   then raise exception 'invalid_functions' using errcode='22023';end if;
-  if check_value->>'status' not in ('OK','ISSUE','NOT_CHECKED')
+  if coalesce(check_value->>'status','') not in ('OK','ISSUE','NOT_CHECKED')
    or (check_value->>'status'='ISSUE' and length(trim(coalesce(check_value->>'note','')))=0)
    or length(coalesce(check_value->>'note',''))>300
    or (check_value ? 'note' and jsonb_typeof(check_value->'note') is distinct from 'string')
@@ -163,7 +163,7 @@ begin
   then raise exception 'invalid_marks' using errcode='22023';end if;
   if jsonb_typeof(mark->'part') is distinct from 'string'
    or length(trim(coalesce(mark->>'part',''))) not between 1 and 80
-   or mark->>'mark' not in ('X','S','M')
+   or coalesce(mark->>'mark','') not in ('X','S','M')
    or exists(select 1 from jsonb_object_keys(mark) k2 where k2 not in ('part','mark'))
   then raise exception 'invalid_marks' using errcode='22023';end if;
  end loop;
