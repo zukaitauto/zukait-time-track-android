@@ -7,7 +7,7 @@ const uuid=x=>typeof x==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[8
 export function createMechanicalInspectionSaveAdapter({authorizeChecklist,executeAtomicSave}={}){
  return async function saveInspection(command){
   if(!command||!uuid(command.checklistId)||!uuid(command.requestId)||
-   !Number.isSafeInteger(command.expectedRevision)||command.expectedRevision<0||
+   !Number.isSafeInteger(command.expectedRevision)||(command.expectedRevision<0||command.expectedRevision>=Number.MAX_SAFE_INTEGER)||
    typeof command.actorId!=='string'||!command.actorId.trim()||
    !command.inspection||typeof command.inspection!=='object'||Array.isArray(command.inspection))
    error('22023');
