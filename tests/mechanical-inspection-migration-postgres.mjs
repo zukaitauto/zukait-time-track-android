@@ -23,12 +23,15 @@ DO $roles$ DECLARE n text; BEGIN
   IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname=n) THEN EXECUTE format('CREATE ROLE %I NOLOGIN',n);END IF;
  END LOOP;
 END $roles$;
+-- Match Supabase's service_role RLS bypass in this disposable test database.
+alter role service_role bypassrls;
 create table public.staff_credentials(
  user_id text primary key,role text not null,active boolean not null,department text
 );
 create table public.staff_sessions(
  token_hash text primary key,user_id text not null references public.staff_credentials(user_id),revoked_at timestamptz
 );
+grant select on public.staff_credentials,public.staff_sessions to service_role;
 create schema zukait_mechanical;
 grant usage on schema zukait_mechanical to service_role;
 create table zukait_mechanical.settings(
@@ -39,6 +42,7 @@ create table zukait_mechanical.checklists(
  id uuid primary key,number text not null,job_card text not null,manual_jc_date date not null,
  created_by text not null references public.staff_credentials(user_id)
 );
+grant select on zukait_mechanical.settings,zukait_mechanical.checklists to service_role;
 insert into zukait_mechanical.settings values(true,true,false,
  '{"SUP003":["MC_CREATE"],"MAN001":["MC_CREATE"]}'::jsonb,'Mechanical','deny',3);
 insert into public.staff_credentials values
@@ -53,6 +57,11 @@ insert into zukait_mechanical.checklists values
 run(setup+auth);
 const migration=fs.readFileSync('supabase/migrations/20261031120000_mechanical_inspection_secure.sql','utf8');
 run(migration);
+const serviceRead=run(`set role service_role;
+ select public.zukait_mechanical_inspection_read('SUP003',repeat('a',64),
+  '11111111-1111-4111-8111-111111111111')->>'ok';
+ reset role;`).trim().split('\\n');
+assert.ok(serviceRead.includes('true'),'service_role must be able to call authenticated inspection RPC');
 const checkGrants=run(`
 select has_function_privilege('anon','public.zukait_mechanical_inspection_read(text,text,uuid)','execute');
 select has_function_privilege('authenticated','public.zukait_mechanical_inspection_save(text,text,uuid,uuid,bigint,jsonb)','execute');
