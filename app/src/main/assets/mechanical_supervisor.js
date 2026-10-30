@@ -20,7 +20,12 @@ async function openSection(section){
  if(['create-checklist','checklists'].includes(section))return workspace(null,section);
  return mount('./mechanical_sections.js','mountMechanicalSection',{section,onBack:()=>workspace(),openChecklist:id=>workspace(id,'checklists'),createChecklist:job=>workspace(null,'create-checklist',job)});
 }
-async function workspace(checklistId,section=null,jobCard=''){return mount('./mechanical_workspace.js?v=20261029037612','mountMechanicalWorkspace',{checklistId,section,jobCard,onClose:()=>workspace(),openSection,openTimeManagement:()=>openSection('time-management'),openDocument:window.ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED===true?documentView:null,openSignature:window.ZUKAIT_MECHANICAL_SIGNATURES_ENABLED===true?signatureView:null,openReport:window.ZUKAIT_MECHANICAL_REPORTS_ENABLED===true?reportView:null,openTracking:window.ZUKAIT_MECHANICAL_TRACKING_ENABLED===true?checklistId=>mount('./mechanical_tracking.js','mountMechanicalTracking',{checklistId}):null,openDelivery:window.ZUKAIT_MECHANICAL_DELIVERY_ENABLED===true?deliveryView:null})}
+async function inspectionView(checklistId,jobCard){
+ return mount('./mechanical_inspection_view.js','mountMechanicalInspection',{
+  checklistId,jobCard,onBack:()=>workspace(checklistId,'checklists')
+ });
+}
+async function workspace(checklistId,section=null,jobCard=''){return mount('./mechanical_workspace.js?v=20261029037612','mountMechanicalWorkspace',{checklistId,section,jobCard,onClose:()=>workspace(),openSection,openTimeManagement:()=>openSection('time-management'),openInspection:inspectionView,openDocument:window.ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED===true?documentView:null,openSignature:window.ZUKAIT_MECHANICAL_SIGNATURES_ENABLED===true?signatureView:null,openReport:window.ZUKAIT_MECHANICAL_REPORTS_ENABLED===true?reportView:null,openTracking:window.ZUKAIT_MECHANICAL_TRACKING_ENABLED===true?checklistId=>mount('./mechanical_tracking.js','mountMechanicalTracking',{checklistId}):null,openDelivery:window.ZUKAIT_MECHANICAL_DELIVERY_ENABLED===true?deliveryView:null})}
 $('mechanical-home').onclick=()=>workspace().catch(e=>$('mechanical-status').textContent=e.message);
 $('mechanical-logout').onclick=()=>{invalidate();if(window.zukaitSessionPrivacy)return window.zukaitSessionPrivacy.signOut();localStorage.removeItem(sessionKey);try{window.AndroidBridge?.clearSecureSessionToken?.()}catch{}location.replace('offline_test.html')};
 window.addEventListener('storage',e=>{if(e.key===sessionKey&&verified){try{token()}catch{}}});
