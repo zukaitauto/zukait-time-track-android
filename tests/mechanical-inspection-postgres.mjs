@@ -7,6 +7,12 @@ assert.equal(process.env.PGHOST,'127.0.0.1','refuse non-local PostgreSQL host');
 assert.equal(process.env.PGPORT,'5432','refuse unexpected PostgreSQL port');
 assert.equal(process.env.PGUSER??'postgres','postgres','isolated test requires postgres user');
 assert.equal(process.env.PGDATABASE??'postgres','postgres','isolated test requires postgres database');
+// Never allow libpq service files, alternate host addresses or connection strings
+// to override the isolated test target.
+for(const key of ['PGHOSTADDR','PGSERVICE','PGSERVICEFILE','PGPASSFILE','PGOPTIONS','PGTARGETSESSIONATTRS','PGREQUIRESSL']){
+ assert.equal(process.env[key],undefined,`unexpected libpq override: ${key}`);
+}
+const psqlArgs=['-X','-h','127.0.0.1','-p','5432','-v','ON_ERROR_STOP=1','-U','postgres','-d','postgres','-At'];
 const setup=`
 DO $roles$ DECLARE role_name text; BEGIN
  FOR role_name IN SELECT unnest(ARRAY['service_role','anon','authenticated']) LOOP
@@ -24,10 +30,10 @@ const probe=`
 SELECT count(*) FROM information_schema.tables WHERE table_schema='zukait_mechanical' AND table_name IN ('inspection_details','inspection_receipts','inspection_audit');
 SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='zukait_mechanical' AND c.relname IN ('inspection_details','inspection_receipts','inspection_audit') AND c.relrowsecurity;
 `;
-const output=execFileSync('psql',['-X','-v','ON_ERROR_STOP=1','-U','postgres','-d','postgres','-At'],{input:setup+sql+probe,encoding:'utf8'});
+const output=execFileSync('psql',psqlArgs,{input:setup+sql+probe,encoding:'utf8'});
 const counts=output.split('\n').filter(x=>x.trim()==='3');
 assert.ok(counts.length>=2,'all three tables must exist with RLS');
-const restrictions=execFileSync('psql',['-X','-v','ON_ERROR_STOP=1','-U','postgres','-d','postgres','-At'],{input:`SELECT count(*) FROM information_schema.role_table_grants WHERE table_schema='zukait_mechanical' AND table_name IN ('inspection_details','inspection_receipts','inspection_audit') AND grantee IN ('anon','authenticated');\nSELECT count(*) FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='zukait_mechanical' AND c.relname IN ('inspection_receipts','inspection_audit') AND NOT t.tgisinternal AND t.tgenabled='O';\n`,encoding:'utf8'}).trim().split('\n');
+const restrictions=execFileSync('psql',psqlArgs,{input:`SELECT count(*) FROM information_schema.role_table_grants WHERE table_schema='zukait_mechanical' AND table_name IN ('inspection_details','inspection_receipts','inspection_audit') AND grantee IN ('anon','authenticated');\nSELECT count(*) FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='zukait_mechanical' AND c.relname IN ('inspection_receipts','inspection_audit') AND NOT t.tgisinternal AND t.tgenabled='O';\n`,encoding:'utf8'}).trim().split('\n');
 assert.deepEqual(restrictions,['0','2'],'client grants must be absent and audit triggers enabled');
 console.log('PASS isolated PostgreSQL Mechanical inspection draft and RLS');
 
@@ -102,6 +108,6 @@ BEGIN
 END;
 $test$;
 `;
-execFileSync('psql',['-X','-v','ON_ERROR_STOP=1','-U','postgres','-d','postgres','-At'],{input:saveDraft+saveProbe,encoding:'utf8'});
+execFileSync('psql',psqlArgs,{input:saveDraft+saveProbe,encoding:'utf8'});
 console.log('PASS isolated Mechanical inspection atomic save, replay, conflict and audit');
 
