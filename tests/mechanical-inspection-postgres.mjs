@@ -38,6 +38,23 @@ DECLARE
   retry_result jsonb;
   next_result jsonb;
 BEGIN
+ BEGIN
+  PERFORM zukait_mechanical.save_inspection_draft(
+   '11111111-1111-4111-8111-111111111111',
+   '55555555-5555-4555-8555-555555555555','SUP003',0,
+   payload - 'jobType');
+  RAISE EXCEPTION 'missing job type incorrectly accepted';
+ EXCEPTION WHEN SQLSTATE '22023' THEN NULL;
+ END;
+ BEGIN
+  PERFORM zukait_mechanical.save_inspection_draft(
+   '66666666-6666-4666-8666-666666666666',
+   '77777777-7777-4777-8777-777777777777','SUP003',0,payload);
+  RAISE EXCEPTION 'unknown checklist incorrectly accepted';
+ EXCEPTION WHEN SQLSTATE 'P0002' THEN NULL;
+ END;
+ IF (SELECT count(*) FROM zukait_mechanical.inspection_receipts) <> 0
+ THEN RAISE EXCEPTION 'invalid saves created receipts'; END IF;
  first_result := zukait_mechanical.save_inspection_draft('11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','SUP003',0,payload);
  IF first_result->>'revision' <> '1' OR first_result->>'replayed' <> 'false' THEN
   RAISE EXCEPTION 'initial save failed: %',first_result;
