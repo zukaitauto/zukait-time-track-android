@@ -54,6 +54,7 @@ try{
   assert.deepEqual((await db.query('select * from workshop_state')).rows,beforeState,'Upgrade must not touch existing garage JSON or revisions');
   assert.deepEqual((await db.query('select user_id,role,department,must_change from staff_credentials order by user_id')).rows,beforeStaff,'Upgrade must not create or convert accounts');
  }
+ if(!mechanicalMigrations.some(f=>f.endsWith('_mechanical_job_intake_v377.sql'))&&fs.existsSync('experiments/v377-mechanical-intake.sql'))await db.exec(fs.readFileSync('experiments/v377-mechanical-intake.sql','utf8'));
  const defaults=(await db.query('select to_jsonb(s) settings from zukait_mechanical.settings s')).rows[0].settings;
  for(const [key,value] of Object.entries(defaults))if(key==='enabled'||key.endsWith('_enabled'))assert.equal(value,false,key+' must remain off');
  assert.deepEqual(defaults.capabilities,{});assert.equal(defaults.department,null);

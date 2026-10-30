@@ -60,6 +60,20 @@ jobs:
         with:
           node-version: '24'
       - run: npm ci --ignore-scripts --include=dev
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.81.3
+      - name: Generate isolated V377 migration draft (no remote database)
+        run: |
+          supabase --version
+          supabase migration --help
+          supabase migration new --help
+          supabase migration new mechanical_job_intake_v377
+          draft_path=$(find supabase/migrations -name '*_mechanical_job_intake_v377.sql')
+          test -n "$draft_path"
+          cp experiments/v377-mechanical-intake.sql "$draft_path"
+          echo "V377_GENERATED_MIGRATION=$draft_path"
+          sha256sum "$draft_path"
       - name: Native transactional persistence and overlapping writers
         run: |
           ZUKAIT_MECHANICAL_INSTALL_MODE=fresh node tests/mechanical-persistence.mjs
