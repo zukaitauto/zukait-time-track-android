@@ -70,15 +70,22 @@ BEGIN
  BEGIN
   PERFORM zukait_mechanical.save_inspection_draft(
    '11111111-1111-4111-8111-111111111111',
-   '88888888-8888-4888-8888-888888888888','EMP001',0,payload,repeat('a',64));
+   '88888888-8888-4888-8888-888888888888','EMP001',0,payload,repeat('b',64));
   RAISE EXCEPTION 'employee save incorrectly accepted';
  EXCEPTION WHEN SQLSTATE '42501' THEN NULL;
  END;
  BEGIN
   PERFORM zukait_mechanical.save_inspection_draft(
    '11111111-1111-4111-8111-111111111111',
-   '99999999-9999-4999-8999-999999999999','SUP004',0,payload,repeat('a',64));
+   '99999999-9999-4999-8999-999999999999','SUP004',0,payload,repeat('c',64));
   RAISE EXCEPTION 'inactive supervisor save incorrectly accepted';
+ EXCEPTION WHEN SQLSTATE '42501' THEN NULL;
+ END;
+ BEGIN
+  PERFORM zukait_mechanical.save_inspection_draft(
+   '11111111-1111-4111-8111-111111111111',
+   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','SUP003',0,payload,repeat('d',64));
+  RAISE EXCEPTION 'invalid session incorrectly accepted';
  EXCEPTION WHEN SQLSTATE '42501' THEN NULL;
  END;
  first_result := zukait_mechanical.save_inspection_draft('11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','SUP003',0,payload,repeat('a',64));
