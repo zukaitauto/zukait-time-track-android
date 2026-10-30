@@ -170,6 +170,6 @@ commit;
  return jsonb_build_object('revision',v_revision+1,'replayed',false);
 end;
 $fn$;
-revoke all on function zukait_mechanical.save_inspection_draft(uuid,uuid,text,bigint,jsonb)
+revoke all on function zukait_mechanical.save_inspection_draft(uuid,uuid,text,bigint,jsonb,text)
  from public,anon,authenticated,service_role;
 commit;
