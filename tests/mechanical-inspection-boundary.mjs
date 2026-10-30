@@ -6,8 +6,8 @@ const requestId='22222222-2222-4222-8222-222222222222';
 const inspection={jobType:'CASH',vehicle:{registration:'1234 AB',make:'Toyota',model:'Camry',year:'2022',customer:'Test',contact:'90000000'},damageMarks:[],functions:Object.fromEntries(INSPECTION_FUNCTIONS.map(k=>[k,{status:'NOT_CHECKED'}])),workDescription:'Inspection'};
 let reads=0,writes=0;
 const context={
- enabled:true,policy:{flags:{mechanical:true}},actor:{id:'SUP003'},
- verifySession:async()=>({id:'SUP003',active:true,role:'Supervisor'}),
+ enabled:true,policy:{flags:{mechanical:true}},actor:{id:'SUP003',role:'Supervisor',department:'Mechanical'},
+ verifySession:async()=>({id:'SUP003',active:true,role:'Supervisor',department:'Mechanical'}),
  authorizeChecklist:async()=>true,
  db:{schema:()=>({from:()=>({select:()=>({eq:()=>({maybeSingle:async()=>{reads++;return {data:null,error:null};}})})})})},
  executeAtomicSave:async()=>{writes++;return {revision:1,replayed:false};}
