@@ -102,7 +102,7 @@ BEGIN
  EXCEPTION WHEN SQLSTATE '40001' THEN NULL;
  END;
  BEGIN
-  PERFORM zukait_mechanical.save_inspection_draft('11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','SUP003',0,jsonb_set(payload,'{workDescription}','"Changed"'));
+  PERFORM zukait_mechanical.save_inspection_draft('11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','SUP003',0,jsonb_set(payload,'{workDescription}','"Changed"'),repeat('a',64));
   RAISE EXCEPTION 'conflicting request incorrectly accepted';
  EXCEPTION WHEN unique_violation THEN NULL;
  END;
