@@ -3,7 +3,28 @@ import {createMechanicalInspectionReadAdapter} from '../supabase/functions/works
 const id='11111111-1111-4111-8111-111111111111';
 const actor={id:'SUP003',active:true,role:'Supervisor'};
 let queries=0;
-const db={schema:name=>{assert.equal(name,'zukait_mechanical');return {from:table=>{assert.equal(table,'inspection_details');return {select:()=>({eq:(key,value)=>{assert.equal(key,'checklist_id');assert.equal(value,id);return {maybeSingle:async()=>{queries++;return {data:{checklist_id:id,revision:2,job_type:'CASH',vehicle:{registration:'1234 AB'},damage_marks:[],function_checks:{},work_description:'Inspection',updated_at:'2026-10-30',updated_by:'SUP003'},error:null};}};}})};}};}};
+const db={
+ schema:name=>{
+  assert.equal(name,'zukait_mechanical');
+  return {from:table=>{
+   assert.equal(table,'inspection_details');
+   return {select:()=>({
+    eq:(key,value)=>{
+     assert.equal(key,'checklist_id');
+     assert.equal(value,id);
+     return {maybeSingle:async()=>{
+      queries++;
+      return {data:{
+       checklist_id:id,revision:2,job_type:'CASH',
+       vehicle:{registration:'1234 AB'},damage_marks:[],function_checks:{},
+       work_description:'Inspection',updated_at:'2026-10-30',updated_by:'SUP003'
+      },error:null};
+     }};
+    }
+   })};
+  }};
+ }
+};
 const adapter=createMechanicalInspectionReadAdapter({db,authorizeChecklist:async()=>true});
 const result=await adapter(id,actor);
 assert.equal(result.revision,2);
