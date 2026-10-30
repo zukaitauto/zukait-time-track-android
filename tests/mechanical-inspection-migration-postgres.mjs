@@ -80,12 +80,32 @@ const escaped=JSON.stringify(inspection).replaceAll("'","''");
 const probe=`
 DO $test$ DECLARE
  p jsonb:='${escaped}'::jsonb;
- r jsonb; r2 jsonb; blocked boolean;
+ r jsonb; r2 jsonb; blocked boolean; malformed jsonb;
 BEGIN
  r:=public.zukait_mechanical_inspection_read('SUP003',repeat('a',64),
   '11111111-1111-4111-8111-111111111111');
  IF r->>'ok'<>'true' OR r->'inspection'<>'null'::jsonb
  THEN RAISE EXCEPTION 'empty read failed: %',r;END IF;
+ -- The database boundary must enforce the same JSON types as the API, even
+ -- when the service-role RPC is called directly with malformed values.
+ FOREACH malformed IN ARRAY ARRAY[
+  jsonb_set(p,'{vehicle,registration}','1234'::jsonb),
+  jsonb_set(p,'{vehicle,year}','2022'::jsonb),
+  jsonb_set(p,'{vehicle,vin}','12345'::jsonb),
+  jsonb_set(p,'{workDescription}','1234'::jsonb),
+  jsonb_set(p,'{damageMarks}','[{"part":42,"mark":"X"}]'::jsonb)
+ ] LOOP
+  BEGIN
+   PERFORM public.zukait_mechanical_inspection_save('SUP003',repeat('a',64),
+    '11111111-1111-4111-8111-111111111111',
+    '33333333-3333-4333-8333-333333333333',0,malformed);
+   RAISE EXCEPTION 'incorrect JSON value type accepted: %',malformed;
+  EXCEPTION WHEN SQLSTATE '22023' THEN NULL;
+  END;
+ END LOOP;
+ IF (SELECT count(*) FROM zukait_mechanical.inspection_receipts)<>0 THEN
+  RAISE EXCEPTION 'invalid type created a receipt';
+ END IF;
  blocked:=false;
  BEGIN
   PERFORM public.zukait_mechanical_inspection_save('EMP001',repeat('c',64),
