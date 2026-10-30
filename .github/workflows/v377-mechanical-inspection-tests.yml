@@ -35,9 +35,12 @@ jobs:
           node --check app/src/main/assets/mechanical_supervisor.js
           node --check app/src/main/assets/mechanical_workspace.js
           for file in tests/mechanical-inspection-*.mjs; do node --check "$file"; done
+      - name: Install browser DOM test dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Run isolated tests
         run: |
           npm run test:mechanical:inspection
+          node tests/mechanical-inspection-view.mjs
 
   isolated-postgres-tests:
     runs-on: ubuntu-latest
