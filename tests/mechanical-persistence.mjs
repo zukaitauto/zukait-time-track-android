@@ -160,8 +160,13 @@ try{
  assert.equal(ordinary.ok,true,'Fresh ordinary full save preserves linked assignments and succeeds');
  assert.deepEqual((await snapshot()).data.sessions,saved.data.sessions);
  await db.exec('reset role');
- assert.equal(Number(await scalar("select count(*) n from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='zukait_mechanical' and c.relkind='r' and c.relrowsecurity")),17,'All17 Mechanical tables require RLS, including scoped intake membership, receipts and audit');
- assert.equal(Number(await scalar("select count(*) n from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='zukait_mechanical' and c.relkind='r' and not c.relrowsecurity")),0);
+ // A fixed count becomes stale when additive, RLS-protected Mechanical tables
+ // are introduced (V377 adds three inspection tables). Check the invariant instead.
+ const mechanicalTables=(await db.query("select c.relname,c.relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='zukait_mechanical' and c.relkind='r' order by c.relname")).rows;
+ assert.ok(mechanicalTables.length>=20,'At least the 17 existing Mechanical tables plus 3 V377 inspection tables must exist');
+ assert.deepEqual(mechanicalTables.filter(t=>!t.relrowsecurity),[],'Every Mechanical table, including all future tables, must enable RLS');
+ for(const name of ['inspection_details','inspection_receipts','inspection_audit'])
+  assert.ok(mechanicalTables.some(t=>t.relname===name&&t.relrowsecurity),'V377 protected table missing: '+name);
  await assert.rejects(db.exec("update zukait_mechanical.audit set actor_id='QA_SUP'"),/mechanical_append_only/,'append-only trigger also rejects owner updates');
  // Both revisions are checked before any metadata or shared writes.
  const stale=await prepare('TASK_CREATE',randomUUID(),{checklistId:firstId,title:'Stale'});await db.exec("update workshop_state set revision=revision+1 where id='main'");const count=Number(await scalar('select count(*) n from zukait_mechanical.tasks'));await assert.rejects(call(stale),/workshop_revision_conflict/);assert.equal(Number(await scalar('select count(*) n from zukait_mechanical.tasks')),count);
