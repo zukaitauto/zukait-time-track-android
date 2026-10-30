@@ -60,7 +60,7 @@ run(migration);
 const serviceRead=run(`set role service_role;
  select public.zukait_mechanical_inspection_read('SUP003',repeat('a',64),
   '11111111-1111-4111-8111-111111111111')->>'ok';
- reset role;`).trim().split('\\n');
+ reset role;`).trim();
 assert.ok(serviceRead.includes('true'),'service_role must be able to call authenticated inspection RPC');
 const checkGrants=run(`
 select has_function_privilege('anon','public.zukait_mechanical_inspection_read(text,text,uuid)','execute');
