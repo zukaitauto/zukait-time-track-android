@@ -127,8 +127,82 @@ begin
    raise exception 'invalid_vehicle' using errcode='22023';
   end if;
  end loop;
- if (p_inspection->'vehicle'->>'year') !~ '^[0-9]{4}$'
-    or (p_inspection->'vehicle'->>'year')::integer not between 1886 and extract(year from now())::integer+1
+ if (p_inspection->'vehicle'->>'year') !~ '^[0-9]{4}
+         ('registration','make','model','year','vin','odometerKm','customer','contact'))
+    or (p_inspection->'vehicle' ? 'vin' and
+        coalesce(p_inspection->'vehicle'->>'vin','') <> '' and
+        upper(p_inspection->'vehicle'->>'vin') !~ '^[A-HJ-NPR-Z0-9]{17}$')
+ then raise exception 'invalid_vehicle' using errcode='22023';end if;
+ if p_inspection->'vehicle' ? 'odometerKm' then
+  if jsonb_typeof(p_inspection->'vehicle'->'odometerKm') is distinct from 'number'
+  then raise exception 'invalid_vehicle' using errcode='22023';end if;
+  if (p_inspection->'vehicle'->>'odometerKm')::numeric not between 0 and 999999999
+  then raise exception 'invalid_vehicle' using errcode='22023';end if;
+ end if;
+ if (select count(*) from jsonb_object_keys(p_inspection->'functions'))<>8
+ then raise exception 'invalid_functions' using errcode='22023';end if;
+ foreach k in array array['lights','wipers','powerWindows','centralLocking','mirrors','horn','dashboardWarning','airConditioning'] loop
+  check_value:=p_inspection->'functions'->k;
+  if jsonb_typeof(check_value) is distinct from 'object'
+  then raise exception 'invalid_functions' using errcode='22023';end if;
+  if coalesce(check_value->>'status','') not in ('OK','ISSUE','NOT_CHECKED')
+   or (check_value->>'status'='ISSUE' and length(trim(coalesce(check_value->>'note','')))=0)
+   or length(coalesce(check_value->>'note',''))>300
+   or (check_value ? 'note' and jsonb_typeof(check_value->'note') is distinct from 'string')
+   or exists(select 1 from jsonb_object_keys(check_value) k2 where k2 not in ('status','note'))
+  then raise exception 'invalid_functions' using errcode='22023';end if;
+ end loop;
+ for mark in select value from jsonb_array_elements(p_inspection->'damageMarks') loop
+  if jsonb_typeof(mark) is distinct from 'object'
+  then raise exception 'invalid_marks' using errcode='22023';end if;
+  if length(trim(coalesce(mark->>'part',''))) not between 1 and 80
+   or coalesce(mark->>'mark','') not in ('X','S','M')
+   or exists(select 1 from jsonb_object_keys(mark) k2 where k2 not in ('part','mark'))
+  then raise exception 'invalid_marks' using errcode='22023';end if;
+ end loop;
+ -- Locks credential+session in authorize_session, then the checklist row.
+ perform zukait_mechanical.inspection_authorize(p_actor,p_session_hash,p_checklist);
+ perform 1 from zukait_mechanical.checklists where id=p_checklist for update;
+ fingerprint:=encode(sha256(convert_to(jsonb_build_object(
+   'actor',p_actor,'checklist',p_checklist,'expected',p_expected,'inspection',p_inspection)::text,'UTF8')),'hex');
+ select * into prior from zukait_mechanical.inspection_receipts where request_id=p_request;
+ if found then
+  if prior.checklist_id=p_checklist and prior.actor_id=p_actor
+     and prior.expected_revision=p_expected and prior.fingerprint=fingerprint
+  then return jsonb_build_object('revision',prior.result_revision,'replayed',true);end if;
+  raise exception 'inspection_request_conflict' using errcode='23505';
+ end if;
+ select * into d from zukait_mechanical.inspection_details where checklist_id=p_checklist for update;
+ if found then
+  current_revision:=d.revision;
+  before_value:=jsonb_build_object('revision',d.revision,'jobType',d.job_type,'vehicle',d.vehicle,
+   'damageMarks',d.damage_marks,'functions',d.function_checks,'workDescription',d.work_description);
+ end if;
+ if current_revision<>p_expected then raise exception 'inspection_revision_conflict' using errcode='40001';end if;
+ new_revision:=current_revision+1;
+ insert into zukait_mechanical.inspection_details(
+  checklist_id,revision,job_type,vehicle,damage_marks,function_checks,work_description,created_by,updated_by)
+ values(p_checklist,new_revision,p_inspection->>'jobType',p_inspection->'vehicle',
+  p_inspection->'damageMarks',p_inspection->'functions',p_inspection->>'workDescription',p_actor,p_actor)
+ on conflict(checklist_id) do update set revision=excluded.revision,job_type=excluded.job_type,
+  vehicle=excluded.vehicle,damage_marks=excluded.damage_marks,function_checks=excluded.function_checks,
+  work_description=excluded.work_description,updated_by=excluded.updated_by,updated_at=clock_timestamp();
+ insert into zukait_mechanical.inspection_receipts(
+  request_id,checklist_id,actor_id,expected_revision,result_revision,fingerprint)
+ values(p_request,p_checklist,p_actor,p_expected,new_revision,fingerprint);
+ insert into zukait_mechanical.inspection_audit(
+  request_id,checklist_id,actor_id,before_value,after_value)
+ values(p_request,p_checklist,p_actor,before_value,p_inspection);
+ return jsonb_build_object('revision',new_revision,'replayed',false);
+end $save$;
+revoke all on function public.zukait_mechanical_inspection_save(text,text,uuid,uuid,bigint,jsonb)
+ from public,anon,authenticated;
+grant execute on function public.zukait_mechanical_inspection_save(text,text,uuid,uuid,bigint,jsonb)
+ to service_role;
+commit;
+
+ then raise exception 'invalid_vehicle_year' using errcode='22023';end if;
+ if (p_inspection->'vehicle'->>'year')::integer not between 1886 and extract(year from now())::integer+1
     or exists(select 1 from jsonb_object_keys(p_inspection->'vehicle') k2 where k2 not in
          ('registration','make','model','year','vin','odometerKm','customer','contact'))
     or (p_inspection->'vehicle' ? 'vin' and
