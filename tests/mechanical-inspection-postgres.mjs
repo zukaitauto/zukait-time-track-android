@@ -1,0 +1,22 @@
+// PostgreSQL 17 isolated schema execution; never connects to production.
+import {execFileSync} from 'node:child_process';
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+assert.equal(process.env.ZUKAIT_MECHANICAL_NATIVE,'1','isolated PostgreSQL opt-in required');
+const setup=`
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role NOLOGIN; END IF; END $$;
+CREATE SCHEMA public_test_guard;
+CREATE TABLE IF NOT EXISTS public.staff_credentials(user_id text primary key);
+CREATE SCHEMA zukait_mechanical;
+CREATE TABLE zukait_mechanical.checklists(id uuid primary key);
+CREATE FUNCTION zukait_mechanical.append_only() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'mechanical_append_only'; END $$;
+`;
+const sql=fs.readFileSync('experiments/v377-mechanical-inspection-details.sql','utf8');
+const probe=`
+SELECT count(*) FROM information_schema.tables WHERE table_schema='zukait_mechanical' AND table_name IN ('inspection_details','inspection_receipts','inspection_audit');
+SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='zukait_mechanical' AND c.relname IN ('inspection_details','inspection_receipts','inspection_audit') AND c.relrowsecurity;
+`;
+const output=execFileSync('psql',['-X','-v','ON_ERROR_STOP=1','-U','postgres','-d','postgres','-At'],{input:setup+sql+probe,encoding:'utf8'});
+const counts=output.split('\n').filter(x=>x.trim()==='3');
+assert.ok(counts.length>=2,'all three tables must exist with RLS');
+console.log('PASS isolated PostgreSQL Mechanical inspection draft and RLS');
