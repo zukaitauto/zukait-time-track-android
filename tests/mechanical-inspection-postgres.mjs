@@ -22,6 +22,7 @@ DO $roles$ DECLARE role_name text; BEGIN
  END LOOP;
 END $roles$;
 CREATE TABLE IF NOT EXISTS public.staff_credentials(user_id text primary key, role text not null, active boolean not null);
+CREATE TABLE public.staff_sessions(user_id text references public.staff_credentials(user_id), token_hash text primary key, revoked_at timestamptz);
 CREATE SCHEMA zukait_mechanical;
 CREATE TABLE zukait_mechanical.checklists(id uuid primary key);
 `;
@@ -40,6 +41,7 @@ console.log('PASS isolated PostgreSQL Mechanical inspection draft and RLS');
 const saveDraft=fs.readFileSync('experiments/v377-mechanical-inspection-save-draft.sql','utf8');
 const saveProbe=`
 INSERT INTO public.staff_credentials(user_id,role,active) VALUES ('SUP003','Supervisor',true),('EMP001','Employee',true),('SUP004','Supervisor',false);
+INSERT INTO public.staff_sessions(user_id,token_hash) VALUES ('SUP003',repeat('a',64)),('EMP001',repeat('b',64)),('SUP004',repeat('c',64));
 INSERT INTO zukait_mechanical.checklists(id) VALUES ('11111111-1111-4111-8111-111111111111');
 DO $test$
 DECLARE
@@ -52,14 +54,14 @@ BEGIN
   PERFORM zukait_mechanical.save_inspection_draft(
    '11111111-1111-4111-8111-111111111111',
    '55555555-5555-4555-8555-555555555555','SUP003',0,
-   payload - 'jobType');
+   payload - 'jobType',repeat('a',64));
   RAISE EXCEPTION 'missing job type incorrectly accepted';
  EXCEPTION WHEN SQLSTATE '22023' THEN NULL;
  END;
  BEGIN
   PERFORM zukait_mechanical.save_inspection_draft(
    '66666666-6666-4666-8666-666666666666',
-   '77777777-7777-4777-8777-777777777777','SUP003',0,payload);
+   '77777777-7777-4777-8777-777777777777','SUP003',0,payload,repeat('a',64));
   RAISE EXCEPTION 'unknown checklist incorrectly accepted';
  EXCEPTION WHEN SQLSTATE 'P0002' THEN NULL;
  END;
@@ -68,27 +70,27 @@ BEGIN
  BEGIN
   PERFORM zukait_mechanical.save_inspection_draft(
    '11111111-1111-4111-8111-111111111111',
-   '88888888-8888-4888-8888-888888888888','EMP001',0,payload);
+   '88888888-8888-4888-8888-888888888888','EMP001',0,payload,repeat('a',64));
   RAISE EXCEPTION 'employee save incorrectly accepted';
  EXCEPTION WHEN SQLSTATE '42501' THEN NULL;
  END;
  BEGIN
   PERFORM zukait_mechanical.save_inspection_draft(
    '11111111-1111-4111-8111-111111111111',
-   '99999999-9999-4999-8999-999999999999','SUP004',0,payload);
+   '99999999-9999-4999-8999-999999999999','SUP004',0,payload,repeat('a',64));
   RAISE EXCEPTION 'inactive supervisor save incorrectly accepted';
  EXCEPTION WHEN SQLSTATE '42501' THEN NULL;
  END;
- first_result := zukait_mechanical.save_inspection_draft('11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','SUP003',0,payload);
+ first_result := zukait_mechanical.save_inspection_draft('11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','SUP003',0,payload,repeat('a',64));
  IF first_result->>'revision' <> '1' OR first_result->>'replayed' <> 'false' THEN
   RAISE EXCEPTION 'initial save failed: %',first_result;
  END IF;
- retry_result := zukait_mechanical.save_inspection_draft('11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','SUP003',0,payload);
+ retry_result := zukait_mechanical.save_inspection_draft('11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','SUP003',0,payload,repeat('a',64));
  IF retry_result->>'revision' <> '1' OR retry_result->>'replayed' <> 'true' THEN
   RAISE EXCEPTION 'idempotent retry failed: %',retry_result;
  END IF;
  BEGIN
-  PERFORM zukait_mechanical.save_inspection_draft('11111111-1111-4111-8111-111111111111','33333333-3333-4333-8333-333333333333','SUP003',0,payload);
+  PERFORM zukait_mechanical.save_inspection_draft('11111111-1111-4111-8111-111111111111','33333333-3333-4333-8333-333333333333','SUP003',0,payload,repeat('a',64));
   RAISE EXCEPTION 'stale revision incorrectly accepted';
  EXCEPTION WHEN SQLSTATE '40001' THEN NULL;
  END;
@@ -113,7 +115,7 @@ BEGIN
   RAISE EXCEPTION 'immutable audit was deleted';
  EXCEPTION WHEN SQLSTATE '55000' THEN NULL;
  END;
- next_result := zukait_mechanical.save_inspection_draft('11111111-1111-4111-8111-111111111111','44444444-4444-4444-8444-444444444444','SUP003',1,payload);
+ next_result := zukait_mechanical.save_inspection_draft('11111111-1111-4111-8111-111111111111','44444444-4444-4444-8444-444444444444','SUP003',1,payload,repeat('a',64));
  IF next_result->>'revision' <> '2' THEN RAISE EXCEPTION 'revision advance failed'; END IF;
  IF (SELECT count(*) FROM zukait_mechanical.inspection_receipts) <> 2
     OR (SELECT count(*) FROM zukait_mechanical.inspection_audit) <> 2
@@ -123,7 +125,7 @@ END;
 $test$;
 `;
 execFileSync('psql',psqlArgs,{input:saveDraft+saveProbe,encoding:'utf8'});
-const functionGrants=execFileSync('psql',psqlArgs,{input:`SELECT has_function_privilege('anon','zukait_mechanical.save_inspection_draft(uuid,uuid,text,bigint,jsonb)','EXECUTE');\nSELECT has_function_privilege('authenticated','zukait_mechanical.save_inspection_draft(uuid,uuid,text,bigint,jsonb)','EXECUTE');\nSELECT has_function_privilege('service_role','zukait_mechanical.save_inspection_draft(uuid,uuid,text,bigint,jsonb)','EXECUTE');\n`,encoding:'utf8'}).trim().split('\n');
+const functionGrants=execFileSync('psql',psqlArgs,{input:`SELECT has_function_privilege('anon','zukait_mechanical.save_inspection_draft(uuid,uuid,text,bigint,jsonb,text)','EXECUTE');\nSELECT has_function_privilege('authenticated','zukait_mechanical.save_inspection_draft(uuid,uuid,text,bigint,jsonb)','EXECUTE');\nSELECT has_function_privilege('service_role','zukait_mechanical.save_inspection_draft(uuid,uuid,text,bigint,jsonb)','EXECUTE');\n`,encoding:'utf8'}).trim().split('\n');
 assert.deepEqual(functionGrants,['f','f','f'],'experimental save function must be inaccessible to API roles');
 console.log('PASS isolated Mechanical inspection atomic save, replay, conflict and audit');
 
