@@ -16,7 +16,9 @@ export async function mechanicalInspectionApi(input,server={}){
  if(input.operation==='READ_INSPECTION'){
   if('inspection'in input||'requestId'in input||'expectedRevision'in input)return fail('invalid_command');
   if(typeof server.readInspection!=='function')return fail('mechanical_adapter_unavailable',503);
-  const record=await server.readInspection(input.checklistId,actor);
+  const current=await server.verifySession();
+  if(!current||current.active!==true||current.id!==actor.id||current.role!==actor.role)return fail('session_changed',401);
+  const record=await server.readInspection(input.checklistId,current);
   return {status:200,body:{ok:true,inspection:record??null}};
  }
  if(!uuid(input.requestId)||!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<0)return fail('invalid_command');
