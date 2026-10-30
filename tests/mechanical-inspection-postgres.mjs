@@ -56,6 +56,22 @@ BEGIN
   RAISE EXCEPTION 'conflicting request incorrectly accepted';
  EXCEPTION WHEN unique_violation THEN NULL;
  END;
+ -- Failed writes must not create receipts or audit records.
+ IF (SELECT count(*) FROM zukait_mechanical.inspection_receipts) <> 1
+    OR (SELECT count(*) FROM zukait_mechanical.inspection_audit) <> 1
+ THEN RAISE EXCEPTION 'failed writes left audit or receipt rows'; END IF;
+ BEGIN
+  UPDATE zukait_mechanical.inspection_receipts SET fingerprint=repeat('a',64)
+  WHERE request_id='22222222-2222-4222-8222-222222222222';
+  RAISE EXCEPTION 'immutable receipt was modified';
+ EXCEPTION WHEN SQLSTATE '55000' THEN NULL;
+ END;
+ BEGIN
+  DELETE FROM zukait_mechanical.inspection_audit
+  WHERE request_id='22222222-2222-4222-8222-222222222222';
+  RAISE EXCEPTION 'immutable audit was deleted';
+ EXCEPTION WHEN SQLSTATE '55000' THEN NULL;
+ END;
  next_result := zukait_mechanical.save_inspection_draft('11111111-1111-4111-8111-111111111111','44444444-4444-4444-8444-444444444444','SUP003',1,payload);
  IF next_result->>'revision' <> '2' THEN RAISE EXCEPTION 'revision advance failed'; END IF;
  IF (SELECT count(*) FROM zukait_mechanical.inspection_receipts) <> 2
