@@ -89,6 +89,7 @@ jobs:
       - run: node tests/mechanical-report.mjs
       - run: node tests/mechanical-report-ui.mjs
       - run: npx playwright install chromium
+      - run: node tests/v377-performance-browser.mjs
       - run: node tests/accountant-bill-intent-browser.mjs
       - run: node tests/accountant-bill-workspace-browser.mjs
       - run: node tests/mechanical-supervisor-role-browser.mjs

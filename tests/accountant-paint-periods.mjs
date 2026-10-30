@@ -8,12 +8,12 @@ const ctx={state,me:{role:'Manager'},Date,console,setTimeout(){},openModal(html)
 ctx.window=ctx;vm.createContext(ctx);vm.runInContext(source.slice(start,end),ctx);
 for(const [month,expected] of [['2026-09',20],['2026-10',-5]]){
  ctx.v145SetExpenseMonth(month);ctx.v145SetExpenseCategory('paint');
- const total=Number(ctx.modal.match(/Paint Expense<\/span><b>OMR (-?[\d.]+)/)[1]);
+ const total=Number(ctx.modal.match(/Paint<\/span><b>OMR (-?[\d.]+)/)[1]);
  assert.equal(total,expected);
  const report=financialReport({state},{month},Date.parse('2026-11-02T08:00:00Z'));
  assert.equal(report.summary.paint.amount_omr,total,'Manager and Accountant month totals agree');
  ctx.v145OpenConsumablesJobCard('PAINT1');
- assert.match(ctx.modal,new RegExp('Total Consumables Expense <b>OMR '+expected.toFixed(3).replace('.','\\.')));
+ assert.match(ctx.modal,new RegExp('Total Consumables Cost <b>OMR '+expected.toFixed(3).replace('.','\\.')));
  assert.equal(report.rows.paint.reduce((n,r)=>n+r.net_cost_omr,0),total,'month rows match report total');
 }
 const all=financialReport({state},{},Date.parse('2026-11-02T08:00:00Z'));

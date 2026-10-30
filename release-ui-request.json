@@ -1,6 +1,6 @@
 {
-  "versionName": "V376",
-  "versionCode": 339,
+  "versionName": "V377",
+  "versionCode": 340,
   "releaseScope": "standard",
   "approvedForStaff": false,
   "sourceCommit": null,
@@ -9,7 +9,7 @@
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "reason": "Coordinated standard V376 candidate. No UI-only waiver and no reuse of V375 approval.",
+  "reason": "V377 development only; no publication until FINAL \u2014 RELEASE V377.",
   "backendDeploymentRequired": false,
-  "verificationSummary": "Final exact-source candidate qualification pending. Published V375 remains current."
+  "verificationSummary": "Candidate development in progress; production V376 remains current."
 }

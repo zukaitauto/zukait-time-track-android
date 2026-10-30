@@ -19,6 +19,6 @@ assert.doesNotMatch(b,/card\('consumables','Consumables Expense'/,'V123 must not
 const v145=s.slice(s.indexOf('V145 MANAGER WORKSHOP PERFORMANCE'));
 assert.match(v145,/grid\.querySelector\('\.v145-consumables'\)/,'Consumables Expense card must be reused on each render');
 assert.match(v145,/a&&!a\.voided&&a\.locked/,'Consumables Expense must count finalized, non-voided records');
-assert.match(v145,/Paint Expense.*Other Consumables.*Total Expense.*Job Cards/,'Consumables detail must show its breakdown');
+assert.match(v145,/Paint.*Paint Materials.*Total Consumables.*Job Cards/,'Consumables detail must show its breakdown');
 console.log('Manager Workshop Performance spare-parts/consumables regression passed');
 

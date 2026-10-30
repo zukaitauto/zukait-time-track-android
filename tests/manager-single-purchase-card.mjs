@@ -54,8 +54,8 @@ for(const [range,total,sublet] of [['month','38.005','8.005'],['today','6.005','
  const detail=fields.get('v123PurchaseBody').innerHTML;
  assert.ok(detail.includes('<span>Total Parts</span>'),'parts footer is displayed separately');
  assert.ok(detail.includes('<span>Total Sublet</span>'),'sublet footer remains');
- assert.ok(detail.includes('<span>Total Purchase Expense · Parts + Sublet</span>'),'combined footer clearly identifies its components');
- assert.ok(detail.indexOf('<span>Total Parts</span>')<detail.indexOf('<span>Total Sublet</span>')&&detail.indexOf('<span>Total Sublet</span>')<detail.indexOf('<span>Total Purchase Expense · Parts + Sublet</span>'));
+ assert.ok(detail.includes('<span>Total Purchase Cost · Parts + Sublet</span>'),'combined footer clearly identifies its components');
+ assert.ok(detail.indexOf('<span>Total Parts</span>')<detail.indexOf('<span>Total Sublet</span>')&&detail.indexOf('<span>Total Sublet</span>')<detail.indexOf('<span>Total Purchase Cost · Parts + Sublet</span>'));
  assert.ok(detail.includes((Number(total)-Number(sublet)).toFixed(3)+' OMR'),'parts equals combined purchase minus sublet');
 }
 assert.equal(JSON.stringify(context.state),combinedSnapshot);assert.equal(JSON.stringify([...cache]),partsSnapshot,'report does not change parts or sublet records');

@@ -1,135 +1,49 @@
 {
-  "versionName": "V376",
-  "versionCode": 339,
-  "sourceCommit": "52bf09188c11803af736de67da69ef584f60292b",
+  "versionName": "V377",
+  "versionCode": 340,
+  "sourceCommit": "3fe496a8f7e8edfa12184f43aa4f0fded8fcbd5f",
   "checks": {
     "client_https_restart": {
       "passed": false,
-      "evidence": "Owner reports V376 restart tests in Chrome/Safari, but the exact tested web build is unavailable. Owner explicitly authorized deferring exact browser-build verification and releasing V376.",
+      "evidence": "V377 development qualification pending; previous release evidence and deferrals are not reused.",
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "client_https_restart",
-          "physical_safari"
-        ],
-        "status": "OWNER_REPORTED_BUILD_UNVERIFIED_DEFERRED",
-        "versionName": "V376",
-        "versionCode": 339,
-        "sourceCommit": "52bf09188c11803af736de67da69ef584f60292b",
-        "authorizedBy": "Owner in this conversation",
-        "recordedAt": "2026-10-29T19:09:44Z",
-        "instruction": "Defer browser-build verification and release",
-        "scope": "Owner reports V376 browser tests; exact tested browser build cannot be established. Defer only this release's exact-source HTTPS restart/Safari verification."
-      }
+      "verifiedAt": null
     },
     "physical_android": {
-      "passed": true,
-      "evidence": "Owner confirmed updated twelve-screen signed V376 candidate40885648299/artifact12902736665 as working, including every Mechanical card and Time Management opened without saving; owner separately confirmed BOTH Manager and Jibin/SUP003 were used. Tested runtimebd8f977 is byte-identical in app/backend/migrations to5110699; candidate50c5b0a changes only release documents/metadata and QA workflow path filters. No invented device model, OS, offline/cold restart or Safari result. Final release source52bf091 changes only release metadata, acceptance validator and regression tests; application/native/backend/migrations remain identical to qualified50c5b0a and owner-tested runtime. New signed run40937518458 passed.",
-      "verifiedBy": "Owner on Android; Codex runtime/source comparison",
-      "verifiedAt": "2026-10-29T17:56:56Z"
+      "passed": false,
+      "evidence": "V377 development qualification pending; previous release evidence and deferrals are not reused.",
+      "verifiedBy": null,
+      "verifiedAt": null
     },
     "physical_safari": {
       "passed": false,
-      "evidence": "Owner reports V376 restart tests in Chrome/Safari, but the exact tested web build is unavailable. Owner explicitly authorized deferring exact browser-build verification and releasing V376.",
+      "evidence": "V377 development qualification pending; previous release evidence and deferrals are not reused.",
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "client_https_restart",
-          "physical_safari"
-        ],
-        "status": "OWNER_REPORTED_BUILD_UNVERIFIED_DEFERRED",
-        "versionName": "V376",
-        "versionCode": 339,
-        "sourceCommit": "52bf09188c11803af736de67da69ef584f60292b",
-        "authorizedBy": "Owner in this conversation",
-        "recordedAt": "2026-10-29T19:09:44Z",
-        "instruction": "Defer browser-build verification and release",
-        "scope": "Owner reports V376 browser tests; exact tested browser build cannot be established. Defer only this release's exact-source HTTPS restart/Safari verification."
-      }
+      "verifiedAt": null
     },
     "full_data_preservation": {
-      "passed": true,
-      "evidence": "Current application/backend/migrations are unchanged from qualified50c5b0a. Contracts40925418984 and regression40925418934 passed; isolated tests verify preservation. Mechanical backend98 was subsequently deployed and verified as recorded. This is preservation test evidence, not a fresh production backup restore. Final-source contracts40937518270 and full regression40937518333 passed.",
-      "verifiedBy": "GitHub Actions and Codex source/preflight review",
-      "verifiedAt": "2026-10-29T17:56:56Z"
+      "passed": false,
+      "evidence": "V377 development qualification pending; previous release evidence and deferrals are not reused.",
+      "verifiedBy": null,
+      "verifiedAt": null
     },
     "fresh_backup_restored": {
       "passed": false,
-      "evidence": "Fresh backup restore test was not performed. Owner explicitly instructed that it be deferred until after V376 publication; waiver recorded separately. Historical October 27 backup predates October 29 Mechanical migrations.",
+      "evidence": "V377 development qualification pending; previous release evidence and deferrals are not reused.",
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "check": "fresh_backup_restored",
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V376",
-        "versionCode": 339,
-        "sourceCommit": "52bf09188c11803af736de67da69ef584f60292b",
-        "authorizedBy": "Owner in this conversation",
-        "recordedAt": "2026-10-29T18:52:58Z",
-        "instruction": "I don't want backup test, bypass it and release, we can do backup test later",
-        "scope": "Fresh production backup restore test only, for this release. Does not attest that a fresh backup exists or that restore testing passed. Does not waive other checks."
-      }
+      "verifiedAt": null
     },
     "pc_site_reconciled": {
-      "passed": true,
-      "evidence": "Current candidate50c5b0a staged PC validation40925418940 succeeded. App source remains identical to the owner-tested twelve-screen runtime. Coordinated publisher remains unchanged and must verify actual public Pages/APK/updater parity after publication; no staff site update is claimed. Final source52bf091 differs from50c5b0a only in release metadata and acceptance validator/tests, with no web or app asset changes.",
-      "verifiedBy": "GitHub Actions and source review",
-      "verifiedAt": "2026-10-29T17:56:56Z"
+      "passed": false,
+      "evidence": "V377 development qualification pending; previous release evidence and deferrals are not reused.",
+      "verifiedBy": null,
+      "verifiedAt": null
     },
     "production_backend_smoke": {
-      "passed": true,
-      "evidence": "Owner-confirmed read-only Android smoke of all twelve Mechanical screens and Time Management passed for BOTH Manager and Jibin/SUP003 against deployed workshop-api98; the new scoped sections/time reads use the live API. Server-side verification additionally confirmed approved SQL bodies, private RLS/execute permissions, original Reception-only guard change, all38 bundled source files/relative imports, and invalid-actor RPC denial before writes. No synthetic production records were created; new private tables were empty after deployment. This verifies changed-path read access and security checks; it does not claim save/time-correction/delivery business lifecycle testing or physical HTTPS restart/Safari acceptance.",
-      "verifiedBy": "Owner live role checks plus Codex deployed-source/SQL security verification",
-      "verifiedAt": "2026-10-29T17:56:56Z"
-    }
-  },
-  "previousPurchaseCandidate": {
-    "sourceCommit": "f70dafbf80866d0b29d659fa872e069d0e7fda8c",
-    "checks": {
-      "client_https_restart": {
-        "passed": false,
-        "evidence": "Pending current-candidate evidence/review for client_https_restart. Exact-source CI and owner Android result are recorded separately. Prior V375 attestation was not copied or relabelled as a new test.",
-        "verifiedBy": null,
-        "verifiedAt": null
-      },
-      "physical_android": {
-        "passed": true,
-        "evidence": "Owner replied good in this chat to the signed V376 Android test for Workshop Performance Parts + Sublet totals and Mechanical navigation without business writes. Tested signed artifact12836262116 from run40733582261 at d0888e43ca508d314f35d7aed4a6444a35b1f213. Final candidate f70dafbf80866d0b29d659fa872e069d0e7fda8c differs only in two offline_test.html script cache query identifiers; runtime scripts, native code and build version339 unchanged. This is limited owner-confirmed navigation/total evidence; no invented device model, restart or offline test.",
-        "verifiedBy": "Owner on Android; Codex source-diff review",
-        "verifiedAt": "2026-10-28T17:19:04Z"
-      },
-      "physical_safari": {
-        "passed": false,
-        "evidence": "Pending current-candidate evidence/review for physical_safari. Exact-source CI and owner Android result are recorded separately. Prior V375 attestation was not copied or relabelled as a new test.",
-        "verifiedBy": null,
-        "verifiedAt": null
-      },
-      "full_data_preservation": {
-        "passed": true,
-        "evidence": "Current runtime-source regression passed on d0888e4: signed/APK full functional regression, stale full-state history-preservation tests, sync compatibility, Mechanical/Accountant native contracts and fresh/upgrade persistence. Final f70dafb changes only script cache query identifiers. Source review confines this correction to report hydration, display and session-response rejection; no business write API, database, permission, calculation or production records changed. Local Parts/Sublet tests snapshot state/cache around read-only expense calculations. This is code-path/data-preservation evidence, not a checksum of concurrently changing live business data or a new backup restore. Final f70dafb Reception40735064778, contracts40735064717, Accountant40735064878 and signed full-regression40735064773 all passed.",
-        "verifiedBy": "Codex source review and exact-runtime GitHub CI",
-        "verifiedAt": "2026-10-28T17:27:02Z"
-      },
-      "fresh_backup_restored": {
-        "passed": false,
-        "evidence": "Pending current-candidate evidence/review for fresh_backup_restored. Exact-source CI and owner Android result are recorded separately. Prior V375 attestation was not copied or relabelled as a new test.",
-        "verifiedBy": null,
-        "verifiedAt": null
-      },
-      "pc_site_reconciled": {
-        "passed": true,
-        "evidence": "Final source f70dafbf80866d0b29d659fa872e069d0e7fda8c passed staged PC website validation run40735064723. Both existing publisher recipes copy v74_updates.js and v2/features/spare-parts/main_module.js; offline_test.html now uses fresh numeric cache query202610280376 for both. No Pages deployment has been performed. The unchanged coordinated publisher rechecks staged/public manifest, APK and updater parity before advancing publication.",
-        "verifiedBy": "GitHub Actions staged PC validation and Codex publisher/source review",
-        "verifiedAt": "2026-10-28T17:27:02Z"
-      },
-      "production_backend_smoke": {
-        "passed": false,
-        "evidence": "Pending current-candidate evidence/review for production_backend_smoke. Exact-source CI and owner Android result are recorded separately. Prior V375 attestation was not copied or relabelled as a new test.",
-        "verifiedBy": null,
-        "verifiedAt": null
-      }
+      "passed": false,
+      "evidence": "V377 development qualification pending; previous release evidence and deferrals are not reused.",
+      "verifiedBy": null,
+      "verifiedAt": null
     }
   }
 }

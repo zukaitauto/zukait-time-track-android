@@ -14,7 +14,7 @@ for(const [key,order] of [['progress',2],['repeat',3],['efficiency',4],['overall
  const rule=section.slice(pos,section.indexOf('}',pos));
  assert.ok(rule.includes('order:'+order+';'),key+' card order');
 }
-assert.match(section,/openGlanceList\('overdue'\)/,'over-allocated tile opens overdue list');
+assert.match(section,/window\.v377OpenOverAllocated\(\)/,'over-allocated tile opens overdue list');
 assert.match(section,/window\.openEmployeeEfficiency\(\)/,'efficiency tile opens employee ranking');
 assert.match(section,/event\.stopImmediatePropagation\(\)/,'legacy handler blocked');
 assert.match(html,/Completed normal assignments only/,'employee ranking excludes repeat assignments');

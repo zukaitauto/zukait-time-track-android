@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import {overAllocatedRows,completedRanking} from '../app/src/main/assets/workshop_performance.js';
+const t=hour=>Date.parse('2026-10-05T'+String(hour).padStart(2,'0')+':00:00+04:00');
+const a={id:'A',job:'JC1',emp:'E',suggested:60,assignedAt:t(8)},s={id:'S',assignmentId:'A',job:'JC1',emp:'E',start:t(8),end:null};
+const data={jobs:[{no:'JC1'}],users:[{id:'E',name:'Employee',department:'Denter'}],assign:[a],sessions:[s]};
+assert.equal(overAllocatedRows(data,t(9)).length,0);
+assert.equal(overAllocatedRows(data,t(10))[0].exceeded,60,'running normal time');
+s.end=t(10);assert.equal(overAllocatedRows(data,t(11))[0].exceeded,60,'pause stops accumulation');
+data.sessions.push({...s});data.assign.push({...a});assert.equal(overAllocatedRows(data,t(11))[0].exceeded,60,'assignment/session IDs counted once');
+data.assign=[a];a.suggested=90;assert.equal(overAllocatedRows(data,t(11))[0].exceeded,30,'manager allocation correction');
+data.sessions=[{...s,end:t(9)}];assert.equal(overAllocatedRows(data,t(11)).length,0,'manager session correction');
+data.sessions=[{...s,start:t(18),end:t(21)}];assert.equal(overAllocatedRows(data,t(21)).length,0,'overtime excluded');
+data.sessions=[s];a.suggested=60;a.completed=true;a.completedAt=t(10);
+assert.equal(overAllocatedRows(data,t(11)).length,0,'finished assignment leaves active-overrun report');
+assert.equal(completedRanking(data,'2026-10',t(11))[0].efficiency,50);
+assert.equal(completedRanking(data,'2026-09',t(11)).length,0);
+for(const patch of [{cancelled:true},{rework:true},{repeat:true},{job:'ID001'}]){const d={...data,assign:[{...a,...patch}]};assert.equal(completedRanking(d,'2026-10',t(11)).length,0);}
+const b={id:'B',job:'JC2',emp:'E',suggested:180,completed:true,completedAt:t(12)};data.assign.push(b);data.sessions.push({id:'S2',assignmentId:'B',job:'JC2',emp:'E',start:t(10),end:t(12)});
+assert.equal(completedRanking(data,'2026-10',t(13))[0].efficiency,100,'weighted totals, not average of percentages');
+assert.equal(completedRanking(data,'2026-10',t(13))[0].jobs,2);
+data.users[0].department='Mechanic';assert.equal(completedRanking(data,'2026-10',t(13)).length,0,'Mechanical work excluded from Body ranking');
+console.log('PASS V377 performance: start/pause/finish, manager corrections, deduplication, duty/overtime, weighted ranking, month and department isolation');

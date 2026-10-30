@@ -4,6 +4,9 @@ set -euo pipefail
 if ! node -e "require.resolve('jsdom')" >/dev/null 2>&1; then
   npm ci --ignore-scripts --include=dev
 fi
+node tests/v377-workshop-performance-ui.mjs
+node tests/v377-financial-integration.mjs
+node tests/v377-performance-calculations.mjs
 node tests/workshop-week.mjs
 node tests/mechanical-time-ui.mjs
 node tests/mechanical-sections-ui.mjs
