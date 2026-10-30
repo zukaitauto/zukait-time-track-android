@@ -19,8 +19,8 @@ declare
 begin
  if p_checklist is null or p_request is null or p_actor is null
     or p_expected is null or p_expected < 0
-    or p_inspection is null or jsonb_typeof(p_inspection) <> 'object'
-    or p_inspection->>'jobType' not in ('CASH','CREDIT')
+    or p_inspection is null or jsonb_typeof(p_inspection) is distinct from 'object'
+    or coalesce(p_inspection->>'jobType','') not in ('CASH','CREDIT')
     or jsonb_typeof(p_inspection->'vehicle') is distinct from 'object'
     or jsonb_typeof(p_inspection->'damageMarks') is distinct from 'array'
     or jsonb_typeof(p_inspection->'functions') is distinct from 'object'
