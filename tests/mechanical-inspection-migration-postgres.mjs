@@ -71,20 +71,22 @@ const escaped=JSON.stringify(inspection).replaceAll("'","''");
 const probe=`
 DO $test$ DECLARE
  p jsonb:='${escaped}'::jsonb;
- r jsonb; r2 jsonb;
+ r jsonb; r2 jsonb; blocked boolean;
 BEGIN
  r:=public.zukait_mechanical_inspection_read('SUP003',repeat('a',64),
   '11111111-1111-4111-8111-111111111111');
  IF r->>'ok'<>'true' OR r->'inspection'<>'null'::jsonb
  THEN RAISE EXCEPTION 'empty read failed: %',r;END IF;
+ blocked:=false;
  BEGIN
   PERFORM public.zukait_mechanical_inspection_save('EMP001',repeat('c',64),
    '11111111-1111-4111-8111-111111111111',
    '22222222-2222-4222-8222-222222222222',0,p);
-  RAISE EXCEPTION 'employee save authorized';
  EXCEPTION WHEN OTHERS THEN
   IF SQLSTATE NOT IN ('42501','P0001') THEN RAISE;END IF;
+  blocked:=true;
  END;
+ IF NOT blocked THEN RAISE EXCEPTION 'employee save authorized';END IF;
  BEGIN
   PERFORM public.zukait_mechanical_inspection_save('SUP003',repeat('a',64),
    '33333333-3333-4333-8333-333333333333',
@@ -121,21 +123,23 @@ BEGIN
     (select count(*) from zukait_mechanical.inspection_audit)<>1 THEN
   RAISE EXCEPTION 'failed writes created history';END IF;
  UPDATE public.staff_sessions SET revoked_at=clock_timestamp() WHERE user_id='SUP003';
+ blocked:=false;
  BEGIN
   PERFORM public.zukait_mechanical_inspection_read('SUP003',repeat('a',64),
    '11111111-1111-4111-8111-111111111111');
-  RAISE EXCEPTION 'revoked read accepted';
- EXCEPTION WHEN SQLSTATE 'P0001' THEN NULL;
+ EXCEPTION WHEN SQLSTATE 'P0001' THEN blocked:=true;
  END;
+ IF NOT blocked THEN RAISE EXCEPTION 'revoked read accepted';END IF;
  UPDATE public.staff_sessions SET revoked_at=null WHERE user_id='SUP003';
  UPDATE public.staff_credentials SET role='Employee' WHERE user_id='SUP003';
+ blocked:=false;
  BEGIN
   PERFORM public.zukait_mechanical_inspection_save('SUP003',repeat('a',64),
    '11111111-1111-4111-8111-111111111111',
    '66666666-6666-4666-8666-666666666666',1,p);
-  RAISE EXCEPTION 'role downgrade accepted';
- EXCEPTION WHEN SQLSTATE 'P0001' THEN NULL;
+ EXCEPTION WHEN SQLSTATE 'P0001' THEN blocked:=true;
  END;
+ IF NOT blocked THEN RAISE EXCEPTION 'role downgrade accepted';END IF;
  UPDATE public.staff_credentials SET role='Mechanical Supervisor' WHERE user_id='SUP003';
  r:=public.zukait_mechanical_inspection_save('MAN001',repeat('b',64),
   '11111111-1111-4111-8111-111111111111',
