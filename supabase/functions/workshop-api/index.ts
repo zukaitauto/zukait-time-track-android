@@ -3,6 +3,8 @@ import {billRoute} from './accountant/extensions/bill_route.js';
 import { mechanicalRoute, mechanicalLegacyDeliveryCheck } from "./extensions/mechanical_route.js";
 import { mechanicalTimeApi } from './extensions/mechanical_time_api.js';
 import { mechanicalSectionApi } from './extensions/mechanical_section_api.js';
+import { mechanicalInspectionBoundary } from './extensions/mechanical_inspection_boundary.js';
+import { createMechanicalInspectionSessionVerifier } from './extensions/mechanical_inspection_session.js';
 import { subletTransition } from './sublet_rules.js';
 import {accountantApi,accountantError} from './accountant/api.js';
 import {insuranceProjection,insuranceLpoTransition} from './insurance_management_rules.js';
@@ -1136,6 +1138,24 @@ Deno.serve(async (req: Request) => {
     }
     if (action.startsWith("mechanical_")) {
       const enabled = Deno.env.get("ZUKAIT_MECHANICAL_ENABLED") === "true";
+      if(action==='mechanical_inspection'){
+        // V377 is fail-closed until checklist ownership and the atomic
+        // inspection RPC are deployed and independently verified.
+        // Never route this action through generic Mechanical commands.
+        const inspectionEnabled = enabled &&
+          Deno.env.get('ZUKAIT_MECHANICAL_INSPECTION_ENABLED') === 'true';
+        const result=await mechanicalInspectionBoundary(body.command,{
+          enabled:inspectionEnabled,policy:{flags:{mechanical:enabled}},
+          actor:user,
+          verifySession:createMechanicalInspectionSessionVerifier({
+            sessionUser,token,expectedActor:user
+          })
+          // authorizeChecklist and executeAtomicSave intentionally absent:
+          // neither is safe to provide until the DB transaction enforces
+          // checklist ownership. The boundary returns 503 if enabled.
+        });
+        return reply(result.body,result.status);
+      }
       if(action==='mechanical_section'){
         const result=await mechanicalSectionApi(admin,user,body,{enabled,qcEnabled:Deno.env.get('ZUKAIT_MECHANICAL_QC_ENABLED')==='true',deliveryEnabled:Deno.env.get('ZUKAIT_MECHANICAL_DELIVERY_ENABLED')==='true',sessionHash:enabled?await sha256Hex(token):'',verifySession:()=>sessionUser(token)});
         return reply(result.body,result.status);
