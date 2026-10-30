@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {mechanicalInspectionApi} from '../supabase/functions/workshop-api/extensions/mechanical_inspection_api.js';
+import {INSPECTION_FUNCTIONS} from '../supabase/functions/workshop-api/extensions/mechanical_inspection_contract.js';
+const id='11111111-1111-4111-8111-111111111111';
+const requestId='22222222-2222-4222-8222-222222222222';
+const inspection={jobType:'CASH',vehicle:{registration:'1234 AB',make:'Toyota',model:'Camry',year:'2022',customer:'Test',contact:'90000000'},damageMarks:[],functions:Object.fromEntries(INSPECTION_FUNCTIONS.map(k=>[k,{status:'NOT_CHECKED'}])),workDescription:'Inspection'};
+const server={enabled:true,policy:{flags:{mechanical:true}},actor:{id:'SUP003'},verifySession:async()=>({id:'SUP003',active:true,role:'Supervisor'}),readInspection:async()=>null,saveInspection:async x=>({revision:x.expectedRevision+1})};
+const read=await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id},server);
+assert.equal(read.status,200);assert.equal(read.body.inspection,null);
+const saved=await mechanicalInspectionApi({operation:'SAVE_INSPECTION',checklistId:id,requestId,expectedRevision:0,inspection},server);
+assert.equal(saved.body.result.revision,1);
+assert.equal((await mechanicalInspectionApi({operation:'SAVE_INSPECTION',checklistId:id,requestId,expectedRevision:0,inspection:{...inspection,jobType:'INSURANCE'}},server)).body.code,'invalid_mechanical_job_type');
+assert.equal((await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id},{...server,enabled:false})).status,403);
+assert.equal((await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id},{...server,actor:{id:'SUP001'},verifySession:async()=>({id:'SUP001',active:true,role:'Supervisor'})})).status,403);
+assert.equal((await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id},{...server,readInspection:undefined})).status,503);
+console.log('PASS inactive Mechanical inspection API boundary');
