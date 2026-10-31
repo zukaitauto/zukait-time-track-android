@@ -15,6 +15,9 @@ create table if not exists public.workshop_reception_existing_job_link_audit (
 alter table public.workshop_reception_existing_job_link_audit enable row level security;
 revoke all on public.workshop_reception_existing_job_link_audit from public,anon,authenticated,service_role;
 grant select,insert on public.workshop_reception_existing_job_link_audit to service_role;
+-- SECURITY INVOKER correction RPC deletes only the mapping row under Manager authorization.
+-- The staging migration granted SELECT/INSERT but omitted DELETE on this table.
+grant delete on public.workshop_reception_existing_job_links to service_role;
 
 create or replace function public.zukait_reception_correct_existing_job_link(p_actor_id text,p_command jsonb)
 returns jsonb language plpgsql security invoker set search_path=public,pg_temp as $$
