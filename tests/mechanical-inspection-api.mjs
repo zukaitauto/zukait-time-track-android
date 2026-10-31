@@ -79,4 +79,19 @@ const circular={operation:'READ_INSPECTION',checklistId:id};
 circular.self=circular;
 assert.equal((await mechanicalInspectionApi(circular,server)).body.code,'invalid_command');
 assert.equal((await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id,unexpected:1n},server)).body.code,'invalid_command');
+const changedType={code:'22023',message:'mechanical_job_type_not_allowed'};
+const linkedRead=await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id},{
+ ...server,authorizeChecklist:async()=>{throw changedType}
+});
+assert.equal(linkedRead.status,409);
+assert.equal(linkedRead.body.code,'mechanical_job_type_not_allowed');
+const linkedSave=await mechanicalInspectionApi({operation:'SAVE_INSPECTION',checklistId:id,requestId,expectedRevision:0,inspection},{
+ ...server,saveInspection:async()=>{throw changedType}
+});
+assert.equal(linkedSave.status,409);
+assert.equal(linkedSave.body.code,'mechanical_job_type_not_allowed');
+const unrelatedMalformed=await mechanicalInspectionApi({operation:'READ_INSPECTION',checklistId:id},{
+ ...server,authorizeChecklist:async()=>{throw {code:'22023',message:'invalid_payload'}}
+});
+assert.equal(unrelatedMalformed.body.code,'invalid_inspection','unrelated SQL 22023 must not look like the linked type error');
 console.log('PASS inactive Mechanical inspection API boundary');
