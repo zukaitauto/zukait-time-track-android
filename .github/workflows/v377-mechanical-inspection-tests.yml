@@ -153,6 +153,26 @@ jobs:
           status,headers,body=send('POST',apikey=key,session='QA-invalid-session-never-authorized')
           assert status==401 and json.loads(body).get('code')=='invalid_session', (
               f'Unrecognized staff session was not rejected: HTTP {status}; {body[:250]!r}')
+          # Check the separate QA login transport without attempting a login.
+          # A fabricated session is harmless: it never reaches credential checking.
+          auth_url=f'https://{ref}.supabase.co/functions/v1/staff-auth'
+          def auth_probe(apikey):
+              request=Request(auth_url,method='POST',
+                  data=json.dumps({'action':'session',
+                      'session_token':'QA-NEVER-AUTHORIZED-STAFF-SESSION'}).encode(),
+                  headers={'content-type':'application/json','apikey':apikey})
+              try:
+                  with urlopen(request,timeout=20) as response:
+                      return response.status,json.loads(response.read(4000))
+              except HTTPError as error:
+                  return error.code,json.loads(error.read(4000))
+          status,result=auth_probe('qa-invalid-public-key')
+          assert status==401 and result.get('code')=='bad_api_key', (
+              f'QA staff-auth accepted unknown key: HTTP {status}; {result}')
+          status,result=auth_probe(key)
+          assert status==401 and result.get('code')=='invalid_session', (
+              f'QA staff-auth accepted unknown session: HTTP {status}; {result}')
+          print('PASS: Hosted QA staff-auth is reachable and rejects unknown API keys and invalid sessions.')
           print('PASS: Hosted V377 QA Edge is reachable; CORS, publishable key and session validation deny unauthorized reads.')
           print('No staff account, workshop data, production endpoint or test write was used.')
           PY
