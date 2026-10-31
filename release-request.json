@@ -148,8 +148,8 @@
       "liveDataValidation": "NOT_VERIFIED"
     },
     "monthlyEmployeeReport": {
-      "sourceCommit": "71092a23835880c0ad78d4cb4b8272de5d5238ed",
-      "status": "ANDROID_APK_AND_REGRESSION_CI_PASSED_SIGNED_AND_PHYSICAL_PENDING",
+      "sourceCommit": "6ac697bdd80e71a5e89e0fde6cb565febf06002e",
+      "status": "SIGNED_ACCEPTANCE_PASSED_PHYSICAL_AND_BACKUP_PENDING",
       "features": [
         "Manager Reports Employee and Monthly tabs use completed productive assignment month in Oman",
         "Unique completed vehicles per employee; finished technician assignments shown separately",
@@ -164,7 +164,7 @@
       "androidArchitectureRun": 41224296093,
       "apkBuildRun": 41224296108,
       "outageRun": 41224296152,
-      "signedAcceptanceRun": null,
+      "signedAcceptanceRun": 41224517915,
       "physicalAndroidScreenCheck": "NOT_VERIFIED_FOR_UPDATED_CANDIDATE",
       "freshBackupRestore": "NOT_VERIFIED_FOR_V377",
       "publication": "HELD",
@@ -172,7 +172,10 @@
       "apkBuildStatus": "PASS_GITHUB_41224296108",
       "connectionOutageStatus": "PASS_GITHUB_41224296152",
       "mechanicalContractsStatus": "PASS_GITHUB_41224296137",
-      "readOnlyCalculationAndDomSmoke": "PASS"
+      "readOnlyCalculationAndDomSmoke": "PASS",
+      "reportAssetSourceCommit": "71092a23835880c0ad78d4cb4b8272de5d5238ed",
+      "signedAcceptanceArtifactId": 13051431894,
+      "signedAcceptanceResult": "SUCCESS_SOURCE_MATCHED_V377"
     },
     "consolidatedEmployeeMonthlyReport": {
       "sourceCommit": "6ac697bdd80e71a5e89e0fde6cb565febf06002e",
