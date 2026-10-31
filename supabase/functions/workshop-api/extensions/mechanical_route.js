@@ -14,6 +14,7 @@ const conflicts=new Set(['mechanical_request_reused','mechanical_revision_confli
 export function mechanicalApiError(error){
  const code=String(error?.message||'');
  if(code==='invalid_mechanical_signature_correction')return response(code,400);
+ if(code==='mechanical_job_type_not_allowed')return response(code,400);
  if(['mechanical_mixed_job_not_allowed','mechanical_job_identity_conflict'].includes(code))return response(code,409);
  if(code==='mechanical_invalid_session')return response('invalid_session',401);
  if(['mechanical_disabled','mechanical_forbidden','mechanical_qc_disabled','mechanical_qc_approver_required','mechanical_delivery_disabled','mechanical_tracking_disabled','mechanical_repeat_disabled','mechanical_documents_disabled','mechanical_document_forbidden','mechanical_signatures_disabled','mechanical_signature_forbidden','mechanical_reports_disabled','mechanical_report_forbidden'].includes(code))return response(code,403);
