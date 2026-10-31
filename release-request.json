@@ -331,7 +331,7 @@
       "branch": "architecture-v2",
       "headBeforeEvidenceCommit": "d995819bb2d345bd29df69bd302e79bf760cf400",
       "pinnedApplicationSource": "6ac697bdd80e71a5e89e0fde6cb565febf06002e",
-      "postPinChanges": "Four commits; release-request.json only; no application source changes",
+      "postPinChanges": "New QA-only Mechanical SQL migration and isolated test/workflow, plus release-request.json metadata; no Android/web application asset changes versus signed source 6ac697b.",
       "signedAcceptanceRun": 41224517915,
       "signedArtifactId": 13051431894,
       "signedArtifactSource": "6ac697bdd80e71a5e89e0fde6cb565febf06002e",
@@ -359,7 +359,8 @@
       "authenticatedSupervisorCreateSaveReadEditReload": "NOT_VERIFIED",
       "authenticatedManagerAccessRevisionAuditBoundary": "NOT_VERIFIED",
       "reason": "Live authorized QA client sessions not available for complete end-to-end flow; simulated service_role SQL tests are not counted as authenticated client acceptance.",
-      "qaDatabaseMutationsByReview": 0
+      "qaDatabaseMutationsByReview": 0,
+      "cashCreditMcCreateQaStatus": "PASS_SQL_GUARD_CI_AND_QA_DEPLOYED; FULL_AUTHENTICATED_ACCEPTANCE_PENDING"
     },
     "outstanding": [
       "Mechanical Supervisor and Manager end-to-end authenticated QA save, edit, revision history, reload, audit and permission checks",
@@ -367,13 +368,13 @@
       "Independently prove that owner-tested physical device installed this exact signed V377 candidate, if physical release acceptance requires source identity",
       "Fresh production backup and isolated restore explicitly deferred by owner, NOT_VERIFIED; prior isolated V375 restore passed on 2026-10-27",
       "Separate owner authorization is mandatory before publishing V377 or activating production backend changes",
-      "Close Mechanical MC_CREATE server-side Cash/Credit-only validation gap; rollback-only QA fix tested, not deployed or source-committed."
+      "Do not deploy QA-verified Mechanical Cash/Credit guard to production without separate production backend authorization."
     ],
     "productionApplication": "V376_UNCHANGED",
     "productionDatabaseTouched": false,
     "productionBackendActivated": false,
     "publicationAuthorized": false,
-    "releaseState": "HELD_PENDING_AUTHENTICATED_QA_AND_OWNER_PUBLICATION_AUTHORIZATION",
+    "releaseState": "HELD_PENDING_AUTHENTICATED_MECHANICAL_QA_AND_OWNER_PUBLICATION_AUTHORIZATION",
     "nextAuthenticatedQaAction": {
       "checkpoint": "2026-10-31",
       "isolatedQaPhoneRun": 41203615443,
@@ -399,14 +400,30 @@
       "qaSnapshotJobTypes": "23 QA workshop jobs: 18 Cash/Credit (case-normalized), 5 Insurance, zero missing types.",
       "proposedRemediation": "Add upper(trim(coalesce(job->>'jobType',''))) IN ('CASH','CREDIT') check to assert_separate_job after unique identity validation, with SQLSTATE 22023 for anything else; preserve existing mixed-department checks and fail closed on missing values.",
       "rollbackOnlyTest": "PASS: Cash/CASH/Credit/CREDIT allowed; INSURANCE/OTHER/empty/missing rejected; duplicate checklist job identity and non-Mechanical employee rejected.",
-      "qaFunctionDeployment": "NOT_APPLIED; ROLLBACK CONFIRMED",
-      "qaFunctionPostTest": "UNCHANGED",
+      "qaFunctionDeployment": "APPLIED_TO_ISOLATED_QA_ONLY",
+      "qaFunctionPostTest": "CASH_CREDIT_ALLOWED_INSURANCE_OTHER_MISSING_REJECTED_DUPLICATE_JC_AND_MIXED_DEPARTMENT_REJECTED",
       "qaChecklistRowsAfter": 2,
       "qaInspectionRowsAfter": 0,
       "productionBackendActivated": false,
-      "releaseImpact": "Backend Mechanical MC_CREATE cannot be certified Cash/Credit-only until code guard is committed and isolated QA verified; production activation remains prohibited.",
+      "releaseImpact": "Resolved and verified in isolated QA. No production Mechanical backend activation approved. Authenticated staff-session acceptance remains pending.",
       "authenticatedSupervisorQa": "NOT_VERIFIED_NO_SUP003_SESSION",
-      "ownerApprovalForProductionBackendActivation": false
+      "ownerApprovalForProductionBackendActivation": false,
+      "migrationFile": "supabase/migrations/20261031210000_mechanical_cash_credit_creation_guard.sql",
+      "regressionFixture": "tests/mechanical-cash-credit-guard.sql",
+      "codeCommit": "db6d49ecb34e6e8d1fea542251e5e75397ebb9db",
+      "ciWiringCommit": "26fcdaf71d2afdffa9a737bb03354edc5c077101",
+      "isolatedCiRun": 41231747889,
+      "isolatedCiResult": {
+        "postgres": "PASS",
+        "node": "PASS",
+        "chromium": "PASS",
+        "hostedQaDenial": "PASS"
+      },
+      "qaAppliedMigration": "v377_qa_mechanical_cash_credit_creation_guard",
+      "qaAppliedVersion": "20261031185635",
+      "qaAuditRowsAfter": 0,
+      "qaReceiptRowsAfter": 0,
+      "qaFunctionSecurity": "anon execute false; authenticated execute false; service_role execute true"
     }
   }
 }
