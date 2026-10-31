@@ -9,6 +9,8 @@ on:
       - 'app/src/main/assets/mechanical_supervisor.js'
       - 'app/src/main/assets/mechanical_workspace.js'
       - 'supabase/migrations/20261031120000_mechanical_inspection_secure.sql'
+      - 'supabase/migrations/20261031210000_mechanical_cash_credit_creation_guard.sql'
+      - 'tests/mechanical-cash-credit-guard.sql'
       - '.github/workflows/v377-mechanical-inspection-tests.yml'
       - 'package.json'
       - 'experiments/v377-mechanical-inspection-*.sql'
@@ -99,6 +101,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Execute isolated SQL schema and atomic-save regression
         run: |
+          psql -X -h 127.0.0.1 -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -f tests/mechanical-cash-credit-guard.sql
           node tests/mechanical-inspection-migration-postgres.mjs
           node tests/mechanical-inspection-postgres.mjs
 
