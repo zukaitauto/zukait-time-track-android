@@ -68,9 +68,9 @@
     "projectName": "zukait-v305-qa",
     "projectRef": "omqgkqknbdcnotabffek",
     "deployedFunction": "workshop-api",
-    "deployedFunctionVersion": 41,
-    "deployedBundleSha256": "e0814635fe5cae12ea3a4a5bc8a37a749c6e0e8098ac6faa99d65030dc9eeae1",
-    "deployedAt": "2026-10-31T06:15:35.853Z",
+    "deployedFunctionVersion": 44,
+    "deployedBundleSha256": "1b209507cac19229d208925801e80c9906e10a15aecaf54e14d651e9e4cf5750",
+    "deployedAt": "2026-10-31T07:06:01.044Z",
     "migrationName": "v377_mechanical_inspection_secure_qa",
     "installedInspectionTables": 3,
     "allInspectionTablesRlsEnabled": true,
@@ -78,7 +78,7 @@
     "existingQaChecklistCountAfter": 2,
     "existingQaWorkshopRevisionAfter": 857,
     "qaActivation": "Restricted to isolated QA hostname; production source still requires disabled-by-default feature flag",
-    "status": "QA_API_ROUTES_AND_DATABASE_VERIFIED",
+    "status": "QA_V44_SOURCE_ALIGNED_DENIAL_SMOKE_PASS",
     "authenticatedWriteReadEditAuditStatus": "NOT_VERIFIED_END_TO_END",
     "physicalAndroidAcceptance": "NOT_RUN_FOR_V377",
     "productionFunctionVersionUnchanged": 98,
@@ -95,7 +95,16 @@
       "mechanical_section",
       "mechanical_time_management"
     ],
-    "qaPhoneArtifactRun": 41175629394
+    "qaPhoneArtifactRun": 41175629394,
+    "sourceAlignment": "All 45 imported QA Edge module files match V377 source commit 156becc5 except index.ts QA-only inspection-host guard and harmless newline differences. Three older Mechanical modules were updated; five unreferenced source files were omitted by the bundler.",
+    "alignedMechanicalModules": [
+      "extensions/mechanical_rules.js",
+      "extensions/mechanical_api.js",
+      "extensions/mechanical_persistence_plan.js"
+    ],
+    "currentHostedSmokeRun": 41176344482,
+    "currentHostedSmokeAttempt": 2,
+    "currentHostedSmokeStatus": "PASS_WITH_QA_API_V44"
   },
   "v377QaHostedSmokeEvidence": {
     "testedSourceCommit": "88cf86dbbbb8ced09c2b689f4bc752b3159a68a4",
@@ -108,6 +117,9 @@
     "authenticatedChecklistSaveEditHistory": "NOT_TESTED_WITH_REAL_QA_SESSION",
     "qaProjectRef": "omqgkqknbdcnotabffek",
     "productionBackendChanged": false,
-    "physicalPhoneTest": "NOT_PERFORMED"
+    "physicalPhoneTest": "NOT_PERFORMED",
+    "qaApiVersionVerified": 44,
+    "workflowAttempt": 2,
+    "verifiedAt": "2026-10-31T07:06:34Z"
   }
 }
