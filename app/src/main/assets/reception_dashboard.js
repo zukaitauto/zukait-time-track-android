@@ -114,7 +114,7 @@
       '<div class="rdb-row-content"><b>'+title+' · '+safe(row.vehicle||"Vehicle not recorded")+
       '</b>'+locationBadge(row.location)+'<small>'+safe(row.registration||"Registration not recorded")+' · '+(row.insurance_company?'<span class="rdb-insurer">'+safe(row.insurance_company)+'</span>':safe(row.job_type||''))+
       (row.rc_no&&isJob?' · '+safe(row.rc_no):'')+'</small><small>'+safe(date.replace(/(\d{4})-(\d{2})-(\d{2})/g,'$3-$2-$1'))+'</small><span class="rdb-state '+(String(row.status).toUpperCase()==='WAITING'?'waiting':String(row.status).toUpperCase()==='APPROVED'?'approved':'neutral')+'">'+safe(row.delivered?'Delivered':row.status==='WAITING'?'Approval Waiting':row.status||'Status not recorded')+'</span>'+(section==='checklists'&&isJob?'<button type="button" data-rdb="open-job" data-job="'+safe(row.job_card)+'">'+(row.delivered?'Delivered · JC ':'JC Opened · ')+safe(row.job_card)+'</button>':'')+age+promise+'</div>'+
-      '<div class="rdb-row-actions">'+open+deliver+(isJob&&(!row.delivered||role()==='Manager')?'<button type="button" data-rdb="edit-job" data-job="'+safe(row.job_card)+'">Edit Job Card</button>':'')+'</div></div>';
+      '<div class="rdb-row-actions">'+open+(section==='checklists'&&!isJob?'<button type="button" data-rdb="link-existing" data-rc="'+safe(row.rc_no)+'">Link Existing Job Card</button>':'')+deliver+(isJob&&(!row.delivered||role()==='Manager')?'<button type="button" data-rdb="edit-job" data-job="'+safe(row.job_card)+'">Edit Job Card</button>':'')+'</div></div>';
   }
   function listHtml(){
     const vwc=section==="vwc";
@@ -247,6 +247,28 @@
       const what=button.dataset.rdb;
       if(what==='open-job'){
         return window.zukaitJobEdit.view(button.dataset.job,{onBack:resume});
+      }
+      if(what==="link-existing"){
+        const rc=button.dataset.rc;
+        if(!rc||!window.zukaitReception?.call||!window.zukaitReception?.action)throw Error("Reception link is unavailable.");
+        const details=await window.zukaitReception.call({operation:"GET",rc_no:rc});
+        const record=details.record;
+        if(!record||record.job_card)throw Error("This checklist is already linked or no longer available. Refresh.");
+        const number=String(window.prompt("Link existing Job Card to Checklist "+rc+". Enter exact Job Card number:","")||"").trim().toUpperCase();
+        if(!number)return;
+        if(!/^[A-Z0-9][A-Z0-9/-]{0,39}$/.test(number))throw Error("Enter a valid existing Job Card number.");
+        const vehicle=[record.details?.make,record.details?.model,record.details?.year].filter(Boolean).join(" ");
+        const registration=record.details?.registration||"Not recorded";
+        if(!window.confirm("Confirm link (no new Job Card created):\\nChecklist "+rc+"\\n"+vehicle+" · "+registration+"\\nExisting Job Card "+number+"\\n\\nThe server will reject mismatched vehicles and duplicate links."))return;
+        const reason=String(window.prompt("Reason for linking these existing records:","Checklist was created before the Job Card was opened directly")||"").trim();
+        if(!reason)return;
+        button.disabled=true;
+        try{
+          const result=await window.zukaitReception.action({action:"reception",command:{operation:"LINK_EXISTING_JOB",rc_no:rc,job_card:number,expected_revision:record.revision,request_id:crypto.randomUUID(),reason,confirmed:true}});
+          if(!result?.ok)throw Error(result?.code||"Link was not confirmed.");
+          await load();window.alert("Checklist "+rc+" linked to JC "+number+".");
+        }finally{button.disabled=false;}
+        return;
       }
       if(what==="edit-job")return window.zukaitJobEdit.open(button.dataset.job);
       if(what==="tile"){await choose(button.dataset.section);return;}
