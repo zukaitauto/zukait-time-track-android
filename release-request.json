@@ -3,7 +3,7 @@
   "versionCode": 340,
   "releaseScope": "standard",
   "approvedForStaff": false,
-  "sourceCommit": "b037898726724805a3dd5d5ed9ba94167cb4d1c4",
+  "sourceCommit": "71092a23835880c0ad78d4cb4b8272de5d5238ed",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": false,
   "authorization": "Development, isolated testing and release evidence preparation only. Owner approval required separately for V377 publication and for backend activation. Do not publish or enable production Mechanical inspection.",
@@ -11,13 +11,13 @@
   "publishNonce": null,
   "releaseHeldByOwner": true,
   "publicationRequiresSeparateInstruction": true,
-  "physicalAcceptanceStatus": "OWNER_CONFIRMED_SIX_ANDROID_CHECKS_PASS_REMAINING_SCOPES_PENDING",
+  "physicalAcceptanceStatus": "PENDING_UPDATED_V377_PHONE_ACCEPTANCE",
   "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V377",
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41203615461,
-  "verificationRun": 41188003717,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
   "previousPublishedRelease": {
     "versionName": "V376",
     "versionCode": 339,
@@ -50,14 +50,14 @@
     "latestQaTestSourceCommit": "88cf86dbbbb8ced09c2b689f4bc752b3159a68a4",
     "latestQaTestRun": 41176344482,
     "latestStandardCiRuns": {
-      "android": 41203615422,
-      "mechanical": 41203615449,
-      "apk": 41203615365,
-      "outage": 41203615367,
+      "android": 41224296093,
+      "mechanical": 41224296137,
+      "apk": 41224296108,
+      "outage": 41224296152,
       "mechanicalPhone": 41203615443,
       "reception": 41203615510
     },
-    "candidateSourceAlignment": "Updated Mechanical full-screen source b037898726724805a3dd5d5ed9ba94167cb4d1c4, signed acceptance 41203615461 artifact 13044315222, Android build 41203615422, standard APK 41203615365, Mechanical isolated phone 41203615443, contracts 41203615449, outage 41203615367 passed. Reception verification 41203615510 still in progress at evidence update. Checklist-to-existing-direct-Job-Card reconciliation remains SPEC_ONLY, NOT IMPLEMENTED. Backup/restore and other release gates remain pending. Publication held.",
+    "candidateSourceAlignment": "V377 candidate source updated to 71092a23835880c0ad78d4cb4b8272de5d5238ed for all-employee monthly completed-vehicle, weighted-efficiency and ID001 integrated Reports; Android/report DOM regression run 41224296093 and APK run 41224296108 require full result and candidate-level signoff. Prior signed acceptance run 41203615461 and prior physical checks belong to older code and do NOT verify this source. Fresh V377 backup/recovery and final owner approval remain required. Production V376 unchanged.",
     "overAllocatedJobsPopup": {
       "includedInCandidate": true,
       "sourceCommit": "72657991c2f6e1d6eb2e811d96a0e44c0c08db8e",
@@ -78,7 +78,7 @@
         "artifactId": 13042518715
       }
     },
-    "signedAcceptanceSourceAligned": true,
+    "signedAcceptanceSourceAligned": false,
     "invoiceEntryInsuranceCompany": {
       "includedInCandidate": true,
       "sourceCommit": "b2f5e59551406be74d3159500134af380f16758f",
@@ -146,6 +146,28 @@
       "scope": "Manager Workshop Performance materials actual expense card",
       "buildStatus": "PASS",
       "liveDataValidation": "NOT_VERIFIED"
+    },
+    "monthlyEmployeeReport": {
+      "sourceCommit": "71092a23835880c0ad78d4cb4b8272de5d5238ed",
+      "status": "SOURCE_ALIGNED_PREPUBLICATION_CI_AND_PHYSICAL_PENDING",
+      "features": [
+        "Manager Reports Employee and Monthly tabs use completed productive assignment month in Oman",
+        "Unique completed vehicles per employee; finished technician assignments shown separately",
+        "Weighted allocated/actual productive efficiency; ID001 total hours beside productive metrics",
+        "Manager Excel and employee drilldown show ID001; mobile report controls wrap",
+        "Repeat, overtime and cancelled work excluded; no live employee records modified"
+      ],
+      "tests": [
+        "tests/monthly-employee-performance.mjs",
+        "tests/monthly-employee-performance-dom.mjs"
+      ],
+      "androidArchitectureRun": 41224296093,
+      "apkBuildRun": 41224296108,
+      "outageRun": 41224296152,
+      "signedAcceptanceRun": null,
+      "physicalAndroidScreenCheck": "NOT_VERIFIED_FOR_UPDATED_CANDIDATE",
+      "freshBackupRestore": "NOT_VERIFIED_FOR_V377",
+      "publication": "HELD"
     }
   },
   "v377RecoveryEvidence": {
