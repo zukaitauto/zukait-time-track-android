@@ -43,5 +43,26 @@
     "priorStatus": "ISOLATED_RESTORE_PASS",
     "freshV377BackupAndRestore": "NOT_VERIFIED",
     "productionChanged": false
+  },
+  "v377QaDeploymentEvidence": {
+    "projectName": "zukait-v305-qa",
+    "projectRef": "omqgkqknbdcnotabffek",
+    "deployedFunction": "workshop-api",
+    "deployedFunctionVersion": 40,
+    "deployedBundleSha256": "54290f17dbf1b23b01fe051a388e78248bcc17818fc715983b6998c06f59cd87",
+    "deployedAt": "2026-10-31T05:45:46.531Z",
+    "migrationName": "v377_mechanical_inspection_secure_qa",
+    "installedInspectionTables": 3,
+    "allInspectionTablesRlsEnabled": true,
+    "directAnonAuthenticatedRpcExecuteAllowed": false,
+    "existingQaChecklistCountAfter": 2,
+    "existingQaWorkshopRevisionAfter": 857,
+    "qaActivation": "Restricted to isolated QA hostname; production source still requires disabled-by-default feature flag",
+    "status": "QA_DEPLOYED_AND_DATABASE_PRIVILEGES_VERIFIED",
+    "authenticatedWriteReadEditAuditStatus": "NOT_VERIFIED_END_TO_END",
+    "physicalAndroidAcceptance": "NOT_RUN_FOR_V377",
+    "productionFunctionVersionUnchanged": 98,
+    "productionInspectionTablesInstalled": false,
+    "productionChanged": false
   }
 }
