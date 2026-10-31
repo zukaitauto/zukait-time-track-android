@@ -125,6 +125,27 @@
       "automatedMechanicalPhoneRun": 41203615443,
       "status": "SIGNED_AND_AUTOMATION_PASSED_RECEPTION_CHECK_RUNNING",
       "physicalManualRetest": "NOT_REQUIRED_BY_OWNER_FOR_EACH_UI_CHANGE"
+    },
+    "latestSourceCi": {
+      "sourceCommit": "2370514a1671fea4fa8b7e3115cd89dcae72156c",
+      "signedAcceptanceRun": 41212772481,
+      "signedAcceptanceArtifactId": 13047296406,
+      "receptionVerificationRun": 41212772560,
+      "androidArchitectureRun": 41212772698,
+      "androidAppBuildRun": 41212772620,
+      "connectionOutageRun": 41212772558,
+      "syncCompatibilityRun": 41212772687,
+      "mechanicalPhoneRun": 41212772790,
+      "status": "PASS_AUTOMATED_BUILDS_AND_RECEPTION_WORKFLOW_ONLY",
+      "databaseLinkCorrectionIsolatedTests": "NOT_VERIFIED",
+      "freshV377ProductionRestore": "NOT_VERIFIED",
+      "publication": "HELD"
+    },
+    "latestUiMaterialsConsumption": {
+      "sourceCommit": "2370514a1671fea4fa8b7e3115cd89dcae72156c",
+      "scope": "Manager Workshop Performance materials actual expense card",
+      "buildStatus": "PASS",
+      "liveDataValidation": "NOT_VERIFIED"
     }
   },
   "v377RecoveryEvidence": {
