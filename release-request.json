@@ -197,7 +197,15 @@
     "priorVersion": "V375",
     "priorStatus": "ISOLATED_RESTORE_PASS",
     "freshV377BackupAndRestore": "NOT_VERIFIED",
-    "productionChanged": false
+    "productionChanged": false,
+    "ownerDeferral": {
+      "requestedOn": "2026-10-31",
+      "status": "OWNER_DEFERRED_UNVERIFIED",
+      "scope": "Skip fresh backup verification in the preparation sequence; this is not a successful backup or restore check.",
+      "priorEvidence": "2026-10-27 isolated V375 restore rehearsal only",
+      "risk": "V377 does not have a fresh independently verified production backup and isolated restore.",
+      "publicationApproved": false
+    }
   },
   "v377QaDeploymentEvidence": {
     "projectName": "zukait-v305-qa",
