@@ -3,7 +3,7 @@
   "versionCode": 340,
   "releaseScope": "standard",
   "approvedForStaff": false,
-  "sourceCommit": "b2f5e59551406be74d3159500134af380f16758f",
+  "sourceCommit": "37ce7e1654e9f5a23210fff6dffd036b35b6d79e",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": false,
   "authorization": "Development, isolated testing and release evidence preparation only. Owner approval required separately for V377 publication and for backend activation. Do not publish or enable production Mechanical inspection.",
@@ -16,7 +16,7 @@
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41188003754,
+  "signedAcceptanceRun": 41202204865,
   "verificationRun": 41188003717,
   "previousPublishedRelease": {
     "versionName": "V376",
@@ -32,9 +32,9 @@
     "mechanicalInspectionSourceCommit": "260e62b52d83642abd13a476e9571ee88646b0aa",
     "inspectionScope": "Isolated PostgreSQL, Node API and Chromium mobile/desktop",
     "signedAcceptanceArtifact": {
-      "runId": 41188003754,
+      "runId": 41202204865,
       "artifactName": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
-      "artifactId": 13037716497
+      "artifactId": 13042424153
     },
     "stagedPcRun": 41175629350,
     "mechanicalPhoneQaRun": 41175629394,
@@ -50,12 +50,12 @@
     "latestQaTestSourceCommit": "88cf86dbbbb8ced09c2b689f4bc752b3159a68a4",
     "latestQaTestRun": 41176344482,
     "latestStandardCiRuns": {
-      "android": 41188003688,
-      "mechanical": 41188003727,
-      "apk": 41188003718,
-      "outage": 41188003774
+      "android": 41202204796,
+      "mechanical": 41202204874,
+      "apk": 41202204799,
+      "outage": 41202204812
     },
-    "candidateSourceAlignment": "Signed V377 APK, full functional smoke tests, four-width Manager Over Allocated Jobs popup Chromium checks and Reception verification passed at source b2f5e59551406be74d3159500134af380f16758f (signed acceptance 41188003754, APK artifact 13037716497, visual QA 13038035935, Reception verification 41188003717). Standard Android/APK/Mechanical-contract/outage CI passed at same source (41188003688, 41188003718, 41188003727, 41188003774). Invoice Entry for Manager and Supervisor now shows saved insurance company with missing-name fallback; Cash and Credit unchanged. Only release-request.json metadata changes after pinned source are permitted by release safety guard. Physical Android acceptance, real-data popup validation, fresh V377 backup/restore, authenticated Mechanical Checklist end-to-end QA and separate owner approval remain pending. V376 production and main unchanged.",
+    "candidateSourceAlignment": "Signed V377 APK and Chromium performance test passed at 37ce7e1654e9f5a23210fff6dffd036b35b6d79e. Single existing Consumables Cost card renamed Consumables Expense, using existing finalized paint and material costs, with date-sorted Job Card drilldown; Over Allocated displays distinct Job Card count; Manager menu refinement. Signed acceptance 41202204865 artifact 13042424153. Android 41202204796, standard APK 41202204799, outage 41202204812, inactive mechanical/accountant 41202204874 successful. Prior phone acceptance applies to earlier V377 candidate only. Physical retest of revised UI, fresh V377 backup/restore, eight-job live validation, authenticated Mechanical Checklist QA and separate publication approval pending. V376 production unchanged.",
     "overAllocatedJobsPopup": {
       "includedInCandidate": true,
       "sourceCommit": "72657991c2f6e1d6eb2e811d96a0e44c0c08db8e",
@@ -67,13 +67,13 @@
         "ID001, repeat, finished and Mechanical exclusions; cache-busted assets"
       ],
       "automatedCalculationAndWiringTests": "PASS_IN_SIGNED_ACCEPTANCE_FULL_REGRESSION_41188003754",
-      "dedicatedFourViewportChromiumTest": "PASS_IN_SIGNED_ACCEPTANCE_RUN_41188003754",
+      "dedicatedFourViewportChromiumTest": "PASS_IN_SIGNED_ACCEPTANCE_RUN_41202204865",
       "realDataValidation": "NOT_VERIFIED",
       "physicalPhoneValidation": "OWNER_CONFIRMED_PASS_ANDROID_V377",
       "visualQaArtifact": {
-        "runId": 41188003754,
+        "runId": 41202204865,
         "artifactName": "V377_MANAGER_OVERALLOCATED_POPUP_VISUAL_QA",
-        "artifactId": 13038035935
+        "artifactId": 13042518715
       }
     },
     "signedAcceptanceSourceAligned": true,
@@ -105,6 +105,15 @@
       "mechanicalChecklistAuthenticatedQa": "NOT_VERIFIED",
       "freshBackupRestore": "NOT_VERIFIED",
       "overAllocatedEightJobRecalculation": "NOT_VERIFIED"
+    },
+    "updatedManagerUi": {
+      "sourceCommit": "37ce7e1654e9f5a23210fff6dffd036b35b6d79e",
+      "consumablesCard": "ONE existing tile renamed Consumables Expense; paint + finalized actual paint materials, returns deducted",
+      "jobCardOrder": "Most recent issue/finalization/return event first",
+      "overAllocatedCard": "Distinct Job Card count; detailed popup retained",
+      "managerMenu": "Remove Mechanical Department menu entry; light teal System Health",
+      "signedRun": 41202204865,
+      "physicalRetest": "PENDING"
     }
   },
   "v377RecoveryEvidence": {
