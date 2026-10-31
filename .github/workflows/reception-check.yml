@@ -46,6 +46,8 @@ on:
       - "app/src/main/assets/secure_auth.js"
       - "app/src/main/assets/offline_test.html"
       - "tests/reception-*"
+      - "app/src/main/assets/monthly_employee_performance.js"
+      - "tests/monthly-employee-performance*.mjs"
       - "tests/workshop-history-preservation.mjs"
       - "tests/release-tier.mjs"
       - "scripts/release-tier.cjs"
