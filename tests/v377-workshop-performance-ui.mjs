@@ -18,4 +18,14 @@ assert.match(section,/window\.v377OpenOverAllocated\(\)/,'over-allocated tile op
 assert.match(section,/window\.openEmployeeEfficiency\(\)/,'efficiency tile opens employee ranking');
 assert.match(section,/event\.stopImmediatePropagation\(\)/,'legacy handler blocked');
 assert.match(html,/Completed normal assignments only/,'employee ranking excludes repeat assignments');
+const legacy=readFileSync(new URL('../app/src/main/assets/v74_updates.js',import.meta.url),'utf8');
+assert.match(legacy,/if\(typeof window\.v377OpenOverAllocated==='function'\)return window\.v377OpenOverAllocated\(\)/,
+ 'legacy Manager tile must delegate to detailed V377 popup');
+assert.match(legacy,/No over-allocated active or paused jobs/,
+ 'legacy fallback must be safe and describe the active/paused scope');
+const report=readFileSync(new URL('../app/src/main/assets/workshop_performance.js',import.meta.url),'utf8');
+for(const required of ['v377-overalloc-vehicle','v377-overalloc-kind','v377-overalloc-name','v377-overalloc-exceeded','data-v377-job']){
+ assert.ok(report.includes(required),'report must include '+required);
+}
+
 console.log('V377 Workshop Performance layout and efficiency wiring: PASS');
