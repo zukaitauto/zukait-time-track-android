@@ -1224,7 +1224,10 @@ Deno.serve(async (req: Request) => {
       const {data:insurance,error:insuranceError}=await admin.from("workshop_insurance_companies").select("id,name");
       if(insuranceError)throw insuranceError;
       const insuranceById=new Map((insurance||[]).map((c:any)=>[String(c.id),String(c.name)]));
-      const safeCases=receptionRows.map(r=>({...r,insurance_company:insuranceById.get(String(r.insurance_id))||""}));
+      const {data:existingLinks,error:linkError}=await admin.from("workshop_reception_existing_job_links").select("rc_no,job_card");
+      if(linkError)throw linkError;
+      const linkByRc=new Map((existingLinks||[]).map((x:any)=>[String(x.rc_no),String(x.job_card)]));
+      const safeCases=receptionRows.map(r=>({...r,job_card:r.job_card||linkByRc.get(String(r.rc_no))||null,insurance_company:insuranceById.get(String(r.insurance_id))||""}));
       const projected=receptionDashboardProjection(state.data,safeCases,{
         section:body.section,search:body.search,month:body.month,from:body.from,to:body.to,
         page:body.page,missing_only:body.missing_only,dated_only:body.dated_only,checklist_status:body.checklist_status,company_filter:body.company_filter
@@ -1368,6 +1371,11 @@ Deno.serve(async (req: Request) => {
         if (code) return reply({ok:false,code}, /forbidden|manager_required/.test(code)?403:/not_found/.test(code)?404:409);
         console.error("reception_command_failed",error);
         return reply({ok:false,code:"reception_unavailable"},503);
+      }
+      if(String(command.operation||"").toUpperCase()==="GET"&&data?.record&&!data.record.job_card){
+        const {data:linked,error:linkReadError}=await admin.from("workshop_reception_existing_job_links").select("job_card").eq("rc_no",String(data.record.rc_no)).maybeSingle();
+        if(linkReadError)throw linkReadError;
+        if(linked?.job_card)data={...data,record:{...data.record,job_card:linked.job_card}};
       }
       let response=user.role === "Receptionist" ? receptionistProjection(data) : data;
       if(String(command.operation||"").toUpperCase()==="GET"&&data?.record?.job_card){
