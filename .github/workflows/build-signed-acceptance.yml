@@ -92,6 +92,20 @@ jobs:
         shell: bash
         run: |
           bash scripts/ci-full-regression.sh
+      - name: Verify V377 Manager over-allocation popup in real Chromium
+        shell: bash
+        run: |
+          npx playwright install --with-deps chromium
+          node tests/v377-overallocated-popup-browser.mjs
+          node tests/v377-performance-browser.mjs
+      - name: Archive V377 popup visual QA snapshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: V377_MANAGER_OVERALLOCATED_POPUP_VISUAL_QA
+          path: artifacts/v377-overallocated/
+          if-no-files-found: ignore
+
       - name: Check production assets
         shell: bash
         run: |
