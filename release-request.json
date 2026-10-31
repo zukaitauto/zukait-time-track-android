@@ -3,7 +3,7 @@
   "versionCode": 340,
   "releaseScope": "standard",
   "approvedForStaff": false,
-  "sourceCommit": "37ce7e1654e9f5a23210fff6dffd036b35b6d79e",
+  "sourceCommit": "b037898726724805a3dd5d5ed9ba94167cb4d1c4",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": false,
   "authorization": "Development, isolated testing and release evidence preparation only. Owner approval required separately for V377 publication and for backend activation. Do not publish or enable production Mechanical inspection.",
@@ -16,7 +16,7 @@
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41202204865,
+  "signedAcceptanceRun": 41203615461,
   "verificationRun": 41188003717,
   "previousPublishedRelease": {
     "versionName": "V376",
@@ -32,9 +32,9 @@
     "mechanicalInspectionSourceCommit": "260e62b52d83642abd13a476e9571ee88646b0aa",
     "inspectionScope": "Isolated PostgreSQL, Node API and Chromium mobile/desktop",
     "signedAcceptanceArtifact": {
-      "runId": 41202204865,
+      "runId": 41203615461,
       "artifactName": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
-      "artifactId": 13042424153
+      "artifactId": 13044315222
     },
     "stagedPcRun": 41175629350,
     "mechanicalPhoneQaRun": 41175629394,
@@ -50,12 +50,14 @@
     "latestQaTestSourceCommit": "88cf86dbbbb8ced09c2b689f4bc752b3159a68a4",
     "latestQaTestRun": 41176344482,
     "latestStandardCiRuns": {
-      "android": 41202204796,
-      "mechanical": 41202204874,
-      "apk": 41202204799,
-      "outage": 41202204812
+      "android": 41203615422,
+      "mechanical": 41203615449,
+      "apk": 41203615365,
+      "outage": 41203615367,
+      "mechanicalPhone": 41203615443,
+      "reception": 41203615510
     },
-    "candidateSourceAlignment": "Signed V377 APK and Chromium performance test passed at 37ce7e1654e9f5a23210fff6dffd036b35b6d79e. Single existing Consumables Cost card renamed Consumables Expense, using existing finalized paint and material costs, with date-sorted Job Card drilldown; Over Allocated displays distinct Job Card count; Manager menu refinement. Signed acceptance 41202204865 artifact 13042424153. Android 41202204796, standard APK 41202204799, outage 41202204812, inactive mechanical/accountant 41202204874 successful. Prior phone acceptance applies to earlier V377 candidate only. Physical retest of revised UI, fresh V377 backup/restore, eight-job live validation, authenticated Mechanical Checklist QA and separate publication approval pending. V376 production unchanged.",
+    "candidateSourceAlignment": "Updated Mechanical full-screen source b037898726724805a3dd5d5ed9ba94167cb4d1c4, signed acceptance 41203615461 artifact 13044315222, Android build 41203615422, standard APK 41203615365, Mechanical isolated phone 41203615443, contracts 41203615449, outage 41203615367 passed. Reception verification 41203615510 still in progress at evidence update. Checklist-to-existing-direct-Job-Card reconciliation remains SPEC_ONLY, NOT IMPLEMENTED. Backup/restore and other release gates remain pending. Publication held.",
     "overAllocatedJobsPopup": {
       "includedInCandidate": true,
       "sourceCommit": "72657991c2f6e1d6eb2e811d96a0e44c0c08db8e",
@@ -114,6 +116,15 @@
       "managerMenu": "Remove Mechanical Department menu entry; light teal System Health",
       "signedRun": 41202204865,
       "physicalRetest": "PENDING"
+    },
+    "updatedMechanicalFullScreen": {
+      "sourceCommit": "b037898726724805a3dd5d5ed9ba94167cb4d1c4",
+      "estimate": "full available page width with existing Mechanical-specific estimate editor",
+      "workspace": "viewport-filling Mechanical dashboard and section shell for web and Android WebView",
+      "signedRun": 41203615461,
+      "automatedMechanicalPhoneRun": 41203615443,
+      "status": "SIGNED_AND_AUTOMATION_PASSED_RECEPTION_CHECK_RUNNING",
+      "physicalManualRetest": "NOT_REQUIRED_BY_OWNER_FOR_EACH_UI_CHANGE"
     }
   },
   "v377RecoveryEvidence": {
