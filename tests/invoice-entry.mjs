@@ -26,7 +26,23 @@ class Element{constructor(){this.dataset={};this.children=[];this.innerHTML='';t
 for(const user of [manager,supervisor,employee]){
  let modal='',calls=0;const dashboard=new Element(),events={};const nodes={managerView:dashboard,supervisorView:dashboard,invoiceBody:{innerHTML:''},invoiceSearch:{value:''},invoiceEntryAmount:{value:'100.125'},invoiceEntryDate:{value:'2026-10-04'},qcRows:{innerHTML:''}};
  const ctx={invoiceComplete,invoiceDateValid,qcStatus,state:structuredClone(base),me:user,window:{addEventListener(name,fn){events[name]=fn},zukaitAuth:{getToken(){return 'test'}},zukaitCloud:{syncHealth:{ready:true},async syncNow(){}}},navigator:{onLine:true},document:{getElementById(id){return nodes[id]||null},createElement(){return new Element()},head:{appendChild(){}}},openModal(html){modal=html},closeModal(){},alert(message){throw Error(message)},Date,console,async fetch(url,opts){calls++;let body=JSON.parse(opts.body);assert.equal(body.invoiceDate,'2026-10-04');assert.equal(body.operation,'FINAL_INVOICE_ENTRY');let result=qcTransition(ctx.state,user,body,1000);assert.equal(result.ok,true);ctx.state=result.data;return{ok:true,async json(){return result}}}};
- vm.runInNewContext(ui+'\nwindow.testPending=invoicePending;window.testRow=row;',ctx);
+ vm.runInNewContext(ui+'\nwindow.testPending=invoicePending;window.testRow=row;window.testInvoiceInlineRow=invoiceInlineRow;',ctx);
+ if(user.role==='Manager'||user.role==='Supervisor'){
+  const invoiceRow=ctx.window.testInvoiceInlineRow;
+  const insurance={...base.jobs[2],reg:'92329.DD'};
+  assert.match(invoiceRow({...insurance,insuranceCompany:'Liva Insurance'}),/92329\.DD · Liva Insurance<\/small>/);
+  assert.match(invoiceRow({...insurance,insurance:'Oman United Insurance'}),/92329\.DD · Oman United Insurance<\/small>/);
+  assert.match(invoiceRow(insurance),/92329\.DD · Insurance<\/small>/,'Missing company must safely fall back to Insurance');
+  assert.match(invoiceRow({...base.jobs[0],insuranceCompany:'Wrong company'}),/ · Cash<\/small>/);
+  assert.match(invoiceRow({...base.jobs[1],insuranceCompany:'Wrong company'}),/ · Credit<\/small>/);
+  const escaped=invoiceRow({...insurance,insuranceCompany:'<img src=x onerror=alert(1)>'});
+  assert.match(escaped,/&lt;img src=x onerror=alert\(1\)&gt;/);
+  assert.doesNotMatch(escaped,/<img/,'Insurance company must be HTML-escaped');
+  ctx.window.zukaitJobCardMaster={identity:()=>({insuranceCompany:'New India Insurance'})};
+  assert.match(invoiceRow(insurance),/92329\.DD · New India Insurance<\/small>/,'Linked vehicle identity should supply company');
+  delete ctx.window.zukaitJobCardMaster;
+ }
+
  await ctx.window.zukaitOpenInvoiceEntry();assert.equal(modal.includes('Invoice Entry'),user.role!=='Employee');
  if(user.role==='Employee'){await ctx.window.zukaitSaveInvoiceEntry('1');assert.equal(calls,0);continue;}
  const launcher=dashboard.querySelector('[data-invoice-entry]');assert.ok(launcher);assert.equal(launcher.dataset.qcCount,'3');launcher.onclick();assert.match(modal,/Invoice Entry/);ctx.window.render();assert.equal(dashboard.children.filter(x=>x.dataset.invoiceEntry).length,1);
