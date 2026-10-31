@@ -3,7 +3,7 @@
   "versionCode": 340,
   "releaseScope": "standard",
   "approvedForStaff": false,
-  "sourceCommit": "156becc54853b4f50a15b85f59e7e475e6257a7e",
+  "sourceCommit": "f3bf4d2162dc7eab773a11ccb57e6ffb0923f7c6",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": false,
   "authorization": "Development, isolated testing and release evidence preparation only. Owner approval required separately for V377 publication and for backend activation. Do not publish or enable production Mechanical inspection.",
@@ -50,12 +50,28 @@
     "latestQaTestSourceCommit": "88cf86dbbbb8ced09c2b689f4bc752b3159a68a4",
     "latestQaTestRun": 41176344482,
     "latestStandardCiRuns": {
-      "android": 41176344476,
-      "mechanical": 41176344539,
-      "apk": 41176344507,
-      "outage": 41176344454
+      "android": 41182273130,
+      "mechanical": 41182273204,
+      "apk": 41182273132,
+      "outage": 41182273140
     },
-    "candidateSourceAlignment": "Signed acceptance and Mechanical phone APK are pinned to source 156becc5. New QA-only workflow commit 88cf86db does not modify application code. Before release, refresh signed source provenance and run all release gates."
+    "candidateSourceAlignment": "V377 candidate pinned to f3bf4d2162dc7eab773a11ccb57e6ffb0923f7c6, including over-allocated Manager popup and cache-busting. Android, app APK, inactive Mechanical/Accountant and outage CI passed at that source (41182273130, 41182273132, 41182273204, 41182273140). Previously recorded signed acceptance artifact/run originated at 156becc5 and MUST NOT be used as current candidate evidence; require new signed acceptance build and same-source checks before release. This commit changes release metadata only; approval and publication remain explicitly withheld.",
+    "overAllocatedJobsPopup": {
+      "includedInCandidate": true,
+      "sourceCommit": "f3bf4d2162dc7eab773a11ccb57e6ffb0923f7c6",
+      "features": [
+        "Manager Over Allocated Jobs opens detailed grouped JC cards",
+        "Vehicle/registration and Cash/Credit/Insurance type",
+        "Per-employee department, allocated/actual/exceeded normal-duty minutes",
+        "Highest overage first; click into JC",
+        "ID001, repeat, finished and Mechanical exclusions; cache-busted assets"
+      ],
+      "automatedCalculationAndWiringTests": "PASS_IN_APK_FULL_REGRESSION_RUN_41182273132",
+      "dedicatedFourViewportChromiumTest": "TEST_PRESENT_IN_REPOSITORY_NOT_CONFIRMED_AS_EXECUTED_IN_LATEST_CI",
+      "realDataValidation": "NOT_VERIFIED",
+      "physicalPhoneValidation": "NOT_RUN_FOR_V377"
+    },
+    "signedAcceptanceSourceAligned": false
   },
   "v377RecoveryEvidence": {
     "priorRestoreDate": "2026-10-27",
