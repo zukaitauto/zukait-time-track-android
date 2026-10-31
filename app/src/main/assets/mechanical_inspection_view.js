@@ -48,7 +48,7 @@ export async function mountMechanicalInspection(root,options={}){
    draft=record?.inspection?structuredClone(record.inspection):empty();
    if(!draft.functions)draft.functions=empty().functions;
    if(!Array.isArray(draft.damageMarks))draft.damageMarks=[];
-  }catch(error){if(live())message=String(error.message||'Unable to read checklist.');}
+  }catch(error){if(live()){const code=String(error?.code||error?.message||'');message=code==='mechanical_job_type_not_allowed'?'This Mechanical checklist is blocked because its linked Job Card is not Cash or Credit. Ask the Manager to correct the Job Card type.':String(error?.message||'Unable to read checklist.');}}
   finally{loading=false;if(live())render();}
  }
  async function save(){
@@ -83,10 +83,10 @@ export async function mountMechanicalInspection(root,options={}){
      'invalid_inspection','invalid_mechanical_job_type','invalid_vehicle',
      'invalid_vehicle_year','invalid_vin','invalid_odometer',
      'invalid_work_description','invalid_damage_marks','invalid_function_checks',
-     'mechanical_forbidden','inspection_checklist_not_found',
+     'mechanical_forbidden','inspection_checklist_not_found','mechanical_job_type_not_allowed',
      'extension_disabled','session_changed','invalid_session'].includes(code);
     if(rejected)pending=null;
-    message=code+(rejected
+    message=code==='mechanical_job_type_not_allowed'?'This Mechanical checklist cannot be saved because its linked Job Card is not Cash or Credit. Ask the Manager to correct the Job Card type.':code+(rejected
      ?' The server rejected this request. Reload to review the current checklist.'
      :' Save status is uncertain. Retry with the same request ID or reopen to verify.');
    }
