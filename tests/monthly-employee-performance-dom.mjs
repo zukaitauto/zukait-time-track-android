@@ -36,11 +36,11 @@ function load(path){
 const rules=load('app/src/main/assets/time_management_rules.js').replace(/\bexport /g,'');
 const engine=load('app/src/main/assets/workshop_performance.js').replace(/^import[^\n]*\n/,'').replace(/\bexport /g,'');
 const report=load('app/src/main/assets/monthly_employee_performance.js').replace(/^import[^\n]*\n/gm,'').replace(/\bexport /g,'');
-const worked=vm.runInContext(rules+'\nworkedMinutes',ctx);
+const worked=vm.runInContext('(function(){'+rules+'\nreturn workedMinutes;})()',ctx);
 ctx.workedMinutes=worked;
-const normal=vm.runInContext(engine+'\nnormalAssignments',ctx);
+const normal=vm.runInContext('(function(){'+engine+'\nreturn normalAssignments;})()',ctx);
 ctx.normalAssignments=normal;
-vm.runInContext(report,ctx);
+vm.runInContext('(function(){'+report+'\n})()',ctx);
 assert.equal(typeof win.zukaitMonthlyEmployeePerformance?.calculate,'function');
 
 win.showReportTab('monthly');
