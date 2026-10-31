@@ -372,6 +372,23 @@
     "productionDatabaseTouched": false,
     "productionBackendActivated": false,
     "publicationAuthorized": false,
-    "releaseState": "HELD_PENDING_AUTHENTICATED_QA_AND_OWNER_PUBLICATION_AUTHORIZATION"
+    "releaseState": "HELD_PENDING_AUTHENTICATED_QA_AND_OWNER_PUBLICATION_AUTHORIZATION",
+    "nextAuthenticatedQaAction": {
+      "checkpoint": "2026-10-31",
+      "isolatedQaPhoneRun": 41203615443,
+      "qaPhoneArtifactId": 13044035816,
+      "qaPhoneArtifactName": "MECHANICAL_PHONE_QA_b037898726724805a3dd5d5ed9ba94167cb4d1c4",
+      "qaPhoneArtifactSource": "b037898726724805a3dd5d5ed9ba94167cb4d1c4",
+      "qaPhoneArtifactAvailableOnCheck": true,
+      "qaPhoneArtifactExpiresAt": "2026-11-14T13:02:23Z",
+      "safety": "Separate com.zukait.timetrack.acceptance package; QA Supabase project omqgkqknbdcnotabffek only; native updater disabled; production not activated.",
+      "sourceComparison": "Compared QA build commit b037898726724805a3dd5d5ed9ba94167cb4d1c4 with pinned release application commit 6ac697bdd80e71a5e89e0fde6cb565febf06002e: 42 commits later, no changed mechanical inspection component or mechanical supervisor/workspace files; distinct QA APK is not exact V377 signed release artifact.",
+      "qaSupervisorSessionStatus": "SUP003 active, MC_CREATE granted, zero unrevoked QA sessions during recheck",
+      "qaManagerSessionStatus": "QA Manager active, MC_CREATE granted, one unrevoked session record; no reusable browser authentication available",
+      "existingLoginHelper": "QA-only v318-qa-login-check function exists but verifies login only and does not itself execute Mechanical Checklist acceptance.",
+      "outstanding": "Run real signed-in Mechanical Supervisor and QA Manager Cash/Credit create, save, reopen, edit, revision/audit/idempotency and permissions checks with QA-only build. Do not send passwords or session tokens to chat.",
+      "result": "AUTHENTICATED_END_TO_END_NOT_VERIFIED",
+      "productionTouched": false
+    }
   }
 }
