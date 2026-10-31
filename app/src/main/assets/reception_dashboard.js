@@ -250,8 +250,8 @@
       }
       if(what==="link-existing"){
         const rc=button.dataset.rc;
-        if(!rc||!window.zukaitReception?.call||!window.zukaitReception?.action)throw Error("Reception link is unavailable.");
-        const details=await window.zukaitReception.call({operation:"GET",rc_no:rc});
+        if(!rc||!window.zukaitReception?.action)throw Error("Reception link is unavailable.");
+        const details=await window.zukaitReception.action({action:"reception",command:{operation:"GET",rc_no:rc}});
         const record=details.record;
         if(!record||record.job_card)throw Error("This checklist is already linked or no longer available. Refresh.");
         const number=String(window.prompt("Link existing Job Card to Checklist "+rc+". Enter exact Job Card number:","")||"").trim().toUpperCase();
