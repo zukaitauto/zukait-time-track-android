@@ -46,7 +46,16 @@
     "physicalPhoneTestStatus": "NOT_RUN_FOR_V377",
     "receptionRegressionRun": 41125370742,
     "receptionRegressionSourceCommit": "b31d849bfa2eed37a33cfb11aa3db4b464e6229a",
-    "receptionRegressionScope": "Previously passed; latest change only Mechanical QA workflow, not app runtime"
+    "receptionRegressionScope": "Previously passed; latest change only Mechanical QA workflow, not app runtime",
+    "latestQaTestSourceCommit": "88cf86dbbbb8ced09c2b689f4bc752b3159a68a4",
+    "latestQaTestRun": 41176344482,
+    "latestStandardCiRuns": {
+      "android": 41176344476,
+      "mechanical": 41176344539,
+      "apk": 41176344507,
+      "outage": 41176344454
+    },
+    "candidateSourceAlignment": "Signed acceptance and Mechanical phone APK are pinned to source 156becc5. New QA-only workflow commit 88cf86db does not modify application code. Before release, refresh signed source provenance and run all release gates."
   },
   "v377RecoveryEvidence": {
     "priorRestoreDate": "2026-10-27",
@@ -87,5 +96,18 @@
       "mechanical_time_management"
     ],
     "qaPhoneArtifactRun": 41175629394
+  },
+  "v377QaHostedSmokeEvidence": {
+    "testedSourceCommit": "88cf86dbbbb8ced09c2b689f4bc752b3159a68a4",
+    "workflowRun": 41176344482,
+    "checked": "Live QA-only workshop-api public HTTP: CORS preflight, invalid publishable key, missing session, unrecognized session",
+    "result": "PASS",
+    "isolatedNodeTests": "PASS",
+    "isolatedPostgresTests": "PASS",
+    "isolatedChromiumTests": "PASS",
+    "authenticatedChecklistSaveEditHistory": "NOT_TESTED_WITH_REAL_QA_SESSION",
+    "qaProjectRef": "omqgkqknbdcnotabffek",
+    "productionBackendChanged": false,
+    "physicalPhoneTest": "NOT_PERFORMED"
   }
 }
