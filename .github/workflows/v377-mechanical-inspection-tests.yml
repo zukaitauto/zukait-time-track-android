@@ -11,6 +11,9 @@ on:
       - 'supabase/migrations/20261031120000_mechanical_inspection_secure.sql'
       - 'supabase/migrations/20261031210000_mechanical_cash_credit_creation_guard.sql'
       - 'tests/mechanical-cash-credit-guard.sql'
+      - 'tests/mechanical-cash-credit-client.mjs'
+      - 'supabase/functions/workshop-api/extensions/mechanical_route.js'
+      - 'app/src/main/assets/mechanical_workspace.js'
       - '.github/workflows/v377-mechanical-inspection-tests.yml'
       - 'package.json'
       - 'experiments/v377-mechanical-inspection-*.sql'
@@ -37,11 +40,13 @@ jobs:
           node --check app/src/main/assets/mechanical_supervisor.js
           node --check app/src/main/assets/mechanical_workspace.js
           for file in tests/mechanical-inspection-*.mjs; do node --check "$file"; done
+          node --check tests/mechanical-cash-credit-client.mjs
       - name: Install browser DOM test dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Run isolated tests
         run: |
           npm run test:mechanical:inspection
+          node tests/mechanical-cash-credit-client.mjs
           node tests/mechanical-inspection-view.mjs
 
 
