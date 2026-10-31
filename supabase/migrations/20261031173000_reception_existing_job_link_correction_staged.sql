@@ -73,7 +73,7 @@ begin
         v_op,p_actor_id,v_reason);
  return jsonb_build_object('ok',true,'rc_no',v_rc,'job_card',
     case when v_op='UNLINK_EXISTING_JOB' then null else v_new end);
-end $$;
+end; $;
 revoke all on function public.zukait_reception_correct_existing_job_link(text,jsonb) from public,anon,authenticated,service_role;
 grant execute on function public.zukait_reception_correct_existing_job_link(text,jsonb) to service_role;
 commit;
