@@ -1227,7 +1227,7 @@ Deno.serve(async (req: Request) => {
       const {data:existingLinks,error:linkError}=await admin.from("workshop_reception_existing_job_links").select("rc_no,job_card");
       if(linkError)throw linkError;
       const linkByRc=new Map((existingLinks||[]).map((x:any)=>[String(x.rc_no),String(x.job_card)]));
-      const safeCases=receptionRows.map(r=>({...r,job_card:r.job_card||linkByRc.get(String(r.rc_no))||null,insurance_company:insuranceById.get(String(r.insurance_id))||""}));
+      const safeCases=receptionRows.map(r=>({...r,job_card:r.job_card||linkByRc.get(String(r.rc_no))||null,manually_linked:linkByRc.has(String(r.rc_no)),insurance_company:insuranceById.get(String(r.insurance_id))||""}));
       const projected=receptionDashboardProjection(state.data,safeCases,{
         section:body.section,search:body.search,month:body.month,from:body.from,to:body.to,
         page:body.page,missing_only:body.missing_only,dated_only:body.dated_only,checklist_status:body.checklist_status,company_filter:body.company_filter
