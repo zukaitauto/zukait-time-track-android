@@ -40,6 +40,8 @@ jobs:
           node tests/qc-delivery-authority.mjs
           node tests/time-management.mjs
           node tests/manager-time-management.mjs
+          node tests/v377-performance-calculations.mjs
+          node tests/v377-workshop-performance-ui.mjs
   persistence:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -109,6 +111,7 @@ jobs:
       - run: node tests/mechanical-report-ui.mjs
       - run: npx playwright install chromium
       - run: node tests/v377-performance-browser.mjs
+      - run: node tests/v377-overallocated-popup-browser.mjs
       - run: node tests/accountant-bill-intent-browser.mjs
       - run: node tests/accountant-bill-workspace-browser.mjs
       - run: node tests/mechanical-supervisor-role-browser.mjs
