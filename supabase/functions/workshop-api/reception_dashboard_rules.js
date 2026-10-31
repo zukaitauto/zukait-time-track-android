@@ -23,7 +23,7 @@ const sortJobs=(a,b)=>createdTime(b.created_at)-createdTime(a.created_at)||seria
 function safeRc(r,company) {
  const d=r?.details||{};
  return {rc_no:text(r.rc_no),sequence_no:Number(r.sequence_no||0),
- job_card:text(r.job_card),direct_job_only:d.direct_job_only===true,job_type:text(r.job_type||"INSURANCE"),
+ job_card:text(r.job_card),manually_linked:r.manually_linked===true,direct_job_only:d.direct_job_only===true,job_type:text(r.job_type||"INSURANCE"),
  vehicle:[d.make,d.model,d.year].filter(Boolean).join(" ").slice(0,240),
  registration:text(d.registration),customer:text(d.customer),
  insurance_company:company||"",received_at:r.received_at||"",
