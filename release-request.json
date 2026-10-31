@@ -331,7 +331,7 @@
       "branch": "architecture-v2",
       "headBeforeEvidenceCommit": "d995819bb2d345bd29df69bd302e79bf760cf400",
       "pinnedApplicationSource": "6ac697bdd80e71a5e89e0fde6cb565febf06002e",
-      "postPinChanges": "New QA-only Mechanical SQL migration and isolated test/workflow, plus release-request.json metadata; no Android/web application asset changes versus signed source 6ac697b.",
+      "postPinChanges": "QA-only Mechanical SQL guards, inspection API/client error-handling changes, local test/workflow changes, and release-request metadata; signed APK still sourced from pinned 6ac697b. New code requires requalification before any final V377 application acceptance.",
       "signedAcceptanceRun": 41224517915,
       "signedArtifactId": 13051431894,
       "signedArtifactSource": "6ac697bdd80e71a5e89e0fde6cb565febf06002e",
@@ -368,7 +368,8 @@
       "Independently prove that owner-tested physical device installed this exact signed V377 candidate, if physical release acceptance requires source identity",
       "Fresh production backup and isolated restore explicitly deferred by owner, NOT_VERIFIED; prior isolated V375 restore passed on 2026-10-27",
       "Separate owner authorization is mandatory before publishing V377 or activating production backend changes",
-      "Do not deploy QA-verified Mechanical Cash/Credit guard to production without separate production backend authorization."
+      "Do not deploy QA-verified Mechanical Cash/Credit guard to production without separate production backend authorization.",
+      "Complete isolated CI run 41233645638 and, only if the PostgreSQL gate passes, apply linked Job Card type inspection authorization migration to isolated QA (never production)."
     ],
     "productionApplication": "V376_UNCHANGED",
     "productionDatabaseTouched": false,
@@ -424,6 +425,29 @@
       "qaAuditRowsAfter": 0,
       "qaReceiptRowsAfter": 0,
       "qaFunctionSecurity": "anon execute false; authenticated execute false; service_role execute true"
+    },
+    "mechanicalLinkedJobTypeGuard": {
+      "reviewDate": "2026-10-31",
+      "issue": "Existing Mechanical inspection_authorize revalidated session, role and checklist ID, but not current workshop_state.jobs[].jobType; a Job Card reclassified after registration could remain readable/editable as Mechanical.",
+      "sourceFixCommit": "cdcad4adcfedbc01ad8488669fc5ecd9fd26c770",
+      "currentCodeHeadBeforeEvidenceCommit": "92b443f43c56c61cd7896c5a22b3c795c3c9c2b0",
+      "guardMigrationFile": "supabase/migrations/20261031224000_mechanical_inspection_linked_job_type_guard.sql",
+      "guardScope": "Authorize every inspection READ and SAVE only while the linked Job Card currently resolves to exactly one Cash or Credit workshop Job Card. Row-level SHARE locks prevent conflicting edits during the transaction.",
+      "failureStatus": "HTTP 409 mechanical_job_type_not_allowed; visible recovery instruction, and definite save rejection does not hold an uncertain retry",
+      "testEvidence": "SQL coverage of Insurance transition, missing type, duplicate JC identities, and no receipt/audit changes; JS API and DOM regression code committed",
+      "ciRun": 41233645638,
+      "ciStatus": "QUEUED_NOT_YET_VERIFIED",
+      "qaMigrationStatus": "NOT_APPLIED_WAITING_FOR_ISOLATED_POSTGRES_CI",
+      "qaApiVersion": 45,
+      "qaRowsAtReview": {
+        "checklists": 2,
+        "inspectionDetails": 0,
+        "inspectionAudit": 0,
+        "inspectionReceipts": 0
+      },
+      "existingQaLinkedJobTypes": "CASH for both existing Mechanical checklists",
+      "productionBackendActivated": false,
+      "authenticatedManagerSupervisorE2E": "NOT_VERIFIED"
     }
   }
 }
