@@ -120,4 +120,26 @@ assert.deepEqual(attempts,[requestId,requestId],'retry must reuse original reque
 assert.doesNotMatch(errorRoot.textContent,/Unconfirmed request/);
 assert.match(errorRoot.textContent,/Reload to review the current checklist/);
 errorView.destroy();
+// A Job Card changed to Insurance must show a clear fail-closed message on
+// both initial reload and attempted save; a definite rejection cannot be
+// treated as an unconfirmed/possibly committed write.
+const readTypeDom=makeDom(),readTypeRoot=readTypeDom.window.document.querySelector('#root');
+const deniedReadView=await mountMechanicalInspection(readTypeRoot,{...options,
+ api:async()=>{throw Error('mechanical_job_type_not_allowed');}});
+assert.match(readTypeRoot.textContent,/blocked because its linked Job Card is not Cash or Credit/);
+deniedReadView.destroy();readTypeDom.window.close();
+const saveTypeDom=makeDom(),saveTypeRoot=saveTypeDom.window.document.querySelector('#root');
+let typeRejectedWrites=0;
+const deniedSaveView=await mountMechanicalInspection(saveTypeRoot,{...options,
+ api:async ({command})=>{
+  if(command.operation==='READ_INSPECTION')return {ok:true,inspection:null};
+  typeRejectedWrites++;throw Error('mechanical_job_type_not_allowed');
+ }});
+validVehicle(saveTypeRoot,saveTypeDom.window);
+submit(saveTypeRoot,saveTypeDom.window);
+await nextTurn();
+assert.equal(typeRejectedWrites,1);
+assert.match(saveTypeRoot.textContent,/cannot be saved because its linked Job Card is not Cash or Credit/);
+assert.doesNotMatch(saveTypeRoot.textContent,/Unconfirmed request/);
+deniedSaveView.destroy();saveTypeDom.window.close();
 console.log('PASS V377 Mechanical inspection DOM: Cash/Credit, edit, image, notes, save/reopen, print, safe retry, definite conflict');
