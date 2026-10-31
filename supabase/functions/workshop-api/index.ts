@@ -53,7 +53,7 @@ function receptionistRequestAllowed(action: string, body: any) {
   if (action === "receptionist_deliver") return body?.operation === "DELIVER" && Object.keys(body).every(k =>
     ["action", "operation", "jobCard", "expectedQcRevision", "expectedVehicleIdentity", "request_id"].includes(k));
   return action === "reception" &&
-    ["CAPABILITIES", "MASTER", "LIST", "GET", "CREATE", "EDIT", "MOVE", "CREATE_JOB", "CREATE_DIRECT_JOB", "CREATE_EXTERNAL_JOB", "SET_CTL", "SET_NOT_REPAIRED", "RELEASE_CTL", "SET_APPROVED", "CREATE_CHECKLIST_JOB"]
+    ["CAPABILITIES", "MASTER", "LIST", "GET", "CREATE", "EDIT", "MOVE", "CREATE_JOB", "CREATE_DIRECT_JOB", "CREATE_EXTERNAL_JOB", "SET_CTL", "SET_NOT_REPAIRED", "RELEASE_CTL", "SET_APPROVED", "CREATE_CHECKLIST_JOB", "LINK_EXISTING_JOB"]
       .includes(body?.command?.operation);
 }
 
