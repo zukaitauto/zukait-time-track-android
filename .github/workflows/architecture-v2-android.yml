@@ -42,6 +42,7 @@ jobs:
           node tests/v157-voice-quick-entry.mjs
           node tests/vehicle-global-identity.mjs
           node tests/employee-parts-privacy.mjs
+          node tests/monthly-employee-performance.mjs
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
