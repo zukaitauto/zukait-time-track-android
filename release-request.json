@@ -323,5 +323,55 @@
     "qaApiVersionVerified": 44,
     "workflowAttempt": 2,
     "verifiedAt": "2026-10-31T07:06:34Z"
+  },
+  "v377FinalReviewEvidence": {
+    "reviewedOn": "2026-10-31",
+    "reviewScope": "Step 4 isolated Mechanical Checklist QA and Step 5 prepublication source/artifact readiness",
+    "gitHub": {
+      "branch": "architecture-v2",
+      "headBeforeEvidenceCommit": "d995819bb2d345bd29df69bd302e79bf760cf400",
+      "pinnedApplicationSource": "6ac697bdd80e71a5e89e0fde6cb565febf06002e",
+      "postPinChanges": "Four commits; release-request.json only; no application source changes",
+      "signedAcceptanceRun": 41224517915,
+      "signedArtifactId": 13051431894,
+      "signedArtifactSource": "6ac697bdd80e71a5e89e0fde6cb565febf06002e",
+      "signedArtifactAvailable": true,
+      "signedBuildResult": "SUCCESS"
+    },
+    "isolatedMechanicalQa": {
+      "projectRef": "omqgkqknbdcnotabffek",
+      "projectStatus": "ACTIVE_HEALTHY",
+      "inspectionSecureMigration": "INSTALLED",
+      "inspectionTablesRls": "ENABLED",
+      "inspectionTableAnonAuthenticatedDirectRead": "DENIED",
+      "inspectionRpcAnonAuthenticatedDirectExecute": "DENIED",
+      "currentlyExistingChecklists": 2,
+      "storedInspectionDetails": 0,
+      "inspectionAuditEntries": 0,
+      "inspectionSaveReceipts": 0,
+      "duplicatesObserved": 0,
+      "cashCreditConstraint": "CONFIRMED_IN_DEPLOYED_SQL",
+      "postgresNodeChromiumWorkflows": "PASS_IN_GITHUB_ISOLATED_TESTS_41124838680",
+      "qaHostedApiDenialWorkflow": "PASS_GITHUB_41176344482",
+      "directInvalidSessionProbe": "PASS_READ_AND_SAVE_DENIED; TRANSACTION_ROLLED_BACK; COUNTS_UNCHANGED",
+      "mechanicalSupervisor": "SUP003 ACTIVE_WITH_MC_CREATE_BUT_NO_UNREVOKED_QA_SESSION",
+      "qaManager": "QA375_M_8A9B8834 ACTIVE_WITH_MC_CREATE_AND_DATABASE_SESSION_RECORD; NO_USABLE_AUTHENTICATED_CLIENT_SESSION_AVAILABLE",
+      "authenticatedSupervisorCreateSaveReadEditReload": "NOT_VERIFIED",
+      "authenticatedManagerAccessRevisionAuditBoundary": "NOT_VERIFIED",
+      "reason": "Live authorized QA client sessions not available for complete end-to-end flow; simulated service_role SQL tests are not counted as authenticated client acceptance.",
+      "qaDatabaseMutationsByReview": 0
+    },
+    "outstanding": [
+      "Mechanical Supervisor and Manager end-to-end authenticated QA save, edit, revision history, reload, audit and permission checks",
+      "Reconcile unidentified eighth Job Card from earlier Over Allocated Jobs screenshot against seven currently verified distinct live Job Cards",
+      "Independently prove that owner-tested physical device installed this exact signed V377 candidate, if physical release acceptance requires source identity",
+      "Fresh production backup and isolated restore explicitly deferred by owner, NOT_VERIFIED; prior isolated V375 restore passed on 2026-10-27",
+      "Separate owner authorization is mandatory before publishing V377 or activating production backend changes"
+    ],
+    "productionApplication": "V376_UNCHANGED",
+    "productionDatabaseTouched": false,
+    "productionBackendActivated": false,
+    "publicationAuthorized": false,
+    "releaseState": "HELD_PENDING_AUTHENTICATED_QA_AND_OWNER_PUBLICATION_AUTHORIZATION"
   }
 }
