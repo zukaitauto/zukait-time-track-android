@@ -3,7 +3,7 @@
   "versionCode": 340,
   "releaseScope": "standard",
   "approvedForStaff": false,
-  "sourceCommit": "72657991c2f6e1d6eb2e811d96a0e44c0c08db8e",
+  "sourceCommit": "b2f5e59551406be74d3159500134af380f16758f",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": false,
   "authorization": "Development, isolated testing and release evidence preparation only. Owner approval required separately for V377 publication and for backend activation. Do not publish or enable production Mechanical inspection.",
@@ -16,8 +16,8 @@
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41183056983,
-  "verificationRun": 41125370742,
+  "signedAcceptanceRun": 41188003754,
+  "verificationRun": 41188003717,
   "previousPublishedRelease": {
     "versionName": "V376",
     "versionCode": 339,
@@ -32,9 +32,9 @@
     "mechanicalInspectionSourceCommit": "260e62b52d83642abd13a476e9571ee88646b0aa",
     "inspectionScope": "Isolated PostgreSQL, Node API and Chromium mobile/desktop",
     "signedAcceptanceArtifact": {
-      "runId": 41183056983,
+      "runId": 41188003754,
       "artifactName": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
-      "artifactId": 13035743239
+      "artifactId": 13037716497
     },
     "stagedPcRun": 41175629350,
     "mechanicalPhoneQaRun": 41175629394,
@@ -44,18 +44,18 @@
       "artifactId": 13033265830
     },
     "physicalPhoneTestStatus": "NOT_RUN_FOR_V377",
-    "receptionRegressionRun": 41125370742,
-    "receptionRegressionSourceCommit": "b31d849bfa2eed37a33cfb11aa3db4b464e6229a",
-    "receptionRegressionScope": "Previously passed; latest change only Mechanical QA workflow, not app runtime",
+    "receptionRegressionRun": 41188003717,
+    "receptionRegressionSourceCommit": "b2f5e59551406be74d3159500134af380f16758f",
+    "receptionRegressionScope": "PASS at pinned V377 source: full Reception verification including invoice-entry tests and browser checks (run 41188003717)",
     "latestQaTestSourceCommit": "88cf86dbbbb8ced09c2b689f4bc752b3159a68a4",
     "latestQaTestRun": 41176344482,
     "latestStandardCiRuns": {
-      "android": 41183057006,
-      "mechanical": 41183056986,
-      "apk": 41183056988,
-      "outage": 41183057098
+      "android": 41188003688,
+      "mechanical": 41188003727,
+      "apk": 41188003718,
+      "outage": 41188003774
     },
-    "candidateSourceAlignment": "Signed V377 APK and four-width Chromium Manager Over Allocated Jobs popup checks passed at source 72657991c2f6e1d6eb2e811d96a0e44c0c08db8e (signed acceptance 41183056983, artifact 13035743239, visual QA 13035459096). Standard Android/APK/Mechanical-contract/outage CI passed at same source (41183057006, 41183056988, 41183056986, 41183057098). Only release-request.json metadata changes after the pinned source are permitted by release safety guard. Physical Android test, real-data popup validation, fresh V377 backup/restore and separate owner approval are not complete. V376 production and main unchanged.",
+    "candidateSourceAlignment": "Signed V377 APK, full functional smoke tests, four-width Manager Over Allocated Jobs popup Chromium checks and Reception verification passed at source b2f5e59551406be74d3159500134af380f16758f (signed acceptance 41188003754, APK artifact 13037716497, visual QA 13038035935, Reception verification 41188003717). Standard Android/APK/Mechanical-contract/outage CI passed at same source (41188003688, 41188003718, 41188003727, 41188003774). Invoice Entry for Manager and Supervisor now shows saved insurance company with missing-name fallback; Cash and Credit unchanged. Only release-request.json metadata changes after pinned source are permitted by release safety guard. Physical Android acceptance, real-data popup validation, fresh V377 backup/restore, authenticated Mechanical Checklist end-to-end QA and separate owner approval remain pending. V376 production and main unchanged.",
     "overAllocatedJobsPopup": {
       "includedInCandidate": true,
       "sourceCommit": "72657991c2f6e1d6eb2e811d96a0e44c0c08db8e",
@@ -66,17 +66,28 @@
         "Highest overage first; click into JC",
         "ID001, repeat, finished and Mechanical exclusions; cache-busted assets"
       ],
-      "automatedCalculationAndWiringTests": "PASS_IN_SIGNED_ACCEPTANCE_FULL_REGRESSION_41183056983",
-      "dedicatedFourViewportChromiumTest": "PASS_IN_SIGNED_ACCEPTANCE_RUN_41183056983",
+      "automatedCalculationAndWiringTests": "PASS_IN_SIGNED_ACCEPTANCE_FULL_REGRESSION_41188003754",
+      "dedicatedFourViewportChromiumTest": "PASS_IN_SIGNED_ACCEPTANCE_RUN_41188003754",
       "realDataValidation": "NOT_VERIFIED",
       "physicalPhoneValidation": "NOT_RUN_FOR_V377",
       "visualQaArtifact": {
-        "runId": 41183056983,
+        "runId": 41188003754,
         "artifactName": "V377_MANAGER_OVERALLOCATED_POPUP_VISUAL_QA",
-        "artifactId": 13035459096
+        "artifactId": 13038035935
       }
     },
-    "signedAcceptanceSourceAligned": true
+    "signedAcceptanceSourceAligned": true,
+    "invoiceEntryInsuranceCompany": {
+      "includedInCandidate": true,
+      "sourceCommit": "b2f5e59551406be74d3159500134af380f16758f",
+      "roles": [
+        "Manager",
+        "Supervisor"
+      ],
+      "behavior": "Insurance pending invoice rows display saved insurance company; generic Insurance only when company missing. Cash/Credit labels unchanged; safely HTML-escaped.",
+      "regressionTests": "PASS_IN_SIGNED_ACCEPTANCE_41188003754_AND_RECEPTION_VERIFICATION_41188003717",
+      "physicalPhoneValidation": "NOT_RUN_FOR_V377"
+    }
   },
   "v377RecoveryEvidence": {
     "priorRestoreDate": "2026-10-27",
