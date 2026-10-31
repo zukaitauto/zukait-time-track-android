@@ -101,3 +101,58 @@ jobs:
         run: |
           node tests/mechanical-inspection-migration-postgres.mjs
           node tests/mechanical-inspection-postgres.mjs
+
+  hosted-qa-denial-smoke:
+    # Read-only traffic against the separate QA Edge Function. Never creates
+    # sessions, authorizes a user, or accesses the production project.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      ZUKAIT_QA_REF: omqgkqknbdcnotabffek
+      ZUKAIT_QA_PUBLIC_KEY: sb_publishable_DBp6FI8Z4ThAq_4LXrZXSg_Xw2uPPgO
+    steps:
+      - name: Check QA-only host, CORS, API key and session denial
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from urllib.request import Request, urlopen
+          from urllib.error import HTTPError
+          ref=os.environ['ZUKAIT_QA_REF']
+          assert ref=='omqgkqknbdcnotabffek', 'The QA test must not target another project'
+          url=f'https://{ref}.supabase.co/functions/v1/workshop-api'
+          key=os.environ['ZUKAIT_QA_PUBLIC_KEY']
+          assert key.startswith('sb_publishable_')
+          payload=json.dumps({'action':'mechanical_inspection',
+              'command':{'operation':'READ_INSPECTION',
+              'checklistId':'00000000-0000-4000-8000-000000000000'}}).encode()
+          def send(method, apikey=None, session=None):
+              headers={'content-type':'application/json'}
+              if apikey: headers['apikey']=apikey
+              if session: headers['x-zukait-session']=session
+              if method=='OPTIONS':
+                  headers.update({'origin':'https://qa.example.invalid',
+                      'access-control-request-method':'POST',
+                      'access-control-request-headers':'apikey,x-zukait-session,content-type'})
+              request=Request(url,data=payload if method=='POST' else None,
+                  method=method,headers=headers)
+              try:
+                  with urlopen(request,timeout=20) as response:
+                      return response.status,dict(response.headers),response.read(4000)
+              except HTTPError as error:
+                  return error.code,dict(error.headers),error.read(4000)
+          status,headers,body=send('OPTIONS')
+          assert status==200, f'CORS preflight rejected: {status}'
+          assert headers.get('Access-Control-Allow-Origin')=='*', 'QA CORS not configured'
+          status,headers,body=send('POST',apikey='qa-invalid-public-key')
+          assert status==401 and json.loads(body).get('code')=='bad_api_key', (
+              f'Unknown public key was not rejected: HTTP {status}; {body[:250]!r}')
+          status,headers,body=send('POST',apikey=key)
+          assert status==401 and json.loads(body).get('code')=='invalid_session', (
+              f'Missing staff session was not rejected: HTTP {status}; {body[:250]!r}')
+          status,headers,body=send('POST',apikey=key,session='QA-invalid-session-never-authorized')
+          assert status==401 and json.loads(body).get('code')=='invalid_session', (
+              f'Unrecognized staff session was not rejected: HTTP {status}; {body[:250]!r}')
+          print('PASS: Hosted V377 QA Edge is reachable; CORS, publishable key and session validation deny unauthorized reads.')
+          print('No staff account, workshop data, production endpoint or test write was used.')
+          PY
