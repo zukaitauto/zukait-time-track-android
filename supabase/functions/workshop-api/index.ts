@@ -1361,7 +1361,8 @@ Deno.serve(async (req: Request) => {
       if (!command || typeof command !== "object" || Array.isArray(command) || JSON.stringify(command).length > 24000) {
         return reply({ok:false,code:"reception_invalid_command"},400);
       }
-      const {data,error} = await admin.rpc("zukait_reception_command",{p_actor_id:String(user.id),p_command:command});
+      const procedure = String(command.operation||"").toUpperCase()==="LINK_EXISTING_JOB" ? "zukait_reception_link_existing_job" : "zukait_reception_command";
+      const {data,error} = await admin.rpc(procedure,{p_actor_id:String(user.id),p_command:command});
       if (error) {
         const code = String(error.message || "").match(/job_number_[a-z0-9_]+|job_edit_manager_required|reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0];
         if (code) return reply({ok:false,code}, /forbidden|manager_required/.test(code)?403:/not_found/.test(code)?404:409);
