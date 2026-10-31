@@ -3,7 +3,7 @@
   "versionCode": 340,
   "releaseScope": "standard",
   "approvedForStaff": false,
-  "sourceCommit": "8113a98c9d2b0413e2d45fdc4040079ee8346ed7",
+  "sourceCommit": "156becc54853b4f50a15b85f59e7e475e6257a7e",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": false,
   "authorization": "Development, isolated testing and release evidence preparation only. Owner approval required separately for V377 publication and for backend activation. Do not publish or enable production Mechanical inspection.",
@@ -16,7 +16,7 @@
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41125369887,
+  "signedAcceptanceRun": 41175629383,
   "verificationRun": 41125370742,
   "previousPublishedRelease": {
     "versionName": "V376",
@@ -24,18 +24,29 @@
     "sourceCommit": "52bf09188c11803af736de67da69ef584f60292b"
   },
   "v377VerificationEvidence": {
-    "androidBuildRun": 41125370256,
-    "mechanicalContractsRun": 41125369868,
-    "connectionOutageRun": 41125369877,
-    "appBuildRun": 41125370005,
+    "androidBuildRun": 41175629369,
+    "mechanicalContractsRun": 41175629395,
+    "connectionOutageRun": 41175629371,
+    "appBuildRun": 41175629398,
     "mechanicalInspectionRun": 41124838680,
     "mechanicalInspectionSourceCommit": "260e62b52d83642abd13a476e9571ee88646b0aa",
     "inspectionScope": "Isolated PostgreSQL, Node API and Chromium mobile/desktop",
     "signedAcceptanceArtifact": {
-      "runId": 41125369887,
+      "runId": 41175629383,
       "artifactName": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
-      "artifactId": 13010118403
-    }
+      "artifactId": 13032508308
+    },
+    "stagedPcRun": 41175629350,
+    "mechanicalPhoneQaRun": 41175629394,
+    "qaPhoneArtifact": {
+      "runId": 41175629394,
+      "artifactName": "MECHANICAL_PHONE_QA_156becc54853b4f50a15b85f59e7e475e6257a7e",
+      "artifactId": 13033265830
+    },
+    "physicalPhoneTestStatus": "NOT_RUN_FOR_V377",
+    "receptionRegressionRun": 41125370742,
+    "receptionRegressionSourceCommit": "b31d849bfa2eed37a33cfb11aa3db4b464e6229a",
+    "receptionRegressionScope": "Previously passed; latest change only Mechanical QA workflow, not app runtime"
   },
   "v377RecoveryEvidence": {
     "priorRestoreDate": "2026-10-27",
@@ -48,9 +59,9 @@
     "projectName": "zukait-v305-qa",
     "projectRef": "omqgkqknbdcnotabffek",
     "deployedFunction": "workshop-api",
-    "deployedFunctionVersion": 40,
-    "deployedBundleSha256": "54290f17dbf1b23b01fe051a388e78248bcc17818fc715983b6998c06f59cd87",
-    "deployedAt": "2026-10-31T05:45:46.531Z",
+    "deployedFunctionVersion": 41,
+    "deployedBundleSha256": "e0814635fe5cae12ea3a4a5bc8a37a749c6e0e8098ac6faa99d65030dc9eeae1",
+    "deployedAt": "2026-10-31T06:15:35.853Z",
     "migrationName": "v377_mechanical_inspection_secure_qa",
     "installedInspectionTables": 3,
     "allInspectionTablesRlsEnabled": true,
@@ -58,11 +69,23 @@
     "existingQaChecklistCountAfter": 2,
     "existingQaWorkshopRevisionAfter": 857,
     "qaActivation": "Restricted to isolated QA hostname; production source still requires disabled-by-default feature flag",
-    "status": "QA_DEPLOYED_AND_DATABASE_PRIVILEGES_VERIFIED",
+    "status": "QA_API_ROUTES_AND_DATABASE_VERIFIED",
     "authenticatedWriteReadEditAuditStatus": "NOT_VERIFIED_END_TO_END",
     "physicalAndroidAcceptance": "NOT_RUN_FOR_V377",
     "productionFunctionVersionUnchanged": 98,
     "productionInspectionTablesInstalled": false,
-    "productionChanged": false
+    "productionChanged": false,
+    "compatibleMigrations": [
+      "v377_mechanical_inspection_secure_qa",
+      "v377_qa_mechanical_time_commit",
+      "v377_qa_mechanical_scoped_sections"
+    ],
+    "installedSectionTables": 4,
+    "routes": [
+      "mechanical_inspection",
+      "mechanical_section",
+      "mechanical_time_management"
+    ],
+    "qaPhoneArtifactRun": 41175629394
   }
 }
