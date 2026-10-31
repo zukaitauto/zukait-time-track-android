@@ -53,7 +53,7 @@ function receptionistRequestAllowed(action: string, body: any) {
   if (action === "receptionist_deliver") return body?.operation === "DELIVER" && Object.keys(body).every(k =>
     ["action", "operation", "jobCard", "expectedQcRevision", "expectedVehicleIdentity", "request_id"].includes(k));
   return action === "reception" &&
-    ["CAPABILITIES", "MASTER", "LIST", "GET", "CREATE", "EDIT", "MOVE", "CREATE_JOB", "CREATE_DIRECT_JOB", "CREATE_EXTERNAL_JOB", "SET_CTL", "SET_NOT_REPAIRED", "RELEASE_CTL", "SET_APPROVED", "CREATE_CHECKLIST_JOB", "LINK_EXISTING_JOB"]
+    ["CAPABILITIES", "MASTER", "LIST", "GET", "CREATE", "EDIT", "MOVE", "CREATE_JOB", "CREATE_DIRECT_JOB", "CREATE_EXTERNAL_JOB", "SET_CTL", "SET_NOT_REPAIRED", "RELEASE_CTL", "SET_APPROVED", "CREATE_CHECKLIST_JOB", "LINK_EXISTING_JOB", "CORRECT_EXISTING_JOB_LINK", "UNLINK_EXISTING_JOB"]
       .includes(body?.command?.operation);
 }
 
@@ -1364,7 +1364,8 @@ Deno.serve(async (req: Request) => {
       if (!command || typeof command !== "object" || Array.isArray(command) || JSON.stringify(command).length > 24000) {
         return reply({ok:false,code:"reception_invalid_command"},400);
       }
-      const procedure = String(command.operation||"").toUpperCase()==="LINK_EXISTING_JOB" ? "zukait_reception_link_existing_job" : "zukait_reception_command";
+      const operation = String(command.operation||"").toUpperCase();
+      const procedure = operation==="LINK_EXISTING_JOB" ? "zukait_reception_link_existing_job" : ["CORRECT_EXISTING_JOB_LINK","UNLINK_EXISTING_JOB"].includes(operation) ? "zukait_reception_correct_existing_job_link" : "zukait_reception_command";
       const {data,error} = await admin.rpc(procedure,{p_actor_id:String(user.id),p_command:command});
       if (error) {
         const code = String(error.message || "").match(/job_number_[a-z0-9_]+|job_edit_manager_required|reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0];
