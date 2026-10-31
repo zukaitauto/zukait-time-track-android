@@ -7,6 +7,7 @@ const fail=(code,status=400)=>({status,body:{ok:false,code}});
 const obj=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const storageError=e=>{
  const code=String(e?.code??'');
+ if(code==='22023'&&String(e?.message??'')==='mechanical_job_type_not_allowed')return fail('mechanical_job_type_not_allowed',409);
  if(code==='40001')return fail('inspection_revision_conflict',409);
  if(code==='23505')return fail('inspection_request_conflict',409);
  if(code==='P0002')return fail('inspection_checklist_not_found',404);
