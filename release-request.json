@@ -57,7 +57,7 @@
       "mechanicalPhone": 41203615443,
       "reception": 41203615510
     },
-    "candidateSourceAlignment": "V377 candidate source updated to 71092a23835880c0ad78d4cb4b8272de5d5238ed for all-employee monthly completed-vehicle, weighted-efficiency and ID001 integrated Reports; Android/report DOM regression run 41224296093 and APK run 41224296108 require full result and candidate-level signoff. Prior signed acceptance run 41203615461 and prior physical checks belong to older code and do NOT verify this source. Fresh V377 backup/recovery and final owner approval remain required. Production V376 unchanged.",
+    "candidateSourceAlignment": "Source 71092a23835880c0ad78d4cb4b8272de5d5238ed (Employee/Monthly Reports with ID001 integrated) passed architecture Android build 41224296093, standard APK build 41224296108, outage 41224296152, and mechanical contracts 41224296137. Signed acceptance run 41203615461 belongs to older source and is invalid for this candidate. Exact-source signed acceptance, owner physical Android report check, fresh V377 backup/restore, updated Reception verification, and final release approval pending. V376 remains published; V377 publication held.",
     "overAllocatedJobsPopup": {
       "includedInCandidate": true,
       "sourceCommit": "72657991c2f6e1d6eb2e811d96a0e44c0c08db8e",
@@ -149,7 +149,7 @@
     },
     "monthlyEmployeeReport": {
       "sourceCommit": "71092a23835880c0ad78d4cb4b8272de5d5238ed",
-      "status": "SOURCE_ALIGNED_PREPUBLICATION_CI_AND_PHYSICAL_PENDING",
+      "status": "ANDROID_APK_AND_REGRESSION_CI_PASSED_SIGNED_AND_PHYSICAL_PENDING",
       "features": [
         "Manager Reports Employee and Monthly tabs use completed productive assignment month in Oman",
         "Unique completed vehicles per employee; finished technician assignments shown separately",
@@ -167,7 +167,12 @@
       "signedAcceptanceRun": null,
       "physicalAndroidScreenCheck": "NOT_VERIFIED_FOR_UPDATED_CANDIDATE",
       "freshBackupRestore": "NOT_VERIFIED_FOR_V377",
-      "publication": "HELD"
+      "publication": "HELD",
+      "androidArchitectureStatus": "PASS_GITHUB_41224296093",
+      "apkBuildStatus": "PASS_GITHUB_41224296108",
+      "connectionOutageStatus": "PASS_GITHUB_41224296152",
+      "mechanicalContractsStatus": "PASS_GITHUB_41224296137",
+      "readOnlyCalculationAndDomSmoke": "PASS"
     }
   },
   "v377RecoveryEvidence": {
