@@ -366,7 +366,8 @@
       "Reconcile unidentified eighth Job Card from earlier Over Allocated Jobs screenshot against seven currently verified distinct live Job Cards",
       "Independently prove that owner-tested physical device installed this exact signed V377 candidate, if physical release acceptance requires source identity",
       "Fresh production backup and isolated restore explicitly deferred by owner, NOT_VERIFIED; prior isolated V375 restore passed on 2026-10-27",
-      "Separate owner authorization is mandatory before publishing V377 or activating production backend changes"
+      "Separate owner authorization is mandatory before publishing V377 or activating production backend changes",
+      "Close Mechanical MC_CREATE server-side Cash/Credit-only validation gap; rollback-only QA fix tested, not deployed or source-committed."
     ],
     "productionApplication": "V376_UNCHANGED",
     "productionDatabaseTouched": false,
@@ -389,6 +390,23 @@
       "outstanding": "Run real signed-in Mechanical Supervisor and QA Manager Cash/Credit create, save, reopen, edit, revision/audit/idempotency and permissions checks with QA-only build. Do not send passwords or session tokens to chat.",
       "result": "AUTHENTICATED_END_TO_END_NOT_VERIFIED",
       "productionTouched": false
+    },
+    "mechanicalCashCreditServerGate": {
+      "reviewDate": "2026-10-31",
+      "projectRef": "omqgkqknbdcnotabffek",
+      "installedRoute": "MC_CREATE and separate inspection read/save",
+      "observation": "MC_CREATE invokes zukait_mechanical.assert_separate_job, which enforces unique job identity and department separation but does not check workshop_state.jobs[].jobType. The separate inspection save RPC restricts its own jobType to CASH/CREDIT and does not secure checklist creation.",
+      "qaSnapshotJobTypes": "23 QA workshop jobs: 18 Cash/Credit (case-normalized), 5 Insurance, zero missing types.",
+      "proposedRemediation": "Add upper(trim(coalesce(job->>'jobType',''))) IN ('CASH','CREDIT') check to assert_separate_job after unique identity validation, with SQLSTATE 22023 for anything else; preserve existing mixed-department checks and fail closed on missing values.",
+      "rollbackOnlyTest": "PASS: Cash/CASH/Credit/CREDIT allowed; INSURANCE/OTHER/empty/missing rejected; duplicate checklist job identity and non-Mechanical employee rejected.",
+      "qaFunctionDeployment": "NOT_APPLIED; ROLLBACK CONFIRMED",
+      "qaFunctionPostTest": "UNCHANGED",
+      "qaChecklistRowsAfter": 2,
+      "qaInspectionRowsAfter": 0,
+      "productionBackendActivated": false,
+      "releaseImpact": "Backend Mechanical MC_CREATE cannot be certified Cash/Credit-only until code guard is committed and isolated QA verified; production activation remains prohibited.",
+      "authenticatedSupervisorQa": "NOT_VERIFIED_NO_SUP003_SESSION",
+      "ownerApprovalForProductionBackendActivation": false
     }
   }
 }
