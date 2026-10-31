@@ -42,6 +42,10 @@ create table zukait_mechanical.checklists(
  id uuid primary key,number text not null,job_card text not null,manual_jc_date date not null,
  created_by text not null references public.staff_credentials(user_id)
 );
+create table public.workshop_state(id text primary key,data jsonb not null);
+grant select on public.workshop_state to service_role;
+insert into public.workshop_state(id,data) values ('main',
+ '{"jobs":[{"no":"MJC001","jobType":"CASH"},{"no":"MJC002","jobType":"CREDIT"}]}'::jsonb);
 grant select on zukait_mechanical.settings,zukait_mechanical.checklists to service_role;
 insert into zukait_mechanical.settings values(true,true,false,
  '{"SUP003":["MC_CREATE"],"MAN001":["MC_CREATE"]}'::jsonb,'Mechanical','deny',3);
@@ -57,6 +61,8 @@ insert into zukait_mechanical.checklists values
 run(setup+auth);
 const migration=fs.readFileSync('supabase/migrations/20261031120000_mechanical_inspection_secure.sql','utf8');
 run(migration);
+const linkedJobGuard=fs.readFileSync('supabase/migrations/20261031224000_mechanical_inspection_linked_job_type_guard.sql','utf8');
+run(linkedJobGuard);
 const serviceRead=run(`set role service_role;
  select public.zukait_mechanical_inspection_read('SUP003',repeat('a',64),
   '11111111-1111-4111-8111-111111111111')->>'ok';
