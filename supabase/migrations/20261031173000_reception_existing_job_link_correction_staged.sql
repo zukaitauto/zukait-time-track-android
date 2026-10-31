@@ -20,7 +20,7 @@ grant select,insert on public.workshop_reception_existing_job_link_audit to serv
 grant delete on public.workshop_reception_existing_job_links to service_role;
 
 create or replace function public.zukait_reception_correct_existing_job_link(p_actor_id text,p_command jsonb)
-returns jsonb language plpgsql security invoker set search_path=public,pg_temp as $$
+returns jsonb language plpgsql security invoker set search_path=public,pg_temp as $reception_correction$
 declare
  v_role text; v_op text:=p_command->>'operation'; v_rc text:=p_command->>'rc_no';
  v_old text:=upper(btrim(coalesce(p_command->>'previous_job_card','')));
@@ -73,7 +73,7 @@ begin
         v_op,p_actor_id,v_reason);
  return jsonb_build_object('ok',true,'rc_no',v_rc,'job_card',
     case when v_op='UNLINK_EXISTING_JOB' then null else v_new end);
-end; $;
+end; $reception_correction$;
 revoke all on function public.zukait_reception_correct_existing_job_link(text,jsonb) from public,anon,authenticated,service_role;
 grant execute on function public.zukait_reception_correct_existing_job_link(text,jsonb) to service_role;
 commit;
