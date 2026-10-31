@@ -10,6 +10,8 @@ on:
       - 'app/src/main/assets/mechanical_workspace.js'
       - 'supabase/migrations/20261031120000_mechanical_inspection_secure.sql'
       - 'supabase/migrations/20261031210000_mechanical_cash_credit_creation_guard.sql'
+      - 'supabase/migrations/20261031224000_mechanical_inspection_linked_job_type_guard.sql'
+      - 'tests/mechanical-inspection-linked-job-guard.sql'
       - 'tests/mechanical-cash-credit-guard.sql'
       - 'tests/mechanical-cash-credit-client.mjs'
       - 'supabase/functions/workshop-api/extensions/mechanical_route.js'
@@ -108,6 +110,7 @@ jobs:
         run: |
           psql -X -h 127.0.0.1 -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -f tests/mechanical-cash-credit-guard.sql
           node tests/mechanical-inspection-migration-postgres.mjs
+          psql -X -h 127.0.0.1 -p 5432 -U postgres -d v377_inspection_test -v ON_ERROR_STOP=1 -f tests/mechanical-inspection-linked-job-guard.sql
           node tests/mechanical-inspection-postgres.mjs
 
   hosted-qa-denial-smoke:
