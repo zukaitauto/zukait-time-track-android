@@ -33,6 +33,8 @@ on:
       - tests/v2-estimate-*
       - app/src/main/assets/v2/features/insurance/**
       - tests/reception-*
+      - app/src/main/assets/monthly_employee_performance.js
+      - tests/monthly-employee-performance*.mjs
 
 permissions:
   contents: read
