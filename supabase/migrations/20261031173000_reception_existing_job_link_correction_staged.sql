@@ -50,7 +50,10 @@ begin
  end if;
  select * into v_checklist from public.workshop_receptions where rc_no=v_rc for update;
  if not found then raise exception 'reception_not_found'; end if;
- if coalesce(p_command->>'expected_revision','') !~ '^[0-9]+
+ if coalesce(p_command->>'expected_revision','') !~ '^[0-9]+$' or
+    v_checklist.revision<>(p_command->>'expected_revision')::bigint
+ then raise exception 'reception_stale_revision'; end if;
+ select * into v_link from public.workshop_reception_existing_job_links where rc_no=v_rc for update;
  if not found or v_link.job_card<>v_old then raise exception 'reception_link_conflict'; end if;
  -- Delete and replace within the same transaction; failure in the existing link RPC
  -- rolls back the deletion and the audit. Only the independent mapping is changed.
