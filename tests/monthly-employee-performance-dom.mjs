@@ -50,7 +50,7 @@ assert.ok(doc.getElementById('monthlyReportMonth'));
 assert.match(doc.getElementById('monthlyReportResults').textContent,/Akhil/);
 assert.match(doc.getElementById('monthlyReportResults').textContent,/Jijesh/);
 assert.match(doc.getElementById('monthlyReportResults').textContent,/ID001 hours/);
-assert.match(doc.getElementById('monthlyReportResults').textContent,/100\.0%/);
+assert.match(doc.getElementById('monthlyReportResults').textContent,/133\.3%/,'weighted 4h allocated \/ 3h actual');
 const row=[...doc.querySelectorAll('#monthlyReportResults tbody tr')].find(tr=>tr.textContent.includes('Akhil'));
 assert.ok(row);
 assert.equal(row.querySelectorAll('td')[2].textContent,'1','deduplicate 12043 to one vehicle');
