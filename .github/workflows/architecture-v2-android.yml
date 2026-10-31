@@ -43,6 +43,7 @@ jobs:
           node tests/vehicle-global-identity.mjs
           node tests/employee-parts-privacy.mjs
           node tests/monthly-employee-performance.mjs
+          node tests/monthly-employee-performance-dom.mjs
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
