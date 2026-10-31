@@ -70,12 +70,71 @@
       ],
       "automatedCalculationAndWiringTests": "PASS_IN_SIGNED_ACCEPTANCE_FULL_REGRESSION_41188003754",
       "dedicatedFourViewportChromiumTest": "PASS_IN_SIGNED_ACCEPTANCE_RUN_41224517915",
-      "realDataValidation": "NOT_VERIFIED",
+      "realDataValidation": "SEVEN_CURRENT_JOB_CARDS_AND_TWELVE_EMPLOYEE_OVERAGES_RECALCULATED; EIGHTH_SCREENSHOT_ITEM_UNVERIFIED",
       "physicalPhoneValidation": "OWNER_CONFIRMED_PASS_ANDROID_V377",
       "visualQaArtifact": {
         "runId": 41202204865,
         "artifactName": "V377_MANAGER_OVERALLOCATED_POPUP_VISUAL_QA",
         "artifactId": 13042518715
+      },
+      "liveRecalculation": {
+        "verificationDate": "2026-10-31",
+        "mode": "READ_ONLY",
+        "projectRef": "pjknotnjkufadqavcmii",
+        "stateRevision": 15456,
+        "stateUpdatedAtUtc": "2026-10-31T16:58:30.980829Z",
+        "evaluatedAsOfUtc": "2026-10-31T17:57:19.390Z",
+        "currentDistinctOverAllocatedJobCards": 7,
+        "currentOverAllocatedAssignments": 12,
+        "calculation": "Cross-checked the app's normalAssignments and workedMinutes rules against an independent read-only SQL duty-window calculation. Excluded ID001, completed/cancelled/rework assignments, delivered/archived/deleted/cancelled and Mechanical jobs, Fridays, holidays, lunch and outside-duty time. Rounded differences <= 0.01 hour.",
+        "currentJobCards": [
+          {
+            "jc": "12036",
+            "overageHours": 45.633,
+            "employeeCount": 2
+          },
+          {
+            "jc": "12021",
+            "overageHours": 44.757,
+            "employeeCount": 2
+          },
+          {
+            "jc": "12075",
+            "overageHours": 30.33,
+            "employeeCount": 1
+          },
+          {
+            "jc": "12083",
+            "overageHours": 10.751,
+            "employeeCount": 2
+          },
+          {
+            "jc": "12098",
+            "overageHours": 7.579,
+            "employeeCount": 2
+          },
+          {
+            "jc": "12086",
+            "overageHours": 2.147,
+            "employeeCount": 2
+          },
+          {
+            "jc": "12084",
+            "overageHours": 0.573,
+            "employeeCount": 1
+          }
+        ],
+        "historicalCrossCheck": {
+          "sourceRevision": 15380,
+          "sourceUpdatedAtUtc": "2026-10-31T08:03:33.233537Z",
+          "evaluatedAsOfUtc": "2026-10-31T08:25:00Z",
+          "distinctOverAllocatedJobCards": 7,
+          "overAllocatedAssignments": 12
+        },
+        "discrepancy": "The earlier screenshot reportedly contained 8 Job Cards, but exact screenshot IDs are unavailable in the release evidence; both checked snapshots produce 7. Do not assert that the eighth screenshot Job Card was verified.",
+        "gate": "PARTIAL: seven live rows validated; eight-row screenshot reconciliation outstanding",
+        "workshopWrites": 0,
+        "productionBackendDeployment": false
       }
     },
     "signedAcceptanceSourceAligned": true,
