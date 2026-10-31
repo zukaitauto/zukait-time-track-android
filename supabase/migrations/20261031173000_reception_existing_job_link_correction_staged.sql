@@ -74,27 +74,3 @@ end $$;
 revoke all on function public.zukait_reception_correct_existing_job_link(text,jsonb) from public,anon,authenticated,service_role;
 grant execute on function public.zukait_reception_correct_existing_job_link(text,jsonb) to service_role;
 commit;
- or
-    v_checklist.revision<>(p_command->>'expected_revision')::bigint
- then raise exception 'reception_stale_revision'; end if;
- select * into v_link from public.workshop_reception_existing_job_links where rc_no=v_rc for update;
- if not found or v_link.job_card<>v_old then raise exception 'reception_link_conflict'; end if;
- -- Delete and replace within the same transaction; failure in the existing link RPC
- -- rolls back the deletion and the audit. Only the independent mapping is changed.
- delete from public.workshop_reception_existing_job_links where rc_no=v_rc;
- if v_op='CORRECT_EXISTING_JOB_LINK' then
-   v_result:=public.zukait_reception_link_existing_job(p_actor_id,jsonb_build_object(
-     'operation','LINK_EXISTING_JOB','rc_no',v_rc,'job_card',v_new,
-     'expected_revision',p_command->>'expected_revision','request_id',v_req,
-     'reason',v_reason,'confirmed',true));
- end if;
- insert into public.workshop_reception_existing_job_link_audit
- (request_id,rc_no,previous_job_card,replacement_job_card,operation,manager_id,reason)
- values(v_req,v_rc,v_old,case when v_op='UNLINK_EXISTING_JOB' then null else v_new end,
-        v_op,p_actor_id,v_reason);
- return jsonb_build_object('ok',true,'rc_no',v_rc,'job_card',
-    case when v_op='UNLINK_EXISTING_JOB' then null else v_new end);
-end $$;
-revoke all on function public.zukait_reception_correct_existing_job_link(text,jsonb) from public,anon,authenticated,service_role;
-grant execute on function public.zukait_reception_correct_existing_job_link(text,jsonb) to service_role;
-commit;
