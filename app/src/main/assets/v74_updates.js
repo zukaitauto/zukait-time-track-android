@@ -4445,6 +4445,21 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  window.zukaitEmployeeTimeAuthority={
    get pending(){return pending?{...pending}:null},
    get serverRow(){return liveRow()},
+   // The journal belongs to the signed-in employee, and stays intact until an
+   // idempotent server receipt confirms the original action ID.
+   get savedPending(){
+     try{
+       const saved=readCommand();
+       return saved?{type:String(saved.command.event_type||''),job:String(saved.command.job||''),clientTime:Number(saved.command.client_time||0)}:null;
+     }catch(_){return {invalid:true}}
+   },
+   recoverPending:()=>{
+     try{
+       const saved=readCommand();
+       if(!saved)return msg('There is no pending work action to recover.','Work Status');
+       return run(saved.command.event_type,saved.command,saved.label);
+     }catch(_){return msg('Pending work could not be read safely. Do not clear app data; contact the manager.','Work Pending')}
+   },
    refresh:async()=>{await window.zukaitCloud?.pull?.(true);await window.zukaitCloud?.pullLiveStatus?.();try{render()}catch(_){}}
  };
 })();
@@ -4477,8 +4492,36 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
    const history=sessions.map(s=>'<tr><td>'+esc(clock(s.start))+'</td><td>'+esc(s.end?clock(s.end):'Working')+'</td></tr>').join('');
    openModal('<div class="section-title"><h2>Vehicle details</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="ocean-vehicle-window">'+car+'<h2>'+esc(d.j.vehicle||'Vehicle')+'</h2><p>Registration '+esc(d.j.reg||'—')+'</p><p>JC '+esc(d.a.job)+' · '+esc(me.name)+'</p><p>Allotted time: <b>'+minutes(d.allotted)+'</b></p><p>Total worked on this job: <b>'+minutes(d.used)+'</b></p>'+(history?'<h3>Your work sessions</h3><table><tr><th>Started</th><th>Ended</th></tr>'+history+'</table>':'')+'</div>');
  }
+ // A PAUSE can remain unconfirmed after the server has already closed the
+ // session. In that state the normal Pause control is no longer visible.
+ // Always expose explicit recovery without creating a new work event.
+ function showPendingRecovery(root){
+   const authority=window.zukaitEmployeeTimeAuthority,info=authority?.savedPending;
+   let el=root.querySelector('#v300RecoveryBanner');
+   if(!info){el?.remove();return}
+   if(!el){
+     el=document.createElement('section');el.id='v300RecoveryBanner';
+     el.setAttribute('role','status');
+     el.style.cssText='margin:12px auto;padding:15px;max-width:660px;box-sizing:border-box;border:2px solid #e0a800;border-radius:15px;background:#fff8dc;color:#5d4100;font:700 15px/1.45 Arial,sans-serif;box-shadow:0 3px 12px #7d55001a';
+     root.prepend(el);
+   }
+   const signature=[info.invalid?'invalid':info.type,info.job,info.clientTime,!!authority.pending].join('|');
+   if(el.dataset.signature===signature)return;
+   el.dataset.signature=signature;
+   if(info.invalid){
+     el.innerHTML='<strong>Pending work needs assistance</strong><p>Saved work cannot be read. Keep app data on this phone and contact the manager.</p>';
+     return;
+   }
+   const label='Retry pending '+String(info.type||'work action')+' for JC '+String(info.job||'');
+   el.innerHTML='<strong>Work confirmation pending</strong><p>'+esc(String(info.type||'Work'))+' for JC '+esc(String(info.job||''))+' has not been confirmed. Retry the original request to recover it safely. Do not clear app data.</p><button type="button" class="v300-retry-work" style="background:#1459b8!important;color:white!important;font-weight:850;padding:12px 17px;border-radius:10px;width:100%;max-width:340px;min-height:50px"></button>';
+   const button=el.querySelector('button');
+   button.textContent=label;
+   button.disabled=!!authority.pending;
+   button.onclick=()=>authority.recoverPending();
+ }
  function refresh(){
    const root=document.getElementById('employeeView');if(!root||!me||me.role!=='Employee')return;
+   showPendingRecovery(root);
    const session=window.zukaitEmployeeDisplaySession?.(me.id)||null;
    root.classList.toggle('ocean-no-running',!session);
    const d=current();if(!d){
