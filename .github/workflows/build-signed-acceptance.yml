@@ -23,6 +23,7 @@ on:
       - tests/hidden-read-traffic.mjs
       - scripts/ci-full-regression.sh
       - tests/manager-profit-*
+      - tests/v377-performance-browser.mjs
       - .github/workflows/reception-check.yml
       - .github/workflows/build-signed-acceptance.yml
       - app/build.gradle
