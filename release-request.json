@@ -11,7 +11,7 @@
   "publishNonce": null,
   "releaseHeldByOwner": true,
   "publicationRequiresSeparateInstruction": true,
-  "physicalAcceptanceStatus": "NOT_RUN_FOR_V377",
+  "physicalAcceptanceStatus": "OWNER_CONFIRMED_SIX_ANDROID_CHECKS_PASS_REMAINING_SCOPES_PENDING",
   "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V377",
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
@@ -43,7 +43,7 @@
       "artifactName": "MECHANICAL_PHONE_QA_156becc54853b4f50a15b85f59e7e475e6257a7e",
       "artifactId": 13033265830
     },
-    "physicalPhoneTestStatus": "NOT_RUN_FOR_V377",
+    "physicalPhoneTestStatus": "OWNER_CONFIRMED_SIX_CHECKS_PASS",
     "receptionRegressionRun": 41188003717,
     "receptionRegressionSourceCommit": "b2f5e59551406be74d3159500134af380f16758f",
     "receptionRegressionScope": "PASS at pinned V377 source: full Reception verification including invoice-entry tests and browser checks (run 41188003717)",
@@ -69,7 +69,7 @@
       "automatedCalculationAndWiringTests": "PASS_IN_SIGNED_ACCEPTANCE_FULL_REGRESSION_41188003754",
       "dedicatedFourViewportChromiumTest": "PASS_IN_SIGNED_ACCEPTANCE_RUN_41188003754",
       "realDataValidation": "NOT_VERIFIED",
-      "physicalPhoneValidation": "NOT_RUN_FOR_V377",
+      "physicalPhoneValidation": "OWNER_CONFIRMED_PASS_ANDROID_V377",
       "visualQaArtifact": {
         "runId": 41188003754,
         "artifactName": "V377_MANAGER_OVERALLOCATED_POPUP_VISUAL_QA",
@@ -86,7 +86,25 @@
       ],
       "behavior": "Insurance pending invoice rows display saved insurance company; generic Insurance only when company missing. Cash/Credit labels unchanged; safely HTML-escaped.",
       "regressionTests": "PASS_IN_SIGNED_ACCEPTANCE_41188003754_AND_RECEPTION_VERIFICATION_41188003717",
-      "physicalPhoneValidation": "NOT_RUN_FOR_V377"
+      "physicalPhoneValidation": "OWNER_CONFIRMED_PASS_ANDROID_V377"
+    },
+    "ownerAndroidAcceptance": {
+      "confirmedOn": "2026-10-31",
+      "versionName": "V377",
+      "versionCode": 340,
+      "sourceArtifactIdentity": "NOT_INDEPENDENTLY_PROVEN_ON_DEVICE",
+      "scope": "Owner reported all six physical-phone checks passed",
+      "results": {
+        "Manager dashboard": "PASS",
+        "Server synchronization": "PASS",
+        "Insurance Invoice Entry": "PASS",
+        "Over Allocated Jobs": "PASS",
+        "Supervisor account switching": "PASS",
+        "Connection recovery": "PASS"
+      },
+      "mechanicalChecklistAuthenticatedQa": "NOT_VERIFIED",
+      "freshBackupRestore": "NOT_VERIFIED",
+      "overAllocatedEightJobRecalculation": "NOT_VERIFIED"
     }
   },
   "v377RecoveryEvidence": {
