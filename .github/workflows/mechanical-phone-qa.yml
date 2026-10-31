@@ -64,6 +64,45 @@ jobs:
       - name: Build separate debug APK
         working-directory: ${{ runner.temp }}/mechanical-acceptance
         run: gradle assembleDebug --stacktrace
+      - name: Verify V377 inspection UI is packaged in QA APK
+        shell: bash
+        run: |
+          python3 - <<'PYCODE'
+          import hashlib
+          import json
+          import os
+          import zipfile
+          from pathlib import Path
+          candidate = Path(os.environ['RUNNER_TEMP']) / 'mechanical-acceptance'
+          apk = candidate / 'app/build/outputs/apk/debug/app-debug.apk'
+          source = candidate / 'app/src/main/assets'
+          manifest = json.loads((candidate / 'acceptance-manifest.json').read_text())
+          assert manifest['application_id'] == 'com.zukait.timetrack.acceptance'
+          assert manifest['project_ref'] == 'omqgkqknbdcnotabffek'
+          assert manifest['updater_disabled'] is True
+          assert manifest['production_activation'] is False
+          required = {
+              'mechanical_supervisor.js': b'mountMechanicalInspection',
+              'mechanical_workspace.js': b'mountMechanicalInspection',
+              'mechanical_inspection_view.js': b'SAVE_INSPECTION',
+              'mechanical_supervisor.html': b'ZUKAIT_MECHANICAL_ENABLED',
+              'secure_auth.js': b'omqgkqknbdcnotabffek.supabase.co',
+          }
+          with zipfile.ZipFile(apk) as archive:
+              paths = set(archive.namelist())
+              for name, marker in required.items():
+                  apk_path = 'assets/' + name
+                  assert apk_path in paths, f'QA APK missing {apk_path}'
+                  packed = archive.read(apk_path)
+                  actual = (source / name).read_bytes()
+                  assert hashlib.sha256(packed).digest() == hashlib.sha256(actual).digest(), f'Packaged asset differs: {name}'
+                  assert marker in packed, f'QA inspection marker missing: {name}'
+                  assert b'pjknotnjkufadqavcmii' not in packed, f'Production project reference in QA asset: {name}'
+              inspection = archive.read('assets/mechanical_inspection_view.js')
+              assert b'READ_INSPECTION' in inspection
+              assert b'SAVE_INSPECTION' in inspection
+          print('PASS: V377 inspection UI, read/save actions and QA-only assets match the separate packaged Android application.')
+          PYCODE
       - name: Verify package and archive evidence
         shell: bash
         run: |
