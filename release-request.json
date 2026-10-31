@@ -3,7 +3,7 @@
   "versionCode": 340,
   "releaseScope": "standard",
   "approvedForStaff": false,
-  "sourceCommit": "f3bf4d2162dc7eab773a11ccb57e6ffb0923f7c6",
+  "sourceCommit": "72657991c2f6e1d6eb2e811d96a0e44c0c08db8e",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": false,
   "authorization": "Development, isolated testing and release evidence preparation only. Owner approval required separately for V377 publication and for backend activation. Do not publish or enable production Mechanical inspection.",
@@ -16,7 +16,7 @@
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41175629383,
+  "signedAcceptanceRun": 41183056983,
   "verificationRun": 41125370742,
   "previousPublishedRelease": {
     "versionName": "V376",
@@ -32,9 +32,9 @@
     "mechanicalInspectionSourceCommit": "260e62b52d83642abd13a476e9571ee88646b0aa",
     "inspectionScope": "Isolated PostgreSQL, Node API and Chromium mobile/desktop",
     "signedAcceptanceArtifact": {
-      "runId": 41175629383,
+      "runId": 41183056983,
       "artifactName": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
-      "artifactId": 13032508308
+      "artifactId": 13035743239
     },
     "stagedPcRun": 41175629350,
     "mechanicalPhoneQaRun": 41175629394,
@@ -50,15 +50,15 @@
     "latestQaTestSourceCommit": "88cf86dbbbb8ced09c2b689f4bc752b3159a68a4",
     "latestQaTestRun": 41176344482,
     "latestStandardCiRuns": {
-      "android": 41182273130,
-      "mechanical": 41182273204,
-      "apk": 41182273132,
-      "outage": 41182273140
+      "android": 41183057006,
+      "mechanical": 41183056986,
+      "apk": 41183056988,
+      "outage": 41183057098
     },
-    "candidateSourceAlignment": "V377 candidate pinned to f3bf4d2162dc7eab773a11ccb57e6ffb0923f7c6, including over-allocated Manager popup and cache-busting. Android, app APK, inactive Mechanical/Accountant and outage CI passed at that source (41182273130, 41182273132, 41182273204, 41182273140). Previously recorded signed acceptance artifact/run originated at 156becc5 and MUST NOT be used as current candidate evidence; require new signed acceptance build and same-source checks before release. This commit changes release metadata only; approval and publication remain explicitly withheld.",
+    "candidateSourceAlignment": "Signed V377 APK and four-width Chromium Manager Over Allocated Jobs popup checks passed at source 72657991c2f6e1d6eb2e811d96a0e44c0c08db8e (signed acceptance 41183056983, artifact 13035743239, visual QA 13035459096). Standard Android/APK/Mechanical-contract/outage CI passed at same source (41183057006, 41183056988, 41183056986, 41183057098). Only release-request.json metadata changes after the pinned source are permitted by release safety guard. Physical Android test, real-data popup validation, fresh V377 backup/restore and separate owner approval are not complete. V376 production and main unchanged.",
     "overAllocatedJobsPopup": {
       "includedInCandidate": true,
-      "sourceCommit": "f3bf4d2162dc7eab773a11ccb57e6ffb0923f7c6",
+      "sourceCommit": "72657991c2f6e1d6eb2e811d96a0e44c0c08db8e",
       "features": [
         "Manager Over Allocated Jobs opens detailed grouped JC cards",
         "Vehicle/registration and Cash/Credit/Insurance type",
@@ -66,12 +66,17 @@
         "Highest overage first; click into JC",
         "ID001, repeat, finished and Mechanical exclusions; cache-busted assets"
       ],
-      "automatedCalculationAndWiringTests": "PASS_IN_APK_FULL_REGRESSION_RUN_41182273132",
-      "dedicatedFourViewportChromiumTest": "TEST_PRESENT_IN_REPOSITORY_NOT_CONFIRMED_AS_EXECUTED_IN_LATEST_CI",
+      "automatedCalculationAndWiringTests": "PASS_IN_SIGNED_ACCEPTANCE_FULL_REGRESSION_41183056983",
+      "dedicatedFourViewportChromiumTest": "PASS_IN_SIGNED_ACCEPTANCE_RUN_41183056983",
       "realDataValidation": "NOT_VERIFIED",
-      "physicalPhoneValidation": "NOT_RUN_FOR_V377"
+      "physicalPhoneValidation": "NOT_RUN_FOR_V377",
+      "visualQaArtifact": {
+        "runId": 41183056983,
+        "artifactName": "V377_MANAGER_OVERALLOCATED_POPUP_VISUAL_QA",
+        "artifactId": 13035459096
+      }
     },
-    "signedAcceptanceSourceAligned": false
+    "signedAcceptanceSourceAligned": true
   },
   "v377RecoveryEvidence": {
     "priorRestoreDate": "2026-10-27",
