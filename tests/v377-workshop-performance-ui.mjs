@@ -68,4 +68,44 @@ assert.equal(actual[0].suggested,120);
 assert.equal(actual[0].actual,60,'ID001, repeat, unfinished and overtime must not change actual productive minutes');
 assert.equal(actual[0].efficiency,200);
 
+
+const employeeHelpers=html.slice(html.indexOf('// Productive reports are per-assignment;'),html.indexOf('function productionReportUI()'));
+const exportCode=html.slice(html.indexOf('function exportManagerReport(type)'),html.indexOf('/* V23 Supervisor',html.indexOf('function exportManagerReport(type)')));
+assert.ok(employeeHelpers.includes('sessionsForAssignment(a)'),'date filter uses exact assignment sessions');
+assert.ok(employeeHelpers.includes("String(a.job).toUpperCase()==='ID001'"),'ID001 excluded from productive rows');
+assert.ok(exportCode.includes('reportAssignmentActual(a)'),'employee Excel export uses per-assignment actual');
+assert.ok(html.includes('rows=reportRows(from,to)'),'monthly reports use productive assignment filter');
+
+const vm=await import('node:vm');
+const seen=[];
+const sampleAssign=[
+ {id:'J1',job:'12043',emp:'EMP002',suggested:330,completed:true,assignedAt:1},
+ {id:'J2',job:'12043',emp:'EMP002',suggested:210,completed:true,assignedAt:2},
+ {id:'H1',job:'ID001',emp:'EMP002',suggested:0,completed:true,assignedAt:3},
+ {id:'H2',job:'ID001',emp:'EMP002',suggested:0,completed:true,assignedAt:4}
+];
+const sampleSessions=[
+ {id:'S1',assignmentId:'J1',emp:'EMP002',job:'12043',start:100,end:200},
+ {id:'S2',assignmentId:'J2',emp:'EMP002',job:'12043',start:150,end:250},
+ {id:'S3',assignmentId:'H1',emp:'EMP002',job:'ID001',start:130,end:230}
+];
+const ctx={
+ state:{assign:sampleAssign,sessions:sampleSessions},
+ window:{zukaitWorkshopPerformance:{assignmentActual:a=>({J1:400,J2:378}[a.id]??99999)}},
+ sessionsForAssignment:a=>sampleSessions.filter(x=>x.assignmentId===a.id),
+ document:{getElementById:id=>({empReportPerson:{value:'EMP002'},empReportStatus:{value:'Completed'}}[id]||null)},
+ getRange:()=>[0,1000],now:()=>1000,
+ fmt:n=>String(Math.round(n))+'m',
+ job:no=>({vehicle:'Toyota Land Cruiser',reg:'516.DD'}),
+ user:id=>({name:id==='EMP002'?'Akhil':'Manager'}),
+ empStatus:()=> 'Finished',
+ downloadExcelFile:(filename,headers,rows)=>seen.push({filename,headers,rows}),
+ alert:()=>{throw Error('unexpected alert')}
+};
+vm.runInNewContext(employeeHelpers+'\n'+exportCode+'\nexportManagerReport("employee");',ctx);
+assert.equal(seen.length,1,'employee export issued once');
+assert.equal(seen[0].rows.length,2,'two assignments, without duplicated ID001');
+assert.deepEqual(Array.from(seen[0].rows,x=>x[5]),['400m','378m'],'individual JC12043 durations must differ');
+assert.deepEqual(Array.from(seen[0].rows,x=>x[1]),['12043','12043'],'both legitimate assignments retained');
+
 console.log('V377 Workshop Performance layout and unified efficiency ranking: PASS');
