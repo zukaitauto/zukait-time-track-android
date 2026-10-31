@@ -3,7 +3,7 @@
   "versionCode": 340,
   "releaseScope": "standard",
   "approvedForStaff": false,
-  "sourceCommit": "71092a23835880c0ad78d4cb4b8272de5d5238ed",
+  "sourceCommit": "6ac697bdd80e71a5e89e0fde6cb565febf06002e",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": false,
   "authorization": "Development, isolated testing and release evidence preparation only. Owner approval required separately for V377 publication and for backend activation. Do not publish or enable production Mechanical inspection.",
@@ -16,8 +16,8 @@
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
+  "signedAcceptanceRun": 41224517915,
+  "verificationRun": 41224517904,
   "previousPublishedRelease": {
     "versionName": "V376",
     "versionCode": 339,
@@ -32,9 +32,9 @@
     "mechanicalInspectionSourceCommit": "260e62b52d83642abd13a476e9571ee88646b0aa",
     "inspectionScope": "Isolated PostgreSQL, Node API and Chromium mobile/desktop",
     "signedAcceptanceArtifact": {
-      "runId": 41203615461,
+      "runId": 41224517915,
       "artifactName": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
-      "artifactId": 13044315222
+      "artifactId": 13051431894
     },
     "stagedPcRun": 41175629350,
     "mechanicalPhoneQaRun": 41175629394,
@@ -43,21 +43,21 @@
       "artifactName": "MECHANICAL_PHONE_QA_156becc54853b4f50a15b85f59e7e475e6257a7e",
       "artifactId": 13033265830
     },
-    "physicalPhoneTestStatus": "OWNER_CONFIRMED_SIX_CHECKS_PASS",
-    "receptionRegressionRun": 41188003717,
-    "receptionRegressionSourceCommit": "b2f5e59551406be74d3159500134af380f16758f",
-    "receptionRegressionScope": "PASS at pinned V377 source: full Reception verification including invoice-entry tests and browser checks (run 41188003717)",
+    "physicalPhoneTestStatus": "PENDING_UPDATED_V377_PHONE_ACCEPTANCE",
+    "receptionRegressionRun": 41224517904,
+    "receptionRegressionSourceCommit": "6ac697bdd80e71a5e89e0fde6cb565febf06002e",
+    "receptionRegressionScope": "PASS at pinned 6ac697b source: Reception verification and browser checks, run 41224517904",
     "latestQaTestSourceCommit": "88cf86dbbbb8ced09c2b689f4bc752b3159a68a4",
     "latestQaTestRun": 41176344482,
     "latestStandardCiRuns": {
-      "android": 41224296093,
-      "mechanical": 41224296137,
-      "apk": 41224296108,
-      "outage": 41224296152,
+      "android": 41224517939,
+      "mechanical": 41224517882,
+      "apk": 41224517891,
+      "outage": 41224517963,
       "mechanicalPhone": 41203615443,
-      "reception": 41203615510
+      "reception": 41224517904
     },
-    "candidateSourceAlignment": "Source 71092a23835880c0ad78d4cb4b8272de5d5238ed (Employee/Monthly Reports with ID001 integrated) passed architecture Android build 41224296093, standard APK build 41224296108, outage 41224296152, and mechanical contracts 41224296137. Signed acceptance run 41203615461 belongs to older source and is invalid for this candidate. Exact-source signed acceptance, owner physical Android report check, fresh V377 backup/restore, updated Reception verification, and final release approval pending. V376 remains published; V377 publication held.",
+    "candidateSourceAlignment": "V377 source 6ac697bdd80e71a5e89e0fde6cb565febf06002e includes consolidated Employee/Monthly Reports, ID001 totals, insurance company labels, and over-allocated popup. Source-matched signed acceptance 41224517915 (artifact 13051431894), Reception verification 41224517904, Android 41224517939, APK 41224517891, contracts 41224517882, outage 41224517963 all passed. Only release-request.json metadata may change after this pinned source under the guarded publication workflow. Updated physical acceptance, fresh production backup/isolated restore, real-data eight-job validation, authenticated Mechanical Checklist QA, and separate owner publication approval remain unverified/pending. V376 production unchanged; V377 publication disabled.",
     "overAllocatedJobsPopup": {
       "includedInCandidate": true,
       "sourceCommit": "72657991c2f6e1d6eb2e811d96a0e44c0c08db8e",
@@ -69,7 +69,7 @@
         "ID001, repeat, finished and Mechanical exclusions; cache-busted assets"
       ],
       "automatedCalculationAndWiringTests": "PASS_IN_SIGNED_ACCEPTANCE_FULL_REGRESSION_41188003754",
-      "dedicatedFourViewportChromiumTest": "PASS_IN_SIGNED_ACCEPTANCE_RUN_41202204865",
+      "dedicatedFourViewportChromiumTest": "PASS_IN_SIGNED_ACCEPTANCE_RUN_41224517915",
       "realDataValidation": "NOT_VERIFIED",
       "physicalPhoneValidation": "OWNER_CONFIRMED_PASS_ANDROID_V377",
       "visualQaArtifact": {
@@ -78,7 +78,7 @@
         "artifactId": 13042518715
       }
     },
-    "signedAcceptanceSourceAligned": false,
+    "signedAcceptanceSourceAligned": true,
     "invoiceEntryInsuranceCompany": {
       "includedInCandidate": true,
       "sourceCommit": "b2f5e59551406be74d3159500134af380f16758f",
@@ -127,16 +127,16 @@
       "physicalManualRetest": "NOT_REQUIRED_BY_OWNER_FOR_EACH_UI_CHANGE"
     },
     "latestSourceCi": {
-      "sourceCommit": "2370514a1671fea4fa8b7e3115cd89dcae72156c",
-      "signedAcceptanceRun": 41212772481,
-      "signedAcceptanceArtifactId": 13047296406,
-      "receptionVerificationRun": 41212772560,
-      "androidArchitectureRun": 41212772698,
-      "androidAppBuildRun": 41212772620,
-      "connectionOutageRun": 41212772558,
+      "sourceCommit": "6ac697bdd80e71a5e89e0fde6cb565febf06002e",
+      "signedAcceptanceRun": 41224517915,
+      "signedAcceptanceArtifactId": 13051431894,
+      "receptionVerificationRun": 41224517904,
+      "androidArchitectureRun": 41224517939,
+      "androidAppBuildRun": 41224517891,
+      "connectionOutageRun": 41224517963,
       "syncCompatibilityRun": 41212772687,
       "mechanicalPhoneRun": 41212772790,
-      "status": "PASS_AUTOMATED_BUILDS_AND_RECEPTION_WORKFLOW_ONLY",
+      "status": "PASS_SOURCE_ALIGNED_AUTOMATED_GATES",
       "databaseLinkCorrectionIsolatedTests": "NOT_VERIFIED",
       "freshV377ProductionRestore": "NOT_VERIFIED",
       "publication": "HELD"
@@ -173,6 +173,20 @@
       "connectionOutageStatus": "PASS_GITHUB_41224296152",
       "mechanicalContractsStatus": "PASS_GITHUB_41224296137",
       "readOnlyCalculationAndDomSmoke": "PASS"
+    },
+    "consolidatedEmployeeMonthlyReport": {
+      "sourceCommit": "6ac697bdd80e71a5e89e0fde6cb565febf06002e",
+      "features": [
+        "All employee completed vehicles and finished assignments",
+        "Employee monthly weighted efficiency",
+        "ID001 hours integrated in the same report",
+        "Excel export and individual employee drilldown"
+      ],
+      "androidWorkflow": 41224517939,
+      "signedAcceptanceRun": 41224517915,
+      "receptionVerificationRun": 41224517904,
+      "automatedStatus": "PASS",
+      "physicalAcceptance": "NOT_VERIFIED_FOR_NEW_CANDIDATE"
     }
   },
   "v377RecoveryEvidence": {
