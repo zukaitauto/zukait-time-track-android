@@ -525,7 +525,35 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const history='<div class="card v75s-section clickable compact-control" onclick="v81OpenEmployeeHistory()"><div class="section-title"><h3>📊 Detailed Performance & Work History</h3><span class="pill">CLICK TO OPEN</span></div><div class="small muted">View the latest 30 work-history records in a separate window.</div></div>';
 
    const dailyReport='<div class="card v75s-section clickable compact-control v253-daily-report" onclick="v253OpenEmployeeDailyReport()"><div class="section-title"><h3>📅 Daily Report</h3><span class="pill">CLICK TO OPEN</span></div><div class="small muted">View Job Card sessions for today or select a previous date.</div></div>';
-   window.v253OpenEmployeeDailyReport=function(selected){if(!me||me.role!=='Employee')return;const localDate=ts=>{const d=new Date(ts),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())},today=localDate(Date.now()),day=selected||today,rows=(state.sessions||[]).filter(x=>x&&String(x.emp)===String(me.id)&&x.start&&localDate(+x.start)===day).slice().sort((a,b)=>(+a.start||0)-(+b.start||0)),tm=ts=>ts?new Date(+ts).toLocaleTimeString([],{hour:'numeric',minute:'2-digit',hour12:true}):'—',status=x=>!x.end?'Running':x.job===H?'Stop':x.paused?'Pause':x.finished?'Finish':'End',body=rows.length?'<div class="v75s-history"><table><tr><th>No.</th><th>JC / Work</th><th>Start</th><th>Pause / Finish</th></tr>'+rows.map((x,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(x.job===H?'ID001':x.job)+'</b></td><td>'+esc(tm(x.start))+'</td><td><b>'+esc(status(x))+'</b> '+esc(x.end?tm(x.end):'In progress')+'</td></tr>').join('')+'</table></div>':'<div class="notice">No work sessions recorded for this date.</div>';openModal('<div class="v253-daily-report-modal"><div class="section-title"><h2>📅 Daily Report</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="card"><label><b>Select Date</b><input id="v253DailyDate" type="date" value="'+esc(day)+'" max="'+esc(today)+'"></label><button type="button" class="blue" onclick="v253OpenEmployeeDailyReport(document.getElementById(\'v253DailyDate\').value)">View</button></div>'+body+'</div>')};
+   window.v253OpenEmployeeDailyReport=function(selected,jobFilter){
+    if(!me||me.role!=='Employee')return;
+    const omanDate=ts=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Muscat',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(+ts));
+    const today=omanDate(Date.now()),day=selected||today,chosen=String(jobFilter||'');
+    const fmt=ts=>new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Muscat',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).format(new Date(+ts));
+    const sessions=(state.sessions||[]).filter(x=>x&&String(x.emp)===String(me.id)&&Number.isFinite(+x.start)&&+x.start>0);
+    const jobs=[...new Set(sessions.filter(x=>omanDate(+x.start)===day).map(x=>String(x.job||'')))].filter(Boolean).sort();
+    const filtered=sessions.filter(x=>!chosen||String(x.job)===chosen),events=[];
+    const add=(at,job,action)=>{if(Number.isFinite(+at)&&+at>0&&omanDate(+at)===day)events.push({at:+at,job:String(job||''),action});};
+    filtered.forEach(x=>{
+     add(x.start,x.job,'START');
+     const pauses=Array.isArray(x.pauses)?x.pauses:[];
+     pauses.forEach(p=>{if(!p||typeof p!=='object')return;
+      if(p.pause!=null)add(p.pause,x.job,'PAUSE');
+      if(p.resume!=null)add(p.resume,x.job,'RESUME');
+     });
+     if(x.end!=null)add(x.end,x.job,x.finished?'FINISH':x.paused?'PAUSE':String(x.job)===String(H)?'FINISH':'FINISH');
+    });
+    const order={FINISH:0,PAUSE:1,START:2,RESUME:3};
+    events.sort((a,b)=>a.at-b.at||(order[a.action]||0)-(order[b.action]||0));
+    const jobName=id=>{if(String(id)===String(H))return 'Ideal Time';const j=(state.jobs||[]).find(v=>String(v.no)===String(id));return [j?.make||j?.vehicle?.make,j?.model||j?.vehicle?.model,j?.year||j?.vehicle?.year].filter(Boolean).join(' ')||'—';};
+    const escText=x=>esc(String(x==null?'':x));
+    const cells=events.map(e=>'<tr><td>'+escText(fmt(e.at))+'</td><td><b>'+escText(e.job===String(H)?'ID001':e.job)+'</b></td><td>'+escText(jobName(e.job))+'</td><td><span class="v253-event v253-'+escText(e.action.toLowerCase())+'">'+escText(e.action)+'</span></td></tr>').join('');
+    const options='<option value="">All Job Cards</option>'+jobs.map(j=>'<option value="'+escText(j)+'"'+(chosen===j?' selected':'')+'>'+escText(j===String(H)?'ID001':j)+'</option>').join('');
+    const control='<div class="card"><label><b>Date</b><input type="date" id="v253DailyDate" value="'+escText(day)+'" max="'+escText(today)+'"></label><label><b>Job Card</b><select id="v253DailyJob">'+options+'</select></label><button class="blue" onclick="v253OpenEmployeeDailyReport(document.getElementById(\'v253DailyDate\').value,document.getElementById(\'v253DailyJob\').value)">View Report</button></div>';
+    const table='<div class="v75s-history"><table><thead><tr><th>Time</th><th>Job Card</th><th>Vehicle</th><th>Action</th></tr></thead><tbody>'+cells+'</tbody></table></div>';
+    const css='<style>.v253-daily-report-modal .v75s-history{overflow-x:auto}.v253-daily-report-modal table{width:100%;border-collapse:collapse;min-width:470px}.v253-daily-report-modal th{background:#202b40;color:#fff;text-align:left;padding:11px 7px}.v253-daily-report-modal td{padding:12px 7px;border-bottom:1px solid #e1e7ee}.v253-event{padding:5px 9px;border-radius:22px;font-weight:700;background:#e8effa;color:#405e91}.v253-start,.v253-resume{background:#e5f5ea;color:#18734d}.v253-pause{background:#fff1d9;color:#905800}</style>';
+    openModal('<div class="v253-daily-report-modal">'+css+'<div class="section-title"><h2>📅 Daily Report</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+control+'<p>Oman time · 12-hour AM/PM · Read only</p><b>'+events.length+' time events</b>'+(events.length?table:'<div class="notice">No time events recorded for this date and Job Card.</div>')+'</div>');
+   };
    const lower='<div class="v89-employee-lower">'+dailyReport+finished+repeatList+history+'</div>';root.innerHTML=brand+identity+runningHtml+allotted+month+leaveBox+lower;
     // V104: Target / Achieved / Incentive capsules are the only Employee incentive display.
     [...root.querySelectorAll('.employee-month-kpi,.card')].filter(x=>/^(?:Total\s+)?Incentive Hours$/i.test((x.querySelector('.kpi-label,h3')?.textContent||'').trim())).forEach(x=>x.remove());
