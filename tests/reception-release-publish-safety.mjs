@@ -51,6 +51,15 @@ if (updater.versionCode < release.versionCode) {
  assert.equal(updater.releaseTag,'release-'+updater.versionName+'-architecture-v2');
  if(!['reception-insurance-features-1-10','accountant-live-test'].includes(release.releaseScope)) assert.equal(uiApproval?.versionName,release.versionName,'Pending UI and APK release versions must match');
  if(!['reception-insurance-features-1-10','accountant-live-test'].includes(release.releaseScope)) assert.equal(uiApproval?.versionCode,release.versionCode);
+ if (release.releaseScope === 'phase1-compatible-ui') {
+  assert.equal(uiApproval?.approvedForStaff, release.approvedForStaff, 'Pending UI and Android approval states must match');
+  assert.equal(uiApproval?.ownerPublicationRequested, release.ownerPublicationRequested, 'Pending UI and Android publication requests must match');
+  if (!release.approvedForStaff) {
+   assert.equal(release.ownerPublicationRequested, false, 'Unapproved Android candidate must not request publication');
+   assert.equal(uiApproval?.releaseHeldByOwner, true, 'Pending UI candidate must remain held');
+  }
+ }
+
 } else if(release.releaseScope==='standard') {
  const require=createRequire(import.meta.url);
  require('../scripts/verify-v305-acceptance.cjs').validate(release,JSON.parse(fs.readFileSync('docs/INSURANCE_V305_ACCEPTANCE_GATE.json','utf8')));
