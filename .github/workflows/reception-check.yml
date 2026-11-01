@@ -45,6 +45,8 @@ on:
       - "app/src/main/assets/supervisor_stable.js"
       - "app/src/main/assets/receptionist*"
       - "app/src/main/assets/secure_auth.js"
+      - "app/src/main/assets/v68_updates.js"
+      - "tests/jobcard-reopen-authority.mjs"
       - "app/src/main/assets/offline_test.html"
       - "tests/reception-*"
       - "app/src/main/assets/monthly_employee_performance.js"
