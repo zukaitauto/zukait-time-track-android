@@ -689,10 +689,22 @@ function preserveOperationalHistory(candidate: any, current: any, user: any): an
   if (serverNotifications.length || Array.isArray(current?.systemNotifications)) {
     candidate.systemNotifications = incomingNotifications;
   }
+  // A delivered JC is closed until the Manager's authenticated QC return command
+  // commits. Old phones must not open assignments while the delivery is active.
+  const deliveredCardIds = new Set((current?.jobs || [])
+    .filter((j: any) => j?.delivered === true)
+    .map((j: any) => String(j.no || "")));
+  const knownAssignmentIds = new Set((current?.assign || []).map((a: any) => String(a?.id || "")));
+  const knownSessionIds = new Set((current?.sessions || []).map((s: any) => String(s?.id || "")));
+  candidate.assign = (candidate.assign || []).filter((a: any) =>
+    !deliveredCardIds.has(String(a?.job || "")) || knownAssignmentIds.has(String(a?.id || "")));
+  candidate.sessions = (candidate.sessions || []).filter((s: any) =>
+    !deliveredCardIds.has(String(s?.job || "")) || knownSessionIds.has(String(s?.id || "")));
   const previousReopens = new Set((current?.reopenLogs || []).map((x: any) => String(x?.id || "")));
   const allowedReopens = new Set((candidate?.reopenLogs || []).filter((x: any) =>
     ["Supervisor", "Manager"].includes(String(user?.role || "")) &&
     String(x?.by || "") === String(user?.id || "") && x?.assignmentId && x?.id &&
+    !deliveredCardIds.has(String(x?.job || "")) &&
     !previousReopens.has(String(x.id))
   ).map((x: any) => String(x.assignmentId)));
   const latestAssignments = new Map((current?.assign || []).filter((x: any) => x?.id).map((x: any) => [String(x.id), x]));
