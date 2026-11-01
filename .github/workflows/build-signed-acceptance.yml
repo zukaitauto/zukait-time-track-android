@@ -24,6 +24,7 @@ on:
       - supabase/functions/workshop-api/**
       - supabase/migrations/*mechanical*
       - tests/mechanical-*
+      - tests/employee-daily-report.mjs
       - tests/hidden-read-traffic.mjs
       - scripts/ci-full-regression.sh
       - tests/time-management.mjs
