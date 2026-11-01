@@ -6,6 +6,16 @@ android {
     namespace 'com.zukait.timetrack'
     compileSdk 35
 
+    // Browser VIN OCR uses LSTM mode (OEM 1). Keep both SIMD and non-SIMD
+    // LSTM cores, worker and English data. Exclude only unused legacy
+    // non-LSTM cores from Android; web-hosted files remain unchanged.
+    androidResources {
+        ignoreAssetsPatterns.addAll([
+            'tesseract-core.wasm.js',
+            'tesseract-core-simd.wasm.js'
+        ])
+    }
+
     defaultConfig {
         applicationId 'com.zukait.timetrack'
         minSdk 24
