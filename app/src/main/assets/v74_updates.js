@@ -547,10 +547,14 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
     events.sort((a,b)=>a.at-b.at||(order[a.action]||0)-(order[b.action]||0));
     const jobName=id=>{if(String(id)===String(H))return 'Ideal Time';const j=(state.jobs||[]).find(v=>String(v.no)===String(id));return [j?.make||j?.vehicle?.make,j?.model||j?.vehicle?.model,j?.year||j?.vehicle?.year].filter(Boolean).join(' ')||'—';};
     const escText=x=>esc(String(x==null?'':x));
+    const dutyStart=Date.parse(day+'T04:00:00Z');
+    const first=events[0]?.at;
+    const openingIdle=Number.isFinite(first)&&first>dutyStart&&first<dutyStart+5*3600000?Math.floor((first-dutyStart)/60000):0;
+    const idleRow=openingIdle>0?'<tr><td colspan="4" style="text-align:center;background:#f9fafc"><b>IDLE TIME: '+String(Math.floor(openingIdle/60)).padStart(2,'0')+':'+String(openingIdle%60).padStart(2,'0')+'</b><div>'+esc(fmt(dutyStart))+' – '+esc(fmt(first))+'</div></td></tr>':'';
     const cells=events.map(e=>'<tr><td>'+escText(fmt(e.at))+'</td><td><b>'+escText(e.job===String(H)?'ID001':e.job)+'</b></td><td>'+escText(jobName(e.job))+'</td><td><span class="v253-event v253-'+escText(e.action.toLowerCase())+'">'+escText(e.action)+'</span></td></tr>').join('');
     const options='<option value="">All Job Cards</option>'+jobs.map(j=>'<option value="'+escText(j)+'"'+(chosen===j?' selected':'')+'>'+escText(j===String(H)?'ID001':j)+'</option>').join('');
     const control='<div class="card"><label><b>Date</b><input type="date" id="v253DailyDate" value="'+escText(day)+'" max="'+escText(today)+'"></label><label><b>Job Card</b><select id="v253DailyJob">'+options+'</select></label><button class="blue" onclick="v253OpenEmployeeDailyReport(document.getElementById(\'v253DailyDate\').value,document.getElementById(\'v253DailyJob\').value)">View Report</button></div>';
-    const table='<div class="v75s-history"><table><thead><tr><th>Time</th><th>Job Card</th><th>Vehicle</th><th>Action</th></tr></thead><tbody>'+cells+'</tbody></table></div>';
+    const table='<div class="v75s-history"><table><thead><tr><th>Time</th><th>Job Card</th><th>Vehicle</th><th>Action</th></tr></thead><tbody>'+idleRow+cells+'</tbody></table></div>';
     const css='<style>.v253-daily-report-modal .v75s-history{overflow-x:auto}.v253-daily-report-modal table{width:100%;border-collapse:collapse;min-width:470px}.v253-daily-report-modal th{background:#202b40;color:#fff;text-align:left;padding:11px 7px}.v253-daily-report-modal td{padding:12px 7px;border-bottom:1px solid #e1e7ee}.v253-event{padding:5px 9px;border-radius:22px;font-weight:700;background:#e8effa;color:#405e91}.v253-start,.v253-resume{background:#e5f5ea;color:#18734d}.v253-pause{background:#fff1d9;color:#905800}</style>';
     openModal('<div class="v253-daily-report-modal">'+css+'<div class="section-title"><h2>📅 Daily Report</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+control+'<p>Oman time · 12-hour AM/PM · Read only</p><b>'+events.length+' time events</b>'+(events.length?table:'<div class="notice">No time events recorded for this date and Job Card.</div>')+'</div>');
    };
