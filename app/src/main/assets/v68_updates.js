@@ -84,7 +84,7 @@ window.v68ManagerSearch=function(){
  matches=matches.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
  const rows=matches.map((j,i)=>{
    const t=totals(j.no),hasRepeat=repeatRows(j.no).length>0;
-   return '<button class="v68-result" onclick="window.zukaitOpenWorkDetails(\''+esc(j.no)+'\')"><b class="v68-list-no">'+(i+1)+'</b><span><b>'+esc(j.no)+'</b><small>'+esc(j.vehicle||'—')+' · '+esc(j.reg||'—')+'</small></span><span class="v68-result-meta">'+fmtM(t.actual)+(hasRepeat?' · Repeat Work':'')+' ›</span></button>';
+   return '<button class="v68-result" onclick="window.zukaitOpenJob360(\''+esc(j.no)+'\')"><b class="v68-list-no">'+(i+1)+'</b><span><b>'+esc(j.no)+'</b><small>'+esc(j.vehicle||'—')+' · '+esc(j.reg||'—')+'</small></span><span class="v68-result-meta">'+fmtM(t.actual)+(hasRepeat?' · Repeat Work':'')+' ›</span></button>';
  }).join('');
  openModal('<div class="v68-search-modal"><div class="section-title"><h2>Job Card Search</h2><button class="secondary" onclick="closeModal()">Close</button></div><p class="muted">Search: <b>'+esc(raw)+'</b></p>'+(rows||'<div class="notice">No matching Job Card or registration number found.</div>')+'</div>');
 };
@@ -107,7 +107,7 @@ window.v68OpenJobDetail=function(no){
  const related=rel.length?rel.map((x,i)=>'<button class="v68-related"><b class="v68-list-no">'+(i+1)+'</b><span onclick="v68OpenJobDetail(\''+esc(x.no)+'\')">'+esc(x.no)+' <small>'+new Date(x.createdAt||Date.now()).toLocaleDateString()+'</small></span></button>').join(''):'<span class="muted">No other Job Cards for this registration.</span>';
  const time=tl.length?tl.map(x=>'<div class="v68-time-row"><b>'+new Date(x.at).toLocaleString()+'</b><span>'+esc(x.label)+'</span></div>').join(''):'<span class="muted">No timeline recorded.</span>';
  openModal('<div class="v68-detail">'+
- '<div class="v68-detail-head"><div><span>MANAGER JOB CARD REVIEW</span><h2>'+esc(no)+'</h2><p>'+esc(j.vehicle||'—')+' · '+esc(j.reg||'—')+'</p></div><button class="secondary" onclick="closeModal()">Close</button></div>'+
+ '<div class="v68-detail-head"><div><span>MANAGER JOB CARD REVIEW</span><h2>'+esc(no)+'</h2><p>'+esc(j.vehicle||'—')+' · '+esc(j.reg||'—')+'</p></div><div><button type="button" class="v68-light-btn" data-jc="'+esc(no)+'" onclick="window.zukaitOpenJob360(this.dataset.jc)">VIEW FULL JC / REOPEN OPTIONS</button><button class="secondary" onclick="closeModal()">Close</button></div></div>'+
  '<div class="v68-summary"><div><small>Persons Worked</small><b>'+t.people+'</b></div><div><small>Total Suggested</small><b>'+fmtM(t.suggested)+'</b></div><div><small>Total Actual</small><b>'+fmtM(t.actual)+'</b></div><div><small>Labour Rate</small><b>OMR 2.500/hr</b></div><div><small>Suggested Labour Cost</small><b>'+money(t.suggested)+'</b></div><div><small>Actual Labour Cost</small><b>'+money(t.actual)+'</b></div></div>'+
  '<div class="v68-block"><h3>Worked Persons</h3>'+tech+'</div>'+
  rep+
