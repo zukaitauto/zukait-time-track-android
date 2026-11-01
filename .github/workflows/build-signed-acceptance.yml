@@ -24,6 +24,9 @@ on:
       - scripts/ci-full-regression.sh
       - tests/manager-profit-*
       - tests/v377-performance-browser.mjs
+      - tests/v377-workshop-efficiency-month-filter.mjs
+      - tests/v377-workshop-performance-ui.mjs
+      - tests/finished-assignment-performance.mjs
       - .github/workflows/reception-check.yml
       - .github/workflows/build-signed-acceptance.yml
       - app/build.gradle
