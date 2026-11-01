@@ -6,6 +6,15 @@ export async function mechanicalSectionApi(admin,actor,body,options){
  if(!(actor?.role==='Manager'||actor?.id==='SUP003'&&['Supervisor','Mechanical Supervisor'].includes(actor.role)))return fail('mechanical_forbidden',403);
  if(!body.command||typeof body.command!=='object'||Array.isArray(body.command)||Object.keys(body).some(k=>!['action','command'].includes(k))||JSON.stringify(body.command).length>70000)return fail('invalid_mechanical_section',400);
  try{
+  // Independent checklist intake has its own guarded database RPC.
+  // It never creates or changes a workshop Job Card.
+  if(['CREATE','LIST','APPROVE'].includes(body.command.operation)){
+   const {data,error}=await admin.rpc('zukait_mechanical_prejob',{p_actor:actor.id,p_session_hash:options.sessionHash,p_command:body.command});
+   if(error)throw error;
+   const fresh=await options.verifySession();
+   if(!fresh||fresh.id!==actor.id||fresh.role!==actor.role)return fail('invalid_session',401);
+   return {status:200,body:data};
+  }
   const {data,error}=await admin.rpc('zukait_mechanical_section',{p_actor:actor.id,p_session_hash:options.sessionHash,p_command:body.command});if(error)throw error;
   if(body.command.operation!=='READ')return {status:200,body:data};
   const result={...data,jobNumbering:'MJC',assign:(data.assign||[]).map(a=>({id:a.id,job:a.job,emp:a.emp,suggested:a.suggested,completed:a.completed,cancelled:a.cancelled,handedOverToAssignmentId:a.handedOverToAssignmentId,workedMinutes:workedMinutes(data,a)}))};
