@@ -41,6 +41,7 @@ node tests/supervisor-leave-dashboard.mjs
 node tests/global-leave-history.mjs
 node tests/leave-sync-race.mjs
 node tests/employee-finish-server-authority.mjs
+node tests/employee-pause-journal-recovery.mjs
 node tests/consumables-smoke.mjs
 node tests/consumables-ui.mjs
 node tests/material-list-navigation.mjs
