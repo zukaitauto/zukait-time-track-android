@@ -82,7 +82,7 @@ window.zukaitOpenTimeManagement=async function(initialJob=''){
  try{if(!navigator.onLine)throw Error('NETWORK');await window.zukaitCloud.syncNow();const h=window.zukaitCloud.syncHealth;if(!h?.ready||h.dirty||h.pendingConflict||h.lastError)throw Error('TIME_SYNC_PENDING');}
  catch(e){return alert(errors[e.message]||'Sync the workshop before opening Time Management.')}
  if(token!==opening||!allowed())return;request=null;selectedJob='';
- openModal('<section id="tmPage" class="tm-page"><div class="tm-header"><h2>⏱ Time Management</h2><button type="button" class="tm-close" onclick="closeModal()">✕ Close</button></div><button type="button" class="tm-back" onclick="closeModal()">← Back</button><p>Add, reduce or split allotted time, or cancel work that has not started.</p><fieldset id="tmInputs"><label>Search JC / registration<div class="tm-search"><input id="tmSearch" type="search" oninput="zukaitTimeSearch()" onkeydown="if(event.key===\'Enter\'){event.preventDefault();zukaitTimeSearch()}"><button type="button" class="tm-back" onclick="zukaitTimeSearch()">Search</button></div></label><div id="tmSearchResults" class="tm-results"></div><div id="tmJob" class="tm-job"></div><div id="tmEditor" hidden><label>Currently assigned technician<select id="tmSource" onchange="zukaitTimeSourceChanged()"></select></label><div id="tmMetrics" class="tm-metrics"></div><label>Action<select id="tmMode" onchange="zukaitTimeChanged()"><option value="ADD">＋ Add Time</option><option value="REDUCE">− Reduce Time</option><option value="SPLIT">⇄ Split / Transfer Time</option><option value="CANCEL_UNSTARTED">✕ Cancel Allotted Work (not started)</option></select></label><label id="tmTargetLabel" hidden>Assign time to technician<select id="tmTarget" onchange="zukaitTimeChanged()"></select></label><div class="tm-duration"><label>Hours<input id="tmHours" type="number" min="0" max="1000" step="1" inputmode="numeric" value="0" oninput="zukaitTimeChanged()"></label><label>Minutes<input id="tmMinutes" type="number" min="0" max="59" step="1" inputmode="numeric" value="30" oninput="zukaitTimeChanged()"></label></div><div id="tmPreview" class="tm-preview"></div><label><span id="tmReasonLabel">Reason (required)</span><textarea id="tmReason" maxlength="500" rows="3" oninput="zukaitTimeChanged()"></textarea></label><button type="button" class="tm-save" onclick="zukaitTimeReview()">Review & Confirm</button></div></fieldset><div id="tmNotice" class="tm-notice" role="status" aria-live="polite"></div><div id="tmReview" class="tm-review" hidden></div></section>');
+ openModal('<section id="tmPage" class="tm-page"><div class="tm-header"><h2>⏱ Time Management</h2><button type="button" class="tm-close" onclick="closeModal()">✕ Close</button></div><button type="button" class="tm-back" onclick="closeModal()">← Back</button><p>Add, reduce or split allotted time, or cancel work that has not started.</p><button type="button" class="tm-back" onclick="zukaitOpenJobTimeInspection()">🔎 Job Card Time Inspection · JC / Registration</button><fieldset id="tmInputs"><label>Search JC / registration<div class="tm-search"><input id="tmSearch" type="search" oninput="zukaitTimeSearch()" onkeydown="if(event.key===\'Enter\'){event.preventDefault();zukaitTimeSearch()}"><button type="button" class="tm-back" onclick="zukaitTimeSearch()">Search</button></div></label><div id="tmSearchResults" class="tm-results"></div><div id="tmJob" class="tm-job"></div><div id="tmEditor" hidden><label>Currently assigned technician<select id="tmSource" onchange="zukaitTimeSourceChanged()"></select></label><div id="tmMetrics" class="tm-metrics"></div><label>Action<select id="tmMode" onchange="zukaitTimeChanged()"><option value="ADD">＋ Add Time</option><option value="REDUCE">− Reduce Time</option><option value="SPLIT">⇄ Split / Transfer Time</option><option value="CANCEL_UNSTARTED">✕ Cancel Allotted Work (not started)</option></select></label><label id="tmTargetLabel" hidden>Assign time to technician<select id="tmTarget" onchange="zukaitTimeChanged()"></select></label><div class="tm-duration"><label>Hours<input id="tmHours" type="number" min="0" max="1000" step="1" inputmode="numeric" value="0" oninput="zukaitTimeChanged()"></label><label>Minutes<input id="tmMinutes" type="number" min="0" max="59" step="1" inputmode="numeric" value="30" oninput="zukaitTimeChanged()"></label></div><div id="tmPreview" class="tm-preview"></div><label><span id="tmReasonLabel">Reason (required)</span><textarea id="tmReason" maxlength="500" rows="3" oninput="zukaitTimeChanged()"></textarea></label><button type="button" class="tm-save" onclick="zukaitTimeReview()">Review & Confirm</button></div></fieldset><div id="tmNotice" class="tm-notice" role="status" aria-live="polite"></div><div id="tmReview" class="tm-review" hidden></div></section>');
  if(initialJob){get('tmSearch').value=String(initialJob);window.zukaitTimeSelectJob(String(initialJob))}else get('tmSearch').focus();
 };
 const style=document.createElement('style');style.textContent=`
@@ -130,7 +130,7 @@ window.zukaitOpenManagerTimeManagement=async function(){
  }catch(e){if(token===managerOpening&&manager()&&String(me.id)===actor)alert(managerErrors[e.code||e.message]||'Could not load work history. Please try again.');return}
  managerRequest=null;
  try{if(managerTimeJournal()){window.zukaitManagerTimeRetry();return}}catch{alert('The pending time change could not be read. Preserve device data and ask the Manager to reconcile it.');return}
- openModal(managerHead('⏱ Time Management')+(managerPending()?'<p class="tm-notice" role="status">'+esc(pendingMessage)+'</p>':'')+'<p>Select the work to correct. Every saved change requires a reason and is kept in audit history.</p><div class="tm-actions"><button type="button" class="tm-back" onclick="zukaitOpenTimeManagement()">Add / Reduce / Split Time</button><button type="button" class="tm-back" onclick="zukaitManagerTimeHistory()">Work History / Audit</button></div><label>Search employee / JC / registration<input id="mtSearch" type="search" oninput="zukaitManagerTimeSearch()"></label><div id="mtRows" class="tm-results"></div></section>');
+ openModal(managerHead('⏱ Time Management')+(managerPending()?'<p class="tm-notice" role="status">'+esc(pendingMessage)+'</p>':'')+'<p>Select the work to correct. Every saved change requires a reason and is kept in audit history.</p><div class="tm-actions"><button type="button" class="tm-back" onclick="zukaitOpenJobTimeInspection()">🔎 Job Card Time Inspection</button><button type="button" class="tm-back" onclick="zukaitOpenTimeManagement()">Add / Reduce / Split Time</button><button type="button" class="tm-back" onclick="zukaitManagerTimeHistory()">Work History / Audit</button></div><label>Search employee / JC / registration<input id="mtSearch" type="search" oninput="zukaitManagerTimeSearch()"></label><div id="mtRows" class="tm-results"></div></section>');
  window.zukaitManagerTimeSearch();
 };
 window.zukaitManagerTimeSearch=function(){
@@ -182,3 +182,115 @@ window.zukaitManagerTimeHistory=function(selected=false){
  const corrections=(managerData().corrections||[]).filter(x=>!rows.some(y=>y.id===x.id)&&(!a||managerSessions(a).some(s=>String(s.id)===String(x.session))));
  openModal(managerHead('Work History / Audit')+(a?'<button type="button" class="tm-back" data-id="'+esc(a.id)+'" onclick="zukaitManagerTimeSelect(this.dataset.id)">← Assignment Work History</button>':'<p>Search an employee or JC in Time Management to view individual work sessions.</p>')+'<div class="tm-results">'+[...rows,...corrections.map(x=>({...x,type:'Time Correction',before:{start:x.oldStart,end:x.oldEnd},after:{start:x.newStart,end:x.newEnd}}))].sort((a,b)=>Number(b.at)-Number(a.at)).map(x=>'<div class="tm-preview"><b>'+esc(x.type)+' · '+esc(x.job||'')+'</b><span>'+esc(new Date(x.at).toLocaleString())+' · '+esc(managerStaff(x.by)?.name||x.by)+'</span><p>Reason: '+esc(x.reason||'—')+'</p><details><summary>Original / changed values</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(JSON.stringify(x.before!==undefined?{before:x.before,after:x.after,...(x.assignmentBefore?{assignmentBefore:x.assignmentBefore,assignmentAfter:x.assignmentAfter}:{})}:{allocatedBefore:x.oldSuggested,allocatedAfter:x.newSuggested,targetBefore:x.targetOldSuggested,targetAfter:x.targetNewSuggested},null,2))+'</pre></details></div>').join('')+'<p>'+(!rows.length&&!corrections.length?'No time changes recorded.':'Original records and reasons are retained.')+'</p></div></section>');
 };
+
+
+/* V377 Job Card Time Inspection.
+   Read-only server snapshot for Manager and Supervisor.
+   Never changes allocations or sessions; Repeat Work is shown separately. */
+let inspectionSnapshot=null,inspectionActor='',inspectionRequest=0,inspectionQuery='',inspectionJob='';
+const inspectionData=()=>allowed()&&inspectionActor===String(me?.id||'')?inspectionSnapshot:null;
+const inspectionKey=v=>String(v??'').toLowerCase().replace(/[^a-z0-9]/g,'');
+const inspectionMinutes=(d,a)=>{
+ try{
+  const n=Number(workedMinutes(d,a,Date.now()));
+  return Number.isFinite(n)?Math.max(0,n):0;
+ }catch(_){return 0;}
+};
+const inspectionFormat=n=>fmtTime(Math.max(0,Math.round(Number(n)||0)));
+const inspectionAssignments=(d,no)=>(d.assign||[]).filter(a=>a&&!a.cancelled&&String(a.job)===String(no)&&String(a.job).toUpperCase()!=='ID001');
+const inspectionEmployeeRows=(d,no)=>{
+ const groups=new Map();
+ for(const a of inspectionAssignments(d,no)){
+  const id=String(a.emp||'');if(!id)continue;
+  if(!groups.has(id)){
+   const u=(d.users||[]).find(x=>x&&String(x.id)===id)||{};
+   groups.set(id,{id,name:u.name||id,department:u.department||'Technician',assigned:0,actual:0,repeat:0,repeatAssigned:0,assignments:[],running:false});
+  }
+  const row=groups.get(id),minutes=inspectionMinutes(d,a);
+  if(a.rework){row.repeat+=minutes;row.repeatAssigned+=Math.max(0,Number(a.suggested)||0);}
+  else{row.assigned+=Math.max(0,Number(a.suggested)||0);row.actual+=minutes;}
+  row.assignments.push(a);
+  if(!a.completed&&(d.sessions||[]).some(s=>s&&s.end==null&&!s.cancelled&&String(s.assignmentId||'')===String(a.id)))row.running=true;
+ }
+ return [...groups.values()].map(x=>({...x,remaining:Math.max(0,x.assigned-x.actual),exceeded:Math.max(0,x.actual-x.assigned)}))
+   .sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+};
+const inspectionMetric=(name,value)=>'<div class="tm-inspect-metric"><span>'+name+'</span><b>'+inspectionFormat(value)+'</b></div>';
+const inspectionJobOf=(d,no)=>(d.jobs||[]).find(j=>j&&String(j.no)===String(no)&&String(j.no)!=='ID001')||null;
+const inspectionBack=()=>'<button type="button" class="tm-back" onclick="zukaitTimeInspectSearchPage()">← Back to Search</button>';
+const inspectionShell=(title,body)=>openModal('<section class="tm-page tm-inspection"><div class="tm-header"><h2>'+esc(title)+'</h2><button type="button" class="tm-close" onclick="closeModal()">✕ Close</button></div>'+body+'</section>');
+window.zukaitOpenJobTimeInspection=async function(query=''){
+ if(!allowed())return;
+ const ticket=++inspectionRequest,actor=String(me.id);
+ try{
+  if(!navigator.onLine||typeof window.zukaitCloud?.readLatest!=='function')throw Error('OFFLINE');
+  const result=await window.zukaitCloud.readLatest();
+  if(ticket!==inspectionRequest||!allowed()||String(me.id)!==actor)return;
+  if(!result?.data||!Array.isArray(result.data.jobs)||!Array.isArray(result.data.assign)||!Array.isArray(result.data.sessions))throw Error('INVALID_SERVER_RECORDS');
+  inspectionSnapshot=result.data;inspectionActor=actor;inspectionQuery=String(query||'');inspectionJob='';
+  window.zukaitTimeInspectSearchPage();
+ }catch(e){
+  if(ticket===inspectionRequest&&allowed()&&String(me.id)===actor)alert('Could not load confirmed Job Card time records from the server. Connect and retry.');
+ }
+};
+window.zukaitTimeInspectionReturn=function(){
+ inspectionSnapshot=null;inspectionActor='';inspectionJob='';inspectionQuery='';
+ ++inspectionRequest;
+ if(me?.role==='Manager')return window.zukaitOpenManagerTimeManagement();
+ return window.zukaitOpenTimeManagement();
+};
+window.zukaitTimeInspectSearchPage=function(){
+ if(!inspectionData())return;
+ inspectionJob='';
+ inspectionShell('Job Card Time Inspection','<button type="button" class="tm-back" onclick="zukaitTimeInspectionReturn()">← Time Management</button>'+
+  '<p>Read-only server records. Search any JC number or registration, including finished and delivered jobs.</p>'+
+  '<label>Search JC Number / Registration Number<input id="tmInspectQuery" type="search" autocomplete="off" placeholder="Enter JC or registration" value="'+esc(inspectionQuery)+'" oninput="zukaitTimeInspectSearch()"></label>'+
+  '<button type="button" class="tm-back" onclick="zukaitOpenJobTimeInspection(document.getElementById(\'tmInspectQuery\')?.value||\'\')">↻ Refresh from Server</button>'+
+  '<div id="tmInspectResults" class="tm-results" aria-live="polite"></div>');
+ window.zukaitTimeInspectSearch();
+};
+window.zukaitTimeInspectSearch=function(){
+ const d=inspectionData(),out=get('tmInspectResults');if(!d||!out)return;
+ inspectionQuery=String(get('tmInspectQuery')?.value||'').trim();
+ const q=inspectionKey(inspectionQuery);
+ if(!q){out.innerHTML='<p>Enter a Job Card or vehicle registration number to inspect working hours.</p>';return;}
+ const matches=(d.jobs||[]).filter(j=>j&&j.no&&String(j.no)!=='ID001'&&!j.deleted&&
+  [j.no,j.reg,j.registration].some(v=>inspectionKey(v).includes(q)))
+  .sort((a,b)=>{
+   const ae=inspectionKey(a.no)===q?1:0,be=inspectionKey(b.no)===q?1:0;
+   return be-ae||Number(b.createdAt||0)-Number(a.createdAt||0)||String(b.no).localeCompare(String(a.no),undefined,{numeric:true});
+  });
+ out.innerHTML=matches.length?matches.slice(0,50).map(j=>{
+  const people=inspectionEmployeeRows(d,j.no);
+  const status=j.delivered?'Delivered':j.archived?'Archived':j.cancelled?'Cancelled':people.length&&people.every(p=>p.assignments.every(a=>a.completed))?'Finished':'In Progress';
+  return '<button type="button" data-jc="'+esc(j.no)+'" onclick="zukaitTimeInspectJob(this.dataset.jc)"><b>JC '+esc(j.no)+' · '+esc(status)+'</b><span>'+esc(vehicle(j)||'Vehicle')+' · '+esc(j.reg||j.registration||'—')+' · '+people.length+' technician(s)</span></button>';
+ }).join(''):'<p>No matching Job Cards.</p>';
+ if(matches.length>50)out.innerHTML+='<p>Showing the first 50 matches. Enter more of the JC or registration number.</p>';
+};
+window.zukaitTimeInspectJob=function(no){
+ const d=inspectionData(),j=d&&inspectionJobOf(d,no);if(!j)return;
+ inspectionJob=String(j.no);
+ const people=inspectionEmployeeRows(d,j.no);
+ const normal=people.reduce((n,p)=>n+p.assigned,0),actual=people.reduce((n,p)=>n+p.actual,0),repeat=people.reduce((n,p)=>n+p.repeat,0);
+ inspectionShell('JC '+esc(j.no)+' · Employee Time',inspectionBack()+
+  '<div class="tm-job"><b>'+esc(vehicle(j)||'Vehicle')+'</b><span>Registration: '+esc(j.reg||j.registration||'—')+'</span></div>'+
+  '<div class="tm-inspect-metrics">'+inspectionMetric('Total Assigned',normal)+inspectionMetric('Total Actual',actual)+inspectionMetric('Repeat Hours',repeat)+'</div>'+
+  '<h3>Assigned Employees</h3><p>Select an employee to inspect their working time.</p>'+
+  '<div class="tm-results">'+(people.length?people.map(p=>
+   '<button type="button" data-emp="'+esc(p.id)+'" onclick="zukaitTimeInspectEmployee(this.dataset.emp)"><b>'+esc(p.name)+'</b><span>'+esc(p.department)+' · Assigned '+inspectionFormat(p.assigned)+' · Actual '+inspectionFormat(p.actual)+(p.running?' · Working':'')+'</span></button>'
+   ).join(''):'<p>No technician assignments recorded for this Job Card.</p>')+'</div>');
+};
+window.zukaitTimeInspectEmployee=function(employeeId){
+ const d=inspectionData(),j=d&&inspectionJobOf(d,inspectionJob);if(!j)return;
+ const person=inspectionEmployeeRows(d,j.no).find(p=>p.id===String(employeeId));if(!person)return;
+ const rows=person.assignments.slice().sort((a,b)=>Number(a.assignedAt||0)-Number(b.assignedAt||0));
+ inspectionShell(esc(person.name)+' · JC '+esc(j.no),
+  '<button type="button" class="tm-back" data-jc="'+esc(j.no)+'" onclick="zukaitTimeInspectJob(this.dataset.jc)">← Assigned Employees</button>'+
+  '<div class="tm-job"><b>'+esc(vehicle(j)||'Vehicle')+' · '+esc(j.reg||j.registration||'—')+'</b><span>'+esc(person.department)+'</span></div>'+
+  '<div class="tm-inspect-metrics">'+inspectionMetric('Assigned Time',person.assigned)+inspectionMetric('Actual Time',person.actual)+inspectionMetric('Remaining Time',person.remaining)+inspectionMetric('Exceeded Time',person.exceeded)+inspectionMetric('Repeat Hours',person.repeat)+'</div>'+
+  '<p class="tm-inspect-note">Normal duty work is compared with the normal allocation. Repeat work is displayed separately and is not double-counted. ID001 and overtime are excluded from these duty-hour figures.</p>'+
+  '<h3>Assignment Breakdown</h3><div class="tm-results">'+rows.map(a=>
+   '<div class="tm-inspect-assignment"><b>'+(a.rework?'Repeat Work':'Normal Work')+' · '+esc(a.completed?'Finished':'Open')+'</b><span>Assigned '+inspectionFormat(a.suggested)+' · Actual '+inspectionFormat(inspectionMinutes(d,a))+'</span></div>'
+  ).join('')+'</div>');
+};
+const inspectionCss=document.createElement('style');inspectionCss.textContent='.tm-inspection .tm-inspect-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:9px;margin:14px 0}.tm-inspection .tm-inspect-metric{background:#f3f7fc;border:1px solid #cad9e8;border-radius:12px;padding:12px 10px}.tm-inspection .tm-inspect-metric span,.tm-inspection .tm-inspect-metric b{display:block}.tm-inspection .tm-inspect-metric span{font-size:12px;font-weight:700}.tm-inspection .tm-inspect-metric b{font-size:19px;margin-top:5px}.tm-inspection .tm-inspect-assignment{background:#f8fafc;border:1px solid #d3dfeb;border-radius:12px;padding:12px;display:grid;gap:5px}.tm-inspection .tm-inspect-assignment span{font-size:14px}.tm-inspection .tm-inspect-note{font-size:13px;color:#52667b;line-height:1.5}';document.head.appendChild(inspectionCss);
