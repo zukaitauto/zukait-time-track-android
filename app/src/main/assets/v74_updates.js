@@ -1946,7 +1946,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  const repeats=no=>live(no).filter(a=>a.rework).sort((a,b)=>(+a.assignedAt||0)-(+b.assignedAt||0));
  const cycleKey=a=>String(a?.repeatCycleId||a?.id||'');
  function backfill(no){const rr=repeats(no);let changed=false;for(const a of rr){if(!a.repeatCycleId){a.repeatCycleId='legacy-repeat-'+a.id;a.repeatCycleNo=rr.indexOf(a)+1;changed=true}}return changed}
- function current(no){backfill(no);const rr=repeats(no);if(!rr.length)return originals(no);const last=rr[rr.length-1],key=cycleKey(last);return rr.filter(a=>cycleKey(a)===key)}
+ function current(no){backfill(no);const rr=repeats(no),extra=live(no).filter(a=>a.additionalWork===true).sort((a,b)=>(+a.assignedAt||0)-(+b.assignedAt||0));const latestExtra=extra[extra.length-1],latestRepeat=rr[rr.length-1];if(latestExtra&&(!latestRepeat||Number(latestExtra.assignedAt||0)>=Number(latestRepeat.assignedAt||0)))return [latestExtra];if(!rr.length)return originals(no);const key=cycleKey(latestRepeat);return rr.filter(a=>cycleKey(a)===key)}
  function complete(no){const rows=current(no);return rows.length>0&&rows.every(a=>a.completed)}
  window.v125CurrentCycle=current;window.v125CycleComplete=complete;
  const previousAssign=window.assignRepeatWorkV56;window.assignRepeatWorkV56=function(no){
