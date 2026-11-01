@@ -1,4 +1,4 @@
-import {qcStatus,invoiceComplete,invoiceDateValid} from './qc_delivery_rules.js?v=316-management-1';
+import {qcStatus,invoiceComplete,invoiceDateValid} from './qc_delivery_rules.js?v=377-reopen-1';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const jobs=()=>state.jobs||[],rawFind=no=>jobs().find(j=>String(j.no)===String(no)),find=no=>{const raw=rawFind(no);if(!raw)return null;const live=window.zukaitJobCardMaster?.display?.(no,raw);return live?{...raw,...live}:raw};
 const allowed=()=>['Supervisor','Manager'].includes(me?.role);
@@ -159,6 +159,7 @@ window.zukaitConfirmReopenDelivered=async function(no){
   await window.zukaitCloud?.syncNow?.();
   if(String(me?.id)!==actor||window.zukaitAuth?.getToken?.()!==token)throw Error('Account changed. Reopen cancelled.');
   const pulled=await window.zukaitCloud?.pull?.(true);
+  if(String(me?.id)!==actor||window.zukaitAuth?.getToken?.()!==token)throw Error('Account changed. Reopen cancelled.');
   const h=window.zukaitCloud?.syncHealth;
   if(pulled===false||!h?.ready||h.dirty||h.pendingConflict||h.lastError)throw Error('Workshop data is not synchronized. Retry when Server Live.');
   const j=rawFind(no);
