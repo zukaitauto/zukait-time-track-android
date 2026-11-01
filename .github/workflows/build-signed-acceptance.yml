@@ -11,6 +11,8 @@ on:
       - .github/workflows/pages.yml
       - .github/workflows/publish-approved-release.yml
       - app/src/main/assets/manager_profit_performance.js
+      - app/src/main/assets/v68_updates.js
+      - tests/jobcard-reopen-authority.mjs
       - app/src/main/assets/offline_test.html
       - app/src/main/assets/time_management*
       - app/src/main/assets/session_privacy.js
