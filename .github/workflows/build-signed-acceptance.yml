@@ -13,6 +13,8 @@ on:
       - app/src/main/assets/manager_profit_performance.js
       - app/src/main/assets/v68_updates.js
       - tests/jobcard-reopen-authority.mjs
+      - tests/paint-*.mjs
+      - app/src/main/assets/paint_module.js
       - app/src/main/assets/offline_test.html
       - app/src/main/assets/time_management*
       - app/src/main/assets/session_privacy.js
