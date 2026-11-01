@@ -13,7 +13,7 @@ android {
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
         versionCode 341
-        versionName "V378" // Development candidate only; production remains V376.
+        versionName "V378" // UI hotfix candidate; production remains V377 until approved publication.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }
