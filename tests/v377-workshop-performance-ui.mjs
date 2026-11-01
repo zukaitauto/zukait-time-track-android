@@ -111,4 +111,42 @@ assert.equal(seen[0].rows.length,2,'two assignments, without duplicated ID001');
 assert.deepEqual(Array.from(seen[0].rows,x=>x[5]),['400m','378m'],'individual JC12043 durations must differ');
 assert.deepEqual(Array.from(seen[0].rows,x=>x[1]),['12043','12043'],'both legitimate assignments retained');
 
-console.log('V377 Workshop Performance layout and unified efficiency ranking: PASS');
+
+
+// Permanent consumables card regression: the base Manager render replaces the
+// entire performance grid on every refresh, so the cards must be in the base
+// HTML and not solely appended later by the V145 enhancement.
+const performanceSection=legacy.slice(
+ legacy.indexOf('/* V123 MANAGER WORKSHOP PERFORMANCE'),
+ legacy.indexOf('/* V',legacy.indexOf('/* V123 MANAGER WORKSHOP PERFORMANCE')+6)
+);
+assert.match(performanceSection,/class="v123-perf v145-consumables"/);
+assert.match(performanceSection,/class="v123-perf v377-materials-consumption"/);
+assert.match(performanceSection,/window\.v145ApplyConsumablesPerformance\?\.\(\)/);
+assert.match(performanceSection,/v145OpenConsumablesPerformance\(\)/);
+assert.match(performanceSection,/v145SetExpenseCategory\(\\'other\\'\)/);
+const view={innerHTML:''};
+const managerRoot={querySelector:selector=>selector==='.v123-manager-performance'?view:null};
+let enhanced=0;
+const screen={
+ state:{assign:[],jobs:[],sublets:[],consumables:{actuals:[]},paintPurchasing:{orders:[]}},
+ me:{role:'Manager'},
+ window:{render:()=>{},v377ConsumablesCostForPeriod:()=>({total:6.123,other:2.345,jobs:1,rows:[]}),v145ApplyConsumablesPerformance:()=>{enhanced++;}},
+ document:{getElementById:id=>id==='managerView'?managerRoot:null,createElement:()=>({textContent:''}),head:{appendChild(){}}},
+ localStorage:{getItem:()=> '[]'},
+ navigator:{onLine:false},
+ setTimeout:()=>{},
+ Intl,
+ console
+};
+vm.runInNewContext(performanceSection,screen);
+for(let redraw=1;redraw<=3;redraw++){
+ screen.window.v123ApplyManagerPerformance();
+ assert.match(view.innerHTML,/Consumables Cost<\/span><b>OMR 6\.123/,'paint plus materials cost survives repaint');
+ assert.match(view.innerHTML,/Total Materials Consumption<\/span><b>OMR 2\.345/,'finalized materials cost survives repaint');
+ assert.equal((view.innerHTML.match(/class="v123-perf v145-consumables"/g)||[]).length,1,'one consumables tile');
+ assert.equal((view.innerHTML.match(/class="v123-perf v377-materials-consumption"/g)||[]).length,1,'one materials tile');
+ assert.equal(enhanced,redraw,'V145 detailed report remains linked after base repaint');
+}
+
+console.log('V377 Workshop Performance layout, consumables repaint and unified efficiency ranking: PASS');
