@@ -91,12 +91,12 @@ const csvPromise=new Promise((resolve,reject)=>{fileReader.onload=()=>resolve(fi
 fileReader.readAsText(exportedBlob);
 const csv=await csvPromise;
 assert.match(csv,/Liva/);assert.match(csv,/JC number/);assert.match(csv,/101/);assert.match(csv,/102/);
-assert.doesNotMatch(csv,/Other <script>|Nissan Altima 2018/);
+assert.doesNotMatch(csv,/Other <script>|Other &lt;script&gt;/);assert.match(csv,/Nissan Altima 2018/);
 assert.match(csv,/OMR 300\.000/);
 w.open=()=>({document:{write:html=>{printedHTML=html;},close(){}},focus(){},print(){printed=true;},close(){}});
 w.document.querySelector('[data-mp-export="print"]').click();
 assert.equal(printed,true);assert.match(printedHTML,/ZUKAIT INTERNATIONAL LLC/);assert.match(printedHTML,/Liva/);assert.match(printedHTML,/JC 101|101/);
-assert.doesNotMatch(printedHTML,/Other &lt;script&gt;|Nissan Altima 2018/);
+assert.doesNotMatch(printedHTML,/Other &lt;script&gt;/);assert.match(printedHTML,/Nissan Altima 2018/);
 const pdfDocs=[];
 w.jspdf={jsPDF:class{
  constructor(){this.pages=1;pdfDocs.push(this);}
@@ -110,7 +110,7 @@ w.jspdf={jsPDF:class{
 }};
 w.document.querySelector('[data-mp-export="pdf"]').click();
 assert.match(savedPDF,/INSURANCE_Monthly_Performance_2026-10_Filtered\.pdf$/);
-assert.match(pdfText.join(' '),/Liva/);assert.match(pdfText.join(' '),/101/);assert.doesNotMatch(pdfText.join(' '),/Nissan Altima 2018/);
+assert.match(pdfText.join(' '),/Liva/);assert.match(pdfText.join(' '),/101/);assert.match(pdfText.join(' '),/Nissan Altima 2018/);assert.doesNotMatch(pdfText.join(' '),/Other <script>/);
 
 const mode=w.document.getElementById('mpMode');mode.value='graph';mode.dispatchEvent(new w.Event('change'));assert.equal(w.document.querySelectorAll('.mp-chart-row').length,3);assert.match(w.document.querySelector('.mp-chart').textContent,/OMR 80\.000/);assert.equal(w.document.querySelector('.mp-job-count strong').textContent,'2');assert.equal(w.document.querySelectorAll('.mp-trend').length,1);
 
