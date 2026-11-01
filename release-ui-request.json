@@ -2,22 +2,22 @@
   "versionName": "V380",
   "versionCode": 343,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
-  "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
-  "approvedAt": null,
-  "publishNonce": null,
+  "approvedForStaff": true,
+  "sourceCommit": "48de3469e7405378f9d9a3782ea9f64f8e65b50b",
+  "approvedAt": "2026-11-01T16:09:00Z",
+  "publishNonce": "owner-v380-20261101-160900-publish-approved-source",
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "reason": "V380 held release includes modern read-only Job Card time inspection, monthly Cash/Insurance exports, Job Card reopen navigation and Paint PO receipt-date correction. Mechanical backend remains uninstalled.",
-  "backendDeploymentRequired": true,
-  "verificationSummary": "Pinned V380 source 21a67708859d42681845922e06e0186e5e3e6768 passed signed Android build 41320969253 and Reception browser verification 41320969105. Staff publication not yet approved.",
-  "ownerRequestedImmediateRelease": false,
-  "ownerPublicationRequested": false,
-  "releaseHeldByOwner": true,
-  "backupDeferredByOwner": false,
-  "signedAcceptanceRun": 41320969253,
-  "verificationRun": 41320969105,
+  "reason": "Owner-approved V380 staff publication: mechanical checklist-first Cash/Credit, linked Job Card search, daily employee Time Details with Share Card, Manager report corrections, reduced APK OCR assets. Backend already deployed, no database changes during publication.",
+  "backendDeploymentRequired": false,
+  "verificationSummary": "Exact source 48de3469e7405378f9d9a3782ea9f64f8e65b50b: signed acceptance 41324059384 SUCCESS, Reception 41324059339 SUCCESS, Android architecture 41324059316 SUCCESS, Mechanical/Accountant 41324059366 SUCCESS, standard APK 41324059363 SUCCESS, outage 41324059352 SUCCESS. Production workshop-api v99 and required prejob functions checked active. Physical and fresh backup NOT RUN (owner deferral).",
+  "ownerRequestedImmediateRelease": true,
+  "ownerPublicationRequested": true,
+  "releaseHeldByOwner": false,
+  "backupDeferredByOwner": true,
+  "signedAcceptanceRun": 41324059384,
+  "verificationRun": 41324059339,
   "v380PaintReceivedDate": {
     "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
     "feature": "Paint PO Received Date visible in summary/list and editable by Manager with correction reason; preserves original received employee and receipt time; audit before/after; rejects invalid/future dates; pending PO cannot be received by correction",
@@ -28,7 +28,7 @@
     "signedArtifactId": 13089726056,
     "receptionVerificationRun": 41320969105
   },
-  "authorization": "V380 unapproved candidate only. Includes modern employee Job Card Time Inspection UI, Cash/Insurance monthly report exports, audited Paint PO Received Date correction, and Manager Job Card reopen navigation. Staff release and Phase 2 backend activation require separate approval.",
+  "authorization": "Owner repeatedly requested immediate V380 publication on 2026-11-01 after being told the release was held; earlier owner direction was to bypass backup and test the published app. Physical Android acceptance and a fresh production backup restore are NOT RUN and not represented as passed. Owner accepts deferral to publish; no backend changes are made by this UI/APK publication. Production pre-job checklist table/RPCs and workshop-api v99 were verified installed before this approval. Source and CI pinned to 48de3469e7405378f9d9a3782ea9f64f8e65b50b.",
   "v380MonthlyExports": {
     "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
     "scope": "Manager Cash Monthly Performance and Insurance Monthly LPO Performance",
@@ -67,5 +67,7 @@
       "Reception browser verification"
     ],
     "published": false
-  }
+  },
+  "ownerRequestedProceed": true,
+  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V380"
 }
