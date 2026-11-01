@@ -3,10 +3,10 @@
   "versionCode": 343,
   "releaseScope": "phase1-compatible-ui",
   "approvedForStaff": false,
-  "sourceCommit": "c747a85551c335076f459989cd52a2ef17b59384",
+  "sourceCommit": "71f6bbfd5d40bc12af5152c71e616f3456205332",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": false,
-  "authorization": "V380 candidate only, not yet approved. Includes Manager Job Card reopen navigation and Paint PO Received Date corrections; web/Android signed candidate verification required. Mechanical prejob SQL and server RPC are not deployed, and Phase 2 activation is not approved.",
+  "authorization": "V380 unapproved candidate only, now includes Cash & Insurance monthly performance Print/PDF/Excel (CSV) exports alongside Manager reopen navigation and Paint PO receipt-date correction. No production backend activation or publishing authorized.",
   "approvedAt": null,
   "publishNonce": null,
   "releaseHeldByOwner": true,
@@ -16,7 +16,7 @@
   "backendDeploymentRequired": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41317900128,
+  "signedAcceptanceRun": 41318984664,
   "verificationRun": null,
   "previousPublishedRelease": {
     "versionName": "V379",
@@ -587,24 +587,46 @@
     "feature": "Manager Job Card search and legacy review now route to full details with reopen eligibility guidance",
     "testedSource": "90be6baaedbf16aeb62fe4eee61e3fd484c7c392",
     "previouslyVerifiedSignedRun": 41307533795,
-    "candidateSource": "c747a85551c335076f459989cd52a2ef17b59384",
-    "candidateSignedRun": 41317900128,
+    "candidateSource": "71f6bbfd5d40bc12af5152c71e616f3456205332",
+    "candidateSignedRun": 41318984664,
     "pending": [
       "Exact-source signed APK and Reception verification",
       "Mechanical prejob backend remains uninstalled in connected projects",
       "Explicit owner publication authorization"
     ],
     "installation": "SIGNED_TEST_APK_ONLY_NOT_PUBLISHED",
-    "candidateArtifactId": 13087923000,
+    "candidateArtifactId": 13088472618,
     "candidateReceptionRun": null
   },
   "v380PaintReceivedDate": {
-    "sourceCommit": "c747a85551c335076f459989cd52a2ef17b59384",
+    "sourceCommit": "71f6bbfd5d40bc12af5152c71e616f3456205332",
     "feature": "Paint PO Received Date visible in summary/list and editable by Manager with correction reason; preserves original received employee and receipt time; audit before/after; rejects invalid/future dates; pending PO cannot be received by correction",
     "test": "tests/paint-received-date-correction.mjs",
     "productionBackendDeployment": false,
     "releaseStatus": "UNPUBLISHED",
-    "signedAcceptanceRun": 41317900128,
-    "signedArtifactId": 13087923000
+    "signedAcceptanceRun": 41318984664,
+    "signedArtifactId": 13088472618
+  },
+  "v380MonthlyExports": {
+    "sourceCommit": "71f6bbfd5d40bc12af5152c71e616f3456205332",
+    "scope": "Manager Cash Monthly Performance and Insurance Monthly LPO Performance",
+    "options": [
+      "Print A4 landscape",
+      "Download PDF",
+      "Excel-compatible CSV"
+    ],
+    "filters": [
+      "Month",
+      "Insurance company where applicable",
+      "List / Graph (print graph; PDF/Excel export full data list)"
+    ],
+    "includes": "Complete filtered Job Card list, totals, provisional cost warnings and dates",
+    "tests": [
+      "tests/manager-profit-performance.mjs",
+      "full functional regression"
+    ],
+    "signedAcceptanceRun": 41318984664,
+    "signedArtifactId": 13088472618,
+    "productionStatus": "NOT_PUBLISHED"
   }
 }
