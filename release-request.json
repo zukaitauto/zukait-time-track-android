@@ -3,10 +3,10 @@
   "versionCode": 343,
   "releaseScope": "phase1-compatible-ui",
   "approvedForStaff": false,
-  "sourceCommit": "71f6bbfd5d40bc12af5152c71e616f3456205332",
+  "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": false,
-  "authorization": "V380 unapproved candidate only, now includes Cash & Insurance monthly performance Print/PDF/Excel (CSV) exports alongside Manager reopen navigation and Paint PO receipt-date correction. No production backend activation or publishing authorized.",
+  "authorization": "V380 unapproved candidate only. Includes modern employee Job Card Time Inspection UI, Cash/Insurance monthly report exports, audited Paint PO Received Date correction, and Manager Job Card reopen navigation. Staff release and Phase 2 backend activation require separate approval.",
   "approvedAt": null,
   "publishNonce": null,
   "releaseHeldByOwner": true,
@@ -16,8 +16,8 @@
   "backendDeploymentRequired": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41318984664,
-  "verificationRun": 41318984555,
+  "signedAcceptanceRun": 41320969253,
+  "verificationRun": 41320969105,
   "previousPublishedRelease": {
     "versionName": "V379",
     "versionCode": 342,
@@ -587,29 +587,29 @@
     "feature": "Manager Job Card search and legacy review now route to full details with reopen eligibility guidance",
     "testedSource": "90be6baaedbf16aeb62fe4eee61e3fd484c7c392",
     "previouslyVerifiedSignedRun": 41307533795,
-    "candidateSource": "71f6bbfd5d40bc12af5152c71e616f3456205332",
-    "candidateSignedRun": 41318984664,
+    "candidateSource": "21a67708859d42681845922e06e0186e5e3e6768",
+    "candidateSignedRun": 41320969253,
     "pending": [
       "Exact-source signed APK and Reception verification",
       "Mechanical prejob backend remains uninstalled in connected projects",
       "Explicit owner publication authorization"
     ],
     "installation": "SIGNED_TEST_APK_ONLY_NOT_PUBLISHED",
-    "candidateArtifactId": 13088472618,
-    "candidateReceptionRun": 41318984555
+    "candidateArtifactId": 13089726056,
+    "candidateReceptionRun": 41320969105
   },
   "v380PaintReceivedDate": {
-    "sourceCommit": "71f6bbfd5d40bc12af5152c71e616f3456205332",
+    "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
     "feature": "Paint PO Received Date visible in summary/list and editable by Manager with correction reason; preserves original received employee and receipt time; audit before/after; rejects invalid/future dates; pending PO cannot be received by correction",
     "test": "tests/paint-received-date-correction.mjs",
     "productionBackendDeployment": false,
     "releaseStatus": "UNPUBLISHED",
-    "signedAcceptanceRun": 41318984664,
-    "signedArtifactId": 13088472618,
-    "receptionVerificationRun": 41318984555
+    "signedAcceptanceRun": 41320969253,
+    "signedArtifactId": 13089726056,
+    "receptionVerificationRun": 41320969105
   },
   "v380MonthlyExports": {
-    "sourceCommit": "71f6bbfd5d40bc12af5152c71e616f3456205332",
+    "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
     "scope": "Manager Cash Monthly Performance and Insurance Monthly LPO Performance",
     "options": [
       "Print A4 landscape",
@@ -626,9 +626,25 @@
       "tests/manager-profit-performance.mjs",
       "full functional regression"
     ],
-    "signedAcceptanceRun": 41318984664,
-    "signedArtifactId": 13088472618,
+    "signedAcceptanceRun": 41320969253,
+    "signedArtifactId": 13089726056,
     "productionStatus": "NOT_PUBLISHED",
-    "receptionVerificationRun": 41318984555
+    "receptionVerificationRun": 41320969105
+  },
+  "v380ModernTimeInspection": {
+    "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
+    "feature": "Read-only Job Card Time Inspection employee detail with premium navy, blue, teal and coral responsive metric tiles and refined navigation",
+    "logicUnchanged": true,
+    "scopedTo": "tm-inspection-employee",
+    "signedAcceptanceRun": 41320969253,
+    "receptionVerificationRun": 41320969105,
+    "signedArtifactId": 13089726056,
+    "tests": [
+      "tests/manager-time-management.mjs",
+      "full functional regression",
+      "signed Android artifact",
+      "Reception browser verification"
+    ],
+    "published": false
   }
 }
