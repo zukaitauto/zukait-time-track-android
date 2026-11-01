@@ -3,19 +3,27 @@
   "versionCode": 343,
   "releaseScope": "phase1-compatible-ui",
   "approvedForStaff": false,
-  "sourceCommit": "d71ef339dd067f41e394da654cfb6a07274010d7",
+  "sourceCommit": "c747a85551c335076f459989cd52a2ef17b59384",
   "approvedAt": null,
   "publishNonce": null,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "reason": "V380 QA candidate: Manager Job Card reopen navigation and status guidance. Mechanical prejob backend linking is not yet installed in connected projects, so no backend rollout or staff publication is approved.",
+  "reason": "V380 unapproved UI candidate includes Manager Job Card reopen navigation and Paint Purchase Order Received Date Manager correction. Backend migrations remain held.",
   "backendDeploymentRequired": true,
   "verificationSummary": "V380 pinned source d71ef339dd067f41e394da654cfb6a07274010d7 signed Android candidate run 41309041533 and Reception verification run 41309041278 passed. Mechanical prejob backend linking not deployed, V380 publication not approved.",
   "ownerRequestedImmediateRelease": false,
   "ownerPublicationRequested": false,
   "releaseHeldByOwner": true,
   "backupDeferredByOwner": false,
-  "signedAcceptanceRun": 41309041533,
-  "verificationRun": 41309041278
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "v380PaintReceivedDate": {
+    "sourceCommit": "c747a85551c335076f459989cd52a2ef17b59384",
+    "feature": "Paint PO Received Date visible in summary/list and editable by Manager with correction reason; preserves original received employee and receipt time; audit before/after; rejects invalid/future dates; pending PO cannot be received by correction",
+    "test": "tests/paint-received-date-correction.mjs",
+    "productionBackendDeployment": false,
+    "releaseStatus": "UNPUBLISHED"
+  },
+  "authorization": "V380 candidate only, not yet approved. Includes Manager Job Card reopen navigation and Paint PO Received Date corrections; web/Android signed candidate verification required. Mechanical prejob SQL and server RPC are not deployed, and Phase 2 activation is not approved."
 }
