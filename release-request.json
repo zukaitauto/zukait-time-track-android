@@ -13,7 +13,7 @@
   "publicationRequiresSeparateInstruction": true,
   "physicalAcceptanceStatus": "PENDING_UPDATED_V377_PHONE_ACCEPTANCE",
   "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V377",
-  "backendDeploymentRequired": false,
+  "backendDeploymentRequired": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "signedAcceptanceRun": 41277798038,
@@ -428,7 +428,8 @@
       "Separate owner authorization is mandatory before publishing V377 or activating production backend changes",
       "Do not deploy QA-verified Mechanical Cash/Credit guard to production without separate production backend authorization.",
       "Complete real authenticated Manager and Mechanical Supervisor QA checklist create/save/reload/edit, confirm new linked-type guard behavior, and verify resulting QA audit/revisions.",
-      "Authenticated Manager and Mechanical Supervisor QA Cash/Credit checklist create/save/reopen/edit, revisions/audit, and current V377 APK device acceptance remain unverified."
+      "Authenticated Manager and Mechanical Supervisor QA Cash/Credit checklist create/save/reopen/edit, revisions/audit, and current V377 APK device acceptance remain unverified.",
+      "Manager Additional Work and Repeat Work use new qc_delivery server operations REOPEN_ADDITIONAL / REOPEN_REPEAT. Production workshop-api must be separately authorized, deployed and tested before V377 publication; signed APK alone is insufficient."
     ],
     "productionApplication": "V376_UNCHANGED",
     "productionDatabaseTouched": false,
@@ -526,6 +527,24 @@
       },
       "releaseImpact": "Linked Job Card guard + API error mapping verified in isolated QA. Authenticated real-phone QA acceptance pending. V377 signed acceptance APK source c96f04f verified; production V376 unchanged.",
       "qaApiValidation": "Isolated QA workshop-api v46 ACTIVE, explicit mechanical_job_type_not_allowed HTTP 409 inspection mapping matched c96f04f source; guard enabled and two Cash-linked checklists preserved."
+    },
+    "managerWorkCycles": {
+      "project": "Bodyshop",
+      "features": [
+        "Manager selects original JC",
+        "Reopen for Additional Work (normal labour, no repeat penalty)",
+        "Repeat Work (quality/mistake responsible employee)",
+        "New audited assignment under original JC",
+        "Preserve previous delivery/invoice/labour and recertify QC"
+      ],
+      "latestVerification": "Full regression passed for source d7b5f2e; newer concurrent source commits require final verification",
+      "automatedTest": "tests/jobcard-additional-repeat-cycles.mjs",
+      "continuousIntegration": "scripts/ci-full-regression.sh",
+      "regressionRun": 41279195953,
+      "signedApkStatus": "IN_PROGRESS_AT_EVIDENCE_CAPTURE",
+      "backendDeploymentRequired": true,
+      "productionBackendActivated": false,
+      "prodMutationNotAuthorized": true
     }
   }
 }
