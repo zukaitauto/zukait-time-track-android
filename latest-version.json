@@ -1,9 +1,9 @@
 {
-  "versionCode": 342,
-  "versionName": "V379",
+  "versionCode": 343,
+  "versionName": "V380",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "acb958587b34fd8ddcdfe77e8782b6168bf83363",
-  "apkSha256": "5fd83031cd6a4dbea527ac1147dcc729a5e060288a2d19915be024d8250cea6e",
-  "releaseTag": "release-V379-architecture-v2"
+  "sourceCommit": "48de3469e7405378f9d9a3782ea9f64f8e65b50b",
+  "apkSha256": "49ae021d6ae6392587ec19026c9aef9fcb927da8d59afe363440a34bd762bf1d",
+  "releaseTag": "release-V380-architecture-v2"
 }
