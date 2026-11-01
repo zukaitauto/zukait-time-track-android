@@ -1,27 +1,27 @@
 {
-  "versionName": "V377",
-  "versionCode": 340,
+  "versionName": "V378",
+  "versionCode": 341,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "sourceCommit": "bbe576cd7be45926bf2e27de7821f625b4cfaba8",
+  "approvedForStaff": false,
+  "sourceCommit": null,
   "ownerRequestedProceed": true,
-  "ownerPublicationRequested": true,
-  "authorization": "Owner expressly requested V377 frontend-only publication first, testing afterward, on 2026-11-01. Production backend activation remains separately unauthorized.",
-  "approvedAt": "2026-11-01T06:25:00Z",
-  "publishNonce": "owner-v377-ui-release-after-test-20261101-bbe576cd",
-  "releaseHeldByOwner": false,
-  "publicationRequiresSeparateInstruction": false,
+  "ownerPublicationRequested": false,
+  "authorization": "V378 display-only hotfix preparation; no production backend/database changes. Approval will follow verified source and signed APK.",
+  "approvedAt": null,
+  "publishNonce": null,
+  "releaseHeldByOwner": true,
+  "publicationRequiresSeparateInstruction": true,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V377",
+  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V378",
   "backendDeploymentRequired": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41280659609,
-  "verificationRun": 41280659600,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
   "previousPublishedRelease": {
-    "versionName": "V376",
-    "versionCode": 339,
-    "sourceCommit": "52bf09188c11803af736de67da69ef584f60292b"
+    "versionName": "V377",
+    "versionCode": 340,
+    "sourceCommit": "bbe576cd7be45926bf2e27de7821f625b4cfaba8"
   },
   "v377VerificationEvidence": {
     "androidBuildRun": 41175629369,
@@ -550,6 +550,13 @@
     "ownerPhysicalAcceptanceDeferred": "Owner explicitly requested publish first, test afterward on 2026-11-01; NOT_RUN.",
     "ownerBackendActivation": "NOT_AUTHORIZED; production workshop-api version 98 lacks REOPEN_ADDITIONAL and REOPEN_REPEAT; Mechanical database guard not activated."
   },
-  "ownerRequestedImmediateRelease": true,
-  "backupDeferredByOwner": true
+  "ownerRequestedImmediateRelease": false,
+  "backupDeferredByOwner": true,
+  "v378HotfixEvidence": {
+    "issue": "Workshop Performance Consumables Cost card disappears on repaint, including Total Materials Consumption",
+    "scope": "Manager UI only, existing V145 paint/materials calculation",
+    "verification": "PENDING",
+    "productionBackendActivated": false,
+    "productionRecordsModified": false
+  }
 }
