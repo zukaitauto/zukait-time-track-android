@@ -29,13 +29,32 @@ export async function mountMechanicalSection(root,options={}){
    if(['CASH','CREDIT'].includes(String(job.jobType||'').toUpperCase())){form.elements.job_type.value=String(job.jobType).toUpperCase();form.elements.job_type.dispatchEvent(new win.Event('change'));}
    matches.replaceChildren(n('p','Vehicle details copied for review. A new Job Card number is still required.'));
   };
-  searchInput.oninput=()=>{
-   const term=searchInput.value.trim().toLowerCase();matches.replaceChildren();
-   if(term.length<2)return;
-   const found=(model?.jobs||[]).filter(j=>!j.deleted&&!j.cancelled&&[j.reg,j.checklistId].some(v=>String(v||'').toLowerCase().includes(term))).slice(0,10);
-   if(!found.length){matches.append(n('p','No matching Mechanical vehicle found. Enter details manually.'));return;}
+  const findExisting=async()=>{
+   const term=searchInput.value.trim();matches.replaceChildren();
+   if(term.length<2){matches.append(n('p','Enter at least two characters.'));return;}
+   const found=(model?.jobs||[]).filter(j=>!j.deleted&&!j.cancelled&&[j.reg,j.checklistId].some(v=>String(v||'').toLowerCase().includes(term.toLowerCase()))).slice(0,10);
    for(const job of found){const choose=n('button',[job.reg,job.make,job.model].filter(Boolean).join(' · '),{type:'button'});choose.onclick=()=>pick(job);matches.append(choose);}
+   try{
+    if(!online())throw Error('Reconnect to search checklists.');
+    const response=await options.api({action:'mechanical_section',command:{operation:'LIST',query:term}});
+    if(!current()||!searchInput.isConnected||searchInput.value.trim()!==term)return;
+    if(!response?.ok)throw Error(response?.code||'Checklist search unavailable.');
+    for(const item of response.checklists||[]){
+     const status=item.approval_status||'PENDING',btn=n('button',[item.checklist_number,item.registration,status].join(' · '),{type:'button'});
+     btn.onclick=()=>{
+      if(status!=='APPROVED'||item.linked_job_card){matches.replaceChildren(n('p','This checklist is not available for Job Card conversion.'));return;}
+      const v=item.vehicle||{};
+      for(const [key,value] of Object.entries({make:v.make,model:v.model,year:v.year,registration:item.registration,vin:v.vin,customer:v.customer,contact:v.contact,odometer:v.odometer})){if(form.elements[key]&&value!=null)form.elements[key].value=String(value);}
+      form.elements.job_type.value=item.job_type;form.elements.job_type.dispatchEvent(new win.Event('change'));
+      matches.replaceChildren(n('p','Approved checklist '+item.checklist_number+' selected. Conversion linking is not enabled yet; do not create a separate direct Job Card for this checklist.'));
+      form.dataset.prejobChecklistId=item.id;
+     };
+     matches.append(btn);
+    }
+    if(!matches.childNodes.length)matches.append(n('p','No matching Mechanical records.'));
+   }catch(e){matches.append(n('p',e.message||'Checklist lookup unavailable.'));}
   };
+  const lookupButton=n('button','Search checklists / vehicles',{type:'button'});lookupButton.onclick=findExisting;searchLabel.append(lookupButton);
   label(form,'Job Card Number','job_card');
   const typeLabel=n('label','Job type'),type=n('select',null,{name:'job_type'});for(const v of ['CASH','CREDIT'])type.append(n('option',v,{value:v}));type.value=draft.job_type||'CASH';typeLabel.append(type);form.append(typeLabel);
   for(const [text,name,required] of [['Make','make',true],['Model','model',true],['Year','year',true],['Registration','registration',true],['KM Reading (optional)','odometer',false],['VIN (optional)','vin',false],['Customer','customer',true],['Contact','contact',true],['Remarks (optional)','remarks',false]])label(form,text,name,'text',required);
@@ -88,7 +107,7 @@ export async function mountMechanicalSection(root,options={}){
   const confirmation=(text,name)=>{const l=n('label',text),e=n('input',null,{name,type:'checkbox'});e.checked=draft[name]==='on';l.prepend(e);form.append(l);return e;};
   const received=confirmation('Vehicle received and details checked','received_confirmed');received.required=true;const notesLabel=n('label','Work Description / Notes'),notes=n('textarea',null,{name:'reason',rows:'6',maxlength:'2000',placeholder:'Describe the repair work required…'});notes.value=draft.reason||'';notes.style.cssText='width:100%;min-height:150px;box-sizing:border-box;padding:12px;border:1px solid #bdd0e5;border-radius:9px;font:inherit;resize:vertical';notes.required=true;notesLabel.append(notes);form.append(notesLabel);
   const update=()=>{credit.parentElement.hidden=type.value!=='CREDIT';credit.required=type.value==='CREDIT';cash.parentElement.hidden=type.value!=='CASH';};type.onchange=update;update();
-  const submit=n('button','Review Job Card',{type:'submit'});submit.disabled=busy;form.append(submit);form.onsubmit=e=>{e.preventDefault();if(!current()||busy)return;draft=Object.fromEntries(new win.FormData(form));const request=uuid(),kind=draft.job_type;
+  const submit=n('button','Review Job Card',{type:'submit'});submit.disabled=busy;form.append(submit);form.onsubmit=e=>{e.preventDefault();if(!current()||busy)return;if(form.dataset.prejobChecklistId){notice='Checklist linking is not enabled yet. The approved checklist was not converted into a Job Card.';render();return;}draft=Object.fromEntries(new win.FormData(form));const request=uuid(),kind=draft.job_type;
    const command={operation:'CREATE_DIRECT_JOB',request_id:request,job_card:String(draft.job_card||'').trim().toUpperCase(),job_type:kind,details:Object.fromEntries(['make','model','year','registration','vin','customer','contact','remarks','odometer'].map(k=>[k,String(draft[k]||'').trim()])),received_confirmed:draft.received_confirmed==='on',reason:String(draft.reason||'').trim()};
    if(!['CASH','CREDIT'].includes(kind)){notice='Mechanical jobs support Cash or Credit only.';render();return;}
    if(command.details.odometer)command.details.odometer_unit='KM';
