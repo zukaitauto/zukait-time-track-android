@@ -20,7 +20,7 @@ for(const role of ['Manager','Mechanical Supervisor']){
   }
   controller.destroy();
  }
- controller=await mountMechanicalWorkspace(root,{enabled:true,section:'create-checklist',jobCard:'M1',storage:w.localStorage,getSession:()=>who,api:async()=>({ok:true,capabilities:['MC_CREATE'],checklists:[],mechanics:[]})});assert.equal(root.querySelector('[data-mc-card]'),null);assert.equal(root.querySelector('input[name=job]').value,'M1');controller.destroy();
+ controller=await mountMechanicalWorkspace(root,{enabled:true,section:'create-checklist',jobCard:'M1',storage:w.localStorage,getSession:()=>who,api:async()=>({ok:true,capabilities:['MC_CREATE'],checklists:[],mechanics:[]})});assert.equal(root.querySelector('[data-mc-card]'),null);assert.ok(root.querySelector('form input[name="registration"]'),'Pre-Job Checklist starts with registration, independent of a Job Card');assert.ok(root.querySelector('form input[name="make"]'));assert.ok(root.querySelector('form input[name="model"]'));assert.equal(root.querySelector('form input[name="job"]'),null,'Pre-Job Checklist must not require or create a Job Card');assert.deepEqual([...root.querySelector('form select[name="job_type"]').options].map(x=>x.value),['CASH','CREDIT'],'Mechanical Pre-Job Checklist does not offer Insurance');controller.destroy();
  controller=await mountMechanicalWorkspace(root,{enabled:true,section:'checklists',storage:w.localStorage,getSession:()=>who,api:async()=>({ok:true,capabilities:['MC_CREATE'],checklists:[],mechanics:[]})});assert.equal(root.querySelector('form[data-operation=MC_CREATE]'),null);controller.destroy();dom.window.close();
 }
 // Exercise the actual shared quote editor with its dedicated-domain adapter.
