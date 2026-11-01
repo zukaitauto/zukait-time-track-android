@@ -1,23 +1,23 @@
 {
   "versionName": "V377",
   "versionCode": 340,
-  "releaseScope": "standard",
-  "approvedForStaff": false,
-  "sourceCommit": "30deac45ddef4188a02bb900860f2123025de2d5",
+  "releaseScope": "phase1-compatible-ui",
+  "approvedForStaff": true,
+  "sourceCommit": "bbe576cd7be45926bf2e27de7821f625b4cfaba8",
   "ownerRequestedProceed": true,
-  "ownerPublicationRequested": false,
-  "authorization": "Development, isolated testing and release evidence preparation only. Owner approval required separately for V377 publication and for backend activation. Do not publish or enable production Mechanical inspection.",
-  "approvedAt": null,
-  "publishNonce": null,
-  "releaseHeldByOwner": true,
-  "publicationRequiresSeparateInstruction": true,
-  "physicalAcceptanceStatus": "PENDING_UPDATED_V377_PHONE_ACCEPTANCE",
+  "ownerPublicationRequested": true,
+  "authorization": "Owner expressly requested V377 frontend-only publication first, testing afterward, on 2026-11-01. Production backend activation remains separately unauthorized.",
+  "approvedAt": "2026-11-01T06:25:00Z",
+  "publishNonce": "owner-v377-ui-release-after-test-20261101-bbe576cd",
+  "releaseHeldByOwner": false,
+  "publicationRequiresSeparateInstruction": false,
+  "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V377",
   "backendDeploymentRequired": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41277798038,
-  "verificationRun": null,
+  "signedAcceptanceRun": 41280659609,
+  "verificationRun": 41280659600,
   "previousPublishedRelease": {
     "versionName": "V376",
     "versionCode": 339,
@@ -32,10 +32,10 @@
     "mechanicalInspectionSourceCommit": "260e62b52d83642abd13a476e9571ee88646b0aa",
     "inspectionScope": "Isolated PostgreSQL, Node API and Chromium mobile/desktop",
     "signedAcceptanceArtifact": {
-      "runId": 41275440435,
+      "runId": 41280659609,
       "artifactName": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
-      "artifactId": 13070738668,
-      "sourceCommit": "c96f04fcde6c20263123fd2ce3f72de667e82869"
+      "artifactId": 13073381550,
+      "sourceCommit": "bbe576cd7be45926bf2e27de7821f625b4cfaba8"
     },
     "stagedPcRun": 41175629350,
     "mechanicalPhoneQaRun": 41175629394,
@@ -280,10 +280,10 @@
       "artifactId": 13051431894
     },
     "recentVerifiedRuns": {
-      "signedAcceptance": 41275440435,
-      "androidBuild": 41275440459,
+      "signedAcceptance": 41280659609,
+      "androidBuild": 41280659631,
       "connectionOutage": 41275440444,
-      "receptionVerification": 41275505780,
+      "receptionVerification": 41280659600,
       "mechanicalLinkedJobRegression": 41274696041
     },
     "employeePendingPauseRecovery": {
@@ -385,12 +385,12 @@
     "reviewScope": "Step 4 isolated Mechanical Checklist QA and Step 5 prepublication source/artifact readiness",
     "gitHub": {
       "branch": "architecture-v2",
-      "headBeforeEvidenceCommit": "d995819bb2d345bd29df69bd302e79bf760cf400",
-      "pinnedApplicationSource": "c96f04fcde6c20263123fd2ce3f72de667e82869",
-      "postPinChanges": "App source pinned to c96f04f; architecture-v2 differs only by release-request.json metadata. Signed APK 13070738668 built and verified from pinned source.",
-      "signedAcceptanceRun": 41275440435,
-      "signedArtifactId": 13070738668,
-      "signedArtifactSource": "c96f04fcde6c20263123fd2ce3f72de667e82869",
+      "headBeforeEvidenceCommit": "bbe576cd7be45926bf2e27de7821f625b4cfaba8",
+      "pinnedApplicationSource": "bbe576cd7be45926bf2e27de7821f625b4cfaba8",
+      "postPinChanges": "Only workflow dispatch controller and release approval JSON after bbe576cd; no app code drift.",
+      "signedAcceptanceRun": 41280659609,
+      "signedArtifactId": 13073381550,
+      "signedArtifactSource": "bbe576cd7be45926bf2e27de7821f625b4cfaba8",
       "signedArtifactAvailable": true,
       "signedBuildResult": "SUCCESS"
     },
@@ -425,17 +425,17 @@
       "Reconcile unidentified eighth Job Card from earlier Over Allocated Jobs screenshot against seven currently verified distinct live Job Cards",
       "Independently prove that owner-tested physical device installed this exact signed V377 candidate, if physical release acceptance requires source identity",
       "Fresh production backup and isolated restore explicitly deferred by owner, NOT_VERIFIED; prior isolated V375 restore passed on 2026-10-27",
-      "Separate owner authorization is mandatory before publishing V377 or activating production backend changes",
       "Do not deploy QA-verified Mechanical Cash/Credit guard to production without separate production backend authorization.",
       "Complete real authenticated Manager and Mechanical Supervisor QA checklist create/save/reload/edit, confirm new linked-type guard behavior, and verify resulting QA audit/revisions.",
       "Authenticated Manager and Mechanical Supervisor QA Cash/Credit checklist create/save/reopen/edit, revisions/audit, and current V377 APK device acceptance remain unverified.",
-      "Manager Additional Work and Repeat Work use new qc_delivery server operations REOPEN_ADDITIONAL / REOPEN_REPEAT. Production workshop-api must be separately authorized, deployed and tested before V377 publication; signed APK alone is insufficient."
+      "Manager Additional Work and Repeat Work use new qc_delivery server operations REOPEN_ADDITIONAL / REOPEN_REPEAT. Production workshop-api must be separately authorized, deployed and tested before V377 publication; signed APK alone is insufficient.",
+      "Owner approved V377 UI-only publication; Mechanical database and new Manager work-cycle server operations are NOT activated and require separate production authorization."
     ],
-    "productionApplication": "V376_UNCHANGED",
+    "productionApplication": "V376_REMAINS_UNTIL_PROTECTED_PUBLISH_COMPLETES",
     "productionDatabaseTouched": false,
     "productionBackendActivated": false,
-    "publicationAuthorized": false,
-    "releaseState": "HELD_SIGNED_V377_VERIFIED_QA_API_VERIFIED_PENDING_PHYSICAL_AUTHENTICATED_ACCEPTANCE_AND_OWNER_APPROVAL",
+    "publicationAuthorized": true,
+    "releaseState": "OWNER_APPROVED_UI_ONLY_PROTECTED_PUBLISH_DISPATCH_REQUESTED",
     "nextAuthenticatedQaAction": {
       "checkpoint": "2026-11-01",
       "isolatedQaPhoneRun": 41275226855,
@@ -537,14 +537,19 @@
         "New audited assignment under original JC",
         "Preserve previous delivery/invoice/labour and recertify QC"
       ],
-      "latestVerification": "Full regression passed for source d7b5f2e; newer concurrent source commits require final verification",
+      "latestVerification": "V377 signed candidate 41280659609 from bbe576cd PASS; existing production API v98 lacks these actions.",
       "automatedTest": "tests/jobcard-additional-repeat-cycles.mjs",
       "continuousIntegration": "scripts/ci-full-regression.sh",
       "regressionRun": 41279195953,
-      "signedApkStatus": "IN_PROGRESS_AT_EVIDENCE_CAPTURE",
+      "signedApkStatus": "PASS_SIGNED_ARTIFACT_13073381550_BACKEND_INACTIVE",
       "backendDeploymentRequired": true,
       "productionBackendActivated": false,
       "prodMutationNotAuthorized": true
-    }
-  }
+    },
+    "publicationScope": "OWNER_APPROVED_V377_FRONTEND_ONLY_TEST_AFTER_RELEASE",
+    "ownerPhysicalAcceptanceDeferred": "Owner explicitly requested publish first, test afterward on 2026-11-01; NOT_RUN.",
+    "ownerBackendActivation": "NOT_AUTHORIZED; production workshop-api version 98 lacks REOPEN_ADDITIONAL and REOPEN_REPEAT; Mechanical database guard not activated."
+  },
+  "ownerRequestedImmediateRelease": true,
+  "backupDeferredByOwner": true
 }
