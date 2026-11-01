@@ -32,6 +32,7 @@ node tests/functional-smoke.mjs
 node tests/published-stylesheets.mjs
 node tests/employee-ocean-timer.mjs
 node tests/employee-job-placement.mjs
+node tests/employee-daily-report.mjs
 node tests/manager-time-management.mjs
 node tests/time-correction-disposition.mjs
 node tests/cancel-unstarted-allotted-work.mjs
