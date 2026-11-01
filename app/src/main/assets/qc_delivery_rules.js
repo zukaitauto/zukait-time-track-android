@@ -33,7 +33,59 @@ export function qcTransition(data,user,request,now){
  const error=code=>({ok:false,code});
  if(!job||key(job.no)==='ID001'||job.deleted||job.archived||job.cancelled||key(job.status)==='CANCELLED')return error('job_not_available');
  const op=request.operation,id=String(user.id||''),cash=String(job.jobType||'').toUpperCase()==='CASH';
- if(!['PAINTING_QC','FINAL_QC','DELIVER','REOPEN_DELIVERED','CASH_AMOUNT_UPDATE','FINAL_INVOICE_CORRECTION','FINAL_INVOICE_ENTRY','DELIVERY_DATE_CORRECTION'].includes(op))return error('bad_qc_operation');
+ if(!['PAINTING_QC','FINAL_QC','DELIVER','REOPEN_DELIVERED','REOPEN_ADDITIONAL','REOPEN_REPEAT','CASH_AMOUNT_UPDATE','FINAL_INVOICE_CORRECTION','FINAL_INVOICE_ENTRY','DELIVERY_DATE_CORRECTION'].includes(op))return error('bad_qc_operation');
+ if(op==='REOPEN_ADDITIONAL'||op==='REOPEN_REPEAT'){
+  // Manager's "Additional work" and "Repeat work" are distinct audited cycles
+  // on the original JC, including a previously delivered vehicle.
+  if(user.role!=='Manager')return error('manager_required');
+  const repeat=op==='REOPEN_REPEAT',employeeId=String(request.employeeId||'').trim();
+  const minutes=Number(request.minutes),reason=String(request.reason||'').trim(),requestId=String(request.requestId||'');
+  if(!/^jr-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestId))return error('reopen_invalid_request');
+  if(!Number.isSafeInteger(minutes)||minutes<1||minutes>60000)return error('reopen_minutes_required');
+  if(reason.length<5)return error('reopen_reason_required');
+  if(reason.length>2000)return error('qc_reason_too_long');
+  const mistakeId=repeat?String(request.mistakeEmployeeId||'').trim():'';
+  const prior=(job.workReopenAudit||[]).find(x=>x.requestId===requestId);
+  if(prior){
+   if(prior.by===id&&prior.operation===op&&prior.employeeId===employeeId&&prior.minutes===minutes&&prior.reason===reason&&String(prior.mistakeEmployeeId||'')===mistakeId)
+    return {ok:true,data:candidate,job,duplicate:true};
+   return error('reopen_request_reused');
+  }
+  if(job.mechanicalDelivery||job.mechanicalJob||job.mechanicalChecklistId||key(job.department)==='MECHANICAL')return error('mechanical_reopen_requires_separate_workflow');
+  const rev=Number(job.qcWorkflow?.revision||0);
+  if(Number(request.expectedQcRevision)!==rev)return error('qc_conflict');
+  const employee=(candidate.users||[]).find(u=>u&&String(u.id)===employeeId&&u.role==='Employee'&&u.active!==false);
+  if(!employee)return error('reopen_employee_invalid');
+  const original=(candidate.assign||[]).filter(a=>a&&!a.cancelled&&key(a.job)===key(job.no));
+  if(!original.length||original.some(a=>!a.completed)||(candidate.sessions||[]).some(x=>x&&!x.cancelled&&!x.end&&key(x.job)===key(job.no)))return error('reopen_work_not_complete');
+  if(repeat&&!original.some(a=>!a.rework&&String(a.emp)===mistakeId))return error('repeat_responsible_employee_required');
+  const assignmentId=requestId;
+  if((candidate.assign||[]).some(a=>String(a?.id)===assignmentId))return error('reopen_request_reused');
+  const delivered=job.delivered===true;
+  const audit={id:requestId,requestId,operation:op,by:id,name:user.name||id,at:now,reason,
+   employeeId,minutes,...(repeat?{mistakeEmployeeId:mistakeId}:{}),
+   previousStatus:job.status||'Completed',previousCompletedAt:job.completedAt||null,
+   previousDelivery:delivered?{at:job.deliveredAt??null,by:job.deliveredBy||null,byName:job.deliveredByName||null}:null,
+   invoiceAtReopen:{amount:job.finalInvoiceAmount??null,date:job.invoiceDate||null}};
+  const existingRepeats=original.filter(a=>a.rework),repeatCycleNo=repeat?(existingRepeats.reduce((n,a)=>Math.max(n,Number(a.repeatCycleNo||0)),0)+1):null;
+  candidate.assign=[...(candidate.assign||[]),{id:assignmentId,job:job.no,emp:employeeId,suggested:minutes,
+   completed:false,cancelled:false,rework:repeat,assignedBy:id,assignedAt:now,
+   ...(repeat?{repeatReason:reason,mistakeEmp:mistakeId,repeatSameEmployee:mistakeId===employeeId,repeatCycleId:requestId,repeatCycleNo,v125Cycle:true}
+            :{additionalWork:true,additionalWorkReason:reason,reissued:true})}];
+  job.workReopenAudit=[...(job.workReopenAudit||[]),audit];
+  if(repeat)candidate.reworkLogs=[...(candidate.reworkLogs||[]),{...audit,assignmentId,job:job.no,emp:employeeId,mistakeEmp:mistakeId,suggested:minutes}];
+  else candidate.reopenLogs=[...(candidate.reopenLogs||[]),{...audit,assignmentId,job:job.no,emp:employeeId,suggested:minutes}];
+  if(delivered){
+   job.deliveryAudit=[...(job.deliveryAudit||[]),audit];
+   job.qcWorkflow={revision:rev+1,history:[...(job.qcWorkflow?.history||[]),audit]};
+   job.qcPassed=false;
+   job.delivered=false;delete job.deliveredAt;delete job.deliveredBy;delete job.deliveredByName;
+  }
+  job.status='Open';delete job.completedAt;
+  job.reopenedAt=now;job.reopenedBy=id;
+  // Old assignments, invoices, insurance LPO, parts and historical sessions stay untouched.
+  return {ok:true,data:candidate,job,assignmentId,duplicate:false};
+ }
  if(op==='REOPEN_DELIVERED'){
   // A delivered vehicle is financially closed. Returning it to the workshop is
   // a Manager-only server transition, never an unaudited full-state edit.
