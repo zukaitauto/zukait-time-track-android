@@ -1,27 +1,28 @@
 {
-  "versionName": "V379",
-  "versionCode": 342,
+  "versionName": "V380",
+  "versionCode": 343,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "sourceCommit": "acb958587b34fd8ddcdfe77e8782b6168bf83363",
+  "approvedForStaff": false,
+  "sourceCommit": "8c0a30485d7ba38a41e1d2785da0723460931329",
   "ownerRequestedProceed": true,
-  "ownerPublicationRequested": true,
-  "authorization": "Owner requested V379 release-first publication of manually numbered Mechanical Job Cards. Exact source signed APK and Reception verification passed. This UI publication does not run SQL migrations; manual-numbering database change was previously applied separately to connected Supabase projects.",
-  "approvedAt": "2026-11-01T11:11:19.296Z",
-  "publishNonce": "owner-v379-mechanical-manual-20261101-acb95858",
-  "releaseHeldByOwner": false,
-  "publicationRequiresSeparateInstruction": false,
-  "physicalAcceptanceStatus": "NOT_RUN",
-  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V379",
+  "ownerPublicationRequested": false,
+  "authorization": "V380 reopen-navigation test candidate only. Owner requested progression, not publication of this new version. Mechanical approved prejob conversion requires unapplied database/backend functions; do not activate or publish before compatibility review.",
+  "approvedAt": null,
+  "publishNonce": null,
+  "releaseHeldByOwner": true,
+  "publicationRequiresSeparateInstruction": true,
+  "physicalAcceptanceStatus": "NOT_RUN_V380",
+  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V380",
   "backendDeploymentRequired": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41300334710,
-  "verificationRun": 41300334662,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
   "previousPublishedRelease": {
-    "versionName": "V378",
-    "versionCode": 341,
-    "sourceCommit": "7d7d310edda8a478c8eda9ea5b3f95a6d1deb18a"
+    "versionName": "V379",
+    "versionCode": 342,
+    "sourceCommit": "acb958587b34fd8ddcdfe77e8782b6168bf83363",
+    "releaseTag": "release-V379-architecture-v2"
   },
   "v377VerificationEvidence": {
     "androidBuildRun": 41175629369,
@@ -550,8 +551,8 @@
     "ownerPhysicalAcceptanceDeferred": "Owner explicitly requested publish first, test afterward on 2026-11-01; NOT_RUN.",
     "ownerBackendActivation": "NOT_AUTHORIZED; production workshop-api version 98 lacks REOPEN_ADDITIONAL and REOPEN_REPEAT; Mechanical database guard not activated."
   },
-  "ownerRequestedImmediateRelease": true,
-  "backupDeferredByOwner": true,
+  "ownerRequestedImmediateRelease": false,
+  "backupDeferredByOwner": false,
   "v378HotfixEvidence": {
     "issue": "Consumables Cost card and Materials Consumption disappear after Manager dashboard re-render",
     "fix": "Render both cards in base Workshop Performance markup, refresh via V145 existing Paint + Actual Materials calculation, cache-bust v74_updates.js",
@@ -581,5 +582,18 @@
     "physicalAcceptanceStatus": "NOT_RUN_OWNER_TEST_AFTER_RELEASE",
     "databaseMigration": "APPLIED_SEPARATELY_TO_CONNECTED_PROJECTS",
     "releaseHeld": false
+  },
+  "v380ReopenCandidate": {
+    "feature": "Manager Job Card search and legacy review now route to full details with reopen eligibility guidance",
+    "testedSource": "90be6baaedbf16aeb62fe4eee61e3fd484c7c392",
+    "previouslyVerifiedSignedRun": 41307533795,
+    "candidateSource": "8c0a30485d7ba38a41e1d2785da0723460931329",
+    "candidateSignedRun": null,
+    "pending": [
+      "V380 exact-source signed APK and full CI",
+      "Mechanical prejob backend compatibility; link RPC and prejob RPC not present on either connected project",
+      "Explicit owner authorization to publish V380"
+    ],
+    "installation": "NOT_PUBLISHED"
   }
 }
