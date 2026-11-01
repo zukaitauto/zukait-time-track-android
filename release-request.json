@@ -17,7 +17,7 @@
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "signedAcceptanceRun": 41318984664,
-  "verificationRun": null,
+  "verificationRun": 41318984555,
   "previousPublishedRelease": {
     "versionName": "V379",
     "versionCode": 342,
@@ -596,7 +596,7 @@
     ],
     "installation": "SIGNED_TEST_APK_ONLY_NOT_PUBLISHED",
     "candidateArtifactId": 13088472618,
-    "candidateReceptionRun": null
+    "candidateReceptionRun": 41318984555
   },
   "v380PaintReceivedDate": {
     "sourceCommit": "71f6bbfd5d40bc12af5152c71e616f3456205332",
@@ -605,7 +605,8 @@
     "productionBackendDeployment": false,
     "releaseStatus": "UNPUBLISHED",
     "signedAcceptanceRun": 41318984664,
-    "signedArtifactId": 13088472618
+    "signedArtifactId": 13088472618,
+    "receptionVerificationRun": 41318984555
   },
   "v380MonthlyExports": {
     "sourceCommit": "71f6bbfd5d40bc12af5152c71e616f3456205332",
@@ -627,6 +628,7 @@
     ],
     "signedAcceptanceRun": 41318984664,
     "signedArtifactId": 13088472618,
-    "productionStatus": "NOT_PUBLISHED"
+    "productionStatus": "NOT_PUBLISHED",
+    "receptionVerificationRun": 41318984555
   }
 }
