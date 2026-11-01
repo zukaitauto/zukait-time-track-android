@@ -11,13 +11,13 @@
   "physicalAcceptanceStatus": "NOT_RUN",
   "reason": "V380 unapproved UI candidate: Cash & Insurance monthly reports export Print/PDF/Excel (CSV), Manager JC reopen navigation and Paint PO Received Date correction. Mechanical prejob backend remains uninstalled.",
   "backendDeploymentRequired": true,
-  "verificationSummary": "Signed acceptance run 41318984664 passed for V380 source 71f6bbfd5d40bc12af5152c71e616f3456205332; Reception UI run 41318984555 pending.",
+  "verificationSummary": "V380 exact source 71f6bbfd5d40bc12af5152c71e616f3456205332 signed APK 41318984664 and Reception run 41318984555 both PASSED. Print/PDF/Excel controls included; staff publication not authorized.",
   "ownerRequestedImmediateRelease": false,
   "ownerPublicationRequested": false,
   "releaseHeldByOwner": true,
   "backupDeferredByOwner": false,
   "signedAcceptanceRun": 41318984664,
-  "verificationRun": null,
+  "verificationRun": 41318984555,
   "v380PaintReceivedDate": {
     "sourceCommit": "71f6bbfd5d40bc12af5152c71e616f3456205332",
     "feature": "Paint PO Received Date visible in summary/list and editable by Manager with correction reason; preserves original received employee and receipt time; audit before/after; rejects invalid/future dates; pending PO cannot be received by correction",
@@ -25,7 +25,8 @@
     "productionBackendDeployment": false,
     "releaseStatus": "UNPUBLISHED",
     "signedAcceptanceRun": 41318984664,
-    "signedArtifactId": 13088472618
+    "signedArtifactId": 13088472618,
+    "receptionVerificationRun": 41318984555
   },
   "authorization": "V380 unapproved candidate only, now includes Cash & Insurance monthly performance Print/PDF/Excel (CSV) exports alongside Manager reopen navigation and Paint PO receipt-date correction. No production backend activation or publishing authorized.",
   "v380MonthlyExports": {
@@ -48,6 +49,7 @@
     ],
     "signedAcceptanceRun": 41318984664,
     "signedArtifactId": 13088472618,
-    "productionStatus": "NOT_PUBLISHED"
+    "productionStatus": "NOT_PUBLISHED",
+    "receptionVerificationRun": 41318984555
   }
 }
