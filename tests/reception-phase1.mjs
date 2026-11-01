@@ -11,6 +11,15 @@ const gradle = fs.readFileSync("app/build.gradle", "utf8");
 assert.ok(gradle.includes('versionName "' + candidate.versionName + '"'));
 assert.ok(gradle.includes("versionCode " + candidate.versionCode));
 assert.equal(typeof candidate.approvedForStaff,"boolean");
+if (candidate.versionName === "V380" && candidate.approvedForStaff === false) {
+  assert.equal(candidate.versionCode, 343, "V380 must increment Android version code");
+  assert.equal(candidate.ownerPublicationRequested, false, "V380 QA draft must not authorize publication");
+  assert.equal(candidate.releaseHeldByOwner, true, "Unapproved V380 must remain held");
+  assert.equal(candidate.phase2ActivationApproved, false, "Mechanical backend activation is separate");
+  assert.match(candidate.v380ReopenCandidate?.feature || "", /Manager Job Card/,
+    "V380 draft must document the Job Card reopen scope");
+}
+
 if (candidate.approvedForStaff) {
   assert.match(candidate.sourceCommit || "", /^[a-f0-9]{40}$/, "Approved release requires a pinned source");
   assert.ok(Number.isSafeInteger(candidate.signedAcceptanceRun) && candidate.signedAcceptanceRun > 0,
