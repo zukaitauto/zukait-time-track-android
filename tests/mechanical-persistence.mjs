@@ -54,7 +54,7 @@ try{
  await db.exec("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt,must_change) values('QA_SUP','QA supervisor','Supervisor','QA_MECHANICAL','none','none',false),('QA_A','QA mechanic A','Employee','QA_MECHANICAL','none','none',false),('QA_B','QA mechanic B','Employee','QA_MECHANICAL','none','none',false),('QA_OTHER','Other','Employee','OTHER','none','none',false)");
  // Shared baseline now provides the session schema and least-privilege grants.
  await db.query('insert into staff_sessions(token_hash,user_id) values($1,$2),($3,$4)',[sessionHash,'QA_SUP','b'.repeat(64),'QA_A']);
- const initial={users:[{id:'QA_A',role:'Employee',department:'QA_MECHANICAL'},{id:'QA_B',role:'Employee',department:'QA_MECHANICAL'}],jobs:Array.from({length:12},(_,i)=>({no:'QA_JC_'+i,status:'Open'})),assign:[],sessions:[],expenses:[{id:'preserve',amount:12.345}],leaves:[{emp:'OTHER'}]};
+ const initial={users:[{id:'QA_A',role:'Employee',department:'QA_MECHANICAL'},{id:'QA_B',role:'Employee',department:'QA_MECHANICAL'}],jobs:Array.from({length:12},(_,i)=>({no:'QA_JC_'+i,jobType:'CASH',status:'Open'})),assign:[],sessions:[],expenses:[{id:'preserve',amount:12.345}],leaves:[{emp:'OTHER'}]};
  await db.query("insert into workshop_state(id,revision,data,updated_by) values('main',1,$1::jsonb,'QA_SUP')",[JSON.stringify(initial)]);
  // Exercise the real generated migration against an existing synthetic garage.
  if(!freshInstall){
