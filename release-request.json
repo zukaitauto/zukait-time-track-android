@@ -3,7 +3,7 @@
   "versionCode": 343,
   "releaseScope": "phase1-compatible-ui",
   "approvedForStaff": false,
-  "sourceCommit": "923ef792ee6f21f5a63f9d3e1edfa2ef3a547bb0",
+  "sourceCommit": "d71ef339dd067f41e394da654cfb6a07274010d7",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": false,
   "authorization": "V380 reopen-navigation test candidate only. Owner requested progression, not publication of this new version. Mechanical approved prejob conversion requires unapplied database/backend functions; do not activate or publish before compatibility review.",
@@ -587,7 +587,7 @@
     "feature": "Manager Job Card search and legacy review now route to full details with reopen eligibility guidance",
     "testedSource": "90be6baaedbf16aeb62fe4eee61e3fd484c7c392",
     "previouslyVerifiedSignedRun": 41307533795,
-    "candidateSource": "923ef792ee6f21f5a63f9d3e1edfa2ef3a547bb0",
+    "candidateSource": "d71ef339dd067f41e394da654cfb6a07274010d7",
     "candidateSignedRun": null,
     "pending": [
       "V380 exact-source signed APK and full CI",
