@@ -8,6 +8,13 @@ export async function mechanicalSectionApi(admin,actor,body,options){
  try{
   // Independent checklist intake has its own guarded database RPC.
   // It never creates or changes a workshop Job Card.
+  if(body.command.operation==='CREATE_LINKED_JOB'){
+   const {data,error}=await admin.rpc('zukait_mechanical_link_approved',{p_actor:actor.id,p_session_hash:options.sessionHash,p_command:body.command});
+   if(error)throw error;
+   const fresh=await options.verifySession();
+   if(!fresh||fresh.id!==actor.id||fresh.role!==actor.role)return fail('invalid_session',401);
+   return {status:200,body:{...data,request_id:body.command.request_id}};
+  }
   if(['CREATE','LIST','APPROVE'].includes(body.command.operation)){
    const {data,error}=await admin.rpc('zukait_mechanical_prejob',{p_actor:actor.id,p_session_hash:options.sessionHash,p_command:body.command});
    if(error)throw error;
