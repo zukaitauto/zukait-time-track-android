@@ -11,11 +11,11 @@
   "physicalAcceptanceStatus": "NOT_RUN",
   "reason": "V380 QA candidate: Manager Job Card reopen navigation and status guidance. Mechanical prejob backend linking is not yet installed in connected projects, so no backend rollout or staff publication is approved.",
   "backendDeploymentRequired": true,
-  "verificationSummary": "V380 exact-source signed acceptance and Reception UI verification pending. V379 remains the current published updater.",
+  "verificationSummary": "V380 pinned source d71ef339dd067f41e394da654cfb6a07274010d7 signed Android candidate passed GitHub Actions 41309041533; artifact 13084666493. Reception verification pending. Approval false; publication held.",
   "ownerRequestedImmediateRelease": false,
   "ownerPublicationRequested": false,
   "releaseHeldByOwner": true,
   "backupDeferredByOwner": false,
-  "signedAcceptanceRun": null,
+  "signedAcceptanceRun": 41309041533,
   "verificationRun": null
 }
