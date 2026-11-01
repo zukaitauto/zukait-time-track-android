@@ -137,6 +137,16 @@ console.log('PASS: delivered JC Manager-only return; required reason; QC reset; 
  assert.match(managerView,/v132ReissueJob\(this\.dataset\.jc\)/,'Finished assignment uses existing safe reopen selector');
  assert.match(managerView,/zukaitReopenDelivered\(this\.dataset\.jc\)/,'Delivered return uses Manager-only server-confirmed workflow');
  assert.match(managerView,/REPEAT WORK — QUALITY \/ MISTAKE/);
+
+ assert.match(managerView,/No completed technician assignment is available to reopen/,'Ineligible unfinished JC clearly explains why REOPEN FINISHED WORK is hidden');
+ assert.match(managerView,/v68_updates\.js\?v=380-reopen-1/,'Updated Manager search script bypasses stale web/Android cache');
+ const searchView=read('app/src/main/assets/v68_updates.js');
+ assert.match(searchView,/v68ManagerSearch=function/);
+ assert.match(searchView,/onclick=\"window\.zukaitOpenJob360\(/,'Manager JC search selects canonical full detail screen with reopen options');
+ assert.match(searchView,/VIEW FULL JC \/ REOPEN OPTIONS/,'Legacy Manager review offers a clear route to reopen actions');
+ assert.match(searchView,/window\.zukaitOpenJob360\(this\.dataset\.jc\)/,'Legacy review button targets canonical role-safe JC details');
+ assert.doesNotMatch(searchView,/onclick=\"window\.zukaitOpenWorkDetails\(/,'Manager search does not open an alternate detail screen without reopen controls');
+
  const client=read('app/src/main/assets/qc_delivery.js');
  assert.match(client,/window\.zukaitManagerOpenWorkAction=function/);
  assert.match(client,/window\.zukaitManagerSaveWorkAction=async function/);
