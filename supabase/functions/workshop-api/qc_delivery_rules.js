@@ -203,6 +203,7 @@ export function preserveQcAuthority(candidate,current,user){
   // Mechanical delivery identity is server-owned, including older full saves.
   if(old?.mechanicalDelivery)j.mechanicalDelivery=JSON.parse(JSON.stringify(old.mechanicalDelivery));else delete j.mechanicalDelivery;
   if(old?.deliveryAudit)j.deliveryAudit=JSON.parse(JSON.stringify(old.deliveryAudit));else delete j.deliveryAudit;
+  if(old?.workReopenAudit)j.workReopenAudit=JSON.parse(JSON.stringify(old.workReopenAudit));else delete j.workReopenAudit;
   if(old?.mechanicalDelivery)j.qcPassed=old.qcPassed;else if(j.qcWorkflow)j.qcPassed=qcStatus(candidate,j).final;
  }
  return candidate;
