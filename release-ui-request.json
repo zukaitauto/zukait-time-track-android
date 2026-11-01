@@ -5,7 +5,7 @@
   "approvedForStaff": false,
   "sourceCommit": "08322b5347d2da027577bfa6f13ec2d2b4853e97",
   "approvedAt": null,
-  "publishNonce": "pending-v379-manual-mechanical-numbering",
+  "publishNonce": null,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
