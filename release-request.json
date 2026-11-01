@@ -646,5 +646,33 @@
       "Reception browser verification"
     ],
     "published": false
+  },
+  "v380PublicationReadiness": {
+    "pinnedSource": "48de3469e7405378f9d9a3782ea9f64f8e65b50b",
+    "signedApkRun": 41324059384,
+    "receptionVerificationRun": 41324059339,
+    "androidArchitectureRun": 41324059316,
+    "mechanicalContractsRun": 41324059366,
+    "connectionOutageRun": 41324059352,
+    "qaBackend": {
+      "projectRef": "omqgkqknbdcnotabffek",
+      "workshopApiVersion": 47,
+      "independentChecklistTable": true,
+      "createListApproveRpc": true,
+      "atomicLinkRpc": true
+    },
+    "productionBackend": {
+      "projectRef": "pjknotnjkufadqavcmii",
+      "workshopApiVersion": 99,
+      "independentChecklistTable": true,
+      "createListApproveRpc": true,
+      "atomicLinkRpc": true,
+      "apiModuleMatchesSource": true
+    },
+    "freshBackupRestore": "NOT_RUN",
+    "physicalAndroidAcceptance": "NOT_RUN",
+    "scope": "Staff V380 app/web publication only, no backend mutations by release workflow",
+    "githubReleaseTag": "release-V380-architecture-v2",
+    "status": "APPROVED_MANUAL_DISPATCH_PENDING"
   }
 }
