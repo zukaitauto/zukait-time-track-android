@@ -34,7 +34,7 @@ for(const required of ['v377-overalloc-vehicle','v377-overalloc-kind','v377-over
 assert.match(legacy,/function v75EffRows\(key\)\{const month=v75MonthBounds\(key\)\.key,ranked=window\.zukaitWorkshopPerformance\?\.completedRanking\?\.\(month\)/);
 assert.match(report,/completedRanking:month=>allowed\(\)\?completedRanking\(data\(\),month\):\[\]/);
 assert.match(report,/window\.v75ChangeEfficiency\(monthInView\)/,'refresh old rings after manager ranking loads');
-assert.match(legacy,/id=\\"v123EfficiencyMonth\\"/,'legacy performance detail has month filter');
+assert.match(legacy,/id="v123EfficiencyMonth"/,'legacy performance detail has month filter');
 assert.match(legacy,/window\.v123ManagerPerformanceMonth/,'month change handler exists');
 assert.match(legacy,/openEmployeeEfficiency\(this\.dataset\.month\)/,'ranking remains accessible from detail');
 
