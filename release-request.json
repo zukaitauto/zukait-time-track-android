@@ -7,7 +7,7 @@
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": true,
   "authorization": "Owner explicitly requested publication of V379 Mechanical manual Job Card number support; source and fresh V379 signed/verification evidence require alignment before protected publication.",
-  "approvedAt": "2026-11-01T07:22:22.656Z",
+  "approvedAt": null,
   "publishNonce": "pending-v379-manual-mechanical-numbering",
   "releaseHeldByOwner": true,
   "publicationRequiresSeparateInstruction": false,
