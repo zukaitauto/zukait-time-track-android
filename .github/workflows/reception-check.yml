@@ -9,6 +9,7 @@ on:
       - "app/src/main/assets/v74_updates.js"
       - "app/src/main/assets/mechanical_*"
       - "tests/mechanical-*"
+      - "tests/employee-daily-report.mjs"
       - "tests/hidden-read-traffic.mjs"
       - "scripts/ci-full-regression.sh"
       - "tests/manager-single-purchase-card.mjs"
