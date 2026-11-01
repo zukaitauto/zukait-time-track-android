@@ -47,6 +47,9 @@ win.showReportTab('monthly');
 assert.match(doc.getElementById('reportContent').textContent,/Monthly Employee Performance/);
 assert.doesNotMatch(doc.getElementById('reportContent').textContent,/OLD MONTHLY REPORT/);
 assert.ok(doc.getElementById('monthlyReportMonth'));
+// The fixture covers October 2026 regardless of the month in which CI executes.
+doc.getElementById('monthlyReportMonth').value='2026-10';
+win.refreshMonthlyReport();
 assert.match(doc.getElementById('monthlyReportResults').textContent,/Akhil/);
 assert.match(doc.getElementById('monthlyReportResults').textContent,/Jijesh/);
 assert.match(doc.getElementById('monthlyReportResults').textContent,/ID001 hours/);
