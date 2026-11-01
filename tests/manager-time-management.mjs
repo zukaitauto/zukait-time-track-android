@@ -134,6 +134,14 @@ for(const role of ['Manager','Supervisor']){
  assert.match(h.ctx.html,/Akhil/);
  assert.match(h.ctx.html,/Repeat Hours/);
  h.ctx.zukaitTimeInspectEmployee('EMP1');
+ assert.match(h.ctx.html,/tm-inspection-employee/,'Employee detail gets the approved modern style; other Time Management views are unchanged');
+ assert.match(h.ctx.html,/tm-inspect-vehicle/,'Vehicle and registration have a clear identity card');
+ assert.equal((h.ctx.html.match(/class="tm-inspect-metric tm-inspect-metric--/g)||[]).length,5,'Exactly five time metrics, no duplicates');
+ for(const theme of ['assigned','actual','remaining','repeat'])assert.match(h.ctx.html,new RegExp('tm-inspect-metric--'+theme),'Accessible color-coded time cards');
+ assert.match(h.ctx.html,/tm-inspect-info/,'Read-only duty-time explanation remains visible');
+ assert.match(h.ctx.html,/tm-inspect-assignments/,'Assignment breakdown stays in the styled detail page');
+ assert.match(h.ctx.html,/onclick="zukaitTimeInspectJob\(this.dataset.jc\)"/,'Back to Assigned Employees remains functional');
+ assert.match(h.ctx.html,/onclick="closeModal\(\)"/,'Close action remains functional');
  for(const item of ['Assigned Time','Actual Time','Remaining Time','Exceeded Time','Repeat Hours','Assignment Breakdown'])
   assert.match(h.ctx.html,new RegExp(item));
  assert.match(h.ctx.html,/4h 00m/,'Normal allocated 240 minutes');
@@ -143,6 +151,8 @@ for(const role of ['Manager','Supervisor']){
  assert.match(h.ctx.html,/Normal Work/);
  assert.match(h.ctx.html,/Repeat Work/);
  h.ctx.zukaitTimeInspectEmployee('EMP2');
+ assert.match(h.ctx.html,/tm-inspect-metric--exceeded/,'Positive exceeded time uses coral warning styling');
+ assert.match(h.ctx.html,/1h 00m/,'Positive exceeded time remains a calculated figure');
  assert.match(h.ctx.html,/0h 30m/,'Akhil allocation 30 minutes');
  assert.match(h.ctx.html,/1h 00m/,'Akhil actual 60 minutes');
  assert.equal(h.ctx.calls,undefined,'Inspection must never write time');
