@@ -16,7 +16,27 @@ export async function mountMechanicalSection(root,options={}){
  async function post(){if(!current()||busy||!pending?.command)return;busy=true;render();try{if(!online())throw Error('OFFLINE');const r=await options.api({action:'mechanical_section',command:pending.command});if(!current())return;if(!r?.ok)throw Error(r?.code||'NETWORK');if(r.request_id!==pending.command.request_id)throw Error('NETWORK');storage.removeItem(journal);pending=null;review=null;draft={};notice='Mechanical Job Card created. Register its checklist to assign work.';model=null;}catch(error){if(current()){pending.error=error.code||error.message;notice=errorMessage(pending.error);storage.setItem(journal,JSON.stringify(pending));}}finally{busy=false;if(current())render();}if(!pending&&current())await load();}
  const label=(form,text,name,type='text',required=true)=>{const l=n('label',text),e=n('input',null,{name,type});e.required=required;e.value=draft[name]||'';l.append(e);form.append(l);return e;};
  function summary(command){const c=command?.command||{},details=c.details||{};const out=n('div',null);for(const text of ['Mechanical JC: '+String(c.job_card||'Not entered'),String(c.job_type||''),[details.make,details.model,details.year,details.registration].filter(Boolean).join(' · '),'Reason: '+String(c.reason||'')])out.append(n('p',text));return out;}
- function jobForm(){const form=n('form',null);form.append(n('h3','New Mechanical Job Card'));form.append(n('p','Enter a unique Mechanical Job Card number. Existing numbers cannot be reused.'));label(form,'Job Card Number','job_card');
+ function jobForm(){const form=n('form',null);form.append(n('h3','New Mechanical Job Card'));form.append(n('p','Enter a unique Mechanical Job Card number. Existing numbers cannot be reused.'));
+  // Existing Mechanical records can be used to prefill the vehicle fields.
+  // Do not imply this converts a pre-approval checklist: backend linking is separate.
+  const searchLabel=n('label','Find existing Mechanical vehicle (registration or checklist ID)');
+  const searchInput=n('input',null,{type:'search',placeholder:'Registration or checklist ID','aria-label':'Find Mechanical vehicle'});
+  const matches=n('div',null,{'aria-live':'polite'});
+  searchLabel.append(searchInput,matches);form.append(searchLabel);
+  const pick=(job)=>{
+   const fields={make:job.make,model:job.model,year:job.year,registration:job.reg,vin:job.vin,customer:job.customerName,contact:job.mobile};
+   for(const [key,value] of Object.entries(fields)){const el=form.elements[key];if(el&&value!=null)el.value=String(value);}
+   if(['CASH','CREDIT'].includes(String(job.jobType||'').toUpperCase())){form.elements.job_type.value=String(job.jobType).toUpperCase();form.elements.job_type.dispatchEvent(new win.Event('change'));}
+   matches.replaceChildren(n('p','Vehicle details copied for review. A new Job Card number is still required.'));
+  };
+  searchInput.oninput=()=>{
+   const term=searchInput.value.trim().toLowerCase();matches.replaceChildren();
+   if(term.length<2)return;
+   const found=(model?.jobs||[]).filter(j=>!j.deleted&&!j.cancelled&&[j.reg,j.checklistId].some(v=>String(v||'').toLowerCase().includes(term))).slice(0,10);
+   if(!found.length){matches.append(n('p','No matching Mechanical vehicle found. Enter details manually.'));return;}
+   for(const job of found){const choose=n('button',[job.reg,job.make,job.model].filter(Boolean).join(' · '),{type:'button'});choose.onclick=()=>pick(job);matches.append(choose);}
+  };
+  label(form,'Job Card Number','job_card');
   const typeLabel=n('label','Job type'),type=n('select',null,{name:'job_type'});for(const v of ['CASH','CREDIT'])type.append(n('option',v,{value:v}));type.value=draft.job_type||'CASH';typeLabel.append(type);form.append(typeLabel);
   for(const [text,name,required] of [['Make','make',true],['Model','model',true],['Year','year',true],['Registration','registration',true],['KM Reading (optional)','odometer',false],['VIN (optional)','vin',false],['Customer','customer',true],['Contact','contact',true],['Remarks (optional)','remarks',false]])label(form,text,name,'text',required);
   const km=form.elements.odometer;km.inputMode='decimal';km.pattern='[0-9]{1,10}(\\.[0-9]{1,2})?';
