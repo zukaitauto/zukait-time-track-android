@@ -16,7 +16,7 @@
   "backendDeploymentRequired": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": null,
+  "signedAcceptanceRun": 41309041533,
   "verificationRun": null,
   "previousPublishedRelease": {
     "versionName": "V379",
@@ -588,12 +588,14 @@
     "testedSource": "90be6baaedbf16aeb62fe4eee61e3fd484c7c392",
     "previouslyVerifiedSignedRun": 41307533795,
     "candidateSource": "d71ef339dd067f41e394da654cfb6a07274010d7",
-    "candidateSignedRun": null,
+    "candidateSignedRun": 41309041533,
     "pending": [
-      "V380 exact-source signed APK and full CI",
-      "Mechanical prejob backend compatibility; link RPC and prejob RPC not present on either connected project",
-      "Explicit owner authorization to publish V380"
+      "Mechanical prejob database/backend compatibility (not installed in either connected Supabase project)",
+      "Exact-source Reception verification final result",
+      "Review later Mechanical UI commits or freeze/rebase source",
+      "Explicit staff publication authorization"
     ],
-    "installation": "NOT_PUBLISHED"
+    "installation": "SIGNED_TEST_APK_ONLY_NOT_PUBLISHED",
+    "candidateArtifactId": 13084666493
   }
 }
