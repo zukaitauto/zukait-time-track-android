@@ -16,7 +16,7 @@
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": null,
+  "signedAcceptanceRun": 41275440435,
   "verificationRun": null,
   "previousPublishedRelease": {
     "versionName": "V376",
@@ -32,9 +32,10 @@
     "mechanicalInspectionSourceCommit": "260e62b52d83642abd13a476e9571ee88646b0aa",
     "inspectionScope": "Isolated PostgreSQL, Node API and Chromium mobile/desktop",
     "signedAcceptanceArtifact": {
-      "runId": 41224517915,
+      "runId": 41275440435,
       "artifactName": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
-      "artifactId": 13051431894
+      "artifactId": 13070738668,
+      "sourceCommit": "c96f04fcde6c20263123fd2ce3f72de667e82869"
     },
     "stagedPcRun": 41175629350,
     "mechanicalPhoneQaRun": 41175629394,
@@ -57,7 +58,7 @@
       "mechanicalPhone": 41203615443,
       "reception": 41224517904
     },
-    "candidateSourceAlignment": "V377 source now pinned to c96f04fcde6c20263123fd2ce3f72de667e82869 for the Oman monthly Workshop Efficiency popup filter and the earlier consolidated Employee/Monthly report. The signed acceptance and Android checks for this exact code source must pass before physical validation. Earlier signed acceptance 41224517915 covered source 6ac697b only and is not valid for the updated month-filter candidate. Production V376 unchanged, V377 release held; fresh backup/restore, phone acceptance, authenticated Mechanical QA and final owner publication approval remain pending.",
+    "candidateSourceAlignment": "Pinned V377 source c96f04fcde6c20263123fd2ce3f72de667e82869 includes Oman month selection in Manager Workshop Efficiency plus unified Employee/Monthly Reports (ID001 totals). Signed Acceptance run 41275440435 PASSED and artifact 13070738668 exactly matches the source. Android build 41275440459, APK build 41275440441, connection outage 41275440444, Mechanical contracts 41275440420, and PC staging 41275440451 PASSED. Month-boundary/efficiency UI tests passed. No source changes after pinned commit, only guarded release-request metadata. Real Android physical screen acceptance, fresh V377 backup/restore, live-data checks, authenticated Mechanical QA, and final owner approval remain PENDING. V376 production unchanged; V377 held.",
     "overAllocatedJobsPopup": {
       "includedInCandidate": true,
       "sourceCommit": "72657991c2f6e1d6eb2e811d96a0e44c0c08db8e",
@@ -137,7 +138,7 @@
         "productionBackendDeployment": false
       }
     },
-    "signedAcceptanceSourceAligned": false,
+    "signedAcceptanceSourceAligned": true,
     "invoiceEntryInsuranceCompany": {
       "includedInCandidate": true,
       "sourceCommit": "b2f5e59551406be74d3159500134af380f16758f",
@@ -252,7 +253,7 @@
     },
     "monthlyWorkshopEfficiencyFilter": {
       "sourceCommit": "c96f04fcde6c20263123fd2ce3f72de667e82869",
-      "status": "SOURCE_PINNED_SIGNED_ACCEPTANCE_RUNNING",
+      "status": "SIGNED_APK_AND_AUTOMATED_TESTS_PASSED_PHYSICAL_PENDING",
       "feature": "Manager Workshop Efficiency popup has Oman month input and Employee Ranking link, completion-date-scoped totals",
       "defaultMonth": "current Oman month",
       "tests": [
@@ -267,7 +268,15 @@
       "stagedWebsiteRun": 41275440451,
       "connectionOutageRun": 41275440444,
       "physicalPhoneValidation": "NOT_VERIFIED",
-      "publication": "HELD"
+      "publication": "HELD",
+      "signedArtifactId": 13070738668,
+      "signedBuildStatus": "PASS",
+      "androidStatus": "PASS"
+    },
+    "previousSignedAcceptanceArtifact": {
+      "runId": 41224517915,
+      "artifactName": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
+      "artifactId": 13051431894
     }
   },
   "v377RecoveryEvidence": {
