@@ -2,26 +2,26 @@
   "versionName": "V379",
   "versionCode": 342,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
-  "sourceCommit": "08322b5347d2da027577bfa6f13ec2d2b4853e97",
+  "approvedForStaff": true,
+  "sourceCommit": "acb958587b34fd8ddcdfe77e8782b6168bf83363",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": true,
-  "authorization": "Owner explicitly requested publication of V379 Mechanical manual Job Card number support; source and fresh V379 signed/verification evidence require alignment before protected publication.",
-  "approvedAt": null,
-  "publishNonce": null,
-  "releaseHeldByOwner": true,
+  "authorization": "Owner requested V379 release-first publication of manually numbered Mechanical Job Cards. Exact source signed APK and Reception verification passed. This UI publication does not run SQL migrations; manual-numbering database change was previously applied separately to connected Supabase projects.",
+  "approvedAt": "2026-11-01T11:11:19.296Z",
+  "publishNonce": "owner-v379-mechanical-manual-20261101-acb95858",
+  "releaseHeldByOwner": false,
   "publicationRequiresSeparateInstruction": false,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V378",
+  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V379",
   "backendDeploymentRequired": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 0,
-  "verificationRun": 0,
+  "signedAcceptanceRun": 41300334710,
+  "verificationRun": 41300334662,
   "previousPublishedRelease": {
-    "versionName": "V377",
-    "versionCode": 340,
-    "sourceCommit": "bbe576cd7be45926bf2e27de7821f625b4cfaba8"
+    "versionName": "V378",
+    "versionCode": 341,
+    "sourceCommit": "7d7d310edda8a478c8eda9ea5b3f95a6d1deb18a"
   },
   "v377VerificationEvidence": {
     "androidBuildRun": 41175629369,
@@ -570,5 +570,16 @@
     "databaseMigration": "applied_to_both_connected_supabase_projects",
     "ciStatus": "AWAITING_VERSION_ALIGNED_SIGNED_AND_RECEPTION_VERIFICATION",
     "productionPublication": "NOT_YET_PUBLISHED"
+  },
+  "v379ManualMechanicalEvidence": {
+    "sourceCommit": "acb958587b34fd8ddcdfe77e8782b6168bf83363",
+    "signedAcceptanceRun": 41300334710,
+    "receptionVerificationRun": 41300334662,
+    "androidArchitectureRun": 41300334687,
+    "mechanicalContractsRun": 41300334661,
+    "uiAndSignedChecks": "PASS_SOURCE_MATCHED",
+    "physicalAcceptanceStatus": "NOT_RUN_OWNER_TEST_AFTER_RELEASE",
+    "databaseMigration": "APPLIED_SEPARATELY_TO_CONNECTED_PROJECTS",
+    "releaseHeld": false
   }
 }
