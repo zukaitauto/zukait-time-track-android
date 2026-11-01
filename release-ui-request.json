@@ -3,7 +3,7 @@
   "versionCode": 343,
   "releaseScope": "phase1-compatible-ui",
   "approvedForStaff": false,
-  "sourceCommit": "923ef792ee6f21f5a63f9d3e1edfa2ef3a547bb0",
+  "sourceCommit": "d71ef339dd067f41e394da654cfb6a07274010d7",
   "approvedAt": null,
   "publishNonce": null,
   "productionBackendChanges": false,
