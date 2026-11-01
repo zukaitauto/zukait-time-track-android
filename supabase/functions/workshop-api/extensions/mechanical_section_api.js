@@ -8,7 +8,7 @@ export async function mechanicalSectionApi(admin,actor,body,options){
  try{
   const {data,error}=await admin.rpc('zukait_mechanical_section',{p_actor:actor.id,p_session_hash:options.sessionHash,p_command:body.command});if(error)throw error;
   if(body.command.operation!=='READ')return {status:200,body:data};
-  const result={...data,assign:(data.assign||[]).map(a=>({id:a.id,job:a.job,emp:a.emp,suggested:a.suggested,completed:a.completed,cancelled:a.cancelled,handedOverToAssignmentId:a.handedOverToAssignmentId,workedMinutes:workedMinutes(data,a)}))};
+  const result={...data,jobNumbering:'MJC',assign:(data.assign||[]).map(a=>({id:a.id,job:a.job,emp:a.emp,suggested:a.suggested,completed:a.completed,cancelled:a.cancelled,handedOverToAssignmentId:a.handedOverToAssignmentId,workedMinutes:workedMinutes(data,a)}))};
   delete result.sessions;delete result.workshopHolidays;
   if(options.qcEnabled===true&&['qc','ready'].includes(body.command.view)){const qc=await mechanicalRoute(admin,actor,{action:'mechanical_qc_overview'},options);if(qc.status!==200)return qc;const jobs=new Set(result.jobs.map(j=>String(j.no))),rows=qc.body.rows.filter(r=>jobs.has(String(r.jobCard)));result.qc={ok:true,rows};}
   const fresh=await options.verifySession();if(!fresh||fresh.id!==actor.id||fresh.role!==actor.role)return fail('invalid_session',401);
