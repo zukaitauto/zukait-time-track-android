@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {chromium} from 'playwright';
-const source=fs.readFileSync('app/src/main/assets/mechanical_workspace.js','utf8').replace('export async function mountMechanicalWorkspace','window.mountMechanicalWorkspace=async function');
+const source=fs.readFileSync('app/src/main/assets/mechanical_workspace.js','utf8').replace(/^import \{mountMechanicalPrejob\} from '\.\/mechanical_prejob_intake\.js';\s*/m,'const mountMechanicalPrejob=()=>{throw Error("Standalone legacy dashboard test")};\n').replace('export async function mountMechanicalWorkspace','window.mountMechanicalWorkspace=async function');
 const shortcuts=fs.readFileSync('app/src/main/assets/mechanical_shortcuts.js','utf8').replace('export function createMechanicalShortcuts','window.createMechanicalShortcuts=function');
 const keys=['estimate','estimate-list','create-checklist','checklists','create-job','jobs','wip','qc','ready','delivered','exceeded','time-management'];
 const browser=await chromium.launch({headless:true});
