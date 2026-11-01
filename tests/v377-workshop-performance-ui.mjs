@@ -15,7 +15,7 @@ for(const [key,order] of [['progress',2],['repeat',3],['efficiency',4],['overall
  assert.ok(rule.includes('order:'+order+';'),key+' card order');
 }
 assert.match(section,/window\.v377OpenOverAllocated\(\)/,'over-allocated tile opens overdue list');
-assert.match(section,/window\.openEmployeeEfficiency\(\)/,'efficiency tile opens employee ranking');
+assert.match(section,/window\.v123ManagerPerformanceOpen\('eff'\)/,'efficiency tile opens monthly-filtered job detail');
 assert.match(section,/event\.stopImmediatePropagation\(\)/,'legacy handler blocked');
 assert.match(html,/Completed normal assignments only/,'employee ranking excludes repeat assignments');
 const legacy=readFileSync(new URL('../app/src/main/assets/v74_updates.js',import.meta.url),'utf8');
@@ -34,6 +34,9 @@ for(const required of ['v377-overalloc-vehicle','v377-overalloc-kind','v377-over
 assert.match(legacy,/function v75EffRows\(key\)\{const month=v75MonthBounds\(key\)\.key,ranked=window\.zukaitWorkshopPerformance\?\.completedRanking\?\.\(month\)/);
 assert.match(report,/completedRanking:month=>allowed\(\)\?completedRanking\(data\(\),month\):\[\]/);
 assert.match(report,/window\.v75ChangeEfficiency\(monthInView\)/,'refresh old rings after manager ranking loads');
+assert.match(legacy,/id=\\"v123EfficiencyMonth\\"/,'legacy performance detail has month filter');
+assert.match(legacy,/window\.v123ManagerPerformanceMonth/,'month change handler exists');
+assert.match(legacy,/openEmployeeEfficiency\(this\.dataset\.month\)/,'ranking remains accessible from detail');
 
 // Exercise the actual ranking module against mixed normal, ID001,
 // repeat, unfinished, after-hours, and cancelled assignments.
