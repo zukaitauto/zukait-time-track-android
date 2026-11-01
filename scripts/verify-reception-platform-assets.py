@@ -15,6 +15,12 @@ from zipfile import ZipFile
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "app/src/main/assets"
 PAGES_WORKFLOW = ROOT / ".github/workflows/pages.yml"
+# The Android build intentionally excludes unused non-LSTM OCR cores to keep
+# the APK smaller. The web deployment retains them for compatibility.
+APK_EXCLUDED_OCR = {
+    "vendor/vin-ocr/tesseract-core.wasm.js",
+    "vendor/vin-ocr/tesseract-core-simd.wasm.js",
+}
 FILES = [
     "offline_test.html",
     "receptionist.html",
@@ -145,6 +151,9 @@ def main():
                 if member not in members and source.endswith(".gz"):
                     member = member[:-3]
                     expected = gzip.decompress(expected)
+                if source in APK_EXCLUDED_OCR:
+                    assert member not in members, f"Unused OCR core unexpectedly bundled: {member}"
+                    continue
                 assert member in members, f"Android APK missing {member}"
                 assert apk.read(member) == expected, (
                     f"Android APK has outdated Reception file: {member}"
