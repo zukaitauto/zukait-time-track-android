@@ -40,9 +40,10 @@
     "stagedPcRun": 41175629350,
     "mechanicalPhoneQaRun": 41175629394,
     "qaPhoneArtifact": {
-      "runId": 41175629394,
-      "artifactName": "MECHANICAL_PHONE_QA_156becc54853b4f50a15b85f59e7e475e6257a7e",
-      "artifactId": 13033265830
+      "runId": 41275226855,
+      "artifactName": "MECHANICAL_PHONE_QA_48fb1ad1793722ce8e2001f06ad05cf9c55b751c",
+      "artifactId": 13071141568,
+      "sourceCommit": "48fb1ad1793722ce8e2001f06ad05cf9c55b751c"
     },
     "physicalPhoneTestStatus": "PENDING_UPDATED_V377_PHONE_ACCEPTANCE",
     "receptionRegressionRun": 41224517904,
@@ -277,6 +278,13 @@
       "runId": 41224517915,
       "artifactName": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
       "artifactId": 13051431894
+    },
+    "recentVerifiedRuns": {
+      "signedAcceptance": 41275440435,
+      "androidBuild": 41275440459,
+      "connectionOutage": 41275440444,
+      "receptionVerification": 41275505780,
+      "mechanicalLinkedJobRegression": 41274696041
     }
   },
   "v377RecoveryEvidence": {
@@ -353,16 +361,16 @@
     "verifiedAt": "2026-10-31T07:06:34Z"
   },
   "v377FinalReviewEvidence": {
-    "reviewedOn": "2026-10-31",
+    "reviewedOn": "2026-11-01",
     "reviewScope": "Step 4 isolated Mechanical Checklist QA and Step 5 prepublication source/artifact readiness",
     "gitHub": {
       "branch": "architecture-v2",
       "headBeforeEvidenceCommit": "d995819bb2d345bd29df69bd302e79bf760cf400",
-      "pinnedApplicationSource": "6ac697bdd80e71a5e89e0fde6cb565febf06002e",
-      "postPinChanges": "QA-only Mechanical SQL guards, inspection API/client error-handling changes, local test/workflow changes, and release-request metadata; signed APK still sourced from pinned 6ac697b. New code requires requalification before any final V377 application acceptance.",
-      "signedAcceptanceRun": 41224517915,
-      "signedArtifactId": 13051431894,
-      "signedArtifactSource": "6ac697bdd80e71a5e89e0fde6cb565febf06002e",
+      "pinnedApplicationSource": "c96f04fcde6c20263123fd2ce3f72de667e82869",
+      "postPinChanges": "App source pinned to c96f04f; architecture-v2 differs only by release-request.json metadata. Signed APK 13070738668 built and verified from pinned source.",
+      "signedAcceptanceRun": 41275440435,
+      "signedArtifactId": 13070738668,
+      "signedArtifactSource": "c96f04fcde6c20263123fd2ce3f72de667e82869",
       "signedArtifactAvailable": true,
       "signedBuildResult": "SUCCESS"
     },
@@ -388,7 +396,9 @@
       "authenticatedManagerAccessRevisionAuditBoundary": "NOT_VERIFIED",
       "reason": "Live authorized QA client sessions not available for complete end-to-end flow; simulated service_role SQL tests are not counted as authenticated client acceptance.",
       "qaDatabaseMutationsByReview": 0,
-      "cashCreditMcCreateQaStatus": "PASS_SQL_GUARD_CI_AND_QA_DEPLOYED; FULL_AUTHENTICATED_ACCEPTANCE_PENDING"
+      "cashCreditMcCreateQaStatus": "PASS_SQL_GUARD_CI_AND_QA_DEPLOYED; FULL_AUTHENTICATED_ACCEPTANCE_PENDING",
+      "qaEdgeFunctionVersion": 46,
+      "qaEdgeInspectionErrorMapping": "QA_DEPLOYED_SOURCE_MATCH_VERIFIED"
     },
     "outstanding": [
       "Mechanical Supervisor and Manager end-to-end authenticated QA save, edit, revision history, reload, audit and permission checks",
@@ -398,28 +408,28 @@
       "Separate owner authorization is mandatory before publishing V377 or activating production backend changes",
       "Do not deploy QA-verified Mechanical Cash/Credit guard to production without separate production backend authorization.",
       "Complete real authenticated Manager and Mechanical Supervisor QA checklist create/save/reload/edit, confirm new linked-type guard behavior, and verify resulting QA audit/revisions.",
-      "Keep V377 publication held; source-pinned signed candidate 6ac697b does not cover later inspection UI/client changes and must be requalified before release."
+      "Authenticated Manager and Mechanical Supervisor QA Cash/Credit checklist create/save/reopen/edit, revisions/audit, and current V377 APK device acceptance remain unverified."
     ],
     "productionApplication": "V376_UNCHANGED",
     "productionDatabaseTouched": false,
     "productionBackendActivated": false,
     "publicationAuthorized": false,
-    "releaseState": "HELD_PENDING_AUTHENTICATED_MECHANICAL_QA_AND_OWNER_PUBLICATION_AUTHORIZATION",
+    "releaseState": "HELD_SIGNED_V377_VERIFIED_QA_API_VERIFIED_PENDING_PHYSICAL_AUTHENTICATED_ACCEPTANCE_AND_OWNER_APPROVAL",
     "nextAuthenticatedQaAction": {
-      "checkpoint": "2026-10-31",
-      "isolatedQaPhoneRun": 41203615443,
-      "qaPhoneArtifactId": 13044035816,
-      "qaPhoneArtifactName": "MECHANICAL_PHONE_QA_b037898726724805a3dd5d5ed9ba94167cb4d1c4",
-      "qaPhoneArtifactSource": "b037898726724805a3dd5d5ed9ba94167cb4d1c4",
+      "checkpoint": "2026-11-01",
+      "isolatedQaPhoneRun": 41275226855,
+      "qaPhoneArtifactId": 13071141568,
+      "qaPhoneArtifactName": "MECHANICAL_PHONE_QA_48fb1ad1793722ce8e2001f06ad05cf9c55b751c",
+      "qaPhoneArtifactSource": "48fb1ad1793722ce8e2001f06ad05cf9c55b751c",
       "qaPhoneArtifactAvailableOnCheck": true,
-      "qaPhoneArtifactExpiresAt": "2026-11-14T13:02:23Z",
+      "qaPhoneArtifactExpiresAt": "2026-11-15T05:01:51Z",
       "safety": "Separate com.zukait.timetrack.acceptance package; QA Supabase project omqgkqknbdcnotabffek only; native updater disabled; production not activated.",
-      "sourceComparison": "Compared QA build commit b037898726724805a3dd5d5ed9ba94167cb4d1c4 with pinned release application commit 6ac697bdd80e71a5e89e0fde6cb565febf06002e: 42 commits later, no changed mechanical inspection component or mechanical supervisor/workspace files; distinct QA APK is not exact V377 signed release artifact.",
+      "sourceComparison": "QA phone 48fb1ad vs V377 signed source c96f04f: GitHub comparison shows differences only in test and workflow files, not app assets; distinct com.zukait.timetrack.acceptance package, QA-only project and updater disabled.",
       "qaSupervisorSessionStatus": "SUP003 active, MC_CREATE granted, zero unrevoked QA sessions during recheck",
       "qaManagerSessionStatus": "QA Manager active, MC_CREATE granted, one unrevoked session record; no reusable browser authentication available",
       "existingLoginHelper": "QA-only v318-qa-login-check function exists but verifies login only and does not itself execute Mechanical Checklist acceptance.",
       "outstanding": "Run real signed-in Mechanical Supervisor and QA Manager Cash/Credit create, save, reopen, edit, revision/audit/idempotency and permissions checks with QA-only build. Do not send passwords or session tokens to chat.",
-      "result": "AUTHENTICATED_END_TO_END_NOT_VERIFIED",
+      "result": "PHONE_QA_ARTIFACT_READY_AUTHENTICATED_TEST_PENDING",
       "productionTouched": false
     },
     "mechanicalCashCreditServerGate": {
@@ -467,7 +477,7 @@
       "ciRun": 41274696041,
       "ciStatus": "PASS_ALL_4_JOBS_ISOLATED_POSTGRES_NODE_CHROMIUM_QA_DENIAL",
       "qaMigrationStatus": "APPLIED_TO_ISOLATED_QA_ONLY_AND_VERIFIED",
-      "qaApiVersion": 45,
+      "qaApiVersion": 46,
       "qaRowsAtReview": {
         "checklists": 2,
         "inspectionDetails": 0,
@@ -494,7 +504,8 @@
         "inspectionAudit": 0,
         "inspectionReceipts": 0
       },
-      "releaseImpact": "Linked Job Card type guard passes synthetic CI and is deployed in isolated QA. Real authenticated QA phone acceptance remains pending. Production V376 unchanged; signed candidate still pinned to older source 6ac697b, not requalified for recent changes."
+      "releaseImpact": "Linked Job Card guard + API error mapping verified in isolated QA. Authenticated real-phone QA acceptance pending. V377 signed acceptance APK source c96f04f verified; production V376 unchanged.",
+      "qaApiValidation": "Isolated QA workshop-api v46 ACTIVE, explicit mechanical_job_type_not_allowed HTTP 409 inspection mapping matched c96f04f source; guard enabled and two Cash-linked checklists preserved."
     }
   }
 }
