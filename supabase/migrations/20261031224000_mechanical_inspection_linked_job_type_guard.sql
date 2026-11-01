@@ -14,7 +14,7 @@ BEGIN
    RAISE EXCEPTION 'mechanical_forbidden' USING ERRCODE='42501';
  END IF;
  SELECT c.job_card INTO linked_job FROM zukait_mechanical.checklists c
-  WHERE c.id=p_checklist FOR SHARE;
+  WHERE c.id=p_checklist;
  IF p_checklist IS NULL OR NOT FOUND THEN
    RAISE EXCEPTION 'inspection_checklist_not_found' USING ERRCODE='P0002';
  END IF;
