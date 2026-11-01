@@ -369,7 +369,8 @@
       "Fresh production backup and isolated restore explicitly deferred by owner, NOT_VERIFIED; prior isolated V375 restore passed on 2026-10-27",
       "Separate owner authorization is mandatory before publishing V377 or activating production backend changes",
       "Do not deploy QA-verified Mechanical Cash/Credit guard to production without separate production backend authorization.",
-      "Complete isolated CI run 41233645638 and, only if the PostgreSQL gate passes, apply linked Job Card type inspection authorization migration to isolated QA (never production)."
+      "Complete real authenticated Manager and Mechanical Supervisor QA checklist create/save/reload/edit, confirm new linked-type guard behavior, and verify resulting QA audit/revisions.",
+      "Keep V377 publication held; source-pinned signed candidate 6ac697b does not cover later inspection UI/client changes and must be requalified before release."
     ],
     "productionApplication": "V376_UNCHANGED",
     "productionDatabaseTouched": false,
@@ -435,9 +436,9 @@
       "guardScope": "Authorize every inspection READ and SAVE only while the linked Job Card currently resolves to exactly one Cash or Credit workshop Job Card. Row-level SHARE locks prevent conflicting edits during the transaction.",
       "failureStatus": "HTTP 409 mechanical_job_type_not_allowed; visible recovery instruction, and definite save rejection does not hold an uncertain retry",
       "testEvidence": "SQL coverage of Insurance transition, missing type, duplicate JC identities, and no receipt/audit changes; JS API and DOM regression code committed",
-      "ciRun": 41233645638,
-      "ciStatus": "QUEUED_NOT_YET_VERIFIED",
-      "qaMigrationStatus": "NOT_APPLIED_WAITING_FOR_ISOLATED_POSTGRES_CI",
+      "ciRun": 41274696041,
+      "ciStatus": "PASS_ALL_4_JOBS_ISOLATED_POSTGRES_NODE_CHROMIUM_QA_DENIAL",
+      "qaMigrationStatus": "APPLIED_TO_ISOLATED_QA_ONLY_AND_VERIFIED",
       "qaApiVersion": 45,
       "qaRowsAtReview": {
         "checklists": 2,
@@ -447,7 +448,25 @@
       },
       "existingQaLinkedJobTypes": "CASH for both existing Mechanical checklists",
       "productionBackendActivated": false,
-      "authenticatedManagerSupervisorE2E": "NOT_VERIFIED"
+      "authenticatedManagerSupervisorE2E": "NOT_VERIFIED",
+      "ciPostgresRemediation": "Removed unauthorized FOR SHARE on read-only checklist; disposable PostgreSQL fixture now mirrors service_role workshop_state UPDATE privilege (workshop FOR SHARE preserved)",
+      "postgresFixCommit": "0c78de99f09dd908bea6ed15632301e472a87090",
+      "qaAppliedMigration": "v377_qa_mechanical_inspection_linked_job_type_guard",
+      "qaAppliedVersion": "20261101045246",
+      "qaEvidence": {
+        "functionInstalled": true,
+        "checklistLockPrivilegeNotRequired": true,
+        "workshopRowLockPreserved": true,
+        "anonExecute": false,
+        "authenticatedExecute": false,
+        "serviceRoleExecute": true,
+        "checklistsPreserved": 2,
+        "cashCreditLinked": 2,
+        "inspectionDetails": 0,
+        "inspectionAudit": 0,
+        "inspectionReceipts": 0
+      },
+      "releaseImpact": "Linked Job Card type guard passes synthetic CI and is deployed in isolated QA. Real authenticated QA phone acceptance remains pending. Production V376 unchanged; signed candidate still pinned to older source 6ac697b, not requalified for recent changes."
     }
   }
 }
