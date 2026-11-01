@@ -4,7 +4,7 @@
   "releaseScope": "phase1-compatible-ui",
   "approvedForStaff": false,
   "sourceCommit": "08322b5347d2da027577bfa6f13ec2d2b4853e97",
-  "approvedAt": "2026-11-01T07:22:22.656Z",
+  "approvedAt": null,
   "publishNonce": "pending-v379-manual-mechanical-numbering",
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
