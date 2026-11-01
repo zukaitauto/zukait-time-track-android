@@ -229,7 +229,7 @@ try{
  await db.exec('set role service_role');const display=await dashboard();assert.equal(display.detail.checklist.number,'MC001');assert.equal(display.detail.assignments.length,2);assert.ok(!JSON.stringify(display).includes('password'));assert.ok(!JSON.stringify(display).includes('QA_SESSION'));await db.exec('reset role');
  // Synthetic pagination fixtures only; never inserted into a live project.
  // Pagination fixtures retain real JC identities; archived rows do not enter QC queues.
- const paginationState=await snapshot();paginationState.data.jobs.push(...Array.from({length:27},(_,i)=>({no:'QA_PAGE_'+i,archived:true})));
+ const paginationState=await snapshot();paginationState.data.jobs.push(...Array.from({length:27},(_,i)=>({no:'QA_PAGE_'+i,jobType:'CASH',archived:true})));
  await db.query("update workshop_state set data=$1::jsonb where id='main'",[JSON.stringify(paginationState.data)]);
  for(let i=0;i<27;i++)await db.query("insert into zukait_mechanical.checklists(id,number,sequence_no,job_card,manual_jc_date,created_by) values($1::uuid,$2,$3,$4,'2026-10-22','QA_SUP')",[randomUUID(),'MC'+(1000+i),1000+i,'QA_PAGE_'+i]);
  const firstPage=await dashboard(0,null);assert.equal(firstPage.checklists.length,25);assert.ok(firstPage.nextAfter>0);const secondPage=await dashboard(firstPage.nextAfter,null);assert.equal(secondPage.checklists.length,4);assert.equal(secondPage.nextAfter,null);assert.equal(new Set([...firstPage.checklists,...secondPage.checklists].map(c=>c.id)).size,29);
