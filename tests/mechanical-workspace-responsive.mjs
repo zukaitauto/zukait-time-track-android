@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';import fs from 'node:fs';import {chromium} from 'playwright';
-const source=fs.readFileSync('app/src/main/assets/mechanical_workspace.js','utf8').replace('export async function mountMechanicalWorkspace','window.mountMechanicalWorkspace=async function');
+const source=fs.readFileSync('app/src/main/assets/mechanical_workspace.js','utf8').replace(/^import \{mountMechanicalPrejob\} from '\.\/mechanical_prejob_intake\.js';\s*/m,'const mountMechanicalPrejob=()=>{throw Error("Not used in existing-checklist layout test")};\n').replace('export async function mountMechanicalWorkspace','window.mountMechanicalWorkspace=async function');
 const navigation=fs.readFileSync('app/src/main/assets/mechanical_navigation.js','utf8').replace('export function installMechanicalNavigation','window.installMechanicalNavigation=function');
 const delivery=fs.readFileSync('app/src/main/assets/mechanical_delivery.js','utf8').replace('export async function mountMechanicalDelivery','window.mountMechanicalDelivery=async function');
 const browser=await chromium.launch({headless:true});fs.mkdirSync('test-results/mechanical',{recursive:true});
