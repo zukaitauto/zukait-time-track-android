@@ -77,7 +77,47 @@ assert.equal(w.document.querySelectorAll('#mpPage img,#mpPage script').length,0,
 assert.match(w.document.querySelector('.mp-summary').textContent,/OMR 240\.000/,'known components of incomplete jobs remain in recorded cost total');assert.match(w.document.querySelector('.mp-summary').textContent,/OMR 110\.000/,'provisional profit uses recorded components once');assert.match(w.document.querySelector('.mp-cost-notice').textContent,/JC 103.*Parts cost pending/);assert.match(w.document.querySelector('tr:last-child .mp-cell-cost').textContent,/OMR 20\.000.*Provisional/);assert.match(w.document.querySelector('tr:last-child .mp-cell-profit').textContent,/OMR 30\.000.*Provisional/);
 const company=w.document.getElementById('mpCompany');company.value='LIVA';company.dispatchEvent(new w.Event('change'));assert.equal(w.document.querySelectorAll('tbody tr').length,2);
 assert.match(w.document.querySelector('.mp-summary').textContent,/OMR 300\.000/);assert.match(w.document.querySelector('.mp-summary').textContent,/26\.67%/,'weighted company margin, not mean of job percentages');
-const mode=w.document.getElementById('mpMode');mode.value='graph';mode.dispatchEvent(new w.Event('change'));assert.equal(w.document.querySelectorAll('.mp-chart-row').length,3);assert.match(w.document.querySelector('.mp-chart').textContent,/OMR 80\.000/);assert.equal(w.document.querySelector('.mp-job-count strong').textContent,'2');assert.equal(w.document.querySelectorAll('.mp-trend').length,1);assert.doesNotMatch(w.document.querySelector('.mp-period-overview').textContent,/JC 101|JC 102|by job card/);
+// Both monthly Cash and Insurance views expose the same filtered Print, PDF and Excel controls.
+assert.deepEqual([...w.document.querySelectorAll('[data-mp-export]')].map(x=>x.dataset.mpExport),['print','pdf','excel']);
+let exportedBlob=null,downloadName='',printedHTML='',printed=false,savedPDF='',pdfText=[];
+w.URL.createObjectURL=blob=>{exportedBlob=blob;return 'blob:https://qa.invalid/monthly';};
+w.URL.revokeObjectURL=()=>{};
+w.HTMLAnchorElement.prototype.click=function(){downloadName=this.download;};
+w.document.querySelector('[data-mp-export="excel"]').click();
+assert.match(downloadName,/INSURANCE_Monthly_Performance_2026-10_Filtered\.csv$/);
+assert.equal(exportedBlob.type,'text/csv;charset=utf-8');
+const fileReader=new w.FileReader();
+const csvPromise=new Promise((resolve,reject)=>{fileReader.onload=()=>resolve(fileReader.result);fileReader.onerror=reject;});
+fileReader.readAsText(exportedBlob);
+const csv=await csvPromise;
+assert.match(csv,/Liva/);assert.match(csv,/JC number/);assert.match(csv,/101/);assert.match(csv,/102/);
+assert.doesNotMatch(csv,/Other <script>|Nissan Altima 2018/);
+assert.match(csv,/OMR 300\.000/);
+w.open=()=>({document:{write:html=>{printedHTML=html;},close(){}},focus(){},print(){printed=true;},close(){}});
+w.document.querySelector('[data-mp-export="print"]').click();
+assert.equal(printed,true);assert.match(printedHTML,/ZUKAIT INTERNATIONAL LLC/);assert.match(printedHTML,/Liva/);assert.match(printedHTML,/JC 101|101/);
+assert.doesNotMatch(printedHTML,/Other &lt;script&gt;|Nissan Altima 2018/);
+const pdfDocs=[];
+w.jspdf={jsPDF:class{
+ constructor(){this.pages=1;pdfDocs.push(this);}
+ setFont(){}setFontSize(){}setFillColor(){}rect(){}setTextColor(){}setDrawColor(){}line(){}
+ text(value){pdfText.push(Array.isArray(value)?value.join(' '):String(value));}
+ splitTextToSize(value){return [String(value)];}
+ addPage(){this.pages++;}
+ getNumberOfPages(){return this.pages;}
+ setPage(){}
+ save(name){savedPDF=name;}
+}};
+w.document.querySelector('[data-mp-export="pdf"]').click();
+assert.match(savedPDF,/INSURANCE_Monthly_Performance_2026-10_Filtered\.pdf$/);
+assert.match(pdfText.join(' '),/Liva/);assert.match(pdfText.join(' '),/101/);assert.doesNotMatch(pdfText.join(' '),/Nissan Altima 2018/);
+
+const mode=w.document.getElementById('mpMode');mode.value='graph';mode.dispatchEvent(new w.Event('change'));assert.equal(w.document.querySelectorAll('.mp-chart-row').length,3);assert.match(w.document.querySelector('.mp-chart').textContent,/OMR 80\.000/);assert.equal(w.document.querySelector('.mp-job-count strong').textContent,'2');assert.equal(w.document.querySelectorAll('.mp-trend').length,1);
+
+assert.equal(w.document.querySelectorAll('[data-mp-export]').length,3,'Graph view retains Print/PDF/Excel');
+w.document.querySelector('[data-mp-export="pdf"]').click();
+assert.match(savedPDF,/INSURANCE_Monthly_Performance_2026-10_Filtered\.pdf$/);
+assert.doesNotMatch(w.document.querySelector('.mp-period-overview').textContent,/JC 101|JC 102|by job card/);
 let month=w.document.getElementById('mpMonth');month.value='2026-09';month.dispatchEvent(new w.Event('change'));await wait(()=>w.document.querySelector('.mp-empty'));assert.match(w.document.querySelector('.mp-empty').textContent,/No matching/);
 const beforeOffline=calls;Object.defineProperty(w.navigator,'onLine',{configurable:true,value:false});await w.zukaitManagerProfit.open('CASH');assert.equal(calls,beforeOffline);assert.match(w.document.getElementById('mpPage').textContent,/unavailable/);
 Object.defineProperty(w.navigator,'onLine',{configurable:true,value:true});let release;held=new Promise(r=>release=r);const opening=w.zukaitManagerProfit.open('INSURANCE');await new Promise(r=>setImmediate(r));w.me={id:'NEW',role:'Manager'};token='NEW-TOKEN';release();await opening;assert.equal(w.document.querySelectorAll('#mpPage tbody tr').length,0,'old-account report cannot render after switch');
