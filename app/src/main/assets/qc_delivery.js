@@ -179,6 +179,67 @@ window.zukaitConfirmReopenDelivered=async function(no){
  }catch(e){alert(e.message||'Unable to reopen delivered Job Card.')}
  finally{busy=false}
 };
+// Manager Job Card → View: two different kinds of work on the same JC.
+// Additional Work is not a technician mistake and never counts as Repeat Work.
+window.zukaitManagerOpenWorkAction=function(no,kind){
+ if(me?.role!=='Manager')return;
+ const j=rawFind(no);
+ if(!j||j.deleted||j.archived||j.cancelled)return alert('Job Card is not available.');
+ if(!['ADDITIONAL','REPEAT'].includes(kind))return;
+ const emps=(state.users||window.users||[]).filter(u=>u&&u.role==='Employee'&&u.active!==false);
+ const completed=(state.assign||[]).filter(a=>a&&!a.cancelled&&String(a.job)===String(no)&&a.completed);
+ if(!completed.length)return alert('Finish existing work before opening a new work cycle.');
+ const options=emps.map(u=>'<option value="'+esc(u.id)+'">'+esc(u.name||u.id)+' ('+esc(u.id)+')</option>').join('');
+ const prior=completed.filter(a=>!a.rework).map(a=>a.emp);
+ const mistakes=emps.filter(e=>prior.includes(e.id)).map(u=>'<option value="'+esc(u.id)+'">'+esc(u.name||u.id)+'</option>').join('');
+ if(kind==='REPEAT'&&!mistakes)return alert('No original technician is available for Repeat Work.');
+ const title=kind==='REPEAT'?'Repeat Work — Mistake / Poor Quality':'Reopen — Additional Work';
+ shell(title+' · JC '+esc(no),
+   '<p><b>Same Job Card:</b> '+esc(no)+' · '+esc(j.vehicle||'')+'</p>'+
+   '<p>'+(kind==='REPEAT'?'Repeat Work records the mistake employee and repeat reason.':'Additional work is normal productive work, with no mistake penalty.')+'</p>'+
+   (j.delivered?'<p>Delivered vehicle: returning to the workshop will preserve its previous delivery, invoice and QC history. Fresh QC is mandatory.</p>':'')+
+   '<label>Technician<select id="jcrEmployee">'+options+'</select></label>'+
+   (kind==='REPEAT'?'<label>Responsible / Mistake Employee<select id="jcrMistake">'+mistakes+'</select></label>':'')+
+   '<label>Allocated Time (hours and minutes, H.MM)<input id="jcrMinutes" inputmode="decimal" value="8.00"></label>'+
+   '<label>Reason (required)<textarea id="jcrReason" maxlength="2000"></textarea></label>'+
+   '<div class="qc-actions"><button class="secondary" data-jc="'+esc(no)+'" onclick="openManagerJobDetails(this.dataset.jc)">CANCEL</button>'+
+   '<button class="qc-btn-deliver" data-jc="'+esc(no)+'" data-kind="'+esc(kind)+'" onclick="zukaitManagerSaveWorkAction(this.dataset.jc,this.dataset.kind)">CONFIRM '+(kind==='REPEAT'?'REPEAT WORK':'REOPEN')+'</button></div>');
+};
+window.zukaitManagerSaveWorkAction=async function(no,kind){
+ if(busy||me?.role!=='Manager'||!['ADDITIONAL','REPEAT'].includes(kind))return;
+ const emp=document.getElementById('jcrEmployee')?.value||'';
+ const mistake=kind==='REPEAT'?document.getElementById('jcrMistake')?.value||'':'';
+ const textMinutes=document.getElementById('jcrMinutes')?.value||'';
+ const minutes=typeof parseWorkMinutes==='function'?parseWorkMinutes(textMinutes):NaN;
+ const reason=String(document.getElementById('jcrReason')?.value||'').trim();
+ if(!emp||!Number.isSafeInteger(minutes)||minutes<1||minutes>60000)return alert('Select a technician and enter valid allocated time (H.MM).');
+ if(kind==='REPEAT'&&!mistake)return alert('Select the responsible technician.');
+ if(reason.length<5)return alert(messages.reopen_reason_required);
+ if(!navigator.onLine)return alert('Connect to the server first.');
+ const actor=String(me.id),token=window.zukaitAuth?.getToken?.()||'';
+ if(!token)return alert('Please sign in again.');
+ const requestId='jr-'+(crypto.randomUUID?.()||'');
+ if(requestId.length!==39)return alert('Device cannot create a safe work request ID.');
+ busy=true;
+ try{
+  await window.zukaitCloud?.syncNow?.();
+  const pulled=await window.zukaitCloud?.pull?.(true),h=window.zukaitCloud?.syncHealth;
+  if(String(me?.id)!==actor||window.zukaitAuth?.getToken?.()!==token)throw Error('Account changed. Action cancelled.');
+  if(pulled===false||!h?.ready||h.dirty||h.pendingConflict||h.lastError)throw Error('Server synchronization is pending. Refresh and retry.');
+  const j=rawFind(no);
+  if(!j)throw Error('Job Card not found.');
+  const payload={action:'qc_delivery',operation:kind==='REPEAT'?'REOPEN_REPEAT':'REOPEN_ADDITIONAL',jobCard:no,employeeId:emp,
+    ...(kind==='REPEAT'?{mistakeEmployeeId:mistake}:{}),minutes,reason,requestId,expectedQcRevision:Number(j.qcWorkflow?.revision||0)};
+  const response=await fetch('https://pjknotnjkufadqavcmii.supabase.co/functions/v1/workshop-api',{
+   method:'POST',headers:{'Content-Type':'application/json',apikey:'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A','x-zukait-session':token},
+   body:JSON.stringify(payload)});
+  const result=await response.json();
+  if(!response.ok||!result.ok)throw Error(messages[result.code]||result.code||'Server could not create this assignment.');
+  await window.zukaitCloud?.pull?.(true);
+  if(String(me?.id)!==actor||window.zukaitAuth?.getToken?.()!==token)return;
+  openManagerJobDetails(no);
+ }catch(e){alert(e.message||'Unable to reopen Job Card.')}finally{busy=false}
+};
 window.zukaitCorrectFinalInvoice=function(no){const j=find(no);if(me?.role!=='Manager'||!j||!j.delivered||!['CASH','CREDIT','INSURANCE'].includes(String(j.jobType||'').toUpperCase()))return;shell('Correct Final Invoice · JC '+j.no,'<p>Manager-only correction after delivery. A reason is mandatory and will be kept in the audit trail.</p><label><b>Final Invoice Amount (OMR)</b><input id="qcFinalCorrectionAmount" type="number" inputmode="decimal" min="0" max="1000000" step="0.001" value="'+esc(Number(j.finalInvoiceAmount??j.amount??0).toFixed(3))+'"></label><label><b>Invoice Date</b><input id="qcFinalCorrectionDate" type="date" value="'+esc(j.invoiceDate||'')+'" required></label><label><b>Correction Reason</b><textarea id="qcFinalCorrectionReason" maxlength="2000" placeholder="Required"></textarea></label><div class="qc-actions"><button type="button" class="qc-btn-pass" data-jc="'+esc(j.no)+'" onclick="zukaitSaveFinalInvoiceCorrection(this.dataset.jc)">Save Manager Correction</button></div>')};
 window.zukaitSaveFinalInvoiceCorrection=function(no){const amount=document.getElementById('qcFinalCorrectionAmount')?.value,reason=document.getElementById('qcFinalCorrectionReason')?.value.trim()||'';if(!reason)return alert(messages.financial_correction_reason_required);const invoiceDate=document.getElementById('qcFinalCorrectionDate')?.value||'';if(!invoiceDateValid(invoiceDate))return alert(messages.invoice_date_required);if(String(amount??'').trim()==='')return alert(messages.final_invoice_amount_required);return submitFinancial(no,'FINAL_INVOICE_CORRECTION',amount,reason,{invoiceDate})};
 window.zukaitOpenDeliveredVehicles=()=>openPage('delivered');window.zukaitOpenReadyToDeliver=()=>openProjectedPage('ready');window.zukaitOpenQCQueue=()=>openProjectedPage('qc');window.zukaitQCRefresh=renderPage;
