@@ -44,6 +44,10 @@ jobs:
           node tests/employee-parts-privacy.mjs
           node tests/monthly-employee-performance.mjs
           node tests/monthly-employee-performance-dom.mjs
+          node tests/v377-workshop-efficiency-month-filter.mjs
+          node tests/v377-workshop-performance-ui.mjs
+          node tests/v377-performance-calculations.mjs
+          node tests/finished-assignment-performance.mjs
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
