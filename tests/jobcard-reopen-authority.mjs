@@ -81,3 +81,67 @@ assert.match(client,/operation:'REOPEN_DELIVERED'/);
 assert.match(client,/await window\.zukaitCloud\?\.pull\?\.\(true\)/,'Server snapshot refreshed');
 assert.match(client,/expectedQcRevision:Number\(j\.qcWorkflow\?\.revision\|\|0\)/);
 console.log('PASS: delivered JC Manager-only return; required reason; QC reset; original invoice, sessions, materials, delivery history protected; UI and full-state guards');
+
+
+// New Manager View Job Card actions: normal additional work and genuine repeat
+// work must remain separate cycles, including for a delivered vehicle.
+{
+ const doc=clone(baseline);
+ doc.users=[{id:'EMP001',name:'Pramod',role:'Employee',active:true},{id:'EMP002',name:'Akhil',role:'Employee',active:true}];
+ const req={jobCard:'12069',operation:'REOPEN_ADDITIONAL',employeeId:'EMP002',minutes:480,
+   reason:'Customer requested further repairs',expectedQcRevision:8,
+   requestId:'jr-12345678-1234-4234-8234-123456789012'};
+ const denied=qcTransition(doc,supervisor,req,now);
+ assert.equal(denied.code,'manager_required');
+ assert.equal(qcTransition(doc,actor,{...req,reason:'x'},now).code,'reopen_reason_required');
+ assert.equal(qcTransition(doc,actor,{...req,minutes:0},now).code,'reopen_minutes_required');
+ assert.equal(qcTransition(doc,actor,{...req,expectedQcRevision:7},now).code,'qc_conflict');
+ const additional=qcTransition(doc,actor,req,now);
+ assert.equal(additional.ok,true);
+ assert.equal(additional.data.assign.length,2,'new assignment is separate from old work');
+ const assignment=additional.data.assign.at(-1);
+ assert.equal(assignment.emp,'EMP002');
+ assert.equal(assignment.suggested,480);
+ assert.equal(assignment.rework,false);
+ assert.equal(assignment.additionalWork,true);
+ assert.equal(additional.data.jobs[0].status,'Open');
+ assert.equal(additional.data.jobs[0].delivered,false);
+ assert.equal(additional.data.jobs[0].qcPassed,false);
+ assert.equal(additional.data.jobs[0].finalInvoiceAmount,230);
+ assert.deepEqual(additional.data.sessions,doc.sessions,'worked sessions preserved');
+ assert.deepEqual(additional.data.consumables,doc.consumables,'consumables preserved');
+ assert.equal(additional.data.jobs[0].workReopenAudit.length,1);
+ assert.equal(additional.data.jobs[0].workReopenAudit[0].operation,'REOPEN_ADDITIONAL');
+ assert.equal(qcStatus(additional.data,additional.data.jobs[0]).stage,'WORK_PENDING');
+ assert.equal(qcTransition(additional.data,actor,{...req,expectedQcRevision:9},now).duplicate,true,
+  'retry with the same request ID is idempotent');
+ const oldPhone=clone(doc);oldPhone.jobs[0].workReopenAudit=[];
+ preserveQcAuthority(oldPhone,additional.data,supervisor);
+ assert.deepEqual(oldPhone.jobs[0].workReopenAudit,additional.data.jobs[0].workReopenAudit,
+  'legacy saves cannot remove Manager reopening audit');
+ const repeatReq={...req,operation:'REOPEN_REPEAT',employeeId:'EMP002',mistakeEmployeeId:'EMP001'};
+ const repeated=qcTransition(doc,actor,repeatReq,now);
+ assert.equal(repeated.ok,true);
+ assert.equal(repeated.data.assign.at(-1).rework,true);
+ assert.equal(repeated.data.assign.at(-1).mistakeEmp,'EMP001');
+ assert.equal(repeated.data.assign.at(-1).suggested,480);
+ assert.equal(repeated.data.jobs[0].workReopenAudit.at(-1).operation,'REOPEN_REPEAT');
+ assert.equal(qcTransition(doc,actor,{...repeatReq,mistakeEmployeeId:'EMP002'},now).code,
+  'repeat_responsible_employee_required');
+ const active=clone(doc);active.assign[0].completed=false;
+ assert.equal(qcTransition(active,actor,req,now).code,'reopen_work_not_complete');
+ const managerView=read('app/src/main/assets/offline_test.html');
+ assert.match(managerView,/REOPEN — ADDITIONAL WORK/);
+ assert.match(managerView,/REPEAT WORK — QUALITY \/ MISTAKE/);
+ const client=read('app/src/main/assets/qc_delivery.js');
+ assert.match(client,/window\.zukaitManagerOpenWorkAction=function/);
+ assert.match(client,/window\.zukaitManagerSaveWorkAction=async function/);
+ assert.match(client,/REOPEN_ADDITIONAL/);
+ assert.match(client,/REOPEN_REPEAT/);
+ assert.match(details,/const latestExtra=extra\[extra\.length-1\]/,
+   'latest additional work must override older completed repeat cycle');
+ const correctionSql=read('scripts/manual_corrections/2026-11-01-JC12025-Soman.sql');
+ assert.match(correctionSql,/08:15/);
+ assert.match(correctionSql,/OWNER_CONFIRMED_MISTAKEN_WORK/);
+ console.log('PASS: Manager additional-vs-repeat work, idempotent server command, QC reset, audit, JC12025 correction script, and View Job Card action wiring');
+}
