@@ -6,7 +6,7 @@ import {randomUUID,webcrypto} from 'node:crypto';
 import {stripTypeScriptTypes} from 'node:module';
 import {insuranceProjection,insuranceLpoTransition} from '../supabase/functions/workshop-api/insurance_management_rules.js';
 let serve,state,revision,writes=0,attempts=0,mode='',role='Manager';
-const baseline={users:[{id:'QA-EMP',name:'Employee',role:'Employee',department:'Denter'}],jobs:[{no:'JC100',jobType:'Insurance',insuranceCompany:'A',createdAt:Date.now()}],assign:[],sessions:[],expenses:[{id:'original'}]};
+const baseline={users:[{id:'QA-EMP',name:'Employee',role:'Employee',department:'Denter'}],jobs:[{no:'JC100',jobType:'Insurance',insuranceCompany:'A',createdAt:Date.parse('2026-10-15T12:00:00+04:00')}],assign:[],sessions:[],expenses:[{id:'original'}]};
 const admin={from(table){const chain={select:()=>chain,eq:()=>chain,order:()=>chain,
  maybeSingle:async()=>({data:{user_id:'QA-MGR',last_seen_at:new Date().toISOString(),staff_credentials:{user_id:'QA-MGR',display_name:'Manager',role,active:true,must_change:false}}}),
  single:async()=>({data:{revision,data:structuredClone(state)}}),range:async()=>({data:[]}),
