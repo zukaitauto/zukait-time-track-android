@@ -1,23 +1,23 @@
 {
-  "versionName": "V378",
-  "versionCode": 341,
+  "versionName": "V379",
+  "versionCode": 342,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "sourceCommit": "7d7d310edda8a478c8eda9ea5b3f95a6d1deb18a",
+  "approvedForStaff": false,
+  "sourceCommit": "08322b5347d2da027577bfa6f13ec2d2b4853e97",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": true,
-  "authorization": "Owner requested release-first, test-afterward workflow and reported missing Workshop Performance Consumables Cost. V378 explicitly scoped to UI-only repair; no production backend changes.",
+  "authorization": "Owner explicitly requested publication of V379 Mechanical manual Job Card number support; source and fresh V379 signed/verification evidence require alignment before protected publication.",
   "approvedAt": "2026-11-01T07:22:22.656Z",
-  "publishNonce": "owner-ui-v378-consumables-cost-20261101-7d7d310e",
-  "releaseHeldByOwner": false,
+  "publishNonce": "pending-v379-manual-mechanical-numbering",
+  "releaseHeldByOwner": true,
   "publicationRequiresSeparateInstruction": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V378",
   "backendDeploymentRequired": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41284282829,
-  "verificationRun": 41284282818,
+  "signedAcceptanceRun": 0,
+  "verificationRun": 0,
   "previousPublishedRelease": {
     "versionName": "V377",
     "versionCode": 340,
@@ -564,5 +564,11 @@
     "productionRecordsModified": false,
     "physicalAcceptanceStatus": "NOT_RUN",
     "releaseStatus": "OWNER_APPROVED_UI_ONLY_PENDING_PROTECTED_PUBLICATION"
+  },
+  "v379MechanicalManualNumbering": {
+    "sourceCommit": "08322b5347d2da027577bfa6f13ec2d2b4853e97",
+    "databaseMigration": "applied_to_both_connected_supabase_projects",
+    "ciStatus": "AWAITING_VERSION_ALIGNED_SIGNED_AND_RECEPTION_VERIFICATION",
+    "productionPublication": "NOT_YET_PUBLISHED"
   }
 }
