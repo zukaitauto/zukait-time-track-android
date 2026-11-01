@@ -3,7 +3,7 @@
   "versionCode": 340,
   "releaseScope": "standard",
   "approvedForStaff": false,
-  "sourceCommit": "c96f04fcde6c20263123fd2ce3f72de667e82869",
+  "sourceCommit": "30deac45ddef4188a02bb900860f2123025de2d5",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": false,
   "authorization": "Development, isolated testing and release evidence preparation only. Owner approval required separately for V377 publication and for backend activation. Do not publish or enable production Mechanical inspection.",
@@ -16,7 +16,7 @@
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41275440435,
+  "signedAcceptanceRun": null,
   "verificationRun": null,
   "previousPublishedRelease": {
     "versionName": "V376",
@@ -59,7 +59,7 @@
       "mechanicalPhone": 41203615443,
       "reception": 41224517904
     },
-    "candidateSourceAlignment": "Pinned V377 source c96f04fcde6c20263123fd2ce3f72de667e82869 includes Oman month selection in Manager Workshop Efficiency plus unified Employee/Monthly Reports (ID001 totals). Signed Acceptance run 41275440435 PASSED and artifact 13070738668 exactly matches the source. Android build 41275440459, APK build 41275440441, connection outage 41275440444, Mechanical contracts 41275440420, and PC staging 41275440451 PASSED. Month-boundary/efficiency UI tests passed. No source changes after pinned commit, only guarded release-request metadata. Real Android physical screen acceptance, fresh V377 backup/restore, live-data checks, authenticated Mechanical QA, and final owner approval remain PENDING. V376 production unchanged; V377 held.",
+    "candidateSourceAlignment": "V377 source 30deac45ddef4188a02bb900860f2123025de2d5 includes monthly Workshop Efficiency filter, all-employee ID001 report, and employee stale-PAUSE safe recovery for JC12109; Android/JS regression 41277798075 passed, contracts 41277798030 and outage 41277798023 passed. Signed acceptance 41277798038, Reception verification 41277798036 and standard APK 41277798026 not yet verified final. Prior signed APK run 41275440435 belongs to old source and is NOT valid for this candidate. Updated phone acceptance, fresh V377 backup/restore, remaining Mechanical authenticated QA and explicit publication approval still pending. Production V376 unchanged.",
     "overAllocatedJobsPopup": {
       "includedInCandidate": true,
       "sourceCommit": "72657991c2f6e1d6eb2e811d96a0e44c0c08db8e",
@@ -139,7 +139,7 @@
         "productionBackendDeployment": false
       }
     },
-    "signedAcceptanceSourceAligned": true,
+    "signedAcceptanceSourceAligned": false,
     "invoiceEntryInsuranceCompany": {
       "includedInCandidate": true,
       "sourceCommit": "b2f5e59551406be74d3159500134af380f16758f",
@@ -285,6 +285,22 @@
       "connectionOutage": 41275440444,
       "receptionVerification": 41275505780,
       "mechanicalLinkedJobRegression": 41274696041
+    },
+    "employeePendingPauseRecovery": {
+      "sourceCommit": "30deac45ddef4188a02bb900860f2123025de2d5",
+      "status": "ANDROID_AND_REGRESSION_PASSED_SIGNED_TEST_PENDING",
+      "symptom": "Older phone-side unconfirmed PAUSE for JC12109 blocks Akhil resume while server has JC12086 Working",
+      "change": "START/RESUME detects matching employee's original PAUSE journal, replays same action ID for idempotent server confirmation only; never issues duplicate START; keeps journal on network, receipt, or actor mismatch",
+      "test": "tests/employee-pause-journal-recovery.mjs",
+      "androidRun": 41277798075,
+      "androidStatus": "PASS",
+      "compatibilityRun": 41277798030,
+      "connectionOutageRun": 41277798023,
+      "signedAcceptanceRun": 41277798038,
+      "signedStatus": "IN_PROGRESS_NOT_YET_VERIFIED",
+      "phoneRecovery": "NOT_YET_VERIFIED",
+      "productionDataChanged": false,
+      "publication": "HELD"
     }
   },
   "v377RecoveryEvidence": {
