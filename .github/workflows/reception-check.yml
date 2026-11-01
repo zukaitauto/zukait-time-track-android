@@ -1109,4 +1109,67 @@ jobs:
           gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
           echo 'Owner-authorized V336 dispatched to the existing coordinated publisher'
 
+
+  dispatch_pinned_v377:
+    name: Publish owner-authorized V377 frontend-only, test after publication
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/architecture-v2' &&
+      github.event.head_commit.message == 'Owner-approved one-time V377 dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require exact owner-approved source and successful separate CI
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SOURCE='bbe576cd7be45926bf2e27de7821f625b4cfaba8'
+          jq -e --arg sha "$SOURCE" '
+            .approvedForStaff == true and .ownerRequestedImmediateRelease == true and
+            .ownerPublicationRequested == true and .releaseHeldByOwner == false and
+            .versionName == "V377" and .versionCode == 340 and
+            .sourceCommit == $sha and .releaseScope == "phase1-compatible-ui" and
+            .backupDeferredByOwner == true and .productionBackendChanges == false and
+            .phase2ActivationApproved == false and .backendDeploymentRequired == true and
+            .physicalAcceptanceStatus == "NOT_RUN" and
+            .signedAcceptanceRun == 41280659609 and .verificationRun == 41280659600
+          ' release-ui-request.json
+          node scripts/verify-ui-only-release.cjs
+          git cat-file -e "$SOURCE^{commit}"
+          git merge-base --is-ancestor "$SOURCE" HEAD
+          git diff --quiet "$SOURCE" HEAD -- . \
+            ':(exclude)release-request.json' \
+            ':(exclude)release-ui-request.json' \
+            ':(exclude).github/workflows/reception-check.yml'
+          for ITEM in \
+            "41280659609:.github/workflows/build-signed-acceptance.yml" \
+            "41280659600:.github/workflows/reception-check.yml" \
+            "41280659631:.github/workflows/architecture-v2-android.yml"; do
+            RUN="${ITEM%%:*}"
+            WORKFLOW="${ITEM#*:}"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN" | jq -e --arg sha "$SOURCE" --arg workflow "$WORKFLOW" '
+              .conclusion == "success" and .head_sha == $sha and
+              .head_branch == "architecture-v2" and .path == $workflow'
+          done
+          if gh release view "release-V377-architecture-v2" >/dev/null 2>&1; then
+            echo "::error::V377 release exists already; stop instead of republishing."
+            exit 1
+          fi
+      - name: Dispatch existing protected coordinated V377 publisher
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
+          echo 'Owner-approved V377 dispatch requested through existing coordinated publisher.'
+
 # V374: revalidate current candidate after physical Android QA and direct arrival fix.
