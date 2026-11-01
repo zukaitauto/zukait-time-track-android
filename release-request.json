@@ -3,7 +3,7 @@
   "versionCode": 340,
   "releaseScope": "standard",
   "approvedForStaff": false,
-  "sourceCommit": "6ac697bdd80e71a5e89e0fde6cb565febf06002e",
+  "sourceCommit": "c96f04fcde6c20263123fd2ce3f72de667e82869",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": false,
   "authorization": "Development, isolated testing and release evidence preparation only. Owner approval required separately for V377 publication and for backend activation. Do not publish or enable production Mechanical inspection.",
@@ -16,8 +16,8 @@
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41224517915,
-  "verificationRun": 41224517904,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
   "previousPublishedRelease": {
     "versionName": "V376",
     "versionCode": 339,
@@ -57,7 +57,7 @@
       "mechanicalPhone": 41203615443,
       "reception": 41224517904
     },
-    "candidateSourceAlignment": "V377 source 6ac697bdd80e71a5e89e0fde6cb565febf06002e includes consolidated Employee/Monthly Reports, ID001 totals, insurance company labels, and over-allocated popup. Source-matched signed acceptance 41224517915 (artifact 13051431894), Reception verification 41224517904, Android 41224517939, APK 41224517891, contracts 41224517882, outage 41224517963 all passed. Only release-request.json metadata may change after this pinned source under the guarded publication workflow. Updated physical acceptance, fresh production backup/isolated restore, real-data eight-job validation, authenticated Mechanical Checklist QA, and separate owner publication approval remain unverified/pending. V376 production unchanged; V377 publication disabled.",
+    "candidateSourceAlignment": "V377 source now pinned to c96f04fcde6c20263123fd2ce3f72de667e82869 for the Oman monthly Workshop Efficiency popup filter and the earlier consolidated Employee/Monthly report. The signed acceptance and Android checks for this exact code source must pass before physical validation. Earlier signed acceptance 41224517915 covered source 6ac697b only and is not valid for the updated month-filter candidate. Production V376 unchanged, V377 release held; fresh backup/restore, phone acceptance, authenticated Mechanical QA and final owner publication approval remain pending.",
     "overAllocatedJobsPopup": {
       "includedInCandidate": true,
       "sourceCommit": "72657991c2f6e1d6eb2e811d96a0e44c0c08db8e",
@@ -137,7 +137,7 @@
         "productionBackendDeployment": false
       }
     },
-    "signedAcceptanceSourceAligned": true,
+    "signedAcceptanceSourceAligned": false,
     "invoiceEntryInsuranceCompany": {
       "includedInCandidate": true,
       "sourceCommit": "b2f5e59551406be74d3159500134af380f16758f",
@@ -249,6 +249,25 @@
       "receptionVerificationRun": 41224517904,
       "automatedStatus": "PASS",
       "physicalAcceptance": "NOT_VERIFIED_FOR_NEW_CANDIDATE"
+    },
+    "monthlyWorkshopEfficiencyFilter": {
+      "sourceCommit": "c96f04fcde6c20263123fd2ce3f72de667e82869",
+      "status": "SOURCE_PINNED_SIGNED_ACCEPTANCE_RUNNING",
+      "feature": "Manager Workshop Efficiency popup has Oman month input and Employee Ranking link, completion-date-scoped totals",
+      "defaultMonth": "current Oman month",
+      "tests": [
+        "tests/v377-workshop-efficiency-month-filter.mjs",
+        "tests/v377-workshop-performance-ui.mjs",
+        "tests/finished-assignment-performance.mjs",
+        "tests/v377-performance-browser.mjs"
+      ],
+      "androidRun": 41275440459,
+      "signedRun": 41275440435,
+      "apkRun": 41275440441,
+      "stagedWebsiteRun": 41275440451,
+      "connectionOutageRun": 41275440444,
+      "physicalPhoneValidation": "NOT_VERIFIED",
+      "publication": "HELD"
     }
   },
   "v377RecoveryEvidence": {
