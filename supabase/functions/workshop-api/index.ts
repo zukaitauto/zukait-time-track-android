@@ -514,6 +514,15 @@ function validatePaintManagerCorrections(candidate,current,user) {
     if(before?.voided!==true && after?.voided===true){
       if(String(user?.role||'')!=='Manager' || String(after?.cancelledBy||'')!==String(user?.id||'') || !String(after?.cancelReason||'').trim()) return 'manager_required_to_cancel_paint_po';
     }
+    // A finalized receipt may be re-dated only by an authenticated Manager
+    // who records an audited correction. Initial Supervisor receipt is unchanged.
+    if (before?.receivedAt && !same(before.receivedAt,after?.receivedAt)) {
+      const at=Number(after?.receivedAt)||(typeof after?.receivedAt==="string"?Date.parse(after.receivedAt):NaN);
+      if (!Number.isFinite(at) || at<=0 || at>Date.now()+86400000) return 'paint_received_date_invalid';
+      if (String(user?.role||'')!=="Manager" || String(after?.correctedBy||'')!==String(user?.id||'')
+          || !String(after?.correctionReason||'').trim()
+          || Number(after?.correctedAt||0)<=Number(before?.correctedAt||0)) return 'manager_required_to_correct_paint_received_date';
+    }
     const oldReturns=new Map((before?.returns||[]).filter((x:any)=>x?.id).map((x:any)=>[String(x.id),x]));
     const newReturns=new Map((after?.returns||[]).filter((x:any)=>x?.id).map((x:any)=>[String(x.id),x]));
     for(const [rid,oldReturn] of oldReturns){
