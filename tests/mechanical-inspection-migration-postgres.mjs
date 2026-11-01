@@ -43,7 +43,7 @@ create table zukait_mechanical.checklists(
  created_by text not null references public.staff_credentials(user_id)
 );
 create table public.workshop_state(id text primary key,data jsonb not null);
-grant select on public.workshop_state to service_role;
+grant select,update on public.workshop_state to service_role;
 insert into public.workshop_state(id,data) values ('main',
  '{"jobs":[{"no":"MJC001","jobType":"CASH"},{"no":"MJC002","jobType":"CREDIT"}]}'::jsonb);
 grant select on zukait_mechanical.settings,zukait_mechanical.checklists to service_role;
