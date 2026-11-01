@@ -4313,7 +4313,21 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  };
  const retryPending=(type,job)=>{
    try{const saved=readCommand();if(!saved)return null;
-     if(saved.command.event_type!==type||(job!==undefined&&String(saved.command.job)!==String(job)))return Promise.resolve(msg('An earlier '+saved.command.event_type+' for '+saved.command.job+' is unconfirmed. Retry that original work control first.','Work Pending'));
+     if(saved.command.event_type!==type||(job!==undefined&&String(saved.command.job)!==String(job))){
+       // If PAUSE was saved on this phone before an interrupted response,
+       // recover its ORIGINAL action ID before allowing any new START/RESUME.
+       // Never send the requested START in this click: another device or a
+       // manager correction may already have resumed a different Job Card.
+       if(type==='START'&&saved.command.event_type==='PAUSE'){
+         return Promise.resolve(run('PAUSE',saved.command,saved.label)).then(receipt=>{
+           if(receipt?.ok!==true)return receipt;
+           const row=liveRow(),working=ACTIVE.has(String(row?.status||''));
+           const detail=working&&row?.job_no?' Server currently shows '+String(row.job_no)+' as '+String(row.status)+'.':'';
+           return msg('Previous PAUSE for JC '+String(saved.command.job)+' is now confirmed. Refresh the Job Cards before another work action.'+detail,'Work Recovered');
+         });
+       }
+       return Promise.resolve(msg('An earlier '+saved.command.event_type+' for '+saved.command.job+' is unconfirmed. Use Retry pending '+saved.command.event_type+' on the employee screen first.','Work Pending'));
+     }
      return run(saved.command.event_type,saved.command,saved.label)}
    catch(e){return Promise.resolve(msg('Pending work could not be read safely. Keep this device data and contact support.','Work Pending'))}
  };
