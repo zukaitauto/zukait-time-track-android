@@ -1,9 +1,9 @@
 {
-  "versionCode": 339,
-  "versionName": "V376",
+  "versionCode": 340,
+  "versionName": "V377",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "52bf09188c11803af736de67da69ef584f60292b",
-  "apkSha256": "b51b1e5ff5996b73b8a871d9c5de89dfa6f99fd60f08c6f3d99f96ef845c2ec6",
-  "releaseTag": "release-V376-architecture-v2"
+  "sourceCommit": "bbe576cd7be45926bf2e27de7821f625b4cfaba8",
+  "apkSha256": "92419c5e196acd9f4cca384e80eb096c31727667fa59d68663798945af7cb22b",
+  "releaseTag": "release-V377-architecture-v2"
 }
