@@ -25,6 +25,7 @@ on:
       - "app/src/main/assets/labour_history.js"
       - "tests/labour-history*.mjs"
       - "tests/staff-time-review.mjs"
+      - "tests/time-management.mjs"
       - "tests/cash-monthly-pulse.mjs"
       - "tests/monthly-followup-responsive.mjs"
       - "app/src/main/assets/v2/features/estimate/**"
