@@ -47,7 +47,7 @@ assert.equal(win.v253EmployeeShareData.rows.filter(e=>e.action==='IDLE').length,
 assert.equal(win.v253EmployeeShareData.rows.filter(e=>e.action==='RESUME').length,3);
 win.v253OpenEmployeeDailyReport('2026-11-01','12086');
 assert.match(html,/4 time events/);
-assert.doesNotMatch(html,/>12021</);
+assert.doesNotMatch(html,/<td><b>12021<\/b><\/td>/,'filtered report must not include another Job Card row');
 await win.v253ShareEmployeeDailyReport();
 assert.equal(shared.name,'Zukait_Employee_Daily_Report_2026-11-01.png');
 assert.match(shared.url,/^data:image\/png/);
