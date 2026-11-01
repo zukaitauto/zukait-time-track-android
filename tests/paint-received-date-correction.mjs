@@ -94,7 +94,7 @@ assert.ok(start>=0&&end>start);
 const js=api.slice(start,end).replace(/:\s*any\b/g,'');
 const server=vm.createContext({same:(a,b)=>JSON.stringify(a)===JSON.stringify(b),Date,Number,String,Map});
 vm.runInContext(js,server);
-const validate=(actor,first,second)=>vm.runInContext('validatePaintManagerCorrections(before,after,actor)',Object.assign(server,{
+const validate=(actor,first,second)=>vm.runInContext('validatePaintManagerCorrections(after,before,actor)',Object.assign(server,{
  actor,before:{paintPurchasing:{orders:[first]}},after:{paintPurchasing:{orders:[second]}}
 }));
 const base={...po,receivedAt,correctedAt:0};
