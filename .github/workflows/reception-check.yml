@@ -46,6 +46,8 @@ on:
       - "app/src/main/assets/receptionist*"
       - "app/src/main/assets/secure_auth.js"
       - "app/src/main/assets/v68_updates.js"
+      - "app/src/main/assets/paint_module.js"
+      - "tests/paint-*.mjs"
       - "tests/jobcard-reopen-authority.mjs"
       - "app/src/main/assets/offline_test.html"
       - "tests/reception-*"
