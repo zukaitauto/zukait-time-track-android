@@ -527,7 +527,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const dailyReport='<div class="card v75s-section clickable compact-control v253-daily-report" onclick="v253OpenEmployeeDailyReport()"><div class="section-title"><h3>📅 Daily Report</h3><span class="pill">CLICK TO OPEN</span></div><div class="small muted">View Job Card sessions for today or select a previous date.</div></div>';
    window.v253OpenEmployeeDailyReport=function(selected,jobFilter){
     if(!me||me.role!=='Employee')return;
-    const omanDate=ts=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Muscat',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(+ts));
+    const omanDate=ts=>{const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Muscat',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(+ts)).map(z=>[z.type,z.value]));return p.year+'-'+p.month+'-'+p.day;};
     const today=omanDate(Date.now()),day=selected||today,chosen=String(jobFilter||'');
     const fmt=ts=>new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Muscat',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).format(new Date(+ts));
     const sessions=(state.sessions||[]).filter(x=>x&&String(x.emp)===String(me.id)&&Number.isFinite(+x.start)&&+x.start>0);
@@ -541,7 +541,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
       if(p.pause!=null)add(p.pause,x.job,'PAUSE');
       if(p.resume!=null)add(p.resume,x.job,'RESUME');
      });
-     if(x.end!=null)add(x.end,x.job,x.finished?'FINISH':x.paused?'PAUSE':String(x.job)===String(H)?'FINISH':'FINISH');
+     if(x.end!=null&&!pauses.some(p=>+p?.pause===+x.end))add(x.end,x.job,x.finished||String(x.job)===String(H)?'FINISH':x.paused?'PAUSE':'FINISH');
     });
     const order={FINISH:0,PAUSE:1,START:2,RESUME:3};
     events.sort((a,b)=>a.at-b.at||(order[a.action]||0)-(order[b.action]||0));
