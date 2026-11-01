@@ -33,7 +33,31 @@ export function qcTransition(data,user,request,now){
  const error=code=>({ok:false,code});
  if(!job||key(job.no)==='ID001'||job.deleted||job.archived||job.cancelled||key(job.status)==='CANCELLED')return error('job_not_available');
  const op=request.operation,id=String(user.id||''),cash=String(job.jobType||'').toUpperCase()==='CASH';
- if(!['PAINTING_QC','FINAL_QC','DELIVER','CASH_AMOUNT_UPDATE','FINAL_INVOICE_CORRECTION','FINAL_INVOICE_ENTRY','DELIVERY_DATE_CORRECTION'].includes(op))return error('bad_qc_operation');
+ if(!['PAINTING_QC','FINAL_QC','DELIVER','REOPEN_DELIVERED','CASH_AMOUNT_UPDATE','FINAL_INVOICE_CORRECTION','FINAL_INVOICE_ENTRY','DELIVERY_DATE_CORRECTION'].includes(op))return error('bad_qc_operation');
+ if(op==='REOPEN_DELIVERED'){
+  // A delivered vehicle is financially closed. Returning it to the workshop is
+  // a Manager-only server transition, never an unaudited full-state edit.
+  if(user.role!=='Manager')return error('manager_required');
+  if(!job.delivered)return error('delivery_required');
+  if(job.mechanicalDelivery||job.mechanicalJob||key(job.department)==='MECHANICAL')return error('mechanical_reopen_requires_separate_workflow');
+  const reason=String(request.reason||'').trim();
+  if(reason.length<5)return error('reopen_reason_required');
+  if(reason.length>2000)return error('qc_reason_too_long');
+  const revision=Number(job.qcWorkflow?.revision||0);
+  if(Number(request.expectedQcRevision)!==revision)return error('qc_conflict');
+  const audit={operation:op,by:id,name:user.name,at:now,reason,
+   previousDelivery:{at:job.deliveredAt??null,by:job.deliveredBy||null,byName:job.deliveredByName||null},
+   previousStatus:String(job.status||'Delivered'),
+   invoiceAtReopen:{amount:job.finalInvoiceAmount??null,date:job.invoiceDate||null}};
+  job.deliveryAudit=[...(job.deliveryAudit||[]),audit];
+  // Retain all earlier QC decisions in history but require a fresh QC cycle.
+  job.qcWorkflow={revision:revision+1,history:[...(job.qcWorkflow?.history||[]),audit]};
+  job.qcPassed=false;
+  job.delivered=false;delete job.deliveredAt;delete job.deliveredBy;delete job.deliveredByName;
+  job.status='Open';job.reopenedAt=now;job.reopenedBy=id;
+  // No prior invoice, insurance LPO, assignments, sessions, or costing are changed.
+  return {ok:true,data:candidate,job};
+ }
  if(op==='CASH_AMOUNT_UPDATE'){
   if(!['Supervisor','Manager'].includes(String(user.role||'')))return error('qc_permission_denied');
   if(job.delivered)return error('already_delivered');
