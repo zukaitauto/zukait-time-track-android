@@ -104,3 +104,60 @@ assert.match(h.ctx.html,/job stays closed/);assert.match(h.ctx.html,/Finished â€
 h.get('mtStart').value=inputTime(at-1800000);h.get('mtEnd').value=inputTime(at);h.get('mtReason').value='Historical missing time on delivered job';h.get('mtWorkStatus').value='FINISHED';h.ctx.zukaitManagerTimeReview();await h.ctx.zukaitManagerTimeConfirm();
 assert.equal(h.ctx.state.jobs[0].delivered,true);assert.equal(h.ctx.state.jobs[0].status,'Delivered');assert.equal(h.ctx.state.assign[0].completed,true);
 console.log('Delivered job form: historical Finish only, server-confirmed save and delivery status preservation passed.');
+
+
+// V377 Job Card Time Inspection drilldown â€” Manager and Supervisor, read-only confirmed snapshot.
+for(const role of ['Manager','Supervisor']){
+ h=harness(role);
+ const selected=fixture();
+ selected.jobs[0].delivered=true;
+ selected.jobs[0].status='Delivered';
+ selected.assign.push({id:'R1',job:'JC1',emp:'EMP1',suggested:45,rework:true,completed:true});
+ selected.sessions.push({id:'RS1',assignmentId:'R1',job:'JC1',emp:'EMP1',start:at-3600000,end:at-1800000});
+ selected.assign.push({id:'A2',job:'JC1',emp:'EMP2',suggested:30,completed:true});
+ selected.sessions.push({id:'S2',assignmentId:'A2',job:'JC1',emp:'EMP2',start:at-3600000,end:at});
+ h.ctx.serverState=selected;
+ h.ctx.state.assign=[]; // stale device data must not become the inspection source
+ h.ctx.zukaitCloud.syncHealth={ready:true,dirty:true,pendingConflict:true,lastError:'unrelated unsaved correction'};
+ const localBefore=JSON.stringify(h.ctx.state);
+ await h.ctx.zukaitOpenJobTimeInspection();
+ assert.match(h.ctx.html,/Search JC Number \/ Registration Number/);
+ assert.equal(h.ctx.readCalls,1);
+ assert.equal(h.ctx.syncCalls,undefined);
+ assert.equal(JSON.stringify(h.ctx.state),localBefore);
+ h.get('tmInspectQuery').value='12345';
+ h.ctx.zukaitTimeInspectSearch();
+ assert.match(h.get('tmInspectResults').innerHTML,/JC JC1/,'Registration lookup finds completed and delivered JCs');
+ h.ctx.zukaitTimeInspectJob('JC1');
+ assert.match(h.ctx.html,/Assigned Employees/);
+ assert.match(h.ctx.html,/Babu/);
+ assert.match(h.ctx.html,/Akhil/);
+ assert.match(h.ctx.html,/Repeat Hours/);
+ h.ctx.zukaitTimeInspectEmployee('EMP1');
+ for(const item of ['Assigned Time','Actual Time','Remaining Time','Exceeded Time','Repeat Hours','Assignment Breakdown'])
+  assert.match(h.ctx.html,new RegExp(item));
+ assert.match(h.ctx.html,/4h 00m/,'Normal allocated 240 minutes');
+ assert.match(h.ctx.html,/1h 00m/,'Normal actual 60 minutes');
+ assert.match(h.ctx.html,/3h 00m/,'Remaining 180 minutes');
+ assert.match(h.ctx.html,/0h 30m/,'Repeat actual 30 minutes shown separately');
+ assert.match(h.ctx.html,/Normal Work/);
+ assert.match(h.ctx.html,/Repeat Work/);
+ h.ctx.zukaitTimeInspectEmployee('EMP2');
+ assert.match(h.ctx.html,/0h 30m/,'Akhil allocation 30 minutes');
+ assert.match(h.ctx.html,/1h 00m/,'Akhil actual 60 minutes');
+ assert.equal(h.ctx.calls,undefined,'Inspection must never write time');
+ assert.equal(JSON.stringify(h.ctx.state),localBefore,'Inspection must not change local workshop data');
+ h.ctx.zukaitTimeInspectJob('JC1');
+ h.ctx.zukaitTimeInspectSearchPage();
+ assert.equal(h.get('tmInspectQuery').value,'12345','Return to search retains registration query');
+}
+h=harness('Employee');await h.ctx.zukaitOpenJobTimeInspection();
+assert.equal(h.ctx.html,undefined,'Employee cannot access Manager/Supervisor inspection');
+h=harness('Supervisor');h.ctx.navigator.onLine=false;await h.ctx.zukaitOpenJobTimeInspection();
+assert.equal(h.ctx.html,undefined);assert.match(h.ctx.lastAlert,/Connect and retry/);
+h=harness('Manager');let finishInspection;h.ctx.zukaitCloud.readLatest=()=>new Promise(resolve=>finishInspection=resolve);
+const openingInspection=h.ctx.zukaitOpenJobTimeInspection();
+h.ctx.me={id:'OTHER',role:'Manager'};
+finishInspection({revision:10,data:fixture()});await openingInspection;
+assert.equal(h.ctx.html,undefined,'Delayed snapshot must not show other account data');
+console.log('V377 Job Card Time Inspection drilldown: Manager/Supervisor, registration search, employee metrics, repeat separation, server snapshot, offline and role guards passed.');
