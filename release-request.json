@@ -16,7 +16,7 @@
   "backendDeploymentRequired": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": null,
+  "signedAcceptanceRun": 41317900128,
   "verificationRun": null,
   "previousPublishedRelease": {
     "versionName": "V379",
@@ -588,14 +588,14 @@
     "testedSource": "90be6baaedbf16aeb62fe4eee61e3fd484c7c392",
     "previouslyVerifiedSignedRun": 41307533795,
     "candidateSource": "c747a85551c335076f459989cd52a2ef17b59384",
-    "candidateSignedRun": null,
+    "candidateSignedRun": 41317900128,
     "pending": [
       "Exact-source signed APK and Reception verification",
       "Mechanical prejob backend remains uninstalled in connected projects",
       "Explicit owner publication authorization"
     ],
     "installation": "SIGNED_TEST_APK_ONLY_NOT_PUBLISHED",
-    "candidateArtifactId": 13084666493,
+    "candidateArtifactId": 13087923000,
     "candidateReceptionRun": null
   },
   "v380PaintReceivedDate": {
@@ -603,6 +603,8 @@
     "feature": "Paint PO Received Date visible in summary/list and editable by Manager with correction reason; preserves original received employee and receipt time; audit before/after; rejects invalid/future dates; pending PO cannot be received by correction",
     "test": "tests/paint-received-date-correction.mjs",
     "productionBackendDeployment": false,
-    "releaseStatus": "UNPUBLISHED"
+    "releaseStatus": "UNPUBLISHED",
+    "signedAcceptanceRun": 41317900128,
+    "signedArtifactId": 13087923000
   }
 }
