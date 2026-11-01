@@ -527,36 +527,88 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    const dailyReport='<div class="card v75s-section clickable compact-control v253-daily-report" onclick="v253OpenEmployeeDailyReport()"><div class="section-title"><h3>📅 Daily Report</h3><span class="pill">CLICK TO OPEN</span></div><div class="small muted">View Job Card sessions for today or select a previous date.</div></div>';
    window.v253OpenEmployeeDailyReport=function(selected,jobFilter){
     if(!me||me.role!=='Employee')return;
-    const omanDate=ts=>{const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Muscat',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(+ts)).map(z=>[z.type,z.value]));return p.year+'-'+p.month+'-'+p.day;};
-    const today=omanDate(Date.now()),day=selected||today,chosen=String(jobFilter||'');
-    const fmt=ts=>new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Muscat',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).format(new Date(+ts));
-    const sessions=(state.sessions||[]).filter(x=>x&&String(x.emp)===String(me.id)&&Number.isFinite(+x.start)&&+x.start>0);
-    const jobs=[...new Set(sessions.filter(x=>omanDate(+x.start)===day).map(x=>String(x.job||'')))].filter(Boolean).sort();
-    const filtered=sessions.filter(x=>!chosen||String(x.job)===chosen),events=[];
-    const add=(at,job,action)=>{if(Number.isFinite(+at)&&+at>0&&omanDate(+at)===day)events.push({at:+at,job:String(job||''),action});};
-    filtered.forEach(x=>{
-     add(x.start,x.job,'START');
-     const pauses=Array.isArray(x.pauses)?x.pauses:[];
-     pauses.forEach(p=>{if(!p||typeof p!=='object')return;
-      if(p.pause!=null)add(p.pause,x.job,'PAUSE');
-      if(p.resume!=null)add(p.resume,x.job,'RESUME');
+    // Reuse the session-event rules of Supervisor > Time Details. No second
+    // employee time store or writable records are created.
+    const OMAN=4*3600000,DAY=86400000,dayStart=t=>Math.floor((t+OMAN)/DAY)*DAY-OMAN;
+    const omanDate=t=>new Date(Number(t)+OMAN).toISOString().slice(0,10);
+    const today=omanDate(Date.now()),day=/^\d{4}-\d{2}-\d{2}$/.test(String(selected||''))?selected:today;
+    const chosen=String(jobFilter||''),fmt=t=>new Date(+t).toLocaleTimeString('en-GB',{timeZone:'Asia/Muscat',hour12:true,hour:'2-digit',minute:'2-digit',second:'2-digit'}).replace(/\b(am|pm)\b/gi,v=>v.toUpperCase());
+    const escText=v=>esc(String(v==null?'':v)),same=(a,b)=>String(a)===String(b);
+    const sessions=(state.sessions||[]).filter(x=>x&&same(x.emp,me.id)&&Number(x.start)>0).slice().sort((a,b)=>Number(a.start)-Number(b.start)||String(a.id||'').localeCompare(String(b.id||'')));
+    const assignmentById=new Map((state.assign||[]).filter(Boolean).map(a=>[String(a.id),a]));
+    const sessionJob=x=>String(x.job||assignmentById.get(String(x.assignmentId))?.job||'—');
+    const allJobs=[...new Set(sessions.map(sessionJob).filter(Boolean))].sort((a,b)=>String(b).localeCompare(String(a),undefined,{numeric:true}));
+    const events=[],priorByJob=new Map();
+    for(const x of sessions){
+     const start=Number(x.start),end=Number(x.end),job=sessionJob(x),prior=priorByJob.get(job);
+     const resumed=!!(prior&&prior.paused&&Number(prior.end)>0&&Number(prior.end)<=start);
+     if(omanDate(start)===day&&(!chosen||same(chosen,job)))events.push({at:start,job,action:resumed?'RESUME':'START'});
+     if(Number.isFinite(end)&&end>0&&omanDate(end)===day&&(!chosen||same(chosen,job)))events.push({at:end,job,action:x.finished?'FINISH':x.paused?'PAUSE':x.autoOvertime||x.autoStopped?'STOP':'STOP'});
+     priorByJob.set(job,x);
+    }
+    // Same shift boundaries and 10-minute idle threshold as Supervisor Time Details.
+    // Merge all employee sessions, regardless of selected JC, so other work is not idle.
+    const rows=events.slice(),holidays=new Set((state.workshopHolidays||[]).filter(Boolean).map(x=>String(typeof x==='object'?(x.date||x.dateKey||x.day||''):x).slice(0,10)));
+    const ds=Date.parse(day+'T00:00:00Z')-OMAN;
+    if(new Date(ds+OMAN).getUTCDay()!==5&&!holidays.has(day)){
+     for(const [fromHour,toHour] of [[8,13],[15,19]]){
+      const shiftStart=ds+fromHour*3600000,shiftEnd=ds+toHour*3600000;
+      const overlaps=sessions.filter(x=>Number(x.start)<shiftEnd&&(!x.end||Number(x.end)>shiftStart)).map(x=>({start:Number(x.start),end:x.end?Number(x.end):Infinity,job:sessionJob(x)}));
+      let covered=shiftStart,previousJob=null;
+      for(const x of overlaps){
+       const at=Math.max(shiftStart,x.start);
+       if(at>covered&&at<shiftEnd){
+        const duration=at-covered;
+        if(duration>600000&&(!chosen||same(chosen,x.job)||same(chosen,previousJob)))rows.push({at,from:covered,action:'IDLE',duration});
+       }
+       if(x.end>covered){covered=x.end;previousJob=x.job;}
+      }
+     }
+    }
+    rows.sort((a,b)=>a.at-b.at||(a.action==='IDLE'?-1:b.action==='IDLE'?1:0));
+    const jobs=new Map((state.jobs||[]).filter(Boolean).map(j=>[String(j.no),j]));
+    const vehicle=job=>{if(job===String(H))return 'Ideal Time';const j=jobs.get(job)||{},identity=window.zukaitJobCardMaster?.identity?.(job)||{};
+     const make=identity.make||j.make||j.vehicleMake||j.brand||'',model=identity.model||j.model||j.vehicleModel||'',year=identity.year||j.year||j.modelYear||j.vehicleYear||'',raw=identity.vehicle||j.vehicle||'';
+     const name=[make,model].filter(Boolean).join(' ')||String(raw||'').trim()||'—';
+     return year&&!name.split(/\s+/).includes(String(year))?name+' '+year:name;
+    };
+    const idleText=ms=>{const min=Math.floor(ms/60000);return String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0');};
+    const eventCount=rows.filter(r=>r.action!=='IDLE').length;
+    const rowHtml=rows.map(r=>r.action==='IDLE'
+      ?'<tr class="v253-idle"><td colspan="4"><strong>IDLE TIME: '+idleText(r.duration)+'</strong><small>'+escText(fmt(r.from))+' – '+escText(fmt(r.at))+'</small></td></tr>'
+      :'<tr><td>'+escText(fmt(r.at))+'</td><td><b>'+escText(r.job===String(H)?'ID001':r.job)+'</b></td><td>'+escText(vehicle(r.job))+'</td><td><span class="v253-event v253-'+escText(r.action.toLowerCase())+'">'+escText(r.action)+'</span></td></tr>').join('');
+    const options='<option value="">All Job Cards</option>'+allJobs.map(j=>'<option value="'+escText(j)+'"'+(chosen===j?' selected':'')+'>'+escText(j===String(H)?'ID001':j)+'</option>').join('');
+    const filter='<div class="card"><label><b>Date</b><input type="date" id="v253DailyDate" value="'+escText(day)+'" max="'+escText(today)+'"></label><label><b>Job Card</b><select id="v253DailyJob">'+options+'</select></label><button type="button" class="blue" onclick="v253OpenEmployeeDailyReport(document.getElementById(\'v253DailyDate\').value,document.getElementById(\'v253DailyJob\').value)">View Report</button></div>';
+    const css='<style>.v253-daily-report-modal .v75s-history{overflow-x:auto}.v253-daily-report-modal table{width:100%;border-collapse:collapse;min-width:470px}.v253-daily-report-modal th{background:#202b40;color:#fff;text-align:left;padding:11px 7px}.v253-daily-report-modal td{padding:12px 7px;border-bottom:1px solid #e1e7ee}.v253-event{padding:5px 9px;border-radius:22px;font-weight:700;background:#e8effa;color:#405e91}.v253-start,.v253-resume{background:#e5f5ea;color:#18734d}.v253-pause{background:#fff1d9;color:#905800}.v253-idle{text-align:center;background:#fff0f0;color:#b32222}.v253-idle strong{display:block;font-size:19px}.v253-idle small{display:block}</style>';
+    const body=rows.length?'<div class="v75s-history"><table><thead><tr><th>Time</th><th>Job Card</th><th>Vehicle</th><th>Action</th></tr></thead><tbody>'+rowHtml+'</tbody></table></div><p>Red: idle time over 10 minutes · scheduled breaks excluded</p>':'<div class="notice">No time events recorded for this date and Job Card.</div>';
+    window.v253EmployeeShareData={owner:String(me.id),day,job:chosen,name:String(me.name||me.id),rows:rows.map(r=>({...r,vehicle:r.action==='IDLE'?'':vehicle(r.job)}))};
+    openModal('<div class="v253-daily-report-modal">'+css+'<div class="section-title"><h2>📅 Daily Report</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="tw-workload-tools"><button type="button" class="secondary" onclick="closeModal()">← Back</button><button type="button" class="tw-time-share" onclick="v253ShareEmployeeDailyReport()">↗ Share Card</button></div>'+filter+'<p>Oman time · 12-hour AM/PM · Read only</p><b>'+eventCount+' time events</b>'+body+'</div>');
+   };
+   window.v253ShareEmployeeDailyReport=async function(){
+    if(!me||me.role!=='Employee')return;
+    const d=window.v253EmployeeShareData;if(!d||String(d.owner)!==String(me.id))return;
+    try{
+     const idleText=ms=>{const min=Math.floor(ms/60000);return String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0');};
+     const fmt=t=>new Date(+t).toLocaleTimeString('en-GB',{timeZone:'Asia/Muscat',hour12:true,hour:'2-digit',minute:'2-digit',second:'2-digit'}).replace(/\b(am|pm)\b/gi,v=>v.toUpperCase());
+     const c=document.createElement('canvas'),W=1080,rowH=76,rows=d.rows;c.width=W;c.height=Math.max(610,410+Math.max(rows.length,1)*rowH);
+     const x=c.getContext('2d');if(!x)throw Error('Canvas unavailable');
+     x.fillStyle='#f5f8fc';x.fillRect(0,0,W,c.height);
+     const print=(t,a,b,size=21,color='#25364c',weight='600')=>{x.fillStyle=color;x.font=weight+' '+size+'px sans-serif';x.fillText(String(t),a,b);};
+     print('ZUKAIT INTERNATIONAL LLC',50,65,25);print(d.name+' · Daily Report',50,117,35);
+     print('Date: '+d.day+'     Job Card: '+(d.job||'All Job Cards'),50,160,22);
+     print('Oman time · 12-hour AM/PM · Read only',50,194,19,'#64748b');
+     const names=['Time','Job Card','Vehicle','Action'],xs=[50,295,465,880];x.fillStyle='#202b40';x.fillRect(34,225,1012,65);
+     names.forEach((n,i)=>print(n,xs[i],267,22,'#fff','700'));
+     rows.forEach((r,i)=>{const y=290+i*rowH;x.fillStyle=r.action==='IDLE'?'#fff0f0':i%2?'#fff':'#f1f5f9';x.fillRect(34,y,1012,rowH);
+      if(r.action==='IDLE'){print('IDLE TIME: '+idleText(r.duration),275,y+30,24,'#b32222','700');print(fmt(r.from)+' – '+fmt(r.at),275,y+57,18,'#b32222');}
+      else {const truncate=(v,max)=>String(v||'').length>max?String(v).slice(0,max-1)+'…':String(v||'');
+       print(fmt(r.at),xs[0],y+44,20);print(r.job,xs[1],y+44,21);print(truncate(r.vehicle,28),xs[2],y+44,19);print(r.action,xs[3],y+44,19,r.action==='PAUSE'?'#905800':'#18734d');}
      });
-     if(x.end!=null&&!pauses.some(p=>+p?.pause===+x.end))add(x.end,x.job,x.finished||String(x.job)===String(H)?'FINISH':x.paused?'PAUSE':'FINISH');
-    });
-    const order={FINISH:0,PAUSE:1,START:2,RESUME:3};
-    events.sort((a,b)=>a.at-b.at||(order[a.action]||0)-(order[b.action]||0));
-    const jobName=id=>{if(String(id)===String(H))return 'Ideal Time';const j=(state.jobs||[]).find(v=>String(v.no)===String(id));return [j?.make||j?.vehicle?.make,j?.model||j?.vehicle?.model,j?.year||j?.vehicle?.year].filter(Boolean).join(' ')||'—';};
-    const escText=x=>esc(String(x==null?'':x));
-    const dutyStart=Date.parse(day+'T04:00:00Z');
-    const first=events[0]?.at;
-    const openingIdle=Number.isFinite(first)&&first>dutyStart&&first<dutyStart+5*3600000?Math.floor((first-dutyStart)/60000):0;
-    const idleRow=openingIdle>0?'<tr><td colspan="4" style="text-align:center;background:#f9fafc"><b>IDLE TIME: '+String(Math.floor(openingIdle/60)).padStart(2,'0')+':'+String(openingIdle%60).padStart(2,'0')+'</b><div>'+esc(fmt(dutyStart))+' – '+esc(fmt(first))+'</div></td></tr>':'';
-    const cells=events.map(e=>'<tr><td>'+escText(fmt(e.at))+'</td><td><b>'+escText(e.job===String(H)?'ID001':e.job)+'</b></td><td>'+escText(jobName(e.job))+'</td><td><span class="v253-event v253-'+escText(e.action.toLowerCase())+'">'+escText(e.action)+'</span></td></tr>').join('');
-    const options='<option value="">All Job Cards</option>'+jobs.map(j=>'<option value="'+escText(j)+'"'+(chosen===j?' selected':'')+'>'+escText(j===String(H)?'ID001':j)+'</option>').join('');
-    const control='<div class="card"><label><b>Date</b><input type="date" id="v253DailyDate" value="'+escText(day)+'" max="'+escText(today)+'"></label><label><b>Job Card</b><select id="v253DailyJob">'+options+'</select></label><button class="blue" onclick="v253OpenEmployeeDailyReport(document.getElementById(\'v253DailyDate\').value,document.getElementById(\'v253DailyJob\').value)">View Report</button></div>';
-    const table='<div class="v75s-history"><table><thead><tr><th>Time</th><th>Job Card</th><th>Vehicle</th><th>Action</th></tr></thead><tbody>'+idleRow+cells+'</tbody></table></div>';
-    const css='<style>.v253-daily-report-modal .v75s-history{overflow-x:auto}.v253-daily-report-modal table{width:100%;border-collapse:collapse;min-width:470px}.v253-daily-report-modal th{background:#202b40;color:#fff;text-align:left;padding:11px 7px}.v253-daily-report-modal td{padding:12px 7px;border-bottom:1px solid #e1e7ee}.v253-event{padding:5px 9px;border-radius:22px;font-weight:700;background:#e8effa;color:#405e91}.v253-start,.v253-resume{background:#e5f5ea;color:#18734d}.v253-pause{background:#fff1d9;color:#905800}</style>';
-    openModal('<div class="v253-daily-report-modal">'+css+'<div class="section-title"><h2>📅 Daily Report</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+control+'<p>Oman time · 12-hour AM/PM · Read only</p><b>'+events.length+' time events</b>'+(events.length?table:'<div class="notice">No time events recorded for this date and Job Card.</div>')+'</div>');
+     const filename='Zukait_Employee_Daily_Report_'+d.day+'.png',url=c.toDataURL('image/png'),bridge=window.AndroidBridge||window.Android;
+     if(bridge&&typeof bridge.shareImageBase64==='function'){bridge.shareImageBase64(filename,url);return;}
+     if(typeof File!=='undefined'&&navigator.share&&navigator.canShare){const blob=await new Promise(resolve=>c.toBlob(resolve,'image/png'));if(blob){const file=new File([blob],filename,{type:'image/png'});if(navigator.canShare({files:[file]})){await navigator.share({title:'Zukait Daily Report',files:[file]});return;}}}
+     const a=document.createElement('a');a.href=url;a.download=filename;a.click();
+    }catch(error){alert('Daily Report card could not be shared: '+(error?.message||'Unknown error'));}
    };
    const lower='<div class="v89-employee-lower">'+dailyReport+finished+repeatList+history+'</div>';root.innerHTML=brand+identity+runningHtml+allotted+month+leaveBox+lower;
     // V104: Target / Achieved / Incentive capsules are the only Employee incentive display.
