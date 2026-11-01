@@ -28,6 +28,37 @@ export async function mechanicalSectionPersistence({db,snapshot,actor,hash}){
   const scoped=await call({operation:'READ'});assert.equal(scoped.jobNumbering,'MJC');assert.equal(scoped.jobs.find(j=>j.no===created.job_card).department,'Mechanical');assert.ok(scoped.jobs.some(j=>j.no===created.job_card));assert.equal(scoped.jobs.some(j=>j.no==='QA_JC_11'),false);
   const after=await snapshot();assert.deepEqual(after.data.expenses,baseline.data.expenses);assert.deepEqual(after.data.assign,baseline.data.assign);assert.deepEqual(after.data.sessions,baseline.data.sessions);
   assert.equal((await db.query('select count(*)::int n from zukait_mechanical.section_audit where actor_id=$1',[actor.id])).rows[0].n,4);
+  // Independently registered Mechanical checklist: no Job Card before approval,
+  // exact vehicle identity upon conversion, one-to-one atomic link.
+  await db.query("update public.staff_credentials set role='Manager' where user_id=$1",[actor.id]);
+  const prejobId=randomUUID(),vehicle={make:'Toyota',model:'Yaris',year:'2023',registration:'QA-PREJOB',vin:'',customer:'QA applicant',contact:'90000000'};
+  const prejobCall=async(command)=>{
+   const point='prejob_call_'+(++serial);await db.exec('savepoint '+point);await db.exec('set role service_role');
+   try{return (await db.query('select public.zukait_mechanical_prejob($1,$2,$3::jsonb) r',[actor.id,hash,JSON.stringify(command)])).rows[0].r;}
+   catch(e){await db.exec('rollback to savepoint '+point);throw e;}
+   finally{await db.exec('reset role');await db.exec('release savepoint '+point);}
+  };
+  const linkCall=async(command)=>{
+   const point='link_call_'+(++serial);await db.exec('savepoint '+point);await db.exec('set role service_role');
+   try{return (await db.query('select public.zukait_mechanical_link_approved($1,$2,$3::jsonb) r',[actor.id,hash,JSON.stringify(command)])).rows[0].r;}
+   catch(e){await db.exec('rollback to savepoint '+point);throw e;}
+   finally{await db.exec('reset role');await db.exec('release savepoint '+point);}
+  };
+  const prejob=await prejobCall({operation:'CREATE',id:prejobId,job_type:'CASH',registration:vehicle.registration,vehicle,inspection:{functions:{}},work_description:'QA inspection'});
+  assert.equal(prejob.ok,true);assert.equal(prejob.checklist.linked_job_card,null);
+  const newRequest=randomUUID(),linkedNumber='MJC900009',newCommand={operation:'CREATE_DIRECT_JOB',request_id:newRequest,job_card:linkedNumber,job_type:'CASH',details:{...vehicle},received_confirmed:true,reason:'Approved QA mechanical inspection'};
+  const conversion={operation:'CREATE_LINKED_JOB',checklist_id:prejobId,expected_revision:prejob.checklist.revision,request_id:newRequest,command:newCommand};
+  await assert.rejects(linkCall(conversion),/mechanical_checklist_not_approved/);
+  const approval=await prejobCall({operation:'APPROVE',id:prejobId,expected_revision:prejob.checklist.revision,approved:true,note:'QA approved by customer'});
+  assert.equal(approval.checklist.approval_status,'APPROVED');
+  await assert.rejects(linkCall({...conversion,expected_revision:approval.checklist.revision,command:{...newCommand,details:{...vehicle,registration:'WRONG'}}}),/mechanical_checklist_vehicle_mismatch/);
+  const linked=await linkCall({...conversion,expected_revision:approval.checklist.revision});
+  assert.equal(linked.job_card,linkedNumber);
+  const found=(await prejobCall({operation:'LIST',query:'QA-PREJOB'})).checklists.find(c=>c.id===prejobId);
+  assert.equal(found.linked_job_card,linkedNumber);
+  await assert.rejects(linkCall({...conversion,expected_revision:found.revision}),/mechanical_checklist_already_linked/);
+  assert.equal((await db.query("select count(*)::int n from zukait_mechanical.prejob_checklists where id=$1 and linked_job_card=$2",[prejobId,linkedNumber])).rows[0].n,1);
+
  }finally{await db.exec('rollback to savepoint mechanical_sections');await db.exec('release savepoint mechanical_sections');}
  assert.deepEqual(await snapshot(),baseline);
  console.log('PASS actual scoped Mechanical sections SQL: own-domain read, official estimate allocation/save/audit/exact retry, Bodyshop binding denial, original direct Cash job validator, no unscoped Reception permission, isolated ownership and complete rollback.');
