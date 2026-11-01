@@ -54,6 +54,7 @@ node tests/live-status-authority.mjs
 node tests/paused-menu-consistency.mjs
 node tests/qc-delivery-authority.mjs
 node tests/jobcard-reopen-authority.mjs
+node tests/jobcard-additional-repeat-cycles.mjs
 node tests/invoice-entry.mjs
 node tests/delivered-material-records.mjs
 node tests/spare-return-button.mjs
