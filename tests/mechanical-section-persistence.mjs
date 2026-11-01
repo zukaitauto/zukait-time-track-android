@@ -15,16 +15,16 @@ export async function mechanicalSectionPersistence({db,snapshot,actor,hash}){
   assert.equal(saved.estimate.createdBy,actor.id);assert.equal(saved.estimate.revision,1);assert.equal(saved.estimate.cashCustomerName,'Synthetic Mechanical customer');assert.equal((await call(save)).duplicate,true);
   await assert.rejects(call({...save,request_id:randomUUID(),expected_revision:1,estimate:{...quote,jobCard:'QA_JC_11'}}),/mechanical_estimate_forbidden/);
   assert.deepEqual((await call({operation:'READ'})).estimates.map(e=>e.id),[clientKey]);
-  const request=randomUUID(),command={operation:'CREATE_DIRECT_JOB',request_id:request,job_card:'',job_type:'CASH',details:{make:'Toyota',model:'Corolla',registration:'QA-MECH-ONLY',year:'2022',customer:'Synthetic customer',contact:'90000000'},received_confirmed:true,reason:'Synthetic isolated Mechanical creation'};
+  const request=randomUUID(),command={operation:'CREATE_DIRECT_JOB',request_id:request,job_card:'MJC900001',job_type:'CASH',details:{make:'Toyota',model:'Corolla',registration:'QA-MECH-ONLY',year:'2022',customer:'Synthetic customer',contact:'90000000'},received_confirmed:true,reason:'Synthetic isolated Mechanical creation'};
   await assert.rejects(call(command,true),/reception_job_forbidden|reception_forbidden/,'Mechanical role must not gain the unscoped Reception RPC');
-  const create={operation:'CREATE_JOB',request_id:request,command};const created=await call(create);assert.equal(created.ok,true);assert.match(created.job_card,/^MJC[0-9]{3,}$/);assert.equal((await call(create)).duplicate,true);
+  const create={operation:'CREATE_JOB',request_id:request,command};const created=await call(create);assert.equal(created.ok,true);assert.equal(created.job_card,'MJC900001');assert.equal((await call(create)).duplicate,true);
   const company=(await db.query("insert into workshop_insurance_companies(name,active) values('QA Mechanical insurer',true) returning id")).rows[0].id;
-  for(const [kind,no] of [['CREDIT',''],['INSURANCE','']]){
+  for(const [kind,no] of [['CREDIT','MJC900002'],['INSURANCE','MJC900003']]){
    const next=randomUUID(),cmd={...command,request_id:next,job_card:no,job_type:kind,...(kind==='CREDIT'?{credit_account:'QA Mechanical credit account'}:{insurance_id:String(company),reference:'QA approval',approval_date:'2026-10-19',evidence:'Synthetic approval evidence',approval_confirmed:true})};
    if(kind==='INSURANCE'){await assert.rejects(call({operation:'CREATE_JOB',request_id:next,command:cmd}),/mechanical_cash_credit_only/);continue;}
-   const result=await call({operation:'CREATE_JOB',request_id:next,command:cmd});assert.equal(result.ok,true);assert.equal(result.job.jobType,kind);assert.notEqual(result.job_card,created.job_card);assert.match(result.job_card,/^MJC[0-9]{3,}$/);
+   const result=await call({operation:'CREATE_JOB',request_id:next,command:cmd});assert.equal(result.ok,true);assert.equal(result.job.jobType,kind);assert.notEqual(result.job_card,created.job_card);assert.equal(result.job_card,'MJC900002');
   }
-  const manualId=randomUUID();await assert.rejects(call({operation:'CREATE_JOB',request_id:manualId,command:{...command,request_id:manualId,job_card:'12345'}}),/mechanical_job_number_server_assigned/);
+  const manualId=randomUUID();await assert.rejects(call({operation:'CREATE_JOB',request_id:manualId,command:{...command,request_id:manualId,job_card:''}}),/reception_invalid_job_number/);
   const scoped=await call({operation:'READ'});assert.equal(scoped.jobNumbering,'MJC');assert.equal(scoped.jobs.find(j=>j.no===created.job_card).department,'Mechanical');assert.ok(scoped.jobs.some(j=>j.no===created.job_card));assert.equal(scoped.jobs.some(j=>j.no==='QA_JC_11'),false);
   const after=await snapshot();assert.deepEqual(after.data.expenses,baseline.data.expenses);assert.deepEqual(after.data.assign,baseline.data.assign);assert.deepEqual(after.data.sessions,baseline.data.sessions);
   assert.equal((await db.query('select count(*)::int n from zukait_mechanical.section_audit where actor_id=$1',[actor.id])).rows[0].n,4);
