@@ -45,6 +45,7 @@ jobs:
           node tests/monthly-employee-performance.mjs
           node tests/monthly-employee-performance-dom.mjs
           node tests/v377-workshop-efficiency-month-filter.mjs
+          node tests/employee-pause-journal-recovery.mjs
           node tests/v377-workshop-performance-ui.mjs
           node tests/v377-performance-calculations.mjs
           node tests/finished-assignment-performance.mjs
