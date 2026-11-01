@@ -3,7 +3,7 @@
 DO $migration$
 DECLARE fn text; old_block text; new_block text;
 BEGIN
- SELECT pg_get_functiondef('zukait_mechanical.zukait_mechanical_section(text,text,jsonb)'::regprocedure) INTO fn;
+ SELECT pg_get_functiondef('public.zukait_mechanical_section(text,text,jsonb)'::regprocedure) INTO fn;
  old_block := $old$
   if coalesce(trim(p_command->'command'->>'job_card'),'')<>'' then raise exception 'mechanical_job_number_server_assigned';end if;
   -- The original command remains the immutable retry fingerprint. Only the
