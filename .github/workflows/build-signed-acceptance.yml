@@ -37,6 +37,7 @@ on:
       - .github/workflows/build-signed-acceptance.yml
       - app/build.gradle
       - release-request.json
+      - release-ui-request.json
       - tests/accountant-*
       - supabase/migrations/*accountant*
       - app/src/main/assets/v2/features/estimate/**
