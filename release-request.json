@@ -1,28 +1,28 @@
 {
-  "versionName": "V381",
-  "versionCode": 344,
-  "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "sourceCommit": "a2bed12c67196fc10b3586154eef0a2a8a54b3f8",
+  "versionName": "V382",
+  "versionCode": 345,
+  "releaseScope": "insurance-lpo-and-incentive",
+  "approvedForStaff": false,
+  "sourceCommit": "5ed629e9cd501548138acf33d439dda9edc80fe5",
   "ownerRequestedProceed": true,
-  "ownerPublicationRequested": true,
-  "authorization": "Owner authorized publication of V381 hotfix for duplicated Workshop Consumables Cost tile and Reopen Work visibility for Manager report, Manager 360 and Supervisor Finished Jobs Today. Signed APK 41394721827 and Reception 41394721778 passed on exact source. No production backend schema changes. Owner defers physical Android retest and fresh backup restore; neither is represented as passed.",
-  "approvedAt": "2026-11-02T05:41:00Z",
-  "publishNonce": "owner-approved-v381-20261102-054100-hotfix",
-  "releaseHeldByOwner": false,
+  "ownerPublicationRequested": false,
+  "authorization": "V382 QA candidate for delivered-only all-dates LPO Pending, advanced date override and Monthly Incentive month/export controls. Not authorized for production publication. QA insurance backend rule deployed separately; production backend unchanged. Requires signed V382 acceptance, backend authorization/deployment, and explicit release approval.",
+  "approvedAt": null,
+  "publishNonce": null,
+  "releaseHeldByOwner": true,
   "publicationRequiresSeparateInstruction": true,
-  "physicalAcceptanceStatus": "NOT_RUN",
-  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V381",
-  "backendDeploymentRequired": false,
+  "physicalAcceptanceStatus": "NOT_RUN_FOR_V382",
+  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V382",
+  "backendDeploymentRequired": true,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41394721827,
-  "verificationRun": 41394721778,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
   "previousPublishedRelease": {
-    "versionName": "V380",
-    "versionCode": 343,
-    "sourceCommit": "48de3469e7405378f9d9a3782ea9f64f8e65b50b",
-    "releaseTag": "release-V380-architecture-v2"
+    "versionName": "V381",
+    "versionCode": 344,
+    "sourceCommit": "a2bed12c67196fc10b3586154eef0a2a8a54b3f8",
+    "releaseTag": "release-V381-architecture-v2"
   },
   "v377VerificationEvidence": {
     "androidBuildRun": 41175629369,
@@ -551,7 +551,7 @@
     "ownerPhysicalAcceptanceDeferred": "Owner explicitly requested publish first, test afterward on 2026-11-01; NOT_RUN.",
     "ownerBackendActivation": "NOT_AUTHORIZED; production workshop-api version 98 lacks REOPEN_ADDITIONAL and REOPEN_REPEAT; Mechanical database guard not activated."
   },
-  "ownerRequestedImmediateRelease": true,
+  "ownerRequestedImmediateRelease": false,
   "backupDeferredByOwner": true,
   "v378HotfixEvidence": {
     "issue": "Consumables Cost card and Materials Consumption disappear after Manager dashboard re-render",
@@ -697,5 +697,14 @@
     "dispatchRequest": "Owner-approved one-time V381 dispatch",
     "pinnedSourceBranch": "release/v381-approved-source",
     "dispatchRetryReason": "Publisher lacked permission to create immutable source ref; source branch created explicitly at the same approved SHA"
+  },
+  "v382CandidateEvidence": {
+    "sourceCommit": "5ed629e9cd501548138acf33d439dda9edc80fe5",
+    "qaSupabaseProject": "omqgkqknbdcnotabffek",
+    "qaWorkshopApiVersion": 48,
+    "productionBackendDeployment": "NOT_AUTHORIZED_NOT_PERFORMED",
+    "signedApk": "NOT_YET_VERIFIED_FOR_V382",
+    "physicalPhoneTest": "NOT_RUN",
+    "releaseApproval": "PENDING"
   }
 }
