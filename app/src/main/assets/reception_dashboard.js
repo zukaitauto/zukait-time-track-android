@@ -71,7 +71,7 @@
     s.textContent+=`#rc-root .rdb-row-content>button[data-rdb="open-job"]{background:#dbeafe!important;color:#1e40af!important;border:1px solid #93c5fd!important;border-radius:7px;min-height:30px!important;padding:4px 8px!important;font-size:10px!important;margin:5px 0 0!important;width:auto!important}#rc-root .rdb-row-actions button[data-rdb="edit-job"]{background:#fef3c7!important;color:#92400e!important;border-color:#fcd34d!important}#rc-root .rdb-row-content>b{display:inline;letter-spacing:0}#rc-root .rdb-section-nav{margin:5px 0 10px}#rc-root .rdb-section-nav button{min-height:34px!important;font-size:11px!important;padding:6px 10px!important}`;
     s.textContent+=`#rc-root .rdb-row-content .rdb-insurer{display:inline-block;max-width:100%;box-sizing:border-box;padding:2px 7px;margin:2px 0;border-radius:6px;background:#e0f2fe;color:#075985;font-weight:700;line-height:1.5;white-space:normal;overflow-wrap:anywhere;vertical-align:baseline}`;
     s.textContent+=`#rc-root .rdb-company-filter{grid-column:1/-1}#rc-root .rdb-company-filter select{width:100%;box-sizing:border-box;min-height:40px;font-size:13px}#rc-root .rdb-open-days{display:inline-block;margin-top:5px;padding:3px 7px;border-radius:6px;background:#eff6ff;color:#1e40af;font-size:11px;font-weight:700}`;
-    s.textContent+=\`
+    s.textContent+=`
     .rdb-link-overlay{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;overflow:auto;padding:18px;background:rgba(11,28,45,.70);backdrop-filter:blur(5px)}
     .rdb-link-dialog{width:min(590px,100%);max-height:min(92vh,880px);overflow-y:auto;background:#fff;color:#1c344b;border:1px solid #b9d5df;border-radius:22px;box-shadow:0 28px 80px #071b2f70;font:inherit}
     .rdb-link-top{background:linear-gradient(125deg,#123a53,#127984);color:#fff;padding:23px 25px}
@@ -97,7 +97,7 @@
     .rdb-link-actions .rdb-link-cancel{background:#ecf2f6!important;color:#244051!important;border:1px solid #bacdd9!important}
     .rdb-link-actions .rdb-link-confirm{background:#11777d!important;color:#fff!important;border:1px solid #08717b!important}
     @media(max-width:500px){.rdb-link-overlay{padding:8px}.rdb-link-dialog{border-radius:15px;max-height:95vh}.rdb-link-top,.rdb-link-inner{padding:16px}.rdb-link-top h3{font-size:20px}.rdb-link-vehicle{grid-template-columns:1fr}.rdb-link-actions button{flex:1}}
-    \`;
+    `;
     document.head.appendChild(s);
   }
   const countFor=key=>key==="new"||key==="create-job"?"":key==="vwc"?counts.vwc??"":counts[key]??"";
