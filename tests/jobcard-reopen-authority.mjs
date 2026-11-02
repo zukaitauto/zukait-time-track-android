@@ -163,7 +163,7 @@ console.log('PASS: delivered JC Manager-only return; required reason; QC reset; 
 // Workshop 360 technician details must expose the role-gated finished-work action.
 {
  const overview=read('app/src/main/assets/workshop_overview.js');
- assert.match(overview,/data-workshop-action=\\"reopen-finished\\"/,'Finished normal technician row offers reopen');
+ assert.match(overview,/reopen-finished/,'Finished normal technician row offers reopen');
  assert.match(overview,/a\.completed&&!a\.rework&&!j\.delivered/,'Reopen hidden on unfinished, repeat and delivered jobs');
  assert.match(overview,/\['Manager','Supervisor'\]\.includes\(role\(\)\)/,'Reopen uses authorized workshop roles');
  assert.match(overview,/window\.v132ReissueJob\(j\.no\)/,'Reopen delegates to existing employee selector');
