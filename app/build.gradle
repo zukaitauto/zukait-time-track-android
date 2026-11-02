@@ -22,8 +22,8 @@ android {
         targetSdk 35
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
-        versionCode 343
-        versionName "V380" // Mechanical manual numbering release candidate; publication controlled by approved release metadata.
+        versionCode 344
+        versionName "V381" // Workshop Performance single Consumables Cost tile and Manager Reopen Work visibility.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }
