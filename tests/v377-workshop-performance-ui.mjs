@@ -36,7 +36,7 @@ assert.match(report,/completedRanking:month=>allowed\(\)\?completedRanking\(data
 assert.match(report,/window\.v75ChangeEfficiency\(monthInView\)/,'refresh old rings after manager ranking loads');
 assert.match(legacy,/id="v123EfficiencyMonth"/,'legacy performance detail has month filter');
 assert.match(legacy,/window\.v123ManagerPerformanceMonth/,'month change handler exists');
-assert.match(legacy,/openEmployeeEfficiency\(this\.dataset\.month\)/,'ranking remains accessible from detail');
+assert.match(legacy,/v123ManagerPerformanceStaff\(this\.dataset\.emp,this\.dataset\.month\)/,'ranking provides staff drill-down with selected month');
 
 // Exercise the actual ranking module against mixed normal, ID001,
 // repeat, unfinished, after-hours, and cancelled assignments.
