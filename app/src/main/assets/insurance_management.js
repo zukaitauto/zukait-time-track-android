@@ -73,7 +73,7 @@
    '<div class="ins-summary">'+summaries.map(([action,label,value])=>'<button data-ins="summary" data-section="'+action+'">'+esc(label)+'<b>'+esc(value)+'</b></button>').join('')+'</div>'+
    '<div class="ins-toolbar"><button data-ins="section" data-section="jobs" aria-pressed="'+(section==='jobs')+'">Insurance Job Cards</button><button data-ins="section" data-section="pending" aria-pressed="'+(section==='pending')+'">LPO Pending</button><button data-ins="print">Print</button><button data-ins="refresh">Refresh</button></div>'+
    '<div class="ins-filters"><label>Insurance Company<select data-ins-filter="company"><option value="">All</option>'+(result.companies||companiesCache).map(c=>'<option'+(filters.company===c?' selected':'')+'>'+esc(c)+'</option>').join('')+'</select></label><label>Month<input type="month" data-ins-filter="month" value="'+esc(filters.month)+'"></label></div>'+
-   '<details class="ins-advanced"><summary>Advanced Date Filters</summary><div class="ins-filters"><label>From<input type="date" data-ins-filter="from" value="'+esc(filters.from)+'"></label><label>To<input type="date" data-ins-filter="to" value="'+esc(filters.to)+'"></label></div></details>'+
+   '<details class="ins-advanced"><summary>Advanced Date Filters (override month)</summary><div class="ins-filters"><label>From<input type="date" data-ins-filter="from" value="'+esc(filters.from)+'"></label><label>To<input type="date" data-ins-filter="to" value="'+esc(filters.to)+'"></label></div></details>'+
    '<label class="ins-search">Search<input data-ins-filter="search" value="'+esc(filters.search||'')+'" placeholder="JC / Vehicle / Insurance"></label>'+
    '<div id="ins-results">'+listHtml()+'</div>');
   const root=document.getElementById('rc-root');root.addEventListener('click',onClick);root.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('.ins-job-line'))onClick(e);});root.addEventListener('change',onFilter);root.addEventListener('input',e=>{if(e.target.dataset.insFilter==='search')onFilter(e);});root.addEventListener('focusout',e=>{if(e.target.dataset.insFilter==='company')setTimeout(syncCompanies,0);});syncCompanies();
@@ -106,7 +106,7 @@
   }catch(e){popup.close();throw e;}
  }
  async function onClick(e){const button=e.target.closest('[data-ins]');if(!button)return;e.preventDefault();try{
-  const action=button.dataset.ins;if(action==='summary'||action==='section'){section=button.dataset.section;page=0;return load();}
+  const action=button.dataset.ins;if(action==='summary'||action==='section'){section=button.dataset.section;page=0;if(section==='pending'){filters.month='';filters.from='';filters.to='';}else if(!filters.month&&!filters.from&&!filters.to){filters.month=new Date(Date.now()+14400000).toISOString().slice(0,7);}return load();}
   if(action==='lpo')return lpo(button.dataset.job);
   if(action==='checklist'){cancelPendingList();return window.zukaitReception.openRecord(button.dataset.job);}if(action==='job')return jobDetails(button.dataset.job);
   if(action==='previous'&&page>0){page--;return load();}if(action==='next'&&(page+1)*50<result.total){page++;return load();}
