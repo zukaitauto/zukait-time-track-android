@@ -2652,18 +2652,55 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v117EmployeeProgressDetails=true;
 })();
 
-/* V115 SUPERVISOR INCENTIVE WINDOW — authoritative click target and monthly staff detail. */
+/* V115 MONTHLY INCENTIVE — month-controlled Manager/Supervisor read-only report and exports. */
 (function(){'use strict';
- const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
- const fm=v=>typeof window.fmt==='function'?window.fmt(Math.max(0,+v||0)):((Math.floor((+v||0)/60))+'h '+String(Math.round((+v||0)%60)).padStart(2,'0')+'m');
- window.openIncentiveList=function(){
-   if(!me||!['Manager','Supervisor'].includes(me.role))return;
-   const rows=(users||[]).filter(u=>u&&u.role==='Employee').map(u=>{const x=typeof window.incentiveFor==='function'?window.incentiveFor(u.id):{target:0,achieved:0,excess:0,repeat:0,incentive:0};return {u,x}}).sort((a,b)=>(Number(b.x.achieved??b.x.eligible)||0)-(Number(a.x.achieved??a.x.eligible)||0)||String(a.u.name||'').localeCompare(String(b.u.name||'')));
+ const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
+ const fm=v=>typeof window.fmt==='function'?window.fmt(Math.max(0,+v||0)):Math.floor((+v||0)/60)+'h '+String(Math.round((+v||0)%60)).padStart(2,'0')+'m';
+ const monthNow=()=>new Date(Date.now()+14400000).toISOString().slice(0,7);
+ let month=monthNow();
+ const valid=m=>/^\d{4}-(0[1-9]|1[0-2])$/.test(m);
+ const rows=()=>{
+   // Noon on the 15th in Oman avoids timezone rollover when choosing the reporting month.
+   const ts=Date.parse(month+'-15T12:00:00+04:00');
+   return (users||[]).filter(u=>u&&u.role==='Employee').map(u=>{
+     const x=typeof window.incentiveFor==='function'?window.incentiveFor(u.id,ts):null;
+     return {u,x:x||{target:0,achieved:0,excess:0,repeat:0,incentive:0}};
+   }).sort((a,b)=>(Number(b.x.achieved??b.x.eligible)||0)-(Number(a.x.achieved??a.x.eligible)||0)||String(a.u.name||'').localeCompare(String(b.u.name||'')));
+ };
+ const columns=['Employee','Department','Target','Achieved','Excess','Repeat Penalty','Incentive'];
+ const values=r=>[r.u.name||r.u.id,r.u.department||'',fm(r.x.target),fm(r.x.achieved??r.x.eligible),fm(r.x.excess),fm(r.x.repeat),fm(r.x.incentive)];
+ const table=rr=>'<table><thead><tr>'+columns.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+
+   rr.map(r=>'<tr>'+values(r).map((v,i)=>'<td>'+ (i===0||i===6?'<b>'+esc(v)+'</b>':esc(v))+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+ const report=()=>'<h2>Monthly Incentive — '+esc(month)+'</h2><p>Employees sorted by achieved hours · Highest first</p>'+table(rows());
+ function render(){
    const body='<div class="section-title"><h2>⭐ Monthly Incentive</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
-    '<p class="small muted">Employees sorted by achieved hours · Highest first</p><div style="overflow:auto"><table><tr><th>Employee</th><th>Target</th><th>Achieved</th><th>Excess</th><th>Repeat Penalty</th><th>Incentive</th></tr>'+
-    rows.map(r=>'<tr><td><b>'+esc(r.u.name||r.u.id)+'</b><br><span class="small">'+esc(r.u.department||'')+'</span></td><td>'+fm(r.x.target)+'</td><td>'+fm(r.x.achieved??r.x.eligible)+'</td><td>'+fm(r.x.excess)+'</td><td>'+fm(r.x.repeat)+'</td><td><b>'+fm(r.x.incentive)+'</b></td></tr>').join('')+'</table></div>';
+     '<div class="ins-incentive-tools" style="display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin:12px 0">'+
+     '<label>Report Month<input id="v115IncentiveMonth" type="month" value="'+esc(month)+'" onchange="v115IncentiveMonth(this.value)"></label>'+
+     '<button type="button" onclick="v115IncentiveExport(\'print\')">Print</button>'+
+     '<button type="button" onclick="v115IncentiveExport(\'pdf\')">PDF</button>'+
+     '<button type="button" onclick="v115IncentiveExport(\'excel\')">Excel</button></div>'+
+     '<p class="small muted">Employees sorted by achieved hours · Highest first · '+esc(month)+'</p><div style="overflow:auto">'+table(rows())+'</div>';
    if(typeof openModal==='function')return openModal(body);
    if(typeof showSupervisorModal==='function')return showSupervisorModal('Monthly Incentive',body);
+ }
+ window.openIncentiveList=function(){
+   if(!me||!['Manager','Supervisor'].includes(me.role))return;
+   month=monthNow();render();
+ };
+ window.v115IncentiveMonth=function(m){if(!valid(m))return;month=m;render();};
+ window.v115IncentiveExport=function(kind){
+   if(!me||!['Manager','Supervisor'].includes(me.role))return;
+   if(kind==='excel'){
+     const csv=[columns,...rows().map(values)].map(a=>a.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+     const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+     const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='ZUKAIT_Monthly_Incentive_'+month+'.csv';
+     document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);return;
+   }
+   if(kind!=='pdf'&&kind!=='print')return;
+   const popup=window.open('','_blank');if(!popup){alert('Enable pop-ups to print or save the report as PDF.');return;}
+   popup.document.write('<!doctype html><html><head><title>ZUKAIT Monthly Incentive '+esc(month)+'</title><style>body{font:13px Arial;margin:24px;color:#14243b}table{border-collapse:collapse;width:100%}th,td{border:1px solid #bbb;padding:8px;text-align:left}th{background:#e9eef5}@page{size:A4 landscape;margin:12mm}</style></head><body>'+report()+'</body></html>');
+   popup.document.close();popup.focus();popup.print();
+   // PDF uses the browser's Save as PDF destination; Print sends to the chosen printer.
  };
  window.v115SupervisorIncentiveWindow=true;
 })();
