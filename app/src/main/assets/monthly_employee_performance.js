@@ -119,7 +119,7 @@ function detailTable(e){
  const rowAction=r=>!manager?'':('<td>'+(r.status==='Completed'&&!r.delivered?'<button type="button" class="secondary zukait-monthly-reopen" data-reopen-jc="'+esc(r.jc)+'">↻ REOPEN WORK</button>':'—')+'</td>');
  return '<div class="report-table-wrap zukait-monthly-scroll"><table><thead><tr><th>JC</th><th>Vehicle / Registration</th><th>Work status</th><th>Finished (Oman)</th><th>Allocated</th><th>Actual</th><th>Efficiency</th><th>Vehicle status</th>'+actions+'</tr></thead><tbody>'+
  e.details.map(r=>'<tr><td><b>'+esc(r.jc)+'</b></td><td>'+esc(r.vehicle)+'<small class="zukait-monthly-sub">'+esc(r.registration)+'</small></td><td>'+esc(r.status)+'</td><td>'+(r.completedAt==null?'—':esc(when(r.completedAt)))+'</td><td>'+fmt(r.allocated)+'</td><td>'+fmt(r.actual)+'</td><td>'+pct(r.efficiency)+'</td><td>'+(r.delivered?'Delivered':'Not delivered')+'</td>'+rowAction(r)+'</tr>').join('')+
- +(e.id001>0?'<tr><td><b>ID001</b></td><td>Waiting Time<small class="zukait-monthly-sub">Monthly consolidated</small></td><td>Completed (monthly)</td><td>—</td><td>'+fmt(e.id001)+'</td><td>'+fmt(e.id001)+'</td><td>100.0%</td><td>Not a vehicle</td>'+(manager?'<td>—</td>':'')+'</tr>':'')+
+ (e.id001>0?'<tr><td><b>ID001</b></td><td>Waiting Time<small class="zukait-monthly-sub">Monthly consolidated</small></td><td>Completed (monthly)</td><td>—</td><td>'+fmt(e.id001)+'</td><td>'+fmt(e.id001)+'</td><td>100.0%</td><td>Not a vehicle</td>'+(manager?'<td>—</td>':'')+'</tr>':'')+
  '</tbody></table></div>';
 }
 
