@@ -71,6 +71,33 @@
     s.textContent+=`#rc-root .rdb-row-content>button[data-rdb="open-job"]{background:#dbeafe!important;color:#1e40af!important;border:1px solid #93c5fd!important;border-radius:7px;min-height:30px!important;padding:4px 8px!important;font-size:10px!important;margin:5px 0 0!important;width:auto!important}#rc-root .rdb-row-actions button[data-rdb="edit-job"]{background:#fef3c7!important;color:#92400e!important;border-color:#fcd34d!important}#rc-root .rdb-row-content>b{display:inline;letter-spacing:0}#rc-root .rdb-section-nav{margin:5px 0 10px}#rc-root .rdb-section-nav button{min-height:34px!important;font-size:11px!important;padding:6px 10px!important}`;
     s.textContent+=`#rc-root .rdb-row-content .rdb-insurer{display:inline-block;max-width:100%;box-sizing:border-box;padding:2px 7px;margin:2px 0;border-radius:6px;background:#e0f2fe;color:#075985;font-weight:700;line-height:1.5;white-space:normal;overflow-wrap:anywhere;vertical-align:baseline}`;
     s.textContent+=`#rc-root .rdb-company-filter{grid-column:1/-1}#rc-root .rdb-company-filter select{width:100%;box-sizing:border-box;min-height:40px;font-size:13px}#rc-root .rdb-open-days{display:inline-block;margin-top:5px;padding:3px 7px;border-radius:6px;background:#eff6ff;color:#1e40af;font-size:11px;font-weight:700}`;
+    s.textContent+=\`
+    .rdb-link-overlay{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;overflow:auto;padding:18px;background:rgba(11,28,45,.70);backdrop-filter:blur(5px)}
+    .rdb-link-dialog{width:min(590px,100%);max-height:min(92vh,880px);overflow-y:auto;background:#fff;color:#1c344b;border:1px solid #b9d5df;border-radius:22px;box-shadow:0 28px 80px #071b2f70;font:inherit}
+    .rdb-link-top{background:linear-gradient(125deg,#123a53,#127984);color:#fff;padding:23px 25px}
+    .rdb-link-top small{font-weight:800;letter-spacing:.13em;color:#c9eff1;text-transform:uppercase}
+    .rdb-link-top h3{margin:8px 0 5px;color:#fff;font-size:24px;line-height:1.2}
+    .rdb-link-top p{margin:0;color:#e8f7fa;font-size:14px;line-height:1.5}
+    .rdb-link-inner{padding:22px 25px 25px}
+    .rdb-link-vehicle{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-bottom:16px}
+    .rdb-link-vehicle>div{background:#eef6fa;padding:13px;border:1px solid #d1e3eb;border-radius:13px;min-width:0}
+    .rdb-link-vehicle small{display:block;color:#5b7085;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em}
+    .rdb-link-vehicle strong{display:block;color:#16374f;margin-top:6px;font-size:18px;overflow-wrap:anywhere}
+    .rdb-link-vehicle span{display:block;color:#486678;font-size:13px;margin-top:4px;overflow-wrap:anywhere}
+    .rdb-link-inner label{display:block;font-weight:800;font-size:13px;margin:13px 0 5px;color:#264153}
+    .rdb-link-inner input,.rdb-link-inner textarea{display:block;box-sizing:border-box;width:100%;padding:12px 13px;min-height:44px;background:#fff;color:#182f45;border:1px solid #9cb7c8;border-radius:10px;font:inherit;font-size:15px}
+    .rdb-link-inner textarea{min-height:82px;resize:vertical}
+    .rdb-link-inner input:focus-visible,.rdb-link-inner textarea:focus-visible{outline:3px solid #8de3da;outline-offset:1px}
+    .rdb-link-preview{margin-top:13px;border-radius:10px;padding:10px 12px;background:#eff6ff;color:#254e71;font-size:13px;line-height:1.5}
+    .rdb-link-preview[data-mismatch=true]{background:#fff0e1;color:#8b3d0b}
+    .rdb-link-note{font-size:12px;color:#4f6174;line-height:1.5;margin:13px 0 0}
+    .rdb-link-validation{font-size:13px;color:#9b2424;min-height:18px;margin:6px 0}
+    .rdb-link-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px;margin-top:16px}
+    .rdb-link-actions button{min-height:44px!important;padding:11px 18px!important;border-radius:10px!important;font-size:14px!important;font-weight:800!important}
+    .rdb-link-actions .rdb-link-cancel{background:#ecf2f6!important;color:#244051!important;border:1px solid #bacdd9!important}
+    .rdb-link-actions .rdb-link-confirm{background:#11777d!important;color:#fff!important;border:1px solid #08717b!important}
+    @media(max-width:500px){.rdb-link-overlay{padding:8px}.rdb-link-dialog{border-radius:15px;max-height:95vh}.rdb-link-top,.rdb-link-inner{padding:16px}.rdb-link-top h3{font-size:20px}.rdb-link-vehicle{grid-template-columns:1fr}.rdb-link-actions button{flex:1}}
+    \`;
     document.head.appendChild(s);
   }
   const countFor=key=>key==="new"||key==="create-job"?"":key==="vwc"?counts.vwc??"":counts[key]??"";
@@ -240,6 +267,73 @@
       localStorage.removeItem(key);
       throw e;}
   }
+
+  // Accessible, in-app alternative to browser prompt/confirm. Server remains
+  // authoritative for vehicle matching, revision and duplicate-link checks.
+  function existingJobLinkDialog(record){
+    css();
+    return new Promise(resolve=>{
+      const rc=String(record.rc_no||'');
+      const d=record.details||{};
+      const vehicle=[d.make,d.model,d.year].filter(Boolean).join(' ')||'Vehicle details unavailable';
+      const reg=String(d.registration||'Not recorded');
+      const overlay=document.createElement('div');
+      overlay.className='rdb-link-overlay';
+      overlay.innerHTML='<section class="rdb-link-dialog" role="dialog" aria-modal="true" aria-labelledby="rdb-link-title">'+
+       '<header class="rdb-link-top"><small>Reception · Record linking</small><h3 id="rdb-link-title">Link existing Job Card</h3>'+
+       '<p>Connect the selected Checklist to a Job Card already in the system. No new Job Card will be created.</p></header>'+
+       '<div class="rdb-link-inner"><div class="rdb-link-vehicle">'+
+       '<div><small>Selected Checklist</small><strong>'+safe(rc)+'</strong><span>'+safe(vehicle)+'</span><span>Reg: '+safe(reg)+'</span></div>'+
+       '<div><small>Existing Job Card</small><strong>Enter JC number</strong><span>Vehicle identity will be checked before linking.</span></div></div>'+
+       '<form id="rdb-link-form"><label for="rdb-link-jc">Existing Job Card number</label>'+
+       '<input id="rdb-link-jc" name="job_card" autocomplete="off" maxlength="40" required placeholder="e.g. 12102" inputmode="text">'+
+       '<div class="rdb-link-preview" data-link-preview aria-live="polite">Enter a Job Card number to preview available details.</div>'+
+       '<label for="rdb-link-reason">Reason for linking</label>'+
+       '<textarea id="rdb-link-reason" name="reason" maxlength="2000" required>Checklist was created before the Job Card was opened directly</textarea>'+
+       '<p class="rdb-link-note">The server checks the vehicle, duplicate links, permissions and checklist revision. Existing invoices and work records stay unchanged.</p>'+
+       '<div class="rdb-link-validation" role="alert"></div>'+
+       '<div class="rdb-link-actions"><button type="button" class="rdb-link-cancel">Cancel</button>'+
+       '<button type="submit" class="rdb-link-confirm">Confirm Link</button></div></form></div></section>';
+      document.body.appendChild(overlay);
+      const input=overlay.querySelector('#rdb-link-jc'),form=overlay.querySelector('#rdb-link-form');
+      const preview=overlay.querySelector('[data-link-preview]'),validation=overlay.querySelector('.rdb-link-validation');
+      const norm=x=>String(x??'').trim().toUpperCase().replace(/\s+/g,'');
+      let settled=false;
+      function finish(value){
+        if(settled)return;settled=true;
+        document.removeEventListener('keydown',onKey);
+        overlay.remove();resolve(value);
+      }
+      function onKey(e){if(e.key==='Escape'){e.preventDefault();finish(null);}}
+      function updatePreview(){
+        validation.textContent='';
+        const no=String(input.value||'').trim().toUpperCase();
+        if(!no){preview.dataset.mismatch='false';preview.textContent='Enter a Job Card number to preview available details.';return;}
+        const jc=(window.state?.jobs||[]).find(j=>norm(j?.no)===norm(no));
+        if(!jc){preview.dataset.mismatch='false';preview.textContent='Job Card '+no+' is not in the current local view. The server will validate it when you confirm.';return;}
+        const checks=[[d.make,jc.make||jc.brand],[d.model,jc.model],[d.year,jc.year||jc.vehicleYear],[d.registration,jc.reg||jc.registration],[d.vin,jc.vin]];
+        const mismatch=checks.some(([a,b])=>norm(a)&&norm(b)&&norm(a)!==norm(b));
+        preview.dataset.mismatch=String(mismatch);
+        preview.textContent='JC '+no+' · '+[jc.make||jc.brand,jc.model,jc.year||jc.vehicleYear].filter(Boolean).join(' ')+
+          ' · '+String(jc.reg||jc.registration||'Registration not recorded')+
+          (mismatch?'. Vehicle information appears different; the server will reject an invalid link.':'. Vehicle details appear consistent. The server will verify the link.');
+      }
+      document.addEventListener('keydown',onKey);
+      overlay.querySelector('.rdb-link-cancel').addEventListener('click',()=>finish(null));
+      overlay.addEventListener('click',e=>{if(e.target===overlay)finish(null);});
+      input.addEventListener('input',updatePreview);
+      form.addEventListener('submit',e=>{
+        e.preventDefault();
+        const number=String(input.value||'').trim().toUpperCase();
+        const reason=String(form.elements.namedItem('reason')?.value||'').trim();
+        if(!/^[A-Z0-9][A-Z0-9/-]{0,39}$/.test(number)){validation.textContent='Enter a valid existing Job Card number.';input.focus();return;}
+        if(!reason){validation.textContent='A reason is required.';form.elements.namedItem('reason').focus();return;}
+        finish({number,reason});
+      });
+      input.focus();
+    });
+  }
+
   async function onClick(event){
     const button=event.target.closest("[data-rdb]");if(!button)return;
     event.preventDefault();
@@ -278,14 +372,9 @@
         const details=await window.zukaitReception.action({action:"reception",command:{operation:"GET",rc_no:rc}});
         const record=details.record;
         if(!record||record.job_card)throw Error("This checklist is already linked or no longer available. Refresh.");
-        const number=String(window.prompt("Link existing Job Card to Checklist "+rc+". Enter exact Job Card number:","")||"").trim().toUpperCase();
-        if(!number)return;
-        if(!/^[A-Z0-9][A-Z0-9/-]{0,39}$/.test(number))throw Error("Enter a valid existing Job Card number.");
-        const vehicle=[record.details?.make,record.details?.model,record.details?.year].filter(Boolean).join(" ");
-        const registration=record.details?.registration||"Not recorded";
-        if(!window.confirm("Confirm link (no new Job Card created):\\nChecklist "+rc+"\\n"+vehicle+" · "+registration+"\\nExisting Job Card "+number+"\\n\\nThe server will reject mismatched vehicles and duplicate links."))return;
-        const reason=String(window.prompt("Reason for linking these existing records:","Checklist was created before the Job Card was opened directly")||"").trim();
-        if(!reason)return;
+        const choice=await existingJobLinkDialog(record);
+        if(!choice)return;
+        const {number,reason}=choice;
         button.disabled=true;
         try{
           const result=await window.zukaitReception.action({action:"reception",command:{operation:"LINK_EXISTING_JOB",rc_no:rc,job_card:number,expected_revision:record.revision,request_id:crypto.randomUUID(),reason,confirmed:true}});
