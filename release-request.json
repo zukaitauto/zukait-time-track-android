@@ -693,6 +693,7 @@
     "physicalAcceptance": "NOT_RUN",
     "freshBackupRestore": "NOT_RUN",
     "backendChanges": false,
-    "status": "OWNER_APPROVED_MANUAL_DISPATCH_PENDING"
+    "status": "OWNER_APPROVED_MANUAL_DISPATCH_PENDING",
+    "dispatchRequest": "Owner-approved one-time V381 dispatch"
   }
 }
