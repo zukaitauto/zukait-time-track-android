@@ -2,17 +2,17 @@
   "versionName": "V381",
   "versionCode": 344,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
+  "approvedForStaff": true,
   "sourceCommit": "a2bed12c67196fc10b3586154eef0a2a8a54b3f8",
   "ownerRequestedProceed": true,
-  "ownerPublicationRequested": false,
-  "authorization": "V381 hotfix candidate for single Consumables Cost tile and Manager Reopen Work in 360 and Employee Performance report. Owner requested publish; source QA and signed acceptance must succeed before approval.",
-  "approvedAt": null,
-  "publishNonce": null,
-  "releaseHeldByOwner": true,
+  "ownerPublicationRequested": true,
+  "authorization": "Owner authorized publication of V381 hotfix for duplicated Workshop Consumables Cost tile and Reopen Work visibility for Manager report, Manager 360 and Supervisor Finished Jobs Today. Signed APK 41394721827 and Reception 41394721778 passed on exact source. No production backend schema changes. Owner defers physical Android retest and fresh backup restore; neither is represented as passed.",
+  "approvedAt": "2026-11-02T05:41:00Z",
+  "publishNonce": "owner-approved-v381-20261102-054100-hotfix",
+  "releaseHeldByOwner": false,
   "publicationRequiresSeparateInstruction": true,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V380",
+  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V381",
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
@@ -551,8 +551,8 @@
     "ownerPhysicalAcceptanceDeferred": "Owner explicitly requested publish first, test afterward on 2026-11-01; NOT_RUN.",
     "ownerBackendActivation": "NOT_AUTHORIZED; production workshop-api version 98 lacks REOPEN_ADDITIONAL and REOPEN_REPEAT; Mechanical database guard not activated."
   },
-  "ownerRequestedImmediateRelease": false,
-  "backupDeferredByOwner": false,
+  "ownerRequestedImmediateRelease": true,
+  "backupDeferredByOwner": true,
   "v378HotfixEvidence": {
     "issue": "Consumables Cost card and Materials Consumption disappear after Manager dashboard re-render",
     "fix": "Render both cards in base Workshop Performance markup, refresh via V145 existing Paint + Actual Materials calculation, cache-bust v74_updates.js",
@@ -674,5 +674,25 @@
     "scope": "Staff V380 app/web publication only, no backend mutations by release workflow",
     "githubReleaseTag": "release-V380-architecture-v2",
     "status": "APPROVED_MANUAL_DISPATCH_PENDING"
+  },
+  "v381HotfixEvidence": {
+    "sourceCommit": "a2bed12c67196fc10b3586154eef0a2a8a54b3f8",
+    "signedAcceptanceRun": 41394721827,
+    "receptionVerificationRun": 41394721778,
+    "androidArchitectureRun": 41394721749,
+    "mechanicalPhoneRun": 41394721816,
+    "apkBuildRun": 41394721723,
+    "syncCompatibilityRun": 41394721832,
+    "connectionOutageRun": 41394721841,
+    "fixes": [
+      "Single combined Consumables Cost tile, breakdown in drilldown",
+      "Manager Job 360 REOPEN WORK",
+      "Manager Employee Completed-Work Report REOPEN WORK",
+      "Supervisor Finished Jobs Today REOPEN WORK"
+    ],
+    "physicalAcceptance": "NOT_RUN",
+    "freshBackupRestore": "NOT_RUN",
+    "backendChanges": false,
+    "status": "OWNER_APPROVED_MANUAL_DISPATCH_PENDING"
   }
 }
