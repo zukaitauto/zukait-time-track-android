@@ -694,6 +694,8 @@
     "freshBackupRestore": "NOT_RUN",
     "backendChanges": false,
     "status": "OWNER_APPROVED_MANUAL_DISPATCH_PENDING",
-    "dispatchRequest": "Owner-approved one-time V381 dispatch"
+    "dispatchRequest": "Owner-approved one-time V381 dispatch",
+    "pinnedSourceBranch": "release/v381-approved-source",
+    "dispatchRetryReason": "Publisher lacked permission to create immutable source ref; source branch created explicitly at the same approved SHA"
   }
 }
