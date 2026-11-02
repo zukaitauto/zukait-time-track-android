@@ -118,7 +118,7 @@
   }catch(e){popup.close();throw e;}
  }
  async function onClick(e){const button=e.target.closest('[data-ins]');if(!button)return;e.preventDefault();try{
-  const action=button.dataset.ins;if(action==='summary'||action==='section'){section=button.dataset.section;page=0;if(section==='pending'||section==='approval'){filters.month='';filters.from='';filters.to='';}else if(!filters.month&&!filters.from&&!filters.to){filters.month=new Date(Date.now()+14400000).toISOString().slice(0,7);}return load();}
+  const action=button.dataset.ins;if(action==='summary'||action==='section'){section=button.dataset.section;page=0;if(section==='pending'||section==='approval'||section==='wip'){filters.month='';filters.from='';filters.to='';}else if(!filters.month&&!filters.from&&!filters.to){filters.month=new Date(Date.now()+14400000).toISOString().slice(0,7);}return load();}
   if(action==='lpo')return lpo(button.dataset.job);
   if(action==='checklist'){cancelPendingList();return window.zukaitReception.openRecord(button.dataset.job);}if(action==='job')return jobDetails(button.dataset.job);
   if(action==='previous'&&page>0){page--;return load();}if(action==='next'&&(page+1)*50<result.total){page++;return load();}
