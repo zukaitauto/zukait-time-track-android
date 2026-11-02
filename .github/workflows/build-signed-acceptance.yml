@@ -1,5 +1,5 @@
 name: Build Signed Acceptance APK
-# Revalidate signed V318 acceptance candidate after Reception/Insurance UI corrections.
+# Build and verify the current architecture-v2 Android acceptance candidate after insurance, incentive or reception changes.
 
 on:
   workflow_dispatch:
@@ -44,6 +44,9 @@ on:
       - tests/reception-*
       - app/src/main/assets/monthly_employee_performance.js
       - tests/monthly-employee-performance*.mjs
+      - app/src/main/assets/insurance_management.js
+      - tests/insurance-management*.mjs
+      - tests/shared-incentive-window.mjs
 
 permissions:
   contents: read
