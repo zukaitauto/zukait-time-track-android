@@ -1363,4 +1363,67 @@ jobs:
           gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
           echo 'Exact-source owner-approved V380 coordinated publication dispatched.'
 
+
+  dispatch_pinned_v381:
+    name: Publish owner-authorized V381 Workshop Performance and Reopen Work corrections
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/architecture-v2' &&
+      github.event.head_commit.message == 'Owner-approved one-time V381 dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require verified source, signed APK, Reception and owner-approved UI-only scope
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SOURCE=$(jq -r '.sourceCommit' release-ui-request.json)
+          test "$SOURCE" = "a2bed12c67196fc10b3586154eef0a2a8a54b3f8" || { echo 'V381 approved source changed'; exit 1; }
+          jq -e --arg sha "$SOURCE" '
+            .approvedForStaff == true and .ownerRequestedImmediateRelease == true and
+            .ownerPublicationRequested == true and .releaseHeldByOwner == false and
+            .versionName == "V381" and .versionCode == 344 and
+            .sourceCommit == $sha and .releaseScope == "phase1-compatible-ui" and
+            .backupDeferredByOwner == true and .productionBackendChanges == false and
+            .phase2ActivationApproved == false and .backendDeploymentRequired == false and
+            .physicalAcceptanceStatus == "NOT_RUN" and
+            (.signedAcceptanceRun == 41394721827) and (.verificationRun == 41394721778)
+          ' release-ui-request.json
+          node scripts/verify-ui-only-release.cjs
+          git cat-file -e "$SOURCE^{commit}"
+          git merge-base --is-ancestor "$SOURCE" HEAD
+          git diff --quiet "$SOURCE" HEAD -- . \
+            ':(exclude)release-request.json' \
+            ':(exclude)release-ui-request.json' \
+            ':(exclude).github/workflows/reception-check.yml'
+          for ITEM in \
+            "$(jq -r .signedAcceptanceRun release-ui-request.json):.github/workflows/build-signed-acceptance.yml" \
+            "$(jq -r .verificationRun release-ui-request.json):.github/workflows/reception-check.yml"; do
+            RUN="${ITEM%%:*}"
+            WORKFLOW="${ITEM#*:}"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN" | jq -e --arg sha "$SOURCE" --arg workflow "$WORKFLOW" '
+              .conclusion == "success" and .head_sha == $sha and
+              .head_branch == "architecture-v2" and .path == $workflow'
+          done
+          if gh release view "release-V381-architecture-v2" >/dev/null 2>&1; then
+            echo "::error::V381 already published; stop duplicate release."
+            exit 1
+          fi
+      - name: Dispatch protected coordinated V381 publisher
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
+          echo 'Exact-source owner-approved V381 coordinated publication dispatched.'
+
 # V374: revalidate current candidate after physical Android QA and direct arrival fix.
