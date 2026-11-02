@@ -213,6 +213,8 @@ node tests/reception-cancellation.mjs
 node tests/insurance-management.mjs
 node tests/insurance-approval-pending-ui.mjs
 node tests/insurance-management-api.mjs
+node tests/insurance-wip-all-dates.mjs
+node tests/reception-modern-link-dialog.mjs
 node tests/reception-management-client.mjs
 node tests/reception-management-sql.mjs
 
