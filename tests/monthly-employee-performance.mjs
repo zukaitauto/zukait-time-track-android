@@ -68,14 +68,14 @@ const unfinished=employeeMonthReport(state,'2026-10',at,'uncompleted').employees
 assert.equal(unfinished.completedAssignments,0,'uncompleted filter excludes finished work');
 assert.equal(unfinished.uncompletedAssignments,1,'uncompleted filter shows running assignment');
 assert.equal(unfinished.totalSuggested,unfinished.suggested+unfinished.id001);
-assert.equal(unfinished.efficiency,unfinished.actual>0?unfinished.suggested/unfinished.actual*100:null,'ID001 excluded from productive efficiency');
+assert.equal(unfinished.efficiency,(unfinished.suggested+unfinished.id001)/(unfinished.actual+unfinished.id001)*100,'ID001 included equally in overall efficiency');
 assert.equal(akhil.id001,120,'ID001 duty clipped to morning and afternoon windows; excludes Fri, holiday, cancelled and duplicate sessions');
 assert.equal(id001Hours(state,'E1','2026-10',at),120);
 assert.equal(id001Hours(state,'E1','2026-11',at),0);
 const zero=report.employees.find(r=>r.id==='E2');
 assert.equal(zero.completedVehicles,1,'finished vehicle with zero duty time still visible');
 assert.equal(zero.missingTime,1,'flag missing time');
-assert.equal(zero.efficiency,null,'zero actual cannot inflate efficiency');
+assert.equal(zero.efficiency,100,'ID001-only efficiency is 100% when its allocated and actual hours match');
 assert.equal(zero.suggested,0,'zero-time suggested excluded from aggregate calculation');
 assert.equal(zero.id001,120,'ID001 appears even if no productive hours for employee');
 assert.equal(report.employees.find(r=>r.id==='E3').completedVehicles,0,'mechanical jobs isolated from Body Workshop report');
@@ -83,7 +83,9 @@ assert.equal(report.totals.completedVehicles,2,'workshop-wide distinct JC count 
 assert.equal(report.totals.completedAssignments,4);
 assert.equal(report.totals.id001,240);
 const rank=completedRanking(state,'2026-10',at);
-assert.equal(rank.find(r=>r.id==='E1').efficiency,akhil.efficiency,'uses existing verified efficiency calculation');
+assert.equal(akhil.reportAssignments,3,'two completed assignments plus one consolidated ID001 row');
+assert.equal(report.totals.efficiency,(report.totals.suggested+report.totals.id001)/(report.totals.actual+report.totals.id001)*100,'total efficiency uses ID001 exactly once');
+assert.ok(Number.isFinite(rank.find(r=>r.id==='E1').efficiency),'productive-only ranking remains independently available');
 assert.equal(JSON.stringify(state),before,'reports must not write to working state');
 assert.equal(employeeMonthReport(state,'2026-11',at).totals.completedAssignments,0,'Oman monthly boundary');
 
@@ -95,4 +97,6 @@ assert.match(src,/window\.monthlyReportUI=monthlyUI/,'existing Monthly tab repla
 assert.match(src,/window\.exportManagerReport=function/,'Excel export uses consolidated report');
 assert.match(src,/data-monthly-employee/,'employee drilldown available in all-staff table');
 assert.match(src,/ID001 hours/,'ID001 included as a column in same report');
+assert.match(src,/Monthly consolidated/,'one monthly ID001 row renders in employee detail');
+assert.match(src,/Finished assignments incl ID001/,'one ID001 reporting assignment counted');
 console.log('Monthly employee completed-vehicle, efficiency and ID001 integrated Reports: PASS');
