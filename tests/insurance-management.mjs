@@ -25,7 +25,7 @@ assert.equal(insuranceLpoTransition(first.data,manager,{...request,request_id:ra
 for(const amount of ['','NaN','1e3','-1','0.0001','1000001'])assert.equal(insuranceLpoTransition(base,manager,{...request,amount},now).code,'insurance_invalid_lpo');
 for(const received_date of ['2026-02-30','2026-10-13','10/10/2026'])assert.equal(insuranceLpoTransition(base,manager,{...request,received_date},now).code,'insurance_invalid_lpo');
 assert.equal(insuranceLpoTransition(base,manager,{...request,job_card:'2'},now).code,'insurance_job_required');
-let report=insuranceProjection(first.data,[],{section:'pending',month:'2026-10'});assert.deepEqual(report.rows.map(x=>x.job_card),['100']);assert.equal(report.summary.collected_amount,123.456);assert.equal(report.summary.delivered_count,1);assert.deepEqual(report.company_breakdown,[{company:'A',count:1}]);
+let report=insuranceProjection(first.data,[],{section:'pending',month:'2026-10'});assert.deepEqual(report.rows.map(x=>x.job_card),[],'undelivered insurance vehicles excluded from LPO Pending');assert.equal(report.summary.collected_amount,123.456);assert.equal(report.summary.delivered_count,1);assert.deepEqual(report.company_breakdown,[{company:'A',count:1}]);
 const correction=insuranceLpoTransition(first.data,manager,{...request,request_id:randomUUID(),expected_revision:1,amount:'100.000',received_date:'2026-09-30',reason:'Received date corrected'},now);assert.equal(correction.ok,true);assert.equal(correction.job.insuranceLpo.history.length,2);
 assert.equal(insuranceProjection(correction.data,[],{month:'2026-10'}).summary.collected_amount,0);assert.equal(insuranceProjection(correction.data,[],{month:'2026-09'}).summary.collected_amount,100);
 const invoice={operation:'FINAL_INVOICE_ENTRY',jobCard:'10',amount:'123.456',invoiceDate:'2026-10-10',expectedQcRevision:0};
@@ -53,3 +53,18 @@ for(const section of ['jobs','pending','wip','delivered','collected']){
  assert.deepEqual(actual,expected,'Noninsurance jobs must not affect '+section+' rows, counts, companies or totals');
 }
 console.log('Insurance-only scope verified for every management job list and summary, including misleading company names');
+
+// Pending defaults to every delivered insurance vehicle regardless of creation month;
+// advanced delivery-date periods override the optional month filter.
+const oct=Date.parse('2026-10-12T12:00:00Z'),sep=Date.parse('2026-09-18T12:00:00Z');
+const pendingFixture={jobs:[
+ {no:'P1',jobType:'INSURANCE',insuranceCompany:'A',createdAt:sep,delivered:true,deliveredAt:sep},
+ {no:'P2',jobType:'INSURANCE',insuranceCompany:'A',createdAt:sep,delivered:true,deliveredAt:oct},
+ {no:'P3',jobType:'INSURANCE',insuranceCompany:'A',createdAt:oct,delivered:false},
+ {no:'P4',jobType:'CASH',createdAt:oct,delivered:true,deliveredAt:oct},
+ {no:'P5',jobType:'INSURANCE',createdAt:oct,delivered:true,deliveredAt:oct,insuranceLpo:{amount:20,receivedDate:'2026-10-12'}}
+]};
+assert.deepEqual(insuranceProjection(pendingFixture,[],{section:'pending'}).rows.map(r=>r.job_card),['P2','P1']);
+assert.deepEqual(insuranceProjection(pendingFixture,[],{section:'pending',month:'2026-09'}).rows.map(r=>r.job_card),['P1']);
+assert.deepEqual(insuranceProjection(pendingFixture,[],{section:'pending',month:'2026-11',from:'2026-09-01',to:'2026-10-31'}).rows.map(r=>r.job_card),['P2','P1']);
+assert.equal(insuranceProjection(pendingFixture,[],{section:'pending',from:'2026-10-01'}).rows[0].job_card,'P2');
