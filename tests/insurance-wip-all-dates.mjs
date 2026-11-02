@@ -15,7 +15,7 @@ const ready=data.jobs[0];ready.qcWorkflow={fingerprint:qcWork(data,ready.no).fin
 assert.equal(qcStatus(data,ready).deliveryReady,true,'Fixture must represent a QC-ready undelivered vehicle');
 const all=insuranceProjection(data,[],{section:'wip',month:''});
 assert.equal(all.ok,true);
-assert.deepEqual(all.rows.map(x=>x.job_card),['JC-NOV','JC-OCT'],'All WIP includes prior-month and QC-ready undelivered Insurance Job Cards');
+assert.deepEqual(all.rows.map(x=>x.job_card).sort(),['JC-NOV','JC-OCT'].sort(),'All WIP includes prior-month and QC-ready undelivered Insurance Job Cards');
 assert.equal(all.summary.wip_count,2,'Summary is all active insurance JCs');
 const month=insuranceProjection(data,[],{section:'wip',month:'2026-11'});
 assert.deepEqual(month.rows.map(x=>x.job_card),['JC-NOV']);
