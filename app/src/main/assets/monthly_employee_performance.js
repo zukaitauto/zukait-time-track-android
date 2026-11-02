@@ -80,7 +80,9 @@ export function employeeMonthReport(data,month,at=Date.now(),workFilter='complet
   e.deliveredVehicles=[...finished].filter(jc=>jobs.get(jc)?.delivered===true).length;
   e.totalSuggested=e.suggested+e.id001;
   e.totalActual=e.actual+e.id001;
-  e.efficiency=e.actual>0?e.suggested/e.actual*100:null;
+  e.efficiency=e.totalActual>0?e.totalSuggested/e.totalActual*100:null;
+  // Waiting time is a single reporting assignment, never an additional vehicle.
+  e.reportAssignments=e.completedAssignments+e.uncompletedAssignments+(e.id001>0?1:0);
   e.details.sort((a,b)=>(b.completedAt??cutoff)-(a.completedAt??cutoff)||a.jc.localeCompare(b.jc));
  }
  const employees=[...byEmployee.values()].sort((a,b)=>{
@@ -92,7 +94,7 @@ export function employeeMonthReport(data,month,at=Date.now(),workFilter='complet
  const suggested=employees.reduce((n,e)=>n+e.suggested,0),actual=employees.reduce((n,e)=>n+e.actual,0),id001=employees.reduce((n,e)=>n+e.id001,0);
  return {month,workFilter,from:bounds.from,to:bounds.to,employees,totals:{employees:employees.length,completedVehicles:completedJobs.size,
   completedAssignments:employees.reduce((n,e)=>n+e.completedAssignments,0),uncompletedAssignments:employees.reduce((n,e)=>n+e.uncompletedAssignments,0),
-  suggested,actual,totalSuggested:suggested+id001,totalActual:actual+id001,efficiency:actual>0?suggested/actual*100:null,
+  suggested,actual,totalSuggested:suggested+id001,totalActual:actual+id001,efficiency:actual+id001>0?(suggested+id001)/(actual+id001)*100:null,
   id001,missingTime:employees.reduce((n,e)=>n+e.missingTime,0)}};
 }
 function stateData(){
@@ -103,13 +105,13 @@ function stateData(){
 function summaryCards(e){
  return '<div class="zukait-monthly-summary">'+[
   ['Completed vehicles',e.completedVehicles],['Delivered (now)',e.deliveredVehicles],
-  ['Finished assignments',e.completedAssignments],['Allocated incl ID001',fmt(e.totalSuggested)],
+  ['Finished assignments incl ID001',e.completedAssignments+(e.id001>0?1:0)],['Allocated incl ID001',fmt(e.totalSuggested)],
   ['Actual incl ID001',fmt(e.totalActual)],['Efficiency',pct(e.efficiency)],
   ['ID001 waiting',fmt(e.id001)]
  ].map(([label,value])=>'<div class="zukait-monthly-kpi"><span>'+esc(label)+'</span><b>'+esc(value)+'</b></div>').join('')+'</div>';
 }
 function detailTable(e){
- if(!e.details.length)return '<p class="notice">No assignments match this work filter. ID001 hours are included in the totals above.</p>';
+ if(!e.details.length&&!e.id001)return '<p class="notice">No assignments match this work filter.</p>';
  // Reports are read-only. Reopen invokes the existing Manager/Supervisor
  // authorization, confirmation and time-preserving assignment flow.
  const manager=typeof me!=='undefined'&&me?.role==='Manager';
@@ -117,10 +119,11 @@ function detailTable(e){
  const rowAction=r=>!manager?'':('<td>'+(r.status==='Completed'&&!r.delivered?'<button type="button" class="secondary zukait-monthly-reopen" data-reopen-jc="'+esc(r.jc)+'">↻ REOPEN WORK</button>':'—')+'</td>');
  return '<div class="report-table-wrap zukait-monthly-scroll"><table><thead><tr><th>JC</th><th>Vehicle / Registration</th><th>Work status</th><th>Finished (Oman)</th><th>Allocated</th><th>Actual</th><th>Efficiency</th><th>Vehicle status</th>'+actions+'</tr></thead><tbody>'+
  e.details.map(r=>'<tr><td><b>'+esc(r.jc)+'</b></td><td>'+esc(r.vehicle)+'<small class="zukait-monthly-sub">'+esc(r.registration)+'</small></td><td>'+esc(r.status)+'</td><td>'+(r.completedAt==null?'—':esc(when(r.completedAt)))+'</td><td>'+fmt(r.allocated)+'</td><td>'+fmt(r.actual)+'</td><td>'+pct(r.efficiency)+'</td><td>'+(r.delivered?'Delivered':'Not delivered')+'</td>'+rowAction(r)+'</tr>').join('')+
+ +(e.id001>0?'<tr><td><b>ID001</b></td><td>Waiting Time<small class="zukait-monthly-sub">Monthly consolidated</small></td><td>Completed (monthly)</td><td>—</td><td>'+fmt(e.id001)+'</td><td>'+fmt(e.id001)+'</td><td>100.0%</td><td>Not a vehicle</td>'+(manager?'<td>—</td>':'')+'</tr>':'')+
  '</tbody></table></div>';
 }
 
-const note='<p class="zukait-monthly-note">Completed work is selected by the technician finish date in Oman. Allocated and actual productive time cover each finished assignment, including work done before this month. Efficiency = total allocated ÷ total actual × 100, not an average of job percentages. ID001 includes normal duty hours in the selected month only and is added once to the displayed Allocated and Actual totals, but not to productive efficiency. Uncompleted work uses recorded duty time within the selected month. Repeat, overtime and Mechanical department jobs are excluded from Body Workshop performance. Delivered status reflects the current vehicle status.</p>';
+const note='<p class="zukait-monthly-note">Completed work is selected by the technician finish date in Oman. Allocated and actual productive time cover each finished assignment, including work done before this month. Efficiency = total allocated ÷ total actual × 100, not an average of job percentages. ID001 includes normal duty hours in the selected month only. It appears once as a monthly reporting assignment, with equal allocated and actual hours, and contributes once to overall efficiency and achieved-hours totals. It does not count as a completed vehicle. Uncompleted work uses recorded duty time within the selected month. Repeat, overtime and Mechanical department jobs are excluded from Body Workshop performance. Delivered status reflects the current vehicle status.</p>';
 const styles='<style>.zukait-monthly-report{color:#18324d;font-size:14px}.zukait-monthly-report label{display:grid;gap:5px;color:#284767;font-weight:700}.zukait-monthly-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:14px 0}.zukait-monthly-toolbar input,.zukait-monthly-toolbar select{min-height:44px;min-width:160px;border-radius:10px;border:1px solid #b6cbe1;background:#fff;color:#1c3554;padding:8px}.zukait-monthly-toolbar button{min-height:44px}.zukait-monthly-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px;margin:12px 0}.zukait-monthly-kpi{border:1px solid #d2e1ee;border-radius:12px;background:#f4f8fd;padding:12px;display:grid;gap:8px}.zukait-monthly-kpi span{font-size:12px;font-weight:750;color:#486482}.zukait-monthly-kpi b{font-size:18px;color:#153e65;font-variant-numeric:tabular-nums}.zukait-monthly-scroll{overflow-x:auto}.zukait-monthly-scroll table{min-width:650px;width:100%}.zukait-monthly-scroll th,.zukait-monthly-scroll td{font-size:13px;padding:10px 8px;text-align:left;vertical-align:middle}.zukait-monthly-sub{display:block;color:#647b90;margin-top:4px}.zukait-monthly-note{font-size:12px;line-height:1.5;color:#4b6279;margin:15px 0}.zukait-monthly-report .zukait-monthly-employee{min-width:110px;text-align:left;font-weight:750}.zukait-monthly-report [data-monthly-employee]:focus-visible{outline:3px solid #2563eb;outline-offset:2px}@media(max-width:480px){.zukait-monthly-toolbar{align-items:stretch}.zukait-monthly-toolbar label{flex:1 1 100%}.zukait-monthly-toolbar select,.zukait-monthly-toolbar input{width:100%}.zukait-monthly-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}</style>';
 function employeeUI(){
  const people=(stateData().users||[]).filter(u=>u?.role==='Employee');
@@ -142,7 +145,7 @@ function renderMonthly(){
  if(!report){result.innerHTML='<p class="notice">Select a valid month.</p>';return;}
  const total=report.totals;
  result.innerHTML='<div class="zukait-monthly-summary">'+[
- ['Employees',total.employees],['Unique completed vehicles',total.completedVehicles],['Finished assignments',total.completedAssignments],
+ ['Employees',total.employees],['Unique completed vehicles',total.completedVehicles],['Finished assignments incl ID001',total.completedAssignments+report.employees.filter(e=>e.id001>0).length],
  ['Allocated incl ID001',fmt(total.totalSuggested)],['Actual incl ID001',fmt(total.totalActual)],['Efficiency',pct(total.efficiency)],['Total ID001',fmt(total.id001)]
  ].map(([label,v])=>'<div class="zukait-monthly-kpi"><span>'+esc(label)+'</span><b>'+esc(v)+'</b></div>').join('')+'</div>'+
  '<div class="report-table-wrap zukait-monthly-scroll"><table><thead><tr><th>Employee</th><th>Department</th><th>Completed vehicles</th><th>Delivered (now)</th><th>Allocated incl ID001</th><th>Actual incl ID001</th><th>Efficiency</th><th>ID001 hours</th></tr></thead><tbody>'+
@@ -165,12 +168,12 @@ function exportReport(type){
  if(type==='monthly'){
   window.downloadExcelFile('zukait-employee-performance-'+eMonth,
    ['Employee','Department','Completed Vehicles','Delivered Now','Finished Assignments','Allocated incl ID001','Actual incl ID001','Efficiency','ID001 Hours'],
-   report.employees.map(e=>[e.name,e.department,e.completedVehicles,e.deliveredVehicles,e.completedAssignments,fmt(e.totalSuggested),fmt(e.totalActual),pct(e.efficiency),fmt(e.id001)]));
+   report.employees.map(e=>[e.name,e.department,e.completedVehicles,e.deliveredVehicles,e.completedAssignments+(e.id001>0?1:0),fmt(e.totalSuggested),fmt(e.totalActual),pct(e.efficiency),fmt(e.id001)]));
  }else{
   const emp=document.getElementById('empReportPerson')?.value,e=report.employees.find(x=>x.id===emp);if(!e)return;
   window.downloadExcelFile('zukait-employee-'+emp+'-performance-'+eMonth,
    ['Employee','JC Number','Vehicle','Registration','Work Status','Completed (Oman)','Allocated','Actual','Efficiency','Delivered Now','Employee Total ID001'],
-   e.details.map(d=>[e.name,d.jc,d.vehicle,d.registration,d.status,d.completedAt==null?'—':when(d.completedAt),fmt(d.allocated),fmt(d.actual),pct(d.efficiency),d.delivered?'Yes':'No',fmt(e.id001)]).concat(e.details.length?[]:[[e.name,'No matching assignments','','','','','','','','',fmt(e.id001)]]));
+   e.details.map(d=>[e.name,d.jc,d.vehicle,d.registration,d.status,d.completedAt==null?'—':when(d.completedAt),fmt(d.allocated),fmt(d.actual),pct(d.efficiency),d.delivered?'Yes':'No','']).concat(e.id001>0?[[e.name,'ID001','Waiting Time','', 'Completed (monthly)','',fmt(e.id001),fmt(e.id001),'100.0%','Not a vehicle',fmt(e.id001)]]:[]));
  }
 }
 if(typeof window!=='undefined'){
