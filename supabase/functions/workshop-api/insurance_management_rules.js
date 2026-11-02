@@ -17,7 +17,8 @@ export function insuranceProjection(data,receptions,opts={}){
  const breakdown=Object.entries(delivered.reduce((a,j)=>{const c=j.insuranceCompany||'Not recorded';a[c]=(a[c]||0)+1;return a;},{})).map(([company,count])=>({company,count})).sort((a,b)=>a.company.localeCompare(b.company));
  const collected=filtered.filter(j=>lpoComplete(j)&&j.insuranceLpo.receivedDate.startsWith(month));
  const waiting=(receptions||[]).filter(r=>key(r.job_type)==='INSURANCE'&&!r.job_card&&!r.outcome&&(!r.repair_status||r.repair_status==='PENDING')&&!r.released_date&&r.approval_status==='WAITING'&&r.details?.direct_job_only!==true&&(!company||r.insurance_company===company));
- const wip=filtered.filter(j=>!j.delivered&&!qcStatus(data,j).deliveryReady);
+ // All undelivered insurance Job Cards remain in WIP, including QC-ready vehicles.
+ const wip=filtered.filter(j=>!j.delivered);
  const section=opts.section||'jobs';
  const selected={jobs:filtered,pending:filtered.filter(j=>j.delivered&&!lpoComplete(j)),collected,delivered,wip}[section];
  if(!selected)return {ok:false,code:'insurance_invalid_section'};
