@@ -9,7 +9,7 @@ export function insuranceProjection(data,receptions,opts={}){
  const jobs=[...unique.values()];
  const receptionByNo=new Map((receptions||[]).filter(r=>r?.rc_no).map(r=>[key(r.rc_no),r]));
  const month=String(opts.month||new Date(Date.now()+14400000).toISOString().slice(0,7));
- if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))return {ok:false,code:'insurance_invalid_filter'};
+ if(opts.month&&!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))return {ok:false,code:'insurance_invalid_filter'};
  if((opts.from&&!invoiceDateValid(opts.from))||(opts.to&&!invoiceDateValid(opts.to))||(opts.from&&opts.to&&opts.from>opts.to))return {ok:false,code:'insurance_invalid_filter'};
  const company=String(opts.company||'');
  const filtered=jobs.filter(j=>!company||j.insuranceCompany===company);
@@ -19,16 +19,16 @@ export function insuranceProjection(data,receptions,opts={}){
  const waiting=(receptions||[]).filter(r=>key(r.job_type)==='INSURANCE'&&!r.job_card&&!r.outcome&&(!r.repair_status||r.repair_status==='PENDING')&&!r.released_date&&r.approval_status==='WAITING'&&r.details?.direct_job_only!==true&&(!company||r.insurance_company===company));
  const wip=filtered.filter(j=>!j.delivered&&!qcStatus(data,j).deliveryReady);
  const section=opts.section||'jobs';
- const selected={jobs:filtered,pending:filtered.filter(j=>!lpoComplete(j)),collected,delivered,wip}[section];
+ const selected={jobs:filtered,pending:filtered.filter(j=>j.delivered&&!lpoComplete(j)),collected,delivered,wip}[section];
  if(!selected)return {ok:false,code:'insurance_invalid_section'};
  const search=String(opts.search||'').toLowerCase();
  const rows=selected.map(j=>{const reception=receptionByNo.get(key(j.receptionNo));const approvalHistory=reception?.insurance?.approvals||reception?.approvals||[];const approvedDates=approvalHistory.map(a=>String(a?.approval_date||'')).filter(d=>invoiceDateValid(d));return {job_card:String(j.no),date:date(j.createdAt),vehicle:[j.make||j.brand,j.model].filter(Boolean).join(' ')||j.vehicle||'',
   year:j.year||j.modelYear||j.vehicleYear||j.model_year||j.vehicle_year||'',registration:j.reg||'',claim:j.claimNo||'',insurance_company:j.insuranceCompany||'',delivered_date:date(j.deliveredAt),
   lpo_amount:lpoComplete(j)?j.insuranceLpo.amount:null,lpo_received_date:j.insuranceLpo?.receivedDate||'',
   lpo_revision:Number(j.insuranceLpo?.revision||0),lpo_history:j.insuranceLpo?.history||[],approval_date:approvedDates[0]||'',reception_location:['VWC','VIW'].includes(key(reception?.location||j.receptionLocation))?key(reception?.location||j.receptionLocation):'',status:j.delivered?'Delivered':j.status||'Open'};})
- .filter(r=>{const day=section==='collected'?r.lpo_received_date:section==='delivered'?r.delivered_date:r.date;
-  return (!opts.month||day.startsWith(month))&&(!opts.from||day>=opts.from)&&(!opts.to||day<=opts.to)&&(!search||[r.job_card,r.vehicle,r.registration,r.claim,r.insurance_company].some(x=>String(x).toLowerCase().includes(search)));})
- .sort((a,b)=>b.job_card.localeCompare(a.job_card,'en',{numeric:true}));
+ .filter(r=>{const day=section==='collected'?r.lpo_received_date:(section==='delivered'||section==='pending')?r.delivered_date:r.date;
+  return ((opts.from||opts.to)||!opts.month||day.startsWith(month))&&(!opts.from||day>=opts.from)&&(!opts.to||day<=opts.to)&&(!search||[r.job_card,r.vehicle,r.registration,r.claim,r.insurance_company].some(x=>String(x).toLowerCase().includes(search)));})
+ .sort((a,b)=>section==='pending'?(b.delivered_date.localeCompare(a.delivered_date)||b.job_card.localeCompare(a.job_card,'en',{numeric:true})):b.job_card.localeCompare(a.job_card,'en',{numeric:true}));
  const page=Math.max(0,Number.isInteger(Number(opts.page))?Number(opts.page):0);
  return {ok:true,section,month,companies:[...new Set(jobs.map(j=>j.insuranceCompany).filter(Boolean))].sort(),
   summary:{collected_amount:collected.reduce((s,j)=>s+Math.round(j.insuranceLpo.amount*1000),0)/1000,delivered_count:delivered.length,approval_pending:waiting.length,wip_count:wip.length},
