@@ -33,6 +33,7 @@ on:
       - "tests/v2-estimate-*"
       - "tests/reception-pages-publication-safety.mjs"
       - "release-request.json"
+      - "release-ui-request.json"
       - "app/src/main/assets/v2/features/insurance/**"
       - "supabase/functions/workshop-api/**"
       - "supabase/functions/staff-auth/**"
