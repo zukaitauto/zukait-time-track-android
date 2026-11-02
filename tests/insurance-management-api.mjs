@@ -20,7 +20,7 @@ const reset=m=>{state=structuredClone(baseline);revision=1;writes=0;attempts=0;m
 async function call(body){const res=await serve(new Request('https://qa.invalid',{method:'POST',headers:{apikey:'qa-key','x-zukait-session':'qa'},body:JSON.stringify(body)}));return {status:res.status,body:await res.json()};}
 const request=()=>({action:'insurance_lpo',job_card:'JC100',amount:'25.125',received_date:'2026-10-10',expected_revision:0,request_id:randomUUID(),reason:''});
 reset();for(const denied of ['Supervisor','Receptionist','Employee','Purchaser']){role=denied;assert.equal((await call(request())).status,403);assert.equal((await call({action:'insurance_dashboard'})).status,403);}assert.equal(writes,0);
-reset();let r=await call({action:'insurance_dashboard',section:'pending',month:'2026-10'});assert.equal(r.status,200);assert.equal(r.body.rows.length,1);assert.equal(writes,0);
+reset();let r=await call({action:'insurance_dashboard',section:'pending',month:'2026-10'});assert.equal(r.status,200);assert.equal(r.body.rows.length,0,'undelivered JC cannot enter LPO Pending');assert.equal(writes,0);
 assert.equal((await call({action:'insurance_dashboard',role:'Manager'})).status,400);
 reset('conflict');r=await call(request());assert.equal(r.status,200);assert.equal(attempts,2);assert.ok(state.expenses.some(x=>x.id==='concurrent'));assert.equal(writes,1);
 reset('lost');const receipt=request();assert.equal((await call(receipt)).status,500);assert.equal(writes,1);r=await call(receipt);assert.equal(r.body.duplicate,true);assert.equal(writes,1);
