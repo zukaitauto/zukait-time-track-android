@@ -121,10 +121,10 @@ const performanceSection=legacy.slice(
  legacy.indexOf('/* V',legacy.indexOf('/* V123 MANAGER WORKSHOP PERFORMANCE')+6)
 );
 assert.match(performanceSection,/class="v123-perf v145-consumables"/);
-assert.match(performanceSection,/class="v123-perf v377-materials-consumption"/);
+assert.doesNotMatch(performanceSection,/class="v123-perf v377-materials-consumption"/,'materials included within Consumables Cost');
 assert.match(performanceSection,/window\.v145ApplyConsumablesPerformance\?\.\(\)/);
 assert.match(performanceSection,/v145OpenConsumablesPerformance\(\)/);
-assert.match(performanceSection,/v145SetExpenseCategory\(\\'other\\'\)/);
+assert.doesNotMatch(performanceSection,/const materialsCard=/,'do not duplicate materials in dashboard');
 const view={innerHTML:''};
 const managerRoot={querySelector:selector=>selector==='.v123-manager-performance'?view:null};
 let enhanced=0;
@@ -143,9 +143,9 @@ vm.runInNewContext(performanceSection,screen);
 for(let redraw=1;redraw<=3;redraw++){
  screen.window.v123ApplyManagerPerformance();
  assert.match(view.innerHTML,/Consumables Cost<\/span><b>OMR 6\.123/,'paint plus materials cost survives repaint');
- assert.match(view.innerHTML,/Total Materials Consumption<\/span><b>OMR 2\.345/,'finalized materials cost survives repaint');
+ assert.doesNotMatch(view.innerHTML,/Total Materials Consumption/,'materials amount belongs in the drilldown, not a second dashboard tile');
  assert.equal((view.innerHTML.match(/class="v123-perf v145-consumables"/g)||[]).length,1,'one consumables tile');
- assert.equal((view.innerHTML.match(/class="v123-perf v377-materials-consumption"/g)||[]).length,1,'one materials tile');
+ assert.equal((view.innerHTML.match(/class="v123-perf v377-materials-consumption"/g)||[]).length,0,'no duplicate materials tile');
  assert.equal(enhanced,redraw,'V145 detailed report remains linked after base repaint');
 }
 
