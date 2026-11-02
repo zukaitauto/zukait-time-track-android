@@ -35,7 +35,7 @@ const unchanged=JSON.stringify(state);
 ctx.window.v123ManagerPerformanceOpen('eff');
 assert.match(modal,/Report month \(Oman\)/,'month filter visible inside popup');
 assert.match(modal,/id="v123EfficiencyMonth" type="month" value="2026-11"/,'current Oman month defaults to November');
-assert.match(modal,/12133/,'default current month includes November completion');
+assert.match(modal,/Akhil/,'default November ranking includes employee with November completion');
 assert.doesNotMatch(modal,/12043/,'default November excludes October completion');
 ctx.window.v123ManagerPerformanceMonth('2026-10');
 assert.match(modal,/value="2026-10"/,'picker retains October when changed');
