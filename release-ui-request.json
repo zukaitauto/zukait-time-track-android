@@ -3,7 +3,7 @@
   "versionCode": 344,
   "releaseScope": "phase1-compatible-ui",
   "approvedForStaff": false,
-  "sourceCommit": "db68ac3dafe1f9674c85284808bdffaab7b0f095",
+  "sourceCommit": "a2bed12c67196fc10b3586154eef0a2a8a54b3f8",
   "approvedAt": null,
   "publishNonce": null,
   "productionBackendChanges": false,
@@ -11,13 +11,13 @@
   "physicalAcceptanceStatus": "NOT_RUN",
   "reason": "V381 hotfix candidate: one combined Consumables Cost card, Manager reopen access from employee reports and 360 details.",
   "backendDeploymentRequired": false,
-  "verificationSummary": "Awaiting source-aligned signed Android and Reception verification.",
+  "verificationSummary": "V381 candidate source a2bed12c67196fc10b3586154eef0a2a8a54b3f8 signed acceptance 41394721827 PASS, Reception 41394721778 IN_PROGRESS; publication held until matching success.",
   "ownerRequestedImmediateRelease": false,
   "ownerPublicationRequested": false,
   "releaseHeldByOwner": true,
   "backupDeferredByOwner": false,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
+  "signedAcceptanceRun": 41394721827,
+  "verificationRun": 41394721778,
   "v380PaintReceivedDate": {
     "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
     "feature": "Paint PO Received Date visible in summary/list and editable by Manager with correction reason; preserves original received employee and receipt time; audit before/after; rejects invalid/future dates; pending PO cannot be received by correction",
@@ -69,5 +69,11 @@
     "published": false
   },
   "ownerRequestedProceed": true,
-  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V380"
+  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V380",
+  "previousPublishedRelease": {
+    "versionName": "V380",
+    "versionCode": 343,
+    "sourceCommit": "48de3469e7405378f9d9a3782ea9f64f8e65b50b",
+    "releaseTag": "release-V380-architecture-v2"
+  }
 }
