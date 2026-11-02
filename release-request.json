@@ -3,7 +3,7 @@
   "versionCode": 344,
   "releaseScope": "phase1-compatible-ui",
   "approvedForStaff": false,
-  "sourceCommit": "db68ac3dafe1f9674c85284808bdffaab7b0f095",
+  "sourceCommit": "a2bed12c67196fc10b3586154eef0a2a8a54b3f8",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": false,
   "authorization": "V381 hotfix candidate for single Consumables Cost tile and Manager Reopen Work in 360 and Employee Performance report. Owner requested publish; source QA and signed acceptance must succeed before approval.",
@@ -16,13 +16,13 @@
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
+  "signedAcceptanceRun": 41394721827,
+  "verificationRun": 41394721778,
   "previousPublishedRelease": {
-    "versionName": "V379",
-    "versionCode": 342,
-    "sourceCommit": "acb958587b34fd8ddcdfe77e8782b6168bf83363",
-    "releaseTag": "release-V379-architecture-v2"
+    "versionName": "V380",
+    "versionCode": 343,
+    "sourceCommit": "48de3469e7405378f9d9a3782ea9f64f8e65b50b",
+    "releaseTag": "release-V380-architecture-v2"
   },
   "v377VerificationEvidence": {
     "androidBuildRun": 41175629369,
