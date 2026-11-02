@@ -47,7 +47,7 @@ assert.match(modal,/12043/,'clicking staff opens October finished vehicle detail
 assert.match(modal,/Staff ranking/,'staff detail contains back navigation');
 ctx.window.v123ManagerPerformanceStaffBack();
 assert.match(modal,/1 job cards · 1 finished assignments/,'deduped job cards and completed technician assignments');
-assert.match(modal,/Efficiency: <strong>150.0%/,'weighted October efficiency preserved');
+assert.match(modal,/Efficiency: 150\.0%/,'weighted October efficiency preserved');
 assert.doesNotMatch(modal,/12133/,'November completion does not leak into October');
 assert.doesNotMatch(modal,/11953/,'September finish does not leak into October');
 assert.doesNotMatch(modal,/REWORK/,'repeat work excluded');
