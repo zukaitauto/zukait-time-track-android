@@ -47,6 +47,8 @@ on:
       - app/src/main/assets/monthly_employee_performance.js
       - tests/monthly-employee-performance*.mjs
       - app/src/main/assets/insurance_management.js
+      - app/src/main/assets/reception_dashboard.js
+      - tests/insurance-wip-all-dates.mjs
       - tests/insurance-management*.mjs
       - tests/shared-incentive-window.mjs
 
