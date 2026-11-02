@@ -1,23 +1,23 @@
 {
   "versionName": "V382",
   "versionCode": 345,
-  "releaseScope": "insurance-lpo-and-incentive",
-  "approvedForStaff": false,
-  "sourceCommit": "5ed629e9cd501548138acf33d439dda9edc80fe5",
+  "releaseScope": "phase1-compatible-ui",
+  "approvedForStaff": true,
+  "sourceCommit": "8e74d9df42d9eb94ef16ddb1c311bb8832c38780",
   "ownerRequestedProceed": true,
-  "ownerPublicationRequested": false,
-  "authorization": "V382 QA candidate for delivered-only all-dates LPO Pending, advanced date override and Monthly Incentive month/export controls. Not authorized for production publication. QA insurance backend rule deployed separately; production backend unchanged. Requires signed V382 acceptance, backend authorization/deployment, and explicit release approval.",
-  "approvedAt": null,
-  "publishNonce": null,
-  "releaseHeldByOwner": true,
+  "ownerPublicationRequested": true,
+  "authorization": "Owner explicitly instructed 2026-11-02 to publish fixes immediately and test afterward. Physical Android retest and fresh backup restore are deferred and NOT PASSED. Production workshop-api insurance LPO rule was deployed separately to version 100, active, exact module matches architecture-v2; release workflow publishes frontend and signed APK only.",
+  "approvedAt": "2026-11-02T14:17:35.748Z",
+  "publishNonce": "v382-owner-publish-request-20261102-after-backend-v100",
+  "releaseHeldByOwner": false,
   "publicationRequiresSeparateInstruction": true,
-  "physicalAcceptanceStatus": "NOT_RUN_FOR_V382",
+  "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V382",
-  "backendDeploymentRequired": true,
+  "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
+  "signedAcceptanceRun": 41460431747,
+  "verificationRun": 41460431673,
   "previousPublishedRelease": {
     "versionName": "V381",
     "versionCode": 344,
@@ -551,7 +551,7 @@
     "ownerPhysicalAcceptanceDeferred": "Owner explicitly requested publish first, test afterward on 2026-11-01; NOT_RUN.",
     "ownerBackendActivation": "NOT_AUTHORIZED; production workshop-api version 98 lacks REOPEN_ADDITIONAL and REOPEN_REPEAT; Mechanical database guard not activated."
   },
-  "ownerRequestedImmediateRelease": false,
+  "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "v378HotfixEvidence": {
     "issue": "Consumables Cost card and Materials Consumption disappear after Manager dashboard re-render",
@@ -699,12 +699,24 @@
     "dispatchRetryReason": "Publisher lacked permission to create immutable source ref; source branch created explicitly at the same approved SHA"
   },
   "v382CandidateEvidence": {
-    "sourceCommit": "5ed629e9cd501548138acf33d439dda9edc80fe5",
+    "sourceCommit": "8e74d9df42d9eb94ef16ddb1c311bb8832c38780",
     "qaSupabaseProject": "omqgkqknbdcnotabffek",
     "qaWorkshopApiVersion": 48,
-    "productionBackendDeployment": "NOT_AUTHORIZED_NOT_PERFORMED",
-    "signedApk": "NOT_YET_VERIFIED_FOR_V382",
+    "productionBackendDeployment": "DEPLOYED_FUNCTION_V100_INSURANCE_RULE_ONLY",
+    "signedApk": "SIGNED_RUN_41460431747_PENDING_CHECK",
     "physicalPhoneTest": "NOT_RUN",
-    "releaseApproval": "PENDING"
+    "releaseApproval": "OWNER_APPROVED_RELEASE_WORKFLOW_GATED"
+  },
+  "reason": "V382 fixes: delivered insurance LPO Pending defaults all dates; advanced From–To overrides month; LPO receipt separate from invoice; Monthly Incentive month filter and Print/PDF/Excel compatible CSV. Production LPO rule separately deployed as workshop-api v100.",
+  "verificationSummary": "V382 exact source acceptance runs: signed 41460431747 and Reception 41460431673; publication workflow independently verifies success. No physical acceptance or fresh restore claimed.",
+  "productionBackendDeploymentEvidence": {
+    "projectRef": "pjknotnjkufadqavcmii",
+    "function": "workshop-api",
+    "version": 100,
+    "onlyChangedModule": "insurance_management_rules.js",
+    "deployedSeparately": true,
+    "status": "ACTIVE",
+    "moduleSourceAligned": true,
+    "productionDataEditedByDeployment": false
   }
 }
