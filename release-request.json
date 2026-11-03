@@ -8,7 +8,7 @@
   "ownerPublicationRequested": false,
   "authorization": "Owner requested V385 release on 2026-11-03. Approval held until exact-source signed APK and Reception CI pass. UI-only scope: Supervisor WIP and Need Attention tile rearrangement, plus contrast correction. No backend deployment, physical phone validation NOT_RUN, fresh backup-restore NOT_RUN.",
   "approvedAt": null,
-  "publishNonce": "v385-qa-pending-20261103",
+  "publishNonce": null,
   "releaseHeldByOwner": true,
   "publicationRequiresSeparateInstruction": true,
   "physicalAcceptanceStatus": "NOT_RUN",
