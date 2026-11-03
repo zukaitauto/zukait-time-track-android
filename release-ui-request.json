@@ -5,7 +5,7 @@
   "approvedForStaff": false,
   "sourceCommit": "23e3ffd12c95b4b89fbc7f7b32edc626f39ec362",
   "approvedAt": null,
-  "publishNonce": "v386-rc0019-release-candidate-awaiting-tests-20261103",
+  "publishNonce": null,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
