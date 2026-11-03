@@ -1,9 +1,9 @@
 {
-  "versionCode": 347,
-  "versionName": "V384",
+  "versionCode": 348,
+  "versionName": "V385",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "9e6148143b9cffe7484a7117fc95d7129e958d50",
-  "apkSha256": "c40945142af363ebc8802badcb95904b5eae3ce7f37ded4e43107a82e49bd7bc",
-  "releaseTag": "release-V384-architecture-v2"
+  "sourceCommit": "3cfddd12aac191ddf30ef3880763f4beaeb95e6f",
+  "apkSha256": "ee4e28eaf22265c0d20d2fbda0584158b3e8728802781373ef17d05d8541feb9",
+  "releaseTag": "release-V385-architecture-v2"
 }
