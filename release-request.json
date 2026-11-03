@@ -2,14 +2,14 @@
   "versionName": "V384",
   "versionCode": 347,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
+  "approvedForStaff": true,
   "sourceCommit": "9e6148143b9cffe7484a7117fc95d7129e958d50",
   "ownerRequestedProceed": true,
-  "ownerPublicationRequested": false,
-  "authorization": "V384 candidate packaging only; no authorization to publish. Supersedes V383 after owner approval and exact-source CI evidence. RC Not Open filter and Insurance dashboard CSS visual refresh.",
-  "approvedAt": null,
-  "publishNonce": null,
-  "releaseHeldByOwner": true,
+  "ownerPublicationRequested": true,
+  "authorization": "Owner explicitly requested 'publish' for V384 on 2026-11-03. Publish exact source 9e6148143b9cffe7484a7117fc95d7129e958d50 from architecture-v2 using protected coordinated workflow. Source CI signed and Reception passed. Android physical acceptance and fresh production backup-restore NOT_RUN; user previously chose test-after-release and backup deferral.",
+  "approvedAt": "2026-11-03T11:52:00Z",
+  "publishNonce": "v384-owner-approved-exact-source-20261103-1152",
+  "releaseHeldByOwner": false,
   "publicationRequiresSeparateInstruction": true,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V384",
@@ -707,8 +707,8 @@
     "physicalPhoneTest": "NOT_RUN",
     "releaseApproval": "OWNER_APPROVED_RELEASE_WORKFLOW_GATED"
   },
-  "reason": "V382 fixes: delivered insurance LPO Pending defaults all dates; advanced From–To overrides month; LPO receipt separate from invoice; Monthly Incentive month filter and Print/PDF/Excel compatible CSV. Production LPO rule separately deployed as workshop-api v100.",
-  "verificationSummary": "V383 source 138804af3cd3ce073bbfa8390ee3332ff3a85c80; signed 41582221493 SUCCESS; Reception 41582221555 SUCCESS; architecture 41582221490 SUCCESS; standard APK 41582221519 SUCCESS; production workshop-api v101 ACTIVE. Phone and fresh backup restore NOT_RUN.",
+  "reason": "V384: Reception Job Card Not Open filter; Insurance Management visual redesign; Insurance In read-only approximate amount column; Manager Work in Progress serial numbers. No source business-logic changes for these UI improvements.",
+  "verificationSummary": "Signed APK run 41609050935 SUCCESS, artifact 13218031933; Reception verification 41609050903 SUCCESS; Android build 41609050980 SUCCESS; APK build 41609050986 SUCCESS; outage safety 41609050933 SUCCESS; inactive contracts 41609050854 SUCCESS. Source 9e6148143b9cffe7484a7117fc95d7129e958d50; V384 code 347.",
   "productionBackendDeploymentEvidence": {
     "projectRef": "pjknotnjkufadqavcmii",
     "function": "workshop-api",
@@ -736,14 +736,14 @@
     "standardAndroidBuildRun": 41582221519
   },
   "v384CandidateEvidence": {
-    "status": "SIGNED_AND_QA_VERIFIED_UNAPPROVED",
+    "status": "OWNER_APPROVED_FOR_PROTECTED_PUBLICATION",
     "scope": [
       "Reception checklist Job Card Not Open filter",
       "Insurance dashboard CSS-only redesign"
     ],
     "productionWorkshopApiVersion": 103,
     "featureSourceCommit": "9e6148143b9cffe7484a7117fc95d7129e958d50",
-    "approvedForStaff": false,
+    "approvedForStaff": true,
     "physicalAndroidAcceptance": "NOT_RUN",
     "freshBackupRestore": "NOT_RUN",
     "notes": "Do not publish until V384 verification is successful and fresh exact-source approval metadata is issued.",
@@ -757,6 +757,7 @@
     "architectureBuildRun": 41609050980,
     "additionalScope": "Manager Work in Progress sequential No. display; no behavioral changes",
     "signedArtifactId": 13218031933,
-    "signedArtifactName": "ZUKAIT_SIGNED_ACCEPTANCE_APK"
+    "signedArtifactName": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
+    "sourceCommit": "9e6148143b9cffe7484a7117fc95d7129e958d50"
   }
 }
