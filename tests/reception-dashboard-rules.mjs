@@ -57,6 +57,29 @@ assert.equal(receptionDashboardProjection(simultaneousData,isolated,{section:"jo
 assert.equal(receptionDashboardProjection(simultaneousData,isolated,{section:"jobs",from:"2026-10-12"}).total,0,"Date range excludes earlier Job Cards");
 assert.equal(receptionDashboardProjection(simultaneousData,isolated,{section:"jobs",search:"JC-LINKED-NEW",month:"2026-10"}).total,1,"Combined Job Card search and month filters preserve deduplication");
 
+
+// "Job Card Not Open" is an actionable in-garage-only queue, not simply
+// a synonym for every Checklist that lacks a JC.
+const notOpenedCases=[
+ rec("RC-ELIGIBLE",50,"APPROVED","VIW"),
+ rec("RC-WAITING",49,"WAITING","VIW"),
+ {...rec("RC-CTL",48,"APPROVED","VIW"),repair_status:"CTL"},
+ {...rec("RC-NOT-REPAIRED",47,"APPROVED","VIW"),repair_status:"NOT_REPAIRED"},
+ {...rec("RC-CASH-SETTLED",46,"APPROVED","VIW","", "CASH"),outcome:"CASH_SETTLED"},
+ rec("RC-OUTSIDE",45,"APPROVED","VWC"),
+ {...rec("RC-RELEASED",44,"APPROVED","VIW"),released_date:"2026-10-12"},
+ rec("RC-OPENED",43,"APPROVED","VIW","JC-OPENED"),
+ {...rec("RC-DIRECT",42,"APPROVED","VIW"),details:{make:"Toyota",model:"Camry",registration:"QA-42",direct_job_only:true}}
+];
+const unlinked=receptionDashboardProjection({jobs:[]},notOpenedCases,{section:"checklists",checklist_status:"not_opened"});
+assert.equal(unlinked.ok,true);
+assert.deepEqual(unlinked.rows.map(r=>r.rc_no),["RC-ELIGIBLE","RC-WAITING"],"Only pending repairs in garage with no JC qualify");
+assert.equal(unlinked.total,2,"Filter total is computed before pagination");
+assert.equal(receptionDashboardProjection({jobs:[]},notOpenedCases,{section:"checklists",checklist_status:"not_opened",search:"QA-50"}).total,1,"Filter combines with registration search");
+assert.equal(receptionDashboardProjection({jobs:[]},notOpenedCases,{section:"checklists",checklist_status:"not_opened",month:"2026-09"}).total,0,"Filter combines with month");
+assert.equal(receptionDashboardProjection({jobs:[]},notOpenedCases,{section:"checklists",checklist_status:"not_opened",company_filter:"cash"}).total,0,"Filter combines with job type");
+assert.equal(receptionDashboardProjection({jobs:[]},notOpenedCases,{section:"checklists",checklist_status:"nonsense"}).code,"reception_invalid_filter");
+
 assert.equal(projection({section:"checklists",search:"JC125"}).rows[0].rc_no,"RC0011");
 assert.equal(projection({section:"checklists",search:"qa-12"}).rows[0].rc_no,"RC0012");
 assert.equal(projection({section:"checklists",search:"rc0010"}).rows[0].rc_no,"RC0010");
