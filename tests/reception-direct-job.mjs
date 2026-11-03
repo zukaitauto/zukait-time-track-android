@@ -178,4 +178,58 @@ assert.equal(w.document.getElementById('rc-external-job').elements.odometer.read
 assert.ok(w.document.getElementById('rc-external-job'));assert.equal(w.document.getElementById('rc-external-approval'),null);assert.equal(w.document.getElementById('rc-approval'),null);
 w.me={id:'QA-MGR',role:'Manager'};await w.zukaitReception.open();await click('view');await click('insurance');
 assert.ok(w.document.getElementById('rc-external-approval'));
+// Both entry points must accept a quotation-approved checklist without a new date.
+// Approved quotation work uses CREATE_JOB so its approved parts are transferred;
+// external approval work uses CREATE_EXTERNAL_JOB, as covered above.
+const quotedRecord={...searchRecord,rc_no:'RC-QUOTE-APPROVED',job_card:null,
+ repair_status:'PENDING',outcome:null,approval_status:'APPROVED',
+ details:{...searchRecord.details,registration:'54852-BB'}};
+const fetchBeforeQuote=w.fetch;
+let quotedCommand=null;
+w.fetch=async(url,args)=>{
+ const command=JSON.parse(args.body).command;
+ if(command.operation==='LIST'&&command.search)return {ok:true,json:async()=>({ok:true,rows:[quotedRecord]})};
+ if(command.operation==='GET'&&command.rc_no===quotedRecord.rc_no)return {ok:true,json:async()=>({
+  ok:true,record:quotedRecord,external_approval:{valid:false},
+  job_creation:{can_create:true},insurance:{approval_valid:true,estimates:[],approvals:[]},
+  movements:[],audit:[],preliminary_parts:{items:[]}
+ })};
+ if(command.operation==='CREATE_JOB'){
+  quotedCommand=command;
+  return {ok:false,status:409,json:async()=>({ok:false,code:'reception_staged_rejection'})};
+ }
+ return fetchBeforeQuote(url,args);
+};
+w.me={id:'QA-RC',role:'Receptionist'};
+await w.zukaitReception.openRecord(quotedRecord.rc_no);
+assert.ok(w.document.querySelector('[data-rc-action="open-approved-job"]'),
+ 'Approved, unlinked insurance checklist must display Open Job Card in its main action row');
+await click('open-approved-job');
+assert.ok(w.document.getElementById('rc-create-job'),
+ 'Open Job Card must navigate directly to verified quotation-approved form');
+assert.equal(w.document.getElementById('rc-external-approval'),null,
+ 'A verified quotation approval must not require an extra approval record');
+await w.zukaitReception.open();await click('direct-job');
+form=w.document.getElementById('rc-direct-job');
+w.document.getElementById('rc-direct-checklist-search').value='54852-BB';
+w.document.getElementById('rc-direct-checklist-find').click();await settle();
+w.document.querySelector('[data-rc-pick="0"]').click();await settle();
+assert.equal(w.document.getElementById('rc-direct-approval-entry').hidden,true,
+ 'Separate Create Job Card must reuse approved checklist date and evidence');
+assert.equal(form.elements.approval_date.required,false);
+assert.equal(form.elements.approval_confirmed.required,false);
+form.elements.job_card.value='QA-QUOTE-12177';
+form.elements.received_confirmed.checked=true;
+await submit();
+assert.ok(quotedCommand,'Separate Create Job Card must submit the existing approved checklist');
+assert.equal(quotedCommand.operation,'CREATE_JOB','Quotation approval must use audited quotation creation workflow');
+assert.equal(quotedCommand.rc_no,'RC-QUOTE-APPROVED');
+assert.equal(quotedCommand.job_card,'QA-QUOTE-12177');
+assert.equal('approval_date' in quotedCommand,false,'Do not resubmit an existing approval date');
+assert.equal('approval_confirmed' in quotedCommand,false,'Do not reapprove an already-approved case');
+quotedRecord.job_card='QA-ALREADY-LINKED';
+await w.zukaitReception.openRecord(quotedRecord.rc_no);
+assert.equal(w.document.querySelector('[data-rc-action="open-approved-job"]'),null,
+ 'Already-linked checklist must not offer duplicate Job Card creation');
+w.fetch=fetchBeforeQuote;
 w.me=null;await settle();dom.window.close();console.log('Direct Reception Job Cards: Cash/Credit/Insurance fields, manually numbered approved insurance, stable lost-response UUID, role isolation and approval controls passed (mock transport).');
