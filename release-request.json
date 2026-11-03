@@ -1,28 +1,28 @@
 {
-  "versionName": "V383",
-  "versionCode": 346,
+  "versionName": "V384",
+  "versionCode": 347,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "sourceCommit": "138804af3cd3ce073bbfa8390ee3332ff3a85c80",
+  "approvedForStaff": false,
+  "sourceCommit": "d799776dfb81a26a8ed3231bfae257974708e92a",
   "ownerRequestedProceed": true,
-  "ownerPublicationRequested": true,
-  "authorization": "Owner expressly requested 2026-11-03: 'Release new version. Then I will test'. V383 version 346 publishes only the frontend and signed APK, on architecture-v2. Production workshop-api Insurance WIP fix was separately deployed as version 101 and source verified. Exact V383 signed acceptance and Reception verification passed. Physical phone testing and fresh production backup restore are NOT_RUN; no passing results are claimed.",
-  "approvedAt": "2026-11-03T05:14:39.463Z",
-  "publishNonce": "v383-owner-publish-test-after-release-20261103-101",
-  "releaseHeldByOwner": false,
+  "ownerPublicationRequested": false,
+  "authorization": "V384 candidate packaging only; no authorization to publish. Supersedes V383 after owner approval and exact-source CI evidence. RC Not Open filter and Insurance dashboard CSS visual refresh.",
+  "approvedAt": null,
+  "publishNonce": "",
+  "releaseHeldByOwner": true,
   "publicationRequiresSeparateInstruction": true,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V383",
+  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V384",
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41582221493,
-  "verificationRun": 41582221555,
+  "signedAcceptanceRun": 0,
+  "verificationRun": 0,
   "previousPublishedRelease": {
-    "versionName": "V382",
-    "versionCode": 345,
-    "sourceCommit": "8e74d9df42d9eb94ef16ddb1c311bb8832c38780",
-    "releaseTag": "release-V382-architecture-v2"
+    "versionName": "V383",
+    "versionCode": 346,
+    "sourceCommit": "138804af3cd3ce073bbfa8390ee3332ff3a85c80",
+    "releaseTag": "release-V383-architecture-v2"
   },
   "v377VerificationEvidence": {
     "androidBuildRun": 41175629369,
@@ -734,5 +734,18 @@
     "receptionVerificationRun": 41582221555,
     "architectureVerificationRun": 41582221490,
     "standardAndroidBuildRun": 41582221519
+  },
+  "v384CandidateEvidence": {
+    "status": "UNAPPROVED_QA",
+    "scope": [
+      "Reception checklist Job Card Not Open filter",
+      "Insurance dashboard CSS-only redesign"
+    ],
+    "productionWorkshopApiVersion": 103,
+    "featureSourceCommit": "d799776dfb81a26a8ed3231bfae257974708e92a",
+    "approvedForStaff": false,
+    "physicalAndroidAcceptance": "NOT_RUN",
+    "freshBackupRestore": "NOT_RUN",
+    "notes": "Do not publish until V384 verification is successful and fresh exact-source approval metadata is issued."
   }
 }
