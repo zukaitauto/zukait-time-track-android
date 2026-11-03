@@ -26,6 +26,7 @@ users.push({id:'inactive',name:'Former painter',role:'Employee',department:'Pain
 context.openTechnicianDepartment('Painter');
 assert.doesNotMatch(elements.get('twDepartment').innerHTML,/Former painter/,'Deactivated technicians must not appear in active department list');
 assert.match(elements.get('twDepartment').innerHTML,/Employee 1/,'Active technicians stay visible');
+users.pop(); // Historical workload scenarios below exercise active staff only.
 
 const tick=()=>[...intervals.values()].forEach(fn=>fn());
 const body=()=>elements.get('twWorkload').innerHTML;
