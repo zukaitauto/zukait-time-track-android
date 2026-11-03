@@ -5,7 +5,7 @@
   "approvedForStaff": false,
   "sourceCommit": "678516b53a6169dd59f813a9689f0bb91a56ab5c",
   "approvedAt": null,
-  "publishNonce": "v385-qa-pending-20261103",
+  "publishNonce": null,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
