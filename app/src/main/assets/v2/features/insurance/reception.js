@@ -526,9 +526,11 @@
       '<div id="rc-direct-insurance" class="rc-wide" hidden><h4>Insurance Approval</h4>' +
       select('insurance_id','Insurance Company',[['','Select Insurance Company'],...companies.map(c=>[c.id,c.name])],'') +
       
+      '<p id="rc-direct-approved-note" hidden>✓ Insurance approval already verified on the selected checklist. Its approval date and evidence are reused; no new entry is needed.</p>' +
+      '<div id="rc-direct-approval-entry">' +
       input('approval_date','Approval Date','',false,'date') +
       '<label>Approval Evidence / Notes<input name="evidence" maxlength="2000" placeholder="Document reference or approval confirmation"></label>' +
-      '<label class="rc-check"><input type="checkbox" name="approval_confirmed">I confirm that insurance approval has been verified.</label></div>' +
+      '<label class="rc-check"><input type="checkbox" name="approval_confirmed">I confirm that insurance approval has been verified.</label></div></div>' +
       '</div><label>Reception Observations<textarea name="remarks" maxlength="2000"></textarea></label>' +
       '<label class="rc-wide">Work Description (optional)<textarea name="reason" rows="6" maxlength="2000" placeholder="Describe the repair work required…" style="display:block;width:100%;box-sizing:border-box;min-height:160px;margin-top:6px;padding:12px;font-size:16px;line-height:1.6;resize:vertical"></textarea></label>' +
       '<label class="rc-check"><input type="checkbox" name="received_confirmed" required>I confirm the vehicle has been received at the workshop.</label><div class="rc-actions"><button type="submit">Open Job Card</button></div></form>');
@@ -536,6 +538,30 @@
     let linkedChecklist=null,linkedApprovalValid=false;
     const searchInput=document.getElementById('rc-direct-checklist-search');
     const searchResults=document.getElementById('rc-direct-checklist-results');
+    const linkedIdentityChanged=()=>{
+      if(!linkedChecklist)return false;
+      if(['make','model','registration','year','vin','customer','contact','claim'].some(k=>
+        !sameApprovedChecklistValue(k,form.elements.namedItem(k)?.value,linkedChecklist.details?.[k])
+      ))return true;
+      return Number(form.elements.namedItem('insurance_id')?.value)!==Number(linkedChecklist.insurance_id);
+    };
+    const updateApprovalEntry=()=>{
+      const insurance=type.value==='INSURANCE';
+      const verified=insurance&&!!linkedChecklist&&linkedApprovalValid;
+      const changed=verified&&linkedIdentityChanged();
+      const reuse=verified&&!changed;
+      document.getElementById('rc-direct-approved-note').hidden=!reuse;
+      document.getElementById('rc-direct-approval-entry').hidden=reuse;
+      // Changing approved identity requires authorized renewal; unchanged
+      // checklists retain their own approved date and evidence in the server.
+      form.elements.namedItem('approval_confirmed').required=insurance&&!reuse;
+      form.elements.namedItem('approval_date').required=!!changed;
+      form.elements.namedItem('evidence').required=!!changed;
+    };
+    const fieldsThatAffectApproval=new Set(['make','model','registration','year','vin','customer','contact','claim','insurance_id']);
+    const onIdentityInput=e=>{if(fieldsThatAffectApproval.has(e.target?.name))updateApprovalEntry();};
+    form.addEventListener('input',onIdentityInput);
+    form.addEventListener('change',onIdentityInput);
     document.getElementById('rc-direct-checklist-find').onclick=async()=>{
       const query=searchInput.value.trim();
       if(!query){searchResults.textContent='Enter a registration or checklist number.';return;}
@@ -559,6 +585,7 @@
             type.value=r.job_type||'INSURANCE';type.disabled=true;type.onchange();
             form.elements.namedItem('odometer_unit').value=String(d.odometer_unit||'KM');
             if(r.insurance_id&&form.elements.insurance_id)form.elements.insurance_id.value=String(r.insurance_id);
+            updateApprovalEntry();
             const note=document.getElementById('rc-direct-checklist-note');
             note.textContent='Selected '+r.rc_no+'. Original checklist odometer: '+(d.odometer||'Not recorded')+' '+(d.odometer_unit||'KM')+'. The Job Card reading is filled from this checklist. You can edit the reading and unit; the original checklist remains unchanged.'+(linkedApprovalValid?' Existing insurance approval verified. New approval is not required unless approved vehicle details are changed.':' Approval must be completed before a linked Job Card can be opened.');
           }catch(err){error(err);}
@@ -591,18 +618,14 @@
       panel.hidden=!insurance;
       document.getElementById('rc-direct-claim').hidden=!insurance;
       form.elements.namedItem('insurance_id').required=insurance;
-      // A verified linked checklist already owns its insurance approval.
-      // The server continues to require renewed approval for real identity changes.
-      const verifiedLink=!!linkedChecklist&&linkedChecklist.job_type==='INSURANCE'&&linkedApprovalValid;
-      form.elements.namedItem('approval_confirmed').required=insurance&&!verifiedLink;
       form.elements.namedItem('claim').required=insurance;
-      form.elements.namedItem('approval_date').required=false;
-      form.elements.namedItem('evidence').required=false;
+      updateApprovalEntry();
     };
     Object.assign(form.elements.namedItem('cash_amount'),{min:'0',max:'1000000',step:'0.001'});
     type.onchange();
     form.onsubmit=async e=>{
       e.preventDefault();
+      updateApprovalEntry();
       const f=new FormData(form),details={};
       for(const k of ['make','model','registration','year','vin','customer','contact','claim','remarks'])details[k]=String(f.get(k)||'').trim();
       details.odometer=String(f.get('odometer')||'').trim();
