@@ -27,6 +27,7 @@ const original=[{user_id:'EMP001',display_name:'Asha',role:'Employee',department
 {user_id:'EMP002',display_name:'Former Employee',role:'Employee',department:'Denter',active:false}];
 let rows=structuredClone(original);
 w.me={id:'MGR001',role:'Manager'};
+let warning='';w.alert=value=>{warning=String(value)};
 w.openModal=html=>w.document.getElementById('modal').innerHTML=html;
 w.closeModal=()=>w.document.getElementById('modal').replaceChildren();
 w.showCreateUserForm=()=>w.document.getElementById('userMgmtList').innerHTML='<form>Create User</form>';
@@ -78,5 +79,5 @@ assert.deepEqual(original,[{user_id:'EMP001',display_name:'Asha',role:'Employee'
 
 w.me={id:'EMP001',role:'Employee'};
 w.openUserManagement();
-assert.equal(w.document.querySelector('#zum')!==null,true,'Non-manager click cannot reconstruct privileged management page');
+assert.equal(warning,'Manager access required.','Non-manager cannot open privileged User Management');
 console.log('PASS: manager staff status, existing inactive accounts, filters, typed-ID/password confirmation, one mutation and history preservation');
