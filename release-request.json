@@ -2,22 +2,22 @@
   "versionName": "V387",
   "versionCode": 350,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
-  "sourceCommit": "3f1f697636c3a57f8a1e337566a472e20ac7d7f6",
+  "approvedForStaff": true,
+  "sourceCommit": "9a46e767442ef1c9ffd8dbae9de00183ad35920d",
   "ownerRequestedProceed": true,
-  "ownerPublicationRequested": false,
-  "authorization": "Owner requested publish on 2026-11-03. Exact-source V387 build and all relevant checks PASS. Authorizes protected architecture-v2 publishing only. Backend cosmetic model-equivalence migration was separately applied and verified to production before this release; no further backend deployment in publication. Physical Android acceptance NOT_RUN and backup-restoration deferred by owner per existing release policy. Does not authorize edits to main.",
-  "approvedAt": null,
-  "publishNonce": null,
-  "releaseHeldByOwner": true,
+  "ownerPublicationRequested": true,
+  "authorization": "Owner requested release of approved teal materials-entry color update on 2026-11-03. Exact-source V387 signed APK and Reception verification both passed, with Android architecture, standard APK, staff-contract and connection checks also passed. Publish only coordinated V387 Android APK and PC site from architecture-v2, without backend deployment or changes to main. Physical phone acceptance NOT_RUN; fresh backup restoration remains deferred under recorded owner release policy.",
+  "approvedAt": "2026-11-03T15:40:34.965Z",
+  "publishNonce": "v387-teal-approved-20261103-9a46e767442ef1c9",
+  "releaseHeldByOwner": false,
   "publicationRequiresSeparateInstruction": true,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V385",
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41659462027,
-  "verificationRun": 41659461966,
+  "signedAcceptanceRun": 41665455118,
+  "verificationRun": 41665454663,
   "previousPublishedRelease": {
     "versionName": "V386",
     "versionCode": 349,
@@ -707,8 +707,8 @@
     "physicalPhoneTest": "NOT_RUN",
     "releaseApproval": "OWNER_APPROVED_RELEASE_WORKFLOW_GATED"
   },
-  "reason": "V387 release candidate: prevent duplicate Insurance approval request for a valid approved checklist; reuse existing approval date/details, and preserve already-applied narrow model formatting equivalence (420 I vs 420i) without allowing real vehicle identity changes. Database migration was already applied before publication. Publication requires matching signed APK and Reception checks.",
-  "verificationSummary": "PASS: matching source ee748068b13ff73fb9280f4ba279c3eefef85d0d, signed 41659462027, Reception/browser 41659461966, Android architecture 41659462077, APK 41659462106, outage 41659462014, sync compatibility 41659461955, staff contracts 41659462002, Accountant acceptance 41659462127. Physical Android acceptance NOT_RUN; backup restoration deferred by owner from prior release.",
+  "reason": "V387 coordinated UI release: existing approved-checklist and cosmetic vehicle-model fixes, plus approved teal materials-entry cards with high-contrast white text and mint serial-number badges. Styling-only additional change; workshop behavior and backend unchanged.",
+  "verificationSummary": "Exact source 9a46e767442ef1c9ffd8dbae9de00183ad35920d: signed APK 41665455118 PASS, Reception/browser 41665454663 PASS, Android architecture 41665454860 PASS, standard APK 41665454664 PASS, staff contracts 41665454995 PASS, connection safety 41665455114 PASS. Physical acceptance NOT_RUN and fresh backup restoration deferred by owner.",
   "productionBackendDeploymentEvidence": {
     "projectRef": "pjknotnjkufadqavcmii",
     "function": "workshop-api",
@@ -779,12 +779,19 @@
     "sourceBranch": "release/v385-approved-source",
     "ownerApprovedAt": "2026-11-03T13:09:54.684Z"
   },
-  "releaseCandidateStatus": "TEAL_UI_SIGNED_BUILD_PENDING",
+  "releaseCandidateStatus": "APPROVED_AWAITING_PROTECTED_WORKFLOW_DISPATCH",
   "v387BackendRecord": {
     "sqlMigration": "supabase/migrations/20261103182000_reception_approved_model_format_equivalence.sql",
     "alreadyApplied": true,
     "appliedAt": "2026-11-03",
     "newBackendDeploymentRequired": false,
     "scope": "Only cosmetic model capitalization/spacing changes preserve existing verified approval; all other vehicle identity fields unchanged."
+  },
+  "tealMaterialsUi": {
+    "sourceCommit": "3f1f697636c3a57f8a1e337566a472e20ac7d7f6",
+    "scope": "Materials search/result palette in consumables_ui.js only",
+    "signedAcceptanceRun": 41665455118,
+    "receptionVerificationRun": 41665454663,
+    "behaviorChanged": false
   }
 }

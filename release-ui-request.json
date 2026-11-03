@@ -2,22 +2,22 @@
   "versionName": "V387",
   "versionCode": 350,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
-  "sourceCommit": "3f1f697636c3a57f8a1e337566a472e20ac7d7f6",
-  "approvedAt": null,
-  "publishNonce": null,
+  "approvedForStaff": true,
+  "sourceCommit": "9a46e767442ef1c9ffd8dbae9de00183ad35920d",
+  "approvedAt": "2026-11-03T15:40:34.965Z",
+  "publishNonce": "v387-teal-approved-20261103-9a46e767442ef1c9",
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "reason": "V387 release candidate: prevent duplicate Insurance approval request for a valid approved checklist; reuse existing approval date/details, and preserve already-applied narrow model formatting equivalence (420 I vs 420i) without allowing real vehicle identity changes. Database migration was already applied before publication. Publication requires matching signed APK and Reception checks.",
+  "reason": "V387 coordinated UI release: existing approved-checklist and cosmetic vehicle-model fixes, plus approved teal materials-entry cards with high-contrast white text and mint serial-number badges. Styling-only additional change; workshop behavior and backend unchanged.",
   "backendDeploymentRequired": false,
-  "verificationSummary": "PASS: matching source ee748068b13ff73fb9280f4ba279c3eefef85d0d, signed 41659462027, Reception/browser 41659461966, Android architecture 41659462077, APK 41659462106, outage 41659462014, sync compatibility 41659461955, staff contracts 41659462002, Accountant acceptance 41659462127. Physical Android acceptance NOT_RUN; backup restoration deferred by owner from prior release.",
+  "verificationSummary": "Exact source 9a46e767442ef1c9ffd8dbae9de00183ad35920d: signed APK 41665455118 PASS, Reception/browser 41665454663 PASS, Android architecture 41665454860 PASS, standard APK 41665454664 PASS, staff contracts 41665454995 PASS, connection safety 41665455114 PASS. Physical acceptance NOT_RUN and fresh backup restoration deferred by owner.",
   "ownerRequestedImmediateRelease": true,
-  "ownerPublicationRequested": false,
-  "releaseHeldByOwner": true,
+  "ownerPublicationRequested": true,
+  "releaseHeldByOwner": false,
   "backupDeferredByOwner": true,
-  "signedAcceptanceRun": 41659462027,
-  "verificationRun": 41659461966,
+  "signedAcceptanceRun": 41665455118,
+  "verificationRun": 41665454663,
   "v380PaintReceivedDate": {
     "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
     "feature": "Paint PO Received Date visible in summary/list and editable by Manager with correction reason; preserves original received employee and receipt time; audit before/after; rejects invalid/future dates; pending PO cannot be received by correction",
@@ -28,7 +28,7 @@
     "signedArtifactId": 13089726056,
     "receptionVerificationRun": 41320969105
   },
-  "authorization": "Owner requested publish on 2026-11-03. Exact-source V387 build and all relevant checks PASS. Authorizes protected architecture-v2 publishing only. Backend cosmetic model-equivalence migration was separately applied and verified to production before this release; no further backend deployment in publication. Physical Android acceptance NOT_RUN and backup-restoration deferred by owner per existing release policy. Does not authorize edits to main.",
+  "authorization": "Owner requested release of approved teal materials-entry color update on 2026-11-03. Exact-source V387 signed APK and Reception verification both passed, with Android architecture, standard APK, staff-contract and connection checks also passed. Publish only coordinated V387 Android APK and PC site from architecture-v2, without backend deployment or changes to main. Physical phone acceptance NOT_RUN; fresh backup restoration remains deferred under recorded owner release policy.",
   "v380MonthlyExports": {
     "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
     "scope": "Manager Cash Monthly Performance and Insurance Monthly LPO Performance",
@@ -103,7 +103,7 @@
     "standardAndroidBuildRun": 41582221519
   },
   "publicationRequiresSeparateInstruction": true,
-  "ownerFinalDispatchRequestedAt": "2026-11-03T05:15:01.776Z",
+  "ownerFinalDispatchRequestedAt": "2026-11-03T15:40:34.965Z",
   "ownerPublisherRetry": {
     "sourceBranch": "release/v383-approved-source",
     "sourceSha": "138804af3cd3ce073bbfa8390ee3332ff3a85c80",
@@ -136,5 +136,12 @@
     "appliedAt": "2026-11-03",
     "newBackendDeploymentRequired": false,
     "scope": "Only cosmetic model capitalization/spacing changes preserve existing verified approval; all other vehicle identity fields unchanged."
+  },
+  "tealMaterialsUi": {
+    "sourceCommit": "3f1f697636c3a57f8a1e337566a472e20ac7d7f6",
+    "scope": "Materials search/result palette in consumables_ui.js only",
+    "signedAcceptanceRun": 41665455118,
+    "receptionVerificationRun": 41665454663,
+    "behaviorChanged": false
   }
 }
