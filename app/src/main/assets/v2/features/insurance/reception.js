@@ -500,6 +500,17 @@
       .addEventListener("change", () => loadList(false).catch(error));
     await loadList(false);
   }
+  function sameApprovedChecklistValue(field,left,right) {
+    const normalize=v=>String(v??'').trim().replace(/\s+/g,' ');
+    const a=normalize(left),b=normalize(right);
+    // Typographic differences are not changes to an approved vehicle.
+    if(['make','model','vin'].includes(field))return a.toUpperCase()===b.toUpperCase();
+    if(field==='registration'){
+      const registration=v=>window.zukaitRegistration?.key?.(v)||normalize(v).replace(/[.\s-]+/g,'').toUpperCase();
+      return registration(a)===registration(b);
+    }
+    return a===b;
+  }
   async function directJob() {
     if (!phase2Enabled) { error(Error("Direct Job Card intake requires the V305 backend.")); return; }
     try { await master(); } catch (x) { error(x); return; }
@@ -549,7 +560,7 @@
             form.elements.namedItem('odometer_unit').value=String(d.odometer_unit||'KM');
             if(r.insurance_id&&form.elements.insurance_id)form.elements.insurance_id.value=String(r.insurance_id);
             const note=document.getElementById('rc-direct-checklist-note');
-            note.textContent='Selected '+r.rc_no+'. Original checklist odometer: '+(d.odometer||'Not recorded')+' '+(d.odometer_unit||'KM')+'. The Job Card reading is filled from this checklist. You can edit the reading and unit; the original checklist remains unchanged.'+(linkedApprovalValid?' Existing insurance approval verified.':' Approval must be completed before a linked Job Card can be opened.');
+            note.textContent='Selected '+r.rc_no+'. Original checklist odometer: '+(d.odometer||'Not recorded')+' '+(d.odometer_unit||'KM')+'. The Job Card reading is filled from this checklist. You can edit the reading and unit; the original checklist remains unchanged.'+(linkedApprovalValid?' Existing insurance approval verified. New approval is not required unless approved vehicle details are changed.':' Approval must be completed before a linked Job Card can be opened.');
           }catch(err){error(err);}
         });
       }catch(err){searchResults.textContent='Checklist search failed: '+String(err.message||err);}
@@ -562,10 +573,14 @@
       searchResults.textContent='';
       document.getElementById('rc-direct-checklist-note').textContent='Checklist selection cleared. This will create a NEW reception intake.';
       document.getElementById('rc-direct-checklist-clear').hidden=true;
+      form.elements.namedItem('approval_confirmed').checked=false;
+      form.elements.namedItem('approval_date').value='';
+      form.elements.namedItem('evidence').value='';
       for(const k of ['make','model','registration','year','vin','customer','contact','claim','remarks','odometer'])
         if(form.elements.namedItem(k))form.elements.namedItem(k).value='';
       form.elements.insurance_id.value='';
       form.elements.odometer_unit.value='KM';
+      type.onchange();
     };
     searchInput.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('rc-direct-checklist-find').click();}};
     type.onchange=()=>{
@@ -575,8 +590,11 @@
       const panel=document.getElementById('rc-direct-insurance');
       panel.hidden=!insurance;
       document.getElementById('rc-direct-claim').hidden=!insurance;
-      for(const name of ['insurance_id','approval_confirmed'])
-        form.elements.namedItem(name).required=insurance;
+      form.elements.namedItem('insurance_id').required=insurance;
+      // A verified linked checklist already owns its insurance approval.
+      // The server continues to require renewed approval for real identity changes.
+      const verifiedLink=!!linkedChecklist&&linkedChecklist.job_type==='INSURANCE'&&linkedApprovalValid;
+      form.elements.namedItem('approval_confirmed').required=insurance&&!verifiedLink;
       form.elements.namedItem('claim').required=insurance;
       form.elements.namedItem('approval_date').required=false;
       form.elements.namedItem('evidence').required=false;
@@ -594,11 +612,12 @@
           if(!linkedApprovalValid || linkedChecklist.job_type!=='INSURANCE') throw Error('This checklist needs verified insurance approval before linked Job Card creation.');
           const revised={};
           for(const k of ['make','model','registration','year','vin','customer','contact','claim']){
-            if(details[k]!==String(linkedChecklist.details?.[k]||'')) revised[k]=details[k];
+            if(!sameApprovedChecklistValue(k,details[k],linkedChecklist.details?.[k])) revised[k]=details[k];
           }
-          const company=Number(f.get('insurance_id'));
-          const changed=Object.keys(revised).length>0||company!==Number(linkedChecklist.insurance_id);
-          if(changed&&!['Manager','Supervisor'].includes(user()?.role)) throw Error('Manager or Supervisor must verify changes to an approved insurance vehicle.');
+          const company=Number(f.get('insurance_id')??linkedChecklist.insurance_id);
+          const companyChanged=company!==Number(linkedChecklist.insurance_id);
+          const changed=Object.keys(revised).length>0||companyChanged;
+          if(changed&&!['Manager','Supervisor'].includes(user()?.role)) throw Error('Manager or Supervisor must verify changes to an approved insurance vehicle. Changed: '+[...Object.keys(revised),...(companyChanged?['insurance company']:[])].join(', ')+'. Restore the checklist values or request authorized verification.');
           if(changed&&(!f.has('approval_confirmed')||!f.get('approval_date')||!f.get('evidence'))) throw Error('Confirm renewed insurance approval, date and evidence for corrected vehicle details.');
           const jc=String(f.get('job_card')).trim().toUpperCase();
           const out=await mutate({operation:'CREATE_EXTERNAL_JOB',cash_amount:String(f.get('cash_amount')||'').trim(),rc_no:linkedChecklist.rc_no,
