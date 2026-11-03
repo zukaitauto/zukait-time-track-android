@@ -141,6 +141,7 @@
     const r=await window.zukaitAuth?.managerStaff?.({operation:'STATUS',target_id:target,active:desired,reason,manager_password},request_id);
     if(!r?.ok||r.target_id!==target||r.active!==desired)throw Error(message(r));
     saving=busy=false;
+    window.zukaitStaffRoster?.invalidate?.();
     close();
     await refresh();
    }catch(err){error.textContent=err.message||'Unable to confirm server status.';saving=busy=false;submit.disabled=false;cancel.disabled=false;}
