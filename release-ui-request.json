@@ -1,23 +1,23 @@
 {
-  "versionName": "V385",
-  "versionCode": 348,
+  "versionName": "V386",
+  "versionCode": 349,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "sourceCommit": "3cfddd12aac191ddf30ef3880763f4beaeb95e6f",
-  "approvedAt": "2026-11-03T13:09:54.684Z",
-  "publishNonce": "v385-owner-approved-refreshed-20261103-3cfddd12aac1",
+  "approvedForStaff": false,
+  "sourceCommit": "23e3ffd12c95b4b89fbc7f7b32edc626f39ec362",
+  "approvedAt": null,
+  "publishNonce": "v386-rc0019-release-candidate-awaiting-tests-20261103",
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "reason": "V385: Supervisor three-card row (Employee Request / Ideal Workers / WIP), read-only shared Work in Progress view, Need Attention next to Estimate in the two-column workshop grid, and Mechanical Department menu readability correction. No backend changes.",
+  "reason": "V386 release candidate: approved RC checklist exposes Open Job Card, Create Job Card can link approved checklists without repeat approval date, with authoritative duplicate/approval checks; includes later active-technician roster fixes. Await exact-source signed, Reception and release checks. No production backend migration or deployment approved.",
   "backendDeploymentRequired": false,
   "verificationSummary": "PASS: signed acceptance 41641106549 (artifact 13233320972), Reception 41641106837, Android architecture 41641106660, standard APK 41641106665, outage 41641106741, inactive contracts 41641106767. Exact source 3cfddd12aac191ddf30ef3880763f4beaeb95e6f; V385 code 348.",
   "ownerRequestedImmediateRelease": true,
-  "ownerPublicationRequested": true,
-  "releaseHeldByOwner": false,
+  "ownerPublicationRequested": false,
+  "releaseHeldByOwner": true,
   "backupDeferredByOwner": true,
-  "signedAcceptanceRun": 41641106549,
-  "verificationRun": 41641106837,
+  "signedAcceptanceRun": 0,
+  "verificationRun": 0,
   "v380PaintReceivedDate": {
     "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
     "feature": "Paint PO Received Date visible in summary/list and editable by Manager with correction reason; preserves original received employee and receipt time; audit before/after; rejects invalid/future dates; pending PO cannot be received by correction",
@@ -28,7 +28,7 @@
     "signedArtifactId": 13089726056,
     "receptionVerificationRun": 41320969105
   },
-  "authorization": "Owner explicitly requested Release for V385 on 2026-11-03. Exact verified source 3cfddd12aac191ddf30ef3880763f4beaeb95e6f on architecture-v2 includes UI updates and a rollback-only SQL QA test committed concurrently. Signed APK 41641106549, Reception 41641106837, Android 41641106660, APK build 41641106665, outage 41641106741, and inactive contracts 41641106767 all PASS. Physical Android acceptance NOT_RUN (owner tests after release); fresh production backup-restore NOT_RUN (previously deferred). No backend changes or deployment.",
+  "authorization": "Owner requested deployment on 2026-11-03; this is a candidate only, not an approved publication. Matching source tests and signed APK must pass and protected manual workflow must be triggered before publication. Existing V385 production remains unchanged.",
   "v380MonthlyExports": {
     "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
     "scope": "Manager Cash Monthly Performance and Insurance Monthly LPO Performance",
@@ -71,10 +71,10 @@
   "ownerRequestedProceed": true,
   "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V385",
   "previousPublishedRelease": {
-    "versionName": "V384",
-    "versionCode": 347,
-    "sourceCommit": "9e6148143b9cffe7484a7117fc95d7129e958d50",
-    "releaseTag": "release-V384-architecture-v2"
+    "versionName": "V385",
+    "versionCode": 348,
+    "sourceCommit": "3cfddd12aac191ddf30ef3880763f4beaeb95e6f",
+    "releaseTag": "release-V385-architecture-v2"
   },
   "productionBackendDeploymentEvidence": {
     "projectRef": "pjknotnjkufadqavcmii",
@@ -128,5 +128,6 @@
     "backendDeploymentRequired": false,
     "sourceBranch": "release/v385-approved-source",
     "ownerApprovedAt": "2026-11-03T13:09:54.684Z"
-  }
+  },
+  "releaseCandidateStatus": "PENDING_SOURCE_VERIFICATION"
 }
