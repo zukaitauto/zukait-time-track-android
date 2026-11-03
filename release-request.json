@@ -8,7 +8,7 @@
   "ownerPublicationRequested": false,
   "authorization": "Owner requested deployment on 2026-11-03; this is a candidate only, not an approved publication. Matching source tests and signed APK must pass and protected manual workflow must be triggered before publication. Existing V385 production remains unchanged.",
   "approvedAt": null,
-  "publishNonce": "v386-rc0019-release-candidate-awaiting-tests-20261103",
+  "publishNonce": null,
   "releaseHeldByOwner": true,
   "publicationRequiresSeparateInstruction": true,
   "physicalAcceptanceStatus": "NOT_RUN",
