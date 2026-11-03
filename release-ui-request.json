@@ -1,23 +1,23 @@
 {
-  "versionName": "V386",
-  "versionCode": 349,
+  "versionName": "V387",
+  "versionCode": 350,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "sourceCommit": "7705e1377cff2b0eebc0581c14c33282dac9ed6e",
-  "approvedAt": "2026-11-03T14:32:17.148Z",
-  "publishNonce": "v386-owner-authorized-20261103-7705e1377cff",
+  "approvedForStaff": false,
+  "sourceCommit": null,
+  "approvedAt": null,
+  "publishNonce": null,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "reason": "V386 owner-requested UI release: Reception approved-checklist Open Job Card and approved-date reuse through Create Job Card, plus verified frontend updates. No production backend migration or deployment in this publication.",
+  "reason": "V387 release candidate: prevent duplicate Insurance approval request for a valid approved checklist; reuse existing approval date/details, and preserve already-applied narrow model formatting equivalence (420 I vs 420i) without allowing real vehicle identity changes. Database migration was already applied before publication. Publication requires matching signed APK and Reception checks.",
   "backendDeploymentRequired": false,
-  "verificationSummary": "PASS exact-source: signed 41653839768; Reception 41653839812; architecture 41653839861; app build 41653839853; outage 41653839791; inactive contracts 41653839825. Physical Android NOT_RUN. Backend NOT_DEPLOYED.",
+  "verificationSummary": "PENDING exact-source V387 signed APK and Reception checks; V386 remains live.",
   "ownerRequestedImmediateRelease": true,
-  "ownerPublicationRequested": true,
-  "releaseHeldByOwner": false,
+  "ownerPublicationRequested": false,
+  "releaseHeldByOwner": true,
   "backupDeferredByOwner": true,
-  "signedAcceptanceRun": 41653839768,
-  "verificationRun": 41653839812,
+  "signedAcceptanceRun": 0,
+  "verificationRun": 0,
   "v380PaintReceivedDate": {
     "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
     "feature": "Paint PO Received Date visible in summary/list and editable by Manager with correction reason; preserves original received employee and receipt time; audit before/after; rejects invalid/future dates; pending PO cannot be received by correction",
@@ -28,7 +28,7 @@
     "signedArtifactId": 13089726056,
     "receptionVerificationRun": 41320969105
   },
-  "authorization": "Owner requested deploy/fix on 2026-11-03. Exact architecture-v2 source 7705e1377cff2b0eebc0581c14c33282dac9ed6e passed signed APK acceptance 41653839768, Reception verification 41653839812, Android build 41653839861, APK build 41653839853, outage 41653839791, inactive contracts 41653839825. Existing owner deferral of fresh backup remains documented. Physical Android test NOT_RUN; owner may test after release. Publication still requires protected workflow_dispatch.",
+  "authorization": "Owner requested Publish for updated Reception insurance approval logic on 2026-11-03. This metadata is an unapproved V387 candidate until exact-source CI passes. No bypass of protected workflow_dispatch.",
   "v380MonthlyExports": {
     "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
     "scope": "Manager Cash Monthly Performance and Insurance Monthly LPO Performance",
@@ -71,10 +71,10 @@
   "ownerRequestedProceed": true,
   "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V385",
   "previousPublishedRelease": {
-    "versionName": "V385",
-    "versionCode": 348,
-    "sourceCommit": "3cfddd12aac191ddf30ef3880763f4beaeb95e6f",
-    "releaseTag": "release-V385-architecture-v2"
+    "versionName": "V386",
+    "versionCode": 349,
+    "sourceCommit": "7705e1377cff2b0eebc0581c14c33282dac9ed6e",
+    "releaseTag": "release-V386-architecture-v2"
   },
   "productionBackendDeploymentEvidence": {
     "projectRef": "pjknotnjkufadqavcmii",
@@ -129,5 +129,12 @@
     "sourceBranch": "release/v385-approved-source",
     "ownerApprovedAt": "2026-11-03T13:09:54.684Z"
   },
-  "releaseCandidateStatus": "APPROVED_AWAITING_MANUAL_DISPATCH"
+  "releaseCandidateStatus": "PENDING_SOURCE_VERIFICATION",
+  "v387BackendRecord": {
+    "sqlMigration": "supabase/migrations/20261103182000_reception_approved_model_format_equivalence.sql",
+    "alreadyApplied": true,
+    "appliedAt": "2026-11-03",
+    "newBackendDeploymentRequired": false,
+    "scope": "Only cosmetic model capitalization/spacing changes preserve existing verified approval; all other vehicle identity fields unchanged."
+  }
 }

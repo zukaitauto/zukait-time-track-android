@@ -22,8 +22,8 @@ android {
         targetSdk 35
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
-        versionCode 349
-        versionName "V386" // Reception approved-checklist Job Card creation and reused insurance approval; retains V385 UI.
+        versionCode 350
+        versionName "V387" // Insurance approval reuse, model formatting equivalence and Reception warning cleanup.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }
