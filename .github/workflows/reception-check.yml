@@ -1582,7 +1582,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          SOURCE='18504cf7ab9ef26e69ba7282af63cafc465896c4'
+          SOURCE='3cfddd12aac191ddf30ef3880763f4beaeb95e6f'
           test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/release/v385-approved-source" --jq '.object.sha')" = "$SOURCE"
           for FILE in release-request.json release-ui-request.json; do
             jq -e --arg sha "$SOURCE" '
@@ -1593,12 +1593,12 @@ jobs:
               .backupDeferredByOwner == true and .productionBackendChanges == false and
               .phase2ActivationApproved == false and .backendDeploymentRequired == false and
               .physicalAcceptanceStatus == "NOT_RUN" and
-              .signedAcceptanceRun == 41640085438 and .verificationRun == 41640085429
+              .signedAcceptanceRun == 41641106549 and .verificationRun == 41641106837
             ' "$FILE"
           done
           jq -e --arg sha "$SOURCE" '.v385CandidateEvidence.sourceCommit == $sha and
-              .v385CandidateEvidence.signedAcceptanceRun == 41640085438 and
-              .v385CandidateEvidence.receptionVerificationRun == 41640085429' release-request.json
+              .v385CandidateEvidence.signedAcceptanceRun == 41641106549 and
+              .v385CandidateEvidence.receptionVerificationRun == 41641106837' release-request.json
           node scripts/verify-ui-only-release.cjs
           git cat-file -e "$SOURCE^{commit}"
           git merge-base --is-ancestor "$SOURCE" HEAD
@@ -1607,8 +1607,8 @@ jobs:
             ':(exclude)release-ui-request.json' \
             ':(exclude).github/workflows/reception-check.yml'
           for ITEM in \
-            "41640085438:.github/workflows/build-signed-acceptance.yml" \
-            "41640085429:.github/workflows/reception-check.yml"; do
+            "41641106549:.github/workflows/build-signed-acceptance.yml" \
+            "41641106837:.github/workflows/reception-check.yml"; do
             RUN="${ITEM%%:*}"
             WORKFLOW="${ITEM#*:}"
             gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN" | jq -e --arg sha "$SOURCE" --arg workflow "$WORKFLOW" '
