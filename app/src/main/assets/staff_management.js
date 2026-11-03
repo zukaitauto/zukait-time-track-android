@@ -54,7 +54,8 @@
   const role=document.getElementById('userMgmtRole')?.value||'All';
   const status=document.getElementById('userMgmtStatus')?.value||'All';
   const rows=accounts.filter(a=>(!search||(a.user_id+' '+a.display_name).toLowerCase().includes(search))&&
-       (role==='All'||role===a.role)&&(status==='All'||(status==='Active')===!!a.active));
+       (role==='All'||role===a.role)&&(status==='All'||(status==='Active')===!!a.active))
+    .sort((a,b)=>Number(!!b.active)-Number(!!a.active)||String(a.user_id).localeCompare(String(b.user_id)));
   const active=accounts.filter(a=>a.active).length,inactive=accounts.length-active;
   const subtitle=document.getElementById('zum-totals');if(subtitle)subtitle.textContent=
     accounts.length+' managed accounts · '+active+' active · '+inactive+' inactive';
