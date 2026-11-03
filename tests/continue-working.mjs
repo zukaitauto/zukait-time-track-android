@@ -72,9 +72,11 @@ const ui=fs.readFileSync('app/src/main/assets/time_management.js','utf8').replac
 let saved=new Map(),server=fixture(),lose=true,sends=[],uiCommits=0;
 async function boot(id='M1',{broken=false}={}){
  const dom=new JSDOM('<html><head></head><body><div id="modal"></div></body></html>',{url:'https://qa.invalid',runScripts:'outside-only'}),w=dom.window;
+ // This historical correction fixture must use a deterministic clock.
+ w.Date=class extends Date{constructor(...args){super(...(args.length?args:[at]))}static now(){return at}};
  Object.assign(w,{me:{...manager,id},state:structuredClone(server),users:server.users,allocationToken,employeeTimeToken,workedMinutes,assignmentHasStarted,alert:m=>{w.lastAlert=m},openModal:html=>{w.document.getElementById('modal').innerHTML=html},closeModal(){}});
  Object.defineProperty(w,'localStorage',{value:{getItem:k=>saved.get(k)||null,setItem:(k,v)=>{if(broken)throw Error('quota');saved.set(k,v)},removeItem:k=>saved.delete(k)}});
- w.zukaitCloud={syncHealth:{ready:true},readLatest:async()=>({data:structuredClone(server)}),timeManagement:async q=>{sends.push(structuredClone(q));const r=change(server,w.me,q,Date.now());if(!r.ok)throw Object.assign(Error(r.code),{code:r.code});if(!r.duplicate){uiCommits++;server=JSON.parse(JSON.stringify(jsonb(r.data)))}if(lose){lose=false;throw Error('NETWORK')}w.state=structuredClone(server);return r}};
+ w.zukaitCloud={syncHealth:{ready:true},readLatest:async()=>({data:structuredClone(server)}),timeManagement:async q=>{sends.push(structuredClone(q));const r=change(server,w.me,q,at);if(!r.ok)throw Object.assign(Error(r.code),{code:r.code});if(!r.duplicate){uiCommits++;server=JSON.parse(JSON.stringify(jsonb(r.data)))}if(lose){lose=false;throw Error('NETWORK')}w.state=structuredClone(server);return r}};
  w.eval(ui);await w.zukaitOpenManagerTimeManagement();return w;
 }
 let w=await boot();w.zukaitManagerTimeSelect('A1');w.zukaitManagerTimeAction('ADD_SESSION');
