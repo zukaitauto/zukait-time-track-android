@@ -1467,12 +1467,12 @@ jobs:
           node scripts/verify-ui-only-release.cjs
           git cat-file -e "$SOURCE^{commit}"
           git merge-base --is-ancestor "$SOURCE" HEAD
-          git diff --quiet "$SOURCE" HEAD -- . \\
-            ':(exclude)release-request.json' \\
-            ':(exclude)release-ui-request.json' \\
+          git diff --quiet "$SOURCE" HEAD -- . \
+            ':(exclude)release-request.json' \
+            ':(exclude)release-ui-request.json' \
             ':(exclude).github/workflows/reception-check.yml'
-          for ITEM in \\
-            "41582221493:.github/workflows/build-signed-acceptance.yml" \\
+          for ITEM in \
+            "41582221493:.github/workflows/build-signed-acceptance.yml" \
             "41582221555:.github/workflows/reception-check.yml"; do
             RUN="${ITEM%%:*}"
             WORKFLOW="${ITEM#*:}"
