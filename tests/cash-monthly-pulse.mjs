@@ -74,6 +74,9 @@ assert.equal(pulse.approximateRepairSummary([{amount:0.1},{amount:0.2},{amount:n
 assert.equal(pulse.approximateRepairSummary([{amount:0.1},{amount:0.2},{amount:null}]).pending,1);
 pulse.install();assert.equal((manager.children[1].innerHTML.match(/class="v251-followup-card insurance-/g)||[]).length,3);assert.match(manager.children[1].innerHTML,/Insurance Monthly Follow-up/);
 await sandbox.window.v251OpenInsurancePulse('in');assert.match(modal,/JC I-IN/);assert.ok(!modal.includes('CASH-ONLY'));assert.match(modal,/Liva &lt;Insurance&gt;/);
+assert.match(modal,/Approx\. Amount \(OMR\)/,'Insurance In list labels the read-only amount column');
+assert.match(modal,/Amounts are read-only here/,'Only Job Card Edit may change the approximate amount');
+assert.doesNotMatch(modal,/<input[^>]*amount|<button[^>]*save.*amount/i,'List cannot directly edit or save the amount');
 await sandbox.window.v251OpenInsurancePulse('out');assert.match(modal,/JC I-OUT/);assert.match(modal,/OMR 1998.000/);assert.match(modal,/Approx. repair value/);assert.ok(!modal.includes('JC I-OLD'));assert.match(modal,/JC I-ZERO/);
 await sandbox.window.v251OpenInsurancePulse('collected');assert.match(modal,/OMR 42.125/);assert.match(modal,/OMR 0.000/);assert.ok(!modal.includes('JC I-NIL'));assert.match(modal,/not cash payment receipts/);
 sandbox.fixture=[ins('I-PENDING',{amount:null}),ins('I-VALUED',{amount:25,finalInvoiceAmount:999})];vm.runInContext('state={jobs:fixture}',ctx);
