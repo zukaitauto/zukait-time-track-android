@@ -109,7 +109,7 @@
   }
   const label=key=>definitions.find(x=>x[0]===key)?.[1]||"Reception";
   function filterHtml(){
-    return (section==='checklists'?'<label>Checklist Status<select data-rdb-filter="checklist_status"><option value="all">All</option><option value="pending"'+(filters.checklist_status==='pending'?' selected':'')+'>Pending</option><option value="opened"'+(filters.checklist_status==='opened'?' selected':'')+'>JC Opened</option></select></label>':'')+'<div class="rdb-filter">'+
+    return (section==='checklists'?'<label>Checklist Status<select data-rdb-filter="checklist_status"><option value="all">All</option><option value="pending"'+(filters.checklist_status==='pending'?' selected':'')+'>Pending</option><option value="opened"'+(filters.checklist_status==='opened'?' selected':'')+'>JC Opened</option><option value="not_opened"'+(filters.checklist_status==='not_opened'?' selected':'')+'>Job Card Not Open</option></select></label>':'')+'<div class="rdb-filter">'+
       '<label class="rdb-company-filter">Company / Job Type<select data-rdb-filter="company_filter">'+companyOptionsHtml()+'</select></label>'+
       '<label>Search<input data-rdb-filter="search" placeholder="RC / JC / registration / vehicle" value="'+safe(filters.search)+'"></label>'+
       '<label>Month<input type="month" data-rdb-filter="month" value="'+safe(filters.month)+'"></label>'+
