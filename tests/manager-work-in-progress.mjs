@@ -19,5 +19,5 @@ assert.match(html,/data-jc="NEW"[^>]*><span class="mwip-serial">2<\/span>/,'Next
 await ctx.zukaitManagerWip.detail('NEW');
 for(const text of ['Afsal','● Working','Bumper','Pending Parts · 1','Paint Details','PO1','Base Coat','OMR 15.000','Masking Tape','OMR 3.000','92403420','20-10-2026'])assert.ok(html.includes(text),text);
 assert.ok(!html.includes('Fitted Part'));await ctx.zukaitManagerWip.detail('OLD');assert.match(html,/72440918/);assert.match(html,/Customer Name/);assert.match(html,/Liva Insurance/);assert.match(html,/Not set/);
-assert.equal(JSON.stringify(state),before,'Dashboard must remain read-only');ctx.me.role='Employee';html='unchanged';await ctx.zukaitManagerWip.open();assert.equal(html,'unchanged');
+assert.equal(JSON.stringify(state),before,'Dashboard must remain read-only');ctx.me.role='Supervisor';html='';await ctx.zukaitManagerWip.open();assert.match(html,/WORKSHOP · SUPERVISOR/,'Supervisor may open the same read-only WIP view');assert.equal(ctx.zukaitManagerWip.count(),2);assert.equal(JSON.stringify(state),before,'Supervisor WIP must remain read-only');ctx.me.role='Employee';html='unchanged';await ctx.zukaitManagerWip.open();assert.equal(html,'unchanged');
 console.log('Manager WIP: date sorting, matching counts, scoped detail data, reception contact, role checks and read-only state passed');
