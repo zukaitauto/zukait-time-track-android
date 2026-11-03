@@ -185,13 +185,13 @@ const quotedRecord={...searchRecord,rc_no:'RC-QUOTE-APPROVED',job_card:null,
  repair_status:'PENDING',outcome:null,approval_status:'APPROVED',
  details:{...searchRecord.details,registration:'54852-BB'}};
 const fetchBeforeQuote=w.fetch;
-let quotedCommand=null;
+let quotedCommand=null,quotedApprovalValid=true;
 w.fetch=async(url,args)=>{
  const command=JSON.parse(args.body).command;
  if(command.operation==='LIST'&&command.search)return {ok:true,json:async()=>({ok:true,rows:[quotedRecord]})};
  if(command.operation==='GET'&&command.rc_no===quotedRecord.rc_no)return {ok:true,json:async()=>({
   ok:true,record:quotedRecord,external_approval:{valid:false},
-  job_creation:{can_create:true},insurance:{approval_valid:true,estimates:[],approvals:[]},
+  job_creation:{can_create:quotedApprovalValid},insurance:{approval_valid:quotedApprovalValid,estimates:[],approvals:[]},
   movements:[],audit:[],preliminary_parts:{items:[]}
  })};
  if(command.operation==='CREATE_JOB'){
@@ -231,5 +231,16 @@ quotedRecord.job_card='QA-ALREADY-LINKED';
 await w.zukaitReception.openRecord(quotedRecord.rc_no);
 assert.equal(w.document.querySelector('[data-rc-action="open-approved-job"]'),null,
  'Already-linked checklist must not offer duplicate Job Card creation');
+quotedRecord.job_card=null;quotedApprovalValid=false;
+await w.zukaitReception.openRecord(quotedRecord.rc_no);
+assert.ok(w.document.querySelector('[data-rc-action="open-approved-job"]'),
+ 'Previously approved checklist keeps the Open Job Card action for review');
+await click('open-approved-job');
+assert.match(w.document.getElementById('rc-error').textContent,/not verified/,
+ 'Server must block creation if recorded approval is no longer valid');
+assert.equal(w.document.getElementById('rc-create-job'),null,
+ 'Unverified case must not create a Job Card through quotation flow');
+assert.equal(w.document.getElementById('rc-external-job'),null,
+ 'Unverified case must not create a Job Card through external approval flow');
 w.fetch=fetchBeforeQuote;
 w.me=null;await settle();dom.window.close();console.log('Direct Reception Job Cards: Cash/Credit/Insurance fields, manually numbered approved insurance, stable lost-response UUID, role isolation and approval controls passed (mock transport).');
