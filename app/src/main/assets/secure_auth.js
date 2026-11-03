@@ -341,7 +341,11 @@
     getToken:()=>token(),
     getSavedUser:()=>savedSession()?.user||null,
     restoreSession,
-    clearSession
+    clearSession,
+    managerStaff:async(command,request_id)=>{
+      if(!me||me.role!=='Manager'||!token())throw Error('A verified Manager login is required.');
+      return callAuth({action:'manager_staff',session_token:token(),command,...(request_id?{request_id}:{})});
+    }
   };
 
   window.addEventListener?.('offline',()=>{++authGeneration;showLogin();});
