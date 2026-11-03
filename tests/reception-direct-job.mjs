@@ -11,7 +11,7 @@ w.fetch=async(_url,args)=>{
  if(c.operation==='CAPABILITIES')result={ok:true,allowed:true,manager:w.me.role==='Manager'};
  if(c.operation==='LIST')result={ok:true,rows:[]};
  if(c.operation==='MASTER')result={ok:true,companies:[{id:1,name:'QA Insurance'}]};
- if(c.operation==='GET')result={ok:true,record,movements:[],audit:[],insurance:{approval_valid:false,can_prepare:false,estimates:[],approvals:[]},external_approval:{valid:record.job_type==='INSURANCE',can_record:w.me.role==='Manager'},job_creation:{can_create:false}};
+ if(c.operation==='GET')result={ok:true,record,movements:[],audit:[],insurance:{approval_valid:false,can_prepare:false,estimates:[],approvals:[]},external_approval:{valid:record.job_type==='INSURANCE'&&record.approval_status==='APPROVED',can_record:w.me.role==='Manager'},job_creation:{can_create:false}};
  if(c.operation==='CREATE_DIRECT_JOB'){
   if(!receipts.has(c.request_id)){
    record={rc_no:'RC-QA-'+receipts.size,job_card:c.job_card,job_type:c.job_type,details:c.details,location:'VIW',revision:2,approval_status:'WAITING'};
@@ -177,7 +177,11 @@ assert.equal(w.document.getElementById('rc-external-job').elements.odometer_unit
 assert.equal(w.document.getElementById('rc-external-job').elements.odometer.readOnly,false);
 assert.ok(w.document.getElementById('rc-external-job'));assert.equal(w.document.getElementById('rc-external-approval'),null);assert.equal(w.document.getElementById('rc-approval'),null);
 w.me={id:'QA-MGR',role:'Manager'};await w.zukaitReception.open();await click('view');await click('insurance');
-assert.ok(w.document.getElementById('rc-external-approval'));
+assert.equal(w.document.getElementById('rc-external-approval'),null,'Valid checklist approval must not request duplicate approval date');
+assert.doesNotMatch(w.document.getElementById('rc-root').textContent,/Approval needs review/,'Valid external approval must not show quotation-only warning');
+record.approval_status='WAITING';
+await w.zukaitReception.openRecord(record.rc_no);await click('insurance');
+assert.ok(w.document.getElementById('rc-external-approval'),'Manager may record an actual missing approval');
 // Both entry points must accept a quotation-approved checklist without a new date.
 // Approved quotation work uses CREATE_JOB so its approved parts are transferred;
 // external approval work uses CREATE_EXTERNAL_JOB, as covered above.
