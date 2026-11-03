@@ -22,8 +22,8 @@ android {
         targetSdk 35
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
-        versionCode 347
-        versionName "V384" // Reception Job Card Not Open filter and Insurance dashboard visual refresh; no workflow changes.
+        versionCode 348
+        versionName "V385" // Supervisor three-card row, shared WIP and Need Attention beside Estimate; UI update.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }
