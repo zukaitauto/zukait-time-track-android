@@ -11,6 +11,58 @@
  .ins-jobs-table{border-collapse:collapse;width:max-content;min-width:1050px;font-size:15px}.ins-jobs-table th{background:#173d59;color:white;text-align:left;padding:11px;white-space:nowrap}.ins-jobs-table td{padding:10px;border-bottom:1px solid #cbdceb;color:#18324a;white-space:nowrap}.ins-job-line{cursor:pointer}.ins-job-line.ins-wip{background:#e8f2ff}.ins-job-line.ins-delivered{background:#e0f5e8}.ins-job-line:hover{filter:brightness(.97)}.ins-job-line:focus-visible{outline:3px solid #167ad5;outline-offset:-3px}.ins-jc-number{font-weight:800}
  .ins-detail-actions{display:flex;gap:8px;flex-wrap:wrap}@media print{.ins-detail-actions,.ins-summary,.ins-toolbar{display:none!important}}
  @media(max-width:800px){.ins-summary,.ins-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.ins-summary{gap:8px}.ins-summary button{padding:12px;font-size:14px;min-height:105px}.ins-summary b{font-size:23px}.ins-toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.ins-table,.ins-table tbody,.ins-table tr,.ins-table td{display:block}.ins-table thead{display:none}.ins-table tr{margin:8px 0;padding:12px;border:1px solid #c3dbe5;border-radius:12px;box-shadow:0 2px 6px #16324b0e}.ins-table td{border:0;padding:4px 0;display:flex;align-items:baseline;gap:8px;justify-content:space-between;text-align:right}.ins-table td:before{content:attr(data-label);font-weight:750;color:#496675;font-size:13px;text-align:left;flex:0 0 36%}.ins-table .ins-primary{font-size:17px;font-weight:800;color:#153e53}.ins-table .ins-primary:before{font-size:13px}.ins-table td.ins-actions{padding-top:9px;border-top:1px solid #e3edf1;margin-top:8px;justify-content:flex-end}.ins-table td.ins-actions:before{display:none}.ins-table td.ins-actions button{width:100%}.ins-filters label{font-size:14px}}
+
+ /* V384 insurance dashboard visual refresh — presentation only; actions and data remain unchanged. */
+ #rc-root:has(.ins-summary){background:#f2f7fd;color:#172c47}
+ .ins-summary{gap:16px;margin:4px 0 22px}
+ .ins-summary button{position:relative;isolation:isolate;overflow:hidden;min-height:126px;padding:19px 20px 18px 88px!important;border:1px solid #dfe7f1!important;border-radius:15px!important;box-shadow:0 6px 16px #14365d13,0 1px 2px #14365d10!important;color:#18324e!important;line-height:1.32;transition:transform .15s ease,box-shadow .15s ease}
+ .ins-summary button:hover{transform:translateY(-2px);box-shadow:0 10px 22px #14365d1f!important}
+ .ins-summary button:focus-visible,.ins-toolbar button:focus-visible,.ins-jobs-table tr:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+ .ins-summary button::before{position:absolute;left:19px;top:21px;width:51px;height:51px;display:grid;place-items:center;border-radius:13px;font-size:28px;color:#fff;box-shadow:0 4px 10px #152f4a24}
+ .ins-summary button:nth-child(1){background:linear-gradient(150deg,#fff 60%,#dcf8ef)!important}
+ .ins-summary button:nth-child(1)::before{content:"◉";background:#008a80}
+ .ins-summary button:nth-child(2){background:linear-gradient(150deg,#fff 60%,#e1eeff)!important}
+ .ins-summary button:nth-child(2)::before{content:"✓";background:#1660ed}
+ .ins-summary button:nth-child(3){background:linear-gradient(150deg,#fff 60%,#fff0e0)!important}
+ .ins-summary button:nth-child(3)::before{content:"◷";background:#ef780b}
+ .ins-summary button:nth-child(4){background:linear-gradient(150deg,#fff 60%,#f0e5ff)!important}
+ .ins-summary button:nth-child(4)::before{content:"⚙";background:#9339e9}
+ .ins-summary b{font-size:clamp(23px,2.1vw,32px);letter-spacing:-.6px;margin-top:9px;color:#087c70!important}
+ .ins-summary button:nth-child(2) b{color:#1656e8!important}
+ .ins-summary button:nth-child(3) b{color:#bd530e!important}
+ .ins-summary button:nth-child(4) b{color:#762bdd!important}
+ .ins-toolbar{align-items:stretch;gap:9px;margin:0 0 18px}
+ .ins-toolbar button{min-height:45px;border-radius:11px!important;padding:11px 18px;box-shadow:0 2px 6px #193f6412}
+ .ins-toolbar button[data-ins="section"]{flex:1 1 27%;border:1px solid #c9d8ea!important;background:#eaf1fa!important;color:#16436e!important;font-weight:800}
+ .ins-toolbar button[data-ins="section"][aria-pressed="true"]{background:linear-gradient(100deg,#0d4d95,#1768c3)!important;color:#fff!important;border-color:#1768c3!important}
+ .ins-toolbar button[data-ins="print"]{background:#fff!important;border:1px solid #c7d7ea!important;color:#1d3859!important}
+ .ins-toolbar button[data-ins="refresh"]{background:#1764ee!important;border:1px solid #1764ee!important;color:#fff!important}
+ .ins-toolbar button:disabled{opacity:.5;cursor:not-allowed}
+ .ins-filters{grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+ .ins-filters label,.ins-search{color:#253d57;font-size:14px;font-weight:800}
+ .ins-filters input,.ins-filters select,.ins-search input{min-height:44px;background:#fff;color:#172c47;border:1px solid #bdccdf;border-radius:10px;padding:10px 13px;box-shadow:0 1px 3px #182f4b0d}
+ .ins-filters input:focus,.ins-filters select:focus,.ins-search input:focus{outline:2px solid #4d94f2;outline-offset:1px;border-color:#3477d4}
+ .ins-advanced{margin:15px 0}
+ .ins-advanced summary{display:inline-flex;align-items:center;min-height:38px;color:#13508f;background:#e2effd;border:1px solid #d0e2f6;border-radius:9px;padding:6px 13px;list-style-position:inside}
+ .ins-advanced[open] .ins-filters{margin-top:12px}
+ .ins-search{margin:13px 0 18px}
+ .ins-search input{display:block;margin-top:6px}
+ .ins-compact-heading,.ins-section-title{color:#183953;font-size:20px;letter-spacing:-.3px;font-weight:850;margin:18px 0 12px}
+ .ins-compact-heading::before{content:"";display:inline-block;width:5px;height:24px;background:#1965ee;border-radius:5px;vertical-align:-5px;margin-right:11px}
+ .ins-list-scroll{background:#fff;border:1px solid #d5e3f0;border-radius:13px;box-shadow:0 5px 18px #133d6310;padding:0;margin:10px 0 16px}
+ .ins-jobs-table{width:100%;min-width:1050px}
+ .ins-jobs-table th{background:#16436d!important;color:#fff!important;padding:13px 12px;font-size:13px;letter-spacing:.05px;border:0;white-space:nowrap}
+ .ins-jobs-table td{padding:11px 12px!important;color:#233b52;border-bottom:1px solid #e3eaf3;line-height:1.35}
+ .ins-job-line.ins-wip,.ins-job-line.ins-delivered{background:#fff}
+ .ins-job-line:nth-child(even){background:#f3f7fc!important}
+ .ins-job-line:hover{background:#e7f1ff!important;filter:none}
+ .ins-jc-number{color:#175cdf!important;text-decoration:underline;text-underline-offset:2px}
+ .ins-jobs-table td:last-child:not(:has(button)){font-weight:800;color:#086e50}
+ .ins-detail-tile{background:#f1f6fc;border:1px solid #dde8f3}
+ .ins-detail-head{background:#e8f1fd;border:1px solid #d5e5f7}
+ @media(max-width:1000px){.ins-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.ins-summary button{min-height:115px}}
+ @media(max-width:600px){.ins-summary{gap:10px}.ins-summary button{padding:14px 10px 13px 14px!important;min-height:115px}.ins-summary button::before{position:static;display:grid;width:30px;height:30px;font-size:18px;margin-bottom:7px}.ins-summary b{font-size:23px}.ins-filters{grid-template-columns:minmax(0,1fr)}.ins-toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.ins-toolbar button{padding:10px 8px;min-height:44px}.ins-jobs-table{min-width:950px}}
+ @media(prefers-reduced-motion:reduce){.ins-summary button{transition:none}.ins-summary button:hover{transform:none}}
  `;document.head.appendChild(s);}
  const money=v=>v==null?'Pending':Number(v).toFixed(3);
  function cells(r){return [r.date,r.job_card,r.vehicle,r.claim,r.insurance_company,r.delivered_date,money(r.lpo_amount),r.lpo_received_date];}
