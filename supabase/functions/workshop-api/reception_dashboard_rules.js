@@ -66,6 +66,10 @@ function matchFilter(row,opts,kind) {
  if(search&&![row.rc_no,row.job_card,row.registration,row.vehicle,row.customer,row.insurance_company].some(v=>text(v).toLowerCase().includes(search)))return false;
  if(kind==="checklists"&&opts.checklist_status==="pending"&&(row.job_card||row.outcome||row.released_date||row.repair_status!=="PENDING"))return false;
  if(kind==="checklists"&&opts.checklist_status==="opened"&&!row.job_card)return false;
+ // Actionable, in-garage checklists only: exclude CTL, cash settled,
+ // customer-held/not-in-garage, not-repaired and already-linked vehicles.
+ if(kind==="checklists"&&opts.checklist_status==="not_opened"&&
+    (row.job_card||row.location!=="VIW"||row.repair_status!=="PENDING"||row.outcome||row.released_date||row.delivered))return false;
  const month=text(opts.month),from=text(opts.from),to=text(opts.to);
  const date=kind==="delivered"?row.delivered_date:kind==="followup"?row.promise_date:
   (kind==="jobs"||kind==="ready"||kind==="vwc-jobs")?row.created_date:row.received_date;
@@ -113,7 +117,7 @@ export function receptionDashboardProjection(data,receptions,opts={},now=Date.no
  counts.vwc=counts["vwc-checklists"]+counts["vwc-jobs"];
  counts.no_promise_date=followup.filter(r=>!r.promise_date).length;
  const section=text(opts.section)||"checklists";
- if(!["", "all", "pending", "opened"].includes(String(opts.checklist_status||"")))return {ok:false,code:"reception_invalid_filter"};
+ if(!["", "all", "pending", "opened", "not_opened"].includes(String(opts.checklist_status||"")))return {ok:false,code:"reception_invalid_filter"};
  if(!Object.hasOwn(lists,section))return {ok:false,code:"reception_invalid_section"};
  if(!["", "true", "false"].includes(String(opts.missing_only??"")))return {ok:false,code:"reception_invalid_filter"};
  const companyFilter=opts.company_filter??'all';
