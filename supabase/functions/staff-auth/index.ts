@@ -243,6 +243,67 @@ Deno.serve(async (req: Request) => {
       return reply(result.data);
     }
 
+    // Manager User Management: read authoritative status; atomically change it
+    // through a service-role-only SQL command with a permanent audit receipt.
+    if (action === "manager_staff") {
+      if (!body || typeof body !== 'object' || Array.isArray(body) ||
+          Object.keys(body).some(k => !['action','session_token','command','request_id'].includes(k)))
+        return reply({ ok: false, code: 'staff_status_invalid_request' }, 400);
+      const session = await verifySession(String(body.session_token || ''));
+      if (!session) return reply({ ok: false, code: 'invalid_session' }, 401);
+      if (session.user.role !== 'Manager') return reply({ ok: false, code: 'manager_required' }, 403);
+      const c = body.command;
+      if (!c || typeof c !== 'object' || Array.isArray(c) || !['LIST','STATUS'].includes(c.operation))
+        return reply({ ok: false, code: 'staff_status_invalid_request' }, 400);
+      const allowedRoles = ['Employee','Supervisor','Mechanical Supervisor','Purchaser','Receptionist'];
+      if (c.operation === 'LIST') {
+        if (Object.keys(c).some(k => k !== 'operation') || body.request_id !== undefined)
+          return reply({ ok: false, code: 'staff_status_invalid_request' }, 400);
+        const { data, error } = await admin.from('staff_credentials')
+          .select('user_id,display_name,role,department,active,updated_at')
+          .in('role',allowedRoles).order('user_id',{ascending:true});
+        if (error) throw error;
+        return reply({ok:true,users:data||[]});
+      }
+      if (Object.keys(c).some(k => !['operation','target_id','active','reason','manager_password'].includes(k)) ||
+          typeof c.active !== 'boolean' ||
+          typeof c.reason !== 'string' || c.reason.trim().length < 3 || c.reason.length > 2000 ||
+          typeof c.manager_password !== 'string' || !c.manager_password ||
+          !/^[A-Z0-9][A-Z0-9_.-]{0,199}$/.test(String(c.target_id || '')) ||
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(body.request_id||'')))
+        return reply({ ok: false, code: 'staff_status_invalid_request' }, 400);
+
+      const targetId = String(c.target_id).toUpperCase();
+      if (targetId === session.user.id) return reply({ ok:false,code:'staff_status_self_forbidden' },403);
+      // A fresh Manager password is required for each status change.
+      // Read only the Manager's login alias; never return credentials to the client.
+      const current = await admin.from('staff_credentials')
+        .select('login_id').eq('user_id',session.user.id).maybeSingle();
+      if (current.error) throw current.error;
+      const reauth = await authUser(current.data?.login_id || session.user.id,c.manager_password);
+      if (!reauth.ok || reauth.user?.id !== session.user.id || reauth.user?.role !== 'Manager')
+        return reply({ok:false,code:'manager_password_invalid'},403);
+
+      const result = await admin.rpc('zukait_manager_staff_status',{
+        p_actor_id:session.user.id,
+        p_target_id:targetId,
+        p_active:c.active,
+        p_reason:c.reason.trim(),
+        p_request_id:body.request_id
+      });
+      if (result.error) {
+        const message = String(result.error.message||'');
+        const names=['staff_status_manager_required','staff_status_self_forbidden','staff_status_not_found',
+          'staff_status_role_forbidden','staff_status_unchanged','staff_status_request_conflict','staff_status_invalid_request'];
+        const code = names.find(k=>message.includes(k)) || 'staff_status_unavailable';
+        return reply({ok:false,code},
+          code==='staff_status_unavailable'?503:
+          code==='staff_status_request_conflict'||code==='staff_status_unchanged'?409:
+          code==='staff_status_manager_required'||code==='staff_status_self_forbidden'||code==='staff_status_role_forbidden'?403:400);
+      }
+      return reply(result.data);
+    }
+
     if (action === "manager_reset") {
       const manager = await authUser(body.manager_id, body.manager_password);
       if (!manager.ok) return reply(manager, manager.code === "locked" ? 423 : 401);
