@@ -110,7 +110,7 @@ w.fetch=async(url,args)=>{
  const command=JSON.parse(args.body).command;
  if(command.operation==='CREATE_EXTERNAL_JOB'){
   unchangedLinkedCommand=command;
-  return {ok:false,status:409,json:async()=>({ok:false,code:'qa_validation_only'})};
+  return {ok:false,status:409,json:async()=>({ok:false,code:'reception_staged_rejection'})};
  }
  return fetchLinkedBefore(url,args);
 };
