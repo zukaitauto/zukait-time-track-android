@@ -2,22 +2,22 @@
   "versionName": "V386",
   "versionCode": 349,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
-  "sourceCommit": "23e3ffd12c95b4b89fbc7f7b32edc626f39ec362",
-  "approvedAt": null,
-  "publishNonce": null,
+  "approvedForStaff": true,
+  "sourceCommit": "7705e1377cff2b0eebc0581c14c33282dac9ed6e",
+  "approvedAt": "2026-11-03T14:32:17.148Z",
+  "publishNonce": "v386-owner-authorized-20261103-7705e1377cff",
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "reason": "V386 release candidate: approved RC checklist exposes Open Job Card, Create Job Card can link approved checklists without repeat approval date, with authoritative duplicate/approval checks; includes later active-technician roster fixes. Await exact-source signed, Reception and release checks. No production backend migration or deployment approved.",
+  "reason": "V386 owner-requested UI release: Reception approved-checklist Open Job Card and approved-date reuse through Create Job Card, plus verified frontend updates. No production backend migration or deployment in this publication.",
   "backendDeploymentRequired": false,
-  "verificationSummary": "PASS: signed acceptance 41641106549 (artifact 13233320972), Reception 41641106837, Android architecture 41641106660, standard APK 41641106665, outage 41641106741, inactive contracts 41641106767. Exact source 3cfddd12aac191ddf30ef3880763f4beaeb95e6f; V385 code 348.",
+  "verificationSummary": "PASS exact-source: signed 41653839768; Reception 41653839812; architecture 41653839861; app build 41653839853; outage 41653839791; inactive contracts 41653839825. Physical Android NOT_RUN. Backend NOT_DEPLOYED.",
   "ownerRequestedImmediateRelease": true,
-  "ownerPublicationRequested": false,
-  "releaseHeldByOwner": true,
+  "ownerPublicationRequested": true,
+  "releaseHeldByOwner": false,
   "backupDeferredByOwner": true,
-  "signedAcceptanceRun": 0,
-  "verificationRun": 0,
+  "signedAcceptanceRun": 41653839768,
+  "verificationRun": 41653839812,
   "v380PaintReceivedDate": {
     "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
     "feature": "Paint PO Received Date visible in summary/list and editable by Manager with correction reason; preserves original received employee and receipt time; audit before/after; rejects invalid/future dates; pending PO cannot be received by correction",
@@ -28,7 +28,7 @@
     "signedArtifactId": 13089726056,
     "receptionVerificationRun": 41320969105
   },
-  "authorization": "Owner requested deployment on 2026-11-03; this is a candidate only, not an approved publication. Matching source tests and signed APK must pass and protected manual workflow must be triggered before publication. Existing V385 production remains unchanged.",
+  "authorization": "Owner requested deploy/fix on 2026-11-03. Exact architecture-v2 source 7705e1377cff2b0eebc0581c14c33282dac9ed6e passed signed APK acceptance 41653839768, Reception verification 41653839812, Android build 41653839861, APK build 41653839853, outage 41653839791, inactive contracts 41653839825. Existing owner deferral of fresh backup remains documented. Physical Android test NOT_RUN; owner may test after release. Publication still requires protected workflow_dispatch.",
   "v380MonthlyExports": {
     "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
     "scope": "Manager Cash Monthly Performance and Insurance Monthly LPO Performance",
@@ -129,5 +129,5 @@
     "sourceBranch": "release/v385-approved-source",
     "ownerApprovedAt": "2026-11-03T13:09:54.684Z"
   },
-  "releaseCandidateStatus": "PENDING_SOURCE_VERIFICATION"
+  "releaseCandidateStatus": "APPROVED_AWAITING_MANUAL_DISPATCH"
 }
