@@ -16,11 +16,17 @@ const context={state,users,me:{role:'Supervisor'},document:{hidden:false,head:{a
   setInterval(fn){intervals.set(++serial,fn);return serial;},clearInterval(id){intervals.delete(id);},
   fmt:n=>String(n)+'m',totalForAssignment:a=>a.worked||0,empStatus:a=>a.testStatus||'New',
   v84TechState:()=>live,
+  zukaitStaffRoster:{filter:team=>team.filter(u=>u.id!=='inactive')},
   showSupervisorModal(t,body){title=t;for(const [id,e] of elements)if(id!=='modal'){e.isConnected=false;elements.delete(id);}
     for(const match of body.matchAll(/id="([^"]+)"/g))elements.set(match[1],element());
     const id=body.includes('twDepartment')?'twDepartment':'twWorkload';elements.get(id).innerHTML=body;
   }};
 context.window=context;vm.createContext(context);vm.runInContext(source,context);
+users.push({id:'inactive',name:'Former painter',role:'Employee',department:'Painter'});
+context.openTechnicianDepartment('Painter');
+assert.doesNotMatch(elements.get('twDepartment').innerHTML,/Former painter/,'Deactivated technicians must not appear in active department list');
+assert.match(elements.get('twDepartment').innerHTML,/Employee 1/,'Active technicians stay visible');
+
 const tick=()=>[...intervals.values()].forEach(fn=>fn());
 const body=()=>elements.get('twWorkload').innerHTML;
 for(const viewerRole of ['Supervisor','Manager']){
