@@ -55,14 +55,86 @@ function insuranceHtml(){
   ['in','INSURANCE IN',i.length,'Vehicles opened this month','↓'],['out','INSURANCE OUT',o.length,'Vehicles delivered this month','↑'],['collected','LPO COLLECTED',l.length,'LPOs received this month','✓']
  ].map(([kind,title,count,caption,icon])=>'<button type="button" class="v251-followup-card insurance-'+kind+'" data-phone-note="'+esc(kind==='collected'?'Received':(approximateRepairSummary(kind==='in'?i:o).pending?'Est. · '+approximateRepairSummary(kind==='in'?i:o).pending+' pending':'Est. repair'))+'" aria-label="'+esc(title+' · '+count+' · '+(kind==='collected'?money(insuranceTotal(l)):repairTotalLabel(kind==='in'?i:o))+' · '+(kind==='collected'?caption:repairCaption(kind==='in'?i:o)+' · '+caption))+'" onclick="v251OpenInsurancePulse(\''+kind+'\')"><span class="v251-followup-icon" aria-hidden="true">'+icon+'</span><b data-short="'+(kind==='collected'?'LPO':kind==='in'?'In':'Out')+'">'+title+'</b><strong>'+count+'</strong>'+'<em>'+cardAmount(kind==='collected'?money(insuranceTotal(l)):repairTotalLabel(kind==='in'?i:o))+'</em>'+(kind==='collected'?'':'<small>'+repairCaption(kind==='in'?i:o)+'</small>')+'<small>'+caption+'</small><span class="v251-card-link">View list →</span></button>').join('')+'</div></section>';
 }
+
+/* Insurance In: save the first approximate repair amount through the
+   existing audited job_card_edit endpoint. Subsequent corrections stay
+   in Edit Job Card, as requested by the workshop. */
+const insuranceApproxBusy=new Set();
+function insuranceAmountCell(j,kind){
+ const value=approximateRepairValue(j);
+ if(kind!=='in'||value!==null){
+  return '<b class="v251-insurance-amount" aria-label="'+esc(kind==='collected'?'LPO Amount (OMR)':'Approx. Amount (OMR)')+'">'+(kind==='collected'?money(j.insuranceLpo.amount):(value===null?'Pending':money(value)))+'</b>';
+ }
+ return '<div class="v251-insurance-entry" data-jc="'+esc(j.no)+'"><label><span class="sr-only">Approximate repair amount in OMR for Job Card '+esc(j.no)+'</span><input type="number" inputmode="decimal" min="0" max="1000000" step="0.001" placeholder="0.000" autocomplete="off" aria-label="Approximate repair amount in OMR for Job Card '+esc(j.no)+'"></label><button type="button" onclick="v251SaveInsuranceApprox(this)">Save</button></div>';
+}
+async function insuranceApproxApi(body){
+ if(!navigator.onLine)throw Error('Connect to the server before saving the approximate amount.');
+ const token=window.zukaitAuth?.getToken?.();
+ if(!token)throw Error('Your session is not available. Log in again before saving.');
+ const response=await fetch('https://pjknotnjkufadqavcmii.supabase.co/functions/v1/workshop-api',{
+  method:'POST',
+  headers:{'Content-Type':'application/json',apikey:'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A','x-zukait-session':token},
+  body:JSON.stringify({action:'job_card_edit',...body})
+ });
+ let result;try{result=await response.json()}catch(_){throw Error('Invalid server response. Recheck the Job Card before retrying.')}
+ if(!response.ok||!result?.ok){
+  const errors={
+   job_edit_conflict:'The Job Card was changed by another user. Refresh and check its amount.',
+   job_edit_invoice_authoritative:'The final invoice already controls this amount. Open Edit Job Card.',
+   job_edit_invalid_amount:'Enter an amount between 0 and 1,000,000 OMR with at most three decimals.',
+   job_edit_forbidden:'Your account does not have permission to edit this Job Card.',
+   job_edit_manager_required:'Only Manager may change a delivered Job Card.',
+   job_not_available:'This Job Card is no longer available.'
+  };
+  throw Error(errors[result?.code]||'Unable to save the approximate amount. Please retry after refreshing.');
+ }
+ return result;
+}
+window.v251SaveInsuranceApprox=async function(button){
+ if(role()!=='Manager')return;
+ const entry=button?.closest?.('.v251-insurance-entry'),input=entry?.querySelector('input');
+ if(!entry||!input)return;
+ const job=String(entry.dataset.jc||'').trim(),amount=input.value.trim();
+ if(!job||! /^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$/.test(amount)||Number(amount)>1000000){
+  window.alert?.('Enter a valid amount between 0 and 1,000,000 OMR (maximum three decimal places).');
+  input.focus();return;
+ }
+ if(insuranceApproxBusy.has(job))return;
+ insuranceApproxBusy.add(job);button.disabled=true;input.disabled=true;
+ const label=button.textContent;button.textContent='Saving…';
+ let saved=false;
+ try{
+  const current=await insuranceApproxApi({operation:'GET',jobCard:job}),j=current.job;
+  if(String(j?.jobType||'').trim().toUpperCase()!=='INSURANCE')throw Error('This Job Card is no longer an Insurance job. Refresh the list.');
+  if(approximateRepairValue(j)!==null)throw Error('An amount is already recorded. Use Edit Job Card to correct it.');
+  if(current.invoice_locked||j.finalInvoiceAmount!=null&&j.finalInvoiceAmount!=='')throw Error('The final invoice already controls this amount. Open Edit Job Card.');
+  await insuranceApproxApi({operation:'EDIT',jobCard:job,expectedEditRevision:Number(j.editRevision||0),patch:{amount},reason:'Initial approximate repair amount entered from Insurance In'});
+  saved=true;
+  // Lock the just-saved row immediately, even if a subsequent refresh is delayed.
+  if(entry.isConnected)entry.outerHTML=insuranceAmountCell({...j,amount:Number(amount)},'in');
+  monthlyConfirmed=null;
+  try{await window.zukaitCloud?.pull?.(true)}catch(_){/* Server acknowledged the edit; subsequent read will retry. */}
+  window.dispatchEvent(new Event('zukait:state-updated'));
+  await window.v251OpenInsurancePulse('in');
+ }catch(e){
+  window.alert?.((saved?'The amount was saved, but the list could not refresh: ':'')+(e?.message||'Please refresh and try again.'));
+ }finally{
+  insuranceApproxBusy.delete(job);
+  if(button.isConnected){button.disabled=false;button.textContent=label;}
+  if(input.isConnected)input.disabled=false;
+ }
+};
+
 window.v251OpenInsurancePulse=async function(kind){
  if(role()!=='Manager'||!['in','out','collected'].includes(kind))return;
  if(!await confirmRead()||role()!=='Manager')return;
  const dateKey=kind==='out'?'deliveredAt':'createdAt',a=insuranceRows(kind,monthlyConfirmed?.data).slice().sort((x,y)=>kind==='collected'?y.insuranceLpo.receivedDate.localeCompare(x.insuranceLpo.receivedDate):Number(y[dateKey]||0)-Number(x[dateKey]||0));
  const title=kind==='in'?'Insurance In':kind==='out'?'Insurance Out':'LPO Collected';
  const dateText=j=>kind==='collected'?j.insuranceLpo.receivedDate.split('-').reverse().join('-'):new Date(Number(j[dateKey])).toLocaleDateString('en-GB',{timeZone:'Asia/Muscat'}).replaceAll('/','-');
- const body=a.length?a.map((j,n)=>'<div class="v251-cash-row v251-insurance-row"><b class="v251-no">'+(n+1)+'</b><div><strong>JC '+esc(j.no)+' · '+esc(j.reg||'Not recorded')+'</strong><small>'+esc([j.vehicle,j.year].filter(Boolean).join(' '))+'</small><small>'+esc(j.insuranceCompany||'Insurance company not recorded')+' · '+esc(dateText(j))+'</small>'+(j.claimNo?'<small>Claim: '+esc(j.claimNo)+'</small>':'')+'</div>'+'<b class="v251-insurance-amount" aria-label="'+esc(kind==='collected'?'LPO Amount (OMR)':'Approx. Amount (OMR)')+'">'+(kind==='collected'?'OMR '+money(j.insuranceLpo.amount):(approximateRepairValue(j)===null?'Pending':'OMR '+money(approximateRepairValue(j))))+'</b>'+'</div>').join(''):'<p class="muted">No '+esc(title.toLowerCase())+' records for '+esc(month().label)+'.</p>';
- openModal('<div class="section-title"><div><h2>'+title+'</h2><p class="muted">'+esc(month().label)+(kind==='collected'?' · LPO documents received; not cash payment receipts':' · '+repairCaption(a))+'</p></div><button class="secondary" onclick="closeModal()">Close</button></div><div class="v251-cash-summary"><b>'+a.length+(kind==='collected'?' LPOs':' Vehicles')+'</b>'+'<strong>'+(kind==='collected'?money(insuranceTotal(a)):repairTotalLabel(a))+'</strong>'+'</div>'+(kind==='collected'?'':'<div class="v251-insurance-columns" aria-label="Insurance vehicle list columns"><span>Job Card / Vehicle Details</span><span>Approx. Amount (OMR)</span></div>')+body+(kind==='collected'?'':'<p class="v251-insurance-edit-hint">Amounts are read-only here. Add or correct them using <strong>Edit Job Card</strong>.</p>'));
+ const body=a.length?a.map((j,n)=>
+  '<div class="v251-cash-row v251-insurance-row"><b class="v251-no">'+(n+1)+'</b><div><strong>JC '+esc(j.no)+' · '+esc(j.reg||'Not recorded')+'</strong><small>'+esc([j.vehicle,j.year].filter(Boolean).join(' '))+'</small><small>'+esc(j.insuranceCompany||'Insurance company not recorded')+' · '+esc(dateText(j))+'</small>'+(j.claimNo?'<small>Claim: '+esc(j.claimNo)+'</small>':'')+'</div>'+insuranceAmountCell(j,kind)+'</div>'
+ ).join(''):'<p class="muted">No '+esc(title.toLowerCase())+' records for '+esc(month().label)+'.</p>';
+ openModal('<div class="section-title"><div><h2>'+title+'</h2><p class="muted">'+esc(month().label)+(kind==='collected'?' · LPO documents received; not cash payment receipts':' · '+repairCaption(a))+'</p></div><button class="secondary" onclick="closeModal()">Close</button></div><div class="v251-cash-summary"><b>'+a.length+(kind==='collected'?' LPOs':' Vehicles')+'</b>'+'<strong>'+(kind==='collected'?money(insuranceTotal(a)):repairTotalLabel(a))+'</strong>'+'</div>'+(kind==='collected'?'':'<div class="v251-insurance-columns" aria-label="Insurance vehicle list columns"><span>Job Card / Vehicle Details</span><span>Approx. Amount (OMR)</span></div>')+body+(kind==='collected'?'':'<p class="v251-insurance-edit-hint">Enter missing approximate amounts and select <strong>Save</strong>. To correct an existing amount, use <strong>Edit Job Card</strong>. Final invoice amounts are maintained separately.</p>'));
 };
 function html(){
  const i=rows('in'),o=rows('out'),label=month().label;
@@ -156,6 +228,15 @@ const s=document.createElement('style');s.id='v251CashPulseStyle';s.textContent=
  .v251-insurance-row{grid-template-columns:23px minmax(0,1fr);padding:12px;gap:6px 10px}
  .v251-insurance-row>b:nth-of-type(2){grid-column:2;font-size:14px;text-align:left}.v251-insurance-row small{font-size:13px}
 }
+
+/* Initial estimated amount entry: one amount field and one save button. */
+.v251-insurance-entry{display:flex;gap:5px;align-items:center;justify-content:flex-end;min-width:140px}
+.v251-insurance-entry label{display:block;min-width:0}
+.v251-insurance-entry input{box-sizing:border-box;width:90px;min-height:37px;padding:6px 7px;margin:0;background:#fff;border:1px solid #a8bfd4;border-radius:7px;color:#17324b;font-size:13px;text-align:right}
+.v251-insurance-entry button{box-sizing:border-box;min-height:37px;padding:6px 9px!important;background:#0e7490!important;color:#fff!important;border:1px solid #0e7490!important;border-radius:7px;font-size:12px}
+.v251-insurance-entry button:disabled,.v251-insurance-entry input:disabled{opacity:.65}
+.v251-insurance-entry input:focus-visible,.v251-insurance-entry button:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+@media(max-width:520px){.v251-insurance-entry{grid-column:2;justify-content:flex-start;flex-wrap:wrap;min-width:0}.v251-insurance-entry input{width:115px}}
 `;document.head.appendChild(s);
 let scheduled=false;function schedule(){if(scheduled)return;scheduled=true;setTimeout(()=>{scheduled=false;install()},0)}new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});['zukait:state-synced','zukait:state-updated','zukait:cloud-sync','online','focus'].forEach(n=>window.addEventListener(n,schedule));document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule()});schedule();setInterval(install,2000);
 window.v251CashPulse={install,html,rows,total,pendingAll,insuranceRows,insuranceHtml,insuranceTotal,approximateRepairValue,approximateRepairSummary};
