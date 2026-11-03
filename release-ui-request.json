@@ -1,23 +1,23 @@
 {
-  "versionName": "V384",
-  "versionCode": 347,
+  "versionName": "V385",
+  "versionCode": 348,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "sourceCommit": "9e6148143b9cffe7484a7117fc95d7129e958d50",
-  "approvedAt": "2026-11-03T11:52:00Z",
-  "publishNonce": "v384-owner-approved-exact-source-20261103-1152",
+  "approvedForStaff": false,
+  "sourceCommit": "678516b53a6169dd59f813a9689f0bb91a56ab5c",
+  "approvedAt": null,
+  "publishNonce": "v385-qa-pending-20261103",
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "reason": "V384: Reception Job Card Not Open filter; Insurance Management visual redesign; Insurance In read-only approximate amount column; Manager Work in Progress serial numbers. No source business-logic changes for these UI improvements.",
+  "reason": "V385: Supervisor three-card row (Employee Request / Ideal Workers / WIP), read-only shared Work in Progress view, Need Attention next to Estimate in the two-column workshop grid, and Mechanical Department menu readability correction. No backend changes.",
   "backendDeploymentRequired": false,
   "verificationSummary": "Signed APK run 41609050935 SUCCESS, artifact 13218031933; Reception verification 41609050903 SUCCESS; Android build 41609050980 SUCCESS; APK build 41609050986 SUCCESS; outage safety 41609050933 SUCCESS; inactive contracts 41609050854 SUCCESS. Source 9e6148143b9cffe7484a7117fc95d7129e958d50; V384 code 347.",
   "ownerRequestedImmediateRelease": true,
-  "ownerPublicationRequested": true,
-  "releaseHeldByOwner": false,
+  "ownerPublicationRequested": false,
+  "releaseHeldByOwner": true,
   "backupDeferredByOwner": true,
-  "signedAcceptanceRun": 41609050935,
-  "verificationRun": 41609050903,
+  "signedAcceptanceRun": 0,
+  "verificationRun": 0,
   "v380PaintReceivedDate": {
     "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
     "feature": "Paint PO Received Date visible in summary/list and editable by Manager with correction reason; preserves original received employee and receipt time; audit before/after; rejects invalid/future dates; pending PO cannot be received by correction",
@@ -28,7 +28,7 @@
     "signedArtifactId": 13089726056,
     "receptionVerificationRun": 41320969105
   },
-  "authorization": "Owner explicitly requested 'publish' for V384 on 2026-11-03. Publish exact source 9e6148143b9cffe7484a7117fc95d7129e958d50 from architecture-v2 using protected coordinated workflow. Source CI signed and Reception passed. Android physical acceptance and fresh production backup-restore NOT_RUN; user previously chose test-after-release and backup deferral.",
+  "authorization": "Owner requested V385 release on 2026-11-03. Approval held until exact-source signed APK and Reception CI pass. UI-only scope: Supervisor WIP and Need Attention tile rearrangement, plus contrast correction. No backend deployment, physical phone validation NOT_RUN, fresh backup-restore NOT_RUN.",
   "v380MonthlyExports": {
     "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
     "scope": "Manager Cash Monthly Performance and Insurance Monthly LPO Performance",
@@ -69,12 +69,12 @@
     "published": false
   },
   "ownerRequestedProceed": true,
-  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V384",
+  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V385",
   "previousPublishedRelease": {
-    "versionName": "V380",
-    "versionCode": 343,
-    "sourceCommit": "48de3469e7405378f9d9a3782ea9f64f8e65b50b",
-    "releaseTag": "release-V380-architecture-v2"
+    "versionName": "V384",
+    "versionCode": 347,
+    "sourceCommit": "9e6148143b9cffe7484a7117fc95d7129e958d50",
+    "releaseTag": "release-V384-architecture-v2"
   },
   "productionBackendDeploymentEvidence": {
     "projectRef": "pjknotnjkufadqavcmii",
@@ -109,5 +109,15 @@
     "sourceSha": "138804af3cd3ce073bbfa8390ee3332ff3a85c80",
     "reason": "Protected publisher token could not create named tag (HTTP 403); pre-created immutable source branch points to exact approved commit, publisher's existing fallback.",
     "retryAt": "2026-11-03T05:16:56.019Z"
+  },
+  "v385CandidateEvidence": {
+    "sourceCommit": "678516b53a6169dd59f813a9689f0bb91a56ab5c",
+    "scope": "Supervisor UI and read-only existing WIP list",
+    "signedAcceptanceStatus": "PENDING",
+    "receptionVerificationStatus": "PENDING",
+    "androidBuildStatus": "PENDING",
+    "physicalAcceptance": "NOT_RUN",
+    "freshBackupRestore": "NOT_RUN",
+    "requestedRelease": true
   }
 }
