@@ -57,8 +57,9 @@ begin
  v_job_vin:=upper(regexp_replace(coalesce(v_job->>'vin',''),'[^A-Za-z0-9]','','g'));
  if v_reg='' or v_job_reg='' or v_reg<>v_job_reg then raise exception 'reception_vehicle_mismatch'; end if;
  if v_vin<>'' and v_job_vin<>'' and v_vin<>v_job_vin then raise exception 'reception_vin_mismatch'; end if;
- if upper(btrim(coalesce(v_rc.details->>'make','')) )<>upper(btrim(coalesce(v_job->>'make',''))) or
-    upper(btrim(coalesce(v_rc.details->>'model','')))<>upper(btrim(coalesce(v_job->>'model',''))) then raise exception 'reception_vehicle_mismatch'; end if;
+ -- Make/model descriptions can differ across historical checklists and direct JCs.
+ -- Normalized registration is authoritative; a conflicting populated VIN
+ -- remains a hard stop to prevent cross-vehicle linking.
  if upper(coalesce(v_job->>'jobType',''))='INSURANCE' and v_rc.approval_status<>'APPROVED' then raise exception 'reception_not_approved'; end if;
  -- Store the mapping independently: NEVER update JC sessions, amounts, or source audit row.
  insert into public.workshop_reception_existing_job_links
