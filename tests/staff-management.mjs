@@ -48,6 +48,8 @@ w.eval(client);
 const settle=async()=>{for(let i=0;i<15;i++)await new Promise(resolve=>setImmediate(resolve));};
 w.openUserManagement();
 await settle();
+assert.equal(w.document.getElementById('userMgmtRole').value,'All','all staff roles displayed by default');
+assert.equal(w.document.getElementById('userMgmtStatus').value,'All','active and inactive staff displayed by default');
 assert.equal(w.document.querySelectorAll('#zum tbody tr').length,3);
 assert.match(w.document.querySelector('#zum-totals').textContent,/2 active · 1 inactive/);
 assert.equal(w.document.querySelectorAll('#zum .zum-inactive').length,1,'Existing inactive user must not appear as active');
@@ -76,6 +78,17 @@ assert.match(w.document.querySelector('#zum-totals').textContent,/1 active · 2 
 assert.deepEqual(original,[{user_id:'EMP001',display_name:'Asha',role:'Employee',department:'Painter',active:true},
 {user_id:'SUP001',display_name:'Sam',role:'Supervisor',department:'Supervisor',active:true},
 {user_id:'EMP002',display_name:'Former Employee',role:'Employee',department:'Denter',active:false}],'No workshop data is changed by status UI');
+
+// A pending server call must not turn into a permanent-looking "Connecting" message
+// after the Manager changes filters. Unsupported production endpoints must be clear.
+let finishRead;
+w.zukaitAuth.managerStaff=()=>new Promise(resolve=>{finishRead=resolve;});
+w.openUserManagement();
+const search=w.document.getElementById('userMgmtSearch');search.value='EMP';search.dispatchEvent(new w.Event('input',{bubbles:true}));
+assert.match(w.document.getElementById('userMgmtList').textContent,/Loading server-verified staff accounts/);
+finishRead({ok:false,code:'unknown_action'});
+await settle();
+assert.match(w.document.getElementById('userMgmtList').textContent,/matching server update/,'old backend must display actionable error');
 
 w.me={id:'EMP001',role:'Employee'};
 w.openUserManagement();
