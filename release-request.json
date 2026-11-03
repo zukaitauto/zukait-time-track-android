@@ -1,28 +1,28 @@
 {
-  "versionName": "V384",
-  "versionCode": 347,
+  "versionName": "V385",
+  "versionCode": 348,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "sourceCommit": "9e6148143b9cffe7484a7117fc95d7129e958d50",
+  "approvedForStaff": false,
+  "sourceCommit": "678516b53a6169dd59f813a9689f0bb91a56ab5c",
   "ownerRequestedProceed": true,
-  "ownerPublicationRequested": true,
-  "authorization": "Owner explicitly requested 'publish' for V384 on 2026-11-03. Publish exact source 9e6148143b9cffe7484a7117fc95d7129e958d50 from architecture-v2 using protected coordinated workflow. Source CI signed and Reception passed. Android physical acceptance and fresh production backup-restore NOT_RUN; user previously chose test-after-release and backup deferral.",
-  "approvedAt": "2026-11-03T11:52:00Z",
-  "publishNonce": "v384-owner-approved-exact-source-20261103-1152",
-  "releaseHeldByOwner": false,
+  "ownerPublicationRequested": false,
+  "authorization": "Owner requested V385 release on 2026-11-03. Approval held until exact-source signed APK and Reception CI pass. UI-only scope: Supervisor WIP and Need Attention tile rearrangement, plus contrast correction. No backend deployment, physical phone validation NOT_RUN, fresh backup-restore NOT_RUN.",
+  "approvedAt": null,
+  "publishNonce": "v385-qa-pending-20261103",
+  "releaseHeldByOwner": true,
   "publicationRequiresSeparateInstruction": true,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V384",
+  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V385",
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41609050935,
-  "verificationRun": 41609050903,
+  "signedAcceptanceRun": 0,
+  "verificationRun": 0,
   "previousPublishedRelease": {
-    "versionName": "V383",
-    "versionCode": 346,
-    "sourceCommit": "138804af3cd3ce073bbfa8390ee3332ff3a85c80",
-    "releaseTag": "release-V383-architecture-v2"
+    "versionName": "V384",
+    "versionCode": 347,
+    "sourceCommit": "9e6148143b9cffe7484a7117fc95d7129e958d50",
+    "releaseTag": "release-V384-architecture-v2"
   },
   "v377VerificationEvidence": {
     "androidBuildRun": 41175629369,
@@ -707,7 +707,7 @@
     "physicalPhoneTest": "NOT_RUN",
     "releaseApproval": "OWNER_APPROVED_RELEASE_WORKFLOW_GATED"
   },
-  "reason": "V384: Reception Job Card Not Open filter; Insurance Management visual redesign; Insurance In read-only approximate amount column; Manager Work in Progress serial numbers. No source business-logic changes for these UI improvements.",
+  "reason": "V385: Supervisor three-card row (Employee Request / Ideal Workers / WIP), read-only shared Work in Progress view, Need Attention next to Estimate in the two-column workshop grid, and Mechanical Department menu readability correction. No backend changes.",
   "verificationSummary": "Signed APK run 41609050935 SUCCESS, artifact 13218031933; Reception verification 41609050903 SUCCESS; Android build 41609050980 SUCCESS; APK build 41609050986 SUCCESS; outage safety 41609050933 SUCCESS; inactive contracts 41609050854 SUCCESS. Source 9e6148143b9cffe7484a7117fc95d7129e958d50; V384 code 347.",
   "productionBackendDeploymentEvidence": {
     "projectRef": "pjknotnjkufadqavcmii",
@@ -759,5 +759,15 @@
     "signedArtifactId": 13218031933,
     "signedArtifactName": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
     "sourceCommit": "9e6148143b9cffe7484a7117fc95d7129e958d50"
+  },
+  "v385CandidateEvidence": {
+    "sourceCommit": "678516b53a6169dd59f813a9689f0bb91a56ab5c",
+    "scope": "Supervisor UI and read-only existing WIP list",
+    "signedAcceptanceStatus": "PENDING",
+    "receptionVerificationStatus": "PENDING",
+    "androidBuildStatus": "PENDING",
+    "physicalAcceptance": "NOT_RUN",
+    "freshBackupRestore": "NOT_RUN",
+    "requestedRelease": true
   }
 }
