@@ -54,6 +54,10 @@ assert.equal(w.document.querySelectorAll('#zum tbody tr').length,3);
 assert.match(w.document.querySelector('#zum-totals').textContent,/2 active · 1 inactive/);
 assert.equal(w.document.querySelectorAll('#zum .zum-inactive').length,1,'Existing inactive user must not appear as active');
 assert.ok(w.document.querySelector('[data-id="EMP002"][data-active="true"]'),'Inactive users must have Reactivate');
+rows=[rows[2],rows[1],rows[0]]; // Server order must not put inactive staff before active staff.
+await w.zukaitStaffManagement.refresh();
+await settle();
+assert.deepEqual([...w.document.querySelectorAll('#zum tbody tr td:first-child small')].map(x=>x.textContent),['EMP001','SUP001','EMP002'],'Active accounts first; inactive accounts last; stable ID order within each status');
 const filters=w.document.querySelector('#userMgmtStatus');
 filters.value='Inactive';filters.dispatchEvent(new w.Event('change',{bubbles:true}));
 assert.equal(w.document.querySelectorAll('#zum tbody tr').length,1,'Inactive filter must reflect server state');
