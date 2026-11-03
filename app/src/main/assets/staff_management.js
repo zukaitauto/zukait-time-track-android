@@ -1,7 +1,7 @@
 (function(){
  'use strict';
  // Real account status lives in staff_credentials, not workshop state.users.
- let accounts=[],loaded=false,busy=false,sequence=0;
+ let accounts=[],loaded=false,loading=false,busy=false,sequence=0;
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const manager=()=>window.me?.role==='Manager';
  const root=()=>document.getElementById('zum');
@@ -49,7 +49,7 @@
  }
  function renderList(){
   const panel=document.getElementById('userMgmtList');if(!panel)return;
-  if(!loaded){panel.innerHTML='<p class="zum-info" role="status">Connecting to the staff authentication server…</p>';return;}
+  if(!loaded){if(loading)panel.innerHTML='<p class="zum-info" role="status">Loading server-verified staff accounts…</p>';return;}
   const search=String(document.getElementById('userMgmtSearch')?.value||'').toLowerCase().trim();
   const role=document.getElementById('userMgmtRole')?.value||'All';
   const status=document.getElementById('userMgmtStatus')?.value||'All';
@@ -69,8 +69,9 @@
  }
  async function refresh(){
   if(!manager()||!root())return;
-  if(!navigator.onLine){loaded=false;document.getElementById('userMgmtList').innerHTML='<p class="zum-info" role="alert">Connect to Server Live to manage staff accounts. No changes have been made.</p>';return;}
+  if(!navigator.onLine){loaded=false;loading=false;document.getElementById('userMgmtList').innerHTML='<p class="zum-info" role="alert">Connect to Server Live to manage staff accounts. No changes have been made.</p>';return;}
   const current=++sequence;
+  loaded=false;loading=true;
   const panel=document.getElementById('userMgmtList');if(panel)panel.innerHTML='<p class="zum-info" role="status">Loading server-verified staff accounts…</p>';
   try{
    const r=await window.zukaitAuth?.managerStaff?.({operation:'LIST'});
@@ -78,8 +79,8 @@
    if(!r?.ok||!Array.isArray(r.users))throw Error(message(r));
    accounts=r.users.filter(a=>a?.user_id && ['Employee','Supervisor','Mechanical Supervisor','Purchaser','Receptionist'].includes(a.role))
      .map(a=>({...a,active:a.active===true}));
-   loaded=true;renderList();
-  }catch(err){if(current!==sequence)return;loaded=false;if(panel)panel.innerHTML='<p class="zum-info" role="alert">'+esc(err.message||'Staff Management server unavailable. No records were changed.')+'</p>';}
+   loaded=true;loading=false;renderList();
+  }catch(err){if(current!==sequence)return;loaded=false;loading=false;if(panel)panel.innerHTML='<p class="zum-info" role="alert">'+esc(err.message||'Staff Management server unavailable. No records were changed.')+'</p>';}
  }
  function message(response){
   const codes={
@@ -91,9 +92,11 @@
    staff_status_role_forbidden:'This account uses a different protected management workflow.',
    staff_status_unchanged:'This account status has already been updated. Refresh the list.',
    staff_status_request_conflict:'This request ID was already used with different details.',
-   staff_status_unavailable:'Staff access management is not yet available on the server.'
+   staff_status_unavailable:'Staff access management is not yet available on the server.',
+   unknown_action:'Staff Management requires the matching server update. No records were changed.',
+   invalid_action:'Staff Management requires the matching server update. No records were changed.'
   };
-  return codes[response?.code]||'The server could not confirm this change. No success has been assumed.';
+  return codes[response?.code]||(response?._status===404?'Staff Management requires the matching server update. No records were changed.':'The server could not confirm this change. No success has been assumed.');
  }
  function statusDialog(target,desired){
   const account=accounts.find(a=>a.user_id===target);
@@ -146,15 +149,15 @@
  }
  function open(){
   if(!manager())return alert('Manager access required.');
-  css();loaded=false;accounts=[];
+  css();loaded=false;loading=false;accounts=[];
   window.openModal('<div id="zum">'+
    '<div class="zum-head"><div><h2>User Management</h2><p class="zum-sub" id="zum-totals">Server-verified access for workshop staff</p></div>'+
    '<div class="zum-actions"><button class="zum-primary" type="button" data-zum-action="create">+ Create User</button>'+
    '<button class="zum-alt" type="button" data-zum-action="refresh">Refresh</button>'+
    '<button class="zum-alt" type="button" data-zum-action="close">Close</button></div></div>'+
    '<div class="zum-filters"><label>Search by name / User ID<input id="userMgmtSearch" placeholder="Search staff"></label>'+
-   '<label>Role<select id="userMgmtRole"><option>All</option><option>Employee</option><option>Supervisor</option><option>Mechanical Supervisor</option><option>Purchaser</option><option>Receptionist</option></select></label>'+
-   '<label>Status<select id="userMgmtStatus"><option>All</option><option>Active</option><option>Inactive</option></select></label></div>'+
+   '<label>Role<select id="userMgmtRole"><option selected>All</option><option>Employee</option><option>Supervisor</option><option>Mechanical Supervisor</option><option>Purchaser</option><option>Receptionist</option></select></label>'+
+   '<label>Status<select id="userMgmtStatus"><option selected>All</option><option>Active</option><option>Inactive</option></select></label></div>'+
    '<p class="zum-info">Deactivation blocks access but does not delete any time logs, Job Cards, invoices, or employee history. Accountant accounts are managed separately.</p>'+
    '<div id="userMgmtList"></div></div>');
   const container=root();if(!container)return;
