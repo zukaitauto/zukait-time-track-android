@@ -102,6 +102,10 @@ assert.match(w.document.getElementById('rc-direct-checklist-note').textContent,/
 assert.deepEqual([...form.elements.odometer_unit.options].map(x=>x.value),['KM','Miles'],'Units must match PostgreSQL validation');
 assert.match(w.document.getElementById('rc-direct-checklist-note').textContent,/53699/);
 assert.equal(form.elements.approval_confirmed.required,false,'Existing valid insurance approval must not require renewed checkbox for unchanged identity');
+assert.equal(w.document.getElementById('rc-direct-approved-note').hidden,false,'Previously approved checklist shows its stored-approval notice');
+assert.equal(w.document.getElementById('rc-direct-approval-entry').hidden,true,'Existing approval date and evidence fields must not be requested again');
+assert.equal(form.elements.approval_date.required,false,'Existing checklist approval date must not be re-entered');
+assert.equal(form.elements.evidence.required,false,'Existing checklist approval evidence must not be re-entered');
 // Staged rejected network response: verify the Receptionist reaches linked creation
 // without falsely treating spacing and plate punctuation as identity corrections.
 const fetchLinkedBefore=w.fetch;
@@ -126,6 +130,10 @@ assert.equal('identity_updates' in unchangedLinkedCommand,false,'Formatting alon
 assert.equal('approval_confirmed' in unchangedLinkedCommand,false,'Existing approval is reused without rewriting it');
 w.fetch=fetchLinkedBefore;
 form.elements.customer.value='Updated QA Customer';assert.equal(form.elements.customer.value,'Updated QA Customer');
+form.elements.customer.dispatchEvent(new w.Event('input',{bubbles:true}));
+assert.equal(w.document.getElementById('rc-direct-approval-entry').hidden,false,'A genuine approved-identity change must request fresh approval');
+assert.equal(form.elements.approval_date.required,true,'Renewed approval date required for corrected customer');
+assert.equal(form.elements.evidence.required,true,'Renewed approval evidence required for corrected customer');
 const beforeLinked=calls.filter(c=>c.operation==='CREATE_DIRECT_JOB').length;
 await submit();assert.equal(calls.filter(c=>c.operation==='CREATE_DIRECT_JOB').length,beforeLinked,'Linked checklist must never create a second direct intake');
 assert.equal(calls.filter(c=>c.operation==='CREATE_EXTERNAL_JOB').length,0,'Receptionist cannot silently alter approved identity');
@@ -148,6 +156,7 @@ assert.equal(calls.filter(c=>c.operation==='CREATE_DIRECT_JOB').length,beforeLin
 w.document.getElementById('rc-direct-checklist-clear').click();await settle();
 assert.equal(w.document.getElementById('rc-direct-checklist-clear').hidden,true);
 assert.equal(form.elements.job_type.disabled,false,'Manual intake must restore editable Job Type');
+assert.equal(w.document.getElementById('rc-direct-approval-entry').hidden,false,'Clearing checklist must restore new insurance approval entry');
 assert.equal(form.elements.make.value,'');
 assert.equal(form.elements.odometer.value,'');
 assert.match(w.document.getElementById('rc-direct-checklist-note').textContent,/NEW reception intake/);
