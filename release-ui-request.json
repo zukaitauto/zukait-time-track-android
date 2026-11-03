@@ -1,23 +1,23 @@
 {
-  "versionName": "V382",
-  "versionCode": 345,
+  "versionName": "V383",
+  "versionCode": 346,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "sourceCommit": "8e74d9df42d9eb94ef16ddb1c311bb8832c38780",
-  "approvedAt": "2026-11-02T14:17:35.748Z",
-  "publishNonce": "v382-owner-publish-request-20261102-after-backend-v100",
+  "approvedForStaff": false,
+  "sourceCommit": "d9eaa1f34e0ddaf2ccb0e508e5424ac3b0f519c4",
+  "approvedAt": null,
+  "publishNonce": null,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "reason": "V382 fixes: delivered insurance LPO Pending defaults all dates; advanced From–To overrides month; LPO receipt separate from invoice; Monthly Incentive month filter and Print/PDF/Excel compatible CSV. Production LPO rule separately deployed as workshop-api v100.",
   "backendDeploymentRequired": false,
   "verificationSummary": "V382 exact source acceptance runs: signed 41460431747 and Reception 41460431673; publication workflow independently verifies success. No physical acceptance or fresh restore claimed.",
-  "ownerRequestedImmediateRelease": true,
-  "ownerPublicationRequested": true,
-  "releaseHeldByOwner": false,
+  "ownerRequestedImmediateRelease": false,
+  "ownerPublicationRequested": false,
+  "releaseHeldByOwner": true,
   "backupDeferredByOwner": true,
-  "signedAcceptanceRun": 41460431747,
-  "verificationRun": 41460431673,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
   "v380PaintReceivedDate": {
     "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
     "feature": "Paint PO Received Date visible in summary/list and editable by Manager with correction reason; preserves original received employee and receipt time; audit before/after; rejects invalid/future dates; pending PO cannot be received by correction",
@@ -28,7 +28,7 @@
     "signedArtifactId": 13089726056,
     "receptionVerificationRun": 41320969105
   },
-  "authorization": "Owner explicitly instructed 2026-11-02 to publish fixes immediately and test afterward. Physical Android retest and fresh backup restore are deferred and NOT PASSED. Production workshop-api insurance LPO rule was deployed separately to version 100, active, exact module matches architecture-v2; release workflow publishes frontend and signed APK only.",
+  "authorization": "User requested 2026-11-03 to release new version and test afterward. Production workshop-api Insurance WIP module separately deployed as v101 and source-verified. Signed V383 build and final publication approval are not yet attested in this candidate metadata. Physical testing and fresh production backup restore remain NOT_RUN; no test is represented as passed.",
   "v380MonthlyExports": {
     "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
     "scope": "Manager Cash Monthly Performance and Insurance Monthly LPO Performance",
@@ -69,7 +69,7 @@
     "published": false
   },
   "ownerRequestedProceed": true,
-  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V381",
+  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V383",
   "previousPublishedRelease": {
     "versionName": "V380",
     "versionCode": 343,
@@ -85,5 +85,17 @@
     "status": "ACTIVE",
     "moduleSourceAligned": true,
     "productionDataEditedByDeployment": false
+  },
+  "v383CandidateEvidence": {
+    "sourceCommit": "d9eaa1f34e0ddaf2ccb0e508e5424ac3b0f519c4",
+    "productionBackendProject": "pjknotnjkufadqavcmii",
+    "productionWorkshopApiVersion": 101,
+    "backendModuleSourceAligned": true,
+    "workInProgressScope": "All undelivered Insurance Job Cards, all dates by default; month/date filters optional",
+    "approvalPendingScope": "All waiting Insurance Checklists, Checklist details and filters",
+    "linkDialogScope": "Responsive in-app link confirmation retaining server identity checks",
+    "releaseStatus": "PENDING_SIGNED_CI",
+    "physicalAndroidAcceptance": "NOT_RUN_OWNER_TO_TEST_AFTER_RELEASE",
+    "freshBackupRestore": "NOT_RUN"
   }
 }
