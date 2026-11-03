@@ -337,7 +337,48 @@
   observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
   ensureAccountantRoleOption();
 
-  window.zukaitAuth={
+  // Verified staff status is separate from the historical workshop employee directory.
+  // Never infer account activity from state.users (it has no auth status field).
+  let rosterCache=null,rosterFor='',rosterAt=0,rosterPending=null;
+  const rosterIdentity=()=>String(me?.id||'')+'|'+String(token()||'');
+  async function refreshTechnicianRoster(force=false){
+    if(!me||!['Manager','Supervisor'].includes(me.role)||!token()||!navigator.onLine)return null;
+    const identity=rosterIdentity(),now=Date.now();
+    if(!force&&rosterCache&&rosterFor===identity&&now-rosterAt<60000)return rosterCache;
+    if(rosterPending)return rosterPending;
+    rosterPending=(async()=>{
+      try{
+        const result=await callAuth({action:'technician_roster',session_token:token()});
+        if(!result?.ok||!Array.isArray(result.technicians))throw Error('Staff roster unavailable');
+        const ids=new Map();
+        for(const item of result.technicians){
+          if(item?.id)ids.set(String(item.id),item.active===true);
+        }
+        if(rosterIdentity()!==identity)return null;
+        rosterCache=ids;rosterFor=identity;rosterAt=Date.now();
+        try{window.render?.()}catch(_){}
+        return rosterCache;
+      }catch(_){
+        if(rosterIdentity()===identity){rosterCache=null;rosterFor=identity;rosterAt=Date.now();}
+        return null;
+      }finally{rosterPending=null;}
+    })();
+    return rosterPending;
+  }
+  window.zukaitStaffRoster={
+    filter(team){
+      if(!me||!['Manager','Supervisor'].includes(me.role)||!token())return null;
+      const identity=rosterIdentity();
+      if(rosterFor!==identity){rosterCache=null;rosterAt=0;rosterFor=identity;}
+      if(rosterCache&&Date.now()-rosterAt<60000)
+        return (team||[]).filter(u=>rosterCache.has(String(u.id))&&rosterCache.get(String(u.id))===true);
+      if(!rosterPending&&Date.now()-rosterAt>10000)void refreshTechnicianRoster();
+      return null; // Do not count unverified inactive accounts as active.
+    },
+    refresh:refreshTechnicianRoster,
+    invalidate(){rosterCache=null;rosterAt=0;rosterFor='';}
+  };
+    window.zukaitAuth={
     getToken:()=>token(),
     getSavedUser:()=>savedSession()?.user||null,
     restoreSession,
