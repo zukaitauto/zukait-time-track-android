@@ -41,7 +41,8 @@
   const statusClass=s=>'tw-status-'+String(s||'').toLowerCase().replace(/[^a-z]+/g,'-');
   const deptClass=d=>'tw-dept-'+String(d||'').toLowerCase().replace(/[^a-z]+/g,'-');
   function departmentBody(dept){
-    const team=(users||[]).filter(u=>u&&u.role==='Employee'&&u.department===dept);
+    const team=window.zukaitStaffRoster?.filter?.((users||[]).filter(u=>u&&u.role==='Employee'&&u.department===dept));
+    if(!team)return '<p class="notice" role="status">Verifying active technician accounts with the server…</p>';
     return team.length?team.map((u,i)=>{
       const {live,rows}=snapshot(u.id),working=rows.find(r=>r.status==='Working');
       const liveLabel=live.status||'Available';
