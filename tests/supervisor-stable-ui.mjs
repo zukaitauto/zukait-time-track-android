@@ -33,7 +33,12 @@ assert.doesNotMatch(stable,/setTimeout\(apply/,'stable Supervisor authority must
 assert.match(stable,/class="v143-two"/,'stable UI must use deterministic two-column rows');
 assert.match(stable,/Available Technicians/,'Available Technicians describes technicians ready for assignment');
 assert.ok(stable.indexOf('class="v143-top requests"')<stable.indexOf('class="v143-top available ideal-worker"'));
-assert.ok(stable.indexOf('class="v143-top available ideal-worker"')<stable.indexOf('class="v143-top attention"'),'Ideal Workers must precede Need Attention');
+assert.ok(stable.indexOf('class="v143-top available ideal-worker"')<stable.indexOf('class="v143-top wip"'),'Ideal Workers must precede WIP in the three-card row');
+assert.doesNotMatch(stable,/class="v143-top attention"/,'Need Attention must no longer occupy the top row');
+assert.match(stable,/id="supervisorNeedAttentionTile"/,'Need Attention belongs beside Estimate');
+assert.ok(stable.indexOf('id="supervisorEstimateTile"')<stable.indexOf('id="supervisorNeedAttentionTile"'),'Need Attention must follow Estimate');
+assert.match(stable,/zukaitManagerWip\?\.count/,'WIP must use the manager shared count');
+assert.match(stable,/window\.v143OpenWip/,'WIP must route to the shared view');
 assert.match(stable,/id="supervisorConsumablesTile"/,'Consumables must occupy the paired Supervisor resource slot');
 assert.match(stable,/Today at a Glance/,'Today at a Glance must remain');
 assert.match(stable,/class="v143-top available ideal-worker"/,'Ideal Workers must occupy the top quick-access row');
