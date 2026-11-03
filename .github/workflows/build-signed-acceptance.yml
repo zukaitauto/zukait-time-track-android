@@ -47,6 +47,11 @@ on:
       - app/src/main/assets/monthly_employee_performance.js
       - tests/monthly-employee-performance*.mjs
       - app/src/main/assets/insurance_management.js
+      - app/src/main/assets/staff_management.js
+      - app/src/main/assets/secure_auth.js
+      - supabase/functions/staff-auth/**
+      - supabase/migrations/*manager_staff*
+      - tests/staff-management.mjs
       - app/src/main/assets/reception_dashboard.js
       - tests/insurance-wip-all-dates.mjs
       - tests/insurance-management*.mjs
