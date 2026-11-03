@@ -1178,7 +1178,7 @@
     // Server GET is authoritative for permission and approval validity.
     const approvedInsuranceJob = r.job_type==='INSURANCE'&&!r.job_card&&!r.outcome&&!r.released_date&&
       !['CTL','NOT_REPAIRED'].includes(r.repair_status)&&
-      (current.external_approval?.valid===true||current.job_creation?.can_create===true);
+      (current.external_approval?.valid===true||current.job_creation?.can_create===true||r.approval_status==='APPROVED');
     shell(
       r.rc_no + " · Reception Checklist",
       checklistSummary(r, d) + badges(r) +
@@ -1186,9 +1186,7 @@
         (current.cancellation?.history ? '<div class="rc-box"><b>Job Card cancelled · '+esc(current.cancellation.history.cancellation_date)+'</b><p>'+esc(current.cancellation.history.reason)+' · '+esc(current.cancellation.history.actor_name)+' ('+esc(current.cancellation.history.actor_id)+')</p><p>History and costs retained. Vehicle location remains '+esc(r.location)+'.</p></div>' : '') +
         '<div class="rc-actions rc-cl-actions">' +
         (r.can_edit ? '<button data-rc-action="edit">Edit</button>' : "") +
-        (approvedInsuranceJob?'<button type="button" class="rc-open-approved-job" data-rc-action="open-approved-job">🚗 OPEN JOB CARD</button>':
-        r.job_type==='INSURANCE'&&r.approval_status==='APPROVED'&&!r.job_card&&!r.outcome&&!r.released_date?
-        '<button type="button" data-rc-action="insurance">Review Insurance Approval</button>':'') +
+        (approvedInsuranceJob?'<button type="button" class="rc-open-approved-job" data-rc-action="open-approved-job">🚗 OPEN JOB CARD</button>':'') +
         (r.repair_status!==undefined&&!r.job_card&&!r.outcome&&!r.released_date?
           '<button data-rc-action="location-choice">VWC / VIG</button>'+
           (r.repair_status==='PENDING'?'<button data-rc-action="management" data-operation="SET_CTL">CTL</button><button data-rc-action="rc-estimate">ESTIMATE</button><button data-rc-action="management" data-operation="SET_APPROVED">APPROVED</button><button data-rc-action="management" data-operation="SET_NOT_REPAIRED">NOT REPAIRED</button>':r.repair_status==='CTL'?'<button data-rc-action="management" data-operation="RELEASE_CTL">Deliver / Release</button>':''):'') +
@@ -1881,8 +1879,8 @@
             break;
           }
           if(current.external_approval?.valid!==true&&current.job_creation?.can_create!==true){
-            await view(target);
-            error(Error('Insurance approval requires verification before a Job Card can be opened.'));
+            insuranceWorkspace();
+            error(Error('This checklist is marked Approved, but the current insurance approval is not verified for Job Card creation. Ask Manager or Supervisor to review the approval record here.'));
             break;
           }
           insuranceWorkspace();
