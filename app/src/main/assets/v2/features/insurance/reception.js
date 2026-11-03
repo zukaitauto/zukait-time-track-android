@@ -535,7 +535,7 @@
       '<label class="rc-wide">Work Description (optional)<textarea name="reason" rows="6" maxlength="2000" placeholder="Describe the repair work required…" style="display:block;width:100%;box-sizing:border-box;min-height:160px;margin-top:6px;padding:12px;font-size:16px;line-height:1.6;resize:vertical"></textarea></label>' +
       '<label class="rc-check"><input type="checkbox" name="received_confirmed" required>I confirm the vehicle has been received at the workshop.</label><div class="rc-actions"><button type="submit">Open Job Card</button></div></form>');
     const form=document.getElementById('rc-direct-job'),type=form.querySelector('[name="job_type"]'),account=form.querySelector('[name="credit_account"]');
-    let linkedChecklist=null,linkedApprovalValid=false;
+    let linkedChecklist=null,linkedApprovalValid=false,linkedApprovalMode='';
     const searchInput=document.getElementById('rc-direct-checklist-search');
     const searchResults=document.getElementById('rc-direct-checklist-results');
     const linkedIdentityChanged=()=>{
@@ -577,7 +577,11 @@
             const r=result.record,d=r.details||{};
             if(r.job_card){searchResults.textContent='Job Card '+r.job_card+' already exists for '+r.rc_no+'.';return;}
             linkedChecklist=r;
-            linkedApprovalValid=!!result.external_approval?.valid;
+            // Quotation-approved Job Cards must use CREATE_JOB to retain approved
+            // parts. Pre-approved external cases use CREATE_EXTERNAL_JOB.
+            linkedApprovalMode=result.job_creation?.can_create===true?'quotation':
+              result.external_approval?.valid===true?'external':'';
+            linkedApprovalValid=!!linkedApprovalMode;
             document.getElementById('rc-direct-checklist-clear').hidden=false;
             for(const k of ['make','model','registration','year','vin','customer','contact','claim','remarks','odometer']){
               if(form.elements.namedItem(k))form.elements.namedItem(k).value=String(d[k]??'');
@@ -595,6 +599,7 @@
     document.getElementById('rc-direct-checklist-clear').onclick=()=>{
       linkedChecklist=null;
       linkedApprovalValid=false;
+      linkedApprovalMode='';
       type.disabled=false;
       searchInput.value='';
       searchResults.textContent='';
@@ -640,16 +645,26 @@
           const company=Number(f.get('insurance_id')??linkedChecklist.insurance_id);
           const companyChanged=company!==Number(linkedChecklist.insurance_id);
           const changed=Object.keys(revised).length>0||companyChanged;
+          if(changed&&linkedApprovalMode==='quotation')
+            throw Error('This approved quotation is linked to the checklist vehicle details. Update the checklist and have the approval verified before creating a Job Card.');
           if(changed&&!['Manager','Supervisor'].includes(user()?.role)) throw Error('Manager or Supervisor must verify changes to an approved insurance vehicle. Changed: '+[...Object.keys(revised),...(companyChanged?['insurance company']:[])].join(', ')+'. Restore the checklist values or request authorized verification.');
           if(changed&&(!f.has('approval_confirmed')||!f.get('approval_date')||!f.get('evidence'))) throw Error('Confirm renewed insurance approval, date and evidence for corrected vehicle details.');
           const jc=String(f.get('job_card')).trim().toUpperCase();
-          const out=await mutate({operation:'CREATE_EXTERNAL_JOB',cash_amount:String(f.get('cash_amount')||'').trim(),rc_no:linkedChecklist.rc_no,
-            expected_revision:linkedChecklist.revision,job_card:jc,
-            reason:String(f.get('reason')||'Linked Job Card intake').trim()||'Linked Job Card intake',
-            job_intake_odometer:details.odometer,job_intake_unit:details.odometer_unit,
-            ...(changed?{identity_updates:revised,insurance_id:company,approval_confirmed:true,
-              reference:String(details.claim||'').trim(),approval_date:String(f.get('approval_date')||''),
-              evidence:String(f.get('evidence')||'').trim()}: {})});
+          const reason=String(f.get('reason')||'Linked Job Card intake').trim()||'Linked Job Card intake';
+          const command=linkedApprovalMode==='quotation'
+            ?{operation:'CREATE_JOB',cash_amount:String(f.get('cash_amount')||'').trim(),rc_no:linkedChecklist.rc_no,
+              expected_revision:linkedChecklist.revision,job_card:jc,reason}
+            :{operation:'CREATE_EXTERNAL_JOB',cash_amount:String(f.get('cash_amount')||'').trim(),rc_no:linkedChecklist.rc_no,
+              expected_revision:linkedChecklist.revision,job_card:jc,reason,
+              job_intake_odometer:details.odometer,job_intake_unit:details.odometer_unit,
+              ...(changed?{identity_updates:revised,insurance_id:company,approval_confirmed:true,
+                reference:String(details.claim||'').trim(),approval_date:String(f.get('approval_date')||''),
+                evidence:String(f.get('evidence')||'').trim()}: {})};
+          if(linkedApprovalMode==='quotation'&&
+            (String(details.odometer||'').trim()!==String(linkedChecklist.details?.odometer||'').trim()||
+            details.odometer_unit!==String(linkedChecklist.details?.odometer_unit||'KM')))
+            throw Error('The quotation-approved Job Card uses the checklist odometer. Keep that reading unchanged for creation; correct the new Job Card reading afterward if required.');
+          const out=await mutate(command);
           if(out){
             try{await window.zukaitCloud?.pull?.(true);}catch(_){}
             if(!await window.zukaitReceptionDashboard?.showJobs?.()) await view(linkedChecklist.rc_no);
@@ -1160,6 +1175,10 @@
     await fetchRecord(no);
     const r = current.record,
       d = r.details;
+    // Server GET is authoritative for permission and approval validity.
+    const approvedInsuranceJob = r.job_type==='INSURANCE'&&!r.job_card&&!r.outcome&&!r.released_date&&
+      !['CTL','NOT_REPAIRED'].includes(r.repair_status)&&
+      (current.external_approval?.valid===true||current.job_creation?.can_create===true);
     shell(
       r.rc_no + " · Reception Checklist",
       checklistSummary(r, d) + badges(r) +
@@ -1167,6 +1186,9 @@
         (current.cancellation?.history ? '<div class="rc-box"><b>Job Card cancelled · '+esc(current.cancellation.history.cancellation_date)+'</b><p>'+esc(current.cancellation.history.reason)+' · '+esc(current.cancellation.history.actor_name)+' ('+esc(current.cancellation.history.actor_id)+')</p><p>History and costs retained. Vehicle location remains '+esc(r.location)+'.</p></div>' : '') +
         '<div class="rc-actions rc-cl-actions">' +
         (r.can_edit ? '<button data-rc-action="edit">Edit</button>' : "") +
+        (approvedInsuranceJob?'<button type="button" class="rc-open-approved-job" data-rc-action="open-approved-job">🚗 OPEN JOB CARD</button>':
+        r.job_type==='INSURANCE'&&r.approval_status==='APPROVED'&&!r.job_card&&!r.outcome&&!r.released_date?
+        '<button type="button" data-rc-action="insurance">Review Insurance Approval</button>':'') +
         (r.repair_status!==undefined&&!r.job_card&&!r.outcome&&!r.released_date?
           '<button data-rc-action="location-choice">VWC / VIG</button>'+
           (r.repair_status==='PENDING'?'<button data-rc-action="management" data-operation="SET_CTL">CTL</button><button data-rc-action="rc-estimate">ESTIMATE</button><button data-rc-action="management" data-operation="SET_APPROVED">APPROVED</button><button data-rc-action="management" data-operation="SET_NOT_REPAIRED">NOT REPAIRED</button>':r.repair_status==='CTL'?'<button data-rc-action="management" data-operation="RELEASE_CTL">Deliver / Release</button>':''):'') +
@@ -1849,6 +1871,25 @@
         case "insurance":
           insuranceWorkspace();
           break;
+        case "open-approved-job": {
+          if(!current?.record?.rc_no)break;
+          const target=current.record.rc_no;
+          await fetchRecord(target);
+          if(current.record?.job_card||current.record?.outcome||current.record?.released_date){
+            await view(target);
+            error(Error('This checklist is already linked or closed. Review the latest status.'));
+            break;
+          }
+          if(current.external_approval?.valid!==true&&current.job_creation?.can_create!==true){
+            await view(target);
+            error(Error('Insurance approval requires verification before a Job Card can be opened.'));
+            break;
+          }
+          insuranceWorkspace();
+          const form=document.getElementById('rc-create-job')||document.getElementById('rc-external-job');
+          form?.querySelector('[name="job_card"]')?.focus();
+          break;
+        }
         case "rc-estimate":
           await window.zukaitEstimate.newFromReception(current.record.rc_no);
           break;
