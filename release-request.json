@@ -3,7 +3,7 @@
   "versionCode": 347,
   "releaseScope": "phase1-compatible-ui",
   "approvedForStaff": false,
-  "sourceCommit": "6c19167838d591c2f4cfbb68c5611fd7d94872c5",
+  "sourceCommit": "9e6148143b9cffe7484a7117fc95d7129e958d50",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": false,
   "authorization": "V384 candidate packaging only; no authorization to publish. Supersedes V383 after owner approval and exact-source CI evidence. RC Not Open filter and Insurance dashboard CSS visual refresh.",
@@ -16,8 +16,8 @@
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 0,
-  "verificationRun": 0,
+  "signedAcceptanceRun": 41609050935,
+  "verificationRun": 41609050903,
   "previousPublishedRelease": {
     "versionName": "V383",
     "versionCode": 346,
@@ -736,25 +736,27 @@
     "standardAndroidBuildRun": 41582221519
   },
   "v384CandidateEvidence": {
-    "status": "LATEST_SOURCE_QA_SIGNED_REVALIDATION_PENDING",
+    "status": "SIGNED_AND_QA_VERIFIED_UNAPPROVED",
     "scope": [
       "Reception checklist Job Card Not Open filter",
       "Insurance dashboard CSS-only redesign"
     ],
     "productionWorkshopApiVersion": 103,
-    "featureSourceCommit": "6c19167838d591c2f4cfbb68c5611fd7d94872c5",
+    "featureSourceCommit": "9e6148143b9cffe7484a7117fc95d7129e958d50",
     "approvedForStaff": false,
     "physicalAndroidAcceptance": "NOT_RUN",
     "freshBackupRestore": "NOT_RUN",
     "notes": "Do not publish until V384 verification is successful and fresh exact-source approval metadata is issued.",
-    "receptionVerificationRun": null,
+    "receptionVerificationRun": 41609050903,
     "androidBuildRun": 41604258456,
     "standardApkBuildRun": 41604258554,
-    "connectionSafetyRun": 41608515833,
-    "mechanicalAccountantRun": 41608515814,
-    "signedAcceptanceRun": null,
-    "sourceBuildRun": 41608515840,
-    "architectureBuildRun": 41608515758,
-    "additionalScope": "Manager Work in Progress sequential No. display; no behavioral changes"
+    "connectionSafetyRun": 41609050933,
+    "mechanicalAccountantRun": 41609050854,
+    "signedAcceptanceRun": 41609050935,
+    "sourceBuildRun": 41609050986,
+    "architectureBuildRun": 41609050980,
+    "additionalScope": "Manager Work in Progress sequential No. display; no behavioral changes",
+    "signedArtifactId": 13218031933,
+    "signedArtifactName": "ZUKAIT_SIGNED_ACCEPTANCE_APK"
   }
 }
