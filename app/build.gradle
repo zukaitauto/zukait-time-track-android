@@ -22,8 +22,8 @@ android {
         targetSdk 35
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
-        versionCode 345
-        versionName "V382" // LPO Pending delivered-only all-dates filters and Monthly Incentive exports.
+        versionCode 346
+        versionName "V383" // Insurance WIP all dates, Approval Pending checklist navigation, modern secure existing-JC link dialog.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }
