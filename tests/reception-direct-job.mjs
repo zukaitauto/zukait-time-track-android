@@ -101,6 +101,30 @@ assert.equal(form.elements.odometer.value,'53845');
 assert.match(w.document.getElementById('rc-direct-checklist-note').textContent,/53699/,'Original recorded 53699 KM remains visible while new reading changes');
 assert.deepEqual([...form.elements.odometer_unit.options].map(x=>x.value),['KM','Miles'],'Units must match PostgreSQL validation');
 assert.match(w.document.getElementById('rc-direct-checklist-note').textContent,/53699/);
+assert.equal(form.elements.approval_confirmed.required,false,'Existing valid insurance approval must not require renewed checkbox for unchanged identity');
+// Staged rejected network response: verify the Receptionist reaches linked creation
+// without falsely treating spacing and plate punctuation as identity corrections.
+const fetchLinkedBefore=w.fetch;
+let unchangedLinkedCommand=null;
+w.fetch=async(url,args)=>{
+ const command=JSON.parse(args.body).command;
+ if(command.operation==='CREATE_EXTERNAL_JOB'){
+  unchangedLinkedCommand=command;
+  return {ok:false,status:409,json:async()=>({ok:false,code:'qa_validation_only'})};
+ }
+ return fetchLinkedBefore(url,args);
+};
+form.elements.job_card.value='QA-LINKED-UNCHANGED';
+form.elements.customer.value='QA Customer  ';
+form.elements.registration.value='7561 - BH';
+form.elements.received_confirmed.checked=true;
+await submit();
+assert.ok(unchangedLinkedCommand,'Receptionist must be allowed to submit an unchanged approved checklist');
+assert.equal(unchangedLinkedCommand.operation,'CREATE_EXTERNAL_JOB');
+assert.equal(unchangedLinkedCommand.rc_no,'RC0099');
+assert.equal('identity_updates' in unchangedLinkedCommand,false,'Formatting alone must not trigger renewed approval');
+assert.equal('approval_confirmed' in unchangedLinkedCommand,false,'Existing approval is reused without rewriting it');
+w.fetch=fetchLinkedBefore;
 form.elements.customer.value='Updated QA Customer';assert.equal(form.elements.customer.value,'Updated QA Customer');
 const beforeLinked=calls.filter(c=>c.operation==='CREATE_DIRECT_JOB').length;
 await submit();assert.equal(calls.filter(c=>c.operation==='CREATE_DIRECT_JOB').length,beforeLinked,'Linked checklist must never create a second direct intake');
