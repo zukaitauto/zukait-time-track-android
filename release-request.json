@@ -3,12 +3,12 @@
   "versionCode": 348,
   "releaseScope": "phase1-compatible-ui",
   "approvedForStaff": true,
-  "sourceCommit": "18504cf7ab9ef26e69ba7282af63cafc465896c4",
+  "sourceCommit": "3cfddd12aac191ddf30ef3880763f4beaeb95e6f",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": true,
-  "authorization": "Owner explicitly requested 'Release' for V385 on 2026-11-03. Publish exact verified source 18504cf7ab9ef26e69ba7282af63cafc465896c4 from architecture-v2 using protected coordinated signed Android/Web workflow. Signed acceptance 41640085438 and Reception 41640085429 passed, plus Android build 41640085399, APK build 41640085421, outage 41640085424, inactive contracts 41640085414. Physical Android acceptance NOT_RUN (owner tests after release); fresh production backup-restore NOT_RUN (owner previously deferred). No backend changes.",
-  "approvedAt": "2026-11-03T13:01:25.771Z",
-  "publishNonce": "v385-owner-approved-20261103-18504cf7ab9e",
+  "authorization": "Owner explicitly requested Release for V385 on 2026-11-03. Exact verified source 3cfddd12aac191ddf30ef3880763f4beaeb95e6f on architecture-v2 includes UI updates and a rollback-only SQL QA test committed concurrently. Signed APK 41641106549, Reception 41641106837, Android 41641106660, APK build 41641106665, outage 41641106741, and inactive contracts 41641106767 all PASS. Physical Android acceptance NOT_RUN (owner tests after release); fresh production backup-restore NOT_RUN (previously deferred). No backend changes or deployment.",
+  "approvedAt": "2026-11-03T13:09:54.684Z",
+  "publishNonce": "v385-owner-approved-refreshed-20261103-3cfddd12aac1",
   "releaseHeldByOwner": false,
   "publicationRequiresSeparateInstruction": true,
   "physicalAcceptanceStatus": "NOT_RUN",
@@ -16,8 +16,8 @@
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41640085438,
-  "verificationRun": 41640085429,
+  "signedAcceptanceRun": 41641106549,
+  "verificationRun": 41641106837,
   "previousPublishedRelease": {
     "versionName": "V384",
     "versionCode": 347,
@@ -708,7 +708,7 @@
     "releaseApproval": "OWNER_APPROVED_RELEASE_WORKFLOW_GATED"
   },
   "reason": "V385: Supervisor three-card row (Employee Request / Ideal Workers / WIP), read-only shared Work in Progress view, Need Attention next to Estimate in the two-column workshop grid, and Mechanical Department menu readability correction. No backend changes.",
-  "verificationSummary": "PASS: signed Android APK 41640085438 (artifact 13232721837), Reception verification 41640085429, Android architecture 41640085399, standard APK 41640085421, outage 41640085424 and inactive contracts 41640085414. Source 18504cf7ab9ef26e69ba7282af63cafc465896c4; V385 code 348.",
+  "verificationSummary": "PASS: signed acceptance 41641106549 (artifact 13233320972), Reception 41641106837, Android architecture 41641106660, standard APK 41641106665, outage 41641106741, inactive contracts 41641106767. Exact source 3cfddd12aac191ddf30ef3880763f4beaeb95e6f; V385 code 348.",
   "productionBackendDeploymentEvidence": {
     "projectRef": "pjknotnjkufadqavcmii",
     "function": "workshop-api",
@@ -761,15 +761,15 @@
     "sourceCommit": "9e6148143b9cffe7484a7117fc95d7129e958d50"
   },
   "v385CandidateEvidence": {
-    "sourceCommit": "18504cf7ab9ef26e69ba7282af63cafc465896c4",
-    "scope": "Supervisor dashboard read-only WIP, Need Attention moved beside Estimate, Mechanical Department menu color contrast; tests and candidate metadata",
-    "signedAcceptanceRun": 41640085438,
-    "signedAcceptanceArtifactId": 13232721837,
-    "receptionVerificationRun": 41640085429,
-    "androidBuildRun": 41640085399,
-    "standardApkBuildRun": 41640085421,
-    "connectionOutageRun": 41640085424,
-    "mechanicalContractsRun": 41640085414,
+    "sourceCommit": "3cfddd12aac191ddf30ef3880763f4beaeb95e6f",
+    "scope": "Supervisor dashboard with shared read-only WIP and Need Attention beside Estimate; menu contrast correction; rollback-only SQL QA test included in exact source",
+    "signedAcceptanceRun": 41641106549,
+    "signedAcceptanceArtifactId": 13233320972,
+    "receptionVerificationRun": 41641106837,
+    "androidBuildRun": 41641106660,
+    "standardApkBuildRun": 41641106665,
+    "connectionOutageRun": 41641106741,
+    "mechanicalContractsRun": 41641106767,
     "signedAcceptanceStatus": "PASS",
     "receptionVerificationStatus": "PASS",
     "androidBuildStatus": "PASS",
@@ -777,7 +777,6 @@
     "freshBackupRestore": "NOT_RUN",
     "backendDeploymentRequired": false,
     "sourceBranch": "release/v385-approved-source",
-    "ownerApprovedAt": "2026-11-03T13:01:25.771Z",
-    "sourceRefreshNote": "Refresh acceptance source to include the rollback-only SQL QA test added at c3a3d9bf26eb after prior source capture; preserve source-integrity gate and do not publish the earlier pinned candidate."
+    "ownerApprovedAt": "2026-11-03T13:09:54.684Z"
   }
 }
