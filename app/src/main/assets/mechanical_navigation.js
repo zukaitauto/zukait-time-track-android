@@ -8,7 +8,16 @@ export function installMechanicalNavigation({host,document:doc,getUser,enabled,o
   if(!menu||menu.querySelector('['+marker+']'))return;
   const button=doc.createElement('button');button.type='button';button.setAttribute(marker,user.role);button.className=user.role==='Manager'?'v135-action mechanical':'v88-mechanical';
   button.style.minHeight='44px';button.style.minWidth='0';button.style.overflowWrap='anywhere';
-  const icon=doc.createElement('i'),label=doc.createElement('span'),title=doc.createElement('b');icon.textContent='🔧';title.textContent='Mechanical Department';label.append(title);button.append(icon,label);
+  // The supervisor menu can inherit dark text on a dark button from its host theme.
+  // Make this navigation tile readable regardless of the surrounding menu styles.
+  if(user.role!=='Manager'){
+   button.style.setProperty('background','#1d4ed8','important');
+   button.style.setProperty('color','#ffffff','important');
+   button.style.setProperty('border','1px solid #1e40af','important');
+  }
+  const icon=doc.createElement('i'),label=doc.createElement('span'),title=doc.createElement('b');icon.textContent='🔧';title.textContent='Mechanical Department';
+  if(user.role!=='Manager'){label.style.setProperty('color','#ffffff','important');title.style.setProperty('color','#ffffff','important')}
+  label.append(title);button.append(icon,label);
   button.addEventListener('click',async()=>{
    const current=getUser();if(enabled()!==true||!['Manager','Supervisor','Mechanical Supervisor'].includes(current?.role)||current.id!==user.id||current.role!==user.role)return;
    button.disabled=true;
