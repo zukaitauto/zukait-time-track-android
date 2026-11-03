@@ -777,6 +777,7 @@
     "freshBackupRestore": "NOT_RUN",
     "backendDeploymentRequired": false,
     "sourceBranch": "release/v385-approved-source",
-    "ownerApprovedAt": "2026-11-03T13:01:25.771Z"
+    "ownerApprovedAt": "2026-11-03T13:01:25.771Z",
+    "sourceRefreshNote": "Refresh acceptance source to include the rollback-only SQL QA test added at c3a3d9bf26eb after prior source capture; preserve source-integrity gate and do not publish the earlier pinned candidate."
   }
 }
