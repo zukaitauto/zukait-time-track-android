@@ -42,10 +42,15 @@ begin
    if not found or coalesce(v_direct.details->>'direct_job_only','false')<>'true' or upper(coalesce(v_direct.job_card,''))<>v_no
       then raise exception 'reception_job_already_linked'; end if;
  else
+   -- Legacy directly created JCs may predate internal Reception audit rows.
+   -- A missing audit row is allowed only when there is NO existing Checklist
+   -- claim; the normalized vehicle identity must still match below.
    select * into v_direct from public.workshop_receptions where upper(job_card)=v_no for update;
-   if not found or coalesce(v_direct.details->>'direct_job_only','false')<>'true' then raise exception 'reception_job_already_linked'; end if;
+   if found and coalesce(v_direct.details->>'direct_job_only','false')<>'true' then raise exception 'reception_job_already_linked'; end if;
  end if;
- if exists(select 1 from public.workshop_receptions where upper(job_card)=v_no and rc_no<>v_direct.rc_no) then raise exception 'reception_job_already_linked'; end if;
+ if exists(select 1 from public.workshop_receptions
+           where upper(job_card)=v_no and (v_direct.rc_no is null or rc_no<>v_direct.rc_no))
+ then raise exception 'reception_job_already_linked'; end if;
  v_reg:=upper(regexp_replace(coalesce(v_rc.details->>'registration',''),'[^A-Za-z0-9]','','g'));
  v_job_reg:=upper(regexp_replace(coalesce(v_job->>'reg',''),'[^A-Za-z0-9]','','g'));
  v_vin:=upper(regexp_replace(coalesce(v_rc.details->>'vin',''),'[^A-Za-z0-9]','','g'));
