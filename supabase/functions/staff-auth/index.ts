@@ -243,6 +243,22 @@ Deno.serve(async (req: Request) => {
       return reply(result.data);
     }
 
+    // Read-only technician roster for Manager and Supervisor dashboards. No credentials or
+    // staff personal details are returned, and inactive accounts are never counted.
+    if (action === "technician_roster") {
+      if (!body || typeof body !== 'object' || Array.isArray(body) ||
+          Object.keys(body).some(k => !['action','session_token'].includes(k)))
+        return reply({ok:false,code:'staff_roster_invalid_request'},400);
+      const session = await verifySession(String(body.session_token || ''));
+      if (!session) return reply({ok:false,code:'invalid_session'},401);
+      if (!['Manager','Supervisor'].includes(session.user.role))
+        return reply({ok:false,code:'manager_or_supervisor_required'},403);
+      const {data,error} = await admin.from('staff_credentials')
+        .select('user_id,active').eq('role','Employee');
+      if (error) throw error;
+      return reply({ok:true,technicians:(data||[]).map(u=>({id:u.user_id,active:u.active===true}))});
+    }
+
     // Manager User Management: read authoritative status; atomically change it
     // through a service-role-only SQL command with a permanent audit receipt.
     if (action === "manager_staff") {
