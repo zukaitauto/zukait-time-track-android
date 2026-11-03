@@ -12,7 +12,10 @@ const before=JSON.stringify(state);let html='';const ctx={state,me:{role:'Manage
 ctx.window=ctx;ctx.zukaitJobCardMaster={costs:()=>({paint:15,materials:3})};ctx.zukaitReception={call:async()=>({record:{details:{customer:'Customer Name',contact:'72440918'}}})};ctx.zukaitV2={sparePartsMain:{reportRows:()=>[{jobCard:'NEW',name:'Bumper',qty:1,status:'ORDERED'},{jobCard:'NEW',name:'Fitted Part',qty:1,status:'FITTED'}]}};
 vm.runInNewContext(fs.readFileSync('app/src/main/assets/manager_work_in_progress.js','utf8'),ctx);
 assert.equal(ctx.zukaitManagerWip.count(),2);assert.deepEqual(Array.from(ctx.zukaitManagerWip.rows(),j=>j.no),['OLD','NEW']);
-await ctx.zukaitManagerWip.open();assert.ok(html.indexOf('data-jc="OLD"')<html.indexOf('data-jc="NEW"'));assert.match(html,/Liva Insurance/);assert.match(html,/Toyota Camry 2014/);assert.match(html,/12-10-2026/);
+await ctx.zukaitManagerWip.open();assert.ok(html.indexOf('data-jc="OLD"')<html.indexOf('data-jc="NEW"'));
+assert.match(html,/<span>No\.<\/span><span>Opened<\/span>/,'The serial-number heading must precede Opened');
+assert.match(html,/data-jc="OLD"[^>]*><span class="mwip-serial">1<\/span>/,'Oldest Job Card receives serial 1');
+assert.match(html,/data-jc="NEW"[^>]*><span class="mwip-serial">2<\/span>/,'Next Job Card receives serial 2');assert.match(html,/Liva Insurance/);assert.match(html,/Toyota Camry 2014/);assert.match(html,/12-10-2026/);
 await ctx.zukaitManagerWip.detail('NEW');
 for(const text of ['Afsal','● Working','Bumper','Pending Parts · 1','Paint Details','PO1','Base Coat','OMR 15.000','Masking Tape','OMR 3.000','92403420','20-10-2026'])assert.ok(html.includes(text),text);
 assert.ok(!html.includes('Fitted Part'));await ctx.zukaitManagerWip.detail('OLD');assert.match(html,/72440918/);assert.match(html,/Customer Name/);assert.match(html,/Liva Insurance/);assert.match(html,/Not set/);
