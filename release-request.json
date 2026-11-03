@@ -2,27 +2,27 @@
   "versionName": "V383",
   "versionCode": 346,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
-  "sourceCommit": "d9eaa1f34e0ddaf2ccb0e508e5424ac3b0f519c4",
+  "approvedForStaff": true,
+  "sourceCommit": "138804af3cd3ce073bbfa8390ee3332ff3a85c80",
   "ownerRequestedProceed": true,
-  "ownerPublicationRequested": false,
-  "authorization": "User requested 2026-11-03 to release new version and test afterward. Production workshop-api Insurance WIP module separately deployed as v101 and source-verified. Signed V383 build and final publication approval are not yet attested in this candidate metadata. Physical testing and fresh production backup restore remain NOT_RUN; no test is represented as passed.",
-  "approvedAt": null,
-  "publishNonce": null,
-  "releaseHeldByOwner": true,
+  "ownerPublicationRequested": true,
+  "authorization": "Owner expressly requested 2026-11-03: 'Release new version. Then I will test'. V383 version 346 publishes only the frontend and signed APK, on architecture-v2. Production workshop-api Insurance WIP fix was separately deployed as version 101 and source verified. Exact V383 signed acceptance and Reception verification passed. Physical phone testing and fresh production backup restore are NOT_RUN; no passing results are claimed.",
+  "approvedAt": "2026-11-03T05:14:39.463Z",
+  "publishNonce": "v383-owner-publish-test-after-release-20261103-101",
+  "releaseHeldByOwner": false,
   "publicationRequiresSeparateInstruction": true,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V383",
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
+  "signedAcceptanceRun": 41582221493,
+  "verificationRun": 41582221555,
   "previousPublishedRelease": {
-    "versionName": "V381",
-    "versionCode": 344,
-    "sourceCommit": "a2bed12c67196fc10b3586154eef0a2a8a54b3f8",
-    "releaseTag": "release-V381-architecture-v2"
+    "versionName": "V382",
+    "versionCode": 345,
+    "sourceCommit": "8e74d9df42d9eb94ef16ddb1c311bb8832c38780",
+    "releaseTag": "release-V382-architecture-v2"
   },
   "v377VerificationEvidence": {
     "androidBuildRun": 41175629369,
@@ -551,7 +551,7 @@
     "ownerPhysicalAcceptanceDeferred": "Owner explicitly requested publish first, test afterward on 2026-11-01; NOT_RUN.",
     "ownerBackendActivation": "NOT_AUTHORIZED; production workshop-api version 98 lacks REOPEN_ADDITIONAL and REOPEN_REPEAT; Mechanical database guard not activated."
   },
-  "ownerRequestedImmediateRelease": false,
+  "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "v378HotfixEvidence": {
     "issue": "Consumables Cost card and Materials Consumption disappear after Manager dashboard re-render",
@@ -708,7 +708,7 @@
     "releaseApproval": "OWNER_APPROVED_RELEASE_WORKFLOW_GATED"
   },
   "reason": "V382 fixes: delivered insurance LPO Pending defaults all dates; advanced From–To overrides month; LPO receipt separate from invoice; Monthly Incentive month filter and Print/PDF/Excel compatible CSV. Production LPO rule separately deployed as workshop-api v100.",
-  "verificationSummary": "V382 exact source acceptance runs: signed 41460431747 and Reception 41460431673; publication workflow independently verifies success. No physical acceptance or fresh restore claimed.",
+  "verificationSummary": "V383 source 138804af3cd3ce073bbfa8390ee3332ff3a85c80; signed 41582221493 SUCCESS; Reception 41582221555 SUCCESS; architecture 41582221490 SUCCESS; standard APK 41582221519 SUCCESS; production workshop-api v101 ACTIVE. Phone and fresh backup restore NOT_RUN.",
   "productionBackendDeploymentEvidence": {
     "projectRef": "pjknotnjkufadqavcmii",
     "function": "workshop-api",
@@ -720,15 +720,19 @@
     "productionDataEditedByDeployment": false
   },
   "v383CandidateEvidence": {
-    "sourceCommit": "d9eaa1f34e0ddaf2ccb0e508e5424ac3b0f519c4",
+    "sourceCommit": "138804af3cd3ce073bbfa8390ee3332ff3a85c80",
     "productionBackendProject": "pjknotnjkufadqavcmii",
     "productionWorkshopApiVersion": 101,
     "backendModuleSourceAligned": true,
     "workInProgressScope": "All undelivered Insurance Job Cards, all dates by default; month/date filters optional",
     "approvalPendingScope": "All waiting Insurance Checklists, Checklist details and filters",
     "linkDialogScope": "Responsive in-app link confirmation retaining server identity checks",
-    "releaseStatus": "PENDING_SIGNED_CI",
+    "releaseStatus": "OWNER_APPROVED_FOR_PROTECTED_PUBLICATION",
     "physicalAndroidAcceptance": "NOT_RUN_OWNER_TO_TEST_AFTER_RELEASE",
-    "freshBackupRestore": "NOT_RUN"
+    "freshBackupRestore": "NOT_RUN",
+    "signedAcceptanceRun": 41582221493,
+    "receptionVerificationRun": 41582221555,
+    "architectureVerificationRun": 41582221490,
+    "standardAndroidBuildRun": 41582221519
   }
 }
