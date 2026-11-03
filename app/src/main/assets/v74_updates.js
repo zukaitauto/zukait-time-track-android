@@ -4270,24 +4270,37 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
  function apply(){
   if(!window.me||me.role!=='Supervisor')return;
   const root=document.getElementById('supervisorView');if(!root)return;
+  // Match the approved mobile layout: Invoice, Consumables, Parts, QC,
+  // Ready, Delivered, then Estimate + Need Attention on the final row.
+  // Existing identity classes keep their established colors and icons.
   const items=[
-   card(root,/\bESTIMATE\b/i),
-   card(root,/\bInvoice Entry\b/i),
-   card(root,/\bCONSUMABLES\b/i),
-   card(root,/\bSPARE PARTS\b/i),
-   card(root,/^QC\b/i),
-   card(root,/\bReady\s+to\s+Deliver\b/i),
-   card(root,/\bDelivered\s+Vehicles\b/i)
+   [card(root,/\bInvoice Entry\b/i),1],
+   [card(root,/\bCONSUMABLES\b/i),2],
+   [card(root,/\bSPARE PARTS\b/i),3],
+   [card(root,/^QC\b/i),4],
+   [card(root,/\bReady\s+to\s+Deliver\b/i),5],
+   [card(root,/\bDelivered\s+Vehicles\b/i),6],
+   [card(root,/\bESTIMATE\b/i),0]
   ];
-  const present=items.filter(Boolean);if(present.length<5)return;
+  const present=items.filter(([x])=>!!x).map(([x])=>x);if(present.length<5)return;
   const counts=new Map();present.forEach(x=>counts.set(x.parentElement,(counts.get(x.parentElement)||0)+1));
   const grid=[...counts.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0];if(!grid||counts.get(grid)<5)return;
   grid.classList.add('v271-workshop-grid');
-  items.forEach((x,i)=>{if(x&&x.parentElement===grid){x.classList.add('v271-workshop-card','v271-card-'+i);grid.appendChild(x)}});
+  items.forEach(([x,i])=>{if(x&&x.parentElement===grid){x.classList.add('v271-workshop-card','v271-card-'+i);grid.appendChild(x)}});
+  const estimate=items[6][0],attention=root.querySelector('#supervisorNeedAttentionTile');
+  if(estimate&&estimate.parentElement===grid&&attention){
+   attention.classList.add('v271-workshop-card','v271-card-7');
+   estimate.insertAdjacentElement('afterend',attention);
+  }
  }
  window.v271ArrangeSupervisorModules=apply;
  const prior=window.render;window.render=function(){const r=typeof prior==='function'?prior.apply(this,arguments):undefined;setTimeout(apply,0);return r};
  if(!document.getElementById('v271SupervisorModuleStyle')){const s=document.createElement('style');s.id='v271SupervisorModuleStyle';s.textContent='#supervisorView .v271-workshop-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:13px 10px!important;align-items:stretch!important}#supervisorView .v271-workshop-card{width:100%!important;margin:0!important;min-height:112px!important;position:relative!important;border-radius:19px!important;padding:13px!important;text-align:left!important;box-shadow:inset 0 2px 1px #fff,0 5px 0 var(--v271-edge),0 10px 17px var(--v271-shadow)!important;border:1.5px solid var(--v271-edge)!important;background:linear-gradient(145deg,#fff,var(--v271-bg))!important;color:var(--v271-ink)!important}#supervisorView .v271-card-0{--v271-bg:#ccfbf1;--v271-edge:#2dd4bf;--v271-ink:#134e4a;--v271-shadow:#0f766e2b}#supervisorView .v271-card-1{--v271-bg:#ede9fe;--v271-edge:#a78bfa;--v271-ink:#5b21b6;--v271-shadow:#7c3aed29}#supervisorView .v271-card-2{--v271-bg:#ffe4ef;--v271-edge:#f5a6c6;--v271-ink:#831843;--v271-shadow:#db27772b}#supervisorView .v271-card-3{--v271-bg:#e0f2fe;--v271-edge:#38bdf8;--v271-ink:#075985;--v271-shadow:#0284c72b}#supervisorView .v271-card-4{--v271-bg:#e0e7ff;--v271-edge:#818cf8;--v271-ink:#3730a3;--v271-shadow:#4f46e52b}#supervisorView .v271-card-5{--v271-bg:#d1fae5;--v271-edge:#34d399;--v271-ink:#065f46;--v271-shadow:#0596692b}#supervisorView .v271-card-6{--v271-bg:#dbeafe;--v271-edge:#60a5fa;--v271-ink:#1e40af;--v271-shadow:#2563eb2b}#supervisorView .v271-workshop-card:before{display:grid;place-items:center;position:absolute;left:12px;top:50%;transform:translateY(-50%);width:39px;height:39px;border-radius:50%;background:#ffffffc9;border:1px solid var(--v271-edge);box-shadow:0 3px 7px var(--v271-shadow);font-size:20px}#supervisorView .v271-card-0:before{content:"🧾"}#supervisorView .v271-card-1:before{content:"📄"}#supervisorView .v271-card-2:before{content:"🎨"}#supervisorView .v271-card-3:before{content:"⚙️"}#supervisorView .v271-card-4:before{content:"✓"}#supervisorView .v271-card-5:before{content:"🚗"}#supervisorView .v271-card-6:before{content:"🚙"}#supervisorView .v271-workshop-card{padding-left:61px!important}#supervisorView .v271-workshop-card *{color:inherit!important}#supervisorView .v271-workshop-card>span:first-child{font-size:0!important;width:0!important;height:0!important;margin:0!important;border:0!important;box-shadow:none!important;background:none!important}#supervisorView .v271-workshop-card>span:first-child:after{content:none!important}@media(max-width:420px){#supervisorView .v271-workshop-card{min-height:104px!important;padding:10px 8px 10px 52px!important}#supervisorView .v271-workshop-card:before{left:8px;width:35px;height:35px;font-size:18px}}';document.head.appendChild(s)}
+ if(!document.getElementById('v271SupervisorAttentionStyle')){
+  const style=document.createElement('style');style.id='v271SupervisorAttentionStyle';
+  style.textContent='#supervisorView #supervisorNeedAttentionTile{position:relative!important;min-width:0!important;min-height:100px!important;padding:13px 63px 13px 12px!important;border:1.5px solid #f6bd35!important;border-radius:19px!important;background:linear-gradient(145deg,#ffffff,#fff1cd)!important;color:#7c2d12!important;box-shadow:inset 0 2px 1px #fff,0 5px 0 #f6bd35,0 10px 17px #d977062b!important;text-align:left!important}#supervisorView #supervisorNeedAttentionTile .v143-attention-count{position:absolute;right:23px;top:50%;transform:translateY(-50%);display:grid;place-items:center;min-width:34px;height:34px;padding:0 3px;border-radius:99px;background:#f59e0b!important;border:1px solid #d97706;color:#ffffff!important;font-size:16px;font-weight:900;line-height:1}#supervisorView #supervisorNeedAttentionTile em{position:absolute;top:50%;right:7px;transform:translateY(-50%);font-size:21px;font-style:normal;font-weight:900;color:#7c2d12!important}#supervisorView #supervisorNeedAttentionTile b{font-size:11px!important;line-height:1.15}#supervisorView #supervisorNeedAttentionTile small{font-size:9px!important;color:#7c2d12!important;line-height:1.2}#supervisorView #supervisorNeedAttentionTile.v271-workshop-card{--v271-bg:#fff1cd;--v271-edge:#f6bd35;--v271-ink:#7c2d12;--v271-shadow:#d977062b;padding-left:60px!important}#supervisorView #supervisorNeedAttentionTile.v271-workshop-card:before{content:"⚠️";background:#fff9eb}#supervisorView #supervisorNeedAttentionTile.v271-workshop-card>span:first-child{font-size:0!important;width:0!important;height:0!important}#supervisorView #supervisorNeedAttentionTile:focus-visible{outline:3px solid #d97706;outline-offset:3px}@media(max-width:420px){#supervisorView #supervisorNeedAttentionTile{min-height:104px!important;padding:10px 55px 10px 8px!important}#supervisorView #supervisorNeedAttentionTile.v271-workshop-card{padding-left:51px!important}#supervisorView #supervisorNeedAttentionTile .v143-attention-count{right:20px;min-width:29px;height:29px;font-size:14px}}';
+  document.head.appendChild(style);
+ }
  setTimeout(apply,0);window.v271SupervisorModuleOrderReady=true;
 })();
 
