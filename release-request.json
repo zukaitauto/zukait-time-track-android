@@ -8,7 +8,7 @@
   "ownerPublicationRequested": false,
   "authorization": "V384 candidate packaging only; no authorization to publish. Supersedes V383 after owner approval and exact-source CI evidence. RC Not Open filter and Insurance dashboard CSS visual refresh.",
   "approvedAt": null,
-  "publishNonce": "",
+  "publishNonce": null,
   "releaseHeldByOwner": true,
   "publicationRequiresSeparateInstruction": true,
   "physicalAcceptanceStatus": "NOT_RUN",
