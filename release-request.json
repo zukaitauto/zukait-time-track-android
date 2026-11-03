@@ -1,28 +1,28 @@
 {
-  "versionName": "V385",
-  "versionCode": 348,
+  "versionName": "V386",
+  "versionCode": 349,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "sourceCommit": "3cfddd12aac191ddf30ef3880763f4beaeb95e6f",
+  "approvedForStaff": false,
+  "sourceCommit": "23e3ffd12c95b4b89fbc7f7b32edc626f39ec362",
   "ownerRequestedProceed": true,
-  "ownerPublicationRequested": true,
-  "authorization": "Owner explicitly requested Release for V385 on 2026-11-03. Exact verified source 3cfddd12aac191ddf30ef3880763f4beaeb95e6f on architecture-v2 includes UI updates and a rollback-only SQL QA test committed concurrently. Signed APK 41641106549, Reception 41641106837, Android 41641106660, APK build 41641106665, outage 41641106741, and inactive contracts 41641106767 all PASS. Physical Android acceptance NOT_RUN (owner tests after release); fresh production backup-restore NOT_RUN (previously deferred). No backend changes or deployment.",
-  "approvedAt": "2026-11-03T13:09:54.684Z",
-  "publishNonce": "v385-owner-approved-refreshed-20261103-3cfddd12aac1",
-  "releaseHeldByOwner": false,
+  "ownerPublicationRequested": false,
+  "authorization": "Owner requested deployment on 2026-11-03; this is a candidate only, not an approved publication. Matching source tests and signed APK must pass and protected manual workflow must be triggered before publication. Existing V385 production remains unchanged.",
+  "approvedAt": null,
+  "publishNonce": "v386-rc0019-release-candidate-awaiting-tests-20261103",
+  "releaseHeldByOwner": true,
   "publicationRequiresSeparateInstruction": true,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V385",
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41641106549,
-  "verificationRun": 41641106837,
+  "signedAcceptanceRun": 0,
+  "verificationRun": 0,
   "previousPublishedRelease": {
-    "versionName": "V384",
-    "versionCode": 347,
-    "sourceCommit": "9e6148143b9cffe7484a7117fc95d7129e958d50",
-    "releaseTag": "release-V384-architecture-v2"
+    "versionName": "V385",
+    "versionCode": 348,
+    "sourceCommit": "3cfddd12aac191ddf30ef3880763f4beaeb95e6f",
+    "releaseTag": "release-V385-architecture-v2"
   },
   "v377VerificationEvidence": {
     "androidBuildRun": 41175629369,
@@ -707,7 +707,7 @@
     "physicalPhoneTest": "NOT_RUN",
     "releaseApproval": "OWNER_APPROVED_RELEASE_WORKFLOW_GATED"
   },
-  "reason": "V385: Supervisor three-card row (Employee Request / Ideal Workers / WIP), read-only shared Work in Progress view, Need Attention next to Estimate in the two-column workshop grid, and Mechanical Department menu readability correction. No backend changes.",
+  "reason": "V386 release candidate: approved RC checklist exposes Open Job Card, Create Job Card can link approved checklists without repeat approval date, with authoritative duplicate/approval checks; includes later active-technician roster fixes. Await exact-source signed, Reception and release checks. No production backend migration or deployment approved.",
   "verificationSummary": "PASS: signed acceptance 41641106549 (artifact 13233320972), Reception 41641106837, Android architecture 41641106660, standard APK 41641106665, outage 41641106741, inactive contracts 41641106767. Exact source 3cfddd12aac191ddf30ef3880763f4beaeb95e6f; V385 code 348.",
   "productionBackendDeploymentEvidence": {
     "projectRef": "pjknotnjkufadqavcmii",
@@ -778,5 +778,6 @@
     "backendDeploymentRequired": false,
     "sourceBranch": "release/v385-approved-source",
     "ownerApprovedAt": "2026-11-03T13:09:54.684Z"
-  }
+  },
+  "releaseCandidateStatus": "PENDING_SOURCE_VERIFICATION"
 }
