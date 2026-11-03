@@ -3,7 +3,7 @@
   "versionCode": 347,
   "releaseScope": "phase1-compatible-ui",
   "approvedForStaff": false,
-  "sourceCommit": "485016d09faa6b1429e3b54e42f6f207e421dfd8",
+  "sourceCommit": "6c19167838d591c2f4cfbb68c5611fd7d94872c5",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": false,
   "authorization": "V384 candidate packaging only; no authorization to publish. Supersedes V383 after owner approval and exact-source CI evidence. RC Not Open filter and Insurance dashboard CSS visual refresh.",
@@ -17,7 +17,7 @@
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
   "signedAcceptanceRun": 0,
-  "verificationRun": 41604258501,
+  "verificationRun": 0,
   "previousPublishedRelease": {
     "versionName": "V383",
     "versionCode": 346,
@@ -736,22 +736,25 @@
     "standardAndroidBuildRun": 41582221519
   },
   "v384CandidateEvidence": {
-    "status": "SOURCE_VERIFIED_SIGNED_ACCEPTANCE_PENDING",
+    "status": "LATEST_SOURCE_QA_SIGNED_REVALIDATION_PENDING",
     "scope": [
       "Reception checklist Job Card Not Open filter",
       "Insurance dashboard CSS-only redesign"
     ],
     "productionWorkshopApiVersion": 103,
-    "featureSourceCommit": "485016d09faa6b1429e3b54e42f6f207e421dfd8",
+    "featureSourceCommit": "6c19167838d591c2f4cfbb68c5611fd7d94872c5",
     "approvedForStaff": false,
     "physicalAndroidAcceptance": "NOT_RUN",
     "freshBackupRestore": "NOT_RUN",
     "notes": "Do not publish until V384 verification is successful and fresh exact-source approval metadata is issued.",
-    "receptionVerificationRun": 41604258501,
+    "receptionVerificationRun": null,
     "androidBuildRun": 41604258456,
     "standardApkBuildRun": 41604258554,
-    "connectionSafetyRun": 41604258634,
-    "mechanicalAccountantRun": 41604258447,
-    "signedAcceptanceRun": null
+    "connectionSafetyRun": 41608515833,
+    "mechanicalAccountantRun": 41608515814,
+    "signedAcceptanceRun": null,
+    "sourceBuildRun": 41608515840,
+    "architectureBuildRun": 41608515758,
+    "additionalScope": "Manager Work in Progress sequential No. display; no behavioral changes"
   }
 }
