@@ -9,6 +9,16 @@ const page=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
 new Function(client);
 assert.ok(page.includes('staff_management.js'),'Manager status screen must be loaded in Android/web entrypoint');
 assert.ok(auth.includes("action === \"manager_staff\""),'Server must expose authorized Manager staff operation');
+const roster=fs.readFileSync('app/src/main/assets/technician_workload.js','utf8');
+const board=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
+const clientAuth=fs.readFileSync('app/src/main/assets/secure_auth.js','utf8');
+assert.match(auth,/action === "technician_roster"/,'Server must expose authenticated technician roster');
+assert.match(auth,/\['Manager','Supervisor'\]\.includes\(session\.user\.role\)/,'Only manager or supervisor can read roster');
+assert.match(auth,/\.select\('user_id,active'\)\.eq\('role','Employee'\)/,'Roster uses authentication status, not workshop-state users');
+assert.match(clientAuth,/zukaitStaffRoster=\{/,'Client caches verified technician status');
+assert.match(board,/zukaitStaffRoster\?\.filter/,'Department totals use authenticated active status');
+assert.match(roster,/zukaitStaffRoster\?\.filter/,'Department staff roster excludes inactive technicians');
+
 assert.ok(auth.includes("session.user.role !== 'Manager'"),'Server requires a Manager session');
 assert.ok(auth.includes("authUser(current.data?.login_id || session.user.id,c.manager_password)"),'Sensitive status change requires password confirmation');
 assert.ok(auth.includes("'zukait_manager_staff_status'"),'Status changes must call atomic SQL RPC');
