@@ -103,5 +103,11 @@
     "standardAndroidBuildRun": 41582221519
   },
   "publicationRequiresSeparateInstruction": true,
-  "ownerFinalDispatchRequestedAt": "2026-11-03T05:15:01.776Z"
+  "ownerFinalDispatchRequestedAt": "2026-11-03T05:15:01.776Z",
+  "ownerPublisherRetry": {
+    "sourceBranch": "release/v383-approved-source",
+    "sourceSha": "138804af3cd3ce073bbfa8390ee3332ff3a85c80",
+    "reason": "Protected publisher token could not create named tag (HTTP 403); pre-created immutable source branch points to exact approved commit, publisher's existing fallback.",
+    "retryAt": "2026-11-03T05:16:56.019Z"
+  }
 }
