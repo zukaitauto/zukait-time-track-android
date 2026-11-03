@@ -153,6 +153,46 @@ function consCompactEntryStyle(){
  // Keep serial numbers in their own grid column. The compact row's important
  // padding used to remove the gutter beneath the absolutely positioned badge.
  s.textContent+='.cons-entry-line-cards .cons-entry-line-card{box-sizing:border-box!important;width:100%!important;min-width:0!important;grid-template-columns:max-content minmax(0,1fr) minmax(64px,.45fr) auto!important;gap:8px!important;padding:8px!important;align-items:center!important;overflow:visible!important}.cons-entry-line-cards .cons-entry-line-card:before{position:static!important;grid-column:1!important;grid-row:1!important;align-self:start!important;width:auto!important;min-width:28px!important;height:24px!important;padding:0 4px!important;box-sizing:border-box!important;line-height:1.3!important}.cons-entry-line-cards .cons-entry-line-card>*{min-width:0!important;box-sizing:border-box!important}.cons-entry-line-cards .cons-entry-line-card>div:first-of-type{grid-column:2!important;grid-row:1!important}.cons-entry-line-cards .cons-entry-line-card>div:nth-of-type(2){grid-column:3!important;grid-row:1!important}.cons-entry-line-cards .cons-entry-line-card>button{grid-column:4!important;grid-row:1!important}.cons-entry-line-cards .cons-entry-line-card>div b,.cons-entry-line-cards .cons-entry-line-card>div span{white-space:normal!important;overflow-wrap:anywhere!important;line-height:1.35!important}';
+ // Approved teal material-picker palette: color/contrast only, no workflow changes.
+ s.textContent += `
+ .cons-entry-shell .cons-material-result{
+   background:linear-gradient(115deg,#125f6a 0%,#14736d 72%,#11776a 100%)!important;
+   border:1px solid #146f71!important;
+   color:#ffffff!important;
+   box-shadow:0 2px 6px rgba(12,74,80,.17)!important;
+ }
+ .cons-entry-shell .cons-material-result b,
+ .cons-entry-shell .cons-material-result span,
+ .cons-entry-shell .cons-material-result small{
+   color:#ffffff!important;
+   opacity:1!important;
+ }
+ .cons-entry-shell .cons-material-result:before{
+   background:#def7e9!important;
+   color:#13543a!important;
+ }
+ .cons-entry-shell .cons-material-result:hover,
+ .cons-entry-shell .cons-material-result:focus-visible{
+   background:linear-gradient(115deg,#0b5360 0%,#105f5e 100%)!important;
+   border-color:#0d6e68!important;
+ }
+ .cons-entry-shell .cons-material-result:focus-visible{
+   outline:3px solid #80d5b7!important;
+   outline-offset:2px;
+ }
+ .cons-entry-shell .cons-material-selected{
+   background:#e5f5ef!important;
+   border-color:#97d3bf!important;
+   color:#124e47!important;
+ }
+ .cons-entry-shell .cons-material-selected b,
+ .cons-entry-shell .cons-material-selected span,
+ .cons-entry-shell .cons-material-selected small{
+   color:#124e47!important;
+   opacity:1!important;
+ }
+ `;
+
  document.head.appendChild(s);
 }
 window.openConsumablesAdditional=function(){
