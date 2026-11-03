@@ -74,12 +74,14 @@ const rs=stable.indexOf('function renderStable(){'),re=stable.indexOf('window.v1
 let rendered='',refreshCalls=0;
 const view={contains:()=>false,classList:{remove(){}},dataset:{},set innerHTML(s){rendered=s}};
 const sc={role:()=> 'Supervisor',document:{getElementById:id=>id==='supervisorView'?view:null,activeElement:null},
- hideLegacy(){},S:()=>({}),staff:()=>[],jobs:()=>[],esc:String,me:{name:'Supervisor'},v251KpiHTML:()=>'',countAttention:()=>0,
+ hideLegacy(){},S:()=>({}),staff:()=>[],jobs:()=>[],esc:String,me:{name:'Supervisor'},v251KpiHTML:()=>'',countAttention:()=>0,countWip:()=>3,
  techOptions:()=>'',countOver:()=>0,techBoard:()=>'',voiceStopVisible(){},voiceListening:false,pendingVoiceEntry:null,
  window:{v78RefreshSupervisorLeave(){refreshCalls++;assert.match(rendered,/id="v78SupervisorLeaveRow"/)}},console};
 vm.runInNewContext(stable.slice(rs,re)+'renderStable();renderStable();',sc);
 assert.equal(refreshCalls,2,'stable initial and repeat renders must populate leave cards');
 assert.equal((rendered.match(/id="v78SupervisorLeaveRow"/g)||[]).length,1);
+assert.match(rendered,/class="v143-top wip"/,'WIP must occupy the third Supervisor top card');
+assert.match(rendered,/id="supervisorNeedAttentionTile"/,'Need Attention must remain beside Estimate');
 
 // The real cloud structural gate patches leave on pull, save acknowledgement
 // and conflict reconciliation without rebuilding Manager/Supervisor shells.
