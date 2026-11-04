@@ -8,6 +8,7 @@ on:
       - 'app/src/main/assets/mechanical_inspection_view.js'
       - 'app/src/main/assets/mechanical_prejob_intake.js'
       - 'tests/mechanical-sections-ui.mjs'
+      - 'tests/mechanical-prejob-browser.mjs'
       - 'app/src/main/assets/mechanical_supervisor.js'
       - 'app/src/main/assets/mechanical_workspace.js'
       - 'supabase/migrations/20261031120000_mechanical_inspection_secure.sql'
@@ -43,6 +44,7 @@ jobs:
           node --check app/src/main/assets/mechanical_inspection_view.js
           node --check app/src/main/assets/mechanical_prejob_intake.js
           node --check tests/mechanical-sections-ui.mjs
+          node --check tests/mechanical-prejob-browser.mjs
           node --check app/src/main/assets/mechanical_supervisor.js
           node --check app/src/main/assets/mechanical_workspace.js
           for file in tests/mechanical-inspection-*.mjs; do node --check "$file"; done
@@ -75,13 +77,17 @@ jobs:
           done
       - run: npx playwright install --with-deps chromium
       - name: Verify real mobile and desktop Chromium inspection flow
-        run: node tests/mechanical-inspection-browser.mjs
+        run: |
+          node tests/mechanical-inspection-browser.mjs
+          node tests/mechanical-prejob-browser.mjs
       - name: Save Mechanical inspection screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: v377-inspection-browser-${{ github.run_id }}
-          path: artifacts/v377-inspection/
+          path: |
+            artifacts/v377-inspection/
+            artifacts/mechanical-prejob/
           if-no-files-found: warn
           retention-days: 14
 
