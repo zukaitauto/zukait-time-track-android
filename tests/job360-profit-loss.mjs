@@ -2,7 +2,10 @@ import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:asser
 let modal='',handlers=[];const state={jobs:[{no:'J1',vehicle:'Toyota',reg:'1234',jobType:'Cash',delivered:true,finalInvoiceAmount:100,invoiceDate:'2026-10-04'}],assign:[],sessions:[]};
 let cost={parts:20,materials:10,paint:5,labour:30,total:65};
 const context={fixture:state,window:{openModal(html){modal=html},closeModal(){},v128JobCostData(){return cost}},document:{addEventListener(type,fn){if(type==='click')handlers.push(fn)},createElement(){return{}},head:{appendChild(){}},body:{},getElementById(){return null},querySelector(){return null}},navigator:{onLine:true},MutationObserver:class{observe(){}},setTimeout(){},setInterval(){},console};
-vm.createContext(context);vm.runInContext('let state=fixture;let users=[];let me={role:"Manager"};',context);vm.runInContext(fs.readFileSync('app/src/main/assets/workshop_overview.js','utf8'),context);
+vm.createContext(context);vm.runInContext('let state=fixture;let users=[];let me={role:"Manager"};',context);const vehicleAppHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const formatter=vehicleAppHtml.slice(vehicleAppHtml.indexOf('function formatVehicleName('),vehicleAppHtml.indexOf('const KEY='));
+vm.runInContext(formatter,context);
+vm.runInContext(fs.readFileSync('app/src/main/assets/workshop_overview.js','utf8'),context);
 const click=action=>handlers.forEach(fn=>fn({target:{closest:selector=>selector.includes('=')&&selector!=='[data-workshop-action="'+action+'"]'?null:{dataset:{workshopAction:action,job:'J1'}}},preventDefault(){},stopPropagation(){}}));
 const original=structuredClone(state);
 for(const role of ['Manager','Supervisor'])for(const type of ['Cash','Credit','Insurance']){

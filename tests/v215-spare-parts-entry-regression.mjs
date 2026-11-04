@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+const vehicleAppHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const formatter=vehicleAppHtml.slice(vehicleAppHtml.indexOf('function formatVehicleName('),vehicleAppHtml.indexOf('const KEY='));
 import fs from 'node:fs';
 import vm from 'node:vm';
 import { randomUUID } from 'node:crypto';
@@ -17,7 +19,8 @@ const copy = value => JSON.parse(JSON.stringify(value));
 function serverProjection(rows){
  const storage=new Map(),window={zukaitV2:{}};
  const ctx={window,localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},navigator:{onLine:true},Date,console};
- vm.createContext(ctx);vm.runInContext(main,ctx);
+ vm.createContext(ctx);vm.runInContext(formatter,ctx);
+vm.runInContext(main,ctx);
  return window.zukaitV2.sparePartsMain.hydrateFromServerRows(copy(rows));
 }
 
@@ -72,7 +75,8 @@ function fixture(userRole = 'Supervisor', userId = 'SUP002', sharedRows = null) 
   vm.createContext(context);
   vm.runInContext(fs.readFileSync('app/src/main/assets/v2/core/offline_queue.js','utf8'),context);
   vm.runInContext(fs.readFileSync('app/src/main/assets/v2/features/spare-parts/workflow.js','utf8'),context);
-  vm.runInContext(main,context);
+  vm.runInContext(formatter,context);
+vm.runInContext(main,context);
   const parts=window.zukaitV2.sparePartsMain;
   parts.hydrateFromServerRows(copy(serverRows));
   elements.set('v2SpDraftCreate',{disabled:false});

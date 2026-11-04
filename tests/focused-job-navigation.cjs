@@ -6,7 +6,10 @@ const window={openModal:h=>{modal=h},closeModal(){},openConsumablesSavedList:(ty
 const document={addEventListener(type,fn){if(type==='click')clicks.push(fn)},createElement(){return{}},head:{appendChild(){}},body:{},getElementById(){return null},querySelector(){return null},querySelectorAll(){return[]}};
 const ctx=vm.createContext({window,document,state,users:[{id:'e1',name:'Normal Worker'},{id:'e2',name:'Repeat Worker'}],me:{role:'Manager'},navigator:{onLine:true},MutationObserver:class{observe(){}},setTimeout:fn=>fn(),setInterval(){},Date,Intl,console,totalForAssignment:()=>15});
 // Do not execute bootstrap callbacks in this DOM fixture.
-ctx.setTimeout=()=>{};vm.runInContext(src,ctx);
+ctx.setTimeout=()=>{};const vehicleAppHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const formatter=vehicleAppHtml.slice(vehicleAppHtml.indexOf('function formatVehicleName('),vehicleAppHtml.indexOf('const KEY='));
+vm.runInContext(formatter,ctx);
+vm.runInContext(src,ctx);
 function click(action,host=null){const b={dataset:{workshopAction:action,job:'J1',recordId:'po1'},closest:()=>host};for(const fn of clicks)fn({target:{closest:sel=>sel==='.wo-360-page'?null:sel==='[data-workshop-action]'||sel==='[data-workshop-action="'+action+'"]'?b:null},preventDefault(){},stopPropagation(){}})}
 for(const name of ['zukaitOpenJob360','zukaitOpenJobReview360','openManagerJobDetails','openSupervisorJob','v68OpenJobDetail','v132OpenSupervisorJobFull']){window[name]('J1');assert.match(modal,/wo-focused-job/);assert.doesNotMatch(modal,/wo-360-page|Cost Summary|Profit \/ Loss|Full 360/)}
 window.zukaitOpenCashDetails('J1');assert.match(modal,/Cash Details/);assert.match(modal,/OMR 45.000/);assert.doesNotMatch(modal,/Normal Worker|Repeat Worker|Production|Painting QC/);

@@ -82,6 +82,9 @@ mw.state=clone(serverData);mw.me={id:'m',role:'Manager'};mw.users=[];mw.alert=m=
 mw.openModal=h=>mw.document.getElementById('modal').innerHTML=h;mw.closeModal=()=>{};mw.render=()=>{};
 mw.zukaitCloud={pull:async()=>{refreshes++}};
 mw.fetch=async(_url,args)=>{editBody=JSON.parse(args.body);if(editBody.operation==='GET')return {ok:true,json:async()=>({ok:true,job:serverData.jobs[0]})};const result=jobEditTransition(serverData,mw.me,editBody,Date.now());assert.equal(result.ok,true,JSON.stringify(result));serverData=result.data;return {ok:true,json:async()=>result}};
+const vehicleAppHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const formatter=vehicleAppHtml.slice(vehicleAppHtml.indexOf('function formatVehicleName('),vehicleAppHtml.indexOf('const KEY='));
+mw.eval(formatter);
 mw.eval(fs.readFileSync('app/src/main/assets/manager_job_edit.js','utf8'));
 mw.eval(fs.readFileSync('app/src/main/assets/job_card_edit.js','utf8'));
 await mw.zukaitJobEdit.open('JC1');assert.equal(refreshes,1);assert.match(mw.document.body.innerHTML,/Full Edit/);assert.equal(mw.document.querySelector('.jce-form'),null);

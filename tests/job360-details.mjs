@@ -11,6 +11,9 @@ const sandbox={fixture:st,staff,window:{openModal:html=>modal=html,closeModal(){
 const ctx=vm.createContext(sandbox);vm.runInContext('let state=fixture;let users=staff;let me={role:"Manager"};',ctx);
 vm.runInContext(fs.readFileSync('app/src/main/assets/paint_order_rules.js','utf8'),ctx);
 vm.runInContext(fs.readFileSync('app/src/main/assets/job_cost_summary_v128.js','utf8'),ctx);
+const vehicleAppHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const formatter=vehicleAppHtml.slice(vehicleAppHtml.indexOf('function formatVehicleName('),vehicleAppHtml.indexOf('const KEY='));
+vm.runInContext(formatter,ctx);
 vm.runInContext(fs.readFileSync('app/src/main/assets/workshop_overview.js','utf8'),ctx);
 const click=(action)=>{for(const handler of clickHandlers)handler({target:{closest:selector=>selector.includes('=')&&selector!=='[data-workshop-action="'+action+'"]'?null:({dataset:{workshopAction:action,job:'12037'}})},preventDefault(){},stopPropagation(){}})};
 sandbox.window.zukaitWorkshopOverview.detail('12037');

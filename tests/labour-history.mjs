@@ -7,6 +7,9 @@ const st={jobs:[{no:'12064',vehicle:'Toyota Camry',reg:'3180 RY'}],assign:[{id:'
 const before=JSON.stringify(st);
 const dom=new JSDOM('<head></head><body><div id="modal"></div></body>',{runScripts:'outside-only',url:'https://qa.invalid/'}),w=dom.window;
 w.me={role:'Manager'};w.state=st;w.users=[{id:'E1',name:'Soman <script>',department:'Denter'}];w.openModal=s=>w.document.querySelector('#modal').innerHTML=s;w.closeModal=()=>{};let back=0,pdf,printed;w.zukaitWorkshopOverview={labourReviewMetrics:()=>({suggestedMinutes:60,actualMinutes:120,exceededMinutes:60,normalDuty:true}),labour:no=>{assert.equal(no,'12064');back++}};w.zukaitReportPdf={share:(html,name)=>pdf={html,name}};w.AndroidBridge={printHtmlNamed:(html,name)=>printed={html,name}};
+const vehicleAppHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const formatter=vehicleAppHtml.slice(vehicleAppHtml.indexOf('function formatVehicleName('),vehicleAppHtml.indexOf('const KEY='));
+vm.runInContext(formatter,dom.getInternalVMContext());
 vm.runInContext(fs.readFileSync('app/src/main/assets/labour_history.js','utf8'),dom.getInternalVMContext());const api=w.zukaitLabourHistory;
 let r=api.periods(st,'12064','E1',start+200*minute);assert.equal(r.rows.length,3);assert.equal(r.totalMs,130*minute);assert.equal(r.rows[1].status,'Paused');
 assert.equal(api.periods({sessions:[{emp:'E1',job:'ID001',preliminaryLinkedJob:'12064',start}]},'12064','E1',start+200*minute).totalMs,0,'Unconfirmed preliminary transfer is not productive labour');
