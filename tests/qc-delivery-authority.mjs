@@ -33,9 +33,21 @@ reads=0;commits=0;admin.from=()=>({select(){return this},eq(){return this},async
 const conflict=await endpoint(admin,transition,()=>[],(body,status=200)=>({body,status}),vinayan,request,'qc_delivery');assert.equal(conflict.body.code,'work_not_finished');assert.equal(commits,1);
 console.log('QC endpoint CAS race tests passed: retries unrelated changes, blocks concurrent reopened work.');
 const vm=await import('node:vm');const ui=fs.readFileSync('app/src/main/assets/qc_delivery.js','utf8');
+const appHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const formatter=appHtml.slice(appHtml.indexOf('function formatVehicleName('),appHtml.indexOf('const KEY='));
 for(const person of [vinayan,shine,manager]){
  const ctx={qcStatus:status,state:copy(initial),me:person,window:{addEventListener(){}},document:{getElementById(){return null},createElement(){return{}},head:{appendChild(){}}},Date,console,alert(){},openModal(){}};
- vm.runInNewContext(ui.replace(/^import[^\n]+\n/, '')+'\nwindow.testRow=row;',ctx);
+ vm.runInNewContext(formatter+ui.replace(/^import[^\n]+\n/, '')+'\nwindow.testRow=row;window.testDeliveredInMonth=deliveredInMonth;',ctx);
+ const start=Date.parse('2026-10-31T20:00:00Z');
+ ctx.state.jobs=[
+  {no:'previous',delivered:true,deliveredAt:start-1},
+  {no:'current',delivered:true,deliveredAt:String(start)},
+  {no:'archived',delivered:true,archived:true,deliveredAt:start},
+  {no:'invalid',delivered:true,deliveredAt:'invalid'},
+  {no:'undelivered',delivered:false,deliveredAt:start}
+ ];
+ assert.equal(ctx.window.testDeliveredInMonth('2026-11').map(j=>j.no).join(), 'current');
+ assert.equal(ctx.window.testDeliveredInMonth('2026-10').map(j=>j.no).join(), 'previous');
  let html=ctx.window.testRow(initial.jobs[0]);
  assert.equal(html.includes('Painting QC</button>'),person.id==='SUP002');assert.equal(html.includes('Final QC</button>'),false);assert.equal(html.includes('Mark Delivered</button>'),false,'QC queue must not contain delivery action');
  ctx.state=copy(data);ctx.state.jobs[0].delivered=false;html=ctx.window.testRow(ctx.state.jobs[0]);assert.equal(html.includes('Final QC</button>'),false,'Final-passed vehicle must leave QC queue');assert.equal(html.includes('Mark Delivered</button>'),false);const readyHtml=ctx.window.testRow(ctx.state.jobs[0],'ready');assert.equal(readyHtml.includes('Mark Delivered</button>'),person.role==='Supervisor');assert.equal(/v213AskDelivered[^>]+disabled/.test(readyHtml),false);
@@ -52,7 +64,7 @@ assert.match(ui,/qc-fail-badge/,'QC failures must show a visible FAIL badge');
 assert.match(ui,/Painting QC ✓/,'Ready to Deliver must show Painting QC pass state');
 assert.match(ui,/Final QC ✓/,'Ready to Deliver must show Final QC pass state');
 assert.match(ui,/lastNotice=operation==='DELIVER'/,'QC actions must return with a short non-blocking result notice');
-assert.match(ui,/const dn=jobs\(\)\.filter\(j=>j&&j\.delivered/,'Delivered Vehicles must have a live count');
+assert.match(ui,/const dn=deliveredInMonth\(currentDeliveryMonth\(\)\)\.length/,'Delivered Vehicles must have a live count');
 assert.match(ui,/qc-btn-paint/,'Painting QC action must keep its own semantic colour');
 assert.match(ui,/qc-btn-final/,'Final QC action must keep its own semantic colour');
 assert.match(ui,/qc-btn-deliver/,'Delivery action must keep its own semantic colour');
