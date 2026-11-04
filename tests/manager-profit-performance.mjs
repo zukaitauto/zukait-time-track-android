@@ -69,6 +69,8 @@ w.Date=FixedDate;w.me={id:'M',role:'Manager'};let token='QA-TOKEN',calls=0,held=
 w.zukaitAuth={getToken:()=>token};w.zukaitSessionPrivacy={locked:false};w.zukaitCloud={revision:7,readManagerProfit:async({month,offset})=>{calls++;if(held)await held;return{ok:true,rows:month==='2026-10'?monthlyRows.slice(offset,offset+2):[],total_count:month==='2026-10'?monthlyRows.length:0,next_offset:month==='2026-10'&&offset+2<monthlyRows.length?offset+2:null,snapshot_revision:7,finance_revision:2,as_of:new Date(now).toISOString(),undated_records:0};}};
 w.openModal=html=>w.document.getElementById('modal').innerHTML=html;w.closeModal=()=>w.document.getElementById('modal').replaceChildren();
 const wait=async fn=>{for(let i=0;i<100;i++){if(fn())return;await new Promise(r=>setTimeout(r,5));}throw Error('UI condition timeout');};
+const appHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+w.eval(appHtml.slice(appHtml.indexOf('function formatVehicleName('),appHtml.indexOf('const KEY=')));
 w.eval(fs.readFileSync('app/src/main/assets/manager_profit_performance.js','utf8'));await wait(()=>w.document.querySelector('[data-profit-card="CASH"] b')?.textContent==='OMR 150.000');
 assert.equal(w.document.querySelectorAll('[data-profit-card]').length,2);
 w.document.querySelector('[data-profit-card="INSURANCE"]').click();await wait(()=>w.document.querySelector('#mpCompany'));
