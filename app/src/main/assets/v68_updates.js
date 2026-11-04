@@ -84,7 +84,7 @@ window.v68ManagerSearch=function(){
  matches=matches.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
  const rows=matches.map((j,i)=>{
    const t=totals(j.no),hasRepeat=repeatRows(j.no).length>0;
-   return '<button class="v68-result" onclick="window.zukaitOpenJob360(\''+esc(j.no)+'\')"><b class="v68-list-no">'+(i+1)+'</b><span><b>'+esc(j.no)+'</b><small>'+esc(j.vehicle||'—')+' · '+esc(j.reg||'—')+'</small></span><span class="v68-result-meta">'+fmtM(t.actual)+(hasRepeat?' · Repeat Work':'')+' ›</span></button>';
+   return '<button class="v68-result" onclick="window.zukaitOpenJob360(\''+esc(j.no)+'\')"><b class="v68-list-no">'+(i+1)+'</b><span><b>'+esc(j.no)+'</b><small>'+esc(formatVehicleName(j.vehicle)||'—')+' · '+esc(j.reg||'—')+'</small></span><span class="v68-result-meta">'+fmtM(t.actual)+(hasRepeat?' · Repeat Work':'')+' ›</span></button>';
  }).join('');
  openModal('<div class="v68-search-modal"><div class="section-title"><h2>Job Card Search</h2><button class="secondary" onclick="closeModal()">Close</button></div><p class="muted">Search: <b>'+esc(raw)+'</b></p>'+(rows||'<div class="notice">No matching Job Card or registration number found.</div>')+'</div>');
 };
@@ -94,7 +94,7 @@ window.v68OpenVehicleHistory=function(reg){
  if(!me||me.role!=='Manager')return;
  const key=clean(reg);
  const list=(state.jobs||[]).filter(j=>j.no!=='ID001'&&clean(j.reg)===key).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
- const rows=list.map(j=>{const t=totals(j.no);return '<tr><td><button class="v68-link" onclick="v68OpenJobDetail(\''+esc(j.no)+'\')">'+esc(j.no)+'</button></td><td>'+esc(j.vehicle||'—')+'</td><td>'+new Date(j.createdAt||Date.now()).toLocaleDateString()+'</td><td>'+fmtM(t.actual)+'</td><td>'+money(t.actual)+'</td><td>'+(repeatRows(j.no).length?'YES':'NO')+'</td></tr>'}).join('');
+ const rows=list.map(j=>{const t=totals(j.no);return '<tr><td><button class="v68-link" onclick="v68OpenJobDetail(\''+esc(j.no)+'\')">'+esc(j.no)+'</button></td><td>'+esc(formatVehicleName(j.vehicle)||'—')+'</td><td>'+new Date(j.createdAt||Date.now()).toLocaleDateString()+'</td><td>'+fmtM(t.actual)+'</td><td>'+money(t.actual)+'</td><td>'+(repeatRows(j.no).length?'YES':'NO')+'</td></tr>'}).join('');
  openModal('<div class="section-title"><h2>Vehicle History — '+esc(reg||'—')+'</h2><button class="secondary" onclick="closeModal()">Close</button></div><div class="v68-table"><table><tr><th>Job Card</th><th>Vehicle</th><th>Date</th><th>Actual Hours</th><th>Actual Labour Cost</th><th>Repeat</th></tr>'+rows+'</table></div>');
 };
 
@@ -107,7 +107,7 @@ window.v68OpenJobDetail=function(no){
  const related=rel.length?rel.map((x,i)=>'<button class="v68-related"><b class="v68-list-no">'+(i+1)+'</b><span onclick="v68OpenJobDetail(\''+esc(x.no)+'\')">'+esc(x.no)+' <small>'+new Date(x.createdAt||Date.now()).toLocaleDateString()+'</small></span></button>').join(''):'<span class="muted">No other Job Cards for this registration.</span>';
  const time=tl.length?tl.map(x=>'<div class="v68-time-row"><b>'+new Date(x.at).toLocaleString()+'</b><span>'+esc(x.label)+'</span></div>').join(''):'<span class="muted">No timeline recorded.</span>';
  openModal('<div class="v68-detail">'+
- '<div class="v68-detail-head"><div><span>MANAGER JOB CARD REVIEW</span><h2>'+esc(no)+'</h2><p>'+esc(j.vehicle||'—')+' · '+esc(j.reg||'—')+'</p></div><div><button type="button" class="v68-light-btn" data-jc="'+esc(no)+'" onclick="window.zukaitOpenJob360(this.dataset.jc)">VIEW FULL JC / REOPEN OPTIONS</button><button class="secondary" onclick="closeModal()">Close</button></div></div>'+
+ '<div class="v68-detail-head"><div><span>MANAGER JOB CARD REVIEW</span><h2>'+esc(no)+'</h2><p>'+esc(formatVehicleName(j.vehicle)||'—')+' · '+esc(j.reg||'—')+'</p></div><div><button type="button" class="v68-light-btn" data-jc="'+esc(no)+'" onclick="window.zukaitOpenJob360(this.dataset.jc)">VIEW FULL JC / REOPEN OPTIONS</button><button class="secondary" onclick="closeModal()">Close</button></div></div>'+
  '<div class="v68-summary"><div><small>Persons Worked</small><b>'+t.people+'</b></div><div><small>Total Suggested</small><b>'+fmtM(t.suggested)+'</b></div><div><small>Total Actual</small><b>'+fmtM(t.actual)+'</b></div><div><small>Labour Rate</small><b>OMR 2.500/hr</b></div><div><small>Suggested Labour Cost</small><b>'+money(t.suggested)+'</b></div><div><small>Actual Labour Cost</small><b>'+money(t.actual)+'</b></div></div>'+
  '<div class="v68-block"><h3>Worked Persons</h3>'+tech+'</div>'+
  rep+
@@ -142,7 +142,7 @@ window.v68FullReport=function(no){
  const time=tl.map(x=>'<div><b>'+new Date(x.at).toLocaleString()+'</b> — '+esc(x.label)+'</div>').join('');
  const other=rel.length?'<table><tr><th>Job Card</th><th>Date</th><th>Actual Hours</th><th>Actual Cost</th></tr>'+rel.map(x=>{const z=totals(x.no);return'<tr><td>'+esc(x.no)+'</td><td>'+new Date(x.createdAt||Date.now()).toLocaleDateString()+'</td><td>'+fmtM(z.actual)+'</td><td>'+money(z.actual)+'</td></tr>'}).join('')+'</table>':'<p>No other Job Cards for this registration.</p>';
  const html='<div class="no-print"><button onclick="window.print()">SAVE AS PDF / SHARE</button></div>'+
- '<div class="head"><div><h1>ZUKAIT AUTO</h1><p>FULL JOB CARD MANAGEMENT REPORT</p></div><div><b>JC '+esc(no)+'</b><p>'+esc(j.vehicle||'—')+'</p><p>'+esc(j.reg||'—')+'</p></div></div>'+
+ '<div class="head"><div><h1>ZUKAIT AUTO</h1><p>FULL JOB CARD MANAGEMENT REPORT</p></div><div><b>JC '+esc(no)+'</b><p>'+esc(formatVehicleName(j.vehicle)||'—')+'</p><p>'+esc(j.reg||'—')+'</p></div></div>'+
  '<div class="summary"><div class="box"><small>Persons Worked</small><b>'+t.people+'</b></div><div class="box"><small>Total Suggested</small><b>'+fmtM(t.suggested)+'</b></div><div class="box"><small>Total Actual</small><b>'+fmtM(t.actual)+'</b></div><div class="box"><small>Original Actual</small><b>'+fmtM(t.original)+'</b></div><div class="box"><small>Repeat Actual</small><b>'+fmtM(t.repeat)+'</b></div><div class="box"><small>Total Actual Labour Cost</small><b>'+money(t.actual)+'</b></div></div>'+
  '<div class="section"><h2>Worked Persons</h2><table><tr><th>Name</th><th>Department</th><th>Suggested</th><th>Actual</th><th>Suggested Cost</th><th>Actual Cost</th></tr>'+tech+'</table></div>'+
  '<div class="section"><h2>Repeat Work</h2>'+rep+'</div>'+

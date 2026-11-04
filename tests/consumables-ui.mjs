@@ -16,6 +16,9 @@ const ctx={state,navigator:{onLine:false},users:[{id:'P1',name:'Painter',departm
  alert:x=>alerts.push(x),prompt:()=>prompts.length?prompts.shift():'Verified correction',confirm:()=>true,setTimeout:fn=>fn(),render(){},save(){ctx.saved=JSON.stringify(state)},closeModal(){},openModal(html){ctx.modal=html}};
 ctx.window=ctx;vm.createContext(ctx);
 vm.runInContext('let me=window.me; delete window.me;',ctx);
+const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const vehicleFormatter=html.slice(html.indexOf('function formatVehicleName('),html.indexOf('const KEY='));
+vm.runInContext(vehicleFormatter,ctx);
 vm.runInContext(fs.readFileSync('app/src/main/assets/consumables_ui.js','utf8'),ctx);
 const fill=values=>Object.entries(values).forEach(([id,value])=>element(id).value=value);
 fill({cmMaterial:'Primer',cmBrand:'Brand',cmUnit:'Liter',cmPrice:'3.5',cmDate:'2020-01-01'});

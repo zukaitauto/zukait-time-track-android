@@ -14,7 +14,7 @@ function cashRows(y,m){
 function total(rows){return rows.reduce((n,j)=>n+(Number(j.amount)||0),0)}
 function table(rows,dateField){
  if(!rows.length)return '<p class="muted">No matching Cash jobs.</p>';
- return '<div class="manager-scroll"><table><tr><th>JC</th><th>Date</th><th>Registration</th><th>Vehicle</th><th>Status</th><th>Amount</th></tr>'+rows.slice().sort((a,b)=>Number(b[dateField]||b.createdAt||0)-Number(a[dateField]||a.createdAt||0)).map(j=>'<tr><td><b>'+E(j.no)+'</b></td><td>'+E(new Date(Number(j[dateField]||j.createdAt||0)).toLocaleDateString('en-GB',{timeZone:'Asia/Muscat'}))+'</td><td>'+E(j.reg||'—')+'</td><td>'+E(j.vehicle||'—')+'</td><td>'+E(j.delivered?'Delivered':'Open')+'</td><td><b>'+money(j.amount)+'</b></td></tr>').join('')+'</table></div>';
+ return '<div class="manager-scroll"><table><tr><th>JC</th><th>Date</th><th>Registration</th><th>Vehicle</th><th>Status</th><th>Amount</th></tr>'+rows.slice().sort((a,b)=>Number(b[dateField]||b.createdAt||0)-Number(a[dateField]||a.createdAt||0)).map(j=>'<tr><td><b>'+E(j.no)+'</b></td><td>'+E(new Date(Number(j[dateField]||j.createdAt||0)).toLocaleDateString('en-GB',{timeZone:'Asia/Muscat'}))+'</td><td>'+E(j.reg||'—')+'</td><td>'+E(formatVehicleName(j.vehicle)||'—')+'</td><td>'+E(j.delivered?'Delivered':'Open')+'</td><td><b>'+money(j.amount)+'</b></td></tr>').join('')+'</table></div>';
 }
 function render(){
  const y=Number(document.getElementById('v250JobYear')?.value),m=Number(document.getElementById('v250JobMonth')?.value);

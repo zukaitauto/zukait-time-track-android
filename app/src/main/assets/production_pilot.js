@@ -73,7 +73,7 @@
     const fresh=(after.assign||[]).filter(a=>a.emp===me.id&&!a.cancelled&&!a.completed&&!beforeA.has(String(a.id)));
     fresh.forEach(a=>{
       const j=(after.jobs||[]).find(x=>x.no===a.job)||{};
-      nativeNotify('New Job Assigned',a.job+' · '+(j.vehicle||'')+(j.reg?' · '+j.reg:''));
+      nativeNotify('New Job Assigned',a.job+' · '+formatVehicleName(j.vehicle)+(j.reg?' · '+j.reg:''));
     });
 
     const beforeN=new Set((before.systemNotifications||[]).map(n=>String(n.id)));
@@ -134,7 +134,7 @@
     return '<div class="card v42-focus v51-focus '+(a.rework?'v51-status-repeat':'v51-status-running')+'">'+
       '<div class="v51-status-strip"><span>'+strip+'</span></div>'+
       '<div class="v42-focus-head"><div><div class="small muted">CURRENT JOB</div><div class="v42-focus-jc">'+esc(a.job)+'</div></div></div>'+
-      '<div class="v42-focus-vehicle">'+esc(j.vehicle||'')+(j.reg?' <span>·</span> '+esc(j.reg):'')+'</div>'+
+      '<div class="v42-focus-vehicle">'+esc(formatVehicleName(j.vehicle)||'')+(j.reg?' <span>·</span> '+esc(j.reg):'')+'</div>'+
       '<div class="v42-times v51-times">'+
         '<div class="v42-time v51-suggested">Suggested<b>'+fmt(sg)+'</b></div>'+
         '<div class="v42-time v51-actual">Actual<b id="currentActual">'+fmt(ac)+'</b></div>'+
