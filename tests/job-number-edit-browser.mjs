@@ -2,6 +2,9 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {chromium,webkit} from 'playwright';
 const script=fs.readFileSync('app/src/main/assets/manager_job_edit.js','utf8'),css=fs.readFileSync('app/src/main/assets/manager_job_edit.css','utf8');
+const hostHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const formatterSource=hostHtml.slice(hostHtml.indexOf('function formatVehicleName('),hostHtml.indexOf('const KEY=',hostHtml.indexOf('function formatVehicleName(')));
+if(!formatterSource.startsWith('function formatVehicleName(')||!formatterSource.includes('return name.replace('))throw Error('Vehicle name fixture changed');
 fs.mkdirSync('artifacts/job-edit',{recursive:true});
 for(const [name,engine] of [['chromium',chromium],['webkit',webkit]])for(const width of [390,820]){
  const browser=await engine.launch({headless:true}),page=await browser.newPage({viewport:{width,height:844}});
@@ -11,7 +14,7 @@ for(const [name,engine] of [['chromium',chromium],['webkit',webkit]])for(const w
   window.openModal=html=>document.getElementById('modal').innerHTML=html;window.closeModal=()=>{};window.alert=m=>messages.push(m);window.render=()=>{};
   window.fetch=async(_url,args)=>{const body=JSON.parse(args.body);calls.push(body);if(window.rejectDuplicate)return {ok:false,json:async()=>({ok:false,code:'job_number_duplicate'})};return {ok:true,json:async()=>({ok:true,job:{...state.jobs[0],...body.patch,no:body.newJobNumber||'11965'}})};};
  });
- await page.addScriptTag({content:script});await page.evaluate(()=>editJobManager('11965'));
+ await page.addScriptTag({content:formatterSource});await page.addScriptTag({content:script});await page.evaluate(()=>editJobManager('11965'));
  assert.equal(await page.locator('#mje-number').inputValue(),'11965');assert.equal(await page.locator('.mje-editor-header h3').evaluate(el=>getComputedStyle(el).color),'rgb(255, 255, 255)');
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.equal(await page.locator('.modal-box').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true);
  try{await page.screenshot({path:'artifacts/job-edit/'+name+'-'+width+'.png',animations:'disabled'});}catch(error){await page.waitForTimeout(150);await page.screenshot({path:'artifacts/job-edit/'+name+'-'+width+'.png',animations:'disabled'});}
