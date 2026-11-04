@@ -1,6 +1,10 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
+// Standalone browser harness must load the same formatter as the full workshop host.
+const hostHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const formatterSource=hostHtml.slice(hostHtml.indexOf('function formatVehicleName('),hostHtml.indexOf('const KEY=',hostHtml.indexOf('function formatVehicleName(')));
+if(!formatterSource.startsWith('function formatVehicleName(')||!formatterSource.includes('return name.replace('))throw Error('Vehicle name formatter fixture changed');
 const browser=await chromium.launch({headless:true});
 try{for(const width of [320,390,768,1280]){
  const page=await browser.newPage({viewport:{width,height:950}});
@@ -11,6 +15,7 @@ try{for(const width of [320,390,768,1280]){
   window.openModal=html=>document.querySelector('#modal').innerHTML=html;window.closeModal=()=>document.querySelector('#modal').innerHTML='';window.zukaitWorkshopOverview={labour:()=>{},labourReviewMetrics:()=>({suggestedMinutes:90,actualMinutes:120,exceededMinutes:30,normalDuty:true})};
   window.AndroidBridge={printHtmlNamed:html=>window.printed=html,shareImageBase64:(name,data)=>window.sharedImage={name,data}};
  });
+ await page.addScriptTag({content:formatterSource});
  for(const file of ['labour_history.js','vendor/pdf/html2canvas-1.4.1.min.js','vendor/pdf/jspdf-4.2.1.min.js','report_pdf_export.js'])await page.addScriptTag({content:fs.readFileSync('app/src/main/assets/'+file,'utf8')});
  await page.evaluate(()=>window.zukaitLabourHistory.openStaff('12064','E1'));
  assert.equal(await page.locator('tbody tr').count(),2);assert.match(await page.locator('.lh-suggested').innerText(),/1h 30m/);assert.match(await page.locator('.lh-actual').innerText(),/2h 00m/);assert.match(await page.locator('.lh-exceeded').innerText(),/0h 30m/);assert.match(await page.locator('.lh-total').innerText(),/2h 00m/);assert.ok(!(await page.locator('#modal').innerText()).includes('Jijesh'));
