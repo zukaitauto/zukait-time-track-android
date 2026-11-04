@@ -39,7 +39,7 @@ try{
    const root=document.querySelector('.mc-prejob'),modal=document.querySelector('#modal'),
      diagram=document.querySelector('.mc-car-stage img'),
      header=document.querySelector('.mc-prejob>header'),title=header.querySelector('h2'),
-     controls=[...document.querySelectorAll('.mc-intake-form button,.mc-intake-form input:not([type=radio]):not([type=checkbox]),.mc-intake-form select,.mc-intake-form textarea')];
+     controls=[...document.querySelectorAll('.mc-intake-form button:not(.mc-zone),.mc-intake-form input:not([type=radio]):not([type=checkbox]),.mc-intake-form select,.mc-intake-form textarea')];
    return {
     modalWidth:modal.getBoundingClientRect().width,
     rootWidth:root.getBoundingClientRect().width,
