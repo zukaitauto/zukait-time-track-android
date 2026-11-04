@@ -18,7 +18,7 @@ async function deliveryView(jobCard){if(window.ZUKAIT_MECHANICAL_DELIVERY_ENABLE
 async function openSection(section,extras={}){
  if(section==='time-management')return mount('./mechanical_time_management.js','mountMechanicalTimeManagement',{onBack:()=>workspace()});
  if(['create-checklist','checklists','linked-checklists'].includes(section))return workspace(null,section);
- return mount('./mechanical_sections.js','mountMechanicalSection',{...extras,section,onBack:()=>extras.prejobChecklist?workspace(null,'checklists'):workspace(),openChecklist:id=>workspace(id,'checklists'),createChecklist:job=>workspace(null,'create-checklist',job)});
+ return mount('./mechanical_sections.js','mountMechanicalSection',{...extras,section,onBack:()=>extras.prejobChecklist?workspace(null,'checklists'):workspace(),openChecklist:id=>workspace(id,'checklists'),createChecklist:job=>workspace(null,'linked-checklists',job)});
 }
 async function inspectionView(checklistId,jobCard){
  return mount('./mechanical_inspection_view.js','mountMechanicalInspection',{
