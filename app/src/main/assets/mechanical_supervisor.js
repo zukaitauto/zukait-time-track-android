@@ -17,7 +17,7 @@ async function signatureView(input){if(window.ZUKAIT_MECHANICAL_SIGNATURES_ENABL
 async function deliveryView(jobCard){if(window.ZUKAIT_MECHANICAL_DELIVERY_ENABLED!==true)return;const probe=await api({action:'mechanical_delivery_probe',jobCard});if(!probe.registered)throw Error('Mechanical checklist required');return mount('./mechanical_delivery.js','mountMechanicalDelivery',{checklistId:probe.checklistId,onClose:()=>workspace(),onDone:()=>workspace()})}
 async function openSection(section,extras={}){
  if(section==='time-management')return mount('./mechanical_time_management.js','mountMechanicalTimeManagement',{onBack:()=>workspace()});
- if(['create-checklist','checklists'].includes(section))return workspace(null,section);
+ if(['create-checklist','checklists','linked-checklists'].includes(section))return workspace(null,section);
  return mount('./mechanical_sections.js','mountMechanicalSection',{...extras,section,onBack:()=>extras.prejobChecklist?workspace(null,'checklists'):workspace(),openChecklist:id=>workspace(id,'checklists'),createChecklist:job=>workspace(null,'create-checklist',job)});
 }
 async function inspectionView(checklistId,jobCard){

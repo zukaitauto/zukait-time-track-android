@@ -244,6 +244,7 @@ export async function mountMechanicalPrejob(root,options={}){
   filter.value=statusFilter;filter.onchange=()=>{statusFilter=filter.value;render();};
   toolbar.append(filter);
   if(options.section==='checklists'&&typeof options.onCreateChecklist==='function')toolbar.append(action('Create Checklist',options.onCreateChecklist));
+  if(options.section==='checklists'&&typeof options.onOpenLegacyList==='function')toolbar.append(action('Existing Job-linked Checklists',options.onOpenLegacyList));
   lookup.append(toolbar);
   const filtered=items.filter(item=>statusFilter==='ALL'||(
    statusFilter==='UNLINKED'?!item.linked_job_card&&item.approval_status!=='DECLINED':

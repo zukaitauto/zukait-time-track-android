@@ -16,6 +16,7 @@ export async function mountMechanicalWorkspace(root,options={}){
  if(options.section==='create-checklist'||(options.section==='checklists'&&!options.checklistId)){
   return mountMechanicalPrejob(root,{...options,
    onCreateChecklist:()=>options.openSection?.('create-checklist'),
+   onOpenLegacyList:()=>options.openSection?.('linked-checklists'),
    onCreateJob:item=>options.openSection?.('create-job',{prejobChecklist:item})
   });
  }
