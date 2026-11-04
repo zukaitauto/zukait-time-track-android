@@ -8,6 +8,8 @@ const el=id=>{if(!elements.has(id))elements.set(id,{value:'',innerHTML:'',datase
 const state={jobs:[],assign:[],paintPurchasing:{orders:[],audit:[]}};
 const ctx={state,users:[],me:{id:'S1',role:'Supervisor'},ZukaitConsumables:C,console,navigator:{onLine:false},setTimeout:fn=>fn(),openModal(html){ctx.modal=html},closeModal(){},document:{head:{appendChild(){}},createElement(){return{}},getElementById:id=>['supervisorView','managerView'].includes(id)?null:el(id),querySelectorAll(){return[]}}};
 ctx.window=ctx;vm.createContext(ctx);
+const appHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+vm.runInContext(appHtml.slice(appHtml.indexOf('function formatVehicleName('),appHtml.indexOf('const KEY=')),ctx);
 for(const name of ['consumables_ui.js','paint_module.js'])vm.runInContext(fs.readFileSync('app/src/main/assets/'+name,'utf8'),ctx);
 ctx.openConsumablesEntry('issued');assert.match(ctx.modal,/margin-left:auto[^>]*>LIST/);assert.match(ctx.modal,/openConsumablesSavedList\('issued'\)/);
 await ctx.openConsumablesActual();assert.match(ctx.modal,/openConsumablesSavedList\('actual'\)/);
