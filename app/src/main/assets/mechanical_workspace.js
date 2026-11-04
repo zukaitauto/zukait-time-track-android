@@ -13,7 +13,7 @@ export async function mountMechanicalWorkspace(root,options={}){
  if(options.enabled!==true||!(initial?.role==='Manager'||initial?.id==='SUP003'&&['Supervisor','Mechanical Supervisor'].includes(initial?.role))||!initial?.id||!initial?.key||typeof options.api!=='function'){
   root.replaceChildren(node('p','Mechanical workspace is unavailable.'));return {destroy(){root.replaceChildren()}};
  }
- if(options.section==='create-checklist'||options.section==='checklists'){
+ if(options.section==='create-checklist'||(options.section==='checklists'&&!options.checklistId)){
   return mountMechanicalPrejob(root,{...options,
    onCreateChecklist:()=>options.openSection?.('create-checklist'),
    onCreateJob:item=>options.openSection?.('create-job',{prejobChecklist:item})
