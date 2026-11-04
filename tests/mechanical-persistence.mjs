@@ -49,7 +49,10 @@ try{
  let base=fs.readFileSync('tests/fixtures/reception-postgres17-baseline.sql','utf8');base=native?base.replace(/create role (anon|authenticated|service_role)[^;]+;/g,''):base.replace('create extension if not exists pgcrypto;','');await db.exec(base);
  const foundation='20261025073818_mechanical_department_inactive_foundation.sql',freshInstall=process.env.ZUKAIT_MECHANICAL_INSTALL_MODE==='fresh';
  const mechanicalMigrations=fs.readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')&&f.includes('_mechanical_')).sort();
- for(const f of fs.readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')&&(freshInstall||!mechanicalMigrations.includes(f))).sort())await db.exec(fs.readFileSync('supabase/migrations/'+f,'utf8'));
+ const sharedVehicleRegistry='20261104143434_shared_vehicle_registry.sql';
+ // This registry migration references independent Mechanical intake rows.
+ // Install it after the Mechanical schema in both fresh and upgrade fixtures.
+ for(const f of fs.readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')&&(f!==sharedVehicleRegistry&&(freshInstall||!mechanicalMigrations.includes(f)))).sort())await db.exec(fs.readFileSync('supabase/migrations/'+f,'utf8'));
  await db.exec(fs.readFileSync('tests/fixtures/workshop-save-live-functions.sql','utf8'));await db.exec(fs.readFileSync('experiments/live-status-session-partition.sql','utf8'));
  await db.exec("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt,must_change) values('QA_SUP','QA supervisor','Supervisor','QA_MECHANICAL','none','none',false),('QA_A','QA mechanic A','Employee','QA_MECHANICAL','none','none',false),('QA_B','QA mechanic B','Employee','QA_MECHANICAL','none','none',false),('QA_OTHER','Other','Employee','OTHER','none','none',false)");
  // Shared baseline now provides the session schema and least-privilege grants.
@@ -63,6 +66,8 @@ try{
   assert.deepEqual((await db.query('select * from workshop_state')).rows,beforeState,'Upgrade must not touch existing garage JSON or revisions');
   assert.deepEqual((await db.query('select user_id,role,department,must_change from staff_credentials order by user_id')).rows,beforeStaff,'Upgrade must not create or convert accounts');
  }
+ if(fs.existsSync('supabase/migrations/'+sharedVehicleRegistry))
+  await db.exec(fs.readFileSync('supabase/migrations/'+sharedVehicleRegistry,'utf8'));
  if(!mechanicalMigrations.some(f=>f.includes('_mechanical_manual_job_card_numbers.sql')||f.endsWith('_mechanical_job_intake_v377.sql'))&&fs.existsSync('experiments/v377-mechanical-intake.sql'))await db.exec(fs.readFileSync('experiments/v377-mechanical-intake.sql','utf8'));
  // The legacy fixture may redefine the scoped RPC after migrations. Reapply
  // the idempotent manual-numbering upgrade to the final function under test.

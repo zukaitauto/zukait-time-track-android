@@ -17,6 +17,10 @@ const uiResponse=()=>({ok:true,actorId:w.me.id,actorRole:w.me.role,workshopRevis
 w.zukaitAuth={getToken:()=>token};w.zukaitCloud={syncHealth:{ready:true,dirty:false,revision:8},readMechanicalQcOverview:async()=>{reads++;if(rejectRead)throw Error('unavailable');if(pending)return pending;return uiResponse()},openMechanicalWorkspace:async id=>workspace=id,openMechanicalDelivery:async no=>{delivered=no;return true},syncNow:async()=>{w.zukaitCloud.syncHealth.revision=8}};
 w.setInterval=()=>{throw Error('QC overview must not poll')};
 const ui=fs.readFileSync('app/src/main/assets/qc_delivery.js','utf8').replace(/^import[^\n]+\n/,'').replace("import('./mechanical_qc_projection.js')","Promise.resolve({createMechanicalQcProjection:window.createMechanicalQcProjection})");
+const formatterHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const formatterSource=formatterHtml.slice(formatterHtml.indexOf('function formatVehicleName('),formatterHtml.indexOf('const KEY=',formatterHtml.indexOf('function formatVehicleName(')));
+if(!formatterSource.startsWith('function formatVehicleName(')||!formatterSource.includes('return name.replace('))throw Error('Vehicle name fixture changed');
+w.eval(formatterSource);
 w.eval(ui);await tick();assert.equal(reads,0,'Flag off makes zero Mechanical reads');w.ZUKAIT_MECHANICAL_ENABLED=true;w.render();await tick();assert.equal(reads,1);assert.equal(w.document.querySelector('[data-qc-queue] .qc-card-count').textContent,'2');assert.equal(w.document.querySelector('[data-manager-ready-slot] .qc-card-count').textContent,'1');
 await w.zukaitOpenReadyToDeliver();assert.equal(reads,2);assert.match(w.document.getElementById('qcRows').textContent,/Mechanical QC · Jibin · Passed/);assert.doesNotMatch(w.document.getElementById('qcRows').textContent,/Painting QC/);assert.equal(w.document.querySelectorAll('#qcRows img').length,0);
 await w.zukaitOverviewDeliver('12079');assert.equal(delivered,'12079');

@@ -23,6 +23,10 @@ const sandbox={fixture:st,staff:st.users,window:{openModal:html=>modal=html,
  navigator:{onLine:true},MutationObserver:class{observe(){}},setTimeout(){},setInterval(){},totalForAssignment:()=>30};
 const ctx=vm.createContext(sandbox);
 vm.runInContext('let state=fixture;let users=staff;let me={role:"Manager"};',ctx);
+const formatterHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const formatterSource=formatterHtml.slice(formatterHtml.indexOf('function formatVehicleName('),formatterHtml.indexOf('const KEY=',formatterHtml.indexOf('function formatVehicleName(')));
+if(!formatterSource.startsWith('function formatVehicleName(')||!formatterSource.includes('return name.replace('))throw Error('Vehicle name fixture changed');
+vm.runInContext(formatterSource,ctx);
 vm.runInContext(source,ctx);
 const detail=()=>sandbox.window.zukaitWorkshopOverview.detail('12078');
 const click=action=>{for(const fn of handlers)fn({target:{closest:selector=>selector.includes('=')&&selector!=='[data-workshop-action="'+action+'"]'?null:({dataset:{workshopAction:action,job:'12078'}})},preventDefault(){},stopPropagation(){}})};

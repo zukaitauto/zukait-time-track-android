@@ -112,7 +112,7 @@ def main():
     cache_tags = {
         "job_card_edit.js": "v=336",
         "v2/features/insurance/reception.js": "v=334",
-        "reception_dashboard.js": "v=333",
+        "reception_dashboard.js": "v=2026110401",
         "receptionist_session.js": "v=305-reception-dashboard-20261010-r2",
     }
     for page, targets in {

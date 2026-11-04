@@ -40,6 +40,10 @@ const worked=vm.runInContext('(function(){'+rules+'\nreturn workedMinutes;})()',
 ctx.workedMinutes=worked;
 const normal=vm.runInContext('(function(){'+engine+'\nreturn normalAssignments;})()',ctx);
 ctx.normalAssignments=normal;
+const formatterHtml=readFileSync(new URL('../app/src/main/assets/offline_test.html',import.meta.url),'utf8');
+const formatterSource=formatterHtml.slice(formatterHtml.indexOf('function formatVehicleName('),formatterHtml.indexOf('const KEY=',formatterHtml.indexOf('function formatVehicleName(')));
+if(!formatterSource.startsWith('function formatVehicleName(')||!formatterSource.includes('return name.replace('))throw Error('Vehicle name fixture changed');
+vm.runInContext(formatterSource,ctx);
 vm.runInContext('(function(){'+report+'\n})()',ctx);
 assert.equal(typeof win.zukaitMonthlyEmployeePerformance?.calculate,'function');
 
