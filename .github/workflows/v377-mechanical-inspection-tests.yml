@@ -45,6 +45,7 @@ jobs:
           node --check app/src/main/assets/mechanical_prejob_intake.js
           node --check tests/mechanical-sections-ui.mjs
           node --check tests/mechanical-prejob-browser.mjs
+          node --check tests/mechanical-prejob-list-link.mjs
           node --check app/src/main/assets/mechanical_supervisor.js
           node --check app/src/main/assets/mechanical_workspace.js
           for file in tests/mechanical-inspection-*.mjs; do node --check "$file"; done
@@ -57,6 +58,7 @@ jobs:
           node tests/mechanical-cash-credit-client.mjs
           node tests/mechanical-inspection-view.mjs
           node tests/mechanical-sections-ui.mjs
+          node tests/mechanical-prejob-list-link.mjs
 
 
   isolated-chromium-tests:
