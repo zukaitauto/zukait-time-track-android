@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';import fs from 'node:fs';import {chromium} from 'playwright';
+const hostHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const formatterSource=hostHtml.slice(hostHtml.indexOf('function formatVehicleName('),hostHtml.indexOf('const KEY=',hostHtml.indexOf('function formatVehicleName(')));
+if(!formatterSource.startsWith('function formatVehicleName(')||!formatterSource.includes('return name.replace('))throw Error('Vehicle formatter fixture changed');
 const source=fs.readFileSync('app/src/main/assets/mechanical_workspace.js','utf8').replace(/^import \{mountMechanicalPrejob\} from '\.\/mechanical_prejob_intake\.js';\s*/m,'const mountMechanicalPrejob=()=>{throw Error("Not used in existing-checklist layout test")};\n').replace('export async function mountMechanicalWorkspace','window.mountMechanicalWorkspace=async function');
 const navigation=fs.readFileSync('app/src/main/assets/mechanical_navigation.js','utf8').replace('export function installMechanicalNavigation','window.installMechanicalNavigation=function');
 const delivery=fs.readFileSync('app/src/main/assets/mechanical_delivery.js','utf8').replace('export async function mountMechanicalDelivery','window.mountMechanicalDelivery=async function');
@@ -6,6 +9,7 @@ const browser=await chromium.launch({headless:true});fs.mkdirSync('test-results/
 try{for(const width of [320,375,768,1280]){
  const page=await browser.newPage({viewport:{width,height:1000}});
  await page.setContent('<style>body{margin:0;background:#e7edf4}.modal-box{width:1100px;max-width:95vw;margin:10px auto}</style><div class="modal-box"><div id="root"></div></div>');
+ await page.addScriptTag({content:formatterSource});
  await page.addScriptTag({content:source});
  await page.evaluate(async()=>{
   let serial=0;const data={ok:true,recordsRevision:2,workshopRevision:8,capabilities:['MC_CREATE','TASK_CREATE','TASK_ASSIGN','TASK_HANDOVER'],departmentConfigured:true,nextAfter:25,

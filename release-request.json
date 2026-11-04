@@ -1,23 +1,23 @@
 {
-  "versionName": "V387",
-  "versionCode": 350,
+  "versionName": "V388",
+  "versionCode": 351,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "sourceCommit": "9a46e767442ef1c9ffd8dbae9de00183ad35920d",
+  "approvedForStaff": false,
+  "sourceCommit": "a250317aeddc0ae20e7e397e330e9b6a64049273",
   "ownerRequestedProceed": true,
-  "ownerPublicationRequested": true,
-  "authorization": "Owner requested release of approved teal materials-entry color update on 2026-11-03. Exact-source V387 signed APK and Reception verification both passed, with Android architecture, standard APK, staff-contract and connection checks also passed. Publish only coordinated V387 Android APK and PC site from architecture-v2, without backend deployment or changes to main. Physical phone acceptance NOT_RUN; fresh backup restoration remains deferred under recorded owner release policy.",
-  "approvedAt": "2026-11-03T15:40:34.965Z",
-  "publishNonce": "v387-teal-approved-20261103-9a46e767442ef1c9",
-  "releaseHeldByOwner": false,
+  "ownerPublicationRequested": false,
+  "authorization": "Owner requested publication of V388 Android and web on 2026-11-04. QA candidate only; do not publish until matching signed Android APK, Reception/browser checks, Mechanical, PC staging, regression and backup protections pass; backend migration and Edge Function deployment are separate and not authorized here. No changes to main.",
+  "approvedAt": null,
+  "publishNonce": null,
+  "releaseHeldByOwner": true,
   "publicationRequiresSeparateInstruction": true,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V385",
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": 41665455118,
-  "verificationRun": 41665454663,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
   "previousPublishedRelease": {
     "versionName": "V386",
     "versionCode": 349,
@@ -551,7 +551,7 @@
     "ownerPhysicalAcceptanceDeferred": "Owner explicitly requested publish first, test afterward on 2026-11-01; NOT_RUN.",
     "ownerBackendActivation": "NOT_AUTHORIZED; production workshop-api version 98 lacks REOPEN_ADDITIONAL and REOPEN_REPEAT; Mechanical database guard not activated."
   },
-  "ownerRequestedImmediateRelease": true,
+  "ownerRequestedImmediateRelease": false,
   "backupDeferredByOwner": true,
   "v378HotfixEvidence": {
     "issue": "Consumables Cost card and Materials Consumption disappear after Manager dashboard re-render",
@@ -708,7 +708,7 @@
     "releaseApproval": "OWNER_APPROVED_RELEASE_WORKFLOW_GATED"
   },
   "reason": "V387 coordinated UI release: existing approved-checklist and cosmetic vehicle-model fixes, plus approved teal materials-entry cards with high-contrast white text and mint serial-number badges. Styling-only additional change; workshop behavior and backend unchanged.",
-  "verificationSummary": "Exact source 9a46e767442ef1c9ffd8dbae9de00183ad35920d: signed APK 41665455118 PASS, Reception/browser 41665454663 PASS, Android architecture 41665454860 PASS, standard APK 41665454664 PASS, staff contracts 41665454995 PASS, connection safety 41665455114 PASS. Physical acceptance NOT_RUN and fresh backup restoration deferred by owner.",
+  "verificationSummary": "PENDING exact V388 QA checks and source-matched signed Android, Reception and PC website validation. No production publication; backend lookup migration not deployed.",
   "productionBackendDeploymentEvidence": {
     "projectRef": "pjknotnjkufadqavcmii",
     "function": "workshop-api",
@@ -779,7 +779,7 @@
     "sourceBranch": "release/v385-approved-source",
     "ownerApprovedAt": "2026-11-03T13:09:54.684Z"
   },
-  "releaseCandidateStatus": "APPROVED_AWAITING_PROTECTED_WORKFLOW_DISPATCH",
+  "releaseCandidateStatus": "V388_QA_CANDIDATE_PENDING_ALL_GATES",
   "v387BackendRecord": {
     "sqlMigration": "supabase/migrations/20261103182000_reception_approved_model_format_equivalence.sql",
     "alreadyApplied": true,
