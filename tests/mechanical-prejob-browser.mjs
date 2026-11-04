@@ -48,7 +48,7 @@ try{
     imageLoaded:diagram.complete&&diagram.naturalWidth>0,
     titleColor:getComputedStyle(title).color,
     headerBackground:getComputedStyle(header).backgroundImage,
-    tooSmall:controls.filter(el=>el.getBoundingClientRect().height<42).map(el=>el.tagName).slice(0,8)
+    tooSmall:controls.filter(el=>{const rect=el.getBoundingClientRect();return rect.width>0&&rect.height<42;}).map(el=>el.tagName).slice(0,8)
    };
   });
   assert.ok(shape.modalWidth>=width-1,'full-screen Mechanical overlay at '+width+'px');
