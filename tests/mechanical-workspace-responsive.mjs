@@ -50,6 +50,7 @@ try{for(const width of [320,375,768,1280]){
  // Main QC/Ready projection in a separate document (no network or active pilot).
  const overviewPage=await browser.newPage({viewport:{width,height:1000}});
  await overviewPage.setContent('<style>body{margin:0;font:16px system-ui}#modal,#managerView{box-sizing:border-box;width:100%;padding:8px}button{min-height:44px}.v67-control-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}</style><div id="managerView"><div class="v67-control-grid"></div></div><div id="modal"></div>');
+ await overviewPage.addScriptTag({content:formatterSource});
  await overviewPage.addScriptTag({content:fs.readFileSync('app/src/main/assets/qc_delivery_rules.js','utf8').replaceAll('export ','')});
  await overviewPage.addScriptTag({content:fs.readFileSync('app/src/main/assets/mechanical_qc_projection.js','utf8').replace('export function createMechanicalQcProjection','window.createMechanicalQcProjection=function')});
  await overviewPage.evaluate(()=>{
