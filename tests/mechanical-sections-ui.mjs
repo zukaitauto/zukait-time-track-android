@@ -20,7 +20,41 @@ for(const role of ['Manager','Mechanical Supervisor']){
   }
   controller.destroy();
  }
- controller=await mountMechanicalWorkspace(root,{enabled:true,section:'create-checklist',jobCard:'M1',storage:w.localStorage,getSession:()=>who,api:async()=>({ok:true,capabilities:['MC_CREATE'],checklists:[],mechanics:[]})});assert.equal(root.querySelector('[data-mc-card]'),null);assert.ok(root.querySelector('form input[name="registration"]'),'Pre-Job Checklist starts with registration, independent of a Job Card');assert.ok(root.querySelector('form input[name="make"]'));assert.ok(root.querySelector('form input[name="model"]'));assert.equal(root.querySelector('form input[name="job"]'),null,'Pre-Job Checklist must not require or create a Job Card');assert.deepEqual([...root.querySelector('form select[name="job_type"]').options].map(x=>x.value),['CASH','CREDIT'],'Mechanical Pre-Job Checklist does not offer Insurance');controller.destroy();
+ const prejobCalls=[];
+ controller=await mountMechanicalWorkspace(root,{enabled:true,section:'create-checklist',jobCard:'M1',storage:w.localStorage,getSession:()=>who,uuid:()=>`12345678-1234-4123-8123-000000009001`,api:async body=>{prejobCalls.push(structuredClone(body));return body.command?.operation==='CREATE'?{ok:true,checklist:{id:'QA-P1',checklist_number:'MC-P000001',registration:body.command.registration,approval_status:'PENDING',revision:1}}:{ok:true,capabilities:['MC_CREATE'],checklists:[],mechanics:[]};}});
+ await tick();
+ assert.equal(root.querySelector('[data-mc-card]'),null);
+ const intake=root.querySelector('form.mc-intake-form');
+ assert.ok(intake,'Mechanical checklist uses Reception-style form');
+ assert.ok(root.querySelector('.mc-form-brand'),'Company and bilingual form header required');
+ assert.ok(root.querySelector('.mc-car-stage img[src*="vehicle-inspection-approved.png"]'),'Same Reception vehicle diagram required');
+ assert.ok(root.querySelector('.mc-inspection-grid'),'Inspection grouped alongside accessories and function checks');
+ assert.ok(root.querySelector('input[name="registration"]'),'Pre-Job Checklist starts with registration, independent of a Job Card');
+ assert.ok(root.querySelector('input[name="make"]'));assert.ok(root.querySelector('input[name="model"]'));
+ assert.equal(root.querySelector('input[name="job"]'),null,'Pre-Job Checklist must not require or create a Job Card');
+ assert.deepEqual([...root.querySelector('select[name="job_type"]').options].map(x=>x.value),['CASH','CREDIT'],'Mechanical Pre-Job Checklist does not offer Insurance');
+ assert.equal(root.querySelectorAll('select[name="insurance_id"],input[name="claim"]').length,0,'Mechanical checklist has no Insurance fields');
+ assert.equal(root.querySelectorAll('input[name="accessory"]').length>=8,true,'Reception-like accessories must be available');
+ const mark=root.querySelector('[data-zone="Front Bumper"]');mark.click();assert.equal(mark.dataset.mark,'X','Damage mark placed by tapping diagram');
+ for(const [name,value] of Object.entries({registration:'TEST-9001',make:'Toyota',model:'Corolla',year:'2023',odometer:'76000',vin:'TESTVIN',customer:'QA Customer',contact:'90000000',work_description:'Inspect brakes and suspension'}))intake.elements[name].value=value;
+ intake.elements.job_type.value='CREDIT';
+ const warning=[...root.querySelectorAll('input[name="check_dashboardWarning"]')].find(x=>x.value==='ISSUE');
+ warning.checked=true;warning.dispatchEvent(new w.Event('change',{bubbles:true}));
+ assert.equal(root.querySelector('[name="note_dashboardWarning"]').closest('label').dataset.visible,'true','Issue notes must appear only for issues');
+ intake.elements.note_dashboardWarning.value='Check engine warning lamp';
+ intake.querySelector('input[name="accessory"][value="jack"]').checked=true;
+ intake.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();await tick();
+ const prejobWrite=prejobCalls.find(x=>x.command?.operation==='CREATE');
+ assert.ok(prejobWrite,'Submit creates Mechanical checklist');
+ assert.equal(prejobWrite.command.job_type,'CREDIT');
+ assert.equal(prejobWrite.command.inspection.damageMarks[0].part,'Front Bumper');
+ assert.equal(prejobWrite.command.inspection.damageMarks[0].mark,'X');
+ assert.equal(prejobWrite.command.inspection.functions.dashboardWarning.status,'ISSUE');
+ assert.equal(prejobWrite.command.inspection.functions.dashboardWarning.note,'Check engine warning lamp');
+ assert.ok(prejobWrite.command.inspection.tools.includes('jack'));
+ assert.equal(prejobCalls.filter(x=>x.command?.operation==='CREATE_JOB').length,0,'Checklist cannot create Job Card');
+ assert.match(root.textContent,/saved as Pending/);
+ controller.destroy();
  controller=await mountMechanicalWorkspace(root,{enabled:true,section:'checklists',storage:w.localStorage,getSession:()=>who,api:async()=>({ok:true,capabilities:['MC_CREATE'],checklists:[],mechanics:[]})});assert.equal(root.querySelector('form[data-operation=MC_CREATE]'),null);controller.destroy();dom.window.close();
 }
 // Exercise the actual shared quote editor with its dedicated-domain adapter.
