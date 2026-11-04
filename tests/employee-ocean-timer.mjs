@@ -13,6 +13,8 @@ w.empStatus=()=>status;
 w.job=no=>({vehicle:no==='12050'?'Toyota Avalon':'Nissan Sunny',reg:no==='12050'?'4493.D':'7788.A'});
 w.renderEmployee=()=>{w.document.getElementById('employeeView').innerHTML='<div class="v75s-identity"></div><div class="v75s-shell"></div>'};w.refreshActiveRunningTime=()=>{};
 w.pause=()=>calls.push('pause');w.start=no=>calls.push('start:'+no);w.finish=()=>calls.push('finish');w.openEmployeeRequestMenu=no=>calls.push('request:'+no);w.v84EmployeeAccount=()=>calls.push('account');w.openModal=html=>{modal=html};
+const appHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+w.eval(appHtml.slice(appHtml.indexOf('function formatVehicleName('),appHtml.indexOf('const KEY=')));
 w.eval('/* EMPLOYEE OCEAN TIMER'+src);
 const text=id=>w.document.getElementById(id).textContent;
 assert.equal(text('oceanAllotted'),'3 hrs');assert.equal(text('oceanUsed'),'2 hrs');assert.equal(text('oceanRemaining'),'1 hr');assert.equal(text('oceanExceeded'),'0 hrs');assert.equal(text('oceanPercent'),'67% used');assert.equal(w.document.querySelectorAll('progress').length,1);assert.equal(w.document.querySelectorAll('.v80-gauge').length,0);

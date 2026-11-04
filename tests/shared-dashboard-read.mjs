@@ -18,13 +18,15 @@ assert.equal(await p.probe(),true);assert.equal(patches,1,'Same revision must st
 p.lastProbedRevision=-1;assert.equal(await p.probe(),false);assert.equal(patches,1,'Fresh snapshots must not trigger a full load on every tick');
 const nodes={woSearch:{value:'12079',focus(){}},woResults:{dataset:{queue:'0'},innerHTML:''}};
 const w=vm.createContext({window:{openModal(){}},state:{jobs:[],assign:[]},me:{role:'Manager'},document:{getElementById:id=>nodes[id]||null,addEventListener(){},createElement(){return{}},head:{appendChild(){}},body:{}},MutationObserver:class{observe(){}},setTimeout(){},setInterval(){},openModal(){},console});
+const appHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+vm.runInContext(appHtml.slice(appHtml.indexOf('function formatVehicleName('),appHtml.indexOf('const KEY=')),w);
 vm.runInContext(fs.readFileSync('app/src/main/assets/workshop_overview.js','utf8'),w);
 w.window.zukaitCloud={async readLatest(){w.state.jobs=[{no:'12079',jobType:'CASH',amount:80,vehicle:'New Reception vehicle',reg:'ABC'}]}};
 for(const role of ['Manager','Supervisor']){
  w.me.role=role;w.state.jobs=[];await w.window.zukaitWorkshopOverview.openSearch(false,'12079');
  assert.match(nodes.woResults.innerHTML,/12079/,'New Reception jobs must be searchable after the shared server read');
  assert.equal(nodes.woSearch.value,'12079');
- w.state.jobs[0].vehicle='Updated Reception vehicle';w.window.zukaitWorkshopOverview.refreshShared();assert.match(nodes.woResults.innerHTML,/Updated Reception vehicle/);assert.equal(nodes.woSearch.value,'12079');
+ w.state.jobs[0].vehicle='Updated Reception vehicle';w.window.zukaitWorkshopOverview.refreshShared();assert.match(nodes.woResults.innerHTML,/Updated Reception Vehicle/);assert.equal(nodes.woSearch.value,'12079');
 }
 w.window.zukaitCloud.confirmedState={jobs:[{no:'12079',jobType:'CASH',amount:80,vehicle:'Confirmed server vehicle',reg:'ABC'}],assign:[]};w.state.jobs=[];w.window.zukaitWorkshopOverview.refreshShared();assert.match(nodes.woResults.innerHTML,/12079/);assert.equal(w.state.jobs.length,0,'Report reads cannot replace pending local state');
 console.log('Shared dashboard reads passed: confirmed server reads, pending edits retained, periodic same-revision repair and Reception JC 12079 visible for both roles');

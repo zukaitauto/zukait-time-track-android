@@ -6,6 +6,16 @@ export async function mechanicalSectionApi(admin,actor,body,options){
  if(!(actor?.role==='Manager'||actor?.id==='SUP003'&&['Supervisor','Mechanical Supervisor'].includes(actor.role)))return fail('mechanical_forbidden',403);
  if(!body.command||typeof body.command!=='object'||Array.isArray(body.command)||Object.keys(body).some(k=>!['action','command'].includes(k))||JSON.stringify(body.command).length>70000)return fail('invalid_mechanical_section',400);
  try{
+  if(body.command.operation==='VEHICLE_LOOKUP'){
+   const {registration}=body.command;
+   if(typeof registration!=='string'||!registration.trim()||registration.length>80||
+      Object.keys(body.command).some(k=>!['operation','registration'].includes(k)))return fail('invalid_registration',400);
+   const {data,error}=await admin.rpc('zukait_vehicle_lookup',{p_registration:registration});
+   if(error)throw error;
+   const fresh=await options.verifySession();
+   if(!fresh||fresh.id!==actor.id||fresh.role!==actor.role)return fail('invalid_session',401);
+   return {status:200,body:{ok:true,...data}};
+  }
   // Independent checklist intake has its own guarded database RPC.
   // It never creates or changes a workshop Job Card.
   if(body.command.operation==='CREATE_LINKED_JOB'){

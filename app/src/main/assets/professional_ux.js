@@ -252,7 +252,7 @@
           '<td><b>'+esc(u.name)+'</b><div class="v43-small">'+esc(u.id)+'</div></td>'+
           '<td>'+esc(u.department)+'</td>'+
           '<td>'+(a?'<button class="blue" style="min-height:34px" onclick="openSupervisorJob(\''+esc(a.job)+'\')">'+esc(a.job)+'</button>':'—')+'</td>'+
-          '<td>'+(a?esc((j?.vehicle||'')+(j?.reg?' / '+j.reg:'')):'—')+'</td>'+
+          '<td>'+(a?esc(formatVehicleName(j?.vehicle)+(j?.reg?' / '+j.reg:'')):'—')+'</td>'+
           '<td>'+badge(a)+'</td>'+
           '<td>'+(a?fmt(sg):'—')+'</td>'+
           '<td>'+(a?fmt(ac):'—')+'</td>'+

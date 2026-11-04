@@ -39,6 +39,9 @@ assert.equal(cost.parts,20);assert.equal(cost.sublet,14.35);assert.equal(cost.pu
 assert.equal(ctx.window.zukaitJobCardMaster.costs('12050').sublet,0);
 
 let screen='';const listeners={};const uiContext={state:second.data,window:{me:user,zukaitCloud:{confirmedState:second.data,readLatest:async()=>({data:second.data})},openModal:html=>screen=html,alert:assert.fail},document:{addEventListener:(name,fn)=>listeners[name]=fn,createElement:()=>({}),head:{appendChild(){}}},Date};
+const vehicleAppHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const formatter=vehicleAppHtml.slice(vehicleAppHtml.indexOf('function formatVehicleName('),vehicleAppHtml.indexOf('const KEY='));
+vm.runInNewContext(formatter,uiContext);
 vm.runInNewContext(read('app/src/main/assets/sublet.js'),uiContext);
 await uiContext.window.zukaitSublet.open('12043');
 assert.ok(screen.includes('Job Card Search'));assert.ok(screen.includes('>List</button>'));

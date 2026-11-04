@@ -44,6 +44,7 @@ function baseReply(body: unknown, status = 200) {
 // Receptionist is a separate, restricted role. Never route it through shared
 // state, financial, time, parts or Supervisor APIs, including direct requests.
 function receptionistRequestAllowed(action: string, body: any) {
+  if (action === "vehicle_lookup") return Object.keys(body).every(k => ["action","registration"].includes(k));
   if(action==='estimate_delete_draft')return Object.keys(body).every(k=>['action','estimate_id','request_id','reception_no'].includes(k));
   if(action==='reception_estimate')return Object.keys(body).every(k=>['action','command'].includes(k))&&['GET','ALLOCATE','SAVE'].includes(body.command?.operation);
   if (action === "job_card_edit") return ["GET","EDIT"].includes(body.operation) && Object.keys(body).every(k => ["action","operation","jobCard","patch","reason","expectedEditRevision"].includes(k));
@@ -1217,6 +1218,19 @@ Deno.serve(async (req: Request) => {
     if ((action === "qc_delivery" || action === "receptionist_deliver") && body.operation === "DELIVER" && Deno.env.get("ZUKAIT_MECHANICAL_ENABLED") === "true" && Deno.env.get("ZUKAIT_MECHANICAL_QC_ENABLED") === "true" && Deno.env.get("ZUKAIT_MECHANICAL_DELIVERY_ENABLED") === "true") {
       const decision = await mechanicalLegacyDeliveryCheck(admin,user,body,{enabled:true,qcEnabled:true,deliveryEnabled:true,sessionHash:await sha256Hex(token)});
       if(decision) return reply(decision.body,decision.status);
+    }
+
+    if (action === "vehicle_lookup") {
+      if (!["Manager","Supervisor","Receptionist"].includes(String(user.role))) return reply({ok:false,code:"reception_forbidden"},403);
+      if (typeof body.registration !== "string" || body.registration.trim().length < 1 || body.registration.length > 80 ||
+          Object.keys(body).some(k => !["action","registration"].includes(k))) return reply({ok:false,code:"invalid_registration"},400);
+      const {data:cap,error:capError}=await admin.rpc("zukait_reception_command",
+        {p_actor_id:String(user.id),p_command:{operation:"CAPABILITIES"}});
+      if (capError) throw capError;
+      if (!cap?.allowed) return reply({ok:false,code:"reception_forbidden"},403);
+      const {data,error}=await admin.rpc("zukait_vehicle_lookup",{p_registration:body.registration});
+      if (error) throw error;
+      return reply({ok:true,...data});
     }
 
     if (action === "reception_dashboard") {

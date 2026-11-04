@@ -6,6 +6,9 @@ const window={zukaitV2:{efficiency:{assignmentActualMinutes:(_s,a)=>a.id==='a1'?
 const document={head:{appendChild(){}},body:{},addEventListener(_type,fn){listeners.push(fn)},createElement(){return {style:{},dataset:{}}},getElementById(){return null},querySelector(){return null},querySelectorAll(){return []}};
 class MutationObserver{observe(){}}
 const sandbox={window,document,MutationObserver,navigator:{onLine:true},state,me:{id:'m1',name:'Manager One',role:'Manager'},users:[{id:'e1',name:'VINAYAN'},{id:'e2',name:'ZAHEER'},{id:'e3',name:'SURAB'}],setTimeout(){},setInterval(){},console,Event:function(){},Date,Map,Set,JSON,Math,Number,String,Array,Promise,alert(){},save(){saved++},uid(){return 'review-1'},F:m=>`${m}m`,totalForAssignment:()=>0,sessionNormalMinutes:()=>30};
+const vehicleAppHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const formatter=vehicleAppHtml.slice(vehicleAppHtml.indexOf('function formatVehicleName('),vehicleAppHtml.indexOf('const KEY='));
+vm.runInNewContext(formatter,sandbox);
 vm.runInNewContext(source,sandbox);
 const api=window.zukaitWorkshopOverview,rows=api.overdueTimeRows();
 assert.equal(rows.length,1,'normal work above approved suggestion appears');

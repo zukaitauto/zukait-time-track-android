@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const file=process.env.WORKSHOP_RELIABILITY_SOURCE||'supabase/functions/workshop-api/index.ts';
-const source=fs.readFileSync(file,'utf8');
+const source=fs.readFileSync(file,'utf8').replaceAll('\r\n','\n');
 const marker='// FINAL_SESSION_STATUS_BEGIN';
 const normalizeCompletedSessionStatuses=source.includes(marker)
  ? new Function(source.split(marker)[1].split('// FINAL_SESSION_STATUS_END')[0]+';return normalizeCompletedSessionStatuses;')()

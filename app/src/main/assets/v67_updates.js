@@ -57,7 +57,7 @@ function controlCounts(){return{
 function assignmentRowsHtml(list){
  if(!list.length)return'<div class="notice">No ongoing work.</div>';
  return '<div class="v67-table-wrap"><table><tr><th>JC</th><th>Vehicle</th><th>Registration</th><th>Technician</th><th>Department</th><th>Status</th><th>Allocated</th><th>Actual</th><th></th></tr>'+
- list.map(a=>{const j=jinfo(a.job),u=person(a.emp);return'<tr><td><b>'+esc(a.job)+'</b></td><td>'+esc(j.vehicle||'—')+'</td><td>'+esc(j.reg||'—')+'</td><td><b>'+esc(u.name)+'</b></td><td>'+esc(u.department||'—')+'</td><td>'+esc(status(a))+'</td><td>'+fmtSafe(+a.suggested||0)+'</td><td>'+fmtSafe(actual(a))+'</td><td><button class="v67-view-btn" onclick="openManagerJobDetails(\''+esc(a.job)+'\')">VIEW DETAILS</button></td></tr>'}).join('')+'</table></div>';
+ list.map(a=>{const j=jinfo(a.job),u=person(a.emp);return'<tr><td><b>'+esc(a.job)+'</b></td><td>'+esc(formatVehicleName(j.vehicle)||'—')+'</td><td>'+esc(j.reg||'—')+'</td><td><b>'+esc(u.name)+'</b></td><td>'+esc(u.department||'—')+'</td><td>'+esc(status(a))+'</td><td>'+fmtSafe(+a.suggested||0)+'</td><td>'+fmtSafe(actual(a))+'</td><td><button class="v67-view-btn" onclick="openManagerJobDetails(\''+esc(a.job)+'\')">VIEW DETAILS</button></td></tr>'}).join('')+'</table></div>';
 }
 window.v67OpenActiveJobs=function(){
  const list=rows('working');

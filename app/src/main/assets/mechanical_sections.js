@@ -1,3 +1,4 @@
+import {bindMechanicalVehicleLookup} from './mechanical_prejob_intake.js';
 const titles={estimate:'Estimate','estimate-list':'Estimate List','create-job':'Create Job Card',jobs:'Job Cards',wip:'WIP',qc:'QC Pending',ready:'Ready for Delivery',delivered:'Delivered Vehicles',exceeded:'Suggested Time Exceed'};
 export async function mountMechanicalSection(root,options={}){
  const doc=root.ownerDocument,win=doc.defaultView,initial=options.getSession?.(),owner=JSON.stringify(initial),section=options.section,storage=options.storage||globalThis.localStorage;
@@ -79,6 +80,12 @@ export async function mountMechanicalSection(root,options={}){
   label(form,'Job Card Number','job_card');
   const typeLabel=n('label','Job type'),type=n('select',null,{name:'job_type'});for(const v of ['CASH','CREDIT'])type.append(n('option',v,{value:v}));type.value=draft.job_type||'CASH';typeLabel.append(type);form.append(typeLabel);
   for(const [text,name,required] of [['Make','make',true],['Model','model',true],['Year','year',true],['Registration','registration',true],['KM Reading (optional)','odometer',false],['VIN (optional)','vin',false],['Customer','customer',true],['Contact','contact',true],['Remarks (optional)','remarks',false]])label(form,text,name,'text',required);
+  bindMechanicalVehicleLookup(form,n,()=>current()&&!selectedPrejob,async registration=>{
+   if(!online())throw Error('OFFLINE');
+   const result=await options.api({action:'mechanical_section',command:{operation:'VEHICLE_LOOKUP',registration}});
+   if(!result?.ok)throw Error(result?.code||'Vehicle lookup unavailable');
+   return result;
+  });
   const km=form.elements.odometer;km.inputMode='decimal';km.pattern='[0-9]{1,10}(\\.[0-9]{1,2})?';
   // Capture VIN label with the phone camera. Use native OCR only when provided by the host;
   // never guess or silently save an uncertain recognition.

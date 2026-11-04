@@ -5,6 +5,9 @@ const source=fs.readFileSync('app/src/main/assets/technician_workload.js','utf8'
 const texts=[];const canvas={getContext:()=>({beginPath(){},roundRect(){},fill(){},fillRect(){},fillText(t){texts.push(t)},measureText:t=>({width:t.length*12})})};
 const state={jobs:[{no:'A',make:'Toyota'},{no:'B',make:'Land Rover'}],sessions:[]};
 const context={state,users:[{id:'E',name:'Soman'}],window:{},document:{createElement:tag=>tag==='canvas'?canvas:{},head:{appendChild(){}}}};
+const vehicleAppHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const formatter=vehicleAppHtml.slice(vehicleAppHtml.indexOf('function formatVehicleName('),vehicleAppHtml.indexOf('const KEY='));
+vm.runInNewContext(formatter,context);
 vm.runInNewContext(source.replace('  document.head.appendChild(style);','  window.report={timeReportRows,timeDetailsBody,drawTimeDetailsCard};\n  document.head.appendChild(style);'),context);
 const {timeReportRows:rows,timeDetailsBody:html,drawTimeDetailsCard:draw}=context.window.report;
 const at=t=>Date.parse('2026-10-06T'+t+'+04:00');
@@ -20,7 +23,7 @@ state.sessions=[session('A','08:00:00'),session('B','09:30:00','09:40:00'),sessi
 state.sessions=[session('A','08:00:00','13:00:00'),session('B','15:00:00')];assert.equal(idle().length,0,'scheduled lunch is not idle');
 state.sessions=[session('A','08:00:00','09:00:00'),session('B','09:30:00')];state.workshopHolidays=['2026-10-06'];assert.equal(idle().length,0);state.workshopHolidays=[];
 state.sessions[1].start=Date.parse('2026-10-07T08:00:00+04:00');assert.equal(rows('E','','ALL').filter(r=>r.action==='IDLE').length,0,'no overnight alert');
-state.jobs[0].make='<script>';assert.match(html('E','2026-10-06','ALL'),/&lt;script&gt;/);assert.match(html('E','','ALL'),/2026-10-07/,'all dates view retains date context');
+state.jobs[0].make='<script>';assert.match(html('E','2026-10-06','ALL'),/&lt;Script&gt;/);assert.match(html('E','','ALL'),/2026-10-07/,'all dates view retains date context');
 console.log('Idle report: sample, strict 10-minute boundary, overlap, job filters, open sessions, breaks, holidays, overnight, escaping, canvas and read-only state passed.');
 
 state.sessions=[session('A','09:00:00')];assert.equal(idle().length,1);assert.equal(idle()[0].from,at('08:00:00'));assert.equal(idle()[0].duration,3600000);assert.match(html('E','2026-10-06','ALL'),/IDLE TIME: 01:00/);

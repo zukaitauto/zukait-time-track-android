@@ -395,7 +395,7 @@
     const more=type==='more_time';
     const defaultMessage=more?'Please approve additional time for this job card.':'';
     const amount=more?'<label><b>Requested Additional Time</b><br><input id="reqMinutes" inputmode="decimal" placeholder="" value="0.30"><div class="time-hint">'+(typeof timeInputHint==='function'?timeInputHint():'Enter H.MM or H:MM')+'</div></label>':'';
-    const detail='<div class="job-detail-grid"><div class="job-detail-stat"><b>JOB CARD</b><strong>'+esc(no)+'</strong></div><div class="job-detail-stat"><b>VEHICLE</b><strong>'+esc(String(j.vehicle||'').toUpperCase())+' · '+esc(String(j.reg||'').toUpperCase())+'</strong></div><div class="job-detail-stat"><b>ALLOCATED</b><strong>'+fmt(a.suggested||0)+'</strong></div><div class="job-detail-stat"><b>ACTUAL</b><strong>'+fmt(assignmentActual(a))+'</strong></div></div>';
+    const detail='<div class="job-detail-grid"><div class="job-detail-stat"><b>JOB CARD</b><strong>'+esc(no)+'</strong></div><div class="job-detail-stat"><b>VEHICLE</b><strong>'+esc(formatVehicleName(j.vehicle))+' · '+esc(String(j.reg||'').toUpperCase())+'</strong></div><div class="job-detail-stat"><b>ALLOCATED</b><strong>'+fmt(a.suggested||0)+'</strong></div><div class="job-detail-stat"><b>ACTUAL</b><strong>'+fmt(assignmentActual(a))+'</strong></div></div>';
     openModal('<div class="section-title"><h3>'+title+'</h3><button class="secondary" onclick="v54CloseRequest()">Close</button></div>'+detail+
       '<div class="card" style="margin:12px 0;background:#f8fafc"><div class="grid">'+amount+
       '<label><b>Message / Details</b><br><textarea id="reqMessage" rows="3" style="width:100%;box-sizing:border-box" placeholder="">'+esc(defaultMessage)+'</textarea></label></div>'+
@@ -513,7 +513,7 @@
       const text=[j.no,j.vehicle,j.reg].join(' ').toUpperCase();
       return !q||text.includes(q);
     }).sort((a,b)=>String(b.no).localeCompare(String(a.no),undefined,{numeric:true}));
-    sel.innerHTML=matches.map(j=>'<option value="'+esc(j.no)+'">'+esc(j.no)+' — '+esc(String(j.vehicle||'').toUpperCase())+' — '+esc(String(j.reg||'').toUpperCase())+'</option>').join('');
+    sel.innerHTML=matches.map(j=>'<option value="'+esc(j.no)+'">'+esc(j.no)+' — '+esc(formatVehicleName(j.vehicle))+' — '+esc(String(j.reg||'').toUpperCase())+'</option>').join('');
     if(matches.some(j=>j.no===old))sel.value=old;
   };
 
@@ -638,7 +638,7 @@
 
   function enhanceEmployee(){
     const root=document.getElementById('employeeView');if(!root||root.classList.contains('hidden'))return;
-    root.querySelectorAll('.v42-focus-vehicle,.employee-jobs .job-card>p:first-of-type').forEach(e=>{e.style.textTransform='uppercase'});
+    root.querySelectorAll('.v42-focus-vehicle,.employee-jobs .job-card>p:first-of-type').forEach(e=>{e.style.textTransform='none'});
     applyWording(root);
   }
 

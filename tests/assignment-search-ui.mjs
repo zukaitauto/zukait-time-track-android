@@ -51,6 +51,8 @@ assert.ok(start>0&&end>start,'authoritative Supervisor search functions must exi
 assert.match(html,/id="supervisorJobSearch"/,'authoritative Supervisor renderer must contain the visible Job Card search input');
 assert.match(html,/class="supervisor-internal-job-select"/,'authoritative Supervisor renderer must retain hidden #sj assignment handoff');
 assert.match(html,/supervisor-assign-grid/,'authoritative Supervisor renderer must own the Assign / Update layout');
+const vehicleFormatter=html.slice(html.indexOf('function formatVehicleName('),html.indexOf('const KEY='));
+vm.runInContext(vehicleFormatter,ctx);
 vm.runInContext(html.slice(start,end),ctx);
 
 const search=q=>{input.value=q;ctx.supervisorJobSearchChanged();return results.innerHTML};

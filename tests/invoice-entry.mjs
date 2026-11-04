@@ -1,4 +1,6 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';import vm from 'node:vm';
+const appHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const formatter=appHtml.slice(appHtml.indexOf('function formatVehicleName('),appHtml.indexOf('const KEY='));
 const source=fs.readFileSync('app/src/main/assets/qc_delivery_rules.js','utf8');assert.equal(source,fs.readFileSync('supabase/functions/workshop-api/qc_delivery_rules.js','utf8'));
 const {qcTransition,invoiceComplete,invoiceDateValid,preserveQcAuthority,qcStatus}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
 const manager={id:'MGR1',role:'Manager',name:'Manager'},supervisor={id:'SUP001',role:'Supervisor',name:'Shine'},employee={id:'E1',role:'Employee'};
@@ -26,7 +28,7 @@ class Element{constructor(){this.dataset={};this.children=[];this.innerHTML='';t
 for(const user of [manager,supervisor,employee]){
  let modal='',calls=0;const dashboard=new Element(),events={};const nodes={managerView:dashboard,supervisorView:dashboard,invoiceBody:{innerHTML:''},invoiceSearch:{value:''},invoiceEntryAmount:{value:'100.125'},invoiceEntryDate:{value:'2026-10-04'},qcRows:{innerHTML:''}};
  const ctx={invoiceComplete,invoiceDateValid,qcStatus,state:structuredClone(base),me:user,window:{addEventListener(name,fn){events[name]=fn},zukaitAuth:{getToken(){return 'test'}},zukaitCloud:{syncHealth:{ready:true},async syncNow(){}}},navigator:{onLine:true},document:{getElementById(id){return nodes[id]||null},createElement(){return new Element()},head:{appendChild(){}}},openModal(html){modal=html},closeModal(){},alert(message){throw Error(message)},Date,console,async fetch(url,opts){calls++;let body=JSON.parse(opts.body);assert.equal(body.invoiceDate,'2026-10-04');assert.equal(body.operation,'FINAL_INVOICE_ENTRY');let result=qcTransition(ctx.state,user,body,1000);assert.equal(result.ok,true);ctx.state=result.data;return{ok:true,async json(){return result}}}};
- vm.runInNewContext(ui+'\nwindow.testPending=invoicePending;window.testRow=row;window.testInvoiceInlineRow=invoiceInlineRow;',ctx);
+ vm.runInNewContext(formatter+ui+'\nwindow.testPending=invoicePending;window.testRow=row;window.testInvoiceInlineRow=invoiceInlineRow;',ctx);
  if(user.role==='Manager'||user.role==='Supervisor'){
   const invoiceRow=ctx.window.testInvoiceInlineRow;
   const insurance={...base.jobs[2],reg:'92329.DD'};
@@ -91,7 +93,7 @@ for(const user of [manager,supervisor])for(const type of ['Cash','Credit','Insur
  document:{getElementById:id=>nodes[id]||null,createElement:()=>new Element(),head:{appendChild(){}}},
  openModal(html){modal=html},closeModal(){},alert(message){throw Error(message)},
  async fetch(url,opts){writes++;const body=JSON.parse(opts.body);assert.equal(body.amount,123.456);assert.equal(body.invoiceDate,'2026-10-25');const result=qcTransition(server,user,body,1000);assert.equal(result.ok,true);server=result.data;ctx.state=structuredClone(server);return {ok:true,json:async()=>result};}};
- vm.runInNewContext(ui,ctx);
+ vm.runInNewContext(formatter+ui,ctx);
  const enter=async()=>{
   await ctx.window.zukaitOpenInvoiceEntry(type);
   nodes['invoiceAmount-'+no].value='123.456';

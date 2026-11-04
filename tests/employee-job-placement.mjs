@@ -4,6 +4,8 @@ const dom=new JSDOM('<div id="employeeView"></div>',{runScripts:'outside-only'})
 w.me={id:'E1',name:'Afsal',department:'Denter',role:'Employee'};w.users=[w.me];w.H='ID001';w.employeeClockTimer=null;w.setInterval=()=>1;w.clearInterval=()=>{};
 w.zukaitV2={leave:{history:()=>[],dashboard:()=>({day:'2026-10-15'})}};w.P=w.user=()=>w.me;w.fmt=n=>`${Math.floor(n)} min`;w.state={assign:[{id:'A1',emp:'E1',job:'JC1',suggested:180,used:7},{id:'A2',emp:'E1',job:'JC2',suggested:120,used:0}],sessions:[]};
 let session=null,started='';w.zukaitEmployeeDisplaySession=()=>session;w.totalForAssignment=a=>a.used;w.job=no=>({no,vehicle:no==='JC1'?'Ford Mustang':'Toyota Corolla',reg:no});w.start=no=>{started=no};w.refreshActiveRunningTime=()=>{};w.v84EmployeeAccount=()=>{};
+const appHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+w.eval(appHtml.slice(appHtml.indexOf('function formatVehicleName('),appHtml.indexOf('const KEY=')));
 w.eval(source.slice(start,end));w.eval('/* EMPLOYEE OCEAN TIMER'+source.split('/* EMPLOYEE OCEAN TIMER')[1]);
 const cards=()=>[...w.document.querySelectorAll('.v75s-grid .v75s-card')];
 w.renderEmployee();assert.equal(cards().length,2);assert.match(cards()[0].querySelector('.v75s-start').textContent,/RESUME WORK/);assert.match(cards()[1].querySelector('.v75s-start').textContent,/START WORK/);assert.equal(w.document.querySelector('.ocean-job'),null);assert.ok(w.document.querySelector('.ocean-idle-banner'));w.eval(cards()[0].querySelector('.v75s-start').getAttribute('onclick'));assert.equal(started,'JC1');

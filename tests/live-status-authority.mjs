@@ -91,6 +91,7 @@ const context={
   setTimeout:(fn)=>{fn();return 0}
 };
 vm.createContext(context);
+vm.runInContext(html.slice(html.indexOf('function formatVehicleName('),html.indexOf('const KEY=')),context);
 vm.runInContext(authority,context);
 
 const statuses=context.window.currentStaffStatuses();

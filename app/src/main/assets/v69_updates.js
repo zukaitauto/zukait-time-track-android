@@ -147,14 +147,14 @@ window.openSupervisorJob=function(no){
  const buttons=(no===HOLD?'':'<p>'+(canReissue?'<button class="green" onclick="v69ReissueJob(\''+E(no)+'\')">↻ REOPEN / REISSUE</button> ':'')+
    '<button class="purple" onclick="addRepeatWork(\''+E(no)+'\')">🔁 REPEAT WORK</button></p>');
  supModal('Job Card '+E(no),
-   '<div class="notice"><b>Vehicle:</b> '+E(j.vehicle||'—')+'<br><b>Registration:</b> '+E(j.reg||'—')+'<br><b>Total Allocated:</b> '+fm(totalS)+' · <b>Total Actual:</b> '+fm(totalA)+'<br><b>Job Card Status:</b> '+(allFinished(no)?'FINISHED':'ASSIGNED / OPEN')+'</div>'+rows+buttons);
+   '<div class="notice"><b>Vehicle:</b> '+E(formatVehicleName(j.vehicle)||'—')+'<br><b>Registration:</b> '+E(j.reg||'—')+'<br><b>Total Allocated:</b> '+fm(totalS)+' · <b>Total Actual:</b> '+fm(totalA)+'<br><b>Job Card Status:</b> '+(allFinished(no)?'FINISHED':'ASSIGNED / OPEN')+'</div>'+rows+buttons);
 };
 
 /* Paused / Over Allocated lists — dependable handlers. */
 function listTable(rows){
  if(!rows.length)return '<div class="notice">No matching Job Cards.</div>';
  return '<div class="v69-table"><table><tr><th>JC</th><th>Vehicle / Reg.</th><th>Technician</th><th>Department</th><th>Status</th><th>Allocated</th><th>Actual</th><th></th></tr>'+
- rows.map(a=>{const j=jinfo(a.job),u=person(a.emp);return '<tr><td><b>'+E(a.job)+'</b></td><td>'+E(j.vehicle||'—')+'<br><span class="small">'+E(j.reg||'—')+'</span></td><td>'+E(u.name)+'</td><td>'+E(u.department||'—')+'</td><td>'+E(status(a))+'</td><td>'+fm(+a.suggested||0)+'</td><td>'+fm(actual(a))+'</td><td><button class="blue" onclick="openSupervisorJob(\''+E(a.job)+'\')">VIEW</button></td></tr>'}).join('')+'</table></div>';
+ rows.map(a=>{const j=jinfo(a.job),u=person(a.emp);return '<tr><td><b>'+E(a.job)+'</b></td><td>'+E(formatVehicleName(j.vehicle)||'—')+'<br><span class="small">'+E(j.reg||'—')+'</span></td><td>'+E(u.name)+'</td><td>'+E(u.department||'—')+'</td><td>'+E(status(a))+'</td><td>'+fm(+a.suggested||0)+'</td><td>'+fm(actual(a))+'</td><td><button class="blue" onclick="openSupervisorJob(\''+E(a.job)+'\')">VIEW</button></td></tr>'}).join('')+'</table></div>';
 }
 window.openGlanceList=function(type){
  const open=(state.assign||[]).filter(a=>a&&!a.cancelled&&!a.completed&&a.job!==HOLD);
@@ -198,7 +198,7 @@ window.openSupervisorFinishedWindow=function(){
    return at(b.no)-at(a.no);
  });
  const body=rows.length?'<div class="v69-table"><table><tr><th>Job Card</th><th>Vehicle / Reg.</th><th>Worked Persons</th><th>Total Allocated</th><th>Total Actual</th><th></th></tr>'+
- rows.map(j=>{const aa=assignments(j.no),names=[...new Set(aa.map(a=>person(a.emp).name))],sg=aa.reduce((n,a)=>n+(+a.suggested||0),0),ac=aa.reduce((n,a)=>n+actual(a),0);return '<tr><td><b>'+E(j.no)+'</b></td><td>'+E(j.vehicle||'—')+'<br><span class="small">'+E(j.reg||'—')+'</span></td><td>'+names.map(E).join(', ')+'</td><td>'+fm(sg)+'</td><td>'+fm(ac)+'</td><td><button class="blue" onclick="openSupervisorJob(\''+E(j.no)+'\')">VIEW</button></td></tr>'}).join('')+'</table></div>':'<div class="notice">No fully finished Job Cards.</div>';
+ rows.map(j=>{const aa=assignments(j.no),names=[...new Set(aa.map(a=>person(a.emp).name))],sg=aa.reduce((n,a)=>n+(+a.suggested||0),0),ac=aa.reduce((n,a)=>n+actual(a),0);return '<tr><td><b>'+E(j.no)+'</b></td><td>'+E(formatVehicleName(j.vehicle)||'—')+'<br><span class="small">'+E(j.reg||'—')+'</span></td><td>'+names.map(E).join(', ')+'</td><td>'+fm(sg)+'</td><td>'+fm(ac)+'</td><td><button class="blue" onclick="openSupervisorJob(\''+E(j.no)+'\')">VIEW</button></td></tr>'}).join('')+'</table></div>':'<div class="notice">No fully finished Job Cards.</div>';
  supModal('✅ Finished Job Cards',body);
 };
 
@@ -210,7 +210,7 @@ window.openActiveWorkers=function(){
  const groups=['Denter','Painter','Mechanic'].map(dept=>{
    const list=rows.filter(x=>x.u.department===dept);
    return '<section class="v69-dept v69-'+dept.toLowerCase()+'"><div class="v69-dept-head"><b>'+deptName[dept]+'</b><span>'+list.length+'</span></div>'+
-    (list.length?list.map((x,i)=>'<details class="v69-worker"><summary><b class="v69-list-no">'+(i+1)+'</b><span class="v69-worker-name">'+E(x.u.name)+'</span><small class="v69-worker-job">'+(x.s.job===H?'ID001':'JC '+E(x.s.job))+'</small></summary><div><b>Job Card:</b> '+E(x.s.job)+'<br><b>Vehicle:</b> '+E(x.j.vehicle||'—')+' · '+E(x.j.reg||'—')+'<br><b>Allocated:</b> '+fm(+x.a.suggested||0)+'<br><b>Actual:</b> '+fm(actual(x.a))+'<br><b>Status:</b> '+E(status(x.a))+'<br><button class="blue" onclick="openSupervisorJob(\''+E(x.s.job)+'\')">VIEW JOB</button></div></details>').join(''):'<div class="v69-empty">No active workers</div>')+'</section>';
+    (list.length?list.map((x,i)=>'<details class="v69-worker"><summary><b class="v69-list-no">'+(i+1)+'</b><span class="v69-worker-name">'+E(x.u.name)+'</span><small class="v69-worker-job">'+(x.s.job===H?'ID001':'JC '+E(x.s.job))+'</small></summary><div><b>Job Card:</b> '+E(x.s.job)+'<br><b>Vehicle:</b> '+E(formatVehicleName(x.j.vehicle)||'—')+' · '+E(x.j.reg||'—')+'<br><b>Allocated:</b> '+fm(+x.a.suggested||0)+'<br><b>Actual:</b> '+fm(actual(x.a))+'<br><b>Status:</b> '+E(status(x.a))+'<br><button class="blue" onclick="openSupervisorJob(\''+E(x.s.job)+'\')">VIEW JOB</button></div></details>').join(''):'<div class="v69-empty">No active workers</div>')+'</section>';
  }).join('');
  supModal('👷 Active Workers','<div class="v69-dept-grid">'+groups+'</div>');
 };

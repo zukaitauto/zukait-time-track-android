@@ -19,6 +19,8 @@ const sandbox={window:{addEventListener(){}},document:{head:new Element(),body:n
 const ctx=vm.createContext(sandbox);
 vm.runInContext(`let state={jobs:[]};let me={role:'Supervisor'};`,ctx);
 const source=fs.readFileSync('app/src/main/assets/cash_monthly_pulse.js','utf8');
+const appHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+vm.runInContext(appHtml.slice(appHtml.indexOf('function formatVehicleName('),appHtml.indexOf('const KEY=')),ctx);
 vm.runInContext(source,ctx);
 const pulse=sandbox.window.v251CashPulse;
 const parts=new Intl.DateTimeFormat('en',{timeZone:'Asia/Muscat',year:'numeric',month:'numeric'}).formatToParts(new Date());

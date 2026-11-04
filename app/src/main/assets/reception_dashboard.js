@@ -30,6 +30,13 @@
     if(document.getElementById("rdb-css"))return;
     const s=document.createElement("style");s.id="rdb-css";
     s.textContent=`
+    #rc-root .rdb-job-table-scroll{overflow-x:auto;margin-top:10px}
+    #rc-root .rdb-job-table{width:100%;border-collapse:collapse;text-align:left;font-size:13px}
+    #rc-root .rdb-job-table th,#rc-root .rdb-job-table td{padding:6px 8px;white-space:nowrap;border-bottom:1px solid #d6e3f0}
+    #rc-root .rdb-job-table th{background:#eaf3fc;color:#123451}
+    #rc-root .rdb-job-table tbody tr:nth-child(even){background:#f7faff}
+    #rc-root .rdb-job-table button,#rc-root .rdb-job-table input{margin:0;width:auto;min-height:32px;padding:4px 8px;font-size:12px;vertical-align:middle}
+    #rc-root .rdb-job-table button+button,#rc-root .rdb-job-table input+button{margin-left:5px}
     #rc-root .rdb-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0 20px}
     #rc-root .rdb-grid>*{min-width:0;max-width:100%}
     #rc-root .rdb-content{min-width:0;overflow-wrap:anywhere;word-break:normal}
@@ -143,6 +150,28 @@
       (row.rc_no&&isJob?' · '+safe(row.rc_no):'')+'</small><small>'+safe(date.replace(/(\d{4})-(\d{2})-(\d{2})/g,'$3-$2-$1'))+'</small><span class="rdb-state '+(String(row.status).toUpperCase()==='WAITING'?'waiting':String(row.status).toUpperCase()==='APPROVED'?'approved':'neutral')+'">'+safe(row.delivered?'Delivered':row.status==='WAITING'?'Approval Waiting':row.status||'Status not recorded')+'</span>'+(section==='checklists'&&isJob?'<button type="button" data-rdb="open-job" data-job="'+safe(row.job_card)+'">'+(row.delivered?'Delivered · JC ':'JC Opened · ')+safe(row.job_card)+'</button>':'')+age+promise+'</div>'+
       '<div class="rdb-row-actions">'+open+(section==='checklists'&&!isJob?'<button type="button" data-rdb="link-existing" data-rc="'+safe(row.rc_no)+'">Link Existing Job Card</button>':'')+(section==='checklists'&&row.manually_linked&&role()==='Manager'?'<button type="button" data-rdb="correct-existing" data-rc="'+safe(row.rc_no)+'" data-job="'+safe(row.job_card)+'">Correct Link</button>':'')+deliver+(isJob&&(!row.delivered||role()==='Manager')?'<button type="button" data-rdb="edit-job" data-job="'+safe(row.job_card)+'">Edit Job Card</button>':'')+'</div></div>';
   }
+  function jobTableHtml(){
+    const headers=['S/N','Created','JC No.','Vehicle','Year','Reg. No.','Insurance / Type','Status','Days Open','Promise Date','Actions'];
+    const rows=latest.map((row,index)=>{
+      const jc=safe(row.job_card), raw=String(row.vehicle||'').trim();
+      // Reception currently supplies the model year as the final token of the vehicle label.
+      const yearMatch=raw.match(/\s+((?:19|20)\d{2})$/);
+      const model=yearMatch?raw.slice(0,yearMatch.index):raw;
+      const vehicle=window.formatVehicleName?.(model)||model;
+      const date=value=>String(value||'—').replace(/^(\d{4})-(\d{2})-(\d{2})$/,'$3/$2/$1');
+      const cells=[index+1+page*50,date(row.created_date),'JC '+row.job_card,vehicle||'—',yearMatch?.[1]||'—',row.registration||'—',row.insurance_company||row.job_type||'—'];
+      const status=safe(row.delivered?'Delivered':row.status||'—')+locationBadge(row.location);
+      const promise=!row.delivered&&writable()
+        ?'<input type="date" aria-label="Promise date for JC '+jc+'" data-rdb-promise="'+jc+'" value="'+safe(row.promise_date)+'"><button type="button" data-rdb="promise" data-job="'+jc+'" data-original="'+safe(row.promise_date)+'">Save</button>'
+        :safe(date(row.promise_date));
+      const actions='<button type="button" data-rdb="open" data-rc="" data-job="'+jc+'">View</button>'+
+        ((!row.delivered||role()==='Manager')?'<button type="button" data-rdb="edit-job" data-job="'+jc+'">Edit</button>':'');
+      return '<tr>'+cells.map(cell=>'<td>'+safe(cell)+'</td>').join('')+'<td>'+status+'</td><td>'+
+        (Number.isInteger(row.days_open)?row.days_open:'—')+'</td><td>'+promise+'</td><td>'+actions+'</td></tr>';
+    });
+    return '<div class="rdb-job-table-scroll" role="region" aria-label="Job Card List" tabindex="0"><table class="rdb-job-table"><thead><tr>'+
+      headers.map(label=>'<th scope="col">'+label+'</th>').join('')+'</tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
+  }
   function listHtml(){
     const vwc=section==="vwc";
     const requested=section==="vwc"?"vwc-checklists":section;
@@ -177,7 +206,7 @@
     const host=document.getElementById("rdb-results"),foot=document.getElementById("rdb-page");
     if(!host||!foot)return;
     const markup=loading?'<p>Loading from Reception server…</p>':
-      latest.length?latest.map(rowHtml).join(""):'<p>No matching records found.</p>';
+      latest.length?(section==="jobs"?jobTableHtml():latest.map(rowHtml).join("")):'<p>No matching records found.</p>';
     if(host.innerHTML!==markup)host.innerHTML=markup;
     foot.textContent=(total?("Showing "+(page*50+1)+"–"+Math.min((page+1)*50,total)+" of "+total):"0 records");
     const next=document.querySelector('#rc-root [data-rdb="next"]');
