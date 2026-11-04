@@ -6,6 +6,10 @@ import {once} from 'node:events';
 import {readFileSync,mkdirSync} from 'node:fs';
 import {chromium} from 'playwright';
 
+// Mirror the formatter loaded globally by offline_test.html in the real app.
+const hostHtml=readFileSync('app/src/main/assets/offline_test.html','utf8');
+const formatterSource=hostHtml.slice(hostHtml.indexOf('function formatVehicleName('),hostHtml.indexOf('const KEY=',hostHtml.indexOf('function formatVehicleName(')));
+if(!formatterSource.startsWith('function formatVehicleName(')||!formatterSource.includes('return name.replace('))throw Error('Vehicle formatter fixture changed');
 const files={
  '/workshop_performance.js':readFileSync('app/src/main/assets/workshop_performance.js'),
  '/time_management_rules.js':readFileSync('app/src/main/assets/time_management_rules.js')
@@ -32,6 +36,7 @@ try{
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.route('**/*',route=>route.request().url().startsWith(origin+'/')?route.continue():route.abort());
   await page.goto(origin,{waitUntil:'domcontentloaded'});
+  await page.addScriptTag({content:formatterSource});
   await page.evaluate(async()=>{
    const t=h=>Date.parse('2026-10-05T'+String(h).padStart(2,'0')+':00:00+04:00');
    window.me={role:'Manager',id:'MAN001'};

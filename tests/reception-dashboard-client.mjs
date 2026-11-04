@@ -55,7 +55,7 @@ for(const [key,name] of Object.entries(headings)){
  assert.equal(w.document.querySelectorAll("[data-rdb=tile]").length,13,key+" Back restores all thirteen cards");
 }
 await click('#rc-root [data-rdb=tile][data-section=jobs]');
-assert.equal(w.document.querySelectorAll(".rdb-row").length,1);
+assert.equal(w.document.querySelectorAll(".rdb-job-table tbody tr").length,1,"Job Card list renders a row in the current table layout");
 assert.equal(w.document.querySelector('.rdb-location').textContent,'VIG');
 assert.ok(w.document.querySelector('.rdb-location').classList.contains('rdb-vig'));
 assert.equal(commands.at(-1).action,'reception_dashboard','Location badges must not write or rename stored location codes');
@@ -64,12 +64,12 @@ await settle();
 assert.match(w.document.querySelector(".rc-topbar h3").textContent,/Job Card List/);
 assert.equal(commands.at(-1).action,"reception_dashboard");
 assert.equal(commands.at(-1).section,"jobs","Job Card intake should re-fetch newest server Job Card List");
-assert.equal(w.document.querySelectorAll(".rdb-row").length,1,"Refreshed list should render without duplicated rows");
+assert.equal(w.document.querySelectorAll(".rdb-job-table tbody tr").length,1,"Refreshed table should render without duplicated rows");
 assert.equal(w.document.querySelector("#rc-root [data-rdb-promise]")?.value,"");
 let viewedJob='',returnedFilter='';
 w.zukaitJobEdit={view:async(no,options)=>{viewedJob=no;w.openModal('<section>Job Card Detail</section>');await options.onBack();returnedFilter=w.document.querySelector('[data-rdb-filter=search]').value}};
 const searchInput=w.document.querySelector('[data-rdb-filter=search]');searchInput.value='JC120';searchInput.dispatchEvent(new w.Event('change',{bubbles:true}));await settle();
-assert.equal(w.document.querySelector('[data-rdb=open]').textContent,'View Job Card','Linked Job Card must not route to Open Checklist');
+assert.equal(w.document.querySelector('[data-rdb=open]').textContent,'View','Linked Job Card must not route to Open Checklist');
 assert.equal(w.document.querySelector('[data-rdb=open]').dataset.rc,'');await click('#rc-root [data-rdb=open]');assert.equal(viewedJob,'JC120');assert.equal(returnedFilter,'JC120','Back from full view retains the Job Card list filter');
 const input=w.document.querySelector("#rc-root [data-rdb-promise]");
 input.value="2026-10-15";
