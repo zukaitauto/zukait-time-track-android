@@ -2,6 +2,10 @@ const titles={estimate:'Estimate','estimate-list':'Estimate List','create-job':'
 export async function mountMechanicalSection(root,options={}){
  const doc=root.ownerDocument,win=doc.defaultView,initial=options.getSession?.(),owner=JSON.stringify(initial),section=options.section,storage=options.storage||globalThis.localStorage;
  const journal='zukait_mechanical_section_pending_v1:'+String(initial?.id||'');let disposed=false,busy=false,model=null,notice='',search='',pending=null,review=null,draft={},iframe=null,estimateOpened=false,photoUrl=null,selectedPrejob=null;
+ // Only a server-approved and still unlinked checklist can prefill this form.
+ if(section==='create-job'&&options.prejobChecklist?.approval_status==='APPROVED'&&!options.prejobChecklist.linked_job_card&&
+   /^[0-9a-f-]{36}$/i.test(String(options.prejobChecklist.id||''))&&Number.isInteger(options.prejobChecklist.revision))
+  selectedPrejob={id:options.prejobChecklist.id,revision:options.prejobChecklist.revision,item:options.prejobChecklist};
  const releasePhoto=()=>{if(photoUrl){win.URL.revokeObjectURL(photoUrl);photoUrl=null;}};
  const online=()=>options.online?.()??win.navigator.onLine;
  const current=()=>!disposed&&options.isEnabled?.()!==false&&JSON.stringify(options.getSession?.())===owner&&(initial?.role==='Manager'||initial?.id==='SUP003'&&['Supervisor','Mechanical Supervisor'].includes(initial.role));
@@ -15,15 +19,36 @@ export async function mountMechanicalSection(root,options={}){
  async function load(){if(!current()||busy||pending)return;busy=true;render();try{if(!online())throw Error('OFFLINE');const result=await options.api({action:'mechanical_section',command:{operation:'READ',view:section}});if(!current()||!online())return;if(!result?.ok)throw Error(result?.code||'NETWORK');model=result;notice='';}catch(error){if(current())notice=errorMessage(error.code||error.message);}finally{busy=false;if(current())render();}}
  async function post(){if(!current()||busy||!pending?.command)return;busy=true;render();try{if(!online())throw Error('OFFLINE');const r=await options.api({action:'mechanical_section',command:pending.command});if(!current())return;if(!r?.ok)throw Error(r?.code||'NETWORK');if(r.request_id!==pending.command.request_id)throw Error('NETWORK');const wasLinked=pending.command.operation==='CREATE_LINKED_JOB';storage.removeItem(journal);pending=null;review=null;draft={};selectedPrejob=null;notice='Mechanical Job Card created. '+(wasLinked?'Approved checklist linked.':'Register its checklist to assign work.');model=null;}catch(error){if(current()){pending.error=error.code||error.message;notice=errorMessage(pending.error);storage.setItem(journal,JSON.stringify(pending));}}finally{busy=false;if(current())render();}if(!pending&&current())await load();}
  const label=(form,text,name,type='text',required=true)=>{const l=n('label',text),e=n('input',null,{name,type});e.required=required;e.value=draft[name]||'';l.append(e);form.append(l);return e;};
- function summary(command){const c=command?.command||{},details=c.details||{};const out=n('div',null);for(const text of ['Mechanical JC: '+String(c.job_card||'Not entered'),String(c.job_type||''),[details.make,details.model,details.year,details.registration].filter(Boolean).join(' · '),'Reason: '+String(c.reason||'')])out.append(n('p',text));return out;}
+ function summary(command){const c=command?.command||{},details=c.details||{};const out=n('div',null);if(command?.operation==='CREATE_LINKED_JOB')out.append(n('p','Approved checklist: '+String(selectedPrejob?.item?.checklist_number||command.checklist_id)));for(const text of ['Mechanical JC: '+String(c.job_card||'Not entered'),String(c.job_type||''),[details.make,details.model,details.year,details.registration].filter(Boolean).join(' · '),'Reason: '+String(c.reason||'')])out.append(n('p',text));return out;}
  function jobForm(){const form=n('form',null);form.append(n('h3','New Mechanical Job Card'));form.append(n('p','Enter a unique Mechanical Job Card number. Existing numbers cannot be reused.'));
   // Existing Mechanical records can be used to prefill the vehicle fields.
-  // Do not imply this converts a pre-approval checklist: backend linking is separate.
+  // Approved independent checklists are linked atomically when the new Job Card is created.
   const searchLabel=n('label','Find existing Mechanical vehicle (registration or checklist ID)');
   const searchInput=n('input',null,{type:'search',placeholder:'Registration or checklist ID','aria-label':'Find Mechanical vehicle'});
   const matches=n('div',null,{'aria-live':'polite'});
   searchLabel.append(searchInput,matches);form.append(searchLabel);
+  const clearChecklist=()=>{
+   selectedPrejob=null;delete form.dataset.prejobChecklistId;
+   for(const name of ['make','model','year','registration','vin','customer','contact','odometer'])
+    if(form.elements[name])form.elements[name].readOnly=false;
+   if(form.elements.job_type)form.elements.job_type.disabled=false;
+  };
+  const applyChecklist=item=>{
+   const v=item.vehicle||{};
+   selectedPrejob={id:item.id,revision:item.revision,item};
+   form.dataset.prejobChecklistId=item.id;
+   for(const [name,value] of Object.entries({
+    make:v.make,model:v.model,year:v.year,registration:item.registration,vin:v.vin,
+    customer:v.customer,contact:v.contact,odometer:v.odometer
+   })){
+    const el=form.elements[name];if(el){el.value=String(value??'');el.readOnly=true;}
+   }
+   form.elements.job_type.value=item.job_type;form.elements.job_type.disabled=true;
+   form.elements.job_type.dispatchEvent(new win.Event('change'));
+   matches.replaceChildren(n('p','Approved checklist '+item.checklist_number+' selected. Vehicle details are locked; confirming the new Job Card links both records atomically.'));
+  };
   const pick=(job)=>{
+   clearChecklist();
    const fields={make:job.make,model:job.model,year:job.year,registration:job.reg,vin:job.vin,customer:job.customerName,contact:job.mobile};
    for(const [key,value] of Object.entries(fields)){const el=form.elements[key];if(el&&value!=null)el.value=String(value);}
    if(['CASH','CREDIT'].includes(String(job.jobType||'').toUpperCase())){form.elements.job_type.value=String(job.jobType).toUpperCase();form.elements.job_type.dispatchEvent(new win.Event('change'));}
@@ -43,11 +68,7 @@ export async function mountMechanicalSection(root,options={}){
      const status=item.approval_status||'PENDING',btn=n('button',[item.checklist_number,item.registration,status].join(' · '),{type:'button'});
      btn.onclick=()=>{
       if(status!=='APPROVED'||item.linked_job_card){matches.replaceChildren(n('p','This checklist is not available for Job Card conversion.'));return;}
-      const v=item.vehicle||{};
-      for(const [key,value] of Object.entries({make:v.make,model:v.model,year:v.year,registration:item.registration,vin:v.vin,customer:v.customer,contact:v.contact,odometer:v.odometer})){if(form.elements[key]&&value!=null)form.elements[key].value=String(value);}
-      form.elements.job_type.value=item.job_type;form.elements.job_type.dispatchEvent(new win.Event('change'));
-      matches.replaceChildren(n('p','Approved checklist '+item.checklist_number+' selected. Conversion linking is not enabled yet; do not create a separate direct Job Card for this checklist.'));
-      form.dataset.prejobChecklistId=item.id;selectedPrejob={id:item.id,revision:item.revision};
+      applyChecklist(item);
      };
      matches.append(btn);
     }
@@ -107,7 +128,8 @@ export async function mountMechanicalSection(root,options={}){
   const confirmation=(text,name)=>{const l=n('label',text),e=n('input',null,{name,type:'checkbox'});e.checked=draft[name]==='on';l.prepend(e);form.append(l);return e;};
   const received=confirmation('Vehicle received and details checked','received_confirmed');received.required=true;const notesLabel=n('label','Work Description / Notes'),notes=n('textarea',null,{name:'reason',rows:'6',maxlength:'2000',placeholder:'Describe the repair work required…'});notes.value=draft.reason||'';notes.style.cssText='width:100%;min-height:150px;box-sizing:border-box;padding:12px;border:1px solid #bdd0e5;border-radius:9px;font:inherit;resize:vertical';notes.required=true;notesLabel.append(notes);form.append(notesLabel);
   const update=()=>{credit.parentElement.hidden=type.value!=='CREDIT';credit.required=type.value==='CREDIT';cash.parentElement.hidden=type.value!=='CASH';};type.onchange=update;update();
-  const submit=n('button','Review Job Card',{type:'submit'});submit.disabled=busy;form.append(submit);form.onsubmit=e=>{e.preventDefault();if(!current()||busy)return;if(form.dataset.prejobChecklistId&&!selectedPrejob){notice='Select an approved checklist again before creating the Job Card.';render();return;}draft=Object.fromEntries(new win.FormData(form));const request=uuid(),kind=draft.job_type;
+  if(selectedPrejob?.item)applyChecklist(selectedPrejob.item);
+  const submit=n('button','Review Job Card',{type:'submit'});submit.disabled=busy;form.append(submit);form.onsubmit=e=>{e.preventDefault();if(!current()||busy)return;if(form.dataset.prejobChecklistId&&!selectedPrejob){notice='Select an approved checklist again before creating the Job Card.';render();return;}draft=Object.fromEntries(new win.FormData(form));if(selectedPrejob?.item)draft.job_type=selectedPrejob.item.job_type;const request=uuid(),kind=draft.job_type;
    const command={operation:'CREATE_DIRECT_JOB',request_id:request,job_card:String(draft.job_card||'').trim().toUpperCase(),job_type:kind,details:Object.fromEntries(['make','model','year','registration','vin','customer','contact','remarks','odometer'].map(k=>[k,String(draft[k]||'').trim()])),received_confirmed:draft.received_confirmed==='on',reason:String(draft.reason||'').trim()};
    if(!['CASH','CREDIT'].includes(kind)){notice='Mechanical jobs support Cash or Credit only.';render();return;}
    if(command.details.odometer)command.details.odometer_unit='KM';
