@@ -1693,3 +1693,68 @@ jobs:
           set -euo pipefail
           gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
           echo 'Owner-authorized V387 exact-source protected publication dispatched.'
+
+  dispatch_pinned_v388:
+    name: Publish owner-authorized V388 Reception and Mechanical UX
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/architecture-v2' &&
+      github.event.head_commit.message == 'Owner-approved one-time V388 dispatch'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify exact source, owner approval, signed candidate and Reception gates
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SOURCE='10c60dda522983bf9c7deb275a4309de2473b8a3'
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/release/v388-approved-source" --jq '.object.sha')" = "$SOURCE"
+          for FILE in release-request.json release-ui-request.json; do
+            jq -e --arg sha "$SOURCE" '
+              .approvedForStaff == true and .ownerRequestedImmediateRelease == true and
+              .ownerPublicationRequested == true and .releaseHeldByOwner == false and
+              .versionName == "V388" and .versionCode == 351 and
+              .sourceCommit == $sha and .releaseScope == "phase1-compatible-ui" and
+              .backupDeferredByOwner == true and .productionBackendChanges == false and
+              .phase2ActivationApproved == false and .backendDeploymentRequired == false and
+              .physicalAcceptanceStatus == "NOT_RUN" and
+              .signedAcceptanceRun == 41859945402 and .verificationRun == 41859945573
+            ' "$FILE"
+          done
+          node scripts/verify-ui-only-release.cjs
+          git cat-file -e "$SOURCE^{commit}"
+          git merge-base --is-ancestor "$SOURCE" HEAD
+          git diff --quiet "$SOURCE" HEAD -- . \
+            ':(exclude)release-request.json' \
+            ':(exclude)release-ui-request.json' \
+            ':(exclude).github/workflows/reception-check.yml'
+          for ITEM in \
+            "41859945402:.github/workflows/build-signed-acceptance.yml" \
+            "41859945573:.github/workflows/reception-check.yml"; do
+            RUN="${ITEM%%:*}"
+            WORKFLOW="${ITEM#*:}"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN" | jq -e --arg sha "$SOURCE" --arg workflow "$WORKFLOW" '
+              .conclusion == "success" and .head_sha == $sha and
+              .head_branch == "architecture-v2" and .path == $workflow'
+          done
+          if gh release view "release-V388-architecture-v2" >/dev/null 2>&1; then
+            echo "::error::V388 is already published; stop duplicate publication."
+            exit 1
+          fi
+      - name: Dispatch protected signed Android and Web publisher
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/publish-approved-release.yml/dispatches" --raw-field ref=architecture-v2
+          echo 'Owner-authorized V388 exact-source protected publication dispatched.'

@@ -2,27 +2,27 @@
   "versionName": "V388",
   "versionCode": 351,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
-  "sourceCommit": "a250317aeddc0ae20e7e397e330e9b6a64049273",
+  "approvedForStaff": true,
+  "sourceCommit": "10c60dda522983bf9c7deb275a4309de2473b8a3",
   "ownerRequestedProceed": true,
-  "ownerPublicationRequested": false,
-  "authorization": "Owner requested publication of V388 Android and web on 2026-11-04. QA candidate only; do not publish until matching signed Android APK, Reception/browser checks, Mechanical, PC staging, regression and backup protections pass; backend migration and Edge Function deployment are separate and not authorized here. No changes to main.",
-  "approvedAt": null,
-  "publishNonce": null,
-  "releaseHeldByOwner": true,
+  "ownerPublicationRequested": true,
+  "authorization": "Owner explicitly requested Android and web publication in chat on 2026-11-04 after Work mode hit its limit; publication authorized ONLY for the exact V388 source 10c60dda522983bf9c7deb275a4309de2473b8a3 on architecture-v2. Matched signed APK workflow 41859945402 and Reception/browser workflow 41859945573 passed, with normal Android 41859945483, architecture 41859945622, Mechanical/Accountant 41859945755, and connection safety 41859945773 passed. No production database migrations or Supabase Edge Function updates authorized; vehicle registry/lookup API remains a separately held backend change. Physical acceptance NOT_RUN and fresh production backup restore deferred per owner's established prior release instructions. Do not modify main.",
+  "approvedAt": "2026-11-04T15:44:51.453Z",
+  "publishNonce": "v388-approved-owner-deploy-20261104154451-10c60dda5229",
+  "releaseHeldByOwner": false,
   "publicationRequiresSeparateInstruction": true,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "freshProductionBackupRestoreStatus": "NOT_RUN_FOR_V385",
+  "freshProductionBackupRestoreStatus": "NOT_RUN",
   "backendDeploymentRequired": false,
   "productionBackendChanges": false,
   "phase2ActivationApproved": false,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
+  "signedAcceptanceRun": 41859945402,
+  "verificationRun": 41859945573,
   "previousPublishedRelease": {
-    "versionName": "V386",
-    "versionCode": 349,
-    "sourceCommit": "7705e1377cff2b0eebc0581c14c33282dac9ed6e",
-    "releaseTag": "release-V386-architecture-v2"
+    "versionName": "V387",
+    "versionCode": 350,
+    "sourceCommit": "9a46e767442ef1c9ffd8dbae9de00183ad35920d",
+    "releaseTag": "release-V387-architecture-v2"
   },
   "v377VerificationEvidence": {
     "androidBuildRun": 41175629369,
@@ -551,7 +551,7 @@
     "ownerPhysicalAcceptanceDeferred": "Owner explicitly requested publish first, test afterward on 2026-11-01; NOT_RUN.",
     "ownerBackendActivation": "NOT_AUTHORIZED; production workshop-api version 98 lacks REOPEN_ADDITIONAL and REOPEN_REPEAT; Mechanical database guard not activated."
   },
-  "ownerRequestedImmediateRelease": false,
+  "ownerRequestedImmediateRelease": true,
   "backupDeferredByOwner": true,
   "v378HotfixEvidence": {
     "issue": "Consumables Cost card and Materials Consumption disappear after Manager dashboard re-render",
@@ -707,8 +707,8 @@
     "physicalPhoneTest": "NOT_RUN",
     "releaseApproval": "OWNER_APPROVED_RELEASE_WORKFLOW_GATED"
   },
-  "reason": "V387 coordinated UI release: existing approved-checklist and cosmetic vehicle-model fixes, plus approved teal materials-entry cards with high-contrast white text and mint serial-number badges. Styling-only additional change; workshop behavior and backend unchanged.",
-  "verificationSummary": "PENDING exact V388 QA checks and source-matched signed Android, Reception and PC website validation. No production publication; backend lookup migration not deployed.",
+  "reason": "V388 coordinated Android/Web app release: approved Reception and Mechanical Checklist UX plus vehicle name formatting and historical-display client improvements. Includes PR #53 source; backend vehicle lookup/registry is NOT being deployed in this release.",
+  "verificationSummary": "PASS exact-source 10c60dda522983bf9c7deb275a4309de2473b8a3; signed Android 41859945402, Reception 41859945573, standard APK 41859945483, architecture 41859945622, Mechanical/Accountant 41859945755, connection safety 41859945773. PC staged asset check passed on equivalent pre-approval assets. Physical device acceptance and production backup restore not executed; previous owner deferrals retained.",
   "productionBackendDeploymentEvidence": {
     "projectRef": "pjknotnjkufadqavcmii",
     "function": "workshop-api",
@@ -779,7 +779,7 @@
     "sourceBranch": "release/v385-approved-source",
     "ownerApprovedAt": "2026-11-03T13:09:54.684Z"
   },
-  "releaseCandidateStatus": "V388_QA_CANDIDATE_PENDING_ALL_GATES",
+  "releaseCandidateStatus": "APPROVED_AWAITING_PROTECTED_WORKFLOW_DISPATCH",
   "v387BackendRecord": {
     "sqlMigration": "supabase/migrations/20261103182000_reception_approved_model_format_equivalence.sql",
     "alreadyApplied": true,
@@ -793,5 +793,22 @@
     "signedAcceptanceRun": 41665455118,
     "receptionVerificationRun": 41665454663,
     "behaviorChanged": false
+  },
+  "v388VerifiedCandidate": {
+    "sourceCommit": "10c60dda522983bf9c7deb275a4309de2473b8a3",
+    "signedAcceptanceRun": 41859945402,
+    "receptionVerificationRun": 41859945573,
+    "normalApkRun": 41859945483,
+    "architectureRun": 41859945622,
+    "mechanicalContractsRun": 41859945755,
+    "connectionSafetyRun": 41859945773,
+    "backendDeploymentRequired": false,
+    "productionDatabaseChanged": false
+  },
+  "v388BackendHold": {
+    "newSqlMigration": "20261104143434_shared_vehicle_registry.sql",
+    "newBackendDeployed": false,
+    "serverVehicleLookupFeature": "NOT_ACTIVE_UNTIL_SEPARATE_BACKEND_APPROVAL",
+    "frontEndFallback": "Manual entry when lookup unavailable"
   }
 }
