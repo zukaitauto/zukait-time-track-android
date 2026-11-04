@@ -13,8 +13,11 @@ export async function mountMechanicalWorkspace(root,options={}){
  if(options.enabled!==true||!(initial?.role==='Manager'||initial?.id==='SUP003'&&['Supervisor','Mechanical Supervisor'].includes(initial?.role))||!initial?.id||!initial?.key||typeof options.api!=='function'){
   root.replaceChildren(node('p','Mechanical workspace is unavailable.'));return {destroy(){root.replaceChildren()}};
  }
- if(options.section==='create-checklist'){
-  return mountMechanicalPrejob(root,options);
+ if(options.section==='create-checklist'||options.section==='checklists'){
+  return mountMechanicalPrejob(root,{...options,
+   onCreateChecklist:()=>options.openSection?.('create-checklist'),
+   onCreateJob:item=>options.openSection?.('create-job',{prejobChecklist:item})
+  });
  }
  let device=options.deviceId;
  try{if(!device){device=storage.getItem('zukait_mechanical_device_v1');if(!device){device=uuid();storage.setItem('zukait_mechanical_device_v1',device)}}const saved=storage.getItem(key);if(saved){pending=JSON.parse(saved);if(pending.owner!==initial.id||!pending.command||typeof pending.command.operation!=='string'||!pending.command.payload)throw Error('invalid_pending');selected=pending.checklistId||null}}catch{pending=null;notice='This device cannot keep a safe retry. Pending changes need review.';device=null;}

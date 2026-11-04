@@ -15,10 +15,10 @@ async function documentView(input){if(window.ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED
 async function reportView(checklistId){if(window.ZUKAIT_MECHANICAL_REPORTS_ENABLED!==true)return;const module=await import('./mechanical_report_view.js');return mount('./mechanical_report_view.js','mountMechanicalReport',{checklistId,...output,spreadsheet:async report=>{await import('./accountant_exports.js');return module.mechanicalReportSpreadsheet(report,window.zukaitAccountantExports.spreadsheet)}})}
 async function signatureView(input){if(window.ZUKAIT_MECHANICAL_SIGNATURES_ENABLED!==true)return;let deviceId=localStorage.getItem('zukait_mechanical_device_v1');if(!deviceId){deviceId=crypto.randomUUID();localStorage.setItem('zukait_mechanical_device_v1',deviceId)}return mount('./mechanical_signature_capture.js','mountMechanicalSignature',{...input,deviceId})}
 async function deliveryView(jobCard){if(window.ZUKAIT_MECHANICAL_DELIVERY_ENABLED!==true)return;const probe=await api({action:'mechanical_delivery_probe',jobCard});if(!probe.registered)throw Error('Mechanical checklist required');return mount('./mechanical_delivery.js','mountMechanicalDelivery',{checklistId:probe.checklistId,onClose:()=>workspace(),onDone:()=>workspace()})}
-async function openSection(section){
+async function openSection(section,extras={}){
  if(section==='time-management')return mount('./mechanical_time_management.js','mountMechanicalTimeManagement',{onBack:()=>workspace()});
  if(['create-checklist','checklists'].includes(section))return workspace(null,section);
- return mount('./mechanical_sections.js','mountMechanicalSection',{section,onBack:()=>workspace(),openChecklist:id=>workspace(id,'checklists'),createChecklist:job=>workspace(null,'create-checklist',job)});
+ return mount('./mechanical_sections.js','mountMechanicalSection',{...extras,section,onBack:()=>extras.prejobChecklist?workspace(null,'checklists'):workspace(),openChecklist:id=>workspace(id,'checklists'),createChecklist:job=>workspace(null,'create-checklist',job)});
 }
 async function inspectionView(checklistId,jobCard){
  return mount('./mechanical_inspection_view.js','mountMechanicalInspection',{
