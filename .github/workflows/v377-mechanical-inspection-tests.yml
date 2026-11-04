@@ -6,6 +6,8 @@ on:
       - 'supabase/functions/workshop-api/extensions/mechanical_inspection_*.js'
       - 'tests/mechanical-inspection-*.mjs'
       - 'app/src/main/assets/mechanical_inspection_view.js'
+      - 'app/src/main/assets/mechanical_prejob_intake.js'
+      - 'tests/mechanical-sections-ui.mjs'
       - 'app/src/main/assets/mechanical_supervisor.js'
       - 'app/src/main/assets/mechanical_workspace.js'
       - 'supabase/migrations/20261031120000_mechanical_inspection_secure.sql'
@@ -39,6 +41,8 @@ jobs:
           node --check supabase/functions/workshop-api/extensions/mechanical_inspection_boundary.js
           node --check supabase/functions/workshop-api/extensions/mechanical_inspection_storage.js
           node --check app/src/main/assets/mechanical_inspection_view.js
+          node --check app/src/main/assets/mechanical_prejob_intake.js
+          node --check tests/mechanical-sections-ui.mjs
           node --check app/src/main/assets/mechanical_supervisor.js
           node --check app/src/main/assets/mechanical_workspace.js
           for file in tests/mechanical-inspection-*.mjs; do node --check "$file"; done
@@ -50,6 +54,7 @@ jobs:
           npm run test:mechanical:inspection
           node tests/mechanical-cash-credit-client.mjs
           node tests/mechanical-inspection-view.mjs
+          node tests/mechanical-sections-ui.mjs
 
 
   isolated-chromium-tests:
