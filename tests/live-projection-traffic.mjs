@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 import {stripTypeScriptTypes} from 'node:module';
-const source=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+const source=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8').replaceAll('\r\n','\n');
 const begin=source.indexOf('function computeLiveStatus('),end=source.indexOf('\n\nfunction employeeTimeTransition',begin);
 const optimized=source.slice(begin,end);
 const original=optimized.replace('.select("revision,users:data->users,sessions:data->sessions,assign:data->assign,jobs:data->jobs,updated_at,updated_by")','.select("revision,data,updated_at,updated_by")')
