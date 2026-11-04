@@ -64,6 +64,7 @@ on:
       - "scripts/verify-ui-only-release.cjs"
       - "scripts/verify-pc-pages-publication.cjs"
       - ".github/workflows/publish-approved-release.yml"
+      - ".github/workflows/build-signed-acceptance.yml"
       - ".github/workflows/pages.yml"
       - "tests/fixtures/reception-*"
       - "package*.json"

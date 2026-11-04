@@ -46,6 +46,7 @@ on:
       - tests/reception-*
       - app/src/main/assets/monthly_employee_performance.js
       - tests/monthly-employee-performance*.mjs
+      - tests/labour-history*.mjs
       - app/src/main/assets/insurance_management.js
       - app/src/main/assets/staff_management.js
       - app/src/main/assets/secure_auth.js
