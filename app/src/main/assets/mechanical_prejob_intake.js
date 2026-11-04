@@ -1,6 +1,50 @@
 // Independent Mechanical intake. No Job Card is created by this screen.
 const parts=['Front Bumper','Bonnet / Hood','LH Front Fender','RH Front Fender','LH Front Door','RH Front Door','LH Rear Door','RH Rear Door','Roof','LH Rear Fender','RH Rear Fender','Tailgate','Rear Bumper','Windshield','Rear Glass','Headlights','Rear Lights'];
 const checks=[['lights','Lights'],['wipers','Wipers'],['powerWindows','Power Windows'],['centralLocking','Central Locking'],['mirrors','Mirrors'],['horn','Horn'],['dashboardWarning','Dashboard Warning'],['airConditioning','Air Conditioning']];
+export function bindMechanicalVehicleLookup(f,n,current,lookup){
+  const plate=f.elements.namedItem('registration');
+  const vehicleInfo=n('div',null,{'aria-live':'polite'});
+  plate.closest('label').after(vehicleInfo);
+  let lookupRevision=0,filledIdentity=[];
+  plate.addEventListener('input',()=>{
+   lookupRevision++;vehicleInfo.replaceChildren();
+   for(const [input,value] of filledIdentity)if(input.value===value)input.value='';
+   filledIdentity=[];
+  });
+  plate.addEventListener('change',async()=>{
+   const registration=plate.value.trim(),revision=++lookupRevision;
+   if(!registration||!current())return;
+   try{
+    const result=await lookup(registration);
+    if(!current()||!f.isConnected||revision!==lookupRevision||registration!==plate.value.trim())return;
+    if(result.match!=='found'){
+     vehicleInfo.textContent=result.match==='conflict'?'Conflicting vehicle records. Confirm the VIN and enter the details manually.':'No verified vehicle match. Enter the vehicle details.';
+     return;
+    }
+    const vin=f.elements.namedItem('vin');
+    if(vin.value&&vin.value.trim().toUpperCase()!==result.vehicle?.vin){
+     vehicleInfo.textContent='The entered VIN differs from the saved vehicle. Confirm the vehicle details.';
+     return;
+    }
+    for(const key of ['vin','make','model','year']){
+     const input=f.elements.namedItem(key),value=result.vehicle?.[key];
+     if(!input.value&&value){input.value=value;filledIdentity.push([input,input.value]);}
+    }
+    vehicleInfo.textContent='Vehicle found. Confirm the vehicle details.';
+    if(result.history?.length){
+     const history=n('details');
+     history.append(n('summary','Vehicle History ('+result.history.length+')'));
+     for(const visit of result.history){
+      const date=new Date(/^\d+$/.test(String(visit.created_at))?Number(visit.created_at):visit.created_at||NaN);
+      history.append(n('p',['JC '+visit.job_card,Number.isFinite(date.getTime())?date.toLocaleDateString('en-GB',{timeZone:'Asia/Muscat'}):'',visit.department,visit.job_type,visit.status].filter(Boolean).join(' · ')));
+     }
+     vehicleInfo.append(history);
+    }
+   }catch{
+    if(current()&&f.isConnected&&revision===lookupRevision)vehicleInfo.textContent='Vehicle lookup unavailable. You can enter the details manually.';
+   }
+  });
+}
 export async function mountMechanicalPrejob(root,options={}){
  const doc=root.ownerDocument,win=doc.defaultView,identity=JSON.stringify(options.getSession?.());
  let disposed=false,busy=false,items=[],message='',query='',statusFilter='ALL';
@@ -126,6 +170,7 @@ export async function mountMechanicalPrejob(root,options={}){
   odometerBox.append(unit,odometer);odo.append(odometerBox);vehicleFields.append(odo);
   field(vehicleFields,'VIN / رقم الهيكل','vin',false);
   vehicleCard.append(vehicleFields);f.append(vehicleCard);
+  bindMechanicalVehicleLookup(f,n,current,registration=>call({operation:'VEHICLE_LOOKUP',registration}));
   const customerCard=card('Customer Information / معلومات العميل','mc-customer-card');
   const customerFields=n('div',null,{class:'mc-customer-fields'});
   field(customerFields,'Customer Name / اسم العميل','customer',true);

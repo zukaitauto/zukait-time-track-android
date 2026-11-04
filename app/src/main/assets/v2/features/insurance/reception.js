@@ -280,6 +280,54 @@
     if(!response.ok||!result?.ok){const e=Error(result?.code||"reception_unavailable");e.code=result?.code;throw e;}
     return result;
   }
+  function bindVehicleLookup(form){
+    const plate=form.elements.namedItem('registration');
+    if(!plate)return;
+    const info=document.createElement('div');
+    info.setAttribute('role','status');
+    plate.closest('label').after(info);
+    let request=0,filled=[];
+    plate.addEventListener('input',()=>{
+      request++;info.replaceChildren();
+      for(const [field,value] of filled)if(field.value===value)field.value='';
+      filled=[];
+    });
+    plate.addEventListener('change',async()=>{
+      const registration=plate.value.trim(),revision=++request;
+      if(!registration)return;
+      try{
+        const result=await apiAction({action:'vehicle_lookup',registration});
+        if(revision!==request||!form.isConnected||registration!==plate.value.trim())return;
+        if(result.match!=='found'){
+          info.textContent=result.match==='conflict'?'Conflicting vehicle records. Confirm the VIN and enter the details manually.':'No verified vehicle match. Enter the vehicle details.';
+          return;
+        }
+        const vin=form.elements.namedItem('vin');
+        if(vin?.value&&vin.value.trim().toUpperCase()!==result.vehicle?.vin){
+          info.textContent='The entered VIN differs from the saved vehicle. Confirm the vehicle details.';
+          return;
+        }
+        for(const key of ['vin','make','model','year']){
+          const field=form.elements.namedItem(key),value=result.vehicle?.[key];
+          if(field&&!field.value&&value){field.value=value;filled.push([field,field.value]);}
+        }
+        info.textContent='Vehicle found. Confirm the vehicle details.';
+        if(result.history?.length){
+          const details=document.createElement('details'),summary=document.createElement('summary');
+          summary.textContent='Vehicle History ('+result.history.length+')';details.append(summary);
+          for(const visit of result.history){
+            const line=document.createElement('div');
+            const date=new Date(/^\d+$/.test(String(visit.created_at))?Number(visit.created_at):visit.created_at||NaN);
+            line.textContent=['JC '+visit.job_card,Number.isFinite(date.getTime())?date.toLocaleDateString('en-GB',{timeZone:'Asia/Muscat'}):'',visit.department,visit.job_type,visit.status].filter(Boolean).join(' · ');
+            details.append(line);
+          }
+          info.append(details);
+        }
+      }catch{
+        if(revision===request&&form.isConnected)info.textContent='Vehicle lookup unavailable. You can enter the details manually.';
+      }
+    });
+  }
   // A read-only, fail-closed capability check. The V304 server does not have
   // the Phase 2 dashboard endpoint and must never offer unsaveable Cash intake.
   // Verify the response shape, not just HTTP 200 or a client version number.
@@ -535,6 +583,7 @@
       '<label class="rc-wide">Work Description (optional)<textarea name="reason" rows="6" maxlength="2000" placeholder="Describe the repair work required…" style="display:block;width:100%;box-sizing:border-box;min-height:160px;margin-top:6px;padding:12px;font-size:16px;line-height:1.6;resize:vertical"></textarea></label>' +
       '<label class="rc-check"><input type="checkbox" name="received_confirmed" required>I confirm the vehicle has been received at the workshop.</label><div class="rc-actions"><button type="submit">Open Job Card</button></div></form>');
     const form=document.getElementById('rc-direct-job'),type=form.querySelector('[name="job_type"]'),account=form.querySelector('[name="credit_account"]');
+    bindVehicleLookup(form);
     let linkedChecklist=null,linkedApprovalValid=false,linkedApprovalMode='';
     const searchInput=document.getElementById('rc-direct-checklist-search');
     const searchResults=document.getElementById('rc-direct-checklist-results');
@@ -1080,6 +1129,7 @@
     type.addEventListener("change", applyType);
     applyType();
     bindInspection(form);
+    if(!no)bindVehicleLookup(form);
     // Track an in-memory form baseline. Never persist unsaved customer details
     // to localStorage or interfere with the existing server request journal.
     checklistSnapshots.set(form, JSON.stringify([...new FormData(form)]));
