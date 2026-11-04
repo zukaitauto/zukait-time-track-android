@@ -277,6 +277,8 @@ jobs:
           mkdir -p _site/v2/features/spare-parts
           cp app/src/main/assets/v2/features/spare-parts/workflow.js _site/v2/features/spare-parts/workflow.js
           cp app/src/main/assets/v2/features/spare-parts/main_module.js _site/v2/features/spare-parts/main_module.js
+          mkdir -p _site/v2/features/insurance
+          cp app/src/main/assets/v2/features/insurance/vehicle-inspection-approved.png _site/v2/features/insurance/vehicle-inspection-approved.png
           cp app/src/main/assets/zukait_logo.webp _site/zukait_logo.webp
           cp -R app/src/main/assets/vehicle-logos _site/vehicle-logos
           if [ -f app/src/main/assets/reception_vin.js ]; then
@@ -342,6 +344,7 @@ jobs:
           test -s _site/v74_updates.js
           test -s _site/v2/features/spare-parts/workflow.js
           test -s _site/v2/features/spare-parts/main_module.js
+          test -s _site/v2/features/insurance/vehicle-inspection-approved.png
           grep -q 'sparePartsMain:{' _site/v2/features/spare-parts/main_module.js
           grep -q 'open:render' _site/v2/features/spare-parts/main_module.js
           grep -q 'window.openSparePartsModule=render' _site/v2/features/spare-parts/main_module.js
