@@ -52,6 +52,8 @@ const ctx={Date:Clock,users,state,me:{role:'Supervisor'},
 };
 ctx.window=ctx;
 ctx.zukaitJobCardMaster={identity:no=>jobs.find(j=>j.no===String(no))||null};
+const appHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+vm.runInNewContext(appHtml.slice(appHtml.indexOf('function formatVehicleName('),appHtml.indexOf('const KEY=')),ctx);
 vm.runInNewContext(source,ctx);
 
 const unchanged=JSON.stringify(state);
