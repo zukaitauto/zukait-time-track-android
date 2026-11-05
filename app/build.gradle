@@ -22,8 +22,8 @@ android {
         targetSdk 35
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
-        versionCode 352
-        versionName "V389" // Updated Reception and Mechanical UI, vehicle label display normalization; backend rollout separate.
+        versionCode 353
+        versionName "V390" // Updated Reception and Mechanical UI, vehicle label display normalization; backend rollout separate.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }
