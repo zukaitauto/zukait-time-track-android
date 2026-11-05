@@ -71,3 +71,7 @@ for(const role of ['Manager','Supervisor','Employee','Purchaser','Mechanical Sup
  assert.equal(n.unread(),2);n.open();assert.equal(n.unread(),2);n.openItem('system-one');assert.equal(n.unread(),1);n.open();assert.equal(n.unread(),1);assert.equal(window.state.systemNotifications[1].read,undefined);
 }
 console.log('PASS per-notification acknowledgement for all dashboard roles; bell preserves unread and other accounts');
+
+sandbox.openModal=html=>sandbox.visible=html;window.me={id:'QA-CLEAR',role:'Manager'};window.state={systemNotifications:Array.from({length:105},(_,i)=>({id:'clear-'+i,target:'QA-CLEAR',message:'Message '+i,createdAt:i+1}))};
+assert.equal(n.unread(),105);n.open();assert.match(sandbox.visible,/Message 104/);n.openItem('system-clear-104');assert.equal(n.unread(),104);n.open();assert.doesNotMatch(sandbox.visible,/Message 104</);assert.match(sandbox.visible,/Message 103/);assert.equal(n.all().length,105,'Read history is preserved');
+console.log('PASS opened notification leaves unread list, exact backlog count decreases, history preserved');
