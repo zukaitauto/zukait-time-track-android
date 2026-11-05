@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+node tests/job-card-manager-open.mjs
 # Every caller runs the same DOM tests with the pinned development dependencies.
 if ! node -e "require.resolve('jsdom')" >/dev/null 2>&1; then
   npm ci --ignore-scripts --include=dev

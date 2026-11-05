@@ -78,6 +78,8 @@ body.employee-session #globalBrandHeader{display:none!important}
 <div id="login" class="card"><h2>Staff Login</h2><p class="muted">Workshop Production &amp; Time Tracking. Use your User ID and individual password.</p><div class="grid"><label>User ID<br><input id="uid" autocomplete="username" placeholder=""></label><label>Password<br><span class="password-wrap"><input id="pw" type="password" autocomplete="current-password" placeholder=""><button type="button" class="pw-eye" id="pwEye" aria-label="Show password" onclick="togglePasswordVisibility()">👁</button></span></label></div><p><button class="blue big-action" onclick="login()">Login</button></p></div>
 <div id="app" class="hidden"><div id="legacyAppHeader" class="row compact-app-header"><h2 id="welcome"></h2><span id="supervisorHeaderMenu" class="hidden supervisor-header-menu clickable" onclick="openSupervisorHeaderMenu()">☰ Supervisor</span><span id="headerOnlineStatus" class="header-online-status"><span class="online-dot"></span><span id="headerOnlineText">Online</span></span><button class="blue header-update" onclick="openAppUpdate()">⬆ Update</button><button class="secondary header-logout" onclick="logout()">Logout</button></div><div id="employeeView" class="hidden"></div><div id="supervisorView" class="hidden"></div><div id="managerView" class="hidden"></div></div>
 </main><div id="modal" class="hidden"></div><script>
+// Shared HTML escaping for base dashboard/report renderers.
+function esc(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function formatVehicleName(value) {
   const name = String(value ?? '').trim()
     .replace(/\bLand[\s-]*Cruiser\b/gi, 'Landcruiser')
