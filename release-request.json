@@ -2,10 +2,10 @@
   "versionName": "V390",
   "versionCode": 353,
   "releaseScope": "manager-workflow-fixes",
-  "approvedForStaff": false,
-  "sourceCommit": null,
-  "approvedAt": null,
-  "publishNonce": null,
+  "approvedForStaff": true,
+  "sourceCommit": "8afde5daa5c7e543cc5307a7bd9921eb3c0c759c",
+  "approvedAt": "2026-11-05T15:03:26.725Z",
+  "publishNonce": "v390-owner-approved-1793891006749-8afde5daa5c7",
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": true,
   "ownerRequestedImmediateRelease": true,
@@ -16,9 +16,9 @@
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "releaseHeldByOwner": false,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "authorization": "Owner explicitly instructed RELEASE and FIX AND RELEASE on 5 November 2026 for the combined architecture-v2 fixes in this chat, including the required scoped backend/database changes and web/Android publication. Existing recorded backup/physical deferrals remain NOT_RUN; no unrelated backend rollout or compact-history activation.",
+  "signedAcceptanceRun": 42050304251,
+  "verificationRun": 42050304322,
+  "authorization": "Owner explicitly instructed RELEASE and FIX AND RELEASE on 5 November 2026 for the combined architecture-v2 fixes in this chat, including the required scoped backend/database changes and web/Android publication. Existing recorded backup/physical deferrals remain NOT_RUN; no unrelated backend rollout or compact-history activation. Owner specifically approved uploading this release record including backend project identifier, verification hashes, and deployment evidence, and publishing the tested website and APK.",
   "reason": "Historical Manager missing time, notification mark-all, new material price periods, all-open WIP/VWC/promise date, odometer loading, Paint invoice count and cancelled-PO refresh.",
   "previousPublishedRelease": {
     "versionName": "V389",
@@ -53,5 +53,15 @@
       "passed": true,
       "evidence": "Manager-only domain tests pass; production anonymous/authenticated SQL EXECUTE privileges false"
     }
+  },
+  "qualification": {
+    "sourceCommit": "8afde5daa5c7e543cc5307a7bd9921eb3c0c759c",
+    "allTriggeredChecksPassed": true,
+    "signedAcceptanceRun": 42050304251,
+    "receptionBrowserRun": 42050304322,
+    "androidRun": 42050304332,
+    "syncCompatibilityRun": 42050304292,
+    "standardApkRun": 42050304226,
+    "physicalDeviceTest": "NOT_RUN"
   }
 }
