@@ -23,12 +23,13 @@ function paintNotifications(){
  return out;
 }
 function markPaintRead(id){const ids=paintReadIds();ids.add(id);localStorage.setItem(readKey()+'-paint',JSON.stringify([...ids]));updateBadges()}
-function openPaintRecord(id){
+async function openPaintRecord(id){
  if(role()!=='Manager')return;
  const n=paintNotifications().find(x=>x.id===id);if(!n)return alert('This record is no longer available.');
  const fn=n.kind==='material'?window.consOpenNotificationMaterial:window.paintOpenNotificationOrder;
  if(typeof fn!=='function')return alert('Please update the app to open this record.');
- try{if(typeof closeModal==='function')closeModal();if(fn(n.recordId)!==false)markPaintRead(n.id)}catch(e){console.warn('Notification record could not be opened',e);alert('Unable to open this record. Please try again.')}
+ const owner=readKey();
+ try{if(typeof closeModal==='function')closeModal();const result=await fn(n.recordId);if(result!==false&&owner===readKey())markPaintRead(n.id)}catch(e){console.warn('Notification record could not be opened',e);alert('Unable to open this record. Please try again.')}
 }
 function eventTime(v){if(typeof v==='number'&&Number.isFinite(v))return v;const n=Date.parse(String(v||''));return Number.isFinite(n)?n:0}
 function partsRows(){try{return window.zukaitV2?.sparePartsMain?.reportRows?.()||[]}catch(_){return[]}}
