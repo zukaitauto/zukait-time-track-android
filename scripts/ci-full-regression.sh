@@ -76,6 +76,7 @@ node tests/paint-safety.mjs
 node tests/paint-received-date-correction.mjs
 node tests/paint-order-authority.mjs
 node tests/paint-invoice-pending.mjs
+node tests/paint-cancel-replacement.mjs
 node tests/paint-reports.mjs
 node tests/vehicle-logo-assets.mjs
 node tests/native-update-integrity.mjs
