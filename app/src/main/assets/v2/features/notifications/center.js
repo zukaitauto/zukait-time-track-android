@@ -6,7 +6,8 @@ function meNow(){try{return (typeof me!=='undefined'&&me)||window.me||null}catch
 function role(){return String(meNow()?.role||'')}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function readKey(){return 'zukait-notification-read-'+String(meNow()?.id||role()||'guest')}
-function readAt(){return Number(localStorage.getItem(readKey())||0)}
+function readIds(){try{return new Set(JSON.parse(localStorage.getItem(readKey()+'-items')||'[]'))}catch(_){return new Set()}}
+function markRead(id){const ids=readIds();ids.add(id);localStorage.setItem(readKey()+'-items',JSON.stringify([...ids]));updateBadges()}
 function paintReadIds(){try{return new Set(JSON.parse(localStorage.getItem(readKey()+'-paint')||'[]'))}catch(_){return new Set()}}
 function stateNow(){try{return (typeof state!=='undefined'&&state)||window.state||{}}catch(_){return window.state||{}}}
 function paintNotifications(){
@@ -69,11 +70,11 @@ function statePartsNotifications(){
 }
 function partsNotifications(){return serverPartsEvents===null?statePartsNotifications():eventPartsNotifications(serverPartsEvents)}
 function systemNotifications(){
- const u=meNow(),rows=Array.isArray(window.state?.systemNotifications)?window.state.systemNotifications:[];
+ const u=meNow(),rows=Array.isArray(stateNow().systemNotifications)?stateNow().systemNotifications:[];
  return rows.filter(n=>n&&!n.read&&(n.target===u?.id||n.target===role())).map(n=>({id:'system-'+n.id,type:'SYSTEM',at:Number(n.createdAt)||0,title:'System Notification',message:String(n.message||''),systemId:n.id}));
 }
 function all(){const m=new Map();for(const n of [...partsNotifications(),...systemNotifications(),...paintNotifications()])m.set(n.id,n);return [...m.values()].sort((a,b)=>b.at-a.at)}
-function unread(){const t=readAt(),ids=paintReadIds();return all().filter(n=>n.recordId?!ids.has(n.id):n.at>t).length}
+function unread(){const ids=readIds(),paint=paintReadIds();return all().filter(n=>!ids.has(n.id)&&!paint.has(n.id)).length}
 function ensureStyle(){if(document.getElementById('zukaitNotificationCenterStyle'))return;const s=document.createElement('style');s.id='zukaitNotificationCenterStyle';s.textContent='.zukait-notify-btn{position:relative!important;width:34px!important;height:34px!important;min-height:34px!important;padding:0!important;margin:0 4px!important;border-radius:10px!important;background:#f8fafc!important;color:#17304d!important;border:1px solid #d7e1eb!important;box-shadow:0 3px 10px #17304d12!important;font-size:17px!important}.zukait-notify-badge{position:absolute;right:-4px;top:-5px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#dc2626;color:#fff;font:800 9px/16px system-ui;text-align:center}.zukait-notify-list{display:grid;gap:4px;counter-reset:zuknotify}.zukait-notify-row{counter-increment:zuknotify;position:relative;padding:6px 7px 6px 34px;border:1px solid #dce6ef;border-radius:9px;background:#fff;color:#17304d;box-shadow:0 1px 4px #17304d0d}.zukait-notify-row:before{content:counter(zuknotify);position:absolute;left:7px;top:7px;display:grid;place-items:center;width:21px;height:21px;border-radius:6px;background:#edf4fb;color:#31577d;font-size:9px;font-weight:900}.zukait-notify-row b{display:block}.zukait-notify-row b{font-size:11px}.zukait-notify-row small{display:block;color:#64748b;margin-top:2px;font-size:9px}.zukait-notify-row button{margin-top:8px!important}';document.head.appendChild(s)}
 function candidates(){const rows=[...document.querySelectorAll('#supervisorView .v143-header,#managerView .v135-manager-header,#managerView .v111-manager-header,#employeeView .v91-role-identity,#managerView .v91-role-identity')];if(role()==='Purchaser'){const h=document.querySelector('#managerView .section-title');if(h&&!rows.includes(h))rows.push(h)}return rows}
 function inject(){
@@ -84,9 +85,17 @@ function inject(){
 function updateBadges(){const n=unread(),html='🔔'+(n?'<span class="zukait-notify-badge">'+(n>99?'99+':n)+'</span>':'');document.querySelectorAll('.zukait-notify-btn').forEach(b=>{if(b.innerHTML!==html)b.innerHTML=html})}
 function openPart(n){const no=String(n?.listNo||n||'').trim();if(!no)return;try{if(typeof closeModal==='function')closeModal()}catch(_){}const open=()=>{try{const sp=window.zukaitV2?.sparePartsMain;if(sp?.openList){sp.openList(no);return true}if(sp?.open){sp.open();setTimeout(()=>sp.openList?.(no),80);return true}}catch(_){}return false};if(!open())setTimeout(open,120)}
 function openCenter(){
- const rows=all();localStorage.setItem(readKey(),String(Date.now()));updateBadges();
- const body='<div class="zukait-notify-list">'+(rows.length?rows.slice(0,30).map(n=>'<div class="zukait-notify-row"><b>'+esc(n.title)+'</b><span>'+esc(n.message)+'</span><small>'+esc(n.at?new Date(n.at).toLocaleString():'')+'</small>'+(n.recordId?'<button class="blue" onclick="zukaitNotificationCenter.openPaintRecord(decodeURIComponent(\''+esc(encodeURIComponent(n.id).replace(/'/g,'%27'))+'\'))">'+(n.kind==='material'?'Open Material List':'Open Purchase Order')+'</button>':'')+(n.listNo?'<button class="blue" onclick="zukaitNotificationCenter.openPart(\''+esc(n.listNo)+'\')">Open Spare Parts</button>':'')+'</div>').join(''):'<p class="muted">No notifications.</p>')+'</div>';
+ const rows=all();updateBadges();
+ const body='<div class="zukait-notify-list">'+(rows.length?rows.slice(0,30).map(n=>'<div class="zukait-notify-row"><b>'+esc(n.title)+'</b><span>'+esc(n.message)+'</span><small>'+esc(n.at?new Date(n.at).toLocaleString():'')+'</small>'+(n.recordId?'<button class="blue" onclick="zukaitNotificationCenter.openPaintRecord(decodeURIComponent(\''+esc(encodeURIComponent(n.id).replace(/'/g,'%27'))+'\'))">'+(n.kind==='material'?'Open Material List':'Open Purchase Order')+'</button>':'')+(n.listNo?'<button class="blue" onclick="zukaitNotificationCenter.openItem(\''+esc(n.id)+'\')">Open Spare Parts</button>':'')+(!n.recordId&&!n.listNo?'<button class="blue" onclick="zukaitNotificationCenter.openItem(\''+esc(n.id)+'\')">Open notification</button>':'')+'</div>').join(''):'<p class="muted">No notifications.</p>')+'</div>';
  if(typeof openModal==='function')openModal('<div class="row"><h3 style="margin:0;flex:1">🔔 Notifications</h3><button class="danger" onclick="closeModal()">✕ Close</button></div>'+body);
+}
+function openItem(id){
+ const n=all().find(x=>x.id===id);if(!n)return;
+ const owner=readKey();
+ if(n.listNo){const sp=window.zukaitV2?.sparePartsMain;if(typeof sp?.openList!=='function')return;
+  try{const result=sp.openList(n.listNo);Promise.resolve(result).then(ok=>{if(ok!==false&&readKey()===owner)markRead(id)}).catch(e=>console.warn('Notification could not open',e));}catch(e){console.warn('Notification could not open',e)}return;}
+ if(typeof openModal!=='function')return;
+ openModal('<h3>'+esc(n.title)+'</h3><p>'+esc(n.message)+'</p><button onclick="closeModal()">Close</button>');markRead(id);
 }
 async function refresh(){
  // Never compete with authentication on the login screen. Server notification
@@ -115,7 +124,7 @@ async function refresh(){
  }catch(_){}finally{refreshInFlight=false}
  inject();updateBadges();
 }
-window.zukaitNotificationCenter={open:openCenter,openPart,openPaintRecord,paintNotifications,refresh,all,unread,inject,eventPartsNotifications,normalizeServerEvent,loadServerPartEvents};
+window.zukaitNotificationCenter={open:openCenter,openPart,openItem,openPaintRecord,paintNotifications,refresh,all,unread,inject,eventPartsNotifications,normalizeServerEvent,loadServerPartEvents};
 document.addEventListener('DOMContentLoaded',()=>{inject();refresh()});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refresh()});window.addEventListener('online',refresh);window.addEventListener('focus',refresh);setTimeout(()=>{inject();refresh()},700);setInterval(refresh,POLL_MS);
 new MutationObserver(()=>inject()).observe(document.documentElement,{childList:true,subtree:true});
 window.addEventListener('zukait-live-status',updateBadges);

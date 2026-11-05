@@ -63,3 +63,11 @@ assert.equal(rows.length,1);assert.equal(rows[0].title,'Arrival Rejected');
 assert.match(rows[0].message,/Not physically received/);assert.equal(rows[0].listNo,'PL001');
 window.me.role='Supervisor';assert.equal(n.eventPartsNotifications([rejected]).length,0);
 window.me.role='Manager';assert.equal(n.eventPartsNotifications([rejected]).length,0);
+
+// Opening the bell never acknowledges other events, for every role.
+sandbox.openModal=()=>{};
+for(const role of ['Manager','Supervisor','Employee','Purchaser','Mechanical Supervisor','Accountant','Receptionist']){
+ window.me={id:'QA-'+role,role};window.state={systemNotifications:[{id:'one',target:window.me.id,message:'First',createdAt:1},{id:'two',target:window.me.id,message:'Second',createdAt:2}]};
+ assert.equal(n.unread(),2);n.open();assert.equal(n.unread(),2);n.openItem('system-one');assert.equal(n.unread(),1);n.open();assert.equal(n.unread(),1);assert.equal(window.state.systemNotifications[1].read,undefined);
+}
+console.log('PASS per-notification acknowledgement for all dashboard roles; bell preserves unread and other accounts');
