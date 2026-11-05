@@ -806,10 +806,17 @@ function threeWayMerge(base: any, remote: any, local: any, field = ""): any {
 
 async function baseStateForRevision(revision: number, currentRevision: number, currentData: any) {
   if (revision === currentRevision) return cloneValue(currentData);
-  const { data, error } = await admin.from("workshop_state_history")
+  // Prefer the compact/legacy-compatible service-role reader. During a rolling
+  // migration, an older database may not yet have the RPC in its schema cache.
+  const { data, error } = await admin.rpc("zukait_history_revision_data", { p_revision: revision });
+  if (!error) return data == null ? null : cloneValue(data);
+  if (error.code !== "PGRST202") throw error;
+  // Schema-not-ready fallback is temporary: remove after every deployed API
+  // is confirmed to use the compatibility RPC and before compact cutover.
+  const legacy = await admin.from("workshop_state_history")
     .select("data").eq("revision", revision).maybeSingle();
-  if (error) throw error;
-  return data?.data ? cloneValue(data.data) : null;
+  if (legacy.error) throw legacy.error;
+  return legacy.data?.data ? cloneValue(legacy.data.data) : null;
 }
 
 
