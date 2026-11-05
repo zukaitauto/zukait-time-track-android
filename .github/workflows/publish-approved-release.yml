@@ -211,9 +211,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="release-${{ steps.approved.outputs.version_name }}${{ github.ref_name == 'architecture-v2' && '-architecture-v2' || '' }}"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release tag already exists; retain it and require operator reconciliation."
-            exit 1
+          if gh release view "$TAG" --json databaseId >/tmp/existing-release.json 2>/dev/null; then
+            RELEASE_ID=$(jq -r .databaseId /tmp/existing-release.json)
+            gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" >/tmp/existing-release-full.json
+            jq -e --arg source "$SOURCE_SHA" --arg tag "$TAG" '.draft == true and .target_commitish == $source and .tag_name == $tag and (.assets | length) == 1 and .assets[0].name == "ZUKAIT_TIME_TRACK_LATEST.apk"' /tmp/existing-release-full.json
+            mkdir -p /tmp/existing-approved-apk
+            gh release download "$TAG" --pattern ZUKAIT_TIME_TRACK_LATEST.apk --dir /tmp/existing-approved-apk
+            cmp ZUKAIT_TIME_TRACK_LATEST.apk /tmp/existing-approved-apk/ZUKAIT_TIME_TRACK_LATEST.apk
+            echo "release_id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
+            echo "release_url=$(jq -r .html_url /tmp/existing-release-full.json)" >> "$GITHUB_OUTPUT"
+            echo "Verified existing draft and exact accepted APK; resuming coordinated publication."
+            exit 0
           fi
           RELEASE_JSON=$(gh api --method POST "repos/${GITHUB_REPOSITORY}/releases" \
             -f tag_name="$TAG" \
@@ -370,6 +378,8 @@ jobs:
       - name: Deploy coordinated Pages candidate
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          timeout: 1200000
       - name: Verify public Pages bytes before advancing staff APK
         run: node scripts/verify-coordinated-release.cjs pages _site
 
