@@ -51,6 +51,7 @@ node tests/assignment-search-ui.mjs
 node tests/supervisor-stable-ui.mjs
 node tests/quick-entry-checklist.mjs
 node tests/manager-work-in-progress.mjs
+node tests/job-vehicle-location.mjs
 node tests/shared-incentive-window.mjs
 node tests/live-status-authority.mjs
 node tests/paused-menu-consistency.mjs
