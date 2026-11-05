@@ -2,163 +2,28 @@
   "versionName": "V389",
   "versionCode": 352,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
-  "sourceCommit": null,
-  "approvedAt": null,
-  "publishNonce": null,
+  "approvedForStaff": true,
+  "sourceCommit": "3b3c304dae7582f65ca54b6fe27303acb965df24",
+  "approvedAt": "2026-11-05T06:19:50.294187+00:00",
+  "publishNonce": "v389-owner-release-2026-11-05T06:19:50.294187+00:00",
+  "ownerRequestedProceed": true,
+  "ownerPublicationRequested": true,
+  "ownerRequestedImmediateRelease": true,
+  "backupDeferredByOwner": true,
   "productionBackendChanges": false,
+  "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "reason": "V388 coordinated Android/Web app release: approved Reception and Mechanical Checklist UX plus vehicle name formatting and historical-display client improvements. Includes PR #53 source; backend vehicle lookup/registry is NOT being deployed in this release.",
-  "backendDeploymentRequired": false,
-  "verificationSummary": "PASS exact-source 10c60dda522983bf9c7deb275a4309de2473b8a3; signed Android 41859945402, Reception 41859945573, standard APK 41859945483, architecture 41859945622, Mechanical/Accountant 41859945755, connection safety 41859945773. PC staged asset check passed on equivalent pre-approval assets. Physical device acceptance and production backup restore not executed; previous owner deferrals retained.",
-  "ownerRequestedImmediateRelease": true,
-  "ownerPublicationRequested": false,
-  "releaseHeldByOwner": true,
-  "backupDeferredByOwner": true,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "v380PaintReceivedDate": {
-    "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
-    "feature": "Paint PO Received Date visible in summary/list and editable by Manager with correction reason; preserves original received employee and receipt time; audit before/after; rejects invalid/future dates; pending PO cannot be received by correction",
-    "test": "tests/paint-received-date-correction.mjs",
-    "productionBackendDeployment": false,
-    "releaseStatus": "UNPUBLISHED",
-    "signedAcceptanceRun": 41320969253,
-    "signedArtifactId": 13089726056,
-    "receptionVerificationRun": 41320969105
-  },
-  "authorization": "V389 candidate preparation: Job Card Manager and per-notification read fixes. Publication pending exact-source checks.",
-  "v380MonthlyExports": {
-    "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
-    "scope": "Manager Cash Monthly Performance and Insurance Monthly LPO Performance",
-    "options": [
-      "Print A4 landscape",
-      "Download PDF",
-      "Excel-compatible CSV"
-    ],
-    "filters": [
-      "Month",
-      "Insurance company where applicable",
-      "List / Graph (print graph; PDF/Excel export full data list)"
-    ],
-    "includes": "Complete filtered Job Card list, totals, provisional cost warnings and dates",
-    "tests": [
-      "tests/manager-profit-performance.mjs",
-      "full functional regression"
-    ],
-    "signedAcceptanceRun": 41320969253,
-    "signedArtifactId": 13089726056,
-    "productionStatus": "NOT_PUBLISHED",
-    "receptionVerificationRun": 41320969105
-  },
-  "v380ModernTimeInspection": {
-    "sourceCommit": "21a67708859d42681845922e06e0186e5e3e6768",
-    "feature": "Read-only Job Card Time Inspection employee detail with premium navy, blue, teal and coral responsive metric tiles and refined navigation",
-    "logicUnchanged": true,
-    "scopedTo": "tm-inspection-employee",
-    "signedAcceptanceRun": 41320969253,
-    "receptionVerificationRun": 41320969105,
-    "signedArtifactId": 13089726056,
-    "tests": [
-      "tests/manager-time-management.mjs",
-      "full functional regression",
-      "signed Android artifact",
-      "Reception browser verification"
-    ],
-    "published": false
-  },
-  "ownerRequestedProceed": true,
   "freshProductionBackupRestoreStatus": "NOT_RUN",
+  "releaseHeldByOwner": false,
+  "signedAcceptanceRun": 41979013206,
+  "verificationRun": 41979016237,
+  "authorization": "Owner requested Release for V389 in chat after automated qualification. UI-only Job Card Manager opening and individual notification read fixes; no backend or data changes. Existing owner backup/physical deferrals retained; neither reported as tested.",
+  "reason": "Restore shared escaping for Job Card Manager and acknowledge only individually opened notifications, including async failures and account switches.",
   "previousPublishedRelease": {
-    "versionName": "V387",
-    "versionCode": 350,
-    "sourceCommit": "9a46e767442ef1c9ffd8dbae9de00183ad35920d",
-    "releaseTag": "release-V387-architecture-v2"
-  },
-  "productionBackendDeploymentEvidence": {
-    "projectRef": "pjknotnjkufadqavcmii",
-    "function": "workshop-api",
-    "version": 100,
-    "onlyChangedModule": "insurance_management_rules.js",
-    "deployedSeparately": true,
-    "status": "ACTIVE",
-    "moduleSourceAligned": true,
-    "productionDataEditedByDeployment": false
-  },
-  "v383CandidateEvidence": {
-    "sourceCommit": "138804af3cd3ce073bbfa8390ee3332ff3a85c80",
-    "productionBackendProject": "pjknotnjkufadqavcmii",
-    "productionWorkshopApiVersion": 101,
-    "backendModuleSourceAligned": true,
-    "workInProgressScope": "All undelivered Insurance Job Cards, all dates by default; month/date filters optional",
-    "approvalPendingScope": "All waiting Insurance Checklists, Checklist details and filters",
-    "linkDialogScope": "Responsive in-app link confirmation retaining server identity checks",
-    "releaseStatus": "OWNER_APPROVED_FOR_PROTECTED_PUBLICATION",
-    "physicalAndroidAcceptance": "NOT_RUN_OWNER_TO_TEST_AFTER_RELEASE",
-    "freshBackupRestore": "NOT_RUN",
-    "signedAcceptanceRun": 41582221493,
-    "receptionVerificationRun": 41582221555,
-    "architectureVerificationRun": 41582221490,
-    "standardAndroidBuildRun": 41582221519
-  },
-  "publicationRequiresSeparateInstruction": true,
-  "ownerFinalDispatchRequestedAt": "2026-11-04T15:44:51.453Z",
-  "ownerPublisherRetry": {
-    "sourceBranch": "release/v383-approved-source",
-    "sourceSha": "138804af3cd3ce073bbfa8390ee3332ff3a85c80",
-    "reason": "Protected publisher token could not create named tag (HTTP 403); pre-created immutable source branch points to exact approved commit, publisher's existing fallback.",
-    "retryAt": "2026-11-03T05:16:56.019Z"
-  },
-  "v385CandidateEvidence": {
-    "sourceCommit": "3cfddd12aac191ddf30ef3880763f4beaeb95e6f",
-    "scope": "Supervisor dashboard with shared read-only WIP and Need Attention beside Estimate; menu contrast correction; rollback-only SQL QA test included in exact source",
-    "signedAcceptanceRun": 41641106549,
-    "signedAcceptanceArtifactId": 13233320972,
-    "receptionVerificationRun": 41641106837,
-    "androidBuildRun": 41641106660,
-    "standardApkBuildRun": 41641106665,
-    "connectionOutageRun": 41641106741,
-    "mechanicalContractsRun": 41641106767,
-    "signedAcceptanceStatus": "PASS",
-    "receptionVerificationStatus": "PASS",
-    "androidBuildStatus": "PASS",
-    "physicalAcceptance": "NOT_RUN",
-    "freshBackupRestore": "NOT_RUN",
-    "backendDeploymentRequired": false,
-    "sourceBranch": "release/v385-approved-source",
-    "ownerApprovedAt": "2026-11-03T13:09:54.684Z"
-  },
-  "releaseCandidateStatus": "APPROVED_AWAITING_PROTECTED_WORKFLOW_DISPATCH",
-  "v387BackendRecord": {
-    "sqlMigration": "supabase/migrations/20261103182000_reception_approved_model_format_equivalence.sql",
-    "alreadyApplied": true,
-    "appliedAt": "2026-11-03",
-    "newBackendDeploymentRequired": false,
-    "scope": "Only cosmetic model capitalization/spacing changes preserve existing verified approval; all other vehicle identity fields unchanged."
-  },
-  "tealMaterialsUi": {
-    "sourceCommit": "3f1f697636c3a57f8a1e337566a472e20ac7d7f6",
-    "scope": "Materials search/result palette in consumables_ui.js only",
-    "signedAcceptanceRun": 41665455118,
-    "receptionVerificationRun": 41665454663,
-    "behaviorChanged": false
-  },
-  "v388VerifiedCandidate": {
+    "versionName": "V388",
+    "versionCode": 351,
     "sourceCommit": "10c60dda522983bf9c7deb275a4309de2473b8a3",
-    "signedAcceptanceRun": 41859945402,
-    "receptionVerificationRun": 41859945573,
-    "normalApkRun": 41859945483,
-    "architectureRun": 41859945622,
-    "mechanicalContractsRun": 41859945755,
-    "connectionSafetyRun": 41859945773,
-    "backendDeploymentRequired": false,
-    "productionDatabaseChanged": false
-  },
-  "v388BackendHold": {
-    "newSqlMigration": "20261104143434_shared_vehicle_registry.sql",
-    "newBackendDeployed": false,
-    "serverVehicleLookupFeature": "NOT_ACTIVE_UNTIL_SEPARATE_BACKEND_APPROVAL",
-    "frontEndFallback": "Manual entry when lookup unavailable"
+    "releaseTag": "release-V388-architecture-v2"
   }
 }
