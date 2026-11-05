@@ -34,3 +34,13 @@ vm.runInContext(fs.readFileSync('app/src/main/assets/job_cost_summary_v128.js','
 assert.equal(ctx.v128JobCostData('LIVE').paint,0,'Dashboard must exclude stale cost for unreceived PO');
 assert.equal(ctx.v128JobCostData('OLD').paint,11.8,'Dashboard shows only confirmed main/additional receipt totals');
 console.log('PASS: historical and new delivery, original/additional PO identity, blank pricing rejection, confirmed-only costing, duplicate confirmation, immediate removal, Oman month boundaries and receipt-date filtering');
+// Menu badge counts vehicles, not separate main/additional orders.
+state.jobs=[{no:'ONE',delivered:true},{no:'TWO',delivered:false}];
+state.paintPurchasing.orders=[order('main-one','ONE',afterMonth),{...order('extra-one','ONE',afterMonth),orderType:'ADDITIONAL'},order('open-two','TWO',afterMonth),{...order('received-one','ONE',afterMonth),receivedAt:afterMonth},{...order('void-one','ONE',afterMonth),voided:true},{...order('nil-one','ONE',afterMonth),nilPaintPurchase:true}];
+ctx.openPaintModule();assert.match(ctx.modal,/Invoice Pending/);assert.match(ctx.modal,/id="paintInvoicePendingBadge"/);assert.equal(el('paintInvoicePendingBadge').textContent,'1');assert.equal(el('paintInvoicePendingBadge').hidden,false);
+const unchanged=JSON.stringify(state);ctx.openPaintModule();assert.equal(JSON.stringify(state),unchanged,'rendering the badge must not change paint records');
+state.jobs[1].delivered=true;ctx.openPaintModule();assert.equal(el('paintInvoicePendingBadge').textContent,'2');
+state.paintPurchasing.orders.filter(o=>o.jobCard==='ONE').forEach(o=>o.receivedAt=afterMonth);ctx.openPaintModule();assert.equal(el('paintInvoicePendingBadge').textContent,'1');
+state.paintPurchasing.orders.find(o=>o.id==='open-two').receivedAt=afterMonth;ctx.openPaintModule();assert.equal(el('paintInvoicePendingBadge').hidden,true,'no pending vehicles hides the badge');
+vm.runInContext("me.role='Manager'",ctx);state.paintPurchasing.orders[0].receivedAt=null;ctx.openPaintModule();assert.equal(el('paintInvoicePendingBadge').textContent,'1');
+console.log('PASS Paint menu invoice badge: unique vehicles, 1/2/zero, additional orders, excluded records, confirmed receipt updates and both roles.');

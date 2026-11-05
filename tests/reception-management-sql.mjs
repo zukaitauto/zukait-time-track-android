@@ -4,15 +4,16 @@ import {randomUUID} from 'node:crypto';
 import {PGlite} from '@electric-sql/pglite';
 // In-memory PostgreSQL only: no URL, network or production state is accepted.
 const db=new PGlite();
+const readSql=p=>fs.readFileSync(p,'utf8').replace(/\r\n/g,'\n');
 try{
  // PGlite includes gen_random_uuid in core, but has no pgcrypto extension.
  // No cryptographic staff-auth function is exercised by this SQL test.
- await db.exec(fs.readFileSync('tests/fixtures/reception-postgres17-baseline.sql','utf8').replace('create extension if not exists pgcrypto;',''));
+ await db.exec(readSql('tests/fixtures/reception-postgres17-baseline.sql').replace('create extension if not exists pgcrypto;',''));
  for(const file of fs.readdirSync('supabase/migrations').filter(x=>x.endsWith('.sql')).sort()){
-  try{await db.exec(fs.readFileSync('supabase/migrations/'+file,'utf8'));}catch(e){console.error('Migration failed:',file,e.message,e.where||'');throw e;}
+  try{await db.exec(readSql('supabase/migrations/'+file));}catch(e){console.error('Migration failed:',file,e.message,e.where||'');throw e;}
  }
- await db.exec(fs.readFileSync('supabase/V336_JOB_DESCRIPTION_PERSISTENCE.sql','utf8'));
- await db.exec(fs.readFileSync('supabase/V336_JOB_DESCRIPTION_PERSISTENCE.sql','utf8')); // idempotent retry
+ await db.exec(readSql('supabase/V336_JOB_DESCRIPTION_PERSISTENCE.sql'));
+ await db.exec(readSql('supabase/V336_JOB_DESCRIPTION_PERSISTENCE.sql')); // idempotent retry
  await db.exec("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt) values('QA-MGR','Manager','Manager','','none','none'),('QA-RC','Reception','Receptionist','','none','none'),('QA-EMP','Employee','Employee','','none','none');insert into workshop_state(id,data,revision,updated_by) values('main','{\"jobs\":[],\"assign\":[],\"sessions\":[],\"estimates\":[]}',1,'QA-MGR');");
  await db.exec("insert into staff_credentials(user_id,display_name,role,department,password_hash,password_salt) values('QA-SUP','Supervisor','Supervisor','','none','none');");
  await db.exec('set role service_role');
@@ -51,7 +52,7 @@ try{
  await db.exec('reset role');
  for(const group of [['reception-direct-job.sql','reception-cash-amount.sql'],['reception-create-job.sql','reception-vehicle-authority.sql'],['reception-create-job.sql','reception-additional.sql'],['reception-cancellation-fixture.sql','reception-cancellation.sql']]){
   await db.exec('reset role');
-  await db.exec('begin');try{for(const file of group){try{await db.exec(fs.readFileSync('tests/'+file,'utf8'));}catch(e){console.error('Regression SQL:',file,e.message,e.where||'');throw e;}}}finally{await db.exec('rollback');}
+  await db.exec('begin');try{for(const file of group){try{await db.exec(readSql('tests/'+file));}catch(e){console.error('Regression SQL:',file,e.message,e.where||'');throw e;}}}finally{await db.exec('rollback');}
  }
  await db.exec('reset role');
  for(const role of ['anon','authenticated']){

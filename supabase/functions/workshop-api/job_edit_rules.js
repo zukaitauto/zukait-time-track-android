@@ -1,7 +1,7 @@
 // Session roles and the current server job, never submitted role/status, own edits.
 const copy=v=>JSON.parse(JSON.stringify(v));
 const fields=['make','model','year','reg','vin','customer','mobile','notes','color','colorCode','jobType','insuranceCompany','claimNo','amount'];
-const fullFields=['createdAt','vehicle','brand','insurance','customerName','customerMobile','vinNumber','chassis','claimNumber','promiseDate','email','customerAddress','creditAccount','jobIntakeOdometer','jobIntakeOdometerUnit','invoiceDate','workDescription','deliveredAt','deliveryDate'];
+const fullFields=['receptionLocation','createdAt','vehicle','brand','insurance','customerName','customerMobile','vinNumber','chassis','claimNumber','promiseDate','email','customerAddress','creditAccount','jobIntakeOdometer','jobIntakeOdometerUnit','invoiceDate','workDescription','deliveredAt','deliveryDate'];
 const calendarDate=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(Date.parse(v+'T12:00:00Z'))&&new Date(v+'T12:00:00Z').toISOString().slice(0,10)===v;
 const identity=['make','model','year','reg','vin','customer','mobile','jobType','insuranceCompany','claimNo'];
 const same=(a,b)=>JSON.stringify(canonical(a))===JSON.stringify(canonical(b));
@@ -16,7 +16,7 @@ export function jobEditProjection(job){
 }
 // Read-only Job Card fields, separate from editable fields and cost/time records.
 export function jobViewProjection(job){
- const viewFields=['id','status','completed','cancelled','deliveredAt','deliveryDate','promiseDate','finalInvoiceAmount','invoiceAmount','invoiceDate',
+ const viewFields=['receptionLocation','id','status','completed','cancelled','deliveredAt','deliveryDate','promiseDate','finalInvoiceAmount','invoiceAmount','invoiceDate',
  'vehicleMake','vehicleModel','brand','modelYear','vehicleYear','registration','registrationNo','VIN','vinNumber','chassis','chassisNo',
  'customerName','customerMobile','customerContact','contact','phone','tel','email','customerAddress','address',
  'colour','colourCode','insurance','claimNumber','claim','jobNotes','workDescription','work_description','workDescriptions','description','descriptions','workDetails','requestedWork','remarks',
@@ -58,7 +58,11 @@ export function jobEditTransition(data,user,request,now){
  const reason=String(request.reason||'').trim();if(!reason||reason.length>2000)return error('job_edit_reason_required');
  const next={...old};
  for(const [k,v] of Object.entries(patch)){
-  if(k==='amount'){
+  if(k==='receptionLocation'){
+   if(!full||!['VIW','VWC'].includes(v))return error('job_edit_invalid_location');
+   if((old.delivered||old.cancelled||old.archived||['DELIVERED','CANCELLED','ARCHIVED','DELETED'].includes(String(old.status||'').toUpperCase()))&&v!==old.receptionLocation)return error('job_edit_location_closed');
+   next.receptionLocation=v;
+  }else if(k==='amount'){
    const parsed=optionalJobAmount(v);if(!parsed.ok)return error('job_edit_invalid_amount');
    if(old.finalInvoiceAmount!=null&&old.finalInvoiceAmount!==''&&parsed.value!==Number(old.finalInvoiceAmount)){
     if(!full||parsed.value===null)return error('job_edit_invoice_authoritative');
@@ -123,6 +127,8 @@ export function preserveJobEditAuthority(candidate,current,user){
  const byNo=new Map((current.jobs||[]).map(j=>[String(j.no),j]));
  const protectedFields=[...fields,...fullFields,'odometer','odometerUnit','jobIntakeUnit','jobNotes','remarks','address','work_description','workDescriptions','description','descriptions','workDetails','requestedWork','createdAt','vehicle','brand','customerName','customerMobile','vinNumber','chassis','claimNumber','insurance','editRevision','directReceptionJob'];
  for(const j of candidate.jobs||[]){const old=byNo.get(String(j.no));if(!old)continue;
+  // Vehicle location changes use the audited dedicated edit, never snapshot saves.
+  if('receptionLocation' in old)j.receptionLocation=copy(old.receptionLocation);else delete j.receptionLocation;
   // Dedicated edits survive stale snapshot saves; all delivered details are Manager-only.
   if(Number(j.editRevision||0)!==Number(old.editRevision||0)||!['Manager','Supervisor'].includes(user?.role)||(old.delivered&&user.role!=='Manager')){
    for(const k of protectedFields){if(k in old)j[k]=copy(old[k]);else delete j[k];}

@@ -152,6 +152,9 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
  const own=(current.sessions||[]).filter(belongs),s=op==='ADD_SESSION'?null:own.find(x=>String(x.id)===command.sessionId);
  const data=copy(current),row=data.assign.find(x=>String(x.id)===String(a.id));let before=copy(a),after=null;
  const running=own.some(x=>!x.end);
+ // A closed missing interval can precede later work, including a live timer.
+ // Paused describes only that interval; later assignment disposition is preserved.
+ const historicalPaused=!j.delivered&&!j.archived&&op==='ADD_SESSION'&&command.workStatus==='PAUSED'&&Number.isSafeInteger(command.end)&&command.end<=at&&own.some(x=>!x.cancelled&&Number(x.start)>=command.end);
  if(['CORRECT_SESSION','ADD_SESSION','CANCEL_SESSION'].includes(op)){
   if(op!=='ADD_SESSION'&&(!s||!s.end||s.cancelled))return fail('time_session_inactive');
   if(command.workStatus){
@@ -164,10 +167,10 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
     if((current.sessions||[]).some(x=>x&&!x.cancelled&&String(x.emp)===String(a.emp)&&!x.end&&String(x.job).toUpperCase()==='ID001'))return fail('time_id001_conflict');
    }
    const historicalFinish=op==='ADD_SESSION'&&command.workStatus==='FINISHED'&&(j.delivered||j.archived);
-   if(own.some(x=>!x.cancelled&&!x.end))return fail('time_work_running');
+   if(!historicalPaused&&own.some(x=>!x.cancelled&&!x.end))return fail('time_work_running');
    // Historical intervals may be corrected without changing the disposition of later work.
-   if(command.workStatus!=='CONTINUE'&&!historicalFinish&&own.some(x=>!x.cancelled&&x.id!==s?.id&&(op==='ADD_SESSION'?Number(x.end)>Number(command.end):(Number(x.end)>Number(s.end)||Number(x.end)>Number(command.end)))))return fail('time_later_session');
-   if(command.workStatus==='PAUSED'&&a.completed)return fail('time_reopen_required');
+   if(command.workStatus!=='CONTINUE'&&!historicalFinish&&!historicalPaused&&own.some(x=>!x.cancelled&&x.id!==s?.id&&(op==='ADD_SESSION'?Number(x.end)>Number(command.end):(Number(x.end)>Number(s.end)||Number(x.end)>Number(command.end)))))return fail('time_later_session');
+   if(command.workStatus==='PAUSED'&&a.completed&&!historicalPaused)return fail('time_reopen_required');
    if(!a.completed&&(j.delivered||j.archived)&&!historicalFinish)return fail('time_job_inactive');
    if(historicalFinish){
     const closedAt=Math.min(...[j.delivered?Number(j.deliveredAt):NaN,j.archived?Number(j.archivedAt):NaN].filter(x=>Number.isFinite(x)&&x>0));

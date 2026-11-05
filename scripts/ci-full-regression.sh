@@ -36,6 +36,7 @@ node tests/employee-job-placement.mjs
 node tests/employee-daily-report.mjs
 node tests/manager-time-management.mjs
 node tests/time-correction-disposition.mjs
+node tests/historical-missing-time.mjs
 node tests/cancel-unstarted-allotted-work.mjs
 node tests/cash-monthly-pulse.mjs
 node tests/leave-after-work.mjs
@@ -46,11 +47,13 @@ node tests/employee-finish-server-authority.mjs
 node tests/employee-pause-journal-recovery.mjs
 node tests/consumables-smoke.mjs
 node tests/consumables-ui.mjs
+node tests/manager-new-price-period.mjs
 node tests/material-list-navigation.mjs
 node tests/assignment-search-ui.mjs
 node tests/supervisor-stable-ui.mjs
 node tests/quick-entry-checklist.mjs
 node tests/manager-work-in-progress.mjs
+node tests/job-vehicle-location.mjs
 node tests/shared-incentive-window.mjs
 node tests/live-status-authority.mjs
 node tests/paused-menu-consistency.mjs
@@ -76,6 +79,7 @@ node tests/paint-safety.mjs
 node tests/paint-received-date-correction.mjs
 node tests/paint-order-authority.mjs
 node tests/paint-invoice-pending.mjs
+node tests/paint-cancel-replacement.mjs
 node tests/paint-reports.mjs
 node tests/vehicle-logo-assets.mjs
 node tests/native-update-integrity.mjs
@@ -145,6 +149,7 @@ node tests/v2-leave.mjs
 node tests/v2-consumables.mjs
 node tests/v2-notification-rules.mjs
 node tests/v2-notification-center.mjs
+node tests/notification-mark-all-read.mjs
 node tests/manager-paint-notifications.mjs
 node tests/v2-reports.mjs
 node tests/v2-scale-benchmark.mjs

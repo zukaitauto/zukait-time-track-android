@@ -1,7 +1,22 @@
 'use strict';
 const fs=require('node:fs');
 const assert=require('node:assert/strict');
+function validateWorkflowFixes(r,ref){
+ assert.equal(ref,'refs/heads/architecture-v2');assert.equal(r.releaseScope,'manager-workflow-fixes');
+ assert.equal(r.approvedForStaff,true);assert.equal(r.ownerPublicationRequested,true);assert.equal(r.ownerRequestedImmediateRelease,true);
+ assert.match(r.sourceCommit,/^[a-f0-9]{40}$/);assert.equal(r.versionName,'V390');assert.equal(r.versionCode,353);
+ assert.equal(r.productionBackendChanges,true);assert.equal(r.backendDeploymentRequired,true);assert.equal(r.phase2ActivationApproved,false);
+ assert.equal(r.physicalAcceptanceStatus,'NOT_RUN');assert.equal(r.freshProductionBackupRestoreStatus,'NOT_RUN');assert.equal(r.backupDeferredByOwner,true);
+ assert.ok(Number.isFinite(Date.parse(r.approvedAt)));assert.ok(r.publishNonce?.length>=12);
+ for(const k of ['signedAcceptanceRun','verificationRun'])assert.ok(Number.isSafeInteger(r[k])&&r[k]>0);
+ assert.equal(r.productionBackend?.project,'pjknotnjkufadqavcmii');assert.ok(r.productionBackend?.version>103);assert.match(r.productionBackend?.bundleSha256||'',/^[a-f0-9]{64}$/);
+ assert.deepEqual(r.productionBackend?.changedModules?.slice().sort(),['job_edit_rules.js','time_management_rules.js']);
+ assert.equal(r.productionBackend?.readbackVerified,true);assert.equal(r.databaseMigration?.name,'manager_job_vehicle_location');assert.equal(r.databaseMigration?.verified,true);
+ for(const k of ['isolatedLocationTransaction','preservedProductionWork','managerPermission'])assert.equal(r.evidence?.[k]?.passed,true);
+ return true;
+}
 function validate(r,ref) {
+ if(r.releaseScope==='manager-workflow-fixes')return validateWorkflowFixes(r,ref);
  assert.equal(ref,'refs/heads/architecture-v2');
  assert.equal(r.releaseScope,'reception-insurance-features-1-10');
  assert.equal(r.approvedForStaff,true);
@@ -32,7 +47,7 @@ function validate(r,ref) {
 }
 if(require.main===module) {
  const r=JSON.parse(fs.readFileSync('release-request.json','utf8'));
- if(r.releaseScope!=='reception-insurance-features-1-10') console.log('MANAGEMENT_PUBLICATION=false');
+ if(!['reception-insurance-features-1-10','manager-workflow-fixes'].includes(r.releaseScope)||r.approvedForStaff!==true) console.log('MANAGEMENT_PUBLICATION=false');
  else { validate(r,process.env.GITHUB_REF); console.log('MANAGEMENT_PUBLICATION=true'); console.log('UI_VERIFICATION_RUN='+r.verificationRun); }
 }
 module.exports={validate};
