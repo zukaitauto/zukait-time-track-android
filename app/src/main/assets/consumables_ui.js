@@ -731,3 +731,4 @@ const oldRender=window.render;
 if(typeof oldRender==='function')window.render=function(){const r=oldRender.apply(this,arguments);setTimeout(addLaunchCard,0);return r};
 setTimeout(addLaunchCard,100);
 })();
+
