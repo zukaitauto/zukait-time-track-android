@@ -83,10 +83,19 @@ function inject(){
 }
 function updateBadges(){const n=unread(),html='🔔'+(n?'<span class="zukait-notify-badge">'+(n>99?'99+':n)+'</span>':'');document.querySelectorAll('.zukait-notify-btn').forEach(b=>{if(b.innerHTML!==html)b.innerHTML=html})}
 function openPart(n){const no=String(n?.listNo||n||'').trim();if(!no)return;try{if(typeof closeModal==='function')closeModal()}catch(_){}const open=()=>{try{const sp=window.zukaitV2?.sparePartsMain;if(sp?.openList){sp.openList(no);return true}if(sp?.open){sp.open();setTimeout(()=>sp.openList?.(no),80);return true}}catch(_){}return false};if(!open())setTimeout(open,120)}
+function markAllRead(){
+ const rows=all(),ids=paintReadIds();
+ for(const n of rows)if(n.recordId)ids.add(n.id);
+ localStorage.setItem(readKey()+'-paint',JSON.stringify([...ids]));
+ localStorage.setItem(readKey(),String(Date.now()));
+ updateBadges();
+ const status=document.getElementById('zukaitNotifyReadStatus');
+ if(status)status.textContent='All current notifications marked as read.';
+}
 function openCenter(){
  const rows=all();localStorage.setItem(readKey(),String(Date.now()));updateBadges();
  const body='<div class="zukait-notify-list">'+(rows.length?rows.slice(0,30).map(n=>'<div class="zukait-notify-row"><b>'+esc(n.title)+'</b><span>'+esc(n.message)+'</span><small>'+esc(n.at?new Date(n.at).toLocaleString():'')+'</small>'+(n.recordId?'<button class="blue" onclick="zukaitNotificationCenter.openPaintRecord(decodeURIComponent(\''+esc(encodeURIComponent(n.id).replace(/'/g,'%27'))+'\'))">'+(n.kind==='material'?'Open Material List':'Open Purchase Order')+'</button>':'')+(n.listNo?'<button class="blue" onclick="zukaitNotificationCenter.openPart(\''+esc(n.listNo)+'\')">Open Spare Parts</button>':'')+'</div>').join(''):'<p class="muted">No notifications.</p>')+'</div>';
- if(typeof openModal==='function')openModal('<div class="row"><h3 style="margin:0;flex:1">🔔 Notifications</h3><button class="danger" onclick="closeModal()">✕ Close</button></div>'+body);
+ if(typeof openModal==='function')openModal('<div class="row"><h3 style="margin:0;flex:1">🔔 Notifications</h3><button class="danger" onclick="closeModal()">✕ Close</button></div><button type="button" onclick="zukaitNotificationCenter.markAllRead()">Mark all as read</button><p id="zukaitNotifyReadStatus" role="status" aria-live="polite"></p>'+body);
 }
 async function refresh(){
  // Never compete with authentication on the login screen. Server notification
@@ -115,7 +124,7 @@ async function refresh(){
  }catch(_){}finally{refreshInFlight=false}
  inject();updateBadges();
 }
-window.zukaitNotificationCenter={open:openCenter,openPart,openPaintRecord,paintNotifications,refresh,all,unread,inject,eventPartsNotifications,normalizeServerEvent,loadServerPartEvents};
+window.zukaitNotificationCenter={open:openCenter,markAllRead,openPart,openPaintRecord,paintNotifications,refresh,all,unread,inject,eventPartsNotifications,normalizeServerEvent,loadServerPartEvents};
 document.addEventListener('DOMContentLoaded',()=>{inject();refresh()});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refresh()});window.addEventListener('online',refresh);window.addEventListener('focus',refresh);setTimeout(()=>{inject();refresh()},700);setInterval(refresh,POLL_MS);
 new MutationObserver(()=>inject()).observe(document.documentElement,{childList:true,subtree:true});
 window.addEventListener('zukait-live-status',updateBadges);
