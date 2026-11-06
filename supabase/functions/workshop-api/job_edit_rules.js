@@ -1,7 +1,7 @@
 // Session roles and the current server job, never submitted role/status, own edits.
 const copy=v=>JSON.parse(JSON.stringify(v));
 const fields=['make','model','year','reg','vin','customer','mobile','notes','color','colorCode','jobType','insuranceCompany','claimNo','amount'];
-const fullFields=['receptionLocation','createdAt','vehicle','brand','insurance','customerName','customerMobile','vinNumber','chassis','claimNumber','promiseDate','email','customerAddress','creditAccount','jobIntakeOdometer','jobIntakeOdometerUnit','invoiceDate','workDescription','deliveredAt','deliveryDate'];
+const fullFields=['receptionLocation','createdAt','vehicle','brand','insurance','customerName','customerMobile','vinNumber','chassis','claimNumber','promiseDate','email','customerAddress','creditAccount','intakeOdometer','intakeOdometerUnit','jobIntakeOdometer','jobIntakeOdometerUnit','invoiceDate','workDescription','deliveredAt','deliveryDate'];
 const calendarDate=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(Date.parse(v+'T12:00:00Z'))&&new Date(v+'T12:00:00Z').toISOString().slice(0,10)===v;
 const identity=['make','model','year','reg','vin','customer','mobile','jobType','insuranceCompany','claimNo'];
 const same=(a,b)=>JSON.stringify(canonical(a))===JSON.stringify(canonical(b));
@@ -20,7 +20,7 @@ export function jobViewProjection(job){
  'vehicleMake','vehicleModel','brand','modelYear','vehicleYear','registration','registrationNo','VIN','vinNumber','chassis','chassisNo',
  'customerName','customerMobile','customerContact','contact','phone','tel','email','customerAddress','address',
  'colour','colourCode','insurance','claimNumber','claim','jobNotes','workDescription','work_description','workDescriptions','description','descriptions','workDetails','requestedWork','remarks',
- 'creditAccount','jobIntakeOdometer','jobIntakeOdometerUnit','jobIntakeUnit','odometer','odometerUnit'];
+ 'creditAccount','intakeOdometer','intakeOdometerUnit','jobIntakeOdometer','jobIntakeOdometerUnit','jobIntakeUnit','odometer','odometerUnit'];
  return {...jobEditProjection(job),...Object.fromEntries(viewFields.filter(k=>k in job).map(k=>[k,copy(job[k])]))};
 }
 // Legacy Reception intake stored the work description only in the creation audit.
