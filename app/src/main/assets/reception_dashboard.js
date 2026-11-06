@@ -165,7 +165,7 @@
         ?'<input type="date" aria-label="Promise date for JC '+jc+'" data-rdb-promise="'+jc+'" value="'+safe(row.promise_date)+'"><button type="button" data-rdb="promise" data-job="'+jc+'" data-original="'+safe(row.promise_date)+'">Save</button>'
         :safe(date(row.promise_date));
       const actions='<button type="button" data-rdb="open" data-rc="" data-job="'+jc+'">View</button>'+
-        ((!row.delivered||role()==='Manager')?'<button type="button" data-rdb="edit-job" data-job="'+jc+'">Edit</button>':'');
+        ((!row.delivered||role()==='Manager')?'<button type="button" data-rdb="edit-job" data-job="'+jc+'">Edit</button>':'')+(!row.delivered&&['Manager','Supervisor','Receptionist'].includes(role())?'<button type="button" data-rdb="vehicle-location" data-job="'+jc+'">VIG / VWC</button>':'');
       return '<tr>'+cells.map(cell=>'<td>'+safe(cell)+'</td>').join('')+'<td>'+status+'</td><td>'+
         (Number.isInteger(row.days_open)?row.days_open:'—')+'</td><td>'+promise+'</td><td>'+actions+'</td></tr>';
     });
@@ -269,6 +269,19 @@
     clearTimeout(pendingTimer);page=0;
     if(k==="search")pendingTimer=setTimeout(()=>load(),280);
     else void load();
+  }
+  function vehicleLocationForm(row){
+    const actor=String(window.me?.id||''),actorRole=role(),key='zukait_vehicle_movement:'+window.zukaitReception.endpoint+':'+actor+':'+row.job_card;
+    const existing=localStorage.getItem(key);let pending=existing?JSON.parse(existing):null;
+    window.zukaitReception.dashboardShell('Vehicle Location · JC '+row.job_card,'<form id="rdb-movement"><label>Vehicle location<select name="location"><option value="VIW">VIG · Vehicle in Garage</option><option value="VWC">VWC · Vehicle with Customer</option></select></label><label>Movement date (Oman)<input type="date" name="movement_date" required></label><label>Reason<textarea name="reason" required maxlength="2000"></textarea></label><p role="status" id="rdb-move-status"></p><button type="submit">'+(pending?'Retry saved movement':'Save movement')+'</button><button type="button" data-rdb="back">Back</button></form>');
+    const form=document.getElementById('rdb-movement');form.elements.location.value=pending?.location||row.location||'VIW';form.elements.movement_date.value=pending?.movement_date||new Date(Date.now()+14400000).toISOString().slice(0,10);form.elements.reason.value=pending?.reason||'';
+    if(pending)for(const input of form.querySelectorAll('input,select,textarea'))input.disabled=true;
+    form.onsubmit=async e=>{e.preventDefault();if(String(window.me?.id||'')!==actor||role()!==actorRole)return;const button=form.querySelector('[type=submit]');button.disabled=true;
+      try{if(!navigator.onLine)throw Error('Reconnect before saving.');const command=pending||{action:'reception_vehicle_movement',request_id:crypto.randomUUID(),job_card:row.job_card,location:form.elements.location.value,expected_location:row.location||'VIW',movement_date:form.elements.movement_date.value,reason:form.elements.reason.value.trim()};
+        localStorage.setItem(key,JSON.stringify(command));pending=command;for(const input of form.querySelectorAll('input,select,textarea'))input.disabled=true;const result=await window.zukaitReception.action(command);if(String(window.me?.id||'')!==actor||role()!==actorRole)return;
+        if(!result?.ok)throw Error(result?.code||'Movement was not confirmed. Retry the saved movement.');localStorage.removeItem(key);await load();
+      }catch(error){document.getElementById('rdb-move-status').textContent=error.message+' Saved requests are retained for safe retry.';}finally{button.disabled=false;}
+    };
   }
   async function savePromise(jobCard,date,original){
     if(!backendAvailable)throw Error("Promise Date needs the Reception server update.");
@@ -419,6 +432,7 @@
       if(what==="refresh"){page=0;return load();}
       if(what==="previous"&&page>0){page--;return load();}
       if(what==="next"&&(page+1)*50<total){page++;return load();}
+      if(what==='vehicle-location'){const row=latest.find(x=>String(x.job_card)===button.dataset.job);if(row?.rc_no)return window.zukaitReception.openRecord(row.rc_no);if(row)return vehicleLocationForm(row);return;}
       if(what==="promise"){
         const jc=button.dataset.job;const inp=[...document.querySelectorAll("#rc-root [data-rdb-promise]")].find(x=>x.dataset.rdbPromise===jc);
         if(!inp)return;

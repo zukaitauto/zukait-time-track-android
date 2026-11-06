@@ -127,6 +127,7 @@ export function preserveJobEditAuthority(candidate,current,user){
  const byNo=new Map((current.jobs||[]).map(j=>[String(j.no),j]));
  const protectedFields=[...fields,...fullFields,'odometer','odometerUnit','jobIntakeUnit','jobNotes','remarks','address','work_description','workDescriptions','description','descriptions','workDetails','requestedWork','createdAt','vehicle','brand','customerName','customerMobile','vinNumber','chassis','claimNumber','insurance','editRevision','directReceptionJob'];
  for(const j of candidate.jobs||[]){const old=byNo.get(String(j.no));if(!old)continue;
+  if('vehicleMovements' in old)j.vehicleMovements=copy(old.vehicleMovements);else delete j.vehicleMovements;
   // Vehicle location changes use the audited dedicated edit, never snapshot saves.
   if('receptionLocation' in old)j.receptionLocation=copy(old.receptionLocation);else delete j.receptionLocation;
   // Dedicated edits survive stale snapshot saves; all delivered details are Manager-only.

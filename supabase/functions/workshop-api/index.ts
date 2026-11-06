@@ -1,3 +1,4 @@
+import {vehicleMovement} from './vehicle_movement_rules.js';
 import { createDatabaseFetch } from './database_fetch.js';
 import {billRoute} from './accountant/extensions/bill_route.js';
 import { mechanicalRoute, mechanicalLegacyDeliveryCheck } from "./extensions/mechanical_route.js";
@@ -44,6 +45,7 @@ function baseReply(body: unknown, status = 200) {
 // Receptionist is a separate, restricted role. Never route it through shared
 // state, financial, time, parts or Supervisor APIs, including direct requests.
 function receptionistRequestAllowed(action: string, body: any) {
+  if(action==='reception_vehicle_movement')return Object.keys(body).every(k=>['action','request_id','job_card','location','expected_location','movement_date','reason'].includes(k));
   if (action === "vehicle_lookup") return Object.keys(body).every(k => ["action","registration"].includes(k));
   if(action==='estimate_delete_draft')return Object.keys(body).every(k=>['action','estimate_id','request_id','reception_no'].includes(k));
   if(action==='reception_estimate')return Object.keys(body).every(k=>['action','command'].includes(k))&&['GET','ALLOCATE','SAVE'].includes(body.command?.operation);
@@ -1325,6 +1327,16 @@ Deno.serve(async (req: Request) => {
       return reply({ok:false,code:'insurance_lpo_conflict'},409);
     }
 
+    if(action==='reception_vehicle_movement'){
+      for(let attempt=0;attempt<8;attempt++){
+        const {data:current,error}=await admin.from('workshop_state').select('revision,data').eq('id','main').single();if(error)throw error;
+        const result=vehicleMovement(current.data,user,body);if(!result.ok)return reply({ok:false,code:result.code},409);
+        if(result.duplicate)return reply({ok:true,duplicate:true,job:result.job});
+        const live=computeLiveStatus(result.data,Number(current.revision)+1,user.id);if(!live.length)return reply({ok:false,code:'movement_live_unavailable'},503);
+        const {data:saved,error:saveError}=await admin.rpc('zukait_commit_workshop_state_v2',{p_expected_revision:Number(current.revision),p_data:result.data,p_changed_by:user.id,p_live:live});if(saveError)throw saveError;
+        if(saved?.ok)return reply({ok:true,job:result.job});if(saved?.code!=='conflict')return reply({ok:false,code:'movement_save_failed'},409);
+      }return reply({ok:false,code:'movement_conflict'},409);
+    }
     if (action === "reception_promise_date") {
       if (!["Manager","Supervisor"].includes(String(user.role))) return reply({ok:false,code:"reception_promise_forbidden"},403);
       for(let attempt=0;attempt<8;attempt++){
