@@ -51,7 +51,7 @@ function safeJob(j,rc,now) {
    [j.make||j.brand,j.model,j.year||j.vehicleYear].filter(Boolean).join(" ").trim()||
    text(j.vehicle||rc?.vehicle),
  registration:text(j.reg||j.registration||rc?.registration),
- customer:text(rc?.customer),insurance_company:text(j.insuranceCompany||rc?.insurance_company),
+ customer:text(j.customer??j.customerName??rc?.customer),mobile:text(j.mobile??j.customerMobile??rc?.mobile),vin:text(j.vin??j.vinNumber??j.chassis??rc?.vin),intake_odometer:('jobIntakeOdometer' in j?j.jobIntakeOdometer:(j.intakeOdometer??j.odometer??null)),intake_odometer_unit:j.jobIntakeOdometerUnit||j.intakeOdometerUnit||j.odometerUnit||'KM',insurance_company:text(j.insuranceCompany||rc?.insurance_company),
  received_at:rc?.received_at||"",received_date:rc?.received_date||"",
  created_date:omanDate(j.createdAt),days_open:receptionOpenDays(j,now),
  delivered_date:omanDate(j.deliveredAt),delivered_at:Number(j.deliveredAt||0),promise_date:validPromiseDate(j.promiseDate)?j.promiseDate:"",
