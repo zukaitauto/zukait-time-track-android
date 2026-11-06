@@ -55,7 +55,7 @@ function safeJob(j,rc,now) {
  received_at:rc?.received_at||"",received_date:rc?.received_date||"",
  created_date:omanDate(j.createdAt),days_open:receptionOpenDays(j,now),
  delivered_date:omanDate(j.deliveredAt),delivered_at:Number(j.deliveredAt||0),promise_date:validPromiseDate(j.promiseDate)?j.promiseDate:"",
- location:j.delivered?'DELIVERED':text(rc?.location||j.receptionLocation),outcome:text(rc?.outcome),
+ movement_history:(j.vehicleMovements||[]).slice(-20).map(a=>({from:a.from,to:a.to,date:a.date,reason:a.reason,by:a.by})),location:j.delivered?'DELIVERED':text(rc?.location||j.receptionLocation),outcome:text(rc?.outcome),
  approval_status:text(rc?.approval_status),
  status:j.delivered?"Delivered":text(j.status||"Open"),delivered:!!j.delivered,
  qc_revision:Number(j.qcWorkflow?.revision||0)};

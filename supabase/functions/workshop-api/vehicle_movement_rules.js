@@ -12,6 +12,7 @@ export function vehicleMovement(data,user,r,now=Date.now()){
  if(j.receptionNo)return fail('movement_use_linked_checklist');
  if((j.receptionLocation||'VIW')!==r.expected_location)return fail('movement_conflict');
  if(r.location===r.expected_location)return fail('movement_no_change');
+ const last=(j.vehicleMovements||[]).at(-1);if(last?.date&&date<last.date)return fail('movement_before_previous');
  const opened=new Date(Number(j.createdAt)+14400000);if(Number.isFinite(opened.getTime())&&date<opened.toISOString().slice(0,10))return fail('movement_before_intake');
  const next=structuredClone(data),job=next.jobs.find(x=>x.no===j.no);job.receptionLocation=r.location;job.vehicleMovements=[...(job.vehicleMovements||[]),{request_id:r.request_id,from:r.expected_location,expected:r.expected_location,to:r.location,date,reason:r.reason.trim(),by:user.id,at:now}];return {ok:true,data:next,job};
 }
