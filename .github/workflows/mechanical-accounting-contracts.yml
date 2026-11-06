@@ -94,6 +94,7 @@ jobs:
         with:
           node-version: '24'
       - run: npm ci --ignore-scripts --include=dev
+      - run: node tests/compact-history-isolated.mjs
       - run: node tests/mechanical-role-privacy.mjs
       - run: node tests/mechanical-workspace.mjs
       - run: node tests/mechanical-dashboard.mjs
