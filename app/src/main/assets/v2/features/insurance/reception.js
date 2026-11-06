@@ -1592,9 +1592,9 @@
   }
   function locationChoice(){
     const r=current.record;
-    shell('Vehicle Location', '<form id="rc-location">'+select('location','Vehicle Location',[['VWC','VWC · Vehicle With Customer'],['VIW','VIG · Vehicle In Garage']],r.location)+input('reason','Movement Remark','',true)+'<button type="submit">Save Location</button></form>');
+    shell('Vehicle Location', '<form id="rc-location">'+select('location','Vehicle Location',[['VWC','VWC · Vehicle With Customer'],['VIW','VIG · Vehicle In Garage']],r.location)+input('movement_date','Movement Date (Oman)',new Date(Date.now()+14400000).toISOString().slice(0,10),true,'date')+input('reason','Movement Remark','',true)+'<button type="submit">Save Location</button></form>');
     document.getElementById('rc-location').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);
-      try{if(f.get('location')===r.location){await view(r.rc_no);return;}const result=await mutate({operation:'MOVE',rc_no:r.rc_no,expected_revision:r.revision,location:f.get('location'),occurred_at:new Date().toISOString(),reason:String(f.get('reason')).trim()});if(result)await view(r.rc_no);}catch(x){error(x);}};
+      try{if(f.get('location')===r.location){await view(r.rc_no);return;}const result=await mutate({operation:'MOVE',rc_no:r.rc_no,expected_revision:r.revision,location:f.get('location'),occurred_at:(String(f.get('movement_date'))===new Date(Date.now()+14400000).toISOString().slice(0,10)?new Date().toISOString():new Date(String(f.get('movement_date'))+'T12:00:00+04:00').toISOString()),reason:String(f.get('reason')).trim()});if(result)await view(r.rc_no);}catch(x){error(x);}};
   }
   function movement() {
     const r = current.record;

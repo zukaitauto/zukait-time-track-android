@@ -74,6 +74,7 @@ try{
  await db.exec(fs.readFileSync('supabase/migrations/20261101130000_mechanical_manual_job_card_numbers.sql','utf8'));
  const deployed=(await db.query("select pg_get_functiondef('public.zukait_mechanical_section(text,text,jsonb)'::regprocedure) as definition")).rows[0].definition;
  assert.ok(deployed.includes('mechanical-manual-jc:'),'Mechanical fixture must expose manual Job Card numbers');
+ if(process.env.ZUKAIT_VEHICLE_PROJECTION_QA==='1')await db.exec(fs.readFileSync('experiments/mechanical-vehicle-detail-projection.sql','utf8'));
  const defaults=(await db.query('select to_jsonb(s) settings from zukait_mechanical.settings s')).rows[0].settings;
  for(const [key,value] of Object.entries(defaults))if(key==='enabled'||key.endsWith('_enabled'))assert.equal(value,false,key+' must remain off');
  assert.deepEqual(defaults.capabilities,{});assert.equal(defaults.department,null);
