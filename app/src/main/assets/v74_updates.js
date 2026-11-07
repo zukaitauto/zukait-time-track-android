@@ -4145,7 +4145,7 @@ window.zukaitOpenJobReview360=function(no){return window.zukaitOpenJob360(no)};
    const gap=uncovered(u.id,+prev.end,at);if(gap.minutes<5)return null;
    return{u,prev,status:statusFor(prev),since:+prev.end,minutes:gap.minutes};
  }
- window.v247CurrentIdealRows=()=>users.filter(u=>u&&u.role==='Employee').map(u=>currentRow(u)).filter(Boolean).sort((a,b)=>b.minutes-a.minutes);
+ window.v247CurrentIdealRows=()=>users.filter(u=>u&&u.role==='Employee'&&u.active!==false).map(u=>currentRow(u)).filter(Boolean).sort((a,b)=>b.minutes-a.minutes);
  function history(emp,from,to,includeOpen=true){
    const ss=productive(emp,from-86400000,to),blocks=[];
    ss.forEach(s=>{const st=+s.start||0,en=+(s.end||Date.now())||0;if(!st||en<=st)return;const last=blocks[blocks.length-1];if(last&&st<=last.end){if(en>=last.end){last.end=en;last.tail=s}return}blocks.push({start:st,end:en,head:s,tail:s})});
