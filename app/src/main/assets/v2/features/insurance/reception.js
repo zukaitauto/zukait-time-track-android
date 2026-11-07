@@ -385,7 +385,7 @@
       }
       if(selected){
         const choice=candidates.find(x=>x.vehicle_id===selected);
-        const fullVin=String(vin?.value||'').replace(/\\s/g,'').toUpperCase();
+        const fullVin=String(vin?.value||'').replace(/\s/g,'').toUpperCase();
         const signature=[selected,plate.value,fullVin].join('|');
         if(form.dataset.vehicleVerifiedOnce===signature){
           delete form.dataset.vehicleVerifiedOnce;
@@ -397,7 +397,7 @@
         apiAction({action:'vehicle_master_verify',registration:plate.value,
           vehicle_id:selected,vin:fullVin}).then(result=>{
           if(!form.isConnected||[selected,plate.value,
-            String(vin?.value||'').replace(/\\s/g,'').toUpperCase()].join('|')!==signature)return;
+            String(vin?.value||'').replace(/\s/g,'').toUpperCase()].join('|')!==signature)return;
           if(!result.available||!result.verified){
             msg('VIN does not match this vehicle. Select the correct vehicle or create a separate record.');
             return;
