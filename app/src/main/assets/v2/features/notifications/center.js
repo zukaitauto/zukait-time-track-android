@@ -75,12 +75,12 @@ function systemNotifications(){
  return rows.filter(n=>n&&!n.read&&(n.target===u?.id||n.target===role())).map(n=>({id:'system-'+n.id,type:'SYSTEM',at:Number(n.createdAt)||0,title:'System Notification',message:String(n.message||''),systemId:n.id}));
 }
 function all(){const m=new Map();for(const n of [...partsNotifications(),...systemNotifications(),...paintNotifications()])m.set(n.id,n);return [...m.values()].sort((a,b)=>b.at-a.at)}
-function managerReadThrough(){
- if(role()!=='Manager')return 0;
+function readThrough(){
+ if(!['Manager','Supervisor'].includes(role()))return 0;
  try{return Number(localStorage.getItem(readKey()+'-through'))||0}catch(_){return 0}
 }
 function unreadRows(){
- const ids=readIds(),paint=paintReadIds(),through=managerReadThrough();
+ const ids=readIds(),paint=paintReadIds(),through=readThrough();
  return all().filter(n=>!ids.has(n.id)&&!paint.has(n.id)&&!(n.at>0&&n.at<=through));
 }
 function unread(){return unreadRows().length}
@@ -98,8 +98,8 @@ function markAllRead(){
  const ids=readIds();
  for(const n of all())ids.add(n.id);
  localStorage.setItem(readKey()+'-items',JSON.stringify([...ids]));
- // Historical notifications may hydrate after the manager clears the badge.
- if(role()==='Manager')localStorage.setItem(readKey()+'-through',String(Math.max(managerReadThrough(),clearedAt)));
+ // Historical notifications may hydrate after the user clears the badge.
+ if(['Manager','Supervisor'].includes(role()))localStorage.setItem(readKey()+'-through',String(Math.max(readThrough(),clearedAt)));
  updateBadges();
  const status=document.getElementById('zukaitNotifyReadStatus');
  if(status)status.textContent='All current notifications marked as read.';
