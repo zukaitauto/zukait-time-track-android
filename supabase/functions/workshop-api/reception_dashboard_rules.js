@@ -112,7 +112,12 @@ export function receptionDashboardProjection(data,receptions,opts={},now=Date.no
  "not-repaired":checklists.filter(r=>r.repair_status==="NOT_REPAIRED"),
  "vwc-checklists":vwcChecklists,"vwc-jobs":vwcJobs.sort(sortJobs),
  ready:ready.sort(sortJobs),delivered:delivered.sort((a,b)=>b.delivered_at-a.delivered_at||sortJobs(a,b)),
- followup:followup.sort((a,b)=>(a.promise_date||"9999").localeCompare(b.promise_date||"9999")||sortJobs(a,b))};
+ followup:followup.sort((a,b)=>{
+  if(!a.promise_date&&!b.promise_date)return sortJobs(a,b);
+  if(!a.promise_date)return 1;
+  if(!b.promise_date)return -1;
+  return a.promise_date.localeCompare(b.promise_date)||a.created_at-b.created_at||sortJobs(a,b);
+ })};
  const counts=Object.fromEntries(Object.entries(lists).map(([k,v])=>[k,v.length]));
  counts.vwc=counts["vwc-checklists"]+counts["vwc-jobs"];
  counts.no_promise_date=followup.filter(r=>!r.promise_date).length;

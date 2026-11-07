@@ -89,6 +89,18 @@ assert.equal(projection({section:"followup",missing_only:true}).total,2);
 assert.deepEqual(projection({section:"followup",from:"2026-10-10",to:"2026-10-16"}).rows.map(x=>x.job_card),["JC125"]);
 assert.equal(projection({section:"followup",from:"2026-10-16",to:"2026-10-20"}).total,0);
 assert.equal(projection({section:"followup",dated_only:true}).total,1);
+const followupJobs={jobs:[
+ {no:"JC201",createdAt:"2026-10-07T10:00:00+04:00",promiseDate:"2026-10-16"},
+ {no:"JC202",createdAt:"2026-10-05T10:00:00+04:00",promiseDate:"2026-10-16"},
+ {no:"JC203",createdAt:"2026-10-09T10:00:00+04:00",promiseDate:"2026-10-15"},
+ {no:"JC204",createdAt:"2026-10-04T10:00:00+04:00"},
+ {no:"JC205",createdAt:"2026-10-08T10:00:00+04:00"},
+ {no:"JC206",createdAt:"2026-10-01T10:00:00+04:00",promiseDate:"2026-10-14",delivered:true}
+]};
+const followupOrder=filters=>receptionDashboardProjection(followupJobs,[],{section:"followup",...filters}).rows.map(row=>row.job_card);
+assert.deepEqual(followupOrder(),["JC203","JC202","JC201","JC205","JC204"]);
+assert.deepEqual(followupOrder({dated_only:true}),["JC203","JC202","JC201"]);
+assert.deepEqual(followupOrder({missing_only:true}),["JC205","JC204"]);
 assert.equal(projection({section:"invalid"}).code,"reception_invalid_section");
 assert.equal(validPromiseDate("2026-02-30"),false);
 assert.equal(validPromiseDate("2026-10-15"),true);
