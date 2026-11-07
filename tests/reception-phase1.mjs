@@ -313,7 +313,7 @@ const form=w.document.getElementById("rc-form");
 assert.deepEqual([...form.querySelectorAll(".rc-create-sections .rc-grid input,.rc-create-sections .rc-grid select")]
   .map(x=>x.name),
   ["registration","make","model","year","odometer_unit","odometer",
-   "vin","customer","contact","claim"]);
+   "vin","customer","contact","claim","customer_role"]);
 assert.equal(form.elements.namedItem("job_type").value,"INSURANCE");
 value("job_type","CASH");
 form.elements.namedItem("job_type").dispatchEvent(new w.Event("change",{bubbles:true}));
