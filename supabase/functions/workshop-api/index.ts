@@ -2010,6 +2010,12 @@ Deno.serve(async (req: Request) => {
         const consumablesCorrectionIssue=validateConsumablesManagerCorrections(candidate,current.data,user);
         if(consumablesCorrectionIssue) return reply({ok:false,code:"consumables_correction_forbidden",message:consumablesCorrectionIssue,revision:current.revision,data:current.data},403);
         candidate = preserveEstimateHistory(candidate, current.data);
+        if (user.role !== "Manager") {
+          const existingLeaves = mapById(current.data?.leaves || []);
+          const forgedApproval = Array.isArray(candidate.leaves) && candidate.leaves.some((row:any) =>
+            (row?.approvalType || row?.approvalId) && !existingLeaves.has(String(row.id)));
+          if (forgedApproval) return reply({ok:false,code:"leave_approval_forbidden"},403);
+        }
         candidate = preserveLeaveAuthority(candidate, current.data, user);
         candidate = preserveManagerTimeAuthority(candidate, current.data);
       candidate = preserveAuthoritativeReopens(candidate, current.data);
