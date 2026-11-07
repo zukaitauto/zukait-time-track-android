@@ -15,7 +15,7 @@ vm.runInContext(fs.readFileSync('app/src/main/assets/v2/features/reports/efficie
 vm.runInContext(fs.readFileSync('app/src/main/assets/v2/features/time/work_rules.js','utf8'),c);
 const src=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
 const start=src.indexOf("(function(){'use strict';",src.indexOf('V75.5 LEAVE CONTROL'));
-const end=src.indexOf(' window.v755OpenLeaveHub',start);
+const end=src.indexOf(" if(!document.getElementById('v88-role-account-style'))",start);
 const editStart=src.indexOf(' window.v114EditLeave',end),editEnd=src.indexOf(' window.v114DeleteLeave',editStart);
 const approvalStart=src.indexOf(' function commitApprovedLeave',end),approvalEnd=src.indexOf(' window.v755OpenLeaveList',approvalStart);
 vm.runInContext(src.slice(start,end)+src.slice(approvalStart,approvalEnd)+src.slice(editStart,editEnd)+'})();',c);
@@ -112,3 +112,24 @@ assert.ok(c.state.leaves.every(l=>l.approvalType==='ANNUAL'&&l.period==='FULL'&&
 assert.equal(c.state.leaveAudit.length,2);
 assert.equal(c.v63IsOnLeave('EMP011',new Date(2026,9,10,14).getTime()),true);
 assert.equal(c.v63IsOnLeave('EMP011',new Date(2026,9,11,8).getTime()),false);
+
+c.v755OpenLeaveHub();
+assert.match(html,/UPCOMING LEAVE/);
+staff[0].department='Paint';
+staff.push({id:'INACTIVE',name:'Inactive Staff',role:'Employee',active:false});
+c.state.leaves=[
+ {emp:'EMP011',date:'2026-10-15',period:'FULL',approvalType:'ANNUAL'},
+ {emp:'EMP011',date:'2026-10-17',period:'FULL',approvalType:'ANNUAL'},
+ {emp:'INACTIVE',date:'2026-10-18',period:'FULL'},
+ {emp:'EMP011',date:'2026-10-25',period:'FULL',cancelled:true}
+];
+c.v755OpenLeaveHub();
+assert.doesNotMatch(html,/Inactive Staff/);
+c.v755OpenUpcomingLeave();
+assert.match(html,/<h3>Paint<\/h3>/);
+assert.match(html,/Annual Leave Approved.*15\/10\/2026.*17\/10\/2026.*18\/10\/2026/);
+assert.doesNotMatch(html,/Inactive Staff|25\/10\/2026/);
+c.me=staff[1];
+html='';
+c.v755OpenUpcomingLeave();
+assert.equal(html,'','Upcoming Leave is Manager only');

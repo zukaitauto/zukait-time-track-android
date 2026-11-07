@@ -1169,13 +1169,56 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  window.v63OpenLeave=function(emp){return window.v755OpenLeaveForm(emp||me?.id)};
  window.v63SaveLeave=function(emp){return window.v755SaveLeave(emp,'v63')};
 
+ window.v755OpenUpcomingLeave=function(){
+   if(me?.role!=='Manager')return;
+   const today=dateKey(Date.now()),staff=new Map(users.filter(u=>u&&u.active!==false).map(u=>[String(u.id),u]));
+   const nextDay=date=>new Date(Date.parse(date)+86400000).toISOString().slice(0,10);
+   function nextWorkingDay(date){
+     for(let i=0;i<366;i++){
+       date=nextDay(date);
+       if(!closedLeaveDay({date,period:'FULL'}))return date;
+     }
+     return '';
+   }
+   const groups=new Map();
+   for(const leave of activeLeaveRows()){
+     const emp=String(leave.emp);
+     if(!staff.has(emp)||!Number.isFinite(Date.parse(leave.date)))continue;
+     if(!groups.has(emp))groups.set(emp,[]);
+     groups.get(emp).push(leave);
+   }
+   const departments=new Map();
+   for(const [emp,leaves] of groups){
+     const u=staff.get(emp),department=u.department||u.role||'Other staff';
+     leaves.sort((a,b)=>a.date.localeCompare(b.date));
+     const blocks=[];
+     for(const row of leaves){
+       const last=blocks.at(-1);
+       if(last&&(last.to===row.date||nextWorkingDay(last.to)===row.date)){
+         if(last.to!==row.date)last.endsMorning=row.period==='AM';
+         else last.endsMorning=last.endsMorning&&row.period==='AM';
+         last.to=row.date;last.labels.add(approvedLeaveLabel(row));
+       }else blocks.push({from:row.date,to:row.date,endsMorning:row.period==='AM',labels:new Set([approvedLeaveLabel(row)])});
+     }
+     for(const block of blocks.filter(b=>b.to>=today)){
+       if(!departments.has(department))departments.set(department,[]);
+       const back=block.endsMorning?block.to:nextWorkingDay(block.to);
+       departments.get(department).push({...block,name:u.name||emp,back});
+     }
+   }
+   const dateText=date=>date?date.split('-').reverse().join('/'):'—';
+   const sections=[...departments].sort(([a],[b])=>a.localeCompare(b)).map(([name,rows])=>
+     '<h3>'+esc(name)+'</h3><div style="overflow-x:auto"><table><thead><tr><th>Staff</th><th>Leave</th><th>From</th><th>To</th><th>Expected Return</th></tr></thead><tbody>'+
+     rows.sort((a,b)=>a.from.localeCompare(b.from)||a.name.localeCompare(b.name)).map(r=>'<tr><td><b>'+esc(r.name)+'</b></td><td>'+esc([...r.labels].join(', '))+'</td><td>'+esc(dateText(r.from))+'</td><td>'+esc(dateText(r.to))+'</td><td><b>'+esc(dateText(r.back)+(r.endsMorning?' · Afternoon':''))+'</b></td></tr>').join('')+'</tbody></table></div>').join('');
+   openModal('<div class="section-title"><h2>Upcoming Leave</h2><button class="secondary" onclick="v755OpenLeaveHub()">Back to Leave</button></div><p style="color:#405470">Current and upcoming leave by department. Return dates follow the workshop calendar.</p>'+(sections||'<div class="notice">No current or upcoming leave.</div>'));
+ };
  window.v755OpenLeaveHub=function(){
    if(!me)return;
    if(me.role==='Employee')return window.v755OpenLeaveForm(me.id);
-   const allowed=users.filter(u=>u&&((me.role==='Manager'&&(u.role==='Employee'||u.role==='Supervisor'))||(me.role==='Supervisor'&&u.role==='Employee')));
-   openModal('<div class="section-title"><h2>Leave</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
+   const allowed=users.filter(u=>u&&u.active!==false&&((me.role==='Manager'&&(u.role==='Employee'||u.role==='Supervisor'))||(me.role==='Supervisor'&&u.role==='Employee')));
+   openModal('<style>.leave-hub{color:#17263b}.leave-hub .section-title{display:flex;justify-content:space-between;align-items:center;gap:12px}.leave-hub .leave-staff{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:10px}.leave-hub .leave-staff button{margin:0!important;min-height:60px;padding:10px 12px;text-align:left;background:#f3f7fc!important;color:#17263b!important;border:1px solid #b6c6da!important;border-radius:10px!important;box-shadow:none!important}.leave-hub .leave-staff button:hover{background:#e4eefb!important;border-color:#557ba9!important}.leave-hub button:focus-visible{outline:3px solid #1d4ed8;outline-offset:2px}.leave-hub .leave-staff b{font-size:15px}.leave-hub .leave-meta{display:block;margin-top:4px;font-size:13px;color:#405470!important}.leave-hub .leave-caption{font-size:14px;color:#475569}</style><section class="leave-hub" aria-label="Leave management"><div class="section-title"><h2>Leave</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
      '<button class="green big-action" style="width:100%;margin-bottom:12px" onclick="v755OpenLeaveForm(\''+esc(me.id)+'\')">MY LEAVE</button>'+
-     '<div class="grid" style="margin-bottom:12px"><button class="blue big-action" onclick="v755OpenLeaveList(\'history\')">TOTAL LEAVE HISTORY</button><button class="secondary big-action" onclick="v755OpenLeaveList(\'month\')">THIS MONTH LEAVE</button></div>'+'<h3>Mark Staff Leave</h3><div class="grid">'+allowed.map(u=>'<button class="secondary" onclick="v755OpenLeaveForm(\''+esc(u.id)+'\')"><b>'+esc(u.name)+'</b><br><span class="small">'+esc(u.role+(u.department?' · '+u.department:''))+'</span></button>').join('')+'</div>');
+     '<div class="grid" style="margin-bottom:12px"><button class="blue big-action" onclick="v755OpenLeaveList(\'history\')">TOTAL LEAVE HISTORY</button><button class="secondary big-action" onclick="v755OpenLeaveList(\'month\')">THIS MONTH LEAVE</button>'+(me.role==='Manager'?'<button class="blue big-action" onclick="v755OpenUpcomingLeave()">UPCOMING LEAVE</button>':'')+'</div>'+'<h3>Mark Staff Leave</h3><p class="leave-caption">Select a staff member to record leave.</p><div class="leave-staff">'+allowed.map(u=>'<button class="secondary" onclick="v755OpenLeaveForm(\''+esc(u.id)+'\')"><b>'+esc(u.name)+'</b><span class="leave-meta">'+esc(u.role+(u.department&&u.department!==u.role?' · '+u.department:''))+'</span></button>').join('')+(allowed.length?'':'<p class="leave-caption">No active staff to show.</p>')+'</div></section>');
  };
 
  if(!document.getElementById('v88-role-account-style')){let css=document.createElement('style');css.id='v88-role-account-style';css.textContent='.v88-role-account{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.v88-role-account button{min-height:48px;border-radius:13px!important;color:#172033!important;font-weight:900!important;border:1px solid rgba(255,255,255,.8)!important;box-shadow:inset 0 1px 2px #fff,0 5px 12px #0f172214!important}.v88-role-account .v88-sync{background:#e5f3ff!important}.v88-role-account .v88-about{background:#efe9ff!important}.v88-role-account .v88-leave{background:#e9f9ef!important}.v88-role-account .v88-logout{background:#ffe8e8!important;color:#991b1b!important}';document.head.appendChild(css)}
