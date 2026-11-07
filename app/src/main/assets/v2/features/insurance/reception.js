@@ -283,6 +283,30 @@
   // Vehicle Master selection is an intake aid only. The server's full VIN
   // and immutable physical-vehicle identities remain authoritative. Never
   // insert another customer's details into the current intake form.
+  function customerRoleField(){
+    return '<label class="rc-customer-role">Contact role for this visit' +
+      '<select name="customer_role">' +
+      '<option value="CUSTOMER">Customer for this Job Card</option>' +
+      '<option value="CLAIM_CONTACT">Insurance claim contact</option>' +
+      '<option value="REPRESENTATIVE">Driver / representative</option>' +
+      '<option value="UNKNOWN">Relationship not confirmed</option>' +
+      '</select></label>' +
+      '<p class="rc-form-hint">This contact role applies to this visit only. ' +
+      'It does not transfer ownership or alter previous customers and invoices.</p>';
+  }
+  async function recordVisitCustomerRole(rcNo,role){
+    if(!rcNo||!role)return true;
+    try {
+      const result=await apiAction({action:'vehicle_master_customer_role',
+        rc_no:String(rcNo),customer_role:String(role)});
+      return result.ok===true;
+    } catch(e) {
+      // Do not retry the already-committed checklist or Job Card creation.
+      window.alert('Checklist / Job Card saved, but contact-role recording needs review: '+
+        String(e.message||e)+'. Existing vehicle and customer data remain saved.');
+      return false;
+    }
+  }
   function bindVehicleLookup(form){
     const plate=form.elements.namedItem('registration');
     const vin=form.elements.namedItem('vin');
@@ -651,7 +675,7 @@
       input('registration','Registration') + input('year','Model Year','',true) + input('vin','VIN / Chassis') +
       input('odometer','Job Card KM / Miles Reading') + select('odometer_unit','Reading Unit',[['KM','KM'],['Miles','Miles']],'KM') + '<div id="rc-direct-claim">' + input('claim','Claim Number') + '</div>' +
       (["Manager","Supervisor"].includes(user()?.role)?input('promise_date','Promise Date (optional)','',false,'date'):'') +
-      input('customer','Customer / Company') + input('contact','Contact') +
+      input('customer','Customer / Company') + input('contact','Contact') + customerRoleField() +
       '<label id="rc-credit-account" hidden>Credit Account / Customer Reference<input name="credit_account" maxlength="200"></label>' +
       '<div id="rc-direct-insurance" class="rc-wide" hidden><h4>Insurance Approval</h4>' +
       select('insurance_id','Insurance Company',[['','Select Insurance Company'],...companies.map(c=>[c.id,c.name])],'') +
@@ -813,6 +837,8 @@
             evidence:String(f.get('evidence')||'').trim(),approval_confirmed:f.has('approval_confirmed')
           }: {})});
         if(out){
+          if(out.record?.rc_no)
+            await recordVisitCustomerRole(out.record.rc_no,String(f.get('customer_role')||'CUSTOMER'));
           const promise=String(f.get('promise_date')||'');
           if(promise&&window.zukaitReceptionDashboard?.savePromise){
             try{await window.zukaitReceptionDashboard.savePromise(String(f.get('job_card')).trim().toUpperCase(),promise,'');}
@@ -1187,7 +1213,7 @@
         '<div class="rc-insurance">' +
         select("insurance_id", "Insurance Company / شركة التأمين *", options, r?.insurance_id || "") +
         '</div></div><div class="rc-create-sections"><section class="rc-box rc-create-vehicle"><h4>Vehicle Information / معلومات المركبة</h4><div class="rc-grid">' + vehicleInputs +
-        '</div></section><section class="rc-box rc-create-customer"><h4>Customer &amp; Claim / معلومات العميل والمطالبة</h4><div class="rc-grid">' + customerInputs +
+        '</div></section><section class="rc-box rc-create-customer"><h4>Customer &amp; Claim / معلومات العميل والمطالبة</h4><div class="rc-grid">' + customerInputs + (r?'':customerRoleField()) +
         '</div></section></div><div class="rc-inspection-layout">'+damagePanel(d)+accessoriesPanel(d)+functionPanel(d)+'</div>'+
         '<div class="rc-box rc-reception-notes"><h4>Work Descriptions / Notes</h4>'+ 
         textFields.filter(([key])=>key==="remarks")
@@ -1657,6 +1683,8 @@
           : {}),
       });
       if (r) {
+        if(!current?.record)
+          await recordVisitCustomerRole(r.record.rc_no,String(f.get('customer_role')||'CUSTOMER'));
         if (r.record.job_card) { try { await window.zukaitCloud?.pull?.(true); } catch (_) {} }
         await view(r.record.rc_no);
       }
