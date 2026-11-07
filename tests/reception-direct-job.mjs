@@ -4,10 +4,15 @@ import {JSDOM} from 'jsdom';
 const dom=new JSDOM('<div id="modal"></div>',{url:'https://qa.invalid',runScripts:'outside-only'}),w=dom.window;
 w.me={id:'QA-RC',role:'Receptionist'};w.zukaitAuth={getToken:()=> 'qa-token'};
 w.openModal=h=>w.document.getElementById('modal').innerHTML=h;
-const calls=[],receipts=new Map();let lose=true,record;
+const calls=[],roleCalls=[],receipts=new Map();let lose=true,record;
 const settle=async()=>{for(let i=0;i<12;i++)await new Promise(r=>setImmediate(r));};
 w.fetch=async(_url,args)=>{
- const c=JSON.parse(args.body).command;calls.push(c);let result={ok:true};
+ const body=JSON.parse(args.body);
+ if(body.action==='vehicle_master_customer_role'){
+  roleCalls.push(body);
+  return {ok:true,json:async()=>({ok:true})};
+ }
+ const c=body.command;calls.push(c);let result={ok:true};
  if(c.operation==='CAPABILITIES')result={ok:true,allowed:true,manager:w.me.role==='Manager'};
  if(c.operation==='LIST')result={ok:true,rows:[]};
  if(c.operation==='MASTER')result={ok:true,companies:[{id:1,name:'QA Insurance'}]};
@@ -33,6 +38,7 @@ const submit=async()=>{form.dispatchEvent(new w.Event('submit',{bubbles:true,can
 await submit();assert.match(w.document.getElementById('rc-error').textContent,/response lost/);
 await submit();
 const cash=calls.filter(c=>c.operation==='CREATE_DIRECT_JOB');assert.equal(cash.length,2);assert.deepEqual(cash[0],cash[1]);assert.equal(cash[0].job_card,'QA-CASH');assert.equal(cash[0].job_type,'CASH');assert.ok(!('credit_account' in cash[0]));assert.equal(receipts.size,1);
+assert.deepEqual(roleCalls,[{action:'vehicle_master_customer_role',rc_no:'RC-QA-0',customer_role:'CUSTOMER'}]);
 assert.equal(w.document.querySelector('[data-rc-action=insurance]'),null);
 await w.zukaitReception.open();await click('direct-job');form=w.document.getElementById('rc-direct-job');
 form.elements.job_type.value='CREDIT';form.elements.job_type.dispatchEvent(new w.Event('change'));
