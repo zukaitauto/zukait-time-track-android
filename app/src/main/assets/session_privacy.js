@@ -25,7 +25,7 @@
     if(retryTimer!==null||!navigator.onLine)return;
     let attempt=0;
     try{attempt=Math.max(0,Math.min(5,Number(sessionStorage.getItem('zukait_session_retry_attempt')||0)||0));}catch(_){}
-    const delay=Math.min(60000,12000*Math.pow(2,attempt));
+    const delay=Math.min(30000,3000*Math.pow(2,attempt));
     retryTimer=setTimeout(async()=>{
       retryTimer=null;
       if(!locked||!navigator.onLine)return;
@@ -71,7 +71,25 @@
       if(!receptionRead&&!['load','revision','live_status','accountant_dashboard','accountant_report','receptionist_delivery_list','receptionist_live_status','reception_list','reception_get','reception_dashboard'].includes(action))throw Error('SESSION_NOT_READY');
     }
     const ticket=generation,actor=identity(),sequence=++requestSequence,controller=new AbortController();controllers.add(controller);
-    const lost=()=>{lastFailureSequence=Math.max(lastFailureSequence,sequence);lock('Workshop connection interrupted. Your current task is preserved. Rechecking automatically…');retryVerification();};
+    let apiAction='';
+    if(url.endsWith('/workshop-api')){
+      try{apiAction=String(JSON.parse(options.body||'{}').action||'load');}catch(_){}
+    }
+    // A confirmed user's isolated background read may return 429/5xx while
+    // the rest of the workshop API remains healthy. Let the existing sync
+    // circuit report that failure; do not hide the verified dashboard.
+    // Transport loss, uncertain writes, cold startup and expired sessions
+    // remain fail-closed behind the privacy screen.
+    const backgroundRead=new Set(['revision','load','live_status','monthly_followup','reception_dashboard',
+      'reception_list','reception_get','receptionist_live_status','receptionist_delivery_list',
+      'accountant_dashboard','accountant_report']).has(apiAction);
+    const lost=(temporaryServerResponse=false)=>{
+      if(temporaryServerResponse&&backgroundRead&&!locked&&verifiedActor===actor&&
+         ticket===generation&&navigator.onLine)return;
+      lastFailureSequence=Math.max(lastFailureSequence,sequence);
+      lock('Workshop connection interrupted. Your current task is preserved. Rechecking automatically…');
+      retryVerification();
+    };
     const abort=()=>controller.abort();options.signal?.addEventListener('abort',abort,{once:true});if(options.signal?.aborted)abort();
     const check=()=>{if(ticket!==generation||actor!==identity()||!navigator.onLine)throw Error('STALE_SESSION');};
     try{
@@ -81,7 +99,7 @@
         const body=await json();check();
         if(url.endsWith('/workshop-api')){
           if(body?.code==='invalid_session'||response.status===401){invalidate();lock('Session expired. Sign in again to verify your account.');}
-          else if(response.status>=500||response.status===429){lost();}
+          else if(response.status>=500||response.status===429){lost(true);}
           else if(locked&&verifiedActor===actor&&sequence>lastFailureSequence&&response.status===200&&body?.ok===true){
             const action=JSON.parse(options.body||'{}').action;
             const saved=JSON.parse(localStorage.getItem('zukait_secure_session_v42')||'null');
@@ -89,7 +107,7 @@
           }
         }
         return body;
-      }catch(error){if(ticket===generation&&url.endsWith('/workshop-api')&&error?.message!=='STALE_SESSION')lost();throw error;}finally{controllers.delete(controller);options.signal?.removeEventListener('abort',abort);}};
+      }catch(error){if(ticket===generation&&url.endsWith('/workshop-api')&&error?.message!=='STALE_SESSION')lost(response.status>=500||response.status===429);throw error;}finally{controllers.delete(controller);options.signal?.removeEventListener('abort',abort);}};
       return response;
     }catch(error){controllers.delete(controller);options.signal?.removeEventListener('abort',abort);if(url.endsWith('/workshop-api')&&ticket===generation&&error?.message!=='STALE_SESSION')lost();throw error;}
   };
