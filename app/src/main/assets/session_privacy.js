@@ -11,7 +11,7 @@
     if(!panel&&document.body){
       panel=document.createElement('div');panel.id='sessionPrivacyScreen';panel.setAttribute('role','status');
       const text=document.createElement('p');text.id='sessionPrivacyMessage';panel.appendChild(text);
-      const retry=document.createElement('button');retry.textContent='Reconnect';retry.onclick=()=>reconnect();panel.appendChild(retry);
+      const retry=document.createElement('button');retry.textContent='Reconnect';retry.onclick=()=>{void reconnect(true);};panel.appendChild(retry);
       const logout=document.createElement('button');logout.textContent='Sign out';logout.onclick=()=>signOut();panel.appendChild(logout);
       document.body.appendChild(panel);
     }
@@ -33,29 +33,87 @@
       await reconnect();
     },delay);
   }
-  async function reconnect(){
-    if(recovering||!locked||!navigator.onLine)return false;
+  function recoveryMessage(message){
+    screen(message);
+  }
+  // The recovery request bypasses the global transport wrapper to avoid a
+  // second recursive privacy lock. It is read-only and verifies the exact
+  // server-authenticated user before exposing any saved workshop UI.
+  async function reconnect(manual=false){
+    if(recovering)return false;
+    if(!locked)return true;
+    if(!navigator.onLine){
+      recoveryMessage('Device reports no internet connection. Check Wi-Fi or mobile data, then press Reconnect.');
+      return false;
+    }
     cancelRetry();recovering=true;
+    if(manual)recoveryMessage('Checking the workshop server and your saved session…');
     try{
       if(verifiedActor&&verifiedActor===identity()){
         const saved=JSON.parse(localStorage.getItem('zukait_secure_session_v42')||'null');
         const token=saved?.token||window.AndroidBridge?.getSecureSessionToken?.()||'';
-        if(!token)return false;
+        if(!token){
+          recoveryMessage('Saved session is unavailable. Use Sign out and sign in again.');
+          return false;
+        }
+        const ticket=generation,actor=identity();
         const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
+        let response,body;
         try{
-          // Read only: never retry an interrupted mutation or reset its journal.
-          const response=await window.fetch('https://pjknotnjkufadqavcmii.supabase.co/functions/v1/workshop-api',{method:'POST',headers:{'Content-Type':'application/json',apikey:'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A','x-zukait-session':token},body:JSON.stringify({action:'revision'}),signal:controller.signal});
-          await response.json();
+          response=await originalFetch('https://pjknotnjkufadqavcmii.supabase.co/functions/v1/workshop-api',{
+            method:'POST',
+            headers:{'Content-Type':'application/json',apikey:'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A','x-zukait-session':token},
+            body:JSON.stringify({action:'revision'}),signal:controller.signal,cache:'no-store'
+          });
+          body=await response.json();
         }finally{clearTimeout(timer)}
-        return !locked;
+        if(ticket!==generation||actor!==identity()||!locked)return !locked;
+        if(response.status===401||body?.code==='invalid_session'){
+          invalidate();recoveryMessage('Session expired. Sign out and sign in again.');return false;
+        }
+        if(response.status!==200||body?.ok!==true){
+          recoveryMessage('Workshop server has not recovered yet (HTTP '+response.status+'). Your saved work is retained. Rechecking automatically…');
+          return false;
+        }
+        if(body.user?.id!==saved?.user?.id||body.user?.role!==saved?.user?.role){
+          invalidate();recoveryMessage('Session identity changed. Sign in again to protect private workshop data.');return false;
+        }
+        // A validated user who is already rendered can return without reload.
+        // If role pages have not finished initializing, re-run authenticated
+        // startup instead of exposing stale or another user's dashboard.
+        if(window.me?.id===body.user.id&&window.me?.role===body.user.role){
+          unlock();return true;
+        }
+        if(window.zukaitAuth?.restoreSession){
+          recoveryMessage('Session verified. Reloading your workshop dashboard…');
+          return !!(await window.zukaitAuth.restoreSession());
+        }
+        recoveryMessage('Session verified. Reloading the workshop app…');
+        location.reload();return false;
       }
-      if(window.zukaitAuth?.restoreSession)return !!(await window.zukaitAuth.restoreSession());
+      if(window.zukaitAuth?.restoreSession){
+        recoveryMessage('Verifying account and loading current workshop data…');
+        const result=!!(await window.zukaitAuth.restoreSession());
+        if(!result&&locked)recoveryMessage('Workshop session verification is still unavailable. Retrying automatically…');
+        return result;
+      }
+      recoveryMessage('Restarting verified workshop login…');
       location.reload();return false;
-    }catch(_){return false}
-    finally{recovering=false;if(locked)retryVerification()}
+    }catch(e){
+      recoveryMessage(e?.name==='AbortError'
+        ?'Workshop server did not respond within 15 seconds. Your work is preserved; retrying automatically…'
+        :'Cannot verify the workshop session right now. Your work is preserved; retrying automatically…');
+      return false;
+    }finally{
+      recovering=false;
+      if(locked)retryVerification();
+    }
   }
   function lock(message='Connection unavailable. Reconnect to verify your session.'){
     locked=true;root.setAttribute('data-session-locked','');screen(message);
+    // Cold-start verification can fail before any fetch listener starts.
+    // Every recoverable lock must arm a retry, not only transport failures.
+    if(navigator.onLine&&!/session expired|identity changed|sign in again/i.test(message))retryVerification();
   }
   function unlock(){if(!navigator.onLine)return;cancelRetry();try{sessionStorage.removeItem('zukait_session_retry_attempt');}catch(_){}verifiedActor=identity();locked=false;root.removeAttribute('data-session-locked');}
   function invalidate(){cancelRetry();verifiedActor=null;generation++;for(const c of controllers)c.abort();controllers.clear();lock();}
