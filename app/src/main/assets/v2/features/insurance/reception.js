@@ -292,14 +292,14 @@
     panel.setAttribute('aria-label','Vehicle Master confirmation');
     panel.setAttribute('role','group');
     plate.closest('label').after(panel);
-    let request=0,candidates=[],selected=null,createNew=false,loaded=false;
+    let request=0,candidates=[],selected=null,createNew=false,loaded=false,verifiedSignature='';
 
     const msg=(text)=>{
       const note=document.createElement('p');
       note.textContent=text;panel.append(note);
     };
     const clear=()=>{
-      request++;candidates=[];selected=null;createNew=false;loaded=false;
+      request++;candidates=[];selected=null;createNew=false;loaded=false;verifiedSignature='';
       panel.replaceChildren();
     };
     function confirmCandidate(candidate){
@@ -332,7 +332,7 @@
         radio.type='radio';radio.name='vehicle_master_choice';radio.value=String(candidate.vehicle_id);
         radio.checked=selected===candidate.vehicle_id&&!createNew;
         radio.addEventListener('change',()=>{
-          selected=candidate.vehicle_id;createNew=false;render();
+          selected=candidate.vehicle_id;createNew=false;verifiedSignature='';render();
         });
         const line=document.createElement('span');
         line.textContent=[candidate.make,candidate.model,candidate.year].filter(Boolean).join(' ')+' · '+String(candidate.visits||0)+' previous visit(s)'+
@@ -344,7 +344,7 @@
       const newRadio=document.createElement('input');
       newRadio.type='radio';newRadio.name='vehicle_master_choice';newRadio.value='NEW_VEHICLE';
       newRadio.checked=createNew;
-      newRadio.addEventListener('change',()=>{selected=null;createNew=true;render();});
+      newRadio.addEventListener('change',()=>{selected=null;createNew=true;verifiedSignature='';render();});
       const newLabel=document.createElement('span');
       newLabel.textContent='Different vehicle using this plate — create a new physical-vehicle record';
       newRow.append(newRadio,newLabel);panel.append(newRow);
@@ -374,7 +374,7 @@
         }
       }
     });
-    vin?.addEventListener('input',()=>{if(loaded&&selected)render();});
+    vin?.addEventListener('input',()=>{verifiedSignature='';if(loaded&&selected)render();});
     form.addEventListener('submit',e=>{
       if(!loaded||!candidates.length)return;
       if(!selected&&!createNew){
@@ -385,10 +385,28 @@
       }
       if(selected){
         const choice=candidates.find(x=>x.vehicle_id===selected);
-        if(!choice||!choice.vin_available||!confirmCandidate(choice)){
-          e.preventDefault();e.stopImmediatePropagation();
+        const fullVin=String(vin?.value||'').replace(/\\s/g,'').toUpperCase();
+        const signature=[selected,plate.value,fullVin].join('|');
+        if(form.dataset.vehicleVerifiedOnce===signature){
+          delete form.dataset.vehicleVerifiedOnce;
           return;
         }
+        // Block the old form save until the backend confirms the exact VIN.
+        e.preventDefault();e.stopImmediatePropagation();
+        if(!choice||!choice.vin_available||!confirmCandidate(choice))return;
+        apiAction({action:'vehicle_master_verify',registration:plate.value,
+          vehicle_id:selected,vin:fullVin}).then(result=>{
+          if(!form.isConnected||[selected,plate.value,
+            String(vin?.value||'').replace(/\\s/g,'').toUpperCase()].join('|')!==signature)return;
+          if(!result.available||!result.verified){
+            msg('VIN does not match this vehicle. Select the correct vehicle or create a separate record.');
+            return;
+          }
+          form.dataset.vehicleVerifiedOnce=signature;
+          form.requestSubmit();
+        }).catch(()=>{
+          if(form.isConnected)msg('Server VIN verification unavailable. Save stopped to avoid linking the wrong vehicle.');
+        });
       }
     },true);
   }
