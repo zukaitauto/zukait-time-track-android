@@ -835,10 +835,8 @@
             insurance_id:Number(f.get('insurance_id')),
             reference:String(f.get('claim')||'').trim(),approval_date:String(f.get('approval_date')||''),
             evidence:String(f.get('evidence')||'').trim(),approval_confirmed:f.has('approval_confirmed')
-          }: {})});
+          }: {})}, String(f.get('customer_role') || 'CUSTOMER'));
         if(out){
-          if(out.record?.rc_no)
-            await recordVisitCustomerRole(out.record.rc_no,String(f.get('customer_role')||'CUSTOMER'));
           const promise=String(f.get('promise_date')||'');
           if(promise&&window.zukaitReceptionDashboard?.savePromise){
             try{await window.zukaitReceptionDashboard.savePromise(String(f.get('job_card')).trim().toUpperCase(),promise,'');}
@@ -1590,15 +1588,15 @@
       }catch(x){error(x)}
     };
   }
-  async function mutate(command) {
+  async function mutate(command, customerRole) {
     if (busy) return null;
     const key = retryKey();
     const encoded = JSON.stringify(command);
     let request = savedRequest(key);
-    if (request && request.encoded !== encoded)
+    if (request && (request.encoded !== encoded || (customerRole && request.customerRole !== customerRole)))
       throw Error("Confirm the saved Reception action before submitting a different change.");
     if (!request) {
-      request = { encoded, request_id: uid() };
+      request = { encoded, request_id: uid(), customerRole };
       // Persist before transport; storage failure must not send an unrecoverable write.
       localStorage.setItem(key, JSON.stringify(request));
       if (localStorage.getItem(key) !== JSON.stringify(request))
@@ -1606,11 +1604,29 @@
     }
     busy = true;
     try {
-      const result = await call({ ...command, request_id: request.request_id });
+      let result = request.created;
+      if (!result) {
+        result = await call({ ...command, request_id: request.request_id });
+        if (request.customerRole) {
+          request.created = { job_card: result.job_card, record: result.record?.rc_no ? { rc_no: result.record.rc_no } : undefined };
+          localStorage.setItem(key, JSON.stringify(request));
+        }
+      }
+      if (request.customerRole) {
+        const rcNo = result.record?.rc_no;
+        const target = rcNo
+          ? { action: "vehicle_master_customer_role", rc_no: rcNo }
+          : { action: "vehicle_master_direct_job_role", request_id: request.request_id };
+        try {
+          await apiAction({ ...target, customer_role: request.customerRole });
+        } catch (error) {
+          throw Error("Job Card saved. Retry the pending contact-role save. " + error.message);
+        }
+      }
       clearRequest(key, request);
       return result;
     } catch (x) {
-      if (x.definitive) clearRequest(key, request);
+      if (x.definitive && !request.created) clearRequest(key, request);
       throw x;
     } finally {
       busy = false;
