@@ -49,6 +49,7 @@ function receptionistRequestAllowed(action: string, body: any) {
   if (action === "vehicle_lookup") return Object.keys(body).every(k => ["action","registration"].includes(k));
   if (action === "vehicle_master_candidates") return Object.keys(body).every(k => ["action","registration"].includes(k));
   if (action === "vehicle_master_verify") return Object.keys(body).every(k => ["action","registration","vehicle_id","vin"].includes(k));
+  if (action === "vehicle_master_customer_role") return Object.keys(body).every(k => ["action","rc_no","customer_role"].includes(k));
   if(action==='estimate_delete_draft')return Object.keys(body).every(k=>['action','estimate_id','request_id','reception_no'].includes(k));
   if(action==='reception_estimate')return Object.keys(body).every(k=>['action','command'].includes(k))&&['GET','ALLOCATE','SAVE'].includes(body.command?.operation);
   if (action === "job_card_edit") return ["GET","EDIT"].includes(body.operation) && Object.keys(body).every(k => ["action","operation","jobCard","patch","reason","expectedEditRevision"].includes(k));
@@ -1229,6 +1230,29 @@ Deno.serve(async (req: Request) => {
     if ((action === "qc_delivery" || action === "receptionist_deliver") && body.operation === "DELIVER" && Deno.env.get("ZUKAIT_MECHANICAL_ENABLED") === "true" && Deno.env.get("ZUKAIT_MECHANICAL_QC_ENABLED") === "true" && Deno.env.get("ZUKAIT_MECHANICAL_DELIVERY_ENABLED") === "true") {
       const decision = await mechanicalLegacyDeliveryCheck(admin,user,body,{enabled:true,qcEnabled:true,deliveryEnabled:true,sessionHash:await sha256Hex(token)});
       if(decision) return reply(decision.body,decision.status);
+    }
+
+    if (action === "vehicle_master_customer_role") {
+      if (!["Manager","Supervisor","Receptionist"].includes(String(user.role)))
+        return reply({ok:false,code:"reception_forbidden"},403);
+      if(typeof body.rc_no!=="string" || body.rc_no.length>80 ||
+         typeof body.customer_role!=="string" ||
+         !["CUSTOMER","CLAIM_CONTACT","REPRESENTATIVE","UNKNOWN"].includes(body.customer_role) ||
+         Object.keys(body).some(k=>!["action","rc_no","customer_role"].includes(k)))
+        return reply({ok:false,code:"invalid_customer_role"},400);
+      const {data:cap,error:capError}=await admin.rpc("zukait_reception_command",
+        {p_actor_id:String(user.id),p_command:{operation:"CAPABILITIES"}});
+      if(capError)throw capError;
+      if(!cap?.allowed)return reply({ok:false,code:"reception_forbidden"},403);
+      const {data,error}=await admin.rpc("zukait_vehicle_record_customer_role",{
+        p_rc_no:body.rc_no,p_actor_id:String(user.id),p_role:body.customer_role
+      });
+      if(error) {
+        if(error.code==="42883"||error.code==="PGRST202")
+          return reply({ok:false,code:"vehicle_master_not_ready"},503);
+        throw error;
+      }
+      return reply(data,data?.ok?200:403);
     }
 
     if (action === "vehicle_master_verify") {
