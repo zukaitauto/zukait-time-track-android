@@ -49,6 +49,7 @@ function receptionistRequestAllowed(action: string, body: any) {
   if (action === "vehicle_lookup") return Object.keys(body).every(k => ["action","registration"].includes(k));
   if (action === "vehicle_master_candidates") return Object.keys(body).every(k => ["action","registration"].includes(k));
   if (action === "vehicle_master_verify") return Object.keys(body).every(k => ["action","registration","vehicle_id","vin"].includes(k));
+  if (action === "vehicle_master_direct_job_role") return Object.keys(body).every(k => ["action","request_id","customer_role"].includes(k));
   if (action === "vehicle_master_customer_role") return Object.keys(body).every(k => ["action","rc_no","customer_role"].includes(k));
   if(action==='estimate_delete_draft')return Object.keys(body).every(k=>['action','estimate_id','request_id','reception_no'].includes(k));
   if(action==='reception_estimate')return Object.keys(body).every(k=>['action','command'].includes(k))&&['GET','ALLOCATE','SAVE'].includes(body.command?.operation);
@@ -1230,6 +1231,21 @@ Deno.serve(async (req: Request) => {
     if ((action === "qc_delivery" || action === "receptionist_deliver") && body.operation === "DELIVER" && Deno.env.get("ZUKAIT_MECHANICAL_ENABLED") === "true" && Deno.env.get("ZUKAIT_MECHANICAL_QC_ENABLED") === "true" && Deno.env.get("ZUKAIT_MECHANICAL_DELIVERY_ENABLED") === "true") {
       const decision = await mechanicalLegacyDeliveryCheck(admin,user,body,{enabled:true,qcEnabled:true,deliveryEnabled:true,sessionHash:await sha256Hex(token)});
       if(decision) return reply(decision.body,decision.status);
+    }
+
+    if (action === "vehicle_master_direct_job_role") {
+      if (!["Manager","Supervisor","Receptionist"].includes(String(user.role)))
+        return reply({ok:false,code:"reception_forbidden"},403);
+      if (typeof body.request_id !== "string" ||
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.request_id) ||
+          !["CUSTOMER","CLAIM_CONTACT","REPRESENTATIVE","UNKNOWN"].includes(body.customer_role) ||
+          Object.keys(body).some(k => !["action","request_id","customer_role"].includes(k)))
+        return reply({ok:false,code:"invalid_customer_role"},400);
+      const {data,error}=await admin.rpc("zukait_vehicle_record_direct_job_role",{
+        p_request_id:body.request_id,p_actor_id:String(user.id),p_role:body.customer_role
+      });
+      if(error) throw error;
+      return reply(data,data?.ok?200:403);
     }
 
     if (action === "vehicle_master_customer_role") {
