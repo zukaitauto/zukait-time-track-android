@@ -1,6 +1,7 @@
 import {createRequire} from 'node:module';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+const require=createRequire(import.meta.url);
 
 const approved = fs.readFileSync('.github/workflows/publish-approved-release.yml','utf8');
 const pages = fs.readFileSync('.github/workflows/pages.yml','utf8');
@@ -68,7 +69,6 @@ if (updater.versionCode < release.versionCode) {
  assert.match(updater.apkSha256,/^[a-f0-9]{64}$/);
  assert.equal(updater.releaseTag,'release-'+release.versionName+'-architecture-v2');
 } else if(release.releaseScope==='standard') {
- const require=createRequire(import.meta.url);
  require('../scripts/verify-v305-acceptance.cjs').validate(release,JSON.parse(fs.readFileSync('docs/INSURANCE_V305_ACCEPTANCE_GATE.json','utf8')));
  require('../scripts/verify-pc-pages-publication.cjs').validate(release,updater,'refs/heads/architecture-v2');
  assert.equal(updater.sourceCommit,release.sourceCommit);
