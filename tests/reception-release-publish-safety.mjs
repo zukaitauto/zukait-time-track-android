@@ -60,6 +60,13 @@ if (updater.versionCode < release.versionCode) {
   }
  }
 
+} else if(release.releaseScope==='manager-workflow-fixes') {
+ const ref='refs/heads/architecture-v2';
+ require('../scripts/verify-management-release.cjs').validate(release,ref);
+ assert.equal(require('../scripts/verify-pc-pages-publication.cjs').validate(release,updater,ref).sha,release.sourceCommit);
+ assert.equal(updater.sourceCommit,release.sourceCommit);
+ assert.match(updater.apkSha256,/^[a-f0-9]{64}$/);
+ assert.equal(updater.releaseTag,'release-'+release.versionName+'-architecture-v2');
 } else if(release.releaseScope==='standard') {
  const require=createRequire(import.meta.url);
  require('../scripts/verify-v305-acceptance.cjs').validate(release,JSON.parse(fs.readFileSync('docs/INSURANCE_V305_ACCEPTANCE_GATE.json','utf8')));
