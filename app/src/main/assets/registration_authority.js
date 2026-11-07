@@ -1,5 +1,5 @@
 (function(){'use strict';
-function display(value){return String(value??'').trim().replace(/\s+/g,' ').toUpperCase()}
+function display(value){const raw=String(value??'').trim().replace(/\s+/g,' ').toUpperCase();const k=raw.replace(/[^A-Z0-9]/g,'');const match=k.match(/^([0-9]+)([A-Z]+)$/);return match?match[1]+'-'+match[2]:raw}
 function key(value){return display(value).normalize('NFKC').replace(/[^A-Z0-9]/g,'')}
 function same(a,b){const x=key(a),y=key(b);return !!x&&x===y}
 function matches(value,query){const v=key(value),q=key(query);return !!q&&v.includes(q)}
