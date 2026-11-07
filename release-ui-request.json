@@ -1,7 +1,7 @@
 {
-  "versionName": "V390",
-  "versionCode": 353,
-  "releaseScope": "phase1-compatible-ui",
+  "versionName": "V391",
+  "versionCode": 354,
+  "releaseScope": "reception-contact-role-and-notification-fixes",
   "approvedForStaff": false,
   "sourceCommit": null,
   "approvedAt": null,
@@ -9,21 +9,21 @@
   "ownerRequestedProceed": true,
   "ownerPublicationRequested": false,
   "ownerRequestedImmediateRelease": false,
-  "backupDeferredByOwner": true,
-  "productionBackendChanges": false,
-  "backendDeploymentRequired": false,
+  "backupDeferredByOwner": false,
+  "productionBackendChanges": true,
+  "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "releaseHeldByOwner": true,
   "signedAcceptanceRun": null,
   "verificationRun": null,
-  "authorization": "Owner requested Release for V389 in chat after automated qualification. UI-only Job Card Manager opening and individual notification read fixes; no backend or data changes. Existing owner backup/physical deferrals retained; neither reported as tested.",
-  "reason": "Notification unread list hides only opened items; exact remaining count replaces 99+; history preserved.",
+  "authorization": null,
+  "reason": "Reception contact roles and persistent notification read state for Manager and Supervisor.",
   "previousPublishedRelease": {
-    "versionName": "V388",
-    "versionCode": 351,
-    "sourceCommit": "10c60dda522983bf9c7deb275a4309de2473b8a3",
-    "releaseTag": "release-V388-architecture-v2"
+    "versionName": "V390",
+    "versionCode": 353,
+    "sourceCommit": "8afde5daa5c7e543cc5307a7bd9921eb3c0c759c",
+    "releaseTag": "release-V390-architecture-v2"
   }
 }
