@@ -764,6 +764,8 @@
       updateApprovalEntry();
       const f=new FormData(form),details={};
       for(const k of ['make','model','registration','year','vin','customer','contact','claim','remarks'])details[k]=String(f.get(k)||'').trim();
+      if(!linkedChecklist && details.registration)
+        details.registration=window.zukaitRegistration?.display?.(details.registration)||details.registration;
       details.odometer=String(f.get('odometer')||'').trim();
       details.odometer_unit=String(f.get('odometer_unit')||'KM');
       try {
@@ -1607,6 +1609,10 @@
     const f = new FormData(e.target),
       details = {};
     fields.forEach(([k]) => (details[k] = String(f.get(k) || "")));
+    // Only new intake registrations are standardized on save. Editing an older
+    // checklist must not rewrite its historical registration spelling.
+    if(!current?.record && details.registration)
+      details.registration=window.zukaitRegistration?.display?.(details.registration)||details.registration;
     if(details.vin && !/^[A-HJ-NPR-Z0-9]{17}$/.test(details.vin) && details.vin!==current?.record?.details?.vin){
       error(Error('VIN must have 17 letters/numbers excluding I, O and Q. Verify and correct it before saving.'));return;
     }
