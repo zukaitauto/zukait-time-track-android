@@ -48,6 +48,7 @@ function receptionistRequestAllowed(action: string, body: any) {
   if(action==='reception_vehicle_movement')return Object.keys(body).every(k=>['action','request_id','job_card','location','expected_location','movement_date','reason'].includes(k));
   if (action === "vehicle_lookup") return Object.keys(body).every(k => ["action","registration"].includes(k));
   if (action === "vehicle_master_candidates") return Object.keys(body).every(k => ["action","registration"].includes(k));
+  if (action === "vehicle_master_verify") return Object.keys(body).every(k => ["action","registration","vehicle_id","vin"].includes(k));
   if(action==='estimate_delete_draft')return Object.keys(body).every(k=>['action','estimate_id','request_id','reception_no'].includes(k));
   if(action==='reception_estimate')return Object.keys(body).every(k=>['action','command'].includes(k))&&['GET','ALLOCATE','SAVE'].includes(body.command?.operation);
   if (action === "job_card_edit") return ["GET","EDIT"].includes(body.operation) && Object.keys(body).every(k => ["action","operation","jobCard","patch","reason","expectedEditRevision"].includes(k));
@@ -1228,6 +1229,29 @@ Deno.serve(async (req: Request) => {
     if ((action === "qc_delivery" || action === "receptionist_deliver") && body.operation === "DELIVER" && Deno.env.get("ZUKAIT_MECHANICAL_ENABLED") === "true" && Deno.env.get("ZUKAIT_MECHANICAL_QC_ENABLED") === "true" && Deno.env.get("ZUKAIT_MECHANICAL_DELIVERY_ENABLED") === "true") {
       const decision = await mechanicalLegacyDeliveryCheck(admin,user,body,{enabled:true,qcEnabled:true,deliveryEnabled:true,sessionHash:await sha256Hex(token)});
       if(decision) return reply(decision.body,decision.status);
+    }
+
+    if (action === "vehicle_master_verify") {
+      if (!["Manager","Supervisor","Receptionist"].includes(String(user.role)))
+        return reply({ok:false,code:"reception_forbidden"},403);
+      if (typeof body.registration!=="string" || body.registration.length>80 ||
+          typeof body.vehicle_id!=="string" || !/^[a-f0-9-]{36}$/i.test(body.vehicle_id) ||
+          typeof body.vin!=="string" || body.vin.length>64 ||
+          Object.keys(body).some(k=>!["action","registration","vehicle_id","vin"].includes(k)))
+        return reply({ok:false,code:"invalid_vehicle_confirmation"},400);
+      const {data:cap,error:capError}=await admin.rpc("zukait_reception_command",
+        {p_actor_id:String(user.id),p_command:{operation:"CAPABILITIES"}});
+      if(capError)throw capError;
+      if(!cap?.allowed)return reply({ok:false,code:"reception_forbidden"},403);
+      const {data,error}=await admin.rpc("zukait_vehicle_verify_match",{
+        p_registration:body.registration,p_vehicle_id:body.vehicle_id,p_vin:body.vin
+      });
+      if(error) {
+        if(error.code==="42883"||error.code==="PGRST202")
+          return reply({ok:true,available:false,verified:false});
+        throw error;
+      }
+      return reply({ok:true,available:true,verified:data===true});
     }
 
     if (action === "vehicle_master_candidates") {
