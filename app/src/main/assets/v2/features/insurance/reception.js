@@ -280,53 +280,117 @@
     if(!response.ok||!result?.ok){const e=Error(result?.code||"reception_unavailable");e.code=result?.code;throw e;}
     return result;
   }
+  // Vehicle Master selection is an intake aid only. The server's full VIN
+  // and immutable physical-vehicle identities remain authoritative. Never
+  // insert another customer's details into the current intake form.
   function bindVehicleLookup(form){
     const plate=form.elements.namedItem('registration');
+    const vin=form.elements.namedItem('vin');
     if(!plate)return;
-    const info=document.createElement('div');
-    info.setAttribute('role','status');
-    plate.closest('label').after(info);
-    let request=0,filled=[];
-    plate.addEventListener('input',()=>{
-      request++;info.replaceChildren();
-      for(const [field,value] of filled)if(field.value===value)field.value='';
-      filled=[];
-    });
+    const panel=document.createElement('section');
+    panel.className='rc-box rc-vehicle-master-choices';
+    panel.setAttribute('aria-label','Vehicle Master confirmation');
+    panel.setAttribute('role','group');
+    plate.closest('label').after(panel);
+    let request=0,candidates=[],selected=null,createNew=false,loaded=false;
+
+    const msg=(text)=>{
+      const note=document.createElement('p');
+      note.textContent=text;panel.append(note);
+    };
+    const clear=()=>{
+      request++;candidates=[];selected=null;createNew=false;loaded=false;
+      panel.replaceChildren();
+    };
+    function confirmCandidate(candidate){
+      const value=String(vin?.value||'').replace(/\s/g,'').toUpperCase();
+      if(!candidate.vin_available){
+        msg('No verified VIN on this record. Reception must confirm the physical vehicle before linking; a plate alone is not proof.');
+        return false;
+      }
+      if(!value||value.length!==17){
+        msg('Enter the full 17-character VIN from the vehicle to confirm this selection.');
+        return false;
+      }
+      if(candidate.vin_last4 && !value.endsWith(String(candidate.vin_last4).toUpperCase())){
+        msg('VIN differs from this record. Select the correct vehicle or create a separate vehicle record.');
+        return false;
+      }
+      return true;
+    }
+    function render(){
+      panel.replaceChildren();
+      if(!loaded)return;
+      const title=document.createElement('h4');title.textContent='Vehicle Master · Confirm Physical Vehicle';panel.append(title);
+      msg('Registration '+String(plate.value||'')+' can belong to different vehicles over time. Confirm the VIN before reusing a record.');
+      if(!candidates.length){msg('No existing vehicle record found. This intake will create a new provisional vehicle unless the VIN matches an existing vehicle.');return;}
+      for(const candidate of candidates){
+        const row=document.createElement('label');
+        row.className='rc-vehicle-choice';
+        row.style.cssText='display:flex;align-items:center;gap:12px;padding:10px;margin:7px 0;border:1px solid #cbd5e1;border-radius:8px;background:#f7fbfd';
+        const radio=document.createElement('input');
+        radio.type='radio';radio.name='vehicle_master_choice';radio.value=String(candidate.vehicle_id);
+        radio.checked=selected===candidate.vehicle_id&&!createNew;
+        radio.addEventListener('change',()=>{
+          selected=candidate.vehicle_id;createNew=false;render();
+        });
+        const line=document.createElement('span');
+        line.textContent=[candidate.make,candidate.model,candidate.year].filter(Boolean).join(' ')+' · '+String(candidate.visits||0)+' previous visit(s)'+
+          (candidate.vin_available?' · VIN ending '+String(candidate.vin_last4||'****'):' · VIN not recorded');
+        row.append(radio,line);panel.append(row);
+      }
+      const newRow=document.createElement('label');
+      newRow.style.cssText='display:flex;align-items:center;gap:12px;padding:10px;margin:7px 0;border:1px solid #cbd5e1;border-radius:8px;background:#f7fbfd';
+      const newRadio=document.createElement('input');
+      newRadio.type='radio';newRadio.name='vehicle_master_choice';newRadio.value='NEW_VEHICLE';
+      newRadio.checked=createNew;
+      newRadio.addEventListener('change',()=>{selected=null;createNew=true;render();});
+      const newLabel=document.createElement('span');
+      newLabel.textContent='Different vehicle using this plate — create a new physical-vehicle record';
+      newRow.append(newRadio,newLabel);panel.append(newRow);
+      const chosen=candidates.find(x=>x.vehicle_id===selected);
+      if(chosen){
+        if(!chosen.vin_available)msg('Unverified identity: do not link by plate alone. Select New Vehicle or request VIN confirmation.');
+        else msg('Selected '+[chosen.make,chosen.model].filter(Boolean).join(' ')+'. Enter and verify its complete VIN. Customer and insurance details are entered separately below.');
+      }
+      msg('A different customer name does not mean a different vehicle. Previous invoices and customer information are not copied.');
+    }
+    plate.addEventListener('input',clear);
     plate.addEventListener('change',async()=>{
-      const registration=plate.value.trim(),revision=++request;
+      plate.value=window.zukaitRegistration?.display?.(plate.value)||String(plate.value||'').trim().toUpperCase();
+      const registration=plate.value,revision=++request;
       if(!registration)return;
+      panel.replaceChildren();msg('Checking Vehicle Master…');
       try{
-        const result=await apiAction({action:'vehicle_lookup',registration});
-        if(revision!==request||!form.isConnected||registration!==plate.value.trim())return;
-        if(result.match!=='found'){
-          info.textContent=result.match==='conflict'?'Conflicting vehicle records. Confirm the VIN and enter the details manually.':'No verified vehicle match. Enter the vehicle details.';
-          return;
+        const result=await apiAction({action:'vehicle_master_candidates',registration});
+        if(request!==revision||!form.isConnected||registration!==plate.value)return;
+        if(!result.available){
+          panel.replaceChildren();msg('Vehicle Master lookup is not yet available. Enter verified vehicle details manually.');return;
         }
-        const vin=form.elements.namedItem('vin');
-        if(vin?.value&&vin.value.trim().toUpperCase()!==result.vehicle?.vin){
-          info.textContent='The entered VIN differs from the saved vehicle. Confirm the vehicle details.';
-          return;
+        loaded=true;candidates=Array.isArray(result.candidates)?result.candidates:[];render();
+      }catch(_){
+        if(request===revision&&form.isConnected){
+          panel.replaceChildren();msg('Vehicle Master unavailable. Existing Reception entry remains available; verify VIN and vehicle manually.');
         }
-        for(const key of ['vin','make','model','year']){
-          const field=form.elements.namedItem(key),value=result.vehicle?.[key];
-          if(field&&!field.value&&value){field.value=value;filled.push([field,field.value]);}
-        }
-        info.textContent='Vehicle found. Confirm the vehicle details.';
-        if(result.history?.length){
-          const details=document.createElement('details'),summary=document.createElement('summary');
-          summary.textContent='Vehicle History ('+result.history.length+')';details.append(summary);
-          for(const visit of result.history){
-            const line=document.createElement('div');
-            const date=new Date(/^\d+$/.test(String(visit.created_at))?Number(visit.created_at):visit.created_at||NaN);
-            line.textContent=['JC '+visit.job_card,Number.isFinite(date.getTime())?date.toLocaleDateString('en-GB',{timeZone:'Asia/Muscat'}):'',visit.department,visit.job_type,visit.status].filter(Boolean).join(' · ');
-            details.append(line);
-          }
-          info.append(details);
-        }
-      }catch{
-        if(revision===request&&form.isConnected)info.textContent='Vehicle lookup unavailable. You can enter the details manually.';
       }
     });
+    vin?.addEventListener('input',()=>{if(loaded&&selected)render();});
+    form.addEventListener('submit',e=>{
+      if(!loaded||!candidates.length)return;
+      if(!selected&&!createNew){
+        e.preventDefault();e.stopImmediatePropagation();
+        panel.replaceChildren();render();
+        msg('Select the correct vehicle or Different vehicle before saving.');
+        return;
+      }
+      if(selected){
+        const choice=candidates.find(x=>x.vehicle_id===selected);
+        if(!choice||!choice.vin_available||!confirmCandidate(choice)){
+          e.preventDefault();e.stopImmediatePropagation();
+          return;
+        }
+      }
+    },true);
   }
   // A read-only, fail-closed capability check. The V304 server does not have
   // the Phase 2 dashboard endpoint and must never offer unsaveable Cash intake.
