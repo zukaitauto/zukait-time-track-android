@@ -2474,13 +2474,49 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
 
 /* V107 INCENTIVE FINAL AUTHORITY — one monthly calculation for Employee, Supervisor and Manager. */
 (function(){'use strict';
- const HOLD='ID001',DAY=86400000;
- const monthBounds=(ts=Date.now())=>{const d=new Date(ts);return [new Date(d.getFullYear(),d.getMonth(),1).getTime(),new Date(d.getFullYear(),d.getMonth()+1,1).getTime()]};
- const key=t=>{const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
- const isHoliday=t=>(new Date(t).getDay()===5)||(state.workshopHolidays||[]).some(h=>String(typeof h==='object'?(h.date||h.day||''):h)===key(t));
- const assignmentFor=s=>(state.assign||[]).find(a=>a&&a.id===s.assignmentId)||(state.assign||[]).find(a=>a&&!a.cancelled&&a.job===s.job&&a.emp===s.emp&&!!a.rework===!!s.rework);
- const clippedNormal=(s,from,to)=>{const st=Math.max(+s.start||0,from),en=Math.min(+s.end||Date.now(),to);if(en<=st)return 0;return typeof window.sessionNormalMinutes==='function'?Math.max(0,window.sessionNormalMinutes({start:st,end:en},en)):0};
- const assignmentNormal=(a,from,to)=>(state.sessions||[]).filter(s=>s&&String(s.emp)===String(a.emp)&&(s.assignmentId===a.id||(!s.assignmentId&&s.job===a.job&&!!s.rework===!!a.rework))&&(+s.start||0)<to&&(+s.end||Date.now())>from).reduce((n,s)=>n+clippedNormal(s,from,to),0);
+ const HOLD='ID001',DAY=86400000,OMAN=4*3600000;
+ const omanDay=ts=>Math.floor((ts+OMAN)/DAY)*DAY-OMAN;
+ const omanKey=ts=>new Date(ts+OMAN).toISOString().slice(0,10);
+ const monthBounds=(ts=Date.now())=>{const d=new Date(ts+OMAN);return [Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),1)-OMAN,Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1)-OMAN]};
+ const isHoliday=ts=>new Date(ts+OMAN).getUTCDay()===5||(state.workshopHolidays||[]).some(h=>String(typeof h==='object'?(h.date||h.dateKey||h.day||''):h).slice(0,10)===omanKey(ts));
+ // Calculate duty time in Oman even when the device is set to another timezone.
+ const normalSegmentMinutes=(start,end)=>{
+   let result=0;
+   for(let day=omanDay(start);day<end;day+=DAY){
+     if(isHoliday(day))continue;
+     for(const [begin,finish] of [[480,780],[900,1140]]){
+       result+=Math.max(0,Math.min(end,day+finish*60000)-Math.max(start,day+begin*60000))/60000;
+     }
+   }
+   return result;
+ };
+ const assignmentFor=s=>(state.assign||[]).find(a=>a&&!a.cancelled&&a.id===s.assignmentId)||
+   (!s.assignmentId?(state.assign||[]).find(a=>a&&!a.cancelled&&a.job===s.job&&String(a.emp)===String(s.emp)&&!!a.rework===!!s.rework):null);
+ const assignmentNormal=(a,from,to)=>{
+   const now=Date.now(),seen=new Set(),covered=[],startLimit=Math.max(0,from),endLimit=Math.min(to,now);
+   if(endLimit<=startLimit)return 0;
+   const sessions=(state.sessions||[]).filter(s=>s&&!s.cancelled&&!s.voided&&String(s.emp)===String(a.emp)&&Number(s.start)>0)
+     .map((s,i)=>({s,i,owner:assignmentFor(s)})).filter(x=>x.owner)
+     // Productive work takes priority over overlapping ID001; ties use recording order.
+     .sort((x,y)=>(x.owner.job===HOLD?1:0)-(y.owner.job===HOLD?1:0)||Number(x.s.start)-Number(y.s.start)||x.i-y.i);
+   let result=0;
+   for(const {s,owner} of sessions){
+     const id=s.id?'id:'+s.id:'span:'+String(s.job)+'|'+String(s.assignmentId||'')+'|'+s.start+'|'+String(s.end||'');
+     if(seen.has(id))continue;
+     seen.add(id);
+     const begin=Math.max(Number(s.start),startLimit),end=Math.min(Number(s.end||now),endLimit);
+     if(end<=begin)continue;
+     let pieces=[[begin,end]];
+     for(const [blockedStart,blockedEnd] of covered){
+       pieces=pieces.flatMap(([left,right])=>right<=blockedStart||left>=blockedEnd?[[left,right]]:
+         [[left,Math.min(right,blockedStart)],[Math.max(left,blockedEnd),right]].filter(([x,y])=>y>x));
+       if(!pieces.length)break;
+     }
+     covered.push([begin,end]);
+     if(String(owner.id)===String(a.id))for(const [left,right] of pieces)result+=normalSegmentMinutes(left,right);
+   }
+   return result;
+ };
  const targetFor=(emp,from,to)=>{
    let target=0,workDays=0,cleaningAllowance=0;
    for(let cur=from;cur<to;cur+=DAY){
@@ -2494,22 +2530,11 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
  };
  const achievementFor=(a,from,to)=>{
    const current=assignmentNormal(a,from,to);
-   // Completed job credit follows its suggested time even if all tracked work
-   // happened in overtime. Overtime minutes remain excluded from Actual and
-   // from the allocated-time countdown.
-   const worked=(state.sessions||[]).some(s=>s&&String(s.emp)===String(a.emp)&&
-     (s.assignmentId===a.id||(!s.assignmentId&&s.job===a.job&&!!s.rework===!!a.rework))&&
-     (+s.start||0)<to&&(+s.end||Date.now())>from&&
-     Math.min(+s.end||Date.now(),to)>Math.max(+s.start||0,from));
-   if(!worked)return {achieved:0,excess:0,actual:0};
+   // Achieved means actual recorded duty time, regardless of JC completion.
    if(a.job===HOLD)return {achieved:current,excess:0,actual:current,id001:current};
-   const prior=assignmentNormal(a,0,from);
-   const suggested=Math.max(0,+a.suggested||0);
+   const prior=assignmentNormal(a,0,from),suggested=Math.max(0,+a.suggested||0);
    const remainingAtStart=Math.max(0,suggested-prior);
-   const completedInPeriod=!!a.completed&&(+a.completedAt||to-1)>=from&&(+a.completedAt||to-1)<to;
-   if(!completedInPeriod)return {achieved:current,excess:Math.max(0,current-remainingAtStart),actual:current};
-   const excess=Math.max(0,current-remainingAtStart);
-   return {achieved:Math.max(0,remainingAtStart-excess),excess,actual:current};
+   return {achieved:current,excess:Math.max(0,current-remainingAtStart),actual:current};
  };
  window.incentiveFor=function(emp,ts=Date.now()){
    const [from,to]=monthBounds(ts),t=targetFor(emp,from,to);
