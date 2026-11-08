@@ -2541,11 +2541,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    let achieved=0,excess=0,actual=0;
    const assignments=(state.assign||[]).filter(a=>a&&!a.cancelled&&String(a.emp)===String(emp));
    for(const a of assignments){
-     if(a.rework){
-       // Repeat employee earns achievement only when correcting another employee's mistake.
-       if(String(a.mistakeEmp||a.emp)!==String(emp)){const x=achievementFor(a,from,to);achieved+=x.achieved;excess+=x.excess;actual+=x.actual}
-       continue;
-     }
+     // Every JC duty minute counts in Achieved. Repeat penalty is separate.
      const x=achievementFor(a,from,to);achieved+=x.achieved;excess+=x.excess;actual+=x.actual;
    }
    // Repeat penalty belongs to the Mistake Employee and always uses ACTUAL normal-duty repeat time.
