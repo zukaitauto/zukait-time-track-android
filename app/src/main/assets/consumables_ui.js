@@ -609,7 +609,7 @@ window.consRefreshAndRunReports=async function(){
  out.innerHTML='<div class="notice">Refreshing finalized materials from server…</div>';
  try{
   const syncResult=await window.zukaitCloud.syncNow();
-  if(syncResult===false||syncResult?.ok===false||syncResult?.success===false)throw new Error('Server synchronization did not complete');
+  if(syncResult!==true)throw new Error('Server synchronization did not complete');
   if(!document.getElementById('crResult'))return;
   consRunReports();
  }catch(error){
