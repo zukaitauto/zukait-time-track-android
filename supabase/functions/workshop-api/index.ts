@@ -422,6 +422,25 @@ function preserveConsumablesHistory(candidate: any, current: any): any {
     }
     if (nextRows.length || serverRows.length || Array.isArray(incoming?.[key])) incoming[key] = nextRows;
   }
+  // Server-owned material aliases prevent outdated workshop clients resurrecting retired material IDs.
+  const aliases = existing?.materialAliases && typeof existing.materialAliases === "object"
+    ? existing.materialAliases : {};
+  if (Object.keys(aliases).length) {
+    const canonical = (id:any) => String(aliases[String(id||"")]||id||"");
+    for (const key of ["issues","actuals","prices"] as const) {
+      for (const row of incoming[key]||[]) {
+        if (key==="prices") {
+          if (row?.materialId) row.materialId=canonical(row.materialId);
+        } else {
+          for (const line of row?.lines||[]) {
+            if (line?.materialId) line.materialId=canonical(line.materialId);
+          }
+        }
+      }
+    }
+    incoming.materials=(incoming.materials||[]).filter((m:any)=>!aliases[String(m?.id||"")]);
+  }
+  incoming.materialAliases = cloneValue(aliases);
   incoming.schemaVersion = Math.max(Number(incoming.schemaVersion||0), Number(existing.schemaVersion||0), 1);
   candidate.consumables = incoming;
   return candidate;
