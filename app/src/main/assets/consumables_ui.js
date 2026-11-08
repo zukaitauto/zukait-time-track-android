@@ -588,13 +588,43 @@ window.consHistoryReopen=function(id){if(role()!=='Manager')return;const reason=
 window.consHistoryVoid=function(kind,id){if(role()!=='Manager')return;const reason=prompt('Reason for voiding this record (required)');if(reason===null)return;if(!confirm('Void this record? The original remains in Edit History.'))return;try{C().managerVoid(state,kind,id,me,reason);save();consOpenHistory();alert('Record voided. Original history retained.')}catch(e){alert(e.message)}};
 window.consOpenReports=function(){
  if(role()!=='Manager')return;const c=C().ensureState(state),opts=(arr,label)=>'<option value="">All '+label+'</option>'+arr.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');
- modal('Painting Consumables Reports','<div class="cons-subnav"><button class="secondary" type="button" onclick="openPaintingConsumables()">← BACK TO CONSUMABLES</button></div><div class="cons-entry-shell"><section class="cons-report-panel"><div class="cons-report-panel-head"><span>REPORT BUILDER</span><h3>Painting consumables</h3><p>Choose a report and date range, then narrow the results if needed.</p></div><div class="cons-report-filters cons-report-builder"><label class="cons-report-type">Report type<select id="crMode"><option value="custom">Custom Range</option><option value="jc">Job Card Cost</option><option value="monthly">Monthly Expense</option><option value="itemtotals">Material Summary</option><option value="brand">Brand-wise</option><option value="painter">Painter-wise</option><option value="supervisor">Supervisor-wise</option></select></label><label>From<input id="crFrom" type="date"></label><label>To<input id="crTo" type="date"></label><label>Job card<input id="crJc" placeholder="All job cards"></label><label>Material<select id="crMat">'+opts(c.materials.filter(x=>x.active!==false),'Materials')+'</select></label><label>Brand<select id="crBrand">'+opts(c.brands.filter(x=>x.active!==false),'Brands')+'</select></label><label>Painter<select id="crPainter">'+opts((users||[]).filter(x=>x.department==='Painter'),'Painters')+'</select></label><label>Supervisor<select id="crSupervisor">'+opts((users||[]).filter(x=>x.role==='Supervisor'),'Supervisors')+'</select></label><div class="cons-report-submit"><span>Finalized actual materials only · Both dates included</span><button type="button" class="blue" onclick="consRunReports()">View Report →</button></div></div></section><div id="crResult" class="notice">Reports use finalized Actual Materials only.</div></div>');
+ modal('Painting Consumables Reports','<div class="cons-subnav"><button class="secondary" type="button" onclick="openPaintingConsumables()">← BACK TO CONSUMABLES</button></div><div class="cons-entry-shell"><section class="cons-report-panel"><div class="cons-report-panel-head"><span>REPORT BUILDER</span><h3>Painting consumables</h3><p>Choose a report and date range, then narrow the results if needed.</p></div><div class="cons-report-filters cons-report-builder"><label class="cons-report-type">Report type<select id="crMode"><option value="custom">Custom Range</option><option value="jc">Job Card Cost</option><option value="monthly">Monthly Expense</option><option value="itemtotals">Material Summary</option><option value="brand">Brand-wise</option><option value="painter">Painter-wise</option><option value="supervisor">Supervisor-wise</option></select></label><label>From<input id="crFrom" type="date"></label><label>To<input id="crTo" type="date"></label><label>Job card<input id="crJc" placeholder="All job cards"></label><label>Material<select id="crMat">'+opts(c.materials.filter(x=>x.active!==false),'Materials')+'</select></label><label>Brand<select id="crBrand">'+opts(c.brands.filter(x=>x.active!==false),'Brands')+'</select></label><label>Painter<select id="crPainter">'+opts((users||[]).filter(x=>x.department==='Painter'),'Painters')+'</select></label><label>Supervisor<select id="crSupervisor">'+opts((users||[]).filter(x=>x.role==='Supervisor'),'Supervisors')+'</select></label><div class="cons-report-submit"><span>Finalized actual materials only · Both dates included</span><button type="button" class="blue" onclick="consRefreshAndRunReports()">View Report →</button></div></div></section><div id="crResult" class="notice">Reports use finalized Actual Materials only.</div></div>');
+};
+let consReportRefreshPending=false;
+window.consRefreshAndRunReports=async function(){
+ if(role()!=='Manager'||consReportRefreshPending)return;
+ const out=document.getElementById('crResult');
+ if(!out)return;
+ if(typeof navigator!=='undefined'&&navigator.onLine===false){
+  out.innerHTML='<div class="notice">Report not generated: offline. Connect to the server and try again to avoid displaying incomplete totals.</div>';
+  return;
+ }
+ if(!window.zukaitCloud||typeof window.zukaitCloud.syncNow!=='function'){
+  out.innerHTML='<div class="notice">Report not generated: server refresh is unavailable. Please reconnect and retry.</div>';
+  return;
+ }
+ consReportRefreshPending=true;
+ const button=document.querySelector('.cons-report-submit button');
+ if(button)button.disabled=true;
+ out.innerHTML='<div class="notice">Refreshing finalized materials from server…</div>';
+ try{
+  const syncResult=await window.zukaitCloud.syncNow();
+  if(syncResult===false||syncResult?.ok===false||syncResult?.success===false)throw new Error('Server synchronization did not complete');
+  if(!document.getElementById('crResult'))return;
+  consRunReports();
+ }catch(error){
+  console.warn('Consumables report synchronization failed',error);
+  if(document.getElementById('crResult'))document.getElementById('crResult').innerHTML='<div class="notice">Report not generated: server refresh failed. Reconnect and try again; existing material records have not been changed.</div>';
+ }finally{
+  consReportRefreshPending=false;
+  if(button)button.disabled=false;
+ }
 };
 window.consRunReports=function(){
  if(role()!=='Manager')return;
  const c=C().ensureState(state),from=document.getElementById('crFrom')?.value,to=document.getElementById('crTo')?.value,jc=(document.getElementById('crJc')?.value||'').trim().toUpperCase(),mid=document.getElementById('crMat')?.value,bid=document.getElementById('crBrand')?.value,pid=document.getElementById('crPainter')?.value,sid=document.getElementById('crSupervisor')?.value,out=document.getElementById('crResult');if(!out)return;
  if(from&&to&&from>to)return alert('From date must be before or equal to To date.');
- const day=t=>{const n=Number(t)||0;if(!n)return '';const d=new Date(n),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+dd};let actuals=c.actuals.filter(x=>!x.voided&&x.locked&&(!from||day(x.actualAt)>=from)&&(!to||day(x.actualAt)<=to)&&(!jc||String(x.jobCard).toUpperCase().includes(jc)));
+ const day=t=>{const n=Number(t)||Date.parse(t);return Number.isFinite(n)&&n>0?new Date(n+4*3600000).toISOString().slice(0,10):''};let actuals=c.actuals.filter(x=>!x.voided&&x.locked&&(!from||day(x.actualAt)>=from)&&(!to||day(x.actualAt)<=to)&&(!jc||String(x.jobCard).toUpperCase().includes(jc)));
  actuals=actuals.filter(a=>{const base=c.issues.find(x=>x.jobCard===a.jobCard&&x.type===C().TYPES.ISSUED&&!x.voided);return (!pid||base?.mainPainterId===pid)&&(!sid||base?.allottedSupervisorId===sid)});
  const rows=[];actuals.forEach(a=>{const base=c.issues.find(x=>x.jobCard===a.jobCard&&x.type===C().TYPES.ISSUED&&!x.voided);a.lines.forEach(l=>{if((mid&&l.materialId!==mid)||(bid&&l.brandId!==bid))return;const m=c.materials.find(x=>x.id===l.materialId)||{},b=c.brands.find(x=>x.id===l.brandId)||{};rows.push({date:day(a.actualAt),jc:a.jobCard,materialId:l.materialId,material:m.name||'',brand:b.name||'',unit:m.unit||'',qty:Number(l.actualQuantity??l.quantity)||0,unitPrice:Number(l.unitPriceSnapshot)||0,cost:Number(l.lineCost)||0,painterId:base?.mainPainterId||'',painter:(users||[]).find(x=>x.id===base?.mainPainterId)?.name||base?.mainPainterId||'—',supervisor:(users||[]).find(x=>x.id===base?.allottedSupervisorId)?.name||base?.allottedSupervisorId||'—'})})});
  const mode=document.getElementById('crMode')?.value||'custom';if(mode==='jc'&&!jc)return alert('Enter a Job Card for Job Card Cost report.');const total=Math.round(rows.reduce((n,r)=>n+r.cost,0)*1000)/1000,jcs=new Set(rows.map(r=>r.jc)).size,groups={};rows.forEach(r=>{const k=r.material+'|'+r.brand+'|'+r.unit;groups[k]||(groups[k]={name:r.material,brand:r.brand,unit:r.unit,qty:0,cost:0});groups[k].qty+=r.qty;groups[k].cost+=r.cost});
