@@ -1253,10 +1253,12 @@
         deniedSnapshot=null;localStorage.removeItem(DENIED_KEY);
       }
     }
-    if(!navigator.onLine)return status('OFFLINE — CHANGE QUEUED','warn');
+    if(!navigator.onLine){status('OFFLINE — CHANGE QUEUED','warn');return false}
     if(cloudDirty)await push(0);
-    if(!cloudDirty)await pull(true);
+    if(cloudDirty)return false;
+    const refreshed=await pull(true);
     if(liveRole())await pullLiveStatus();
+    return refreshed===true&&!cloudDirty;
   }
 
   async function backupNow(){
