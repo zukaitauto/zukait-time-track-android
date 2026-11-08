@@ -2490,7 +2490,7 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    }
    return result;
  };
- const assignmentFor=s=>(state.assign||[]).find(a=>a&&!a.cancelled&&a.id===s.assignmentId)||
+ const assignmentFor=s=>(s.assignmentId?(state.assign||[]).find(a=>a&&!a.cancelled&&a.id===s.assignmentId):null)||
    (!s.assignmentId?(state.assign||[]).find(a=>a&&!a.cancelled&&a.job===s.job&&String(a.emp)===String(s.emp)&&!!a.rework===!!s.rework):null);
  const assignmentNormal=(a,from,to)=>{
    const now=Date.now(),seen=new Set(),covered=[],startLimit=Math.max(0,from),endLimit=Math.min(to,now);
