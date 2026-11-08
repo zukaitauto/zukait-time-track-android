@@ -142,10 +142,17 @@
     if(!String(reason||'').trim())throw new Error('REASON_REQUIRED');
     const before=clone(row),allowed=allowance(state,row.jobCard);
     const nextLines=(Array.isArray(lines)?lines:[]).map((l,i)=>{
-      const a=allowed.find(x=>x.materialId===l.materialId&&x.brandId===l.brandId); if(!a)throw new Error('ACTUAL_NOT_ISSUED');
-      const q=Number(l.quantity); if(!Number.isFinite(q)||q<0||q>a.quantity+1e-9)throw new Error('ACTUAL_EXCEEDS_ISSUED');
+      const a=allowed.find(x=>x.materialId===l.materialId&&x.brandId===l.brandId);
+      const previous=(row.lines||[]).find(x=>x.materialId===l.materialId&&x.brandId===l.brandId);
+      // Corrections must retain the same flexibility as original Actual entry:
+      // a finalized actual-only item or over-issued amount remains valid.
+      if(!a&&!previous)throw new Error('ACTUAL_MATERIAL_NOT_FOUND');
+      const q=Number(l.quantity); if(!Number.isFinite(q)||q<0)throw new Error('INVALID_ACTUAL_QUANTITY');
       const p=priceAt(state,l.materialId,l.brandId,row.actualAt); if(!p)throw new Error('PRICE_NOT_FOUND');
-      return {no:i+1,materialId:l.materialId,brandId:l.brandId,unit:a.unit,issuedQuantity:a.quantity,actualQuantity:q,priceId:p.id,unitPriceSnapshot:p.pricePerUnit,lineCost:money(q*p.pricePerUnit)};
+      const issuedQuantity=Number(a?.quantity||0);
+      return {no:i+1,materialId:l.materialId,brandId:l.brandId,unit:a?.unit||previous?.unit||'',
+        issuedQuantity,actualQuantity:q,actualOnly:!a,overIssued:!!a&&q>issuedQuantity+1e-9,
+        priceId:p.id,unitPriceSnapshot:p.pricePerUnit,lineCost:money(q*p.pricePerUnit)};
     });
     row.lines=nextLines; row.totalCost=money(nextLines.reduce((n,l)=>n+l.lineCost,0)); row.correctedAt=Date.now(); row.correctedBy=actor.id; row.correctedByName=String(actor?.name||actor?.id||''); row.correctedByRole=String(actor?.role||''); row.correctionReason=String(reason||'').trim();
     auditChange(c,'ACTUAL_CORRECTED',row,before,row,actor,reason); return clone(row);
@@ -170,7 +177,7 @@
     auditChange(c,'ACTUAL_REOPENED',row,before,row,actor,why); return clone(row);
   }
   function monthlyExpense(state,year,month){
-    const c=ensureState(state),from=new Date(year,month,1).getTime(),to=new Date(year,month+1,1).getTime();
+    const c=ensureState(state),from=Date.UTC(year,month,1)-4*3600000,to=Date.UTC(year,month+1,1)-4*3600000;
     const rows=c.actuals.filter(x=>!x.voided&&x.locked&&x.actualAt>=from&&x.actualAt<to);
     return {jobCards:new Set(rows.map(x=>x.jobCard)).size,totalExpense:money(rows.reduce((s,x)=>s+num(x.totalCost),0)),records:rows.length};
   }
