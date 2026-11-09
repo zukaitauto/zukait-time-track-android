@@ -54,3 +54,8 @@ test('repeat JC actual is included once; repeat penalty is separate',()=>{
  assert.equal(r.repeat,60);
  assert.equal(r.incentive,0);
 });
+
+test('different repeat worker earns actual while original employee receives penalty',()=>{
+ const data={assign:[{id:'R',emp:'REPAIR',job:'J2',rework:true,mistakeEmp:'ORIGINAL',suggested:60}],sessions:[{id:'r',assignmentId:'R',emp:'REPAIR',job:'J2',start:t(2,8),end:t(2,9)}]};
+ const api=run(data);assert.equal(api.incentiveFor('REPAIR',t(8,12)).achieved,60);assert.equal(api.incentiveFor('REPAIR',t(8,12)).repeat,0);assert.equal(api.incentiveFor('ORIGINAL',t(8,12)).achieved,0);assert.equal(api.incentiveFor('ORIGINAL',t(8,12)).repeat,60);
+});

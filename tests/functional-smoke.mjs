@@ -660,7 +660,7 @@ assert.match(updates,/V107 INCENTIVE FINAL AUTHORITY/,'V107 incentive final auth
 assert.match(updates,/window\.v107IncentiveFinalAuthority=true/,'V107 final incentive authority marker');
 assert.match(updates,/incentive=Math\.max\(0,achieved-t\.target-repeat\)/,'incentive = achieved - target - repeat');
 assert.match(updates,/a\.job===HOLD\)return \{achieved:current,excess:0,actual:current,id001:current\}/,'ID001 duty-time must count in Achieved exactly once');
-assert.match(updates,/String\(a\.mistakeEmp\|\|a\.emp\)!==String\(emp\)/,'different repeat employee can earn achievement');
+assert.match(updates,/Every JC duty minute counts in Achieved/, 'repeat worker actual counts independently of the separately attributed mistake penalty');
 assert.match(updates,/String\(a\.mistakeEmp\|\|a\.emp\)===String\(emp\)/,'repeat actual is charged to mistake employee');
 assert.match(updates,/dutyAfterLeave-15/,'15-minute cleaning allowance reduces working-day target');
 
@@ -774,7 +774,8 @@ assert.match(cloud, /ZukaitConsumables\.ensureState\(state\)/, 'cloud state norm
 assert.match(consumables, /timeControlFingerprint/, 'Consumables must expose a regression fingerprint for protected time-control collections');
 assert.doesNotMatch(consumables, /state\.sessions\.(push|splice)|state\.assign\.(push|splice)|state\.jobs\.(push|splice)/, 'Consumables module must not mutate time-control jobs, assignments, or sessions');
 assert.match(consumables, /unitPriceSnapshot/, 'Actual material records must snapshot the applicable historical unit price');
-assert.match(consumables, /ACTUAL_EXCEEDS_ISSUED/, 'Actual quantity must never exceed issued plus additional allowance');
+assert.match(consumables,/overIssued:/,'Recorded over-issued actuals must remain explicitly flagged');
+assert.match(consumables,/actualOnly:/,'Actual-only material lines retain their source distinction');
 assert.match(consumables, /ACTUAL_ALREADY_FINISHED/, 'Actual Finish must be duplicate protected and locked');
 const consumablesUi = read('app/src/main/assets/consumables_ui.js');
 assert.match(consumablesUi, /Suggested \/ Issued Materials/, 'Supervisor Painting menu must retain Suggested / Issued Materials');

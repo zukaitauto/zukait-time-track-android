@@ -47,6 +47,9 @@ const scalar=async sql=>(await db.query(sql)).rows[0].n;
 let at=Date.parse('2026-10-19T04:00:00Z');
 try{
  let base=fs.readFileSync('tests/fixtures/reception-postgres17-baseline.sql','utf8');base=native?base.replace(/create role (anon|authenticated|service_role)[^;]+;/g,''):base.replace('create extension if not exists pgcrypto;','');await db.exec(base);
+ // The production visit-role patch predates the repository registry foundation.
+ // Supply its private-schema prerequisite to the older schema-only QA baseline.
+ await db.exec('create schema if not exists zukait_vehicle; revoke all on schema zukait_vehicle from public,anon,authenticated');
  const foundation='20261025073818_mechanical_department_inactive_foundation.sql',freshInstall=process.env.ZUKAIT_MECHANICAL_INSTALL_MODE==='fresh';
  const mechanicalMigrations=fs.readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')&&f.includes('_mechanical_')).sort();
  const sharedVehicleRegistry='20261104143434_shared_vehicle_registry.sql';
