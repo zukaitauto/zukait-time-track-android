@@ -259,8 +259,12 @@ window.consAddLine=function(){
 window.consRemoveLine=function(i){draft.lines.splice(i,1);consRenderRows();consRefreshIssueFinishState()};
 window.consEditLine=function(i){const l=draft.lines[i];if(!l)return;const c=C().ensureState(state),m=c.materials.find(x=>x.id===l.materialId)||{},b=c.brands.find(x=>x.id===l.brandId)||{},v=prompt((m.name||'Material')+' / '+(b.name||'Brand')+' quantity ('+(m.unit||'unit')+')',String(l.quantity));if(v===null)return;const q=Number(v);if(!Number.isFinite(q)||q<=0)return alert('Enter a valid quantity.');l.quantity=q;consRenderRows()};
 window.consRenderRows=function(){
- const out=document.getElementById('consDraftRows');if(!out)return;const c=C().ensureState(state);
- out.innerHTML=draft.lines.length?'<div class="cons-entry-line-cards">'+draft.lines.map((l,i)=>{const m=c.materials.find(x=>x.id===l.materialId)||{},b=c.brands.find(x=>x.id===l.brandId)||{};return '<div class="cons-entry-line-card"><div><b>'+esc(m.name||'')+'</b><span>'+esc(b.name||'')+'</span></div><div><small>QUANTITY</small><b>'+esc(l.quantity)+' '+esc(m.unit||'')+'</b></div><button class="secondary" onclick="consRemoveLine('+i+')">REMOVE</button></div>'}).join('')+'</div>':'<div class="notice">No materials added yet.</div>';
+ const out=document.getElementById('consDraftRows');if(!out)return;const c=C().ensureState(state),at=Date.now();let totalMills=0,missing=0;
+ const rows=draft.lines.map((l,i)=>{const m=c.materials.find(x=>x.id===l.materialId)||{},b=c.brands.find(x=>x.id===l.brandId)||{},price=C().priceAt(state,l.materialId,l.brandId,at),rate=Number(price?.pricePerUnit),known=!!price&&price.pricePerUnit!==null&&price.pricePerUnit!==''&&typeof price.pricePerUnit!=='boolean'&&Number.isFinite(rate)&&rate>=0,mills=known?Math.round(Number(l.quantity)*rate*1000):null;
+  if(mills===null)missing++;else totalMills+=mills;
+  return '<div class="cons-entry-line-card"><div><b>'+esc(m.name||'')+'</b><span>'+esc(b.name||'')+'</span></div><div><small>QUANTITY</small><b>'+esc(l.quantity)+' '+esc(m.unit||'')+'</b><small>Unit price: '+(known?'OMR '+rate.toFixed(3):'Price pending')+'</small><b>Amount: '+(known?'OMR '+(mills/1000).toFixed(3):'Pending')+'</b></div><button class="secondary" onclick="consRemoveLine('+i+')">REMOVE</button></div>';
+ }).join('');
+ out.innerHTML=draft.lines.length?'<div class="cons-entry-line-cards">'+rows+'</div><div class="notice cons-issue-cost" role="status" aria-live="polite"><b>'+ (missing?'Priced subtotal':'Estimated issue total')+': OMR '+(totalMills/1000).toFixed(3)+'</b>'+(missing?'<p>'+missing+' material line(s) have no applicable price. Total cost is pending.</p>':'')+'<small>Cost preview at current material prices. Final consumption expense follows recorded actual usage. Adding or removing a line updates this estimate.</small></div>':'<div class="notice">No materials added yet.</div>';
  consRefreshIssueFinishState();
 };
 window.consFinishIssue=function(){

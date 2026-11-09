@@ -194,3 +194,8 @@ state.consumables.actuals=originalActuals;
 ctx.consOpenReports();assert.match(ctx.modal,/<option value="itemtotals">Material Summary<\/option>/);
 assert.doesNotMatch(ctx.modal,/<option value="material(?:brand)?">|Period Item Totals/);
 console.log('Single Material Summary: combined material totals, inclusive dates, JC filters and empty state passed');
+
+// Issue costing must remain a preview and update on quantity/removal.
+ctx.openConsumablesEntry('additional');ctx.consSelectJC('JC1');fill({consMaterial:m.id,consBrand:b.id,consQty:'2'});const recordsBefore=JSON.stringify(state.consumables);ctx.consAddLine();assert.match(element('consDraftRows').innerHTML,/Estimated issue total: OMR 8\.500/);assert.equal(JSON.stringify(state.consumables),recordsBefore);
+ctx.consRemoveLine(0);assert.match(element('consDraftRows').innerHTML,/No materials added/);
+const oldPrices=state.consumables.prices;state.consumables.prices=[];fill({consMaterial:m.id,consBrand:b.id,consQty:'2'});ctx.consAddLine();assert.match(element('consDraftRows').innerHTML,/Price pending/);assert.match(element('consDraftRows').innerHTML,/Total cost is pending/);assert.doesNotMatch(element('consDraftRows').innerHTML,/Estimated issue total/);state.consumables.prices=oldPrices;ctx.consRenderRows();assert.match(element('consDraftRows').innerHTML,/Estimated issue total: OMR 8\.500/);console.log('PASS issue/additional cost preview uses authoritative prices, recalculates without saving and flags missing prices');
