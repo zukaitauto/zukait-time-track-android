@@ -41,7 +41,7 @@ assert.equal(corrected.totalCost,7,'correction must recalculate using historical
 assert.equal(corrected.lines[0].unitPriceSnapshot,3.5,'correction must preserve historical price snapshot');
 assert.equal(state.consumables.audit.at(-1).type,'ACTUAL_CORRECTED');
 assert.equal(state.consumables.audit.at(-1).reason,'Verified actual usage');
-assert.throws(()=>C.managerCorrectActual(state,actual.id,[{materialId:mat.id,brandId:brand.id,quantity:3}],manager,'too high'),/ACTUAL_EXCEEDS_ISSUED/);
+{const fixture=structuredClone(state);const corrected=C.managerCorrectActual(fixture,actual.id,[{materialId:mat.id,brandId:brand.id,quantity:3}],manager,'Verified over-issued actual');assert.equal(corrected.lines[0].overIssued,true);assert.equal(corrected.lines[0].actualQuantity,3);}
 assert.throws(()=>C.managerReopenActual(state,actual.id,supervisor,'x'),/MANAGER_ONLY/);
 assert.throws(()=>C.managerReopenActual(state,actual.id,manager,''),/REASON_REQUIRED/);
 const reopened=C.managerReopenActual(state,actual.id,manager,'Supervisor needs controlled correction');
