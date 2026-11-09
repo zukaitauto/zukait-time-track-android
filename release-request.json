@@ -2,20 +2,65 @@
   "versionName": "V391",
   "versionCode": 354,
   "releaseScope": "reception-contact-role-and-notification-fixes",
-  "approvedForStaff": false,
-  "ownerPublicationRequested": false,
-  "releaseHeldByOwner": true,
+  "approvedForStaff": true,
+  "sourceCommit": "5ab6dd27e78ad6bf0df6b14fd3e420c9d6ad22e3",
+  "ownerPublicationRequested": true,
+  "ownerRequestedImmediateRelease": true,
+  "releaseHeldByOwner": false,
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "Persist Reception contact roles and keep cleared Manager and Supervisor notifications read after refresh.",
+  "physicalAcceptanceStatus": "NOT_RUN",
+  "freshProductionBackupRestoreStatus": "NOT_RUN",
+  "backupDeferredByOwner": true,
+  "approvedAt": "2026-11-09T08:48:07.600Z",
+  "publishNonce": "v391-owner-release-1794214087600",
+  "signedAcceptanceRun": 42588007866,
+  "verificationRun": 42588008255,
+  "authorization": "Owner explicitly requested release and completion of remaining tasks. Publish this exact qualified source on architecture-v2 only. Existing owner backup deferral retained; owner will physically test after release. No claim that physical acceptance or fresh restore was performed.",
+  "reason": "Actual duty-time Monthly Incentive achievement, repeat penalty attribution, customer/contact and intake-KM preservation, audited temporary VIG/VWC movement and notification read fixes.",
+  "productionBackend": {
+    "project": "pjknotnjkufadqavcmii",
+    "version": 107,
+    "bundleSha256": "8fb979a5efb937eaa06183056c513daccc26f04400d6d07109c87d99c6aadf82",
+    "changedModules": [
+      "index.ts",
+      "job_edit_rules.js",
+      "reception_dashboard_rules.js",
+      "vehicle_movement_rules.js"
+    ],
+    "readbackVerified": true,
+    "filesVerified": 39,
+    "scope": "Minimal v106-based bundle; preserve other live modules, environment flags, and custom session authentication. Compact history and broader Vehicle Master identity rollout remain off."
+  },
+  "databaseMigration": {
+    "name": "v391_private_visit_customer_roles",
+    "verified": true,
+    "additionalProjection": "mechanical_vehicle_detail_projection",
+    "dataBackfill": false
+  },
+  "evidence": {
+    "isolatedRoleRollout": {
+      "passed": true,
+      "evidence": "tests/v391-role-rollout-qa.mjs passed against isolated legacy schema; no production fixtures"
+    },
+    "privatePermissions": {
+      "passed": true,
+      "evidence": "anon/authenticated function EXECUTE denied; service_role permitted; live read-only privilege checks"
+    },
+    "missingActorDenied": {
+      "passed": true,
+      "evidence": "Live unknown-actor call returned reception_forbidden without inserting a role"
+    },
+    "productionRecordsPreserved": {
+      "passed": true,
+      "evidence": "Rollout DDL creates private role storage and replaces projection routines only; no update/delete/backfill of business records"
+    }
+  },
   "previousPublishedRelease": {
     "versionName": "V390",
     "versionCode": 353,
     "sourceCommit": "8afde5daa5c7e543cc5307a7bd9921eb3c0c759c",
     "releaseTag": "release-V390-architecture-v2"
-  },
-  "sourceCommit": "4c497bcbbe03ee6c98c45682b7f83c51ee971aa7",
-  "approvedAt": null,
-  "publishNonce": null
+  }
 }
