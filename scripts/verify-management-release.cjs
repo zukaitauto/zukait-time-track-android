@@ -15,7 +15,20 @@ function validateWorkflowFixes(r,ref){
  for(const k of ['isolatedLocationTransaction','preservedProductionWork','managerPermission'])assert.equal(r.evidence?.[k]?.passed,true);
  return true;
 }
+function validateV391(r,ref){
+ assert.equal(ref,'refs/heads/architecture-v2');assert.equal(r.releaseScope,'reception-contact-role-and-notification-fixes');
+ assert.equal(r.versionName,'V391');assert.equal(r.versionCode,354);assert.equal(r.approvedForStaff,true);assert.equal(r.ownerPublicationRequested,true);assert.equal(r.ownerRequestedImmediateRelease,true);
+ assert.match(r.sourceCommit,/^[a-f0-9]{40}$/);assert.equal(r.productionBackendChanges,true);assert.equal(r.backendDeploymentRequired,true);assert.equal(r.phase2ActivationApproved,false);
+ assert.equal(r.physicalAcceptanceStatus,'NOT_RUN');assert.equal(r.freshProductionBackupRestoreStatus,'NOT_RUN');assert.equal(r.backupDeferredByOwner,true);
+ assert.ok(Number.isFinite(Date.parse(r.approvedAt)));assert.ok(r.publishNonce?.length>=12);for(const k of ['signedAcceptanceRun','verificationRun'])assert.ok(Number.isSafeInteger(r[k])&&r[k]>0);
+ assert.equal(r.productionBackend?.project,'pjknotnjkufadqavcmii');assert.ok(r.productionBackend?.version>=107);assert.match(r.productionBackend?.bundleSha256||'',/^[a-f0-9]{64}$/);assert.equal(r.productionBackend?.readbackVerified,true);
+ assert.deepEqual(r.productionBackend?.changedModules?.slice().sort(),['index.ts','job_edit_rules.js','reception_dashboard_rules.js','vehicle_movement_rules.js']);
+ assert.equal(r.databaseMigration?.name,'v391_private_visit_customer_roles');assert.equal(r.databaseMigration?.verified,true);
+ for(const k of ['isolatedRoleRollout','privatePermissions','missingActorDenied','productionRecordsPreserved'])assert.equal(r.evidence?.[k]?.passed,true);
+ return true;
+}
 function validate(r,ref) {
+ if(r.releaseScope==='reception-contact-role-and-notification-fixes')return validateV391(r,ref);
  if(r.releaseScope==='manager-workflow-fixes')return validateWorkflowFixes(r,ref);
  assert.equal(ref,'refs/heads/architecture-v2');
  assert.equal(r.releaseScope,'reception-insurance-features-1-10');
@@ -47,7 +60,7 @@ function validate(r,ref) {
 }
 if(require.main===module) {
  const r=JSON.parse(fs.readFileSync('release-request.json','utf8'));
- if(!['reception-insurance-features-1-10','manager-workflow-fixes'].includes(r.releaseScope)||r.approvedForStaff!==true) console.log('MANAGEMENT_PUBLICATION=false');
+ if(!['reception-insurance-features-1-10','manager-workflow-fixes','reception-contact-role-and-notification-fixes'].includes(r.releaseScope)||r.approvedForStaff!==true) console.log('MANAGEMENT_PUBLICATION=false');
  else { validate(r,process.env.GITHUB_REF); console.log('MANAGEMENT_PUBLICATION=true'); console.log('UI_VERIFICATION_RUN='+r.verificationRun); }
 }
 module.exports={validate};

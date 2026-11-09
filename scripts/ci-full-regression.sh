@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+node tests/v391-release-gate.cjs
 node tests/vehicle-movement.mjs
 node tests/job-identity-preservation.mjs
 node tests/job-card-manager-open.mjs
