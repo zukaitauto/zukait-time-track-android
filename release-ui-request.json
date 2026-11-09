@@ -3,7 +3,7 @@
   "versionCode": 354,
   "releaseScope": "reception-contact-role-and-notification-fixes",
   "approvedForStaff": false,
-  "sourceCommit": null,
+  "sourceCommit": "4c497bcbbe03ee6c98c45682b7f83c51ee971aa7",
   "approvedAt": null,
   "publishNonce": null,
   "ownerRequestedProceed": true,
