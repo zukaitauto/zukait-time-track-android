@@ -96,7 +96,7 @@ for (const engine of ['chromium', 'webkit']) {
       assert.ok(functionGrid.sameRow&&functionGrid.shortRow&&functionGrid.radios&&functionGrid.radioHoriz,
         `${engine} ${width}: Function Check options must align horizontally in compact rows; ${JSON.stringify(functionGrid)}`);
       const expected=['registration','make','model','year','odometer_unit','odometer',
-        'vin','customer','contact','claim'];
+        'vin','customer','contact','claim','customer_role'];
       const order=await page.locator('#rc-form .rc-create-sections .rc-grid input,#rc-form .rc-create-sections .rc-grid select')
         .evaluateAll(nodes=>nodes.map(n=>n.name));
       assert.deepEqual(order,expected,`${engine} ${width}: ordered fields`);
