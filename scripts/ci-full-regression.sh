@@ -73,6 +73,7 @@ node tests/sublet-expenses.mjs
 node tests/registration-authority.mjs
 node tests/id001-preliminary-labour.mjs
 node tests/id001-achieved-classification.mjs
+node tests/v2-monthly-incentive-actual-achieved.mjs
 node tests/id001-preliminary-classification.mjs
 node tests/id001-preliminary-end-to-end.mjs
 node tests/id001-assignment-uniqueness.mjs
