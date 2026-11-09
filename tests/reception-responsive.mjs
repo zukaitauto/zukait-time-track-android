@@ -152,7 +152,7 @@ for (const engine of ['chromium', 'webkit']) {
       await page.locator('[data-rc-action=new]').click();
       await page.locator('#rc-form').waitFor();
       assert.equal(await page.locator('#rc-form [name=job_type] option[value=CASH]').count(),0);
-      assert.match(await page.locator('.rc-form-hint').textContent(),/Insurance checklist only/);
+      assert.match(await page.locator('#rc-form > .rc-form-hint').textContent(),/Insurance checklist only/);
       assert.equal(await page.locator('#rc-form [name=insurance_id]').getAttribute('required'),'');
       assert.equal(await page.locator('.modal-box.rc-dialog').isVisible(),true);
       // A Phase 1 Back click must never invoke the Phase 2 dashboard.
