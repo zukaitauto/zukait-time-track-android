@@ -1,7 +1,7 @@
 import {financialReport,validateFilters,validDay,key,milli,day,searchKey} from './finance_rules.js';
 import {managerProfitReport} from './profit_performance.js';
 const actions=new Set(['accountant_dashboard','accountant_jc_search','accountant_jc_detail','accountant_report','accountant_command']);
-const reportNames=new Set(['jobs','consumables','paint','parts','leave','cash','lpo','outstanding','monthly','audit','labour','invoices','manager_profit']);
+const reportNames=new Set(['jobs','consumables','paint','parts','leave','cash','lpo','outstanding','monthly','audit','labour','invoices','cash_invoices','manager_profit']);
 const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
 export const canonical=v=>Array.isArray(v)?v.map(canonical):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,canonical(v[k])])):v;
 export async function fingerprint(value,secret){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);return [...new Uint8Array(await crypto.subtle.sign('HMAC',k,new TextEncoder().encode(JSON.stringify(canonical(value)))))].map(x=>x.toString(16).padStart(2,'0')).join('');}
@@ -47,6 +47,36 @@ export async function accountantApi(admin,user,body,secret,now=Date.now()){
  if(action==='accountant_jc_detail'){const d=full.details.find(d=>d.job_card===key(body.job_card));return d?{status:200,body:{ok:true,detail:d,breakdown:Object.fromEntries(['consumables','paint','parts'].map(k=>[k,full.rows[k].filter(r=>r.job_card===d.job_card)])),snapshot_revision:full.snapshot_revision,finance_revision:full.finance_revision}}:fail('job_not_found',404);}
  let rows;
  if(action==='accountant_jc_search'){const q=searchKey(body.query);rows=full.details.filter(d=>[d.job_card,d.registration,d.vehicle,d.customer].some(v=>searchKey(v).includes(q))).map(d=>({job_card:d.job_card,registration:d.registration,vehicle:d.vehicle,customer:d.customer,job_type:d.job_type}));}
+ else if(body.report==='cash_invoices'){
+  // An invoice register is different from a receipt ledger. Include every
+  // CASH-type Job Card with a verified final invoice, even when deposits
+  // cover it and no synthetic cash-invoice receipt was generated.
+  const byJob=new Map(full.details.map(d=>[d.job_card,d]));
+  const selection=filters.month||(filters.from||filters.to?'':day(now).slice(0,7));
+  const today=day(now);
+  const rowsAll=full.rows.invoices.filter(i=>{
+   if(key(i.job_type)!=='CASH'||!i.date||i.date>today)return false;
+   if(selection&&!i.date.startsWith(selection))return false;
+   if((filters.from&&i.date<filters.from)||(filters.to&&i.date>filters.to))return false;
+   const d=byJob.get(i.job_card)||{};
+   if(filters.job_card&&key(i.job_card)!==key(filters.job_card))return false;
+   if(filters.query&&![i.job_card,i.customer,d.registration,d.vehicle].some(v=>searchKey(v).includes(searchKey(filters.query))))return false;
+   return true;
+  }).map(i=>{
+   const d=byJob.get(i.job_card)||{};
+   return {job_card:i.job_card,date:i.date,invoice_date:i.date,registration:d.registration||'',
+    vehicle:d.vehicle||'',customer:i.customer||d.customer||'',
+    invoice_amount_omr:i.invoice_amount_omr,source:'Final Cash invoice'};
+  }).sort((a,b)=>b.date.localeCompare(a.date)||b.job_card.localeCompare(a.job_card,undefined,{numeric:true}));
+  const totalMilli=rowsAll.reduce((n,r)=>n+(milli(r.invoice_amount_omr)||0),0);
+  const offset=body.offset||0,limit=body.limit||100;
+  return {status:200,body:{ok:true,rows:rowsAll.slice(offset,offset+limit),
+   total_count:rowsAll.length,next_offset:offset+limit<rowsAll.length?offset+limit:null,
+   invoice_total_omr:totalMilli/1000,invoice_count:rowsAll.length,
+   period_month:selection,summary:report.summary,as_of:full.as_of,
+   notes:['Only final invoices entered for CASH-type Job Cards are included.','Invoice totals are not proof of physical cash, bank or cheque receipt.'],
+   snapshot_revision:full.snapshot_revision,finance_revision:full.finance_revision}};
+ }
  else if(body.report==='monthly'){
   const base=filters.month||day(now).slice(0,7),date=new Date(base+'-01T08:00:00Z');rows=[];
   for(let i=0;i<12;i++){const month=new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth()-i,1)).toISOString().slice(0,7),r=financialReport(context,{...filters,month},now);if((filters.from&&month<filters.from.slice(0,7))||(filters.to&&month>filters.to.slice(0,7)))continue;rows.push({month,...Object.fromEntries(Object.entries(r.summary).filter(([,v])=>v&&typeof v==='object'&&'amount_omr' in v).map(([k,v])=>[k+'_omr',v.pending_records?null:v.amount_omr])),pending_cost_records:r.summary.total_job_cost.pending_records,lpo_pending_records:r.summary.lpo_pending_records,leave_days:r.summary.leave_total_days});}
