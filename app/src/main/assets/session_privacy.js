@@ -140,7 +140,7 @@
     // remain fail-closed behind the privacy screen.
     const backgroundRead=new Set(['revision','load','live_status','monthly_followup','reception_dashboard',
       'reception_list','reception_get','receptionist_live_status','receptionist_delivery_list',
-      'accountant_dashboard','accountant_report']).has(apiAction);
+      'accountant_dashboard','accountant_report','notification_receipts']).has(apiAction);
     const lost=(temporaryServerResponse=false)=>{
       if(temporaryServerResponse&&backgroundRead&&!locked&&verifiedActor===actor&&
          ticket===generation&&navigator.onLine)return;
