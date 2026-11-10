@@ -71,8 +71,9 @@ function closeDetail(){detailGeneration++;target=null;$('detail').hidden=true;$(
 function backendReport(name){return name==='cash'?'cash_invoices':name==='cash_ledger'?'cash':name;}
 function closeCashDialog(){
  const dialog=$('cash-entry-dialog');
- if(typeof dialog.close==='function'&&dialog.open)dialog.close();
- else dialog.removeAttribute('open');
+ try{if(typeof dialog.close==='function'&&dialog.open)dialog.close();
+ else dialog.removeAttribute('open');}
+ catch{dialog.removeAttribute('open');}
  $('entry').hidden=true;
 }
 async function load(){if(!verified)return;closeDetail();result=null;$('pdf').disabled=true;$('excel').disabled=true;$('cash-entry').disabled=true;const ticket=++generation;try{say('Loading verified financial records…');const searching=report!=='jobs'||$('query').value.trim().length>=2;const appliedFilters=filters();const r=await request('workshop-api',{action:searching?'accountant_report':'accountant_dashboard',report:backendReport(report),filters:appliedFilters,offset,limit:searching?25:1});if(ticket!==generation)return;result={...r,appliedFilters,canExport:searching};
@@ -129,8 +130,9 @@ function cashForm(row=null){
  $('transaction-date').value=row?.transaction_date||new Date(Date.now()+14400000).toISOString().slice(0,10);
  $('reason').value='';
  const dialog=$('cash-entry-dialog');
- if(typeof dialog.showModal==='function'&&!dialog.open)dialog.showModal();
- else dialog.setAttribute('open','');
+ try{if(typeof dialog.showModal==='function'&&!dialog.open)dialog.showModal();
+ else dialog.setAttribute('open','');}
+ catch{dialog.setAttribute('open','');}
  $('payee').focus?.();
 }
 
