@@ -147,7 +147,12 @@ function markAllRead(){
  updateBadges();
  queueReceiptSync();
  const status=document.getElementById('zukaitNotifyReadStatus');
- if(status)status.textContent='All current notifications marked as read.';
+ if(status)status.textContent=navigator.onLine
+   ?'All current notifications marked as read. Synchronizing across your devices.'
+   :'All current notifications marked as read on this device. Server synchronization will resume when connected.';
+ // Do not leave previously unread rows visible in an already-open popup.
+ const list=document.querySelector('.zukait-notify-list');
+ if(list)list.innerHTML='<p class="muted">No unread notifications.</p>';
 }
 function openCenter(){
  const rows=unreadRows();updateBadges();
