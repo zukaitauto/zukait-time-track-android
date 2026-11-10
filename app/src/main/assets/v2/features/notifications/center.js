@@ -1,5 +1,5 @@
 (function(){'use strict';
-const POLL_MS=5000;
+const POLL_MS=15000;
 let serverPartsEvents=null;
 let refreshInFlight=false;
 let receiptsInFlight=false,receiptResyncPending=false,receiptsActor='',receiptsLastFetch=0,remoteIds=new Set(),remoteThrough=0;
@@ -191,7 +191,7 @@ async function refresh(){
  await syncReceipts();
 }
 window.zukaitNotificationCenter={open:openCenter,markAllRead,openPart,openItem,openPaintRecord,paintNotifications,refresh,all,unread,inject,eventPartsNotifications,normalizeServerEvent,loadServerPartEvents};
-document.addEventListener('DOMContentLoaded',()=>{inject();refresh()});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refresh()});window.addEventListener('online',refresh);window.addEventListener('focus',refresh);setTimeout(()=>{inject();refresh()},700);setInterval(refresh,POLL_MS);
+document.addEventListener('DOMContentLoaded',()=>{inject();refresh()});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){receiptsLastFetch=0;refresh()}});window.addEventListener('online',refresh);window.addEventListener('focus',()=>{receiptsLastFetch=0;refresh()});setTimeout(()=>{inject();refresh()},700);setInterval(refresh,POLL_MS);
 new MutationObserver(()=>inject()).observe(document.documentElement,{childList:true,subtree:true});
 window.addEventListener('zukait-live-status',updateBadges);
 })();
