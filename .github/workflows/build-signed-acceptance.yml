@@ -64,7 +64,7 @@ permissions:
 jobs:
   candidate:
     if: github.ref_name == 'architecture-v2'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
       ANDROID_HOME: /usr/local/lib/android/sdk
