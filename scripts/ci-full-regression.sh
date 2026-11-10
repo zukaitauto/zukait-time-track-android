@@ -154,6 +154,7 @@ node tests/v2-consumables.mjs
 node tests/v2-notification-rules.mjs
 node tests/v2-notification-center.mjs
 node tests/notification-mark-all-read.mjs
+node tests/notification-cross-device-receipts.mjs
 node tests/manager-paint-notifications.mjs
 node tests/v2-reports.mjs
 node tests/v2-scale-benchmark.mjs
