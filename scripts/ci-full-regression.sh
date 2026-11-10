@@ -30,6 +30,7 @@ node tests/accountant-parts-costs.mjs
 node tests/accountant-ledger-sql.mjs
 node tests/accountant-auth-api.mjs
 node tests/accountant-dashboard.mjs
+node tests/accountant-cash-invoice-register.mjs
 node tests/accountant-overview-layout.mjs
 ACCOUNTANT_TEST_ROLE=Manager node tests/accountant-dashboard.mjs
 node tests/accountant-manager-dom.mjs
