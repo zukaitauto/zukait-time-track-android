@@ -243,7 +243,7 @@ async function openReceptionEstimates(rcNo){
     const saved=matching.filter(e=>e.status==='Saved').sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));
     const drafts=matching.filter(e=>e.status!=='Saved');
     ensureStyle();
-    const heading=nav('zukaitReception?.openChecklist?.(\''+esc(rcNo)+'\')')+
+    const heading=nav('zukaitReception.openRecord(\''+esc(rcNo)+'\')')+
       '<div class="est-home"><h3>Estimates for '+esc(rcNo)+'</h3><p class="est-help">View a previously saved estimate for this checklist or create another only when needed.</p>';
     const entries=saved.map(e=>'<div class="est-section"><b>'+esc(e.estimateNo||'Estimate')+'</b> · Saved · OMR '+money(totals(e).total)+
       '<div class="rc-actions" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">'+
