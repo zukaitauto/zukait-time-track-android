@@ -12,3 +12,151 @@ main,main *{min-width:0}.brand>div{overflow-wrap:anywhere}.summary b{overflow-wr
 header{background:#ffffffcc;border:1px solid #fff;border-radius:22px;padding:17px;box-shadow:0 8px 22px #21486810}.account-network{color:#17634d;background:#e5f6ec;border:1px solid #c3dfd1;border-radius:30px;padding:8px 10px;font-size:11px;font-weight:750;white-space:nowrap}.account-network.offline{background:#fff0da;color:#875a16;border-color:#e9d3ac}.account-menu-button{font-size:20px;background:#eaf0f7;min-width:44px}#account-menu{width:min(560px,calc(100vw - 24px));max-height:90vh;overflow:auto;border:1px solid #d5e5ee;border-radius:24px;padding:22px;background:linear-gradient(145deg,#fff,#f0f7fc);color:#18334d;box-shadow:0 22px 70px #132c4840}#account-menu::backdrop{background:#142c4559;backdrop-filter:blur(4px)}#account-menu h2{margin:5px 0}#account-menu-identity{font-size:13px;color:#536d82}.account-menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.account-menu-grid button{display:grid;text-align:left;gap:7px;background:linear-gradient(135deg,#fff,#e4f1fa);padding:15px;border:1px solid #d2e3ed;border-radius:16px}.account-menu-grid button>span{font-size:22px;color:#2c7596}.account-menu-grid small{font-size:11px;color:#526d82;font-weight:450;line-height:1.4}.account-menu-grid .account-menu-danger{background:linear-gradient(135deg,#fff,#ffe7e9);color:#963e51}#account-password-form label{margin:12px 0}#account-password-status{font-size:13px;line-height:1.5}#account-menu-close{font-size:22px;min-width:42px}@media(max-width:550px){header{padding:13px;gap:13px}header .brand{flex:1 1 200px}header .actions{gap:8px}#account-menu{padding:16px}.account-menu-grid button{padding:12px}.account-menu-grid b{font-size:13px}}
 
 .expense-breakdowns{display:grid;gap:12px;margin:20px 0}.expense-breakdown{border:1px solid #cce5dc;border-radius:15px;background:#f0faf6;overflow:hidden}.expense-breakdown summary{display:flex;align-items:center;gap:12px;justify-content:space-between;cursor:pointer;padding:16px;font-weight:750;list-style:none}.expense-breakdown summary::-webkit-details-marker{display:none}.expense-breakdown summary small{display:block;font-size:11px;font-weight:500;color:#547582;margin-top:5px}.expense-breakdown summary strong{font-size:16px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.expense-lines{background:#fff;padding:12px}.expense-parts{border-color:#cbddeb;background:#eef6fd}.expense-paint{border-color:#ded0ef;background:#f6f0fc}.expense-breakdown summary:focus-visible{outline:3px solid #1383ce;outline-offset:-3px}@media(max-width:550px){.expense-breakdown summary{padding:13px;gap:8px}.expense-breakdown summary strong{font-size:14px}.expense-lines{padding:9px}}
+
+
+/* Accounts overview refresh: compact, restrained and high contrast.
+   Scoped to the home view so ledgers, entry forms and exports retain their layout. */
+#accounts-home .home-heading{
+  margin:12px 0 16px;padding:20px 23px;gap:14px;
+  background:#fff;border:1px solid #d9e5ef;border-radius:19px;
+  box-shadow:0 5px 18px #1834510b;
+}
+#accounts-home .home-heading h2{
+  font-size:clamp(23px,2.7vw,31px);letter-spacing:-.035em;color:#143550;
+  margin:4px 0 5px;
+}
+#accounts-home .home-heading p{font-size:13px;color:#527085;line-height:1.4}
+#accounts-home .eyebrow{color:#087a88;font-size:10px}
+#accounts-home .secure-badge{
+  color:#16634d;background:#e8f6ed;border:1px solid #c5e3d1;
+  box-shadow:none;font-size:11px;
+}
+#accounts-home .summary{gap:11px;margin-bottom:12px}
+#accounts-home .summary button.account-kpi{
+  --kpi-accent:#256c8d;
+  display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;
+  gap:7px;position:relative;min-height:121px;
+  padding:15px 18px 13px;border-radius:15px;
+  background:#fff!important;border:1px solid #d7e3eb!important;
+  border-left:4px solid var(--kpi-accent)!important;
+  box-shadow:0 4px 12px #16324b0b!important;
+  color:#173852;text-align:left;
+  transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease;
+}
+#accounts-home .summary button.account-kpi:hover{
+  border-color:var(--kpi-accent)!important;transform:translateY(-1px);
+  box-shadow:0 8px 20px #14365018!important;
+}
+#accounts-home .account-kpi-top{
+  display:flex;gap:6px;align-items:center;justify-content:space-between;
+  color:#456078;font-size:12px;font-weight:750;
+}
+#accounts-home .account-kpi-top>span:last-child{font-size:16px;color:var(--kpi-accent)}
+#accounts-home .summary button.account-kpi b{
+  font-size:clamp(19px,2.1vw,27px);line-height:1.1;
+  letter-spacing:-.025em;font-weight:850;color:#133553;
+}
+#accounts-home .summary button.account-kpi small{
+  color:#566e83;font-size:11px;line-height:1.35;
+  font-weight:600;min-height:16px;
+}
+#accounts-home .summary button.account-kpi .account-kpi-pending{color:#965d11}
+#accounts-home .account-kpi-dot{
+  display:inline-block;margin-right:6px;width:7px;height:7px;
+  border-radius:50%;background:#d38a1b;vertical-align:middle;
+}
+#accounts-home .account-kpi-category{
+  position:absolute;bottom:14px;right:17px;font-size:10px;
+  font-weight:700;letter-spacing:.015em;color:#8595a3;
+}
+#accounts-home .account-kpi-cash_in{--kpi-accent:#0f8579!important}
+#accounts-home .account-kpi-cash_out{--kpi-accent:#517693!important}
+#accounts-home .account-kpi-lpo_collected{--kpi-accent:#18847b!important}
+#accounts-home .account-kpi-outstanding{--kpi-accent:#c27c1d!important}
+#accounts-home .account-kpi-total_expenses{--kpi-accent:#55729b!important}
+#accounts-home .account-kpi-estimated_gross_profit{--kpi-accent:#6c6bb0!important}
+#accounts-home .accounts-home-disclaimer{
+  color:#61768a;font-size:11px;line-height:1.45;
+  margin:2px 2px 18px;
+}
+#accounts-home .module-heading{margin:13px 0 10px}
+#accounts-home .module-heading h2{font-size:19px;color:#173852}
+#accounts-home .module-heading>span{font-size:11px;color:#73879a}
+#accounts-home #navigation{
+  gap:10px;padding:0 0 14px;
+}
+#accounts-home #navigation .module-card{
+  min-height:99px;padding:15px;align-items:center;gap:13px;
+  border:1px solid #d9e5ee!important;border-radius:15px;
+  background:#fff!important;color:#173852!important;
+  box-shadow:0 4px 14px #17344c0b!important;
+  transition:border-color .14s ease,transform .14s ease,box-shadow .14s ease;
+}
+#accounts-home #navigation .module-card:hover{
+  transform:translateY(-2px);
+  border-color:var(--accent)!important;
+  box-shadow:0 9px 20px #18345018!important;
+}
+#accounts-home #navigation .module-icon{
+  width:44px;height:44px;border-radius:12px;flex:0 0 44px;
+  background:color-mix(in srgb,var(--accent) 10%,white);
+  border:1px solid color-mix(in srgb,var(--accent) 16%,white);
+  color:var(--accent);box-shadow:none;
+  font-size:23px;
+}
+#accounts-home #navigation .module-copy{
+  padding:0;gap:5px;min-width:0;flex:1;
+}
+#accounts-home #navigation .module-copy strong{
+  font-size:13px;font-weight:780;line-height:1.3;color:#1a3853;
+}
+#accounts-home #navigation .module-copy small{
+  color:#64798e;font-size:11px;line-height:1.4;
+}
+#accounts-home #navigation .module-arrow{
+  font-size:21px;align-self:center;flex:0 0 auto;margin:0 0 0 auto;
+  color:var(--accent);
+}
+#accounts-home #navigation .tone-blue,
+#accounts-home #navigation .tone-indigo,
+#accounts-home #navigation .tone-purple{--accent:#3c719e}
+#accounts-home #navigation .tone-teal,
+#accounts-home #navigation .tone-sky,
+#accounts-home #navigation .tone-green{--accent:#168579}
+#accounts-home #navigation .tone-violet,
+#accounts-home #navigation .tone-rose{--accent:#7866a5}
+#accounts-home #navigation .tone-amber{--accent:#a17b37}
+@media(max-width:900px){
+  #accounts-home .summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #accounts-home #navigation{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:550px){
+  #accounts-home .home-heading{padding:15px 16px;border-radius:14px}
+  #accounts-home .home-heading h2{font-size:24px}
+  #accounts-home .summary{gap:8px}
+  #accounts-home .summary button.account-kpi{
+    min-height:116px;padding:12px 11px 13px;gap:7px;border-radius:12px;
+  }
+  #accounts-home .summary button.account-kpi b{
+    font-size:clamp(16px,4.3vw,21px);overflow-wrap:anywhere;
+  }
+  #accounts-home .account-kpi-top{font-size:11px}
+  #accounts-home .account-kpi-category{display:none}
+  #accounts-home #navigation{grid-template-columns:1fr;gap:8px}
+  #accounts-home #navigation .module-card{
+    min-height:76px;padding:11px 12px;flex-direction:row;
+    gap:11px;border-radius:13px;align-items:center;
+  }
+  #accounts-home #navigation .module-icon{
+    width:40px;height:40px;flex-basis:40px;font-size:21px;
+  }
+  #accounts-home #navigation .module-copy strong{font-size:13px}
+  #accounts-home #navigation .module-copy small{font-size:11px}
+  #accounts-home #navigation .module-arrow{
+    position:static;font-size:20px;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #accounts-home .summary button.account-kpi,
+  #accounts-home #navigation .module-card{transition:none;transform:none!important}
+}
