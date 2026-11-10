@@ -55,6 +55,7 @@ w.document.getElementById('cancel-entry').click();
 assert.equal(w.document.getElementById('cash-entry-dialog').hasAttribute('open'),false,'Cancel closes Cash Entry');
 w.zukaitAccountant.switchReport('jobs');
 await wait(()=>w.document.getElementById('title').textContent==='JC Search & 360° Financial View');
+assert.equal(w.document.getElementById('month').value,'','Cash Invoices default month must not hide older Job Cards when navigating to JC Search');
 
 w.document.getElementById('query').value='Toyota';w.document.getElementById('refresh').click();
 await wait(()=>w.document.getElementById('rows').textContent.includes('Toyota Camry'));
