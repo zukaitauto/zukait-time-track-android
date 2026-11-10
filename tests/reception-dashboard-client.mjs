@@ -36,7 +36,8 @@ w.eval(fs.readFileSync("app/src/main/assets/reception_dashboard.js","utf8"));
 const settle=async()=>{for(let i=0;i<20;i++)await new Promise(resolve=>setImmediate(resolve));};
 await w.zukaitReception.open();await settle();
 let buttons=w.document.querySelectorAll("#rc-root [data-rdb=tile]");
-assert.equal(buttons.length,13,"Reception home retains ten cards and adds CTL, Not Repaired and Manager Insurance");
+assert.equal(buttons.length,14,"Reception home includes the authorized Estimate launcher and retains all existing work cards");
+assert.ok([...buttons].some(b=>b.dataset.section==='estimate'&&b.textContent.includes('Estimate')),"Estimate tile must remain visible");
 for(const [i,name] of ["Create Checklist","Create Job Card","Checklist List","Job Card List","Approval Waiting Insurance",
 "Vehicle With Customer","Approved Vehicles","Ready to Deliver","Delivered Vehicle List","Delivery Follow-up"].entries())
  assert.ok([...buttons].some(b=>b.textContent.includes(name)),name+" label missing");
@@ -52,7 +53,7 @@ for(const [key,name] of Object.entries(headings)){
  assert.equal(commands.at(-1).section,key==="vwc"?"vwc-checklists":key);
  if(key==="vwc")assert.equal(w.document.querySelectorAll("[data-rdb=vwc]").length,2,"VWC has two separate lists");
  await click('#rc-root [data-rdb=back-dashboard]');
- assert.equal(w.document.querySelectorAll("[data-rdb=tile]").length,13,key+" Back restores all thirteen cards");
+ assert.equal(w.document.querySelectorAll("[data-rdb=tile]").length,14,key+" Back restores all fourteen cards including Estimate");
 }
 await click('#rc-root [data-rdb=tile][data-section=jobs]');
 assert.equal(w.document.querySelectorAll(".rdb-job-table tbody tr").length,1,"Job Card list renders a row in the current table layout");
