@@ -232,3 +232,5 @@ node tests/reception-management-sql.mjs
 node tests/reception-management-release.mjs
 
 node tests/id001-server-stop.mjs
+
+node tests/reception-checklist-saved-estimates.mjs
