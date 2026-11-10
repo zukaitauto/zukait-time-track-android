@@ -5,6 +5,7 @@
   const definitions=[
     ["new","Create Checklist","New vehicle intake","📝"],
     ["create-job","Create Job Card","Cash / Credit · approved Insurance","🚗"],
+    ["estimate","Estimate","New · Find · Saved · Print / PDF","🧾"],
     ["checklists","Checklist List","Number · date · month · search","📋"],
     ["jobs","Job Card List","Number · date · month · search","🗂"],
     ["waiting","Approval Waiting Insurance","Checklist not yet approved","⏳"],
@@ -107,12 +108,12 @@
     `;
     document.head.appendChild(s);
   }
-  const countFor=key=>key==="new"||key==="create-job"?"":key==="vwc"?counts.vwc??"":counts[key]??"";
+  const countFor=key=>["new","create-job","estimate"].includes(key)?"":key==="vwc"?counts.vwc??"":counts[key]??"";
   function tiles(){
     return definitions.filter(d=>d[0]!=="insurance"||role()==="Manager").map(([key,title,sub,icon])=>
       '<button type="button" class="rdb-card" data-rdb="tile" data-section="'+key+'" data-active="false" aria-label="Open '+safe(title)+'">'+
       '<span class="rdb-emoji" aria-hidden="true">'+icon+'</span><span class="rdb-content"><b>'+safe(title)+
-      '</b><small>'+safe(!backendAvailable&&!['new','checklists'].includes(key)?'Server update required':sub)+'</small></span><span class="rdb-count">'+safe(backendAvailable?countFor(key):'')+'</span></button>').join("");
+      '</b><small>'+safe(!backendAvailable&&!['new','checklists','estimate'].includes(key)?'Server update required':sub)+'</small></span><span class="rdb-count">'+safe(backendAvailable?countFor(key):'')+'</span></button>').join("");
   }
   const label=key=>definitions.find(x=>x[0]===key)?.[1]||"Reception";
   function filterHtml(){
@@ -247,11 +248,19 @@
   }
   async function choose(next){
     if(!backendAvailable){
+      if(next==='estimate'){
+        if(typeof window.zukaitEstimate?.openHome!=='function')throw Error('Estimate module is unavailable. Reload and try again.');
+        return window.zukaitEstimate.openHome();
+      }
       if(next==="new")return window.zukaitReception.newChecklist();
       if(next==="checklists")return window.zukaitReception.checklistList();
       const notice=document.getElementById("rdb-unavailable");
       if(notice)notice.innerHTML="<h4>"+safe(label(next))+"</h4><p>This function needs the Reception server update. No records were loaded or changed. Use the existing workshop workflow until activation is verified.</p>";
       return;
+    }
+    if(next==='estimate'){
+      if(typeof window.zukaitEstimate?.openHome!=='function')throw Error('Estimate module is unavailable. Reload and try again.');
+      return window.zukaitEstimate.openHome();
     }
     if(next==='insurance')return window.zukaitInsuranceManagement?.open();
     if(next==="new")return window.zukaitReception.newChecklist();
