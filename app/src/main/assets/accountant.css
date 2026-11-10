@@ -160,3 +160,61 @@ header{background:#ffffffcc;border:1px solid #fff;border-radius:22px;padding:17p
   #accounts-home .summary button.account-kpi,
   #accounts-home #navigation .module-card{transition:none;transform:none!important}
 }
+
+
+/* Cash Invoice Register — restrained financial summary and compact modal. */
+#accounts-workspace .cash-invoice-total{
+ display:flex;align-items:center;justify-content:space-between;gap:18px;
+ padding:18px 22px;margin:13px 0 16px;
+ border:1px solid #b8dbd3;border-left:5px solid #178073;border-radius:15px;
+ background:#f0faf6;box-shadow:0 5px 16px #1a4a420a;
+}
+#accounts-workspace .cash-invoice-total>div:first-child{display:grid;gap:5px}
+#accounts-workspace .cash-invoice-total span{
+ font-size:12px;font-weight:750;color:#285c54;
+}
+#accounts-workspace .cash-invoice-total strong{
+ font-size:clamp(22px,2.7vw,32px);letter-spacing:-.035em;line-height:1.2;
+ color:#135a52;font-variant-numeric:tabular-nums;
+}
+#accounts-workspace .cash-invoice-total small{
+ font-size:11px;color:#5e7975;line-height:1.4;
+}
+#accounts-workspace .cash-invoice-total-count{text-align:right;display:grid;gap:6px}
+#accounts-workspace .cash-invoice-total-count b{font-size:13px;color:#1e554d}
+#accounts-workspace #notes.notice{
+ font-size:12px;line-height:1.5;padding:10px 13px;margin:9px 0;
+ background:#f5f9fc;color:#4c6680;
+}
+#accounts-workspace #cash-entry,
+#accounts-workspace #cash-ledger-toggle{font-size:12px}
+#accounts-workspace #cash-entry{
+ background:#166c68;border-color:#166c68;color:#fff;
+}
+#accounts-workspace #rows [data-job]{
+ background:#e9f5f3;border-color:#bcded8;color:#146960;
+}
+.cash-entry-dialog{
+ width:min(760px,calc(100vw - 26px));max-height:90dvh;
+ padding:0;border:1px solid #c6dbe6;border-radius:20px;
+ box-shadow:0 25px 75px #102e4259;color:#173852;
+ overflow:auto;background:white;
+}
+.cash-entry-dialog::backdrop{background:#0e2b3d80;backdrop-filter:blur(3px)}
+.cash-entry-dialog .cash-entry-form{
+ display:block;margin:0;box-shadow:none;border:none;border-radius:20px;
+ padding:23px;
+}
+.cash-entry-dialog h2{font-size:21px;margin:0 0 15px;color:#143752}
+.cash-entry-dialog .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cash-entry-dialog .actions{padding-top:17px;gap:10px}
+.cash-entry-dialog .actions button:first-child{
+ background:#116a68;border-color:#116a68;color:#fff;
+}
+@media(max-width:650px){
+ #accounts-workspace .cash-invoice-total{padding:14px;gap:10px;flex-wrap:wrap}
+ #accounts-workspace .cash-invoice-total-count{text-align:left}
+ .cash-entry-dialog{width:calc(100vw - 16px);max-height:94dvh;border-radius:13px}
+ .cash-entry-dialog .cash-entry-form{padding:15px}
+ .cash-entry-dialog .form-grid{grid-template-columns:1fr}
+}
