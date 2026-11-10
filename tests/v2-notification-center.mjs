@@ -30,7 +30,8 @@ assert.equal(rows.length,0,'Manager must not receive routine Purchaser/Superviso
 
 assert.match(code,/reports\.page\('SPARE_PARTS'/,'notification refresh must use authoritative Spare Parts event history');
 assert.match(code,/setInterval\(refresh,POLL_MS\)/);
-assert.match(code,/const POLL_MS=5000/);
+assert.match(code,/const POLL_MS=15000/,'notification event polling is intentionally throttled to protect backend resources');
+assert.match(code,/const RECEIPT_REFRESH_MS=30000/,'receipt readback refresh uses a bounded separate interval');
 assert.match(code,/const beforeParts=purchaser&&sp\?\.reportRows\?JSON\.stringify\(sp\.reportRows\(\)\):''/,'Purchaser refresh must detect authoritative Spare Parts changes without rebuilding on unchanged polls');
 assert.match(code,/renderPurchaserDashboard\?\.\(true\)/,'Visible Purchaser dashboard must refresh from the hydrated server cache when Spare Parts change');
 assert.match(code,/refreshManagerSparePartsSummary\?\.\(true\)/,'Manager Spare Parts summary must refresh from the same hydrated server cache');
