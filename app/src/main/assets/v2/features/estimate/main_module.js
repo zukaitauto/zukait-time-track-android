@@ -230,14 +230,19 @@ async function openReceptionEstimates(rcNo){
   receptionEstimateListBusy=true;
   try{
     if(!navigator.onLine)throw Error('Connect to the server to view saved estimates for this checklist.');
-    // Receptionist uses an authenticated, case-scoped GET; other roles first refresh
-    // workshop state, so saved quotes from a different device are included.
+    // A case-scoped server GET is authoritative across Reception, Manager and Supervisor.
+    // Global workshop snapshots alone may not contain the newest saved estimate.
     if(role()==='Receptionist'){
       if(!window.zukaitReceptionEstimate?.prepare)throw Error('Reception Estimate service unavailable.');
       await window.zukaitReceptionEstimate.prepare(rcNo);
-    }else if(window.zukaitCloud?.syncNow){
-      if(await window.zukaitCloud.syncNow()!==true)throw Error('Could not refresh saved estimates from server.');
-    }else throw Error('Estimate synchronization is unavailable.');
+    }else{
+      if(!window.zukaitReception?.action)throw Error('Reception Estimate service unavailable.');
+      const response=await window.zukaitReception.action({action:'reception_estimate',command:{operation:'GET',rc_no:rcNo}});
+      if(!Array.isArray(response?.estimates))throw Error('Server did not return the estimate list.');
+      ensureState();
+      const ids=new Set(response.estimates.map(e=>String(e.id)));
+      state.estimates=state.estimates.filter(e=>!ids.has(String(e.id))).concat(response.estimates);
+    }
     ensureState();
     const matching=(state.estimates||[]).filter(e=>e&&String(e.receptionNo||'').toUpperCase()===String(rcNo).toUpperCase()&&!e.receptionAdditionalRequestId);
     const saved=matching.filter(e=>e.status==='Saved').sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));
