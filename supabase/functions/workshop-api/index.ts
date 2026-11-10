@@ -1187,6 +1187,34 @@ Deno.serve(async (req: Request) => {
     }
     if(body.newJobNumber !== undefined && action !== "manager_job_full_edit") return reply({ok:false,code:"job_edit_invalid_fields"},400);
 
+    // Notification read acknowledgements are account-scoped. Authentication
+    // always resolves the actor from the session, never from a request parameter.
+    if (action === 'notification_receipts') {
+      if (!['GET','ACK'].includes(body?.operation) ||
+          !Object.keys(body||{}).every(k=>['action','operation','ids','through'].includes(k)))
+        return reply({ok:false,code:'notification_invalid_request'},400);
+      const actorId=String(user.id||'');
+      if(!actorId)return reply({ok:false,code:'invalid_session'},401);
+      if(body.operation==='GET') {
+        const [receipts,mark]=await Promise.all([
+          admin.from('workshop_notification_reads').select('notification_id').eq('actor_id',actorId).limit(5001),
+          admin.from('workshop_notification_watermarks').select('read_through_ms').eq('actor_id',actorId).maybeSingle()
+        ]);
+        if(receipts.error||mark.error)throw receipts.error||mark.error;
+        if((receipts.data||[]).length>5000)return reply({ok:false,code:'notification_history_limit'},503);
+        return reply({ok:true,ids:(receipts.data||[]).map((r:any)=>r.notification_id),through:Number(mark.data?.read_through_ms||0)});
+      }
+      const ids=body.ids===undefined?[]:body.ids;
+      if(!Array.isArray(ids)||ids.length>5000||ids.some((id:any)=>typeof id!=='string'||id.length<1||id.length>256)||
+         (body.through!==undefined&&body.through!==null&&(!Number.isSafeInteger(body.through)||body.through<0)))
+        return reply({ok:false,code:'notification_invalid_request'},400);
+      const {data:ack,error:ackError}=await admin.rpc('zukait_notification_ack',{
+        p_actor_id:actorId,p_ids:ids,p_read_through_ms:body.through??null
+      });
+      if(ackError)throw ackError;
+      return reply({ok:true,through:Number(ack?.read_through_ms||0)});
+    }
+
     // Mechanical Supervisors cannot use legacy full-state/bodyshop/financial APIs.
     if (user.role === 'Mechanical Supervisor' && !action.startsWith('mechanical_')) {
       return reply({ok:false,code:'mechanical_role_only'},403);
