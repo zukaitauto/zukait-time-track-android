@@ -75,5 +75,5 @@ test('Accounts KPI uses this month CASH invoice amount rather than all-time rece
   {action:'accountant_dashboard',report:'jobs',limit:1},'test-key-not-live',now);
  assert.equal(home.status,200);
  assert.equal(home.body.summary.cash_invoice_current_month.amount_omr,160);
- assert.equal(home.body.summary.cash_in.amount_omr,160);
+ assert.equal(home.body.summary.cash_in.amount_omr,200,'all-time receipt summary deliberately differs from current-month invoice KPI');
 });
