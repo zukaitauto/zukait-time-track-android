@@ -1190,6 +1190,12 @@ Deno.serve(async (req: Request) => {
     // Notification read acknowledgements are account-scoped. Authentication
     // always resolves the actor from the session, never from a request parameter.
     if (action === 'notification_receipts') {
+      // Enforce actor role before validating request fields. Receptionists,
+      // Accountants and Mechanical Supervisors have separate API boundaries;
+      // no receipt lookup may bypass their existing role restrictions.
+      if(user.role==='Receptionist')return reply({ok:false,code:'receptionist_forbidden'},403);
+      if(user.role==='Accountant')return reply({ok:false,code:'accountant_forbidden'},403);
+      if(user.role==='Mechanical Supervisor')return reply({ok:false,code:'mechanical_role_only'},403);
       if (!['GET','ACK'].includes(body?.operation) ||
           !Object.keys(body||{}).every(k=>['action','operation','ids','through'].includes(k)))
         return reply({ok:false,code:'notification_invalid_request'},400);
