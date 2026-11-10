@@ -224,6 +224,40 @@ async function newEstimate(reception=null,requestKey=null,additionalRequestId=nu
   try{if(!reception)rememberEstimate(e)}catch(error){return alert('Could not retain this draft on the device. Estimate was not saved.');}
   state.estimates.unshift(e);if(reception){audit(e,'CREATE');saveState()}openEditor(e.id);return e.id;
 }
+let receptionEstimateListBusy=false;
+async function openReceptionEstimates(rcNo){
+  if(!canUse()||receptionEstimateListBusy)return;
+  receptionEstimateListBusy=true;
+  try{
+    if(!navigator.onLine)throw Error('Connect to the server to view saved estimates for this checklist.');
+    // Receptionist uses an authenticated, case-scoped GET; other roles first refresh
+    // workshop state, so saved quotes from a different device are included.
+    if(role()==='Receptionist'){
+      if(!window.zukaitReceptionEstimate?.prepare)throw Error('Reception Estimate service unavailable.');
+      await window.zukaitReceptionEstimate.prepare(rcNo);
+    }else if(window.zukaitCloud?.syncNow){
+      if(await window.zukaitCloud.syncNow()!==true)throw Error('Could not refresh saved estimates from server.');
+    }else throw Error('Estimate synchronization is unavailable.');
+    ensureState();
+    const matching=(state.estimates||[]).filter(e=>e&&String(e.receptionNo||'').toUpperCase()===String(rcNo).toUpperCase()&&!e.receptionAdditionalRequestId);
+    const saved=matching.filter(e=>e.status==='Saved').sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));
+    const drafts=matching.filter(e=>e.status!=='Saved');
+    ensureStyle();
+    const heading=nav('zukaitReception?.openChecklist?.(\''+esc(rcNo)+'\')')+
+      '<div class="est-home"><h3>Estimates for '+esc(rcNo)+'</h3><p class="est-help">View a previously saved estimate for this checklist or create another only when needed.</p>';
+    const entries=saved.map(e=>'<div class="est-section"><b>'+esc(e.estimateNo||'Estimate')+'</b> · Saved · OMR '+money(totals(e).total)+
+      '<div class="rc-actions" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">'+
+      '<button type="button" class="blue" data-estimate-id="'+esc(e.id)+'" onclick="zukaitEstimate.preview(this.dataset.estimateId)">View Estimate</button>'+
+      '<button type="button" class="secondary" data-estimate-id="'+esc(e.id)+'" onclick="zukaitEstimate.openEditor(this.dataset.estimateId)">Edit Estimate</button></div></div>').join('');
+    const draftsHtml=drafts.length?'<h4>Unfinished drafts</h4>'+drafts.map(e=>'<div class="est-section">'+esc(e.estimateNo||'Draft')+
+      ' · Draft <button type="button" class="secondary" data-estimate-id="'+esc(e.id)+'" onclick="zukaitEstimate.openEditor(this.dataset.estimateId)">Continue Draft</button></div>').join(''):'';
+    openModal(heading+(saved.length?'<h4>Previously saved estimates ('+saved.length+')</h4>'+entries:'<p class="notice">No saved estimate found for this checklist.</p>')+
+      draftsHtml+'<div class="est-bottom"><button type="button" class="blue" data-rc="'+esc(rcNo)+
+      '" onclick="zukaitEstimate.newFromReception(this.dataset.rc)">+ Create New Estimate</button></div></div>');
+  }catch(error){
+    alert(error.message||'Could not retrieve this checklist\'s estimates. Please retry.');
+  }finally{receptionEstimateListBusy=false;}
+}
 let receptionEstimateBusy=false;
 async function newFromReception(rcNo,additionalRequestId=null){
   if(!canUse()||receptionEstimateBusy)return;
@@ -606,7 +640,7 @@ function wrapRender(name){
 }
 try{if(typeof state!=='undefined')for(const e of state.estimates||[])rememberEstimate(e)}catch(error){console.warn('Existing device estimates could not be retained',error)}
 function boot(){ensureState();ensureStyle();wrapRender('renderSupervisor');wrapRender('renderManager');ensureDashboardCards()}
-window.zukaitEstimate={openHome,openDrafts,deleteDraft,refreshLists,newEstimate,newFromReception,openEditor,setPaymentType,setType,setVat,addRow,removeRow,recalc,autoSave,saveCurrent,loadJob,openFind,renderFind,openRecent,openReports,preview,printEstimate,pdfEstimate,whatsApp,shareEstimate,ensureDashboardCards,totals,printable,estimatePdfFilename,estimateDocumentHtml,shareText,currentOutputEstimate,toggleCustomerParts};
+window.zukaitEstimate={openHome,openDrafts,deleteDraft,refreshLists,newEstimate,newFromReception,openReceptionEstimates,openEditor,setPaymentType,setType,setVat,addRow,removeRow,recalc,autoSave,saveCurrent,loadJob,openFind,renderFind,openRecent,openReports,preview,printEstimate,pdfEstimate,whatsApp,shareEstimate,ensureDashboardCards,totals,printable,estimatePdfFilename,estimateDocumentHtml,shareText,currentOutputEstimate,toggleCustomerParts};
 window.openEstimateModule=openHome;
 document.addEventListener('DOMContentLoaded',boot);setTimeout(boot,0);setTimeout(boot,700);
 new MutationObserver(()=>{wrapRender('renderSupervisor');wrapRender('renderManager');ensureDashboardCards()}).observe(document.documentElement,{childList:true,subtree:true});
