@@ -43,11 +43,18 @@ await wait(()=>!w.document.getElementById('cash-entry').disabled);
 assert.equal(w.document.getElementById('accounts-home').hidden,true);
 assert.equal(w.document.getElementById('accounts-workspace').hidden,false);
 
+w.zukaitAccountant.switchReport('cash');
+await wait(()=>w.document.getElementById('title').textContent==='Cash Invoices'&&!w.document.getElementById('cash-entry').disabled);
+assert.equal(w.document.getElementById('cash-entry').hidden,false);
 w.document.getElementById('cash-entry').click();
+assert.equal(w.document.getElementById('cash-entry-dialog').hasAttribute('open'),true,'Cash Entry opens a dialog');
 for(const [id,value] of [['transaction-date','2026-10-01'],['payee','QA'],['amount','1.000'],['reason','QA no-write revision validation']])w.document.getElementById(id).value=value;
 rejectEntry=true;w.document.getElementById('entry').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
 await wait(()=>w.document.getElementById('message').textContent==='QA_REJECTED_WITHOUT_POSTING');
 w.document.getElementById('cancel-entry').click();
+assert.equal(w.document.getElementById('cash-entry-dialog').hasAttribute('open'),false,'Cancel closes Cash Entry');
+w.zukaitAccountant.switchReport('jobs');
+await wait(()=>w.document.getElementById('title').textContent==='JC Search & 360° Financial View');
 
 w.document.getElementById('query').value='Toyota';w.document.getElementById('refresh').click();
 await wait(()=>w.document.getElementById('rows').textContent.includes('Toyota Camry'));
