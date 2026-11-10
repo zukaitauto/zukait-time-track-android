@@ -48,7 +48,7 @@ function filters(){return Object.fromEntries(['query','month','from','to','emplo
 function display(v,isMoney=false){return window.zukaitAccountantExports.display(v,isMoney)}
 function renderSummary(summary){
  const cards=[
-  ['Cash In','cash_in','cash','Receipts'],
+  ['Cash Invoices','cash_invoice_current_month','cash','Current Oman month'],
   ['Cash Out','cash_out','cash','Payments'],
   ['Insurance LPO Collected','lpo_collected','lpo','Insurance'],
   ['Outstanding Payments','outstanding','outstanding','Receivables'],
