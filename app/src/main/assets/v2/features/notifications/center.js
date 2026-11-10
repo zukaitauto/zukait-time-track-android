@@ -2,7 +2,7 @@
 const POLL_MS=5000;
 let serverPartsEvents=null;
 let refreshInFlight=false;
-let receiptsInFlight=false,receiptsActor='',receiptsLastFetch=0,remoteIds=new Set(),remoteThrough=0;
+let receiptsInFlight=false,receiptResyncPending=false,receiptsActor='',receiptsLastFetch=0,remoteIds=new Set(),remoteThrough=0;
 const RECEIPT_REFRESH_MS=30000;
 function getReadThroughLocal(){try{return Number(localStorage.getItem(readKey()+'-through'))||0}catch(_){return 0}}
 function effectiveRemoteIds(){return receiptsActor===readKey()?remoteIds:new Set()}
@@ -19,7 +19,7 @@ async function syncReceipts(force=false){
     if(!Array.isArray(response.ids))throw Error('Notification server read is incomplete');
     remoteIds=new Set(response.ids);remoteThrough=Math.max(0,Number(response.through)||0);
     receiptsActor=actor;receiptsLastFetch=Date.now();
-    const missing=[...readIds()].filter(id=>!remoteIds.has(id));
+    const missing=[...new Set([...readIds(),...paintReadIds()])].filter(id=>!remoteIds.has(id));
     const localThrough=getReadThroughLocal();
     if(missing.length||localThrough>remoteThrough){
       // Migrate old local acknowledgements, and replay interrupted/offline reads.
@@ -42,9 +42,9 @@ async function syncReceipts(force=false){
     // or report sync success after a failed server call.
     console.warn('Notification read acknowledgement sync failed',err);
     receiptsLastFetch=0;
-  }finally{receiptsInFlight=false}
+  }finally{receiptsInFlight=false;if(receiptResyncPending){receiptResyncPending=false;void syncReceipts(true)}}
 }
-function queueReceiptSync(){receiptsLastFetch=0;void syncReceipts(true)}
+function queueReceiptSync(){receiptsLastFetch=0;if(receiptsInFlight)receiptResyncPending=true;else void syncReceipts(true)}
 
 function meNow(){try{return (typeof me!=='undefined'&&me)||window.me||null}catch(_){return window.me||null}}
 function role(){return String(meNow()?.role||'')}
@@ -120,7 +120,7 @@ function systemNotifications(){
 }
 function all(){const m=new Map();for(const n of [...partsNotifications(),...systemNotifications(),...paintNotifications()])m.set(n.id,n);return [...m.values()].sort((a,b)=>b.at-a.at)}
 function readThrough(){
- if(!['Manager','Supervisor'].includes(role()))return 0;
+ if(!['Manager','Supervisor','Purchaser'].includes(role()))return 0;
  try{return Number(localStorage.getItem(readKey()+'-through'))||0}catch(_){return 0}
 }
 function unreadRows(){
