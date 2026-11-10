@@ -12,7 +12,7 @@ test('accounts overview keeps the financial and module contracts intact',()=>{
  assert.match(html,/id="accounts-workspace"/);
  assert.match(html,/id="accounts-back"/);
  assert.match(html,/id="manager-back"/);
- assert.match(html,/id="accountant?/i);
+ assert.match(html,/id="account-name"/);
  assert.match(js,/function renderSummary\(summary\)/);
  assert.match(js,/Estimated Gross Profit/);
  assert.match(js,/moduleDesign/);
