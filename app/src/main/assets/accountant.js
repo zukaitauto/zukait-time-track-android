@@ -94,9 +94,13 @@ function showHome(){
  for(const k of ['query','month','from','to','employee','material','insurance'])$(k).value='';
  load();
 }
-function switchReport(name){if(!columns[name])return;report=name;offset=0;
+function switchReport(name){
+ if(!columns[name])return;
+ const leavingCash=['cash','cash_ledger'].includes(report)&&!['cash','cash_ledger'].includes(name);
+ report=name;offset=0;
  $('accounts-home').hidden=true;$('accounts-workspace').hidden=false;closeCashDialog();
  if(name==='cash'){$('month').value=omanMonth();$('from').value='';$('to').value='';$('query').value='';}
+ else if(leavingCash){for(const id of ['month','from','to','query'])$(id).value='';}
  $('module-label').textContent=name==='cash_ledger'?'Receipts / Cash Out':modules.find(m=>m[0]===name)[1];
  for(const k of ['employee','material','insurance'])$(k).closest('label').hidden=!({employee:['consumables','leave'],material:['consumables'],insurance:['jobs','lpo','outstanding']}[k].includes(name));
  closeDetail();load();$('accounts-workspace').scrollIntoView?.({block:'start',behavior:'smooth'});
