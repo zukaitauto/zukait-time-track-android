@@ -2071,7 +2071,7 @@
           break;
         }
         case "rc-estimate":
-          await window.zukaitEstimate.newFromReception(current.record.rc_no);
+          await window.zukaitEstimate.openReceptionEstimates(current.record.rc_no);
           break;
         case "additional-parts":
           preliminaryParts(true);
