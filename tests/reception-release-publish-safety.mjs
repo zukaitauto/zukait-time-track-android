@@ -74,5 +74,14 @@ if (updater.versionCode < release.versionCode) {
  assert.equal(updater.sourceCommit,release.sourceCommit);
  assert.match(updater.apkSha256,/^[a-f0-9]{64}$/);
  assert.equal(updater.releaseTag,'release-'+updater.versionName+'-architecture-v2');
+} else if(release.releaseScope==='reception-contact-role-and-notification-fixes') {
+ assert.equal(release.approvedForStaff,true,'Current coordinated source must have explicit owner staff approval');
+ assert.equal(release.ownerPublicationRequested,true,'Current signed publication requires owner intent');
+ assert.equal(updater.sourceCommit,release.sourceCommit,'Latest signed version must match approved source');
+ assert.equal(updater.versionCode,release.versionCode);
+ assert.equal(updater.versionName,release.versionName);
+ assert.match(updater.apkSha256,/^[a-f0-9]{64}$/);
+ assert.equal(updater.releaseTag,'release-'+release.versionName+'-architecture-v2');
+ assert.equal(uiApproval?.approvedForStaff,false,'Unapproved newer UI request must not be treated as published');
 } else if(['reception-insurance-features-1-10','accountant-live-test'].includes(release.releaseScope)) { assert.equal(updater.sourceCommit,release.sourceCommit); assert.equal(updater.versionCode,release.versionCode); assert.match(updater.apkSha256,/^[a-f0-9]{64}$/); } else verifyUpdaterAfterUiRelease(updater);
 console.log('PASS: Signed APK and Pages are manual-only on architecture-v2 with source/approval gates; explicit UI approval required');
