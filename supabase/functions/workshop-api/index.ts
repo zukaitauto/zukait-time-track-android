@@ -1196,13 +1196,21 @@ Deno.serve(async (req: Request) => {
       const actorId=String(user.id||'');
       if(!actorId)return reply({ok:false,code:'invalid_session'},401);
       if(body.operation==='GET') {
-        const [receipts,mark]=await Promise.all([
-          admin.from('workshop_notification_reads').select('notification_id').eq('actor_id',actorId).limit(5001),
-          admin.from('workshop_notification_watermarks').select('read_through_ms').eq('actor_id',actorId).maybeSingle()
-        ]);
-        if(receipts.error||mark.error)throw receipts.error||mark.error;
-        if((receipts.data||[]).length>5000)return reply({ok:false,code:'notification_history_limit'},503);
-        return reply({ok:true,ids:(receipts.data||[]).map((r:any)=>r.notification_id),through:Number(mark.data?.read_through_ms||0)});
+        const mark=await admin.from('workshop_notification_watermarks')
+          .select('read_through_ms').eq('actor_id',actorId).maybeSingle();
+        if(mark.error)throw mark.error;
+        const ids:string[]=[];
+        // PostgREST may cap each request at 1,000 rows regardless of limit().
+        // Page the full history so older read events cannot become unread again.
+        for(let offset=0;offset<=20000;offset+=1000){
+          const receipts=await admin.from('workshop_notification_reads').select('notification_id')
+            .eq('actor_id',actorId).order('notification_id',{ascending:true}).range(offset,offset+999);
+          if(receipts.error)throw receipts.error;
+          const rows=receipts.data||[];
+          ids.push(...rows.map((r:any)=>String(r.notification_id)));
+          if(rows.length<1000)return reply({ok:true,ids,through:Number(mark.data?.read_through_ms||0)});
+        }
+        return reply({ok:false,code:'notification_history_limit'},503);
       }
       const ids=body.ids===undefined?[]:body.ids;
       if(!Array.isArray(ids)||ids.length>5000||ids.some((id:any)=>typeof id!=='string'||id.length<1||id.length>256)||
