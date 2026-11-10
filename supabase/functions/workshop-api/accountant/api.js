@@ -25,6 +25,15 @@ export async function accountantApi(admin,user,body,secret,now=Date.now()){
  }
  const loaded=await admin.rpc('zukait_accountant_context',{p_actor_id:user.id});if(loaded.error)throw loaded.error;
  const context=loaded.data,full=financialReport(context,{},now),report=Object.keys(filters).length&&body.report!=='manager_profit'?financialReport(context,filters,now):full;
+ const omanCurrentMonth=day(now).slice(0,7);
+ const currentCashInvoices=full.rows.invoices.filter(i=>key(i.job_type)==='CASH'&&String(i.date||'').startsWith(omanCurrentMonth));
+ const monthlyCashInvoiceTotal=currentCashInvoices.reduce((n,i)=>n+(milli(i.invoice_amount_omr)||0),0)/1000;
+ // A CASH Job Card invoice is not proof of physical cash received.
+ const enrichedSummary={...report.summary,cash_invoice_current_month:{
+  amount_omr:monthlyCashInvoiceTotal,records:currentCashInvoices.length,
+  pending_records:0,month:omanCurrentMonth
+ }};
+
  if(body.report==='manager_profit'){
   const result=managerProfitReport(context,full,filters,now),offset=body.offset||0,limit=body.limit||100;
   return {status:200,body:{ok:true,...result,rows:result.rows.slice(offset,offset+limit),total_count:result.rows.length,next_offset:offset+limit<result.rows.length?offset+limit:null,as_of:full.as_of,snapshot_revision:full.snapshot_revision,finance_revision:full.finance_revision}};
@@ -73,7 +82,7 @@ export async function accountantApi(admin,user,body,secret,now=Date.now()){
   return {status:200,body:{ok:true,rows:rowsAll.slice(offset,offset+limit),
    total_count:rowsAll.length,next_offset:offset+limit<rowsAll.length?offset+limit:null,
    invoice_total_omr:totalMilli/1000,invoice_count:rowsAll.length,
-   period_month:selection,summary:report.summary,as_of:full.as_of,
+   period_month:selection,summary:enrichedSummary,as_of:full.as_of,
    notes:['Only final invoices entered for CASH-type Job Cards are included.','Invoice totals are not proof of physical cash, bank or cheque receipt.'],
    snapshot_revision:full.snapshot_revision,finance_revision:full.finance_revision}};
  }
@@ -82,6 +91,6 @@ export async function accountantApi(admin,user,body,secret,now=Date.now()){
   for(let i=0;i<12;i++){const month=new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth()-i,1)).toISOString().slice(0,7),r=financialReport(context,{...filters,month},now);if((filters.from&&month<filters.from.slice(0,7))||(filters.to&&month>filters.to.slice(0,7)))continue;rows.push({month,...Object.fromEntries(Object.entries(r.summary).filter(([,v])=>v&&typeof v==='object'&&'amount_omr' in v).map(([k,v])=>[k+'_omr',v.pending_records?null:v.amount_omr])),pending_cost_records:r.summary.total_job_cost.pending_records,lpo_pending_records:r.summary.lpo_pending_records,leave_days:r.summary.leave_total_days});}
  }else rows=report.rows[body.report||'jobs']||[];
  const offset=body.offset||0,limit=body.limit||100;
- return {status:200,body:{ok:true,rows:rows.slice(offset,offset+limit),total_count:rows.length,next_offset:offset+limit<rows.length?offset+limit:null,summary:report.summary,as_of:report.as_of,notes:report.notes,snapshot_revision:report.snapshot_revision,finance_revision:report.finance_revision}};
+ return {status:200,body:{ok:true,rows:rows.slice(offset,offset+limit),total_count:rows.length,next_offset:offset+limit<rows.length?offset+limit:null,summary:enrichedSummary,as_of:report.as_of,notes:report.notes,snapshot_revision:report.snapshot_revision,finance_revision:report.finance_revision}};
 }
 export function accountantError(error){const msg=String(error?.message||error);const known=['accountant_forbidden','manager_required','request_conflict','financial_conflict','entry_not_correctable','duplicate_payment_reference','invalid_cash_entry','invalid_transaction_date','job_not_found','verified_invoice_required','cash_direction_change_forbidden','invalid_cost_adjustment','invalid_invoice_amount','expense_category_required'];const code=known.find(c=>msg.includes(c))||'accountant_unavailable';return {status:['accountant_forbidden','manager_required'].includes(code)?403:['request_conflict','financial_conflict','entry_not_correctable','duplicate_payment_reference'].includes(code)?409:code==='accountant_unavailable'?503:400,body:{ok:false,code}};}
