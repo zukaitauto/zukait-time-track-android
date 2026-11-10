@@ -20,6 +20,9 @@ on:
       - 'supabase/functions/staff-auth/index.ts'
       - 'supabase/migrations/*accountant*'
       - 'tests/accountant*'
+      - 'app/src/main/assets/v2/features/notifications/**'
+      - 'tests/v2-notification-center.mjs'
+      - 'tests/notification-*.mjs'
       - '.github/workflows/accountant-qa.yml'
 permissions:
   contents: read
