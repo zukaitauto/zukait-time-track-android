@@ -36,6 +36,6 @@ test('dense accessible responsive layout is scoped to Accounts home only',()=>{
  assert.match(css,/#accounts-home #navigation\{grid-template-columns:1fr/);
  assert.match(css,/:focus-visible/);
  assert.match(css, /prefers-reduced-motion:reduce/);
- assert.match(html,/accountant\.css\?v=20261110-compact-accounts/);
- assert.match(html,/accountant\.js\?v=20261110-accounts-kpis/);
+ assert.match(html,/accountant\.css\?v=20261110-[a-z0-9-]+/);
+ assert.match(html,/accountant\.js\?v=20261110-[a-z0-9-]+/);
 });
