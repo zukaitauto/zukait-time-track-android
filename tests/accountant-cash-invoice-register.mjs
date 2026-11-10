@@ -77,3 +77,14 @@ test('Accounts KPI uses this month CASH invoice amount rather than all-time rece
  assert.equal(home.body.summary.cash_invoice_current_month.amount_omr,160);
  assert.equal(home.body.summary.cash_in.amount_omr,200,'all-time receipt summary deliberately differs from current-month invoice KPI');
 });
+
+test('Manual Cash Out entries never appear in the invoice register',async()=>{
+ const modified=structuredClone(ctx);
+ modified.entries.push({id:'cash-out-1',kind:'CASH_OUT',job_card:'C100',amount:25,transaction_date:'2026-11-04',payee:'Supplier',payment_method:'BANK'});
+ const invoices=await fetchReport('cash_invoices',{month:'2026-11'},0,25,modified);
+ const ledger=await fetchReport('cash',{month:'2026-11'},0,25,modified);
+ assert.equal(invoices.invoice_total_omr,160);
+ assert.equal(invoices.rows.length,2);
+ assert.ok(ledger.rows.some(row=>row.kind==='CASH_OUT'&&row.id==='cash-out-1'));
+ assert.equal(invoices.rows.some(row=>row.id==='cash-out-1'),false);
+});
