@@ -64,3 +64,16 @@ test('Invoice total includes all matching rows, even when server sends one page'
  assert.equal(first.invoice_total_omr,185);assert.equal(second.invoice_total_omr,185);
  assert.equal(first.next_offset,25);assert.equal(second.next_offset,null);
 });
+
+test('Accounts KPI uses this month CASH invoice amount rather than all-time receipt amount',async()=>{
+ const r=await fetchReport('cash_invoices');
+ assert.equal(r.summary.cash_invoice_current_month.amount_omr,160);
+ assert.equal(r.summary.cash_invoice_current_month.records,2);
+ assert.equal(r.summary.cash_invoice_current_month.month,'2026-11');
+ const adminStub={rpc:async()=>({data:ctx,error:null})};
+ const home=await accountantApi(adminStub,{id:'MGR001',role:'Manager'},
+  {action:'accountant_dashboard',report:'jobs',limit:1},'test-key-not-live',now);
+ assert.equal(home.status,200);
+ assert.equal(home.body.summary.cash_invoice_current_month.amount_omr,160);
+ assert.equal(home.body.summary.cash_in.amount_omr,160);
+});
