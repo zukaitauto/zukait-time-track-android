@@ -39,6 +39,9 @@ on:
       - release-request.json
       - release-ui-request.json
       - tests/accountant-*
+      - app/src/main/assets/v2/features/notifications/**
+      - tests/v2-notification-center.mjs
+      - tests/notification-*.mjs
       - supabase/migrations/*accountant*
       - app/src/main/assets/v2/features/estimate/**
       - tests/v2-estimate-*
