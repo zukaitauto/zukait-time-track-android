@@ -2,12 +2,56 @@
 const POLL_MS=5000;
 let serverPartsEvents=null;
 let refreshInFlight=false;
+let receiptsInFlight=false,receiptsActor='',receiptsLastFetch=0,remoteIds=new Set(),remoteThrough=0;
+const RECEIPT_REFRESH_MS=30000;
+function getReadThroughLocal(){try{return Number(localStorage.getItem(readKey()+'-through'))||0}catch(_){return 0}}
+function effectiveRemoteIds(){return receiptsActor===readKey()?remoteIds:new Set()}
+function effectiveRemoteThrough(){return receiptsActor===readKey()?remoteThrough:0}
+async function syncReceipts(force=false){
+  const u=meNow();
+  if(!u?.id||!navigator.onLine||window.zukaitSessionPrivacy?.locked||!window.zukaitReception?.action||receiptsInFlight)return;
+  const actor=readKey(),now=Date.now();
+  if(!force&&receiptsActor===actor&&now-receiptsLastFetch<RECEIPT_REFRESH_MS)return;
+  receiptsInFlight=true;
+  try{
+    const response=await window.zukaitReception.action({action:'notification_receipts',operation:'GET'});
+    if(readKey()!==actor)return;
+    if(!Array.isArray(response.ids))throw Error('Notification server read is incomplete');
+    remoteIds=new Set(response.ids);remoteThrough=Math.max(0,Number(response.through)||0);
+    receiptsActor=actor;receiptsLastFetch=Date.now();
+    const missing=[...readIds()].filter(id=>!remoteIds.has(id));
+    const localThrough=getReadThroughLocal();
+    if(missing.length||localThrough>remoteThrough){
+      // Migrate old local acknowledgements, and replay interrupted/offline reads.
+      // The server resolves this actor from authentication, not request fields.
+      for(let i=0;i<missing.length;i+=500){
+        await window.zukaitReception.action({action:'notification_receipts',operation:'ACK',ids:missing.slice(i,i+500),
+          ...(i===0&&localThrough>remoteThrough?{through:localThrough}:{})});
+        if(readKey()!==actor)return;
+        for(const id of missing.slice(i,i+500))remoteIds.add(id);
+      }
+      if(!missing.length&&localThrough>remoteThrough){
+        const ack=await window.zukaitReception.action({action:'notification_receipts',operation:'ACK',ids:[],through:localThrough});
+        if(readKey()!==actor)return;
+        remoteThrough=Math.max(remoteThrough,Number(ack.through)||0);
+      }else if(localThrough>remoteThrough)remoteThrough=localThrough;
+    }
+    updateBadges();
+  }catch(err){
+    // Keep local receipts until a confirmed sync. Never erase acknowledgements
+    // or report sync success after a failed server call.
+    console.warn('Notification read acknowledgement sync failed',err);
+    receiptsLastFetch=0;
+  }finally{receiptsInFlight=false}
+}
+function queueReceiptSync(){receiptsLastFetch=0;void syncReceipts(true)}
+
 function meNow(){try{return (typeof me!=='undefined'&&me)||window.me||null}catch(_){return window.me||null}}
 function role(){return String(meNow()?.role||'')}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function readKey(){return 'zukait-notification-read-'+String(meNow()?.id||role()||'guest')}
 function readIds(){try{return new Set(JSON.parse(localStorage.getItem(readKey()+'-items')||'[]'))}catch(_){return new Set()}}
-function markRead(id){const ids=readIds();ids.add(id);localStorage.setItem(readKey()+'-items',JSON.stringify([...ids]));updateBadges()}
+function markRead(id){const ids=readIds();ids.add(id);localStorage.setItem(readKey()+'-items',JSON.stringify([...ids]));updateBadges();queueReceiptSync()}
 function paintReadIds(){try{return new Set(JSON.parse(localStorage.getItem(readKey()+'-paint')||'[]'))}catch(_){return new Set()}}
 function stateNow(){try{return (typeof state!=='undefined'&&state)||window.state||{}}catch(_){return window.state||{}}}
 function paintNotifications(){
@@ -22,7 +66,7 @@ function paintNotifications(){
  }
  return out;
 }
-function markPaintRead(id){const ids=paintReadIds();ids.add(id);localStorage.setItem(readKey()+'-paint',JSON.stringify([...ids]));updateBadges()}
+function markPaintRead(id){const ids=paintReadIds();ids.add(id);localStorage.setItem(readKey()+'-paint',JSON.stringify([...ids]));updateBadges();queueReceiptSync()}
 async function openPaintRecord(id){
  if(role()!=='Manager')return;
  const n=paintNotifications().find(x=>x.id===id);if(!n)return alert('This record is no longer available.');
@@ -80,8 +124,8 @@ function readThrough(){
  try{return Number(localStorage.getItem(readKey()+'-through'))||0}catch(_){return 0}
 }
 function unreadRows(){
- const ids=readIds(),paint=paintReadIds(),through=readThrough();
- return all().filter(n=>!ids.has(n.id)&&!paint.has(n.id)&&!(n.at>0&&n.at<=through));
+ const ids=readIds(),paint=paintReadIds(),remote=effectiveRemoteIds(),through=Math.max(readThrough(),effectiveRemoteThrough());
+ return all().filter(n=>!ids.has(n.id)&&!paint.has(n.id)&&!remote.has(n.id)&&!(n.at>0&&n.at<=through));
 }
 function unread(){return unreadRows().length}
 function ensureStyle(){if(document.getElementById('zukaitNotificationCenterStyle'))return;const s=document.createElement('style');s.id='zukaitNotificationCenterStyle';s.textContent='.zukait-notify-btn{position:relative!important;width:34px!important;height:34px!important;min-height:34px!important;padding:0!important;margin:0 4px!important;border-radius:10px!important;background:#f8fafc!important;color:#17304d!important;border:1px solid #d7e1eb!important;box-shadow:0 3px 10px #17304d12!important;font-size:17px!important}.zukait-notify-badge{position:absolute;right:-4px;top:-5px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#dc2626;color:#fff;font:800 9px/16px system-ui;text-align:center}.zukait-notify-list{display:grid;gap:4px;counter-reset:zuknotify}.zukait-notify-row{counter-increment:zuknotify;position:relative;padding:6px 7px 6px 34px;border:1px solid #dce6ef;border-radius:9px;background:#fff;color:#17304d;box-shadow:0 1px 4px #17304d0d}.zukait-notify-row:before{content:counter(zuknotify);position:absolute;left:7px;top:7px;display:grid;place-items:center;width:21px;height:21px;border-radius:6px;background:#edf4fb;color:#31577d;font-size:9px;font-weight:900}.zukait-notify-row b{display:block}.zukait-notify-row b{font-size:11px}.zukait-notify-row small{display:block;color:#64748b;margin-top:2px;font-size:9px}.zukait-notify-row button{margin-top:8px!important}';document.head.appendChild(s)}
@@ -98,9 +142,10 @@ function markAllRead(){
  const ids=readIds();
  for(const n of all())ids.add(n.id);
  localStorage.setItem(readKey()+'-items',JSON.stringify([...ids]));
- // Historical notifications may hydrate after the user clears the badge.
- if(['Manager','Supervisor'].includes(role()))localStorage.setItem(readKey()+'-through',String(Math.max(readThrough(),clearedAt)));
+ // New events arriving after this acknowledgement are not suppressed.
+ if(['Manager','Supervisor','Purchaser'].includes(role()))localStorage.setItem(readKey()+'-through',String(Math.max(readThrough(),clearedAt)));
  updateBadges();
+ queueReceiptSync();
  const status=document.getElementById('zukaitNotifyReadStatus');
  if(status)status.textContent='All current notifications marked as read.';
 }
@@ -143,6 +188,7 @@ async function refresh(){
   }
  }catch(_){}finally{refreshInFlight=false}
  inject();updateBadges();
+ await syncReceipts();
 }
 window.zukaitNotificationCenter={open:openCenter,markAllRead,openPart,openItem,openPaintRecord,paintNotifications,refresh,all,unread,inject,eventPartsNotifications,normalizeServerEvent,loadServerPartEvents};
 document.addEventListener('DOMContentLoaded',()=>{inject();refresh()});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refresh()});window.addEventListener('online',refresh);window.addEventListener('focus',refresh);setTimeout(()=>{inject();refresh()},700);setInterval(refresh,POLL_MS);
