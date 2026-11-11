@@ -66,7 +66,7 @@ export async function accountantApi(admin,user,body,secret,now=Date.now()){
   const sublets=(Array.isArray(context.state?.sublets)?context.state.sublets:[])
    .filter(v=>v&&!v.voided&&!v.cancelled&&key(v.jobCard)===d.job_card)
    .map(v=>({id:v.id||'',job_card:d.job_card,date:day(v.createdAt||v.date)||'',supplier:String(v.supplier||v.vendor||v.payee||''),description:String(v.description||v.workDescription||''),cost_omr:Number.isSafeInteger(v.amountMills)&&v.amountMills>=0?v.amountMills/1000:null}));
-  const p=accountsPerformanceReport(context,full,{from:'1900-01-01'},now).rows.find(r=>r.job_card===d.job_card);
+  const p=managerProfitReport(context,full,{all_months:true,include_credit:true,delivered_insurance_only:true,job_card:d.job_card},now).rows.find(r=>r.job_card===d.job_card);
   const subletPending=sublets.some(r=>r.cost_omr===null),subletCost=subletPending?null:sublets.reduce((n,r)=>n+r.cost_omr,0);
   const total=p?.total_job_cost_omr??(subletCost!==null&&milli(d.total_cost_omr)!==null?(milli(d.total_cost_omr)+milli(subletCost))/1000:null);
   const amount=p?.invoice_amount_omr??(d.job_type==='INSURANCE'?full.rows.lpo.find(x=>x.job_card===d.job_card&&x.lpo_status==='Received')?.lpo_amount_omr:d.invoice_amount_omr);
