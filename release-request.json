@@ -246,7 +246,7 @@
       }
     }
   },
-  "ownerApprovedLiveAccountantTesting": true,
+  "ownerApprovedLiveAccountantTesting": false,
   "databaseMigration": {
     "name": "v391_private_visit_customer_roles",
     "verified": true,
