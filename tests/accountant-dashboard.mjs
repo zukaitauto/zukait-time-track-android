@@ -127,6 +127,8 @@ w.document.getElementById('accounts-back').click();
 w.document.querySelector('#navigation [data-report="profit"]').click();
 await wait(()=>w.document.getElementById('title').textContent==='Profit / Loss');
 assert.equal(w.document.getElementById('category-filter').value,'ALL','profit default includes all categories');
+assert.equal(w.document.getElementById('notes').textContent,'','Profit/Loss shows no verbose financial explanation');
+assert.equal(w.document.getElementById('notes').hidden,true,'Profit/Loss does not leave an empty notice card');
 w.document.getElementById('month').value='2026-10';w.document.getElementById('refresh').click();
 await wait(()=>w.document.querySelector('#rows [data-expense="paint"]'));
 assert.match(w.document.getElementById('rows').textContent,/CASH/);
