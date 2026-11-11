@@ -7,8 +7,11 @@ function html(title,columns,rows,meta='',options={}){
  const notes=cleanPrint?'':'<p>'+esc(meta)+'</p><p>Revenue ≠ cash received. Purchases ≠ allocated costs. Estimated gross profit ≠ net profit.</p>';
  const value=(r,c)=>{
   const v=r[c[1]];
-  if(cleanPrint&&c[1]==='percentage'&&v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v)))return Number(v).toFixed(2)+'%';
-  return display(v,c[2]);
+  if(cleanPrint&&v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))){
+   if(c[1]==='percentage'||c[1].endsWith('_percentage'))return Number(v).toFixed(2)+'%';
+   if(c[2])return Number(v).toFixed(3);
+  }
+  return display(v,cleanPrint?false:c[2]);
  };
  return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>@page{size:A4 landscape;margin:12mm}body{font:10px Arial;color:#000;background:#fff}h1{font-size:19px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #b7b7b7;padding:6px;text-align:left;overflow-wrap:anywhere}th{background:#eef1f4}tr{break-inside:avoid}thead{display:table-header-group}</style></head><body>'+heading+notes+'<table><thead><tr>'+columns.map(c=>'<th>'+esc(c[0])+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+columns.map(c=>'<td>'+esc(value(r,c))+'</td>').join('')+'</tr>').join('')+'</tbody></table></body></html>';
 }
