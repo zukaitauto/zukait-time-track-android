@@ -99,7 +99,7 @@ function switchReport(name){
  const leavingCash=['cash','cash_ledger'].includes(report)&&!['cash','cash_ledger'].includes(name);
  report=name;offset=0;
  $('accounts-home').hidden=true;$('accounts-workspace').hidden=false;closeCashDialog();
- if(name==='cash'){$('month').value=omanMonth();$('from').value='';$('to').value='';$('query').value='';}
+ if(['cash','cash_ledger'].includes(name)){$('month').value=omanMonth();$('from').value='';$('to').value='';$('query').value='';}
  else if(leavingCash){for(const id of ['month','from','to','query'])$(id).value='';}
  $('module-label').textContent=name==='cash_ledger'?'Receipts / Cash Out':modules.find(m=>m[0]===name)[1];
  for(const k of ['employee','material','insurance'])$(k).closest('label').hidden=!({employee:['consumables','leave'],material:['consumables'],insurance:['jobs','lpo','outstanding']}[k].includes(name));
@@ -156,7 +156,7 @@ const moduleDesign={
  outstanding:['◷','Unpaid invoices and partial payments','rose'],
  monthly:['▥','Monthly totals, comparisons and exports','purple']
 };
-$('navigation').innerHTML=modules.map(([name,title])=>{const [icon,description,tone]=moduleDesign[name];return '<button type="button" class="module-card tone-'+tone+'" aria-label="'+esc(title)+'" data-report="'+name+'"><span class="module-icon" aria-hidden="true">'+icon+'</span><span class="module-copy"><strong>'+title+'</strong><small>'+description+'</small></span><span class="module-arrow" aria-hidden="true">›</span></button>';}).join('');for(const id of ['navigation','summary'])$(id).onclick=e=>{const b=e.target.closest('[data-report]');if(b)switchReport(b.dataset.report)};
+$('navigation').innerHTML=modules.map(([name,title])=>{const [icon,description,tone]=moduleDesign[name];return '<button type="button" class="module-card tone-'+tone+'" aria-label="'+esc(title)+'" data-report="'+name+'"><span class="module-icon" aria-hidden="true">'+icon+'</span><span class="module-copy"><strong>'+title+'</strong><small>'+description+'</small></span><span class="module-arrow" aria-hidden="true">›</span></button>';}).join('');for(const id of ['navigation','summary','accounts-shortcuts'])$(id).onclick=e=>{const b=e.target.closest('[data-report]');if(b)switchReport(b.dataset.report)};
 $('query').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();offset=0;$('detail').hidden=true;load()}});$('refresh').onclick=()=>{offset=0;$('detail').hidden=true;load()};$('clear').onclick=()=>{for(const k of ['query','month','from','to','employee','material','insurance'])$(k).value='';if(['cash','cash_ledger'].includes(report))$('month').value=omanMonth();offset=0;$('detail').hidden=true;load()};$('previous').onclick=()=>{offset=Math.max(0,offset-25);load()};$('next').onclick=()=>{if(next!==null){offset=next;load()}};$('cash-entry').onclick=()=>cashForm();
 $('cash-ledger-toggle').onclick=()=>{report=report==='cash'?'cash_ledger':'cash';offset=0;$('module-label').textContent=report==='cash_ledger'?'Receipts / Cash Out':'Cash Invoices';load();};
 $('cash-entry-dialog').addEventListener('close',()=>{$('entry').hidden=true;});
