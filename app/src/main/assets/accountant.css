@@ -236,3 +236,34 @@ header{background:#ffffffcc;border:1px solid #fff;border-radius:22px;padding:17p
 @media(max-width:900px){#accounts-home .accounts-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:550px){#accounts-home .accounts-flow{margin:6px 0 17px}#accounts-home .accounts-shortcuts{grid-template-columns:1fr;gap:8px}#accounts-home .accounts-shortcut{min-height:76px;padding:12px 14px;border-radius:13px}#accounts-home .shortcut-icon{width:40px;height:40px;flex-basis:40px;font-size:23px}#accounts-home .shortcut-copy strong{font-size:14px}}
 @media(prefers-reduced-motion:reduce){#accounts-home .accounts-shortcut{transition:none}}
+
+
+/* Five approved Accounts sections: report tables stay horizontally scrollable. */
+#accounts-home #navigation .module-card{min-height:118px}
+#accounts-workspace .filters label[hidden]{display:none!important}
+#accounts-workspace .filters{grid-template-columns:repeat(4,minmax(0,1fr))}
+#accounts-workspace .accounts-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0}
+#accounts-workspace .accounts-kpi{border:1px solid #dae6f0;border-radius:12px;background:#f5f9ff;padding:14px;min-width:0}
+#accounts-workspace .accounts-kpi small{display:block;color:#4e6980;font-size:11px;margin-bottom:6px}
+#accounts-workspace .accounts-kpi b{display:block;color:#183e5c;font-size:clamp(16px,1.9vw,24px);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+#accounts-workspace .accounts-kpi .positive{color:#14714e}
+#accounts-workspace .accounts-kpi .negative{color:#aa3941}
+#accounts-workspace .finance-report{width:100%;overflow:auto;overscroll-behavior-inline:contain;border:1px solid #d9e6ef;border-radius:12px}
+#accounts-workspace .finance-report table{min-width:1250px;width:max-content;min-width:max(100%,1250px)}
+#accounts-workspace .finance-report th{position:sticky;top:0;background:#e8f2fa;z-index:1}
+#accounts-workspace .finance-report td{font-variant-numeric:tabular-nums}
+#accounts-workspace .finance-report .number{text-align:right}
+#accounts-workspace .finance-report .expense-link{font-size:12px;padding:5px 9px;min-height:32px;border:1px solid #badce9;background:#f0faff;color:#17516d;text-decoration:underline}
+#accounts-workspace .finance-report .jc-link{font-size:12px;color:#124c83;text-decoration:underline}
+#accounts-workspace .finance-report .profit{font-weight:800;color:#16734d}
+#accounts-workspace .finance-report .loss{font-weight:800;color:#af374b}
+#accounts-workspace .finance-report .pending{font-weight:750;color:#936714}
+#accounts-workspace .finance-report tr:hover td{background:#f3f9ff}
+#accounts-workspace .expense-breakdowns{display:grid;gap:12px}
+#accounts-workspace .expense-breakdown{background:#f3f8fe;border-color:#c7ddec}
+#accounts-workspace .expense-breakdown summary strong{font-variant-numeric:tabular-nums}
+#accounts-workspace .detail-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+#accounts-workspace #detail h3{font-size:16px;margin:15px 0 8px}
+#accounts-workspace .readonly-leave-notice{font-weight:650;color:#226250}
+@media(max-width:900px){#accounts-workspace .accounts-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}#accounts-workspace .filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:550px){#accounts-workspace .filters{grid-template-columns:1fr 1fr;gap:8px;padding:10px}#accounts-workspace .accounts-kpis{gap:7px}#accounts-workspace .accounts-kpi{padding:10px}#accounts-workspace .accounts-kpi b{font-size:17px}#accounts-workspace .panel{padding:12px}#accounts-home #navigation .module-card{min-height:78px}}
