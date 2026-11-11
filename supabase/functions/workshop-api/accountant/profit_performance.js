@@ -8,12 +8,13 @@ export function managerProfitReport(context,financial,filters={},now=Date.now())
  const lpos=new Map(array(financial.rows?.lpo).filter(l=>l.lpo_status==='Received').map(l=>[key(l.job_card),l]));
  const rows=[],seen=new Set();let undated=0;
  for(const detail of financial.details||[]){
-  const no=key(detail.job_card),j=jobs.get(no),kind=detail.job_type;if(!j||seen.has(no)||!['CASH','INSURANCE'].includes(kind))continue;seen.add(no);
-  const lpo=lpos.get(no),date=kind==='CASH'?detail.invoice_date:lpo?.lpo_received_date;
-  const amount=milli(kind==='CASH'?j.finalInvoiceAmount:lpo?.lpo_amount_omr);
+  const no=key(detail.job_card),j=jobs.get(no),kind=detail.job_type;if(!j||seen.has(no)||!(['CASH','INSURANCE'].includes(kind)||(filters.include_credit===true&&['CREDIT','CORPORATE'].includes(kind))))continue;seen.add(no);
+  if(kind==='INSURANCE'&&filters.delivered_insurance_only===true&&j.delivered!==true&&key(j.status)!=='DELIVERED')continue;
+  const lpo=lpos.get(no),date=kind==='INSURANCE'?lpo?.lpo_received_date:detail.invoice_date;
+  const amount=milli(kind==='INSURANCE'?lpo?.lpo_amount_omr:j.finalInvoiceAmount);
   if(amount===null||amount<0)continue;
   if(!validDay(date)){undated++;continue;}
-  if(!date.startsWith(month)||date>today||filters.from&&date<filters.from||filters.to&&date>filters.to)continue;
+  if((filters.all_months!==true&&!date.startsWith(month))||date>today||filters.from&&date<filters.from||filters.to&&date>filters.to)continue;
   const company=String(detail.insurance_company||'').trim();
   if(filters.insurance&&!key(company).includes(key(filters.insurance)))continue;
   if(filters.job_card&&no!==key(filters.job_card))continue;
@@ -49,7 +50,9 @@ export function managerProfitReport(context,financial,filters={},now=Date.now())
   const baseCost=Object.values(costs).some(v=>v===null)?null:Object.values(costs).reduce((a,b)=>a+b,0);
   const totalCost=baseCost===null||subletPending?null:baseCost+sublet;
   const profit=totalCost===null?null:amount-totalCost;
-  rows.push({kind,job_card:no,date,vehicle,registration:detail.registration||'',insurance_company:company,amount_omr:money(amount),total_cost_omr:money(totalCost),sublet_cost_omr:subletPending?null:money(sublet),profit_omr:money(profit),profit_percentage:profit===null||amount===0?null:profit/amount*100,costs_complete:totalCost!==null,cost_breakdown_omr:Object.fromEntries(Object.entries(costs).map(([k,v])=>[k,money(v)])),cost_notes:[...new Set([...notes,...(subletPending?['Sublet cost pending']:[])])]});
+  const corporate=kind==='CORPORATE'||(kind==='CREDIT'&&(j.isCorporate===true||key(j.customerType)==='CORPORATE'||key(j.creditType)==='CORPORATE'));
+  const customer=String(j.corporateCompanyName||j.creditCustomerName||j.companyName||detail.customer||'').trim();
+  rows.push({kind:corporate?'CORPORATE':kind,job_card:no,date,vehicle,registration:detail.registration||'',customer:detail.customer||'',company_name:customer,insurance_company:company,amount_omr:money(amount),total_cost_omr:money(totalCost),sublet_cost_omr:subletPending?null:money(sublet),profit_omr:money(profit),profit_percentage:profit===null||amount===0?null:profit/amount*100,costs_complete:totalCost!==null,cost_breakdown_omr:Object.fromEntries(Object.entries(costs).map(([k,v])=>[k,money(v)])),cost_notes:[...new Set([...notes,...(subletPending?['Sublet cost pending']:[])])]});
  }
  rows.sort((a,b)=>a.date.localeCompare(b.date)||a.job_card.localeCompare(b.job_card,undefined,{numeric:true}));
  return {rows,month,undated_records:undated,basis:'Cash: final invoice date/amount counted once as received. Insurance: LPO document received date/amount, not insurer payment. Profit uses recorded job costs including sublet; overheads and tax adjustments are not included.'};
