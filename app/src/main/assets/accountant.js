@@ -1,9 +1,21 @@
 (function(){'use strict';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const config=window.ZUKAIT_ACCOUNTANT_CONFIG||{},url=config.url||'https://pjknotnjkufadqavcmii.supabase.co',publicKey=config.key||'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A',sessionKey='zukait_secure_session_v42';
-const modules=[['jobs','JC Search & 360° Financial View'],['consumables','Consumables Expenses'],['paint','Paint Expenses'],['parts','Spare Parts Expenses'],['leave','Employee Leave Details'],['cash','Cash Invoices'],['lpo','Insurance LPO Tracking'],['outstanding','Outstanding Payments'],['monthly','Monthly Financial Reports']];
+const modules=[['jobs','Job Card 360°'],['cash','Cash In'],['insurance_invoiced','Insurance Invoiced'],['leave','Leave Management'],['profit','Profit / Loss']];
 const money=(title,key)=>[title,key,true],omanMonth=()=>new Date(Date.now()+14400000).toISOString().slice(0,7),common=[['JC','job_card'],['Date','date']];
 const columns={jobs:[['JC','job_card'],['Registration','registration'],['Vehicle','vehicle'],['Customer','customer'],['Type','job_type'],money('Invoice OMR','invoice_amount_omr'),money('Total cost OMR','total_cost_omr'),money('Estimated GP OMR','estimated_gross_profit_omr')],consumables:[...common,['Material','material'],['Brand','brand'],['Actual quantity','quantity'],['Unit','unit'],money('Unit price OMR','unit_price_omr'),money('Cost OMR','cost_omr')],paint:[...common,['PO','po'],['Supplier','supplier'],['Status','status'],money('Paint amount OMR','gross_omr'),money('Returns OMR','returns_omr'),money('Net OMR','net_cost_omr')],parts:[...common,['PL','list_no'],['Part','part'],['Ordered quantity','quantity'],['Received quantity','received_quantity'],['Pending quantity','pending_quantity'],['Returned quantity','returned_quantity'],['Supplier','supplier'],['Status','status'],['Invoice reference','invoice_reference'],money('Purchase OMR','purchase_amount_omr'),money('Pending purchase OMR','pending_purchase_omr'),money('Returns OMR','returns_omr'),money('Net OMR','net_cost_omr')],leave:[['Employee','employee'],['Date','date'],['Period','period_label'],['Approval','approval_status'],['Days','days'],['Remark','remark']],cash:[['Invoice Date','invoice_date'],['JC','job_card'],['Registration','registration'],['Vehicle','vehicle'],['Customer','customer'],money('Invoice Amount OMR','invoice_amount_omr')],cash_ledger:[['Date','transaction_date'],['Source','receipt_source'],['Direction','kind'],['JC','job_card'],['Payer / payee','payee'],['Category','category'],['Method','payment_method'],money('Posted OMR','recorded_amount_omr'),money('Counted OMR','amount_omr'),['Reference','reference']],lpo:[['Insurance','insurance_company'],['JC','job_card'],['Claim','claim_number'],['LPO status','lpo_status'],['LPO document received','lpo_received_date'],money('LPO amount OMR','lpo_amount_omr'),money('Cash collected OMR','collected_amount_omr'),['Latest collection date','collection_date'],money('Balance OMR','outstanding_omr')],outstanding:[['JC','job_card'],['Customer','customer'],['Insurance','insurance_company'],['Invoice date','invoice_date'],['Delivery date','delivery_date'],money('Invoice OMR','invoice_amount_omr'),money('Verified receipts OMR','payment_received_omr'),money('Balance OMR','outstanding_omr'),['Status','payment_status']],monthly:[['Month','month'],...['cash_in','cash_out','invoiced_revenue','payments_received','consumables','paint','parts','labour','total_job_cost','estimated_gross_profit','outstanding','lpo_collected','lpo_documents_received'].map(k=>money(k.replaceAll('_',' ')+' OMR',k+'_omr')),['Pending cost records','pending_cost_records'],['Pending LPO documents','lpo_pending_records'],['Leave days','leave_days']]};
+
+const financialColumns=[
+ ['No.','serial'],['Date','date'],['JC','job_card'],['Vehicle','vehicle'],
+ money('Labour OMR','labour_cost_omr'),money('Paint OMR','paint_cost_omr'),
+ money('Consumables OMR','consumables_cost_omr'),money('Parts OMR','parts_cost_omr'),
+ money('Sublet OMR','sublet_cost_omr'),money('Total Job Cost OMR','total_job_cost_omr'),
+ money('LPO / Cash Amount OMR','invoice_amount_omr'),money('Net Profit / Loss OMR','net_profit_omr'),['Percentage','percentage']
+];
+columns.cash=financialColumns;
+columns.insurance_invoiced=[...financialColumns.slice(0,4),['Insurance Company','insurance_company'],...financialColumns.slice(4)];
+columns.profit=[...financialColumns.slice(0,4),['Category','kind'],['Company / Customer','company_name'],...financialColumns.slice(4)];
+columns.leave=[['Employee','employee'],['Date','date'],['Leave','period_label'],['Status','approval_status'],['Days','days'],['Remark','remark'],['Marked By','marked_by'],['Cancellation By','cancelled_by'],['Cancellation Reason','cancel_reason']];
 let user=null,report='jobs',offset=0,next=null,result=null,generation=0,detailGeneration=0,busy=false,target=null,verified=false;
 const saved=()=>{try{return JSON.parse(localStorage.getItem(sessionKey)||'null')}catch{return null}};
 const token=()=>{const s=saved();if(!s||s.user?.id!==user?.id||s.user?.role!==user?.role||!['Accountant','Manager'].includes(s.user?.role)){invalidate();throw Error('ACCOUNT_CHANGED');}return String(s.token||window.AndroidBridge?.getSecureSessionToken?.()||'')};
@@ -44,7 +56,18 @@ function invalidate(){closeCashDialog();billReview?.reset();verified=false;gener
 window.addEventListener('storage',e=>{if(verified&&billsEnabled&&(e.key===pendingKey()||e.key==='zukait_bill_intent_v1:'+encodeURIComponent(url)+':'+encodeURIComponent(user.id)))showPending();});
 window.addEventListener('storage',e=>{if(e.key===sessionKey&&verified){try{token()}catch{say('Account changed. Sign in again.')}}});
 async function request(endpoint,body){const t=token();if(!t)throw Error('Sign in required');const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),15000);let r;try{r=await fetch(url+'/functions/v1/'+endpoint,{method:'POST',headers:{'Content-Type':'application/json',apikey:publicKey,'x-zukait-session':t},body:JSON.stringify(body),signal:controller.signal})}catch(e){if(token()!==t){invalidate();throw Error('ACCOUNT_CHANGED');}throw e;}finally{clearTimeout(timeout)}const data=await r.json();if(token()!==t){invalidate();throw Error('ACCOUNT_CHANGED');}if(!r.ok||!data.ok){const error=new Error(data.code||'Request unavailable');error.status=r.status;throw error;}return data;}
-function filters(){return Object.fromEntries(['query','month','from','to','employee','material','insurance'].map(k=>[k,$(k).value.trim()]).filter(([,v])=>v));}
+function filters(){
+ const used=['query','month','from','to'];
+ if(report==='leave')used.push('employee');
+ const out=Object.fromEntries(used.map(k=>[k,$(k).value.trim()]).filter(([,v])=>v));
+ if(report==='cash')out.kind='CASH';
+ if(report==='insurance_invoiced')out.kind='INSURANCE';
+ if(report==='profit')out.kind=$('category-filter').value||'ALL';
+ if(['insurance_invoiced','profit'].includes(report)&&$('insurance-company').value)out.insurance=$('insurance-company').value;
+ if(report==='profit'&&$('customer-filter').value)out.customer=$('customer-filter').value;
+ if(report==='leave')out.status=$('leave-status').value;
+ return out;
+}
 function display(v,isMoney=false){return window.zukaitAccountantExports.display(v,isMoney)}
 function renderSummary(summary){
  const cards=[
@@ -68,7 +91,7 @@ function renderSummary(summary){
 }
 function table(rows,cols,actions=false){return '<div class="table-wrap"><table><thead><tr>'+cols.map(c=>'<th'+(c[2]?' class="money"':'')+'>'+esc(c[0])+'</th>').join('')+(actions?'<th>Actions</th>':'')+'</tr></thead><tbody>'+rows.map((r,i)=>'<tr>'+cols.map(c=>'<td'+(c[2]?' class="money"':'')+'>'+esc(display(r[c[1]],c[2]))+'</td>').join('')+(actions?'<td>'+(['jobs','cash'].includes(report)?'<button type="button" data-job="'+esc(r.job_card)+'">'+(report==='jobs'?'Open financial view':'View JC')+'</button>':report==='cash_ledger'?(r.invoice_receipt?'<span>From Cash invoice</span>':'<button type="button" data-correct="'+i+'">Correct</button><button type="button" data-reverse="'+i+'">Reverse</button>'):'')+'</td>':'')+'</tr>').join('')+'</tbody></table></div>';}
 function closeDetail(){detailGeneration++;target=null;$('detail').hidden=true;$('correction').hidden=true;}
-function backendReport(name){return name==='cash'?'cash_invoices':name==='cash_ledger'?'cash':name;}
+function backendReport(name){return ['cash','insurance_invoiced','profit'].includes(name)?'accounts_performance':name==='leave'?'accounts_leave':name;}
 function closeCashDialog(){
  const dialog=$('cash-entry-dialog');
  try{if(typeof dialog.close==='function'&&dialog.open)dialog.close();
@@ -146,17 +169,13 @@ $('correction').onsubmit=e=>{e.preventDefault();if(!target?.field)return;const d
 $('detail').onclick=e=>{const b=e.target.closest('[data-adjust]');if(!b||!target)return;target.field=b.dataset.adjust;$('correction-target').textContent=target.detail.job_card+' · '+target.field.replaceAll('_',' ')+' · Original '+display(target.detail[target.field],true)+(target.field==='invoice_amount_omr'&&target.detail.job_type==='INSURANCE'?' · Linked LPO amount is also corrected; this does not record a cash receipt.':'');$('corrected-value').value=target.detail[target.field];$('correction-reason').value='';$('correction').hidden=false;};
 $('rows').onclick=e=>{if(!result)return;const j=e.target.closest('[data-job]');if(j)return openJob(j.dataset.job);const c=e.target.closest('[data-correct]');if(c){const row=result.rows[Number(c.dataset.correct)];if(row&&!row.invoice_receipt)return cashForm(row);return;}const r=e.target.closest('[data-reverse]');if(r){const row=result.rows[Number(r.dataset.reverse)];if(!row||row.invoice_receipt)return;const reason=prompt('Reason for reversal? The original entry remains in history.');if(reason?.trim().length>=3)submit({operation:'REVERSE',entry_id:row.id,transaction_date:new Date(Date.now()+14400000).toISOString().slice(0,10),reason:reason.trim(),...revision()});}};
 const moduleDesign={
- jobs:['⌕','Find a job card and its financial details','blue'],
- consumables:['▤','Actual materials, quantities and costs','teal'],
- paint:['◒','Purchase orders, returns and net costs','violet'],
- parts:['⚙','Invoices, confirmed parts and returns','sky'],
- leave:['▦','Employee leave and monthly totals','amber'],
- cash:['▤','Final CASH invoices and monthly totals','green'],
- lpo:['▣','Insurance documents and collections','indigo'],
- outstanding:['◷','Unpaid invoices and partial payments','rose'],
- monthly:['▥','Monthly totals, comparisons and exports','purple']
+ jobs:['⌕','Search registration or JC and inspect all five costs','blue'],
+ cash:['▤','Manager Cash financial report with five cost columns','green'],
+ insurance_invoiced:['▣','Delivered, invoiced insurance vehicles by company','indigo'],
+ leave:['▦','Manager leave history — read-only','amber'],
+ profit:['◒','Cash, Insurance, Credit and Corporate combined','teal']
 };
-$('navigation').innerHTML=modules.map(([name,title])=>{const [icon,description,tone]=moduleDesign[name];return '<button type="button" class="module-card tone-'+tone+'" aria-label="'+esc(title)+'" data-report="'+name+'"><span class="module-icon" aria-hidden="true">'+icon+'</span><span class="module-copy"><strong>'+title+'</strong><small>'+description+'</small></span><span class="module-arrow" aria-hidden="true">›</span></button>';}).join('');for(const id of ['navigation','summary','accounts-shortcuts'])$(id).onclick=e=>{const b=e.target.closest('[data-report]');if(b)switchReport(b.dataset.report)};
+$('navigation').innerHTML=modules.map(([name,title])=>{const [icon,description,tone]=moduleDesign[name];return '<button type="button" class="module-card tone-'+tone+'" aria-label="'+esc(title)+'" data-report="'+name+'"><span class="module-icon" aria-hidden="true">'+icon+'</span><span class="module-copy"><strong>'+title+'</strong><small>'+description+'</small></span><span class="module-arrow" aria-hidden="true">›</span></button>';}).join('');for(const id of ['navigation','summary'])$(id).onclick=e=>{const b=e.target.closest('[data-report]');if(b)switchReport(b.dataset.report)};
 $('query').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();offset=0;$('detail').hidden=true;load()}});$('refresh').onclick=()=>{offset=0;$('detail').hidden=true;load()};$('clear').onclick=()=>{for(const k of ['query','month','from','to','employee','material','insurance'])$(k).value='';if(['cash','cash_ledger'].includes(report))$('month').value=omanMonth();offset=0;$('detail').hidden=true;load()};$('previous').onclick=()=>{offset=Math.max(0,offset-25);load()};$('next').onclick=()=>{if(next!==null){offset=next;load()}};$('cash-entry').onclick=()=>cashForm();
 $('cash-ledger-toggle').onclick=()=>{report=report==='cash'?'cash_ledger':'cash';offset=0;$('module-label').textContent=report==='cash_ledger'?'Receipts / Cash Out':'Cash Invoices';load();};
 $('cash-entry-dialog').addEventListener('close',()=>{$('entry').hidden=true;});
