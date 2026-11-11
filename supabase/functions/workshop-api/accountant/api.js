@@ -1,7 +1,8 @@
 import {financialReport,validateFilters,validDay,key,milli,day,searchKey} from './finance_rules.js';
 import {managerProfitReport} from './profit_performance.js';
+import {accountsPerformanceReport,accountsLeaveReport} from './accounts_reports.js';
 const actions=new Set(['accountant_dashboard','accountant_jc_search','accountant_jc_detail','accountant_report','accountant_command']);
-const reportNames=new Set(['jobs','consumables','paint','parts','leave','cash','lpo','outstanding','monthly','audit','labour','invoices','cash_invoices','manager_profit']);
+const reportNames=new Set(['jobs','consumables','paint','parts','leave','cash','lpo','outstanding','monthly','audit','labour','invoices','cash_invoices','manager_profit','accounts_performance','accounts_leave']);
 const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
 export const canonical=v=>Array.isArray(v)?v.map(canonical):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,canonical(v[k])])):v;
 export async function fingerprint(value,secret){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);return [...new Uint8Array(await crypto.subtle.sign('HMAC',k,new TextEncoder().encode(JSON.stringify(canonical(value)))))].map(x=>x.toString(16).padStart(2,'0')).join('');}
@@ -14,6 +15,7 @@ export async function accountantApi(admin,user,body,secret,now=Date.now()){
  if(action==='accountant_report'&&!reportNames.has(body.report))return fail('invalid_report');
  if(body.report==='manager_profit'&&(action!=='accountant_report'||user.role!=='Manager'))return fail('manager_required',403);
  if(body.report==='manager_profit'&&Object.keys(filters).some(k=>!['month','insurance','query','job_card','from','to'].includes(k)))return fail('invalid_filters');
+ if(Object.keys(filters).some(k=>['kind','customer','status'].includes(k))&&!(action==='accountant_report'&&['accounts_performance','accounts_leave'].includes(body.report)))return fail('invalid_filters');
  if(action==='accountant_jc_search'&&(typeof body.query!=='string'||body.query.trim().length<2||body.query.length>80||searchKey(body.query).length<2))return fail('invalid_query');
  if(action==='accountant_jc_detail'&&(!/^[A-Z0-9_-]{1,40}$/.test(key(body.job_card))||body.query!==undefined))return fail('invalid_job_card');
  let fp;
@@ -34,6 +36,11 @@ export async function accountantApi(admin,user,body,secret,now=Date.now()){
   pending_records:0,month:omanCurrentMonth
  }};
 
+ if(action==='accountant_report'&&['accounts_performance','accounts_leave'].includes(body.report)){
+  const projection=body.report==='accounts_performance'?accountsPerformanceReport(context,full,filters,now):accountsLeaveReport(full,filters);
+  const off=body.offset||0,limit=body.limit||100;
+  return {status:200,body:{ok:true,...projection,rows:projection.rows.slice(off,off+limit),total_count:projection.rows.length,next_offset:off+limit<projection.rows.length?off+limit:null,as_of:full.as_of,snapshot_revision:full.snapshot_revision,finance_revision:full.finance_revision}};
+ }
  if(body.report==='manager_profit'){
   const result=managerProfitReport(context,full,filters,now),offset=body.offset||0,limit=body.limit||100;
   return {status:200,body:{ok:true,...result,rows:result.rows.slice(offset,offset+limit),total_count:result.rows.length,next_offset:offset+limit<result.rows.length?offset+limit:null,as_of:full.as_of,snapshot_revision:full.snapshot_revision,finance_revision:full.finance_revision}};
@@ -53,7 +60,22 @@ export async function accountantApi(admin,user,body,secret,now=Date.now()){
   }
   const posted=await admin.rpc('zukait_accountant_post',{p_actor_id:user.id,p_request_id:body.request_id,p_fingerprint:fp,p_command:c});if(posted.error)throw posted.error;return {status:200,body:posted.data};
  }
- if(action==='accountant_jc_detail'){const d=full.details.find(d=>d.job_card===key(body.job_card));return d?{status:200,body:{ok:true,detail:d,breakdown:Object.fromEntries(['consumables','paint','parts'].map(k=>[k,full.rows[k].filter(r=>r.job_card===d.job_card)])),snapshot_revision:full.snapshot_revision,finance_revision:full.finance_revision}}:fail('job_not_found',404);}
+ if(action==='accountant_jc_detail'){
+  const d=full.details.find(d=>d.job_card===key(body.job_card));
+  if(!d)return fail('job_not_found',404);
+  const sublets=(Array.isArray(context.state?.sublets)?context.state.sublets:[])
+   .filter(v=>v&&!v.voided&&!v.cancelled&&key(v.jobCard)===d.job_card)
+   .map(v=>({id:v.id||'',job_card:d.job_card,date:day(v.createdAt||v.date)||'',supplier:String(v.supplier||v.vendor||v.payee||''),description:String(v.description||v.workDescription||''),cost_omr:Number.isSafeInteger(v.amountMills)&&v.amountMills>=0?v.amountMills/1000:null}));
+  const p=accountsPerformanceReport(context,full,{from:'1900-01-01'},now).rows.find(r=>r.job_card===d.job_card);
+  const subletPending=sublets.some(r=>r.cost_omr===null),subletCost=subletPending?null:sublets.reduce((n,r)=>n+r.cost_omr,0);
+  const total=p?.total_job_cost_omr??(subletCost!==null&&milli(d.total_cost_omr)!==null?(milli(d.total_cost_omr)+milli(subletCost))/1000:null);
+  const amount=p?.invoice_amount_omr??(d.job_type==='INSURANCE'?full.rows.lpo.find(x=>x.job_card===d.job_card&&x.lpo_status==='Received')?.lpo_amount_omr:d.invoice_amount_omr);
+  const profit=total!==null&&milli(amount)!==null?(milli(amount)-milli(total))/1000:null;
+  const detail={...d,sublet_cost_omr:p?.sublet_cost_omr??subletCost,job_total_cost_omr:total,job_invoice_amount_omr:amount??null,job_profit_omr:profit,job_profit_percentage:profit===null||!milli(amount)?null:profit/Number(amount)*100};
+  const breakdown=Object.fromEntries(['consumables','paint','parts','labour'].map(k=>[k,full.rows[k].filter(r=>r.job_card===d.job_card)]));
+  breakdown.sublet=sublets;
+  return {status:200,body:{ok:true,detail,breakdown,snapshot_revision:full.snapshot_revision,finance_revision:full.finance_revision}};
+ }
  let rows;
  if(action==='accountant_jc_search'){const q=searchKey(body.query);rows=full.details.filter(d=>[d.job_card,d.registration,d.vehicle,d.customer].some(v=>searchKey(v).includes(q))).map(d=>({job_card:d.job_card,registration:d.registration,vehicle:d.vehicle,customer:d.customer,job_type:d.job_type}));}
  else if(body.report==='cash_invoices'){
