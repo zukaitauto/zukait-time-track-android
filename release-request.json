@@ -3,7 +3,7 @@
   "versionCode": 356,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": false,
-  "sourceCommit": null,
+  "sourceCommit": "140676f0c34bb56c0da33ac8f96d928c29c2ce19",
   "ownerPublicationRequested": true,
   "ownerRequestedImmediateRelease": true,
   "releaseHeldByOwner": true,
@@ -18,7 +18,7 @@
   "signedAcceptanceRun": null,
   "verificationRun": null,
   "authorization": "Owner requested V393 Accounts improvements release for checking.",
-  "reason": "Owner requested RELEASE FOR CHECKING for Cash and Insurance modern no-scroll UI, Job Card expense detail popup, Profit/Loss With/Without Labour, and labour time HH:MM display. Keep production V392 until V393 exact-source tests, backend readback and protected publication succeed.",
+  "reason": "Owner requested RELEASE FOR CHECKING for Cash and Insurance modern no-scroll UI, Job Card expense detail popup, Profit/Loss With/Without Labour, and labour time HH:MM display. Keep production V392 until V393 exact-source tests, backend readback and protected publication succeed. Candidate source pinned only; no publication authorized until CI and backend verification.",
   "productionBackend": {
     "status": "V393_BACKEND_PENDING",
     "prior": {
