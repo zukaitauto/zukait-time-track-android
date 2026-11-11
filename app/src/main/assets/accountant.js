@@ -215,7 +215,7 @@ $('accounts-back').onclick=showHome;
 
 const drilldownColumns={
  consumables:columns.consumables,paint:columns.paint,parts:columns.parts,
- labour:[['JC','job_card'],['Date','date'],['Normal Duty Hours','normal_hours'],money('Labour Rate OMR/h','rate_omr'),money('Labour Cost OMR','labour_cost_omr')],
+ labour:[['Employee','employee_name'],['JC','job_card'],['Date','date'],['Normal Duty Hours','normal_hours'],money('Labour Rate OMR/h','rate_omr'),money('Labour Cost OMR','labour_cost_omr')],
  sublet:[['Date','date'],['Supplier','supplier'],['Work Description','description'],money('Cost OMR','cost_omr')]
 };
 const expenseSpecs=[
