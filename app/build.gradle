@@ -24,6 +24,7 @@ android {
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
         versionCode 355
         versionName "V392" // Five approved Accounts reports; matching Accountant backend required before activation.
+        // Acceptance source: five Accounts sections, existing workshop source unchanged.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }
