@@ -27,6 +27,7 @@ android {
         // V393: dedicated Accountant UI/Profit toggle candidate; release only after coordinated backend checks.
         // V393 exact-source Acceptance: Accounts reports + financial popup + hours/minutes.
         // Browser acceptance re-run with package-mirror-independent Playwright setup.
+        // WebKit verified in supported container; Android and financial runtime unchanged.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }
