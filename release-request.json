@@ -1,7 +1,7 @@
 {
   "versionName": "V392",
   "versionCode": 355,
-  "releaseScope": "accountant-live-test-candidate",
+  "releaseScope": "accountant-live-test",
   "approvedForStaff": false,
   "sourceCommit": null,
   "ownerPublicationRequested": true,
