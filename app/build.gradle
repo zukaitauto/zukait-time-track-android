@@ -22,8 +22,8 @@ android {
         targetSdk 35
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
-        versionCode 356
-        versionName "V393" // Accounts UI, modal, labour display and optional without-labour profit test release.
+        versionCode 357
+        versionName "V394" // Approved Accounts two-column UI and verified partial-priced job costing.
         // V393: dedicated Accountant UI/Profit toggle candidate; release only after coordinated backend checks.
         // V393 exact-source Acceptance: Accounts reports + financial popup + hours/minutes.
         // Browser acceptance re-run with package-mirror-independent Playwright setup.
