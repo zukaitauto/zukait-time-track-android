@@ -164,6 +164,19 @@ function renderPerformanceTable(rows){
   return '<td data-label="'+esc(c[0])+'" class="'+(c[2]?'number ':'')+sign+'" title="'+(estimate?'Provisional: missing item prices are excluded or parts not yet received':'')+'">'+formatted+(estimate?'*':'')+'</td>';
  }).join('')+'</tr>').join('')+'</tbody></table></div>';
 }
+function jobCardResults(rows){
+ return '<section class="jc360-results" aria-label="Job Card search results">'+rows.map(r=>{
+  const meta=[r.registration,r.vehicle,r.customer].filter(Boolean).map(esc).join(' · ');
+  return '<article class="jc360-result-card"><div class="jc360-result-header">'+
+   '<div><strong>JC '+esc(r.job_card)+'</strong><small>'+meta+'</small></div>'+
+   '<span class="jc360-job-type">'+esc(r.job_type||'Job Card')+'</span></div>'+
+   '<div class="jc360-metrics"><div class="jc360-metric"><small>Total Cost</small>'+
+   '<strong>'+esc(display(r.total_cost_omr,true))+'</strong></div>'+
+   '<div class="jc360-metric is-profit"><small>Estimated GP</small>'+
+   '<strong>'+esc(display(r.estimated_gross_profit_omr,true))+'</strong></div></div>'+
+   '<button type="button" class="jc360-open" data-job="'+esc(r.job_card)+'">Open financial view</button></article>';
+ }).join('')+'</section>';
+}
 function fillSelect(id,values,allLabel){
  const el=$(id),selected=el.value;
  el.replaceChildren(new Option(allLabel,''));
@@ -222,9 +235,9 @@ async function load(){
   if(!finance&&report!=='leave')renderSummary(r.summary);
   $('title').textContent=modules.find(m=>m[0]===report)?.[1]||report;
   $('report-meta').textContent='As of '+new Date(r.as_of).toLocaleString('en-GB',{timeZone:'Asia/Muscat'})+' Oman time'+(report==='leave'?' · '+r.summary.leave_total_days+' leave days':'');
-  $('notes').textContent=report==='leave'?'Read-only Manager leave history. Cancelled leave does not count in leave days.':(r.notes||[]).join(' ');
+  $('notes').textContent=report==='jobs'?'':report==='leave'?'Read-only Manager leave history. Cancelled leave does not count in leave days.':(r.notes||[]).join(' ');
   $('rows').innerHTML=!searching?'<p>Search for a job card or registration number (at least 2 characters), then click to open financial details.</p>':
-   r.rows.length?(finance?renderPerformanceTable(r.rows):table(r.rows,columns[report],report==='jobs')):
+   r.rows.length?(report==='jobs'?jobCardResults(r.rows):finance?renderPerformanceTable(r.rows):table(r.rows,columns[report],false)):
    '<p>No matching records in the selected period. Missing costs are not counted as zero.</p>';
   $('previous').parentElement.hidden=!searching;
   $('pdf').disabled=!searching;$('excel').disabled=!searching;$('print').disabled=!searching;
@@ -282,9 +295,11 @@ function expenseBreakdowns(b,d,preferredType=''){
  return '<section class="expense-breakdowns" aria-label="Five financial expense breakdowns">'+
   ordered.map(([type,title,k])=>{
    const lines=b[type]||[];
-   return '<details class="expense-breakdown expense-'+type+'"><summary><span>'+esc(title)+
-    ' <small>'+lines.length+' source record(s) · click for details</small></span><strong>'+esc(display(d[k],true))+
-    '</strong><span aria-hidden="true">⌄</span></summary><div class="expense-lines">'+
+   const icons={labour:'♧',paint:'◌',consumables:'⬡',parts:'⚙',sublet:'↗'};
+   return '<details class="expense-breakdown expense-'+type+'"><summary>'+
+    '<span class="expense-label"><span class="expense-glyph" aria-hidden="true">'+icons[type]+'</span><span>'+esc(title)+'</span></span>'+
+    '<strong class="expense-amount">'+esc(display(d[k],true))+
+    '</strong><span class="expense-chevron" aria-hidden="true">⌄</span></summary><div class="expense-lines">'+
     (lines.length?table(lines,drilldownColumns[type]):'<p>No finalized '+esc(title.toLowerCase())+' lines in the verified source. An unknown expense is shown as Pending.</p>')+
     (type==='labour'?'<p class="notice">Labour cost is the verified combined normal-duty total; unfinished sessions remain pending.</p>':'')+
     '</div></details>';
@@ -356,9 +371,16 @@ async function openJob(no,expandType='',trigger=null){
     ...(d.cost_partial?[['Cost status','PARTIAL — MISSING ITEM PRICES']]:d.cost_estimated?[['Cost status','PROVISIONAL']]:[]),
     ...(d.labour_excluded?[['Calculation Mode','WITHOUT LABOUR']]:[]),['Registration',d.registration],['Vehicle',d.vehicle],['Job Type',d.job_type],['Insurance Company / Cash',d.insurance_company||d.job_type],['Invoice / LPO Amount',display(amount,true)],['Total Job Cost',display(cost,true)],
     [d.labour_excluded?'Profit / Loss without Labour':resultLabel,display(profit,true)],['Profit %',d.job_profit_percentage===null?'Pending':Number(d.job_profit_percentage).toFixed(2)+'%']
-   ].map(([label,v])=>'<div class="detail-value"><small>'+esc(label)+'</small><strong>'+esc(v??'—')+'</strong></div>').join('')+
-   '</div><h3>'+(expandType?'Selected expense details · '+esc(expandType.charAt(0).toUpperCase()+expandType.slice(1)):'Click any expense to open source details')+'</h3>'+expenseBreakdowns(r.breakdown||{},d,expandType)+
-   '<p class="notice">'+(d.cost_partial?'PARTIAL ESTIMATE: Calculated from items with recorded prices. Missing material or parts prices are excluded; profit may decrease when entered. · ':d.parts_cost_estimated?'Parts List price includes unreceived items — profit is provisional. · ':d.parts_price_pending?'Some Parts List purchase prices are missing — profit remains Pending. · ':'')+(d.labour_excluded?'Labour excluded from this profit calculation; recorded labour remains unchanged. · ':'')+esc((d.warnings||[]).join(' · ')||'Estimated profit excludes general workshop overheads.')+'</p>';
+   ].map(([label,v])=>{
+    const tone=/^Profit|^Loss/.test(label)?Number(profit)<0?' is-loss':' is-positive':
+     label==='Total Job Cost'||label==='Invoice / LPO Amount'?' is-money':
+     label==='Cost status'?' is-status':'';
+    return '<div class="detail-value'+tone+'"><small>'+esc(label)+'</small><strong>'+esc(v??'—')+'</strong></div>';
+   }).join('')+
+   '</div><h3>'+(expandType?'Expense breakdown · '+esc(expandType.charAt(0).toUpperCase()+expandType.slice(1)):'Expense breakdown')+'</h3>'+expenseBreakdowns(r.breakdown||{},d,expandType)+
+   (d.cost_partial?'<p class="financial-status-note">Partial estimate: missing parts or materials prices are excluded; profit may change.</p>':
+    d.cost_estimated?'<p class="financial-status-note">Provisional cost: some parts have not yet been received.</p>':
+    d.job_total_cost_omr===null?'<p class="financial-status-note">Some source costs are pending.</p>':'');
   $('detail').hidden=false;
   $('close-detail').onclick=closeDetail;
   $('job-pdf').onclick=()=>exportJob('pdf');$('job-excel').onclick=()=>exportJob('excel');$('job-print').onclick=()=>exportJob('print');
@@ -403,12 +425,13 @@ $('entry').onsubmit=e=>{e.preventDefault();const c={operation:$('operation').val
 $('correction').onsubmit=e=>{e.preventDefault();if(!target?.field)return;const d=target.detail,k=target.field,c={operation:k==='invoice_amount_omr'?'CORRECT_INVOICE':'ADJUST_COST',job_card:d.job_card,expected_snapshot_revision:target.snapshot_revision,expected_finance_revision:target.finance_revision,transaction_date:new Date(Date.now()+14400000).toISOString().slice(0,10),old_value:d[k],new_value:$('corrected-value').value,reason:$('correction-reason').value.trim()};if(c.operation==='ADJUST_COST')c.category={consumables_cost_omr:'consumables',paint_cost_omr:'paint',parts_cost_omr:'parts',labour_cost_omr:'labour'}[k];submit(c);};
 $('detail').onclick=e=>{const b=e.target.closest('[data-adjust]');if(!b||!target)return;target.field=b.dataset.adjust;$('correction-target').textContent=target.detail.job_card+' · '+target.field.replaceAll('_',' ')+' · Original '+display(target.detail[target.field],true)+(target.field==='invoice_amount_omr'&&target.detail.job_type==='INSURANCE'?' · Linked LPO amount is also corrected; this does not record a cash receipt.':'');$('corrected-value').value=target.detail[target.field];$('correction-reason').value='';$('correction').hidden=false;};
 $('rows').onclick=e=>{if(!result)return;const expense=e.target.closest('[data-expense]');if(expense)return openJob(expense.dataset.job,expense.dataset.expense,expense);const j=e.target.closest('[data-job]');if(j)return openJob(j.dataset.job,'',j);const c=e.target.closest('[data-correct]');if(c){const row=result.rows[Number(c.dataset.correct)];if(row&&!row.invoice_receipt)return cashForm(row);return;}const r=e.target.closest('[data-reverse]');if(r){const row=result.rows[Number(r.dataset.reverse)];if(!row||row.invoice_receipt)return;const reason=prompt('Reason for reversal? The original entry remains in history.');if(reason?.trim().length>=3)submit({operation:'REVERSE',entry_id:row.id,transaction_date:new Date(Date.now()+14400000).toISOString().slice(0,10),reason:reason.trim(),...revision()});}};
+const moduleSvg=content=>'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+content+'</svg>';
 const moduleDesign={
- jobs:['⌕','Search registration or JC and inspect all five costs','blue'],
- cash:['▤','Manager Cash financial report with five cost columns','green'],
- insurance_invoiced:['▣','Delivered, invoiced insurance vehicles by company','indigo'],
- leave:['▦','Manager leave history — read-only','amber'],
- profit:['◒','Cash, Insurance, Credit and Corporate combined','teal']
+ jobs:[moduleSvg('<rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="m8 14 2.3 2.3L16 10.5"/>'),'Search registration or JC and inspect all five costs','blue'],
+ cash:[moduleSvg('<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v5c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 11v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5M5 16v2c0 1.7 3.1 3 7 3s7-1.3 7-3v-2"/>'),'Manager Cash financial report with five cost columns','green'],
+ insurance_invoiced:[moduleSvg('<path d="M12 2 4 5v6c0 5.2 3 8.6 8 11 5-2.4 8-5.8 8-11V5z"/><path d="m7.5 13 1-3h7l1 3M8 16v-3h8v3M9 16v1m6-1v1"/>'),'Delivered, invoiced insurance vehicles by company','indigo'],
+ leave:[moduleSvg('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2v6m10-6v6M3 10h18"/>'),'Manager leave history — read-only','amber'],
+ profit:[moduleSvg('<rect x="4" y="13" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="16" y="3" width="4" height="18" rx="1"/>'),'Cash, Insurance, Credit and Corporate combined','teal']
 };
 $('navigation').innerHTML=modules.map(([name,title])=>{const [icon,description,tone]=moduleDesign[name];return '<button type="button" class="module-card tone-'+tone+'" aria-label="'+esc(title)+'" data-report="'+name+'"><span class="module-icon" aria-hidden="true">'+icon+'</span><span class="module-copy"><strong>'+title+'</strong><small>'+description+'</small></span><span class="module-arrow" aria-hidden="true">›</span></button>';}).join('');for(const id of ['navigation','summary'])$(id).onclick=e=>{const b=e.target.closest('[data-report]');if(b)switchReport(b.dataset.report)};
 $('query').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();offset=0;$('detail').hidden=true;load()}});$('refresh').onclick=()=>{offset=0;$('detail').hidden=true;load()};$('clear').onclick=()=>{
