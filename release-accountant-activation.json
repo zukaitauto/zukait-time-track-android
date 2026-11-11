@@ -1,8 +1,8 @@
 {
   "approved": true,
-  "release": "V392",
-  "sourceCommit": "9d0dd0bf6bfe5943ac8ebb8ef9902272d855f213",
-  "publishNonce": "9d0dd0bf6bfe5943ac8ebb8ef9902272",
-  "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
-  "reason": "Explicit owner request on 11 Nov 2026: release V392 Accounts five-option app for live testing after passed release gates. Previous V391 source remains available for rollback."
+  "release": "V393",
+  "sourceCommit": "067b3eb8005c952dbefa160497f3a68a01bfa002",
+  "publishNonce": "067b3eb8005c952dbefa160497f3a68a",
+  "authorization": "Owner requested V393 Accounts improvements release for checking.",
+  "reason": "Owner explicitly requested V393 release for checking. All three exact-source protected gates succeeded; Workshop API v114 deployed and verified; preserve V392 rollback."
 }
