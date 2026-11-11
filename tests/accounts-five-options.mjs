@@ -70,6 +70,8 @@ assert.equal(details.status,200);
 assert.equal(details.body.detail.job_total_cost_omr,'57.500');
 assert.equal(details.body.breakdown.sublet[0].cost_omr,20);
 assert.equal(details.body.breakdown.labour.length,1);
+assert.equal(details.body.breakdown.labour[0].employee_name,'Technician');
+assert.equal(details.body.breakdown.labour[0].normal_hours,1);
 assert.equal((await accountantApi(admin,accountant,{action:'accountant_report',report:'manager_profit',filters:month},'qa',now)).status,403,'legacy Manager financial access remains Manager only');
 assert.ok(readCount>0);
 assert.equal(JSON.stringify(c),baseline.replace('"delivered":false','"delivered":true'),'the only state change is the explicit synthetic delivery flag');
