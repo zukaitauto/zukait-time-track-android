@@ -6,9 +6,15 @@ try{for(const width of [320,375,768,1280]){
  page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(!r.url().startsWith(base))external.push(r.url())});
  if(!live)await page.route('**/*',r=>{const url=new URL(r.request().url());assert.equal(url.origin,new URL(base).origin);const file=path.resolve('_site','.'+url.pathname+(url.pathname.endsWith('/')?'index.html':''));assert.ok(file.startsWith(path.resolve('_site')+'/'));return r.fulfill({path:file,contentType:file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html'})});
  await page.goto(base+prefix);const frame=page.frameLocator('iframe');
- await frame.getByRole('button',{name:'Cash Invoices',exact:true}).click();
+ await frame.getByRole('button',{name:/^Cash Invoices ·/}).click();
  await frame.locator('#cash-invoice-total-amount').filter({hasText:'235.500'}).waitFor();
  assert.match(await frame.locator('#rows').innerText(),/DEMO-001/);
+ await frame.locator('#query').fill('DEMO-001');
+ await frame.locator('#refresh').click();
+ await frame.locator('#cash-invoice-total-amount').filter({hasText:'150.000'}).waitFor();
+ assert.doesNotMatch(await frame.locator('#rows').innerText(),/DEMO-002/);
+ await frame.locator('#clear').click();
+ await frame.locator('#cash-invoice-total-amount').filter({hasText:'235.500'}).waitFor();
  await page.evaluate(()=>localStorage.setItem('preview-parent-sentinel','parent session unchanged'));
  await page.screenshot({path:`artifacts/accounts-preview/${live?'live':'staged'}-invoices-${width}.png`,fullPage:true});
  await frame.locator('#cash-entry').click();await frame.locator('#cash-entry-dialog').waitFor({state:'visible'});
