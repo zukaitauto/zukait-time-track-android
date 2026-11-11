@@ -20,8 +20,31 @@
   "authorization": "Owner requested V393 Accounts improvements release for checking.",
   "reason": "Owner requested RELEASE FOR CHECKING for Cash and Insurance modern no-scroll UI, Job Card expense detail popup, Profit/Loss With/Without Labour, and labour time HH:MM display. Keep production V392 until V393 exact-source tests, backend readback and protected publication succeed. Exact source pinned; release blocked until three matching CI runs and verified backend deployment.",
   "productionBackend": {
-    "status": "V393_BACKEND_PENDING",
-    "prior": {
+    "project": "pjknotnjkufadqavcmii",
+    "functions": {
+      "staff-auth": {
+        "version": 13,
+        "bundleSha256": "8c9007aef796124863048c9b75156133edd9823ba9fc5211f0e70fe6ec5e4a11",
+        "verifiedFileMatch": true
+      },
+      "workshop-api": {
+        "version": 114,
+        "bundleSha256": "003ef5969e525c1a6808ee286f229aaf99c648a795761fe05a71a9d18732d3ac",
+        "verifiedFileMatch": true
+      }
+    },
+    "migrations": [
+      "accountant_financial_ledger",
+      "accountant_lpo_audit",
+      "accountant_append_only_grants",
+      "accountant_append_only_corrections"
+    ],
+    "priorWorkshopApiVersion": 113,
+    "readbackVerified": true,
+    "filesVerified": 40,
+    "changedAccountantFiles": 3,
+    "scope": "Workshop API v114 deployed: 37 existing live files preserved unchanged, 3 Accountant files updated from pinned V393 source; user-auth v13 unchanged.",
+    "previousReleaseEvidence": {
       "project": "pjknotnjkufadqavcmii",
       "functions": {
         "staff-auth": {
@@ -61,9 +84,9 @@
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true,
     "sourceVerificationRuns": {},
-    "backendReadback": "workshop-api v113, 40 files; 36 existing files preserved, 4 Accountant files match immutable V392 source",
+    "backendReadback": "workshop-api v114 active; 40 files, 37 preserved, 3 Accountant files match pinned V393 source; staff-auth v13 active",
     "rollbackApp": "release-V391-architecture-v2",
-    "rollbackBackendPreviousVersion": 112
+    "rollbackBackendPreviousVersion": 113
   },
   "previousPublishedRelease": {
     "versionName": "V392",
