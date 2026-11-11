@@ -2,39 +2,48 @@
   "versionName": "V392",
   "versionCode": 355,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": false,
-  "sourceCommit": null,
+  "approvedForStaff": true,
+  "sourceCommit": "9d0dd0bf6bfe5943ac8ebb8ef9902272d855f213",
   "ownerPublicationRequested": true,
   "ownerRequestedImmediateRelease": true,
-  "releaseHeldByOwner": true,
+  "releaseHeldByOwner": false,
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "backupDeferredByOwner": true,
-  "approvedAt": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "authorization": "Owner requested: Release it then I will test. V392 source/backend approval evidence must be completed before publishing.",
-  "reason": "Five approved Accounts dashboard options and coordinated API compatibility; production deploy and exact-source CI release evidence pending.",
+  "approvedAt": "2026-11-11T13:37:38.052Z",
+  "publishNonce": "9d0dd0bf6bfe5943ac8ebb8ef9902272",
+  "signedAcceptanceRun": 43029933583,
+  "verificationRun": 43029933573,
+  "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
+  "reason": "Owner explicitly requested 'Release it then I will test'. V392 activates exactly five approved Accounts options, preserves existing workshop records and omits unapproved accounting modules.",
   "productionBackend": {
-    "status": "PENDING_V392",
-    "previous": {
-      "project": "pjknotnjkufadqavcmii",
-      "version": 107,
-      "bundleSha256": "8fb979a5efb937eaa06183056c513daccc26f04400d6d07109c87d99c6aadf82",
-      "changedModules": [
-        "index.ts",
-        "job_edit_rules.js",
-        "reception_dashboard_rules.js",
-        "vehicle_movement_rules.js"
-      ],
-      "readbackVerified": true,
-      "filesVerified": 39,
-      "scope": "Minimal v106-based bundle; preserve other live modules, environment flags, and custom session authentication. Compact history and broader Vehicle Master identity rollout remain off."
-    }
+    "project": "pjknotnjkufadqavcmii",
+    "functions": {
+      "staff-auth": {
+        "version": 13,
+        "bundleSha256": "8c9007aef796124863048c9b75156133edd9823ba9fc5211f0e70fe6ec5e4a11",
+        "verifiedFileMatch": true
+      },
+      "workshop-api": {
+        "version": 113,
+        "bundleSha256": "46c3eb001f50ccb93e1b9be0e40301fcea9e05180eb8d19300018659f8b80259",
+        "verifiedFileMatch": true
+      }
+    },
+    "migrations": [
+      "accountant_financial_ledger",
+      "accountant_lpo_audit",
+      "accountant_append_only_grants",
+      "accountant_append_only_corrections"
+    ],
+    "priorWorkshopApiVersion": 112,
+    "readbackVerified": true,
+    "filesVerified": 40,
+    "changedAccountantFiles": 4,
+    "scope": "Live function v112 bundle preserved unchanged outside 4 Accountant files. New accounts_reports.js added. Preserve workshop API, staff-auth, and privileges."
   },
   "databaseMigration": {
     "name": "v391_private_visit_customer_roles",
@@ -43,22 +52,19 @@
     "dataBackfill": false
   },
   "evidence": {
-    "isolatedRoleRollout": {
-      "passed": true,
-      "evidence": "tests/v391-role-rollout-qa.mjs passed against isolated legacy schema; no production fixtures"
+    "credentialPreservation": true,
+    "qaFinancialAcceptance": true,
+    "serverPermissions": true,
+    "rollbackPrepared": true,
+    "legacyLoginCompatibility": true,
+    "sourceVerificationRuns": {
+      "signedAcceptanceRun": 43029933583,
+      "verificationRun": 43029933573,
+      "accountantVerificationRun": 43029933570
     },
-    "privatePermissions": {
-      "passed": true,
-      "evidence": "anon/authenticated function EXECUTE denied; service_role permitted; live read-only privilege checks"
-    },
-    "missingActorDenied": {
-      "passed": true,
-      "evidence": "Live unknown-actor call returned reception_forbidden without inserting a role"
-    },
-    "productionRecordsPreserved": {
-      "passed": true,
-      "evidence": "Rollout DDL creates private role storage and replaces projection routines only; no update/delete/backfill of business records"
-    }
+    "backendReadback": "workshop-api v113, 40 files; 36 existing files preserved, 4 Accountant files match immutable V392 source",
+    "rollbackApp": "release-V391-architecture-v2",
+    "rollbackBackendPreviousVersion": 112
   },
   "previousPublishedRelease": {
     "versionName": "V391",
@@ -67,5 +73,5 @@
     "releaseTag": "release-V391-architecture-v2"
   },
   "ownerApprovedLiveAccountantTesting": true,
-  "accountantVerificationRun": null
+  "accountantVerificationRun": 43029933570
 }
