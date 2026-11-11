@@ -67,7 +67,7 @@ const leave=await accountantApi(admin,accountant,{action:'accountant_report',rep
 assert.equal(leave.body.rows.length,2);
 const details=await accountantApi(admin,manager,{action:'accountant_jc_detail',job_card:'J1'},'qa',now);
 assert.equal(details.status,200);
-assert.equal(details.body.detail.job_total_cost_omr,57.5);
+assert.equal(details.body.detail.job_total_cost_omr,'57.500');
 assert.equal(details.body.breakdown.sublet[0].cost_omr,20);
 assert.equal(details.body.breakdown.labour.length,1);
 assert.equal((await accountantApi(admin,accountant,{action:'accountant_report',report:'manager_profit',filters:month},'qa',now)).status,403,'legacy Manager financial access remains Manager only');
