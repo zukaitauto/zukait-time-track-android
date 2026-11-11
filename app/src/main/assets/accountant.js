@@ -99,34 +99,111 @@ function closeCashDialog(){
  catch{dialog.removeAttribute('open');}
  $('entry').hidden=true;
 }
-async function load(){if(!verified)return;closeDetail();result=null;$('pdf').disabled=true;$('excel').disabled=true;$('cash-entry').disabled=true;const ticket=++generation;try{say('Loading verified financial records…');const searching=report!=='jobs'||$('query').value.trim().length>=2;const appliedFilters=filters();const r=await request('workshop-api',{action:searching?'accountant_report':'accountant_dashboard',report:backendReport(report),filters:appliedFilters,offset,limit:searching?25:1});if(ticket!==generation)return;result={...r,appliedFilters,canExport:searching};
- const invoiceView=report==='cash',ledgerView=report==='cash_ledger';
- $('cash-entry').hidden=!(invoiceView||ledgerView);$('cash-entry').disabled=false;
- $('cash-ledger-toggle').hidden=!(invoiceView||ledgerView);
- $('cash-ledger-toggle').textContent=invoiceView?'Receipts / Cash Out':'← Cash Invoices';
- $('cash-invoice-total').hidden=!invoiceView;
- if(invoiceView){
-  $('cash-invoice-total-amount').textContent=display(r.invoice_total_omr,true);
-  $('cash-invoice-total-count').textContent=String(r.invoice_count??r.total_count)+' invoice'+((r.invoice_count??r.total_count)===1?'':'s');
-  $('cash-invoice-total-period').textContent=appliedFilters.month||r.period_month||'Selected period';
+
+const performanceReports=new Set(['cash','insurance_invoiced','profit']);
+function renderPerformanceTable(rows){
+ const cols=columns[report],costKeys=new Map([
+  ['labour_cost_omr','labour'],['paint_cost_omr','paint'],
+  ['consumables_cost_omr','consumables'],['parts_cost_omr','parts'],['sublet_cost_omr','sublet']
+ ]);
+ return '<div class="finance-report" role="region" aria-label="Job Card financial report" tabindex="0"><table><thead><tr>'+
+ cols.map(c=>'<th scope="col"'+(c[2]?' class="number"':'')+'>'+esc(c[0])+'</th>').join('')+
+ '</tr></thead><tbody>'+rows.map(r=>'<tr>'+cols.map(c=>{
+  const k=c[1],val=r[k],formatted=esc(k==='percentage'?(val===null||val===undefined?'—':Number(val).toFixed(2)+'%'):display(val,c[2]));
+  if(k==='job_card')return '<td><button type="button" class="jc-link" data-job="'+esc(r.job_card)+'">'+formatted+'</button></td>';
+  if(costKeys.has(k))return '<td class="number"><button type="button" class="expense-link" data-job="'+esc(r.job_card)+'" data-expense="'+costKeys.get(k)+'" aria-label="View '+esc(c[0])+' details for JC '+esc(r.job_card)+'">'+formatted+'</button></td>';
+  const sign=k==='net_profit_omr'?(val===null?'pending':Number(val)<0?'loss':'profit'):'';
+  return '<td class="'+(c[2]?'number ':'')+sign+'">'+formatted+'</td>';
+ }).join('')+'</tr>').join('')+'</tbody></table></div>';
+}
+function fillSelect(id,values,allLabel){
+ const el=$(id),selected=el.value;
+ el.replaceChildren(new Option(allLabel,''));
+ for(const value of values||[])el.add(new Option(value,value));
+ if([...el.options].some(o=>o.value===selected))el.value=selected;
+}
+function showFinancialSummary(data){
+ const isFinancial=performanceReports.has(report),area=$('accounts-kpis'),box=$('cash-invoice-total');
+ area.hidden=!isFinancial;box.hidden=!isFinancial;
+ if(!isFinancial){area.replaceChildren();return;}
+ const summary=data.summary||{},label=report==='cash'?'Total Cash Invoiced':report==='insurance_invoiced'?'Total Insurance Invoiced':'Total Invoiced';
+ $('accounts-report-total-label').textContent=label;
+ $('cash-invoice-total-amount').textContent=display(summary.revenue_omr,true);
+ $('cash-invoice-total-count').textContent=String(summary.records||0)+' Job Cards';
+ $('cash-invoice-total-period').textContent=data.period_month||($('from').value||$('to').value?'Selected period':'Current month');
+ $('accounts-report-total-caption').textContent='Final invoice / LPO value; not a duplicate payment receipt';
+ const figures=[
+  ['Total Job Cost',summary.total_cost_omr,true],
+  ['Profit / Loss',summary.profit_omr,true],
+  ['Profit Percentage',summary.profit_percentage,false],
+  ['Pending Cost Jobs',summary.pending_cost_records||0,false]
+ ];
+ area.innerHTML=figures.map(([label,value,currency])=>'<div class="accounts-kpi"><small>'+esc(label)+'</small><b class="'+(label==='Profit / Loss'&&value!==null?(Number(value)<0?'negative':'positive'):'')+'">'+
+  (currency?esc(display(value,true)):label==='Profit Percentage'?(value===null?'Pending / —':Number(value).toFixed(2)+'%'):esc(value))+'</b></div>').join('');
+ if(data.facets){
+  fillSelect('insurance-company',data.facets.insurance||[],'All Insurance Companies');
+  fillSelect('customer-filter',[...(data.facets.credit||[]),...(data.facets.corporate||[])].filter((s,i,a)=>a.indexOf(s)===i),'All Credit / Corporate Customers');
  }
- next=searching?r.next_offset:null;renderSummary(r.summary);$('title').textContent=ledgerView?'Receipts / Cash Out':modules.find(m=>m[0]===report)?.[1]||report;$('report-meta').textContent='As of '+new Date(r.as_of).toLocaleString('en-GB',{timeZone:'Asia/Muscat'})+' Oman time'+(report==='leave'?' · Leave total: '+r.summary.leave_total_days+' day(s)':'');$('notes').textContent=invoiceView?'Final invoices for CASH Job Cards only. Invoice total is not proof of cash, bank, card or cheque receipt.':ledgerView?'Receipts and payments ledger. Payment methods and references come from recorded entries.':r.notes.join(' ');$('rows').innerHTML=!searching?'<p>Search for a job card to view its financial details. Enter at least 2 characters.</p>':r.rows.length?table(r.rows,columns[report],['jobs','cash','cash_ledger'].includes(report)):invoiceView?'<p>No final CASH invoices entered for the selected period.</p>':'<p>No matching verified records. Missing source data is not treated as a confirmed zero cost.</p>';$('previous').parentElement.hidden=!searching;$('pdf').disabled=!searching;$('excel').disabled=!searching;$('refresh').textContent=report==='jobs'?'Search job card':'Apply filters';$('previous').disabled=offset===0;$('next').disabled=next===null;$('page-status').textContent=(r.rows.length?offset+1:0)+'–'+(offset+r.rows.length)+' of '+r.total_count;$('navigation').querySelectorAll('button').forEach(b=>b.setAttribute('aria-current',!$('accounts-workspace').hidden&&b.dataset.report===report?'page':'false'));say('');showPending();}catch(e){if(ticket===generation)say(e.message==='ACCOUNT_CHANGED'?'Account changed. Sign in again.':e.message);}}
+}
+async function load(){
+ if(!verified)return;
+ closeDetail();result=null;
+ $('pdf').disabled=true;$('excel').disabled=true;$('print').disabled=true;$('cash-entry').disabled=true;
+ const ticket=++generation;
+ try{
+  say('Loading verified financial records…');
+  const searching=report!=='jobs'||$('query').value.trim().length>=2,appliedFilters=filters();
+  const r=await request('workshop-api',{action:searching?'accountant_report':'accountant_dashboard',report:backendReport(report),filters:appliedFilters,offset,limit:searching?25:1});
+  if(ticket!==generation)return;
+  result={...r,appliedFilters,canExport:searching};
+  const finance=performanceReports.has(report);
+  $('cash-entry').hidden=report!=='cash';$('cash-entry').disabled=false;
+  $('cash-ledger-toggle').hidden=true;
+  showFinancialSummary(r);
+  next=searching?r.next_offset:null;
+  if(!finance&&report!=='leave')renderSummary(r.summary);
+  $('title').textContent=modules.find(m=>m[0]===report)?.[1]||report;
+  $('report-meta').textContent='As of '+new Date(r.as_of).toLocaleString('en-GB',{timeZone:'Asia/Muscat'})+' Oman time'+(report==='leave'?' · '+r.summary.leave_total_days+' leave days':'');
+  $('notes').textContent=report==='leave'?'Read-only Manager leave history. Cancelled leave does not count in leave days.':(r.notes||[]).join(' ');
+  $('rows').innerHTML=!searching?'<p>Search by Job Card or registration number (at least 2 characters), then click to open financial details.</p>':
+   r.rows.length?(finance?renderPerformanceTable(r.rows):table(r.rows,columns[report],report==='jobs')):
+   '<p>No matching records in the selected period. Missing costs are not counted as zero.</p>';
+  $('previous').parentElement.hidden=!searching;
+  $('pdf').disabled=!searching;$('excel').disabled=!searching;$('print').disabled=!searching;
+  $('refresh').textContent=report==='jobs'?'Search Job Card':'Apply filters';
+  $('previous').disabled=offset===0;$('next').disabled=next===null;
+  $('page-status').textContent=(r.rows.length?offset+1:0)+'–'+(offset+r.rows.length)+' of '+r.total_count;
+  $('navigation').querySelectorAll('button').forEach(b=>b.setAttribute('aria-current',!$('accounts-workspace').hidden&&b.dataset.report===report?'page':'false'));
+  say('');showPending();
+ }catch(e){if(ticket===generation)say(e.message==='ACCOUNT_CHANGED'?'Account changed. Sign in again.':e.message);}
+}
 function showHome(){
  $('accounts-home').hidden=false;$('accounts-workspace').hidden=true;
  closeCashDialog();closeDetail();report='jobs';offset=0;
  for(const k of ['query','month','from','to','employee','material','insurance'])$(k).value='';
  load();
 }
+
+function filterVisibility(){
+ const kind=$('category-filter').value;
+ $('filter-kind').hidden=report!=='profit';
+ $('filter-company').hidden=!(report==='insurance_invoiced'||report==='profit'&&['ALL','INSURANCE'].includes(kind));
+ $('filter-customer').hidden=!(report==='profit'&&['ALL','CREDIT','CORPORATE'].includes(kind));
+ $('filter-status').hidden=report!=='leave';
+ $('filter-employee').hidden=report!=='leave';
+ for(const id of ['month','from','to'])$(id).closest('label').hidden=report==='jobs';
+}
 function switchReport(name){
- if(!columns[name])return;
- const leavingCash=['cash','cash_ledger'].includes(report)&&!['cash','cash_ledger'].includes(name);
+ if(!modules.some(m=>m[0]===name))return;
  report=name;offset=0;
  $('accounts-home').hidden=true;$('accounts-workspace').hidden=false;closeCashDialog();
- if(['cash','cash_ledger'].includes(name)){$('month').value=omanMonth();$('from').value='';$('to').value='';$('query').value='';}
- else if(leavingCash){for(const id of ['month','from','to','query'])$(id).value='';}
- $('module-label').textContent=name==='cash_ledger'?'Receipts / Cash Out':modules.find(m=>m[0]===name)[1];
- for(const k of ['employee','material','insurance'])$(k).closest('label').hidden=!({employee:['consumables','leave'],material:['consumables'],insurance:['jobs','lpo','outstanding']}[k].includes(name));
- closeDetail();load();$('accounts-workspace').scrollIntoView?.({block:'start',behavior:'smooth'});
+ for(const id of ['query','month','from','to','employee','material','insurance'])$(id).value='';
+ for(const id of ['insurance-company','customer-filter'])$(id).value='';
+ $('category-filter').value='ALL';$('leave-status').value='active';
+ if(performanceReports.has(name))$('month').value=omanMonth();
+ $('module-label').textContent=modules.find(m=>m[0]===name)[1];
+ filterVisibility();closeDetail();load();
+ $('accounts-workspace').scrollIntoView?.({block:'start',behavior:'smooth'});
 }
 $('accounts-back').onclick=showHome;
 function expenseBreakdowns(b,d){return '<section class="expense-breakdowns" aria-label="Job Card expense details">'+[['consumables','Consumables','consumables_cost_omr'],['parts','Spare Parts','parts_cost_omr'],['paint','Paint','paint_cost_omr']].map(([key,title,cost])=>'<details class="expense-breakdown expense-'+key+'"><summary><span>'+title+' <small>'+((b[key]||[]).length)+' item(s)</small></span><strong>'+display(d[cost],true)+'</strong><span aria-hidden="true">⌄</span></summary><div class="expense-lines">'+((b[key]||[]).length?table(b[key],columns[key]):'<p>No recorded items. Check whether actual costs still need to be entered.</p>')+'</div></details>').join('')+'</section>';}
