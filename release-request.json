@@ -3,7 +3,7 @@
   "versionCode": 356,
   "releaseScope": "accountant-live-test",
   "approvedForStaff": false,
-  "sourceCommit": "954373090de6216436aae4163e44a86eb950e641",
+  "sourceCommit": "067b3eb8005c952dbefa160497f3a68a01bfa002",
   "ownerPublicationRequested": true,
   "ownerRequestedImmediateRelease": true,
   "releaseHeldByOwner": true,
@@ -18,7 +18,7 @@
   "signedAcceptanceRun": null,
   "verificationRun": null,
   "authorization": "Owner requested V393 Accounts improvements release for checking.",
-  "reason": "Owner explicitly requested V393 release for checking. Source pinned to validated Accounts UI, JC detail modal, Insurance no-scroll layout, With/Without Labour, and labour HH:MM formatting. V393 is held until Accountant, Reception, signed APK checks pass against this exact SHA.",
+  "reason": "Owner explicitly requested V393 release for checking. Held until Accountant, Reception, and signed APK acceptance pass against immutable source 067b3eb8005c952dbefa160497f3a68a01bfa002. Updated Reception browser CI uses full Playwright Chromium/WebKit runtime image; backend workshop-api v114 already verified.",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
