@@ -81,3 +81,5 @@ dependencies {
 // V369: Verify additive delivery fields preserve authorized API responses and privacy.
 
 // V392 Accounts release: rerun full Accountant, Reception and signed APK acceptance against the held candidate.
+
+// V392 exact-source acceptance: existing Reception 14-tile browser regression corrected.
