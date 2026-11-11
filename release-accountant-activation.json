@@ -1,8 +1,8 @@
 {
   "approved": true,
-  "release": "V394",
-  "sourceCommit": "cf2d20a38481a7fcd6507280c6aaa5a9b41fb3cd",
-  "publishNonce": "cf2d20a38481a7fcd6507280c6aaa5a9",
-  "authorization": "Owner requested publishing V394 Accounts redesign for testing.",
-  "reason": "Owner requested publishing V394 for testing. Accountant, Reception and signed APK exact-source checks succeeded. Supabase workshop-api v115 is active and matches pinned V394 changes; preserved v114 and V393 rollback."
+  "release": "V395",
+  "sourceCommit": "1bcfebf812435672f1795d19ba75a37a16ff0595",
+  "publishNonce": "1bcfebf812435672f1795d19ba75a37a",
+  "authorization": "Owner requested V395 concise Accounts Profit/Loss screen for testing.",
+  "reason": "Approved UI-only V395: remove long Profit/Loss description, preserve financial functions and unchanged Supabase v115; exact-source signed, Accountant and Reception gates passed."
 }
