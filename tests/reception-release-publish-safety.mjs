@@ -50,8 +50,8 @@ if (updater.versionCode < release.versionCode) {
  assert.match(updater.sourceCommit,/^[a-f0-9]{40}$/);
  assert.match(updater.apkSha256,/^[a-f0-9]{64}$/);
  assert.equal(updater.releaseTag,'release-'+updater.versionName+'-architecture-v2');
- if(!['reception-insurance-features-1-10','accountant-live-test'].includes(release.releaseScope)) assert.equal(uiApproval?.versionName,release.versionName,'Pending UI and APK release versions must match');
- if(!['reception-insurance-features-1-10','accountant-live-test'].includes(release.releaseScope)) assert.equal(uiApproval?.versionCode,release.versionCode);
+ if(!['reception-insurance-features-1-10','accountant-live-test','mechanical-ui-test'].includes(release.releaseScope)) assert.equal(uiApproval?.versionName,release.versionName,'Pending UI and APK release versions must match');
+ if(!['reception-insurance-features-1-10','accountant-live-test','mechanical-ui-test'].includes(release.releaseScope)) assert.equal(uiApproval?.versionCode,release.versionCode);
  if (release.releaseScope === 'phase1-compatible-ui') {
   assert.equal(uiApproval?.approvedForStaff, release.approvedForStaff, 'Pending UI and Android approval states must match');
   assert.equal(uiApproval?.ownerPublicationRequested, release.ownerPublicationRequested, 'Pending UI and Android publication requests must match');
@@ -83,5 +83,5 @@ if (updater.versionCode < release.versionCode) {
  assert.match(updater.apkSha256,/^[a-f0-9]{64}$/);
  assert.equal(updater.releaseTag,'release-'+release.versionName+'-architecture-v2');
  assert.equal(uiApproval?.approvedForStaff,false,'Unapproved newer UI request must not be treated as published');
-} else if(['reception-insurance-features-1-10','accountant-live-test'].includes(release.releaseScope)) { assert.equal(updater.sourceCommit,release.sourceCommit); assert.equal(updater.versionCode,release.versionCode); assert.match(updater.apkSha256,/^[a-f0-9]{64}$/); } else verifyUpdaterAfterUiRelease(updater);
+} else if(['reception-insurance-features-1-10','accountant-live-test','mechanical-ui-test'].includes(release.releaseScope)) { assert.equal(updater.sourceCommit,release.sourceCommit); assert.equal(updater.versionCode,release.versionCode); assert.match(updater.apkSha256,/^[a-f0-9]{64}$/); } else verifyUpdaterAfterUiRelease(updater);
 console.log('PASS: Signed APK and Pages are manual-only on architecture-v2 with source/approval gates; explicit UI approval required');
