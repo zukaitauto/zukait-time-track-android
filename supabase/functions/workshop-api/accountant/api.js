@@ -68,8 +68,8 @@ export async function accountantApi(admin,user,body,secret,now=Date.now()){
    .map(v=>({id:v.id||'',job_card:d.job_card,date:day(v.createdAt||v.date)||'',supplier:String(v.supplier||v.vendor||v.payee||''),description:String(v.description||v.workDescription||''),cost_omr:Number.isSafeInteger(v.amountMills)&&v.amountMills>=0?v.amountMills/1000:null}));
   const p=managerProfitReport(context,full,{all_months:true,include_credit:true,delivered_insurance_only:true,job_card:d.job_card},now).rows.find(r=>r.job_card===d.job_card);
   const subletPending=sublets.some(r=>r.cost_omr===null),subletCost=subletPending?null:sublets.reduce((n,r)=>n+r.cost_omr,0);
-  const total=p?.total_job_cost_omr??(subletCost!==null&&milli(d.total_cost_omr)!==null?(milli(d.total_cost_omr)+milli(subletCost))/1000:null);
-  const amount=p?.invoice_amount_omr??(d.job_type==='INSURANCE'?full.rows.lpo.find(x=>x.job_card===d.job_card&&x.lpo_status==='Received')?.lpo_amount_omr:d.invoice_amount_omr);
+  const total=p?.total_cost_omr??(subletCost!==null&&milli(d.total_cost_omr)!==null?(milli(d.total_cost_omr)+milli(subletCost))/1000:null);
+  const amount=p?.amount_omr??(d.job_type==='INSURANCE'?full.rows.lpo.find(x=>x.job_card===d.job_card&&x.lpo_status==='Received')?.lpo_amount_omr:d.invoice_amount_omr);
   const profit=total!==null&&milli(amount)!==null?(milli(amount)-milli(total))/1000:null;
   const detail={...d,sublet_cost_omr:p?.sublet_cost_omr??subletCost,job_total_cost_omr:total,job_invoice_amount_omr:amount??null,job_profit_omr:profit,job_profit_percentage:profit===null||!milli(amount)?null:profit/Number(amount)*100};
   const breakdown=Object.fromEntries(['consumables','paint','parts','labour'].map(k=>[k,full.rows[k].filter(r=>r.job_card===d.job_card)]));
