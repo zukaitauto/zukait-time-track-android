@@ -19,6 +19,20 @@ try{for(const width of [320,375,768,1280]){
   const store=new Map();const controller=await window.mountMechanicalWorkspace(document.getElementById('root'),{enabled:true,getSession:()=>({id:'SUP003',role:'Supervisor',key:'QA_SYNTHETIC'}),online:()=>true,storage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)},deviceId:'QA_DEVICE',uuid:()=>String(++serial),api:async body=>{window.calls.push(body);if(body.action==='mechanical_qc_readiness')return {ok:true,status:{checklistId:'MC_TEST',workComplete:true,mechanicalRequired:true,mechanicalPassed:false,delivered:false,workToken:'a'.repeat(64),recordsRevision:2,workshopRevision:8}};return {...data,detail:body.checklistId?detail:null}}});
   window.enableQcPreview=async()=>{data.qcAvailable=true;data.capabilities.push('MECHANICAL_QC');detail.assignments[0].completed=true;await controller.refresh()};
  });
+ const dashboard=await page.evaluate(()=>{
+  const grid=document.querySelector('.mc-dashboard-grid'),cards=[...document.querySelectorAll('[data-mc-card]')],a=cards[0].getBoundingClientRect(),b=cards[1].getBoundingClientRect();
+  return {cards:cards.length,columns:getComputedStyle(grid).gridTemplateColumns.split(' ').length,sideBySide:Math.abs(a.top-b.top)<2&&b.left>a.left,
+   icons:cards.filter(c=>c.querySelector('.mc-card-icon svg')).length,emptyDescriptions:cards.filter(c=>c.textContent.includes('Open Mechanical screen')).length,
+   overflow:document.documentElement.scrollWidth>innerWidth,header:getComputedStyle(document.querySelector('.mc-workspace-head')).backgroundImage};
+ });
+ assert.equal(dashboard.cards,12,'All Mechanical shortcuts remain');
+ assert.equal(dashboard.columns,2,width+'px dashboard must keep two columns');
+ assert.equal(dashboard.sideBySide,true,width+'px first row stays side by side');
+ assert.equal(dashboard.icons,12,'Every card has its own inline SVG icon');
+ assert.equal(dashboard.emptyDescriptions,0,'Generic Mechanical descriptions removed');
+ assert.equal(dashboard.overflow,false,width+'px dashboard horizontal overflow');
+ assert.match(dashboard.header,/linear-gradient/,'Approved navy gradient header');
+ if([375,1280].includes(width))await page.screenshot({path:'test-results/mechanical/dashboard-modern-'+width+'.png',fullPage:true});
  await page.getByRole('button',{name:'MC001 · JC 12079 · 2026-10-22',exact:true}).click();await page.locator('[data-operation=TASK_HANDOVER]').waitFor();
  const shape=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth,columns:getComputedStyle(document.querySelector('.mc-grid')).gridTemplateColumns.split(' ').length,unsafe:document.querySelectorAll('#root script,#root img').length,tooNarrow:[...document.querySelectorAll('#root input,#root select,#root button')].some(e=>e.getBoundingClientRect().height<43)}));
  assert.equal(shape.overflow,false,width+'px horizontal overflow');assert.equal(shape.columns,width<=760?1:2);assert.equal(shape.unsafe,0);assert.equal(shape.tooNarrow,false,'Touch controls need at least 44px');
