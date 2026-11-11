@@ -128,10 +128,10 @@ function renderPerformanceTable(rows){
  cols.map(c=>'<th scope="col"'+(c[2]?' class="number"':'')+'>'+esc(c[0])+'</th>').join('')+
  '</tr></thead><tbody>'+rows.map(r=>'<tr>'+cols.map(c=>{
   const k=c[1],val=r[k],formatted=esc(k==='percentage'?(val===null||val===undefined?'—':Number(val).toFixed(2)+'%'):display(val,c[2]));
-  if(k==='job_card')return '<td><button type="button" class="jc-link" data-job="'+esc(r.job_card)+'">'+formatted+'</button></td>';
-  if(costKeys.has(k))return '<td class="number"><button type="button" class="expense-link" data-job="'+esc(r.job_card)+'" data-expense="'+costKeys.get(k)+'" aria-label="View '+esc(c[0])+' details for JC '+esc(r.job_card)+'">'+formatted+'</button></td>';
+  if(k==='job_card')return '<td data-label="'+esc(c[0])+'"><button type="button" class="jc-link" data-job="'+esc(r.job_card)+'">'+formatted+'</button></td>';
+  if(costKeys.has(k))return '<td data-label="'+esc(c[0])+'" class="number"><button type="button" class="expense-link" data-job="'+esc(r.job_card)+'" data-expense="'+costKeys.get(k)+'" aria-label="View '+esc(c[0])+' details for JC '+esc(r.job_card)+'">'+formatted+'</button></td>';
   const sign=k==='net_profit_omr'?(val===null?'pending':Number(val)<0?'loss':'profit'):'';
-  return '<td class="'+(c[2]?'number ':'')+sign+'">'+formatted+'</td>';
+  return '<td data-label="'+esc(c[0])+'" class="'+(c[2]?'number ':'')+sign+'">'+formatted+'</td>';
  }).join('')+'</tr>').join('')+'</tbody></table></div>';
 }
 function fillSelect(id,values,allLabel){
@@ -219,7 +219,7 @@ function filterVisibility(){
 }
 function switchReport(name){
  if(!modules.some(m=>m[0]===name))return;
- report=name;offset=0;
+ report=name;offset=0;$('accounts-workspace').dataset.report=name;
  $('accounts-home').hidden=true;$('accounts-workspace').hidden=false;closeCashDialog();
  for(const id of ['query','month','from','to','employee','material','insurance'])$(id).value='';
  for(const id of ['insurance-company','customer-filter'])$(id).value='';
