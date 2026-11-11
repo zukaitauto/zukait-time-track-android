@@ -16,6 +16,7 @@ export async function accountantApi(admin,user,body,secret,now=Date.now()){
  if(body.report==='manager_profit'&&(action!=='accountant_report'||user.role!=='Manager'))return fail('manager_required',403);
  if(body.report==='manager_profit'&&Object.keys(filters).some(k=>!['month','insurance','query','job_card','from','to'].includes(k)))return fail('invalid_filters');
  if(Object.keys(filters).some(k=>['kind','customer','status'].includes(k))&&!(action==='accountant_report'&&['accounts_performance','accounts_leave'].includes(body.report)))return fail('invalid_filters');
+ if(filters.labour_mode&&!(action==='accountant_report'&&body.report==='accounts_performance'))return fail('invalid_filters');
  if(action==='accountant_jc_search'&&(typeof body.query!=='string'||body.query.trim().length<2||body.query.length>80||searchKey(body.query).length<2))return fail('invalid_query');
  if(action==='accountant_jc_detail'&&(!/^[A-Z0-9_-]{1,40}$/.test(key(body.job_card))||body.query!==undefined))return fail('invalid_job_card');
  let fp;
