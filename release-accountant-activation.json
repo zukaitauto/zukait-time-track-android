@@ -1,8 +1,8 @@
 {
   "approved": true,
-  "release": "V395",
-  "sourceCommit": "1bcfebf812435672f1795d19ba75a37a16ff0595",
-  "publishNonce": "1bcfebf812435672f1795d19ba75a37a",
-  "authorization": "Owner requested V395 concise Accounts Profit/Loss screen for testing.",
-  "reason": "Approved UI-only V395: remove long Profit/Loss description, preserve financial functions and unchanged Supabase v115; exact-source signed, Accountant and Reception gates passed."
+  "release": "V396",
+  "sourceCommit": "2830fa0bd4d61b98a5d4ff61ee1625087c0527de",
+  "publishNonce": "2830fa0bd4d61b98a5d4ff61ee162508",
+  "authorization": "Owner approved publishing the Mechanical Department modern UI for testing.",
+  "reason": "Owner-approved V396 Mechanical two-column modern UI; exact-source signed, Mechanical phone, Reception and Accountant QA passed. No production backend or data changes. V395 rollback retained."
 }
