@@ -88,7 +88,8 @@ jobs:
           ZUKAIT_MECHANICAL_INSTALL_MODE=fresh node tests/mechanical-persistence.mjs
           node tests/mechanical-persistence.mjs
   workspace:
-    runs-on: ubuntu-latest
+    # Playwright 1.58 supports Ubuntu 24.04; ubuntu-latest may resolve to unsupported 26.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
