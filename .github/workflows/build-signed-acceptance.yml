@@ -123,7 +123,7 @@ jobs:
       - name: Verify V377 Manager over-allocation popup in real Chromium
         shell: bash
         run: |
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
           node tests/v377-overallocated-popup-browser.mjs
           node tests/v377-performance-browser.mjs
           node tests/v377-workshop-efficiency-month-filter.mjs
