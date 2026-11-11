@@ -57,7 +57,9 @@ export function accountsPerformanceReport(context,financial,filters={},now=Date.
 
 /** Read-only view of the same leave history stored in workshop state for the Manager. */
 export function accountsLeaveReport(financial,filters={}){
- const rows=array(financial.rows.leave).filter(r=>
+ const allRows=array(financial.rows.leave);
+ const employees=[...new Map(allRows.filter(r=>r.employee_id).map(r=>[r.employee_id,{id:r.employee_id,name:r.employee||r.employee_id}])).values()].sort((a,b)=>a.name.localeCompare(b.name));
+ const rows=allRows.filter(r=>
   (!filters.month||String(r.date).startsWith(filters.month))&&
   (!filters.from||r.date>=filters.from)&&(!filters.to||r.date<=filters.to)&&
   (!filters.employee||r.employee_id===filters.employee)&&
@@ -65,7 +67,7 @@ export function accountsLeaveReport(financial,filters={}){
    filters.status==='cancelled'?r.cancelled:true)&&
   (!filters.query||matches([r.employee,r.employee_id,r.date,r.period_label,r.remark].join(' '),filters.query))
  ).sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(a.employee).localeCompare(String(b.employee)));
- return {rows,summary:{records:rows.length,people:new Set(rows.map(r=>r.employee_id)).size,
+ return {rows,facets:{employees},summary:{records:rows.length,people:new Set(rows.map(r=>r.employee_id)).size,
    leave_total_days:rows.reduce((n,r)=>n+(Number(r.days)||0),0)},
    notes:['Leave Management is read-only in Accounts. Cancelled records remain in the history.']};
 }
