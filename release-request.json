@@ -2,23 +2,23 @@
   "versionName": "V393",
   "versionCode": 356,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": false,
+  "approvedForStaff": true,
   "sourceCommit": "067b3eb8005c952dbefa160497f3a68a01bfa002",
   "ownerPublicationRequested": true,
   "ownerRequestedImmediateRelease": true,
-  "releaseHeldByOwner": true,
+  "releaseHeldByOwner": false,
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "backupDeferredByOwner": true,
-  "approvedAt": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
+  "approvedAt": "2026-11-11T15:49:25.861Z",
+  "publishNonce": "067b3eb8005c952dbefa160497f3a68a",
+  "signedAcceptanceRun": 43051447646,
+  "verificationRun": 43051447849,
   "authorization": "Owner requested V393 Accounts improvements release for checking.",
-  "reason": "Owner explicitly requested V393 release for checking. Held until Accountant, Reception, and signed APK acceptance pass against immutable source 067b3eb8005c952dbefa160497f3a68a01bfa002. Updated Reception browser CI uses full Playwright Chromium/WebKit runtime image; backend workshop-api v114 already verified.",
+  "reason": "Explicit owner instruction RELEASE IT. V393 verified against exact source: Accountant isolated acceptance, Reception verification, and signed APK passed. Workshop API v114 readback verified with 40 files and three Accountant-only changes. V392 remains available for rollback; physical device acceptance NOT_RUN and backup deferral are declared.",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -79,13 +79,17 @@
   },
   "evidence": {
     "credentialPreservation": true,
-    "qaFinancialAcceptance": false,
+    "qaFinancialAcceptance": true,
     "serverPermissions": true,
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true,
-    "sourceVerificationRuns": {},
+    "sourceVerificationRuns": {
+      "signedAcceptanceRun": 43051447646,
+      "verificationRun": 43051447849,
+      "accountantVerificationRun": 43051447611
+    },
     "backendReadback": "workshop-api v114 active; 40 files, 37 preserved, 3 Accountant files match pinned V393 source; staff-auth v13 active",
-    "rollbackApp": "release-V391-architecture-v2",
+    "rollbackApp": "release-V392-architecture-v2",
     "rollbackBackendPreviousVersion": 113
   },
   "previousPublishedRelease": {
@@ -95,5 +99,5 @@
     "releaseTag": "release-V392-architecture-v2"
   },
   "ownerApprovedLiveAccountantTesting": true,
-  "accountantVerificationRun": null
+  "accountantVerificationRun": 43051447611
 }
