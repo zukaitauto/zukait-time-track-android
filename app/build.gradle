@@ -28,6 +28,7 @@ android {
         // V393 exact-source Acceptance: Accounts reports + financial popup + hours/minutes.
         // Browser acceptance re-run with package-mirror-independent Playwright setup.
         // WebKit verified in supported container; Android and financial runtime unchanged.
+        // V393 protected Acceptance: all Reception browser tests use isolated Playwright image.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }
