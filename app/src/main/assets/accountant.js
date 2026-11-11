@@ -206,8 +206,93 @@ function switchReport(name){
  $('accounts-workspace').scrollIntoView?.({block:'start',behavior:'smooth'});
 }
 $('accounts-back').onclick=showHome;
-function expenseBreakdowns(b,d){return '<section class="expense-breakdowns" aria-label="Job Card expense details">'+[['consumables','Consumables','consumables_cost_omr'],['parts','Spare Parts','parts_cost_omr'],['paint','Paint','paint_cost_omr']].map(([key,title,cost])=>'<details class="expense-breakdown expense-'+key+'"><summary><span>'+title+' <small>'+((b[key]||[]).length)+' item(s)</small></span><strong>'+display(d[cost],true)+'</strong><span aria-hidden="true">⌄</span></summary><div class="expense-lines">'+((b[key]||[]).length?table(b[key],columns[key]):'<p>No recorded items. Check whether actual costs still need to be entered.</p>')+'</div></details>').join('')+'</section>';}
-async function openJob(no){closeDetail();const ticket=detailGeneration;try{say('Loading complete financial view…');const r=await request('workshop-api',{action:'accountant_jc_detail',job_card:no});if(ticket!==detailGeneration||!verified)return;const d=r.detail;target={...r,detail:d};const values=[['Invoice','invoice_amount_omr'],['Actual consumables','consumables_cost_omr'],['Net paint','paint_cost_omr'],['Net spare parts','parts_cost_omr'],['Normal-duty labour','labour_cost_omr'],['Total JC cost','total_cost_omr'],['Estimated gross profit','estimated_gross_profit_omr'],['Verified payment received','payment_received_omr'],['Outstanding balance','outstanding_omr']];$('detail').innerHTML='<div class="heading"><h2>JC '+esc(d.job_card)+' · Financial 360°</h2><button type="button" id="close-detail">Close details</button></div><p>'+esc([d.vehicle,d.registration,d.customer,d.job_type].filter(Boolean).join(' · '))+'</p>'+(d.cash_invoice_paid?'<p class="notice">Cash invoice confirms full payment. Existing Cash In entries are reconciled to prevent double counting.</p>':'')+'<div class="detail-grid">'+values.map(([label,k])=>'<div class="detail-value"><small>'+label+'</small><strong>'+display(d[k],true)+'</strong>'+(['invoice_amount_omr','consumables_cost_omr','paint_cost_omr','parts_cost_omr','labour_cost_omr'].includes(k)&&d[k]!==null?'<button type="button" data-adjust="'+k+'">Record correction</button>':'')+'</div>').join('')+'</div><p class="notice">'+esc(d.warnings.join(' · ')||'All mapped source costs are available. Estimated gross profit excludes overheads.')+'</p>'+expenseBreakdowns(r.breakdown||{},d)+'<h3>Transactions and correction history</h3>'+table(d.history,[['Record ID','id'],['Replaces','replaces_id'],['Reverses','reverses_id'],['Operation','operation'],['Kind','kind'],['Payee','payee'],['Method','payment_method'],['Reference','reference'],['Actor','actor_id'],['When','created_at'],money('Old OMR','old_value'),money('New OMR','new_value'),['Reason','reason']]);$('detail').hidden=false;$('close-detail').onclick=closeDetail;$('detail').scrollIntoView?.({behavior:'smooth',block:'start'});say('');}catch(e){if(ticket===detailGeneration)say(e.message)}}
+
+const drilldownColumns={
+ consumables:columns.consumables,paint:columns.paint,parts:columns.parts,
+ labour:[['JC','job_card'],['Date','date'],['Normal Duty Hours','normal_hours'],money('Labour Rate OMR/h','rate_omr'),money('Labour Cost OMR','labour_cost_omr')],
+ sublet:[['Date','date'],['Supplier','supplier'],['Work Description','description'],money('Cost OMR','cost_omr')]
+};
+const expenseSpecs=[
+ ['labour','Labour Cost','labour_cost_omr'],
+ ['paint','Paint Expense','paint_cost_omr'],
+ ['consumables','Consumables Expense','consumables_cost_omr'],
+ ['parts','Parts Expense','parts_cost_omr'],
+ ['sublet','Sublet Cost','sublet_cost_omr']
+];
+function expenseBreakdowns(b,d){
+ return '<section class="expense-breakdowns" aria-label="Five financial expense breakdowns">'+
+  expenseSpecs.map(([type,title,k])=>{
+   const lines=b[type]||[];
+   return '<details class="expense-breakdown expense-'+type+'"><summary><span>'+esc(title)+
+    ' <small>'+lines.length+' source record(s) · click for details</small></span><strong>'+esc(display(d[k],true))+
+    '</strong><span aria-hidden="true">⌄</span></summary><div class="expense-lines">'+
+    (lines.length?table(lines,drilldownColumns[type]):'<p>No finalized '+esc(title.toLowerCase())+' lines in the verified source. An unknown expense is shown as Pending.</p>')+
+    (type==='labour'?'<p class="notice">Labour cost is the verified combined normal-duty total; unfinished sessions remain pending.</p>':'')+
+    '</div></details>';
+  }).join('')+'</section>';
+}
+function financialDocument(detail,breakdown){
+ const format=(k)=>esc(display(detail[k],true));
+ const amounts=expenseSpecs.map(([,name,k])=>'<tr><th>'+esc(name)+'</th><td>'+format(k)+'</td></tr>').join('');
+ const pieces=expenseSpecs.map(([type,title])=>'<h3>'+esc(title)+'</h3>'+((breakdown[type]||[]).length?table(breakdown[type],drilldownColumns[type]):'<p>No finalized source lines</p>')).join('');
+ const income=detail.job_invoice_amount_omr??detail.invoice_amount_omr;
+ return '<!doctype html><html><head><meta charset="utf-8"><title>JC '+esc(detail.job_card)+' Financial 360</title><style>body{font:12px/1.5 Arial,sans-serif;color:#20354b;margin:20px}table{border-collapse:collapse;width:100%;margin:8px 0 18px}th,td{border:1px solid #d1dce7;padding:8px;text-align:left}th{background:#eaf2fb}h2,h3{page-break-after:avoid}.table-wrap{overflow:visible}small{font-size:10px}</style></head><body>'+
+ '<h2>ZUKAIT INTERNATIONAL LLC — JC Financial 360°</h2>'+
+ '<p>JC '+esc(detail.job_card)+' · '+esc(detail.registration)+' · '+esc(detail.vehicle)+' · '+esc(detail.job_type)+
+ (detail.insurance_company?' · '+esc(detail.insurance_company):'')+'</p>'+
+ '<table>'+amounts+'<tr><th>Total Job Cost</th><td>'+format('job_total_cost_omr')+'</td></tr>'+
+ '<tr><th>Invoice / LPO Amount</th><td>'+esc(display(income,true))+'</td></tr>'+
+ '<tr><th>Profit / Loss</th><td>'+format('job_profit_omr')+'</td></tr></table>'+
+ pieces+'<p>Amounts in OMR. Estimated job-level profit excludes general overheads. Pending amounts are not zero.</p></body></html>';
+}
+async function exportJob(kind){
+ if(!target?.detail||busy)return;
+ const d=target.detail,breakdown=target.breakdown||{},name='Zukait_JC_'+String(d.job_card).replace(/[^A-Za-z0-9_-]/g,'')+'_Financial_360';
+ try{
+  const html=financialDocument(d,breakdown);
+  if(kind==='pdf')await window.zukaitReportPdf.share(html,name+'.pdf');
+  else if(kind==='print'){const w=window.open('','_blank');if(!w)throw Error('Allow pop-ups for printing.');w.document.write(html);w.document.close();w.print();}
+  else {
+   const records=[...expenseSpecs.map(([type,label,k])=>({category:label,details:'Category total',amount_omr:d[k]})),
+    {category:'Total Job Cost',details:'',amount_omr:d.job_total_cost_omr},
+    {category:'Invoice / LPO',details:'',amount_omr:d.job_invoice_amount_omr},
+    {category:'Profit / Loss',details:'',amount_omr:d.job_profit_omr}];
+   for(const [type,label] of expenseSpecs)for(const line of breakdown[type]||[])records.push({category:label,details:[line.material,line.part,line.description,line.supplier,line.employee_name,line.normal_hours,line.quantity].filter(v=>v!==undefined&&v!==null).join(' · '),amount_omr:line.cost_omr??line.net_cost_omr??line.labour_cost_omr??null});
+   const xml=window.zukaitAccountantExports.spreadsheet('JC '+d.job_card+' Financial 360',[['Category','category'],['Details','details'],money('OMR','amount_omr')],records);
+   if(window.AndroidBridge?.saveExportFile){const bytes=new TextEncoder().encode(xml);let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);window.AndroidBridge.saveExportFile(name+'.xml','application/vnd.ms-excel',btoa(binary));}
+   else{const url=URL.createObjectURL(new Blob([xml],{type:'application/vnd.ms-excel'})),a=document.createElement('a');a.href=url;a.download=name+'.xml';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+  }
+  say('Job Card financial report prepared.');
+ }catch(e){say(e.message);}
+}
+async function openJob(no,expandType=''){
+ closeDetail();const ticket=detailGeneration;
+ try{
+  say('Loading Job Card financial details…');
+  const r=await request('workshop-api',{action:'accountant_jc_detail',job_card:no});
+  if(ticket!==detailGeneration||!verified)return;
+  const d=r.detail;target={...r,detail:d};
+  const amount=d.job_invoice_amount_omr??d.invoice_amount_omr;
+  const cost=d.job_total_cost_omr;
+  const profit=d.job_profit_omr;
+  const resultLabel=profit===null?'Pending':Number(profit)<0?'Loss':'Profit';
+  $('detail').innerHTML=
+   '<div class="heading"><h2>JC '+esc(d.job_card)+' · Financial 360°</h2><div class="detail-actions">'+
+   '<button type="button" id="job-pdf">PDF</button><button type="button" id="job-excel">Excel</button><button type="button" id="job-print">Print</button>'+
+   '<button type="button" id="close-detail">Back to report</button></div></div>'+
+   '<div class="detail-grid">'+[
+    ['Registration',d.registration],['Vehicle',d.vehicle],['Job Type',d.job_type],['Insurance Company / Cash',d.insurance_company||d.job_type],['Invoice / LPO Amount',display(amount,true)],['Total Job Cost',display(cost,true)],
+    [resultLabel,display(profit,true)],['Profit %',d.job_profit_percentage===null?'Pending':Number(d.job_profit_percentage).toFixed(2)+'%']
+   ].map(([label,v])=>'<div class="detail-value"><small>'+esc(label)+'</small><strong>'+esc(v??'—')+'</strong></div>').join('')+
+   '</div><h3>Click any expense to open source details</h3>'+expenseBreakdowns(r.breakdown||{},d)+
+   '<p class="notice">'+esc((d.warnings||[]).join(' · ')||'Estimated profit excludes general workshop overheads.')+'</p>';
+  $('detail').hidden=false;
+  $('close-detail').onclick=closeDetail;
+  $('job-pdf').onclick=()=>exportJob('pdf');$('job-excel').onclick=()=>exportJob('excel');$('job-print').onclick=()=>exportJob('print');
+  if(expandType){const section=$('detail').querySelector('.expense-'+expandType);if(section)section.open=true;}
+  $('detail').scrollIntoView?.({behavior:'smooth',block:'start'});say('');
+ }catch(e){if(ticket===detailGeneration)say(e.message);}
+}
 async function submit(command,retry=null){
  if(!billsEnabled)return submitUnlocked(command,retry);
  if(!verified||busy)return;
