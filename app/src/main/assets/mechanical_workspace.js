@@ -34,7 +34,27 @@ export async function mountMechanicalWorkspace(root,options={}){
   target.scrollIntoView?.({block:'start',behavior:'auto'});if(!target.matches('input,button,select'))target.setAttribute('tabindex','-1');target.focus({preventScroll:true});
  }
  function dashboard(){
-  const definitions=[['estimate','Estimate','✎','blue'],['estimate-list','Estimate List','▤','violet'],['create-checklist','Create Checklist','＋','mint'],['checklists','Check Lists','☑','cyan'],['create-job','Create Job Card','▣','peach'],['jobs','Job Cards','▦','blue'],['wip','WIP','⚙','violet'],['qc','QC Pending','✓','amber'],['ready','Ready for Delivery','↗','mint'],['delivered','Delivered Vehicles','⌂','cyan'],['exceeded','Suggested Time Exceed','◷','rose'],['time-management','Time Management','⏱','peach']];
+  const definitions=[['estimate','Estimate','blue'],['estimate-list','Estimate List','violet'],['create-checklist','Create Checklist','mint'],['checklists','Check Lists','peach'],['create-job','Create Job Card','cobalt'],['jobs','Job Cards','sky'],['wip','WIP','violet'],['qc','QC Pending','amber'],['ready','Ready for Delivery','green'],['delivered','Delivered Vehicles','cyan'],['exceeded','Suggested Time Exceed','rose'],['time-management','Time Management','violet']];
+  // SVG icon paths are fixed source assets, never business-record HTML.
+  const icons={
+   estimate:'<rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/>',
+   'estimate-list':'<path d="m12 3 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 16l9 5 9-5"/>',
+   'create-checklist':'<path d="M12 4v16M4 12h16"/>',
+   checklists:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8 12 3 3 5-6"/>',
+   'create-job':'<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8" cy="11" r="2"/><path d="M5 16c0-2 6-2 6 0M14 10h5M14 14h5"/>',
+   jobs:'<rect x="4" y="6" width="16" height="15" rx="2"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M4 12h16M11 11v3h2v-3"/>',
+   wip:'<path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.7 5.7l1.4 1.4m9.8 9.8 1.4 1.4M18.3 5.7l-1.4 1.4m-9.8 9.8-1.4 1.4"/><circle cx="12" cy="12" r="6"/><path d="m12 9 3 3-3 3"/>',
+   qc:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8 12 3 3 5-6"/>',
+   ready:'<path d="M21 3 9 15M21 3l-5 17-4.5-7.5L4 8l17-5Z"/>',
+   delivered:'<path d="m5 13 2-5h10l2 5M5 17H4v-4l2-2h12l2 2v4h-1M7 17h10M7 17v2M17 17v2"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/>',
+   exceeded:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l-3 3"/>',
+   'time-management':'<circle cx="12" cy="13" r="8"/><path d="M12 13V9m0 4 3 2M9 2h6m-3 0v3m6 2 2-2"/>'
+  };
+  const iconFor=key=>{
+   const holder=node('span',null,{class:'mc-card-icon','aria-hidden':'true'});
+   holder.innerHTML='<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">'+icons[key]+'</svg>';
+   return holder;
+  };
   const caps=new Set(model?.capabilities||[]),nav=options.navigation;
   const local={
    'time-management':typeof options.openTimeManagement==='function'&&(initial.role==='Manager'||initial.id==='SUP003'&&['Supervisor','Mechanical Supervisor'].includes(initial.role))?async()=>{if(pending){notice='Resolve the saved pending change before opening another section.';render();return;}await options.openTimeManagement();}:null,
@@ -45,7 +65,7 @@ export async function mountMechanicalWorkspace(root,options={}){
   };
   const grid=node('nav',null,{class:'mc-dashboard-grid','aria-label':'Mechanical sections'});
   let counts={};try{counts=nav?.counts?.()||{}}catch{}
-  for(const [key,title,icon,tone] of definitions){
+  for(const [key,title,tone] of definitions){
    const separate=typeof options.openSection==='function',shared=nav?.available?.(key)===true,available=separate||shared||typeof local[key]==='function';
    const card=button(null,async()=>{
     if(!active()||busy)return;
@@ -54,7 +74,9 @@ export async function mountMechanicalWorkspace(root,options={}){
     if(shared){if(pending){notice='Resolve the saved pending change before opening another section.';render();return}busy=true;render();try{await nav.open(key)}catch(e){if(active())notice=e.message||'Unable to open this section. Refresh and retry.'}finally{busy=false;if(active()&&root.isConnected)render()}}
     else local[key]();
    },{'data-mc-card':key,class:'mc-dashboard-card mc-tone-'+tone,'aria-label':title});
-   card.append(node('span',icon,{class:'mc-card-icon','aria-hidden':'true'}),node('b',title),node('small',separate?'Open Mechanical screen':available?(shared?nav.scope(key):key==='create-checklist'?'Mechanical registration':key==='checklists'?'Mechanical records':'Select checklist · existing checks'):'Restricted for this login'));
+   card.append(iconFor(key),node('b',title));
+   if(key==='wip')card.append(node('small','(Work in Progress)'));
+   else if(!available)card.append(node('small','Restricted for this login'));
    if(!available)card.setAttribute('data-restricted','true');
    if(counts[key]!=null&&/^\d+$/.test(String(counts[key])))card.append(node('span',String(counts[key]),{class:'mc-card-count','aria-label':title+' count'}));
    grid.append(card);
@@ -113,6 +135,96 @@ export async function mountMechanicalWorkspace(root,options={}){
   @media(max-width:760px){.mc-workspace{padding:12px;border-radius:17px}.mc-workspace .mc-grid{grid-template-columns:minmax(0,1fr);gap:16px}.mc-workspace .mc-workspace-head{padding:10px!important;gap:8px}.mc-workspace .mc-workspace-head h2{font-size:16px!important}.mc-workspace form,.mc-workspace article{padding:14px}}
   @media(max-width:380px){.mc-workspace .mc-workspace-head h2{min-width:130px}.mc-workspace .mc-workspace-head button{flex:1}}
   @media(prefers-reduced-motion:reduce){.mc-workspace button{transition:none}}
+  /* Approved Mechanical Dashboard refresh: color-led two-column cards.
+     Styling and icons only; data, navigation, role checks and actions are unchanged. */
+  .mc-workspace{background:linear-gradient(165deg,#f8fbff,#edf5ff 60%,#f9fbff)!important;border:1px solid #cfe2f4;border-radius:26px;padding:18px}
+  .mc-workspace .mc-workspace-head{
+   background:linear-gradient(117deg,#073b78 0%,#0b69b7 58%,#083469 100%)!important;
+   color:#fff!important;border:1px solid #176aaf!important;border-radius:24px!important;
+   padding:19px 18px!important;box-shadow:0 12px 25px #083e752c!important;backdrop-filter:none;
+   margin:0 0 19px!important
+  }
+  .mc-workspace .mc-brand{
+   width:49px;height:49px;flex:0 0 49px;border-radius:15px;
+   color:#fff;background:linear-gradient(135deg,#27bfff,#0669d9);
+   box-shadow:inset 0 1px 0 #ffffff80,0 6px 12px #002b6440;font-size:28px
+  }
+  .mc-workspace .mc-workspace-head h2{
+   color:#fff!important;font-size:clamp(19px,2.7vw,26px)!important;font-weight:850;
+   min-width:140px;line-height:1.25;letter-spacing:-.035em
+  }
+  .mc-workspace .mc-workspace-head button{
+   background:#fff!important;color:#0a3062!important;border:1px solid #d4e5f9!important;
+   font-weight:800;min-height:43px;box-shadow:0 3px 10px #00285526!important
+  }
+  .mc-workspace [role=status]:empty{display:none}
+  .mc-workspace .mc-dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(134px,auto);gap:14px;margin:0 0 22px}
+  .mc-workspace .mc-dashboard-card{
+   --mc-tint:#dcedff;--mc-deep:#9bd3ff;--mc-accent:#0876db;--mc-accent-end:#03b4f3;--mc-edge:#a9d5f5;
+   position:relative;isolation:isolate;overflow:hidden;display:flex;
+   flex-direction:column;justify-content:flex-start;align-items:flex-start;gap:5px;
+   padding:15px 38px 15px 16px!important;min-width:0;min-height:134px;width:100%;
+   text-align:left;background:linear-gradient(135deg,#fdfefe 0%,var(--mc-tint) 72%,var(--mc-deep) 155%)!important;
+   border:1px solid var(--mc-edge)!important;border-radius:22px!important;
+   box-shadow:inset 0 1px 0 #fff,0 5px 15px #15477712!important;color:#0a2245!important
+  }
+  .mc-workspace .mc-dashboard-card::before{
+   content:'';position:absolute;z-index:0;pointer-events:none;right:-43px;bottom:-51px;
+   width:180px;height:100px;border-radius:55% 45% 0 0;transform:rotate(-15deg);
+   background:var(--mc-deep);opacity:.48
+  }
+  .mc-workspace .mc-dashboard-card::after{
+   content:'';position:absolute;right:15px;top:53%;width:9px;height:9px;
+   border-right:3px solid #0a2548;border-top:3px solid #0a2548;
+   border-radius:1px;transform:translateY(-50%) rotate(45deg);
+   pointer-events:none
+  }
+  .mc-workspace .mc-dashboard-card>span,.mc-workspace .mc-dashboard-card>b,.mc-workspace .mc-dashboard-card>small{position:relative;z-index:1}
+  .mc-workspace .mc-dashboard-card b{font-size:clamp(14px,2vw,19px)!important;color:#081f43!important;line-height:1.2;font-weight:850;margin-top:auto;letter-spacing:-.02em}
+  .mc-workspace .mc-dashboard-card small{font-size:11px;line-height:1.25;color:#203b61;font-weight:650}
+  .mc-workspace .mc-card-icon{
+   flex:0 0 46px;width:46px;height:46px;display:grid;place-items:center;
+   background:linear-gradient(140deg,var(--mc-accent-end),var(--mc-accent))!important;color:#fff!important;
+   border:1px solid #ffffff7a;border-radius:14px;
+   box-shadow:inset 0 1px 0 #ffffff70,0 4px 10px #16447720
+  }
+  .mc-workspace .mc-card-icon svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  .mc-workspace .mc-card-count{right:35px;top:12px;background:#ffffffef;z-index:2;font-weight:850}
+  .mc-workspace .mc-tone-blue{--mc-tint:#d9edff;--mc-deep:#83c7ff;--mc-edge:#acd9fb;--mc-accent:#046fe0;--mc-accent-end:#26c7ff}
+  .mc-workspace .mc-tone-violet{--mc-tint:#eee8ff;--mc-deep:#bd9cff;--mc-edge:#d6c5fa;--mc-accent:#7344da;--mc-accent-end:#b780fb}
+  .mc-workspace .mc-tone-mint{--mc-tint:#dffaf2;--mc-deep:#81ecc9;--mc-edge:#b5ead9;--mc-accent:#08a678;--mc-accent-end:#48e2ae}
+  .mc-workspace .mc-tone-peach{--mc-tint:#fff0e6;--mc-deep:#ffbb85;--mc-edge:#f7d9bf;--mc-accent:#e98509;--mc-accent-end:#ffbc3e}
+  .mc-workspace .mc-tone-cobalt{--mc-tint:#dcebff;--mc-deep:#7fb7ff;--mc-edge:#a6c9f6;--mc-accent:#0953c2;--mc-accent-end:#268ce9}
+  .mc-workspace .mc-tone-sky{--mc-tint:#e0f2ff;--mc-deep:#86d2ff;--mc-edge:#b3dff7;--mc-accent:#0676cb;--mc-accent-end:#4cc7ff}
+  .mc-workspace .mc-tone-amber{--mc-tint:#fff4d6;--mc-deep:#ffd36a;--mc-edge:#f5dca1;--mc-accent:#e99d00;--mc-accent-end:#ffc933}
+  .mc-workspace .mc-tone-green{--mc-tint:#e4fae9;--mc-deep:#9be9a5;--mc-edge:#b8ebc6;--mc-accent:#18a843;--mc-accent-end:#68da47}
+  .mc-workspace .mc-tone-cyan{--mc-tint:#def8ff;--mc-deep:#80e3f8;--mc-edge:#a9e7f3;--mc-accent:#08a0d3;--mc-accent-end:#36d8ff}
+  .mc-workspace .mc-tone-rose{--mc-tint:#ffedf4;--mc-deep:#fbb2d8;--mc-edge:#f8cddd;--mc-accent:#d82570;--mc-accent-end:#ff75aa}
+  .mc-workspace .mc-dashboard-card[data-restricted=true]::after{border-color:#6b7891}
+  @media(max-width:650px){
+   .mc-workspace{padding:11px;border-radius:17px}
+   .mc-workspace .mc-workspace-head{padding:14px 12px!important;gap:9px;border-radius:19px!important}
+   .mc-workspace .mc-brand{width:41px;height:41px;flex-basis:41px;border-radius:12px;font-size:24px}
+   .mc-workspace .mc-workspace-head h2{font-size:17px!important;min-width:122px}
+   .mc-workspace .mc-workspace-head button{min-height:42px;font-size:11px;padding:8px 10px}
+   .mc-workspace .mc-dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(136px,auto);gap:10px}
+   .mc-workspace .mc-dashboard-card{min-height:136px;padding:13px 26px 12px 13px!important;border-radius:17px!important}
+   .mc-workspace .mc-dashboard-card::after{right:10px;width:7px;height:7px;border-width:2px}
+   .mc-workspace .mc-dashboard-card b{font-size:clamp(12px,3.65vw,16px)!important;line-height:1.23}
+   .mc-workspace .mc-dashboard-card small{font-size:10px}
+   .mc-workspace .mc-card-icon{width:40px;height:40px;flex-basis:40px;border-radius:12px}
+   .mc-workspace .mc-card-icon svg{width:23px;height:23px}
+   .mc-workspace .mc-card-count{right:27px;top:9px}
+  }
+  @media(max-width:380px){
+   .mc-workspace .mc-dashboard-grid{gap:8px;grid-auto-rows:minmax(148px,auto)}
+   .mc-workspace .mc-dashboard-card{padding:12px 25px 12px 11px!important;min-height:148px}
+   .mc-workspace .mc-dashboard-card b{font-size:12px!important}
+   .mc-workspace .mc-workspace-head h2{min-width:128px}
+  }
+  @media(prefers-reduced-motion:no-preference){
+   .mc-workspace .mc-dashboard-card:hover:not(:disabled){transform:translateY(-2px);box-shadow:inset 0 1px 0 #fff,0 8px 18px #15477726!important}
+  }
   /* V377: Mechanical workspace occupies the viewport, like Reception, when hosted in the legacy modal. */
   #modal:has(.mc-dashboard-grid),.modal:has(.mc-dashboard-grid){position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;overflow:auto!important;z-index:9999!important;box-sizing:border-box!important}
   #modal:has(.mc-dashboard-grid) .modal-box,.modal:has(.mc-dashboard-grid) .modal-box{width:100%!important;max-width:none!important;min-height:100dvh!important;max-height:none!important;margin:0!important;padding:clamp(10px,2vw,24px)!important;border-radius:0!important;box-sizing:border-box!important;overflow:visible!important}
