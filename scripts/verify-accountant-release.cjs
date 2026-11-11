@@ -3,7 +3,7 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
 function validate(r,ref){
  assert.equal(ref,'refs/heads/architecture-v2','Accountant release must use architecture-v2');
  assert.equal(r.releaseScope,'accountant-live-test');assert.equal(r.approvedForStaff,true);
- assert.equal(r.ownerApprovedLiveAccountantTesting,true);assert.ok(['Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.','Owner requested V393 Accounts improvements release for checking.'].includes(r.authorization),'Owner release authorization required');
+ assert.equal(r.ownerApprovedLiveAccountantTesting,true);assert.ok(['Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.','Owner requested V393 Accounts improvements release for checking.','Owner requested publishing V394 Accounts redesign for testing.'].includes(r.authorization),'Owner release authorization required');
  assert.equal(r.physicalAcceptanceStatus,'NOT_RUN','Do not claim unperformed device acceptance');
  assert.equal(r.productionBackendChanges,true);assert.equal(r.phase2ActivationApproved,false);
  assert.match(r.versionName,/^V[1-9][0-9]*$/);assert.ok(r.versionCode>299);
