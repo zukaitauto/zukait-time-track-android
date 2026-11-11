@@ -273,17 +273,17 @@ function expenseBreakdowns(b,d,preferredType=''){
 }
 function financialDocument(detail,breakdown){
  const format=(k)=>esc(display(detail[k],true));
- const amounts=expenseSpecs.map(([,name,k])=>'<tr><th>'+esc(name)+'</th><td>'+format(k)+'</td></tr>').join('');
+ const amounts=expenseSpecs.map(([type,name,k])=>'<tr><th>'+esc(name+(detail.labour_excluded&&type==='labour'?' (excluded from profit)':''))+'</th><td>'+format(k)+'</td></tr>').join('');
  const pieces=expenseSpecs.map(([type,title])=>'<h3>'+esc(title)+'</h3>'+((breakdown[type]||[]).length?table(breakdown[type],drilldownColumns[type]):'<p>No finalized source lines</p>')).join('');
  const income=detail.job_invoice_amount_omr??detail.invoice_amount_omr;
  return '<!doctype html><html><head><meta charset="utf-8"><title>JC '+esc(detail.job_card)+' Financial 360</title><style>body{font:12px/1.5 Arial,sans-serif;color:#20354b;margin:20px}table{border-collapse:collapse;width:100%;margin:8px 0 18px}th,td{border:1px solid #d1dce7;padding:8px;text-align:left}th{background:#eaf2fb}h2,h3{page-break-after:avoid}.table-wrap{overflow:visible}small{font-size:10px}</style></head><body>'+
  '<h2>ZUKAIT INTERNATIONAL LLC — JC Financial 360°</h2>'+
  '<p>JC '+esc(detail.job_card)+' · '+esc(detail.registration)+' · '+esc(detail.vehicle)+' · '+esc(detail.job_type)+
  (detail.insurance_company?' · '+esc(detail.insurance_company):'')+'</p>'+
- '<table>'+amounts+'<tr><th>Total Job Cost</th><td>'+format('job_total_cost_omr')+'</td></tr>'+
+ '<table>'+amounts+'<tr><th>'+(detail.labour_excluded?'Total Job Cost (Without Labour)':'Total Job Cost')+'</th><td>'+format('job_total_cost_omr')+'</td></tr>'+
  '<tr><th>Invoice / LPO Amount</th><td>'+esc(display(income,true))+'</td></tr>'+
  '<tr><th>Profit / Loss</th><td>'+format('job_profit_omr')+'</td></tr></table>'+
- pieces+'<p>Amounts in OMR. Estimated job-level profit excludes general overheads. Pending amounts are not zero.</p></body></html>';
+ pieces+'<p>Amounts in OMR. '+(detail.labour_excluded?'Labour expense is excluded from the Profit / Loss calculation, but the recorded labour expense is unchanged. ':'')+'Estimated job-level profit excludes general overheads. Pending amounts are not zero.</p></body></html>';
 }
 async function exportJob(kind){
  if(!target?.detail||busy)return;
@@ -293,8 +293,8 @@ async function exportJob(kind){
   if(kind==='pdf')await window.zukaitReportPdf.share(html,name+'.pdf');
   else if(kind==='print'){const w=window.open('','_blank');if(!w)throw Error('Allow pop-ups for printing.');w.document.write(html);w.document.close();w.print();}
   else {
-   const records=[...expenseSpecs.map(([type,label,k])=>({category:label,details:'Category total',amount_omr:d[k]})),
-    {category:'Total Job Cost',details:'',amount_omr:d.job_total_cost_omr},
+   const records=[...expenseSpecs.map(([type,label,k])=>({category:label+(d.labour_excluded&&type==='labour'?' (excluded)':''),details:'Category total',amount_omr:d[k]})),
+    {category:d.labour_excluded?'Total Job Cost (Without Labour)':'Total Job Cost',details:'',amount_omr:d.job_total_cost_omr},
     {category:'Invoice / LPO',details:'',amount_omr:d.job_invoice_amount_omr},
     {category:'Profit / Loss',details:'',amount_omr:d.job_profit_omr}];
    for(const [type,label] of expenseSpecs)for(const line of breakdown[type]||[])records.push({category:label,details:[line.material,line.part,line.description,line.supplier,line.employee_name,line.normal_hours,line.quantity].filter(v=>v!==undefined&&v!==null).join(' · '),amount_omr:line.cost_omr??line.net_cost_omr??line.labour_cost_omr??null});
@@ -311,7 +311,16 @@ async function openJob(no,expandType='',trigger=null){
   say('Loading Job Card financial details…');
   const r=await request('workshop-api',{action:'accountant_jc_detail',job_card:no});
   if(ticket!==detailGeneration||!verified)return;
-  const d=r.detail;target={...r,detail:d};
+  let d=r.detail;
+  const selectedRow=report==='profit'&&labourMode==='without'?result?.rows?.find(row=>row.job_card===d.job_card):null;
+  if(selectedRow){
+   d={...d,job_total_cost_omr:selectedRow.total_job_cost_omr,
+    job_invoice_amount_omr:selectedRow.invoice_amount_omr,
+    job_profit_omr:selectedRow.net_profit_omr,
+    job_profit_percentage:selectedRow.percentage,
+    labour_excluded:true};
+  }
+  target={...r,detail:d};
   const amount=d.job_invoice_amount_omr??d.invoice_amount_omr;
   const cost=d.job_total_cost_omr;
   const profit=d.job_profit_omr;
@@ -321,11 +330,11 @@ async function openJob(no,expandType='',trigger=null){
    '<button type="button" id="job-pdf">PDF</button><button type="button" id="job-excel">Excel</button><button type="button" id="job-print">Print</button>'+
    '<button type="button" id="close-detail">Back to report</button></div></div>'+
    '<div class="detail-grid">'+[
-    ['Registration',d.registration],['Vehicle',d.vehicle],['Job Type',d.job_type],['Insurance Company / Cash',d.insurance_company||d.job_type],['Invoice / LPO Amount',display(amount,true)],['Total Job Cost',display(cost,true)],
-    [resultLabel,display(profit,true)],['Profit %',d.job_profit_percentage===null?'Pending':Number(d.job_profit_percentage).toFixed(2)+'%']
+    ...(d.labour_excluded?[['Calculation Mode','WITHOUT LABOUR']]:[]),['Registration',d.registration],['Vehicle',d.vehicle],['Job Type',d.job_type],['Insurance Company / Cash',d.insurance_company||d.job_type],['Invoice / LPO Amount',display(amount,true)],['Total Job Cost',display(cost,true)],
+    [d.labour_excluded?'Profit / Loss without Labour':resultLabel,display(profit,true)],['Profit %',d.job_profit_percentage===null?'Pending':Number(d.job_profit_percentage).toFixed(2)+'%']
    ].map(([label,v])=>'<div class="detail-value"><small>'+esc(label)+'</small><strong>'+esc(v??'—')+'</strong></div>').join('')+
    '</div><h3>'+(expandType?'Selected expense details · '+esc(expandType.charAt(0).toUpperCase()+expandType.slice(1)):'Click any expense to open source details')+'</h3>'+expenseBreakdowns(r.breakdown||{},d,expandType)+
-   '<p class="notice">'+esc((d.warnings||[]).join(' · ')||'Estimated profit excludes general workshop overheads.')+'</p>';
+   '<p class="notice">'+(d.labour_excluded?'Labour excluded from this profit calculation; recorded labour remains unchanged. · ':'')+esc((d.warnings||[]).join(' · ')||'Estimated profit excludes general workshop overheads.')+'</p>';
   $('detail').hidden=false;
   $('close-detail').onclick=closeDetail;
   $('job-pdf').onclick=()=>exportJob('pdf');$('job-excel').onclick=()=>exportJob('excel');$('job-print').onclick=()=>exportJob('print');
