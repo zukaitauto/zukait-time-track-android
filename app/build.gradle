@@ -22,8 +22,8 @@ android {
         targetSdk 35
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
-        versionCode 355
-        versionName "V392" // Five approved Accounts reports; matching Accountant backend required before activation.
+        versionCode 356
+        versionName "V393" // Accounts UI, modal, labour display and optional without-labour profit test release.
         // Acceptance source: five Accounts sections, existing workshop source unchanged.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
