@@ -3,7 +3,7 @@
   "versionCode": 359,
   "releaseScope": "mechanical-ui-test",
   "approvedForStaff": false,
-  "sourceCommit": "6dcca59e79953e535ee2d739ed5877a63d985625",
+  "sourceCommit": "2830fa0bd4d61b98a5d4ff61ee1625087c0527de",
   "ownerPublicationRequested": true,
   "ownerRequestedImmediateRelease": true,
   "releaseHeldByOwner": true,
@@ -19,7 +19,7 @@
   "verificationRun": null,
   "accountantVerificationRun": null,
   "authorization": "Owner approved publishing the Mechanical Department modern UI for testing.",
-  "reason": "V396 held pending exact-source acceptance. Mechanical Dashboard modern blue header, 12 colorful two-column tiles, readable SVG icons and navigation unchanged; no backend/database changes. Published V395 remains the rollback.",
+  "reason": "V396 exact-source Mechanical visual candidate held pending signed Android, Reception, Accountant and Mechanical phone QA. No backend or database changes; V395 remains live.",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
