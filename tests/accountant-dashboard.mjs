@@ -42,6 +42,9 @@ await wait(()=>w.document.getElementById('rows').textContent.includes('Toyota Ca
 assert.equal(w.document.querySelector('#rows img'),null,'untrusted customer names are escaped');
 w.document.querySelector('#rows [data-job="J1"]').click();
 await wait(()=>!w.document.getElementById('detail').hidden);
+assert.equal(w.document.getElementById('financial-detail-dialog').open,true,'JC opens a separate modal, not a scrolled inline panel');
+assert.equal(w.document.documentElement.classList.contains('financial-dialog-open'),true,'modal prevents report scrolling');
+assert.equal(w.document.getElementById('query').value,'Toyota','report search preserved while modal opens');
 assert.equal(w.document.querySelectorAll('#detail .expense-breakdown').length,5,'all five costs open details');
 for(const type of ['labour','paint','consumables','parts','sublet'])assert.ok(w.document.querySelector('#detail .expense-'+type),'financial details include '+type);
 assert.match(w.document.querySelector('#detail .expense-consumables').textContent,/Primer/);
@@ -51,6 +54,10 @@ assert.match(w.document.getElementById('detail').textContent,/OMR 150.000/);
 w.document.getElementById('job-pdf').click();await wait(()=>pdf?.name.includes('Financial_360'));
 assert.match(pdf.html,/Labour Cost/);
 assert.match(pdf.html,/Sublet Cost/);
+w.document.getElementById('close-detail').click();
+assert.equal(w.document.getElementById('financial-detail-dialog').open,false,'close returns to existing report');
+assert.equal(w.document.getElementById('query').value,'Toyota','close keeps search');
+assert.ok(w.document.querySelector('#rows [data-job="J1"]'),'close keeps same JC list');
 w.document.getElementById('accounts-back').click();
 assert.equal(w.document.getElementById('accounts-home').hidden,false);
 
@@ -66,6 +73,11 @@ assert.match(w.document.getElementById('accounts-report-total-label').textConten
 w.document.querySelector('#rows [data-expense="paint"]').click();
 await wait(()=>!w.document.getElementById('detail').hidden);
 assert.equal(w.document.querySelector('#detail .expense-paint').open,true,'click cost opens its source lines');
+assert.equal(w.document.getElementById('financial-detail-dialog').open,true,'expense opens the same dedicated modal');
+assert.equal(w.document.querySelector('#detail .expense-breakdown').classList.contains('expense-paint'),true,'clicked expense shown first');
+w.document.getElementById('close-detail').click();
+assert.equal(w.document.getElementById('month').value,'2026-10','cost detail close preserves month filter');
+assert.ok(w.document.querySelector('#rows [data-expense="paint"]'),'cost detail close retains the same report');
 w.document.getElementById('accounts-back').click();
 
 w.document.querySelector('#navigation [data-report="insurance_invoiced"]').click();
