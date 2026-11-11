@@ -90,7 +90,25 @@ function renderSummary(summary){
  }).join('');
 }
 function table(rows,cols,actions=false){return '<div class="table-wrap"><table><thead><tr>'+cols.map(c=>'<th'+(c[2]?' class="money"':'')+'>'+esc(c[0])+'</th>').join('')+(actions?'<th>Actions</th>':'')+'</tr></thead><tbody>'+rows.map((r,i)=>'<tr>'+cols.map(c=>'<td'+(c[2]?' class="money"':'')+'>'+esc(display(r[c[1]],c[2]))+'</td>').join('')+(actions?'<td>'+(['jobs','cash'].includes(report)?'<button type="button" data-job="'+esc(r.job_card)+'">'+(report==='jobs'?'Open financial view':'View JC')+'</button>':report==='cash_ledger'?(r.invoice_receipt?'<span>From Cash invoice</span>':'<button type="button" data-correct="'+i+'">Correct</button><button type="button" data-reverse="'+i+'">Reverse</button>'):'')+'</td>':'')+'</tr>').join('')+'</tbody></table></div>';}
-function closeDetail(){detailGeneration++;target=null;$('detail').hidden=true;$('correction').hidden=true;}
+let detailTrigger=null;
+function closeDetail(){
+ detailGeneration++;target=null;$('detail').hidden=true;$('correction').hidden=true;
+ const modal=$('financial-detail-dialog'),wasOpen=modal?.open;
+ if(wasOpen){try{if(typeof modal.close==='function')modal.close();else modal.removeAttribute('open');}catch{modal.removeAttribute('open');}}
+ document.documentElement.classList.remove('financial-dialog-open');
+ const trigger=detailTrigger;detailTrigger=null;
+ if(wasOpen&&trigger?.isConnected&&typeof trigger.focus==='function')trigger.focus({preventScroll:true});
+}
+function showDetailDialog(){
+ const modal=$('financial-detail-dialog');
+ try{if(!modal.open){if(typeof modal.showModal==='function')modal.showModal();else modal.setAttribute('open','');}}
+ catch{modal.setAttribute('open','');}
+ document.documentElement.classList.add('financial-dialog-open');
+ modal.scrollTop=0;
+ $('close-detail')?.focus?.({preventScroll:true});
+}
+$('financial-detail-dialog').addEventListener('cancel',e=>{e.preventDefault();closeDetail();});
+$('financial-detail-dialog').addEventListener('click',e=>{if(e.target===$('financial-detail-dialog'))closeDetail();});
 function backendReport(name){return ['cash','insurance_invoiced','profit'].includes(name)?'accounts_performance':name==='leave'?'accounts_leave':name;}
 function closeCashDialog(){
  const dialog=$('cash-entry-dialog');
@@ -225,9 +243,10 @@ const expenseSpecs=[
  ['parts','Parts Expense','parts_cost_omr'],
  ['sublet','Sublet Cost','sublet_cost_omr']
 ];
-function expenseBreakdowns(b,d){
+function expenseBreakdowns(b,d,preferredType=''){
+ const ordered=preferredType?[...expenseSpecs].sort((a,b)=>Number(b[0]===preferredType)-Number(a[0]===preferredType)):expenseSpecs;
  return '<section class="expense-breakdowns" aria-label="Five financial expense breakdowns">'+
-  expenseSpecs.map(([type,title,k])=>{
+  ordered.map(([type,title,k])=>{
    const lines=b[type]||[];
    return '<details class="expense-breakdown expense-'+type+'"><summary><span>'+esc(title)+
     ' <small>'+lines.length+' source record(s) · click for details</small></span><strong>'+esc(display(d[k],true))+
@@ -271,8 +290,8 @@ async function exportJob(kind){
   say('Job Card financial report prepared.');
  }catch(e){say(e.message);}
 }
-async function openJob(no,expandType=''){
- closeDetail();const ticket=detailGeneration;
+async function openJob(no,expandType='',trigger=null){
+ closeDetail();detailTrigger=trigger||document.activeElement;const ticket=detailGeneration;
  try{
   say('Loading Job Card financial details…');
   const r=await request('workshop-api',{action:'accountant_jc_detail',job_card:no});
@@ -283,20 +302,20 @@ async function openJob(no,expandType=''){
   const profit=d.job_profit_omr;
   const resultLabel=profit===null?'Pending':Number(profit)<0?'Loss':'Profit';
   $('detail').innerHTML=
-   '<div class="heading"><h2>JC '+esc(d.job_card)+' · Financial 360°</h2><div class="detail-actions">'+
+   '<div class="heading"><h2 id="financial-detail-title">JC '+esc(d.job_card)+' · Financial 360°</h2><div class="detail-actions">'+
    '<button type="button" id="job-pdf">PDF</button><button type="button" id="job-excel">Excel</button><button type="button" id="job-print">Print</button>'+
    '<button type="button" id="close-detail">Back to report</button></div></div>'+
    '<div class="detail-grid">'+[
     ['Registration',d.registration],['Vehicle',d.vehicle],['Job Type',d.job_type],['Insurance Company / Cash',d.insurance_company||d.job_type],['Invoice / LPO Amount',display(amount,true)],['Total Job Cost',display(cost,true)],
     [resultLabel,display(profit,true)],['Profit %',d.job_profit_percentage===null?'Pending':Number(d.job_profit_percentage).toFixed(2)+'%']
    ].map(([label,v])=>'<div class="detail-value"><small>'+esc(label)+'</small><strong>'+esc(v??'—')+'</strong></div>').join('')+
-   '</div><h3>Click any expense to open source details</h3>'+expenseBreakdowns(r.breakdown||{},d)+
+   '</div><h3>'+(expandType?'Selected expense details · '+esc(expandType.charAt(0).toUpperCase()+expandType.slice(1)):'Click any expense to open source details')+'</h3>'+expenseBreakdowns(r.breakdown||{},d,expandType)+
    '<p class="notice">'+esc((d.warnings||[]).join(' · ')||'Estimated profit excludes general workshop overheads.')+'</p>';
   $('detail').hidden=false;
   $('close-detail').onclick=closeDetail;
   $('job-pdf').onclick=()=>exportJob('pdf');$('job-excel').onclick=()=>exportJob('excel');$('job-print').onclick=()=>exportJob('print');
   if(expandType){const section=$('detail').querySelector('.expense-'+expandType);if(section)section.open=true;}
-  $('detail').scrollIntoView?.({behavior:'smooth',block:'start'});say('');
+  showDetailDialog();say('');
  }catch(e){if(ticket===detailGeneration)say(e.message);}
 }
 async function submit(command,retry=null){
@@ -335,7 +354,7 @@ function revision(){return {expected_snapshot_revision:result?.snapshot_revision
 $('entry').onsubmit=e=>{e.preventDefault();const c={operation:$('operation').value,...revision(),transaction_date:$('transaction-date').value,kind:$('kind').value,job_card:$('entry-job').value.trim().toUpperCase(),payee:$('payee').value.trim(),amount:$('amount').value,payment_method:$('method').value,category:$('category').value.trim(),reference:$('reference').value.trim(),remarks:$('remarks').value.trim(),reason:$('reason').value.trim()};if(c.operation==='CORRECT')c.entry_id=$('entry-id').value;submit(c);};
 $('correction').onsubmit=e=>{e.preventDefault();if(!target?.field)return;const d=target.detail,k=target.field,c={operation:k==='invoice_amount_omr'?'CORRECT_INVOICE':'ADJUST_COST',job_card:d.job_card,expected_snapshot_revision:target.snapshot_revision,expected_finance_revision:target.finance_revision,transaction_date:new Date(Date.now()+14400000).toISOString().slice(0,10),old_value:d[k],new_value:$('corrected-value').value,reason:$('correction-reason').value.trim()};if(c.operation==='ADJUST_COST')c.category={consumables_cost_omr:'consumables',paint_cost_omr:'paint',parts_cost_omr:'parts',labour_cost_omr:'labour'}[k];submit(c);};
 $('detail').onclick=e=>{const b=e.target.closest('[data-adjust]');if(!b||!target)return;target.field=b.dataset.adjust;$('correction-target').textContent=target.detail.job_card+' · '+target.field.replaceAll('_',' ')+' · Original '+display(target.detail[target.field],true)+(target.field==='invoice_amount_omr'&&target.detail.job_type==='INSURANCE'?' · Linked LPO amount is also corrected; this does not record a cash receipt.':'');$('corrected-value').value=target.detail[target.field];$('correction-reason').value='';$('correction').hidden=false;};
-$('rows').onclick=e=>{if(!result)return;const expense=e.target.closest('[data-expense]');if(expense)return openJob(expense.dataset.job,expense.dataset.expense);const j=e.target.closest('[data-job]');if(j)return openJob(j.dataset.job);const c=e.target.closest('[data-correct]');if(c){const row=result.rows[Number(c.dataset.correct)];if(row&&!row.invoice_receipt)return cashForm(row);return;}const r=e.target.closest('[data-reverse]');if(r){const row=result.rows[Number(r.dataset.reverse)];if(!row||row.invoice_receipt)return;const reason=prompt('Reason for reversal? The original entry remains in history.');if(reason?.trim().length>=3)submit({operation:'REVERSE',entry_id:row.id,transaction_date:new Date(Date.now()+14400000).toISOString().slice(0,10),reason:reason.trim(),...revision()});}};
+$('rows').onclick=e=>{if(!result)return;const expense=e.target.closest('[data-expense]');if(expense)return openJob(expense.dataset.job,expense.dataset.expense,expense);const j=e.target.closest('[data-job]');if(j)return openJob(j.dataset.job,'',j);const c=e.target.closest('[data-correct]');if(c){const row=result.rows[Number(c.dataset.correct)];if(row&&!row.invoice_receipt)return cashForm(row);return;}const r=e.target.closest('[data-reverse]');if(r){const row=result.rows[Number(r.dataset.reverse)];if(!row||row.invoice_receipt)return;const reason=prompt('Reason for reversal? The original entry remains in history.');if(reason?.trim().length>=3)submit({operation:'REVERSE',entry_id:row.id,transaction_date:new Date(Date.now()+14400000).toISOString().slice(0,10),reason:reason.trim(),...revision()});}};
 const moduleDesign={
  jobs:['⌕','Search registration or JC and inspect all five costs','blue'],
  cash:['▤','Manager Cash financial report with five cost columns','green'],
