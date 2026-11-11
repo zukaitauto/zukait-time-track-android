@@ -17,8 +17,21 @@ try{for(const width of [320,375,768,1280]){
  await frame.locator('#cash-invoice-total-amount').filter({hasText:'235.500'}).waitFor();
  await page.evaluate(()=>localStorage.setItem('preview-parent-sentinel','parent session unchanged'));
  await page.screenshot({path:`artifacts/accounts-preview/${live?'live':'staged'}-invoices-${width}.png`,fullPage:true});
- await frame.locator('#cash-entry').click();await frame.locator('#cash-entry-dialog').waitFor({state:'visible'});
- await frame.locator('#kind').selectOption('CASH_OUT');
+ await frame.locator('#cash-entry').click();
+ await frame.locator('#preview-invoice-entry').waitFor({state:'visible'});
+ await frame.locator('#preview-jc').selectOption('DEMO-001');
+ assert.equal(await frame.locator('#preview-invoice-number').inputValue(),'INV-DEMO-001');
+ assert.equal(await frame.locator('#preview-invoice-amount').textContent(),'OMR 150.000');
+ assert.match(await frame.locator('#preview-invoice-status').textContent(),/Already counted/);
+ await frame.locator('#preview-jc').selectOption('DEMO-002');
+ assert.match(await frame.locator('#preview-invoice-status').textContent(),/invoice number missing/);
+ await frame.locator('#preview-jc').selectOption('DEMO-003');
+ assert.match(await frame.locator('#preview-invoice-status').textContent(),/Final invoice missing/);
+ await frame.locator('#preview-jc').selectOption('DEMO-001');
+ await page.screenshot({path:`artifacts/accounts-preview/${live?'live':'staged'}-cash-in-entry-${width}.png`,fullPage:true});
+ await frame.locator('#preview-open-cash-out').click();
+ await frame.locator('#cash-entry-dialog').waitFor({state:'visible'});
+ assert.equal(await frame.locator('#kind').inputValue(),'CASH_OUT');
  const isolation=await frame.locator('body').evaluate(async()=>{
   const read=localStorage.getItem('zukait_secure_session_v42');let denied=false;try{await fetch('https://visual-preview.invalid/functions/v1/workshop-api',{method:'POST',body:JSON.stringify({action:'accountant_command'})})}catch{denied=true}
   return {denied,read,origin:window.origin,overflow:document.documentElement.scrollWidth>innerWidth+1};
