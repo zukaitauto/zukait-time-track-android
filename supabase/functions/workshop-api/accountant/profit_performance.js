@@ -1,4 +1,5 @@
 import {key,milli,day,validDay,searchKey} from './finance_rules.js';
+import {availablePartsListCost,availableConsumablesCost} from './accounts_parts_cost.js';
 const array=v=>Array.isArray(v)?v:[],money=n=>n===null?null:(n/1000).toFixed(3);
 // Read-only invoice/LPO cohorts. Reuse verified financial costs, never ledger
 // receipts as revenue here: the owner counts each final Cash invoice once.
@@ -43,16 +44,25 @@ export function managerProfitReport(context,financial,filters={},now=Date.now())
    if(costs[category]===null)notes.push(...array(detail.warnings).filter(w=>w===category+' cost pending'||w.toLowerCase().includes(category)));
    if(costs[category]===null&&!notes.includes(category+' cost pending'))notes.push(category+' cost pending');
   }
-  // An unresolved parts receipt, running shift, or other explicit warning is
-  // authoritative even if category totals are otherwise known.
+  // Include known item prices even when other Parts List/material prices are
+  // missing. This is an explicitly partial estimate, not a verified final cost.
+  const parts=availablePartsListCost(sources.parts,detail.parts_cost_omr,
+   array(context.entries).filter(e=>key(e.job_card)===no));
+  const materialRows=array(financial.rows?.consumables).filter(x=>key(x.job_card)===no);
+  const materials=availableConsumablesCost(materialRows,detail.consumables_cost_omr);
+  const partial=parts.partial||materials.partial;
+  if(parts.partial){costs.parts=milli(parts.cost_omr);notes.push(parts.source);}
+  if(materials.partial){costs.consumables=milli(materials.cost_omr);notes.push('Partial consumables cost — missing material prices excluded');}
+  // Do not turn pending fully-priced receipts into final actuals. The Accounts
+  // screen may separately use their recorded purchase price as an estimate.
   const incompleteParts=array(detail.warnings).some(w=>/spare parts receipts are incomplete/i.test(w));
-  if(incompleteParts){costs.parts=null;notes.push('Spare parts receipts are incomplete');}
+  if(incompleteParts&&!parts.partial){costs.parts=null;notes.push('Spare parts receipts are incomplete');}
   const baseCost=Object.values(costs).some(v=>v===null)?null:Object.values(costs).reduce((a,b)=>a+b,0);
   const totalCost=baseCost===null||subletPending?null:baseCost+sublet;
   const profit=totalCost===null?null:amount-totalCost;
   const corporate=kind==='CORPORATE'||(kind==='CREDIT'&&(j.isCorporate===true||key(j.customerType)==='CORPORATE'||key(j.creditType)==='CORPORATE'));
   const customer=String(j.corporateCompanyName||j.creditCustomerName||j.companyName||detail.customer||'').trim();
-  rows.push({kind:corporate?'CORPORATE':kind,job_card:no,date,vehicle,registration:detail.registration||'',customer:detail.customer||'',company_name:customer,insurance_company:company,amount_omr:money(amount),total_cost_omr:money(totalCost),sublet_cost_omr:subletPending?null:money(sublet),profit_omr:money(profit),profit_percentage:profit===null||amount===0?null:profit/amount*100,costs_complete:totalCost!==null,cost_breakdown_omr:Object.fromEntries(Object.entries(costs).map(([k,v])=>[k,money(v)])),cost_notes:[...new Set([...notes,...(subletPending?['Sublet cost pending']:[])])]});
+  rows.push({kind:corporate?'CORPORATE':kind,job_card:no,date,vehicle,registration:detail.registration||'',customer:detail.customer||'',company_name:customer,insurance_company:company,amount_omr:money(amount),total_cost_omr:money(totalCost),sublet_cost_omr:subletPending?null:money(sublet),profit_omr:money(profit),profit_percentage:profit===null||amount===0?null:profit/amount*100,costs_complete:totalCost!==null&&!partial,cost_partial:partial,cost_breakdown_omr:Object.fromEntries(Object.entries(costs).map(([k,v])=>[k,money(v)])),cost_notes:[...new Set([...notes,...(subletPending?['Sublet cost pending']:[])])]});
  }
  rows.sort((a,b)=>a.date.localeCompare(b.date)||a.job_card.localeCompare(b.job_card,undefined,{numeric:true}));
  return {rows,month,undated_records:undated,basis:'Cash: final invoice date/amount counted once as received. Insurance: LPO document received date/amount, not insurer payment. Profit uses recorded job costs including sublet; overheads and tax adjustments are not included.'};
