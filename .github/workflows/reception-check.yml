@@ -135,31 +135,19 @@ jobs:
       - run: node tests/reception-v305-acceptance.mjs
       - run: node tests/reception-backup-export-safety.mjs
       - run: node tests/reception-release-publish-safety.mjs
-      - name: Use HTTPS Ubuntu mirrors for browser dependencies
-        run: |
-          for source in /etc/apt/apt-mirrors.txt /etc/apt/sources.list.d/ubuntu.sources; do
-            if [ -f "$source" ]; then
-              sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g; s|http://security.ubuntu.com/ubuntu|https://security.ubuntu.com/ubuntu|g' "$source"
-            fi
-          done
-      - run: npx playwright install chromium
+      - name: Prepare supported Chromium and WebKit runtime
+        run: docker pull mcr.microsoft.com/playwright:v1.58.2-noble
         timeout-minutes: 10
       - name: Verify print preview navigation outside the sandbox on Chromium and WebKit
-        # Playwright's supported Noble image includes WebKit/Chromium system libraries,
-        # avoiding unavailable Ubuntu apt mirrors on the hosted runner.
-        run: |
-          docker run --rm --ipc=host \
-            -v "$PWD:/work" -w /work \
-            mcr.microsoft.com/playwright:v1.58.2-noble \
-            node tests/print-navigation-browser.mjs
+        run: bash scripts/ci-browser-via-image.sh node tests/print-navigation-browser.mjs
       - name: Verify monthly and date-range Paint Reports on phones
-        run: node tests/paint-reports-responsive.mjs
+        run: bash scripts/ci-browser-via-image.sh node tests/paint-reports-responsive.mjs
       - name: Verify delivered checklist and Job Card status for all Reception roles
-        run: node tests/reception-delivered-status-browser.mjs
+        run: bash scripts/ci-browser-via-image.sh node tests/reception-delivered-status-browser.mjs
       - name: Verify Days Open and company filters for all Reception roles
-        run: node tests/reception-company-age-browser.mjs
+        run: bash scripts/ci-browser-via-image.sh node tests/reception-company-age-browser.mjs
       - name: Verify organized Job Card editor and number confirmation on phones
-        run: node tests/job-number-edit-browser.mjs
+        run: bash scripts/ci-browser-via-image.sh node tests/job-number-edit-browser.mjs
       - name: Save Job Card editor previews
         if: always()
         uses: actions/upload-artifact@v4
@@ -168,7 +156,7 @@ jobs:
           path: artifacts/job-edit/
           retention-days: 14
       - name: Verify shared dashboard cards on phones and desktop
-        run: node tests/shared-dashboard-cards.mjs && node tests/shared-dashboard-cards-responsive.mjs
+        run: node tests/shared-dashboard-cards.mjs && bash scripts/ci-browser-via-image.sh node tests/shared-dashboard-cards-responsive.mjs
       - name: Save shared dashboard card previews
         if: always()
         uses: actions/upload-artifact@v4
@@ -177,7 +165,7 @@ jobs:
           path: artifacts/dashboard-cards/
           retention-days: 14
       - name: Verify clean Purchase Completed A4 print layout
-        run: node tests/purchase-completed-print-responsive.mjs
+        run: bash scripts/ci-browser-via-image.sh node tests/purchase-completed-print-responsive.mjs
       - name: Save Purchase Completed print previews
         if: always()
         uses: actions/upload-artifact@v4
@@ -186,9 +174,9 @@ jobs:
           path: artifacts/purchase-print/
           retention-days: 14
       - name: Verify Cash and Insurance monthly dashboard cards
-        run: node tests/cash-monthly-pulse.mjs && node tests/monthly-followup-responsive.mjs
+        run: node tests/cash-monthly-pulse.mjs && bash scripts/ci-browser-via-image.sh node tests/monthly-followup-responsive.mjs
       - name: Verify staff labour sessions and real PDF/image exports
-        run: node tests/labour-history.mjs && node tests/staff-time-review.mjs && node tests/labour-history-responsive.mjs
+        run: node tests/labour-history.mjs && node tests/staff-time-review.mjs && bash scripts/ci-browser-via-image.sh node tests/labour-history-responsive.mjs
       - name: Save staff labour report previews
         uses: actions/upload-artifact@v4
         with:
@@ -201,9 +189,9 @@ jobs:
           name: monthly-followup-preview-${{ github.run_id }}
           path: artifacts/monthly-followup/
           retention-days: 14
-      - run: npm run test:reception:browser
+      - run: bash scripts/ci-browser-via-image.sh npm run test:reception:browser
       - name: Verify approved one-page A4 Reception PDF in Chromium
-        run: node tests/reception-print-a4.mjs
+        run: bash scripts/ci-browser-via-image.sh node tests/reception-print-a4.mjs
       - name: Preserve A4 print preview for workshop review
         if: always()
         uses: actions/upload-artifact@v4
