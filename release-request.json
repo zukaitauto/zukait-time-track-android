@@ -2,24 +2,24 @@
   "versionName": "V395",
   "versionCode": 358,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": false,
-  "sourceCommit": "252b07ce8b4a0f318d0ac3167638e4d9f08bc6b5",
+  "approvedForStaff": true,
+  "sourceCommit": "1bcfebf812435672f1795d19ba75a37a16ff0595",
   "ownerPublicationRequested": true,
   "ownerRequestedImmediateRelease": true,
-  "releaseHeldByOwner": true,
+  "releaseHeldByOwner": false,
   "productionBackendChanges": false,
   "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "backupDeferredByOwner": false,
-  "approvedAt": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "accountantVerificationRun": null,
+  "backupDeferredByOwner": true,
+  "approvedAt": "2026-11-11T18:18:37.172Z",
+  "publishNonce": "1bcfebf812435672f1795d19ba75a37a",
+  "signedAcceptanceRun": 43075729981,
+  "verificationRun": 43075730759,
+  "accountantVerificationRun": 43075730058,
   "authorization": "Owner requested V395 concise Accounts Profit/Loss screen for testing.",
-  "reason": "V395 UI-only candidate. Removes verbose Profit/Loss report notice; calculations, pending/partial flags, reports and production backend are unchanged. Must pass exact-source release acceptance before publication.",
+  "reason": "V395 UI-only Profit/Loss text simplification requested after V394 phone testing. Exact source Accountant, Reception, signed APK and safety checks succeeded. Backend unchanged at v115, no database migrations. V394 retained for rollback; physical device and fresh backup restore checks remain NOT_RUN.",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
     "functions": {
@@ -40,11 +40,11 @@
       "accountant_append_only_grants",
       "accountant_append_only_corrections"
     ],
-    "priorWorkshopApiVersion": 114,
+    "priorWorkshopApiVersion": 115,
     "readbackVerified": true,
     "filesVerified": 41,
-    "changedAccountantFiles": 4,
-    "scope": "Workshop API v115: 37 existing production files preserved, three Accountant files updated and one costing helper added; staff-auth v13 unchanged.",
+    "changedAccountantFiles": 0,
+    "scope": "V395 is UI-only; production workshop-api v115 and staff-auth v13 are unchanged.",
     "previousReleaseEvidence": {
       "project": "pjknotnjkufadqavcmii",
       "functions": {
@@ -54,8 +54,8 @@
           "verifiedFileMatch": true
         },
         "workshop-api": {
-          "version": 114,
-          "bundleSha256": "003ef5969e525c1a6808ee286f229aaf99c648a795761fe05a71a9d18732d3ac",
+          "version": 115,
+          "bundleSha256": "9732585b88d162078ac0f037ac968d0ad1c1cd051597a835c4cd61a3f8390829",
           "verifiedFileMatch": true
         }
       },
@@ -65,11 +65,11 @@
         "accountant_append_only_grants",
         "accountant_append_only_corrections"
       ],
-      "priorWorkshopApiVersion": 113,
+      "priorWorkshopApiVersion": 114,
       "readbackVerified": true,
-      "filesVerified": 40,
-      "changedAccountantFiles": 3,
-      "scope": "Workshop API v114 deployed: 37 existing live files preserved unchanged, 3 Accountant files updated from pinned V393 source; user-auth v13 unchanged.",
+      "filesVerified": 41,
+      "changedAccountantFiles": 4,
+      "scope": "Workshop API v115: 37 existing production files preserved, three Accountant files updated and one costing helper added; staff-auth v13 unchanged.",
       "previousReleaseEvidence": {
         "project": "pjknotnjkufadqavcmii",
         "functions": {
@@ -79,8 +79,8 @@
             "verifiedFileMatch": true
           },
           "workshop-api": {
-            "version": 113,
-            "bundleSha256": "46c3eb001f50ccb93e1b9be0e40301fcea9e05180eb8d19300018659f8b80259",
+            "version": 114,
+            "bundleSha256": "003ef5969e525c1a6808ee286f229aaf99c648a795761fe05a71a9d18732d3ac",
             "verifiedFileMatch": true
           }
         },
@@ -90,22 +90,52 @@
           "accountant_append_only_grants",
           "accountant_append_only_corrections"
         ],
-        "priorWorkshopApiVersion": 112,
+        "priorWorkshopApiVersion": 113,
         "readbackVerified": true,
         "filesVerified": 40,
-        "changedAccountantFiles": 4,
-        "scope": "Live function v112 bundle preserved unchanged outside 4 Accountant files. New accounts_reports.js added. Preserve workshop API, staff-auth, and privileges."
+        "changedAccountantFiles": 3,
+        "scope": "Workshop API v114 deployed: 37 existing live files preserved unchanged, 3 Accountant files updated from pinned V393 source; user-auth v13 unchanged.",
+        "previousReleaseEvidence": {
+          "project": "pjknotnjkufadqavcmii",
+          "functions": {
+            "staff-auth": {
+              "version": 13,
+              "bundleSha256": "8c9007aef796124863048c9b75156133edd9823ba9fc5211f0e70fe6ec5e4a11",
+              "verifiedFileMatch": true
+            },
+            "workshop-api": {
+              "version": 113,
+              "bundleSha256": "46c3eb001f50ccb93e1b9be0e40301fcea9e05180eb8d19300018659f8b80259",
+              "verifiedFileMatch": true
+            }
+          },
+          "migrations": [
+            "accountant_financial_ledger",
+            "accountant_lpo_audit",
+            "accountant_append_only_grants",
+            "accountant_append_only_corrections"
+          ],
+          "priorWorkshopApiVersion": 112,
+          "readbackVerified": true,
+          "filesVerified": 40,
+          "changedAccountantFiles": 4,
+          "scope": "Live function v112 bundle preserved unchanged outside 4 Accountant files. New accounts_reports.js added. Preserve workshop API, staff-auth, and privileges."
+        }
       }
     }
   },
   "evidence": {
-    "credentialPreservation": false,
-    "qaFinancialAcceptance": false,
-    "serverPermissions": false,
-    "rollbackPrepared": false,
-    "legacyLoginCompatibility": false,
-    "sourceVerificationRuns": {},
-    "backendReadback": "Pending V395 verification",
+    "credentialPreservation": true,
+    "qaFinancialAcceptance": true,
+    "serverPermissions": true,
+    "rollbackPrepared": true,
+    "legacyLoginCompatibility": true,
+    "sourceVerificationRuns": {
+      "signedAcceptanceRun": 43075729981,
+      "verificationRun": 43075730759,
+      "accountantVerificationRun": 43075730058
+    },
+    "backendReadback": "Unchanged workshop-api v115 active with 41 files; staff-auth v13 unchanged; no Supabase deployment in V395.",
     "rollbackApp": "release-V394-architecture-v2",
     "rollbackBackendPreviousVersion": 115
   },
