@@ -22,8 +22,8 @@ android {
         targetSdk 35
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
-        versionCode 354
-        versionName "V391" // Updated Reception and Mechanical UI, vehicle label display normalization; backend rollout separate.
+        versionCode 355
+        versionName "V392" // Five approved Accounts reports; matching Accountant backend required before activation.
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }
