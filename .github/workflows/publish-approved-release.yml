@@ -133,6 +133,16 @@ jobs:
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN" > /tmp/accountant-verification.json
           jq -e --arg sha "$(jq -r .sourceCommit release-request.json)" '.head_sha==$sha and .head_branch=="architecture-v2" and .path==".github/workflows/accountant-qa.yml" and .conclusion=="success"' /tmp/accountant-verification.json
 
+      - name: Verify Mechanical dashboard phone QA provenance
+        if: env.ACCOUNTANT_PUBLICATION == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$(jq -r .releaseScope release-request.json)" = "mechanical-ui-test" ]; then
+            RUN=$(jq -r .mechanicalVerificationRun release-request.json)
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN" | jq -e --arg sha "$(jq -r .sourceCommit release-request.json)" '.head_sha==$sha and .head_branch=="architecture-v2" and .path==".github/workflows/mechanical-phone-qa.yml" and .conclusion=="success"'
+          fi
+
       - name: Pin both clients to the approved source
         shell: bash
         run: |
