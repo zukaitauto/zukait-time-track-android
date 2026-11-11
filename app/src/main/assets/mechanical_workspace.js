@@ -169,8 +169,8 @@ export async function mountMechanicalWorkspace(root,options={}){
    box-shadow:inset 0 1px 0 #fff,0 5px 15px #15477712!important;color:#0a2245!important
   }
   .mc-workspace .mc-dashboard-card::before{
-   content:'';position:absolute;z-index:0;pointer-events:none;right:-43px;bottom:-51px;
-   width:180px;height:100px;border-radius:55% 45% 0 0;transform:rotate(-15deg);
+   content:'';position:absolute;z-index:0;pointer-events:none;right:0;bottom:0;
+   width:min(72%,180px);height:68px;border-radius:80% 0 0 0;transform:none;
    background:var(--mc-deep);opacity:.48
   }
   .mc-workspace .mc-dashboard-card::after{
