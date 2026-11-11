@@ -79,3 +79,5 @@ dependencies {
 // V368: Validate Paint Reports with reliable HTTPS browser dependency setup.
 
 // V369: Verify additive delivery fields preserve authorized API responses and privacy.
+
+// V392 Accounts release: rerun full Accountant, Reception and signed APK acceptance against the held candidate.
