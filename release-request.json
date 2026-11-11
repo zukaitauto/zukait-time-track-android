@@ -1,49 +1,52 @@
 {
-  "versionName": "V392",
-  "versionCode": 355,
+  "versionName": "V393",
+  "versionCode": 356,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": true,
-  "sourceCommit": "9d0dd0bf6bfe5943ac8ebb8ef9902272d855f213",
+  "approvedForStaff": false,
+  "sourceCommit": null,
   "ownerPublicationRequested": true,
   "ownerRequestedImmediateRelease": true,
-  "releaseHeldByOwner": false,
+  "releaseHeldByOwner": true,
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "backupDeferredByOwner": true,
-  "approvedAt": "2026-11-11T13:37:38.052Z",
-  "publishNonce": "9d0dd0bf6bfe5943ac8ebb8ef9902272",
-  "signedAcceptanceRun": 43029933583,
-  "verificationRun": 43029933573,
-  "authorization": "Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.",
-  "reason": "Owner explicitly requested 'Release it then I will test'. V392 activates exactly five approved Accounts options, preserves existing workshop records and omits unapproved accounting modules.",
+  "approvedAt": null,
+  "publishNonce": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "authorization": "Owner requested V393 Accounts improvements release for checking.",
+  "reason": "Owner requested RELEASE FOR CHECKING for Cash and Insurance modern no-scroll UI, Job Card expense detail popup, Profit/Loss With/Without Labour, and labour time HH:MM display. Keep production V392 until V393 exact-source tests, backend readback and protected publication succeed.",
   "productionBackend": {
-    "project": "pjknotnjkufadqavcmii",
-    "functions": {
-      "staff-auth": {
-        "version": 13,
-        "bundleSha256": "8c9007aef796124863048c9b75156133edd9823ba9fc5211f0e70fe6ec5e4a11",
-        "verifiedFileMatch": true
+    "status": "V393_BACKEND_PENDING",
+    "prior": {
+      "project": "pjknotnjkufadqavcmii",
+      "functions": {
+        "staff-auth": {
+          "version": 13,
+          "bundleSha256": "8c9007aef796124863048c9b75156133edd9823ba9fc5211f0e70fe6ec5e4a11",
+          "verifiedFileMatch": true
+        },
+        "workshop-api": {
+          "version": 113,
+          "bundleSha256": "46c3eb001f50ccb93e1b9be0e40301fcea9e05180eb8d19300018659f8b80259",
+          "verifiedFileMatch": true
+        }
       },
-      "workshop-api": {
-        "version": 113,
-        "bundleSha256": "46c3eb001f50ccb93e1b9be0e40301fcea9e05180eb8d19300018659f8b80259",
-        "verifiedFileMatch": true
-      }
-    },
-    "migrations": [
-      "accountant_financial_ledger",
-      "accountant_lpo_audit",
-      "accountant_append_only_grants",
-      "accountant_append_only_corrections"
-    ],
-    "priorWorkshopApiVersion": 112,
-    "readbackVerified": true,
-    "filesVerified": 40,
-    "changedAccountantFiles": 4,
-    "scope": "Live function v112 bundle preserved unchanged outside 4 Accountant files. New accounts_reports.js added. Preserve workshop API, staff-auth, and privileges."
+      "migrations": [
+        "accountant_financial_ledger",
+        "accountant_lpo_audit",
+        "accountant_append_only_grants",
+        "accountant_append_only_corrections"
+      ],
+      "priorWorkshopApiVersion": 112,
+      "readbackVerified": true,
+      "filesVerified": 40,
+      "changedAccountantFiles": 4,
+      "scope": "Live function v112 bundle preserved unchanged outside 4 Accountant files. New accounts_reports.js added. Preserve workshop API, staff-auth, and privileges."
+    }
   },
   "databaseMigration": {
     "name": "v391_private_visit_customer_roles",
@@ -53,25 +56,21 @@
   },
   "evidence": {
     "credentialPreservation": true,
-    "qaFinancialAcceptance": true,
+    "qaFinancialAcceptance": false,
     "serverPermissions": true,
     "rollbackPrepared": true,
     "legacyLoginCompatibility": true,
-    "sourceVerificationRuns": {
-      "signedAcceptanceRun": 43029933583,
-      "verificationRun": 43029933573,
-      "accountantVerificationRun": 43029933570
-    },
+    "sourceVerificationRuns": {},
     "backendReadback": "workshop-api v113, 40 files; 36 existing files preserved, 4 Accountant files match immutable V392 source",
     "rollbackApp": "release-V391-architecture-v2",
     "rollbackBackendPreviousVersion": 112
   },
   "previousPublishedRelease": {
-    "versionName": "V391",
-    "versionCode": 354,
-    "sourceCommit": "5ab6dd27e78ad6bf0df6b14fd3e420c9d6ad22e3",
-    "releaseTag": "release-V391-architecture-v2"
+    "versionName": "V392",
+    "versionCode": 355,
+    "sourceCommit": "9d0dd0bf6bfe5943ac8ebb8ef9902272d855f213",
+    "releaseTag": "release-V392-architecture-v2"
   },
   "ownerApprovedLiveAccountantTesting": true,
-  "accountantVerificationRun": 43029933570
+  "accountantVerificationRun": null
 }
