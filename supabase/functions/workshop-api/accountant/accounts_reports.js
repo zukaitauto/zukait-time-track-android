@@ -3,6 +3,14 @@ import {managerProfitReport} from './profit_performance.js';
 const array=v=>Array.isArray(v)?v:[];
 const money=v=>v===null?null:v/1000;
 const numeric=v=>milli(v);
+const profitWithoutLabour=(row,fields)=>{
+ const nonLabour=['paint','consumables','parts','sublet'].map(k=>numeric(fields[k]));
+ const invoice=numeric(row.amount_omr);
+ const cost=nonLabour.includes(null)?null:nonLabour.reduce((sum,value)=>sum+value,0);
+ const profit=cost===null||invoice===null?null:invoice-cost;
+ return {cost:money(cost),profit:money(profit),
+  percentage:profit===null||invoice===0?null:Math.round(profit/invoice*10000)/100};
+};
 const matches=(value,query)=>!query||searchKey(value).includes(searchKey(query));
 const names=rows=>[...new Set(rows.filter(Boolean).map(s=>String(s).trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
 
@@ -27,18 +35,24 @@ export function accountsPerformanceReport(context,financial,filters={},now=Date.
   (!filters.insurance||r.kind==='INSURANCE'&&key(r.insurance_company)===key(filters.insurance))&&
   (!filters.customer||['CREDIT','CORPORATE'].includes(r.kind)&&key(r.company_name||r.customer)===key(filters.customer))&&
   matches([r.job_card,r.registration,r.vehicle,r.customer,r.company_name].join(' '),filters.query));
+ const withoutLabour=filters.labour_mode==='without';
  const rows=selected.map((r,index)=>{
   const c=r.cost_breakdown_omr||{};
+  const alternative=withoutLabour?profitWithoutLabour(r,{...c,sublet:r.sublet_cost_omr}):null;
+  const effectiveCost=alternative?alternative.cost:r.total_cost_omr;
+  const effectiveProfit=alternative?alternative.profit:r.profit_omr;
+  const effectivePercentage=alternative?alternative.percentage:r.profit_percentage;
   return {...r,serial:index+1,job_type:r.kind,
+   costs_complete:alternative?alternative.cost!==null:r.costs_complete,
    labour_cost_omr:c.labour??null,
    paint_cost_omr:c.paint??null,
    consumables_cost_omr:c.consumables??null,
    parts_cost_omr:c.parts??null,
    sublet_cost_omr:r.sublet_cost_omr??null,
-   total_job_cost_omr:r.total_cost_omr??null,
+   total_job_cost_omr:effectiveCost??null,
    invoice_amount_omr:r.amount_omr,
-   net_profit_omr:r.profit_omr,
-   percentage:r.profit_percentage==null?null:Math.round(r.profit_percentage*100)/100
+   net_profit_omr:effectiveProfit,
+   percentage:effectivePercentage==null?null:Math.round(effectivePercentage*100)/100
   };
  });
  const total=field=>rows.reduce((sum,r)=>sum+(numeric(r[field])||0),0);
@@ -47,11 +61,11 @@ export function accountsPerformanceReport(context,financial,filters={},now=Date.
  const cost=pending?null:total('total_job_cost_omr');
  const profit=cost===null?null:revenue-cost;
  return {
-  rows,facets,period_month:month,
+  rows,facets,period_month:month,labour_mode:withoutLabour?'without':'with',
   summary:{records:rows.length,revenue_omr:money(revenue),total_cost_omr:money(cost),
    profit_omr:money(profit),profit_percentage:profit===null||revenue===0?null:profit/revenue*100,
    pending_cost_records:pending},
-  notes:['Invoice and LPO amounts are not additional receipt entries.','Profit excludes overheads and unmodeled tax adjustments.','Pending expenses cannot be treated as zero.']
+  notes:[...(withoutLabour?['Without Labour mode: labour expense is excluded from job cost and profit/loss calculations, but recorded labour is unchanged.']:[]),'Invoice and LPO amounts are not additional receipt entries.','Profit excludes overheads and unmodeled tax adjustments.','Pending expenses cannot be treated as zero.']
  };
 }
 
