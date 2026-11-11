@@ -142,7 +142,7 @@ header{background:#ffffffcc;border:1px solid #fff;border-radius:22px;padding:17p
   }
   #accounts-home .account-kpi-top{font-size:11px}
   #accounts-home .account-kpi-category{display:none}
-  #accounts-home #navigation{grid-template-columns:1fr;gap:8px}
+  #accounts-home #navigation{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   #accounts-home #navigation .module-card{
     min-height:76px;padding:11px 12px;flex-direction:row;
     gap:11px;border-radius:13px;align-items:center;
@@ -441,4 +441,282 @@ html.financial-dialog-open {overflow:hidden}
 @media(max-width:1100px) {
  #accounts-workspace[data-report="insurance_invoiced"] .finance-report td:nth-child(12) {background:transparent}
  #accounts-workspace[data-report="insurance_invoiced"] .finance-report td:nth-child(13) {background:#ecfcf2}
+}
+
+
+/* V393 Accounts visual refresh: approved 2-column cards and Financial 360.
+   Visual-only. Existing navigation, dialogs, exports and financial APIs remain. */
+#accounts-home .home-heading{
+  position:relative;isolation:isolate;overflow:hidden;min-height:142px;
+  padding:clamp(16px,2.5vw,26px);gap:12px;
+  background:linear-gradient(115deg,#ffffff 0%,#f8fcff 58%,#e6f5ff 100%);
+  border:1px solid #d6e9f6;border-radius:23px;box-shadow:0 12px 30px #0d3e7420;
+}
+#accounts-home .home-heading::after{
+  content:"";position:absolute;z-index:-1;inset:auto -35px -72px auto;
+  width:min(42%,250px);height:180px;transform:rotate(-23deg);
+  background:linear-gradient(140deg,#8ee9e340,#2b8cce30 50%,#b5ecff2d);
+  border-radius:54% 46% 40% 50%;pointer-events:none;
+}
+#accounts-home .home-heading>div{position:relative;z-index:1}
+#accounts-home .home-heading h2{
+  font-size:clamp(24px,3.1vw,34px);color:#082855;
+  letter-spacing:-.04em;font-weight:850;
+}
+#accounts-home .home-heading p{max-width:410px;color:#51667f;line-height:1.5}
+#accounts-home .eyebrow{letter-spacing:.18em;color:#147a9c}
+#accounts-home .secure-badge{
+  position:relative;z-index:1;align-self:flex-start;color:#08704b;
+  background:linear-gradient(125deg,#eefff5,#d9f7ed);
+  border:1px solid #b6ebd4;font-weight:800;
+}
+#accounts-home .module-heading{margin:24px 0 15px}
+#accounts-home .module-heading h2{font-size:clamp(19px,2.4vw,24px);font-weight:850;color:#102b54}
+#accounts-home #navigation{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:0 0 20px;
+}
+#accounts-home #navigation .module-card{
+  --accent:#126db0;--tile:#ecf7ff;
+  position:relative;isolation:isolate;overflow:hidden;
+  display:flex;flex-direction:row;align-items:center;
+  min-width:0;min-height:152px;gap:15px;padding:22px 20px 22px 27px;
+  background:linear-gradient(128deg,#fff 8%,var(--tile) 100%)!important;
+  border:1px solid color-mix(in srgb,var(--accent) 26%,#e6f1fa)!important;
+  border-radius:22px;box-shadow:0 9px 26px #16436b16!important;
+  color:#102b54!important;text-align:left;
+}
+#accounts-home #navigation .module-card::before{
+  content:"";position:absolute;left:11px;top:19px;bottom:19px;width:5px;
+  border-radius:8px;background:var(--accent);opacity:.9;
+}
+#accounts-home #navigation .module-card::after{
+  content:"";position:absolute;z-index:-1;right:-26px;bottom:-44px;
+  width:185px;height:105px;border-radius:55% 40% 0 0;transform:rotate(-17deg);
+  background:linear-gradient(100deg,transparent,color-mix(in srgb,var(--accent) 19%,transparent));
+  pointer-events:none;
+}
+#accounts-home #navigation .module-card:focus-visible{
+  outline:3px solid #0f65b2;outline-offset:3px;
+}
+#accounts-home #navigation .module-icon{
+  display:grid;place-items:center;flex:0 0 54px;width:54px;height:54px;
+  border-radius:17px;color:var(--accent);
+  background:linear-gradient(135deg,#f7fcff,color-mix(in srgb,var(--accent) 17%,white));
+  border:1px solid #ffffffcf;
+}
+#accounts-home #navigation .module-icon svg{height:28px;width:28px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+#accounts-home #navigation .module-copy{display:grid;flex:1;gap:9px;position:relative;z-index:1}
+#accounts-home #navigation .module-copy strong{
+  font-size:clamp(15px,1.7vw,20px);line-height:1.26;font-weight:850;color:#0a2348;
+}
+#accounts-home #navigation .module-copy small{font-size:clamp(11px,1.1vw,13px);color:#48617d;line-height:1.45}
+#accounts-home #navigation .module-arrow{color:#0b2a4f;font-size:23px;font-weight:900}
+#accounts-home #navigation .tone-blue{--accent:#0e79ba;--tile:#dcf2ff}
+#accounts-home #navigation .tone-green{--accent:#11956a;--tile:#dff8ef}
+#accounts-home #navigation .tone-indigo{--accent:#4f71d2;--tile:#e8ecff}
+#accounts-home #navigation .tone-amber{--accent:#17a67a;--tile:#e2faf0}
+#accounts-home #navigation .tone-teal{--accent:#00a4a5;--tile:#dff8fc}
+#accounts-home #navigation .module-card:last-child{grid-column:1/-1;min-height:120px}
+@media(max-width:650px){
+  #accounts-home #navigation{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  #accounts-home #navigation .module-card{
+    display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;
+    padding:15px 13px 15px 18px;min-height:190px;gap:10px;border-radius:17px;
+  }
+  #accounts-home #navigation .module-card::before{left:7px;top:14px;bottom:14px;width:4px}
+  #accounts-home #navigation .module-icon{width:43px;height:43px;flex-basis:43px;border-radius:13px}
+  #accounts-home #navigation .module-icon svg{width:24px;height:24px}
+  #accounts-home #navigation .module-copy{gap:5px;flex:none;padding-right:1px}
+  #accounts-home #navigation .module-copy strong{font-size:clamp(12px,3.6vw,15px)}
+  #accounts-home #navigation .module-copy small{font-size:clamp(10px,2.8vw,12px)}
+  #accounts-home #navigation .module-arrow{position:absolute;right:11px;top:23px;font-size:22px}
+  #accounts-home #navigation .module-card:last-child{
+    grid-column:1/-1;min-height:100px;flex-direction:row;align-items:center;gap:14px;padding:17px 16px 17px 22px;
+  }
+  #accounts-home #navigation .module-card:last-child .module-copy{padding-right:20px}
+  #accounts-home #navigation .module-card:last-child .module-arrow{top:auto;right:14px}
+}
+@media(max-width:360px){
+  #accounts-home #navigation{gap:8px}
+  #accounts-home #navigation .module-card{padding:13px 9px 14px 16px;min-height:200px}
+  #accounts-home #navigation .module-copy small{font-size:10px}
+  #accounts-home .home-heading{padding:15px}
+}
+
+/* Job Card 360°: focused search, readable result cards, no verbose notes. */
+#accounts-workspace[data-report="jobs"] .filters{
+  grid-template-columns:minmax(0,2fr) auto auto;align-items:end;
+  background:#fff;border:1px solid #d3e5f4;border-radius:19px;
+  padding:clamp(12px,2vw,19px);box-shadow:0 8px 25px #204a7418;
+}
+#accounts-workspace[data-report="jobs"] .filters>label:first-child{font-size:13px;color:#3c5572}
+#accounts-workspace[data-report="jobs"] #refresh{
+  background:linear-gradient(120deg,#117bc9,#084f9b);border-color:#145c9f;
+  color:#fff;font-weight:800;box-shadow:0 4px 12px #155da522;
+}
+#accounts-workspace[data-report="jobs"] #clear{color:#194e80;background:#edf4fa;border-color:#c3d7e7}
+#accounts-workspace[data-report="jobs"]>.panel{
+  background:#fff;border:1px solid #d2e6f5;border-radius:24px;
+  box-shadow:0 10px 30px #133d6818;padding:clamp(14px,2.5vw,24px);
+}
+#accounts-workspace[data-report="jobs"]>.panel>.heading{
+  position:relative;border-bottom:1px solid #dbe9f5;padding:4px 2px 17px;margin-bottom:16px;
+}
+#accounts-workspace[data-report="jobs"] #title{font-size:clamp(22px,2.9vw,30px);font-weight:850;color:#0b2c58}
+#accounts-workspace[data-report="jobs"] #report-meta{color:#57708c}
+#accounts-workspace[data-report="jobs"] .heading .actions button{
+  border-radius:12px;background:linear-gradient(135deg,#fff,#eef7ff);
+  border-color:#c6dced;color:#154e81;min-height:42px;
+}
+#accounts-workspace[data-report="jobs"] #notes:empty{display:none}
+#accounts-workspace[data-report="jobs"] .jc360-results{display:grid;gap:14px}
+#accounts-workspace[data-report="jobs"] .jc360-result-card{
+  position:relative;overflow:hidden;background:linear-gradient(130deg,#fff,#f4faff);
+  border:1px solid #d3e4f3;border-radius:20px;padding:18px;
+  box-shadow:0 5px 16px #164b8311;
+}
+#accounts-workspace[data-report="jobs"] .jc360-result-card::before{
+  content:"";position:absolute;top:19px;left:0;width:5px;height:43px;
+  background:linear-gradient(#13bcc3,#087aa7);border-radius:0 5px 5px 0;
+}
+#accounts-workspace[data-report="jobs"] .jc360-result-header{
+  display:flex;align-items:flex-start;gap:10px;justify-content:space-between;
+  padding:0 0 14px 2px;flex-wrap:wrap;
+}
+#accounts-workspace[data-report="jobs"] .jc360-result-header strong{
+  display:block;font-size:19px;font-weight:850;color:#0b2d57;
+}
+#accounts-workspace[data-report="jobs"] .jc360-result-header small{
+  display:block;margin-top:5px;font-size:12px;line-height:1.35;color:#516b87;overflow-wrap:anywhere;
+}
+#accounts-workspace[data-report="jobs"] .jc360-job-type{
+  font-size:10px;font-weight:850;letter-spacing:.04em;text-transform:uppercase;
+  border-radius:30px;background:#e3f5ef;border:1px solid #c4e8db;
+  color:#126b57;padding:7px 11px;max-width:100%;overflow-wrap:anywhere;
+}
+#accounts-workspace[data-report="jobs"] .jc360-metrics{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;
+}
+#accounts-workspace[data-report="jobs"] .jc360-metric{
+  min-width:0;padding:17px;border:1px solid #d7eafa;border-radius:17px;
+  background:linear-gradient(115deg,#f4faff,#dff2ff);
+}
+#accounts-workspace[data-report="jobs"] .jc360-metric.is-profit{
+  background:linear-gradient(110deg,#f1fdfa,#def8ef);border-color:#caebde;
+}
+#accounts-workspace[data-report="jobs"] .jc360-metric small{
+  display:block;color:#36597e;font-size:12px;font-weight:700;margin-bottom:7px;
+}
+#accounts-workspace[data-report="jobs"] .jc360-metric strong{
+  font-size:clamp(16px,3.1vw,26px);line-height:1.25;letter-spacing:-.025em;
+  color:#082c55;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;
+}
+#accounts-workspace[data-report="jobs"] .jc360-metric.is-profit strong{color:#087957}
+#accounts-workspace[data-report="jobs"] .jc360-result-card .jc360-open{
+  margin-top:14px;width:100%;min-height:47px;
+  color:#fff;background:linear-gradient(110deg,#0d75bd,#0850a0);border:1px solid #0d59aa;
+  border-radius:14px;font-size:14px;font-weight:850;
+}
+#accounts-workspace[data-report="jobs"] .paging{margin-top:19px}
+@media(max-width:650px){
+  #accounts-workspace[data-report="jobs"] .filters{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px}
+  #accounts-workspace[data-report="jobs"] .filters>label:first-child{grid-column:1/-1}
+  #accounts-workspace[data-report="jobs"] #refresh,#accounts-workspace[data-report="jobs"] #clear{width:100%;min-height:45px}
+  #accounts-workspace[data-report="jobs"] .jc360-result-card{padding:15px}
+  #accounts-workspace[data-report="jobs"] .jc360-metric{padding:12px}
+  #accounts-workspace[data-report="jobs"] .jc360-metric strong{font-size:clamp(15px,4.5vw,21px)}
+}
+
+/* Financial 360° modal: two-column information tiles and compact expense accordions. */
+.financial-detail-dialog{
+  border:1px solid #b8d7eb;border-radius:24px;
+  background:#f9fcff;box-shadow:0 28px 86px #051e426b;
+}
+.financial-detail-dialog #detail.panel{
+  background:linear-gradient(180deg,#fff,#f7fbff);padding:clamp(13px,2.8vw,28px);
+}
+.financial-detail-dialog #detail>.heading{
+  border-bottom:1px solid #d4e4f1;padding-bottom:14px;margin-bottom:18px;gap:12px;
+}
+.financial-detail-dialog #financial-detail-title{
+  position:relative;padding-left:14px;color:#092956;
+  font-size:clamp(19px,2.6vw,27px);font-weight:850;letter-spacing:-.035em;
+}
+.financial-detail-dialog #financial-detail-title::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:5px;border-radius:6px;background:#0bb4bd;
+}
+.financial-detail-dialog .detail-actions{gap:7px}
+.financial-detail-dialog .detail-actions button{
+  background:linear-gradient(125deg,#fff,#ecf7fe);border-color:#c1dcf0;
+  color:#11528d;min-height:41px;border-radius:11px;
+}
+.financial-detail-dialog #close-detail{
+  background:linear-gradient(120deg,#167cc7,#07509d);border-color:#0b64b4;color:#fff;font-weight:800;
+}
+.financial-detail-dialog .detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.financial-detail-dialog .detail-value{
+  min-width:0;position:relative;padding:clamp(12px,1.8vw,18px);
+  border:1px solid #d5e7f7;border-radius:17px;
+  background:linear-gradient(125deg,#f5faff,#e5f3ff);
+}
+.financial-detail-dialog .detail-value.is-money{
+  background:linear-gradient(125deg,#eff9ff,#def1fe);
+}
+.financial-detail-dialog .detail-value.is-positive{
+  background:linear-gradient(125deg,#f0fcf8,#d9f5ec);border-color:#d0eadd;
+}
+.financial-detail-dialog .detail-value.is-loss{
+  background:linear-gradient(125deg,#fff8f7,#ffebea);border-color:#f1ccca;
+}
+.financial-detail-dialog .detail-value.is-status{
+  background:linear-gradient(125deg,#fff9ed,#fff0ce);border-color:#efdcab;
+}
+.financial-detail-dialog .detail-value small{font-size:clamp(11px,1.15vw,13px);line-height:1.4;color:#455f7d;margin-bottom:6px}
+.financial-detail-dialog .detail-value strong{
+  display:block;font-size:clamp(15px,2vw,23px);font-weight:850;line-height:1.3;
+  color:#112c4d;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;
+}
+.financial-detail-dialog .detail-value.is-positive strong{color:#057957}
+.financial-detail-dialog .detail-value.is-loss strong{color:#b12f46}
+.financial-detail-dialog #detail h3{
+  margin:23px 0 13px;font-size:clamp(15px,1.7vw,19px);color:#112e52;
+}
+.financial-detail-dialog .expense-breakdowns{display:grid;gap:10px;margin:12px 0}
+.financial-detail-dialog .expense-breakdown{
+  border:1px solid #d3e5f2;border-radius:17px;
+  background:#fff;box-shadow:0 4px 13px #174c7810;
+}
+.financial-detail-dialog .expense-breakdown summary{
+  display:flex;justify-content:space-between;gap:9px;padding:14px;align-items:center;color:#0d2c51;
+}
+.financial-detail-dialog .expense-breakdown .expense-label{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.financial-detail-dialog .expense-glyph{
+  display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;
+  border-radius:12px;background:#e0f2fc;color:#0b73b2;font-size:20px;
+}
+.financial-detail-dialog .expense-amount{
+  background:#e7f4ff;padding:9px 11px;border-radius:11px;color:#123a68;
+  font-size:clamp(12px,1.6vw,17px);white-space:nowrap;
+}
+.financial-detail-dialog .expense-chevron{font-size:19px;color:#3c587a}
+.financial-detail-dialog .expense-breakdown[open]{
+  background:#f6fcff;border-color:#8acbdc;
+}
+.financial-detail-dialog .expense-lines{background:#fff;border-top:1px solid #d6e6f0}
+.financial-detail-dialog .financial-status-note{
+  margin:16px 0 2px;padding:10px 12px;background:#fff8e9;
+  border:1px solid #efd9a7;border-radius:12px;color:#6e4c0a;font-size:12px;
+}
+@media(max-width:650px){
+  .financial-detail-dialog{width:calc(100vw - 12px);max-height:94dvh;border-radius:18px}
+  .financial-detail-dialog #detail.panel{padding:13px}
+  .financial-detail-dialog .detail-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .financial-detail-dialog .detail-value{padding:12px 10px;border-radius:13px}
+  .financial-detail-dialog .detail-value strong{font-size:clamp(14px,3.8vw,18px)}
+  .financial-detail-dialog .detail-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%;gap:6px}
+  .financial-detail-dialog .detail-actions button{min-height:40px;padding:8px 4px;font-size:11px;white-space:normal;overflow-wrap:anywhere}
+  .financial-detail-dialog .expense-breakdown summary{padding:11px;gap:7px}
+  .financial-detail-dialog .expense-label{font-size:clamp(12px,3.4vw,14px)}
+  .financial-detail-dialog .expense-glyph{flex-basis:32px;width:32px;height:32px;font-size:17px}
+  .financial-detail-dialog .expense-amount{padding:7px;font-size:clamp(12px,3.4vw,15px)}
 }
