@@ -1,5 +1,6 @@
 import {day,key,milli,searchKey} from './finance_rules.js';
 import {managerProfitReport} from './profit_performance.js';
+import {availablePartsListCost} from './accounts_parts_cost.js';
 const array=v=>Array.isArray(v)?v:[];
 const money=v=>v===null?null:v/1000;
 const numeric=v=>milli(v);
@@ -36,9 +37,28 @@ export function accountsPerformanceReport(context,financial,filters={},now=Date.
   (!filters.customer||['CREDIT','CORPORATE'].includes(r.kind)&&key(r.company_name||r.customer)===key(filters.customer))&&
   matches([r.job_card,r.registration,r.vehicle,r.customer,r.company_name].join(' '),filters.query));
  const withoutLabour=filters.labour_mode==='without';
+ const byJob=new Map(),adjustmentsByJob=new Map();
+ for(const part of array(financial.rows?.parts)){
+  const no=key(part.job_card),list=byJob.get(no)||[];list.push(part);byJob.set(no,list);
+ }
+ for(const entry of array(context.entries)){
+  if(entry?.kind!=='COST_ADJUSTMENT'||key(entry.category)!=='PARTS')continue;
+  const no=key(entry.job_card),list=adjustmentsByJob.get(no)||[];
+  list.push(entry);adjustmentsByJob.set(no,list);
+ }
+ const calculate=(row,values,excludeLabour)=>{
+  const keys=excludeLabour?['paint','consumables','parts','sublet']:['labour','paint','consumables','parts','sublet'];
+  const portions=keys.map(k=>numeric(values[k])),invoice=numeric(row.amount_omr);
+  const cost=portions.includes(null)?null:portions.reduce((n,v)=>n+v,0);
+  const profit=cost===null||invoice===null?null:invoice-cost;
+  return {cost:money(cost),profit:money(profit),percentage:profit===null||invoice===0?null:Math.round(profit/invoice*10000)/100};
+ };
  const rows=selected.map((r,index)=>{
-  const c=r.cost_breakdown_omr||{};
-  const alternative=withoutLabour?profitWithoutLabour(r,{...c,sublet:r.sublet_cost_omr}):null;
+  const c=r.cost_breakdown_omr||{},no=key(r.job_card),sourceLines=byJob.get(no)||[];
+  const partsList=sourceLines.length?availablePartsListCost(sourceLines,c.parts,adjustmentsByJob.get(no)||[]):null;
+  const costFields={...c,parts:partsList?partsList.cost_omr:c.parts,sublet:r.sublet_cost_omr};
+  const changedParts=partsList!==null&&numeric(partsList.cost_omr)!==numeric(c.parts);
+  const alternative=withoutLabour||changedParts?calculate(r,costFields,withoutLabour):null;
   const effectiveCost=alternative?alternative.cost:r.total_cost_omr;
   const effectiveProfit=alternative?alternative.profit:r.profit_omr;
   const effectivePercentage=alternative?alternative.percentage:r.profit_percentage;
@@ -47,7 +67,12 @@ export function accountsPerformanceReport(context,financial,filters={},now=Date.
    labour_cost_omr:c.labour??null,
    paint_cost_omr:c.paint??null,
    consumables_cost_omr:c.consumables??null,
-   parts_cost_omr:c.parts??null,
+   parts_cost_omr:costFields.parts??null,
+   parts_cost_source:partsList?.source||'',
+   parts_cost_estimated:partsList?.provisional===true,
+   parts_price_pending:partsList?.pending===true,
+   parts_list_items:partsList?.items??0,
+   cost_notes:partsList?[...new Set([...(r.cost_notes||[]).filter(n=>!String(n).toLowerCase().includes('parts')&&!String(n).toLowerCase().includes('spare')),partsList.source])]:r.cost_notes,
    sublet_cost_omr:r.sublet_cost_omr??null,
    total_job_cost_omr:effectiveCost??null,
    invoice_amount_omr:r.amount_omr,
@@ -64,8 +89,8 @@ export function accountsPerformanceReport(context,financial,filters={},now=Date.
   rows,facets,period_month:month,labour_mode:withoutLabour?'without':'with',
   summary:{records:rows.length,revenue_omr:money(revenue),total_cost_omr:money(cost),
    profit_omr:money(profit),profit_percentage:profit===null||revenue===0?null:profit/revenue*100,
-   pending_cost_records:pending},
-  notes:[...(withoutLabour?['Without Labour mode: labour expense is excluded from job cost and profit/loss calculations, but recorded labour is unchanged.']:[]),'Invoice and LPO amounts are not additional receipt entries.','Profit excludes overheads and unmodeled tax adjustments.','Pending expenses cannot be treated as zero.']
+   pending_cost_records:pending,estimated_parts_jobs:rows.filter(r=>r.parts_cost_estimated).length},
+  notes:[...(withoutLabour?['Without Labour mode: labour expense is excluded from job cost and profit/loss calculations, but recorded labour is unchanged.']:[]),'Invoice and LPO amounts are not additional receipt entries.','Profit excludes overheads and unmodeled tax adjustments.','Recorded Parts List purchase prices count toward their linked Job Card profit; unreceived items are estimates and missing prices remain Pending.','Pending expenses cannot be treated as zero.']
  };
 }
 
