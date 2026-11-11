@@ -24,7 +24,7 @@ android {
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
         versionCode 357
         versionName "V394" // Approved Accounts two-column UI and verified partial-priced job costing.
-        // V394 acceptance source: verified 320–1280px Accounts layout and protected API cost checks.
+        // V394 acceptance source: verified 320–1280px Accounts layout, current notification cache and protected API cost checks.
         // V393: dedicated Accountant UI/Profit toggle candidate; release only after coordinated backend checks.
         // V393 exact-source Acceptance: Accounts reports + financial popup + hours/minutes.
         // Browser acceptance re-run with package-mirror-independent Playwright setup.
