@@ -218,3 +218,21 @@ header{background:#ffffffcc;border:1px solid #fff;border-radius:22px;padding:17p
  .cash-entry-dialog .cash-entry-form{padding:15px}
  .cash-entry-dialog .form-grid{grid-template-columns:1fr}
 }
+
+
+/* Accounts redesign: accessible action-first daily financial navigation. */
+#accounts-home .accounts-flow{margin:8px 0 22px}
+#accounts-home .accounts-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+#accounts-home .accounts-shortcut{--shortcut:#0c776c;--soft:#e6f6f1;display:flex;align-items:center;gap:12px;text-align:left;min-height:96px;padding:18px;border:1px solid #d3e3e9;border-radius:17px;background:linear-gradient(135deg,#fff,var(--soft));color:#173952;box-shadow:0 5px 16px #1739520d}
+#accounts-home .accounts-shortcut:hover{border-color:var(--shortcut);box-shadow:0 8px 20px #1739521c}
+#accounts-home .accounts-shortcut:focus-visible{outline:3px solid #1383ce;outline-offset:3px}
+#accounts-home .shortcut-icon{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;background:#fff;border:1px solid color-mix(in srgb,var(--shortcut) 18%,white);border-radius:13px;font-size:25px;color:var(--shortcut)}
+#accounts-home .shortcut-copy{display:grid;gap:5px;min-width:0;flex:1}
+#accounts-home .shortcut-copy strong{font-size:15px;line-height:1.25;color:#173952}
+#accounts-home .shortcut-copy small{font-size:11px;line-height:1.4;font-weight:550;color:#557186}
+#accounts-home .shortcut-arrow{color:var(--shortcut);font-size:19px;align-self:flex-start}
+#accounts-home .shortcut-out{--shortcut:#32669b;--soft:#e8f0ff}
+#accounts-home .shortcut-pending{--shortcut:#956b25;--soft:#fff1d8}
+@media(max-width:900px){#accounts-home .accounts-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:550px){#accounts-home .accounts-flow{margin:6px 0 17px}#accounts-home .accounts-shortcuts{grid-template-columns:1fr;gap:8px}#accounts-home .accounts-shortcut{min-height:76px;padding:12px 14px;border-radius:13px}#accounts-home .shortcut-icon{width:40px;height:40px;flex-basis:40px;font-size:23px}#accounts-home .shortcut-copy strong{font-size:14px}}
+@media(prefers-reduced-motion:reduce){#accounts-home .accounts-shortcut{transition:none}}
