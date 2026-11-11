@@ -16,7 +16,7 @@ const rows=[
 ];
 for(const title of ['Cash In','Insurance Invoiced','Profit / Loss','Leave Management','Job Card 360°']){
  const report=exports.html(title,columns,rows,'{"month":"2026-11","kind":"CASH"}',{cleanPrint:true});
- assert.match(report,new RegExp(title.replace(/[.*+?^$()|[\]{}]/g,'\\$&')));
+ assert.ok(report.includes(title),'printed page heading includes '+title);
  assert.match(report,/Labour OMR/);
  assert.match(report,/Net Profit \/ Loss OMR/);
  assert.doesNotMatch(report,/kind&quot;|month&quot;|Revenue ≠|Purchases ≠|Estimated gross profit ≠/,'no filter JSON or descriptions in print');
