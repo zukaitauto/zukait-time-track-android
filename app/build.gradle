@@ -23,7 +23,8 @@ android {
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
         versionCode 358
-        versionName "V395" // Approved Accounts two-column UI and verified partial-priced job costing.
+        versionName "V395" // Accounts: concise Profit/Loss summary with verified financial flags.
+        // V395 exact-source verification: concise Profit/Loss UI, unchanged Accountant backend.
         // V394 acceptance source: verified 320–1280px Accounts layout, current notification cache and protected API cost checks.
         // V393: dedicated Accountant UI/Profit toggle candidate; release only after coordinated backend checks.
         // V393 exact-source Acceptance: Accounts reports + financial popup + hours/minutes.
