@@ -73,6 +73,7 @@ export async function accountantApi(admin,user,body,secret,now=Date.now()){
   const profit=total!==null&&milli(amount)!==null?(milli(amount)-milli(total))/1000:null;
   const detail={...d,sublet_cost_omr:p?.sublet_cost_omr??subletCost,job_total_cost_omr:total,job_invoice_amount_omr:amount??null,job_profit_omr:profit,job_profit_percentage:profit===null||!milli(amount)?null:profit/Number(amount)*100};
   const breakdown=Object.fromEntries(['consumables','paint','parts','labour'].map(k=>[k,full.rows[k].filter(r=>r.job_card===d.job_card)]));
+  breakdown.labour=breakdown.labour.flatMap(line=>Array.isArray(line.employee_lines)?line.employee_lines:[line]);
   breakdown.sublet=sublets;
   return {status:200,body:{ok:true,detail,breakdown,snapshot_revision:full.snapshot_revision,finance_revision:full.finance_revision}};
  }
