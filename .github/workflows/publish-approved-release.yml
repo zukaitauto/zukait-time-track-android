@@ -4,6 +4,14 @@ on:
   # Publishing a staff APK is an explicit action, never a side effect of a
   # release-request edit, QA push, or a commit on main.
   workflow_dispatch:
+    inputs:
+      publication_mode:
+        description: 'Protected publication mode (preview never changes staff release)'
+        type: choice
+        default: coordinated-release
+        options:
+          - coordinated-release
+          - accounts-visual-preview
 
 permissions:
   contents: write
@@ -17,7 +25,7 @@ concurrency:
 
 jobs:
   release:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/architecture-v2'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/architecture-v2' && inputs.publication_mode != 'accounts-visual-preview'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -483,3 +491,65 @@ jobs:
             coordinated-*.json
           if-no-files-found: warn
           retention-days: 90
+
+  accounts-visual-preview:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+      actions: read
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/architecture-v2' && inputs.publication_mode == 'accounts-visual-preview'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment:
+      name: github-pages
+      url: https://zukaitauto.github.io/zukait-time-track-android/previews/accounts-cash-invoices/
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Verify owner scope and immutable successful source provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          node scripts/accounts-preview/approval.cjs
+          SOURCE=$(jq -r .sourceCommit accounts-web-preview-request.json)
+          git merge-base --is-ancestor "$SOURCE" "$GITHUB_SHA"
+          test "$(git rev-parse origin/architecture-v2)" = "$GITHUB_SHA"
+          git diff --exit-code "$SOURCE" "$GITHUB_SHA" -- app supabase package.json package-lock.json
+          for KIND in accountant signed; do
+            RUN=$(jq -r ".verificationRuns.$KIND" accounts-web-preview-request.json)
+            EXPECTED='.github/workflows/accountant-qa.yml'
+            if [ "$KIND" = signed ]; then EXPECTED='.github/workflows/build-signed-acceptance.yml'; fi
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN" | jq -e --arg source "$SOURCE" --arg path "$EXPECTED" '.head_sha == $source and .head_branch == "architecture-v2" and .path == $path and .conclusion == "success"'
+          done
+      - run: npm ci --ignore-scripts --include=dev
+      - run: npx playwright install --with-deps chromium
+      - name: Qualify additive preview and no-production-write boundary
+        run: |
+          mkdir -p artifacts/accounts-preview
+          node scripts/accounts-preview/data.mjs
+          python3 tests/accounts-web-preview.py
+          python3 scripts/accounts-preview/site.py prepare
+          node tests/accounts-web-preview-browser.mjs
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+      - name: Deploy protected additive preview only
+        uses: actions/deploy-pages@v4
+      - name: Verify preview and preserved workshop assets live
+        run: |
+          python3 scripts/accounts-preview/site.py verify
+          ACCOUNTS_PREVIEW_LIVE=true node tests/accounts-web-preview-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: accounts-web-preview-evidence
+          path: artifacts/accounts-preview/
+          retention-days: 14
