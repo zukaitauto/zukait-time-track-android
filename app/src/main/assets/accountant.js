@@ -165,7 +165,7 @@ async function load(){
   $('title').textContent=modules.find(m=>m[0]===report)?.[1]||report;
   $('report-meta').textContent='As of '+new Date(r.as_of).toLocaleString('en-GB',{timeZone:'Asia/Muscat'})+' Oman time'+(report==='leave'?' · '+r.summary.leave_total_days+' leave days':'');
   $('notes').textContent=report==='leave'?'Read-only Manager leave history. Cancelled leave does not count in leave days.':(r.notes||[]).join(' ');
-  $('rows').innerHTML=!searching?'<p>Search by Job Card or registration number (at least 2 characters), then click to open financial details.</p>':
+  $('rows').innerHTML=!searching?'<p>Search for a job card or registration number (at least 2 characters), then click to open financial details.</p>':
    r.rows.length?(finance?renderPerformanceTable(r.rows):table(r.rows,columns[report],report==='jobs')):
    '<p>No matching records in the selected period. Missing costs are not counted as zero.</p>';
   $('previous').parentElement.hidden=!searching;
