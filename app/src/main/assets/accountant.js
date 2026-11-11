@@ -16,7 +16,7 @@ columns.cash=financialColumns;
 columns.insurance_invoiced=[...financialColumns.slice(0,4),['Insurance Company','insurance_company'],...financialColumns.slice(4)];
 columns.profit=[...financialColumns.slice(0,4),['Category','kind'],['Company / Customer','company_name'],...financialColumns.slice(4)];
 columns.leave=[['Employee','employee'],['Date','date'],['Leave','period_label'],['Status','approval_status'],['Days','days'],['Remark','remark'],['Marked By','marked_by'],['Cancellation By','cancelled_by'],['Cancellation Reason','cancel_reason']];
-let user=null,report='jobs',offset=0,next=null,result=null,generation=0,detailGeneration=0,busy=false,target=null,verified=false;
+let user=null,report='jobs',labourMode='with',offset=0,next=null,result=null,generation=0,detailGeneration=0,busy=false,target=null,verified=false;
 const saved=()=>{try{return JSON.parse(localStorage.getItem(sessionKey)||'null')}catch{return null}};
 const token=()=>{const s=saved();if(!s||s.user?.id!==user?.id||s.user?.role!==user?.role||!['Accountant','Manager'].includes(s.user?.role)){invalidate();throw Error('ACCOUNT_CHANGED');}return String(s.token||window.AndroidBridge?.getSecureSessionToken?.()||'')};
 let billClient=null,billBlocked=false,financialLockKey=null,billReview=null;
@@ -62,7 +62,7 @@ function filters(){
  const out=Object.fromEntries(used.map(k=>[k,$(k).value.trim()]).filter(([,v])=>v));
  if(report==='cash')out.kind='CASH';
  if(report==='insurance_invoiced')out.kind='INSURANCE';
- if(report==='profit')out.kind=$('category-filter').value||'ALL';
+ if(report==='profit'){out.kind=$('category-filter').value||'ALL';out.labour_mode=labourMode;}
  if(['insurance_invoiced','profit'].includes(report)&&$('insurance-company').value)out.insurance=$('insurance-company').value;
  if(report==='profit'&&$('customer-filter').value)out.customer=$('customer-filter').value;
  if(report==='leave')out.status=$('leave-status').value;
@@ -119,8 +119,21 @@ function closeCashDialog(){
 }
 
 const performanceReports=new Set(['cash','insurance_invoiced','profit']);
+function reportColumns(name=report,mode=labourMode){
+ return name==='profit'&&mode==='without'?columns[name].map(c=>c[1]==='labour_cost_omr'?['Labour OMR (excluded)',c[1],c[2]]:c):columns[name];
+}
+function updateLabourModeControls(){
+ const active=report==='profit';
+ $('profit-labour-toggle').hidden=!active;
+ for(const [mode,id] of [['with','profit-with-labour'],['without','profit-without-labour']]){
+  $(''+id).setAttribute('aria-pressed',String(active&&labourMode===mode));
+ }
+ $('profit-labour-help').textContent=labourMode==='without'?
+  'Labour is excluded from job cost and profit calculations; source labour expenses remain unchanged.':
+  'Labour is included in job cost and profit calculations.';
+}
 function renderPerformanceTable(rows){
- const cols=columns[report],costKeys=new Map([
+ const cols=reportColumns(),costKeys=new Map([
   ['labour_cost_omr','labour'],['paint_cost_omr','paint'],
   ['consumables_cost_omr','consumables'],['parts_cost_omr','parts'],['sublet_cost_omr','sublet']
  ]);
@@ -150,14 +163,15 @@ function showFinancialSummary(data){
  $('cash-invoice-total-count').textContent=String(summary.records||0)+' Job Cards';
  $('cash-invoice-total-period').textContent=data.period_month||($('from').value||$('to').value?'Selected period':'Current month');
  $('accounts-report-total-caption').textContent='Final invoice / LPO value; not a duplicate payment receipt';
+ const withoutLabour=report==='profit'&&labourMode==='without';
  const figures=[
-  ['Total Job Cost',summary.total_cost_omr,true],
-  ['Profit / Loss',summary.profit_omr,true],
-  ['Profit Percentage',summary.profit_percentage,false],
+  [withoutLabour?'Total Job Cost (excl. Labour)':'Total Job Cost',summary.total_cost_omr,true],
+  [withoutLabour?'Profit / Loss (excl. Labour)':'Profit / Loss',summary.profit_omr,true],
+  [withoutLabour?'Profit % (excl. Labour)':'Profit Percentage',summary.profit_percentage,false],
   ['Pending Cost Jobs',summary.pending_cost_records||0,false]
  ];
  area.innerHTML=figures.map(([label,value,currency])=>'<div class="accounts-kpi"><small>'+esc(label)+'</small><b class="'+(label==='Profit / Loss'&&value!==null?(Number(value)<0?'negative':'positive'):'')+'">'+
-  (currency?esc(display(value,true)):label==='Profit Percentage'?(value===null?'Pending / —':Number(value).toFixed(2)+'%'):esc(value))+'</b></div>').join('');
+  (currency?esc(display(value,true)):label.startsWith('Profit %')||label==='Profit Percentage'?(value===null?'Pending / —':Number(value).toFixed(2)+'%'):esc(value))+'</b></div>').join('');
  if(data.facets){
   fillSelect('insurance-company',data.facets.insurance||[],'All Insurance Companies');
   fillSelect('customer-filter',[...(data.facets.credit||[]),...(data.facets.corporate||[])].filter((s,i,a)=>a.indexOf(s)===i),'All Credit / Corporate Customers');
@@ -177,6 +191,7 @@ async function load(){
   const finance=performanceReports.has(report);
   $('cash-entry').hidden=report!=='cash';$('cash-entry').disabled=false;
   $('cash-ledger-toggle').hidden=true;
+  updateLabourModeControls();
   showFinancialSummary(r);
   if(report==='leave'&&r.facets?.employees){
    const staff=$('employee'),selected=staff.value;
@@ -219,14 +234,14 @@ function filterVisibility(){
 }
 function switchReport(name){
  if(!modules.some(m=>m[0]===name))return;
- report=name;offset=0;$('accounts-workspace').dataset.report=name;
+ report=name;labourMode='with';offset=0;$('accounts-workspace').dataset.report=name;
  $('accounts-home').hidden=true;$('accounts-workspace').hidden=false;closeCashDialog();
  for(const id of ['query','month','from','to','employee','material','insurance'])$(id).value='';
  for(const id of ['insurance-company','customer-filter'])$(id).value='';
  $('category-filter').value='ALL';$('leave-status').value='active';
  if(performanceReports.has(name))$('month').value=omanMonth();
  $('module-label').textContent=modules.find(m=>m[0]===name)[1];
- filterVisibility();closeDetail();load();
+ updateLabourModeControls();filterVisibility();closeDetail();load();
  $('accounts-workspace').scrollIntoView?.({block:'start',behavior:'smooth'});
 }
 $('accounts-back').onclick=showHome;
