@@ -1,4 +1,4 @@
-name: Dispatch owner-approved Accountant publication
+name: Dispatch owner-approved Accountant or Mechanical UI publication
 on:
   push:
     branches: [architecture-v2]
@@ -44,6 +44,10 @@ jobs:
             RUN=$(jq -r ".$FIELD" release-request.json)
             gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN" | jq -e --arg sha "$SOURCE" --arg path ".github/workflows/$WORKFLOW" '.head_sha==$sha and .head_branch=="architecture-v2" and .path==$path and .conclusion=="success"'
           done
+          if [ "$(jq -r .releaseScope release-request.json)" = "mechanical-ui-test" ]; then
+            RUN=$(jq -r .mechanicalVerificationRun release-request.json)
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN" | jq -e --arg sha "$SOURCE" '.head_sha==$sha and .head_branch=="architecture-v2" and .path==".github/workflows/mechanical-phone-qa.yml" and .conclusion=="success"'
+          fi
           # Dispatch retains every existing publisher check, signed-byte and
           # Pages/APK/updater verification gate. It does not publish directly.
           gh workflow run publish-approved-release.yml --ref architecture-v2
