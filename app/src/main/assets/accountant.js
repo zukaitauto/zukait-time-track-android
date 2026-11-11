@@ -155,12 +155,13 @@ function renderPerformanceTable(rows){
   const k=c[1],val=r[k],formatted=esc(k==='percentage'?(val===null||val===undefined?'—':Number(val).toFixed(2)+'%'):display(val,c[2]));
   if(k==='job_card')return '<td data-label="'+esc(c[0])+'"><button type="button" class="jc-link" data-job="'+esc(r.job_card)+'">'+formatted+'</button></td>';
   if(costKeys.has(k)){
-   const estimate=k==='parts_cost_omr'&&r.parts_cost_estimated===true;
-   const hint=estimate?' Parts List entered price (includes unreceived quantities; estimated cost)':'';
+   const estimate=k==='parts_cost_omr'&&r.parts_cost_estimated===true||k==='consumables_cost_omr'&&r.consumables_cost_estimated===true;
+   const hint=estimate?(r.cost_partial?' Partial: unpriced items excluded from known expense total.':' Priced but unreceived parts are provisional.'):'';
    return '<td data-label="'+esc(c[0])+'" class="number"><button type="button" class="expense-link" data-job="'+esc(r.job_card)+'" data-expense="'+costKeys.get(k)+'" title="'+esc(hint.trim())+'" aria-label="View '+esc(c[0])+' details for JC '+esc(r.job_card)+esc(hint)+'">'+formatted+(estimate?'*':'')+'</button></td>';
   }
   const sign=k==='net_profit_omr'?(val===null?'pending':Number(val)<0?'loss':'profit'):'';
-  return '<td data-label="'+esc(c[0])+'" class="'+(c[2]?'number ':'')+sign+'">'+formatted+'</td>';
+  const estimate=['total_job_cost_omr','net_profit_omr','percentage'].includes(k)&&r.cost_estimated===true;
+  return '<td data-label="'+esc(c[0])+'" class="'+(c[2]?'number ':'')+sign+'" title="'+(estimate?'Provisional: missing item prices are excluded or parts not yet received':'')+'">'+formatted+(estimate?'*':'')+'</td>';
  }).join('')+'</tr>').join('')+'</tbody></table></div>';
 }
 function fillSelect(id,values,allLabel){
@@ -187,7 +188,8 @@ function showFinancialSummary(data){
   ['Pending Cost Jobs',summary.pending_cost_records||0,false]
  ];
  area.innerHTML=figures.map(([label,value,currency])=>'<div class="accounts-kpi"><small>'+esc(label)+'</small><b class="'+(label==='Profit / Loss'&&value!==null?(Number(value)<0?'negative':'positive'):'')+'">'+
-  (currency?esc(display(value,true)):label.startsWith('Profit %')||label==='Profit Percentage'?(value===null?'Pending / —':Number(value).toFixed(2)+'%'):esc(value))+'</b></div>').join('');
+  (currency?esc(display(value,true)):label.startsWith('Profit %')||label==='Profit Percentage'?(value===null?'Pending / —':Number(value).toFixed(2)+'%'):esc(value))+
+  ((summary.partial_cost_records||0)>0&&label!=='Pending Cost Jobs'?'*':'')+'</b></div>').join('');
  if(data.facets){
   fillSelect('insurance-company',data.facets.insurance||[],'All Insurance Companies');
   fillSelect('customer-filter',[...(data.facets.credit||[]),...(data.facets.corporate||[])].filter((s,i,a)=>a.indexOf(s)===i),'All Credit / Corporate Customers');
@@ -290,7 +292,7 @@ function expenseBreakdowns(b,d,preferredType=''){
 }
 function financialDocument(detail,breakdown,cleanPrint=false){
  const format=(k)=>esc(cleanPrint?display(detail[k],true).replace(/^OMR /,''):display(detail[k],true));
- const amounts=expenseSpecs.map(([type,name,k])=>'<tr><th>'+esc(name+(detail.labour_excluded&&type==='labour'?' (excluded from profit)':'')+(type==='parts'&&detail.parts_cost_estimated?' (Parts List estimated)':''))+'</th><td>'+format(k)+'</td></tr>').join('');
+ const amounts=expenseSpecs.map(([type,name,k])=>'<tr><th>'+esc(name+(detail.labour_excluded&&type==='labour'?' (excluded from profit)':'')+(type==='parts'&&detail.parts_cost_estimated?' (Parts List estimated)':'')+(type==='consumables'&&detail.consumables_cost_estimated?' (Partial)':''))+'</th><td>'+format(k)+'</td></tr>').join('');
  const pieces=expenseSpecs.map(([type,title])=>'<h3>'+esc(title)+'</h3>'+((breakdown[type]||[]).length?table(breakdown[type],drilldownColumns[type],false,cleanPrint):'<p>No finalized source lines</p>')).join('');
  const income=detail.job_invoice_amount_omr??detail.invoice_amount_omr;
  return '<!doctype html><html><head><meta charset="utf-8"><title>JC '+esc(detail.job_card)+' Financial 360</title><style>body{font:12px/1.5 Arial,sans-serif;color:#20354b;margin:20px}table{border-collapse:collapse;width:100%;margin:8px 0 18px}th,td{border:1px solid #d1dce7;padding:8px;text-align:left}th{background:#eaf2fb}h2,h3{page-break-after:avoid}.table-wrap{overflow:visible}small{font-size:10px}</style></head><body>'+
@@ -300,7 +302,8 @@ function financialDocument(detail,breakdown,cleanPrint=false){
  '<table>'+amounts+'<tr><th>'+(detail.labour_excluded?'Total Job Cost (Without Labour)':'Total Job Cost')+'</th><td>'+format('job_total_cost_omr')+'</td></tr>'+
  '<tr><th>Invoice / LPO Amount</th><td>'+esc(cleanPrint?display(income,true).replace(/^OMR /,''):display(income,true))+'</td></tr>'+
  '<tr><th>Profit / Loss</th><td>'+format('job_profit_omr')+'</td></tr></table>'+
- pieces+(cleanPrint?'':'<p>Amounts in OMR. '+(detail.labour_excluded?'Labour expense is excluded from the Profit / Loss calculation, but the recorded labour expense is unchanged. ':'')+'Estimated job-level profit excludes general overheads. Pending amounts are not zero.</p>')+'</body></html>';
+ pieces+(detail.cost_partial?'<p><strong>PARTIAL ESTIMATE:</strong> Only available item prices are included. Missing material/parts prices are excluded, not assumed zero. The shown profit may decrease as prices are added.</p>':'')+
+ (cleanPrint?'':'<p>Amounts in OMR. '+(detail.labour_excluded?'Labour expense is excluded from the Profit / Loss calculation, but the recorded labour expense is unchanged. ':'')+'Estimated job-level profit excludes general overheads. Pending amounts are not zero.</p>')+'</body></html>';
 }
 async function exportJob(kind){
  if(!target?.detail||busy)return;
@@ -313,7 +316,8 @@ async function exportJob(kind){
    const records=[...expenseSpecs.map(([type,label,k])=>({category:label+(d.labour_excluded&&type==='labour'?' (excluded)':''),details:'Category total',amount_omr:d[k]})),
     {category:d.labour_excluded?'Total Job Cost (Without Labour)':'Total Job Cost',details:'',amount_omr:d.job_total_cost_omr},
     {category:'Invoice / LPO',details:'',amount_omr:d.job_invoice_amount_omr},
-    {category:'Profit / Loss',details:'',amount_omr:d.job_profit_omr}];
+    {category:'Profit / Loss',details:'',amount_omr:d.job_profit_omr},
+    {category:'Cost status',details:d.cost_partial?'PARTIAL — missing item prices excluded':d.cost_estimated?'PROVISIONAL — unreceived parts':d.costs_complete?'COMPLETE':'PENDING',amount_omr:null}];
    for(const [type,label] of expenseSpecs)for(const line of breakdown[type]||[])records.push({category:label,details:[line.material,line.part,line.description,line.supplier,line.employee_name,line.normal_hours,line.quantity].filter(v=>v!==undefined&&v!==null).join(' · '),amount_omr:line.cost_omr??line.net_cost_omr??line.labour_cost_omr??null});
    const xml=window.zukaitAccountantExports.spreadsheet('JC '+d.job_card+' Financial 360',[['Category','category'],['Details','details'],money('OMR','amount_omr')],records);
    if(window.AndroidBridge?.saveExportFile){const bytes=new TextEncoder().encode(xml);let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);window.AndroidBridge.saveExportFile(name+'.xml','application/vnd.ms-excel',btoa(binary));}
@@ -335,7 +339,9 @@ async function openJob(no,expandType='',trigger=null){
     job_invoice_amount_omr:selectedRow.invoice_amount_omr,
     job_profit_omr:selectedRow.net_profit_omr,
     job_profit_percentage:selectedRow.percentage,
-    labour_excluded:true};
+    labour_excluded:true,cost_partial:selectedRow.cost_partial,cost_estimated:selectedRow.cost_estimated,
+    costs_complete:selectedRow.costs_complete,consumables_cost_omr:selectedRow.consumables_cost_omr,
+    parts_cost_omr:selectedRow.parts_cost_omr};
   }
   target={...r,detail:d};
   const amount=d.job_invoice_amount_omr??d.invoice_amount_omr;
@@ -347,11 +353,12 @@ async function openJob(no,expandType='',trigger=null){
    '<button type="button" id="job-pdf">PDF</button><button type="button" id="job-excel">Excel</button><button type="button" id="job-print">Print</button>'+
    '<button type="button" id="close-detail">Back to report</button></div></div>'+
    '<div class="detail-grid">'+[
+    ...(d.cost_partial?[['Cost status','PARTIAL — MISSING ITEM PRICES']]:d.cost_estimated?[['Cost status','PROVISIONAL']]:[]),
     ...(d.labour_excluded?[['Calculation Mode','WITHOUT LABOUR']]:[]),['Registration',d.registration],['Vehicle',d.vehicle],['Job Type',d.job_type],['Insurance Company / Cash',d.insurance_company||d.job_type],['Invoice / LPO Amount',display(amount,true)],['Total Job Cost',display(cost,true)],
     [d.labour_excluded?'Profit / Loss without Labour':resultLabel,display(profit,true)],['Profit %',d.job_profit_percentage===null?'Pending':Number(d.job_profit_percentage).toFixed(2)+'%']
    ].map(([label,v])=>'<div class="detail-value"><small>'+esc(label)+'</small><strong>'+esc(v??'—')+'</strong></div>').join('')+
    '</div><h3>'+(expandType?'Selected expense details · '+esc(expandType.charAt(0).toUpperCase()+expandType.slice(1)):'Click any expense to open source details')+'</h3>'+expenseBreakdowns(r.breakdown||{},d,expandType)+
-   '<p class="notice">'+(d.parts_cost_estimated?'Parts List price includes unreceived items — profit is provisional. · ':d.parts_price_pending?'Some Parts List purchase prices are missing — profit remains Pending. · ':'')+(d.labour_excluded?'Labour excluded from this profit calculation; recorded labour remains unchanged. · ':'')+esc((d.warnings||[]).join(' · ')||'Estimated profit excludes general workshop overheads.')+'</p>';
+   '<p class="notice">'+(d.cost_partial?'PARTIAL ESTIMATE: Calculated from items with recorded prices. Missing material or parts prices are excluded; profit may decrease when entered. · ':d.parts_cost_estimated?'Parts List price includes unreceived items — profit is provisional. · ':d.parts_price_pending?'Some Parts List purchase prices are missing — profit remains Pending. · ':'')+(d.labour_excluded?'Labour excluded from this profit calculation; recorded labour remains unchanged. · ':'')+esc((d.warnings||[]).join(' · ')||'Estimated profit excludes general workshop overheads.')+'</p>';
   $('detail').hidden=false;
   $('close-detail').onclick=closeDetail;
   $('job-pdf').onclick=()=>exportJob('pdf');$('job-excel').onclick=()=>exportJob('excel');$('job-print').onclick=()=>exportJob('print');
@@ -419,7 +426,8 @@ for(const [mode,id] of [['with','profit-with-labour'],['without','profit-without
  $(id).onclick=()=>{if(report!=='profit'||mode===labourMode)return;labourMode=mode;offset=0;updateLabourModeControls();load();};
 }
 $('cancel-entry').onclick=closeCashDialog;$('cancel-correction').onclick=()=>{$('correction').hidden=true};
-async function exportRows(kind){if(!result?.canExport||busy)return;const printable=kind==='print'?window.open('','_blank'):null;if(kind==='print'&&!printable){say('Allow print pop-ups and try again.');return;}const exportGeneration=generation,exportReport=report,exportBackendReport=backendReport(report),exportFilters={...result.appliedFilters},exportMode=labourMode,exportColumns=reportColumns(report,labourMode);busy=true;try{say('Preparing complete report…');const all=[],expected=[result.snapshot_revision,result.finance_revision];let cursor=0;do{const r=await request('workshop-api',{action:'accountant_report',report:exportBackendReport,filters:exportFilters,offset:cursor,limit:500});if(exportGeneration!==generation)throw Error('Report changed during export. Export the selected report again.');if(r.snapshot_revision!==expected[0]||r.finance_revision!==expected[1])throw Error('Data changed during export. Refresh before exporting.');all.push(...r.rows);cursor=r.next_offset;if(all.length>5000)throw Error('Narrow the date filter to export at most 5,000 rows.');}while(cursor!==null);const title=(exportReport==='cash_ledger'?'Receipts / Cash Out':modules.find(m=>m[0]===exportReport)[1])+(exportReport==='profit'?(exportMode==='without'?' — Without Labour':' — With Labour'):''),name='Zukait_'+exportReport+(exportReport==='profit'?'_'+exportMode+'_labour':'')+'_'+new Date().toISOString().slice(0,10);if(kind==='pdf'){await window.zukaitReportPdf.share(window.zukaitAccountantExports.html(title,exportColumns,all,'',{cleanPrint:true}),name+'.pdf');}else if(kind==='print'){printable.document.write(window.zukaitAccountantExports.html(title,exportColumns,all,'',{cleanPrint:true}));printable.document.close();printable.print();}else{const xml=window.zukaitAccountantExports.spreadsheet(title,exportColumns,all);if(window.AndroidBridge?.saveExportFile){const bytes=new TextEncoder().encode(xml);let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);window.AndroidBridge.saveExportFile(name+'.xml','application/vnd.ms-excel',btoa(binary));}else{const a=document.createElement('a'),u=URL.createObjectURL(new Blob([xml],{type:'application/vnd.ms-excel'}));a.href=u;a.download=name+'.xml';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);}}say('Report prepared.');}catch(e){if(printable)try{printable.close()}catch{}say(e.message)}finally{busy=false;}}
+async function exportRows(kind){if(!result?.canExport||busy)return;const printable=kind==='print'?window.open('','_blank'):null;if(kind==='print'&&!printable){say('Allow print pop-ups and try again.');return;}const exportGeneration=generation,exportReport=report,exportBackendReport=backendReport(report),exportFilters={...result.appliedFilters},exportMode=labourMode,
+ exportColumns=[...reportColumns(report,labourMode),...(performanceReports.has(report)?[['Cost status','cost_status']]:[])];busy=true;try{say('Preparing complete report…');const all=[],expected=[result.snapshot_revision,result.finance_revision];let cursor=0;do{const r=await request('workshop-api',{action:'accountant_report',report:exportBackendReport,filters:exportFilters,offset:cursor,limit:500});if(exportGeneration!==generation)throw Error('Report changed during export. Export the selected report again.');if(r.snapshot_revision!==expected[0]||r.finance_revision!==expected[1])throw Error('Data changed during export. Refresh before exporting.');all.push(...r.rows.map(row=>({...row,cost_status:row.cost_partial?'PARTIAL — missing prices excluded':row.cost_estimated?'PROVISIONAL — unreceived parts':!row.costs_complete?'PENDING':'COMPLETE'})));cursor=r.next_offset;if(all.length>5000)throw Error('Narrow the date filter to export at most 5,000 rows.');}while(cursor!==null);const title=(exportReport==='cash_ledger'?'Receipts / Cash Out':modules.find(m=>m[0]===exportReport)[1])+(exportReport==='profit'?(exportMode==='without'?' — Without Labour':' — With Labour'):''),name='Zukait_'+exportReport+(exportReport==='profit'?'_'+exportMode+'_labour':'')+'_'+new Date().toISOString().slice(0,10);if(kind==='pdf'){await window.zukaitReportPdf.share(window.zukaitAccountantExports.html(title,exportColumns,all,'',{cleanPrint:true}),name+'.pdf');}else if(kind==='print'){printable.document.write(window.zukaitAccountantExports.html(title,exportColumns,all,'',{cleanPrint:true}));printable.document.close();printable.print();}else{const xml=window.zukaitAccountantExports.spreadsheet(title,exportColumns,all);if(window.AndroidBridge?.saveExportFile){const bytes=new TextEncoder().encode(xml);let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);window.AndroidBridge.saveExportFile(name+'.xml','application/vnd.ms-excel',btoa(binary));}else{const a=document.createElement('a'),u=URL.createObjectURL(new Blob([xml],{type:'application/vnd.ms-excel'}));a.href=u;a.download=name+'.xml';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);}}say('Report prepared.');}catch(e){if(printable)try{printable.close()}catch{}say(e.message)}finally{busy=false;}}
 $('pdf').onclick=()=>exportRows('pdf');$('excel').onclick=()=>exportRows('excel');$('print').onclick=()=>exportRows('print');
 $('manager-back').onclick=()=>location.assign(location.protocol==='file:'||location.hostname==='appassets.androidplatform.net'?'offline_test.html':'index.html');
 $('logout').onclick=()=>{if(window.zukaitSessionPrivacy){invalidate();return window.zukaitSessionPrivacy.signOut();}let t='';try{t=token()}catch{}invalidate();localStorage.removeItem(sessionKey);try{window.AndroidBridge?.clearSecureSessionToken?.()}catch{}if(t)fetch(url+'/functions/v1/staff-auth',{method:'POST',headers:{'Content-Type':'application/json',apikey:publicKey},body:JSON.stringify({action:'logout',session_token:t})}).catch(()=>{});location.replace(location.protocol==='file:'||location.hostname==='appassets.androidplatform.net'?'offline_test.html':'index.html');};
