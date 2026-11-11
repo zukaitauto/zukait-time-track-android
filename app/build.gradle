@@ -83,3 +83,5 @@ dependencies {
 // V392 Accounts release: rerun full Accountant, Reception and signed APK acceptance against the held candidate.
 
 // V392 exact-source acceptance: existing Reception 14-tile browser regression corrected.
+
+// V392 final release acceptance: preserve production Reception/Receptionist dashboard tile counts.
