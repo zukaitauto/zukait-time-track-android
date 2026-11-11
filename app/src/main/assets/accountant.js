@@ -89,7 +89,13 @@ function renderSummary(summary){
    '<span class="account-kpi-category">'+esc(category)+'</span></button>';
  }).join('');
 }
-function table(rows,cols,actions=false){return '<div class="table-wrap"><table><thead><tr>'+cols.map(c=>'<th'+(c[2]?' class="money"':'')+'>'+esc(c[0])+'</th>').join('')+(actions?'<th>Actions</th>':'')+'</tr></thead><tbody>'+rows.map((r,i)=>'<tr>'+cols.map(c=>'<td'+(c[2]?' class="money"':'')+'>'+esc(display(r[c[1]],c[2]))+'</td>').join('')+(actions?'<td>'+(['jobs','cash'].includes(report)?'<button type="button" data-job="'+esc(r.job_card)+'">'+(report==='jobs'?'Open financial view':'View JC')+'</button>':report==='cash_ledger'?(r.invoice_receipt?'<span>From Cash invoice</span>':'<button type="button" data-correct="'+i+'">Correct</button><button type="button" data-reverse="'+i+'">Reverse</button>'):'')+'</td>':'')+'</tr>').join('')+'</tbody></table></div>';}
+// Display hours as hours/minutes only; retain original high-precision hours for cost calculations.
+function formatNormalDutyHours(hours){
+ if(hours===null||hours===undefined||hours===''||!Number.isFinite(Number(hours))||Number(hours)<0)return 'Not Available / Pending';
+ const minutes=Math.round(Number(hours)*60);
+ return Math.floor(minutes/60)+'h '+String(minutes%60).padStart(2,'0')+'m';
+}
+function table(rows,cols,actions=false){return '<div class="table-wrap"><table><thead><tr>'+cols.map(c=>'<th'+(c[2]?' class="money"':'')+'>'+esc(c[0])+'</th>').join('')+(actions?'<th>Actions</th>':'')+'</tr></thead><tbody>'+rows.map((r,i)=>'<tr>'+cols.map(c=>'<td'+(c[2]?' class="money"':'')+'>'+esc(c[1]==='normal_hours'?formatNormalDutyHours(r[c[1]]):display(r[c[1]],c[2]))+'</td>').join('')+(actions?'<td>'+(['jobs','cash'].includes(report)?'<button type="button" data-job="'+esc(r.job_card)+'">'+(report==='jobs'?'Open financial view':'View JC')+'</button>':report==='cash_ledger'?(r.invoice_receipt?'<span>From Cash invoice</span>':'<button type="button" data-correct="'+i+'">Correct</button><button type="button" data-reverse="'+i+'">Reverse</button>'):'')+'</td>':'')+'</tr>').join('')+'</tbody></table></div>';}
 let detailTrigger=null;
 function closeDetail(){
  detailGeneration++;target=null;$('detail').hidden=true;$('correction').hidden=true;
@@ -431,5 +437,5 @@ async function prepareForUpdate(){
  const clean=()=>verified&&!busy&&navigator.onLine!==false&&localStorage.getItem(pendingKey())===null&&!hasBillPending()&&$('entry').hidden&&!$('cash-entry-dialog').open&&$('correction').hidden&&$('account-password-form').hidden;
  try{if(!clean())return false;token();await request('workshop-api',{action:'accountant_dashboard',limit:1});return clean();}catch{return false;}
 }
-window.zukaitAccountant={load,openJob,switchReport,submit,exportRows,changePassword,prepareForUpdate,submitBill,getUser:()=>verified?{...user}:null};boot();
+window.zukaitAccountant={load,openJob,switchReport,submit,exportRows,changePassword,prepareForUpdate,submitBill,getUser:()=>verified?{...user}:null,formatNormalDutyHours};boot();
 })();
