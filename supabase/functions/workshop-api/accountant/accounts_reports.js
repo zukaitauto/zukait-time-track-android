@@ -12,7 +12,7 @@ const names=rows=>[...new Set(rows.filter(Boolean).map(s=>String(s).trim()).filt
  */
 export function accountsPerformanceReport(context,financial,filters={},now=Date.now()){
  const all=managerProfitReport(context,financial,{
-  all_months:true,include_credit:true,delivered_insurance_only:true,
+  all_months:!!(filters.from||filters.to),month:filters.month||day(now).slice(0,7),include_credit:true,delivered_insurance_only:true,
   from:filters.from||'',to:filters.to||''
  },now).rows;
  const month=filters.from||filters.to?'':filters.month||day(now).slice(0,7);
