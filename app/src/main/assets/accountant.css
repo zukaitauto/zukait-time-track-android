@@ -269,87 +269,87 @@ header{background:#ffffffcc;border:1px solid #fff;border-radius:22px;padding:17p
 @media(max-width:550px){#accounts-workspace .filters{grid-template-columns:1fr 1fr;gap:8px;padding:10px}#accounts-workspace .accounts-kpis{gap:7px}#accounts-workspace .accounts-kpi{padding:10px}#accounts-workspace .accounts-kpi b{font-size:17px}#accounts-workspace .panel{padding:12px}#accounts-home #navigation .module-card{min-height:78px}}
 
 
-/* V392 Cash In visual refresh: desktop 13-column table with no horizontal pan. */
-body:has(#accounts-workspace[data-report="cash"]:not([hidden])) {
+/* Shared Cash In and Insurance Invoiced modern visual pattern: fit every column without horizontal scrolling. */
+body:has(#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]):not([hidden])) {
  background:radial-gradient(circle at 0 15%,#e0f8ff,transparent 40%),radial-gradient(circle at 100% 10%,#e8e7ff,transparent 50%),#edf4fd;
 }
-body:has(#accounts-workspace[data-report="cash"]:not([hidden])) main {width:100%;max-width:1760px;padding:14px clamp(12px,1.4vw,26px)}
-body:has(#accounts-workspace[data-report="cash"]:not([hidden])) header {
+body:has(#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]):not([hidden])) main {width:100%;max-width:1760px;padding:14px clamp(12px,1.4vw,26px)}
+body:has(#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]):not([hidden])) header {
  padding:15px 20px;background:linear-gradient(107deg,#0a3678 0%,#0765a7 54%,#008b84 100%);
  border:1px solid #0a7d9a;border-radius:18px;box-shadow:0 8px 24px #12487c23;color:#fff;
 }
-body:has(#accounts-workspace[data-report="cash"]:not([hidden])) header h1,
-body:has(#accounts-workspace[data-report="cash"]:not([hidden])) header p {color:#fff}
-body:has(#accounts-workspace[data-report="cash"]:not([hidden])) header button {border-color:#c7e4f6;background:#fffffff2;color:#0b3973}
-#accounts-workspace[data-report="cash"] .workspace-bar {margin:16px 0 10px}
-#accounts-workspace[data-report="cash"] .filters {display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;background:#ffffffed;border:1px solid #d7e6f7;box-shadow:0 5px 19px #2b528712;padding:14px 18px}
-#accounts-workspace[data-report="cash"] .filters>label {flex:1 1 154px}
-#accounts-workspace[data-report="cash"] .filters>label:first-child {flex:1.4 1 240px}
-#accounts-workspace[data-report="cash"] .filters>label[hidden] {display:none!important}
-#accounts-workspace[data-report="cash"] .filters>#refresh {background:linear-gradient(130deg,#1973d0,#064eac);border-color:#1262bc;color:white;min-width:130px}
-#accounts-workspace[data-report="cash"] .filters>#clear {min-width:87px;background:#fff;color:#184d88;border-color:#a8c5e9}
-#accounts-workspace[data-report="cash"]>.panel {border:1px solid #d3e3f6;background:#ffffffeb;border-radius:19px;box-shadow:0 8px 26px #154a7814;padding:clamp(12px,1.3vw,20px)}
-#accounts-workspace[data-report="cash"] #title {font-size:clamp(20px,2vw,27px);color:#093b75}
-#accounts-workspace[data-report="cash"] .heading .actions button {border-radius:10px}
-#accounts-workspace[data-report="cash"] #cash-entry {background:linear-gradient(150deg,#0b9c4f,#08763d);color:white;border-color:#07723d;font-weight:800}
-#accounts-workspace[data-report="cash"] #cash-invoice-total {
+body:has(#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]):not([hidden])) header h1,
+body:has(#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]):not([hidden])) header p {color:#fff}
+body:has(#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]):not([hidden])) header button {border-color:#c7e4f6;background:#fffffff2;color:#0b3973}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .workspace-bar {margin:16px 0 10px}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .filters {display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;background:#ffffffed;border:1px solid #d7e6f7;box-shadow:0 5px 19px #2b528712;padding:14px 18px}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .filters>label {flex:1 1 154px}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .filters>label:first-child {flex:1.4 1 240px}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .filters>label[hidden] {display:none!important}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .filters>#refresh {background:linear-gradient(130deg,#1973d0,#064eac);border-color:#1262bc;color:white;min-width:130px}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .filters>#clear {min-width:87px;background:#fff;color:#184d88;border-color:#a8c5e9}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"])>.panel {border:1px solid #d3e3f6;background:#ffffffeb;border-radius:19px;box-shadow:0 8px 26px #154a7814;padding:clamp(12px,1.3vw,20px)}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) #title {font-size:clamp(20px,2vw,27px);color:#093b75}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .heading .actions button {border-radius:10px}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) #cash-entry {background:linear-gradient(150deg,#0b9c4f,#08763d);color:white;border-color:#07723d;font-weight:800}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) #cash-invoice-total {
  background:linear-gradient(100deg,#e3ffed 0%,#f1fff7 43%,#f0f6ff 100%);
  border:1px solid #b4e4c9;border-left:6px solid #0b923b;
  border-radius:17px;box-shadow:0 4px 14px #037a5320;padding:19px 24px;
 }
-#accounts-workspace[data-report="cash"] #cash-invoice-total-amount {font-size:clamp(24px,3.1vw,36px);color:#0d573e;letter-spacing:-.035em}
-#accounts-workspace[data-report="cash"] .cash-invoice-total-count b {color:#0e674b}
-#accounts-workspace[data-report="cash"] #accounts-kpis {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin:13px 0}
-#accounts-workspace[data-report="cash"] .accounts-kpi {position:relative;padding:15px 13px 15px 58px;min-height:90px;border-radius:16px;background:linear-gradient(120deg,#f0f8ff,#e0f0ff);border:1px solid #d4e5fb}
-#accounts-workspace[data-report="cash"] .accounts-kpi:nth-child(2) {background:linear-gradient(120deg,#edfff6,#dff7e9);border-color:#cbe9d8}
-#accounts-workspace[data-report="cash"] .accounts-kpi:nth-child(3) {background:linear-gradient(120deg,#faf4ff,#eee4ff);border-color:#e5d7f9}
-#accounts-workspace[data-report="cash"] .accounts-kpi:nth-child(4) {background:linear-gradient(120deg,#fff8eb,#fff0da);border-color:#f4e2c4}
-#accounts-workspace[data-report="cash"] .accounts-kpi::before {
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) #cash-invoice-total-amount {font-size:clamp(24px,3.1vw,36px);color:#0d573e;letter-spacing:-.035em}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .cash-invoice-total-count b {color:#0e674b}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) #accounts-kpis {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin:13px 0}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi {position:relative;padding:15px 13px 15px 58px;min-height:90px;border-radius:16px;background:linear-gradient(120deg,#f0f8ff,#e0f0ff);border:1px solid #d4e5fb}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi:nth-child(2) {background:linear-gradient(120deg,#edfff6,#dff7e9);border-color:#cbe9d8}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi:nth-child(3) {background:linear-gradient(120deg,#faf4ff,#eee4ff);border-color:#e5d7f9}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi:nth-child(4) {background:linear-gradient(120deg,#fff8eb,#fff0da);border-color:#f4e2c4}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi::before {
  content:"◆";position:absolute;top:19px;left:14px;width:34px;height:34px;border-radius:12px;
  display:grid;place-items:center;background:#d5ebff;color:#0b6fc8;font-size:20px;
 }
-#accounts-workspace[data-report="cash"] .accounts-kpi:nth-child(2)::before {content:"▥";color:#0c8848;background:#cef3dc}
-#accounts-workspace[data-report="cash"] .accounts-kpi:nth-child(3)::before {content:"%";color:#6842bd;background:#e6d6ff}
-#accounts-workspace[data-report="cash"] .accounts-kpi:nth-child(4)::before {content:"◷";color:#b2730a;background:#ffebc5}
-#accounts-workspace[data-report="cash"] .accounts-kpi b {font-size:clamp(16px,1.7vw,25px);line-height:1.1;color:#0c3769}
-#accounts-workspace[data-report="cash"] .accounts-kpi small {font-size:11px;font-weight:700;color:#3e5c79}
-#accounts-workspace[data-report="cash"] #notes {background:#edf5ff;border-color:#d3e2ff;color:#234f80}
-#accounts-workspace[data-report="cash"] .finance-report {overflow:visible;border:1px solid #bad0e6;border-radius:12px}
-#accounts-workspace[data-report="cash"] .finance-report table {width:100%!important;min-width:0!important;max-width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:clamp(9px,.75vw,12px)}
-#accounts-workspace[data-report="cash"] .finance-report th {
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi:nth-child(2)::before {content:"▥";color:#0c8848;background:#cef3dc}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi:nth-child(3)::before {content:"%";color:#6842bd;background:#e6d6ff}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi:nth-child(4)::before {content:"◷";color:#b2730a;background:#ffebc5}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi b {font-size:clamp(16px,1.7vw,25px);line-height:1.1;color:#0c3769}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi small {font-size:11px;font-weight:700;color:#3e5c79}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) #notes {background:#edf5ff;border-color:#d3e2ff;color:#234f80}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report {overflow:visible;border:1px solid #bad0e6;border-radius:12px}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report table {width:100%!important;min-width:0!important;max-width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:clamp(9px,.75vw,12px)}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th {
  background:linear-gradient(180deg,#1165ba,#073f87);color:#fff;font-size:clamp(9px,.72vw,12px);font-weight:750;
  padding:10px 4px;white-space:normal;overflow-wrap:anywhere;vertical-align:middle;text-align:center;border-right:1px solid #ffffff2c;
 }
-#accounts-workspace[data-report="cash"] .finance-report td {
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report td {
  padding:9px 3px;white-space:normal;overflow-wrap:anywhere;vertical-align:middle;text-align:center;border-right:1px solid #d9e6f2;
  font-variant-numeric:tabular-nums;
 }
-#accounts-workspace[data-report="cash"] .finance-report tbody tr:nth-child(even) td {background:#f1f7fe}
-#accounts-workspace[data-report="cash"] .finance-report tbody tr:hover td {background:#e5f3ff}
-#accounts-workspace[data-report="cash"] .finance-report th:nth-child(1) {width:3%}
-#accounts-workspace[data-report="cash"] .finance-report th:nth-child(2) {width:6%}
-#accounts-workspace[data-report="cash"] .finance-report th:nth-child(3) {width:6%}
-#accounts-workspace[data-report="cash"] .finance-report th:nth-child(4) {width:12%}
-#accounts-workspace[data-report="cash"] .finance-report th:nth-child(5) {width:8%}
-#accounts-workspace[data-report="cash"] .finance-report th:nth-child(6) {width:7%}
-#accounts-workspace[data-report="cash"] .finance-report th:nth-child(7) {width:9%}
-#accounts-workspace[data-report="cash"] .finance-report th:nth-child(8) {width:7%}
-#accounts-workspace[data-report="cash"] .finance-report th:nth-child(9) {width:7%}
-#accounts-workspace[data-report="cash"] .finance-report th:nth-child(10) {width:9%}
-#accounts-workspace[data-report="cash"] .finance-report th:nth-child(11) {width:10%}
-#accounts-workspace[data-report="cash"] .finance-report th:nth-child(12) {width:10%}
-#accounts-workspace[data-report="cash"] .finance-report th:nth-child(13) {width:6%}
-#accounts-workspace[data-report="cash"] .finance-report .jc-link {
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report tbody tr:nth-child(even) td {background:#f1f7fe}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report tbody tr:hover td {background:#e5f3ff}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(1) {width:3%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(2) {width:6%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(3) {width:6%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(4) {width:12%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(5) {width:8%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(6) {width:7%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(7) {width:9%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(8) {width:7%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(9) {width:7%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(10) {width:9%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(11) {width:10%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(12) {width:10%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(13) {width:6%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report .jc-link {
  color:#075bb8;background:transparent;border:0;text-decoration:underline;font-size:inherit;font-weight:800;
  padding:2px;min-height:28px;white-space:normal;
 }
-#accounts-workspace[data-report="cash"] .finance-report .expense-link {
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report .expense-link {
  background:#e1f8ec;border:1px solid #b7e3cc;color:#0c6744;border-radius:8px;
  font-size:inherit;font-weight:750;min-height:29px;padding:5px 3px;text-decoration:underline;max-width:100%;
  white-space:normal;overflow-wrap:anywhere;
 }
-#accounts-workspace[data-report="cash"] .finance-report .profit {color:#0c753d;font-weight:850}
-#accounts-workspace[data-report="cash"] .finance-report .loss {color:#b12d48;font-weight:850}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report .profit {color:#0c753d;font-weight:850}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report .loss {color:#b12d48;font-weight:850}
 
 /* Detail window replaces automatic page scrolling, with native dialog focus trapping. */
 html.financial-dialog-open {overflow:hidden}
@@ -367,27 +367,27 @@ html.financial-dialog-open {overflow:hidden}
 .financial-detail-dialog .expense-breakdown summary {cursor:pointer}
 .financial-detail-dialog .expense-lines {overflow:auto;max-width:100%}
 @media(max-width:1100px) {
- #accounts-workspace[data-report="cash"] .finance-report table {display:block}
- #accounts-workspace[data-report="cash"] .finance-report thead {display:none}
- #accounts-workspace[data-report="cash"] .finance-report tbody {display:grid;gap:12px;padding:10px}
- #accounts-workspace[data-report="cash"] .finance-report tr {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 8px;background:#fff;border:1px solid #cbdff0;border-radius:14px;overflow:hidden}
- #accounts-workspace[data-report="cash"] .finance-report td {
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report table {display:block}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report thead {display:none}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report tbody {display:grid;gap:12px;padding:10px}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report tr {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 8px;background:#fff;border:1px solid #cbdff0;border-radius:14px;overflow:hidden}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report td {
    display:flex;flex-direction:column;justify-content:center;gap:5px;align-items:flex-start;
    padding:10px 9px;border-right:0;border-bottom:1px solid #e1ebf4;text-align:left;font-size:12px;
  }
- #accounts-workspace[data-report="cash"] .finance-report td::before {content:attr(data-label);font-size:10px;font-weight:800;color:#52708f;line-height:1.2}
- #accounts-workspace[data-report="cash"] .finance-report td:nth-child(4) {grid-column:span 3}
- #accounts-workspace[data-report="cash"] .finance-report td:nth-child(12) {background:#ecfcf2}
- #accounts-workspace[data-report="cash"] .finance-report .expense-link {font-size:12px;padding:5px 7px}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report td::before {content:attr(data-label);font-size:10px;font-weight:800;color:#52708f;line-height:1.2}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report td:nth-child(4) {grid-column:span 3}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report td:nth-child(12) {background:#ecfcf2}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report .expense-link {font-size:12px;padding:5px 7px}
 }
 @media(max-width:740px) {
- #accounts-workspace[data-report="cash"] .accounts-kpis {grid-template-columns:repeat(2,minmax(0,1fr))}
- #accounts-workspace[data-report="cash"] .finance-report tr {grid-template-columns:repeat(2,minmax(0,1fr))}
- #accounts-workspace[data-report="cash"] .finance-report td:nth-child(4) {grid-column:span 2}
- #accounts-workspace[data-report="cash"] .finance-report td:nth-child(12) {grid-column:span 1}
- #accounts-workspace[data-report="cash"] .filters>label {flex:1 1 130px}
- #accounts-workspace[data-report="cash"] .accounts-kpi {padding-left:13px;padding-top:46px}
- #accounts-workspace[data-report="cash"] .accounts-kpi::before {top:9px;left:11px;width:27px;height:27px}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpis {grid-template-columns:repeat(2,minmax(0,1fr))}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report tr {grid-template-columns:repeat(2,minmax(0,1fr))}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report td:nth-child(4) {grid-column:span 2}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report td:nth-child(12) {grid-column:span 1}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .filters>label {flex:1 1 130px}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi {padding-left:13px;padding-top:46px}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi::before {top:9px;left:11px;width:27px;height:27px}
  .financial-detail-dialog {width:calc(100vw - 12px);max-height:93vh;border-radius:14px}
 }
 
@@ -420,4 +420,25 @@ html.financial-dialog-open {overflow:hidden}
  #accounts-workspace .profit-labour-label {width:100%}
  #accounts-workspace .profit-labour-toggle button {flex:1 1 130px}
  #accounts-workspace .profit-labour-help {flex-basis:100%}
+}
+
+
+/* Insurance Invoiced has 14 columns, one more than Cash In. All fit at desktop widths. */
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(1) {width:3%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(2) {width:7%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(3) {width:5%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(4) {width:12%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(5) {width:10%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(6) {width:7%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(7) {width:6%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(8) {width:8%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(9) {width:6%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(10) {width:6%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(11) {width:9%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(12) {width:9%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(13) {width:8%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(14) {width:4%}
+@media(max-width:1100px) {
+ #accounts-workspace[data-report="insurance_invoiced"] .finance-report td:nth-child(12) {background:transparent}
+ #accounts-workspace[data-report="insurance_invoiced"] .finance-report td:nth-child(13) {background:#ecfcf2}
 }
