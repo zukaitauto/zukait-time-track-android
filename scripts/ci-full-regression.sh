@@ -26,6 +26,7 @@ node tests/manager-profit-performance.mjs
 node tests/accounts-five-options.mjs
 node tests/accountant-release-gate.cjs
 node tests/accountant-finance.mjs
+node tests/accountant-print-layout.mjs
 node tests/accountant-paint-periods.mjs
 node tests/accountant-parts-costs.mjs
 node tests/accountant-ledger-sql.mjs
