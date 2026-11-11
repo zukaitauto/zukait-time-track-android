@@ -120,7 +120,13 @@ function closeCashDialog(){
 
 const performanceReports=new Set(['cash','insurance_invoiced','profit']);
 function reportColumns(name=report,mode=labourMode){
- return name==='profit'&&mode==='without'?columns[name].map(c=>c[1]==='labour_cost_omr'?['Labour OMR (excluded)',c[1],c[2]]:c):columns[name];
+ const labels={
+  labour_cost_omr:'Labour OMR (excluded)',
+  total_job_cost_omr:'Total Job Cost OMR (Without Labour)',
+  net_profit_omr:'Net Profit / Loss OMR (Without Labour)',
+  percentage:'Percentage (Without Labour)'
+ };
+ return name==='profit'&&mode==='without'?columns[name].map(c=>labels[c[1]]?[labels[c[1]],c[1],c[2]]:c):columns[name];
 }
 function updateLabourModeControls(){
  const active=report==='profit';
