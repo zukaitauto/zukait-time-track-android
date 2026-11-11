@@ -53,7 +53,17 @@ export function financialReport(context,filters={},now=Date.now()){
   let minutes=0;for(const intervals of groups.values())for(const [a,b] of unionIntervals(intervals))minutes+=normalMinutes(a,b,holidays);
   const labourCost=rate!==null&&rate>=0&&!open&&!invalid&&groups.size?Math.round(minutes/60*rate):null;
   if(labourCost===null)warnings.push(open?'Work is still running':rate===null?'Labour rate not configured':'Closed working-time source incomplete');
-  labour.push({job_card:no,date:day(j.completedAt||j.deliveredAt||j.invoiceDate),normal_hours:minutes/60,rate_omr:money(rate),labour_cost_omr:money(labourCost)});
+  const employeeMinutes=[...groups.entries()].map(([id,intervals])=>({
+   id,minutes:unionIntervals(intervals).reduce((n,[a,b])=>n+normalMinutes(a,b,holidays),0)
+  })).sort((a,b)=>a.id.localeCompare(b.id));
+  let distributedLabour=0;
+  const employeeLines=employeeMinutes.map((r,index)=>{
+   const allocated=labourCost===null?null:index===employeeMinutes.length-1?labourCost-distributedLabour:Math.round(r.minutes/60*rate);
+   distributedLabour+=allocated||0;
+   return {job_card:no,date:day(j.completedAt||j.deliveredAt||j.invoiceDate),employee_id:r.id,employee_name:users.get(r.id)||r.id,
+    normal_hours:r.minutes/60,rate_omr:money(rate),labour_cost_omr:money(allocated)};
+  });
+  labour.push({job_card:no,date:day(j.completedAt||j.deliveredAt||j.invoiceDate),normal_hours:minutes/60,rate_omr:money(rate),labour_cost_omr:money(labourCost),employee_lines:employeeLines});
   const costMap={consumables:consCost,paint:paintCost,parts:partsCost,labour:labourCost};
   for(const category of Object.keys(costMap)){const adjustments=entries.filter(e=>e.kind==='COST_ADJUSTMENT'&&key(e.job_card)===no&&e.category===category);if(costMap[category]!==null)costMap[category]+=adjustments.reduce((n,e)=>n+(milli(e.new_value)-milli(e.old_value)),0);}
   const invoice=milli(j.finalInvoiceAmount),verified=invoice!==null&&invoice>=0&&validDay(j.invoiceDate);
