@@ -390,3 +390,34 @@ html.financial-dialog-open {overflow:hidden}
  #accounts-workspace[data-report="cash"] .accounts-kpi::before {top:9px;left:11px;width:27px;height:27px}
  .financial-detail-dialog {width:calc(100vw - 12px);max-height:93vh;border-radius:14px}
 }
+
+
+/* Option 5 Profit / Loss: display-only labour inclusion switch. */
+#accounts-workspace .profit-labour-toggle {
+ display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+ margin:4px 0 13px;padding:12px 14px;
+ background:linear-gradient(110deg,#f0f8ff,#e9f3ff 52%,#edf9f4);
+ border:1px solid #bed7ee;border-radius:13px;
+}
+#accounts-workspace .profit-labour-toggle[hidden] {display:none!important}
+#accounts-workspace .profit-labour-label {font-size:13px;font-weight:800;color:#154a7b;margin-right:5px}
+#accounts-workspace .profit-labour-toggle button {
+ border:1px solid #a7c7e7;border-radius:9px;background:#fff;color:#13517f;
+ font-size:13px;font-weight:800;min-height:39px;padding:8px 18px;white-space:normal;
+}
+#accounts-workspace .profit-labour-toggle button[aria-pressed="true"] {
+ background:linear-gradient(135deg,#0873c1,#074c98);border-color:#125caa;
+ color:white;box-shadow:0 4px 12px #155cb32b;
+}
+#accounts-workspace .profit-labour-toggle button[data-labour-mode="without"][aria-pressed="true"] {
+ background:linear-gradient(135deg,#087f64,#076a4b);border-color:#0c7255;
+}
+#accounts-workspace .profit-labour-help {font-size:11px;color:#466884;flex:1 1 235px;line-height:1.45}
+#accounts-workspace[data-report="profit"] .finance-report:has(th) {border-color:#c6d9ef}
+#accounts-workspace[data-report="profit"] .finance-report th {background:#e6f1fc;color:#153e66}
+@media(max-width:650px){
+ #accounts-workspace .profit-labour-toggle {gap:7px;padding:10px}
+ #accounts-workspace .profit-labour-label {width:100%}
+ #accounts-workspace .profit-labour-toggle button {flex:1 1 130px}
+ #accounts-workspace .profit-labour-help {flex-basis:100%}
+}
