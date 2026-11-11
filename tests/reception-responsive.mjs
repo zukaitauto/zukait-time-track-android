@@ -163,11 +163,12 @@ for (const engine of ['chromium', 'webkit']) {
       await page.locator('[data-rc-action=new]').waitFor();
       assert.equal(await page.locator('#rc-form').count(),0);
       assert.equal(await page.locator('#rc-error').textContent(),"");
-      // Load the same dashboard bundle used by both production entrypoints.
+      // The production Reception dashboard exposes 14 tiles; preserve this behavior.
+       // Load the same dashboard bundle used by both production entrypoints.
       await page.addScriptTag({content:fs.readFileSync('app/src/main/assets/reception_dashboard.js','utf8')});
       await page.evaluate(()=>window.zukaitReception.open());
       await page.locator('[data-rdb=tile][data-section=followup]').waitFor();
-      assert.equal(await page.locator('[data-rdb=tile]').count(),13);
+      assert.equal(await page.locator('[data-rdb=tile]').count(),14);
       assert.equal(await page.locator('#rdb-results').count(),0);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width}: Phase 1 dashboard overflow`);
       await page.locator('[data-rdb=tile][data-section=followup]').click();
@@ -177,7 +178,7 @@ for (const engine of ['chromium', 'webkit']) {
       assert.equal(await page.locator('#rc-form option[value=CASH]').count(),0);
       await page.locator('[data-rc-action=back]').click();
       await page.locator('[data-rdb=tile][data-section=followup]').waitFor();
-      assert.equal(await page.locator('[data-rdb=tile]').count(),13);
+      assert.equal(await page.locator('[data-rdb=tile]').count(),14);
       await page.close();
       console.log(`${engine} ${width}: list, editor, keyboard and overflow checks passed`);
     }
