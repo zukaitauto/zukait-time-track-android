@@ -154,7 +154,11 @@ function renderPerformanceTable(rows){
  '</tr></thead><tbody>'+rows.map(r=>'<tr>'+cols.map(c=>{
   const k=c[1],val=r[k],formatted=esc(k==='percentage'?(val===null||val===undefined?'—':Number(val).toFixed(2)+'%'):display(val,c[2]));
   if(k==='job_card')return '<td data-label="'+esc(c[0])+'"><button type="button" class="jc-link" data-job="'+esc(r.job_card)+'">'+formatted+'</button></td>';
-  if(costKeys.has(k))return '<td data-label="'+esc(c[0])+'" class="number"><button type="button" class="expense-link" data-job="'+esc(r.job_card)+'" data-expense="'+costKeys.get(k)+'" aria-label="View '+esc(c[0])+' details for JC '+esc(r.job_card)+'">'+formatted+'</button></td>';
+  if(costKeys.has(k)){
+   const estimate=k==='parts_cost_omr'&&r.parts_cost_estimated===true;
+   const hint=estimate?' Parts List entered price (includes unreceived quantities; estimated cost)':'';
+   return '<td data-label="'+esc(c[0])+'" class="number"><button type="button" class="expense-link" data-job="'+esc(r.job_card)+'" data-expense="'+costKeys.get(k)+'" title="'+esc(hint.trim())+'" aria-label="View '+esc(c[0])+' details for JC '+esc(r.job_card)+esc(hint)+'">'+formatted+(estimate?'*':'')+'</button></td>';
+  }
   const sign=k==='net_profit_omr'?(val===null?'pending':Number(val)<0?'loss':'profit'):'';
   return '<td data-label="'+esc(c[0])+'" class="'+(c[2]?'number ':'')+sign+'">'+formatted+'</td>';
  }).join('')+'</tr>').join('')+'</tbody></table></div>';
@@ -286,7 +290,7 @@ function expenseBreakdowns(b,d,preferredType=''){
 }
 function financialDocument(detail,breakdown,cleanPrint=false){
  const format=(k)=>esc(cleanPrint?display(detail[k],true).replace(/^OMR /,''):display(detail[k],true));
- const amounts=expenseSpecs.map(([type,name,k])=>'<tr><th>'+esc(name+(detail.labour_excluded&&type==='labour'?' (excluded from profit)':''))+'</th><td>'+format(k)+'</td></tr>').join('');
+ const amounts=expenseSpecs.map(([type,name,k])=>'<tr><th>'+esc(name+(detail.labour_excluded&&type==='labour'?' (excluded from profit)':'')+(type==='parts'&&detail.parts_cost_estimated?' (Parts List estimated)':''))+'</th><td>'+format(k)+'</td></tr>').join('');
  const pieces=expenseSpecs.map(([type,title])=>'<h3>'+esc(title)+'</h3>'+((breakdown[type]||[]).length?table(breakdown[type],drilldownColumns[type],false,cleanPrint):'<p>No finalized source lines</p>')).join('');
  const income=detail.job_invoice_amount_omr??detail.invoice_amount_omr;
  return '<!doctype html><html><head><meta charset="utf-8"><title>JC '+esc(detail.job_card)+' Financial 360</title><style>body{font:12px/1.5 Arial,sans-serif;color:#20354b;margin:20px}table{border-collapse:collapse;width:100%;margin:8px 0 18px}th,td{border:1px solid #d1dce7;padding:8px;text-align:left}th{background:#eaf2fb}h2,h3{page-break-after:avoid}.table-wrap{overflow:visible}small{font-size:10px}</style></head><body>'+
@@ -347,7 +351,7 @@ async function openJob(no,expandType='',trigger=null){
     [d.labour_excluded?'Profit / Loss without Labour':resultLabel,display(profit,true)],['Profit %',d.job_profit_percentage===null?'Pending':Number(d.job_profit_percentage).toFixed(2)+'%']
    ].map(([label,v])=>'<div class="detail-value"><small>'+esc(label)+'</small><strong>'+esc(v??'—')+'</strong></div>').join('')+
    '</div><h3>'+(expandType?'Selected expense details · '+esc(expandType.charAt(0).toUpperCase()+expandType.slice(1)):'Click any expense to open source details')+'</h3>'+expenseBreakdowns(r.breakdown||{},d,expandType)+
-   '<p class="notice">'+(d.labour_excluded?'Labour excluded from this profit calculation; recorded labour remains unchanged. · ':'')+esc((d.warnings||[]).join(' · ')||'Estimated profit excludes general workshop overheads.')+'</p>';
+   '<p class="notice">'+(d.parts_cost_estimated?'Parts List price includes unreceived items — profit is provisional. · ':d.parts_price_pending?'Some Parts List purchase prices are missing — profit remains Pending. · ':'')+(d.labour_excluded?'Labour excluded from this profit calculation; recorded labour remains unchanged. · ':'')+esc((d.warnings||[]).join(' · ')||'Estimated profit excludes general workshop overheads.')+'</p>';
   $('detail').hidden=false;
   $('close-detail').onclick=closeDetail;
   $('job-pdf').onclick=()=>exportJob('pdf');$('job-excel').onclick=()=>exportJob('excel');$('job-print').onclick=()=>exportJob('print');
