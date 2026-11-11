@@ -8,7 +8,7 @@ const names=['Water Paper 800','BASE WHITE','Masking Tape','2K Slow Thinner','Lo
 const materials=names.map((name,i)=>({id:'M'+i,name,unit:i===0?'Piece':'Liter'}));
 const brands=['CARSHINE','BASE WHITE','MASKING TAPE','SAYARA','Long brand name without truncation'].map((name,i)=>({id:'B'+i,name}));
 const lines=materials.map((m,i)=>({materialId:m.id,brandId:brands[i].id,quantity:i===1?0.4:1}));
-const ctx={window:{},state:{},draft:{jc:{job:{no:'TEST'}},lines},consRefreshIssueFinishState(){},C:()=>({ensureState:()=>({materials,brands}),allowance:()=>lines}),esc:x=>String(x),document:{getElementById:id=>id==='consActualRows'?out:id==='consDraftRows'?draftOut:null,createElement:()=>({textContent:''}),head:{appendChild:s=>{css+=s.textContent}}}};
+const ctx={window:{},state:{},draft:{jc:{job:{no:'TEST'}},lines},consRefreshIssueFinishState(){},C:()=>({ensureState:()=>({materials,brands}),allowance:()=>lines,priceAt:()=>({pricePerUnit:1})}),esc:x=>String(x),document:{getElementById:id=>id==='consActualRows'?out:id==='consDraftRows'?draftOut:null,createElement:()=>({textContent:''}),head:{appendChild:s=>{css+=s.textContent}}}};
 vm.createContext(ctx);
 vm.runInContext(source.slice(source.indexOf('function consCompactEntryStyle(){'),source.indexOf('window.openConsumablesAdditional='))+'\nconsCompactEntryStyle();',ctx);
 vm.runInContext(source.slice(source.indexOf('window.consRenderActualRows=function(){'),source.indexOf('window.consAddActualMaterial=')),ctx);
