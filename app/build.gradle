@@ -85,3 +85,5 @@ dependencies {
 // V392 exact-source acceptance: existing Reception 14-tile browser regression corrected.
 
 // V392 final release acceptance: preserve production Reception/Receptionist dashboard tile counts.
+
+// V392 acceptance: restore complete Consumables browser-test fixture without changing workshop UI.
