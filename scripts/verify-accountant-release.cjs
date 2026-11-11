@@ -16,5 +16,5 @@ function validate(r,ref){
  for(const k of ['credentialPreservation','qaFinancialAcceptance','serverPermissions','rollbackPrepared','legacyLoginCompatibility'])assert.equal(r.evidence[k],true,k+' not verified');
  return true;
 }
-if(require.main===module){const r=JSON.parse(fs.readFileSync('release-request.json','utf8'));if(r.releaseScope!=='accountant-live-test')console.log('ACCOUNTANT_PUBLICATION=false');else{validate(r,process.env.GITHUB_REF);console.log('ACCOUNTANT_PUBLICATION=true');console.log('UI_VERIFICATION_RUN='+r.verificationRun);}}
+if(require.main===module){const r=JSON.parse(fs.readFileSync('release-request.json','utf8'));if(r.releaseScope!=='accountant-live-test'||r.approvedForStaff!==true)console.log('ACCOUNTANT_PUBLICATION=false');else{validate(r,process.env.GITHUB_REF);console.log('ACCOUNTANT_PUBLICATION=true');console.log('UI_VERIFICATION_RUN='+r.verificationRun);}}
 module.exports={validate};
