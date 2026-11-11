@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><script src="session_privacy.js?v=20261107-reconnect-recovery-1"></script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Zukait · Accountant</title><link rel="stylesheet" href="accountant.css?v=20261110-cash-register-1"><link rel="stylesheet" href="dashboard_cards.css?v=1"></head><body><main>
+<!doctype html><html lang="en"><head><script src="session_privacy.js?v=20261107-reconnect-recovery-1"></script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Zukait · Accountant</title><link rel="stylesheet" href="accountant.css?v=20261111-overview-1"><link rel="stylesheet" href="dashboard_cards.css?v=1"></head><body><main>
 <header><div class="brand"><span class="mark" aria-hidden="true">Z</span><div><h1 id="account-name">Accounts Dashboard</h1><p id="identity">Verifying secure session…</p></div></div><div class="actions"><button id="manager-back" type="button" hidden>← Manager dashboard</button><span id="account-network" class="account-network" title="Device network status">Online</span><button id="account-menu-button" class="account-menu-button" type="button" aria-label="Open account menu" aria-haspopup="dialog" disabled>☰</button><button id="logout" type="button">Logout</button></div></header>
 <p id="message" role="status" aria-live="polite"></p><div id="pending" hidden class="notice"></div>
 <section id="app" hidden>
@@ -6,7 +6,14 @@
 <div class="home-heading"><div><span class="eyebrow">ZUKAIT · ACCOUNTS</span><h2>Accounts overview</h2><p>Financial position, outstanding entries and quick access to your reports.</p></div><span class="secure-badge">● Secure access</span></div>
 <section id="summary" class="summary" aria-label="Financial summary"></section>
 <p class="accounts-home-disclaimer">Amounts are in OMR. Pending source records need review and may change totals. Estimated gross profit excludes overheads. Select a figure to inspect its report.</p>
-<div class="module-heading"><h2>Accounts modules</h2><span>Select a module to open</span></div>
+<section class="accounts-flow" aria-labelledby="daily-followup-title">
+<div class="module-heading"><h2 id="daily-followup-title">Daily follow-up</h2><span>Open the list you need</span></div>
+<div id="accounts-shortcuts" class="accounts-shortcuts" aria-label="Daily accounts shortcuts">
+<button type="button" class="accounts-shortcut shortcut-in" data-report="cash"><span class="shortcut-icon" aria-hidden="true">▤</span><span class="shortcut-copy"><strong>Cash In</strong><small>Final CASH Job Card invoices</small></span><span class="shortcut-arrow" aria-hidden="true">↗</span></button>
+<button type="button" class="accounts-shortcut shortcut-out" data-report="cash_ledger"><span class="shortcut-icon" aria-hidden="true">⇄</span><span class="shortcut-copy"><strong>Cash Out / Receipts</strong><small>Recorded payments and receipts</small></span><span class="shortcut-arrow" aria-hidden="true">↗</span></button>
+<button type="button" class="accounts-shortcut shortcut-pending" data-report="outstanding"><span class="shortcut-icon" aria-hidden="true">◷</span><span class="shortcut-copy"><strong>Outstanding</strong><small>Unpaid and partly paid invoices</small></span><span class="shortcut-arrow" aria-hidden="true">↗</span></button>
+</div></section>
+<div class="module-heading"><h2>All accounts reports</h2><span>Choose a report</span></div>
 <nav id="navigation" aria-label="Accountant modules"></nav>
 </section>
 <section id="accounts-workspace" hidden>
@@ -31,4 +38,4 @@
 <section id="account-update-panel" class="notice" hidden><h3>App Update</h3><p id="account-version"></p><p id="account-update-status" role="status" aria-live="polite"></p><div class="actions"><button id="account-check-update" type="button">Check for updates</button><button id="account-install-update" type="button" hidden>Download &amp; install update</button><button id="account-web-reload" type="button" hidden>Reload web app</button></div></section>
 <form id="account-password-form" hidden><h3>Change password</h3><label>Current password<input id="account-current-password" type="password" autocomplete="current-password" required></label><label>New password<input id="account-new-password" type="password" autocomplete="new-password" minlength="8" required></label><label>Confirm new password<input id="account-confirm-password" type="password" autocomplete="new-password" minlength="8" required></label><p id="account-password-status" role="status"></p><button id="account-save-password" type="submit">Save new password</button></form>
 </dialog>
-<script src="vendor/pdf/html2canvas-1.4.1.min.js"></script><script src="vendor/pdf/jspdf-4.2.1.min.js"></script><script src="report_pdf_export.js?v=2026101405"></script><script src="accountant_exports.js?v=1"></script><script src="accountant.js?v=20261110-cash-register-1"></script><script src="accountant_shell.js?v=341"></script></body></html>
+<script src="vendor/pdf/html2canvas-1.4.1.min.js"></script><script src="vendor/pdf/jspdf-4.2.1.min.js"></script><script src="report_pdf_export.js?v=2026101405"></script><script src="accountant_exports.js?v=1"></script><script src="accountant.js?v=20261111-overview-1"></script><script src="accountant_shell.js?v=341"></script></body></html>
