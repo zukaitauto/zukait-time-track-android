@@ -2,28 +2,51 @@
   "versionName": "V394",
   "versionCode": 357,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": false,
-  "sourceCommit": "956e907391431c4954d785e48cd868ea989f1632",
+  "approvedForStaff": true,
+  "sourceCommit": "cf2d20a38481a7fcd6507280c6aaa5a9b41fb3cd",
   "ownerPublicationRequested": true,
   "ownerRequestedImmediateRelease": true,
-  "releaseHeldByOwner": true,
+  "releaseHeldByOwner": false,
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "backupDeferredByOwner": false,
-  "approvedAt": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "accountantVerificationRun": null,
+  "backupDeferredByOwner": true,
+  "approvedAt": "2026-11-11T17:50:26.332Z",
+  "publishNonce": "cf2d20a38481a7fcd6507280c6aaa5a9",
+  "signedAcceptanceRun": 43071170073,
+  "verificationRun": 43071170136,
+  "accountantVerificationRun": 43071170070,
   "authorization": "Owner requested publishing V394 Accounts redesign for testing.",
-  "reason": "V394 candidate in verification. Approved two-column Accounts, concise JC360, and partial-priced cost logic. Protected publication held until exact-source CI, production backend readback, and release acceptance evidence are complete.",
+  "reason": "Owner instructed publication for testing. Exact-source V394 Accountant QA, signed acceptance, Reception and additional safety workflows succeeded. Workshop API v115 readback matches all four scoped changes; 37 unrelated files preserved. V393 retained as rollback. Owner requested to test after publication; physical testing and fresh backup restore not performed, reported NOT_RUN.",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
-    "status": "PENDING_V394_UPDATE",
-    "currentlyDeployed": {
+    "functions": {
+      "staff-auth": {
+        "version": 13,
+        "bundleSha256": "8c9007aef796124863048c9b75156133edd9823ba9fc5211f0e70fe6ec5e4a11",
+        "verifiedFileMatch": true
+      },
+      "workshop-api": {
+        "version": 115,
+        "bundleSha256": "9732585b88d162078ac0f037ac968d0ad1c1cd051597a835c4cd61a3f8390829",
+        "verifiedFileMatch": true
+      }
+    },
+    "migrations": [
+      "accountant_financial_ledger",
+      "accountant_lpo_audit",
+      "accountant_append_only_grants",
+      "accountant_append_only_corrections"
+    ],
+    "priorWorkshopApiVersion": 114,
+    "readbackVerified": true,
+    "filesVerified": 41,
+    "changedAccountantFiles": 4,
+    "scope": "Workshop API v115: 37 existing production files preserved, three Accountant files updated and one costing helper added; staff-auth v13 unchanged.",
+    "previousReleaseEvidence": {
+      "project": "pjknotnjkufadqavcmii",
       "functions": {
         "staff-auth": {
           "version": 13,
@@ -35,20 +58,60 @@
           "bundleSha256": "003ef5969e525c1a6808ee286f229aaf99c648a795761fe05a71a9d18732d3ac",
           "verifiedFileMatch": true
         }
+      },
+      "migrations": [
+        "accountant_financial_ledger",
+        "accountant_lpo_audit",
+        "accountant_append_only_grants",
+        "accountant_append_only_corrections"
+      ],
+      "priorWorkshopApiVersion": 113,
+      "readbackVerified": true,
+      "filesVerified": 40,
+      "changedAccountantFiles": 3,
+      "scope": "Workshop API v114 deployed: 37 existing live files preserved unchanged, 3 Accountant files updated from pinned V393 source; user-auth v13 unchanged.",
+      "previousReleaseEvidence": {
+        "project": "pjknotnjkufadqavcmii",
+        "functions": {
+          "staff-auth": {
+            "version": 13,
+            "bundleSha256": "8c9007aef796124863048c9b75156133edd9823ba9fc5211f0e70fe6ec5e4a11",
+            "verifiedFileMatch": true
+          },
+          "workshop-api": {
+            "version": 113,
+            "bundleSha256": "46c3eb001f50ccb93e1b9be0e40301fcea9e05180eb8d19300018659f8b80259",
+            "verifiedFileMatch": true
+          }
+        },
+        "migrations": [
+          "accountant_financial_ledger",
+          "accountant_lpo_audit",
+          "accountant_append_only_grants",
+          "accountant_append_only_corrections"
+        ],
+        "priorWorkshopApiVersion": 112,
+        "readbackVerified": true,
+        "filesVerified": 40,
+        "changedAccountantFiles": 4,
+        "scope": "Live function v112 bundle preserved unchanged outside 4 Accountant files. New accounts_reports.js added. Preserve workshop API, staff-auth, and privileges."
       }
-    },
-    "requiredChanges": [
-      "accountant/api.js",
-      "accountant/accounts_reports.js",
-      "accountant/profit_performance.js",
-      "accountant/accounts_parts_cost.js"
-    ]
+    }
   },
   "evidence": {
-    "sourceVerificationRuns": {},
-    "qaFinancialAcceptance": false,
-    "backendReadback": "PENDING",
-    "rollbackPrepared": false
+    "credentialPreservation": true,
+    "qaFinancialAcceptance": true,
+    "serverPermissions": true,
+    "rollbackPrepared": true,
+    "legacyLoginCompatibility": true,
+    "sourceVerificationRuns": {
+      "signedAcceptanceRun": 43071170073,
+      "verificationRun": 43071170136,
+      "accountantVerificationRun": 43071170070
+    },
+    "backendReadback": "ACTIVE_HEALTHY workshop-api v115, 41 files; three Accountant files updated and helper added, all four match pinned V394 source; 37 prior files preserved and staff-auth v13 unchanged.",
+    "rollbackApp": "release-V393-architecture-v2",
+    "rollbackBackendPreviousVersion": 114
   },
   "previousPublishedRelease": {
     "versionName": "V393",
@@ -108,5 +171,12 @@
       }
     }
   },
-  "ownerApprovedLiveAccountantTesting": true
+  "ownerApprovedLiveAccountantTesting": true,
+  "databaseMigration": {
+    "name": "v391_private_visit_customer_roles",
+    "verified": true,
+    "additionalProjection": "mechanical_vehicle_detail_projection",
+    "dataBackfill": false,
+    "newV394MigrationRequired": false
+  }
 }
