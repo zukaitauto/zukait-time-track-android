@@ -41,12 +41,43 @@ export function availablePartsListCost(partRows,recordedPartsCost=null,adjustmen
  // Existing completed job costs include authorized financial adjustments.
  // Prefer exact verified values when the Parts List has no open receipts.
  const complete=!missing;
- const amount=complete?(!provisional&&recorded!==null&&recorded===calculated?recorded:calculated):null;
+ // Partial values are lower bounds on expense, NOT final costs. Never invent
+ // an unpriced item's price or use a supplier quotation as a purchase price.
+ const partial=!complete&&priced>0&&Number.isSafeInteger(calculated)&&calculated>=0;
+ const amount=complete?(!provisional&&recorded!==null&&recorded===calculated?recorded:calculated):partial?calculated:null;
  return {
   cost_omr:amount===null?null:amount/1000,
-  provisional:complete&&provisional,
+  provisional:(complete&&provisional)||partial,
   pending:!complete,
-  source:complete?(provisional?'Parts List recorded purchase price (includes unreceived items)':'Parts List purchase cost'):'Parts List price missing',
+  partial,
+  source:partial?'Partial Parts List cost — missing item prices excluded':complete?(provisional?'Parts List recorded purchase price (includes unreceived items)':'Parts List purchase cost'):'Parts List price missing',
   items:seen.size||items.length,priced_items:priced
  };
+}
+
+/**
+ * Use finalized Actual consumable/material source lines only. Each priced
+ * item contributes once; missing prices remain flagged (not priced as zero).
+ * The recorded aggregate is retained when all source lines are priced,
+ * preserving authorized adjustments and original rounding.
+ */
+export function availableConsumablesCost(materialRows,recordedCost=null){
+ const items=rows(materialRows).filter(Boolean);
+ if(!items.length)return {cost_omr:recordedCost??null,pending:recordedCost==null,partial:false,items:0,priced_items:0};
+ let known=0,priced=0,missing=false,seen=new Set();
+ for(const item of items){
+  const id=String(item.id||'');
+  if(id&&seen.has(id))continue;
+  if(id)seen.add(id);
+  let cost=milli(item.cost_omr);
+  if(cost===null){
+   const price=milli(item.unit_price_omr),quantity=Number(item.quantity);
+   if(price!==null&&price>=0&&item.quantity!=null&&Number.isFinite(quantity)&&quantity>=0)cost=Math.round(price*quantity);
+  }
+  if(cost===null||!Number.isSafeInteger(cost)){missing=true;continue;}
+  known+=cost;priced++;
+ }
+ const recorded=milli(recordedCost),partial=missing&&priced>0;
+ const amount=partial?known:missing?null:recorded!==null?recorded:known;
+ return {cost_omr:amount===null?null:amount/1000,pending:missing,partial,items:items.length,priced_items:priced};
 }
