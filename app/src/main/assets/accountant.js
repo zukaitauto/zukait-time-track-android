@@ -160,6 +160,12 @@ async function load(){
   $('cash-entry').hidden=report!=='cash';$('cash-entry').disabled=false;
   $('cash-ledger-toggle').hidden=true;
   showFinancialSummary(r);
+  if(report==='leave'&&r.facets?.employees){
+   const staff=$('employee'),selected=staff.value;
+   staff.replaceChildren(new Option('All Employees / Supervisors',''));
+   for(const employee of r.facets.employees)staff.add(new Option(employee.name,employee.id));
+   if([...staff.options].some(o=>o.value===selected))staff.value=selected;
+  }
   next=searching?r.next_offset:null;
   if(!finance&&report!=='leave')renderSummary(r.summary);
   $('title').textContent=modules.find(m=>m[0]===report)?.[1]||report;
