@@ -28,7 +28,7 @@ for(const engine of ['chromium','webkit']){
   await context.addInitScript(({user})=>localStorage.setItem('zukait_secure_session_v42',JSON.stringify({user,token:'qa-session'})),{user});
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto('https://reception-qa.invalid/receptionist.html');await page.locator('[data-rdb=tile]').first().waitFor();
-  assert.equal(await page.locator('[data-rdb=tile]').count(),12,'Twelve Reception options on home screen');
+  assert.equal(await page.locator('[data-rdb=tile]').count(),13,'Thirteen existing Reception options on home screen');
   await page.locator('[data-rdb=tile][data-section=checklists]').click();
   await page.locator('.rdb-row').waitFor();
   assert.equal(await page.locator('.rdb-grid').count(),0,'Checklist List opens without dashboard above');
