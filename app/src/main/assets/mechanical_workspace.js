@@ -155,7 +155,7 @@ export async function mountMechanicalWorkspace(root,options={}){
   }
   .mc-workspace .mc-workspace-head button{
    background:#fff!important;color:#0a3062!important;border:1px solid #d4e5f9!important;
-   font-weight:800;min-height:43px;box-shadow:0 3px 10px #00285526!important
+   font-weight:800;min-height:44px;box-shadow:0 3px 10px #00285526!important
   }
   .mc-workspace [role=status]:empty{display:none}
   .mc-workspace .mc-dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(134px,auto);gap:14px;margin:0 0 22px}
@@ -206,7 +206,7 @@ export async function mountMechanicalWorkspace(root,options={}){
    .mc-workspace .mc-workspace-head{padding:14px 12px!important;gap:9px;border-radius:19px!important}
    .mc-workspace .mc-brand{width:41px;height:41px;flex-basis:41px;border-radius:12px;font-size:24px}
    .mc-workspace .mc-workspace-head h2{font-size:17px!important;min-width:122px}
-   .mc-workspace .mc-workspace-head button{min-height:42px;font-size:11px;padding:8px 10px}
+   .mc-workspace .mc-workspace-head button{min-height:44px;font-size:11px;padding:8px 10px}
    .mc-workspace .mc-dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(136px,auto);gap:10px}
    .mc-workspace .mc-dashboard-card{min-height:136px;padding:13px 26px 12px 13px!important;border-radius:17px!important}
    .mc-workspace .mc-dashboard-card::after{right:10px;width:7px;height:7px;border-width:2px}
