@@ -1,50 +1,61 @@
 {
-  "versionName": "V393",
-  "versionCode": 356,
+  "versionName": "V394",
+  "versionCode": 357,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": true,
-  "sourceCommit": "067b3eb8005c952dbefa160497f3a68a01bfa002",
+  "approvedForStaff": false,
+  "sourceCommit": "956e907391431c4954d785e48cd868ea989f1632",
   "ownerPublicationRequested": true,
   "ownerRequestedImmediateRelease": true,
-  "releaseHeldByOwner": false,
+  "releaseHeldByOwner": true,
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "backupDeferredByOwner": true,
-  "approvedAt": "2026-11-11T15:49:25.861Z",
-  "publishNonce": "067b3eb8005c952dbefa160497f3a68a",
-  "signedAcceptanceRun": 43051447646,
-  "verificationRun": 43051447849,
-  "authorization": "Owner requested V393 Accounts improvements release for checking.",
-  "reason": "Explicit owner instruction RELEASE IT. V393 verified against exact source: Accountant isolated acceptance, Reception verification, and signed APK passed. Workshop API v114 readback verified with 40 files and three Accountant-only changes. V392 remains available for rollback; physical device acceptance NOT_RUN and backup deferral are declared.",
+  "backupDeferredByOwner": false,
+  "approvedAt": null,
+  "publishNonce": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "accountantVerificationRun": null,
+  "authorization": "Owner requested publishing V394 Accounts redesign for testing.",
+  "reason": "V394 candidate in verification. Approved two-column Accounts, concise JC360, and partial-priced cost logic. Protected publication held until exact-source CI, production backend readback, and release acceptance evidence are complete.",
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
-    "functions": {
-      "staff-auth": {
-        "version": 13,
-        "bundleSha256": "8c9007aef796124863048c9b75156133edd9823ba9fc5211f0e70fe6ec5e4a11",
-        "verifiedFileMatch": true
-      },
-      "workshop-api": {
-        "version": 114,
-        "bundleSha256": "003ef5969e525c1a6808ee286f229aaf99c648a795761fe05a71a9d18732d3ac",
-        "verifiedFileMatch": true
+    "status": "PENDING_V394_UPDATE",
+    "currentlyDeployed": {
+      "functions": {
+        "staff-auth": {
+          "version": 13,
+          "bundleSha256": "8c9007aef796124863048c9b75156133edd9823ba9fc5211f0e70fe6ec5e4a11",
+          "verifiedFileMatch": true
+        },
+        "workshop-api": {
+          "version": 114,
+          "bundleSha256": "003ef5969e525c1a6808ee286f229aaf99c648a795761fe05a71a9d18732d3ac",
+          "verifiedFileMatch": true
+        }
       }
     },
-    "migrations": [
-      "accountant_financial_ledger",
-      "accountant_lpo_audit",
-      "accountant_append_only_grants",
-      "accountant_append_only_corrections"
-    ],
-    "priorWorkshopApiVersion": 113,
-    "readbackVerified": true,
-    "filesVerified": 40,
-    "changedAccountantFiles": 3,
-    "scope": "Workshop API v114 deployed: 37 existing live files preserved unchanged, 3 Accountant files updated from pinned V393 source; user-auth v13 unchanged.",
-    "previousReleaseEvidence": {
+    "requiredChanges": [
+      "accountant/api.js",
+      "accountant/accounts_reports.js",
+      "accountant/profit_performance.js",
+      "accountant/accounts_parts_cost.js"
+    ]
+  },
+  "evidence": {
+    "sourceVerificationRuns": {},
+    "qaFinancialAcceptance": false,
+    "backendReadback": "PENDING",
+    "rollbackPrepared": false
+  },
+  "previousPublishedRelease": {
+    "versionName": "V393",
+    "versionCode": 356,
+    "sourceCommit": "067b3eb8005c952dbefa160497f3a68a01bfa002",
+    "releaseTag": "release-V393-architecture-v2",
+    "productionBackend": {
       "project": "pjknotnjkufadqavcmii",
       "functions": {
         "staff-auth": {
@@ -53,8 +64,8 @@
           "verifiedFileMatch": true
         },
         "workshop-api": {
-          "version": 113,
-          "bundleSha256": "46c3eb001f50ccb93e1b9be0e40301fcea9e05180eb8d19300018659f8b80259",
+          "version": 114,
+          "bundleSha256": "003ef5969e525c1a6808ee286f229aaf99c648a795761fe05a71a9d18732d3ac",
           "verifiedFileMatch": true
         }
       },
@@ -64,40 +75,38 @@
         "accountant_append_only_grants",
         "accountant_append_only_corrections"
       ],
-      "priorWorkshopApiVersion": 112,
+      "priorWorkshopApiVersion": 113,
       "readbackVerified": true,
       "filesVerified": 40,
-      "changedAccountantFiles": 4,
-      "scope": "Live function v112 bundle preserved unchanged outside 4 Accountant files. New accounts_reports.js added. Preserve workshop API, staff-auth, and privileges."
+      "changedAccountantFiles": 3,
+      "scope": "Workshop API v114 deployed: 37 existing live files preserved unchanged, 3 Accountant files updated from pinned V393 source; user-auth v13 unchanged.",
+      "previousReleaseEvidence": {
+        "project": "pjknotnjkufadqavcmii",
+        "functions": {
+          "staff-auth": {
+            "version": 13,
+            "bundleSha256": "8c9007aef796124863048c9b75156133edd9823ba9fc5211f0e70fe6ec5e4a11",
+            "verifiedFileMatch": true
+          },
+          "workshop-api": {
+            "version": 113,
+            "bundleSha256": "46c3eb001f50ccb93e1b9be0e40301fcea9e05180eb8d19300018659f8b80259",
+            "verifiedFileMatch": true
+          }
+        },
+        "migrations": [
+          "accountant_financial_ledger",
+          "accountant_lpo_audit",
+          "accountant_append_only_grants",
+          "accountant_append_only_corrections"
+        ],
+        "priorWorkshopApiVersion": 112,
+        "readbackVerified": true,
+        "filesVerified": 40,
+        "changedAccountantFiles": 4,
+        "scope": "Live function v112 bundle preserved unchanged outside 4 Accountant files. New accounts_reports.js added. Preserve workshop API, staff-auth, and privileges."
+      }
     }
   },
-  "databaseMigration": {
-    "name": "v391_private_visit_customer_roles",
-    "verified": true,
-    "additionalProjection": "mechanical_vehicle_detail_projection",
-    "dataBackfill": false
-  },
-  "evidence": {
-    "credentialPreservation": true,
-    "qaFinancialAcceptance": true,
-    "serverPermissions": true,
-    "rollbackPrepared": true,
-    "legacyLoginCompatibility": true,
-    "sourceVerificationRuns": {
-      "signedAcceptanceRun": 43051447646,
-      "verificationRun": 43051447849,
-      "accountantVerificationRun": 43051447611
-    },
-    "backendReadback": "workshop-api v114 active; 40 files, 37 preserved, 3 Accountant files match pinned V393 source; staff-auth v13 active",
-    "rollbackApp": "release-V392-architecture-v2",
-    "rollbackBackendPreviousVersion": 113
-  },
-  "previousPublishedRelease": {
-    "versionName": "V392",
-    "versionCode": 355,
-    "sourceCommit": "9d0dd0bf6bfe5943ac8ebb8ef9902272d855f213",
-    "releaseTag": "release-V392-architecture-v2"
-  },
-  "ownerApprovedLiveAccountantTesting": true,
-  "accountantVerificationRun": 43051447611
+  "ownerApprovedLiveAccountantTesting": true
 }
