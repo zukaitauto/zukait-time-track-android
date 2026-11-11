@@ -49,11 +49,18 @@ assert.equal(w.document.querySelectorAll('#detail .expense-breakdown').length,5,
 for(const type of ['labour','paint','consumables','parts','sublet'])assert.ok(w.document.querySelector('#detail .expense-'+type),'financial details include '+type);
 assert.match(w.document.querySelector('#detail .expense-consumables').textContent,/Primer/);
 assert.match(w.document.querySelector('#detail .expense-parts').textContent,/Lamp/);
+assert.equal(w.zukaitAccountant.formatNormalDutyHours(10.187822222222222),'10h 11m');
+assert.equal(w.zukaitAccountant.formatNormalDutyHours(14.567247222222221),'14h 34m');
+assert.equal(w.zukaitAccountant.formatNormalDutyHours(1.99999),'2h 00m','minute rounding carries into the next hour');
+assert.equal(w.zukaitAccountant.formatNormalDutyHours(null),'Not Available / Pending','missing hours must stay missing');
+assert.match(w.document.querySelector('#detail .expense-labour').textContent,/1h 00m/,'source hours appear as hours and minutes');
+assert.doesNotMatch(w.document.querySelector('#detail .expense-labour').textContent,/10\.187822222222222/,'raw decimal hours do not leak into detail view');
 assert.match(w.document.getElementById('detail').textContent,/OMR 37.500/);
 assert.match(w.document.getElementById('detail').textContent,/OMR 150.000/);
 w.document.getElementById('job-pdf').click();await wait(()=>pdf?.name.includes('Financial_360'));
 assert.match(pdf.html,/Labour Cost/);
 assert.match(pdf.html,/Sublet Cost/);
+assert.match(pdf.html,/1h 00m/,'Financial 360 PDF also formats labour duration as hours/minutes');
 w.document.getElementById('close-detail').click();
 assert.equal(w.document.getElementById('financial-detail-dialog').open,false,'close returns to existing report');
 assert.equal(w.document.getElementById('query').value,'Toyota','close keeps search');
