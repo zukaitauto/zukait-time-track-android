@@ -29,7 +29,10 @@ test('responsive high contrast Financial 360 design and asset versions',()=>{
  assert.match(css,/#accounts-workspace \.accounts-kpis/);
  assert.match(css,/#accounts-workspace \.finance-report/);
  assert.match(css,/@media\(max-width:550px\)/);
- assert.match(css,/#accounts-home #navigation\{grid-template-columns:1fr/);
+ assert.match(css,/#accounts-home #navigation\\{grid-template-columns:repeat\\(2,minmax\\(0,1fr\\)\\)/,'approved two-column layout stays two-column on small phones');
+ assert.match(css,/#accounts-home #navigation \\.module-card:last-child\\{grid-column:1\\/-1/,'Profit/Loss spans both columns');
+ assert.match(js,/function jobCardResults\\(rows\\)/,'search result is a responsive card layout');
+ assert.match(css,/\\.financial-detail-dialog \\.detail-grid\\{display:grid;grid-template-columns:repeat\\(2,minmax\\(0,1fr\\)\\)/,'Financial 360 uses two detail columns');
  assert.match(css,/:focus-visible/);
  assert.match(css,/prefers-reduced-motion:reduce/);
  assert.match(html,/accountant\.css\?v=20261111-[a-z0-9-]+/);
