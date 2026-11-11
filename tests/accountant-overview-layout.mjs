@@ -35,3 +35,21 @@ test('responsive high contrast Financial 360 design and asset versions',()=>{
  assert.match(html,/accountant\.css\?v=20261111-[a-z0-9-]+/);
  assert.match(html,/accountant\.js\?v=20261111-[a-z0-9-]+/);
 });
+
+test('Insurance Invoiced mirrors Cash In design and fits all 14 financial columns',()=>{
+ const shared='#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"])';
+ assert.ok(css.includes(shared+' .finance-report table'), 'both reports share fit-to-page table styling');
+ assert.ok(css.includes(shared+' .finance-report th'), 'both reports share readable modern header colors');
+ assert.ok(css.includes(shared+' #accounts-kpis'), 'both reports share summary cards');
+ assert.ok(css.includes(shared+' #cash-invoice-total'), 'both reports share total invoiced banner');
+ assert.match(css,/\.finance-report table \{width:100%!important;min-width:0!important;/);
+ assert.match(css,/#accounts-workspace:is\(\[data-report="cash"\],\[data-report="insurance_invoiced"\]\) \.finance-report \{overflow:visible/);
+ const insuranceWidths=[...css.matchAll(/#accounts-workspace\[data-report="insurance_invoiced"\] \.finance-report th:nth-child\((\d+)\) \{width:(\d+)%\}/g)];
+ assert.equal(insuranceWidths.length,14,'Insurance Invoiced shows 14 columns');
+ assert.deepEqual(insuranceWidths.map(x=>Number(x[1])),Array.from({length:14},(_,i)=>i+1));
+ assert.equal(insuranceWidths.reduce((sum,x)=>sum+Number(x[2]),0),100,'Insurance table spans exactly 100% available width');
+ assert.match(css,/@media\(max-width:1100px\)/,'narrow displays use vertically stacked labelled records');
+ assert.match(js,/columns\.insurance_invoiced=\[\.\.\.financialColumns\.slice\(0,4\),\['Insurance Company','insurance_company'\],\.\.\.financialColumns\.slice\(4\)\]/);
+ assert.match(js,/if\(expense\)return openJob\(expense\.dataset\.job,expense\.dataset\.expense,expense\)/,'expense details use the modal');
+ assert.match(js,/const j=e\.target\.closest\('\[data-job\]'\);if\(j\)return openJob\(j\.dataset\.job,'',j\)/,'JC details use the modal');
+});
