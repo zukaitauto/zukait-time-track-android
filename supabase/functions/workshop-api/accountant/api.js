@@ -1,7 +1,7 @@
 import {financialReport,validateFilters,validDay,key,milli,day,searchKey} from './finance_rules.js';
 import {managerProfitReport} from './profit_performance.js';
 import {accountsPerformanceReport,accountsLeaveReport} from './accounts_reports.js';
-import {availablePartsListCost} from './accounts_parts_cost.js';
+import {availablePartsListCost,availableConsumablesCost} from './accounts_parts_cost.js';
 const actions=new Set(['accountant_dashboard','accountant_jc_search','accountant_jc_detail','accountant_report','accountant_command']);
 const reportNames=new Set(['jobs','consumables','paint','parts','leave','cash','lpo','outstanding','monthly','audit','labour','invoices','cash_invoices','manager_profit','accounts_performance','accounts_leave']);
 const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
@@ -71,13 +71,15 @@ export async function accountantApi(admin,user,body,secret,now=Date.now()){
   const p=managerProfitReport(context,full,{all_months:true,include_credit:true,delivered_insurance_only:true,job_card:d.job_card},now).rows.find(r=>r.job_card===d.job_card);
   const subletPending=sublets.some(r=>r.cost_omr===null),subletCost=subletPending?null:sublets.reduce((n,r)=>n+r.cost_omr,0);
   const expenseLines=full.rows.parts.filter(r=>r.job_card===d.job_card);
+  const materialLines=full.rows.consumables.filter(r=>r.job_card===d.job_card);
+  const materials=materialLines.length?availableConsumablesCost(materialLines,p?.cost_breakdown_omr?.consumables??d.consumables_cost_omr):null;
   const partsRecorded=p?.cost_breakdown_omr?.parts??d.parts_cost_omr;
   const partsCorrection=(Array.isArray(context.entries)?context.entries:[]).filter(e=>key(e.job_card)===d.job_card);
   const partsList=expenseLines.length?availablePartsListCost(expenseLines,partsRecorded,partsCorrection):null;
   const fields={
    labour:p?.cost_breakdown_omr?.labour??d.labour_cost_omr,
    paint:p?.cost_breakdown_omr?.paint??d.paint_cost_omr,
-   consumables:p?.cost_breakdown_omr?.consumables??d.consumables_cost_omr,
+   consumables:materials?materials.cost_omr:p?.cost_breakdown_omr?.consumables??d.consumables_cost_omr,
    parts:partsList?partsList.cost_omr:partsRecorded,
    sublet:p?.sublet_cost_omr??subletCost
   };
@@ -85,10 +87,18 @@ export async function accountantApi(admin,user,body,secret,now=Date.now()){
   const total=portions.includes(null)?null:portions.reduce((a,b)=>a+b,0)/1000;
   const amount=p?.amount_omr??(d.job_type==='INSURANCE'?full.rows.lpo.find(x=>x.job_card===d.job_card&&x.lpo_status==='Received')?.lpo_amount_omr:d.invoice_amount_omr);
   const profit=total!==null&&milli(amount)!==null?(milli(amount)-milli(total))/1000:null;
-  const detail={...d,parts_cost_omr:fields.parts,parts_cost_source:partsList?.source||'',
+  const partial=partsList?.partial===true||materials?.partial===true;
+  const estimated=partial||partsList?.provisional===true;
+  const detail={...d,parts_cost_omr:fields.parts,consumables_cost_omr:fields.consumables,
+   cost_partial:partial,cost_estimated:estimated,
+   costs_complete:total!==null&&partsList?.pending!==true&&materials?.pending!==true,
+   consumables_price_pending:materials?.pending===true,consumables_cost_estimated:materials?.partial===true,
+   parts_cost_partial:partsList?.partial===true,parts_cost_source:partsList?.source||'',
    parts_cost_estimated:partsList?.provisional===true,parts_price_pending:partsList?.pending===true,
    parts_list_items:partsList?.items??0,
    sublet_cost_omr:fields.sublet,job_total_cost_omr:total,job_invoice_amount_omr:amount??null,
+   warnings:[...(d.warnings||[]).filter(w=>!(partial&&/^(parts|consumables) cost pending$/i.test(w))),
+    ...(partial?['Partial cost: missing Parts List/material prices excluded; resulting profit may decrease when costs are entered']:[])],
    job_profit_omr:profit,job_profit_percentage:profit===null||!milli(amount)?null:profit/Number(amount)*100};
   const breakdown=Object.fromEntries(['consumables','paint','parts','labour'].map(k=>[k,full.rows[k].filter(r=>r.job_card===d.job_card)]));
   breakdown.labour=breakdown.labour.flatMap(line=>Array.isArray(line.employee_lines)?line.employee_lines:[line]);
