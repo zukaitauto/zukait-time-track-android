@@ -1281,7 +1281,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (user.role === 'Accountant' || action.startsWith('accountant_')) {
-      try {const result=await accountantApi(admin,user,body,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);return reply(result.body,result.status);}
+      try {const result=await accountantApi(admin,user,body,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,Date.now(),{computeLiveStatus});return reply(result.body,result.status);}
       catch(error){const result=accountantError(error);return reply(result.body,result.status);}
     }
 
