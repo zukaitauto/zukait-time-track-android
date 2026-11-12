@@ -2,7 +2,7 @@
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const config=window.ZUKAIT_ACCOUNTANT_CONFIG||{},url=config.url||'https://pjknotnjkufadqavcmii.supabase.co',publicKey=config.key||'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A',sessionKey='zukait_secure_session_v42';
 const modules=[['jobs','Job Card 360°'],['cash','Cash In'],['insurance_invoiced','Insurance Invoiced'],['leave','Leave Management'],['profit','Profit / Loss'],['consumables','Consumables'],['parts','Spare Parts'],['paint','Paint']];
-const money=(title,key)=>[title,key,true],omanMonth=()=>new Date(Date.now()+14400000).toISOString().slice(0,7),common=[['JC','job_card'],['Date','date']];
+const money=(title,key)=>[title,key,true],omanMonth=()=>new Date(Date.now()+14400000).toISOString().slice(0,7),common=[['JC','job_card'],['Vehicle','vehicle'],['Date','date']];
 const columns={jobs:[['JC','job_card'],['Registration','registration'],['Vehicle','vehicle'],['Customer','customer'],['Type','job_type'],money('Invoice OMR','invoice_amount_omr'),money('Total cost OMR','total_cost_omr'),money('Estimated GP OMR','estimated_gross_profit_omr')],consumables:[...common,['Material','material'],['Brand','brand'],['Actual quantity','quantity'],['Unit','unit'],money('Unit price OMR','unit_price_omr'),money('Cost OMR','cost_omr')],paint:[...common,['PO','po'],['Supplier','supplier'],['Brand','brand'],['Status','status'],money('Paint amount OMR','gross_omr'),money('Returns OMR','returns_omr'),money('Net OMR','net_cost_omr')],parts:[...common,['PL','list_no'],['Part','part'],['Ordered quantity','quantity'],['Received quantity','received_quantity'],['Pending quantity','pending_quantity'],['Returned quantity','returned_quantity'],['Supplier','supplier'],['Status','status'],['Invoice reference','invoice_reference'],money('Purchase OMR','purchase_amount_omr'),money('Pending purchase OMR','pending_purchase_omr'),money('Returns OMR','returns_omr'),money('Net OMR','net_cost_omr')],leave:[['Employee','employee'],['Date','date'],['Period','period_label'],['Approval','approval_status'],['Days','days'],['Remark','remark']],cash:[['Invoice Date','invoice_date'],['JC','job_card'],['Registration','registration'],['Vehicle','vehicle'],['Customer','customer'],money('Invoice Amount OMR','invoice_amount_omr')],cash_ledger:[['Date','transaction_date'],['Source','receipt_source'],['Direction','kind'],['JC','job_card'],['Payer / payee','payee'],['Category','category'],['Method','payment_method'],money('Posted OMR','recorded_amount_omr'),money('Counted OMR','amount_omr'),['Reference','reference']],lpo:[['Insurance','insurance_company'],['JC','job_card'],['Claim','claim_number'],['LPO status','lpo_status'],['LPO document received','lpo_received_date'],money('LPO amount OMR','lpo_amount_omr'),money('Cash collected OMR','collected_amount_omr'),['Latest collection date','collection_date'],money('Balance OMR','outstanding_omr')],outstanding:[['JC','job_card'],['Customer','customer'],['Insurance','insurance_company'],['Invoice date','invoice_date'],['Delivery date','delivery_date'],money('Invoice OMR','invoice_amount_omr'),money('Verified receipts OMR','payment_received_omr'),money('Balance OMR','outstanding_omr'),['Status','payment_status']],monthly:[['Month','month'],...['cash_in','cash_out','invoiced_revenue','payments_received','consumables','paint','parts','labour','total_job_cost','estimated_gross_profit','outstanding','lpo_collected','lpo_documents_received'].map(k=>money(k.replaceAll('_',' ')+' OMR',k+'_omr')),['Pending cost records','pending_cost_records'],['Pending LPO documents','lpo_pending_records'],['Leave days','leave_days']]};
 
 const financialColumns=[
@@ -162,7 +162,7 @@ const expenseSummaryKey={consumables:'consumables',parts:'parts',paint:'paint'};
 
 const expenseViews={consumables:[['details','Detailed entries'],['material','Material-wise'],['brand','Brand-wise'],['monthly','Monthly consumption'],['job','Job Card-wise']],parts:[['details','Detailed entries'],['part','Part-wise'],['supplier','Supplier-wise'],['monthly','Monthly expense'],['job','Job Card-wise']],paint:[['details','Detailed entries'],['brand','Brand-wise'],['supplier','Supplier-wise'],['monthly','Monthly expense'],['job','Job Card-wise']]};
 function expenseGroup(rows,kind,view){
- const fields={material:['material','brand','unit'],brand:kind==='consumables'?['brand','unit']:['brand'],monthly:['month'],job:['job_card'],supplier:['supplier'],part:['part']}[view];
+ const fields={material:['material','brand','unit'],brand:kind==='consumables'?['brand','unit']:['brand'],monthly:['month'],job:['job_card','vehicle'],supplier:['supplier'],part:['part']}[view];
  if(!fields)return {rows,cols:columns[kind]};
  const map=new Map(),costKey=kind==='consumables'?'cost_omr':'net_cost_omr';
  for(const r of rows){
@@ -317,7 +317,7 @@ async function load(){
   $('title').textContent=modules.find(m=>m[0]===report)?.[1]||report;
   $('report-meta').textContent='As of '+new Date(r.as_of).toLocaleString('en-GB',{timeZone:'Asia/Muscat'})+' Oman time'+(report==='leave'?' · '+r.summary.leave_total_days+' leave days':'');
   // Keep detailed financial caveats in source drilldowns and exports, not in the Profit/Loss summary.
-  const notesText=['jobs','profit'].includes(report)?'':report==='leave'?'Read-only Manager leave history. Cancelled leave does not count in leave days.':(r.notes||[]).join(' ');
+  const notesText=expenseReports.has(report)||['jobs','profit'].includes(report)?'':report==='leave'?'Read-only Manager leave history. Cancelled leave does not count in leave days.':(r.notes||[]).join(' ');
   $('notes').textContent=notesText;
   $('notes').hidden=!notesText.trim();
   $('rows').innerHTML=!searching?'<p>Search for a job card or registration number (at least 2 characters), then click to open financial details.</p>':
@@ -430,6 +430,34 @@ async function exportJob(kind){
   say('Job Card financial report prepared.');
  }catch(e){say(e.message);}
 }
+// Expense-only drilldown; JC360 stays exclusive to financial Job Card links.
+async function openExpenseJob(no,kind,trigger=null){
+ if(!['paint','consumables','parts'].includes(kind))return openJob(no,'',trigger);
+ closeDetail();detailTrigger=trigger||document.activeElement;const ticket=detailGeneration;
+ try{
+  say('Loading '+kind+' details…');
+  const rows=[],filters={job_card:no};let cursor=0,snapshot,finance;
+  do{
+   const page=await request('workshop-api',{action:'accountant_report',report:kind,filters,offset:cursor,limit:500});
+   if(ticket!==detailGeneration||!verified)return;
+   if(snapshot===undefined){snapshot=page.snapshot_revision;finance=page.finance_revision;}
+   else if(snapshot!==page.snapshot_revision||finance!==page.finance_revision)throw Error('Records changed; reopen this report.');
+   rows.push(...page.rows);cursor=page.next_offset;
+   if(rows.length>5000)throw Error('Too many entries; narrow the report.');
+  }while(cursor!==null);
+  const title={paint:'Received Paint POs',parts:'Arrived Spare Parts',consumables:'Actual Consumables'}[kind];
+  const vehicle=rows.find(r=>r.vehicle)?.vehicle||result?.rows?.find(r=>r.job_card===no)?.vehicle||'Vehicle not recorded';
+  const amountKey=kind==='consumables'?'cost_omr':'net_cost_omr';
+  const pending=rows.filter(r=>r[amountKey]==null).length;
+  const total=rows.reduce((n,r)=>n+(Number.isFinite(Number(r[amountKey]))&&r[amountKey]!=null?Math.round(Number(r[amountKey])*1000):0),0)/1000;
+  $('detail').innerHTML='<div class="heading"><div><h2 id="financial-detail-title">JC '+esc(no)+' · '+esc(title)+'</h2><p class="expense-vehicle">'+esc(vehicle)+'</p></div>'+
+   '<div class="detail-actions"><button type="button" id="close-detail">Back to report</button></div></div>'+
+   '<div class="expense-focused-total"><span>Known '+esc(title)+' Cost</span><strong>'+esc(display(total,true))+'</strong>'+
+   (pending?'<small>'+pending+' received/finalized entries have pending prices</small>':'')+'</div>'+
+   (rows.length?table(rows,columns[kind],false):'<p>No matching finalized '+esc(kind)+' entries.</p>');
+  $('detail').hidden=false;$('close-detail').onclick=closeDetail;showDetailDialog();say('');
+ }catch(e){if(ticket===detailGeneration)say(e.message);}
+}
 async function openJob(no,expandType='',trigger=null){
  closeDetail();detailTrigger=trigger||document.activeElement;const ticket=detailGeneration;
  try{
@@ -513,13 +541,13 @@ function revision(){return {expected_snapshot_revision:result?.snapshot_revision
 $('entry').onsubmit=e=>{e.preventDefault();const c={operation:$('operation').value,...revision(),transaction_date:$('transaction-date').value,kind:$('kind').value,job_card:$('entry-job').value.trim().toUpperCase(),payee:$('payee').value.trim(),amount:$('amount').value,payment_method:$('method').value,category:$('category').value.trim(),reference:$('reference').value.trim(),remarks:$('remarks').value.trim(),reason:$('reason').value.trim()};if(c.operation==='CORRECT')c.entry_id=$('entry-id').value;submit(c);};
 $('correction').onsubmit=e=>{e.preventDefault();if(!target?.field)return;const d=target.detail,k=target.field,c={operation:k==='invoice_amount_omr'?'CORRECT_INVOICE':'ADJUST_COST',job_card:d.job_card,expected_snapshot_revision:target.snapshot_revision,expected_finance_revision:target.finance_revision,transaction_date:new Date(Date.now()+14400000).toISOString().slice(0,10),old_value:d[k],new_value:$('corrected-value').value,reason:$('correction-reason').value.trim()};if(c.operation==='ADJUST_COST')c.category={consumables_cost_omr:'consumables',paint_cost_omr:'paint',parts_cost_omr:'parts',labour_cost_omr:'labour'}[k];submit(c);};
 $('detail').onclick=e=>{const b=e.target.closest('[data-adjust]');if(!b||!target)return;target.field=b.dataset.adjust;$('correction-target').textContent=target.detail.job_card+' · '+target.field.replaceAll('_',' ')+' · Original '+display(target.detail[target.field],true)+(target.field==='invoice_amount_omr'&&target.detail.job_type==='INSURANCE'?' · Linked LPO amount is also corrected; this does not record a cash receipt.':'');$('corrected-value').value=target.detail[target.field];$('correction-reason').value='';$('correction').hidden=false;};
-$('rows').onclick=e=>{if(!result)return;const expense=e.target.closest('[data-expense]');if(expense)return openJob(expense.dataset.job,expense.dataset.expense,expense);const j=e.target.closest('[data-job]');if(j)return openJob(j.dataset.job,'',j);const c=e.target.closest('[data-correct]');if(c){const row=result.rows[Number(c.dataset.correct)];if(row&&!row.invoice_receipt)return cashForm(row);return;}const r=e.target.closest('[data-reverse]');if(r){const row=result.rows[Number(r.dataset.reverse)];if(!row||row.invoice_receipt)return;const reason=prompt('Reason for reversal? The original entry remains in history.');if(reason?.trim().length>=3)submit({operation:'REVERSE',entry_id:row.id,transaction_date:new Date(Date.now()+14400000).toISOString().slice(0,10),reason:reason.trim(),...revision()});}};
+$('rows').onclick=e=>{if(!result)return;const expense=e.target.closest('[data-expense]');if(expense)return ['paint','parts','consumables'].includes(expense.dataset.expense)?openExpenseJob(expense.dataset.job,expense.dataset.expense,expense):openJob(expense.dataset.job,expense.dataset.expense,expense);const j=e.target.closest('[data-job]');if(j)return expenseReports.has(report)?openExpenseJob(j.dataset.job,report,j):openJob(j.dataset.job,'',j);const c=e.target.closest('[data-correct]');if(c){const row=result.rows[Number(c.dataset.correct)];if(row&&!row.invoice_receipt)return cashForm(row);return;}const r=e.target.closest('[data-reverse]');if(r){const row=result.rows[Number(r.dataset.reverse)];if(!row||row.invoice_receipt)return;const reason=prompt('Reason for reversal? The original entry remains in history.');if(reason?.trim().length>=3)submit({operation:'REVERSE',entry_id:row.id,transaction_date:new Date(Date.now()+14400000).toISOString().slice(0,10),reason:reason.trim(),...revision()});}};
 const moduleSvg=content=>'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+content+'</svg>';
 const moduleDesign={
  jobs:[moduleSvg('<rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="m8 14 2.3 2.3L16 10.5"/>'),'Search registration or JC and inspect all five costs','blue'],
- cash:[moduleSvg('<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v5c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 11v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5M5 16v2c0 1.7 3.1 3 7 3s7-1.3 7-3v-2"/>'),'Manager Cash financial report with five cost columns','green'],
+ cash:[moduleSvg('<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v5c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 11v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5M5 16v2c0 1.7 3.1 3 7 3s7-1.3 7-3v-2"/>'),'Cash Job Card invoices, monthly totals and filters','green'],
  insurance_invoiced:[moduleSvg('<path d="M12 2 4 5v6c0 5.2 3 8.6 8 11 5-2.4 8-5.8 8-11V5z"/><path d="m7.5 13 1-3h7l1 3M8 16v-3h8v3M9 16v1m6-1v1"/>'),'Delivered, invoiced insurance vehicles by company','indigo'],
- leave:[moduleSvg('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2v6m10-6v6M3 10h18"/>'),'Manager leave history — read-only','amber'],
+ leave:[moduleSvg('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2v6m10-6v6M3 10h18"/>'),'Leave management and history','amber'],
  profit:[moduleSvg('<rect x="4" y="13" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="16" y="3" width="4" height="18" rx="1"/>'),'Cash, Insurance, Credit and Corporate combined','teal'],
  consumables:[moduleSvg('<rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 2v6m6-6v6M8 12h8m-8 4h8"/>'),'Monthly material consumption, brand and costs','green'],
  parts:[moduleSvg('<path d="M14 4a6 6 0 0 0-7 7L3 15l6 6 4-4a6 6 0 0 0 7-7l-5 5-4-4z"/>'),'Monthly spare parts purchases and returns','blue'],
