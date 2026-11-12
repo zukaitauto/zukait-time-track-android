@@ -31,7 +31,25 @@
     if(document.getElementById("rdb-css"))return;
     const s=document.createElement("style");s.id="rdb-css";
     s.textContent=`
-    #rc-root .rdb-job-table-scroll{overflow-x:auto;margin-top:10px}
+    
+     #rc-root .rdb-followup-scroll{overflow-x:auto;max-width:100%;margin-top:10px;border:1px solid #d3e4ee;border-radius:12px;background:#fff}
+     #rc-root .rdb-followup-table{width:100%;min-width:1060px;border-collapse:collapse;text-align:left;font-size:13px;color:#1b3850}
+     #rc-root .rdb-followup-table th{background:#e8f3fc;color:#153d61;font-size:12px;font-weight:850;white-space:nowrap}
+     #rc-root .rdb-followup-table td,#rc-root .rdb-followup-table th{padding:10px 12px;border-bottom:1px solid #dbe6ef;vertical-align:middle}
+     #rc-root .rdb-followup-table tbody tr:nth-child(even){background:#f7fbff}
+     #rc-root .rdb-followup-table td strong{font-weight:850;color:#103954}
+     #rc-root .rdb-followup-vehicle{display:block;color:#355b75;font-weight:650;margin-top:3px}
+     #rc-root .rdb-followup-date{display:flex;gap:6px;align-items:center;white-space:nowrap}
+     #rc-root .rdb-followup-date input{box-sizing:border-box;width:145px;min-height:36px;padding:6px;border:1px solid #a9c2d6;border-radius:7px;background:#fff;color:#183a52}
+     #rc-root .rdb-followup-date button{background:#147568!important;color:#fff!important}
+     #rc-root .rdb-followup-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+     #rc-root .rdb-followup-actions button,#rc-root .rdb-followup-date button{font-size:12px!important;padding:7px 10px!important;min-height:36px!important;white-space:nowrap;border-radius:7px!important}
+     #rc-root .rdb-followup-actions button[data-rdb="open"]{background:#146295!important;color:white!important}
+     #rc-root .rdb-followup-actions button[data-rdb="edit-job"]{background:#fff1c8!important;color:#7a4500!important;border:1px solid #eac15b!important}
+     #rc-root .rdb-followup-status{font-weight:750;font-size:12px}
+     #rc-root .rdb-followup-table .rdb-location{margin:4px 0 0 6px}
+     #rc-root .rdb-followup-table .rdb-followup-index{font-weight:850;color:#176287}
+#rc-root .rdb-job-table-scroll{overflow-x:auto;margin-top:10px}
     #rc-root .rdb-job-table{width:100%;border-collapse:collapse;text-align:left;font-size:13px}
     #rc-root .rdb-job-table th,#rc-root .rdb-job-table td{padding:6px 8px;white-space:nowrap;border-bottom:1px solid #d6e3f0}
     #rc-root .rdb-job-table th{background:#eaf3fc;color:#123451}
@@ -151,6 +169,24 @@
       (row.rc_no&&isJob?' · '+safe(row.rc_no):'')+'</small><small>'+safe(date.replace(/(\d{4})-(\d{2})-(\d{2})/g,'$3-$2-$1'))+'</small><span class="rdb-state '+(String(row.status).toUpperCase()==='WAITING'?'waiting':String(row.status).toUpperCase()==='APPROVED'?'approved':'neutral')+'">'+safe(row.delivered?'Delivered':row.status==='WAITING'?'Approval Waiting':row.status||'Status not recorded')+'</span>'+(section==='checklists'&&isJob?'<button type="button" data-rdb="open-job" data-job="'+safe(row.job_card)+'">'+(row.delivered?'Delivered · JC ':'JC Opened · ')+safe(row.job_card)+'</button>':'')+age+promise+'</div>'+
       '<div class="rdb-row-actions">'+open+(section==='checklists'&&!isJob?'<button type="button" data-rdb="link-existing" data-rc="'+safe(row.rc_no)+'">Link Existing Job Card</button>':'')+(section==='checklists'&&row.manually_linked&&role()==='Manager'?'<button type="button" data-rdb="correct-existing" data-rc="'+safe(row.rc_no)+'" data-job="'+safe(row.job_card)+'">Correct Link</button>':'')+deliver+(isJob&&(!row.delivered||role()==='Manager')?'<button type="button" data-rdb="edit-job" data-job="'+safe(row.job_card)+'">Edit Job Card</button>':'')+'</div></div>';
   }
+  // Each Delivery Follow-up vehicle occupies one compact row; no changes to saved records.
+  function followupTableHtml(){
+    const headers=['No.','Job Card / Vehicle','Registration','Company / Type','Promise Date','Days Open','Status / Location','Actions'];
+    const rows=latest.map((row,index)=>{
+      const jc=safe(row.job_card),date=safe(row.promise_date||''),isJob=!!row.job_card;
+      const canEdit=isJob&&!row.delivered&&writable();
+      const promise=canEdit?'<div class="rdb-followup-date"><input type="date" aria-label="Promise date for JC '+jc+'" data-rdb-promise="'+jc+'" value="'+date+'"><button type="button" data-rdb="promise" data-job="'+jc+'" data-original="'+date+'">Save</button></div>':safe(row.promise_date||'No date');
+      const actions='<div class="rdb-followup-actions"><button type="button" data-rdb="open" data-rc="" data-job="'+jc+'">View Job Card</button>'+
+       (isJob&&(!row.delivered||role()==='Manager')?'<button type="button" data-rdb="edit-job" data-job="'+jc+'">Edit Job Card</button>':'')+'</div>';
+      return '<tr><td class="rdb-followup-index">'+safe(index+1+page*50)+'</td>'+
+       '<td><strong>JC '+jc+'</strong><span class="rdb-followup-vehicle">'+safe(row.vehicle||'Vehicle not recorded')+'</span></td>'+
+       '<td>'+safe(row.registration||'—')+'</td><td>'+safe(row.insurance_company||row.job_type||'—')+'</td>'+
+       '<td>'+promise+'</td><td><strong>'+safe(Number.isInteger(row.days_open)?row.days_open:'—')+'</strong></td>'+
+       '<td><span class="rdb-followup-status">'+safe(row.status||'Open')+'</span>'+locationBadge(row.location)+'</td><td>'+actions+'</td></tr>';
+    });
+    return '<div class="rdb-followup-scroll" role="region" aria-label="Delivery Follow-up table" tabindex="0"><table class="rdb-followup-table">'+
+     '<thead><tr>'+headers.map(x=>'<th scope="col">'+x+'</th>').join('')+'</tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
+  }
   function jobTableHtml(){
     const headers=['S/N','Created','JC No.','Vehicle','Year','Reg. No.','Insurance / Type','Status','Days Open','Promise Date','Actions'];
     const rows=latest.map((row,index)=>{
@@ -207,7 +243,7 @@
     const host=document.getElementById("rdb-results"),foot=document.getElementById("rdb-page");
     if(!host||!foot)return;
     const markup=loading?'<p>Loading from Reception server…</p>':
-      latest.length?(section==="jobs"?jobTableHtml():latest.map(rowHtml).join("")):'<p>No matching records found.</p>';
+      latest.length?(section==="jobs"?jobTableHtml():section==="followup"?followupTableHtml():latest.map(rowHtml).join("")):'<p>No matching records found.</p>';
     if(host.innerHTML!==markup)host.innerHTML=markup;
     foot.textContent=(total?("Showing "+(page*50+1)+"–"+Math.min((page+1)*50,total)+" of "+total):"0 records");
     const next=document.querySelector('#rc-root [data-rdb="next"]');
