@@ -1005,7 +1005,7 @@
     try{
       const r=await api({...command,action:'manager_job_full_edit'});
       if(stale(epoch)||token!==sessionToken())throw Error('STALE_SESSION');
-      if(!r.ok)return r;
+      if(!r.ok){status('CORRECTION NOT CONFIRMED','warn');return r;}
       // A receipt is not a full snapshot: invalidate earlier pulls and baselines
       // without relabelling the cached data with the receipt's new revision.
       dirtyGeneration++;
@@ -1015,6 +1015,9 @@
       if(stale(epoch)||token!==sessionToken())throw Error('STALE_SESSION');
       if(!refreshed)status('SAVED — REFRESH PENDING','warn');
       return {...r,refresh_pending:!refreshed};
+    }catch(e){
+      if(!stale(epoch)&&token===sessionToken())status('CORRECTION NOT CONFIRMED','warn');
+      throw e;
     }finally{
       if(!stale(epoch)&&token===sessionToken()){
         managerEditInFlight=false;
