@@ -86,6 +86,53 @@ el('peReceivedDate').value='2026-10-25';
 app.paintSaveEdit(po.id);
 assert.equal(po.receivedAt,previous);
 
+// Exercise the list and detail renderers with the reported floating-point sum.
+const example={...po,id:'paint-059',poNumber:'PO-Zi059',jobCard:'JC12086',vendor:'New Wishes Trading',
+ createdAt:'2026-11-04T12:20:00Z',receivedAt:String(Date.parse('2026-11-04T12:22:00Z')),
+ lines:[
+  {paintType:'Base Coat',quantity:0.7,pricePerLitre:11,lineTotal:7.7},
+  {paintType:'Pearl Coat',quantity:0.6,pricePerLitre:11,lineTotal:6.6}
+ ]};
+const overnight={...example,id:'overnight',poNumber:'PO-overnight',
+ createdAt:Date.parse('2026-10-31T23:58:00+04:00'),receivedAt:'2026-11-01T00:02:00+04:00'};
+const undated={...example,id:'undated',poNumber:'PO-undated',receivedAt:'invalid'};
+state.paintPurchasing.orders=[example,overnight,undated,pending];
+assert.equal(example.lines.reduce((total,line)=>total+line.quantity,0),1.2999999999999998);
+const beforeDisplay=JSON.stringify(state.paintPurchasing);
+app.saved=false;
+el('paintPOListQuery').value=example.poNumber;
+app.paintRenderPOList();
+const list=el('paintPOListRows').innerHTML;
+assert.match(list,/Created: 04\/11\/2026, 4:20:00 pm/i);
+assert.match(list,/Received Date: 2026-11-04/);
+assert.match(list,/Total Quantity: 1\.300 Liter/);
+assert.match(list,/>Received<\/span>/);
+app.paintOpenPORecord(example.id);
+const details=el('psOut').innerHTML;
+assert.match(details,/>0\.700 L</);
+assert.match(details,/>0\.600 L</);
+assert.match(details,/OMR 14\.300/);
+assert.match(details,/Received By: Vinayan · 04\/11\/2026, 4:22:00 pm/i);
+el('paintPOMonth').value='2026-10';
+el('paintPOListQuery').value='';
+app.paintRenderPOList();
+assert.match(el('paintPOListRows').innerHTML,/PO-overnight.*Received Date: 2026-11-01/);
+el('paintPOListQuery').value=pending.poNumber;
+app.paintRenderPOList();
+assert.match(el('paintPOListRows').innerHTML, /Waiting for Paint/);
+assert.doesNotMatch(el('paintPOListRows').innerHTML,/Received Date:/);
+el('paintReceivedMonth').value='2026-11';
+app.paintRenderReceivedList();
+const receipts=el('paintReceivedListRows').innerHTML;
+assert.match(receipts,/PO-overnight.*01\/11\/2026, 12:02:00 am/i);
+assert.doesNotMatch(receipts,/PO-undated/);
+el('paintReceivedMonth').value='';
+el('paintReceivedListQuery').value='PO-undated';
+app.paintRenderReceivedList();
+assert.match(el('paintReceivedListRows').innerHTML,/Date unavailable/);
+assert.equal(JSON.stringify(state.paintPurchasing),beforeDisplay);
+assert.equal(app.saved,false);
+
 // Run the backend Manager-only correction guard as executable JS from source.
 const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
 const start=api.indexOf('function validatePaintManagerCorrections(');
