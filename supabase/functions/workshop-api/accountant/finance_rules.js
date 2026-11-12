@@ -34,7 +34,7 @@ export function financialReport(context,filters={},now=Date.now()){
    const paintLineBrands=[...new Set(arr(o.lines).map(l=>String(l.brandName||l.brand||'').trim()).filter(Boolean))];
    const recordedBrand=String(o.brandName||o.brand||'').trim();
    const paintBrand=recordedBrand||(paintLineBrands.length===1?paintLineBrands[0]:paintLineBrands.length>1?'Mixed / unallocated':'Not recorded');
-   const paintLines=arr(o.lines).filter(Boolean),paintUnits=[...new Set(paintLines.map(l=>String(l.unit||'Liter').trim()))];
+   const paintLines=arr(o.lines).filter(Boolean),paintUnits=[...new Set(paintLines.map(l=>String(l.unit||'Not recorded').trim()))];
    const validPaintQuantity=paintLines.length&&paintLines.every(l=>l.quantity!==null&&l.quantity!==undefined&&Number.isFinite(Number(l.quantity))&&Number(l.quantity)>=0);
    const paintQuantity=validPaintQuantity&&paintUnits.length===1?paintLines.reduce((n,l)=>n+Number(l.quantity),0):null;
    const paintPrices=[...new Set(paintLines.map(l=>milli(l.pricePerLitre)))];
