@@ -1,71 +1,16 @@
 {
-  "versionName": "V397",
-  "versionCode": 360,
+  "versionName": "V398",
+  "versionCode": 361,
   "releaseScope": "accountant-live-test",
-  "approvedForStaff": true,
-  "ownerPublicationRequested": true,
-  "ownerRequestedImmediateRelease": true,
-  "releaseHeldByOwner": false,
+  "approvedForStaff": false,
+  "ownerPublicationRequested": false,
+  "ownerRequestedImmediateRelease": false,
+  "releaseHeldByOwner": true,
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "Exact-source signed APK, Reception and Accountant QA passed; production workshop-api v116 readback matches reviewed brand-only reporting patch, staff-auth unchanged; no financial records edited. Physical phone acceptance and fresh backup restore NOT_RUN; V396 retained for rollback.",
-  "sourceCommit": "e9a999507864adf3018538375414f7241044759b",
-  "approvedAt": "2026-11-12T09:17:05.453Z",
-  "publishNonce": "e9a999507864adf3018538375414f724",
-  "ownerApprovedLiveAccountantTesting": true,
-  "physicalAcceptanceStatus": "NOT_RUN",
-  "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "backupDeferredByOwner": true,
-  "signedAcceptanceRun": 43189333738,
-  "verificationRun": 43189333723,
-  "accountantVerificationRun": 43189333689,
-  "authorization": "Owner requested publishing V397 for complete Accountant Module testing.",
-  "productionBackend": {
-    "project": "pjknotnjkufadqavcmii",
-    "functions": {
-      "staff-auth": {
-        "version": 13,
-        "bundleSha256": "8c9007aef796124863048c9b75156133edd9823ba9fc5211f0e70fe6ec5e4a11",
-        "verifiedFileMatch": true
-      },
-      "workshop-api": {
-        "version": 116,
-        "bundleSha256": "77f775eb7f41b7d933b9bad66c33633ddca38e517f556d8fa7af735d893ea4e1",
-        "verifiedFileMatch": true
-      }
-    },
-    "migrations": [
-      "accountant_financial_ledger",
-      "accountant_lpo_audit",
-      "accountant_append_only_grants",
-      "accountant_append_only_corrections"
-    ],
-    "priorWorkshopApiVersion": 115,
-    "readbackVerified": true,
-    "filesVerified": 41,
-    "changedAccountantFiles": 1,
-    "scope": "V397 production reporting patch: preserve all 41 live workshop-api files except replacement of accountant/finance_rules.js; staff-auth v13 unchanged."
-  },
-  "evidence": {
-    "credentialPreservation": true,
-    "qaFinancialAcceptance": true,
-    "serverPermissions": true,
-    "rollbackPrepared": true,
-    "legacyLoginCompatibility": true,
-    "sourceVerificationRuns": {
-      "signedAcceptanceRun": 43189333738,
-      "verificationRun": 43189333723,
-      "accountantVerificationRun": 43189333689
-    },
-    "backendReadback": "Confirmed ACTIVE workshop-api v116 with exact repo finance_rules.js; 41 files, staff-auth v13 unchanged.",
-    "rollbackApp": "release-V396-architecture-v2",
-    "rollbackBackendPreviousVersion": 115
-  },
-  "previousPublishedRelease": {
-    "versionName": "V396",
-    "versionCode": 359,
-    "sourceCommit": "2830fa0bd4d61b98a5d4ff61ee1625087c0527de",
-    "releaseTag": "release-V396-architecture-v2"
-  }
+  "reason": "V398 UI/expense report candidate only: isolate arrived parts and received paint, vehicle labels, focused expense drilldowns, eight equal dashboard cards and full-width Profit/Loss. Full Manager-equivalent Accountant leave mutations need separate audited backend authorization. Not approved for publication until complete regression and release verification.",
+  "sourceCommit": null,
+  "approvedAt": null,
+  "publishNonce": null
 }
