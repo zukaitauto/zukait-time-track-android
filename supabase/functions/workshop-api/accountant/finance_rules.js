@@ -34,10 +34,15 @@ export function financialReport(context,filters={},now=Date.now()){
    const paintLineBrands=[...new Set(arr(o.lines).map(l=>String(l.brandName||l.brand||'').trim()).filter(Boolean))];
    const recordedBrand=String(o.brandName||o.brand||'').trim();
    const paintBrand=recordedBrand||(paintLineBrands.length===1?paintLineBrands[0]:paintLineBrands.length>1?'Mixed / unallocated':'Not recorded');
-   const commonPaint={job_card:no,po:o.poNumber||'',supplier:o.supplier||o.supplierName||o.vendor||'',brand:paintBrand,purchase_date:day(o.createdAt),received,nil:!!o.nilPaintPurchase};
+   const paintLines=arr(o.lines).filter(Boolean),paintUnits=[...new Set(paintLines.map(l=>String(l.unit||'Liter').trim()))];
+   const validPaintQuantity=paintLines.length&&paintLines.every(l=>l.quantity!==null&&l.quantity!==undefined&&Number.isFinite(Number(l.quantity))&&Number(l.quantity)>=0);
+   const paintQuantity=validPaintQuantity&&paintUnits.length===1?paintLines.reduce((n,l)=>n+Number(l.quantity),0):null;
+   const paintPrices=[...new Set(paintLines.map(l=>milli(l.pricePerLitre)))];
+   const paintUnitPrice=paintPrices.length===1?money(paintPrices[0]):null;
+   const commonPaint={job_card:no,po:o.poNumber||'',supplier:o.supplier||o.supplierName||o.vendor||'',brand:paintBrand,quantity:paintQuantity,unit:paintUnits.length===1?paintUnits[0]:'Mixed',unit_price_omr:paintUnitPrice,purchase_date:day(o.createdAt),received,nil:!!o.nilPaintPurchase};
    // Reports show dated cost movements; JC360 retains the complete current net.
    paint.push({...commonPaint,id:o.id,date:day(o.receivedAt||o.createdAt),status:o.nilPaintPurchase?'NIL / Leftover':received?'Received':'Receipt pending',gross_omr:received?money(gross):null,returns_omr:received?0:null,net_cost_omr:net!==null?money(gross):null});
-   if(received&&!o.nilPaintPurchase)for(const {source:r,value} of returnRows)paint.push({...commonPaint,id:String(o.id)+':return:'+r.id,date:day(r.returnedAt),date_status:day(r.returnedAt)?'Recorded':'Return date unavailable',status:'Returned paint',gross_omr:0,returns_omr:money(value),net_cost_omr:net!==null&&value!==null?money(-value):null});
+   if(received&&!o.nilPaintPurchase)for(const {source:r,value} of returnRows)paint.push({...commonPaint,id:String(o.id)+':return:'+r.id,date:day(r.returnedAt),date_status:day(r.returnedAt)?'Recorded':'Return date unavailable',status:'Returned paint',quantity:Number.isFinite(Number(r.quantity))&&r.quantity!=null?Number(r.quantity):null,unit_price_omr:null,gross_omr:0,returns_omr:money(value),net_cost_omr:net!==null&&value!==null?money(-value):null});
   }
   const items=lists.filter(l=>key(l.jobCard)===no).flatMap(l=>l.items.map(i=>({...i,listNo:l.listNo})));let partsCost=items.length?0:null,partsPending=false;
   for(const i of items){const returned=key(i.status)==='RETURNED',snapshot=returned&&i.preReturnSnapshot&&typeof i.preReturnSnapshot==='object'?i.preReturnSnapshot:{},price=milli(returned?(i.purchaseAmount??snapshot.purchaseAmount):i.purchaseAmount),qty=Number(i.qty),confirmed=['RECEIVED','SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED','CUSTOMER_SETTLEMENT'].includes(key(i.status)),known=price!==null&&price>=0&&Number.isFinite(qty)&&qty>0;
