@@ -1280,6 +1280,7 @@ Deno.serve(async (req: Request) => {
       return reply(result.body,result.status);
     }
 
+    // Owner-approved V398 source includes compact Reception rows and revised one-row browser expectations.
     // V398 exact-source combined QA: Reception compact Delivery Follow-up and Accountant receipts/leave.
     // V398 source gate: the Reception Delivery Follow-up compact table is presentation-only;
     // its server-side promise-date revision guards and permission checks remain unchanged.
