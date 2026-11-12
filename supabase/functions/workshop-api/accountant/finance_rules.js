@@ -30,6 +30,7 @@ export function financialReport(context,filters={},now=Date.now()){
    const returnRows=[];
    for(const r of unique(arr(o.returns).filter(Boolean).map((x,i)=>({...x,id:x.id||String(i)}))).filter(x=>!x.voided)){let v=milli(r.value);if(v===null){const l=arr(o.lines).find(l=>l.id===r.lineId),lc=l?linePrice(l):null,q=Number(r.quantity);v=lc!==null&&Number(l.quantity)>0?Math.round(lc*q/Number(l.quantity)):milli(r.pricePerLitre)!==null?Math.round(milli(r.pricePerLitre)*q):null;}returnRows.push({source:r,value:v});ret=v===null||ret===null?null:ret+v;}
    const net=received&&gross!==null&&ret!==null&&gross>=ret?gross-ret:null;if(net===null)paintCost=null;else if(paintCost!==null)paintCost+=net;
+   // A supplier is not a paint brand. Do not attribute mixed-line purchase costs to one brand.
    const paintLineBrands=[...new Set(arr(o.lines).map(l=>String(l.brandName||l.brand||'').trim()).filter(Boolean))];
    const recordedBrand=String(o.brandName||o.brand||'').trim();
    const paintBrand=recordedBrand||(paintLineBrands.length===1?paintLineBrands[0]:paintLineBrands.length>1?'Mixed / unallocated':'Not recorded');
