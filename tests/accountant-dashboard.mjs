@@ -49,6 +49,15 @@ for(const [expense,label] of [['consumables','Consumables'],['parts','Spare Part
  },0);
  assert.equal(Number(reportedGroupedKnown.toFixed(3)),expectedExpenses[expense],'grouped known costs reconcile to report header');
  assert.equal(w.document.getElementById('cash-invoice-total').hidden,false,'top expense remains visible for grouped reports');
+ const focusedHeading=expense==='parts'?'Arrived Spare Parts':expense==='paint'?'Received Paint POs':'Actual Consumables';
+ viewSelect.value='details';viewSelect.dispatchEvent(new w.Event('change'));
+ await wait(()=>w.document.querySelector('#rows [data-job="J1"]'));
+ w.document.querySelector('#rows [data-job="J1"]').click();
+ await wait(()=>w.document.getElementById('financial-detail-dialog').open);
+ assert.match(w.document.getElementById('financial-detail-title').textContent,new RegExp(focusedHeading));
+ assert.doesNotMatch(w.document.getElementById('detail').textContent,/Profit %|Labour Cost|Financial 360/i,'expense list must not show unrelated financial 360 details');
+ assert.match(w.document.getElementById('detail').textContent,/Toyota Camry/,'focused popup identifies vehicle');
+ w.document.getElementById('close-detail').click();
  viewSelect.value='job';viewSelect.dispatchEvent(new w.Event('change'));
  await wait(()=>w.document.querySelector('#rows [data-job="J1"]'));
  assert.equal(w.document.querySelector('#rows [data-job="J1"]').tagName,'BUTTON');
