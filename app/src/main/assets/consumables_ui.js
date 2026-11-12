@@ -229,7 +229,7 @@ window.consLoadJC=function(type){
   if(details)details.innerHTML=consVehicleDetails(d,base.colourCode||'');
   const pname=(users||[]).find(x=>x.id===base.mainPainterId)?.name||base.mainPainterId||'—',sname=(users||[]).find(x=>x.id===base.allottedSupervisorId)?.name||base.allottedSupervisorId||'—';
   if(context)context.innerHTML='<b>ADDING EXTRA MATERIALS TO JC '+esc(d.job.no)+'</b><small>'+esc(d.vehicle||d.job.vehicle||'Vehicle')+' · Colour '+esc(base.colourCode||'—')+'</small><small>Painter '+esc(pname)+' · Supervisor '+esc(sname)+'</small>';
-  if(workspace)workspace.classList?.remove?.('hidden');if(note)note.textContent='Add only the extra materials required for this Job Card.';consRefreshIssueFinishState();return
+  if(workspace)workspace.classList?.remove?.('hidden');const lockedActual=C().ensureState(state).actuals.some(x=>!x.voided&&x.locked&&String(x.jobCard).toUpperCase()===String(d.job.no).toUpperCase());if(note)note.textContent=lockedActual?'Final Actual Materials are locked. The Manager must reopen Actual Materials in Consumables Edit History before saving Additional Materials.':'Add only the extra materials required for this Job Card.';consRefreshIssueFinishState();return
  }
  if(!d){if(v)v.value='';if(p)p.innerHTML='<option value="">Select painter</option>';if(sup)sup.value=me?.name||me?.id||'';if(details)details.innerHTML='';if(note)note.textContent=el?.value?'Select a Job Card from the search results.':'';consRefreshIssueFinishState();return}
  if(details)details.innerHTML=consVehicleDetails(d,document.getElementById('consColour')?.value||'');
@@ -246,7 +246,7 @@ window.consFilterBrands=function(){
  sel.innerHTML='<option value="">Brand</option>'+brands.map(b=>'<option value="'+esc(b.id)+'">'+esc(b.name)+'</option>').join('');if(brands.length===1)sel.value=brands[0].id;
  const m=c.materials.find(x=>x.id===mid),q=document.getElementById('consQty');if(q)q.placeholder=m?.unit?'Quantity ('+m.unit+')':'Quantity';
 };
-window.consRefreshIssueFinishState=function(){const btn=document.getElementById('consFinishBtn');if(!btn)return false;const painter=draft.type==='additional'?(draft.additionalBase?.mainPainterId||''):(document.getElementById('consPainter')?.value||draft.jc?.painters?.[0]?.id||'');const ready=!!(draft.jc&&draft.lines.length);btn.disabled=!ready;if(btn.style){btn.style.backgroundColor=ready?'#166534':'';btn.style.color=ready?'#ffffff':'';btn.style.fontWeight='900';}btn.title=ready?'Finish and save materials':'Select a Job Card and add at least one material';return ready};
+window.consRefreshIssueFinishState=function(){const btn=document.getElementById('consFinishBtn');if(!btn)return false;const locked=draft.type==='additional'&&draft.jc&&C().ensureState(state).actuals.some(x=>!x.voided&&x.locked&&String(x.jobCard).toUpperCase()===String(draft.jc.job.no).toUpperCase());const ready=!!(draft.jc&&draft.lines.length&&!locked);btn.disabled=!ready;if(btn.style){btn.style.backgroundColor=ready?'#166534':'';btn.style.color=ready?'#ffffff':'';btn.style.fontWeight='900';}btn.title=locked?'Manager must reopen finalized Actual Materials before Additional can be saved':(ready?'Finish and save materials':'Select a Job Card and add at least one material');return ready};
 window.consAddLine=function(){
  if(!draft.jc)return alert('Load a valid Job Card first.');
  const mid=document.getElementById('consMaterial')?.value,bid=document.getElementById('consBrand')?.value,q=Number(document.getElementById('consQty')?.value);
@@ -310,10 +310,16 @@ window.consLoadActual=function(){
  document.getElementById('consActualPainter').value=pu?.name||base?.mainPainterId||'';
  document.getElementById('consActualSupervisor').value=su?.name||base?.allottedSupervisorId||'';
  if(!base){const fb=document.getElementById('consFinishActualBtn');if(fb)fb.disabled=true;out.innerHTML='<div class="notice">No completed Suggested / Issued Materials found for this Job Card.</div>';return}
- if(c.actuals.some(x=>x.jobCard===d.job.no&&!x.voided)){const fb=document.getElementById('consFinishActualBtn');if(fb)fb.disabled=true;out.innerHTML='<div class="notice">Actual Materials are already finished and locked for this Job Card.</div>';return}
- const a=C().allowance(state,d.job.no);
- draft.lines=a.map(({materialId,brandId,quantity})=>({materialId,brandId,quantity}));const fb=document.getElementById('consFinishActualBtn');if(fb)fb.disabled=!draft.lines.length;
- if(note)note.textContent='Suggested / issued quantity is shown for reference. Enter the quantity actually used; add a material below if it was used but not originally issued.';
+ const existing=c.actuals.find(x=>x.jobCard===d.job.no&&!x.voided),reopened=existing&&!existing.locked&&existing.managerReopen;
+ if(existing&&!reopened){const fb=document.getElementById('consFinishActualBtn');if(fb)fb.disabled=true;out.innerHTML='<div class="notice">Actual Materials are already finished and locked for this Job Card. The Manager can reopen them through Consumables Edit History.</div>';return}
+ if(reopened&&role()!=='Manager'){const fb=document.getElementById('consFinishActualBtn');if(fb)fb.disabled=true;out.innerHTML='<div class="notice">The Manager must review and re-finalize this reopened Actual record.</div>';return}
+ const a=C().allowance(state,d.job.no),previous=new Map((reopened?.lines||[]).map(x=>[x.materialId+'|'+x.brandId,x]));
+ // Preserve original actual quantities; new additional issue rows require explicit actual confirmation.
+ draft.lines=a.map(({materialId,brandId,quantity})=>({materialId,brandId,quantity:previous.get(materialId+'|'+brandId)?.actualQuantity??(reopened?0:quantity)}));
+ for(const old of reopened?.lines||[]){if(!a.some(x=>x.materialId===old.materialId&&x.brandId===old.brandId))draft.lines.push({materialId:old.materialId,brandId:old.brandId,quantity:Number(old.actualQuantity||0),actualOnly:true})}
+ if(reopened)draft.actualAt=Number(reopened.actualAt)||Date.now();
+ const fb=document.getElementById('consFinishActualBtn');if(fb)fb.disabled=!draft.lines.length;
+ if(note)note.textContent=reopened?'Manager correction: previous actual quantities are preserved. Enter any newly used quantities, then confirm and lock. Original actual date is retained.':'Suggested / issued quantity is shown for reference. Enter the quantity actually used; add a material below if it was used but not originally issued.';
  const add=document.getElementById('consActualAdd');if(add){add.classList.remove('hidden');add.innerHTML='<button type="button" class="blue" onclick="consAddActualMaterial()">＋ ADD MATERIAL</button>'}
  consRenderActualRows();
 };
@@ -328,14 +334,14 @@ window.consFinishActual=function(){
  if(!draft.jc||!draft.lines.length)return alert('Load a Job Card with issued materials first.');
  const inputs=[...document.querySelectorAll('.cons-actual-qty')],lines=draft.lines.map((l,i)=>({...l,quantity:Number(inputs[i]?.value)}));
  if(lines.some(x=>!Number.isFinite(x.quantity)||x.quantity<0))return alert('Actual quantity must be zero or more.');
- const at=Date.now(),c=C().ensureState(state);let total=0;
+ const at=Number(draft.actualAt)||Date.now(),c=C().ensureState(state);let total=0;
  const rows=lines.map((l,i)=>{const m=c.materials.find(x=>x.id===l.materialId)||{},b=c.brands.find(x=>x.id===l.brandId)||{},p=C().priceAt(state,l.materialId,l.brandId,at);if(!p)throw new Error('Price not found for '+(m.name||'material'));const cost=Math.round((l.quantity*p.pricePerUnit+Number.EPSILON)*1000)/1000;total+=cost;return '<div class="cons-review-card"><div><b>'+esc(m.name||'')+'</b><span>'+esc(b.name||'')+'</span></div><div><small>ACTUAL QTY</small><b>'+esc(l.quantity)+' '+esc(m.unit||'')+'</b></div><div><small>PRICE / UNIT</small><b>OMR '+Number(p.pricePerUnit).toFixed(3)+'</b></div><div><small>COST</small><b>OMR '+cost.toFixed(3)+'</b></div></div>'}).join('');
  draft.pendingActual={jobCard:draft.jc.job.no,vehicle:draft.jc.vehicle||'',lines,actualAt:at,total};
  modal('Confirm Actual Materials','<div class="cons-confirm"><div class="notice"><b>FINAL CHECK BEFORE LOCKING</b><br>JC '+esc(draft.jc.job.no)+' · '+esc(formatVehicleName(draft.jc.vehicle)||'—')+'<br>Entered by: '+esc(me?.name||me?.id||'—')+'</div><div class="cons-review-cards">'+rows+'</div><div class="cons-confirm-total"><span>Total Actual Material Cost</span><b>OMR '+total.toFixed(3)+'</b></div><div class="cons-entry-actions"><button class="secondary" onclick="consBackActualReview()">← BACK</button><button class="green" onclick="consConfirmFinishActual()">CONFIRM & LOCK</button></div></div>','consBackActualReview()');
 };
 window.consBackActualReview=function(){
  const p=draft.pendingActual;if(!p)return openConsumablesActual();
- openConsumablesActual();const el=document.getElementById('consActualJc');if(el)el.value=p.jobCard;consLoadActual();draft.lines=p.lines.map(x=>({...x}));consRenderActualRows();
+ openConsumablesActual();const el=document.getElementById('consActualJc');if(el)el.value=p.jobCard;consLoadActual();draft.lines=p.lines.map(x=>({...x}));draft.actualAt=p.actualAt;consRenderActualRows();
 };
 window.consConfirmFinishActual=function(){
  const p=draft.pendingActual;if(!p||!p.lines?.length)return alert('Actual Materials review expired. Reopen the Job Card and try again.');
