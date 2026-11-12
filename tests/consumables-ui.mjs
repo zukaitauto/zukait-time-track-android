@@ -199,3 +199,29 @@ console.log('Single Material Summary: combined material totals, inclusive dates,
 ctx.openConsumablesEntry('additional');ctx.consSelectJC('JC1');fill({consMaterial:m.id,consBrand:b.id,consQty:'2'});const recordsBefore=JSON.stringify(state.consumables);ctx.consAddLine();assert.match(element('consDraftRows').innerHTML,/Estimated issue total: OMR 8\.500/);assert.equal(JSON.stringify(state.consumables),recordsBefore);
 ctx.consRemoveLine(0);assert.match(element('consDraftRows').innerHTML,/No materials added/);
 const oldPrices=state.consumables.prices;state.consumables.prices=[];fill({consMaterial:m.id,consBrand:b.id,consQty:'2'});ctx.consAddLine();assert.match(element('consDraftRows').innerHTML,/Price pending/);assert.match(element('consDraftRows').innerHTML,/Total cost is pending/);assert.doesNotMatch(element('consDraftRows').innerHTML,/Estimated issue total/);state.consumables.prices=oldPrices;ctx.consRenderRows();assert.match(element('consDraftRows').innerHTML,/Estimated issue total: OMR 8\.500/);console.log('PASS issue/additional cost preview uses authoritative prices, recalculates without saving and flags missing prices');
+
+// A locked final Actual must not silently accept late issue quantities.
+ctx.openConsumablesEntry('additional');ctx.consSelectJC('JC1');
+fill({consMaterial:m.id,consBrand:b.id,consQty:'0.25'});ctx.consAddLine();
+assert.equal(element('consFinishBtn').disabled,true,'Additional FINISH stays blocked until Manager reopens final Actual');
+assert.match(element('consJcNote').textContent,/Manager must reopen Actual Materials/);
+const originalFinal=state.consumables.actuals[0],originalFinalId=originalFinal.id,originalActualAt=originalFinal.actualAt,originalFinalQty=originalFinal.lines[0].actualQuantity;
+C.managerReopenActual(state,originalFinalId,{id:'M1',role:'Manager'},'Late verified hardener consumption');
+ctx.openConsumablesEntry('additional');ctx.consSelectJC('JC1');
+fill({consMaterial:m.id,consBrand:b.id,consQty:'0.25'});ctx.consAddLine();
+assert.equal(element('consFinishBtn').disabled,false,'Manager-reopened final Actual permits a controlled Additional issue');
+ctx.consFinishIssue();
+const lateIssue=state.consumables.issues.at(-1);assert.equal(lateIssue.type,C.TYPES.ADDITIONAL);assert.equal(lateIssue.lines[0].quantity,0.25);
+await ctx.openConsumablesActual();fill({consActualJc:'JC1'});ctx.consLoadActual();
+assert.match(element('consActualRows').innerHTML,new RegExp('value="'+originalFinalQty+'"'),'Reopened Actual must preload prior actual quantity, not new issued allowance');
+assert.equal(element('consFinishActualBtn').disabled,false,'Manager can re-finalize a reopened Actual');
+element('consActualRows').innerHTML=element('consActualRows').innerHTML.replace('value="'+originalFinalQty+'"','value="2.5"');
+ctx.consFinishActual();ctx.consConfirmFinishActual();
+assert.equal(state.consumables.actuals.length,1,'Reopened Actual must update in place, never double count');
+assert.equal(state.consumables.actuals[0].id,originalFinalId);
+assert.equal(state.consumables.actuals[0].actualAt,originalActualAt,'Original financial period must remain unchanged');
+assert.equal(state.consumables.actuals[0].lines[0].actualQuantity,2.5);
+assert.equal(state.consumables.actuals[0].lines[0].issuedQuantity,2.75);
+assert.equal(state.consumables.actuals[0].correctedBy,'M1');
+assert.ok(state.consumables.audit.some(x=>x.type==='ACTUAL_REFINALIZED'&&x.by==='M1'));
+console.log('PASS finalized late additional correction with Manager reopen, quantity prefill, original period and one audited Actual');
