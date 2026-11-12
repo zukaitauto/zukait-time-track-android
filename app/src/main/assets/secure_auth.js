@@ -389,6 +389,6 @@
     }
   };
 
-  window.addEventListener?.('offline',()=>{++authGeneration;showLogin();});
+  window.addEventListener?.('offline',()=>{++authGeneration;if(!window.zukaitSessionPrivacy?.connectionPending)showLogin();});
   setTimeout(()=>restoreSession(),50);
 })();
