@@ -1280,6 +1280,8 @@ Deno.serve(async (req: Request) => {
       return reply(result.body,result.status);
     }
 
+    // V398 source gate: the Reception Delivery Follow-up compact table is presentation-only;
+    // its server-side promise-date revision guards and permission checks remain unchanged.
     // Accountant leave changes are allowed only through the audited command handler;
     // generic workshop save and Manager operations remain forbidden for Accountant users.
     if (user.role === 'Accountant' || action.startsWith('accountant_')) {
