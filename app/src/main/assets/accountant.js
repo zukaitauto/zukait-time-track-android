@@ -1,7 +1,7 @@
 (function(){'use strict';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const config=window.ZUKAIT_ACCOUNTANT_CONFIG||{},url=config.url||'https://pjknotnjkufadqavcmii.supabase.co',publicKey=config.key||'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A',sessionKey='zukait_secure_session_v42';
-const modules=[['jobs','Job Card 360°'],['cash','Cash In'],['insurance_invoiced','Insurance Invoiced'],['leave','Leave Management'],['profit','Profit / Loss']];
+const modules=[['jobs','Job Card 360°'],['cash','Cash In'],['insurance_invoiced','Insurance Invoiced'],['leave','Leave Management'],['profit','Profit / Loss'],['consumables','Consumables'],['parts','Spare Parts'],['paint','Paint']];
 const money=(title,key)=>[title,key,true],omanMonth=()=>new Date(Date.now()+14400000).toISOString().slice(0,7),common=[['JC','job_card'],['Date','date']];
 const columns={jobs:[['JC','job_card'],['Registration','registration'],['Vehicle','vehicle'],['Customer','customer'],['Type','job_type'],money('Invoice OMR','invoice_amount_omr'),money('Total cost OMR','total_cost_omr'),money('Estimated GP OMR','estimated_gross_profit_omr')],consumables:[...common,['Material','material'],['Brand','brand'],['Actual quantity','quantity'],['Unit','unit'],money('Unit price OMR','unit_price_omr'),money('Cost OMR','cost_omr')],paint:[...common,['PO','po'],['Supplier','supplier'],['Status','status'],money('Paint amount OMR','gross_omr'),money('Returns OMR','returns_omr'),money('Net OMR','net_cost_omr')],parts:[...common,['PL','list_no'],['Part','part'],['Ordered quantity','quantity'],['Received quantity','received_quantity'],['Pending quantity','pending_quantity'],['Returned quantity','returned_quantity'],['Supplier','supplier'],['Status','status'],['Invoice reference','invoice_reference'],money('Purchase OMR','purchase_amount_omr'),money('Pending purchase OMR','pending_purchase_omr'),money('Returns OMR','returns_omr'),money('Net OMR','net_cost_omr')],leave:[['Employee','employee'],['Date','date'],['Period','period_label'],['Approval','approval_status'],['Days','days'],['Remark','remark']],cash:[['Invoice Date','invoice_date'],['JC','job_card'],['Registration','registration'],['Vehicle','vehicle'],['Customer','customer'],money('Invoice Amount OMR','invoice_amount_omr')],cash_ledger:[['Date','transaction_date'],['Source','receipt_source'],['Direction','kind'],['JC','job_card'],['Payer / payee','payee'],['Category','category'],['Method','payment_method'],money('Posted OMR','recorded_amount_omr'),money('Counted OMR','amount_omr'),['Reference','reference']],lpo:[['Insurance','insurance_company'],['JC','job_card'],['Claim','claim_number'],['LPO status','lpo_status'],['LPO document received','lpo_received_date'],money('LPO amount OMR','lpo_amount_omr'),money('Cash collected OMR','collected_amount_omr'),['Latest collection date','collection_date'],money('Balance OMR','outstanding_omr')],outstanding:[['JC','job_card'],['Customer','customer'],['Insurance','insurance_company'],['Invoice date','invoice_date'],['Delivery date','delivery_date'],money('Invoice OMR','invoice_amount_omr'),money('Verified receipts OMR','payment_received_omr'),money('Balance OMR','outstanding_omr'),['Status','payment_status']],monthly:[['Month','month'],...['cash_in','cash_out','invoiced_revenue','payments_received','consumables','paint','parts','labour','total_job_cost','estimated_gross_profit','outstanding','lpo_collected','lpo_documents_received'].map(k=>money(k.replaceAll('_',' ')+' OMR',k+'_omr')),['Pending cost records','pending_cost_records'],['Pending LPO documents','lpo_pending_records'],['Leave days','leave_days']]};
 
@@ -125,6 +125,8 @@ function closeCashDialog(){
 }
 
 const performanceReports=new Set(['cash','insurance_invoiced','profit']);
+const expenseReports=new Set(['consumables','parts','paint']);
+const expenseSummaryKey={consumables:'consumables',parts:'parts',paint:'paint'};
 function reportColumns(name=report,mode=labourMode){
  const labels={
   labour_cost_omr:'Labour OMR (excluded)',
@@ -185,7 +187,17 @@ function fillSelect(id,values,allLabel){
 }
 function showFinancialSummary(data){
  const isFinancial=performanceReports.has(report),area=$('accounts-kpis'),box=$('cash-invoice-total');
- area.hidden=!isFinancial;box.hidden=!isFinancial;
+ const isExpense=expenseReports.has(report);
+ area.hidden=!isFinancial;box.hidden=!(isFinancial||isExpense);
+ if(isExpense){
+  const summary=data.summary?.[expenseSummaryKey[report]]||{};
+  $('accounts-report-total-label').textContent='Total '+modules.find(m=>m[0]===report)[1]+' Expense';
+  $('cash-invoice-total-amount').textContent=display(summary.amount_omr,true);
+  $('cash-invoice-total-count').textContent=String(summary.records??0)+' records';
+  $('cash-invoice-total-period').textContent=data.period_month||($('month').value||($('from').value||$('to').value?'Selected period':'Current month'));
+  $('accounts-report-total-caption').textContent=Number(summary.pending_records||0)>0?summary.pending_records+' records have pending costs; total includes only known amounts':'Based on verified recorded costs for the selected period';
+  area.replaceChildren();return;
+ }
  if(!isFinancial){area.replaceChildren();return;}
  const summary=data.summary||{},label=report==='cash'?'Total Cash Invoiced':report==='insurance_invoiced'?'Total Insurance Invoiced':'Total Invoiced';
  $('accounts-report-total-label').textContent=label;
@@ -274,7 +286,7 @@ function switchReport(name){
  for(const id of ['query','month','from','to','employee','material','insurance'])$(id).value='';
  for(const id of ['insurance-company','customer-filter'])$(id).value='';
  $('category-filter').value='ALL';$('leave-status').value='active';
- if(performanceReports.has(name))$('month').value=omanMonth();
+ if(performanceReports.has(name)||expenseReports.has(name))$('month').value=omanMonth();
  $('module-label').textContent=modules.find(m=>m[0]===name)[1];
  updateLabourModeControls();filterVisibility();closeDetail();load();
  $('accounts-workspace').scrollIntoView?.({block:'start',behavior:'smooth'});
@@ -434,19 +446,22 @@ const moduleDesign={
  cash:[moduleSvg('<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v5c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 11v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5M5 16v2c0 1.7 3.1 3 7 3s7-1.3 7-3v-2"/>'),'Manager Cash financial report with five cost columns','green'],
  insurance_invoiced:[moduleSvg('<path d="M12 2 4 5v6c0 5.2 3 8.6 8 11 5-2.4 8-5.8 8-11V5z"/><path d="m7.5 13 1-3h7l1 3M8 16v-3h8v3M9 16v1m6-1v1"/>'),'Delivered, invoiced insurance vehicles by company','indigo'],
  leave:[moduleSvg('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2v6m10-6v6M3 10h18"/>'),'Manager leave history — read-only','amber'],
- profit:[moduleSvg('<rect x="4" y="13" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="16" y="3" width="4" height="18" rx="1"/>'),'Cash, Insurance, Credit and Corporate combined','teal']
+ profit:[moduleSvg('<rect x="4" y="13" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="16" y="3" width="4" height="18" rx="1"/>'),'Cash, Insurance, Credit and Corporate combined','teal'],
+ consumables:[moduleSvg('<rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 2v6m6-6v6M8 12h8m-8 4h8"/>'),'Monthly material consumption, brand and costs','green'],
+ parts:[moduleSvg('<path d="M14 4a6 6 0 0 0-7 7L3 15l6 6 4-4a6 6 0 0 0 7-7l-5 5-4-4z"/>'),'Monthly spare parts purchases and returns','blue'],
+ paint:[moduleSvg('<path d="M5 13h14v7H5zM8 4h8l3 9H5zM12 4V2"/>'),'Monthly paint purchases and returns','indigo']
 };
 $('navigation').innerHTML=modules.map(([name,title])=>{const [icon,description,tone]=moduleDesign[name];return '<button type="button" class="module-card tone-'+tone+'" aria-label="'+esc(title)+'" data-report="'+name+'"><span class="module-icon" aria-hidden="true">'+icon+'</span><span class="module-copy"><strong>'+title+'</strong><small>'+description+'</small></span><span class="module-arrow" aria-hidden="true">›</span></button>';}).join('');for(const id of ['navigation','summary'])$(id).onclick=e=>{const b=e.target.closest('[data-report]');if(b)switchReport(b.dataset.report)};
 $('query').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();offset=0;$('detail').hidden=true;load()}});$('refresh').onclick=()=>{offset=0;$('detail').hidden=true;load()};$('clear').onclick=()=>{
  for(const id of ['query','month','from','to','employee','material','insurance','insurance-company','customer-filter'])$(id).value='';
  $('category-filter').value='ALL';$('leave-status').value='active';
- if(performanceReports.has(report))$('month').value=omanMonth();
+ if(performanceReports.has(report)||expenseReports.has(report))$('month').value=omanMonth();
  filterVisibility();offset=0;$('detail').hidden=true;load();
 };$('previous').onclick=()=>{offset=Math.max(0,offset-25);load()};$('next').onclick=()=>{if(next!==null){offset=next;load()}};$('cash-entry').onclick=()=>cashForm();
 $('cash-ledger-toggle').onclick=()=>{report=report==='cash'?'cash_ledger':'cash';offset=0;$('module-label').textContent=report==='cash_ledger'?'Receipts / Cash Out':'Cash Invoices';load();};
 $('cash-entry-dialog').addEventListener('close',()=>{$('entry').hidden=true;});
-for(const id of ['from','to'])$(id).addEventListener('change',()=>{if(performanceReports.has(report)&&$(id).value)$('month').value='';});
-$('month').addEventListener('change',()=>{if(performanceReports.has(report)&&$('month').value){$('from').value='';$('to').value='';}});
+for(const id of ['from','to'])$(id).addEventListener('change',()=>{if((performanceReports.has(report)||expenseReports.has(report))&&$(id).value)$('month').value='';});
+$('month').addEventListener('change',()=>{if((performanceReports.has(report)||expenseReports.has(report))&&$('month').value){$('from').value='';$('to').value='';}});
 $('category-filter').onchange=()=>{filterVisibility();$('insurance-company').value='';$('customer-filter').value='';};
 for(const [mode,id] of [['with','profit-with-labour'],['without','profit-without-labour']]){
  $(id).onclick=()=>{if(report!=='profit'||mode===labourMode)return;labourMode=mode;offset=0;updateLabourModeControls();load();};
