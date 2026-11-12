@@ -1,19 +1,24 @@
 import {financialReport,validateFilters,validDay,key,milli,day,searchKey} from './finance_rules.js';
+import {accountantLeaveCommand} from './leave_commands.js';
 import {managerProfitReport} from './profit_performance.js';
 import {accountsPerformanceReport,accountsLeaveReport} from './accounts_reports.js';
 import {availablePartsListCost,availableConsumablesCost} from './accounts_parts_cost.js';
-const actions=new Set(['accountant_dashboard','accountant_jc_search','accountant_jc_detail','accountant_report','accountant_command']);
+const actions=new Set(['accountant_dashboard','accountant_jc_search','accountant_jc_detail','accountant_report','accountant_command','accountant_leave_command']);
 const reportNames=new Set(['jobs','consumables','paint','parts','leave','cash','lpo','outstanding','monthly','audit','labour','invoices','cash_invoices','manager_profit','accounts_performance','accounts_leave']);
 const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
 export const canonical=v=>Array.isArray(v)?v.map(canonical):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,canonical(v[k])])):v;
 export async function fingerprint(value,secret){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);return [...new Uint8Array(await crypto.subtle.sign('HMAC',k,new TextEncoder().encode(JSON.stringify(canonical(value)))))].map(x=>x.toString(16).padStart(2,'0')).join('');}
-export async function accountantApi(admin,user,body,secret,now=Date.now()){
+export async function accountantApi(admin,user,body,secret,now=Date.now(),services={}){
  const fail=(code,status=400)=>({status,body:{ok:false,code}}),action=body?.action;
  if(!user||!['Accountant','Manager'].includes(user.role)||!actions.has(action))return fail('accountant_forbidden',403);
- if(Object.keys(body).some(k=>!['action','query','job_card','filters','report','offset','limit','request_id','command'].includes(k)))return fail('accountant_forbidden',403);
+ if(Object.keys(body).some(k=>!['action','query','job_card','filters','report','offset','limit','request_id','command','expected_revision'].includes(k)))return fail('accountant_forbidden',403);
  const filters=body.filters||{};if(!validateFilters(filters))return fail('invalid_filters');
  if(body.offset!==undefined&&(!Number.isInteger(body.offset)||body.offset<0)||body.limit!==undefined&&(!Number.isInteger(body.limit)||body.limit<1||body.limit>500))return fail('invalid_pagination');
  if(action==='accountant_report'&&!reportNames.has(body.report))return fail('invalid_report');
+ if(action==='accountant_leave_command'){
+  if(Object.keys(body).some(k=>!['action','request_id','command','expected_revision'].includes(k)))return fail('invalid_leave_command');
+  return accountantLeaveCommand(admin,user,body,now,services.computeLiveStatus);
+ }
  if(body.report==='manager_profit'&&(action!=='accountant_report'||user.role!=='Manager'))return fail('manager_required',403);
  if(body.report==='manager_profit'&&Object.keys(filters).some(k=>!['month','insurance','query','job_card','from','to'].includes(k)))return fail('invalid_filters');
  if(Object.keys(filters).some(k=>['kind','customer','status'].includes(k))&&!(action==='accountant_report'&&['accounts_performance','accounts_leave'].includes(body.report)))return fail('invalid_filters');
