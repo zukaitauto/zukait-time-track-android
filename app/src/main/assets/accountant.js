@@ -121,12 +121,13 @@ function formatNormalDutyHours(hours){
 }
 function table(rows,cols,actions=false,printMode=false,focused=false){
  const headers=cols.map(c=>'<th'+(c[2]?' class="money"':'')+'>'+esc(c[0])+'</th>').join('');
+ const leaveActions=!printMode&&report==='leave';
  const body=rows.map((r,i)=>'<tr>'+cols.map(c=>{
   const value=esc(c[1]==='normal_hours'?formatNormalDutyHours(r[c[1]]):printMode&&c[2]?display(r[c[1]],true).replace(/^OMR /,''):display(r[c[1]],c[2]));
   const isJobLink=!printMode&&!focused&&expenseReports.has(report)&&c[1]==='job_card'&&r.job_card;
   return '<td'+(c[2]?' class="money"':'')+'>'+(isJobLink?'<button type="button" class="jc-link" data-job="'+esc(r.job_card)+'" aria-label="Open JC '+esc(r.job_card)+' financial view">'+value+'</button>':value)+'</td>';
- }).join('')+(actions?'<td>'+(['jobs','cash'].includes(report)?'<button type="button" data-job="'+esc(r.job_card)+'">'+(report==='jobs'?'Open financial view':'View JC')+'</button>':report==='cash_ledger'?(r.invoice_receipt?'<span>From Cash invoice</span>':'<button type="button" data-correct="'+i+'">Correct</button><button type="button" data-reverse="'+i+'">Reverse</button>'):'')+'</td>':'')+'</tr>').join('');
- return '<div class="table-wrap"><table><thead><tr>'+headers+(actions?'<th>Actions</th>':'')+'</tr></thead><tbody>'+body+'</tbody></table></div>';
+ }).join('')+(leaveActions?'<td>'+(r.cancelled?'Cancelled':'<button type="button" data-leave-edit="'+esc(r.id)+'">Edit</button> <button type="button" data-leave-cancel="'+esc(r.id)+'">Cancel</button>')+'</td>':'')+(actions?'<td>'+(['jobs','cash'].includes(report)?'<button type="button" data-job="'+esc(r.job_card)+'">'+(report==='jobs'?'Open financial view':'View JC')+'</button>':report==='cash_ledger'?(r.invoice_receipt?'<span>From Cash invoice</span>':'<button type="button" data-correct="'+i+'">Correct</button><button type="button" data-reverse="'+i+'">Reverse</button>'):'')+'</td>':'')+'</tr>').join('');
+ return '<div class="table-wrap"><table><thead><tr>'+headers+(leaveActions?'<th>Actions</th>':'')+(actions?'<th>Actions</th>':'')+'</tr></thead><tbody>'+body+'</tbody></table></div>';
 }
 let detailTrigger=null;
 function closeDetail(){
@@ -302,7 +303,7 @@ async function load(){
   if(report==='profit'&&r.labour_mode!==labourMode)throw Error('The server did not confirm the selected labour calculation. Releasing the backend update is required.');
   result={...r,appliedFilters,canExport:searching};
   const finance=performanceReports.has(report);
-  $('cash-entry').hidden=report!=='cash';$('cash-entry').disabled=false;
+  $('cash-entry').hidden=!['cash','leave'].includes(report);$('cash-entry').textContent=report==='leave'?'＋ Mark Leave':'＋ Cash Entry';$('cash-entry').disabled=false;
   $('cash-ledger-toggle').hidden=true;
   updateLabourModeControls();
   showFinancialSummary(r);
@@ -317,7 +318,7 @@ async function load(){
   $('title').textContent=modules.find(m=>m[0]===report)?.[1]||report;
   $('report-meta').textContent='As of '+new Date(r.as_of).toLocaleString('en-GB',{timeZone:'Asia/Muscat'})+' Oman time'+(report==='leave'?' · '+r.summary.leave_total_days+' leave days':'');
   // Keep detailed financial caveats in source drilldowns and exports, not in the Profit/Loss summary.
-  const notesText=expenseReports.has(report)||['jobs','profit'].includes(report)?'':report==='leave'?'Read-only Manager leave history. Cancelled leave does not count in leave days.':(r.notes||[]).join(' ');
+  const notesText=expenseReports.has(report)||['jobs','profit'].includes(report)?'':report==='leave'?'Leave changes are audited and confirmed by the server; cancelled leave is retained in history.':(r.notes||[]).join(' ');
   $('notes').textContent=notesText;
   $('notes').hidden=!notesText.trim();
   $('rows').innerHTML=!searching?'<p>Search for a job card or registration number (at least 2 characters), then click to open financial details.</p>':
@@ -505,6 +506,62 @@ async function openJob(no,expandType='',trigger=null){
   showDetailDialog();say('');
  }catch(e){if(ticket===detailGeneration)say(e.message);}
 }
+// Accountant leave edits use a dedicated server action, never generic workshop save.
+const leavePendingKey=()=> 'zukait_accountant_leave_pending_v1:'+encodeURIComponent(url)+':'+encodeURIComponent(user?.id||'');
+function openLeaveForm(operation='ADD',row=null,trigger=null){
+ if(report!=='leave'||!verified)return;
+ closeDetail();detailTrigger=trigger||document.activeElement;
+ const existing=localStorage.getItem(leavePendingKey());
+ const options=(result?.facets?.employees||[]).map(p=>'<option value="'+esc(p.id)+'"'+(String(row?.employee_id)===String(p.id)?' selected':'')+'>'+esc(p.name)+'</option>').join('');
+ const date=row?.date||omanMonth()+'-'+String(new Date(Date.now()+14400000).getUTCDate()).padStart(2,'0');
+ const label=operation==='ADD'?'Mark Leave':operation==='EDIT'?'Edit Leave':'Cancel Leave';
+ const inputs=operation==='CANCEL'?'<p>Staff: <strong>'+esc(row?.employee||'')+'</strong> · '+esc(row?.date||'')+' · '+esc(row?.period_label||'')+'</p>':
+  '<div class="leave-form-grid"><label>Staff<select id="leave-target" required>'+options+'</select></label>'+
+  '<label>Date<input id="leave-date" type="date" value="'+esc(date)+'" required></label>'+
+  '<label>Leave Type<select id="leave-period"><option value="FULL">Full Day</option><option value="AM">Morning Half Day</option><option value="PM">Afternoon Half Day</option></select></label>'+
+  '<label>Remark<textarea id="leave-remark" rows="2" maxlength="2000">'+esc(row?.remark||'')+'</textarea></label></div>'+
+  '<label class="leave-after-work"><input id="leave-after-work" type="checkbox"> Mark remaining duty after recorded work, if applicable</label>';
+ $('detail').innerHTML='<div class="heading"><h2 id="financial-detail-title">'+esc(label)+'</h2><div class="detail-actions"><button type="button" id="close-detail">Back to report</button></div></div>'+
+  '<form id="leave-management-form" class="leave-management-form">'+inputs+
+  '<label>Reason for change (required for edits, cancellation and past dates)<textarea id="leave-reason" rows="2" maxlength="500"></textarea></label>'+
+  '<div class="detail-actions"><button type="submit">'+esc(label)+' with audit history</button>'+
+  (existing?'<button id="retry-leave" type="button">Retry previous pending leave request</button>':'')+'</div></form>';
+ $('detail').hidden=false;$('close-detail').onclick=closeDetail;
+ if(row&&operation==='EDIT')$('leave-period').value=row.period;
+ const form=$('leave-management-form');
+ form.onsubmit=e=>{e.preventDefault();const command={operation};
+  if(operation!=='ADD')command.leave_id=row.id;
+  if(operation!=='CANCEL')Object.assign(command,{emp:$('leave-target').value,date:$('leave-date').value,period:$('leave-period').value,remark:$('leave-remark').value,after_work:$('leave-after-work').checked});
+  command.reason=$('leave-reason').value.trim();commitAccountantLeave(command);
+ };
+ if(existing)$('retry-leave').onclick=()=>commitAccountantLeave(null,true);
+ showDetailDialog();
+}
+async function commitAccountantLeave(command,retry=false){
+ if(busy||!verified||report!=='leave')return;
+ if(navigator.onLine===false){say('Leave changes require an online connection.');return;}
+ let body;const existing=localStorage.getItem(leavePendingKey());
+ if(existing&&!retry){say('An earlier leave change may be pending. Retry the original request before submitting another.');return;}
+ if(retry){
+  if(!existing){say('No pending leave request found.');return;}
+  try{body=JSON.parse(existing)}catch{say('The pending leave request is damaged. Contact Manager before correcting records.');return;}
+ }else{
+  body={action:'accountant_leave_command',request_id:crypto.randomUUID(),expected_revision:result?.snapshot_revision,command};
+  localStorage.setItem(leavePendingKey(),JSON.stringify(body));
+  if(localStorage.getItem(leavePendingKey())!==JSON.stringify(body)){say('Unable to preserve this request for safe retry. Nothing was submitted.');return;}
+ }
+ busy=true;const actor=user.id;
+ try{
+  token();say('Saving audited leave change…');
+  await request('workshop-api',body);
+  if(!verified||user.id!==actor)throw Error('ACCOUNT_CHANGED');
+  localStorage.removeItem(leavePendingKey());closeDetail();busy=false;await load();say('Leave change confirmed and saved in audit history.');
+ }catch(e){
+  // Definite server rejection is safe to correct and resubmit with a fresh revision.
+  if(e.status>=400&&e.status<500&&e.message!=='invalid_session'&&e.message!=='request_conflict')localStorage.removeItem(leavePendingKey());
+  say(e.message==='leave_revision_conflict'?'Leave data changed. Refresh the history before resubmitting.':e.message+' · If the save was interrupted, retry the same pending request.');
+ }finally{busy=false;}
+}
 async function submit(command,retry=null){
  if(!billsEnabled)return submitUnlocked(command,retry);
  if(!verified||busy)return;
@@ -541,13 +598,13 @@ function revision(){return {expected_snapshot_revision:result?.snapshot_revision
 $('entry').onsubmit=e=>{e.preventDefault();const c={operation:$('operation').value,...revision(),transaction_date:$('transaction-date').value,kind:$('kind').value,job_card:$('entry-job').value.trim().toUpperCase(),payee:$('payee').value.trim(),amount:$('amount').value,payment_method:$('method').value,category:$('category').value.trim(),reference:$('reference').value.trim(),remarks:$('remarks').value.trim(),reason:$('reason').value.trim()};if(c.operation==='CORRECT')c.entry_id=$('entry-id').value;submit(c);};
 $('correction').onsubmit=e=>{e.preventDefault();if(!target?.field)return;const d=target.detail,k=target.field,c={operation:k==='invoice_amount_omr'?'CORRECT_INVOICE':'ADJUST_COST',job_card:d.job_card,expected_snapshot_revision:target.snapshot_revision,expected_finance_revision:target.finance_revision,transaction_date:new Date(Date.now()+14400000).toISOString().slice(0,10),old_value:d[k],new_value:$('corrected-value').value,reason:$('correction-reason').value.trim()};if(c.operation==='ADJUST_COST')c.category={consumables_cost_omr:'consumables',paint_cost_omr:'paint',parts_cost_omr:'parts',labour_cost_omr:'labour'}[k];submit(c);};
 $('detail').onclick=e=>{const b=e.target.closest('[data-adjust]');if(!b||!target)return;target.field=b.dataset.adjust;$('correction-target').textContent=target.detail.job_card+' · '+target.field.replaceAll('_',' ')+' · Original '+display(target.detail[target.field],true)+(target.field==='invoice_amount_omr'&&target.detail.job_type==='INSURANCE'?' · Linked LPO amount is also corrected; this does not record a cash receipt.':'');$('corrected-value').value=target.detail[target.field];$('correction-reason').value='';$('correction').hidden=false;};
-$('rows').onclick=e=>{if(!result)return;const expense=e.target.closest('[data-expense]');if(expense)return ['paint','parts','consumables'].includes(expense.dataset.expense)?openExpenseJob(expense.dataset.job,expense.dataset.expense,expense):openJob(expense.dataset.job,expense.dataset.expense,expense);const j=e.target.closest('[data-job]');if(j)return expenseReports.has(report)?openExpenseJob(j.dataset.job,report,j):openJob(j.dataset.job,'',j);const c=e.target.closest('[data-correct]');if(c){const row=result.rows[Number(c.dataset.correct)];if(row&&!row.invoice_receipt)return cashForm(row);return;}const r=e.target.closest('[data-reverse]');if(r){const row=result.rows[Number(r.dataset.reverse)];if(!row||row.invoice_receipt)return;const reason=prompt('Reason for reversal? The original entry remains in history.');if(reason?.trim().length>=3)submit({operation:'REVERSE',entry_id:row.id,transaction_date:new Date(Date.now()+14400000).toISOString().slice(0,10),reason:reason.trim(),...revision()});}};
+$('rows').onclick=e=>{if(!result)return;const edit=e.target.closest('[data-leave-edit]');if(edit)return openLeaveForm('EDIT',result.rows.find(r=>String(r.id)===edit.dataset.leaveEdit),edit);const cancel=e.target.closest('[data-leave-cancel]');if(cancel)return openLeaveForm('CANCEL',result.rows.find(r=>String(r.id)===cancel.dataset.leaveCancel),cancel);const expense=e.target.closest('[data-expense]');if(expense)return ['paint','parts','consumables'].includes(expense.dataset.expense)?openExpenseJob(expense.dataset.job,expense.dataset.expense,expense):openJob(expense.dataset.job,expense.dataset.expense,expense);const j=e.target.closest('[data-job]');if(j)return expenseReports.has(report)?openExpenseJob(j.dataset.job,report,j):openJob(j.dataset.job,'',j);const c=e.target.closest('[data-correct]');if(c){const row=result.rows[Number(c.dataset.correct)];if(row&&!row.invoice_receipt)return cashForm(row);return;}const r=e.target.closest('[data-reverse]');if(r){const row=result.rows[Number(r.dataset.reverse)];if(!row||row.invoice_receipt)return;const reason=prompt('Reason for reversal? The original entry remains in history.');if(reason?.trim().length>=3)submit({operation:'REVERSE',entry_id:row.id,transaction_date:new Date(Date.now()+14400000).toISOString().slice(0,10),reason:reason.trim(),...revision()});}};
 const moduleSvg=content=>'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+content+'</svg>';
 const moduleDesign={
  jobs:[moduleSvg('<rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="m8 14 2.3 2.3L16 10.5"/>'),'Search registration or JC and inspect all five costs','blue'],
  cash:[moduleSvg('<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v5c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 11v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5M5 16v2c0 1.7 3.1 3 7 3s7-1.3 7-3v-2"/>'),'Cash Job Card invoices, monthly totals and filters','green'],
  insurance_invoiced:[moduleSvg('<path d="M12 2 4 5v6c0 5.2 3 8.6 8 11 5-2.4 8-5.8 8-11V5z"/><path d="m7.5 13 1-3h7l1 3M8 16v-3h8v3M9 16v1m6-1v1"/>'),'Delivered, invoiced insurance vehicles by company','indigo'],
- leave:[moduleSvg('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2v6m10-6v6M3 10h18"/>'),'Leave history — read-only until authorized management is enabled','amber'],
+ leave:[moduleSvg('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2v6m10-6v6M3 10h18"/>'),'Mark, edit and cancel leave with audit history','amber'],
  profit:[moduleSvg('<rect x="4" y="13" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="16" y="3" width="4" height="18" rx="1"/>'),'Cash, Insurance, Credit and Corporate combined','teal'],
  consumables:[moduleSvg('<rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 2v6m6-6v6M8 12h8m-8 4h8"/>'),'Monthly material consumption, brand and costs','green'],
  parts:[moduleSvg('<path d="M14 4a6 6 0 0 0-7 7L3 15l6 6 4-4a6 6 0 0 0 7-7l-5 5-4-4z"/>'),'Monthly spare parts purchases and returns','blue'],
@@ -559,7 +616,7 @@ $('query').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault()
  $('category-filter').value='ALL';$('leave-status').value='active';
  if(performanceReports.has(report)||expenseReports.has(report)||report==='leave')$('month').value=omanMonth();
  filterVisibility();offset=0;$('detail').hidden=true;load();
-};$('previous').onclick=()=>{offset=Math.max(0,offset-25);load()};$('next').onclick=()=>{if(next!==null){offset=next;load()}};$('cash-entry').onclick=()=>cashForm();
+};$('previous').onclick=()=>{offset=Math.max(0,offset-25);load()};$('next').onclick=()=>{if(next!==null){offset=next;load()}};$('cash-entry').onclick=()=>report==='leave'?openLeaveForm('ADD'):cashForm();
 $('cash-ledger-toggle').onclick=()=>{report=report==='cash'?'cash_ledger':'cash';offset=0;$('module-label').textContent=report==='cash_ledger'?'Receipts / Cash Out':'Cash Invoices';load();};
 $('cash-entry-dialog').addEventListener('close',()=>{$('entry').hidden=true;});
 for(const id of ['from','to'])$(id).addEventListener('change',()=>{if((performanceReports.has(report)||expenseReports.has(report))&&$(id).value)$('month').value='';});
