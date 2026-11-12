@@ -310,7 +310,7 @@ window.consLoadActual=function(){
  document.getElementById('consActualPainter').value=pu?.name||base?.mainPainterId||'';
  document.getElementById('consActualSupervisor').value=su?.name||base?.allottedSupervisorId||'';
  if(!base){const fb=document.getElementById('consFinishActualBtn');if(fb)fb.disabled=true;out.innerHTML='<div class="notice">No completed Suggested / Issued Materials found for this Job Card.</div>';return}
- const existing=c.actuals.find(x=>x.jobCard===d.job.no&&!x.voided),reopened=existing&&!existing.locked&&existing.managerReopen;
+ const existing=c.actuals.find(x=>x.jobCard===d.job.no&&!x.voided),reopened=existing&&!existing.locked&&existing.managerReopen?existing:null;
  if(existing&&!reopened){const fb=document.getElementById('consFinishActualBtn');if(fb)fb.disabled=true;out.innerHTML='<div class="notice">Actual Materials are already finished and locked for this Job Card. The Manager can reopen them through Consumables Edit History.</div>';return}
  if(reopened&&role()!=='Manager'){const fb=document.getElementById('consFinishActualBtn');if(fb)fb.disabled=true;out.innerHTML='<div class="notice">The Manager must review and re-finalize this reopened Actual record.</div>';return}
  const a=C().allowance(state,d.job.no),previous=new Map((reopened?.lines||[]).map(x=>[x.materialId+'|'+x.brandId,x]));
