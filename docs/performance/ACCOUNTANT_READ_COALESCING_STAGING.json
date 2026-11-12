@@ -1,0 +1,52 @@
+{
+  "project": "pjknotnjkufadqavcmii",
+  "qualifiedSource": "0c59b456bc09d7a3eebd76e40bdb003ff3f23495",
+  "ownerApprovedInactiveStaging": true,
+  "stagingVerifiedAt": "2026-11-12T17:11:25Z",
+  "migration": {
+    "version": "20261112170825",
+    "name": "accountant_read_snapshot_probe",
+    "probeDefinitionMd5": "2f39cf119881db8fe17080efb0214ec9",
+    "owner": "postgres",
+    "securityInvoker": true,
+    "stable": true,
+    "anonExecute": false,
+    "authenticatedExecute": false,
+    "serviceRoleExecute": true,
+    "unknownActorDenied": true
+  },
+  "backend": {
+    "version": 118,
+    "previousVersion": 117,
+    "bundleSha256": "c832a8e8a5e546a3c4880dc6a3ffb3fa1a7c53283e59888dadfab2b3033134a1",
+    "verifyJwt": false,
+    "importMap": "deno.json",
+    "filesVerified": 43,
+    "originalModulesUnchanged": 40,
+    "changedModules": [
+      "index.ts",
+      "accountant/api.js",
+      "accountant/context_reader.js"
+    ],
+    "hardDisabled": true,
+    "dispatcherSetting": "coalesceContextReads:false"
+  },
+  "existingContextMd5": "5cb0e04223f9f3e517ece00eb11fa8a3",
+  "productionFinancialRecordsModified": false,
+  "productionHistoryDeleted": false,
+  "androidOrWebPublished": false,
+  "olderSpillPatchApplied": false,
+  "authenticatedDeviceTest": "NOT_RUN",
+  "checks": {
+    "databaseResponsive": true,
+    "lockWaits": 0,
+    "webStatus": 200,
+    "invalidSessionWorkshopStatus": 401,
+    "invalidSessionAccountantStatus": 401,
+    "invalidSessionStaffAuthStatus": 401,
+    "securityAdvisorNewProbeFindings": 0
+  },
+  "optimizationActive": false,
+  "productionSavingsMeasured": false,
+  "rollback": "Exact previous v117 bundle retained locally. Activation needs separate approved dispatcher configuration."
+}

@@ -78,3 +78,25 @@ reviewed cleanup. Do not execute the old spill patch or delete history as part o
 
 Remaining database work: measured sequential/filter-aware reads, compact-history
 qualification/cutover, and separate Supabase host/billing/restart investigation.
+
+## Approved inactive staging — 12 November 2026
+
+The owner approved staging qualified commit 0c59b456 on the live project. Migration
+20261112170825_accountant_read_snapshot_probe is applied and verified service-only.
+Backend v118 is a minimal v117-based patch: 43 files read back exactly, 40 original
+modules unchanged, original import map and verify_jwt false retained. The dispatcher
+uses **literal coalesceContextReads:false**, so an environment flag cannot enable
+sharing. The staging bundle builder now emits that hard-disabled profile by default.
+The repository handler retains the qualified configurable hook for development.
+
+Existing heavy-context definition remains 5cb0e04223f9f3e517ece00eb11fa8a3. New probe
+definition is 2f39cf119881db8fe17080efb0214ec9, stable/security invoker, postgres owner,
+fixed search_path, only postgres/service_role EXECUTE. Unknown actors were denied
+without inserting test records. Invalid-session workshop/accountant/staff-auth reads
+returned HTTP401 and the web entry returned HTTP200. Authenticated device workflows
+were not exercised during staging. No financial records, history or staff application
+release were changed. The old v117 bundle is archived locally for code rollback.
+
+This stage has **no active optimization benefit yet**. Capture comparable baseline
+counters and explicitly review a controlled activation separately. Enabling requires
+a new approved dispatcher configuration; changing the secret flag alone is insufficient.
