@@ -80,7 +80,7 @@ let serverData=clone(initial),refreshes=0,editBody;
 Object.assign(serverData.jobs[0],{make:'Toyota',model:'Camry',vehicle:'Toyota Camry',createdAt:Date.parse('2026-10-01T10:00:00+04:00'),year:'2014'});serverData.assign[0].suggested=60;
 mw.state=clone(serverData);mw.me={id:'m',role:'Manager'};mw.users=[];mw.alert=m=>{throw Error(m)};
 mw.openModal=h=>mw.document.getElementById('modal').innerHTML=h;mw.closeModal=()=>{};mw.render=()=>{};
-mw.zukaitCloud={pull:async()=>{refreshes++}};
+mw.zukaitCloud={pull:async()=>{refreshes++},managerJobEdit:async body=>{const r=await mw.fetch('',{body:JSON.stringify(body)});const result=await r.json();if(result.ok)mw.state=clone(result.data);return result}};
 mw.fetch=async(_url,args)=>{editBody=JSON.parse(args.body);if(editBody.operation==='GET')return {ok:true,json:async()=>({ok:true,job:serverData.jobs[0]})};const result=jobEditTransition(serverData,mw.me,editBody,Date.now());assert.equal(result.ok,true,JSON.stringify(result));serverData=result.data;return {ok:true,json:async()=>result}};
 const vehicleAppHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
 const formatter=vehicleAppHtml.slice(vehicleAppHtml.indexOf('function formatVehicleName('),vehicleAppHtml.indexOf('const KEY='));

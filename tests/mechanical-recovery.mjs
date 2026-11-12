@@ -11,7 +11,7 @@ function context(initial=base){
  const storage=new Map(),events=[],timers=[];
  storage.set('zukait_cloud_denied_snapshot_v42',JSON.stringify({user:'QA_SUP',data:initial,error:'mechanical_authority_conflict'}));
  storage.set('zukait_cloud_pending_conflict_v42',JSON.stringify({user:'QA_SUP',revision:1,data:initial}));
- const c={state:structuredClone(initial),me:{id:'QA_SUP',role:'Manager'},token:'QA_SYNTHETIC',navigator:{onLine:true},cloudPushing:false,cloudDirty:true,cloudApplying:false,cloudRevision:1,dirtyGeneration:1,lastSyncedState:structuredClone(base),lastSyncError:'',consecutiveSyncErrors:0,pushTimer:null,
+ const c={state:structuredClone(initial),me:{id:'QA_SUP',role:'Manager'},token:'QA_SYNTHETIC',navigator:{onLine:true},cloudPushing:false,managerEditInFlight:false,cloudDirty:true,cloudApplying:false,cloudRevision:1,dirtyGeneration:1,lastSyncedState:structuredClone(base),lastSyncError:'',consecutiveSyncErrors:0,pushTimer:null,
  localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},
  status:(...x)=>events.push(x),setServerConnection:(...x)=>events.push(x),sessionToken:()=>c.token,payloadState:()=>structuredClone(c.state),persistLocal(){},ensureShape(){},scheduleDashboardRender(){},setTimeout:fn=>timers.push(fn),clearTimeout(){},console:{error(){},warn(){}},liveRole:()=>false,alert(){},confirm:()=>{throw Error('Mechanical recovery cannot use generic retry confirmation')},pull:async()=>{},api:async()=>({ok:true,revision:2,data:structuredClone(remote)})};
  vm.createContext(c);vm.runInContext(prefix+merge+recovery,c);c.getDenied=()=>vm.runInContext('deniedSnapshot',c);

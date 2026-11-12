@@ -13,6 +13,7 @@ for(const [name,engine] of [['chromium',chromium],['webkit',webkit]])for(const w
   window.state={jobs:[{no:'11965',make:'BYD',model:'Leopard 7 EV',vehicle:'BYD Leopard 7 EV',reg:'2970-R',year:'2025',jobType:'Cash',createdAt:Date.parse('2026-09-27T09:00:00+04:00')},{no:'12000'}],assign:[],sessions:[]};window.me={id:'M',role:'Manager'};window.users=[];window.calls=[];window.messages=[];
   window.openModal=html=>document.getElementById('modal').innerHTML=html;window.closeModal=()=>{};window.alert=m=>messages.push(m);window.render=()=>{};
   window.fetch=async(_url,args)=>{const body=JSON.parse(args.body);calls.push(body);if(window.rejectDuplicate)return {ok:false,json:async()=>({ok:false,code:'job_number_duplicate'})};return {ok:true,json:async()=>({ok:true,job:{...state.jobs[0],...body.patch,no:body.newJobNumber||'11965'}})};};
+  window.zukaitCloud={managerJobEdit:async command=>{const response=await fetch('',{body:JSON.stringify(command)});const r=await response.json();if(r.ok)Object.assign(state.jobs[0],r.job);return r}};
  });
  await page.addScriptTag({content:formatterSource});await page.addScriptTag({content:script});await page.evaluate(()=>editJobManager('11965'));
  assert.equal(await page.locator('#mje-number').inputValue(),'11965');assert.equal(await page.locator('.mje-editor-header h3').evaluate(el=>getComputedStyle(el).color),'rgb(255, 255, 255)');

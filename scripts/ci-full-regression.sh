@@ -8,6 +8,7 @@ node tests/job-card-manager-open.mjs
 if ! node -e "require.resolve('jsdom')" >/dev/null 2>&1; then
   npm ci --ignore-scripts --include=dev
 fi
+node tests/manager-job-sync.mjs
 node tests/v377-workshop-performance-ui.mjs
 node tests/v377-financial-integration.mjs
 node tests/v377-performance-calculations.mjs

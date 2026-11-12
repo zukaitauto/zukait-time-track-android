@@ -51,7 +51,7 @@ const push=source.slice(source.indexOf('  async function push(retry=0)'),source.
 const storage=new Map();let connection='',sendCount=0,reply={_status:500,code:'server_error'};
 const p={me:{id:'QA_MANAGER',role:'Manager'},state:{jobs:[{no:'QA_JOB',cashAmount:20}]},
   localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},
-  cloudPushing:false,cloudDirty:true,cloudRevision:1,dirtyGeneration:1,navigator:{onLine:true},
+  cloudPushing:false,managerEditInFlight:false,cloudDirty:true,cloudRevision:1,dirtyGeneration:1,navigator:{onLine:true},
   sessionToken:()=>true,status(){},payloadState:()=>structuredClone(p.state),clone:structuredClone,
   lastSyncError:'',consecutiveSyncErrors:0,lastSuccessfulSyncAt:0,lastSyncedState:null,
   setServerConnection:kind=>connection=kind,console:{error(){}},pushTimer:null,

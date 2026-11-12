@@ -21,6 +21,7 @@
   let cloudDirty=localStorage.getItem(DIRTY_KEY)==='1';
   let cloudApplying=false;
   let cloudPushing=false;
+  let managerEditInFlight=false;
   let pushTimer=null;
   let dashboardRenderTimer=null;
   let pollTimer=null;
@@ -491,16 +492,17 @@
   function same(a,b){return JSON.stringify(a)===JSON.stringify(b)}
   function clone(x){return JSON.parse(JSON.stringify(x))}
 
-  function threeWayMerge(base,remote,local){
+  function threeWayMerge(base,remote,local,field=''){
     if (same(local,base)) return clone(remote);
     if (same(remote,base)) return clone(local);
     if (Array.isArray(base)||Array.isArray(remote)||Array.isArray(local)) {
       const b=Array.isArray(base)?base:[], r=Array.isArray(remote)?remote:[], l=Array.isArray(local)?local:[];
-      const idBased=[...b,...r,...l].every(x=>!x || typeof x!=='object' || Array.isArray(x) || x.id!=null);
+      const identity=field==='jobs'?'no':'id';
+      const idBased=[...b,...r,...l].every(x=>x==null || (typeof x==='object'&&!Array.isArray(x)&&x[identity]!=null));
       if(!idBased) return clone(l);
-      const bm=new Map(b.filter(x=>x&&x.id!=null).map(x=>[String(x.id),x]));
-      const rm=new Map(r.filter(x=>x&&x.id!=null).map(x=>[String(x.id),x]));
-      const lm=new Map(l.filter(x=>x&&x.id!=null).map(x=>[String(x.id),x]));
+      const bm=new Map(b.filter(x=>x&&x[identity]!=null).map(x=>[String(x[identity]),x]));
+      const rm=new Map(r.filter(x=>x&&x[identity]!=null).map(x=>[String(x[identity]),x]));
+      const lm=new Map(l.filter(x=>x&&x[identity]!=null).map(x=>[String(x[identity]),x]));
       const ids=[...new Set([...bm.keys(),...rm.keys(),...lm.keys()])];
       const out=[];
       for(const id of ids){
@@ -539,7 +541,7 @@
           if(same(lv,bv))continue;
           out[k]=clone(lv);continue;
         }
-        out[k]=threeWayMerge(bv,rv,lv);
+        out[k]=threeWayMerge(bv,rv,lv,k);
       }
       return out;
     }
@@ -784,7 +786,7 @@
 
   async function push(retry=0){
     const epoch=sessionEpoch;
-    if(cloudPushing||!cloudDirty)return false;
+    if(cloudPushing||managerEditInFlight||!cloudDirty)return false;
     if(api.retryAfter?.('save')>0)return false;
     if(permissionBlocked(payloadState())){
       const mechanicalBlocked=isMechanicalConflict(deniedSnapshot?.error);
@@ -989,6 +991,33 @@
         clearTimeout(pushTimer);
         pushTimer=setTimeout(()=>push(0),0);
       }
+      }
+    }
+  }
+
+  // Manager corrections are online commands, never optimistic shared-state edits.
+  async function managerJobEdit(command){
+    const epoch=sessionEpoch,token=sessionToken();
+    if(me?.role!=='Manager'||!token)throw Error('job_edit_manager_required');
+    if(managerEditInFlight||cloudDirty||cloudPushing)throw Error('JOB_EDIT_SYNC_PENDING');
+    managerEditInFlight=true;
+    try{
+      const r=await api({...command,action:'manager_job_full_edit'});
+      if(stale(epoch)||token!==sessionToken())throw Error('STALE_SESSION');
+      if(!r.ok)return r;
+      // A receipt is not a full snapshot: invalidate earlier pulls and baselines
+      // without relabelling the cached data with the receipt's new revision.
+      dirtyGeneration++;
+      lastSyncedState=null;
+      let refreshed=false;
+      try{if(!cloudDirty)refreshed=await pull(true)}catch(e){warnPoll('Job Card saved; refresh deferred',e)}
+      if(stale(epoch)||token!==sessionToken())throw Error('STALE_SESSION');
+      if(!refreshed)status('SAVED — REFRESH PENDING','warn');
+      return {...r,refresh_pending:!refreshed};
+    }finally{
+      if(!stale(epoch)&&token===sessionToken()){
+        managerEditInFlight=false;
+        if(cloudDirty){clearTimeout(pushTimer);pushTimer=setTimeout(()=>push(0),0)}
       }
     }
   }
@@ -1343,7 +1372,7 @@
   }
 
   function stop(){
-    sessionEpoch++;for(const c of requestControllers)c.abort();requestControllers.clear();
+    sessionEpoch++;managerEditInFlight=false;for(const c of requestControllers)c.abort();requestControllers.clear();
     pollActive=false;pollGeneration++;
     clearTimeout(pollTimer);pollTimer=null;
     clearTimeout(livePollTimer);livePollTimer=null;
@@ -1353,7 +1382,7 @@
 
 
   function resetForSession(){
-    stop();cloudDirty=false;cloudPushing=false;cloudApplying=false;pullInFlight=false;liveInFlight=false;revisionProbeInFlight=false;
+    stop();cloudDirty=false;cloudPushing=false;managerEditInFlight=false;cloudApplying=false;pullInFlight=false;liveInFlight=false;revisionProbeInFlight=false;
     cloudRevision=0;dirtyGeneration=0;initialDone=false;lastSyncedState=null;deniedSnapshot=null;
     lastSuccessfulSyncAt=0;lastRevisionProbeAt=0;lastProbedRevision=-1;lastSyncError='';consecutiveSyncErrors=0;
     liveStatusRows=[];liveStatusRevision=0;liveStatusLastFetchedAt=0;liveStatusServerTime=0;
@@ -1391,7 +1420,7 @@
     publishLiveStatus(false);
   });
   window.zukaitCloud={
-    resetForSession,init,pull,push,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,readManagerProfit,readMechanicalQcOverview,openMechanicalWorkspace,openMechanicalDelivery,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
+    resetForSession,init,pull,push,managerJobEdit,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,readManagerProfit,readMechanicalQcOverview,openMechanicalWorkspace,openMechanicalDelivery,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
     configured:()=>true,
     get confirmedState(){return confirmedReadRevision>=cloudRevision?confirmedReadState:null},
     get revision(){return cloudRevision},
