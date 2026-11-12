@@ -30,6 +30,7 @@ node tests/accountant-finance.mjs
 node tests/accountant-print-layout.mjs
 node tests/accountant-paint-periods.mjs
 node tests/accountant-parts-costs.mjs
+node tests/accountant-parts-priced-expenses.mjs
 node tests/accountant-ledger-sql.mjs
 node tests/accountant-context-aggregation.mjs
 node tests/accountant-context-reader.mjs

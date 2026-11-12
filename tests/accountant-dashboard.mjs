@@ -5,6 +5,7 @@ const db=await accountantDb(),admin=sqlAdmin(db),ctx=fixture();ctx.state.jobs[0]
 const scope=fixture();
 scope.state.paintPurchasing.orders.push({id:'P_PENDING_QA',jobCard:'J1',createdAt:Date.parse('2026-10-08T08:00:00Z'),lines:[{id:'L',quantity:1,pricePerLitre:4}]});
 scope.events.push({event_id:'qa-pending-parts',entity_id:'pending',event_type:'SPARE_PART_LISTED',revision:1,server_time:'2026-10-08T08:00:00Z',payload:{listNo:'PL_PENDING',partId:'pending',jobCard:'J1',name:'Unreceived door',qty:1}});
+scope.events.push({event_id:'qa-unpriced-listed',entity_id:'unpriced-arrival',event_type:'SPARE_PART_LISTED',revision:1,server_time:'2026-10-08T08:00:00Z',payload:{listNo:'PL_UNPRICED',partId:'unpriced-arrival',jobCard:'J1',name:'Unpriced arrived door',qty:1}},{event_id:'qa-unpriced-arrived',entity_id:'unpriced-arrival',event_type:'SPARE_PART_STATUS_CHANGED',revision:2,server_time:'2026-10-08T09:00:00Z',payload:{listNo:'PL_UNPRICED',partId:'unpriced-arrival',jobCard:'J1',to:'RECEIVED',receivedQty:1}});
 const scopeDb={rpc:async()=>({data:scope,error:null})};
 for(const [kind,total] of [['paint',20],['parts',10],['consumables',10]]){
  const response=await accountantApi(scopeDb,actor,{action:'accountant_report',report:kind,filters:{month:'2026-10'},offset:0,limit:500},'QA-only-fingerprint',Date.parse('2026-11-12T08:00:00Z'));
@@ -12,7 +13,7 @@ for(const [kind,total] of [['paint',20],['parts',10],['consumables',10]]){
  assert.equal(response.body.summary[kind].amount_omr,total,kind+' known arrived/finalized expense total');
  assert.ok(response.body.rows.every(row=>row.vehicle.includes('Toyota Camry')),kind+' rows carry make and model');
  if(kind==='paint')assert.ok(response.body.rows.every(row=>row.status==='Received'||row.status==='Returned paint'),'NIL and unreceived Paint POs are hidden');
- if(kind==='parts')assert.ok(response.body.rows.every(row=>row.confirmed&&Number(row.received_quantity)>0),'unreceived part is hidden');
+ if(kind==='parts')assert.ok(response.body.rows.every(row=>row.confirmed&&Number(row.received_quantity)>0&&row.net_cost_omr!==null),'unreceived and unpriced parts are hidden');
 }
 
 const dom=new JSDOM(fs.readFileSync('app/src/main/assets/accountant.html','utf8'),{url:'https://qa.invalid/accountant.html',runScripts:'outside-only'}),w=dom.window;let pdf=null,excel=null,lose=false,sent=0,holdDetail=null,holdReport=null,holdDashboard=null,rejectEntry=false,updateChecks=0,updateOpens=0,installOpens=0,exits=0,nativeToken='qa-accountant-token';

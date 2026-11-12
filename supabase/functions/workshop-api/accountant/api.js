@@ -150,6 +150,7 @@ export async function accountantApi(admin,user,body,secret,now=Date.now(),servic
  }else rows=report.rows[body.report||'jobs']||[];
  if(action==='accountant_report'&&['consumables','paint','parts'].includes(body.report)){
   // Expense pages are receipt/finalization reports, not open purchase queues.
+  // Hide received parts with no recorded cost; explicit zero remains a known amount.
   // Keep financialReport() untouched for JC360, profit and audit calculations.
   const category=body.report;
   const vehicles=new Map((Array.isArray(context.state?.jobs)?context.state.jobs:[])
@@ -160,7 +161,7 @@ export async function accountantApi(admin,user,body,secret,now=Date.now(),servic
    }));
   rows=rows.filter(row=>category==='paint'?row.received===true&&row.nil!==true&&
     ['Received','Returned paint'].includes(row.status):
-    category==='parts'?row.confirmed===true&&Number(row.received_quantity)>0&&key(row.status)!=='RETURNED':
+    category==='parts'?row.confirmed===true&&Number(row.received_quantity)>0&&key(row.status)!=='RETURNED'&&milli(row.net_cost_omr)!==null:
     true).map(row=>({...row,vehicle:vehicles.get(key(row.job_card))||''}));
   const amountField=category==='consumables'?'cost_omr':'net_cost_omr';
   const amounts=rows.map(row=>milli(row[amountField]));
