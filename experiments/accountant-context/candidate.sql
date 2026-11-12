@@ -1,5 +1,15 @@
--- NOT APPLIED TO PRODUCTION. No change to functions, records or permissions.
--- Matches the context function's exact existing event filter and ordering.
-create index workshop_v2_events_accountant_order_idx
- on public.workshop_v2_events(server_time,event_id)
- where event_type like 'SPARE_PART_%';
+-- NOT APPLIED TO PRODUCTION. Ordered narrow keys, then primary-key payload lookup.
+-- The explicit outer ordering preserves the existing API event order. OFFSET 0
+-- keeps the payload lookup lateral, after the narrow ordering step.
+create or replace function public.zukait_accountant_context(p_actor_id text) returns jsonb language plpgsql security invoker set search_path=public as $$
+declare staff public.staff_credentials%rowtype;outcome jsonb;
+begin
+ select * into staff from public.staff_credentials where user_id=p_actor_id and active;
+ if not found or staff.role not in ('Manager','Accountant') or staff.must_change then raise exception 'accountant_forbidden';end if;
+ -- One statement supplies a consistent view of the snapshot, journal and source events.
+ select jsonb_build_object('state',w.data,'revision',w.revision,
+ 'finance_revision',coalesce((select max(sequence_no) from public.workshop_accounting_entries),0),
+ 'entries',coalesce((select jsonb_agg(to_jsonb(e) order by sequence_no) from public.workshop_accounting_entries e),'[]'::jsonb),
+ 'events',coalesce((select jsonb_agg(jsonb_build_object('event_id',e.event_id,'entity_id',e.entity_id,'event_type',e.event_type,'revision',e.revision,'server_time',e.server_time,'payload',e.payload)) from (select event_row.* from (select event_id,server_time from public.workshop_v2_events where event_type like 'SPARE_PART_%' order by server_time,event_id) event_keys cross join lateral (select e.* from public.workshop_v2_events e where e.event_id=event_keys.event_id offset 0) event_row order by event_keys.server_time,event_keys.event_id) e),'[]'::jsonb)) into outcome from public.workshop_state w where w.id='main';
+ if outcome is null then raise exception 'snapshot_unavailable';end if;return outcome;
+end$$;

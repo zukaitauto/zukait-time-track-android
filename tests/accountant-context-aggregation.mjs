@@ -15,6 +15,7 @@ try{
  }else{const {accountantDb}=await import('./helpers/accountant-db.mjs');db=await accountantDb()}
  const applyBaseline=()=>db.exec('drop index if exists public.workshop_v2_events_accountant_order_idx;'+baseline);
  const applyCandidate=()=>db.exec('drop index if exists public.workshop_v2_events_accountant_order_idx;'+candidate);
+ await db.exec('create unique index if not exists workshop_v2_events_pkey on workshop_v2_events(event_id)');
  const value=async actor=>(await db.query('select zukait_accountant_context($1) as value',[actor])).rows[0].value;
  const permissions=async()=> (await db.query("select proowner::regrole::text as owner,prosecdef,proconfig,proacl::text as acl from pg_proc where oid='public.zukait_accountant_context(text)'::regprocedure")).rows[0];
  const originalPermissions=await permissions();await applyBaseline();const baselineMd5=(await db.query("select md5(pg_get_functiondef('public.zukait_accountant_context(text)'::regprocedure)) as hash")).rows[0].hash;const initial=await value('A');assert.deepEqual(initial.entries,[]);assert.deepEqual(initial.events,[]);await applyCandidate();assert.deepEqual(await value('A'),initial);
