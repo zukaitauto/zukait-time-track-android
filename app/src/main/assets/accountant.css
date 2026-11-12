@@ -783,3 +783,17 @@ body:has(#accounts-workspace[data-report="profit"]:not([hidden])) main{max-width
  #accounts-workspace[data-report="profit"] .finance-report tr{width:100%;max-width:100%;min-width:0}
  #accounts-workspace[data-report="profit"] .finance-report td{max-width:100%;box-sizing:border-box}
 }
+
+/* V398 Accountant audited Leave Management */
+.leave-management-form{display:grid;gap:15px;margin:15px 0 2px;color:#193b60}
+.leave-management-form>label{display:grid;gap:7px;font-weight:750}
+.leave-management-form :is(input,select,textarea){width:100%;min-width:0;box-sizing:border-box;border:1px solid #bfd4e4;border-radius:10px;padding:11px;background:#fff;color:#143753;font-size:14px}
+.leave-management-form :is(input,select,textarea):focus-visible{outline:3px solid #84d0f0}
+.leave-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.leave-form-grid label{display:grid;gap:6px;font-weight:700;min-width:0}
+.leave-management-form .leave-after-work{display:flex;flex-direction:row;align-items:center;gap:9px;font-size:13px}
+.leave-after-work input{flex:none;width:18px;height:18px}
+.leave-management-form .detail-actions{display:flex;flex-wrap:wrap;gap:8px}
+#accounts-workspace[data-report="leave"] #rows :is([data-leave-edit],[data-leave-cancel]){font-weight:800;min-height:36px;margin:2px;padding:6px 10px;border-radius:8px}
+#accounts-workspace[data-report="leave"] #rows [data-leave-cancel]{border-color:#e9b7b3;color:#9e2940;background:#fff2f1}
+@media(max-width:550px){.leave-form-grid{grid-template-columns:1fr}.leave-management-form .detail-actions button{flex:1 1 130px}}
