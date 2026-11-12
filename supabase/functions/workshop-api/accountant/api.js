@@ -44,7 +44,7 @@ export async function accountantApi(admin,user,body,secret,now=Date.now(),servic
  }};
 
  if(action==='accountant_report'&&['accounts_performance','accounts_leave'].includes(body.report)){
-  const projection=body.report==='accounts_performance'?accountsPerformanceReport(context,full,filters,now):accountsLeaveReport(full,filters);
+  const projection=body.report==='accounts_performance'?accountsPerformanceReport(context,full,filters,now):accountsLeaveReport(full,filters,context.state?.users);
   const off=body.offset||0,limit=body.limit||100;
   return {status:200,body:{ok:true,...projection,rows:projection.rows.slice(off,off+limit),total_count:projection.rows.length,next_offset:off+limit<projection.rows.length?off+limit:null,as_of:full.as_of,snapshot_revision:full.snapshot_revision,finance_revision:full.finance_revision}};
  }
