@@ -37,6 +37,9 @@ for(const [expense,label] of [['consumables','Consumables'],['parts','Spare Part
  await wait(()=>w.document.querySelector('#rows th')?.textContent===expectedHeading);
  assert.match(w.document.getElementById('rows').textContent,/Known Expense OMR/,'grouped report shows financial amount');
  assert.equal(w.document.getElementById('cash-invoice-total').hidden,false,'top expense remains visible for grouped reports');
+ viewSelect.value='job';viewSelect.dispatchEvent(new w.Event('change'));
+ await wait(()=>w.document.querySelector('#rows [data-job="J1"]'));
+ assert.equal(w.document.querySelector('#rows [data-job="J1"]').tagName,'BUTTON');
  w.document.getElementById('accounts-back').click();
 }
 
