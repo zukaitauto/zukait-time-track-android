@@ -1,8 +1,8 @@
 {
   "approved": true,
-  "release": "V397",
-  "sourceCommit": "e9a999507864adf3018538375414f7241044759b",
-  "publishNonce": "e9a999507864adf3018538375414f724",
-  "authorization": "Owner requested publishing V397 for complete Accountant Module testing.",
-  "reason": "Owner-approved V397 Accountant eight-card testing release. Exact-source signed APK, Reception and Accountant acceptance passed; live workshop-api v116 readback verified; V396 rollback retained. Physical phone acceptance NOT_RUN."
+  "release": "V398",
+  "sourceCommit": "60d7e9656d62a07baae35a6e8cc71bd3d1eb2ddc",
+  "publishNonce": "60d7e9656d62a07baae35a6e8cc71bd3",
+  "authorization": "Owner approved publishing V398 Accountant and Reception Delivery Follow-up corrections for testing.",
+  "reason": "Owner approved complete V398 Accountant and Reception one-row Delivery Follow-up test publication; exact-source QA and signed APK passed; production workshop-api v117 readback verified; V397 retained for rollback. Physical device acceptance and fresh backup restore NOT_RUN."
 }
