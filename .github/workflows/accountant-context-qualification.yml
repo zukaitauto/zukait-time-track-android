@@ -6,6 +6,11 @@ on:
     paths:
       - 'experiments/accountant-context/**'
       - 'tests/accountant-context-aggregation.mjs'
+      - 'tests/accountant-context-reader.mjs'
+      - 'tests/accountant-read-coalescing-sql.mjs'
+      - 'tests/helpers/accountant-read-db.mjs'
+      - 'experiments/accountant-read-coalescing/**'
+      - 'supabase/functions/workshop-api/accountant/context_reader.js'
       - '.github/workflows/accountant-context-qualification.yml'
 permissions:
   contents: read
@@ -28,6 +33,7 @@ jobs:
       PGPORT: 5432
       PGPASSWORD: isolated-accountant-context-test
       ACCOUNTANT_CONTEXT_NATIVE: '1'
+      ACCOUNTANT_READ_NATIVE: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,8 +42,12 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts --include=dev
       - run: node tests/accountant-context-aggregation.mjs
+      - run: node tests/accountant-context-reader.mjs
+      - run: node tests/accountant-read-coalescing-sql.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: accountant-context-postgres17-qualification
-          path: artifacts/accountant-context/
+          path: |
+            artifacts/accountant-context/
+            artifacts/accountant-read-coalescing/

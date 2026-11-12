@@ -32,6 +32,8 @@ node tests/accountant-paint-periods.mjs
 node tests/accountant-parts-costs.mjs
 node tests/accountant-ledger-sql.mjs
 node tests/accountant-context-aggregation.mjs
+node tests/accountant-context-reader.mjs
+node tests/accountant-read-coalescing-sql.mjs
 node tests/accountant-auth-api.mjs
 node tests/accountant-leave-command.mjs
 node tests/accountant-dashboard.mjs

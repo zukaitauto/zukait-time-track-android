@@ -1,3 +1,5 @@
+import {createAccountantContextReader} from './context_reader.js';
+const readAccountantContext=createAccountantContextReader();
 import {financialReport,validateFilters,validDay,key,milli,day,searchKey} from './finance_rules.js';
 import {accountantLeaveCommand} from './leave_commands.js';
 import {managerProfitReport} from './profit_performance.js';
@@ -32,8 +34,8 @@ export async function accountantApi(admin,user,body,secret,now=Date.now(),servic
   const receipt=await admin.from('workshop_accountant_commands').select('actor_id,fingerprint,result').eq('request_id',body.request_id).maybeSingle();if(receipt.error)throw receipt.error;
   if(receipt.data)return receipt.data.actor_id===user.id&&receipt.data.fingerprint===fp?{status:200,body:receipt.data.result}:fail('request_conflict',409);
  }
- const loaded=await admin.rpc('zukait_accountant_context',{p_actor_id:user.id});if(loaded.error)throw loaded.error;
- const context=loaded.data,full=financialReport(context,{},now),report=Object.keys(filters).length&&body.report!=='manager_profit'?financialReport(context,filters,now):full;
+ const context=await readAccountantContext(admin,user,{enabled:services.coalesceContextReads===true,project:services.contextProject||'',readOnly:['accountant_dashboard','accountant_jc_search','accountant_jc_detail','accountant_report'].includes(action)});
+ const full=financialReport(context,{},now),report=Object.keys(filters).length&&body.report!=='manager_profit'?financialReport(context,filters,now):full;
  const omanCurrentMonth=day(now).slice(0,7);
  const currentCashInvoices=full.rows.invoices.filter(i=>key(i.job_type)==='CASH'&&String(i.date||'').startsWith(omanCurrentMonth));
  const monthlyCashInvoiceTotal=currentCashInvoices.reduce((n,i)=>n+(milli(i.invoice_amount_omr)||0),0)/1000;
