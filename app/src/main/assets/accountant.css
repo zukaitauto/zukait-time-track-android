@@ -720,3 +720,58 @@ html.financial-dialog-open {overflow:hidden}
   .financial-detail-dialog .expense-glyph{flex-basis:32px;width:32px;height:32px;font-size:17px}
   .financial-detail-dialog .expense-amount{padding:7px;font-size:clamp(12px,3.4vw,15px)}
 }
+
+
+/* Accountant V398 candidate: equal eight-card grid and focused expense reporting. */
+#accounts-home #navigation{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+#accounts-home #navigation .module-card:last-child{grid-column:auto;min-height:152px}
+#accounts-workspace:is([data-report="paint"],[data-report="parts"],[data-report="consumables"]) #rows .table-wrap{overflow-x:auto}
+#accounts-workspace:is([data-report="paint"],[data-report="parts"],[data-report="consumables"]) #rows table{font-size:13px}
+#accounts-workspace:is([data-report="paint"],[data-report="parts"],[data-report="consumables"]) #rows td,
+#accounts-workspace:is([data-report="paint"],[data-report="parts"],[data-report="consumables"]) #rows th{padding:14px 12px;color:#183851}
+#accounts-workspace:is([data-report="paint"],[data-report="parts"],[data-report="consumables"]) #rows td.money{font-weight:850;color:#075c70;font-variant-numeric:tabular-nums}
+#accounts-workspace:is([data-report="paint"],[data-report="parts"],[data-report="consumables"]) #rows .jc-link{font-size:13px;font-weight:850}
+.expense-focused-total{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 0;padding:16px;background:#eaf8f2;border:1px solid #b5dfcc;border-radius:13px}
+.expense-focused-total span{font-weight:750;color:#175c4d}
+.expense-focused-total strong{font-size:21px;color:#065a4a;font-variant-numeric:tabular-nums}
+.expense-focused-total small{color:#82590f;font-weight:650}
+.expense-vehicle{color:#355e7c;font-weight:750;margin:6px 0}
+#accounts-workspace[data-report="profit"] .finance-report{overflow-x:visible;max-width:100%}
+body:has(#accounts-workspace[data-report="profit"]:not([hidden])) main{max-width:none;width:100%}
+@media(min-width:901px){
+ #accounts-workspace[data-report="profit"] .finance-report table{display:table;width:100%;min-width:0;table-layout:fixed;font-size:clamp(9px,.76vw,12px)}
+ #accounts-workspace[data-report="profit"] .finance-report th,
+ #accounts-workspace[data-report="profit"] .finance-report td{padding:10px 3px;white-space:normal;overflow-wrap:anywhere;line-height:1.35}
+ #accounts-workspace[data-report="profit"] .finance-report .expense-link,
+ #accounts-workspace[data-report="profit"] .finance-report .jc-link{max-width:100%;min-width:0;font-size:inherit;padding:5px 2px;white-space:normal;overflow-wrap:anywhere}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(1){width:3%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(2){width:7%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(3){width:5%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(4){width:12%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(5){width:6%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(6){width:10%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(7){width:6%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(8){width:6%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(9){width:8%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(10){width:6%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(11){width:6%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(12){width:7%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(13){width:7%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(14){width:7%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(15){width:4%}
+}
+@media(max-width:900px){
+ #accounts-workspace[data-report="profit"] .finance-report{overflow:visible}
+ #accounts-workspace[data-report="profit"] .finance-report table{display:block}
+ #accounts-workspace[data-report="profit"] .finance-report thead{display:none}
+ #accounts-workspace[data-report="profit"] .finance-report tbody{display:grid;gap:12px}
+ #accounts-workspace[data-report="profit"] .finance-report tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid #cbddeb;border-radius:14px;overflow:hidden;background:#fff}
+ #accounts-workspace[data-report="profit"] .finance-report td{display:flex;flex-direction:column;gap:5px;white-space:normal;min-width:0;overflow-wrap:anywhere;padding:12px;border-bottom:1px solid #e4ecf4}
+ #accounts-workspace[data-report="profit"] .finance-report td:before{content:attr(data-label);font-size:11px;color:#546d84;font-weight:800}
+ #accounts-workspace[data-report="profit"] .finance-report td:nth-child(4){grid-column:1/-1}
+}
+@media(max-width:550px){
+ #accounts-home #navigation{gap:10px}
+ #accounts-home #navigation .module-card:last-child{min-height:177px}
+ #accounts-workspace[data-report="profit"] .finance-report tr{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
