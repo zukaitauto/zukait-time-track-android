@@ -9,5 +9,8 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "V397 candidate pending signed APK, Reception and Accountant verification and production function readback."
+  "reason": "V397 candidate pending signed APK, Reception and Accountant verification and production function readback.",
+  "sourceCommit": null,
+  "approvedAt": null,
+  "publishNonce": null
 }
