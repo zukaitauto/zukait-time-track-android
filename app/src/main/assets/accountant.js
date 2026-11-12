@@ -119,11 +119,11 @@ function formatNormalDutyHours(hours){
  const minutes=Math.round(Number(hours)*60);
  return Math.floor(minutes/60)+'h '+String(minutes%60).padStart(2,'0')+'m';
 }
-function table(rows,cols,actions=false,printMode=false){
+function table(rows,cols,actions=false,printMode=false,focused=false){
  const headers=cols.map(c=>'<th'+(c[2]?' class="money"':'')+'>'+esc(c[0])+'</th>').join('');
  const body=rows.map((r,i)=>'<tr>'+cols.map(c=>{
   const value=esc(c[1]==='normal_hours'?formatNormalDutyHours(r[c[1]]):printMode&&c[2]?display(r[c[1]],true).replace(/^OMR /,''):display(r[c[1]],c[2]));
-  const isJobLink=!printMode&&expenseReports.has(report)&&c[1]==='job_card'&&r.job_card;
+  const isJobLink=!printMode&&!focused&&expenseReports.has(report)&&c[1]==='job_card'&&r.job_card;
   return '<td'+(c[2]?' class="money"':'')+'>'+(isJobLink?'<button type="button" class="jc-link" data-job="'+esc(r.job_card)+'" aria-label="Open JC '+esc(r.job_card)+' financial view">'+value+'</button>':value)+'</td>';
  }).join('')+(actions?'<td>'+(['jobs','cash'].includes(report)?'<button type="button" data-job="'+esc(r.job_card)+'">'+(report==='jobs'?'Open financial view':'View JC')+'</button>':report==='cash_ledger'?(r.invoice_receipt?'<span>From Cash invoice</span>':'<button type="button" data-correct="'+i+'">Correct</button><button type="button" data-reverse="'+i+'">Reverse</button>'):'')+'</td>':'')+'</tr>').join('');
  return '<div class="table-wrap"><table><thead><tr>'+headers+(actions?'<th>Actions</th>':'')+'</tr></thead><tbody>'+body+'</tbody></table></div>';
@@ -454,7 +454,7 @@ async function openExpenseJob(no,kind,trigger=null){
    '<div class="detail-actions"><button type="button" id="close-detail">Back to report</button></div></div>'+
    '<div class="expense-focused-total"><span>Known '+esc(title)+' Cost</span><strong>'+esc(display(total,true))+'</strong>'+
    (pending?'<small>'+pending+' received/finalized entries have pending prices</small>':'')+'</div>'+
-   (rows.length?table(rows,columns[kind],false):'<p>No matching finalized '+esc(kind)+' entries.</p>');
+   (rows.length?table(rows,columns[kind],false,false,true):'<p>No matching finalized '+esc(kind)+' entries.</p>');
   $('detail').hidden=false;$('close-detail').onclick=closeDetail;showDetailDialog();say('');
  }catch(e){if(ticket===detailGeneration)say(e.message);}
 }
