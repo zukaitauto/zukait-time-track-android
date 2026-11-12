@@ -32,7 +32,8 @@ for(const [expense,label] of [['consumables','Consumables'],['parts','Spare Part
  w.document.getElementById('month').value='2026-10';
  w.document.getElementById('refresh').click();
  await wait(()=>w.document.getElementById('cash-invoice-total-period').textContent==='2026-10');
- const expectedExpenses={consumables:10,parts:10,paint:15};
+ // The fixture's paint return has no return date: its 5 OMR deduction is part of JC360 net cost, not October dated expense.
+ const expectedExpenses={consumables:10,parts:10,paint:20};
  const reportedAmount=w.document.getElementById('cash-invoice-total-amount').textContent;
  assert.equal(reportedAmount,'OMR '+expectedExpenses[expense].toFixed(3),'expense total reconciles with finalized October source costs');
  viewSelect.value=groupBy;
