@@ -25,6 +25,18 @@ for(const [expense,label] of [['consumables','Consumables'],['parts','Spare Part
  assert.equal(w.document.getElementById('month').value,new Date(Date.now()+14400000).toISOString().slice(0,7),'present Oman month is the default');
  assert.equal(w.document.getElementById('cash-invoice-total').hidden,false,'expense total is visible above the rows');
  assert.match(w.document.getElementById('cash-invoice-total-amount').textContent,/OMR/);
+ const viewSelect=w.document.getElementById('expense-view');
+ const groupBy=expense==='consumables'?'brand':expense==='parts'?'part':'brand';
+ assert.ok([...viewSelect.options].some(option=>option.value===groupBy),'expected grouping must be offered');
+ w.document.getElementById('month').value='2026-10';
+ w.document.getElementById('refresh').click();
+ await wait(()=>w.document.getElementById('cash-invoice-total-period').textContent==='2026-10');
+ viewSelect.value=groupBy;
+ viewSelect.dispatchEvent(new w.Event('change'));
+ const expectedHeading=groupBy==='part'?'Part':'Brand';
+ await wait(()=>w.document.querySelector('#rows th')?.textContent===expectedHeading);
+ assert.match(w.document.getElementById('rows').textContent,/Known Expense OMR/,'grouped report shows financial amount');
+ assert.equal(w.document.getElementById('cash-invoice-total').hidden,false,'top expense remains visible for grouped reports');
  w.document.getElementById('accounts-back').click();
 }
 
