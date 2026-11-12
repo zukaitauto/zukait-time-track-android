@@ -141,6 +141,25 @@ export async function accountantApi(admin,user,body,secret,now=Date.now()){
   const base=filters.month||day(now).slice(0,7),date=new Date(base+'-01T08:00:00Z');rows=[];
   for(let i=0;i<12;i++){const month=new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth()-i,1)).toISOString().slice(0,7),r=financialReport(context,{...filters,month},now);if((filters.from&&month<filters.from.slice(0,7))||(filters.to&&month>filters.to.slice(0,7)))continue;rows.push({month,...Object.fromEntries(Object.entries(r.summary).filter(([,v])=>v&&typeof v==='object'&&'amount_omr' in v).map(([k,v])=>[k+'_omr',v.pending_records?null:v.amount_omr])),pending_cost_records:r.summary.total_job_cost.pending_records,lpo_pending_records:r.summary.lpo_pending_records,leave_days:r.summary.leave_total_days});}
  }else rows=report.rows[body.report||'jobs']||[];
+ if(action==='accountant_report'&&['consumables','paint','parts'].includes(body.report)){
+  // Expense pages are receipt/finalization reports, not open purchase queues.
+  // Keep financialReport() untouched for JC360, profit and audit calculations.
+  const category=body.report;
+  const vehicles=new Map((Array.isArray(context.state?.jobs)?context.state.jobs:[])
+   .filter(j=>j&&!j.deleted).map(j=>{
+    const base=String(j.vehicle||[j.make,j.model].filter(Boolean).join(' ')).trim();
+    const year=String(j.year||j.modelYear||j.vehicleYear||'').trim();
+    return [key(j.no),year&&!base.split(/\\s+/).includes(year)?base+' '+year:base];
+   }));
+  rows=rows.filter(row=>category==='paint'?row.received===true&&row.nil!==true&&
+    ['Received','Returned paint'].includes(row.status):
+    category==='parts'?row.confirmed===true&&Number(row.received_quantity)>0&&key(row.status)!=='RETURNED':
+    true).map(row=>({...row,vehicle:vehicles.get(key(row.job_card))||''}));
+  const amountField=category==='consumables'?'cost_omr':'net_cost_omr';
+  const amounts=rows.map(row=>milli(row[amountField]));
+  enrichedSummary[category]={amount_omr:amounts.reduce((n,v)=>n+(v??0),0)/1000,
+   records:rows.length,pending_records:amounts.filter(v=>v===null).length};
+ }
  const offset=body.offset||0,limit=body.limit||100;
  return {status:200,body:{ok:true,rows:rows.slice(offset,offset+limit),total_count:rows.length,next_offset:offset+limit<rows.length?offset+limit:null,summary:enrichedSummary,as_of:report.as_of,notes:report.notes,snapshot_revision:report.snapshot_revision,finance_revision:report.finance_revision}};
 }
