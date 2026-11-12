@@ -65,8 +65,8 @@ const blocked={sessionEpoch:1,cloudPushing:false,managerEditInFlight:true,cloudD
  };
  w.eval(source);w.eval(fs.readFileSync('app/src/main/assets/job_card_master.js','utf8'));w.eval(fs.readFileSync('app/src/main/assets/manager_job_edit.js','utf8'));
  await w.zukaitCloud.pull(true);w.editJobManager('1');w.document.getElementById('mje-customer').value='Corrected';w.document.getElementById('mje-reason').value='Confirmed correction';
- const saving=w.zukaitSaveManagerFullEdit();assert.equal(w.state.jobs[0].customer,'Existing');assert.equal(JSON.parse(w.localStorage.getItem('qa-cache')).jobs[0].customer,'Existing');finish();await saving;
- assert.equal(w.state.jobs[0].customer,'Corrected');assert.equal(w.zukaitCloud.revision,6);assert.equal(JSON.parse(w.localStorage.getItem('qa-cache')).jobs[0].customer,'Corrected');assert.equal(w.state.jobEdits[0].reason,'Confirmed correction');assert.equal(w.zukaitCloud.dirty,false);
+ const saving=w.zukaitSaveManagerFullEdit();assert.equal(w.zukaitCloud.syncHealth.correcting,true);assert.equal(w.state.jobs[0].customer,'Existing');assert.equal(JSON.parse(w.localStorage.getItem('qa-cache')).jobs[0].customer,'Existing');finish();await saving;
+ assert.equal(w.zukaitCloud.syncHealth.correcting,false);assert.equal(w.state.jobs[0].customer,'Corrected');assert.equal(w.zukaitCloud.revision,6);assert.equal(JSON.parse(w.localStorage.getItem('qa-cache')).jobs[0].customer,'Corrected');assert.equal(w.state.jobEdits[0].reason,'Confirmed correction');assert.equal(w.zukaitCloud.dirty,false);
  assert.deepEqual(requests.map(r=>r.action),['load','manager_job_full_edit','load']);assert.equal(requests.at(-1).known_revision,undefined,'post-command refresh cannot reuse an old conditional baseline');
  w.zukaitCloud.stop();dom.window.close();
 }

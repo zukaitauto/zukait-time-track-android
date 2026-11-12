@@ -1001,6 +1001,7 @@
     if(me?.role!=='Manager'||!token)throw Error('job_edit_manager_required');
     if(managerEditInFlight||cloudDirty||cloudPushing)throw Error('JOB_EDIT_SYNC_PENDING');
     managerEditInFlight=true;
+    status('SAVING CORRECTION…','info');
     try{
       const r=await api({...command,action:'manager_job_full_edit'});
       if(stale(epoch)||token!==sessionToken())throw Error('STALE_SESSION');
@@ -1431,7 +1432,7 @@
     get lastSuccessfulSyncAt(){return lastSuccessfulSyncAt},
     get lastRevisionProbeAt(){return lastRevisionProbeAt},
     get lastSyncAgeMs(){return lastSuccessfulSyncAt?Math.max(0,Date.now()-lastSuccessfulSyncAt):null},
-    get syncHealth(){return {online:navigator.onLine,revision:cloudRevision,dirty:cloudDirty,pushing:cloudPushing,pulling:pullInFlight,ready:initialDone,lastSuccessfulSyncAt,lastSyncAgeMs:lastSuccessfulSyncAt?Math.max(0,Date.now()-lastSuccessfulSyncAt):null,lastError:lastSyncError,consecutiveErrors:consecutiveSyncErrors,pendingConflict:!!localStorage.getItem(PENDING_KEY),liveFresh:liveStatusLastFetchedAt>0&&Date.now()-liveStatusLastFetchedAt<7000&&navigator.onLine,liveAgeMs:liveStatusLastFetchedAt?Math.max(0,Date.now()-liveStatusLastFetchedAt):null}},
+    get syncHealth(){return {online:navigator.onLine,revision:cloudRevision,dirty:cloudDirty,pushing:cloudPushing,correcting:managerEditInFlight,pulling:pullInFlight,ready:initialDone,lastSuccessfulSyncAt,lastSyncAgeMs:lastSuccessfulSyncAt?Math.max(0,Date.now()-lastSuccessfulSyncAt):null,lastError:lastSyncError,consecutiveErrors:consecutiveSyncErrors,pendingConflict:!!localStorage.getItem(PENDING_KEY),liveFresh:liveStatusLastFetchedAt>0&&Date.now()-liveStatusLastFetchedAt<7000&&navigator.onLine,liveAgeMs:liveStatusLastFetchedAt?Math.max(0,Date.now()-liveStatusLastFetchedAt):null}},
     get pendingConflict(){try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'null')}catch(_){return null}}
   };
   // Existing role menus are assigned by scripts loaded after cloud_sync.js.
