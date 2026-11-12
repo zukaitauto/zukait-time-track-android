@@ -17,6 +17,7 @@ columns.insurance_invoiced=[...financialColumns.slice(0,4),['Insurance Company',
 columns.profit=[...financialColumns.slice(0,4),['Category','kind'],['Company / Customer','company_name'],...financialColumns.slice(4)];
 columns.leave=[['Employee','employee'],['Date','date'],['Leave','period_label'],['Status','approval_status'],['Days','days'],['Remark','remark'],['Marked By','marked_by'],['Cancellation By','cancelled_by'],['Cancellation Reason','cancel_reason']];
 let user=null,report='jobs',labourMode='with',offset=0,next=null,result=null,generation=0,detailGeneration=0,busy=false,target=null,verified=false;
+let passwordRotation = 0;
 const saved=()=>{try{return JSON.parse(localStorage.getItem(sessionKey)||'null')}catch{return null}};
 const token=()=>{const s=saved();if(!s||s.user?.id!==user?.id||s.user?.role!==user?.role||!['Accountant','Manager'].includes(s.user?.role)){invalidate();throw Error('ACCOUNT_CHANGED');}return String(s.token||window.AndroidBridge?.getSecureSessionToken?.()||'')};
 let billClient=null,billBlocked=false,financialLockKey=null,billReview=null;
@@ -55,7 +56,30 @@ async function submitBill(command,retry=false){
 function invalidate(){closeCashDialog();billReview?.reset();verified=false;generation++;closeDetail();result=null;target=null;$('app').hidden=true;for(const id of ['rows','detail','summary','pending'])$(id).replaceChildren();$('pending').hidden=true;window.dispatchEvent(new Event('zukait-accountant-session'));}
 window.addEventListener('storage',e=>{if(verified&&billsEnabled&&(e.key===pendingKey()||e.key==='zukait_bill_intent_v1:'+encodeURIComponent(url)+':'+encodeURIComponent(user.id)))showPending();});
 window.addEventListener('storage',e=>{if(e.key===sessionKey&&verified){try{token()}catch{say('Account changed. Sign in again.')}}});
-async function request(endpoint,body){const t=token();if(!t)throw Error('Sign in required');const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),15000);let r;try{r=await fetch(url+'/functions/v1/'+endpoint,{method:'POST',headers:{'Content-Type':'application/json',apikey:publicKey,'x-zukait-session':t},body:JSON.stringify(body),signal:controller.signal})}catch(e){if(token()!==t){invalidate();throw Error('ACCOUNT_CHANGED');}throw e;}finally{clearTimeout(timeout)}const data=await r.json();if(token()!==t){invalidate();throw Error('ACCOUNT_CHANGED');}if(!r.ok||!data.ok){const error=new Error(data.code||'Request unavailable');error.status=r.status;throw error;}return data;}
+async function request(endpoint,body){
+ const t=token();
+ if(!t)throw Error('Sign in required');
+ const rotation=passwordRotation;
+ const checkSession=()=>{
+  const current=token();
+  if(rotation!==passwordRotation)throw Error('SESSION_ROTATED');
+  if(current!==t){invalidate();throw Error('ACCOUNT_CHANGED');}
+ };
+ const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),15000);
+ let response;
+ try{
+  response=await fetch(url+'/functions/v1/'+endpoint,{method:'POST',headers:{'Content-Type':'application/json',apikey:publicKey,'x-zukait-session':t},body:JSON.stringify(body),signal:controller.signal});
+ }catch(error){checkSession();throw error;}
+ finally{clearTimeout(timeout);}
+ const data=await response.json();
+ checkSession();
+ if(!response.ok||!data.ok){
+  const error=new Error(data.code||'Request unavailable');
+  error.status=response.status;
+  throw error;
+ }
+ return data;
+}
 function filters(){
  const used=['query','month','from','to'];
  if(report==='leave')used.push('employee');
@@ -534,6 +558,7 @@ async function changePassword(currentPassword,newPassword){
    if(b.saveSecureSessionToken(r.session_token)===false||String(b.getSecureSessionToken())!==r.session_token)throw Error('Secure storage unavailable');
   }else s.token=r.session_token;
   localStorage.setItem(sessionKey,JSON.stringify(s));
+  passwordRotation++;
  }catch{invalidate();localStorage.removeItem(sessionKey);try{window.AndroidBridge?.clearSecureSessionToken?.()}catch{}throw Error('Password changed. Sign in again to continue.');}
  await load();
 }
