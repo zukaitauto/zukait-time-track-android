@@ -30,7 +30,7 @@ test('responsive high contrast Financial 360 design and asset versions',()=>{
  assert.match(css,/#accounts-workspace \.finance-report/);
  assert.match(css,/@media\(max-width:550px\)/);
  assert.ok(css.includes('#accounts-home #navigation{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}'),'two columns remain on small phones');
- assert.ok(css.includes('#accounts-home #navigation .module-card:last-child{grid-column:1/-1'),'last card spans both columns');
+ assert.ok(css.includes('#accounts-home #navigation .module-card:last-child{grid-column:auto'),'last card occupies equal-width column');
  assert.ok(js.includes('function jobCardResults(rows)'),'JC results use the approved card layout');
  assert.ok(css.includes('.financial-detail-dialog .detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))'),'Financial 360 has two columns');
  assert.match(css,/:focus-visible/);
@@ -53,6 +53,6 @@ test('Insurance Invoiced mirrors Cash In design and fits all 14 financial column
  assert.equal(insuranceWidths.reduce((sum,x)=>sum+Number(x[2]),0),100,'Insurance table spans exactly 100% available width');
  assert.match(css,/@media\(max-width:1100px\)/,'narrow displays use vertically stacked labelled records');
  assert.match(js,/columns\.insurance_invoiced=\[\.\.\.financialColumns\.slice\(0,4\),\['Insurance Company','insurance_company'\],\.\.\.financialColumns\.slice\(4\)\]/);
- assert.match(js,/if\(expense\)return openJob\(expense\.dataset\.job,expense\.dataset\.expense,expense\)/,'expense details use the modal');
- assert.match(js,/const j=e\.target\.closest\('\[data-job\]'\);if\(j\)return openJob\(j\.dataset\.job,'',j\)/,'JC details use the modal');
+ assert.match(js,/openExpenseJob\(expense\.dataset\.job,expense\.dataset\.expense,expense\)/,'expense details use a focused category modal');
+ assert.match(js,/expenseReports\.has\(report\)\?openExpenseJob\(j\.dataset\.job,report,j\):openJob\(j\.dataset\.job,'',j\)/,'expense JC opens focused list while financial JC opens 360');
 });
