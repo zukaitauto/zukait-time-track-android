@@ -182,7 +182,7 @@ assert.equal(w.document.getElementById('filter-company').hidden,false);
 w.document.getElementById('accounts-back').click();
 w.document.querySelector('#navigation [data-report="leave"]').click();
 await wait(()=>w.document.getElementById('title').textContent==='Leave Management');
-assert.match(w.document.getElementById('notes').textContent,/Read-only/);
+assert.match(w.document.getElementById('notes').textContent,/audited/);
 w.document.getElementById('month').value='2026-10';
 w.document.getElementById('refresh').click();
 await wait(()=>w.document.getElementById('rows').textContent.includes('Technician'));
