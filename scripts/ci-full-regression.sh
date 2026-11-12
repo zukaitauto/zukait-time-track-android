@@ -33,6 +33,7 @@ node tests/accountant-parts-costs.mjs
 node tests/accountant-ledger-sql.mjs
 node tests/accountant-context-aggregation.mjs
 node tests/accountant-auth-api.mjs
+node tests/accountant-leave-command.mjs
 node tests/accountant-dashboard.mjs
 node tests/accountant-cash-invoice-register.mjs
 node tests/accountant-overview-layout.mjs
