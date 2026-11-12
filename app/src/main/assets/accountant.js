@@ -547,7 +547,7 @@ const moduleDesign={
  jobs:[moduleSvg('<rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="m8 14 2.3 2.3L16 10.5"/>'),'Search registration or JC and inspect all five costs','blue'],
  cash:[moduleSvg('<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v5c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 11v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5M5 16v2c0 1.7 3.1 3 7 3s7-1.3 7-3v-2"/>'),'Cash Job Card invoices, monthly totals and filters','green'],
  insurance_invoiced:[moduleSvg('<path d="M12 2 4 5v6c0 5.2 3 8.6 8 11 5-2.4 8-5.8 8-11V5z"/><path d="m7.5 13 1-3h7l1 3M8 16v-3h8v3M9 16v1m6-1v1"/>'),'Delivered, invoiced insurance vehicles by company','indigo'],
- leave:[moduleSvg('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2v6m10-6v6M3 10h18"/>'),'Leave management and history','amber'],
+ leave:[moduleSvg('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2v6m10-6v6M3 10h18"/>'),'Leave history — read-only until authorized management is enabled','amber'],
  profit:[moduleSvg('<rect x="4" y="13" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="16" y="3" width="4" height="18" rx="1"/>'),'Cash, Insurance, Credit and Corporate combined','teal'],
  consumables:[moduleSvg('<rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 2v6m6-6v6M8 12h8m-8 4h8"/>'),'Monthly material consumption, brand and costs','green'],
  parts:[moduleSvg('<path d="M14 4a6 6 0 0 0-7 7L3 15l6 6 4-4a6 6 0 0 0 7-7l-5 5-4-4z"/>'),'Monthly spare parts purchases and returns','blue'],
