@@ -10,6 +10,8 @@
   let cloudApplying=false;
   let cloudPushing=false;
   let pushTimer=null;
+  let localGeneration=0;
+  let pushBlocked=false;
   let pollTimer=null;
   let livePollTimer=null;
   let liveInFlight=false;
@@ -82,7 +84,7 @@
   }
   async function v2CommitEvent(event){
     const r=await api({action:'v2_commit_event',event});
-    if(!r.ok){const e=new Error(r.code||'V2_EVENT_COMMIT_FAILED');e.code=r.code||'V2_EVENT_COMMIT_FAILED';throw e;}
+    if(!r.ok){const e=new Error(r.code||'V2_EVENT_COMMIT_FAILED');e.code=r.code||'V2_EVENT_COMMIT_FAILED';e.retryable=r._status>=500||r._status===429||r.code==='invalid_session';throw e;}
     return r;
   }
   async function flushV2EventQueue(){
@@ -92,7 +94,7 @@
       try{const r=await v2CommitEvent(event);q.markSynced(event.eventId,{serverTime:r.server_time,serverRevision:r.server_revision});synced++;}
       catch(e){
         const code=String(e?.code||e?.message||'V2_EVENT_COMMIT_FAILED');
-        if(code==='NETWORK'||code==='TIMEOUT'||code==='NO_SESSION'){console.warn('V2 event sync deferred',event.eventId,e);break;}
+        if(e?.retryable||code==='NETWORK'||code==='TIMEOUT'||code==='NO_SESSION'){console.warn('V2 event sync deferred',event.eventId,e);break;}
         q.markConflict?.(event.eventId,code);console.warn('V2 event quarantined for reconciliation',event.eventId,code);
       }
     }
@@ -192,6 +194,7 @@
     state.overtimeNotices=state.overtimeNotices||{};
     state.incentiveTargetMinutes=state.incentiveTargetMinutes||210*60;
     if(window.ZukaitConsumables&&typeof window.ZukaitConsumables.ensureState==='function')window.ZukaitConsumables.ensureState(state);
+    window.zukaitDataIndex?.invalidate?.();
   }
 
   function persistLocal(){
@@ -208,24 +211,35 @@
     persistLocal();
   }
 
-  function clone(x){return JSON.parse(JSON.stringify(x))}
+  function same(a,b){return JSON.stringify(a)===JSON.stringify(b)}
+  function clone(x){return x===undefined?undefined:JSON.parse(JSON.stringify(x))}
 
-  function threeWayMerge(base,remote,local){
+  function threeWayMerge(base,remote,local,path=''){
     if (same(local,base)) return clone(remote);
     if (same(remote,base)) return clone(local);
     if (Array.isArray(base)||Array.isArray(remote)||Array.isArray(local)) {
       const b=Array.isArray(base)?base:[], r=Array.isArray(remote)?remote:[], l=Array.isArray(local)?local:[];
-      const idBased=[...b,...r,...l].every(x=>!x || typeof x!=='object' || Array.isArray(x) || x.id!=null);
-      if(!idBased) return clone(l);
-      const bm=new Map(b.filter(x=>x&&x.id!=null).map(x=>[String(x.id),x]));
-      const rm=new Map(r.filter(x=>x&&x.id!=null).map(x=>[String(x.id),x]));
-      const lm=new Map(l.filter(x=>x&&x.id!=null).map(x=>[String(x.id),x]));
+      const key=path==='jobs'?'no':'id';
+      const keyed=[...b,...r,...l].every(x=>x==null||(typeof x==='object'&&!Array.isArray(x)&&x[key]!=null));
+      // Unkeyed lists (holidays, audit entries) use occurrence identities so
+      // concurrent additions survive without removing intentional duplicates.
+      const index=rows=>{
+        const counts=new Map(),out=new Map();
+        for(const x of rows){
+          if(x==null)continue;
+          const raw=keyed?String(x[key]):JSON.stringify(x);
+          const n=counts.get(raw)||0;counts.set(raw,n+1);
+          out.set(keyed?raw:raw+'#'+n,x);
+        }
+        return out;
+      };
+      const bm=index(b),rm=index(r),lm=index(l);
       const ids=[...new Set([...bm.keys(),...rm.keys(),...lm.keys()])];
       const out=[];
       for(const id of ids){
         const bv=bm.get(id),rv=rm.get(id),lv=lm.get(id);
         if(bv===undefined){
-          if(rv!==undefined&&lv!==undefined)out.push(threeWayMerge({},rv,lv));
+          if(rv!==undefined&&lv!==undefined)out.push(threeWayMerge({},rv,lv,path));
           else if(lv!==undefined)out.push(clone(lv));
           else if(rv!==undefined)out.push(clone(rv));
           continue;
@@ -239,7 +253,7 @@
           if(same(lv,bv))continue;
           out.push(clone(lv));continue;
         }
-        out.push(threeWayMerge(bv,rv,lv));
+        out.push(threeWayMerge(bv,rv,lv,path));
       }
       return out;
     }
@@ -258,7 +272,7 @@
           if(same(lv,bv))continue;
           out[k]=clone(lv);continue;
         }
-        out[k]=threeWayMerge(bv,rv,lv);
+        out[k]=threeWayMerge(bv,rv,lv,path?path+'.'+k:k);
       }
       return out;
     }
@@ -372,10 +386,11 @@
     if(pullInFlight)return false;
     if(!sessionToken()){status('LOGIN REQUIRED','local');initialDone=true;return false}
     if(!navigator.onLine){status(cloudDirty?'OFFLINE — CHANGE QUEUED':'OFFLINE — LOCAL CACHE','warn');initialDone=true;return false}
-    if(cloudDirty&&!force){status('CHANGE WAITING TO SYNC','warn');return false}
+    if(cloudDirty){status(pushBlocked?'CHANGE NEEDS REVIEW — KEPT ON DEVICE':'CHANGE WAITING TO SYNC','warn');return false}
     status('SYNCING…','info');
     pullInFlight=true;
     const before=clone(state||{});
+    const generationAtPull=localGeneration;
     let r;
     try{r=await api({action:'load'})}finally{pullInFlight=false}
     if(!r.ok){
@@ -384,34 +399,37 @@
       throw new Error(r.code||'LOAD_FAILED');
     }
     const remoteRev=Number(r.revision||0);
+    if(remoteRev<cloudRevision){initialDone=true;return true}
     if(force||remoteRev!==cloudRevision){
       cloudApplying=true;
       try{
-        normalizeRemote(r.data);
+        const editedDuringPull=localGeneration!==generationAtPull||cloudDirty;
+        normalizeRemote(editedDuringPull?threeWayMerge(before,r.data,clone(state||{})):r.data);
         cloudRevision=remoteRev;
         localStorage.setItem(REV_KEY,String(cloudRevision));
       }finally{cloudApplying=false}
       if(typeof window.v42AfterCloudPull==='function'){
         try{window.v42AfterCloudPull(before,clone(state),r)}catch(e){console.warn('Notification hook failed',e)}
       }
-      lastSyncedState=clone(state||{});
+      lastSyncedState=clone(r.data||{});
       if(me)try{render()}catch(e){console.error('Render after sync failed',e)}
     } else if(!lastSyncedState) {
       lastSyncedState=clone(state||{});
     }
-    status('SYNCED','ok');
+    status(cloudDirty?'CHANGE WAITING TO SYNC':'SYNCED',cloudDirty?'warn':'ok');
     initialDone=true;
     conflictAlerted=false;
     return true;
   }
 
   async function push(retry=0){
-    if(cloudPushing||!cloudDirty)return false;
+    if(cloudPushing||!cloudDirty||pushBlocked)return false;
     if(!sessionToken()){status('LOGIN REQUIRED','bad');return false}
     if(!navigator.onLine){status('OFFLINE — CHANGE QUEUED','warn');return false}
     cloudPushing=true;
     status('SAVING…','info');
     const localSnapshot=payloadState();
+    const generationAtPush=localGeneration;
     try{
       const r=await api({action:'save',expected_revision:cloudRevision,data:localSnapshot});
       if(r.ok){
@@ -420,19 +438,19 @@
         // device cannot remain locally stale after a successful save.
         cloudRevision=Number(r.server_revision||r.revision||cloudRevision+1);
         localStorage.setItem(REV_KEY,String(cloudRevision));
-        localStorage.removeItem(DIRTY_KEY);
-        localStorage.removeItem(PENDING_KEY);
-        cloudDirty=false;
-        if(r.data&&typeof r.data==='object'){
+        const editedDuringPush=localGeneration!==generationAtPush;
+        const authoritative=r.data&&typeof r.data==='object'?clone(r.data):clone(localSnapshot);
+        lastSyncedState=clone(authoritative);
+        if(r.data||editedDuringPush){
+          const current=payloadState();
           cloudApplying=true;
-          try{normalizeRemote(reconcileConsumablesDuplicates(clone(r.data)))}finally{cloudApplying=false}
-          if(me?.role==='Employee')finalizeEmployeeOfflineMarkers(state,me.id);
-          lastSyncedState=clone(state||{});
+          try{normalizeRemote(editedDuringPush?threeWayMerge(localSnapshot,authoritative,current):authoritative)}finally{cloudApplying=false}
           if(me)try{render()}catch(_){}
-        }else{
-          lastSyncedState=clone(localSnapshot);
         }
-        status('SYNCED','ok');
+        cloudDirty=localGeneration!==generationAtPush;
+        if(cloudDirty)localStorage.setItem(DIRTY_KEY,'1');else localStorage.removeItem(DIRTY_KEY);
+        localStorage.removeItem(PENDING_KEY);
+        status(cloudDirty?'CHANGE WAITING TO SYNC':'SYNCED',cloudDirty?'warn':'ok');
         conflictAlerted=false;
         if(r.force_pull&&!r.data){
           setTimeout(()=>{if(!cloudDirty)pull(true).catch(e=>console.warn('Post-rebase refresh failed',e))},0);
@@ -448,7 +466,7 @@
           : threeWayMerge(base,remote,localSnapshot);
         try{if(me?.role==='Employee')window.zukaitV2?.reconnectAudit?.record?.({assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:cloudRevision,syncState:'pending'},{assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:Number(r.revision||cloudRevision)},'LEGACY_CONFLICT_MERGE')}catch(e){console.warn('V2 reconnect shadow audit skipped',e)}
         cloudApplying=true;
-        try{state=merged;ensureShape();persistLocal()}finally{cloudApplying=false}
+        try{state=localGeneration!==generationAtPush?threeWayMerge(localSnapshot,merged,payloadState()):merged;ensureShape();persistLocal()}finally{cloudApplying=false}
         cloudRevision=Number(r.revision||cloudRevision);
         localStorage.setItem(REV_KEY,String(cloudRevision));
         lastSyncedState=remote;
@@ -467,13 +485,7 @@
       }
 
       if(r.code==='id001_update_required'){
-        // The server rejected a legacy ID001 state. Discard the unsafe local queue and reload the clean shared state.
-        cloudDirty=false;
-        localStorage.removeItem(DIRTY_KEY);
-        localStorage.removeItem(PENDING_KEY);
-        status('RELOADING SAFE ID001 STATE…','info');
-        cloudPushing=false;
-        try{await pull(true)}catch(_){status('SYNC ERROR','bad')}
+        preserveRejectedChange(r.code);
         return false;
       }
 
@@ -493,7 +505,7 @@
                 : threeWayMerge(base,remote,localSnapshot);
               try{if(me?.role==='Employee')window.zukaitV2?.reconnectAudit?.record?.({assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:cloudRevision,syncState:'pending'},{assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:Number(latest.revision||cloudRevision)},'LEGACY_PERMISSION_REBASE')}catch(e){console.warn('V2 reconnect shadow audit skipped',e)}
               cloudApplying=true;
-              try{state=merged;ensureShape();persistLocal()}finally{cloudApplying=false}
+              try{state=localGeneration!==generationAtPush?threeWayMerge(localSnapshot,merged,payloadState()):merged;ensureShape();persistLocal()}finally{cloudApplying=false}
               cloudRevision=Number(latest.revision||cloudRevision);
               localStorage.setItem(REV_KEY,String(cloudRevision));
               lastSyncedState=remote;
@@ -505,14 +517,7 @@
             }
           }catch(e){console.warn('Permission rebase failed',e)}
         }
-        // Do not keep retrying an unauthorized full snapshot. Clear the dirty
-        // snapshot before pulling so every device returns to one clean revision.
-        cloudDirty=false;
-        localStorage.removeItem(DIRTY_KEY);
-        localStorage.removeItem(PENDING_KEY);
-        status('REFRESHING WORKSHOP DATA…','info');
-        cloudPushing=false;
-        try{await pull(true)}catch(_){status('SYNC ERROR','bad')}
+        preserveRejectedChange(r.code);
         return false;
       }
       if(r.code==='invalid_session'){
@@ -527,12 +532,28 @@
       localStorage.setItem(DIRTY_KEY,'1');
       status(navigator.onLine?'SYNC ERROR — RETRYING':'OFFLINE — CHANGE QUEUED',navigator.onLine?'bad':'warn');
       return false;
-    }finally{cloudPushing=false}
+    }finally{
+      cloudPushing=false;
+      if(cloudDirty&&!pushBlocked&&sessionToken()&&navigator.onLine){
+        clearTimeout(pushTimer);
+        pushTimer=setTimeout(()=>push(0),localGeneration!==generationAtPush?100:5000);
+      }
+    }
+  }
+
+  function preserveRejectedChange(code){
+    pushBlocked=true;
+    cloudDirty=true;
+    localStorage.setItem(DIRTY_KEY,'1');
+    localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,code,data:payloadState()}));
+    status('CHANGE NEEDS REVIEW — KEPT ON DEVICE','warn');
   }
 
   window.cloudScheduleSave=function(){
     if(cloudApplying)return;
+    localGeneration++;
     cloudDirty=true;
+    pushBlocked=false;
     localStorage.setItem(DIRTY_KEY,'1');
     clearTimeout(pushTimer);
     pushTimer=setTimeout(()=>push(0),100);
@@ -540,7 +561,7 @@
 
   async function syncNow(){
     if(!navigator.onLine)return status('OFFLINE — CHANGE QUEUED','warn');
-    if(cloudDirty)await push(0);
+    if(cloudDirty){pushBlocked=false;await push(0);}
     if(!cloudDirty)await pull(true);
     if(liveRole())await pullLiveStatus();
   }
