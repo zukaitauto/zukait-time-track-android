@@ -95,7 +95,15 @@ function formatNormalDutyHours(hours){
  const minutes=Math.round(Number(hours)*60);
  return Math.floor(minutes/60)+'h '+String(minutes%60).padStart(2,'0')+'m';
 }
-function table(rows,cols,actions=false,printMode=false){return '<div class="table-wrap"><table><thead><tr>'+cols.map(c=>'<th'+(c[2]?' class="money"':'')+'>'+esc(c[0])+'</th>').join('')+(actions?'<th>Actions</th>':'')+'</tr></thead><tbody>'+rows.map((r,i)=>'<tr>'+cols.map(c=>'<td'+(c[2]?' class="money"':'')+'>'+esc(c[1]==='normal_hours'?formatNormalDutyHours(r[c[1]]):printMode&&c[2]?display(r[c[1]],true).replace(/^OMR /,''):display(r[c[1]],c[2]))+'</td>').join('')+(actions?'<td>'+(['jobs','cash'].includes(report)?'<button type="button" data-job="'+esc(r.job_card)+'">'+(report==='jobs'?'Open financial view':'View JC')+'</button>':report==='cash_ledger'?(r.invoice_receipt?'<span>From Cash invoice</span>':'<button type="button" data-correct="'+i+'">Correct</button><button type="button" data-reverse="'+i+'">Reverse</button>'):'')+'</td>':'')+'</tr>').join('')+'</tbody></table></div>';}
+function table(rows,cols,actions=false,printMode=false){
+ const headers=cols.map(c=>'<th'+(c[2]?' class="money"':'')+'>'+esc(c[0])+'</th>').join('');
+ const body=rows.map((r,i)=>'<tr>'+cols.map(c=>{
+  const value=esc(c[1]==='normal_hours'?formatNormalDutyHours(r[c[1]]):printMode&&c[2]?display(r[c[1]],true).replace(/^OMR /,''):display(r[c[1]],c[2]));
+  const isJobLink=!printMode&&expenseReports.has(report)&&c[1]==='job_card'&&r.job_card;
+  return '<td'+(c[2]?' class="money"':'')+'>'+(isJobLink?'<button type="button" class="jc-link" data-job="'+esc(r.job_card)+'" aria-label="Open JC '+esc(r.job_card)+' financial view">'+value+'</button>':value)+'</td>';
+ }).join('')+(actions?'<td>'+(['jobs','cash'].includes(report)?'<button type="button" data-job="'+esc(r.job_card)+'">'+(report==='jobs'?'Open financial view':'View JC')+'</button>':report==='cash_ledger'?(r.invoice_receipt?'<span>From Cash invoice</span>':'<button type="button" data-correct="'+i+'">Correct</button><button type="button" data-reverse="'+i+'">Reverse</button>'):'')+'</td>':'')+'</tr>').join('');
+ return '<div class="table-wrap"><table><thead><tr>'+headers+(actions?'<th>Actions</th>':'')+'</tr></thead><tbody>'+body+'</tbody></table></div>';
+}
 let detailTrigger=null;
 function closeDetail(){
  detailGeneration++;target=null;$('detail').hidden=true;$('correction').hidden=true;
