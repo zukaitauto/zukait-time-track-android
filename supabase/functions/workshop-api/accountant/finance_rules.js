@@ -30,7 +30,10 @@ export function financialReport(context,filters={},now=Date.now()){
    const returnRows=[];
    for(const r of unique(arr(o.returns).filter(Boolean).map((x,i)=>({...x,id:x.id||String(i)}))).filter(x=>!x.voided)){let v=milli(r.value);if(v===null){const l=arr(o.lines).find(l=>l.id===r.lineId),lc=l?linePrice(l):null,q=Number(r.quantity);v=lc!==null&&Number(l.quantity)>0?Math.round(lc*q/Number(l.quantity)):milli(r.pricePerLitre)!==null?Math.round(milli(r.pricePerLitre)*q):null;}returnRows.push({source:r,value:v});ret=v===null||ret===null?null:ret+v;}
    const net=received&&gross!==null&&ret!==null&&gross>=ret?gross-ret:null;if(net===null)paintCost=null;else if(paintCost!==null)paintCost+=net;
-   const commonPaint={job_card:no,po:o.poNumber||'',supplier:o.supplier||o.supplierName||o.vendor||'',purchase_date:day(o.createdAt),received,nil:!!o.nilPaintPurchase};
+   const paintLineBrands=[...new Set(arr(o.lines).map(l=>String(l.brandName||l.brand||'').trim()).filter(Boolean))];
+   const recordedBrand=String(o.brandName||o.brand||'').trim();
+   const paintBrand=recordedBrand||(paintLineBrands.length===1?paintLineBrands[0]:paintLineBrands.length>1?'Mixed / unallocated':'Not recorded');
+   const commonPaint={job_card:no,po:o.poNumber||'',supplier:o.supplier||o.supplierName||o.vendor||'',brand:paintBrand,purchase_date:day(o.createdAt),received,nil:!!o.nilPaintPurchase};
    // Reports show dated cost movements; JC360 retains the complete current net.
    paint.push({...commonPaint,id:o.id,date:day(o.receivedAt||o.createdAt),status:o.nilPaintPurchase?'NIL / Leftover':received?'Received':'Receipt pending',gross_omr:received?money(gross):null,returns_omr:received?0:null,net_cost_omr:net!==null?money(gross):null});
    if(received&&!o.nilPaintPurchase)for(const {source:r,value} of returnRows)paint.push({...commonPaint,id:String(o.id)+':return:'+r.id,date:day(r.returnedAt),date_status:day(r.returnedAt)?'Recorded':'Return date unavailable',status:'Returned paint',gross_omr:0,returns_omr:money(value),net_cost_omr:net!==null&&value!==null?money(-value):null});
