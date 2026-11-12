@@ -37,6 +37,13 @@ export function prepareLeaveMutation(state,user,command,requestId,now,staffRole)
   Object.keys(command).some(k=>!['operation','leave_id','emp','date','period','remark','reason','after_work'].includes(k)))
   return result('invalid_leave_command');
  const operation=command.operation;
+ // Reject unexpected shapes rather than coercing client-supplied authorization fields.
+ if((operation!=='ADD'&&!safeId(command.leave_id))||
+  (operation==='ADD'&&(!safeId(command.emp)||!validDay(command.date)||!['FULL','AM','PM'].includes(command.period)))||
+  ['emp','date','period','remark','reason'].some(k=>command[k]!==undefined&&typeof command[k]!=='string')||
+  (command.after_work!==undefined&&typeof command.after_work!=='boolean')||
+  (operation==='CANCEL'&&Object.keys(command).some(k=>!['operation','leave_id','reason'].includes(k))))
+  return result('invalid_leave_command');
  if(!['Employee','Supervisor'].includes(staffRole))return result('leave_target_forbidden',403);
  const rows=entries(state.leaves),old=operation==='ADD'?null:rows.find(x=>x&&String(x.id)===String(command.leave_id)&&!x.cancelled);
  if(operation!=='ADD'&&!old)return result('leave_not_found',404);
