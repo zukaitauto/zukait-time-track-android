@@ -89,6 +89,8 @@ node tests/v2-monthly-incentive-actual-achieved.mjs
 node tests/id001-preliminary-classification.mjs
 node tests/id001-preliminary-end-to-end.mjs
 node tests/id001-assignment-uniqueness.mjs
+TEST_HISTORY_READER_COMPAT=true node tests/id001-assignment-uniqueness.mjs
+node tests/history-reader-rollout.mjs
 node tests/v156-id001-preliminary-server-deployment.mjs
 node tests/paint-safety.mjs
 node tests/paint-received-date-correction.mjs

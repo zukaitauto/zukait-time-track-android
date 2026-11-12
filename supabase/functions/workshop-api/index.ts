@@ -831,11 +831,14 @@ function threeWayMerge(base: any, remote: any, local: any, field = ""): any {
 
 async function baseStateForRevision(revision: number, currentRevision: number, currentData: any) {
   if (revision === currentRevision) return cloneValue(currentData);
+  // Explicit opt-in only: the live legacy database has no compatibility RPC yet.
   // Prefer the compact/legacy-compatible service-role reader. During a rolling
   // migration, an older database may not yet have the RPC in its schema cache.
-  const { data, error } = await admin.rpc("zukait_history_revision_data", { p_revision: revision });
-  if (!error) return data == null ? null : cloneValue(data);
-  if (error.code !== "PGRST202") throw error;
+  if (Deno.env.get("ZUKAIT_HISTORY_READER_COMPAT") === "true") {
+    const { data, error } = await admin.rpc("zukait_history_revision_data", { p_revision: revision });
+    if (!error) return data == null ? null : cloneValue(data);
+    if (error.code !== "PGRST202") throw error;
+  }
   // Schema-not-ready fallback is temporary: remove after every deployed API
   // is confirmed to use the compatibility RPC and before compact cutover.
   const legacy = await admin.from("workshop_state_history")
