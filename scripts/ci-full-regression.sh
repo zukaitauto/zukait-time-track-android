@@ -9,6 +9,7 @@ if ! node -e "require.resolve('jsdom')" >/dev/null 2>&1; then
   npm ci --ignore-scripts --include=dev
 fi
 node tests/manager-job-sync.mjs
+node tests/manager-full-edit.cjs
 node tests/v377-workshop-performance-ui.mjs
 node tests/v377-financial-integration.mjs
 node tests/v377-performance-calculations.mjs
@@ -222,7 +223,6 @@ node tests/native-dialog-lifecycle.mjs
 node tests/manager-quick-view.cjs
 node tests/focused-job-navigation.cjs
 
-node tests/manager-full-edit.cjs
 node tests/manager-classification-correction.mjs
 node tests/reception-job-edit.mjs
 
