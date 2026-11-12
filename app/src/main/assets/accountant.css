@@ -775,3 +775,11 @@ body:has(#accounts-workspace[data-report="profit"]:not([hidden])) main{max-width
  #accounts-home #navigation .module-card:last-child{min-height:177px}
  #accounts-workspace[data-report="profit"] .finance-report tr{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+/* Profit/Loss must override the legacy 1250px table minimum on every device. */
+#accounts-workspace[data-report="profit"] .finance-report table{min-width:0!important;width:100%!important;max-width:100%!important}
+#accounts-workspace[data-report="profit"] .finance-report tbody{min-width:0;max-width:100%}
+@media(max-width:900px){
+ #accounts-workspace[data-report="profit"] .finance-report tr{width:100%;max-width:100%;min-width:0}
+ #accounts-workspace[data-report="profit"] .finance-report td{max-width:100%;box-sizing:border-box}
+}
