@@ -40,3 +40,7 @@ Eleven SQL groups now include workshop_history_mode_rollback_qa: actual fixture 
 A current isolated restore, physical disk capacity/free space and real working-day Accountant savings remain unverified. No production data was exported or changed to obtain this packet. The earlier app-release backup-test waiver is not treated as authorization for a history-storage cutover.
 
 References: [Supabase backups](https://supabase.com/docs/guides/platform/backups), [database versus disk allocation](https://supabase.com/docs/guides/platform/database-size), [performance advisor remediation](https://supabase.com/docs/guides/database/database-linter?lint=0001_unindexed_foreign_keys).
+
+## Follow-up candidate: redundant seed guard
+
+See HISTORY_SEED_GUARD.md. A sixth additive staged migration avoids recomputing OLD-state seed payload/digest after its revision is already captured. The runner now includes twelve isolated groups and a negative-control check was performed locally. It is not applied to production; the earlier eleven-test qualification does not automatically qualify this later commit.
