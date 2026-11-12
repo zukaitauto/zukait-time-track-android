@@ -186,7 +186,7 @@ assert.match(w.document.getElementById('notes').textContent,/audited/);
 w.document.getElementById('month').value='2026-10';
 w.document.getElementById('refresh').click();
 await wait(()=>w.document.getElementById('rows').textContent.includes('Technician'));
-assert.equal(w.document.getElementById('rows').querySelector('[data-leave-edit]'),null);
+assert.ok(w.document.getElementById('rows').querySelector('[data-leave-edit]'),'Leave edit actions are available');
 assert.equal(w.document.getElementById('rows').querySelector('[data-leave-delete]'),null);
 
 w.document.getElementById('accounts-back').click();
