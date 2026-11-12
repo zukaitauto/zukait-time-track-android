@@ -1,0 +1,35 @@
+{
+  "project": "pjknotnjkufadqavcmii",
+  "ownerApprovedDeployment": true,
+  "qualifiedSource": "854cf229fc66553bb6b6d85f4ec50630add68ecc",
+  "backendVersion": 120,
+  "previousVersion": 119,
+  "bundleSha256": "b194c4e23108ba0fac60e0e459063908a62ec7439a84f6efa26656f842199edc",
+  "filesVerified": 43,
+  "changedModules": [
+    "accountant/api.js"
+  ],
+  "unchangedModules": 42,
+  "readSharingEnabled": true,
+  "verifyJwt": false,
+  "importMap": "deno.json",
+  "financialRecordsModified": false,
+  "historyDeleted": false,
+  "databaseMigration": false,
+  "androidOrWebPublished": false,
+  "invalidSessionStatus": 401,
+  "databaseResponsive": true,
+  "lockWaits": 0,
+  "explicitZeroPreserved": true,
+  "authenticatedFilterScreenTest": "AWAITING_OWNER",
+  "passingSourceCiRuns": [
+    43273044924,
+    43273045287,
+    43273044999,
+    43273044994,
+    43273045139,
+    43273045220,
+    43273044997,
+    43273044925
+  ]
+}

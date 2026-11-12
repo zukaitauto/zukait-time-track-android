@@ -23,7 +23,11 @@ pages, deduplicated export/group inputs, focused popup data, price correction,
 original JC360 pending sources and immutable financial projections. Both-role
 DOM/API/export tests and existing costs/profit/Cash/read-sharing tests also pass.
 
-Development fix only until separate exact-source production approval. For rollout,
-patch only accountant/api.js in the current verified v119 live bundle, retaining
-sharing enabled and every other module/config byte. No database migration or new
-app release is required. Recheck the live baseline and full CI before deploying.
+Owner-approved production deployment completed on 12 November 2026 as backend
+v120, from tested commit 854cf229fc66553bb6b6d85f4ec50630add68ecc. Only
+accountant/api.js changed from verified v119; all 42 other files and configuration
+were preserved, including enabled read sharing. All 43 files were read back exactly.
+No database migration, record change or new app/web release was performed.
+Database health and invalid-session denial checks passed. Authenticated UI acceptance
+of the new filter awaits the owner reopening the report. Exact rollback source v119
+is retained locally. See PARTS_PRICED_EXPENSES_DEPLOYMENT.json for provenance.
