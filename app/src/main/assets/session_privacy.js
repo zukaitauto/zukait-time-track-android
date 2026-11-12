@@ -1,6 +1,7 @@
 (function(){
   'use strict';
   // A document is never trusted merely because it has a saved token or DOM.
+  let connectionPending=false;
   let generation=0,locked=true,verifiedActor=null,requestSequence=0,lastFailureSequence=0,recovering=false;
   const controllers=new Set(),root=document.documentElement;
   const style=document.createElement('style');
@@ -34,7 +35,7 @@
     },delay);
   }
   function recoveryMessage(message){
-    screen(message);
+    if(!connectionPending)screen(message);
   }
   // The recovery request bypasses the global transport wrapper to avoid a
   // second recursive privacy lock. It is read-only and verifies the exact
@@ -69,14 +70,14 @@
         }finally{clearTimeout(timer)}
         if(ticket!==generation||actor!==identity()||!locked)return !locked;
         if(response.status===401||body?.code==='invalid_session'){
-          invalidate();recoveryMessage('Session expired. Sign out and sign in again.');return false;
+          invalidate();lock('Session expired. Sign out and sign in again.');return false;
         }
         if(response.status!==200||body?.ok!==true){
           recoveryMessage('Workshop server has not recovered yet (HTTP '+response.status+'). Your saved work is retained. Rechecking automatically…');
           return false;
         }
         if(body.user?.id!==saved?.user?.id||body.user?.role!==saved?.user?.role){
-          invalidate();recoveryMessage('Session identity changed. Sign in again to protect private workshop data.');return false;
+          invalidate();lock('Session identity changed. Sign in again to protect private workshop data.');return false;
         }
         // A validated user who is already rendered can return without reload.
         // If role pages have not finished initializing, re-run authenticated
@@ -110,13 +111,25 @@
     }
   }
   function lock(message='Connection unavailable. Reconnect to verify your session.'){
-    locked=true;root.setAttribute('data-session-locked','');screen(message);
+    connectionPending=false;locked=true;root.setAttribute('data-session-locked','');screen(message);
     // Cold-start verification can fail before any fetch listener starts.
     // Every recoverable lock must arm a retry, not only transport failures.
-    if(navigator.onLine&&!/session expired|identity changed|sign in again/i.test(message))retryVerification();
+    if(/session expired|identity changed|sign in again/i.test(message))cancelRetry();
+    else if(navigator.onLine)retryVerification();
   }
-  function unlock(){if(!navigator.onLine)return;cancelRetry();try{sessionStorage.removeItem('zukait_session_retry_attempt');}catch(_){}verifiedActor=identity();locked=false;root.removeAttribute('data-session-locked');}
+  function unlock(){if(!navigator.onLine)return;cancelRetry();try{sessionStorage.removeItem('zukait_session_retry_attempt');}catch(_){}verifiedActor=identity();locked=false;connectionPending=false;root.removeAttribute('data-session-locked');window.zukaitServerConnection?.refresh?.();}
   function invalidate(){cancelRetry();verifiedActor=null;generation++;for(const c of controllers)c.abort();controllers.clear();lock();}
+  function keepVerifiedDashboard(){
+    return !!verifiedActor && verifiedActor===identity() && !!window.me?.id &&
+      !!document.getElementById('legacyAppHeader') && !root.hasAttribute('data-session-locked');
+  }
+  function waitForConnection(){
+    if(!keepVerifiedDashboard())return false;
+    locked=true;connectionPending=true;
+    window.zukaitServerConnection?.refresh?.();
+    retryVerification();
+    return true;
+  }
   const identity=()=>{try{const s=JSON.parse(localStorage.getItem('zukait_secure_session_v42')||'null');return JSON.stringify([s?.user?.id,s?.user?.role,s?.token||window.AndroidBridge?.getSecureSessionToken?.()||'']);}catch(_){return '';}};
   const originalFetch=window.fetch.bind(window);
   window.fetch=async function(input,options={}){
@@ -145,6 +158,7 @@
       if(temporaryServerResponse&&backgroundRead&&!locked&&verifiedActor===actor&&
          ticket===generation&&navigator.onLine)return;
       lastFailureSequence=Math.max(lastFailureSequence,sequence);
+      if(waitForConnection())return;
       lock('Workshop connection interrupted. Your current task is preserved. Rechecking automatically…');
       retryVerification();
     };
@@ -203,12 +217,19 @@
       location.replace(location.hostname==='appassets.androidplatform.net'||location.protocol==='file:'?'offline_test.html':'index.html');
     }catch(e){lock(e.message);}
   }
-  window.zukaitSessionPrivacy={lock,unlock,invalidate,signOut,reconnect,clearCachedStorage,get generation(){return generation},get locked(){return locked}};
+  window.zukaitSessionPrivacy={lock,unlock,invalidate,signOut,reconnect,clearCachedStorage,get generation(){return generation},get locked(){return locked},get connectionPending(){return connectionPending}};
   lock('Verifying session and server connection…');
   document.addEventListener('DOMContentLoaded',()=>{if(locked)screen(navigator.onLine?'Verifying session and server connection…':'Connection unavailable. Reconnect to verify your session.');});
-  window.addEventListener('offline',()=>{invalidate();window.zukaitCloud?.stop?.();});
-  // A fresh document verifies identity and reloads the snapshot on reconnect.
-  window.addEventListener('online',()=>{if(locked)location.reload();});
+  window.addEventListener('offline',()=>{
+    if(waitForConnection()){
+      generation++;
+      for(const controller of controllers)controller.abort();
+      controllers.clear();
+      return;
+    }
+    invalidate();window.zukaitCloud?.stop?.();
+  });
+  window.addEventListener('online',()=>{if(locked)void reconnect();});
   window.addEventListener('pageshow',event=>{if(event.persisted){invalidate();location.reload();}});
   window.addEventListener('storage',event=>{if(event.key===null||event.key==='zukait_secure_session_v42'){invalidate();location.reload();}});
 })();
