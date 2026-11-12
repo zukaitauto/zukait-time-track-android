@@ -1,9 +1,9 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';import {JSDOM} from 'jsdom';import {randomUUID,webcrypto} from 'node:crypto';import {accountantDb} from './helpers/accountant-db.mjs';import {sqlAdmin} from './helpers/accountant-admin.mjs';import {accountantApi} from '../supabase/functions/workshop-api/accountant/api.js';import {fixture} from './accountant-finance.mjs';
 const actor={id:process.env.ACCOUNTANT_TEST_ROLE==='Manager'?'M':'A',role:process.env.ACCOUNTANT_TEST_ROLE||'Accountant'};
 const db=await accountantDb(),admin=sqlAdmin(db),ctx=fixture();ctx.state.jobs[0].customerName='<img src=x onerror=alert(1)>';await db.query('update workshop_state set data=$1::jsonb,revision=7 where id=\'main\'',[JSON.stringify(ctx.state)]);for(const e of ctx.events)await db.query('insert into workshop_v2_events values($1,$2,$3,$4,$5,$6::jsonb)',[e.event_id,e.entity_id,e.event_type,e.revision,e.server_time,JSON.stringify(e.payload)]);
-const dom=new JSDOM(fs.readFileSync('app/src/main/assets/accountant.html','utf8'),{url:'https://qa.invalid/accountant.html',runScripts:'outside-only'}),w=dom.window;let pdf=null,excel=null,lose=false,sent=0,holdDetail=null,holdReport=null,rejectEntry=false,updateChecks=0,updateOpens=0,installOpens=0,exits=0,nativeToken='qa-accountant-token';
+const dom=new JSDOM(fs.readFileSync('app/src/main/assets/accountant.html','utf8'),{url:'https://qa.invalid/accountant.html',runScripts:'outside-only'}),w=dom.window;let pdf=null,excel=null,lose=false,sent=0,holdDetail=null,holdReport=null,holdDashboard=null,rejectEntry=false,updateChecks=0,updateOpens=0,installOpens=0,exits=0,nativeToken='qa-accountant-token';
 w.TextEncoder=TextEncoder;w.ZUKAIT_ACCOUNTANT_CONFIG={url:'https://qa.invalid',key:'qa-key'};w.localStorage.setItem('zukait_secure_session_v42',JSON.stringify({user:actor,token:'qa-accountant-token'}));w.alert=()=>{};w.prompt=()=> 'QA reason';Object.defineProperty(w.crypto,'randomUUID',{value:randomUUID});w.zukaitReportPdf={share:async(html,name)=>pdf={html,name}};w.AndroidBridge={saveExportFile:(name,mime,data)=>excel={name,mime,data},getAppVersion:()=> 'V340',getAppVersionCode:()=>303,checkForUpdates:()=>updateChecks++,openUpdatePage:()=>updateOpens++,installDownloadedUpdate:()=>installOpens++,exitApp:()=>exits++,saveSecureSessionToken:t=>{nativeToken=t;return true},getSecureSessionToken:()=>nativeToken};
-w.fetch=async(url,opts)=>{assert.ok(url.startsWith('https://qa.invalid/'),'test must never call production');const b=JSON.parse(opts.body);if(url.endsWith('staff-auth')&&b.action==='change_password'){assert.equal(b.user_id,actor.id);assert.equal(b.current_password,'QA-current-password');assert.equal(b.new_password,'QA-new-password');return {ok:true,status:200,json:async()=>({ok:true,session_token:'QA-ROTATED-TOKEN'})};}if(url.endsWith('staff-auth'))return {ok:true,status:200,json:async()=>({ok:true,user:{...actor,name:'QA Finance'}})};if(b.action==='accountant_report'&&holdReport){const release=holdReport;holdReport=null;await release;}if(b.action==='accountant_jc_detail'&&holdDetail){const release=holdDetail;holdDetail=null;await release;}if(b.action==='accountant_command'&&rejectEntry){rejectEntry=false;assert.equal(b.command.expected_snapshot_revision,7);assert.equal(b.command.expected_finance_revision,0);return {ok:false,status:400,json:async()=>({ok:false,code:'QA_REJECTED_WITHOUT_POSTING'})};}sent++;const r=await accountantApi(admin,actor,b,'QA-only-fingerprint');if(lose&&b.action==='accountant_command'){lose=false;throw Error('NETWORK_AFTER_COMMIT')};return {ok:r.status===200,status:r.status,json:async()=>r.body}};
+w.fetch=async(url,opts)=>{assert.ok(url.startsWith('https://qa.invalid/'),'test must never call production');const b=JSON.parse(opts.body);if(url.endsWith('staff-auth')&&b.action==='change_password'){assert.equal(b.user_id,actor.id);assert.equal(b.current_password,'QA-current-password');assert.equal(b.new_password,'QA-new-password');return {ok:true,status:200,json:async()=>({ok:true,session_token:'QA-ROTATED-TOKEN'})};}if(url.endsWith('staff-auth'))return {ok:true,status:200,json:async()=>({ok:true,user:{...actor,name:'QA Finance'}})};if(b.action==='accountant_dashboard'&&holdDashboard){const release=holdDashboard;holdDashboard=null;await release;}if(b.action==='accountant_report'&&holdReport){const release=holdReport;holdReport=null;await release;}if(b.action==='accountant_jc_detail'&&holdDetail){const release=holdDetail;holdDetail=null;await release;}if(b.action==='accountant_command'&&rejectEntry){rejectEntry=false;assert.equal(b.command.expected_snapshot_revision,7);assert.equal(b.command.expected_finance_revision,0);return {ok:false,status:400,json:async()=>({ok:false,code:'QA_REJECTED_WITHOUT_POSTING'})};}sent++;const r=await accountantApi(admin,actor,b,'QA-only-fingerprint');if(lose&&b.action==='accountant_command'){lose=false;throw Error('NETWORK_AFTER_COMMIT')};return {ok:r.status===200,status:r.status,json:async()=>r.body}};
 w.eval(fs.readFileSync('app/src/main/assets/accountant_exports.js','utf8'));w.eval(fs.readFileSync('app/src/main/assets/accountant.js','utf8'));w.eval(fs.readFileSync('app/src/main/assets/accountant_shell.js','utf8'));
 const wait=async f=>{for(let i=0;i<500;i++){if(f())return;await new Promise(r=>setTimeout(r,10))}throw Error('UI condition timed out: '+w.document.getElementById('message').textContent)};
 
@@ -18,6 +18,7 @@ assert.equal(w.document.getElementById('summary').hidden,true,'legacy KPI naviga
 assert.ok(w.document.querySelector('#navigation [data-report="parts"]'));
 assert.equal(w.document.querySelector('#navigation [data-report="outstanding"]'),null);
 
+let releasePreviousDashboard;
 for(const [expense,label] of [['consumables','Consumables'],['parts','Spare Parts'],['paint','Paint']]){
  w.document.querySelector('#navigation [data-report="'+expense+'"]').click();
  await wait(()=>w.document.getElementById('accounts-report-total-label').textContent==='Total '+label+' Expense');
@@ -40,6 +41,7 @@ for(const [expense,label] of [['consumables','Consumables'],['parts','Spare Part
  viewSelect.value='job';viewSelect.dispatchEvent(new w.Event('change'));
  await wait(()=>w.document.querySelector('#rows [data-job="J1"]'));
  assert.equal(w.document.querySelector('#rows [data-job="J1"]').tagName,'BUTTON');
+ if(expense==='paint')holdDashboard=new Promise(resolve=>{releasePreviousDashboard=resolve;});
  w.document.getElementById('accounts-back').click();
 }
 
@@ -56,6 +58,8 @@ for(const [id,value] of [['account-current-password','QA-current-password'],['ac
 w.document.getElementById('account-password-form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
 await wait(()=>w.document.getElementById('account-password-status').textContent==='Password changed successfully.');
 assert.equal(nativeToken,'QA-ROTATED-TOKEN');
+assert.equal(holdDashboard,null,'the pre-rotation dashboard request is in flight');
+releasePreviousDashboard();
 assert.equal(JSON.parse(w.localStorage.getItem('zukait_secure_session_v42')).token,undefined);
 w.document.getElementById('account-menu-close').click();
 
