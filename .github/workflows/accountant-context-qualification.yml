@@ -1,0 +1,43 @@
+name: Accountant context isolated qualification
+on:
+  workflow_dispatch:
+  push:
+    branches: [architecture-v2]
+    paths:
+      - 'experiments/accountant-context/**'
+      - 'tests/accountant-context-aggregation.mjs'
+      - '.github/workflows/accountant-context-qualification.yml'
+permissions:
+  contents: read
+jobs:
+  postgres17:
+    if: github.ref == 'refs/heads/architecture-v2'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: isolated-accountant-context-test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGPASSWORD: isolated-accountant-context-test
+      ACCOUNTANT_CONTEXT_NATIVE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --include=dev
+      - run: node tests/accountant-context-aggregation.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: accountant-context-postgres17-qualification
+          path: artifacts/accountant-context/
