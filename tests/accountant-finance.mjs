@@ -39,6 +39,20 @@ assert.equal(financialReport(vendorSource).rows.paint[0].supplier,'Workshop Pain
 vendorSource.state.paintPurchasing.orders[0].supplier='Imported Supplier';
 assert.equal(financialReport(vendorSource).rows.paint[0].supplier,'Imported Supplier','existing supplier aliases retain precedence');
 
+// Paint brands remain distinct from suppliers; multiple line brands cannot be credited to one brand.
+const brandSource=fixture();
+brandSource.state.paintPurchasing.orders[0].vendor='Vendor Not A Brand';
+brandSource.state.paintPurchasing.orders[0].lines[0].brand='Sayarra';
+assert.equal(financialReport(brandSource).rows.paint[0].brand,'Sayarra','single recorded line brand is attributed');
+assert.equal(financialReport(brandSource).rows.paint[0].supplier,'Vendor Not A Brand','supplier is not treated as a brand');
+brandSource.state.paintPurchasing.orders[0].lines.push({id:'SECOND',quantity:1,pricePerLitre:4,brand:'Autopaint'});
+assert.equal(financialReport(brandSource).rows.paint[0].brand,'Mixed / unallocated','mixed-brand PO cannot be assigned to one brand');
+brandSource.state.paintPurchasing.orders[0].brandName='Manual Brand';
+assert.equal(financialReport(brandSource).rows.paint[0].brand,'Manual Brand','explicit order brand takes precedence over line brands');
+delete brandSource.state.paintPurchasing.orders[0].brandName;
+brandSource.state.paintPurchasing.orders[0].lines.forEach(line=>delete line.brand);
+assert.equal(financialReport(brandSource).rows.paint[0].brand,'Not recorded','unknown brand is not invented');
+
 // Insurance filtering applies to linked receipts/invoices as well as LPO documents.
 const insured=fixture(),insuredBefore=JSON.stringify(insured);
 const companyReport=financialReport(insured,{insurance:'Liva'},at('12:00'));
