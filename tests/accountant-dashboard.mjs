@@ -11,12 +11,23 @@ await wait(()=>w.document.getElementById('rows').textContent.includes('Search'))
 assert.equal(w.document.getElementById('accounts-home').hidden,false);
 assert.equal(w.document.getElementById('accounts-workspace').hidden,true);
 assert.equal(w.document.getElementById('account-name').textContent,'QA Finance');
-assert.equal(w.document.querySelectorAll('#navigation .module-card').length,5,'exactly five approved Accounts sections');
+assert.equal(w.document.querySelectorAll('#navigation .module-card').length,8,'exactly eight approved Accounts sections');
 assert.deepEqual([...w.document.querySelectorAll('#navigation [data-report]')].map(b=>b.dataset.report),
- ['jobs','cash','insurance_invoiced','leave','profit']);
+ ['jobs','cash','insurance_invoiced','leave','profit','consumables','parts','paint']);
 assert.equal(w.document.getElementById('summary').hidden,true,'legacy KPI navigation is hidden');
-assert.equal(w.document.querySelector('#navigation [data-report="parts"]'),null);
+assert.ok(w.document.querySelector('#navigation [data-report="parts"]'));
 assert.equal(w.document.querySelector('#navigation [data-report="outstanding"]'),null);
+
+for(const [expense,label] of [['consumables','Consumables'],['parts','Spare Parts'],['paint','Paint']]){
+ w.document.querySelector('#navigation [data-report="'+expense+'"]').click();
+ await wait(()=>w.document.getElementById('accounts-report-total-label').textContent==='Total '+label+' Expense');
+ assert.equal(w.document.getElementById('accounts-workspace').hidden,false,'expense opens its own report page');
+ assert.equal(w.document.getElementById('month').value,new Date(Date.now()+14400000).toISOString().slice(0,7),'present Oman month is the default');
+ assert.equal(w.document.getElementById('cash-invoice-total').hidden,false,'expense total is visible above the rows');
+ assert.match(w.document.getElementById('cash-invoice-total-amount').textContent,/OMR/);
+ w.document.getElementById('accounts-back').click();
+}
+
 
 // Existing role menu, password rotation and secure session behavior remain intact.
 assert.equal(w.document.getElementById('account-menu-button').disabled,false);
@@ -173,4 +184,4 @@ assert.equal(w.document.getElementById('app').hidden,true,'account switch clears
 assert.equal(w.document.getElementById('rows').textContent,'');
 assert.equal(w.document.getElementById('account-menu-button').disabled,true);
 dom.window.close();await db.close();
-console.log('Five-option Accounts DOM/API/PostgreSQL: secure sessions, 360 cost sources, Cash, delivered Insurance, read-only Leave, Profit, PDF/Excel and cross-user isolation passed');
+console.log('Eight-option Accounts DOM/API/PostgreSQL: secure sessions, 360 cost sources, Cash, delivered Insurance, read-only Leave, Profit, PDF/Excel and cross-user isolation passed');
