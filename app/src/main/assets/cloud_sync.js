@@ -46,8 +46,6 @@
   let lastSyncError='';
   let consecutiveSyncErrors=0;
   let serverConnectionState='connecting';
-  let serverConnectionEverConfirmed=false;
-  let serverConnectionBannerTimer=null;
   const pollWarnings=new Map();
   function warnPoll(message,error){
     const code=String(error?.code||error?.message||'UNKNOWN');
@@ -65,33 +63,22 @@
       const online=document.getElementById('headerOnlineStatus');
       if(online)host.insertBefore(pill,online);else host.appendChild(pill);
     }
-    let banner=document.getElementById('serverConnectionBanner');
-    if(!banner){banner=document.createElement('div');banner.id='serverConnectionBanner';banner.className='server-connection-banner hidden';document.body.appendChild(banner)}
-    return {pill,banner};
+    return pill;
   }
   function setServerConnection(state,message){
-    const previous=serverConnectionState;serverConnectionState=state;
-    const ui=ensureServerConnectionUi();
-    const labels={connected:'● Server Connected',busy:'● Sync Delayed',connecting:'● Connecting…',offline:'● Server Offline'};
-    if(ui.pill){ui.pill.textContent=labels[state]||labels.connecting;ui.pill.dataset.serverState=state;ui.pill.title=message||''}
-    clearTimeout(serverConnectionBannerTimer);
-    if(!ui.banner)return;
-    if(state==='offline'||state==='busy'){
-      ui.banner.textContent=message||(state==='busy'?'Workshop sync is delayed. Pending changes stay on this device until confirmed.':'Server connection unavailable. Changes may not sync until connection is restored.');
-      ui.banner.className='server-connection-banner '+(state==='busy'?'server-connection-banner-busy':'server-connection-banner-offline');
-    }else if(state==='connected'&&previous!=='connected'&&serverConnectionEverConfirmed){
-      ui.banner.textContent='Server connected — synchronization restored.';
-      ui.banner.className='server-connection-banner server-connection-banner-restored';
-      serverConnectionBannerTimer=setTimeout(()=>{ui.banner.className='server-connection-banner hidden'},3500);
-    }else if(state==='connecting'){
-      ui.banner.textContent=message||'Connecting to workshop server…';
-      ui.banner.className='server-connection-banner server-connection-banner-connecting';
-      serverConnectionBannerTimer=setTimeout(()=>{if(serverConnectionState==='connecting')ui.banner.className='server-connection-banner hidden'},4000);
-    }else ui.banner.className='server-connection-banner hidden';
-    if(state==='connected')serverConnectionEverConfirmed=true;
+    serverConnectionState=state;
+    const pill=ensureServerConnectionUi();
+    const pending=window.zukaitSessionPrivacy?.connectionPending;
+    const displayedState=!navigator.onLine?'offline':pending?'busy':state;
+    if(pill){
+      pill.textContent=displayedState==='connected'?'● Synced':'● Sync unavailable';
+      pill.dataset.serverState=displayedState==='connected'?'connected':'offline';
+      pill.setAttribute('role','status');
+      pill.title=message|| (displayedState==='connected'?'Workshop data is connected.':'Synchronization will retry automatically.');
+    }
     try{window.dispatchEvent(new CustomEvent('zukait-server-connection',{detail:{state,message:message||'',at:Date.now()}}))}catch(_){}
   }
-  window.zukaitServerConnection={get state(){return serverConnectionState},get connected(){return serverConnectionState==='connected'},refresh:()=>setServerConnection(serverConnectionState)};
+  window.zukaitServerConnection={get state(){return serverConnectionState},get connected(){return serverConnectionState==='connected'&&!window.zukaitSessionPrivacy?.connectionPending&&navigator.onLine},refresh:()=>setServerConnection(serverConnectionState)};
 
   function sessionToken(){return window.zukaitAuth?.getToken?.()||''}
 
