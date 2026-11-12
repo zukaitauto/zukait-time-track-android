@@ -5,12 +5,12 @@ const html=fs.readFileSync('app/src/main/assets/accountant.html','utf8');
 const css=fs.readFileSync('app/src/main/assets/accountant.css','utf8');
 const js=fs.readFileSync('app/src/main/assets/accountant.js','utf8');
 
-test('Accounts dashboard has precisely the five approved options',()=>{
+test('Accounts dashboard has precisely the eight approved options',()=>{
  assert.match(html,/id="navigation"/);
- assert.match(html,/5 options/);
+ assert.match(html,/8 options/);
  assert.doesNotMatch(html,/id="accounts-shortcuts"/);
  assert.match(js,/\['jobs','Job Card 360°'\]/);
- for(const part of ['Cash In','Insurance Invoiced','Leave Management','Profit \/ Loss'])assert.ok(js.includes(part));
+ for(const part of ['Cash In','Insurance Invoiced','Leave Management','Profit / Loss','Consumables','Spare Parts','Paint'])assert.ok(js.includes(part));
  assert.match(html,/id="accounts-back"/);
  assert.match(html,/id="manager-back"/);
  assert.match(html,/id="account-name"/);
@@ -30,13 +30,13 @@ test('responsive high contrast Financial 360 design and asset versions',()=>{
  assert.match(css,/#accounts-workspace \.finance-report/);
  assert.match(css,/@media\(max-width:550px\)/);
  assert.ok(css.includes('#accounts-home #navigation{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}'),'two columns remain on small phones');
- assert.ok(css.includes('#accounts-home #navigation .module-card:last-child{grid-column:1/-1'),'Profit/Loss spans both columns');
+ assert.ok(css.includes('#accounts-home #navigation .module-card:last-child{grid-column:1/-1'),'last card spans both columns');
  assert.ok(js.includes('function jobCardResults(rows)'),'JC results use the approved card layout');
  assert.ok(css.includes('.financial-detail-dialog .detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))'),'Financial 360 has two columns');
  assert.match(css,/:focus-visible/);
  assert.match(css,/prefers-reduced-motion:reduce/);
- assert.match(html,/accountant\.css\?v=20261111-[a-z0-9-]+/);
- assert.match(html,/accountant\.js\?v=20261111-[a-z0-9-]+/);
+ assert.match(html,/accountant\.css\?v=\d{8}-[a-z0-9-]+/);
+ assert.match(html,/accountant\.js\?v=\d{8}-[a-z0-9-]+/);
 });
 
 test('Insurance Invoiced mirrors Cash In design and fits all 14 financial columns',()=>{
