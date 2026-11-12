@@ -146,12 +146,13 @@ function expenseGroup(rows,kind,view){
   const key=JSON.stringify(values);if(!map.has(key))map.set(key,{values,entries:0,mills:0,missing:0,qty:0,knownQty:0});
   const g=map.get(key);g.entries++;
   if(r[costKey]==null||!Number.isFinite(Number(r[costKey])))g.missing++;else g.mills+=Math.round(Number(r[costKey])*1000);
-  if(r.quantity!=null&&Number.isFinite(Number(r.quantity))){g.qty+=Number(r.quantity);g.knownQty++;}
+  const usedQuantity=kind==='parts'?r.received_quantity:r.quantity;
+  if(usedQuantity!=null&&Number.isFinite(Number(usedQuantity))){g.qty+=Number(usedQuantity);g.knownQty++;}
  }
  const output=[...map.values()].map(g=>({...Object.fromEntries(fields.map((f,i)=>[f,g.values[i]])),entries:g.entries,quantity:g.knownQty===g.entries?Number(g.qty.toFixed(3)):null,known_expense_omr:g.mills/1000,pending_price_records:g.missing})).sort((a,b)=>String(a[fields[0]]).localeCompare(String(b[fields[0]])));
  const labels={month:'Month',job_card:'Job Card',material:'Material',brand:'Brand',unit:'Unit',supplier:'Supplier',part:'Part'};
  const cols=[...fields.map(f=>[labels[f],f])];
- if(kind==='consumables'&&['material','brand'].includes(view)||kind==='parts'&&view==='part')cols.push(['Quantity','quantity']);
+ if(kind==='consumables'&&['material','brand'].includes(view)||kind==='parts'&&view==='part')cols.push([kind==='parts'?'Received Qty':'Actual Quantity','quantity']);
  cols.push(['Entries','entries'],money('Known Expense OMR','known_expense_omr'),['Unpriced Entries','pending_price_records']);
  return {rows:output,cols};
 }
