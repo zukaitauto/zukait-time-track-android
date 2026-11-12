@@ -9,8 +9,23 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "V398 UI/expense report candidate only: isolate arrived parts and received paint, vehicle labels, focused expense drilldowns, eight equal dashboard cards and full-width Profit/Loss. Full Manager-equivalent Accountant leave mutations need separate audited backend authorization. Not approved for publication until complete regression and release verification.",
-  "sourceCommit": null,
+  "reason": "V398 Accountant corrections and scoped, audited Leave Management implemented. Exact-source Accountant acceptance, Reception verification, signed APK, Android and safety checks passed. Production workshop-api v116 and V397 app remain unchanged. Awaiting explicit owner publication approval and verified backend deployment.",
+  "sourceCommit": "0cdae2df4053557f4e946c14f29674154d692b6f",
   "approvedAt": null,
-  "publishNonce": null
+  "publishNonce": null,
+  "physicalAcceptanceStatus": "NOT_RUN",
+  "freshProductionBackupRestoreStatus": "NOT_RUN",
+  "prePublicationEvidence": {
+    "sourceCommit": "0cdae2df4053557f4e946c14f29674154d692b6f",
+    "accountantVerificationRun": 43223865461,
+    "verificationRun": 43223865601,
+    "signedAcceptanceRun": 43223865474,
+    "androidBuildRun": 43223865617,
+    "connectionSafetyRun": 43223865672,
+    "syncCompatibilityRun": 43223865877,
+    "inactiveContractsRun": 43223865604,
+    "rollbackApp": "release-V397-architecture-v2",
+    "productionBackendVersion": 116,
+    "backendTargetVersion": 117
+  }
 }
