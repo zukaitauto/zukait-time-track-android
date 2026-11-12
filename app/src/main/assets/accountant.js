@@ -127,7 +127,41 @@ function closeCashDialog(){
 const performanceReports=new Set(['cash','insurance_invoiced','profit']);
 const expenseReports=new Set(['consumables','parts','paint']);
 const expenseSummaryKey={consumables:'consumables',parts:'parts',paint:'paint'};
+
+const expenseViews={consumables:[['details','Detailed entries'],['material','Material-wise'],['brand','Brand-wise'],['monthly','Monthly consumption'],['job','Job Card-wise']],parts:[['details','Detailed entries'],['part','Part-wise'],['supplier','Supplier-wise'],['monthly','Monthly expense'],['job','Job Card-wise']],paint:[['details','Detailed entries'],['supplier','Supplier-wise'],['monthly','Monthly expense'],['job','Job Card-wise']]};
+function expenseGroup(rows,kind,view){
+ const fields={material:['material','brand','unit'],brand:['brand','unit'],monthly:['month'],job:['job_card'],supplier:['supplier'],part:['part']}[view];
+ if(!fields)return {rows,cols:columns[kind]};
+ const map=new Map(),costKey=kind==='consumables'?'cost_omr':'net_cost_omr';
+ for(const r of rows){
+  const values=fields.map(f=>f==='month'?String(r.date||'').slice(0,7)||'Date unavailable':String(r[f]||'Not recorded'));
+  const key=JSON.stringify(values);if(!map.has(key))map.set(key,{values,entries:0,mills:0,missing:0,qty:0,knownQty:0});
+  const g=map.get(key);g.entries++;
+  if(r[costKey]==null||!Number.isFinite(Number(r[costKey])))g.missing++;else g.mills+=Math.round(Number(r[costKey])*1000);
+  if(r.quantity!=null&&Number.isFinite(Number(r.quantity))){g.qty+=Number(r.quantity);g.knownQty++;}
+ }
+ const output=[...map.values()].map(g=>({...Object.fromEntries(fields.map((f,i)=>[f,g.values[i]])),entries:g.entries,quantity:g.knownQty===g.entries?Number(g.qty.toFixed(3)):null,known_expense_omr:g.mills/1000,pending_price_records:g.missing})).sort((a,b)=>String(a[fields[0]]).localeCompare(String(b[fields[0]])));
+ const labels={month:'Month',job_card:'Job Card',material:'Material',brand:'Brand',unit:'Unit',supplier:'Supplier',part:'Part'};
+ const cols=[...fields.map(f=>[labels[f],f])];
+ if(kind==='consumables'&&['material','brand'].includes(view)||kind==='parts'&&view==='part')cols.push(['Quantity','quantity']);
+ cols.push(['Entries','entries'],money('Known Expense OMR','known_expense_omr'),['Unpriced Entries','pending_price_records']);
+ return {rows:output,cols};
+}
+async function allExpenseRows(kind,filter,ticket){
+ const all=[];let cursor=0,snapshot,finance;
+ do{
+  const page=await request('workshop-api',{action:'accountant_report',report:kind,filters:filter,offset:cursor,limit:500});
+  if(ticket!==generation)throw Error('Report changed');
+  if(snapshot===undefined){snapshot=page.snapshot_revision;finance=page.finance_revision;}
+  else if(snapshot!==page.snapshot_revision||finance!==page.finance_revision)throw Error('Financial records changed; refresh report');
+  all.push(...page.rows);cursor=page.next_offset;
+  if(all.length>5000||all.length===5000&&cursor!==null)throw Error('Too many records. Narrow the date range for a complete report.');
+ }while(cursor!==null);
+ return all;
+}
+
 function reportColumns(name=report,mode=labourMode){
+ if(expenseReports.has(name)&&$('expense-view').value!=='details')return expenseGroup([],name,$('expense-view').value).cols;
  const labels={
   labour_cost_omr:'Labour OMR (excluded)',
   total_job_cost_omr:'Total Job Cost OMR (Without Labour)',
@@ -228,7 +262,9 @@ async function load(){
  try{
   say('Loading verified financial records…');
   const searching=report!=='jobs'||$('query').value.trim().length>=2,appliedFilters=filters();
-  const r=await request('workshop-api',{action:searching?'accountant_report':'accountant_dashboard',report:backendReport(report),filters:appliedFilters,offset,limit:searching?25:1});
+  const grouped=expenseReports.has(report)&&$('expense-view').value!=='details';
+  let r=await request('workshop-api',{action:searching?'accountant_report':'accountant_dashboard',report:backendReport(report),filters:appliedFilters,offset:grouped?0:offset,limit:searching?25:1});
+  if(grouped){const source=await allExpenseRows(report,appliedFilters,ticket),group=expenseGroup(source,report,$('expense-view').value);r={...r,rows:group.rows.slice(offset,offset+25),total_count:group.rows.length,next_offset:offset+25<group.rows.length?offset+25:null};}
   if(ticket!==generation)return;
   if(report==='profit'&&r.labour_mode!==labourMode)throw Error('The server did not confirm the selected labour calculation. Releasing the backend update is required.');
   result={...r,appliedFilters,canExport:searching};
@@ -252,7 +288,7 @@ async function load(){
   $('notes').textContent=notesText;
   $('notes').hidden=!notesText.trim();
   $('rows').innerHTML=!searching?'<p>Search for a job card or registration number (at least 2 characters), then click to open financial details.</p>':
-   r.rows.length?(report==='jobs'?jobCardResults(r.rows):finance?renderPerformanceTable(r.rows):table(r.rows,columns[report],false)):
+   r.rows.length?(report==='jobs'?jobCardResults(r.rows):finance?renderPerformanceTable(r.rows):table(r.rows,reportColumns(),false)):
    '<p>No matching records in the selected period. Missing costs are not counted as zero.</p>';
   $('previous').parentElement.hidden=!searching;
   $('pdf').disabled=!searching;$('excel').disabled=!searching;$('print').disabled=!searching;
@@ -272,6 +308,10 @@ function showHome(){
 
 function filterVisibility(){
  const kind=$('category-filter').value;
+ const views=expenseViews[report]||[],selection=$('expense-view'),previous=selection.value;
+ $('expense-view-filter').hidden=!views.length;
+ selection.replaceChildren(...views.map(([value,label])=>new Option(label,value)));
+ selection.value=views.some(([v])=>v===previous)?previous:'details';
  $('filter-kind').hidden=report!=='profit';
  $('filter-company').hidden=!(report==='insurance_invoiced'||report==='profit'&&['ALL','INSURANCE'].includes(kind));
  $('filter-customer').hidden=!(report==='profit'&&['ALL','CREDIT','CORPORATE'].includes(kind));
@@ -462,13 +502,14 @@ $('cash-ledger-toggle').onclick=()=>{report=report==='cash'?'cash_ledger':'cash'
 $('cash-entry-dialog').addEventListener('close',()=>{$('entry').hidden=true;});
 for(const id of ['from','to'])$(id).addEventListener('change',()=>{if((performanceReports.has(report)||expenseReports.has(report))&&$(id).value)$('month').value='';});
 $('month').addEventListener('change',()=>{if((performanceReports.has(report)||expenseReports.has(report))&&$('month').value){$('from').value='';$('to').value='';}});
+$('expense-view').onchange=()=>{if(expenseReports.has(report)){offset=0;load();}};
 $('category-filter').onchange=()=>{filterVisibility();$('insurance-company').value='';$('customer-filter').value='';};
 for(const [mode,id] of [['with','profit-with-labour'],['without','profit-without-labour']]){
  $(id).onclick=()=>{if(report!=='profit'||mode===labourMode)return;labourMode=mode;offset=0;updateLabourModeControls();load();};
 }
 $('cancel-entry').onclick=closeCashDialog;$('cancel-correction').onclick=()=>{$('correction').hidden=true};
 async function exportRows(kind){if(!result?.canExport||busy)return;const printable=kind==='print'?window.open('','_blank'):null;if(kind==='print'&&!printable){say('Allow print pop-ups and try again.');return;}const exportGeneration=generation,exportReport=report,exportBackendReport=backendReport(report),exportFilters={...result.appliedFilters},exportMode=labourMode,
- exportColumns=performanceReports.has(report)?[...reportColumns(report,labourMode).slice(0,-1),['Cost status','cost_status'],reportColumns(report,labourMode).at(-1)]:reportColumns(report,labourMode);busy=true;try{say('Preparing complete report…');const all=[],expected=[result.snapshot_revision,result.finance_revision];let cursor=0;do{const r=await request('workshop-api',{action:'accountant_report',report:exportBackendReport,filters:exportFilters,offset:cursor,limit:500});if(exportGeneration!==generation)throw Error('Report changed during export. Export the selected report again.');if(r.snapshot_revision!==expected[0]||r.finance_revision!==expected[1])throw Error('Data changed during export. Refresh before exporting.');all.push(...r.rows.map(row=>({...row,cost_status:row.cost_partial?'PARTIAL — missing prices excluded':row.cost_estimated?'PROVISIONAL — unreceived parts':!row.costs_complete?'PENDING':'COMPLETE'})));cursor=r.next_offset;if(all.length>5000)throw Error('Narrow the date filter to export at most 5,000 rows.');}while(cursor!==null);const title=(exportReport==='cash_ledger'?'Receipts / Cash Out':modules.find(m=>m[0]===exportReport)[1])+(exportReport==='profit'?(exportMode==='without'?' — Without Labour':' — With Labour'):''),name='Zukait_'+exportReport+(exportReport==='profit'?'_'+exportMode+'_labour':'')+'_'+new Date().toISOString().slice(0,10);if(kind==='pdf'){await window.zukaitReportPdf.share(window.zukaitAccountantExports.html(title,exportColumns,all,'',{cleanPrint:true}),name+'.pdf');}else if(kind==='print'){printable.document.write(window.zukaitAccountantExports.html(title,exportColumns,all,'',{cleanPrint:true}));printable.document.close();printable.print();}else{const xml=window.zukaitAccountantExports.spreadsheet(title,exportColumns,all);if(window.AndroidBridge?.saveExportFile){const bytes=new TextEncoder().encode(xml);let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);window.AndroidBridge.saveExportFile(name+'.xml','application/vnd.ms-excel',btoa(binary));}else{const a=document.createElement('a'),u=URL.createObjectURL(new Blob([xml],{type:'application/vnd.ms-excel'}));a.href=u;a.download=name+'.xml';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);}}say('Report prepared.');}catch(e){if(printable)try{printable.close()}catch{}say(e.message)}finally{busy=false;}}
+ exportColumns=performanceReports.has(report)?[...reportColumns(report,labourMode).slice(0,-1),['Cost status','cost_status'],reportColumns(report,labourMode).at(-1)]:reportColumns(report,labourMode);busy=true;try{say('Preparing complete report…');const all=[],expected=[result.snapshot_revision,result.finance_revision];let cursor=0;do{const r=await request('workshop-api',{action:'accountant_report',report:exportBackendReport,filters:exportFilters,offset:cursor,limit:500});if(exportGeneration!==generation)throw Error('Report changed during export. Export the selected report again.');if(r.snapshot_revision!==expected[0]||r.finance_revision!==expected[1])throw Error('Data changed during export. Refresh before exporting.');all.push(...r.rows.map(row=>({...row,cost_status:row.cost_partial?'PARTIAL — missing prices excluded':row.cost_estimated?'PROVISIONAL — unreceived parts':!row.costs_complete?'PENDING':'COMPLETE'})));cursor=r.next_offset;if(all.length>5000)throw Error('Narrow the date filter to export at most 5,000 rows.');}while(cursor!==null);if(expenseReports.has(exportReport)&&$('expense-view').value!=='details'){const grouped=expenseGroup(all,exportReport,$('expense-view').value);all.splice(0,all.length,...grouped.rows);}const title=(exportReport==='cash_ledger'?'Receipts / Cash Out':modules.find(m=>m[0]===exportReport)[1])+(exportReport==='profit'?(exportMode==='without'?' — Without Labour':' — With Labour'):''),name='Zukait_'+exportReport+(exportReport==='profit'?'_'+exportMode+'_labour':'')+'_'+new Date().toISOString().slice(0,10);if(kind==='pdf'){await window.zukaitReportPdf.share(window.zukaitAccountantExports.html(title,exportColumns,all,'',{cleanPrint:true}),name+'.pdf');}else if(kind==='print'){printable.document.write(window.zukaitAccountantExports.html(title,exportColumns,all,'',{cleanPrint:true}));printable.document.close();printable.print();}else{const xml=window.zukaitAccountantExports.spreadsheet(title,exportColumns,all);if(window.AndroidBridge?.saveExportFile){const bytes=new TextEncoder().encode(xml);let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);window.AndroidBridge.saveExportFile(name+'.xml','application/vnd.ms-excel',btoa(binary));}else{const a=document.createElement('a'),u=URL.createObjectURL(new Blob([xml],{type:'application/vnd.ms-excel'}));a.href=u;a.download=name+'.xml';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);}}say('Report prepared.');}catch(e){if(printable)try{printable.close()}catch{}say(e.message)}finally{busy=false;}}
 $('pdf').onclick=()=>exportRows('pdf');$('excel').onclick=()=>exportRows('excel');$('print').onclick=()=>exportRows('print');
 $('manager-back').onclick=()=>location.assign(location.protocol==='file:'||location.hostname==='appassets.androidplatform.net'?'offline_test.html':'index.html');
 $('logout').onclick=()=>{if(window.zukaitSessionPrivacy){invalidate();return window.zukaitSessionPrivacy.signOut();}let t='';try{t=token()}catch{}invalidate();localStorage.removeItem(sessionKey);try{window.AndroidBridge?.clearSecureSessionToken?.()}catch{}if(t)fetch(url+'/functions/v1/staff-auth',{method:'POST',headers:{'Content-Type':'application/json',apikey:publicKey},body:JSON.stringify({action:'logout',session_token:t})}).catch(()=>{});location.replace(location.protocol==='file:'||location.hostname==='appassets.androidplatform.net'?'offline_test.html':'index.html');};
