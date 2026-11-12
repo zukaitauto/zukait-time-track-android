@@ -1,5 +1,5 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';import {stripTypeScriptTypes} from 'node:module';
-const source=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');const start=source.indexOf('async function baseStateForRevision('),end=source.indexOf('// FINAL_SESSION_STATUS_BEGIN',start);assert.ok(start>0&&end>start);const body=stripTypeScriptTypes(source.slice(start,end));
+const source=fs.readFileSync(process.argv[2]||'supabase/functions/workshop-api/index.ts','utf8');const start=source.indexOf('async function baseStateForRevision('),end=source.indexOf('// FINAL_SESSION_STATUS_BEGIN',start);assert.ok(start>0&&end>start);const body=stripTypeScriptTypes(source.slice(start,end));
 function setup({enabled='',rpc={data:{source:'compatible'}},legacy={data:{data:{source:'legacy'}}}}={}){
  const calls=[];
  const admin={
