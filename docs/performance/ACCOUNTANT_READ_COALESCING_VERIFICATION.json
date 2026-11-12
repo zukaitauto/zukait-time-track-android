@@ -1,0 +1,33 @@
+{
+  "qualifiedSource": "0c59b456bc09d7a3eebd76e40bdb003ff3f23495",
+  "productionProject": "pjknotnjkufadqavcmii",
+  "liveBaselineVersion": 117,
+  "productionDeployed": false,
+  "productionEnabled": false,
+  "productionRecordsModified": false,
+  "olderSpillPatchApplied": false,
+  "syntheticBurst": {
+    "requests": 20,
+    "fullContextLoadsBefore": 20,
+    "fullContextLoadsAfter": 2,
+    "additionalLightweightProbes": 19
+  },
+  "sequentialReads": {
+    "fullContextLoads": 1,
+    "additionalProbes": 0
+  },
+  "completedContextsRetained": 0,
+  "productionSavingsMeasured": false,
+  "passingRuns": {
+    "nativePostgres17": 43263360553,
+    "accountantAcceptance": 43263360511,
+    "receptionVerification": 43263360512,
+    "connectionOutage": 43263360642,
+    "mechanicalAccountantContracts": 43263360566,
+    "syncTraffic": 43263360605,
+    "androidArchitecture": 43263360477,
+    "apkBuild": 43263360552,
+    "signedAcceptanceBuild": 43263360676
+  },
+  "rollout": "Separate exact-source approval required. Recheck live bundle and database responsiveness. New service-only probe plus minimal v117-based backend patch; flag off initially. No automatic publication or activation."
+}
