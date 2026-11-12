@@ -81,6 +81,13 @@ assert.equal(w.document.querySelector("#rc-root [data-rdb-promise]")?.value,"202
 await click('#rc-root [data-rc-action=back]');
 assert.equal(w.document.querySelectorAll('[data-rdb=tile]').length,14,"Header Back restores Reception dashboard including Estimate");
 await click('#rc-root [data-rdb=tile][data-section=followup]');
+assert.equal(w.document.querySelectorAll('.rdb-followup-table tbody tr').length,1,'Delivery Follow-up is one row per vehicle');
+assert.equal(w.document.querySelectorAll('#rdb-results .rdb-row').length,0,'Delivery Follow-up must not render large cards');
+assert.match(w.document.querySelector('.rdb-followup-table tbody tr').textContent,/Toyota Camry 2024/);
+assert.ok(w.document.querySelector('.rdb-followup-table [data-rdb-promise="JC120"]'),'Promise Date remains editable within row');
+assert.ok(w.document.querySelector('.rdb-followup-table [data-rdb="promise"]'),'Promise Date Save action remains');
+assert.ok(w.document.querySelector('.rdb-followup-table [data-rdb="open"]'),'View Job Card retained');
+assert.ok(w.document.querySelector('.rdb-followup-table [data-rdb="edit-job"]'),'Edit Job Card retained');
 const from=w.document.querySelector("[data-rdb-filter=from]");from.value="2026-10-10";
 from.dispatchEvent(new w.Event("change",{bubbles:true}));await settle();
 const to=w.document.querySelector("[data-rdb-filter=to]");to.value="2026-10-15";
