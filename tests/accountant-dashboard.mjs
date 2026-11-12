@@ -32,11 +32,21 @@ for(const [expense,label] of [['consumables','Consumables'],['parts','Spare Part
  w.document.getElementById('month').value='2026-10';
  w.document.getElementById('refresh').click();
  await wait(()=>w.document.getElementById('cash-invoice-total-period').textContent==='2026-10');
+ const expectedExpenses={consumables:10,parts:10,paint:15};
+ const reportedAmount=w.document.getElementById('cash-invoice-total-amount').textContent;
+ assert.equal(reportedAmount,'OMR '+expectedExpenses[expense].toFixed(3),'expense total reconciles with finalized October source costs');
  viewSelect.value=groupBy;
  viewSelect.dispatchEvent(new w.Event('change'));
  const expectedHeading=groupBy==='part'?'Part':'Brand';
  await wait(()=>w.document.querySelector('#rows th')?.textContent===expectedHeading);
  assert.match(w.document.getElementById('rows').textContent,/Known Expense OMR/,'grouped report shows financial amount');
+ const reportedGroupedKnown=[...w.document.querySelectorAll('#rows tbody tr')].reduce((sum,row)=>{
+  const cells=[...row.querySelectorAll('td')],columnNames=[...w.document.querySelectorAll('#rows th')].map(th=>th.textContent);
+  const position=columnNames.indexOf('Known Expense OMR');
+  const amount=Number(cells[position]?.textContent?.replace(/[^0-9.-]/g,''));
+  return sum+(Number.isFinite(amount)?amount:0);
+ },0);
+ assert.equal(Number(reportedGroupedKnown.toFixed(3)),expectedExpenses[expense],'grouped known costs reconcile to report header');
  assert.equal(w.document.getElementById('cash-invoice-total').hidden,false,'top expense remains visible for grouped reports');
  viewSelect.value='job';viewSelect.dispatchEvent(new w.Event('change'));
  await wait(()=>w.document.querySelector('#rows [data-job="J1"]'));
