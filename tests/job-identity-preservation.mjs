@@ -11,3 +11,5 @@ assert.equal(display.customer,'');assert.equal(display.jobIntakeOdometer,null);a
 for(const key of ['customerName','modelYear','VIN','intakeOdometer','odometerUnit','colourCode'])assert.equal(display[key],undefined,key+' stale snapshot removed for legacy and linked jobs');
 assert.equal(JSON.stringify(state),saved,'shared identity is read-only');
 console.log('PASS explicit clears beat legacy aliases and stale report snapshots for vehicle, customer/contact and odometer fields.');
+
+state.jobs.push({no:'J4',modelYear:'',vehicleYear:'2020',registration:'',registrationNo:'NEW'});assert.equal(identity('J4').year,'2020');assert.equal(identity('J4').reg,'NEW');
