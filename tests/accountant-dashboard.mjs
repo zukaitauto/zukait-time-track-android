@@ -150,9 +150,9 @@ assert.equal([...cashPrintedDocument.querySelectorAll('tbody td')].filter(cell=>
 assert.match(cashPrintedDocument.querySelector('tbody tr td:last-child').textContent,/%$/,'Cash print percentages carry percent symbol');
 w.document.querySelector('#rows [data-expense="paint"]').click();
 await wait(()=>!w.document.getElementById('detail').hidden);
-assert.equal(w.document.querySelector('#detail .expense-paint').open,true,'click cost opens its source lines');
+assert.match(w.document.getElementById('financial-detail-title').textContent,/Received Paint POs/,'clicked Paint amount opens only received Paint POs');
 assert.equal(w.document.getElementById('financial-detail-dialog').open,true,'expense opens the same dedicated modal');
-assert.equal(w.document.querySelector('#detail .expense-breakdown').classList.contains('expense-paint'),true,'clicked expense shown first');
+assert.doesNotMatch(w.document.getElementById('detail').textContent,/Financial 360|Labour Cost|Profit %/,'paint drilldown excludes unrelated categories');
 w.document.getElementById('close-detail').click();
 assert.equal(w.document.getElementById('month').value,'2026-10','cost detail close preserves month filter');
 assert.ok(w.document.querySelector('#rows [data-expense="paint"]'),'cost detail close retains the same report');
