@@ -145,7 +145,9 @@ w.document.getElementById('accounts-back').click();
 w.document.querySelector('#navigation [data-report="leave"]').click();
 await wait(()=>w.document.getElementById('title').textContent==='Leave Management');
 assert.match(w.document.getElementById('notes').textContent,/Read-only/);
-assert.match(w.document.getElementById('rows').textContent,/Technician/);
+w.document.getElementById('month').value='2026-10';
+w.document.getElementById('refresh').click();
+await wait(()=>w.document.getElementById('rows').textContent.includes('Technician'));
 assert.equal(w.document.getElementById('rows').querySelector('[data-leave-edit]'),null);
 assert.equal(w.document.getElementById('rows').querySelector('[data-leave-delete]'),null);
 

@@ -14,7 +14,7 @@ function validate(r,ref){
   assert.ok(Number.isSafeInteger(r.mechanicalVerificationRun)&&r.mechanicalVerificationRun>0,'Isolated Mechanical phone QA evidence required');
  }else{
   assert.equal(r.ownerApprovedLiveAccountantTesting,true);
-  assert.ok(['Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.','Owner requested V393 Accounts improvements release for checking.','Owner requested publishing V394 Accounts redesign for testing.','Owner requested V395 concise Accounts Profit/Loss screen for testing.'].includes(r.authorization),'Owner release authorization required');
+  assert.ok(['Owner approved activating Accountant backend and publishing Manager Accounts for live-app testing with PROCEED.','Owner requested V393 Accounts improvements release for checking.','Owner requested publishing V394 Accounts redesign for testing.','Owner requested V395 concise Accounts Profit/Loss screen for testing.','Owner requested publishing V397 for complete Accountant Module testing.'].includes(r.authorization),'Owner release authorization required');
  }
  assert.equal(r.physicalAcceptanceStatus,'NOT_RUN','Do not claim unperformed device acceptance');
  assert.equal(typeof r.productionBackendChanges,'boolean');assert.equal(r.backendDeploymentRequired,r.productionBackendChanges,'Backend deployment flag must reflect this release');assert.equal(r.phase2ActivationApproved,false);
