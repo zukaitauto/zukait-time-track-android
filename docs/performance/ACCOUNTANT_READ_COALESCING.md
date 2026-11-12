@@ -1,8 +1,10 @@
 # Accountant concurrent-read optimization
 
-Development candidate only. No production migration, deployment, feature activation,
-financial record change, history deletion or Android/web publication has occurred.
-The earlier 14%-slower temporary-spill patch remains unapplied and independent.
+Current live state: **enabled on workshop-api v119**, after owner-approved inactive
+staging on v118. The source qualification, schema staging and activation are distinct
+records below. No financial records or history were changed; no Android/web release
+was published. The older slower spill patch remains unapplied. Production savings
+are not measured yet; authenticated screen acceptance is awaiting the owner.
 
 ## Behavior and correctness boundary
 
@@ -72,7 +74,7 @@ the minimal bundle with the flag still off. Only enable after explicit approval 
 eligibility measurements; preserve all other secrets/flags. Missing probe must never
 be worked around by allowing anonymous access or caching stale data.
 
-Rollback: disable the flag to restore the original read path. Retain the exact old
+Rollback for live v119: redeploy the exact archived hard-disabled v118 source. The new backend version will increment; do not assume the numeric version can be rolled back. Changing an environment secret alone does not override the live literal true. Retain the exact old
 bundle for code rollback. The unused service-only probe may stay until a separately
 reviewed cleanup. Do not execute the old spill patch or delete history as part of this.
 
@@ -100,3 +102,27 @@ release were changed. The old v117 bundle is archived locally for code rollback.
 This stage has **no active optimization benefit yet**. Capture comparable baseline
 counters and explicitly review a controlled activation separately. Enabling requires
 a new approved dispatcher configuration; changing the secret flag alone is insufficient.
+
+## Controlled activation — 12 November 2026
+
+Owner requested Proceed after staging. Backend v119 changes only the dispatcher
+boolean to true; all 42 other source files are unchanged from v118 and all 43
+read back byte-for-byte. The original import map and verify_jwt configuration remain.
+The existing financial context function is unchanged. The active profile is literal
+true, while the repository handler retains its qualified configurable development
+hook. `scripts/prepare-accountant-read-activation.mjs` reproduces the reviewed
+one-boolean change from the exact v118 baseline and preserves the disabled rollback.
+
+Activation occurred outside normal garage hours. The checked 17:23:06–17:27:00 UTC
+log window had no recorded requests; target context/probe statement counters were
+not present in the retained cache at the checkpoint. Do not treat missing IDs as zero
+or claim daily/production savings. The baseline/checkpoint interval spans disabled
+and enabled periods. Database start time and statement reset/dealloc were unchanged.
+A monitored working-session comparison and owner screen checks remain pending.
+
+Database and denied-session checks passed. Service-only probe identity/snapshot/
+instance fields were verified read-only with an eligible account; no credentials,
+financial context or customer data were returned. No production records were added
+for testing. Invalid-session checks do not replace authenticated UI acceptance.
+The exact activation metadata and rollback limitation are recorded in
+ACCOUNTANT_READ_COALESCING_ACTIVATION.json.
