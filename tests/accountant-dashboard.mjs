@@ -187,7 +187,7 @@ w.document.getElementById('month').value='2026-10';
 w.document.getElementById('refresh').click();
 await wait(()=>w.document.getElementById('rows').textContent.includes('Technician'));
 assert.ok(w.document.getElementById('rows').querySelector('[data-leave-edit]'),'Leave edit actions are available');
-assert.equal(w.document.getElementById('rows').querySelector('[data-leave-delete]'),null);
+assert.ok(w.document.getElementById('rows').querySelector('[data-leave-cancel]'),'Leave cancellation action is available');
 
 w.document.getElementById('accounts-back').click();
 w.document.querySelector('#navigation [data-report="profit"]').click();
