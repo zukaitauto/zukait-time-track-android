@@ -1,8 +1,8 @@
 {
   "approved": true,
-  "release": "V396",
-  "sourceCommit": "2830fa0bd4d61b98a5d4ff61ee1625087c0527de",
-  "publishNonce": "2830fa0bd4d61b98a5d4ff61ee162508",
-  "authorization": "Owner approved publishing the Mechanical Department modern UI for testing.",
-  "reason": "Owner-approved V396 Mechanical two-column modern UI; exact-source signed, Mechanical phone, Reception and Accountant QA passed. No production backend or data changes. V395 rollback retained."
+  "release": "V397",
+  "sourceCommit": "e9a999507864adf3018538375414f7241044759b",
+  "publishNonce": "e9a999507864adf3018538375414f724",
+  "authorization": "Owner requested publishing V397 for complete Accountant Module testing.",
+  "reason": "Owner-approved V397 Accountant eight-card testing release. Exact-source signed APK, Reception and Accountant acceptance passed; live workshop-api v116 readback verified; V396 rollback retained. Physical phone acceptance NOT_RUN."
 }
