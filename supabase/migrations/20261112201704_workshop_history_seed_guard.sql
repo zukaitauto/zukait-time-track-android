@@ -79,4 +79,3 @@ begin
 end;
 $$;
 revoke all on function zukait_history.capture_state_update() from public,anon,authenticated,service_role;
-
