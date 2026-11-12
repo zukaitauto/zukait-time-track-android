@@ -327,7 +327,7 @@ function switchReport(name){
  for(const id of ['insurance-company','customer-filter'])$(id).value='';
  $('category-filter').value='ALL';$('leave-status').value='active';
  if(expenseReports.has(name))$('expense-view').value='details';
- if(performanceReports.has(name)||expenseReports.has(name))$('month').value=omanMonth();
+ if(performanceReports.has(name)||expenseReports.has(name)||name==='leave')$('month').value=omanMonth();
  $('module-label').textContent=modules.find(m=>m[0]===name)[1];
  updateLabourModeControls();filterVisibility();closeDetail();load();
  $('accounts-workspace').scrollIntoView?.({block:'start',behavior:'smooth'});
@@ -496,7 +496,7 @@ $('navigation').innerHTML=modules.map(([name,title])=>{const [icon,description,t
 $('query').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();offset=0;$('detail').hidden=true;load()}});$('refresh').onclick=()=>{offset=0;$('detail').hidden=true;load()};$('clear').onclick=()=>{
  for(const id of ['query','month','from','to','employee','material','insurance','insurance-company','customer-filter'])$(id).value='';
  $('category-filter').value='ALL';$('leave-status').value='active';
- if(performanceReports.has(report)||expenseReports.has(report))$('month').value=omanMonth();
+ if(performanceReports.has(report)||expenseReports.has(report)||report==='leave')$('month').value=omanMonth();
  filterVisibility();offset=0;$('detail').hidden=true;load();
 };$('previous').onclick=()=>{offset=Math.max(0,offset-25);load()};$('next').onclick=()=>{if(next!==null){offset=next;load()}};$('cash-entry').onclick=()=>cashForm();
 $('cash-ledger-toggle').onclick=()=>{report=report==='cash'?'cash_ledger':'cash';offset=0;$('module-label').textContent=report==='cash_ledger'?'Receipts / Cash Out':'Cash Invoices';load();};
