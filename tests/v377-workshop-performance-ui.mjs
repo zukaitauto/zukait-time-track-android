@@ -3,17 +3,25 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const html=readFileSync(new URL('../app/src/main/assets/offline_test.html',import.meta.url),'utf8');
-const start=html.indexOf("const cards=[['Work in Progress'");
+const start=html.indexOf("const cards=[['Over Allocated'");
 assert.ok(start>=0,'Workshop Performance theme script exists');
 const section=html.slice(start,html.indexOf('})();',start)+5);
 assert.match(section,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/,'two-column desktop grid');
-for(const [key,order] of [['progress',2],['repeat',3],['efficiency',4],['overallocated',1],['parts',5],['consumables',6],['cash',7],['insurance',8]]){
+for(const [key,order] of [['overallocated',1],['progress',2],['parts',5],['consumables',6],['cash',7],['insurance',8]]){
  const marker='data-perf-key=\\\"'+key+'\\\"]{';
  const pos=section.indexOf(marker);
  assert.ok(pos>=0,key+' card style exists');
  const rule=section.slice(pos,section.indexOf('}',pos));
  assert.ok(rule.includes('order:'+order+';'),key+' card order');
 }
+// QC and Ready are the original, server-backed queue buttons transplanted
+// into the Manager grid, so their queue authority is not copied or reimplemented.
+assert.match(section,/\['QC','qc','✅'\]/);
+assert.match(section,/\['Ready to Deliver','ready','🚘'\]/);
+assert.match(section,/data-qc-queue/);
+assert.match(section,/data-qc-ready/);
+assert.match(section,/window\.zukaitQCRefreshManagerCards/);
+assert.match(section,/button\.remove\(\);continue/,'duplicate repeat and efficiency overview tiles removed, features retained elsewhere');
 assert.match(section,/window\.v377OpenOverAllocated\(\)/,'over-allocated tile opens overdue list');
 assert.match(section,/window\.v123ManagerPerformanceOpen\('eff'\)/,'efficiency tile opens monthly-filtered job detail');
 assert.match(section,/event\.stopImmediatePropagation\(\)/,'legacy handler blocked');
