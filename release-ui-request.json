@@ -2,24 +2,24 @@
   "versionName": "V400",
   "versionCode": 363,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
-  "sourceCommit": "af4d052e8c950e61911b7ed5cb9f7c9b9ef1071e",
-  "approvedAt": null,
-  "publishNonce": null,
+  "approvedForStaff": true,
+  "sourceCommit": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
+  "approvedAt": "2026-11-13T18:13:10.368Z",
+  "publishNonce": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
   "ownerRequestedProceed": true,
-  "ownerPublicationRequested": false,
-  "ownerRequestedImmediateRelease": false,
-  "releaseHeldByOwner": true,
-  "backupDeferredByOwner": false,
+  "ownerPublicationRequested": true,
+  "ownerRequestedImmediateRelease": true,
+  "releaseHeldByOwner": false,
+  "backupDeferredByOwner": true,
   "productionBackendChanges": false,
   "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "authorization": "Owner requested: Publish it. Then I will test. Earlier workshop release instructions explicitly said to bypass backup verification; no restore is represented as completed.",
-  "reason": "V400 held test candidate: readable two-column Actual Materials and final confirmation for Manager/Supervisor, compact two-column Manager Workshop Control Center. Existing workflows, data, permissions and audit unchanged. Publication requires exact-source checks and protected approval.",
+  "signedAcceptanceRun": 43479529213,
+  "verificationRun": 43479529232,
+  "authorization": "Owner requested Proceed to complete the redesigns and final publish for testing in this conversation, 2026-11-13. Previous explicit instruction to bypass backup applies to release verification only; no restore is claimed.",
+  "reason": "Owner-authorized V400 coordinated web/Android test publication of UI-only Manager/Supervisor Actual Materials and Confirm & Lock readability plus two-column Manager Workshop Control Center. All ten exact-source checks passed; production schema, backend and data untouched. Physical acceptance and backup-restore verification remain NOT_RUN.",
   "previousPublishedRelease": {
     "versionName": "V399",
     "versionCode": 362,
@@ -27,15 +27,61 @@
     "sourceCommit": "5a52ff58025287f47057ab7a8a3d932943253a47"
   },
   "prePublicationEvidence": {
-    "sourceCommit": "5a52ff58025287f47057ab7a8a3d932943253a47",
-    "signedAcceptanceRun": 43466632011,
-    "verificationRun": 43466632045,
-    "androidBuildRun": 43466631951,
-    "connectionSafetyRun": 43466631992,
-    "inactiveContractsRun": 43466632290,
-    "normalBuildRun": 43466632063,
+    "sourceCommit": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
+    "checks": {
+      "signed": {
+        "runId": 43479529213,
+        "head_sha": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
+        "status": "SUCCESS"
+      },
+      "reception": {
+        "runId": 43479529232,
+        "head_sha": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
+        "status": "SUCCESS"
+      },
+      "regularApk": {
+        "runId": 43479529755,
+        "head_sha": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
+        "status": "SUCCESS"
+      },
+      "androidArchitecture": {
+        "runId": 43479529315,
+        "head_sha": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
+        "status": "SUCCESS"
+      },
+      "connection": {
+        "runId": 43479529408,
+        "head_sha": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
+        "status": "SUCCESS"
+      },
+      "mechanical": {
+        "runId": 43479529434,
+        "head_sha": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
+        "status": "SUCCESS"
+      },
+      "accountant": {
+        "runId": 43479529343,
+        "head_sha": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
+        "status": "SUCCESS"
+      },
+      "sync": {
+        "runId": 43479529299,
+        "head_sha": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
+        "status": "SUCCESS"
+      },
+      "nativePdf": {
+        "runId": 43479529398,
+        "head_sha": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
+        "status": "SUCCESS"
+      },
+      "inactiveContracts": {
+        "runId": 43479529215,
+        "head_sha": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
+        "status": "SUCCESS"
+      }
+    },
     "physicalAcceptance": "NOT_RUN",
     "backupRestore": "NOT_RUN",
-    "priorRelease": "release-V398-architecture-v2"
+    "productionBackendChanges": false
   }
 }
