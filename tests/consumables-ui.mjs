@@ -251,3 +251,23 @@ const noAccess=ctx.modal;ctx.consHistoryOpenForJob('JC1');
 assert.equal(ctx.modal,noAccess,'Supervisor cannot access manager history through deep link');
 assert.equal(state.consumables.audit.length,historyCountBefore,'Navigating history must not mutate data');
 console.log('PASS consumables history JC-first mobile navigation, separate tabs, targeted reopen action, registration lookup and Manager-only access');
+
+// Regression: reopened Actual is pending FINAL CONFIRMATION, not a missing/locked record.
+vm.runInContext("me={id:'M1',role:'Manager'}",ctx);
+const pendingSnapshot=structuredClone(state.consumables),assignSnapshot=structuredClone(state.assign);
+state.assign[0].completed=true;
+assert.equal(ctx.consFinalMaterialPendingCount(),0,'Locked JC must not appear on Final Material Pending');
+const finalized=state.consumables.actuals[0];
+C.managerReopenActual(state,finalized.id,{id:'M1',role:'Manager'},'Owner-requested forgotten hardener');
+assert.equal(ctx.consFinalMaterialPendingCount(),1,'Reopened JC requires final actual confirmation');
+ctx.openFinalMaterialPending();
+assert.match(ctx.modal,/REOPENED ACTUAL — Manager to finalize/,'Pending list must explain reopened status');
+assert.doesNotMatch(ctx.modal,/ACTUAL NOT ENTERED/,'Reopened record must not be described as never entered');
+await ctx.openConsumablesActual();fill({consActualJc:'JC1'});ctx.consLoadActual();
+assert.match(element('consActualNote').textContent,/Manager correction/,'Reopened Manager entry remains editable');
+assert.doesNotMatch(element('consActualRows').innerHTML,/already finished and locked/);
+vm.runInContext("me={id:'S1',role:'Supervisor'}",ctx);
+ctx.consLoadActual();
+assert.match(element('consActualRows').innerHTML,/Manager must review and re-finalize/,'Supervisor cannot finalize Manager-reopened actuals');
+state.consumables=pendingSnapshot;state.assign=assignSnapshot;
+console.log('PASS reopened actual pending route shows manager finalization, not a duplicate or wrong locked status');
