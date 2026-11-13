@@ -1861,7 +1861,7 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
   }
   // A performance refresh may replace the grid. Restore the SAME live QC cards,
   // not new counters or substitute click actions.
-  if(window.me?.role==='Manager'&&typeof window.zukaitQCRefreshManagerCards==='function'&&(!grid.querySelector('[data-qc-queue]')||!grid.querySelector('[data-qc-ready]'))){
+  if(typeof me!=='undefined'&&me?.role==='Manager'&&typeof window.zukaitQCRefreshManagerCards==='function'&&(!grid.querySelector('[data-qc-queue]')||!grid.querySelector('[data-qc-ready]'))){
    window.zukaitQCRefreshManagerCards();
   }
  }
