@@ -21,6 +21,19 @@ assert.match(section,/\['Ready to Deliver','ready','🚘'\]/);
 assert.match(section,/data-qc-queue/);
 assert.match(section,/data-qc-ready/);
 assert.match(section,/window\.zukaitQCRefreshManagerCards/);
+
+const qcUi=readFileSync(new URL('../app/src/main/assets/qc_delivery.js',import.meta.url),'utf8');
+assert.match(qcUi,/managerPerfGrid=me\.role==='Manager'\?root\.querySelector\('\.v123-manager-performance \.v123-grid'\)/,'Manager queues use Workshop Performance destination');
+assert.match(qcUi,/queue\.onclick=window\.zukaitOpenQCQueue/,'QC queue click authority unchanged');
+assert.match(qcUi,/ready\.onclick=window\.zukaitOpenReadyToDeliver/,'Ready queue click authority unchanged');
+assert.match(qcUi,/card\.dataset\.perfKey=key/,'Original live cards receive Performance layout keys');
+assert.match(qcUi,/managerPerfGrid\.appendChild\(card\)/,'Original cards move into performance grid, not a duplicate');
+assert.match(qcUi,/window\.zukaitQCRefreshManagerCards=apply/,'Live QC cards recover after Performance redraw');
+assert.match(qcUi,/me\.role==='Manager'\?\[estimate,consumables,parts,deliveredCard\]/,'Manager Control Center no longer relocates QC or Ready');
+assert.match(section,/order:3!important/,'QC is in row two on all screens');
+assert.match(section,/order:4!important/,'Ready is in row two on all screens');
+assert.match(html,/qc_delivery\.js\?v=2026111303/,'Browser loads updated QC dashboard module instead of cached old file');
+
 assert.match(section,/button\.remove\(\);continue/,'duplicate repeat and efficiency overview tiles removed, features retained elsewhere');
 assert.match(section,/window\.v377OpenOverAllocated\(\)/,'over-allocated tile opens overdue list');
 assert.match(section,/window\.v123ManagerPerformanceOpen\('eff'\)/,'efficiency tile opens monthly-filtered job detail');
