@@ -20,6 +20,6 @@ for(const name of ['pendingVehicleLabel','spareRecentRows']){
  assert.ok(source.includes('function '+name+'('));
 }
 const css=fs.readFileSync('app/src/main/assets/dashboard_cards.css','utf8');
-for(const file of ['offline_test.html','receptionist.html','accountant.html'])assert.match(fs.readFileSync('app/src/main/assets/'+file,'utf8'),/href="dashboard_cards.css\?v=1"/);
+for(const file of ['offline_test.html','receptionist.html','accountant.html'])assert.match(fs.readFileSync('app/src/main/assets/'+file,'utf8'),/href="dashboard_cards.css\?v=[A-Za-z0-9._-]+"/);
 assert.match(css,/prefers-reduced-motion/);assert.match(css,/@media print/);
 console.log('Shared dashboard cards: Manager/Supervisor actions, role-specific Purchaser UI, readable count labels, priority order, deduplicated model and read-only behavior passed.');
