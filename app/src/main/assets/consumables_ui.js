@@ -33,15 +33,21 @@ window.openConsumablesModule=function(){
 window.openConsumablesPlaceholder=function(name){modal(esc(name)+' Consumables','<div class="notice">This department module is openable and isolated. Detailed workflow will be added after Painting Consumables is completed.</div>')};
 function action(label,sub,fn,cls=''){return '<button class="cons-action '+cls+'" onclick="'+fn+'"><b>'+label+'</b><small>'+sub+'</small></button>'}
 function consFinalMaterialPendingRows(){
- const c=C().ensureState(state),done=no=>{const a=(state.assign||[]).filter(x=>x&&!x.cancelled&&String(x.job)===String(no));return a.length>0&&a.every(x=>x.completed)},actual=new Set(c.actuals.filter(x=>x&&!x.voided&&x.locked).map(x=>String(x.jobCard||'').toUpperCase())),by=new Map();
+ const c=C().ensureState(state),done=no=>{const a=(state.assign||[]).filter(x=>x&&!x.cancelled&&String(x.job)===String(no));return a.length>0&&a.every(x=>x.completed)};
+ const actual=new Set(c.actuals.filter(x=>x&&!x.voided&&x.locked).map(x=>String(x.jobCard||'').toUpperCase()));
+ const reopened=new Set(c.actuals.filter(x=>x&&!x.voided&&!x.locked&&x.managerReopen).map(x=>String(x.jobCard||'').toUpperCase()));
+ const unlocked=new Set(c.actuals.filter(x=>x&&!x.voided&&!x.locked).map(x=>String(x.jobCard||'').toUpperCase())),by=new Map();
  c.issues.filter(x=>x&&!x.voided&&x.type===C().TYPES.ISSUED&&x.jobCard).forEach(x=>{const no=String(x.jobCard).toUpperCase();if(done(no)&&!actual.has(no))by.set(no,x)});
- return [...by.entries()].map(([jobCard,row])=>({jobCard,row}));
+ return [...by.entries()].map(([jobCard,row])=>({jobCard,row,status:reopened.has(jobCard)?'reopened':unlocked.has(jobCard)?'review':'missing'}));
 }
 window.consFinalMaterialPendingCount=function(){return consFinalMaterialPendingRows().length};
 window.openFinalMaterialPending=function(){
  if(!['Supervisor','Manager'].includes(role()))return;
  const rows=consFinalMaterialPendingRows();
- const body=rows.length?'<div class="cons-final-pending-list" role="list">'+rows.map((x,i)=>{const d=jcData(x.jobCard),j=d?.job||{};return '<button type="button" class="cons-final-pending-row" onclick="openConsumablesActual().then(()=>{const e=document.getElementById(\'consActualJc\');if(e){e.value=decodeURIComponent(\''+encodeURIComponent(x.jobCard)+'\');consLoadActual()}})"><b class="cons-row-no">'+(i+1)+'</b><b>JC '+esc(x.jobCard)+'</b><span>'+esc(d?.vehicle||j.vehicle||'Vehicle')+'</span><span class="cons-row-reg">Reg: '+esc(j.reg||j.registration||'—')+'</span><i>›</i></button>'}).join('')+'</div>':'<div class="notice">No Final Paint Material entries are pending.</div>';
+ const body=rows.length?'<div class="cons-final-pending-list" role="list">'+rows.map((x,i)=>{
+  const d=jcData(x.jobCard),j=d?.job||{},status=x.status==='reopened'?'REOPENED ACTUAL — Manager to finalize':x.status==='review'?'UNLOCKED ACTUAL — Manager review required':'ACTUAL NOT ENTERED — Complete final materials';
+  return '<button type="button" class="cons-final-pending-row" onclick="openConsumablesActual().then(()=>{const e=document.getElementById(\\'consActualJc\\');if(e){e.value=decodeURIComponent(\\''+encodeURIComponent(x.jobCard)+'\\');consLoadActual()}})"><b class="cons-row-no">'+(i+1)+'</b><b>JC '+esc(x.jobCard)+'</b><span>'+esc(d?.vehicle||j.vehicle||'Vehicle')+'</span><span class="cons-row-reg">Reg: '+esc(j.reg||j.registration||'—')+'</span><span class="cons-row-reg" style="font-weight:800;color:#155e75">'+esc(status)+'</span><i>›</i></button>';
+ }).join('')+'</div>':'<div class="notice">No Final Paint Material entries are pending.</div>';
  modal('⚠ Final Material Pending · '+rows.length,body,'openPaintingConsumables()');
 };
 window.openPaintingConsumables=function(){
@@ -311,7 +317,7 @@ window.consLoadActual=function(){
  document.getElementById('consActualSupervisor').value=su?.name||base?.allottedSupervisorId||'';
  if(!base){const fb=document.getElementById('consFinishActualBtn');if(fb)fb.disabled=true;out.innerHTML='<div class="notice">No completed Suggested / Issued Materials found for this Job Card.</div>';return}
  const existing=c.actuals.find(x=>x.jobCard===d.job.no&&!x.voided),reopened=existing&&!existing.locked&&existing.managerReopen?existing:null;
- if(existing&&!reopened){const fb=document.getElementById('consFinishActualBtn');if(fb)fb.disabled=true;out.innerHTML='<div class="notice">Actual Materials are already finished and locked for this Job Card. The Manager can reopen them through Consumables Edit History.</div>';return}
+ if(existing&&!reopened){const fb=document.getElementById('consFinishActualBtn');if(fb)fb.disabled=true;out.innerHTML=existing.locked?'<div class="notice">Actual Materials are finalized and locked for this Job Card. '+(role()==='Manager'?'<button type="button" class="blue" onclick="consHistoryOpenForJob('+esc(JSON.stringify(d.job.no))+')">FIND & REOPEN ACTUAL</button>':'Ask a Manager to reopen if a correction is needed.')+'</div>':'<div class="notice">Actual Materials are unlocked but have no authorized reopen record. A Manager must review this record before finalization.</div>';return}
  if(reopened&&role()!=='Manager'){const fb=document.getElementById('consFinishActualBtn');if(fb)fb.disabled=true;out.innerHTML='<div class="notice">The Manager must review and re-finalize this reopened Actual record.</div>';return}
  const a=C().allowance(state,d.job.no),previous=new Map((reopened?.lines||[]).map(x=>[x.materialId+'|'+x.brandId,x]));
  // Preserve original actual quantities; new additional issue rows require explicit actual confirmation.
@@ -319,7 +325,7 @@ window.consLoadActual=function(){
  for(const old of reopened?.lines||[]){if(!a.some(x=>x.materialId===old.materialId&&x.brandId===old.brandId))draft.lines.push({materialId:old.materialId,brandId:old.brandId,quantity:Number(old.actualQuantity||0),actualOnly:true})}
  if(reopened)draft.actualAt=Number(reopened.actualAt)||Date.now();
  const fb=document.getElementById('consFinishActualBtn');if(fb)fb.disabled=!draft.lines.length;
- if(note)note.textContent=reopened?'Manager correction: previous actual quantities are preserved. Enter any newly used quantities, then confirm and lock. Original actual date is retained.':'Suggested / issued quantity is shown for reference. Enter the quantity actually used; add a material below if it was used but not originally issued.';
+ if(note){const additions=reopened?a.filter(x=>!previous.has(x.materialId+'|'+x.brandId)).map(x=>{const m=c.materials.find(m=>m.id===x.materialId)||{};return (m.name||'Material')+' ('+x.quantity+' '+(m.unit||'units')+' issued)' }):[];note.textContent=reopened?'Manager correction: original actual quantities and accounting date are preserved. '+(additions.length?'Newly issued: '+additions.join(', ')+'. Set actual used quantities before confirming and locking.':'Review quantities, then confirm and lock.'):'Suggested / issued quantity is shown for reference. Enter the quantity actually used; add a material below if it was used but not originally issued.';}
  const add=document.getElementById('consActualAdd');if(add){add.classList.remove('hidden');add.innerHTML='<button type="button" class="blue" onclick="consAddActualMaterial()">＋ ADD MATERIAL</button>'}
  consRenderActualRows();
 };
