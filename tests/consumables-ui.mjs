@@ -204,7 +204,7 @@ const oldPrices=state.consumables.prices;state.consumables.prices=[];fill({consM
 ctx.openConsumablesEntry('additional');ctx.consSelectJC('JC1');
 fill({consMaterial:m.id,consBrand:b.id,consQty:'0.25'});ctx.consAddLine();
 assert.equal(element('consFinishBtn').disabled,true,'Additional FINISH stays blocked until Manager reopens final Actual');
-assert.match(element('consJcNote').textContent,/Manager must reopen Actual Materials/);
+assert.match(element('consJcNote').innerHTML,/FIND & REOPEN FINAL ACTUAL/,'Manager should see a direct navigation to the locked Actual record');
 const originalFinal=state.consumables.actuals[0],originalFinalId=originalFinal.id,originalActualAt=originalFinal.actualAt,originalFinalQty=originalFinal.lines[0].actualQuantity;
 C.managerReopenActual(state,originalFinalId,{id:'M1',role:'Manager'},'Late verified hardener consumption');
 ctx.openConsumablesEntry('additional');ctx.consSelectJC('JC1');
