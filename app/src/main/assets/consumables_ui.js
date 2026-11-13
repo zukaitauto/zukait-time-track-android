@@ -46,7 +46,7 @@ window.openFinalMaterialPending=function(){
  const rows=consFinalMaterialPendingRows();
  const body=rows.length?'<div class="cons-final-pending-list" role="list">'+rows.map((x,i)=>{
   const d=jcData(x.jobCard),j=d?.job||{},status=x.status==='reopened'?'REOPENED ACTUAL — Manager to finalize':x.status==='review'?'UNLOCKED ACTUAL — Manager review required':'ACTUAL NOT ENTERED — Complete final materials';
-  return '<button type="button" class="cons-final-pending-row" onclick="openConsumablesActual().then(()=>{const e=document.getElementById(\\'consActualJc\\');if(e){e.value=decodeURIComponent(\\''+encodeURIComponent(x.jobCard)+'\\');consLoadActual()}})"><b class="cons-row-no">'+(i+1)+'</b><b>JC '+esc(x.jobCard)+'</b><span>'+esc(d?.vehicle||j.vehicle||'Vehicle')+'</span><span class="cons-row-reg">Reg: '+esc(j.reg||j.registration||'—')+'</span><span class="cons-row-reg" style="font-weight:800;color:#155e75">'+esc(status)+'</span><i>›</i></button>';
+  return '<button type="button" class="cons-final-pending-row" onclick="openConsumablesActual().then(()=>{const e=document.getElementById(\'consActualJc\');if(e){e.value=decodeURIComponent(\''+encodeURIComponent(x.jobCard)+'\');consLoadActual()}})"><b class="cons-row-no">'+(i+1)+'</b><b>JC '+esc(x.jobCard)+'</b><span>'+esc(d?.vehicle||j.vehicle||'Vehicle')+'</span><span class="cons-row-reg">Reg: '+esc(j.reg||j.registration||'—')+'</span><span class="cons-row-reg" style="font-weight:800;color:#155e75">'+esc(status)+'</span><i>›</i></button>';
  }).join('')+'</div>':'<div class="notice">No Final Paint Material entries are pending.</div>';
  modal('⚠ Final Material Pending · '+rows.length,body,'openPaintingConsumables()');
 };
