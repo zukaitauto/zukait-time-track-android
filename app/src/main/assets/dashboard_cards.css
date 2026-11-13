@@ -120,3 +120,13 @@
 @media print{
  #managerView :is(.v67-section,.v123-manager-performance,.v67-admin-row){box-shadow:none!important}
 }
+
+/* Manager Workshop Performance compact cards: titles and live values only. */
+#managerView .v123-manager-performance .v123-head p,
+#managerView .v123-manager-performance .v123-grid button.v123-perf small,
+#managerView .v123-manager-performance .v123-grid button.qc-launch .qc-card-copy small{
+ display:none!important;
+}
+#managerView .v123-manager-performance .v123-grid :is(button.v123-perf,button.qc-launch[data-qc-queue],button.qc-launch[data-qc-ready]){
+ min-height:92px!important;
+}
