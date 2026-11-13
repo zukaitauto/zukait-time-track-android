@@ -14,8 +14,9 @@ function rows(){const unique=new Map();for(const j of st().jobs||[]){if(!j?.no||
 const promiseDay=j=>{const value=j.promiseDate;if(!value)return '';if(/^\d{4}-\d\d-\d\d$/.test(String(value))){const parsed=new Date(value+'T12:00:00Z');return Number.isFinite(parsed.getTime())&&parsed.toISOString().slice(0,10)===value?value:'';}return day(value)};
 const promiseCell=j=>{const due=promiseDay(j),today=day(Date.now()),label=!due?'Not set':due<today?'Overdue':due===today?'Due today':'';return '<span class="mwip-promise'+(due&&due<today?' overdue':due===today?' due-today':'')+'">'+esc(due?date(due):'Not set')+(due&&label?'<small>'+label+'</small>':'')+'</span>'};
 const money=v=>v==null?'Not available':'OMR '+Number(v).toFixed(3);
-function shell(title,body,back=false){style();openModal('<section class="mwip"><header class="mwip-head"><div><small>WORKSHOP · '+(me?.role==='Supervisor'?'SUPERVISOR':'MANAGER')+'</small><h2>'+esc(title)+'</h2></div><div>'+(back?'<button type="button" onclick="zukaitManagerWip.open()">← Back</button>':'')+'<button type="button" onclick="closeModal()">Close ×</button></div></header>'+body+'</section>')}
-function renderList(note=''){if(!allowed())return;const list=rows();shell('Work in Progress','<p class="mwip-help">'+list.length+' open job cards · Includes unassigned work · Oldest opened first · Days use Oman calendar dates</p>'+note+'<div class="mwip-scroll"><div class="mwip-list-head"><span>No.</span><span>Opened</span><span>JC No.</span><span>Vehicle / Year</span><span>Job type / Insurance</span><span>Promise Date</span><span>Days open</span></div>'+list.map((j,i)=>'<button class="mwip-list-row" type="button" data-jc="'+esc(j.no)+'" onclick="zukaitManagerWip.detail(this.dataset.jc)"><span class="mwip-serial">'+(i+1)+'</span><span>'+esc(date(j.createdAt))+'</span><b>'+esc(j.no)+'</b><strong>'+esc(vehicle(j)||'Vehicle not recorded')+' '+locationBadge(j)+'</strong><span>'+esc(type(j))+'</span>'+promiseCell(j)+'<span class="mwip-age">'+(age(j)===null?'Not recorded':age(j)+' days')+' ›</span></button>').join('')+(list.length?'':'<p>No work in progress.</p>')+'</div>')}
+function shell(title,body,back=false){style();openModal('<section class="mwip mwip-page"><header class="mwip-head"><div><small>WORKSHOP · '+(me?.role==='Supervisor'?'SUPERVISOR':'MANAGER')+'</small><h2>'+esc(title)+'</h2></div><div>'+(back?'<button type="button" onclick="zukaitManagerWip.open()">← Back</button>':'')+'<button type="button" onclick="closeModal()">Close ×</button></div></header>'+body+'</section>');document.getElementById('modal')?.classList?.add('mwip-fullscreen-modal')}
+const assignedCell=no=>{const count=new Set((st().assign||[]).filter(a=>a&&!a.cancelled&&!a.completed&&key(a.job)===key(no)).map(a=>String(a.emp||'').trim()).filter(Boolean)).size;return '<span class="mwip-assigned">'+(count?count+' assigned':'Unassigned')+'</span>'};
+function renderList(note=''){if(!allowed())return;const list=rows();shell('Work in Progress','<p class="mwip-help">'+list.length+' open job cards · Includes unassigned work · Oldest opened first · Days use Oman calendar dates</p>'+note+'<div class="mwip-scroll"><div class="mwip-list-head"><span>No.</span><span>Opened</span><span>JC No.</span><span>Vehicle / Year</span><span>Registration</span><span>Job type / Insurance</span><span>Technicians</span><span>Promise Date</span><span>Days open</span></div>'+list.map((j,i)=>'<button class="mwip-list-row" type="button" data-jc="'+esc(j.no)+'" onclick="zukaitManagerWip.detail(this.dataset.jc)"><span class="mwip-serial">'+(i+1)+'</span><span>'+esc(date(j.createdAt))+'</span><b>'+esc(j.no)+'</b><strong>'+esc(vehicle(j)||'Vehicle not recorded')+' '+locationBadge(j)+'</strong><span class="mwip-reg">'+esc(j.reg||j.registration||'—')+'</span><span class="mwip-type">'+esc(type(j))+'</span>'+assignedCell(j.no)+promiseCell(j)+'<span class="mwip-age">'+(age(j)===null?'Not recorded':age(j)+' days')+' ›</span></button>').join('')+(list.length?'':'<p>No work in progress.</p>')+'</div>')}
 async function open(){if(!allowed())return;renderList();try{if(!window.zukaitCloud?.dirty)await window.zukaitCloud?.pull?.(true);if(document.querySelector('.mwip-list-head'))renderList()}catch(_){if(document.querySelector('.mwip-list-head'))renderList('<p class="mwip-help">Refresh unavailable. Showing the last synced records.</p>')}}
 function card(title,body,cls=''){return '<section class="mwip-card '+cls+'"><h3>'+title+'</h3>'+body+'</section>'}
 const fact=(label,value)=>'<div class="mwip-fact"><small>'+label+'</small><b>'+esc(value||'Not recorded')+'</b></div>';
@@ -40,6 +41,77 @@ function renderDetail(j,contact,customer,note){
 }
 function style(){if(document.getElementById('managerWipStyle'))return;const el=document.createElement('style');el.id='managerWipStyle';el.textContent=`
 #modal .mwip-vwc{display:inline-block;padding:2px 6px;border:1px solid #e9b949;border-radius:4px;background:#fff0c9;color:#765000;font-size:10px;font-weight:800;line-height:1.4;vertical-align:middle;white-space:nowrap}#modal .mwip{color:#172033;background:#f8fafc;padding:6px;border-radius:14px}#modal .mwip-head{display:flex;justify-content:space-between;gap:12px;align-items:center;background:linear-gradient(120deg,#0f2947,#075985);color:white;padding:18px;border-radius:14px}#modal .mwip-head h2{color:white!important;margin:4px 0}#modal .mwip-head small{color:#bae6fd;letter-spacing:1px}#modal .mwip-head button{background:#fff!important;color:#0c4a6e!important;margin:3px;padding:8px 12px;border-radius:8px}#modal .mwip-help{font-size:12px;color:#526172;margin:14px 4px}#modal .mwip-scroll{overflow-x:auto}#modal .mwip-list-head,#modal .mwip-list-row{display:grid!important;grid-template-columns:42px 100px 75px minmax(160px,1.4fr) minmax(150px,1fr) 110px 90px;gap:12px;align-items:center;min-width:900px;width:100%;box-sizing:border-box;text-align:left;padding:14px!important}#modal .mwip-list-head{background:#e2e8f0;font-size:12px;font-weight:800}#modal .mwip-list-row{background:#fff!important;color:#172033!important;border:1px solid #d9e3ec!important;border-left:4px solid #0284c7!important;border-radius:8px;margin:7px 0!important;font-size:13px!important}#modal .mwip-list-row:focus-visible{outline:3px solid #f59e0b;outline-offset:-3px}#modal .mwip-promise{color:#075985;font-weight:700}#modal .mwip-promise small{display:block;font-size:10px;margin-top:3px}#modal .mwip-promise.overdue{color:#b91c1c}#modal .mwip-promise.due-today{color:#92400e}#modal .mwip-age{color:#92400e;font-weight:800}#modal .mwip-serial{font-weight:800;color:#075985;background:#e0f2fe;border-radius:7px;padding:6px;text-align:center}#modal .mwip-banner{padding:18px;background:#e0f2fe;border-radius:12px;margin:14px 0}#modal .mwip-banner h3{margin:0;color:#0c4a6e}#modal .mwip-banner p{margin:6px 0}#modal .mwip-badges{display:flex;flex-wrap:wrap;gap:8px}#modal .mwip-badges span{padding:6px 9px;background:#fff;border-radius:8px;font-size:12px;font-weight:700}#modal .mwip-badges .overdue{background:#fee2e2;color:#991b1b}#modal .mwip-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}#modal .mwip-card{padding:16px;border:1px solid #dbe4ec;border-top:4px solid #0284c7;border-radius:12px;background:#fff;min-width:0}#modal .mwip-card h3{margin:0 0 12px}#modal .mwip-workers{border-top-color:#059669}#modal .mwip-parts{border-top-color:#d97706}#modal .mwip-paint{border-top-color:#9333ea}#modal .mwip-materials{border-top-color:#0d9488}#modal .mwip-line{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #e2e8f0;font-size:13px;overflow-wrap:anywhere}#modal .mwip-line>div{min-width:0}#modal .mwip-line small{display:block;color:#64748b;margin-top:4px}#modal .mwip-status{font-size:11px;color:#92400e}#modal .mwip-status.running{color:#047857}#modal .mwip-facts{display:grid;grid-template-columns:1fr 1fr;gap:14px}#modal .mwip-fact small{display:block;color:#64748b;font-size:11px}#modal .mwip-fact b{display:block;margin-top:5px;font-size:13px;overflow-wrap:anywhere}#modal .mwip-cost{font-weight:800;color:#075985}@media(max-width:650px){#modal .mwip-grid{grid-template-columns:1fr}#modal .mwip-head{align-items:flex-start;padding:14px}#modal .mwip-head>div:last-child{display:flex;flex-direction:column}}
+
+/* Dedicated full-screen WIP page shared by Manager and Supervisor. Does not alter data or actions. */
+#modal.modal-backdrop.mwip-fullscreen-modal{
+ inset:0!important;padding:0!important;display:flex!important;
+ align-items:stretch!important;justify-content:stretch!important;
+ background:#edf3f9!important;z-index:1100!important;
+}
+#modal.mwip-fullscreen-modal>.modal-box{
+ box-sizing:border-box!important;margin:0!important;padding:0!important;
+ width:100vw!important;max-width:none!important;min-height:0!important;
+ height:100dvh!important;max-height:100dvh!important;border-radius:0!important;
+ overflow-y:auto!important;overflow-x:hidden!important;
+ overscroll-behavior:contain;background:#f3f7fc!important;
+}
+#modal.mwip-fullscreen-modal .mwip-page{
+ width:100%!important;max-width:1500px!important;min-height:100%!important;
+ box-sizing:border-box!important;margin:auto!important;padding:14px 18px!important;
+ background:transparent!important;border-radius:0!important;
+}
+#modal.mwip-fullscreen-modal .mwip-head{
+ position:sticky;top:0;z-index:5;padding:13px 17px!important;
+ box-shadow:0 3px 12px #0b294425;
+}
+#modal.mwip-fullscreen-modal .mwip-head h2{font-size:clamp(19px,2vw,25px)!important;line-height:1.25!important}
+#modal.mwip-fullscreen-modal .mwip-head button{
+ min-height:44px!important;font-weight:800!important;white-space:nowrap;
+}
+#modal.mwip-fullscreen-modal .mwip-scroll{
+ max-width:100%;overflow-x:auto;overflow-y:visible;
+ overscroll-behavior-x:contain;
+}
+#modal.mwip-fullscreen-modal .mwip-list-head,
+#modal.mwip-fullscreen-modal .mwip-list-row{
+ grid-template-columns:44px 99px 76px minmax(140px,1.4fr) minmax(95px,.9fr) minmax(126px,1fr) 90px 108px 82px;
+ gap:10px;min-width:975px;
+}
+#modal.mwip-fullscreen-modal .mwip-list-head{
+ position:sticky;top:0;z-index:2;
+ background:#e2ebf5!important;color:#25445d!important;
+}
+#modal.mwip-fullscreen-modal .mwip-list-row{min-height:72px}
+#modal.mwip-fullscreen-modal .mwip-list-row strong{overflow-wrap:anywhere;font-size:13px}
+#modal.mwip-fullscreen-modal .mwip-reg{color:#254e6a;font-weight:750;overflow-wrap:anywhere}
+#modal.mwip-fullscreen-modal .mwip-assigned{font-size:12px;color:#256348;font-weight:800}
+#modal.mwip-fullscreen-modal .mwip-help{margin:12px 4px 14px!important;font-size:12px!important}
+@media(max-width:700px){
+ #modal.mwip-fullscreen-modal .mwip-page{padding:0 8px 12px!important}
+ #modal.mwip-fullscreen-modal .mwip-head{margin:0 -8px 9px;border-radius:0 0 14px 14px!important;padding:12px 13px!important}
+ #modal.mwip-fullscreen-modal .mwip-head>div:last-child{flex-direction:row!important;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+ #modal.mwip-fullscreen-modal .mwip-head button{padding:8px 11px!important}
+ #modal.mwip-fullscreen-modal .mwip-scroll{overflow:visible!important}
+ #modal.mwip-fullscreen-modal .mwip-list-head{display:none!important}
+ #modal.mwip-fullscreen-modal .mwip-list-row{
+  display:grid!important;min-width:0!important;width:100%!important;
+  grid-template-columns:43px minmax(0,1fr) auto!important;
+  gap:6px 9px!important;align-items:start!important;
+  padding:12px!important;margin:9px 0!important;min-height:110px;
+  border-radius:13px!important;
+ }
+ #modal.mwip-fullscreen-modal .mwip-list-row .mwip-serial{grid-column:1;grid-row:1 / span 3;align-self:start;font-size:13px}
+ #modal.mwip-fullscreen-modal .mwip-list-row>b{grid-column:2;grid-row:1;font-size:16px!important;color:#153c60!important}
+ #modal.mwip-fullscreen-modal .mwip-list-row>span:nth-child(2){grid-column:3;grid-row:1;font-size:11px;color:#60778b;text-align:right}
+ #modal.mwip-fullscreen-modal .mwip-list-row>strong{grid-column:2 / -1;grid-row:2;font-size:14px!important;line-height:1.35}
+ #modal.mwip-fullscreen-modal .mwip-list-row>.mwip-reg{grid-column:2;grid-row:3;font-size:12px}
+ #modal.mwip-fullscreen-modal .mwip-list-row>.mwip-type{grid-column:2 / -1;grid-row:4;font-size:12px;white-space:normal}
+ #modal.mwip-fullscreen-modal .mwip-list-row>.mwip-assigned{grid-column:3;grid-row:3;text-align:right;font-size:11px}
+ #modal.mwip-fullscreen-modal .mwip-list-row>.mwip-promise{grid-column:2;grid-row:5;font-size:12px}
+ #modal.mwip-fullscreen-modal .mwip-list-row>.mwip-age{grid-column:3;grid-row:5;font-size:12px;text-align:right}
+ #modal.mwip-fullscreen-modal .mwip-grid{grid-template-columns:1fr!important}
+}
+
 `;document.head.appendChild(el)}
 window.zukaitManagerWip={open,detail,rows,count:()=>rows().length};
 })();
