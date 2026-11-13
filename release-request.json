@@ -1,84 +1,34 @@
 {
-  "versionName": "V398",
-  "versionCode": 361,
-  "releaseScope": "accountant-live-test",
-  "approvedForStaff": true,
+  "versionName": "V399",
+  "versionCode": 362,
+  "releaseScope": "phase1-compatible-ui",
+  "approvedForStaff": false,
   "ownerPublicationRequested": true,
   "ownerRequestedImmediateRelease": true,
-  "releaseHeldByOwner": false,
-  "productionBackendChanges": true,
-  "backendDeploymentRequired": true,
+  "ownerRequestedProceed": true,
+  "releaseHeldByOwner": true,
+  "productionBackendChanges": false,
+  "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
-  "reason": "Owner-authorized V398 Accountant and compact Reception Delivery Follow-up publication. Exact-source financial, Reception, signed APK and compatibility QA passed; workshop-api v117 live and verified; V397 rollback retained. No production financial records edited. Physical acceptance NOT_RUN; fresh backup restore NOT_RUN.",
-  "sourceCommit": "60d7e9656d62a07baae35a6e8cc71bd3d1eb2ddc",
-  "approvedAt": "2026-11-12T13:38:52.183Z",
-  "publishNonce": "60d7e9656d62a07baae35a6e8cc71bd3",
+  "reason": "Owner requested publish V399 for live UI testing. Contains full-screen Manager/Supervisor WIP, restricted Supervisor Mechanical menu, Manager Workshop Performance cards and Consumables corrections. No production backend/schema/data changes. Await protected publication evidence and explicit release gate.",
+  "sourceCommit": "18625665c73dce02968bdcd911a26755b0e15cc7",
+  "approvedAt": null,
+  "publishNonce": null,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "prePublicationEvidence": {
-    "sourceCommit": "0cdae2df4053557f4e946c14f29674154d692b6f",
-    "accountantVerificationRun": 43223865461,
-    "verificationRun": 43223865601,
-    "signedAcceptanceRun": 43223865474,
-    "androidBuildRun": 43223865617,
-    "connectionSafetyRun": 43223865672,
-    "syncCompatibilityRun": 43223865877,
-    "inactiveContractsRun": 43223865604,
-    "rollbackApp": "release-V397-architecture-v2",
-    "productionBackendVersion": 116,
-    "backendTargetVersion": 117
-  },
-  "ownerApprovedLiveAccountantTesting": true,
-  "signedAcceptanceRun": 43228422678,
-  "verificationRun": 43228422636,
-  "accountantVerificationRun": 43228422567,
-  "authorization": "Owner approved publishing V398 Accountant and Reception Delivery Follow-up corrections for testing.",
   "backupDeferredByOwner": false,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "authorization": "Owner requested: Publish it. Then I will test.",
+  "previousPublishedRelease": {
+    "versionName": "V398",
+    "versionCode": 361,
+    "releaseTag": "release-V398-architecture-v2",
+    "sourceCommit": "60d7e9656d62a07baae35a6e8cc71bd3d1eb2ddc"
+  },
   "productionBackend": {
     "project": "pjknotnjkufadqavcmii",
-    "functions": {
-      "staff-auth": {
-        "version": 13,
-        "bundleSha256": "8c9007aef796124863048c9b75156133edd9823ba9fc5211f0e70fe6ec5e4a11",
-        "verifiedFileMatch": true
-      },
-      "workshop-api": {
-        "version": 117,
-        "bundleSha256": "883544e99894f225df0ec69539099c431bfff08a5b957fe149ee8537f63f1294",
-        "verifiedFileMatch": true
-      }
-    },
-    "migrations": [
-      "accountant_financial_ledger",
-      "accountant_lpo_audit",
-      "accountant_append_only_grants",
-      "accountant_append_only_corrections"
-    ],
-    "priorWorkshopApiVersion": 116,
-    "readbackVerified": true,
-    "filesVerified": 42,
-    "changedAccountantFiles": 3,
-    "addedLeaveCommand": true,
-    "scope": "Preserved 41 live source files except accountant/api.js, accountant/accounts_reports.js, accountant/finance_rules.js and narrow index.ts route; added accountant/leave_commands.js."
-  },
-  "evidence": {
-    "credentialPreservation": true,
-    "qaFinancialAcceptance": true,
-    "serverPermissions": true,
-    "rollbackPrepared": true,
-    "legacyLoginCompatibility": true,
-    "sourceVerificationRuns": {
-      "signedAcceptanceRun": 43228422678,
-      "verificationRun": 43228422636,
-      "accountantVerificationRun": 43228422567
-    },
-    "backendReadback": "Confirmed ACTIVE workshop-api v117, 42 files, four reviewed Accountant modules identical to source and entrypoint scoped command; staff-auth v13 unchanged.",
-    "rollbackApp": "release-V397-architecture-v2",
-    "rollbackBackendPreviousVersion": 116
-  },
-  "previousPublishedRelease": {
-    "versionName": "V397",
-    "versionCode": 360,
-    "releaseTag": "release-V397-architecture-v2"
+    "deploymentRequired": false,
+    "unchangedFromPreviousPublishedRelease": true
   }
 }
