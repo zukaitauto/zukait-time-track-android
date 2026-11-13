@@ -19,6 +19,14 @@ for(const method of ['v111OpenManagerMenu','v135OpenManagerMenu','v110OpenManage
 }
 ctx.me={id:'SUP003',name:'Jibin',role:'Supervisor'};
 for(const method of ['v65OpenAccount','openSupervisorHeaderMenu']){host[method]();assert.equal(doc.querySelectorAll('[data-mechanical-navigation]').length,1);assert.ok(doc.getElementById('modal').textContent.includes(method==='v65OpenAccount'?'LOGOUT':'Employee Requests'));}
+// Shine and other general Supervisors must not see the Mechanical Department launcher.
+ctx.me={id:'SUP002',name:'Shine',role:'Supervisor'};
+for(const method of ['v65OpenAccount','openSupervisorHeaderMenu']){
+ host[method]();
+ assert.equal(doc.querySelectorAll('[data-mechanical-navigation]').length,0,'General Supervisor menu must hide Mechanical Department');
+ assert.ok(doc.getElementById('modal').textContent.includes(method==='v65OpenAccount'?'LOGOUT':'Employee Requests'));
+}
+ctx.me={id:'SUP003',name:'Jibin',role:'Supervisor'};
 installMechanicalNavigation(config);host.v65OpenAccount();assert.equal(doc.querySelectorAll('[data-mechanical-navigation]').length,1,'Repeated installation/menu open cannot duplicate entry');
 for(const role of ['Employee','Purchaser','Receptionist','Accountant']){ctx.me={id:'QA_OTHER',name:'Other',role};host.v65OpenAccount();assert.equal(doc.querySelectorAll('[data-mechanical-navigation]').length,0);assert.ok(doc.querySelector('[onclick*="logout"]'));}
 ctx.me={id:'SUP003',name:'Jibin',role:'Supervisor'};host.v65OpenAccount();const stale=doc.querySelector('[data-mechanical-navigation]'),before=opens;ctx.me={...ctx.me,id:'OTHER'};stale.click();await Promise.resolve();assert.equal(opens,before,'Stale menu cannot open for a different account');
