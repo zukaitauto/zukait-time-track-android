@@ -15,10 +15,15 @@ vm.runInContext(source.slice(source.indexOf('window.consRenderActualRows=functio
 ctx.window.consRenderActualRows();assert.doesNotMatch(out.innerHTML,/>MATERIAL</);
 vm.runInContext(source.slice(source.indexOf('window.consRenderRows=function(){'),source.indexOf('window.consFinishIssue=function(){')),ctx);
 ctx.window.consRenderRows();
+assert.match(css,/\.cons-actual-assignment-grid/,'approved two-column details styling must be present');
+assert.match(css,/\.cons-actual-review-card/,'confirmation rows must have dedicated responsive styling');
+assert.match(source,/cons-confirm-redesign/,'confirmation screen must use the new layout');
+assert.match(source,/consActualVehicle\" readonly/,'vehicle detail remains read-only');
+assert.match(source,/consActualPainter\" readonly/,'painter remains read-only');
 const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH,args:['--no-sandbox']}: {})});
 try{for(const width of [320,390,600,768,1280]){
  const page=await browser.newPage({viewport:{width,height:950}});
- await page.setContent('<style>body{margin:0;padding:12px;font:16px Arial}main{padding:12px}input{padding:20px;font-size:24px}'+css+'</style><main>'+out.innerHTML+'</main>');
+ await page.setContent('<style>body{margin:0;padding:12px;font:16px Arial}main{padding:12px}input{padding:20px;font-size:24px}'+css+'</style><main class="cons-actual-page">'+out.innerHTML+'</main>');
  assert.equal(await page.locator('.cons-actual-line-name').count(),names.length);
  for(const card of await page.locator('.cons-actual-line-card').all()){
   const result=await card.evaluate(el=>{const children=[...el.children],rects=children.map(x=>x.getBoundingClientRect()),input=el.querySelector('input');return {overflow:[el,...el.querySelectorAll('*')].some(x=>x.scrollWidth>x.clientWidth+1),overlap:rects.some((a,i)=>rects.slice(i+1).some(b=>Math.min(a.right,b.right)-Math.max(a.left,b.left)>1&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>1)),font:parseFloat(getComputedStyle(input).fontSize),height:input.getBoundingClientRect().height,nameFont:parseFloat(getComputedStyle(el.querySelector('b')).fontSize)};});
