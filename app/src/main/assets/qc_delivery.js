@@ -339,7 +339,7 @@ function apply(){if(!allowed())return;initialProjection();const root=document.ge
   }
   root.querySelectorAll('[data-manager-ready-slot]').forEach(slot=>{if(slot!==ready)slot.remove()});
   root.querySelectorAll('button').forEach(button=>{
-   if(!button.closest('.v67-control-grid,.v123-manager-performance')&&/Ready\\s*(for|to)\\s*Deliver(?:y)?/i.test(button.textContent||''))button.remove();
+   if(!button.closest('.v67-control-grid,.v123-manager-performance')&&/Ready\s*(for|to)\s*Deliver(?:y)?/i.test(button.textContent||''))button.remove();
   });
  }
  let invoice=root.querySelector('[data-invoice-entry]');if(!invoice){invoice=document.createElement('button');invoice.dataset.invoiceEntry='1';invoice.className=me.role==='Manager'?'v67-control violet qc-launch':'v143-resource qc-launch';invoice.onclick=()=>window.zukaitOpenInvoiceEntry();(root.querySelector('.v67-control-grid,.v143-two')||root).appendChild(invoice)}
