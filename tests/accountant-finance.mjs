@@ -87,3 +87,21 @@ assert.equal(undatedReport.summary.paint.amount_omr,15,'undated return remains i
 assert.equal(undatedReport.rows.paint.find(r=>r.status==='Returned paint').date,'','missing return date must not be invented');
 assert.equal(financialReport(undatedPaint,{month:'2026-09'},reportNow).summary.paint.amount_omr,20,'undated return must not be assigned to receipt month');
 assert.match(undatedReport.notes.join(' '),/Undated returns/);
+
+const subletFixture=fixture(),baselineFinance=financialReport(subletFixture,{},at('12:00'));
+subletFixture.state.sublets=[
+ {id:'SUB-1',jobCard:'J1',amountMills:2500,date:'2026-10-01',description:'Wheel balancing'},
+ {id:'SUB-1',jobCard:'J1',amountMills:2500,date:'2026-10-01',description:'Repeated sync'},
+ {id:'SUB-VOID',jobCard:'J1',amountMills:9000,date:'2026-10-01',voided:true}
+];
+const subletBefore=JSON.stringify(subletFixture),subletFinance=financialReport(subletFixture,{},at('12:00'));
+assert.equal(subletFinance.details[0].sublet_cost_omr,2.5,'deduplicated sublet belongs to JC cost');
+assert.equal(subletFinance.details[0].total_cost_omr,40,'Accounting Job Card cost includes sublet');
+assert.equal(subletFinance.details[0].estimated_gross_profit_omr,110,'job gross profit deducts sublet once');
+assert.equal(subletFinance.summary.sublet.amount_omr,2.5,'sublet expense is visible in summary');
+assert.equal(subletFinance.rows.sublet.length,1,'duplicate sublet ID cannot double-count expense');
+assert.equal(subletFinance.summary.total_expenses.amount_omr,baselineFinance.summary.total_expenses.amount_omr+2.5);
+assert.equal(JSON.stringify(subletFixture),subletBefore,'read-only accounting sublet report never changes records');
+subletFixture.state.sublets[0].amountMills=null;
+assert.equal(financialReport(subletFixture,{},at('12:00')).details[0].total_cost_omr,null,'unknown sublet makes JC cost pending');
+console.log('Sublet cost parity, unique IDs, expenses, pending values, profit and no writes: PASS');
