@@ -15,11 +15,12 @@ if(r.validate(input,{assignments:[...originals,{job:'JC1',rework:true,completed:
 x=r.buildAssignment({...input,employeeId:'E1'},{assignments:originals,actorId:'SUP1',at:101});
 if(!x.assignment.repeatSameEmployee) throw new Error('same employee flag failed');
 const deduction=r.incentiveDeductionMinutes([
- {rework:true,mistakeEmp:'E1',suggested:60},
- {rework:true,mistakeEmp:'E1',actualMinutes:45,suggested:60},
- {rework:true,mistakeEmp:'E2',suggested:90},
- {rework:false,mistakeEmp:'E1',suggested:100},
- {rework:true,mistakeEmp:'E1',suggested:30,cancelled:true}
+ {job:'JC1',repeatCycleNo:1,rework:true,mistakeEmp:'E1',suggested:60},
+ {job:'JC1',repeatCycleNo:1,rework:true,mistakeEmp:'E1',actualMinutes:45,suggested:60},
+ {job:'JC1',repeatCycleNo:2,rework:true,mistakeEmp:'E1',suggested:90},
+ {job:'JC2',repeatCycleNo:1,rework:true,mistakeEmp:'E2',suggested:90},
+ {job:'JC3',rework:false,mistakeEmp:'E1',suggested:100},
+ {job:'JC4',rework:true,mistakeEmp:'E1',suggested:30,cancelled:true}
 ],'E1');
-if(deduction!==105) throw new Error('mistake employee deduction failed: '+deduction);
+if(deduction!==600) throw new Error('two distinct five-hour cycles expected: '+deduction);
 console.log('V2 repeat work parity tests passed');
