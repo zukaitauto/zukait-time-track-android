@@ -22,6 +22,9 @@ const context=fixture();context.state.jobs[0].year='2017';context.state.sublets=
 context.entries.push({id:'duplicate-cash',kind:'CASH_IN',job_card:'J1',amount:150,transaction_date:'2026-10-02'});
 const before=JSON.stringify(context),full=financialReport(context,{},now);
 let report=managerProfitReport(context,full,{month:'2026-10'},now),cash=report.rows.find(r=>r.kind==='CASH'),insurance=report.rows.find(r=>r.kind==='INSURANCE');
+assert.equal(full.details[0].total_cost_omr,49.845,'Accounting Job Card total agrees with Manager profit');
+assert.equal(full.details[0].sublet_cost_omr,12.345,'sublet included in Accounting cost once');
+assert.equal(full.summary.sublet.amount_omr,12.345,'sublet summary includes expense');
 assert.equal(cash.amount_omr,'150.000');assert.equal(cash.date,'2026-10-01');assert.equal(cash.total_cost_omr,'49.845');assert.equal(cash.profit_omr,'100.155');assert.equal(cash.profit_percentage,66.77);assert.equal(cash.vehicle,'Toyota Camry 2017');
 assert.equal(insurance.amount_omr,'100.000');assert.equal(insurance.profit_omr,null);assert.equal(insurance.costs_complete,false);
 // Missing categories with no source records are zero; unfinished work is not.
