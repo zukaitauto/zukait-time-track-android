@@ -36,3 +36,87 @@
 @media(max-width:380px){#modal.v2-sp-modal-host .v2-sp-grid2{gap:13px 8px!important}#modal.v2-sp-modal-host .v2-sp-tile{padding:10px!important}#modal.v2-sp-modal-host .v2-sp-tile>b{font-size:13px!important}}
 @media(prefers-reduced-motion:reduce){:is(.module-card,.pending-card,.v2-sp-tile,.v2-sp-liquid-tile,.v143-top,.v143-resource,.wo-quick-card){transition:none!important}}
 @media print{:is(.card,.module-card,.pending-card,.summary>button,.rdb-card,.ocean-job,.v2-sp-tile,.v2-sp-recent,.v143-top,.wo-360-card){box-shadow:none!important;transform:none!important}}
+
+
+/* Manager visual refinement — CSS only. No data, cards, controls or navigation altered. */
+#managerView{
+ --manager-ink:#173b56;
+ --manager-line:#d3e3ee;
+ --manager-shadow:rgba(28,66,95,.095);
+}
+#managerView :is(.v67-section,.v123-manager-performance,.v67-admin-row){
+ border:1px solid var(--manager-line)!important;
+ border-radius:18px!important;
+ box-shadow:0 4px 15px var(--manager-shadow)!important;
+}
+#managerView .v67-section{
+ padding:17px!important;
+ background:linear-gradient(160deg,#fff 65%,#f5f9fd)!important;
+}
+#managerView :is(.v67-section-title h3,.v123-head h3,.v67-admin-row h3){
+ color:var(--manager-ink)!important;
+ letter-spacing:-.015em;
+ line-height:1.3!important;
+}
+#managerView :is(.v67-section-title p,.v67-admin-row p){
+ color:#58718a!important;
+ line-height:1.5!important;
+}
+#managerView :is(.v67-first-row,.v67-control-grid,.v67-tools){
+ gap:11px!important;
+}
+#managerView :is(button.v67-feature,button.v67-control){
+ border-radius:15px!important;
+ box-shadow:0 3px 10px rgba(22,57,84,.09)!important;
+ min-width:0;
+}
+#managerView :is(button.v67-feature,button.v67-control) :is(span,small,b){
+ color:inherit!important;
+ opacity:1!important;
+ line-height:1.3!important;
+ overflow-wrap:anywhere;
+}
+#managerView button.v67-feature span{font-size:13px!important}
+#managerView button.v67-feature small{font-size:11px!important}
+#managerView button.v67-control span{font-size:11px!important;letter-spacing:.015em}
+#managerView button.v67-control small{font-size:10px!important;line-height:1.4!important}
+#managerView .v67-toolbox{
+ border-radius:15px!important;
+ box-shadow:0 3px 10px rgba(22,57,84,.07)!important;
+}
+#managerView .v67-tool-actions button{
+ border-color:#bfd3e5!important;
+ background:#fff!important;
+ color:#254e70!important;
+ box-shadow:0 1px 4px rgba(25,63,91,.05)!important;
+}
+#managerView .v123-manager-performance .v123-grid button.v123-perf{
+ border-radius:15px!important;
+ box-shadow:0 3px 10px rgba(22,57,84,.08)!important;
+}
+#managerView .v123-manager-performance .v123-grid button.v123-perf :is(span,b){
+ color:inherit!important;
+ opacity:1!important;
+ line-height:1.3!important;
+ overflow-wrap:anywhere;
+}
+#managerView :is(button.v67-feature,button.v67-control,.v67-tool-actions button,.v123-grid button.v123-perf):focus-visible{
+ outline:3px solid #1e67a2!important;
+ outline-offset:3px;
+}
+@media(max-width:600px){
+ #managerView .v67-section{padding:12px!important}
+ #managerView .v67-first-row{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+ #managerView .v67-first-row>button:nth-child(3):last-child{grid-column:1/-1}
+ #managerView button.v67-feature{min-height:102px!important;padding:12px!important}
+ #managerView button.v67-feature b{font-size:26px!important}
+ #managerView .v67-control-grid{gap:8px!important}
+ #managerView button.v67-control{padding:11px!important;min-height:94px!important}
+ #managerView .v123-manager-performance .v123-grid button.v123-perf{min-height:98px}
+}
+@media(prefers-reduced-motion:reduce){
+ #managerView :is(button.v67-feature,button.v67-control,.v67-tool-actions button){transition:none!important}
+}
+@media print{
+ #managerView :is(.v67-section,.v123-manager-performance,.v67-admin-row){box-shadow:none!important}
+}
