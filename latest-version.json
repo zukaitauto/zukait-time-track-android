@@ -1,9 +1,9 @@
 {
-  "versionCode": 361,
-  "versionName": "V398",
+  "versionCode": 362,
+  "versionName": "V399",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "60d7e9656d62a07baae35a6e8cc71bd3d1eb2ddc",
-  "apkSha256": "d81f0ca950985bd7ff8bb7a04d10a047be542e550ee07d0cc4ba3b7ae14c0d78",
-  "releaseTag": "release-V398-architecture-v2"
+  "sourceCommit": "5a52ff58025287f47057ab7a8a3d932943253a47",
+  "apkSha256": "ac553879e1e882de75126cf0534226e6f0d519b55096f2cb480f3564488e1866",
+  "releaseTag": "release-V399-architecture-v2"
 }
