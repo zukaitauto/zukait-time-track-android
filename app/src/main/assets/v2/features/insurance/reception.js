@@ -2104,7 +2104,7 @@
             if(approvalForm){
               approvalForm.querySelector('[name="approval_date"]')?.focus();
             }else{
-              error(Error('Insurance approval must be verified before opening the Job Card. A Manager or Supervisor must record the approval date and evidence (or complete the quotation approval).'));
+              error(Error('This insurance checklist approval is not verified for Job Card creation. A Manager or Supervisor must record the approval date and evidence (or complete the quotation approval).'));
             }
             break;
           }
