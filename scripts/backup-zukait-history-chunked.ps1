@@ -59,18 +59,27 @@ try {
     $first = [long]$plan.first_revision
     $cutoff = [long]$plan.cutoff_revision
     Write-Host "Starting/resuming bounded history export: revisions $first to $cutoff"
-    # Honor previously completed 100-revision chunks exactly as saved. After
-    # the first missing full chunk, switch to 25-revision chunks, avoiding the
-    # 90-second timeout that occurred on the original 100-revision chunk.
-    # Reruns keep the same manifest and resume either chunk type safely.
+    # Preserve all verified earlier files (100- or 25-revision chunks) and
+    # newer 5- or 1-revision chunks. Start all NEW exports at five revisions.
+    # When a five-revision query fails, use single revisions for that exact
+    # five-revision range. Never cross the next existing chunk boundary.
+    $singleUntil = [long]0
     for ($lo = $first; $lo -le $cutoff;) {
-        $fullHi = [Math]::Min($cutoff,$lo+$ChunkSize-1)
-        $fullBase = 'rev-{0:D8}-{1:D8}' -f $lo,$fullHi
-        $fullSidecar = Join-Path $folder ($fullBase+'.json')
-        if (Test-Path -LiteralPath $fullSidecar) {
-            $hi = $fullHi
-        } else {
-            $hi = [Math]::Min($cutoff,$lo+24)
+        $hi = [long]0
+        foreach ($savedSize in @($ChunkSize,25,5,1) | Select-Object -Unique) {
+            $candidateHi = [Math]::Min($cutoff,$lo+[long]$savedSize-1)
+            $candidateBase = 'rev-{0:D8}-{1:D8}' -f $lo,$candidateHi
+            if (Test-Path -LiteralPath (Join-Path $folder ($candidateBase+'.json'))) {
+                $hi = $candidateHi
+                break
+            }
+        }
+        if ($hi -eq 0) {
+            if ($lo -le $singleUntil) {
+                $hi = $lo
+            } else {
+                $hi = [Math]::Min($cutoff,$lo+4)
+            }
         }
         $base = 'rev-{0:D8}-{1:D8}' -f $lo,$hi
         $bin = Join-Path $folder ($base+'.bin.part')
@@ -96,8 +105,24 @@ try {
         }
         $destination = $bin.Replace('\','/').Replace("'","''")
         $copyCommand = "\copy (select revision,data,updated_at,updated_by,archived_at from public.workshop_state_history where revision >= $lo and revision <= $hi order by revision) to '$destination' with (format binary)"
-        $copyMessage = & $psql @common -c $copyCommand 2>&1
-        if ($LASTEXITCODE -ne 0) { throw "Export failed for $base. Rerun to resume. $copyMessage" }
+        # Windows PowerShell 5.1 elevates native stderr to NativeCommandError
+        # with ErrorActionPreference=Stop. Capture the actual process exit code
+        # instead, so only the bounded five-to-one fallback is attempted.
+        $oldPreference = $ErrorActionPreference
+        try {
+            $ErrorActionPreference = 'Continue'
+            $copyMessage = & $psql @common -c $copyCommand 2>&1
+            $copyExitCode = $LASTEXITCODE
+        } finally { $ErrorActionPreference = $oldPreference }
+        if ($copyExitCode -ne 0) {
+            if ($hi -gt $lo) {
+                Write-Warning "History export $base failed. Continuing in single-revision mode for these revisions."
+                $singleUntil = [Math]::Max($singleUntil,$hi)
+                Start-Sleep -Seconds 8
+                continue
+            }
+            throw "Single-revision export failed at revision $lo; stopping safely. Resume later after Supabase recovers. $copyMessage"
+        }
         $match = [regex]::Match(($copyMessage -join [Environment]::NewLine),'(?m)^COPY\s+(\d+)\s*$')
         if (!$match.Success) { throw "Missing confirmed COPY row count: $base" }
         $count = [long]$match.Groups[1].Value
@@ -131,7 +156,8 @@ try {
         Remove-Item -LiteralPath $bin,$verify -Force
         $total += $count
         Write-Host ("Verified {0} ({1} records)" -f $base,$count)
-        Start-Sleep -Milliseconds 1000
+        # Gentle pacing avoids sustained heavy disk I/O on Supabase Micro.
+        Start-Sleep -Seconds 3
         $lo = $hi + 1
     }
     $readBack = & $psql @common -At -c "select count(*) from public.workshop_state_history where revision >= $first and revision <= $cutoff"
