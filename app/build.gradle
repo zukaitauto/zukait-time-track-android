@@ -22,8 +22,8 @@ android {
         targetSdk 35
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
-        versionCode 363
-        versionName "V400" // Workshop Control Center and Actual Materials readable UI test release.
+        versionCode 364
+        versionName "V401" // Calculation audit test: productive efficiency, repeat deduction, sublet and parts totals.
         // V396 final acceptance source: modern Mechanical dashboard, source-pinned web/APK, unchanged secure Mechanical, Reception and financial APIs.
         // V395 exact-source verification: concise Profit/Loss UI, unchanged Accountant backend and release gate.
         // V394 acceptance source: verified 320–1280px Accounts layout, current notification cache and protected API cost checks.
