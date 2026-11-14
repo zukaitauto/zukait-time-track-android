@@ -41,18 +41,30 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify approved V307 source is an immutable Git ref
+      - name: Verify approved release source is an immutable Git ref
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          # A publication must never silently approve a held or unverified release.
           # GitHub allows the ordinary GITHUB_TOKEN to release a source with
           # workflow-file changes when that exact source already has a ref.
-          # This pinned branch is release metadata, not a source modification.
-          jq -e '.approvedForStaff == true and (.versionName | test("^V[1-9][0-9]*$"))' release-request.json
-          APPROVED_SOURCE=$(jq -r '.sourceCommit' release-request.json)
-          APPROVED_VERSION=$(jq -r '.versionName' release-request.json)
+          # This pinned ref is release metadata, not a source modification.
+          APPROVED_VERSION=$(jq -r '.versionName // empty' release-request.json)
+          if ! [[ "$APPROVED_VERSION" =~ ^V[1-9][0-9]*$ ]]; then
+            echo "::error::Invalid release version in release-request.json; publication stopped."
+            exit 1
+          fi
+          if [ "$(jq -r '.approvedForStaff // false' release-request.json)" != "true" ]; then
+            echo "::error::$APPROVED_VERSION is not approved for staff publication. Complete required release acceptance and update release-request.json before dispatching this workflow."
+            exit 1
+          fi
+          APPROVED_SOURCE=$(jq -r '.sourceCommit // empty' release-request.json)
+          if ! [[ "$APPROVED_SOURCE" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::$APPROVED_VERSION has no valid pinned sourceCommit. Verify the exact tested commit before publication."
+            exit 1
+          fi
           PINNED_REF="approved-$(printf '%s' "$APPROVED_VERSION" | tr '[:upper:]' '[:lower:]')-source"
           if ! gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$PINNED_REF" >/tmp/approved-ref.json 2>/dev/null; then
             # A pre-created release metadata ref avoids granting the workflow
