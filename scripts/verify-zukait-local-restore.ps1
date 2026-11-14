@@ -144,7 +144,9 @@ try {
     }
 
     if (!$markerExists) {
-        # Write marker BEFORE creating database. Never connect to Supabase.
+        # Only mark a restore as resumable AFTER local database creation.
+        & $createdb -h $localHost -p $LocalPort -U $LocalUser -T template0 $LocalDatabase
+        if ($LASTEXITCODE -ne 0) { throw 'Creating isolated local rehearsal database failed. Nothing touched in production.' }
         [pscustomobject]@{
             database=$LocalDatabase
             host=$localHost
@@ -153,8 +155,6 @@ try {
             expected_rows=$expectedRecords
             started_utc=[DateTimeOffset]::UtcNow.ToString('o')
         } | ConvertTo-Json | Set-Content -LiteralPath $statePath -Encoding UTF8
-        & $createdb -h $localHost -p $LocalPort -U $LocalUser -T template0 $LocalDatabase
-        if ($LASTEXITCODE -ne 0) { throw 'Creating isolated local rehearsal database failed. Nothing touched in production.' }
         Write-Host "CREATED LOCAL-ONLY DATABASE: $LocalDatabase"
     }
 
@@ -166,8 +166,13 @@ try {
             throw 'Partial local schema restore exists. Stop and inspect; automatic cleanup is forbidden.'
         }
         Write-Host 'RESTORING CORE ARCHIVE TO LOCAL DATABASE (not Supabase).'
-        & $pgRestore -h $localHost -p $LocalPort -U $LocalUser -d $LocalDatabase --no-owner --no-privileges --clean --if-exists --exit-on-error --single-transaction $core
-        if ($LASTEXITCODE -ne 0) {
+        $previousErrorAction = $ErrorActionPreference
+        try {
+            $ErrorActionPreference = 'Continue'
+            & $pgRestore -h $localHost -p $LocalPort -U $LocalUser -d $LocalDatabase --no-owner --no-privileges --clean --if-exists --exit-on-error --single-transaction $core
+            $restoreCode = $LASTEXITCODE
+        } finally { $ErrorActionPreference = $previousErrorAction }
+        if ($restoreCode -ne 0) {
             throw 'Local core schema/data restore failed. No remote database was used. Save this error for diagnosis.'
         }
         $coreRows = & $psql @baseArgs -d $LocalDatabase -At -c "select count(*) from public.workshop_state where id='main'"
