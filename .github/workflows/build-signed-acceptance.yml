@@ -35,6 +35,9 @@ on:
       - tests/finished-assignment-performance.mjs
       - .github/workflows/reception-check.yml
       - .github/workflows/build-signed-acceptance.yml
+      - .github/workflows/accountant-qa.yml
+      - app/src/main/assets/consumables_ui.js
+      - tests/consumables-ui.mjs
       - app/build.gradle
       - release-request.json
       - release-ui-request.json
