@@ -59,8 +59,19 @@ try {
     $first = [long]$plan.first_revision
     $cutoff = [long]$plan.cutoff_revision
     Write-Host "Starting/resuming bounded history export: revisions $first to $cutoff"
-    for ($lo = $first; $lo -le $cutoff; $lo += $ChunkSize) {
-        $hi = [Math]::Min($cutoff,$lo+$ChunkSize-1)
+    # Honor previously completed 100-revision chunks exactly as saved. After
+    # the first missing full chunk, switch to 25-revision chunks, avoiding the
+    # 90-second timeout that occurred on the original 100-revision chunk.
+    # Reruns keep the same manifest and resume either chunk type safely.
+    for ($lo = $first; $lo -le $cutoff;) {
+        $fullHi = [Math]::Min($cutoff,$lo+$ChunkSize-1)
+        $fullBase = 'rev-{0:D8}-{1:D8}' -f $lo,$fullHi
+        $fullSidecar = Join-Path $folder ($fullBase+'.json')
+        if (Test-Path -LiteralPath $fullSidecar) {
+            $hi = $fullHi
+        } else {
+            $hi = [Math]::Min($cutoff,$lo+24)
+        }
         $base = 'rev-{0:D8}-{1:D8}' -f $lo,$hi
         $bin = Join-Path $folder ($base+'.bin.part')
         $gzPart = Join-Path $folder ($base+'.bin.gz.part')
@@ -76,6 +87,7 @@ try {
             }
             $total += [long]$record.rows
             Write-Host "Existing chunk verified: $base"
+            $lo = $hi + 1
             continue
         }
         if (Test-Path -LiteralPath $gz) { throw "Unverified archive exists, refusing overwrite: $base" }
@@ -119,7 +131,8 @@ try {
         Remove-Item -LiteralPath $bin,$verify -Force
         $total += $count
         Write-Host ("Verified {0} ({1} records)" -f $base,$count)
-        Start-Sleep -Milliseconds 350
+        Start-Sleep -Milliseconds 1000
+        $lo = $hi + 1
     }
     $readBack = & $psql @common -At -c "select count(*) from public.workshop_state_history where revision >= $first and revision <= $cutoff"
     if ($LASTEXITCODE -ne 0 -or "$readBack".Trim() -ne "$total" -or $total -ne [long]$plan.expected_rows) {
