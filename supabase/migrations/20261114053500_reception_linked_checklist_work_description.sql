@@ -38,12 +38,14 @@ begin
   -- CREATE_DIRECT_JOB then links it atomically. Populate its Work Description
   -- in that transaction's existing workshop_state update; don't add a second
   -- snapshot, weaken guards, or turn the checklist into a Direct Job Card.
+  -- The creation remark is audit metadata; never substitute it for an empty
+  -- Checklist Work Description.
   definition:=pg_get_functiondef('public.zukait_reception_command(text,jsonb)'::regprocedure);
   if definition is null then raise exception 'reception_command_missing'; end if;
   old_text:=$needle$when x->>'no'=no then (x-'directReceptionJob')||jsonb_build_object('receptionNo',r.rc_no,'receptionLocation',r.location) else x end order by n$needle$;
   new_text:=$replacement$when x->>'no'=no then (x-'directReceptionJob')||jsonb_build_object(
     'receptionNo',r.rc_no,'receptionLocation',r.location,
-    'workDescription',coalesce(nullif(btrim(r.details->>'remarks'),''),coalesce(x->>'workDescription',''))
+    'workDescription',coalesce(r.details->>'remarks','')
   ) else x end order by n$replacement$;
   if (length(definition)-length(replace(definition,old_text,'')))/length(old_text)<>1 then
     raise exception 'reception_cash_credit_work_description_drift';
