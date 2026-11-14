@@ -1362,10 +1362,12 @@
     await fetchRecord(no);
     const r = current.record,
       d = r.details;
-    // Server GET is authoritative for permission and approval validity.
-    const approvedInsuranceJob = r.job_type==='INSURANCE'&&!r.job_card&&!r.outcome&&!r.released_date&&
-      !['CTL','NOT_REPAIRED'].includes(r.repair_status)&&
-      (current.external_approval?.valid===true||current.job_creation?.can_create===true||r.approval_status==='APPROVED');
+    // A saved, open checklist can start a linked Job Card without entering a
+    // separate Direct Job Card. Only Insurance requires verified approval.
+    const checklistKind=String(r.job_type||'INSURANCE').toUpperCase();
+    const canOpenChecklistJob=['CASH','CREDIT','INSURANCE'].includes(checklistKind)&&
+      !r.job_card&&!r.outcome&&!r.released_date&&
+      (r.repair_status===undefined||r.repair_status==='PENDING');
     shell(
       r.rc_no + " · Reception Checklist",
       checklistSummary(r, d) + badges(r) +
@@ -1373,7 +1375,7 @@
         (current.cancellation?.history ? '<div class="rc-box"><b>Job Card cancelled · '+esc(current.cancellation.history.cancellation_date)+'</b><p>'+esc(current.cancellation.history.reason)+' · '+esc(current.cancellation.history.actor_name)+' ('+esc(current.cancellation.history.actor_id)+')</p><p>History and costs retained. Vehicle location remains '+esc(r.location)+'.</p></div>' : '') +
         '<div class="rc-actions rc-cl-actions">' +
         (r.can_edit ? '<button data-rc-action="edit">Edit</button>' : "") +
-        (approvedInsuranceJob?'<button type="button" class="rc-open-approved-job" data-rc-action="open-approved-job">🚗 OPEN JOB CARD</button>':'') +
+        (canOpenChecklistJob?'<button type="button" class="rc-open-approved-job" data-rc-action="'+(checklistKind==='INSURANCE'?'open-approved-job':'checklist-job')+'">🚗 OPEN JOB CARD</button>':'') +
         (r.repair_status!==undefined&&!r.job_card&&!r.outcome&&!r.released_date?
           '<button data-rc-action="location-choice">VWC / VIG</button>'+
           (r.repair_status==='PENDING'?'<button data-rc-action="management" data-operation="SET_CTL">CTL</button><button data-rc-action="rc-estimate">ESTIMATE</button><button data-rc-action="management" data-operation="SET_APPROVED">APPROVED</button><button data-rc-action="management" data-operation="SET_NOT_REPAIRED">NOT REPAIRED</button>':r.repair_status==='CTL'?'<button data-rc-action="management" data-operation="RELEASE_CTL">Deliver / Release</button>':''):'') +
@@ -1384,7 +1386,7 @@
         (r.repair_notes?'<div class="rc-box"><b>'+esc(r.repair_status)+'</b><p>'+esc(r.repair_notes)+'</p>'+(r.released_date?'<p>Vehicle Released · '+esc(r.released_date)+' · '+esc(r.release_remark)+'</p>':'')+'</div>':'') +
         '<details class="rc-box"><summary>Preparation &amp; Historical Workflows</summary><div class="rc-actions">'+
         (current.insurance&&(r.job_type||'INSURANCE')==='INSURANCE'?'<button data-rc-action="insurance">Approval &amp; Job Card</button>':'')+
-        (r.repair_status==='PENDING'&&!r.job_card&&!r.outcome&&r.job_type!=='INSURANCE'?'<button data-rc-action="checklist-job">Open Linked Job Card</button>':'')+
+        ''+
         (current.preliminary_parts?'<button data-rc-action="parts">Parts Preparation</button>':'')+
         (!r.outcome||current.cancellation?.history?'<button data-rc-action="movement">Movement History Entry</button>':'')+
         (user()?.role!=='Receptionist'&&!r.job_card&&!r.outcome?'<button data-rc-action="outcome">Historical Case Closure</button>':'')+'</div></details>' +
@@ -1748,7 +1750,7 @@
   }
   function checklistJob(){
     const r=current.record;
-    shell('Open Job Card from '+r.rc_no,'<form id="rc-linked-job">'+input('job_card','Job Card Number','',true)+input('cash_amount','Estimated Amount (optional)','',false,'number')+input('reason','Creation Remark','',true)+'<button type="submit">Open Linked Job Card</button></form>');
+    shell('Open Job Card from '+r.rc_no,'<div class="rc-box"><b>'+esc(r.job_type||'Cash')+' · '+esc([r.details?.make,r.details?.model].filter(Boolean).join(' '))+'</b><p>Insurance approval is not required. Vehicle details and Work Description / Notes are copied from this checklist.</p><div style="white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5">'+esc(r.details?.remarks||'No work description recorded')+'</div></div><form id="rc-linked-job">'+input('job_card','Job Card Number','',true)+input('cash_amount','Estimated Amount (optional)','',false,'number')+input('reason','Creation Remark','',true)+'<button type="submit">Open Linked Job Card</button></form>');
     document.getElementById('rc-linked-job').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);try{const out=await mutate({operation:'CREATE_CHECKLIST_JOB',rc_no:r.rc_no,expected_revision:r.revision,job_card:String(f.get('job_card')).trim().toUpperCase(),cash_amount:String(f.get('cash_amount')||''),reason:String(f.get('reason')).trim()});if(out){try{await window.zukaitCloud?.pull?.(true);}catch(_){}await view(r.rc_no);}}catch(x){error(x);}};
   }
   function locationChoice(){
@@ -2089,12 +2091,25 @@
             error(Error('This checklist is already linked or closed. Review the latest status.'));
             break;
           }
-          if(current.external_approval?.valid!==true&&current.job_creation?.can_create!==true){
-            insuranceWorkspace();
-            error(Error('This checklist is marked Approved, but the current insurance approval is not verified for Job Card creation. Ask Manager or Supervisor to review the approval record here.'));
+          if(String(current.record.job_type||'').toUpperCase()!=='INSURANCE'){
+            checklistJob();
             break;
           }
+          const verified=current.external_approval?.valid===true||current.job_creation?.can_create===true;
           insuranceWorkspace();
+          if(!verified){
+            // Missing approval: show the existing server-audited approval workflow
+            // with a date and evidence. Do not silently approve insurance jobs.
+            const approvalForm=document.getElementById('rc-external-approval')||document.getElementById('rc-approval');
+            if(approvalForm){
+              approvalForm.querySelector('[name="approval_date"]')?.focus();
+            }else{
+              error(Error('Insurance approval must be verified before opening the Job Card. A Manager or Supervisor must record the approval date and evidence (or complete the quotation approval).'));
+            }
+            break;
+          }
+          // Valid recorded approval already contains its date/evidence. Reuse
+          // it without asking the user to re-enter the approval date.
           const form=document.getElementById('rc-create-job')||document.getElementById('rc-external-job');
           form?.querySelector('[name="job_card"]')?.focus();
           break;
