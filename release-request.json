@@ -11,7 +11,7 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "Exact-source signed APK, Reception and Accountant CI all passed on 4db1cde545d858bf642fe20244ffa33c8308ce9c. V401 is still held pending V401 Accounting backend deployment and verified readback, live financial reconciliation, release evidence and final authorization.",
+  "reason": "V401 signed APK, Reception and Accountant CI passed against pinned source 4db1cde545d858bf642fe20244ffa33c8308ce9c. Publication HELD. Supabase workshop-api v122 has 43 files versus 55 in pinned V401 source; index.ts differs, and V401 adds Mechanical inspection, Accountant supplier/payables, and job-numbering modules. Two Accounting calculation files still equal V400, not V401. Full backend compatibility, deployment/readback, live financial reconciliation and other approval evidence remain unverified. Do not launch coordinated publisher.",
   "authorization": "Owner requested publishing V401 calculation audit corrections for testing.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
