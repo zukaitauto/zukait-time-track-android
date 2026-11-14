@@ -41,6 +41,24 @@ let data=clone(initial),calls=[],messages=[];w.me={id:'u',role:'Receptionist'};w
 w.fetch=async(_url,args)=>{const body=JSON.parse(args.body);calls.push(body);const r=body.operation==='GET'?{ok:true,job:jobEditProjection(data.jobs[0]),invoice_locked:data.jobs[0].finalInvoiceAmount!=null}:jobEditTransition(data,w.me,body,1);if(r.data)data=r.data;return {ok:r.ok,json:async()=>r};};
 w.eval(fs.readFileSync('app/src/main/assets/job_card_edit.js','utf8'));
 await w.zukaitJobEdit.open('JC1');assert.match(w.document.body.innerHTML,/Cash Amount/);w.document.getElementById('jce-amount').value='30.125';w.document.getElementById('jce-reason').value='Customer agreed';await w.zukaitJobEdit.save();assert.equal(data.jobs[0].amount,30.125);assert.equal(calls.at(-1).action,'job_card_edit');
+// Regression: a capitalized Job Type from stored data must not become a
+// spurious edit when Reception saves a VIN on a Cash Job Card.
+data.jobs[0].jobType='CASH';
+await w.zukaitJobEdit.open('JC1');
+w.document.getElementById('jce-vin').value='WP0ZZZ98ZFK181382';
+w.document.getElementById('jce-reason').value='Confirm the VIN';
+await w.zukaitJobEdit.save();
+assert.equal(data.jobs[0].vin,'WP0ZZZ98ZFK181382');
+assert.deepEqual(calls.at(-1).patch,{vin:'WP0ZZZ98ZFK181382'},'VIN edit must not include an unchanged Job Type');
+// A linked checklist also must never acquire a spurious Job Type edit.
+data.jobs[0].receptionNo='RC-QA-LINKED';
+await w.zukaitJobEdit.open('JC1');
+assert.equal(w.document.getElementById('jce-jobType').disabled,true);
+w.document.getElementById('jce-notes').value='Updated job notes';
+w.document.getElementById('jce-reason').value='Correct notes';
+await w.zukaitJobEdit.save();
+assert.equal(data.jobs[0].notes,'Updated job notes');
+assert.deepEqual(calls.at(-1).patch,{notes:'Updated job notes'});
 data.jobs[0].delivered=true;await w.zukaitJobEdit.open('JC1');assert.match(messages.at(-1),/Only Manager/);
 w.me.role='Manager';data.jobs[0].finalInvoiceAmount=30.125;await w.zukaitJobEdit.open('JC1');assert.equal(w.document.getElementById('jce-amount').readOnly,true);
 dom.window.close();console.log('Job Card edit: server role matrix, delivered/stale/forged writes, optional amounts, linked identity, invoice locks, preserved work, and Reception UI passed.');
