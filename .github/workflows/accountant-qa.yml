@@ -24,6 +24,9 @@ on:
       - 'tests/v2-notification-center.mjs'
       - 'tests/notification-*.mjs'
       - '.github/workflows/accountant-qa.yml'
+      - '.github/workflows/build-signed-acceptance.yml'
+      - 'release-request.json'
+      - 'app/src/main/assets/consumables_ui.js'
 permissions:
   contents: read
 jobs:
