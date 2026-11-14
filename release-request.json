@@ -11,7 +11,7 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "V401 signed APK, Reception and Accountant CI passed for pinned source 4db1cde545d858bf642fe20244ffa33c8308ce9c. workshop-api 123 contains the two exact audited calculation files with the other 41 live files and original verify_jwt setting preserved; staff-auth 13 matches repository, and required four Accounting migrations are present. Release HELD pending post-deploy live financial acceptance, remaining evidence and final guarded publication; inactive Mechanical inspection remains disabled.",
+  "reason": "V401 signed APK, Reception and Accounting CI passed for pinned source 4db1cde545d858bf642fe20244ffa33c8308ce9c. workshop-api 123 audited Accounting files and authentication readback verified. Post-deploy Accountant CI rerun 43568035465 attempt 2 succeeded. Publication remains HELD: live cost reconciliation and other release evidence incomplete. architecture-v2 also added read-only history backup script after pinned source; current protected source-drift rule rejects that unapproved difference.",
   "authorization": "Owner requested publishing V401 calculation audit corrections for testing.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
@@ -62,5 +62,12 @@
     "legacyLoginCompatibility": false,
     "liveCostReconciliation": false,
     "repeatAndId001Regression": false
+  },
+  "postDeploymentAccountantRun": {
+    "runId": 43568035465,
+    "attempt": 2,
+    "sourceCommit": "eb949928eaa4080c9c0e48bc54d59dfd6a58e06c",
+    "result": "success",
+    "scope": "Automated isolated Accountant acceptance after workshop-api v123 deploy; not a substitute for live cost reconciliation"
   }
 }
