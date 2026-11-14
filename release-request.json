@@ -11,7 +11,7 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "V401 signed APK, Reception and Accountant CI passed against pinned source 4db1cde545d858bf642fe20244ffa33c8308ce9c. Publication HELD. Supabase workshop-api v122 has 43 files versus 55 in pinned V401 source; index.ts differs, and V401 adds Mechanical inspection, Accountant supplier/payables, and job-numbering modules. Two Accounting calculation files still equal V400, not V401. Full backend compatibility, deployment/readback, live financial reconciliation and other approval evidence remain unverified. Do not launch coordinated publisher.",
+  "reason": "V401 signed APK, Reception and Accountant CI passed for pinned source 4db1cde545d858bf642fe20244ffa33c8308ce9c. workshop-api 123 contains the two exact audited calculation files with the other 41 live files and original verify_jwt setting preserved; staff-auth 13 matches repository, and required four Accounting migrations are present. Release HELD pending post-deploy live financial acceptance, remaining evidence and final guarded publication; inactive Mechanical inspection remains disabled.",
   "authorization": "Owner requested publishing V401 calculation audit corrections for testing.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
@@ -34,7 +34,25 @@
       "accountant/finance_rules.js",
       "accountant/profit_performance.js"
     ],
-    "readbackVerified": false
+    "readbackVerified": true,
+    "functions": {
+      "staff-auth": {
+        "version": 13,
+        "bundleSha256": "8c9007aef796124863048c9b75156133edd9823ba9fc5211f0e70fe6ec5e4a11",
+        "verifiedFileMatch": true
+      },
+      "workshop-api": {
+        "version": 123,
+        "bundleSha256": "edf5131f3b1394afe3ecff52d4d45c72680f8462889b07a1cfd871e9d374d68a",
+        "verifiedFileMatch": true
+      }
+    },
+    "migrations": [
+      "accountant_financial_ledger",
+      "accountant_lpo_audit",
+      "accountant_append_only_grants",
+      "accountant_append_only_corrections"
+    ]
   },
   "evidence": {
     "credentialPreservation": false,
