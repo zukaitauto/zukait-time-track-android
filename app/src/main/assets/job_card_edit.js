@@ -3,7 +3,7 @@ const actor=()=>typeof me!=='undefined'?me:window.me;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fields=[['make','Make'],['model','Model'],['year','Year'],['reg','Registration Number'],['vin','VIN / Chassis'],['customer','Customer'],['mobile','Contact'],['color','Vehicle Color'],['colorCode','Paint Color Code'],['claimNo','Claim Number'],['insuranceCompany','Insurance Company'],['notes','Job Notes'],['amount','Cash Amount (OMR) — optional']];
 const linked=new Set(['make','model','year','reg','vin','customer','mobile','jobType','insuranceCompany','claimNo']);
-const messages={job_edit_manager_required:'Only Manager can edit a delivered Job Card.',job_edit_conflict:'This Job Card changed. Reopen Edit Job Card to use the latest details.',job_edit_invoice_authoritative:'The final invoice owns this amount. Use Invoice Entry to correct it.',job_edit_linked_identity:'Correct linked vehicle details in the Reception Checklist.',job_edit_invalid_amount:'Enter an amount from 0 to 1,000,000 OMR with up to three decimal places.',job_edit_forbidden:'Your login cannot edit Job Cards.',job_edit_reason_required:'Enter a reason for this change.'};
+const messages={job_edit_manager_required:'Only Manager can edit a delivered Job Card.',job_edit_conflict:'This Job Card changed. Reopen Edit Job Card to use the latest details.',job_edit_invoice_authoritative:'The final invoice owns this amount. Use Invoice Entry to correct it.',job_edit_linked_identity:'Correct linked vehicle details in the Reception Checklist.',job_edit_invalid_amount:'Enter an amount from 0 to 1,000,000 OMR with up to three decimal places.',job_edit_invalid_fields:'The server rejected one or more Job Card fields. Check the values, especially the VIN / Chassis, and reopen the form before retrying.',job_edit_unavailable:'The workshop database could not confirm this edit. Check the current Job Card before retrying; do not assume it was saved.',job_not_available:'This Job Card is no longer available for editing. Reload the list.',job_edit_forbidden:'Your login cannot edit Job Cards.',job_edit_reason_required:'Enter a reason for this change.'};
 let draft=null,busy=false,loadId=0;
 async function api(body){
  if(!navigator.onLine)throw Error('Connect to the server to edit a Job Card.');
@@ -45,9 +45,13 @@ async function save(){
  if(busy||!draft)return;
  const current=draft,patch={},j=current.job;
  for(const key of [...fields.map(x=>x[0]),'jobType']){
-  if(j.receptionNo&&linked.has(key)||key==='amount'&&current.locked)continue;
+  if(j.receptionNo&&(linked.has(key)||key==='jobType')||key==='amount'&&current.locked)continue;
   const raw=String(document.getElementById('jce-'+key)?.value||'').trim(),value=key==='amount'?(raw===''?null:raw):raw;
-  if(String(value??'')!==String(j[key]??''))patch[key]=value;
+  // Job type and VIN have canonical casing; a casing-only difference is not an edit.
+  const unchanged=['jobType','vin'].includes(key)
+   ?String(value??'').toUpperCase()===String(j[key]??'').toUpperCase()
+   :String(value??'')===String(j[key]??'');
+  if(!unchanged)patch[key]=value;
  }
  if(!Object.keys(patch).length)return alert('No changes were made.');
  const reason=String(document.getElementById('jce-reason')?.value||'').trim();if(!reason)return alert(messages.job_edit_reason_required);
