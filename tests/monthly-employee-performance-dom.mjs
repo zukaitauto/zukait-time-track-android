@@ -57,7 +57,7 @@ win.refreshMonthlyReport();
 assert.match(doc.getElementById('monthlyReportResults').textContent,/Akhil/);
 assert.match(doc.getElementById('monthlyReportResults').textContent,/Jijesh/);
 assert.match(doc.getElementById('monthlyReportResults').textContent,/ID001 hours/);
-assert.match(doc.getElementById('monthlyReportResults').textContent,/133\\.3%/,'completed productive efficiency: 4h allocated divided by 3h actual; ID001 excluded');
+assert.match(doc.getElementById('monthlyReportResults').textContent,/133\.3%/,'completed productive efficiency: 4h allocated divided by 3h actual; ID001 excluded');
 const row=[...doc.querySelectorAll('#monthlyReportResults tbody tr')].find(tr=>tr.textContent.includes('Akhil'));
 assert.ok(row);
 assert.equal(row.querySelectorAll('td')[2].textContent,'1','deduplicate 12043 to one vehicle');
