@@ -200,11 +200,11 @@ try {
             throw "Backup archive checksum mismatch for $($chunk.name)"
         }
         if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Force }
-        $input = [IO.File]::OpenRead($chunk.gz)
-        $gunzip = [IO.Compression.GZipStream]::new($input,[IO.Compression.CompressionMode]::Decompress)
+        $compressedInput = [IO.File]::OpenRead($chunk.gz)
+        $gunzip = [IO.Compression.GZipStream]::new($compressedInput,[IO.Compression.CompressionMode]::Decompress)
         $output = [IO.File]::Create($temp)
         try { $gunzip.CopyTo($output) }
-        finally { $output.Dispose();$gunzip.Dispose();$input.Dispose() }
+        finally { $output.Dispose();$gunzip.Dispose();$compressedInput.Dispose() }
         if ((Get-FileHash -LiteralPath $temp -Algorithm SHA256).Hash -ne $chunk.rawHash) {
             throw "Restored compressed bytes do not match original binary export: $($chunk.name)"
         }
