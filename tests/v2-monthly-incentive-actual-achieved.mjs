@@ -51,11 +51,30 @@ test('repeat JC actual is included once; repeat penalty is separate',()=>{
  ]};
  const r=run(data).incentiveFor('E',t(8,12));
  assert.equal(r.achieved,60);
- assert.equal(r.repeat,60);
+ assert.equal(r.repeat,300,'one repeat job deducts fixed five hours');
  assert.equal(r.incentive,0);
 });
 
 test('different repeat worker earns actual while original employee receives penalty',()=>{
  const data={assign:[{id:'R',emp:'REPAIR',job:'J2',rework:true,mistakeEmp:'ORIGINAL',suggested:60}],sessions:[{id:'r',assignmentId:'R',emp:'REPAIR',job:'J2',start:t(2,8),end:t(2,9)}]};
- const api=run(data);assert.equal(api.incentiveFor('REPAIR',t(8,12)).achieved,60);assert.equal(api.incentiveFor('REPAIR',t(8,12)).repeat,0);assert.equal(api.incentiveFor('ORIGINAL',t(8,12)).achieved,0);assert.equal(api.incentiveFor('ORIGINAL',t(8,12)).repeat,60);
+ const api=run(data);assert.equal(api.incentiveFor('REPAIR',t(8,12)).achieved,60);assert.equal(api.incentiveFor('REPAIR',t(8,12)).repeat,0);assert.equal(api.incentiveFor('ORIGINAL',t(8,12)).achieved,0);assert.equal(api.incentiveFor('ORIGINAL',t(8,12)).repeat,300);
+});
+
+test('one five-hour penalty per repeat cycle, not per worker or continuation month',()=>{
+ const october=(d,h)=>Date.parse('2026-10-'+String(d).padStart(2,'0')+'T'+String(h).padStart(2,'0')+':00:00+04:00');
+ const assign=[
+  {id:'R1',emp:'REPAIR',job:'J7',rework:true,mistakeEmp:'ORIGINAL',repeatCycleNo:1,suggested:90},
+  {id:'R2',emp:'OTHER',job:'J7',rework:true,mistakeEmp:'ORIGINAL',repeatCycleNo:1,suggested:90},
+  {id:'R3',emp:'REPAIR',job:'J7',rework:true,mistakeEmp:'ORIGINAL',repeatCycleNo:2,suggested:90}
+ ];
+ const sessions=[
+  {id:'a',assignmentId:'R1',emp:'REPAIR',job:'J7',start:october(29,8),end:october(29,9)},
+  {id:'b',assignmentId:'R2',emp:'OTHER',job:'J7',start:october(29,10),end:october(29,11)},
+  {id:'c',assignmentId:'R1',emp:'REPAIR',job:'J7',start:t(2,8),end:t(2,9)},
+  {id:'d',assignmentId:'R3',emp:'REPAIR',job:'J7',start:t(3,8),end:t(3,10)}
+ ];
+ const api=run({assign,sessions});
+ assert.equal(api.incentiveFor('ORIGINAL',october(30,12)).repeat,300,'split cycle charged once in October');
+ assert.equal(api.incentiveFor('ORIGINAL',t(8,12)).repeat,300,'November continuation not recharged; second cycle charged');
+ assert.equal(api.incentiveFor('REPAIR',t(8,12)).repeat,0,'repair worker not penalized');
 });

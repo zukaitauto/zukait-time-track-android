@@ -38,7 +38,14 @@
   };
 
   repeat.incentiveDeductionMinutes=function(assignments,employeeId){
-    return (assignments||[]).filter(a=>a&&a.rework&&!a.cancelled&&String(a.mistakeEmp)===String(employeeId))
-      .reduce((n,a)=>n+Math.max(0,Number(a.actualMinutes!=null?a.actualMinutes:a.suggested)||0),0);
+    // One fixed 300-minute penalty per recorded repeat job/cycle; do not
+    // multiply by repair duration or by technician reassignment.
+    const keys=new Set();
+    for(const a of (assignments||[]).filter(a=>a&&a.rework&&!a.cancelled&&String(a.mistakeEmp)===String(employeeId))){
+      const cycle=Number(a.repeatCycleNo),cycleKey=Number.isInteger(cycle)&&cycle>0?'cycle:'+cycle:
+        a.repeatCycleId?'id:'+String(a.repeatCycleId):'legacy';
+      keys.add(String(a.job||a.id||'').trim().toUpperCase()+'|'+cycleKey);
+    }
+    return keys.size*300;
   };
 })();

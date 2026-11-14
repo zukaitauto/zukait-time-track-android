@@ -2544,9 +2544,21 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
      // Every JC duty minute counts in Achieved. Repeat penalty is separate.
      const x=achievementFor(a,from,to);achieved+=x.achieved;excess+=x.excess;actual+=x.actual;
    }
-   // Repeat penalty belongs to the Mistake Employee and always uses ACTUAL normal-duty repeat time.
+   // Deduct five hours per repeat job/cycle in its first month of actual duty work.
+   // Multiple workers and continuing sessions never incur a second penalty.
+   const repeatGroups=new Map();
+   for(const a of (state.assign||[]).filter(a=>a&&!a.cancelled&&a.rework&&String(a.mistakeEmp||a.emp)===String(emp))){
+     const cycle=Number(a.repeatCycleNo),cycleKey=Number.isInteger(cycle)&&cycle>0?'cycle:'+cycle:
+       a.repeatCycleId?'id:'+String(a.repeatCycleId):'legacy';
+     const key=String(a.job||'').trim().toUpperCase()+'|'+cycleKey;
+     if(!repeatGroups.has(key))repeatGroups.set(key,[]);
+     repeatGroups.get(key).push(a);
+   }
    let repeat=0;
-   for(const a of (state.assign||[]).filter(a=>a&&!a.cancelled&&a.rework&&String(a.mistakeEmp||a.emp)===String(emp)))repeat+=assignmentNormal(a,from,to);
+   for(const group of repeatGroups.values()){
+     if(group.some(a=>assignmentNormal(a,0,from)>0))continue;
+     if(group.some(a=>assignmentNormal(a,from,to)>0))repeat+=300;
+   }
    const incentive=Math.max(0,achieved-t.target-repeat);
    return {target:t.target,actual,eligible:achieved,achieved,excess,repeat,incentive,workDays:t.workDays,cleaningAllowance:t.cleaningAllowance};
  };

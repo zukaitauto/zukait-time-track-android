@@ -50,6 +50,7 @@ node tests/published-stylesheets.mjs
 node tests/employee-ocean-timer.mjs
 node tests/employee-job-placement.mjs
 node tests/employee-daily-report.mjs
+node tests/monthly-employee-performance.mjs
 node tests/manager-time-management.mjs
 node tests/time-correction-disposition.mjs
 node tests/historical-missing-time.mjs
@@ -80,6 +81,7 @@ node tests/invoice-entry.mjs
 node tests/delivered-material-records.mjs
 node tests/spare-return-button.mjs
 node tests/v2-spare-parts-return-cancel.mjs
+node tests/v161-spare-parts-actual-cost.mjs
 node tests/job360-profit-loss.mjs
 node tests/consumables-backend-security.mjs
 node tests/v128-costing-safety.mjs

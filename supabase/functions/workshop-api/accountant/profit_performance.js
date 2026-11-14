@@ -1,4 +1,4 @@
-import {key,milli,day,validDay,searchKey} from './finance_rules.js';
+import {key,milli,day,validDay,searchKey,jobSubletCost} from './finance_rules.js';
 import {availablePartsListCost,availableConsumablesCost} from './accounts_parts_cost.js';
 const array=v=>Array.isArray(v)?v:[],money=n=>n===null?null:(n/1000).toFixed(3);
 // Read-only invoice/LPO cohorts. Reuse verified financial costs, never ledger
@@ -22,12 +22,7 @@ export function managerProfitReport(context,financial,filters={},now=Date.now())
   const baseVehicle=String(detail.vehicle||j.vehicle||[j.make,j.model].filter(Boolean).join(' ')).trim(),year=String(j.year||j.modelYear||j.vehicleYear||'').trim();
   const vehicle=year&&!baseVehicle.split(/\s+/).includes(year)?[baseVehicle,year].filter(Boolean).join(' '):baseVehicle;
   if(filters.query&&![no,vehicle,detail.registration,detail.customer].some(x=>searchKey(x).includes(searchKey(filters.query))))continue;
-  let sublet=0,subletPending=false;const subletIds=new Map();
-  for(const row of array(s.sublets).filter(x=>x&&!x.voided&&!x.cancelled&&key(x.jobCard)===no)){
-   const id=String(row.id||'');if(!id){subletPending=true;continue;}
-   if(subletIds.has(id)){if(subletIds.get(id)!==row.amountMills)subletPending=true;continue;}subletIds.set(id,row.amountMills);
-   if(!Number.isSafeInteger(row.amountMills)||row.amountMills<0)subletPending=true;else sublet+=row.amountMills;
-  }
+  const subletResult=jobSubletCost(s,no),subletPending=subletResult.amountMills===null,sublet=subletResult.amountMills??0;
   // An absent category is a verified zero only if the job has no source activity
   // for it. Unfinalized records must remain pending rather than silently zero.
   const sources={
