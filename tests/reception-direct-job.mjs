@@ -252,5 +252,95 @@ assert.equal(w.document.getElementById('rc-create-job'),null,
  'Unverified case must not create a Job Card through quotation flow');
 assert.equal(w.document.getElementById('rc-external-job'),null,
  'Unverified case must not create a Job Card through external approval flow');
+
+// Checklist-first creation regression: Cash/Credit are not Insurance approval
+// cases, while Insurance must request missing approval date/evidence and reuse
+// a verified existing approval without prompting for a second date.
+const checklistCases={
+ cash:{rc_no:'RC-CASH-LINK-QA',job_type:'CASH',location:'VIW',repair_status:'PENDING',
+  revision:3,job_card:null,outcome:null,approval_status:'WAITING',can_edit:true,
+  details:{make:'Lexus',model:'ES350',year:'2014',registration:'62571-R',odometer:'12325',odometer_unit:'KM',
+   remarks:'Repair left rear door\nPrepare and paint'}},
+ credit:{rc_no:'RC-CREDIT-LINK-QA',job_type:'CREDIT',credit_account:'FLEET-A',location:'VIW',repair_status:'PENDING',
+  revision:4,job_card:null,outcome:null,approval_status:'WAITING',can_edit:true,
+  details:{make:'Toyota',model:'Corolla',year:'2022',registration:'19721-M',remarks:'Replace bumper'}},
+ insurancePending:{rc_no:'RC-INS-PENDING-QA',job_type:'INSURANCE',insurance_id:1,location:'VIW',
+  repair_status:'PENDING',revision:5,job_card:null,outcome:null,approval_status:'WAITING',can_edit:true,
+  details:{make:'Nissan',model:'Altima',year:'2017',registration:'63221-A',remarks:'Replace headlamp'}},
+ insuranceApproved:{rc_no:'RC-INS-APPROVED-QA',job_type:'INSURANCE',insurance_id:1,location:'VIW',
+  repair_status:'PENDING',revision:6,job_card:null,outcome:null,approval_status:'APPROVED',can_edit:true,
+  details:{make:'Honda',model:'Accord',year:'2021',registration:'23991-X',remarks:'Repair front bumper'}},
+};
+let activeChecklist=checklistCases.cash, checklistCommand=null;
+w.fetch=async(url,args)=>{
+ const body=JSON.parse(args.body),cmd=body.command||{};
+ if(cmd.operation==='GET'&&cmd.rc_no===activeChecklist.rc_no){
+  const verified=activeChecklist===checklistCases.insuranceApproved;
+  return {ok:true,json:async()=>({ok:true,record:activeChecklist,movements:[],audit:[],
+   insurance:{approval_valid:false,can_prepare:false,estimates:[],approvals:[]},
+   external_approval:{valid:verified,can_record:!verified&&w.me.role==='Manager'},
+   job_creation:{can_create:false},preliminary_parts:{items:[]}})};
+ }
+ if(cmd.operation==='CREATE_CHECKLIST_JOB'){
+  checklistCommand=cmd;
+  return {ok:false,status:409,json:async()=>({ok:false,code:'reception_staged_rejection'})};
+ }
+ return fetchBeforeQuote(url,args);
+};
+await w.zukaitReception.openRecord(activeChecklist.rc_no);
+assert.ok(w.document.querySelector('[data-rc-action="checklist-job"]'),
+ 'Cash checklist shows Open Job Card in the primary action area');
+await click('checklist-job');
+let checklistForm=w.document.getElementById('rc-linked-job');
+assert.ok(checklistForm,'Cash checklist opens linked Job Card form');
+assert.equal(checklistForm.querySelector('[name="approval_date"]'),null,'Cash must never ask for insurance approval date');
+assert.match(w.document.getElementById('rc-root').textContent,/Repair left rear door/,'Saved work description shown before creation');
+checklistForm.elements.job_card.value='QA-CASH-LINKED';
+checklistForm.elements.reason.value='QA linked cash creation';
+checklistForm.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
+await settle();
+assert.ok(checklistCommand,'Cash checklist must reach audited linked Job Card transaction');
+assert.equal(checklistCommand.operation,'CREATE_CHECKLIST_JOB');
+assert.equal(checklistCommand.rc_no,checklistCases.cash.rc_no);
+assert.equal(checklistCommand.job_card,'QA-CASH-LINKED');
+assert.equal(calls.filter(x=>x.operation==='CREATE_DIRECT_JOB').length,beforeLinked,
+ 'Cash checklist must not create a separate Direct Job Card');
+
+activeChecklist=checklistCases.credit;
+await w.zukaitReception.openRecord(activeChecklist.rc_no);
+assert.ok(w.document.querySelector('[data-rc-action="checklist-job"]'),'Credit checklist offers linked creation');
+await click('checklist-job');
+checklistForm=w.document.getElementById('rc-linked-job');
+assert.ok(checklistForm);
+assert.equal(checklistForm.querySelector('[name="approval_date"]'),null,'Credit must never ask for insurance approval date');
+assert.match(w.document.getElementById('rc-root').textContent,/Replace bumper/);
+
+w.me.role='Manager';
+activeChecklist=checklistCases.insurancePending;
+await w.zukaitReception.openRecord(activeChecklist.rc_no);
+assert.ok(w.document.querySelector('[data-rc-action="open-approved-job"]'),
+ 'Unapproved Insurance checklist still offers Open Job Card to begin approval workflow');
+await click('open-approved-job');
+assert.ok(w.document.getElementById('rc-external-approval'),
+ 'Missing insurance approval shows authorized approval form');
+assert.ok(w.document.querySelector('#rc-external-approval [name="approval_date"]'),
+ 'Missing Insurance approval must ask for approval date');
+assert.equal(w.document.getElementById('rc-external-job'),null,
+ 'Pending Insurance approval must not permit Job Card creation');
+assert.equal(w.document.getElementById('rc-create-job'),null);
+
+activeChecklist=checklistCases.insuranceApproved;
+await w.zukaitReception.openRecord(activeChecklist.rc_no);
+await click('open-approved-job');
+assert.ok(w.document.getElementById('rc-external-job'),
+ 'Approved Insurance checklist opens Job Card form without repeating approval');
+assert.equal(w.document.getElementById('rc-external-approval'),null,
+ 'Valid stored Insurance approval must not prompt for approval date again');
+assert.equal(w.document.querySelector('#rc-external-job [name="approval_date"]'),null);
+activeChecklist={...checklistCases.insuranceApproved,job_card:'QA-EXISTING'};
+await w.zukaitReception.openRecord(activeChecklist.rc_no);
+assert.equal(w.document.querySelector('[data-rc-action="open-approved-job"]'),null,
+ 'Linked checklist must not offer creating a duplicate Job Card');
+w.fetch=fetchBeforeQuote;
 w.fetch=fetchBeforeQuote;
 w.me=null;await settle();dom.window.close();console.log('Direct Reception Job Cards: Cash/Credit/Insurance fields, manually numbered approved insurance, stable lost-response UUID, role isolation and approval controls passed (mock transport).');
