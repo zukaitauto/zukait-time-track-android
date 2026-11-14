@@ -737,16 +737,21 @@
             linkedApprovalMode=result.job_creation?.can_create===true?'quotation':
               result.external_approval?.valid===true?'external':'';
             linkedApprovalValid=!!linkedApprovalMode;
+            const checklistKind=String(r.job_type||'').toUpperCase();
+            // Cash/Credit checklists are eligible without any insurance approval.
+            // Insurance retains the existing quotation/external approval gate.
             document.getElementById('rc-direct-checklist-clear').hidden=false;
             for(const k of ['make','model','registration','year','vin','customer','contact','claim','remarks','odometer']){
               if(form.elements.namedItem(k))form.elements.namedItem(k).value=String(d[k]??'');
             }
             type.value=r.job_type||'INSURANCE';type.disabled=true;type.onchange();
+            account.value=checklistKind==='CREDIT'?String(r.credit_account||''):'';
+            account.readOnly=checklistKind==='CREDIT';
             form.elements.namedItem('odometer_unit').value=String(d.odometer_unit||'KM');
             if(r.insurance_id&&form.elements.insurance_id)form.elements.insurance_id.value=String(r.insurance_id);
             updateApprovalEntry();
             const note=document.getElementById('rc-direct-checklist-note');
-            note.textContent='Selected '+r.rc_no+'. Original checklist odometer: '+(d.odometer||'Not recorded')+' '+(d.odometer_unit||'KM')+'. The Job Card reading is filled from this checklist. You can edit the reading and unit; the original checklist remains unchanged.'+(linkedApprovalValid?' Existing insurance approval verified. New approval is not required unless approved vehicle details are changed.':' Approval must be completed before a linked Job Card can be opened.');
+            note.textContent='Selected '+r.rc_no+'. Original checklist odometer: '+(d.odometer||'Not recorded')+' '+(d.odometer_unit||'KM')+'. '+(checklistKind==='CASH'||checklistKind==='CREDIT'?'Cash/Credit checklist: insurance approval is not required. The new Job Card will copy the saved vehicle details and Work Description / Notes. Edit the checklist first if any of these details need correction.':'The Job Card reading is filled from this checklist. You can edit the reading and unit; the original checklist remains unchanged.'+(linkedApprovalValid?' Existing insurance approval verified. New approval is not required unless approved vehicle details are changed.':' Insurance approval must be completed before a linked Job Card can be opened.'));
           }catch(err){error(err);}
         });
       }catch(err){searchResults.textContent='Checklist search failed: '+String(err.message||err);}
@@ -756,6 +761,8 @@
       linkedApprovalValid=false;
       linkedApprovalMode='';
       type.disabled=false;
+      account.readOnly=false;
+      account.value='';
       searchInput.value='';
       searchResults.textContent='';
       document.getElementById('rc-direct-checklist-note').textContent='Checklist selection cleared. This will create a NEW reception intake.';
@@ -794,7 +801,29 @@
       details.odometer_unit=String(f.get('odometer_unit')||'KM');
       try {
         if(linkedChecklist){
-          if(!linkedApprovalValid || linkedChecklist.job_type!=='INSURANCE') throw Error('This checklist needs verified insurance approval before linked Job Card creation.');
+          const linkedKind=String(linkedChecklist.job_type||'').toUpperCase();
+          if(linkedKind==='CASH'||linkedKind==='CREDIT'){
+            // Reuse the existing audited, idempotent server-side checklist-to-JC
+            // transaction. Never create a second independent Direct Job Card.
+            const original=linkedChecklist.details||{};
+            const changed=['make','model','registration','year','vin','customer','contact','remarks'].filter(k=>
+              !sameApprovedChecklistValue(k,details[k],original[k])
+            );
+            if(details.odometer!==String(original.odometer||'')||
+               details.odometer_unit!==String(original.odometer_unit||'KM'))changed.push('odometer');
+            if(changed.length)throw Error('Changes to '+changed.join(', ')+' must first be saved on Checklist '+linkedChecklist.rc_no+'. The linked Job Card copies the saved checklist details and Work Description / Notes.');
+            const command={operation:'CREATE_CHECKLIST_JOB',rc_no:linkedChecklist.rc_no,
+              expected_revision:linkedChecklist.revision,job_card:String(f.get('job_card')||'').trim().toUpperCase(),
+              cash_amount:String(f.get('cash_amount')||'').trim(),
+              reason:String(f.get('reason')||'Linked Job Card intake').trim()||'Linked Job Card intake'};
+            const out=await mutate(command);
+            if(out){
+              try{await window.zukaitCloud?.pull?.(true);}catch(_){}
+              if(!await window.zukaitReceptionDashboard?.showJobs?.())await view(linkedChecklist.rc_no);
+            }
+            return;
+          }
+          if(linkedKind!=='INSURANCE'||!linkedApprovalValid)throw Error('This insurance checklist needs verified approval before linked Job Card creation.');
           const revised={};
           for(const k of ['make','model','registration','year','vin','customer','contact','claim']){
             if(!sameApprovedChecklistValue(k,details[k],linkedChecklist.details?.[k])) revised[k]=details[k];
