@@ -11,16 +11,16 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "Seven exact-source CI checks passed on 2e41164e8c1fade221417429b4b69c5647c6216b; signed APK, Reception and Accountant runs pinned. Accountant backend v123 readback verified. Automated financial QA and repeat/ID001 regression evidence recorded; V401 HELD pending independent live cost reconciliation, credential/recovery/security evidence and guarded final approval. Physical device and fresh backup restore remain NOT_RUN.",
+  "reason": "V401 candidate repinned to 02c3185c8fd04e287b25483485bd6b8fe588a2b8 to include JC12157 VIN-only save and unchanged Cash Job Type fix (09c004e), regression test (02c3185). Signed APK 43579100483 and Reception 43579100498 passed at this exact source. Prior Accountant QA 43570502753 is historical and NOT valid for this candidate; re-run exact-source Accountant QA and financial/repeat evidence evaluation before approval. Backup script improvements also present at this source; no unrelated Mechanical activation. V401 HELD pending actual live reconciliation, credential/security/rollback evidence and physical device/restore checks.",
   "authorization": "Owner requested publishing V401 calculation audit corrections for testing.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "backupDeferredByOwner": false,
-  "sourceCommit": "2e41164e8c1fade221417429b4b69c5647c6216b",
+  "sourceCommit": "02c3185c8fd04e287b25483485bd6b8fe588a2b8",
   "approvedAt": null,
   "publishNonce": null,
-  "signedAcceptanceRun": 43570502820,
-  "verificationRun": 43570502775,
+  "signedAcceptanceRun": 43579100483,
+  "verificationRun": 43579100498,
   "accountantVerificationRun": 43570502753,
   "previousPublishedRelease": {
     "versionName": "V400",
@@ -56,7 +56,7 @@
   },
   "evidence": {
     "credentialPreservation": false,
-    "qaFinancialAcceptance": true,
+    "qaFinancialAcceptance": false,
     "serverPermissions": false,
     "rollbackPrepared": false,
     "legacyLoginCompatibility": false,
@@ -72,22 +72,27 @@
   },
   "evidenceDetails": {
     "repeatAndId001Regression": {
-      "status": "PASS_AUTOMATED",
-      "sourceCommit": "2e41164e8c1fade221417429b4b69c5647c6216b",
+      "status": "PASS_AUTOMATED_CANDIDATE",
+      "sourceCommit": "02c3185c8fd04e287b25483485bd6b8fe588a2b8",
       "runs": [
-        43570502820,
-        43570502753
+        43579100483
       ],
-      "coverage": "Successful ci-full-regression.sh: jobcard-additional-repeat-cycles, ID001 achieved/preliminary, V2 repeat work and server authority tests. Does not attest live workshop totals."
+      "coverage": "Signed acceptance CI full regression passed at this exact source; does not attest live workshop totals."
     },
     "qaFinancialAcceptance": {
-      "status": "PASS_AUTOMATED",
-      "sourceCommit": "2e41164e8c1fade221417429b4b69c5647c6216b",
-      "runs": [
-        43570502753,
-        43570502820
-      ],
-      "coverage": "Successful accountant isolated browser/API QA and ci-full-regression.sh financial test suite; does not attest live production cost reconciliation."
+      "status": "PENDING_EXACT_SOURCE_RETEST",
+      "sourceCommit": "02c3185c8fd04e287b25483485bd6b8fe588a2b8",
+      "priorRun": 43570502753,
+      "coverage": "Previous Accountant QA was at older source; do not count as current candidate acceptance."
     }
+  },
+  "vinOnlyEditCandidate": {
+    "status": "INCLUDED_IN_SIGNED_CANDIDATE_NOT_PUBLISHED",
+    "sourceCommit": "02c3185c8fd04e287b25483485bd6b8fe588a2b8",
+    "fixCommit": "09c004e9d96b7075a40ad441498d6c5dd62a25fb",
+    "testCommit": "02c3185c8fd04e287b25483485bd6b8fe588a2b8",
+    "signedRun": 43579100483,
+    "receptionRun": 43579100498,
+    "liveSaveVerified": false
   }
 }
