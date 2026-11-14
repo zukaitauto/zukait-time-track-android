@@ -11,7 +11,7 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "V401 seven CI workflows, including signed APK, Reception and Accountant acceptance, passed on pinned source 2e41164e8c1fade221417429b4b69c5647c6216b. Source drift resolved by repinning to verified commit (includes bounded read-only history export). workshop-api v123 audited accounting files readback verified. Release HELD pending live financial reconciliation, repeat/ID001 audit and required financial/security/recovery evidence. Physical device acceptance and fresh restore remain NOT_RUN.",
+  "reason": "Seven exact-source CI checks passed on 2e41164e8c1fade221417429b4b69c5647c6216b; signed APK, Reception and Accountant runs pinned. Accountant backend v123 readback verified. Automated financial QA and repeat/ID001 regression evidence recorded; V401 HELD pending independent live cost reconciliation, credential/recovery/security evidence and guarded final approval. Physical device and fresh backup restore remain NOT_RUN.",
   "authorization": "Owner requested publishing V401 calculation audit corrections for testing.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
@@ -56,12 +56,12 @@
   },
   "evidence": {
     "credentialPreservation": false,
-    "qaFinancialAcceptance": false,
+    "qaFinancialAcceptance": true,
     "serverPermissions": false,
     "rollbackPrepared": false,
     "legacyLoginCompatibility": false,
     "liveCostReconciliation": false,
-    "repeatAndId001Regression": false
+    "repeatAndId001Regression": true
   },
   "postDeploymentAccountantRun": {
     "runId": 43568035465,
@@ -69,5 +69,25 @@
     "sourceCommit": "eb949928eaa4080c9c0e48bc54d59dfd6a58e06c",
     "result": "success",
     "scope": "Automated isolated Accountant acceptance after workshop-api v123 deploy; not a substitute for live cost reconciliation"
+  },
+  "evidenceDetails": {
+    "repeatAndId001Regression": {
+      "status": "PASS_AUTOMATED",
+      "sourceCommit": "2e41164e8c1fade221417429b4b69c5647c6216b",
+      "runs": [
+        43570502820,
+        43570502753
+      ],
+      "coverage": "Successful ci-full-regression.sh: jobcard-additional-repeat-cycles, ID001 achieved/preliminary, V2 repeat work and server authority tests. Does not attest live workshop totals."
+    },
+    "qaFinancialAcceptance": {
+      "status": "PASS_AUTOMATED",
+      "sourceCommit": "2e41164e8c1fade221417429b4b69c5647c6216b",
+      "runs": [
+        43570502753,
+        43570502820
+      ],
+      "coverage": "Successful accountant isolated browser/API QA and ci-full-regression.sh financial test suite; does not attest live production cost reconciliation."
+    }
   }
 }
