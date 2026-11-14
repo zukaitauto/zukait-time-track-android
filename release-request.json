@@ -11,17 +11,17 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "V401 is held while a new architecture-v2 candidate is verified. The branch includes the JC12157 VIN-only save correction, its regression test and the corrected local restore script. This metadata commit starts exact-source signed Android, Reception and Accountant QA. Pin the resulting candidate commit before recording its runs. Live reconciliation, authentication, permissions, physical acceptance and rollback evidence remain outstanding.",
+  "reason": "V401 is held while exact-source signed Android, Reception and Accountant QA runs complete. The pinned candidate includes the JC12157 VIN-only save correction, its regression test and the corrected local restore script. Live reconciliation, authentication, permissions, physical acceptance and rollback evidence remain outstanding.",
   "authorization": "Owner requested publishing V401 calculation audit corrections for testing.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "backupDeferredByOwner": false,
-  "sourceCommit": "02c3185c8fd04e287b25483485bd6b8fe588a2b8",
+  "sourceCommit": "99059a2f6036e90384f2379e09d5141495a9928a",
   "approvedAt": null,
   "publishNonce": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "accountantVerificationRun": null,
+  "signedAcceptanceRun": 43611512349,
+  "verificationRun": 43611512429,
+  "accountantVerificationRun": 43611512367,
   "previousPublishedRelease": {
     "versionName": "V400",
     "versionCode": 363,
@@ -72,20 +72,22 @@
   },
   "evidenceDetails": {
     "repeatAndId001Regression": {
-      "status": "PENDING_EXACT_SOURCE_RETEST"
+      "status": "PENDING_EXACT_SOURCE_RETEST",
+      "sourceCommit": "99059a2f6036e90384f2379e09d5141495a9928a"
     },
     "qaFinancialAcceptance": {
       "status": "PENDING_EXACT_SOURCE_RETEST",
-      "priorRun": 43570502753
+      "priorRun": 43570502753,
+      "sourceCommit": "99059a2f6036e90384f2379e09d5141495a9928a"
     }
   },
   "vinOnlyEditCandidate": {
     "status": "INCLUDED_PENDING_EXACT_SOURCE_QA",
-    "sourceCommit": "02c3185c8fd04e287b25483485bd6b8fe588a2b8",
+    "sourceCommit": "99059a2f6036e90384f2379e09d5141495a9928a",
     "fixCommit": "09c004e9d96b7075a40ad441498d6c5dd62a25fb",
     "testCommit": "02c3185c8fd04e287b25483485bd6b8fe588a2b8",
-    "signedRun": null,
-    "receptionRun": null,
+    "signedRun": 43611512349,
+    "receptionRun": 43611512429,
     "liveSaveVerified": false
   },
   "previousCandidateEvidence": {
