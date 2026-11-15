@@ -53,3 +53,22 @@ Official documentation: https://supabase.com/kb/troubleshooting/exhaust-disk-io 
 6. **Hold** compact cutover, snapshot deletion, vacuum-full or any disk reclamation until separate complete recovery and approvals. No existing historical rows have been deleted.
 
 **This is a metadata inventory and a release-blocking checklist, not a production change or confirmation of full application restore.**
+
+
+## Follow-up inventory — 2026-11-15 afternoon (read-only; no platform changes)
+
+- Project still reports ACTIVE_HEALTHY; health advisors returned no current lints.
+- The database allocated 5,850,188,947 bytes and the public workshop_state_history relation 5,810,716,672 bytes in a lightweight catalog query. These values do not measure physical free disk or Disk I/O burst balance.
+- Supabase Auth auth.users has 0 rows. ZUKAIT uses a separate staff authentication mechanism; 0 here does NOT indicate no staff accounts. Preserve the public credential, session and authorization data and custom staff-auth source.
+- Storage exact counts: employee-voice-notes (private) has 0 objects; zukait-pc (public) has 7 objects. Source object sizes from metadata (bytes): app.svg 266011; cloud_sync.js 11476; index.html 260907; production_pilot.js 14741; professional_ux.js 16177; secure_auth.js 10614; zukait_logo.webp 4052. Metadata is not a backup of object bytes.
+- Added scripts/backup-zukait-public-storage-readonly.ps1. It downloads only those 7 public files to a new encrypted Z: drive folder, hashes and size-checks them, and writes a manifest after success. The script was inspected in source, not yet executed on the user's PC.
+- All 9 currently deployed Edge Function source bundles could be read back through the Supabase connector. Live workshop-api v123 has 42 files; staff-auth v13 has 2; voice-api v4 has 2; each of the remaining 6 has 1. This is not yet a durable off-platform backup, and no secrets or source bodies were written to the repo.
+- Remaining blocker: the physical disk free-space and Disk I/O balance cannot be established from these management/catalog metadata tools.
+
+### Next steps without production changes
+
+1. Run and verify public Storage 7-object backup to encrypted Z: and its STORAGE-BACKUP-PASSED.json manifest. Recheck private bucket before any eventual release.
+2. Preserve the exact current 9 deployed Edge Function source bundles securely and separately, along with versions/import maps and hashes; do not deploy anything.
+3. Obtain dashboard evidence of physical free disk, WAL headroom and minimum recent Disk I/O balance.
+4. Plan a transaction-consistent recovery point addressing the 3 Vehicle audit references missing from the older core dump.
+5. Only after documented resource headroom, full recovery and explicit production approval, requalify history migration against current workshop-api v123. Retain legacy history; no deletion/compaction now.
