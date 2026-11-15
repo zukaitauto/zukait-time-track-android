@@ -7,7 +7,9 @@ Never changes or drops original recovery database, archives or production.
 Any failed clone is retained for investigation; no automatic cleanup.
 #>
 [CmdletBinding()]
-param()
+param(
+    [switch]$ResumeExistingClone
+)
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 $root='Z:\Zukait-20261025'
@@ -111,20 +113,57 @@ try{
     if($size -lt 100MB){throw 'Local source database size unexpectedly small.'}
     if($sessions -ne 0){throw 'Close clients connected to the original local recovery database before cloning.'}
     $needed=[long]([Math]::Ceiling($size*1.4)+2GB)
-    if($null -eq $free -or $free -lt $needed){
-        throw ('Not enough local free space for cloned recovery (available {0:N1} GB, need {1:N1} GB).' -f ($free/1GB),($needed/1GB))
-    }
     $existing=@(& $psql @base -d postgres -At -c "select count(*) from pg_database where datname='$targetDb'")
-    if($LASTEXITCODE -ne 0 -or $existing.Count -ne 1 -or "$($existing[0])".Trim() -ne '0'){
-        throw "Target local database $targetDb already exists. Refusing to overwrite or resume automatically."
+    if($LASTEXITCODE -ne 0 -or $existing.Count -ne 1){
+        throw "Cannot confirm the expected local test database state. Refusing to proceed."
     }
-    Write-Host ('DISK SPACE VERIFIED: local source {0:N2} GB; free {1:N2} GB.' -f ($size/1GB),($free/1GB))
-    Write-Host "CREATING NEW LOCAL COPY: $targetDb (original stays unchanged)"
-    $old=$ErrorActionPreference
-    try{$ErrorActionPreference='Continue'; & $createdb -w -h $hostIp -p $port -U postgres -T $sourceDb $targetDb; $createExit=$LASTEXITCODE}
-    finally{$ErrorActionPreference=$old}
-    if($createExit -ne 0){throw 'Local database cloning failed; original recovery and backups remain safe.'}
-    Write-Host 'NEW LOCAL COPY CREATED.'
+    $targetCount=[int]"$($existing[0])".Trim()
+    if($targetCount -ne 0 -and $targetCount -ne 1){
+        throw 'Unexpected duplicate database count. Refusing to proceed.'
+    }
+    if($targetCount -eq 0){
+        if($ResumeExistingClone){
+            throw 'Resume requested, but the test clone does not exist. Refusing to create it implicitly.'
+        }
+        if($null -eq $free -or $free -lt $needed){
+            throw ('Not enough local free space for cloned recovery (available {0:N1} GB, need {1:N1} GB).' -f ($free/1GB),($needed/1GB))
+        }
+        Write-Host ('DISK SPACE VERIFIED: local source {0:N2} GB; free {1:N2} GB.' -f ($size/1GB),($free/1GB))
+        Write-Host "CREATING NEW LOCAL COPY: $targetDb (original stays unchanged)"
+        $old=$ErrorActionPreference
+        try{$ErrorActionPreference='Continue'; & $createdb -w -h $hostIp -p $port -U postgres -T $sourceDb $targetDb; $createExit=$LASTEXITCODE}
+        finally{$ErrorActionPreference=$old}
+        if($createExit -ne 0){throw 'Local database cloning failed; original recovery and backups remain safe.'}
+        Write-Host 'NEW LOCAL COPY CREATED.'
+    } else {
+        if(!$ResumeExistingClone){
+            throw "Target local database $targetDb exists. To inspect and resume only an untouched clone, specify -ResumeExistingClone."
+        }
+        # This branch is intentionally STRICT: resume only an exact expected
+        # pre-private-restore database. Anything partially restored or modified
+        # stays untouched and requires separate manual diagnosis.
+        if($null -eq $free -or $free -lt 500MB){
+            throw 'Less than 500 MB free on local PostgreSQL volume. Refusing to restore.'
+        }
+        $sourceCheck=@(& $psql @base -d $sourceDb -At -F '|' -c "select (select count(*) from public.workshop_state_history),(select min(revision) from public.workshop_state_history),(select max(revision) from public.workshop_state_history),(select count(*) from public.workshop_state where id='main'),(select count(*) from pg_namespace where nspname in ('zukait_mechanical','zukait_vehicle')),(select count(*) from pg_trigger t join pg_class c on c.oid=t.tgrelid join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and not t.tgisinternal)")
+        if($LASTEXITCODE -ne 0 -or $sourceCheck.Count -ne 1){
+            throw 'Could not verify the original local recovery database. Refusing to resume.'
+        }
+        $targetCheck=@(& $psql @base -d $targetDb -At -F '|' -c "select (select count(*) from public.workshop_state_history),(select min(revision) from public.workshop_state_history),(select max(revision) from public.workshop_state_history),(select count(*) from public.workshop_state where id='main'),(select count(*) from pg_namespace where nspname in ('zukait_mechanical','zukait_vehicle')),(select count(*) from pg_trigger t join pg_class c on c.oid=t.tgrelid join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and not t.tgisinternal)")
+        if($LASTEXITCODE -ne 0 -or $targetCheck.Count -ne 1){
+            throw 'Could not verify existing local test clone. Refusing to resume.'
+        }
+        $srcParts="$($sourceCheck[0])" -split '\|'
+        $dstParts="$($targetCheck[0])" -split '\|'
+        if($srcParts.Count -ne 6 -or $dstParts.Count -ne 6 -or
+           "$($sourceCheck[0])" -cne "$($targetCheck[0])" -or
+           [long]$dstParts[0] -ne 16410 -or [long]$dstParts[3] -ne 1 -or
+           [long]$dstParts[4] -ne 0 -or [long]$dstParts[5] -ne 0){
+            throw ("Existing test clone differs from the verified unmodified recovery state. Actual control totals: {0}. Nothing restored." -f $targetCheck[0])
+        }
+        Write-Host 'EXISTING LOCAL CLONE VERIFIED: 16410 history records, 1 workshop main row, 0 private schemas, 0 public triggers.'
+        Write-Host 'RESUMING PRIVATE-SCHEMA RESTORE IN THIS CLONE ONLY. No new clone or cleanup.'
+    }
     Write-Host 'RESTORING 18 Mechanical and 3 Vehicle tables into LOCAL COPY...'
     $old=$ErrorActionPreference
     try{$ErrorActionPreference='Continue'; & $pgRestore -w -h $hostIp -p $port -U postgres -d $targetDb --no-owner --no-privileges --single-transaction --exit-on-error $privateArchive; $privateExit=$LASTEXITCODE}
