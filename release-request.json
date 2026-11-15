@@ -91,6 +91,19 @@
       "status": "PASS_LIVE_EXISTING_MANAGER_AND_SUPERVISOR",
       "verifiedOn": "2026-11-15",
       "coverage": "Both existing staff accounts signed in to the current live workshop app and reached their online role dashboards. Manager opened the live Accounts Profit / Loss report. Accounts controls were absent from the Supervisor dashboard. Supervisor API denial and historical credential preservation remain unverified."
+    },
+    "approvedOctoberProfitLoss": {
+      "status": "OWNER_CONFIRMED_APPROVED_REPORT",
+      "period": "2026-10",
+      "basis": "With labour",
+      "fileName": "Zukait_profit_with_labour_2026-11-15.xml",
+      "sha256": "5e378032577d3906a2aa425d1754dc085d9dcfc2be548a4c26d860dd6202effa",
+      "jobCount": 45,
+      "partialCostJobCount": 1,
+      "totalJobCostOmr": "5088.128",
+      "netProfitOmr": "5918.872",
+      "coverage": "October rows were checked arithmetically. One job excludes missing prices. This file establishes the approved report baseline for a separate comparison to live results.",
+      "lpoCashAmountOmr": "11007.000"
     }
   },
   "vinOnlyEditCandidate": {
