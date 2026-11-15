@@ -103,7 +103,20 @@
       "totalJobCostOmr": "5088.128",
       "netProfitOmr": "5918.872",
       "coverage": "October rows were checked arithmetically. One job excludes missing prices. This file establishes the approved report baseline for a separate comparison to live results.",
-      "lpoCashAmountOmr": "11007.000"
+      "lpoCashAmountOmr": "11007.000",
+      "liveComparison": {
+        "status": "PASS_LIVE_REPORT_MATCH",
+        "verifiedOn": "2026-11-15",
+        "role": "Manager",
+        "period": "2026-10",
+        "basis": "With labour",
+        "jobCount": 45,
+        "pendingCostJobCount": 1,
+        "lpoCashAmountOmr": "11007.000",
+        "totalJobCostOmr": "5088.128",
+        "netProfitOmr": "5918.872",
+        "coverage": "Live October report totals matched the owner-approved XML exactly. The report still flags one pending-cost job. Source cost records and the pending prices were not independently verified."
+      }
     }
   },
   "vinOnlyEditCandidate": {
