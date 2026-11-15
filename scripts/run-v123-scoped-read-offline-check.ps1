@@ -23,7 +23,7 @@ $major=[int](([string]$versionText).TrimStart('v').Split('.')[0])
 if($major -lt 22){throw ("Node.js 22+ required; installed version is "+$versionText)}
 if(!(Test-Path -LiteralPath $dir -PathType Container)){throw "Expected encrypted Z: backup is missing: $dir"}
 if(!(Test-Path -LiteralPath $manifest -PathType Leaf)){throw "Expected pinned source hash manifest is missing: $manifest"}
-$rev='0d160ad6a41c34462623d7ee580df457254f520f'
+$rev='4629f07562e8c68d74d55242f54f800e7843b4e8'
 $root="https://raw.githubusercontent.com/zukaitauto/zukait-time-track-android/$rev/"
 $workspace=Join-Path $env:TEMP ('zukait-v123-test-'+[guid]::NewGuid().ToString('N').Substring(0,10))
 New-Item -ItemType Directory -Path $workspace -ErrorAction Stop | Out-Null
