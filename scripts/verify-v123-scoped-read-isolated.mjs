@@ -237,6 +237,33 @@ async function testRuntime(original,patched,folder) {
   assert.equal(legacy.trace.rpcs,0);
   return {cases:requests.length,originalSelectors:oldSelectors,patchedSelectors:newSelectors};
 }
+async function testHarnessSelfCheck() {
+  // CI-only synthetic transport test uses development source and bundled JS rules.
+  // It neither claims to verify deployed v123 nor connects to Supabase.
+  const root=path.resolve('supabase/functions/workshop-api');
+  const rules=await loadRealRules(root);
+  const state=makeState(rules.qcWork);
+  const candidate=buildServer(fs.readFileSync(path.join(root,'index.ts'),'utf8'),state,rules);
+  const tests=[
+    {role:'Manager',body:{action:'insurance_dashboard',section:'jobs',month:'2026-11'},expect:200},
+    {role:'Manager',body:{action:'insurance_dashboard',section:'pending',month:'2026-11'},expect:200},
+    {role:'Receptionist',body:{action:'receptionist_delivery_list'},expect:200},
+    {role:'Receptionist',body:{action:'insurance_dashboard'},expect:403},
+    {role:'Manager',body:{action:'receptionist_delivery_list'},expect:403},
+    {role:'Receptionist',body:{action:'receptionist_delivery_list',actor_id:'forged'},expect:403}
+  ];
+  for (const t of tests) {
+    const r=await candidate.request(t.role,t.body);
+    assert.equal(r.status,t.expect,'Synthetic dev handler check for '+t.body.action);
+  }
+  assert.equal(candidate.trace.writes,0);
+  assert.equal(candidate.trace.rpcs,0);
+  assert.ok(candidate.trace.selects.some(s=>s.table==='workshop_state'&&
+    s.fields==='jobs:data->jobs'));
+  assert.ok(candidate.trace.selects.some(s=>s.table==='workshop_state'&&
+    s.fields==='jobs:data->jobs,assign:data->assign,sessions:data->sessions'));
+  return tests.length;
+}
 function testPatchParser() {
   const baseline='first\nsecond\nthird\nfourth\nfifth\nsixth\nseventh\n';
   const demo='diff --git a/index.ts b/index.ts\n--- a/index.ts\n+++ b/index.ts\n'+
@@ -254,8 +281,8 @@ async function main(){
   if(major<22)fail('Node.js 22+ needed for isolated v123 TypeScript stripping. No backup changed.');
   if(a.selfTest) {
     testPatchParser();
-    // CI self-check covers argument and diff failure safety only, not v123 runtime.
-    console.log('PASS: offline v123 verifier parser self-check (not a live v123 runtime qualification).');
+    const n=await testHarnessSelfCheck();
+    console.log('PASS: offline v123 verifier parser + '+n+' mocked API runtime self-checks (NOT deployed v123).');
     return;
   }
   if(!a['function-dir']||!a.manifest||!a.patch)fail('Specify --function-dir, --manifest and --patch. No data changed.');
