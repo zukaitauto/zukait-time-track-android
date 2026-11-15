@@ -101,15 +101,189 @@ $secret = Read-Host 'Enter LOCAL PostgreSQL postgres password (not Supabase pass
 $ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secret)
 try { $env:PGPASSWORD = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr) }
 finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr) }
-$baseArgs = @('-X','-v','ON_ERROR_STOP=1','-h',$localHost,'-p',$LocalPort,'-U',$LocalUser)
+# -w disables a second, native psql password prompt. The supplied password
+# must be the one entered into the script's secure Read-Host prompt.
+$baseArgs = @('-X','-w','-v','ON_ERROR_STOP=1','-h',$localHost,'-p',$LocalPort,'-U',$LocalUser)
 try {
-    $identity = & $psql @baseArgs -d postgres -At -F '|' -c "select inet_server_addr()::text,current_setting('server_version_num'),current_setting('data_directory')"
-    if ($LASTEXITCODE -ne 0) { throw 'Local PostgreSQL is not reachable; start the local PostgreSQL 17 service.' }
-    $parts = "$identity".Trim() -split '\|',3
-    if ($parts.Count -ne 3 -or $parts[0] -ne $localHost -or [int]$parts[1] -lt 170000 -or [int]$parts[1] -ge 180000) {
-        throw 'Refusing to restore: target is not local PostgreSQL 17 on 127.0.0.1.'
+    if ([string]::IsNullOrEmpty($env:PGPASSWORD)) {
+        throw 'The local PostgreSQL password entry was empty. Run again and enter the NEW local password.'
     }
-    $dataDirectory = $parts[2]
+    # A tagged row avoids interpreting Windows client prompts or other stdout
+    # as a database address. Version, port and data directory are all checked.
+    $identityLines = @(& $psql @baseArgs -d postgres -At -F '|' -c "select 'ZUKAIT_LOCAL_PG17',inet_server_addr()::text,inet_server_port()::text,current_setting('server_version_num'),current_setting('data_directory')")
+    $identityExitCode = $LASTEXITCODE
+    if ($identityExitCode -ne 0) {
+        throw ("Local PostgreSQL connection/authentication failed on 127.0.0.1:{0}. Use the NEW password created with initdb, not the Supabase password." -f $LocalPort)
+    }
+    $matches = @($identityLines | Where-Object { "$_".StartsWith('ZUKAIT_LOCAL_PG17|') })
+    if ($matches.Count -ne 1) {
+        Write-Host ("Local identity check returned {0} unrecognized output line(s)." -f $identityLines.Count)
+        throw 'Unable to parse the exact local PostgreSQL identity; no restore attempted.'
+    }
+    $parts = "$($matches[0])".Trim() -split '\|',5
+    if ($parts.Count -ne 5) {
+        throw 'Malformed local PostgreSQL identity fields; no restore attempted.'
+    }
+    $seenAddress = $parts[1].Trim()
+    $seenPort = $parts[2].Trim()
+    $seenVersion = $parts[3].Trim()
+    $seenDataDir = $parts[4].Trim()
+    Write-Host ("LOCAL SERVER CHECK: address={0}, port={1}, version_num={2}" -f $seenAddress,$seenPort,$seenVersion)
+    if ($seenAddress -ne $localHost -or $seenPort -ne $LocalPort -or
+        $seenVersion -notmatch '^\d{6}
+    if ($dataRoot -notmatch '^[A-Za-z]:\\$') {
+        throw 'Local PostgreSQL data directory is not a Windows drive; check disk space manually.'
+    }
+    $dataDrive = Get-PSDrive -Name $dataRoot.Substring(0,1)
+    $minFree = 8GB
+    if ($dataDrive.Free -lt $minFree) {
+        throw ('Insufficient space on local PostgreSQL data drive {0}: {1:N1} GB free; at least 8 GB required.' -f $dataRoot,($dataDrive.Free/1GB))
+    }
+    if (!(Test-Path -LiteralPath $work)) {
+        New-Item -ItemType Directory -Path $work | Out-Null
+    }
+
+    # The marker must exist to allow use of an existing local DB. This prevents
+    # touching any earlier rehearsal or any other user-owned local database.
+    $markerExists = Test-Path -LiteralPath $statePath
+    if ($markerExists) {
+        $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
+        if ($state.database -ne $LocalDatabase -or $state.host -ne $localHost -or
+            [long]$state.cutoff_revision -ne [long]$plan.cutoff_revision -or
+            [long]$state.expected_rows -ne $expectedRecords) {
+            throw 'Existing rehearsal marker does not match the target or backup. Refusing to overwrite.'
+        }
+    }
+    $existing = & $psql @baseArgs -d postgres -At -c "select count(*) from pg_database where datname='$LocalDatabase'"
+    if ($LASTEXITCODE -ne 0) { throw 'Could not check the local rehearsal database name.' }
+    if (!$markerExists -and "$existing".Trim() -ne '0') {
+        throw "Local database $LocalDatabase already exists without our safety marker; refusing access."
+    }
+    if ($markerExists -and "$existing".Trim() -ne '1') {
+        throw 'Rehearsal marker exists but the local database is missing. Refusing to guess.'
+    }
+
+    if (!$markerExists) {
+        # Only mark a restore as resumable AFTER local database creation.
+        & $createdb -h $localHost -p $LocalPort -U $LocalUser -T template0 $LocalDatabase
+        if ($LASTEXITCODE -ne 0) { throw 'Creating isolated local rehearsal database failed. Nothing touched in production.' }
+        [pscustomobject]@{
+            database=$LocalDatabase
+            host=$localHost
+            port=$LocalPort
+            cutoff_revision=[long]$plan.cutoff_revision
+            expected_rows=$expectedRecords
+            started_utc=[DateTimeOffset]::UtcNow.ToString('o')
+        } | ConvertTo-Json | Set-Content -LiteralPath $statePath -Encoding UTF8
+        Write-Host "CREATED LOCAL-ONLY DATABASE: $LocalDatabase"
+    }
+
+    $coreFlag = Join-Path $work 'core-restored.flag'
+    if (!(Test-Path -LiteralPath $coreFlag)) {
+        $objects = & $psql @baseArgs -d $LocalDatabase -At -c "select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname in ('workshop_state','workshop_state_history')"
+        if ($LASTEXITCODE -ne 0) { throw 'Could not inspect the new local database.' }
+        if ("$objects".Trim() -ne '0') {
+            throw 'Partial local schema restore exists. Stop and inspect; automatic cleanup is forbidden.'
+        }
+        Write-Host 'RESTORING CORE ARCHIVE TO LOCAL DATABASE (not Supabase).'
+        $previousErrorAction = $ErrorActionPreference
+        try {
+            $ErrorActionPreference = 'Continue'
+            & $pgRestore -h $localHost -p $LocalPort -U $LocalUser -d $LocalDatabase --no-owner --no-privileges --clean --if-exists --exit-on-error --single-transaction $core
+            $restoreCode = $LASTEXITCODE
+        } finally { $ErrorActionPreference = $previousErrorAction }
+        if ($restoreCode -ne 0) {
+            throw 'Local core schema/data restore failed. No remote database was used. Save this error for diagnosis.'
+        }
+        $coreRows = & $psql @baseArgs -d $LocalDatabase -At -c "select count(*) from public.workshop_state where id='main'"
+        $historyRows = & $psql @baseArgs -d $LocalDatabase -At -c "select count(*) from public.workshop_state_history"
+        if ($LASTEXITCODE -ne 0 -or "$coreRows".Trim() -ne '1' -or "$historyRows".Trim() -ne '0') {
+            throw 'Local core archive did not restore expected main state and empty history table.'
+        }
+        'CORE_RESTORED_LOCALLY' | Set-Content -LiteralPath $coreFlag
+        Write-Host 'CORE RESTORE VERIFIED: workshop_state main row present, history table empty.'
+    }
+
+    $temp = Join-Path $work 'chunk-replay.bin.part'
+    foreach ($chunk in $chunks) {
+        $localCount = & $psql @baseArgs -d $LocalDatabase -At -c "select count(*) from public.workshop_state_history where revision >= $($chunk.low) and revision <= $($chunk.high)"
+        if ($LASTEXITCODE -ne 0) { throw 'Local restored-history read failed.' }
+        $count = [long]"$localCount".Trim()
+        if ($count -eq $chunk.rows -and $chunk.rows -gt 0) {
+            Write-Host "Already restored: $($chunk.low)-$($chunk.high)"
+            continue
+        }
+        if ($count -ne 0) {
+            throw "Local history contains $count unexpected/partial records in range $($chunk.low)-$($chunk.high). Stopping."
+        }
+        if ((Get-FileHash -LiteralPath $chunk.gz -Algorithm SHA256).Hash -ne $chunk.gzHash) {
+            throw "Backup archive checksum mismatch for $($chunk.name)"
+        }
+        if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Force }
+        $compressedInput = [IO.File]::OpenRead($chunk.gz)
+        $gunzip = [IO.Compression.GZipStream]::new($compressedInput,[IO.Compression.CompressionMode]::Decompress)
+        $output = [IO.File]::Create($temp)
+        try { $gunzip.CopyTo($output) }
+        finally { $output.Dispose();$gunzip.Dispose();$compressedInput.Dispose() }
+        if ((Get-FileHash -LiteralPath $temp -Algorithm SHA256).Hash -ne $chunk.rawHash) {
+            throw "Restored compressed bytes do not match original binary export: $($chunk.name)"
+        }
+        $source = $temp.Replace('\','/').Replace("'","''")
+        $copy = "\copy public.workshop_state_history (revision,data,updated_at,updated_by,archived_at) from '$source' with (format binary)"
+        $response = & $psql @baseArgs -d $LocalDatabase -c $copy
+        if ($LASTEXITCODE -ne 0) {
+            throw "Local COPY restoration failed for $($chunk.name). Existing backups are untouched."
+        }
+        $verified = & $psql @baseArgs -d $LocalDatabase -At -c "select count(*) from public.workshop_state_history where revision >= $($chunk.low) and revision <= $($chunk.high)"
+        if ($LASTEXITCODE -ne 0 -or [long]"$verified".Trim() -ne $chunk.rows) {
+            throw "Local imported row-count mismatch for $($chunk.name)"
+        }
+        Remove-Item -LiteralPath $temp -Force
+        Write-Host ("Restored locally: {0}-{1} ({2} records)" -f $chunk.low,$chunk.high,$chunk.rows)
+    }
+
+    $summary = & $psql @baseArgs -d $LocalDatabase -At -F '|' -c "select count(*),min(revision),max(revision),count(*) filter(where data is null) from public.workshop_state_history"
+    if ($LASTEXITCODE -ne 0) { throw 'Could not verify total restored history.' }
+    $totals = "$summary".Trim() -split '\|'
+    if ($totals.Count -ne 4 -or
+        [long]$totals[0] -ne $expectedRecords -or
+        [long]$totals[1] -ne [long]$plan.first_revision -or
+        [long]$totals[2] -ne [long]$plan.cutoff_revision -or
+        [long]$totals[3] -ne 0) {
+        throw "Restored history control totals FAILED: $summary"
+    }
+    [pscustomobject]@{
+        status='LOCAL_CORE_AND_HISTORY_RESTORE_VERIFIED'
+        database=$LocalDatabase; host='127.0.0.1'; source_backup='ZUKAIT'
+        history_rows=[long]$totals[0]; min_revision=[long]$totals[1]
+        max_revision=[long]$totals[2]; null_json_rows=[long]$totals[3]
+        finished_utc=[DateTimeOffset]::UtcNow.ToString('o')
+        recovery_point_note='Core dump and history export were captured separately; not one transaction-consistent production point.'
+        pending='Separate app/read compatibility, permissions, disk headroom and rollout gates.'
+    } | ConvertTo-Json | Set-Content -LiteralPath $passedPath -Encoding UTF8
+    Write-Host "LOCAL RESTORE PASSED - $expectedRecords history records restored and checked"
+    Write-Host "LOCAL DATABASE: $LocalDatabase"
+    Write-Host "REPORT: $passedPath"
+    Write-Host 'Original backups unchanged. Production Supabase was NOT contacted.'
+}
+finally {
+    Remove-Item Env:\PGPASSWORD -ErrorAction SilentlyContinue
+    Remove-Item Env:\PGSSLMODE -ErrorAction SilentlyContinue
+}
+ -or
+        [int]$seenVersion -lt 170000 -or [int]$seenVersion -ge 180000) {
+        throw 'Refusing to restore: server address/port/PostgreSQL 17 verification failed.'
+    }
+    $dataDirectory = $seenDataDir
+    # The dedicated instance created for this rehearsal has a known local
+    # data folder. A localhost proxy to a remote server cannot pass this gate.
+    if ($LocalPort -eq '55433') {
+        $expectedDir = Join-Path $env:LOCALAPPDATA 'ZUKAIT\pg17-restore-20261114'
+        $actualDir = [IO.Path]::GetFullPath($dataDirectory).TrimEnd('\','/')
+        if ($actualDir -ine ([IO.Path]::GetFullPath($expectedDir).TrimEnd('\','/'))) {
+            throw ("Refusing to restore: port 55433 does not lead to expected local data folder: {0}" -f $expectedDir)
+        }
+    }
     $dataRoot = [IO.Path]::GetPathRoot($dataDirectory)
     if ($dataRoot -notmatch '^[A-Za-z]:\\$') {
         throw 'Local PostgreSQL data directory is not a Windows drive; check disk space manually.'
