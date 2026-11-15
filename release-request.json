@@ -59,7 +59,7 @@
     "qaFinancialAcceptance": false,
     "serverPermissions": false,
     "rollbackPrepared": false,
-    "legacyLoginCompatibility": false,
+    "legacyLoginCompatibility": true,
     "liveCostReconciliation": false,
     "repeatAndId001Regression": false
   },
@@ -86,6 +86,11 @@
       "finishedAt": "2026-11-15T07:34:58.1772363+00:00",
       "historyRows": 16410,
       "coverage": "Recovered workshop data locally. Full application recovery, auth, storage and trigger dependencies remain unverified."
+    },
+    "legacyLoginCompatibility": {
+      "status": "PASS_LIVE_EXISTING_MANAGER_AND_SUPERVISOR",
+      "verifiedOn": "2026-11-15",
+      "coverage": "Both existing staff accounts signed in to the current live workshop app and reached their online role dashboards. Manager opened the live Accounts Profit / Loss report. Accounts controls were absent from the Supervisor dashboard. Supervisor API denial and historical credential preservation remain unverified."
     }
   },
   "vinOnlyEditCandidate": {
