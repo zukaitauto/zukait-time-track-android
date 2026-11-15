@@ -38,6 +38,7 @@ if($null -ne $cli){
     $prefix=@('--yes','supabase@latest')
     Write-Host 'Supabase CLI not installed; using npx to fetch/run Supabase CLI in the npm cache (may require internet).'
 }
+$loginHint = if ($prefix.Count -gt 0) { 'npx --yes supabase@latest login' } else { 'supabase login' }
 function RunSupabase([string[]]$arguments){
     $oldPref=$ErrorActionPreference
     try{
@@ -48,7 +49,7 @@ function RunSupabase([string[]]$arguments){
         $ErrorActionPreference=$oldPref
     }
     if($exit -ne 0){
-        throw ('Supabase CLI command failed (exit {0}): {1}. If authentication expired, run: supabase login on your own PC. Never paste a token or password into chat.' -f $exit,($arguments -join ' '))
+        throw ('Supabase CLI command failed (exit {0}): {1}. If authentication is missing, run on this PC: {2}. Never paste a token or password into chat.' -f $exit,($arguments -join ' '),$loginHint)
     }
 }
 $oldPref=$ErrorActionPreference
