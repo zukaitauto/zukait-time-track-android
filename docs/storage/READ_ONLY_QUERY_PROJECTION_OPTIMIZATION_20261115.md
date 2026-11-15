@@ -34,7 +34,7 @@ Committed code: `supabase/functions/workshop-api/index.ts` on `architecture-v2`.
 
 - Added `tests/read-only-projection-io.mjs` with synthetic fixtures: compares projected and full-state Insurance rows/counts and Reception QC/delivery readiness, checks no financial/extra state is needed, and asserts exact route selectors, permissions and full-state mutation CAS remain.
 - Included that test in `scripts/ci-full-regression.sh` following the existing Insurance management API test.
-- Source patches and tests were read back from GitHub. GitHub Actions automatically started for the resulting commit. **As of the check, only the Connection outage safety workflow reported success; comprehensive CI was in progress.** Do not claim the new test passed until a runner reports a completed successful check.
+- **Verified CI**: GitHub Actions workflow [Build Zukait Time Track APK, run 43718761420](https://github.com/zukaitauto/zukait-time-track-android/actions/runs/43718761420) completed successfully against the exact candidate commit `7143f6f705eb242e517d414ca3271f4745814403`. The job's functional smoke-test logs explicitly contain `PASS: scoped read-only workshop-state projections preserve insurance and QC results; write CAS and permissions unchanged.`. Source changes and test were independently read back from the branch. This is synthetic/CI evidence, not production measurement of reduced traffic or a published release.
 - **No production deployment approval**: a later release must compare the exact deployed `workshop-api` v123 bundle and keep unrelated pending changes out. Requalify all behavior before separately authorizing an exact minimal patch.
 
 ## Capacity gate: cannot certify
@@ -42,3 +42,7 @@ Committed code: `supabase/functions/workshop-api/index.ts` on `architecture-v2`.
 Connected Supabase project metadata and SQL/extension interfaces do **not** expose remaining EBS I/O burst credits or physical available disk space. `pg_database_size`, `pg_stat_io`, `pg_stat_wal`, `pg_stat_statements`, and status `ACTIVE_HEALTHY` are not substitutes. These values require the authorized Supabase dashboard/physical infrastructure metric provider. The earlier Support case described exhausted EBS IO balance and recent November 15 503/restart errors; optimizing without this information could exacerbate outages.
 
 **Production status: HOLD** compact history, dual-write mode, schema/index creation, vacuum-full, bulk exports, and any restart. Preserve all verified Z: archives and existing history. No user-facing UI/functionality changes have been published.
+
+## Verification update
+
+At the final readback the architecture-v2 build, inactive Mechanical/Accountant contracts, Connection outage safety and functional smoke-test workflow completed successfully for candidate commit `7143f6f705eb242e517d414ca3271f4745814403`. No deployment action was invoked.
