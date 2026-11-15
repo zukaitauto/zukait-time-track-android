@@ -18,7 +18,7 @@ function argsParser(args) {
   const v = {};
   for (let i=0;i<args.length;i++) {
     if (args[i]==='--self-test') {v.selfTest=true; continue;}
-    if (!['--function-dir','--manifest','--patch'].includes(args[i])||!args[i+1]) fail('Invalid CLI argument '+args[i]);
+    if (!['--function-dir','--manifest','--patch','--stage-dir'].includes(args[i])||!args[i+1]) fail('Invalid CLI argument '+args[i]);
     v[args[i].slice(2)]=args[++i];
   }
   return v;
@@ -237,6 +237,143 @@ async function testRuntime(original,patched,folder) {
   assert.equal(legacy.trace.rpcs,0);
   return {cases:requests.length,originalSelectors:oldSelectors,patchedSelectors:newSelectors};
 }
+
+function makeOfflineReleasePackage({folder,observed,patchedSource,stageDir,metadata}) {
+  // A complete, source-only staging + rollback rehearsal. Never deploy.
+  if (!stageDir) fail('No release stage directory provided');
+  const archiveDir=fs.realpathSync(folder);
+  const parent=fs.realpathSync(path.dirname(path.dirname(path.dirname(path.dirname(archiveDir)))));
+  const target=path.resolve(stageDir);
+  const targetParent=fs.realpathSync(path.dirname(target));
+  const same=(a,b)=>process.platform==='win32'?a.toLowerCase()===b.toLowerCase():a===b;
+  if (!same(targetParent,parent)) fail('Stage folder must be a NEW direct child of the encrypted backup base');
+  if(fs.existsSync(target))fail('Stage folder exists: refusing to replace previous work');
+  if(observed.length!==43||observed.filter(f=>f.name==='index.ts').length!==1)
+    fail('Full 43-file source manifest required to stage or rehearse rollback');
+  const expectedNames=new Set(observed.map(x=>x.name));
+  if(expectedNames.size!==43)fail('Source inventory has duplicate filenames');
+
+  const tmp=fs.mkdtempSync(path.join(parent,'.zukait-v123-stage-incomplete-'));
+  let published=false;
+  function treeName(root){return path.join(tmp,root,'supabase','functions','workshop-api')}
+  function writeTree(root,patched){
+    const output=treeName(root);
+    for(const entry of observed){
+      const targetFile=path.join(output,...entry.name.split('/'));
+      fs.mkdirSync(path.dirname(targetFile),{recursive:true});
+      if(patched&&entry.name==='index.ts'){
+        fs.writeFileSync(targetFile,patchedSource,{flag:'wx'});
+      }else {
+        fs.copyFileSync(path.join(archiveDir,...entry.name.split('/')),targetFile,fs.constants.COPYFILE_EXCL);
+      }
+    }
+    return output;
+  }
+  function inspectTree(root,patched){
+    const files=[];
+    function recurse(dirname,prefix=''){
+      for(const dirent of fs.readdirSync(dirname,{withFileTypes:true})){
+        const name=prefix?prefix+'/'+dirent.name:dirent.name;
+        if(dirent.isSymbolicLink())fail('Stage contains a symbolic link: '+name);
+        if(dirent.isDirectory())recurse(path.join(dirname,dirent.name),name);
+        else if(dirent.isFile()) files.push(name);
+        else fail('Unexpected staging filesystem object: '+name);
+      }
+    }
+    recurse(root);
+    if(files.length!==43||files.some(x=>!expectedNames.has(x))) fail('Staged source file list differs from exact 43-file manifest');
+    for(const item of observed){
+      const file=fs.readFileSync(path.join(root,...item.name.split('/')));
+      const expectedHash=patched&&item.name==='index.ts'?hash(Buffer.from(patchedSource)):item.sha256;
+      if(hash(file)!==expectedHash)fail('Staged SHA256 mismatch: '+item.name);
+      if(!patched&&file.length!==item.bytes)fail('Rollback size mismatch: '+item.name);
+    }
+  }
+  try{
+    const rollback=writeTree('ROLLBACK-UNPATCHED-V123',false);
+    const candidate=writeTree('CANDIDATE-PROJECTED-READS',true);
+    inspectTree(rollback,false);
+    inspectTree(candidate,true);
+    // Offline rollback rehearsal: restore a working copy of the patched files
+    // with the complete unpatched archive. Never replace a deployed function.
+    const drill=treeName('ROLLBACK-DRILL');
+    for(const item of observed){
+      const destination=path.join(drill,...item.name.split('/'));
+      fs.mkdirSync(path.dirname(destination),{recursive:true});
+      fs.copyFileSync(path.join(candidate,...item.name.split('/')),destination,fs.constants.COPYFILE_EXCL);
+    }
+    for(const item of observed) {
+      const restored=path.join(drill,...item.name.split('/'));
+      const original=path.join(rollback,...item.name.split('/'));
+      fs.copyFileSync(original,restored); // overwritten only in newly created temporary rehearsal
+    }
+    inspectTree(drill,false);
+    fs.rmSync(path.join(tmp,'ROLLBACK-DRILL'),{recursive:true,force:true});
+    if(hash(fs.readFileSync(path.join(archiveDir,'index.ts')))!==expectedIndexSha)
+      fail('Encrypted original source changed after packaging');
+    const result={
+      status:'V123_SOURCE_STAGE_AND_ROLLBACK_REHEARSAL_PASSED',
+      qualified_utc:new Date().toISOString(),
+      project_ref:'pjknotnjkufadqavcmii',
+      function_slug:'workshop-api',
+      original_deployment_version:123,
+      original_deployment_bundle_sha256:expectedDeploymentSha,
+      source_file_count:43,
+      changed_files:['index.ts'],
+      patched_index_sha256:hash(Buffer.from(patchedSource)),
+      baseline_index_sha256:expectedIndexSha,
+      synthetic_api_cases:metadata.synthetic_cases,
+      patch_hunks:metadata.applied_patch_hunks,
+      rollback_copy_sha256_verified:true,
+      candidate_unchanged_files_sha256_verified:true,
+      rollback_rehearsal:'offline file restore completed and all 43 hashes rechecked; live CLI redeployment NOT exercised',
+      production_deployments:0,
+      production_writes:0,
+      source_backup_mutated:false,
+      contents:{
+        candidate:'CANDIDATE-PROJECTED-READS/supabase/functions/workshop-api',
+        rollback:'ROLLBACK-UNPATCHED-V123/supabase/functions/workshop-api'
+      },
+      deploy_authorized:false,
+      caveat:'No live Supabase deployment, no actual deployment rollback proof, no credentials/config verification, no EBS disk IO measurements.'
+    };
+    fs.writeFileSync(path.join(tmp,'STAGE-AND-ROLLBACK-VERIFIED.json'),JSON.stringify(result,null,2)+'\n',{flag:'wx'});
+    fs.renameSync(tmp,target);
+    published=true;
+    return {stageRoot:target,manifest:result};
+  }finally {
+    if(!published&&fs.existsSync(tmp))fs.rmSync(tmp,{recursive:true,force:true});
+  }
+}
+async function testPackagingFailClosed(){
+  // This self-test never uses the operator's encrypted backup. Build 43
+  // synthetic source files and check that staging/rollback copies are exact.
+  const tempRoot=fs.mkdtempSync(path.join(os.tmpdir(),'zukait-package-fixture-'));
+  try{
+    const base=path.join(tempRoot,'Zukait-20261025');
+    const folder=path.join(base,'FAKE-EDGE-BACKUP','supabase','functions','workshop-api');
+    fs.mkdirSync(folder,{recursive:true});
+    const items=[{name:'index.ts',bytes:10,sha256:hash(Buffer.from('unchanged\n'))}];
+    for(let i=0;i<42;i++){
+      const name='module/fixture'+String(i).padStart(2,'0')+'.js';
+      const value=Buffer.from('synthetic '+i+'\n');
+      items.push({name,bytes:value.length,sha256:hash(value)});
+      const dst=path.join(folder,...name.split('/'));
+      fs.mkdirSync(path.dirname(dst),{recursive:true});fs.writeFileSync(dst,value);
+    }
+    fs.writeFileSync(path.join(folder,'index.ts'),'unchanged\n');
+    // Packaging function is pinned to actual v123 index SHA: reject synthetic data.
+    assert.throws(()=>makeOfflineReleasePackage({
+      folder,observed:items,patchedSource:'patched\n',
+      stageDir:path.join(base,'NO-PACKAGE-ON-SOURCE-MISMATCH'),
+      metadata:{synthetic_cases:7,applied_patch_hunks:3}
+    }),/Encrypted original source changed/);
+    assert.equal(fs.existsSync(path.join(base,'NO-PACKAGE-ON-SOURCE-MISMATCH')),false);
+    assert.equal(fs.readFileSync(path.join(folder,'index.ts'),'utf8'),'unchanged\n');
+    return true;
+  }finally{fs.rmSync(tempRoot,{recursive:true,force:true});}
+}
+
 async function testHarnessSelfCheck() {
   // CI-only synthetic transport test uses development source and bundled JS rules.
   // It neither claims to verify deployed v123 nor connects to Supabase.
@@ -281,8 +418,9 @@ async function main(){
   if(major<22)fail('Node.js 22+ needed for isolated v123 TypeScript stripping. No backup changed.');
   if(a.selfTest) {
     testPatchParser();
+    await testPackagingFailClosed();
     const n=await testHarnessSelfCheck();
-    console.log('PASS: offline v123 verifier parser + '+n+' mocked API runtime self-checks (NOT deployed v123).');
+    console.log('PASS: v123 patch parser, fail-closed 43-file staging/rollback, and '+n+' mocked API runtime self-checks (NOT deployed v123).');
     return;
   }
   if(!a['function-dir']||!a.manifest||!a.patch)fail('Specify --function-dir, --manifest and --patch. No data changed.');
@@ -318,6 +456,13 @@ async function main(){
   fs.writeFileSync(resultFile,JSON.stringify(report,null,2)+'\n',{flag:'wx'});
   console.log('V123 ISOLATED RUNTIME TEST PASSED - 43 verified source files, '+result.cases+' synthetic API cases, 3 patch hunks.');
   console.log('No network, no live API, no database writes and no source-backup edits.');
+  if(a['stage-dir']){
+    const packaged=makeOfflineReleasePackage({folder,observed,patchedSource:applied.newSource,
+      stageDir:a['stage-dir'],metadata:report});
+    console.log('V123 STAGING AND OFFLINE ROLLBACK REHEARSAL PASSED - 43 source files in each package; only candidate index.ts differs.');
+    console.log('STAGING: '+packaged.stageRoot);
+    console.log('STAGING REPORT: '+path.join(packaged.stageRoot,'STAGE-AND-ROLLBACK-VERIFIED.json'));
+  }
   console.log('REPORT: '+resultFile);
 }
 main().catch(err=>{console.error('V123 ISOLATED TEST FAILED (no production changes): '+err.message);process.exitCode=1;});
