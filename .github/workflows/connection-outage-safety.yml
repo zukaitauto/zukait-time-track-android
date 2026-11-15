@@ -30,3 +30,4 @@ jobs:
           node tests/account-session-isolation.mjs
           node tests/employee-finish-server-authority.mjs
           node tests/id001-server-stop.mjs
+          node tests/stage-v124-history-reader-safety.mjs
