@@ -1,12 +1,11 @@
-# ZUKAIT workshop-api v123 minimal, SOURCE-READBACK-BOUND patch
-# Target deployed source version: 123; deploy only after independently verifying exact live bundle SHA.
+# ZUKAIT workshop-api v123 minimal SOURCE-READBACK-BOUND patch
 # Deployed bundle SHA256: edf5131f3b1394afe3ecff52d4d45c72680f8462889b07a1cfd871e9d374d68a
-# STATUS: STAGED ONLY. This is not an authorized production deployment.
-# No replacement of the 43-file deployed source bundle or runtime secrets is included.
+# Live version: 123; STATUS STAGED ONLY, NOT AUTHORIZED FOR DEPLOYMENT
+# No deployed source bundle, tokens or secrets are committed.
 diff --git a/index.ts b/index.ts
 --- a/index.ts
 +++ b/index.ts
-@@ -1280,8 +1280,11 @@
+@@ -1280,9 +1280,12 @@
      if(action==='insurance_dashboard'){
        if(user.role!=='Manager')return reply({ok:false,code:'insurance_manager_required'},403);
        if(Object.keys(body).some(k=>!['action','section','company','month','from','to','page','search'].includes(k))||JSON.stringify(body).length>2500)return reply({ok:false,code:'insurance_invalid_filter'},400);
@@ -19,7 +18,8 @@ diff --git a/index.ts b/index.ts
        const cases:any[]=[];
        for(let offset=0;offset<=50000;offset+=500){
          const {data:chunk,error}=await admin.from('workshop_receptions').select('rc_no,job_card,job_type,details,location,outcome,approval_status,repair_status,released_date,insurance_id').order('sequence_no',{ascending:false}).range(offset,offset+499);
-@@ -1290,7 +1293,7 @@
+         if(error)throw error;cases.push(...(chunk||[]));if((chunk||[]).length<500)break;
+@@ -1290,8 +1293,8 @@
        }
        const {data:companies,error}=await admin.from('workshop_insurance_companies').select('id,name');if(error)throw error;
        const names=new Map((companies||[]).map((c:any)=>[c.id,c.name]));
@@ -28,7 +28,8 @@ diff --git a/index.ts b/index.ts
        if(result.ok&&result.rows?.length){
          // Fetch approval evidence only for the visible page: no repeated full-table history scan.
          const rcByJob=new Map(cases.filter(r=>r.job_card).map(r=>[String(r.job_card).toUpperCase(),r.rc_no]));
-@@ -1394,12 +1397,22 @@
+         const rcNumbers=[...new Set(result.rows.map((r:any)=>rcByJob.get(String(r.job_card).toUpperCase())).filter(Boolean))];
+@@ -1394,13 +1397,22 @@
        return reply({ok:false,code:"reception_promise_conflict"},409);
      }
  
@@ -51,4 +52,4 @@ diff --git a/index.ts b/index.ts
          const result = receptionistDeliveryTransition(current.data, user, body, Date.now());
          if (!result.ok) return reply({ok:false,code:result.code}, result.code === "receptionist_forbidden"?403:409);
          if (result.duplicate) return reply({ok:true,duplicate:true,job:receptionistDeliveryRow(current.data,result.job)});
-+        const live=computeLiveStatus(result.data,Number(current.revision||0)+1,user.id);
+         const live=computeLiveStatus(result.data,Number(current.revision||0)+1,user.id);
