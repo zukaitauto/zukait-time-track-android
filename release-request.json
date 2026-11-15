@@ -61,7 +61,7 @@
     "rollbackPrepared": false,
     "legacyLoginCompatibility": true,
     "liveCostReconciliation": false,
-    "repeatAndId001Regression": false
+    "repeatAndId001Regression": true
   },
   "postDeploymentAccountantRun": {
     "runId": 43568035465,
@@ -72,8 +72,12 @@
   },
   "evidenceDetails": {
     "repeatAndId001Regression": {
-      "status": "PENDING_EXACT_SOURCE_RETEST",
-      "sourceCommit": "99059a2f6036e90384f2379e09d5141495a9928a"
+      "status": "PASS_EXACT_SOURCE_FULL_REGRESSION",
+      "sourceCommit": "99059a2f6036e90384f2379e09d5141495a9928a",
+      "runs": [
+        43611512367
+      ],
+      "coverage": "The passing full-regression step in the isolated Accountant QA job ran the repeat-work and ID001 tests listed by the pinned CI script."
     },
     "qaFinancialAcceptance": {
       "status": "PASS_ISOLATED_QA_LIVE_RECONCILIATION_PENDING",
