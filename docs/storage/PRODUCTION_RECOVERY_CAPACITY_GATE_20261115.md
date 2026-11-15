@@ -62,7 +62,7 @@ Official documentation: https://supabase.com/kb/troubleshooting/exhaust-disk-io 
 - Supabase Auth auth.users has 0 rows. ZUKAIT uses a separate staff authentication mechanism; 0 here does NOT indicate no staff accounts. Preserve the public credential, session and authorization data and custom staff-auth source.
 - Storage exact counts: employee-voice-notes (private) has 0 objects; zukait-pc (public) has 7 objects. Source object sizes from metadata (bytes): app.svg 266011; cloud_sync.js 11476; index.html 260907; production_pilot.js 14741; professional_ux.js 16177; secure_auth.js 10614; zukait_logo.webp 4052. Metadata is not a backup of object bytes.
 - Added scripts/backup-zukait-public-storage-readonly.ps1. It downloads only those 7 public files to a new encrypted Z: drive folder, hashes and size-checks them, and writes a manifest after success. The script was inspected in source, not yet executed on the user's PC.
-- All 9 currently deployed Edge Function source bundles could be read back through the Supabase connector. Live workshop-api v123 has 42 files; staff-auth v13 has 2; voice-api v4 has 2; each of the remaining 6 has 1. This is not yet a durable off-platform backup, and no secrets or source bodies were written to the repo.
+- All 9 currently deployed Edge Function source bundles could be read back through the Supabase connector. Live workshop-api v123 has 43 files (including deno.json); staff-auth v13 has 2; voice-api v4 has 2; each of the remaining 6 has 1. This is not yet a durable off-platform backup, and no secrets or source bodies were written to the repo.
 - Remaining blocker: the physical disk free-space and Disk I/O balance cannot be established from these management/catalog metadata tools.
 
 ### Next steps without production changes
@@ -72,3 +72,12 @@ Official documentation: https://supabase.com/kb/troubleshooting/exhaust-disk-io 
 3. Obtain dashboard evidence of physical free disk, WAL headroom and minimum recent Disk I/O balance.
 4. Plan a transaction-consistent recovery point addressing the 3 Vehicle audit references missing from the older core dump.
 5. Only after documented resource headroom, full recovery and explicit production approval, requalify history migration against current workshop-api v123. Retain legacy history; no deletion/compaction now.
+
+
+## Exact live Edge source SHA256 snapshot — 2026-11-15
+
+The read-only Management API get_edge_function endpoint returned all **9** active functions, containing **53** individual deployed source files, inclusive of deno.json files. A SHA-256/UTF-8 byte inventory (with file paths, live version, deployment bundle SHA and verify_jwt/import-map flags) was committed in docs/storage/EDGE_FUNCTION_LIVE_SOURCE_SHA256_20261115.json. No source bodies or secret values were committed. workshop-api is active at version 123 and contains 43 files including deno.json. The original 42-file count in prior notes was the file count before accounting for the dependency config file.
+
+A local-only Windows export script, scripts/backup-zukait-live-edge-functions-readonly.ps1, was committed. It uses Supabase CLI functions download --use-api into a unique encrypted Z: folder, checks each file against the above independently gathered SHA, and writes EDGE-SOURCE-BACKUP-PASSED.json only after all 53 files match. The script can run through an installed Supabase CLI or npx fallback and requires the user's own locally authenticated Supabase account; never provide an access token in chat. It may reconstruct only missing deno.json files from exact hash-verified Management API readback bytes. No functions deploy/delete/push/restart operation is present.
+
+**Status**: Source checksum snapshot is verified, but the user has **not yet run this Edge backup script** on the PC; durable off-platform Edge source recovery remains pending. Environment secrets and hosted configuration are separate and remain outside scope. Full recovery and production history optimization are not approved.
