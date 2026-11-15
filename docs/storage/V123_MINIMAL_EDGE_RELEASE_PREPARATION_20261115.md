@@ -1,5 +1,5 @@
 # ZUKAIT — minimal v123 Edge-only optimization release preparation
-**Preparation state: READY FOR OWNER RELEASE DECISION; NOT DEPLOYED.**
+**Preparation state: 43-file candidate and 43-file rollback packages STAGED & OFFLINE-VERIFIED on encrypted Z: (operator evidence); NOT DEPLOYED. Live deployment rollback remains untested and requires explicit owner release approval.**
 
 ## 1. Exact scope and provenance
 
@@ -52,6 +52,23 @@ At SQL sample **2026-11-15 14:33:24 UTC**:
 - **GitHub CI verification passed**: [Build Zukait Time Track APK, run #43725642312](https://github.com/zukaitauto/zukait-time-track-android/actions/runs/43725642312) completed with successful functional smoke tests. Its job logs explicitly say `PASS: v123 patch parser, fail-closed 43-file staging/rollback, and 6 mocked API runtime self-checks (NOT deployed v123).` This validates parser, mocked request behavior and source-only package mechanics. It does **not** imply the operator's PC stage exists. **PC staging remains pending** until a `STAGE-AND-ROLLBACK-VERIFIED.json` file is produced and its output is shared.
 - Even a successful source-only package cannot establish that the live CLI deployment/rollback command will work, retain the current JWT/region settings, or preserve server-side secret configuration. This remains a separate mandatory gate before live release.
 
+
+## 4B. Operator-confirmed staging and offline rollback result — 15 November 2026
+
+The operator supplied Windows PowerShell output for the pinned local runner. This is an observed **success report from the PC**, not direct access by GitHub to encrypted Z:.
+
+- `V123 ISOLATED RUNTIME TEST PASSED - 43 verified source files, 7 synthetic API cases, 3 patch hunks.`
+- `V123 STAGING AND OFFLINE ROLLBACK REHEARSAL PASSED - 43 source files in each package; only candidate index.ts differs.`
+- `V123 RELEASE STAGING AND OFFLINE ROLLBACK REHEARSAL PASSED - Two complete 43-file bundles verified.`
+- The script reported no network/live API, no database writes and no source-backup edits during the Node runtime test.
+- Encrypted staging folder: `Z:\Zukait-20261025\ZUKAIT-V123-EDGE-RELEASE-STAGE-20261115-144459-4f434b34`.
+- Verified staging report: `Z:\Zukait-20261025\ZUKAIT-V123-EDGE-RELEASE-STAGE-20261115-144459-4f434b34\STAGE-AND-ROLLBACK-VERIFIED.json`.
+- Supplemental runtime report: `Z:\Zukait-20261025\ZUKAIT-V123-RUNTIME-TEST-20261115-144500-63612df7\V123-ISOLATED-RUNTIME-TEST-PASSED.json`.
+- **Rollback scope:** the rehearsal checked offline file restoration for all 43 files. It did **not** execute a real Supabase CLI deploy/rollback or verify live region/JWT settings preservation through a redeploy.
+- **Read-only production recheck after the reported test:** `workshop-api` remains `ACTIVE` v123, bundle SHA `edf5131f3b1394afe3ecff52d4d45c72680f8462889b07a1cfd871e9d374d68a`, with `verify_jwt=false` and import map enabled. No live deploy occurred.
+
+**Updated disposition:** The previously pending staging artifact is now confirmed complete to the limits of the operator-supplied test. Remaining gates are (1) owner approval for this exact Edge-only change; (2) an executable, pinned CLI rollout and rollback method that preserves deployed configuration; (3) a current operational preflight and post-release acceptance/monitoring window. Physical disk and EBS I/O reserves remain an independent blocker to history compaction.
+
 ## 5. Controlled rollout, when separately approved
 
 1. Capture a short pre-release baseline of `workshop-api` HTTP statuses, request latency where available, relevant live error logs and user-facing login/Insurance/Reception read results.
@@ -72,6 +89,6 @@ At SQL sample **2026-11-15 14:33:24 UTC**:
 
 **Completed:** isolated validation, code scope, pinned baseline and backup evidence, read-only error/lock sample, release/rollback acceptance plan.
 
-**Not completed:** explicit live-release authorization, a deployed and independently qualified 43-file staging artifact, confirmation of an executable rollback path, active deployment, post-release user acceptance or any actual performance gain.
+**Not completed:** explicit live-release authorization, an independently verified **live** rollback redeployment method, active deployment, post-release user acceptance or any measured production performance gain. Both complete source-only staging packages are already offline-qualified.
 
 **Current production**: `workshop-api` v123 unchanged. Hold release unless all gates pass. Other production history/IO optimization remains separate.
