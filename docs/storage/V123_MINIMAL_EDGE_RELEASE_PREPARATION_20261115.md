@@ -40,6 +40,18 @@ At SQL sample **2026-11-15 14:33:24 UTC**:
 - **Do not run `.github/workflows/publish-approved-release.yml`** for this change: it coordinates staff APK/Pages publication and risks unrelated releases. Use a specifically controlled Edge-only operation that preserves rollback.
 - Do not introduce the compact history schema, dual-write, heavy export, `VACUUM FULL`, new production indexes, database restarts or subscription upgrades.
 
+## 4A. Verified offline staging/rollback tool (new; not yet run on operator PC)
+
+- Runner: [`scripts/run-v123-scoped-read-offline-check.ps1`](../../scripts/run-v123-scoped-read-offline-check.ps1), with pinned Node helper [`scripts/verify-v123-scoped-read-isolated.mjs`](../../scripts/verify-v123-scoped-read-isolated.mjs) and three-hunk diff.
+- The wrapper now creates a **new** `Z:\Zukait-20261025\ZUKAIT-V123-EDGE-RELEASE-STAGE-*` directory. It explicitly refuses to overwrite an existing stage and does not modify the source archive.
+- Stages only these complete source directories, each with exactly 43 hash-checked files:
+  - `CANDIDATE-PROJECTED-READS\supabase\functions\workshop-api\` (only `index.ts` patched);
+  - `ROLLBACK-UNPATCHED-V123\supabase\functions\workshop-api\` (all 43 originals SHA-identical to encrypted backup).
+- The tool copies the candidate bundle into a temporary rollback-drill folder, restores all 43 originals from the rollback package, SHA-compares all 43 files to the pinned baseline, and removes the drill. Only after success does it atomically publish the completed staging directory with `STAGE-AND-ROLLBACK-VERIFIED.json`. The source-only rollback rehearsal **is not** a deployed rollback exercise.
+- Offline synthetic API runtime checks (7 cases) are rerun before packaging. No network requests or production mutations occur in Node; the PowerShell wrapper downloads only the public pinned checker and diff from GitHub.
+- The GitHub build uses `--self-test` to validate parser, synthetic API behavior, and fail-closed staging mechanics; passing CI does **not** imply the PC stage exists. **Operator PC staging is still pending** until a `STAGE-AND-ROLLBACK-VERIFIED.json` file is produced and its output is shared.
+- Even a successful source-only package cannot establish that the live CLI deployment/rollback command will work, retain the current JWT/region settings, or preserve server-side secret configuration. This remains a separate mandatory gate before live release.
+
 ## 5. Controlled rollout, when separately approved
 
 1. Capture a short pre-release baseline of `workshop-api` HTTP statuses, request latency where available, relevant live error logs and user-facing login/Insurance/Reception read results.
