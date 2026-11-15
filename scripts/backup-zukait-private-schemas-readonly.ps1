@@ -55,12 +55,20 @@ try {
     }
     Write-Host 'Starting bounded READ-ONLY export of two small private ZUKAIT application schemas.'
     Write-Host 'No workshop history data is being read.'
+    # Build the --file argument BEFORE the array. Within a PowerShell array,
+    # an unparenthesized string + variable may be split into separate native
+    # arguments, causing pg_dump to reject the archive pathname.
+    $outputFileArg = '--file=' + $archive
     $dumpArgs = @(
         '-w', '-h', $prodHost, '-p', '5432', '-U', 'postgres', '-d', 'postgres',
         '--format=custom','--compress=1',
         '--schema=zukait_mechanical','--schema=zukait_vehicle',
-        '--lock-wait-timeout=3000','--file='+$archive
+        '--lock-wait-timeout=3000', $outputFileArg
     )
+    if ($dumpArgs.Count -ne 15 -or $dumpArgs[14] -cne $outputFileArg -or
+        !$outputFileArg.StartsWith('--file=Z:\\')) {
+        throw 'Invalid pg_dump output-file argument; not connecting to production.'
+    }
     $oldErrorPreference = $ErrorActionPreference
     try {
         # PowerShell 5.1 may surface native stderr as a terminating exception.
