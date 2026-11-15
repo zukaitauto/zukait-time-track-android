@@ -22,7 +22,7 @@
 ## Current verification state
 
 - GitHub source readback confirms the runner is staged on `architecture-v2`.
-- The GitHub build's functional smoke-test step on the runner revision completed successfully, including `node scripts/verify-v123-scoped-read-isolated.mjs --self-test`. **This only qualifies the runner against development source**, not the actual v123 backup.
+- The GitHub [functional smoke-test run #43722088802](https://github.com/zukaitauto/zukait-time-track-android/actions/runs/43722088802) **completed successfully**. Its job log explicitly contains `PASS: offline v123 verifier parser + 6 mocked API runtime self-checks (NOT deployed v123).` **This only qualifies the runner against development source**, not the actual v123 backup.
 - An earlier source-only qualification programmatically applied the three-hunk patch to the in-memory v123 source readback and confirmed it matched exactly the three expected substitutions. See `WORKSHOP_API_V123_SCOPED_READ_QUALIFICATION_20261115.md`.
 - **Operator PC isolated v123 run remains PENDING.** Do not report its seven runtime cases as passing until the user supplies the completed test report.
 
