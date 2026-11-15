@@ -1,5 +1,8 @@
 # Compact-history rollout preparation — 12 November 2026
 
+> **2026-11-15 LIVE PRODUCTION UPDATE:** The active `workshop-api` is now **v123**, not the v120 baseline in this packet. **Do not deploy** the v120-derived candidate or use its rollback packet against production. The isolated local recovery tests passed for 16,410 history records, 21 private tables and 31 public triggers, with three mismatched Vehicle audit references across separately dated backups. The database allocated 5,826,538,643 bytes and the history relation 5,787,058,176 bytes in a lightweight production catalog check; available physical disk and EBS I/O burst headroom are **not yet known**. See [15 November live capacity and recovery gate](PRODUCTION_RECOVERY_CAPACITY_GATE_20261115.md). No live history rollout is approved.
+
+
 Status: development/isolated qualification only. No production history change or deployment approved by this packet.
 
 ## Verified baseline
