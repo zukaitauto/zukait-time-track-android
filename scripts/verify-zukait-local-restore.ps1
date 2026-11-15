@@ -109,7 +109,7 @@ try {
         throw 'The local PostgreSQL password entry was empty. Run again and enter the NEW local password.'
     }
     # An exact tagged row avoids interpreting native Windows prompts as SQL.
-    $identityLines = @(& $psql @baseArgs -d postgres -At -F '|' -c "select 'ZUKAIT_LOCAL_PG17',inet_server_addr()::text,inet_server_port()::text,current_setting('server_version_num'),current_setting('data_directory')")
+    $identityLines = @(& $psql @baseArgs -d postgres -At -F '|' -c "select 'ZUKAIT_LOCAL_PG17',host(inet_server_addr()),inet_server_port()::text,current_setting('server_version_num'),current_setting('data_directory')")
     $identityExitCode = $LASTEXITCODE
     if ($identityExitCode -ne 0) {
         throw ("Local PostgreSQL connection/authentication failed on 127.0.0.1:{0}. Use the NEW password created with initdb, not the Supabase password." -f $LocalPort)
@@ -126,7 +126,9 @@ try {
     $seenVersion = $parts[3].Trim()
     $seenDataDir = $parts[4].Trim()
     Write-Host ("LOCAL SERVER CHECK: address={0}, port={1}, version_num={2}" -f $seenAddress,$seenPort,$seenVersion)
-    if ($seenAddress -ne $localHost -or $seenPort -ne $LocalPort -or
+    # PostgreSQL inet may render local IPv4 as 127.0.0.1/32 in older outputs.
+    $isLocalIpv4 = ($seenAddress -eq $localHost -or $seenAddress -eq ($localHost + '/32'))
+    if (!$isLocalIpv4 -or $seenPort -ne $LocalPort -or
         $seenVersion -notmatch '^[0-9]{6}$' -or
         [int]$seenVersion -lt 170000 -or [int]$seenVersion -ge 180000) {
         throw 'Refusing to restore: server address/port/PostgreSQL 17 verification failed.'
