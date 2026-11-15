@@ -198,23 +198,52 @@ try {
         if ("$objects".Trim() -ne '0') {
             throw 'Partial local schema restore exists. Stop and inspect; automatic cleanup is forbidden.'
         }
-        Write-Host 'RESTORING CORE ARCHIVE TO LOCAL DATABASE (not Supabase).'
+        # The core archive was taken with pg_dump -n public. Its trigger
+        # definitions can depend on functions in schemas excluded from the
+        # archive (for example zukait_mechanical). Do NOT fabricate stubs or
+        # connect to production. For this local DATA RECOVERY rehearsal only,
+        # omit every archived TRIGGER entry from pg_restore's TOC; retain all
+        # remaining tables, data, constraints, indexes, functions and views.
+        # This is NOT proof of a complete application/database recovery.
+        $tocLines = @(& $pgRestore --list $core)
+        if ($LASTEXITCODE -ne 0 -or $tocLines.Count -eq 0) {
+            throw 'Could not inspect the core archive TOC; no local restore attempted.'
+        }
+        $omittedTriggers = @($tocLines | Where-Object { "$_" -match '^\s*\d+;\s+\d+\s+\d+\s+TRIGGER\s+' })
+        $tocFiltered = @($tocLines | ForEach-Object {
+            if ("$_" -match '^\s*\d+;\s+\d+\s+\d+\s+TRIGGER\s+') {
+                ';' + $_
+            } else {
+                $_
+            }
+        })
+        $tocFilterPath = Join-Path $work 'core-restore-omit-triggers.toc'
+        [IO.File]::WriteAllLines($tocFilterPath,[string[]]$tocFiltered,(New-Object System.Text.UTF8Encoding($false)))
+        Write-Host ("RESTORING CORE DATA LOCALLY; skipping {0} trigger definition(s) requiring separate dependency validation." -f $omittedTriggers.Count)
         $previousErrorAction = $ErrorActionPreference
         try {
             $ErrorActionPreference = 'Continue'
-            & $pgRestore -h $localHost -p $LocalPort -U $LocalUser -d $LocalDatabase --no-owner --no-privileges --clean --if-exists --exit-on-error --single-transaction $core
+            & $pgRestore -h $localHost -p $LocalPort -U $LocalUser -d $LocalDatabase --no-owner --no-privileges --clean --if-exists --exit-on-error --single-transaction -L $tocFilterPath $core
             $restoreCode = $LASTEXITCODE
         } finally { $ErrorActionPreference = $previousErrorAction }
         if ($restoreCode -ne 0) {
-            throw 'Local core schema/data restore failed. No remote database was used. Save this error for diagnosis.'
+            throw 'Local core restore still failed. A non-trigger dependency may be missing; no remote database was used. Send the pg_restore error.'
         }
         $coreRows = & $psql @baseArgs -d $LocalDatabase -At -c "select count(*) from public.workshop_state where id='main'"
         $historyRows = & $psql @baseArgs -d $LocalDatabase -At -c "select count(*) from public.workshop_state_history"
         if ($LASTEXITCODE -ne 0 -or "$coreRows".Trim() -ne '1' -or "$historyRows".Trim() -ne '0') {
             throw 'Local core archive did not restore expected main state and empty history table.'
         }
-        'CORE_RESTORED_LOCALLY' | Set-Content -LiteralPath $coreFlag
-        Write-Host 'CORE RESTORE VERIFIED: workshop_state main row present, history table empty.'
+        [pscustomobject]@{
+            mode='LOCAL_DATA_RECOVERY_REHEARSAL_ONLY'
+            trigger_definitions_omitted=$omittedTriggers.Count
+            toc_entries_omitted=@($omittedTriggers)
+            reason='The public-only core archive omits non-public schemas and functions used by public-table triggers.'
+            limitation='Not a complete application restore. Preserve core dump and collect all dependent schemas separately.'
+        } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $work 'core-trigger-omissions.json') -Encoding UTF8
+        'CORE_DATA_RESTORED_LOCALLY_WITHOUT_TRIGGERS' | Set-Content -LiteralPath $coreFlag
+        Write-Host 'CORE DATA RESTORE VERIFIED: workshop_state main row present, history table empty.'
+        Write-Warning 'TRIGGERS OMITTED LOCALLY. Full application recovery is NOT verified.'
     }
 
     $temp = Join-Path $work 'chunk-replay.bin.part'
@@ -266,15 +295,17 @@ try {
         throw "Restored history control totals FAILED: $summary"
     }
     [pscustomobject]@{
-        status='LOCAL_CORE_AND_HISTORY_RESTORE_VERIFIED'
+        status='LOCAL_DATA_RECOVERY_WITH_TRIGGERS_OMITTED'
         database=$LocalDatabase; host='127.0.0.1'; source_backup='ZUKAIT'
         history_rows=[long]$totals[0]; min_revision=[long]$totals[1]
         max_revision=[long]$totals[2]; null_json_rows=[long]$totals[3]
         finished_utc=[DateTimeOffset]::UtcNow.ToString('o')
         recovery_point_note='Core dump and history export were captured separately; not one transaction-consistent production point.'
-        pending='Separate app/read compatibility, permissions, disk headroom and rollout gates.'
+        pending='Full application restore NOT proven: non-public schemas and trigger dependencies were absent from public-only core dump. Verify full schema, auth/storage, app/read compatibility, permissions, disk headroom before rollout.'
+        trigger_omissions_report=(Join-Path $work 'core-trigger-omissions.json')
     } | ConvertTo-Json | Set-Content -LiteralPath $passedPath -Encoding UTF8
-    Write-Host "LOCAL RESTORE PASSED - $expectedRecords history records restored and checked"
+    Write-Host "LOCAL DATA RECOVERY PASSED - $expectedRecords history records restored and checked"
+    Write-Warning 'Not a complete application restore: non-public schema dependencies and triggers were omitted locally.'
     Write-Host "LOCAL DATABASE: $LocalDatabase"
     Write-Host "REPORT: $passedPath"
     Write-Host 'Original backups unchanged. Production Supabase was NOT contacted.'
