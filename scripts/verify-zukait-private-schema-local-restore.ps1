@@ -69,6 +69,25 @@ $vd=@($privateToc | Where-Object {"$_" -match '^\s*\d+;\s+\d+\s+\d+\s+TABLE DATA
 if($mt -ne 18 -or $md -ne 18 -or $vt -ne 3 -or $vd -ne 3){
     throw 'Private backup must contain precisely 18 Mechanical and 3 Vehicle table definitions and data sections.'
 }
+# The private audit export (15 Nov) contains request IDs that were created
+# after the public-only core export (14 Nov). Preserve ALL audit rows.
+# In this *isolated local test only*, postpone validation of exactly the
+# expected cross-snapshot FK; pg_restore still restores every other constraint.
+$deferredFkEntries=@($privateToc | Where-Object {
+    "$_" -match '^\s*\d+;\s+\d+\s+\d+\s+FK CONSTRAINT\s+zukait_vehicle\s+direct_job_customer_role_audit\s+direct_job_customer_role_audit_request_id_fkey(?:\s|$)'
+})
+if($deferredFkEntries.Count -ne 1){
+    throw 'Expected exactly one cross-snapshot Vehicle audit request FK. No restore attempted.'
+}
+$filteredPrivateToc=@($privateToc | ForEach-Object {
+    if("$_" -match '^\s*\d+;\s+\d+\s+\d+\s+FK CONSTRAINT\s+zukait_vehicle\s+direct_job_customer_role_audit\s+direct_job_customer_role_audit_request_id_fkey(?:\s|$)'){
+        ';'+"$_"
+    } else {
+        "$_"
+    }
+})
+$privateTocForRehearsal=Join-Path $work 'privatecheck-deferred-one-fk.toc'
+[IO.File]::WriteAllLines($privateTocForRehearsal,[string[]]$filteredPrivateToc,[Text.UTF8Encoding]::new($false))
 $coreToc=@(& $pgRestore --list $core)
 if($LASTEXITCODE -ne 0){throw 'Cannot read original core backup contents.'}
 $triggerEntries=@($coreToc | Where-Object {"$_" -match '^\s*\d+;\s+\d+\s+\d+\s+TRIGGER\s+public\s+'})
@@ -165,10 +184,11 @@ try{
         Write-Host 'RESUMING PRIVATE-SCHEMA RESTORE IN THIS CLONE ONLY. No new clone or cleanup.'
     }
     Write-Host 'RESTORING 18 Mechanical and 3 Vehicle tables into LOCAL COPY...'
+    Write-Warning 'One known cross-snapshot Vehicle audit FK will be recreated NOT VALID locally. No audit rows are discarded.'
     $old=$ErrorActionPreference
-    try{$ErrorActionPreference='Continue'; & $pgRestore -w -h $hostIp -p $port -U postgres -d $targetDb --no-owner --no-privileges --single-transaction --exit-on-error $privateArchive; $privateExit=$LASTEXITCODE}
+    try{$ErrorActionPreference='Continue'; & $pgRestore -w -h $hostIp -p $port -U postgres -d $targetDb --no-owner --no-privileges --single-transaction --exit-on-error -L $privateTocForRehearsal $privateArchive; $privateExit=$LASTEXITCODE}
     finally{$ErrorActionPreference=$old}
-    if($privateExit -ne 0){throw 'Local private schema restore failed. Send pg_restore error; original verified database and backup files are unchanged.'}
+    if($privateExit -ne 0){throw 'Local private schema restore failed (another dependency may differ). Send the first pg_restore error; backups/original recovery unchanged.'}
     $schemaInfo=@(& $psql @base -d $targetDb -At -F '|' -c "select (select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='zukait_mechanical' and c.relkind in ('r','p')),(select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='zukait_vehicle' and c.relkind in ('r','p')),(select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='zukait_mechanical')")
     if($LASTEXITCODE -ne 0 -or $schemaInfo.Count -ne 1){throw 'Cannot verify local private schema object totals.'}
     $si="$($schemaInfo[0])" -split '\|'
@@ -176,6 +196,36 @@ try{
         throw "Private schema object counts mismatch: $($schemaInfo[0])"
     }
     Write-Host ("PRIVATE SCHEMAS RESTORED: Mechanical={0}, Vehicle={1}, Mechanical functions={2}." -f $si[0],$si[1],$si[2])
+    # A NOT VALID FK enforces referential integrity for future changes but
+    # does not retroactively reject historic rows from different backup times.
+    # This is deliberately confined to the local clone. The production FK
+    # and all source archives remain intact and unchanged.
+    $addDeferredFk = @'
+BEGIN;
+SET LOCAL statement_timeout = '30000';
+ALTER TABLE ONLY zukait_vehicle.direct_job_customer_role_audit
+  ADD CONSTRAINT direct_job_customer_role_audit_request_id_fkey
+  FOREIGN KEY (request_id)
+  REFERENCES public.workshop_reception_commands(request_id) NOT VALID;
+COMMIT;
+'@
+    & $psql @base -d $targetDb -c $addDeferredFk
+    if($LASTEXITCODE -ne 0){
+        throw 'Could not recreate the deferred Vehicle audit FK in LOCAL CLONE. Do not modify original restore or backup.'
+    }
+    $auditSummary=@(& $psql @base -d $targetDb -At -F '|' -c "select (select count(*) from zukait_vehicle.direct_job_customer_role_audit),(select count(*) from zukait_vehicle.direct_job_customer_role_audit a left join public.workshop_reception_commands c on c.request_id=a.request_id where c.request_id is null),(select count(*) from pg_constraint k join pg_class r on r.oid=k.conrelid join pg_namespace n on n.oid=r.relnamespace where n.nspname='zukait_vehicle' and r.relname='direct_job_customer_role_audit' and k.conname='direct_job_customer_role_audit_request_id_fkey' and k.contype='f' and not k.convalidated)")
+    if($LASTEXITCODE -ne 0 -or $auditSummary.Count -ne 1){
+        throw 'Could not verify local audit row preservation and deferred FK.'
+    }
+    $auditParts="$($auditSummary[0])" -split '\|'
+    if($auditParts.Count -ne 3 -or [long]$auditParts[2] -ne 1 -or
+       [long]$auditParts[1] -gt [long]$auditParts[0] -or [long]$auditParts[1] -lt 0){
+        throw "Local audit count or NOT VALID FK check failed: $($auditSummary[0])"
+    }
+    $auditTotal=[long]$auditParts[0]
+    $missingRequests=[long]$auditParts[1]
+    Write-Host ("LOCAL AUDIT PRESERVED: {0} audit records; {1} request reference(s) absent from older core backup." -f $auditTotal,$missingRequests)
+    Write-Warning 'This local FK is NOT VALIDATED against existing records; the backups are not one consistent point in time.'
     Write-Host 'RESTORING 31 PUBLIC TRIGGERS INTO LOCAL COPY...'
     $old=$ErrorActionPreference
     try{$ErrorActionPreference='Continue'; & $pgRestore -w -h $hostIp -p $port -U postgres -d $targetDb --no-owner --no-privileges --single-transaction --exit-on-error -L $triggerToc $core; $triggerExit=$LASTEXITCODE}
@@ -188,7 +238,7 @@ try{
         throw "Final local control totals incorrect: $($totals[0])"
     }
     [pscustomobject]@{
-        status='LOCAL_APP_SCHEMAS_AND_TRIGGERS_VERIFIED__NOT_COMPLETE_SUPABASE_RESTORE'
+        status='LOCAL_APP_SCHEMAS_TRIGGERS_WITH_DEFERRED_VEHICLE_FK__NOT_FULL_RECOVERY'
         clone=$targetDb
         original=$sourceDb
         local_port=55433
@@ -198,15 +248,20 @@ try{
         vehicle_tables=[int]$si[1]
         mechanical_functions=[int]$si[2]
         private_sha256=$hash.ToLowerInvariant()
+        vehicle_audit_rows_preserved=$auditTotal
+        vehicle_audit_missing_core_request_references=$missingRequests
+        vehicle_audit_fk_recreated_not_validated=$true
         verified_at_utc=[DateTimeOffset]::UtcNow.ToString('o')
         limitations=@(
+            'One Vehicle audit FK is NOT VALID in local clone due to different backup capture times; new writes are still checked',
             'Core, history and private tables were captured at different times',
             'Supabase auth/storage object bytes, Edge functions, secrets, permissions, extensions and app behavior need separate checks',
             'No production history deletion, rewrite or compact mode authorized'
         )
     } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $outReport -Encoding UTF8
-    Write-Host 'LOCAL PRIVATE SCHEMA + TRIGGER RECOVERY PASSED.'
+    Write-Host 'LOCAL PRIVATE SCHEMA + TRIGGER RECOVERY TEST PASSED WITH CROSS-SNAPSHOT FK EXCEPTION.'
     Write-Host '21 private tables, 31 public triggers and 16410 history records verified locally.'
+    Write-Warning ("The Vehicle audit FK is NOT VALID in the local clone; {0} historic request reference(s) are missing from the older core backup." -f $missingRequests)
     Write-Host "NEW LOCAL TEST DATABASE: $targetDb"
     Write-Host "REPORT: $outReport"
     Write-Warning 'Full Supabase/platform recovery is NOT established; production optimization remains on hold.'
