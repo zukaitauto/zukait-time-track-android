@@ -1,5 +1,6 @@
 // Offline packaging only. No credentials, database connection or deployment.
-// Input must be the verified 43-file live v120 readback/deployment bundle.
+// Input must be an independently verified 43-file live readback.
+// Fail closed for unqualified versions or drift; never deploy this script.
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
@@ -11,14 +12,19 @@ const baseline=JSON.parse(fs.readFileSync(baselinePath,'utf8'));
 assert.equal(baseline.files.length,43,'Review a changed live bundle separately');
 // Keep the exact live bundle from the selected release. Never infer deployed
 // code from the branch or silently use a stale v120 version label.
-assert.ok([120,122].includes(baseline.version),'Unqualified deployed version: review source before packaging');
-if(baseline.version===122){
- assert.equal(baseline.ezbr_sha256,'c78650c9c8d7810e9770b03c44e9f10fb1b39f3a9e54529d657165c6d621f257','v122 live bundle drift: requalify exact source');
-}
+const approved={
+  120:{index:'7288382735de10de0ab44c60cec013ad998f6a98d899129c1aea0d3eceb0964e',bundle:null},
+  122:{index:'7288382735de10de0ab44c60cec013ad998f6a98d899129c1aea0d3eceb0964e',bundle:'c78650c9c8d7810e9770b03c44e9f10fb1b39f3a9e54529d657165c6d621f257'},
+  123:{index:'7288382735de10de0ab44c60cec013ad998f6a98d899129c1aea0d3eceb0964e',bundle:'edf5131f3b1394afe3ecff52d4d45c72680f8462889b07a1cfd871e9d374d68a'},
+  124:{index:'45c804facc435fd6e07c1743bb80e5451657fa0a93130b34c49525b18f7c8292',bundle:'ebd48e18da452008048a67902a346b9b3ad67e9f85124aa48aaa2dae7e134f3e'},
+};
+const pinned=approved[baseline.version];
+assert.ok(pinned,'Unqualified deployed version: review source before packaging');
+if(pinned.bundle) assert.equal(baseline.ezbr_sha256,pinned.bundle,'Live bundle drift: requalify exact source');
 assert.equal(baseline.slug,'workshop-api','Expected workshop-api live readback');
 assert.equal(new Set(baseline.files.map(f=>f.name)).size,43);
 const old=baseline.files.find(f=>f.name==='index.ts');
-assert.equal(sha(old.content),'7288382735de10de0ab44c60cec013ad998f6a98d899129c1aea0d3eceb0964e','Live handler drift: requalify exact source');
+assert.equal(sha(old.content),pinned.index,'Live handler drift: requalify exact source');
 assert.equal(sha(baseline.files.find(f=>f.name==='accountant/api.js').content),'03db7a9a7861d3463f780d468b57558b31fd14c065b75cf7f1ca74028eb43980','Priced-parts fix must remain');
 assert.match(old.content,/coalesceContextReads:\s*true/,'Preserve active Accountant sharing');
 assert.equal(baseline.verify_jwt,false,'Custom session authentication configuration must remain');
@@ -34,8 +40,9 @@ assert.match(candidate.files.find(f=>f.name==='index.ts').content,/coalesceConte
 fs.mkdirSync(outputPath);
 const payload=b=>({name:'workshop-api',entrypoint_path:'index.ts',import_map_path:'deno.json',verify_jwt:false,files:b.files});
 fs.writeFileSync(path.join(outputPath,'candidate-bundle.json'),JSON.stringify(payload(candidate),null,2));
-fs.writeFileSync(path.join(outputPath,'rollback-v120-bundle.json'),JSON.stringify(payload(baseline),null,2));
+const rollbackName=`rollback-v${baseline.version}-bundle.json`;
+fs.writeFileSync(path.join(outputPath,rollbackName),JSON.stringify(payload(baseline),null,2));
 fs.writeFileSync(path.join(outputPath,'candidate-index.ts'),candidate.files.find(f=>f.name==='index.ts').content);
-const manifest={project:'pjknotnjkufadqavcmii',baseline_version:baseline.version,baseline_bundle_sha256:baseline.ezbr_sha256||null,production_authorization:false,default_reader:'legacy',opt_in:'ZUKAIT_HISTORY_READER_COMPAT=true',changed_files:['index.ts'],requires_live_readback_recheck:true,files:candidate.files.map(f=>({name:f.name,baseline_sha256:sha(baseline.files.find(g=>g.name===f.name).content),candidate_sha256:sha(f.content)}))};
+const manifest={project:'pjknotnjkufadqavcmii',baseline_version:baseline.version,baseline_bundle_sha256:baseline.ezbr_sha256||null,rollback_bundle_file:rollbackName,production_authorization:false,default_reader:'legacy',opt_in:'ZUKAIT_HISTORY_READER_COMPAT=true',changed_files:['index.ts'],requires_live_readback_recheck:true,files:candidate.files.map(f=>({name:f.name,baseline_sha256:sha(baseline.files.find(g=>g.name===f.name).content),candidate_sha256:sha(f.content)}))};
 fs.writeFileSync(path.join(outputPath,'review.json'),JSON.stringify(manifest,null,2)+'\n');
 console.log(`Prepared default-off reader and exact v${baseline.version} rollback; 42 files unchanged. NO deployment performed.`);
