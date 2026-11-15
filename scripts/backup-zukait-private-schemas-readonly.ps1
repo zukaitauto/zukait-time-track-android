@@ -66,7 +66,7 @@ try {
         '--lock-wait-timeout=3000', $outputFileArg
     )
     if ($dumpArgs.Count -ne 15 -or $dumpArgs[14] -cne $outputFileArg -or
-        !$outputFileArg.StartsWith('--file=Z:\\')) {
+        !$outputFileArg.StartsWith('--file=Z:')) {
         throw 'Invalid pg_dump output-file argument; not connecting to production.'
     }
     $oldErrorPreference = $ErrorActionPreference
