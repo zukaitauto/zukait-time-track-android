@@ -1440,8 +1440,12 @@ Deno.serve(async (req: Request) => {
     if(action==='insurance_dashboard'){
       if(user.role!=='Manager')return reply({ok:false,code:'insurance_manager_required'},403);
       if(Object.keys(body).some(k=>!['action','section','company','month','from','to','page','search'].includes(k))||JSON.stringify(body).length>2500)return reply({ok:false,code:'insurance_invalid_filter'},400);
-      const {data:current,error:readError}=await admin.from('workshop_state').select('data').eq('id','main').single();
+      const {data:current,error:readError}=await admin.from('workshop_state').select('jobs:data->jobs').eq('id','main').single();
       if(readError)throw readError;
+      // The insurance list uses jobs, not the full workshop JSON payload.
+      // Allow old full-state fixtures without changing production projection.
+      const insuranceState=Array.isArray(current?.jobs)?{jobs:current.jobs}:current?.data;
+      if(!Array.isArray(insuranceState?.jobs))throw Error('insurance_projection_unavailable');
       const cases:any[]=[];
       for(let offset=0;offset<=50000;offset+=500){
         const {data:chunk,error}=await admin.from('workshop_receptions').select('rc_no,job_card,job_type,details,location,outcome,approval_status,repair_status,released_date,insurance_id').order('sequence_no',{ascending:false}).range(offset,offset+499);
@@ -1450,7 +1454,7 @@ Deno.serve(async (req: Request) => {
       }
       const {data:companies,error}=await admin.from('workshop_insurance_companies').select('id,name');if(error)throw error;
       const names=new Map((companies||[]).map((c:any)=>[c.id,c.name]));
-      const result=insuranceProjection(current.data,cases.map(r=>({...r,insurance_company:names.get(r.insurance_id)||''})),body);
+      const result=insuranceProjection(insuranceState,cases.map(r=>({...r,insurance_company:names.get(r.insurance_id)||''})),body);
       if(result.ok&&result.rows?.length){
         // Fetch approval evidence only for the visible page: no repeated full-table history scan.
         const rcByJob=new Map(cases.filter(r=>r.job_card).map(r=>[String(r.job_card).toUpperCase(),r.rc_no]));
@@ -1518,10 +1522,19 @@ Deno.serve(async (req: Request) => {
 
     if (action === "receptionist_delivery_list" || action === "receptionist_deliver") {
       if (user.role !== "Receptionist") return reply({ok:false, code:"receptionist_forbidden"},403);
+      if (action === "receptionist_delivery_list") {
+        // Read-only QC readiness needs only jobs, assignments and sessions.
+        // Never change the full-state CAS required for delivery mutations.
+        const {data:listing,error:listingError}=await admin.from("workshop_state")
+          .select("jobs:data->jobs,assign:data->assign,sessions:data->sessions").eq("id","main").single();
+        if (listingError) throw listingError;
+        const projected=Array.isArray(listing?.jobs)?listing:listing?.data;
+        if (!Array.isArray(projected?.jobs)) throw Error("receptionist_delivery_projection_unavailable");
+        return reply({ok:true,rows:receptionistDeliveryList(projected)});
+      }
       for (let attempt=0; attempt<8; attempt++) {
         const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
         if (readError) throw readError;
-        if (action === "receptionist_delivery_list") return reply({ok:true, rows:receptionistDeliveryList(current.data)});
         const result = receptionistDeliveryTransition(current.data, user, body, Date.now());
         if (!result.ok) return reply({ok:false,code:result.code}, result.code === "receptionist_forbidden"?403:409);
         if (result.duplicate) return reply({ok:true,duplicate:true,job:receptionistDeliveryRow(current.data,result.job)});
