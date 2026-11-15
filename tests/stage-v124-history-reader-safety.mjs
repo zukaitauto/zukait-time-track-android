@@ -38,7 +38,7 @@ try {
   }));
   const outdated=run([backup,target]);
   assert.notEqual(outdated.status,0,'v123 backup must be rejected');
-  assert.match(outdated.stderr,/pinned_inventory/);
+  assert.match(outdated.stderr,/EDGE_FUNCTION_LIVE_SOURCE_SHA256_20261115_V124/);
   assert.equal(fs.existsSync(target),false,'Old backup must not create stage');
 
   fs.writeFileSync(path.join(backup,'EDGE-SOURCE-BACKUP-PASSED.json'),JSON.stringify({
