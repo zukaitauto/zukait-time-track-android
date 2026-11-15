@@ -33,8 +33,17 @@ Write-Host 'Preparing pinned test files (no source backup is uploaded)...'
 Invoke-WebRequest -UseBasicParsing -Uri ($root+'scripts/verify-v123-scoped-read-isolated.mjs') -OutFile $harness -TimeoutSec 45
 Invoke-WebRequest -UseBasicParsing -Uri ($root+'docs/storage/WORKSHOP_API_V123_SCOPED_READ_ONLY.patch') -OutFile $patch -TimeoutSec 45
 Write-Host ('Running isolated synthetic tests against actual v123 backup. Node '+$versionText)
-$out=@(& $node.Source $harness --function-dir $dir --manifest $manifest --patch $patch 2>&1)
-$exit=$LASTEXITCODE
+# Windows PowerShell 5.1 converts native STDERR (including harmless Node warnings)
+# into ErrorRecord objects. Temporarily allow non-terminating STDERR, while
+# still failing closed on the actual Node process exit code.
+$priorErrorActionPreference=$ErrorActionPreference
+try {
+    $ErrorActionPreference='Continue'
+    $out=@(& $node.Source $harness --function-dir $dir --manifest $manifest --patch $patch 2>&1)
+    $exit=$LASTEXITCODE
+} finally {
+    $ErrorActionPreference=$priorErrorActionPreference
+}
 foreach($line in $out){Write-Host ([string]$line)}
 if($exit -ne 0){throw ('Isolated test did not pass; exit code '+$exit+'. Original encrypted backup is unchanged. Do not deploy.')}
 $reports=@($out | ForEach-Object {[string]$_} | Where-Object {$_ -like 'REPORT: *'})
