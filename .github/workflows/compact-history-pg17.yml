@@ -1,0 +1,68 @@
+# Synthetic-only compact history qualification. No Supabase credentials or
+# production network requests. Postgres service is a disposable GitHub runner.
+name: Compact history PostgreSQL 17 qualification
+on:
+  push:
+    branches: [architecture-v2]
+    paths:
+      - '.github/workflows/compact-history-pg17.yml'
+      - 'tests/compact-history-isolated.mjs'
+      - 'tests/history-reader-rollout.mjs'
+      - 'tests/stage-v124-history-reader-safety.mjs'
+      - 'scripts/prepare-history-reader-candidate.mjs'
+      - 'scripts/stage-v124-history-reader-offline.mjs'
+      - 'supabase/migrations/*workshop*history*.sql'
+      - 'supabase/tests/workshop_*history*qa.sql'
+      - 'tests/fixtures/reception-postgres17-baseline.sql'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-history-qualification:
+    name: Test PGlite and disposable PostgreSQL 17
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres17:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic_ci_only_password
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout architecture-v2 source
+        uses: actions/checkout@v4
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install pinned test dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify legacy-default compatibility reader
+        run: node tests/history-reader-rollout.mjs
+      - name: Verify fail-closed offline backup staging
+        run: node tests/stage-v124-history-reader-safety.mjs
+      - name: Run all 12 synthetic compact history groups in PGlite
+        run: node tests/compact-history-isolated.mjs
+      - name: Run all 12 synthetic compact history groups in PostgreSQL 17
+        env:
+          ZUKAIT_COMPACT_NATIVE: '1'
+          PGHOST: '127.0.0.1'
+          PGPORT: '5432'
+          PGUSER: 'postgres'
+          PGPASSWORD: synthetic_ci_only_password
+        run: node tests/compact-history-isolated.mjs
+      - name: Qualify staging only, not a production cutover
+        run: |
+          echo 'PASS: synthetic-only history qualification completed'
+          echo 'No production database connection, storage rewrite, migration or deployment'
