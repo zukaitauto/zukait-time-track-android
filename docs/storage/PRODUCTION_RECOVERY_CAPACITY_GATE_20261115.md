@@ -119,3 +119,11 @@ Completed a **live deployed-source readback** of `workshop-api` v123 (bundle SHA
 Read-only serialization measurements on the single production `workshop_state` row were **9,673,885 bytes** for the whole JSON; **352,403 bytes** for Insurance `jobs` only; and **1,407,540 bytes** for Reception delivery `jobs+assign+sessions`. This measures payload sections, **not actual EBS credit balance** or measured latency improvement. Branch synthetic tests passed; exact deployed patch has been source-verified but not runtime-integrated in an isolated 43-file v123 build.
 
 **Production status unchanged:** `workshop-api` v123 remains live; patch **not deployed**. Heavy history optimization, schema/index changes, bulk exports and restarts remain on hold until physical disk/I/O measurements and further recovery checks are complete.
+
+## Release readiness — 15 November 2026, operator-confirmed offline v123 test
+
+The operator completed the exact 43-file encrypted-Z: `workshop-api` v123 isolated qualification: **43/43 source hashes**, **7/7 synthetic API cases**, **3/3 patch hunks**, no production requests/writes and no backup modification. User-provided saved test report: `Z:\Zukait-20261025\ZUKAIT-V123-RUNTIME-TEST-20261115-141939-e2e6b9af\V123-ISOLATED-RUNTIME-TEST-PASSED.json`. This is synthetic offline evidence, not live performance testing.
+
+Read-only live recheck reconfirmed `workshop-api` v123 `ACTIVE` with source SHA `edf5131f3b1394afe3ecff52d4d45c72680f8462889b07a1cfd871e9d374d68a`; source still unchanged. Supabase SQL at 14:33 UTC showed 0 current I/O waiters and 0 waiting locks. Log window 13:15–14:16 UTC showed 0 API gateway HTTP 5xx events / 1,543 events and 0 Edge Function 5xx events / 1,601 events. EBS burst balance/actual free physical disk **still not accessible** via connected tools.
+
+Prepared [minimal Edge-only controlled release runbook](V123_MINIMAL_EDGE_RELEASE_PREPARATION_20261115.md) for owner approval, exact v123 source pin, all 43 files, rollback artifact, 2 read-only projection changes and acceptance monitoring. **No deployment initiated.** The existing APK/Pages publish workflow is not the release path for this Edge-only patch. **Do not** activate history compaction or production DDL based on this result.
