@@ -210,6 +210,9 @@ try {
             throw 'Could not inspect the core archive TOC; no local restore attempted.'
         }
         $omittedTriggers = @($tocLines | Where-Object { "$_" -match '^\s*\d+;\s+\d+\s+\d+\s+TRIGGER\s+' })
+        if ($omittedTriggers.Count -eq 0) {
+            throw 'Archive TOC contains no TRIGGER definitions; cannot apply the expected limited data-recovery path.'
+        }
         $tocFiltered = @($tocLines | ForEach-Object {
             if ("$_" -match '^\s*\d+;\s+\d+\s+\d+\s+TRIGGER\s+') {
                 ';' + $_
@@ -218,7 +221,7 @@ try {
             }
         })
         $tocFilterPath = Join-Path $work 'core-restore-omit-triggers.toc'
-        [IO.File]::WriteAllLines($tocFilterPath,[string[]]$tocFiltered,(New-Object System.Text.UTF8Encoding($false)))
+        [IO.File]::WriteAllLines($tocFilterPath,[string[]]$tocFiltered,[Text.UTF8Encoding]::new($false))
         Write-Host ("RESTORING CORE DATA LOCALLY; skipping {0} trigger definition(s) requiring separate dependency validation." -f $omittedTriggers.Count)
         $previousErrorAction = $ErrorActionPreference
         try {
