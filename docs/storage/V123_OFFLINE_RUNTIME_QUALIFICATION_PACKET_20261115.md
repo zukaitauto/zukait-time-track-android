@@ -1,6 +1,6 @@
 # ZUKAIT — exact workshop-api v123 offline runtime qualification packet
 
-**Status: prepared on `architecture-v2`, not yet executed on the operator PC.** No database/Edge deployment or infrastructure change occurred.
+**Status: operator PC isolated v123 runtime qualification PASSED on 15 November 2026.** All 43 source SHA-256 checks, seven synthetic API cases, and all three patch hunks passed. No database/Edge deployment or infrastructure change occurred.
 
 ## Source and safety boundary
 
@@ -24,7 +24,11 @@
 - GitHub source readback confirms the runner is staged on `architecture-v2`.
 - The GitHub [functional smoke-test run #43722088802](https://github.com/zukaitauto/zukait-time-track-android/actions/runs/43722088802) **completed successfully**. Its job log explicitly contains `PASS: offline v123 verifier parser + 6 mocked API runtime self-checks (NOT deployed v123).` **This only qualifies the runner against development source**, not the actual v123 backup.
 - An earlier source-only qualification programmatically applied the three-hunk patch to the in-memory v123 source readback and confirmed it matched exactly the three expected substitutions. See `WORKSHOP_API_V123_SCOPED_READ_QUALIFICATION_20261115.md`.
-- **Operator PC isolated v123 run remains PENDING.** Do not report its seven runtime cases as passing until the user supplies the completed test report.
+- **Operator PC isolated v123 run PASSED.** The operator provided the full Windows PowerShell output on 15 November 2026: `V123 ISOLATED RUNTIME TEST PASSED - 43 verified source files, 7 synthetic API cases, 3 patch hunks.` Then: `No network, no live API, no database writes and no source-backup edits.` The wrapper confirmed `ZUKAIT V123 ISOLATED QUALIFICATION PASSED - Original 43-file source backup untouched.` The report was saved to `Z:\Zukait-20261025\ZUKAIT-V123-RUNTIME-TEST-20261115-141939-e2e6b9af\V123-ISOLATED-RUNTIME-TEST-PASSED.json`. This evidence is based on the operator's posted output, not independent access to the PC drive.
+
+## Production status after operator verification
+
+Production remained at `workshop-api` v123, `ACTIVE` with bundle SHA `edf5131f3b1394afe3ecff52d4d45c72680f8462889b07a1cfd871e9d374d68a` on the subsequent read-only Supabase check. Runtime qualification of the **minimal isolated patch** is passed; this does **not** establish performance improvement in production, physical disk headroom, or approval to deploy. The protected APK/PAGES publication workflow is not a vehicle for an Edge-only patch and must not be dispatched for this purpose.
 
 ## Release boundary
 
