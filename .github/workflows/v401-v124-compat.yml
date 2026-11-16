@@ -1,0 +1,46 @@
+name: V401 exact-v124 VIN and Mechanical Inspection compatibility
+on:
+  workflow_dispatch:
+  push:
+    branches: [architecture-v2]
+    paths:
+      - 'releases/v401-v124-compat/**'
+      - 'scripts/verify-v401-v124-compat.cjs'
+      - '.github/workflows/v401-v124-compat.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  v124-overlay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Verify exact live v124 source is unchanged outside scoped routes
+        run: node scripts/verify-v401-v124-compat.cjs
+      - name: Stage isolated exact-v124 compatible entrypoint
+        run: cp releases/v401-v124-compat/workshop-api/index.ts supabase/functions/workshop-api/index.ts
+      - name: Type-check exact-v124 candidate and server modules
+        run: deno check supabase/functions/workshop-api/index.ts
+      - name: Run isolated Mechanical Inspection security and adapter tests
+        run: |
+          node tests/mechanical-inspection-contract.mjs
+          node tests/mechanical-inspection-api.mjs
+          node tests/mechanical-inspection-boundary.mjs
+          node tests/mechanical-inspection-session.mjs
+          node tests/mechanical-inspection-storage.mjs
+          node tests/mechanical-inspection-read-adapter.mjs
+          node tests/mechanical-inspection-save-adapter.mjs
+      - name: Verify VIN safety and Reception API contracts
+        run: |
+          node tests/vehicle-global-identity.mjs
+          node tests/reception-vehicle-authority.mjs
+          node tests/reception-job-edit.mjs
