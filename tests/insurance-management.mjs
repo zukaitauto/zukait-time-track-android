@@ -6,6 +6,31 @@ import {qcTransition,preserveQcAuthority} from '../supabase/functions/workshop-a
 import {receptionDashboardProjection} from '../supabase/functions/workshop-api/reception_dashboard_rules.js';
 const manager={id:'QA-MGR',role:'Manager',name:'QA Manager'},supervisor={id:'QA-SUP',role:'Supervisor'},now=Date.parse('2026-10-12T12:00:00Z');
 const base={jobs:[{no:'10',jobType:'Insurance',insuranceCompany:'A',claimNo:'C10',createdAt:1,delivered:true,deliveredAt:now,qcWorkflow:{revision:0}},{no:'2',jobType:'Cash',createdAt:now,delivered:true,qcWorkflow:{revision:0}},{no:'100',jobType:'INSURANCE',insuranceCompany:'B',createdAt:now}],assign:[],sessions:[],expenses:[{id:'retain'}]};
+// Canonical insurance names: keep historical values untouched while merging reports and filters.
+const legacyInsurers={jobs:[
+ {no:'Q1',jobType:'INSURANCE',insuranceCompany:'OMAN QATAR',createdAt:now,delivered:true,deliveredAt:now},
+ {no:'Q2',jobType:'INSURANCE',insuranceCompany:'Oman Qatar Insurance',createdAt:now,delivered:true,deliveredAt:now},
+ {no:'D1',jobType:'INSURANCE',insuranceCompany:'SAICO',createdAt:now,delivered:true,deliveredAt:now},
+ {no:'D2',jobType:'INSURANCE',insuranceCompany:'DAMANA-Saudi Arabian Insurance',createdAt:now,delivered:true,deliveredAt:now}
+]};
+const aliasedInsurance=insuranceProjection(legacyInsurers,[],{section:'delivered',month:'2026-10',
+ companyNames:['Oman Qatar Insurance','SAICO','Orient Insurance','Orange Card']});
+assert.equal(aliasedInsurance.companies.filter(name=>name==='Oman Qatar Insurance').length,1);
+assert.equal(aliasedInsurance.companies.filter(name=>name==='DAMANA-Saudi Arabian Insurance').length,1);
+assert.ok(!aliasedInsurance.companies.includes('OMAN QATAR'));
+assert.ok(!aliasedInsurance.companies.includes('SAICO'));
+assert.ok(aliasedInsurance.companies.includes('Orange Card'));
+assert.ok(aliasedInsurance.companies.includes('Orient Insurance'));
+assert.deepEqual(aliasedInsurance.company_breakdown,[
+ {company:'DAMANA-Saudi Arabian Insurance',count:2},
+ {company:'Oman Qatar Insurance',count:2}
+]);
+assert.equal(insuranceProjection(legacyInsurers,[],{company:'Oman Qatar Insurance',month:'2026-10'}).total,2);
+assert.equal(insuranceProjection(legacyInsurers,[],{company:'OMAN QATAR',month:'2026-10'}).total,2);
+assert.equal(insuranceProjection(legacyInsurers,[],{company:'DAMANA-Saudi Arabian Insurance',month:'2026-10'}).total,2);
+assert.equal(insuranceProjection(legacyInsurers,[],{company:'SAICO',month:'2026-10'}).total,2);
+assert.ok(aliasedInsurance.rows.every(row=>!['SAICO','OMAN QATAR'].includes(row.insurance_company)));
+
 // Insurance Management Delivered excludes Cash and Credit, even when delivered on the same date.
 const deliveryOnly=insuranceProjection({jobs:[...base.jobs,{no:'3',jobType:'Credit',createdAt:now,delivered:true,deliveredAt:now},{no:'4',jobType:'CASH',createdAt:now,delivered:true,deliveredAt:now}]},[],{section:'delivered',month:'2026-10'});
 assert.equal(deliveryOnly.ok,true);

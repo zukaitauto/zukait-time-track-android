@@ -1452,9 +1452,9 @@ Deno.serve(async (req: Request) => {
         if(error)throw error;cases.push(...(chunk||[]));if((chunk||[]).length<500)break;
         if(offset>=50000)return reply({ok:false,code:'insurance_dashboard_limit'},503);
       }
-      const {data:companies,error}=await admin.from('workshop_insurance_companies').select('id,name');if(error)throw error;
+      const {data:companies,error}=await admin.from('workshop_insurance_companies').select('id,name,active');if(error)throw error;
       const names=new Map((companies||[]).map((c:any)=>[c.id,c.name]));
-      const result=insuranceProjection(insuranceState,cases.map(r=>({...r,insurance_company:names.get(r.insurance_id)||''})),body);
+      const result=insuranceProjection(insuranceState,cases.map(r=>({...r,insurance_company:names.get(r.insurance_id)||''})),{...body,companyNames:(companies||[]).filter((c:any)=>c.active!==false).map((c:any)=>c.name)});
       if(result.ok&&result.rows?.length){
         // Fetch approval evidence only for the visible page: no repeated full-table history scan.
         const rcByJob=new Map(cases.filter(r=>r.job_card).map(r=>[String(r.job_card).toUpperCase(),r.rc_no]));

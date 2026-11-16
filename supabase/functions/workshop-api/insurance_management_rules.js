@@ -1,5 +1,15 @@
 import {invoiceDateValid,qcStatus} from './qc_delivery_rules.js';
 const key=v=>String(v??'').trim().toUpperCase();
+// Normalize display and report filters only. Do not rewrite historical Job Cards, claims or LPOs.
+export function canonicalInsuranceName(value){
+ const raw=String(value??'').trim();
+ const normalized=raw.replace(/[\\s_.-]+/g,' ').toUpperCase();
+ if(normalized==='OMAN QATAR'||normalized==='OMAN QATAR INSURANCE')return 'Oman Qatar Insurance';
+ if(['SAICO','DAMANA','DAMANA SAUDI ARABIAN INSURANCE'].includes(normalized))return 'DAMANA-Saudi Arabian Insurance';
+ if(normalized==='ORIENT INSURANCE')return 'Orient Insurance';
+ if(normalized==='ORANGE CARD')return 'Orange Card';
+ return raw;
+}
 const date=v=>{const d=new Date(Number(v||0));return Number(v)>0&&Number.isFinite(d.getTime())?new Date(d.getTime()+14400000).toISOString().slice(0,10):'';};
 export const lpoComplete=j=>!!(j?.insuranceLpo&&Number.isFinite(j.insuranceLpo.amount)&&j.insuranceLpo.amount>=0&&invoiceDateValid(j.insuranceLpo.receivedDate));
 export function insuranceProjection(data,receptions,opts={}){
@@ -11,12 +21,12 @@ export function insuranceProjection(data,receptions,opts={}){
  const month=String(opts.month||new Date(Date.now()+14400000).toISOString().slice(0,7));
  if(opts.month&&!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))return {ok:false,code:'insurance_invalid_filter'};
  if((opts.from&&!invoiceDateValid(opts.from))||(opts.to&&!invoiceDateValid(opts.to))||(opts.from&&opts.to&&opts.from>opts.to))return {ok:false,code:'insurance_invalid_filter'};
- const company=String(opts.company||'');
- const filtered=jobs.filter(j=>!company||j.insuranceCompany===company);
+ const company=canonicalInsuranceName(opts.company||'');
+ const filtered=jobs.filter(j=>!company||canonicalInsuranceName(j.insuranceCompany||j.insurance)===company);
  const delivered=filtered.filter(j=>j.delivered&&date(j.deliveredAt).startsWith(month));
- const breakdown=Object.entries(delivered.reduce((a,j)=>{const c=j.insuranceCompany||'Not recorded';a[c]=(a[c]||0)+1;return a;},{})).map(([company,count])=>({company,count})).sort((a,b)=>a.company.localeCompare(b.company));
+ const breakdown=Object.entries(delivered.reduce((a,j)=>{const c=canonicalInsuranceName(j.insuranceCompany||j.insurance)||'Not recorded';a[c]=(a[c]||0)+1;return a;},{})).map(([company,count])=>({company,count})).sort((a,b)=>a.company.localeCompare(b.company));
  const collected=filtered.filter(j=>lpoComplete(j)&&j.insuranceLpo.receivedDate.startsWith(month));
- const waiting=(receptions||[]).filter(r=>key(r.job_type)==='INSURANCE'&&!r.job_card&&!r.outcome&&(!r.repair_status||r.repair_status==='PENDING')&&!r.released_date&&r.approval_status==='WAITING'&&r.details?.direct_job_only!==true&&(!company||r.insurance_company===company));
+ const waiting=(receptions||[]).filter(r=>key(r.job_type)==='INSURANCE'&&!r.job_card&&!r.outcome&&(!r.repair_status||r.repair_status==='PENDING')&&!r.released_date&&r.approval_status==='WAITING'&&r.details?.direct_job_only!==true&&(!company||canonicalInsuranceName(r.insurance_company)===company));
  // All undelivered insurance Job Cards remain in WIP, including QC-ready vehicles.
  const wip=filtered.filter(j=>!j.delivered);
  const section=opts.section||'jobs';
@@ -24,14 +34,14 @@ export function insuranceProjection(data,receptions,opts={}){
  if(!selected)return {ok:false,code:'insurance_invalid_section'};
  const search=String(opts.search||'').toLowerCase();
  const rows=selected.map(j=>{const reception=receptionByNo.get(key(j.receptionNo));const approvalHistory=reception?.insurance?.approvals||reception?.approvals||[];const approvedDates=approvalHistory.map(a=>String(a?.approval_date||'')).filter(d=>invoiceDateValid(d));return {job_card:String(j.no),date:date(j.createdAt),vehicle:[j.make||j.brand,j.model].filter(Boolean).join(' ')||j.vehicle||'',
-  year:j.year||j.modelYear||j.vehicleYear||j.model_year||j.vehicle_year||'',registration:j.reg||'',claim:j.claimNo||'',insurance_company:j.insuranceCompany||'',delivered_date:date(j.deliveredAt),
+  year:j.year||j.modelYear||j.vehicleYear||j.model_year||j.vehicle_year||'',registration:j.reg||'',claim:j.claimNo||'',insurance_company:canonicalInsuranceName(j.insuranceCompany||j.insurance),delivered_date:date(j.deliveredAt),
   lpo_amount:lpoComplete(j)?j.insuranceLpo.amount:null,lpo_received_date:j.insuranceLpo?.receivedDate||'',
   lpo_revision:Number(j.insuranceLpo?.revision||0),lpo_history:j.insuranceLpo?.history||[],approval_date:approvedDates[0]||'',reception_location:['VWC','VIW'].includes(key(reception?.location||j.receptionLocation))?key(reception?.location||j.receptionLocation):'',status:j.delivered?'Delivered':j.status||'Open'};})
  .filter(r=>{const day=section==='collected'?r.lpo_received_date:(section==='delivered'||section==='pending')?r.delivered_date:r.date;
   return ((opts.from||opts.to)||!opts.month||day.startsWith(month))&&(!opts.from||day>=opts.from)&&(!opts.to||day<=opts.to)&&(!search||[r.job_card,r.vehicle,r.registration,r.claim,r.insurance_company].some(x=>String(x).toLowerCase().includes(search)));})
  .sort((a,b)=>section==='pending'?(b.delivered_date.localeCompare(a.delivered_date)||b.job_card.localeCompare(a.job_card,'en',{numeric:true})):b.job_card.localeCompare(a.job_card,'en',{numeric:true}));
  const page=Math.max(0,Number.isInteger(Number(opts.page))?Number(opts.page):0);
- return {ok:true,section,month,companies:[...new Set(jobs.map(j=>j.insuranceCompany).filter(Boolean))].sort(),
+ return {ok:true,section,month,companies:[...new Set([...jobs.map(j=>j.insuranceCompany||j.insurance),...(Array.isArray(opts.companyNames)?opts.companyNames:[])].map(canonicalInsuranceName).filter(Boolean))].sort(),
   summary:{collected_amount:collected.reduce((s,j)=>s+Math.round(j.insuranceLpo.amount*1000),0)/1000,delivered_count:delivered.length,approval_pending:waiting.length,wip_count:wip.length},
   company_breakdown:breakdown,total:rows.length,page,page_size:50,rows:rows.slice(page*50,(page+1)*50)};
 }
