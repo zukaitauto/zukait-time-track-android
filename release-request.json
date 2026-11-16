@@ -11,7 +11,7 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "Exact-source signed Android, Reception and isolated Accountant QA passed. V401 remains held pending live financial reconciliation, authenticated staff and permission checks, and full rollback evidence. Local history recovery succeeded with triggers omitted.",
+  "reason": "V401 held: live v124 backend compatibility is incomplete. Checklist Work Description migration is applied and SQL readback verified; Mechanical Inspection DB foundation and role guard installed, but v124 Edge endpoint remains absent. Vehicle Master/VIN schema and v124 endpoint remain uninstalled. Authenticated device acceptance, exact-v124 rollback, and remaining protected staff-release checks still pending.",
   "authorization": "Owner requested publishing V401 calculation audit corrections for testing.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
@@ -137,5 +137,38 @@
     "signedAcceptanceRun": 43579100483,
     "verificationRun": 43579100498,
     "accountantVerificationRun": 43570502753
+  },
+  "liveV124Compatibility": {
+    "checkedOn": "2026-11-16",
+    "productionProject": "pjknotnjkufadqavcmii",
+    "liveWorkshopApiVersion": 124,
+    "liveWorkshopApiBundleSha256": "ebd48e18da452008048a67902a346b9b3ad67e9f85124aa48aaa2dae7e134f3e",
+    "checklistWorkDescription": {
+      "status": "APPLIED_SQL_VERIFIED_NO_LIVE_JC_ACCEPTANCE",
+      "migration": "reception_linked_checklist_work_description_v401",
+      "migrationVersion": "20261116085253",
+      "functionInjectionsVerified": 3,
+      "rollbackSource": "scripts/rollback-v401-reception-work-description.sql"
+    },
+    "mechanicalInspection": {
+      "status": "DB_FOUNDATION_VERIFIED_EDGE_ENDPOINT_NOT_DEPLOYED",
+      "databaseMigrations": [
+        "mechanical_inspection_secure_v401",
+        "mechanical_inspection_linked_job_type_guard_v401"
+      ],
+      "tablesWithRls": 3,
+      "readWriteRpcRestrictedToServiceRole": true,
+      "liveV124EdgeHandlerPresent": false,
+      "enabledForStaff": false
+    },
+    "vinVerification": {
+      "status": "HOLD_REQUIRES_VEHICLE_MASTER_SCHEMA_AND_V124_EDGE_PATCH",
+      "liveVehicleMasterTablesInstalled": false,
+      "liveCandidateAndVerifyRpcInstalled": false,
+      "liveV124EdgeHandlerPresent": false,
+      "noPlateOnlyIdentityMatching": true
+    },
+    "staffReleaseApproval": false,
+    "documentation": "docs/releases/V401_LIVE_COMPATIBILITY_20261116.md"
   }
 }
