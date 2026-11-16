@@ -11,7 +11,7 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "V401 current-source signed/Reception/Accountant CI passed, v125 compatible. October 2026 financial source totals independently reconciled: 45 documents, revenue OMR 11,007.000, recorded cost OMR 5,088.608, provisional profit OMR 5,918.392. OMR 0.480 change explained by Nov 16 post-invoice labour for JC12057; JC12060 PL022 still has one unpriced ordered part. Staff publication held pending Manager authenticated report comparison, post-invoice session confirmation, live role/recovery checks; compact history remains off.",
+  "reason": "V401 isolated real auth implementation role matrix PASS on run 43863640761; live login sessions observed for Manager/Supervisor/Receptionist/Purchaser/Employee, but Mechanical Supervisor has never signed in and must complete first password change, and Accountant live acceptance remains outstanding. Real authenticated production roles, rollback and recovery checks still pending. Staff publish HELD; compact-history remains disabled.",
   "authorization": "Owner requested publishing V401 calculation audit corrections for testing.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
@@ -208,6 +208,35 @@
       "productionDataModified": false,
       "accountantLedgerRows": 0,
       "note": "Cash final invoices and received insurance LPO documents are the revenue source. The accounting entries table is for separate postings, and its zero rows do not make invoiced revenue zero. Source-side cost variance is explained without overwriting historical data. Do not declare final zero pending costs or full UI acceptance."
+    },
+    "staffRoleWorkflows": {
+      "status": "PASS_ISOLATED_AUTH_CODE_LIVE_PERSONNEL_ACCEPTANCE_PARTIAL",
+      "date": "2026-11-16",
+      "isolatedRun": 43863640761,
+      "ciResult": "SUCCESS",
+      "testedRealCode": "staff-auth/index.ts; accountant/api.js; mechanical_inspection_api.js",
+      "syntheticRoleCount": 7,
+      "covers": [
+        "Login and session refresh",
+        "Manager-only staff and Accountant account management",
+        "Manager profit data isolation",
+        "Mechanical inspection role gate",
+        "Supervisor technician roster",
+        "Receptionist first login and password change",
+        "Mechanical Supervisor temporary password change and relogin",
+        "Accountant forced password change, session revocation and ledger role permissions",
+        "Employee and Purchaser forbidden boundaries",
+        "inactive staff denial, logout and revocation"
+      ],
+      "liveObserved": {
+        "managerSupervisorReceptionistPurchaserEmployee": "Non-revoked sessions observed in production within 24 hours of read",
+        "activeAccountant": "Existing sessions; none used in 24-hour window",
+        "mechanicalSupervisor": "Active; no recorded successful session; first password change pending; no password lock"
+      },
+      "liveAuthenticatedRoleAcceptance": false,
+      "productionCredentialsOrSessionsChanged": false,
+      "note": "Seven-role matrix tests exercise actual authentication code with synthetic isolated accounts. They do not constitute real production staff login. Production browser profiles contain no saved ZUKAIT staff session. No passwords or bearer tokens were accessed.",
+      "documentation": "docs/releases/V401_STAFF_ROLE_LOGIN_ACCEPTANCE_20261116.md"
     }
   },
   "vinOnlyEditCandidate": {
