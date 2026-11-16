@@ -11,7 +11,7 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "V401 held: live v124 backend compatibility is incomplete. Checklist Work Description migration is applied and SQL readback verified; Mechanical Inspection DB foundation and role guard installed, but v124 Edge endpoint remains absent. Vehicle Master/VIN schema and v124 endpoint remain uninstalled. Authenticated device acceptance, exact-v124 rollback, and remaining protected staff-release checks still pending.",
+  "reason": "V401 backend compatibility routes deployed on the exact original Workshop API v124 base as API v125, and VIN Master safe schema plus bounded 43-VIN Reception backfill verified. Still HELD for signed APK/Web staff release pending current-source reconciliation, authenticated Manager/Reception/Mechanical acceptance (including inspection save), physical Android testing, and full external rollback/recovery evidence. Compact history is not activated.",
   "authorization": "Owner requested publishing V401 calculation audit corrections for testing.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
@@ -42,8 +42,8 @@
         "verifiedFileMatch": true
       },
       "workshop-api": {
-        "version": 123,
-        "bundleSha256": "edf5131f3b1394afe3ecff52d4d45c72680f8462889b07a1cfd871e9d374d68a",
+        "version": 125,
+        "bundleSha256": "41e5fdde202f44facd4aaff2387c0d0eea706c02b1094e5418742a65734078de",
         "verifiedFileMatch": true
       }
     },
@@ -141,8 +141,8 @@
   "liveV124Compatibility": {
     "checkedOn": "2026-11-16",
     "productionProject": "pjknotnjkufadqavcmii",
-    "liveWorkshopApiVersion": 124,
-    "liveWorkshopApiBundleSha256": "ebd48e18da452008048a67902a346b9b3ad67e9f85124aa48aaa2dae7e134f3e",
+    "liveWorkshopApiVersion": 125,
+    "liveWorkshopApiBundleSha256": "41e5fdde202f44facd4aaff2387c0d0eea706c02b1094e5418742a65734078de",
     "checklistWorkDescription": {
       "status": "APPLIED_SQL_VERIFIED_NO_LIVE_JC_ACCEPTANCE",
       "migration": "reception_linked_checklist_work_description_v401",
@@ -151,24 +151,37 @@
       "rollbackSource": "scripts/rollback-v401-reception-work-description.sql"
     },
     "mechanicalInspection": {
-      "status": "DB_FOUNDATION_VERIFIED_EDGE_ENDPOINT_NOT_DEPLOYED",
+      "status": "DB_AND_V125_ENDPOINT_DEPLOYED_AUTHENTICATED_DEVICE_ACCEPTANCE_PENDING",
       "databaseMigrations": [
         "mechanical_inspection_secure_v401",
         "mechanical_inspection_linked_job_type_guard_v401"
       ],
-      "tablesWithRls": 3,
-      "readWriteRpcRestrictedToServiceRole": true,
-      "liveV124EdgeHandlerPresent": false,
-      "enabledForStaff": false
+      "rpcInstalled": true,
+      "currentEdgeHandlerPresent": true,
+      "remainsEnvironmentFeatureGated": true,
+      "liveFullSaveAcceptanceVerified": false
     },
     "vinVerification": {
-      "status": "HOLD_REQUIRES_VEHICLE_MASTER_SCHEMA_AND_V124_EDGE_PATCH",
-      "liveVehicleMasterTablesInstalled": false,
-      "liveCandidateAndVerifyRpcInstalled": false,
-      "liveV124EdgeHandlerPresent": false,
-      "noPlateOnlyIdentityMatching": true
+      "status": "LIVE_DB_AND_EDGE_V125_DEPLOYED_ISOLATED_AND_UNAUTH_SMOKE_PASS_AUTHENTICATED_ACCEPTANCE_PENDING",
+      "migration": "v401_vehicle_master_safe_identity_v124",
+      "historicalBackfill": "v401_verified_format_vin_intake_backfill",
+      "unique17CharacterVinIntakes": 43,
+      "positiveDirectRpcChecks": 43,
+      "falsePositiveChecks": 0,
+      "accidentalMergeCount": 0
     },
     "staffReleaseApproval": false,
-    "documentation": "docs/releases/V401_LIVE_COMPATIBILITY_20261116.md"
+    "documentation": "docs/releases/V401_LIVE_COMPATIBILITY_20261116.md",
+    "v125EdgeDeployment": {
+      "version": 125,
+      "hash": "41e5fdde202f44facd4aaff2387c0d0eea706c02b1094e5418742a65734078de",
+      "exactUnmodifiedLegacyModuleFiles": 42,
+      "exactScopedIndexOverlay": true,
+      "addedMechanicalModules": 7,
+      "baselineRestoreEntrypoint": "releases/v401-v124-compat/workshop-api/rollback-v124-index.ts",
+      "overlaySource": "releases/v401-v124-compat/workshop-api/index.ts",
+      "passingIsolatedCI": 43837861641,
+      "passingLiveUnauthenticatedEndpointSmokeCI": 43838547750
+    }
   }
 }
