@@ -86,17 +86,17 @@ for(const [id,role,department] of identities){
   assert.ok(typeof r.body.session_token==='string'&&r.body.session_token.length>=30);
   assert.equal(JSON.stringify(r.body).includes('password_hash'),false);
   const sess=await call({action:'session',session_token:r.body.session_token});
-  assert.equal(sess.status,200,id+' session');
-  assert.equal(sess.body.user.role,role);
+  assert.equal(sess.status,id==='SUP003'?401:200,id+' initial session policy');
+  if(id!=='SUP003')assert.equal(sess.body.user.role,role);
   tokens.set(id,r.body.session_token);
 }
 assert.equal(tokens.size,7);
 // The live Mechanical Supervisor account requires first password change. Do not
 // clear must_change in the database; prove the normal authenticated flow instead.
 const mechanicalInitial=tokens.get('SUP003');
-assert.equal((await call({action:'session',session_token:mechanicalInitial})).status,200);
+assert.equal((await call({action:'session',session_token:mechanicalInitial})).status,401,'temporary Mechanical Supervisor session denied until password change');
 const mechChanged=await call({
- action:'change_password',session_token:mechanicalInitial,user_id:'SUP003',
+ action:'change_password',user_id:'SUP003',
  current_password:syntheticPassword,new_password:'V401-mechanical-personal-password'
 });
 assert.equal(mechChanged.status,200,'Mechanical Supervisor must change their temporary password');
@@ -108,6 +108,14 @@ assert.equal((await call({action:'login',user_id:'SUP003',password:syntheticPass
 const mechRelogin=await call({action:'login',user_id:'SUP003',password:'V401-mechanical-personal-password'});
 assert.equal(mechRelogin.status,200,'Mechanical Supervisor re-login with permanent password');
 assert.equal(mechRelogin.body.must_change,false);
+// A first-login requirement must apply to EVERY staff role, not only Accountant.
+for(const [id,token] of tokens){
+ const row=credentials.find(x=>x.user_id===id);
+ row.must_change=true;
+ assert.equal((await call({action:'session',session_token:token})).status,401,id+' must_change session denial');
+ row.must_change=false;
+ assert.equal((await call({action:'session',session_token:token})).status,200,id+' restored authorized session');
+}
 const roles=new Map(identities.map(([id,role])=>[id,role]));
 let managerRosterCount=0,techRosterCount=0;
 for(const [id,token] of tokens){
