@@ -11,17 +11,17 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "V401 backend compatibility routes deployed on the exact original Workshop API v124 base as API v125, and VIN Master safe schema plus bounded 43-VIN Reception backfill verified. Still HELD for signed APK/Web staff release pending current-source reconciliation, authenticated Manager/Reception/Mechanical acceptance (including inspection save), physical Android testing, and full external rollback/recovery evidence. Compact history is not activated.",
+  "reason": "V401 exact-source signed APK, Reception and Accountant automated acceptance all PASS on current pinned source. Production v125 VIN and Mechanical backend compatible. Staff publication remains HELD: credential preservation, authenticated role permissions, full live cost reconciliation and coherent rollback/recovery checks are not yet verified; physical Android acceptance NOT_RUN. No compact history activation.",
   "authorization": "Owner requested publishing V401 calculation audit corrections for testing.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "backupDeferredByOwner": false,
-  "sourceCommit": "99059a2f6036e90384f2379e09d5141495a9928a",
+  "sourceCommit": "1ec4b7907b5f301692f64c163656eb1b582c3887",
   "approvedAt": null,
   "publishNonce": null,
-  "signedAcceptanceRun": 43611512349,
-  "verificationRun": 43611512429,
-  "accountantVerificationRun": 43611512367,
+  "signedAcceptanceRun": 43856800110,
+  "verificationRun": 43856800069,
+  "accountantVerificationRun": 43856800029,
   "previousPublishedRelease": {
     "versionName": "V400",
     "versionCode": 363,
@@ -56,7 +56,7 @@
   },
   "evidence": {
     "credentialPreservation": false,
-    "qaFinancialAcceptance": false,
+    "qaFinancialAcceptance": true,
     "serverPermissions": false,
     "rollbackPrepared": false,
     "legacyLoginCompatibility": true,
@@ -73,17 +73,17 @@
   "evidenceDetails": {
     "repeatAndId001Regression": {
       "status": "PASS_EXACT_SOURCE_FULL_REGRESSION",
-      "sourceCommit": "99059a2f6036e90384f2379e09d5141495a9928a",
+      "sourceCommit": "1ec4b7907b5f301692f64c163656eb1b582c3887",
       "runs": [
-        43611512367
+        43856800029
       ],
-      "coverage": "The passing full-regression step in the isolated Accountant QA job ran the repeat-work and ID001 tests listed by the pinned CI script."
+      "coverage": "Exact-source Accountant isolated QA runs the full regression suite including ID001 and repeat-work tests."
     },
     "qaFinancialAcceptance": {
-      "status": "PASS_ISOLATED_QA_LIVE_RECONCILIATION_PENDING",
-      "sourceCommit": "99059a2f6036e90384f2379e09d5141495a9928a",
-      "run": 43611512367,
-      "coverage": "Accountant and Manager browser tests, full regression, Android debug build and live unauthenticated access denial passed."
+      "status": "PASS_EXACT_SOURCE_ISOLATED_QA_LIVE_RECONCILIATION_PENDING",
+      "sourceCommit": "1ec4b7907b5f301692f64c163656eb1b582c3887",
+      "run": 43856800029,
+      "coverage": "Exact-source isolated Accountant acceptance successful, including UI regression and access-denial tests. Live role, real cost source and reconciliation still need verification."
     },
     "localRestoreRehearsal": {
       "status": "LOCAL_DATA_RECOVERY_WITH_TRIGGERS_OMITTED",
@@ -125,18 +125,18 @@
   },
   "vinOnlyEditCandidate": {
     "status": "INCLUDED_IN_SIGNED_CANDIDATE_NOT_PUBLISHED",
-    "sourceCommit": "99059a2f6036e90384f2379e09d5141495a9928a",
+    "sourceCommit": "1ec4b7907b5f301692f64c163656eb1b582c3887",
     "fixCommit": "09c004e9d96b7075a40ad441498d6c5dd62a25fb",
     "testCommit": "02c3185c8fd04e287b25483485bd6b8fe588a2b8",
-    "signedRun": 43611512349,
-    "receptionRun": 43611512429,
+    "signedRun": 43856800110,
+    "receptionRun": 43856800069,
     "liveSaveVerified": false
   },
   "previousCandidateEvidence": {
-    "sourceCommit": "02c3185c8fd04e287b25483485bd6b8fe588a2b8",
-    "signedAcceptanceRun": 43579100483,
-    "verificationRun": 43579100498,
-    "accountantVerificationRun": 43570502753
+    "sourceCommit": "99059a2f6036e90384f2379e09d5141495a9928a",
+    "signedAcceptanceRun": 43611512349,
+    "verificationRun": 43611512429,
+    "accountantVerificationRun": 43611512367
   },
   "liveV124Compatibility": {
     "checkedOn": "2026-11-16",
@@ -186,15 +186,12 @@
   },
   "candidateRefresh": {
     "requestedOn": "2026-11-16",
-    "purpose": "Requalify current V401 source after v125 compatibility deployment",
-    "status": "IN_PROGRESS",
-    "priorSourceCommit": "99059a2f6036e90384f2379e09d5141495a9928a",
+    "status": "PASS_EXACT_SOURCE_AUTOMATED",
+    "candidateCommit": "1ec4b7907b5f301692f64c163656eb1b582c3887",
     "staffReleaseApproved": false,
-    "requiredWorkflows": [
-      "build-signed-acceptance.yml",
-      "reception-check.yml",
-      "accountant-qa.yml"
-    ],
-    "note": "This metadata-only commit triggers fresh exact-source verification; publication remains blocked pending authenticated financial and role/security/rollback checks."
+    "signedAcceptanceRun": 43856800110,
+    "receptionVerificationRun": 43856800069,
+    "accountantVerificationRun": 43856800029,
+    "note": "Source pin and acceptance artifacts agree; live validation/rollback gates remain false."
   }
 }
