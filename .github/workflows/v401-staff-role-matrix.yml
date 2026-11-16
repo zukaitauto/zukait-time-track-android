@@ -35,3 +35,21 @@ jobs:
         run: |
           node tests/mechanical-inspection-api.mjs
           node tests/mechanical-inspection-session.mjs
+      - name: Live v14 and v126 invalid-session smoke checks (read-only)
+        run: |
+          set -euo pipefail
+          BASE='https://pjknotnjkufadqavcmii.supabase.co/functions/v1'
+          KEY='sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A'
+          for ACTION in accountant_dashboard mechanical_inspection technician_roster; do
+            RESPONSE=$(curl --silent --show-error --max-time 25 --output /tmp/denied.json --write-out '%{http_code}' \
+              --request POST \
+              --header 'Content-Type: application/json' \
+              --header "apikey: $KEY" \
+              --header 'x-zukait-session: INVALID-V401-ROLE-MATRIX-SESSION' \
+              --data "{\"action\":\"$ACTION\"}" "$BASE/workshop-api")
+            if [ "$RESPONSE" != 401 ]; then echo "::error::$ACTION accepted unexpected status $RESPONSE"; cat /tmp/denied.json; exit 1; fi
+          done
+          RESPONSE=$(curl --silent --show-error --max-time 25 --output /tmp/auth-denied.json --write-out '%{http_code}' \
+            --request POST --header 'Content-Type: application/json' --header "apikey: $KEY" \
+            --data '{"action":"session","session_token":"INVALID-V401-ROLE-MATRIX-SESSION"}' "$BASE/staff-auth")
+          test "$RESPONSE" = 401 || { echo "::error::staff-auth accepted invalid session ($RESPONSE)"; cat /tmp/auth-denied.json; exit 1; }
