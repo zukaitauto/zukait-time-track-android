@@ -11,7 +11,7 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "Production first-login session-policy hardening deployed: staff-auth v14 and Workshop API v126, exact one-line changes; isolated 7-role auth and live invalid-session smoke passed run 43865404639, production healthy. Mechanical Supervisor first login and actual positive authenticated staff role acceptance not yet performed; live financial UI, coherent recovery and V401 signed-source requalification still require verified evidence. V401 staff publish HELD; compact history disabled.",
+  "reason": "Production incident 2026-11-16 all users unable to login. Rolled staff-auth v14 back to v13 access rules as deployment v15; rolled workshop-api v126 back to v125 access rules as v127. Restored code read-back verified, but even after rollback DB queries timed out and edge logs show 57014 request deadline exceeded plus Cloudflare 522. Restart/diagnose database required. V401 staff release HELD.",
   "authorization": "Owner requested publishing V401 calculation audit corrections for testing.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
@@ -37,14 +37,20 @@
     "readbackVerified": true,
     "functions": {
       "staff-auth": {
-        "version": 14,
-        "bundleSha256": "170b405af2cf16f800dfe4e524149fb829c661b26a6db051dae0253e4b00436a",
-        "verifiedFileMatch": true
+        "version": 15,
+        "restoredFrom": 13,
+        "rollbackSourceCommit": "ba5404a7f23440540d6cc879bc004926c6b8d748",
+        "bundleSha256": "20e8d783723439df15b2fc7d0133821df9f23c9fd3b761e8ef50afb6012a594a",
+        "verifiedFileMatch": true,
+        "status": "ACTIVE"
       },
       "workshop-api": {
-        "version": 126,
-        "bundleSha256": "dd84c0aa2290f4fe9ea62aeda56821a6e08c28fff1c740a896776cc072233280",
-        "verifiedFileMatch": true
+        "version": 127,
+        "restoredFrom": 125,
+        "rollbackSourceCommit": "ba5404a7f23440540d6cc879bc004926c6b8d748",
+        "bundleSha256": "41e5fdde202f44facd4aaff2387c0d0eea706c02b1094e5418742a65734078de",
+        "verifiedFileMatch": true,
+        "status": "ACTIVE"
       }
     },
     "migrations": [
@@ -272,6 +278,28 @@
         "status": "PREEXISTING_SESSION_ACTIVITY_ONLY__NEW_LOGIN_ACCEPTANCE_NOT_VERIFIED",
         "note": "These are server-side session table counts only. No staff password or session token retrieved; no authenticated user impersonation or live HTTP role-workflow performed."
       }
+    },
+    "productionLoginIncident": {
+      "date": "2026-11-16",
+      "userReported": "All staff unable to login",
+      "status": "DATABASE_CONNECTION_TIMEOUT_PERSISTS_AFTER_EXACT_AUTH_ROLLBACK",
+      "rollback": {
+        "staffAuth": "v14 -> v15 with v13 access rules",
+        "workshopApi": "v126 -> v127 with v125 access rules",
+        "fileReadback": "PASS"
+      },
+      "diagnostics": [
+        "Supabase active/healthy platform metadata but simple execute_sql calls timed out repeatedly",
+        "Function logs after rollback workshop-api v127 show SQLSTATE 57014 Database request deadline exceeded",
+        "staff-auth v14 logs observed Cloudflare origin 522 timeout",
+        "Supabase restart may temporarily restore if under-provisioned; requires dashboard because available connector has no restart action"
+      ],
+      "causeAssessment": "Database overload/connection path timeout strongly indicated; not evidence of invalid user passwords",
+      "releaseHold": true,
+      "staffPasswordsChanged": false,
+      "workshopRecordsChanged": false,
+      "requires": "Owner Supabase dashboard Project Settings > General > Restart project, then verify actual staff login; escalate support if still failing",
+      "source": "Supabase Edge function logs / SQL errors / GitHub rollback bundles"
     }
   },
   "vinOnlyEditCandidate": {
