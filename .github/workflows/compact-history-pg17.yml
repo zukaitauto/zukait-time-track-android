@@ -8,6 +8,7 @@ on:
       - '.github/workflows/compact-history-pg17.yml'
       - 'tests/compact-history-isolated.mjs'
       - 'tests/workshop-forward-lz4-isolated.mjs'
+      - 'tests/compact-history-storage-benchmark-native.mjs'
       - 'supabase/tests/workshop_forward_lz4_isolated_qa.sql'
       - 'tests/history-reader-rollout.mjs'
       - 'tests/stage-v124-history-reader-safety.mjs'
@@ -71,6 +72,13 @@ jobs:
           PGPORT: '5432'
           PGPASSWORD: synthetic_ci_only_password
         run: node tests/workshop-forward-lz4-isolated.mjs
+      - name: Compare 24 identical synthetic saves in legacy dual and compact modes
+        env:
+          ZUKAIT_COMPACT_BENCHMARK_NATIVE: '1'
+          PGHOST: '127.0.0.1'
+          PGPORT: '5432'
+          PGPASSWORD: synthetic_ci_only_password
+        run: node tests/compact-history-storage-benchmark-native.mjs
       - name: Qualify staging only, not a production cutover
         run: |
           echo 'PASS: synthetic-only history qualification completed'
