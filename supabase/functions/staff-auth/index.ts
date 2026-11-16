@@ -101,7 +101,7 @@ async function verifySession(token: string) {
     .select("user_id,display_name,role,department,active,must_change")
     .eq("user_id", session.user_id)
     .maybeSingle();
-  if (staffError || !staff || !staff.active || (staff.role==='Accountant'&&staff.must_change)) return null;
+  if (staffError || !staff || !staff.active || staff.must_change) return null;
 
   await admin.from("staff_sessions").update({ last_seen_at: new Date().toISOString() })
     .eq("token_hash", hash);
