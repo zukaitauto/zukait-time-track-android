@@ -11,7 +11,7 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "V401 exact-source signed APK, Reception and Accountant automated acceptance all PASS on current pinned source. Production v125 VIN and Mechanical backend compatible. Staff publication remains HELD: credential preservation, authenticated role permissions, full live cost reconciliation and coherent rollback/recovery checks are not yet verified; physical Android acceptance NOT_RUN. No compact history activation.",
+  "reason": "V401 automated exact-source signed, Reception and Accountant QA PASS; live production financial acceptance FAIL due to OMR 0.480 higher job cost vs approved October 2026 baseline (live 5088.608 vs approved 5088.128). Database role permissions PASS, but authenticated staff-session HTTP acceptance and credential/rollback verification remain incomplete. Preserve existing production operations; V401 publication HELD, V400 published. See docs/releases/V401_FINANCIAL_ROLE_LIVE_ACCEPTANCE_20261116.md.",
   "authorization": "Owner requested publishing V401 calculation audit corrections for testing.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
@@ -121,6 +121,42 @@
         "netProfitOmr": "5918.872",
         "coverage": "Live October report totals matched the owner-approved XML exactly. The report still flags one pending-cost job. Source cost records and the pending prices were not independently verified."
       }
+    },
+    "liveCostReconciliation": {
+      "status": "FAIL_LIVE_COST_VARIANCE_OMR_0_480",
+      "checkedOn": "2026-11-16",
+      "period": "2026-10",
+      "snapshotRevision": 17197,
+      "financeRevision": 0,
+      "revenueRows": 45,
+      "revenueOmr": "11007.000",
+      "approvedTotalCostOmr": "5088.128",
+      "currentTotalCostOmr": "5088.608",
+      "approvedProfitOmr": "5918.872",
+      "currentProfitOmr": "5918.392",
+      "partialCostJobs": 1,
+      "remaining": "Find the exact source of OMR 0.480 cost variance with owner-approved row-level evidence; do not force reconciliation.",
+      "report": "docs/releases/V401_FINANCIAL_ROLE_LIVE_ACCEPTANCE_20261116.md"
+    },
+    "liveRoleAcceptance": {
+      "status": "PASS_DATABASE_PERMISSIONS_AUTHENTICATED_STAFF_HTTP_NOT_RUN",
+      "checkedOn": "2026-11-16",
+      "accountantContextRead": "PASS_ACTIVE_ACCOUNTANT",
+      "deniedRoles": [
+        "Supervisor",
+        "Receptionist",
+        "Employee"
+      ],
+      "directRpcAnonAuthenticatedDenied": true,
+      "financialAndWorkshopRlsRestricted": true,
+      "liveStaffSessionPositiveTests": false,
+      "credentialHashesCompared": false,
+      "staffInventory": {
+        "total": 33,
+        "active": 25,
+        "inactive": 8
+      },
+      "report": "docs/releases/V401_FINANCIAL_ROLE_LIVE_ACCEPTANCE_20261116.md"
     }
   },
   "vinOnlyEditCandidate": {
