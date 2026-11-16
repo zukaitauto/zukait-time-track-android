@@ -18,11 +18,11 @@ select 1,jsonb_build_object('jobs',jsonb_agg(jsonb_build_object(
 from generate_series(1,600) as g(n);
 
 do $qa$
-declare v_old jsonb; v_size integer;
+declare v_old jsonb; v_size integer; v_method text;
 begin
-  select data,pg_column_size(data) into strict v_old,v_size
+  select data,pg_column_size(data),pg_column_compression(data) into strict v_old,v_size,v_method
   from zukait_lz4_forward_qa where id=1;
-  if pg_column_compression(v_old) is distinct from 'pglz' then
+  if v_method is distinct from 'pglz' then
     raise exception 'initial_pglz_not_compressed';
   end if;
   if jsonb_array_length(v_old->'jobs')<>600 or v_size<1000 then
