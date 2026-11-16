@@ -1,3 +1,32 @@
+# ZUKAIT V401 backend compatibility — FINAL DEPLOYMENT UPDATE
+
+**Updated: 2026-11-16.** API compatibility deployed, **staff V401 remains held**.
+This update supersedes the historical 'VIN not activated' and 'Mechanical API absent' findings in the archived investigation below.
+
+## Verified production state
+- Supabase project `pjknotnjkufadqavcmii`: `workshop-api` **v125 ACTIVE**; SHA-256 `41e5fdde202f44facd4aaff2387c0d0eea706c02b1094e5418742a65734078de`.
+- Exact live v124 source was preserved outside the four scoped additive route/import and whitelist blocks; **all 42 existing non-entrypoint source files** remained byte-identical on v125 readback. Seven audited Mechanical Inspection server modules added, total 50 files. `verify_jwt=false` kept to preserve the existing custom session auth model; new actions require the established authenticated staff session and per-role checks.
+- Staged exact-v124 overlay: `releases/v401-v124-compat/workshop-api/index.ts`. Exact pre-overlay v124 entrypoint: `releases/v401-v124-compat/workshop-api/rollback-v124-index.ts`. Emergency Vehicle Master trigger disable: `scripts/rollback-v401-vehicle-master-capture.sql`. This is not evidence of a full off-platform backup of all Supabase resources.
+- Isolated compatibility workflow passed: [run 43837861641](https://github.com/zukaitauto/zukait-time-track-android/actions/runs/43837861641).
+- Live v125 invalid-session smoke tests for `vehicle_master_candidates`, `vehicle_master_verify` and `mechanical_inspection` passed: [run 43838547750](https://github.com/zukaitauto/zukait-time-track-android/actions/runs/43838547750). These tests verify denial of unauthenticated requests, not authenticated business workflows.
+
+## Vehicle Master integration
+- Applied atomic six-script safe-identity migrations under `v401_vehicle_master_safe_identity_v124`: private physical vehicles/visits/ownership, VIN candidate lookup and exact VIN match, capture and linked Job Card reconciliation triggers. No archived Job Card, customer, insurance or history records rewritten; plate alone never establishes physical identity. RLS enabled on new tables, direct public RPC execution denied.
+- Applied bounded `v401_verified_format_vin_intake_backfill`, source: `docs/releases/V401_VERIFIED_FORMAT_VIN_INTAKE_BACKFILL.sql`. Exactly **43 historical Reception intakes** had distinct syntactically valid 17-character VINs. These were added as 43 physical vehicles and 43 Reception visit references, with 0 duplicate VIN keys, 0 orphan visits. Existing 46 Reception records remain untouched; blank VINs are not forcibly linked.
+- Direct SQL lookup verification: `32621-m` and `32621 M` normalize to `32621M`; direct VIN match positive for all 43 registered intakes and zero for a nonmatching VIN. This validates the private RPC logic, not physical VIN authenticity.
+
+## Mechanical Inspection integration
+- Database foundation `mechanical_inspection_secure_v401` and job-type guard `mechanical_inspection_linked_job_type_guard_v401` previously applied. Private tables and authorized read/save RPCs verified; direct anon/authenticated access denied. The source overlay now exposes the `mechanical_inspection` route on v125 with the existing authenticated session and dedicated Mechanical role/checklist checks.
+- **Feature gating retained:** `ZUKAIT_MECHANICAL_INSPECTION_ENABLED` must be explicitly enabled after authenticated device and audit checks. This flag's current value was not verified by the available management API. No test Mechanical Inspection data was written to production.
+
+## NOT YET VERIFIED — keeps V401 held
+- Live Manager/Reception/Mechanical authenticated behavior, including real VIN confirmation and real Mechanical Inspection READ/SAVE, after this v125 rollout.
+- Physical Android V401 installation, end-to-end synced Job Card test, staff permission boundaries with actual login sessions, full coherent backup/restore and operational rollback of the complete application.
+- Current-source drift: the signed V401 candidate and publication metadata are pinned to an older source. V401 cannot be published without separate source/CI reconciliation.
+- No compact-history optimisation, history deletion, service restart, or staff APK/Web publish occurred as part of this backend change.
+
+---
+
 # ZUKAIT V401 — scoped live compatibility record (2026-11-16)
 
 Project: `pjknotnjkufadqavcmii` (production); branch: `architecture-v2`.
