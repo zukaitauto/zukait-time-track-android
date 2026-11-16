@@ -66,7 +66,7 @@ select now() as checked_at,
        case when (select count(*) from status)=12
                  and (select count(*) from status where expected_writer and inserts_history and not reads_history)=12
                  and (select count(*) from missing)=0
-                 and (select count(*) from history_views)=0
+                 and (select view_count from history_views)=0
             then 'PASS_CATALOG_DEPENDENCY_INVENTORY_ONLY'
             else 'HOLD_REVIEW_HISTORY_DEPENDENCIES'
        end as catalog_gate,
