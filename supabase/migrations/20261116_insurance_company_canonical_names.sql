@@ -11,8 +11,8 @@ BEGIN
    RAISE EXCEPTION 'Expected SAICO (ID 6) missing; inspect company master before changing';
  END IF;
  IF NOT EXISTS (SELECT 1 FROM public.workshop_insurance_companies WHERE name='Orange Card') THEN
-   INSERT INTO public.workshop_insurance_companies(id,name,active)
-   SELECT coalesce(max(id),0)+1,'Orange Card',true FROM public.workshop_insurance_companies;
+   INSERT INTO public.workshop_insurance_companies(name,active)
+   VALUES ('Orange Card',true);
  END IF;
  -- Oman Qatar Insurance and Orient Insurance are already present: retain their IDs.
 END;
