@@ -12,6 +12,8 @@ on:
       - 'supabase/tests/workshop_forward_lz4_isolated_qa.sql'
       - 'tests/history-reader-rollout.mjs'
       - 'tests/compact-history-rollout-gate.mjs'
+      - 'tests/coherent-recovery-pg17.mjs'
+      - 'scripts/backup-zukait-coherent-app-snapshot.ps1'
       - 'scripts/check-compact-history-rollout.mjs'
       - 'docs/storage/COMPACT_HISTORY_RELEASE_EVIDENCE_20261116.json'
       - 'tests/stage-v124-history-reader-safety.mjs'
@@ -84,6 +86,13 @@ jobs:
           PGPORT: '5432'
           PGPASSWORD: synthetic_ci_only_password
         run: node tests/compact-history-storage-benchmark-native.mjs
+      - name: Prove coherent public Mechanical Vehicle backup and isolated PG17 restore
+        env:
+          ZUKAIT_RECOVERY_NATIVE: '1'
+          PGHOST: '127.0.0.1'
+          PGPORT: '5432'
+          PGPASSWORD: synthetic_ci_only_password
+        run: node tests/coherent-recovery-pg17.mjs
       - name: Qualify staging only, not a production cutover
         run: |
           echo 'PASS: synthetic-only history qualification completed'
