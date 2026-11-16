@@ -78,7 +78,7 @@ try {
       // Reproduces the existing DB-side archive-before-save pattern,
       // including the compact-mode BEFORE INSERT skip trigger.
       const previous=await q("select revision,data,updated_at,updated_by from public.workshop_state where id='main'");
-      assert.equal(previous.rows[0].revision,i,'Sequential synthetic revision');
+      assert.equal(Number(previous.rows[0].revision),i,'Sequential synthetic revision');
       await q("insert into public.workshop_state_history(revision,data,updated_at,updated_by) values($1,$2,$3,$4) on conflict(revision) do nothing",
         [previous.rows[0].revision,previous.rows[0].data,previous.rows[0].updated_at,previous.rows[0].updated_by]);
       await q("update public.workshop_state set revision=$1,data=$2::jsonb,updated_by='synthetic_qa',updated_at=clock_timestamp() where id='main'",
