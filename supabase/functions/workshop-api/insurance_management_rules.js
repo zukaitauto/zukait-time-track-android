@@ -3,7 +3,7 @@ const key=v=>String(v??'').trim().toUpperCase();
 // Normalize display and report filters only. Do not rewrite historical Job Cards, claims or LPOs.
 export function canonicalInsuranceName(value){
  const raw=String(value??'').trim();
- const normalized=raw.replace(/[\\s_.-]+/g,' ').toUpperCase();
+ const normalized=raw.replace(/[\s_.-]+/g,' ').toUpperCase();
  if(normalized==='OMAN QATAR'||normalized==='OMAN QATAR INSURANCE')return 'Oman Qatar Insurance';
  if(['SAICO','DAMANA','DAMANA SAUDI ARABIAN INSURANCE'].includes(normalized))return 'DAMANA-Saudi Arabian Insurance';
  if(normalized==='ORIENT INSURANCE')return 'Orient Insurance';
