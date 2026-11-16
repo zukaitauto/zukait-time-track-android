@@ -86,6 +86,17 @@ jobs:
           PGPORT: '5432'
           PGPASSWORD: synthetic_ci_only_password
         run: node tests/compact-history-storage-benchmark-native.mjs
+      - name: Parse encrypted Windows coherent backup script without running it
+        shell: pwsh
+        run: |
+          $tokens=$null
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'scripts/backup-zukait-coherent-app-snapshot.ps1'), [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host 'PASS: Windows operator backup script parsed. No production backup performed.'
       - name: Prove coherent public Mechanical Vehicle backup and isolated PG17 restore
         env:
           ZUKAIT_RECOVERY_NATIVE: '1'
