@@ -11,7 +11,7 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "V401 automated exact-source signed, Reception and Accountant QA PASS; live production financial acceptance FAIL due to OMR 0.480 higher job cost vs approved October 2026 baseline (live 5088.608 vs approved 5088.128). Database role permissions PASS, but authenticated staff-session HTTP acceptance and credential/rollback verification remain incomplete. Preserve existing production operations; V401 publication HELD, V400 published. See docs/releases/V401_FINANCIAL_ROLE_LIVE_ACCEPTANCE_20261116.md.",
+  "reason": "V401 current-source signed/Reception/Accountant CI passed, v125 compatible. October 2026 financial source totals independently reconciled: 45 documents, revenue OMR 11,007.000, recorded cost OMR 5,088.608, provisional profit OMR 5,918.392. OMR 0.480 change explained by Nov 16 post-invoice labour for JC12057; JC12060 PL022 still has one unpriced ordered part. Staff publication held pending Manager authenticated report comparison, post-invoice session confirmation, live role/recovery checks; compact history remains off.",
   "authorization": "Owner requested publishing V401 calculation audit corrections for testing.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
@@ -157,6 +157,57 @@
         "inactive": 8
       },
       "report": "docs/releases/V401_FINANCIAL_ROLE_LIVE_ACCEPTANCE_20261116.md"
+    },
+    "financialTotalsSourceReconciliation": {
+      "status": "PASS_RAW_SOURCE_WITH_DOCUMENTED_POST_INVOICE_TIME_AND_PENDING_COST",
+      "checkedOn": "2026-11-16",
+      "period": "2026-10",
+      "productionProject": "pjknotnjkufadqavcmii",
+      "workshopRevision": 17197,
+      "source": "Read-only independent SQL against workshop_state.jobs, sessions, consumables actuals, paint orders, sublets and authoritative workshop_v2_spare_part_state / workshop_v2_events",
+      "octoberCashDocuments": 28,
+      "octoberInsuranceLpoDocuments": 17,
+      "distinctJobCards": 45,
+      "duplicateJobCardCount": 0,
+      "cashInvoiceAmountOmr": "3377.000",
+      "receivedLpoAmountOmr": "7630.000",
+      "combinedRevenueOmr": "11007.000",
+      "jobCostOmr": {
+        "labour": "2298.636",
+        "parts": "1148.570",
+        "consumables": "446.293",
+        "paint": "211.850",
+        "sublet": "983.259",
+        "totalRecorded": "5088.608"
+      },
+      "provisionalProfitOmr": "5918.392",
+      "previousApprovedReference": {
+        "reportDate": "2026-11-15",
+        "revenueOmr": "11007.000",
+        "recordedCostOmr": "5088.128",
+        "provisionalProfitOmr": "5918.872"
+      },
+      "explainedVariance": {
+        "changedJobCard": "12057",
+        "postInvoiceSessionDate": "2026-11-16",
+        "sessionStartLocal": "12:01:49.979",
+        "sessionEndLocal": "12:13:21.300",
+        "normalDutyMinutesApprox": 11.522,
+        "addedLabourCostOmr": "0.480",
+        "status": "RAW_RECORD_FOUND_MANAGER_TO_CONFIRM_TIME_IS_CORRECT"
+      },
+      "incompleteCost": {
+        "pendingJobCard": "12060",
+        "partsList": "PL022",
+        "sourceStatus": "ORDERED",
+        "finalPriceRecorded": false,
+        "provisionalTotalIsNotCompleteCost": true
+      },
+      "verifiedCurrentManagerReportUi": false,
+      "liveManagerRoleSessionTestedInThisAudit": false,
+      "productionDataModified": false,
+      "accountantLedgerRows": 0,
+      "note": "Cash final invoices and received insurance LPO documents are the revenue source. The accounting entries table is for separate postings, and its zero rows do not make invoiced revenue zero. Source-side cost variance is explained without overwriting historical data. Do not declare final zero pending costs or full UI acceptance."
     }
   },
   "vinOnlyEditCandidate": {
