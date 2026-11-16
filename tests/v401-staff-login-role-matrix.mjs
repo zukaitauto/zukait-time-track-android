@@ -66,7 +66,7 @@ const identities=[
 ];
 for(const [id,role,department] of identities)credentials.push({
   user_id:id,login_id:id,display_name:id,role,department,
-  active:id!=='QA-OFF',must_change:false,failed_attempts:0,locked_until:null,...hashes
+  active:id!=='QA-OFF',must_change:id==='SUP003',failed_attempts:0,locked_until:null,...hashes
 });
 const call=async payload=>{
   const res=await serve(new Request('https://isolated.invalid/functions/v1/staff-auth',{
@@ -91,6 +91,23 @@ for(const [id,role,department] of identities){
   tokens.set(id,r.body.session_token);
 }
 assert.equal(tokens.size,7);
+// The live Mechanical Supervisor account requires first password change. Do not
+// clear must_change in the database; prove the normal authenticated flow instead.
+const mechanicalInitial=tokens.get('SUP003');
+assert.equal((await call({action:'session',session_token:mechanicalInitial})).status,200);
+const mechChanged=await call({
+ action:'change_password',session_token:mechanicalInitial,user_id:'SUP003',
+ current_password:syntheticPassword,new_password:'V401-mechanical-personal-password'
+});
+assert.equal(mechChanged.status,200,'Mechanical Supervisor must change their temporary password');
+assert.equal(credentials.find(x=>x.user_id==='SUP003').must_change,false);
+assert.equal((await call({action:'session',session_token:mechanicalInitial})).status,401,'old mechanical session revoked');
+assert.equal((await call({action:'session',session_token:mechChanged.body.session_token})).status,200);
+tokens.set('SUP003',mechChanged.body.session_token);
+assert.equal((await call({action:'login',user_id:'SUP003',password:syntheticPassword})).status,401,'temporary mechanical password invalidated');
+const mechRelogin=await call({action:'login',user_id:'SUP003',password:'V401-mechanical-personal-password'});
+assert.equal(mechRelogin.status,200,'Mechanical Supervisor re-login with permanent password');
+assert.equal(mechRelogin.body.must_change,false);
 const roles=new Map(identities.map(([id,role])=>[id,role]));
 let managerRosterCount=0,techRosterCount=0;
 for(const [id,token] of tokens){
