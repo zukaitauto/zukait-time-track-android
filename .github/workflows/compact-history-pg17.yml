@@ -11,6 +11,9 @@ on:
       - 'tests/compact-history-storage-benchmark-native.mjs'
       - 'supabase/tests/workshop_forward_lz4_isolated_qa.sql'
       - 'tests/history-reader-rollout.mjs'
+      - 'tests/compact-history-rollout-gate.mjs'
+      - 'scripts/check-compact-history-rollout.mjs'
+      - 'docs/storage/COMPACT_HISTORY_RELEASE_EVIDENCE_20261116.json'
       - 'tests/stage-v124-history-reader-safety.mjs'
       - 'scripts/prepare-history-reader-candidate.mjs'
       - 'scripts/stage-v124-history-reader-offline.mjs'
@@ -53,6 +56,8 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Verify legacy-default compatibility reader
         run: node tests/history-reader-rollout.mjs
+      - name: Verify rollout HOLD and source/approval gates
+        run: node tests/compact-history-rollout-gate.mjs
       - name: Verify fail-closed offline backup staging
         run: node tests/stage-v124-history-reader-safety.mjs
       - name: Run all 12 synthetic compact history groups in PGlite
