@@ -7,6 +7,8 @@ on:
     paths:
       - '.github/workflows/compact-history-pg17.yml'
       - 'tests/compact-history-isolated.mjs'
+      - 'tests/workshop-forward-lz4-isolated.mjs'
+      - 'supabase/tests/workshop_forward_lz4_isolated_qa.sql'
       - 'tests/history-reader-rollout.mjs'
       - 'tests/stage-v124-history-reader-safety.mjs'
       - 'scripts/prepare-history-reader-candidate.mjs'
@@ -62,6 +64,13 @@ jobs:
           PGUSER: 'postgres'
           PGPASSWORD: synthetic_ci_only_password
         run: node tests/compact-history-isolated.mjs
+      - name: Verify forward LZ4 compression preserves old PGLZ records
+        env:
+          ZUKAIT_LZ4_QA_NATIVE: '1'
+          PGHOST: '127.0.0.1'
+          PGPORT: '5432'
+          PGPASSWORD: synthetic_ci_only_password
+        run: node tests/workshop-forward-lz4-isolated.mjs
       - name: Qualify staging only, not a production cutover
         run: |
           echo 'PASS: synthetic-only history qualification completed'
