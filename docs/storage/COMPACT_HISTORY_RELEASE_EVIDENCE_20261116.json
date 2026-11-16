@@ -20,7 +20,7 @@
     },
     "physical_storage_headroom": {
       "state": "pending",
-      "note": "No verified physical disk free space and WAL headroom; allocated PostgreSQL relation bytes do not measure capacity."
+      "note": "Operator Supabase Database Size screenshot from 16 Nov 2026 around 11:29 AM Oman shows 8 GB provisioned, 5.55 GB used, about 2.45 GB nominal remaining. History object about 5.5 GB (99.07 percent). Physical free/WAL/system headroom for migration/rewrite not proven, so gate remains PENDING."
     },
     "coherent_recovery_restore": {
       "state": "pending",
