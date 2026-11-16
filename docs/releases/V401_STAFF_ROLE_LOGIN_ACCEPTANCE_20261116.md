@@ -1,3 +1,18 @@
+# Final production authentication hardening — 16 November 2026
+
+**Supersedes the earlier read-only deployment status below.** This change is deployed and verified.
+
+- Production `pjknotnjkufadqavcmii`: `staff-auth` **v14 ACTIVE**, bundle SHA-256 `170b405af2cf16f800dfe4e524149fb829c661b26a6db051dae0253e4b00436a`. Exact live v13 source retained except one server `must_change` gate.
+- `workshop-api` **v126 ACTIVE**, bundle SHA-256 `dd84c0aa2290f4fe9ea62aeda56821a6e08c28fff1c740a896776cc072233280`. Exact live v125 source retained except one server `must_change` gate; all 49 non-entrypoint source files were read-back byte-identical.
+- The original client first-login password change still works: the `login` response flags `must_change=true`, the client calls `change_password` with the original password, and new sessions are issued only after the password is changed. The `session` endpoint and Workshop API now deny *all* roles with pending `must_change`, not just Accountant/Receptionist.
+- Pre-change production audit: 6 active Employees and 1 Mechanical Supervisor require first password change; **none had a non-revoked session** when checked. No account credentials, token hashes, session rows, customer records or workshop state were written during rollout.
+- [Passing complete live-isolated role check run 43865404639](https://github.com/zukaitauto/zukait-time-track-android/actions/runs/43865404639) runs the actual staff-auth code against synthetic accounts, isolated Accountant PostgreSQL tests, Mechanical Inspection role checks and **production v14/v126 invalid-session HTTP smoke**. No real login credentials are used.
+- Supabase `ACTIVE_HEALTHY`; zero health advisor lints after both deployments.
+- The exact before-change live sources remain retrievable by Git commit `ba5404a7f23440540d6cc879bc004926c6b8d748` for `staff-auth/index.ts` and `releases/v401-v124-compat/workshop-api/index.ts`; rollback would require redeployment and readback, not a simple source revert. No rollback executed.
+- **Real staff positive authentication still unverified.** In particular Mechanical Supervisor has not logged in; they must use their temporary password and complete the first-password-change prompt. Do not mark real authenticated staff acceptance or staff publication complete without a valid authorized user sign-in. V401 remains held; V400 remains published.
+
+---
+
 # V401 Staff Login and Role Workflow Acceptance — 16 November 2026
 
 ## Status
