@@ -11,15 +11,15 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "Production incident 2026-11-16 all users unable to login. Rolled staff-auth v14 back to v13 access rules as deployment v15; rolled workshop-api v126 back to v125 access rules as v127. Restored code read-back verified, but even after rollback DB queries timed out and edge logs show 57014 request deadline exceeded plus Cloudflare 522. Restart/diagnose database required. V401 staff release HELD.",
+  "reason": "V401 signed APK from source 52a6804d successfully built and verified in CI run 43880457568. Nine DB role authorization denials passed, but real signed-in cross-role HTTP denies unavailable; Accountant live unauthenticated API smoke retry pending after database outage. Current coherent production backup and complete restore still unverified; prior Oct27 rehearsal and partial Nov15 restore do not satisfy current release recovery gate. Production backend auth rollback versions v15/v127 must be reconciled before publishing. Release HOLD.",
   "authorization": "Owner requested publishing V401 calculation audit corrections for testing.",
   "physicalAcceptanceStatus": "NOT_RUN",
-  "freshProductionBackupRestoreStatus": "NOT_RUN",
+  "freshProductionBackupRestoreStatus": "NOT_VERIFIED_CURRENT_COHERENT_RESTORE",
   "backupDeferredByOwner": false,
-  "sourceCommit": "1ec4b7907b5f301692f64c163656eb1b582c3887",
+  "sourceCommit": "52a6804d8dab347a6b15ed016bd3ee9628019f86",
   "approvedAt": null,
   "publishNonce": null,
-  "signedAcceptanceRun": 43856800110,
+  "signedAcceptanceRun": 43880457568,
   "verificationRun": 43856800069,
   "accountantVerificationRun": 43856800029,
   "previousPublishedRelease": {
@@ -300,6 +300,44 @@
       "workshopRecordsChanged": false,
       "requires": "Owner Supabase dashboard Project Settings > General > Restart project, then verify actual staff login; escalate support if still failing",
       "source": "Supabase Edge function logs / SQL errors / GitHub rollback bundles"
+    },
+    "finalReleaseVerification_20261116": {
+      "scope": "Steps 3,4,5 ordered by owner — verify without production credential/workshop edits",
+      "step3": {
+        "status": "PARTIAL__DB_ROLE_DENIAL_PASSED__ACTUAL_CROSS_ROLE_HTTP_NOT_AVAILABLE",
+        "databaseEvidence": "10 sensitive RPC grants and 12 protected RLS tables denied anon/authenticated; 9 read-only DB authorization denial scenarios passed",
+        "httpNegative": "Previous CI invalid-token HTTP checks passed; retry of Accountant unauthenticated endpoint smoke run 43880457615 requested after initial failure during database connection outage",
+        "authenticatedCrossRole": false,
+        "blocker": "TinyFish browser profiles have no saved signed-in ZUKAIT site. Do not obtain real production bearer tokens via database or messages. Positive browser roles were user-reported, not imported into this tool context.",
+        "credentialsChanged": false,
+        "dataChanged": false
+      },
+      "step4": {
+        "status": "PREVIOUS_RESTORE_EVIDENCE_ONLY__FRESH_COHERENT_BACKUP_RESTORE_NOT_VERIFIED",
+        "completedLocalRestore_20261027": "Historical 27 Oct owner-PC rehearsal: 85 tables and 17484 rows compared; 0 row count mismatches, matching restored data; evidence in user's archived restore report",
+        "novemberLocalRestore": "15 Nov locally recovered 16410 history rows with triggers omitted; not full application, auth, storage recovery",
+        "latestNovemberBackups": "PC-held Nov12 full dump and Nov14 workshop-public dump not available for independent readback/checksum/restore verification",
+        "relevantScript": "scripts/backup-zukait-coherent-app-snapshot.ps1 (coherent public/mechanical/vehicle app scope, does not cover Supabase Auth, Storage or Edge deployment)",
+        "recoveryReady": false,
+        "productionDataChanged": false
+      },
+      "step5": {
+        "status": "SIGNED_ACCEPTANCE_APK_BUILT_VERIFIED__PUBLICATION_NOT_APPROVED",
+        "sourceCommit": "52a6804d8dab347a6b15ed016bd3ee9628019f86",
+        "signedRun": 43880457568,
+        "signedRunUrl": "https://github.com/zukaitauto/zukait-time-track-android/actions/runs/43880457568",
+        "signedArtifact": "ZUKAIT_SIGNED_ACCEPTANCE_APK",
+        "signedArtifactId": 14232276866,
+        "artifactZipSha256": "95cf7cfbd4d3665f41c15cb20c5800b7c9a9483589c3d372e201b032a8cd5ab1",
+        "package": "com.zukait.timetrack",
+        "versionCode": 364,
+        "versionName": "V401",
+        "certificateMatchedInCI": true,
+        "nativeAndReceptionChecksInCI": true,
+        "productionBackendCompatibilityWarning": "Production staff-auth v15 and workshop-api v127 have restored older auth rules whereas repo includes subsequent security patches. Never redeploy source backend without requalification.",
+        "independentDeviceAcceptance": false
+      },
+      "releaseHold": true
     }
   },
   "vinOnlyEditCandidate": {
