@@ -183,5 +183,18 @@
       "passingIsolatedCI": 43837861641,
       "passingLiveUnauthenticatedEndpointSmokeCI": 43838547750
     }
+  },
+  "candidateRefresh": {
+    "requestedOn": "2026-11-16",
+    "purpose": "Requalify current V401 source after v125 compatibility deployment",
+    "status": "IN_PROGRESS",
+    "priorSourceCommit": "99059a2f6036e90384f2379e09d5141495a9928a",
+    "staffReleaseApproved": false,
+    "requiredWorkflows": [
+      "build-signed-acceptance.yml",
+      "reception-check.yml",
+      "accountant-qa.yml"
+    ],
+    "note": "This metadata-only commit triggers fresh exact-source verification; publication remains blocked pending authenticated financial and role/security/rollback checks."
   }
 }
