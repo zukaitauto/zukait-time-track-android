@@ -255,7 +255,23 @@
       "realStaffLoginTested": false,
       "currentActiveFirstChangeStaffCount": 7,
       "currentActiveFirstChangeStaffWithUnrevokedSessions": 0,
-      "liveFullPositiveRoleAcceptance": false
+      "liveFullPositiveRoleAcceptance": false,
+      "readOnlyLiveAudit": {
+        "date": "2026-11-16",
+        "afterServerFixUtc": "2026-11-16T12:16:00Z",
+        "staffAuthVersion": 14,
+        "workshopApiVersion": 126,
+        "projectStatus": "ACTIVE_HEALTHY",
+        "newlyCreatedSessionRowsAfterFix": 0,
+        "existingUnrevokedSessionsSeenAfterFix": 1,
+        "existingSessionRoleSeenAfterFix": "Manager",
+        "inactiveAccountsWithUnrevokedSessions": 0,
+        "firstPasswordChangeAccountsWithUnrevokedSessions": 0,
+        "pendingMechanicalSupervisorFirstLogin": true,
+        "accountantRecentAuthenticatedSessionSeen": false,
+        "status": "PREEXISTING_SESSION_ACTIVITY_ONLY__NEW_LOGIN_ACCEPTANCE_NOT_VERIFIED",
+        "note": "These are server-side session table counts only. No staff password or session token retrieved; no authenticated user impersonation or live HTTP role-workflow performed."
+      }
     }
   },
   "vinOnlyEditCandidate": {
