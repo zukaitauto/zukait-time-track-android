@@ -11,7 +11,7 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "V401 isolated real auth implementation role matrix PASS on run 43863640761; live login sessions observed for Manager/Supervisor/Receptionist/Purchaser/Employee, but Mechanical Supervisor has never signed in and must complete first password change, and Accountant live acceptance remains outstanding. Real authenticated production roles, rollback and recovery checks still pending. Staff publish HELD; compact-history remains disabled.",
+  "reason": "Production first-login session-policy hardening deployed: staff-auth v14 and Workshop API v126, exact one-line changes; isolated 7-role auth and live invalid-session smoke passed run 43865404639, production healthy. Mechanical Supervisor first login and actual positive authenticated staff role acceptance not yet performed; live financial UI, coherent recovery and V401 signed-source requalification still require verified evidence. V401 staff publish HELD; compact history disabled.",
   "authorization": "Owner requested publishing V401 calculation audit corrections for testing.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
@@ -37,13 +37,13 @@
     "readbackVerified": true,
     "functions": {
       "staff-auth": {
-        "version": 13,
-        "bundleSha256": "8c9007aef796124863048c9b75156133edd9823ba9fc5211f0e70fe6ec5e4a11",
+        "version": 14,
+        "bundleSha256": "170b405af2cf16f800dfe4e524149fb829c661b26a6db051dae0253e4b00436a",
         "verifiedFileMatch": true
       },
       "workshop-api": {
-        "version": 125,
-        "bundleSha256": "41e5fdde202f44facd4aaff2387c0d0eea706c02b1094e5418742a65734078de",
+        "version": 126,
+        "bundleSha256": "dd84c0aa2290f4fe9ea62aeda56821a6e08c28fff1c740a896776cc072233280",
         "verifiedFileMatch": true
       }
     },
@@ -210,7 +210,7 @@
       "note": "Cash final invoices and received insurance LPO documents are the revenue source. The accounting entries table is for separate postings, and its zero rows do not make invoiced revenue zero. Source-side cost variance is explained without overwriting historical data. Do not declare final zero pending costs or full UI acceptance."
     },
     "staffRoleWorkflows": {
-      "status": "PASS_ISOLATED_AUTH_CODE_LIVE_PERSONNEL_ACCEPTANCE_PARTIAL",
+      "status": "PRODUCTION_SESSION_POLICY_FIXED_AND_SMOKE_PASSED__REAL_LOGIN_ACCEPTANCE_PENDING",
       "date": "2026-11-16",
       "isolatedRun": 43863640761,
       "ciResult": "SUCCESS",
@@ -236,7 +236,26 @@
       "liveAuthenticatedRoleAcceptance": false,
       "productionCredentialsOrSessionsChanged": false,
       "note": "Seven-role matrix tests exercise actual authentication code with synthetic isolated accounts. They do not constitute real production staff login. Production browser profiles contain no saved ZUKAIT staff session. No passwords or bearer tokens were accessed.",
-      "documentation": "docs/releases/V401_STAFF_ROLE_LOGIN_ACCEPTANCE_20261116.md"
+      "documentation": "docs/releases/V401_STAFF_ROLE_LOGIN_ACCEPTANCE_20261116.md",
+      "latestIsolatedAndLiveSmokeRun": 43865404639,
+      "productionStaffAuth": {
+        "version": 14,
+        "sha256": "170b405af2cf16f800dfe4e524149fb829c661b26a6db051dae0253e4b00436a",
+        "status": "ACTIVE"
+      },
+      "productionWorkshopApi": {
+        "version": 126,
+        "sha256": "dd84c0aa2290f4fe9ea62aeda56821a6e08c28fff1c740a896776cc072233280",
+        "status": "ACTIVE"
+      },
+      "fix": "Backend session authorization now denies must_change for all roles. First password change remains available through explicit password-change route.",
+      "productionLegacyModuleFilesPreserved": true,
+      "isolatedFullRoleMatrixPassed": true,
+      "liveInvalidSessionSmokePassed": true,
+      "realStaffLoginTested": false,
+      "currentActiveFirstChangeStaffCount": 7,
+      "currentActiveFirstChangeStaffWithUnrevokedSessions": 0,
+      "liveFullPositiveRoleAcceptance": false
     }
   },
   "vinOnlyEditCandidate": {
