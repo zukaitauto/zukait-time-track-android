@@ -36,6 +36,10 @@ const admin={
     return chain;
   },
   async rpc(name,params){
+    if(name==='zukait_accountant_context')return {data:{
+      state:{jobs:[],users:[],sessions:[],sublets:[],leaves:[],consumables:{actuals:[],issues:[]},paintPurchasing:{orders:[]}},
+      events:[],entries:[],snapshot_revision:1,finance_revision:0
+    },error:null};
     rpcCalls++;
     assert.equal(name,'zukait_manager_accountants');
     assert.equal(params.p_command.operation,'LIST');
