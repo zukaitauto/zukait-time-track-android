@@ -50,3 +50,20 @@ jobs:
           node tests/vehicle-global-identity.mjs
           node tests/reception-vehicle-authority.mjs
           node tests/reception-job-edit.mjs
+      - name: Live v125 endpoint deployment smoke — invalid sessions must fail closed
+        run: |
+          set -euo pipefail
+          BASE='https://pjknotnjkufadqavcmii.supabase.co/functions/v1/workshop-api'
+          KEY='sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A'
+          for action in vehicle_master_candidates vehicle_master_verify mechanical_inspection; do
+            case "$action" in
+              vehicle_master_candidates) BODY='{"action":"vehicle_master_candidates","registration":"32621-M"}' ;;
+              vehicle_master_verify) BODY='{"action":"vehicle_master_verify","registration":"32621-M","vehicle_id":"00000000-0000-4000-8000-000000000000","vin":"WVWZZZ1JZXW000001"}' ;;
+              mechanical_inspection) BODY='{"action":"mechanical_inspection","command":{"operation":"READ_INSPECTION","checklistId":"00000000-0000-4000-8000-000000000000"}}' ;;
+            esac
+            STATUS=$(curl --silent --show-error --max-time 25 --output /tmp/v401-endpoint-denied.json --write-out '%{http_code}' \
+              --request POST --header 'Content-Type: application/json' \
+              --header "apikey: $KEY" --header 'x-zukait-session: NONEXISTENT_V401_ENDPOINT_TEST' \
+              --data "$BODY" "$BASE")
+            test "$STATUS" = 401 || { echo "::error::$action unexpected unauthenticated status $STATUS"; cat /tmp/v401-endpoint-denied.json; exit 1; }
+          done
