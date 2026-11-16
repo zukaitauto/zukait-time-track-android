@@ -24,11 +24,11 @@
     },
     "coherent_recovery_restore": {
       "state": "pending",
-      "note": "Encrypted PC public/private dumps were taken at different points; isolated Vehicle audit foreign-key references disagreed. Fresh consistent restore needed."
+      "note": "16 November: production private FK inventory passed (34/34 validated); 7/7 Vehicle audit references resolve live; coherent single-transaction app-schema PG17 backup/restore method PASSED synthetic GitHub CI run 43826075559. Prior real public/private encrypted PC backups were taken on separate dates and are not coherent. Current real production snapshot and isolated restore NOT performed; this gate remains PENDING."
     },
     "current_edge_source_backup": {
       "state": "pending",
-      "note": "Live workshop-api v124 43-file source hash inventoried, but exact current encrypted-PC off-platform backup not verified."
+      "note": "Exact deployed v124 43-file bundle identity reverified 16 November; encrypted off-platform v124 source backup remains NOT performed. Stage helper is prepared; gate stays PENDING."
     },
     "exact_source_rollback_rehearsal": {
       "state": "pending",
