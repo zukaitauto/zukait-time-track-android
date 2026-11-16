@@ -29,7 +29,7 @@ jobs:
       - name: Stage isolated exact-v124 compatible entrypoint
         run: cp releases/v401-v124-compat/workshop-api/index.ts supabase/functions/workshop-api/index.ts
       - name: Type-check exact-v124 candidate and server modules
-        run: deno check supabase/functions/workshop-api/index.ts
+        run: deno check --node-modules-dir=auto supabase/functions/workshop-api/index.ts
       - name: Run isolated Mechanical Inspection security and adapter tests
         run: |
           node tests/mechanical-inspection-contract.mjs
