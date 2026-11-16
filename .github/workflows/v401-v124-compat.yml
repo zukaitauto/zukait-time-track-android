@@ -43,6 +43,8 @@ jobs:
           node tests/mechanical-inspection-storage.mjs
           node tests/mechanical-inspection-read-adapter.mjs
           node tests/mechanical-inspection-save-adapter.mjs
+      - name: Install browser-test dependencies
+        run: npm ci --ignore-scripts --include=dev
       - name: Verify VIN safety and Reception API contracts
         run: |
           node tests/vehicle-global-identity.mjs
