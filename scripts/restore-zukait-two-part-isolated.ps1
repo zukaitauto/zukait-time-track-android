@@ -42,7 +42,7 @@ function ImportGzip([string]$file) {
  $proc=[Diagnostics.Process]::Start($psi)
  try {
   $stream=[IO.File]::OpenRead($file)
-  $gz=New-Object IO.Compression.GZipStream($stream,[IO.Compression.CompressionMode]::Decompress)
+  $gz=[IO.Compression.GZipStream]::new($stream,[IO.Compression.CompressionMode]::Decompress)
   try {$gz.CopyTo($proc.StandardInput.BaseStream)}
   finally {$gz.Dispose();$stream.Dispose();$proc.StandardInput.Close()}
   $reply=$proc.StandardOutput.ReadToEnd()
