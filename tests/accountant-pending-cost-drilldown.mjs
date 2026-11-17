@@ -61,7 +61,7 @@ w.document.querySelector('#rows [data-pending-all]').click();
 await wait(()=>w.document.querySelectorAll('#rows .finance-report tbody tr').length===25);
 assert.equal(w.document.getElementById('pdf').disabled,false);
 w.document.getElementById('profit-without-labour').click();
-await wait(()=>w.document.querySelector('[data-pending-costs]')&&!w.document.getElementById('profit-without-labour').getAttribute('aria-pressed').includes('false'));
+await wait(()=>w.document.getElementById('profit-without-labour').getAttribute('aria-pressed')==='true'&&w.document.getElementById('message').textContent===''&&w.document.querySelector('#rows .finance-report')&&w.document.querySelector('[data-pending-costs]'));
 w.document.querySelector('[data-pending-costs]').click();
 await wait(()=>w.document.querySelectorAll('#rows .pending-cost-job').length===2);
 assert.ok(requests.some(b=>b.action==='accountant_report'&&b.limit===500&&b.filters.labour_mode==='without'));
