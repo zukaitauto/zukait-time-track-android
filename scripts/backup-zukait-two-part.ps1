@@ -118,7 +118,7 @@ function ExportCsvRaw([long]$from,[long]$through,[string]$output) {
 function CompressCsv([string]$input,[string]$output) {
  $infile=[IO.File]::OpenRead($input)
  $outfile=[IO.File]::Create($output)
- $zip=New-Object IO.Compression.GZipStream($outfile,[IO.Compression.CompressionMode]::Compress)
+ $zip=[IO.Compression.GZipStream]::new($outfile,[IO.Compression.CompressionMode]::Compress)
  try {$infile.CopyTo($zip)}
  finally {$zip.Dispose();$outfile.Dispose();$infile.Dispose()}
 }
