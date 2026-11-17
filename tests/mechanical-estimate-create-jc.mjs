@@ -6,7 +6,7 @@ import {mountMechanicalSection} from '../app/src/main/assets/mechanical_sections
 const tick=()=>new Promise(resolve=>setTimeout(resolve,0));
 const page=new JSDOM('<main><iframe id="estimate" src="https://qa.invalid/mechanical_estimate.html"></iframe><div id="job"></div></main>',{url:'https://qa.invalid/mechanical_supervisor.html',pretendToBeVisual:true,runScripts:'outside-only'});
 const outer=page.window,child=outer.document.getElementById('estimate').contentWindow;
-child.document.body.innerHTML='<p id="estimate-notice"></p><div id="modal"><div class="modal-box"></div></div>';
+child.document.open();child.document.write('<!doctype html><html><head></head><body><p id="estimate-notice"></p><div id="modal"><div class="modal-box"></div></div></body></html>');child.document.close();
 child.me={id:'SUP003',role:'Mechanical Supervisor'};
 child.state={jobs:[],estimateAudit:[],estimates:[{
  id:'estimate-1',estimateNo:'Zi-Qt0081',date:'2026-11-17',type:'PL',vatEnabled:true,
