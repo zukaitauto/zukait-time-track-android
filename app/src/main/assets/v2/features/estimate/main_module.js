@@ -108,6 +108,11 @@ function saveState(){if(typeof save==='function')save()}
 function ensureStyle(){
   if(document.getElementById('zukaitEstimateStyle'))return;
   const s=document.createElement('style');s.id='zukaitEstimateStyle';s.textContent=`
+  .est-mechanical-editor{max-width:none!important;width:100%!important;box-sizing:border-box}
+  .est-mechanical-editor .est-cash-only{padding:10px 13px;border:1px solid #bfdbc8;border-radius:10px;background:#eef9ef;color:#174d38;font-size:14px}
+  .est-mechanical-editor .est-switch button[hidden]{display:none!important}
+  .est-mechanical-editor .est-switch:has(#estTypeLS[hidden]){grid-template-columns:1fr}
+  #modal .est-mechanical-editor .est-bottom .est-open-jc{background:#0b705f!important;color:#fff!important;border-color:#0b705f!important;grid-column:1/-1;font-size:14px!important}
   .est-home{background:linear-gradient(145deg,#f7fbff,#eef5fb);border:1px solid #dce7f2;border-radius:20px;padding:14px}
   .est-grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
   .est-action{min-height:84px;border-radius:16px!important;text-align:left!important;padding:13px!important;background:#fff!important;color:#18324e!important;border:1px solid #d9e5f0!important;box-shadow:0 8px 20px #18314d12!important}
@@ -207,7 +212,7 @@ async function newEstimate(reception=null,requestKey=null,additionalRequestId=nu
   const clientKey=requestKey||uid();let a;
   try{a=await window.zukaitCloud.allocateEstimateNo(clientKey)}catch(e){alert('Unable to generate Estimate No. Please check connection and try again.');return}
   const u=currentUser()||{},e={
-    id:clientKey,estimateNo:String(a?.estimate_no||''),sequenceNo:Number(a?.sequence_no||0),date:localDate(),type:'LS',vatEnabled:true,vatRate:.05,
+    id:clientKey,estimateNo:String(a?.estimate_no||''),sequenceNo:Number(a?.sequence_no||0),date:localDate(),type:window.zukaitMechanicalEstimate?.active?.()===true?'PL':'LS',vatEnabled:true,vatRate:.05,
     customerName:'',mobile:'',makeModel:'',year:'',registration:'',vin:'',claimNo:'',jobCard:'',
     customerSuppliedParts:'',showCustomerSuppliedParts:false,notes:'',
     lsRows:[{id:uid(),description:'',amount:0}],labourRows:[{id:uid(),description:'',amount:0}],partRows:[{id:uid(),description:'',qty:1,unitPrice:0}],
@@ -324,6 +329,7 @@ async function loadEstimateCompanies(){
   }catch(error){console.warn('Insurance suggestions unavailable; company can still be typed',error)}
 }
 function setPaymentType(type){
+ if(window.zukaitMechanicalEstimate?.active?.()===true)return;
  const e=findEstimate(window.__zukaitEstimateCurrent);if(!e||e.receptionNo)return;
  const input=document.getElementById('estName');
  if(insuranceEstimate(e))e.insuranceCompany=input?.value||'';else e.cashCustomerName=input?.value||'';
@@ -337,21 +343,22 @@ function setPaymentType(type){
 function openEditor(id){
   const e=findEstimate(id);if(!e)return alert('Estimate not found.');ensureStyle();
   if(window.zukaitMechanicalEstimate?.active?.()===true&&e.receptionNo){openModal(nav('zukaitEstimate.openFind()')+'<p>This estimate is linked to a Reception approval. Ask the Manager to amend it through the original Reception record.</p>'+printable(e));return;}
+  const mechanical=window.zukaitMechanicalEstimate?.active?.()===true;
   const html=nav('zukaitEstimate.openHome()')+
-  '<div class="est-home est-editor"><div class="est-hero"><span class="est-eyebrow">REPAIR ESTIMATE</span><h3>'+esc(e.estimateNo)+'</h3><p>Prepare the repair scope and costs for your customer.</p></div>'+
-  '<div class="est-switches"><div><b class="small">Estimate Type</b><div class="est-switch"><button id="estTypeLS" onclick="zukaitEstimate.setType(\'LS\')">Lumpsum</button><button id="estTypePL" onclick="zukaitEstimate.setType(\'PL\')">Parts + labour</button></div></div>'+
+  '<div class="est-home est-editor'+(mechanical?' est-mechanical-editor':'')+'"><div class="est-hero"><span class="est-eyebrow">REPAIR ESTIMATE</span><h3>'+esc(e.estimateNo)+'</h3><p>Prepare the repair scope and costs for your customer.</p></div>'+
+  '<div class="est-switches"><div><b class="small">Estimate Type</b><div class="est-switch"><button id="estTypeLS" onclick="zukaitEstimate.setType(\'LS\')"'+(mechanical&&e.type!=='LS'?' hidden':'')+'>Lumpsum</button><button id="estTypePL" onclick="zukaitEstimate.setType(\'PL\')">Parts + labour</button></div></div>'+
   '<div><b class="small">Tax</b><div class="est-switch"><button id="estVatYes" onclick="zukaitEstimate.setVat(true)">VAT 5%</button><button id="estVatNo" onclick="zukaitEstimate.setVat(false)">NO VAT</button></div></div></div>'+
   '<div class="est-section"><h4>'+estimateLabel('Customer & vehicle')+'</h4><p class="est-help">Enter details below or fill vehicle information from a job card.</p><div class="row est-lookup"><input id="estJobLookup" aria-label="Find job card or registration" placeholder="Optional: search JC / Registration" style="flex:1"><button class="blue" onclick="zukaitEstimate.loadJob()">Load job card</button></div>'+
-  '<div class="est-switch" aria-label="Payment type"><button type="button" id="estPayINSURANCE" class="'+(insuranceEstimate(e)?'active':'')+'" aria-pressed="'+insuranceEstimate(e)+'" onclick="zukaitEstimate.setPaymentType(\'INSURANCE\')">Insurance</button><button type="button" id="estPayCASH" class="'+(!insuranceEstimate(e)?'active':'')+'" aria-pressed="'+!insuranceEstimate(e)+'" onclick="zukaitEstimate.setPaymentType(\'CASH\')">Cash</button></div><datalist id="estCompanyOptions">'+companyOptions()+'</datalist>'+
+  (mechanical?'<p class="est-cash-only">Payment type: <strong>Cash</strong></p>':'<div class="est-switch" aria-label="Payment type"><button type="button" id="estPayINSURANCE" class="'+(insuranceEstimate(e)?'active':'')+'" aria-pressed="'+insuranceEstimate(e)+'" onclick="zukaitEstimate.setPaymentType(\'INSURANCE\')">Insurance</button><button type="button" id="estPayCASH" class="'+(!insuranceEstimate(e)?'active':'')+'" aria-pressed="'+!insuranceEstimate(e)+'" onclick="zukaitEstimate.setPaymentType(\'CASH\')">Cash</button></div><datalist id="estCompanyOptions">'+companyOptions()+'</datalist>')+
   '<div class="est-fields">'+
     field('estDate','Date',e.date,'date')+
-    '<label><span id="estNameLabel">'+estimateLabel(insuranceEstimate(e)?'Insurance company':'Customer name')+'</span><input id="estName" value="'+esc(e.customerName||'')+'" '+(insuranceEstimate(e)?'list="estCompanyOptions"':'')+' oninput="zukaitEstimate.recalc()"></label>'+
+    '<label><span id="estNameLabel">'+estimateLabel(mechanical?'Customer name':insuranceEstimate(e)?'Insurance company':'Customer name')+'</span><input id="estName" value="'+esc(e.customerName||'')+'" '+(!mechanical&&insuranceEstimate(e)?'list="estCompanyOptions"':'')+' oninput="zukaitEstimate.recalc()"></label>'+
     field('estMobile','Tel. No.',e.mobile,'tel')+
     field('estMakeModel','Make',e.makeModel)+
     field('estYear','Year',e.year,'number','min="1900" max="2100"')+
     field('estReg','Registration No.',e.registration)+
     field('estVin','VIN',e.jobCard?(window.zukaitJobCardMaster?.vin?.(e.jobCard)||e.vin):e.vin,'text','maxlength="32" autocapitalize="characters" autocomplete="off"')+'<label>VIN Scanner<button type="button" class="secondary" onclick="zukaitVinScan?.open(\'estVin\')">▣ Scan Barcode</button><button type="button" class="secondary" onclick="zukaitVinScan?.capture(\'estVin\')">📷 Capture VIN</button></label>'+
-    '<div id="estClaimField" style="display:'+(insuranceEstimate(e)?'contents':'none')+'">'+field('estClaim','Claim No.',e.claimNo)+'</div>'+
+    (!mechanical?'<div id="estClaimField" style="display:'+(insuranceEstimate(e)?'contents':'none')+'">'+field('estClaim','Claim No.',e.claimNo)+'</div>':'')+
     field('estJobCard','JC.NO (Optional)',e.jobCard)+
   '</div></div>'+
   '<div id="estLsSection" class="est-section"><h4>'+estimateLabel('Repair scope')+'</h4><p class="est-help">Describe each repair and enter its amount in OMR.</p><div class="est-columns"><span>'+estimateLabel('Description')+'</span><span>'+estimateLabel('Amount OMR')+'</span><span></span></div><div id="estLsRows">'+lsRowsHtml(e.lsRows)+'</div><button class="est-add" onclick="zukaitEstimate.addRow(\'LS\')">+ Add repair</button>'+
@@ -361,7 +368,7 @@ function openEditor(id){
   '<div style="margin-top:10px">'+field('estMiscPl','Misc',money(e.misc),'text','inputmode="decimal" oninput="zukaitEstimate.recalc()"')+'</div></div>'+
   '<div class="est-section est-summary"><h4>'+estimateLabel('Cost summary')+'</h4><div id="estSummary"></div></div>'+
   '<div class="est-section"><h4 style="margin-bottom:8px">'+estimateLabel('Notes & conditions')+'</h4><p class="est-help">Add repair exclusions, payment terms or customer-supplied parts.</p>'+'<label style="display:flex;align-items:center;gap:8px"><input id="estShowCustomerParts" type="checkbox" '+(customerPartsVisible(e)?'checked':'')+' onchange="zukaitEstimate.toggleCustomerParts()">Show spare parts supplied by customer on estimate (optional)</label><div id="estCustomerPartsBox" '+(customerPartsVisible(e)?'':'hidden')+'>'+textAreaField('estCustomerParts','Spare Parts Required — To Be Supplied by Customer',e.customerSuppliedParts,'Only if required')+'</div>'+'<div style="height:8px"></div>'+textAreaField('estNotes','Notes / Conditions',e.notes,'Optional notes')+'</div>'+
-  '<p id="estSaveStatus" role="status" aria-live="polite"></p><div class="est-bottom"><button class="green" onclick="zukaitEstimate.saveCurrent(\''+esc(e.id)+'\')">Save estimate</button><button class="blue" onclick="zukaitEstimate.preview(\''+esc(e.id)+'\')">Preview</button><button class="blue" onclick="zukaitEstimate.printEstimate(\''+esc(e.id)+'\')">Print</button><button class="purple" onclick="zukaitEstimate.pdfEstimate(\''+esc(e.id)+'\')">PDF</button><button class="green" onclick="zukaitEstimate.whatsApp(\''+esc(e.id)+'\')">WhatsApp</button><button class="secondary" onclick="zukaitEstimate.shareEstimate(\''+esc(e.id)+'\')">Share</button></div></div>';
+  '<p id="estSaveStatus" role="status" aria-live="polite"></p><div class="est-bottom"><button class="green" onclick="zukaitEstimate.saveCurrent(\''+esc(e.id)+'\')">Save estimate</button>'+ (mechanical?'<button type="button" class="est-open-jc" onclick="zukaitEstimate.createMechanicalJob(\''+esc(e.id)+'\')">Create Job Card from Estimate</button>':'')+<button class="blue" onclick="zukaitEstimate.preview(\''+esc(e.id)+'\')">Preview</button><button class="blue" onclick="zukaitEstimate.printEstimate(\''+esc(e.id)+'\')">Print</button><button class="purple" onclick="zukaitEstimate.pdfEstimate(\''+esc(e.id)+'\')">PDF</button><button class="green" onclick="zukaitEstimate.whatsApp(\''+esc(e.id)+'\')">WhatsApp</button><button class="secondary" onclick="zukaitEstimate.shareEstimate(\''+esc(e.id)+'\')">Share</button></div></div>';
   openModal(html);
   window.__zukaitEstimateCurrent=id;
   if(e.receptionNo){
@@ -374,8 +381,36 @@ function openEditor(id){
   loadEstimateCompanies();
   requestAnimationFrame(()=>{setType(e.type||'LS',false);setVat(e.vatEnabled!==false,false);recalc()});
 }
+// Mechanical-only: reuse the existing reviewed CREATE_JOB form, never write a JC from an estimate click.
+async function createMechanicalJob(id){
+ if(window.zukaitMechanicalEstimate?.active?.()!==true||!navigator.onLine)return alert('Open Mechanical Estimate online to create a Job Card.');
+ const e=findEstimate(id);if(!e||window.__zukaitEstimateCurrent!==id)return alert('Reopen this estimate to continue.');
+ if(e.jobCard)return alert('This estimate already references JC '+e.jobCard+'. Open that Job Card instead of creating a duplicate.');
+ if(estimateSaveBusy)return alert('Finish saving the estimate before creating a Job Card.');
+ const draft=draftFromDom(e),descriptions=(draft.type==='PL'?draft.labourRows:draft.lsRows).map(row=>String(row.description||'').trim()).filter(Boolean);
+ if(!draft.customerName||!draft.registration||!draft.makeModel||!draft.year||!draft.mobile)return alert('Enter customer, phone, registration, make/model and year before opening the Job Card.');
+ if(!descriptions.length)return alert('Add at least one labour work description to transfer to the Job Card.');
+ const work=descriptions.join('\n');if(work.length>2000)return alert('Labour descriptions exceed the 2,000-character Job Card limit. Shorten them before continuing.');
+ const status=document.getElementById('estSaveStatus');if(status)status.textContent='Saving the estimate before opening Job Card…';
+ try{
+  const confirmed=await window.zukaitMechanicalEstimate.save({...e,...draft,jobType:'CASH'},Number(e.revision||0));
+  if(!confirmed||confirmed.id!==id||window.__zukaitEstimateCurrent!==id)throw Error('Estimate confirmation changed. Reopen the estimate.');
+  Object.assign(e,confirmed);rememberEstimate(e);
+  const value=String(draft.makeModel||'').trim(),known=['LAND ROVER','MERCEDES BENZ','MERCEDES-BENZ','ALFA ROMEO','ROLLS ROYCE','ASTON MARTIN','GREAT WALL'];
+  const full=known.find(m=>value.toUpperCase().startsWith(m+' '));
+  const pos=full?full.length:value.indexOf(' ');
+  const make=pos>0?value.slice(0,pos).trim():value,model=pos>0?value.slice(pos).trim():'';
+  if(window.parent===window)throw Error('Open the Estimate from the Mechanical dashboard to create a Job Card.');
+  window.parent.postMessage({mechanicalEstimateCreateJob:{
+   estimateNo:String(e.estimateNo||''),make,model,year:String(draft.year),registration:String(draft.registration),
+   vin:String(draft.vin||''),customer:String(draft.customerName),contact:String(draft.mobile),
+   remarks:'Mechanical Estimate '+String(e.estimateNo||''),reason:work,job_type:'CASH'
+  }},location.origin);
+  if(status)status.textContent='Opening the Mechanical Job Card for review…';
+ }catch(error){if(status)status.textContent=error.message||'Could not confirm the estimate.';else alert(error.message);}
+}
 function setType(t,doRecalc=true){
-  const e=findEstimate(window.__zukaitEstimateCurrent);t=t==='PL'?'PL':'LS';if(e)e.type=t;
+  const e=findEstimate(window.__zukaitEstimateCurrent);t=t==='PL'?'PL':'LS';if(window.zukaitMechanicalEstimate?.active?.()===true&&e?.type!=='LS')t='PL';if(e)e.type=t;
   document.getElementById('estLsSection')?.classList.toggle('hidden',t!=='LS');
   document.getElementById('estPlSection')?.classList.toggle('hidden',t!=='PL');
   document.getElementById('estTypeLS')?.classList.toggle('active',t==='LS');
@@ -408,7 +443,7 @@ function draftFromDom(e){
     type:document.getElementById('estTypePL')?.classList.contains('active')?'PL':'LS',
     vatEnabled:document.getElementById('estVatYes')?.classList.contains('active'),
     date:document.getElementById('estDate')?.value||localDate(),
-    jobType:e.jobType||'CASH',
+    jobType:window.zukaitMechanicalEstimate?.active?.()===true?'CASH':e.jobType||'CASH',
     insuranceCompany:insuranceEstimate(e)?document.getElementById('estName')?.value?.trim()||'':e.insuranceCompany||'',
     cashCustomerName:!insuranceEstimate(e)?document.getElementById('estName')?.value?.trim()||'':e.cashCustomerName||'',
     customerName:document.getElementById('estName')?.value?.trim()||'',
@@ -645,7 +680,7 @@ function wrapRender(name){
 }
 try{if(typeof state!=='undefined')for(const e of state.estimates||[])rememberEstimate(e)}catch(error){console.warn('Existing device estimates could not be retained',error)}
 function boot(){ensureState();ensureStyle();wrapRender('renderSupervisor');wrapRender('renderManager');ensureDashboardCards()}
-window.zukaitEstimate={openHome,openDrafts,deleteDraft,refreshLists,newEstimate,newFromReception,openReceptionEstimates,openEditor,setPaymentType,setType,setVat,addRow,removeRow,recalc,autoSave,saveCurrent,loadJob,openFind,renderFind,openRecent,openReports,preview,printEstimate,pdfEstimate,whatsApp,shareEstimate,ensureDashboardCards,totals,printable,estimatePdfFilename,estimateDocumentHtml,shareText,currentOutputEstimate,toggleCustomerParts};
+window.zukaitEstimate={openHome,openDrafts,deleteDraft,refreshLists,newEstimate,newFromReception,openReceptionEstimates,openEditor,createMechanicalJob,setPaymentType,setType,setVat,addRow,removeRow,recalc,autoSave,saveCurrent,loadJob,openFind,renderFind,openRecent,openReports,preview,printEstimate,pdfEstimate,whatsApp,shareEstimate,ensureDashboardCards,totals,printable,estimatePdfFilename,estimateDocumentHtml,shareText,currentOutputEstimate,toggleCustomerParts};
 window.openEstimateModule=openHome;
 document.addEventListener('DOMContentLoaded',boot);setTimeout(boot,0);setTimeout(boot,700);
 new MutationObserver(()=>{wrapRender('renderSupervisor');wrapRender('renderManager');ensureDashboardCards()}).observe(document.documentElement,{childList:true,subtree:true});
