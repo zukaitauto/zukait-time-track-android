@@ -77,7 +77,7 @@ assert.ok(confirm);
 confirm.click();await tick();await tick();
 const command=calls.find(c=>c.command.operation==='CREATE_JOB');
 assert.ok(command,'uses existing audited Mechanical Job Card command');
-assert.equal(command.command.job_type,'CASH');
+assert.equal(command.command.command.job_type,'CASH');
 assert.equal(command.command.command.details.registration,'32621-M');
 assert.equal(command.command.command.details.customer,'Test Customer');
 assert.match(command.command.command.reason,/Replace brake pads/);
