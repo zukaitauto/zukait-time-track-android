@@ -1,87 +1,29 @@
 {
-  "versionName": "V400",
-  "versionCode": 363,
+  "versionName": "V402",
+  "versionCode": 365,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "sourceCommit": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
-  "approvedAt": "2026-11-13T18:13:10.368Z",
-  "publishNonce": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
+  "approvedForStaff": false,
+  "sourceCommit": null,
+  "approvedAt": null,
+  "publishNonce": null,
   "ownerRequestedProceed": true,
-  "ownerPublicationRequested": true,
-  "ownerRequestedImmediateRelease": true,
-  "releaseHeldByOwner": false,
+  "ownerPublicationRequested": false,
+  "ownerRequestedImmediateRelease": false,
+  "releaseHeldByOwner": true,
   "backupDeferredByOwner": true,
   "productionBackendChanges": false,
   "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "signedAcceptanceRun": 43479529213,
-  "verificationRun": 43479529232,
-  "authorization": "Owner requested Proceed to complete the redesigns and final publish for testing in this conversation, 2026-11-13. Previous explicit instruction to bypass backup applies to release verification only; no restore is claimed.",
-  "reason": "Owner-authorized V400 coordinated web/Android test publication of UI-only Manager/Supervisor Actual Materials and Confirm & Lock readability plus two-column Manager Workshop Control Center. All ten exact-source checks passed; production schema, backend and data untouched. Physical acceptance and backup-restore verification remain NOT_RUN.",
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "authorization": "Owner requested publishing V402 UI-only changes for live Android/Web testing on 17 November 2026. Exact-source acceptance still pending; do not deploy until confirmed.",
+  "reason": "Unapproved V402 UI-only candidate: Manager Profit/Loss Pending Cost Jobs click-through plus Mechanical Cash Estimate -> reviewed Job Card. No Supabase/database changes; V401 retained as published fallback.",
   "previousPublishedRelease": {
-    "versionName": "V399",
-    "versionCode": 362,
-    "releaseTag": "release-V399-architecture-v2",
-    "sourceCommit": "5a52ff58025287f47057ab7a8a3d932943253a47"
-  },
-  "prePublicationEvidence": {
-    "sourceCommit": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
-    "checks": {
-      "signed": {
-        "runId": 43479529213,
-        "head_sha": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
-        "status": "SUCCESS"
-      },
-      "reception": {
-        "runId": 43479529232,
-        "head_sha": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
-        "status": "SUCCESS"
-      },
-      "regularApk": {
-        "runId": 43479529755,
-        "head_sha": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
-        "status": "SUCCESS"
-      },
-      "androidArchitecture": {
-        "runId": 43479529315,
-        "head_sha": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
-        "status": "SUCCESS"
-      },
-      "connection": {
-        "runId": 43479529408,
-        "head_sha": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
-        "status": "SUCCESS"
-      },
-      "mechanical": {
-        "runId": 43479529434,
-        "head_sha": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
-        "status": "SUCCESS"
-      },
-      "accountant": {
-        "runId": 43479529343,
-        "head_sha": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
-        "status": "SUCCESS"
-      },
-      "sync": {
-        "runId": 43479529299,
-        "head_sha": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
-        "status": "SUCCESS"
-      },
-      "nativePdf": {
-        "runId": 43479529398,
-        "head_sha": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
-        "status": "SUCCESS"
-      },
-      "inactiveContracts": {
-        "runId": 43479529215,
-        "head_sha": "a9ae2f3848ee02db39d2b83fcfef488b322f8c19",
-        "status": "SUCCESS"
-      }
-    },
-    "physicalAcceptance": "NOT_RUN",
-    "backupRestore": "NOT_RUN",
-    "productionBackendChanges": false
+    "versionName": "V401",
+    "versionCode": 364,
+    "releaseTag": "release-V401-architecture-v2",
+    "sourceCommit": "1a953688d8260a4729cb9e78a294024acfc43596"
   }
 }
