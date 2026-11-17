@@ -6,6 +6,16 @@ function validate(r,ref){
  // when explicitly owner-authorized, backend-unchanged and QA-proven.
  const mechanical=r.releaseScope==='mechanical-ui-test';
  const calculationAudit=r.releaseScope==='calculation-audit-live-test';
+ // Narrow, fully disclosed owner-directed V401 test-release exception.
+ // It waives only evidence collection for this specific release, never signed
+ // source, authentication code, backend identity, or delivered-byte checks.
+ const waived=calculationAudit&&r.versionName==='V401'&&r.versionCode===364&&
+  r.v401TestWaiver?.mode==='OWNER_DIRECTED_LIVE_TEST_2026_11_17'&&
+  r.v401TestWaiver?.sourceCommit===r.sourceCommit&&
+  r.v401TestWaiver?.previousPublishedRelease==='V400'&&
+  r.v401TestWaiver?.deferred?.every(k=>['credentialPreservation','serverPermissions','rollbackPrepared','liveCostReconciliation'].includes(k))&&
+  r.v401TestWaiver?.deferred?.length===4;
+
  assert.ok(mechanical||calculationAudit||r.releaseScope==='accountant-live-test','Accountant / Mechanical / audited calculation scope required');assert.equal(r.approvedForStaff,true);
  if(mechanical){
   assert.equal(r.ownerApprovedMechanicalUiTesting,true,'Mechanical UI owner authorization required');
@@ -27,15 +37,24 @@ function validate(r,ref){
  if(calculationAudit){
   assert.equal(r.versionName,'V401');assert.equal(r.versionCode,364);
   assert.equal(r.productionBackendChanges,true);assert.equal(r.backendDeploymentRequired,true);
-  assert.deepEqual(r.productionBackend.changedModules?.slice().sort(),['accountant/finance_rules.js','accountant/profit_performance.js']);
+  assert.deepEqual(r.productionBackend.changedModules?.slice().sort(),['accountant/accounts_reports.js','accountant/finance_rules.js','accountant/profit_performance.js']);
   assert.equal(r.productionBackend.readbackVerified,true);
-  assert.equal(r.evidence?.liveCostReconciliation,true);
+  if(waived){
+   assert.equal(r.evidence?.liveCostReconciliation,false,'Do not falsify unfinished live financial acceptance');
+   assert.equal(r.freshProductionBackupRestoreStatus,'NOT_VERIFIED_CURRENT_COHERENT_RESTORE');
+   assert.equal(r.v401TestWaiver?.acknowledgesUnverifiedAccessAndRecovery,true);
+   assert.equal(r.v401TestWaiver?.serverRuntimeProtectionUnchanged,true);
+  }else assert.equal(r.evidence?.liveCostReconciliation,true);
   assert.equal(r.evidence?.repeatAndId001Regression,true);
  }
  assert.equal(r.productionBackend.project,'pjknotnjkufadqavcmii');
  for(const slug of ['staff-auth','workshop-api']){const e=r.productionBackend.functions[slug];assert.ok(e.version>0);assert.match(e.bundleSha256,/^[a-f0-9]{64}$/);assert.equal(e.verifiedFileMatch,true);}
  for(const n of ['accountant_financial_ledger','accountant_lpo_audit','accountant_append_only_grants','accountant_append_only_corrections'])assert.ok(r.productionBackend.migrations.includes(n));
- for(const k of ['credentialPreservation','qaFinancialAcceptance','serverPermissions','rollbackPrepared','legacyLoginCompatibility'])assert.equal(r.evidence[k],true,k+' not verified');
+ for(const k of ['credentialPreservation','qaFinancialAcceptance','serverPermissions','rollbackPrepared','legacyLoginCompatibility']){
+  if(waived&&['credentialPreservation','serverPermissions','rollbackPrepared'].includes(k))
+   assert.equal(r.evidence[k],false,k+' must remain visibly unverified under test waiver');
+  else assert.equal(r.evidence[k],true,k+' not verified');
+ }
  return true;
 }
 if(require.main===module){const r=JSON.parse(fs.readFileSync('release-request.json','utf8'));if(!['accountant-live-test','mechanical-ui-test','calculation-audit-live-test'].includes(r.releaseScope)||r.approvedForStaff!==true)console.log('ACCOUNTANT_PUBLICATION=false');else{validate(r,process.env.GITHUB_REF);console.log('ACCOUNTANT_PUBLICATION=true');console.log('UI_VERIFICATION_RUN='+r.verificationRun);}}
