@@ -17,6 +17,7 @@ columns.insurance_invoiced=[...financialColumns.slice(0,4),['Insurance Company',
 columns.profit=[...financialColumns.slice(0,4),['Category','kind'],['Company / Customer','company_name'],...financialColumns.slice(4)];
 columns.leave=[['Employee','employee'],['Date','date'],['Leave','period_label'],['Status','approval_status'],['Days','days'],['Remark','remark'],['Marked By','marked_by'],['Cancellation By','cancelled_by'],['Cancellation Reason','cancel_reason']];
 let user=null,report='jobs',labourMode='with',offset=0,next=null,result=null,generation=0,detailGeneration=0,busy=false,target=null,verified=false;
+let pendingCostRows=null,pendingCostLoading=false;
 let passwordRotation = 0;
 const saved=()=>{try{return JSON.parse(localStorage.getItem(sessionKey)||'null')}catch{return null}};
 const token=()=>{const s=saved();if(!s||s.user?.id!==user?.id||s.user?.role!==user?.role||!['Accountant','Manager'].includes(s.user?.role)){invalidate();throw Error('ACCOUNT_CHANGED');}return String(s.token||window.AndroidBridge?.getSecureSessionToken?.()||'')};
@@ -53,7 +54,7 @@ async function submitBill(command,retry=false){
  catch(e){say(e.message);throw e;}
  finally{busy=false;showPending();}
 }
-function invalidate(){closeCashDialog();billReview?.reset();verified=false;generation++;closeDetail();result=null;target=null;$('app').hidden=true;for(const id of ['rows','detail','summary','pending'])$(id).replaceChildren();$('pending').hidden=true;window.dispatchEvent(new Event('zukait-accountant-session'));}
+function invalidate(){closeCashDialog();billReview?.reset();verified=false;generation++;closeDetail();result=null;pendingCostRows=null;target=null;$('app').hidden=true;for(const id of ['rows','detail','summary','pending'])$(id).replaceChildren();$('pending').hidden=true;window.dispatchEvent(new Event('zukait-accountant-session'));}
 window.addEventListener('storage',e=>{if(verified&&billsEnabled&&(e.key===pendingKey()||e.key==='zukait_bill_intent_v1:'+encodeURIComponent(url)+':'+encodeURIComponent(user.id)))showPending();});
 window.addEventListener('storage',e=>{if(e.key===sessionKey&&verified){try{token()}catch{say('Account changed. Sign in again.')}}});
 async function request(endpoint,body){
@@ -282,17 +283,67 @@ function showFinancialSummary(data){
   [(provisional?'Provisional Profit %':'Profit Percentage')+suffix,summary.profit_percentage??summary.provisional_profit_percentage,false],
   ['Pending Cost Jobs',summary.pending_cost_records||0,false]
  ];
- area.innerHTML=figures.map(([label,value,currency],index)=>'<div class="accounts-kpi"><small>'+esc(label)+'</small><b class="'+(index===1&&value!=null?(Number(value)<0?'negative':'positive'):'')+'">'+
-  (currency?esc(display(value,true)):index===2?(value==null?'Pending / —':Number(value).toFixed(2)+'%'):esc(value))+'</b></div>').join('')+
+ area.innerHTML=figures.map(([label,value,currency],index)=>{
+  const actionable=report==='profit'&&index===3;
+  const count=Number(value)||0;
+  const start=actionable?'<button type="button" class="accounts-kpi accounts-kpi-open" data-pending-costs aria-label="View '+esc(count)+' pending cost job cards"'+(count>0?'':' disabled')+'>':'<div class="accounts-kpi">';
+  return start+'<small>'+esc(label)+'</small><b class="'+(index===1&&value!=null?(Number(value)<0?'negative':'positive'):'')+'">'+
+   (currency?esc(display(value,true)):index===2?(value==null?'Pending / —':Number(value).toFixed(2)+'%'):esc(value))+'</b>'+
+   (actionable?'<span class="accounts-kpi-hint">'+(count>0?'View job cards ›':'No pending jobs')+'</span>':'')+
+   (actionable?'</button>':'</div>');
+ }).join('')+
   (provisional?'<p class="financial-status-note">Provisional totals include recorded costs only. Missing costs remain pending; profit may decrease when they are entered.</p>':'');
  if(data.facets){
   fillSelect('insurance-company',data.facets.insurance||[],'All Insurance Companies');
   fillSelect('customer-filter',[...(data.facets.credit||[]),...(data.facets.corporate||[])].filter((s,i,a)=>a.indexOf(s)===i),'All Credit / Corporate Customers');
  }
 }
+function pendingCostList(rows){
+ const cards=rows.map(r=>{
+  const vehicle=[r.vehicle,r.registration].filter(Boolean).map(esc).join(' · ')||'Vehicle not recorded';
+  const reasons=[r.parts_price_pending?'Parts price pending':null,r.consumables_price_pending?'Consumables price pending':null,...(Array.isArray(r.cost_notes)?r.cost_notes:[])].filter(Boolean);
+  return '<button type="button" class="pending-cost-job" data-job="'+esc(r.job_card)+'" aria-label="Open JC '+esc(r.job_card)+' financial details">'+
+   '<span class="pending-cost-job-title"><strong>JC '+esc(r.job_card)+'</strong><span>'+esc(r.kind||r.job_type||'Job Card')+'</span></span>'+
+   '<span class="pending-cost-vehicle">'+vehicle+'</span>'+
+   '<span class="pending-cost-reason">'+esc(reasons.join(' · ')||'Job costs not yet complete')+'</span>'+
+   '<span class="pending-cost-job-link">Open financial details ›</span></button>';
+ }).join('');
+ return '<section class="pending-cost-view" role="region" aria-label="Pending cost job cards">'+
+  '<div class="pending-cost-heading"><div><h3>Pending Cost Jobs · '+rows.length+'</h3><p>Selected report filters are preserved. Select a job card to review recorded and missing costs.</p></div>'+
+  '<button type="button" data-pending-all>Show all job cards</button></div>'+
+  '<div class="pending-cost-list">'+cards+'</div></section>';
+}
+async function openPendingCostJobs(){
+ if(!verified||report!=='profit'||!result||pendingCostLoading||Number(result.summary?.pending_cost_records||0)<=0)return;
+ const ticket=generation,actor=user?.id,filters={...result.appliedFilters},snapshot=result.snapshot_revision,finance=result.finance_revision;
+ const trigger=$('accounts-kpis').querySelector('[data-pending-costs]');
+ pendingCostLoading=true;if(trigger)trigger.disabled=true;
+ try{
+  say('Loading pending cost job cards…');
+  const all=[];let cursor=0;
+  do{
+   const page=await request('workshop-api',{action:'accountant_report',report:'accounts_performance',filters,offset:cursor,limit:500});
+   if(ticket!==generation||!verified||user?.id!==actor||report!=='profit')return;
+   if(page.snapshot_revision!==snapshot||page.finance_revision!==finance)throw Error('Financial records changed. Apply filters to refresh the report.');
+   if(page.labour_mode!==labourMode)throw Error('Labour calculation changed. Apply filters to refresh.');
+   all.push(...page.rows);cursor=page.next_offset;
+   if(all.length>5000)throw Error('Too many job cards. Narrow the selected period.');
+  }while(cursor!==null);
+  if(all.length!==result.total_count)throw Error('Report count changed. Apply filters to refresh.');
+  const incomplete=all.filter(r=>!r.costs_complete||r.total_job_cost_omr==null||!Number.isFinite(Number(r.total_job_cost_omr)));
+  if(incomplete.length!==Number(result.summary.pending_cost_records||0))throw Error('Pending cost count changed. Apply filters to refresh.');
+  pendingCostRows=incomplete;
+  $('rows').innerHTML=pendingCostList(incomplete);
+  $('previous').parentElement.hidden=true;
+  for(const id of ['pdf','excel','print'])$(id).disabled=true;
+  $('page-status').textContent=incomplete.length+' pending cost job cards';
+  say('');
+ }catch(e){if(ticket===generation)say(e.message);}
+ finally{pendingCostLoading=false;if(ticket===generation&&trigger?.isConnected)trigger.disabled=false;}
+}
 async function load(){
  if(!verified)return;
- closeDetail();result=null;
+ closeDetail();result=null;pendingCostRows=null;
  $('pdf').disabled=true;$('excel').disabled=true;$('print').disabled=true;$('cash-entry').disabled=true;
  const ticket=++generation;
  try{
@@ -468,7 +519,7 @@ async function openJob(no,expandType='',trigger=null){
   const r=await request('workshop-api',{action:'accountant_jc_detail',job_card:no});
   if(ticket!==detailGeneration||!verified)return;
   let d=r.detail;
-  const selectedRow=report==='profit'&&labourMode==='without'?result?.rows?.find(row=>row.job_card===d.job_card):null;
+  const selectedRow=report==='profit'&&labourMode==='without'?(pendingCostRows||result?.rows)?.find(row=>row.job_card===d.job_card):null;
   if(selectedRow){
    d={...d,job_total_cost_omr:selectedRow.total_job_cost_omr,
     job_invoice_amount_omr:selectedRow.invoice_amount_omr,
@@ -600,7 +651,8 @@ function revision(){return {expected_snapshot_revision:result?.snapshot_revision
 $('entry').onsubmit=e=>{e.preventDefault();const c={operation:$('operation').value,...revision(),transaction_date:$('transaction-date').value,kind:$('kind').value,job_card:$('entry-job').value.trim().toUpperCase(),payee:$('payee').value.trim(),amount:$('amount').value,payment_method:$('method').value,category:$('category').value.trim(),reference:$('reference').value.trim(),remarks:$('remarks').value.trim(),reason:$('reason').value.trim()};if(c.operation==='CORRECT')c.entry_id=$('entry-id').value;submit(c);};
 $('correction').onsubmit=e=>{e.preventDefault();if(!target?.field)return;const d=target.detail,k=target.field,c={operation:k==='invoice_amount_omr'?'CORRECT_INVOICE':'ADJUST_COST',job_card:d.job_card,expected_snapshot_revision:target.snapshot_revision,expected_finance_revision:target.finance_revision,transaction_date:new Date(Date.now()+14400000).toISOString().slice(0,10),old_value:d[k],new_value:$('corrected-value').value,reason:$('correction-reason').value.trim()};if(c.operation==='ADJUST_COST')c.category={consumables_cost_omr:'consumables',paint_cost_omr:'paint',parts_cost_omr:'parts',labour_cost_omr:'labour'}[k];submit(c);};
 $('detail').onclick=e=>{const b=e.target.closest('[data-adjust]');if(!b||!target)return;target.field=b.dataset.adjust;$('correction-target').textContent=target.detail.job_card+' · '+target.field.replaceAll('_',' ')+' · Original '+display(target.detail[target.field],true)+(target.field==='invoice_amount_omr'&&target.detail.job_type==='INSURANCE'?' · Linked LPO amount is also corrected; this does not record a cash receipt.':'');$('corrected-value').value=target.detail[target.field];$('correction-reason').value='';$('correction').hidden=false;};
-$('rows').onclick=e=>{if(!result)return;const edit=e.target.closest('[data-leave-edit]');if(edit)return openLeaveForm('EDIT',result.rows.find(r=>String(r.id)===edit.dataset.leaveEdit),edit);const cancel=e.target.closest('[data-leave-cancel]');if(cancel)return openLeaveForm('CANCEL',result.rows.find(r=>String(r.id)===cancel.dataset.leaveCancel),cancel);const expense=e.target.closest('[data-expense]');if(expense)return ['paint','parts','consumables'].includes(expense.dataset.expense)?openExpenseJob(expense.dataset.job,expense.dataset.expense,expense):openJob(expense.dataset.job,expense.dataset.expense,expense);const j=e.target.closest('[data-job]');if(j)return expenseReports.has(report)?openExpenseJob(j.dataset.job,report,j):openJob(j.dataset.job,'',j);const c=e.target.closest('[data-correct]');if(c){const row=result.rows[Number(c.dataset.correct)];if(row&&!row.invoice_receipt)return cashForm(row);return;}const r=e.target.closest('[data-reverse]');if(r){const row=result.rows[Number(r.dataset.reverse)];if(!row||row.invoice_receipt)return;const reason=prompt('Reason for reversal? The original entry remains in history.');if(reason?.trim().length>=3)submit({operation:'REVERSE',entry_id:row.id,transaction_date:new Date(Date.now()+14400000).toISOString().slice(0,10),reason:reason.trim(),...revision()});}};
+$('accounts-kpis').onclick=e=>{if(e.target.closest('[data-pending-costs]'))openPendingCostJobs();};
+$('rows').onclick=e=>{if(!result)return;if(e.target.closest('[data-pending-all]'))return load();const edit=e.target.closest('[data-leave-edit]');if(edit)return openLeaveForm('EDIT',result.rows.find(r=>String(r.id)===edit.dataset.leaveEdit),edit);const cancel=e.target.closest('[data-leave-cancel]');if(cancel)return openLeaveForm('CANCEL',result.rows.find(r=>String(r.id)===cancel.dataset.leaveCancel),cancel);const expense=e.target.closest('[data-expense]');if(expense)return ['paint','parts','consumables'].includes(expense.dataset.expense)?openExpenseJob(expense.dataset.job,expense.dataset.expense,expense):openJob(expense.dataset.job,expense.dataset.expense,expense);const j=e.target.closest('[data-job]');if(j)return expenseReports.has(report)?openExpenseJob(j.dataset.job,report,j):openJob(j.dataset.job,'',j);const c=e.target.closest('[data-correct]');if(c){const row=result.rows[Number(c.dataset.correct)];if(row&&!row.invoice_receipt)return cashForm(row);return;}const r=e.target.closest('[data-reverse]');if(r){const row=result.rows[Number(r.dataset.reverse)];if(!row||row.invoice_receipt)return;const reason=prompt('Reason for reversal? The original entry remains in history.');if(reason?.trim().length>=3)submit({operation:'REVERSE',entry_id:row.id,transaction_date:new Date(Date.now()+14400000).toISOString().slice(0,10),reason:reason.trim(),...revision()});}};
 const moduleSvg=content=>'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+content+'</svg>';
 const moduleDesign={
  jobs:[moduleSvg('<rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="m8 14 2.3 2.3L16 10.5"/>'),'Search registration or JC and inspect all five costs','blue'],
