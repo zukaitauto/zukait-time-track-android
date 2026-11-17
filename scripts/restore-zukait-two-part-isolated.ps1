@@ -92,7 +92,7 @@ $ptr=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($pw)
 try {$env:PGPASSWORD=[Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)}
 finally {[Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)}
 try {
- $tables=@(LocalSql "SELECT tablename FROM pg_tables WHERE schemaname NOT IN ('pg_catalog','information_schema') LIMIT 1")
+ $tables=@(LocalSql "SELECT tablename FROM pg_tables WHERE schemaname IN ('public','zukait_mechanical','zukait_vehicle') LIMIT 1")
  if($tables.Count -ne 0){throw 'Local target database is not empty. Refusing to overwrite any data.'}
  & $pgrestore '-w' '-h' '127.0.0.1' '-p' "$LocalPort" '-U' 'postgres' '-d' $LocalDatabase '--exit-on-error' '--no-owner' '--no-acl' $archive
  if($LASTEXITCODE -ne 0){throw 'Core restore failed. Retain logs and do not call this a recoverable backup.'}
