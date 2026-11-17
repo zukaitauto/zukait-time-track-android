@@ -6,12 +6,12 @@
   "ownerPublicationRequested": true,
   "ownerRequestedImmediateRelease": true,
   "ownerRequestedProceed": true,
-  "releaseHeldByOwner": true,
+  "releaseHeldByOwner": false,
   "ownerApprovedLiveAccountantTesting": true,
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "V401 signed APK from source 52a6804d successfully built and verified in CI run 43880457568. Nine DB role authorization denials passed, but real signed-in cross-role HTTP denies unavailable; Accountant live unauthenticated API smoke retry pending after database outage. Current coherent production backup and complete restore still unverified; prior Oct27 rehearsal and partial Nov15 restore do not satisfy current release recovery gate. Production backend auth rollback versions v15/v127 must be reconciled before publishing. Release HOLD.",
+  "reason": "Owner renewed V401 publication request on 2026-11-17. Signed APK, Reception and Accountant workflows all succeeded for pinned source 52a6804d8dab347a6b15ed016bd3ee9628019f86; stale workflow references corrected. Technical release hold remains: current architecture-v2 contains later source changes; authenticated cross-role acceptance, credential preservation, live cost acceptance and rollback evidence remain unverified. Production staff-auth v15 and workshop-api v127 bundle identities reconfirmed; metadata health is not functional acceptance.",
   "authorization": "Owner requested publishing V401 calculation audit corrections for testing.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_VERIFIED_CURRENT_COHERENT_RESTORE",
@@ -20,8 +20,8 @@
   "approvedAt": null,
   "publishNonce": null,
   "signedAcceptanceRun": 43880457568,
-  "verificationRun": 43856800069,
-  "accountantVerificationRun": 43856800029,
+  "verificationRun": 43880457465,
+  "accountantVerificationRun": 43880457615,
   "previousPublishedRelease": {
     "versionName": "V400",
     "versionCode": 363,
@@ -338,6 +338,25 @@
         "independentDeviceAcceptance": false
       },
       "releaseHold": true
+    },
+    "releaseReview_20261117": {
+      "ownerPublicationRequested": true,
+      "technicalReadiness": "BLOCKED_NOT_PUBLISHED",
+      "sourceCommit": "52a6804d8dab347a6b15ed016bd3ee9628019f86",
+      "verifiedSuccessfulRuns": {
+        "signed": 43880457568,
+        "reception": 43880457465,
+        "accountant": 43880457615
+      },
+      "productionBundleIdentity": "MATCHES_RECORDED_STAFF_AUTH_V15_AND_WORKSHOP_API_V127",
+      "projectMetadataStatus": "ACTIVE_HEALTHY",
+      "limitations": [
+        "No authenticated staff HTTP acceptance performed",
+        "No production prices, credentials or workshop records changed",
+        "Current branch has source drift beyond the pinned signed candidate; existing publication workflow will reject it",
+        "No security or release-integrity checks bypassed"
+      ],
+      "ownerManualTestingDeferralRequested": true
     }
   },
   "vinOnlyEditCandidate": {
