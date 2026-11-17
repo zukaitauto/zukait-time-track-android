@@ -150,12 +150,14 @@ try {
   }
   if($toc|Where-Object {$_ -like '*TABLE DATA public workshop_state_history *'}){throw 'History data unexpectedly included in core export.'}
   $ids=@(GetHistoryIds $before)
+  $gapCount=0
+  for($g=1;$g -lt $ids.Count;$g++){if($ids[$g] -ne ($ids[$g-1]+1)){$gapCount++}}
   $inventory=Join-Path $root 'history-revisions.txt'
   [IO.File]::WriteAllText($inventory,($ids -join [Environment]::NewLine)+[Environment]::NewLine,[Text.Encoding]::ASCII)
   $manifest=[ordered]@{
    project_ref=$project;status='CORE_COMPLETE__HISTORY_NOT_EXPORTED__RESTORE_NOT_TESTED'
    source_revision=$before;history_min=$ids[0];history_max=$ids[$ids.Count-1]
-   history_count=$ids.Count;chunk_rows=$ChunkRows
+   history_count=$ids.Count;history_internal_gaps=$gapCount;chunk_rows=$ChunkRows
    core_file='operational-public-mechanical-vehicle.dump'
    core_sha256=(HashFile $archive);inventory_file='history-revisions.txt'
    inventory_sha256=(HashFile $inventory)
