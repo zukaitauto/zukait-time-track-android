@@ -115,12 +115,19 @@ function ExportCsvRaw([long]$from,[long]$through,[string]$output) {
   if($proc.ExitCode -ne 0){throw ('History COPY failed for '+$from+'-'+$through+': '+$err.Substring(0,[Math]::Min(300,$err.Length)))}
  } finally {$proc.Dispose()}
 }
-function CompressCsv([string]$input,[string]$output) {
- $infile=[IO.File]::OpenRead($input)
- $outfile=[IO.File]::Create($output)
- $zip=[IO.Compression.GZipStream]::new($outfile,[IO.Compression.CompressionMode]::Compress)
- try {$infile.CopyTo($zip)}
- finally {$zip.Dispose();$outfile.Dispose();$infile.Dispose()}
+function CompressCsv([string]$sourcePath,[string]$destinationPath) {
+ # $input is an automatic PowerShell pipeline variable: never use it as a parameter.
+ if([string]::IsNullOrWhiteSpace($sourcePath) -or [string]::IsNullOrWhiteSpace($destinationPath)){
+  throw 'History compressor requires explicit source and destination paths.'
+ }
+ $infile=[IO.File]::OpenRead($sourcePath)
+ try {
+  $outfile=[IO.File]::Create($destinationPath)
+  try {
+   $zip=[IO.Compression.GZipStream]::new($outfile,[IO.Compression.CompressionMode]::Compress)
+   try {$infile.CopyTo($zip)}finally {$zip.Dispose()}
+  } finally {$outfile.Dispose()}
+ } finally {$infile.Dispose()}
 }
 $root=AssertLocation
 if($Phase -eq 'Verify' -and [string]::IsNullOrWhiteSpace($SessionFolder)){throw 'Verify needs -SessionFolder.'}
