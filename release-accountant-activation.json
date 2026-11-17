@@ -1,8 +1,14 @@
 {
   "approved": true,
-  "release": "V398",
-  "sourceCommit": "60d7e9656d62a07baae35a6e8cc71bd3d1eb2ddc",
-  "publishNonce": "60d7e9656d62a07baae35a6e8cc71bd3",
-  "authorization": "Owner approved publishing V398 Accountant and Reception Delivery Follow-up corrections for testing.",
-  "reason": "Owner approved complete V398 Accountant and Reception one-row Delivery Follow-up test publication; exact-source QA and signed APK passed; production workshop-api v117 readback verified; V397 retained for rollback. Physical device acceptance and fresh backup restore NOT_RUN."
+  "release": "V401",
+  "sourceCommit": "1a953688d8260a4729cb9e78a294024acfc43596",
+  "publishNonce": "1a953688d8260a4729cb9e78a294024acfc43596",
+  "authorization": "Owner requested publishing V401 calculation audit corrections for testing.",
+  "reason": "Owner explicitly requested V401 test release despite four documented unverified acceptance checks, which remain false; exact-source signed, Reception, Accountant CI passed and publisher still enforces APK/Pages parity.",
+  "ownerWaiverMode": "OWNER_DIRECTED_LIVE_TEST_2026_11_17",
+  "qualifyingRuns": {
+    "signed": 44144371579,
+    "reception": 44144371618,
+    "accountant": 44144371702
+  }
 }
