@@ -32,7 +32,8 @@
     "project": "pjknotnjkufadqavcmii",
     "changedModules": [
       "accountant/finance_rules.js",
-      "accountant/profit_performance.js"
+      "accountant/profit_performance.js",
+      "accountant/accounts_reports.js"
     ],
     "readbackVerified": true,
     "functions": {
@@ -45,12 +46,14 @@
         "status": "ACTIVE"
       },
       "workshop-api": {
-        "version": 127,
+        "version": 128,
         "restoredFrom": 125,
         "rollbackSourceCommit": "ba5404a7f23440540d6cc879bc004926c6b8d748",
-        "bundleSha256": "41e5fdde202f44facd4aaff2387c0d0eea706c02b1094e5418742a65734078de",
+        "bundleSha256": "d6d349a7a38881d23927c8f5c7ca8f2f89539e643c94e396b316b6ffa5e15901",
         "verifiedFileMatch": true,
-        "status": "ACTIVE"
+        "status": "ACTIVE",
+        "previousVersion": 127,
+        "sourceModule": "accountant/accounts_reports.js"
       }
     },
     "migrations": [
@@ -302,7 +305,7 @@
       "source": "Supabase Edge function logs / SQL errors / GitHub rollback bundles"
     },
     "finalReleaseVerification_20261116": {
-      "scope": "Steps 3,4,5 ordered by owner \u2014 verify without production credential/workshop edits",
+      "scope": "Steps 3,4,5 ordered by owner — verify without production credential/workshop edits",
       "step3": {
         "status": "PARTIAL__DB_ROLE_DENIAL_PASSED__ACTUAL_CROSS_ROLE_HTTP_NOT_AVAILABLE",
         "databaseEvidence": "10 sensitive RPC grants and 12 protected RLS tables denied anon/authenticated; 9 read-only DB authorization denial scenarios passed",
@@ -457,7 +460,7 @@
     "note": "Source pin and acceptance artifacts agree; live validation/rollback gates remain false."
   },
   "pendingProfitSummaryFix": {
-    "status": "IMPLEMENTED_NOT_DEPLOYED",
+    "status": "BACKEND_DEPLOYED_VERIFIED__PC_AND_ANDROID_UI_PUBLICATION_PENDING",
     "requestedOn": "2026-11-17",
     "reason": "Pending-cost jobs blank all period cost and profit cards",
     "behavior": "Expose recorded cost and provisional profit separately; preserve null final totals and pending flags; respect labour mode and full cohort pagination",
@@ -465,6 +468,32 @@
       "app/src/main/assets/accountant.js",
       "supabase/functions/workshop-api/accountant/accounts_reports.js"
     ],
-    "requires": "Qualify a new signed candidate and matching scoped backend module before publication. Existing signed V401 candidate does not contain this fix."
+    "requires": "Publish approved exact-source signed Android/Web release after existing technical acceptance gates; do not bypass controls.",
+    "backendDeployment": {
+      "project": "pjknotnjkufadqavcmii",
+      "function": "workshop-api",
+      "version": 128,
+      "status": "ACTIVE",
+      "bundleSha256": "d6d349a7a38881d23927c8f5c7ca8f2f89539e643c94e396b316b6ffa5e15901",
+      "sourceCommit": "48eb3af562e97e67c727c7358c34e8c1728c2246",
+      "changedModules": [
+        "accountant/accounts_reports.js"
+      ],
+      "preservedOtherLiveFiles": 49,
+      "readbackMatchesCommittedSource": true,
+      "verifyJwtUnchanged": true,
+      "productionWorkshopDataModified": false,
+      "ci": {
+        "accountant": 44136424240,
+        "signed": 44136423988
+      }
+    },
+    "uiPublication": {
+      "status": "PENDING_PROTECTED_RELEASE",
+      "latestCommittedSource": "48eb3af562e97e67c727c7358c34e8c1728c2246",
+      "currentlyPublishedPagesHasNewLabels": false,
+      "reason": "Protected GitHub Pages workflow does not auto-publish; V401 publication evidence remains unmet.",
+      "liveSignedInFinancialValuesAccepted": false
+    }
   }
 }
