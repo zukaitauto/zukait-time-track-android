@@ -14,6 +14,8 @@ on:
       - 'tests/compact-history-rollout-gate.mjs'
       - 'tests/coherent-recovery-pg17.mjs'
       - 'scripts/backup-zukait-coherent-app-snapshot.ps1'
+      - 'scripts/backup-zukait-two-part.ps1'
+      - 'scripts/restore-zukait-two-part-isolated.ps1'
       - 'scripts/check-compact-history-rollout.mjs'
       - 'docs/storage/COMPACT_HISTORY_RELEASE_EVIDENCE_20261116.json'
       - 'tests/stage-v124-history-reader-safety.mjs'
@@ -97,6 +99,19 @@ jobs:
             exit 1
           }
           Write-Host 'PASS: Windows operator backup script parsed. No production backup performed.'
+      - name: Parse two-part Windows backup and isolated restore scripts (no execution)
+        shell: pwsh
+        run: |
+          foreach ($name in @('scripts/backup-zukait-two-part.ps1', 'scripts/restore-zukait-two-part-isolated.ps1')) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $name), [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Error $_.Message }
+              exit 1
+            }
+            Write-Host "PASS: parsed $name without connecting to production."
+          }
       - name: Prove coherent public Mechanical Vehicle backup and isolated PG17 restore
         env:
           ZUKAIT_RECOVERY_NATIVE: '1'
