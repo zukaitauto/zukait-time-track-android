@@ -31,7 +31,7 @@ w.fetch=async(url,options)=>{
    recorded_cost_omr:1550,provisional_profit_omr:3100,profit_percentage:null,
    pending_cost_records:2,costs_provisional:true},period_month:'2026-11',
   labour_mode:b.filters?.labour_mode||'with',snapshot_revision:9,finance_revision:0,as_of:'2026-11-17T10:00:00Z'
- }:b.action==='staff-auth'?{user:{id:'M',role:'Manager',name:'QA Manager'}}:{
+ }:url.endsWith('/staff-auth')?{user:{id:'M',role:'Manager',name:'QA Manager'}}:{
   summary:{},as_of:'2026-11-17T10:00:00Z',snapshot_revision:9,finance_revision:0
  };
  return {ok:true,status:200,json:async()=>({ok:true,...result})};
