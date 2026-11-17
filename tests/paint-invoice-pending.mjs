@@ -13,6 +13,36 @@ state.paintPurchasing.orders=[original,extra,order('live','LIVE',afterMonth),ord
 await ctx.openPaintInvoicePending();let html=el('paintInvoiceRows').innerHTML;
 for(const id of ['original','extra','historic'])assert.ok(html.includes('PO-'+id));
 for(const id of ['live','void','nil','done'])assert.ok(!html.includes('PO-'+id));
+// Readable Invoice Pending rows must show real PO, vehicle, JC, registration and vendor fields.
+assert.match(html,/class="paint-invoice-row"/);
+for(const label of ['Vehicle','Job Card','Reg. No.','Vendor','PO No.']){
+ assert.ok(html.includes('<small>'+label+'</small>'),'Visible label required: '+label);
+}
+assert.match(html,/INVOICE PENDING · ENTER RECEIVED PAINT/);
+assert.match(ctx.modal,/paintInvoiceVisibleCount/);
+assert.equal(el('paintInvoiceVisibleCount').textContent,'(2)','Main and additional POs share one vehicle count');
+state.jobs[0].vehicle='Porsche Cayman';
+state.jobs[0].reg='69153-AA';
+original.make='Outdated order vehicle';
+original.registration='OLD-REG';
+original.vendor='Long Vendor Name That Must Remain Readable';
+ctx.paintRenderInvoicePending();html=el('paintInvoiceRows').innerHTML;
+assert.ok(html.includes('Porsche Cayman'),'Use authoritative Job Card vehicle rather than stale PO data');
+assert.ok(html.includes('69153-AA'),'Use authoritative Job Card registration');
+assert.ok(html.includes(original.vendor),'Show long vendor in the row without truncating content');
+assert.ok(!html.includes('Outdated order vehicle'),'Stale PO vehicle must not replace live Job Card details');
+el('paintInvoiceQuery').value='69153-AA';
+ctx.paintRenderInvoicePending();html=el('paintInvoiceRows').innerHTML;
+assert.ok(html.includes('PO-original'),'Search must match authoritative registration');
+assert.ok(html.includes('PO-extra'),'Search must include every PO for the same matching vehicle');
+assert.ok(!html.includes('PO-historic'),'Search must narrow results');
+assert.equal(el('paintInvoiceVisibleCount').textContent,'(1)','Search count tracks unique vehicles');
+el('paintInvoiceQuery').value='';
+ctx.paintRenderInvoicePending();html=el('paintInvoiceRows').innerHTML;
+assert.ok(html.includes('data-record="original"'),'Existing Received Paint row-open behavior retained');
+const paintSource=fs.readFileSync('app/src/main/assets/paint_module.js','utf8');
+assert.match(paintSource,/\.paint-invoice-row\{display:grid!important/,'Invoice Pending must not inherit truncated compact row');
+assert.match(paintSource,/@media\(max-width:650px\)/,'Compact phones must stack invoice fields');
 assert.equal(state.paintCosting.OLD,undefined);
 ctx.paintOpenInvoicePO('original');assert.equal(el('prJc').value,'original');assert.ok(el('prJcOut').innerHTML.includes('PO-original'));
 box.setInputs([{value:'',dataset:{}}],[{value:'',dataset:{}}]);ctx.paintReviewReceived('original');assert.equal(original.receivedAt,undefined);assert.ok(!ctx.modal.includes('FINAL CHECK'));
