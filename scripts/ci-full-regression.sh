@@ -16,6 +16,7 @@ node tests/v377-performance-calculations.mjs
 node tests/workshop-week.mjs
 node tests/mechanical-time-ui.mjs
 node tests/mechanical-sections-ui.mjs
+node tests/mechanical-estimate-create-jc.mjs
 node tests/mechanical-time-scope.mjs
 node tests/mechanical-time-api.mjs
 node tests/completed-overdue-runtime.mjs
