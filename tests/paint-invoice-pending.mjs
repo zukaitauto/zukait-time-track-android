@@ -42,6 +42,8 @@ ctx.paintRenderInvoicePending();html=el('paintInvoiceRows').innerHTML;
 assert.ok(html.includes('data-record="original"'),'Existing Received Paint row-open behavior retained');
 const paintSource=fs.readFileSync('app/src/main/assets/paint_module.js','utf8');
 assert.match(paintSource,/\.paint-invoice-row\{display:grid!important/,'Invoice Pending must not inherit truncated compact row');
+assert.match(paintSource,/paint-invoice-vehicle::before/,'Vehicle icon appears beside readable vehicle text');
+assert.match(paintSource,/paint-invoice-status::before/,'Pending status icon is shown without replacing the action text');
 assert.match(paintSource,/@media\(max-width:650px\)/,'Compact phones must stack invoice fields');
 assert.equal(state.paintCosting.OLD,undefined);
 ctx.paintOpenInvoicePO('original');assert.equal(el('prJc').value,'original');assert.ok(el('prJcOut').innerHTML.includes('PO-original'));
