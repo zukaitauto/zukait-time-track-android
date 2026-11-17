@@ -16,6 +16,7 @@ on:
       - 'scripts/backup-zukait-coherent-app-snapshot.ps1'
       - 'scripts/backup-zukait-two-part.ps1'
       - 'scripts/restore-zukait-two-part-isolated.ps1'
+      - 'tests/two-part-history-compression.ps1'
       - 'scripts/check-compact-history-rollout.mjs'
       - 'docs/storage/COMPACT_HISTORY_RELEASE_EVIDENCE_20261116.json'
       - 'tests/stage-v124-history-reader-safety.mjs'
@@ -112,6 +113,9 @@ jobs:
             }
             Write-Host "PASS: parsed $name without connecting to production."
           }
+      - name: Regression test binary-safe history compressor with no production access
+        shell: pwsh
+        run: ./tests/two-part-history-compression.ps1
       - name: Prove coherent public Mechanical Vehicle backup and isolated PG17 restore
         env:
           ZUKAIT_RECOVERY_NATIVE: '1'
