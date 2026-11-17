@@ -11,7 +11,7 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "OWNER-DIRECTED V401 LIVE TEST: explicitly approved for publication despite unfinished checks (credential preservation, authenticated cross-role HTTP, live financial UI and current coherent rollback/backup). Those evidence flags remain FALSE; device acceptance NOT_RUN. Signed source, CI, runtime security, protected publisher and byte-parity checks are NOT waived. Previous V400 is retained as rollback application. Actual publication pending verified CI and coordinated publisher success.",
+  "reason": "OWNER-APPROVED V401 LIVE TEST RELEASE: exact-source signed APK, Reception and Accountant successful on 2026-11-17. Owner explicitly deferred unverified live authenticated role/financial acceptance, credential preservation and coherent backup/rollback tests, which remain FALSE; no production credentials/data altered by this authorization. Runtime security unchanged. Protected APK, Pages, updater parity and signed binary checks remain required. V400 preserved as fallback.",
   "authorization": "Owner requested publishing V401 calculation audit corrections for testing.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_VERIFIED_CURRENT_COHERENT_RESTORE",
@@ -19,9 +19,9 @@
   "sourceCommit": "1a953688d8260a4729cb9e78a294024acfc43596",
   "approvedAt": "2026-11-17T18:08:56.341Z",
   "publishNonce": "1a953688d8260a4729cb9e78a294024acfc43596",
-  "signedAcceptanceRun": 44138148983,
-  "verificationRun": 44138149115,
-  "accountantVerificationRun": 44138149037,
+  "signedAcceptanceRun": 44144371579,
+  "verificationRun": 44144371618,
+  "accountantVerificationRun": 44144371702,
   "previousPublishedRelease": {
     "versionName": "V400",
     "versionCode": 363,
@@ -460,9 +460,9 @@
     "note": "Source pin and acceptance artifacts agree; live validation/rollback gates remain false.",
     "latestQualifiedSource": "1a953688d8260a4729cb9e78a294024acfc43596",
     "date": "2026-11-17",
-    "signedRun": 44138148983,
-    "receptionRun": 44138149115,
-    "accountantRun": 44138149037,
+    "signedRun": 44144371579,
+    "receptionRun": 44144371618,
+    "accountantRun": 44144371702,
     "androidArchitectureRun": 44138149033,
     "connectionRun": 44138149072,
     "mechanicalAccountingRun": 44138148962,
@@ -471,7 +471,7 @@
     "staffPublicationStatus": "NOT_APPROVED__ACCEPTANCE_GATES_OUTSTANDING",
     "productionDataChanged": false,
     "ownerWaiverValidatorSource": "31c54ac3310cc1920a07237ee2d0a44a50f40234",
-    "runQualification": "PENDING_EXACT_SOURCE_CI",
+    "runQualification": "PASS_EXACT_PINNED_SOURCE",
     "requestedSource": "1a953688d8260a4729cb9e78a294024acfc43596"
   },
   "pendingProfitSummaryFix": {
@@ -536,6 +536,11 @@
     "freshProductionBackupRestore": "NOT_VERIFIED_CURRENT_COHERENT_RESTORE",
     "publicationNotYetApproved": false,
     "notes": "Never treat deferred tests as passed. No runtime auth/security changes. Existing signed-byte and CDN parity controls remain required.",
-    "ownerAuthorizedRelease": true
+    "ownerAuthorizedRelease": true,
+    "qualifyingRuns": {
+      "signed": 44144371579,
+      "reception": 44144371618,
+      "accountant": 44144371702
+    }
   }
 }
