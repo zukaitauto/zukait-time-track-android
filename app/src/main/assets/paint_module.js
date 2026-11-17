@@ -162,8 +162,11 @@ function paintInvoicePendingStyle(){
  '.paint-invoice-field{display:flex!important;flex-direction:column!important;gap:4px!important;min-width:0!important;max-width:100%!important;white-space:normal!important;overflow-wrap:anywhere!important;line-height:1.3!important}',
  '.paint-invoice-field small{display:block!important;color:#4b637e!important;font-size:12px!important;font-weight:700!important;line-height:1.3!important;white-space:normal!important}',
  '.paint-invoice-field strong{display:block!important;color:#17324d!important;font-size:15px!important;font-weight:800!important;line-height:1.35!important;white-space:normal!important;overflow-wrap:anywhere!important}',
+ '.paint-invoice-vehicle{position:relative!important;min-height:48px!important;padding-left:57px!important;justify-content:center!important}',
+ '.paint-invoice-vehicle::before{content:"🚘";position:absolute;top:50%;left:0;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:10px;background:#e0ebff;font-size:23px;line-height:1}',
  '.paint-invoice-vehicle strong{font-size:17px!important;color:#11345e!important}',
  '.paint-invoice-status{display:block!important;min-width:0!important;padding:10px!important;border-radius:9px!important;background:#fff0c7!important;color:#734600!important;font-size:12px!important;font-weight:850!important;line-height:1.5!important;text-align:center!important;white-space:normal!important;overflow-wrap:anywhere!important}',
+ '.paint-invoice-status::before{content:"◷";display:inline-block;margin-right:7px;font-size:17px;vertical-align:-1px}',
  '@media(max-width:1150px){.paint-invoice-row{grid-template-columns:repeat(3,minmax(0,1fr))!important}.paint-invoice-status{grid-column:1/-1}}',
  '@media(max-width:650px){.paint-invoice-row{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;padding:12px!important}.paint-invoice-vehicle,.paint-invoice-status{grid-column:1/-1}.paint-invoice-field strong{font-size:14px!important}.paint-invoice-vehicle strong{font-size:16px!important}}'
  ].join('');
