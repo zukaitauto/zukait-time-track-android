@@ -357,6 +357,32 @@
         "No security or release-integrity checks bypassed"
       ],
       "ownerManualTestingDeferralRequested": true
+    },
+    "permissionsReview_20261117": {
+      "status": "PASS_DATABASE_CONTROLS_AUTHENTICATED_HTTP_PENDING",
+      "scope": "Read-only production checks; no staff credentials, sessions or workshop records changed",
+      "sensitiveFunctionCount": 9,
+      "anonAndAuthenticatedExecuteDenied": true,
+      "serviceRoleExecuteAllowed": true,
+      "protectedTableCount": 11,
+      "rlsEnabled": true,
+      "anonAndAuthenticatedSelectDenied": true,
+      "accountantReadSnapshotGate": {
+        "allowed": [
+          "Manager",
+          "Accountant"
+        ],
+        "denied": [
+          "Supervisor",
+          "Receptionist",
+          "Employee",
+          "Purchaser",
+          "Mechanical Supervisor"
+        ],
+        "denial": "accountant_forbidden"
+      },
+      "limitations": "Database calls using actor IDs are not authenticated staff-session HTTP tests. No browser profile has a saved site sign-in. Secure user sign-in is needed for remaining HTTP role checks.",
+      "serverPermissionsGateCompleted": false
     }
   },
   "vinOnlyEditCandidate": {
