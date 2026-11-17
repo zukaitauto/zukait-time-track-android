@@ -148,16 +148,59 @@ function paintInvoiceOrders(){return (state.paintPurchasing?.orders||[]).filter(
 function paintOrderStatus(o){if(o.voided)return 'CANCELLED';if(o.nilPaintPurchase)return o.status||'NIL – No Purchase Required';if(o.receivedAt)return 'RECEIVED';const job=(state.jobs||[]).find(j=>String(j.no||'').trim().toUpperCase()===String(o.jobCard||'').trim().toUpperCase());return job&&(job.delivered===true||String(job.status||'').trim().toUpperCase()==='DELIVERED')?'INVOICE PENDING':'PENDING'}
 function paintMonth(at){if(!at)return '';const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Muscat',year:'numeric',month:'2-digit'}).formatToParts(new Date(at));return parts.find(p=>p.type==='year').value+'-'+parts.find(p=>p.type==='month').value}
 function paintMonthFilter(id,render){return '<label>Month <input type="month" id="'+id+'" onchange="'+render+'()"></label><button type="button" class="secondary" onclick="document.getElementById(\''+id+'\').value=\'\';'+render+'()">All months</button>'}
+
+// Dedicated Invoice Pending cards avoid the global compact-list ellipsis/truncation.
+function paintInvoicePendingStyle(){
+ if(document.getElementById('paintInvoicePendingStyle'))return;
+ const sheet=document.createElement('style');
+ sheet.id='paintInvoicePendingStyle';
+ sheet.textContent=[
+ '.paint-invoice-list{display:grid!important;gap:10px!important;margin:12px 0}',
+ '.paint-invoice-row{display:grid!important;grid-template-columns:minmax(155px,1.1fr) minmax(85px,.55fr) minmax(105px,.7fr) minmax(130px,1fr) minmax(90px,.6fr) minmax(210px,1.2fr)!important;align-items:center!important;gap:12px!important;box-sizing:border-box!important;width:100%!important;min-width:0!important;min-height:78px!important;padding:14px!important;background:#fff!important;color:#19324a!important;border:1px solid #cbd9e8!important;border-radius:12px!important;box-shadow:0 2px 8px #12355413;text-align:left!important;white-space:normal!important;cursor:pointer}',
+ '.paint-invoice-row:hover{background:#f5faff!important;border-color:#75a7db!important}',
+ '.paint-invoice-row:focus-visible{outline:3px solid #2563eb!important;outline-offset:2px}',
+ '.paint-invoice-field{display:flex!important;flex-direction:column!important;gap:4px!important;min-width:0!important;max-width:100%!important;white-space:normal!important;overflow-wrap:anywhere!important;line-height:1.3!important}',
+ '.paint-invoice-field small{display:block!important;color:#4b637e!important;font-size:12px!important;font-weight:700!important;line-height:1.3!important;white-space:normal!important}',
+ '.paint-invoice-field strong{display:block!important;color:#17324d!important;font-size:15px!important;font-weight:800!important;line-height:1.35!important;white-space:normal!important;overflow-wrap:anywhere!important}',
+ '.paint-invoice-vehicle strong{font-size:17px!important;color:#11345e!important}',
+ '.paint-invoice-status{display:block!important;min-width:0!important;padding:10px!important;border-radius:9px!important;background:#fff0c7!important;color:#734600!important;font-size:12px!important;font-weight:850!important;line-height:1.5!important;text-align:center!important;white-space:normal!important;overflow-wrap:anywhere!important}',
+ '@media(max-width:1150px){.paint-invoice-row{grid-template-columns:repeat(3,minmax(0,1fr))!important}.paint-invoice-status{grid-column:1/-1}}',
+ '@media(max-width:650px){.paint-invoice-row{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;padding:12px!important}.paint-invoice-vehicle,.paint-invoice-status{grid-column:1/-1}.paint-invoice-field strong{font-size:14px!important}.paint-invoice-vehicle strong{font-size:16px!important}}'
+ ].join('');
+ document.head.appendChild(sheet);
+}
+function paintInvoiceDetails(o){
+ const jc=String(o.jobCard||'').trim().toUpperCase();
+ const job=(state.jobs||[]).find(j=>String(j.no||'').trim().toUpperCase()===jc);
+ const live=job?window.zukaitJobCardMaster?.display?.(o.jobCard,job):null;
+ const vehicle=live?.vehicle||[live?.make||job?.make,live?.model||job?.model].filter(Boolean).join(' ')||job?.vehicle||o.make||'Vehicle not recorded';
+ const registration=live?.registration||live?.reg||job?.reg||job?.registration||o.registration||'—';
+ return {vehicle:String(vehicle),registration:String(registration)};
+}
 window.openPaintInvoicePending=async function(){
  if(!['Supervisor','Manager'].includes(r()))return;
  if(navigator.onLine&&window.zukaitCloud?.syncNow){try{await window.zukaitCloud.syncNow()}catch(e){console.warn('Invoice Pending refresh failed; using saved records',e)}}
  if(!['Supervisor','Manager'].includes(r()))return;
- modal('Invoice Pending','<div class="cons-searchbar"><input id="paintInvoiceQuery" placeholder="PO / Job Card / Vendor / Vehicle" oninput="paintRenderInvoicePending()"></div><p class="muted small">Delivered vehicles awaiting confirmed Received Paint</p><div id="paintInvoiceRows"></div>');paintRenderInvoicePending();
+ paintInvoicePendingStyle();
+ modal('Invoice Pending','<div class="cons-searchbar"><input id="paintInvoiceQuery" placeholder="PO / Job Card / Vendor / Vehicle / Registration" oninput="paintRenderInvoicePending()"></div><p class="muted small">Delivered vehicles awaiting confirmed Received Paint <strong id="paintInvoiceVisibleCount"></strong></p><div id="paintInvoiceRows" class="paint-invoice-list"></div>');paintRenderInvoicePending();
 };
 window.paintRenderInvoicePending=function(){
- if(!['Supervisor','Manager'].includes(r()))return;const out=document.getElementById('paintInvoiceRows');if(!out)return;const q=(document.getElementById('paintInvoiceQuery')?.value||'').trim().toLowerCase();
- const rows=paintInvoiceOrders().filter(o=>!q||[o.poNumber,o.jobCard,o.vendor,o.make,o.registration].join(' ').toLowerCase().includes(q)).sort((a,b)=>paintPOTime(b)-paintPOTime(a));
- out.innerHTML=rows.length?rows.map(o=>'<button type="button" class="zukait-compact-list-row" data-record="'+esc(o.id)+'" onclick="paintOpenInvoicePO(this.dataset.record)"><span class="zukait-compact-list-main"><b>'+esc(o.poNumber)+' · JC '+esc(o.jobCard)+'</b><small>'+esc([o.vendor,o.make,o.registration].filter(Boolean).join(' · '))+'</small></span><span class="zukait-compact-list-tail">INVOICE PENDING · ENTER RECEIVED PAINT</span></button>').join(''):'<div class="notice">No Invoice Pending Paint POs.</div>';
+ if(!['Supervisor','Manager'].includes(r()))return;
+ const out=document.getElementById('paintInvoiceRows');if(!out)return;
+ const q=(document.getElementById('paintInvoiceQuery')?.value||'').trim().toLowerCase();
+ const rows=paintInvoiceOrders().map(o=>({o,...paintInvoiceDetails(o)}))
+  .filter(x=>!q||[x.o.poNumber,x.o.jobCard,x.o.vendor,x.vehicle,x.registration].join(' ').toLowerCase().includes(q))
+  .sort((a,b)=>paintPOTime(b.o)-paintPOTime(a.o));
+ const visible=document.getElementById('paintInvoiceVisibleCount');
+ if(visible)visible.textContent='('+new Set(rows.map(x=>String(x.o.jobCard||'').trim().toUpperCase()).filter(Boolean)).size+')';
+ out.innerHTML=rows.length?rows.map(({o,vehicle,registration})=>
+  '<button type="button" class="paint-invoice-row" data-record="'+esc(o.id)+'" onclick="paintOpenInvoicePO(this.dataset.record)" aria-label="Open Received Paint for JC '+esc(o.jobCard||'—')+', PO '+esc(o.poNumber||'—')+'">'+
+  '<span class="paint-invoice-field paint-invoice-vehicle"><small>Vehicle</small><strong>'+esc(vehicle)+'</strong></span>'+
+  '<span class="paint-invoice-field"><small>Job Card</small><strong>'+esc(o.jobCard||'—')+'</strong></span>'+
+  '<span class="paint-invoice-field"><small>Reg. No.</small><strong>'+esc(registration)+'</strong></span>'+
+  '<span class="paint-invoice-field"><small>Vendor</small><strong>'+esc(o.vendor||'—')+'</strong></span>'+
+  '<span class="paint-invoice-field"><small>PO No.</small><strong>'+esc(o.poNumber||'—')+'</strong></span>'+
+  '<span class="paint-invoice-status">INVOICE PENDING · ENTER RECEIVED PAINT</span></button>').join(''):'<div class="notice">No Invoice Pending Paint POs.</div>';
 };
 window.paintOpenInvoicePO=function(id){if(!['Supervisor','Manager'].includes(r()))return;const o=root().orders.find(o=>o&&o.id===id&&paintOrderStatus(o)==='INVOICE PENDING');if(!o)return;pd.invoicePending=true;modal('Received Paint',searchBox('prJc','paintLoadReceived()','Original Paint PO'),'openPaintInvoicePending()');document.getElementById('prJc').value=o.id;paintLoadReceived()};
 function paintPOTime(o){return paintTimestamp(o.createdAt)}
