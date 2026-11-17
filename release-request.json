@@ -11,17 +11,17 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "Owner renewed V401 publication request on 2026-11-17. Signed APK, Reception and Accountant workflows all succeeded for pinned source 52a6804d8dab347a6b15ed016bd3ee9628019f86; stale workflow references corrected. Technical release hold remains: current architecture-v2 contains later source changes; authenticated cross-role acceptance, credential preservation, live cost acceptance and rollback evidence remain unverified. Production staff-auth v15 and workshop-api v127 bundle identities reconfirmed; metadata health is not functional acceptance.",
+  "reason": "V401 financial provisional-cost API workshop-api v128 is ACTIVE and new client provisional labels are committed. Exact source 12aa8c0bf9ef2208a0f33375a493c22671436917 passed signed, Reception, Accountant, Android architecture, APK, connection and Mechanical/Accounting CI on 2026-11-17. Web and Android staff publication are still NOT APPROVED: live signed-in financial UI, authenticated cross-role workflows, credential preservation and current coherent backup/restore/rollback acceptance remain unverified. V400 remains staff release. No protection bypass.",
   "authorization": "Owner requested publishing V401 calculation audit corrections for testing.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_VERIFIED_CURRENT_COHERENT_RESTORE",
   "backupDeferredByOwner": false,
-  "sourceCommit": "52a6804d8dab347a6b15ed016bd3ee9628019f86",
+  "sourceCommit": "12aa8c0bf9ef2208a0f33375a493c22671436917",
   "approvedAt": null,
   "publishNonce": null,
-  "signedAcceptanceRun": 43880457568,
-  "verificationRun": 43880457465,
-  "accountantVerificationRun": 43880457615,
+  "signedAcceptanceRun": 44138148983,
+  "verificationRun": 44138149115,
+  "accountantVerificationRun": 44138149037,
   "previousPublishedRelease": {
     "versionName": "V400",
     "versionCode": 363,
@@ -457,10 +457,22 @@
     "signedAcceptanceRun": 43856800110,
     "receptionVerificationRun": 43856800069,
     "accountantVerificationRun": 43856800029,
-    "note": "Source pin and acceptance artifacts agree; live validation/rollback gates remain false."
+    "note": "Source pin and acceptance artifacts agree; live validation/rollback gates remain false.",
+    "latestQualifiedSource": "12aa8c0bf9ef2208a0f33375a493c22671436917",
+    "date": "2026-11-17",
+    "signedRun": 44138148983,
+    "receptionRun": 44138149115,
+    "accountantRun": 44138149037,
+    "androidArchitectureRun": 44138149033,
+    "connectionRun": 44138149072,
+    "mechanicalAccountingRun": 44138148962,
+    "regularApkRun": 44138148967,
+    "ciStatus": "SUCCESS",
+    "staffPublicationStatus": "NOT_APPROVED__ACCEPTANCE_GATES_OUTSTANDING",
+    "productionDataChanged": false
   },
   "pendingProfitSummaryFix": {
-    "status": "BACKEND_DEPLOYED_VERIFIED__PC_AND_ANDROID_UI_PUBLICATION_PENDING",
+    "status": "BACKEND_DEPLOYED_VERIFIED__EXACT_SOURCE_CLIENT_CI_PASSED__PUBLICATION_PENDING",
     "requestedOn": "2026-11-17",
     "reason": "Pending-cost jobs blank all period cost and profit cards",
     "behavior": "Expose recorded cost and provisional profit separately; preserve null final totals and pending flags; respect labour mode and full cohort pagination",
@@ -490,10 +502,17 @@
     },
     "uiPublication": {
       "status": "PENDING_PROTECTED_RELEASE",
-      "latestCommittedSource": "48eb3af562e97e67c727c7358c34e8c1728c2246",
+      "latestCommittedSource": "12aa8c0bf9ef2208a0f33375a493c22671436917",
       "currentlyPublishedPagesHasNewLabels": false,
-      "reason": "Protected GitHub Pages workflow does not auto-publish; V401 publication evidence remains unmet.",
-      "liveSignedInFinancialValuesAccepted": false
+      "reason": "Production Pages and Android UI remain pinned to V400; protected release approval/acceptance gates are not satisfied.",
+      "liveSignedInFinancialValuesAccepted": false,
+      "exactSourceCiQualified": true,
+      "qualifiedRuns": {
+        "signed": 44138148983,
+        "reception": 44138149115,
+        "accountant": 44138149037,
+        "androidArchitecture": 44138149033
+      }
     }
   }
 }
