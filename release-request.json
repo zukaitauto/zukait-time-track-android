@@ -302,7 +302,7 @@
       "source": "Supabase Edge function logs / SQL errors / GitHub rollback bundles"
     },
     "finalReleaseVerification_20261116": {
-      "scope": "Steps 3,4,5 ordered by owner — verify without production credential/workshop edits",
+      "scope": "Steps 3,4,5 ordered by owner \u2014 verify without production credential/workshop edits",
       "step3": {
         "status": "PARTIAL__DB_ROLE_DENIAL_PASSED__ACTUAL_CROSS_ROLE_HTTP_NOT_AVAILABLE",
         "databaseEvidence": "10 sensitive RPC grants and 12 protected RLS tables denied anon/authenticated; 9 read-only DB authorization denial scenarios passed",
@@ -455,5 +455,16 @@
     "receptionVerificationRun": 43856800069,
     "accountantVerificationRun": 43856800029,
     "note": "Source pin and acceptance artifacts agree; live validation/rollback gates remain false."
+  },
+  "pendingProfitSummaryFix": {
+    "status": "IMPLEMENTED_NOT_DEPLOYED",
+    "requestedOn": "2026-11-17",
+    "reason": "Pending-cost jobs blank all period cost and profit cards",
+    "behavior": "Expose recorded cost and provisional profit separately; preserve null final totals and pending flags; respect labour mode and full cohort pagination",
+    "files": [
+      "app/src/main/assets/accountant.js",
+      "supabase/functions/workshop-api/accountant/accounts_reports.js"
+    ],
+    "requires": "Qualify a new signed candidate and matching scoped backend module before publication. Existing signed V401 candidate does not contain this fix."
   }
 }

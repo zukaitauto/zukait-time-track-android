@@ -274,15 +274,17 @@ function showFinancialSummary(data){
  $('cash-invoice-total-period').textContent=data.period_month||($('from').value||$('to').value?'Selected period':'Current month');
  $('accounts-report-total-caption').textContent='Final invoice / LPO value; not a duplicate payment receipt';
  const withoutLabour=report==='profit'&&labourMode==='without';
+ const provisional=summary.costs_provisional===true||Number(summary.pending_cost_records||0)>0||Number(summary.partial_cost_records||0)>0||Number(summary.estimated_parts_jobs||0)>0;
+ const suffix=withoutLabour?' (excl. Labour)':'';
  const figures=[
-  [withoutLabour?'Total Job Cost (excl. Labour)':'Total Job Cost',summary.total_cost_omr,true],
-  [withoutLabour?'Profit / Loss (excl. Labour)':'Profit / Loss',summary.profit_omr,true],
-  [withoutLabour?'Profit % (excl. Labour)':'Profit Percentage',summary.profit_percentage,false],
+  [(provisional?'Recorded Job Cost':'Total Job Cost')+suffix,summary.total_cost_omr??summary.recorded_cost_omr,true],
+  [(provisional?'Provisional Profit / Loss':'Profit / Loss')+suffix,summary.profit_omr??summary.provisional_profit_omr,true],
+  [(provisional?'Provisional Profit %':'Profit Percentage')+suffix,summary.profit_percentage??summary.provisional_profit_percentage,false],
   ['Pending Cost Jobs',summary.pending_cost_records||0,false]
  ];
- area.innerHTML=figures.map(([label,value,currency])=>'<div class="accounts-kpi"><small>'+esc(label)+'</small><b class="'+(label==='Profit / Loss'&&value!==null?(Number(value)<0?'negative':'positive'):'')+'">'+
-  (currency?esc(display(value,true)):label.startsWith('Profit %')||label==='Profit Percentage'?(value===null?'Pending / —':Number(value).toFixed(2)+'%'):esc(value))+
-  ((summary.partial_cost_records||0)>0&&label!=='Pending Cost Jobs'?'*':'')+'</b></div>').join('');
+ area.innerHTML=figures.map(([label,value,currency],index)=>'<div class="accounts-kpi"><small>'+esc(label)+'</small><b class="'+(index===1&&value!=null?(Number(value)<0?'negative':'positive'):'')+'">'+
+  (currency?esc(display(value,true)):index===2?(value==null?'Pending / —':Number(value).toFixed(2)+'%'):esc(value))+'</b></div>').join('')+
+  (provisional?'<p class="financial-status-note">Provisional totals include recorded costs only. Missing costs remain pending; profit may decrease when they are entered.</p>':'');
  if(data.facets){
   fillSelect('insurance-company',data.facets.insurance||[],'All Insurance Companies');
   fillSelect('customer-filter',[...(data.facets.credit||[]),...(data.facets.corporate||[])].filter((s,i,a)=>a.indexOf(s)===i),'All Credit / Corporate Customers');

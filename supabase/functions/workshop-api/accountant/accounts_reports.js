@@ -102,10 +102,21 @@ export function accountsPerformanceReport(context,financial,filters={},now=Date.
  const uncalculable=rows.some(r=>numeric(r.total_job_cost_omr)===null);
  const cost=uncalculable?null:total('total_job_cost_omr');
  const profit=cost===null?null:revenue-cost;
+ // Separate recorded subtotals from final costs: unknown categories stay null.
+ // Aggregate the full selected cohort here, before API pagination.
+ const includedCategories=withoutLabour?['paint','consumables','parts','sublet']:['labour','paint','consumables','parts','sublet'];
+ const knownCost=rows.reduce((sum,r)=>{
+  const complete=numeric(r.total_job_cost_omr);
+  return sum+(complete!==null?complete:includedCategories.reduce((n,k)=>n+(numeric(r[k+'_cost_omr'])??0),0));
+ },0);
+ const provisionalProfit=revenue-knownCost;
  return {
   rows,facets,period_month:month,labour_mode:withoutLabour?'without':'with',
   summary:{records:rows.length,revenue_omr:money(revenue),total_cost_omr:money(cost),
    profit_omr:money(profit),profit_percentage:profit===null||revenue===0?null:profit/revenue*100,
+   recorded_cost_omr:money(knownCost),provisional_profit_omr:money(provisionalProfit),
+   provisional_profit_percentage:revenue===0?null:provisionalProfit/revenue*100,
+   costs_provisional:pending>0||rows.some(r=>r.cost_estimated),
    pending_cost_records:pending,partial_cost_records:rows.filter(r=>r.cost_partial).length,
    estimated_parts_jobs:rows.filter(r=>r.parts_cost_estimated).length},
   notes:[...(withoutLabour?['Without Labour mode: labour expense is excluded from job cost and profit/loss calculations, but recorded labour is unchanged.']:[]),'Partial cost means only priced material/part lines are included; Profit/Loss is provisional and can decrease as missing prices are entered.','Invoice and LPO amounts are not additional receipt entries.','Profit excludes overheads and unmodeled tax adjustments.','Recorded Parts List purchase prices count toward their linked Job Card profit; unreceived items are estimates and missing prices remain Pending.','Pending expenses cannot be treated as zero.']
