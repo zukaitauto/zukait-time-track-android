@@ -11,7 +11,7 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "reason": "OWNER-APPROVED V401 LIVE TEST RELEASE: exact-source signed APK, Reception and Accountant successful on 2026-11-17. Owner explicitly deferred unverified live authenticated role/financial acceptance, credential preservation and coherent backup/rollback tests, which remain FALSE; no production credentials/data altered by this authorization. Runtime security unchanged. Protected APK, Pages, updater parity and signed binary checks remain required. V400 preserved as fallback.",
+  "reason": "V401 PUBLISHED 2026-11-17 through protected signed APK+Pages+updater parity publisher (run 44145185043). Exact-source QA signed, Reception, Accountant passed. Owner-authorized live-test waiver leaves credential preservation, authenticated cross-role permission proof, current coherent backup/rollback and signed-in financial UI acceptance UNVERIFIED (all evidence flags remain false). V400 release retained as prior fallback.",
   "authorization": "Owner requested publishing V401 calculation audit corrections for testing.",
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_VERIFIED_CURRENT_COHERENT_RESTORE",
@@ -472,10 +472,12 @@
     "productionDataChanged": false,
     "ownerWaiverValidatorSource": "31c54ac3310cc1920a07237ee2d0a44a50f40234",
     "runQualification": "PASS_EXACT_PINNED_SOURCE",
-    "requestedSource": "1a953688d8260a4729cb9e78a294024acfc43596"
+    "requestedSource": "1a953688d8260a4729cb9e78a294024acfc43596",
+    "publicationRun": 44145185043,
+    "publicationResult": "SUCCESS"
   },
   "pendingProfitSummaryFix": {
-    "status": "BACKEND_DEPLOYED_VERIFIED__EXACT_SOURCE_CLIENT_CI_PASSED__PUBLICATION_PENDING",
+    "status": "BACKEND_AND_WEB_ANDROID_UI_PUBLISHED_VERIFIED__LIVE_SIGNED_IN_FINANCIAL_ACCEPTANCE_PENDING",
     "requestedOn": "2026-11-17",
     "reason": "Pending-cost jobs blank all period cost and profit cards",
     "behavior": "Expose recorded cost and provisional profit separately; preserve null final totals and pending flags; respect labour mode and full cohort pagination",
@@ -504,10 +506,10 @@
       }
     },
     "uiPublication": {
-      "status": "PENDING_PROTECTED_RELEASE",
+      "status": "PUBLISHED_AND_EXACT_ASSET_PARITY_VERIFIED",
       "latestCommittedSource": "12aa8c0bf9ef2208a0f33375a493c22671436917",
-      "currentlyPublishedPagesHasNewLabels": false,
-      "reason": "Owner requests V401 live-test release with expressly deferred acceptance; awaiting exact-source CI and protected publication.",
+      "currentlyPublishedPagesHasNewLabels": true,
+      "reason": "Protected coordinated publisher verified public Pages assets, signed APK and updater against pinned V401 source.",
       "liveSignedInFinancialValuesAccepted": false,
       "exactSourceCiQualified": true,
       "qualifiedRuns": {
@@ -515,7 +517,11 @@
         "reception": 44138149115,
         "accountant": 44138149037,
         "androidArchitecture": 44138149033
-      }
+      },
+      "publisherRun": 44145185043,
+      "publisherConclusion": "SUCCESS",
+      "releaseTag": "release-V401-architecture-v2",
+      "publishedAt": "2026-11-17T18:13:33Z"
     }
   },
   "v401TestWaiver": {
@@ -541,6 +547,18 @@
       "signed": 44144371579,
       "reception": 44144371618,
       "accountant": 44144371702
+    },
+    "publicationResult": {
+      "status": "PUBLISHED",
+      "run": 44145185043,
+      "conclusion": "SUCCESS",
+      "publishedAt": "2026-11-17T18:13:33Z",
+      "remainingDeferredChecks": [
+        "credentialPreservation",
+        "serverPermissions",
+        "rollbackPrepared",
+        "liveCostReconciliation"
+      ]
     }
   }
 }
