@@ -94,7 +94,7 @@ function initialProjection(){
 function projectionAfterCloudPull(){
  if(!projectionPilot()||document.visibilityState==='hidden'||typeof window.zukaitCloud?.readMechanicalQcOverview!=='function')return;
  if(!projectionSyncReady()){projectionError='Workshop synchronization is incomplete.';apply();return}
- if(projectionCurrent())return;
+ if(projectionCurrent()&&!projectionError)return;
  const owner=JSON.stringify(projectionSession());
  if(projectionLoadingOwner===owner)return;
  const key=owner+'|'+String(window.zukaitCloud.syncHealth.revision);
