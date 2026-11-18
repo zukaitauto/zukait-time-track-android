@@ -410,7 +410,7 @@ async function createMechanicalJob(id){
  }catch(error){if(status)status.textContent=error.message||'Could not confirm the estimate.';else alert(error.message);}
 }
 function setType(t,doRecalc=true){
-  const e=findEstimate(window.__zukaitEstimateCurrent);t=t==='PL'?'PL':'LS';if(window.zukaitMechanicalEstimate?.active?.()===true&&e?.type!=='LS')t='PL';if(e)e.type=t;
+  const e=findEstimate(window.__zukaitEstimateCurrent);t=t==='PL'?'PL':'LS';if(e)e.type=t;
   document.getElementById('estLsSection')?.classList.toggle('hidden',t!=='LS');
   document.getElementById('estPlSection')?.classList.toggle('hidden',t!=='PL');
   document.getElementById('estTypeLS')?.classList.toggle('active',t==='LS');
