@@ -1,67 +1,34 @@
 {
-  "versionName": "V402",
-  "versionCode": 365,
+  "versionName": "V403",
+  "versionCode": 366,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "sourceCommit": "c9dd4045ce32a125d04e8a2df2d859fd9c496b13",
-  "approvedAt": "2026-11-17T19:41:29.304Z",
-  "publishNonce": "c9dd4045ce32a125d04e8a2df2d859fd9c496b13",
+  "approvedForStaff": false,
+  "ownerPublicationRequested": false,
+  "ownerRequestedImmediateRelease": false,
   "ownerRequestedProceed": true,
-  "ownerPublicationRequested": true,
-  "ownerRequestedImmediateRelease": true,
-  "releaseHeldByOwner": false,
-  "backupDeferredByOwner": true,
+  "releaseHeldByOwner": true,
   "productionBackendChanges": false,
   "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "signedAcceptanceRun": 44160551594,
-  "verificationRun": 44160551560,
-  "authorization": "Owner explicitly requested: 'Release then I will test' (17 November 2026), approving a V402 UI-only Android/Web live-test publication.",
-  "reason": "V402 owner-approved UI-only test update: clickable Manager Accounts Profit/Loss Pending Cost Jobs list and Cash-only full-screen Mechanical Parts+Labour Estimate with reviewed labour-only Job Card handoff. All six exact-source checks passed. Production Supabase functions and schema unchanged; physical phone acceptance and current full backup/restore remain NOT_RUN. V401 is retained as previous published fallback.",
+  "backupDeferredByOwner": true,
+  "sourceCommit": null,
+  "approvedAt": null,
+  "publishNonce": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "authorization": "Owner requested fully fixing the Mechanical and Reception Estimate V403 changes for prompt test release; release after exact V403 build and acceptance checks pass.",
+  "reason": "V403 UI-only candidate: Mechanical Lumpsum reenabled, Parts+Labour clean display, Create Job Card offered only from server-saved Mechanical Estimate List, blank-row Add buttons focus new row, and customer/insurance, make-model and registration required on both Mechanical and Reception Save. No database or backend changes. Retain V402 live until approved.",
   "previousPublishedRelease": {
-    "versionName": "V401",
-    "versionCode": 364,
-    "releaseTag": "release-V401-architecture-v2",
-    "sourceCommit": "1a953688d8260a4729cb9e78a294024acfc43596"
+    "versionName": "V402",
+    "versionCode": 365,
+    "releaseTag": "release-V402-architecture-v2",
+    "sourceCommit": "c9dd4045ce32a125d04e8a2df2d859fd9c496b13"
   },
-  "prePublicationEvidence": {
-    "sourceCommit": "c9dd4045ce32a125d04e8a2df2d859fd9c496b13",
-    "checks": {
-      "signed": {
-        "runId": 44160551594,
-        "status": "PASS_EXACT_SOURCE",
-        "head_sha": "c9dd4045ce32a125d04e8a2df2d859fd9c496b13"
-      },
-      "reception": {
-        "runId": 44160551560,
-        "status": "PASS_EXACT_SOURCE",
-        "head_sha": "c9dd4045ce32a125d04e8a2df2d859fd9c496b13"
-      },
-      "regularApk": {
-        "runId": 44160551574,
-        "status": "PASS_EXACT_SOURCE",
-        "head_sha": "c9dd4045ce32a125d04e8a2df2d859fd9c496b13"
-      },
-      "androidArchitecture": {
-        "runId": 44160551595,
-        "status": "PASS_EXACT_SOURCE",
-        "head_sha": "c9dd4045ce32a125d04e8a2df2d859fd9c496b13"
-      },
-      "connection": {
-        "runId": 44160551581,
-        "status": "PASS_EXACT_SOURCE",
-        "head_sha": "c9dd4045ce32a125d04e8a2df2d859fd9c496b13"
-      },
-      "inactiveContracts": {
-        "runId": 44160551584,
-        "status": "PASS_EXACT_SOURCE",
-        "head_sha": "c9dd4045ce32a125d04e8a2df2d859fd9c496b13"
-      }
-    },
+  "pendingTestEvidence": {
+    "productionBackendChanges": false,
     "physicalAcceptance": "NOT_RUN",
-    "freshBackupRestore": "NOT_RUN",
-    "productionBackendChanges": false
+    "freshBackupRestore": "NOT_RUN"
   }
 }
