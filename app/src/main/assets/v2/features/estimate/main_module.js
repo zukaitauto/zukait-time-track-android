@@ -109,7 +109,7 @@ function ensureStyle(){
   if(document.getElementById('zukaitEstimateStyle'))return;
   const s=document.createElement('style');s.id='zukaitEstimateStyle';s.textContent=`
   .est-mechanical-editor{max-width:none!important;width:100%!important;box-sizing:border-box}
-  .est-saved-item{margin:9px 0;padding:8px;border:1px solid #cbdde0;border-radius:11px;background:#f7fbfd}.est-saved-item>.est-result{width:100%;margin:0 0 8px}.est-saved-create-jc{display:block;width:100%;min-height:44px!important;background:#0a765f!important;color:white!important;border:0!important;border-radius:9px!important;font-weight:800!important}.est-saved-create-jc:disabled{background:#e3e8eb!important;color:#475569!important;cursor:default}.est-required-star{font-size:15px;font-weight:900;color:#dc2626!important;margin-inline-start:3px}.est-editor [aria-invalid="true"]{border:2px solid #dc2626!important;background:#fff5f5!important}.est-mechanical-editor .est-cash-only{padding:10px 13px;border:1px solid #bfdbc8;border-radius:10px;background:#eef9ef;color:#174d38;font-size:14px}
+  .est-saved-item{margin:9px 0;padding:8px;border:1px solid #cbdde0;border-radius:11px;background:#f7fbfd}.est-saved-item>.est-result{width:100%;margin:0 0 8px}.est-saved-create-jc{display:block;width:100%;min-height:44px!important;background:#0a765f!important;color:white!important;border:0!important;border-radius:9px!important;font-weight:800!important}.est-saved-create-jc:disabled{background:#e3e8eb!important;color:#475569!important;cursor:default}.est-required-star{font-size:15px;font-weight:900;color:#dc2626!important;margin-inline-start:3px}.est-editor [aria-invalid="true"]{border:2px solid #dc2626!important;background:#fff5f5!important}.est-editor .est-section[hidden]{display:none!important}.est-mechanical-editor .est-cash-only{padding:10px 13px;border:1px solid #bfdbc8;border-radius:10px;background:#eef9ef;color:#174d38;font-size:14px}
   .est-mechanical-editor .est-switch button[hidden]{display:none!important}
   .est-mechanical-editor .est-switch:has(#estTypeLS[hidden]){grid-template-columns:1fr}
   #modal .est-mechanical-editor .est-bottom .est-open-jc{background:#0b705f!important;color:#fff!important;border-color:#0b705f!important;grid-column:1/-1;font-size:14px!important}
@@ -364,7 +364,7 @@ function openEditor(id){
     field('estJobCard','JC.NO (Optional)',e.jobCard)+
   '</div></div>'+
   '<div id="estLsSection" class="est-section"><h4>'+estimateLabel('Repair scope')+'</h4><p class="est-help">Describe each repair and enter its amount in OMR.</p><div class="est-columns"><span>'+estimateLabel('Description')+'</span><span>'+estimateLabel('Amount OMR')+'</span><span></span></div><div id="estLsRows">'+lsRowsHtml(e.lsRows)+'</div><button class="est-add" onclick="zukaitEstimate.addRow(\'LS\')">+ Add repair</button>'+
-  '<div class="est-fields" style="margin-top:10px">'+field('estLsParts','Spare Parts',money(e.lsSpareParts),'text','inputmode="decimal" oninput="zukaitEstimate.recalc()"')+field('estMiscLs','Misc',money(e.misc),'text','inputmode="decimal" oninput="zukaitEstimate.recalc()"')+'</div></div>'+
+  (mechanical&&!num(e.lsSpareParts)&&!num(e.misc)?'':'<div class="est-fields" style="margin-top:10px">'+field('estLsParts','Spare Parts',money(e.lsSpareParts),'text','inputmode="decimal" oninput="zukaitEstimate.recalc()"')+field('estMiscLs','Misc',money(e.misc),'text','inputmode="decimal" oninput="zukaitEstimate.recalc()"')+'</div>')+'</div>'+
   '<div id="estPlSection" class="est-section"><div class="est-section-heading"><h4>'+estimateLabel('Labour')+'</h4><button type="button" class="est-add" onclick="zukaitEstimate.addRow(\'LAB\')">+ Add Labour</button></div><div class="est-columns"><span>'+estimateLabel('Description')+'</span><span>'+estimateLabel('Amount OMR')+'</span><span></span></div><div id="estLabRows">'+labourRowsHtml(e.labourRows)+'</div>'+
   '<div class="est-section-heading est-parts-heading"><h4>'+estimateLabel('Spare parts')+'</h4><button type="button" class="est-add" onclick="zukaitEstimate.addRow(\'PART\')">+ Add Part</button></div><div class="est-columns est-part-columns"><span>'+estimateLabel('Part description')+'</span><span>'+estimateLabel('Qty')+'</span><span>'+estimateLabel('Unit OMR')+'</span><span></span></div><div id="estPartRows">'+partRowsHtml(e.partRows)+'</div>'+
   '<div style="margin-top:10px">'+field('estMiscPl','Misc',money(e.misc),'text','inputmode="decimal" oninput="zukaitEstimate.recalc()"')+'</div></div>'+
@@ -411,8 +411,9 @@ async function createMechanicalJob(id){
 }
 function setType(t,doRecalc=true){
   const e=findEstimate(window.__zukaitEstimateCurrent);t=t==='PL'?'PL':'LS';if(e)e.type=t;
-  document.getElementById('estLsSection')?.classList.toggle('hidden',t!=='LS');
-  document.getElementById('estPlSection')?.classList.toggle('hidden',t!=='PL');
+  const ls=document.getElementById('estLsSection'),pl=document.getElementById('estPlSection');
+  if(ls){ls.hidden=t!=='LS';ls.classList.toggle('hidden',t!=='LS');}
+  if(pl){pl.hidden=t!=='PL';pl.classList.toggle('hidden',t!=='PL');}
   document.getElementById('estTypeLS')?.classList.toggle('active',t==='LS');
   document.getElementById('estTypePL')?.classList.toggle('active',t==='PL');
   if(doRecalc)recalc();
@@ -460,8 +461,8 @@ function draftFromDom(e){
     lsRows:rowsFromDom('[data-est-ls-row]','ls'),
     labourRows:rowsFromDom('[data-est-lab-row]','lab'),
     partRows:rowsFromDom('[data-est-part-row]','part'),
-    lsSpareParts:num(document.getElementById('estLsParts')?.value),
-    misc:num((document.getElementById('estTypePL')?.classList.contains('active')?document.getElementById('estMiscPl'):document.getElementById('estMiscLs'))?.value)
+    lsSpareParts:document.getElementById('estLsParts')?num(document.getElementById('estLsParts').value):num(e.lsSpareParts),
+    misc:num((document.getElementById('estTypePL')?.classList.contains('active')?document.getElementById('estMiscPl')?.value:document.getElementById('estMiscLs')?.value)??e.misc)
   });
 }
 function recalc(){
@@ -472,7 +473,7 @@ function recalc(){
   const lines=d.type==='LS'
     ?[['Total Labour / Lumpsum',t.labour],['Spare Parts',t.parts],['Misc',t.misc]]
     :[['Total Labour',t.labour],['Total Parts',t.parts],['Misc',t.misc],['Subtotal',t.subtotal]];
-  box.innerHTML=lines.map(x=>'<div class="est-summary-line"><span>'+estimateLabel(x[0])+'</span><b>OMR '+money(x[1])+'</b></div>').join('')+
+  box.innerHTML=lines.filter(x=>!(window.zukaitMechanicalEstimate?.active?.()===true&&d.type==='LS'&&['Spare Parts','Misc'].includes(x[0])&&!num(x[1]))).map(x=>'<div class="est-summary-line"><span>'+estimateLabel(x[0])+'</span><b>OMR '+money(x[1])+'</b></div>').join('')+
     (d.vatEnabled?'<div class="est-summary-line"><span>'+estimateLabel('VAT 5%')+'</span><b>OMR '+money(t.vat)+'</b></div>':'')+
     '<div class="est-summary-line total"><span>'+estimateLabel('TOTAL')+'</span><span>OMR '+money(t.total)+'</span></div>';
 }
