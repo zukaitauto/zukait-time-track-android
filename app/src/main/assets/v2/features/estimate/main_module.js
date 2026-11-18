@@ -499,11 +499,30 @@ function autoSave(){
   };
   autoSaveTimer=setTimeout(attempt,500);
 }
+function validateEstimateDraft(d){
+ const required=[['estName',d.jobType==='INSURANCE'?'Insurance company':'Customer name',d.customerName],['estMakeModel','Make & Model',d.makeModel],['estReg','Registration No.',d.registration]];
+ for(const [id,label,value] of required){
+  const input=document.getElementById(id);
+  input?.removeAttribute('aria-invalid');
+  if(!String(value||'').trim()){
+   if(input){input.setAttribute('aria-invalid','true');input.focus();}
+   return label+' is required (*).';
+  }
+ }
+ const rows=d.type==='LS'?(d.lsRows||[]):[...(d.labourRows||[]),...(d.partRows||[])];
+ for(const row of rows){
+  const amount=Object.prototype.hasOwnProperty.call(row,'qty')?num(row.qty)*num(row.unitPrice):num(row.amount);
+  if(amount>0&&!String(row.description||'').trim())return 'Enter a description for each priced repair, labour or part row.';
+ }
+ if(!rows.some(row=>String(row.description||'').trim()))return 'Add a repair, labour or part description before saving.';
+ return '';
+}
 async function saveCurrent(id,quiet=false){
   const notify=message=>{if(quiet){const status=document.getElementById('estSaveStatus');if(status&&window.__zukaitEstimateCurrent===id)status.textContent=message;}else alert(message)};
   if(quiet)notify('Saving…');
   const e=findEstimate(id);if(!e)return;
   const before=totals(e).total,d=draftFromDom(e),u=currentUser()||{};
+  const validationError=validateEstimateDraft(d);if(validationError){notify(validationError);return;}
   if(window.zukaitMechanicalEstimate?.active?.()===true){
     if(estimateSaveBusy)return;estimateSaveBusy=true;
     try{const saved=await window.zukaitMechanicalEstimate.save({...e,...d},Number(e.revision||0));Object.assign(e,saved);rememberEstimate(e);recalc();notify(e.estimateNo+' saved on the server.');}
