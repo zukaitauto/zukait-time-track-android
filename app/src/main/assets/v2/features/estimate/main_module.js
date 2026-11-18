@@ -363,7 +363,7 @@ function openEditor(id){
     (!mechanical?'<div id="estClaimField" style="display:'+(insuranceEstimate(e)?'contents':'none')+'">'+field('estClaim','Claim No.',e.claimNo)+'</div>':'')+
     field('estJobCard','JC.NO (Optional)',e.jobCard)+
   '</div></div>'+
-  '<div id="estLsSection" class="est-section"><h4>'+estimateLabel('Repair scope')+'</h4><p class="est-help">Describe each repair and enter its amount in OMR.</p><div class="est-columns"><span>'+estimateLabel('Description')+'</span><span>'+estimateLabel('Amount OMR')+'</span><span></span></div><div id="estLsRows">'+lsRowsHtml(e.lsRows)+'</div><button class="est-add" onclick="zukaitEstimate.addRow(\'LS\')">+ Add repair</button>'+
+  '<div id="estLsSection" class="est-section"><h4>'+estimateLabel('Repair scope')+'</h4><p class="est-help">Describe each repair and enter its amount in OMR.</p><div class="est-columns"><span>'+estimateLabel('Description')+'</span><span>'+estimateLabel('Amount OMR')+'</span><span></span></div><div id="estLsRows">'+lsRowsHtml(e.lsRows)+'</div><button type="button" class="est-add" onclick="zukaitEstimate.addRow(\'LS\')">+ Add repair</button>'+
   (mechanical&&!num(e.lsSpareParts)&&!num(e.misc)?'':'<div class="est-fields" style="margin-top:10px">'+field('estLsParts','Spare Parts',money(e.lsSpareParts),'text','inputmode="decimal" oninput="zukaitEstimate.recalc()"')+field('estMiscLs','Misc',money(e.misc),'text','inputmode="decimal" oninput="zukaitEstimate.recalc()"')+'</div>')+'</div>'+
   '<div id="estPlSection" class="est-section"><div class="est-section-heading"><h4>'+estimateLabel('Labour')+'</h4><button type="button" class="est-add" onclick="zukaitEstimate.addRow(\'LAB\')">+ Add Labour</button></div><div class="est-columns"><span>'+estimateLabel('Description')+'</span><span>'+estimateLabel('Amount OMR')+'</span><span></span></div><div id="estLabRows">'+labourRowsHtml(e.labourRows)+'</div>'+
   '<div class="est-section-heading est-parts-heading"><h4>'+estimateLabel('Spare parts')+'</h4><button type="button" class="est-add" onclick="zukaitEstimate.addRow(\'PART\')">+ Add Part</button></div><div class="est-columns est-part-columns"><span>'+estimateLabel('Part description')+'</span><span>'+estimateLabel('Qty')+'</span><span>'+estimateLabel('Unit OMR')+'</span><span></span></div><div id="estPartRows">'+partRowsHtml(e.partRows)+'</div>'+
@@ -430,7 +430,12 @@ function addRow(kind,button){
   if(kind==='LAB'){box=document.getElementById('estLabRows');html=labourRowsHtml([{id,description:'',amount:0}])}
   if(kind==='PART'){box=document.getElementById('estPartRows');html=partRowsHtml([{id,description:'',qty:1,unitPrice:0}])}
   const anchor=button?.closest?.('.est-row');
-  if(anchor)anchor.insertAdjacentHTML('afterend',html);else if(box)box.insertAdjacentHTML('beforeend',html);recalc();
+  let added=null;
+  if(anchor){anchor.insertAdjacentHTML('afterend',html);added=anchor.nextElementSibling;}
+  else if(box){box.insertAdjacentHTML('beforeend',html);added=box.lastElementChild;}
+  recalc();
+  // Blank descriptions must not block another row; focus the new item so it is obvious on phones.
+  const next=added?.querySelector?.('.est-desc');next?.focus?.();next?.scrollIntoView?.({block:'nearest'});
 }
 function removeRow(btn){const row=btn?.closest?.('[data-est-ls-row],[data-est-lab-row],[data-est-part-row]');if(row)row.remove();recalc()}
 function rowsFromDom(sel,kind){
