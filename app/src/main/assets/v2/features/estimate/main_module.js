@@ -109,7 +109,7 @@ function ensureStyle(){
   if(document.getElementById('zukaitEstimateStyle'))return;
   const s=document.createElement('style');s.id='zukaitEstimateStyle';s.textContent=`
   .est-mechanical-editor{max-width:none!important;width:100%!important;box-sizing:border-box}
-  .est-mechanical-editor .est-cash-only{padding:10px 13px;border:1px solid #bfdbc8;border-radius:10px;background:#eef9ef;color:#174d38;font-size:14px}
+  .est-saved-item{margin:9px 0;padding:8px;border:1px solid #cbdde0;border-radius:11px;background:#f7fbfd}.est-saved-item>.est-result{width:100%;margin:0 0 8px}.est-saved-create-jc{display:block;width:100%;min-height:44px!important;background:#0a765f!important;color:white!important;border:0!important;border-radius:9px!important;font-weight:800!important}.est-saved-create-jc:disabled{background:#e3e8eb!important;color:#475569!important;cursor:default}.est-mechanical-editor .est-cash-only{padding:10px 13px;border:1px solid #bfdbc8;border-radius:10px;background:#eef9ef;color:#174d38;font-size:14px}
   .est-mechanical-editor .est-switch button[hidden]{display:none!important}
   .est-mechanical-editor .est-switch:has(#estTypeLS[hidden]){grid-template-columns:1fr}
   #modal .est-mechanical-editor .est-bottom .est-open-jc{background:#0b705f!important;color:#fff!important;border-color:#0b705f!important;grid-column:1/-1;font-size:14px!important}
@@ -547,14 +547,26 @@ function loadJob(){
   const live=window.zukaitJobCardMaster?.display?.(j.no,j)||j;put('estJobCard',live.no||j.no);put('estReg',live.reg||live.registration||j.reg||j.registration);put('estMakeModel',live.vehicle||[live.make||j.make||j.brand,live.model||j.model].filter(Boolean).join(' ').trim()||j.vehicle);put('estYear',live.year||j.year);put('estVin',live.vin||'');put('estClaim',j.claimNo||j.claim);put('estName',j.customerName||j.name);put('estMobile',j.mobile||j.phone);
 }
 async function openFind(){
-  await refreshEstimateRead();ensureStyle();openModal(nav('zukaitEstimate.openHome()')+'<div class="est-home"><h3>🔎 Find Estimate</h3><input id="estFindInput" style="width:100%;box-sizing:border-box" placeholder="Zi-Qt / Registration / Mobile / Name / Claim" oninput="zukaitEstimate.renderFind()"><div id="estFindResults" style="margin-top:10px"></div></div>');renderFind();
+  await refreshEstimateRead();ensureStyle();openModal(nav('zukaitEstimate.openHome()')+'<div class="est-home"><h3>'+(window.zukaitMechanicalEstimate?.active?.()===true?'Saved Estimates':'🔎 Find Estimate')+'</h3><input id="estFindInput" style="width:100%;box-sizing:border-box" placeholder="Zi-Qt / Registration / Mobile / Name / Claim" oninput="zukaitEstimate.renderFind()"><div id="estFindResults" style="margin-top:10px"></div></div>');renderFind();
 }
 function filtered(q){
   ensureState();q=String(q||'').trim().toLowerCase();const rows=state.estimates.slice().sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0));
   if(!q)return rows;
   return rows.filter(e=>[e.estimateNo,e.customerName,e.mobile,e.makeModel,e.registration,e.vin,e.claimNo,e.jobCard].join(' ').toLowerCase().includes(q));
 }
-function renderFind(){const q=document.getElementById('estFindInput')?.value||'',rows=filtered(q).slice(0,100),el=document.getElementById('estFindResults');if(el)el.innerHTML=rows.length?rows.map(estimateCard).join(''):'<p class="muted">No matching estimate.</p>'}
+function mechanicalSavedEstimateRow(e){
+  const linked=String(e.jobCard||'').trim();
+  return '<div class="est-saved-item">'+estimateCard(e)+
+   '<button class="est-saved-create-jc" type="button" '+(linked?'disabled':'')+
+   ' onclick="zukaitEstimate.createMechanicalJob(\''+esc(e.id)+'\')">'+(linked?'JC '+esc(linked)+' already linked':'Create Job Card from Saved Estimate')+'</button></div>';
+}
+function renderFind(){
+ const q=document.getElementById('estFindInput')?.value||'';
+ const mechanical=window.zukaitMechanicalEstimate?.active?.()===true;
+ const rows=filtered(q).filter(e=>!mechanical||e.status==='Saved').slice(0,100);
+ const el=document.getElementById('estFindResults');
+ if(el)el.innerHTML=rows.length?rows.map(e=>mechanical?mechanicalSavedEstimateRow(e):estimateCard(e)).join(''):'<p class="muted">No matching '+(mechanical?'saved ':'')+'estimate.</p>';
+}
 async function openRecent(){await refreshEstimateRead();const rows=savedEstimates().slice().sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)).slice(0,30);openModal(nav('zukaitEstimate.openHome()')+'<div class="est-home"><h3>🕘 Recent Estimates</h3><div id="estRecentResults">'+(rows.length?rows.map(estimateCard).join(''):'<div class="est-empty"><b>Your first estimate starts here</b><p>Create an estimate to keep customer details and repair costs together.</p></div>')+'</div></div>')}
 function openReports(){
   ensureState();const rows=savedEstimates(),t=rows.reduce((s,e)=>s+totals(e).total,0),ls=rows.filter(e=>e.type!=='PL').length,pl=rows.filter(e=>e.type==='PL').length;
