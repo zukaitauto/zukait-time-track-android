@@ -2,24 +2,24 @@
   "versionName": "V404",
   "versionCode": 367,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
-  "ownerPublicationRequested": false,
-  "ownerRequestedImmediateRelease": false,
+  "approvedForStaff": true,
+  "ownerPublicationRequested": true,
+  "ownerRequestedImmediateRelease": true,
   "ownerRequestedProceed": true,
-  "releaseHeldByOwner": true,
+  "releaseHeldByOwner": false,
   "productionBackendChanges": false,
   "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "backupDeferredByOwner": true,
-  "sourceCommit": null,
-  "approvedAt": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "authorization": "Owner explicitly requested: RELEASE for the QC Pending and Ready to Deliver count fix (18 November 2026). No workshop records, API, or database changes.",
-  "reason": "V404 owner-requested UI-only candidate; QC and Ready dashboard counts update from the role-scoped server overview after healthy cloud synchronization, preserve last confirmed counts with warnings during failed sync, and retry once on subsequent healthy pull. Existing role and Mechanical QC authority unchanged. V403 remains live rollback baseline. Publication held until exact-source signed Android and Reception verification passes.",
+  "sourceCommit": "d53c2e840d44fb5fee6cf7fb493629af0969557e",
+  "approvedAt": "2026-11-18T06:23:19.148Z",
+  "publishNonce": "d53c2e840d44fb5fee6cf7fb493629af0969557e",
+  "signedAcceptanceRun": 44250319578,
+  "verificationRun": 44250319338,
+  "authorization": "Owner explicitly requested RELEASE of the QC Pending / Ready to Deliver dashboard count fix for Manager and Supervisor on 18 November 2026.",
+  "reason": "V404 owner-approved UI-only Android/Web live-test release. All ten exact-source checks passed on d53c2e840d44fb5fee6cf7fb493629af0969557e including Reception, signed APK, native PDF, Android build, Mechanical QC, synchronization and connection safety. Existing QC authorization, records, workshop database and production backend are unchanged. Physical owner device testing and current backup restore remain NOT_RUN; V403 is retained as rollback baseline.",
   "previousPublishedRelease": {
     "versionName": "V403",
     "versionCode": 366,
@@ -32,8 +32,49 @@
     "freshBackupRestore": "NOT_RUN"
   },
   "verification": {
-    "sourceCommit": null,
-    "checks": {},
+    "sourceCommit": "d53c2e840d44fb5fee6cf7fb493629af0969557e",
+    "checks": {
+      "signedCandidate": {
+        "run": 44250319578,
+        "status": "PASS"
+      },
+      "reception": {
+        "run": 44250319338,
+        "status": "PASS"
+      },
+      "androidArchitecture": {
+        "run": 44250319331,
+        "status": "PASS"
+      },
+      "standardApk": {
+        "run": 44250319334,
+        "status": "PASS"
+      },
+      "mechanicalContracts": {
+        "run": 44250319260,
+        "status": "PASS"
+      },
+      "connection": {
+        "run": 44250319272,
+        "status": "PASS"
+      },
+      "syncTraffic": {
+        "run": 44250319292,
+        "status": "PASS"
+      },
+      "mechanicalPhone": {
+        "run": 44250319348,
+        "status": "PASS"
+      },
+      "accountant": {
+        "run": 44250319276,
+        "status": "PASS"
+      },
+      "nativePdf": {
+        "run": 44250319822,
+        "status": "PASS"
+      }
+    },
     "physicalAcceptance": "NOT_RUN",
     "freshBackupRestore": "NOT_RUN",
     "productionBackendChanges": false
