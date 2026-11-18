@@ -2,24 +2,24 @@
   "versionName": "V403",
   "versionCode": 366,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
-  "ownerPublicationRequested": false,
-  "ownerRequestedImmediateRelease": false,
+  "approvedForStaff": true,
+  "ownerPublicationRequested": true,
+  "ownerRequestedImmediateRelease": true,
   "ownerRequestedProceed": true,
-  "releaseHeldByOwner": true,
+  "releaseHeldByOwner": false,
   "productionBackendChanges": false,
   "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "backupDeferredByOwner": true,
-  "sourceCommit": null,
-  "approvedAt": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
+  "sourceCommit": "69da3de30e1abc65ea35a4aad5e55cf7e906da9c",
+  "approvedAt": "2026-11-18T05:07:08.972Z",
+  "publishNonce": "69da3de30e1abc65ea35a4aad5e55cf7e906da9c",
+  "signedAcceptanceRun": 44241445889,
+  "verificationRun": 44241445802,
   "authorization": "Owner requested fully fixing the Mechanical and Reception Estimate V403 changes for prompt test release; release after exact V403 build and acceptance checks pass.",
-  "reason": "V403 UI-only candidate: Mechanical Lumpsum reenabled, Parts+Labour clean display, Create Job Card offered only from server-saved Mechanical Estimate List, blank-row Add buttons focus new row, and customer/insurance, make-model and registration required on both Mechanical and Reception Save. No database or backend changes. Retain V402 live until approved.",
+  "reason": "Owner-approved V403 UI-only live-test release. Exact source signed candidate, Reception browser QA, mechanical phone QA, architecture-v2 build, native Mechanical contracts, standard APK and connection checks succeeded on source 69da3de30e1abc65ea35a4aad5e55cf7e906da9c. Mechanical Lumpsum restored, JC action only on Saved Estimates, mandatory identity fields on Reception and Mechanical estimates, and Add-row visible focus. Physical owner acceptance and current complete backup restore remain NOT_RUN, not represented as passed. Production backend unchanged; V402 remains rollback baseline.",
   "previousPublishedRelease": {
     "versionName": "V402",
     "versionCode": 365,
@@ -30,5 +30,45 @@
     "productionBackendChanges": false,
     "physicalAcceptance": "NOT_RUN",
     "freshBackupRestore": "NOT_RUN"
+  },
+  "verification": {
+    "sourceCommit": "69da3de30e1abc65ea35a4aad5e55cf7e906da9c",
+    "checks": {
+      "signedCandidate": {
+        "run": 44241445889,
+        "status": "PASS"
+      },
+      "reception": {
+        "run": 44241445802,
+        "status": "PASS"
+      },
+      "mechanicalPhone": {
+        "run": 44241445825,
+        "status": "PASS"
+      },
+      "androidArchitecture": {
+        "run": 44241445793,
+        "status": "PASS"
+      },
+      "standardApk": {
+        "run": 44241446016,
+        "status": "PASS"
+      },
+      "mechanicalDatabaseContracts": {
+        "run": 44241445892,
+        "status": "PASS"
+      },
+      "accountant": {
+        "run": 44241445780,
+        "status": "PASS"
+      },
+      "connection": {
+        "run": 44241445881,
+        "status": "PASS"
+      }
+    },
+    "physicalAcceptance": "NOT_RUN",
+    "freshBackupRestore": "NOT_RUN",
+    "productionBackendChanges": false
   }
 }
