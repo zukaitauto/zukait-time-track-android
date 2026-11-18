@@ -33,6 +33,10 @@ assert.equal(child.document.querySelector('#estTypeLS').hasAttribute('hidden'),f
 child.zukaitEstimate.setType('LS');
 assert.equal(child.document.querySelector('#estPlSection').hidden,true,'LS hides the separate Parts + Labour section');
 assert.equal(child.document.querySelector('#estLsSection').hidden,false);
+const lsCount=child.document.querySelectorAll('[data-est-ls-row]').length;
+child.document.querySelector('#estLsRows .est-desc').value='';
+child.document.querySelector('#estLsSection .est-add').click();
+assert.equal(child.document.querySelectorAll('[data-est-ls-row]').length,lsCount+1,'Add repair works without description');
 child.zukaitEstimate.setType('PL');
 assert.equal(child.document.querySelector('#estLsSection').hidden,true,'PL hides duplicate Repair Scope');
 assert.equal(child.document.querySelector('#estPayINSURANCE'),null,'Cash-only Mechanical Estimate has no insurance choice');
