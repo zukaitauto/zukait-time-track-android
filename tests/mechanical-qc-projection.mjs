@@ -13,7 +13,7 @@ Object.assign(w,{qcStatus,invoiceComplete,invoiceDateValid,state:{jobs:[],assign
 Object.defineProperty(w.document,'visibilityState',{value:'visible',writable:true});
 let reads=0,token='QA_ONE',pending=null,rejectRead=false,workspace=null,delivered=null;
 const rows=[{jobCard:'12079',vehicle:'<img src=x onerror=bad>',registration:'QA',mechanical:true,checklistId:'MC001',route:'MECHANICAL_ONLY',stage:'DELIVERY',deliveryReady:true,paintingRequired:false,finalRequired:false,mechanicalRequired:true,mechanicalPassed:true,qcVisible:false,readyAt:1},{jobCard:'12080',vehicle:'Pending Mechanical',registration:'QA2',mechanical:true,checklistId:'MC002',stage:'MECHANICAL_QC',deliveryReady:false,mechanicalRequired:true,canMechanical:true,qcVisible:true,readyAt:0},{jobCard:'12081',vehicle:'Painting vehicle',registration:'QA3',mechanical:false,stage:'FINAL_QC',canFinal:true,paintingRequired:true,painting:true,finalRequired:true,deliveryReady:false,qcVisible:true,readyAt:0}];
-const uiResponse=()=>({ok:true,actorId:w.me.id,actorRole:w.me.role,workshopRevision:w.zukaitCloud?.syncHealth.revision??8,recordsRevision:2,capturedAt:Date.now(),rows:structuredClone(rows),counts:{qc:rows.filter(r=>r.qcVisible).length,ready:rows.filter(r=>r.deliveryReady).length,review:0}});
+let serverRevision=8;const uiResponse=()=>({ok:true,actorId:w.me.id,actorRole:w.me.role,workshopRevision:serverRevision,recordsRevision:2,capturedAt:Date.now(),rows:structuredClone(rows),counts:{qc:rows.filter(r=>r.qcVisible).length,ready:rows.filter(r=>r.deliveryReady).length,review:0}});
 w.zukaitAuth={getToken:()=>token};w.zukaitCloud={syncHealth:{ready:true,dirty:false,revision:8},readMechanicalQcOverview:async()=>{reads++;if(rejectRead)throw Error('unavailable');if(pending)return pending;return uiResponse()},openMechanicalWorkspace:async id=>workspace=id,openMechanicalDelivery:async no=>{delivered=no;return true},syncNow:async()=>{w.zukaitCloud.syncHealth.revision=8}};
 w.setInterval=()=>{throw Error('QC overview must not poll')};
 const ui=fs.readFileSync('app/src/main/assets/qc_delivery.js','utf8').replace(/^import[^\n]+\n/,'').replace("import('./mechanical_qc_projection.js')","Promise.resolve({createMechanicalQcProjection:window.createMechanicalQcProjection})");
@@ -45,7 +45,7 @@ assert.equal(w.document.querySelector('#managerView [data-qc-queue] .qc-card-cou
 assert.equal(w.document.querySelector('#managerView [data-qc-ready] .qc-card-count').textContent,'1');
 for(let i=0;i<10;i++)w.v42AfterCloudPull();await tick();assert.equal(reads,coldBefore+2,'Identical healthy cloud pulls reuse confirmed counts');
 // Same actor, higher synchronized revision: refresh once; confirmed zero is displayed as 0.
-rows.length=0;w.zukaitCloud.syncHealth.revision=10;
+rows.length=0;serverRevision=10;w.zukaitCloud.syncHealth.revision=10;
 w.v42AfterCloudPull();await tick();
 assert.equal(reads,coldBefore+3,'Changed workshop revision refreshes once');
 assert.equal(w.document.querySelector('#managerView [data-qc-queue] .qc-card-count').textContent,'0');
