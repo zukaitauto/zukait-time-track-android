@@ -16,6 +16,13 @@ for(const [id,role,qcCount] of [['SUP001','Supervisor',1],['SUP002','Supervisor'
 // Existing painting/final order remains intact for non-Mechanical jobs.
 let paint=qcTransition(c.snapshot.data,{id:'SUP002',role:'Supervisor'},{operation:'PAINTING_QC',jobCard:'PAINT_JOB',expectedQcRevision:0,result:'PASS'},at);assert.equal(paint.ok,true);c.snapshot.data=paint.data;c.actor.id='SUP001';r=await overview(c);assert.equal(row(r,'PAINT_JOB').canFinal,true);assert.equal(row(r,'PAINT_JOB').canPaint,false);
 let final=qcTransition(c.snapshot.data,{id:'SUP001',role:'Supervisor'},{operation:'FINAL_QC',jobCard:'PAINT_JOB',expectedQcRevision:1,result:'PASS'},at);c.snapshot.data=final.data;assert.equal((await overview(c)).counts.ready,2);
+const legacyJob=c.snapshot.data.jobs.find(j=>j.no==='PAINT_JOB');
+legacyJob.delivered=true;legacyJob.deliveredAt=Date.parse('2026-01-15T12:00:00Z');
+r=await overview(c);assert.equal(r.counts.ready,1,'Delivered older job leaves Ready regardless of selected reporting month');
+assert.equal(r.rows.some(x=>x.jobCard==='PAINT_JOB'),false,'Delivered job must not appear in pending QC/Ready lists');
+legacyJob.delivered=false;legacyJob.deliveredAt=null;
+r=await overview(c);assert.equal(r.counts.ready,2,'Reopened delivered job returns to Ready after valid QC');
+
 // Mixed policy is unconfirmed: no implied third-approval decision or ready count.
 c=fixture();c.snapshot.data.assign.push({id:'A3',job:'MC_JOB',emp:'P1',completed:true});r=await overview(c);assert.equal(row(r).reviewRequired,true);assert.equal(row(r).route,'MIXED');assert.equal(row(r).deliveryReady,false);assert.equal(r.counts.review,1);
 for(const required of [true,false]){const d=copy(c);d.policy.qc={...qc,mixedMechanicalRequired:required};const result=row(await overview(d));assert.equal(result.deliveryReady,false);assert.equal(result.reviewRequired,true);assert.equal(result.code,'mechanical_mixed_job_not_allowed');}
