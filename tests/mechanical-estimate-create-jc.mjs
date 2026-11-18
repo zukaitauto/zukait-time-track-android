@@ -35,8 +35,8 @@ assert.equal(child.document.querySelector('#estPlSection').hidden,true,'LS hides
 assert.equal(child.document.querySelector('#estLsSection').hidden,false);
 const lsCount=child.document.querySelectorAll('[data-est-ls-row]').length;
 child.document.querySelector('#estLsRows .est-desc').value='';
-child.document.querySelector('#estLsSection .est-add').click();
-assert.equal(child.document.querySelectorAll('[data-est-ls-row]').length,lsCount+1,'Add repair works without description');
+child.zukaitEstimate.addRow('LS');
+assert.equal(child.document.querySelectorAll('[data-est-ls-row]').length,lsCount+1,'Add repair works without description (JSDOM calls handler directly)');
 child.zukaitEstimate.setType('PL');
 assert.equal(child.document.querySelector('#estLsSection').hidden,true,'PL hides duplicate Repair Scope');
 assert.equal(child.document.querySelector('#estPayINSURANCE'),null,'Cash-only Mechanical Estimate has no insurance choice');
@@ -45,10 +45,10 @@ assert.equal(child.document.querySelector('.est-open-jc'),null,'Create Job Card 
 for(const id of ['estName','estMakeModel','estReg'])assert.ok(child.document.getElementById(id).required,id+' must be required');
 assert.equal(child.document.querySelectorAll('.est-required-star').length,3);
 const n0=child.document.querySelectorAll('[data-est-lab-row]').length;
-child.document.querySelector('#estPlSection .est-add').click();
+child.zukaitEstimate.addRow('LAB');
 assert.equal(child.document.querySelectorAll('[data-est-lab-row]').length,n0+1,'Add Labour works even with empty description');
 const p0=child.document.querySelectorAll('[data-est-part-row]').length;
-child.document.querySelector('#estPartRows .est-row-add').click();
+child.zukaitEstimate.addRow('PART');
 assert.equal(child.document.querySelectorAll('[data-est-part-row]').length,p0+1,'Add Part works even with empty description');
 child.document.querySelector('#estName').value='';
 await child.zukaitEstimate.saveCurrent('estimate-1');
