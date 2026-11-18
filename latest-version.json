@@ -1,9 +1,9 @@
 {
-  "versionCode": 366,
-  "versionName": "V403",
+  "versionCode": 367,
+  "versionName": "V404",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "69da3de30e1abc65ea35a4aad5e55cf7e906da9c",
-  "apkSha256": "a7a032ec8b02f6538be1ae6af16ae9ee904a4b5cf50dfe93aa4f462b6d8d0c16",
-  "releaseTag": "release-V403-architecture-v2"
+  "sourceCommit": "d53c2e840d44fb5fee6cf7fb493629af0969557e",
+  "apkSha256": "2c177b95942479598c2eb292e7876f08da40fb21b87714e436d786914b80fa63",
+  "releaseTag": "release-V404-architecture-v2"
 }
