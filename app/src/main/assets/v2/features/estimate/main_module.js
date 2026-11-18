@@ -383,31 +383,29 @@ function openEditor(id){
 }
 // Mechanical-only: reuse the existing reviewed CREATE_JOB form, never write a JC from an estimate click.
 async function createMechanicalJob(id){
- if(window.zukaitMechanicalEstimate?.active?.()!==true||!navigator.onLine)return alert('Open Mechanical Estimate online to create a Job Card.');
- const e=findEstimate(id);if(!e||window.__zukaitEstimateCurrent!==id)return alert('Reopen this estimate to continue.');
- if(e.jobCard)return alert('This estimate already references JC '+e.jobCard+'. Open that Job Card instead of creating a duplicate.');
+ if(window.zukaitMechanicalEstimate?.active?.()!==true||!navigator.onLine)return alert('Open Mechanical Saved Estimates online to create a Job Card.');
+ const e=findEstimate(id);
+ if(!e||e.status!=='Saved')return alert('Save this estimate first, then choose Create Job Card from Saved Estimates.');
+ if(e.jobCard)return alert('This estimate already references JC '+e.jobCard+'. Open that Job Card instead.');
  if(estimateSaveBusy)return alert('Finish saving the estimate before creating a Job Card.');
- const draft=draftFromDom(e),descriptions=(draft.type==='PL'?draft.labourRows:draft.lsRows).map(row=>String(row.description||'').trim()).filter(Boolean);
- if(!draft.customerName||!draft.registration||!draft.makeModel||!draft.year||!draft.mobile)return alert('Enter customer, phone, registration, make/model and year before opening the Job Card.');
- if(!descriptions.length)return alert('Add at least one labour work description to transfer to the Job Card.');
- const work=descriptions.join('\n');if(work.length>2000)return alert('Labour descriptions exceed the 2,000-character Job Card limit. Shorten them before continuing.');
- const status=document.getElementById('estSaveStatus');if(status)status.textContent='Saving the estimate before opening Job Card…';
- try{
-  const confirmed=await window.zukaitMechanicalEstimate.save({...e,...draft,jobType:'CASH'},Number(e.revision||0));
-  if(!confirmed||confirmed.id!==id||window.__zukaitEstimateCurrent!==id)throw Error('Estimate confirmation changed. Reopen the estimate.');
-  Object.assign(e,confirmed);rememberEstimate(e);
-  const value=String(draft.makeModel||'').trim(),known=['LAND ROVER','MERCEDES BENZ','MERCEDES-BENZ','ALFA ROMEO','ROLLS ROYCE','ASTON MARTIN','GREAT WALL'];
-  const full=known.find(m=>value.toUpperCase().startsWith(m+' '));
-  const pos=full?full.length:value.indexOf(' ');
-  const make=pos>0?value.slice(0,pos).trim():value,model=pos>0?value.slice(pos).trim():'';
-  if(window.parent===window)throw Error('Open the Estimate from the Mechanical dashboard to create a Job Card.');
-  window.parent.postMessage({mechanicalEstimateCreateJob:{
-   estimateNo:String(e.estimateNo||''),make,model,year:String(draft.year),registration:String(draft.registration),
-   vin:String(draft.vin||''),customer:String(draft.customerName),contact:String(draft.mobile),
-   remarks:'Mechanical Estimate '+String(e.estimateNo||''),reason:work,job_type:'CASH'
-  }},location.origin);
-  if(status)status.textContent='Opening the Mechanical Job Card for review…';
- }catch(error){if(status)status.textContent=error.message||'Could not confirm the estimate.';else alert(error.message);}
+ if(!String(e.customerName||'').trim()||!String(e.registration||'').trim()||!String(e.makeModel||'').trim())return alert('Edit and save the required Customer, Make & Model, and Registration details first.');
+ if(!String(e.year||'').trim()||!String(e.mobile||'').trim())return alert('Edit and save the vehicle year and customer phone before creating the Job Card.');
+ const rows=e.type==='PL'?(e.labourRows||[]):(e.lsRows||[]);
+ const descriptions=rows.map(row=>String(row.description||'').trim()).filter(Boolean);
+ if(!descriptions.length)return alert('Add and save a '+(e.type==='PL'?'labour':'lumpsum')+' work description before creating the Job Card.');
+ const work=descriptions.join('\n');if(work.length>2000)return alert('Work descriptions exceed the Job Card 2,000-character limit. Edit the saved estimate first.');
+ const prior=(state.jobs||[]).some(j=>String(j?.details?.remarks||j?.remarks||'').includes('Mechanical Estimate '+String(e.estimateNo||'')));
+ if(prior)return alert('An existing Job Card already refers to this estimate. Open that Job Card instead.');
+ const value=String(e.makeModel||'').trim(),known=['LAND ROVER','MERCEDES BENZ','MERCEDES-BENZ','ALFA ROMEO','ROLLS ROYCE','ASTON MARTIN','GREAT WALL'];
+ const full=known.find(m=>value.toUpperCase().startsWith(m+' '));
+ const pos=full?full.length:value.indexOf(' ');
+ const make=pos>0?value.slice(0,pos).trim():value,model=pos>0?value.slice(pos).trim():'';
+ if(window.parent===window)return alert('Open the Saved Estimates list from the Mechanical dashboard to create a Job Card.');
+ window.parent.postMessage({mechanicalEstimateCreateJob:{
+  estimateNo:String(e.estimateNo||''),make,model,year:String(e.year),registration:String(e.registration),
+  vin:String(e.vin||''),customer:String(e.customerName),contact:String(e.mobile),
+  remarks:'Mechanical Estimate '+String(e.estimateNo||''),reason:work,job_type:'CASH'
+ }},location.origin);
 }
 function setType(t,doRecalc=true){
   const e=findEstimate(window.__zukaitEstimateCurrent);t=t==='PL'?'PL':'LS';if(e)e.type=t;
