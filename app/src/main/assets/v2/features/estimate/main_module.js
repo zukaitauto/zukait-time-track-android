@@ -503,9 +503,9 @@ function validateEstimateDraft(d){
  const required=[['estName',d.jobType==='INSURANCE'?'Insurance company':'Customer name',d.customerName],['estMakeModel','Make & Model',d.makeModel],['estReg','Registration No.',d.registration]];
  for(const [id,label,value] of required){
   const input=document.getElementById(id);
-  input?.removeAttribute('aria-invalid');
+  input?.removeAttribute?.('aria-invalid');
   if(!String(value||'').trim()){
-   if(input){input.setAttribute('aria-invalid','true');input.focus();}
+   if(input){input.setAttribute?.('aria-invalid','true');input.focus?.();}
    return label+' is required (*).';
   }
  }
