@@ -57,6 +57,8 @@ if($ids.Count -ne [int]$m.history_count -or [int]$m.chunk_rows -ne 50){
   throw 'Unexpected source revision inventory or 50-revision backup structure.'
 }
 $chunks=[int][Math]::Ceiling($ids.Count/50.0)
+$drive=Get-PSDrive -Name Z -ErrorAction Stop
+if($null -ne $drive.Free -and $drive.Free -lt 2GB){throw 'Encrypted Z: drive has less than 2 GB free; export refused.'}
 $firstMissing=-1
 for($i=0;$i -lt $chunks;$i++){
   $base='history-'+$i.ToString('D5')
@@ -102,7 +104,9 @@ function ReadPg([string]$sql){
 }
 function ExportIndexedRows([long[]]$revisions,[string]$target){
   $where=($revisions|ForEach-Object {"$_"}) -join ','
-  $sql="COPY (SELECT revision,data,updated_at,updated_by,archived_at FROM public.workshop_state_history WHERE revision IN ($where) ORDER BY revision) TO STDOUT WITH (FORMAT csv)"
+  $count=$revisions.Count
+  $sql="COPY (SELECT h.revision,h.data,h.updated_at,h.updated_by,h.archived_at FROM public.workshop_state_history h WHERE h.revision IN ($where) AND (SELECT count(*) FROM public.workshop_state_history WHERE revision IN ($where)) = $count ORDER BY h.revision) TO STDOUT WITH (FORMAT csv)"
+  $bytesBefore=(Get-Item -LiteralPath $target).Length
   $psi=New-Object Diagnostics.ProcessStartInfo
   $psi.FileName=$pg
   $psi.Arguments='-X -q -w -v ON_ERROR_STOP=1 -h "'+$hostName+'" -p 5432 -U "'+$dbUser+'" -d postgres -c "'+$sql+'"'
@@ -120,12 +124,15 @@ function ExportIndexedRows([long[]]$revisions,[string]$target){
     if($proc.ExitCode -ne 0){
       throw ('Indexed COPY failed; stop without retrying: '+$err.Substring(0,[Math]::Min(350,$err.Length)))
     }
+    if((Get-Item -LiteralPath $target).Length -le $bytesBefore){
+      throw ('Missing history rows from indexed read: '+$where)
+    }
   }finally{$proc.Dispose()}
 }
 function GzipFile([string]$source,[string]$dest){
   $inputFile=[IO.File]::OpenRead($source)
   try{
-    $outputFile=[IO.File]::CreateNew($dest)
+    $outputFile=[IO.File]::Open($dest,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
     try{
       $gz=[IO.Compression.GZipStream]::new($outputFile,[IO.Compression.CompressionMode]::Compress)
       try{$inputFile.CopyTo($gz)}finally{$gz.Dispose()}
@@ -179,8 +186,9 @@ try{
     $sidecar=$record+'.writing'
     [IO.File]::WriteAllText($sidecar,($info|ConvertTo-Json -Depth 6),[Text.Encoding]::UTF8)
     Move-Item -LiteralPath $sidecar -Destination $record -ErrorAction Stop
+    # Delete only this run's unique temporary CSV, never older archives or partials.
+    Remove-Item -LiteralPath $partialCsv -ErrorAction Stop
     Write-Host ('PACED CHUNK '+($i+1)+'/'+$chunks+' HASH VERIFIED. Existing backup preserved.')
-    # Intentionally retain .paced CSV partials for diagnosis; never delete other files.
     if($i+1 -lt $max){Start-Sleep -Seconds $ChunkPauseSeconds}
   }
   Write-Host 'LIMITED PACED EXPORT FINISHED. STOP HERE AND VERIFY APP CONNECTIVITY.'
