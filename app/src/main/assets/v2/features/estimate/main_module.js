@@ -308,14 +308,49 @@ function field(id,label,value,type='text',extra=''){
 function textAreaField(id,label,value,placeholder=''){
   return '<label style="display:block;font-weight:700;font-size:12px;color:#334155">'+estimateLabel(label)+'<textarea id="'+id+'" rows="2" placeholder="'+esc(placeholder)+'" style="width:100%;box-sizing:border-box;margin-top:4px;resize:vertical">'+esc(value||'')+'</textarea></label>';
 }
+
+function formatEstimateDescription(value){
+  const acronyms=new Set(['ABS','ECU','BSM','VIN','OEM','OBD','EGR','DPF','TPMS','CVT','EPS','ATF','EV','HV','AC','HVAC','SRS','ADAS','AWD']);
+  return String(value??'').trim().replace(/\s+/g,' ').split(' ').map(word=>
+    word.split(/([/-])/).map(part=>{
+      if(!/^[A-Za-z]+$/.test(part))return part;
+      const upper=part.toUpperCase();
+      return acronyms.has(upper)?upper:upper.slice(0,1)+upper.slice(1).toLowerCase();
+    }).join('')
+  ).join(' ');
+}
+function estimateDescriptionOptions(kind){
+  ensureState();
+  const counts=new Map();
+  function add(row){
+    const formatted=formatEstimateDescription(row?.description);
+    if(!formatted)return;
+    const key=formatted.toLowerCase();
+    const entry=counts.get(key);
+    if(entry)entry.count++;
+    else counts.set(key,{value:formatted,count:1});
+  }
+  for(const estimate of state.estimates||[]){
+    if(!estimate||estimate.status!=='Saved')continue;
+    const rows=kind==='PART'?(estimate.partRows||[]):[...(estimate.labourRows||[]),...(estimate.lsRows||[])];
+    for(const row of rows)add(row);
+  }
+  return [...counts.values()].sort((a,b)=>b.count-a.count||a.value.localeCompare(b.value))
+    .slice(0,500).map(row=>'<option value="'+esc(row.value)+'"></option>').join('');
+}
+function normalizeEstimateDescriptionInput(input){
+  if(input)input.value=formatEstimateDescription(input.value);
+  autoSave();
+}
+
 function lsRowsHtml(rows){
-  return (rows||[]).map(r=>'<div class="est-row" data-est-ls-row="'+esc(r.id)+'"><input onchange="zukaitEstimate.autoSave()" aria-label="Item description" class="est-desc" placeholder="Description" value="'+esc(r.description||'')+'"><input onchange="zukaitEstimate.autoSave()" aria-label="Amount OMR" class="est-amount" inputmode="decimal" placeholder="0.000" value="'+money(r.amount)+'" oninput="zukaitEstimate.recalc()"><button type="button" aria-label="Remove item" class="est-remove" onclick="zukaitEstimate.removeRow(this)">✕</button></div>').join('');
+  return (rows||[]).map(r=>'<div class="est-row" data-est-ls-row="'+esc(r.id)+'"><input onchange="zukaitEstimate.normalizeDescription(this)" aria-label="Item description" class="est-desc" list="estLabDescOptions" autocapitalize="words" placeholder="Description" value="'+esc(formatEstimateDescription(r.description||''))+'"><input onchange="zukaitEstimate.autoSave()" aria-label="Amount OMR" class="est-amount" inputmode="decimal" placeholder="0.000" value="'+money(r.amount)+'" oninput="zukaitEstimate.recalc()"><button type="button" aria-label="Remove item" class="est-remove" onclick="zukaitEstimate.removeRow(this)">✕</button></div>').join('');
 }
 function labourRowsHtml(rows){
-  return (rows||[]).map(r=>'<div class="est-row" data-est-lab-row="'+esc(r.id)+'"><input onchange="zukaitEstimate.autoSave()" aria-label="Item description" class="est-desc" placeholder="Labour description" value="'+esc(r.description||'')+'"><input onchange="zukaitEstimate.autoSave()" aria-label="Amount OMR" class="est-amount" inputmode="decimal" placeholder="0.000" value="'+money(r.amount)+'" oninput="zukaitEstimate.recalc()"><div class="est-row-actions"><button type="button" class="est-row-add" onclick="zukaitEstimate.addRow(\'LAB\',this)">+ Add</button><button type="button" aria-label="Remove item" class="est-remove" onclick="zukaitEstimate.removeRow(this)">✕</button></div></div>').join('');
+  return (rows||[]).map(r=>'<div class="est-row" data-est-lab-row="'+esc(r.id)+'"><input onchange="zukaitEstimate.normalizeDescription(this)" aria-label="Item description" class="est-desc" list="estLabDescOptions" autocapitalize="words" placeholder="Labour description" value="'+esc(formatEstimateDescription(r.description||''))+'"><input onchange="zukaitEstimate.autoSave()" aria-label="Amount OMR" class="est-amount" inputmode="decimal" placeholder="0.000" value="'+money(r.amount)+'" oninput="zukaitEstimate.recalc()"><div class="est-row-actions"><button type="button" class="est-row-add" onclick="zukaitEstimate.addRow(\'LAB\',this)">+ Add</button><button type="button" aria-label="Remove item" class="est-remove" onclick="zukaitEstimate.removeRow(this)">✕</button></div></div>').join('');
 }
 function partRowsHtml(rows){
-  return (rows||[]).map(r=>'<div class="est-row est-part-row" data-est-part-row="'+esc(r.id)+'"><input onchange="zukaitEstimate.autoSave()" aria-label="Item description" class="est-desc" placeholder="Part description" value="'+esc(r.description||'')+'"><input onchange="zukaitEstimate.autoSave()" aria-label="Quantity" class="est-qty" type="number" min="0.001" step="0.001" value="'+num(r.qty)+'" oninput="zukaitEstimate.recalc()"><input onchange="zukaitEstimate.autoSave()" aria-label="Unit price OMR" class="est-unit" inputmode="decimal" placeholder="0.000" value="'+money(r.unitPrice)+'" oninput="zukaitEstimate.recalc()"><div class="est-row-actions"><button type="button" class="est-row-add" onclick="zukaitEstimate.addRow(\'PART\',this)">+ Add</button><button type="button" aria-label="Remove item" class="est-remove" onclick="zukaitEstimate.removeRow(this)">✕</button></div></div>').join('');
+  return (rows||[]).map(r=>'<div class="est-row est-part-row" data-est-part-row="'+esc(r.id)+'"><input onchange="zukaitEstimate.normalizeDescription(this)" aria-label="Item description" class="est-desc" list="estPartDescOptions" autocapitalize="words" placeholder="Part description" value="'+esc(formatEstimateDescription(r.description||''))+'"><input onchange="zukaitEstimate.autoSave()" aria-label="Quantity" class="est-qty" type="number" min="0.001" step="0.001" value="'+num(r.qty)+'" oninput="zukaitEstimate.recalc()"><input onchange="zukaitEstimate.autoSave()" aria-label="Unit price OMR" class="est-unit" inputmode="decimal" placeholder="0.000" value="'+money(r.unitPrice)+'" oninput="zukaitEstimate.recalc()"><div class="est-row-actions"><button type="button" class="est-row-add" onclick="zukaitEstimate.addRow(\'PART\',this)">+ Add</button><button type="button" aria-label="Remove item" class="est-remove" onclick="zukaitEstimate.removeRow(this)">✕</button></div></div>').join('');
 }
 function customerPartsVisible(e){return e.showCustomerSuppliedParts===undefined?!!String(e.customerSuppliedParts||'').trim():e.showCustomerSuppliedParts===true}
 function toggleCustomerParts(){
@@ -346,7 +381,7 @@ function openEditor(id){
   const e=findEstimate(id);if(!e)return alert('Estimate not found.');ensureStyle();
   if(window.zukaitMechanicalEstimate?.active?.()===true&&e.receptionNo){openModal(nav('zukaitEstimate.openFind()')+'<p>This estimate is linked to a Reception approval. Ask the Manager to amend it through the original Reception record.</p>'+printable(e));return;}
   const mechanical=window.zukaitMechanicalEstimate?.active?.()===true;
-  const html=nav('zukaitEstimate.openHome()')+
+  const html=nav('zukaitEstimate.openHome()')+'<datalist id="estLabDescOptions">'+estimateDescriptionOptions('LAB')+'</datalist><datalist id="estPartDescOptions">'+estimateDescriptionOptions('PART')+'</datalist>'+
   '<div class="est-home est-editor'+(mechanical?' est-mechanical-editor':'')+'"><div class="est-hero"><span class="est-eyebrow">REPAIR ESTIMATE</span><h3>'+esc(e.estimateNo)+'</h3><p>Prepare the repair scope and costs for your customer.</p></div>'+
   '<div class="est-switches"><div><b class="small">Estimate Type</b><div class="est-switch"><button id="estTypeLS" onclick="zukaitEstimate.setType(\'LS\')">Lumpsum</button><button id="estTypePL" onclick="zukaitEstimate.setType(\'PL\')">Parts + labour</button></div></div>'+
   '<div><b class="small">Tax</b><div class="est-switch"><button id="estVatYes" onclick="zukaitEstimate.setVat(true)">VAT 5%</button><button id="estVatNo" onclick="zukaitEstimate.setVat(false)">NO VAT</button></div></div></div>'+
@@ -440,8 +475,8 @@ function addRow(kind,button){
 function removeRow(btn){const row=btn?.closest?.('[data-est-ls-row],[data-est-lab-row],[data-est-part-row]');if(row)row.remove();recalc()}
 function rowsFromDom(sel,kind){
   return [...document.querySelectorAll(sel)].map(r=>{
-    if(kind==='part')return {id:r.getAttribute('data-est-part-row')||uid(),description:r.querySelector('.est-desc')?.value?.trim()||'',qty:num(r.querySelector('.est-qty')?.value)||1,unitPrice:num(r.querySelector('.est-unit')?.value)};
-    return {id:r.getAttribute(kind==='ls'?'data-est-ls-row':'data-est-lab-row')||uid(),description:r.querySelector('.est-desc')?.value?.trim()||'',amount:num(r.querySelector('.est-amount')?.value)};
+    if(kind==='part')return {id:r.getAttribute('data-est-part-row')||uid(),description:formatEstimateDescription(r.querySelector('.est-desc')?.value),qty:num(r.querySelector('.est-qty')?.value)||1,unitPrice:num(r.querySelector('.est-unit')?.value)};
+    return {id:r.getAttribute(kind==='ls'?'data-est-ls-row':'data-est-lab-row')||uid(),description:formatEstimateDescription(r.querySelector('.est-desc')?.value),amount:num(r.querySelector('.est-amount')?.value)};
   });
 }
 function draftFromDom(e){
@@ -611,13 +646,13 @@ function printable(e){
     const labour=(e.labourRows||[]).filter(x=>x.description||num(x.amount));
     const parts=(e.partRows||[]).filter(x=>x.description||num(x.unitPrice));
     body='<div class="doc-section-title">'+estimateLabel('LABOUR')+'</div><table class="work-table"><colgroup><col style="width:7%"><col style="width:65%"><col style="width:28%"></colgroup><thead><tr><th>'+estimateLabel('No.')+'</th><th>'+estimateLabel('Description')+'</th>'+amountHead+'</tr></thead><tbody>'+
-      (labour.map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(x.description)+'</td><td class="money-cell">'+money(x.amount)+'</td></tr>').join('')||'<tr><td colspan="3">&nbsp;</td></tr>')+'</tbody></table>';
+      (labour.map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(formatEstimateDescription(x.description))+'</td><td class="money-cell">'+money(x.amount)+'</td></tr>').join('')||'<tr><td colspan="3">&nbsp;</td></tr>')+'</tbody></table>';
     if(parts.length)body+='<div class="doc-section-title">'+estimateLabel('SPARE PARTS')+'</div><table class="work-table"><colgroup><col style="width:7%"><col style="width:43%"><col style="width:10%"><col style="width:20%"><col style="width:20%"></colgroup><thead><tr><th>'+estimateLabel('No.')+'</th><th>'+estimateLabel('Part Description')+'</th><th>'+estimateLabel('Qty')+'</th><th class="money-cell">'+estimateLabel('Unit Price OMR')+'</th>'+amountHead+'</tr></thead><tbody>'+
-      parts.map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(x.description)+'</td><td>'+num(x.qty)+'</td><td class="money-cell">'+money(x.unitPrice)+'</td><td class="money-cell">'+money(num(x.qty)*num(x.unitPrice))+'</td></tr>').join('')+'</tbody></table>';
+      parts.map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(formatEstimateDescription(x.description))+'</td><td>'+num(x.qty)+'</td><td class="money-cell">'+money(x.unitPrice)+'</td><td class="money-cell">'+money(num(x.qty)*num(x.unitPrice))+'</td></tr>').join('')+'</tbody></table>';
   }else{
     const rows=(e.lsRows||[]).filter(x=>x.description||num(x.amount));
     body='<div class="doc-section-title">'+estimateLabel('LABOUR / LUMPSUM')+'</div><table class="work-table">'+columns+'<thead><tr><th>'+estimateLabel('Description')+'</th>'+amountHead+'</tr></thead><tbody>'+
-      (rows.map(x=>'<tr><td>'+esc(x.description)+'</td><td class="money-cell">'+money(x.amount)+'</td></tr>').join('')||'<tr><td>&nbsp;</td><td>&nbsp;</td></tr>')+'</tbody></table>';
+      (rows.map(x=>'<tr><td>'+esc(formatEstimateDescription(x.description))+'</td><td class="money-cell">'+money(x.amount)+'</td></tr>').join('')||'<tr><td>&nbsp;</td><td>&nbsp;</td></tr>')+'</tbody></table>';
     if(t.parts>0)body+='<div class="doc-section-title">'+estimateLabel('SPARE PARTS')+'</div><table class="work-table">'+columns+'<thead><tr><th>'+estimateLabel('Description')+'</th>'+amountHead+'</tr></thead><tbody><tr><td>'+estimateLabel('Spare Parts / Lumpsum')+'</td><td class="money-cell">'+money(t.parts)+'</td></tr></tbody></table>';
   }
   const charges=e.type==='PL'?[['Total Labour',t.labour],['Total Parts',t.parts],['Misc',t.misc],['Subtotal',t.subtotal]]:[['Total Labour / Lumpsum',t.labour],['Spare Parts',t.parts],['Misc',t.misc]];
@@ -716,7 +751,7 @@ function wrapRender(name){
 }
 try{if(typeof state!=='undefined')for(const e of state.estimates||[])rememberEstimate(e)}catch(error){console.warn('Existing device estimates could not be retained',error)}
 function boot(){ensureState();ensureStyle();wrapRender('renderSupervisor');wrapRender('renderManager');ensureDashboardCards()}
-window.zukaitEstimate={openHome,openDrafts,deleteDraft,refreshLists,newEstimate,newFromReception,openReceptionEstimates,openEditor,createMechanicalJob,setPaymentType,setType,setVat,addRow,removeRow,recalc,autoSave,saveCurrent,loadJob,openFind,renderFind,openRecent,openReports,preview,printEstimate,pdfEstimate,whatsApp,shareEstimate,ensureDashboardCards,totals,printable,estimatePdfFilename,estimateDocumentHtml,shareText,currentOutputEstimate,toggleCustomerParts};
+window.zukaitEstimate={normalizeDescription:normalizeEstimateDescriptionInput,openHome,openDrafts,deleteDraft,refreshLists,newEstimate,newFromReception,openReceptionEstimates,openEditor,createMechanicalJob,setPaymentType,setType,setVat,addRow,removeRow,recalc,autoSave,saveCurrent,loadJob,openFind,renderFind,openRecent,openReports,preview,printEstimate,pdfEstimate,whatsApp,shareEstimate,ensureDashboardCards,totals,printable,estimatePdfFilename,estimateDocumentHtml,shareText,currentOutputEstimate,toggleCustomerParts};
 window.openEstimateModule=openHome;
 document.addEventListener('DOMContentLoaded',boot);setTimeout(boot,0);setTimeout(boot,700);
 new MutationObserver(()=>{wrapRender('renderSupervisor');wrapRender('renderManager');ensureDashboardCards()}).observe(document.documentElement,{childList:true,subtree:true});
