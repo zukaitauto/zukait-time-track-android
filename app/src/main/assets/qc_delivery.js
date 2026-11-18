@@ -339,7 +339,7 @@ function apply(){if(!allowed())return;initialProjection();const root=document.ge
  if(!delivered){delivered=document.createElement('button');delivered.className='v143-resource qc-launch';delivered.textContent='Delivered Vehicles';(root.querySelector('.v143-two')||root).appendChild(delivered)}
  if(!delivered.dataset.qcDelivered)delivered.dataset.qcDelivered='1';delivered.disabled=false;delivered.removeAttribute('aria-disabled');delivered.onclick=window.zukaitOpenDeliveredVehicles;const dn=deliveredInMonth(currentDeliveryMonth()).length,dtext=String(dn);if(delivered.dataset.qcCount!==dtext){delivered.innerHTML='<span class="qc-card-icon" aria-hidden="true">🚗✓</span><span class="qc-card-copy"><b>Delivered Vehicles</b><small>This month</small></span><span class="qc-card-count">'+esc(dn)+'</span><span class="qc-card-arrow" aria-hidden="true">›</span>';delivered.dataset.qcCount=dtext;}
  let queue=root.querySelector('[data-qc-queue]');if(!queue){queue=document.createElement('button');queue.dataset.qcQueue='1';queue.className=me.role==='Manager'?'v67-control sky qc-launch':'v143-resource qc-launch';queue.onclick=window.zukaitOpenQCQueue;(managerPerfGrid||root.querySelector('.v67-control-grid,.v143-two')||root).appendChild(queue)}
- const pilot=projectionPilot(),confirmed=pilot&&projectionSyncReady()?projectionCurrent():null;
+ const pilot=projectionPilot(),confirmed=pilot&&projectionSyncReady()&&!projectionError?projectionCurrent():null;
  const previousConfirmed=pilot?projectionLastConfirmed():null;
  const currentOrLast=confirmed||previousConfirmed;
  const loading=pilot&&projectionLoadingOwner===JSON.stringify(projectionSession());
