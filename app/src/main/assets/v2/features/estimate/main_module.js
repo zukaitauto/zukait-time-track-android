@@ -514,7 +514,6 @@ function validateEstimateDraft(d){
   const amount=Object.prototype.hasOwnProperty.call(row,'qty')?num(row.qty)*num(row.unitPrice):num(row.amount);
   if(amount>0&&!String(row.description||'').trim())return 'Enter a description for each priced repair, labour or part row.';
  }
- if(!rows.some(row=>String(row.description||'').trim()))return 'Add a repair, labour or part description before saving.';
  return '';
 }
 async function saveCurrent(id,quiet=false){
