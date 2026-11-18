@@ -109,7 +109,7 @@ function ensureStyle(){
   if(document.getElementById('zukaitEstimateStyle'))return;
   const s=document.createElement('style');s.id='zukaitEstimateStyle';s.textContent=`
   .est-mechanical-editor{max-width:none!important;width:100%!important;box-sizing:border-box}
-  .est-saved-item{margin:9px 0;padding:8px;border:1px solid #cbdde0;border-radius:11px;background:#f7fbfd}.est-saved-item>.est-result{width:100%;margin:0 0 8px}.est-saved-create-jc{display:block;width:100%;min-height:44px!important;background:#0a765f!important;color:white!important;border:0!important;border-radius:9px!important;font-weight:800!important}.est-saved-create-jc:disabled{background:#e3e8eb!important;color:#475569!important;cursor:default}.est-mechanical-editor .est-cash-only{padding:10px 13px;border:1px solid #bfdbc8;border-radius:10px;background:#eef9ef;color:#174d38;font-size:14px}
+  .est-saved-item{margin:9px 0;padding:8px;border:1px solid #cbdde0;border-radius:11px;background:#f7fbfd}.est-saved-item>.est-result{width:100%;margin:0 0 8px}.est-saved-create-jc{display:block;width:100%;min-height:44px!important;background:#0a765f!important;color:white!important;border:0!important;border-radius:9px!important;font-weight:800!important}.est-saved-create-jc:disabled{background:#e3e8eb!important;color:#475569!important;cursor:default}.est-required-star{font-size:15px;font-weight:900;color:#dc2626!important;margin-inline-start:3px}.est-editor [aria-invalid="true"]{border:2px solid #dc2626!important;background:#fff5f5!important}.est-mechanical-editor .est-cash-only{padding:10px 13px;border:1px solid #bfdbc8;border-radius:10px;background:#eef9ef;color:#174d38;font-size:14px}
   .est-mechanical-editor .est-switch button[hidden]{display:none!important}
   .est-mechanical-editor .est-switch:has(#estTypeLS[hidden]){grid-template-columns:1fr}
   #modal .est-mechanical-editor .est-bottom .est-open-jc{background:#0b705f!important;color:#fff!important;border-color:#0b705f!important;grid-column:1/-1;font-size:14px!important}
@@ -300,8 +300,10 @@ function estimateLabel(text){
  const arabic=estimateArabicLabels[key];
  return esc(text)+(arabic?' / <bdi lang="ar" dir="rtl">'+esc(arabic)+'</bdi>':'');
 }
+function requiredLabel(label){return estimateLabel(label)+'<span class="est-required-star" aria-label="Required field"> *</span>';}
 function field(id,label,value,type='text',extra=''){
-  return '<label>'+estimateLabel(label)+'<input id="'+id+'" type="'+type+'" value="'+esc(value||'')+'" '+extra+'></label>';
+  const mandatory=['estMakeModel','estReg'].includes(id);
+  return '<label>'+(mandatory?requiredLabel(label):estimateLabel(label))+'<input id="'+id+'" type="'+type+'" value="'+esc(value||'')+'" '+(mandatory?'required aria-required="true" ':'')+extra+'></label>';
 }
 function textAreaField(id,label,value,placeholder=''){
   return '<label style="display:block;font-weight:700;font-size:12px;color:#334155">'+estimateLabel(label)+'<textarea id="'+id+'" rows="2" placeholder="'+esc(placeholder)+'" style="width:100%;box-sizing:border-box;margin-top:4px;resize:vertical">'+esc(value||'')+'</textarea></label>';
@@ -336,7 +338,7 @@ function setPaymentType(type){
  e.jobType=type==='INSURANCE'?'INSURANCE':'CASH';
  if(input){input.value=insuranceEstimate(e)?e.insuranceCompany||'':e.cashCustomerName||'';input.setAttribute('list',insuranceEstimate(e)?'estCompanyOptions':'');}
  const claimField=document.getElementById('estClaimField');if(claimField)claimField.style.display=insuranceEstimate(e)?'contents':'none';
- const label=document.getElementById('estNameLabel');if(label)label.innerHTML=estimateLabel(insuranceEstimate(e)?'Insurance company':'Customer name');
+ const label=document.getElementById('estNameLabel');if(label)label.innerHTML=requiredLabel(insuranceEstimate(e)?'Insurance company':'Customer name');
  for(const value of ['INSURANCE','CASH']){const button=document.getElementById('estPay'+value);button?.classList.toggle('active',e.jobType===value);button?.setAttribute('aria-pressed',String(e.jobType===value));}
  recalc();
 }
@@ -352,9 +354,9 @@ function openEditor(id){
   (mechanical?'<p class="est-cash-only">Payment type: <strong>Cash</strong></p>':'<div class="est-switch" aria-label="Payment type"><button type="button" id="estPayINSURANCE" class="'+(insuranceEstimate(e)?'active':'')+'" aria-pressed="'+insuranceEstimate(e)+'" onclick="zukaitEstimate.setPaymentType(\'INSURANCE\')">Insurance</button><button type="button" id="estPayCASH" class="'+(!insuranceEstimate(e)?'active':'')+'" aria-pressed="'+!insuranceEstimate(e)+'" onclick="zukaitEstimate.setPaymentType(\'CASH\')">Cash</button></div><datalist id="estCompanyOptions">'+companyOptions()+'</datalist>')+
   '<div class="est-fields">'+
     field('estDate','Date',e.date,'date')+
-    '<label><span id="estNameLabel">'+estimateLabel(mechanical?'Customer name':insuranceEstimate(e)?'Insurance company':'Customer name')+'</span><input id="estName" value="'+esc(e.customerName||'')+'" '+(!mechanical&&insuranceEstimate(e)?'list="estCompanyOptions"':'')+' oninput="zukaitEstimate.recalc()"></label>'+
+    '<label><span id="estNameLabel">'+requiredLabel(mechanical?'Customer name':insuranceEstimate(e)?'Insurance company':'Customer name')+'</span><input id="estName" required aria-required="true" value="'+esc(e.customerName||'')+'" '+(!mechanical&&insuranceEstimate(e)?'list="estCompanyOptions"':'')+' oninput="zukaitEstimate.recalc()"></label>'+
     field('estMobile','Tel. No.',e.mobile,'tel')+
-    field('estMakeModel','Make',e.makeModel)+
+    field('estMakeModel','Make & Model',e.makeModel)+
     field('estYear','Year',e.year,'number','min="1900" max="2100"')+
     field('estReg','Registration No.',e.registration)+
     field('estVin','VIN',e.jobCard?(window.zukaitJobCardMaster?.vin?.(e.jobCard)||e.vin):e.vin,'text','maxlength="32" autocapitalize="characters" autocomplete="off"')+'<label>VIN Scanner<button type="button" class="secondary" onclick="zukaitVinScan?.open(\'estVin\')">▣ Scan Barcode</button><button type="button" class="secondary" onclick="zukaitVinScan?.capture(\'estVin\')">📷 Capture VIN</button></label>'+
