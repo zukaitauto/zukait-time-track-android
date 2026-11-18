@@ -21,6 +21,9 @@ on:
       - 'docs/storage/COMPACT_HISTORY_RELEASE_EVIDENCE_20261116.json'
       - 'tests/stage-v124-history-reader-safety.mjs'
       - 'scripts/prepare-history-reader-candidate.mjs'
+      - 'scripts/history-reader-patch-core.mjs'
+      - 'scripts/history-reader-v128-lock.json'
+      - 'tests/history-reader-v128-safe-stage.mjs'
       - 'scripts/stage-v124-history-reader-offline.mjs'
       - 'supabase/migrations/*workshop*history*.sql'
       - 'supabase/tests/workshop_*history*qa.sql'
@@ -61,6 +64,8 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Verify legacy-default compatibility reader
         run: node tests/history-reader-rollout.mjs
+      - name: Verify v128 exact-source staging fail-closed and 49 unchanged modules
+        run: node tests/history-reader-v128-safe-stage.mjs
       - name: Verify rollout HOLD and source/approval gates
         run: node tests/compact-history-rollout-gate.mjs
       - name: Verify fail-closed offline backup staging

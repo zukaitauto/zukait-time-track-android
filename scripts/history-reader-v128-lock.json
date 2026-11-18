@@ -1,0 +1,266 @@
+{
+  "project_ref": "pjknotnjkufadqavcmii",
+  "slug": "workshop-api",
+  "edge_function_id": "a9ef7c0d-bc5e-4ed0-bcdc-5d0b9453f7a4",
+  "version": 128,
+  "verify_jwt": false,
+  "import_map": true,
+  "ezbr_sha256": "d6d349a7a38881d23927c8f5c7ca8f2f89539e643c94e396b316b6ffa5e15901",
+  "source_file_count": 50,
+  "entrypoint_sha256": "90cb794e8f4160ada336587d4d5895a3a2c77d507d265dee205f467125d3a931",
+  "captured_date": "2026-11-18",
+  "capture_method": "read-only Supabase get_edge_function; hash inventory, not an off-platform encrypted backup",
+  "production_changes_authorized": false,
+  "files": [
+    {
+      "name": "index.ts",
+      "bytes": 152016,
+      "sha256": "90cb794e8f4160ada336587d4d5895a3a2c77d507d265dee205f467125d3a931"
+    },
+    {
+      "name": "vehicle_movement_rules.js",
+      "bytes": 2470,
+      "sha256": "7ac59b780cf337ce3ed1ad5abe0377e64789db138b94f5cc600230d7f7467fa6"
+    },
+    {
+      "name": "database_fetch.js",
+      "bytes": 2251,
+      "sha256": "51074e554f5df700e59430a886e9a32de2f0801a6eda0582f6dbbff08c3765c3"
+    },
+    {
+      "name": "accountant/extensions/bill_route.js",
+      "bytes": 3138,
+      "sha256": "729134ab1c7570954c46a7c21277699410ccea505ccbc808c4bfec2d1b0a703f"
+    },
+    {
+      "name": "accountant/api.js",
+      "bytes": 17819,
+      "sha256": "03db7a9a7861d3463f780d468b57558b31fd14c065b75cf7f1ca74028eb43980"
+    },
+    {
+      "name": "accountant/context_reader.js",
+      "bytes": 2517,
+      "sha256": "d459e6522320181f4c3ab8a990135d5334f4931f72a2697d840eb923fbbf826a"
+    },
+    {
+      "name": "accountant/finance_rules.js",
+      "bytes": 24893,
+      "sha256": "00e8301ef9ddb6917d281919dd9855113bb6b91ebe3a796e0dfa0b2e8ddd36ce"
+    },
+    {
+      "name": "accountant/spare_projection.js",
+      "bytes": 9619,
+      "sha256": "949857fd2d4f0360ac10ccd91bd7b4dc72b44415071f5e5e123a8e6f66451718"
+    },
+    {
+      "name": "accountant/leave_commands.js",
+      "bytes": 7691,
+      "sha256": "5a0bdcb5e8deafe5d2c069ae74c772dae7b9129a11c0e43f72b1a1a565878304"
+    },
+    {
+      "name": "accountant/profit_performance.js",
+      "bytes": 6173,
+      "sha256": "bdd72001766a75167db7a6b47c5ccc6d0acf5517482c6ec45a11e6b9d2af99b4"
+    },
+    {
+      "name": "accountant/accounts_parts_cost.js",
+      "bytes": 4298,
+      "sha256": "53547c42b19406831782b92495ae86184999ac3dd3a15cf97b2f814483807b60"
+    },
+    {
+      "name": "accountant/accounts_reports.js",
+      "bytes": 9799,
+      "sha256": "c49b03334a37864575c003a48d32db7b15349586799562c815c23b6155cd6b16"
+    },
+    {
+      "name": "extensions/mechanical_route.js",
+      "bytes": 23833,
+      "sha256": "90651aed8a38d77b0d26772e18c36d98ee60667406416f781b14b9fc8b10ceef"
+    },
+    {
+      "name": "extensions/mechanical_report.js",
+      "bytes": 8631,
+      "sha256": "f468f6feecd86576f3bf8af1490fd221b5ed9eb41b4b25beb10220e58ed1dba5"
+    },
+    {
+      "name": "extensions/mechanical_report_periods.js",
+      "bytes": 2106,
+      "sha256": "fb10d281f31d77a8515b70b8652eb921caf75c8936c1d6919fc9c4f0206021a6"
+    },
+    {
+      "name": "extensions/mechanical_signed_document.js",
+      "bytes": 2611,
+      "sha256": "14be150c31bb02c5d47750ed9d47fd10a8eef537d54f092ab08f1860fa4ca7ab"
+    },
+    {
+      "name": "extensions/mechanical_rules.js",
+      "bytes": 10929,
+      "sha256": "1e03d7eca004e74e00a67f1967fe8b3cfef2946a446c02c5da5d52a37acde5fd"
+    },
+    {
+      "name": "extensions/command_contracts.js",
+      "bytes": 3662,
+      "sha256": "0d95cedfb38e00fb1656df89e1ee2ab1a389545af617345080176f802eb27297"
+    },
+    {
+      "name": "extensions/mechanical_repeat_rules.js",
+      "bytes": 3779,
+      "sha256": "ec93aa8c6ba355c5418ed9a482b88d1ade9768a1a2a2f9323f852572b7958d20"
+    },
+    {
+      "name": "time_management_rules.js",
+      "bytes": 25235,
+      "sha256": "71cf7eac83083a811315dc0101cf38e57a2421fd406528ed490de7be74cbfdd1"
+    },
+    {
+      "name": "extensions/mechanical_signature.js",
+      "bytes": 3632,
+      "sha256": "088256fc88ef65fbda2d63d7383c5ba6f9cf7a7e5966ab0284a85a6415e71145"
+    },
+    {
+      "name": "extensions/mechanical_signature_correction.js",
+      "bytes": 2821,
+      "sha256": "61e46164de307d6d5e092d2c724324922ada6c330a83bc8cefcab45b26383f3a"
+    },
+    {
+      "name": "extensions/mechanical_document.js",
+      "bytes": 4297,
+      "sha256": "d769b55a4b7ef6ea4416a2f994044b2b0dfa2287aaa5fb4431a7bb7f649c60fb"
+    },
+    {
+      "name": "extensions/mechanical_api.js",
+      "bytes": 4462,
+      "sha256": "c1b6f04bd24b56e0ad5bc71b5b39c02210b5ad73d4be7e9f555b728d532d6c8a"
+    },
+    {
+      "name": "extensions/mechanical_persistence_plan.js",
+      "bytes": 2561,
+      "sha256": "ef218a94f904bcc7ca619778dcd9ba99e2af5dbf1cab1319a53b5c6dd4860cbc"
+    },
+    {
+      "name": "extensions/mechanical_qc_boundary.js",
+      "bytes": 5336,
+      "sha256": "5614e9bcdc19f65c6cb494bd41bfbdca1064752ae1e9cc9b8793bb82a23348fc"
+    },
+    {
+      "name": "extensions/mechanical_qc_rules.js",
+      "bytes": 7603,
+      "sha256": "36855b331b871f1c11923f6d0c9f29278bcc3dfeb345a4c3130eef3e00fa8f3e"
+    },
+    {
+      "name": "qc_delivery_rules.js",
+      "bytes": 12817,
+      "sha256": "52060d59f7f53ed9fa95efb20d5b862cdfe6dae3bfa6408bf87430b1f669b7dc"
+    },
+    {
+      "name": "extensions/mechanical_delivery_api.js",
+      "bytes": 2811,
+      "sha256": "2aa7368e7d74cea2eae441030bcaa4469fcda399777308cfc8f7f8b0c62470a0"
+    },
+    {
+      "name": "extensions/mechanical_delivery_plan.js",
+      "bytes": 2783,
+      "sha256": "deecfaeda5d6f4fead02f0e0426e17ba9e75d86069d679842c1ecf44e0f5d32c"
+    },
+    {
+      "name": "extensions/mechanical_tracking.js",
+      "bytes": 4520,
+      "sha256": "9810dbb329dd059bbf9ea15a7bf47e1793bc444daed6038c57e76cb00746f895"
+    },
+    {
+      "name": "extensions/mechanical_qc_overview.js",
+      "bytes": 5073,
+      "sha256": "0d8a18b35e5fe6033da6c2126bd2504b6abc4d31fcefd996f82d05c779084538"
+    },
+    {
+      "name": "extensions/mechanical_time_api.js",
+      "bytes": 5848,
+      "sha256": "e02a9759c9bd50741e7284671e35abb0314b53cc09e27dfdaf6af0b516f19205"
+    },
+    {
+      "name": "extensions/mechanical_time_rules.js",
+      "bytes": 5927,
+      "sha256": "6bfcaf404e91d9a68eaca92ba17137f0d4de7e8916a6095e9d95b53d05f41d35"
+    },
+    {
+      "name": "extensions/mechanical_section_api.js",
+      "bytes": 3046,
+      "sha256": "ee6f1ec000af68375c5de39e1e9ce717e94dbc41abe1da0c106680ab0b02670b"
+    },
+    {
+      "name": "extensions/mechanical_inspection_boundary.js",
+      "bytes": 1330,
+      "sha256": "e8ad7d04987a5fb23b6f956784a1be8b75461f2a121299c4a5b12890b22c54f6"
+    },
+    {
+      "name": "extensions/mechanical_inspection_api.js",
+      "bytes": 4947,
+      "sha256": "c6c70dc44f817f0519a999876ff59ab4260a5cf5a0eea84e7092eeb8ed51ebc8"
+    },
+    {
+      "name": "extensions/mechanical_inspection_contract.js",
+      "bytes": 2505,
+      "sha256": "f0cdf1d041626c3b7e6c9d6a2f8a3aecd82f29c5af4370d58f9f70aa923ab364"
+    },
+    {
+      "name": "extensions/mechanical_inspection_read_adapter.js",
+      "bytes": 2287,
+      "sha256": "73653d18c7d0b34fe7ed1cc2f4c8097283ef8c690529b67bcaad3cfc9ee61db8"
+    },
+    {
+      "name": "extensions/mechanical_inspection_save_adapter.js",
+      "bytes": 1965,
+      "sha256": "e63137a056c37944d7ad96edd09285dc7aaa6e1cbf8c8033cf078308cb7eb2ca"
+    },
+    {
+      "name": "extensions/mechanical_inspection_session.js",
+      "bytes": 813,
+      "sha256": "0816cf5856c7540cda7d69c11c0e008efd209d616e20210d34710f03a9914a2a"
+    },
+    {
+      "name": "extensions/mechanical_inspection_storage.js",
+      "bytes": 2266,
+      "sha256": "7b5d1ed0c3e851396cbd4163c078203984503712f6bf05f23a85e77a496a1a86"
+    },
+    {
+      "name": "sublet_rules.js",
+      "bytes": 3251,
+      "sha256": "bac0f002129e5ad2c8adbc50b1c51d59a490838470baf53555d9a16f85f90106"
+    },
+    {
+      "name": "insurance_management_rules.js",
+      "bytes": 6846,
+      "sha256": "d0dea5ced3e916186a7a37c138edf128428310eaf217dfad54b2faf4135596ff"
+    },
+    {
+      "name": "job_edit_rules.js",
+      "bytes": 13193,
+      "sha256": "1e0252bf0490f0c3de4e6e8d13b294908c13940d2e0d1e756f2239f442f7f167"
+    },
+    {
+      "name": "job_type_authority.js",
+      "bytes": 1536,
+      "sha256": "5a2c48d0b7642b4053ded9901d5b0872c0f572cb61c4105c33d5a0b80c36d1d6"
+    },
+    {
+      "name": "paint_order_rules.js",
+      "bytes": 2881,
+      "sha256": "16c129e5d77a3bbd3eb409e728fcbb314120239433ad99791e16c24f6690cd24"
+    },
+    {
+      "name": "receptionist_delivery_rules.js",
+      "bytes": 3061,
+      "sha256": "1dec915521493c8c13dc5d39e17b866c31eb40ed62188d5818519a0f7bb6217a"
+    },
+    {
+      "name": "reception_dashboard_rules.js",
+      "bytes": 13643,
+      "sha256": "121c1f2859405c01f20a4e8b05d2b1795deb4805375866cc732e1638e491ca1c"
+    },
+    {
+      "name": "deno.json",
+      "bytes": 2,
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    }
+  ]
+}
