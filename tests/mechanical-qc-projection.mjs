@@ -13,7 +13,7 @@ Object.assign(w,{qcStatus,invoiceComplete,invoiceDateValid,state:{jobs:[],assign
 Object.defineProperty(w.document,'visibilityState',{value:'visible',writable:true});
 let reads=0,token='QA_ONE',pending=null,rejectRead=false,workspace=null,delivered=null;
 const rows=[{jobCard:'12079',vehicle:'<img src=x onerror=bad>',registration:'QA',mechanical:true,checklistId:'MC001',route:'MECHANICAL_ONLY',stage:'DELIVERY',deliveryReady:true,paintingRequired:false,finalRequired:false,mechanicalRequired:true,mechanicalPassed:true,qcVisible:false,readyAt:1},{jobCard:'12080',vehicle:'Pending Mechanical',registration:'QA2',mechanical:true,checklistId:'MC002',stage:'MECHANICAL_QC',deliveryReady:false,mechanicalRequired:true,canMechanical:true,qcVisible:true,readyAt:0},{jobCard:'12081',vehicle:'Painting vehicle',registration:'QA3',mechanical:false,stage:'FINAL_QC',canFinal:true,paintingRequired:true,painting:true,finalRequired:true,deliveryReady:false,qcVisible:true,readyAt:0}];
-const uiResponse=()=>({ok:true,actorId:w.me.id,actorRole:w.me.role,workshopRevision:8,recordsRevision:2,capturedAt:Date.now(),rows:structuredClone(rows),counts:{qc:2,ready:1,review:0}});
+const uiResponse=()=>({ok:true,actorId:w.me.id,actorRole:w.me.role,workshopRevision:w.zukaitCloud?.syncHealth.revision??8,recordsRevision:2,capturedAt:Date.now(),rows:structuredClone(rows),counts:{qc:rows.filter(r=>r.qcVisible).length,ready:rows.filter(r=>r.deliveryReady).length,review:0}});
 w.zukaitAuth={getToken:()=>token};w.zukaitCloud={syncHealth:{ready:true,dirty:false,revision:8},readMechanicalQcOverview:async()=>{reads++;if(rejectRead)throw Error('unavailable');if(pending)return pending;return uiResponse()},openMechanicalWorkspace:async id=>workspace=id,openMechanicalDelivery:async no=>{delivered=no;return true},syncNow:async()=>{w.zukaitCloud.syncHealth.revision=8}};
 w.setInterval=()=>{throw Error('QC overview must not poll')};
 const ui=fs.readFileSync('app/src/main/assets/qc_delivery.js','utf8').replace(/^import[^\n]+\n/,'').replace("import('./mechanical_qc_projection.js')","Promise.resolve({createMechanicalQcProjection:window.createMechanicalQcProjection})");
@@ -26,13 +26,29 @@ await w.zukaitOpenReadyToDeliver();assert.equal(reads,2);assert.match(w.document
 await w.zukaitOverviewDeliver('12079');assert.equal(delivered,'12079');
 await w.zukaitOpenQCQueue();assert.equal(reads,3);assert.match(w.document.getElementById('qcRows').textContent,/Mechanical QC pending/);await w.zukaitOverviewMechanicalQC('12080');assert.equal(workspace,'MC002');
 for(let i=0;i<10;i++){w.render();w.dispatchEvent(new w.Event('zukait-live-status'));w.zukaitQCRefresh()}await tick();assert.equal(reads,3,'Rendering/search/live status does not make more reads');
-w.zukaitCloud.syncHealth.revision=9;w.render();assert.equal(w.document.querySelector('[data-qc-queue] .qc-card-count').textContent,'—');assert.match(w.document.getElementById('qcRows').textContent,/not been confirmed/);assert.equal(reads,3,'Revision invalidation is memory-only');
+w.zukaitCloud.syncHealth.revision=9;w.render();assert.equal(w.document.querySelector('[data-qc-queue] .qc-card-count').textContent,'2','Unconfirmed revision retains last confirmed QC count');assert.match(w.document.querySelector('[data-qc-queue]').textContent,/sync warning/i);assert.match(w.document.getElementById('qcRows').textContent,/not been confirmed/);assert.equal(reads,3,'Revision invalidation is memory-only');
 await w.zukaitOverviewRefresh();assert.equal(reads,4);assert.match(w.document.getElementById('qcRows').textContent,/Sync workshop records/,'Legacy write UI needs matching shared revision');assert.doesNotMatch(w.document.getElementById('qcRows').innerHTML,/zukaitOpenFinalQC\(this/);
 await w.zukaitOverviewSync();assert.equal(reads,5);assert.match(w.document.getElementById('qcRows').innerHTML,/zukaitOpenFinalQC\(this/);
 w.document.visibilityState='hidden';w.document.dispatchEvent(new w.Event('visibilitychange'));assert.equal(reads,5);w.document.visibilityState='visible';w.document.dispatchEvent(new w.Event('visibilitychange'));await tick();assert.equal(reads,6);
 w.dispatchEvent(new w.Event('zukait-mechanical-change'));await tick();assert.equal(reads,7);
-rejectRead=true;await w.zukaitOverviewRefresh();assert.equal(w.document.querySelector('[data-qc-queue] .qc-card-count').textContent,'—','Error is unknown, never false zero');rejectRead=false;
+rejectRead=true;await w.zukaitOverviewRefresh();assert.equal(w.document.querySelector('[data-qc-queue] .qc-card-count').textContent,'2','Read failure retains last confirmed count');assert.match(w.document.querySelector('[data-qc-ready]').textContent,/Delivery sync warning/);rejectRead=false;
 let finish;pending=new Promise(r=>finish=r);const obsolete=uiResponse(),request=w.zukaitOverviewRefresh();await tick();token='QA_TWO';w.me={id:'SUP003',role:'Supervisor'};finish(obsolete);await request;assert.equal(w.zukaitQCPendingJobs(),null,'No cross-account snapshot');pending=null;w.render();await tick();assert.equal(w.document.querySelector('#supervisorView [data-qc-queue] .qc-card-count').textContent,'2');
 w.me={id:'SUP001',role:'Supervisor'};w.state.jobs=[{no:'12081',qcWorkflow:{revision:0}}];let posts=0;w.fetch=async(_url,req)=>{posts++;assert.equal(JSON.parse(req.body).operation,'FINAL_QC');return {ok:true,json:async()=>({ok:true})}};const beforeAction=reads;await w.zukaitFinalPass('12081');assert.equal(posts,1);assert.equal(reads,beforeAction+1,'Successful legacy QC explicitly refreshes the route-aware overview');
+// Cold-start failure must not be masked by zero and must retry after the next healthy pull.
+token='QA_THREE';w.me={id:'MGR',role:'Manager'};rejectRead=true;const coldBefore=reads;
+w.render();await tick();assert.equal(reads,coldBefore+1,'Cold dashboard performs one initial read');
+assert.equal(w.document.querySelector('#managerView [data-qc-queue] .qc-card-count').textContent,'!','No initial confirmation is a visible synchronization warning');
+for(let i=0;i<12;i++)w.render();await tick();assert.equal(reads,coldBefore+1,'Repeated renders cannot flood Supabase after failure');
+rejectRead=false;w.v42AfterCloudPull();await tick();
+assert.equal(reads,coldBefore+2,'Healthy cloud pull retries the failed startup projection exactly once');
+assert.equal(w.document.querySelector('#managerView [data-qc-queue] .qc-card-count').textContent,'2');
+assert.equal(w.document.querySelector('#managerView [data-qc-ready] .qc-card-count').textContent,'1');
+for(let i=0;i<10;i++)w.v42AfterCloudPull();await tick();assert.equal(reads,coldBefore+2,'Identical healthy cloud pulls reuse confirmed counts');
+// Same actor, higher synchronized revision: refresh once; confirmed zero is displayed as 0.
+rows.length=0;w.zukaitCloud.syncHealth.revision=10;
+w.v42AfterCloudPull();await tick();
+assert.equal(reads,coldBefore+3,'Changed workshop revision refreshes once');
+assert.equal(w.document.querySelector('#managerView [data-qc-queue] .qc-card-count').textContent,'0');
+assert.equal(w.document.querySelector('#managerView [data-qc-ready] .qc-card-count').textContent,'0');
 w.ZUKAIT_MECHANICAL_ENABLED=false;const before=reads;await w.zukaitOpenQCQueue();assert.equal(reads,before);assert.equal(w.document.querySelectorAll('#qcRows .qc-row').length,0,'Flag off returns legacy local queue');dom.window.close();
 console.log('PASS QC projection: no polling/default-off reads, coalescing, revision/account/token invalidation, unknown/error states, escaped main lists/counts, explicit refresh and protected action routing.');
