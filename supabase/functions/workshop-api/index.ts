@@ -1,6 +1,8 @@
 import {vehicleMovement} from './vehicle_movement_rules.js';
 import { createDatabaseFetch } from './database_fetch.js';
 import {billRoute} from './accountant/extensions/bill_route.js';
+import {consumablesStockApi} from './extensions/consumables_stock_api.js';
+
 import { mechanicalRoute, mechanicalLegacyDeliveryCheck } from "./extensions/mechanical_route.js";
 import { mechanicalTimeApi } from './extensions/mechanical_time_api.js';
 import { mechanicalSectionApi } from './extensions/mechanical_section_api.js';
@@ -1189,6 +1191,16 @@ Deno.serve(async (req: Request) => {
       for (const field of ["search","query"]) if (typeof body[field] === "string") body[field] = numberCodec.internalNumber(body[field]);
     }
     if(body.newJobNumber !== undefined && action !== "manager_job_full_edit") return reply({ok:false,code:"job_edit_invalid_fields"},400);
+    // Stock is an isolated, small-table API; NO writes to workshop_state.
+    // Both flags default off until the catalog migration and acceptance are complete.
+    if(action==='consumables_stock') {
+      const result=await consumablesStockApi(admin,user,body,{
+        enabled:Deno.env.get('ZUKAIT_STOCK_ENABLED')==='true',
+        writesEnabled:Deno.env.get('ZUKAIT_STOCK_WRITES_ENABLED')==='true',
+        sessionHash:await sha256Hex(token)
+      });
+      return reply(result.body,result.status);
+    }
 
     // Notification read acknowledgements are account-scoped. Authentication
     // always resolves the actor from the session, never from a request parameter.
