@@ -26,7 +26,7 @@ vm.runInContext(fs.readFileSync('app/src/main/assets/consumables_ui.js','utf8'),
 vm.runInContext(fs.readFileSync('app/src/main/assets/mechanical_consumables_ui.js','utf8'),ctx);
 const fill=values=>Object.entries(values).forEach(([id,v])=>el(id).value=v);
 ctx.openMechanicalConsumables();
-assert.match(shown,/Brands & Price/);
+assert.match(shown,/Brands &amp; Price/);
 ctx.openMechanicalConsumablesSection('master');
 assert.match(shown,/Material Name/);
 assert.match(shown,/Brand Name/);
