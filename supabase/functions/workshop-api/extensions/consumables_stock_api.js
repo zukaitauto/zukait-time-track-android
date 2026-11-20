@@ -4,14 +4,14 @@
 const roles = new Set(['Manager','Supervisor','Mechanical Supervisor']);
 const managerActions = new Set(['OPENING','ADJUST','MINIMUM']);
 const allowedCommands = new Set(['OPENING','PURCHASE','RESERVE','CHANGE','CANCEL','FINALISE','RETURN','ADJUST','MINIMUM','MECHANICAL_ISSUE']);
-const allowedKeys = new Set(['action','operation','command','requestId','data','materialId','brandId','jobCard','cursor','page']);
+const allowedKeys = new Set(['action','operation','command','requestId','data','materialId','brandId','jobCard','cursor','page','origin']);
 const bad = (code,status=400) => ({status,body:{ok:false,code}});
 const good = data => ({status:200,body:{ok:true,...data}});
 function safeId(value, limit=120) {
   const s=String(value||'').trim();
   return s.length<=limit&&/^[a-zA-Z0-9_.:-]*$/.test(s)?s:'';
 }
-export async function consumablesStockApi(admin,user,body,{enabled=false,writesEnabled=false,mechanicalWritesEnabled=false,sessionHash=''}={}) {
+export async function consumablesStockApi(admin,user,body,{enabled=false,writesEnabled=false,mechanicalWritesEnabled=false,masterLinkEnabled=false,sessionHash=''}={}) {
   if(!roles.has(user?.role))return bad('stock_forbidden',403);
   if(!enabled)return bad('stock_not_enabled',503);
   if(!body||typeof body!=='object'||Array.isArray(body)||
@@ -21,6 +21,31 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
   // LIST/HISTORY/BALANCE/RESERVATIONS could otherwise disclose Bodyshop-only stock.
   if(user.role==='Mechanical Supervisor'&&!['CATALOG','WRITE'].includes(operation))
     return bad('mechanical_stock_forbidden',403);
+  if(operation==='MASTER_LINK') {
+    // Manager-only projection of one material+brand that is ALREADY committed
+    // to the existing workshop Master; SQL rechecks saved IDs, price and role.
+    if(user.role!=='Manager')return bad('manager_only',403);
+    if(!masterLinkEnabled)return bad('stock_master_link_not_enabled',423);
+    if(!sessionHash)return bad('stock_session_required',401);
+    const materialId=safeId(body.materialId);
+    const brandId=safeId(body.brandId);
+    const origin=body.origin;
+    if(!materialId||!brandId||!['Mechanical','Painting'].includes(origin))
+      return bad('invalid_master_link');
+    const {data,error}=await admin.rpc('zukait_stock_link_master',{
+      p_session_hash:sessionHash,p_material_id:materialId,p_brand_id:brandId,
+      p_origin:origin
+    });
+    if(error){
+      const code=String(error.message||'');
+      const allowed=['MANAGER_ONLY','STOCK_FORBIDDEN','MASTER_NOT_SAVED',
+        'STOCK_UNIT_CONFLICT','PAINT_ONLY_MASTER','INVALID_MASTER'];
+      const mapped=allowed.includes(code)?code.toLowerCase():'stock_master_link_failed';
+      return bad(mapped,mapped==='manager_only'||mapped==='stock_forbidden'?403:
+        mapped==='stock_master_link_failed'?503:409);
+    }
+    return good({linked:data});
+  }
   if(operation==='CATALOG') {
     // One bounded indexed read; only stock catalog keys, never workshop_state.
     const page=Math.max(0,Math.min(20,Number.isInteger(body.page)?body.page:0));
