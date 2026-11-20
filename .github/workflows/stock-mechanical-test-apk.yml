@@ -1,0 +1,117 @@
+name: Stock and Mechanical TEST APK (isolated, no publication)
+
+on:
+  pull_request:
+    branches: [architecture-v2]
+    paths:
+      - '.github/workflows/stock-mechanical-test-apk.yml'
+      - 'app/src/main/assets/consumables*'
+      - 'app/src/main/assets/mechanical*'
+      - 'app/src/main/assets/cloud_sync.js'
+      - 'app/src/main/assets/offline_test.html'
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-test-apk:
+    if: github.event.pull_request.head.ref == 'integration/mechanical-consumables-stock-20261121' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      ZUKAIT_ACCEPTANCE_PROJECT_REF: omqgkqknbdcnotabffek
+      ZUKAIT_ACCEPTANCE_PUBLISHABLE_KEY: sb_publishable_DBp6FI8Z4ThAq_4LXrZXSg_Xw2uPPgO
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+    steps:
+      - name: Check out exact combined PR source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Confirm source has combined Stock + Mechanical, QA only
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          node tests/consumables-combined-wiring.mjs
+          node tests/consumables-combined-release-role-flags.mjs
+      - name: Prepare separated test Android package
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import importlib.util, json, os, subprocess
+          from pathlib import Path
+          spec=importlib.util.spec_from_file_location('prepare_qa',Path('scripts/prepare-insurance-acceptance.py'))
+          mod=importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(mod)
+          source=Path.cwd()
+          output=Path(os.environ['RUNNER_TEMP'])/'zukait-stock-mechanical-test'
+          sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          manifest=mod.prepare(source,output,os.environ['ZUKAIT_ACCEPTANCE_PROJECT_REF'],
+             os.environ['ZUKAIT_ACCEPTANCE_PUBLISHABLE_KEY'],sha)
+          assert manifest['application_id']=='com.zukait.timetrack.acceptance'
+          assert manifest['project_ref']=='omqgkqknbdcnotabffek'
+          assert manifest['updater_disabled'] is True
+          assert manifest['backend_acceptance']=='NOT_RUN'
+          assert manifest['physical_device_acceptance']=='NOT_RUN'
+          assert (output/'app/src/main/assets/consumables_stock_ui.js').exists()
+          assert (output/'app/src/main/assets/mechanical_consumables_host.js').exists()
+          assert (output/'app/src/main/assets/mechanical_consumables_returns_host.js').exists()
+          assert (output/'app/src/main/assets/mechanical_consumables_totals_host.js').exists()
+          # No flags are turned ON by this test build.
+          (output/'TEST-ONLY.txt').write_text(
+            'Stock + Mechanical visual TEST build; separate QA backend. '
+            'No production access, inventory migrations, or approved live transactions. '
+            'Feature flags remain OFF. Do not replace the workshop app.\n')
+          print('QA-only test app prepared, updater disabled, production untouched.')
+          PY
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Install Android 35 build packages
+        shell: bash
+        run: |
+          set -e
+          SDKMANAGER=$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | head -n 1)
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
+      - name: Build separately installable debug test APK
+        working-directory: ${{ runner.temp }}/zukait-stock-mechanical-test
+        run: gradle assembleDebug --stacktrace
+      - name: Verify APK identity and QA-only scripts
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os,zipfile
+          root=Path(os.environ['RUNNER_TEMP'])/'zukait-stock-mechanical-test'
+          apk=root/'app/build/outputs/apk/debug/app-debug.apk'
+          with zipfile.ZipFile(apk) as z:
+            for n in ['consumables_stock_ui.js','mechanical_consumables_host.js',
+                      'mechanical_consumables_returns_host.js','mechanical_consumables_totals_host.js']:
+              assert 'assets/'+n in z.namelist(),n
+            for n in ['cloud_sync.js','secure_auth.js','mechanical_supervisor.js','offline_test.html']:
+              data=z.read('assets/'+n)
+              assert b'pjknotnjkufadqavcmii' not in data,n
+              assert b'omqgkqknbdcnotabffek' in data or n=='offline_test.html'
+          PY
+          QA="$RUNNER_TEMP/zukait-stock-mechanical-test"
+          "$ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner" verify --verbose "$QA/app/build/outputs/apk/debug/app-debug.apk"
+          "$ANDROID_SDK_ROOT/build-tools/35.0.0/aapt" dump badging "$QA/app/build/outputs/apk/debug/app-debug.apk" | grep -F "package: name='com.zukait.timetrack.acceptance'"
+          sha256sum "$QA/app/build/outputs/apk/debug/app-debug.apk" > "$QA/apk-sha256.txt"
+          echo 'QA-only APK artifact. Stock functions OFF; no live migration or publication.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload isolated test APK (not a release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZUKAIT-STOCK-MECHANICAL-TEST-${{ github.event.pull_request.head.sha }}
+          retention-days: 14
+          path: |
+            ${{ runner.temp }}/zukait-stock-mechanical-test/app/build/outputs/apk/debug/app-debug.apk
+            ${{ runner.temp }}/zukait-stock-mechanical-test/apk-sha256.txt
+            ${{ runner.temp }}/zukait-stock-mechanical-test/acceptance-manifest.json
+            ${{ runner.temp }}/zukait-stock-mechanical-test/TEST-ONLY.txt
