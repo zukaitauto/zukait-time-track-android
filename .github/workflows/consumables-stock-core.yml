@@ -37,6 +37,8 @@ jobs:
         run: node tests/consumables-stock-core.mjs
       - name: Feature-flagged API boundaries
         run: node tests/consumables-stock-api.mjs
+      - name: Direct PostgreSQL ACL, RLS and service-role acceptance
+        run: node tests/consumables-stock-db-roles.mjs
       - name: Clickable stock menu and bounded UI reads
         run: node tests/consumables-stock-ui.mjs
       - name: Manager-only one-time legacy review UI
