@@ -41,6 +41,23 @@ assert.equal(t.lineCount,0);approx(t.grossCost,0);approx(t.returnCredit,0);appro
 assert.equal(t.items.length,0);
 await assert.rejects(issue('before-opening',[{materialId:'oil',brandId:'a',quantity:1}]),/INSUFFICIENT_STOCK/);
 
+// Unauthorized/unverified opening is rejected BEFORE the first stock movement.
+await assert.rejects(cmd('uncounted','OPENING',
+ {materialId:'oil',brandId:'a',quantity:20,unitCost:5}),
+ /PHYSICAL_COUNT_CONFIRMATION_REQUIRED/);
+await assert.rejects(cmd('no-note','OPENING',
+ {materialId:'oil',brandId:'a',quantity:20,unitCost:5,countConfirmed:true}),
+ /PHYSICAL_COUNT_CONFIRMATION_REQUIRED/);
+await assert.rejects(cmd('zero-count','OPENING',
+ {materialId:'oil',brandId:'a',quantity:0,unitCost:5,
+  countConfirmed:true,reason:'Counted zero litres'}),
+ /INVALID_OPENING/);
+await assert.rejects(cmd('fractional-piece','OPENING',
+ {materialId:'wd',brandId:'a',quantity:2.5,unitCost:3,
+  countConfirmed:true,reason:'Counted package units'}),
+ /PIECE_WHOLE_REQUIRED/);
+assert.equal((await db.query("select count(*) n from public.zukait_stock_movements")).rows[0].n,0,
+ 'invalid physical opening must not create any stock movement');
 for(const [id,quantity,unitCost,mat,brand] of [
  ['opening-a',20,5,'oil','a'],['opening-b',10,7,'oil','b'],['opening-wd',4,3,'wd','a']]){
   const r=await cmd(id,'OPENING',{materialId:mat,brandId:brand,quantity,unitCost,countConfirmed:true,reason:'Verified physical count'});
