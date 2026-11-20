@@ -64,6 +64,20 @@ assert.equal(requests.filter(x=>x.type==='read'&&x.table==='workshop_state').len
  'Mechanical catalog must not fetch workshop-state snapshots');
 
 // A submitted Master name/price must NEVER be trusted by Stock.
+const previewReq={operation:'LEGACY_PREVIEW',page:0};
+r=await consumablesStockApi(admin,S,previewReq,{enabled:true,masterLinkEnabled:true,sessionHash:'staff'});
+assert.equal(r.status,403,'only Manager can preview older master pairs');
+r=await consumablesStockApi(admin,M,previewReq,{enabled:true,sessionHash:'manager'});
+assert.equal(r.status,423,'legacy preview remains disabled until stock master link is enabled');
+r=await consumablesStockApi(admin,M,{...previewReq,page:50},
+ {enabled:true,masterLinkEnabled:true,sessionHash:'manager'});
+assert.equal(r.status,400,'only bounded legacy preview pages allowed');
+r=await consumablesStockApi(admin,M,previewReq,
+ {enabled:true,masterLinkEnabled:true,sessionHash:'manager'});
+assert.equal(r.status,200);
+const previewCall=requests.filter(x=>x.type==='write').at(-1);
+assert.equal(previewCall.fn,'zukait_stock_legacy_preview');
+assert.deepEqual(previewCall.args,{p_session_hash:'manager',p_page:0});
 const linkReq={operation:'MASTER_LINK',materialId:'oil5w30',brandId:'brandA',origin:'Mechanical'};
 const beforeLinks=requests.filter(x=>x.type==='write').length;
 r=await consumablesStockApi(admin,S,linkReq,{enabled:true,masterLinkEnabled:true,sessionHash:'supervisor'});
