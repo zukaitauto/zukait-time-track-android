@@ -35,7 +35,10 @@ const receipt=Stock.transaction(s,'FINALISE',{requestId:'t'+seq,reservationId:ca
 assert.equal(receipt.replay,true);
 assert.equal(receipt.state.movements.length,countBefore); // retries cannot duplicate
 assert.throws(()=>Stock.transaction(s,'FINALISE',{requestId:'t'+seq,reservationId:capsiRes.id,actualQuantity:2},supervisor),/REQUEST_ID_CONFLICT/);
-run('RETURN',{reservationId:capsiRes.id,quantity:.5},supervisor);
+const returned=run('RETURN',{reservationId:capsiRes.id,quantity:.5},supervisor);
+approx(returned.credit,.5*locked);
+approx(returned.netCost,locked);
+approx(s.reservations.find(x=>x.id===capsiRes.id).netCost,locked);
 approx(s.items[0].physical,13);
 approx(s.reservations.find(x=>x.id===capsiRes.id).returnedLots[0].quantity,.5);
 assert.throws(()=>run('RETURN',{reservationId:capsiRes.id,quantity:2},supervisor),/RETURN_EXCEEDS_ACTUAL/);
