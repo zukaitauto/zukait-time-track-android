@@ -30,7 +30,7 @@ vm.runInContext(mechanical,ctx);
 const keys=['issued','actual','additional','search','totals'];
 ctx.openMechanicalConsumables();
 assert.match(output,/Mechanical Consumables/);
-for(const k of keys) assert.match(output,new RegExp('openMechanicalConsumablesSection\\(\\\\\\\''+k));
+for(const k of keys) assert.ok(output.includes("openMechanicalConsumablesSection('"+k+"')"),'missing '+k+' tile');
 assert.match(output,/Suggested \/ Issued Materials/);
 assert.match(output,/Actual Materials/);
 assert.match(output,/Additional Materials/);
