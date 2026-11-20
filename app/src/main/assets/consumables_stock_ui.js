@@ -3,7 +3,7 @@
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const OMR=n=>Number(n||0).toFixed(3);
 const fmt=n=>Number(n||0).toFixed(2);
-let view={page:'balance',items:[],history:[],hasMore:false,loading:false,error:'',busy:false,
+let view={page:'balance',items:[],history:[],itemsHasMore:false,historyHasMore:false,loading:false,error:'',busy:false,
   selected:'',mode:'total',pending:null};
 const allowed=()=>typeof me!=='undefined'&&['Manager','Supervisor'].includes(me?.role);
 const manager=()=>typeof me!=='undefined'&&me?.role==='Manager';
@@ -78,7 +78,7 @@ function render(){
        '<button class="zs-btn secondary" onclick="zukStockNav(\'balance\',true)">Refresh</button></div>'+
        (!rows.length?'<p class="zs-warning">No opening stock recorded. The existing material master remains unchanged.</p>':
           rows.map(rowCard).join(''))+
-       (view.hasMore?'<button class="zs-btn secondary" onclick="zukStockMore()">Load more items</button>':''));
+       (view.itemsHasMore?'<button class="zs-btn secondary" onclick="zukStockMore()">Load more items</button>':''));
    return;
  }
  if(view.page==='detail'){
@@ -100,8 +100,9 @@ function render(){
    let material=row?.material_id||c.materials[0]?.id||'',brand=row?.brand_id||c.brands[0]?.id||'';
    const mopts=c.materials.map(m=>'<option value="'+esc(m.id)+'"'+(String(m.id)===String(material)?' selected':'')+'>'+esc(m.name)+'</option>').join('');
    const bopts=c.brands.map(b=>'<option value="'+esc(b.id)+'"'+(String(b.id)===String(brand)?' selected':'')+'>'+esc(b.name)+'</option>').join('');
-   draw('<h3>Add Purchased Stock</h3>'+
+   draw('<h3>Add / Open Stock</h3>'+
     '<p class="zs-muted">Enter litres directly (not tins or drums). Non-liquid materials retain kg or Piece units.</p>'+
+    (manager()?'<label>Entry type</label><select id="zs-entrytype"><option value="PURCHASE">Purchased Stock</option><option value="OPENING">Opening Stock (one time only)</option></select>':'')+
     '<div class="zs-two"><div><label>Material</label><select id="zs-material">'+mopts+'</select></div>'+
     '<div><label>Brand</label><select id="zs-brand">'+bopts+'</select></div></div>'+
     '<label>Quantity (existing material unit)</label><input id="zs-qty" type="number" min="0.0001" step="any" value="5">'+
@@ -118,7 +119,7 @@ function render(){
       '<div class="zs-muted">Physical '+fmt(x.physical_delta)+' · Reserved '+fmt(x.reserved_delta)+
       ' · Value '+OMR(x.cost_delta)+' OMR</div><div class="zs-muted">'+esc(x.job_card||'')+' '+esc(x.note||'')+'</div></div>').join(''):
       '<p class="zs-card">No stock transactions found.</p>')+
-    (view.hasMore?'<button class="zs-btn secondary" onclick="zukStockMoreHistory()">Load older 50 records</button>':''));
+    (view.historyHasMore?'<button class="zs-btn secondary" onclick="zukStockMoreHistory()">Load older 50 records</button>':''));
    return;
  }
  if(view.page==='adjust'){
@@ -157,8 +158,8 @@ async function load(page,force=false){
      const request=needsItems?{operation:'LIST',page:0}:{operation:'HISTORY'};
      const reply=await api(request);
      if(!reply.ok)throw Error(reply.code||'STOCK_UNAVAILABLE');
-     if(needsItems){view.items=reply.items||[];view.hasMore=!!reply.hasMore}
-     else{view.history=reply.history||[];view.hasMore=!!reply.hasMore}
+     if(needsItems){view.items=reply.items||[];view.itemsHasMore=!!reply.hasMore}
+     else{view.history=reply.history||[];view.historyHasMore=!!reply.hasMore}
    }catch(e){view.error=String(e.message||e)}
    finally{view.loading=false}
  }
@@ -172,7 +173,7 @@ window.zukStockMore=async()=>{
   try{
     const reply=await api({operation:'LIST',page:Math.floor(view.items.length/100)});
     if(!reply.ok)throw Error(reply.code||'STOCK_UNAVAILABLE');
-    view.items.push(...(reply.items||[]));view.hasMore=!!reply.hasMore;
+    view.items.push(...(reply.items||[]));view.itemsHasMore=!!reply.hasMore;
   }catch(e){view.error=String(e.message||e)}finally{view.loading=false;render()}
 };
 window.zukStockMoreHistory=async()=>{
@@ -182,7 +183,7 @@ window.zukStockMoreHistory=async()=>{
   try{
     const reply=await api({operation:'HISTORY',cursor:String(cursor)});
     if(!reply.ok)throw Error(reply.code||'STOCK_UNAVAILABLE');
-    view.history.push(...(reply.history||[]));view.hasMore=!!reply.hasMore;
+    view.history.push(...(reply.history||[]));view.historyHasMore=!!reply.hasMore;
   }catch(e){view.error=String(e.message||e)}finally{view.loading=false;render()}
 };
 const request=()=>typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():
@@ -214,7 +215,11 @@ window.zukStockSavePurchase=()=>{
     price:Number(d.getElementById('zs-price')?.value)};
  if(!data.materialId||!data.brandId||!(data.quantity>0)||!(data.price>0))
    {view.error='Enter material, brand, positive quantity and purchase price.';render();return}
- write('PURCHASE',data);
+ const type=manager()?d.getElementById('zs-entrytype')?.value:'PURCHASE';
+ if(type==='OPENING'){
+   const cost=data.priceMethod==='total'?data.price/data.quantity:data.price;
+   write('OPENING',{materialId:data.materialId,brandId:data.brandId,quantity:data.quantity,unitCost:cost});
+ }else write('PURCHASE',data);
 };
 window.zukStockSaveAdjustment=()=>{
  if(!manager())return;
