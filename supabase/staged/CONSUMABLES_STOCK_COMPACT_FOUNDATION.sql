@@ -62,7 +62,7 @@ create table if not exists public.zukait_stock_movements (
   material_id text not null,
   brand_id text not null,
   action text not null check (action in (
-    'OPENING','PURCHASE','RESERVE','CHANGE','CANCEL','FINALISE','RETURN','ADJUST','MINIMUM','MECHANICAL_ISSUE')),
+    'OPENING','PURCHASE','RESERVE','CHANGE','CANCEL','FINALISE','RETURN','ADJUST','MINIMUM','MECHANICAL_ISSUE','MECHANICAL_RETURN')),
   physical_delta numeric(18,4) not null default 0,
   reserved_delta numeric(18,4) not null default 0,
   cost_delta numeric(20,8) not null default 0,
