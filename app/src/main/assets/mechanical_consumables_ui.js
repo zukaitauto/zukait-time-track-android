@@ -5,9 +5,12 @@ const sections={
   additional:{title:'Additional Materials',desc:'Issue extra materials directly to an existing Mechanical Job Card; each issue is final.'},
   returns:{title:'Return Materials',desc:'Return unused issued quantities with audited cost credit.'},
   search:{title:'Search Material List',desc:'Browse the existing Consumables Materials and Brand Master.'},
-  totals:{title:'Total Consumables',desc:'Review Mechanical Job Card material totals when stock integration is active.'}
+  totals:{title:'Total Consumables',desc:'Review Mechanical Job Card material totals when stock integration is active.'},
+  master:{title:'Brands & Price',desc:'Manager: create material, add brands, set unit, category, price and effective date.',managerOnly:true},
+  materialHistory:{title:'Search Material / Price History',desc:'Manager: view shared brands, unit and complete price history.',managerOnly:true}
 };
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const canManage=()=>{const user=typeof me!=='undefined'&&me?me:window.me;return user?.role==='Manager'};
 const canView=()=>{
  const r=(typeof me!=='undefined'&&me?me.role:window.me?.role);
  return r==='Manager'||r==='Supervisor';
@@ -58,7 +61,7 @@ function open(title,body){
 }
 function menu(){
  if(!canView())return;
- const entries=Object.entries(sections).map(([key,s])=>
+ const entries=Object.entries(sections).filter(([,s])=>!s.managerOnly||canManage()).map(([key,s])=>
   '<button type="button" class="mc-cons-tile" onclick="openMechanicalConsumablesSection(\''+key+'\')">'+
   '<b>'+escapeHtml(s.title)+'</b><small>'+escapeHtml(s.desc)+'</small></button>').join('');
  open('','<p class="mc-cons-muted">Mechanical materials are final when issued. No separate Actual Materials or finalisation step. Painting material records remain separate.</p>'+
@@ -111,7 +114,9 @@ function issueSelector(){
 }
 function section(id){
  if(!canView())return;
- const s=sections[id];if(!s)return menu();
+ const s=sections[id];if(!s||s.managerOnly&&!canManage())return menu();
+ if(id==='master')return window.consOpenMaster?.('mechanical');
+ if(id==='materialHistory')return window.consOpenMaterialSearch?.('mechanical');
  const back='<button class="mc-cons-secondary" type="button" onclick="openMechanicalConsumables()">← Mechanical menu</button>';
  if(id==='search'){
    open(s.title,back+'<p class="mc-cons-muted">Uses the existing Consumables Materials and Brand Master. No extra materials table or Supabase history download.</p>'+catalog());
