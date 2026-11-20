@@ -174,7 +174,8 @@ export async function mountMechanicalConsumablesHost(root,options={}){
      page=nextPage;hasMore=r.hasMore===true;
      refreshMaterials();
      controls.more.hidden=!hasMore;
-     putMessage(catalog.length?'Select the Job Card, material, brand and quantity.':
+     if(pending)putMessage('An earlier issue is awaiting confirmation. Retry the same request before issuing again.');
+     else putMessage(catalog.length?'Select the Job Card, material, brand and quantity.':
        'No stocked Mechanical materials yet. The Manager must link the existing Material Master to stock.');
    }catch(e){
      if(active())putMessage('Stock catalog unavailable: '+String(e?.message||e));
