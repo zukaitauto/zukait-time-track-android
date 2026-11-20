@@ -1,0 +1,28 @@
+name: Consumables stock core tests
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/consumables-stock-core-20261120
+    paths:
+      - 'app/src/main/assets/consumables_stock_core.js'
+      - 'tests/consumables-stock-core.mjs'
+      - '.github/workflows/consumables-stock-core.yml'
+  pull_request:
+    branches:
+      - architecture-v2
+    paths:
+      - 'app/src/main/assets/consumables_stock_core.js'
+      - 'tests/consumables-stock-core.mjs'
+      - '.github/workflows/consumables-stock-core.yml'
+jobs:
+  stock-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/consumables-stock-core.mjs
