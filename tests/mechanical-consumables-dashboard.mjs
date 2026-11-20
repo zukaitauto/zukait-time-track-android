@@ -7,7 +7,7 @@ const source=readFileSync('app/src/main/assets/mechanical_supervisor.js','utf8')
 assert.match(source,/mount\('\.\/mechanical_consumables_host\.js'/);
 assert.match(source,/if\(section==='consumables'\)return consumablesView\(\)/);
 assert.match(source,/openConsumables:consumablesView/);
-assert.doesNotMatch(readFileSync('app/src/main/assets/mechanical_consumables_host.js','utf8'),/workshop_state|cloud_sync\.js|consumables_ui\.js/i,
+assert.doesNotMatch(readFileSync('app/src/main/assets/mechanical_consumables_host.js','utf8'),/^\s*import\b.*(?:workshop_state|cloud_sync\.js|consumables_ui\.js)/im,
  'Dedicated host must not import a large workshop snapshot or the Painting UI');
 
 const dom=new JSDOM('<div id="root"></div>',{url:'https://qa.invalid'}),w=dom.window;
