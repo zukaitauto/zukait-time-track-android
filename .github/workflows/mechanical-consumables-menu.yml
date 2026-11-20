@@ -1,0 +1,34 @@
+name: Mechanical Consumables menu acceptance
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/open-mechanical-consumables-20261120
+    paths:
+      - 'app/src/main/assets/mechanical_consumables_ui.js'
+      - 'app/src/main/assets/consumables_ui.js'
+      - 'app/src/main/assets/offline_test.html'
+      - 'tests/mechanical-consumables-open.mjs'
+      - '.github/workflows/mechanical-consumables-menu.yml'
+  pull_request:
+    branches: [architecture-v2]
+jobs:
+  mechanical-consumables:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse navigation and screens
+        run: |
+          node --check app/src/main/assets/mechanical_consumables_ui.js
+          node --check app/src/main/assets/consumables_ui.js
+      - name: Mechanical Consumables tile and five screens
+        run: node tests/mechanical-consumables-open.mjs
+      - name: Existing Painting cost engine remains intact
+        run: node tests/consumables-smoke.mjs
+      - name: Existing Painting UI workflow remains intact
+        run: node tests/consumables-ui.mjs
