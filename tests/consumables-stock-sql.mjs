@@ -22,9 +22,9 @@ const cmd=async(token,action,data,requestId='stock-test-'+(++seq))=>{
 };
 const approx=(a,b)=>assert.ok(Math.abs(Number(a)-b)<1e-5,String(a)+' != '+String(b));
 const capsi={materialId:'primer',brandId:'capsi'},milaco={materialId:'primer',brandId:'milaco'};
-await cmd('token-manager','OPENING',{...capsi,quantity:4,unitCost:5.5});
-await cmd('token-manager','OPENING',{...milaco,quantity:6,unitCost:6});
-await assert.rejects(cmd('token-supervisor','OPENING',{materialId:'thin',brandId:'capsi',quantity:1,unitCost:3}),/MANAGER_ONLY/);
+await cmd('token-manager','OPENING',{...capsi,quantity:4,unitCost:5.5,countConfirmed:true,reason:'Verified physical count'});
+await cmd('token-manager','OPENING',{...milaco,quantity:6,unitCost:6,countConfirmed:true,reason:'Verified physical count'});
+await assert.rejects(cmd('token-supervisor','OPENING',{materialId:'thin',brandId:'capsi',quantity:1,unitCost:3,countConfirmed:true,reason:'Verified physical count'}),/MANAGER_ONLY/);
 let x=await cmd('token-supervisor','PURCHASE',{...capsi,quantity:5,priceMethod:'total',price:30});
 approx(x.averageCost,52/9);
 x=await cmd('token-supervisor','RESERVE',{...capsi,quantity:2,jobCard:'JC12000'});
