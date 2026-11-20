@@ -93,10 +93,25 @@ begin
     v_price := nullif(p_data->>'unitCost','')::numeric;
     if v_qty is null or v_qty<0 or v_price is null or v_price<0
       then raise exception 'INVALID_OPENING' using errcode='22023'; end if;
+    if v_unit='Piece' and pg_catalog.trunc(v_qty)<>v_qty then
+      raise exception 'PIECE_WHOLE_REQUIRED' using errcode='22023';end if;
     v_total:=v_qty*v_price;
+    -- The Master-link creates a ZERO placeholder; an untouched placeholder
+    -- may be opened exactly once, without losing any recorded stock value.
     insert into public.zukait_stock_balances(material_id,brand_id,unit,physical,reserved,stock_value)
-      values(v_material,v_brand,v_unit,v_qty,0,v_total)
-      returning * into v_item;
+      values(v_material,v_brand,v_unit,0,0,0)
+      on conflict(material_id,brand_id) do nothing;
+    select * into v_item from public.zukait_stock_balances
+      where material_id=v_material and brand_id=v_brand for update;
+    if v_item.unit<>v_unit or v_item.physical<>0 or v_item.reserved<>0
+       or v_item.stock_value<>0 or exists (
+         select 1 from public.zukait_stock_movements mov
+          where mov.material_id=v_material and mov.brand_id=v_brand
+            and mov.action in ('OPENING','PURCHASE','RESERVE','FINALISE','MECHANICAL_ISSUE','ADJUST')
+       ) then raise exception 'OPENING_ALREADY_RECORDED' using errcode='23505';end if;
+    update public.zukait_stock_balances set physical=v_qty,stock_value=v_total,
+      updated_at=now()
+      where material_id=v_material and brand_id=v_brand returning * into v_item;
     v_pdelta:=v_qty; v_cdelta:=v_total;
   else
     -- Brand-new materials can be purchased directly after their existing Master
