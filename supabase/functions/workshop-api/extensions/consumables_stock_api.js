@@ -17,6 +17,16 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
   if(!body||typeof body!=='object'||Array.isArray(body)||
     Object.keys(body).some(k=>!allowedKeys.has(k)))return bad('stock_invalid_request');
   const operation=String(body.operation||'LIST').trim().toUpperCase();
+  if(operation==='BALANCE') {
+    const materialId=safeId(body.materialId);
+    const brandId=safeId(body.brandId);
+    if(!materialId||!brandId)return bad('stock_item_required');
+    const {data,error}=await admin.from('zukait_stock_balances')
+      .select('material_id,brand_id,unit,physical,reserved,stock_value,minimum,updated_at')
+      .eq('material_id',materialId).eq('brand_id',brandId).maybeSingle();
+    if(error)return bad('stock_read_failed',503);
+    return good({item:data||null});
+  }
   if(operation==='LIST') {
     const page=Math.max(0,Math.min(20,Number.isInteger(body.page)?body.page:0));
     const {data,error}=await admin.from('zukait_stock_balances')
