@@ -19,7 +19,7 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
   const operation=String(body.operation||'LIST').trim().toUpperCase();
   // Mechanical Supervisors may only see the scoped Mechanical catalog and issue to it.
   // LIST/HISTORY/BALANCE/RESERVATIONS could otherwise disclose Bodyshop-only stock.
-  if(user.role==='Mechanical Supervisor'&&!['CATALOG','WRITE','MECHANICAL_RETURNABLE'].includes(operation))
+  if(user.role==='Mechanical Supervisor'&&!['CATALOG','WRITE','MECHANICAL_RETURNABLE','MECHANICAL_TOTALS'].includes(operation))
     return bad('mechanical_stock_forbidden',403);
   if(operation==='LEGACY_PREVIEW') {
     // One-time Manager review of the CURRENT saved master; at most 20 pairs.
@@ -59,6 +59,22 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
         mapped==='stock_master_link_failed'?503:409);
     }
     return good({linked:data});
+  }
+  if(operation==='MECHANICAL_TOTALS') {
+    if(!['Manager','Mechanical Supervisor'].includes(user.role))
+      return bad('mechanical_stock_forbidden',403);
+    // Off by default until the same isolated Mechanical stock release.
+    if(!mechanicalWritesEnabled)return bad('mechanical_stock_not_enabled',423);
+    if(!sessionHash)return bad('stock_session_required',401);
+    const jc=String(body.jobCard||'').trim().toUpperCase();
+    if(!/^[A-Z0-9_. -]{1,36}$/.test(jc))return bad('invalid_mechanical_job');
+    if(!Number.isInteger(body.page)||body.page<0||body.page>49)
+      return bad('invalid_totals_page');
+    const {data,error}=await admin.rpc('zukait_stock_mechanical_job_totals',{
+      p_session_hash:sessionHash,p_job_card:jc,p_page:body.page
+    });
+    if(error)return bad('mechanical_totals_read_failed',503);
+    return good({totals:data});
   }
   if(operation==='MECHANICAL_RETURNABLE') {
     if(!['Manager','Mechanical Supervisor'].includes(user.role))
