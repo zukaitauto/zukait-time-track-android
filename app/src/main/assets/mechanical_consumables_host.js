@@ -12,7 +12,7 @@ export async function mountMechanicalConsumablesHost(root,options={}){
  let controls={},notice='';
  const h=(tag,content='',attrs={})=>{
    const n=doc.createElement(tag);
-   n.textContent=String(content);
+   n.textContent=content==null?'':String(content);
    for(const [key,value] of Object.entries(attrs)){
      if(key==='class')n.className=value;
      else if(key==='type'||key==='id'||key==='placeholder'||key==='name')n.setAttribute(key,value);
