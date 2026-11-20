@@ -67,7 +67,7 @@ for(const key of keys){
     assert.match(output,/Mechanical Job Card/);
     assert.match(output,/no materials have been issued or deducted from stock/i);
     assert.match(output,/ISSUE MATERIALS \(not enabled\)/);
-    assert.match(output,/<button type="button" disabled title="Secure stock issuing is not enabled yet"/);
+    assert.match(output,/<button id="mcConsSubmit" type="button" title="Secure stock issuing is not enabled yet" disabled/);
     assert.match(output,/mcConsMaterial/);
     assert.match(output,/mcConsBrand/);
     assert.match(output,/CAPSI/);
