@@ -44,6 +44,23 @@ rollback and authenticated Manager/supervisor cross-role tests. Do not enable
 Mechanical issuing until the independent Mechanical stock feature flags and
 opening stock acceptance are complete.
 
+**Older saved Materials and Brands: one-time controlled review.** The Manager
+opens **Stock Balance → One-time: Review Older Materials**. The system shows
+up to 20 existing priced material/brand pairs per page from the already-saved
+Master; nothing is changed when this list opens. The Manager explicitly chooses
+Mechanical, Painting or Both for a particular pair and taps **Link Material**.
+Paint-category materials can only be linked to Painting. No bulk auto-assign
+occurs, and a link never creates physical stock, changes a purchase price,
+alters historic JC costs or invents an opening balance. Multiple brands under
+one material share the canonical material ID while keeping distinct stock.
+
+`CONSUMABLES_STOCK_LEGACY_PREVIEW.sql` is a service-role-only, Manager-
+authenticated, 20-result paginated read of the CURRENT master. The separate
+existing `zukait_stock_link_master` function verifies the saved master again
+and applies only the chosen key mapping. Both functions are disabled by
+default at the API. The review screen is a **one-time Manager setup tool**;
+Mechanics and Mechanical Supervisors never see it.
+
 **Existing historical Master pairs require a one-time, audited baseline
 mapping** before general availability. The automatic link covers subsequent
 successful Manager edits; it does not invent a department for old Consumable
@@ -58,6 +75,22 @@ materials, backfill purchases or reset historical stock.
 - Opening Stock may populate a linked zero balance once; repeated opening
   with a new request is rejected.
 - Other daily work and technician actions never trigger catalog linking.
+
+## Release acceptance for older materials
+
+- Review existing materials (including active/inactive, Paint-category and
+  shared Consumable examples) on an isolated restored database, not on live
+  production.
+- Verify no new physical stock, reservations, purchases, valuations, audit
+  movements or Job Card costs appear from linking.
+- Confirm units of each brand are correct, verify one-time opening quantities
+  against a physical count, and do not mix US/imperial gallon labels.
+- Verify authorized Manager can preview/map; Mechanical Supervisor and
+  Bodyshop Supervisor cannot use the one-time mapping API.
+- Include linked materials in Mechanical CATALOG only after explicit
+  classification and legitimate opening stock, never inferred from history.
+- Deploy only through the separate approved stock release; keep all flags off
+  until full cross-role and phone/web acceptance.
 
 ## Tested
 
