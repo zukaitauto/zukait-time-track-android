@@ -19,11 +19,27 @@ async function consumablesView(){
  // Dedicated Mechanical-only screen. Never import Painting / full-state cloud sync.
  return mount('./mechanical_consumables_host.js','mountMechanicalConsumablesHost',{
    onBack:()=>workspace(),
+   onReturn:()=>returnMaterialsView(),
    stockEnabled:()=>window.ZUKAIT_MECHANICAL_STOCK_ENABLED===true,
    stockRequest:body=>{
      if(!['CATALOG','WRITE'].includes(body?.operation)||
        body.operation==='WRITE'&&body.command!=='MECHANICAL_ISSUE')throw Error('Mechanical stock action forbidden');
      if(window.ZUKAIT_MECHANICAL_STOCK_ENABLED!==true)throw Error('Mechanical stock is not activated');
+     return request('workshop-api',{action:'consumables_stock',...body});
+   }
+ });
+}
+async function returnMaterialsView(){
+ // Returns only original issued lines; no Painting reservations or state sync.
+ return mount('./mechanical_consumables_returns_host.js','mountMechanicalConsumablesReturns',{
+   onBack:()=>consumablesView(),
+   stockEnabled:()=>window.ZUKAIT_MECHANICAL_STOCK_ENABLED===true,
+   stockRequest:body=>{
+     if(!['MECHANICAL_RETURNABLE','WRITE'].includes(body?.operation)||
+         body.operation==='WRITE'&&body.command!=='MECHANICAL_RETURN')
+        throw Error('Mechanical return action forbidden');
+     if(window.ZUKAIT_MECHANICAL_STOCK_ENABLED!==true)
+        throw Error('Mechanical stock is not activated');
      return request('workshop-api',{action:'consumables_stock',...body});
    }
  });
