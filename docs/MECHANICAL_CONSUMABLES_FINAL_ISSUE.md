@@ -13,6 +13,42 @@ Mechanical menu has these five sections:
 
 Remove the separate **Actual Materials** entry. Never create a waiting-for-actual queue for Mechanical Consumables.
 
+## Return Materials — development implementation (unpublished)
+
+The standalone Mechanical Supervisor Consumables page now offers **Return Materials**.
+Normal daily use is deliberately short:
+
+1. Enter the Mechanical Job Card and tap **Find issued materials**.
+2. Choose the **original issue line** (material + brand). The server returns only
+   that Job Card's still-returnable lines, in pages of up to 20.
+3. Enter unused quantity and a short reason, then tap **RETURN MATERIAL**.
+
+The server refuses more than was originally issued, refuses fractional pieces,
+locks the original issue line against concurrent over-returns, restores physical
+stock to the original **material and brand**, and records a **positive credit at
+the original locked issue cost**. The last partial return credits any remaining
+rounding difference so total credit cannot exceed the original issued cost.
+The original issue row keeps its original locked price, and a separate compact
+return row plus stock movement preserve the audit history. No Painting
+reservation flow is modified.
+
+The screen persists an **actor-specific request ID and exact payload** before
+sending a return. If the internet drops or a receipt is unconfirmed, the
+Supervisor must retry **the same return**, not create a new request that could
+double-credit. Opening the screen without selecting a Job Card performs no
+inventory read.
+
+Implementation: `CONSUMABLES_STOCK_MECHANICAL_RETURN.sql`,
+`mechanical_consumables_returns_host.js`, the scoped Workshop API route, and
+isolated PostgreSQL / browser tests. All are **staged only**; server and client
+feature flags remain off in production.
+
+**Further acceptance needed:** test with an isolated production-like database,
+verify real Manager/Mechanical Supervisor permissions and denied Bodyshop access,
+physical opening stocks, actual device/JCs, read-back of the correct cost report,
+and Manager review access from the legacy Master screen. Do not merge or publish
+until those checks are complete.
+
 ## Transaction invariants for the future secure integration
 
 1. Verify the Mechanical Job Card on the server and its department; **do not accept a Painting Job Card**. Use Manager and authorized Mechanical Supervisor role checks from the trusted staff session (the general Painting Supervisor must not automatically get Mechanical write access).
