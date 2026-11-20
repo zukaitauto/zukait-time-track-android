@@ -75,6 +75,42 @@ Client: \`window.ZUKAIT_MECHANICAL_STOCK_ENABLED\`,
 
 **Do not turn on these flags merely because CI is green.**
 
+## Offline PC backup readiness preflight — prepared, not executed on your PC
+
+The development branch includes a **read-only** helper:
+\`scripts/preflight-mechanical-stock-backup-readonly.ps1\`.
+
+It inspects the previously named encrypted Z: two-part backup session
+(\`Z:\Zukait-20261025\ZUKAIT-TWO-PART-20261118-085525-05bc29\` by default).
+
+- Validates project identity, current manifest status and revision inventory.
+- Checks 50-row history-chunk order, names, row counts, file sizes and SHA-256.
+- Reports saved / expected / remaining history chunks and next missing chunk.
+- Never reads production database credentials, calls Supabase, exports history,
+  updates a backup file, restores, deletes, or creates a local database.
+- \`-Quick\` reads only structure/metadata; it **never** certifies hashes.
+- Even when every file hash matches, it reports
+  \`BACKUP_FILE_HASHES_PASSED__ISOLATED_RESTORE_NOT_VERIFIED\`.
+  This is NOT a completed local restore nor full Supabase backup.
+
+With the encrypted Z: drive unlocked on the PC and the development checkout
+available, one command runs the default full local check:
+
+\`\`\`powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\preflight-mechanical-stock-backup-readonly.ps1"
+\`\`\`
+
+Do **not** begin a production history export or stock migration from this
+preflight. If the history set is incomplete, finish backup only after workshop
+operations are stable, during an appropriate approved safety window. The
+existing \`backup-zukait-two-part.ps1 -Phase Verify\` and
+\`restore-zukait-two-part-isolated.ps1\` are distinct, explicitly controlled
+steps and are not launched automatically.
+
+An in-memory/synthetic GitHub CI test checks incomplete history, correct
+completion classification, corrupted chunks and wrong project references.
+Synthetic CI fixtures never establish that the real Z: backup is intact.
+
 ## Current field evidence — NOT YET VERIFIED
 
 - [ ] Actual physical counts entered by a Manager for each material + brand
