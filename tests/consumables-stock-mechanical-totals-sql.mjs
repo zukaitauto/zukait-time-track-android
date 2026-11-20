@@ -19,7 +19,7 @@ await db.exec("insert into public.zukait_stock_material_keys(material_id,unit,de
 await db.exec("insert into public.zukait_stock_brand_keys(brand_id,display_name) values('a','Brand A'),('b','Brand B')");
 await db.exec("insert into public.zukait_stock_balances(material_id,brand_id,unit,physical,reserved,stock_value) values('oil','a','Liter',0,0,0),('oil','b','Liter',0,0,0),('wd','a','Piece',0,0,0)");
 const rpc=async(name,params)=>{
- const args=params.map((_,i)=>'
+ const args=params.map((_,i)=>String.fromCharCode(36)+(i+1)+(i===params.length-1&&name!=='zukait_stock_mechanical_job_totals'?'::jsonb':'')).join(',');
  const {rows}=await db.query("select public."+name+"("+args+") result",params);
  return rows[0].result;
 };
