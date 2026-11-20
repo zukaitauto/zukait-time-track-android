@@ -4,7 +4,11 @@ import {PGlite} from '@electric-sql/pglite';
 
 // Isolated PostgreSQL only. Never a production connection.
 const db=new PGlite();
-await db.exec('create role anon; create role authenticated; create role service_role;');
+await db.exec('create role anon; create role authenticated; create role service_role bypassrls;');
+// Supabase service_role bypasses RLS; anon and authenticated NEVER do.
+const pgRoles=await db.query("select rolname,rolbypassrls from pg_catalog.pg_roles where rolname in ('anon','authenticated','service_role')");
+assert.equal(pgRoles.rows.find(x=>x.rolname==='service_role').rolbypassrls,true);
+assert.equal(pgRoles.rows.find(x=>x.rolname==='authenticated').rolbypassrls,false);
 await db.exec("create table public.staff_credentials(user_id text primary key,role text not null,department text,active boolean default true,must_change boolean default false)");
 await db.exec("create table public.staff_sessions(user_id text references public.staff_credentials(user_id),token_hash text primary key,revoked_at timestamptz)");
 await db.exec("create table public.workshop_state(id text primary key,revision bigint default 1,data jsonb not null)");
