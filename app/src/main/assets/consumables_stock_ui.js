@@ -4,7 +4,7 @@ const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const OMR=n=>Number(n||0).toFixed(3);
 const fmt=n=>Number(n||0).toFixed(2);
 let view={page:'balance',items:[],history:[],itemsHasMore:false,historyHasMore:false,loading:false,error:'',busy:false,
-  selected:'',mode:'total',pending:null};
+  selected:'',mode:'total',pending:null,legacyItems:[],legacyPage:0,legacyHasMore:false};
 const allowed=()=>typeof me!=='undefined'&&['Manager','Supervisor'].includes(me?.role);
 const manager=()=>typeof me!=='undefined'&&me?.role==='Manager';
 const api=x=>window.zukaitCloud?.stockRequest?.(x)||Promise.reject(Error('Stock server connection not ready'));
@@ -75,10 +75,33 @@ function render(){
        '<div class="zs-metric"><div class="zs-muted">Low stock</div><b>'+low+'</b></div>'+
        '<div class="zs-metric"><div class="zs-muted">Out of stock</div><b>'+out+'</b></div></div>'+
        '<div class="zs-row" style="margin-top:12px"><h3>Available Stock</h3>'+
-       '<button class="zs-btn secondary" onclick="zukStockNav(\'balance\',true)">Refresh</button></div>'+
+       '<button class="zs-btn secondary" onclick="zukStockNav(\'balance\',true)">Refresh</button></div>'+ 
+       (manager()?'<button class="zs-btn secondary" onclick="zukStockLegacyReview()">One-time: Review Older Materials</button>':'')+
        (!rows.length?'<p class="zs-warning">No opening stock recorded. The existing material master remains unchanged.</p>':
           rows.map(rowCard).join(''))+
        (view.itemsHasMore?'<button class="zs-btn secondary" onclick="zukStockMore()">Load more items</button>':''));
+   return;
+ }
+ if(view.page==='legacy'){
+   if(!manager()){draw('<p class="zs-warning">Only Manager can review older materials.</p>');return}
+   draw('<h3>Older Materials — One-time Setup</h3>'+
+     '<p class="zs-muted">The existing Material Master is unchanged. Select which department uses each material and brand. Stock quantity starts at ZERO unless previously recorded; no prices or job costs are changed.</p>'+
+     (view.legacyItems.length?view.legacyItems.map((x,i)=>{
+       const paint=x.category==='Paint';
+       const dept=String(x.department||'Unassigned');
+       const options=paint?['Painting']:['Mechanical','Painting','Both'];
+       return '<div class="zs-card"><div class="zs-row"><b>'+esc(x.name)+' — '+esc(x.brand)+'</b>'+
+         '<span class="zs-muted">'+esc(x.unit)+' · '+esc(x.category)+'</span></div>'+
+         '<p class="zs-muted">Current: '+esc(dept)+(x.linked?' · Stock entry exists':' · Not linked')+'</p>'+
+         '<div class="zs-two"><div><label>Used in department</label>'+
+         '<select id="zs-legacy-origin-'+i+'"><option value="">Choose department</option>'+
+         options.map(y=>'<option value="'+y+'">'+y+'</option>').join('')+'</select></div>'+
+         '<div style="display:flex;align-items:end"><button class="zs-btn" type="button" onclick="zukStockLegacyLink('+i+')"'+(view.busy?' disabled':'')+'>Link Material</button></div></div></div>';
+     }).join(''):'<div class="zs-card">No older priced material/brand pairs on this page.</div>')+
+     '<div class="zs-row">'+
+     (view.legacyPage>0?'<button class="zs-btn secondary" onclick="zukStockLegacyPage('+(view.legacyPage-1)+')">Previous</button>':'')+
+     (view.legacyHasMore?'<button class="zs-btn secondary" onclick="zukStockLegacyPage('+(view.legacyPage+1)+')">Next 20</button>':'')+'</div>'+
+     '<p class="zs-muted">No bulk assignment, no stock purchases, and no automatic conversion of Painting to Mechanical.</p>');
    return;
  }
  if(view.page==='detail'){
@@ -165,6 +188,41 @@ async function load(page,force=false){
  }
  render();
 }
+async function loadLegacy(page=0){
+ if(!manager()||view.busy||view.loading)return;
+ if(!Number.isInteger(page)||page<0||page>49)return;
+ view.page='legacy';view.legacyPage=page;view.loading=true;view.error='';render();
+ try{
+   const r=await api({operation:'LEGACY_PREVIEW',page});
+   if(!r?.ok||r.preview?.readOnly!==true)throw Error(r?.code||'Legacy materials unavailable');
+   view.legacyItems=Array.isArray(r.preview.items)?r.preview.items.slice(0,20):[];
+   view.legacyHasMore=r.preview.hasMore===true;
+ }catch(e){view.legacyItems=[];view.legacyHasMore=false;view.error=String(e?.message||e)}
+ finally{view.loading=false;render()}
+}
+window.zukStockLegacyReview=()=>loadLegacy(0);
+window.zukStockLegacyPage=page=>loadLegacy(page);
+window.zukStockLegacyLink=async(index)=>{
+ if(!manager()||view.busy||view.loading)return;
+ const x=view.legacyItems[index];if(!x)return;
+ const origin=document.getElementById('zs-legacy-origin-'+index)?.value;
+ if(!['Mechanical','Painting','Both'].includes(origin)){
+   view.error='Choose Mechanical, Painting or Both.';render();return;
+ }
+ if(x.category==='Paint'&&origin!=='Painting'){
+   view.error='Paint category is Painting only.';render();return;
+ }
+ view.busy=true;view.error='';render();
+ try{
+   const r=await api({operation:'MASTER_LINK',
+     materialId:x.materialId,brandId:x.brandId,origin});
+   if(!r?.ok||r.linked?.linked!==true)throw Error(r?.code||'Link not confirmed');
+   view.busy=false;await loadLegacy(view.legacyPage);
+ }catch(e){
+   view.busy=false;view.error=String(e?.message||e);
+   render();
+ }
+};
 window.openStockManagement=()=>load('balance',true);
 window.zukStockNav=(page,force=false)=>load(page,force);
 window.zukStockDetail=id=>{view.selected=String(id||'');view.page='detail';render()};
