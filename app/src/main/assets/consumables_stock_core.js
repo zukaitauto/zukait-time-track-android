@@ -92,7 +92,7 @@
       const cost = avgCost(row);
       const r = { id: nextId(state, 'res'), materialId: row.materialId, brandId: row.brandId,
         jobCard: jc, status: 'reserved', lots: [{ quantity: q, unitCost: cost }],
-        finalisedLots: [], returnedLots: [], reservedQty: q, actualQty: 0, finalCost: 0 };
+        finalisedLots: [], returnedLots: [], reservedQty: q, actualQty: 0, finalCost: 0, returnCredit: 0, netCost: 0 };
       row.reserved += q;
       state.reservations.push(r);
       log('RESERVED', row, q, { reservationId: r.id, jobCard: jc, lockedCost: cost });
@@ -146,7 +146,7 @@
       row.value -= cost;
       if (row.physical < EPS) { row.physical = 0; row.value = 0; }
       if (row.value < -EPS) throw Error('NEGATIVE_STOCK_VALUE');
-      r.status = 'finalised'; r.actualQty = q; r.finalCost = cost;
+      r.status = 'finalised'; r.actualQty = q; r.finalCost = cost; r.netCost = cost;
       const released = r.reservedQty - q;
       r.reservedQty = 0; r.lots = [];
       log('FINALISED', row, -q, { reservationId: r.id, jobCard: r.jobCard,
@@ -175,8 +175,10 @@
       }
       if (left>EPS) throw Error('RETURN_LOT_MISMATCH');
       row.physical += q; row.value += credit;
+      r.returnCredit = (r.returnCredit || 0) + credit;
+      r.netCost = r.finalCost - r.returnCredit;
       log('RETURNED', row, q, { reservationId:r.id, jobCard:r.jobCard, credit });
-      result = { reservationId:r.id, quantity:q, credit, balance:stockLine(row) };
+      result = { reservationId:r.id, quantity:q, credit, netCost:r.netCost, balance:stockLine(row) };
     } else if (action === 'ADJUST') {
       if (actor.role !== 'Manager') throw Error('MANAGER_ONLY');
       const row = lookup();
