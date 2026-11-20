@@ -98,7 +98,7 @@ begin
     execute format('grant select,insert,update,delete on table public.%I to service_role',rel);
   end loop;
 end $$;
-grant usage, select on all sequences in schema public to service_role;
+-- Identity sequence access is handled by owner/service_role; never grant all public sequences.
 -- No policies for anon/authenticated: even an authenticated user cannot directly read or mutate stock.
 -- One-time catalog-key import must come from trusted server-verified existing material/brand master.
 -- No automatic deletion of financial history; archive old movements ONLY after verified offline export.
