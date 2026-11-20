@@ -7,7 +7,7 @@ const admin={
    requests.push({type:'read',table});
    const q={
      select(){return q},order(){return q},eq(){return q},lt(){return q},
-     range(){return q},limit(){return q},
+     range(){return q},limit(){return q},maybeSingle(){return Promise.resolve({data:{material_id:'oil5w30',brand_id:'brandA',unit:'Liter',physical:10,reserved:2},error:null})},
      then(resolve,reject){return Promise.resolve({data:table==='zukait_stock_balances'?
        Array.from({length:101},(_,i)=>({material_id:'m'+i,brand_id:'b'})):
        table==='zukait_stock_movements'?Array.from({length:51},(_,i)=>({id:300-i})):
@@ -46,6 +46,12 @@ assert.equal(r.status,400);
 const MS={role:'Mechanical Supervisor',id:'ms'};
 const mechanical={operation:'WRITE',command:'MECHANICAL_ISSUE',requestId:'issue-1',
  data:{jobCard:'JC12500',lines:[{materialId:'oil5w30',brandId:'brandA',quantity:4.5}]}};
+r=await consumablesStockApi(admin,MS,{operation:'BALANCE',materialId:'oil5w30',brandId:'brandA'},{enabled:true});
+assert.equal(r.status,200);
+assert.equal(r.body.item.material_id,'oil5w30');
+assert.equal(r.body.item.physical-r.body.item.reserved,8);
+r=await consumablesStockApi(admin,MS,{operation:'BALANCE',materialId:'not valid',brandId:'brandA'},{enabled:true});
+assert.equal(r.status,400);
 const countWrites=()=>requests.filter(x=>x.type==='write').length;
 const earlier=countWrites();
 r=await consumablesStockApi(admin,MS,mechanical,
