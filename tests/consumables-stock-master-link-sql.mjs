@@ -46,6 +46,14 @@ rows=await db.query("select brand_id,physical from public.zukait_stock_balances 
 assert.deepEqual(rows.rows.map(x=>x.brand_id),['a','b'],'two brands share one material but not stock quantity');
 const mk=await db.query("select count(*) as n from public.zukait_stock_material_keys");
 assert.equal(mk.rows[0].n,1);
+// Opening remains available on the new zero-balance placeholder once.
+let opening=await db.query("select public.zukait_stock_command($1,$2,$3,$4::jsonb) as result",[
+ 'valid-manager','opening-brand-b','OPENING',JSON.stringify({materialId:'oil5w30',brandId:'b',quantity:3,unitCost:4})
+]);
+assert.equal(Number(opening.rows[0].result.physical),3);
+await assert.rejects(db.query("select public.zukait_stock_command($1,$2,$3,$4::jsonb) as result",[
+ 'valid-manager','opening-brand-b-again','OPENING',JSON.stringify({materialId:'oil5w30',brandId:'b',quantity:3,unitCost:4})
+]),/OPENING_ALREADY_RECORDED/);
 const savedPrice=master.consumables.prices[0];
 let r=await db.query("select public.zukait_stock_command($1,$2,$3,$4::jsonb) as result",[
  'valid-manager','stock-purchase','PURCHASE',JSON.stringify({materialId:'oil5w30',brandId:'a',quantity:10,price:30,priceMethod:'total'})
@@ -73,6 +81,6 @@ await assert.rejects(link('valid-manager','oil5w30','b','Mechanical'),/MASTER_NO
 await db.exec("update public.staff_sessions set revoked_at=now() where token_hash='valid-manager'");
 await assert.rejects(link('valid-manager','oil5w30','a','Mechanical'),/MANAGER_ONLY/);
 const audit=await db.query("select count(*) as n from public.zukait_stock_movements");
-assert.equal(audit.rows[0].n,1,'catalog link never makes issue, reserve or unrelated stock movements');
+assert.equal(audit.rows[0].n,2,'catalog linking itself never makes a stock movement; only explicit opening and purchase do');
 console.log('Stock Master link: canonical saved source, multi-brand, unit guard, zero opening, retries, cross-department safety, Manager auth, no repricing PASS');
 await db.close();
