@@ -43,4 +43,32 @@ r=await consumablesStockApi(admin,M,{operation:'LIST',actorRole:'Manager'},{enab
 assert.equal(r.status,400,'client cannot provide arbitrary actor role');
 r=await consumablesStockApi(admin,M,{operation:'HISTORY',cursor:'not-valid'},{enabled:true});
 assert.equal(r.status,400);
-console.log('Stock API: role denial, disabled-by-default flags, paginated reads and receipt write PASSED');
+const MS={role:'Mechanical Supervisor',id:'ms'};
+const mechanical={operation:'WRITE',command:'MECHANICAL_ISSUE',requestId:'issue-1',
+ data:{jobCard:'JC12500',lines:[{materialId:'oil5w30',brandId:'brandA',quantity:4.5}]}};
+const countWrites=()=>requests.filter(x=>x.type==='write').length;
+const earlier=countWrites();
+r=await consumablesStockApi(admin,MS,mechanical,
+ {enabled:true,writesEnabled:true,sessionHash:'mechanical-session'});
+assert.equal(r.status,423,'Mechanical issue has an independent default-off flag');
+assert.equal(countWrites(),earlier);
+r=await consumablesStockApi(admin,S,mechanical,
+ {enabled:true,writesEnabled:true,mechanicalWritesEnabled:true,sessionHash:'bodyshop-session'});
+assert.equal(r.status,403,'Bodyshop Supervisor cannot issue Mechanical materials');
+assert.equal(countWrites(),earlier);
+r=await consumablesStockApi(admin,MS,{...mechanical,command:'PURCHASE'},
+ {enabled:true,writesEnabled:true,mechanicalWritesEnabled:true,sessionHash:'mechanical-session'});
+assert.equal(r.status,403,'Mechanical Supervisor cannot change general stock purchases');
+r=await consumablesStockApi(admin,MS,mechanical,
+ {enabled:true,writesEnabled:true,mechanicalWritesEnabled:true,sessionHash:'mechanical-session'});
+assert.equal(r.status,200);
+const finalWrite=requests.filter(x=>x.type==='write').at(-1);
+assert.equal(finalWrite.fn,'zukait_stock_mechanical_issue');
+assert.equal(finalWrite.args.p_session_hash,'mechanical-session');
+assert.deepEqual(finalWrite.args.p_data,mechanical.data);
+assert.equal(Object.hasOwn(finalWrite.args,'p_action'),false);
+r=await consumablesStockApi(admin,M,mechanical,
+ {enabled:true,writesEnabled:true,mechanicalWritesEnabled:true,sessionHash:'manager-session'});
+assert.equal(r.status,200);
+
+console.log('Stock API: role denial, disabled-by-default flags, paginated reads and receipt write and Mechanical issue guards PASSED');
