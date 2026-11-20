@@ -171,4 +171,31 @@ assert.equal(retWrite.args.p_session_hash,'ms');
 assert.deepEqual(retWrite.args.p_data,ret.data);
 assert.equal(Object.hasOwn(retWrite.args,'p_action'),false);
 assert.equal(countWrites(),writesBeforeReturn+2,'only authorized read+return can reach RPC');
-console.log('Stock API: roles, disabled-by-default, separate Mechanical issue/return RPC, and bounded returnable read PASS');
+// Only Mechanical Supervisor or Manager may view JC-specific net cost totals.
+const totals={operation:'MECHANICAL_TOTALS',jobCard:'JC12500',page:0};
+const beforeTotals=requests.filter(x=>x.type==='write').length;
+r=await consumablesStockApi(admin,S,totals,
+ {enabled:true,mechanicalWritesEnabled:true,sessionHash:'bodyshop'});
+assert.equal(r.status,403,'Bodyshop cannot view Mechanical JC costs');
+r=await consumablesStockApi(admin,MS,totals,{enabled:true,sessionHash:'mechanical'});
+assert.equal(r.status,423,'Mechanical totals stay gated off until stock release');
+r=await consumablesStockApi(admin,MS,{...totals,page:50},
+ {enabled:true,mechanicalWritesEnabled:true,sessionHash:'mechanical'});
+assert.equal(r.status,400,'only bounded pages for JC totals');
+r=await consumablesStockApi(admin,MS,{...totals,jobCard:'JC*'},
+ {enabled:true,mechanicalWritesEnabled:true,sessionHash:'mechanical'});
+assert.equal(r.status,400,'no arbitrary SQL/JC filter');
+r=await consumablesStockApi(admin,MS,totals,
+ {enabled:true,mechanicalWritesEnabled:true,sessionHash:'mechanical'});
+assert.equal(r.status,200);
+const totalRead=requests.filter(x=>x.type==='write').at(-1);
+assert.equal(totalRead.fn,'zukait_stock_mechanical_job_totals');
+assert.deepEqual(totalRead.args,{p_session_hash:'mechanical',p_job_card:'JC12500',p_page:0});
+r=await consumablesStockApi(admin,M,totals,
+ {enabled:true,mechanicalWritesEnabled:true,sessionHash:'manager'});
+assert.equal(r.status,200);
+assert.equal(requests.filter(x=>x.type==='write').length,beforeTotals+2,'only authorized totals RPCs can reach database');
+assert.equal(requests.filter(x=>x.type==='read'&&x.table==='workshop_state').length,0,
+ 'Totals must never pull workshop state');
+
+console.log('Stock API: roles, disabled-by-default, separate Mechanical issue/return RPC, bounded returnable read, and JC net totals PASS');
