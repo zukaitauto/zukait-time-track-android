@@ -32,7 +32,12 @@ It verifies **direct Postgres role permissions**, not only JavaScript menu hidin
 
 1. **Physical opening stock**: Manager approves an actual count and purchase
    cost for EACH material+brand+unit, including sealed packages and coolant
-   container sizes. No inferred or fabricated opening quantities.
+   container sizes. No inferred or fabricated opening quantities. The staged
+   Manager screen uses BLANK quantity/cost fields and requires a physical-count
+   checkbox plus a short audit reason before opening. The database independently
+   rejects missing confirmation, missing reason, zero/invalid count and
+   fractional pieces. The confirmation records what the Manager attested;
+   it is not evidence a physical count has actually happened.
 2. **Verified recoverable backup**: fresh backup, integrity verification and
    isolated restore rehearsal of the CURRENT production revision, including
    custom staff authentication, Mechanical JC tables and relevant functions.
@@ -69,6 +74,18 @@ Client: \`window.ZUKAIT_MECHANICAL_STOCK_ENABLED\`,
 \`window.ZUKAIT_STOCK_MASTER_LINK_ENABLED\`.
 
 **Do not turn on these flags merely because CI is green.**
+
+## Current field evidence — NOT YET VERIFIED
+
+- [ ] Actual physical counts entered by a Manager for each material + brand
+- [ ] Each brand's opening valuation verified against purchase invoices/counts
+- [ ] A current PC backup SHA-256 and archive-read test completed
+- [ ] An isolated restore of that current backup, with staff/JCs and functions
+- [ ] Real Android and Web acceptance with Manager / Mechanical Supervisor
+- [ ] Production connection and EBS I/O stability verified before any rollout
+
+None of the above may be marked complete using synthetic test fixtures.
+No live Supabase query or PC backup operation has been run in this PR.
 
 ## Minimal release decision
 
