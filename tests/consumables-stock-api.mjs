@@ -65,11 +65,17 @@ assert.equal(requests.filter(x=>x.type==='read'&&x.table==='workshop_state').len
 
 const mechanical={operation:'WRITE',command:'MECHANICAL_ISSUE',requestId:'issue-1',
  data:{jobCard:'JC12500',lines:[{materialId:'oil5w30',brandId:'brandA',quantity:4.5}]}};
+r=await consumablesStockApi(admin,MS,{operation:'LIST'},{enabled:true});
+assert.equal(r.status,403,'Mechanical Supervisor cannot list Painting stock');
+r=await consumablesStockApi(admin,MS,{operation:'HISTORY'},{enabled:true});
+assert.equal(r.status,403,'Mechanical Supervisor cannot read general movement history');
 r=await consumablesStockApi(admin,MS,{operation:'BALANCE',materialId:'oil5w30',brandId:'brandA'},{enabled:true});
+assert.equal(r.status,403,'Mechanical Supervisor uses department-scoped catalog, not unrestricted balance lookup');
+r=await consumablesStockApi(admin,M,{operation:'BALANCE',materialId:'oil5w30',brandId:'brandA'},{enabled:true});
 assert.equal(r.status,200);
 assert.equal(r.body.item.material_id,'oil5w30');
 assert.equal(r.body.item.physical-r.body.item.reserved,8);
-r=await consumablesStockApi(admin,MS,{operation:'BALANCE',materialId:'not valid',brandId:'brandA'},{enabled:true});
+r=await consumablesStockApi(admin,M,{operation:'BALANCE',materialId:'not valid',brandId:'brandA'},{enabled:true});
 assert.equal(r.status,400);
 const countWrites=()=>requests.filter(x=>x.type==='write').length;
 const earlier=countWrites();
