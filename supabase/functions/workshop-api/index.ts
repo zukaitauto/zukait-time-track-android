@@ -1197,6 +1197,7 @@ Deno.serve(async (req: Request) => {
       const result=await consumablesStockApi(admin,user,body,{
         enabled:Deno.env.get('ZUKAIT_STOCK_ENABLED')==='true',
         writesEnabled:Deno.env.get('ZUKAIT_STOCK_WRITES_ENABLED')==='true',
+        mechanicalWritesEnabled:Deno.env.get('ZUKAIT_MECHANICAL_STOCK_ENABLED')==='true',
         sessionHash:await sha256Hex(token)
       });
       return reply(result.body,result.status);
