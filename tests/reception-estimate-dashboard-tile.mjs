@@ -14,7 +14,8 @@ test('Estimate is a shared Reception tile and opens the existing Estimate window
  assert.match(dashboard,/\["new","create-job","estimate"\]\.includes\(key\)/);
  assert.match(dashboard,/\['new','checklists','estimate'\]\.includes\(key\)/);
  assert.match(estimate,/function canUse\(\)[\s\S]*?Receptionist/);
- assert.match(estimate,/window\.zukaitEstimate=\{openHome/);
+ assert.match(estimate,/window\.zukaitEstimate=\{[^}]*\bopenHome\b/,
+  'Reception Estimate API exposes openHome regardless of object property ordering');
 });
 test('Manager and Supervisor retain their existing Estimate dashboard cards',()=>{
  assert.match(estimate,/if\(r==='Supervisor'\)/);
