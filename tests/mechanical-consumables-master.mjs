@@ -33,6 +33,7 @@ assert.match(shown,/Brand Name/);
 assert.match(shown,/Price \/ Unit OMR/);
 assert.match(shown,/Effective From/);
 assert.match(shown,/cmCategory/);
+assert.match(shown,/<option selected>Consumable<\/option>/,'Mechanical new materials default to Consumable');
 assert.match(shown,/onclick="openMechanicalConsumables\(\)"/);
 
 fill({cmMaterial:'Engine Oil 5W-30',cmBrand:'Brand A',cmUnit:'Liter',
@@ -74,6 +75,7 @@ ctx.openMechanicalConsumablesSection('materialHistory');
 assert.match(shown,/VIEW HISTORY/);
 assert.match(shown,/onclick="openMechanicalConsumables\(\)"/);
 ctx.openConsumablesManager('master');
+assert.doesNotMatch(shown,/<option selected>Consumable<\/option>/,'Painting retains its original category default');
 assert.match(shown,/onclick="openPaintingConsumables\(\)"/,
  'painting master keeps its original return target');
 ctx.openConsumablesManager('material');
