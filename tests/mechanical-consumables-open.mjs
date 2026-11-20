@@ -17,8 +17,11 @@ const masterOpens=[],materialHistoryOpens=[];
 const rows={innerHTML:''};
 const input={value:''};
 const matSelect={value:'p'};
-const brandSelect={innerHTML:''};
+const brandSelect={innerHTML:'',value:'b'};
 const unitDisplay={textContent:''};
+const issueQuantity={value:''};
+const issueDraft={innerHTML:''};
+const issueWarning={textContent:''};
 const data={consumables:{
  materials:[{id:'p',name:'2K Primer',unit:'Liter',active:true},
             {id:'t',name:'Masking Tape',unit:'Piece',active:true}],
@@ -29,7 +32,7 @@ const ctx={console,me:{id:'M',role:'Manager'},state:data,
  consOpenMaster:origin=>masterOpens.push(origin),
  consOpenMaterialSearch:origin=>materialHistoryOpens.push(origin),
  openModal:html=>{output=html},closeModal:()=>{},
- document:{getElementById:id=>id==='mcConsFilter'?input:id==='mcConsRows'?rows:id==='mcConsMaterial'?matSelect:id==='mcConsBrand'?brandSelect:id==='mcConsUnit'?unitDisplay:null}};
+ document:{getElementById:id=>id==='mcConsFilter'?input:id==='mcConsRows'?rows:id==='mcConsMaterial'?matSelect:id==='mcConsBrand'?brandSelect:id==='mcConsUnit'?unitDisplay:id==='mcConsQuantity'?issueQuantity:id==='mcConsDraft'?issueDraft:id==='mcConsWarning'?issueWarning:null}};
 ctx.window=ctx;
 vm.createContext(ctx);
 vm.runInContext(mechanical,ctx);
@@ -61,15 +64,32 @@ for(const key of keys){
   assert.match(output,/Mechanical Consumables/);
   assert.match(output,/openMechanicalConsumables\(\)/,'Each subpage can navigate back');
   if(key==='issued'||key==='additional') {
-    assert.match(output,/Mechanical Job Card Number/);
-    assert.match(output,/No material is issued or deducted from stock/);
-    assert.match(output,/atomic stock deduction/);
+    assert.match(output,/Mechanical Job Card/);
+    assert.match(output,/no materials have been issued or deducted from stock/i);
+    assert.match(output,/ISSUE MATERIALS \(not enabled\)/);
+    assert.match(output,/<button type="button" disabled title="Secure stock issuing is not enabled yet"/);
     assert.match(output,/mcConsMaterial/);
     assert.match(output,/mcConsBrand/);
     assert.match(output,/CAPSI/);
     assert.match(output,/MILACO/);
   }
 }
+ctx.openMechanicalConsumablesSection('issued');
+matSelect.value='p';brandSelect.value='b';issueQuantity.value='1.5';
+ctx.mechanicalConsumablesAddLine();
+assert.match(issueDraft.innerHTML,/1.5 Liter/);
+assert.match(issueDraft.innerHTML,/CAPSI/);
+issueQuantity.value='1';
+ctx.mechanicalConsumablesAddLine();
+assert.match(issueWarning.textContent,/already added/);
+brandSelect.value='m';issueQuantity.value='2';
+ctx.mechanicalConsumablesAddLine();
+assert.match(issueDraft.innerHTML,/MILACO/);
+assert.match(issueDraft.innerHTML,/2 Liter/);
+ctx.mechanicalConsumablesRemoveLine(0);
+assert.doesNotMatch(issueDraft.innerHTML,/CAPSI/);
+assert.match(issueDraft.innerHTML,/MILACO/);
+assert.equal(writes,0,'no stock or JC writes during local issue draft');
 ctx.openMechanicalConsumablesSection('actual');
 assert.ok(output.includes("openMechanicalConsumablesSection('issued')"),'Legacy Actual link returns to menu without saving');
 ctx.openMechanicalConsumablesSection('returns');
