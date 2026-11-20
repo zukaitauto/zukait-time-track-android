@@ -43,10 +43,10 @@ await assert.rejects(issue('before-opening',[{materialId:'oil',brandId:'a',quant
 
 for(const [id,quantity,unitCost,mat,brand] of [
  ['opening-a',20,5,'oil','a'],['opening-b',10,7,'oil','b'],['opening-wd',4,3,'wd','a']]){
-  const r=await cmd(id,'OPENING',{materialId:mat,brandId:brand,quantity,unitCost});
+  const r=await cmd(id,'OPENING',{materialId:mat,brandId:brand,quantity,unitCost,countConfirmed:true,reason:'Verified physical count'});
   approx(r.physical,quantity);
 }
-await assert.rejects(cmd('opening-again','OPENING',{materialId:'oil',brandId:'a',quantity:20,unitCost:5}),/OPENING_ALREADY_RECORDED/);
+await assert.rejects(cmd('opening-again','OPENING',{materialId:'oil',brandId:'a',quantity:20,unitCost:5,countConfirmed:true,reason:'Verified physical count'}),/OPENING_ALREADY_RECORDED/);
 const first=await issue('first-batch',[
  {materialId:'oil',brandId:'a',quantity:4},
  {materialId:'oil',brandId:'b',quantity:2},
