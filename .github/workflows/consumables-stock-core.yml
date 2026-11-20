@@ -39,6 +39,8 @@ jobs:
         run: node tests/consumables-stock-core.mjs
       - name: Feature-flagged API boundaries
         run: node tests/consumables-stock-api.mjs
+      - name: Combined Stock and Mechanical menu, sync and API wiring
+        run: node tests/consumables-combined-wiring.mjs
       - name: Direct PostgreSQL ACL, RLS and service-role acceptance
         run: node tests/consumables-stock-db-roles.mjs
       - name: Offline PC backup integrity and incomplete-history safety preflight

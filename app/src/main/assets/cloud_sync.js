@@ -739,6 +739,7 @@
     lastSuccessfulSyncAt=Date.now();lastSyncError='';consecutiveSyncErrors=0;setServerConnection('connected');
     initialDone=true;
     conflictAlerted=false;
+    if(typeof window!=='undefined'&&typeof setTimeout==='function'&&typeof flushStockMasterLinks==='function')setTimeout(flushStockMasterLinks,0);
     return true;
   }
 
@@ -852,6 +853,8 @@
           }
           status('SYNCED','ok');
           conflictAlerted=false;
+          // Never project master IDs until this exact workshop save is accepted.
+          if(typeof window!=='undefined'&&typeof setTimeout==='function'&&typeof flushStockMasterLinks==='function')setTimeout(flushStockMasterLinks,0);
           if(r.force_pull&&!r.data){
             setTimeout(()=>{if(!cloudDirty)pull(true).catch(e=>console.warn('Post-rebase refresh failed',e))},0);
           }
@@ -1036,6 +1039,65 @@
     // not after an arbitrary debounce window.
     pushTimer=setTimeout(()=>push(0),0);
   };
+
+  // One tiny Material+Brand ID after a CONFIRMED existing workshop save.
+  // No extra workshop_state write and no polling/full-history read.
+  // Queue is per actor so a different login cannot link another user's edits.
+  const STOCK_LINK_PREFIX='zukait_stock_master_link_queue_v1:';
+  let stockMasterLinkBusy=false;
+  function stockLinkKey(){return STOCK_LINK_PREFIX+String(me?.id||'')}
+  function stockPendingLinks(){
+    try{
+      const raw=JSON.parse(localStorage.getItem(stockLinkKey())||'[]');
+      return Array.isArray(raw)?raw.filter(x=>x&&x.materialId&&x.brandId&&
+        ['Mechanical','Painting'].includes(x.origin)).slice(0,80):[];
+    }catch(_){return []}
+  }
+  window.cloudQueueStockMasterLink=function(entry){
+    if(me?.role!=='Manager'||!navigator.onLine||window.zukaitSessionPrivacy?.locked)return false;
+    const materialId=String(entry?.materialId||''),brandId=String(entry?.brandId||'');
+    const origin=entry?.origin;
+    if(!/^[a-zA-Z0-9_.:-]{1,120}$/.test(materialId)||
+       !/^[a-zA-Z0-9_.:-]{1,120}$/.test(brandId)||
+       !['Mechanical','Painting'].includes(origin))return false;
+    try{
+      const queue=stockPendingLinks();
+      if(!queue.some(x=>x.materialId===materialId&&x.brandId===brandId&&x.origin===origin)){
+        if(queue.length>=80){console.warn('Stock catalog link queue is full; Manager review required.');return false}
+        queue.push({materialId,brandId,origin});
+        localStorage.setItem(stockLinkKey(),JSON.stringify(queue));
+      }
+      // Never link before cloud confirms the original workshop-state save.
+      return true;
+    }catch(e){console.warn('Unable to queue stock catalog link',e);return false}
+  };
+  async function flushStockMasterLinks(){
+    if(stockMasterLinkBusy||window.ZUKAIT_STOCK_MASTER_LINK_ENABLED!==true||
+       me?.role!=='Manager'||!initialDone||cloudDirty||cloudPushing||
+       !navigator.onLine||!sessionToken()||window.zukaitSessionPrivacy?.locked)return;
+    const queue=stockPendingLinks(),item=queue[0],actor=String(me.id),epoch=sessionEpoch;
+    if(!item)return;
+    stockMasterLinkBusy=true;
+    let more=false;
+    try{
+      const r=await api({action:'consumables_stock',operation:'MASTER_LINK',
+        materialId:item.materialId,brandId:item.brandId,origin:item.origin});
+      if(stale(epoch)||String(me?.id)!==actor)return;
+      if(r?.ok===true&&r.linked?.linked===true){
+        const rest=stockPendingLinks().filter(x=>!(
+          x.materialId===item.materialId&&x.brandId===item.brandId&&x.origin===item.origin));
+        localStorage.setItem(stockLinkKey(),JSON.stringify(rest));
+        more=rest.length>0;
+      }else{
+        // A rejected or unconfirmed link stays queued; never claim it succeeded.
+        console.warn('Stock catalog link pending:',r?.code||'unconfirmed');
+      }
+    }catch(e){if(!stale(epoch))console.warn('Stock catalog link pending:',e)}
+    finally{
+      stockMasterLinkBusy=false;
+      if(more&&!stale(epoch))setTimeout(flushStockMasterLinks,400);
+    }
+  }
 
   // Reports read a server snapshot independently of queued edits and polling.
   let readLatestInFlight=null,confirmedReadState=null,confirmedReadRevision=-1;
