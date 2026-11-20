@@ -35,6 +35,8 @@ export async function mountMechanicalWorkspace(root,options={}){
  }
  function dashboard(){
   const definitions=[['estimate','Estimate','blue'],['estimate-list','Estimate List','violet'],['create-checklist','Create Checklist','mint'],['checklists','Check Lists','peach'],['create-job','Create Job Card','cobalt'],['jobs','Job Cards','sky'],['wip','WIP','violet'],['qc','QC Pending','amber'],['ready','Ready for Delivery','green'],['delivered','Delivered Vehicles','cyan'],['exceeded','Suggested Time Exceed','rose'],['time-management','Time Management','violet']];
+  // Only the dedicated host supplies this link; legacy dashboard remains unchanged.
+  if(typeof options.openConsumables==='function')definitions.push(['consumables','Mechanical Consumables','mint']);
   // SVG icon paths are fixed source assets, never business-record HTML.
   const icons={
    estimate:'<rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/>',
@@ -48,7 +50,8 @@ export async function mountMechanicalWorkspace(root,options={}){
    ready:'<path d="M21 3 9 15M21 3l-5 17-4.5-7.5L4 8l17-5Z"/>',
    delivered:'<path d="m5 13 2-5h10l2 5M5 17H4v-4l2-2h12l2 2v4h-1M7 17h10M7 17v2M17 17v2"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/>',
    exceeded:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l-3 3"/>',
-   'time-management':'<circle cx="12" cy="13" r="8"/><path d="M12 13V9m0 4 3 2M9 2h6m-3 0v3m6 2 2-2"/>'
+   'time-management':'<circle cx="12" cy="13" r="8"/><path d="M12 13V9m0 4 3 2M9 2h6m-3 0v3m6 2 2-2"/>',
+   consumables:'<path d="M5 5h14v4H5zM7 9v11h10V9M9 13h6M9 16h6"/>'
   };
   const iconFor=key=>{
    const holder=node('span',null,{class:'mc-card-icon','aria-hidden':'true'});
