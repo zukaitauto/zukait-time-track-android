@@ -136,7 +136,8 @@ begin
      for update;
    if not found then raise exception 'OPENING_STOCK_REQUIRED' using errcode='22023';end if;
    if not exists (select 1 from public.zukait_stock_material_keys m
-      where m.material_id=v_line.material_id and m.active=true)
+      where m.material_id=v_line.material_id and m.active=true
+        and m.department in ('Mechanical','Both'))
       or not exists (select 1 from public.zukait_stock_brand_keys b
       where b.brand_id=v_line.brand_id and b.active=true) then
       raise exception 'STOCK_MASTER_KEY_NOT_FOUND' using errcode='22023';end if;
