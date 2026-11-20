@@ -44,6 +44,7 @@ el('mcConsJc').value='JC12500';
 el('mcConsMaterial').value='oil';
 el('mcConsBrand').value='brand1';
 el('mcConsQuantity').value='4.5';
+await ctx.mechanicalConsumablesRefreshBalance(); // mock DOM sets the selected material after the first render
 ctx.mechanicalConsumablesAddLine();
 assert.equal(el('mcConsSubmit').disabled,false);
 assert.match(el('mcConsDraft').innerHTML,/Brand A/);
