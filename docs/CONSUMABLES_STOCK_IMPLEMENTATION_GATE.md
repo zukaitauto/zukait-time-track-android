@@ -1,6 +1,6 @@
 # ZUKAIT Consumables Stock — implementation and release gate
 
-**Status (2026-11-20): stock domain core and focused tests committed; not connected to the live app or database.**
+**Status (2026-11-20): stock domain core, compact staged SQL/RPC, feature-flagged API, fifth Stock menu and five clickable UI screens committed. SQL and UI tests passed in isolated GitHub CI. Stock is NOT linked to existing Suggested/Actual Materials server transactions and is NOT deployed or enabled in the live database.**
 This is a staged change based on `architecture-v2`. Do not deploy the standalone core as if it were a complete stock module.
 
 ## Approved workshop workflow
@@ -31,11 +31,11 @@ The Workshop API authenticates `x-zukait-session` against `staff_sessions` and `
 
 A new stock API route must resolve the actor from the verified server session, enforce Manager/Supervisor permissions on every request, and restrict sensitive corrections to Manager. Use a dedicated server RPC with table privileges/RLS designed for that trust boundary. Never accept an actor ID or role from the client as authority. Verify material/brand IDs against the live existing material master.
 
-## Integration gates (not implemented yet)
+## Integration and release gates (remaining)
 
-1. Add normalized DB migration and internal, privileged, idempotent stock RPCs. **Do not apply to production until a restore rehearsal and targeted load test pass.**
-2. Add feature-flagged Workshop API endpoints for read and write, with role denial and audit enforcement.
-3. Implement all five Stock screens on Android/Web using the server API. Disable saves rather than displaying stale success when offline.
+1. Convert the staged SQL and RPC into an official Supabase migration using the CLI, verify in an isolated PG17 environment and seed compact master keys. **Do not apply to production until a restore rehearsal and targeted load test pass.**
+2. The feature-flagged Workshop API route is staged and tested; confirm real staff permissions, idempotency and tiny response limits against an isolated server before enabling either flag.
+3. Five clickable Stock screens are staged. Complete live read/write UX and physical device acceptance; offline saves must fail closed rather than display stale success.
 4. Integrate new Suggested/Issued and Actual Materials workflow transactions at the server boundary. In particular, `finishActual` currently selects the material-master price by `actualAt`; the new stock pathway must instead apply locked suggestion cost layers for **new** stock-controlled JCs, without changing existing historical prices.
 5. Cutover: import/verify existing material/brand IDs; record **physical opening balances at activation time**; do not retroactively deduct old JCs or reserve old suggestions. Handle an existing ongoing JC explicitly at cutover.
 6. Regression: concurrent reservations, cancelled/changed suggestions, duplicate save/retry, intermittent connectivity, zero-stock reprice, multiple brands, kg/Piece units, purchase total price, partial finalisation, returns and audit.
