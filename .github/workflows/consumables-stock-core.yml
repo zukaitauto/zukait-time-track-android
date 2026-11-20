@@ -1,20 +1,19 @@
-name: Consumables stock core tests
+name: Consumables stock safety tests
 on:
   workflow_dispatch:
   push:
-    branches:
-      - feature/consumables-stock-core-20261120
+    branches: [feature/consumables-stock-core-20261120]
     paths:
       - 'app/src/main/assets/consumables_stock_core.js'
-      - 'tests/consumables-stock-core.mjs'
+      - 'app/src/main/assets/consumables_stock_ui.js'
+      - 'app/src/main/assets/consumables_ui.js'
+      - 'app/src/main/assets/cloud_sync.js'
+      - 'supabase/staged/CONSUMABLES_STOCK_COMPACT_*.sql'
+      - 'supabase/functions/workshop-api/**'
+      - 'tests/consumables-stock-*.mjs'
       - '.github/workflows/consumables-stock-core.yml'
   pull_request:
-    branches:
-      - architecture-v2
-    paths:
-      - 'app/src/main/assets/consumables_stock_core.js'
-      - 'tests/consumables-stock-core.mjs'
-      - '.github/workflows/consumables-stock-core.yml'
+    branches: [architecture-v2]
 jobs:
   stock-test:
     runs-on: ubuntu-latest
@@ -25,4 +24,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node tests/consumables-stock-core.mjs
+          cache: 'npm'
+      - name: Install locked dependencies (isolated CI only)
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Validate stock JavaScript syntax
+        run: |
+          node --check app/src/main/assets/consumables_stock_core.js
+          node --check app/src/main/assets/consumables_stock_ui.js
+          node --check app/src/main/assets/consumables_ui.js
+          node --check app/src/main/assets/cloud_sync.js
+      - name: Transaction core behavior
+        run: node tests/consumables-stock-core.mjs
+      - name: Feature-flagged API boundaries
+        run: node tests/consumables-stock-api.mjs
+      - name: Isolated PostgreSQL stock lifecycle
+        run: node tests/consumables-stock-sql.mjs
