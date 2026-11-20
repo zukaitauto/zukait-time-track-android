@@ -49,6 +49,23 @@ physical opening stocks, actual device/JCs, read-back of the correct cost report
 and Manager review access from the legacy Master screen. Do not merge or publish
 until those checks are complete.
 
+## Total Consumables — read-only Job Card net cost (development only)
+
+The dedicated Mechanical Supervisor screen now has **Total Consumables**.
+One Job Card search shows **Total issued − Returned unused = Net consumables
+cost**, in OMR, plus small pages of brand-specific issue lines and returns.
+
+The server uses `zukait_stock_mechanical_job_totals` from the separate
+Stock PR #61 and verifies the actual Mechanical role and JC on every read.
+No Job Card/workshop-state copies, no historical cost recalculation, no
+manual cost entry, and no extra daily work steps. **Existing Painting
+Consumables stays unchanged.** Synthetic opening/issue/return test data
+reconciles to OMR 37.000 issued, OMR 8.000 returned, OMR 29.000 net; this
+is NOT a live workshop amount.
+
+Production rollout remains disabled pending real opening-stock,
+cross-role, Android/web and backup/restore acceptance.
+
 ## Transaction invariants for the future secure integration
 
 1. Verify the Mechanical Job Card on the server and its department; **do not accept a Painting Job Card**. Use Manager and authorized Mechanical Supervisor role checks from the trusted staff session (the general Painting Supervisor must not automatically get Mechanical write access).
