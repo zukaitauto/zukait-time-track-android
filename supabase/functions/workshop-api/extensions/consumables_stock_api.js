@@ -21,6 +21,20 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
   // LIST/HISTORY/BALANCE/RESERVATIONS could otherwise disclose Bodyshop-only stock.
   if(user.role==='Mechanical Supervisor'&&!['CATALOG','WRITE'].includes(operation))
     return bad('mechanical_stock_forbidden',403);
+  if(operation==='LEGACY_PREVIEW') {
+    // One-time Manager review of the CURRENT saved master; at most 20 pairs.
+    // No write to Stock or workshop_state, no automatic department inference.
+    if(user.role!=='Manager')return bad('manager_only',403);
+    if(!masterLinkEnabled)return bad('stock_master_link_not_enabled',423);
+    if(!sessionHash)return bad('stock_session_required',401);
+    if(!Number.isInteger(body.page)||body.page<0||body.page>49)
+      return bad('invalid_preview_page');
+    const {data,error}=await admin.rpc('zukait_stock_legacy_preview',{
+      p_session_hash:sessionHash,p_page:body.page
+    });
+    if(error)return bad('legacy_preview_failed',503);
+    return good({preview:data});
+  }
   if(operation==='MASTER_LINK') {
     // Manager-only projection of one material+brand that is ALREADY committed
     // to the existing workshop Master; SQL rechecks saved IDs, price and role.
@@ -30,7 +44,7 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
     const materialId=safeId(body.materialId);
     const brandId=safeId(body.brandId);
     const origin=body.origin;
-    if(!materialId||!brandId||!['Mechanical','Painting'].includes(origin))
+    if(!materialId||!brandId||!['Mechanical','Painting','Both'].includes(origin))
       return bad('invalid_master_link');
     const {data,error}=await admin.rpc('zukait_stock_link_master',{
       p_session_hash:sessionHash,p_material_id:materialId,p_brand_id:brandId,
