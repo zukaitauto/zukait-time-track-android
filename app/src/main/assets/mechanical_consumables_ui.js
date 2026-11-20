@@ -13,7 +13,7 @@ const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<
 const canManage=()=>{const user=typeof me!=='undefined'&&me?me:window.me;return user?.role==='Manager'};
 const canView=()=>{
  const r=(typeof me!=='undefined'&&me?me.role:window.me?.role);
- return r==='Manager'||r==='Supervisor';
+ return r==='Manager'||r==='Supervisor'||r==='Mechanical Supervisor';
 };
 function master(){
  // Read the existing Material and Brand Master. Never store a duplicate catalog.
@@ -98,6 +98,7 @@ function brandPreview() {
    ? records.map(x=>'<option value="'+escapeHtml(x.brandId)+'">'+escapeHtml(x.brand)+'</option>').join('')
    : '<option value="">No brand recorded for this material</option>';
  if(unit)unit.textContent='Unit: '+(records[0]?.unit||'Select a material with a brand');
+ loadBalance();
  const qtyLabel=document.querySelector?.('label[for="mcConsQuantity"]');
  if(qtyLabel)qtyLabel.textContent='Quantity ('+(records[0]?.unit||'—')+')';
 }
@@ -110,14 +111,22 @@ function issueSelector(){
   '<label for="mcConsMaterial">Material / Grade</label>'+
   '<select id="mcConsMaterial" onchange="mechanicalConsumablesSelectMaterial()">'+materialOpts+'</select>'+
   '<label for="mcConsBrand">Brand</label>'+
-  '<select id="mcConsBrand">'+brands.map(x=>'<option value="'+escapeHtml(x.brandId)+'">'+escapeHtml(x.brand)+'</option>').join('')+'</select>'+
+  '<select id="mcConsBrand" onchange="mechanicalConsumablesRefreshBalance()">'+brands.map(x=>'<option value="'+escapeHtml(x.brandId)+'">'+escapeHtml(x.brand)+'</option>').join('')+'</select>'+
   '<p id="mcConsUnit" class="mc-cons-muted">Unit: '+escapeHtml(first?.unit||'Not available')+'</p>'+
   '<p class="mc-cons-muted">Every material and brand combination will have its own stock balance and purchase cost. Save remains disabled until the secure Mechanical issue workflow is connected.</p></div>';
 }
 
 const draftLines=[];
+let currentIssueKind='issued',pendingIssue=null,sending=false,balanceRead=0;
+const canIssue=()=>{
+ const u=typeof me!=='undefined'&&me?me:window.me;
+ return ['Manager','Mechanical Supervisor'].includes(u?.role)&&
+   window.ZUKAIT_MECHANICAL_STOCK_ENABLED===true&&
+   typeof window.zukaitCloud?.stockRequest==='function';
+};
 function addIssueLine(){
  if(!canView())return;
+ if(pendingIssue||sending)return;
  const m=document.getElementById('mcConsMaterial')?.value;
  const b=document.getElementById('mcConsBrand')?.value;
  const raw=String(document.getElementById('mcConsQuantity')?.value||'').trim();
@@ -137,7 +146,7 @@ function addIssueLine(){
  renderDraft();
 }
 function removeIssueLine(index){
- if(!canView()||!Number.isInteger(index)||index<0||index>=draftLines.length)return;
+ if(!canView()||pendingIssue||sending||!Number.isInteger(index)||index<0||index>=draftLines.length)return;
  draftLines.splice(index,1);
  renderDraft();
 }
@@ -147,6 +156,62 @@ function renderDraft(){
    draftLines.map((x,i)=>'<div class="mc-cons-toolbar" style="padding:8px 0;border-bottom:1px solid #dce6f1">'+
    '<span><b>'+escapeHtml(x.material)+'</b> — '+escapeHtml(x.brand)+' · '+escapeHtml(x.quantity)+' '+escapeHtml(x.unit)+'</span>'+
    '<button class="mc-cons-secondary" type="button" onclick="mechanicalConsumablesRemoveLine('+i+')">Remove</button></div>').join('');
+ const submit=document.getElementById('mcConsSubmit');
+ if(submit)submit.disabled=!canIssue()||draftLines.length===0||sending;
+}
+
+async function loadBalance(){
+ const out=document.getElementById('mcConsAvailable');
+ if(!out||!canIssue())return;
+ const materialId=document.getElementById('mcConsMaterial')?.value;
+ const brandId=document.getElementById('mcConsBrand')?.value;
+ const generation=++balanceRead;
+ if(!materialId||!brandId){out.textContent='Choose a material and brand.';return}
+ out.textContent='Checking available stock…';
+ try{
+   const r=await window.zukaitCloud.stockRequest({operation:'BALANCE',materialId,brandId});
+   if(generation!==balanceRead||!document.getElementById('mcConsAvailable'))return;
+   if(!r?.ok)throw Error(r?.code||'Stock not available');
+   const item=r.item;
+   out.textContent=item?'Available: '+Number(item.physical-item.reserved).toFixed(2)+' '+item.unit:
+     'No opening stock recorded for this brand.';
+ }catch(_){
+   if(generation===balanceRead&&out)out.textContent='Stock unavailable. No issue has been made.';
+ }
+}
+async function submitIssue(){
+ if(!canIssue()||sending||!draftLines.length)return;
+ const jc=String(document.getElementById('mcConsJc')?.value||'').trim().toUpperCase();
+ const warn=document.getElementById('mcConsWarning');
+ if(!/^[A-Z0-9_. -]{1,36}$/.test(jc)){if(warn)warn.textContent='Enter a valid Mechanical Job Card number.';return}
+ if(typeof navigator!=='undefined'&&navigator.onLine===false){
+   if(warn)warn.textContent='Offline. Nothing was issued.';return;
+ }
+ const data={jobCard:jc,kind:currentIssueKind,
+    lines:draftLines.map(x=>({materialId:x.materialId,brandId:x.brandId,quantity:x.quantity}))};
+ const fingerprint=JSON.stringify(data);
+ if(pendingIssue&&pendingIssue.fingerprint!==fingerprint){
+   if(warn)warn.textContent='Issue details changed after an uncertain save. Reopen the screen and review the Job Card before retrying.';return;
+ }
+ if(!pendingIssue){
+   const id=(typeof crypto!=='undefined'&&crypto.randomUUID)?
+     crypto.randomUUID():'mechanical-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+   pendingIssue={requestId:id,fingerprint};
+ }
+ sending=true;renderDraft();
+ try{
+   const r=await window.zukaitCloud.stockRequest({
+     operation:'WRITE',command:'MECHANICAL_ISSUE',
+     requestId:pendingIssue.requestId,data
+   });
+   if(!r?.ok||r.receipt?.final!==true||String(r.receipt.jobCard)!==jc
+      ||Number(r.receipt.lineCount)!==draftLines.length)throw Error(r?.code||'No confirmed issue receipt');
+   draftLines.length=0;pendingIssue=null;
+   if(warn)warn.textContent='ISSUED — '+jc+' · '+Number(r.receipt.totalCost||0).toFixed(3)+' OMR. Final.';
+   loadBalance();
+ }catch(e){
+   if(warn)warn.textContent='Issue not confirmed: '+String(e?.message||e)+'. Retry uses the same request ID.';
+ }finally{sending=false;renderDraft()}
 }
 function issueForm(){
  // Local draft only; stock and JC costs are not changed until a server transaction is available.
@@ -166,7 +231,8 @@ function issueForm(){
    '<button class="mc-cons-secondary" type="button" onclick="mechanicalConsumablesAddLine()">+ Add Material</button>'+
    '<p id="mcConsWarning" role="status" class="mc-cons-muted"></p>'+
    '<div id="mcConsDraft"></div>'+
-   '<button type="button" disabled title="Secure stock issuing is not enabled yet" style="display:block;width:100%;background:#94a3b8;color:white;padding:12px;margin-top:12px">ISSUE MATERIALS (not enabled)</button>'+
+   '<p id="mcConsAvailable" class="mc-cons-muted">'+(canIssue()?'Checking available stock…':'Available stock will show when issuing is enabled.')+'</p>'+ 
+   '<button id="mcConsSubmit" type="button" '+(canIssue()?'onclick="mechanicalConsumablesSubmitIssue()"':'title="Secure stock issuing is not enabled yet"')+' disabled style="display:block;width:100%;background:#64748b;color:white;padding:12px;margin-top:12px">ISSUE MATERIALS'+(canIssue()?'':' (not enabled)')+'</button>'+ 
    '<p class="mc-cons-muted">Once enabled, one server-confirmed issue will be final. No separate Actual or finalisation.</p></div>';
 }
 function section(id){
@@ -192,9 +258,10 @@ function section(id){
      '<button class="mc-cons-secondary" onclick="openMechanicalConsumablesSection(\'search\')">Browse Material Master</button>');
    return;
  }
- draftLines.length=0;
+ draftLines.length=0;pendingIssue=null;sending=false;currentIssueKind=id;
  open(s.title,back+issueForm()+
-   '<div class="mc-cons-alert">Preview only: no materials have been issued or deducted from stock.</div>');
+   (canIssue()?'':'<div class="mc-cons-alert">Preview only: no materials have been issued or deducted from stock.</div>'));
+ renderDraft();loadBalance();
 }
 window.openMechanicalConsumables=menu;
 window.openMechanicalConsumablesSection=section;
@@ -202,4 +269,6 @@ window.mechanicalConsumablesFilter=renderMaterialRows;
 window.mechanicalConsumablesSelectMaterial=brandPreview;
 window.mechanicalConsumablesAddLine=addIssueLine;
 window.mechanicalConsumablesRemoveLine=removeIssueLine;
+window.mechanicalConsumablesRefreshBalance=loadBalance;
+window.mechanicalConsumablesSubmitIssue=submitIssue;
 })();
