@@ -45,3 +45,5 @@ jobs:
         run: node tests/consumables-stock-mechanical-sql.mjs
       - name: Material Master to compact Stock catalog integration
         run: node tests/consumables-stock-master-link-sql.mjs
+      - name: One-time legacy catalog preview and manual classification
+        run: node tests/consumables-stock-legacy-preview-sql.mjs
