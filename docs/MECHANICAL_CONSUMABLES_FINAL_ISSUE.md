@@ -35,6 +35,17 @@ Remove the separate **Actual Materials** entry. Never create a waiting-for-actua
 - Confirm multiple issue lines together as **one atomic batch** (all save or none), with individual brand/grade cost snapshots and one server-confirmed receipt; retries must not double deduct. Each return must refer back to its original brand-specific issue line.
 - Material/brand names and prices are **not** copied into a duplicate master or full Job Card snapshot. Retain compact IDs, quantities and locked prices in the stock journal.
 
+## Material and brand creation — same as Painting
+
+- In Mechanical Consumables, **Manager → Brands & Price** opens the EXISTING shared Consumables Master editor; **Manager → Search Material / Price History** opens the EXISTING shared price-history screen. No new material master, brand table or duplicate history is created.
+- Reuse exactly the Painting master fields: Material Name, Brand Name, Unit (Liter, kg, Piece), Category, Price per Unit (OMR), Effective From; required reason for initial/new price period and history/audit safeguards.
+- A material such as Engine Oil 5W-30 exists only ONCE in the material master, while Brand A and Brand B have distinct material+brand price histories and independent stock balances when stock integration is enabled.
+- The current material Unit and Category cannot silently change when a new brand or effective-date price is entered. Reused material names and brand names remain canonical.
+- Mechanical master screens use a Mechanical back button; Painting master screens retain Painting navigation, including after edit/cancel/search.
+- Manager-only, matching the existing Painting permission model. Other Supervisors may issue materials after Mechanical authorization is developed, but cannot create, reprice or edit master records from this screen.
+- The existing master update uses the ERP's current master synchronization. No additional Supabase material storage is introduced by this UI navigation.
+- Example master entries are **guidance only**: do not seed Engine Oil, WD-40, coolant, brands, prices or stock quantities in production without actual workshop input.
+
 ## Development status
 
 The existing Mechanical tile is enabled in draft PR #62, and its **five UI pages and read-only material/brand selection** are wired. Current Mechanical issue screens must **fail closed**: they do not yet persist issues or deduct stock. The shared stock PR #61 needs a separate idempotent, atomic **MECHANICAL_ISSUE** command and a role-scoped Mechanical Job Card authority check before turning saves on. The current SQL/RPC supports Painting-style reservations and finalisation, **not Mechanical direct issue**.
