@@ -6,10 +6,20 @@ const admin={
  from(table){
    requests.push({type:'read',table});
    const q={
-     select(){return q},order(){return q},eq(){return q},lt(){return q},
+     select(cols){q.columns=cols;return q},order(){return q},eq(){return q},lt(){return q},
      range(){return q},limit(){return q},maybeSingle(){return Promise.resolve({data:{material_id:'oil5w30',brand_id:'brandA',unit:'Liter',physical:10,reserved:2},error:null})},
      then(resolve,reject){return Promise.resolve({data:table==='zukait_stock_balances'?
-       Array.from({length:101},(_,i)=>({material_id:'m'+i,brand_id:'b'})):
+       (q.columns?.includes('material:zukait_stock_material_keys')?[
+         {material_id:'oil',brand_id:'a',unit:'Liter',physical:20,reserved:1,
+           material:{display_name:'Engine Oil 5W-30',department:'Mechanical',active:true},
+           brand:{display_name:'Brand A',active:true}},
+         {material_id:'primer',brand_id:'b',unit:'Liter',physical:3,reserved:0,
+           material:{display_name:'Primer',department:'Painting',active:true},
+           brand:{display_name:'Brand B',active:true}},
+         {material_id:'inactive',brand_id:'c',unit:'Piece',physical:3,reserved:0,
+           material:{display_name:'WD-40',department:'Mechanical',active:false},
+           brand:{display_name:'Brand C',active:true}}
+       ]:Array.from({length:101},(_,i)=>({material_id:'m'+i,brand_id:'b'}))):
        table==='zukait_stock_movements'?Array.from({length:51},(_,i)=>({id:300-i})):
        [],error:null}).then(resolve,reject)}
    };return q;
@@ -44,6 +54,15 @@ assert.equal(r.status,400,'client cannot provide arbitrary actor role');
 r=await consumablesStockApi(admin,M,{operation:'HISTORY',cursor:'not-valid'},{enabled:true});
 assert.equal(r.status,400);
 const MS={role:'Mechanical Supervisor',id:'ms'};
+r=await consumablesStockApi(admin,MS,{operation:'CATALOG',page:0},{enabled:true});
+assert.equal(r.status,200);
+assert.equal(r.body.items.length,1,'Mechanical catalog excludes Painting and inactive materials');
+assert.equal(r.body.items[0].name,'Engine Oil 5W-30');
+assert.equal(r.body.items[0].brand,'Brand A');
+assert.equal(r.body.items[0].physical-r.body.items[0].reserved,19);
+assert.equal(requests.filter(x=>x.type==='read'&&x.table==='workshop_state').length,0,
+ 'Mechanical catalog must not fetch workshop-state snapshots');
+
 const mechanical={operation:'WRITE',command:'MECHANICAL_ISSUE',requestId:'issue-1',
  data:{jobCard:'JC12500',lines:[{materialId:'oil5w30',brandId:'brandA',quantity:4.5}]}};
 r=await consumablesStockApi(admin,MS,{operation:'BALANCE',materialId:'oil5w30',brandId:'brandA'},{enabled:true});
