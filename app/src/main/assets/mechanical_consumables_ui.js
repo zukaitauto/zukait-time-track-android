@@ -1,9 +1,8 @@
 (function(){
 'use strict';
 const sections={
-  issued:{title:'Suggested / Issued Materials',desc:'Select consumables for a Mechanical Job Card.'},
-  actual:{title:'Actual Materials',desc:'Review final consumable quantities for Mechanical Job Cards.'},
-  additional:{title:'Additional Materials',desc:'Add extra consumables to an existing Mechanical Job Card.'},
+  issued:{title:'Issued Materials',desc:'Issue materials directly to a Mechanical Job Card; issuing is final.'},
+  additional:{title:'Additional Materials',desc:'Issue extra materials directly to an existing Mechanical Job Card; each issue is final.'},
   search:{title:'Search Material List',desc:'Browse the existing Consumables Materials and Brand Master.'},
   totals:{title:'Total Consumables',desc:'Review Mechanical Job Card material totals when stock integration is active.'}
 };
@@ -60,9 +59,9 @@ function menu(){
  const entries=Object.entries(sections).map(([key,s])=>
   '<button type="button" class="mc-cons-tile" onclick="openMechanicalConsumablesSection(\''+key+'\')">'+
   '<b>'+escapeHtml(s.title)+'</b><small>'+escapeHtml(s.desc)+'</small></button>').join('');
- open('','<p class="mc-cons-muted">Mechanical section only. Painting material entries and Job Card costs remain separate.</p>'+
+ open('','<p class="mc-cons-muted">Mechanical materials are final when issued. No separate Actual Materials or finalisation step. Painting material records remain separate.</p>'+
   '<div class="mc-cons-list">'+entries+'</div>'+
-  '<p class="mc-cons-alert">Mechanical material saving and stock deduction are not active yet. These screens are available for navigation and master lookup; no Job Card data will be changed.</p>');
+  '<p class="mc-cons-alert">Mechanical issuing and immediate stock deduction are not connected yet. All issue screens remain read-only until the secure Mechanical Job Card and stock integration is enabled.</p>');
 }
 function catalog(){
  return '<label for="mcConsFilter">Search material or brand</label>'+
@@ -95,12 +94,12 @@ function section(id){
      '<button class="mc-cons-secondary" onclick="openMechanicalConsumablesSection(\'search\')">Browse Material Master</button>');
    return;
  }
- const wording=id==='actual'?'Actual quantity finalisation':id==='additional'?'Additional issue':'Suggested / Issued material';
+ const wording=id==='additional'?'Additional material issue (final immediately)':'Material issue (final immediately)';
  open(s.title,back+'<p class="mc-cons-muted">'+escapeHtml(s.desc)+'</p>'+
   '<div class="mc-cons-card"><label for="mcConsJc">Mechanical Job Card Number</label>'+
   '<input id="mcConsJc" type="text" placeholder="Enter Mechanical JC number" autocomplete="off">'+
-  '<p class="mc-cons-muted">This is a screen layout only. '+wording+' cannot be saved until the separate Mechanical Job Card authority is connected.</p></div>'+
-  '<div class="mc-cons-alert">No material is reserved, issued, finalised, or deducted from stock on this screen.</div>'+
+  '<p class="mc-cons-muted">This is a screen layout only. '+wording+' cannot be saved until the separate Mechanical Job Card authority is connected. Once enabled, a confirmed issue will immediately deduct physical stock, lock its purchase cost, and count as final consumption.</p></div>'+
+  '<div class="mc-cons-alert">No material is issued or deducted from stock on this preview screen. There is no separate Actual Materials finalisation.</div>'+
   '<button class="mc-cons-secondary" onclick="openMechanicalConsumablesSection(\'search\')">View Existing Materials</button>');
 }
 window.openMechanicalConsumables=menu;
