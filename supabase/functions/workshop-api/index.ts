@@ -1198,6 +1198,7 @@ Deno.serve(async (req: Request) => {
         enabled:Deno.env.get('ZUKAIT_STOCK_ENABLED')==='true',
         writesEnabled:Deno.env.get('ZUKAIT_STOCK_WRITES_ENABLED')==='true',
         mechanicalWritesEnabled:Deno.env.get('ZUKAIT_MECHANICAL_STOCK_ENABLED')==='true',
+        masterLinkEnabled:Deno.env.get('ZUKAIT_STOCK_MASTER_LINK_ENABLED')==='true',
         sessionHash:await sha256Hex(token)
       });
       return reply(result.body,result.status);
