@@ -15,15 +15,18 @@ assert.doesNotMatch(mechanical,/cloudScheduleSave|\bconsFinishIssue\b|\bfinishAc
 let output='',reads=0,writes=0;
 const rows={innerHTML:''};
 const input={value:''};
+const matSelect={value:'p'};
+const brandSelect={innerHTML:''};
+const unitDisplay={textContent:''};
 const data={consumables:{
  materials:[{id:'p',name:'2K Primer',unit:'Liter',active:true},
             {id:'t',name:'Masking Tape',unit:'Piece',active:true}],
- brands:[{id:'b',name:'CAPSI',active:true}],
- prices:[{materialId:'p',brandId:'b',pricePerUnit:5.5}]
+ brands:[{id:'b',name:'CAPSI',active:true},{id:'m',name:'MILACO',active:true}],
+ prices:[{materialId:'p',brandId:'b',pricePerUnit:5.5},{materialId:'p',brandId:'m',pricePerUnit:6.2}]
 }};
 const ctx={console,me:{id:'M',role:'Manager'},state:data,
  openModal:html=>{output=html},closeModal:()=>{},
- document:{getElementById:id=>id==='mcConsFilter'?input:id==='mcConsRows'?rows:null}};
+ document:{getElementById:id=>id==='mcConsFilter'?input:id==='mcConsRows'?rows:id==='mcConsMaterial'?matSelect:id==='mcConsBrand'?brandSelect:id==='mcConsUnit'?unitDisplay:null}};
 ctx.window=ctx;
 vm.createContext(ctx);
 vm.runInContext(mechanical,ctx);
@@ -51,6 +54,10 @@ for(const key of keys){
     assert.match(output,/Mechanical Job Card Number/);
     assert.match(output,/No material is issued or deducted from stock/);
     assert.match(output,/atomic stock deduction/);
+    assert.match(output,/mcConsMaterial/);
+    assert.match(output,/mcConsBrand/);
+    assert.match(output,/CAPSI/);
+    assert.match(output,/MILACO/);
   }
 }
 ctx.openMechanicalConsumablesSection('actual');
@@ -58,6 +65,10 @@ assert.ok(output.includes("openMechanicalConsumablesSection('issued')"),'Legacy 
 ctx.openMechanicalConsumablesSection('returns');
 assert.match(output,/audited reversal at the locked issue cost/);
 assert.match(output,/Returns are not active yet/);
+ctx.mechanicalConsumablesSelectMaterial();
+assert.match(brandSelect.innerHTML,/CAPSI/);
+assert.match(brandSelect.innerHTML,/MILACO/);
+assert.match(unitDisplay.textContent,/Liter/);
 ctx.openMechanicalConsumablesSection('search');
 assert.match(rows.innerHTML,/2K Primer/);
 assert.match(rows.innerHTML,/CAPSI/);
