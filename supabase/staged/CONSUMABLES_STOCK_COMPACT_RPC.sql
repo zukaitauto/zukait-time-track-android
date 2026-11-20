@@ -99,6 +99,17 @@ begin
       returning * into v_item;
     v_pdelta:=v_qty; v_cdelta:=v_total;
   else
+    -- Brand-new materials can be purchased directly after their existing Master
+    -- IDs are synced into the tiny catalog. No separate zero-balance setup click.
+    if v_op='PURCHASE' then
+      insert into public.zukait_stock_balances(material_id,brand_id,unit,physical,reserved,stock_value)
+      select mk.material_id,bk.brand_id,mk.unit,0,0,0
+        from public.zukait_stock_material_keys mk
+        cross join public.zukait_stock_brand_keys bk
+       where mk.material_id=v_material and mk.active=true
+         and bk.brand_id=v_brand and bk.active=true
+      on conflict (material_id,brand_id) do nothing;
+    end if;
     select * into v_item from public.zukait_stock_balances
       where material_id=v_material and brand_id=v_brand for update;
     if not found then raise exception 'OPENING_STOCK_REQUIRED' using errcode='22023'; end if;
