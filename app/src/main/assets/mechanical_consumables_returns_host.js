@@ -118,6 +118,7 @@ export async function mountMechanicalConsumablesReturns(root,options={}){
      show('RETURNED · '+copy.data.quantity+' · Cost credited '+Number(r.receipt.credit||0).toFixed(3)+' OMR');
      // No full-state refresh. The selected JC list can be refreshed manually.
      lines=[];page=0;hasMore=false;renderLines();
+     state.empty.textContent='Tap Find issued materials to refresh remaining returnable quantities.';
    }catch(e){if(sameUser())show('Return not confirmed. Retry the SAME request. '+String(e?.message||e))}
    finally{busy=false;if(sameUser())update()}
  }
