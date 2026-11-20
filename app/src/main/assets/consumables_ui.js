@@ -29,7 +29,7 @@ function deptCard(title,icon,enabled,fn){
 }
 window.openConsumablesModule=function(){
  const r=role();if(r!=='Supervisor'&&r!=='Manager')return;
- modal('Consumables','<div class="cons-depts">'+deptCard('Painting Consumables','🎨',true,'openPaintingConsumables()')+deptCard('PAINT','🖌️',true,"typeof openPaintModule==='function'?openPaintModule():(typeof openPaintPurchaseOrder==='function'?openPaintPurchaseOrder():openPaintingConsumables())")+deptCard('Denting Consumables','🛠️',false,"openConsumablesPlaceholder('Denting')")+deptCard('Mechanical Consumables','⚙️',false,"openConsumablesPlaceholder('Mechanical')")+'</div>');
+ modal('Consumables','<div class="cons-depts">'+deptCard('Painting Consumables','🎨',true,'openPaintingConsumables()')+deptCard('PAINT','🖌️',true,"typeof openPaintModule==='function'?openPaintModule():(typeof openPaintPurchaseOrder==='function'?openPaintPurchaseOrder():openPaintingConsumables())")+deptCard('Denting Consumables','🛠️',false,"openConsumablesPlaceholder('Denting')")+deptCard('Mechanical Consumables','⚙️',true,'openMechanicalConsumables()')+'</div>');
 };
 window.openConsumablesPlaceholder=function(name){modal(esc(name)+' Consumables','<div class="notice">This department module is openable and isolated. Detailed workflow will be added after Painting Consumables is completed.</div>')};
 function action(label,sub,fn,cls=''){return '<button class="cons-action '+cls+'" onclick="'+fn+'"><b>'+label+'</b><small>'+sub+'</small></button>'}
