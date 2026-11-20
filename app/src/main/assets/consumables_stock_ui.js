@@ -85,7 +85,7 @@ function render(){
  if(view.page==='legacy'){
    if(!manager()){draw('<p class="zs-warning">Only Manager can review older materials.</p>');return}
    draw('<h3>Older Materials — One-time Setup</h3>'+
-     '<p class="zs-muted">The existing Material Master is unchanged. Select which department uses each material and brand. Stock quantity starts at ZERO unless previously recorded; no prices or job costs are changed.</p>'+
+     '<p class="zs-muted">The existing Material Master is unchanged. Choose the department for the material (shared by all its brands). Each brand keeps its own stock. A new brand starts at ZERO; prices and job costs are unchanged.</p>'+
      (view.legacyItems.length?view.legacyItems.map((x,i)=>{
        const paint=x.category==='Paint';
        const dept=String(x.department||'Unassigned');
