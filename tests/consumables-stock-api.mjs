@@ -137,4 +137,38 @@ r=await consumablesStockApi(admin,M,mechanical,
  {enabled:true,writesEnabled:true,mechanicalWritesEnabled:true,sessionHash:'manager-session'});
 assert.equal(r.status,200);
 
-console.log('Stock API: role denial, disabled-by-default flags, paginated reads and receipt write and Mechanical issue guards PASSED');
+// Returning Mechanical materials must never route to Painting's reservation RETURN.
+const returnable={operation:'MECHANICAL_RETURNABLE',jobCard:'JC12500',page:0};
+const ret={operation:'WRITE',command:'MECHANICAL_RETURN',requestId:'return-1',
+ data:{lineId:71,quantity:1.5,reason:'Unused oil'}};
+const writesBeforeReturn=countWrites();
+r=await consumablesStockApi(admin,S,returnable,{enabled:true,mechanicalWritesEnabled:true,sessionHash:'s'});
+assert.equal(r.status,403,'Bodyshop Supervisor cannot inspect Mechanical issues');
+r=await consumablesStockApi(admin,MS,returnable,{enabled:true,sessionHash:'ms'});
+assert.equal(r.status,423,'Mechanical returns are independently disabled by default');
+r=await consumablesStockApi(admin,MS,{...returnable,jobCard:'INVALID/JC'},
+ {enabled:true,mechanicalWritesEnabled:true,sessionHash:'ms'});
+assert.equal(r.status,400,'untrusted JC values rejected');
+r=await consumablesStockApi(admin,MS,returnable,
+ {enabled:true,mechanicalWritesEnabled:true,sessionHash:'ms'});
+assert.equal(r.status,200);
+const readReturn=requests.filter(x=>x.type==='write').at(-1);
+assert.equal(readReturn.fn,'zukait_stock_mechanical_returnable');
+assert.deepEqual(readReturn.args,{p_session_hash:'ms',p_job_card:'JC12500',p_page:0});
+r=await consumablesStockApi(admin,MS,ret,
+ {enabled:true,writesEnabled:true,sessionHash:'ms'});
+assert.equal(r.status,423,'return write not enabled by general stock flag alone');
+r=await consumablesStockApi(admin,S,ret,
+ {enabled:true,writesEnabled:true,mechanicalWritesEnabled:true,sessionHash:'s'});
+assert.equal(r.status,403,'Painting Supervisor cannot return Mechanical issues');
+r=await consumablesStockApi(admin,MS,ret,
+ {enabled:true,writesEnabled:true,mechanicalWritesEnabled:true,sessionHash:'ms'});
+assert.equal(r.status,200);
+const retWrite=requests.filter(x=>x.type==='write').at(-1);
+assert.equal(retWrite.fn,'zukait_stock_mechanical_return');
+assert.equal(retWrite.args.p_request_id,'return-1');
+assert.equal(retWrite.args.p_session_hash,'ms');
+assert.deepEqual(retWrite.args.p_data,ret.data);
+assert.equal(Object.hasOwn(retWrite.args,'p_action'),false);
+assert.equal(countWrites(),writesBeforeReturn+2,'only authorized read+return can reach RPC');
+console.log('Stock API: roles, disabled-by-default, separate Mechanical issue/return RPC, and bounded returnable read PASS');
