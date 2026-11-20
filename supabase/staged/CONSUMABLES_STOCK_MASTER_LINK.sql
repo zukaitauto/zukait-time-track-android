@@ -25,7 +25,7 @@ declare
 begin
  if nullif(p_session_hash,'') is null then
    raise exception 'STOCK_FORBIDDEN' using errcode='42501';end if;
- if p_origin not in ('Mechanical','Painting') then
+ if p_origin not in ('Mechanical','Painting','Both') then
    raise exception 'INVALID_MASTER_ORIGIN' using errcode='22023';end if;
  if p_material_id is null or p_material_id='' or length(p_material_id)>120 or
     p_material_id !~ '^[a-zA-Z0-9_.:-]+$' or
@@ -74,7 +74,7 @@ begin
  if v_unit not in ('Liter','kg','Piece') or length(v_name) not between 1 and 180
     or length(v_brand_name) not between 1 and 180 then
    raise exception 'INVALID_MASTER' using errcode='22023';end if;
- if p_origin='Mechanical' and v_category='Paint' then
+ if p_origin in ('Mechanical','Both') and v_category='Paint' then
    raise exception 'PAINT_ONLY_MASTER' using errcode='22023';end if;
  v_scope:=p_origin;
 
