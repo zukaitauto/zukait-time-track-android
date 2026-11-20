@@ -9,6 +9,7 @@ on:
       - 'app/src/main/assets/consumables_ui.js'
       - 'app/src/main/assets/offline_test.html'
       - 'tests/mechanical-consumables-open.mjs'
+      - 'tests/mechanical-consumables-master.mjs'
       - '.github/workflows/mechanical-consumables-menu.yml'
   pull_request:
     branches: [architecture-v2]
@@ -28,6 +29,8 @@ jobs:
           node --check app/src/main/assets/consumables_ui.js
       - name: Mechanical Consumables tile and five screens
         run: node tests/mechanical-consumables-open.mjs
+      - name: Shared Material and Brand creation with Manager safeguards
+        run: node tests/mechanical-consumables-master.mjs
       - name: Existing Painting cost engine remains intact
         run: node tests/consumables-smoke.mjs
       - name: Existing Painting UI workflow remains intact
