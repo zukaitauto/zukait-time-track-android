@@ -97,7 +97,9 @@ function brandPreview() {
  target.innerHTML=records.length
    ? records.map(x=>'<option value="'+escapeHtml(x.brandId)+'">'+escapeHtml(x.brand)+'</option>').join('')
    : '<option value="">No brand recorded for this material</option>';
- if(unit)unit.textContent=records[0]?.unit||'Select a material with a brand';
+ if(unit)unit.textContent='Unit: '+(records[0]?.unit||'Select a material with a brand');
+ const qtyLabel=document.querySelector?.('label[for="mcConsQuantity"]');
+ if(qtyLabel)qtyLabel.textContent='Quantity ('+(records[0]?.unit||'—')+')';
 }
 function issueSelector(){
  // A single material can have many selectable brands; never coalesce stock by name.
@@ -111,6 +113,61 @@ function issueSelector(){
   '<select id="mcConsBrand">'+brands.map(x=>'<option value="'+escapeHtml(x.brandId)+'">'+escapeHtml(x.brand)+'</option>').join('')+'</select>'+
   '<p id="mcConsUnit" class="mc-cons-muted">Unit: '+escapeHtml(first?.unit||'Not available')+'</p>'+
   '<p class="mc-cons-muted">Every material and brand combination will have its own stock balance and purchase cost. Save remains disabled until the secure Mechanical issue workflow is connected.</p></div>';
+}
+
+const draftLines=[];
+function addIssueLine(){
+ if(!canView())return;
+ const m=document.getElementById('mcConsMaterial')?.value;
+ const b=document.getElementById('mcConsBrand')?.value;
+ const raw=String(document.getElementById('mcConsQuantity')?.value||'').trim();
+ const row=master().find(x=>String(x.id)===m&&String(x.brandId)===b);
+ const n=Number(raw);
+ const warn=document.getElementById('mcConsWarning');
+ const fail=msg=>{if(warn)warn.textContent=msg};
+ if(!row||!b)return fail('Choose a material and its brand.');
+ if(!raw||!Number.isFinite(n)||n<=0||!Number.isInteger(n*10000))
+   return fail('Enter a valid quantity, up to four decimal places.');
+ if(row.unit==='Piece'&&!Number.isInteger(n))return fail('Pieces must be whole numbers.');
+ if(draftLines.length>=20)return fail('Maximum 20 lines per issue.');
+ if(draftLines.some(x=>x.materialId===m&&x.brandId===b))return fail('Material and brand already added. Remove it before changing the quantity.');
+ draftLines.push({materialId:m,brandId:b,material:row.material,brand:row.brand,unit:row.unit,quantity:n});
+ if(warn)warn.textContent='';
+ const qty=document.getElementById('mcConsQuantity');if(qty)qty.value='';
+ renderDraft();
+}
+function removeIssueLine(index){
+ if(!canView()||!Number.isInteger(index)||index<0||index>=draftLines.length)return;
+ draftLines.splice(index,1);
+ renderDraft();
+}
+function renderDraft(){
+ const target=document.getElementById('mcConsDraft');if(!target)return;
+ target.innerHTML=!draftLines.length?'<p class="mc-cons-muted">No materials added yet.</p>':
+   draftLines.map((x,i)=>'<div class="mc-cons-toolbar" style="padding:8px 0;border-bottom:1px solid #dce6f1">'+
+   '<span><b>'+escapeHtml(x.material)+'</b> — '+escapeHtml(x.brand)+' · '+escapeHtml(x.quantity)+' '+escapeHtml(x.unit)+'</span>'+
+   '<button class="mc-cons-secondary" type="button" onclick="mechanicalConsumablesRemoveLine('+i+')">Remove</button></div>').join('');
+}
+function issueForm(){
+ // Local draft only; stock and JC costs are not changed until a server transaction is available.
+ const rows=master(),first=rows[0],unique=[...new Map(rows.map(x=>[String(x.id),x])).values()];
+ const brands=first?rows.filter(x=>String(x.id)===String(first.id)&&x.brandId):[];
+ return '<div class="mc-cons-card">'+
+   '<label for="mcConsJc">Mechanical Job Card</label>'+
+   '<input id="mcConsJc" autocomplete="off" placeholder="JC number">'+
+   '<label for="mcConsMaterial">Material</label>'+
+   '<select id="mcConsMaterial" onchange="mechanicalConsumablesSelectMaterial()">'+
+   unique.map(x=>'<option value="'+escapeHtml(x.id)+'">'+escapeHtml(x.material)+'</option>').join('')+'</select>'+
+   '<label for="mcConsBrand">Brand</label>'+
+   '<select id="mcConsBrand">'+brands.map(x=>'<option value="'+escapeHtml(x.brandId)+'">'+escapeHtml(x.brand)+'</option>').join('')+'</select>'+
+   '<label for="mcConsQuantity">Quantity'+(first?.unit?' ('+escapeHtml(first.unit)+')':'')+'</label>'+
+   '<input id="mcConsQuantity" inputmode="decimal" type="number" min="0.0001" step="any" placeholder="Enter quantity">'+
+   '<p id="mcConsUnit" class="mc-cons-muted">Unit: '+escapeHtml(first?.unit||'—')+'</p>'+
+   '<button class="mc-cons-secondary" type="button" onclick="mechanicalConsumablesAddLine()">+ Add Material</button>'+
+   '<p id="mcConsWarning" role="status" class="mc-cons-muted"></p>'+
+   '<div id="mcConsDraft"></div>'+
+   '<button type="button" disabled title="Secure stock issuing is not enabled yet" style="display:block;width:100%;background:#94a3b8;color:white;padding:12px;margin-top:12px">ISSUE MATERIALS (not enabled)</button>'+
+   '<p class="mc-cons-muted">Once enabled, one server-confirmed issue will be final. No separate Actual or finalisation.</p></div>';
 }
 function section(id){
  if(!canView())return;
@@ -135,17 +192,14 @@ function section(id){
      '<button class="mc-cons-secondary" onclick="openMechanicalConsumablesSection(\'search\')">Browse Material Master</button>');
    return;
  }
- const wording=id==='additional'?'Additional material issue (final immediately)':'Material issue (final immediately)';
- open(s.title,back+'<p class="mc-cons-muted">'+escapeHtml(s.desc)+'</p>'+
-  '<div class="mc-cons-card"><label for="mcConsJc">Mechanical Job Card Number</label>'+
-  '<input id="mcConsJc" type="text" placeholder="Enter Mechanical JC number" autocomplete="off">'+
-  '<p class="mc-cons-muted">Select one or more material lines. Example units: engine oil 5W-30 / 20W-40 / 5W-40 in litres, WD-40 by piece, coolant by gallon container. Each confirmed issue will be final immediately, with one atomic stock deduction for all lines and a locked cost per line.</p>'+ 
-  '<p class="mc-cons-muted">This is a screen layout only. '+wording+' cannot be saved until the separate Mechanical Job Card authority is connected.</p></div>'+issueSelector()+ 
-  '<div class="mc-cons-alert">No material is issued or deducted from stock on this preview screen. There is no separate Actual Materials finalisation.</div>'+
-  '<button class="mc-cons-secondary" onclick="openMechanicalConsumablesSection(\'search\')">View Existing Materials</button>');
+ draftLines.length=0;
+ open(s.title,back+issueForm()+
+   '<div class="mc-cons-alert">Preview only: no materials have been issued or deducted from stock.</div>');
 }
 window.openMechanicalConsumables=menu;
 window.openMechanicalConsumablesSection=section;
 window.mechanicalConsumablesFilter=renderMaterialRows;
 window.mechanicalConsumablesSelectMaterial=brandPreview;
+window.mechanicalConsumablesAddLine=addIssueLine;
+window.mechanicalConsumablesRemoveLine=removeIssueLine;
 })();
