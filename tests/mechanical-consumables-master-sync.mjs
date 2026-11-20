@@ -52,7 +52,7 @@ await ctx.flushStockMasterLinks();
 assert.equal(calls.length,2);
 assert.equal(JSON.parse(storage.getItem('zukait_stock_master_link_queue_v1:MGR1')).length,0,
  'confirmed link removed from retry queue');
-assert.deepEqual(calls[1],{
+assert.deepEqual(JSON.parse(JSON.stringify(calls[1])),{
  action:'consumables_stock',operation:'MASTER_LINK',
  materialId:'oil5w30',brandId:'brand1',origin:'Mechanical'
 });
