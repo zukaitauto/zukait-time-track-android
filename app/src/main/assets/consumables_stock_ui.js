@@ -125,14 +125,18 @@ function render(){
    const bopts=c.brands.map(b=>'<option value="'+esc(b.id)+'"'+(String(b.id)===String(brand)?' selected':'')+'>'+esc(b.name)+'</option>').join('');
    draw('<h3>Add / Open Stock</h3>'+
     '<p class="zs-muted">Enter litres directly (not tins or drums). Non-liquid materials retain kg or Piece units.</p>'+
-    (manager()?'<label>Entry type</label><select id="zs-entrytype"><option value="PURCHASE">Purchased Stock</option><option value="OPENING">Opening Stock (one time only)</option></select>':'')+
+    (manager()?'<label>Entry type</label><select id="zs-entrytype" onchange="zukStockSetEntryType()"><option value="PURCHASE">Purchased Stock</option><option value="OPENING">Opening Stock (one time only)</option></select>':'')+
     '<div class="zs-two"><div><label>Material</label><select id="zs-material">'+mopts+'</select></div>'+
     '<div><label>Brand</label><select id="zs-brand">'+bopts+'</select></div></div>'+
-    '<label>Quantity (existing material unit)</label><input id="zs-qty" type="number" min="0.0001" step="any" value="5">'+
+    '<label>Quantity (existing material unit)</label><input id="zs-qty" type="number" min="0.0001" step="any" placeholder="Enter physically counted / received quantity">'+
     '<label>Price method</label><select id="zs-method"><option value="total">Total Purchase Price</option><option value="unit">Price per Unit</option></select>'+
-    '<label>Purchase price (OMR)</label><input id="zs-price" type="number" min="0.001" step="any" value="30">'+
+    '<label id="zs-price-label">Purchase price (OMR)</label><input id="zs-price" type="number" min="0.001" step="any" placeholder="Enter actual cost">'+
+    '<div id="zs-opening-fields" style="display:none" class="zs-card">'+
+    '<p class="zs-warning">Opening Stock is recorded once for this material and brand. Use the physical count, never an estimated stock number.</p>'+
+    '<label><input id="zs-count-confirmed" type="checkbox" style="width:auto" /> I have physically counted this material and brand</label>'+
+    '<label>Count reference / reason</label><textarea id="zs-opening-note" rows="2" maxlength="180" placeholder="e.g. Verified opening count, 21 Nov"></textarea></div>'+
     '<p class="zs-muted">The server calculates weighted average cost after saving. Existing master prices are not overwritten.</p>'+
-    '<button class="zs-btn" onclick="zukStockSavePurchase()"'+(view.busy?' disabled':'')+'>Save Purchased Stock</button>');
+    '<button class="zs-btn" id="zs-save-entry" onclick="zukStockSavePurchase()"'+(view.busy?' disabled':'')+'>Save Purchased Stock</button>');
    return;
  }
  if(view.page==='history'){
@@ -264,6 +268,16 @@ async function write(command,data){
    view.busy=false;render();
  }
 }
+window.zukStockSetEntryType=()=>{
+ const d=document;
+ const opening=manager()&&d.getElementById('zs-entrytype')?.value==='OPENING';
+ const detail=d.getElementById('zs-opening-fields');
+ if(detail)detail.style.display=opening?'block':'none';
+ const button=d.getElementById('zs-save-entry');
+ if(button)button.textContent=opening?'Confirm Opening Stock':'Save Purchased Stock';
+ const label=d.getElementById('zs-price-label');
+ if(label)label.textContent=opening?'Counted stock cost (OMR)':'Purchase price (OMR)';
+};
 window.zukStockSavePurchase=()=>{
  const d=document;
  const data={materialId:d.getElementById('zs-material')?.value,
@@ -275,8 +289,15 @@ window.zukStockSavePurchase=()=>{
    {view.error='Enter material, brand, positive quantity and purchase price.';render();return}
  const type=manager()?d.getElementById('zs-entrytype')?.value:'PURCHASE';
  if(type==='OPENING'){
+   const confirmed=d.getElementById('zs-count-confirmed')?.checked===true;
+   const reason=String(d.getElementById('zs-opening-note')?.value||'').trim();
+   if(!confirmed||reason.length<5||reason.length>180){
+     view.error='Confirm the physical count and enter a short count reference (5–180 characters).';
+     render();return;
+   }
    const cost=data.priceMethod==='total'?data.price/data.quantity:data.price;
-   write('OPENING',{materialId:data.materialId,brandId:data.brandId,quantity:data.quantity,unitCost:cost});
+   write('OPENING',{materialId:data.materialId,brandId:data.brandId,quantity:data.quantity,
+      unitCost:cost,countConfirmed:true,reason});
  }else write('PURCHASE',data);
 };
 window.zukStockSaveAdjustment=()=>{
