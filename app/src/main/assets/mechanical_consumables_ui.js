@@ -3,6 +3,7 @@
 const sections={
   issued:{title:'Issued Materials',desc:'Issue materials directly to a Mechanical Job Card; issuing is final.'},
   additional:{title:'Additional Materials',desc:'Issue extra materials directly to an existing Mechanical Job Card; each issue is final.'},
+  returns:{title:'Return Materials',desc:'Return unused issued quantities with audited cost credit.'},
   search:{title:'Search Material List',desc:'Browse the existing Consumables Materials and Brand Master.'},
   totals:{title:'Total Consumables',desc:'Review Mechanical Job Card material totals when stock integration is active.'}
 };
@@ -60,7 +61,8 @@ function menu(){
   '<button type="button" class="mc-cons-tile" onclick="openMechanicalConsumablesSection(\''+key+'\')">'+
   '<b>'+escapeHtml(s.title)+'</b><small>'+escapeHtml(s.desc)+'</small></button>').join('');
  open('','<p class="mc-cons-muted">Mechanical materials are final when issued. No separate Actual Materials or finalisation step. Painting material records remain separate.</p>'+
-  '<div class="mc-cons-list">'+entries+'</div>'+
+  '<div class="mc-cons-list">'+entries+'</div>'+ 
+  '<div class="mc-cons-card"><b>Mechanical unit examples</b><p class="mc-cons-muted">Engine Oil 5W-30, 20W-40, 5W-40 — Litre (L)<br>WD-40 — Piece (can)<br>Coolant — gallon container (pack size identified in material name)</p></div>'+ 
   '<p class="mc-cons-alert">Mechanical issuing and immediate stock deduction are not connected yet. All issue screens remain read-only until the secure Mechanical Job Card and stock integration is enabled.</p>');
 }
 function catalog(){
@@ -89,6 +91,14 @@ function section(id){
    open(s.title,back+'<p class="mc-cons-muted">Uses the existing Consumables Materials and Brand Master. No extra materials table or Supabase history download.</p>'+catalog());
    renderMaterialRows();return;
  }
+ if(id==='returns'){
+   open(s.title,back+'<p class="mc-cons-muted">Unused Mechanical materials return to stock against the original final issue; the original issue remains in history.</p>'+ 
+     '<div class="mc-cons-card"><label for="mcConsJc">Mechanical Job Card Number</label>'+ 
+     '<input id="mcConsJc" type="text" placeholder="Enter Mechanical JC number" autocomplete="off">'+ 
+     '<p class="mc-cons-muted">After backend integration, choose the original issued line, enter return quantity and reason, and confirm an audited reversal at the locked issue cost.</p></div>'+ 
+     '<div class="mc-cons-alert">Returns are not active yet. No material quantity, cost or Job Card has been changed.</div>');
+   return;
+ }
  if(id==='totals'){
    open(s.title,back+'<div class="mc-cons-alert">Mechanical material totals cannot be calculated until the Mechanical Job Card material transactions are connected and verified. Existing Painting totals are not shown here.</div>'+
      '<button class="mc-cons-secondary" onclick="openMechanicalConsumablesSection(\'search\')">Browse Material Master</button>');
@@ -98,7 +108,8 @@ function section(id){
  open(s.title,back+'<p class="mc-cons-muted">'+escapeHtml(s.desc)+'</p>'+
   '<div class="mc-cons-card"><label for="mcConsJc">Mechanical Job Card Number</label>'+
   '<input id="mcConsJc" type="text" placeholder="Enter Mechanical JC number" autocomplete="off">'+
-  '<p class="mc-cons-muted">This is a screen layout only. '+wording+' cannot be saved until the separate Mechanical Job Card authority is connected. Once enabled, a confirmed issue will immediately deduct physical stock, lock its purchase cost, and count as final consumption.</p></div>'+
+  '<p class="mc-cons-muted">Select one or more material lines. Example units: engine oil 5W-30 / 20W-40 / 5W-40 in litres, WD-40 by piece, coolant by gallon container. Each confirmed issue will be final immediately, with one atomic stock deduction for all lines and a locked cost per line.</p>'+ 
+  '<p class="mc-cons-muted">This is a screen layout only. '+wording+' cannot be saved until the separate Mechanical Job Card authority is connected.</p></div>'+ 
   '<div class="mc-cons-alert">No material is issued or deducted from stock on this preview screen. There is no separate Actual Materials finalisation.</div>'+
   '<button class="mc-cons-secondary" onclick="openMechanicalConsumablesSection(\'search\')">View Existing Materials</button>');
 }
