@@ -91,8 +91,14 @@ begin
     ) then raise exception 'STOCK_MASTER_KEY_NOT_FOUND' using errcode='22023'; end if;
     v_qty := nullif(p_data->>'quantity','')::numeric;
     v_price := nullif(p_data->>'unitCost','')::numeric;
-    if v_qty is null or v_qty<0 or v_price is null or v_price<0
-      then raise exception 'INVALID_OPENING' using errcode='22023'; end if;
+    -- Manager must explicitly attest a physically counted quantity and its
+    -- source/reference. Never accept UI examples or an implied old balance.
+    if p_data->>'countConfirmed' is distinct from 'true' or
+       length(v_note) not between 5 and 180 then
+      raise exception 'PHYSICAL_COUNT_CONFIRMATION_REQUIRED' using errcode='22023';end if;
+    if v_qty is null or v_qty<=0 or v_price is null or v_price<=0 or
+       pg_catalog.round(v_qty,4)<>v_qty then
+      raise exception 'INVALID_OPENING' using errcode='22023';end if;
     if v_unit='Piece' and pg_catalog.trunc(v_qty)<>v_qty then
       raise exception 'PIECE_WHOLE_REQUIRED' using errcode='22023';end if;
     v_total:=v_qty*v_price;
