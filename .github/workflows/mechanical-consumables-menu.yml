@@ -16,6 +16,8 @@ on:
       - 'app/src/main/assets/mechanical_workspace.js'
       - 'app/src/main/assets/mechanical_supervisor.js'
       - 'tests/mechanical-consumables-master.mjs'
+      - 'tests/mechanical-consumables-master-sync.mjs'
+      - 'app/src/main/assets/cloud_sync.js'
       - '.github/workflows/mechanical-consumables-menu.yml'
   pull_request:
     branches: [architecture-v2]
@@ -47,6 +49,8 @@ jobs:
         run: node tests/mechanical-consumables-dashboard.mjs
       - name: Shared Material and Brand creation with Manager safeguards
         run: node tests/mechanical-consumables-master.mjs
+      - name: Saved-Master stock link queue and retry safety
+        run: node tests/mechanical-consumables-master-sync.mjs
       - name: Existing Painting cost engine remains intact
         run: node tests/consumables-smoke.mjs
       - name: Existing Painting UI workflow remains intact
