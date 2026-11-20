@@ -1423,8 +1423,15 @@
     status(cloudDirty?'OFFLINE — CHANGE QUEUED':'OFFLINE — LOCAL CACHE','warn');
     publishLiveStatus(false);
   });
+  // Small, direct stock API. Never save stock data to workshop_state or queue it
+  // in the large local snapshot. The server's receipt confirms every write.
+  async function stockRequest(command){
+    if(!me||!['Manager','Supervisor'].includes(me.role))throw Error('STOCK_FORBIDDEN');
+    if(!command||typeof command!=='object')throw Error('INVALID_STOCK_COMMAND');
+    return await api({...command,action:'consumables_stock'});
+  }
   window.zukaitCloud={
-    resetForSession,init,pull,push,managerJobEdit,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,readManagerProfit,readMechanicalQcOverview,openMechanicalWorkspace,openMechanicalDelivery,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
+    resetForSession,init,pull,push,stockRequest,managerJobEdit,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,readManagerProfit,readMechanicalQcOverview,openMechanicalWorkspace,openMechanicalDelivery,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
     configured:()=>true,
     get confirmedState(){return confirmedReadRevision>=cloudRevision?confirmedReadState:null},
     get revision(){return cloudRevision},
