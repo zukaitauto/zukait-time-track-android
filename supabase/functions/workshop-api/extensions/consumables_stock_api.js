@@ -17,6 +17,29 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
   if(!body||typeof body!=='object'||Array.isArray(body)||
     Object.keys(body).some(k=>!allowedKeys.has(k)))return bad('stock_invalid_request');
   const operation=String(body.operation||'LIST').trim().toUpperCase();
+  if(operation==='CATALOG') {
+    // One bounded indexed read; only stock catalog keys, never workshop_state.
+    const page=Math.max(0,Math.min(20,Number.isInteger(body.page)?body.page:0));
+    const {data,error}=await admin.from('zukait_stock_balances')
+      .select('material_id,brand_id,unit,physical,reserved,material:zukait_stock_material_keys(display_name,department,active),brand:zukait_stock_brand_keys(display_name,active)')
+      .order('material_id',{ascending:true}).order('brand_id',{ascending:true})
+      .range(page*100,(page+1)*100);
+    if(error)return bad('stock_catalog_failed',503);
+    const raw=Array.isArray(data)?data:[];
+    const items=raw.slice(0,100).filter(x=>{
+      const m=Array.isArray(x.material)?x.material[0]:x.material;
+      const b=Array.isArray(x.brand)?x.brand[0]:x.brand;
+      return m?.active!==false&&b?.active!==false&&
+        ['Mechanical','Both'].includes(m?.department)&&
+        String(m?.display_name||'').length>0&&String(b?.display_name||'').length>0;
+    }).map(x=>({
+      materialId:x.material_id,brandId:x.brand_id,unit:x.unit,
+      name:(Array.isArray(x.material)?x.material[0]:x.material).display_name,
+      brand:(Array.isArray(x.brand)?x.brand[0]:x.brand).display_name,
+      physical:x.physical,reserved:x.reserved
+    }));
+    return good({items,page,hasMore:raw.length>100});
+  }
   if(operation==='BALANCE') {
     const materialId=safeId(body.materialId);
     const brandId=safeId(body.brandId);
