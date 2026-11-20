@@ -55,7 +55,10 @@ await child.zukaitEstimate.saveCurrent('estimate-1');
 assert.match(child.lastAlert,/Customer name is required/);
 assert.equal(saveCount,0,'invalid quote must not reach server');
 child.document.querySelector('#estName').value='Test Customer';
-assert.equal(child.document.querySelector('#estPartRows .est-desc').value,'Brake pad set');
+assert.equal(child.document.querySelector('#estPartRows .est-desc').value,'Brake Pad Set',
+ 'Estimate editor intentionally formats visible part descriptions as title case');
+assert.equal(child.state.estimates[0].partRows[0].description,'Brake pad set',
+ 'Opening editor must not mutate the original saved estimate');
 await child.zukaitEstimate.openFind();
 assert.ok(child.document.querySelector('.est-saved-create-jc'),'Saved list must have the Create Job Card action');
 assert.equal(child.document.querySelectorAll('.est-saved-create-jc').length,1);
