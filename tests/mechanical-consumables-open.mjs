@@ -13,6 +13,7 @@ assert.match(html,/mechanical_consumables_ui\.js\?v=/,'Mechanic module must load
 assert.doesNotMatch(mechanical,/cloudScheduleSave|\bconsFinishIssue\b|\bfinishActual\b|zukait_save_workshop_state/,'menu must not reuse Painting data writes or large snapshot saves');
 
 let output='',reads=0,writes=0;
+const masterOpens=[],materialHistoryOpens=[];
 const rows={innerHTML:''};
 const input={value:''};
 const matSelect={value:'p'};
@@ -25,6 +26,8 @@ const data={consumables:{
  prices:[{materialId:'p',brandId:'b',pricePerUnit:5.5},{materialId:'p',brandId:'m',pricePerUnit:6.2}]
 }};
 const ctx={console,me:{id:'M',role:'Manager'},state:data,
+ consOpenMaster:origin=>masterOpens.push(origin),
+ consOpenMaterialSearch:origin=>materialHistoryOpens.push(origin),
  openModal:html=>{output=html},closeModal:()=>{},
  document:{getElementById:id=>id==='mcConsFilter'?input:id==='mcConsRows'?rows:id==='mcConsMaterial'?matSelect:id==='mcConsBrand'?brandSelect:id==='mcConsUnit'?unitDisplay:null}};
 ctx.window=ctx;
@@ -34,6 +37,13 @@ const keys=['issued','additional','returns','search','totals'];
 ctx.openMechanicalConsumables();
 assert.match(output,/Mechanical Consumables/);
 for(const k of keys) assert.ok(output.includes("openMechanicalConsumablesSection('"+k+"')"),'missing '+k+' tile');
+assert.match(output,/Brands & Price/);
+assert.match(output,/Search Material \/ Price History/);
+ctx.openMechanicalConsumablesSection('master');
+ctx.openMechanicalConsumablesSection('materialHistory');
+assert.deepEqual(masterOpens,['mechanical']);
+assert.deepEqual(materialHistoryOpens,['mechanical']);
+ctx.openMechanicalConsumables();
 assert.match(output,/Issued Materials/);
 assert.doesNotMatch(output,/Suggested \/ Issued Materials/);
 assert.match(output,/No separate Actual Materials or finalisation step/);
@@ -87,7 +97,13 @@ assert.equal(output,old,'employees cannot open Mechanical consumables from the s
 ctx.me={id:'S',role:'Supervisor'};
 ctx.openMechanicalConsumables();
 assert.match(output,/Mechanical Consumables/,'existing Supervisor can open tile');
+assert.ok(!output.includes("openMechanicalConsumablesSection('master')"),'Supervisor must not see Manager master editor');
+assert.ok(!output.includes("openMechanicalConsumablesSection('materialHistory')"),'Supervisor cannot edit price history');
+ctx.openMechanicalConsumablesSection('master');
+ctx.openMechanicalConsumablesSection('materialHistory');
+assert.deepEqual(masterOpens,['mechanical'],'Supervisor never reaches material creation');
+assert.deepEqual(materialHistoryOpens,['mechanical'],'Supervisor never reaches price editor');
 assert.equal(writes,0);
 assert.equal(reads,0);
 assert.deepEqual(data.consumables.materials.map(x=>x.name),['2K Primer','Masking Tape']);
-console.log('Mechanical consumables: 5 screens, final-on-issue, Return Materials, item units, read-only catalog and Painting isolation: PASS');
+console.log('Mechanical consumables: Manager shared Brands & Price and history links, Supervisor role gates, issue/returns, multiple brands and Painting isolation: PASS');
