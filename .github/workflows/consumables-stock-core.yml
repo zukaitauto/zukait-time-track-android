@@ -37,5 +37,7 @@ jobs:
         run: node tests/consumables-stock-core.mjs
       - name: Feature-flagged API boundaries
         run: node tests/consumables-stock-api.mjs
+      - name: Clickable stock menu and bounded UI reads
+        run: node tests/consumables-stock-ui.mjs
       - name: Isolated PostgreSQL stock lifecycle
         run: node tests/consumables-stock-sql.mjs
