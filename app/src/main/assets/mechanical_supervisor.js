@@ -20,6 +20,7 @@ async function consumablesView(){
  return mount('./mechanical_consumables_host.js','mountMechanicalConsumablesHost',{
    onBack:()=>workspace(),
    onReturn:()=>returnMaterialsView(),
+   onTotals:()=>consumablesTotalsView(),
    stockEnabled:()=>window.ZUKAIT_MECHANICAL_STOCK_ENABLED===true,
    stockRequest:body=>{
      if(!['CATALOG','WRITE'].includes(body?.operation)||
@@ -40,6 +41,20 @@ async function returnMaterialsView(){
         throw Error('Mechanical return action forbidden');
      if(window.ZUKAIT_MECHANICAL_STOCK_ENABLED!==true)
         throw Error('Mechanical stock is not activated');
+     return request('workshop-api',{action:'consumables_stock',...body});
+   }
+ });
+}
+async function consumablesTotalsView(){
+ // Mechanical-only, read-only, indexed JC cost aggregation.
+ return mount('./mechanical_consumables_totals_host.js','mountMechanicalConsumablesTotals',{
+   onBack:()=>consumablesView(),
+   stockEnabled:()=>window.ZUKAIT_MECHANICAL_STOCK_ENABLED===true,
+   stockRequest:body=>{
+     if(body?.operation!=='MECHANICAL_TOTALS')
+       throw Error('Mechanical cost read action forbidden');
+     if(window.ZUKAIT_MECHANICAL_STOCK_ENABLED!==true)
+       throw Error('Mechanical stock is not activated');
      return request('workshop-api',{action:'consumables_stock',...body});
    }
  });
