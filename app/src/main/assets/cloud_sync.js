@@ -1029,6 +1029,17 @@
     }
   }
 
+  window.cloudScheduleSave=function(){
+    if(cloudApplying||window.zukaitSessionPrivacy?.locked||!me||!navigator.onLine)return;
+    dirtyGeneration++;
+    cloudDirty=true;
+    localStorage.setItem(DIRTY_KEY,'1');
+    clearTimeout(pushTimer);
+    // A user action should leave the phone for the server on the next task,
+    // not after an arbitrary debounce window.
+    pushTimer=setTimeout(()=>push(0),0);
+  };
+
   // One tiny Material+Brand ID after a CONFIRMED existing workshop save.
   // No extra workshop_state write and no polling/full-history read.
   // Queue is per actor so a different login cannot link another user's edits.
@@ -1087,17 +1098,6 @@
       if(more&&!stale(epoch))setTimeout(flushStockMasterLinks,400);
     }
   }
-
-  window.cloudScheduleSave=function(){
-    if(cloudApplying||window.zukaitSessionPrivacy?.locked||!me||!navigator.onLine)return;
-    dirtyGeneration++;
-    cloudDirty=true;
-    localStorage.setItem(DIRTY_KEY,'1');
-    clearTimeout(pushTimer);
-    // A user action should leave the phone for the server on the next task,
-    // not after an arbitrary debounce window.
-    pushTimer=setTimeout(()=>push(0),0);
-  };
 
   // Reports read a server snapshot independently of queued edits and polling.
   let readLatestInFlight=null,confirmedReadState=null,confirmedReadRevision=-1;
