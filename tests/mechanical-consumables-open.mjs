@@ -37,7 +37,7 @@ const keys=['issued','additional','returns','search','totals'];
 ctx.openMechanicalConsumables();
 assert.match(output,/Mechanical Consumables/);
 for(const k of keys) assert.ok(output.includes("openMechanicalConsumablesSection('"+k+"')"),'missing '+k+' tile');
-assert.match(output,/Brands & Price/);
+assert.match(output,/Brands &amp; Price/);
 assert.match(output,/Search Material \/ Price History/);
 ctx.openMechanicalConsumablesSection('master');
 ctx.openMechanicalConsumablesSection('materialHistory');
