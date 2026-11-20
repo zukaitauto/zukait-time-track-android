@@ -8,7 +8,7 @@ on:
       - 'app/src/main/assets/consumables_stock_ui.js'
       - 'app/src/main/assets/consumables_ui.js'
       - 'app/src/main/assets/cloud_sync.js'
-      - 'supabase/staged/CONSUMABLES_STOCK_COMPACT_*.sql'
+      - 'supabase/staged/CONSUMABLES_STOCK_*.sql'
       - 'supabase/functions/workshop-api/**'
       - 'tests/consumables-stock-*.mjs'
       - '.github/workflows/consumables-stock-core.yml'
@@ -41,3 +41,5 @@ jobs:
         run: node tests/consumables-stock-ui.mjs
       - name: Isolated PostgreSQL stock lifecycle
         run: node tests/consumables-stock-sql.mjs
+      - name: Atomic Mechanical final issue and retry safety
+        run: node tests/consumables-stock-mechanical-sql.mjs
