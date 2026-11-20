@@ -23,10 +23,10 @@ function master(){
    const linked=new Set(prices.filter(p=>p&&!p.voided&&p.materialId===material.id).map(p=>String(p.brandId)));
    if(linked.size){
      for(const brand of brands.filter(x=>linked.has(String(x.id))))rows.push({
-       material:material.name,brand:brand.name,unit:material.unit||'',id:material.id
+       material:material.name,brand:brand.name,unit:material.unit||'',id:material.id,brandId:brand.id
      });
    }else{
-     rows.push({material:material.name,brand:'Not assigned',unit:material.unit||'',id:material.id});
+     rows.push({material:material.name,brand:'Not assigned',unit:material.unit||'',id:material.id,brandId:''});
    }
  }
  return rows.sort((a,b)=>a.material.localeCompare(b.material)||a.brand.localeCompare(b.brand));
@@ -44,7 +44,8 @@ const style='<style>'+
  '.mc-cons .mc-cons-muted{color:#4d657b;font-size:13px;line-height:1.5}'+
  '.mc-cons .mc-cons-alert{border-left:4px solid #e1a640;background:#fff8e8;padding:12px;margin:12px 0;color:#694b18}'+
  '.mc-cons input{display:block;border:1px solid #aebfd1;border-radius:9px;padding:10px;font-size:16px;width:100%;box-sizing:border-box;background:white;color:#1e3046}'+
- '.mc-cons label{font-size:13px;font-weight:700;display:block;margin:8px 0 5px}'+
+ ' .mc-cons label{font-size:13px;font-weight:700;display:block;margin:8px 0 5px}'+
+ '.mc-cons select{display:block;border:1px solid #aebfd1;border-radius:9px;padding:10px;font-size:16px;width:100%;box-sizing:border-box;background:white;color:#1e3046}'+
  '@media(max-width:360px){.mc-cons .mc-cons-list{grid-template-columns:1fr}}'+
  '</style>';
 function open(title,body){
@@ -83,6 +84,31 @@ function renderMaterialRows(){
     '<b>'+escapeHtml(x.material)+'</b> <span class="mc-cons-muted"> — '+escapeHtml(x.brand)+' · '+escapeHtml(x.unit)+'</span></div>').join(''):
    '<p class="mc-cons-muted">No matching materials in the current master.</p>');
 }
+function brandPreview() {
+ if(!canView())return;
+ const material=document.getElementById('mcConsMaterial');
+ const target=document.getElementById('mcConsBrand');
+ const unit=document.getElementById('mcConsUnit');
+ if(!material||!target)return;
+ const records=master().filter(x=>String(x.id)===String(material.value)&&x.brandId);
+ target.innerHTML=records.length
+   ? records.map(x=>'<option value="'+escapeHtml(x.brandId)+'">'+escapeHtml(x.brand)+'</option>').join('')
+   : '<option value="">No brand recorded for this material</option>';
+ if(unit)unit.textContent=records[0]?.unit||'Select a material with a brand';
+}
+function issueSelector(){
+ // A single material can have many selectable brands; never coalesce stock by name.
+ const rows=master(),unique=[...new Map(rows.map(x=>[String(x.id),x])).values()];
+ const materialOpts=unique.map(x=>'<option value="'+escapeHtml(x.id)+'">'+escapeHtml(x.material)+'</option>').join('');
+ const first=unique[0],brands=first?rows.filter(x=>String(x.id)===String(first.id)&&x.brandId):[];
+ return '<div class="mc-cons-card"><b>Material / brand (read-only selection preview)</b>'+
+  '<label for="mcConsMaterial">Material / Grade</label>'+
+  '<select id="mcConsMaterial" onchange="mechanicalConsumablesSelectMaterial()">'+materialOpts+'</select>'+
+  '<label for="mcConsBrand">Brand</label>'+
+  '<select id="mcConsBrand">'+brands.map(x=>'<option value="'+escapeHtml(x.brandId)+'">'+escapeHtml(x.brand)+'</option>').join('')+'</select>'+
+  '<p id="mcConsUnit" class="mc-cons-muted">Unit: '+escapeHtml(first?.unit||'Not available')+'</p>'+
+  '<p class="mc-cons-muted">Every material and brand combination will have its own stock balance and purchase cost. Save remains disabled until the secure Mechanical issue workflow is connected.</p></div>';
+}
 function section(id){
  if(!canView())return;
  const s=sections[id];if(!s)return menu();
@@ -109,11 +135,12 @@ function section(id){
   '<div class="mc-cons-card"><label for="mcConsJc">Mechanical Job Card Number</label>'+
   '<input id="mcConsJc" type="text" placeholder="Enter Mechanical JC number" autocomplete="off">'+
   '<p class="mc-cons-muted">Select one or more material lines. Example units: engine oil 5W-30 / 20W-40 / 5W-40 in litres, WD-40 by piece, coolant by gallon container. Each confirmed issue will be final immediately, with one atomic stock deduction for all lines and a locked cost per line.</p>'+ 
-  '<p class="mc-cons-muted">This is a screen layout only. '+wording+' cannot be saved until the separate Mechanical Job Card authority is connected.</p></div>'+ 
+  '<p class="mc-cons-muted">This is a screen layout only. '+wording+' cannot be saved until the separate Mechanical Job Card authority is connected.</p></div>'+issueSelector()+ 
   '<div class="mc-cons-alert">No material is issued or deducted from stock on this preview screen. There is no separate Actual Materials finalisation.</div>'+
   '<button class="mc-cons-secondary" onclick="openMechanicalConsumablesSection(\'search\')">View Existing Materials</button>');
 }
 window.openMechanicalConsumables=menu;
 window.openMechanicalConsumablesSection=section;
 window.mechanicalConsumablesFilter=renderMaterialRows;
+window.mechanicalConsumablesSelectMaterial=brandPreview;
 })();
