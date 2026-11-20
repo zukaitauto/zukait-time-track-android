@@ -39,8 +39,8 @@ assert.equal(rows.rows.length,1);
 assert.equal(rows.rows[0].display_name,'Engine Oil 5W-30');
 assert.equal(rows.rows[0].brand,'Brand A');
 assert.equal(rows.rows[0].unit,'Liter');
-assert.equal(rows.rows[0].physical,0);
-assert.equal(rows.rows[0].stock_value,0);
+assert.equal(Number(rows.rows[0].physical),0);
+assert.equal(Number(rows.rows[0].stock_value),0);
 await link('valid-manager','oil5w30','b','Mechanical');
 rows=await db.query("select brand_id,physical from public.zukait_stock_balances order by brand_id");
 assert.deepEqual(rows.rows.map(x=>x.brand_id),['a','b'],'two brands share one material but not stock quantity');
@@ -50,7 +50,7 @@ const savedPrice=master.consumables.prices[0];
 let r=await db.query("select public.zukait_stock_command($1,$2,$3,$4::jsonb) as result",[
  'valid-manager','stock-purchase','PURCHASE',JSON.stringify({materialId:'oil5w30',brandId:'a',quantity:10,price:30,priceMethod:'total'})
 ]);
-assert.equal(r.rows[0].result.physical,10);
+assert.equal(Number(r.rows[0].result.physical),10);
 const before=await db.query("select physical,stock_value from public.zukait_stock_balances where brand_id='a'");
 assert.equal(Number(before.rows[0].stock_value),30);
 await link('valid-manager','oil5w30','a','Painting');
