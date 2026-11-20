@@ -739,7 +739,7 @@
     lastSuccessfulSyncAt=Date.now();lastSyncError='';consecutiveSyncErrors=0;setServerConnection('connected');
     initialDone=true;
     conflictAlerted=false;
-    if(typeof setTimeout==='function')setTimeout(flushStockMasterLinks,0);
+    if(typeof window!=='undefined'&&typeof setTimeout==='function')setTimeout(flushStockMasterLinks,0);
     return true;
   }
 
@@ -854,7 +854,7 @@
           status('SYNCED','ok');
           conflictAlerted=false;
           // Never project master IDs until this exact workshop save is accepted.
-          if(typeof setTimeout==='function')setTimeout(flushStockMasterLinks,0);
+          if(typeof window!=='undefined'&&typeof setTimeout==='function')setTimeout(flushStockMasterLinks,0);
           if(r.force_pull&&!r.data){
             setTimeout(()=>{if(!cloudDirty)pull(true).catch(e=>console.warn('Post-rebase refresh failed',e))},0);
           }
