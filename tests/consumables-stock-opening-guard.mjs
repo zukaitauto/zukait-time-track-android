@@ -39,7 +39,7 @@ const a=fixture();
 await a.w.openStockManagement();
 await a.w.zukStockNav('add');
 assert.match(a.html(),/Opening Stock \(one time only\)/);
-assert.match(a.html(),/Confirm Opening Stock/);
+assert.match(a.html(),/id="zs-opening-fields"/);
 assert.doesNotMatch(a.html(),/id="zs-qty"[^>]+value="5"/,
  'No default quantity may be mistaken for physical stock count');
 assert.doesNotMatch(a.html(),/id="zs-price"[^>]+value="30"/,
