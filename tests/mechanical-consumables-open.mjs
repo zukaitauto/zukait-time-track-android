@@ -27,7 +27,7 @@ const ctx={console,me:{id:'M',role:'Manager'},state:data,
 ctx.window=ctx;
 vm.createContext(ctx);
 vm.runInContext(mechanical,ctx);
-const keys=['issued','additional','search','totals'];
+const keys=['issued','additional','returns','search','totals'];
 ctx.openMechanicalConsumables();
 assert.match(output,/Mechanical Consumables/);
 for(const k of keys) assert.ok(output.includes("openMechanicalConsumablesSection('"+k+"')"),'missing '+k+' tile');
@@ -36,6 +36,10 @@ assert.doesNotMatch(output,/Suggested \/ Issued Materials/);
 assert.match(output,/No separate Actual Materials or finalisation step/);
 assert.ok(!output.includes("openMechanicalConsumablesSection('actual')"),'No Actual Materials screen');
 assert.match(output,/Additional Materials/);
+assert.match(output,/Return Materials/);
+assert.match(output,/5W-30.*20W-40.*5W-40/);
+assert.match(output,/WD-40/);
+assert.match(output,/Coolant/);
 assert.match(output,/Search Material List/);
 assert.match(output,/Total Consumables/);
 assert.doesNotMatch(output,/Coming soon/i,'Tile opens genuine Mechanical screen');
@@ -46,11 +50,14 @@ for(const key of keys){
   if(key==='issued'||key==='additional') {
     assert.match(output,/Mechanical Job Card Number/);
     assert.match(output,/No material is issued or deducted from stock/);
-    assert.match(output,/immediately deduct physical stock/);
+    assert.match(output,/atomic stock deduction/);
   }
 }
 ctx.openMechanicalConsumablesSection('actual');
 assert.ok(output.includes("openMechanicalConsumablesSection('issued')"),'Legacy Actual link returns to menu without saving');
+ctx.openMechanicalConsumablesSection('returns');
+assert.match(output,/audited reversal at the locked issue cost/);
+assert.match(output,/Returns are not active yet/);
 ctx.openMechanicalConsumablesSection('search');
 assert.match(rows.innerHTML,/2K Primer/);
 assert.match(rows.innerHTML,/CAPSI/);
@@ -72,4 +79,4 @@ assert.match(output,/Mechanical Consumables/,'existing Supervisor can open tile'
 assert.equal(writes,0);
 assert.equal(reads,0);
 assert.deepEqual(data.consumables.materials.map(x=>x.name),['2K Primer','Masking Tape']);
-console.log('Mechanical consumables: 4 screens, final-on-issue design, no Actual step, read-only catalog, permissions and Painting isolation: PASS');
+console.log('Mechanical consumables: 5 screens, final-on-issue, Return Materials, item units, read-only catalog and Painting isolation: PASS');
