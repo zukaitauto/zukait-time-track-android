@@ -83,7 +83,7 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
         'INVALID_ISSUE_LINES','INVALID_ISSUE_LINE','INVALID_ISSUE_KIND',
         'DUPLICATE_MATERIAL_BRAND','PIECE_WHOLE_REQUIRED']);
       const code=codes.has(message)?message.toLowerCase():'stock_write_failed';
-      return bad(code,code==='stock_forbidden'||code==='manager_only'?403:
+      return bad(code,code==='stock_forbidden'||code==='manager_only'||code==='mechanical_stock_forbidden'?403:
         code==='stock_write_failed'?503:409);
     }
     return good({receipt});
