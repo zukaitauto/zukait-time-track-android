@@ -29,6 +29,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install locked test dependencies
+        run: npm ci --ignore-scripts
       - name: Parse navigation and screens
         run: |
           node --check app/src/main/assets/mechanical_consumables_ui.js
