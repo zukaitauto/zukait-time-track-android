@@ -7,6 +7,7 @@ const C=require('../app/src/main/assets/consumables.js');
 const elements=new Map();
 const el=id=>{if(!elements.has(id))elements.set(id,{value:'',innerHTML:'',textContent:'',dataset:{}});return elements.get(id)};
 let shown='',saves=0;
+const stockLinks=[];
 const alerts=[];
 const state={jobs:[],assign:[]};
 const ctx={
@@ -21,6 +22,7 @@ const ctx={
  }
 };
 ctx.window=ctx;
+ctx.cloudQueueStockMasterLink=x=>{stockLinks.push({...x});return true};
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync('app/src/main/assets/consumables_ui.js','utf8'),ctx);
 vm.runInContext(fs.readFileSync('app/src/main/assets/mechanical_consumables_ui.js','utf8'),ctx);
@@ -55,12 +57,16 @@ assert.equal(c.materials.length,1,'second brand does not duplicate material');
 assert.equal(c.brands.length,2);
 assert.equal(c.prices.length,2);
 assert.equal(saves,2);
+assert.deepEqual(stockLinks.map(x=>x.origin),['Mechanical','Mechanical']);
+assert.equal(stockLinks[0].materialId,stockLinks[1].materialId,'same material ID across brands');
+assert.notEqual(stockLinks[0].brandId,stockLinks[1].brandId,'separate brands linked without duplicating material');
 
 fill({cmMaterial:'Engine Oil 5W-30',cmBrand:'Brand B',cmUnit:'Liter',
  cmCategory:'Consumable',cmPrice:'4.000',cmDate:'2026-11-20'});
 ctx.consSaveMaster();
 assert.equal(c.prices.length,2,'duplicate brand + effective date blocked');
 assert.equal(saves,2);
+assert.equal(stockLinks.length,2,'rejected duplicate-date prices cannot link stock');
 assert.ok(alerts.some(x=>x.includes('PRICE_DATE_DUPLICATE')));
 
 fill({cmMaterial:'Engine Oil 5W-30',cmBrand:'Brand B',cmUnit:'Piece',
@@ -68,6 +74,7 @@ fill({cmMaterial:'Engine Oil 5W-30',cmBrand:'Brand B',cmUnit:'Piece',
 ctx.consSaveMaster();
 assert.equal(c.materials[0].unit,'Liter','material unit cannot be silently changed');
 assert.equal(saves,2);
+assert.equal(stockLinks.length,2,'rejected unit changes cannot link stock');
 
 ctx.consOpenMaster(); // nested edit/cancel flow retains mechanical origin
 assert.match(shown,/onclick="openMechanicalConsumables\(\)"/);
