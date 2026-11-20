@@ -51,7 +51,7 @@ materials, backfill purchases or reset historical stock.
 
 ## Performance guarantees
 
-- At most one tiny Stock-link RPC per successfully edited material+brand.
+- One tiny queued Stock-link request per edited material+brand; an uncertain result may retry idempotently, using the same IDs and origin.
 - Source validation reads ONLY `workshop_state.data->consumables` once for
   a Manager edit; no history tables or full workshop snapshots sent to client.
 - Links are upserts by existing IDs; no material/brand duplication.
