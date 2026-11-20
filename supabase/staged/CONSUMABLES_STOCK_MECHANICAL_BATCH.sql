@@ -108,27 +108,27 @@ begin
 
  -- Confirm unique (materialId,brandId) and valid numeric quantities BEFORE saving.
  if exists (
-   select 1 from pg_catalog.jsonb_array_elements(v_payload) x
-   where pg_catalog.jsonb_typeof(x)<>'object'
-      or not (x ? 'materialId' and x ? 'brandId' and x ? 'quantity')
-      or coalesce(x->>'quantity','') !~ '^[0-9]+([.][0-9]+)?$'
-      or (x->>'quantity')::numeric<=0
-      or pg_catalog.round((x->>'quantity')::numeric,4)<>(x->>'quantity')::numeric
-      or coalesce(x->>'materialId','')=''
-      or coalesce(x->>'brandId','')=''
+   select 1 from pg_catalog.jsonb_array_elements(v_payload) as x(item)
+   where pg_catalog.jsonb_typeof(x.item)<>'object'
+      or not (x.item ? 'materialId' and x.item ? 'brandId' and x.item ? 'quantity')
+      or coalesce(x.item->>'quantity','') !~ '^[0-9]+([.][0-9]+)?$'
+      or (x.item->>'quantity')::numeric<=0
+      or pg_catalog.round((x.item->>'quantity')::numeric,4)<>(x.item->>'quantity')::numeric
+      or coalesce(x.item->>'materialId','')=''
+      or coalesce(x.item->>'brandId','')=''
  ) then raise exception 'INVALID_ISSUE_LINE' using errcode='22023';end if;
  if (select count(*) from pg_catalog.jsonb_array_elements(v_payload)) <>
-    (select count(distinct x->>'materialId'||'|'||x->>'brandId')
-      from pg_catalog.jsonb_array_elements(v_payload) x) then
+    (select count(distinct (x.item->>'materialId')||'|'||(x.item->>'brandId'))
+      from pg_catalog.jsonb_array_elements(v_payload) as x(item)) then
    raise exception 'DUPLICATE_MATERIAL_BRAND' using errcode='22023';end if;
 
  -- Lock all selected balances in a deterministic order to avoid deadlocks.
  -- A competing purchase/issue/reservation for a brand sees updated stock.
  for v_line in
-   select x->>'materialId' as material_id,
-          x->>'brandId' as brand_id,
-          (x->>'quantity')::numeric as qty
-   from pg_catalog.jsonb_array_elements(v_payload) x
+   select x.item->>'materialId' as material_id,
+          x.item->>'brandId' as brand_id,
+          (x.item->>'quantity')::numeric as qty
+   from pg_catalog.jsonb_array_elements(v_payload) as x(item)
    order by 1,2
  loop
    select * into v_item from public.zukait_stock_balances
@@ -149,10 +149,10 @@ begin
  insert into public.zukait_stock_mechanical_issues(job_card,issue_kind,actor_id,request_id)
    values(v_jc,v_kind,v_actor,p_request_id) returning id into v_issue_id;
  for v_line in
-   select x->>'materialId' as material_id,
-          x->>'brandId' as brand_id,
-          (x->>'quantity')::numeric as qty
-   from pg_catalog.jsonb_array_elements(v_payload) x
+   select x.item->>'materialId' as material_id,
+          x.item->>'brandId' as brand_id,
+          (x.item->>'quantity')::numeric as qty
+   from pg_catalog.jsonb_array_elements(v_payload) as x(item)
    order by 1,2
  loop
    select * into v_item from public.zukait_stock_balances
