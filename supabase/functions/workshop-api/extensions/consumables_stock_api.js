@@ -3,7 +3,7 @@
 // Uses small, paginated tables and one transactional RPC per write.
 const roles = new Set(['Manager','Supervisor','Mechanical Supervisor']);
 const managerActions = new Set(['OPENING','ADJUST','MINIMUM']);
-const allowedCommands = new Set(['OPENING','PURCHASE','RESERVE','CHANGE','CANCEL','FINALISE','RETURN','ADJUST','MINIMUM','MECHANICAL_ISSUE']);
+const allowedCommands = new Set(['OPENING','PURCHASE','RESERVE','CHANGE','CANCEL','FINALISE','RETURN','ADJUST','MINIMUM','MECHANICAL_ISSUE','MECHANICAL_RETURN']);
 const allowedKeys = new Set(['action','operation','command','requestId','data','materialId','brandId','jobCard','cursor','page','origin']);
 const bad = (code,status=400) => ({status,body:{ok:false,code}});
 const good = data => ({status:200,body:{ok:true,...data}});
@@ -19,7 +19,7 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
   const operation=String(body.operation||'LIST').trim().toUpperCase();
   // Mechanical Supervisors may only see the scoped Mechanical catalog and issue to it.
   // LIST/HISTORY/BALANCE/RESERVATIONS could otherwise disclose Bodyshop-only stock.
-  if(user.role==='Mechanical Supervisor'&&!['CATALOG','WRITE'].includes(operation))
+  if(user.role==='Mechanical Supervisor'&&!['CATALOG','WRITE','MECHANICAL_RETURNABLE'].includes(operation))
     return bad('mechanical_stock_forbidden',403);
   if(operation==='LEGACY_PREVIEW') {
     // One-time Manager review of the CURRENT saved master; at most 20 pairs.
@@ -59,6 +59,21 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
         mapped==='stock_master_link_failed'?503:409);
     }
     return good({linked:data});
+  }
+  if(operation==='MECHANICAL_RETURNABLE') {
+    if(!['Manager','Mechanical Supervisor'].includes(user.role))
+      return bad('mechanical_stock_forbidden',403);
+    if(!mechanicalWritesEnabled)return bad('mechanical_stock_not_enabled',423);
+    if(!sessionHash)return bad('stock_session_required',401);
+    const jc=String(body.jobCard||'').trim().toUpperCase();
+    if(!/^[A-Z0-9_. -]{1,36}$/.test(jc))return bad('invalid_mechanical_job');
+    if(!Number.isInteger(body.page)||body.page<0||body.page>49)
+      return bad('invalid_return_page');
+    const {data,error}=await admin.rpc('zukait_stock_mechanical_returnable',{
+      p_session_hash:sessionHash,p_job_card:jc,p_page:body.page
+    });
+    if(error)return bad('returnable_read_failed',503);
+    return good({returnable:data});
   }
   if(operation==='CATALOG') {
     // One bounded indexed read; only stock catalog keys, never workshop_state.
@@ -134,7 +149,7 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
     const command=String(body.command||'').toUpperCase();
     if(!allowedCommands.has(command))return bad('stock_unknown_command');
     if(managerActions.has(command)&&user.role!=='Manager')return bad('manager_only',403);
-    if(command==='MECHANICAL_ISSUE') {
+    if(command==='MECHANICAL_ISSUE'||command==='MECHANICAL_RETURN') {
       if(!['Manager','Mechanical Supervisor'].includes(user.role))return bad('mechanical_stock_forbidden',403);
       if(!mechanicalWritesEnabled)return bad('mechanical_stock_not_enabled',423);
     }else if(!['Manager','Supervisor'].includes(user.role))return bad('stock_forbidden',403);
@@ -144,8 +159,9 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
     const data=body.data;
     if(!data||typeof data!=='object'||Array.isArray(data)||
        JSON.stringify(data).length>2048)return bad('stock_invalid_payload');
-    const mechanical=command==='MECHANICAL_ISSUE';
-    const {data:receipt,error}=await admin.rpc(mechanical?'zukait_stock_mechanical_issue':'zukait_stock_command',
+    const mechanical=command==='MECHANICAL_ISSUE'||command==='MECHANICAL_RETURN';
+    const mechanicalRpc=command==='MECHANICAL_RETURN'?'zukait_stock_mechanical_return':'zukait_stock_mechanical_issue';
+    const {data:receipt,error}=await admin.rpc(mechanical?mechanicalRpc:'zukait_stock_command',
       mechanical?{p_session_hash:sessionHash,p_request_id:requestId,p_data:data}:
         {p_session_hash:sessionHash,p_request_id:requestId,p_action:command,p_data:data});
     if(error) {
@@ -157,7 +173,10 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
         'REQUEST_ID_CONFLICT','STOCK_VALUATION_CONFLICT','REASON_REQUIRED',
         'MECHANICAL_STOCK_FORBIDDEN','MECHANICAL_JOB_NOT_FOUND','INVALID_MECHANICAL_JOB',
         'INVALID_ISSUE_LINES','INVALID_ISSUE_LINE','INVALID_ISSUE_KIND',
-        'DUPLICATE_MATERIAL_BRAND','PIECE_WHOLE_REQUIRED']);
+        'DUPLICATE_MATERIAL_BRAND','PIECE_WHOLE_REQUIRED',
+        'MECHANICAL_LINE_NOT_FOUND','RETURN_EXCEEDS_ISSUED',
+        'RETURN_REASON_REQUIRED','INVALID_RETURN_LINE','INVALID_RETURN_QUANTITY',
+        'STOCK_UNIT_CONFLICT']);
       const code=codes.has(message)?message.toLowerCase():'stock_write_failed';
       return bad(code,code==='stock_forbidden'||code==='manager_only'||code==='mechanical_stock_forbidden'?403:
         code==='stock_write_failed'?503:409);
