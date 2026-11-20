@@ -12,6 +12,8 @@ on:
       - 'tests/mechanical-consumables-issue.mjs'
       - 'tests/mechanical-consumables-host.mjs'
       - 'tests/mechanical-consumables-returns-host.mjs'
+      - 'tests/mechanical-consumables-totals-host.mjs'
+      - 'app/src/main/assets/mechanical_consumables_totals_host.js'
       - 'app/src/main/assets/mechanical_consumables_returns_host.js'
       - 'tests/mechanical-consumables-dashboard.mjs'
       - 'app/src/main/assets/mechanical_consumables_host.js'
@@ -49,6 +51,8 @@ jobs:
         run: node tests/mechanical-consumables-host.mjs
       - name: Dedicated Return Materials screen, original issue line and retry
         run: node tests/mechanical-consumables-returns-host.mjs
+      - name: Read-only Mechanical Job Card consumables net cost
+        run: node tests/mechanical-consumables-totals-host.mjs
       - name: Dedicated Mechanical dashboard card routing
         run: node tests/mechanical-consumables-dashboard.mjs
       - name: Shared Material and Brand creation with Manager safeguards
