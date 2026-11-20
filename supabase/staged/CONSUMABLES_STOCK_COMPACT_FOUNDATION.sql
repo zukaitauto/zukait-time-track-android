@@ -7,7 +7,7 @@
 create table if not exists public.zukait_stock_material_keys (
   material_id text primary key,
   display_name text not null default '' check (length(display_name)<=180),
-  department text not null default 'Both' check (department in ('Mechanical','Painting','Both')),
+  department text not null default 'Unassigned' check (department in ('Unassigned','Mechanical','Painting','Both')),
   unit text not null check (unit in ('Liter','kg','Piece')),
   active boolean not null default true
 );
