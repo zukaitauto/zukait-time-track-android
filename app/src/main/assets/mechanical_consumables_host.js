@@ -198,7 +198,8 @@ export async function mountMechanicalConsumablesHost(root,options={}){
    pending=readPending();
    const modeRow=h('div');
    modeRow.append(button('Issued Materials',()=>{if(busy||pending)return;mode='issued';putMessage('Issued Materials selected.');}),
-       button('Additional Materials',()=>{if(busy||pending)return;mode='additional';putMessage('Additional Materials selected.');}));
+       button('Additional Materials',()=>{if(busy||pending)return;mode='additional';putMessage('Additional Materials selected.');}),
+       button('Return Materials',()=>{if(busy||pending)return;options.onReturn?.()}));
    shell.append(modeRow);
    const jc=h('input',null,{id:'mc-stock-jc',placeholder:'Mechanical JC number'});
    const material=h('select',null,{id:'mc-stock-material'}),brand=h('select',null,{id:'mc-stock-brand'});
