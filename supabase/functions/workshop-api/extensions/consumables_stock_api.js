@@ -17,6 +17,10 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
   if(!body||typeof body!=='object'||Array.isArray(body)||
     Object.keys(body).some(k=>!allowedKeys.has(k)))return bad('stock_invalid_request');
   const operation=String(body.operation||'LIST').trim().toUpperCase();
+  // Mechanical Supervisors may only see the scoped Mechanical catalog and issue to it.
+  // LIST/HISTORY/BALANCE/RESERVATIONS could otherwise disclose Bodyshop-only stock.
+  if(user.role==='Mechanical Supervisor'&&!['CATALOG','WRITE'].includes(operation))
+    return bad('mechanical_stock_forbidden',403);
   if(operation==='CATALOG') {
     // One bounded indexed read; only stock catalog keys, never workshop_state.
     const page=Math.max(0,Math.min(20,Number.isInteger(body.page)?body.page:0));
