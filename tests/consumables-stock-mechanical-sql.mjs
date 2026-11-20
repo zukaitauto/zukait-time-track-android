@@ -15,9 +15,9 @@ await db.exec("insert into public.staff_credentials(user_id,role,department) val
 await db.exec("insert into public.staff_sessions(user_id,token_hash) values ('MGR','manager'),('MSUP','mechanical'),('SUP','bodyshop'),('EMP','employee')");
 await db.exec("insert into zukait_mechanical.checklists(job_card) values('JC12500')");
 await db.exec("insert into zukait_mechanical.intake_jobs(job_card) values('JC12501')");
-await db.exec("insert into public.zukait_stock_material_keys(material_id,unit) values('oil5w30','Liter'),('wd40','Piece')");
+await db.exec("insert into public.zukait_stock_material_keys(material_id,unit,department) values('oil5w30','Liter','Mechanical'),('wd40','Piece','Both'),('primer','Liter','Painting')");
 await db.exec("insert into public.zukait_stock_brand_keys(brand_id) values('a'),('b')");
-await db.exec("insert into public.zukait_stock_balances(material_id,brand_id,unit,physical,stock_value) values ('oil5w30','a','Liter',20,100),('oil5w30','b','Liter',10,70),('wd40','a','Piece',5,7.5)");
+await db.exec("insert into public.zukait_stock_balances(material_id,brand_id,unit,physical,stock_value) values ('oil5w30','a','Liter',20,100),('oil5w30','b','Liter',10,70),('wd40','a','Piece',5,7.5),('primer','a','Liter',3,8)");
 let n=0;
 const issue=async(token,data,request='mech-test-'+(++n))=>{
  const r=await db.query('select public.zukait_stock_mechanical_issue($1,$2,$3::jsonb) as result',
@@ -33,6 +33,8 @@ const payload={jobCard:'JC12500',kind:'issued',lines:[
 await assert.rejects(issue('bodyshop',payload),/MECHANICAL_STOCK_FORBIDDEN/);
 await assert.rejects(issue('employee',payload),/MECHANICAL_STOCK_FORBIDDEN/);
 await assert.rejects(issue('mechanical',{...payload,jobCard:'JC12599'}),/MECHANICAL_JOB_NOT_FOUND/);
+await assert.rejects(issue('mechanical',{jobCard:'JC12500',lines:[{materialId:'primer',brandId:'a',quantity:1}]}),/STOCK_MASTER_KEY_NOT_FOUND/,
+ 'Mechanical Supervisor cannot issue a Painting-only material even by its exact database ID');
 const initial=await issue('mechanical',payload,'one-issue');
 assert.equal(initial.lineCount,3);
 assert.equal(initial.final,true);
