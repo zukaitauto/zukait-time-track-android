@@ -15,7 +15,7 @@ function consUpdateSync(){
 }
 const modal=(title,body,back)=>{
   if(typeof window.openModal!=='function')return;
-  const backAction=back||((title==='Consumables')?'':(title==='🎨 Painting Consumables'?'openConsumablesModule()':'openPaintingConsumables()'));
+  const backAction=back||((title==='Consumables')?'':(title==='🎨 Painting Consumables'?'openConsumablesModule()':(['Brands & Price','Search Material'].includes(title)&&consMasterOrigin==='mechanical'?'openMechanicalConsumables()':'openPaintingConsumables()')));
   const listType=title==='Suggested / Issued Materials'?'issued':title==='Actual Materials'?'actual':'';
   const listButton=listType?'<button type="button" onclick="openConsumablesSavedList(\''+listType+'\')" style="margin-left:auto;height:26px;min-height:26px;width:auto;flex:0 0 auto;border:1px solid #93c5fd;border-radius:8px;background:#dbeafe;color:#1d4ed8;font-size:9px;font-weight:900;padding:4px 10px">LIST</button>':'';
   const actualPage=title==='Actual Materials'||title==='Confirm Actual Materials';
