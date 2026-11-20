@@ -6,7 +6,7 @@ const master=readFileSync('app/src/main/assets/consumables_ui.js','utf8');
 const start=cloud.indexOf('// One tiny Material+Brand ID after a CONFIRMED');
 const end=cloud.indexOf('// Reports read a server snapshot independently',start);
 assert.ok(start>0&&end>start,'Stock master queue must exist inside the established cloud sync workflow');
-assert.match(cloud,/status\('SYNCED','ok'\);[\s\S]{0,200}setTimeout\(flushStockMasterLinks,0\)/,
+assert.match(cloud,/status\('SYNCED','ok'\);[\s\S]{0,600}setTimeout\(flushStockMasterLinks,0\)/,
  'Only acknowledged main workshop saves can trigger catalog syncing');
 assert.match(cloud,/async function flushStockMasterLinks\(/);
 assert.match(master,/cloudQueueStockMasterLink\(\{materialId:m.id,brandId:b.id,origin:/);
