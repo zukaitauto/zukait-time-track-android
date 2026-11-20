@@ -63,6 +63,27 @@ assert.equal(r.body.items[0].physical-r.body.items[0].reserved,19);
 assert.equal(requests.filter(x=>x.type==='read'&&x.table==='workshop_state').length,0,
  'Mechanical catalog must not fetch workshop-state snapshots');
 
+// A submitted Master name/price must NEVER be trusted by Stock.
+const linkReq={operation:'MASTER_LINK',materialId:'oil5w30',brandId:'brandA',origin:'Mechanical'};
+const beforeLinks=requests.filter(x=>x.type==='write').length;
+r=await consumablesStockApi(admin,S,linkReq,{enabled:true,masterLinkEnabled:true,sessionHash:'supervisor'});
+assert.equal(r.status,403,'only Manager may link the authoritative Master');
+r=await consumablesStockApi(admin,M,linkReq,{enabled:true,sessionHash:'manager'});
+assert.equal(r.status,423,'new stock Master integration stays disabled by default');
+r=await consumablesStockApi(admin,M,{...linkReq,unit:'Piece'},
+  {enabled:true,masterLinkEnabled:true,sessionHash:'manager'});
+assert.equal(r.status,400,'client cannot inject unit or purchase cost');
+r=await consumablesStockApi(admin,M,linkReq,
+ {enabled:true,masterLinkEnabled:true,sessionHash:'manager'});
+assert.equal(r.status,200);
+const linkWrite=requests.filter(x=>x.type==='write').at(-1);
+assert.equal(linkWrite.fn,'zukait_stock_link_master');
+assert.deepEqual(linkWrite.args,{
+ p_session_hash:'manager',p_material_id:'oil5w30',p_brand_id:'brandA',p_origin:'Mechanical'
+});
+assert.equal(requests.filter(x=>x.type==='write').length,beforeLinks+1,
+ 'denied/disabled master requests cannot make a DB write');
+
 const mechanical={operation:'WRITE',command:'MECHANICAL_ISSUE',requestId:'issue-1',
  data:{jobCard:'JC12500',lines:[{materialId:'oil5w30',brandId:'brandA',quantity:4.5}]}};
 r=await consumablesStockApi(admin,MS,{operation:'LIST'},{enabled:true});
