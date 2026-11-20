@@ -48,11 +48,11 @@ const mk=await db.query("select count(*) as n from public.zukait_stock_material_
 assert.equal(mk.rows[0].n,1);
 // Opening remains available on the new zero-balance placeholder once.
 let opening=await db.query("select public.zukait_stock_command($1,$2,$3,$4::jsonb) as result",[
- 'valid-manager','opening-brand-b','OPENING',JSON.stringify({materialId:'oil5w30',brandId:'b',quantity:3,unitCost:4})
+ 'valid-manager','opening-brand-b','OPENING',JSON.stringify({materialId:'oil5w30',brandId:'b',quantity:3,unitCost:4,countConfirmed:true,reason:'Verified physical count'})
 ]);
 assert.equal(Number(opening.rows[0].result.physical),3);
 await assert.rejects(db.query("select public.zukait_stock_command($1,$2,$3,$4::jsonb) as result",[
- 'valid-manager','opening-brand-b-again','OPENING',JSON.stringify({materialId:'oil5w30',brandId:'b',quantity:3,unitCost:4})
+ 'valid-manager','opening-brand-b-again','OPENING',JSON.stringify({materialId:'oil5w30',brandId:'b',quantity:3,unitCost:4,countConfirmed:true,reason:'Verified physical count'})
 ]),/OPENING_ALREADY_RECORDED/);
 const savedPrice=master.consumables.prices[0];
 let r=await db.query("select public.zukait_stock_command($1,$2,$3,$4::jsonb) as result",[
