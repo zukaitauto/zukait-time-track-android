@@ -45,6 +45,8 @@ jobs:
         run: node tests/consumables-stock-sql.mjs
       - name: Atomic Mechanical final issue and retry safety
         run: node tests/consumables-stock-mechanical-sql.mjs
+      - name: Audited Mechanical return, original locked cost and retries
+        run: node tests/consumables-stock-mechanical-return-sql.mjs
       - name: Material Master to compact Stock catalog integration
         run: node tests/consumables-stock-master-link-sql.mjs
       - name: One-time legacy catalog preview and manual classification
