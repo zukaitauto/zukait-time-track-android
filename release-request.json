@@ -1,30 +1,30 @@
 {
-  "versionName": "V404",
-  "versionCode": 367,
+  "versionName": "V405",
+  "versionCode": 368,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "ownerPublicationRequested": true,
-  "ownerRequestedImmediateRelease": true,
+  "approvedForStaff": false,
+  "ownerPublicationRequested": false,
+  "ownerRequestedImmediateRelease": false,
   "ownerRequestedProceed": true,
-  "releaseHeldByOwner": false,
+  "releaseHeldByOwner": true,
   "productionBackendChanges": false,
   "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "backupDeferredByOwner": true,
-  "sourceCommit": "d53c2e840d44fb5fee6cf7fb493629af0969557e",
-  "approvedAt": "2026-11-18T06:23:19.148Z",
-  "publishNonce": "d53c2e840d44fb5fee6cf7fb493629af0969557e",
-  "signedAcceptanceRun": 44250319578,
-  "verificationRun": 44250319338,
-  "authorization": "Owner explicitly requested RELEASE of the QC Pending / Ready to Deliver dashboard count fix for Manager and Supervisor on 18 November 2026.",
-  "reason": "V404 owner-approved UI-only Android/Web live-test release. All ten exact-source checks passed on d53c2e840d44fb5fee6cf7fb493629af0969557e including Reception, signed APK, native PDF, Android build, Mechanical QC, synchronization and connection safety. Existing QC authorization, records, workshop database and production backend are unchanged. Physical owner device testing and current backup restore remain NOT_RUN; V403 is retained as rollback baseline.",
+  "sourceCommit": "",
+  "approvedAt": null,
+  "publishNonce": "",
+  "signedAcceptanceRun": 0,
+  "verificationRun": 0,
+  "authorization": "Owner requested proceeding with UI-only Mechanical Consumables and Stock Master screen testing on 21 November 2026. This candidate must pass exact-source V405 checks before coordinated publication.",
+  "reason": "V405 CANDIDATE ONLY: Mechanical and Stock UI-only previews use existing staff login. Stock deductions, issue/return, valuation, stock backend flags and production migrations remain disabled. Pending exact-source Reception, Android, signed APK, synchronization and connection acceptance.",
   "previousPublishedRelease": {
-    "versionName": "V403",
-    "versionCode": 366,
-    "releaseTag": "release-V403-architecture-v2",
-    "sourceCommit": "69da3de30e1abc65ea35a4aad5e55cf7e906da9c"
+    "versionName": "V404",
+    "versionCode": 367,
+    "releaseTag": "release-V404-architecture-v2",
+    "sourceCommit": "d53c2e840d44fb5fee6cf7fb493629af0969557e"
   },
   "pendingTestEvidence": {
     "productionBackendChanges": false,
@@ -32,49 +32,8 @@
     "freshBackupRestore": "NOT_RUN"
   },
   "verification": {
-    "sourceCommit": "d53c2e840d44fb5fee6cf7fb493629af0969557e",
-    "checks": {
-      "signedCandidate": {
-        "run": 44250319578,
-        "status": "PASS"
-      },
-      "reception": {
-        "run": 44250319338,
-        "status": "PASS"
-      },
-      "androidArchitecture": {
-        "run": 44250319331,
-        "status": "PASS"
-      },
-      "standardApk": {
-        "run": 44250319334,
-        "status": "PASS"
-      },
-      "mechanicalContracts": {
-        "run": 44250319260,
-        "status": "PASS"
-      },
-      "connection": {
-        "run": 44250319272,
-        "status": "PASS"
-      },
-      "syncTraffic": {
-        "run": 44250319292,
-        "status": "PASS"
-      },
-      "mechanicalPhone": {
-        "run": 44250319348,
-        "status": "PASS"
-      },
-      "accountant": {
-        "run": 44250319276,
-        "status": "PASS"
-      },
-      "nativePdf": {
-        "run": 44250319822,
-        "status": "PASS"
-      }
-    },
+    "sourceCommit": "",
+    "checks": {},
     "physicalAcceptance": "NOT_RUN",
     "freshBackupRestore": "NOT_RUN",
     "productionBackendChanges": false
