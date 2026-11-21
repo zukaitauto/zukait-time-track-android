@@ -51,7 +51,7 @@ begin
      m.item->>'unit' as unit,
      coalesce(m.item->>'category','Consumable') as category,
      b.item->>'id' as brand_id,b.item->>'name' as brand_name,
-     coalesce(mk.department,'Unassigned') as department,
+     coalesce(mk.department,nullif(nullif(m.item->>'department',''),'Unassigned'),'Painting') as department,
      bal.material_id is not null as has_balance
    from active_pairs a
    join materials m on m.item->>'id'=a.mid
