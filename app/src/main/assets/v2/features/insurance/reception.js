@@ -434,6 +434,43 @@
       }
     },true);
   }
+  // Direct Job Card VIN guidance: stop a typo before it reaches the server.
+  // Never guess a chassis number or silently convert O/I/Q into digits.
+  function bindDirectVinValidation(form){
+    const input=form.elements.namedItem('vin');
+    if(!input)return ()=>true;
+    const hint=document.createElement('p');
+    hint.id='rc-direct-vin-status';
+    hint.className='rc-form-hint';
+    hint.setAttribute('aria-live','polite');
+    input.closest('label')?.append(hint);
+    input.setAttribute('aria-describedby',[input.getAttribute('aria-describedby'),hint.id].filter(Boolean).join(' '));
+    function validate(){
+      const value=String(input.value||'').replace(/\s+/g,'').toUpperCase();
+      if(input.value!==value)input.value=value;
+      let message='';
+      if(value){
+        const index=[...value].findIndex(char=>'IOQ'.includes(char));
+        if(index!==-1){
+          const char=value[index];
+          message='VIN contains letter '+char+' at position '+(index+1)+'. VINs cannot contain I, O or Q. Confirm the chassis plate'+(char==='O'?'; the character may be digit 0 (zero)':'')+'.';
+        }else if(/[^A-Z0-9]/.test(value)){
+          message='VIN contains an unsupported character. Use 17 letters/numbers only, excluding I, O and Q.';
+        }else if(value.length!==17){
+          message='VIN must have 17 characters (currently '+value.length+'). Verify the complete chassis number.';
+        }
+      }
+      if(message)input.setAttribute('aria-invalid','true');
+      else input.removeAttribute('aria-invalid');
+      hint.textContent=message||(value?'VIN format accepted. Confirm the number on the vehicle.':'If entered, VIN must have 17 characters; I, O and Q are not valid VIN letters.');
+      hint.style.color=message?'#a42327':'#48637f';
+      return !message;
+    }
+    input.addEventListener('input',validate);
+    input.addEventListener('blur',validate);
+    validate();
+    return validate;
+  }
   // A read-only, fail-closed capability check. The V304 server does not have
   // the Phase 2 dashboard endpoint and must never offer unsaveable Cash intake.
   // Verify the response shape, not just HTTP 200 or a client version number.
@@ -505,6 +542,7 @@
         reception_job_number_exists: "This Job Card number is already in use. Choose another number.",
         reception_job_already_created: "This checklist already has a Job Card. Reload it to continue.",
         reception_invalid_job_number: "Enter a valid Job Card number. ID001 is reserved.",
+        reception_invalid_vin: "VIN / Chassis is invalid. Enter 17 letters/numbers without I, O or Q. Check the VIN on the vehicle; O may be mistaken for zero (0).",
         reception_job_forbidden: "Your account does not have permission to create this Job Card.",
         reception_not_approved: "Record insurance approval before creating a Job Card.",
         reception_approval_changed: "Approval needs review because source information changed. Refresh the quotation and approval first.",
@@ -690,6 +728,7 @@
       '<label class="rc-check"><input type="checkbox" name="received_confirmed" required>I confirm the vehicle has been received at the workshop.</label><div class="rc-actions"><button type="submit">Open Job Card</button></div></form>');
     const form=document.getElementById('rc-direct-job'),type=form.querySelector('[name="job_type"]'),account=form.querySelector('[name="credit_account"]');
     bindVehicleLookup(form);
+    const validateDirectVin=bindDirectVinValidation(form);
     let linkedChecklist=null,linkedApprovalValid=false,linkedApprovalMode='';
     const searchInput=document.getElementById('rc-direct-checklist-search');
     const searchResults=document.getElementById('rc-direct-checklist-results');
@@ -793,6 +832,13 @@
     form.onsubmit=async e=>{
       e.preventDefault();
       updateApprovalEntry();
+      // Preserve untouched legacy checklist identity; validate every new or edited direct VIN.
+      const typedVin=form.elements.namedItem('vin')?.value||'';
+      if((!linkedChecklist||!sameApprovedChecklistValue('vin',typedVin,linkedChecklist.details?.vin))&&
+         !validateDirectVin()){
+        form.elements.namedItem('vin')?.focus();
+        return;
+      }
       const f=new FormData(form),details={};
       for(const k of ['make','model','registration','year','vin','customer','contact','claim','remarks'])details[k]=String(f.get(k)||'').trim();
       if(!linkedChecklist && details.registration)
