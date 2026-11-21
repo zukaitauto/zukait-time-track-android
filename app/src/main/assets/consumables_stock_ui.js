@@ -231,25 +231,199 @@ window.zukStockLegacyLink=async(index)=>{
    render();
  }
 };
-// Visual-only: the existing Consumables Material Master is not a verified stock ledger.
+// UI-only acceptance: show the agreed screens without interpreting the legacy
+// Consumables Material Master as a verified stock ledger or making Stock API calls.
+const preview={page:'balance',query:'',material:'',brand:''};
+const previewTabs=[
+ ['balance','Stock Balance'],['add','Add Stock'],['history','Stock History'],
+ ['adjust','Stock Adjustment'],['reports','Stock Reports']
+];
+const previewCss='<style>'+
+ '.zs-preview{max-width:1160px;margin:0 auto;color:#14263c;font-size:14px}'+
+ '.zs-preview h2{font-size:22px;margin:13px 0 4px}.zs-preview h3{font-size:17px;margin:13px 0}'+
+ '.zs-preview .zs-pnav{display:flex;gap:7px;flex-wrap:wrap;margin:15px 0}'+
+ '.zs-preview .zs-pnav button{border:1px solid #b5cce3;border-radius:9px;background:#f5f9ff;color:#174b78;padding:10px 14px;min-height:42px;font-weight:700}'+
+ '.zs-preview .zs-pnav button.active{background:#195dab;border-color:#195dab;color:#fff}'+
+ '.zs-preview .zs-panel{background:#fff;border:1px solid #d9e4ef;border-radius:12px;padding:15px;margin:12px 0}'+
+ '.zs-preview .zs-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:9px}'+
+ '.zs-preview .zs-stat{border:1px solid #dbe6ef;background:#f4f8fd;border-radius:11px;padding:13px}'+
+ '.zs-preview .zs-stat small{display:block;color:#52677c;margin-bottom:7px}.zs-preview .zs-stat strong{font-size:19px;overflow-wrap:anywhere}'+
+ '.zs-preview .zs-table-wrap{overflow-x:auto;max-width:100%;border:1px solid #dce7f2;border-radius:10px}'+
+ '.zs-preview table{border-collapse:collapse;min-width:910px;width:100%;font-size:13px}'+
+ '.zs-preview th{background:#eaf2fc;text-align:left;white-space:nowrap;color:#244564;padding:12px 11px}'+
+ '.zs-preview td{padding:12px 11px;border-top:1px solid #e5edf6;vertical-align:middle}'+
+ '.zs-preview tr:nth-child(even) td{background:#fbfdff}'+
+ '.zs-preview .zs-not-ready{font-size:12px;color:#795111;background:#fff2d8;border-radius:7px;padding:4px 7px;display:inline-block}'+
+ '.zs-preview .zs-filter{display:grid;grid-template-columns:minmax(160px,2fr) repeat(2,minmax(130px,1fr)) auto;gap:8px;align-items:end}'+
+ '.zs-preview .zs-field{display:block;margin:7px 0;color:#344f68;font-weight:700;font-size:13px}'+
+ '.zs-preview .zs-field input,.zs-preview .zs-field select,.zs-preview .zs-field textarea{display:block;width:100%;margin-top:5px;min-height:42px;padding:9px 10px;border-radius:8px;border:1px solid #bccfe2;background:white;color:#15283e;font-size:15px}'+
+ '.zs-preview .zs-formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}'+
+ '.zs-preview .zs-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}'+
+ '.zs-preview button{cursor:pointer}.zs-preview button:disabled{cursor:not-allowed;opacity:.65}'+
+ '.zs-preview .zs-ghost{background:#eaf2fc;border:1px solid #a6c3e0;color:#18518b;border-radius:8px;padding:11px 15px;font-weight:700}'+
+ '.zs-preview .zs-disabled{background:#d4dce5;color:#34475d;border:0;padding:11px 15px;border-radius:8px;font-weight:700}'+
+ '.zs-preview .zs-preview-note{font-size:13px;color:#465d74;line-height:1.6}'+
+ '@media(max-width:680px){.zs-preview .zs-filter,.zs-preview .zs-formgrid{grid-template-columns:minmax(0,1fr)}.zs-preview .zs-panel{padding:10px}.zs-preview .zs-pnav button{flex:1 1 135px}}'+
+ '</style>';
+const previewNotReady='<span class="zs-not-ready">Not initialized</span>';
+const previewNotice=()=>'<div class="zs-warning" role="status"><b>UI PREVIEW ONLY.</b> Opening stock, purchases, issuing, returns and adjustments are NOT ACTIVE. '+
+ 'Master materials are not verified stock balances. No stock transactions, stock reservations or costs will be saved.</div>';
+function previewPairs(){
+ const c=catalog(),rows=[];
+ for(const m of c.materials){
+  const ids=[...new Set((typeof state!=='undefined'&&state?.consumables?.prices||[])
+     .filter(p=>p&&!p.voided&&String(p.materialId)===String(m.id))
+     .map(p=>String(p.brandId||'')))];
+  if(!ids.length){rows.push({material:m,brand:null});continue}
+  for(const id of ids){
+   const brand=c.brands.find(b=>String(b.id)===id);
+   if(brand)rows.push({material:m,brand});
+  }
+  if(!rows.some(x=>String(x.material.id)===String(m.id)))rows.push({material:m,brand:null});
+ }
+ return rows;
+}
+const previewOptions=(list,selected,placeholder)=>'<option value="">'+esc(placeholder)+'</option>'+
+ list.map(x=>'<option value="'+esc(x.id)+'"'+(String(selected)===String(x.id)?' selected':'')+'>'+esc(x.name)+'</option>').join('');
+const previewFormOptions=(list)=>list.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');
+function previewBalance(rows,c){
+ const filtered=rows.filter(x=>(!preview.query||[x.material.name,x.brand?.name,x.material.unit].join(' ').toLowerCase().includes(preview.query.toLowerCase()))&&
+   (!preview.material||String(x.material.id)===preview.material)&&
+   (!preview.brand||String(x.brand?.id||'')===preview.brand));
+ return '<div class="zs-stats">'+
+  [['Material types',String(c.materials.length)],['Material / brand rows',String(rows.length)],
+   ['Physical stock','Not initialized'],['Reserved for Job Cards','Not initialized'],
+   ['Available stock','Not initialized'],['Low stock items','Not initialized']]
+  .map(([k,v])=>'<div class="zs-stat"><small>'+esc(k)+'</small><strong>'+esc(v)+'</strong></div>').join('')+'</div>'+
+  '<div class="zs-panel"><h3>Stock Balance</h3><p class="zs-preview-note">Materials and brands below come from the existing master. '+
+  'Quantity, weighted-average cost and reorder levels remain unavailable until physical opening stock is verified.</p>'+
+  '<div class="zs-filter">'+
+  '<label class="zs-field">Search material or brand<input id="zs-preview-query" placeholder="Search material or brand" value="'+esc(preview.query)+'"></label>'+
+  '<label class="zs-field">Material<select id="zs-preview-material">'+previewOptions(c.materials,preview.material,'All materials')+'</select></label>'+
+  '<label class="zs-field">Brand<select id="zs-preview-brand">'+previewOptions(c.brands,preview.brand,'All brands')+'</select></label>'+
+  '<button type="button" class="zs-ghost" onclick="zukStockPreviewFilter()">Apply filter</button></div>'+
+  '<div class="zs-table-wrap"><table aria-label="Stock Balance preview"><thead><tr>'+
+  '<th>Material</th><th>Brand</th><th>Unit</th><th>Physical</th><th>Reserved</th><th>Available</th>'+
+  '<th>Avg. Cost / Unit</th><th>Min. Level</th><th>Status</th></tr></thead><tbody>'+
+  (filtered.length?filtered.map(x=>'<tr><td><b>'+esc(x.material.name)+'</b></td>'+
+    '<td>'+esc(x.brand?.name||'Not assigned')+'</td><td>'+esc(x.material.unit||'Not set')+'</td>'+
+    '<td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>'+previewNotReady+'</td></tr>').join(''):
+   '<tr><td colspan="9">No materials match these filters.</td></tr>')+
+  '</tbody></table></div><p class="zs-preview-note">— means no verified stock quantity or stock cost is available; it does not mean zero.</p></div>'+
+  '<div class="zs-panel"><h3>Job Card Material Workflows</h3>'+
+  '<p class="zs-preview-note">Review the Supervisor Suggest Material and Return Unused Material screens. Neither screen can post a transaction in V405.</p>'+
+  '<div class="zs-actions"><button type="button" class="zs-ghost" onclick="zukStockPreviewNavigate(\'suggest\')">Supervisor · Suggest Material</button>'+
+  '<button type="button" class="zs-ghost" onclick="zukStockPreviewNavigate(\'return\')">Return Unused Material</button></div></div>';
+}
+function previewAdd(c){
+ return '<div class="zs-panel"><h3>Add Stock — Preview</h3>'+
+  '<p class="zs-preview-note">Enter liquids directly in litres after manual conversion. No tins or drums conversion. Other master items retain their existing unit. '+
+  'Prices may be entered per unit or as a total purchase amount. Nothing is posted in preview.</p>'+
+  '<div class="zs-formgrid"><label class="zs-field">Entry type<select id="zs-preview-entry">'+
+  (manager()?'<option value="OPENING">Opening Stock (verified physical count)</option>':'')+
+  '<option value="PURCHASE">Purchased Stock</option></select></label>'+
+  '<label class="zs-field">Material<select id="zs-preview-add-material">'+previewFormOptions(c.materials)+'</select></label>'+
+  '<label class="zs-field">Brand<select id="zs-preview-add-brand">'+previewFormOptions(c.brands)+'</select></label>'+
+  '<label class="zs-field">Quantity (existing material unit)<input id="zs-preview-qty" type="number" min="0" step="any" placeholder="Enter quantity" oninput="zukStockPreviewPrice()"></label>'+
+  '<label class="zs-field">Price entry method<select id="zs-preview-method" onchange="zukStockPreviewPrice()">'+
+  '<option value="total">Total Purchase Price</option><option value="unit">Price per Unit</option></select></label>'+
+  '<label class="zs-field">Price (OMR)<input id="zs-preview-price" type="number" min="0" step="any" placeholder="Enter price" oninput="zukStockPreviewPrice()"></label></div>'+
+  '<div class="zs-panel" style="background:#f2f7fc;margin:12px 0">'+
+  '<b>Calculated preview only</b><div class="zs-preview-note" id="zs-preview-calculated" role="status">Enter quantity and price to calculate a preview.</div></div>'+
+  '<label class="zs-field">Opening count reference / purchase note<textarea rows="2" placeholder="Physical stock confirmation or purchase reference"></textarea></label>'+
+  '<div class="zs-actions"><button type="button" class="zs-disabled" disabled>Save Stock — Not Active</button></div></div>';
+}
+function previewHistory(){
+ return '<div class="zs-panel"><h3>Stock History</h3><p class="zs-preview-note">This tab will display bounded, audited purchase, issue, return and adjustment records after stock activation.</p>'+
+ '<div class="zs-table-wrap"><table aria-label="Stock History preview"><thead><tr><th>Date</th><th>Action</th><th>Material</th><th>Brand</th><th>Quantity</th><th>Value (OMR)</th><th>Reference</th></tr></thead>'+
+ '<tbody><tr><td colspan="7">No stock ledger is active. No transaction history is shown.</td></tr></tbody></table></div></div>';
+}
+function previewAdjust(c){
+ return '<div class="zs-panel"><h3>Stock Adjustment — Preview</h3>'+
+ (!manager()?'<p class="zs-warning">Stock adjustment is Manager-only. Supervisors can view this description but cannot submit adjustments.</p>':
+  '<div class="zs-formgrid"><label class="zs-field">Material<select>'+previewFormOptions(c.materials)+'</select></label>'+
+  '<label class="zs-field">Brand<select>'+previewFormOptions(c.brands)+'</select></label>'+
+  '<label class="zs-field">Current stock<input value="Not initialized" readonly></label>'+
+  '<label class="zs-field">New physical count<input type="number" min="0" step="any" placeholder="Actual counted quantity"></label></div>'+
+  '<label class="zs-field">Reason<textarea rows="2" placeholder="Required reason for variance"></textarea></label>'+
+  '<p class="zs-preview-note">Stock difference cannot be calculated until a verified opening balance exists. No adjustments can be submitted.</p>'+
+  '<button type="button" class="zs-disabled" disabled>Save Adjustment — Not Active</button>')+'</div>';
+}
+function previewReports(c){
+ return '<div class="zs-stats">'+
+ [['Material types',String(c.materials.length)],['Current stock valuation','Not initialized'],
+ ['Reserved value','Not initialized'],['Low stock items','Not initialized']]
+ .map(([k,v])=>'<div class="zs-stat"><small>'+esc(k)+'</small><strong>'+esc(v)+'</strong></div>').join('')+'</div>'+
+ '<div class="zs-panel"><h3>Stock Reports</h3><p class="zs-preview-note">Reports will use verified stock transactions and server-side aggregates. '+
+ 'No inventory valuation is inferred from the old material price list.</p>'+
+ '<div class="zs-actions"><button type="button" disabled class="zs-disabled">Print / PDF — Not Active</button>'+
+ '<button type="button" disabled class="zs-disabled">Export Excel — Not Active</button></div></div>';
+}
+function previewJobCard(c,kind){
+ const isReturn=kind==='return';
+ return '<div class="zs-panel"><h3>'+(isReturn?'Return Unused Material':'Supervisor — Suggest Material')+' · Preview</h3>'+
+ '<p class="zs-preview-note">These are workflow controls only. No reservation, issue, return, deduction or Job Card cost will be saved.</p>'+
+ '<div class="zs-formgrid"><label class="zs-field">Job Card number<input placeholder="Enter Job Card number"></label>'+
+ '<label class="zs-field">Material<select>'+previewFormOptions(c.materials)+'</select></label>'+
+ '<label class="zs-field">Brand<select>'+previewFormOptions(c.brands)+'</select></label>'+
+ '<label class="zs-field">'+(isReturn?'Unused return quantity':'Suggested quantity')+' (material unit)<input type="number" min="0" step="any" placeholder="Quantity"></label></div>'+
+ '<div class="zs-panel" style="background:#f2f7fc"><b>'+(isReturn?'Return credit':'Locked unit cost')+': Not initialized</b>'+
+ '<p class="zs-preview-note">'+(isReturn?
+  'The return must use the original Job Card locked cost and must not exceed verified issued quantity.':
+  'The weighted-average unit cost will lock when first reserved for this Job Card. Later purchases cannot change earlier reserved cost; additional suggestions lock their own cost.')+
+ '</p></div><div class="zs-actions"><button class="zs-ghost" type="button" onclick="zukStockPreviewNavigate(\'balance\')">← Stock Balance</button>'+
+ '<button class="zs-disabled" type="button" disabled>'+(isReturn?'Confirm Return':'Add Suggestion')+' — Not Active</button></div></div>';
+}
 function showPreview(){
  if(!allowed())return;
- const c=catalog();
- const list=c.materials.slice(0,30).map(m=>'<div class="zs-card"><b>'+
-   esc(m.name||'Unnamed material')+'</b><p class="zs-muted">Unit: '+
-   esc(m.unit||'Not set')+' · Material Master reference only</p></div>').join('');
- window.openModal?.(css+'<section class="zs">'+
-  '<div class="zs-row"><button class="zs-btn secondary" onclick="openConsumablesModule()">← Consumables</button>'+
-  '<button class="zs-btn secondary" onclick="closeModal()">✕ Close</button></div>'+
-  '<h2>Stock Management — Preview Only</h2>'+
-  '<div class="zs-warning">Testing in the main app: opening stock, purchases, issuing, returns and adjustments are NOT ACTIVE. No quantities or costs below are stock balances.</div>'+
-  '<h3>Existing Material Master</h3>'+
-  (list||'<p class="zs-muted">No existing materials in this account.</p>')+
-  (c.materials.length>30?'<p class="zs-muted">First 30 materials shown.</p>':'')+
-  '<p class="zs-muted">Actual stock quantities and Job Card costs will appear only after a controlled stock activation.</p></section>');
+ const c=catalog(),rows=previewPairs();
+ const tabName=previewTabs.find(x=>x[0]===preview.page)?.[1]||(preview.page==='suggest'?'Suggest Material':'Return Material');
+ const nav=previewTabs.map(([k,name])=>'<button type="button"'+(preview.page===k?' class="active" aria-current="page"':'')+
+  ' onclick="zukStockPreviewNavigate(\''+k+'\')">'+name+'</button>').join('');
+ let content='';
+ switch(preview.page){
+  case 'add':content=previewAdd(c);break;
+  case 'history':content=previewHistory();break;
+  case 'adjust':content=previewAdjust(c);break;
+  case 'reports':content=previewReports(c);break;
+  case 'suggest':content=previewJobCard(c,'suggest');break;
+  case 'return':content=previewJobCard(c,'return');break;
+  default:content=previewBalance(rows,c);
+ }
+ window.openModal?.(css+previewCss+'<section class="zs zs-preview">'+
+  '<div class="zs-row"><button type="button" class="zs-ghost" onclick="openConsumablesModule()">← Consumables</button>'+
+  '<button type="button" class="zs-ghost" onclick="closeModal()">✕ Close</button></div>'+
+  '<h2>Consumables Stock Management</h2><p class="zs-preview-note">'+esc(tabName)+' · Manager / Supervisor visual acceptance</p>'+
+  previewNotice()+'<nav class="zs-pnav" aria-label="Stock Management tabs">'+nav+'</nav>'+
+  content+'<p class="zs-preview-note">V405 stock interface preview. No stock API calls, inventory adjustments or database writes.</p></section>');
 }
-window.openStockManagement=()=>previewOnly()?showPreview():load('balance',true);
-window.zukStockNav=(page,force=false)=>load(page,force);
+window.zukStockPreviewNavigate=page=>{
+ if(!allowed()||!['balance','add','history','adjust','reports','suggest','return'].includes(page))return;
+ preview.page=page;showPreview();
+};
+window.zukStockPreviewFilter=()=>{
+ if(!allowed()||!previewOnly())return;
+ preview.query=String(document.getElementById('zs-preview-query')?.value||'').trim();
+ preview.material=String(document.getElementById('zs-preview-material')?.value||'');
+ preview.brand=String(document.getElementById('zs-preview-brand')?.value||'');
+ showPreview();
+};
+window.zukStockPreviewPrice=()=>{
+ if(!previewOnly()||!allowed())return;
+ const d=document,quantity=Number(d.getElementById('zs-preview-qty')?.value),
+ price=Number(d.getElementById('zs-preview-price')?.value),
+ method=d.getElementById('zs-preview-method')?.value;
+ const output=d.getElementById('zs-preview-calculated');
+ if(!output)return;
+ if(!Number.isFinite(quantity)||quantity<=0||!Number.isFinite(price)||price<=0){
+  output.textContent='Enter quantity and price to calculate a preview.';return;
+ }
+ const cost=method==='unit'?price:price/quantity,total=method==='unit'?price*quantity:price;
+ output.textContent='Quantity: '+fmt(quantity)+' · Price per unit: '+OMR(cost)+
+  ' OMR · Total purchase value: '+OMR(total)+' OMR. Preview only — not saved.';
+};
+window.openStockManagement=()=>previewOnly()?(preview.page='balance',showPreview()):load('balance',true);
+window.zukStockNav=(page,force=false)=>previewOnly()?window.zukStockPreviewNavigate(page):load(page,force);
 window.zukStockDetail=id=>{view.selected=String(id||'');view.page='detail';render()};
 window.zukStockMore=async()=>{
   if(view.loading)return;view.loading=true;
@@ -300,6 +474,7 @@ window.zukStockSetEntryType=()=>{
  if(label)label.textContent=opening?'Counted stock cost (OMR)':'Purchase price (OMR)';
 };
 window.zukStockSavePurchase=()=>{
+ if(previewOnly())return;
  const d=document;
  const data={materialId:d.getElementById('zs-material')?.value,
     brandId:d.getElementById('zs-brand')?.value,
@@ -322,7 +497,7 @@ window.zukStockSavePurchase=()=>{
  }else write('PURCHASE',data);
 };
 window.zukStockSaveAdjustment=()=>{
- if(!manager())return;
+ if(previewOnly()||!manager())return;
  const d=document,item=String(d.getElementById('zs-item')?.value||''),ix=item.indexOf('|');
  const data={materialId:item.slice(0,ix),brandId:item.slice(ix+1),
    countedQuantity:Number(d.getElementById('zs-count')?.value),
