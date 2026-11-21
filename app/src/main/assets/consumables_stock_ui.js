@@ -315,6 +315,136 @@ function previewBalance(rows,c){
   '<div class="zs-actions"><button type="button" class="zs-ghost" onclick="zukStockPreviewNavigate(\'suggest\')">Supervisor · Suggest Material</button>'+
   '<button type="button" class="zs-ghost" onclick="zukStockPreviewNavigate(\'return\')">Return Unused Material</button></div></div>';
 }
+// Phase 1 interactive acceptance, fully isolated from workshop and stock APIs.
+// Test entries live in RAM for this browser tab only, never in Supabase or
+// workshop_state. This must NOT be confused with production stock activation.
+const stockTrial={active:false,balances:new Map(),events:[],message:''};
+const trialKey=(materialId,brandId)=>JSON.stringify([String(materialId),String(brandId)]);
+function trialNotice(){
+ return '<div class="zs-warning" role="status" style="background:#e8f7f2;border-color:#8dceb7;color:#124936">'+
+  '<b>TEST MODE · NOT REAL STOCK.</b> Opening counts and purchases work only inside this browser tab. '+
+  'Nothing is saved to Supabase, synced to other devices, or used for Job Card costing. '+
+  'Closing or reloading clears all test entries.</div>';
+}
+function trialControls(){
+ return '<div class="zs-actions" style="margin:10px 0 16px">'+
+ (stockTrial.active?
+  '<button type="button" class="zs-ghost" onclick="zukStockTestReset()">Clear test entries</button>':
+  '<button type="button" class="zs-ghost" onclick="zukStockTestStart()">Start opening-stock / purchase test</button>')+
+ '</div>';
+}
+function trialBalance(c){
+ const rows=[...stockTrial.balances.values()],total=rows.reduce((a,b)=>a+b.value,0);
+ return '<div class="zs-stats">'+
+ [['Test stock items',String(rows.length)],['Test stock value',OMR(total)+' OMR'],['Job Card reservations','Not active']]
+ .map(([k,v])=>'<div class="zs-stat"><small>'+esc(k)+'</small><strong>'+esc(v)+'</strong></div>').join('')+'</div>'+
+ '<div class="zs-panel"><h3>Stock Balance · Test Mode</h3>'+
+ (rows.length?'<div class="zs-table-wrap"><table><thead><tr><th>Material</th><th>Brand</th><th>Unit</th><th>Physical</th><th>Reserved</th><th>Available</th><th>Avg cost</th><th>Stock value</th></tr></thead><tbody>'+
+ rows.map(r=>'<tr><td>'+esc(c.materials.find(x=>String(x.id)===r.materialId)?.name||r.materialId)+'</td>'+
+ '<td>'+esc(c.brands.find(x=>String(x.id)===r.brandId)?.name||r.brandId)+'</td>'+
+ '<td>'+esc(r.unit)+'</td><td>'+fmt(r.qty)+'</td><td>0</td><td>'+fmt(r.qty)+'</td>'+
+ '<td>'+OMR(r.qty?r.value/r.qty:0)+'</td><td>'+OMR(r.value)+'</td></tr>').join('')+
+ '</tbody></table></div>':
+ '<p>No test entries yet. Open <b>Add Stock</b> and record a physically counted opening quantity.</p>')+
+ '<p class="zs-preview-note">These are test entries only; production stock balances are still not initialized.</p></div>';
+}
+function trialAdd(c){
+ const matOptions=previewFormOptions(c.materials),brandOptions=previewFormOptions(c.brands);
+ return '<div class="zs-panel"><h3>Opening Stock & Purchased Stock · Test Mode</h3>'+
+ '<p class="zs-preview-note">Enter quantity in the existing material unit. Convert tins or drums to litres manually. '+
+ 'Choose either total purchase price or price per unit; the other is calculated automatically.</p>'+
+ '<div class="zs-formgrid"><label class="zs-field">Entry type<select id="zs-trial-entry">'+
+ (manager()?'<option value="OPENING">Opening Stock — one-time count</option>':'')+
+ '<option value="PURCHASE">Purchase</option></select></label>'+
+ '<label class="zs-field">Material<select id="zs-trial-material">'+matOptions+'</select></label>'+
+ '<label class="zs-field">Brand<select id="zs-trial-brand">'+brandOptions+'</select></label>'+
+ '<label class="zs-field">Quantity (material unit)<input id="zs-trial-qty" type="number" min="0" step="any" placeholder="Physically counted or purchased quantity" oninput="zukStockTrialCalculate()"></label>'+
+ '<label class="zs-field">Price method<select id="zs-trial-method" onchange="zukStockTrialCalculate()">'+
+ '<option value="total">Total value (OMR)</option><option value="unit">Price per unit (OMR)</option></select></label>'+
+ '<label class="zs-field">Price (OMR)<input id="zs-trial-price" type="number" min="0" step="any" placeholder="Actual counted cost or purchase price" oninput="zukStockTrialCalculate()"></label></div>'+
+ '<div class="zs-panel" style="background:#f2f7fc"><b>Calculated test values</b>'+
+ '<p id="zs-trial-calculated" role="status" class="zs-preview-note">Enter quantity and price to calculate cost.</p></div>'+
+ '<label class="zs-field">Count / purchase reference<input id="zs-trial-note" maxlength="180" placeholder="Required reason, at least 5 characters"></label>'+
+ '<label class="zs-field"><input id="zs-trial-count" type="checkbox" style="width:auto;min-height:auto;display:inline-block;margin-right:7px">Physical count confirmed (Opening Stock only)</label>'+
+ '<p class="zs-preview-note">Manager can record the first opening count. Manager/Supervisor can add test purchases after opening. No database changes.</p>'+
+ '<div class="zs-actions"><button type="button" class="zs-ghost" onclick="zukStockTrialSave()">Record Test Entry</button></div></div>';
+}
+function trialHistory(c){
+ const events=[...stockTrial.events].reverse();
+ return '<div class="zs-panel"><h3>Stock History · Test Mode</h3>'+
+ (events.length?'<div class="zs-table-wrap"><table><thead><tr><th>No.</th><th>Type</th><th>Material</th><th>Brand</th><th>Quantity</th><th>Total (OMR)</th><th>Reference</th></tr></thead><tbody>'+
+ events.map(e=>'<tr><td>'+e.id+'</td><td>'+esc(e.kind)+'</td>'+
+ '<td>'+esc(c.materials.find(x=>String(x.id)===e.materialId)?.name||e.materialId)+'</td>'+
+ '<td>'+esc(c.brands.find(x=>String(x.id)===e.brandId)?.name||e.brandId)+'</td>'+
+ '<td>'+fmt(e.qty)+'</td><td>'+OMR(e.value)+'</td><td>'+esc(e.note)+'</td></tr>').join('')+
+ '</tbody></table></div>':'<p>No test transactions recorded yet.</p>')+
+ '<p class="zs-preview-note">History appears in this browser tab only, not in the production audit trail.</p></div>';
+}
+function trialReports(c){
+ const rows=[...stockTrial.balances.values()];
+ const total=rows.reduce((sum,row)=>sum+row.value,0);
+ return '<div class="zs-stats">'+
+ [['Test stock value',OMR(total)+' OMR'],['Materials with test opening',String(rows.length)],
+ ['Test transactions',String(stockTrial.events.length)]]
+ .map(([k,v])=>'<div class="zs-stat"><small>'+esc(k)+'</small><strong>'+esc(v)+'</strong></div>').join('')+
+ '</div><div class="zs-panel"><h3>Stock Reports · Test Mode</h3>'+
+ '<p class="zs-preview-note">Only the current tab test entries are included. Real reporting and printing remain disabled.</p></div>';
+}
+window.zukStockTestStart=()=>{
+ if(!previewOnly()||!allowed())return;
+ stockTrial.active=true;stockTrial.message='';
+ showPreview();
+};
+window.zukStockTestReset=()=>{
+ if(!stockTrial.active||!allowed()||!window.confirm?.('Clear all test stock entries in this browser tab?'))return;
+ stockTrial.balances.clear();stockTrial.events=[];stockTrial.message='';
+ showPreview();
+};
+window.zukStockTrialCalculate=()=>{
+ if(!stockTrial.active||!allowed())return;
+ const d=document,qty=Number(d.getElementById('zs-trial-qty')?.value),
+ price=Number(d.getElementById('zs-trial-price')?.value),
+ method=d.getElementById('zs-trial-method')?.value,
+ output=d.getElementById('zs-trial-calculated');
+ if(!output)return;
+ if(!Number.isFinite(qty)||qty<=0||!Number.isFinite(price)||price<=0){
+  output.textContent='Enter quantity and price to calculate cost.';return;
+ }
+ const total=method==='unit'?price*qty:price;
+ output.textContent='Quantity '+fmt(qty)+' · Unit cost '+OMR(total/qty)+' OMR · Total '+OMR(total)+' OMR. Test mode — not saved to Supabase.';
+};
+window.zukStockTrialSave=()=>{
+ if(!stockTrial.active||!allowed())return;
+ const d=document,get=id=>d.getElementById(id),c=catalog();
+ const kind=String(get('zs-trial-entry')?.value||''),
+ materialId=String(get('zs-trial-material')?.value||''),
+ brandId=String(get('zs-trial-brand')?.value||''),
+ qty=Number(get('zs-trial-qty')?.value),price=Number(get('zs-trial-price')?.value),
+ priceMethod=get('zs-trial-method')?.value,note=String(get('zs-trial-note')?.value||'').trim();
+ const material=c.materials.find(x=>String(x.id)===materialId);
+ const isValidPair=previewPairs().some(r=>String(r.material.id)===materialId&&String(r.brand?.id||'')===brandId);
+ const total=priceMethod==='unit'?qty*price:price;
+ const key=trialKey(materialId,brandId),old=stockTrial.balances.get(key);
+ let problem='';
+ if(!['OPENING','PURCHASE'].includes(kind)||!material||!isValidPair)problem='Choose a valid material and brand.';
+ else if(!Number.isFinite(qty)||qty<=0||qty>100000||!Number.isFinite(price)||price<=0||
+   price>1000000||!Number.isFinite(total)||total>1000000)problem='Enter a positive quantity and actual cost.';
+ else if(String(material.unit).toLowerCase()==='piece'&&!Number.isInteger(qty))problem='Piece quantities must be whole numbers.';
+ else if(!['unit','total'].includes(priceMethod))problem='Choose a valid price method.';
+ else if(note.length<5||note.length>180)problem='Enter a reference of 5–180 characters.';
+ else if(kind==='OPENING'&&(!manager()||get('zs-trial-count')?.checked!==true))problem='Manager must confirm the physical opening count.';
+ else if(kind==='OPENING'&&old)problem='Opening stock already recorded for this test item.';
+ else if(kind==='PURCHASE'&&!old)problem='Record opening stock for this material/brand before purchasing.';
+ const status=d.getElementById('zs-trial-calculated');
+ if(problem){stockTrial.message=problem;if(status)status.textContent=problem;return;}
+ const row={materialId,brandId,unit:material.unit,qty:(old?.qty||0)+qty,
+   value:Math.round(((old?.value||0)+total)*1000)/1000};
+ stockTrial.balances.set(key,row);
+ stockTrial.events.push({id:stockTrial.events.length+1,kind,materialId,brandId,
+  qty,value:Math.round(total*1000)/1000,note});
+ stockTrial.message=kind+' test entry recorded: '+fmt(qty)+' '+esc(material.unit)+'.';
+ preview.page='balance';showPreview();
+};
 function previewAdd(c){
  return '<div class="zs-panel"><h3>Add Stock — Preview</h3>'+
   '<p class="zs-preview-note">Enter liquids directly in litres after manual conversion. No tins or drums conversion. Other master items retain their existing unit. '+
@@ -435,7 +565,7 @@ const previewHomeTiles=[
  ['reports','📊','Stock Reports','Stock valuation, low stock and consumption reports','teal']
 ];
 function previewHome(){
- return '<div class="zs-home-hero"><h3>Consumables Stock Management</h3><p class="zs-preview-note">Select an option to open its detail screen. No stock data is displayed on this menu.</p></div>'+
+ return trialControls()+'<div class="zs-home-hero"><h3>Consumables Stock Management</h3><p class="zs-preview-note">Select an option to open its detail screen. No stock data is displayed on this menu.</p></div>'+
   '<div class="zs-home-grid" aria-label="Stock Management menu">'+previewHomeTiles.map(t=>
     '<button type="button" class="zs-home-tile '+t[4]+'" onclick="zukStockPreviewNavigate(\''+t[0]+'\')">'+
     '<span class="zs-home-icon" aria-hidden="true">'+t[1]+'</span>'+
@@ -453,13 +583,13 @@ function showPreview(){
  let content='';
  if(isHome)content=previewHome();
  else switch(preview.page){
-  case 'add':content=previewAdd(c);break;
-  case 'history':content=previewHistory();break;
+  case 'add':content=stockTrial.active?trialAdd(c):previewAdd(c);break;
+  case 'history':content=stockTrial.active?trialHistory(c):previewHistory();break;
   case 'adjust':content=previewAdjust(c);break;
-  case 'reports':content=previewReports(c);break;
+  case 'reports':content=stockTrial.active?trialReports(c):previewReports(c);break;
   case 'suggest':content=previewJobCard(c,'suggest');break;
   case 'return':content=previewJobCard(c,'return');break;
-  default:content=previewBalance(rows,c);
+  default:content=stockTrial.active?trialBalance(c):previewBalance(rows,c);
  }
  const back=isHome?
    '<button type="button" class="zs-ghost" onclick="zukStockPreviewExit(\'consumables\')">← Consumables</button>':
@@ -469,8 +599,9 @@ function showPreview(){
   '<strong class="zs-screen-brand">▣ ZUKAIT · STOCK</strong>'+
   '<button type="button" class="zs-ghost" onclick="zukStockPreviewExit(\'dashboard\')">✕ Close</button></header>'+
   (isHome?'':'<h2>'+esc(tabName)+'</h2>')+
-  previewNotice()+content+
-  '<p class="zs-preview-note">Stock interface preview only. No stock API calls, inventory adjustments or database writes.</p></section>';
+  (stockTrial.active?trialNotice():previewNotice())+
+  (stockTrial.message?'<p role="alert" class="zs-warning">'+esc(stockTrial.message)+'</p>':'')+content+
+  '<p class="zs-preview-note">'+(stockTrial.active?'TEST MODE ONLY · NO STOCK API OR DATABASE WRITES.':'Stock interface preview only. No stock API calls, inventory adjustments or database writes.')+'</p></section>';
  let screen=document.getElementById('zs-stock-screen');
  if(!screen){
   screen=document.createElement('main');
