@@ -103,7 +103,8 @@ function draw(body) {
       '<button class="zs-btn secondary" onclick="closeModal()">✕ Close</button>')+'</div>'+
     '<h2 style="margin:12px 0 6px">'+esc(departmentTitle())+' · Stock</h2>'+
     '<label for="zs-department">Department</label><select id="zs-department" onchange="openStockManagement(this.value)">'+
-    [['','All departments'],['Painting','Paint Consumables'],['Mechanical','Mechanical Consumables']]
+    (live?[['Painting','Paint Consumables'],['Mechanical','Mechanical Consumables']]:
+      [['','All departments'],['Painting','Paint Consumables'],['Mechanical','Mechanical Consumables']])
       .map(([value,name])=>'<option value="'+value+'"'+(value===department?' selected':'')+'>'+name+'</option>').join('')+'</select>'+
     (department?'<p class="zs-muted">Shared items use the same stock balance in both departments.</p>':'')+
     '<div class="zs-nav">'+nav+'</div>';
@@ -383,7 +384,7 @@ function previewBalance(rows,c){
 // Test entries live in RAM for this browser tab only, never in Supabase or
 // workshop_state. This must NOT be confused with production stock activation.
 const stockTrial={active:false,balances:new Map(),events:[],message:''};
-const trialKey=(materialId,brandId)=>JSON.stringify([String(materialId),String(brandId)]);
+const trialKey=(materialId,brandId)=>JSON.stringify([department,String(materialId),String(brandId)]);
 function trialNotice(){
  return '<div class="zs-warning" role="status" style="background:#e8f7f2;border-color:#8dceb7;color:#124936">'+
   '<b>TEST MODE · NOT REAL STOCK.</b> Opening counts and purchases work only inside this browser tab. '+
@@ -398,7 +399,7 @@ function trialControls(){
  '</div>';
 }
 function trialBalance(c){
- const rows=[...stockTrial.balances.values()],total=rows.reduce((a,b)=>a+b.value,0);
+ const rows=[...stockTrial.balances.values()].filter(x=>x.department===department),total=rows.reduce((a,b)=>a+b.value,0);
  return '<div class="zs-stats">'+
  [['Test stock items',String(rows.length)],['Test stock value',OMR(total)+' OMR'],['Job Card reservations','Not active']]
  .map(([k,v])=>'<div class="zs-stat"><small>'+esc(k)+'</small><strong>'+esc(v)+'</strong></div>').join('')+'</div>'+
@@ -434,7 +435,7 @@ function trialAdd(c){
  '<div class="zs-actions"><button type="button" class="zs-ghost" onclick="zukStockTrialSave()">Record Test Entry</button></div></div>';
 }
 function trialHistory(c){
- const events=[...stockTrial.events].reverse();
+ const events=[...stockTrial.events].filter(x=>x.department===department).reverse();
  return '<div class="zs-panel"><h3>Stock History · Test Mode</h3>'+
  (events.length?'<div class="zs-table-wrap"><table><thead><tr><th>No.</th><th>Type</th><th>Material</th><th>Brand</th><th>Quantity</th><th>Total (OMR)</th><th>Reference</th></tr></thead><tbody>'+
  events.map(e=>'<tr><td>'+e.id+'</td><td>'+esc(e.kind)+'</td>'+
@@ -445,11 +446,11 @@ function trialHistory(c){
  '<p class="zs-preview-note">History appears in this browser tab only, not in the production audit trail.</p></div>';
 }
 function trialReports(c){
- const rows=[...stockTrial.balances.values()];
+ const rows=[...stockTrial.balances.values()].filter(x=>x.department===department);
  const total=rows.reduce((sum,row)=>sum+row.value,0);
  return '<div class="zs-stats">'+
  [['Test stock value',OMR(total)+' OMR'],['Materials with test opening',String(rows.length)],
- ['Test transactions',String(stockTrial.events.length)]]
+ ['Test transactions',String(stockTrial.events.filter(x=>x.department===department).length)]]
  .map(([k,v])=>'<div class="zs-stat"><small>'+esc(k)+'</small><strong>'+esc(v)+'</strong></div>').join('')+
  '</div><div class="zs-panel"><h3>Stock Reports · Test Mode</h3>'+
  '<p class="zs-preview-note">Only the current tab test entries are included. Real reporting and printing remain disabled.</p></div>';
@@ -501,10 +502,10 @@ window.zukStockTrialSave=()=>{
  else if(kind==='PURCHASE'&&!old)problem='Record opening stock for this material/brand before purchasing.';
  const status=d.getElementById('zs-trial-calculated');
  if(problem){stockTrial.message=problem;if(status)status.textContent=problem;return;}
- const row={materialId,brandId,unit:material.unit,qty:(old?.qty||0)+qty,
+ const row={department,materialId,brandId,unit:material.unit,qty:(old?.qty||0)+qty,
    value:Math.round(((old?.value||0)+total)*1000)/1000};
  stockTrial.balances.set(key,row);
- stockTrial.events.push({id:stockTrial.events.length+1,kind,materialId,brandId,
+ stockTrial.events.push({id:stockTrial.events.length+1,department,kind,materialId,brandId,
   qty,value:Math.round(total*1000)/1000,note});
  stockTrial.message=kind+' test entry recorded: '+fmt(qty)+' '+esc(material.unit)+'.';
  preview.page='balance';showPreview();
@@ -786,7 +787,7 @@ window.zukStockUpdateBrands=()=>{
 window.zukStockSelectDepartment=scope=>{
  if(!allowed()||!['','Painting','Mechanical'].includes(scope)||view.busy||view.loading)return;
  department=scope;
- preview.page='home';
+ preview.page='home';stockTrial.message='';
  view.items=[];view.history=[];view.report=null;view.selected='';
  view.itemsHasMore=false;view.historyHasMore=false;
  if(previewOnly())return showPreview();
