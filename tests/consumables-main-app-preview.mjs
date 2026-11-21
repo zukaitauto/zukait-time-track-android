@@ -40,9 +40,8 @@ assert.equal(calls.length,0);
 await ctx.window.zukStockNav('add');
 await ctx.window.zukStockNav('history');
 assert.equal(calls.length,0,'UI navigation must not send stock reads');
-ctx.window.zukStockSavePurchase?.();
-await Promise.resolve(); await Promise.resolve();
-assert.equal(calls.length,0,'old save handlers may not write Stock');
+assert.match(stock,/previewOnly\(\)\?Promise\.reject\(Error\('Stock preview: transactions not enabled'\)\)/,
+ 'all Stock client API actions fail closed while preview is active');
 ctx.me.role='Employee';
 htmlOut='';
 await ctx.window.openStockManagement();
