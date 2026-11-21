@@ -1,28 +1,22 @@
 {
-  "versionName": "V409",
-  "versionCode": 372,
+  "versionName": "V410",
+  "versionCode": 373,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "ownerPublicationRequested": true,
-  "ownerRequestedImmediateRelease": true,
-  "ownerRequestedProceed": true,
-  "releaseHeldByOwner": false,
+  "approvedForStaff": false,
+  "ownerPublicationRequested": false,
+  "ownerRequestedImmediateRelease": false,
+  "ownerRequestedProceed": false,
+  "releaseHeldByOwner": true,
   "productionBackendChanges": false,
   "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "reason": "Owner-requested V409 normal-app UI testing publication only. Production stock ledger/API/writes are NOT activated. Unverified backup and physical acceptance are deferred for this UI-only publication; not for stock database rollout.",
+  "reason": "V410 two-column Paint/Mechanical Stock Management UI acceptance. Existing live Stock API and inventory writes remain disabled. New approval and exact-source signing checks required before coordinated staff/web publication.",
   "previousPublishedRelease": {
-    "versionName": "V407",
-    "versionCode": 370,
-    "releaseTag": "release-V407-architecture-v2",
-    "sourceCommit": "35c7bff7a4c58752843bbd00fcdb1a9732c01fe1"
-  },
-  "sourceCommit": "4a534766fd870baabb9d8d7731ed2081e956390c",
-  "approvedAt": "2026-11-21T18:23:44.506Z",
-  "publishNonce": "owner-v409-stock-ui-test-4a534766-20261121",
-  "signedAcceptanceRun": 44934909198,
-  "verificationRun": 44934909271,
-  "backupDeferredByOwner": true
+    "versionName": "V409",
+    "versionCode": 372,
+    "releaseTag": "release-V409-architecture-v2",
+    "sourceCommit": "4a534766fd870baabb9d8d7731ed2081e956390c"
+  }
 }
