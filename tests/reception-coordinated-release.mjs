@@ -52,7 +52,7 @@ try {
     await assert.rejects(verifyRelease(record,async (url,options={})=>{
       if(url.endsWith('.apk'))return {url,ok:false,status:403};
       return publicFetch(url);
-    }),/HTTP 403.*ZUKAIT_TIME_TRACK_LATEST\\.apk/,
+    }),/HTTP 403.*ZUKAIT_TIME_TRACK_LATEST\.apk/,
     'A failed public APK download must never be bypassed');
   } finally {
     if(oldToken===undefined)delete process.env.GH_TOKEN;
