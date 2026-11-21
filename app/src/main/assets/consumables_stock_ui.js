@@ -622,7 +622,8 @@ const previewHomeCss='<style>'+
  '#zs-stock-screen .zs-preview .zs-home-tile:hover{box-shadow:0 10px 26px #1e42644d!important;transform:translateY(-2px)}'+
  '#zs-stock-screen .zs-preview .zs-home-tile:focus-visible{outline:3px solid #152b45!important;outline-offset:3px}'+
  '@media(max-width:600px){#zs-stock-screen .zs-screen-brand{order:3;flex:1 0 100%;text-align:center;padding:5px 0 0;font-size:16px!important}#zs-stock-screen .zs-preview .zs-home-info strong{font-size:16px!important;line-height:1.24!important;overflow-wrap:anywhere}#zs-stock-screen .zs-preview .zs-home-info small{font-size:11px!important;line-height:1.4!important}#zs-stock-screen .zs-preview .zs-home-chevron{right:9px;bottom:7px}}'+
-  '#zs-stock-screen .zs-create-item{background:#e6f1ff!important;border:2px solid #2563b7!important;color:#123b69!important;font-size:15px!important;font-weight:800!important;width:100%;min-height:48px}'+
+  '#zs-stock-screen .zs-manager-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0 8px}'+
+ '#zs-stock-screen .zs-manager-actions button{background:#e6f1ff!important;border:2px solid #2563b7!important;color:#123b69!important;font-size:14px!important;font-weight:800!important;width:100%;min-height:50px;white-space:normal;overflow-wrap:anywhere}'+
   '#zs-stock-screen .zs-department-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}'+
   '#zs-stock-screen .zs-department-card{min-height:160px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:12px;text-align:left;border:1px solid #235d94;border-radius:15px;padding:16px;color:#fff;background:linear-gradient(135deg,#255ce1,#173f90);font-weight:750;cursor:pointer;min-width:0}'+
   '#zs-stock-screen .zs-department-card.mechanical{background:linear-gradient(135deg,#117c73,#09534d);border-color:#09534d}'+
@@ -662,10 +663,13 @@ function departmentTitle(){
 }
 // Separate department entry points. A Both item shares one physical stock
 // ledger balance; unassigned legacy materials are never auto-classified.
-// New item setup writes only the existing Material Master. Stock counts remain independent.
-const stockCreateAction=()=>manager()?
- '<div class="zs-actions"><button type="button" class="zs-ghost zs-create-item" onclick="zukStockCreateItem()">＋ Create New Item</button>'+
- '<p class="zs-preview-note">Choose Paint, Mechanical or Shared. Stock is entered after counting.</p></div>':'';
+// Material/Brand changes use the existing audited Manager Material Master.
+// Stock quantities are separate; the preview cannot create balances.
+const stockMasterActions=()=>manager()?
+ '<div class="zs-manager-actions" aria-label="Stock catalog management">'+
+ '<button type="button" class="zs-ghost zs-materials-btn" onclick="zukStockOpenMaterials()">▤ Materials &amp; Brands</button>'+
+ '<button type="button" class="zs-ghost zs-create-item" onclick="zukStockCreateItem()">＋ Create New Item</button></div>'+
+ '<p class="zs-preview-note">Existing materials belong to Paint. New items: Paint, Mechanical or Shared. Stock count is separate.</p>':'';
 function departmentMenu(){
  return '<div class="zs-home-hero"><h3>Consumables Stock Management</h3>'+
   '<p class="zs-preview-note">Choose a department to open its stock screens.</p></div>'+
@@ -673,7 +677,7 @@ function departmentMenu(){
   '<button type="button" class="zs-department-card painting" data-department="Painting" onclick="zukStockSelectDepartment(this.dataset.department)">'+
   '<span aria-hidden="true">🎨</span><strong>Paint Consumables</strong><small>Painting materials and shared stock</small></button>'+
   '<button type="button" class="zs-department-card mechanical" data-department="Mechanical" onclick="zukStockSelectDepartment(this.dataset.department)">'+
-  '<span aria-hidden="true">⚙️</span><strong>Mechanical Consumables</strong><small>Mechanical materials and shared stock</small></button></div>'+stockCreateAction();
+  '<span aria-hidden="true">⚙️</span><strong>Mechanical Consumables</strong><small>Mechanical materials and shared stock</small></button></div>'+stockMasterActions();
 }
 function showLiveHome(){
  if(!allowed()||!liveStockReady())return;
@@ -686,7 +690,7 @@ function showLiveHome(){
  const content=choosing?departmentMenu():
   '<div class="zs-home-hero"><h3>'+esc(departmentTitle())+'</h3>'+
   '<p class="zs-preview-note">Live department-filtered inventory. Shared materials use one physical balance.</p></div>'+
-  '<div class="zs-home-grid" aria-label="'+esc(departmentTitle())+' Stock Management menu">'+tiles+'</div>'+stockCreateAction();
+  '<div class="zs-home-grid" aria-label="'+esc(departmentTitle())+' Stock Management menu">'+tiles+'</div>'+stockMasterActions();
  const markup=css+previewCss+previewHomeCss+
   '<section class="zs zs-preview" data-stock-view="home">'+
   '<header class="zs-screen-toolbar">'+
@@ -698,6 +702,11 @@ function showLiveHome(){
   content+'</section>';
  renderStockScreen(markup,'home');
 }
+window.zukStockOpenMaterials=()=>{
+ if(!manager())return;
+ window.zukStockPreviewExit('dashboard');
+ window.consOpenMaster?.(department||'');
+};
 window.zukStockCreateItem=()=>{
  if(!manager())return;
  window.zukStockPreviewExit('dashboard');
@@ -717,7 +726,7 @@ function previewHome(){
     '<span class="zs-home-icon" aria-hidden="true">'+t[1]+'</span>'+
     '<span class="zs-home-info"><strong>'+t[2]+'</strong><small>'+t[3]+'</small></span>'+
     '<span class="zs-home-chevron" aria-hidden="true">›</span></button>'
-  ).join('')+'</div>'+stockCreateAction();
+  ).join('')+'</div>'+stockMasterActions();
 }
 // This is a real full-screen in-app page, not a modal. The Stock menu and
 // each selected detail screen are mutually exclusive, with explicit Back.
