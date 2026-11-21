@@ -101,7 +101,7 @@ function draw(body) {
       '<button class="zs-btn secondary" onclick="openConsumablesModule()">← Consumables</button>')+
     (live?'<button class="zs-btn secondary" onclick="zukStockPreviewExit(\'dashboard\')">✕ Close</button>':
       '<button class="zs-btn secondary" onclick="closeModal()">✕ Close</button>')+'</div>'+
-    '<h2 style="margin:12px 0 6px">Consumables Stock</h2>'+
+    '<h2 style="margin:12px 0 6px">'+esc(departmentTitle())+' · Stock</h2>'+
     '<label for="zs-department">Department</label><select id="zs-department" onchange="openStockManagement(this.value)">'+
     [['','All departments'],['Painting','Paint Consumables'],['Mechanical','Mechanical Consumables']]
       .map(([value,name])=>'<option value="'+value+'"'+(value===department?' selected':'')+'>'+name+'</option>').join('')+'</select>'+
@@ -360,7 +360,7 @@ function previewBalance(rows,c){
    ['Available stock','Not initialized'],['Low stock items','Not initialized']]
   .map(([k,v])=>'<div class="zs-stat"><small>'+esc(k)+'</small><strong>'+esc(v)+'</strong></div>').join('')+'</div>'+
   '<div class="zs-panel"><h3>Stock Balance</h3><p class="zs-preview-note">Materials and brands below come from the existing master. '+
-  'Quantity, weighted-average cost and reorder levels remain unavailable until physical opening stock is verified.</p>'+
+  'These master rows are not confirmed as "+esc(departmentTitle())+" stock or department-assigned. Quantity, weighted-average cost and reorder levels remain unavailable until physical opening stock is verified.</p>'+
   '<div class="zs-filter">'+
   '<label class="zs-field">Search material or brand<input id="zs-preview-query" placeholder="Search material or brand" value="'+esc(preview.query)+'"></label>'+
   '<label class="zs-field">Material<select id="zs-preview-material">'+previewOptions(c.materials,preview.material,'All materials')+'</select></label>'+
@@ -727,13 +727,15 @@ function showPreview(){
   default:content=stockTrial.active?trialBalance(c):previewBalance(rows,c);
  }
  const back=isHome?
-   '<button type="button" class="zs-ghost" onclick="zukStockPreviewExit(\'consumables\')">← Consumables</button>':
-   '<button type="button" class="zs-ghost" onclick="zukStockPreviewNavigate(\'home\')">← Stock Management</button>';
+  (department?
+    '<button type="button" class="zs-ghost" onclick="zukStockResetDepartment()">← Departments</button>':
+    '<button type="button" class="zs-ghost" onclick="zukStockPreviewExit(\'consumables\')">← Consumables</button>'):
+  '<button type="button" class="zs-ghost" onclick="zukStockPreviewNavigate(\'home\')">← '+esc(departmentTitle())+'</button>';
  const markup=css+previewCss+previewHomeCss+'<section class="zs zs-preview" data-stock-view="'+esc(preview.page)+'">'+
   '<header class="zs-screen-toolbar">'+back+
   '<strong class="zs-screen-brand">▣ ZUKAIT · STOCK</strong>'+
   '<button type="button" class="zs-ghost" onclick="zukStockPreviewExit(\'dashboard\')">✕ Close</button></header>'+
-  (isHome?'':'<h2>'+esc(tabName)+'</h2>')+
+  (isHome?'':'<h2>'+esc(departmentTitle())+' · '+esc(tabName)+'</h2>')+
   (stockTrial.active?trialNotice():previewNotice())+
   (stockTrial.message?'<p role="alert" class="zs-warning">'+esc(stockTrial.message)+'</p>':'')+content+
   '<p class="zs-preview-note">'+(stockTrial.active?'TEST MODE ONLY · NO STOCK API OR DATABASE WRITES.':'Stock interface preview only. No stock API calls, inventory adjustments or database writes.')+'</p></section>';
@@ -749,6 +751,7 @@ window.zukStockPreviewExit=destination=>{
 };
 window.zukStockPreviewNavigate=page=>{
  if(!allowed()||!['home','balance','add','history','adjust','reports','suggest','return'].includes(page))return;
+ if(!department&&page!=='home')return;
  preview.page=page;showPreview();
 };
 window.zukStockPreviewFilter=()=>{
@@ -780,13 +783,21 @@ window.zukStockUpdateBrands=()=>{
  const material=document.getElementById('zs-material'),brand=document.getElementById('zs-brand');
  if(material&&brand)brand.innerHTML=stockBrandOptions(material.value,brand.value);
 };
+window.zukStockSelectDepartment=scope=>{
+ if(!allowed()||!['','Painting','Mechanical'].includes(scope)||view.busy||view.loading)return;
+ department=scope;
+ preview.page='home';
+ view.items=[];view.history=[];view.report=null;view.selected='';
+ view.itemsHasMore=false;view.historyHasMore=false;
+ if(previewOnly())return showPreview();
+ if(liveStockReady())return showLiveHome();
+ if(scope)return load('balance',true); // Isolated QA client only.
+};
+window.zukStockResetDepartment=()=>window.zukStockSelectDepartment('');
 window.openStockManagement=async(scope='')=>{
  if(!allowed()||view.loading||view.busy)return;
- // Exactly one small, authenticated STATUS request when the user opens Stock.
- // Fail closed for old servers, missing schema, disabled flags, offline access
- // or an expired session. Real inventory writes still require server role checks.
- if(previewOnly()&&window.ZUKAIT_STOCK_LIVE_CHECK_ON_OPEN===true&&
-    currentStockSession()){
+ // The normal app asks the authenticated API whether complete secured Stock is ready.
+ if(previewOnly()&&window.ZUKAIT_STOCK_LIVE_CHECK_ON_OPEN===true&&currentStockSession()){
    const session=currentStockSession();
    try{
      const status=await window.zukaitCloud?.stockRequest?.({operation:'STATUS'});
@@ -795,15 +806,12 @@ window.openStockManagement=async(scope='')=>{
        session===currentStockSession()?session:'';
    }catch(_){liveStockSession='';}
  }
- if(previewOnly()){preview.page='home';window.closeModal?.();showPreview();return}
  department=['Painting','Mechanical'].includes(scope)?scope:'';
- view.items=[];view.history=[];view.report=null;view.selected='';view.itemsHasMore=false;view.historyHasMore=false;
- if(liveStockReady()){
-   if(scope)return load('balance',true); // Changed department inside a detail.
-   window.closeModal?.();
-   return showLiveHome(); // No stock API until a menu card is selected.
- }
- return load('balance',true); // Existing isolated Stock pilot behavior.
+ if(previewOnly()){preview.page='home';window.closeModal?.();showPreview();return}
+ view.items=[];view.history=[];view.report=null;view.selected='';
+ view.itemsHasMore=false;view.historyHasMore=false;
+ if(liveStockReady()){window.closeModal?.();return showLiveHome()}
+ return load('balance',true); // Existing isolated stock QA behavior unchanged.
 };
 window.zukStockNav=(page,force=false)=>previewOnly()?window.zukStockPreviewNavigate(page):load(page,force);
 window.zukStockDetail=id=>{view.selected=String(id||'');view.page='detail';render()};
