@@ -5,13 +5,12 @@ import {consumablesStockApi} from '../supabase/functions/workshop-api/extensions
 
 // Stock stays closed for missing production schema/disabled flags. This is a
 // real-data activation path for the normal Android/Web app, NOT a test-only URL.
-let dbReads=0;
-const admin={from(table){
-  assert.equal(table,'zukait_stock_balances');
-  return {select(column){
-    assert.equal(column,'material_id');
-    return {limit(count){assert.equal(count,1);dbReads++;return Promise.resolve({data:[],error:null})}};
-  }};
+let readinessCalls=0;
+const admin={async rpc(fn){
+  assert.equal(fn,'zukait_stock_installation_ready',
+    'Status must verify all tables, atomic RPCs and RLS, not one balance row');
+  readinessCalls++;
+  return {data:{ready:true,schemaReady:true,rpcReady:true},error:null};
 }};
 const manager={role:'Manager'};
 let reply=await consumablesStockApi(admin,manager,{operation:'STATUS'},{
@@ -20,19 +19,29 @@ let reply=await consumablesStockApi(admin,manager,{operation:'STATUS'},{
 assert.equal(reply.status,200);
 assert.equal(reply.body.ready,false);
 assert.equal(reply.body.writes,false);
-assert.equal(dbReads,0,'Disabled stock must not query tables');
+assert.equal(readinessCalls,0,'Disabled stock must not query tables');
 reply=await consumablesStockApi(admin,{role:'Employee'},{operation:'STATUS'},{
   enabled:true,writesEnabled:true,masterLinkEnabled:true
 });
 assert.equal(reply.status,403,'Unapproved employees cannot check Stock status');
-assert.equal(dbReads,0);
+assert.equal(readinessCalls,0);
 reply=await consumablesStockApi(admin,manager,{operation:'STATUS'},{
   enabled:true,writesEnabled:true,masterLinkEnabled:true
 });
 assert.equal(reply.body.ready,true);
 assert.equal(reply.body.writes,true);
 assert.equal(reply.body.masterLink,true);
-assert.equal(dbReads,1);
+assert.equal(readinessCalls,1);
+for(const result of [
+  {data:{ready:false,schemaReady:true,rpcReady:false},error:null},
+  {data:{ready:true},error:{message:'RPC did not execute'}},
+  {data:null,error:{message:'function not installed'}}
+]){
+  const denied=await consumablesStockApi({async rpc(){return result;}},manager,
+    {operation:'STATUS'},{enabled:true,writesEnabled:true,masterLinkEnabled:true});
+  assert.equal(denied.body.ready,false,'Incomplete or failing schema must fail closed');
+  assert.equal(denied.body.writes,false,'Never permit write activation on partial setup');
+}
 
 const source=readFileSync('app/src/main/assets/consumables_stock_ui.js','utf8');
 const html=readFileSync('app/src/main/assets/offline_test.html','utf8');
