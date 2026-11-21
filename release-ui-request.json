@@ -2,24 +2,24 @@
   "versionName": "V408",
   "versionCode": 371,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
-  "ownerPublicationRequested": false,
-  "ownerRequestedImmediateRelease": false,
+  "approvedForStaff": true,
+  "ownerPublicationRequested": true,
+  "ownerRequestedImmediateRelease": true,
   "ownerRequestedProceed": true,
-  "releaseHeldByOwner": true,
+  "releaseHeldByOwner": false,
   "productionBackendChanges": false,
   "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "backupDeferredByOwner": false,
-  "sourceCommit": null,
-  "approvedAt": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "authorization": "HELD V408 candidate: owner requested enabling stock testing and correcting card colors. No staff publication approved until exact-source signed UI acceptance. Production stock writes remain disabled.",
-  "reason": "V408 UI-only candidate: scoped accessible card colors, full-screen 5-box Stock Management and isolated tab-only Opening/Purchase test, no Supabase stock transactions or backend changes. V407 remains published.",
+  "backupDeferredByOwner": true,
+  "sourceCommit": "5c6a2fe7a10e3a6ca423e62186f8fcf4795dab63",
+  "approvedAt": "2026-11-21T14:14:01.035Z",
+  "publishNonce": "5c6a2fe7a10e3a6ca423e62186f8fcf4795dab63",
+  "signedAcceptanceRun": 44912506190,
+  "verificationRun": 44912506059,
+  "authorization": "Owner requested to make Stock UI active for testing on 2026-11-21. V408 is approved strictly as isolated in-browser Stock Test Mode and accessible color changes. Real stock ledger, opening balances, purchase persistence, issuing, returns, adjustments and any Supabase migration/deployment are NOT APPROVED. Physical device and fresh backup restore remain NOT_RUN; prior UI-only deferrals are not claimed as passed.",
+  "reason": "V408 source-pinned UI-only staff release: accessible five-card Stock UI, explicit tab-only test opening/purchases/average-cost/history, no stock API calls or workshop-state writes. Exact-source ten CI runs passed. V407 retained as fallback.",
   "previousPublishedRelease": {
     "versionName": "V407",
     "versionCode": 370,
@@ -32,43 +32,55 @@
     "freshBackupRestore": "NOT_RUN"
   },
   "verification": {
-    "sourceCommit": null,
+    "sourceCommit": "5c6a2fe7a10e3a6ca423e62186f8fcf4795dab63",
     "checks": {
       "signedCandidate": {
-        "run": null,
-        "status": "PENDING"
+        "run": 44912506190,
+        "status": "PASS"
       },
       "reception": {
-        "run": null,
-        "status": "PENDING"
+        "run": 44912506059,
+        "status": "PASS"
       },
       "androidArchitecture": {
-        "run": null,
-        "status": "PENDING"
+        "run": 44912506202,
+        "status": "PASS"
       },
       "standardApk": {
-        "run": null,
-        "status": "PENDING"
+        "run": 44912506204,
+        "status": "PASS"
       },
       "mechanicalContracts": {
-        "run": null,
-        "status": "PENDING"
+        "run": 44912506149,
+        "status": "PASS"
+      },
+      "mechanicalPhone": {
+        "run": 44912506152,
+        "status": "PASS"
       },
       "connection": {
-        "run": null,
-        "status": "PENDING"
+        "run": 44912506150,
+        "status": "PASS"
       },
-      "stockTest": {
-        "run": null,
-        "status": "PENDING"
+      "accountant": {
+        "run": 44912506084,
+        "status": "PASS"
       },
-      "estimate": {
-        "run": null,
-        "status": "PENDING"
+      "syncTraffic": {
+        "run": 44912506080,
+        "status": "PASS"
       },
       "nativePdf": {
-        "run": null,
-        "status": "PENDING"
+        "run": 44912506075,
+        "status": "PASS"
+      },
+      "stockTest": {
+        "run": 44912506190,
+        "status": "PASS_IN_FULL_REGRESSION"
+      },
+      "stockPreview": {
+        "run": 44912506190,
+        "status": "PASS_IN_FULL_REGRESSION"
       }
     },
     "physicalAcceptance": "NOT_RUN",
