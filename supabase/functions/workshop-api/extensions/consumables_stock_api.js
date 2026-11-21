@@ -20,9 +20,11 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
   // exists. Do not claim that a staged catalog or Master prices are stock balances.
   if(operation==='STATUS') {
     if(!enabled)return good({live:false,ready:false,writes:false,masterLink:false});
-    const {error}=await admin.from('zukait_stock_balances')
-      .select('material_id').limit(1);
-    const ready=!error;
+    // Verify ALL required compact tables, atomic RPCs, role gates and RLS.
+    // Missing readiness RPC also fails closed; this is a single small catalog
+    // query, not a scan of workshop_state, transactions or stock balances.
+    const {data,error}=await admin.rpc('zukait_stock_installation_ready');
+    const ready=!error&&data?.ready===true;
     return good({live:ready,ready,writes:ready&&writesEnabled,
       masterLink:ready&&masterLinkEnabled});
   }
