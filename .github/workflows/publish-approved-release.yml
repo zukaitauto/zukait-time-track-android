@@ -132,7 +132,7 @@ jobs:
             verify_followup_blob 'supabase/functions/staff-auth/index.ts' 'f7e6229d96151124ada2b47061eea207837ec59e'
             verify_followup_blob 'tests/staff-session-database-outage.mjs' '2e14da1955429f05e4507f096ad424690ff3274e'
             verify_followup_blob 'scripts/verify-coordinated-release.cjs' '054886ee69e6b9785ea4e39a48800172e2e0d7fa'
-            verify_followup_blob 'tests/reception-coordinated-release.mjs' 'a6160eb3bb23ab37518acc923eb0b87bffef1cf1'
+            verify_followup_blob 'tests/reception-coordinated-release.mjs' 'e97c251bab5a004ea3ed61f64cdeca18ad532e6c'
           fi
           if ! git diff --quiet "$SOURCE_COMMIT" "$GITHUB_SHA" -- . "${EXCLUDES[@]}"; then
             echo "Production source drift detected after approved source commit:"
