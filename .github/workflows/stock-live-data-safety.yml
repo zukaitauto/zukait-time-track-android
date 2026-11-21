@@ -1,0 +1,43 @@
+name: Consumables Stock live-data release safety
+
+on:
+  push:
+    branches: [architecture-v2]
+    paths:
+      - 'app/src/main/assets/consumables_stock_ui.js'
+      - 'app/src/main/assets/offline_test.html'
+      - 'supabase/staged/CONSUMABLES_STOCK_*.sql'
+      - 'supabase/functions/workshop-api/extensions/consumables_stock_api.js'
+      - 'tests/consumables-stock-*.mjs'
+      - 'tests/consumables-main-app-preview.mjs'
+      - 'scripts/prepare-consumables-stock-android-pilot.mjs'
+      - '.github/workflows/stock-live-data-safety.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stock-offline-db-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned test dependencies (no scripts)
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Full isolated PG17-compatible stock ledger checks
+        run: npm run test:consumables:stock
+      - name: Normal staff app cannot activate via URL
+        run: node tests/consumables-stock-live-readiness.mjs
+      - name: Confirm production release remains held
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const request=JSON.parse(fs.readFileSync('release-request.json','utf8'));
+          if(request.phase2ActivationApproved!==false || request.approvedForStaff!==false ||
+             request.productionBackendChanges!==false)throw Error('Stock production release gate unexpectedly open');
+          console.log('PASS: stock production release held');
+          NODE
