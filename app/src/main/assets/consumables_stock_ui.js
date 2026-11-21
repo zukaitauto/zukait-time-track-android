@@ -88,14 +88,17 @@ const css='<style>'+
  '@media(min-width:720px){.zs-nav{grid-template-columns:repeat(5,minmax(0,1fr))}.zs-two{display:grid;grid-template-columns:1fr 1fr;gap:14px}}'+
  '</style>';
 function draw(body) {
-  if(typeof window.openModal!=='function')return;
+  const live=liveStockReady();
+  if(!live&&typeof window.openModal!=='function')return;
   const names=[['balance','📦 Stock Balance'],['add','➕ Add Stock'],['history','🕘 Stock History'],
      ['adjust','⚖️ Stock Adjustment'],['reports','📊 Stock Reports']];
   const nav=names.map(([key,name])=>'<button type="button" class="'+(view.page===key?'zs-active':'')+
     '" onclick="zukStockNav(\''+key+'\')">'+name+'</button>').join('');
   const header='<div class="zs"><div class="zs-row">'+
-    '<button class="zs-btn secondary" onclick="openConsumablesModule()">← Consumables</button>'+
-    '<button class="zs-btn secondary" onclick="closeModal()">✕ Close</button></div>'+
+    (live?'<button class="zs-btn secondary" onclick="zukStockLiveHome()">← Stock Management</button>':
+      '<button class="zs-btn secondary" onclick="openConsumablesModule()">← Consumables</button>')+
+    (live?'<button class="zs-btn secondary" onclick="zukStockPreviewExit(\'dashboard\')">✕ Close</button>':
+      '<button class="zs-btn secondary" onclick="closeModal()">✕ Close</button>')+'</div>'+
     '<h2 style="margin:12px 0 6px">Consumables Stock</h2>'+
     '<label for="zs-department">Department</label><select id="zs-department" onchange="openStockManagement(this.value)">'+
     [['','All departments'],['Painting','Paint Consumables'],['Mechanical','Mechanical Consumables']]
@@ -103,7 +106,9 @@ function draw(body) {
     (department?'<p class="zs-muted">Shared items use the same stock balance in both departments.</p>':'')+
     '<div class="zs-nav">'+nav+'</div>';
   const message=view.error?'<div class="zs-warning">'+esc(view.error)+'</div>':'';
-  window.openModal(css+header+message+(body||'')+'</div>');
+  const markup=css+header+message+(body||'')+'</div>';
+  if(live){renderStockScreen(previewHomeCss+markup,view.page);return;}
+  window.openModal(markup);
 }
 function rowCard(r){
  const unit=esc(r.unit||'Liter'),a=available(r);
@@ -621,6 +626,47 @@ const previewHomeTiles=[
  ['adjust','⚖️','Stock Adjustment','Physical stock counts and audit reasons','orange'],
  ['reports','📊','Stock Reports','Stock valuation, low stock and consumption reports','teal']
 ];
+// Share the same full-screen host for preview and real inventory screens.
+// One selected detail view replaces the menu; no modal on an activated app.
+function renderStockScreen(markup,page){
+ let screen=document.getElementById('zs-stock-screen');
+ if(!screen){
+  screen=document.createElement('main');
+  screen.id='zs-stock-screen';
+  screen.setAttribute('aria-label','Consumables Stock Management');
+  screen.setAttribute('tabindex','-1');
+  screen.dataset.savedOverflow=document.body.style.overflow||'';
+  document.body.appendChild(screen);
+  document.body.style.overflow='hidden';
+ }
+ screen.dataset.view=page;
+ screen.innerHTML=markup;
+ screen.scrollTop=0;
+ screen.focus({preventScroll:true});
+}
+function showLiveHome(){
+ if(!allowed()||!liveStockReady())return;
+ const tiles=previewHomeTiles.map(t=>
+  '<button type="button" class="zs-home-tile '+t[4]+'" onclick="zukStockLiveNavigate(\''+t[0]+'\')">'+
+  '<span class="zs-home-icon" aria-hidden="true">'+t[1]+'</span>'+
+  '<span class="zs-home-info"><strong>'+t[2]+'</strong><small>'+t[3]+'</small></span>'+
+  '<span class="zs-home-chevron" aria-hidden="true">›</span></button>').join('');
+ const markup=css+previewCss+previewHomeCss+
+  '<section class="zs zs-preview" data-stock-view="home">'+
+  '<header class="zs-screen-toolbar">'+
+  '<button type="button" class="zs-ghost" onclick="zukStockPreviewExit(\'consumables\')">← Consumables</button>'+
+  '<strong class="zs-screen-brand">▣ ZUKAIT · STOCK</strong>'+
+  '<button type="button" class="zs-ghost" onclick="zukStockPreviewExit(\'dashboard\')">✕ Close</button></header>'+
+  '<div class="zs-home-hero"><h3>Consumables Stock Management</h3>'+
+  '<p class="zs-preview-note">Verified live inventory. Select a card to open its detail screen.</p></div>'+
+  '<div class="zs-home-grid" aria-label="Stock Management menu">'+tiles+'</div></section>';
+ renderStockScreen(markup,'home');
+}
+window.zukStockLiveHome=()=>showLiveHome();
+window.zukStockLiveNavigate=page=>{
+ if(!allowed()||!liveStockReady()||!['balance','add','history','adjust','reports'].includes(page))return;
+ return load(page,true);
+};
 function previewHome(){
  return trialControls()+'<div class="zs-home-hero"><h3>Consumables Stock Management</h3><p class="zs-preview-note">Select an option to open its detail screen. No stock data is displayed on this menu.</p></div>'+
   '<div class="zs-home-grid" aria-label="Stock Management menu">'+previewHomeTiles.map(t=>
@@ -659,20 +705,7 @@ function showPreview(){
   (stockTrial.active?trialNotice():previewNotice())+
   (stockTrial.message?'<p role="alert" class="zs-warning">'+esc(stockTrial.message)+'</p>':'')+content+
   '<p class="zs-preview-note">'+(stockTrial.active?'TEST MODE ONLY · NO STOCK API OR DATABASE WRITES.':'Stock interface preview only. No stock API calls, inventory adjustments or database writes.')+'</p></section>';
- let screen=document.getElementById('zs-stock-screen');
- if(!screen){
-  screen=document.createElement('main');
-  screen.id='zs-stock-screen';
-  screen.setAttribute('aria-label','Consumables Stock Management');
-  screen.setAttribute('tabindex','-1');
-  screen.dataset.savedOverflow=document.body.style.overflow||'';
-  document.body.appendChild(screen);
-  document.body.style.overflow='hidden';
- }
- screen.dataset.view=preview.page;
- screen.innerHTML=markup;
- screen.scrollTop=0;
- screen.focus({preventScroll:true});
+ renderStockScreen(markup,preview.page);
 }
 window.zukStockPreviewExit=destination=>{
  const screen=document.getElementById('zs-stock-screen');
@@ -733,7 +766,12 @@ window.openStockManagement=async(scope='')=>{
  if(previewOnly()){preview.page='home';window.closeModal?.();showPreview();return}
  department=['Painting','Mechanical'].includes(scope)?scope:'';
  view.items=[];view.history=[];view.report=null;view.selected='';view.itemsHasMore=false;view.historyHasMore=false;
- return load('balance',true);
+ if(liveStockReady()){
+   if(scope)return load('balance',true); // Changed department inside a detail.
+   window.closeModal?.();
+   return showLiveHome(); // No stock API until a menu card is selected.
+ }
+ return load('balance',true); // Existing isolated Stock pilot behavior.
 };
 window.zukStockNav=(page,force=false)=>previewOnly()?window.zukStockPreviewNavigate(page):load(page,force);
 window.zukStockDetail=id=>{view.selected=String(id||'');view.page='detail';render()};
