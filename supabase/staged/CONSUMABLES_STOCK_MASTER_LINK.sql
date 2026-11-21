@@ -20,6 +20,7 @@ declare
  v_name text;
  v_brand_name text;
  v_category text;
+ v_saved_scope text;
  v_scope text;
  v_final_scope text;
 begin
@@ -71,10 +72,17 @@ begin
  v_name:=trim(coalesce(v_material->>'name',''));
  v_brand_name:=trim(coalesce(v_brand->>'name',''));
  v_category:=coalesce(v_material->>'category','Consumable');
+ v_saved_scope:=coalesce(nullif(trim(v_material->>'department'),''),'Unassigned');
+ if v_saved_scope not in ('Unassigned','Mechanical','Painting','Both') then
+   raise exception 'INVALID_MASTER' using errcode='22023';end if;
+ -- New materials are classified in the saved Master. Clients cannot change
+ -- their scope during Stock linking; only legacy Unassigned rows can be mapped.
+ if v_saved_scope<>'Unassigned' and p_origin<>v_saved_scope then
+   raise exception 'MASTER_SCOPE_MISMATCH' using errcode='22023';end if;
  if v_unit not in ('Liter','kg','Piece') or length(v_name) not between 1 and 180
     or length(v_brand_name) not between 1 and 180 then
    raise exception 'INVALID_MASTER' using errcode='22023';end if;
- if p_origin in ('Mechanical','Both') and v_category='Paint' then
+ if (p_origin in ('Mechanical','Both') or v_saved_scope in ('Mechanical','Both')) and v_category='Paint' then
    raise exception 'PAINT_ONLY_MASTER' using errcode='22023';end if;
  v_scope:=p_origin;
 
