@@ -7,7 +7,10 @@ let view={page:'balance',items:[],history:[],itemsHasMore:false,historyHasMore:f
   selected:'',mode:'total',pending:null,legacyItems:[],legacyPage:0,legacyHasMore:false};
 const allowed=()=>typeof me!=='undefined'&&['Manager','Supervisor'].includes(me?.role);
 const manager=()=>typeof me!=='undefined'&&me?.role==='Manager';
-const api=x=>window.zukaitCloud?.stockRequest?.(x)||Promise.reject(Error('Stock server connection not ready'));
+// Main-app visual acceptance: hard block every Stock API call until a separate controlled pilot.
+const previewOnly=()=>window.ZUKAIT_STOCK_UI_PREVIEW_ONLY===true;
+const api=x=>previewOnly()?Promise.reject(Error('Stock preview: transactions not enabled')):
+  window.zukaitCloud?.stockRequest?.(x)||Promise.reject(Error('Stock server connection not ready'));
 const catalog=()=>{
   try{
     const c=typeof state!=='undefined'&&window.ZukaitConsumables?.ensureState(state);
@@ -174,6 +177,7 @@ function render(){
 }
 async function load(page,force=false){
  if(!allowed())return;
+ if(previewOnly()){showPreview();return;}
  if(view.busy)return;
  if(page)view.page=page;
  view.error='';
@@ -227,7 +231,24 @@ window.zukStockLegacyLink=async(index)=>{
    render();
  }
 };
-window.openStockManagement=()=>load('balance',true);
+// Visual-only: the existing Consumables Material Master is not a verified stock ledger.
+function showPreview(){
+ if(!allowed())return;
+ const c=catalog();
+ const list=c.materials.slice(0,30).map(m=>'<div class="zs-card"><b>'+
+   esc(m.name||'Unnamed material')+'</b><p class="zs-muted">Unit: '+
+   esc(m.unit||'Not set')+' · Material Master reference only</p></div>').join('');
+ window.openModal?.(css+'<section class="zs">'+
+  '<div class="zs-row"><button class="zs-btn secondary" onclick="openConsumablesModule()">← Consumables</button>'+
+  '<button class="zs-btn secondary" onclick="closeModal()">✕ Close</button></div>'+
+  '<h2>Stock Management — Preview Only</h2>'+
+  '<div class="zs-warning">Testing in the main app: opening stock, purchases, issuing, returns and adjustments are NOT ACTIVE. No quantities or costs below are stock balances.</div>'+
+  '<h3>Existing Material Master</h3>'+
+  (list||'<p class="zs-muted">No existing materials in this account.</p>')+
+  (c.materials.length>30?'<p class="zs-muted">First 30 materials shown.</p>':'')+
+  '<p class="zs-muted">Actual stock quantities and Job Card costs will appear only after a controlled stock activation.</p></section>');
+}
+window.openStockManagement=()=>previewOnly()?showPreview():load('balance',true);
 window.zukStockNav=(page,force=false)=>load(page,force);
 window.zukStockDetail=id=>{view.selected=String(id||'');view.page='detail';render()};
 window.zukStockMore=async()=>{
