@@ -40,6 +40,8 @@ assert.ok(html.includes('window.ZUKAIT_STOCK_LIVE_CHECK_ON_OPEN=true'),
   'Normal app must use a bounded readiness check, not a test-only APK');
 assert.ok(html.includes('window.ZUKAIT_STOCK_UI_PREVIEW_ONLY=true'),
   'Normal app must fail closed before readiness is confirmed');
+assert.doesNotMatch(source,/get\\('stockPilot'\\)/,
+  'Production Stock activation must not depend on a browser URL');
 
 function makeFixture(status,role='Manager'){
   const requests=[]; let output=''; let screen=null; let token='session-one';
