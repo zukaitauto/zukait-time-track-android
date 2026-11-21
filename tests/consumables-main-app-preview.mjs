@@ -18,6 +18,10 @@ assert.ok(stock.includes('.zs-screen-brand{order:3;flex:1 0 100%'),
  'On narrow phones the stock title must move to a readable second toolbar row');
 assert.ok(stock.includes('.zs-home-info small{color:#f4f7ff!important'),
  'Stock descriptions must use light text on colored cards');
+assert.ok(stock.includes('@media(max-width:600px){#zs-stock-screen .zs-preview .zs-home-grid{grid-template-columns:repeat(2,minmax(0,1fr))'),
+ 'Phone-sized stock tiles must remain two columns, not one');
+assert.ok(stock.includes('.zs-department-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))'),
+ 'Paint and Mechanical entry options must appear side by side');
 
 const html=readFileSync('app/src/main/assets/offline_test.html','utf8');
 const menu=readFileSync('app/src/main/assets/consumables_ui.js','utf8');
@@ -84,7 +88,14 @@ assert.equal(current(),'home');
 assert.equal(body.style.overflow,'hidden');
 assert.equal(closedModal,1,'Previous Consumables popup must close');
 assert.equal(modalOpened,0,'Stock screen must never use an openModal popup');
-assert.equal(cards(),5,'Exactly five colored menu boxes');
+assert.equal(cards(),0,'First stock screen chooses a department');
+assert.match(markup(),/Paint Consumables/);
+assert.match(markup(),/Mechanical Consumables/);
+assert.match(markup(),/zs-department-grid/);
+ctx.window.zukStockSelectDepartment('Painting');
+assert.equal(current(),'home');
+assert.equal(cards(),5,'Five colored Paint Stock menu boxes');
+assert.match(markup(),/Paint Consumables/);
 assert.match(markup(),/zs-home-grid/);
 assert.match(markup(),/Consumables Stock Management/);
 for(const [key,title] of [
@@ -183,6 +194,15 @@ assert.doesNotMatch(markup(),/<td><b>2K Primer<\/b><\/td>/);
 
 ctx.window.zukStockPreviewNavigate('home');
 assert.equal(cards(),5);
+ctx.window.zukStockResetDepartment();
+assert.equal(cards(),0,'Back to departments must hide the stock action cards');
+ctx.window.zukStockSelectDepartment('Mechanical');
+assert.equal(cards(),5,'Mechanical gets its own five-card menu');
+assert.match(markup(),/Mechanical Consumables/);
+ctx.window.zukStockPreviewNavigate('balance');
+assert.match(markup(),/Mechanical Consumables · Stock Balance/);
+assert.match(markup(),/NOT a verified department stock list/);
+ctx.window.zukStockPreviewNavigate('home');
 ctx.window.zukStockPreviewExit('consumables');
 assert.equal(screen,null,'Back to Consumables must dispose Stock page');
 assert.equal(body.style.overflow,'');
@@ -198,6 +218,8 @@ assert.equal(screen,null,'Employee cannot open Manager/Supervisor Stock page');
 // Manager can test real input flows safely in this tab, with NO stock backend calls.
 ctx.me.role='Manager';
 ctx.window.openStockManagement();
+assert.equal(cards(),0,'New Stock entry must start at the department picker');
+ctx.window.zukStockSelectDepartment('Painting');
 assert.match(markup(),/Start opening-stock \/ purchase test/);
 ctx.window.zukStockTestStart();
 assert.equal(current(),'home');
@@ -246,4 +268,4 @@ assert.match(markup(),/Clear test entries/);
 assert.equal(calls.length,0,'All preview screens and disabled save operations must be network-free');
 assert.equal(modalOpened,0,'No popup must open while entering any Stock detail screen');
 assert.match(stock,/previewOnly\(\)\?Promise\.reject\(Error\('Stock preview: transactions not enabled'\)\)/);
-console.log('STOCK V407 FULL-PAGE PASS: five boxes, distinct detail screens, Back/Close navigation, locked stock writes and zero RPC');
+console.log('STOCK two-column PASS: Paint and Mechanical routes, detail screens, locked writes, zero RPC');
