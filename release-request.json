@@ -1,10 +1,10 @@
 {
-  "versionName": "V405",
-  "versionCode": 368,
+  "versionName": "V406",
+  "versionCode": 369,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
+  "approvedForStaff": false,
   "ownerPublicationRequested": true,
-  "ownerRequestedImmediateRelease": true,
+  "ownerRequestedImmediateRelease": false,
   "ownerRequestedProceed": true,
   "releaseHeldByOwner": false,
   "productionBackendChanges": false,
@@ -12,19 +12,19 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "backupDeferredByOwner": true,
-  "sourceCommit": "bea14ce76ffb3db189b0dbba74c1bb87e8ff5613",
-  "approvedAt": "2026-11-21T05:38:53.717Z",
-  "publishNonce": "bea14ce76ffb3db189b0dbba74c1bb87e8ff5613",
-  "signedAcceptanceRun": 44871545509,
-  "verificationRun": 44871545404,
-  "authorization": "Owner explicitly instructed proceeding with the main-app UI-only Mechanical Consumables and Stock Preview for one-by-one bug testing on 21 November 2026. Owner previously deferred physical acceptance and backup rehearsal for this UI-only release.",
-  "reason": "V405 owner-approved UI-only Android/Web main-app pilot using existing ZUKAIT staff logins. Stock view is PREVIEW ONLY; Mechanical issuing/returns, purchase adjustments, stock costing, SQL and server feature flags are NOT enabled. Published V404 is retained as rollback. Exact-source Reception, signed APK, Android, standard APK, mechanical/accountant contracts and outage safety CI succeeded. Physical device and backup restore remain NOT_RUN.",
+  "backupDeferredByOwner": false,
+  "sourceCommit": null,
+  "approvedAt": null,
+  "publishNonce": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "authorization": "Owner requested proceeding with V406 UI correction. This is an UNAPPROVED candidate; approval, exact-source acceptance and explicit physical/backup deferral are outstanding.",
+  "reason": "Unapproved V406 candidate: five-tab Stock Management visual preview, Manager/Supervisor only, no stock ledger, no live stock transactions, no Mechanical issuing/returns, no backend change. V405 remains published.",
   "previousPublishedRelease": {
-    "versionName": "V404",
-    "versionCode": 367,
-    "releaseTag": "release-V404-architecture-v2",
-    "sourceCommit": "d53c2e840d44fb5fee6cf7fb493629af0969557e"
+    "versionName": "V405",
+    "versionCode": 368,
+    "releaseTag": "release-V405-architecture-v2",
+    "sourceCommit": "bea14ce76ffb3db189b0dbba74c1bb87e8ff5613"
   },
   "pendingTestEvidence": {
     "productionBackendChanges": false,
@@ -32,31 +32,35 @@
     "freshBackupRestore": "NOT_RUN"
   },
   "verification": {
-    "sourceCommit": "bea14ce76ffb3db189b0dbba74c1bb87e8ff5613",
+    "sourceCommit": null,
     "checks": {
       "signedCandidate": {
-        "run": 44871545509,
-        "status": "PASS"
+        "run": null,
+        "status": "PENDING"
       },
       "reception": {
-        "run": 44871545404,
-        "status": "PASS"
+        "run": null,
+        "status": "PENDING"
       },
       "androidArchitecture": {
-        "run": 44871545463,
-        "status": "PASS"
+        "run": null,
+        "status": "PENDING"
       },
       "standardApk": {
-        "run": 44871545469,
-        "status": "PASS"
+        "run": null,
+        "status": "PENDING"
       },
       "mechanicalContracts": {
-        "run": 44871545412,
-        "status": "PASS"
+        "run": null,
+        "status": "PENDING"
       },
       "connection": {
-        "run": 44871545459,
-        "status": "PASS"
+        "run": null,
+        "status": "PENDING"
+      },
+      "stockPreview": {
+        "run": null,
+        "status": "PENDING"
       },
       "syncTraffic": {
         "run": null,
