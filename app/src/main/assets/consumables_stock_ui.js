@@ -15,15 +15,17 @@ let liveStockSession='';
 const currentStockSession=()=>String(window.zukaitAuth?.getToken?.()||'');
 const liveStockReady=()=>!!liveStockSession&&
   liveStockSession===currentStockSession()&&currentStockSession().length>0;
+// A query parameter can never override Stock safety in the staff app.
+// The separately packaged QA build opts in at build time instead.
+const isolatedStockPilot=()=>window.ZUKAIT_STOCK_ISOLATED_PILOT===true;
 const previewOnly=()=>window.ZUKAIT_STOCK_UI_PREVIEW_ONLY===true&&
-  !liveStockReady()&&
-  (!window.location?.search||new URLSearchParams(window.location.search).get('stockPilot')!=='1');
+  !liveStockReady()&&!isolatedStockPilot();
 const api=x=>previewOnly()?Promise.reject(Error('Stock preview: transactions not enabled')):
   window.zukaitCloud?.stockRequest?.(x)||Promise.reject(Error('Stock server connection not ready'));
 const stockRead=request=>api(department?{...request,department}:request);
 window.zukaitStockPickerEnabled=()=>!previewOnly()&&(
-  new URLSearchParams(window.location?.search||'').get('stockPilot')==='1'||
-  window.ZUKAIT_DEPARTMENT_PICKERS_ENABLED===true);
+  isolatedStockPilot()||
+  (liveStockReady()&&window.ZUKAIT_DEPARTMENT_PICKERS_ENABLED===true));
 const pickerRequests=new Map();
 window.zukaitStockPickerPairs=async scope=>{
   if(!window.zukaitStockPickerEnabled())return null;
