@@ -8,6 +8,7 @@ const fields={};
 const window={
   location:{search:'?stockPilot=1'},
   ZUKAIT_STOCK_UI_PREVIEW_ONLY:true,
+  ZUKAIT_STOCK_ISOLATED_PILOT:true,
   openModal(value){html=value;},
   ZukaitConsumables:{ensureState(state){return state.consumables;}},
   zukaitCloud:{async stockRequest(command){
