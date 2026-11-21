@@ -409,6 +409,23 @@ const previewHomeCss='<style>'+
  '.zs-preview .zs-home-tile.teal{background:#e6f8f8;border-color:#b7dfdf}'+
  '.zs-preview .zs-home-tile:last-child{grid-column:span 2}'+
  '@media(max-width:620px){.zs-preview .zs-home-grid{grid-template-columns:1fr}.zs-preview .zs-home-tile:last-child{grid-column:auto}.zs-preview .zs-home-tile{min-height:105px;padding:15px}}'+
+
+ /* Scope the palette to the stock page: global .blue/.green/.purple themes
+    previously overrode tile backgrounds, leaving dark labels unreadable. */
+ '#zs-stock-screen .zs-screen-toolbar{background:#fff!important;color:#153653!important;border-color:#d6e4f2!important}'+
+ '#zs-stock-screen .zs-screen-brand{color:#174b77!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-tile{border-width:1px 1px 1px 5px!important;color:#17324f!important;box-shadow:0 5px 20px #1e42641a!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-tile.blue{background:linear-gradient(135deg,#eef6ff,#dcecff)!important;border-color:#9ac2f8!important;border-left-color:#2469ce!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-tile.green{background:linear-gradient(135deg,#effaf4,#d7f0e3)!important;border-color:#9fd6b7!important;border-left-color:#168654!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-tile.purple{background:linear-gradient(135deg,#f8f3ff,#e9ddfa)!important;border-color:#cdb7ef!important;border-left-color:#7545bd!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-tile.orange{background:linear-gradient(135deg,#fff9f3,#ffead9)!important;border-color:#ebc8a4!important;border-left-color:#cc751e!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-tile.teal{background:linear-gradient(135deg,#f1fcfb,#d9f1ef)!important;border-color:#a7d7d2!important;border-left-color:#18847d!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-info strong{color:#142f4a!important;font-weight:800!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-info small{color:#36516c!important;font-weight:550!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-chevron{color:#174967!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-icon{background:#fff!important;color:#194f7d!important;box-shadow:0 3px 9px #163a5a12!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-tile:hover{box-shadow:0 10px 26px #1e42642d!important;transform:translateY(-2px)}'+
+ '#zs-stock-screen .zs-preview .zs-home-tile:focus-visible{outline:3px solid #1669c5!important;outline-offset:3px}'+
  '</style>';
 const previewHomeTiles=[
  ['balance','📦','Stock Balance','Available, reserved and total stock, with average cost','blue'],
