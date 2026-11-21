@@ -25,6 +25,8 @@ assert.ok(stock.includes('.zs-department-grid{display:grid;grid-template-columns
 
 const html=readFileSync('app/src/main/assets/offline_test.html','utf8');
 const menu=readFileSync('app/src/main/assets/consumables_ui.js','utf8');
+assert.match(menu,/modal\('Materials & Brands'/,'Manager master must be renamed Materials & Brands');
+assert.doesNotMatch(menu,/action\('Brands & Price'/,'Old Painting dashboard must not show moved Master action');
 const mech=readFileSync('app/src/main/assets/mechanical_consumables_ui.js','utf8');
 assert.ok(html.includes('<script>window.ZUKAIT_STOCK_UI_PREVIEW_ONLY=true;</script><script src="consumables_stock_ui.js'),
  'The main app must enable Stock preview mode before loading the Stock UI');
@@ -57,10 +59,14 @@ const ctx={
  me:{id:'M',role:'Manager'},
  state:{consumables:{
   materials:[{id:'m1',name:'2K Primer',unit:'Liter',active:true},
-             {id:'m2',name:'Water Paper 800',unit:'Piece',active:true}],
+             {id:'m2',name:'Water Paper 800',unit:'Piece',active:true},
+             {id:'m3',name:'Engine Oil',unit:'Liter',active:true,department:'Mechanical'},
+             {id:'m4',name:'Cleaning Solvent',unit:'Liter',active:true,department:'Both'}],
   brands:[{id:'b1',name:'CAPSI',active:true},{id:'b2',name:'MILACO',active:true}],
   prices:[{materialId:'m1',brandId:'b1',price:9.2},
-          {materialId:'m1',brandId:'b2',price:10.8}]
+          {materialId:'m1',brandId:'b2',price:10.8},
+          {materialId:'m3',brandId:'b1',price:5},
+          {materialId:'m4',brandId:'b1',price:2}]
  }},
  document,
  window:{
@@ -93,6 +99,7 @@ assert.match(markup(),/Paint Consumables/);
 assert.match(markup(),/Mechanical Consumables/);
 assert.match(markup(),/zs-department-grid/);
 assert.match(markup(),/Create New Item/,'Manager must be able to create materials directly from Stock menu');
+assert.match(markup(),/Materials &amp; Brands/,'Materials & Brands must be in Stock menu');
 ctx.window.zukStockSelectDepartment('Painting');
 assert.equal(current(),'home');
 assert.equal(cards(),5,'Five colored Paint Stock menu boxes');
@@ -120,6 +127,8 @@ assert.match(markup(),/2K Primer/);
 assert.match(markup(),/CAPSI/);
 assert.match(markup(),/MILACO/);
 assert.match(markup(),/Water Paper 800/);
+assert.match(markup(),/Cleaning Solvent/,'Shared item available in Paint');
+assert.doesNotMatch(markup(),/Engine Oil/,'Mechanical item must not be in Paint');
 assert.match(markup(),/Not assigned/);
 assert.match(markup(),/Not initialized/);
 assert.match(markup(),/Avg. Cost \/ Unit/);
@@ -203,6 +212,9 @@ assert.equal(cards(),5,'Mechanical gets its own five-card menu');
 assert.match(markup(),/Mechanical Consumables/);
 ctx.window.zukStockPreviewNavigate('balance');
 assert.match(markup(),/Mechanical Consumables · Stock Balance/);
+assert.match(markup(),/Engine Oil/,'Mechanical material visible in Mechanical');
+assert.match(markup(),/Cleaning Solvent/,'Shared material visible in Mechanical');
+assert.doesNotMatch(markup(),/2K Primer/,'Old unclassified Paint material excluded from Mechanical');
 assert.match(markup(),/NOT a verified department stock list/);
 ctx.window.zukStockPreviewNavigate('home');
 ctx.window.zukStockPreviewExit('consumables');
@@ -269,8 +281,12 @@ assert.match(markup(),/Clear test entries/);
 
 const newItemNavigation=[];
 ctx.window.consOpenMaster=scope=>newItemNavigation.push(scope);
+ctx.window.zukStockOpenMaterials();
+assert.deepEqual(newItemNavigation,['Painting'],'Materials & Brands must open from Paint Stock');
+ctx.window.openStockManagement();
+ctx.window.zukStockSelectDepartment('Painting');
 ctx.window.zukStockCreateItem();
-assert.deepEqual(newItemNavigation,['Painting'],'Stock create action should open Manager Master with department selected');
+assert.deepEqual(newItemNavigation,['Painting','Painting'],'Create New Item must preselect Paint');
 assert.equal(screen,null,'Creating item must close the full-screen Stock overlay first');
 assert.equal(calls.length,0,'All preview screens and disabled save operations must be network-free');
 assert.equal(modalOpened,0,'No popup must open while entering any Stock detail screen');
