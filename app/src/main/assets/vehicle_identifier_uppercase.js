@@ -14,9 +14,9 @@
   const isPlate = value => /(?:registration|reg|plate)(?:no|number)?$/.test(value) ||
     /(?:vehicle|car)(?:number|no)$/.test(value);
   const labelKind = value => {
-    const text = String(value || '').trim();
-    if (/^(?:enter\s+)?(?:vin|chassis)(?:\s*\/\s*(?:vin|chassis))?(?:\s*(?:no\.?|number))?(?:\s*[*:\/]|$)/i.test(text)) return 'vin';
-    if (/^(?:enter\s+)?(?:registration|reg(?:istration)?\s*(?:no\.?|number)?|(?:vehicle|license|licence)\s+plate(?:\s*(?:no\.?|number))?|plate(?:\s*(?:no\.?|number))?|vehicle\s+number)(?:\s*[*:\/]|$)/i.test(text)) return 'registration';
+    const text = String(value || '').replace(/\s+/g,' ').trim();
+    if (/^(?:enter\s+)?(?:vin(?:\s*\/\s*chassis)?|chassis(?:\s*\/\s*vin)?)(?:\s*(?:no\.?|number))?(?=\s*[*:\/(]|$)/i.test(text)) return 'vin';
+    if (/^(?:enter\s+)?(?:registration|reg|vehicle\s+registration|(?:vehicle|license|licence)\s+plate|plate|vehicle\s+number)(?:\s*(?:no\.?|number))?(?=\s*[*:\/(]|$)/i.test(text)) return 'registration';
     return '';
   };
 
