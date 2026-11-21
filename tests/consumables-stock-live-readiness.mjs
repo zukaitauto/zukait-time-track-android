@@ -88,6 +88,14 @@ assert.deepEqual(denied.requests.map(x=>x.operation),['STATUS'],
   'Disabled server must not receive LIST or WRITE');
 assert.match(denied.screen().innerHTML,/UI PREVIEW ONLY/);
 
+const urlBypass=makeFixture(()=>({ok:true,live:false,ready:false,writes:false,masterLink:false}));
+urlBypass.window.location.search='?stockPilot=1';
+await urlBypass.window.openStockManagement();
+assert.deepEqual(urlBypass.requests.map(x=>x.operation),['STATUS'],
+  'URL parameters must not bypass server activation checks');
+assert.match(urlBypass.screen().innerHTML,/UI PREVIEW ONLY/,
+  'Unapproved real app still shows preview even with stockPilot query flag');
+
 const noWrite=makeFixture(()=>({ok:true,live:true,ready:true,writes:false,masterLink:true}));
 await noWrite.window.openStockManagement();
 assert.deepEqual(noWrite.requests.map(x=>x.operation),['STATUS'],
