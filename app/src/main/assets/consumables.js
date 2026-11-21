@@ -8,6 +8,9 @@
   const TYPES={ISSUED:'issued',ADDITIONAL:'additional',ACTUAL:'actual'};
   const UNITS=['Liter','kg','Piece'];
   const CATEGORIES=['Paint','Consumable'];
+  const MATERIAL_DEPARTMENTS=['Painting','Mechanical','Both'];
+  // Older workshop materials have no department; never silently classify them.
+  const availableToPainting=m=>!m?.department||m.department==='Unassigned'||['Painting','Both'].includes(m.department);
   const UNIT_ALIASES={Litre:'Liter',litre:'Liter',liter:'Liter',KG:'kg',Kg:'kg',piece:'Piece',PIECE:'Piece'};
   const normalizeUnit=unit=>UNIT_ALIASES[String(unit||'').trim()]||String(unit||'').trim();
   const clone=v=>JSON.parse(JSON.stringify(v));
@@ -37,9 +40,15 @@
   function addMaterial(state,input,actor){
     assertRole(actor?.role,true); const c=ensureState(state);
     const name=String(input?.name||'').trim(); const unit=normalizeUnit(input?.unit); const category=CATEGORIES.includes(input?.category)?input.category:'Consumable';
+    const requested=String(input?.department||'').trim();
+    // Existing callers may leave older materials unassigned. The new Manager
+    // form requires an explicit selection; no implicit Painting default.
+    const department=requested||'Unassigned';
     if(!name)throw new Error('MATERIAL_NAME_REQUIRED'); if(!validUnit(unit))throw new Error('INVALID_UNIT');
+    if(requested&&!MATERIAL_DEPARTMENTS.includes(requested))throw new Error('INVALID_MATERIAL_DEPARTMENT');
+    if(category==='Paint'&&!['Painting','Unassigned'].includes(department))throw new Error('PAINT_ONLY_MATERIAL');
     if(c.materials.some(x=>x.active!==false&&x.name.toLowerCase()===name.toLowerCase()))throw new Error('MATERIAL_DUPLICATE');
-    const row={id:uid('mat'),name,unit,category,active:true,createdAt:Date.now(),createdBy:actor.id};
+    const row={id:uid('mat'),name,unit,category,department,active:true,createdAt:Date.now(),createdBy:actor.id};
     c.materials.push(row); return clone(row);
   }
   function addBrand(state,input,actor){
@@ -85,6 +94,7 @@
     return lines.map((l,i)=>{
       const m=c.materials.find(x=>x.id===l.materialId&&x.active!==false),b=c.brands.find(x=>x.id===l.brandId&&x.active!==false),q=num(l.quantity);
       if(!m)throw new Error('MATERIAL_NOT_FOUND'); if(!b)throw new Error('BRAND_NOT_FOUND'); if(!(q>0))throw new Error('INVALID_QUANTITY');
+      if(!availableToPainting(m))throw new Error('MATERIAL_DEPARTMENT_FORBIDDEN');
       return {no:i+1,materialId:m.id,brandId:b.id,unit:m.unit,quantity:q};
     });
   }
@@ -117,6 +127,7 @@
     const wanted=Array.isArray(input.lines)&&input.lines.length?input.lines:allowed;
     const lines=wanted.map((l,i)=>{
       const a=allowed.find(x=>x.materialId===l.materialId&&x.brandId===l.brandId),m=c.materials.find(x=>x.id===l.materialId&&x.active!==false),b=c.brands.find(x=>x.id===l.brandId&&x.active!==false); if(!m)throw new Error('MATERIAL_NOT_FOUND'); if(!b)throw new Error('BRAND_NOT_FOUND');
+      if(!availableToPainting(m))throw new Error('MATERIAL_DEPARTMENT_FORBIDDEN');
       const q=Number(l.quantity); if(!Number.isFinite(q)||q<0)throw new Error('INVALID_ACTUAL_QUANTITY');
       const p=priceAt(state,l.materialId,l.brandId,actualAt); if(!p)throw new Error('PRICE_NOT_FOUND');
       return {no:i+1,materialId:l.materialId,brandId:l.brandId,unit:m.unit,issuedQuantity:Number(a?.quantity||0),actualQuantity:q,actualOnly:!a,overIssued:!!a&&q>a.quantity+1e-9,priceId:p.id,unitPriceSnapshot:p.pricePerUnit,lineCost:money(q*p.pricePerUnit)};
