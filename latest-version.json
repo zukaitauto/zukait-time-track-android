@@ -1,9 +1,9 @@
 {
-  "versionCode": 370,
-  "versionName": "V407",
+  "versionCode": 372,
+  "versionName": "V409",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "35c7bff7a4c58752843bbd00fcdb1a9732c01fe1",
-  "apkSha256": "8775273773c71052e58d5f5a18684e4011e919a8f6ade77be35a913a6cc475a5",
-  "releaseTag": "release-V407-architecture-v2"
+  "sourceCommit": "4a534766fd870baabb9d8d7731ed2081e956390c",
+  "apkSha256": "64042db39b9f5b32e5b7086bd888e0cd87975b917c4c867374a63896c18e4380",
+  "releaseTag": "release-V409-architecture-v2"
 }
