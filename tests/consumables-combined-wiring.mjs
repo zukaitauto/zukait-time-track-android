@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const text=p=>readFileSync(p,'utf8');
+const cloud=text('app/src/main/assets/cloud_sync.js');
+const menu=text('app/src/main/assets/consumables_ui.js');
+const html=text('app/src/main/assets/offline_test.html');
+const stock=text('app/src/main/assets/consumables_stock_ui.js');
+const mechanical=text('app/src/main/assets/mechanical_consumables_ui.js');
+const supervisor=text('app/src/main/assets/mechanical_supervisor.js');
+const backend=text('supabase/functions/workshop-api/extensions/consumables_stock_api.js');
+assert.match(cloud,/async function stockRequest\(command\)/,'shared Stock API must remain exposed');
+assert.match(cloud,/resetForSession,init,pull,push,stockRequest,managerJobEdit/,'Stock API must remain reachable');
+assert.match(cloud,/cloudQueueStockMasterLink/,'post-save Master-to-Stock queue must survive');
+assert.match(menu,/deptCard\('Stock','📦',true,'openStockManagement\(\)'\)/,'Stock menu preserved');
+assert.match(menu,/deptCard\('Mechanical Consumables','⚙️',true,'openMechanicalConsumables\(\)'\)/,'Mechanical menu preserved');
+assert.match(menu,/cloudQueueStockMasterLink/,'Master updates still queue on confirmed save');
+const a=html.indexOf('consumables_stock_ui.js'),b=html.indexOf('mechanical_consumables_ui.js');
+assert.ok(a>0&&b>a,'Both Stock and Mechanical UI scripts must load after shared Master');
+assert.match(stock,/window\.openStockManagement/);
+assert.match(mechanical,/window\.openMechanicalConsumables/);
+assert.match(supervisor,/mechanical_consumables_host\.js/);
+assert.match(supervisor,/mechanical_consumables_returns_host\.js/);
+assert.match(supervisor,/mechanical_consumables_totals_host\.js/);
+for(const operation of ['MECHANICAL_ISSUE','MECHANICAL_RETURN','MECHANICAL_TOTALS','MASTER_LINK']){
+ assert.ok(backend.includes(operation),'Missing combined server operation '+operation);
+}
+const api=text('supabase/functions/workshop-api/index.ts');
+assert.match(api,/ZUKAIT_MECHANICAL_STOCK_ENABLED/);
+assert.match(api,/ZUKAIT_STOCK_MASTER_LINK_ENABLED/);
+assert.doesNotMatch(html,/ZUKAIT_MECHANICAL_STOCK_ENABLED\s*=\s*true/,'do not enable stock in test app');
+console.log('Combined Stock+Mechanical wiring PASS: single shared Master, both menus/scripts, dedicated scoped backend, flags off');

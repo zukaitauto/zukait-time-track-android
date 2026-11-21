@@ -1,0 +1,65 @@
+name: Mechanical Consumables menu acceptance
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/open-mechanical-consumables-20261120
+    paths:
+      - 'app/src/main/assets/mechanical_consumables_ui.js'
+      - 'app/src/main/assets/consumables_ui.js'
+      - 'app/src/main/assets/offline_test.html'
+      - 'tests/mechanical-consumables-open.mjs'
+      - 'tests/mechanical-consumables-issue.mjs'
+      - 'tests/mechanical-consumables-host.mjs'
+      - 'tests/mechanical-consumables-returns-host.mjs'
+      - 'tests/mechanical-consumables-totals-host.mjs'
+      - 'app/src/main/assets/mechanical_consumables_totals_host.js'
+      - 'app/src/main/assets/mechanical_consumables_returns_host.js'
+      - 'tests/mechanical-consumables-dashboard.mjs'
+      - 'app/src/main/assets/mechanical_consumables_host.js'
+      - 'app/src/main/assets/mechanical_workspace.js'
+      - 'app/src/main/assets/mechanical_supervisor.js'
+      - 'tests/mechanical-consumables-master.mjs'
+      - 'tests/mechanical-consumables-master-sync.mjs'
+      - 'app/src/main/assets/cloud_sync.js'
+      - '.github/workflows/mechanical-consumables-menu.yml'
+  pull_request:
+    branches: [architecture-v2]
+jobs:
+  mechanical-consumables:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install locked test dependencies
+        run: npm ci --ignore-scripts
+      - name: Parse navigation and screens
+        run: |
+          node --check app/src/main/assets/mechanical_consumables_ui.js
+          node --check app/src/main/assets/consumables_ui.js
+          node --check app/src/main/assets/mechanical_consumables_host.js
+          node --check app/src/main/assets/mechanical_supervisor.js
+      - name: Mechanical Consumables tile and five screens
+        run: node tests/mechanical-consumables-open.mjs
+      - name: Simple final issue with safe retry
+        run: node tests/mechanical-consumables-issue.mjs
+      - name: Dedicated Mechanical Supervisor host, catalog and retry tests
+        run: node tests/mechanical-consumables-host.mjs
+      - name: Dedicated Return Materials screen, original issue line and retry
+        run: node tests/mechanical-consumables-returns-host.mjs
+      - name: Read-only Mechanical Job Card consumables net cost
+        run: node tests/mechanical-consumables-totals-host.mjs
+      - name: Dedicated Mechanical dashboard card routing
+        run: node tests/mechanical-consumables-dashboard.mjs
+      - name: Shared Material and Brand creation with Manager safeguards
+        run: node tests/mechanical-consumables-master.mjs
+      - name: Saved-Master stock link queue and retry safety
+        run: node tests/mechanical-consumables-master-sync.mjs
+      - name: Existing Painting cost engine remains intact
+        run: node tests/consumables-smoke.mjs
+      - name: Existing Painting UI workflow remains intact
+        run: node tests/consumables-ui.mjs

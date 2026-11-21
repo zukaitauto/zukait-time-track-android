@@ -15,7 +15,52 @@ async function documentView(input){if(window.ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED
 async function reportView(checklistId){if(window.ZUKAIT_MECHANICAL_REPORTS_ENABLED!==true)return;const module=await import('./mechanical_report_view.js');return mount('./mechanical_report_view.js','mountMechanicalReport',{checklistId,...output,spreadsheet:async report=>{await import('./accountant_exports.js');return module.mechanicalReportSpreadsheet(report,window.zukaitAccountantExports.spreadsheet)}})}
 async function signatureView(input){if(window.ZUKAIT_MECHANICAL_SIGNATURES_ENABLED!==true)return;let deviceId=localStorage.getItem('zukait_mechanical_device_v1');if(!deviceId){deviceId=crypto.randomUUID();localStorage.setItem('zukait_mechanical_device_v1',deviceId)}return mount('./mechanical_signature_capture.js','mountMechanicalSignature',{...input,deviceId})}
 async function deliveryView(jobCard){if(window.ZUKAIT_MECHANICAL_DELIVERY_ENABLED!==true)return;const probe=await api({action:'mechanical_delivery_probe',jobCard});if(!probe.registered)throw Error('Mechanical checklist required');return mount('./mechanical_delivery.js','mountMechanicalDelivery',{checklistId:probe.checklistId,onClose:()=>workspace(),onDone:()=>workspace()})}
+async function consumablesView(){
+ // Dedicated Mechanical-only screen. Never import Painting / full-state cloud sync.
+ return mount('./mechanical_consumables_host.js','mountMechanicalConsumablesHost',{
+   onBack:()=>workspace(),
+   onReturn:()=>returnMaterialsView(),
+   onTotals:()=>consumablesTotalsView(),
+   stockEnabled:()=>window.ZUKAIT_MECHANICAL_STOCK_ENABLED===true,
+   stockRequest:body=>{
+     if(!['CATALOG','WRITE'].includes(body?.operation)||
+       body.operation==='WRITE'&&body.command!=='MECHANICAL_ISSUE')throw Error('Mechanical stock action forbidden');
+     if(window.ZUKAIT_MECHANICAL_STOCK_ENABLED!==true)throw Error('Mechanical stock is not activated');
+     return request('workshop-api',{action:'consumables_stock',...body});
+   }
+ });
+}
+async function returnMaterialsView(){
+ // Returns only original issued lines; no Painting reservations or state sync.
+ return mount('./mechanical_consumables_returns_host.js','mountMechanicalConsumablesReturns',{
+   onBack:()=>consumablesView(),
+   stockEnabled:()=>window.ZUKAIT_MECHANICAL_STOCK_ENABLED===true,
+   stockRequest:body=>{
+     if(!['MECHANICAL_RETURNABLE','WRITE'].includes(body?.operation)||
+         body.operation==='WRITE'&&body.command!=='MECHANICAL_RETURN')
+        throw Error('Mechanical return action forbidden');
+     if(window.ZUKAIT_MECHANICAL_STOCK_ENABLED!==true)
+        throw Error('Mechanical stock is not activated');
+     return request('workshop-api',{action:'consumables_stock',...body});
+   }
+ });
+}
+async function consumablesTotalsView(){
+ // Mechanical-only, read-only, indexed JC cost aggregation.
+ return mount('./mechanical_consumables_totals_host.js','mountMechanicalConsumablesTotals',{
+   onBack:()=>consumablesView(),
+   stockEnabled:()=>window.ZUKAIT_MECHANICAL_STOCK_ENABLED===true,
+   stockRequest:body=>{
+     if(body?.operation!=='MECHANICAL_TOTALS')
+       throw Error('Mechanical cost read action forbidden');
+     if(window.ZUKAIT_MECHANICAL_STOCK_ENABLED!==true)
+       throw Error('Mechanical stock is not activated');
+     return request('workshop-api',{action:'consumables_stock',...body});
+   }
+ });
+}
 async function openSection(section,extras={}){
+ if(section==='consumables')return consumablesView();
  if(section==='time-management')return mount('./mechanical_time_management.js','mountMechanicalTimeManagement',{onBack:()=>workspace()});
  if(['create-checklist','checklists','linked-checklists'].includes(section))return workspace(null,section);
  return mount('./mechanical_sections.js','mountMechanicalSection',{...extras,section,onBack:()=>extras.prejobChecklist?workspace(null,'checklists'):workspace(),onCreateJobFromEstimate:prefill=>openSection('create-job',{estimatePrefill:prefill}),openChecklist:id=>workspace(id,'checklists'),createChecklist:job=>workspace(null,'linked-checklists',job)});
@@ -25,7 +70,7 @@ async function inspectionView(checklistId,jobCard){
   checklistId,jobCard,onBack:()=>workspace(checklistId,'checklists')
  });
 }
-async function workspace(checklistId,section=null,jobCard=''){return mount('./mechanical_workspace.js?v=20261111-modern-mechanical-dashboard','mountMechanicalWorkspace',{checklistId,section,jobCard,onClose:()=>workspace(),openSection,openTimeManagement:()=>openSection('time-management'),openInspection:inspectionView,openDocument:window.ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED===true?documentView:null,openSignature:window.ZUKAIT_MECHANICAL_SIGNATURES_ENABLED===true?signatureView:null,openReport:window.ZUKAIT_MECHANICAL_REPORTS_ENABLED===true?reportView:null,openTracking:window.ZUKAIT_MECHANICAL_TRACKING_ENABLED===true?checklistId=>mount('./mechanical_tracking.js','mountMechanicalTracking',{checklistId}):null,openDelivery:window.ZUKAIT_MECHANICAL_DELIVERY_ENABLED===true?deliveryView:null})}
+async function workspace(checklistId,section=null,jobCard=''){return mount('./mechanical_workspace.js?v=20261111-modern-mechanical-dashboard','mountMechanicalWorkspace',{checklistId,section,jobCard,onClose:()=>workspace(),openSection,openConsumables:consumablesView,openTimeManagement:()=>openSection('time-management'),openInspection:inspectionView,openDocument:window.ZUKAIT_MECHANICAL_DOCUMENTS_ENABLED===true?documentView:null,openSignature:window.ZUKAIT_MECHANICAL_SIGNATURES_ENABLED===true?signatureView:null,openReport:window.ZUKAIT_MECHANICAL_REPORTS_ENABLED===true?reportView:null,openTracking:window.ZUKAIT_MECHANICAL_TRACKING_ENABLED===true?checklistId=>mount('./mechanical_tracking.js','mountMechanicalTracking',{checklistId}):null,openDelivery:window.ZUKAIT_MECHANICAL_DELIVERY_ENABLED===true?deliveryView:null})}
 $('mechanical-home').onclick=()=>workspace().catch(e=>$('mechanical-status').textContent=e.message);
 $('mechanical-logout').onclick=()=>{invalidate();if(window.zukaitSessionPrivacy)return window.zukaitSessionPrivacy.signOut();localStorage.removeItem(sessionKey);try{window.AndroidBridge?.clearSecureSessionToken?.()}catch{}location.replace('offline_test.html')};
 window.addEventListener('storage',e=>{if(e.key===sessionKey&&verified){try{token()}catch{}}});

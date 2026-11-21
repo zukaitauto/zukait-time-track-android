@@ -1,0 +1,69 @@
+name: Consumables stock safety tests
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/consumables-stock-core-20261120]
+    paths:
+      - 'app/src/main/assets/consumables_stock_core.js'
+      - 'app/src/main/assets/consumables_stock_ui.js'
+      - 'app/src/main/assets/consumables_ui.js'
+      - 'app/src/main/assets/cloud_sync.js'
+      - 'supabase/staged/CONSUMABLES_STOCK_*.sql'
+      - 'supabase/functions/workshop-api/**'
+      - 'tests/consumables-stock-*.mjs'
+      - 'scripts/preflight-mechanical-stock-backup-readonly.ps1'
+      - 'tests/stock-backup-preflight-fixture.ps1'
+      - '.github/workflows/consumables-stock-core.yml'
+  pull_request:
+    branches: [architecture-v2]
+jobs:
+  stock-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install locked dependencies (isolated CI only)
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Validate stock JavaScript syntax
+        run: |
+          node --check app/src/main/assets/consumables_stock_core.js
+          node --check app/src/main/assets/consumables_stock_ui.js
+          node --check app/src/main/assets/consumables_ui.js
+          node --check app/src/main/assets/cloud_sync.js
+      - name: Transaction core behavior
+        run: node tests/consumables-stock-core.mjs
+      - name: Feature-flagged API boundaries
+        run: node tests/consumables-stock-api.mjs
+      - name: Combined Stock and Mechanical menu, sync and API wiring
+        run: node tests/consumables-combined-wiring.mjs
+      - name: Safe main-app Stock preview using existing staff login
+        run: node tests/consumables-main-app-preview.mjs
+      - name: Combined release roles and default-off flags
+        run: node tests/consumables-combined-release-role-flags.mjs
+      - name: Direct PostgreSQL ACL, RLS and service-role acceptance
+        run: node tests/consumables-stock-db-roles.mjs
+      - name: Offline PC backup integrity and incomplete-history safety preflight
+        run: pwsh -NoProfile -File tests/stock-backup-preflight-fixture.ps1
+      - name: Clickable stock menu and bounded UI reads
+        run: node tests/consumables-stock-ui.mjs
+      - name: Manager physical opening confirmation and blank count controls
+        run: node tests/consumables-stock-opening-guard.mjs
+      - name: Manager-only one-time legacy review UI
+        run: node tests/consumables-stock-legacy-ui.mjs
+      - name: Isolated PostgreSQL stock lifecycle
+        run: node tests/consumables-stock-sql.mjs
+      - name: Atomic Mechanical final issue and retry safety
+        run: node tests/consumables-stock-mechanical-sql.mjs
+      - name: Audited Mechanical return, original locked cost and retries
+        run: node tests/consumables-stock-mechanical-return-sql.mjs
+      - name: Opening stock, issue/return and Mechanical JC net cost reconciliation
+        run: node tests/consumables-stock-mechanical-totals-sql.mjs
+      - name: Material Master to compact Stock catalog integration
+        run: node tests/consumables-stock-master-link-sql.mjs
+      - name: One-time legacy catalog preview and manual classification
+        run: node tests/consumables-stock-legacy-preview-sql.mjs
