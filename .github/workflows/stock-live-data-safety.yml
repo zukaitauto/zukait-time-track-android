@@ -9,6 +9,7 @@ on:
       - 'supabase/staged/CONSUMABLES_STOCK_*.sql'
       - 'supabase/functions/workshop-api/extensions/consumables_stock_api.js'
       - 'tests/consumables-stock-*.mjs'
+      - 'package.json'
       - 'tests/consumables-main-app-preview.mjs'
       - 'scripts/prepare-consumables-stock-android-pilot.mjs'
       - '.github/workflows/stock-live-data-safety.yml'
