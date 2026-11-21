@@ -58,8 +58,8 @@ try {
   'programmatically filled identifiers normalize before a Save click');
 
  const box=get('dynamic');
- box.innerHTML='<form id="reception"><label>Registration Number *<input id="unlabeledRegistration" value="51748-r"></label>'+
-   '<label>VIN / Chassis<input id="unlabeledVin" value="abcde12345"></label>'+
+ box.innerHTML='<form id="reception"><label>Registration Number *<input id="genericFieldA" value="51748-r"></label>'+
+   '<label>VIN / Chassis<input id="genericFieldB" value="abcde12345"></label>'+
    '<label>Make<input name="make" value="toyota"></label>'+
    '<label>Plate No.<input name="plate_no" value="3456-k"></label>'+
    '<label>VIN<input name="vin" value="jt2bk12u160023342"></label>'+
@@ -69,8 +69,8 @@ try {
  const reception=get('reception');
  assert.equal(reception.elements.namedItem('plate_no').value,'3456-K');
  assert.equal(reception.elements.namedItem('vin').value,'JT2BK12U160023342');
- assert.equal(get('unlabeledRegistration').value,'51748-R','visible label-only fallback');
- assert.equal(get('unlabeledVin').value,'ABCDE12345');
+ assert.equal(get('genericFieldA').value,'51748-R','visible label-only fallback');
+ assert.equal(get('genericFieldB').value,'ABCDE12345');
  assert.equal(get('search').value,'toyota','generic search must remain unchanged');
 
  reception.elements.namedItem('plate_no').value='52525-p';
