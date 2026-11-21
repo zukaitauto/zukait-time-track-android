@@ -8,8 +8,15 @@ let view={page:'balance',items:[],history:[],itemsHasMore:false,historyHasMore:f
   selected:'',mode:'total',pending:null,legacyItems:[],legacyPage:0,legacyHasMore:false,report:null};
 const allowed=()=>typeof me!=='undefined'&&['Manager','Supervisor'].includes(me?.role);
 const manager=()=>typeof me!=='undefined'&&me?.role==='Manager';
-// Main-app visual acceptance: hard block every Stock API call until a separate controlled pilot.
+// The normal app can ask the authenticated server whether a real-data ledger
+// is installed and writable. The source preview flag and URL are NOT authority.
+// Never cache readiness across changed staff sessions.
+let liveStockSession='';
+const currentStockSession=()=>String(window.zukaitAuth?.getToken?.()||'');
+const liveStockReady=()=>!!liveStockSession&&
+  liveStockSession===currentStockSession()&&currentStockSession().length>0;
 const previewOnly=()=>window.ZUKAIT_STOCK_UI_PREVIEW_ONLY===true&&
+  !liveStockReady()&&
   (!window.location?.search||new URLSearchParams(window.location.search).get('stockPilot')!=='1');
 const api=x=>previewOnly()?Promise.reject(Error('Stock preview: transactions not enabled')):
   window.zukaitCloud?.stockRequest?.(x)||Promise.reject(Error('Stock server connection not ready'));
@@ -708,8 +715,21 @@ window.zukStockUpdateBrands=()=>{
  const material=document.getElementById('zs-material'),brand=document.getElementById('zs-brand');
  if(material&&brand)brand.innerHTML=stockBrandOptions(material.value,brand.value);
 };
-window.openStockManagement=(scope='')=>{
+window.openStockManagement=async(scope='')=>{
  if(!allowed()||view.loading||view.busy)return;
+ // Exactly one small, authenticated STATUS request when the user opens Stock.
+ // Fail closed for old servers, missing schema, disabled flags, offline access
+ // or an expired session. Real inventory writes still require server role checks.
+ if(previewOnly()&&window.ZUKAIT_STOCK_LIVE_CHECK_ON_OPEN===true&&
+    currentStockSession()){
+   const session=currentStockSession();
+   try{
+     const status=await window.zukaitCloud?.stockRequest?.({operation:'STATUS'});
+     liveStockSession=status?.ok===true&&status.live===true&&
+       status.ready===true&&status.writes===true&&status.masterLink===true&&
+       session===currentStockSession()?session:'';
+   }catch(_){liveStockSession='';}
+ }
  if(previewOnly()){preview.page='home';window.closeModal?.();showPreview();return}
  department=['Painting','Mechanical'].includes(scope)?scope:'';
  view.items=[];view.history=[];view.report=null;view.selected='';view.itemsHasMore=false;view.historyHasMore=false;
