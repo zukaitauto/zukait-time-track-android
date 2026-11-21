@@ -2,24 +2,24 @@
   "versionName": "V406",
   "versionCode": 369,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
-  "ownerPublicationRequested": false,
-  "ownerRequestedImmediateRelease": false,
+  "approvedForStaff": true,
+  "ownerPublicationRequested": true,
+  "ownerRequestedImmediateRelease": true,
   "ownerRequestedProceed": true,
-  "releaseHeldByOwner": true,
+  "releaseHeldByOwner": false,
   "productionBackendChanges": false,
   "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "backupDeferredByOwner": false,
-  "sourceCommit": null,
-  "approvedAt": null,
-  "publishNonce": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "authorization": "Owner requested V406 preparation. NOT approved for publication: candidate held pending exact-source tests, signed acceptance, review and any fresh safety deferrals.",
-  "reason": "Unapproved V406 candidate: five-tab Stock Management visual preview, Manager/Supervisor only, no stock ledger, no live stock transactions, no Mechanical issuing/returns, no backend change. V405 remains published.",
+  "backupDeferredByOwner": true,
+  "sourceCommit": "febd3c6c9deb023099bc5ca6fadea1f728e946ae",
+  "approvedAt": "2026-11-21T08:12:25.523Z",
+  "publishNonce": "febd3c6c9deb023099bc5ca6fadea1f728e946ae",
+  "signedAcceptanceRun": 44883432830,
+  "verificationRun": 44883432858,
+  "authorization": "Owner requested proceeding with V406 stock preview correction after V405 UI-only release. V405's explicitly owner-deferred physical/restore acceptance is carried forward ONLY for this UI-only correction; these checks remain NOT_RUN, not PASSED. No backend, data, or stock write feature activation.",
+  "reason": "V406 owner-authorized UI-only correction to V405: approved five-tab Consumables Stock Preview, material/brand filters, Add Stock calculation preview, Job Card suggestion/return visual previews, no stock transactions or writes. Pinned exact-source Reception, signed APK, Android, standard APK, Mechanical/Accountant contracts, outage safety, Accountant CI passed. V405 retained as rollback. Physical device and fresh restore NOT_RUN; no database change.",
   "previousPublishedRelease": {
     "versionName": "V405",
     "versionCode": 368,
@@ -32,45 +32,45 @@
     "freshBackupRestore": "NOT_RUN"
   },
   "verification": {
-    "sourceCommit": null,
+    "sourceCommit": "febd3c6c9deb023099bc5ca6fadea1f728e946ae",
     "checks": {
       "signedCandidate": {
-        "run": null,
-        "status": "PENDING"
+        "run": 44883432830,
+        "status": "PASS"
       },
       "reception": {
-        "run": null,
-        "status": "PENDING"
+        "run": 44883432858,
+        "status": "PASS"
       },
       "androidArchitecture": {
-        "run": null,
-        "status": "PENDING"
+        "run": 44883432806,
+        "status": "PASS"
       },
       "standardApk": {
-        "run": null,
-        "status": "PENDING"
+        "run": 44883432854,
+        "status": "PASS"
       },
       "mechanicalContracts": {
-        "run": null,
-        "status": "PENDING"
+        "run": 44883432792,
+        "status": "PASS"
       },
       "connection": {
-        "run": null,
-        "status": "PENDING"
+        "run": 44883432851,
+        "status": "PASS"
+      },
+      "accountant": {
+        "run": 44883432794,
+        "status": "PASS"
       },
       "stockPreview": {
-        "run": null,
-        "status": "PENDING"
+        "run": 44882901580,
+        "status": "PR_PASS_NON_EXACT_SOURCE"
       },
       "syncTraffic": {
         "run": null,
         "status": "NOT_RUN_ON_EXACT_SOURCE"
       },
       "mechanicalPhone": {
-        "run": null,
-        "status": "NOT_RUN_ON_EXACT_SOURCE"
-      },
-      "accountant": {
         "run": null,
         "status": "NOT_RUN_ON_EXACT_SOURCE"
       },
