@@ -271,3 +271,20 @@ ctx.consLoadActual();
 assert.match(element('consActualRows').innerHTML,/Manager must review and re-finalize/,'Supervisor cannot finalize Manager-reopened actuals');
 state.consumables=pendingSnapshot;state.assign=assignSnapshot;
 console.log('PASS reopened actual pending route shows manager finalization, not a duplicate or wrong locked status');
+
+if(!state.consumables.materials.some(x=>x.id===hm.id))state.consumables.materials.push(hm);
+if(!state.consumables.brands.some(x=>x.id===hb.id))state.consumables.brands.push(hb);
+state.consumables.prices.push({id:'mechanical-picker-price',materialId:hm.id,brandId:hb.id,pricePerUnit:1});
+ctx.zukaitStockPickerEnabled=()=>true;
+ctx.zukaitStockPickerPairs=async department=>new Set([JSON.stringify(
+  department==='Painting'?[m.id,b.id]:[hm.id,hb.id]
+)]);
+fill({consMaterialSearch:''});
+await ctx.consSearchMaterialBrand(true);
+assert.match(element('consMaterialResults').innerHTML,/Primer/);
+assert.doesNotMatch(element('consMaterialResults').innerHTML,/Legacy Reducer/);
+vm.runInContext(fs.readFileSync('app/src/main/assets/mechanical_consumables_ui.js','utf8'),ctx);
+await ctx.openMechanicalConsumablesSection('search');
+assert.match(element('mcConsRows').innerHTML,/Legacy Reducer/);
+assert.doesNotMatch(element('mcConsRows').innerHTML,/Primer/);
+console.log('Job Card department pickers exclude the other department');
