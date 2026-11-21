@@ -10,6 +10,12 @@ on:
       - 'app/src/main/assets/offline_test.html'
       - 'tests/consumables-main-app-preview.mjs'
       - '.github/workflows/main-app-consumables-preview.yml'
+  push:
+    branches: [architecture-v2]
+    paths:
+      - 'app/src/main/assets/consumables_stock_ui.js'
+      - 'tests/consumables-main-app-preview.mjs'
+      - '.github/workflows/main-app-consumables-preview.yml'
   workflow_dispatch:
 
 permissions:
