@@ -27,7 +27,7 @@ const context={
   window,URLSearchParams,navigator:{onLine:true},
   document:{getElementById:id=>fields[id]},
   me:{id:'manager',role:'Manager'},
-  state:{consumables:{materials:[{id:'oil',name:'Oil'}],brands:[{id:'brand',name:'Brand'}]}}
+  state:{consumables:{materials:[{id:'oil',name:'Oil',department:'Both'}],brands:[{id:'brand',name:'Brand'}]}}
 };
 runInNewContext(readFileSync('app/src/main/assets/consumables_stock_ui.js','utf8'),context);
 await window.openStockManagement();
