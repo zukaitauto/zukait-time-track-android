@@ -654,22 +654,42 @@ function renderStockScreen(markup,page){
  screen.scrollTop=0;
  screen.focus({preventScroll:true});
 }
+function departmentTitle(){
+ return department==='Painting'?'Paint Consumables':
+   department==='Mechanical'?'Mechanical Consumables':'Consumables Stock Management';
+}
+// Separate department entry points. A Both item shares one physical stock
+// ledger balance; unassigned legacy materials are never auto-classified.
+function departmentMenu(){
+ return '<div class="zs-home-hero"><h3>Consumables Stock Management</h3>'+
+  '<p class="zs-preview-note">Choose a department to open its stock screens.</p></div>'+
+  '<div class="zs-department-grid" aria-label="Stock departments">'+
+  '<button type="button" class="zs-department-card painting" data-department="Painting" onclick="zukStockSelectDepartment(this.dataset.department)">'+
+  '<span aria-hidden="true">🎨</span><strong>Paint Consumables</strong><small>Painting materials and shared stock</small></button>'+
+  '<button type="button" class="zs-department-card mechanical" data-department="Mechanical" onclick="zukStockSelectDepartment(this.dataset.department)">'+
+  '<span aria-hidden="true">⚙️</span><strong>Mechanical Consumables</strong><small>Mechanical materials and shared stock</small></button></div>';
+}
 function showLiveHome(){
  if(!allowed()||!liveStockReady())return;
- const tiles=previewHomeTiles.map(t=>
+ const choosing=!department;
+ const tiles=choosing?'':previewHomeTiles.map(t=>
   '<button type="button" class="zs-home-tile '+t[4]+'" onclick="zukStockLiveNavigate(\''+t[0]+'\')">'+
   '<span class="zs-home-icon" aria-hidden="true">'+t[1]+'</span>'+
   '<span class="zs-home-info"><strong>'+t[2]+'</strong><small>'+t[3]+'</small></span>'+
   '<span class="zs-home-chevron" aria-hidden="true">›</span></button>').join('');
+ const content=choosing?departmentMenu():
+  '<div class="zs-home-hero"><h3>'+esc(departmentTitle())+'</h3>'+
+  '<p class="zs-preview-note">Live department-filtered inventory. Shared materials use one physical balance.</p></div>'+
+  '<div class="zs-home-grid" aria-label="'+esc(departmentTitle())+' Stock Management menu">'+tiles+'</div>';
  const markup=css+previewCss+previewHomeCss+
   '<section class="zs zs-preview" data-stock-view="home">'+
   '<header class="zs-screen-toolbar">'+
-  '<button type="button" class="zs-ghost" onclick="zukStockPreviewExit(\'consumables\')">← Consumables</button>'+
+  (choosing?
+    '<button type="button" class="zs-ghost" onclick="zukStockPreviewExit(\'consumables\')">← Consumables</button>':
+    '<button type="button" class="zs-ghost" onclick="zukStockResetDepartment()">← Departments</button>')+
   '<strong class="zs-screen-brand">▣ ZUKAIT · STOCK</strong>'+
   '<button type="button" class="zs-ghost" onclick="zukStockPreviewExit(\'dashboard\')">✕ Close</button></header>'+
-  '<div class="zs-home-hero"><h3>Consumables Stock Management</h3>'+
-  '<p class="zs-preview-note">Verified live inventory. Select a card to open its detail screen.</p></div>'+
-  '<div class="zs-home-grid" aria-label="Stock Management menu">'+tiles+'</div></section>';
+  content+'</section>';
  renderStockScreen(markup,'home');
 }
 window.zukStockLiveHome=()=>showLiveHome();
@@ -678,8 +698,10 @@ window.zukStockLiveNavigate=page=>{
  return load(page,true);
 };
 function previewHome(){
- return trialControls()+'<div class="zs-home-hero"><h3>Consumables Stock Management</h3><p class="zs-preview-note">Select an option to open its detail screen. No stock data is displayed on this menu.</p></div>'+
-  '<div class="zs-home-grid" aria-label="Stock Management menu">'+previewHomeTiles.map(t=>
+ if(!department)return departmentMenu();
+ return trialControls()+'<div class="zs-home-hero"><h3>'+esc(departmentTitle())+'</h3>'+
+  '<p class="zs-preview-note">Choose a stock function. Saved master materials are not yet verified department stock.</p></div>'+
+  '<div class="zs-home-grid" aria-label="'+esc(departmentTitle())+' Stock Management menu">'+previewHomeTiles.map(t=>
     '<button type="button" class="zs-home-tile '+t[4]+'" onclick="zukStockPreviewNavigate(\''+t[0]+'\')">'+
     '<span class="zs-home-icon" aria-hidden="true">'+t[1]+'</span>'+
     '<span class="zs-home-info"><strong>'+t[2]+'</strong><small>'+t[3]+'</small></span>'+
