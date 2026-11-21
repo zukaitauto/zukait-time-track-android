@@ -45,6 +45,9 @@ try {
   edit(`${assets}/offline_test.html`, [
     [/<head>/gi, `<head>\n<meta http-equiv="Content-Security-Policy" content="connect-src 'self' ${origin}; form-action 'self'">`]
   ]);
+  edit(`${assets}/offline_test.html`, [
+    ['window.ZUKAIT_STOCK_UI_PREVIEW_ONLY=true;', 'window.ZUKAIT_STOCK_UI_PREVIEW_ONLY=true;window.ZUKAIT_STOCK_ISOLATED_PILOT=true;']
+  ]);
   edit('app/build.gradle', [
     ["applicationId 'com.zukait.timetrack'", "applicationId 'com.zukait.timetrack.stockpilot'"]
   ]);
