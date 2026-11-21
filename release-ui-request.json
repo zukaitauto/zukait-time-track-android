@@ -18,5 +18,11 @@
     "versionCode": 370,
     "releaseTag": "release-V407-architecture-v2",
     "sourceCommit": "35c7bff7a4c58752843bbd00fcdb1a9732c01fe1"
-  }
+  },
+  "sourceCommit": "bdb1497437efe0ec4ccffada9cde5953af44e67e",
+  "approvedAt": null,
+  "publishNonce": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "backupDeferredByOwner": false
 }
