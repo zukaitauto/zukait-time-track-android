@@ -70,5 +70,7 @@ assert.equal(calls.at(-1).department,'Painting');
 await window.zukaitStockPickerPairs('Mechanical');
 assert.equal(calls.at(-1).department,'Mechanical');
 window.location.search='';
-assert.equal(await window.zukaitStockPickerPairs('Painting'),null);
+assert.ok((await window.zukaitStockPickerPairs('Painting'))
+  .has(JSON.stringify(['oil','brand'])),
+  'Isolated QA opt-in is tied to the packaged build flag, not a URL parameter');
 console.log('Controlled stock UI: all five screens, stock math, report totals and stock commands passed');
