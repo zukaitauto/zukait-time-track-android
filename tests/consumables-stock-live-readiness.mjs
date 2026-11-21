@@ -114,21 +114,36 @@ let live=true;
 const approved=makeFixture(()=>({ok:true,live,ready:live,writes:live,masterLink:live}));
 await approved.window.openStockManagement();
 assert.deepEqual(approved.requests.map(x=>x.operation),['STATUS'],
-  'Five-card home must not fetch stock until a card is opened');
+  'Department chooser must not fetch any balances');
+assert.match(approved.screen().innerHTML,/zs-department-grid/);
+assert.match(approved.screen().innerHTML,/Paint Consumables/);
+assert.match(approved.screen().innerHTML,/Mechanical Consumables/);
+assert.equal(approved.output(),'','Live stock must use full-screen navigation, not a modal');
+approved.window.zukStockSelectDepartment('Painting');
 assert.match(approved.screen().innerHTML,/zs-home-grid/);
-assert.match(approved.screen().innerHTML,/Consumables Stock Management/);
-assert.equal(approved.output(),'','Live stock must use the full-screen page, not a modal');
+assert.match(approved.screen().innerHTML,/Paint Consumables/);
+assert.equal(approved.requests.length,1,'Choosing Paint must not fetch until a card opens');
 await approved.window.zukStockLiveNavigate('balance');
 assert.deepEqual(approved.requests.map(x=>x.operation),['STATUS','LIST']);
+assert.equal(approved.requests.at(-1).department,'Painting');
 assert.match(approved.screen().innerHTML,/10\.00 Liter/);
 assert.doesNotMatch(approved.screen().innerHTML,/UI PREVIEW ONLY/);
 approved.window.zukStockLiveHome();
+approved.window.zukStockResetDepartment();
+assert.match(approved.screen().innerHTML,/zs-department-grid/);
+approved.window.zukStockSelectDepartment('Mechanical');
 assert.match(approved.screen().innerHTML,/zs-home-grid/);
+assert.match(approved.screen().innerHTML,/Mechanical Consumables/);
+await approved.window.zukStockLiveNavigate('balance');
+assert.equal(approved.requests.at(-1).department,'Mechanical',
+  'Mechanical inventory queries must be independently scoped');
+assert.deepEqual(approved.requests.map(x=>x.operation),['STATUS','LIST','LIST']);
 live=false;approved.changeSession('session-two');
 await approved.window.openStockManagement();
-assert.deepEqual(approved.requests.map(x=>x.operation),['STATUS','LIST','STATUS'],
+assert.deepEqual(approved.requests.map(x=>x.operation),['STATUS','LIST','LIST','STATUS'],
   'Another staff session must require a fresh server check');
 assert.match(approved.screen().innerHTML,/UI PREVIEW ONLY/);
+assert.match(approved.screen().innerHTML,/zs-department-grid/);
 
 const employee=makeFixture(()=>({ok:true,live:true,ready:true,writes:true,masterLink:true}),'Employee');
 await employee.window.openStockManagement();
