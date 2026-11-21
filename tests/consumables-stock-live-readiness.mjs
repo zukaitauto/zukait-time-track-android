@@ -94,9 +94,17 @@ assert.deepEqual(noWrite.requests.map(x=>x.operation),['STATUS'],
 let live=true;
 const approved=makeFixture(()=>({ok:true,live,ready:live,writes:live,masterLink:live}));
 await approved.window.openStockManagement();
+assert.deepEqual(approved.requests.map(x=>x.operation),['STATUS'],
+  'Five-card home must not fetch stock until a card is opened');
+assert.match(approved.screen().innerHTML,/zs-home-grid/);
+assert.match(approved.screen().innerHTML,/Consumables Stock Management/);
+assert.equal(approved.output(),'','Live stock must use the full-screen page, not a modal');
+await approved.window.zukStockLiveNavigate('balance');
 assert.deepEqual(approved.requests.map(x=>x.operation),['STATUS','LIST']);
-assert.match(approved.output(),/10\.00 Liter/);
-assert.doesNotMatch(approved.output(),/UI PREVIEW ONLY/);
+assert.match(approved.screen().innerHTML,/10\\.00 Liter/);
+assert.doesNotMatch(approved.screen().innerHTML,/UI PREVIEW ONLY/);
+approved.window.zukStockLiveHome();
+assert.match(approved.screen().innerHTML,/zs-home-grid/);
 live=false;approved.changeSession('session-two');
 await approved.window.openStockManagement();
 assert.deepEqual(approved.requests.map(x=>x.operation),['STATUS','LIST','STATUS'],
