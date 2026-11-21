@@ -9,12 +9,14 @@ on:
       - 'app/src/main/assets/mechanical_consumables_ui.js'
       - 'app/src/main/assets/offline_test.html'
       - 'tests/consumables-main-app-preview.mjs'
+      - 'tests/consumables-stock-live-readiness.mjs'
       - '.github/workflows/main-app-consumables-preview.yml'
   push:
     branches: [architecture-v2]
     paths:
       - 'app/src/main/assets/consumables_stock_ui.js'
       - 'tests/consumables-main-app-preview.mjs'
+      - 'tests/consumables-stock-live-readiness.mjs'
       - '.github/workflows/main-app-consumables-preview.yml'
   workflow_dispatch:
 
@@ -37,6 +39,8 @@ jobs:
           node --check app/src/main/assets/cloud_sync.js
       - name: No stock RPC from main-app read-only preview
         run: node tests/consumables-main-app-preview.mjs
+      - name: Stock live-data activation remains server-gated
+        run: node tests/consumables-stock-live-readiness.mjs
       - name: Existing Painting/Consumables regression
         run: node tests/consumables-ui.mjs
       - name: No backend or release source changed by UI preview
