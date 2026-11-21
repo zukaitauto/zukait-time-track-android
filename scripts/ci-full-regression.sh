@@ -66,6 +66,7 @@ node tests/employee-finish-server-authority.mjs
 node tests/employee-pause-journal-recovery.mjs
 node tests/consumables-smoke.mjs
 node tests/consumables-ui.mjs
+node tests/consumables-main-app-preview.mjs
 node tests/manager-new-price-period.mjs
 node tests/material-list-navigation.mjs
 node tests/assignment-search-ui.mjs
