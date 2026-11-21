@@ -25,6 +25,39 @@ try {
   const release={tag_name:record.releaseTag,draft:false,prerelease:false,assets:[{name:'ZUKAIT_TIME_TRACK_LATEST.apk',browser_download_url:`https://github.com/zukaitauto/zukait-time-track-android/releases/download/${record.releaseTag}/ZUKAIT_TIME_TRACK_LATEST.apk`}]};
   const publicFetch=async url=>response(url,url.includes('raw.githubusercontent')?JSON.stringify(metadata):url.includes('api.github')?JSON.stringify(release):apk);
   await verifyRelease(record,publicFetch);
+  // A shared CI runner can hit unauthenticated REST API rate limiting. Retry
+  // only api.github.com using the token; public APK downloads remain anonymous.
+  const oldToken=process.env.GH_TOKEN;
+  process.env.GH_TOKEN='test-read-only-token';
+  try {
+    let githubApi403s=0,authorizedGithubCalls=0,publicDownloadChecks=0;
+    await verifyRelease(record,async (url,options={})=>{
+      if(new URL(url).hostname==='api.github.com'){
+        if(!options.headers?.Authorization){
+          githubApi403s++;
+          return {url,ok:false,status:403};
+        }
+        assert.equal(options.headers.Authorization,'Bearer test-read-only-token');
+        authorizedGithubCalls++;
+        return response(url,JSON.stringify(release));
+      }
+      assert.equal(options.headers?.Authorization,undefined,
+        'Do not leak GitHub token to Pages, raw updater or public APK URL');
+      if(url.endsWith('.apk'))publicDownloadChecks++;
+      return publicFetch(url);
+    });
+    assert.equal(githubApi403s,1);
+    assert.equal(authorizedGithubCalls,1);
+    assert.equal(publicDownloadChecks,1);
+    await assert.rejects(verifyRelease(record,async (url,options={})=>{
+      if(url.endsWith('.apk'))return {url,ok:false,status:403};
+      return publicFetch(url);
+    }),/HTTP 403.*ZUKAIT_TIME_TRACK_LATEST\\.apk/,
+    'A failed public APK download must never be bypassed');
+  } finally {
+    if(oldToken===undefined)delete process.env.GH_TOKEN;
+    else process.env.GH_TOKEN=oldToken;
+  }
   metadata.versionCode=267;
   await assert.rejects(verifyRelease(record,publicFetch),/Updater mismatch/);
   metadata.versionCode=268;
