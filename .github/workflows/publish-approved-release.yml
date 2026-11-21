@@ -112,6 +112,28 @@ jobs:
             # controller, its waiver record, and controller tests may differ.
             EXCLUDES+=(':(exclude).github/workflows/publish-approved-release.yml' ':(exclude).github/workflows/reception-check.yml' ':(exclude)scripts/verify-ui-only-release.cjs' ':(exclude)release-ui-request.json' ':(exclude)tests/reception-ui-only-release.mjs')
           fi
+          # Scoped V411 continuation after an already-published, verified APK:
+          # two server-auth fixes and two publication-verifier changes landed
+          # AFTER the signed V411 source. None is packaged from the pinned
+          # V411 source checkout. Validate all four exact blob IDs; any other
+          # drift remains a hard failure. This is NOT a generic bypass.
+          if [ "$UI_ONLY_PUBLICATION" = "true" ] &&
+             [ "$(jq -r '.versionName' release-request.json)" = "V411" ] &&
+             [ "$SOURCE_COMMIT" = "11d8e53a04ebda055d678fc3fe23a54316865c44" ]; then
+            verify_followup_blob() {
+              local path="$1" expected="$2" actual
+              actual=$(git rev-parse "$GITHUB_SHA:$path")
+              test "$actual" = "$expected" || {
+                echo "::error::V411 scoped recovery source mismatch: $path"
+                exit 1
+              }
+              EXCLUDES+=(":(exclude)$path")
+            }
+            verify_followup_blob 'supabase/functions/staff-auth/index.ts' 'f7e6229d96151124ada2b47061eea207837ec59e'
+            verify_followup_blob 'tests/staff-session-database-outage.mjs' '2e14da1955429f05e4507f096ad424690ff3274e'
+            verify_followup_blob 'scripts/verify-coordinated-release.cjs' '054886ee69e6b9785ea4e39a48800172e2e0d7fa'
+            verify_followup_blob 'tests/reception-coordinated-release.mjs' 'a6160eb3bb23ab37518acc923eb0b87bffef1cf1'
+          fi
           if ! git diff --quiet "$SOURCE_COMMIT" "$GITHUB_SHA" -- . "${EXCLUDES[@]}"; then
             echo "Production source drift detected after approved source commit:"
             git diff --name-only "$SOURCE_COMMIT" "$GITHUB_SHA" -- . ':(exclude)release-request.json'
@@ -154,6 +176,15 @@ jobs:
             RUN=$(jq -r .mechanicalVerificationRun release-request.json)
             gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN" | jq -e --arg sha "$(jq -r .sourceCommit release-request.json)" '.head_sha==$sha and .head_branch=="architecture-v2" and .path==".github/workflows/mechanical-phone-qa.yml" and .conclusion=="success"'
           fi
+
+      - name: Stage audited public-delivery verifier from this immutable approval commit
+        shell: bash
+        run: |
+          # The signed app/web assets are later detached to the immutable source.
+          # This verifier is publication infrastructure, not a packaged asset.
+          git show "$GITHUB_SHA:scripts/verify-coordinated-release.cjs" > /tmp/zukait-release-verifier.cjs
+          test -s /tmp/zukait-release-verifier.cjs
+          node --check /tmp/zukait-release-verifier.cjs
 
       - name: Pin both clients to the approved source
         shell: bash
@@ -244,13 +275,16 @@ jobs:
           if gh release view "$TAG" --json databaseId >/tmp/existing-release.json 2>/dev/null; then
             RELEASE_ID=$(jq -r .databaseId /tmp/existing-release.json)
             gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" >/tmp/existing-release-full.json
-            jq -e --arg source "$SOURCE_SHA" --arg tag "$TAG" '.draft == true and .target_commitish == $source and .tag_name == $tag and (.assets | length) == 1 and .assets[0].name == "ZUKAIT_TIME_TRACK_LATEST.apk"' /tmp/existing-release-full.json
+            # A previous run may have published the exact APK before a later
+            # verification/API-rate-limit failure. Resume it WITHOUT replacing
+            # the tag or signed asset. Reject changed source, APK or asset set.
+            jq -e --arg source "$SOURCE_SHA" --arg tag "$TAG" '.target_commitish == $source and .tag_name == $tag and ((.draft == true) or (.draft == false and .prerelease == false)) and (.assets | length) == 1 and .assets[0].name == "ZUKAIT_TIME_TRACK_LATEST.apk"' /tmp/existing-release-full.json
             mkdir -p /tmp/existing-approved-apk
             gh release download "$TAG" --pattern ZUKAIT_TIME_TRACK_LATEST.apk --dir /tmp/existing-approved-apk
             cmp ZUKAIT_TIME_TRACK_LATEST.apk /tmp/existing-approved-apk/ZUKAIT_TIME_TRACK_LATEST.apk
             echo "release_id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
             echo "release_url=$(jq -r .html_url /tmp/existing-release-full.json)" >> "$GITHUB_OUTPUT"
-            echo "Verified existing draft and exact accepted APK; resuming coordinated publication."
+            echo "Verified existing release, pinned source and byte-identical signed APK; resuming coordinated publication."
             exit 0
           fi
           RELEASE_JSON=$(gh api --method POST "repos/${GITHUB_REPOSITORY}/releases" \
@@ -397,7 +431,7 @@ jobs:
         run: python3 scripts/verify-reception-platform-assets.py --site _site
 
       - name: Create source and asset integrity manifest
-        run: node scripts/verify-coordinated-release.cjs manifest _site
+        run: node /tmp/zukait-release-verifier.cjs manifest _site
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -411,7 +445,7 @@ jobs:
         with:
           timeout: 1200000
       - name: Verify public Pages bytes before advancing staff APK
-        run: node scripts/verify-coordinated-release.cjs pages _site
+        run: node /tmp/zukait-release-verifier.cjs pages _site
 
       - name: Make approved release public and latest
         shell: bash
@@ -468,7 +502,9 @@ jobs:
           jq '{tag_name,name,draft,prerelease,html_url,assets:[.assets[].name]}' /tmp/published-release.json
 
       - name: Verify public signed APK before updater publication
-        run: node scripts/verify-coordinated-release.cjs apk _site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node /tmp/zukait-release-verifier.cjs apk _site
 
       - name: Publish matching update metadata
         shell: bash
@@ -501,7 +537,9 @@ jobs:
           git push --force-with-lease="refs/heads/architecture-v2:$APPROVAL_SHA" origin HEAD:architecture-v2
 
       - name: Verify public updater and downloadable APK parity
-        run: node scripts/verify-coordinated-release.cjs release _site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node /tmp/zukait-release-verifier.cjs release _site
 
       - name: Preserve coordinated release evidence even on failure
         if: always()
