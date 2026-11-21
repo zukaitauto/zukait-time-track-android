@@ -1423,8 +1423,22 @@
     status(cloudDirty?'OFFLINE — CHANGE QUEUED':'OFFLINE — LOCAL CACHE','warn');
     publishLiveStatus(false);
   });
+  // Independent Stock Phase 1 transport. Never enqueue workshop snapshot writes.
+  // Both UI and backend must explicitly enable the first-phase pilot.
+  async function stockRequest(command){
+    if(window.ZUKAIT_STOCK_UI_PREVIEW_ONLY===true||
+       window.ZUKAIT_STOCK_PHASE1_ENABLED!==true)throw Error('STOCK_PHASE1_DISABLED');
+    if(!['Manager','Supervisor'].includes(String(me?.role||'')))throw Error('STOCK_FORBIDDEN');
+    const op=String(command?.operation||'').toUpperCase();
+    if(!['LIST','BALANCE','HISTORY','WRITE'].includes(op))throw Error('STOCK_ACTION_DISABLED');
+    const data=command?.data||({LIST:{page:command?.page??0},
+      HISTORY:{cursor:command?.cursor??null},BALANCE:{materialId:command?.materialId,brandId:command?.brandId}}[op]||{});
+    return api({action:'stock_phase1',operation:op,
+      command:op==='WRITE'?String(command.command||'').toUpperCase():undefined,
+      requestId:op==='WRITE'?command.requestId:undefined,data});
+  }
   window.zukaitCloud={
-    resetForSession,init,pull,push,managerJobEdit,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,readManagerProfit,readMechanicalQcOverview,openMechanicalWorkspace,openMechanicalDelivery,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
+    stockRequest,resetForSession,init,pull,push,managerJobEdit,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,readManagerProfit,readMechanicalQcOverview,openMechanicalWorkspace,openMechanicalDelivery,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
     configured:()=>true,
     get confirmedState(){return confirmedReadRevision>=cloudRevision?confirmedReadState:null},
     get revision(){return cloudRevision},
