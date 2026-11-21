@@ -502,7 +502,7 @@ window.zukStockPreviewPrice=()=>{
  output.textContent='Quantity: '+fmt(quantity)+' · Price per unit: '+OMR(cost)+
   ' OMR · Total purchase value: '+OMR(total)+' OMR. Preview only — not saved.';
 };
-window.openStockManagement=()=>previewOnly()?(preview.page='home',window.closeModal?.(),showPreview()):load('balance',true);
+window.openStockManagement=()=>{if(previewOnly()){if(!allowed())return;preview.page='home';window.closeModal?.();showPreview();return}return load('balance',true)};
 window.zukStockNav=(page,force=false)=>previewOnly()?window.zukStockPreviewNavigate(page):load(page,force);
 window.zukStockDetail=id=>{view.selected=String(id||'');view.page='detail';render()};
 window.zukStockMore=async()=>{
