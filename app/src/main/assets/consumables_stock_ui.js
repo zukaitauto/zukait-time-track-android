@@ -360,7 +360,7 @@ function previewBalance(rows,c){
    ['Available stock','Not initialized'],['Low stock items','Not initialized']]
   .map(([k,v])=>'<div class="zs-stat"><small>'+esc(k)+'</small><strong>'+esc(v)+'</strong></div>').join('')+'</div>'+
   '<div class="zs-panel"><h3>Stock Balance</h3><p class="zs-preview-note">Materials and brands below come from the existing master. '+
-  'These master rows are not confirmed as "+esc(departmentTitle())+" stock or department-assigned. Quantity, weighted-average cost and reorder levels remain unavailable until physical opening stock is verified.</p>'+
+  'This is the shared material master for reference, NOT a verified department stock list. Quantities and stock costs remain unavailable until opening counts and department assignment are confirmed.</p>'+
   '<div class="zs-filter">'+
   '<label class="zs-field">Search material or brand<input id="zs-preview-query" placeholder="Search material or brand" value="'+esc(preview.query)+'"></label>'+
   '<label class="zs-field">Material<select id="zs-preview-material">'+previewOptions(c.materials,preview.material,'All materials')+'</select></label>'+
