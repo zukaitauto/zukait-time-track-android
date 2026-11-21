@@ -89,6 +89,7 @@ node tests/consumables-backend-security.mjs
 node tests/v128-costing-safety.mjs
 node tests/sublet-expenses.mjs
 node tests/registration-authority.mjs
+node tests/vehicle-identifier-uppercase.mjs
 node tests/id001-preliminary-labour.mjs
 node tests/id001-achieved-classification.mjs
 node tests/v2-monthly-incentive-actual-achieved.mjs
