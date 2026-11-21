@@ -60,4 +60,14 @@ for (const department of ['Painting','Mechanical']) {
   assert.match(html, /<option value="oil" selected>Oil<\/option>/);
   assert.match(html, /<option value="brand">Brand<\/option>/);
 }
+const [paintPairs, paintRepeat]=await Promise.all([
+  window.zukaitStockPickerPairs('Painting'),window.zukaitStockPickerPairs('Painting')
+]);
+assert.equal(paintPairs,paintRepeat);
+assert.ok(paintPairs.has(JSON.stringify(['oil','brand'])));
+assert.equal(calls.at(-1).department,'Painting');
+await window.zukaitStockPickerPairs('Mechanical');
+assert.equal(calls.at(-1).department,'Mechanical');
+window.location.search='';
+assert.equal(await window.zukaitStockPickerPairs('Painting'),null);
 console.log('Controlled stock UI: all five screens, stock math, report totals and stock commands passed');

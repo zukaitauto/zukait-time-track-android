@@ -14,6 +14,37 @@ const previewOnly=()=>window.ZUKAIT_STOCK_UI_PREVIEW_ONLY===true&&
 const api=x=>previewOnly()?Promise.reject(Error('Stock preview: transactions not enabled')):
   window.zukaitCloud?.stockRequest?.(x)||Promise.reject(Error('Stock server connection not ready'));
 const stockRead=request=>api(department?{...request,department}:request);
+window.zukaitStockPickerEnabled=()=>!previewOnly()&&(
+  new URLSearchParams(window.location?.search||'').get('stockPilot')==='1'||
+  window.ZUKAIT_DEPARTMENT_PICKERS_ENABLED===true);
+const pickerRequests=new Map();
+window.zukaitStockPickerPairs=async scope=>{
+  if(!window.zukaitStockPickerEnabled())return null;
+  if(!['Painting','Mechanical'].includes(scope))throw Error('Invalid material department');
+  const token=window.zukaitAuth?.getToken?.();
+  const old=pickerRequests.get(scope);
+  if(old?.token===token&&old?.until>Date.now())return old.result;
+  const pending={token,until:Infinity,result:readPickerPairs(scope,token)};
+  pickerRequests.set(scope,pending);
+  try{
+    return await pending.result;
+  }catch(error){
+    if(pickerRequests.get(scope)===pending)pickerRequests.delete(scope);
+    throw error;
+  }finally{pending.until=Date.now()+30000;}
+};
+async function readPickerPairs(scope,token){
+  const mechanicalSupervisor=typeof me!=='undefined'&&me?.role==='Mechanical Supervisor';
+  const keys=new Set();
+  for(let page=0;page<=20;page++){
+    const request=mechanicalSupervisor?{operation:'CATALOG',page}:{operation:'LIST',department:scope,page};
+    const result=await api(request);
+    if(!result?.ok||token!==window.zukaitAuth?.getToken?.())throw Error('Department material list unavailable');
+    for(const row of result.items||[])keys.add(JSON.stringify([row.material_id??row.materialId,row.brand_id??row.brandId]));
+    if(!result.hasMore)return keys;
+  }
+  throw Error('Department material list exceeds the supported page limit');
+}
 const catalog=()=>{
   try{
     const c=typeof state!=='undefined'&&window.ZukaitConsumables?.ensureState(state);
@@ -242,6 +273,7 @@ window.zukStockLegacyLink=async(index)=>{
    const r=await api({operation:'MASTER_LINK',
      materialId:x.materialId,brandId:x.brandId,origin});
    if(!r?.ok||r.linked?.linked!==true)throw Error(r?.code||'Link not confirmed');
+   pickerRequests.clear();
    view.busy=false;await loadLegacy(view.legacyPage);
  }catch(e){
    view.busy=false;view.error=String(e?.message||e);

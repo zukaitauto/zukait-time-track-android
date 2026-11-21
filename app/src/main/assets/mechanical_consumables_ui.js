@@ -15,6 +15,8 @@ const canView=()=>{
  const r=(typeof me!=='undefined'&&me?me.role:window.me?.role);
  return r==='Manager'||r==='Supervisor'||r==='Mechanical Supervisor';
 };
+let departmentPairs=null;
+let sectionRequest=0;
 function master(){
  // Read the existing Material and Brand Master. Never store a duplicate catalog.
  const c=(typeof state!=='undefined'&&state?.consumables)||{};
@@ -23,12 +25,12 @@ function master(){
  const prices=Array.isArray(c.prices)?c.prices:[];
  const rows=[];
  for(const material of materials){
-   const linked=new Set(prices.filter(p=>p&&!p.voided&&p.materialId===material.id).map(p=>String(p.brandId)));
+   const linked=new Set(prices.filter(p=>p&&!p.voided&&p.materialId===material.id&&(!departmentPairs||departmentPairs.has(JSON.stringify([p.materialId,p.brandId])))).map(p=>String(p.brandId)));
    if(linked.size){
      for(const brand of brands.filter(x=>linked.has(String(x.id))))rows.push({
        material:material.name,brand:brand.name,unit:material.unit||'',id:material.id,brandId:brand.id
      });
-   }else{
+   }else if(!departmentPairs){
      rows.push({material:material.name,brand:'Not assigned',unit:material.unit||'',id:material.id,brandId:''});
    }
  }
@@ -61,6 +63,7 @@ function open(title,body){
 }
 function menu(){
  if(!canView())return;
+ sectionRequest++;
  const stockEntry=['Manager','Supervisor'].includes((typeof me!=='undefined'?me:window.me)?.role)
    ? '<button type="button" class="mc-cons-tile" onclick="openStockManagement(&quot;Mechanical&quot;)"><b>Mechanical Stock</b><small>Mechanical and shared stock balances, history and reports.</small></button>' : '';
  const entries=Object.entries(sections).filter(([,s])=>!s.managerOnly||canManage()).map(([key,s])=>
@@ -237,12 +240,28 @@ function issueForm(){
    '<button id="mcConsSubmit" type="button" '+(canIssue()?'onclick="mechanicalConsumablesSubmitIssue()"':'title="Secure stock issuing is not enabled yet"')+' disabled style="display:block;width:100%;background:#64748b;color:white;padding:12px;margin-top:12px">ISSUE MATERIALS'+(canIssue()?'':' (not enabled)')+'</button>'+ 
    '<p class="mc-cons-muted">Once enabled, one server-confirmed issue will be final. No separate Actual or finalisation.</p></div>';
 }
-function section(id){
+async function section(id){
  if(!canView())return;
  const s=sections[id];if(!s||s.managerOnly&&!canManage())return menu();
  if(id==='master')return window.consOpenMaster?.('mechanical');
  if(id==='materialHistory')return window.consOpenMaterialSearch?.('mechanical');
  const back='<button class="mc-cons-secondary" type="button" onclick="openMechanicalConsumables()">← Mechanical menu</button>';
+ if(['search','issued','additional'].includes(id)&&window.zukaitStockPickerEnabled?.()){
+   const request=++sectionRequest;
+   departmentPairs=new Set();
+   open(s.title,back+'<p id="mcConsLoading" class="mc-cons-muted">Loading Mechanical materials…</p>');
+   try{
+     const pairs=await window.zukaitStockPickerPairs('Mechanical');
+     if(request!==sectionRequest||!canView()||!document.getElementById('mcConsLoading'))return;
+     departmentPairs=pairs??new Set();
+   }catch{
+     if(request===sectionRequest&&canView()&&document.getElementById('mcConsLoading'))open(s.title,back+'<p class="mc-cons-alert">Mechanical materials could not be loaded. Try again.</p>');
+     return;
+   }
+ }else{
+   sectionRequest++;
+   departmentPairs=null;
+ }
  if(id==='search'){
    open(s.title,back+'<p class="mc-cons-muted">Uses the existing Consumables Materials and Brand Master. No extra materials table or Supabase history download.</p>'+catalog());
    renderMaterialRows();return;

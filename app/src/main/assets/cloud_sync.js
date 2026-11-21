@@ -1424,8 +1424,9 @@
     publishLiveStatus(false);
   });
   async function stockRequest(command){
-    if(!me||!['Manager','Supervisor'].includes(me.role))throw Error('STOCK_FORBIDDEN');
     if(!command||typeof command!=='object')throw Error('INVALID_STOCK_COMMAND');
+    const mechanicalCatalog=me?.role==='Mechanical Supervisor'&&command.operation==='CATALOG';
+    if(!me||!['Manager','Supervisor'].includes(me.role)&&!mechanicalCatalog)throw Error('STOCK_FORBIDDEN');
     return await api({...command,action:'consumables_stock'});
   }
   window.zukaitCloud={
