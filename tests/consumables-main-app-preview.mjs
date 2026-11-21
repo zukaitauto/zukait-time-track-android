@@ -5,6 +5,16 @@ import {runInNewContext} from 'node:vm';
 // Dependency-free full-screen in-app routing test. Standard APK CI does not
 // run npm install before the smoke tests, so this must use Node built-ins.
 const stock=readFileSync('app/src/main/assets/consumables_stock_ui.js','utf8');
+// Prevent global theme rules from rendering near-black text on saturated colored cards.
+for(const color of ['blue','green','purple','orange','teal']){
+ assert.ok(stock.includes('#zs-stock-screen .zs-preview .zs-home-tile.'+color),
+  'Missing explicitly scoped contrast-safe '+color+' card palette');
+}
+assert.ok(stock.includes('.zs-home-info strong{color:#142f4a!important}'),
+ 'Stock card titles must use high-contrast text');
+assert.ok(stock.includes('.zs-screen-brand{color:#174b77!important}'),
+ 'Header brand must remain readable');
+
 const html=readFileSync('app/src/main/assets/offline_test.html','utf8');
 const menu=readFileSync('app/src/main/assets/consumables_ui.js','utf8');
 const mech=readFileSync('app/src/main/assets/mechanical_consumables_ui.js','utf8');
