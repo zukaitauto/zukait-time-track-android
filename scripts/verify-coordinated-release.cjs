@@ -30,8 +30,20 @@ function manifest(dir, approval, sourceSha, apk) {
     releaseTag:`release-${approval.versionName}-architecture-v2`, apkSha256:hash(apk), files};
 }
 async function bytes(url, fetcher=fetch) {
-  const response = await fetcher(url, {redirect:'follow', signal:AbortSignal.timeout(30000),
-    headers:{'Cache-Control':'no-cache', 'User-Agent':'Zukait-Coordinated-Release-Verification'}});
+  const options={redirect:'follow',signal:AbortSignal.timeout(30000),
+    headers:{'Cache-Control':'no-cache','User-Agent':'Zukait-Coordinated-Release-Verification'}};
+  let response=await fetcher(url, options);
+  // The unauthenticated GitHub REST API can return 403 on shared CI runner IPs
+  // even when the release and its public APK are available. Retry ONLY that
+  // API request with the GitHub Actions read token. Never send it to Pages,
+  // raw.githubusercontent.com or github.com APK download redirects.
+  if(response.status===403 && new URL(url).hostname==='api.github.com' &&
+     process.env.GH_TOKEN) {
+    response=await fetcher(url,{...options,headers:{
+      ...options.headers,Authorization:'Bearer '+process.env.GH_TOKEN,
+      Accept:'application/vnd.github+json'
+    }});
+  }
   assert.equal(new URL(response.url || url).protocol, 'https:');
   assert.ok(response.ok, `HTTP ${response.status}: ${url}`);
   return Buffer.from(await response.arrayBuffer());
@@ -77,6 +89,8 @@ async function verifyRelease(record, fetcher=fetch, checkMetadata=true) {
   const asset=release.assets.find(a=>a.name==='ZUKAIT_TIME_TRACK_LATEST.apk');
   const expected=`https://github.com/${REPO}/releases/download/${record.releaseTag}/ZUKAIT_TIME_TRACK_LATEST.apk`;
   assert.equal(asset?.browser_download_url,expected);
+  if(asset.digest)assert.equal(asset.digest,'sha256:'+record.apkSha256,
+    'GitHub release asset digest differs from accepted signed bytes');
   assert.equal(hash(await bytes(expected,fetcher)),record.apkSha256,'Public APK differs from accepted signed bytes');
 }
 async function main() {
