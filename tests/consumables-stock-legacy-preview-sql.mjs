@@ -33,7 +33,7 @@ assert.equal(p0.items.length,20);
 assert.equal(p0.hasMore,true);
 assert.equal(p0.items[0].materialId,'mat-000');
 assert.equal(p0.items[0].brandId,'brand-a');
-assert.equal(p0.items[0].department,'Unassigned');
+assert.equal(p0.items[0].department,'Painting','Unclassified existing materials are displayed as Paint without writing the Master');
 assert.equal(p0.items[0].linked,false);
 const p1=await preview('manager',1);
 assert.equal(p1.items.length,3);
