@@ -13,10 +13,20 @@ function safeId(value, limit=120) {
 }
 export async function consumablesStockApi(admin,user,body,{enabled=false,writesEnabled=false,mechanicalWritesEnabled=false,masterLinkEnabled=false,sessionHash=''}={}) {
   if(!roles.has(user?.role))return bad('stock_forbidden',403);
-  if(!enabled)return bad('stock_not_enabled',503);
   if(!body||typeof body!=='object'||Array.isArray(body)||
     Object.keys(body).some(k=>!allowedKeys.has(k)))return bad('stock_invalid_request');
   const operation=String(body.operation||'LIST').trim().toUpperCase();
+  // An authenticated, bounded readiness check is safe before the Stock schema
+  // exists. Do not claim that a staged catalog or Master prices are stock balances.
+  if(operation==='STATUS') {
+    if(!enabled)return good({live:false,ready:false,writes:false,masterLink:false});
+    const {error}=await admin.from('zukait_stock_balances')
+      .select('material_id').limit(1);
+    const ready=!error;
+    return good({live:ready,ready,writes:ready&&writesEnabled,
+      masterLink:ready&&masterLinkEnabled});
+  }
+  if(!enabled)return bad('stock_not_enabled',503);
   const department=body.department;
   if(department!==undefined&&!['Painting','Mechanical'].includes(department))
     return bad('stock_invalid_department');
