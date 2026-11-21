@@ -54,10 +54,15 @@ async function readPickerPairs(scope,token){
   }
   throw Error('Department material list exceeds the supported page limit');
 }
+// The historical Materials Master was exclusively Paint Consumables.
+// Treat missing/legacy department as Paint for display and selection without
+// rewriting live workshop_state or touching historical Job Card prices.
+const stockMaterialDepartment=m=>['Painting','Mechanical','Both'].includes(m?.department)?m.department:'Painting';
+const stockMaterialInDepartment=m=>!department||stockMaterialDepartment(m)==='Both'||stockMaterialDepartment(m)===department;
 const catalog=()=>{
   try{
     const c=typeof state!=='undefined'&&window.ZukaitConsumables?.ensureState(state);
-    return {materials:(c?.materials||[]).filter(x=>x.active!==false),
+    return {materials:(c?.materials||[]).filter(x=>x.active!==false&&stockMaterialInDepartment(x)),
       brands:(c?.brands||[]).filter(x=>x.active!==false)};
   }catch(_){return {materials:[],brands:[]}}
 };
@@ -361,7 +366,7 @@ function previewBalance(rows,c){
    ['Available stock','Not initialized'],['Low stock items','Not initialized']]
   .map(([k,v])=>'<div class="zs-stat"><small>'+esc(k)+'</small><strong>'+esc(v)+'</strong></div>').join('')+'</div>'+
   '<div class="zs-panel"><h3>Stock Balance</h3><p class="zs-preview-note">Materials and brands below come from the existing master. '+
-  'This is the shared material master for reference, NOT a verified department stock list. Quantities and stock costs remain unavailable until opening counts and department assignment are confirmed.</p>'+
+  'This is NOT a verified department stock list. Older materials are shown under Paint; newly created Mechanical and Shared materials appear in their assigned departments. Quantities and stock costs remain unavailable until opening counts are confirmed.</p>'+
   '<div class="zs-filter">'+
   '<label class="zs-field">Search material or brand<input id="zs-preview-query" placeholder="Search material or brand" value="'+esc(preview.query)+'"></label>'+
   '<label class="zs-field">Material<select id="zs-preview-material">'+previewOptions(c.materials,preview.material,'All materials')+'</select></label>'+
