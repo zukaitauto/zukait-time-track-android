@@ -9,7 +9,7 @@
     "test:reception:concurrency": "node tests/reception-concurrency.mjs",
     "test:consumables:pdf": "node tests/consumables-pdf-master.mjs",
     "test:mechanical:inspection": "node tests/mechanical-inspection-api.mjs && node tests/mechanical-inspection-read-adapter.mjs && node tests/mechanical-inspection-save-adapter.mjs && node tests/mechanical-inspection-boundary.mjs && node tests/mechanical-inspection-session.mjs && node tests/mechanical-inspection-storage.mjs",
-    "test:consumables:stock": "node tests/consumables-stock-core.mjs && node tests/consumables-stock-api.mjs && node tests/consumables-stock-integration.mjs && node tests/consumables-stock-opening-guard.mjs && node tests/consumables-stock-pilot-ui.mjs && node tests/consumables-stock-sql.mjs && node tests/consumables-stock-master-link-sql.mjs && node tests/consumables-stock-legacy-preview-sql.mjs && node tests/consumables-stock-installation-readiness-sql.mjs && node tests/consumables-main-app-preview.mjs"
+    "test:consumables:stock": "node tests/consumables-stock-core.mjs && node tests/consumables-stock-material-department.mjs && node tests/consumables-stock-api.mjs && node tests/consumables-stock-integration.mjs && node tests/consumables-stock-opening-guard.mjs && node tests/consumables-stock-pilot-ui.mjs && node tests/consumables-stock-sql.mjs && node tests/consumables-stock-master-link-sql.mjs && node tests/consumables-stock-legacy-preview-sql.mjs && node tests/consumables-stock-installation-readiness-sql.mjs && node tests/consumables-main-app-preview.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.3.14",
