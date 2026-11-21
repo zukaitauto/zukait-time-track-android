@@ -113,7 +113,7 @@ assert.doesNotMatch(markup(),/<table aria-label="Stock Balance preview">/);
 ctx.window.zukStockPreviewNavigate('balance');
 assert.equal(current(),'balance','Opening Stock Balance must navigate to a new view');
 assert.equal(cards(),0,'Detail view must replace, not append to, the home cards');
-assert.match(markup(),/← Stock Management/);
+assert.match(markup(),/← Paint Consumables/);
 assert.match(markup(),/2K Primer/);
 assert.match(markup(),/CAPSI/);
 assert.match(markup(),/MILACO/);
