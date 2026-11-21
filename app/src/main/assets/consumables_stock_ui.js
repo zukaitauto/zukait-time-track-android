@@ -4,11 +4,12 @@ const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const OMR=n=>Number(n||0).toFixed(3);
 const fmt=n=>Number(n||0).toFixed(2);
 let view={page:'balance',items:[],history:[],itemsHasMore:false,historyHasMore:false,loading:false,error:'',busy:false,
-  selected:'',mode:'total',pending:null,legacyItems:[],legacyPage:0,legacyHasMore:false};
+  selected:'',mode:'total',pending:null,legacyItems:[],legacyPage:0,legacyHasMore:false,report:null};
 const allowed=()=>typeof me!=='undefined'&&['Manager','Supervisor'].includes(me?.role);
 const manager=()=>typeof me!=='undefined'&&me?.role==='Manager';
 // Main-app visual acceptance: hard block every Stock API call until a separate controlled pilot.
-const previewOnly=()=>window.ZUKAIT_STOCK_UI_PREVIEW_ONLY===true;
+const previewOnly=()=>window.ZUKAIT_STOCK_UI_PREVIEW_ONLY===true&&
+  (!window.location?.search||new URLSearchParams(window.location.search).get('stockPilot')!=='1');
 const api=x=>previewOnly()?Promise.reject(Error('Stock preview: transactions not enabled')):
   window.zukaitCloud?.stockRequest?.(x)||Promise.reject(Error('Stock server connection not ready'));
 const catalog=()=>{
@@ -30,7 +31,11 @@ const css='<style>'+
  '.zs-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:12px 0}'+
  '.zs button{cursor:pointer}.zs-nav button{padding:12px 8px;border:1px solid #bdd1e4;background:#f7fbff;border-radius:11px;font-weight:750;color:#23446b;text-align:left}'+
  '.zs-nav button.zs-active{background:#dcecff;border-color:#317bd7;color:#1255b3}'+
- '.zs-card{border:1px solid #d6e2ef;background:white;border-radius:12px;padding:11px;margin:8px 0}'+
+ '.zs-card{border:1px solid #b8cfe2;background:#fff;border-radius:12px;padding:11px;margin:8px 0;color:#15253c}'+
+ 'button.zs-card,button.zs-card b,.zs-metric b{color:#15253c!important}button.zs-card{background:#f6faff!important}'+
+ 'button.zs-card:hover{background:#e7f2ff!important}button.zs-card .zs-muted{color:#435b73!important}'+
+ 'button.zs-card .zs-available{color:#146239!important}'+
+ '.zs button:focus-visible{outline:3px solid #1559a5;outline-offset:2px}'+
  '.zs-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}'+
  '.zs-metric{background:#edf5fb;padding:10px;border-radius:10px}.zs-muted{font-size:12px;color:#596c81}'+
  '.zs-row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}'+
@@ -51,10 +56,10 @@ function draw(body) {
   const header='<div class="zs"><div class="zs-row">'+
     '<button class="zs-btn secondary" onclick="openConsumablesModule()">← Consumables</button>'+
     '<button class="zs-btn secondary" onclick="closeModal()">✕ Close</button></div>'+
-    '<h2 style="margin:12px 0 6px">Consumables Stock</h2><div class="zs-muted">Manager & Supervisor · Stock balance, not large history snapshots</div>'+
+    '<h2 style="margin:12px 0 6px">Consumables Stock</h2><div class="zs-muted">Manager & Supervisor</div>'+
     '<div class="zs-nav">'+nav+'</div>';
   const message=view.error?'<div class="zs-warning">'+esc(view.error)+'</div>':'';
-  window.openModal(css+header+message+(body||'')+'<p class="zs-muted">Stock data is loaded only on request. No workshop-state snapshot is saved from this screen.</p></div>');
+  window.openModal(css+header+message+(body||'')+'</div>');
 }
 function rowCard(r){
  const unit=esc(r.unit||'Liter'),a=available(r);
@@ -64,7 +69,7 @@ function rowCard(r){
    (a<Number(r.minimum)?'<span class="zs-pill">Low stock</span>':'')+'</div>'+
    '<div class="zs-grid" style="margin-top:9px"><div><div class="zs-muted">Physical</div><b>'+fmt(r.physical)+' '+unit+
    '</b></div><div><div class="zs-muted">Reserved</div><b>'+fmt(r.reserved)+' '+unit+
-   '</b></div><div><div class="zs-muted">Available</div><b style="color:#16733b">'+fmt(a)+' '+unit+'</b></div></div>'+
+   '</b></div><div><div class="zs-muted">Available</div><b class="zs-available">'+fmt(a)+' '+unit+'</b></div></div>'+
    '<div class="zs-muted" style="margin-top:6px">Average '+OMR(Number(r.physical)>0?Number(r.stock_value)/Number(r.physical):0)+' OMR/'+unit+'</div></button>';
 }
 function render(){
@@ -166,30 +171,34 @@ function render(){
    return;
  }
  if(view.page==='reports'){
-   const items=view.items,sum=items.reduce((a,x)=>a+Number(x.stock_value||0),0);
-   draw('<h3>Stock Reports</h3><div class="zs-card">'+
-     '<div class="zs-row"><span>Current stock valuation</span><b>'+OMR(sum)+' OMR</b></div>'+
-     '<div class="zs-row"><span>Stocked material/brands (loaded)</span><b>'+items.length+'</b></div>'+
-     '<div class="zs-row"><span>Low stock items (loaded)</span><b>'+items.filter(x=>available(x)<Number(x.minimum)).length+'</b></div></div>'+
-     '<p class="zs-warning">This is a current-balance preview, not a complete monthly report. Monthly totals and PDF/Excel exports need the dedicated server aggregate before release.</p>'+
-     '<button class="zs-btn secondary" onclick="zukStockNav(\'history\')">Open Bounded Stock History</button>');
+   const r=view.report;
+   draw('<div class="zs-row"><h3>Stock Reports</h3><button class="zs-btn secondary" onclick="zukStockNav(\'reports\',true)">Refresh</button></div>'+
+     (r?'<div class="zs-card">'+
+     '<div class="zs-row"><span>Current stock valuation</span><b>'+OMR(r.valuation)+' OMR</b></div>'+
+     '<div class="zs-row"><span>Tracked material and brand pairs</span><b>'+esc(r.items)+'</b></div>'+
+     '<div class="zs-row"><span>Low stock</span><b>'+esc(r.low)+'</b></div>'+
+     '<div class="zs-row"><span>Out of stock</span><b>'+esc(r.out)+'</b></div></div>':
+     '<p class="zs-warning">Stock report unavailable.</p>')+
+     '<button class="zs-btn secondary" onclick="zukStockNav(\'history\')">Open Stock History</button>');
  }
 }
 async function load(page,force=false){
  if(!allowed())return;
  if(previewOnly()){showPreview();return;}
- if(view.busy)return;
+ if(view.busy||view.loading)return;
  if(page)view.page=page;
  view.error='';
- const needsItems=['balance','add','adjust','reports'].includes(view.page);
+ const needsItems=['balance','add','adjust'].includes(view.page);
+ const needReport=view.page==='reports';
  const needHistory=view.page==='history';
- if((needsItems&&(!view.items.length||force))||(needHistory&&(!view.history.length||force))){
+ if((needsItems&&(!view.items.length||force))||(needHistory&&(!view.history.length||force))||(needReport&&(!view.report||force))){
    view.loading=true;render();
    try{
-     const request=needsItems?{operation:'LIST',page:0}:{operation:'HISTORY'};
+     const request=needsItems?{operation:'LIST',page:0}:{operation:needReport?'REPORTS':'HISTORY'};
      const reply=await api(request);
      if(!reply.ok)throw Error(reply.code||'STOCK_UNAVAILABLE');
      if(needsItems){view.items=reply.items||[];view.itemsHasMore=!!reply.hasMore}
+     else if(needReport)view.report=reply.report||null;
      else{view.history=reply.history||[];view.historyHasMore=!!reply.hasMore}
    }catch(e){view.error=String(e.message||e)}
    finally{view.loading=false}
@@ -676,6 +685,11 @@ const request=()=>typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUU
 async function write(command,data){
  if(view.busy)return;
  if(!navigator.onLine){view.error='Offline: stock was not changed.';render();return}
+ const fields=['entrytype','material','brand','qty','method','price','count-confirmed','opening-note','item','count','reason'];
+ const form=fields.flatMap(key=>{
+   const input=document.getElementById('zs-'+key);
+   return input?[[key,input.value,input.checked]]:[];
+ });
  view.busy=true;view.error='';render();
  // Keep a stable receipt ID if the first request timed out. Never silently retry with a NEW ID.
  const fingerprint=JSON.stringify({command,data});
@@ -684,11 +698,16 @@ async function write(command,data){
  try{
    const reply=await api({operation:'WRITE',command,requestId:view.pending.requestId,data});
    if(!reply.ok)throw Error(reply.code||'STOCK_WRITE_FAILED');
-   view.pending=null;view.items=[];view.history=[];view.busy=false;
+   view.pending=null;view.items=[];view.history=[];view.report=null;view.busy=false;
    await load('balance',true);
  }catch(e){
    view.error=String(e.message||e)+'. No success has been confirmed by the server.';
    view.busy=false;render();
+   for(const [key,value,checked] of form){
+     const input=document.getElementById('zs-'+key);
+     if(input){input.value=value;if(typeof checked==='boolean')input.checked=checked;}
+   }
+   window.zukStockSetEntryType();
  }
 }
 window.zukStockSetEntryType=()=>{
