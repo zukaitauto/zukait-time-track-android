@@ -1,102 +1,22 @@
 {
-  "versionName": "V408",
-  "versionCode": 371,
+  "versionName": "V409",
+  "versionCode": 372,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "ownerPublicationRequested": true,
-  "ownerRequestedImmediateRelease": true,
-  "ownerRequestedProceed": true,
-  "releaseHeldByOwner": false,
+  "approvedForStaff": false,
+  "ownerPublicationRequested": false,
+  "ownerRequestedImmediateRelease": false,
+  "ownerRequestedProceed": false,
+  "releaseHeldByOwner": true,
   "productionBackendChanges": false,
   "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "backupDeferredByOwner": true,
-  "sourceCommit": "ccf23d219bb6e507c8c0683cedeffd61750fcb00",
-  "approvedAt": "2026-11-21T14:18:34.724Z",
-  "publishNonce": "ccf23d219bb6e507c8c0683cedeffd61750fcb00",
-  "signedAcceptanceRun": 44912928210,
-  "verificationRun": 44912928192,
-  "authorization": "Owner requested to proceed with V408 publication on 21 November 2026. Approved exact source includes UI-only stock color/test changes and later Reception VIN-validation guidance, all verified at ccf23d219bb6e507c8c0683cedeffd61750fcb00. V408 stock opening/purchase tests are TAB-ONLY, NOT REAL STOCK; no stock API, Supabase migration, stock ledger, issuing, returns or adjustments activated. Physical-device and backup-restore remain NOT_RUN.",
-  "reason": "V408 UI-only staff publication: accessible Stock Management five-card colors, optional local-tab Opening/Purchase Test Mode, Reception direct Job Card VIN error guidance. Seven exact-source CI workflows passed. Mechanical phone, sync traffic and PDF ran on earlier V408 UI source, with no changes in their respective code. Production stock writes disabled; V407 rollback.",
+  "reason": "Held Android and web acceptance candidate for the merged stock and department picker source. Production stock activation is separate.",
   "previousPublishedRelease": {
     "versionName": "V407",
     "versionCode": 370,
     "releaseTag": "release-V407-architecture-v2",
     "sourceCommit": "35c7bff7a4c58752843bbd00fcdb1a9732c01fe1"
-  },
-  "pendingTestEvidence": {
-    "productionBackendChanges": false,
-    "physicalAcceptance": "NOT_RUN",
-    "freshBackupRestore": "NOT_RUN"
-  },
-  "verification": {
-    "sourceCommit": "ccf23d219bb6e507c8c0683cedeffd61750fcb00",
-    "checks": {
-      "signedCandidate": {
-        "run": 44912928210,
-        "status": "PASS",
-        "sourceCommit": "ccf23d219bb6e507c8c0683cedeffd61750fcb00"
-      },
-      "reception": {
-        "run": 44912928192,
-        "status": "PASS",
-        "sourceCommit": "ccf23d219bb6e507c8c0683cedeffd61750fcb00"
-      },
-      "androidArchitecture": {
-        "run": 44912928147,
-        "status": "PASS",
-        "sourceCommit": "ccf23d219bb6e507c8c0683cedeffd61750fcb00"
-      },
-      "standardApk": {
-        "run": 44912928148,
-        "status": "PASS",
-        "sourceCommit": "ccf23d219bb6e507c8c0683cedeffd61750fcb00"
-      },
-      "mechanicalContracts": {
-        "run": 44912928151,
-        "status": "PASS",
-        "sourceCommit": "ccf23d219bb6e507c8c0683cedeffd61750fcb00"
-      },
-      "accountant": {
-        "run": 44912928168,
-        "status": "PASS",
-        "sourceCommit": "ccf23d219bb6e507c8c0683cedeffd61750fcb00"
-      },
-      "connection": {
-        "run": 44912928196,
-        "status": "PASS",
-        "sourceCommit": "ccf23d219bb6e507c8c0683cedeffd61750fcb00"
-      },
-      "mechanicalPhone": {
-        "run": 44912506152,
-        "status": "PASS_PRIOR_V408_SOURCE_UNCHANGED_SUBSYSTEM",
-        "sourceCommit": "5c6a2fe7a10e3a6ca423e62186f8fcf4795dab63"
-      },
-      "syncTraffic": {
-        "run": 44912506080,
-        "status": "PASS_PRIOR_V408_SOURCE_UNCHANGED_SUBSYSTEM",
-        "sourceCommit": "5c6a2fe7a10e3a6ca423e62186f8fcf4795dab63"
-      },
-      "nativePdf": {
-        "run": 44912506075,
-        "status": "PASS_PRIOR_V408_SOURCE_UNCHANGED_SUBSYSTEM",
-        "sourceCommit": "5c6a2fe7a10e3a6ca423e62186f8fcf4795dab63"
-      },
-      "stockTest": {
-        "run": 44912928210,
-        "status": "PASS_IN_FULL_REGRESSION",
-        "sourceCommit": "ccf23d219bb6e507c8c0683cedeffd61750fcb00"
-      },
-      "stockPreview": {
-        "run": 44912928210,
-        "status": "PASS_IN_FULL_REGRESSION",
-        "sourceCommit": "ccf23d219bb6e507c8c0683cedeffd61750fcb00"
-      }
-    },
-    "physicalAcceptance": "NOT_RUN",
-    "freshBackupRestore": "NOT_RUN",
-    "productionBackendChanges": false
   }
 }
