@@ -33,12 +33,20 @@ jobs:
         run: npm run test:consumables:stock
       - name: Normal staff app cannot activate via URL
         run: node tests/consumables-stock-live-readiness.mjs
-      - name: Confirm production release remains held
+      - name: Confirm live Stock activation remains disabled
         run: |
           node - <<'NODE'
           const fs=require('node:fs');
           const request=JSON.parse(fs.readFileSync('release-request.json','utf8'));
-          if(request.phase2ActivationApproved!==false || request.approvedForStaff!==false ||
-             request.productionBackendChanges!==false)throw Error('Stock production release gate unexpectedly open');
-          console.log('PASS: stock production release held');
+          // V409 may be published for UI acceptance. That is NOT permission
+          // to install stock tables, deploy Stock API, or activate writes.
+          if(request.phase2ActivationApproved!==false ||
+             request.productionBackendChanges!==false ||
+             request.backendDeploymentRequired!==false ||
+             request.releaseScope!=='phase1-compatible-ui')
+            throw Error('Unexpected Stock backend activation or release scope');
+          const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+          if(!html.includes('window.ZUKAIT_STOCK_UI_PREVIEW_ONLY=true'))
+            throw Error('Stock preview safety missing from normal app');
+          console.log('PASS: UI-only V409 allowed, live inventory writes remain locked.');
           NODE
