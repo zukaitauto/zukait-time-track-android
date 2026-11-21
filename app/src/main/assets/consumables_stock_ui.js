@@ -376,6 +376,23 @@ function previewJobCard(c,kind){
 }
 
 const previewHomeCss='<style>'+
+ '#zs-stock-screen{position:fixed;inset:0;z-index:2147483000;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:linear-gradient(145deg,#f3f8ff,#ffffff 56%,#e9f4fd);color:#14263c}'+
+ '#zs-stock-screen .zs-preview{max-width:1250px;min-height:100%;padding:clamp(15px,3vw,36px);margin:0 auto}'+
+ '#zs-stock-screen .zs-screen-toolbar{background:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 15px;margin:0 0 16px;border:1px solid #d1e1f1;border-radius:15px;box-shadow:0 5px 18px #25446a0b}'+
+ '#zs-stock-screen .zs-screen-brand{font-weight:900;color:#173f75;font-size:18px;letter-spacing:.025em}'+
+ '#zs-stock-screen .zs-preview h2{font-size:clamp(23px,3vw,32px);margin:22px 0 12px}'+
+ '#zs-stock-screen .zs-preview .zs-home-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:22px 0 26px}'+
+ '#zs-stock-screen .zs-preview .zs-home-tile{display:flex;flex-direction:column;align-items:flex-start;min-height:190px;padding:22px;gap:12px;transition:transform .15s ease,box-shadow .15s ease;box-shadow:0 8px 23px #194a7914}'+
+ '#zs-stock-screen .zs-preview .zs-home-tile:hover{transform:translateY(-2px);box-shadow:0 12px 27px #194a7926}'+
+ '#zs-stock-screen .zs-preview .zs-home-icon{font-size:24px;flex:0 0 52px;height:52px;width:52px;border-radius:15px;box-shadow:0 2px 8px #123c5b14}'+
+ '#zs-stock-screen .zs-preview .zs-home-info strong{font-size:19px}'+
+ '#zs-stock-screen .zs-preview .zs-home-info small{font-size:13px}'+
+ '#zs-stock-screen .zs-preview .zs-home-chevron{position:absolute;right:20px;bottom:15px;align-self:auto;font-size:27px}'+
+ '#zs-stock-screen .zs-preview .zs-home-tile:last-child{grid-column:span 2}'+
+ '#zs-stock-screen .zs-preview .zs-panel{padding:clamp(14px,2.5vw,27px);box-shadow:0 3px 15px #194a790a}'+
+ '@media(max-width:900px){#zs-stock-screen .zs-preview .zs-home-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#zs-stock-screen .zs-preview .zs-home-tile:last-child{grid-column:span 2}}'+
+ '@media(max-width:600px){#zs-stock-screen .zs-preview .zs-home-grid{grid-template-columns:1fr}#zs-stock-screen .zs-preview .zs-home-tile:last-child{grid-column:auto}#zs-stock-screen .zs-preview .zs-home-tile{min-height:140px;padding:16px}#zs-stock-screen .zs-screen-toolbar{padding:9px 10px;gap:5px}#zs-stock-screen .zs-screen-brand{font-size:14px}}'+
+
  '.zs-preview .zs-home-hero{border-radius:17px;padding:20px 22px;background:linear-gradient(110deg,#e6f1ff,#f3faff);border:1px solid #bfd8ef;margin:14px 0}'+
  '.zs-preview .zs-home-hero h3{font-size:22px;color:#193f6d;margin:0 0 7px}'+
  '.zs-preview .zs-home-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:15px 0}'+
@@ -409,10 +426,13 @@ function previewHome(){
     '<span class="zs-home-chevron" aria-hidden="true">›</span></button>'
   ).join('')+'</div>';
 }
+// This is a real full-screen in-app page, not a modal. The Stock menu and
+// each selected detail screen are mutually exclusive, with explicit Back.
 function showPreview(){
- if(!allowed())return;
+ if(!allowed()||!previewOnly())return;
  const isHome=preview.page==='home',c=catalog(),rows=isHome?[]:previewPairs();
- const tabName=previewTabs.find(x=>x[0]===preview.page)?.[1]||(preview.page==='suggest'?'Suggest Material':'Return Material');
+ const tabName=previewTabs.find(x=>x[0]===preview.page)?.[1]||
+  (preview.page==='suggest'?'Suggest Material':'Return Unused Material');
  let content='';
  if(isHome)content=previewHome();
  else switch(preview.page){
@@ -424,14 +444,39 @@ function showPreview(){
   case 'return':content=previewJobCard(c,'return');break;
   default:content=previewBalance(rows,c);
  }
- const back=isHome?'':'<div class="zs-actions"><button type="button" class="zs-ghost" onclick="zukStockPreviewNavigate(\'home\')">← Stock Menu</button></div>';
- window.openModal?.(css+previewCss+previewHomeCss+'<section class="zs zs-preview">'+
-  '<div class="zs-row"><button type="button" class="zs-ghost" onclick="openConsumablesModule()">← Consumables</button>'+
-  '<button type="button" class="zs-ghost" onclick="closeModal()">✕ Close</button></div>'+
+ const back=isHome?
+   '<button type="button" class="zs-ghost" onclick="zukStockPreviewExit(\'consumables\')">← Consumables</button>':
+   '<button type="button" class="zs-ghost" onclick="zukStockPreviewNavigate(\'home\')">← Stock Management</button>';
+ const markup=css+previewCss+previewHomeCss+'<section class="zs zs-preview" data-stock-view="'+esc(preview.page)+'">'+
+  '<header class="zs-screen-toolbar">'+back+
+  '<strong class="zs-screen-brand">▣ ZUKAIT · STOCK</strong>'+
+  '<button type="button" class="zs-ghost" onclick="zukStockPreviewExit(\'dashboard\')">✕ Close</button></header>'+
   (isHome?'':'<h2>'+esc(tabName)+'</h2>')+
-  previewNotice()+back+content+
-  '<p class="zs-preview-note">Stock interface preview only. No stock API calls, inventory adjustments or database writes.</p></section>');
+  previewNotice()+content+
+  '<p class="zs-preview-note">Stock interface preview only. No stock API calls, inventory adjustments or database writes.</p></section>';
+ let screen=document.getElementById('zs-stock-screen');
+ if(!screen){
+  screen=document.createElement('main');
+  screen.id='zs-stock-screen';
+  screen.setAttribute('aria-label','Consumables Stock Management');
+  screen.setAttribute('tabindex','-1');
+  screen.dataset.savedOverflow=document.body.style.overflow||'';
+  document.body.appendChild(screen);
+  document.body.style.overflow='hidden';
+ }
+ screen.dataset.view=preview.page;
+ screen.innerHTML=markup;
+ screen.scrollTop=0;
+ screen.focus({preventScroll:true});
 }
+window.zukStockPreviewExit=destination=>{
+ const screen=document.getElementById('zs-stock-screen');
+ if(screen){
+  document.body.style.overflow=screen.dataset.savedOverflow||'';
+  screen.remove();
+ }
+ if(destination==='consumables')window.openConsumablesModule?.();
+};
 window.zukStockPreviewNavigate=page=>{
  if(!allowed()||!['home','balance','add','history','adjust','reports','suggest','return'].includes(page))return;
  preview.page=page;showPreview();
@@ -457,7 +502,7 @@ window.zukStockPreviewPrice=()=>{
  output.textContent='Quantity: '+fmt(quantity)+' · Price per unit: '+OMR(cost)+
   ' OMR · Total purchase value: '+OMR(total)+' OMR. Preview only — not saved.';
 };
-window.openStockManagement=()=>previewOnly()?(preview.page='home',showPreview()):load('balance',true);
+window.openStockManagement=()=>previewOnly()?(preview.page='home',window.closeModal?.(),showPreview()):load('balance',true);
 window.zukStockNav=(page,force=false)=>previewOnly()?window.zukStockPreviewNavigate(page):load(page,force);
 window.zukStockDetail=id=>{view.selected=String(id||'');view.page='detail';render()};
 window.zukStockMore=async()=>{
