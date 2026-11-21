@@ -3,6 +3,7 @@ import { createDatabaseFetch } from './database_fetch.js';
 import {billRoute} from './accountant/extensions/bill_route.js';
 import { mechanicalRoute, mechanicalLegacyDeliveryCheck } from "./extensions/mechanical_route.js";
 import { mechanicalTimeApi } from './extensions/mechanical_time_api.js';
+import { stockPhase1Api } from './extensions/stock_phase1_api.js';
 import { mechanicalSectionApi } from './extensions/mechanical_section_api.js';
 import { mechanicalInspectionBoundary } from './extensions/mechanical_inspection_boundary.js';
 import { createMechanicalInspectionSessionVerifier } from './extensions/mechanical_inspection_session.js';
@@ -1296,6 +1297,16 @@ Deno.serve(async (req: Request) => {
 
     if (user.role === "Receptionist" && !receptionistRequestAllowed(action, body)) {
       return reply({ok:false, code:"receptionist_forbidden"}, 403);
+    }
+
+    // Stock Phase 1: separate ledger behind a default-OFF server flag.
+    // Session was validated above; this API checks active role again in its SQL RPC.
+    if (action === "stock_phase1") {
+      const result = await stockPhase1Api(admin,user,body,{
+        enabled:Deno.env.get("ZUKAIT_STOCK_PHASE1_ENABLED")==="true",
+        sessionHash:await sha256Hex(token)
+      });
+      return reply(result.body,result.status);
     }
 
     if ((action === "qc_delivery" || action === "receptionist_deliver") && body.operation === "DELIVER" && Deno.env.get("ZUKAIT_MECHANICAL_ENABLED") === "true" && Deno.env.get("ZUKAIT_MECHANICAL_QC_ENABLED") === "true" && Deno.env.get("ZUKAIT_MECHANICAL_DELIVERY_ENABLED") === "true") {
