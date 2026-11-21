@@ -329,8 +329,9 @@ const previewCss='<style>'+
  '@media(max-width:680px){.zs-preview .zs-filter,.zs-preview .zs-formgrid{grid-template-columns:minmax(0,1fr)}.zs-preview .zs-panel{padding:10px}.zs-preview .zs-pnav button{flex:1 1 135px}}'+
  '</style>';
 const previewNotReady='<span class="zs-not-ready">Not initialized</span>';
-const previewNotice=()=>'<div class="zs-warning" role="status"><b>UI PREVIEW ONLY.</b> Opening stock, purchases, issuing, returns and adjustments are NOT ACTIVE. '+
- 'Master materials are not verified stock balances. No stock transactions, stock reservations or costs will be saved.</div>';
+const previewNotice=()=>'<div class="zs-warning" role="status"><b>UI PREVIEW ONLY · LIVE STOCK NOT SET UP.</b> '+
+ 'Saved material names are available, but physical stock and stock costs have not been verified. '+
+ 'Purchases, issues, returns and adjustments cannot be saved until the stock database and API are activated.</div>';
 function previewPairs(){
  const c=catalog(),rows=[];
  for(const m of c.materials){
@@ -574,17 +575,17 @@ const previewHomeCss='<style>'+
  '#zs-stock-screen .zs-screen-toolbar{background:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 15px;margin:0 0 16px;border:1px solid #d1e1f1;border-radius:15px;box-shadow:0 5px 18px #25446a0b}'+
  '#zs-stock-screen .zs-screen-brand{font-weight:900;color:#173f75;font-size:18px;letter-spacing:.025em}'+
  '#zs-stock-screen .zs-preview h2{font-size:clamp(23px,3vw,32px);margin:22px 0 12px}'+
- '#zs-stock-screen .zs-preview .zs-home-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:22px 0 26px}'+
+ '#zs-stock-screen .zs-preview .zs-home-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0 24px}'+
  '#zs-stock-screen .zs-preview .zs-home-tile{display:flex;flex-direction:column;align-items:flex-start;min-height:190px;padding:22px;gap:12px;transition:transform .15s ease,box-shadow .15s ease;box-shadow:0 8px 23px #194a7914}'+
  '#zs-stock-screen .zs-preview .zs-home-tile:hover{transform:translateY(-2px);box-shadow:0 12px 27px #194a7926}'+
  '#zs-stock-screen .zs-preview .zs-home-icon{font-size:24px;flex:0 0 52px;height:52px;width:52px;border-radius:15px;box-shadow:0 2px 8px #123c5b14}'+
  '#zs-stock-screen .zs-preview .zs-home-info strong{font-size:19px}'+
  '#zs-stock-screen .zs-preview .zs-home-info small{font-size:13px}'+
  '#zs-stock-screen .zs-preview .zs-home-chevron{position:absolute;right:20px;bottom:15px;align-self:auto;font-size:27px}'+
- '#zs-stock-screen .zs-preview .zs-home-tile:last-child{grid-column:span 2}'+
+ '#zs-stock-screen .zs-preview .zs-home-tile:last-child{grid-column:auto}'+
  '#zs-stock-screen .zs-preview .zs-panel{padding:clamp(14px,2.5vw,27px);box-shadow:0 3px 15px #194a790a}'+
- '@media(max-width:900px){#zs-stock-screen .zs-preview .zs-home-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#zs-stock-screen .zs-preview .zs-home-tile:last-child{grid-column:span 2}}'+
- '@media(max-width:600px){#zs-stock-screen .zs-preview .zs-home-grid{grid-template-columns:1fr}#zs-stock-screen .zs-preview .zs-home-tile:last-child{grid-column:auto}#zs-stock-screen .zs-preview .zs-home-tile{min-height:140px;padding:16px}#zs-stock-screen .zs-screen-toolbar{padding:9px 10px;gap:5px}#zs-stock-screen .zs-screen-brand{font-size:14px}}'+
+ '@media(max-width:900px){#zs-stock-screen .zs-preview .zs-home-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#zs-stock-screen .zs-preview .zs-home-tile:last-child{grid-column:auto}}'+
+ '@media(max-width:600px){#zs-stock-screen .zs-preview .zs-home-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}#zs-stock-screen .zs-preview .zs-home-tile:last-child{grid-column:auto}#zs-stock-screen .zs-preview .zs-home-tile{min-width:0;min-height:150px;padding:13px;gap:7px}#zs-stock-screen .zs-preview .zs-home-icon{flex:0 0 36px;width:36px;height:36px;font-size:20px}#zs-stock-screen .zs-screen-toolbar{padding:9px 10px;gap:5px}#zs-stock-screen .zs-screen-brand{font-size:14px}}'+
 
  '.zs-preview .zs-home-hero{border-radius:17px;padding:20px 22px;background:linear-gradient(110deg,#e6f1ff,#f3faff);border:1px solid #bfd8ef;margin:14px 0}'+
  '.zs-preview .zs-home-hero h3{font-size:22px;color:#193f6d;margin:0 0 7px}'+
@@ -601,7 +602,7 @@ const previewHomeCss='<style>'+
  '.zs-preview .zs-home-tile.orange{background:#fff2e6;border-color:#efd3b6}'+
  '.zs-preview .zs-home-tile.teal{background:#e6f8f8;border-color:#b7dfdf}'+
  '.zs-preview .zs-home-tile:last-child{grid-column:span 2}'+
- '@media(max-width:620px){.zs-preview .zs-home-grid{grid-template-columns:1fr}.zs-preview .zs-home-tile:last-child{grid-column:auto}.zs-preview .zs-home-tile{min-height:105px;padding:15px}}'+
+ '@media(max-width:620px){.zs-preview .zs-home-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.zs-preview .zs-home-tile:last-child{grid-column:auto}.zs-preview .zs-home-tile{min-height:150px;padding:13px}}'+
 
  /* Dedicated Stock-card palette: avoid inherited global blue/green/purple
     backgrounds and dark text, including on narrow phones. */
@@ -619,7 +620,14 @@ const previewHomeCss='<style>'+
  '#zs-stock-screen .zs-preview .zs-home-icon{background:#ffffffed!important;color:#194f7d!important;box-shadow:0 3px 9px #163a5a22!important}'+
  '#zs-stock-screen .zs-preview .zs-home-tile:hover{box-shadow:0 10px 26px #1e42644d!important;transform:translateY(-2px)}'+
  '#zs-stock-screen .zs-preview .zs-home-tile:focus-visible{outline:3px solid #152b45!important;outline-offset:3px}'+
- '@media(max-width:600px){#zs-stock-screen .zs-screen-brand{order:3;flex:1 0 100%;text-align:center;padding:5px 0 0;font-size:16px!important}#zs-stock-screen .zs-preview .zs-home-info strong{font-size:20px!important}#zs-stock-screen .zs-preview .zs-home-tile{min-height:145px}}'+
+ '@media(max-width:600px){#zs-stock-screen .zs-screen-brand{order:3;flex:1 0 100%;text-align:center;padding:5px 0 0;font-size:16px!important}#zs-stock-screen .zs-preview .zs-home-info strong{font-size:16px!important;line-height:1.24!important;overflow-wrap:anywhere}#zs-stock-screen .zs-preview .zs-home-info small{font-size:11px!important;line-height:1.4!important}#zs-stock-screen .zs-preview .zs-home-chevron{right:9px;bottom:7px}}'+
+  '#zs-stock-screen .zs-department-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}'+
+  '#zs-stock-screen .zs-department-card{min-height:160px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:12px;text-align:left;border:1px solid #235d94;border-radius:15px;padding:16px;color:#fff;background:linear-gradient(135deg,#255ce1,#173f90);font-weight:750;cursor:pointer;min-width:0}'+
+  '#zs-stock-screen .zs-department-card.mechanical{background:linear-gradient(135deg,#117c73,#09534d);border-color:#09534d}'+
+  '#zs-stock-screen .zs-department-card strong{font-size:clamp(16px,2.1vw,20px);line-height:1.3;color:#fff!important;overflow-wrap:anywhere}'+
+  '#zs-stock-screen .zs-department-card small{font-size:12px;line-height:1.45;color:#eefbff!important}'+
+  '#zs-stock-screen .zs-department-card:focus-visible{outline:3px solid #142740;outline-offset:3px}'+
+  '@media(max-width:600px){#zs-stock-screen .zs-department-grid{gap:10px}#zs-stock-screen .zs-department-card{min-height:142px;padding:12px;gap:8px}#zs-stock-screen .zs-department-card small{font-size:11px}}'+
  '</style>';
 const previewHomeTiles=[
  ['balance','📦','Stock Balance','Available, reserved and total stock, with average cost','blue'],
