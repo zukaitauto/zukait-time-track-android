@@ -95,13 +95,15 @@ async function verifySession(token: string) {
     .select("user_id,revoked_at")
     .eq("token_hash", hash)
     .maybeSingle();
-  if (error || !session || session.revoked_at) return null;
+  if (error) throw error;
+  if (!session || session.revoked_at) return null;
 
   const { data: staff, error: staffError } = await admin.from("staff_credentials")
     .select("user_id,display_name,role,department,active,must_change")
     .eq("user_id", session.user_id)
     .maybeSingle();
-  if (staffError || !staff || !staff.active || staff.must_change) return null;
+  if (staffError) throw staffError;
+  if (!staff || !staff.active || staff.must_change) return null;
 
   await admin.from("staff_sessions").update({ last_seen_at: new Date().toISOString() })
     .eq("token_hash", hash);
