@@ -16,7 +16,7 @@ assert.doesNotMatch(html,/window\.ZUKAIT_MECHANICAL_STOCK_ENABLED\s*=\s*true/,
  'Mechanical issuing must not be enabled by main app');
 
 const dom=new JSDOM('<!doctype html><html><body><div id="modal" class="modal-backdrop"></div></body></html>',
- {url:'https://zukaitauto.github.io/',runScripts:'outside-only'});
+ {url:'https://zukaitauto.github.io/',runScripts:'dangerously'});
 const win=dom.window,doc=win.document,calls=[];
 let modalOpened=0,backToConsumables=0,closedModal=0;
 win.me={id:'M',role:'Manager'};
