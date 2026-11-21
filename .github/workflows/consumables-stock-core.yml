@@ -41,6 +41,8 @@ jobs:
         run: node tests/consumables-stock-api.mjs
       - name: Combined Stock and Mechanical menu, sync and API wiring
         run: node tests/consumables-combined-wiring.mjs
+      - name: Safe main-app Stock preview using existing staff login
+        run: node tests/consumables-main-app-preview.mjs
       - name: Combined release roles and default-off flags
         run: node tests/consumables-combined-release-role-flags.mjs
       - name: Direct PostgreSQL ACL, RLS and service-role acceptance
