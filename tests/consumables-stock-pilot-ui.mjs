@@ -49,4 +49,15 @@ window.zukStockSaveAdjustment();
 await new Promise(resolve=>setImmediate(resolve));
 assert.equal(calls.filter(x=>x.operation==='WRITE').at(-1).command,'ADJUST');
 assert.equal(calls.filter(x=>x.operation==='WRITE').at(-1).data.countedQuantity,8);
+for (const department of ['Painting','Mechanical']) {
+  await window.openStockManagement(department);
+  assert.equal(calls.at(-1).department,department);
+  await window.zukStockNav('history');
+  assert.equal(calls.at(-1).department,department);
+  await window.zukStockNav('reports');
+  assert.equal(calls.at(-1).department,department);
+  await window.zukStockNav('add');
+  assert.match(html, /<option value="oil" selected>Oil<\/option>/);
+  assert.match(html, /<option value="brand">Brand<\/option>/);
+}
 console.log('Controlled stock UI: all five screens, stock math, report totals and stock commands passed');

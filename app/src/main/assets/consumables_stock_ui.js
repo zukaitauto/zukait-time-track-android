@@ -3,6 +3,7 @@
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const OMR=n=>Number(n||0).toFixed(3);
 const fmt=n=>Number(n||0).toFixed(2);
+let department='';
 let view={page:'balance',items:[],history:[],itemsHasMore:false,historyHasMore:false,loading:false,error:'',busy:false,
   selected:'',mode:'total',pending:null,legacyItems:[],legacyPage:0,legacyHasMore:false,report:null};
 const allowed=()=>typeof me!=='undefined'&&['Manager','Supervisor'].includes(me?.role);
@@ -12,6 +13,7 @@ const previewOnly=()=>window.ZUKAIT_STOCK_UI_PREVIEW_ONLY===true&&
   (!window.location?.search||new URLSearchParams(window.location.search).get('stockPilot')!=='1');
 const api=x=>previewOnly()?Promise.reject(Error('Stock preview: transactions not enabled')):
   window.zukaitCloud?.stockRequest?.(x)||Promise.reject(Error('Stock server connection not ready'));
+const stockRead=request=>api(department?{...request,department}:request);
 const catalog=()=>{
   try{
     const c=typeof state!=='undefined'&&window.ZukaitConsumables?.ensureState(state);
@@ -56,7 +58,11 @@ function draw(body) {
   const header='<div class="zs"><div class="zs-row">'+
     '<button class="zs-btn secondary" onclick="openConsumablesModule()">← Consumables</button>'+
     '<button class="zs-btn secondary" onclick="closeModal()">✕ Close</button></div>'+
-    '<h2 style="margin:12px 0 6px">Consumables Stock</h2><div class="zs-muted">Manager & Supervisor</div>'+
+    '<h2 style="margin:12px 0 6px">Consumables Stock</h2>'+
+    '<label for="zs-department">Department</label><select id="zs-department" onchange="openStockManagement(this.value)">'+
+    [['','All departments'],['Painting','Paint Consumables'],['Mechanical','Mechanical Consumables']]
+      .map(([value,name])=>'<option value="'+value+'"'+(value===department?' selected':'')+'>'+name+'</option>').join('')+'</select>'+
+    (department?'<p class="zs-muted">Shared items use the same stock balance in both departments.</p>':'')+
     '<div class="zs-nav">'+nav+'</div>';
   const message=view.error?'<div class="zs-warning">'+esc(view.error)+'</div>':'';
   window.openModal(css+header+message+(body||'')+'</div>');
@@ -128,13 +134,15 @@ function render(){
  }
  if(view.page==='add'){
    const c=catalog(),row=view.items.find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected);
-   let material=row?.material_id||c.materials[0]?.id||'',brand=row?.brand_id||c.brands[0]?.id||'';
-   const mopts=c.materials.map(m=>'<option value="'+esc(m.id)+'"'+(String(m.id)===String(material)?' selected':'')+'>'+esc(m.name)+'</option>').join('');
-   const bopts=c.brands.map(b=>'<option value="'+esc(b.id)+'"'+(String(b.id)===String(brand)?' selected':'')+'>'+esc(b.name)+'</option>').join('');
+   if(department&&!view.items.length){draw('<p class="zs-card">No stock items assigned to this department. A Manager can link items from the Stock Balance screen.</p>');return}
+   const material=row?.material_id||(department?view.items[0]?.material_id:c.materials[0]?.id)||'';
+   const materials=department?c.materials.filter(m=>view.items.some(r=>r.material_id===m.id)):c.materials;
+   const mopts=materials.map(m=>'<option value="'+esc(m.id)+'"'+(String(m.id)===String(material)?' selected':'')+'>'+esc(m.name)+'</option>').join('');
+   const bopts=stockBrandOptions(material,row?.brand_id);
    draw('<h3>Add / Open Stock</h3>'+
     '<p class="zs-muted">Enter litres directly (not tins or drums). Non-liquid materials retain kg or Piece units.</p>'+
     (manager()?'<label>Entry type</label><select id="zs-entrytype" onchange="zukStockSetEntryType()"><option value="PURCHASE">Purchased Stock</option><option value="OPENING">Opening Stock (one time only)</option></select>':'')+
-    '<div class="zs-two"><div><label>Material</label><select id="zs-material">'+mopts+'</select></div>'+
+    '<div class="zs-two"><div><label>Material</label><select id="zs-material" onchange="zukStockUpdateBrands()">'+mopts+'</select></div>'+
     '<div><label>Brand</label><select id="zs-brand">'+bopts+'</select></div></div>'+
     '<label>Quantity (existing material unit)</label><input id="zs-qty" type="number" min="0.0001" step="any" placeholder="Enter physically counted / received quantity">'+
     '<label>Price method</label><select id="zs-method"><option value="total">Total Purchase Price</option><option value="unit">Price per Unit</option></select>'+
@@ -195,7 +203,7 @@ async function load(page,force=false){
    view.loading=true;render();
    try{
      const request=needsItems?{operation:'LIST',page:0}:{operation:needReport?'REPORTS':'HISTORY'};
-     const reply=await api(request);
+     const reply=await stockRead(request);
      if(!reply.ok)throw Error(reply.code||'STOCK_UNAVAILABLE');
      if(needsItems){view.items=reply.items||[];view.itemsHasMore=!!reply.hasMore}
      else if(needReport)view.report=reply.report||null;
@@ -659,13 +667,27 @@ window.zukStockPreviewPrice=()=>{
  output.textContent='Quantity: '+fmt(quantity)+' · Price per unit: '+OMR(cost)+
   ' OMR · Total purchase value: '+OMR(total)+' OMR. Preview only — not saved.';
 };
-window.openStockManagement=()=>{if(previewOnly()){if(!allowed())return;preview.page='home';window.closeModal?.();showPreview();return}return load('balance',true)};
+function stockBrandOptions(material,selected){
+ const brands=catalog().brands.filter(b=>!department||view.items.some(r=>r.material_id===material&&r.brand_id===b.id));
+ return brands.map(b=>'<option value="'+esc(b.id)+'"'+(b.id===selected?' selected':'')+'>'+esc(b.name)+'</option>').join('');
+}
+window.zukStockUpdateBrands=()=>{
+ const material=document.getElementById('zs-material'),brand=document.getElementById('zs-brand');
+ if(material&&brand)brand.innerHTML=stockBrandOptions(material.value,brand.value);
+};
+window.openStockManagement=(scope='')=>{
+ if(!allowed()||view.loading||view.busy)return;
+ if(previewOnly()){preview.page='home';window.closeModal?.();showPreview();return}
+ department=['Painting','Mechanical'].includes(scope)?scope:'';
+ view.items=[];view.history=[];view.report=null;view.selected='';view.itemsHasMore=false;view.historyHasMore=false;
+ return load('balance',true);
+};
 window.zukStockNav=(page,force=false)=>previewOnly()?window.zukStockPreviewNavigate(page):load(page,force);
 window.zukStockDetail=id=>{view.selected=String(id||'');view.page='detail';render()};
 window.zukStockMore=async()=>{
   if(view.loading)return;view.loading=true;
   try{
-    const reply=await api({operation:'LIST',page:Math.floor(view.items.length/100)});
+    const reply=await stockRead({operation:'LIST',page:Math.floor(view.items.length/100)});
     if(!reply.ok)throw Error(reply.code||'STOCK_UNAVAILABLE');
     view.items.push(...(reply.items||[]));view.itemsHasMore=!!reply.hasMore;
   }catch(e){view.error=String(e.message||e)}finally{view.loading=false;render()}
@@ -675,7 +697,7 @@ window.zukStockMoreHistory=async()=>{
   const cursor=view.history[view.history.length-1].id;
   view.loading=true;
   try{
-    const reply=await api({operation:'HISTORY',cursor:String(cursor)});
+    const reply=await stockRead({operation:'HISTORY',cursor:String(cursor)});
     if(!reply.ok)throw Error(reply.code||'STOCK_UNAVAILABLE');
     view.history.push(...(reply.history||[]));view.historyHasMore=!!reply.hasMore;
   }catch(e){view.error=String(e.message||e)}finally{view.loading=false;render()}

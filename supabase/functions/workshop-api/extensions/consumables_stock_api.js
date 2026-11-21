@@ -4,7 +4,7 @@
 const roles = new Set(['Manager','Supervisor','Mechanical Supervisor']);
 const managerActions = new Set(['OPENING','ADJUST','MINIMUM']);
 const allowedCommands = new Set(['OPENING','PURCHASE','RESERVE','CHANGE','CANCEL','FINALISE','RETURN','ADJUST','MINIMUM','MECHANICAL_ISSUE','MECHANICAL_RETURN']);
-const allowedKeys = new Set(['action','operation','command','requestId','data','materialId','brandId','jobCard','cursor','page','origin']);
+const allowedKeys = new Set(['action','operation','command','requestId','data','materialId','brandId','jobCard','cursor','page','origin','department']);
 const bad = (code,status=400) => ({status,body:{ok:false,code}});
 const good = data => ({status:200,body:{ok:true,...data}});
 function safeId(value, limit=120) {
@@ -17,6 +17,10 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
   if(!body||typeof body!=='object'||Array.isArray(body)||
     Object.keys(body).some(k=>!allowedKeys.has(k)))return bad('stock_invalid_request');
   const operation=String(body.operation||'LIST').trim().toUpperCase();
+  const department=body.department;
+  if(department!==undefined&&!['Painting','Mechanical'].includes(department))
+    return bad('stock_invalid_department');
+
   // Mechanical Supervisors may only see the scoped Mechanical catalog and issue to it.
   // LIST/HISTORY/BALANCE/RESERVATIONS could otherwise disclose Bodyshop-only stock.
   if(user.role==='Mechanical Supervisor'&&!['CATALOG','WRITE','MECHANICAL_RETURNABLE','MECHANICAL_TOTALS'].includes(operation))
@@ -125,15 +129,19 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
     return good({item:data||null});
   }
   if(operation==='REPORTS') {
-    const {data,error}=await admin.rpc('zukait_stock_balance_report');
+    const {data,error}=department
+      ? await admin.rpc('zukait_stock_department_report',{p_department:department})
+      : await admin.rpc('zukait_stock_balance_report');
     if(error||!data)return bad('stock_report_failed',503);
     return good({report:data});
   }
   if(operation==='LIST') {
     const page=Math.max(0,Math.min(20,Number.isInteger(body.page)?body.page:0));
-    const {data,error}=await admin.from('zukait_stock_balances')
-      .select('material_id,brand_id,unit,physical,reserved,stock_value,minimum,updated_at')
-      .order('material_id',{ascending:true}).order('brand_id',{ascending:true})
+    const fields='material_id,brand_id,unit,physical,reserved,stock_value,minimum,updated_at';
+    let query=admin.from('zukait_stock_balances').select(department
+      ? fields+',material:zukait_stock_material_keys!inner(department,active)' : fields);
+    if(department)query=query.in('material.department',[department,'Both']).eq('material.active',true);
+    const {data,error}=await query.order('material_id',{ascending:true}).order('brand_id',{ascending:true})
       .range(page*100,(page+1)*100);
     if(error)return bad('stock_read_failed',503);
     const rows=Array.isArray(data)?data:[];
@@ -145,6 +153,14 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
     if(body.materialId&&!materialId||body.brandId&&!brandId)return bad('stock_invalid_filter');
     const cursor=body.cursor==null?'':String(body.cursor);
     if(cursor&&!/^[1-9]\d{0,17}$/.test(cursor))return bad('stock_invalid_cursor');
+    if(department){
+      const {data,error}=await admin.rpc('zukait_stock_department_history',{
+        p_department:department,p_material_id:materialId||null,p_brand_id:brandId||null,p_cursor:cursor||null
+      });
+      if(error)return bad('stock_history_failed',503);
+      const rows=Array.isArray(data)?data:[];
+      return good({history:rows.slice(0,50),hasMore:rows.length>50});
+    }
     let query=admin.from('zukait_stock_movements')
       .select('id,material_id,brand_id,action,physical_delta,reserved_delta,cost_delta,job_card,actor_id,note,recorded_at')
       .order('id',{ascending:false}).limit(51);

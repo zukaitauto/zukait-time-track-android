@@ -69,6 +69,22 @@ try {
   const movements = await db.query('select action,actor_id from zukait_stock_movements order by id');
   assert.deepEqual(movements.rows.map(row=>[row.action,row.actor_id]),
     [['OPENING','m'],['PURCHASE','s'],['ADJUST','m']]);
+  await db.exec(`
+    update zukait_stock_material_keys set department='Both' where material_id='oil';
+    insert into zukait_stock_material_keys(material_id,unit,department)
+      values ('paint','Liter','Painting'),('mechanical','Liter','Mechanical'),('unassigned','Liter','Unassigned');
+    insert into zukait_stock_balances(material_id,brand_id,unit,physical,reserved,stock_value)
+      values ('paint','brand','Liter',1,0,5),('mechanical','brand','Liter',2,0,10),('unassigned','brand','Liter',1,0,20);
+    insert into zukait_stock_movements(material_id,brand_id,action,actor_id,request_id)
+      values ('paint','brand','OPENING','m','paint-scope'),('mechanical','brand','OPENING','m','mechanical-scope');
+  `);
+  for (const [department, own, valuation] of [['Painting','paint',59],['Mechanical','mechanical',64]]) {
+    const reports = (await db.query('select zukait_stock_department_report($1) result',[department])).rows[0].result;
+    assert.equal(reports.valuation,valuation);
+    assert.equal(reports.items,2);
+    const history = (await db.query('select zukait_stock_department_history($1,null,null,null) result',[department])).rows[0].result;
+    assert.deepEqual([...new Set(history.map(row=>row.material_id))],[own,'oil']);
+  }
   assert.deepEqual(await legacy(), initial);
   console.log('Stock API + SQL: costing, valuation, receipts, access and legacy preservation passed');
 } finally {

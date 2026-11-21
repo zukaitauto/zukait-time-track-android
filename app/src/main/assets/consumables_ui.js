@@ -53,7 +53,7 @@ window.openFinalMaterialPending=function(){
 };
 window.openPaintingConsumables=function(){
  if(!['Supervisor','Manager'].includes(role()))return;
- let base=action('⚠ Final Material Pending · '+consFinalMaterialPendingRows().length,'Ready JCs missing final Actual Materials','openFinalMaterialPending()','additional')+action('Suggested / Issued Materials','Original material issue','openConsumablesEntry(\'issued\')','issued')+
+ let base=action('Paint Stock','Paint and shared stock balances, history and reports',"openStockManagement('Painting')",'search')+action('⚠ Final Material Pending · '+consFinalMaterialPendingRows().length,'Ready JCs missing final Actual Materials','openFinalMaterialPending()','additional')+action('Suggested / Issued Materials','Original material issue','openConsumablesEntry(\'issued\')','issued')+
  action('Actual Materials','Final quantity used for costing','openConsumablesEntry(\'actual\')','actual')+
  action('Additional Materials','Extra controlled material issue','openConsumablesEntry(\'additional\')','additional')+
  action('Search Material List','JC issued vs actual material','openConsumablesSearch()','search')+

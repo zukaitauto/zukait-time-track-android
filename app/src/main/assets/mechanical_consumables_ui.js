@@ -61,11 +61,13 @@ function open(title,body){
 }
 function menu(){
  if(!canView())return;
+ const stockEntry=['Manager','Supervisor'].includes((typeof me!=='undefined'?me:window.me)?.role)
+   ? '<button type="button" class="mc-cons-tile" onclick="openStockManagement(&quot;Mechanical&quot;)"><b>Mechanical Stock</b><small>Mechanical and shared stock balances, history and reports.</small></button>' : '';
  const entries=Object.entries(sections).filter(([,s])=>!s.managerOnly||canManage()).map(([key,s])=>
   '<button type="button" class="mc-cons-tile" onclick="openMechanicalConsumablesSection(\''+key+'\')">'+
   '<b>'+escapeHtml(s.title)+'</b><small>'+escapeHtml(s.desc)+'</small></button>').join('');
  open('','<p class="mc-cons-muted">Mechanical materials are final when issued. No separate Actual Materials or finalisation step. Painting material records remain separate.</p>'+
-  '<div class="mc-cons-list">'+entries+'</div>'+ 
+  '<div class="mc-cons-list">'+stockEntry+entries+'</div>'+
   '<div class="mc-cons-card"><b>Mechanical unit examples</b><p class="mc-cons-muted">Engine Oil 5W-30, 20W-40, 5W-40 — Litre (L)<br>WD-40 — Piece (can)<br>Coolant — gallon container (pack size identified in material name)</p></div>'+ 
   '<p class="mc-cons-alert">Mechanical issuing and immediate stock deduction are not connected yet. All issue screens remain read-only until the secure Mechanical Job Card and stock integration is enabled.</p>');
 }
