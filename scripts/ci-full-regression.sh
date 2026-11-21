@@ -167,6 +167,7 @@ node tests/v2-spare-parts.mjs
 node tests/v2-spare-parts-edit-delete.mjs
 node tests/v2-estimate-smoke.mjs
 node tests/v2-estimate-functional.mjs
+node tests/v2-estimate-parts-suggest.mjs
 node tests/v2-estimate-shared-sync.mjs
 node tests/legacy-closed-session-authority.mjs
 node tests/v2-repeat-work.mjs
