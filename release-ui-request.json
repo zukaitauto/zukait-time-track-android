@@ -18,5 +18,10 @@
     "versionCode": 372,
     "releaseTag": "release-V409-architecture-v2",
     "sourceCommit": "4a534766fd870baabb9d8d7731ed2081e956390c"
-  }
+  },
+  "sourceCommit": null,
+  "approvedAt": null,
+  "publishNonce": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null
 }
