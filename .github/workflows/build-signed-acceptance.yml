@@ -1,4 +1,5 @@
 name: Build Signed Acceptance APK
+# Normal signed ZUKAIT V409 acceptance candidate. Stock writes remain server-gated.
 # Build and verify the current architecture-v2 Android acceptance candidate after insurance, incentive or reception changes.
 
 on:
@@ -37,6 +38,10 @@ on:
       - .github/workflows/build-signed-acceptance.yml
       - .github/workflows/accountant-qa.yml
       - app/src/main/assets/consumables_ui.js
+      - app/src/main/assets/consumables_stock_ui.js
+      - app/src/main/assets/consumables_stock_core.js
+      - tests/consumables-stock-*.mjs
+      - .github/workflows/stock-live-data-safety.yml
       - tests/consumables-ui.mjs
       - app/build.gradle
       - release-request.json
