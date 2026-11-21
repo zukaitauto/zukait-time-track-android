@@ -10,10 +10,14 @@ for(const color of ['blue','green','purple','orange','teal']){
  assert.ok(stock.includes('#zs-stock-screen .zs-preview .zs-home-tile.'+color),
   'Missing explicitly scoped contrast-safe '+color+' card palette');
 }
-assert.ok(stock.includes('.zs-home-info strong{color:#142f4a!important'),
+assert.ok(stock.includes('.zs-home-info strong{color:#ffffff!important'),
  'Stock card titles must use high-contrast text');
-assert.ok(stock.includes('.zs-screen-brand{color:#174b77!important'),
+assert.ok(stock.includes('.zs-screen-brand{color:#ffffff!important'),
  'Header brand must remain readable');
+assert.ok(stock.includes('.zs-screen-brand{order:3;flex:1 0 100%'),
+ 'On narrow phones the stock title must move to a readable second toolbar row');
+assert.ok(stock.includes('.zs-home-info small{color:#f4f7ff!important'),
+ 'Stock descriptions must use light text on colored cards');
 
 const html=readFileSync('app/src/main/assets/offline_test.html','utf8');
 const menu=readFileSync('app/src/main/assets/consumables_ui.js','utf8');
