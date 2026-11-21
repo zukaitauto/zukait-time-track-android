@@ -55,7 +55,7 @@ await child.zukaitEstimate.saveCurrent('estimate-1');
 assert.match(child.lastAlert,/Customer name is required/);
 assert.equal(saveCount,0,'invalid quote must not reach server');
 child.document.querySelector('#estName').value='Test Customer';
-assert.equal(child.document.querySelector('#estPartRows .est-desc').value,'Brake pad set');
+assert.equal(child.document.querySelector('#estPartRows .est-desc').value,'Brake Pad Set','visible Mechanical estimate item uses the existing Title Case formatter');
 await child.zukaitEstimate.openFind();
 assert.ok(child.document.querySelector('.est-saved-create-jc'),'Saved list must have the Create Job Card action');
 assert.equal(child.document.querySelectorAll('.est-saved-create-jc').length,1);
@@ -71,7 +71,7 @@ assert.equal(prefill.make,'Toyota');assert.equal(prefill.model,'Corolla');
 assert.equal(prefill.customer,'Test Customer');assert.equal(prefill.contact,'91234567');
 assert.equal(prefill.registration,'32621-M');
 assert.match(prefill.reason,/Replace brake pads\nRoad test/);
-assert.doesNotMatch(prefill.reason,/Brake pad set|Legacy repair scope|25\.000/,'parts and unused repair scope are not work descriptions');
+assert.doesNotMatch(prefill.reason,/Brake pad set|Legacy repair scope|25\.000/i,'parts and unused repair scope are not work descriptions');
 
 const session={id:'SUP003',role:'Mechanical Supervisor',key:'qa'},calls=[];
 const section=await mountMechanicalSection(outer.document.getElementById('job'),{
@@ -106,6 +106,6 @@ assert.equal(command.command.command.job_type,'CASH');
 assert.equal(command.command.command.details.registration,'32621-M');
 assert.equal(command.command.command.details.customer,'Test Customer');
 assert.match(command.command.command.reason,/Replace brake pads/);
-assert.doesNotMatch(JSON.stringify(command),/Brake pad set/);
+assert.doesNotMatch(JSON.stringify(command),/Brake pad set/i);
 section.destroy();page.window.close();
 console.log('PASS Mechanical saved-estimate-only Job Card prefill, LS/PL toggles, required indicators, +Add blank rows, no parts posting, confirmation required');
