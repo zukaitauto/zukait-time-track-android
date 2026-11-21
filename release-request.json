@@ -1,30 +1,30 @@
 {
-  "versionName": "V407",
-  "versionCode": 370,
+  "versionName": "V408",
+  "versionCode": 371,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
-  "ownerPublicationRequested": true,
-  "ownerRequestedImmediateRelease": true,
+  "approvedForStaff": false,
+  "ownerPublicationRequested": false,
+  "ownerRequestedImmediateRelease": false,
   "ownerRequestedProceed": true,
-  "releaseHeldByOwner": false,
+  "releaseHeldByOwner": true,
   "productionBackendChanges": false,
   "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "backupDeferredByOwner": true,
-  "sourceCommit": "35c7bff7a4c58752843bbd00fcdb1a9732c01fe1",
-  "approvedAt": "2026-11-21T12:18:50.199Z",
-  "publishNonce": "35c7bff7a4c58752843bbd00fcdb1a9732c01fe1",
-  "signedAcceptanceRun": 44902036844,
-  "verificationRun": 44902036854,
-  "authorization": "Owner explicitly said PUBLISH on 2026-11-21. Approve V407 UI-only source after exact-source signed APK and Reception workflows passed. This does NOT authorize Phase 1 stock ledger, opening stock/purchases, issues/returns, Supabase backend deployment, or database mutations. Physical-device and fresh backup-restore remain NOT_RUN (previous UI-only deferred safety scope), never claimed as PASSED.",
-  "reason": "Owner-authorized V407 UI-only publication: five colored Stock Management cards each opening full-screen detail views, VIN/registration uppercase entry, Estimate Parts descriptions filtered while typing. No live stock transactions or backend changes. Exactly pinned source verified in signed acceptance, Reception, APK, architecture, Mechanical/Accountant contracts, connection, Estimate, PDF workflows; V406 rollback.",
+  "backupDeferredByOwner": false,
+  "sourceCommit": null,
+  "approvedAt": null,
+  "publishNonce": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "authorization": "HELD V408 candidate: owner requested enabling stock testing and correcting card colors. No staff publication approved until exact-source signed UI acceptance. Production stock writes remain disabled.",
+  "reason": "V408 UI-only candidate: scoped accessible card colors, full-screen 5-box Stock Management and isolated tab-only Opening/Purchase test, no Supabase stock transactions or backend changes. V407 remains published.",
   "previousPublishedRelease": {
-    "versionName": "V406",
-    "versionCode": 369,
-    "releaseTag": "release-V406-architecture-v2",
-    "sourceCommit": "febd3c6c9deb023099bc5ca6fadea1f728e946ae"
+    "versionName": "V407",
+    "versionCode": 370,
+    "releaseTag": "release-V407-architecture-v2",
+    "sourceCommit": "35c7bff7a4c58752843bbd00fcdb1a9732c01fe1"
   },
   "pendingTestEvidence": {
     "productionBackendChanges": false,
@@ -32,63 +32,43 @@
     "freshBackupRestore": "NOT_RUN"
   },
   "verification": {
-    "sourceCommit": "35c7bff7a4c58752843bbd00fcdb1a9732c01fe1",
+    "sourceCommit": null,
     "checks": {
       "signedCandidate": {
-        "run": 44902036844,
-        "status": "PASS"
+        "run": null,
+        "status": "PENDING"
       },
       "reception": {
-        "run": 44902036854,
-        "status": "PASS"
+        "run": null,
+        "status": "PENDING"
       },
       "androidArchitecture": {
-        "run": 44902036857,
-        "status": "PASS"
+        "run": null,
+        "status": "PENDING"
       },
       "standardApk": {
-        "run": 44902036838,
-        "status": "PASS"
+        "run": null,
+        "status": "PENDING"
       },
       "mechanicalContracts": {
-        "run": 44902036905,
-        "status": "PASS"
+        "run": null,
+        "status": "PENDING"
       },
       "connection": {
-        "run": 44902036864,
-        "status": "PASS"
+        "run": null,
+        "status": "PENDING"
+      },
+      "stockTest": {
+        "run": null,
+        "status": "PENDING"
       },
       "estimate": {
-        "run": 44902036862,
-        "status": "PASS"
-      },
-      "estimateVisual": {
-        "run": 44902036896,
-        "status": "PASS"
+        "run": null,
+        "status": "PENDING"
       },
       "nativePdf": {
-        "run": 44902036898,
-        "status": "PASS"
-      },
-      "stockPreview": {
-        "run": 44902036844,
-        "status": "PASS_IN_SIGNED_CANDIDATE_FULL_REGRESSION"
-      },
-      "vinUppercase": {
-        "run": 44902036844,
-        "status": "PASS_IN_SIGNED_CANDIDATE_FULL_REGRESSION"
-      },
-      "accountant": {
-        "run": 44902036905,
-        "status": "PASS_AS_MECHANICAL_ACCOUNTANT_CONTRACT_CHECK"
-      },
-      "syncTraffic": {
         "run": null,
-        "status": "NOT_RUN_ON_EXACT_SOURCE"
-      },
-      "mechanicalPhone": {
-        "run": null,
-        "status": "NOT_RUN_ON_EXACT_SOURCE"
+        "status": "PENDING"
       }
     },
     "physicalAcceptance": "NOT_RUN",
