@@ -53,6 +53,7 @@ jobs:
           node tests/v2-estimate-smoke.mjs
           node tests/v2-estimate-functional.mjs
           node tests/v2-estimate-description-catalog.mjs
+          node tests/v2-estimate-parts-suggest.mjs
           node tests/v2-estimate-shared-sync.mjs
           node tests/legacy-closed-session-authority.mjs
 
