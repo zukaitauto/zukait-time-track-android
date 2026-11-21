@@ -122,6 +122,13 @@ function ensureStyle(){
   .est-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.est-fields label{font-weight:700;font-size:12px;color:#334155}.est-fields input{width:100%;box-sizing:border-box;margin-top:4px}
   .est-section{margin-top:12px;padding:12px;border:1px solid #dce6ef;border-radius:15px;background:#fff}.est-section h4{margin:0 0 8px}
   .est-row{display:grid;grid-template-columns:minmax(0,1fr) 120px 44px;gap:6px;margin:6px 0}.est-part-row{grid-template-columns:minmax(0,1fr) 70px 105px 44px}
+  .est-part-desc-control{position:relative;min-width:0;width:100%}
+  .est-part-desc-control .est-desc{width:100%;box-sizing:border-box}
+  .est-part-suggestions[hidden]{display:none!important}
+  .est-part-suggestions{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:65;max-height:280px;overflow-y:auto;border:1px solid #abc6e0;border-radius:10px;background:#fff;box-shadow:0 10px 24px #1834502c;padding:4px}
+  #modal .est-part-suggestions .est-part-choice,.est-part-suggestions .est-part-choice{display:block!important;width:100%!important;min-height:40px!important;margin:0!important;border:0!important;border-radius:6px!important;background:#fff!important;color:#20394f!important;text-align:left!important;padding:9px 10px!important;font-size:13px!important;font-weight:650!important;white-space:normal!important}
+  #modal .est-part-suggestions .est-part-choice:hover,#modal .est-part-suggestions .est-part-choice[aria-selected="true"],.est-part-suggestions .est-part-choice[aria-selected="true"]{background:#dceffa!important;color:#174773!important}
+  @media(max-width:390px){.est-part-row .est-part-desc-control{grid-column:1/-1}}
   .est-row input{width:100%;box-sizing:border-box}.est-remove{background:#dc2626!important;padding:6px!important;margin:0!important}
   .est-section-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}.est-editor .est-section .est-section-heading h4{margin:0!important;min-width:0}.est-editor .est-section .est-section-heading .est-add{width:auto!important;flex:0 0 auto;min-height:44px;margin:0!important;padding:8px 12px!important}.est-parts-heading{margin-top:20px}
   .est-add{background:#64748b!important;width:100%;margin:7px 0 0!important}.est-summary{margin-top:10px;border-top:1px solid #e2e8f0;padding-top:8px}
@@ -343,6 +350,96 @@ function normalizeEstimateDescriptionInput(input){
   autoSave();
 }
 
+
+function estimatePartSuggestionList(raw){
+  const query=String(raw||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  if(query.length<2)return [];
+  ensureState();
+  const counts=new Map();
+  function add(rawValue,weight=1){
+    const value=formatEstimateDescription(rawValue);
+    if(!value)return;
+    const key=value.toLowerCase(),current=counts.get(key);
+    if(current)current.count+=weight;
+    else counts.set(key,{value,count:weight});
+  }
+  for(const e of state.estimates||[]){
+    if(e?.status!=='Saved')continue;
+    for(const row of e.partRows||[])add(row?.description);
+  }
+  // Requested common descriptions, not inventory entries or stock allocations.
+  for(const value of ['Fr Rh Fender','Fr Rh Fender Liner','Fr Rh Fender Molding'])add(value,0);
+  const words=query.split(' ').filter(Boolean);
+  const matchScore=value=>{
+    const text=value.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+    if(text===query)return 0;
+    if(text.startsWith(query))return 1;
+    const tokens=text.split(' ').filter(Boolean);
+    let position=0,ordered=true;
+    for(const word of words){
+      while(position<tokens.length&&!tokens[position].startsWith(word))position++;
+      if(position===tokens.length){ordered=false;break}
+      position++;
+    }
+    if(ordered)return 2;
+    const used=new Set();
+    if(words.every(word=>{
+      const index=tokens.findIndex((token,i)=>!used.has(i)&&token.startsWith(word));
+      if(index<0)return false;
+      used.add(index);return true;
+    }))return 3;
+    return -1;
+  };
+  return [...counts.values()].map(x=>({...x,score:matchScore(x.value)}))
+    .filter(x=>x.score>=0).sort((a,b)=>a.score-b.score||b.count-a.count||a.value.localeCompare(b.value))
+    .slice(0,8).map(x=>x.value);
+}
+function estimatePartHintPanel(input){
+  return input?.closest?.('.est-part-desc-control')?.querySelector?.('.est-part-suggestions')||null;
+}
+function hideEstimatePartHints(input,immediate=false){
+  const panel=estimatePartHintPanel(input);if(!panel)return;
+  const hide=()=>{panel.hidden=true;panel.innerHTML='';input._partHints=[];input._partActive=-1;input.setAttribute('aria-expanded','false')};
+  if(immediate)hide();else setTimeout(hide,140);
+}
+function showEstimatePartHints(input){
+  const panel=estimatePartHintPanel(input);if(!panel)return;
+  const matches=estimatePartSuggestionList(input.value);
+  if(!matches.length){hideEstimatePartHints(input,true);return}
+  input._partHints=matches;input._partActive=-1;
+  panel.innerHTML=matches.map((value,i)=>'<button class="est-part-choice" type="button" role="option" aria-selected="false" data-part-index="'+i+'" onpointerdown="event.preventDefault()" onclick="zukaitEstimate.selectPartSuggestion(this)">'+esc(value)+'</button>').join('');
+  panel.hidden=false;input.setAttribute('aria-expanded','true');
+}
+function selectEstimatePartHint(button){
+  const wrap=button?.closest?.('.est-part-desc-control'),input=wrap?.querySelector?.('.est-desc');
+  const i=Number(button?.getAttribute?.('data-part-index')),selected=input?._partHints?.[i];
+  if(!input||!Number.isInteger(i)||!selected)return;
+  input.value=selected;
+  hideEstimatePartHints(input,true);
+  input.focus?.();
+  normalizeEstimateDescriptionInput(input);
+}
+function estimatePartHintKeydown(event,input){
+  const panel=estimatePartHintPanel(input);if(!panel)return;
+  if(event.key==='Escape'){hideEstimatePartHints(input,true);return}
+  if(!['ArrowDown','ArrowUp','Enter'].includes(event.key))return;
+  if(panel.hidden&&event.key!=='Enter')showEstimatePartHints(input);
+  const choices=[...panel.querySelectorAll('.est-part-choice')];
+  if(!choices.length)return;
+  if(event.key==='Enter'){
+    const active=input._partActive;
+    if(Number.isInteger(active)&&active>=0&&choices[active]){
+      event.preventDefault();selectEstimatePartHint(choices[active]);
+    }
+    return;
+  }
+  event.preventDefault();
+  const current=Number.isInteger(input._partActive)?input._partActive:-1;
+  const next=event.key==='ArrowDown'?(current+1)%choices.length:(current<0?choices.length-1:(current+choices.length-1)%choices.length);
+  input._partActive=next;
+  choices.forEach((choice,i)=>choice.setAttribute('aria-selected',String(i===next)));
+  choices[next]?.scrollIntoView?.({block:'nearest'});
+}
 function lsRowsHtml(rows){
   return (rows||[]).map(r=>'<div class="est-row" data-est-ls-row="'+esc(r.id)+'"><input onchange="zukaitEstimate.normalizeDescription(this)" aria-label="Item description" class="est-desc" list="estLabDescOptions" autocapitalize="words" placeholder="Description" value="'+esc(formatEstimateDescription(r.description||''))+'"><input onchange="zukaitEstimate.autoSave()" aria-label="Amount OMR" class="est-amount" inputmode="decimal" placeholder="0.000" value="'+money(r.amount)+'" oninput="zukaitEstimate.recalc()"><button type="button" aria-label="Remove item" class="est-remove" onclick="zukaitEstimate.removeRow(this)">✕</button></div>').join('');
 }
@@ -350,7 +447,7 @@ function labourRowsHtml(rows){
   return (rows||[]).map(r=>'<div class="est-row" data-est-lab-row="'+esc(r.id)+'"><input onchange="zukaitEstimate.normalizeDescription(this)" aria-label="Item description" class="est-desc" list="estLabDescOptions" autocapitalize="words" placeholder="Labour description" value="'+esc(formatEstimateDescription(r.description||''))+'"><input onchange="zukaitEstimate.autoSave()" aria-label="Amount OMR" class="est-amount" inputmode="decimal" placeholder="0.000" value="'+money(r.amount)+'" oninput="zukaitEstimate.recalc()"><div class="est-row-actions"><button type="button" class="est-row-add" onclick="zukaitEstimate.addRow(\'LAB\',this)">+ Add</button><button type="button" aria-label="Remove item" class="est-remove" onclick="zukaitEstimate.removeRow(this)">✕</button></div></div>').join('');
 }
 function partRowsHtml(rows){
-  return (rows||[]).map(r=>'<div class="est-row est-part-row" data-est-part-row="'+esc(r.id)+'"><input onchange="zukaitEstimate.normalizeDescription(this)" aria-label="Item description" class="est-desc" list="estPartDescOptions" autocapitalize="words" placeholder="Part description" value="'+esc(formatEstimateDescription(r.description||''))+'"><input onchange="zukaitEstimate.autoSave()" aria-label="Quantity" class="est-qty" type="number" min="0.001" step="0.001" value="'+num(r.qty)+'" oninput="zukaitEstimate.recalc()"><input onchange="zukaitEstimate.autoSave()" aria-label="Unit price OMR" class="est-unit" inputmode="decimal" placeholder="0.000" value="'+money(r.unitPrice)+'" oninput="zukaitEstimate.recalc()"><div class="est-row-actions"><button type="button" class="est-row-add" onclick="zukaitEstimate.addRow(\'PART\',this)">+ Add</button><button type="button" aria-label="Remove item" class="est-remove" onclick="zukaitEstimate.removeRow(this)">✕</button></div></div>').join('');
+  return (rows||[]).map(r=>'<div class="est-row est-part-row" data-est-part-row="'+esc(r.id)+'"><div class="est-part-desc-control"><input onchange="zukaitEstimate.normalizeDescription(this)" oninput="zukaitEstimate.suggestParts(this)" onkeydown="zukaitEstimate.partHintKeydown(event,this)" onblur="zukaitEstimate.hidePartHints(this)" aria-label="Part description" aria-autocomplete="list" aria-haspopup="listbox" aria-expanded="false" class="est-desc" autocapitalize="words" autocomplete="off" placeholder="Type part name to search" value="'+esc(formatEstimateDescription(r.description||''))+'"><div class="est-part-suggestions" role="listbox" hidden></div></div><input onchange="zukaitEstimate.autoSave()" aria-label="Quantity" class="est-qty" type="number" min="0.001" step="0.001" value="'+num(r.qty)+'" oninput="zukaitEstimate.recalc()"><input onchange="zukaitEstimate.autoSave()" aria-label="Unit price OMR" class="est-unit" inputmode="decimal" placeholder="0.000" value="'+money(r.unitPrice)+'" oninput="zukaitEstimate.recalc()"><div class="est-row-actions"><button type="button" class="est-row-add" onclick="zukaitEstimate.addRow(\'PART\',this)">+ Add</button><button type="button" aria-label="Remove item" class="est-remove" onclick="zukaitEstimate.removeRow(this)">✕</button></div></div>').join('');
 }
 function customerPartsVisible(e){return e.showCustomerSuppliedParts===undefined?!!String(e.customerSuppliedParts||'').trim():e.showCustomerSuppliedParts===true}
 function toggleCustomerParts(){
@@ -381,7 +478,7 @@ function openEditor(id){
   const e=findEstimate(id);if(!e)return alert('Estimate not found.');ensureStyle();
   if(window.zukaitMechanicalEstimate?.active?.()===true&&e.receptionNo){openModal(nav('zukaitEstimate.openFind()')+'<p>This estimate is linked to a Reception approval. Ask the Manager to amend it through the original Reception record.</p>'+printable(e));return;}
   const mechanical=window.zukaitMechanicalEstimate?.active?.()===true;
-  const html=nav('zukaitEstimate.openHome()')+'<datalist id="estLabDescOptions">'+estimateDescriptionOptions('LAB')+'</datalist><datalist id="estPartDescOptions">'+estimateDescriptionOptions('PART')+'</datalist>'+
+  const html=nav('zukaitEstimate.openHome()')+'<datalist id="estLabDescOptions">'+estimateDescriptionOptions('LAB')+'</datalist>'+
   '<div class="est-home est-editor'+(mechanical?' est-mechanical-editor':'')+'"><div class="est-hero"><span class="est-eyebrow">REPAIR ESTIMATE</span><h3>'+esc(e.estimateNo)+'</h3><p>Prepare the repair scope and costs for your customer.</p></div>'+
   '<div class="est-switches"><div><b class="small">Estimate Type</b><div class="est-switch"><button id="estTypeLS" onclick="zukaitEstimate.setType(\'LS\')">Lumpsum</button><button id="estTypePL" onclick="zukaitEstimate.setType(\'PL\')">Parts + labour</button></div></div>'+
   '<div><b class="small">Tax</b><div class="est-switch"><button id="estVatYes" onclick="zukaitEstimate.setVat(true)">VAT 5%</button><button id="estVatNo" onclick="zukaitEstimate.setVat(false)">NO VAT</button></div></div></div>'+
@@ -751,7 +848,7 @@ function wrapRender(name){
 }
 try{if(typeof state!=='undefined')for(const e of state.estimates||[])rememberEstimate(e)}catch(error){console.warn('Existing device estimates could not be retained',error)}
 function boot(){ensureState();ensureStyle();wrapRender('renderSupervisor');wrapRender('renderManager');ensureDashboardCards()}
-window.zukaitEstimate={normalizeDescription:normalizeEstimateDescriptionInput,openHome,openDrafts,deleteDraft,refreshLists,newEstimate,newFromReception,openReceptionEstimates,openEditor,createMechanicalJob,setPaymentType,setType,setVat,addRow,removeRow,recalc,autoSave,saveCurrent,loadJob,openFind,renderFind,openRecent,openReports,preview,printEstimate,pdfEstimate,whatsApp,shareEstimate,ensureDashboardCards,totals,printable,estimatePdfFilename,estimateDocumentHtml,shareText,currentOutputEstimate,toggleCustomerParts};
+window.zukaitEstimate={normalizeDescription:normalizeEstimateDescriptionInput,suggestParts:showEstimatePartHints,partHintKeydown:estimatePartHintKeydown,hidePartHints:hideEstimatePartHints,selectPartSuggestion:selectEstimatePartHint,openHome,openDrafts,deleteDraft,refreshLists,newEstimate,newFromReception,openReceptionEstimates,openEditor,createMechanicalJob,setPaymentType,setType,setVat,addRow,removeRow,recalc,autoSave,saveCurrent,loadJob,openFind,renderFind,openRecent,openReports,preview,printEstimate,pdfEstimate,whatsApp,shareEstimate,ensureDashboardCards,totals,printable,estimatePdfFilename,estimateDocumentHtml,shareText,currentOutputEstimate,toggleCustomerParts};
 window.openEstimateModule=openHome;
 document.addEventListener('DOMContentLoaded',boot);setTimeout(boot,0);setTimeout(boot,700);
 new MutationObserver(()=>{wrapRender('renderSupervisor');wrapRender('renderManager');ensureDashboardCards()}).observe(document.documentElement,{childList:true,subtree:true});
