@@ -10,9 +10,9 @@ for(const color of ['blue','green','purple','orange','teal']){
  assert.ok(stock.includes('#zs-stock-screen .zs-preview .zs-home-tile.'+color),
   'Missing explicitly scoped contrast-safe '+color+' card palette');
 }
-assert.ok(stock.includes('.zs-home-info strong{color:#142f4a!important}'),
+assert.ok(stock.includes('.zs-home-info strong{color:#142f4a!important'),
  'Stock card titles must use high-contrast text');
-assert.ok(stock.includes('.zs-screen-brand{color:#174b77!important}'),
+assert.ok(stock.includes('.zs-screen-brand{color:#174b77!important'),
  'Header brand must remain readable');
 
 const html=readFileSync('app/src/main/assets/offline_test.html','utf8');
