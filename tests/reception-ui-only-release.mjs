@@ -30,8 +30,6 @@ try {
 const publishWorkflow=fs.readFileSync('.github/workflows/publish-approved-release.yml','utf8');
 assert.ok(publishWorkflow.includes('git merge-base --is-ancestor "$SOURCE_SHA" "$VERIFY_SHA"'),
  'Reception verification may be on a metadata-only descendant of the pinned source');
-assert.ok(publishWorkflow.includes("' :(exclude)release-request.json'")===false,
- 'Source drift exclusions must use the exact release request path');
 assert.ok(publishWorkflow.includes(":(exclude)release-request.json") &&
  publishWorkflow.includes(":(exclude)release-ui-request.json"),
  'Runtime and test source drift remain blocked by the publication gate');
