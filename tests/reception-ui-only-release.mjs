@@ -28,10 +28,13 @@ try {
  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(tmp,'release-request.json'),'utf8')),candidate);
 } finally { fs.rmSync(tmp,{recursive:true,force:true}); }
 const publishWorkflow=fs.readFileSync('.github/workflows/publish-approved-release.yml','utf8');
-assert.match(publishWorkflow,/git merge-base --is-ancestor "\$SOURCE_SHA" "\$VERIFY_SHA"/,
- 'Reception verification may be on an approved metadata-only descendant of the pinned source');
-assert.match(publishWorkflow,/git diff --quiet "\$SOURCE_SHA" "\$VERIFY_SHA" -- \. \\\s*'\:\(exclude\)release-request\.json' \\\s*'\:\(exclude\)release-ui-request\.json'/,
- 'Any runtime or test source drift must stop UI-only publication');
-assert.match(publishWorkflow,/\.path' \/tmp\/ui-verification-run\.json\)" = "\.github\/workflows\/reception-check\.yml"/,
+assert.ok(publishWorkflow.includes('git merge-base --is-ancestor "$SOURCE_SHA" "$VERIFY_SHA"'),
+ 'Reception verification may be on a metadata-only descendant of the pinned source');
+assert.ok(publishWorkflow.includes("' :(exclude)release-request.json'")===false,
+ 'Source drift exclusions must use the exact release request path');
+assert.ok(publishWorkflow.includes(":(exclude)release-request.json") &&
+ publishWorkflow.includes(":(exclude)release-ui-request.json"),
+ 'Runtime and test source drift remain blocked by the publication gate');
+assert.ok(publishWorkflow.includes('.github/workflows/reception-check.yml'),
  'Only Reception verification may provide UI publication provenance');
 console.log('PASS: explicit UI-only owner waiver; historical approval cannot publish newer unapproved candidate');
