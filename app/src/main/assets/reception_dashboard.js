@@ -124,6 +124,26 @@
     .rdb-link-actions .rdb-link-confirm{background:#11777d!important;color:#fff!important;border:1px solid #08717b!important}
     @media(max-width:500px){.rdb-link-overlay{padding:8px}.rdb-link-dialog{border-radius:15px;max-height:95vh}.rdb-link-top,.rdb-link-inner{padding:16px}.rdb-link-top h3{font-size:20px}.rdb-link-vehicle{grid-template-columns:1fr}.rdb-link-actions button{flex:1}}
     `;
+    s.textContent+=`
+    #rc-root .rdb-job-table button[data-rdb="vehicle-location"]{background:#ccfbf1!important;color:#115e59!important;border:1px solid #5eead4!important;border-radius:8px!important;font-weight:800!important;min-height:34px!important}
+    #rc-root .rdb-job-table button[data-rdb="vehicle-location"]:hover{background:#99f6e4!important}
+    .rdb-movement-overlay{position:fixed;inset:0;z-index:2147480000;background:#12253d91;display:flex;justify-content:center;align-items:center;padding:18px;box-sizing:border-box}
+    .rdb-movement-dialog{width:min(100%,570px);max-height:92vh;overflow:auto;background:#fff;border:1px solid #c6dced;border-radius:20px;box-shadow:0 20px 60px #10223850;color:#17324e;font-family:inherit}
+    .rdb-movement-header{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;padding:22px 24px;background:linear-gradient(120deg,#eaf4ff,#e6faf6);border-bottom:1px solid #cde2ee}
+    .rdb-movement-header small{color:#155e8c;font-weight:800;letter-spacing:.08em}
+    .rdb-movement-header h3{margin:5px 0 4px;color:#113b62;font-size:23px}.rdb-movement-header p{margin:0;color:#42627c;font-weight:600}
+    .rdb-move-close{border:1px solid #aac4d9;border-radius:10px;background:white;color:#153b5d;padding:8px 12px;cursor:pointer}
+    #rdb-movement{padding:20px 24px}.rdb-move-caption{background:#f0f7ff;border-radius:10px;padding:12px;margin:0 0 16px}
+    .rdb-move-options{border:0;padding:0;margin:0 0 17px;display:grid;gap:10px}.rdb-move-options legend{font-weight:800;margin-bottom:10px}
+    .rdb-move-option{display:flex;align-items:center;gap:12px;background:#effcf8;border:1px solid #b9e8db;border-radius:12px;padding:14px;cursor:pointer}
+    .rdb-move-option:nth-of-type(2){background:#eef5ff;border-color:#bfd8fa}
+    .rdb-move-option:has(input:checked){outline:2px solid #0d9488;outline-offset:1px}
+    .rdb-move-option input{width:18px;height:18px;accent-color:#0f766e}.rdb-move-option span{display:grid;gap:4px}.rdb-move-option small{font-size:12px;color:#536f83}
+    .rdb-move-fields{display:grid;gap:13px}.rdb-move-fields label{display:grid;gap:6px;font-weight:750}.rdb-move-fields input,.rdb-move-fields textarea{width:100%;box-sizing:border-box;border:1px solid #aac4da;border-radius:10px;padding:11px;font:inherit;color:#17324e;background:white}
+    #rdb-move-status{color:#9a3412;font-weight:650}.rdb-move-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:15px}.rdb-move-actions button{border-radius:9px;padding:11px 18px;font-weight:800;cursor:pointer}.rdb-move-cancel{background:#f0f5fb;border:1px solid #b5ccdd;color:#244660}.rdb-move-save{background:#0f766e;color:#fff;border:1px solid #0c655e}.rdb-move-save:disabled{opacity:.55}
+    .rdb-move-history{margin-top:15px;padding:12px;border-radius:10px;background:#f5f8fc;max-height:145px;overflow:auto;font-size:12px}.rdb-move-history h4{margin:0 0 8px}
+    @media(max-width:580px){.rdb-movement-overlay{padding:8px}.rdb-movement-header,#rdb-movement{padding:16px}.rdb-movement-header h3{font-size:19px}}
+`;
     document.head.appendChild(s);
   }
   const countFor=key=>["new","create-job","estimate"].includes(key)?"":key==="vwc"?counts.vwc??"":counts[key]??"";
@@ -318,15 +338,30 @@
   function vehicleLocationForm(row){
     const actor=String(window.me?.id||''),actorRole=role(),key='zukait_vehicle_movement:'+window.zukaitReception.endpoint+':'+actor+':'+row.job_card;
     const existing=localStorage.getItem(key);let pending=existing?JSON.parse(existing):null;
-    window.zukaitReception.dashboardShell('Vehicle Location · JC '+row.job_card,'<form id="rdb-movement"><label>Vehicle location<select name="location"><option value="VIW">VIG · Vehicle in Garage</option><option value="VWC">VWC · Vehicle with Customer</option></select></label><label>Movement date (Oman)<input type="date" name="movement_date" required></label><label>Reason<textarea name="reason" required maxlength="2000"></textarea></label><p role="status" id="rdb-move-status"></p><button type="submit">'+(pending?'Retry saved movement':'Save movement')+'</button><button type="button" data-rdb="back">Back</button></form>');
-    const form=document.getElementById('rdb-movement');form.elements.location.value=pending?.location||row.location||'VIW';form.elements.movement_date.value=pending?.movement_date||new Date(Date.now()+14400000).toISOString().slice(0,10);form.elements.reason.value=pending?.reason||'';
+    document.querySelector('.rdb-movement-overlay')?.remove();
+    const overlay=document.createElement('div');
+    overlay.className='rdb-movement-overlay';
+    overlay.innerHTML='<section class="rdb-movement-dialog" role="dialog" aria-modal="true" aria-labelledby="rdb-move-title">'+
+      '<header class="rdb-movement-header"><div><small>JOB CARD · '+safe(row.job_card)+'</small><h3 id="rdb-move-title">Vehicle Location Status</h3><p>'+safe(row.vehicle||'Vehicle')+' · '+safe(row.registration||'Registration not recorded')+'</p></div><button type="button" class="rdb-move-close" aria-label="Close vehicle location">✕</button></header>'+
+      '<form id="rdb-movement"><p class="rdb-move-caption">Current location: <b>'+safe(row.location==='VWC'?'Vehicle With Customer (VWC)':'Vehicle in Garage (VIG)')+'</b></p>'+
+      '<fieldset class="rdb-move-options"><legend>Select vehicle location</legend><label class="rdb-move-option"><input type="radio" name="location" value="VIW" required><span>🏠 <b>Vehicle in Garage (VIG)</b><small>Vehicle is currently at the workshop</small></span></label>'+
+      '<label class="rdb-move-option"><input type="radio" name="location" value="VWC" required><span>🚗 <b>Vehicle With Customer (VWC)</b><small>Vehicle is currently with the customer</small></span></label></fieldset>'+
+      '<div class="rdb-move-fields"><label>Movement date (Oman)<input type="date" name="movement_date" required></label><label>Reason for change<textarea name="reason" required maxlength="2000" rows="2" placeholder="Enter reason for vehicle movement"></textarea></label></div>'+
+      '<p role="status" id="rdb-move-status"></p><footer class="rdb-move-actions"><button type="button" class="rdb-move-cancel">Cancel</button><button type="submit" class="rdb-move-save">'+(pending?'Retry saved movement':'Save Status')+'</button></footer></form></section>';
+    document.body.appendChild(overlay);
+    const form=overlay.querySelector('#rdb-movement'),close=()=>overlay.remove();
+    overlay.querySelector('.rdb-move-close').addEventListener('click',close);
+    overlay.querySelector('.rdb-move-cancel').addEventListener('click',close);
+    form.elements.location.value=pending?.location||row.location||'VIW';
+    form.elements.movement_date.value=pending?.movement_date||new Date(Date.now()+14400000).toISOString().slice(0,10);
+    form.elements.reason.value=pending?.reason||'';
     if(pending)for(const input of form.querySelectorAll('input,select,textarea'))input.disabled=true;
-    if(row.movement_history?.length){const history=document.createElement('section');history.innerHTML='<h4>Movement history</h4>'+row.movement_history.map(a=>'<p>'+safe(a.date)+' '+safe(a.from==='VWC'?'VWC':'VIG')+' to '+safe(a.to==='VWC'?'VWC':'VIG')+' - '+safe(a.reason)+' - '+safe(a.by)+'</p>').join('');form.append(history);}
+    if(row.movement_history?.length){const history=document.createElement('section');history.className='rdb-move-history';history.innerHTML='<h4>Movement history</h4>'+row.movement_history.map(a=>'<p>'+safe(a.date)+' · '+safe(a.from==='VWC'?'VWC':'VIG')+' → '+safe(a.to==='VWC'?'VWC':'VIG')+' · '+safe(a.reason)+' · '+safe(a.by)+'</p>').join('');form.insertBefore(history,form.querySelector('.rdb-move-actions'));}
     form.onsubmit=async e=>{e.preventDefault();if(String(window.me?.id||'')!==actor||role()!==actorRole)return;const button=form.querySelector('[type=submit]');button.disabled=true;
       try{if(!navigator.onLine)throw Error('Reconnect before saving.');const command=pending||{action:'reception_vehicle_movement',request_id:crypto.randomUUID(),job_card:row.job_card,location:form.elements.location.value,expected_location:row.location||'VIW',movement_date:form.elements.movement_date.value,reason:form.elements.reason.value.trim()};
         localStorage.setItem(key,JSON.stringify(command));pending=command;for(const input of form.querySelectorAll('input,select,textarea'))input.disabled=true;const result=await window.zukaitReception.action(command);if(String(window.me?.id||'')!==actor||role()!==actorRole)return;
-        if(!result?.ok)throw Error(result?.code||'Movement was not confirmed. Retry the saved movement.');localStorage.removeItem(key);await load();
-      }catch(error){document.getElementById('rdb-move-status').textContent=error.message+' Saved requests are retained for safe retry.';}finally{button.disabled=false;}
+        if(!result?.ok)throw Error(result?.code||'Movement was not confirmed. Retry the saved movement.');localStorage.removeItem(key);close();await load();
+      }catch(error){overlay.querySelector('#rdb-move-status').textContent=error.message+' Saved requests are retained for safe retry.';}finally{button.disabled=false;}
     };
   }
   async function savePromise(jobCard,date,original){
