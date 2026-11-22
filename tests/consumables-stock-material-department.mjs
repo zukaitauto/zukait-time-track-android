@@ -29,6 +29,6 @@ assert.match(ui,/Materials &amp; Brands/,'Stock menu must expose Materials & Bra
 assert.match(ui,/zs-manager-actions\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/,'Stock management actions must have two columns');
 assert.match(master,/modal\('Materials & Brands'/,'Manager page title must use new name');
 assert.doesNotMatch(master,/action\('Brands & Price'/,'Old Painting menu must not retain the master action');
-assert.match(master,/cmDepartment/,'Manager must choose the new material department');
+assert.match(master,/cmNewDepartment/,'Manager must choose the new material department');
 assert.match(master,/r\.m\.department==='Both'\?'Shared'/,'Master must display Shared scope');
 console.log('PASS: Materials & Brands in Stock, legacy Paint display, Mechanical isolation, Shared inventory scope, Manager-only creation');
