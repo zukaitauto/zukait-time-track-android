@@ -499,6 +499,7 @@ window.zukStockTrialResolvePair=()=>{
 window.zukStockTrialSave=()=>{
  if(!stockTrial.active||!allowed())return;
  const d=document,get=id=>d.getElementById(id),c=catalog();
+ window.zukStockTrialResolvePair?.();
  const kind=String(get('zs-trial-entry')?.value||''),
  materialId=String(get('zs-trial-material')?.value||''),
  brandId=String(get('zs-trial-brand')?.value||''),
