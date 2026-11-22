@@ -25,6 +25,11 @@ assert.ok(stock.includes('.zs-department-grid{display:grid;grid-template-columns
 
 const html=readFileSync('app/src/main/assets/offline_test.html','utf8');
 const menu=readFileSync('app/src/main/assets/consumables_ui.js','utf8');
+const masterStart=menu.indexOf('id="cmCreateHeading"'),priceStart=menu.indexOf('id="cmPriceHeading"');
+assert.ok(masterStart>=0&&priceStart>masterStart,'Material creation and Brand & Price must be separate screen sections');
+assert.match(menu,/CREATE MATERIAL/);
+assert.match(menu,/SAVE BRAND &amp; PRICE/);
+assert.doesNotMatch(menu.slice(masterStart,priceStart),/cmPrice|cmDate/,'Create Material must not collect price or effective date');
 assert.match(menu,/modal\('Materials & Brands'/,'Manager master must be renamed Materials & Brands');
 assert.doesNotMatch(menu,/action\('Brands & Price'/,'Old Painting dashboard must not show moved Master action');
 const mech=readFileSync('app/src/main/assets/mechanical_consumables_ui.js','utf8');
@@ -152,6 +157,9 @@ assert.match(markup(),/Add Stock — Preview/);
 assert.match(markup(),/Total Purchase Price/);
 assert.match(markup(),/Price per Unit/);
 assert.match(markup(),/No tins or drums conversion/);
+assert.match(markup(),/Search Material \+ Brand/,'Add Stock must use one searchable Material + Brand field');
+assert.match(markup(),/id="zs-preview-add-pairs"/);
+assert.doesNotMatch(markup(),/zs-preview-add-brand|>Brand<\/select>/,'Brand is not selected in a separate dropdown');
 assert.match(markup(),/Save Stock — Not Active/);
 assert.match(markup(),/<button[^>]+disabled>/);
 set('zs-preview-qty','20');

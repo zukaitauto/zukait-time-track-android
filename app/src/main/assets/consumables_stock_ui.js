@@ -516,23 +516,25 @@ window.zukStockTrialSave=()=>{
  preview.page='balance';showPreview();
 };
 function previewAdd(c){
- return '<div class="zs-panel"><h3>Add Stock — Preview</h3>'+
-  '<p class="zs-preview-note">Enter liquids directly in litres after manual conversion. No tins or drums conversion. Other master items retain their existing unit. '+
-  'Prices may be entered per unit or as a total purchase amount. Nothing is posted in preview.</p>'+
-  '<div class="zs-formgrid"><label class="zs-field">Entry type<select id="zs-preview-entry">'+
-  (manager()?'<option value="OPENING">Opening Stock (verified physical count)</option>':'')+
-  '<option value="PURCHASE">Purchased Stock</option></select></label>'+
-  '<label class="zs-field">Material<select id="zs-preview-add-material">'+previewFormOptions(c.materials)+'</select></label>'+
-  '<label class="zs-field">Brand<select id="zs-preview-add-brand">'+previewFormOptions(c.brands)+'</select></label>'+
-  '<label class="zs-field">Quantity (existing material unit)<input id="zs-preview-qty" type="number" min="0" step="any" placeholder="Enter quantity" oninput="zukStockPreviewPrice()"></label>'+
-  '<label class="zs-field">Price entry method<select id="zs-preview-method" onchange="zukStockPreviewPrice()">'+
-  '<option value="total">Total Purchase Price</option><option value="unit">Price per Unit</option></select></label>'+
-  '<label class="zs-field">Price (OMR)<input id="zs-preview-price" type="number" min="0" step="any" placeholder="Enter price" oninput="zukStockPreviewPrice()"></label></div>'+
-  '<div class="zs-panel" style="background:#f2f7fc;margin:12px 0">'+
-  '<b>Calculated preview only</b><div class="zs-preview-note" id="zs-preview-calculated" role="status">Enter quantity and price to calculate a preview.</div></div>'+
-  '<label class="zs-field">Opening count reference / purchase note<textarea rows="2" placeholder="Physical stock confirmation or purchase reference"></textarea></label>'+
-  '<div class="zs-actions"><button type="button" class="zs-disabled" disabled>Save Stock — Not Active</button></div></div>';
-}
+  const options=previewPairs().filter(x=>stockMaterialInDepartment(x.material)).map(x=>
+   '<option value="'+esc(x.material.name+' — '+(x.brand?.name||'Not assigned'))+'" data-pair="'+esc(x.material.id)+'|'+esc(x.brand?.id||'')+'"></option>').join('');
+  return '<div class="zs-panel"><h3>Add Stock — Preview</h3>'+
+   '<p class="zs-preview-note">Enter liquids directly in litres after manual conversion. No tins or drums conversion. Other master items retain their existing unit. '+
+   'Prices may be entered per unit or as a total purchase amount. Nothing is posted in preview.</p>'+
+   '<div class="zs-formgrid"><label class="zs-field">Entry type<select id="zs-preview-entry">'+
+   (manager()?'<option value="OPENING">Opening Stock (verified physical count)</option>':'')+
+   '<option value="PURCHASE">Purchased Stock</option></select></label>'+
+   '<label class="zs-field">Search Material + Brand<input id="zs-preview-add-pair" list="zs-preview-add-pairs" autocomplete="off" placeholder="Type material or brand name"></label>'+
+   '<datalist id="zs-preview-add-pairs">'+options+'</datalist>'+
+   '<label class="zs-field">Quantity (existing material unit)<input id="zs-preview-qty" type="number" min="0" step="any" placeholder="Enter quantity" oninput="zukStockPreviewPrice()"></label>'+
+   '<label class="zs-field">Price entry method<select id="zs-preview-method" onchange="zukStockPreviewPrice()">'+
+   '<option value="total">Total Purchase Price</option><option value="unit">Price per Unit</option></select></label>'+
+   '<label class="zs-field" id="zs-preview-price-label">Total Purchase Price (OMR)<input id="zs-preview-price" type="number" min="0" step="any" placeholder="Enter price" oninput="zukStockPreviewPrice()"></label></div>'+
+   '<div class="zs-panel zs-calculation-card" style="margin:12px 0">'+
+   '<b>Calculated preview only</b><div class="zs-preview-note" id="zs-preview-calculated" role="status">Enter quantity and price to calculate a preview.</div></div>'+
+   '<label class="zs-field">Opening count reference / purchase note<textarea rows="2" placeholder="Physical stock confirmation or purchase reference"></textarea></label>'+
+   '<div class="zs-actions"><button type="button" class="zs-disabled" disabled>Save Stock — Not Active</button></div></div>';
+ }
 function previewHistory(){
  return '<div class="zs-panel"><h3>Stock History</h3><p class="zs-preview-note">This tab will display bounded, audited purchase, issue, return and adjustment records after stock activation.</p>'+
  '<div class="zs-table-wrap"><table aria-label="Stock History preview"><thead><tr><th>Date</th><th>Action</th><th>Material</th><th>Brand</th><th>Quantity</th><th>Value (OMR)</th><th>Reference</th></tr></thead>'+
@@ -590,7 +592,17 @@ const previewHomeCss='<style>'+
  '#zs-stock-screen .zs-preview .zs-home-chevron{position:absolute;right:20px;bottom:15px;align-self:auto;font-size:27px}'+
  '#zs-stock-screen .zs-preview .zs-home-tile:last-child{grid-column:auto}'+
  '#zs-stock-screen .zs-preview .zs-panel{padding:clamp(14px,2.5vw,27px);box-shadow:0 3px 15px #194a790a}'+
- '@media(max-width:900px){#zs-stock-screen .zs-preview .zs-home-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#zs-stock-screen .zs-preview .zs-home-tile:last-child{grid-column:auto}}'+
+ ' '#zs-stock-screen .zs-preview[data-stock-view="history"] .zs-panel{background:#f7f2ff;border-color:#d9c9ee}'+
+ '#zs-stock-screen .zs-preview[data-stock-view="history"] .zs-panel h3{color:#62418a}'+
+ '#zs-stock-screen .zs-preview[data-stock-view="adjust"] .zs-panel{background:#fff5e9;border-color:#f0d4b1}'+
+ '#zs-stock-screen .zs-preview[data-stock-view="adjust"] .zs-panel h3{color:#875521}'+
+ '#zs-stock-screen .zs-preview[data-stock-view="reports"] .zs-panel{background:#edf8f6;border-color:#c2e1d9}'+
+ '#zs-stock-screen .zs-preview[data-stock-view="reports"] .zs-panel h3{color:#25685f}'+
+ '#zs-stock-screen .zs-preview[data-stock-view="add"] .zs-panel{background:#f1f8ef;border-color:#cfe3c7}'+
+ '#zs-stock-screen .zs-preview[data-stock-view="add"] .zs-panel h3{color:#42693b}'+
+ '#zs-stock-screen .zs-preview .zs-field input:focus,#zs-stock-screen .zs-preview .zs-field select:focus,#zs-stock-screen .zs-preview .zs-field textarea:focus{outline:3px solid #84b7e7;outline-offset:1px;border-color:#367ab6}'+
+ '#zs-stock-screen .zs-preview .zs-calculation-card{background:#fff!important;border-left:5px solid #74a96e!important}'+
+@media(max-width:900px){#zs-stock-screen .zs-preview .zs-home-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#zs-stock-screen .zs-preview .zs-home-tile:last-child{grid-column:auto}}'+
  '@media(max-width:600px){#zs-stock-screen .zs-preview .zs-home-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}#zs-stock-screen .zs-preview .zs-home-tile:last-child{grid-column:auto}#zs-stock-screen .zs-preview .zs-home-tile{min-width:0;min-height:150px;padding:13px;gap:7px}#zs-stock-screen .zs-preview .zs-home-icon{flex:0 0 36px;width:36px;height:36px;font-size:20px}#zs-stock-screen .zs-screen-toolbar{padding:9px 10px;gap:5px}#zs-stock-screen .zs-screen-brand{font-size:14px}}'+
 
  '.zs-preview .zs-home-hero{border-radius:17px;padding:20px 22px;background:linear-gradient(110deg,#e6f1ff,#f3faff);border:1px solid #bfd8ef;margin:14px 0}'+
@@ -797,8 +809,9 @@ window.zukStockPreviewPrice=()=>{
   output.textContent='Enter quantity and price to calculate a preview.';return;
  }
  const cost=method==='unit'?price:price/quantity,total=method==='unit'?price*quantity:price;
- output.textContent='Quantity: '+fmt(quantity)+' · Price per unit: '+OMR(cost)+
-  ' OMR · Total purchase value: '+OMR(total)+' OMR. Preview only — not saved.';
+ const label=document.getElementById('zs-preview-price-label');
+ if(label)label.firstChild.textContent=method==='unit'?'Price per Unit (OMR)':'Total Purchase Price (OMR)';
+ output.textContent='Calculated '+(method==='unit'?'total purchase price: '+OMR(total)+' OMR':'price per unit: '+OMR(cost)+' OMR')+' · Quantity: '+fmt(quantity)+'. Preview only — not saved.';
 };
 function stockBrandOptions(material,selected){
  const brands=catalog().brands.filter(b=>!department||view.items.some(r=>r.material_id===material&&r.brand_id===b.id));
