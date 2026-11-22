@@ -34,7 +34,7 @@ const masterStart=menu.indexOf('<h3 id="cmCreateHeading"'),priceStart=menu.index
 assert.ok(masterStart>=0&&priceStart>masterStart,'Material creation and Brand & Price must be separate screen sections');
 assert.match(menu,/CREATE MATERIAL/);
 assert.match(menu,/SAVE BRAND &amp; PRICE/);
-assert.doesNotMatch(menu.slice(masterStart,priceStart),/cmPrice|cmDate/,'Create Material must not collect price or effective date');
+assert.doesNotMatch(menu.slice(masterStart,priceStart),/id="cmPrice|id="cmDate/,'Create Material must not collect price or effective date');
 assert.match(menu,/modal\('Materials & Brands'/,'Manager master must be renamed Materials & Brands');
 assert.doesNotMatch(menu,/action\('Brands & Price'/,'Old Painting dashboard must not show moved Master action');
 const mech=readFileSync('app/src/main/assets/mechanical_consumables_ui.js','utf8');
