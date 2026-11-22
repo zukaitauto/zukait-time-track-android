@@ -22,6 +22,11 @@ assert.ok(stock.includes('@media(max-width:600px){#zs-stock-screen .zs-preview .
  'Phone-sized stock tiles must remain two columns, not one');
 assert.ok(stock.includes('.zs-department-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))'),
  'Paint and Mechanical entry options must appear side by side');
+for(const [screen,color] of [['history','#62418a'],['adjust','#875521'],['reports','#25685f']]){
+ assert.ok(stock.includes('data-stock-view="'+screen+'"')&&stock.includes(color),
+  screen+' needs its own readable pastel color treatment');
+}
+
 
 const html=readFileSync('app/src/main/assets/offline_test.html','utf8');
 const menu=readFileSync('app/src/main/assets/consumables_ui.js','utf8');
@@ -251,8 +256,8 @@ ctx.window.zukStockPreviewNavigate('add');
 assert.match(markup(),/Record Test Entry/);
 assert.doesNotMatch(markup(),/Save Stock — Not Active/);
 set('zs-trial-entry','OPENING');
-set('zs-trial-material','m1');
-set('zs-trial-brand','b1');
+set('zs-trial-pair','2K Primer — CAPSI');
+fields['zs-trial-material']={value:''};fields['zs-trial-brand']={value:''};
 set('zs-trial-qty','20');
 set('zs-trial-price','120');
 set('zs-trial-method','total');
@@ -265,8 +270,8 @@ assert.match(markup(),/120\.000/);
 assert.match(markup(),/Test stock items/);
 ctx.window.zukStockPreviewNavigate('add');
 set('zs-trial-entry','PURCHASE');
-set('zs-trial-material','m1');
-set('zs-trial-brand','b1');
+set('zs-trial-pair','2K Primer — CAPSI');
+fields['zs-trial-material']={value:''};fields['zs-trial-brand']={value:''};
 set('zs-trial-qty','10');
 set('zs-trial-price','8');
 set('zs-trial-method','unit');

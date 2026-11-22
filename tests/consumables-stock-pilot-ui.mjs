@@ -40,7 +40,7 @@ await window.zukStockNav('reports');
 assert.match(html,/90\.000 OMR/);
 assert.match(html,/>104</);
 await window.zukStockNav('add');
-for(const [key,value] of Object.entries({material:'oil',brand:'brand',qty:'2',method:'total',price:'10',entrytype:'PURCHASE'}))fields['zs-'+key]={value};
+for(const [key,value] of Object.entries({'material-brand-search':'Oil — Brand',material:'oil',brand:'brand',qty:'2',method:'total',price:'10',entrytype:'PURCHASE'}))fields['zs-'+key]={value};
 window.zukStockSavePurchase();
 await new Promise(resolve=>setImmediate(resolve));
 assert.equal(calls.find(x=>x.operation==='WRITE').command,'PURCHASE');
@@ -58,8 +58,9 @@ for (const department of ['Painting','Mechanical']) {
   await window.zukStockNav('reports');
   assert.equal(calls.at(-1).department,department);
   await window.zukStockNav('add');
-  assert.match(html, /<option value="oil" selected>Oil<\/option>/);
-  assert.match(html, /<option value="brand">Brand<\/option>/);
+  assert.match(html, /id="zs-material-brand-search"/);
+  assert.match(html, /Oil — Brand/);
+  assert.doesNotMatch(html, /<label>Brand<\/label><select id="zs-brand"/);
 }
 const [paintPairs, paintRepeat]=await Promise.all([
   window.zukaitStockPickerPairs('Painting'),window.zukaitStockPickerPairs('Painting')
