@@ -21,8 +21,10 @@ const vehicleFormatter=html.slice(html.indexOf('function formatVehicleName('),ht
 vm.runInContext(vehicleFormatter,ctx);
 vm.runInContext(fs.readFileSync('app/src/main/assets/consumables_ui.js','utf8'),ctx);
 const fill=values=>Object.entries(values).forEach(([id,value])=>element(id).value=value);
-fill({cmMaterial:'Primer',cmBrand:'Brand',cmUnit:'Liter',cmDepartment:'Painting',cmPrice:'3.5',cmDate:'2020-01-01'});
-ctx.consSaveMaster();assert.equal(state.consumables.materials.length,1);assert.equal(state.consumables.brands.length,1);assert.match(element('cmList').innerHTML,/OMR 3.500/);assert.doesNotMatch(element('cmList').innerHTML,/NaN/);
+fill({cmNewMaterial:'Primer',cmNewUnit:'Liter',cmNewCategory:'Consumable',cmNewDepartment:'Painting'});
+ctx.consCreateMaterial();assert.equal(state.consumables.materials.length,1);
+fill({cmMaterial:'Primer',cmBrand:'Brand',cmPrice:'3.5',cmDate:'2020-01-01'});
+ctx.consSaveMaster();assert.equal(state.consumables.brands.length,1);assert.match(element('cmList').innerHTML,/OMR 3.500/);assert.doesNotMatch(element('cmList').innerHTML,/NaN/);
 const m=state.consumables.materials[0],b=state.consumables.brands[0];
 assert.equal(m.department,'Painting','New painting Master item must retain selected department');
 vm.runInContext("me={id:'S1',role:'Supervisor'}",ctx);ctx.render();assert.equal(tile.className,'cons-supervisor-tile');ctx.render();assert.ok(tile);

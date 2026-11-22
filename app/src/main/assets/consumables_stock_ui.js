@@ -184,29 +184,30 @@ function render(){
    return;
  }
  if(view.page==='add'){
-   const c=catalog(),row=view.items.find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected);
-   if(department&&!view.items.length){draw('<p class="zs-card">No stock items assigned to this department. A Manager can link items from the Stock Balance screen.</p>');return}
-   const material=row?.material_id||(department?view.items[0]?.material_id:c.materials[0]?.id)||'';
-   const materials=department?c.materials.filter(m=>view.items.some(r=>r.material_id===m.id)):c.materials;
-   const mopts=materials.map(m=>'<option value="'+esc(m.id)+'"'+(String(m.id)===String(material)?' selected':'')+'>'+esc(m.name)+'</option>').join('');
-   const bopts=stockBrandOptions(material,row?.brand_id);
-   draw('<h3>Add / Open Stock</h3>'+
-    '<p class="zs-muted">Enter litres directly (not tins or drums). Non-liquid materials retain kg or Piece units.</p>'+
-    (manager()?'<label>Entry type</label><select id="zs-entrytype" onchange="zukStockSetEntryType()"><option value="PURCHASE">Purchased Stock</option><option value="OPENING">Opening Stock (one time only)</option></select>':'')+
-    '<div class="zs-two"><div><label>Material</label><select id="zs-material" onchange="zukStockUpdateBrands()">'+mopts+'</select></div>'+
-    '<div><label>Brand</label><select id="zs-brand">'+bopts+'</select></div></div>'+
-    '<label>Quantity (existing material unit)</label><input id="zs-qty" type="number" min="0.0001" step="any" placeholder="Enter physically counted / received quantity">'+
-    '<label>Price method</label><select id="zs-method"><option value="total">Total Purchase Price</option><option value="unit">Price per Unit</option></select>'+
-    '<label id="zs-price-label">Purchase price (OMR)</label><input id="zs-price" type="number" min="0.001" step="any" placeholder="Enter actual cost">'+
-    '<div id="zs-opening-fields" style="display:none" class="zs-card">'+
-    '<p class="zs-warning">Opening Stock is recorded once for this material and brand. Use the physical count, never an estimated stock number.</p>'+
-    '<label><input id="zs-count-confirmed" type="checkbox" style="width:auto" /> I have physically counted this material and brand</label>'+
-    '<label>Count reference / reason</label><textarea id="zs-opening-note" rows="2" maxlength="180" placeholder="e.g. Verified opening count, 21 Nov"></textarea></div>'+
-    '<p class="zs-muted">The server calculates weighted average cost after saving. Existing master prices are not overwritten.</p>'+
-    '<button class="zs-btn" id="zs-save-entry" onclick="zukStockSavePurchase()"'+(view.busy?' disabled':'')+'>Save Purchased Stock</button>');
-   return;
- }
- if(view.page==='history'){
+    const c=catalog(),row=view.items.find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected),
+     selected=row||view.items[0];
+    if(department&&!view.items.length){draw('<p class="zs-card">No stock items assigned to this department. A Manager can link items from the Stock Balance screen.</p>');return}
+    const pairOptions=view.items.map(x=>'<option value="'+esc(label(x))+'"></option>').join(''),
+     pairName=selected?label(selected):'';
+    draw('<h3>Add / Open Stock</h3>'+
+     '<p class="zs-muted">Enter litres directly (not tins or drums). Non-liquid materials retain kg or Piece units.</p>'+
+     (manager()?'<label>Entry type</label><select id="zs-entrytype" onchange="zukStockSetEntryType()"><option value="PURCHASE">Purchased Stock</option><option value="OPENING">Opening Stock (one time only)</option></select>':'')+
+     '<label>Search Material + Brand</label><input id="zs-material-brand-search" list="zs-material-brand-options" autocomplete="off" value="'+esc(pairName)+'" oninput="zukStockResolvePair()">'+
+     '<datalist id="zs-material-brand-options">'+pairOptions+'</datalist>'+
+     '<input id="zs-material" type="hidden" value="'+esc(selected?.material_id||'')+'"><input id="zs-brand" type="hidden" value="'+esc(selected?.brand_id||'')+'">'+
+     '<label>Quantity (existing material unit)</label><input id="zs-qty" type="number" min="0.0001" step="any" placeholder="Enter physically counted / received quantity" oninput="zukStockCalculatePurchase()">'+
+     '<label>Price method</label><select id="zs-method" onchange="zukStockCalculatePurchase()"><option value="total">Total Purchase Price</option><option value="unit">Price per Unit</option></select>'+
+     '<label id="zs-price-label">Purchase amount (OMR)</label><input id="zs-price" type="number" min="0.001" step="any" placeholder="Enter actual cost" oninput="zukStockCalculatePurchase()">'+
+     '<div class="zs-card zs-calculation-card"><b>Calculated amount</b><div id="zs-price-calculated" role="status">Enter quantity and purchase amount.</div></div>'+
+     '<div id="zs-opening-fields" style="display:none" class="zs-card">'+
+     '<p class="zs-warning">Opening Stock is recorded once for this material and brand. Use the physical count, never an estimated stock number.</p>'+
+     '<label><input id="zs-count-confirmed" type="checkbox" style="width:auto" /> I have physically counted this material and brand</label>'+
+     '<label>Count reference / reason</label><textarea id="zs-opening-note" rows="2" maxlength="180" placeholder="e.g. Verified opening count, 21 Nov"></textarea></div>'+
+     '<p class="zs-muted">The server calculates weighted average cost after saving. Existing master prices are not overwritten.</p>'+
+     '<button class="zs-btn" id="zs-save-entry" onclick="zukStockSavePurchase()"'+(view.busy?' disabled':'')+'>Save Purchased Stock</button>');
+    return;
+  }
+  if(view.page==='history'){
    draw('<div class="zs-row"><h3>Stock History</h3><button class="zs-btn secondary" onclick="zukStockNav(\'history\',true)">Refresh</button></div>'+
    (view.history.length?view.history.map(x=>'<div class="zs-card"><div class="zs-row"><b>'+esc(x.action)+' — '+esc(label(x))+'</b>'+
       '<span class="zs-muted">'+esc(String(x.recorded_at||'').slice(0,10))+'</span></div>'+
@@ -419,26 +420,30 @@ function trialBalance(c){
  '<p class="zs-preview-note">These are test entries only; production stock balances are still not initialized.</p></div>';
 }
 function trialAdd(c){
- const matOptions=previewFormOptions(c.materials),brandOptions=previewFormOptions(c.brands);
- return '<div class="zs-panel"><h3>Opening Stock & Purchased Stock · Test Mode</h3>'+
- '<p class="zs-preview-note">Enter quantity in the existing material unit. Convert tins or drums to litres manually. '+
- 'Choose either total purchase price or price per unit; the other is calculated automatically.</p>'+
- '<div class="zs-formgrid"><label class="zs-field">Entry type<select id="zs-trial-entry">'+
- (manager()?'<option value="OPENING">Opening Stock — one-time count</option>':'')+
- '<option value="PURCHASE">Purchase</option></select></label>'+
- '<label class="zs-field">Material<select id="zs-trial-material">'+matOptions+'</select></label>'+
- '<label class="zs-field">Brand<select id="zs-trial-brand">'+brandOptions+'</select></label>'+
- '<label class="zs-field">Quantity (material unit)<input id="zs-trial-qty" type="number" min="0" step="any" placeholder="Physically counted or purchased quantity" oninput="zukStockTrialCalculate()"></label>'+
- '<label class="zs-field">Price method<select id="zs-trial-method" onchange="zukStockTrialCalculate()">'+
- '<option value="total">Total value (OMR)</option><option value="unit">Price per unit (OMR)</option></select></label>'+
- '<label class="zs-field">Price (OMR)<input id="zs-trial-price" type="number" min="0" step="any" placeholder="Actual counted cost or purchase price" oninput="zukStockTrialCalculate()"></label></div>'+
- '<div class="zs-panel" style="background:#f2f7fc"><b>Calculated test values</b>'+
- '<p id="zs-trial-calculated" role="status" class="zs-preview-note">Enter quantity and price to calculate cost.</p></div>'+
- '<label class="zs-field">Count / purchase reference<input id="zs-trial-note" maxlength="180" placeholder="Required reason, at least 5 characters"></label>'+
- '<label class="zs-field"><input id="zs-trial-count" type="checkbox" style="width:auto;min-height:auto;display:inline-block;margin-right:7px">Physical count confirmed (Opening Stock only)</label>'+
- '<p class="zs-preview-note">Manager can record the first opening count. Manager/Supervisor can add test purchases after opening. No database changes.</p>'+
- '<div class="zs-actions"><button type="button" class="zs-ghost" onclick="zukStockTrialSave()">Record Test Entry</button></div></div>';
-}
+  const pairs=previewPairs().filter(x=>stockMaterialInDepartment(x.material)).map(x=>{
+   const title=x.material.name+' — '+(x.brand?.name||'Not assigned');
+   return '<option value="'+esc(title)+'"></option>';
+  }).join('');
+  return '<div class="zs-panel"><h3>Opening Stock & Purchased Stock · Test Mode</h3>'+
+  '<p class="zs-preview-note">Enter quantity in the existing material unit. Convert tins or drums to litres manually. '+
+  'Choose either total purchase price or price per unit; the other is calculated automatically.</p>'+
+  '<div class="zs-formgrid"><label class="zs-field">Entry type<select id="zs-trial-entry">'+
+  (manager()?'<option value="OPENING">Opening Stock — one-time count</option>':'')+
+  '<option value="PURCHASE">Purchase</option></select></label>'+
+  '<label class="zs-field">Search Material + Brand<input id="zs-trial-pair" list="zs-trial-pairs" autocomplete="off" placeholder="Type material or brand name"></label>'+
+  '<datalist id="zs-trial-pairs">'+pairs+'</datalist>'+
+  '<input id="zs-trial-material" type="hidden" value=""><input id="zs-trial-brand" type="hidden" value="">'+
+  '<label class="zs-field">Quantity (material unit)<input id="zs-trial-qty" type="number" min="0" step="any" placeholder="Physically counted or purchased quantity" oninput="zukStockTrialCalculate()"></label>'+
+  '<label class="zs-field">Price method<select id="zs-trial-method" onchange="zukStockTrialCalculate()">'+
+  '<option value="total">Total value (OMR)</option><option value="unit">Price per unit (OMR)</option></select></label>'+
+  '<label class="zs-field">Price (OMR)<input id="zs-trial-price" type="number" min="0" step="any" placeholder="Actual counted cost or purchase price" oninput="zukStockTrialCalculate()"></label></div>'+
+  '<div class="zs-panel" style="background:#f2f7fc"><b>Calculated test values</b>'+
+  '<p id="zs-trial-calculated" role="status" class="zs-preview-note">Enter quantity and price to calculate cost.</p></div>'+
+  '<label class="zs-field">Count / purchase reference<input id="zs-trial-note" maxlength="180" placeholder="Required reason, at least 5 characters"></label>'+
+  '<label class="zs-field"><input id="zs-trial-count" type="checkbox" style="width:auto;min-height:auto;display:inline-block;margin-right:7px">Physical count confirmed (Opening Stock only)</label>'+
+  '<p class="zs-preview-note">Manager can record the first opening count. Manager/Supervisor can add test purchases after opening. No database changes.</p>'+
+  '<div class="zs-actions"><button type="button" class="zs-ghost" onclick="zukStockTrialSave()">Record Test Entry</button></div></div>';
+ }
 function trialHistory(c){
  const events=[...stockTrial.events].filter(x=>x.department===department).reverse();
  return '<div class="zs-panel"><h3>Stock History · Test Mode</h3>'+
@@ -483,9 +488,18 @@ window.zukStockTrialCalculate=()=>{
  const total=method==='unit'?price*qty:price;
  output.textContent='Quantity '+fmt(qty)+' · Unit cost '+OMR(total/qty)+' OMR · Total '+OMR(total)+' OMR. Test mode — not saved to Supabase.';
 };
+window.zukStockTrialResolvePair=()=>{
+ const input=document.getElementById('zs-trial-pair'),value=String(input?.value||'').trim().toLowerCase();
+ const pair=previewPairs().find(x=>(x.material.name+' — '+(x.brand?.name||'Not assigned')).trim().toLowerCase()===value);
+ const material=document.getElementById('zs-trial-material'),brand=document.getElementById('zs-trial-brand');
+ if(material)material.value=pair?.material.id||'';
+ if(brand)brand.value=pair?.brand?.id||'';
+ return !!pair;
+};
 window.zukStockTrialSave=()=>{
  if(!stockTrial.active||!allowed())return;
  const d=document,get=id=>d.getElementById(id),c=catalog();
+ window.zukStockTrialResolvePair?.();
  const kind=String(get('zs-trial-entry')?.value||''),
  materialId=String(get('zs-trial-material')?.value||''),
  brandId=String(get('zs-trial-brand')?.value||''),
@@ -516,23 +530,25 @@ window.zukStockTrialSave=()=>{
  preview.page='balance';showPreview();
 };
 function previewAdd(c){
- return '<div class="zs-panel"><h3>Add Stock — Preview</h3>'+
-  '<p class="zs-preview-note">Enter liquids directly in litres after manual conversion. No tins or drums conversion. Other master items retain their existing unit. '+
-  'Prices may be entered per unit or as a total purchase amount. Nothing is posted in preview.</p>'+
-  '<div class="zs-formgrid"><label class="zs-field">Entry type<select id="zs-preview-entry">'+
-  (manager()?'<option value="OPENING">Opening Stock (verified physical count)</option>':'')+
-  '<option value="PURCHASE">Purchased Stock</option></select></label>'+
-  '<label class="zs-field">Material<select id="zs-preview-add-material">'+previewFormOptions(c.materials)+'</select></label>'+
-  '<label class="zs-field">Brand<select id="zs-preview-add-brand">'+previewFormOptions(c.brands)+'</select></label>'+
-  '<label class="zs-field">Quantity (existing material unit)<input id="zs-preview-qty" type="number" min="0" step="any" placeholder="Enter quantity" oninput="zukStockPreviewPrice()"></label>'+
-  '<label class="zs-field">Price entry method<select id="zs-preview-method" onchange="zukStockPreviewPrice()">'+
-  '<option value="total">Total Purchase Price</option><option value="unit">Price per Unit</option></select></label>'+
-  '<label class="zs-field">Price (OMR)<input id="zs-preview-price" type="number" min="0" step="any" placeholder="Enter price" oninput="zukStockPreviewPrice()"></label></div>'+
-  '<div class="zs-panel" style="background:#f2f7fc;margin:12px 0">'+
-  '<b>Calculated preview only</b><div class="zs-preview-note" id="zs-preview-calculated" role="status">Enter quantity and price to calculate a preview.</div></div>'+
-  '<label class="zs-field">Opening count reference / purchase note<textarea rows="2" placeholder="Physical stock confirmation or purchase reference"></textarea></label>'+
-  '<div class="zs-actions"><button type="button" class="zs-disabled" disabled>Save Stock — Not Active</button></div></div>';
-}
+  const options=previewPairs().filter(x=>stockMaterialInDepartment(x.material)).map(x=>
+   '<option value="'+esc(x.material.name+' — '+(x.brand?.name||'Not assigned'))+'" data-pair="'+esc(x.material.id)+'|'+esc(x.brand?.id||'')+'"></option>').join('');
+  return '<div class="zs-panel"><h3>Add Stock — Preview</h3>'+
+   '<p class="zs-preview-note">Enter liquids directly in litres after manual conversion. No tins or drums conversion. Other master items retain their existing unit. '+
+   'Prices may be entered per unit or as a total purchase amount. Nothing is posted in preview.</p>'+
+   '<div class="zs-formgrid"><label class="zs-field">Entry type<select id="zs-preview-entry">'+
+   (manager()?'<option value="OPENING">Opening Stock (verified physical count)</option>':'')+
+   '<option value="PURCHASE">Purchased Stock</option></select></label>'+
+   '<label class="zs-field">Search Material + Brand<input id="zs-preview-add-pair" list="zs-preview-add-pairs" autocomplete="off" placeholder="Type material or brand name"></label>'+
+   '<datalist id="zs-preview-add-pairs">'+options+'</datalist>'+
+   '<label class="zs-field">Quantity (existing material unit)<input id="zs-preview-qty" type="number" min="0" step="any" placeholder="Enter quantity" oninput="zukStockPreviewPrice()"></label>'+
+   '<label class="zs-field">Price entry method<select id="zs-preview-method" onchange="zukStockPreviewPrice()">'+
+   '<option value="total">Total Purchase Price</option><option value="unit">Price per Unit</option></select></label>'+
+   '<label class="zs-field" id="zs-preview-price-label">Total Purchase Price (OMR)<input id="zs-preview-price" type="number" min="0" step="any" placeholder="Enter price" oninput="zukStockPreviewPrice()"></label></div>'+
+   '<div class="zs-panel zs-calculation-card" style="margin:12px 0">'+
+   '<b>Calculated preview only</b><div class="zs-preview-note" id="zs-preview-calculated" role="status">Enter quantity and price to calculate a preview.</div></div>'+
+   '<label class="zs-field">Opening count reference / purchase note<textarea rows="2" placeholder="Physical stock confirmation or purchase reference"></textarea></label>'+
+   '<div class="zs-actions"><button type="button" class="zs-disabled" disabled>Save Stock — Not Active</button></div></div>';
+ }
 function previewHistory(){
  return '<div class="zs-panel"><h3>Stock History</h3><p class="zs-preview-note">This tab will display bounded, audited purchase, issue, return and adjustment records after stock activation.</p>'+
  '<div class="zs-table-wrap"><table aria-label="Stock History preview"><thead><tr><th>Date</th><th>Action</th><th>Material</th><th>Brand</th><th>Quantity</th><th>Value (OMR)</th><th>Reference</th></tr></thead>'+
@@ -590,6 +606,16 @@ const previewHomeCss='<style>'+
  '#zs-stock-screen .zs-preview .zs-home-chevron{position:absolute;right:20px;bottom:15px;align-self:auto;font-size:27px}'+
  '#zs-stock-screen .zs-preview .zs-home-tile:last-child{grid-column:auto}'+
  '#zs-stock-screen .zs-preview .zs-panel{padding:clamp(14px,2.5vw,27px);box-shadow:0 3px 15px #194a790a}'+
+ '#zs-stock-screen .zs-preview[data-stock-view="history"] .zs-panel{background:#f7f2ff;border-color:#d9c9ee}'+
+ '#zs-stock-screen .zs-preview[data-stock-view="history"] .zs-panel h3{color:#62418a}'+
+ '#zs-stock-screen .zs-preview[data-stock-view="adjust"] .zs-panel{background:#fff5e9;border-color:#f0d4b1}'+
+ '#zs-stock-screen .zs-preview[data-stock-view="adjust"] .zs-panel h3{color:#875521}'+
+ '#zs-stock-screen .zs-preview[data-stock-view="reports"] .zs-panel{background:#edf8f6;border-color:#c2e1d9}'+
+ '#zs-stock-screen .zs-preview[data-stock-view="reports"] .zs-panel h3{color:#25685f}'+
+ '#zs-stock-screen .zs-preview[data-stock-view="add"] .zs-panel{background:#f1f8ef;border-color:#cfe3c7}'+
+ '#zs-stock-screen .zs-preview[data-stock-view="add"] .zs-panel h3{color:#42693b}'+
+ '#zs-stock-screen .zs-preview .zs-field input:focus,#zs-stock-screen .zs-preview .zs-field select:focus,#zs-stock-screen .zs-preview .zs-field textarea:focus{outline:3px solid #84b7e7;outline-offset:1px;border-color:#367ab6}'+
+ '#zs-stock-screen .zs-preview .zs-calculation-card{background:#fff!important;border-left:5px solid #74a96e!important}'+
  '@media(max-width:900px){#zs-stock-screen .zs-preview .zs-home-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#zs-stock-screen .zs-preview .zs-home-tile:last-child{grid-column:auto}}'+
  '@media(max-width:600px){#zs-stock-screen .zs-preview .zs-home-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}#zs-stock-screen .zs-preview .zs-home-tile:last-child{grid-column:auto}#zs-stock-screen .zs-preview .zs-home-tile{min-width:0;min-height:150px;padding:13px;gap:7px}#zs-stock-screen .zs-preview .zs-home-icon{flex:0 0 36px;width:36px;height:36px;font-size:20px}#zs-stock-screen .zs-screen-toolbar{padding:9px 10px;gap:5px}#zs-stock-screen .zs-screen-brand{font-size:14px}}'+
 
@@ -797,8 +823,9 @@ window.zukStockPreviewPrice=()=>{
   output.textContent='Enter quantity and price to calculate a preview.';return;
  }
  const cost=method==='unit'?price:price/quantity,total=method==='unit'?price*quantity:price;
- output.textContent='Quantity: '+fmt(quantity)+' · Price per unit: '+OMR(cost)+
-  ' OMR · Total purchase value: '+OMR(total)+' OMR. Preview only — not saved.';
+ const label=document.getElementById('zs-preview-price-label');
+ if(label)label.firstChild.textContent=method==='unit'?'Price per Unit (OMR)':'Total Purchase Price (OMR)';
+ output.textContent='Calculated Price per Unit: '+OMR(cost)+' OMR · Total Purchase Price: '+OMR(total)+' OMR · Quantity: '+fmt(quantity)+'. Preview only — not saved.';
 };
 function stockBrandOptions(material,selected){
  const brands=catalog().brands.filter(b=>!department||view.items.some(r=>r.material_id===material&&r.brand_id===b.id));
@@ -888,6 +915,25 @@ async function write(command,data){
    window.zukStockSetEntryType();
  }
 }
+window.zukStockResolvePair=()=>{
+ const input=document.getElementById('zs-material-brand-search'),value=String(input?.value||'').trim().toLowerCase();
+ const row=view.items.find(x=>label(x).trim().toLowerCase()===value);
+ const material=document.getElementById('zs-material'),brand=document.getElementById('zs-brand');
+ if(material)material.value=row?.material_id||'';
+ if(brand)brand.value=row?.brand_id||'';
+ view.selected=row?String(row.material_id)+'|'+String(row.brand_id):'';
+ return !!row;
+};
+window.zukStockCalculatePurchase=()=>{
+ const d=document,qty=Number(d.getElementById('zs-qty')?.value),price=Number(d.getElementById('zs-price')?.value),
+  method=d.getElementById('zs-method')?.value,output=d.getElementById('zs-price-calculated');
+ const labelNode=d.getElementById('zs-price-label');
+ if(labelNode)labelNode.textContent=manager()&&d.getElementById('zs-entrytype')?.value==='OPENING'?'Counted amount (OMR)':(method==='unit'?'Price per Unit (OMR)':'Total Purchase Price (OMR)');
+ if(!output)return;
+ if(!(qty>0)||!(price>0)){output.textContent='Enter quantity and purchase amount.';return}
+ const unit=method==='unit'?price:price/qty,total=method==='unit'?price*qty:price;
+ output.textContent=method==='unit'?'Calculated Total Purchase Price: '+OMR(total)+' OMR':'Calculated Price per Unit: '+OMR(unit)+' OMR';
+};
 window.zukStockSetEntryType=()=>{
  const d=document;
  const opening=manager()&&d.getElementById('zs-entrytype')?.value==='OPENING';
@@ -896,11 +942,12 @@ window.zukStockSetEntryType=()=>{
  const button=d.getElementById('zs-save-entry');
  if(button)button.textContent=opening?'Confirm Opening Stock':'Save Purchased Stock';
  const label=d.getElementById('zs-price-label');
- if(label)label.textContent=opening?'Counted stock cost (OMR)':'Purchase price (OMR)';
+ if(label)label.textContent=opening?'Counted amount (OMR)':'Purchase amount (OMR)';
 };
 window.zukStockSavePurchase=()=>{
  if(previewOnly())return;
  const d=document;
+ window.zukStockResolvePair?.();
  const data={materialId:d.getElementById('zs-material')?.value,
     brandId:d.getElementById('zs-brand')?.value,
     quantity:Number(d.getElementById('zs-qty')?.value),

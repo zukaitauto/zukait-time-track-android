@@ -524,9 +524,92 @@ window.consShareSearch=async function(){
  else{try{await navigator.clipboard.writeText(text);alert('Material list copied. You can paste it into WhatsApp or another app.')}catch(e){alert('Share is not available on this device.')}}
 };
 window.openConsumablesManager=function(type){if(role()!=='Manager')return;if(type==='master')return consOpenMaster();if(type==='material')return consOpenMaterialSearch();if(type==='reports')return consOpenReports();if(type==='history')return consOpenHistory();modal('Manager Consumables','<div class="notice">Manager-only Consumables foundation is connected.</div>')};
-window.consOpenMaster=function(preset=''){if(role()!=='Manager')return;window.consNewItemDefaultDepartment=['Painting','Mechanical','Both'].includes(preset)?preset:'';const units=['Liter','kg','Piece'],cats=['Consumable','Paint'];modal('Materials & Brands','<div class="cons-subnav"><button class="secondary" type="button" onclick="openStockManagement()">← BACK TO STOCK</button></div><div id="consMasterWorkspace" class="cons-entry-shell"><div class="cons-master-form"><input id="cmMaterial" list="cmMaterialChoices" placeholder="Material Name" autocomplete="off" oninput="consMasterSuggest()"><datalist id="cmMaterialChoices"></datalist><input id="cmBrand" list="cmBrandChoices" placeholder="Brand Name" autocomplete="off"><datalist id="cmBrandChoices"></datalist><select id="cmUnit">'+units.map(x=>'<option>'+x+'</option>').join('')+'</select><select id="cmCategory">'+cats.map(x=>'<option>'+x+'</option>').join('')+'</select><label>Used In — required for new items<select id="cmDepartment"><option value="">Choose Paint, Mechanical or Shared</option><option value="Painting">Paint</option><option value="Mechanical">Mechanical</option><option value="Both">Shared</option></select></label><input id="cmPrice" type="number" min="0" step="0.001" placeholder="Price / Unit OMR"><label>Effective From<input id="cmDate" type="date" value="'+new Date().toISOString().slice(0,10)+'"></label><button class="blue" onclick="consSaveMaster()">CREATE NEW ITEM / SET PRICE</button></div><p id="cmSaveMessage" class="notice" role="status">Shared is available in both departments with one stock balance. Opening stock is entered only after a physical count.</p><div class="cons-searchbar"><input id="cmListSearch" type="search" autocomplete="off" aria-label="Search material or brand" placeholder="Search material or brand..." oninput="consRenderMaster()"></div><div id="cmList"></div><button class="secondary" onclick="consPrintMaster()">PRINT MATERIAL & PRICE LIST</button></div>','openStockManagement()');const d=document.getElementById('cmDepartment');if(d)d.value=window.consNewItemDefaultDepartment;consRenderMaster();consMasterSuggest()};
-window.consMasterSuggest=function(){const c=C().ensureState(state),mi=document.getElementById('cmMaterial'),ml=document.getElementById('cmMaterialChoices'),bl=document.getElementById('cmBrandChoices');if(ml)ml.innerHTML=c.materials.filter(x=>x.active!==false).map(x=>'<option value="'+esc(x.name)+'"></option>').join('');const q=String(mi?.value||'').trim().toLowerCase(),m=c.materials.find(x=>x.active!==false&&String(x.name||'').trim().toLowerCase()===q);const brands=m?c.brands.filter(b=>b.active!==false&&c.prices.some(p=>!p.voided&&p.materialId===m.id&&p.brandId===b.id)):c.brands.filter(b=>b.active!==false);if(bl)bl.innerHTML=brands.map(b=>'<option value="'+esc(b.name)+'"></option>').join('');if(m){const u=document.getElementById('cmUnit'),cat=document.getElementById('cmCategory');if(u)u.value=m.unit||u.value;if(cat)cat.value=m.category||cat.value;const d=document.getElementById('cmDepartment');if(d){d.value=['Painting','Mechanical','Both'].includes(m.department)?m.department:'Painting';d.disabled=true;}}else{const d=document.getElementById('cmDepartment');if(d){d.disabled=false;d.value=window.consNewItemDefaultDepartment||'';}}};
-window.consSaveMaster=function(){if(role()!=='Manager')return;const mn=document.getElementById('cmMaterial')?.value.trim(),bn=document.getElementById('cmBrand')?.value.trim(),unit=document.getElementById('cmUnit')?.value,category=document.getElementById('cmCategory')?.value||'Consumable',department=document.getElementById('cmDepartment')?.value||'',rawPrice=String(document.getElementById('cmPrice')?.value||'').trim(),price=Number(rawPrice),date=document.getElementById('cmDate')?.value;if(!mn||!bn||!unit||!rawPrice||!Number.isFinite(price)||price<0||!date)return alert('Enter Material, Brand, Unit, Price and Effective From date.');const existing=C().ensureState(state).materials.find(x=>x.active!==false&&String(x.name||'').trim().toLowerCase()===String(mn||'').toLowerCase());if(!existing&&!['Painting','Mechanical','Both'].includes(department))return alert('Choose Paint, Mechanical or Shared before creating an item.');if(!existing&&category==='Paint'&&department!=='Painting')return alert('Paint category can only be assigned to Paint. Choose Consumable for Mechanical or Shared.');if(existing&&['Painting','Mechanical','Both'].includes(existing.department)&&department&&department!==existing.department)return alert('Existing item department cannot be changed here. A controlled correction is required.');const reason=prompt('Reason for this price entry/change:');if(reason===null)return;if(!reason.trim())return alert('Reason is required for every price entry/change.');try{const c=C().ensureState(state),actor={id:me?.id||'',role:'Manager'};let m=c.materials.find(x=>String(x.name).toLowerCase()===mn.toLowerCase()&&x.active!==false);if(!m)m=C().addMaterial(state,{name:mn,unit,category,department},actor);else if(m.unit!==unit)return alert('This material already uses '+m.unit+'. Use its configured unit to protect historical quantities.');else if(!m.category)m.category=category;else if(m.category!==category)return alert('This material is already classified as '+m.category+'. Change its category through a controlled correction to protect reporting.');let b=c.brands.find(x=>String(x.name).toLowerCase()===bn.toLowerCase()&&x.active!==false);if(!b)b=C().addBrand(state,{name:bn},actor);const effective=new Date(date+'T00:00:00').getTime(),hasLater=c.prices.some(p=>!p.voided&&p.materialId===m.id&&p.brandId===b.id&&p.effectiveFrom>effective);if(hasLater&&!confirm('This is a backdated price before a newer price period. Affected Actual costs will update from this date up to the next price period. Continue?'))return;C().setPrice(state,{materialId:m.id,brandId:b.id,pricePerUnit:price,effectiveFrom:effective,reason:reason.trim()},actor);if(typeof save==='function')save();document.getElementById('cmPrice').value='';consRenderMaster();const status=document.getElementById('cmSaveMessage');if(status)status.textContent='Item / price saved in the Material Master. Opening stock remains unverified until counted.'}catch(e){alert(String(e?.message||e))}};
+window.consOpenMaster=function(preset=''){
+ if(role()!=='Manager')return;
+ window.consNewItemDefaultDepartment=['Painting','Mechanical','Both'].includes(preset)?preset:'';
+ const units=['Liter','kg','Piece'],cats=['Consumable','Paint'];
+ modal('Materials & Brands',
+ '<div class="cons-subnav"><button class="secondary" type="button" onclick="openStockManagement()">← BACK TO STOCK</button></div>'+
+ '<div id="consMasterWorkspace" class="cons-entry-shell">'+
+ '<section class="cons-master-form" aria-labelledby="cmCreateHeading"><h3 id="cmCreateHeading">Create Material</h3>'+
+ '<p class="notice">Create the material record first. Price and effective date are managed separately under Brand &amp; Price.</p>'+
+ '<input id="cmNewMaterial" placeholder="Material Name" autocomplete="off">'+
+ '<select id="cmNewUnit">'+units.map(x=>'<option>'+x+'</option>').join('')+'</select>'+
+ '<select id="cmNewCategory">'+cats.map(x=>'<option>'+x+'</option>').join('')+'</select>'+
+ '<label>Used In — required for new materials<select id="cmNewDepartment"><option value="">Choose Paint, Mechanical or Shared</option><option value="Painting">Paint</option><option value="Mechanical">Mechanical</option><option value="Both">Shared</option></select></label>'+
+ '<button class="blue" type="button" onclick="consCreateMaterial()">CREATE MATERIAL</button></section>'+
+ '<section class="cons-master-form" aria-labelledby="cmPriceHeading"><h3 id="cmPriceHeading">Brand &amp; Price</h3>'+
+ '<p class="notice">Add a brand price or set a new effective-dated price. Previous price periods remain in history.</p>'+
+ '<input id="cmMaterial" list="cmMaterialChoices" placeholder="Search Material" autocomplete="off" oninput="consMasterSuggest()"><datalist id="cmMaterialChoices"></datalist>'+
+ '<input id="cmBrand" list="cmBrandChoices" placeholder="Search or enter Brand" autocomplete="off"><datalist id="cmBrandChoices"></datalist>'+
+ '<input id="cmPrice" type="number" min="0" step="0.001" placeholder="Price / Unit OMR">'+
+ '<label>Effective From<input id="cmDate" type="date" value="'+new Date().toISOString().slice(0,10)+'"></label>'+
+ '<button class="blue" type="button" onclick="consSaveMaster()">SAVE BRAND &amp; PRICE</button></section>'+
+ '<p id="cmSaveMessage" class="notice" role="status">Shared materials use one physical stock balance. Opening stock is entered only after a physical count.</p>'+
+ '<div class="cons-searchbar"><input id="cmListSearch" type="search" autocomplete="off" aria-label="Search material or brand" placeholder="Search material or brand..." oninput="consRenderMaster()"></div>'+
+ '<div id="cmList"></div><button class="secondary" type="button" onclick="consPrintMaster()">PRINT MATERIAL &amp; PRICE LIST</button></div>',
+ 'openStockManagement()');
+ const d=document.getElementById('cmNewDepartment');
+ if(d)d.value=window.consNewItemDefaultDepartment;
+ consRenderMaster();consMasterSuggest();
+};
+window.consCreateMaterial=function(){
+ if(role()!=='Manager')return;
+ const name=String(document.getElementById('cmNewMaterial')?.value||'').trim(),
+  unit=document.getElementById('cmNewUnit')?.value,
+  category=document.getElementById('cmNewCategory')?.value||'Consumable',
+  department=document.getElementById('cmNewDepartment')?.value||'';
+ if(!name||!unit||!['Painting','Mechanical','Both'].includes(department))
+  return alert('Enter a material name, unit and department.');
+ if(category==='Paint'&&department!=='Painting')
+  return alert('Paint category can only be assigned to Paint.');
+ try{
+  const c=C().ensureState(state),exists=c.materials.some(x=>x.active!==false&&String(x.name||'').trim().toLowerCase()===name.toLowerCase());
+  if(exists)return alert('This material already exists. Add or update its price under Brand & Price.');
+  C().addMaterial(state,{name,unit,category,department},{id:me?.id||'',role:'Manager'});
+  if(typeof save==='function')save();
+  const input=document.getElementById('cmNewMaterial');if(input)input.value='';
+  const status=document.getElementById('cmSaveMessage');if(status)status.textContent='Material created without a price. Add a brand and price separately when ready.';
+  consMasterSuggest();
+ }catch(e){alert(String(e?.message||e))}
+};
+window.consMasterSuggest=function(){
+ const c=C().ensureState(state),mi=document.getElementById('cmMaterial'),
+  ml=document.getElementById('cmMaterialChoices'),bl=document.getElementById('cmBrandChoices');
+ if(ml)ml.innerHTML=c.materials.filter(x=>x.active!==false)
+  .sort((a,b)=>String(a.name).localeCompare(String(b.name),undefined,{sensitivity:'base'}))
+  .map(x=>'<option value="'+esc(x.name)+'"></option>').join('');
+ const q=String(mi?.value||'').trim().toLowerCase(),
+  m=c.materials.find(x=>x.active!==false&&String(x.name||'').trim().toLowerCase()===q);
+ const brands=m?c.brands.filter(b=>b.active!==false&&c.prices.some(p=>!p.voided&&p.materialId===m.id&&p.brandId===b.id)):c.brands.filter(b=>b.active!==false);
+ if(bl)bl.innerHTML=brands.map(b=>'<option value="'+esc(b.name)+'"></option>').join('');
+};
+window.consSaveMaster=function(){
+ if(role()!=='Manager')return;
+ const mn=String(document.getElementById('cmMaterial')?.value||'').trim(),
+  bn=String(document.getElementById('cmBrand')?.value||'').trim(),
+  rawPrice=String(document.getElementById('cmPrice')?.value||'').trim(),
+  price=Number(rawPrice),date=document.getElementById('cmDate')?.value;
+ if(!mn||!bn||!rawPrice||!Number.isFinite(price)||price<0||!date)
+  return alert('Enter Material, Brand, Price and Effective From date.');
+ const c=C().ensureState(state),m=c.materials.find(x=>x.active!==false&&String(x.name||'').trim().toLowerCase()===mn.toLowerCase());
+ if(!m)return alert('Create the material first, then add its Brand & Price here.');
+ const reason=prompt('Reason for this price entry/change:');
+ if(reason===null)return;
+ if(!reason.trim())return alert('Reason is required for every price entry/change.');
+ try{
+  let b=c.brands.find(x=>String(x.name).toLowerCase()===bn.toLowerCase()&&x.active!==false);
+  if(!b)b=C().addBrand(state,{name:bn},{id:me?.id||'',role:'Manager'});
+  const effective=new Date(date+'T00:00:00').getTime(),
+   hasLater=c.prices.some(p=>!p.voided&&p.materialId===m.id&&p.brandId===b.id&&p.effectiveFrom>effective);
+  if(hasLater&&!confirm('This is a backdated price before a newer price period. Affected Actual costs will update from this date up to the next price period. Continue?'))return;
+  C().setPrice(state,{materialId:m.id,brandId:b.id,pricePerUnit:price,effectiveFrom:effective,reason:reason.trim()},{id:me?.id||'',role:'Manager'});
+  if(typeof save==='function')save();
+  const p=document.getElementById('cmPrice');if(p)p.value='';
+  consRenderMaster();
+  const status=document.getElementById('cmSaveMessage');if(status)status.textContent='Brand price saved. Previous periods remain in price history.';
+ }catch(e){alert(String(e?.message||e))}
+};
 window.consRenderMaster=function(){
  const out=document.getElementById('cmList');if(!out)return;const c=C().ensureState(state),rows=[];
  c.materials.filter(x=>x.active!==false).forEach(m=>c.brands.filter(x=>x.active!==false).forEach(b=>{

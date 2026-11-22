@@ -22,9 +22,19 @@ assert.ok(stock.includes('@media(max-width:600px){#zs-stock-screen .zs-preview .
  'Phone-sized stock tiles must remain two columns, not one');
 assert.ok(stock.includes('.zs-department-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))'),
  'Paint and Mechanical entry options must appear side by side');
+for(const [screen,color] of [['history','#62418a'],['adjust','#875521'],['reports','#25685f']]){
+ assert.ok(stock.includes('data-stock-view="'+screen+'"')&&stock.includes(color),
+  screen+' needs its own readable pastel color treatment');
+}
+
 
 const html=readFileSync('app/src/main/assets/offline_test.html','utf8');
 const menu=readFileSync('app/src/main/assets/consumables_ui.js','utf8');
+const masterStart=menu.indexOf('<h3 id="cmCreateHeading"'),priceStart=menu.indexOf('<h3 id="cmPriceHeading"');
+assert.ok(masterStart>=0&&priceStart>masterStart,'Material creation and Brand & Price must be separate screen sections');
+assert.match(menu,/CREATE MATERIAL/);
+assert.match(menu,/SAVE BRAND &amp; PRICE/);
+assert.doesNotMatch(menu.slice(masterStart,priceStart),/id="cmPrice|id="cmDate/,'Create Material must not collect price or effective date');
 assert.match(menu,/modal\('Materials & Brands'/,'Manager master must be renamed Materials & Brands');
 assert.doesNotMatch(menu,/action\('Brands & Price'/,'Old Painting dashboard must not show moved Master action');
 const mech=readFileSync('app/src/main/assets/mechanical_consumables_ui.js','utf8');
@@ -152,6 +162,9 @@ assert.match(markup(),/Add Stock — Preview/);
 assert.match(markup(),/Total Purchase Price/);
 assert.match(markup(),/Price per Unit/);
 assert.match(markup(),/No tins or drums conversion/);
+assert.match(markup(),/Search Material \+ Brand/,'Add Stock must use one searchable Material + Brand field');
+assert.match(markup(),/id="zs-preview-add-pairs"/);
+assert.doesNotMatch(markup(),/zs-preview-add-brand|>Brand<\/select>/,'Brand is not selected in a separate dropdown');
 assert.match(markup(),/Save Stock — Not Active/);
 assert.match(markup(),/<button[^>]+disabled>/);
 set('zs-preview-qty','20');
@@ -243,8 +256,8 @@ ctx.window.zukStockPreviewNavigate('add');
 assert.match(markup(),/Record Test Entry/);
 assert.doesNotMatch(markup(),/Save Stock — Not Active/);
 set('zs-trial-entry','OPENING');
-set('zs-trial-material','m1');
-set('zs-trial-brand','b1');
+set('zs-trial-pair','2K Primer — CAPSI');
+fields['zs-trial-material']={value:''};fields['zs-trial-brand']={value:''};
 set('zs-trial-qty','20');
 set('zs-trial-price','120');
 set('zs-trial-method','total');
@@ -257,8 +270,8 @@ assert.match(markup(),/120\.000/);
 assert.match(markup(),/Test stock items/);
 ctx.window.zukStockPreviewNavigate('add');
 set('zs-trial-entry','PURCHASE');
-set('zs-trial-material','m1');
-set('zs-trial-brand','b1');
+set('zs-trial-pair','2K Primer — CAPSI');
+fields['zs-trial-material']={value:''};fields['zs-trial-brand']={value:''};
 set('zs-trial-qty','10');
 set('zs-trial-price','8');
 set('zs-trial-method','unit');
