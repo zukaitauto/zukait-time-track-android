@@ -44,8 +44,8 @@ assert.doesNotMatch(a.html(),/id="zs-qty"[^>]+value="5"/,
  'No default quantity may be mistaken for physical stock count');
 assert.doesNotMatch(a.html(),/id="zs-price"[^>]+value="30"/,
  'No example purchase price may be submitted by accident');
-a.m('zs-material').value='oil';
-a.m('zs-brand').value='b';
+a.m('zs-material-brand-search').value='Engine Oil 5W-30 — Brand A';
+a.w.zukStockResolvePair();
 a.m('zs-entrytype').value='OPENING';
 a.m('zs-method').value='unit';
 a.m('zs-qty').value='4';
@@ -77,8 +77,8 @@ await sup.w.openStockManagement();
 await sup.w.zukStockNav('add');
 assert.doesNotMatch(sup.html(),/Opening Stock \(one time only\)/,
  'Bodyshop Supervisor has no Opening Stock button');
-sup.m('zs-material').value='oil';
-sup.m('zs-brand').value='b';
+sup.m('zs-material-brand-search').value='Engine Oil 5W-30 — Brand A';
+sup.w.zukStockResolvePair();
 sup.m('zs-qty').value='4';
 sup.m('zs-method').value='unit';
 sup.m('zs-price').value='5';
