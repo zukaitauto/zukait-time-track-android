@@ -592,7 +592,7 @@ const previewHomeCss='<style>'+
  '#zs-stock-screen .zs-preview .zs-home-chevron{position:absolute;right:20px;bottom:15px;align-self:auto;font-size:27px}'+
  '#zs-stock-screen .zs-preview .zs-home-tile:last-child{grid-column:auto}'+
  '#zs-stock-screen .zs-preview .zs-panel{padding:clamp(14px,2.5vw,27px);box-shadow:0 3px 15px #194a790a}'+
- ' '#zs-stock-screen .zs-preview[data-stock-view="history"] .zs-panel{background:#f7f2ff;border-color:#d9c9ee}'+
+ '#zs-stock-screen .zs-preview[data-stock-view="history"] .zs-panel{background:#f7f2ff;border-color:#d9c9ee}'+
  '#zs-stock-screen .zs-preview[data-stock-view="history"] .zs-panel h3{color:#62418a}'+
  '#zs-stock-screen .zs-preview[data-stock-view="adjust"] .zs-panel{background:#fff5e9;border-color:#f0d4b1}'+
  '#zs-stock-screen .zs-preview[data-stock-view="adjust"] .zs-panel h3{color:#875521}'+
