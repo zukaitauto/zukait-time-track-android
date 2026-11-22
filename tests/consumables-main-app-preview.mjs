@@ -25,7 +25,7 @@ assert.ok(stock.includes('.zs-department-grid{display:grid;grid-template-columns
 
 const html=readFileSync('app/src/main/assets/offline_test.html','utf8');
 const menu=readFileSync('app/src/main/assets/consumables_ui.js','utf8');
-const masterStart=menu.indexOf('id="cmCreateHeading"'),priceStart=menu.indexOf('id="cmPriceHeading"');
+const masterStart=menu.indexOf('<h3 id="cmCreateHeading"'),priceStart=menu.indexOf('<h3 id="cmPriceHeading"');
 assert.ok(masterStart>=0&&priceStart>masterStart,'Material creation and Brand & Price must be separate screen sections');
 assert.match(menu,/CREATE MATERIAL/);
 assert.match(menu,/SAVE BRAND &amp; PRICE/);
