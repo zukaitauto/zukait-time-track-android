@@ -152,7 +152,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$UI_VERIFICATION_RUN" > /tmp/ui-verification-run.json
-          test "$(jq -r '.head_sha' /tmp/ui-verification-run.json)" = "$(jq -r '.sourceCommit' release-request.json)"
+          VERIFY_SHA=$(jq -r '.head_sha' /tmp/ui-verification-run.json)
+          SOURCE_SHA=$(jq -r '.sourceCommit' release-request.json)
+          test "$(jq -r '.head_branch' /tmp/ui-verification-run.json)" = "architecture-v2"
+          test "$(jq -r '.path' /tmp/ui-verification-run.json)" = ".github/workflows/reception-check.yml"
+          test "$(jq -r '.conclusion' /tmp/ui-verification-run.json)" = "success"
+          git cat-file -e "$VERIFY_SHA^{commit}"
+          git merge-base --is-ancestor "$SOURCE_SHA" "$VERIFY_SHA"
+          git merge-base --is-ancestor "$VERIFY_SHA" "$GITHUB_SHA"
+          git diff --quiet "$SOURCE_SHA" "$VERIFY_SHA" -- . \
+            ':(exclude)release-request.json' \
+            ':(exclude)release-ui-request.json' || {
+            echo "::error::Reception verification source contains runtime-code drift."
+            exit 1
+          }
           test "$(jq -r '.head_branch' /tmp/ui-verification-run.json)" = "architecture-v2"
           test "$(jq -r '.path' /tmp/ui-verification-run.json)" = ".github/workflows/reception-check.yml"
           test "$(jq -r '.conclusion' /tmp/ui-verification-run.json)" = "success"
