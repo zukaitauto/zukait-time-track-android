@@ -824,7 +824,7 @@ window.zukStockPreviewPrice=()=>{
  const cost=method==='unit'?price:price/quantity,total=method==='unit'?price*quantity:price;
  const label=document.getElementById('zs-preview-price-label');
  if(label)label.firstChild.textContent=method==='unit'?'Price per Unit (OMR)':'Total Purchase Price (OMR)';
- output.textContent='Calculated '+(method==='unit'?'total purchase price: '+OMR(total)+' OMR':'price per unit: '+OMR(cost)+' OMR')+' · Quantity: '+fmt(quantity)+'. Preview only — not saved.';
+ output.textContent='Calculated Price per Unit: '+OMR(cost)+' OMR · Total Purchase Price: '+OMR(total)+' OMR · Quantity: '+fmt(quantity)+'. Preview only — not saved.';
 };
 function stockBrandOptions(material,selected){
  const brands=catalog().brands.filter(b=>!department||view.items.some(r=>r.material_id===material&&r.brand_id===b.id));
