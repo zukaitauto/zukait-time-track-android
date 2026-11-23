@@ -134,8 +134,8 @@ begin
   if exists (
     select 1 from public.zukait_stock_reservations r
     where r.job_card=v_line.jc and r.material_id=v_line.mid
-      and r.brand_id=v_line.bid and r.status='reserved'
-      and r.reserved_qty>0
+      and r.brand_id=v_line.bid
+      and r.status in ('reserved','finalised')
   ) then
     raise exception 'PAINT_RESERVATION_FINALISATION_REQUIRED' using errcode='23514';
   end if;
