@@ -4,6 +4,7 @@ on:
     branches: [architecture-v2]
     paths:
       - 'app/src/main/assets/consumables_stock_ui.js'
+      - 'tests/consumables-stock-home-responsive.mjs'
       - 'app/src/main/assets/consumables_ui.js'
       - 'tests/consumables-master-mobile-responsive.mjs'
       - 'tests/consumables-stock-legacy-linked-ui.mjs'
@@ -29,6 +30,7 @@ jobs:
           node --check tests/consumables-stock-legacy-linked-ui.mjs
           node --check app/src/main/assets/consumables_ui.js
           node --check tests/consumables-master-mobile-responsive.mjs
+          node --check tests/consumables-stock-home-responsive.mjs
       - name: Run all isolated Stock regressions
         run: npm run test:consumables:stock
       - name: Verify preview-only application safety
@@ -39,3 +41,4 @@ jobs:
         run: |
           npx playwright install chromium
           node tests/consumables-master-mobile-responsive.mjs
+          node tests/consumables-stock-home-responsive.mjs
