@@ -12,14 +12,14 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "reason": "Held V415 candidate: Manager-only Create Material and Brand & Price on Stock chooser, plus direct Review & Link Existing Materials from empty Add Stock. Existing saved material/brand prices remain separate from ledger; explicit Manager linking is required. Empty catalog search disabled and Opening Stock remains guarded by physical count. No database, stock quantity, costing, permission, or Mechanical issuing changes. Wait for exact-source signed APK and Reception verification; V414 remains published.",
+  "reason": "Held V415 UI candidate: Manager-only Create Material and Brand & Price entry on Stock chooser; guided Review & Link Existing Materials when Add Stock catalog is empty; Paint and Mechanical detail pages omit redundant department selector while preserving their scoped reads and existing Back navigation. No backend, stock, historical price, permission, Mechanical issuing, or Job Card Create changes. Requires verified exact-source signed APK and Reception acceptance and explicit release publication.",
   "previousPublishedRelease": {
     "versionName": "V414",
     "versionCode": 377,
     "releaseTag": "release-V414-architecture-v2",
     "sourceCommit": "e01f6f6b20b62a95fccce1bd211e9c34e6bb2d46"
   },
-  "sourceCommit": "870e21a026a6b871e86e9be4b1258429a001417c",
+  "sourceCommit": "da92d0237c3b5e0d41b599a7427c24dc6f41e6de",
   "backupDeferredByOwner": true,
   "signedAcceptanceRun": null,
   "verificationRun": null,
