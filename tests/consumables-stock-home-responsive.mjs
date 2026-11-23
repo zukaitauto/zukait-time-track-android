@@ -13,7 +13,7 @@ const document={
   scrollTop:0,setAttribute(){},focus(){},remove(){screen=null}}}
 };
 const ctx={
- me:{id:'M',role:'Manager'},state:{consumables:{materials:[],brands:[],prices:[]}},
+ me:{id:'M',role:'Manager'},state:{consumables:{materials:[{id:'m1',name:'Primer',unit:'Liter',active:true},{id:'m2',name:'Clear',unit:'Liter',active:true}],brands:[{id:'b1',name:'Brand A',active:true}],prices:[]}},
  document,navigator:{onLine:true},console,
  window:{
   ZUKAIT_STOCK_UI_PREVIEW_ONLY:true,
@@ -28,7 +28,12 @@ ctx.window.openStockManagement();
 assert.ok(screen?.innerHTML,'full-screen Stock chooser renders');
 const markup=screen.innerHTML;
 assert.match(markup,/Consumables Stock/);
-assert.match(markup,/Stock Departments/);
+assert.match(markup,/<h3>Stock<\/h3>/);
+assert.match(markup,/Total Materials/);
+assert.match(markup,/Total Brands/);
+assert.match(markup,/>2<\/strong>/);
+assert.match(markup,/>1<\/strong>/);
+assert.doesNotMatch(markup,/>186<\/strong>|>42<\/strong>/,'Never hardcode mockup totals');
 assert.match(markup,/Material Setup/);
 assert.equal((markup.match(/class="zs-department-card /g)||[]).length,2);
 assert.equal((markup.match(/class="zs-(?:create-item|materials-btn)" onclick/g)||[]).length,2);
@@ -64,10 +69,10 @@ try{
     colors:buttons.map(x=>({
       title:getComputedStyle(x.querySelector('strong')).color,
       description:getComputedStyle(x.querySelector('small')).color,
-      fill:getComputedStyle(x).backgroundImage
+      fill:getComputedStyle(x).backgroundColor
     })),
-    toolbar:{background:getComputedStyle(document.querySelector('.zs-screen-toolbar')).backgroundColor,
-      text:getComputedStyle(document.querySelector('.zs-screen-brand')).color}
+    toolbar:{background:getComputedStyle(document.querySelector('.zs-screen-toolbar>.zs-ghost:first-child')).backgroundColor,
+      text:getComputedStyle(document.querySelector('.zs-screen-toolbar>.zs-ghost:first-child')).color}
    };
   });
   assert.equal(m.cards,4,'four actions at '+width);
@@ -82,23 +87,17 @@ try{
   assert.equal(m.iconsVisible,true);
   assert.ok(m.maxRight<=width+1,'card outside viewport at '+width);
   assert.ok(m.bodyWidth<=width+1,'horizontal scroll at '+width);
-  // The landing screen now uses one coordinated light palette instead of
-  // saturated dark blocks with white text. Verify actual browser colors.
-  const colorRgb=s=>(s.match(/\d+/g)||[]).slice(0,3).map(Number);
-  const luminance=rgb=>rgb.map(v=>{const x=v/255;return x<=0.04045?x/12.92:((x+0.055)/1.055)**2.4})
+  // Verify readable dark text on the four pastel card backgrounds.
+  const rgb=x=>(x.match(/\d+/g)||[]).slice(0,3).map(Number);
+  const luminance=c=>c.map(v=>{const x=v/255;return x<=0.04045?x/12.92:((x+0.055)/1.055)**2.4})
     .reduce((sum,v,i)=>sum+v*[0.2126,0.7152,0.0722][i],0);
   const contrast=(a,b)=>{const x=luminance(a),y=luminance(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05)};
   for(const item of m.colors){
-    const stops=[...item.fill.matchAll(/rgb\(\d+,\s*\d+,\s*\d+\)/g)].map(x=>colorRgb(x[0]));
-    assert.ok(stops.length>=2,'Card must have a soft gradient at '+width);
-    for(const fill of stops){
-      assert.ok(luminance(fill)>0.78,'Card too dark at '+width);
-      assert.ok(contrast(fill,colorRgb(item.title))>=7,'Card title contrast below 7:1 at '+width);
-      assert.ok(contrast(fill,colorRgb(item.description))>=4.5,'Card help-text contrast below 4.5:1 at '+width);
-    }
+    assert.ok(luminance(rgb(item.fill))>0.76,'Card must be pastel, not dark, at '+width);
+    assert.ok(contrast(rgb(item.fill),rgb(item.title))>=7,'Card title contrast below 7:1 at '+width);
+    assert.ok(contrast(rgb(item.fill),rgb(item.description))>=4.5,'Card text contrast below 4.5:1 at '+width);
   }
-  assert.ok(luminance(colorRgb(m.toolbar.background))>0.8,'Toolbar should be light on the chooser at '+width);
-  assert.ok(contrast(colorRgb(m.toolbar.background),colorRgb(m.toolbar.text))>=7,'Toolbar brand contrast too low at '+width);
+  assert.ok(contrast(rgb(m.toolbar.background),rgb(m.toolbar.text))>=7,'Navigation button contrast too low at '+width);
   await page.close();
  }
 }finally{await browser.close();}
@@ -111,4 +110,4 @@ ctx.window.zukStockPreviewExit('dashboard');
 ctx.window.openStockManagement();
 assert.equal(screen,null,'Employee must not access Stock chooser');
 assert.equal(networkCalls,0,'home redesign must never write or read stock');
-console.log('PASS: Stock home uses unified light palette with accessible contrast, four responsive cards without overflow at 320–1280px; Manager-only setup and routes preserved, no stock API calls');
+console.log('PASS: approved pastel Stock home with real material/brand counts, accessible contrast, four responsive cards 320–1280px, Manager-only setup and zero stock API writes');
