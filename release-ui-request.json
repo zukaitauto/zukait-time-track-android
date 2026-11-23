@@ -12,14 +12,14 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "reason": "Held V415 UI candidate: Manager-only Create Material and Brand & Price entry on Stock chooser; guided Review & Link Existing Materials when Add Stock catalog is empty; Paint and Mechanical detail pages omit redundant department selector while preserving their scoped reads and existing Back navigation. No backend, stock, historical price, permission, Mechanical issuing, or Job Card Create changes. Requires verified exact-source signed APK and Reception acceptance and explicit release publication.",
+  "reason": "Held V415 UI candidate: Manager Create Material and Brand & Price shortcuts, guided linking for empty Add Stock, redundant Stock detail department selector removed, and new read-only Accountant Profit/Loss Total Job Cost breakdown across all filtered Job Cards (Parts, Paint, Consumables, Labour, Sublet). With/Without Labour mode preserved and labour excluded only from calculated total when selected. No backend, stock, historical costing, permissions, or Job Card Create changes. Exact-source signed APK and Reception checks required before owner-approved publication.",
   "previousPublishedRelease": {
     "versionName": "V414",
     "versionCode": 377,
     "releaseTag": "release-V414-architecture-v2",
     "sourceCommit": "e01f6f6b20b62a95fccce1bd211e9c34e6bb2d46"
   },
-  "sourceCommit": "da92d0237c3b5e0d41b599a7427c24dc6f41e6de",
+  "sourceCommit": "7715ea934d89a06183c4730f0f5cc370e66949a4",
   "backupDeferredByOwner": true,
   "signedAcceptanceRun": null,
   "verificationRun": null,
