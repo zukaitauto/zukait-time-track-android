@@ -110,8 +110,14 @@ assert.equal(cards(),0,'First stock screen chooses a department');
 assert.match(markup(),/Paint Consumables/);
 assert.match(markup(),/Mechanical Consumables/);
 assert.match(markup(),/zs-department-grid/);
-assert.doesNotMatch(markup(),/<button[^>]*zs-(?:create-item|materials-btn)/,
- 'Approved department chooser must show only Painting and Mechanical, not Material Master actions');
+assert.match(markup(),/aria-label="Manager material setup"/,
+ 'Manager must see material setup on the first department chooser');
+assert.match(markup(),/class="zs-create-item" onclick="zukStockCreateItem\(\)"/,
+ 'Create Material shortcut must be present on the department chooser');
+assert.match(markup(),/class="zs-materials-btn" onclick="zukStockOpenMaterials\(\)"/,
+ 'Brand & Price shortcut must be present on the department chooser');
+assert.match(markup(),/<strong>Create Material<\/strong>/);
+assert.match(markup(),/<strong>Brand &amp; Price<\/strong>/);
 ctx.window.zukStockSelectDepartment('Painting');
 assert.equal(current(),'home');
 assert.equal(cards(),5,'Five colored Paint Stock menu boxes');
@@ -301,15 +307,16 @@ ctx.window.zukStockTestReset();
 assert.match(markup(),/Clear test entries/);
 
 const newItemNavigation=[];
-ctx.window.consOpenMaster=scope=>newItemNavigation.push(scope);
+ctx.window.consOpenMaster=(scope,section)=>newItemNavigation.push([scope,section]);
 ctx.window.zukStockOpenMaterials();
-assert.deepEqual(newItemNavigation,['Painting'],'Materials & Brands must open from Paint Stock');
+assert.deepEqual(newItemNavigation,[['Painting','price']],'Brand & Price must open pricing on the selected department');
 ctx.window.openStockManagement();
-ctx.window.zukStockSelectDepartment('Painting');
+assert.match(markup(),/Manager material setup/);
 ctx.window.zukStockCreateItem();
-assert.deepEqual(newItemNavigation,['Painting','Painting'],'Create New Item must preselect Paint');
+assert.deepEqual(newItemNavigation,[['Painting','price'],['','create']],
+ 'Create Material from department chooser must open master creation with department selectable');
 assert.equal(screen,null,'Creating item must close the full-screen Stock overlay first');
 assert.equal(calls.length,0,'All preview screens and disabled save operations must be network-free');
 assert.equal(modalOpened,0,'No popup must open while entering any Stock detail screen');
 assert.match(stock,/previewOnly\(\)\?Promise\.reject\(Error\('Stock preview: transactions not enabled'\)\)/);
-console.log('STOCK two-column PASS: Paint and Mechanical routes, detail screens, locked writes, zero RPC');
+console.log('STOCK two-column PASS: Paint and Mechanical routes, Manager catalog shortcuts, five-card detail menus, locked writes, zero RPC');
