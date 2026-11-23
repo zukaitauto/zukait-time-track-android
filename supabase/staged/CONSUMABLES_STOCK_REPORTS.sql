@@ -5,8 +5,9 @@ as $$
   select jsonb_build_object(
     'valuation',coalesce(sum(stock_value),0),
     'items',count(*),
-    'low',count(*) filter(where physical-reserved>0 and physical-reserved<minimum),
-    'out',count(*) filter(where physical-reserved<=0)
+    'low',count(*) filter(where initialised and physical-reserved>0 and physical-reserved<minimum),
+    'out',count(*) filter(where initialised and physical-reserved<=0),
+    'uncounted',count(*) filter(where not initialised)
   ) from public.zukait_stock_balances;
 $$;
 revoke all on function public.zukait_stock_balance_report() from public,anon,authenticated;
@@ -19,8 +20,9 @@ as $$
   select jsonb_build_object(
     'valuation',coalesce(sum(b.stock_value),0),
     'items',count(*),
-    'low',count(*) filter(where b.physical-b.reserved>0 and b.physical-b.reserved<b.minimum),
-    'out',count(*) filter(where b.physical-b.reserved<=0)
+    'low',count(*) filter(where b.initialised and b.physical-b.reserved>0 and b.physical-b.reserved<b.minimum),
+    'out',count(*) filter(where b.initialised and b.physical-b.reserved<=0),
+    'uncounted',count(*) filter(where not b.initialised)
   )
   from public.zukait_stock_balances b
   join public.zukait_stock_material_keys m using (material_id)

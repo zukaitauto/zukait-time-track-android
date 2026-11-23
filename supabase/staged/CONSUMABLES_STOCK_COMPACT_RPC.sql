@@ -116,7 +116,7 @@ begin
             and mov.action in ('OPENING','PURCHASE','RESERVE','FINALISE','MECHANICAL_ISSUE','ADJUST')
        ) then raise exception 'OPENING_ALREADY_RECORDED' using errcode='23505';end if;
     update public.zukait_stock_balances set physical=v_qty,stock_value=v_total,
-      updated_at=now()
+      initialised=true,updated_at=now()
       where material_id=v_material and brand_id=v_brand returning * into v_item;
     v_pdelta:=v_qty; v_cdelta:=v_total;
   else
@@ -134,6 +134,19 @@ begin
     select * into v_item from public.zukait_stock_balances
       where material_id=v_material and brand_id=v_brand for update;
     if not found then raise exception 'OPENING_STOCK_REQUIRED' using errcode='22023'; end if;
+    -- Never let NUMERIC(18,4) silently round stock quantities, and never
+    -- accept fractional Piece stock. Validate before any movement is committed.
+    if v_op in ('PURCHASE','RESERVE','CHANGE','FINALISE','RETURN','ADJUST','MINIMUM') then
+      v_qty:=nullif(p_data->>(case
+        when v_op='FINALISE' then 'actualQuantity'
+        when v_op='ADJUST' then 'countedQuantity'
+        when v_op='MINIMUM' then 'minimum'
+        else 'quantity' end),'')::numeric;
+      if v_qty is not null and pg_catalog.round(v_qty,4)<>v_qty then
+        raise exception 'QUANTITY_PRECISION_EXCEEDED' using errcode='22023';end if;
+      if v_qty is not null and v_item.unit='Piece' and pg_catalog.trunc(v_qty)<>v_qty then
+        raise exception 'PIECE_WHOLE_REQUIRED' using errcode='22023';end if;
+    end if;
     if v_op in ('PURCHASE','RESERVE') then
       v_qty:=nullif(p_data->>'quantity','')::numeric;
       if v_qty is null or v_qty<=0
@@ -147,7 +160,8 @@ begin
       elsif p_data->>'priceMethod'='unit' then v_total:=v_price*v_qty;
       else raise exception 'PRICE_METHOD_REQUIRED' using errcode='22023'; end if;
       update public.zukait_stock_balances
-        set physical=physical+v_qty, stock_value=stock_value+v_total, updated_at=now()
+        set physical=physical+v_qty, stock_value=stock_value+v_total,
+            initialised=true,updated_at=now()
         where material_id=v_material and brand_id=v_brand returning * into v_item;
       v_pdelta:=v_qty; v_cdelta:=v_total;
     elsif v_op='RESERVE' then
@@ -269,7 +283,7 @@ begin
       v_total:=v_delta*v_price;
       update public.zukait_stock_balances
         set physical=v_qty, stock_value=case when v_qty=0 then 0 else stock_value+v_total end,
-            updated_at=now()
+            initialised=true,updated_at=now()
         where material_id=v_material and brand_id=v_brand returning * into v_item;
       v_pdelta:=v_delta; v_cdelta:=v_total;
     elsif v_op='MINIMUM' then

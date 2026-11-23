@@ -18,6 +18,10 @@ as $ready$
   checked_relations as (
     select coalesce(bool_and(
       cls.oid is not null and coalesce(cls.relrowsecurity,false)
+      and (rel.relname<>'zukait_stock_balances' or exists (
+        select 1 from pg_catalog.pg_attribute att
+         where att.attrelid=cls.oid and att.attname='initialised' and not att.attisdropped
+      ))
       and not coalesce(pg_catalog.has_table_privilege('anon',cls.oid,'SELECT'),true)
       and not coalesce(pg_catalog.has_table_privilege('anon',cls.oid,'INSERT'),true)
       and not coalesce(pg_catalog.has_table_privilege('anon',cls.oid,'UPDATE'),true)
