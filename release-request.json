@@ -12,14 +12,14 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "reason": "Held V415 UI candidate: Stock Manager material/brand setup shortcuts and guided linking, scoped Stock details without redundant department switch; Accountant Profit/Loss Total Job Cost opens verified full-filter five-category expense breakdown (Parts, Paint, Consumables, Labour, Sublet) honoring With/Without Labour. Accountant web asset cache bumped so new JS/CSS loads. Read-only breakdown, no backend/financial/stock records touched. Requires matching signed APK + Reception verification and explicit publication approval.",
+  "reason": "HELD V415 UI candidate. Stock: Manager Create Material and Brand & Price shortcuts, guided link from empty Add Stock, Paint/Mechanical detail screens without redundant department selector. Accountant: Profit/Loss Total Job Cost clickable full filtered cost breakdown. Manager: monthly graph compares weighted profit percentage for Cash and each insurance company together, with OMR revenue, recorded costs, result, pending/provisional indicators. Read-only visual comparison uses existing Manager profit API and no production data changes. V414 remains live. Await signed APK, full regression and Reception checks and explicit publication authorization.",
   "previousPublishedRelease": {
     "versionName": "V414",
     "versionCode": 377,
     "releaseTag": "release-V414-architecture-v2",
     "sourceCommit": "e01f6f6b20b62a95fccce1bd211e9c34e6bb2d46"
   },
-  "sourceCommit": "54ab69dfabef64153b5935c34c13f7e29bb19b02",
+  "sourceCommit": "a14d2816736c85c655bc93ffd6dfcd6694d4df31",
   "backupDeferredByOwner": true,
   "signedAcceptanceRun": null,
   "verificationRun": null,
