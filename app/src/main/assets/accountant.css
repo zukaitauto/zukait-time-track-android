@@ -819,3 +819,60 @@ body:has(#accounts-workspace[data-report="profit"]:not([hidden])) main{max-width
 #accounts-workspace .pending-cost-reason{font-size:11px;color:#795521;overflow-wrap:anywhere}
 #accounts-workspace .pending-cost-job-link{font-size:12px;font-weight:800;color:#126d63;justify-self:end}
 @media(max-width:650px){#accounts-workspace #rows .pending-cost-job{grid-template-columns:1fr;gap:7px;padding:12px}#accounts-workspace .pending-cost-job-link{justify-self:start}}
+
+
+/* Profit / Loss: full filtered-period Total Job Cost category drilldown. */
+#accounts-workspace .accounts-kpi-cost-open{
+ display:block;text-align:left;width:100%;cursor:pointer;font:inherit;
+ border-color:#b8d0f0;background:linear-gradient(135deg,#eef5ff,#fff);
+}
+#accounts-workspace .accounts-kpi-cost-open:hover:not(:disabled){
+ border-color:#3b7bd5;box-shadow:0 6px 18px #1756a71e;
+}
+#accounts-workspace .accounts-kpi-cost-open:focus-visible{outline:3px solid #1765c7;outline-offset:2px}
+#accounts-workspace .accounts-kpi-cost-open .accounts-kpi-hint{color:#155ca6}
+#accounts-workspace .accounts-kpi-cost-open:disabled{opacity:.8;cursor:progress}
+.financial-detail-dialog .total-cost-subtitle{font-size:12px;color:#536e89;margin:6px 0 0}
+.financial-detail-dialog .total-cost-overview{
+ background:linear-gradient(120deg,#e9f3ff,#f5fbff);
+ border:1px solid #bcd5f3;border-radius:16px;padding:16px 18px;margin:18px 0;
+}
+.financial-detail-dialog .total-cost-overview small{display:block;color:#315879;font-size:13px;font-weight:750}
+.financial-detail-dialog .total-cost-overview strong{
+ display:block;color:#14497e;font-size:clamp(25px,4vw,36px);font-variant-numeric:tabular-nums;
+ letter-spacing:-.5px;margin-top:6px;overflow-wrap:anywhere;
+}
+.financial-detail-dialog .total-cost-overview p{font-size:12px;color:#79521c;margin:9px 0 0}
+.financial-detail-dialog .total-cost-categories{display:grid;gap:9px}
+.financial-detail-dialog .total-cost-category{
+ display:flex;gap:12px;align-items:center;padding:12px 14px;min-width:0;
+ border:1px solid #d7e5f2;background:#f6faff;border-radius:13px;
+}
+.financial-detail-dialog .total-cost-category.total-cost-parts{border-left:5px solid #3c65bc}
+.financial-detail-dialog .total-cost-category.total-cost-paint{border-left:5px solid #8b52bc}
+.financial-detail-dialog .total-cost-category.total-cost-consumables{border-left:5px solid #0b8b8b}
+.financial-detail-dialog .total-cost-category.total-cost-labour{border-left:5px solid #cb8639}
+.financial-detail-dialog .total-cost-category.total-cost-sublet{border-left:5px solid #416888}
+.financial-detail-dialog .total-cost-category.is-excluded{background:#f2f5f8;border-color:#dae2e9}
+.financial-detail-dialog .total-cost-icon{
+ flex:0 0 33px;width:33px;height:33px;border-radius:9px;
+ background:#fff;color:#234f79;display:grid;place-items:center;font-size:19px;
+}
+.financial-detail-dialog .total-cost-label{flex:1;min-width:0}
+.financial-detail-dialog .total-cost-label strong{display:block;font-size:14px;color:#1d4368}
+.financial-detail-dialog .total-cost-label small{display:block;color:#576f88;font-size:11px;line-height:1.45}
+.financial-detail-dialog .total-cost-category b{
+ flex-shrink:0;color:#214767;font-size:16px;text-align:right;font-variant-numeric:tabular-nums;
+ overflow-wrap:anywhere;
+}
+.financial-detail-dialog .total-cost-category.is-excluded b{color:#6c7987}
+.financial-detail-dialog .total-cost-footnote{
+ color:#4b647e;font-size:12px;line-height:1.5;margin:12px 2px 3px;
+}
+@media(max-width:600px){
+ .financial-detail-dialog .total-cost-category{padding:11px;gap:9px}
+ .financial-detail-dialog .total-cost-category b{font-size:13px;max-width:39%;white-space:normal}
+ .financial-detail-dialog .total-cost-icon{flex-basis:30px;width:30px;height:30px}
+ .financial-detail-dialog .total-cost-label strong{font-size:13px}
+ .financial-detail-dialog .total-cost-label small{font-size:10px}
+}
