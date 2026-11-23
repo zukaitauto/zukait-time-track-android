@@ -24,6 +24,7 @@ create table if not exists public.zukait_stock_balances (
   reserved numeric(18,4) not null default 0 check (reserved >= 0 and reserved <= physical),
   stock_value numeric(20,8) not null default 0 check (stock_value >= 0),
   minimum numeric(18,4) not null default 0 check (minimum >= 0),
+  initialised boolean not null default false, -- false = uncounted/unreceived placeholder, NOT verified zero
   opened_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   primary key (material_id,brand_id)

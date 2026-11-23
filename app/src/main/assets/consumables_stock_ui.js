@@ -69,13 +69,20 @@ const catalog=()=>{
   }catch(_){return {materials:[],brands:[],prices:[]}}
 };
 // Read-only Material Master overlay; never infer physical stock from saved prices.
+// A future or invalid brand price is not a current price.
+const currentMasterPrice=p=>{
+ const v=p?.pricePerUnit,t=p?.effectiveFrom;
+ return v!==null&&v!==undefined&&v!==''&&typeof v!=='boolean'&&
+   Number.isFinite(Number(v))&&Number(v)>=0&&
+   (t===undefined||t===null||t===''||(Number.isFinite(Number(t))&&Number(t)<=Date.now()));
+};
 function masterInventory(){
  const c=catalog(),materials=new Map(c.materials.map(m=>[String(m.id),m])),
   brands=new Map(c.brands.map(b=>[String(b.id),b])),pairs=new Map(),
   pricedMaterials=new Set();
  for(const p of c.prices){
   const m=materials.get(String(p.materialId)),b=brands.get(String(p.brandId));
-  if(!m||!b)continue;
+  if(!m||!b||!currentMasterPrice(p))continue;
   pricedMaterials.add(String(m.id));
   const key=String(m.id)+'|'+String(b.id);
   if(!pairs.has(key))pairs.set(key,{key,name:String(m.name||m.id),
@@ -93,6 +100,8 @@ const label=(r)=>{
   return (m?.name||r.material_id)+' — '+(b?.name||r.brand_id);
 };
 const available=x=>Number(x.physical)-Number(x.reserved);
+// A zero placeholder created by Master linking is not a confirmed physical count.
+const hasCount=x=>x?.initialised===true;
 const css='<style>'+
  '.zs{font-family:inherit;color:#15253c;max-width:1150px;margin:auto}.zs *{box-sizing:border-box}'+
  '.zs-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:12px 0}'+
@@ -146,15 +155,20 @@ function draw(body) {
   window.openModal(markup);
 }
 function rowCard(r){
- const unit=esc(r.unit||'Liter'),a=available(r);
- const ids=esc(String(r.material_id)+'|'+String(r.brand_id));
+ const unit=esc(r.unit||'Unit not recorded'),counted=hasCount(r),
+   a=available(r),ids=esc(String(r.material_id)+'|'+String(r.brand_id));
+ const q=n=>counted?fmt(n)+' '+unit:'—';
  return '<button type="button" class="zs-card" style="display:block;width:100%;text-align:left" data-id="'+ids+
    '" onclick="zukStockDetail(this.dataset.id)"><div class="zs-row"><b>'+esc(label(r))+'</b>'+
-   (a<Number(r.minimum)?'<span class="zs-pill">Low stock</span>':'')+'</div>'+
-   '<div class="zs-grid" style="margin-top:9px"><div><div class="zs-muted">Physical</div><b>'+fmt(r.physical)+' '+unit+
-   '</b></div><div><div class="zs-muted">Reserved</div><b>'+fmt(r.reserved)+' '+unit+
-   '</b></div><div><div class="zs-muted">Available</div><b class="zs-available">'+fmt(a)+' '+unit+'</b></div></div>'+
-   '<div class="zs-muted" style="margin-top:6px">Average '+OMR(Number(r.physical)>0?Number(r.stock_value)/Number(r.physical):0)+' OMR/'+unit+'</div></button>';
+   (!counted?'<span class="zs-pill zs-unlinked-pill">Not counted</span>':
+    a<=0?'<span class="zs-pill">Out of stock</span>':
+    a<Number(r.minimum)?'<span class="zs-pill">Low stock</span>':'')+'</div>'+
+   '<div class="zs-grid" style="margin-top:9px"><div><div class="zs-muted">Physical</div><b>'+q(r.physical)+
+   '</b></div><div><div class="zs-muted">Reserved</div><b>'+q(r.reserved)+
+   '</b></div><div><div class="zs-muted">Available</div><b class="zs-available">'+q(a)+'</b></div></div>'+
+   '<div class="zs-muted" style="margin-top:6px">Average '+
+   (counted?OMR(Number(r.physical)>0?Number(r.stock_value)/Number(r.physical):0)+' OMR/'+unit:'Not recorded')+
+   '</div></button>';
 }
 function masterStockCard(x,status){
  return '<div class="zs-card zs-unlinked" data-balance-entry data-balance-kind="'+esc(status)+
@@ -174,7 +188,7 @@ function unpricedMaterialCard(m){
  return '<div class="zs-card zs-unpriced" data-balance-entry data-balance-kind="unpriced"'+
   ' data-balance-name="'+esc(m.name||m.id)+'"><div class="zs-row"><b>'+esc(m.name||m.id)+'</b>'+
   '<span class="zs-pill zs-unlinked-pill">Brand &amp; Price needed</span></div>'+
-  '<p class="zs-muted">No saved active brand price for this material. Not a stock balance; no quantity assumed.</p>'+
+  '<p class="zs-muted">No currently effective brand price for this material. Historical or future prices are not current. Not a stock balance; no quantity assumed.</p>'+
   (manager()?'<button type="button" class="zs-btn secondary zs-master-price-action" onclick="zukStockOpenMaterials()">Open Brand &amp; Price</button>':'')+'</div>';
 }
 function render(){
@@ -184,19 +198,21 @@ function render(){
   const rows=view.items,known=new Set(rows.map(r=>String(r.material_id)+'|'+String(r.brand_id))),
     master=masterInventory(),incomplete=view.itemsHasMore||!!view.error,
     unlinked=master.pairs.filter(p=>!known.has(p.key)),
-    unpriced=master.unpriced.filter(m=>!rows.some(r=>String(r.material_id)===String(m.id))),
-    low=rows.filter(x=>available(x)>0&&available(x)<Number(x.minimum)).length,
-    out=rows.filter(x=>available(x)<=0).length,
+    unpriced=master.unpriced,
+    counted=rows.filter(hasCount),
+    low=counted.filter(x=>available(x)>0&&available(x)<Number(x.minimum)).length,
+    out=counted.filter(x=>available(x)<=0).length,
     entries=[
      ...rows.map(r=>({name:label(r),markup:'<div data-balance-entry data-balance-kind="linked" data-balance-name="'+esc(label(r))+'">'+rowCard(r)+'</div>'})),
      ...unlinked.map(p=>({name:p.name+' — '+p.brand,markup:masterStockCard(p,incomplete?'pending':'unlinked')})),
      ...unpriced.map(m=>({name:String(m.name||m.id),markup:unpricedMaterialCard(m)}))
     ].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'}));
   draw('<div class="zs-grid">'+
-    '<div class="zs-metric"><div class="zs-muted">Material / Brand items</div><b>'+entries.length+'</b></div>'+
-    '<div class="zs-metric"><div class="zs-muted">Linked stock</div><b>'+rows.length+'</b></div>'+
+    '<div class="zs-metric"><div class="zs-muted">Entries displayed</div><b>'+entries.length+'</b></div>'+
+    '<div class="zs-metric"><div class="zs-muted">Ledger pairs loaded</div><b>'+rows.length+'</b></div>'+
     '<div class="zs-metric"><div class="zs-muted">Needs linking</div><b>'+(incomplete?'—':unlinked.length)+'</b></div></div>'+
-    '<p class="zs-muted">Linked stock: '+low+' low and '+out+' out of stock. Unlinked Master items are not counted as zero stock.</p>'+
+    '<p class="zs-muted">Ledger pairs loaded: '+counted.length+' counted and '+(rows.length-counted.length)+' not counted; '+low+' low and '+out+' out of stock'+(incomplete?' (loaded pages only)':'')+'. Unlinked Master items are not counted as zero stock.</p>'+
+    (department==='Painting'?'<p class="zs-warning">Paint Job Card Actual Materials are not automatically deducted from this Stock ledger. Reconcile usage before relying on availability or valuation.</p>':'')+
     '<div class="zs-row" style="margin-top:12px"><h3>Stock Balance &amp; Material Master</h3>'+
     '<button class="zs-btn secondary" onclick="zukStockNav(\'balance\',true)">Refresh</button></div>'+
     '<div class="zs-balance-tools"><label>Search material or brand<input type="search" id="zs-balance-query" autocomplete="off" value="'+esc(view.balanceQuery||'')+
@@ -209,7 +225,7 @@ function render(){
     (entries.length?entries.map(x=>x.markup).join(''):
      '<p class="zs-warning">No saved Material Master items or linked Stock records visible. Check the Master and refresh.</p>')+
     (entries.length?'<p class="zs-muted" id="zs-balance-search-empty" hidden>No materials match this search or filter.</p>':'')+
-    (incomplete?'<button class="zs-btn secondary" onclick="zukStockMore()">Load more items</button>':''));
+    (view.itemsHasMore?'<button class="zs-btn secondary" onclick="zukStockMore()">Load more items</button>':''));
   applyBalanceFilters();return;
  }
  if(view.page==='legacy'){
@@ -238,12 +254,12 @@ function render(){
  if(view.page==='detail'){
    const r=view.items.find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected);
    if(!r){view.page='balance';render();return}
-   const unit=esc(r.unit);
+   const unit=esc(r.unit),counted=hasCount(r),q=n=>counted?fmt(n)+' '+unit:'Not counted';
    draw('<button class="zs-btn secondary" onclick="zukStockNav(\'balance\')">← Stock Balance</button>'+
     '<div class="zs-card"><h3>'+esc(label(r))+'</h3>'+
-    [['Physical',fmt(r.physical)+' '+unit],['Reserved',fmt(r.reserved)+' '+unit],
-     ['Available',fmt(available(r))+' '+unit],['Average cost',OMR(Number(r.physical)?Number(r.stock_value)/Number(r.physical):0)+' OMR/'+unit],
-     ['Stock value',OMR(r.stock_value)+' OMR'],['Minimum stock',fmt(r.minimum)+' '+unit]]
+    [['Physical',q(r.physical)],['Reserved',q(r.reserved)],
+     ['Available',q(available(r))],['Average cost',counted?OMR(Number(r.physical)?Number(r.stock_value)/Number(r.physical):0)+' OMR/'+unit:'Not recorded'],
+     ['Stock value',counted?OMR(r.stock_value)+' OMR':'Not recorded'],['Minimum stock',fmt(r.minimum)+' '+unit]]
      .map(([k,v])=>'<div class="zs-row" style="padding:5px 0"><span class="zs-muted">'+k+'</span><b>'+v+'</b></div>').join('')+'</div>'+
      '<button class="zs-btn" onclick="zukStockNav(\'add\')">Add Purchased Stock</button> '+
      (manager()?'<button class="zs-btn secondary" onclick="zukStockNav(\'adjust\')">Stock Adjustment</button>':''));
@@ -305,7 +321,9 @@ function render(){
      '<div class="zs-row"><span>Current stock valuation</span><b>'+OMR(r.valuation)+' OMR</b></div>'+
      '<div class="zs-row"><span>Tracked material and brand pairs</span><b>'+esc(r.items)+'</b></div>'+
      '<div class="zs-row"><span>Low stock</span><b>'+esc(r.low)+'</b></div>'+
-     '<div class="zs-row"><span>Out of stock</span><b>'+esc(r.out)+'</b></div></div>':
+     '<div class="zs-row"><span>Out of stock</span><b>'+esc(r.out)+'</b></div>'+
+     '<div class="zs-row"><span>Not physically counted</span><b>'+esc(r.uncounted??'—')+'</b></div>'+
+     '<p class="zs-muted">Stock value uses recorded purchase costs, not effective-dated Consumables Master prices used in Job Card costing.</p></div>':
      '<p class="zs-warning">Stock report unavailable.</p>')+
      '<button class="zs-btn secondary" onclick="zukStockNav(\'history\')">Open Stock History</button>');
  }
@@ -325,7 +343,7 @@ async function load(page,force=false){
      const request=needsItems?{operation:'LIST',page:0}:{operation:needReport?'REPORTS':'HISTORY'};
      const reply=await stockRead(request);
      if(!reply.ok)throw Error(reply.code||'STOCK_UNAVAILABLE');
-     if(needsItems){view.items=reply.items||[];view.itemsHasMore=!!reply.hasMore;view.itemsNextPage=1}
+     if(needsItems){view.items=verifiedLedgerRows(reply);view.itemsHasMore=!!reply.hasMore;view.itemsNextPage=1}
      else if(needReport)view.report=reply.report||null;
      else{view.history=reply.history||[];view.historyHasMore=!!reply.hasMore}
    }catch(e){view.error=String(e.message||e)}
@@ -965,12 +983,19 @@ window.zukStockBalanceSearch=value=>{view.balanceQuery=String(value||'').slice(0
 window.zukStockBalanceFilter=value=>{if(!['all','linked','unlinked','unpriced'].includes(value))return;view.balanceFilter=value;if(view.page==='balance')applyBalanceFilters();};
 window.zukStockNav=(page,force=false)=>previewOnly()?window.zukStockPreviewNavigate(page):load(page,force);
 window.zukStockDetail=id=>{view.selected=String(id||'');view.page='detail';render()};
+// Refuse old Stock API payloads; without explicit count metadata a real
+// zero could be confused with an uninitialised Master-link placeholder.
+const verifiedLedgerRows=reply=>{
+ if(!Array.isArray(reply?.items)||reply.items.some(x=>typeof x?.initialised!=='boolean'))
+   throw Error('Stock server count-status update required. Balances withheld until the approved migration.');
+ return reply.items;
+};
 window.zukStockMore=async()=>{
-  if(view.loading)return;view.loading=true;
+  if(view.loading||!view.itemsHasMore)return;view.loading=true;
   try{
     const reply=await stockRead({operation:'LIST',page:view.itemsNextPage});
     if(!reply.ok)throw Error(reply.code||'STOCK_UNAVAILABLE');
-    view.items.push(...(reply.items||[]));view.itemsHasMore=!!reply.hasMore;view.itemsNextPage++;
+    view.items.push(...verifiedLedgerRows(reply));view.itemsHasMore=!!reply.hasMore;view.itemsNextPage++;view.error='';
   }catch(e){view.error=String(e.message||e)}finally{view.loading=false;render()}
 };
 window.zukStockMoreHistory=async()=>{

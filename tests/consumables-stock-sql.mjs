@@ -72,5 +72,18 @@ approx(totals.valuation,Number(expectedValue));
 assert.equal((await db.query("select has_function_privilege('authenticated','public.zukait_stock_balance_report()','execute') allowed")).rows[0].allowed,false);
 const noLegacy=await db.query("select count(*) as n from information_schema.tables where table_name='workshop_state' and table_schema='public'");
 assert.equal(noLegacy.rows[0].n,0,'stock schema must not introduce or modify workshop_state');
-console.log('Compact stock SQL: lifecycle, weighted average, role checks, retries and no large snapshots PASSED');
+// A placeholder is not a verified zero-stock balance, and fractions of Piece
+// or quantities below the database's four-decimal precision must be rejected.
+await cmd('token-manager','OPENING',{materialId:'tape',brandId:'capsi',
+ quantity:3,unitCost:1,countConfirmed:true,reason:'Physically counted pieces'});
+await assert.rejects(
+ cmd('token-manager','PURCHASE',{materialId:'tape',brandId:'capsi',
+   quantity:0.5,priceMethod:'unit',price:1}),/PIECE_WHOLE_REQUIRED/);
+await assert.rejects(
+ cmd('token-manager','PURCHASE',{materialId:'primer',brandId:'capsi',
+   quantity:0.00001,priceMethod:'unit',price:1}),/QUANTITY_PRECISION_EXCEEDED/);
+const tapeRow=(await db.query("select physical,initialised from public.zukait_stock_balances where material_id='tape'")).rows[0];
+assert.equal(Number(tapeRow.physical),3,'invalid Piece purchase leaves stock unchanged');
+assert.equal(tapeRow.initialised,true,'physically confirmed opening sets initialised flag');
+console.log('Compact stock SQL: lifecycle, weighted average, role checks, precision, retries and no large snapshots PASSED');
 await db.close();

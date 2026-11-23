@@ -111,7 +111,7 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
     // One bounded indexed read; only stock catalog keys, never workshop_state.
     const page=Math.max(0,Math.min(20,Number.isInteger(body.page)?body.page:0));
     const {data,error}=await admin.from('zukait_stock_balances')
-      .select('material_id,brand_id,unit,physical,reserved,material:zukait_stock_material_keys(display_name,department,active),brand:zukait_stock_brand_keys(display_name,active)')
+      .select('material_id,brand_id,unit,physical,reserved,initialised,material:zukait_stock_material_keys(display_name,department,active),brand:zukait_stock_brand_keys(display_name,active)')
       .order('material_id',{ascending:true}).order('brand_id',{ascending:true})
       .range(page*100,(page+1)*100);
     if(error)return bad('stock_catalog_failed',503);
@@ -126,7 +126,7 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
       materialId:x.material_id,brandId:x.brand_id,unit:x.unit,
       name:(Array.isArray(x.material)?x.material[0]:x.material).display_name,
       brand:(Array.isArray(x.brand)?x.brand[0]:x.brand).display_name,
-      physical:x.physical,reserved:x.reserved
+      physical:x.physical,reserved:x.reserved,initialised:x.initialised
     }));
     return good({items,page,hasMore:raw.length>100});
   }
@@ -135,7 +135,7 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
     const brandId=safeId(body.brandId);
     if(!materialId||!brandId)return bad('stock_item_required');
     const {data,error}=await admin.from('zukait_stock_balances')
-      .select('material_id,brand_id,unit,physical,reserved,stock_value,minimum,updated_at')
+      .select('material_id,brand_id,unit,physical,reserved,stock_value,minimum,initialised,updated_at')
       .eq('material_id',materialId).eq('brand_id',brandId).maybeSingle();
     if(error)return bad('stock_read_failed',503);
     return good({item:data||null});
@@ -148,8 +148,9 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
     return good({report:data});
   }
   if(operation==='LIST') {
-    const page=Math.max(0,Math.min(20,Number.isInteger(body.page)?body.page:0));
-    const fields='material_id,brand_id,unit,physical,reserved,stock_value,minimum,updated_at';
+    const page=body.page===undefined?0:body.page;
+    if(!Number.isInteger(page)||page<0||page>200)return bad('stock_invalid_page');
+    const fields='material_id,brand_id,unit,physical,reserved,stock_value,minimum,initialised,updated_at';
     let query=admin.from('zukait_stock_balances').select(department
       ? fields+',material:zukait_stock_material_keys!inner(department,active)' : fields);
     if(department)query=query.in('material.department',[department,'Both']).eq('material.active',true);
@@ -222,7 +223,7 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
         'REQUEST_ID_CONFLICT','STOCK_VALUATION_CONFLICT','REASON_REQUIRED',
         'MECHANICAL_STOCK_FORBIDDEN','MECHANICAL_JOB_NOT_FOUND','INVALID_MECHANICAL_JOB',
         'INVALID_ISSUE_LINES','INVALID_ISSUE_LINE','INVALID_ISSUE_KIND',
-        'DUPLICATE_MATERIAL_BRAND','PIECE_WHOLE_REQUIRED',
+        'DUPLICATE_MATERIAL_BRAND','PIECE_WHOLE_REQUIRED','QUANTITY_PRECISION_EXCEEDED',
         'MECHANICAL_LINE_NOT_FOUND','RETURN_EXCEEDS_ISSUED',
         'RETURN_REASON_REQUIRED','INVALID_RETURN_LINE','INVALID_RETURN_QUANTITY',
         'STOCK_UNIT_CONFLICT']);

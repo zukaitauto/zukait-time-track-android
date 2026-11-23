@@ -52,7 +52,7 @@ assert.ok(html.includes('window.ZUKAIT_STOCK_UI_PREVIEW_ONLY=true'),
 assert.doesNotMatch(source,/get\\('stockPilot'\\)/,
   'Production Stock activation must not depend on a browser URL');
 
-function makeFixture(status,role='Manager'){
+function makeFixture(status,role='Manager',includeCountState=true){
   const requests=[]; let output=''; let screen=null; let token='session-one';
   const body={style:{overflow:''},appendChild(element){screen=element;}};
   const window={
@@ -64,7 +64,7 @@ function makeFixture(status,role='Manager'){
       if(command.operation==='STATUS')return status();
       if(command.operation==='LIST')return {ok:true,items:[{
         material_id:'M',brand_id:'B',unit:'Liter',physical:10,reserved:0,
-        stock_value:30,minimum:1
+        stock_value:30,minimum:1,...(includeCountState?{initialised:true}:{})
       }],hasMore:false};
       throw Error('Unexpected Stock operation: '+command.operation);
     }},
@@ -152,6 +152,16 @@ assert.deepEqual(approved.requests.map(x=>x.operation),['STATUS','LIST','LIST','
   'Another staff session must require a fresh server check');
 assert.match(approved.screen().innerHTML,/UI PREVIEW ONLY/);
 assert.match(approved.screen().innerHTML,/zs-department-grid/);
+
+// An older backend may report itself ready yet omit the new count-status field.
+// Fail closed instead of showing a false “Not counted” or zero balance.
+const legacyServer=makeFixture(
+ ()=>({ok:true,live:true,ready:true,writes:true,masterLink:true}),'Manager',false);
+await legacyServer.window.openStockManagement();
+legacyServer.window.zukStockSelectDepartment('Painting');
+await legacyServer.window.zukStockLiveNavigate('balance');
+assert.match(legacyServer.screen().innerHTML,/count-status update required/);
+assert.doesNotMatch(legacyServer.screen().innerHTML,/10\.00 Liter/);
 
 const employee=makeFixture(()=>({ok:true,live:true,ready:true,writes:true,masterLink:true}),'Employee');
 await employee.window.openStockManagement();
