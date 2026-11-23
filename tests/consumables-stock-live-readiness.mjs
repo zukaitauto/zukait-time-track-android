@@ -127,6 +127,12 @@ await approved.window.zukStockLiveNavigate('balance');
 assert.deepEqual(approved.requests.map(x=>x.operation),['STATUS','LIST']);
 assert.equal(approved.requests.at(-1).department,'Painting');
 assert.match(approved.screen().innerHTML,/10\.00 Liter/);
+assert.doesNotMatch(approved.screen().innerHTML,/id="zs-department"/,
+ 'Painting stock detail must not show a Mechanical department switch');
+await approved.window.zukStockLiveNavigate('adjust');
+assert.match(approved.screen().innerHTML,/Manager Stock Adjustment/);
+assert.doesNotMatch(approved.screen().innerHTML,/id="zs-department"/,
+ 'Painting Stock Adjustment must remain Paint-only');
 assert.doesNotMatch(approved.screen().innerHTML,/UI PREVIEW ONLY/);
 approved.window.zukStockLiveHome();
 approved.window.zukStockResetDepartment();
@@ -137,6 +143,8 @@ assert.match(approved.screen().innerHTML,/Mechanical Consumables/);
 await approved.window.zukStockLiveNavigate('balance');
 assert.equal(approved.requests.at(-1).department,'Mechanical',
   'Mechanical inventory queries must be independently scoped');
+assert.doesNotMatch(approved.screen().innerHTML,/id="zs-department"/,
+ 'Mechanical Stock detail must not show a Painting department switch');
 assert.deepEqual(approved.requests.map(x=>x.operation),['STATUS','LIST','LIST']);
 live=false;approved.changeSession('session-two');
 await approved.window.openStockManagement();
