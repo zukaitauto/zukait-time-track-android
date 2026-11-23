@@ -299,6 +299,87 @@ function showFinancialSummary(data){
   fillSelect('customer-filter',[...(data.facets.credit||[]),...(data.facets.corporate||[])].filter((s,i,a)=>a.indexOf(s)===i),'All Credit / Corporate Customers');
  }
 }
+// Read-only full-period breakdown; the 25 visible rows are never summed as the report total.
+async function openTotalJobCostBreakdown(trigger=null){
+ if(!verified||report!=='profit'||!result||totalCostLoading||busy||navigator.onLine===false)return;
+ const ticket=generation,owner=user?.id,mode=labourMode,snapshot=result.snapshot_revision,
+  finance=result.finance_revision,appliedFilters={...result.appliedFilters},
+  expected=result.total_count,summary={...result.summary},origin=trigger||document.activeElement;
+ totalCostLoading=true;if(origin)origin.disabled=true;
+ try{
+  say('Loading all Job Card cost categories…');
+  const all=[],seen=new Set();let cursor=0;
+  do{
+   if(seen.has(cursor))throw Error('Report pagination did not advance. Refresh.');
+   seen.add(cursor);
+   const page=await request('workshop-api',{action:'accountant_report',report:'accounts_performance',
+    filters:appliedFilters,offset:cursor,limit:500});
+   if(ticket!==generation||!verified||user?.id!==owner||report!=='profit'||mode!==labourMode)return;
+   if(page.snapshot_revision!==snapshot||page.finance_revision!==finance)
+    throw Error('Financial records changed. Apply filters to refresh the report.');
+   if(page.labour_mode!==mode)throw Error('Labour calculation changed. Apply filters to refresh.');
+   if(!Array.isArray(page.rows)||page.total_count!==expected)
+    throw Error('Report count changed. Apply filters to refresh.');
+   all.push(...page.rows);
+   if(all.length>5000)throw Error('Too many Job Cards. Narrow the selected period.');
+   const nextPage=page.next_offset;
+   if(nextPage!==null&&(!Number.isSafeInteger(nextPage)||nextPage<=cursor))
+    throw Error('Invalid report pagination. Refresh.');
+   cursor=nextPage;
+  }while(cursor!==null);
+  if(all.length!==expected)throw Error('Report count changed. Apply filters to refresh.');
+  const categories=[
+   ['parts','Spare Parts','parts_cost_omr','⚙'],
+   ['paint','Paint','paint_cost_omr','◈'],
+   ['consumables','Consumables','consumables_cost_omr','◉'],
+   ['labour','Labour','labour_cost_omr','♧'],
+   ['sublet','Sublet','sublet_cost_omr','↗']
+  ].map(([key,title,field,icon])=>{
+   let known=0,unconfirmed=0;
+   for(const row of all){
+    const raw=row[field];
+    if(raw===null||raw===undefined||raw===''){unconfirmed++;continue;}
+    const number=Number(raw),mills=Math.round(number*1000);
+    if(!Number.isSafeInteger(mills))throw Error('Invalid category expense. Refresh.');
+    known+=mills;
+   }
+   if(!Number.isSafeInteger(known))throw Error('Too many cost records. Narrow the selected period.');
+   return {key,title,known,unconfirmed,icon,included:!(mode==='without'&&key==='labour')};
+  });
+  const knownIncluded=categories.filter(c=>c.included).reduce((sum,c)=>sum+c.known,0);
+  const recordedRaw=summary.total_cost_omr??summary.recorded_cost_omr;
+  const recorded=recordedRaw==null?null:Math.round(Number(recordedRaw)*1000);
+  if(recorded!==null&&!Number.isSafeInteger(recorded))throw Error('Invalid recorded total. Refresh.');
+  const pending=Number(summary.pending_cost_records||0),provisional=summary.costs_provisional===true||pending>0;
+  const dateRange=appliedFilters.month||
+   (appliedFilters.from||appliedFilters.to?[appliedFilters.from||'Start',appliedFilters.to||'Today'].join(' to '):'Selected period');
+  const rows=categories.map(c=>
+   '<div class="total-cost-category total-cost-'+c.key+(c.included?'':' is-excluded')+'">'+
+    '<span class="total-cost-icon" aria-hidden="true">'+c.icon+'</span>'+
+    '<span class="total-cost-label"><strong>'+esc(c.title)+'</strong><small>'+
+     (c.included?'Included in Job Cost':'Excluded from selected Profit/Loss calculation')+
+     (c.unconfirmed?' · '+c.unconfirmed+' unconfirmed Job Card(s)':'')+'</small></span>'+
+    '<b>'+esc(display(c.known/1000,true))+'</b></div>'
+  ).join('');
+  const mismatch=recorded!==null&&recorded!==knownIncluded;
+  closeDetail();detailTrigger=origin;
+  $('detail').innerHTML=
+   '<div class="heading"><div><h2 id="financial-detail-title">Total Job Cost Breakdown</h2>'+
+    '<p class="total-cost-subtitle">'+esc(dateRange)+' · '+all.length+' Job Cards · '+
+     esc(mode==='without'?'Without Labour':'With Labour')+'</p></div>'+
+    '<div class="detail-actions"><button type="button" id="close-detail">Back to Profit / Loss</button></div></div>'+
+   '<div class="total-cost-overview"><small>'+esc(provisional?'Recorded Job Cost':'Total Job Cost')+
+    (mode==='without'?' (excl. Labour)':'')+'</small>'+
+    '<strong>'+esc(recorded===null?'Pending':display(recorded/1000,true))+'</strong>'+
+    (provisional?'<p>'+pending+' Job Card(s) have pending costs. The figures below include only known expense amounts; missing prices are not treated as zero.</p>':'')+'</div>'+
+   '<h3>Expense categories</h3><div class="total-cost-categories">'+rows+'</div>'+
+   (mismatch?'<p class="financial-status-note">The known categories do not reconcile with the recorded total. Refresh the report and review Job Card costs before relying on this breakdown.</p>':
+    '<p class="total-cost-footnote">Included recorded categories: '+esc(display(knownIncluded/1000,true))+'.</p>')+
+   '<p class="total-cost-footnote">All Job Cards matching the selected report filters are included. Sublet is shown separately. Read-only view; no source labour, parts, paint, consumables, or stock records are changed.</p>';
+  $('detail').hidden=false;$('close-detail').onclick=closeDetail;showDetailDialog();say('');
+ }catch(e){if(ticket===generation&&verified&&report==='profit')say(e?.message||'Cost breakdown unavailable. Refresh the report.');}
+ finally{totalCostLoading=false;if(origin?.isConnected)origin.disabled=false;}
+}
 function pendingCostList(rows){
  const cards=rows.map(r=>{
   const vehicle=[r.vehicle,r.registration].filter(Boolean).map(esc).join(' · ')||'Vehicle not recorded';
