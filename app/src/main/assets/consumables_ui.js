@@ -528,18 +528,24 @@ window.consOpenMaster=function(preset='',section=''){
  if(role()!=='Manager')return;
  window.consNewItemDefaultDepartment=['Painting','Mechanical','Both'].includes(preset)?preset:'';
  const units=['Liter','kg','Piece'],cats=['Consumable','Paint'];
- modal('Materials & Brands',
- '<div class="cons-subnav"><button class="secondary" type="button" onclick="openStockManagement()">← BACK TO STOCK</button></div>'+
- '<div id="consMasterWorkspace" class="cons-entry-shell">'+
+ const focused=section==='create'||section==='price';
+ const pageTitle=section==='create'?'Create Material':section==='price'?'Brand & Price':'Materials & Brands';
+ const intro=section==='create'?
+  '<span class="cons-master-intro-icon create" aria-hidden="true">⬡</span><div><h2>Create Material</h2><p>Add a new consumable material.</p></div>':
+  '<span class="cons-master-intro-icon price" aria-hidden="true">◇</span><div><h2>Brand &amp; Price</h2><p>Assign a brand and price with an effective date.</p></div>';
+ modal(pageTitle,
+ '<div class="cons-subnav"><button class="secondary" type="button" onclick="openStockManagement()">← Stock Management</button></div>'+
+ '<div id="consMasterWorkspace" class="cons-entry-shell'+(focused?' cons-master-focused cons-master-'+section:'')+'">'+
+ (focused?'<div class="cons-master-intro">'+intro+'</div>':'')+
  '<section class="cons-master-form" aria-labelledby="cmCreateHeading"><h3 id="cmCreateHeading">Create Material</h3>'+
- '<p class="notice">Create the material record first. Price and effective date are managed separately under Brand &amp; Price.</p>'+
+ '<p class="notice">Create the material first. Add a brand and price separately.</p>'+
  '<label class="cons-master-field">Material Name<input id="cmNewMaterial" placeholder="Enter material name" autocomplete="off"></label>'+
  '<label class="cons-master-field">Unit<select id="cmNewUnit">'+units.map(x=>'<option>'+x+'</option>').join('')+'</select></label>'+
  '<label class="cons-master-field">Category<select id="cmNewCategory">'+cats.map(x=>'<option>'+x+'</option>').join('')+'</select></label>'+
  '<label class="cons-master-field">Used In — required for new materials<select id="cmNewDepartment"><option value="">Select department</option><option value="Painting">Paint</option><option value="Mechanical">Mechanical</option><option value="Both">Shared</option></select></label>'+
  '<button class="blue" type="button" onclick="consCreateMaterial()">CREATE MATERIAL</button></section>'+
  '<section class="cons-master-form" aria-labelledby="cmPriceHeading"><h3 id="cmPriceHeading">Brand &amp; Price</h3>'+
- '<p class="notice">Add a brand price or set a new effective-dated price. Previous price periods remain in history.</p>'+
+ '<p class="notice">Previous effective-dated prices remain in history.</p>'+
  '<label class="cons-master-field">Material<input id="cmMaterial" list="cmMaterialChoices" placeholder="Search material" autocomplete="off" oninput="consMasterSuggest()"></label><datalist id="cmMaterialChoices"></datalist>'+
  '<label class="cons-master-field">Brand<input id="cmBrand" list="cmBrandChoices" placeholder="Search or enter brand" autocomplete="off"></label><datalist id="cmBrandChoices"></datalist>'+
  '<label class="cons-master-field">Price / Unit (OMR)<input id="cmPrice" type="number" min="0" step="0.001" inputmode="decimal" placeholder="Enter price per unit"></label>'+
@@ -992,6 +998,38 @@ body.cons-master-open #cmList{max-height:62vh;overflow:auto}
  #consMasterWorkspace .cons-table{max-width:100%;overflow-x:auto}
 }
 
+
+/* Approved pastel Materials forms. Separate Stock shortcuts share legacy save methods. */
+#consMasterWorkspace.cons-master-focused{display:flex!important;flex-direction:column;gap:16px!important;max-width:680px!important;margin:0 auto!important;padding:4px 0 14px;min-width:0}
+#consMasterWorkspace.cons-master-focused .cons-master-intro{display:flex;gap:15px;align-items:center;padding:10px 4px 0;min-width:0}
+#consMasterWorkspace.cons-master-focused .cons-master-intro h2{font-size:23px;line-height:1.25;color:#102440;margin:0 0 5px;font-weight:850}
+#consMasterWorkspace.cons-master-focused .cons-master-intro p{font-size:14px;line-height:1.45;color:#4b6078;margin:0}
+#consMasterWorkspace.cons-master-focused .cons-master-intro-icon{display:grid;place-items:center;width:58px;height:58px;flex:0 0 58px;border-radius:50%;font-size:33px;font-weight:750}
+#consMasterWorkspace.cons-master-focused .cons-master-intro-icon.create{background:#def3fd;color:#0c8ac2}
+#consMasterWorkspace.cons-master-focused .cons-master-intro-icon.price{background:#fff0d6;color:#eea134}
+#consMasterWorkspace.cons-master-focused .cons-master-form{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:13px!important;padding:18px!important;background:#f8f9ff!important;border:1px solid #e0e4f2!important;border-radius:18px!important;box-shadow:none!important}
+#consMasterWorkspace.cons-master-focused .cons-master-form>h3,#consMasterWorkspace.cons-master-focused .cons-master-form>.notice{display:none!important}
+#consMasterWorkspace.cons-master-create section[aria-labelledby="cmPriceHeading"]{display:none!important}
+#consMasterWorkspace.cons-master-price section[aria-labelledby="cmCreateHeading"]{display:none!important}
+#consMasterWorkspace.cons-master-create .cons-master-field:has(#cmNewCategory){display:none!important}
+#consMasterWorkspace.cons-master-focused .cons-master-field{font-size:14px!important;font-weight:800!important;color:#172c4b!important;line-height:1.4!important;gap:7px!important}
+#consMasterWorkspace.cons-master-focused .cons-master-field input,#consMasterWorkspace.cons-master-focused .cons-master-field select{width:100%!important;min-height:49px!important;background:#fff!important;border:1px solid #c5d0e2!important;color:#192e48!important;font-size:16px!important;border-radius:11px!important;padding:11px 12px!important}
+#consMasterWorkspace.cons-master-focused .cons-master-form>button{border:0!important;border-radius:12px!important;color:#fff!important;background:#205bcd!important;min-height:52px!important;font-size:16px!important;font-weight:850!important;text-align:center!important;box-shadow:0 3px 11px #1d55aa1d!important;margin-top:7px}
+#consMasterWorkspace.cons-master-focused.cons-master-price .cons-master-form>button{background:#086eaa!important}
+#consMasterWorkspace.cons-master-focused .cons-master-form>button:focus-visible{outline:3px solid #6ca6ff!important;outline-offset:3px!important}
+#consMasterWorkspace.cons-master-focused>.cons-searchbar,#consMasterWorkspace.cons-master-focused>#cmList,#consMasterWorkspace.cons-master-focused>button.secondary{display:none!important}
+#consMasterWorkspace.cons-master-focused>#cmSaveMessage{background:#f3f9ff!important;border:1px solid #d5e8f5!important;border-radius:10px!important;padding:12px!important;font-size:13px!important;line-height:1.4!important;color:#3a5b76!important}
+@media(min-width:901px){
+ .modal-backdrop:has(#consMasterWorkspace.cons-master-focused) .modal-box{width:min(740px,96vw)!important;max-width:740px!important}
+ body.cons-master-open .modal:has(#consMasterWorkspace.cons-master-focused){width:min(740px,96vw)!important;max-width:740px!important}
+}
+@media(max-width:700px){
+ #consMasterWorkspace.cons-master-focused{max-width:100%!important}
+ #consMasterWorkspace.cons-master-focused .cons-master-intro{gap:11px!important}
+ #consMasterWorkspace.cons-master-focused .cons-master-intro h2{font-size:22px}
+ #consMasterWorkspace.cons-master-focused .cons-master-intro-icon{width:50px;height:50px;flex-basis:50px;font-size:28px}
+ #consMasterWorkspace.cons-master-focused .cons-master-form{padding:15px!important;gap:12px!important}
+}
 `;document.head.appendChild(css);
 const oldRender=window.render;
 if(typeof oldRender==='function')window.render=function(){const r=oldRender.apply(this,arguments);setTimeout(addLaunchCard,0);return r};
