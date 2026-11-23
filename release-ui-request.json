@@ -12,14 +12,14 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "reason": "Unapproved V415 candidate: user reported missing Create Material and Brand & Price actions on V414 Stock department selector. Restores Manager-only setup shortcuts on first department screen, opens existing audited Material Master with form focus. Five Stock tiles unchanged, no stock, pricing or backend mutations from this patch. Requires exact-source Android signed APK and Reception tests and explicit release approval before publication; last public version V414 remains live.",
+  "reason": "Held V415 candidate: Manager-only Create Material and Brand & Price on Stock chooser, plus direct Review & Link Existing Materials from empty Add Stock. Existing saved material/brand prices remain separate from ledger; explicit Manager linking is required. Empty catalog search disabled and Opening Stock remains guarded by physical count. No database, stock quantity, costing, permission, or Mechanical issuing changes. Wait for exact-source signed APK and Reception verification; V414 remains published.",
   "previousPublishedRelease": {
     "versionName": "V414",
     "versionCode": 377,
     "releaseTag": "release-V414-architecture-v2",
     "sourceCommit": "e01f6f6b20b62a95fccce1bd211e9c34e6bb2d46"
   },
-  "sourceCommit": "5b7586cdadd7913d998d9e56d7a74e6747b17b25",
+  "sourceCommit": "870e21a026a6b871e86e9be4b1258429a001417c",
   "backupDeferredByOwner": true,
   "signedAcceptanceRun": null,
   "verificationRun": null,
