@@ -4,6 +4,8 @@ on:
     branches: [architecture-v2]
     paths:
       - 'app/src/main/assets/consumables_stock_ui.js'
+      - 'app/src/main/assets/consumables_ui.js'
+      - 'tests/consumables-master-mobile-responsive.mjs'
       - 'tests/consumables-stock-legacy-linked-ui.mjs'
       - 'package.json'
       - '.github/workflows/stock-legacy-linked-ui-pr.yml'
@@ -13,7 +15,7 @@ permissions:
 jobs:
   review:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -25,7 +27,13 @@ jobs:
         run: |
           node --check app/src/main/assets/consumables_stock_ui.js
           node --check tests/consumables-stock-legacy-linked-ui.mjs
+          node --check app/src/main/assets/consumables_ui.js
+          node --check tests/consumables-master-mobile-responsive.mjs
       - name: Run all isolated Stock regressions
         run: npm run test:consumables:stock
       - name: Verify preview-only application safety
         run: node tests/consumables-main-app-preview.mjs
+      - name: Check Manager Materials and Brand Price modal on iPhone and desktop
+        run: |
+          npx playwright install chromium
+          node tests/consumables-master-mobile-responsive.mjs
