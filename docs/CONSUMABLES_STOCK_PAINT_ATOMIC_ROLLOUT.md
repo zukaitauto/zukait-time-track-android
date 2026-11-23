@@ -13,7 +13,7 @@ When activated **after** the existing Stock schema + `initialised` migration, th
 - Price-only adjustment: no quantity change; no stock movement, preserving historical inventory valuation.
 - Stock can't go below already reserved stock. Piece quantities must be whole, other quantities at most 4 decimal places.
 - **Existing untracked historical Actuals are never automatically backdated.** Changing one without an audited baseline yields `HISTORICAL_ACTUAL_BASELINE_REQUIRED`. Existing unapplied rows may remain unchanged while unrelated JCs are processed.
-- Outstanding explicit Paint reservations are refused with `PAINT_RESERVATION_FINALISATION_REQUIRED`; the separate reservation-lot finalisation workflow must be integrated before both workflows may be active together.
+- Existing explicit Paint reservations (including already-finalised reservations) are refused with `PAINT_RESERVATION_FINALISATION_REQUIRED`; the separate reservation-lot finalisation workflow must be integrated before both workflows may be active together.
 - Full workshop JSON history is **not** duplicated in the tiny Stock tables. The new `zukait_stock_paint_applied` table stores only JC/material/brand quantities and locked inventory cost. Audit movements carry the committed revision-based request ID.
 
 ## Files
