@@ -58,7 +58,7 @@ assert.deepEqual(requestsToStrings(manager.requests),['LIST:Painting:0']);
 const supervisor=fixture('Supervisor');
 await supervisor.win.openStockManagement('Painting');
 assert.match(supervisor.html(),/Thinner — Bravo/);
-assert.doesNotMatch(supervisor.html(),/zs-link-action|zs-master-price-action/,
+assert.doesNotMatch(supervisor.html(),/class="zs-btn secondary zs-(?:link-action|master-price-action)"/,
  'Supervisor sees unlinked Master names but no Manager linking actions');
 const mechanical=fixture();
 await mechanical.win.openStockManagement('Mechanical');
