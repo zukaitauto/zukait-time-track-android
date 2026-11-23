@@ -146,7 +146,7 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
  if(a.handedOverToAssignmentId&&['ADD_SESSION','CORRECT_SESSION'].includes(op)&&Number(command.end)>Number(a.completedAt||0))return fail('time_handover_cutoff');
  if(allocationToken(a)!==request.expectedSource)return fail('time_allocation_changed');
  if(employeeTimeToken(current,a.emp)!==request.expectedSessions)return fail('time_sessions_changed');
- const j=(current.jobs||[]).find(x=>x&&String(x.no)===String(a.job));
+ const j=(current.jobs||[]).find(x=>x&&String(x.no)===String(a.job))||(String(a.job).toUpperCase()==='ID001'?{no:'ID001'}:null);
  if(!j||j.deleted||j.cancelled)return fail('time_job_inactive');
  const belongs=s=>s&&String(s.emp)===String(a.emp)&&(s.assignmentId?String(s.assignmentId)===String(a.id):String(s.job)===String(a.job));
  const own=(current.sessions||[]).filter(belongs),s=op==='ADD_SESSION'?null:own.find(x=>String(x.id)===command.sessionId);
@@ -159,7 +159,7 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
   if(op!=='ADD_SESSION'&&(!s||!s.end||s.cancelled))return fail('time_session_inactive');
   if(command.workStatus){
    if(command.workStatus==='CONTINUE'){
-    if(String(a.job).toUpperCase()==='ID001'||j.delivered||j.archived)return fail('time_job_inactive');
+    if(j.delivered||j.archived)return fail('time_job_inactive');
     if(a.completed)return fail('time_reopen_required');
     const employee=(current.users||[]).find(u=>u&&String(u.id)===String(a.emp)&&u.role==='Employee'&&u.active!==false);
     if(!employee)return fail('time_employee_invalid');
@@ -195,7 +195,9 @@ export function managerTimeTransition(current,actor,request,at=Date.now()){
    if(command.workStatus==='CONTINUE'){
     after.serverAuthoritative=true;after.serverStartedAt=after.start;
     row.completed=false;
-    const jobRow=data.jobs.find(x=>String(x.no)===String(a.job));jobRow.status='Open';delete jobRow.completedAt;
+    if(String(a.job).toUpperCase()!=='ID001'){
+     const jobRow=data.jobs.find(x=>String(x.no)===String(a.job));jobRow.status='Open';delete jobRow.completedAt;
+    }
     data.lastActions=data.lastActions||{};data.lastActions[a.emp]={text:'Started '+String(a.job)+' (Manager corrected)',at};
    }
    if(after.finished){row.completed=true;row.completedAt=op==='ADD_SESSION'&&(j.delivered||j.archived)?Math.max(Number(a.completedAt)||0,after.end,...own.filter(x=>!x.cancelled).map(x=>Number(x.end)||0)):after.end;row.managerTimeCompletion=true;row.timeManagementRevision=(Number(a.timeManagementRevision)||0)+1;}
