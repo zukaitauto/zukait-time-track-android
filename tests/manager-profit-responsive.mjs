@@ -22,7 +22,7 @@ try{for(const width of [320,390,768,1024,1280]){
  await page.locator('#mpCompany').selectOption('LIVA');assert.equal(await page.locator('tbody tr').count(),2);assert.match(await page.locator('.mp-summary').innerText(),/26\.67%/);
  await page.locator('#mpMode').selectOption('graph');assert.equal(await page.locator('.mp-chart-row').count(),3);assert.match(await page.locator('.mp-chart').innerText(),/OMR 80\.000/);assert.equal(await page.locator('.mp-job-count strong').innerText(),'2');assert.equal(await page.locator('.mp-compare-row').count(),3,'Cash plus two insurance companies share the margin graph');
  assert.match(await page.locator('.mp-compare-row.is-cash').innerText(),/33\.33%/);
- assert.match(await page.locator('.mp-compare-row.is-insurance').first().innerText(),/26\.67%/);
+ assert.match(await page.locator('.mp-compare-row.is-insurance').filter({hasText:'Liva'}).innerText(),/26\.67%/);
  assert.match(await page.locator('.mp-compare-row.is-provisional').innerText(),/Provisional margin/);assert.doesNotMatch(await page.locator('.mp-period-overview').innerText(),/JC 12070|JC 12071|by job card/);
  const comparisonOverflow=await page.locator('.mp-compare-row').evaluateAll(rows=>rows.some(el=>{
   const r=el.getBoundingClientRect();return r.left<-1||r.right>innerWidth+1||el.scrollWidth>el.clientWidth+1;
