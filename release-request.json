@@ -19,10 +19,10 @@
     "releaseTag": "release-V412-architecture-v2",
     "sourceCommit": "ac0a09804450a44dce109d534e6b1ec9fc371059"
   },
-  "sourceCommit": "9ca1e8f5fcf0cf78fbb9640719d10f33c99f5602",
+  "sourceCommit": "661916850ee930ae01a1a8993f775ab37291f453",
   "backupDeferredByOwner": true,
-  "signedAcceptanceRun": 45181909934,
-  "verificationRun": 45181909968,
-  "approvedAt": "2026-11-23T13:19:11.633Z",
-  "publishNonce": "owner-v413-jobcard-9ca1e8f5-20261123"
+  "signedAcceptanceRun": 45182814734,
+  "verificationRun": 45182814949,
+  "approvedAt": "2026-11-23T13:23:13.576Z",
+  "publishNonce": "owner-v413-jobcard-66191685-20261123"
 }
