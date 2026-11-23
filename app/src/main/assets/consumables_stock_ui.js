@@ -778,6 +778,50 @@ const previewHomeCss='<style>'+
  '#zs-stock-screen:has(.zs-entry-home) .zs-screen-toolbar>.zs-ghost{background:#ffffff!important;color:#1c4a6c!important;border:1px solid #b8d0e0!important;box-shadow:none!important}'+
  '#zs-stock-screen:has(.zs-entry-home) .zs-screen-toolbar>.zs-ghost:focus-visible{outline:3px solid #2c6da6!important;outline-offset:2px}'+
  '@media(max-width:349px){#zs-stock-screen .zs-entry-home .zs-department-grid,#zs-stock-screen .zs-entry-home .zs-manager-actions{grid-template-columns:minmax(0,1fr)!important}#zs-stock-screen .zs-entry-home .zs-department-card,#zs-stock-screen .zs-entry-home .zs-manager-actions button{min-height:132px!important;padding:15px!important}}'+
+ /* Approved Workshop Performance-inspired Stock home, mockup-matched pastel cards. */
+ '#zs-stock-screen:has(.zs-entry-home){background:#f9fbfe!important;color:#152b46!important}'+
+ '#zs-stock-screen:has(.zs-entry-home) .zs-preview{max-width:1060px!important}'+
+ '#zs-stock-screen:has(.zs-entry-home) .zs-screen-toolbar{background:transparent!important;border:0!important;box-shadow:none!important;margin:0 0 14px!important;padding:8px 0!important}'+
+ '#zs-stock-screen:has(.zs-entry-home) .zs-screen-toolbar>.zs-ghost:first-child{background:#13466b!important;color:#fff!important;border:1px solid #13466b!important;border-radius:999px!important;padding:11px 16px!important}'+
+ '#zs-stock-screen:has(.zs-entry-home) .zs-screen-toolbar>.zs-ghost:last-child{background:#fff!important;color:#17334f!important;border:1px solid #b9c9dc!important;border-radius:999px!important;padding:11px 16px!important}'+
+ '#zs-stock-screen:has(.zs-entry-home) .zs-screen-brand{color:#284d6b!important;font-size:13px!important;letter-spacing:0!important}'+
+ '#zs-stock-screen .zs-entry-home{max-width:980px!important;gap:26px!important}'+
+ '#zs-stock-screen .zs-entry-hero{display:flex;gap:16px;align-items:center;padding:23px 20px!important;background:#fff!important;border:1px solid #e2e9f4!important;border-radius:21px!important;box-shadow:0 3px 13px #263e5c0a!important}'+
+ '#zs-stock-screen .zs-entry-hero:after{display:none!important}'+
+ '#zs-stock-screen .zs-entry-hero-icon{width:66px;height:66px;flex:0 0 66px;display:grid;place-items:center;border-radius:50%;background:#dff5ff;color:#137bad;font-size:42px;line-height:1}'+
+ '#zs-stock-screen .zs-entry-hero-text{min-width:0;flex:1}'+
+ '#zs-stock-screen .zs-entry-hero h2{font-size:clamp(23px,3vw,30px)!important;line-height:1.13!important;color:#10263f!important;margin:0 0 8px!important;letter-spacing:-.02em}'+
+ '#zs-stock-screen .zs-entry-hero p{font-size:14px!important;line-height:1.5!important;color:#40556f!important;margin:0!important}'+
+ '#zs-stock-screen .zs-entry-section{gap:14px!important}'+
+ '#zs-stock-screen .zs-entry-section-head{padding:0 5px!important}'+
+ '#zs-stock-screen .zs-entry-section-head h3{font-size:24px!important;color:#162b47!important;letter-spacing:-.01em!important}'+
+ '#zs-stock-screen .zs-entry-section-head p{font-size:14px!important;color:#4b6077!important;margin:4px 0 0!important}'+
+ '#zs-stock-screen .zs-entry-home .zs-department-grid,#zs-stock-screen .zs-entry-home .zs-manager-actions{gap:14px!important}'+
+ '#zs-stock-screen .zs-entry-home .zs-department-card,#zs-stock-screen .zs-entry-home .zs-manager-actions button{justify-content:flex-start!important;min-height:186px!important;gap:10px!important;border:1px solid transparent!important;border-radius:20px!important;padding:18px!important;box-shadow:0 2px 6px #1c396108!important;transform:none!important}'+
+ '#zs-stock-screen .zs-entry-home .zs-department-card.painting{background:#edf4ff!important;border-color:#cbdffc!important;border-top:1px solid #cbdffc!important}'+
+ '#zs-stock-screen .zs-entry-home .zs-department-card.mechanical{background:#eef9f0!important;border-color:#d3eed8!important;border-top:1px solid #d3eed8!important}'+
+ '#zs-stock-screen .zs-entry-home .zs-manager-actions .zs-create-item{background:#f8edff!important;border-color:#ead5fa!important;border-top:1px solid #ead5fa!important}'+
+ '#zs-stock-screen .zs-entry-home .zs-manager-actions .zs-materials-btn{background:#fff7e9!important;border-color:#f9e3b8!important;border-top:1px solid #f9e3b8!important}'+
+ '#zs-stock-screen .zs-entry-home .zs-department-card strong,#zs-stock-screen .zs-entry-home .zs-manager-actions button strong{font-size:clamp(16px,2vw,21px)!important;font-weight:850!important;line-height:1.23!important;color:#10243d!important}'+
+ '#zs-stock-screen .zs-entry-home .zs-department-card small,#zs-stock-screen .zs-entry-home .zs-manager-actions button small{font-size:14px!important;line-height:1.44!important;color:#3d546d!important;font-weight:500!important}'+
+ '#zs-stock-screen .zs-entry-home .zs-department-icon,#zs-stock-screen .zs-entry-home .zs-action-icon{width:53px!important;height:53px!important;flex:0 0 53px!important;border-radius:50%!important;color:#fff!important;font-size:27px!important;box-shadow:none!important}'+
+ '#zs-stock-screen .zs-entry-home .painting .zs-department-icon{background:#318eea!important}'+
+ '#zs-stock-screen .zs-entry-home .mechanical .zs-department-icon{background:#75c955!important}'+
+ '#zs-stock-screen .zs-entry-home .zs-create-item .zs-action-icon{background:#ae72d1!important}'+
+ '#zs-stock-screen .zs-entry-home .zs-materials-btn .zs-action-icon{background:#ffad38!important}'+
+ '#zs-stock-screen .zs-entry-home .zs-entry-card-top{min-height:53px!important}'+
+ '#zs-stock-screen .zs-entry-home .zs-entry-arrow{color:#3d5979!important;font-size:28px!important}'+
+ '#zs-stock-screen .zs-entry-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;padding:17px 18px;background:#edf5ff;border:1px solid #c9dfff;border-radius:22px}'+
+ '#zs-stock-screen .zs-entry-summary-item{display:flex;gap:12px;align-items:center;min-width:0}'+
+ '#zs-stock-screen .zs-entry-summary-item+.zs-entry-summary-item{border-left:1px solid #c8d7eb;padding-left:18px}'+
+ '#zs-stock-screen .zs-entry-summary-icon{height:46px;width:46px;flex:0 0 46px;display:grid;place-items:center;border-radius:50%;font-size:24px}'+
+ '#zs-stock-screen .zs-entry-summary-icon.blue{background:#d9f1fe;color:#0b86c8}'+
+ '#zs-stock-screen .zs-entry-summary-icon.amber{background:#fff0d5;color:#eda234}'+
+ '#zs-stock-screen .zs-entry-summary-item small{display:block;font-size:13px;color:#2d4a65;font-weight:650}'+
+ '#zs-stock-screen .zs-entry-summary-item strong{display:block;font-size:26px;line-height:1.2;color:#10233d;font-weight:900;margin-top:4px}'+
+ '#zs-stock-screen .zs-entry-summary-note{grid-column:1/-1;font-size:11px;line-height:1.3;color:#516c82;margin:4px 0 0}'+
+ '@media(max-width:600px){#zs-stock-screen .zs-entry-home{gap:22px!important}#zs-stock-screen .zs-entry-hero{padding:17px 14px!important;gap:12px!important}#zs-stock-screen .zs-entry-hero-icon{width:49px;height:49px;flex-basis:49px;font-size:31px}#zs-stock-screen .zs-entry-hero h2{font-size:22px!important}#zs-stock-screen .zs-entry-hero p{font-size:13px!important}#zs-stock-screen .zs-entry-section-head h3{font-size:23px!important}#zs-stock-screen .zs-entry-section-head p{font-size:13px!important}#zs-stock-screen .zs-entry-home .zs-department-grid,#zs-stock-screen .zs-entry-home .zs-manager-actions{gap:10px!important}#zs-stock-screen .zs-entry-home .zs-department-card,#zs-stock-screen .zs-entry-home .zs-manager-actions button{padding:12px!important;min-height:190px!important;gap:8px!important}#zs-stock-screen .zs-entry-home .zs-department-card strong,#zs-stock-screen .zs-entry-home .zs-manager-actions button strong{font-size:17px!important}#zs-stock-screen .zs-entry-home .zs-department-card small,#zs-stock-screen .zs-entry-home .zs-manager-actions button small{font-size:13px!important}#zs-stock-screen .zs-entry-home .zs-department-icon,#zs-stock-screen .zs-entry-home .zs-action-icon{height:46px!important;width:46px!important;flex-basis:46px!important;font-size:23px!important}#zs-stock-screen .zs-entry-summary{padding:12px;gap:8px}#zs-stock-screen .zs-entry-summary-item{gap:7px}#zs-stock-screen .zs-entry-summary-item+.zs-entry-summary-item{padding-left:9px}#zs-stock-screen .zs-entry-summary-icon{height:36px;width:36px;flex-basis:36px;font-size:19px}#zs-stock-screen .zs-entry-summary-item strong{font-size:23px}}'+
+ '@media(max-width:349px){#zs-stock-screen .zs-entry-home .zs-department-grid,#zs-stock-screen .zs-entry-home .zs-manager-actions{grid-template-columns:minmax(0,1fr)!important}#zs-stock-screen .zs-entry-home .zs-department-card,#zs-stock-screen .zs-entry-home .zs-manager-actions button{min-height:150px!important;padding:17px!important}}'+
  '</style>';
 const previewHomeTiles=[
  ['balance','📦','Stock Balance','Available, reserved and total stock, with average cost','blue'],
@@ -815,32 +859,44 @@ function departmentTitle(){
 // Catalog setup belongs on the first Stock screen, not inside the five-card Stock menu.
 const stockMasterActions=()=>manager()?
  '<div class="zs-entry-section zs-entry-setup-section">'+
- '<div class="zs-entry-section-head"><span class="zs-entry-section-symbol" aria-hidden="true">✦</span><div>'+
- '<h3>Material Setup</h3><p>Create materials and maintain brand prices</p></div></div>'+
+ '<div class="zs-entry-section-head"><div>'+
+ '<h3>Material Setup</h3><p>Create materials and manage brands and prices.</p></div></div>'+
  '<div class="zs-manager-actions" aria-label="Manager material setup">'+
  '<button type="button" class="zs-create-item" onclick="zukStockCreateItem()">'+
  '<span class="zs-entry-card-top"><span class="zs-action-icon" aria-hidden="true">＋</span><span class="zs-entry-arrow" aria-hidden="true">›</span></span>'+
- '<strong>Create Material</strong><small>New material and unit</small></button>'+
+ '<strong>Create Material</strong><small>Add new material, unit and department.</small></button>'+
  '<button type="button" class="zs-materials-btn" onclick="zukStockOpenMaterials()">'+
- '<span class="zs-entry-card-top"><span class="zs-action-icon" aria-hidden="true">▤</span><span class="zs-entry-arrow" aria-hidden="true">›</span></span>'+
- '<strong>Brand &amp; Price</strong><small>Brands and dated pricing</small></button></div></div>':'';
+ '<span class="zs-entry-card-top"><span class="zs-action-icon" aria-hidden="true">◇</span><span class="zs-entry-arrow" aria-hidden="true">›</span></span>'+
+ '<strong>Brand &amp; Price</strong><small>Assign brands and effective-dated prices.</small></button></div></div>':'';
 function departmentMenu(){
+ // Counts describe the saved Material Master, NOT verified physical stock.
+ // No mockup example values, remote requests or fabricated inventory.
+ const totals=(typeof state!=='undefined'&&state?.consumables)?catalog():null;
+ const materials=totals?String(totals.materials.length):'—';
+ const brands=totals?String(totals.brands.length):'—';
  return '<div class="zs-entry-home">'+
   '<div class="zs-entry-hero">'+
-  '<div class="zs-entry-eyebrow"><span class="zs-entry-dot" aria-hidden="true"></span>WORKSHOP INVENTORY</div>'+
-  '<h2>Consumables Stock</h2>'+
-  '<p>Choose a department or manage your material catalog.</p></div>'+
+  '<span class="zs-entry-hero-icon" aria-hidden="true">▱</span>'+
+  '<div class="zs-entry-hero-text"><h2>Consumables Stock Management</h2>'+
+  '<p>Manage paint and mechanical consumables, materials, brands and pricing.</p></div></div>'+
   '<div class="zs-entry-section zs-entry-department-section">'+
-  '<div class="zs-entry-section-head"><span class="zs-entry-section-symbol" aria-hidden="true">▦</span><div>'+
-  '<h3>Stock Departments</h3><p>Shared items use one physical balance</p></div></div>'+
+  '<div class="zs-entry-section-head"><div>'+
+  '<h3>Stock</h3><p>Open and manage stock for each department.</p></div></div>'+
   '<div class="zs-department-grid" aria-label="Stock departments">'+
   '<button type="button" class="zs-department-card painting" data-department="Painting" onclick="zukStockSelectDepartment(this.dataset.department)">'+
   '<span class="zs-entry-card-top"><span class="zs-department-icon" aria-hidden="true">🎨</span><span class="zs-entry-arrow" aria-hidden="true">›</span></span>'+
-  '<strong>Paint Consumables</strong><small>Paint and shared stock</small></button>'+
+  '<strong>Paint Consumables</strong><small>Painting materials and shared stock.</small></button>'+
   '<button type="button" class="zs-department-card mechanical" data-department="Mechanical" onclick="zukStockSelectDepartment(this.dataset.department)">'+
-  '<span class="zs-entry-card-top"><span class="zs-department-icon" aria-hidden="true">⚙️</span><span class="zs-entry-arrow" aria-hidden="true">›</span></span>'+
-  '<strong>Mechanical Consumables</strong><small>Mechanical and shared stock</small></button></div></div>'+
-  stockMasterActions()+'</div>';
+  '<span class="zs-entry-card-top"><span class="zs-department-icon" aria-hidden="true">⚙</span><span class="zs-entry-arrow" aria-hidden="true">›</span></span>'+
+  '<strong>Mechanical Consumables</strong><small>Mechanical materials and shared stock.</small></button></div></div>'+
+  stockMasterActions()+
+  (manager()?'<div class="zs-entry-summary" aria-label="Saved Material Master totals">'+
+  '<div class="zs-entry-summary-item"><span class="zs-entry-summary-icon blue" aria-hidden="true">▣</span><div>'+
+  '<small>Total Materials</small><strong>'+esc(materials)+'</strong></div></div>'+
+  '<div class="zs-entry-summary-item"><span class="zs-entry-summary-icon amber" aria-hidden="true">◇</span><div>'+
+  '<small>Total Brands</small><strong>'+esc(brands)+'</strong></div></div>'+
+  '<p class="zs-entry-summary-note">Saved Material Master records, not physical stock counts.</p></div>':'')+
+  '</div>';
 }
 function showLiveHome(){
  if(!allowed()||!liveStockReady())return;
