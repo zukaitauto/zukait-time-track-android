@@ -4,7 +4,7 @@ const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const OMR=n=>Number(n||0).toFixed(3);
 const fmt=n=>Number(n||0).toFixed(2);
 let department='';
-let view={page:'balance',items:[],history:[],itemsHasMore:false,historyHasMore:false,loading:false,error:'',busy:false,
+let view={page:'balance',items:[],history:[],itemsHasMore:false,itemsNextPage:1,historyHasMore:false,loading:false,error:'',busy:false,
   selected:'',mode:'total',pending:null,legacyItems:[],legacyPage:0,legacyHasMore:false,report:null,
   balanceQuery:'',balanceFilter:'all'};
 const allowed=()=>typeof me!=='undefined'&&['Manager','Supervisor'].includes(me?.role);
@@ -182,7 +182,7 @@ function render(){
  if(view.loading){draw('<div class="zs-card">Loading the selected stock screen…</div>');return}
  if(view.page==='balance'){
   const rows=view.items,known=new Set(rows.map(r=>String(r.material_id)+'|'+String(r.brand_id))),
-    master=masterInventory(),incomplete=view.itemsHasMore,
+    master=masterInventory(),incomplete=view.itemsHasMore||!!view.error,
     unlinked=master.pairs.filter(p=>!known.has(p.key)),
     unpriced=master.unpriced.filter(m=>!rows.some(r=>String(r.material_id)===String(m.id))),
     low=rows.filter(x=>available(x)>0&&available(x)<Number(x.minimum)).length,
@@ -205,7 +205,7 @@ function render(){
     [['all','All items'],['linked','Linked stock'],['unlinked','Needs linking'],['unpriced','Brand & Price needed']]
       .map(([id,name])=>'<option value="'+id+'"'+(view.balanceFilter===id?' selected':'')+'>'+name+'</option>').join('')+'</select></label></div>'+
     (manager()?'<button class="zs-btn secondary" onclick="zukStockLegacyReview()">One-time: Review Older Materials</button>':'')+
-    (incomplete?'<p class="zs-warning">More stock balances may be on later pages. Load them before deciding that unmatched Master items need linking.</p>':'')+
+    (view.error?'<p class="zs-warning">Stock link status cannot be verified until the ledger loads successfully. Refresh to retry.</p>':view.itemsHasMore?'<p class="zs-warning">More stock balances may be on later pages. Load them before deciding that unmatched Master items need linking.</p>':'')+
     (entries.length?entries.map(x=>x.markup).join(''):
      '<p class="zs-warning">No saved Material Master items or linked Stock records visible. Check the Master and refresh.</p>')+
     (entries.length?'<p class="zs-muted" id="zs-balance-search-empty" hidden>No materials match this search or filter.</p>':'')+
@@ -325,7 +325,7 @@ async function load(page,force=false){
      const request=needsItems?{operation:'LIST',page:0}:{operation:needReport?'REPORTS':'HISTORY'};
      const reply=await stockRead(request);
      if(!reply.ok)throw Error(reply.code||'STOCK_UNAVAILABLE');
-     if(needsItems){view.items=reply.items||[];view.itemsHasMore=!!reply.hasMore}
+     if(needsItems){view.items=reply.items||[];view.itemsHasMore=!!reply.hasMore;view.itemsNextPage=1}
      else if(needReport)view.report=reply.report||null;
      else{view.history=reply.history||[];view.historyHasMore=!!reply.hasMore}
    }catch(e){view.error=String(e.message||e)}
@@ -922,7 +922,7 @@ window.zukStockSelectDepartment=scope=>{
  department=scope;
  preview.page='home';stockTrial.message='';
  view.items=[];view.history=[];view.report=null;view.selected='';
- view.balanceQuery='';view.balanceFilter='all';
+ view.itemsNextPage=1;view.balanceQuery='';view.balanceFilter='all';
  view.itemsHasMore=false;view.historyHasMore=false;
  if(previewOnly())return showPreview();
  if(liveStockReady())return showLiveHome();
@@ -944,6 +944,7 @@ window.openStockManagement=async(scope='')=>{
  department=['Painting','Mechanical'].includes(scope)?scope:'';
  if(previewOnly()){preview.page='home';window.closeModal?.();showPreview();return}
  view.items=[];view.history=[];view.report=null;view.selected='';
+ view.itemsNextPage=1;view.balanceQuery='';view.balanceFilter='all';
  view.itemsHasMore=false;view.historyHasMore=false;
  if(liveStockReady()){window.closeModal?.();return showLiveHome()}
  return load('balance',true); // Existing isolated stock QA behavior unchanged.
@@ -967,9 +968,9 @@ window.zukStockDetail=id=>{view.selected=String(id||'');view.page='detail';rende
 window.zukStockMore=async()=>{
   if(view.loading)return;view.loading=true;
   try{
-    const reply=await stockRead({operation:'LIST',page:Math.floor(view.items.length/100)});
+    const reply=await stockRead({operation:'LIST',page:view.itemsNextPage});
     if(!reply.ok)throw Error(reply.code||'STOCK_UNAVAILABLE');
-    view.items.push(...(reply.items||[]));view.itemsHasMore=!!reply.hasMore;
+    view.items.push(...(reply.items||[]));view.itemsHasMore=!!reply.hasMore;view.itemsNextPage++;
   }catch(e){view.error=String(e.message||e)}finally{view.loading=false;render()}
 };
 window.zukStockMoreHistory=async()=>{
