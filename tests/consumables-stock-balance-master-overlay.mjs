@@ -25,9 +25,9 @@ function fixture(role='Manager',paged=false){
    if(request.operation!=='LIST')throw Error('Unexpected Stock operation '+request.operation);
    if(request.department==='Mechanical')return {ok:true,hasMore:false,items:[]};
    if(paged&&request.page===1)return {ok:true,hasMore:false,items:[{
-    material_id:'p2',brand_id:'b',unit:'Liter',physical:0,reserved:0,stock_value:0,minimum:0}]};
+    material_id:'p2',brand_id:'b',unit:'Liter',physical:0,reserved:0,stock_value:0,minimum:0,initialised:false}]};
    return {ok:true,hasMore:paged,items:[{
-    material_id:'p1',brand_id:'a',unit:'Liter',physical:7,reserved:2,stock_value:14,minimum:1}]};
+    material_id:'p1',brand_id:'a',unit:'Liter',physical:7,reserved:2,stock_value:14,minimum:1,initialised:true}]};
   }}
  };
  const ctx={window:win,me:{id:role,role},state:{consumables:structuredClone(master)},
@@ -41,6 +41,7 @@ const shown=manager.html();
 assert.match(shown,/Stock Balance &amp; Material Master/);
 assert.match(shown,/Clear — Alpha/);
 assert.match(shown,/7.00 Liter/);
+assert.match(shown,/not automatically deducted/,'Do not claim historical paint usage is already deducted');
 assert.match(shown,/5.00 Liter/,'Physical minus reserved from stock ledger only');
 assert.match(shown,/Thinner — Bravo/);
 assert.match(shown,/Shared Cleaner — Alpha/,'Shared Master item visible in Paint');
@@ -72,6 +73,7 @@ assert.doesNotMatch(paged.html(),/class="zs-btn secondary zs-link-action"/,
  'Incomplete ledger pages must not assert a Master pair is unlinked');
 await paged.win.zukStockMore();
 assert.match(paged.html(),/Thinner — Bravo/);
+assert.match(paged.html(),/Not counted/,'linked zero placeholder is not a physical count');
 assert.equal((paged.html().match(/data-balance-kind="linked"/g)||[]).length,2,
  'Pair present on later Stock page must deduplicate Master overlay');
 assert.equal((paged.html().match(/data-balance-kind="unlinked"/g)||[]).length,1,
