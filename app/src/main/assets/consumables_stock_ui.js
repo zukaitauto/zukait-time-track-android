@@ -740,6 +740,38 @@ const previewHomeCss='<style>'+
   '#zs-stock-screen .zs-department-card small{font-size:12px;line-height:1.45;color:#eefbff!important}'+
   '#zs-stock-screen .zs-department-card:focus-visible{outline:3px solid #142740;outline-offset:3px}'+
   '@media(max-width:600px){#zs-stock-screen .zs-department-grid{gap:10px}#zs-stock-screen .zs-department-card{min-height:142px;padding:12px;gap:8px}#zs-stock-screen .zs-department-card small{font-size:11px}}'+
+  /* Clean Stock landing dashboard. Apply ONLY to department chooser;
+     five Stock function screens and Stock data services stay untouched. */
+ '#zs-stock-screen .zs-entry-home{display:grid;gap:18px;max-width:980px;margin:0 auto;padding-bottom:26px}'+
+ '#zs-stock-screen .zs-entry-hero{position:relative;overflow:hidden;background:linear-gradient(116deg,#f1f7ff 0%,#fff 64%,#edf7fc 100%);border:1px solid #d5e5f4;border-radius:19px;padding:22px 24px;box-shadow:0 5px 22px #17365a0a}'+
+ '#zs-stock-screen .zs-entry-hero:after{content:"";position:absolute;right:-38px;top:-56px;width:160px;height:160px;border-radius:50%;border:26px solid #d9eafb66;pointer-events:none}'+
+ '#zs-stock-screen .zs-entry-eyebrow{display:flex;align-items:center;gap:7px;font-weight:850;font-size:12px;letter-spacing:.08em;color:#23629e;margin-bottom:9px}'+
+ '#zs-stock-screen .zs-entry-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#20a980}'+
+ '#zs-stock-screen .zs-entry-hero h2{position:relative;font-size:clamp(24px,3vw,31px)!important;line-height:1.18!important;letter-spacing:-.025em;color:#173856!important;margin:0 0 8px!important;font-weight:900}'+
+ '#zs-stock-screen .zs-entry-hero p{position:relative;font-size:14px;line-height:1.45;color:#4a6179;margin:0;max-width:460px}'+
+ '#zs-stock-screen .zs-entry-section{display:grid;gap:10px;min-width:0}'+
+ '#zs-stock-screen .zs-entry-section-head{display:flex;gap:11px;align-items:center;padding:0 3px}'+
+ '#zs-stock-screen .zs-entry-section-symbol{width:38px;height:38px;flex:0 0 38px;display:grid;place-items:center;border-radius:11px;background:#e9f2fc;color:#225e9a;font-size:21px}'+
+ '#zs-stock-screen .zs-entry-setup-section .zs-entry-section-symbol{background:#f1eafb;color:#6b35b5}'+
+ '#zs-stock-screen .zs-entry-section-head h3{font-size:19px!important;font-weight:850!important;line-height:1.25!important;color:#172e49!important;margin:0!important}'+
+ '#zs-stock-screen .zs-entry-section-head p{font-size:13px!important;line-height:1.35!important;color:#536b81!important;margin:3px 0 0!important}'+
+ '#zs-stock-screen .zs-entry-home .zs-department-grid,#zs-stock-screen .zs-entry-home .zs-manager-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;margin:0!important}'+
+ '#zs-stock-screen .zs-entry-home .zs-department-card,#zs-stock-screen .zs-entry-home .zs-manager-actions button{position:relative;display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:9px!important;min-height:164px!important;max-width:100%;min-width:0!important;padding:16px!important;text-align:left!important;border:1px solid #ffffff35!important;border-radius:17px!important;white-space:normal!important;overflow-wrap:anywhere!important;box-shadow:0 7px 19px #24445e20!important;transition:transform .15s ease,box-shadow .15s ease}'+
+ '#zs-stock-screen .zs-entry-home .zs-department-card.painting{background:linear-gradient(140deg,#315bd3,#1a3e99)!important}'+
+ '#zs-stock-screen .zs-entry-home .zs-department-card.mechanical{background:linear-gradient(140deg,#168779,#0a5c58)!important}'+
+ '#zs-stock-screen .zs-entry-home .zs-manager-actions .zs-create-item{background:linear-gradient(140deg,#7744c1,#54228f)!important}'+
+ '#zs-stock-screen .zs-entry-home .zs-manager-actions .zs-materials-btn{background:linear-gradient(140deg,#277d98,#14566e)!important}'+
+ '#zs-stock-screen .zs-entry-card-top{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:7px;width:100%;min-height:38px}'+
+ '#zs-stock-screen .zs-entry-home .zs-department-icon,#zs-stock-screen .zs-entry-home .zs-action-icon{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border-radius:11px;background:#ffffffed!important;color:#174866!important;font-size:20px!important;line-height:1!important;box-shadow:0 2px 8px #0e25331b}'+
+ '#zs-stock-screen .zs-entry-arrow{display:grid;place-items:center;color:#fff!important;font-size:25px;font-weight:900;width:23px;height:29px;opacity:.95}'+
+ '#zs-stock-screen .zs-entry-home .zs-department-card strong,#zs-stock-screen .zs-entry-home .zs-manager-actions button strong{display:block;color:#fff!important;font-size:clamp(16px,1.65vw,19px)!important;font-weight:850!important;line-height:1.24!important;letter-spacing:-.01em;white-space:normal!important;overflow-wrap:anywhere!important}'+
+ '#zs-stock-screen .zs-entry-home .zs-department-card small,#zs-stock-screen .zs-entry-home .zs-manager-actions button small{display:block;color:#f4f8ff!important;font-size:13px!important;font-weight:550!important;line-height:1.33!important;white-space:normal!important;overflow-wrap:anywhere!important;letter-spacing:0}'+
+ '#zs-stock-screen .zs-entry-home button:hover{transform:translateY(-2px)!important;box-shadow:0 10px 23px #15375135!important}'+
+ '#zs-stock-screen .zs-entry-home button:focus-visible{outline:3px solid #efb33e!important;outline-offset:3px}'+
+ '#zs-stock-screen .zs-screen-toolbar>.zs-ghost{min-height:43px!important;min-width:0!important;max-width:100%;padding:10px 14px!important;font-size:14px!important;font-weight:800!important;line-height:1.2!important;border-radius:10px!important;border:1px solid #6d839c!important;background:#2e4560!important;color:#fff!important;white-space:normal!important}'+
+ '#zs-stock-screen .zs-screen-toolbar .zs-screen-brand{display:flex;align-items:center;justify-content:center;color:#fff!important;font-size:16px!important;letter-spacing:.02em!important}'+
+ '@media(max-width:600px){#zs-stock-screen .zs-preview{padding:12px!important}#zs-stock-screen .zs-screen-toolbar{gap:8px!important;align-items:center!important;padding:10px!important;margin-bottom:14px!important}#zs-stock-screen .zs-screen-toolbar>.zs-ghost{font-size:13px!important;min-height:43px!important;padding:10px!important}#zs-stock-screen .zs-screen-toolbar .zs-screen-brand{order:3;flex:1 0 100%;text-align:center;padding:0!important;font-size:15px!important}#zs-stock-screen .zs-entry-home{gap:17px}#zs-stock-screen .zs-entry-hero{padding:20px 17px;border-radius:16px}#zs-stock-screen .zs-entry-home .zs-department-grid,#zs-stock-screen .zs-entry-home .zs-manager-actions{gap:10px!important}#zs-stock-screen .zs-entry-home .zs-department-card,#zs-stock-screen .zs-entry-home .zs-manager-actions button{padding:13px!important;min-height:169px!important;gap:8px!important}#zs-stock-screen .zs-entry-home .zs-department-card strong,#zs-stock-screen .zs-entry-home .zs-manager-actions button strong{font-size:17px!important}#zs-stock-screen .zs-entry-home .zs-department-card small,#zs-stock-screen .zs-entry-home .zs-manager-actions button small{font-size:13px!important;line-height:1.32!important}}'+
+ '@media(max-width:349px){#zs-stock-screen .zs-entry-home .zs-department-grid,#zs-stock-screen .zs-entry-home .zs-manager-actions{grid-template-columns:minmax(0,1fr)!important}#zs-stock-screen .zs-entry-home .zs-department-card,#zs-stock-screen .zs-entry-home .zs-manager-actions button{min-height:132px!important;padding:15px!important}}'+
  '</style>';
 const previewHomeTiles=[
  ['balance','📦','Stock Balance','Available, reserved and total stock, with average cost','blue'],
@@ -776,23 +808,33 @@ function departmentTitle(){
 // Stock quantities are separate; the preview cannot create balances.
 // Catalog setup belongs on the first Stock screen, not inside the five-card Stock menu.
 const stockMasterActions=()=>manager()?
- '<div class="zs-home-hero"><h3>Material Setup</h3>'+
- '<p class="zs-preview-note">Create materials and manage brand prices separately. Stock counts remain under Add Stock.</p></div>'+
+ '<div class="zs-entry-section zs-entry-setup-section">'+
+ '<div class="zs-entry-section-head"><span class="zs-entry-section-symbol" aria-hidden="true">✦</span><div>'+
+ '<h3>Material Setup</h3><p>Create materials and maintain brand prices</p></div></div>'+
  '<div class="zs-manager-actions" aria-label="Manager material setup">'+
  '<button type="button" class="zs-create-item" onclick="zukStockCreateItem()">'+
- '<span class="zs-action-icon" aria-hidden="true">＋</span><strong>Create Material</strong>'+
- '<small>New material, unit and department</small></button>'+
+ '<span class="zs-entry-card-top"><span class="zs-action-icon" aria-hidden="true">＋</span><span class="zs-entry-arrow" aria-hidden="true">›</span></span>'+
+ '<strong>Create Material</strong><small>New material and unit</small></button>'+
  '<button type="button" class="zs-materials-btn" onclick="zukStockOpenMaterials()">'+
- '<span class="zs-action-icon" aria-hidden="true">▤</span><strong>Brand &amp; Price</strong>'+
- '<small>Assign brands and set effective-dated prices</small></button></div>':'';
+ '<span class="zs-entry-card-top"><span class="zs-action-icon" aria-hidden="true">▤</span><span class="zs-entry-arrow" aria-hidden="true">›</span></span>'+
+ '<strong>Brand &amp; Price</strong><small>Brands and dated pricing</small></button></div></div>':'';
 function departmentMenu(){
- return '<div class="zs-home-hero"><h3>Consumables Stock Management</h3>'+
-  '<p class="zs-preview-note">Choose a department to open its stock screens.</p></div>'+
+ return '<div class="zs-entry-home">'+
+  '<div class="zs-entry-hero">'+
+  '<div class="zs-entry-eyebrow"><span class="zs-entry-dot" aria-hidden="true"></span>WORKSHOP INVENTORY</div>'+
+  '<h2>Consumables Stock</h2>'+
+  '<p>Choose a department or manage your material catalog.</p></div>'+
+  '<div class="zs-entry-section zs-entry-department-section">'+
+  '<div class="zs-entry-section-head"><span class="zs-entry-section-symbol" aria-hidden="true">▦</span><div>'+
+  '<h3>Stock Departments</h3><p>Shared items use one physical balance</p></div></div>'+
   '<div class="zs-department-grid" aria-label="Stock departments">'+
   '<button type="button" class="zs-department-card painting" data-department="Painting" onclick="zukStockSelectDepartment(this.dataset.department)">'+
-  '<span aria-hidden="true">🎨</span><strong>Paint Consumables</strong><small>Painting materials and shared stock</small></button>'+
+  '<span class="zs-entry-card-top"><span class="zs-department-icon" aria-hidden="true">🎨</span><span class="zs-entry-arrow" aria-hidden="true">›</span></span>'+
+  '<strong>Paint Consumables</strong><small>Paint and shared stock</small></button>'+
   '<button type="button" class="zs-department-card mechanical" data-department="Mechanical" onclick="zukStockSelectDepartment(this.dataset.department)">'+
-  '<span aria-hidden="true">⚙️</span><strong>Mechanical Consumables</strong><small>Mechanical materials and shared stock</small></button></div>'+stockMasterActions();
+  '<span class="zs-entry-card-top"><span class="zs-department-icon" aria-hidden="true">⚙️</span><span class="zs-entry-arrow" aria-hidden="true">›</span></span>'+
+  '<strong>Mechanical Consumables</strong><small>Mechanical and shared stock</small></button></div></div>'+
+  stockMasterActions()+'</div>';
 }
 function showLiveHome(){
  if(!allowed()||!liveStockReady())return;
