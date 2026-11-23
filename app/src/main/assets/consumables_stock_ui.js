@@ -5,7 +5,8 @@ const OMR=n=>Number(n||0).toFixed(3);
 const fmt=n=>Number(n||0).toFixed(2);
 let department='';
 let view={page:'balance',items:[],history:[],itemsHasMore:false,historyHasMore:false,loading:false,error:'',busy:false,
-  selected:'',mode:'total',pending:null,legacyItems:[],legacyPage:0,legacyHasMore:false,report:null};
+  selected:'',mode:'total',pending:null,legacyItems:[],legacyPage:0,legacyHasMore:false,report:null,
+  balanceQuery:'',balanceFilter:'all'};
 const allowed=()=>typeof me!=='undefined'&&['Manager','Supervisor'].includes(me?.role);
 const manager=()=>typeof me!=='undefined'&&me?.role==='Manager';
 // The normal app can ask the authenticated server whether a real-data ledger
@@ -63,9 +64,28 @@ const catalog=()=>{
   try{
     const c=typeof state!=='undefined'&&window.ZukaitConsumables?.ensureState(state);
     return {materials:(c?.materials||[]).filter(x=>x.active!==false&&stockMaterialInDepartment(x)),
-      brands:(c?.brands||[]).filter(x=>x.active!==false)};
-  }catch(_){return {materials:[],brands:[]}}
+      brands:(c?.brands||[]).filter(x=>x.active!==false),
+      prices:(c?.prices||[]).filter(x=>x.voided!==true)};
+  }catch(_){return {materials:[],brands:[],prices:[]}}
 };
+// Read-only Material Master overlay; never infer physical stock from saved prices.
+function masterInventory(){
+ const c=catalog(),materials=new Map(c.materials.map(m=>[String(m.id),m])),
+  brands=new Map(c.brands.map(b=>[String(b.id),b])),pairs=new Map(),
+  pricedMaterials=new Set();
+ for(const p of c.prices){
+  const m=materials.get(String(p.materialId)),b=brands.get(String(p.brandId));
+  if(!m||!b)continue;
+  pricedMaterials.add(String(m.id));
+  const key=String(m.id)+'|'+String(b.id);
+  if(!pairs.has(key))pairs.set(key,{key,name:String(m.name||m.id),
+   brand:String(b.name||b.id),unit:String(m.unit||'')});
+ }
+ return {pairs:[...pairs.values()].sort((a,b)=>a.name.localeCompare(b.name,undefined,
+  {numeric:true,sensitivity:'base'})||a.brand.localeCompare(b.brand,undefined,
+  {numeric:true,sensitivity:'base'})),
+  unpriced:c.materials.filter(m=>!pricedMaterials.has(String(m.id)))};
+}
 const label=(r)=>{
   const c=catalog();
   const m=c.materials.find(x=>String(x.id)===String(r.material_id));
@@ -92,6 +112,11 @@ const css='<style>'+
  '.zs label{display:block;font-size:12px;font-weight:750;margin:12px 0 4px;color:#435b73}'+
  '.zs-pill{border-radius:16px;padding:3px 7px;background:#fff0ce;color:#824900;font-size:11px;font-weight:700}'+
  '.zs-warning{background:#fff3df;border:1px solid #edd3a0;border-radius:8px;padding:10px;color:#6b4916}'+
+ '.zs-unlinked{background:#f8fbff;border-color:#c8d7eb}.zs-unlinked-pill{background:#fff1d5;color:#805113}'+
+ '.zs-unlinked-grid{margin:10px 0}.zs-unlinked-grid b{display:block;color:#7b8694;font-size:17px}.zs-unlinked-grid small{display:block;color:#5a6e83}'+
+ '.zs-link-action,.zs-master-price-action{margin-top:9px}'+
+ '.zs-balance-tools{display:grid;grid-template-columns:minmax(0,2fr) minmax(140px,1fr);gap:10px;margin:9px 0 12px}'+
+ '@media(max-width:480px){.zs-balance-tools{grid-template-columns:minmax(0,1fr)}}'+
  '@media(min-width:720px){.zs-nav{grid-template-columns:repeat(5,minmax(0,1fr))}.zs-two{display:grid;grid-template-columns:1fr 1fr;gap:14px}}'+
  '</style>';
 function draw(body) {
@@ -130,6 +155,27 @@ function rowCard(r){
    '</b></div><div><div class="zs-muted">Reserved</div><b>'+fmt(r.reserved)+' '+unit+
    '</b></div><div><div class="zs-muted">Available</div><b class="zs-available">'+fmt(a)+' '+unit+'</b></div></div>'+
    '<div class="zs-muted" style="margin-top:6px">Average '+OMR(Number(r.physical)>0?Number(r.stock_value)/Number(r.physical):0)+' OMR/'+unit+'</div></button>';
+}
+function masterStockCard(x,status){
+ return '<div class="zs-card zs-unlinked" data-balance-entry data-balance-kind="'+esc(status)+
+  '" data-balance-name="'+esc(x.name+' — '+x.brand)+'">'+
+  '<div class="zs-row"><b>'+esc(x.name)+' — '+esc(x.brand)+'</b>'+
+   '<span class="zs-pill zs-unlinked-pill">'+esc(status==='pending'?'Link status not checked':'Not linked')+'</span></div>'+
+  '<p class="zs-muted">'+esc(x.unit||'Unit not recorded')+
+   ' · Material Master record · Stock quantity not recorded</p>'+
+  '<div class="zs-grid zs-unlinked-grid"><div><small>Physical</small><b>—</b></div>'+
+   '<div><small>Reserved</small><b>—</b></div>'+
+   '<div><small>Available</small><b>—</b></div></div>'+
+  (manager()&&status!=='pending'?
+   '<button type="button" class="zs-btn secondary zs-link-action" onclick="zukStockLegacyReview()">Review &amp; Link</button>':'')+
+  '</div>';
+}
+function unpricedMaterialCard(m){
+ return '<div class="zs-card zs-unpriced" data-balance-entry data-balance-kind="unpriced"'+
+  ' data-balance-name="'+esc(m.name||m.id)+'"><div class="zs-row"><b>'+esc(m.name||m.id)+'</b>'+
+  '<span class="zs-pill zs-unlinked-pill">Brand &amp; Price needed</span></div>'+
+  '<p class="zs-muted">No saved active brand price for this material. Not a stock balance; no quantity assumed.</p>'+
+  (manager()?'<button type="button" class="zs-btn secondary zs-master-price-action" onclick="zukStockOpenMaterials()">Open Brand &amp; Price</button>':'')+'</div>';
 }
 function render(){
  if(!allowed())return;
