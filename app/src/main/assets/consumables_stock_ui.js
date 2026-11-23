@@ -398,6 +398,7 @@ function trialNotice(){
   'Closing or reloading clears all test entries.</div>';
 }
 function trialControls(){
+ if(window.ZUKAIT_STOCK_QA_SIMULATION!==true)return '<p role="status" class="zs-warning">Real stock is not activated on this server. Opening stock, purchases and adjustments cannot be saved yet. Existing Materials &amp; Brands remain available to Managers.</p>';
  return '<div class="zs-actions" style="margin:10px 0 16px">'+
  (stockTrial.active?
   '<button type="button" class="zs-ghost" onclick="zukStockTestReset()">Clear test entries</button>':
@@ -466,12 +467,12 @@ function trialReports(c){
  '<p class="zs-preview-note">Only the current tab test entries are included. Real reporting and printing remain disabled.</p></div>';
 }
 window.zukStockTestStart=()=>{
- if(!previewOnly()||!allowed())return;
+ if(window.ZUKAIT_STOCK_QA_SIMULATION!==true||!previewOnly()||!allowed())return;
  stockTrial.active=true;stockTrial.message='';
  showPreview();
 };
 window.zukStockTestReset=()=>{
- if(!stockTrial.active||!allowed()||!window.confirm?.('Clear all test stock entries in this browser tab?'))return;
+ if(window.ZUKAIT_STOCK_QA_SIMULATION!==true||!stockTrial.active||!allowed()||!window.confirm?.('Clear all test stock entries in this browser tab?'))return;
  stockTrial.balances.clear();stockTrial.events=[];stockTrial.message='';
  showPreview();
 };
@@ -497,7 +498,7 @@ window.zukStockTrialResolvePair=()=>{
  return !!pair;
 };
 window.zukStockTrialSave=()=>{
- if(!stockTrial.active||!allowed())return;
+ if(window.ZUKAIT_STOCK_QA_SIMULATION!==true||!stockTrial.active||!allowed())return;
  const d=document,get=id=>d.getElementById(id),c=catalog();
  window.zukStockTrialResolvePair?.();
  const kind=String(get('zs-trial-entry')?.value||''),
@@ -763,6 +764,7 @@ function previewHome(){
 // each selected detail screen are mutually exclusive, with explicit Back.
 function showPreview(){
  if(!allowed()||!previewOnly())return;
+ if(window.ZUKAIT_STOCK_QA_SIMULATION!==true)stockTrial.active=false;
  const isHome=preview.page==='home',c=catalog(),rows=isHome?[]:previewPairs();
  const tabName=previewTabs.find(x=>x[0]===preview.page)?.[1]||
   (preview.page==='suggest'?'Suggest Material':'Return Unused Material');
