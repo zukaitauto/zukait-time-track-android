@@ -171,3 +171,47 @@ h.ctx.me={id:'OTHER',role:'Manager'};
 finishInspection({revision:10,data:fixture()});await openingInspection;
 assert.equal(h.ctx.html,undefined,'Delayed snapshot must not show other account data');
 console.log('V377 Job Card Time Inspection drilldown: Manager/Supervisor, registration search, employee metrics, repeat separation, server snapshot, offline and role guards passed.');
+
+
+// ID001 missing-time Continue: no artificial job row, no end time, no JC modification.
+{
+ const started=Date.now()-60000;
+ const id001=fixture();
+ id001.assign.push({id:'ID-001',job:'ID001',emp:'EMP1',suggested:0,completed:false,idealCard:true,noSuggestedTime:true,countsAsNormalWorking:false});
+ id001.sessions[0].start=started-3600000;
+ id001.sessions[0].end=started-120000;
+ const req={requestId:'tm-'+randomUUID(),operation:'ADD_SESSION',assignmentId:'ID-001',sessionId:'',
+  start:started,end:null,workStatus:'CONTINUE',reason:'Owner confirmed ID001 start',
+  expectedSource:allocationToken(id001.assign[1]),expectedSessions:employeeTimeToken(id001,'EMP1')};
+ const result=transition(id001,manager,req,Date.now());
+ assert.equal(result.ok,true,'Manager can start open-ended ID001 without a Job Card master row');
+ assert.equal(result.data.sessions[1].job,'ID001');
+ assert.equal(result.data.sessions[1].end,null);
+ assert.equal(result.data.sessions[1].paused,false);
+ assert.equal(result.data.sessions[1].finished,false);
+ assert.deepEqual(result.data.jobs,id001.jobs,'normal Job Cards remain untouched');
+ assert.deepEqual(result.data.sessions[0],id001.sessions[0],'paused normal JC remains intact');
+ assert.equal(result.audit.command.workStatus,'CONTINUE');
+ assert.equal(transition(result.data,manager,req,Date.now()).duplicate,true,'retry is idempotent');
+ assert.equal(transition(id001,{id:'SUP1',role:'Supervisor'},req,Date.now()).code,'time_permission_denied');
+ const collision=clone(id001);collision.sessions.push({id:'OTHER',emp:'EMP1',job:'JC1',start:started-1000,end:null});
+ const collidingReq={...req,expectedSessions:employeeTimeToken(collision,'EMP1')};
+ assert.equal(transition(collision,manager,collidingReq,Date.now()).code,'time_session_overlap');
+ h=harness();h.ctx.state=id001;
+ await h.ctx.zukaitOpenManagerTimeManagement();
+ h.ctx.zukaitManagerTimeSelect('ID-001');
+ h.ctx.zukaitManagerTimeAction('ADD_SESSION');
+ assert.match(h.ctx.html,/value="CONTINUE"/,'ID001 offers Continue Working');
+ h.get('mtWorkStatus').value='CONTINUE';
+ h.ctx.zukaitManagerTimeStatusChanged();
+ assert.equal(h.get('mtEnd').disabled,true,'end date disabled for running ID001');
+ assert.equal(h.get('mtEndLabel').hidden,true,'end date hidden for running ID001');
+ h.get('mtStart').value=inputTime(started);
+ h.get('mtReason').value='Owner confirmed ID001 start';
+ h.ctx.zukaitManagerTimeReview();
+ assert.match(h.get('mtReview').innerHTML,/Continue Working/);
+ await h.ctx.zukaitManagerTimeConfirm();
+ assert.equal(h.ctx.state.sessions.at(-1).end,null);
+ assert.equal(h.ctx.state.sessions.at(-1).job,'ID001');
+}
+console.log('ID001 Manager Continue: UI, open-ended save, audit, permissions, overlap and JC preservation passed.');
