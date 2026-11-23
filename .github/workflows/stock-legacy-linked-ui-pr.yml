@@ -1,0 +1,31 @@
+name: V415 Legacy Stock linking UI regression
+on:
+  pull_request:
+    branches: [architecture-v2]
+    paths:
+      - 'app/src/main/assets/consumables_stock_ui.js'
+      - 'tests/consumables-stock-legacy-linked-ui.mjs'
+      - 'package.json'
+      - '.github/workflows/stock-legacy-linked-ui-pr.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned test dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Check JavaScript syntax
+        run: |
+          node --check app/src/main/assets/consumables_stock_ui.js
+          node --check tests/consumables-stock-legacy-linked-ui.mjs
+      - name: Run all isolated Stock regressions
+        run: npm run test:consumables:stock
+      - name: Verify preview-only application safety
+        run: node tests/consumables-main-app-preview.mjs
