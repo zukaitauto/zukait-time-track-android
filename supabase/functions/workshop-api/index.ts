@@ -2151,6 +2151,15 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "save") {
+      // Default OFF: only the explicitly approved, migration-verified rollout
+      // may atomically commit Paint Actual Materials with inventory movements.
+      // Do not let a partial Stock deployment break ordinary workshop saves.
+      const paintAtomic = Deno.env.get('ZUKAIT_STOCK_PAINT_ATOMIC_ENABLED')==='true';
+      if(paintAtomic && (
+        Deno.env.get('ZUKAIT_STOCK_ENABLED')!=='true' ||
+        Deno.env.get('ZUKAIT_STOCK_WRITES_ENABLED')!=='true' ||
+        Deno.env.get('ZUKAIT_STOCK_MASTER_LINK_ENABLED')!=='true'
+      )) return reply({ok:false,code:'paint_stock_rollout_not_ready'},503);
       const originalExpected = Number(body.expected_revision);
       const originalProposed = body.data;
       if (!Number.isFinite(originalExpected) || !originalProposed || typeof originalProposed !== "object") {
@@ -2252,7 +2261,8 @@ Deno.serve(async (req: Request) => {
 
         const next = currentRevision + 1;
         const live = computeLiveStatus(candidate, next, user.id);
-        const { data: committed, error } = await admin.rpc("zukait_commit_workshop_state_v2", {
+        const { data: committed, error } = await admin.rpc(
+          paintAtomic ? "zukait_commit_workshop_paint_stock_v1" : "zukait_commit_workshop_state_v2", {
           p_expected_revision: currentRevision,
           p_data: candidate,
           p_changed_by: user.id,
