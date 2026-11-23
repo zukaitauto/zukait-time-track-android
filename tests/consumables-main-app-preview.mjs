@@ -37,7 +37,8 @@ assert.ok(masterStart>=0&&priceStart>masterStart,'Material creation and Brand & 
 assert.match(menu,/CREATE MATERIAL/);
 assert.match(menu,/SAVE BRAND &amp; PRICE/);
 assert.doesNotMatch(menu.slice(masterStart,priceStart),/id="cmPrice|id="cmDate/,'Create Material must not collect price or effective date');
-assert.match(menu,/modal\('Materials & Brands'/,'Manager master must be renamed Materials & Brands');
+assert.match(menu,/modal\(pageTitle,/,'Manager Master must use the selected screen title');
+assert.match(menu,/pageTitle=section==='create'\?'Create Material':section==='price'\?'Brand & Price':'Materials & Brands'/,'Focused create/price screens preserve combined Master fallback');
 assert.doesNotMatch(menu,/action\('Brands & Price'/,'Old Painting dashboard must not show moved Master action');
 const mech=readFileSync('app/src/main/assets/mechanical_consumables_ui.js','utf8');
 assert.ok(html.includes('<script>window.ZUKAIT_STOCK_UI_PREVIEW_ONLY=true;</script><script src="consumables_stock_ui.js'),
