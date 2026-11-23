@@ -181,19 +181,36 @@ function render(){
  if(!allowed())return;
  if(view.loading){draw('<div class="zs-card">Loading the selected stock screen…</div>');return}
  if(view.page==='balance'){
-   const rows=view.items,low=rows.filter(x=>available(x)>0&&available(x)<Number(x.minimum)).length,
-       out=rows.filter(x=>available(x)<=0).length;
-   draw('<div class="zs-grid">'+
-       '<div class="zs-metric"><div class="zs-muted">Stock items</div><b>'+rows.length+'</b></div>'+
-       '<div class="zs-metric"><div class="zs-muted">Low stock</div><b>'+low+'</b></div>'+
-       '<div class="zs-metric"><div class="zs-muted">Out of stock</div><b>'+out+'</b></div></div>'+
-       '<div class="zs-row" style="margin-top:12px"><h3>Available Stock</h3>'+
-       '<button class="zs-btn secondary" onclick="zukStockNav(\'balance\',true)">Refresh</button></div>'+ 
-       (manager()?'<button class="zs-btn secondary" onclick="zukStockLegacyReview()">One-time: Review Older Materials</button>':'')+
-       (!rows.length?'<p class="zs-warning">No opening stock recorded. The existing material master remains unchanged.</p>':
-          rows.map(rowCard).join(''))+
-       (view.itemsHasMore?'<button class="zs-btn secondary" onclick="zukStockMore()">Load more items</button>':''));
-   return;
+  const rows=view.items,known=new Set(rows.map(r=>String(r.material_id)+'|'+String(r.brand_id))),
+    master=masterInventory(),incomplete=view.itemsHasMore,
+    unlinked=master.pairs.filter(p=>!known.has(p.key)),
+    unpriced=master.unpriced.filter(m=>!rows.some(r=>String(r.material_id)===String(m.id))),
+    low=rows.filter(x=>available(x)>0&&available(x)<Number(x.minimum)).length,
+    out=rows.filter(x=>available(x)<=0).length,
+    entries=[
+     ...rows.map(r=>({name:label(r),markup:'<div data-balance-entry data-balance-kind="linked" data-balance-name="'+esc(label(r))+'">'+rowCard(r)+'</div>'})),
+     ...unlinked.map(p=>({name:p.name+' — '+p.brand,markup:masterStockCard(p,incomplete?'pending':'unlinked')})),
+     ...unpriced.map(m=>({name:String(m.name||m.id),markup:unpricedMaterialCard(m)}))
+    ].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'}));
+  draw('<div class="zs-grid">'+
+    '<div class="zs-metric"><div class="zs-muted">Material / Brand items</div><b>'+entries.length+'</b></div>'+
+    '<div class="zs-metric"><div class="zs-muted">Linked stock</div><b>'+rows.length+'</b></div>'+
+    '<div class="zs-metric"><div class="zs-muted">Needs linking</div><b>'+(incomplete?'—':unlinked.length)+'</b></div></div>'+
+    '<p class="zs-muted">Linked stock: '+low+' low and '+out+' out of stock. Unlinked Master items are not counted as zero stock.</p>'+
+    '<div class="zs-row" style="margin-top:12px"><h3>Stock Balance &amp; Material Master</h3>'+
+    '<button class="zs-btn secondary" onclick="zukStockNav(\'balance\',true)">Refresh</button></div>'+
+    '<div class="zs-balance-tools"><label>Search material or brand<input type="search" id="zs-balance-query" autocomplete="off" value="'+esc(view.balanceQuery||'')+
+     '" placeholder="Search Paint materials" oninput="zukStockBalanceSearch(this.value)"></label>'+
+    '<label>Show<select id="zs-balance-filter" onchange="zukStockBalanceFilter(this.value)">'+
+    [['all','All items'],['linked','Linked stock'],['unlinked','Needs linking'],['unpriced','Brand & Price needed']]
+      .map(([id,name])=>'<option value="'+id+'"'+(view.balanceFilter===id?' selected':'')+'>'+name+'</option>').join('')+'</select></label></div>'+
+    (manager()?'<button class="zs-btn secondary" onclick="zukStockLegacyReview()">One-time: Review Older Materials</button>':'')+
+    (incomplete?'<p class="zs-warning">More stock balances may be on later pages. Load them before deciding that unmatched Master items need linking.</p>':'')+
+    (entries.length?entries.map(x=>x.markup).join(''):
+     '<p class="zs-warning">No saved Material Master items or linked Stock records visible. Check the Master and refresh.</p>')+
+    (entries.length?'<p class="zs-muted" id="zs-balance-search-empty" hidden>No materials match this search or filter.</p>':'')+
+    (incomplete?'<button class="zs-btn secondary" onclick="zukStockMore()">Load more items</button>':''));
+  applyBalanceFilters();return;
  }
  if(view.page==='legacy'){
    if(!manager()){draw('<p class="zs-warning">Only Manager can review older materials.</p>');return}
@@ -905,6 +922,7 @@ window.zukStockSelectDepartment=scope=>{
  department=scope;
  preview.page='home';stockTrial.message='';
  view.items=[];view.history=[];view.report=null;view.selected='';
+ view.balanceQuery='';view.balanceFilter='all';
  view.itemsHasMore=false;view.historyHasMore=false;
  if(previewOnly())return showPreview();
  if(liveStockReady())return showLiveHome();
@@ -930,6 +948,20 @@ window.openStockManagement=async(scope='')=>{
  if(liveStockReady()){window.closeModal?.();return showLiveHome()}
  return load('balance',true); // Existing isolated stock QA behavior unchanged.
 };
+function applyBalanceFilters(){
+ const root=document.getElementById?.('zs-stock-screen')||document;
+ if(typeof root.querySelectorAll!=='function')return;
+ const query=String(view.balanceQuery||'').trim().toLocaleLowerCase(),filter=view.balanceFilter||'all';
+ let visible=0;
+ for(const node of root.querySelectorAll('[data-balance-entry]')){
+  const name=String(node.getAttribute('data-balance-name')||'').toLocaleLowerCase(),
+    kind=node.getAttribute('data-balance-kind'),shown=(!query||name.includes(query))&&(filter==='all'||kind===filter);
+  node.hidden=!shown;if(shown)visible++;
+ }
+ const empty=root.querySelector('#zs-balance-search-empty');if(empty)empty.hidden=visible>0;
+}
+window.zukStockBalanceSearch=value=>{view.balanceQuery=String(value||'').slice(0,180);if(view.page==='balance')applyBalanceFilters();};
+window.zukStockBalanceFilter=value=>{if(!['all','linked','unlinked','unpriced'].includes(value))return;view.balanceFilter=value;if(view.page==='balance')applyBalanceFilters();};
 window.zukStockNav=(page,force=false)=>previewOnly()?window.zukStockPreviewNavigate(page):load(page,force);
 window.zukStockDetail=id=>{view.selected=String(id||'');view.page='detail';render()};
 window.zukStockMore=async()=>{
