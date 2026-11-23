@@ -20,7 +20,14 @@ try{for(const width of [320,390,768,1024,1280]){
  const visibleCells=await page.locator('tbody td').evaluateAll(xs=>xs.every(el=>{const r=el.getBoundingClientRect();return r.left>=-1&&r.right<=innerWidth+1&&el.scrollWidth<=el.clientWidth+1}));assert.equal(visibleCells,true,'every financial value fits within the screen '+width);
  fs.mkdirSync('artifacts/reception',{recursive:true});await page.screenshot({path:'artifacts/reception/manager-profit-list-'+engine+'-'+width+'.png',fullPage:true});
  await page.locator('#mpCompany').selectOption('LIVA');assert.equal(await page.locator('tbody tr').count(),2);assert.match(await page.locator('.mp-summary').innerText(),/26\.67%/);
- await page.locator('#mpMode').selectOption('graph');assert.equal(await page.locator('.mp-chart-row').count(),3);assert.match(await page.locator('.mp-chart').innerText(),/OMR 80\.000/);assert.equal(await page.locator('.mp-job-count strong').innerText(),'2');assert.equal(await page.locator('.mp-trend').count(),1);assert.doesNotMatch(await page.locator('.mp-period-overview').innerText(),/JC 12070|JC 12071|by job card/);
+ await page.locator('#mpMode').selectOption('graph');assert.equal(await page.locator('.mp-chart-row').count(),3);assert.match(await page.locator('.mp-chart').innerText(),/OMR 80\.000/);assert.equal(await page.locator('.mp-job-count strong').innerText(),'2');assert.equal(await page.locator('.mp-compare-row').count(),3,'Cash plus two insurance companies share the margin graph');
+ assert.match(await page.locator('.mp-compare-row.is-cash').innerText(),/33\.33%/);
+ assert.match(await page.locator('.mp-compare-row.is-insurance').first().innerText(),/26\.67%/);
+ assert.match(await page.locator('.mp-compare-row.is-provisional').innerText(),/Provisional margin/);assert.doesNotMatch(await page.locator('.mp-period-overview').innerText(),/JC 12070|JC 12071|by job card/);
+ const comparisonOverflow=await page.locator('.mp-compare-row').evaluateAll(rows=>rows.some(el=>{
+  const r=el.getBoundingClientRect();return r.left<-1||r.right>innerWidth+1||el.scrollWidth>el.clientWidth+1;
+ }));
+ assert.equal(comparisonOverflow,false,'Cash/insurer comparison must fit '+engine+' '+width);
  const overlap=await page.locator('.mp-chart-row').evaluateAll(rows=>rows.some(el=>{const xs=[...el.children].map(x=>x.getBoundingClientRect());return xs.some((a,i)=>xs.slice(i+1).some(b=>Math.min(a.right,b.right)-Math.max(a.left,b.left)>1&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>1));}));assert.equal(overlap,false,'graph items overlap '+width);
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'graph document overflow '+width);
  fs.mkdirSync('artifacts/reception',{recursive:true});await page.screenshot({path:'artifacts/reception/manager-profit-'+engine+'-'+width+'.png',fullPage:true});
