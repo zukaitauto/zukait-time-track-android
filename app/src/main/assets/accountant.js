@@ -17,7 +17,7 @@ columns.insurance_invoiced=[...financialColumns.slice(0,4),['Insurance Company',
 columns.profit=[...financialColumns.slice(0,4),['Category','kind'],['Company / Customer','company_name'],...financialColumns.slice(4)];
 columns.leave=[['Employee','employee'],['Date','date'],['Leave','period_label'],['Status','approval_status'],['Days','days'],['Remark','remark'],['Marked By','marked_by'],['Cancellation By','cancelled_by'],['Cancellation Reason','cancel_reason']];
 let user=null,report='jobs',labourMode='with',offset=0,next=null,result=null,generation=0,detailGeneration=0,busy=false,target=null,verified=false;
-let pendingCostRows=null,pendingCostLoading=false;
+let pendingCostRows=null,pendingCostLoading=false,totalCostLoading=false;
 let passwordRotation = 0;
 const saved=()=>{try{return JSON.parse(localStorage.getItem(sessionKey)||'null')}catch{return null}};
 const token=()=>{const s=saved();if(!s||s.user?.id!==user?.id||s.user?.role!==user?.role||!['Accountant','Manager'].includes(s.user?.role)){invalidate();throw Error('ACCOUNT_CHANGED');}return String(s.token||window.AndroidBridge?.getSecureSessionToken?.()||'')};
@@ -284,13 +284,14 @@ function showFinancialSummary(data){
   ['Pending Cost Jobs',summary.pending_cost_records||0,false]
  ];
  area.innerHTML=figures.map(([label,value,currency],index)=>{
-  const actionable=report==='profit'&&index===3;
+  const pendingLink=report==='profit'&&index===3,costLink=report==='profit'&&index===0;
   const count=Number(value)||0;
-  const start=actionable?'<button type="button" class="accounts-kpi accounts-kpi-open" data-pending-costs aria-label="View '+esc(count)+' pending cost job cards"'+(count>0?'':' disabled')+'>':'<div class="accounts-kpi">';
+  const start=pendingLink?'<button type="button" class="accounts-kpi accounts-kpi-open" data-pending-costs aria-label="View '+esc(count)+' pending cost job cards"'+(count>0?'':' disabled')+'>':
+   costLink?'<button type="button" class="accounts-kpi accounts-kpi-cost-open" data-total-cost-breakdown aria-label="Open total job cost by Parts, Paint, Consumables, Labour and Sublet">':'<div class="accounts-kpi">';
   return start+'<small>'+esc(label)+'</small><b class="'+(index===1&&value!=null?(Number(value)<0?'negative':'positive'):'')+'">'+
    (currency?esc(display(value,true)):index===2?(value==null?'Pending / —':Number(value).toFixed(2)+'%'):esc(value))+'</b>'+
-   (actionable?'<span class="accounts-kpi-hint">'+(count>0?'View job cards ›':'No pending jobs')+'</span>':'')+
-   (actionable?'</button>':'</div>');
+   (pendingLink||costLink?'<span class="accounts-kpi-hint">'+(pendingLink?(count>0?'View job cards ›':'No pending jobs'):'View five cost categories ›')+'</span>':'')+
+   (pendingLink||costLink?'</button>':'</div>');
  }).join('')+
   (provisional?'<p class="financial-status-note">Provisional totals include recorded costs only. Missing costs remain pending; profit may decrease when they are entered.</p>':'');
  if(data.facets){
@@ -651,7 +652,11 @@ function revision(){return {expected_snapshot_revision:result?.snapshot_revision
 $('entry').onsubmit=e=>{e.preventDefault();const c={operation:$('operation').value,...revision(),transaction_date:$('transaction-date').value,kind:$('kind').value,job_card:$('entry-job').value.trim().toUpperCase(),payee:$('payee').value.trim(),amount:$('amount').value,payment_method:$('method').value,category:$('category').value.trim(),reference:$('reference').value.trim(),remarks:$('remarks').value.trim(),reason:$('reason').value.trim()};if(c.operation==='CORRECT')c.entry_id=$('entry-id').value;submit(c);};
 $('correction').onsubmit=e=>{e.preventDefault();if(!target?.field)return;const d=target.detail,k=target.field,c={operation:k==='invoice_amount_omr'?'CORRECT_INVOICE':'ADJUST_COST',job_card:d.job_card,expected_snapshot_revision:target.snapshot_revision,expected_finance_revision:target.finance_revision,transaction_date:new Date(Date.now()+14400000).toISOString().slice(0,10),old_value:d[k],new_value:$('corrected-value').value,reason:$('correction-reason').value.trim()};if(c.operation==='ADJUST_COST')c.category={consumables_cost_omr:'consumables',paint_cost_omr:'paint',parts_cost_omr:'parts',labour_cost_omr:'labour'}[k];submit(c);};
 $('detail').onclick=e=>{const b=e.target.closest('[data-adjust]');if(!b||!target)return;target.field=b.dataset.adjust;$('correction-target').textContent=target.detail.job_card+' · '+target.field.replaceAll('_',' ')+' · Original '+display(target.detail[target.field],true)+(target.field==='invoice_amount_omr'&&target.detail.job_type==='INSURANCE'?' · Linked LPO amount is also corrected; this does not record a cash receipt.':'');$('corrected-value').value=target.detail[target.field];$('correction-reason').value='';$('correction').hidden=false;};
-$('accounts-kpis').onclick=e=>{if(e.target.closest('[data-pending-costs]'))openPendingCostJobs();};
+$('accounts-kpis').onclick=e=>{
+ const cost=e.target.closest('[data-total-cost-breakdown]');
+ if(cost)return openTotalJobCostBreakdown(cost);
+ if(e.target.closest('[data-pending-costs]'))openPendingCostJobs();
+};
 $('rows').onclick=e=>{if(!result)return;if(e.target.closest('[data-pending-all]'))return load();const edit=e.target.closest('[data-leave-edit]');if(edit)return openLeaveForm('EDIT',result.rows.find(r=>String(r.id)===edit.dataset.leaveEdit),edit);const cancel=e.target.closest('[data-leave-cancel]');if(cancel)return openLeaveForm('CANCEL',result.rows.find(r=>String(r.id)===cancel.dataset.leaveCancel),cancel);const expense=e.target.closest('[data-expense]');if(expense)return ['paint','parts','consumables'].includes(expense.dataset.expense)?openExpenseJob(expense.dataset.job,expense.dataset.expense,expense):openJob(expense.dataset.job,expense.dataset.expense,expense);const j=e.target.closest('[data-job]');if(j)return expenseReports.has(report)?openExpenseJob(j.dataset.job,report,j):openJob(j.dataset.job,'',j);const c=e.target.closest('[data-correct]');if(c){const row=result.rows[Number(c.dataset.correct)];if(row&&!row.invoice_receipt)return cashForm(row);return;}const r=e.target.closest('[data-reverse]');if(r){const row=result.rows[Number(r.dataset.reverse)];if(!row||row.invoice_receipt)return;const reason=prompt('Reason for reversal? The original entry remains in history.');if(reason?.trim().length>=3)submit({operation:'REVERSE',entry_id:row.id,transaction_date:new Date(Date.now()+14400000).toISOString().slice(0,10),reason:reason.trim(),...revision()});}};
 const moduleSvg=content=>'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+content+'</svg>';
 const moduleDesign={
