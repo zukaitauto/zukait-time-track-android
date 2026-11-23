@@ -895,6 +895,30 @@ test('Manager report counts returned quantity and clears it on cancellation',asy
  assert.equal(restored.parts.reportRows()[0].amount,7.32);
 });
 
+test('Invoice Entry uses current Job Card model after Credos to Seltos edit, not an old PL snapshot',async()=>{
+ const f=fixture('Supervisor');
+ Object.assign(f.serverRows[0].payload,{vehicle:'KIA CREDOS',model:'CREDOS',year:'2021',registration:'67286-A'});
+ f.parts.hydrateFromServerRows(copy(f.serverRows));
+ const originalEvents=copy(f.serverRows);
+ f.window.zukaitJobCardMaster={display:()=>({no:f.jobCard,make:'KIA',model:'Seltos',vehicle:'KIA Seltos',year:'2021',reg:'67286-A',receptionNo:'RC0049'})};
+ await f.parts.openInvoiceEntry();
+ assert.match(f.html(),/KIA Seltos 2021/,'Invoice Entry row must use corrected Job Card model');
+ assert.doesNotMatch(f.html(),/CREDOS/i,'Old PL model must not be displayed alongside updated vehicle name');
+ assert.match(f.html(),/data-search="[^"]*seltos[^"]*"/i,'Invoice Entry search must include updated model');
+ assert.match(f.html(),/data-search="[^"]*67286-a[^"]*"/i,'Invoice Entry search must include current registration');
+ assert.match(f.html(),/1 pending/,'Invoice Entry pending count is unchanged');
+ await f.parts.openInvoiceEntryList(f.listNo);
+ assert.match(f.html(),/KIA Seltos 2021/,'Invoice details must match Invoice Entry list');
+ assert.match(f.html(),/Reg 67286-A/);
+ assert.deepEqual(f.serverRows,originalEvents,'Display correction must not modify authoritative parts events');
+ assert.equal(f.commits.length,0,'Viewing Invoice Entry must not change inventory or invoice prices');
+ delete f.window.zukaitJobCardMaster;
+ f.window.jd=()=>null;
+ await f.parts.openInvoiceEntry();
+ assert.match(f.html(),/KIA CREDOS 2021/,'Archived Parts List remains a fallback when no JC is available');
+ assert.doesNotMatch(f.html(),/CREDOS CREDOS/,'Fallback must not duplicate model text');
+});
+
 test('invoice save immediately refreshes through actual report service without stale pending state',async()=>{
  const manager=fixture('Manager','M1');
  manager.window.zukaitServerReports={page:async()=>({rows:copy(manager.serverRows),source:'server',nextCursor:null})};
