@@ -533,17 +533,17 @@ window.consOpenMaster=function(preset='',section=''){
  '<div id="consMasterWorkspace" class="cons-entry-shell">'+
  '<section class="cons-master-form" aria-labelledby="cmCreateHeading"><h3 id="cmCreateHeading">Create Material</h3>'+
  '<p class="notice">Create the material record first. Price and effective date are managed separately under Brand &amp; Price.</p>'+
- '<input id="cmNewMaterial" placeholder="Material Name" autocomplete="off">'+
- '<select id="cmNewUnit">'+units.map(x=>'<option>'+x+'</option>').join('')+'</select>'+
- '<select id="cmNewCategory">'+cats.map(x=>'<option>'+x+'</option>').join('')+'</select>'+
- '<label>Used In — required for new materials<select id="cmNewDepartment"><option value="">Choose Paint, Mechanical or Shared</option><option value="Painting">Paint</option><option value="Mechanical">Mechanical</option><option value="Both">Shared</option></select></label>'+
+ '<label class="cons-master-field">Material Name<input id="cmNewMaterial" placeholder="Enter material name" autocomplete="off"></label>'+
+ '<label class="cons-master-field">Unit<select id="cmNewUnit">'+units.map(x=>'<option>'+x+'</option>').join('')+'</select></label>'+
+ '<label class="cons-master-field">Category<select id="cmNewCategory">'+cats.map(x=>'<option>'+x+'</option>').join('')+'</select></label>'+
+ '<label class="cons-master-field">Used In — required for new materials<select id="cmNewDepartment"><option value="">Select department</option><option value="Painting">Paint</option><option value="Mechanical">Mechanical</option><option value="Both">Shared</option></select></label>'+
  '<button class="blue" type="button" onclick="consCreateMaterial()">CREATE MATERIAL</button></section>'+
  '<section class="cons-master-form" aria-labelledby="cmPriceHeading"><h3 id="cmPriceHeading">Brand &amp; Price</h3>'+
  '<p class="notice">Add a brand price or set a new effective-dated price. Previous price periods remain in history.</p>'+
- '<input id="cmMaterial" list="cmMaterialChoices" placeholder="Search Material" autocomplete="off" oninput="consMasterSuggest()"><datalist id="cmMaterialChoices"></datalist>'+
- '<input id="cmBrand" list="cmBrandChoices" placeholder="Search or enter Brand" autocomplete="off"><datalist id="cmBrandChoices"></datalist>'+
- '<input id="cmPrice" type="number" min="0" step="0.001" placeholder="Price / Unit OMR">'+
- '<label>Effective From<input id="cmDate" type="date" value="'+new Date().toISOString().slice(0,10)+'"></label>'+
+ '<label class="cons-master-field">Material<input id="cmMaterial" list="cmMaterialChoices" placeholder="Search material" autocomplete="off" oninput="consMasterSuggest()"></label><datalist id="cmMaterialChoices"></datalist>'+
+ '<label class="cons-master-field">Brand<input id="cmBrand" list="cmBrandChoices" placeholder="Search or enter brand" autocomplete="off"></label><datalist id="cmBrandChoices"></datalist>'+
+ '<label class="cons-master-field">Price / Unit (OMR)<input id="cmPrice" type="number" min="0" step="0.001" inputmode="decimal" placeholder="Enter price per unit"></label>'+
+ '<label class="cons-master-field">Effective From<input id="cmDate" type="date" value="'+new Date().toISOString().slice(0,10)+'"></label>'+
  '<button class="blue" type="button" onclick="consSaveMaster()">SAVE BRAND &amp; PRICE</button></section>'+
  '<p id="cmSaveMessage" class="notice" role="status">Shared materials use one physical stock balance. Opening stock is entered only after a physical count.</p>'+
  '<div class="cons-searchbar"><input id="cmListSearch" type="search" autocomplete="off" aria-label="Search material or brand" placeholder="Search material or brand..." oninput="consRenderMaster()"></div>'+
@@ -556,9 +556,9 @@ window.consOpenMaster=function(preset='',section=''){
  // Reuse the audited Manager Master, bringing the requested form into view.
  if(section==='create'||section==='price'){
   const heading=document.getElementById(section==='create'?'cmCreateHeading':'cmPriceHeading');
-  heading?.scrollIntoView?.({block:'start'});
+  if(window.matchMedia?.('(min-width:701px)')?.matches===true||section==='price')heading?.scrollIntoView?.({block:'nearest'});
   const input=document.getElementById(section==='create'?'cmNewMaterial':'cmMaterial');
-  input?.focus?.({preventScroll:true});
+  if(window.matchMedia?.('(min-width:701px)')?.matches===true)input?.focus?.({preventScroll:true});
  }
 };
 window.consCreateMaterial=function(){
@@ -968,6 +968,30 @@ body.cons-master-open #cmList{max-height:62vh;overflow:auto}
 .cons-page .cons-report-kpis.paint{grid-template-columns:repeat(4,minmax(0,1fr))}
 .cons-page .cons-table{display:block;min-width:0;width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y}
 @media(max-width:550px){.cons-page .cons-report-kpis,.cons-page .cons-report-kpis.paint{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Manager Materials / Brand & Price: scoped mobile readability and clipping fix. */
+#consMasterWorkspace{width:100%;min-width:0;max-width:100%;overflow-wrap:anywhere}
+#consMasterWorkspace .cons-master-form{min-width:0;max-width:100%;padding:16px;margin:0;background:#f8fbff;border:1px solid #c9d9ea;border-radius:14px;box-sizing:border-box;align-items:stretch}
+#consMasterWorkspace .cons-master-form>h3,#consMasterWorkspace .cons-master-form>.notice,#consMasterWorkspace .cons-master-form>button{grid-column:1/-1!important;min-width:0}
+#consMasterWorkspace .cons-master-form>h3{margin:0;font-size:19px;line-height:1.3;color:#143b63!important;font-weight:850}
+#consMasterWorkspace .cons-master-form>.notice{margin:0 0 6px;font-size:13px!important;line-height:1.5!important;color:#34536b!important;white-space:normal!important;overflow-wrap:anywhere}
+#consMasterWorkspace .cons-master-field{display:flex;flex-direction:column;min-width:0;width:100%;gap:6px;font-weight:750!important;font-size:13px!important;line-height:1.4!important;color:#284762!important;white-space:normal!important}
+#consMasterWorkspace .cons-master-field>input,#consMasterWorkspace .cons-master-field>select{display:block;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;min-height:48px!important;margin:0!important;padding:10px 12px!important;background:#fff!important;color:#172f4b!important;border:1px solid #a5bdd2!important;border-radius:10px!important;font-size:16px!important;line-height:1.3!important;text-overflow:ellipsis;box-shadow:none!important}
+#consMasterWorkspace .cons-master-field>input::placeholder{color:#61758d!important;opacity:1}
+#consMasterWorkspace .cons-master-field>input:focus-visible,#consMasterWorkspace .cons-master-field>select:focus-visible{outline:3px solid #2c6cbd!important;outline-offset:1px}
+#consMasterWorkspace .cons-master-form>button{width:100%!important;max-width:100%!important;min-height:48px!important;white-space:normal!important;overflow-wrap:anywhere;font-size:14px!important;border-radius:10px!important}
+#consMasterWorkspace #cmSaveMessage{margin:0;color:#2d556f!important;font-size:13px!important;line-height:1.45!important}
+#consMasterWorkspace .cons-searchbar{min-width:0;grid-template-columns:minmax(0,1fr)}
+#consMasterWorkspace #cmListSearch{min-width:0;max-width:100%;width:100%!important;box-sizing:border-box;font-size:16px!important;color:#19364f!important}
+@media(max-width:700px){
+ .modal-box:has(#consMasterWorkspace){box-sizing:border-box!important;width:calc(100vw - 16px)!important;max-width:calc(100vw - 16px)!important;min-width:0!important;max-height:calc(100dvh - 20px)!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain;padding:12px!important}
+ .cons-page:has(#consMasterWorkspace){width:100%!important;min-width:0!important;max-width:100%!important}
+ #consMasterWorkspace .cons-master-form{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px!important;padding:14px!important}
+ #consMasterWorkspace .cons-master-form>*{grid-column:1/-1!important;width:100%;min-width:0;max-width:100%;box-sizing:border-box}
+ #consMasterWorkspace .cons-master-form>.notice{padding:10px!important}
+ #consMasterWorkspace #cmList{max-width:100%;min-width:0}
+ #consMasterWorkspace .cons-table{max-width:100%;overflow-x:auto}
+}
+
 `;document.head.appendChild(css);
 const oldRender=window.render;
 if(typeof oldRender==='function')window.render=function(){const r=oldRender.apply(this,arguments);setTimeout(addLaunchCard,0);return r};
