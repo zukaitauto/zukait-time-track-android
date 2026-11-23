@@ -110,8 +110,8 @@ assert.equal(cards(),0,'First stock screen chooses a department');
 assert.match(markup(),/Paint Consumables/);
 assert.match(markup(),/Mechanical Consumables/);
 assert.match(markup(),/zs-department-grid/);
-assert.match(markup(),/Create New Item/,'Manager must be able to create materials directly from Stock menu');
-assert.match(markup(),/Materials &amp; Brands/,'Materials & Brands must be in Stock menu');
+assert.doesNotMatch(markup(),/<button[^>]*zs-(?:create-item|materials-btn)/,
+ 'Approved department chooser must show only Painting and Mechanical, not Material Master actions');
 ctx.window.zukStockSelectDepartment('Painting');
 assert.equal(current(),'home');
 assert.equal(cards(),5,'Five colored Paint Stock menu boxes');
