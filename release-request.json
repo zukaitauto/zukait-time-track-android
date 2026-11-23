@@ -1,8 +1,8 @@
 {
-  "versionName": "V412",
-  "versionCode": 375,
+  "versionName": "V413",
+  "versionCode": 376,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": true,
+  "approvedForStaff": false,
   "ownerPublicationRequested": true,
   "ownerRequestedImmediateRelease": true,
   "ownerRequestedProceed": true,
@@ -12,17 +12,13 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "reason": "Owner authorized V412 UI-only publication for the approved Consumables Stock redesign. Exact-source V412 build, signed acceptance APK, Reception verification, Stock safety, outage safety and Android architecture build passed. Production Stock schema and transaction writes remain gated until the authenticated server reports Stock ready; this release does not activate live Stock. Physical acceptance and backup-restore checks remain deferred for UI-only testing.",
+  "reason": "V413 candidate for the owner-approved matching Job Card View and Edit design, keeping Create unchanged. Exact-source release acceptance is pending. Stock backend installation and owner-authorized activation were completed separately on 2026-11-23; this UI candidate does not redeploy the backend. Backup remains explicitly deferred; no restore is claimed.",
   "previousPublishedRelease": {
-    "versionName": "V411",
-    "versionCode": 374,
-    "releaseTag": "release-V411-architecture-v2",
-    "sourceCommit": "11d8e53a04ebda055d678fc3fe23a54316865c44"
+    "versionName": "V412",
+    "versionCode": 375,
+    "releaseTag": "release-V412-architecture-v2",
+    "sourceCommit": "ac0a09804450a44dce109d534e6b1ec9fc371059"
   },
-  "sourceCommit": "ac0a09804450a44dce109d534e6b1ec9fc371059",
-  "approvedAt": "2026-11-22T15:42:33.658Z",
-  "publishNonce": "owner-v412-ui-only-ac0a0980-20261122",
-  "signedAcceptanceRun": 45039371033,
-  "verificationRun": 45039492420,
+  "sourceCommit": "",
   "backupDeferredByOwner": true
 }
