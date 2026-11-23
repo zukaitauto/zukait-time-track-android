@@ -150,7 +150,8 @@ function render(){
  }
  if(view.page==='legacy'){
    if(!manager()){draw('<p class="zs-warning">Only Manager can review older materials.</p>');return}
-   draw('<h3>Older Materials — One-time Setup</h3>'+
+   draw('<h3>Older Materials — One-time Setup</h3>'+ 
+     '<button type="button" class="zs-btn secondary" onclick="zukStockNav(\'add\',true)">← Return to Add Stock</button>'+
      '<p class="zs-muted">The existing Material Master is unchanged. Choose the department for the material (shared by all its brands). Each brand keeps its own stock. A new brand starts at ZERO; prices and job costs are unchanged.</p>'+
      (view.legacyItems.length?view.legacyItems.map((x,i)=>{
        const paint=x.category==='Paint';
@@ -187,14 +188,15 @@ function render(){
  if(view.page==='add'){
     const c=catalog(),row=view.items.find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected),
      selected=row||view.items[0];
-    const noAssignedItems=department&&!view.items.length;
+    const noAssignedItems=Boolean(department&&!view.items.length);
     const pairOptions=view.items.map(x=>'<option value="'+esc(label(x))+'"></option>').join(''),
      pairName=selected?label(selected):'';
     draw('<h3>Add / Open Stock</h3>'+
-     (noAssignedItems?'<p class="zs-warning">No linked material and brand pairs in this department. Ask the Manager to review older materials in Stock Balance. Stock cannot be saved until a valid pair is linked.</p>':'')+
+     (noAssignedItems?'<div class="zs-warning"><b>No linked material and brand pairs for this department.</b><p>The existing Material Master is separate from Stock. Each material and brand must be reviewed and linked before Opening Stock can be saved.</p>'+
+       (manager()?'<button type="button" class="zs-btn" onclick="zukStockLegacyReview()">Review &amp; Link Existing Materials</button>':'Ask the Manager to link existing material and brand pairs.')+'</div>':'')+
      '<p class="zs-muted">Enter litres directly (not tins or drums). Non-liquid materials retain kg or Piece units.</p>'+
      (manager()?'<label>Entry type</label><select id="zs-entrytype" onchange="zukStockSetEntryType()"><option value="PURCHASE">Purchased Stock</option><option value="OPENING">Opening Stock (one time only)</option></select>':'')+
-     '<label>Search Material + Brand</label><input id="zs-material-brand-search" list="zs-material-brand-options" autocomplete="off" value="'+esc(pairName)+'" oninput="zukStockResolvePair()">'+
+     '<label>Search Material + Brand</label><input id="zs-material-brand-search" list="zs-material-brand-options" autocomplete="off" value="'+esc(pairName)+'"'+(noAssignedItems?' disabled placeholder="Link a material + brand first"':'')+' oninput="zukStockResolvePair()">'+
      '<datalist id="zs-material-brand-options">'+pairOptions+'</datalist>'+
      '<input id="zs-material" type="hidden" value="'+esc(selected?.material_id||'')+'"><input id="zs-brand" type="hidden" value="'+esc(selected?.brand_id||'')+'">'+
      '<label>Quantity (existing material unit)</label><input id="zs-qty" type="number" min="0.0001" step="any" placeholder="Enter physically counted / received quantity" oninput="zukStockCalculatePurchase()">'+
