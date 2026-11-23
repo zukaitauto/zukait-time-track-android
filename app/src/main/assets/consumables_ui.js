@@ -524,7 +524,7 @@ window.consShareSearch=async function(){
  else{try{await navigator.clipboard.writeText(text);alert('Material list copied. You can paste it into WhatsApp or another app.')}catch(e){alert('Share is not available on this device.')}}
 };
 window.openConsumablesManager=function(type){if(role()!=='Manager')return;if(type==='master')return consOpenMaster();if(type==='material')return consOpenMaterialSearch();if(type==='reports')return consOpenReports();if(type==='history')return consOpenHistory();modal('Manager Consumables','<div class="notice">Manager-only Consumables foundation is connected.</div>')};
-window.consOpenMaster=function(preset=''){
+window.consOpenMaster=function(preset='',section=''){
  if(role()!=='Manager')return;
  window.consNewItemDefaultDepartment=['Painting','Mechanical','Both'].includes(preset)?preset:'';
  const units=['Liter','kg','Piece'],cats=['Consumable','Paint'];
@@ -552,6 +552,14 @@ window.consOpenMaster=function(preset=''){
  const d=document.getElementById('cmNewDepartment');
  if(d)d.value=window.consNewItemDefaultDepartment;
  consRenderMaster();consMasterSuggest();
+ // The Stock chooser offers separate Create Material and Brand & Price shortcuts.
+ // Reuse the audited Manager Master, bringing the requested form into view.
+ if(section==='create'||section==='price'){
+  const heading=document.getElementById(section==='create'?'cmCreateHeading':'cmPriceHeading');
+  heading?.scrollIntoView?.({block:'start'});
+  const input=document.getElementById(section==='create'?'cmNewMaterial':'cmMaterial');
+  input?.focus?.({preventScroll:true});
+ }
 };
 window.consCreateMaterial=function(){
  if(role()!=='Manager')return;
