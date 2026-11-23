@@ -12,7 +12,7 @@ async function api(body){
 }
 async function open(no){
  if(!['Manager','Supervisor','Receptionist'].includes(actor()?.role))return;
- const id=++loadId;draft=null;
+ const id=++loadId;draft=null;viewStyle();
  try{
   if(actor()?.role==='Manager'&&typeof window.editJobManager==='function'){
    if(typeof window.zukaitCloud?.pull==='function')await window.zukaitCloud.pull(true);
@@ -26,7 +26,8 @@ async function open(no){
   draft={job:j,locked:result.invoice_locked};
   if(!j.make||!j.model){const n=window.zukaitNormalizeVehicle?.(j.make||'',j.model||'',j.vehicle||'');if(n){j.make=j.make||n.make;j.model=j.model||n.model;}}
   const input=([key,label])=>'<label>'+esc(key==='amount'&&String(j.jobType||'').toUpperCase()==='INSURANCE'?'Approx. Repair Amount (OMR)':label)+'<input id="jce-'+key+'" '+(key==='amount'?'type="number" min="0" max="1000000" step="0.001" inputmode="decimal" ':'')+'value="'+esc(j[key])+'"'+(j.receptionNo&&linked.has(key)||key==='amount'&&result.invoice_locked?' readonly':'')+'></label>';
-  openModal('<section class="jce-form"><h3>Edit Job Card · '+esc(j.no)+'</h3>'+(j.receptionNo?'<p>Vehicle identity is linked to '+esc(j.receptionNo)+'. Correct it in Reception Checklist.</p>':'')+(result.invoice_locked?'<p>Final invoice amount is authoritative. Use Invoice Entry for a correction.</p>':'')+'<form id="jce-form"><div class="grid">'+fields.map(input).join('')+'<label>Job Type<select id="jce-jobType"'+(j.receptionNo?' disabled':'')+'>'+['Cash','Credit','Insurance'].map(t=>'<option'+(t.toUpperCase()===String(j.jobType||'').toUpperCase()?' selected':'')+'>'+t+'</option>').join('')+'</select></label></div><label>Reason for Change<textarea id="jce-reason" maxlength="2000" required></textarea></label><button type="submit">Save Changes</button><button type="button" id="jce-cancel">Cancel</button></form></section>');
+  openModal('<section class="jce-form jce-view jce-editor"><header class="jce-view-header"><div><small>ZUKAIT INTERNATIONAL LLC</small><h3>Edit Job Card · '+esc(j.no)+'</h3><div>'+esc([j.make,j.model].filter(Boolean).join(' ')||j.vehicle||'')+'</div></div></header>'+(j.receptionNo?'<p>Vehicle identity is linked to '+esc(j.receptionNo)+'. Correct it in Reception Checklist.</p>':'')+(result.invoice_locked?'<p>Final invoice amount is authoritative. Use Invoice Entry for a correction.</p>':'')+'<form id="jce-form"><section class="jce-view-section"><h4>Vehicle, Customer & Payment</h4><div class="grid">'+fields.map(input).join('')+'<label>Job Type<select id="jce-jobType"'+(j.receptionNo?' disabled':'')+'>'+['Cash','Credit','Insurance'].map(t=>'<option'+(t.toUpperCase()===String(j.jobType||'').toUpperCase()?' selected':'')+'>'+t+'</option>').join('')+'</select></label></div></section><label>Reason for Change<textarea id="jce-reason" maxlength="2000" required></textarea></label><button type="submit">Save Changes</button><button type="button" id="jce-cancel">Cancel</button></form></section>');
+  document.querySelector('.jce-editor')?.closest('.modal-box')?.classList.add('jce-view-modal');
   const editType=document.getElementById('jce-jobType');
   const updateInsuranceVisibility=()=>{
     const visible=String(editType.value).toUpperCase()==='INSURANCE';
@@ -72,6 +73,28 @@ function viewCss(){return `
 .jce-view-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px 0}.jce-view-section{margin:10px 0;border:1px solid #dce3e9;border-radius:6px;overflow:hidden}.jce-view-section h4{margin:0;padding:7px 10px;background:#edf2f5;color:#173e54;font-size:13px}.jce-view-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0}.jce-view-field{min-width:0;border-bottom:1px solid #e1e8ee;padding:7px 10px}.jce-view-field b{display:block;font-size:11px;color:#496578}.jce-view-value{white-space:pre-wrap;overflow-wrap:anywhere;margin:3px 0 0;line-height:1.4}.jce-view-wide{grid-column:1/-1}.jce-view-work{padding:10px;white-space:pre-wrap;line-height:1.6;min-height:70px}
 @media(max-width:550px){.jce-view{padding:10px;font-size:13px}.jce-view h3{font-size:20px}.jce-view-nav{width:100%}.jce-view-nav button{flex:1}.jce-view-field{padding:6px 8px}.jce-view-summary{gap:4px}}
 @page{size:A4;margin:12mm}@media print{.jce-view-nav{display:none!important}.jce-view{padding:0;max-width:none;font-size:11px}.jce-view h3{font-size:20px}.jce-view-fields,.jce-view-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.jce-view-header,.jce-view-field{break-inside:avoid}.jce-view-section h4{break-after:avoid}.jce-view-section{overflow:visible;border-radius:0}.jce-view-value,.jce-view-work{overflow:visible!important}.jce-view-work{min-height:90px}.jce-view-section h4{print-color-adjust:exact}}
+
+/* View and Edit share one scoped palette; Create Job Card is unaffected. */
+.jce-view{background:#f3f7fa;color:#172f43;border-radius:18px;padding:18px;font-family:Arial,sans-serif}
+.jce-view .jce-view-header{background:linear-gradient(120deg,#12314c,#146b70);border:0;border-radius:14px;padding:22px;color:#fff;box-shadow:0 6px 18px #12314c18}
+.jce-view .jce-view-header h3{color:#fff!important;font-size:24px;line-height:1.3;margin:5px 0}
+.jce-view .jce-view-header small{color:#cae8ed;font-weight:700;letter-spacing:1px}
+.jce-view .jce-view-nav button{background:#fff!important;color:#163f55!important;border:1px solid #d3e4eb!important;border-radius:9px;box-shadow:none!important;font-weight:700}
+.jce-view .jce-view-section{background:#fff;border:1px solid #d9e5ec;border-radius:12px;margin:16px 0;box-shadow:0 3px 12px #1b3e5510}
+.jce-view .jce-view-section h4{background:#e9f4f3;color:#155e63;font-size:14px;font-weight:700;border-bottom:1px solid #d3e7e5;padding:12px 14px}
+.jce-view .jce-view-field{padding:12px 14px;border-color:#e7edf2}
+.jce-view .jce-view-field b{color:#496579;font-size:12px;font-weight:600}
+.jce-view .jce-view-value{color:#172f43;font-size:14px;margin-top:5px}
+.jce-view .jce-view-work{padding:14px;color:#172f43}
+.jce-view button:focus-visible,.jce-editor input:focus-visible,.jce-editor select:focus-visible,.jce-editor textarea:focus-visible{outline:3px solid #0e7490;outline-offset:3px}
+.jce-editor .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:14px}
+.jce-editor label{display:block;min-width:0;color:#496579;font-size:13px;font-weight:600}
+.jce-editor input,.jce-editor select,.jce-editor textarea{display:block;box-sizing:border-box;min-width:0;width:100%;margin:6px 0 0;padding:12px;min-height:46px;border:1px solid #b9cdd8;border-radius:9px;background:#fff;color:#172f43;font:16px Arial,sans-serif}
+.jce-editor label[hidden]{display:none!important}.jce-editor button{min-height:44px;border-radius:9px;padding:10px 16px;margin:12px 8px 0 0}
+.jce-editor button[type=submit]{background:#126b70!important;color:#fff!important;border:1px solid #126b70!important}
+@media(max-width:550px){.jce-view{padding:10px;border-radius:12px}.jce-view .jce-view-header{padding:16px}.jce-view .jce-view-header h3{font-size:21px}.jce-view .jce-view-nav{width:100%}.jce-view .jce-view-nav button{flex:1}.jce-view .jce-view-field{padding:10px}.jce-editor .grid{grid-template-columns:1fr;gap:14px}}
+@media print{.jce-view{background:#fff;border-radius:0;padding:0}.jce-view .jce-view-header{background:#fff;color:#172f43;box-shadow:none;border-radius:0;border-bottom:2px solid #126b70;padding:0 0 12px}.jce-view .jce-view-header h3{color:#172f43!important}.jce-view .jce-view-header small{color:#496579}.jce-view .jce-view-section{box-shadow:none;border-radius:0}.jce-view .jce-view-field{padding:7px 10px}.jce-view .jce-view-value{font-size:11px}}
+
 `}
 function viewValue(value){if(value==null||value==='')return '—';if(typeof value==='object')return JSON.stringify(value,null,2);return String(value)}
 function jobDate(value){if(value==null||value==='')return 'Not recorded';const n=typeof value==='number'?value:/^\d+$/.test(String(value))?Number(value):Date.parse(value);return Number.isFinite(n)?new Date(n).toLocaleString('en-GB',{timeZone:'Asia/Muscat',dateStyle:'medium',timeStyle:'short'}):String(value)}

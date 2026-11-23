@@ -56,3 +56,16 @@
 .mje-editor .mje-editor-actions button{min-width:110px}
 .mje-editor button:disabled{opacity:.65;cursor:wait}
 @media(max-width:520px){.mje-editor .grid{grid-template-columns:1fr;gap:14px}.mje-editor .mje-section{padding:12px}.mje-editor .mje-editor-header{padding:13px}.mje-editor .mje-editor-header h3{font-size:19px!important}.mje-editor .mje-vehicle-summary{align-items:flex-start;flex-direction:column;gap:5px}.mje-editor .mje-editor-actions button{flex:1;min-width:0}}
+
+/* Match the approved Job Card View palette and section hierarchy. */
+.mje-form.mje-editor{background:#f3f7fa;border-radius:18px;padding:18px;color:#172f43}
+.mje-editor .mje-editor-header{background:linear-gradient(120deg,#12314c,#146b70);padding:22px;border-radius:14px;box-shadow:0 6px 18px #12314c18}
+.mje-editor .mje-editor-header small{color:#cae8ed}
+.mje-editor .mje-editor-header button{color:#163f55!important;box-shadow:none!important}
+.mje-editor .mje-section{border-color:#d9e5ec;border-radius:12px;box-shadow:0 3px 12px #1b3e5510}
+.mje-editor .mje-section legend{color:#155e63;background:#e9f4f3;border:1px solid #d3e7e5;border-radius:7px;padding:6px 10px;font-size:14px}
+.mje-editor input,.mje-editor select,.mje-editor textarea{background:#fff;color:#172f43;border-color:#b9cdd8}
+.mje-editor .mje-editor-actions{background:#f3f7fa}
+.mje-editor .mje-editor-actions .blue{background:#126b70!important;border-color:#126b70!important;box-shadow:none!important}
+.mje-editor button:focus-visible,.mje-editor input:focus-visible,.mje-editor select:focus-visible,.mje-editor textarea:focus-visible{outline-color:#0e7490}
+@media(max-width:550px){.mje-form.mje-editor{padding:10px;border-radius:12px}.mje-editor .mje-editor-header{padding:16px}}
