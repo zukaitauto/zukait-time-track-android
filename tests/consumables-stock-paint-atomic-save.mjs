@@ -130,6 +130,11 @@ try {
  )),/PAINT_RESERVATION_FINALISATION_REQUIRED/);
  assert.equal(await live(),beforeReservation,'reserved paint stock must not be deducted twice');
  approx((await stock('tape')).physical,5);
+ await db.exec("update public.zukait_stock_reservations set status='finalised',reserved_qty=0,actual_qty=1 where job_card='JC12509'");
+ await assert.rejects(()=>call(beforeReservation,data(
+   actual('JC12500','clear',3),actual('JC12000','clear',2),actual('JC12509','tape',1)
+ )),/PAINT_RESERVATION_FINALISATION_REQUIRED/);
+ assert.equal(await live(),beforeReservation,'already-finalised reservation cannot be deducted twice');
 
  const granted=(await db.query("select has_function_privilege('authenticated','public.zukait_commit_workshop_paint_stock_v1(bigint,jsonb,text,jsonb)','EXECUTE') as ok")).rows[0].ok;
  assert.equal(granted,false,'untrusted users cannot invoke atomic stock-save RPC');
