@@ -33,6 +33,8 @@ jobs:
         run: npm run test:consumables:stock
       - name: Verify preview-only application safety
         run: node tests/consumables-main-app-preview.mjs
+      - name: Verify original Material Master create, brand and price functionality
+        run: node tests/consumables-ui.mjs
       - name: Check Manager Materials and Brand Price modal on iPhone and desktop
         run: |
           npx playwright install chromium
