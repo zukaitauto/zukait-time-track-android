@@ -84,12 +84,12 @@ try{
   assert.ok(m.bodyWidth<=width+1,'horizontal scroll at '+width);
   // The landing screen now uses one coordinated light palette instead of
   // saturated dark blocks with white text. Verify actual browser colors.
-  const colorRgb=s=>(s.match(/\\d+/g)||[]).slice(0,3).map(Number);
+  const colorRgb=s=>(s.match(/\d+/g)||[]).slice(0,3).map(Number);
   const luminance=rgb=>rgb.map(v=>{const x=v/255;return x<=0.04045?x/12.92:((x+0.055)/1.055)**2.4})
     .reduce((sum,v,i)=>sum+v*[0.2126,0.7152,0.0722][i],0);
   const contrast=(a,b)=>{const x=luminance(a),y=luminance(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05)};
   for(const item of m.colors){
-    const stops=[...item.fill.matchAll(/rgb\\(\\d+, \\d+, \\d+\\)/g)].map(x=>colorRgb(x[0]));
+    const stops=[...item.fill.matchAll(/rgb\(\d+,\s*\d+,\s*\d+\)/g)].map(x=>colorRgb(x[0]));
     assert.ok(stops.length>=2,'Card must have a soft gradient at '+width);
     for(const fill of stops){
       assert.ok(luminance(fill)>0.78,'Card too dark at '+width);
