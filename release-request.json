@@ -12,14 +12,14 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "reason": "HELD V415 UI candidate. Stock: Manager Create Material and Brand & Price shortcuts, guided link from empty Add Stock, Paint/Mechanical detail screens without redundant department selector. Accountant: Profit/Loss Total Job Cost clickable full filtered cost breakdown. Manager: monthly graph compares weighted profit percentage for Cash and each insurance company together, with OMR revenue, recorded costs, result, pending/provisional indicators. Read-only visual comparison uses existing Manager profit API and no production data changes. V414 remains live. Await signed APK, full regression and Reception checks and explicit publication authorization.",
+  "reason": "HELD V415 UI candidate: Stock Manager create material/brand-price setup, safe master linking on empty Add Stock, scoped Paint/Mechanical detail screens, and Paint/Mechanical Stock Balance overlay of saved Material Master prices + actual linked ledger. Unlinked or unpriced items display no assumed stock quantities; Manager link and Brand & Price actions remain explicit, no automatic writes. Includes Accountant Total Job Cost breakdown and Manager Cash-vs-insurers weighted profit graph. No database, inventory, cost or historical job changes. V414 remains published. Exact-source signed Android, Reception, Stock and visual acceptance plus owner release approval required before publishing.",
   "previousPublishedRelease": {
     "versionName": "V414",
     "versionCode": 377,
     "releaseTag": "release-V414-architecture-v2",
     "sourceCommit": "e01f6f6b20b62a95fccce1bd211e9c34e6bb2d46"
   },
-  "sourceCommit": "a14d2816736c85c655bc93ffd6dfcd6694d4df31",
+  "sourceCommit": "0a43ea3ecbcd53688c6ce930f55adae6ae04e465",
   "backupDeferredByOwner": true,
   "signedAcceptanceRun": null,
   "verificationRun": null,
