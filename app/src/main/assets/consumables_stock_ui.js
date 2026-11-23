@@ -108,10 +108,11 @@ function draw(body) {
     (live?'<button class="zs-btn secondary" onclick="zukStockPreviewExit(\'dashboard\')">✕ Close</button>':
       '<button class="zs-btn secondary" onclick="closeModal()">✕ Close</button>')+'</div>'+
     '<h2 style="margin:12px 0 6px">'+esc(departmentTitle())+' · Stock</h2>'+
-    '<label for="zs-department">Department</label><select id="zs-department" onchange="openStockManagement(this.value)">'+
-    (live?[['Painting','Paint Consumables'],['Mechanical','Mechanical Consumables']]:
-      [['','All departments'],['Painting','Paint Consumables'],['Mechanical','Mechanical Consumables']])
-      .map(([value,name])=>'<option value="'+value+'"'+(value===department?' selected':'')+'>'+name+'</option>').join('')+'</select>'+
+    // The department was chosen on the Stock landing page.
+    // Never offer cross-department switching inside a scoped detail form.
+    (department?'':'<label for="zs-department">Department</label><select id="zs-department" onchange="openStockManagement(this.value)">'+
+      [['','All departments'],['Painting','Paint Consumables'],['Mechanical','Mechanical Consumables']]
+      .map(([value,name])=>'<option value="'+value+'"'+(value===department?' selected':'')+'>'+name+'</option>').join('')+'</select>')+
     (department?'<p class="zs-muted">Shared items use the same stock balance in both departments.</p>':'')+
     (live?'':'<div class="zs-nav">'+nav+'</div>');
   const message=view.error?'<div class="zs-warning">'+esc(view.error)+'</div>':'';
