@@ -117,12 +117,31 @@ w.document.querySelector('[data-mp-export="pdf"]').click();
 assert.match(savedPDF,/INSURANCE_Monthly_Performance_2026-10_Filtered\.pdf$/);
 assert.match(pdfText.join(' '),/Liva/);assert.match(pdfText.join(' '),/101/);assert.match(pdfText.join(' '),/Nissan Altima 2018/);assert.doesNotMatch(pdfText.join(' '),/Other <script>/);
 
-const mode=w.document.getElementById('mpMode');mode.value='graph';mode.dispatchEvent(new w.Event('change'));assert.equal(w.document.querySelectorAll('.mp-chart-row').length,3);assert.match(w.document.querySelector('.mp-chart').textContent,/OMR 80\.000/);assert.equal(w.document.querySelector('.mp-job-count strong').textContent,'2');assert.equal(w.document.querySelectorAll('.mp-trend').length,1);
+const mode=w.document.getElementById('mpMode');mode.value='graph';mode.dispatchEvent(new w.Event('change'));
+assert.equal(w.document.querySelectorAll('.mp-chart-row').length,3,'existing selected revenue/cost/result remains');
+assert.match(w.document.querySelector('.mp-chart').textContent,/OMR 80\.000/);
+assert.equal(w.document.querySelector('.mp-job-count strong').textContent,'2','selected company remains filtered in summary');
+assert.equal(w.document.querySelectorAll('.mp-comparison-row').length,0,'new cohort rows have comparison-specific class');
+assert.equal(w.document.querySelectorAll('.mp-compare-row').length,3,'Cash plus two insurers appear even with Liva filter');
+assert.match(w.document.querySelector('.mp-compare-row.is-cash').textContent,/Cash Jobs.*33\.33%/);
+assert.match(w.document.querySelector('.mp-compare-row.is-insurance').textContent,/Liva.*26\.67%/,
+ 'Insurance margin is weighted by group invoice/LPO amounts, not average of per-job percentages');
+const companies=[...w.document.querySelectorAll('.mp-compare-row.is-insurance')];
+assert.match(companies[1].textContent,/60\.00%/,'incomplete company shows provisional weighted margin');
+assert.match(companies[1].textContent,/Provisional margin/,'missing costs are not presented as final');
+assert.equal(w.document.querySelectorAll('#mpPage img,#mpPage script').length,0,'insurer names remain escaped in graph');
+assert.doesNotMatch(w.document.querySelector('.mp-period-overview').textContent,/Job cards across the month/,
+ 'Old daily count graph is replaced with insurer comparison');
+assert.match(w.document.querySelector('.mp-comparison-panel').textContent,/LPO is a document value, not an insurer payment/);
 
 assert.equal(w.document.querySelectorAll('[data-mp-export]').length,3,'Graph view retains Print/PDF/Excel');
 w.document.querySelector('[data-mp-export="pdf"]').click();
 assert.match(savedPDF,/INSURANCE_Monthly_Performance_2026-10_Filtered\.pdf$/);
 assert.doesNotMatch(w.document.querySelector('.mp-period-overview').textContent,/JC 101|JC 102|by job card/);
+await w.zukaitManagerProfit.open('CASH','2026-10','graph');
+assert.equal(w.document.querySelectorAll('.mp-compare-row').length,3,
+ 'Opening Cash graph also shows each insurer and Cash together');
+assert.match(w.document.querySelector('.mp-compare-row.is-insurance').textContent,/Liva.*26\.67%/);
 let month=w.document.getElementById('mpMonth');month.value='2026-09';month.dispatchEvent(new w.Event('change'));await wait(()=>w.document.querySelector('.mp-empty'));assert.match(w.document.querySelector('.mp-empty').textContent,/No matching/);
 const beforeOffline=calls;Object.defineProperty(w.navigator,'onLine',{configurable:true,value:false});await w.zukaitManagerProfit.open('CASH');assert.equal(calls,beforeOffline);assert.match(w.document.getElementById('mpPage').textContent,/unavailable/);
 Object.defineProperty(w.navigator,'onLine',{configurable:true,value:true});let release;held=new Promise(r=>release=r);const opening=w.zukaitManagerProfit.open('INSURANCE');await new Promise(r=>setImmediate(r));w.me={id:'NEW',role:'Manager'};token='NEW-TOKEN';release();await opening;assert.equal(w.document.querySelectorAll('#mpPage tbody tr').length,0,'old-account report cannot render after switch');
