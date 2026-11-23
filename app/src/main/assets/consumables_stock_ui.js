@@ -343,7 +343,7 @@ async function load(page,force=false){
      const request=needsItems?{operation:'LIST',page:0}:{operation:needReport?'REPORTS':'HISTORY'};
      const reply=await stockRead(request);
      if(!reply.ok)throw Error(reply.code||'STOCK_UNAVAILABLE');
-     if(needsItems){view.items=reply.items||[];view.itemsHasMore=!!reply.hasMore;view.itemsNextPage=1}
+     if(needsItems){view.items=verifiedLedgerRows(reply);view.itemsHasMore=!!reply.hasMore;view.itemsNextPage=1}
      else if(needReport)view.report=reply.report||null;
      else{view.history=reply.history||[];view.historyHasMore=!!reply.hasMore}
    }catch(e){view.error=String(e.message||e)}
@@ -983,12 +983,19 @@ window.zukStockBalanceSearch=value=>{view.balanceQuery=String(value||'').slice(0
 window.zukStockBalanceFilter=value=>{if(!['all','linked','unlinked','unpriced'].includes(value))return;view.balanceFilter=value;if(view.page==='balance')applyBalanceFilters();};
 window.zukStockNav=(page,force=false)=>previewOnly()?window.zukStockPreviewNavigate(page):load(page,force);
 window.zukStockDetail=id=>{view.selected=String(id||'');view.page='detail';render()};
+// Refuse old Stock API payloads; without explicit count metadata a real
+// zero could be confused with an uninitialised Master-link placeholder.
+const verifiedLedgerRows=reply=>{
+ if(!Array.isArray(reply?.items)||reply.items.some(x=>typeof x?.initialised!=='boolean'))
+   throw Error('Stock server count-status update required. Balances withheld until the approved migration.');
+ return reply.items;
+};
 window.zukStockMore=async()=>{
   if(view.loading||!view.itemsHasMore)return;view.loading=true;
   try{
     const reply=await stockRead({operation:'LIST',page:view.itemsNextPage});
     if(!reply.ok)throw Error(reply.code||'STOCK_UNAVAILABLE');
-    view.items.push(...(reply.items||[]));view.itemsHasMore=!!reply.hasMore;view.itemsNextPage++;view.error='';
+    view.items.push(...verifiedLedgerRows(reply));view.itemsHasMore=!!reply.hasMore;view.itemsNextPage++;view.error='';
   }catch(e){view.error=String(e.message||e)}finally{view.loading=false;render()}
 };
 window.zukStockMoreHistory=async()=>{

@@ -21,7 +21,7 @@ function fixture(role='Manager',linked=true){
     calls.push(req);
     if(req.operation==='LIST')
      return {ok:true,items:linked?[{material_id:'oil',brand_id:'b',physical:0,reserved:0,
-       unit:'Liter',stock_value:0,minimum:0}]:[],hasMore:false};
+       unit:'Liter',stock_value:0,minimum:0,initialised:false}]:[],hasMore:false};
     if(req.operation==='LEGACY_PREVIEW')
      return {ok:true,preview:{readOnly:true,items:[],hasMore:false}};
     if(req.operation==='WRITE')
